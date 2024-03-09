@@ -1,4 +1,8 @@
-import { IChainlinkAutomationRegistry__factory, IChainlinkPriceOracle__factory } from '@dolomite-exchange/modules-oracles/src/types';
+import Deployments, * as deployments from '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
+import {
+  IChainlinkAutomationRegistry__factory,
+  IChainlinkPriceOracleOld__factory,
+} from '@dolomite-exchange/modules-oracles/src/types';
 import { BigNumber as ZapBigNumber } from '@dolomite-exchange/zap-sdk/dist';
 import * as BorrowPositionProxyV2Json from '@dolomite-margin/deployed-contracts/BorrowPositionProxyV2.json';
 import * as DepositWithdrawalProxyJson from '@dolomite-margin/deployed-contracts/DepositWithdrawalProxy.json';
@@ -7,13 +11,13 @@ import * as ExpiryJson from '@dolomite-margin/deployed-contracts/Expiry.json';
 import * as IGenericTraderProxyV1Json from '@dolomite-margin/deployed-contracts/GenericTraderProxyV1.json';
 import * as LiquidatorAssetRegistryJson from '@dolomite-margin/deployed-contracts/LiquidatorAssetRegistry.json';
 import * as LiquidatorProxyV1Json from '@dolomite-margin/deployed-contracts/LiquidatorProxyV1.json';
-import * as LiquidatorProxyV4WithGenericTraderJson from '@dolomite-margin/deployed-contracts/LiquidatorProxyV4WithGenericTrader.json';
+import * as LiquidatorProxyV4WithGenericTraderJson
+  from '@dolomite-margin/deployed-contracts/LiquidatorProxyV4WithGenericTrader.json';
 import { address } from '@dolomite-margin/dist/src';
 import { Provider } from '@ethersproject/providers';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { BaseContract, BigNumberish, ContractInterface, Signer } from 'ethers';
 import { ethers, network } from 'hardhat';
-import Deployments, * as deployments from '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
 import {
   IBorrowPositionProxyV2__factory,
   IDepositWithdrawalProxy__factory,
@@ -37,7 +41,8 @@ import {
 } from '../../src/types';
 import {
   ARB_MAP,
-  CHAINLINK_AUTOMATION_REGISTRY_MAP, CHAINLINK_PRICE_AGGREGATORS_MAP,
+  CHAINLINK_AUTOMATION_REGISTRY_MAP,
+  CHAINLINK_PRICE_AGGREGATORS_MAP,
   CHAINLINK_PRICE_ORACLE_MAP,
   D_ARB_MAP,
   D_GMX_MAP,
@@ -46,7 +51,7 @@ import {
   DJ_USDC,
   DPLV_GLP_MAP,
   DPT_GLP_2024_MAP,
-  DPT_R_ETH_JUN_2025_MAP,
+  DPT_R_ETH_JUN_2025_MAP, DPT_WE_ETH_APR_2024_MAP,
   DPT_WST_ETH_JUN_2024_MAP,
   DPT_WST_ETH_JUN_2025_MAP,
   DPX_MAP,
@@ -56,18 +61,22 @@ import {
   JONES_MAP,
   LINK_MAP,
   MAGIC_GLP_MAP,
-  MAGIC_MAP, MATIC_MAP,
+  MAGIC_MAP,
+  MATIC_MAP,
   MIM_MAP,
   NATIVE_USDC_MAP,
   PENDLE_MAP,
   PREMIA_MAP,
   RDNT_MAP,
   RETH_MAP,
-  SIZE_MAP, SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL,
+  RS_ETH_MAP,
+  SIZE_MAP,
+  SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL,
   ST_ETH_MAP,
   USDC_MAP,
   USDT_MAP,
   WBTC_MAP,
+  WE_ETH_MAP,
   WETH_MAP,
   WST_ETH_MAP,
 } from '../../src/utils/constants';
@@ -231,6 +240,18 @@ export async function setupGMXBalance(
   await core.tokens.gmx!.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
+export async function setupRsEthBalance(
+  core: { tokens: { rsEth: IERC20 } },
+  signer: SignerWithAddress,
+  amount: BigNumberish,
+  spender: { address: string },
+) {
+  const whaleAddress = '0xf176fb51f4eb826136a54fdc71c50fcd2202e272'; // Balancer Vault
+  const whaleSigner = await impersonate(whaleAddress, true);
+  await core.tokens.rsEth!.connect(whaleSigner).transfer(signer.address, amount);
+  await core.tokens.rsEth!.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
+}
+
 export async function setupRETHBalance(
   core: { tokens: { rEth: IERC20 } },
   signer: SignerWithAddress,
@@ -241,6 +262,18 @@ export async function setupRETHBalance(
   const whaleSigner = await impersonate(whaleAddress, true);
   await core.tokens.rEth!.connect(whaleSigner).transfer(signer.address, amount);
   await core.tokens.rEth!.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
+}
+
+export async function setupWeEthBalance(
+  core: { tokens: { weEth: IERC20 } },
+  signer: SignerWithAddress,
+  amount: BigNumberish,
+  spender: { address: string },
+) {
+  const whaleAddress = '0xa6c895eb332e91c5b3d00b7baeeaae478cc502da'; // Balancer Vault
+  const whaleSigner = await impersonate(whaleAddress, true);
+  await core.tokens.weEth!.connect(whaleSigner).transfer(signer.address, amount);
+  await core.tokens.weEth!.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
 export async function setupWstETHBalance(
@@ -345,7 +378,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
 
   const chainlinkPriceOracle = getContract(
     CHAINLINK_PRICE_ORACLE_MAP[config.network],
-    IChainlinkPriceOracle__factory.connect,
+    IChainlinkPriceOracleOld__factory.connect,
     governance,
   );
 
@@ -482,7 +515,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
         camelotEcosystem: await createCamelotEcosystem(typedConfig.network, hhUser1),
         chainlinkAutomationRegistry: IChainlinkAutomationRegistry__factory.connect(
           CHAINLINK_AUTOMATION_REGISTRY_MAP[typedConfig.network],
-          governance
+          governance,
         ),
         gmxEcosystem: await createGmxEcosystem(typedConfig.network, hhUser1),
         gmxEcosystemV2: await createGmxEcosystemV2(typedConfig.network, hhUser1),
@@ -504,6 +537,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
           dplvGlp: DPLV_GLP_MAP[typedConfig.network]!.marketId,
           dPtGlp: DPT_GLP_2024_MAP[typedConfig.network]!.marketId,
           dPtREthJun2025: DPT_R_ETH_JUN_2025_MAP[typedConfig.network]!.marketId,
+          dPtWeEthApr2024: DPT_WE_ETH_APR_2024_MAP[typedConfig.network]!.marketId,
           dPtWstEthJun2024: DPT_WST_ETH_JUN_2024_MAP[typedConfig.network]!.marketId,
           dPtWstEthJun2025: DPT_WST_ETH_JUN_2025_MAP[typedConfig.network]!.marketId,
           dpx: DPX_MAP[typedConfig.network]!.marketId,
@@ -531,6 +565,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
           dGmx: IERC20__factory.connect(D_GMX_MAP[typedConfig.network]!.address, hhUser1),
           dPtGlp: IERC20__factory.connect(DPT_GLP_2024_MAP[typedConfig.network]!.address, hhUser1),
           dPtREthJun2025: IERC20__factory.connect(DPT_R_ETH_JUN_2025_MAP[typedConfig.network]!.address, hhUser1),
+          dPtWeEthApr2024: IERC20__factory.connect(DPT_WE_ETH_APR_2024_MAP[typedConfig.network]!.address, hhUser1),
           dPtWstEthJun2024: IERC20__factory.connect(DPT_WST_ETH_JUN_2024_MAP[typedConfig.network]!.address, hhUser1),
           dPtWstEthJun2025: IERC20__factory.connect(DPT_WST_ETH_JUN_2025_MAP[typedConfig.network]!.address, hhUser1),
           dpx: IERC20__factory.connect(DPX_MAP[typedConfig.network]!.address, hhUser1),
@@ -543,10 +578,12 @@ export async function setupCoreProtocol<T extends NetworkType>(
           premia: IERC20__factory.connect(PREMIA_MAP[typedConfig.network]!.address, hhUser1),
           pendle: IERC20__factory.connect(PENDLE_MAP[typedConfig.network]!.address, hhUser1),
           rEth: IERC20__factory.connect(RETH_MAP[typedConfig.network]!.address, hhUser1),
+          rsEth: IERC20__factory.connect(RS_ETH_MAP[typedConfig.network]!.address, hhUser1),
           radiant: IERC20__factory.connect(RDNT_MAP[typedConfig.network]!.address, hhUser1),
           size: IERC20__factory.connect(SIZE_MAP[typedConfig.network]!.address, hhUser1),
           stEth: IERC20__factory.connect(ST_ETH_MAP[typedConfig.network]!.address, hhUser1),
           wbtc: IERC20__factory.connect(WBTC_MAP[typedConfig.network].address, hhUser1),
+          weEth: IERC20__factory.connect(WE_ETH_MAP[typedConfig.network]!.address, hhUser1),
           wstEth: IERC20__factory.connect(WST_ETH_MAP[typedConfig.network]!.address, hhUser1),
         },
       },
@@ -580,7 +617,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
           matic: IERC20__factory.connect(MATIC_MAP[typedConfig.network].address, hhUser1),
           usdt: IERC20__factory.connect(USDT_MAP[typedConfig.network].address, hhUser1),
           wbtc: IERC20__factory.connect(WBTC_MAP[typedConfig.network].address, hhUser1),
-        }
+        },
       },
     ) as any;
   }

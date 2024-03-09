@@ -64,7 +64,10 @@ async function doStuffInternal<T extends NetworkType>(
         txResult = await delayedMultiSig.submitTransaction(transaction.to, ZERO_BI, transaction.data);
       }
 
-      transactionIds.push((await delayedMultiSig.queryFilter(filter, txResult.blockHash))[0].args.transactionId);
+      const submissionEvent = (await delayedMultiSig.queryFilter(filter, txResult.blockHash))[0];
+      if (submissionEvent) {
+        transactionIds.push(submissionEvent.args.transactionId);
+      }
     }
 
     console.log('\tSubmitted transactions. Advancing time forward...');

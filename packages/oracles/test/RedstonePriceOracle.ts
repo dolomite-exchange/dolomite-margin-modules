@@ -3,46 +3,48 @@ import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import {
-  ChainlinkPriceOracle,
-  ChainlinkPriceOracle__factory,
+  RedstonePriceOracle,
+  RedstonePriceOracle__factory,
   TestChainlinkAggregator,
   TestChainlinkAggregator__factory,
 } from '../src/types';
 import {
   CustomTestToken,
 } from '@dolomite-exchange/modules-base/src/types';
-import { getChainlinkPriceOracleConstructorParamsFromOldPriceOracle } from '../src/oracles-constructors';
-import { createContractWithAbi, createTestToken } from '@dolomite-exchange/modules-base/../../../packages/base/src/utils/dolomite-utils';
+import { createContractWithAbi, createTestToken } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import {
   ADDRESS_ZERO,
-  MAX_INT_192_BI,
   Network,
-  ONE_BI,
   ONE_DAY_SECONDS,
-  TEN_BI,
   ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, snapshot, waitTime } from '@dolomite-exchange/modules-base/test/utils';
+import {
+  impersonate,
+  revertToSnapshotAndCapture,
+  snapshot,
+  waitTime
+} from '@dolomite-exchange/modules-base/test/utils';
 import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { parseEther } from 'ethers/lib/utils';
+import { getRedstonePriceOracleConstructorParams } from '../src/oracles-constructors';
+import { WE_ETH_ETH_REDSTONE_FEED_MAP } from 'packages/base/src/utils/constants';
 
-const WETH_PRICE = BigNumber.from('1883923360000000000000');
-const BTC_PRICE = BigNumber.from('299800328339800000000000000000000');
-const USDC_PRICE = BigNumber.from('999937000000000000000000000000');
-const TEST_TOKEN_PRICE = WETH_PRICE.mul(1).div(10);
-const TEST_TOKEN_STANDARD_PRICE = TEN_BI.pow(18).div(10);
+const WE_ETH_PRICE = BigNumber.from('3966474866008054000000');
+const TEST_TOKEN_PRICE = parseEther('1');
+const USDC_PRICE = TEST_TOKEN_PRICE.mul(BigNumber.from(10).pow(12));
 
-describe('ChainlinkPriceOracle', () => {
+describe('RedstonePriceOracle', () => {
   let snapshotId: string;
 
   let core: CoreProtocolArbitrumOne;
 
-  let oracle: ChainlinkPriceOracle;
+  let oracle: RedstonePriceOracle;
   let testAggregator: TestChainlinkAggregator;
   let testToken: CustomTestToken;
 
   before(async () => {
-    const blockNumber = 114_200_000; // DO NOT CHANGE THIS
+    const blockNumber = 187_699_000; // DO NOT CHANGE THIS
     core = await setupCoreProtocol({
       blockNumber,
       network: Network.ArbitrumOne,
@@ -54,12 +56,25 @@ describe('ChainlinkPriceOracle', () => {
       [],
     );
     testToken = await createTestToken();
-    await testAggregator.setLatestAnswer(TEN_BI.pow(18).div(10)); // 0.1E
+    await testAggregator.setLatestAnswer(TEST_TOKEN_PRICE); // 0.1E
     await testAggregator.setDecimals(18);
-    oracle = (await createContractWithAbi<ChainlinkPriceOracle>(
-      ChainlinkPriceOracle__factory.abi,
-      ChainlinkPriceOracle__factory.bytecode,
-      await getChainlinkPriceOracleConstructorParamsFromOldPriceOracle(core),
+    const aggregators = [
+      ADDRESS_ZERO,
+      testAggregator.address,
+      testAggregator.address,
+      testAggregator.address,
+      WE_ETH_ETH_REDSTONE_FEED_MAP[Network.ArbitrumOne],
+    ];
+    oracle = (await createContractWithAbi<RedstonePriceOracle>(
+      RedstonePriceOracle__factory.abi,
+      RedstonePriceOracle__factory.bytecode,
+      await getRedstonePriceOracleConstructorParams(
+        [core.tokens.weth, core.tokens.dai, core.tokens.usdc, core.tokens.wbtc, core.tokens.weEth],
+        aggregators,
+        [ADDRESS_ZERO, ADDRESS_ZERO, ADDRESS_ZERO, core.tokens.dai.address, core.tokens.weth.address],
+        [false, false, false, false, false],
+        core
+      )
     )).connect(core.governance);
 
     snapshotId = await snapshot();
@@ -71,9 +86,9 @@ describe('ChainlinkPriceOracle', () => {
 
   describe('#constructor', () => {
     it('should succeed when values are aligned', async () => {
-      await createContractWithAbi<ChainlinkPriceOracle>(
-        ChainlinkPriceOracle__factory.abi,
-        ChainlinkPriceOracle__factory.bytecode,
+      await createContractWithAbi<RedstonePriceOracle>(
+        RedstonePriceOracle__factory.abi,
+        RedstonePriceOracle__factory.bytecode,
         [
           [ZERO_ADDRESS],
           [ZERO_ADDRESS],
@@ -87,9 +102,9 @@ describe('ChainlinkPriceOracle', () => {
 
     it('should fail when token length is not aligned', async () => {
       await expectThrow(
-        createContractWithAbi<ChainlinkPriceOracle>(
-          ChainlinkPriceOracle__factory.abi,
-          ChainlinkPriceOracle__factory.bytecode,
+        createContractWithAbi<RedstonePriceOracle>(
+          RedstonePriceOracle__factory.abi,
+          RedstonePriceOracle__factory.bytecode,
           [
             [ZERO_ADDRESS],
             [ZERO_ADDRESS, ZERO_ADDRESS],
@@ -99,15 +114,15 @@ describe('ChainlinkPriceOracle', () => {
             core.dolomiteMargin.address,
           ],
         ),
-        'ChainlinkPriceOracle: Invalid tokens length',
+        'RedstonePriceOracle: Invalid tokens length',
       );
     });
 
     it('should fail when aggregator length is not aligned', async () => {
       await expectThrow(
-        createContractWithAbi<ChainlinkPriceOracle>(
-          ChainlinkPriceOracle__factory.abi,
-          ChainlinkPriceOracle__factory.bytecode,
+        createContractWithAbi<RedstonePriceOracle>(
+          RedstonePriceOracle__factory.abi,
+          RedstonePriceOracle__factory.bytecode,
           [
             [ZERO_ADDRESS, ZERO_ADDRESS],
             [ZERO_ADDRESS, ZERO_ADDRESS],
@@ -117,15 +132,15 @@ describe('ChainlinkPriceOracle', () => {
             core.dolomiteMargin.address,
           ],
         ),
-        'ChainlinkPriceOracle: Invalid aggregators length',
+        'RedstonePriceOracle: Invalid aggregators length',
       );
     });
 
     it('should fail when token decimal length is not aligned', async () => {
       await expectThrow(
-        createContractWithAbi<ChainlinkPriceOracle>(
-          ChainlinkPriceOracle__factory.abi,
-          ChainlinkPriceOracle__factory.bytecode,
+        createContractWithAbi<RedstonePriceOracle>(
+          RedstonePriceOracle__factory.abi,
+          RedstonePriceOracle__factory.bytecode,
           [
             [ZERO_ADDRESS, ZERO_ADDRESS],
             [ZERO_ADDRESS, ZERO_ADDRESS],
@@ -135,15 +150,15 @@ describe('ChainlinkPriceOracle', () => {
             core.dolomiteMargin.address,
           ],
         ),
-        'ChainlinkPriceOracle: Invalid decimals length',
+        'RedstonePriceOracle: Invalid decimals length',
       );
     });
 
-    it('should fail when token pair length is not aligned', async () => {
+    it('should fail when token decimal length is not aligned', async () => {
       await expectThrow(
-        createContractWithAbi<ChainlinkPriceOracle>(
-          ChainlinkPriceOracle__factory.abi,
-          ChainlinkPriceOracle__factory.bytecode,
+        createContractWithAbi<RedstonePriceOracle>(
+          RedstonePriceOracle__factory.abi,
+          RedstonePriceOracle__factory.bytecode,
           [
             [ZERO_ADDRESS, ZERO_ADDRESS],
             [ZERO_ADDRESS, ZERO_ADDRESS],
@@ -153,37 +168,30 @@ describe('ChainlinkPriceOracle', () => {
             core.dolomiteMargin.address,
           ],
         ),
-        'ChainlinkPriceOracle: Invalid pairs length',
+        'RedstonePriceOracle: Invalid pairs length',
       );
     });
   });
 
   describe('#getPrice', () => {
     it('returns the correct value for a token with 18 decimals', async () => {
-      const price = await oracle.getPrice(core.tokens.weth.address);
-      expect(price.value).to.eq(WETH_PRICE);
+      const price = await oracle.getPrice(core.tokens.dai.address);
+      expect(price.value).to.eq(TEST_TOKEN_PRICE);
     });
 
     it('returns the correct value for a token with less than 18 decimals', async () => {
-      const price = await oracle.getPrice(core.tokens.wbtc.address);
-      expect(price.value).to.eq(BTC_PRICE);
-    });
-
-    it('returns the correct value for a token with less than 18 decimals and non-USD base price', async () => {
       const price = await oracle.getPrice(core.tokens.usdc.address);
       expect(price.value).to.eq(USDC_PRICE);
     });
 
+    it('returns the correct value for a token with less than 18 decimals and non-USD base price', async () => {
+      const price = await oracle.getPrice(core.tokens.wbtc.address);
+      expect(price.value).to.eq(TEST_TOKEN_PRICE.mul(BigNumber.from('10').pow(10)));
+    });
+
     it('returns the correct value for a token with non-USDC base and 18 decimals', async () => {
-      await oracle.ownerInsertOrUpdateOracleToken(
-        testToken.address,
-        18,
-        testAggregator.address,
-        core.tokens.weth.address,
-        false
-      );
-      const price = await oracle.getPrice(testToken.address);
-      expect(price.value).to.eq(TEST_TOKEN_PRICE);
+      const price = await oracle.getPrice(core.tokens.weEth.address);
+      expect(price.value).to.eq(WE_ETH_PRICE);
     });
 
     it('returns the correct value for usd bypass token', async () => {
@@ -195,34 +203,33 @@ describe('ChainlinkPriceOracle', () => {
         true
       );
       const price = await oracle.getPrice(testToken.address);
-      expect(price.value).to.eq(TEST_TOKEN_STANDARD_PRICE);
+      expect(price.value).to.eq(TEST_TOKEN_PRICE);
     });
 
-
-    it('reverts when token bypasses USD value and caller is dolomite margin', async () => {
+    it('reverts if dolomite margin calls getPrice on usd bypass token', async () => {
       const doloImpersonator = await impersonate(core.dolomiteMargin.address, true);
-      await oracle.ownerInsertOrUpdateOracleToken(
+      await oracle.connect(core.governance).ownerInsertOrUpdateOracleToken(
         testToken.address,
         18,
         testAggregator.address,
-        core.tokens.weth.address,
-        true,
+        ADDRESS_ZERO,
+        true
       );
       await expectThrow(
         oracle.connect(doloImpersonator).getPrice(testToken.address),
-        `ChainlinkPriceOracle: Token bypasses USD value <${testToken.address.toLowerCase()}>`,
+        `RedstonePriceOracle: Token bypasses USD value <${testToken.address.toLowerCase()}>`,
       );
-    })
+    });
 
     it('reverts when an invalid address is passed in', async () => {
       const ONE_ADDRESS = '0x1000000000000000000000000000000000000000';
       await expectThrow(
         oracle.getPrice(ZERO_ADDRESS),
-        `ChainlinkPriceOracle: Invalid token <${ZERO_ADDRESS}>`,
+        `RedstonePriceOracle: Invalid token <${ZERO_ADDRESS}>`,
       );
       await expectThrow(
         oracle.getPrice(ONE_ADDRESS),
-        `ChainlinkPriceOracle: Invalid token <${ONE_ADDRESS}>`,
+        `RedstonePriceOracle: Invalid token <${ONE_ADDRESS}>`,
       );
     });
 
@@ -238,39 +245,7 @@ describe('ChainlinkPriceOracle', () => {
       await waitTime((60 * 60 * 36) + 1); // prices expire in 36 hours by default
       await expectThrow(
         oracle.getPrice(testToken.address),
-        `ChainlinkPriceOracle: Chainlink price expired <${testToken.address.toLowerCase()}>`,
-      );
-    });
-
-    it('reverts when the price is too low', async () => {
-      await testAggregator.setLatestAnswer(ONE_BI);
-      await testAggregator.setMinAnswer(MAX_INT_192_BI);
-      await oracle.ownerInsertOrUpdateOracleToken(
-        testToken.address,
-        18,
-        testAggregator.address,
-        core.tokens.weth.address,
-        false
-      );
-      await expectThrow(
-        oracle.getPrice(testToken.address),
-        'ChainlinkPriceOracle: Chainlink price too low',
-      );
-    });
-
-    it('reverts when the price is too high', async () => {
-      await testAggregator.setLatestAnswer(MAX_INT_192_BI);
-      await testAggregator.setMaxAnswer(ONE_BI);
-      await oracle.ownerInsertOrUpdateOracleToken(
-        testToken.address,
-        18,
-        testAggregator.address,
-        core.tokens.weth.address,
-        false
-      );
-      await expectThrow(
-        oracle.getPrice(testToken.address),
-        'ChainlinkPriceOracle: Chainlink price too high',
+        `RedstonePriceOracle: Chainlink price expired <${testToken.address.toLowerCase()}>`,
       );
     });
   });
@@ -293,7 +268,7 @@ describe('ChainlinkPriceOracle', () => {
       const stalenessThreshold = ONE_DAY_SECONDS - 1;
       await expectThrow(
         oracle.ownerSetStalenessThreshold(stalenessThreshold),
-        `ChainlinkPriceOracle: Staleness threshold too low <${stalenessThreshold.toFixed()}>`,
+        `RedstonePriceOracle: Staleness threshold too low <${stalenessThreshold.toFixed()}>`,
       );
     });
 
@@ -301,7 +276,7 @@ describe('ChainlinkPriceOracle', () => {
       const stalenessThreshold = (ONE_DAY_SECONDS * 7) + 1;
       await expectThrow(
         oracle.ownerSetStalenessThreshold(stalenessThreshold),
-        `ChainlinkPriceOracle: Staleness threshold too high <${stalenessThreshold.toFixed()}>`,
+        `RedstonePriceOracle: Staleness threshold too high <${stalenessThreshold.toFixed()}>`,
       );
     });
   });
@@ -314,12 +289,11 @@ describe('ChainlinkPriceOracle', () => {
         18,
         testAggregator.address,
         ZERO_ADDRESS,
-        true
+        false
       );
       expect(await oracle.getDecimalsByToken(tokenAddress)).to.eq(18);
       expect(await oracle.getAggregatorByToken(tokenAddress)).to.eq(testAggregator.address);
       expect(await oracle.getTokenPairByToken(tokenAddress)).to.eq(ZERO_ADDRESS);
-      expect(await oracle.getBypassUsdValueByToken(tokenAddress)).to.eq(true);
     });
 
     it('can update an existing oracle', async () => {
@@ -329,12 +303,11 @@ describe('ChainlinkPriceOracle', () => {
         11,
         testAggregator.address,
         core.tokens.weth.address,
-        true
+        false
       );
       expect(await oracle.getDecimalsByToken(tokenAddress)).to.eq(11);
       expect(await oracle.getAggregatorByToken(tokenAddress)).to.eq(testAggregator.address);
       expect(await oracle.getTokenPairByToken(tokenAddress)).to.eq(core.tokens.weth.address);
-      expect(await oracle.getBypassUsdValueByToken(tokenAddress)).to.eq(true);
     });
 
     it('fails when invoked by non-admin', async () => {
@@ -350,27 +323,12 @@ describe('ChainlinkPriceOracle', () => {
       );
     });
 
-    it('fails when non-zero paired token does not have an aggregator', async () => {
-      const tokenAddress = testToken.address;
-      const otherPairAddress = '0x1234567812345678123456781234567812345678';
-      await expectThrow(
-        oracle.ownerInsertOrUpdateOracleToken(
-          tokenAddress,
-          9,
-          testAggregator.address,
-          otherPairAddress,
-          false
-        ),
-        `ChainlinkPriceOracle: Invalid token pair <${otherPairAddress.toLowerCase()}>`,
-      );
-    });
-
     it('can be set as the oracle for a market', async () => {
       await oracle.ownerInsertOrUpdateOracleToken(
         testToken.address,
         18,
         testAggregator.address,
-        core.tokens.weth.address,
+        ADDRESS_ZERO,
         false
       );
       const marketId = await core.dolomiteMargin.getNumMarkets();

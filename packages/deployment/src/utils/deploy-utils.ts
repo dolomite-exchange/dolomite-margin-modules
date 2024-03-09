@@ -862,7 +862,7 @@ export function writeFile(
 
 async function isValidAmount(token: IERC20, amount: BigNumberish) {
   const realAmount = BigNumber.from(amount);
-  if (realAmount.eq(ZERO_BI)) {
+  if (realAmount.eq(ZERO_BI) || realAmount.eq('1')) {
     return true;
   }
 

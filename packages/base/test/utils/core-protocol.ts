@@ -1,4 +1,4 @@
-import { IChainlinkAutomationRegistry, IChainlinkPriceOracle } from '@dolomite-exchange/modules-oracles/src/types';
+import { IChainlinkAutomationRegistry, IChainlinkPriceOracleOld } from '@dolomite-exchange/modules-oracles/src/types';
 import { ApiToken } from '@dolomite-exchange/zap-sdk';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { BigNumberish } from 'ethers';
@@ -56,6 +56,7 @@ interface CoreProtocolTokensArbitrumOne extends CoreProtocolTokens {
   dGmx: IERC20;
   dPtGlp: IERC20;
   dPtREthJun2025: IERC20;
+  dPtWeEthApr2024: IERC20;
   dPtWstEthJun2024: IERC20;
   dPtWstEthJun2025: IERC20;
   dpx: IERC20;
@@ -67,11 +68,13 @@ interface CoreProtocolTokensArbitrumOne extends CoreProtocolTokens {
   nativeUsdc: IERC20;
   premia: IERC20;
   rEth: IERC20;
+  rsEth: IERC20;
   radiant: IERC20;
   pendle: IERC20;
   size: IERC20;
   stEth: IERC20;
   wbtc: IERC20;
+  weEth: IERC20;
   wstEth: IERC20;
 }
 
@@ -83,6 +86,7 @@ interface CoreProtocolMarketIdsArbitrumOne extends CoreProtocolMarketIds {
   djUSDC: BigNumberish;
   dplvGlp: BigNumberish;
   dPtGlp: BigNumberish;
+  dPtWeEthApr2024: BigNumberish;
   dPtREthJun2025: BigNumberish;
   dPtWstEthJun2024: BigNumberish;
   dPtWstEthJun2025: BigNumberish;
@@ -227,7 +231,7 @@ interface CoreProtocolParamsArbitrumOne {
   arbEcosystem: ArbEcosystem;
   camelotEcosystem: CamelotEcosystem;
   chainlinkAutomationRegistry: IChainlinkAutomationRegistry;
-  chainlinkPriceOracle: IChainlinkPriceOracle;
+  chainlinkPriceOracle: IChainlinkPriceOracleOld;
   gmxEcosystem: GmxEcosystem;
   gmxEcosystemV2: GmxEcosystemV2;
   jonesEcosystem: JonesEcosystem;
@@ -247,7 +251,7 @@ export class CoreProtocolArbitrumOne extends CoreProtocolAbstract<Network.Arbitr
   public readonly arbEcosystem: ArbEcosystem;
   public readonly camelotEcosystem: CamelotEcosystem;
   public readonly chainlinkAutomationRegistry: IChainlinkAutomationRegistry;
-  public readonly chainlinkPriceOracle: IChainlinkPriceOracle;
+  public readonly chainlinkPriceOracle: IChainlinkPriceOracleOld;
   public readonly gmxEcosystem: GmxEcosystem;
   public readonly gmxEcosystemV2: GmxEcosystemV2;
   public readonly jonesEcosystem: JonesEcosystem;
@@ -288,13 +292,13 @@ export class CoreProtocolArbitrumOne extends CoreProtocolAbstract<Network.Arbitr
 }
 
 export interface CoreProtocolParamsBase {
-  chainlinkPriceOracle: IChainlinkPriceOracle;
+  chainlinkPriceOracle: IChainlinkPriceOracleOld;
   paraswapEcosystem: ParaswapEcosystem;
 }
 
 export class CoreProtocolBase extends CoreProtocolAbstract<Network.Base> {
 
-  public readonly chainlinkPriceOracle: IChainlinkPriceOracle;
+  public readonly chainlinkPriceOracle: IChainlinkPriceOracleOld;
   public readonly paraswapEcosystem: ParaswapEcosystem;
   public readonly network: Network.Base = Network.Base;
 
@@ -321,7 +325,7 @@ interface CoreProtocolMarketIdsZkEvm extends CoreProtocolMarketIds {
 }
 
 export interface CoreProtocolParamsZkEvm {
-  chainlinkPriceOracle: IChainlinkPriceOracle;
+  chainlinkPriceOracle: IChainlinkPriceOracleOld;
   marketIds: CoreProtocolMarketIdsZkEvm;
   paraswapEcosystem: ParaswapEcosystem;
   tokens: CoreProtocolTokensZkEvm;
@@ -329,7 +333,7 @@ export interface CoreProtocolParamsZkEvm {
 
 export class CoreProtocolPolygonZkEvm extends CoreProtocolAbstract<Network.PolygonZkEvm> {
 
-  public readonly chainlinkPriceOracle: IChainlinkPriceOracle;
+  public readonly chainlinkPriceOracle: IChainlinkPriceOracleOld;
   public readonly paraswapEcosystem: ParaswapEcosystem;
 
   public override readonly marketIds: CoreProtocolMarketIdsZkEvm;
