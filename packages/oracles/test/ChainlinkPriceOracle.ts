@@ -22,13 +22,13 @@ import {
   TEN_BI,
   ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, snapshot, waitTime } from '@dolomite-exchange/modules-base/test/utils';
+import { getRealLatestBlockNumber, impersonate, revertToSnapshotAndCapture, snapshot, waitTime } from '@dolomite-exchange/modules-base/test/utils';
 import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 
-const WETH_PRICE = BigNumber.from('1883923360000000000000');
-const BTC_PRICE = BigNumber.from('299800328339800000000000000000000');
-const USDC_PRICE = BigNumber.from('999937000000000000000000000000');
+const WETH_PRICE = BigNumber.from('2260038782330000000000');
+const BTC_PRICE = BigNumber.from('440493939086400000000000000000000');
+const USDC_PRICE = BigNumber.from('1000071010000000000000000000000');
 const TEST_TOKEN_PRICE = WETH_PRICE.mul(1).div(10);
 const TEST_TOKEN_STANDARD_PRICE = TEN_BI.pow(18).div(10);
 
@@ -42,11 +42,7 @@ describe('ChainlinkPriceOracle', () => {
   let testToken: CustomTestToken;
 
   before(async () => {
-    const blockNumber = 114_200_000; // DO NOT CHANGE THIS
-    core = await setupCoreProtocol({
-      blockNumber,
-      network: Network.ArbitrumOne,
-    });
+    core = await setupCoreProtocol(await getDefaultCoreProtocolConfig(Network.ArbitrumOne));
 
     testAggregator = await createContractWithAbi<TestChainlinkAggregator>(
       TestChainlinkAggregator__factory.abi,
@@ -366,7 +362,7 @@ describe('ChainlinkPriceOracle', () => {
         testToken.address,
         18,
         testAggregator.address,
-        core.tokens.weth.address,
+        ADDRESS_ZERO,
         false
       );
       const marketId = await core.dolomiteMargin.getNumMarkets();
@@ -381,7 +377,7 @@ describe('ChainlinkPriceOracle', () => {
         false,
       );
       const price = await core.dolomiteMargin.getMarketPrice(marketId);
-      expect(price.value).to.eq(TEST_TOKEN_PRICE);
+      expect(price.value).to.eq(TEST_TOKEN_STANDARD_PRICE);
     });
   });
 
@@ -445,7 +441,7 @@ describe('ChainlinkPriceOracle', () => {
         testToken.address,
         18,
         testAggregator.address,
-        core.tokens.weth.address,
+        ADDRESS_ZERO,
         false
       );
       const marketId = await core.dolomiteMargin.getNumMarkets();
@@ -460,7 +456,7 @@ describe('ChainlinkPriceOracle', () => {
         false,
       );
       const price = await core.dolomiteMargin.getMarketPrice(marketId);
-      expect(price.value).to.eq(TEST_TOKEN_PRICE);
+      expect(price.value).to.eq(TEST_TOKEN_STANDARD_PRICE);
     });
   });
 });

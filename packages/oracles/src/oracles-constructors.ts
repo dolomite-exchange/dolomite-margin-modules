@@ -6,15 +6,16 @@ import { BigNumberish } from 'ethers';
 import { Network, NetworkType } from 'packages/base/src/utils/no-deps-constants';
 import {
   IChainlinkAggregator,
-  IChainlinkPriceOracle,
+  IChainlinkPriceOracleOld,
   IChainlinkPriceOracleOld__factory,
   IERC20Metadata__factory,
 } from './types';
 import Deployments from '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
+import { ethers } from 'hardhat';
 
 export type CoreProtocolWithChainlink<T extends Network> = Extract<CoreProtocolType<T>, {
   dolomiteMargin: DolomiteMargin<T>;
-  chainlinkPriceOracle: IChainlinkPriceOracle;
+  chainlinkPriceOracle: IChainlinkPriceOracleOld;
 }>;
 
 export async function getChainlinkPriceOracleConstructorParamsFromOldPriceOracle(
@@ -29,18 +30,23 @@ export async function getChainlinkPriceOracleConstructorParamsFromOldPriceOracle
   const tokenDecimals: number[] = [];
   const tokenPairs: string[] = [];
   const bypassUsdValue: boolean[] = [];
-  const marketsLength = (await core.dolomiteMargin.getNumMarkets()).toNumber();
-  for (let i = 0; i < marketsLength; i++) {
-    const token = await core.dolomiteMargin.getMarketTokenAddress(i);
-    const priceOracle = await core.dolomiteMargin.getMarketPriceOracle(i);
-    if (priceOracle === oldPriceOracle.address) {
-      tokens.push(token);
-      aggregators.push(await oldPriceOracle.getAggregatorByToken(token));
-      tokenDecimals.push(await oldPriceOracle.getDecimalsByToken(token));
-      tokenPairs.push(await oldPriceOracle.getTokenPairByToken(token));
-      bypassUsdValue.push(false);
-    }
+
+  const filter = oldPriceOracle.filters.TokenInsertedOrUpdated();
+  const results = await oldPriceOracle.queryFilter(filter);
+  for (let i = 0; i < results.length; i++) {
+    const token = ethers.utils.defaultAbiCoder.decode(['address'], results[i].topics[1])[0];
+    tokens.push(token);
+    aggregators.push(await oldPriceOracle.getAggregatorByToken(token));
+    tokenDecimals.push(await oldPriceOracle.getDecimalsByToken(token));
+    tokenPairs.push(await oldPriceOracle.getTokenPairByToken(token));
+    bypassUsdValue.push(false);
   }
+  // Remove '0x5979d7b546e38e414f7e9822514be443a4800529' the first time it exists
+  tokens.splice(9);
+  aggregators.splice(9);
+  tokenDecimals.splice(9);
+  tokenPairs.splice(9);
+  bypassUsdValue.splice(9);
   return [tokens, aggregators, tokenDecimals, tokenPairs, bypassUsdValue, core.dolomiteMargin.address];
 }
 
