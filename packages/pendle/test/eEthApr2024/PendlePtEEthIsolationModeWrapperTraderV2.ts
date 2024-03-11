@@ -77,7 +77,7 @@ describe('PendlePtEEthApr2024IsolationModeWrapperTraderV2', () => {
 
   before(async () => {
     core = await setupCoreProtocol({
-      blockNumber: await getRealLatestBlockNumber(true, Network.ArbitrumOne),
+      blockNumber: 187_700_000,
       network: Network.ArbitrumOne,
     });
 
@@ -132,7 +132,7 @@ describe('PendlePtEEthApr2024IsolationModeWrapperTraderV2', () => {
     await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkPriceOracle(
       chainlinkOracle.address
     );
-    await chainlinkOracle.connect(core.governance).ownerInsertOrUpdateOracleToken(
+    await chainlinkOracle.connect(core.governance).ownerInsertOrUpdateOracleTokenWithBypass(
       underlyingToken.address,
       18,
       CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][core.tokens.weEth.address],

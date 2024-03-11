@@ -10,6 +10,7 @@ import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/ut
 import { BaseRouter, Router } from '@pendle/sdk-v2';
 import { CHAIN_ID_MAPPING } from '@pendle/sdk-v2/dist/common/ChainId';
 import {
+  getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupTestMarket,
   setupUserVaultProxy,
@@ -72,7 +73,7 @@ describe('PendlePtEEthApr2024IsolationModeUnwrapperTraderV2', () => {
 
   before(async () => {
     core = await setupCoreProtocol({
-      blockNumber: await getRealLatestBlockNumber(true, Network.ArbitrumOne),
+      blockNumber: 187_700_000,
       network: Network.ArbitrumOne,
     });
 
@@ -128,7 +129,7 @@ describe('PendlePtEEthApr2024IsolationModeUnwrapperTraderV2', () => {
     await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkPriceOracle(
       chainlinkOracle.address
     );
-    await chainlinkOracle.connect(core.governance).ownerInsertOrUpdateOracleToken(
+    await chainlinkOracle.connect(core.governance).ownerInsertOrUpdateOracleTokenWithBypass(
       underlyingToken.address,
       18,
       CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][core.tokens.weEth.address],

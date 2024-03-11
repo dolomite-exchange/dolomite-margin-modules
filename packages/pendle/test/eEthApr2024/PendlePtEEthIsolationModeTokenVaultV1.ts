@@ -96,7 +96,7 @@ describe('PendlePtEEthApr2024IsolationModeTokenVaultV1', () => {
     await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkPriceOracle(
       chainlinkOracle.address
     );
-    await chainlinkOracle.connect(core.governance).ownerInsertOrUpdateOracleToken(
+    await chainlinkOracle.connect(core.governance).ownerInsertOrUpdateOracleTokenWithBypass(
       underlyingToken.address,
       18,
       CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][core.tokens.weEth.address],
