@@ -33,20 +33,27 @@ export async function getChainlinkPriceOracleConstructorParamsFromOldPriceOracle
 
   const filter = oldPriceOracle.filters.TokenInsertedOrUpdated();
   const results = await oldPriceOracle.queryFilter(filter);
+  let seenWstEth = false;
+
   for (let i = 0; i < results.length; i++) {
     const token = ethers.utils.defaultAbiCoder.decode(['address'], results[i].topics[1])[0];
-    tokens.push(token);
-    aggregators.push(await oldPriceOracle.getAggregatorByToken(token));
-    tokenDecimals.push(await oldPriceOracle.getDecimalsByToken(token));
-    tokenPairs.push(await oldPriceOracle.getTokenPairByToken(token));
-    bypassUsdValue.push(false);
+    if (token != core.tokens.wstEth.address) {
+      tokens.push(token);
+      aggregators.push(await oldPriceOracle.getAggregatorByToken(token));
+      tokenDecimals.push(await oldPriceOracle.getDecimalsByToken(token));
+      tokenPairs.push(await oldPriceOracle.getTokenPairByToken(token));
+      bypassUsdValue.push(false);
+    } else {
+      if (seenWstEth) {
+        tokens.push(token);
+        aggregators.push(await oldPriceOracle.getAggregatorByToken(token));
+        tokenDecimals.push(await oldPriceOracle.getDecimalsByToken(token));
+        tokenPairs.push(await oldPriceOracle.getTokenPairByToken(token));
+        bypassUsdValue.push(false);
+      }
+      seenWstEth = true;
+    }
   }
-  // Remove '0x5979d7b546e38e414f7e9822514be443a4800529' the first time it exists
-  tokens.splice(9);
-  aggregators.splice(9);
-  tokenDecimals.splice(9);
-  tokenPairs.splice(9);
-  bypassUsdValue.splice(9);
   return [tokens, aggregators, tokenDecimals, tokenPairs, bypassUsdValue, core.dolomiteMargin.address];
 }
 
