@@ -24,7 +24,7 @@ import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/prot
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IChainlinkAccessControlAggregator } from "./interfaces/IChainlinkAccessControlAggregator.sol";
 import { IChainlinkAggregator } from "./interfaces/IChainlinkAggregator.sol";
-import { IChainlinkPriceOracle } from "./interfaces/IChainlinkPriceOracle.sol";
+import {IChainlinkPriceOracleV2} from "./interfaces/IChainlinkPriceOracleV2.sol";
 
 
 /**
@@ -33,7 +33,7 @@ import { IChainlinkPriceOracle } from "./interfaces/IChainlinkPriceOracle.sol";
  *
  * An implementation of the IDolomitePriceOracle interface that makes Chainlink prices compatible with the protocol.
  */
-contract ChainlinkPriceOracle is IChainlinkPriceOracle, OnlyDolomiteMargin {
+contract ChainlinkPriceOracle is IChainlinkPriceOracleV2, OnlyDolomiteMargin {
 
     // ========================= Constants =========================
 
@@ -126,7 +126,7 @@ contract ChainlinkPriceOracle is IChainlinkPriceOracle, OnlyDolomiteMargin {
         _ownerSetStalenessThreshold(_stalenessThreshold);
     }
 
-    function ownerInsertOrUpdateOracleToken(
+    function ownerInsertOrUpdateOracleTokenWithBypass(
         address _token,
         uint8 _tokenDecimals,
         address _chainlinkAggregator,
@@ -142,6 +142,24 @@ contract ChainlinkPriceOracle is IChainlinkPriceOracle, OnlyDolomiteMargin {
             _chainlinkAggregator,
             _tokenPair,
             _bypassUsdValue
+        );
+    }
+
+    function ownerInsertOrUpdateOracleToken(
+        address _token,
+        uint8 _tokenDecimals,
+        address _chainlinkAggregator,
+        address _tokenPair
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender)
+    {
+        _ownerInsertOrUpdateOracleToken(
+            _token,
+            _tokenDecimals,
+            _chainlinkAggregator,
+            _tokenPair,
+            false
         );
     }
 
@@ -212,7 +230,7 @@ contract ChainlinkPriceOracle is IChainlinkPriceOracle, OnlyDolomiteMargin {
         );
 
         if (tokenPair == address(0)) {
-            // The pair has a USD base, we are done.
+            // The pair has a USD base or can bypass USD pairing, we are done.
             return IDolomiteStructs.MonetaryPrice({
                 value: standardizedPrice
             });
@@ -239,6 +257,10 @@ contract ChainlinkPriceOracle is IChainlinkPriceOracle, OnlyDolomiteMargin {
 
     function getTokenPairByToken(address _token) public view returns (address _tokenPair) {
         return _tokenToPairingMap[_token];
+    }
+
+    function getBypassUsdValueByToken(address _token) public view returns (bool) {
+        return _tokenToBypassUsdValueMap[_token];
     }
 
     /**
