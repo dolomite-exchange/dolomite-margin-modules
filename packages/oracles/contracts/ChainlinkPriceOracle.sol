@@ -24,7 +24,7 @@ import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/prot
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IChainlinkAccessControlAggregator } from "./interfaces/IChainlinkAccessControlAggregator.sol";
 import { IChainlinkAggregator } from "./interfaces/IChainlinkAggregator.sol";
-import {IChainlinkPriceOracleV2} from "./interfaces/IChainlinkPriceOracleV2.sol";
+import { IChainlinkPriceOracleV2 } from "./interfaces/IChainlinkPriceOracleV2.sol";
 
 
 /**
@@ -193,7 +193,6 @@ contract ChainlinkPriceOracle is IChainlinkPriceOracleV2, OnlyDolomiteMargin {
         );
 
         uint256 chainlinkPrice = uint256(answer);
-        address tokenPair = _tokenToPairingMap[_token];
 
         // standardize the Chainlink price to be the proper number of decimals of (36 - tokenDecimals)
         uint256 standardizedPrice = standardizeNumberOfDecimals(
@@ -202,22 +201,26 @@ contract ChainlinkPriceOracle is IChainlinkPriceOracleV2, OnlyDolomiteMargin {
             aggregatorProxy.decimals()
         );
 
-        if (tokenPair == address(0)) {
-            // The pair has a USD base or can bypass USD pairing, we are done.
-            return IDolomiteStructs.MonetaryPrice({
-                value: standardizedPrice
-            });
-        } else {
-            // The price we just got and converted is NOT against USD. So we need to get its pair's price against USD.
-            // We can do so by recursively calling #getPrice using the `tokenPair` as the parameter instead of `token`.
-            uint256 tokenPairPrice = getPrice(tokenPair).value;
-            // Standardize the price to use 36 decimals.
-            uint256 tokenPairWith36Decimals = tokenPairPrice * (10 ** uint256(_tokenToDecimalsMap[tokenPair]));
-            // Now that the chained price uses 36 decimals (and thus is standardized), we can do easy math.
-            return IDolomiteStructs.MonetaryPrice({
-                value: standardizedPrice * tokenPairWith36Decimals / _ONE_DOLLAR
-            });
-        }
+        return IDolomiteStructs.MonetaryPrice({
+            value: standardizedPrice
+        });
+
+        // if (tokenPair == address(0)) {
+        //     // The pair has a USD base or can bypass USD pairing, we are done.
+        //     return IDolomiteStructs.MonetaryPrice({
+        //         value: standardizedPrice
+        //     });
+        // } else {
+        //     // The price we just got and converted is NOT against USD. So we need to get its pair's price against USD.
+        //     // We can do so by recursively calling #getPrice using the `tokenPair` as the parameter instead of `token`.
+        //     uint256 tokenPairPrice = getPrice(tokenPair).value;
+        //     // Standardize the price to use 36 decimals.
+        //     uint256 tokenPairWith36Decimals = tokenPairPrice * (10 ** uint256(_tokenToDecimalsMap[tokenPair]));
+        //     // Now that the chained price uses 36 decimals (and thus is standardized), we can do easy math.
+        //     return IDolomiteStructs.MonetaryPrice({
+        //         value: standardizedPrice * tokenPairWith36Decimals / _ONE_DOLLAR
+        //     });
+        // }
     }
 
     function getAggregatorByToken(address _token) public view returns (IChainlinkAggregator) {
