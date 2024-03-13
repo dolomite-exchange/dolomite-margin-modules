@@ -262,4 +262,28 @@ describe('DolomiteRegistryImplementation', () => {
       );
     });
   });
+
+  describe('#ownerSetOracleAggregator', () => {
+    it('should work normally', async () => {
+      const result = await registry.connect(core.governance).ownerSetOracleAggregator(OTHER_ADDRESS);
+      await expectEvent(registry, result, 'OracleAggregatorSet', {
+        oracleAggregator: OTHER_ADDRESS,
+      });
+      expect(await registry.oracleAggregator()).to.equal(OTHER_ADDRESS);
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetOracleAggregator(OTHER_ADDRESS),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetOracleAggregator(ZERO_ADDRESS),
+        'DolomiteRegistryImplementation: Invalid oracleAggregator',
+      );
+    });
+  });
 });
