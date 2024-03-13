@@ -16,7 +16,6 @@ import {
   ADDRESS_ZERO,
   Network,
   ONE_DAY_SECONDS,
-  ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import {
   impersonate,
@@ -30,7 +29,6 @@ import { parseEther } from 'ethers/lib/utils';
 import { getRedstonePriceOracleConstructorParams } from '../src/oracles-constructors';
 import { WE_ETH_ETH_REDSTONE_FEED_MAP } from 'packages/base/src/utils/constants';
 
-const WE_ETH_PRICE = BigNumber.from('3966474866008054000000');
 const TEST_TOKEN_PRICE = parseEther('1');
 const USDC_PRICE = TEST_TOKEN_PRICE.mul(BigNumber.from(10).pow(12));
 
@@ -72,7 +70,6 @@ describe('RedstonePriceOracle', () => {
         [core.tokens.weth, core.tokens.dai, core.tokens.usdc, core.tokens.wbtc, core.tokens.weEth],
         aggregators,
         [ADDRESS_ZERO, ADDRESS_ZERO, ADDRESS_ZERO, core.tokens.dai.address, core.tokens.weth.address],
-        [false, false, false, false, false],
         core
       )
     )).connect(core.governance);
@@ -94,7 +91,6 @@ describe('RedstonePriceOracle', () => {
           [ZERO_ADDRESS],
           [8],
           [ZERO_ADDRESS],
-          [false],
           core.dolomiteMargin.address,
         ],
       );
@@ -110,7 +106,6 @@ describe('RedstonePriceOracle', () => {
             [ZERO_ADDRESS, ZERO_ADDRESS],
             [8, 8],
             [ZERO_ADDRESS, ZERO_ADDRESS],
-            [false, false],
             core.dolomiteMargin.address,
           ],
         ),
@@ -128,7 +123,6 @@ describe('RedstonePriceOracle', () => {
             [ZERO_ADDRESS, ZERO_ADDRESS],
             [8],
             [ZERO_ADDRESS, ZERO_ADDRESS],
-            [false, false],
             core.dolomiteMargin.address,
           ],
         ),
@@ -146,29 +140,10 @@ describe('RedstonePriceOracle', () => {
             [ZERO_ADDRESS, ZERO_ADDRESS],
             [8, 8],
             [ZERO_ADDRESS],
-            [false, false],
             core.dolomiteMargin.address,
           ],
         ),
         'RedstonePriceOracle: Invalid decimals length',
-      );
-    });
-
-    it('should fail when token decimal length is not aligned', async () => {
-      await expectThrow(
-        createContractWithAbi<RedstonePriceOracle>(
-          RedstonePriceOracle__factory.abi,
-          RedstonePriceOracle__factory.bytecode,
-          [
-            [ZERO_ADDRESS, ZERO_ADDRESS],
-            [ZERO_ADDRESS, ZERO_ADDRESS],
-            [8, 8],
-            [ZERO_ADDRESS, ZERO_ADDRESS],
-            [false],
-            core.dolomiteMargin.address,
-          ],
-        ),
-        'RedstonePriceOracle: Invalid pairs length',
       );
     });
   });
@@ -184,40 +159,17 @@ describe('RedstonePriceOracle', () => {
       expect(price.value).to.eq(USDC_PRICE);
     });
 
-    it('returns the correct value for a token with less than 18 decimals and non-USD base price', async () => {
-      const price = await oracle.getPrice(core.tokens.wbtc.address);
-      expect(price.value).to.eq(TEST_TOKEN_PRICE.mul(BigNumber.from('10').pow(10)));
-    });
-
-    it('returns the correct value for a token with non-USDC base and 18 decimals', async () => {
-      const price = await oracle.getPrice(core.tokens.weEth.address);
-      expect(price.value).to.eq(WE_ETH_PRICE);
-    });
-
-    it('returns the correct value for usd bypass token', async () => {
-      await oracle.connect(core.governance).ownerInsertOrUpdateOracleToken(
-        testToken.address,
-        18,
-        testAggregator.address,
-        ADDRESS_ZERO,
-        true
-      );
-      const price = await oracle.getPrice(testToken.address);
-      expect(price.value).to.eq(TEST_TOKEN_PRICE);
-    });
-
-    it('reverts if dolomite margin calls getPrice on usd bypass token', async () => {
+    it('reverts if dolomite margin calls getPrice', async () => {
       const doloImpersonator = await impersonate(core.dolomiteMargin.address, true);
       await oracle.connect(core.governance).ownerInsertOrUpdateOracleToken(
         testToken.address,
         18,
         testAggregator.address,
-        ADDRESS_ZERO,
-        true
+        ADDRESS_ZERO
       );
       await expectThrow(
         oracle.connect(doloImpersonator).getPrice(testToken.address),
-        `RedstonePriceOracle: Token bypasses USD value <${testToken.address.toLowerCase()}>`,
+        'RedstonePriceOracle: DolomiteMargin cannot call',
       );
     });
 
@@ -238,8 +190,7 @@ describe('RedstonePriceOracle', () => {
         testToken.address,
         18,
         testAggregator.address,
-        core.tokens.weth.address,
-        false
+        core.tokens.weth.address
       );
       await testAggregator.setLatestAnswer(BigNumber.from('20000000000')); // $200
       await waitTime((60 * 60 * 36) + 1); // prices expire in 36 hours by default
@@ -288,8 +239,7 @@ describe('RedstonePriceOracle', () => {
         tokenAddress,
         18,
         testAggregator.address,
-        ZERO_ADDRESS,
-        false
+        ZERO_ADDRESS
       );
       expect(await oracle.getDecimalsByToken(tokenAddress)).to.eq(18);
       expect(await oracle.getAggregatorByToken(tokenAddress)).to.eq(testAggregator.address);
@@ -302,8 +252,7 @@ describe('RedstonePriceOracle', () => {
         tokenAddress,
         11,
         testAggregator.address,
-        core.tokens.weth.address,
-        false
+        core.tokens.weth.address
       );
       expect(await oracle.getDecimalsByToken(tokenAddress)).to.eq(11);
       expect(await oracle.getAggregatorByToken(tokenAddress)).to.eq(testAggregator.address);
@@ -316,34 +265,10 @@ describe('RedstonePriceOracle', () => {
           testToken.address,
           9,
           testAggregator.address,
-          ZERO_ADDRESS,
-          false
+          ZERO_ADDRESS
         ),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
-    });
-
-    it('can be set as the oracle for a market', async () => {
-      await oracle.ownerInsertOrUpdateOracleToken(
-        testToken.address,
-        18,
-        testAggregator.address,
-        ADDRESS_ZERO,
-        false
-      );
-      const marketId = await core.dolomiteMargin.getNumMarkets();
-      await core.dolomiteMargin.ownerAddMarket(
-        testToken.address,
-        oracle.address,
-        core.interestSetters.alwaysZeroInterestSetter.address,
-        { value: ZERO_BI },
-        { value: ZERO_BI },
-        ZERO_BI,
-        false,
-        false,
-      );
-      const price = await core.dolomiteMargin.getMarketPrice(marketId);
-      expect(price.value).to.eq(TEST_TOKEN_PRICE);
     });
   });
 });

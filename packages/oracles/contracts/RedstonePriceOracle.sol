@@ -49,8 +49,6 @@ contract RedstonePriceOracle is IRedstonePriceOracle, OnlyDolomiteMargin {
     /// @dev Defaults to USD if the value is the ZERO address
     mapping(address => address) private _tokenToPairingMap;
 
-    mapping(address => bool) private _tokenToBypassUsdValueMap;
-
     uint256 public stalenessThreshold;
 
     // ========================= Constructor =========================
@@ -63,7 +61,6 @@ contract RedstonePriceOracle is IRedstonePriceOracle, OnlyDolomiteMargin {
      * @param  _tokenDecimals           The number of decimals that each token has.
      * @param  _tokenPairs              The token against which this token's value is compared using the aggregator. The
      *                                  zero address means USD.
-     * @param  _tokenToBypassUsdValue   True if the token does NOT return a USD value
      * @param  _dolomiteMargin          The address of the DolomiteMargin contract.
      */
     constructor(
@@ -71,7 +68,6 @@ contract RedstonePriceOracle is IRedstonePriceOracle, OnlyDolomiteMargin {
         address[] memory _chainlinkAggregators,
         uint8[] memory _tokenDecimals,
         address[] memory _tokenPairs,
-        bool[] memory _tokenToBypassUsdValue,
         address _dolomiteMargin
     )
         OnlyDolomiteMargin(_dolomiteMargin)
@@ -91,11 +87,6 @@ contract RedstonePriceOracle is IRedstonePriceOracle, OnlyDolomiteMargin {
             _FILE,
             "Invalid decimals length"
         );
-        Require.that(
-            _tokenPairs.length == _tokenToBypassUsdValue.length,
-            _FILE,
-            "Invalid pairs length"
-        );
 
         uint256 tokensLength = _tokens.length;
         for (uint256 i; i < tokensLength; ++i) {
@@ -103,8 +94,7 @@ contract RedstonePriceOracle is IRedstonePriceOracle, OnlyDolomiteMargin {
                 _tokens[i],
                 _tokenDecimals[i],
                 _chainlinkAggregators[i],
-                _tokenPairs[i],
-                _tokenToBypassUsdValue[i]
+                _tokenPairs[i]
             );
         }
 
@@ -126,8 +116,7 @@ contract RedstonePriceOracle is IRedstonePriceOracle, OnlyDolomiteMargin {
         address _token,
         uint8 _tokenDecimals,
         address _chainlinkAggregator,
-        address _tokenPair,
-        bool _tokenToBypassUsdValue
+        address _tokenPair
     )
     external
     onlyDolomiteMarginOwner(msg.sender)
@@ -136,8 +125,7 @@ contract RedstonePriceOracle is IRedstonePriceOracle, OnlyDolomiteMargin {
             _token,
             _tokenDecimals,
             _chainlinkAggregator,
-            _tokenPair,
-            _tokenToBypassUsdValue
+            _tokenPair
         );
     }
 
@@ -156,14 +144,11 @@ contract RedstonePriceOracle is IRedstonePriceOracle, OnlyDolomiteMargin {
             "Invalid token",
             _token
         );
-        if (_tokenToBypassUsdValueMap[_token]) {
-            Require.that(
-                msg.sender != address(DOLOMITE_MARGIN()),
-                _FILE,
-                "Token bypasses USD value",
-                _token
-            );
-        }
+        Require.that(
+            msg.sender != address(DOLOMITE_MARGIN()),
+            _FILE,
+            "DolomiteMargin cannot call"
+        );
 
         IChainlinkAggregator aggregatorProxy = _tokenToAggregatorMap[_token];
         (
@@ -190,29 +175,9 @@ contract RedstonePriceOracle is IRedstonePriceOracle, OnlyDolomiteMargin {
             aggregatorProxy.decimals()
         );
 
-        if (tokenPair == address(0)) {
-            // The pair has a USD base, we are done.
-            return IDolomiteStructs.MonetaryPrice({
-                value: standardizedPrice
-            });
-        } else {
-            // The price we just got and converted is NOT against USD. So we need to get its pair's price against USD.
-            // We can do so by recursively calling #getPrice using the `tokenPair` as the parameter instead of `token`.
-            uint256 tokenPairPrice;
-            if (address(_tokenToAggregatorMap[tokenPair]) == address(0)) {
-                uint256 marketId = DOLOMITE_MARGIN().getMarketIdByTokenAddress(tokenPair);
-                tokenPairPrice = DOLOMITE_MARGIN().getMarketPrice(marketId).value;
-            } else {
-                tokenPairPrice = getPrice(tokenPair).value;
-            }
-
-            // Standardize the price to use 36 decimals.
-            uint256 tokenPairWith36Decimals = tokenPairPrice * (10 ** uint256(_tokenToDecimalsMap[tokenPair]));
-            // Now that the chained price uses 36 decimals (and thus is standardized), we can do easy math.
-            return IDolomiteStructs.MonetaryPrice({
-                value: standardizedPrice * tokenPairWith36Decimals / _ONE_DOLLAR
-            });
-        }
+        return IDolomiteStructs.MonetaryPrice({
+            value: standardizedPrice
+        });
     }
 
     function getAggregatorByToken(address _token) public view returns (IChainlinkAggregator) {
@@ -273,12 +238,10 @@ contract RedstonePriceOracle is IRedstonePriceOracle, OnlyDolomiteMargin {
         address _token,
         uint8 _tokenDecimals,
         address _chainlinkAggregator,
-        address _tokenPair,
-        bool _tokenToBypassUsdValue
+        address _tokenPair
     ) internal {
         _tokenToAggregatorMap[_token] = IChainlinkAggregator(_chainlinkAggregator);
         _tokenToDecimalsMap[_token] = _tokenDecimals;
-        _tokenToBypassUsdValueMap[_token] = _tokenToBypassUsdValue;
         if (_tokenPair != address(0)) {
             _tokenToPairingMap[_token] = _tokenPair;
         }

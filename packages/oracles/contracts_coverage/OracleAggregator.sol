@@ -22,8 +22,9 @@ pragma solidity ^0.8.9;
 import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
+import { IChainlinkAccessControlAggregator } from "./interfaces/IChainlinkAccessControlAggregator.sol";
+import { IChainlinkAggregator } from "./interfaces/IChainlinkAggregator.sol";
 import { IChainlinkPriceOracleV2 } from "./interfaces/IChainlinkPriceOracleV2.sol";
-import { IOracleAggregator } from "./interfaces/IOracleAggregator.sol";
 
 
 /**
@@ -32,7 +33,7 @@ import { IOracleAggregator } from "./interfaces/IOracleAggregator.sol";
  *
  * An implementation of the IDolomitePriceOracle interface that makes Chainlink prices compatible with the protocol.
  */
-contract OracleAggregator is OnlyDolomiteMargin, IOracleAggregator {
+contract OracleAggregator is OnlyDolomiteMargin {
 
     // ========================= Constants =========================
 
@@ -48,9 +49,9 @@ contract OracleAggregator is OnlyDolomiteMargin, IOracleAggregator {
     /**
      * Note, these arrays are set up such that each index corresponds with one-another.
      *
-     * @param  _tokens          The tokens that are supported by this adapter.
-     * @param  _oracles         The Chainlink aggregators that have on-chain prices.
-     * @param  _dolomiteMargin  The address of the DolomiteMargin contract.
+     * @param  _tokens                  The tokens that are supported by this adapter.
+     * @param  _oracles    The Chainlink aggregators that have on-chain prices.
+     * @param  _dolomiteMargin          The address of the DolomiteMargin contract.
      */
     constructor(
         address[] memory _tokens,
@@ -59,6 +60,7 @@ contract OracleAggregator is OnlyDolomiteMargin, IOracleAggregator {
     )
         OnlyDolomiteMargin(_dolomiteMargin)
     {
+        if (_tokens.length == _oracles.length) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _tokens.length == _oracles.length,
             _FILE,
@@ -98,6 +100,7 @@ contract OracleAggregator is OnlyDolomiteMargin, IOracleAggregator {
     view
     returns (IDolomiteStructs.MonetaryPrice memory)
     {
+        if (address(_tokenToOracleMap[_token]) != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             address(_tokenToOracleMap[_token]) != address(0),
             _FILE,
@@ -120,7 +123,7 @@ contract OracleAggregator is OnlyDolomiteMargin, IOracleAggregator {
             return IDolomiteStructs.MonetaryPrice({
                 value: price.value * tokenPairWith36Decimals / _ONE_DOLLAR
             });
-            
+
         }
     }
 
@@ -135,6 +138,5 @@ contract OracleAggregator is OnlyDolomiteMargin, IOracleAggregator {
         address _oracle
     ) internal {
         _tokenToOracleMap[_token] = IChainlinkPriceOracleV2(_oracle);
-        emit TokenInsertedOrUpdated(_token, _oracle);
     }
 }
