@@ -34,6 +34,7 @@ import { PremiaEcosystem } from './ecosystem-utils/premia';
 import { TestEcosystem } from './ecosystem-utils/testers';
 import { UmamiEcosystem } from './ecosystem-utils/umami';
 import { CoreProtocolConfig } from './setup';
+import { IChainlinkPriceOracleV1 } from 'packages/oracles/src/types';
 
 interface CoreProtocolTokens {
   dai: IERC20;
@@ -231,7 +232,7 @@ interface CoreProtocolParamsArbitrumOne {
   arbEcosystem: ArbEcosystem;
   camelotEcosystem: CamelotEcosystem;
   chainlinkAutomationRegistry: IChainlinkAutomationRegistry;
-  chainlinkPriceOracle: IChainlinkPriceOracleOld;
+  chainlinkPriceOracle: IChainlinkPriceOracleV1;
   gmxEcosystem: GmxEcosystem;
   gmxEcosystemV2: GmxEcosystemV2;
   jonesEcosystem: JonesEcosystem;
@@ -251,7 +252,7 @@ export class CoreProtocolArbitrumOne extends CoreProtocolAbstract<Network.Arbitr
   public readonly arbEcosystem: ArbEcosystem;
   public readonly camelotEcosystem: CamelotEcosystem;
   public readonly chainlinkAutomationRegistry: IChainlinkAutomationRegistry;
-  public readonly chainlinkPriceOracle: IChainlinkPriceOracleOld;
+  public readonly chainlinkPriceOracle: IChainlinkPriceOracleV1;
   public readonly gmxEcosystem: GmxEcosystem;
   public readonly gmxEcosystemV2: GmxEcosystemV2;
   public readonly jonesEcosystem: JonesEcosystem;

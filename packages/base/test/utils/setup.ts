@@ -104,6 +104,7 @@ import { createPremiaEcosystem } from './ecosystem-utils/premia';
 import { createTestEcosystem } from './ecosystem-utils/testers';
 import { createUmamiEcosystem } from './ecosystem-utils/umami';
 import { impersonate, impersonateOrFallback, resetFork } from './index';
+import { IChainlinkPriceOracleV1__factory } from 'packages/oracles/src/types';
 
 /**
  * Config to for setting up tests in the `before` function
@@ -378,7 +379,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
 
   const chainlinkPriceOracle = getContract(
     CHAINLINK_PRICE_ORACLE_MAP[config.network],
-    IChainlinkPriceOracleOld__factory.connect,
+    IChainlinkPriceOracleV1__factory.connect,
     governance,
   );
 

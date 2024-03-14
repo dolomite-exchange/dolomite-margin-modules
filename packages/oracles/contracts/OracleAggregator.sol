@@ -27,7 +27,6 @@ import { IOracleAggregator } from "./interfaces/IOracleAggregator.sol";
 
 
 // @todo Change to IDolomitePriceOracle
-// @todo Move tokenPair addresses to this oracle aggregator
 /**
  * @title   OracleAggregator
  * @author  Dolomite
