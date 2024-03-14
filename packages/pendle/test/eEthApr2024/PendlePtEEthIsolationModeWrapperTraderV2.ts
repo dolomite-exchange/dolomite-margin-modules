@@ -2,7 +2,6 @@ import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
 import { ADDRESS_ZERO, BYTES_EMPTY, Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import {
   encodeExternalSellActionDataWithNoData,
-  getRealLatestBlockNumber,
   impersonate,
   revertToSnapshotAndCapture,
   snapshot,
@@ -43,11 +42,11 @@ import {
   createPendleRegistry,
 } from '../pendle-ecosystem-utils';
 import { encodeSwapExactTokensForPt, ONE_TENTH_OF_ONE_BIPS_NUMBER } from '../pendle-utils';
-import { ChainlinkPriceOracle, ChainlinkPriceOracle__factory, RedstonePriceOracle, RedstonePriceOracle__factory } from 'packages/oracles/src/types';
+import { ChainlinkPriceOracleV2, ChainlinkPriceOracleV2__factory, RedstonePriceOracleV2, RedstonePriceOracleV2__factory } from 'packages/oracles/src/types';
 import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
 import { CHAINLINK_PRICE_AGGREGATORS_MAP, WE_ETH_ETH_REDSTONE_FEED_MAP } from 'packages/base/src/utils/constants';
 import { DolomiteRegistryImplementation, DolomiteRegistryImplementation__factory } from 'packages/base/src/types';
-import { getChainlinkPriceOracleConstructorParamsFromOldPriceOracle, getRedstonePriceOracleConstructorParams } from 'packages/oracles/src/oracles-constructors';
+import { getChainlinkPriceOracleV2ConstructorParamsFromOldPriceOracle, getRedstonePriceOracleV2ConstructorParams } from 'packages/oracles/src/oracles-constructors';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // 200 units of underlying
@@ -88,10 +87,10 @@ describe('PendlePtEEthApr2024IsolationModeWrapperTraderV2', () => {
     underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
     const wethAggregator = await core.chainlinkPriceOracle!.getAggregatorByToken(core.tokens.weth.address);
     const weEthAggregator = WE_ETH_ETH_REDSTONE_FEED_MAP[Network.ArbitrumOne];
-    const redstoneOracle = (await createContractWithAbi<RedstonePriceOracle>(
-      RedstonePriceOracle__factory.abi,
-      RedstonePriceOracle__factory.bytecode,
-      await getRedstonePriceOracleConstructorParams(
+    const redstoneOracle = (await createContractWithAbi<RedstonePriceOracleV2>(
+      RedstonePriceOracleV2__factory.abi,
+      RedstonePriceOracleV2__factory.bytecode,
+      await getRedstonePriceOracleV2ConstructorParams(
         [core.tokens.weth, underlyingToken],
         [wethAggregator, weEthAggregator],
         [ADDRESS_ZERO, core.tokens.weth.address],
@@ -124,10 +123,10 @@ describe('PendlePtEEthApr2024IsolationModeWrapperTraderV2', () => {
     );
     await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(dolomiteRegistryImplementation.address);
     await core.dolomiteRegistry.connect(core.governance).ownerSetRedstonePriceOracle(redstoneOracle.address);
-    const chainlinkOracle = (await createContractWithAbi<ChainlinkPriceOracle>(
-      ChainlinkPriceOracle__factory.abi,
-      ChainlinkPriceOracle__factory.bytecode,
-      await getChainlinkPriceOracleConstructorParamsFromOldPriceOracle(core),
+    const chainlinkOracle = (await createContractWithAbi<ChainlinkPriceOracleV2>(
+      ChainlinkPriceOracleV2__factory.abi,
+      ChainlinkPriceOracleV2__factory.bytecode,
+      await getChainlinkPriceOracleV2ConstructorParamsFromOldPriceOracle(core),
     )).connect(core.governance);
     await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkPriceOracle(
       chainlinkOracle.address
