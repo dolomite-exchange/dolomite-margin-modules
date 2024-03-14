@@ -22,10 +22,12 @@ pragma solidity ^0.8.9;
 import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
-import { IChainlinkPriceOracleV2 } from "./interfaces/IChainlinkPriceOracleV2.sol";
+import { IChainlinkPriceOracleV3 } from "./interfaces/IChainlinkPriceOracleV3.sol";
 import { IOracleAggregator } from "./interfaces/IOracleAggregator.sol";
 
 
+// @todo Change to IDolomitePriceOracle
+// @todo Move tokenPair addresses to this oracle aggregator
 /**
  * @title   OracleAggregator
  * @author  Dolomite
@@ -41,7 +43,10 @@ contract OracleAggregator is OnlyDolomiteMargin, IOracleAggregator {
 
     // ========================= Storage =========================
 
-    mapping(address => IChainlinkPriceOracleV2) private _tokenToOracleMap;
+    mapping(address => IChainlinkPriceOracleV3) private _tokenToOracleMap;
+
+    /// @dev Defaults to USD if the value is the ZERO address
+    mapping(address => address) private _tokenToPairingMap;
 
     // ========================= Constructor =========================
 
@@ -50,11 +55,14 @@ contract OracleAggregator is OnlyDolomiteMargin, IOracleAggregator {
      *
      * @param  _tokens          The tokens that are supported by this adapter.
      * @param  _oracles         The Chainlink aggregators that have on-chain prices.
+     * @param  _tokenPairs      The token against which this token's value is compared using the aggregator. The
+     *                          zero address means USD.
      * @param  _dolomiteMargin  The address of the DolomiteMargin contract.
      */
     constructor(
         address[] memory _tokens,
         address[] memory _oracles,
+        address[] memory _tokenPairs,
         address _dolomiteMargin
     )
         OnlyDolomiteMargin(_dolomiteMargin)
@@ -64,12 +72,18 @@ contract OracleAggregator is OnlyDolomiteMargin, IOracleAggregator {
             _FILE,
             "Invalid tokens length"
         );
+        Require.that(
+            _oracles.length == _tokenPairs.length,
+            _FILE,
+            "Invalid oracles length"
+        );
 
         uint256 tokensLength = _tokens.length;
         for (uint256 i; i < tokensLength; ++i) {
             _ownerInsertOrUpdateOracle(
                 _tokens[i],
-                _oracles[i]
+                _oracles[i],
+                _tokenPairs[i]
             );
         }
     }
@@ -78,14 +92,16 @@ contract OracleAggregator is OnlyDolomiteMargin, IOracleAggregator {
 
     function ownerInsertOrUpdateOracle(
         address _token,
-        address _oracle
+        address _oracle,
+        address _tokenPair
     )
     external
     onlyDolomiteMarginOwner(msg.sender)
     {
         _ownerInsertOrUpdateOracle(
             _token,
-            _oracle
+            _oracle,
+            _tokenPair
         );
     }
 
@@ -104,17 +120,18 @@ contract OracleAggregator is OnlyDolomiteMargin, IOracleAggregator {
             "Invalid token",
             _token
         );
-        IChainlinkPriceOracleV2 oracle = _tokenToOracleMap[_token];
+        IChainlinkPriceOracleV3 oracle = _tokenToOracleMap[_token];
 
         IDolomiteStructs.MonetaryPrice memory price = oracle.getPrice(_token);
-        address tokenPair = oracle.getTokenPairByToken(_token);
-        uint256 tokenPairDecimals = oracle.getDecimalsByToken(tokenPair);
+        address tokenPair = _tokenToPairingMap[_token];
 
         if (tokenPair == address(0)) {
             return price;
         } else {
             IDolomiteStructs.MonetaryPrice memory tokenPairPrice = getPrice(tokenPair);
+
             // Standardize the price to use 36 decimals.
+            uint256 tokenPairDecimals = _tokenToOracleMap[tokenPair].getDecimalsByToken(tokenPair);
             uint256 tokenPairWith36Decimals = tokenPairPrice.value * (10 ** tokenPairDecimals);
             // Now that the chained price uses 36 decimals (and thus is standardized), we can do easy math.
             return IDolomiteStructs.MonetaryPrice({
@@ -124,17 +141,23 @@ contract OracleAggregator is OnlyDolomiteMargin, IOracleAggregator {
         }
     }
 
-    function getOracleByToken(address _token) public view returns (IChainlinkPriceOracleV2) {
+    function getOracleByToken(address _token) public view returns (IChainlinkPriceOracleV3) {
         return _tokenToOracleMap[_token];
+    }
+
+    function getTokenPairByToken(address _token) public view returns (address _tokenPair) {
+        return _tokenToPairingMap[_token];
     }
 
     // ========================= Internal Functions =========================
 
     function _ownerInsertOrUpdateOracle(
         address _token,
-        address _oracle
+        address _oracle,
+        address _tokenPair
     ) internal {
-        _tokenToOracleMap[_token] = IChainlinkPriceOracleV2(_oracle);
-        emit TokenInsertedOrUpdated(_token, _oracle);
+        _tokenToOracleMap[_token] = IChainlinkPriceOracleV3(_oracle);
+        _tokenToPairingMap[_token] = _tokenPair;
+        emit TokenInsertedOrUpdated(_token, _oracle, _tokenPair);
     }
 }

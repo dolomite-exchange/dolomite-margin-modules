@@ -22,22 +22,22 @@ pragma solidity ^0.8.9;
 import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
-import { IChainlinkAccessControlAggregator } from "./interfaces/IChainlinkAccessControlAggregator.sol";
 import { IChainlinkAggregator } from "./interfaces/IChainlinkAggregator.sol";
-import { IChainlinkPriceOracleV2 } from "./interfaces/IChainlinkPriceOracleV2.sol";
+import { IRedstonePriceOracleV2 } from "./interfaces/IRedstonePriceOracleV2.sol";
 
 
 /**
- * @title   ChainlinkPriceOracleV2
+ * @title   RedstonePriceOracleV2
  * @author  Dolomite
+ * @dev     Redstone oracles have the same interface as Chainlink oracles
  *
- * An implementation of the IDolomitePriceOracle interface that makes Chainlink prices compatible with the protocol.
+ * An implementation of the IDolomitePriceOracle interface that makes Redstone prices compatible with the protocol.
  */
-contract ChainlinkPriceOracleV2 is IChainlinkPriceOracleV2, OnlyDolomiteMargin {
+contract RedstonePriceOracleV2 is IRedstonePriceOracleV2, OnlyDolomiteMargin {
 
     // ========================= Constants =========================
 
-    bytes32 private constant _FILE = "ChainlinkPriceOracleV2";
+    bytes32 private constant _FILE = "RedstonePriceOracleV2";
     uint256 private constant _ONE_DOLLAR = 10 ** 36;
 
     // ========================= Storage =========================
@@ -76,21 +76,25 @@ contract ChainlinkPriceOracleV2 is IChainlinkPriceOracleV2, OnlyDolomiteMargin {
     )
         OnlyDolomiteMargin(_dolomiteMargin)
     {
+        if (_tokens.length == _chainlinkAggregators.length) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _tokens.length == _chainlinkAggregators.length,
             _FILE,
             "Invalid tokens length"
         );
+        if (_chainlinkAggregators.length == _tokenDecimals.length) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _chainlinkAggregators.length == _tokenDecimals.length,
             _FILE,
             "Invalid aggregators length"
         );
+        if (_tokenDecimals.length == _tokenPairs.length) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _tokenDecimals.length == _tokenPairs.length,
             _FILE,
             "Invalid decimals length"
         );
+        if (_tokenPairs.length == _tokenToBypassUsdValue.length) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _tokenPairs.length == _tokenToBypassUsdValue.length,
             _FILE,
@@ -122,30 +126,12 @@ contract ChainlinkPriceOracleV2 is IChainlinkPriceOracleV2, OnlyDolomiteMargin {
         _ownerSetStalenessThreshold(_stalenessThreshold);
     }
 
-    function ownerInsertOrUpdateOracleTokenWithBypass(
-        address _token,
-        uint8 _tokenDecimals,
-        address _chainlinkAggregator,
-        address _tokenPair,
-        bool _bypassUsdValue
-    )
-    external
-    onlyDolomiteMarginOwner(msg.sender)
-    {
-        _ownerInsertOrUpdateOracleToken(
-            _token,
-            _tokenDecimals,
-            _chainlinkAggregator,
-            _tokenPair,
-            _bypassUsdValue
-        );
-    }
-
     function ownerInsertOrUpdateOracleToken(
         address _token,
         uint8 _tokenDecimals,
         address _chainlinkAggregator,
-        address _tokenPair
+        address _tokenPair,
+        bool _tokenToBypassUsdValue
     )
     external
     onlyDolomiteMarginOwner(msg.sender)
@@ -155,7 +141,7 @@ contract ChainlinkPriceOracleV2 is IChainlinkPriceOracleV2, OnlyDolomiteMargin {
             _tokenDecimals,
             _chainlinkAggregator,
             _tokenPair,
-            false
+            _tokenToBypassUsdValue
         );
     }
 
@@ -168,6 +154,7 @@ contract ChainlinkPriceOracleV2 is IChainlinkPriceOracleV2, OnlyDolomiteMargin {
     view
     returns (IDolomiteStructs.MonetaryPrice memory)
     {
+        if (address(_tokenToAggregatorMap[_token]) != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             address(_tokenToAggregatorMap[_token]) != address(0),
             _FILE,
@@ -175,6 +162,7 @@ contract ChainlinkPriceOracleV2 is IChainlinkPriceOracleV2, OnlyDolomiteMargin {
             _token
         );
         if (_tokenToBypassUsdValueMap[_token]) {
+            if (msg.sender != address(DOLOMITE_MARGIN())) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 msg.sender != address(DOLOMITE_MARGIN()),
                 _FILE,
@@ -191,23 +179,12 @@ contract ChainlinkPriceOracleV2 is IChainlinkPriceOracleV2, OnlyDolomiteMargin {
             uint256 updatedAt,
             /* uint80 answeredInRound */
         ) = aggregatorProxy.latestRoundData();
+        if (block.timestamp - updatedAt < stalenessThreshold) { /* FOR COVERAGE TESTING */ }
         Require.that(
             block.timestamp - updatedAt < stalenessThreshold,
             _FILE,
             "Chainlink price expired",
             _token
-        );
-
-        IChainlinkAccessControlAggregator controlAggregator = aggregatorProxy.aggregator();
-        Require.that(
-            controlAggregator.minAnswer() < answer,
-            _FILE,
-            "Chainlink price too low"
-        );
-        Require.that(
-            answer < controlAggregator.maxAnswer(),
-            _FILE,
-            "Chainlink price too high"
         );
 
         uint256 chainlinkPrice = uint256(answer);
@@ -221,14 +198,21 @@ contract ChainlinkPriceOracleV2 is IChainlinkPriceOracleV2, OnlyDolomiteMargin {
         );
 
         if (tokenPair == address(0)) {
-            // The pair has a USD base or can bypass USD pairing, we are done.
+            // The pair has a USD base, we are done.
             return IDolomiteStructs.MonetaryPrice({
                 value: standardizedPrice
             });
         } else {
             // The price we just got and converted is NOT against USD. So we need to get its pair's price against USD.
             // We can do so by recursively calling #getPrice using the `tokenPair` as the parameter instead of `token`.
-            uint256 tokenPairPrice = getPrice(tokenPair).value;
+            uint256 tokenPairPrice;
+            if (address(_tokenToAggregatorMap[tokenPair]) == address(0)) {
+                uint256 marketId = DOLOMITE_MARGIN().getMarketIdByTokenAddress(tokenPair);
+                tokenPairPrice = DOLOMITE_MARGIN().getMarketPrice(marketId).value;
+            } else {
+                tokenPairPrice = getPrice(tokenPair).value;
+            }
+
             // Standardize the price to use 36 decimals.
             uint256 tokenPairWith36Decimals = tokenPairPrice * (10 ** uint256(_tokenToDecimalsMap[tokenPair]));
             // Now that the chained price uses 36 decimals (and thus is standardized), we can do easy math.
@@ -248,10 +232,6 @@ contract ChainlinkPriceOracleV2 is IChainlinkPriceOracleV2, OnlyDolomiteMargin {
 
     function getTokenPairByToken(address _token) public view returns (address _tokenPair) {
         return _tokenToPairingMap[_token];
-    }
-
-    function getBypassUsdValueByToken(address _token) public view returns (bool) {
-        return _tokenToBypassUsdValueMap[_token];
     }
 
     /**
@@ -279,12 +259,14 @@ contract ChainlinkPriceOracleV2 is IChainlinkPriceOracleV2, OnlyDolomiteMargin {
     )
     internal
     {
+        if (_stalenessThreshold >= 24 hours) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _stalenessThreshold >= 24 hours,
             _FILE,
             "Staleness threshold too low",
             _stalenessThreshold
         );
+        if (_stalenessThreshold <= 7 days) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _stalenessThreshold <= 7 days,
             _FILE,
@@ -301,20 +283,12 @@ contract ChainlinkPriceOracleV2 is IChainlinkPriceOracleV2, OnlyDolomiteMargin {
         uint8 _tokenDecimals,
         address _chainlinkAggregator,
         address _tokenPair,
-        bool _bypassUsdValue
+        bool _tokenToBypassUsdValue
     ) internal {
         _tokenToAggregatorMap[_token] = IChainlinkAggregator(_chainlinkAggregator);
         _tokenToDecimalsMap[_token] = _tokenDecimals;
-        _tokenToBypassUsdValueMap[_token] = _bypassUsdValue;
+        _tokenToBypassUsdValueMap[_token] = _tokenToBypassUsdValue;
         if (_tokenPair != address(0)) {
-            Require.that(
-                address(_tokenToAggregatorMap[_tokenPair]) != address(0),
-                _FILE,
-                "Invalid token pair",
-                _tokenPair
-            );
-            // The aggregator's price is NOT against USD. Therefore, we need to store what it's against as well as the
-            // # of decimals the aggregator's price has.
             _tokenToPairingMap[_token] = _tokenPair;
         }
         emit TokenInsertedOrUpdated(_token, _chainlinkAggregator, _tokenPair);

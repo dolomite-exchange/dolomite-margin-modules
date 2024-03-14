@@ -24,12 +24,12 @@ import { IChainlinkAggregator } from "./IChainlinkAggregator.sol";
 
 
 /**
- * @title   IChainlinkPriceOracleV2
+ * @title   IChainlinkPriceOracleV1
  * @author  Dolomite
  *
  * An interface of IDolomitePriceOracle that makes Chainlink prices compatible with the protocol.
  */
-interface IChainlinkPriceOracleV2 is IDolomitePriceOracle {
+interface IChainlinkPriceOracleV1 is IDolomitePriceOracle {
 
     // ============ Events ============
 
@@ -51,24 +51,6 @@ interface IChainlinkPriceOracleV2 is IDolomitePriceOracle {
      */
     function ownerSetStalenessThreshold(
         uint256 _stalenessThreshold
-    )
-    external;
-
-    /**
-     * @dev Insert or update a token in the oracle. This function can only be called by the owner of DolomiteMargin.
-     *
-     * @param  _token               The token whose Chainlink aggregator should be inserted or updated
-     * @param  _tokenDecimals       The number of decimals that this token has
-     * @param  _chainlinkAggregator The Chainlink aggregator that corresponds with this token
-     * @param  _tokenPair           The token pair that corresponds with this token. The zero address means USD.
-     * @param  _bypassUsdValue      True if the token does not return USD price
-     */
-    function ownerInsertOrUpdateOracleTokenWithBypass(
-        address _token,
-        uint8 _tokenDecimals,
-        address _chainlinkAggregator,
-        address _tokenPair,
-        bool _bypassUsdValue
     )
     external;
 

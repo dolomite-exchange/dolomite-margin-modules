@@ -24,12 +24,12 @@ import { IChainlinkAggregator } from "./IChainlinkAggregator.sol";
 
 
 /**
- * @title   IRedstonePriceOracle
+ * @title   IChainlinkPriceOracleV1
  * @author  Dolomite
  *
- * An interface of IDolomitePriceOracle that makes Redstone prices compatible with the protocol.
+ * An interface of IDolomitePriceOracle that makes Chainlink prices compatible with the protocol.
  */
-interface IRedstonePriceOracle is IDolomitePriceOracle {
+interface IChainlinkPriceOracleV1 is IDolomitePriceOracle {
 
     // ============ Events ============
 
@@ -57,10 +57,10 @@ interface IRedstonePriceOracle is IDolomitePriceOracle {
     /**
      * @dev Insert or update a token in the oracle. This function can only be called by the owner of DolomiteMargin.
      *
-     * @param  _token                   The token whose Chainlink aggregator should be inserted or updated
-     * @param  _tokenDecimals           The number of decimals that this token has
-     * @param  _chainlinkAggregator     The Chainlink aggregator that corresponds with this token
-     * @param  _tokenPair               The token pair that corresponds with this token. The zero address means USD.
+     * @param  _token               The token whose Chainlink aggregator should be inserted or updated
+     * @param  _tokenDecimals       The number of decimals that this token has
+     * @param  _chainlinkAggregator The Chainlink aggregator that corresponds with this token
+     * @param  _tokenPair           The token pair that corresponds with this token. The zero address means USD.
      */
     function ownerInsertOrUpdateOracleToken(
         address _token,

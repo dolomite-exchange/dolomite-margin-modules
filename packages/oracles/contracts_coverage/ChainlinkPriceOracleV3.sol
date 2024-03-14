@@ -22,22 +22,22 @@ pragma solidity ^0.8.9;
 import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
+import { IChainlinkAccessControlAggregator } from "./interfaces/IChainlinkAccessControlAggregator.sol";
 import { IChainlinkAggregator } from "./interfaces/IChainlinkAggregator.sol";
-import { IRedstonePriceOracle } from "./interfaces/IRedstonePriceOracle.sol";
+import { IChainlinkPriceOracleV3 } from "./interfaces/IChainlinkPriceOracleV3.sol";
 
 
 /**
- * @title   RedstonePriceOracle
+ * @title   ChainlinkPriceOracleV3
  * @author  Dolomite
- * @dev     Redstone oracles have the same interface as Chainlink oracles
  *
- * An implementation of the IDolomitePriceOracle interface that makes Redstone prices compatible with the protocol.
+ * An implementation of the IDolomitePriceOracle interface that makes Chainlink prices compatible with the protocol.
  */
-contract RedstonePriceOracle is IRedstonePriceOracle, OnlyDolomiteMargin {
+contract ChainlinkPriceOracleV3 is IChainlinkPriceOracleV3, OnlyDolomiteMargin {
 
     // ========================= Constants =========================
 
-    bytes32 private constant _FILE = "RedstonePriceOracle";
+    bytes32 private constant _FILE = "ChainlinkPriceOracleV3";
     uint256 private constant _ONE_DOLLAR = 10 ** 36;
 
     // ========================= Storage =========================
@@ -46,8 +46,7 @@ contract RedstonePriceOracle is IRedstonePriceOracle, OnlyDolomiteMargin {
 
     mapping(address => uint8) private _tokenToDecimalsMap;
 
-    /// @dev Defaults to USD if the value is the ZERO address
-    mapping(address => address) private _tokenToPairingMap;
+    mapping(address => bool) private _tokenToInvertPriceMap;
 
     uint256 public stalenessThreshold;
 
@@ -59,31 +58,33 @@ contract RedstonePriceOracle is IRedstonePriceOracle, OnlyDolomiteMargin {
      * @param  _tokens                  The tokens that are supported by this adapter.
      * @param  _chainlinkAggregators    The Chainlink aggregators that have on-chain prices.
      * @param  _tokenDecimals           The number of decimals that each token has.
-     * @param  _tokenPairs              The token against which this token's value is compared using the aggregator. The
-     *                                  zero address means USD.
+     * @param  _invertPrice             True if should invert price received from Chainlink
      * @param  _dolomiteMargin          The address of the DolomiteMargin contract.
      */
     constructor(
         address[] memory _tokens,
         address[] memory _chainlinkAggregators,
         uint8[] memory _tokenDecimals,
-        address[] memory _tokenPairs,
+        bool[] memory _invertPrice,
         address _dolomiteMargin
     )
         OnlyDolomiteMargin(_dolomiteMargin)
     {
+        if (_tokens.length == _chainlinkAggregators.length) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _tokens.length == _chainlinkAggregators.length,
             _FILE,
             "Invalid tokens length"
         );
+        if (_chainlinkAggregators.length == _tokenDecimals.length) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _chainlinkAggregators.length == _tokenDecimals.length,
             _FILE,
             "Invalid aggregators length"
         );
+        if (_tokenDecimals.length == _invertPrice.length) { /* FOR COVERAGE TESTING */ }
         Require.that(
-            _tokenDecimals.length == _tokenPairs.length,
+            _tokenDecimals.length == _invertPrice.length,
             _FILE,
             "Invalid decimals length"
         );
@@ -94,7 +95,7 @@ contract RedstonePriceOracle is IRedstonePriceOracle, OnlyDolomiteMargin {
                 _tokens[i],
                 _tokenDecimals[i],
                 _chainlinkAggregators[i],
-                _tokenPairs[i]
+                _invertPrice[i]
             );
         }
 
@@ -116,7 +117,7 @@ contract RedstonePriceOracle is IRedstonePriceOracle, OnlyDolomiteMargin {
         address _token,
         uint8 _tokenDecimals,
         address _chainlinkAggregator,
-        address _tokenPair
+        bool _invertPrice
     )
     external
     onlyDolomiteMarginOwner(msg.sender)
@@ -125,7 +126,7 @@ contract RedstonePriceOracle is IRedstonePriceOracle, OnlyDolomiteMargin {
             _token,
             _tokenDecimals,
             _chainlinkAggregator,
-            _tokenPair
+            _invertPrice
         );
     }
 
@@ -138,12 +139,14 @@ contract RedstonePriceOracle is IRedstonePriceOracle, OnlyDolomiteMargin {
     view
     returns (IDolomiteStructs.MonetaryPrice memory)
     {
+        if (address(_tokenToAggregatorMap[_token]) != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             address(_tokenToAggregatorMap[_token]) != address(0),
             _FILE,
             "Invalid token",
             _token
         );
+        if (msg.sender != address(DOLOMITE_MARGIN())) { /* FOR COVERAGE TESTING */ }
         Require.that(
             msg.sender != address(DOLOMITE_MARGIN()),
             _FILE,
@@ -158,6 +161,7 @@ contract RedstonePriceOracle is IRedstonePriceOracle, OnlyDolomiteMargin {
             uint256 updatedAt,
             /* uint80 answeredInRound */
         ) = aggregatorProxy.latestRoundData();
+        if (block.timestamp - updatedAt < stalenessThreshold) { /* FOR COVERAGE TESTING */ }
         Require.that(
             block.timestamp - updatedAt < stalenessThreshold,
             _FILE,
@@ -165,14 +169,33 @@ contract RedstonePriceOracle is IRedstonePriceOracle, OnlyDolomiteMargin {
             _token
         );
 
+        IChainlinkAccessControlAggregator controlAggregator = aggregatorProxy.aggregator();
+        if (controlAggregator.minAnswer() < answer) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            controlAggregator.minAnswer() < answer,
+            _FILE,
+            "Chainlink price too low"
+        );
+        if (answer < controlAggregator.maxAnswer()) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            answer < controlAggregator.maxAnswer(),
+            _FILE,
+            "Chainlink price too high"
+        );
+
         uint256 chainlinkPrice = uint256(answer);
-        address tokenPair = _tokenToPairingMap[_token];
+        uint8 valueDecimals = aggregatorProxy.decimals();
+
+        if (_tokenToInvertPriceMap[_token]) {
+            uint256 decimalFactor = 10 ** uint256(valueDecimals);
+            chainlinkPrice = (decimalFactor ** 2) / chainlinkPrice;
+        }
 
         // standardize the Chainlink price to be the proper number of decimals of (36 - tokenDecimals)
         uint256 standardizedPrice = standardizeNumberOfDecimals(
             _tokenToDecimalsMap[_token],
             chainlinkPrice,
-            aggregatorProxy.decimals()
+            valueDecimals
         );
 
         return IDolomiteStructs.MonetaryPrice({
@@ -188,8 +211,8 @@ contract RedstonePriceOracle is IRedstonePriceOracle, OnlyDolomiteMargin {
         return _tokenToDecimalsMap[_token];
     }
 
-    function getTokenPairByToken(address _token) public view returns (address _tokenPair) {
-        return _tokenToPairingMap[_token];
+    function getInvertPriceByToken(address _token) public view returns (bool _invertPrice) {
+        return _tokenToInvertPriceMap[_token];
     }
 
     /**
@@ -217,12 +240,14 @@ contract RedstonePriceOracle is IRedstonePriceOracle, OnlyDolomiteMargin {
     )
     internal
     {
+        if (_stalenessThreshold >= 24 hours) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _stalenessThreshold >= 24 hours,
             _FILE,
             "Staleness threshold too low",
             _stalenessThreshold
         );
+        if (_stalenessThreshold <= 7 days) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _stalenessThreshold <= 7 days,
             _FILE,
@@ -238,13 +263,11 @@ contract RedstonePriceOracle is IRedstonePriceOracle, OnlyDolomiteMargin {
         address _token,
         uint8 _tokenDecimals,
         address _chainlinkAggregator,
-        address _tokenPair
+        bool _invertPrice
     ) internal {
         _tokenToAggregatorMap[_token] = IChainlinkAggregator(_chainlinkAggregator);
         _tokenToDecimalsMap[_token] = _tokenDecimals;
-        if (_tokenPair != address(0)) {
-            _tokenToPairingMap[_token] = _tokenPair;
-        }
-        emit TokenInsertedOrUpdated(_token, _chainlinkAggregator, _tokenPair);
+        _tokenToInvertPriceMap[_token] = _invertPrice;
+        emit TokenInsertedOrUpdated(_token, _chainlinkAggregator);
     }
 }

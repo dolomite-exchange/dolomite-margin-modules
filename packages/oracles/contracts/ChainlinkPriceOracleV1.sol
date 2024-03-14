@@ -22,22 +22,22 @@ pragma solidity ^0.8.9;
 import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
+import { IChainlinkAccessControlAggregator } from "./interfaces/IChainlinkAccessControlAggregator.sol";
 import { IChainlinkAggregator } from "./interfaces/IChainlinkAggregator.sol";
-import { IRedstonePriceOracle } from "./interfaces/IRedstonePriceOracle.sol";
+import { IChainlinkPriceOracleV1 } from "./interfaces/IChainlinkPriceOracleV1.sol";
 
 
 /**
- * @title   RedstonePriceOracle
+ * @title   ChainlinkPriceOracleV1
  * @author  Dolomite
- * @dev     Redstone oracles have the same interface as Chainlink oracles
  *
- * An implementation of the IDolomitePriceOracle interface that makes Redstone prices compatible with the protocol.
+ * An implementation of the IDolomitePriceOracle interface that makes Chainlink prices compatible with the protocol.
  */
-contract RedstonePriceOracle is IRedstonePriceOracle, OnlyDolomiteMargin {
+contract ChainlinkPriceOracleV1 is IChainlinkPriceOracleV1, OnlyDolomiteMargin {
 
     // ========================= Constants =========================
 
-    bytes32 private constant _FILE = "RedstonePriceOracle";
+    bytes32 private constant _FILE = "ChainlinkPriceOracleV1";
     uint256 private constant _ONE_DOLLAR = 10 ** 36;
 
     // ========================= Storage =========================
@@ -72,19 +72,16 @@ contract RedstonePriceOracle is IRedstonePriceOracle, OnlyDolomiteMargin {
     )
         OnlyDolomiteMargin(_dolomiteMargin)
     {
-        if (_tokens.length == _chainlinkAggregators.length) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _tokens.length == _chainlinkAggregators.length,
             _FILE,
             "Invalid tokens length"
         );
-        if (_chainlinkAggregators.length == _tokenDecimals.length) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _chainlinkAggregators.length == _tokenDecimals.length,
             _FILE,
             "Invalid aggregators length"
         );
-        if (_tokenDecimals.length == _tokenPairs.length) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _tokenDecimals.length == _tokenPairs.length,
             _FILE,
@@ -141,18 +138,11 @@ contract RedstonePriceOracle is IRedstonePriceOracle, OnlyDolomiteMargin {
     view
     returns (IDolomiteStructs.MonetaryPrice memory)
     {
-        if (address(_tokenToAggregatorMap[_token]) != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             address(_tokenToAggregatorMap[_token]) != address(0),
             _FILE,
             "Invalid token",
             _token
-        );
-        if (msg.sender != address(DOLOMITE_MARGIN())) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            msg.sender != address(DOLOMITE_MARGIN()),
-            _FILE,
-            "DolomiteMargin cannot call"
         );
 
         IChainlinkAggregator aggregatorProxy = _tokenToAggregatorMap[_token];
@@ -163,12 +153,23 @@ contract RedstonePriceOracle is IRedstonePriceOracle, OnlyDolomiteMargin {
             uint256 updatedAt,
             /* uint80 answeredInRound */
         ) = aggregatorProxy.latestRoundData();
-        if (block.timestamp - updatedAt < stalenessThreshold) { /* FOR COVERAGE TESTING */ }
         Require.that(
             block.timestamp - updatedAt < stalenessThreshold,
             _FILE,
             "Chainlink price expired",
             _token
+        );
+
+        IChainlinkAccessControlAggregator controlAggregator = aggregatorProxy.aggregator();
+        Require.that(
+            controlAggregator.minAnswer() < answer,
+            _FILE,
+            "Chainlink price too low"
+        );
+        Require.that(
+            answer < controlAggregator.maxAnswer(),
+            _FILE,
+            "Chainlink price too high"
         );
 
         uint256 chainlinkPrice = uint256(answer);
@@ -181,9 +182,22 @@ contract RedstonePriceOracle is IRedstonePriceOracle, OnlyDolomiteMargin {
             aggregatorProxy.decimals()
         );
 
-        return IDolomiteStructs.MonetaryPrice({
-            value: standardizedPrice
-        });
+        if (tokenPair == address(0)) {
+            // The pair has a USD base, we are done.
+            return IDolomiteStructs.MonetaryPrice({
+                value: standardizedPrice
+            });
+        } else {
+            // The price we just got and converted is NOT against USD. So we need to get its pair's price against USD.
+            // We can do so by recursively calling #getPrice using the `tokenPair` as the parameter instead of `token`.
+            uint256 tokenPairPrice = getPrice(tokenPair).value;
+            // Standardize the price to use 36 decimals.
+            uint256 tokenPairWith36Decimals = tokenPairPrice * (10 ** uint256(_tokenToDecimalsMap[tokenPair]));
+            // Now that the chained price uses 36 decimals (and thus is standardized), we can do easy math.
+            return IDolomiteStructs.MonetaryPrice({
+                value: standardizedPrice * tokenPairWith36Decimals / _ONE_DOLLAR
+            });
+        }
     }
 
     function getAggregatorByToken(address _token) public view returns (IChainlinkAggregator) {
@@ -223,14 +237,12 @@ contract RedstonePriceOracle is IRedstonePriceOracle, OnlyDolomiteMargin {
     )
     internal
     {
-        if (_stalenessThreshold >= 24 hours) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _stalenessThreshold >= 24 hours,
             _FILE,
             "Staleness threshold too low",
             _stalenessThreshold
         );
-        if (_stalenessThreshold <= 7 days) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _stalenessThreshold <= 7 days,
             _FILE,
@@ -251,6 +263,14 @@ contract RedstonePriceOracle is IRedstonePriceOracle, OnlyDolomiteMargin {
         _tokenToAggregatorMap[_token] = IChainlinkAggregator(_chainlinkAggregator);
         _tokenToDecimalsMap[_token] = _tokenDecimals;
         if (_tokenPair != address(0)) {
+            Require.that(
+                address(_tokenToAggregatorMap[_tokenPair]) != address(0),
+                _FILE,
+                "Invalid token pair",
+                _tokenPair
+            );
+            // The aggregator's price is NOT against USD. Therefore, we need to store what it's against as well as the
+            // # of decimals the aggregator's price has.
             _tokenToPairingMap[_token] = _tokenPair;
         }
         emit TokenInsertedOrUpdated(_token, _chainlinkAggregator, _tokenPair);

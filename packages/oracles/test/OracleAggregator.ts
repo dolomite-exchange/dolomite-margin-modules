@@ -3,12 +3,12 @@ import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import {
-  ChainlinkPriceOracleV2,
-  ChainlinkPriceOracleV2__factory,
+  ChainlinkPriceOracleV3,
+  ChainlinkPriceOracleV3__factory,
   OracleAggregator,
   OracleAggregator__factory,
-  RedstonePriceOracle,
-  RedstonePriceOracle__factory,
+  RedstonePriceOracleV3,
+  RedstonePriceOracleV3__factory,
   TestChainlinkAggregator,
   TestChainlinkAggregator__factory,
 } from '../src/types';
@@ -16,9 +16,9 @@ import {
   CustomTestToken,
 } from '@dolomite-exchange/modules-base/src/types';
 import {
-  getChainlinkPriceOracleConstructorParamsFromOldPriceOracle,
+  getChainlinkPriceOracleV3ConstructorParamsFromChainlinkOracleV1,
   getOracleAggregatorConstructorParams,
-  getRedstonePriceOracleConstructorParams
+  getRedstonePriceOracleV3ConstructorParams
 } from '../src/oracles-constructors';
 import { createContractWithAbi, createTestToken } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import {
@@ -40,8 +40,8 @@ describe('OracleAggregator', () => {
 
   let core: CoreProtocolArbitrumOne;
 
-  let chainlinkOracle: ChainlinkPriceOracleV2;
-  let redstoneOracle: RedstonePriceOracle;
+  let chainlinkOracle: ChainlinkPriceOracleV3;
+  let redstoneOracle: RedstonePriceOracleV3;
   let testAggregator: TestChainlinkAggregator;
   let testToken: CustomTestToken;
   let oracleAggregator: OracleAggregator;
@@ -58,19 +58,19 @@ describe('OracleAggregator', () => {
     await testAggregator.setLatestAnswer(TEN_BI.pow(18).div(10)); // 0.1E
     await testAggregator.setDecimals(18);
 
-    chainlinkOracle = (await createContractWithAbi<ChainlinkPriceOracleV2>(
-      ChainlinkPriceOracleV2__factory.abi,
-      ChainlinkPriceOracleV2__factory.bytecode,
-      await getChainlinkPriceOracleConstructorParamsFromOldPriceOracle(core),
+    chainlinkOracle = (await createContractWithAbi<ChainlinkPriceOracleV3>(
+      ChainlinkPriceOracleV3__factory.abi,
+      ChainlinkPriceOracleV3__factory.bytecode,
+      await getChainlinkPriceOracleV3ConstructorParamsFromChainlinkOracleV1(core),
     )).connect(core.governance);
 
-    redstoneOracle = (await createContractWithAbi<RedstonePriceOracle>(
-      RedstonePriceOracle__factory.abi,
-      RedstonePriceOracle__factory.bytecode,
-      await getRedstonePriceOracleConstructorParams(
+    redstoneOracle = (await createContractWithAbi<RedstonePriceOracleV3>(
+      RedstonePriceOracleV3__factory.abi,
+      RedstonePriceOracleV3__factory.bytecode,
+      await getRedstonePriceOracleV3ConstructorParams(
         [core.tokens.weEth],
         [WE_ETH_ETH_REDSTONE_FEED_MAP[Network.ArbitrumOne]],
-        [core.tokens.weth.address],
+        [false],
         core
       )
     )).connect(core.governance);
@@ -96,6 +96,7 @@ describe('OracleAggregator', () => {
         [
           [ZERO_ADDRESS],
           [ZERO_ADDRESS],
+          [ZERO_ADDRESS],
           core.dolomiteMargin.address,
         ],
       );
@@ -109,10 +110,27 @@ describe('OracleAggregator', () => {
           [
             [ZERO_ADDRESS],
             [ZERO_ADDRESS, ZERO_ADDRESS],
+            [ZERO_ADDRESS],
             core.dolomiteMargin.address,
           ],
         ),
         'OracleAggregator: Invalid tokens length',
+      );
+    });
+
+    it('should fail when token length is not aligned', async () => {
+      await expectThrow(
+        createContractWithAbi<OracleAggregator>(
+          OracleAggregator__factory.abi,
+          OracleAggregator__factory.bytecode,
+          [
+            [ZERO_ADDRESS],
+            [ZERO_ADDRESS],
+            [ZERO_ADDRESS, ZERO_ADDRESS],
+            core.dolomiteMargin.address,
+          ],
+        ),
+        'OracleAggregator: Invalid oracles length',
       );
     });
   });
@@ -138,9 +156,13 @@ describe('OracleAggregator', () => {
         testToken.address,
         18,
         testAggregator.address,
+        false
+      );
+      await oracleAggregator.ownerInsertOrUpdateOracle(
+        testToken.address,
+        chainlinkOracle.address,
         core.tokens.weth.address
       );
-      await oracleAggregator.ownerInsertOrUpdateOracle(testToken.address, chainlinkOracle.address);
       const price = await oracleAggregator.getPrice(testToken.address);
       expect(price.value).to.eq(TEST_TOKEN_PRICE);
     });
@@ -165,13 +187,15 @@ describe('OracleAggregator', () => {
         tokenAddress,
         18,
         testAggregator.address,
-        ZERO_ADDRESS,
+        false
       );
       await oracleAggregator.ownerInsertOrUpdateOracle(
         tokenAddress,
-        chainlinkOracle.address
+        chainlinkOracle.address,
+        ZERO_ADDRESS
       );
       expect(await oracleAggregator.getOracleByToken(tokenAddress)).to.eq(chainlinkOracle.address);
+      expect(await oracleAggregator.getTokenPairByToken(tokenAddress)).to.eq(ZERO_ADDRESS);
     });
 
     it('can update an existing oracle', async () => {
@@ -180,24 +204,29 @@ describe('OracleAggregator', () => {
         tokenAddress,
         18,
         testAggregator.address,
-        ZERO_ADDRESS,
+        false
       );
       await oracleAggregator.ownerInsertOrUpdateOracle(
         tokenAddress,
-        chainlinkOracle.address
+        chainlinkOracle.address,
+        core.tokens.usdc.address,
       );
       expect(await oracleAggregator.getOracleByToken(tokenAddress)).to.eq(chainlinkOracle.address);
+      expect(await oracleAggregator.getTokenPairByToken(tokenAddress)).to.eq(core.tokens.usdc.address);
       await oracleAggregator.ownerInsertOrUpdateOracle(
         tokenAddress,
-        redstoneOracle.address
+        redstoneOracle.address,
+        ZERO_ADDRESS,
       );
       expect(await oracleAggregator.getOracleByToken(tokenAddress)).to.eq(redstoneOracle.address);
+      expect(await oracleAggregator.getTokenPairByToken(tokenAddress)).to.eq(ZERO_ADDRESS);
     });
 
     it('fails when invoked by non-admin', async () => {
       await expectThrow(
         oracleAggregator.connect(core.hhUser1).ownerInsertOrUpdateOracle(
           testToken.address,
+          ZERO_ADDRESS,
           ZERO_ADDRESS,
         ),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
