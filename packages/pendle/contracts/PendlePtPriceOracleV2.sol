@@ -27,15 +27,14 @@ import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/I
 import { IPendlePtPriceOracle } from "./interfaces/IPendlePtPriceOracle.sol";
 import { IPendleRegistry } from "./interfaces/IPendleRegistry.sol";
 
-import "hardhat/console.sol";
 
 /**
- * @title   PendlePtPriceOracle
+ * @title   PendlePtPriceOracleV2
  * @author  Dolomite
  *
  * @notice  An implementation of the IPendlePtPriceOracle interface that gets Pendle's pt price in USD terms.
  */
-contract PendlePtPriceOracle is IPendlePtPriceOracle, OnlyDolomiteMargin {
+contract PendlePtPriceOracleV2 is IPendlePtPriceOracle, OnlyDolomiteMargin {
 
     // ============================ Constants ============================
 
@@ -47,7 +46,6 @@ contract PendlePtPriceOracle is IPendlePtPriceOracle, OnlyDolomiteMargin {
 
     address immutable public DPT_TOKEN; // solhint-disable-line var-name-mixedcase
     IPendleRegistry immutable public REGISTRY; // solhint-disable-line var-name-mixedcase
-    address immutable public UNDERLYING_TOKEN; // solhint-disable-line var-name-mixedcase
     uint256 immutable public PT_ASSET_SCALE; // solhint-disable-line var-name-mixedcase
     uint256 public deductionCoefficient;
 
@@ -56,12 +54,10 @@ contract PendlePtPriceOracle is IPendlePtPriceOracle, OnlyDolomiteMargin {
     constructor(
         address _dptToken,
         address _pendleRegistry,
-        address _underlyingToken,
         address _dolomiteMargin
     ) OnlyDolomiteMargin(_dolomiteMargin) {
         DPT_TOKEN = _dptToken;
         REGISTRY = IPendleRegistry(_pendleRegistry);
-        UNDERLYING_TOKEN = _underlyingToken;
         PT_ASSET_SCALE = uint256(10) ** uint256(IERC20Metadata(DPT_TOKEN).decimals());
         _ownerSetDeductionCoefficient(0);
 
@@ -120,7 +116,6 @@ contract PendlePtPriceOracle is IPendlePtPriceOracle, OnlyDolomiteMargin {
     function _getCurrentPrice() internal view virtual returns (uint256) {
         // @follow-up is it ok to apply the deduction coefficient to the excchange rate?
         uint256 ptExchangeRate = REGISTRY.ptOracle().getPtToAssetRate(address(REGISTRY.ptMarket()), TWAP_DURATION);
-        console.log(ptExchangeRate);
         return _applyDeductionCoefficient(ptExchangeRate);
     }
 }
