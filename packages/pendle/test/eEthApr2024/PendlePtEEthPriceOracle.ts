@@ -120,7 +120,6 @@ describe('PendlePtEEthApr2024PriceOracle', () => {
 
   describe('#getPrice', () => {
     it('returns the correct value under normal conditions for the dptToken', async () => {
-      await setNextBlockTimestamp(1709735900);
       const price = await ptOracle.getPrice(factory.address);
       expect(price.value).to.eq(PT_E_ETH_PRICE);
     });
