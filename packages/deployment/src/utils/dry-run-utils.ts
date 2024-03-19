@@ -52,6 +52,7 @@ async function doStuffInternal<T extends NetworkType>(
     const delayedMultiSig = result.core.delayedMultiSig.connect(signer);
     const filter = delayedMultiSig.filters.Submission();
     const transactionIds = [];
+
     for (const transaction of result.upload.transactions) {
       let txResult;
       if (transaction.to === result.core.delayedMultiSig.address) {
@@ -111,6 +112,7 @@ export async function doDryRunAndCheckDeployment<T extends NetworkType>(
       process.exit(0);
     })
     .catch(e => {
+      cleanHardhatDeployment();
       console.error(new Error(e.stack));
       process.exit(1);
     });

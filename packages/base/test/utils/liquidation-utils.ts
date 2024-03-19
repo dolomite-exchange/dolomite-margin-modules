@@ -1,5 +1,5 @@
 import { address } from '@dolomite-exchange/dolomite-margin';
-import { BigNumber as ZapBigNumber, ZapOutputParam } from '@dolomite-exchange/zap-sdk/dist';
+import { BigNumber as ZapBigNumber, ZapOutputParam } from '@dolomite-exchange/zap-sdk';
 import { GenericTraderType } from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
 import { BigNumber, BigNumberish, ContractTransaction } from 'ethers';
 import { AccountInfoStruct, GenericTraderParamStruct } from '../../src/utils';

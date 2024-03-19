@@ -1,4 +1,4 @@
-import { ApiToken, DolomiteZap, Network as ZapNetwork } from '@dolomite-exchange/zap-sdk/dist';
+import { ApiToken, DolomiteZap, Network as ZapNetwork } from '@dolomite-exchange/zap-sdk';
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
@@ -85,11 +85,11 @@ describe('GLPIsolationModeLiquidationWithZap', () => {
       decimals: 18,
       tokenAddress: factory.address,
     };
-    zap = new DolomiteZap(
-      ZapNetwork.ARBITRUM_ONE,
-      process.env.SUBGRAPH_URL as string,
-      core.hhUser1.provider!,
-    );
+    zap = new DolomiteZap({
+      network: ZapNetwork.ARBITRUM_ONE,
+      subgraphUrl: process.env.SUBGRAPH_URL as string,
+      web3Provider: core.hhUser1.provider!,
+    });
 
     unwrapper = await createGLPUnwrapperTraderV2(core, factory, gmxRegistry);
     wrapper = await createGLPWrapperTraderV2(core, factory, gmxRegistry);

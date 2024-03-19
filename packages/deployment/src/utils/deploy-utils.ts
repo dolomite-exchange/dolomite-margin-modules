@@ -185,6 +185,7 @@ async function getFreshArtifactFromWorkspace(artifactName: string) {
         deploymentsArtifactsPath,
         { overwrite: true },
       );
+
       const artifact = JSON.parse(readFileSync(artifactPath, 'utf8'));
       await artifacts.saveArtifactAndDebugFile(artifact);
       return;

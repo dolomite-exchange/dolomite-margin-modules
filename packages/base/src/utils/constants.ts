@@ -12,6 +12,12 @@ interface TokenWithMarketId {
 
 type ArbitrumOrZkEvm = Network.ArbitrumOne | Network.PolygonZkEvm;
 
+export const SUBGRAPH_URL_MAP: Record<Network, string> = {
+  [Network.PolygonZkEvm]: 'https://api.studio.thegraph.com/query/47377/dolomite-polygon-zkevm/version/latest',
+  [Network.Base]: 'https://api.studio.thegraph.com/query/47377/dolomite-base/version/latest',
+  [Network.ArbitrumOne]: 'https://api.thegraph.com/subgraphs/name/dolomite-exchange/dolomite-v2-arbitrum',
+};
+
 // ************************* External Contract Addresses *************************
 
 export const ARB_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
@@ -65,6 +71,34 @@ export const D_GMX_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x790FF506ac24b03A21F3d0019227447AE2B55Ca5',
     marketId: 30,
+  },
+};
+
+export const D_GM_ARB_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0x2c799166c9f0DbF9EFC5004cbCe4c5A37fA39329',
+    marketId: 31,
+  },
+};
+
+export const D_GM_BTC_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0x1E8e8B7a2F827b3bc12B00eE402145061b7050eF',
+    marketId: 32,
+  },
+};
+
+export const D_GM_ETH_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0x505582242757f16D72F8C4462A616E388Ca1b074',
+    marketId: 33,
+  },
+};
+
+export const D_GM_LINK_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0x18cB14564FBb015BD3439220D177799355abC0E0',
+    marketId: 34,
   },
 };
 

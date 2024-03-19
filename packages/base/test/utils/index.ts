@@ -1,7 +1,9 @@
+import CoreDeployments from '@dolomite-exchange/dolomite-margin/dist/migrations/deployed.json';
+import ModuleDeployments from '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
 import { time } from '@nomicfoundation/hardhat-network-helpers';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { BigNumber, BigNumberish, ContractTransaction } from 'ethers';
-import { config as hardhatConfig, ethers, network as hardhatNetwork } from 'hardhat';
+import { config as hardhatConfig, ethers, network as hardhatNetwork, tracer } from 'hardhat';
 import { HttpNetworkConfig } from 'hardhat/src/types/config';
 import { Network, networkToNetworkNameMap } from '../../src/utils/no-deps-constants';
 
@@ -51,6 +53,19 @@ export async function resetFork(blockNumber: number, network: Network) {
         },
       },
     ],
+  });
+
+  Object.keys(CoreDeployments).forEach(contractName => {
+    const contractAddress = (CoreDeployments as any)[contractName]?.[network]?.address;
+    if (contractAddress) {
+      tracer.nameTags[contractAddress] = contractName;
+    }
+  });
+  Object.keys(ModuleDeployments).forEach(contractName => {
+    const contractAddress = (ModuleDeployments as any)[contractName]?.[network]?.address;
+    if (contractAddress) {
+      tracer.nameTags[contractAddress] = contractName;
+    }
   });
 }
 

@@ -188,19 +188,21 @@ library GmxV2Library {
         );
 
         // Fix stack too deep
+        address outputToken = _outputToken;
         IGmxV2IsolationModeVaultFactory factory = _factory;
+        address longToken = factory.LONG_TOKEN();
 
-        (, uint256 minShortTokenAmount) = abi.decode(_extraData, (IDolomiteStructs.Decimal, uint256));
+        (, uint256 minOtherTokenAmount) = abi.decode(_extraData, (IDolomiteStructs.Decimal, uint256));
         IUpgradeableAsyncIsolationModeUnwrapperTrader unwrapper = registry.getUnwrapperByToken(factory);
         IGmxExchangeRouter.CreateWithdrawalParams memory withdrawalParams = IGmxExchangeRouter.CreateWithdrawalParams(
             /* receiver = */ address(unwrapper),
             /* callbackContract = */ address(unwrapper),
             /* uiFeeReceiver = */ address(0),
             /* market = */ swapPath[0],
-            /* longTokenSwapPath = */ _outputToken == factory.LONG_TOKEN() ? new address[](0) : swapPath,
-            /* shortTokenSwapPath = */ _outputToken == factory.SHORT_TOKEN() ? new address[](0) : swapPath,
-            /* minLongTokenAmount = */ _minOutputAmount,
-            /* minShortTokenAmount = */ minShortTokenAmount,
+            /* longTokenSwapPath = */ outputToken == longToken ? new address[](0) : swapPath,
+            /* shortTokenSwapPath = */ outputToken != longToken ? new address[](0) : swapPath,
+            /* minLongTokenAmount = */ longToken == outputToken ? _minOutputAmount : minOtherTokenAmount,
+            /* minShortTokenAmount = */ longToken != outputToken ? _minOutputAmount : minOtherTokenAmount,
             /* shouldUnwrapNativeToken = */ false,
             /* executionFee = */ _ethExecutionFee,
             /* callbackGasLimit = */ registry.callbackGasLimit()
@@ -431,12 +433,13 @@ library GmxV2Library {
             _chainId
         );
 
-        // Check the min output amount of the other token too since GM is unwound via 2 tokens
+        // Check the min output amount of the other token too since GM is unwound via 2 tokens. The
+        // `otherMinOutputAmount` is the min amount out we'll accept when swapping to `outputToken`
         _requireMinAmountIsNotTooLargeForLiquidation(
             cache.dolomiteMargin,
             _liquidAccount,
             cache.inputMarketId,
-            cache.longMarketId != cache.outputMarketId ? cache.longMarketId : cache.shortMarketId,
+            cache.outputMarketId,
             _inputAmount.mul(weight),
             otherMinOutputAmount,
             _chainId

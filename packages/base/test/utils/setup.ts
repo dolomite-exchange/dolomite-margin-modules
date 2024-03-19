@@ -3,7 +3,7 @@ import {
   IChainlinkAutomationRegistry__factory,
   IChainlinkPriceOracleOld__factory,
 } from '@dolomite-exchange/modules-oracles/src/types';
-import { BigNumber as ZapBigNumber } from '@dolomite-exchange/zap-sdk/dist';
+import { BigNumber as ZapBigNumber } from '@dolomite-exchange/zap-sdk';
 import * as BorrowPositionProxyV2Json from '@dolomite-margin/deployed-contracts/BorrowPositionProxyV2.json';
 import * as DepositWithdrawalProxyJson from '@dolomite-margin/deployed-contracts/DepositWithdrawalProxy.json';
 import * as DolomiteMarginJson from '@dolomite-margin/deployed-contracts/DolomiteMargin.json';
@@ -44,7 +44,7 @@ import {
   CHAINLINK_AUTOMATION_REGISTRY_MAP,
   CHAINLINK_PRICE_AGGREGATORS_MAP,
   CHAINLINK_PRICE_ORACLE_MAP,
-  D_ARB_MAP,
+  D_ARB_MAP, D_GM_ARB_MAP, D_GM_BTC_MAP, D_GM_ETH_MAP, D_GM_LINK_MAP,
   D_GMX_MAP,
   DAI_MAP,
   DFS_GLP_MAP,
@@ -533,6 +533,10 @@ export async function setupCoreProtocol<T extends NetworkType>(
           dArb: D_ARB_MAP[typedConfig.network]!.marketId,
           dfsGlp: DFS_GLP_MAP[typedConfig.network]!.marketId,
           dGmx: D_GMX_MAP[typedConfig.network]!.marketId,
+          dGmArb: D_GM_ARB_MAP[typedConfig.network]!.marketId,
+          dGmBtc: D_GM_BTC_MAP[typedConfig.network]!.marketId,
+          dGmEth: D_GM_ETH_MAP[typedConfig.network]!.marketId,
+          dGmLink: D_GM_LINK_MAP[typedConfig.network]!.marketId,
           djUSDC: DJ_USDC[typedConfig.network]!.marketId,
           dplvGlp: DPLV_GLP_MAP[typedConfig.network]!.marketId,
           dPtGlp: DPT_GLP_2024_MAP[typedConfig.network]!.marketId,
@@ -563,6 +567,10 @@ export async function setupCoreProtocol<T extends NetworkType>(
           dArb: IERC20__factory.connect(D_ARB_MAP[typedConfig.network]!.address, hhUser1),
           dfsGlp: IERC20__factory.connect(DFS_GLP_MAP[typedConfig.network]!.address, hhUser1),
           dGmx: IERC20__factory.connect(D_GMX_MAP[typedConfig.network]!.address, hhUser1),
+          dGmArb: IERC20__factory.connect(D_GM_ARB_MAP[typedConfig.network]!.address, hhUser1),
+          dGmBtc: IERC20__factory.connect(D_GM_BTC_MAP[typedConfig.network]!.address, hhUser1),
+          dGmEth: IERC20__factory.connect(D_GM_ETH_MAP[typedConfig.network]!.address, hhUser1),
+          dGmLink: IERC20__factory.connect(D_GM_LINK_MAP[typedConfig.network]!.address, hhUser1),
           dPtGlp: IERC20__factory.connect(DPT_GLP_2024_MAP[typedConfig.network]!.address, hhUser1),
           dPtREthJun2025: IERC20__factory.connect(DPT_R_ETH_JUN_2025_MAP[typedConfig.network]!.address, hhUser1),
           dPtWeEthApr2024: IERC20__factory.connect(DPT_WE_ETH_APR_2024_MAP[typedConfig.network]!.address, hhUser1),

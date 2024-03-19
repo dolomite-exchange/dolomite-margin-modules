@@ -10,7 +10,7 @@ import {
   setupCoreProtocol,
   setupTestMarket,
 } from 'packages/base/test/utils/setup';
-import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE } from '../src/gmx-v2-constructors';
+import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE_FOR_TESTS } from '../src/gmx-v2-constructors';
 import {
   GmxV2IsolationModeUnwrapperTraderV2,
   GmxV2IsolationModeVaultFactory,
@@ -59,7 +59,7 @@ describe('GmxV2Registry', () => {
       allowableMarketIds,
       core.gmxEcosystemV2!.gmTokens.ethUsd,
       userVaultImplementation,
-      GMX_V2_EXECUTION_FEE,
+      GMX_V2_EXECUTION_FEE_FOR_TESTS,
     );
     unwrapper = await createGmxV2IsolationModeUnwrapperTraderV2(
       core,
@@ -146,7 +146,7 @@ describe('GmxV2Registry', () => {
         allowableMarketIds,
         core.gmxEcosystemV2!.gmTokens.ethUsd,
         userVaultImplementation,
-        GMX_V2_EXECUTION_FEE,
+        GMX_V2_EXECUTION_FEE_FOR_TESTS,
       );
       await expectThrow(
         gmxV2Registry.connect(core.governance).ownerSetUnwrapperByToken(
@@ -197,7 +197,7 @@ describe('GmxV2Registry', () => {
         allowableMarketIds,
         core.gmxEcosystemV2!.gmTokens.ethUsd,
         userVaultImplementation,
-        GMX_V2_EXECUTION_FEE,
+        GMX_V2_EXECUTION_FEE_FOR_TESTS,
       );
       await expectThrow(
         gmxV2Registry.connect(core.governance).ownerSetWrapperByToken(

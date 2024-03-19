@@ -3,7 +3,6 @@ import '@nomiclabs/hardhat-etherscan';
 import '@typechain/hardhat';
 import 'hardhat-gas-reporter';
 import {
-  DEFAULT_BLOCK_NUMBER,
   Network, NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP,
   NetworkName,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';

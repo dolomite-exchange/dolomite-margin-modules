@@ -2,11 +2,13 @@
 import '@nomiclabs/hardhat-etherscan';
 import '@typechain/hardhat';
 import 'hardhat-gas-reporter';
+import 'hardhat-tracer';
 import {
   DEFAULT_BLOCK_NUMBER,
   Network,
   NetworkName,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import hardhat from 'hardhat';
 import { HardhatUserConfig } from 'hardhat/types';
 
 import 'tsconfig-paths/register';
@@ -113,6 +115,9 @@ const config: HardhatUserConfig = {
       base: basescanApiKey,
       polygonZkEvm: polygonscanApiKey,
     },
+  },
+  tracer: {
+    enabled: false,
   },
 };
 

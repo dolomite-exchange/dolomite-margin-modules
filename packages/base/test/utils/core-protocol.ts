@@ -1,5 +1,5 @@
 import { IChainlinkAutomationRegistry, IChainlinkPriceOracleOld } from '@dolomite-exchange/modules-oracles/src/types';
-import { ApiToken } from '@dolomite-exchange/zap-sdk';
+import { ApiToken, DolomiteZap } from '@dolomite-exchange/zap-sdk';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { BigNumberish } from 'ethers';
 import { Network, NetworkType } from 'packages/base/src/utils/no-deps-constants';
@@ -17,7 +17,7 @@ import {
   IWETH,
   RegistryProxy,
 } from '../../src/types';
-import { CHAINLINK_PRICE_AGGREGATORS_MAP } from '../../src/utils/constants';
+import { CHAINLINK_PRICE_AGGREGATORS_MAP, SUBGRAPH_URL_MAP } from '../../src/utils/constants';
 import { DolomiteMargin, Expiry } from './dolomite';
 import { AbraEcosystem } from './ecosystem-utils/abra';
 import { ArbEcosystem } from './ecosystem-utils/arb';
@@ -54,6 +54,10 @@ interface CoreProtocolTokensArbitrumOne extends CoreProtocolTokens {
   dArb: IERC20;
   dfsGlp: IERC20;
   dGmx: IERC20;
+  dGmArb: IERC20;
+  dGmBtc: IERC20;
+  dGmEth: IERC20;
+  dGmLink: IERC20;
   dPtGlp: IERC20;
   dPtREthJun2025: IERC20;
   dPtWeEthApr2024: IERC20;
@@ -83,6 +87,10 @@ interface CoreProtocolMarketIdsArbitrumOne extends CoreProtocolMarketIds {
   dArb: BigNumberish;
   dfsGlp: BigNumberish;
   dGmx: BigNumberish;
+  dGmArb: BigNumberish;
+  dGmBtc: BigNumberish;
+  dGmEth: BigNumberish;
+  dGmLink: BigNumberish;
   djUSDC: BigNumberish;
   dplvGlp: BigNumberish;
   dPtGlp: BigNumberish;
@@ -154,6 +162,7 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
    * Config passed through at Core Protocol's creation time
    */
   public readonly config: CoreProtocolConfig<T>;
+  public readonly zap: DolomiteZap;
   public readonly governance: SignerWithAddress;
   public readonly hhUser1: SignerWithAddress;
   public readonly hhUser2: SignerWithAddress;
@@ -195,6 +204,12 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
 
   constructor(params: CoreProtocolParams<T>) {
     this.config = params.config;
+    this.zap = new DolomiteZap({
+      network: this.config.networkNumber,
+      subgraphUrl: SUBGRAPH_URL_MAP[this.config.network],
+      web3Provider: params.hhUser1.provider!,
+      defaultBlockTag: params.config.blockNumber,
+    });
     this.governance = params.governance;
     this.hhUser1 = params.hhUser1;
     this.hhUser2 = params.hhUser2;

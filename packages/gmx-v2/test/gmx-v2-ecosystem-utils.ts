@@ -115,11 +115,14 @@ export async function createGmxV2IsolationModeTokenVaultV1(
 ): Promise<GmxV2IsolationModeTokenVaultV1> {
   const artifact = await createArtifactFromWorkspaceIfNotExists('GmxV2IsolationModeTokenVaultV1');
   const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
-  return createContractWithLibraryAndArtifact<GmxV2IsolationModeTokenVaultV1>(
+  const vault = await createContractWithLibraryAndArtifact<GmxV2IsolationModeTokenVaultV1>(
     artifact,
     { GmxV2Library: library.address, ...libraries },
     getGmxV2IsolationModeTokenVaultConstructorParams(core),
   );
+  // TODO: delete and check deletion
+  artifact.sourceName
+  return vault;
 }
 
 export async function createTestGmxV2IsolationModeTokenVaultV1(
@@ -192,20 +195,26 @@ export async function createTestGmxV2IsolationModeVaultFactory(
   );
 }
 
+export async function createGmxV2IsolationModeUnwrapperTraderV2Implementation(
+  core: CoreProtocolArbitrumOne,
+  gmxV2Library: GmxV2Library,
+): Promise<GmxV2IsolationModeUnwrapperTraderV2> {
+  const artifact = await createArtifactFromWorkspaceIfNotExists('GmxV2IsolationModeUnwrapperTraderV2');
+  const libraries = await createAsyncIsolationModeUnwrapperTraderImpl();
+  return await createContractWithLibraryAndArtifact<GmxV2IsolationModeUnwrapperTraderV2>(
+    artifact,
+    { GmxV2Library: gmxV2Library.address, ...libraries },
+    [core.tokens.weth.address],
+  );
+}
+
 export async function createGmxV2IsolationModeUnwrapperTraderV2(
   core: CoreProtocolArbitrumOne,
   dGM: IGmxV2IsolationModeVaultFactory | GmxV2IsolationModeVaultFactory,
   gmxV2Library: GmxV2Library,
   gmxV2Registry: IGmxV2Registry | GmxV2Registry,
 ): Promise<GmxV2IsolationModeUnwrapperTraderV2> {
-  const artifact = await createArtifactFromWorkspaceIfNotExists('GmxV2IsolationModeUnwrapperTraderV2');
-  const libraries = await createAsyncIsolationModeUnwrapperTraderImpl();
-  const implementation = await createContractWithLibraryAndArtifact<GmxV2IsolationModeUnwrapperTraderV2>(
-    artifact,
-    { GmxV2Library: gmxV2Library.address, ...libraries },
-    [core.tokens.weth.address],
-  );
-
+  const implementation = await createGmxV2IsolationModeUnwrapperTraderV2Implementation(core, gmxV2Library);
   const proxy = await createContractWithAbi<IsolationModeTraderProxy>(
     IsolationModeTraderProxy__factory.abi,
     IsolationModeTraderProxy__factory.bytecode,
@@ -249,19 +258,26 @@ export async function createTestGmxV2IsolationModeUnwrapperTraderV2(
   return TestGmxV2IsolationModeUnwrapperTraderV2__factory.connect(proxy.address, core.hhUser1);
 }
 
+export async function createGmxV2IsolationModeWrapperTraderV2Implementation(
+  core: CoreProtocolArbitrumOne,
+  library: GmxV2Library,
+): Promise<GmxV2IsolationModeWrapperTraderV2> {
+  const artifact = await createArtifactFromWorkspaceIfNotExists('GmxV2IsolationModeWrapperTraderV2');
+  const libraries = await createAsyncIsolationModeWrapperTraderImpl();
+  return await createContractWithLibraryAndArtifact<GmxV2IsolationModeWrapperTraderV2>(
+    artifact,
+    { GmxV2Library: library.address, ...libraries },
+    [core.tokens.weth.address],
+  );
+}
+
 export async function createGmxV2IsolationModeWrapperTraderV2(
   core: CoreProtocolArbitrumOne,
   dGM: IGmxV2IsolationModeVaultFactory | GmxV2IsolationModeVaultFactory,
   library: GmxV2Library,
   gmxV2Registry: IGmxV2Registry | GmxV2Registry,
 ): Promise<GmxV2IsolationModeWrapperTraderV2> {
-  const artifact = await createArtifactFromWorkspaceIfNotExists('GmxV2IsolationModeWrapperTraderV2');
-  const libraries = await createAsyncIsolationModeWrapperTraderImpl();
-  const implementation = await createContractWithLibraryAndArtifact<GmxV2IsolationModeWrapperTraderV2>(
-    artifact,
-    { GmxV2Library: library.address, ...libraries },
-    [core.tokens.weth.address],
-  );
+  const implementation = await createGmxV2IsolationModeWrapperTraderV2Implementation(core, library);
   const proxy = await createContractWithAbi<IsolationModeTraderProxy>(
     IsolationModeTraderProxy__factory.abi,
     IsolationModeTraderProxy__factory.bytecode,
