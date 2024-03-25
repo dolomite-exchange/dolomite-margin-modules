@@ -4,6 +4,7 @@ pragma solidity ^0.8.9;
 import { FullMath } from "./FullMath.sol";
 import { TickMath } from "./TickMath.sol";
 import { IAlgebraV3Pool } from "../interfaces/IAlgebraV3Pool.sol";
+import { IPancakeV3Pair } from "../interfaces/IPancakeV3Pair.sol";
 
 
 /**
@@ -20,6 +21,21 @@ library OracleLibrary {
         secondAgos[1] = 0;
 
         (int56[] memory tickCumulatives, , ,) = IAlgebraV3Pool(_pool).getTimepoints(secondAgos);
+        int56 tickCumulativesDelta = tickCumulatives[1] - tickCumulatives[0];
+        timeWeightedAverageTick = int24(tickCumulativesDelta / int32(_period));
+
+        // Always round to negative infinity
+        if (tickCumulativesDelta < 0 && (tickCumulativesDelta % int32(_period) != 0)) timeWeightedAverageTick--;
+    }
+
+    function consultPancakeSwap(address _pool, uint32 _period) internal view returns (int24 timeWeightedAverageTick) {
+        require(_period != 0); // solhint-disable-line reason-string
+
+        uint32[] memory secondAgos = new uint32[](2);
+        secondAgos[0] = _period;
+        secondAgos[1] = 0;
+
+        (int56[] memory tickCumulatives, ) = IPancakeV3Pair(_pool).observe(secondAgos);
         int56 tickCumulativesDelta = tickCumulatives[1] - tickCumulatives[0];
         timeWeightedAverageTick = int24(tickCumulativesDelta / int32(_period));
 
