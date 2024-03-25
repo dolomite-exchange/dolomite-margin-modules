@@ -1,9 +1,9 @@
 import { IAlgebraV3Pool, IERC20 } from '@dolomite-exchange/modules-base/src/types';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import { CoreProtocolArbitrumOne, CoreProtocolPolygonZkEvm } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { DolomiteMargin } from '@dolomite-exchange/modules-base/test/utils/dolomite';
 import { CoreProtocolType } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { BigNumberish } from 'ethers';
-import { Network, NetworkType } from 'packages/base/src/utils/no-deps-constants';
+import { ADDRESS_ZERO, Network, NetworkType } from 'packages/base/src/utils/no-deps-constants';
 import {
   ChainlinkPriceOracleV3,
   IChainlinkAggregator,
@@ -23,9 +23,36 @@ export type CoreProtocolWithChainlink<T extends Network> = Extract<CoreProtocolT
   chainlinkPriceOracle: IChainlinkPriceOracleOld;
 }>;
 
+export async function getChainlinkPriceOracleV3ConstructorParamsFromChainlinkOracleV1ZkEvm(
+  core: CoreProtocolPolygonZkEvm,
+): Promise<[string[], string[], BigNumberish[], boolean[], string, string]> {
+  const oldPriceOracle = IChainlinkPriceOracleV1__factory.connect(
+    Deployments.ChainlinkPriceOracleV1[core.config.network].address,
+    core.hhUser1,
+  );
+  const tokens: string[] = [];
+  const aggregators: string[] = [];
+  const tokenDecimals: number[] = [];
+  const invertPrice: boolean[] = [];
+
+  const filter = oldPriceOracle.filters.TokenInsertedOrUpdated();
+  let results = await oldPriceOracle.queryFilter(filter, 9792982, 9792983);
+  results = results.concat(await oldPriceOracle.queryFilter(filter, 9859954, 9859954));
+  results = results.concat(await oldPriceOracle.queryFilter(filter, 9893094, 9893094));
+
+  for (let i = 0; i < results.length; i++) {
+    const token = ethers.utils.defaultAbiCoder.decode(['address'], results[i].topics[1])[0];
+    tokens.push(token);
+    aggregators.push(await oldPriceOracle.getAggregatorByToken(token));
+    tokenDecimals.push(await oldPriceOracle.getDecimalsByToken(token));
+    invertPrice.push(false);
+  }
+  return [tokens, aggregators, tokenDecimals, invertPrice, core.dolomiteRegistry.address, core.dolomiteMargin.address];
+}
+
 export async function getChainlinkPriceOracleV3ConstructorParamsFromChainlinkOracleV1(
   core: CoreProtocolArbitrumOne,
-): Promise<[string[], string[], BigNumberish[], boolean[], string]> {
+): Promise<[string[], string[], BigNumberish[], boolean[], string, string]> {
   const oldPriceOracle = IChainlinkPriceOracleV1__factory.connect(
     Deployments.ChainlinkPriceOracleV1[core.config.network].address,
     core.hhUser1,
@@ -56,7 +83,7 @@ export async function getChainlinkPriceOracleV3ConstructorParamsFromChainlinkOra
       seenWstEth = true;
     }
   }
-  return [tokens, aggregators, tokenDecimals, invertPrice, core.dolomiteMargin.address];
+  return [tokens, aggregators, tokenDecimals, invertPrice, core.dolomiteRegistry.address, core.dolomiteMargin.address];
 }
 
 export async function getChainlinkPriceOracleV2ConstructorParamsFromOldPriceOracle(
@@ -124,9 +151,9 @@ export async function getChainlinkPriceOracleV1ConstructorParamsFromOldPriceOrac
 }
 
 export async function getOracleAggregatorConstructorParams(
-  core: CoreProtocolArbitrumOne,
+  core: CoreProtocolArbitrumOne | CoreProtocolPolygonZkEvm,
   chainlinkOracle: ChainlinkPriceOracleV3,
-  redstoneOracle: RedstonePriceOracleV3
+  redstoneOracle: RedstonePriceOracleV3 | null
 ): Promise<[string[], string[], string[], string]> {
   const oldPriceOracle = IChainlinkPriceOracleV1__factory.connect(
     Deployments.ChainlinkPriceOracleV1[core.config.network].address,
@@ -138,7 +165,12 @@ export async function getOracleAggregatorConstructorParams(
   const tokenPairs: string[] = [];
 
   const chainlinkFilter = chainlinkOracle.filters.TokenInsertedOrUpdated();
-  const chainlinkResults = await chainlinkOracle.queryFilter(chainlinkFilter);
+  let chainlinkResults;
+  if (core.config.network === Network.ArbitrumOne) {
+    chainlinkResults = await chainlinkOracle.queryFilter(chainlinkFilter);
+  } else {
+    chainlinkResults = await chainlinkOracle.queryFilter(chainlinkFilter, -9999);
+  }
   for (let i = 0; i < chainlinkResults.length; i++) {
     const token = ethers.utils.defaultAbiCoder.decode(['address'], chainlinkResults[i].topics[1])[0];
     tokens.push(token);
@@ -146,14 +178,16 @@ export async function getOracleAggregatorConstructorParams(
     tokenPairs.push(await oldPriceOracle.getTokenPairByToken(token));
   }
 
-  const redstoneFilter = redstoneOracle.filters.TokenInsertedOrUpdated();
-  const redstoneResults = await redstoneOracle.queryFilter(redstoneFilter);
-  for (let i = 0; i < redstoneResults.length; i++) {
-    const token = ethers.utils.defaultAbiCoder.decode(['address'], redstoneResults[i].topics[1])[0];
-    tokens.push(token);
-    oracles.push(redstoneOracle.address);
-    // @follow-up Right now weEth is the only token so hardcoding weth as token pair
-    tokenPairs.push(core.tokens.weth.address);
+  if (redstoneOracle) {
+    const redstoneFilter = redstoneOracle.filters.TokenInsertedOrUpdated();
+    const redstoneResults = await redstoneOracle.queryFilter(redstoneFilter);
+    for (let i = 0; i < redstoneResults.length; i++) {
+      const token = ethers.utils.defaultAbiCoder.decode(['address'], redstoneResults[i].topics[1])[0];
+      tokens.push(token);
+      oracles.push(redstoneOracle.address);
+      // @follow-up Right now weEth is the only token so hardcoding weth as token pair
+      tokenPairs.push(core.tokens.weth.address);
+    }
   }
 
   return [tokens, oracles, tokenPairs, core.dolomiteMargin.address];
@@ -198,12 +232,13 @@ export async function getRedstonePriceOracleV3ConstructorParams<T extends Networ
   aggregators: string[],
   invertPrice: boolean[],
   core: CoreProtocolType<T>,
-): Promise<[string[], string[], BigNumberish[], boolean[], string]> {
+): Promise<[string[], string[], BigNumberish[], boolean[], string, string]> {
   return [
     tokens.map(t => t.address),
     aggregators,
     await Promise.all(tokens.map(t => IERC20Metadata__factory.connect(t.address, t.signer).decimals())),
     invertPrice,
+    core.dolomiteRegistry.address,
     core.dolomiteMargin.address,
   ];
 }

@@ -21,9 +21,11 @@ pragma solidity ^0.8.9;
 
 import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
+import { IDolomiteRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IDolomiteRegistry.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IChainlinkAggregator } from "./interfaces/IChainlinkAggregator.sol";
 import { IRedstonePriceOracleV3 } from "./interfaces/IRedstonePriceOracleV3.sol";
+import { IOracleAggregator2 } from"./interfaces/IOracleAggregator2.sol";
 
 
 /**
@@ -48,6 +50,7 @@ contract RedstonePriceOracleV3 is IRedstonePriceOracleV3, OnlyDolomiteMargin {
 
     mapping(address => bool) private _tokenToInvertPriceMap;
 
+    IDolomiteRegistry public immutable DOLOMITE_REGISTRY;
     uint256 public stalenessThreshold;
 
     // ========================= Constructor =========================
@@ -66,6 +69,7 @@ contract RedstonePriceOracleV3 is IRedstonePriceOracleV3, OnlyDolomiteMargin {
         address[] memory _chainlinkAggregators,
         uint8[] memory _tokenDecimals,
         bool[] memory _invertPrice,
+        address _dolomiteRegistry,
         address _dolomiteMargin
     )
         OnlyDolomiteMargin(_dolomiteMargin)
@@ -100,6 +104,7 @@ contract RedstonePriceOracleV3 is IRedstonePriceOracleV3, OnlyDolomiteMargin {
         }
 
         _ownerSetStalenessThreshold(36 hours);
+        DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
     }
 
     // ========================= Admin Functions =========================
@@ -178,8 +183,11 @@ contract RedstonePriceOracleV3 is IRedstonePriceOracleV3, OnlyDolomiteMargin {
         }
 
         // standardize the Chainlink price to be the proper number of decimals of (36 - tokenDecimals)
+        IOracleAggregator2 aggregator = IOracleAggregator2(address(DOLOMITE_REGISTRY.oracleAggregator()));
+        uint8 tokenDecimals = aggregator.getDecimalsByToken(_token);
+        /*assert(tokenDecimals > 0);*/
         uint256 standardizedPrice = standardizeNumberOfDecimals(
-            _tokenToDecimalsMap[_token],
+            tokenDecimals,
             chainlinkPrice,
             valueDecimals
         );

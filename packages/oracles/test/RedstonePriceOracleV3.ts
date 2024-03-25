@@ -3,13 +3,14 @@ import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import {
+  OracleAggregator2__factory,
   RedstonePriceOracleV3,
   RedstonePriceOracleV3__factory,
   TestChainlinkAggregator,
   TestChainlinkAggregator__factory,
 } from '../src/types';
 import {
-  CustomTestToken,
+  CustomTestToken, DolomiteRegistryImplementation, DolomiteRegistryImplementation__factory,
 } from '@dolomite-exchange/modules-base/src/types';
 import { createContractWithAbi, createTestToken } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import {
@@ -28,6 +29,7 @@ import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/se
 import { parseEther } from 'ethers/lib/utils';
 import { getRedstonePriceOracleV3ConstructorParams } from '../src/oracles-constructors';
 import { WE_ETH_ETH_REDSTONE_FEED_MAP } from 'packages/base/src/utils/constants';
+import { MockContract, deployMockContract } from 'ethereum-waffle';
 
 const TEST_TOKEN_PRICE = parseEther('1');
 const USDC_PRICE = TEST_TOKEN_PRICE.mul(BigNumber.from(10).pow(12));
@@ -40,6 +42,7 @@ describe('RedstonePriceOracleV3', () => {
   let oracle: RedstonePriceOracleV3;
   let testAggregator: TestChainlinkAggregator;
   let testToken: CustomTestToken;
+  let oracleAggregator: MockContract;
 
   before(async () => {
     const blockNumber = 187_699_000; // DO NOT CHANGE THIS
@@ -47,6 +50,20 @@ describe('RedstonePriceOracleV3', () => {
       blockNumber,
       network: Network.ArbitrumOne,
     });
+
+    const dolomiteRegistryImplementation = await createContractWithAbi<DolomiteRegistryImplementation>(
+      DolomiteRegistryImplementation__factory.abi,
+      DolomiteRegistryImplementation__factory.bytecode,
+      [],
+    );
+    await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(dolomiteRegistryImplementation.address);
+
+    oracleAggregator = await deployMockContract(core.governance, OracleAggregator2__factory.abi);
+    await oracleAggregator.mock.getDecimalsByToken.withArgs(core.tokens.weth.address).returns(18);
+    await oracleAggregator.mock.getDecimalsByToken.withArgs(core.tokens.dai.address).returns(18);
+    await oracleAggregator.mock.getDecimalsByToken.withArgs(core.tokens.usdc.address).returns(6);
+    await oracleAggregator.mock.getDecimalsByToken.withArgs(core.tokens.wbtc.address).returns(8);
+    await oracleAggregator.mock.getDecimalsByToken.withArgs(core.tokens.weEth.address).returns(18);
 
     testAggregator = await createContractWithAbi<TestChainlinkAggregator>(
       TestChainlinkAggregator__factory.abi,
@@ -73,6 +90,7 @@ describe('RedstonePriceOracleV3', () => {
         core
       )
     )).connect(core.governance);
+    await core.dolomiteRegistry.connect(core.governance).ownerSetOracleAggregator(oracleAggregator.address);
 
     snapshotId = await snapshot();
   });
@@ -91,6 +109,7 @@ describe('RedstonePriceOracleV3', () => {
           [ZERO_ADDRESS],
           [8],
           [false],
+          core.dolomiteRegistry.address,
           core.dolomiteMargin.address,
         ],
       );
@@ -106,6 +125,7 @@ describe('RedstonePriceOracleV3', () => {
             [ZERO_ADDRESS, ZERO_ADDRESS],
             [8, 8],
             [false, false],
+            core.dolomiteRegistry.address,
             core.dolomiteMargin.address,
           ],
         ),
@@ -123,6 +143,7 @@ describe('RedstonePriceOracleV3', () => {
             [ZERO_ADDRESS, ZERO_ADDRESS],
             [8],
             [false, false],
+            core.dolomiteRegistry.address,
             core.dolomiteMargin.address,
           ],
         ),
@@ -140,6 +161,7 @@ describe('RedstonePriceOracleV3', () => {
             [ZERO_ADDRESS, ZERO_ADDRESS],
             [8, 8],
             [false],
+            core.dolomiteRegistry.address,
             core.dolomiteMargin.address,
           ],
         ),
@@ -160,6 +182,7 @@ describe('RedstonePriceOracleV3', () => {
     });
 
     it('returns the correct value if invert price is true', async () => {
+      await oracleAggregator.mock.getDecimalsByToken.withArgs(testToken.address).returns(18);
       await oracle.connect(core.governance).ownerInsertOrUpdateOracleToken(
         testToken.address,
         18,

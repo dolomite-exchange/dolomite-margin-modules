@@ -21,9 +21,11 @@ pragma solidity ^0.8.9;
 
 import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
+import { IDolomiteRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IDolomiteRegistry.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IChainlinkAccessControlAggregator } from "./interfaces/IChainlinkAccessControlAggregator.sol";
 import { IChainlinkAggregator } from "./interfaces/IChainlinkAggregator.sol";
+import { IOracleAggregator2 } from"./interfaces/IOracleAggregator2.sol";
 import { IChainlinkPriceOracleV3 } from "./interfaces/IChainlinkPriceOracleV3.sol";
 
 
@@ -48,6 +50,8 @@ contract ChainlinkPriceOracleV3 is IChainlinkPriceOracleV3, OnlyDolomiteMargin {
 
     mapping(address => bool) private _tokenToInvertPriceMap;
 
+    IDolomiteRegistry public immutable DOLOMITE_REGISTRY;
+
     uint256 public stalenessThreshold;
 
     // ========================= Constructor =========================
@@ -59,6 +63,7 @@ contract ChainlinkPriceOracleV3 is IChainlinkPriceOracleV3, OnlyDolomiteMargin {
      * @param  _chainlinkAggregators    The Chainlink aggregators that have on-chain prices.
      * @param  _tokenDecimals           The number of decimals that each token has.
      * @param  _invertPrice             True if should invert price received from Chainlink
+     * @param  _dolomiteRegistry        The address of the DolomiteRegistry contract.
      * @param  _dolomiteMargin          The address of the DolomiteMargin contract.
      */
     constructor(
@@ -66,6 +71,7 @@ contract ChainlinkPriceOracleV3 is IChainlinkPriceOracleV3, OnlyDolomiteMargin {
         address[] memory _chainlinkAggregators,
         uint8[] memory _tokenDecimals,
         bool[] memory _invertPrice,
+        address _dolomiteRegistry,
         address _dolomiteMargin
     )
         OnlyDolomiteMargin(_dolomiteMargin)
@@ -97,6 +103,7 @@ contract ChainlinkPriceOracleV3 is IChainlinkPriceOracleV3, OnlyDolomiteMargin {
         }
 
         _ownerSetStalenessThreshold(36 hours);
+        DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
     }
 
     // ========================= Admin Functions =========================
@@ -184,8 +191,11 @@ contract ChainlinkPriceOracleV3 is IChainlinkPriceOracleV3, OnlyDolomiteMargin {
         }
 
         // standardize the Chainlink price to be the proper number of decimals of (36 - tokenDecimals)
+        IOracleAggregator2 aggregator = IOracleAggregator2(address(DOLOMITE_REGISTRY.oracleAggregator()));
+        uint8 tokenDecimals = aggregator.getDecimalsByToken(_token);
+        assert(tokenDecimals > 0);
         uint256 standardizedPrice = standardizeNumberOfDecimals(
-            _tokenToDecimalsMap[_token],
+            tokenDecimals,
             chainlinkPrice,
             valueDecimals
         );

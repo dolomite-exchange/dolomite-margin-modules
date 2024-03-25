@@ -5,15 +5,18 @@ import { BigNumber } from 'ethers';
 import {
   ChainlinkPriceOracleV3,
   ChainlinkPriceOracleV3__factory,
+  OracleAggregator2,
+  OracleAggregator2__factory,
   TestChainlinkAggregator,
   TestChainlinkAggregator__factory,
 } from '../src/types';
 import {
-  CustomTestToken,
+  CustomTestToken, DolomiteRegistryImplementation, DolomiteRegistryImplementation__factory,
 } from '@dolomite-exchange/modules-base/src/types';
 import { getChainlinkPriceOracleV3ConstructorParamsFromChainlinkOracleV1 } from '../src/oracles-constructors';
 import { createContractWithAbi, createTestToken } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import {
+  ADDRESS_ZERO,
   MAX_INT_192_BI,
   Network,
   ONE_BI,
@@ -29,6 +32,7 @@ import {
 import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { parseEther } from 'ethers/lib/utils';
+import { TokenInfo } from '../src';
 
 const WETH_PRICE = BigNumber.from('2260038782330000000000');
 const BTC_PRICE = BigNumber.from('440493939086400000000000000000000');
@@ -41,10 +45,17 @@ describe('ChainlinkPriceOracleV3', () => {
   let oracle: ChainlinkPriceOracleV3;
   let testAggregator: TestChainlinkAggregator;
   let testToken: CustomTestToken;
+  let oracleAggregator: OracleAggregator2;
 
   before(async () => {
     core = await setupCoreProtocol(await getDefaultCoreProtocolConfig(Network.ArbitrumOne));
 
+    const dolomiteRegistryImplementation = await createContractWithAbi<DolomiteRegistryImplementation>(
+      DolomiteRegistryImplementation__factory.abi,
+      DolomiteRegistryImplementation__factory.bytecode,
+      [],
+    );
+    await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(dolomiteRegistryImplementation.address);
     testAggregator = await createContractWithAbi<TestChainlinkAggregator>(
       TestChainlinkAggregator__factory.abi,
       TestChainlinkAggregator__factory.bytecode,
@@ -58,6 +69,39 @@ describe('ChainlinkPriceOracleV3', () => {
       ChainlinkPriceOracleV3__factory.bytecode,
       await getChainlinkPriceOracleV3ConstructorParamsFromChainlinkOracleV1(core),
     )).connect(core.governance);
+    const tokenInfos: TokenInfo[] = [
+      {
+        oracleInfos: [
+          { oracle: oracle.address, tokenPair: ADDRESS_ZERO, weight: 100 },
+        ],
+        decimals: 18,
+        token: core.tokens.weth.address
+      },
+      {
+        oracleInfos: [
+          { oracle: oracle.address, tokenPair: ADDRESS_ZERO, weight: 100 },
+        ],
+        decimals: 6,
+        token: core.tokens.usdc.address
+      },
+      {
+        oracleInfos: [
+          { oracle: oracle.address, tokenPair: ADDRESS_ZERO, weight: 100 },
+        ],
+        decimals: 8,
+        token: core.tokens.wbtc.address
+      }
+    ];
+    oracleAggregator = (await createContractWithAbi<OracleAggregator2>(
+      OracleAggregator2__factory.abi,
+      OracleAggregator2__factory.bytecode,
+      [
+        tokenInfos,
+        core.dolomiteMargin.address
+      ]
+    )).connect(core.governance);
+    await core.dolomiteRegistry.connect(core.governance).ownerSetOracleAggregator(oracleAggregator.address);
+    await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkPriceOracle(oracle.address);
 
     snapshotId = await snapshot();
   });
@@ -76,6 +120,7 @@ describe('ChainlinkPriceOracleV3', () => {
           [ZERO_ADDRESS],
           [8],
           [false],
+          core.dolomiteRegistry.address,
           core.dolomiteMargin.address,
         ],
       );
@@ -91,6 +136,7 @@ describe('ChainlinkPriceOracleV3', () => {
             [ZERO_ADDRESS, ZERO_ADDRESS],
             [8, 8],
             [false, false],
+            core.dolomiteRegistry.address,
             core.dolomiteMargin.address,
           ],
         ),
@@ -108,6 +154,7 @@ describe('ChainlinkPriceOracleV3', () => {
             [ZERO_ADDRESS, ZERO_ADDRESS],
             [8],
             [false, false],
+            core.dolomiteRegistry.address,
             core.dolomiteMargin.address,
           ],
         ),
@@ -125,6 +172,7 @@ describe('ChainlinkPriceOracleV3', () => {
             [ZERO_ADDRESS, ZERO_ADDRESS],
             [8, 8],
             [false],
+            core.dolomiteRegistry.address,
             core.dolomiteMargin.address,
           ],
         ),
@@ -151,6 +199,14 @@ describe('ChainlinkPriceOracleV3', () => {
         testAggregator.address,
         true
       );
+      const tokenInfo: TokenInfo = {
+        oracleInfos: [
+          { oracle: oracle.address, tokenPair: core.tokens.weth.address, weight: 100 },
+        ],
+        decimals: 18,
+        token: testToken.address,
+      };
+      await oracleAggregator.ownerInsertOrUpdateToken(tokenInfo);
       await testAggregator.setLatestAnswer(parseEther('.5'));
       const price = await oracle.getPrice(testToken.address);
       expect(price.value).to.eq(parseEther('2'));

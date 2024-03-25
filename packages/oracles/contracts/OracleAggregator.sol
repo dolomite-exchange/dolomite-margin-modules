@@ -26,7 +26,6 @@ import { IChainlinkPriceOracleV3 } from "./interfaces/IChainlinkPriceOracleV3.so
 import { IOracleAggregator } from "./interfaces/IOracleAggregator.sol";
 
 
-// @todo Change to IDolomitePriceOracle
 /**
  * @title   OracleAggregator
  * @author  Dolomite

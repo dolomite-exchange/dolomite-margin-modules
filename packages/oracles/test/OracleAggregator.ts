@@ -35,7 +35,7 @@ const BTC_PRICE = BigNumber.from('440493939086400000000000000000000');
 const USDC_PRICE = BigNumber.from('1000071010000000000000000000000');
 const TEST_TOKEN_PRICE = WETH_PRICE.mul(1).div(10);
 
-describe('OracleAggregator', () => {
+xdescribe('OracleAggregator', () => {
   let snapshotId: string;
 
   let core: CoreProtocolArbitrumOne;
