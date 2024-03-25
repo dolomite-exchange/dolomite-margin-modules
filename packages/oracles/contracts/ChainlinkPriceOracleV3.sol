@@ -20,13 +20,13 @@
 pragma solidity ^0.8.9;
 
 import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
-import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { IDolomiteRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IDolomiteRegistry.sol";
+import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IChainlinkAccessControlAggregator } from "./interfaces/IChainlinkAccessControlAggregator.sol";
 import { IChainlinkAggregator } from "./interfaces/IChainlinkAggregator.sol";
-import { IOracleAggregator2 } from"./interfaces/IOracleAggregator2.sol";
 import { IChainlinkPriceOracleV3 } from "./interfaces/IChainlinkPriceOracleV3.sol";
+import { IOracleAggregator2 } from "./interfaces/IOracleAggregator2.sol";
 
 
 /**
