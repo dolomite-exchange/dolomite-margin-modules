@@ -563,6 +563,10 @@ export const PENDLE_ROUTER_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x0000000001E4ef00d069e71d6bA041b0A16F7eA0',
 };
 
+export const PENDLE_ROUTER_V3_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x00000000005BBB0EF59571E58418F9a4357b68A0',
+};
+
 export const PENDLE_SY_GLP_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x2066a650AF4b6895f72E618587Aad5e8120B7790',
 };

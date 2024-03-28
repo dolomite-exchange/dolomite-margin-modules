@@ -40,6 +40,7 @@ import {
   PENDLE_PT_WST_ETH_2025_MARKET_MAP,
   PENDLE_PT_WST_ETH_2025_TOKEN_MAP,
   PENDLE_ROUTER_MAP,
+  PENDLE_ROUTER_V3_MAP,
   PENDLE_SY_GLP_TOKEN_MAP,
   PENDLE_SY_RETH_TOKEN_MAP,
   PENDLE_SY_RS_ETH_TOKEN_MAP,
@@ -48,9 +49,11 @@ import {
 } from '../../../src/utils/constants';
 import Deployments, * as deployments from  '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
 import { getContract } from '../setup';
+import { IPendleRouterV3, IPendleRouterV3__factory } from 'packages/pendle/src/types';
 
 export interface PendleEcosystem {
   pendleRouter: IPendleRouter;
+  pendleRouterV3: IPendleRouterV3;
   glpMar2024: {
     pendleRegistry: IPendleGLPRegistry;
     pendleRegistryProxy: RegistryProxy;
@@ -112,6 +115,11 @@ export async function createPendleEcosystem(
     pendleRouter: getContract(
       PENDLE_ROUTER_MAP[network] as string,
       IPendleRouter__factory.connect,
+      signer,
+    ),
+    pendleRouterV3: getContract(
+      PENDLE_ROUTER_V3_MAP[network] as string,
+      IPendleRouterV3__factory.connect,
       signer,
     ),
     glpMar2024: {
