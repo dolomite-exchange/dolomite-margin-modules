@@ -16,8 +16,10 @@ import {
   getPendlePtGLP2024IsolationModeWrapperTraderV2ConstructorParams,
   getPendlePtGLPPriceOracleConstructorParams,
   getPendlePtIsolationModeUnwrapperTraderV2ConstructorParams,
+  getPendlePtIsolationModeUnwrapperTraderV3ConstructorParams,
   getPendlePtIsolationModeVaultFactoryConstructorParams,
   getPendlePtIsolationModeWrapperTraderV2ConstructorParams,
+  getPendlePtIsolationModeWrapperTraderV3ConstructorParams,
   getPendlePtPriceOracleConstructorParams,
   getPendlePtPriceOracleV2ConstructorParams,
   getPendlePtRsEthPriceOracleConstructorParams,
@@ -58,10 +60,14 @@ import {
   PendlePtIsolationModeTokenVaultV1,
   PendlePtIsolationModeUnwrapperTraderV2,
   PendlePtIsolationModeUnwrapperTraderV2__factory,
+  PendlePtIsolationModeUnwrapperTraderV3,
+  PendlePtIsolationModeUnwrapperTraderV3__factory,
   PendlePtIsolationModeVaultFactory,
   PendlePtIsolationModeVaultFactory__factory,
   PendlePtIsolationModeWrapperTraderV2,
   PendlePtIsolationModeWrapperTraderV2__factory,
+  PendlePtIsolationModeWrapperTraderV3,
+  PendlePtIsolationModeWrapperTraderV3__factory,
   PendlePtPriceOracle,
   PendlePtPriceOracleV2,
   PendlePtPriceOracleV2__factory,
@@ -157,6 +163,19 @@ export function createPendlePtIsolationModeWrapperTraderV2<T extends Network>(
   );
 }
 
+export function createPendlePtIsolationModeWrapperTraderV3<T extends Network>(
+  core: CoreProtocolWithPendle<T>,
+  pendleRegistry: IPendleRegistry | PendleRegistry,
+  underlyingToken: IERC20,
+  dptToken: IPendlePtIsolationModeVaultFactory | PendlePtIsolationModeVaultFactory,
+): Promise<PendlePtIsolationModeWrapperTraderV3> {
+  return createContractWithAbi(
+    PendlePtIsolationModeWrapperTraderV3__factory.abi,
+    PendlePtIsolationModeWrapperTraderV3__factory.bytecode,
+    getPendlePtIsolationModeWrapperTraderV3ConstructorParams(core, pendleRegistry, underlyingToken, dptToken),
+  );
+}
+
 export function createPendlePtIsolationModeUnwrapperTraderV2<T extends Network>(
   core: CoreProtocolWithPendle<T>,
   pendleRegistry: IPendleRegistry | PendleRegistry,
@@ -167,6 +186,19 @@ export function createPendlePtIsolationModeUnwrapperTraderV2<T extends Network>(
     PendlePtIsolationModeUnwrapperTraderV2__factory.abi,
     PendlePtIsolationModeUnwrapperTraderV2__factory.bytecode,
     getPendlePtIsolationModeUnwrapperTraderV2ConstructorParams(core, pendleRegistry, underlyingToken, dptToken),
+  );
+}
+
+export function createPendlePtIsolationModeUnwrapperTraderV3<T extends Network>(
+  core: CoreProtocolWithPendle<T>,
+  pendleRegistry: IPendleRegistry | PendleRegistry,
+  underlyingToken: IERC20,
+  dptToken: IPendlePtIsolationModeVaultFactory | PendlePtIsolationModeVaultFactory,
+): Promise<PendlePtIsolationModeUnwrapperTraderV3> {
+  return createContractWithAbi(
+    PendlePtIsolationModeUnwrapperTraderV3__factory.abi,
+    PendlePtIsolationModeUnwrapperTraderV3__factory.bytecode,
+    getPendlePtIsolationModeUnwrapperTraderV3ConstructorParams(core, pendleRegistry, underlyingToken, dptToken),
   );
 }
 

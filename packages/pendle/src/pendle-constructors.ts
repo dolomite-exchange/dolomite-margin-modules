@@ -201,7 +201,43 @@ export function getPendlePtIsolationModeWrapperTraderV2ConstructorParams<T exten
   ];
 }
 
+export function getPendlePtIsolationModeWrapperTraderV3ConstructorParams<T extends Network>(
+  core: CoreProtocolWithPendle<T>,
+  pendleRegistry: IPendleRegistry | PendleRegistry,
+  underlyingToken: IERC20,
+  dptFactory: IPendlePtIsolationModeVaultFactory | PendlePtIsolationModeVaultFactory,
+): any[] {
+  if (!core.pendleEcosystem) {
+    throw new Error('Pendle ecosystem not initialized');
+  }
+
+  return [
+    pendleRegistry.address,
+    underlyingToken.address,
+    dptFactory.address,
+    core.dolomiteMargin.address,
+  ];
+}
+
 export function getPendlePtIsolationModeUnwrapperTraderV2ConstructorParams<T extends Network>(
+  core: CoreProtocolWithPendle<T>,
+  pendleRegistry: IPendleRegistry | PendleRegistry,
+  underlyingToken: IERC20,
+  dptToken: IPendlePtIsolationModeVaultFactory | PendlePtIsolationModeVaultFactory,
+): any[] {
+  if (!core.pendleEcosystem) {
+    throw new Error('Pendle ecosystem not initialized');
+  }
+
+  return [
+    pendleRegistry.address,
+    underlyingToken.address,
+    dptToken.address,
+    core.dolomiteMargin.address,
+  ];
+}
+
+export function getPendlePtIsolationModeUnwrapperTraderV3ConstructorParams<T extends Network>(
   core: CoreProtocolWithPendle<T>,
   pendleRegistry: IPendleRegistry | PendleRegistry,
   underlyingToken: IERC20,

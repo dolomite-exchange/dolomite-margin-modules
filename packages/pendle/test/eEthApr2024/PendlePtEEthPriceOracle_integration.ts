@@ -119,6 +119,7 @@ describe('PendlePtEEthApr2024PriceOracle_integration', () => {
         console.log(e);
         return Promise.reject(e);
       });
+    console.log(data);
     apiAmountOut = BigNumber.from(data.data.amountTokenOut).mul((await core.dolomiteMargin.getMarketPrice(0)).value);
 
     snapshotId = await snapshot();
