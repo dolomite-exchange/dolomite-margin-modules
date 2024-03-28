@@ -25,12 +25,18 @@ import {
   createPendlePtIsolationModeVaultFactory,
   createPendleRegistry,
 } from '../pendle-ecosystem-utils';
-import { ChainlinkPriceOracleV2, ChainlinkPriceOracleV2__factory, RedstonePriceOracleV2, RedstonePriceOracleV2__factory } from 'packages/oracles/src/types';
+import {
+  ChainlinkPriceOracleV2,
+  ChainlinkPriceOracleV2__factory,
+  RedstonePriceOracleV2,
+  RedstonePriceOracleV2__factory
+} from 'packages/oracles/src/types';
 import { setNextBlockTimestamp } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
 import { getChainlinkPriceOracleV2ConstructorParamsFromOldPriceOracle, getRedstonePriceOracleV2ConstructorParams } from 'packages/oracles/src/oracles-constructors';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
+import { mine } from '@nomicfoundation/hardhat-network-helpers';
 
-const PT_E_ETH_PRICE = BigNumber.from('3689824302982898438870');
+const PT_E_ETH_PRICE = BigNumber.from('3689828284230479766147');
 
 describe('PendlePtEEthApr2024PriceOracle', () => {
   let snapshotId: string;
@@ -120,6 +126,8 @@ describe('PendlePtEEthApr2024PriceOracle', () => {
 
   describe('#getPrice', () => {
     it('returns the correct value under normal conditions for the dptToken', async () => {
+      await setNextBlockTimestamp(1709735900);
+      await mine();
       const price = await ptOracle.getPrice(factory.address);
       expect(price.value).to.eq(PT_E_ETH_PRICE);
     });
