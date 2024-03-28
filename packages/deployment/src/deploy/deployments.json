@@ -595,6 +595,13 @@
       "isVerified": true
     }
   },
+  "GmxV2IsolationModeTokenVaultV6": {
+    "42161": {
+      "address": "0x924a11B867ae293Ad21543dB203042bA4AA7e0a1",
+      "transaction": "0x153edffb4b50236ceeaa9329849fe0524d3d9aa2961bf3d6234491d7491b824a",
+      "isVerified": true
+    }
+  },
   "GmxV2IsolationModeUnwrapperTraderImplementationV2": {
     "42161": {
       "address": "0xa39f1a9900C57Fef088fd14E9aE43e77661eA0fD",
@@ -735,6 +742,13 @@
     "42161": {
       "address": "0xC06e4d86C2ce81BB9E2eCEb59Bf96bB301569A6F",
       "transaction": "0x4bc0aed4104d6b1da8fa2fc19cf8627a5f6ea9a4d5f9986b1175b2f7aa821adc",
+      "isVerified": true
+    }
+  },
+  "IsolationModeTokenVaultV1ActionsImplV4": {
+    "42161": {
+      "address": "0xADEDdA034F43A50FbF430f47CDBce4457cF818c2",
+      "transaction": "0xe1c8cb1db781ced0a02706676b792060874db6ae1b6dad4dea2a1c64f2000363",
       "isVerified": true
     }
   },

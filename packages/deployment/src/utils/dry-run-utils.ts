@@ -5,7 +5,7 @@ import {
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { advanceByTimeDelta, impersonate } from '@dolomite-exchange/modules-base/test/utils';
 import { CoreProtocolType } from '@dolomite-exchange/modules-base/test/utils/setup';
-import hardhat from 'hardhat';
+import hardhat, { ethers } from 'hardhat';
 import { createFolder, DenJsonUpload, readDeploymentFile, writeDeploymentFile, writeFile } from './deploy-utils';
 
 const CHUNK_SIZE = 16;

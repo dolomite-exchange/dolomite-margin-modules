@@ -166,7 +166,7 @@ function findArtifactPath(parentPath: string, artifactName: string): string | un
   return undefined;
 }
 
-async function getFreshArtifactFromWorkspace(artifactName: string) {
+export async function initializeFreshArtifactFromWorkspace(artifactName: string): Promise<void> {
   const packagesPath = '../../../../packages';
   const deploymentsArtifactsPath = path.join(__dirname, packagesPath, 'deployment', 'artifacts');
   await fsExtra.remove(deploymentsArtifactsPath);
@@ -215,7 +215,7 @@ export async function deployContractAndSave(
     file = {};
   }
 
-  await getFreshArtifactFromWorkspace(contractName);
+  await initializeFreshArtifactFromWorkspace(contractName);
   const chainId = network.config.chainId!;
   const usedContractName = contractRename ?? contractName;
   if (file[usedContractName]?.[chainId.toString()]) {
@@ -536,13 +536,19 @@ export interface DenJsonUpload {
   transactions: EncodedTransaction[];
 }
 
-function isOwnerFunction(methodName: string): boolean {
+function isOwnerFunction(methodName: string, isMultisig: boolean): boolean {
   return methodName.startsWith('owner')
     || methodName === 'upgradeTo'
     || methodName === 'upgradeToAndCall'
     || methodName === 'setUserVaultImplementation'
     || methodName === 'setIsTokenConverterTrusted'
-    || methodName === 'setGmxRegistry';
+    || methodName === 'setGmxRegistry'
+    || (isMultisig && methodName === 'addOwner')
+    || (isMultisig && methodName === 'changeRequirement')
+    || (isMultisig && methodName === 'changeTimelock')
+    || (isMultisig && methodName === 'removeOver')
+    || (isMultisig && methodName === 'replaceOwner')
+    || (isMultisig && methodName === 'setSelector');
 }
 
 export async function prettyPrintEncodedDataWithTypeSafety<
@@ -583,7 +589,7 @@ export async function prettyPrintEncodedDataWithTypeSafety<
 
   if (
     typeof methodName === 'string'
-    && isOwnerFunction(methodName)
+    && isOwnerFunction(methodName, transaction.to === core.delayedMultiSig.address)
     && await core.dolomiteMargin.owner() === core.delayedMultiSig.address
   ) {
     // All owner ... functions must go to Dolomite governance first
