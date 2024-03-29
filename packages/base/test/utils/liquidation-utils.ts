@@ -3,7 +3,13 @@ import { BigNumber as ZapBigNumber, ZapOutputParam } from '@dolomite-exchange/za
 import { GenericTraderType } from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
 import { BigNumber, BigNumberish, ContractTransaction } from 'ethers';
 import { AccountInfoStruct, GenericTraderParamStruct } from '../../src/utils';
-import { BYTES_EMPTY, MAX_UINT_256_BI, Network, NO_EXPIRY, NO_PARASWAP_TRADER_PARAM } from '../../src/utils/no-deps-constants';
+import {
+  BYTES_EMPTY,
+  MAX_UINT_256_BI,
+  Network,
+  NO_EXPIRY,
+  NO_PARASWAP_TRADER_PARAM,
+} from '../../src/utils/no-deps-constants';
 import { CoreProtocolType } from './setup';
 import { ZapParam } from './zap-utils';
 

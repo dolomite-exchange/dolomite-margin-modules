@@ -1,3 +1,4 @@
+import Deployments from '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
 import {
   DolomiteCompatibleWhitelistForPlutusDAO,
   DolomiteCompatibleWhitelistForPlutusDAO__factory,
@@ -14,11 +15,10 @@ import {
   PlutusVaultGLPIsolationModeWrapperTraderV1,
   PlutusVaultGLPIsolationModeWrapperTraderV1__factory,
 } from '@dolomite-exchange/modules-plutus/src/types';
-import { IERC20, IERC20__factory, IERC4626, IERC4626__factory, } from '../../../src/types';
-import { Network } from '../../../src/utils/no-deps-constants';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { IERC20, IERC20__factory, IERC4626, IERC4626__factory } from '../../../src/types';
 import { PLS_TOKEN_MAP, PLV_GLP_FARM_MAP, PLV_GLP_MAP, PLV_GLP_ROUTER_MAP } from '../../../src/utils/constants';
-import Deployments from  '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
+import { Network } from '../../../src/utils/no-deps-constants';
+import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';
 import { getContract } from '../setup';
 
 export interface PlutusEcosystem {
@@ -39,7 +39,7 @@ export interface PlutusEcosystem {
 
 export async function createPlutusEcosystem(
   network: Network,
-  signer: SignerWithAddress,
+  signer: SignerWithAddressWithSafety,
 ): Promise<PlutusEcosystem> {
   if (network !== Network.ArbitrumOne) {
     return Promise.reject(`Invalid network, found ${network}`);

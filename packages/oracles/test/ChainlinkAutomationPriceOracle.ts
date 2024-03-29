@@ -1,6 +1,7 @@
 import { CustomTestVaultToken } from '@dolomite-exchange/modules-base/src/types';
 import { createContractWithAbi, createTestVaultToken } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { Network, ONE_WEEK_SECONDS } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { SignerWithAddressWithSafety } from '@dolomite-exchange/modules-base/src/utils/SignerWithAddressWithSafety';
 import {
   getBlockTimestamp,
   impersonate,
@@ -16,7 +17,6 @@ import {
   setupUSDCBalance,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
@@ -38,9 +38,9 @@ describe('ChainlinkAutomationPriceOracle', () => {
   let core: CoreProtocolArbitrumOne;
   let token: CustomTestVaultToken;
   let marketId: BigNumber;
-  let chainlinkRegistry: SignerWithAddress;
+  let chainlinkRegistry: SignerWithAddressWithSafety;
   let deploymentTimestamp: BigNumberish;
-  let zeroAddress: SignerWithAddress;
+  let zeroAddress: SignerWithAddressWithSafety;
 
   let chainlinkAutomationPriceOracle: TestChainlinkAutomationPriceOracle;
 

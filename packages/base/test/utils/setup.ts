@@ -15,7 +15,6 @@ import * as LiquidatorProxyV4WithGenericTraderJson
   from '@dolomite-margin/deployed-contracts/LiquidatorProxyV4WithGenericTrader.json';
 import { address } from '@dolomite-margin/dist/src';
 import { Provider } from '@ethersproject/providers';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { BaseContract, BigNumberish, ContractInterface, Signer } from 'ethers';
 import { ethers, network } from 'hardhat';
 import {
@@ -44,14 +43,19 @@ import {
   CHAINLINK_AUTOMATION_REGISTRY_MAP,
   CHAINLINK_PRICE_AGGREGATORS_MAP,
   CHAINLINK_PRICE_ORACLE_MAP,
-  D_ARB_MAP, D_GM_ARB_MAP, D_GM_BTC_MAP, D_GM_ETH_MAP, D_GM_LINK_MAP,
+  D_ARB_MAP,
+  D_GM_ARB_MAP,
+  D_GM_BTC_MAP,
+  D_GM_ETH_MAP,
+  D_GM_LINK_MAP,
   D_GMX_MAP,
   DAI_MAP,
   DFS_GLP_MAP,
   DJ_USDC,
   DPLV_GLP_MAP,
   DPT_GLP_2024_MAP,
-  DPT_R_ETH_JUN_2025_MAP, DPT_WE_ETH_APR_2024_MAP,
+  DPT_R_ETH_JUN_2025_MAP,
+  DPT_WE_ETH_APR_2024_MAP,
   DPT_WST_ETH_JUN_2024_MAP,
   DPT_WST_ETH_JUN_2025_MAP,
   DPX_MAP,
@@ -81,6 +85,7 @@ import {
   WST_ETH_MAP,
 } from '../../src/utils/constants';
 import { Network, NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP, NetworkType } from '../../src/utils/no-deps-constants';
+import { SignerWithAddressWithSafety } from '../../src/utils/SignerWithAddressWithSafety';
 import {
   CoreProtocolAbstract,
   CoreProtocolArbitrumOne,
@@ -159,7 +164,7 @@ export async function enableInterestAccrual<T extends NetworkType>(
 
 export async function setupWETHBalance<T extends NetworkType>(
   core: CoreProtocolAbstract<T>,
-  signer: SignerWithAddress,
+  signer: SignerWithAddressWithSafety,
   amount: BigNumberish,
   spender: { address: string },
 ) {
@@ -169,7 +174,7 @@ export async function setupWETHBalance<T extends NetworkType>(
 
 export async function setupARBBalance(
   core: CoreProtocolArbitrumOne,
-  signer: SignerWithAddress,
+  signer: SignerWithAddressWithSafety,
   amount: BigNumberish,
   spender: { address: string },
 ) {
@@ -181,7 +186,7 @@ export async function setupARBBalance(
 
 export async function setupDAIBalance<T extends NetworkType>(
   core: CoreProtocolAbstract<T>,
-  signer: SignerWithAddress,
+  signer: SignerWithAddressWithSafety,
   amount: BigNumberish,
   spender: { address: string },
 ) {
@@ -193,7 +198,7 @@ export async function setupDAIBalance<T extends NetworkType>(
 
 export async function setupNativeUSDCBalance(
   core: CoreProtocolArbitrumOne,
-  signer: SignerWithAddress,
+  signer: SignerWithAddressWithSafety,
   amount: BigNumberish,
   spender: { address: string },
 ) {
@@ -205,7 +210,7 @@ export async function setupNativeUSDCBalance(
 
 export async function setupUSDCBalance<T extends NetworkType>(
   core: CoreProtocolAbstract<T>,
-  signer: SignerWithAddress,
+  signer: SignerWithAddressWithSafety,
   amount: BigNumberish,
   spender: { address: string },
 ) {
@@ -217,7 +222,7 @@ export async function setupUSDCBalance<T extends NetworkType>(
 
 export async function setupGMBalance(
   core: CoreProtocolArbitrumOne,
-  signer: SignerWithAddress,
+  signer: SignerWithAddressWithSafety,
   amount: BigNumberish,
   spender?: { address: string },
 ) {
@@ -230,7 +235,7 @@ export async function setupGMBalance(
 
 export async function setupGMXBalance(
   core: { tokens: { gmx: IERC20 } },
-  signer: SignerWithAddress,
+  signer: SignerWithAddressWithSafety,
   amount: BigNumberish,
   spender: { address: string },
 ) {
@@ -242,7 +247,7 @@ export async function setupGMXBalance(
 
 export async function setupRsEthBalance(
   core: { tokens: { rsEth: IERC20 } },
-  signer: SignerWithAddress,
+  signer: SignerWithAddressWithSafety,
   amount: BigNumberish,
   spender: { address: string },
 ) {
@@ -254,7 +259,7 @@ export async function setupRsEthBalance(
 
 export async function setupRETHBalance(
   core: { tokens: { rEth: IERC20 } },
-  signer: SignerWithAddress,
+  signer: SignerWithAddressWithSafety,
   amount: BigNumberish,
   spender: { address: string },
 ) {
@@ -266,7 +271,7 @@ export async function setupRETHBalance(
 
 export async function setupWeEthBalance(
   core: { tokens: { weEth: IERC20 } },
-  signer: SignerWithAddress,
+  signer: SignerWithAddressWithSafety,
   amount: BigNumberish,
   spender: { address: string },
 ) {
@@ -278,7 +283,7 @@ export async function setupWeEthBalance(
 
 export async function setupWstETHBalance(
   core: { tokens: { wstEth: IERC20 } },
-  signer: SignerWithAddress,
+  signer: SignerWithAddressWithSafety,
   amount: BigNumberish,
   spender: { address: string },
 ) {
@@ -291,7 +296,7 @@ export async function setupWstETHBalance(
 export function setupUserVaultProxy<T extends BaseContract>(
   vault: address,
   factoryInterface: { abi: ContractInterface },
-  signer?: SignerWithAddress,
+  signer?: SignerWithAddressWithSafety,
 ): T {
   return new BaseContract(
     vault,
@@ -360,8 +365,9 @@ export async function setupCoreProtocol<T extends NetworkType>(
   }
 
   const dolomiteMarginAddress = DolomiteMarginJson.networks[config.network].address;
-  const [hhUser1, hhUser2, hhUser3, hhUser4, hhUser5] = await ethers.getSigners();
-  const governance: SignerWithAddress = await impersonateOrFallback(
+  const [hhUser1, hhUser2, hhUser3, hhUser4, hhUser5] = await Promise.all((await ethers.getSigners())
+    .map(s => SignerWithAddressWithSafety.create(s.address)));
+  const governance: SignerWithAddressWithSafety = await impersonateOrFallback(
     await IDolomiteMargin__factory.connect(dolomiteMarginAddress, hhUser1).owner(),
     true,
     hhUser1,
@@ -671,17 +677,23 @@ export async function setupTestMarket<T extends NetworkType>(
 async function createTokenVaultActionsLibraries<T extends NetworkType>(
   config: CoreProtocolSetupConfig<T>,
 ): Promise<Record<string, string>> {
-  const tokenVaultPrefix = 'IsolationModeTokenVaultV1ActionsImpl';
+  return {
+    IsolationModeTokenVaultV1ActionsImpl: getMaxDeploymentVersionAddressByDeploymentKey(
+      'IsolationModeTokenVaultV1ActionsImpl',
+      config.network,
+    ),
+  };
+}
+
+export function getMaxDeploymentVersionAddressByDeploymentKey(key: string, network: Network): address {
   const maxTokenVaultVersion = Object.keys(deployments)
-    .filter(k => k.startsWith(tokenVaultPrefix) && (deployments as any)[k][config.network])
+    .filter(k => k.startsWith(key) && (deployments as any)[k][network])
     .sort((a, b) => a < b ? 1 : -1)[0];
   if (!maxTokenVaultVersion) {
-    return Promise.reject(new Error(`Could not find token vault for network ${config.network}`));
+    throw new Error(`Could not find ${key} for network ${network}`);
   }
 
-  return {
-    IsolationModeTokenVaultV1ActionsImpl: (deployments as any)[maxTokenVaultVersion][config.network].address,
-  };
+  return (deployments as any)[maxTokenVaultVersion][network].address;
 }
 
 export function getContract<T>(

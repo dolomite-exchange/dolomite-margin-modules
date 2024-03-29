@@ -11,6 +11,7 @@ import {
   ONE_ETH_BI,
   ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { SignerWithAddressWithSafety } from '@dolomite-exchange/modules-base/src/utils/SignerWithAddressWithSafety';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import {
   expectEvent,
@@ -26,7 +27,6 @@ import {
 } from '@dolomite-exchange/modules-base/test/utils/dolomite';
 import { getSimpleZapParams } from '@dolomite-exchange/modules-base/test/utils/zap-utils';
 import { mine } from '@nomicfoundation/hardhat-network-helpers';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
@@ -72,7 +72,7 @@ const borrowAccountNumber = '123';
 const amountWei = parseEther('1');
 const otherAmountWei = parseEther('0.33');
 const usdcAmount = BigNumber.from('1000000000'); // $1000
-const minAmountOut = parseEther('1800');
+const minAmountOut = parseEther('1500');
 const DUMMY_DEPOSIT_KEY = '0x6d1ff6ffcab884211992a9d6b8261b7fae5db4d2da3a5eb58647988da3869d6f';
 const DUMMY_WITHDRAWAL_KEY = '0x6d1ff6ffcab884211992a9d6b8261b7fae5db4d2da3a5eb58647988da3869d6f';
 const CREATE_WITHDRAWALS_DISABLED_KEY = '0xe22e21c60f32cfb79020e8dbf3211f7a678325f5d7195c979268c4db4a4a6fa1';
@@ -105,8 +105,8 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
   let vault: TestGmxV2IsolationModeTokenVaultV1;
   let vault2: TestGmxV2IsolationModeTokenVaultV1;
   let marketId: BigNumber;
-  let impersonatedFactory: SignerWithAddress;
-  let impersonatedVault: SignerWithAddress;
+  let impersonatedFactory: SignerWithAddressWithSafety;
+  let impersonatedVault: SignerWithAddressWithSafety;
   let testReader: TestGmxReader;
   let testDataStore: TestGmxDataStore;
   let eventEmitter: EventEmitterRegistry;
@@ -149,7 +149,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
     );
 
     // Use actual price oracle later
-    await core.testEcosystem!.testPriceOracle!.setPrice(factory.address, '1000000000000000000000000000000');
+    await core.testEcosystem!.testPriceOracle!.setPrice(factory.address, '1000000000000000000');
     marketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, factory, true);
     await disableInterestAccrual(core, core.marketIds.weth);
@@ -678,7 +678,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         defaultAccountNumber,
         amountWei,
         core.tokens.weth.address,
-        ONE_BI,
+        minAmountOut,
         DEFAULT_EXTRA_DATA,
         { value: executionFee },
       )).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
@@ -1035,6 +1035,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         amountWei,
         { value: executionFee },
       );
+
       // Create debt for the position
       let gmPrice = (await core.dolomiteMargin.getMarketPrice(marketId)).value;
       const wethPrice = (await core.dolomiteMargin.getMarketPrice(core.marketIds.weth)).value;
@@ -1232,7 +1233,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       const initiateWrappingParams = await getInitiateWrappingParams(
         borrowAccountNumber,
         core.marketIds.usdc,
-        1000e6,
+        usdcAmount.mul(10),
         marketId,
         minAmountOut,
         wrapper,
@@ -1250,6 +1251,35 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           { value: amountWei },
         ),
         `IsolationModeVaultV1Pausable: Cannot zap to market when paused <${marketId.toString()}>`,
+      );
+    });
+
+    it('should fail when minOutputAmount is much bigger than inputAmount', async () => {
+      await gmxV2Registry.connect(core.governance).ownerSetGmxReader(testReader.address);
+      await testReader.setPnlToPoolFactors(INVALID_POOL_FACTOR, VALID_POOL_FACTOR);
+      expect(await vault.isExternalRedemptionPaused()).to.be.true;
+
+      const initiateWrappingParams = await getInitiateWrappingParams(
+        borrowAccountNumber,
+        core.marketIds.usdc,
+        1000e6,
+        marketId,
+        minAmountOut,
+        wrapper,
+        executionFee,
+      );
+      await expectThrow(
+        vault.swapExactInputForOutput(
+          borrowAccountNumber,
+          initiateWrappingParams.marketPath,
+          initiateWrappingParams.amountIn,
+          initiateWrappingParams.minAmountOut,
+          initiateWrappingParams.traderParams,
+          initiateWrappingParams.makerAccounts,
+          initiateWrappingParams.userConfig,
+          { value: amountWei },
+        ),
+        'IsolationModeVaultV1ActionsImpl: minOutputAmount too large',
       );
     });
 

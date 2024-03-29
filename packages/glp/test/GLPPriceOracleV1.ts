@@ -1,17 +1,17 @@
 import { ADDRESSES } from '@dolomite-exchange/dolomite-margin';
-import { expect } from 'chai';
-import { BigNumber } from 'ethers';
-import { GLPPriceOracleV1, GmxRegistryV1 } from '../src/types';
 import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { expect } from 'chai';
+import { BigNumber } from 'ethers';
+import { GLPPriceOracleV1, GmxRegistryV1 } from '../src/types';
 import {
   createGLPIsolationModeTokenVaultV1,
   createGLPIsolationModeVaultFactory,
   createGLPPriceOracleV1,
   createGmxRegistry,
 } from './glp-ecosystem-utils';
-import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 
 const GLP_PRICE = BigNumber.from('1157958974643177588'); // $1.157958974643177588
 

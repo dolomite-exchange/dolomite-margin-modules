@@ -2,6 +2,7 @@ import { CustomTestVaultToken } from '@dolomite-exchange/modules-base/src/types'
 import { CHAINLINK_AUTOMATION_REGISTRY_MAP } from '@dolomite-exchange/modules-base/src/utils/constants';
 import { createTestVaultToken } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { SignerWithAddressWithSafety } from '@dolomite-exchange/modules-base/src/utils/SignerWithAddressWithSafety';
 import {
   getBlockTimestamp,
   getRealLatestBlockNumber,
@@ -12,15 +13,14 @@ import {
 import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { setupCoreProtocol, setupUSDCBalance } from '@dolomite-exchange/modules-base/test/utils/setup';
+import deployments from '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
 import { ADDRESSES } from '@dolomite-margin/dist/src';
 import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
-import deployments from  '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
 import {
   IPlutusVaultGLP,
   IPlutusVaultGLP__factory,
@@ -51,10 +51,10 @@ describe('PlutusVaultGLPWithChainlinkAutomationPriceOracle', () => {
   let plutusVaultRegistry: PlutusVaultRegistry;
   let factory: PlutusVaultGLPIsolationModeVaultFactory;
   let unwrapperTrader: PlutusVaultGLPIsolationModeUnwrapperTraderV1 | PlutusVaultGLPIsolationModeUnwrapperTraderV2;
-  let chainlinkRegistry: SignerWithAddress;
+  let chainlinkRegistry: SignerWithAddressWithSafety;
   let deploymentTimestamp: BigNumberish;
   let exitFeeBp: BigNumber;
-  let zeroAddress: SignerWithAddress;
+  let zeroAddress: SignerWithAddressWithSafety;
 
   before(async () => {
     const network = Network.ArbitrumOne;

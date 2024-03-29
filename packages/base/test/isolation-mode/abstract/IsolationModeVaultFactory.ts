@@ -1,4 +1,3 @@
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish, ContractTransaction, ethers } from 'ethers';
@@ -22,6 +21,7 @@ import {
 } from '../../../src/types';
 import { createContractWithAbi, createContractWithLibrary, createTestToken } from '../../../src/utils/dolomite-utils';
 import { BYTES_EMPTY, Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
+import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import {
   expectEvent,
@@ -63,7 +63,7 @@ describe('IsolationModeVaultFactory', () => {
   let userVaultImplementation: TestIsolationModeTokenVaultV1;
   let initializeResult: ContractTransaction;
 
-  let solidAccount: SignerWithAddress;
+  let solidAccount: SignerWithAddressWithSafety;
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
@@ -460,10 +460,10 @@ describe('IsolationModeVaultFactory', () => {
 
   describe('#enqueueTransferIntoDolomiteMargin', () => {
     async function executeWrapV1(
-      vaultImplementation: SignerWithAddress,
+      vaultImplementation: SignerWithAddressWithSafety,
       inputMarketId: BigNumberish,
       outputMarketId: BigNumberish,
-      signer?: SignerWithAddress,
+      signer?: SignerWithAddressWithSafety,
     ): Promise<ContractTransaction> {
       const solidAccountId = 0;
       const actions = await tokenWrapperV1.createActionsForWrapping(
@@ -482,10 +482,10 @@ describe('IsolationModeVaultFactory', () => {
     }
 
     async function executeWrapV2(
-      vaultImplementation: SignerWithAddress,
+      vaultImplementation: SignerWithAddressWithSafety,
       inputMarketId: BigNumberish,
       outputMarketId: BigNumberish,
-      signer?: SignerWithAddress,
+      signer?: SignerWithAddressWithSafety,
     ): Promise<ContractTransaction> {
       const solidAccountId = 0;
       const actions = await tokenWrapperV2.createActionsForWrapping({
@@ -664,10 +664,10 @@ describe('IsolationModeVaultFactory', () => {
 
   describe('#enqueueTransferFromDolomiteMargin', () => {
     async function executeUnwrapV1(
-      vaultImplementation: SignerWithAddress,
+      vaultImplementation: SignerWithAddressWithSafety,
       inputMarketId: BigNumberish,
       outputMarketId: BigNumberish,
-      signer?: SignerWithAddress,
+      signer?: SignerWithAddressWithSafety,
     ): Promise<ContractTransaction> {
       const solidAccountId = 0;
       const actions = await tokenUnwrapperV1.createActionsForUnwrappingForLiquidation(

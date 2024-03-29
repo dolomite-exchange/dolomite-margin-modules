@@ -1,7 +1,7 @@
 import { IAlgebraV3Pool, IAlgebraV3Pool__factory } from '../../../src/types';
-import { Network } from '../../../src/utils/no-deps-constants';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { PREMIA_WETH_V3_POOL_MAP } from '../../../src/utils/constants';
+import { Network } from '../../../src/utils/no-deps-constants';
+import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';
 import { getContract } from '../setup';
 
 export interface PremiaEcosystem {
@@ -10,7 +10,7 @@ export interface PremiaEcosystem {
 
 export async function createPremiaEcosystem(
   network: Network,
-  signer: SignerWithAddress,
+  signer: SignerWithAddressWithSafety,
 ): Promise<PremiaEcosystem> {
   if (network !== Network.ArbitrumOne) {
     return Promise.reject(`Invalid network, found ${network}`);

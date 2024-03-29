@@ -1,4 +1,3 @@
-import deployments from '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
 import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
 import { Network, ONE_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import {
@@ -28,6 +27,7 @@ import {
   setupUserVaultProxy,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { checkForParaswapSuccess } from '@dolomite-exchange/modules-base/test/utils/trader-utils';
+import deployments from '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
 import { ApiToken, DolomiteZap, Network as ZapNetwork } from '@dolomite-exchange/zap-sdk';
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 import { BaseRouter, Router } from '@pendle/sdk-v2';

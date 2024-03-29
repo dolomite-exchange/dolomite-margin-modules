@@ -1,3 +1,4 @@
+import Deployments, * as deployments from '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
 import {
   IPendleGLPRegistry,
   IPendleGLPRegistry__factory,
@@ -22,9 +23,7 @@ import {
   PendleYtGLP2024IsolationModeVaultFactory,
   PendleYtGLP2024IsolationModeVaultFactory__factory,
 } from '@dolomite-exchange/modules-pendle/src/types';
-import { RegistryProxy, RegistryProxy__factory, } from '../../../src/types';
-import { Network } from '../../../src/utils/no-deps-constants';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { RegistryProxy, RegistryProxy__factory } from '../../../src/types';
 import {
   PENDLE_PT_E_ETH_2024_MARKET_MAP,
   PENDLE_PT_E_ETH_2024_TOKEN_MAP,
@@ -44,9 +43,10 @@ import {
   PENDLE_SY_RETH_TOKEN_MAP,
   PENDLE_SY_RS_ETH_TOKEN_MAP,
   PENDLE_SY_WST_ETH_TOKEN_MAP,
-  PENDLE_YT_GLP_2024_TOKEN_MAP
+  PENDLE_YT_GLP_2024_TOKEN_MAP,
 } from '../../../src/utils/constants';
-import Deployments, * as deployments from  '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
+import { Network } from '../../../src/utils/no-deps-constants';
+import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';
 import { getContract } from '../setup';
 
 export interface PendleEcosystem {
@@ -102,7 +102,7 @@ export interface PendleEcosystem {
 
 export async function createPendleEcosystem(
   network: Network,
-  signer: SignerWithAddress,
+  signer: SignerWithAddressWithSafety,
 ): Promise<PendleEcosystem> {
   if (network !== Network.ArbitrumOne) {
     return Promise.reject(`Invalid network, found ${network}`);

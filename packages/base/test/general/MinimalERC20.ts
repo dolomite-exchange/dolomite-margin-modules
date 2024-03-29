@@ -3,9 +3,9 @@ import { TestMinimalERC20, TestMinimalERC20__factory } from '../../src/types';
 import { createContractWithAbi } from '../../src/utils/dolomite-utils';
 import { ADDRESS_ZERO, Network } from '../../src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../utils';
+import { expectThrow } from '../utils/assertions';
 import { CoreProtocolArbitrumOne } from '../utils/core-protocol';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '../utils/setup';
-import { expectThrow } from '../utils/assertions';
 
 describe('MinimalERC20', () => {
   let snapshotId: string;
@@ -45,7 +45,7 @@ describe('MinimalERC20', () => {
     it('should fail if zero address', async () => {
       await expectThrow(
         token.mint(ADDRESS_ZERO, 100),
-        'ERC20: Mint to the zero address'
+        'ERC20: Mint to the zero address',
       );
     });
   });
@@ -61,14 +61,14 @@ describe('MinimalERC20', () => {
     it('should fail if zero address', async () => {
       await expectThrow(
         token.burn(ADDRESS_ZERO, 100),
-        'ERC20: Burn from the zero address'
+        'ERC20: Burn from the zero address',
       );
     });
 
     it('should fail if amount is greater than balance', async () => {
       await expectThrow(
         token.burn(core.hhUser1.address, 100),
-        'ERC20: Burn amount exceeds balance'
+        'ERC20: Burn amount exceeds balance',
       );
     });
   });
@@ -85,21 +85,21 @@ describe('MinimalERC20', () => {
       const zeroImpersonator = await impersonate(ADDRESS_ZERO, true);
       await expectThrow(
         token.connect(zeroImpersonator).transfer(core.hhUser2.address, 150),
-        'ERC20: Transfer from the zero address'
+        'ERC20: Transfer from the zero address',
       );
     });
 
     it('should fail if to zero address', async () => {
       await expectThrow(
         token.transfer(ADDRESS_ZERO, 100),
-        'ERC20: Transfer to the zero address'
+        'ERC20: Transfer to the zero address',
       );
     });
 
     it('should fail if amount is greater than balance', async () => {
       await expectThrow(
         token.transfer(core.hhUser2.address, 100),
-        'ERC20: Transfer amount exceeds balance'
+        'ERC20: Transfer amount exceeds balance',
       );
     });
   });
@@ -114,14 +114,14 @@ describe('MinimalERC20', () => {
       const zeroImpersonator = await impersonate(ADDRESS_ZERO, true);
       await expectThrow(
         token.connect(zeroImpersonator).approve(core.hhUser2.address, 150),
-        'ERC20: Approve from the zero address'
+        'ERC20: Approve from the zero address',
       );
     });
 
     it('should fail if to zero address', async () => {
       await expectThrow(
         token.approve(ADDRESS_ZERO, 100),
-        'ERC20: Approve to the zero address'
+        'ERC20: Approve to the zero address',
       );
     });
   });
@@ -139,7 +139,7 @@ describe('MinimalERC20', () => {
       await token.mint(core.hhUser1.address, 100);
       await expectThrow(
         token.connect(core.hhUser2).transferFrom(core.hhUser1.address, core.hhUser2.address, 50),
-        'ERC20: Insufficient allowance'
+        'ERC20: Insufficient allowance',
       );
     });
 
@@ -148,14 +148,14 @@ describe('MinimalERC20', () => {
       await token.approve(core.hhUser2.address, 150);
       await expectThrow(
         token.connect(core.hhUser2).transferFrom(core.hhUser1.address, core.hhUser2.address, 150),
-        'ERC20: Transfer amount exceeds balance'
+        'ERC20: Transfer amount exceeds balance',
       );
     });
 
     it('should fail if from zero address', async () => {
       await expectThrow(
         token.transferFromZeroAddress(core.hhUser2.address, 150),
-        'ERC20: Transfer from the zero address'
+        'ERC20: Transfer from the zero address',
       );
     });
 
@@ -164,7 +164,7 @@ describe('MinimalERC20', () => {
       await token.approve(core.hhUser2.address, 150);
       await expectThrow(
         token.connect(core.hhUser2).transferFrom(core.hhUser1.address, ADDRESS_ZERO, 150),
-        'ERC20: Transfer to the zero address'
+        'ERC20: Transfer to the zero address',
       );
     });
   });

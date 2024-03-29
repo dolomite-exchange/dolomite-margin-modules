@@ -1,8 +1,8 @@
-import deployments from '@dolomite-exchange/dolomite-margin-modules/scripts/deployments.json';
 import { CustomTestVaultToken, IERC4626 } from '@dolomite-exchange/modules-base/src/types';
 import { CHAINLINK_AUTOMATION_REGISTRY_MAP } from '@dolomite-exchange/modules-base/src/utils/constants';
 import { createContractWithAbi, createTestVaultToken } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { SignerWithAddressWithSafety } from '@dolomite-exchange/modules-base/src/utils/SignerWithAddressWithSafety';
 import {
   getBlockTimestamp,
   impersonate,
@@ -16,12 +16,12 @@ import {
   setupCoreProtocol,
   setupUSDCBalance,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
+import deployments from '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
 import { ADDRESSES } from '@dolomite-margin/dist/src';
 import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
-import { BigNumber, BigNumberish } from 'ethers';
+import { BigNumber, BigNumberish, Signer } from 'ethers';
 import { ethers } from 'hardhat';
 import {
   IJonesWhitelistController,
@@ -48,11 +48,11 @@ describe('JonesUSDCWithChainlinkAutomationPriceOracle', () => {
   let jonesUSDCWithChainlinkAutomationPriceOracle: JonesUSDCWithChainlinkAutomationPriceOracle;
   let jUSDC: IERC4626;
   let jUSDCNoSupply: CustomTestVaultToken;
-  let chainlinkRegistry: SignerWithAddress;
+  let chainlinkRegistry: SignerWithAddressWithSafety;
   let deploymentTimestamp: BigNumberish;
   let retentionFee: BigNumber;
   let retentionFeeBase: BigNumber;
-  let zeroAddress: SignerWithAddress;
+  let zeroAddress: Signer;
 
   before(async () => {
     const network = Network.ArbitrumOne;
@@ -92,9 +92,7 @@ describe('JonesUSDCWithChainlinkAutomationPriceOracle', () => {
     );
     deploymentTimestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
     await jonesUSDCWithChainlinkAutomationPriceOracle.connect(core.governance)
-      .ownerSetForwarder(
-      chainlinkRegistry.address
-    );
+      .ownerSetForwarder(chainlinkRegistry.address);
 
     snapshotId = await snapshot();
   });

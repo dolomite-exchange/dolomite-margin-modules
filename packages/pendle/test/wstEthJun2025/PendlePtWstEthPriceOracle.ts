@@ -137,8 +137,8 @@ describe('PendlePtWstEthJun2025PriceOracle', () => {
       await advanceToTimestamp(1705000000);
       await core.dolomiteRegistry.connect(core.governance)
         .ownerSetChainlinkPriceOracle(
-        core.testEcosystem!.testPriceOracle.address
-      );
+          core.testEcosystem!.testPriceOracle.address,
+        );
       const price = await ptOracle.getPrice(factory.address);
       expect(price.value).to.eq(PT_WST_ETH_PRICE);
     });

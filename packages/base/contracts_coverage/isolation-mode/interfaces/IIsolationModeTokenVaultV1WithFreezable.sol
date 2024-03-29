@@ -145,4 +145,6 @@ interface IIsolationModeTokenVaultV1WithFreezable is IIsolationModeTokenVaultV1 
     function virtualBalance() external view returns (uint256);
 
     function WETH() external view returns (IWETH);
+
+    function CHAIN_ID() external view returns (uint256);
 }

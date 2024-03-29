@@ -2,33 +2,40 @@ import {
   DolomiteRegistryImplementation,
   DolomiteRegistryImplementation__factory,
 } from '@dolomite-exchange/modules-base/src/types';
-import { CHAINLINK_PRICE_AGGREGATORS_MAP, WE_ETH_ETH_REDSTONE_FEED_MAP } from '@dolomite-exchange/modules-base/src/utils/constants';
+import {
+  CHAINLINK_PRICE_AGGREGATORS_MAP,
+  WE_ETH_ETH_REDSTONE_FEED_MAP,
+} from '@dolomite-exchange/modules-base/src/utils/constants';
 import { createContractWithAbi } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { ADDRESS_ZERO, Network, ONE_ETH_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import {
-  setupCoreProtocol,
-  setupTestMarket,
-} from '@dolomite-exchange/modules-base/test/utils/setup';
+  getRealLatestBlockNumber,
+  revertToSnapshotAndCapture,
+  snapshot,
+} from '@dolomite-exchange/modules-base/test/utils';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import { setupCoreProtocol, setupTestMarket } from '@dolomite-exchange/modules-base/test/utils/setup';
+import axios from 'axios';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
+import { parseEther } from 'ethers/lib/utils';
 import {
-  IERC20,
-  PendlePtIsolationModeVaultFactory,
-  PendlePtPriceOracle,
-  PendleRegistry,
-} from '../../src/types';
+  getChainlinkPriceOracleConstructorParamsFromOldPriceOracle,
+  getRedstonePriceOracleConstructorParams,
+} from 'packages/oracles/src/oracles-constructors';
+import {
+  ChainlinkPriceOracle,
+  ChainlinkPriceOracle__factory,
+  RedstonePriceOracle,
+  RedstonePriceOracle__factory,
+} from 'packages/oracles/src/types';
+import { IERC20, PendlePtIsolationModeVaultFactory, PendlePtPriceOracle, PendleRegistry } from '../../src/types';
 import {
   createPendlePtEEthPriceOracle,
   createPendlePtIsolationModeTokenVaultV1,
   createPendlePtIsolationModeVaultFactory,
   createPendleRegistry,
 } from '../pendle-ecosystem-utils';
-import { ChainlinkPriceOracle, ChainlinkPriceOracle__factory, RedstonePriceOracle, RedstonePriceOracle__factory } from 'packages/oracles/src/types';
-import { getChainlinkPriceOracleConstructorParamsFromOldPriceOracle, getRedstonePriceOracleConstructorParams } from 'packages/oracles/src/oracles-constructors';
-import axios from 'axios';
-import { parseEther } from 'ethers/lib/utils';
 
 describe('PendlePtEEthApr2024PriceOracle_integration', () => {
   let snapshotId: string;
@@ -57,8 +64,8 @@ describe('PendlePtEEthApr2024PriceOracle_integration', () => {
         [wethAggregator, weEthAggregator],
         [ADDRESS_ZERO, core.tokens.weth.address],
         [false, false],
-        core
-      )
+        core,
+      ),
     )).connect(core.governance);
 
     const dolomiteRegistryImplementation = await createContractWithAbi<DolomiteRegistryImplementation>(
@@ -74,14 +81,14 @@ describe('PendlePtEEthApr2024PriceOracle_integration', () => {
       await getChainlinkPriceOracleConstructorParamsFromOldPriceOracle(core),
     )).connect(core.governance);
     await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkPriceOracle(
-      chainlinkOracle.address
+      chainlinkOracle.address,
     );
     await chainlinkOracle.connect(core.governance).ownerInsertOrUpdateOracleToken(
       underlyingToken.address,
       18,
       CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][core.tokens.weEth.address],
       ADDRESS_ZERO,
-      true
+      true,
     );
 
     pendleRegistry = await createPendleRegistry(

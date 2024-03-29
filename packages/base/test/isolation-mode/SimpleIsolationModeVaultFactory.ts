@@ -1,4 +1,3 @@
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { BaseContract, BigNumber } from 'ethers';
 import {
   CustomTestToken,
@@ -13,6 +12,7 @@ import {
 } from '../../src/types';
 import { createContractWithAbi, createContractWithLibrary, createTestToken } from '../../src/utils/dolomite-utils';
 import { Network } from '../../src/utils/no-deps-constants';
+import { SignerWithAddressWithSafety } from '../../src/utils/SignerWithAddressWithSafety';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
 import { expectArrayEq, expectEvent, expectThrow } from '../utils/assertions';
 import { CoreProtocolArbitrumOne } from '../utils/core-protocol';
@@ -31,7 +31,7 @@ describe('SimpleIsolationModeVaultFactory', () => {
   let factory: SimpleIsolationModeVaultFactory;
   let userVaultImplementation: BaseContract;
 
-  let solidAccount: SignerWithAddress;
+  let solidAccount: SignerWithAddressWithSafety;
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));

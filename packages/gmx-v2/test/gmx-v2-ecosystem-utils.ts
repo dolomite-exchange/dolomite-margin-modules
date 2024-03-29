@@ -115,14 +115,11 @@ export async function createGmxV2IsolationModeTokenVaultV1(
 ): Promise<GmxV2IsolationModeTokenVaultV1> {
   const artifact = await createArtifactFromWorkspaceIfNotExists('GmxV2IsolationModeTokenVaultV1');
   const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
-  const vault = await createContractWithLibraryAndArtifact<GmxV2IsolationModeTokenVaultV1>(
+  return await createContractWithLibraryAndArtifact<GmxV2IsolationModeTokenVaultV1>(
     artifact,
     { GmxV2Library: library.address, ...libraries },
     getGmxV2IsolationModeTokenVaultConstructorParams(core),
   );
-  // TODO: delete and check deletion
-  artifact.sourceName
-  return vault;
 }
 
 export async function createTestGmxV2IsolationModeTokenVaultV1(

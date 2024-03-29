@@ -28,8 +28,10 @@ import { IDolomiteMargin } from "../../../protocol/interfaces/IDolomiteMargin.so
 import { IDolomiteStructs } from "../../../protocol/interfaces/IDolomiteStructs.sol";
 import { BitsLib } from "../../../protocol/lib/BitsLib.sol";
 import { DecimalLib } from "../../../protocol/lib/DecimalLib.sol";
+import { DolomiteMarginVersionWrapperLib } from "../../../lib/DolomiteMarginVersionWrapperLib.sol";
 import { Require } from "../../../protocol/lib/Require.sol";
 import { TypesLib } from "../../../protocol/lib/TypesLib.sol";
+import { IDolomiteRegistry } from "../../../interfaces/IDolomiteRegistry.sol";
 import { IIsolationModeTokenVaultV1 } from "../../interfaces/IIsolationModeTokenVaultV1.sol";
 import { IIsolationModeVaultFactory } from "../../interfaces/IIsolationModeVaultFactory.sol";
 
@@ -41,6 +43,8 @@ import { IIsolationModeVaultFactory } from "../../interfaces/IIsolationModeVault
  * Reusable library for functions that save bytecode on the async unwrapper/wrapper contracts
  */
 library IsolationModeTokenVaultV1ActionsImpl {
+    using DecimalLib for uint256;
+    using DolomiteMarginVersionWrapperLib for IDolomiteMargin;
     using TypesLib for IDolomiteMargin.Par;
     using TypesLib for IDolomiteMargin.Wei;
 
@@ -450,7 +454,7 @@ library IsolationModeTokenVaultV1ActionsImpl {
         }
     }
 
-    function checkIsLiquidatable(
+    function validateIsNotLiquidatable(
         IIsolationModeTokenVaultV1 _vault,
         uint256 _accountNumber
     ) public view {
@@ -482,6 +486,59 @@ library IsolationModeTokenVaultV1ActionsImpl {
                 && _isCollateralized(liquidSupplyValue.value, liquidBorrowValue.value, marginRatio),
             _FILE,
             "Account liquidatable"
+        );
+    }
+
+    function requireMinAmountIsNotTooLargeForLiquidation(
+        IDolomiteMargin _dolomiteMargin,
+        uint256 _chainId,
+        IDolomiteStructs.AccountInfo memory _liquidAccount,
+        uint256 _inputMarketId,
+        uint256 _outputMarketId,
+        uint256 _inputTokenAmount,
+        uint256 _minOutputAmount
+    ) public view {
+        uint256 inputValue = _dolomiteMargin.getMarketPrice(_inputMarketId).value * _inputTokenAmount;
+        uint256 outputValue = _dolomiteMargin.getMarketPrice(_outputMarketId).value * _minOutputAmount;
+
+        IDolomiteStructs.Decimal memory spread = _dolomiteMargin.getVersionedLiquidationSpreadForPair(
+            _chainId,
+            _liquidAccount,
+            /* heldMarketId = */ _inputMarketId,
+            /* ownedMarketId = */ _outputMarketId
+        );
+        spread.value /= 2;
+        uint256 inputValueAdj = inputValue - inputValue.mul(spread);
+
+        if (outputValue <= inputValueAdj) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            outputValue <= inputValueAdj,
+            _FILE,
+            "minOutputAmount too large"
+        );
+    }
+
+    function requireMinAmountIsNotTooLargeForWrapToUnderlying(
+        IDolomiteRegistry _dolomiteRegistry,
+        IDolomiteMargin _dolomiteMargin,
+        uint256 _inputMarketId,
+        uint256 _outputMarketId,
+        uint256 _inputAmount,
+        uint256 _minOutputAmount
+    ) public view {
+        uint256 inputValue = _dolomiteMargin.getMarketPrice(_inputMarketId).value * _inputAmount;
+        uint256 outputValue = _dolomiteMargin.getMarketPrice(_outputMarketId).value * _minOutputAmount;
+
+        IDolomiteStructs.Decimal memory toleranceDecimal = IDolomiteStructs.Decimal({
+            value: _dolomiteRegistry.slippageToleranceForPauseSentinel()
+        });
+        uint256 inputValueAdj = inputValue + inputValue.mul(toleranceDecimal);
+
+        if (outputValue <= inputValueAdj) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            outputValue <= inputValueAdj,
+            _FILE,
+            "minOutputAmount too large"
         );
     }
 

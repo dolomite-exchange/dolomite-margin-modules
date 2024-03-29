@@ -1,5 +1,10 @@
 import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { getRealLatestBlockNumber, impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
+import {
+  getRealLatestBlockNumber,
+  impersonate,
+  revertToSnapshotAndCapture,
+  snapshot,
+} from '@dolomite-exchange/modules-base/test/utils';
 import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import {
   setupCoreProtocol,
@@ -7,6 +12,9 @@ import {
   setupUserVaultProxy,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { expect } from 'chai';
+import { RS_ETH_CAMELOT_POOL_MAP } from 'packages/base/src/utils/constants';
+import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
+import { TWAPPriceOracle, TWAPPriceOracle__factory } from 'packages/oracles/src/types';
 import {
   IPendlePtToken,
   PendlePtIsolationModeTokenVaultV1,
@@ -25,9 +33,6 @@ import {
   createPendlePtRsEthPriceOracle,
   createPendleRegistry,
 } from '../pendle-ecosystem-utils';
-import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
-import { TWAPPriceOracle, TWAPPriceOracle__factory } from 'packages/oracles/src/types';
-import { RS_ETH_CAMELOT_POOL_MAP } from 'packages/base/src/utils/constants';
 
 describe('PendlePtRsEthApr2024IsolationModeTokenVaultV1', () => {
   let snapshotId: string;
@@ -51,7 +56,7 @@ describe('PendlePtRsEthApr2024IsolationModeTokenVaultV1', () => {
     const twapPriceOracle = await createContractWithAbi<TWAPPriceOracle>(
       TWAPPriceOracle__factory.abi,
       TWAPPriceOracle__factory.bytecode,
-      [core.tokens.rsEth.address, [RS_ETH_CAMELOT_POOL_MAP[Network.ArbitrumOne]], core.dolomiteMargin.address]
+      [core.tokens.rsEth.address, [RS_ETH_CAMELOT_POOL_MAP[Network.ArbitrumOne]], core.dolomiteMargin.address],
     );
     const rsEthMarketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, core.tokens.rsEth, false, twapPriceOracle);

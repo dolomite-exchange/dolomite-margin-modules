@@ -1,5 +1,4 @@
 import { ActionType, AmountDenomination, AmountReference } from '@dolomite-margin/dist/src';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { defaultAbiCoder } from 'ethers/lib/utils';
@@ -14,6 +13,7 @@ import {
 import { AccountInfoStruct } from '../../../src/utils';
 import { createContractWithAbi, createContractWithLibrary, createTestToken } from '../../../src/utils/dolomite-utils';
 import { BYTES_EMPTY, Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
+import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';
 import {
   encodeExternalSellActionDataWithNoData,
   impersonate,
@@ -49,7 +49,7 @@ describe('IsolationModeWrapperTraderV2', () => {
   let vault: TestIsolationModeTokenVaultV1;
   let defaultAccount: AccountInfoStruct;
 
-  let solidUser: SignerWithAddress;
+  let solidUser: SignerWithAddressWithSafety;
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));

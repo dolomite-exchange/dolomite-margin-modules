@@ -165,9 +165,12 @@ contract TestAsyncProtocolIsolationModeTokenVault is
 
         // Ignore the freezable implementation and call the pausable one directly
         // Need to still allow the unwrapper so can't call freezable modifier
-        _requireNotLiquidatableIfWrapToUnderlying(
+        _validateIfWrapToUnderlying(
             _params.tradeAccountNumber,
-            _params.marketIdsPath[_params.marketIdsPath.length - 1]
+            _params.marketIdsPath[0],
+            _params.marketIdsPath[_params.marketIdsPath.length - 1],
+            _params.inputAmountWei,
+            _params.minOutputAmountWei
         );
         IsolationModeTokenVaultV1WithPausable._swapExactInputForOutput(
             _params

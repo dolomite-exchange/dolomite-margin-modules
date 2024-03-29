@@ -1,5 +1,4 @@
 import { ActionType, AmountDenomination, AmountReference } from '@dolomite-margin/dist/src';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import { BigNumber, ethers } from 'ethers';
@@ -15,6 +14,7 @@ import {
 import { AccountInfoStruct } from '../../../src/utils';
 import { createContractWithAbi, createContractWithLibrary, createTestToken } from '../../../src/utils/dolomite-utils';
 import { BYTES_EMPTY, Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
+import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';
 import {
   encodeExternalSellActionDataWithNoData,
   impersonate,
@@ -49,7 +49,7 @@ describe('IsolationModeUnwrapperTraderV1', () => {
   let vault: TestIsolationModeTokenVaultV1;
   let defaultAccount: AccountInfoStruct;
 
-  let solidUser: SignerWithAddress;
+  let solidUser: SignerWithAddressWithSafety;
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
@@ -226,12 +226,12 @@ describe('IsolationModeUnwrapperTraderV1', () => {
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
       await underlyingToken.addBalance(unwrapper.address, amountWei);
       await unwrapper.connect(dolomiteMarginImpersonator).exchange(
-          core.hhUser1.address,
-          core.dolomiteMargin.address,
-          otherToken.address,
-          factory.address,
-          amountWei,
-          encodeExternalSellActionDataWithNoData(amountWei), // minOutputAmount
+        core.hhUser1.address,
+        core.dolomiteMargin.address,
+        otherToken.address,
+        factory.address,
+        amountWei,
+        encodeExternalSellActionDataWithNoData(amountWei), // minOutputAmount
       );
     });
 
@@ -260,7 +260,7 @@ describe('IsolationModeUnwrapperTraderV1', () => {
           ZERO_BI,
           encodeExternalSellActionDataWithNoData(amountWei), // minOutputAmount
         ),
-        'IsolationModeUnwrapperTraderV1: Invalid input amount'
+        'IsolationModeUnwrapperTraderV1: Invalid input amount',
       );
     });
 

@@ -16,6 +16,7 @@ import {
 } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
+import { parseEther } from 'ethers/lib/utils';
 import {
   IERC20,
   PendlePtIsolationModeVaultFactory,
@@ -32,7 +33,6 @@ import {
   createPendlePtPriceOracle,
   createPendleRegistry,
 } from '../pendle-ecosystem-utils';
-import { parseEther } from 'ethers/lib/utils';
 
 const PT_WST_ETH_PRICE = BigNumber.from('5018321015037081078544705');
 
@@ -175,8 +175,8 @@ describe('PendlePtWstEthJun2024PriceOracle', () => {
       await advanceToTimestamp(1705000000);
       await core.dolomiteRegistry.connect(core.governance)
         .ownerSetChainlinkPriceOracle(
-        core.testEcosystem!.testPriceOracle.address
-      );
+          core.testEcosystem!.testPriceOracle.address,
+        );
       const price = await ptOracle.getPrice(factory.address);
       expect(price.value).to.eq(PT_WST_ETH_PRICE);
     });

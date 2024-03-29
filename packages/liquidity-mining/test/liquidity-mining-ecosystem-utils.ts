@@ -1,5 +1,5 @@
+import { SignerWithAddressWithSafety } from '@dolomite-exchange/modules-base/src/utils/SignerWithAddressWithSafety';
 import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { ethers } from 'ethers';
 import { createContractWithAbi, createContractWithLibrary } from '../../base/src/utils/dolomite-utils';
 import {
@@ -53,7 +53,7 @@ export async function createTestVesterV1Proxy(
 
 export async function createTestVesterV2Proxy(
   core: CoreProtocolArbitrumOne,
-  handler: SignerWithAddress,
+  handler: SignerWithAddressWithSafety,
 ): Promise<TestVesterImplementationV2> {
   const library = await createContractWithAbi<VesterImplementationLibForV2>(
     VesterImplementationLibForV2__factory.abi,

@@ -5,7 +5,6 @@ import {
   getGmxV2IsolationModeTokenVaultConstructorParams,
 } from '@dolomite-exchange/modules-gmx-v2/src/gmx-v2-constructors';
 import { GmxV2IsolationModeTokenVaultV1__factory } from '@dolomite-exchange/modules-gmx-v2/src/types';
-import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
 import {
@@ -20,30 +19,24 @@ import getScriptName from '../../../utils/get-script-name';
  * This script encodes the following transactions:
  * - Deploys new GMX V2 library and ActionsImpl library
  * - Deploys a new Token Vault for each GM token
- * - Allows ownerSetUserVaultImplementation and upgradeTo to be called on the delayed multi sig immediately
  */
 async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
   const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
 
-  const gmxV2LibraryAddress = await deployContractAndSave(
-    'GmxV2Library',
-    [],
-    'GmxV2LibraryV3',
-  );
-  const gmxV2Libraries = { GmxV2Library: gmxV2LibraryAddress };
+  const gmxV2Libraries = core.gmxEcosystemV2.live.gmxV2LibraryMap;
 
   const tokenVaultActionsAddress = await deployContractAndSave(
     'IsolationModeTokenVaultV1ActionsImpl',
     [],
-    'IsolationModeTokenVaultV1ActionsImplV4',
+    'IsolationModeTokenVaultV1ActionsImplV5',
   );
 
   const gmxV2TokenVaultAddress = await deployContractAndSave(
     'GmxV2IsolationModeTokenVaultV1',
     getGmxV2IsolationModeTokenVaultConstructorParams(core),
-    'GmxV2IsolationModeTokenVaultV6',
-    { ...{ IsolationModeTokenVaultV1ActionsImpl: tokenVaultActionsAddress }, ...gmxV2Libraries },
+    'GmxV2IsolationModeTokenVaultV7',
+    { IsolationModeTokenVaultV1ActionsImpl: tokenVaultActionsAddress, ...gmxV2Libraries },
   );
   const gmxV2TokenVault = GmxV2IsolationModeTokenVaultV1__factory.connect(gmxV2TokenVaultAddress, core.hhUser1);
 
@@ -53,26 +46,11 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     core.gmxEcosystemV2.live.gmEth.factory,
     core.gmxEcosystemV2.live.gmLink.factory,
   ];
-  const unwrappers = [
-    core.gmxEcosystemV2.live.gmArb.unwrapperProxy,
-    core.gmxEcosystemV2.live.gmBtc.unwrapperProxy,
-    core.gmxEcosystemV2.live.gmEth.unwrapperProxy,
-    core.gmxEcosystemV2.live.gmLink.unwrapperProxy,
-  ];
-  const wrappers = [
-    core.gmxEcosystemV2.live.gmArb.wrapperProxy,
-    core.gmxEcosystemV2.live.gmBtc.wrapperProxy,
-    core.gmxEcosystemV2.live.gmEth.wrapperProxy,
-    core.gmxEcosystemV2.live.gmLink.wrapperProxy,
-  ];
-  const marketIds = await Promise.all(factories.map(f => core.dolomiteMargin.getMarketIdByTokenAddress(f.address)));
 
   const transactions: EncodedTransaction[] = [];
 
   for (let i = 0; i < factories.length; i += 1) {
     const factory = factories[i];
-    const unwrapper = unwrappers[i];
-    const wrapper = wrappers[i];
     const transaction = await prettyPrintEncodedDataWithTypeSafety(
       core,
       { factory },
@@ -80,38 +58,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       'ownerSetUserVaultImplementation',
       [gmxV2TokenVault.address],
     );
-    transactions.push(
-      transaction,
-      await prettyPrintEncodedDataWithTypeSafety(
-        core,
-        { multisig: core.delayedMultiSig },
-        'multisig',
-        'setSelector',
-        [factory.address, transaction.data.substring(0, 10), true],
-      ),
-    );
-
-    const upgradeToSelector = (await unwrapper.populateTransaction.upgradeTo(ZERO_ADDRESS)).data!.substring(0, 10);
-    transactions.push(
-      transaction,
-      await prettyPrintEncodedDataWithTypeSafety(
-        core,
-        { multisig: core.delayedMultiSig },
-        'multisig',
-        'setSelector',
-        [unwrapper.address, upgradeToSelector, true],
-      ),
-    );
-    transactions.push(
-      transaction,
-      await prettyPrintEncodedDataWithTypeSafety(
-        core,
-        { multisig: core.delayedMultiSig },
-        'multisig',
-        'setSelector',
-        [wrapper.address, upgradeToSelector, true],
-      ),
-    );
+    transactions.push(transaction);
   }
 
   return {

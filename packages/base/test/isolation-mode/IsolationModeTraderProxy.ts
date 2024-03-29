@@ -8,11 +8,7 @@ import {
   TestIsolationModeFactory,
   TestIsolationModeTokenVaultV1,
 } from '../../src/types';
-import {
-  createContractWithAbi,
-  createContractWithLibrary,
-  createTestToken,
-} from '../../src/utils/dolomite-utils';
+import { createContractWithAbi, createContractWithLibrary, createTestToken } from '../../src/utils/dolomite-utils';
 import { Network } from '../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
 import { expectEvent, expectThrow } from '../utils/assertions';

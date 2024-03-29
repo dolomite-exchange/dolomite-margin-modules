@@ -4,18 +4,25 @@ import {
   getRealLatestBlockNumber,
   impersonate,
   revertToSnapshotAndCapture,
-  snapshot
+  snapshot,
 } from '@dolomite-exchange/modules-base/test/utils';
 import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
-import { BaseRouter, Router } from '@pendle/sdk-v2';
-import { CHAIN_ID_MAPPING } from '@pendle/sdk-v2/dist/common/ChainId';
 import {
   setupCoreProtocol,
   setupRsEthBalance,
   setupTestMarket,
   setupUserVaultProxy,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { BaseRouter, Router } from '@pendle/sdk-v2';
+import { CHAIN_ID_MAPPING } from '@pendle/sdk-v2/dist/common/ChainId';
 import { expect } from 'chai';
+import { BigNumber } from 'ethers';
+import { AccountInfoStruct } from 'packages/base/src/utils';
+import { RS_ETH_CAMELOT_POOL_MAP } from 'packages/base/src/utils/constants';
+import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
+import { expectThrow } from 'packages/base/test/utils/assertions';
+import { setupNewGenericTraderProxy } from 'packages/base/test/utils/dolomite';
+import { TWAPPriceOracle, TWAPPriceOracle__factory } from 'packages/oracles/src/types';
 import {
   IERC20,
   IPendlePtMarket,
@@ -33,19 +40,10 @@ import {
   createPendlePtIsolationModeUnwrapperTraderV2,
   createPendlePtIsolationModeVaultFactory,
   createPendlePtIsolationModeWrapperTraderV2,
-  createPendlePtPriceOracle,
   createPendlePtRsEthPriceOracle,
   createPendleRegistry,
 } from '../pendle-ecosystem-utils';
-import { BigNumber } from 'ethers';
-import { ONE_TENTH_OF_ONE_BIPS_NUMBER, encodeSwapExactPtForTokens } from '../pendle-utils';
-import { AccountInfoStruct } from 'packages/base/src/utils';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import { expectThrow } from 'packages/base/test/utils/assertions';
-import { setupNewGenericTraderProxy } from 'packages/base/test/utils/dolomite';
-import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
-import { TWAPPriceOracle, TWAPPriceOracle__factory } from 'packages/oracles/src/types';
-import { RS_ETH_CAMELOT_POOL_MAP } from 'packages/base/src/utils/constants';
+import { encodeSwapExactPtForTokens, ONE_TENTH_OF_ONE_BIPS_NUMBER } from '../pendle-utils';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('20000000000000000000'); // 20
@@ -83,7 +81,7 @@ describe('PendlePtRsEthApr2024IsolationModeUnwrapperTraderV2', () => {
     const twapPriceOracle = await createContractWithAbi<TWAPPriceOracle>(
       TWAPPriceOracle__factory.abi,
       TWAPPriceOracle__factory.bytecode,
-      [core.tokens.rsEth.address, [RS_ETH_CAMELOT_POOL_MAP[Network.ArbitrumOne]], core.dolomiteMargin.address]
+      [core.tokens.rsEth.address, [RS_ETH_CAMELOT_POOL_MAP[Network.ArbitrumOne]], core.dolomiteMargin.address],
     );
     underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, core.tokens.rsEth, false, twapPriceOracle);
@@ -134,7 +132,7 @@ describe('PendlePtRsEthApr2024IsolationModeUnwrapperTraderV2', () => {
       ptMarket.address as any,
       underlyingToken.address as any,
       amountWei,
-      ONE_TENTH_OF_ONE_BIPS_NUMBER
+      ONE_TENTH_OF_ONE_BIPS_NUMBER,
     );
 
     ptBal = await core.pendleEcosystem.rsEthApr2024.ptRsEthToken.balanceOf(core.hhUser1.address);

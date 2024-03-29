@@ -1,6 +1,5 @@
 import { IChainlinkAutomationRegistry, IChainlinkPriceOracleOld } from '@dolomite-exchange/modules-oracles/src/types';
 import { ApiToken, DolomiteZap } from '@dolomite-exchange/zap-sdk';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { BigNumberish } from 'ethers';
 import { Network, NetworkType } from 'packages/base/src/utils/no-deps-constants';
 import {
@@ -18,6 +17,7 @@ import {
   RegistryProxy,
 } from '../../src/types';
 import { CHAINLINK_PRICE_AGGREGATORS_MAP, SUBGRAPH_URL_MAP } from '../../src/utils/constants';
+import { SignerWithAddressWithSafety } from '../../src/utils/SignerWithAddressWithSafety';
 import { DolomiteMargin, Expiry } from './dolomite';
 import { AbraEcosystem } from './ecosystem-utils/abra';
 import { ArbEcosystem } from './ecosystem-utils/arb';
@@ -118,12 +118,12 @@ interface CoreProtocolMarketIdsArbitrumOne extends CoreProtocolMarketIds {
 
 export interface CoreProtocolParams<T extends NetworkType> {
   config: CoreProtocolConfig<T>;
-  governance: SignerWithAddress;
-  hhUser1: SignerWithAddress;
-  hhUser2: SignerWithAddress;
-  hhUser3: SignerWithAddress;
-  hhUser4: SignerWithAddress;
-  hhUser5: SignerWithAddress;
+  governance: SignerWithAddressWithSafety;
+  hhUser1: SignerWithAddressWithSafety;
+  hhUser2: SignerWithAddressWithSafety;
+  hhUser3: SignerWithAddressWithSafety;
+  hhUser4: SignerWithAddressWithSafety;
+  hhUser5: SignerWithAddressWithSafety;
   borrowPositionProxyV2: IBorrowPositionProxyV2;
   constants: CoreProtocolConstants<T>;
   delayedMultiSig: IPartiallyDelayedMultiSig;
@@ -163,12 +163,12 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
    */
   public readonly config: CoreProtocolConfig<T>;
   public readonly zap: DolomiteZap;
-  public readonly governance: SignerWithAddress;
-  public readonly hhUser1: SignerWithAddress;
-  public readonly hhUser2: SignerWithAddress;
-  public readonly hhUser3: SignerWithAddress;
-  public readonly hhUser4: SignerWithAddress;
-  public readonly hhUser5: SignerWithAddress;
+  public readonly governance: SignerWithAddressWithSafety;
+  public readonly hhUser1: SignerWithAddressWithSafety;
+  public readonly hhUser2: SignerWithAddressWithSafety;
+  public readonly hhUser3: SignerWithAddressWithSafety;
+  public readonly hhUser4: SignerWithAddressWithSafety;
+  public readonly hhUser5: SignerWithAddressWithSafety;
   /// =========================
   /// Contracts and Ecosystems
   /// =========================

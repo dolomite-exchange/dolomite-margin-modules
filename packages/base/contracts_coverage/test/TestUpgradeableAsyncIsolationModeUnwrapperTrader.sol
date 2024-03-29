@@ -208,7 +208,10 @@ contract TestUpgradeableAsyncIsolationModeUnwrapperTrader is
         _executeWithdrawal(withdrawalInfo);
     }
 
-    function afterWithdrawalCancellation(bytes32 _key, ITestAsyncProtocol.Withdrawal memory _withdrawal) external {
+    function afterWithdrawalCancellation(
+        bytes32 _key,
+        ITestAsyncProtocol.Withdrawal memory /* _withdrawal */
+    ) external {
         _executeWithdrawalCancellation(_key);
     }
 
