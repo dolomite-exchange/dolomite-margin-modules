@@ -10,6 +10,7 @@ export interface InterestSetters {
   linearStepFunction8L92UInterestSetter: IDolomiteInterestSetter;
   linearStepFunction10L90U95OInterestSetter: IDolomiteInterestSetter;
   linearStepFunction14L86UInterestSetter: IDolomiteInterestSetter;
+  linearStepFunction16L84UInterestSetter: IDolomiteInterestSetter;
 }
 
 export async function createInterestSetters(
@@ -35,6 +36,10 @@ export async function createInterestSetters(
     ),
     linearStepFunction14L86UInterestSetter: IDolomiteInterestSetter__factory.connect(
       deployments.Altcoin14L86ULinearStepFunctionInterestSetter[network].address,
+      signer,
+    ),
+    linearStepFunction16L84UInterestSetter: IDolomiteInterestSetter__factory.connect(
+      deployments.Altcoin16L84ULinearStepFunctionInterestSetter[network].address,
       signer,
     ),
   };

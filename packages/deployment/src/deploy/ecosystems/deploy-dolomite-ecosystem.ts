@@ -9,6 +9,7 @@ import { SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL } from '@dolomite-exchange/module
 import { getRegistryProxyConstructorParams } from '@dolomite-exchange/modules-base/src/utils/constructors/dolomite';
 import { getAnyNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { Network, NetworkType } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { getRealLatestBlockNumber, resetForkIfPossible } from '@dolomite-exchange/modules-base/test/utils';
 import { DolomiteMargin } from '@dolomite-exchange/modules-base/test/utils/dolomite';
 import {
   getLinearStepFunctionInterestSetterConstructorParams,
@@ -57,10 +58,20 @@ async function deployInterestSetters(): Promise<void> {
     ),
     'Altcoin14L86ULinearStepFunctionInterestSetter',
   );
+  await deployContractAndSave(
+    'LinearStepFunctionInterestSetter',
+    getLinearStepFunctionInterestSetterConstructorParams(
+      parseEther('0.16'),
+      parseEther('0.84'),
+      NINETY_PERCENT,
+    ),
+    'Altcoin16L84ULinearStepFunctionInterestSetter',
+  );
 }
 
 async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   const network = await getAnyNetwork() as T;
+  await resetForkIfPossible(await getRealLatestBlockNumber(true, network), network);
   const [hh1User1] = await ethers.getSigners();
 
   let dolomiteMargin: DolomiteMargin<T>;
@@ -125,7 +136,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   await deployContractAndSave(
     'IsolationModeTokenVaultV1ActionsImpl',
     [],
-    'IsolationModeTokenVaultV1ActionsImplV3',
+    'IsolationModeTokenVaultV1ActionsImplV5',
   );
 
   await deployInterestSetters();

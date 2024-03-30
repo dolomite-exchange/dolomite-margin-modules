@@ -5,7 +5,6 @@ import {
   getGmxV2IsolationModeTokenVaultConstructorParams,
 } from '@dolomite-exchange/modules-gmx-v2/src/gmx-v2-constructors';
 import { GmxV2IsolationModeTokenVaultV1__factory } from '@dolomite-exchange/modules-gmx-v2/src/types';
-import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
 import {
@@ -15,12 +14,12 @@ import {
 } from '../../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../utils/dry-run-utils';
 import getScriptName from '../../../utils/get-script-name';
+import Deployments from '../../deployments.json';
 
 /**
  * This script encodes the following transactions:
  * - Deploys new GMX V2 library and ActionsImpl library
  * - Deploys a new Token Vault for each GM token
- * - Allows ownerSetUserVaultImplementation and upgradeTo to be called on the delayed multi sig immediately
  */
 async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
@@ -29,21 +28,45 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const gmxV2LibraryAddress = await deployContractAndSave(
     'GmxV2Library',
     [],
-    'GmxV2LibraryV3',
+    'GmxV2LibraryV4',
   );
   const gmxV2Libraries = { GmxV2Library: gmxV2LibraryAddress };
 
-  const tokenVaultActionsAddress = await deployContractAndSave(
-    'IsolationModeTokenVaultV1ActionsImpl',
+  const unwrapperTraderLibAddress = await deployContractAndSave(
+    'AsyncIsolationModeUnwrapperTraderImpl',
     [],
-    'IsolationModeTokenVaultV1ActionsImplV4',
+    'AsyncIsolationModeUnwrapperTraderImplV2',
+  );
+  const unwrapperImplementationAddress = await deployContractAndSave(
+    'GmxV2IsolationModeUnwrapperTraderV2',
+    [core.tokens.weth.address],
+    'GmxV2IsolationModeUnwrapperTraderImplementationV4',
+    {
+      ...gmxV2Libraries,
+      AsyncIsolationModeUnwrapperTraderImpl: unwrapperTraderLibAddress,
+    },
+  );
+
+  const wrapperTraderLibAddress = await deployContractAndSave(
+    'AsyncIsolationModeWrapperTraderImpl',
+    [],
+    'AsyncIsolationModeWrapperTraderImplV2',
+  );
+  const wrapperImplementationAddress = await deployContractAndSave(
+    'GmxV2IsolationModeWrapperTraderV2',
+    [core.tokens.weth.address],
+    'GmxV2IsolationModeWrapperTraderImplementationV4',
+    {
+      ...gmxV2Libraries,
+      AsyncIsolationModeWrapperTraderImpl: wrapperTraderLibAddress,
+    },
   );
 
   const gmxV2TokenVaultAddress = await deployContractAndSave(
     'GmxV2IsolationModeTokenVaultV1',
     getGmxV2IsolationModeTokenVaultConstructorParams(core),
-    'GmxV2IsolationModeTokenVaultV6',
-    { ...{ IsolationModeTokenVaultV1ActionsImpl: tokenVaultActionsAddress }, ...gmxV2Libraries },
+    'GmxV2IsolationModeTokenVaultV8',
+    { ...core.tokenVaultActionsLibraries, ...gmxV2Libraries },
   );
   const gmxV2TokenVault = GmxV2IsolationModeTokenVaultV1__factory.connect(gmxV2TokenVaultAddress, core.hhUser1);
 
@@ -72,43 +95,28 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     const factory = factories[i];
     const unwrapper = unwrappers[i];
     const wrapper = wrappers[i];
-    const transaction = await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { factory },
-      'factory',
-      'ownerSetUserVaultImplementation',
-      [gmxV2TokenVault.address],
-    );
-    transactions.push(
-      transaction,
-      await prettyPrintEncodedDataWithTypeSafety(
-        core,
-        { multisig: core.delayedMultiSig },
-        'multisig',
-        'setSelector',
-        [factory.address, transaction.data.substring(0, 10), true],
-      ),
-    );
 
-    const upgradeToSelector = (await unwrapper.populateTransaction.upgradeTo(ZERO_ADDRESS)).data!.substring(0, 10);
     transactions.push(
-      transaction,
       await prettyPrintEncodedDataWithTypeSafety(
         core,
-        { multisig: core.delayedMultiSig },
-        'multisig',
-        'setSelector',
-        [unwrapper.address, upgradeToSelector, true],
+        { factory },
+        'factory',
+        'ownerSetUserVaultImplementation',
+        [gmxV2TokenVault.address],
       ),
-    );
-    transactions.push(
-      transaction,
       await prettyPrintEncodedDataWithTypeSafety(
         core,
-        { multisig: core.delayedMultiSig },
-        'multisig',
-        'setSelector',
-        [wrapper.address, upgradeToSelector, true],
+        { unwrapper },
+        'unwrapper',
+        'upgradeTo',
+        [unwrapperImplementationAddress],
+      ),
+      await prettyPrintEncodedDataWithTypeSafety(
+        core,
+        { wrapper },
+        'wrapper',
+        'upgradeTo',
+        [wrapperImplementationAddress],
       ),
     );
   }
@@ -126,6 +134,14 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
           assertHardhatInvariant(
             await factory.userVaultImplementation() === gmxV2TokenVaultAddress,
             `Invalid token vault at index [${i}]`,
+          );
+          assertHardhatInvariant(
+            await unwrappers[i].implementation() === unwrapperImplementationAddress,
+            `Invalid unwrapper implementation at index [${i}]`,
+          );
+          assertHardhatInvariant(
+            await wrappers[i].implementation() === wrapperImplementationAddress,
+            `Invalid unwrapper implementation at index [${i}]`,
           );
         }),
       );

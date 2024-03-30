@@ -1,14 +1,10 @@
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import hardhat from 'hardhat';
 import { ethers } from 'ethers';
+import hardhat from 'hardhat';
 
 export class SignerWithAddressWithSafety extends ethers.Signer {
-  public static async create(signerAddress: string) {
-    return new SignerWithAddressWithSafety(await hardhat.ethers.getSigner(signerAddress));
-  }
-
   public constructor(
-    private readonly _signer: SignerWithAddress
+    private readonly _address: string,
+    private readonly _signer: ethers.providers.JsonRpcSigner,
   ) {
     super();
     (this as any).provider = _signer.provider;
@@ -18,11 +14,18 @@ export class SignerWithAddressWithSafety extends ethers.Signer {
     if (hardhat.network.name !== 'hardhat') {
       throw new Error('Cannot get address for signer when not on Hardhat network!');
     }
-    return this._signer.address;
+    return this._address;
+  }
+
+  public static async create(signerAddress: string) {
+    return new SignerWithAddressWithSafety(
+      signerAddress,
+      ((await hardhat.ethers.getSigner(signerAddress)) as any)._signer,
+    );
   }
 
   public async getAddress(): Promise<string> {
-    return this._signer.address;
+    return this._address;
   }
 
   public signMessage(message: string | ethers.utils.Bytes): Promise<string> {
@@ -30,19 +33,19 @@ export class SignerWithAddressWithSafety extends ethers.Signer {
   }
 
   public signTransaction(
-    transaction: ethers.utils.Deferrable<ethers.providers.TransactionRequest>
+    transaction: ethers.utils.Deferrable<ethers.providers.TransactionRequest>,
   ): Promise<string> {
     return this._signer.signTransaction(transaction);
   }
 
   public sendTransaction(
-    transaction: ethers.utils.Deferrable<ethers.providers.TransactionRequest>
+    transaction: ethers.utils.Deferrable<ethers.providers.TransactionRequest>,
   ): Promise<ethers.providers.TransactionResponse> {
     return this._signer.sendTransaction(transaction);
   }
 
   public connect(provider: ethers.providers.Provider): SignerWithAddressWithSafety {
-    return new SignerWithAddressWithSafety(this._signer.connect(provider));
+    return new SignerWithAddressWithSafety(this._address, this._signer.connect(provider));
   }
 
   // tslint:disable-next-line
@@ -53,6 +56,6 @@ export class SignerWithAddressWithSafety extends ethers.Signer {
   }
 
   public toJSON() {
-    return `<SignerWithAddress ${this._signer.address}>`;
+    return `<SignerWithAddress ${this._address}>`;
   }
 }

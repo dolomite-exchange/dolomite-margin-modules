@@ -41,7 +41,12 @@ export async function getRealLatestBlockNumber(
   return Number.parseInt(blockNumber, 16) - (include32BlockBuffer ? 32 : 0);
 }
 
-export async function resetFork(blockNumber: number, network: Network) {
+export async function resetForkIfPossible(blockNumber: number, network: Network) {
+  if (hardhatNetwork.name !== 'hardhat') {
+    console.log('\tSkipping forking...\n');
+    return;
+  }
+
   const networkConfig = hardhatConfig.networks?.[networkToNetworkNameMap[network]] as HttpNetworkConfig;
   await hardhatNetwork.provider.request({
     method: 'hardhat_reset',

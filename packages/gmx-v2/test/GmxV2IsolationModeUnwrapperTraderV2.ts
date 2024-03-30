@@ -91,6 +91,8 @@ const callbackGasLimit = process.env.COVERAGE !== 'true'
   ? GMX_V2_CALLBACK_GAS_LIMIT
   : GMX_V2_CALLBACK_GAS_LIMIT.mul(10);
 
+const wethAmount = ONE_ETH_BI;
+
 enum UnwrapTradeType {
   ForWithdrawal = 0,
   ForDeposit = 1,
@@ -206,8 +208,8 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       core.hhUser2,
     );
 
-    await setupWETHBalance(core, core.hhUser1, ONE_ETH_BI, core.dolomiteMargin);
-    await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, ONE_ETH_BI);
+    await setupWETHBalance(core, core.hhUser1, wethAmount, core.dolomiteMargin);
+    await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, wethAmount);
 
     await setupNativeUSDCBalance(core, core.hhUser1, usdcAmount, core.dolomiteMargin);
     await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.nativeUsdc!, usdcAmount);
@@ -578,8 +580,8 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         borrowAccountNumber,
         amountWei,
         core.tokens.weth.address,
-        ONE_BI,
-        ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [parseEther('.5'), MAX_UINT_256_BI]),
+        MAX_UINT_256_BI,
+        ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [parseEther('.5'), MAX_UINT_256_BI.sub(1)]),
         { value: executionFee },
       )).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
 
@@ -720,6 +722,70 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       expect(await vault.isDepositSourceWrapper()).to.eq(false);
       expect(await underlyingToken.balanceOf(vault.address)).to.eq(ZERO_BI);
     }
+
+    it('should work normally for long token from account number 0', async () => {
+      await setupGMBalance(core, core.hhUser1, amountWei, vault);
+      await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await expectProtocolBalance(core, vault, defaultAccountNumber, marketId, amountWei);
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, wethAmount);
+      await expectWalletBalance(vault, underlyingToken, amountWei);
+      expect(await vault.isVaultAccountFrozen(defaultAccountNumber)).to.eq(false);
+      expect(await vault.isVaultAccountFrozen(defaultAccountNumber)).to.eq(false);
+
+      const minAmountOut = ONE_BI;
+      await vault.initiateUnwrapping(
+        defaultAccountNumber,
+        amountWei,
+        core.tokens.weth.address,
+        minAmountOut,
+        DEFAULT_EXTRA_DATA,
+        { value: executionFee },
+      );
+
+      const filter = eventEmitter.filters.AsyncWithdrawalCreated();
+      withdrawalKey = (await eventEmitter.queryFilter(filter))[0].args.key;
+      const withdrawalBefore = await unwrapper.getWithdrawalInfo(withdrawalKey);
+      expect(withdrawalBefore.key).to.eq(withdrawalKey);
+      expect(withdrawalBefore.vault).to.eq(vault.address);
+      expect(withdrawalBefore.accountNumber).to.eq(defaultAccountNumber);
+      expect(withdrawalBefore.inputAmount).to.eq(amountWei);
+      expect(withdrawalBefore.outputToken).to.eq(core.tokens.weth.address);
+      expect(withdrawalBefore.outputAmount).to.eq(minAmountOut);
+
+      const result = await core.gmxEcosystemV2!.gmxWithdrawalHandler.connect(core.gmxEcosystemV2!.gmxExecutor)
+        .executeWithdrawal(
+          withdrawalKey,
+          getOracleParams(core.tokens.weth.address, core.tokens.nativeUsdc!.address),
+          { gasLimit },
+        );
+      await expectEvent(eventEmitter, result, 'AsyncWithdrawalExecuted', {
+        key: withdrawalKey,
+        token: factory.address,
+      });
+
+      const withdrawalAfter = await unwrapper.getWithdrawalInfo(withdrawalKey);
+      expect(withdrawalAfter.key).to.eq(BYTES_ZERO);
+      expect(withdrawalAfter.vault).to.eq(ZERO_ADDRESS);
+      expect(withdrawalAfter.accountNumber).to.eq(ZERO_BI);
+      expect(withdrawalAfter.inputAmount).to.eq(ZERO_BI);
+      expect(withdrawalAfter.outputToken).to.eq(ZERO_ADDRESS);
+      expect(withdrawalAfter.outputAmount).to.eq(ZERO_BI);
+
+      await expectProtocolBalance(core, vault.address, defaultAccountNumber, marketId, ZERO_BI);
+      await expectProtocolBalance(core, vault.address, defaultAccountNumber, core.marketIds.weth, ZERO_BI);
+      await expectProtocolBalanceIsGreaterThan(
+        core,
+        { owner: core.hhUser1.address, number: defaultAccountNumber },
+        core.marketIds.weth,
+        wethAmount.add(ONE_BI),
+        '0',
+      );
+      await expectProtocolBalance(core, vault.address, defaultAccountNumber, core.marketIds.nativeUsdc!, ZERO_BI);
+      expect(await vault.isVaultFrozen()).to.eq(false);
+      expect(await vault.shouldSkipTransfer()).to.eq(false);
+      expect(await vault.isDepositSourceWrapper()).to.eq(false);
+      expect(await underlyingToken.balanceOf(vault.address)).to.eq(ZERO_BI);
+    });
 
     it('should work normally with actual oracle params and long token', async () => {
       await setupBalances(core.tokens.weth);
@@ -1591,7 +1657,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
   describe('#getExchangeCost', () => {
     it('should revert', async () => {
       await expectThrow(
-        unwrapper.getExchangeCost(factory.address, core.tokens.weth.address, ONE_ETH_BI, BYTES_EMPTY),
+        unwrapper.getExchangeCost(factory.address, core.tokens.weth.address, wethAmount, BYTES_EMPTY),
         'GmxV2IsolationModeUnwrapperV2: getExchangeCost is not implemented',
       );
     });

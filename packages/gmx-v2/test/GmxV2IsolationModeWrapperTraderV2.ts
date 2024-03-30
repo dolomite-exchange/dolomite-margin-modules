@@ -732,6 +732,67 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
   });
 
   describe('#afterDepositCancellation', () => {
+    it.only('should work normally for account number 0', async () => {
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, ONE_ETH_BI);
+      await expectProtocolBalance(core, vault.address, defaultAccountNumber, core.marketIds.weth, ZERO_BI);
+
+      const wethBalanceBefore = await core.tokens.weth.balanceOf(core.dolomiteMargin.address);
+
+      const initiateWrappingParams = await getInitiateWrappingParams(
+        defaultAccountNumber,
+        core.marketIds.weth,
+        ONE_ETH_BI,
+        marketId,
+        minAmountOut,
+        wrapper,
+        executionFee,
+      );
+      await vault.addCollateralAndSwapExactInputForOutput(
+        defaultAccountNumber,
+        defaultAccountNumber,
+        initiateWrappingParams.marketPath,
+        initiateWrappingParams.amountIn,
+        initiateWrappingParams.minAmountOut,
+        initiateWrappingParams.traderParams,
+        initiateWrappingParams.makerAccounts,
+        initiateWrappingParams.userConfig,
+        { value: executionFee },
+      );
+
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, ZERO_BI);
+      await expectProtocolBalance(core, vault, defaultAccountNumber, core.marketIds.weth, ZERO_BI);
+      await expectProtocolBalance(core, vault, defaultAccountNumber, marketId, minAmountOut);
+      expect(await vault.virtualBalance()).to.eq(minAmountOut);
+      expect(await underlyingToken.balanceOf(vault.address)).to.eq(ZERO_BI);
+
+      const filter = eventEmitter.filters.AsyncDepositCreated();
+      const eventArgs = (await eventEmitter.queryFilter(filter))[0].args;
+      expect(eventArgs.token).to.eq(factory.address);
+      const depositKey = eventArgs.key;
+      await expectProtocolBalance(core, vault.address, defaultAccountNumber, marketId, minAmountOut);
+      await expectProtocolBalance(core, vault.address, defaultAccountNumber, core.marketIds.weth, 0);
+      expect(await vault.isVaultFrozen()).to.eq(true);
+      expect(await vault.shouldSkipTransfer()).to.eq(false);
+      expect(await vault.isDepositSourceWrapper()).to.eq(false);
+
+      // Mine blocks so we can cancel deposit
+      await mine(1200);
+      const result = await vault.cancelDeposit(depositKey, { gasLimit });
+      await expectEvent(eventEmitter, result, 'AsyncDepositCancelled', {
+        key: depositKey,
+        token: factory.address,
+      });
+
+      expect(await core.tokens.weth.balanceOf(core.dolomiteMargin.address)).to.eq(wethBalanceBefore);
+      await expectProtocolBalance(core, vault.address, defaultAccountNumber, marketId, 0);
+      await expectProtocolBalance(core, vault.address, defaultAccountNumber, core.marketIds.weth, 0);
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, ONE_ETH_BI);
+      expect(await vault.isVaultFrozen()).to.eq(false);
+      expect(await vault.shouldSkipTransfer()).to.eq(false);
+      expect(await vault.isDepositSourceWrapper()).to.eq(false);
+      await expectEmptyDepositInfo(depositKey);
+    });
+
     it('should work normally with long token', async () => {
       await vault.transferIntoPositionWithOtherToken(
         defaultAccountNumber,

@@ -236,7 +236,7 @@ export async function deployContractAndSave(
       ? await createContractWithLibrary(contractName, libraries, args)
       : await createContractWithName(contractName, args);
   } catch (e) {
-    console.error(`\tCould not deploy at attempt ${attempts + 1} due to error:`, e);
+    console.error(`\tCould not deploy at attempt ${attempts + 1} due for ${contractName} to error:`, e);
     return deployContractAndSave(contractName, args, contractRename, libraries, attempts + 1);
   }
 

@@ -202,7 +202,7 @@ interface IIsolationModeTokenVaultV1 {
      *          for `_marketIdsPath[last]`.
      *
      * @param  _toAccountNumber             The account number to receive the collateral transfer after the trade.
-     * @param  _borrowAccountNumber         The account number to use for the vault's trade. Cannot be 0.
+     * @param  _borrowAccountNumber         The account number to use for the vault's trade.
      * @param  _marketIdsPath               The path of market IDs to use for each trade action. Length should be equal
      *                                      to `_tradersPath.length + 1`.
      * @param  _inputAmountWei              The input amount (in wei) to use for the initial trade action. Setting this

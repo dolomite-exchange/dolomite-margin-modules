@@ -8,6 +8,7 @@ import {
   createContractWithAbi,
   createContractWithLibraryAndArtifact,
 } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import { BYTES_EMPTY } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import {
   createAsyncIsolationModeUnwrapperTraderImpl,
@@ -317,7 +318,7 @@ export function getInitiateWrappingParams(
       {
         trader: wrapper.address,
         traderType: GenericTraderType.IsolationModeWrapper,
-        tradeData: ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [accountNumber, executionFee]),
+        tradeData: BYTES_EMPTY,
         makerAccountIndex: 0,
       },
     ],

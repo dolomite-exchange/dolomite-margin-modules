@@ -47,39 +47,41 @@ async function doStuffInternal<T extends NetworkType>(
   if (hardhat.network.name === 'hardhat') {
     const result = await executionFn();
 
-    console.log('\tSimulating admin transactions...');
-    const signer = await impersonate((await result.core.delayedMultiSig.getOwners())[0], true);
-    const delayedMultiSig = result.core.delayedMultiSig.connect(signer);
-    const filter = delayedMultiSig.filters.Submission();
-    const transactionIds = [];
+    if (result.core) {
+      console.log('\tSimulating admin transactions...');
+      const signer = await impersonate((await result.core.delayedMultiSig.getOwners())[0], true);
+      const delayedMultiSig = result.core.delayedMultiSig.connect(signer);
+      const filter = delayedMultiSig.filters.Submission();
+      const transactionIds = [];
 
-    for (const transaction of result.upload.transactions) {
-      let txResult;
-      if (transaction.to === result.core.delayedMultiSig.address) {
-        txResult = await signer.sendTransaction({
-          to: transaction.to,
-          data: transaction.data,
-          from: signer.address,
-        });
-      } else {
-        txResult = await delayedMultiSig.submitTransaction(transaction.to, ZERO_BI, transaction.data);
+      for (const transaction of result.upload.transactions) {
+        let txResult;
+        if (transaction.to === result.core.delayedMultiSig.address) {
+          txResult = await signer.sendTransaction({
+            to: transaction.to,
+            data: transaction.data,
+            from: signer.address,
+          });
+        } else {
+          txResult = await delayedMultiSig.submitTransaction(transaction.to, ZERO_BI, transaction.data);
+        }
+
+        const submissionEvent = (await delayedMultiSig.queryFilter(filter, txResult.blockHash))[0];
+        if (submissionEvent) {
+          transactionIds.push(submissionEvent.args.transactionId);
+        }
       }
 
-      const submissionEvent = (await delayedMultiSig.queryFilter(filter, txResult.blockHash))[0];
-      if (submissionEvent) {
-        transactionIds.push(submissionEvent.args.transactionId);
+      console.log('\tSubmitted transactions. Advancing time forward...');
+      await advanceByTimeDelta((await delayedMultiSig.secondsTimeLocked()) + 1);
+
+      console.log('\tExecuting chunked transactions...');
+      const transactionIdChunks = chunkify(transactionIds, CHUNK_SIZE);
+      for (const transactionIdChunk of transactionIdChunks) {
+        await delayedMultiSig.executeMultipleTransactions(transactionIdChunk);
       }
+      console.log('\tAdmin transactions succeeded!');
     }
-
-    console.log('\tSubmitted transactions. Advancing time forward...');
-    await advanceByTimeDelta((await delayedMultiSig.secondsTimeLocked()) + 1);
-
-    console.log('\tExecuting chunked transactions...');
-    const transactionIdChunks = chunkify(transactionIds, CHUNK_SIZE);
-    for (const transactionIdChunk of transactionIdChunks) {
-      await delayedMultiSig.executeMultipleTransactions(transactionIdChunk);
-    }
-    console.log('\tAdmin transactions succeeded!');
 
     if (result.invariants) {
       console.log('\tChecking invariants...');

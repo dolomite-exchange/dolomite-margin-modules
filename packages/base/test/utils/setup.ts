@@ -16,7 +16,7 @@ import * as LiquidatorProxyV4WithGenericTraderJson
 import { address } from '@dolomite-margin/dist/src';
 import { Provider } from '@ethersproject/providers';
 import { BaseContract, BigNumberish, ContractInterface, Signer } from 'ethers';
-import { ethers, network } from 'hardhat';
+import { ethers } from 'hardhat';
 import {
   IBorrowPositionProxyV2__factory,
   IDepositWithdrawalProxy__factory,
@@ -108,7 +108,7 @@ import { createPlutusEcosystem } from './ecosystem-utils/plutus';
 import { createPremiaEcosystem } from './ecosystem-utils/premia';
 import { createTestEcosystem } from './ecosystem-utils/testers';
 import { createUmamiEcosystem } from './ecosystem-utils/umami';
-import { impersonate, impersonateOrFallback, resetFork } from './index';
+import { impersonate, impersonateOrFallback, resetForkIfPossible } from './index';
 
 /**
  * Config to for setting up tests in the `before` function
@@ -222,13 +222,13 @@ export async function setupUSDCBalance<T extends NetworkType>(
 
 export async function setupGMBalance(
   core: CoreProtocolArbitrumOne,
-  signer: SignerWithAddressWithSafety,
+  signer: { address: string },
   amount: BigNumberish,
   spender?: { address: string },
 ) {
   const controller = await impersonate(core.gmxEcosystemV2!.gmxExchangeRouter.address, true);
   await core.gmxEcosystemV2!.gmxEthUsdMarketToken.connect(controller).mint(signer.address, amount);
-  if (spender) {
+  if (signer instanceof SignerWithAddressWithSafety && spender) {
     await core.gmxEcosystemV2!.gmxEthUsdMarketToken.connect(signer).approve(spender.address, amount);
   }
 }
@@ -358,11 +358,7 @@ export type CoreProtocolType<T extends NetworkType> = T extends Network.Arbitrum
 export async function setupCoreProtocol<T extends NetworkType>(
   config: Readonly<CoreProtocolSetupConfig<T>>,
 ): Promise<CoreProtocolType<T>> {
-  if (network.name === 'hardhat') {
-    await resetFork(config.blockNumber, config.network);
-  } else {
-    console.log('\tSkipping forking...\n');
-  }
+  await resetForkIfPossible(config.blockNumber, config.network);
 
   const dolomiteMarginAddress = DolomiteMarginJson.networks[config.network].address;
   const [hhUser1, hhUser2, hhUser3, hhUser4, hhUser5] = await Promise.all((await ethers.getSigners())
