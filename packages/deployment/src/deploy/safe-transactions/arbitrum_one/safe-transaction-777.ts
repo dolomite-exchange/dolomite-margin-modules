@@ -14,6 +14,7 @@ import {
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../utils/dry-run-utils';
 import getScriptName from '../../../utils/get-script-name';
 
+// @follow-up Do you prefer to use these constants in the object below? Or keep as is where I put the addresses directly in the object
 const rEthJun2025WrapperAddress = '0x78BBFe4e48E20B1e6016afB7e9Bc8a1D1A51266A';
 const rEthJun2025UnwrapperAddress = '0xc16A0611DA04181AaaA2C750479aC0d8F17F6898';
 const wsEthJun2024UnwrapperAddress = '0x5BFEE4e3853d499e4B149C4F18c91F59A45C422E';
@@ -149,6 +150,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     },
     invariants: async () => {
       for (let i = 0; i < factories.length; i++) {
+        // @follow-up Are these asserts sufficient? Or do you want other ones for underlying token, etc.?
         assertHardhatInvariant(
           await factories[i].factory.isTokenConverterTrusted(factories[i].newWrapper),
           'New wrapper is not trusted'
