@@ -1,7 +1,10 @@
 import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { getPendlePtIsolationModeUnwrapperTraderV3ConstructorParams, getPendlePtIsolationModeWrapperTraderV3ConstructorParams } from '@dolomite-exchange/modules-pendle/src/pendle-constructors';
+import {
+  getPendlePtIsolationModeUnwrapperTraderV3ConstructorParams,
+  getPendlePtIsolationModeWrapperTraderV3ConstructorParams
+} from '@dolomite-exchange/modules-pendle/src/pendle-constructors';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
 import {
@@ -22,7 +25,11 @@ const weEthApr2024WrapperAddress = '0x80aE22E33Fc6066ACA9F9da6621Feeb0C86Ad426';
 
 /**
  * This script encodes the following transactions:
- * - Deploys PendleV3Router Unwrapper and Wrapper for eEthApr2024, rEthJun2025, rsEthApr2024, wstEthJun2024, wstEthJun2025
+ * - Deploys PendleV3Router unwrapper and wrapper for the following markets:
+ *      rEthJun2025
+ *      wstEthJun2024
+ *      wstEthJun2025
+ *      eEthApr2024
  * - Disables the old wrapper and unwrappers for those markets
  * - Enables the new wrapper and unwrappers for those markets
  * - Update pendle router
@@ -30,7 +37,6 @@ const weEthApr2024WrapperAddress = '0x80aE22E33Fc6066ACA9F9da6621Feeb0C86Ad426';
 async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
   const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
-
 
   const transactions = [];
   const factories = [
