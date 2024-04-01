@@ -1,5 +1,4 @@
 import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin/dist/src';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { BigNumber, ContractTransaction } from 'ethers';
 import {
@@ -20,7 +19,15 @@ import {
   depositIntoDolomiteMargin,
   withdrawFromDolomiteMargin,
 } from '../../../src/utils/dolomite-utils';
-import { BYTES_EMPTY, MAX_UINT_256_BI, Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
+import {
+  BYTES_EMPTY,
+  MAX_UINT_256_BI,
+  Network,
+  ONE_BI,
+  ONE_ETH_BI,
+  ZERO_BI,
+} from '../../../src/utils/no-deps-constants';
+import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import {
   expectEvent,
@@ -73,10 +80,10 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
   let factory: TestFreezableIsolationModeVaultFactory;
   let userVaultImplementation: TestIsolationModeTokenVaultV1WithFreezable;
   let userVault: TestIsolationModeTokenVaultV1WithFreezable;
-  let impersonatedVault: SignerWithAddress;
+  let impersonatedVault: SignerWithAddressWithSafety;
   let registry: TestHandlerRegistry;
 
-  let solidUser: SignerWithAddress;
+  let solidUser: SignerWithAddressWithSafety;
   let otherToken1: CustomTestToken;
   let otherToken2: CustomTestToken;
   let otherMarketId1: BigNumber;
@@ -89,7 +96,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
     userVaultImplementation = await createContractWithLibrary<TestIsolationModeTokenVaultV1WithFreezable>(
       'TestIsolationModeTokenVaultV1WithFreezable',
       libraries,
-      [core.tokens.weth.address],
+      [core.tokens.weth.address, core.network],
     );
     registry = await createTestHandlerRegistry(core);
     factory = await createTestFreezableIsolationModeVaultFactory(
@@ -389,8 +396,8 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
       await expect(
         () => userVault.closeBorrowPositionWithUnderlyingVaultToken(
           borrowAccountNumber,
-          defaultAccountNumber
-      )).to.changeEtherBalance(core.hhUser1, ONE_ETH_BI);
+          defaultAccountNumber,
+        )).to.changeEtherBalance(core.hhUser1, ONE_ETH_BI);
       expect(await userVault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(ZERO_BI);
 
       await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, underlyingMarketId, ZERO_BI);
@@ -1257,11 +1264,12 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
       await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId2, ZERO_BI);
       await expectProtocolBalance(core, userVault, borrowAccountNumber, otherMarketId2, otherAmountWei);
 
+      const minOutputAmount = ONE_ETH_BI;
       const zapParams = await getWrapZapParams(
         otherMarketId1,
         otherAmountWei,
         underlyingMarketId,
-        amountWei,
+        minOutputAmount,
         tokenWrapper,
         core,
       );
@@ -1276,7 +1284,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
         zapParams.userConfig,
       );
 
-      await expectProtocolBalance(core, userVault, defaultAccountNumber, underlyingMarketId, amountWei);
+      await expectProtocolBalance(core, userVault, defaultAccountNumber, underlyingMarketId, minOutputAmount);
       await expectProtocolBalance(core, userVault, borrowAccountNumber, underlyingMarketId, ZERO_BI);
       await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId1, ZERO_BI);
       await expectProtocolBalance(
@@ -1522,6 +1530,36 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
           zapParams.userConfig,
         ),
         'IsolationModeVaultV1ActionsImpl: Account liquidatable',
+      );
+    });
+
+    it('should fail if min amount out is too large for wrapping', async () => {
+      await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await userVault.openBorrowPosition(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        amountWei,
+      );
+
+      const outputAmount = otherAmountWei.div(2);
+      const zapParams = await getSimpleZapParams(
+        otherMarketId1,
+        otherAmountWei,
+        underlyingMarketId,
+        outputAmount,
+        core,
+      );
+      await expectThrow(
+        userVault.swapExactInputForOutput(
+          borrowAccountNumber,
+          zapParams.marketIdsPath,
+          zapParams.inputAmountWei,
+          amountWei.mul('100000000'),
+          zapParams.tradersPath,
+          zapParams.makerAccounts,
+          zapParams.userConfig,
+        ),
+        'IsolationModeVaultV1ActionsImpl: minOutputAmount too large',
       );
     });
 
@@ -1816,7 +1854,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
         amountWei,
         otherToken1.address,
         ONE_BI,
-        BYTES_EMPTY
+        BYTES_EMPTY,
       );
     });
 
@@ -1827,7 +1865,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
           amountWei,
           otherToken1.address,
           ONE_BI,
-          BYTES_EMPTY
+          BYTES_EMPTY,
         ),
         `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
       );
@@ -1841,9 +1879,9 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
           ZERO_BI,
           otherToken1.address,
           ONE_BI,
-          BYTES_EMPTY
+          BYTES_EMPTY,
         ),
-        'IsolationModeVaultV1Freezable: Invalid withdrawal amount'
+        'IsolationModeVaultV1Freezable: Invalid withdrawal amount',
       );
     });
 
@@ -1855,9 +1893,9 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
           amountWei.add(1),
           otherToken1.address,
           ONE_BI,
-          BYTES_EMPTY
+          BYTES_EMPTY,
         ),
-        `IsolationModeVaultV1Freezable: Withdrawal too large <${userVault.address.toLowerCase()}, ${defaultAccountNumber}>`
+        `IsolationModeVaultV1Freezable: Withdrawal too large <${userVault.address.toLowerCase()}, ${defaultAccountNumber}>`,
       );
     });
 
@@ -1867,7 +1905,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
         defaultAccountNumber,
         FreezeType.Deposit,
         PLUS_ONE_BI,
-        otherToken1.address
+        otherToken1.address,
       );
       await expectThrow(
         userVault.initiateUnwrapping(
@@ -1875,7 +1913,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
           amountWei,
           otherToken1.address,
           ONE_BI,
-          BYTES_EMPTY
+          BYTES_EMPTY,
         ),
         'IsolationModeVaultV1Freezable: Vault is frozen',
       );
@@ -1886,19 +1924,19 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
       await userVault.openBorrowPosition(
         defaultAccountNumber,
         borrowAccountNumber,
-        amountWei
+        amountWei,
       );
       await userVault.transferFromPositionWithOtherToken(
         borrowAccountNumber,
         defaultAccountNumber,
         core.marketIds.usdc,
         usdcAmount,
-        BalanceCheckFlag.None
+        BalanceCheckFlag.None,
       );
 
       await core.testEcosystem!.testPriceOracle.setPrice(
         factory.address,
-        '10'
+        '10',
       );
       await expectThrow(
         userVault.initiateUnwrapping(
@@ -1906,7 +1944,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
           amountWei,
           otherToken1.address,
           ONE_BI,
-          BYTES_EMPTY
+          BYTES_EMPTY,
         ),
         'IsolationModeVaultV1ActionsImpl: Account liquidatable',
       );
@@ -1919,9 +1957,9 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
           amountWei,
           otherToken1.address,
           ONE_BI,
-          BYTES_EMPTY
+          BYTES_EMPTY,
         ),
-        'IsolationModeTokenVaultV1: Reentrant call'
+        'IsolationModeTokenVaultV1: Reentrant call',
       );
     });
   });
@@ -1934,7 +1972,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
         amountWei,
         otherToken1.address,
         ONE_BI,
-        BYTES_EMPTY
+        BYTES_EMPTY,
       );
     });
 
@@ -1947,7 +1985,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
           amountWei,
           otherToken1.address,
           ONE_BI,
-          BYTES_EMPTY
+          BYTES_EMPTY,
         ),
         `IsolationModeVaultV1Freezable: Only liquidator can call <${core.hhUser3.address.toLowerCase()}>`,
       );
@@ -1961,9 +1999,9 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
           amountWei.sub(1),
           otherToken1.address,
           ONE_BI,
-          BYTES_EMPTY
+          BYTES_EMPTY,
         ),
-        `IsolationModeVaultV1Freezable: Liquidation must be full balance <${userVault.address.toLowerCase()}, ${defaultAccountNumber}>`
+        `IsolationModeVaultV1Freezable: Liquidation must be full balance <${userVault.address.toLowerCase()}, ${defaultAccountNumber}>`,
       );
     });
 
@@ -1974,9 +2012,9 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
           amountWei,
           otherToken1.address,
           ONE_BI,
-          BYTES_EMPTY
+          BYTES_EMPTY,
         ),
-        `IsolationModeVaultV1Freezable: Account is frozen <${userVault.address.toLowerCase()}, ${defaultAccountNumber}>`
+        `IsolationModeVaultV1Freezable: Account is frozen <${userVault.address.toLowerCase()}, ${defaultAccountNumber}>`,
       );
     });
 
@@ -1987,9 +2025,9 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
           amountWei,
           otherToken1.address,
           ONE_BI,
-          BYTES_EMPTY
+          BYTES_EMPTY,
         ),
-        'IsolationModeTokenVaultV1: Reentrant call'
+        'IsolationModeTokenVaultV1: Reentrant call',
       );
     });
   });
@@ -2005,11 +2043,11 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
         defaultAccountNumber,
         FreezeType.Deposit,
         PLUS_ONE_BI,
-        otherToken1.address
+        otherToken1.address,
       );
       await expectThrow(
         userVault.testRequireVaultAccountNotFrozen(defaultAccountNumber),
-        ''
+        '',
       );
     });
   });

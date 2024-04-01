@@ -56,6 +56,7 @@ contract DolomiteRegistryImplementation is
     bytes32 private constant _LIQUIDATOR_ASSET_REGISTRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.liquidatorAssetRegistry")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _EVENT_EMITTER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.eventEmitter")) - 1);
     bytes32 private constant _CHAINLINK_PRICE_ORACLE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.chainlinkPriceOracle")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _REDSTONE_PRICE_ORACLE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.redstonePriceOracle")) - 1); // solhint-disable-line max-line-length
 
     // ==================== Constructor ====================
 
@@ -133,6 +134,14 @@ contract DolomiteRegistryImplementation is
         _ownerSetDolomiteMigrator(_dolomiteMigrator);
     }
 
+    function ownerSetRedstonePriceOracle(
+        address _redstonePriceOracle
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetRedstonePriceOracle(_redstonePriceOracle);
+    }
+
     // ========================== View Functions =========================
 
     function genericTraderProxy() external view returns (IGenericTraderProxyV1) {
@@ -161,6 +170,10 @@ contract DolomiteRegistryImplementation is
 
     function dolomiteMigrator() external view returns (IDolomiteMigrator) {
         return IDolomiteMigrator(_getAddress(_DOLOMITE_MIGRATOR_SLOT));
+    }
+
+    function redstonePriceOracle() external view returns (IDolomitePriceOracle) {
+        return IDolomitePriceOracle(_getAddress(_REDSTONE_PRICE_ORACLE_SLOT));
     }
 
     function slippageToleranceForPauseSentinelBase() external pure returns (uint256) {
@@ -276,5 +289,18 @@ contract DolomiteRegistryImplementation is
 
         _setAddress(_DOLOMITE_MIGRATOR_SLOT, _dolomiteMigrator);
         emit DolomiteMigratorSet(_dolomiteMigrator);
+    }
+
+    function _ownerSetRedstonePriceOracle(
+        address _redstonePriceOracle
+    ) internal {
+        Require.that(
+            _redstonePriceOracle != address(0),
+            _FILE,
+            "Invalid redstonePriceOracle"
+        );
+
+        _setAddress(_REDSTONE_PRICE_ORACLE_SLOT, _redstonePriceOracle);
+        emit RedstonePriceOracleSet(_redstonePriceOracle);
     }
 }

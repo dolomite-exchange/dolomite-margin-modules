@@ -14,6 +14,7 @@ import {
 import { getChainlinkPriceOracleConstructorParamsFromOldPriceOracle } from '../src/oracles-constructors';
 import { createContractWithAbi, createTestToken } from '@dolomite-exchange/modules-base/../../../packages/base/src/utils/dolomite-utils';
 import {
+  ADDRESS_ZERO,
   MAX_INT_192_BI,
   Network,
   ONE_BI,
@@ -21,7 +22,7 @@ import {
   TEN_BI,
   ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { revertToSnapshotAndCapture, snapshot, waitTime } from '@dolomite-exchange/modules-base/test/utils';
+import { impersonate, revertToSnapshotAndCapture, snapshot, waitTime } from '@dolomite-exchange/modules-base/test/utils';
 import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 
@@ -29,6 +30,7 @@ const WETH_PRICE = BigNumber.from('1883923360000000000000');
 const BTC_PRICE = BigNumber.from('299800328339800000000000000000000');
 const USDC_PRICE = BigNumber.from('999937000000000000000000000000');
 const TEST_TOKEN_PRICE = WETH_PRICE.mul(1).div(10);
+const TEST_TOKEN_STANDARD_PRICE = TEN_BI.pow(18).div(10);
 
 describe('ChainlinkPriceOracle', () => {
   let snapshotId: string;
@@ -77,6 +79,7 @@ describe('ChainlinkPriceOracle', () => {
           [ZERO_ADDRESS],
           [8],
           [ZERO_ADDRESS],
+          [false],
           core.dolomiteMargin.address,
         ],
       );
@@ -92,6 +95,7 @@ describe('ChainlinkPriceOracle', () => {
             [ZERO_ADDRESS, ZERO_ADDRESS],
             [8, 8],
             [ZERO_ADDRESS, ZERO_ADDRESS],
+            [false, false],
             core.dolomiteMargin.address,
           ],
         ),
@@ -109,6 +113,7 @@ describe('ChainlinkPriceOracle', () => {
             [ZERO_ADDRESS, ZERO_ADDRESS],
             [8],
             [ZERO_ADDRESS, ZERO_ADDRESS],
+            [false, false],
             core.dolomiteMargin.address,
           ],
         ),
@@ -126,10 +131,29 @@ describe('ChainlinkPriceOracle', () => {
             [ZERO_ADDRESS, ZERO_ADDRESS],
             [8, 8],
             [ZERO_ADDRESS],
+            [false, false],
             core.dolomiteMargin.address,
           ],
         ),
         'ChainlinkPriceOracle: Invalid decimals length',
+      );
+    });
+
+    it('should fail when token pair length is not aligned', async () => {
+      await expectThrow(
+        createContractWithAbi<ChainlinkPriceOracle>(
+          ChainlinkPriceOracle__factory.abi,
+          ChainlinkPriceOracle__factory.bytecode,
+          [
+            [ZERO_ADDRESS, ZERO_ADDRESS],
+            [ZERO_ADDRESS, ZERO_ADDRESS],
+            [8, 8],
+            [ZERO_ADDRESS, ZERO_ADDRESS],
+            [false],
+            core.dolomiteMargin.address,
+          ],
+        ),
+        'ChainlinkPriceOracle: Invalid pairs length',
       );
     });
   });
@@ -156,10 +180,39 @@ describe('ChainlinkPriceOracle', () => {
         18,
         testAggregator.address,
         core.tokens.weth.address,
+        false
       );
       const price = await oracle.getPrice(testToken.address);
       expect(price.value).to.eq(TEST_TOKEN_PRICE);
     });
+
+    it('returns the correct value for usd bypass token', async () => {
+      await oracle.connect(core.governance).ownerInsertOrUpdateOracleToken(
+        testToken.address,
+        18,
+        testAggregator.address,
+        ADDRESS_ZERO,
+        true
+      );
+      const price = await oracle.getPrice(testToken.address);
+      expect(price.value).to.eq(TEST_TOKEN_STANDARD_PRICE);
+    });
+
+
+    it('reverts when token bypasses USD value and caller is dolomite margin', async () => {
+      const doloImpersonator = await impersonate(core.dolomiteMargin.address, true);
+      await oracle.ownerInsertOrUpdateOracleToken(
+        testToken.address,
+        18,
+        testAggregator.address,
+        core.tokens.weth.address,
+        true,
+      );
+      await expectThrow(
+        oracle.connect(doloImpersonator).getPrice(testToken.address),
+        `ChainlinkPriceOracle: Token bypasses USD value <${testToken.address.toLowerCase()}>`,
+      );
+    })
 
     it('reverts when an invalid address is passed in', async () => {
       const ONE_ADDRESS = '0x1000000000000000000000000000000000000000';
@@ -179,6 +232,7 @@ describe('ChainlinkPriceOracle', () => {
         18,
         testAggregator.address,
         core.tokens.weth.address,
+        false
       );
       await testAggregator.setLatestAnswer(BigNumber.from('20000000000')); // $200
       await waitTime((60 * 60 * 36) + 1); // prices expire in 36 hours by default
@@ -196,6 +250,7 @@ describe('ChainlinkPriceOracle', () => {
         18,
         testAggregator.address,
         core.tokens.weth.address,
+        false
       );
       await expectThrow(
         oracle.getPrice(testToken.address),
@@ -211,6 +266,7 @@ describe('ChainlinkPriceOracle', () => {
         18,
         testAggregator.address,
         core.tokens.weth.address,
+        false
       );
       await expectThrow(
         oracle.getPrice(testToken.address),
@@ -258,10 +314,12 @@ describe('ChainlinkPriceOracle', () => {
         18,
         testAggregator.address,
         ZERO_ADDRESS,
+        true
       );
       expect(await oracle.getDecimalsByToken(tokenAddress)).to.eq(18);
       expect(await oracle.getAggregatorByToken(tokenAddress)).to.eq(testAggregator.address);
       expect(await oracle.getTokenPairByToken(tokenAddress)).to.eq(ZERO_ADDRESS);
+      expect(await oracle.getBypassUsdValueByToken(tokenAddress)).to.eq(true);
     });
 
     it('can update an existing oracle', async () => {
@@ -271,10 +329,12 @@ describe('ChainlinkPriceOracle', () => {
         11,
         testAggregator.address,
         core.tokens.weth.address,
+        true
       );
       expect(await oracle.getDecimalsByToken(tokenAddress)).to.eq(11);
       expect(await oracle.getAggregatorByToken(tokenAddress)).to.eq(testAggregator.address);
       expect(await oracle.getTokenPairByToken(tokenAddress)).to.eq(core.tokens.weth.address);
+      expect(await oracle.getBypassUsdValueByToken(tokenAddress)).to.eq(true);
     });
 
     it('fails when invoked by non-admin', async () => {
@@ -284,6 +344,7 @@ describe('ChainlinkPriceOracle', () => {
           9,
           testAggregator.address,
           ZERO_ADDRESS,
+          false
         ),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
@@ -298,6 +359,7 @@ describe('ChainlinkPriceOracle', () => {
           9,
           testAggregator.address,
           otherPairAddress,
+          false
         ),
         `ChainlinkPriceOracle: Invalid token pair <${otherPairAddress.toLowerCase()}>`,
       );
@@ -309,6 +371,7 @@ describe('ChainlinkPriceOracle', () => {
         18,
         testAggregator.address,
         core.tokens.weth.address,
+        false
       );
       const marketId = await core.dolomiteMargin.getNumMarkets();
       await core.dolomiteMargin.ownerAddMarket(

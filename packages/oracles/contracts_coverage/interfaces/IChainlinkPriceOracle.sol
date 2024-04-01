@@ -61,12 +61,14 @@ interface IChainlinkPriceOracle is IDolomitePriceOracle {
      * @param  _tokenDecimals       The number of decimals that this token has
      * @param  _chainlinkAggregator The Chainlink aggregator that corresponds with this token
      * @param  _tokenPair           The token pair that corresponds with this token. The zero address means USD.
+     * @param  _bypassUsdValue      True if the token does not return USD price
      */
     function ownerInsertOrUpdateOracleToken(
         address _token,
         uint8 _tokenDecimals,
         address _chainlinkAggregator,
-        address _tokenPair
+        address _tokenPair,
+        bool _bypassUsdValue
     )
     external;
 

@@ -1,6 +1,6 @@
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { BigNumber, ContractTransaction } from 'ethers';
+import { parseEther } from 'ethers/lib/utils';
 import {
   CustomTestToken,
   TestFreezableIsolationModeVaultFactory,
@@ -19,12 +19,10 @@ import {
   depositIntoDolomiteMargin,
 } from '../../../src/utils/dolomite-utils';
 import { ADDRESS_ZERO, Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
+import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
-import {
-  expectEvent,
-  expectProtocolBalance,
-  expectThrow,
-} from '../../utils/assertions';
+import { expectEvent, expectProtocolBalance, expectThrow } from '../../utils/assertions';
+import { CoreProtocolArbitrumOne } from '../../utils/core-protocol';
 import { createIsolationModeTokenVaultV1ActionsImpl } from '../../utils/dolomite';
 import {
   createTestFreezableIsolationModeVaultFactory,
@@ -36,8 +34,6 @@ import {
   setupTestMarket,
   setupUserVaultProxy,
 } from '../../utils/setup';
-import { CoreProtocolArbitrumOne } from '../../utils/core-protocol';
-import { parseEther } from 'ethers/lib/utils';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
@@ -72,10 +68,10 @@ describe('FreezableIsolationModeVaultFactory', () => {
   let factory: TestFreezableIsolationModeVaultFactory;
   let userVaultImplementation: TestIsolationModeTokenVaultV1WithFreezable;
   let userVault: TestIsolationModeTokenVaultV1WithFreezable;
-  let impersonatedVault: SignerWithAddress;
+  let impersonatedVault: SignerWithAddressWithSafety;
   let registry: TestHandlerRegistry;
 
-  let solidUser: SignerWithAddress;
+  let solidUser: SignerWithAddressWithSafety;
   let otherToken1: CustomTestToken;
   let otherToken2: CustomTestToken;
   let otherMarketId1: BigNumber;
@@ -174,14 +170,14 @@ describe('FreezableIsolationModeVaultFactory', () => {
   });
 
   async function freezeVault(
-    accountNumber: BigNumber = ZERO_BI
+    accountNumber: BigNumber = ZERO_BI,
   ): Promise<ContractTransaction> {
     return factory.connect(impersonatedVault).setVaultAccountPendingAmountForFrozenStatus(
       userVault.address,
       accountNumber,
       FreezeType.Deposit,
       PLUS_ONE_BI,
-      core.tokens.usdc.address
+      core.tokens.usdc.address,
     );
   }
 
@@ -197,7 +193,7 @@ describe('FreezableIsolationModeVaultFactory', () => {
       const newFee = ONE_ETH_BI.div(2);
       const result = await factory.connect(core.governance).ownerSetExecutionFee(newFee);
       await expectEvent(factory, result, 'ExecutionFeeSet', {
-        executionFee: newFee
+        executionFee: newFee,
       });
       expect(await factory.executionFee()).to.eq(newFee);
     });
@@ -222,7 +218,7 @@ describe('FreezableIsolationModeVaultFactory', () => {
       const newMaxFee = ONE_ETH_BI.div(2);
       const result = await factory.connect(core.governance).ownerSetMaxExecutionFee(newMaxFee);
       await expectEvent(factory, result, 'MaxExecutionFeeSet', {
-        maxExecutionFee: newMaxFee
+        maxExecutionFee: newMaxFee,
       });
       expect(await factory.maxExecutionFee()).to.eq(newMaxFee);
     });
@@ -240,7 +236,7 @@ describe('FreezableIsolationModeVaultFactory', () => {
       const newRegistry = await createTestHandlerRegistry(core);
       const result = await factory.connect(core.governance).ownerSetHandlerRegistry(newRegistry.address);
       await expectEvent(factory, result, 'HandlerRegistrySet', {
-        handlerRegistry: newRegistry.address
+        handlerRegistry: newRegistry.address,
       });
       expect(await factory.handlerRegistry()).to.eq(newRegistry.address);
     });
@@ -306,7 +302,7 @@ describe('FreezableIsolationModeVaultFactory', () => {
         defaultAccountNumber,
         FreezeType.Deposit,
         PLUS_ONE_BI,
-        core.tokens.usdc.address
+        core.tokens.usdc.address,
       );
       await expectEvent(factory, result, 'VaultAccountFrozen', {
         vault: userVault.address,
@@ -318,12 +314,12 @@ describe('FreezableIsolationModeVaultFactory', () => {
       expect(await factory.getPendingAmountByAccount(
         userVault.address,
         defaultAccountNumber,
-        FreezeType.Deposit
+        FreezeType.Deposit,
       )).to.eq(ONE_BI);
       expect(await factory.getPendingAmountByVault(userVault.address, FreezeType.Deposit)).to.eq(ONE_BI);
       expect(await factory.getOutputTokenByAccount(
         userVault.address,
-        defaultAccountNumber
+        defaultAccountNumber,
       )).to.eq(core.tokens.usdc.address);
       expect(await factory.isVaultAccountFrozen(userVault.address, defaultAccountNumber)).to.be.true;
     });
@@ -334,7 +330,7 @@ describe('FreezableIsolationModeVaultFactory', () => {
         defaultAccountNumber,
         FreezeType.Deposit,
         PLUS_ONE_BI,
-        core.tokens.usdc.address
+        core.tokens.usdc.address,
       );
 
       await factory.connect(core.governance).setVaultAccountPendingAmountForFrozenStatus(
@@ -342,14 +338,14 @@ describe('FreezableIsolationModeVaultFactory', () => {
         defaultAccountNumber,
         FreezeType.Deposit,
         MINUS_ONE_BI,
-        core.tokens.usdc.address
+        core.tokens.usdc.address,
       );
 
       expect(await factory.isVaultFrozen(userVault.address)).to.be.false;
       expect(await factory.getPendingAmountByAccount(
         userVault.address,
         defaultAccountNumber,
-        FreezeType.Deposit
+        FreezeType.Deposit,
       )).to.eq(ZERO_BI);
       expect(await factory.getPendingAmountByVault(userVault.address, FreezeType.Deposit)).to.eq(ZERO_BI);
       expect(await factory.getOutputTokenByAccount(userVault.address, defaultAccountNumber)).to.eq(ADDRESS_ZERO);
@@ -362,7 +358,7 @@ describe('FreezableIsolationModeVaultFactory', () => {
         defaultAccountNumber,
         FreezeType.Withdrawal,
         PLUS_ONE_BI,
-        core.tokens.usdc.address
+        core.tokens.usdc.address,
       );
       await expectEvent(factory, result, 'VaultAccountFrozen', {
         vault: userVault.address,
@@ -374,12 +370,12 @@ describe('FreezableIsolationModeVaultFactory', () => {
       expect(await factory.getPendingAmountByAccount(
         userVault.address,
         defaultAccountNumber,
-        FreezeType.Withdrawal
+        FreezeType.Withdrawal,
       )).to.eq(ONE_BI);
       expect(await factory.getPendingAmountByVault(userVault.address, FreezeType.Withdrawal)).to.eq(ONE_BI);
       expect(await factory.getOutputTokenByAccount(
         userVault.address,
-        defaultAccountNumber
+        defaultAccountNumber,
       )).to.eq(core.tokens.usdc.address);
       expect(await factory.isVaultAccountFrozen(userVault.address, defaultAccountNumber)).to.be.true;
     });
@@ -390,21 +386,21 @@ describe('FreezableIsolationModeVaultFactory', () => {
         defaultAccountNumber,
         FreezeType.Withdrawal,
         PLUS_ONE_BI,
-        core.tokens.usdc.address
+        core.tokens.usdc.address,
       );
       await factory.connect(core.governance).setVaultAccountPendingAmountForFrozenStatus(
         userVault.address,
         defaultAccountNumber,
         FreezeType.Withdrawal,
         MINUS_ONE_BI,
-        core.tokens.usdc.address
+        core.tokens.usdc.address,
       );
 
       expect(await factory.isVaultFrozen(userVault.address)).to.be.false;
       expect(await factory.getPendingAmountByAccount(
         userVault.address,
         defaultAccountNumber,
-        FreezeType.Deposit
+        FreezeType.Deposit,
       )).to.eq(ZERO_BI);
       expect(await factory.getPendingAmountByVault(userVault.address, FreezeType.Deposit)).to.eq(ZERO_BI);
       expect(await factory.getOutputTokenByAccount(userVault.address, defaultAccountNumber)).to.eq(ADDRESS_ZERO);
@@ -417,7 +413,7 @@ describe('FreezableIsolationModeVaultFactory', () => {
         defaultAccountNumber,
         FreezeType.Withdrawal,
         PLUS_ONE_BI,
-        core.tokens.usdc.address
+        core.tokens.usdc.address,
       );
       await expectThrow(
         factory.connect(core.governance).setVaultAccountPendingAmountForFrozenStatus(
@@ -425,7 +421,7 @@ describe('FreezableIsolationModeVaultFactory', () => {
           defaultAccountNumber,
           FreezeType.Withdrawal,
           MINUS_ONE_BI,
-          core.tokens.weth.address
+          core.tokens.weth.address,
         ),
         `FreezableVaultFactory: Invalid output token <${core.tokens.weth.address.toLowerCase()}>`,
       );
@@ -437,7 +433,7 @@ describe('FreezableIsolationModeVaultFactory', () => {
         defaultAccountNumber,
         FreezeType.Withdrawal,
         { sign: false, value: ZERO_BI },
-        core.tokens.usdc.address
+        core.tokens.usdc.address,
       );
       expect(await factory.isVaultFrozen(userVault.address)).to.be.false;
       expect(await factory.getOutputTokenByAccount(userVault.address, defaultAccountNumber)).to.eq(ADDRESS_ZERO);
@@ -452,21 +448,21 @@ describe('FreezableIsolationModeVaultFactory', () => {
         defaultAccountNumber,
         FreezeType.Deposit,
         PLUS_ONE_BI,
-        core.tokens.usdc.address
+        core.tokens.usdc.address,
       );
       await factory.connect(wrapperImpersonator).setVaultAccountPendingAmountForFrozenStatus(
         userVault.address,
         defaultAccountNumber,
         FreezeType.Deposit,
         PLUS_ONE_BI,
-        core.tokens.usdc.address
+        core.tokens.usdc.address,
       );
       await factory.connect(vaultImpersonator).setVaultAccountPendingAmountForFrozenStatus(
         userVault.address,
         defaultAccountNumber,
         FreezeType.Deposit,
         PLUS_ONE_BI,
-        core.tokens.usdc.address
+        core.tokens.usdc.address,
       );
       await expectThrow(
         factory.connect(core.hhUser2).setVaultAccountPendingAmountForFrozenStatus(
@@ -474,7 +470,7 @@ describe('FreezableIsolationModeVaultFactory', () => {
           defaultAccountNumber,
           FreezeType.Deposit,
           PLUS_ONE_BI,
-          core.tokens.usdc.address
+          core.tokens.usdc.address,
         ),
         `FreezableVaultFactory: Caller is not a authorized <${core.hhUser2.address.toLowerCase()}>`,
       );
@@ -487,7 +483,7 @@ describe('FreezableIsolationModeVaultFactory', () => {
           defaultAccountNumber,
           FreezeType.Deposit,
           PLUS_ONE_BI,
-          core.tokens.usdc.address
+          core.tokens.usdc.address,
         ),
         `IsolationModeVaultFactory: Invalid vault <${core.hhUser1.address.toLowerCase()}>`,
       );
@@ -502,13 +498,13 @@ describe('FreezableIsolationModeVaultFactory', () => {
         defaultAccountNumber,
         FreezeType.Deposit,
         PLUS_ONE_BI,
-        core.tokens.usdc.address
+        core.tokens.usdc.address,
       );
       await factory.connect(wrapperImpersonator).setShouldVaultSkipTransfer(userVault.address, true);
       await factory.connect(wrapperImpersonator).depositIntoDolomiteMarginFromTokenConverter(
         userVault.address,
         ZERO_BI,
-        ONE_ETH_BI
+        ONE_ETH_BI,
       );
       await expectProtocolBalance(core, userVault.address, ZERO_BI, underlyingMarketId, ONE_ETH_BI);
     });
@@ -518,7 +514,7 @@ describe('FreezableIsolationModeVaultFactory', () => {
         factory.connect(core.hhUser2).depositIntoDolomiteMarginFromTokenConverter(
           userVault.address,
           ZERO_BI,
-          ONE_ETH_BI
+          ONE_ETH_BI,
         ),
         `IsolationModeVaultFactory: Caller is not a token converter <${core.hhUser2.address.toLowerCase()}>`,
       );
@@ -530,7 +526,7 @@ describe('FreezableIsolationModeVaultFactory', () => {
         factory.connect(wrapperImpersonator).depositIntoDolomiteMarginFromTokenConverter(
           core.hhUser1.address,
           ZERO_BI,
-          ONE_ETH_BI
+          ONE_ETH_BI,
         ),
         `IsolationModeVaultFactory: Invalid vault <${core.hhUser1.address.toLowerCase()}>`,
       );

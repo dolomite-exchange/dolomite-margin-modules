@@ -166,7 +166,7 @@ function findArtifactPath(parentPath: string, artifactName: string): string | un
   return undefined;
 }
 
-async function getFreshArtifactFromWorkspace(artifactName: string) {
+export async function initializeFreshArtifactFromWorkspace(artifactName: string): Promise<void> {
   const packagesPath = '../../../../packages';
   const deploymentsArtifactsPath = path.join(__dirname, packagesPath, 'deployment', 'artifacts');
   await fsExtra.remove(deploymentsArtifactsPath);
@@ -185,6 +185,7 @@ async function getFreshArtifactFromWorkspace(artifactName: string) {
         deploymentsArtifactsPath,
         { overwrite: true },
       );
+
       const artifact = JSON.parse(readFileSync(artifactPath, 'utf8'));
       await artifacts.saveArtifactAndDebugFile(artifact);
       return;
@@ -214,7 +215,7 @@ export async function deployContractAndSave(
     file = {};
   }
 
-  await getFreshArtifactFromWorkspace(contractName);
+  await initializeFreshArtifactFromWorkspace(contractName);
   const chainId = network.config.chainId!;
   const usedContractName = contractRename ?? contractName;
   if (file[usedContractName]?.[chainId.toString()]) {
@@ -235,7 +236,7 @@ export async function deployContractAndSave(
       ? await createContractWithLibrary(contractName, libraries, args)
       : await createContractWithName(contractName, args);
   } catch (e) {
-    console.error(`\tCould not deploy at attempt ${attempts + 1} due to error:`, e);
+    console.error(`\tCould not deploy at attempt ${attempts + 1} due for ${contractName} to error:`, e);
     return deployContractAndSave(contractName, args, contractRename, libraries, attempts + 1);
   }
 
@@ -535,13 +536,19 @@ export interface DenJsonUpload {
   transactions: EncodedTransaction[];
 }
 
-function isOwnerFunction(methodName: string): boolean {
+function isOwnerFunction(methodName: string, isMultisig: boolean): boolean {
   return methodName.startsWith('owner')
     || methodName === 'upgradeTo'
     || methodName === 'upgradeToAndCall'
     || methodName === 'setUserVaultImplementation'
     || methodName === 'setIsTokenConverterTrusted'
-    || methodName === 'setGmxRegistry';
+    || methodName === 'setGmxRegistry'
+    || (isMultisig && methodName === 'addOwner')
+    || (isMultisig && methodName === 'changeRequirement')
+    || (isMultisig && methodName === 'changeTimelock')
+    || (isMultisig && methodName === 'removeOver')
+    || (isMultisig && methodName === 'replaceOwner')
+    || (isMultisig && methodName === 'setSelector');
 }
 
 export async function prettyPrintEncodedDataWithTypeSafety<
@@ -582,7 +589,7 @@ export async function prettyPrintEncodedDataWithTypeSafety<
 
   if (
     typeof methodName === 'string'
-    && isOwnerFunction(methodName)
+    && isOwnerFunction(methodName, transaction.to === core.delayedMultiSig.address)
     && await core.dolomiteMargin.owner() === core.delayedMultiSig.address
   ) {
     // All owner ... functions must go to Dolomite governance first
@@ -862,7 +869,7 @@ export function writeFile(
 
 async function isValidAmount(token: IERC20, amount: BigNumberish) {
   const realAmount = BigNumber.from(amount);
-  if (realAmount.eq(ZERO_BI)) {
+  if (realAmount.eq(ZERO_BI) || realAmount.eq('1')) {
     return true;
   }
 

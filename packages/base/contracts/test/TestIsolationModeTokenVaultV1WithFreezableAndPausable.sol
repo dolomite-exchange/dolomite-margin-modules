@@ -41,7 +41,7 @@ contract TestIsolationModeTokenVaultV1WithFreezableAndPausable is IsolationModeT
     bytes32 private constant _IS_EXTERNAL_REDEMPTION_PAUSED_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isExternalRedemptionPaused")) - 1);
 
     // solhint-disable-next-line no-empty-blocks
-    constructor(address _weth) IsolationModeTokenVaultV1WithFreezable(_weth) {}
+    constructor(address _weth, uint256 _chainId) IsolationModeTokenVaultV1WithFreezable(_weth, _chainId) {}
 
     function setIsExternalRedemptionPaused(bool _newIsExternalRedemptionPaused) public {
         _setUint256(_IS_EXTERNAL_REDEMPTION_PAUSED_SLOT, _newIsExternalRedemptionPaused ? 1 : 0);

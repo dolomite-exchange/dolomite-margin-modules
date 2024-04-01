@@ -1,17 +1,17 @@
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import { RegistryProxy, RegistryProxy__factory, } from '../../../src/types';
-import { Network } from '../../../src/utils/no-deps-constants';
-import { ARB_MAP } from '../../../src/utils/constants';
-import Deployments from  '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
-import { getContract } from '../setup';
 import {
   ARBIsolationModeVaultFactory__factory,
   ARBRegistry__factory,
   IARB,
   IARB__factory,
   IARBIsolationModeVaultFactory,
-  IARBRegistry
+  IARBRegistry,
 } from '@dolomite-exchange/modules-arb/src/types';
+import Deployments from '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
+import { RegistryProxy, RegistryProxy__factory } from '../../../src/types';
+import { ARB_MAP } from '../../../src/utils/constants';
+import { Network } from '../../../src/utils/no-deps-constants';
+import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';
+import { getContract } from '../setup';
 
 export interface ArbEcosystem {
   arb: IARB;
@@ -22,7 +22,7 @@ export interface ArbEcosystem {
   };
 }
 
-export async function createArbEcosystem(network: Network, signer: SignerWithAddress): Promise<ArbEcosystem> {
+export async function createArbEcosystem(network: Network, signer: SignerWithAddressWithSafety): Promise<ArbEcosystem> {
   if (network !== Network.ArbitrumOne) {
     return Promise.reject(`Invalid network, found ${network}`);
   }

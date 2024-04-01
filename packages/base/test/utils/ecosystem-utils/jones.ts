@@ -1,3 +1,4 @@
+import Deployments from '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
 import {
   IJonesGLPAdapter,
   IJonesGLPAdapter__factory,
@@ -12,7 +13,6 @@ import {
   JonesUSDCIsolationModeVaultFactory,
   JonesUSDCIsolationModeVaultFactory__factory,
 } from '@dolomite-exchange/modules-jones/src/types';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import {
   IAlgebraV3Pool,
   IAlgebraV3Pool__factory,
@@ -21,7 +21,6 @@ import {
   RegistryProxy,
   RegistryProxy__factory,
 } from '../../../src/types';
-import { Network } from '../../../src/utils/no-deps-constants';
 import {
   JONES_ECOSYSTEM_GOVERNOR_MAP,
   JONES_GLP_ADAPTER_MAP,
@@ -30,10 +29,11 @@ import {
   JONES_JUSDC_MAP,
   JONES_JUSDC_RECEIPT_TOKEN_MAP,
   JONES_WETH_V3_POOL_MAP,
-  JONES_WHITELIST_CONTROLLER_MAP
+  JONES_WHITELIST_CONTROLLER_MAP,
 } from '../../../src/utils/constants';
+import { Network } from '../../../src/utils/no-deps-constants';
+import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';
 import { impersonateOrFallback } from '../index';
-import Deployments from  '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
 import { getContract } from '../setup';
 
 export interface JonesEcosystem {
@@ -43,7 +43,7 @@ export interface JonesEcosystem {
   usdcReceiptToken: IERC4626;
   jUSDC: IERC4626;
   jUSDCFarm: IJonesUSDCFarm;
-  admin: SignerWithAddress;
+  admin: SignerWithAddressWithSafety;
   jonesWethV3Pool: IAlgebraV3Pool;
   live: {
     jUSDCIsolationModeFactory: JonesUSDCIsolationModeVaultFactory;
@@ -52,7 +52,10 @@ export interface JonesEcosystem {
   };
 }
 
-export async function createJonesEcosystem(network: Network, signer: SignerWithAddress): Promise<JonesEcosystem> {
+export async function createJonesEcosystem(
+  network: Network,
+  signer: SignerWithAddressWithSafety,
+): Promise<JonesEcosystem> {
   if (network !== Network.ArbitrumOne) {
     return Promise.reject(`Invalid network, found ${network}`);
   }

@@ -1,5 +1,4 @@
 import { ActionType, AmountDenomination, AmountReference } from '@dolomite-margin/dist/src';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
@@ -14,6 +13,7 @@ import {
 import { AccountInfoStruct } from '../../../src/utils';
 import { createContractWithAbi, createContractWithLibrary, createTestToken } from '../../../src/utils/dolomite-utils';
 import { BYTES_EMPTY, Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
+import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';
 import {
   encodeExternalSellActionDataWithNoData,
   impersonate,
@@ -49,7 +49,7 @@ describe('IsolationModeWrapperTraderV1', () => {
   let vault: TestIsolationModeTokenVaultV1;
   let defaultAccount: AccountInfoStruct;
 
-  let solidUser: SignerWithAddress;
+  let solidUser: SignerWithAddressWithSafety;
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
@@ -158,7 +158,7 @@ describe('IsolationModeWrapperTraderV1', () => {
           ZERO_BI, // normalize the amount to match the # of decimals otherToken has
           encodeExternalSellActionDataWithNoData(amountWei), // minOutputAmount is too large
         ),
-        'IsolationModeWrapperTraderV1: Invalid input amount'
+        'IsolationModeWrapperTraderV1: Invalid input amount',
       );
     });
 

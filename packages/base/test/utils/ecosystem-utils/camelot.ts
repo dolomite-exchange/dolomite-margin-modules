@@ -1,12 +1,12 @@
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import { IAlgebraV3Pool, IAlgebraV3Pool__factory, } from '../../../src/types';
-import { Network } from '../../../src/utils/no-deps-constants';
+import { IAlgebraV3Pool, IAlgebraV3Pool__factory } from '../../../src/types';
 import {
   DPX_WETH_V3_POOL_MAP,
   GRAIL_USDC_V3_POOL_MAP,
   GRAIL_WETH_V3_POOL_MAP,
-  SIZE_WETH_V3_POOL_MAP
+  SIZE_WETH_V3_POOL_MAP,
 } from '../../../src/utils/constants';
+import { Network } from '../../../src/utils/no-deps-constants';
+import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';
 import { getContract } from '../setup';
 
 export interface CamelotEcosystem {
@@ -18,7 +18,7 @@ export interface CamelotEcosystem {
 
 export async function createCamelotEcosystem(
   network: Network,
-  signer: SignerWithAddress,
+  signer: SignerWithAddressWithSafety,
 ): Promise<CamelotEcosystem> {
   if (network !== Network.ArbitrumOne) {
     return Promise.reject(`Invalid network, found ${network}`);

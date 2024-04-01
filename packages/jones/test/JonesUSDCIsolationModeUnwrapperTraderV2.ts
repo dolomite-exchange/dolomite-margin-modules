@@ -1,6 +1,7 @@
 import { IERC4626 } from '@dolomite-exchange/modules-base/src/types';
 import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
 import { BYTES_EMPTY, Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { SignerWithAddressWithSafety } from '@dolomite-exchange/modules-base/src/utils/SignerWithAddressWithSafety';
 import {
   encodeExternalSellActionDataWithNoData,
   impersonate,
@@ -17,7 +18,6 @@ import {
   setupUSDCBalance,
   setupUserVaultProxy,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import {
@@ -60,7 +60,7 @@ describe('JonesUSDCIsolationModeUnwrapperTraderV2', () => {
   let priceOracle: JonesUSDCPriceOracle;
   let defaultAccount: AccountInfoStruct;
 
-  let solidUser: SignerWithAddress;
+  let solidUser: SignerWithAddressWithSafety;
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));

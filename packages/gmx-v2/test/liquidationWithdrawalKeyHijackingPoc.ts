@@ -35,7 +35,7 @@ import {
 } from 'packages/base/test/utils/setup';
 import { getLiquidateIsolationModeZapPath } from 'packages/base/test/utils/zap-utils';
 import { AccountStruct } from '../../../packages/base/src/utils/constants';
-import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE } from '../src/gmx-v2-constructors';
+import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE_FOR_TESTS } from '../src/gmx-v2-constructors';
 import {
   GmxV2IsolationModeTokenVaultV1,
   GmxV2IsolationModeTokenVaultV1__factory,
@@ -118,7 +118,7 @@ describe('POC: liquidationWithdrawalKeyHijacking', () => {
       allowableMarketIds,
       core.gmxEcosystemV2!.gmTokens.ethUsd,
       userVaultImplementation,
-      GMX_V2_EXECUTION_FEE,
+      GMX_V2_EXECUTION_FEE_FOR_TESTS,
     );
     underlyingToken = IGmxMarketToken__factory.connect(await factory.UNDERLYING_TOKEN(), core.hhUser1);
     unwrapper = await createGmxV2IsolationModeUnwrapperTraderV2(
@@ -191,13 +191,13 @@ describe('POC: liquidationWithdrawalKeyHijacking', () => {
       defaultAccountNumber,
       borrowAccountNumber,
       amountWei,
-      { value: GMX_V2_EXECUTION_FEE },
+      { value: GMX_V2_EXECUTION_FEE_FOR_TESTS },
     );
     await vault.openBorrowPosition(
       defaultAccountNumber,
       borrowAccountNumber2,
       amountWeiForSecond,
-      { value: GMX_V2_EXECUTION_FEE },
+      { value: GMX_V2_EXECUTION_FEE_FOR_TESTS },
     );
 
     await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);

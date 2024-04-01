@@ -11,6 +11,7 @@ import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import {
+  getGmxV2IsolationModeTokenVaultConstructorParams,
   getGmxV2IsolationModeUnwrapperTraderV2ConstructorParams,
   getGmxV2IsolationModeVaultFactoryConstructorParams,
   getGmxV2IsolationModeWrapperTraderV2ConstructorParams,
@@ -77,7 +78,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
 
   const gmxV2TokenVaultAddress = await deployContractAndSave(
     'GmxV2IsolationModeTokenVaultV1',
-    [core.tokens.weth.address],
+    getGmxV2IsolationModeTokenVaultConstructorParams(core),
     'GmxV2IsolationModeTokenVaultV1',
     { ...core.tokenVaultActionsLibraries, ...gmxV2Libraries },
   );

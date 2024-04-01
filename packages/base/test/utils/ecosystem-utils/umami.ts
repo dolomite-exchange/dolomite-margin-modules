@@ -2,11 +2,9 @@ import {
   IUmamiAssetVault,
   IUmamiAssetVault__factory,
   IUmamiAssetVaultStorageViewer,
-  IUmamiAssetVaultStorageViewer__factory
+  IUmamiAssetVaultStorageViewer__factory,
 } from '@dolomite-exchange/modules-umami/src/types';
 import { Signer } from 'ethers';
-import { Network } from '../../../src/utils/no-deps-constants';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import {
   UMAMI_CONFIGURATOR_MAP,
   UMAMI_LINK_VAULT_MAP,
@@ -14,8 +12,10 @@ import {
   UMAMI_UNI_VAULT_MAP,
   UMAMI_USDC_VAULT_MAP,
   UMAMI_WBTC_VAULT_MAP,
-  UMAMI_WETH_VAULT_MAP
+  UMAMI_WETH_VAULT_MAP,
 } from '../../../src/utils/constants';
+import { Network } from '../../../src/utils/no-deps-constants';
+import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';
 import { impersonateOrFallback } from '../index';
 import { getContract } from '../setup';
 
@@ -31,7 +31,7 @@ export interface UmamiEcosystem {
 
 export async function createUmamiEcosystem(
   network: Network,
-  signer: SignerWithAddress,
+  signer: SignerWithAddressWithSafety,
 ): Promise<UmamiEcosystem> {
   if (network !== Network.ArbitrumOne) {
     return Promise.reject(`Invalid network, found ${network}`);

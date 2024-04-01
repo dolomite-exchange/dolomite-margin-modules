@@ -47,6 +47,7 @@ interface IDolomiteRegistry {
     event EventEmitterSet(address indexed _eventEmitter);
     event ChainlinkPriceOracleSet(address indexed _chainlinkPriceOracle);
     event DolomiteMigratorSet(address indexed _dolomiteMigrator);
+    event RedstonePriceOracleSet(address indexed _redstonePriceOracle);
 
     // ========================================================
     // =================== Admin Functions ====================
@@ -92,6 +93,13 @@ interface IDolomiteRegistry {
 
     function ownerSetDolomiteMigrator(address _dolomiteMigrator) external;
 
+    /**
+     *
+     * @param  _redstonePriceOracle    The new address of the Redstone price oracle that's compatible with
+     *                                  DolomiteMargin.
+     */
+    function ownerSetRedstonePriceOracle(address _redstonePriceOracle) external;
+
     // ========================================================
     // =================== Getter Functions ===================
     // ========================================================
@@ -127,6 +135,11 @@ interface IDolomiteRegistry {
     function chainlinkPriceOracle() external view returns (IDolomitePriceOracle);
 
     function dolomiteMigrator() external view returns (IDolomiteMigrator);
+
+    /**
+     * @return The address of the Redstone price oracle that's compatible with DolomiteMargin
+     */
+    function redstonePriceOracle() external view returns (IDolomitePriceOracle);
 
     /**
      * @return The base (denominator) for the slippage tolerance variable. Always 1e18.

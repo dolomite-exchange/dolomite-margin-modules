@@ -10,7 +10,7 @@ import {
   setupTestMarket,
   setupUserVaultProxy,
 } from 'packages/base/test/utils/setup';
-import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE } from '../src/gmx-v2-constructors';
+import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE_FOR_TESTS } from '../src/gmx-v2-constructors';
 import {
   GmxV2IsolationModeTokenVaultV1,
   GmxV2IsolationModeTokenVaultV1__factory,
@@ -63,7 +63,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
       allowableMarketIds,
       core.gmxEcosystemV2!.gmTokens.ethUsd,
       vaultImplementation,
-      GMX_V2_EXECUTION_FEE,
+      GMX_V2_EXECUTION_FEE_FOR_TESTS,
     );
 
     unwrapper = await createGmxV2IsolationModeUnwrapperTraderV2(
@@ -132,7 +132,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
         allowableMarketIds,
         core.gmxEcosystemV2!.gmTokens.ethUsd,
         vaultImplementation,
-        GMX_V2_EXECUTION_FEE,
+        GMX_V2_EXECUTION_FEE_FOR_TESTS,
       );
       await createGmxV2IsolationModeVaultFactory(
         core,
@@ -142,7 +142,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
         [allowableMarketIds[1], allowableMarketIds[0]],
         core.gmxEcosystemV2!.gmTokens.ethUsd,
         vaultImplementation,
-        GMX_V2_EXECUTION_FEE,
+        GMX_V2_EXECUTION_FEE_FOR_TESTS,
       );
     });
 
@@ -157,7 +157,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
           allowableMarketIds,
           core.gmxEcosystemV2!.gmTokens.ethUsd,
           vaultImplementation,
-          GMX_V2_EXECUTION_FEE,
+          GMX_V2_EXECUTION_FEE_FOR_TESTS,
         ),
         'GmxV2Library: Invalid market IDs length',
       );
@@ -173,7 +173,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
           allowableMarketIds,
           core.gmxEcosystemV2!.gmTokens.ethUsd,
           vaultImplementation,
-          GMX_V2_EXECUTION_FEE,
+          GMX_V2_EXECUTION_FEE_FOR_TESTS,
         ),
         'GmxV2Library: Invalid market IDs',
       );
@@ -186,7 +186,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
           allowableMarketIds,
           core.gmxEcosystemV2!.gmTokens.ethUsd,
           vaultImplementation,
-          GMX_V2_EXECUTION_FEE,
+          GMX_V2_EXECUTION_FEE_FOR_TESTS,
         ),
         'GmxV2Library: Invalid market IDs',
       );
@@ -203,7 +203,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
           badAllowableCollateralMarketIds,
           core.gmxEcosystemV2!.gmTokens.ethUsd,
           vaultImplementation,
-          GMX_V2_EXECUTION_FEE,
+          GMX_V2_EXECUTION_FEE_FOR_TESTS,
         ),
         'GmxV2Library: Invalid market IDs length',
       );
@@ -219,7 +219,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
           [core.marketIds.nativeUsdc!, core.marketIds.dai!],
           core.gmxEcosystemV2!.gmTokens.ethUsd,
           vaultImplementation,
-          GMX_V2_EXECUTION_FEE,
+          GMX_V2_EXECUTION_FEE_FOR_TESTS,
         ),
         'GmxV2Library: Invalid market IDs',
       );
@@ -232,7 +232,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
           [core.marketIds.dai!, core.marketIds.nativeUsdc!],
           core.gmxEcosystemV2!.gmTokens.ethUsd,
           vaultImplementation,
-          GMX_V2_EXECUTION_FEE,
+          GMX_V2_EXECUTION_FEE_FOR_TESTS,
         ),
         'GmxV2Library: Invalid market IDs',
       );

@@ -1,3 +1,5 @@
+import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin';
+import { expect } from 'chai';
 import { BaseContract, BigNumber } from 'ethers';
 import {
   CustomTestToken,
@@ -11,16 +13,19 @@ import {
   TestSimpleIsolationModeVaultFactory,
   TestSimpleIsolationModeVaultFactory__factory,
 } from '../../src/types';
-import { createContractWithAbi, createContractWithLibrary, createTestToken, depositIntoDolomiteMargin } from '../../src/utils/dolomite-utils';
-import { BYTES_EMPTY, Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from '../../src/utils/no-deps-constants';
+import {
+  createContractWithAbi,
+  createContractWithLibrary,
+  createTestToken,
+  depositIntoDolomiteMargin,
+} from '../../src/utils/dolomite-utils';
+import { BYTES_EMPTY, Network, ONE_ETH_BI, ZERO_BI } from '../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
 import { expectProtocolBalance } from '../utils/assertions';
+import { CoreProtocolArbitrumOne } from '../utils/core-protocol';
 import { createIsolationModeTokenVaultV1ActionsImpl } from '../utils/dolomite';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from '../utils/setup';
-import { expect } from 'chai';
-import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin';
 import { getWrapZapParams } from '../utils/zap-utils';
-import { CoreProtocolArbitrumOne } from '../utils/core-protocol';
 
 const defaultAccountNumber = 0;
 const otherAccountNumber = 123;
@@ -85,7 +90,7 @@ describe('SimpleIsolationModeWrapperTraderV2', () => {
       [
         factory.address,
         core.dolomiteMargin.address,
-        core.dolomiteRegistry.address
+        core.dolomiteRegistry.address,
       ],
     );
     tokenWrapper = await createContractWithAbi<SimpleIsolationModeWrapperTraderV2>(
@@ -122,7 +127,7 @@ describe('SimpleIsolationModeWrapperTraderV2', () => {
         underlyingToken.address,
         factory.address,
         amountWei,
-        BYTES_EMPTY
+        BYTES_EMPTY,
       )).to.eq(amountWei);
     });
   });
@@ -145,7 +150,7 @@ describe('SimpleIsolationModeWrapperTraderV2', () => {
         otherAccountNumber,
         underlyingMarketId,
         amountWei,
-        BalanceCheckFlag.Both
+        BalanceCheckFlag.Both,
       );
       await expectProtocolBalance(core, userVault.address, otherAccountNumber, underlyingMarketId, amountWei);
 
@@ -155,7 +160,7 @@ describe('SimpleIsolationModeWrapperTraderV2', () => {
         factoryMarketId,
         amountWei,
         tokenWrapper,
-        core
+        core,
       );
       await userVault.swapExactInputForOutput(
         otherAccountNumber,

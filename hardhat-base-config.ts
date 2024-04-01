@@ -3,7 +3,6 @@ import '@nomiclabs/hardhat-etherscan';
 import '@typechain/hardhat';
 import 'hardhat-gas-reporter';
 import {
-  DEFAULT_BLOCK_NUMBER,
   Network, NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP,
   NetworkName,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
@@ -58,7 +57,7 @@ export const base_config: HardhatUserConfig = {
     [NetworkName.ArbitrumOne]: {
       chainId: parseInt(Network.ArbitrumOne, 10),
       url: arbitrumOneWeb3Url,
-      gas: 30_000_000, // 50M gas
+      gas: 30_000_000, // 30M gas
       accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
     },
     [NetworkName.Base]: {

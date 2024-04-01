@@ -60,7 +60,13 @@ contract TestAsyncProtocolIsolationModeTokenVault is
     // ========================== Constructors ==========================
     // ==================================================================
 
-    constructor(address _testAsyncProtocol, address _weth) IsolationModeTokenVaultV1WithFreezable(_weth) {
+    constructor(
+        address _testAsyncProtocol,
+        address _weth,
+        uint256 _chainId
+    )
+        IsolationModeTokenVaultV1WithFreezable(_weth, _chainId)
+    {
         TEST_ASYNC_PROTOCOL = ITestAsyncProtocol(_testAsyncProtocol);
     }
 
@@ -106,7 +112,7 @@ contract TestAsyncProtocolIsolationModeTokenVault is
     function isExternalRedemptionPaused()
         public
         override
-        view
+        pure
         returns (bool)
     {
         return false;
@@ -161,9 +167,12 @@ contract TestAsyncProtocolIsolationModeTokenVault is
 
         // Ignore the freezable implementation and call the pausable one directly
         // Need to still allow the unwrapper so can't call freezable modifier
-        _requireNotLiquidatableIfWrapToUnderlying(
+        _validateIfWrapToUnderlying(
             _params.tradeAccountNumber,
-            _params.marketIdsPath[_params.marketIdsPath.length - 1]
+            _params.marketIdsPath[0],
+            _params.marketIdsPath[_params.marketIdsPath.length - 1],
+            _params.inputAmountWei,
+            _params.minOutputAmountWei
         );
         IsolationModeTokenVaultV1WithPausable._swapExactInputForOutput(
             _params
