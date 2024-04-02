@@ -48,10 +48,10 @@ contract PancakeV3PriceOracle is ITWAPPriceOracleV1, OnlyDolomiteMargin {
 
     // ========================= Storage =========================
 
-    address public pair;
     uint32 public observationInterval;
 
     address public immutable TOKEN; // solhint-disable-line var-name-mixedcase
+    address public immutable PAIR;
     uint256 public immutable TOKEN_DECIMALS_FACTOR; // solhint-disable-line var-name-mixedcase
     IDolomiteRegistry public immutable DOLOMITE_REGISTRY;
 
@@ -64,7 +64,7 @@ contract PancakeV3PriceOracle is ITWAPPriceOracleV1, OnlyDolomiteMargin {
         address _dolomiteMargin
     ) OnlyDolomiteMargin(_dolomiteMargin) {
         TOKEN = _token;
-        pair = _pair;
+        PAIR = _pair;
         _ownerSetObservationInterval(15 minutes);
 
         TOKEN_DECIMALS_FACTOR = 10 ** IERC20Metadata(_token).decimals();
@@ -97,7 +97,7 @@ contract PancakeV3PriceOracle is ITWAPPriceOracleV1, OnlyDolomiteMargin {
             _token
         );
 
-        IAlgebraV3Pool currentPair = IAlgebraV3Pool(pair);
+        IAlgebraV3Pool currentPair = IAlgebraV3Pool(PAIR);
 
         address poolToken0 = currentPair.token0();
         address outputToken = poolToken0 == _token ? currentPair.token1() : poolToken0;

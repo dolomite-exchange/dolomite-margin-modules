@@ -28,7 +28,7 @@ import { IDolomitePriceOracle } from "@dolomite-exchange/modules-base/contracts/
  *
  * An interface of IDolomitePriceOracle that uses TWAP to get prices compatible with the protocol
  */
-interface ITWAPPriceOracle is IDolomitePriceOracle {
+interface ITWAPPriceOracleV1 is IDolomitePriceOracle {
 
     // ============ Events ============
 

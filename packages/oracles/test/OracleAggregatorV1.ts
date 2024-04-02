@@ -13,7 +13,7 @@ import {
   TestChainlinkAggregator__factory,
 } from '../src/types';
 import {
-  CustomTestToken,
+  CustomTestToken, DolomiteRegistryImplementation, DolomiteRegistryImplementation__factory,
 } from '@dolomite-exchange/modules-base/src/types';
 import {
   getChainlinkPriceOracleV3ConstructorParamsFromChainlinkOracleV1,
@@ -81,6 +81,16 @@ xdescribe('OracleAggregatorV1', () => {
       await getOracleAggregatorV1ConstructorParams(core, chainlinkOracle, redstoneOracle),
     )).connect(core.governance);
 
+    const dolomiteRegistryImplementation = await createContractWithAbi<DolomiteRegistryImplementation>(
+      DolomiteRegistryImplementation__factory.abi,
+      DolomiteRegistryImplementation__factory.bytecode,
+      [],
+    );
+    await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(dolomiteRegistryImplementation.address);
+    await core.dolomiteRegistry.connect(core.governance).ownerSetOracleAggregator(oracleAggregator.address);
+    await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkPriceOracle(chainlinkOracle.address);
+    await core.dolomiteRegistry.connect(core.governance).ownerSetRedstonePriceOracle(redstoneOracle.address);
+
     snapshotId = await snapshot();
   });
 
@@ -136,7 +146,7 @@ xdescribe('OracleAggregatorV1', () => {
   });
 
   describe('#getPrice', () => {
-    it('returns the correct value for a token with 18 decimals', async () => {
+    it.only('returns the correct value for a token with 18 decimals', async () => {
       const price = await oracleAggregator.getPrice(core.tokens.weth.address);
       expect(price.value).to.eq(WETH_PRICE);
     });

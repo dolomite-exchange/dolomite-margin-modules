@@ -23,7 +23,7 @@ import { IDolomitePriceOracle } from "@dolomite-exchange/modules-base/contracts/
 
 
 /**
- * @title   IOracleAggregatorV2.sol
+ * @title   IOracleAggregatorV2
  * @author  Dolomite
  *
  * An interface of IDolomitePriceOracle that aggregates all oracles into one contract

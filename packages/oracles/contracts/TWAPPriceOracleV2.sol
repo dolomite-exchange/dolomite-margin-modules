@@ -32,17 +32,17 @@ import { OracleLibrary } from "./utils/OracleLibrary.sol";
 
 
 /**
- * @title   PancakeV3PriceOracle
+ * @title   TWAPPriceOracleV2
  * @author  Dolomite
  *
- * An implementation of the ITWAPPriceOracleV1.sol interface that makes gets the TWAP from an LP pool
+ * An implementation of the ITWAPPriceOracleV1.sol interface that makes gets the TWAP from a number of LP pools
  */
-contract PancakeV3PriceOracle is ITWAPPriceOracleV1, OnlyDolomiteMargin {
+contract TWAPPriceOracleV2 is ITWAPPriceOracleV1, OnlyDolomiteMargin {
     using EnumerableSet for EnumerableSet.AddressSet;
 
     // ========================= Constants =========================
 
-    bytes32 private constant _FILE = "PancakeV3PriceOracle";
+    bytes32 private constant _FILE = "TWAPPriceOracleV2";
     uint256 private constant _ONE_DOLLAR = 10 ** 36;
     uint8 private constant _ORACLE_VALUE_DECIMALS = 36;
 
@@ -90,7 +90,6 @@ contract PancakeV3PriceOracle is ITWAPPriceOracleV1, OnlyDolomiteMargin {
     public
     view
     returns (IDolomiteStructs.MonetaryPrice memory) {
-        if (_token == TOKEN) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _token == TOKEN,
             _FILE,
@@ -103,14 +102,13 @@ contract PancakeV3PriceOracle is ITWAPPriceOracleV1, OnlyDolomiteMargin {
         address poolToken0 = currentPair.token0();
         address outputToken = poolToken0 == _token ? currentPair.token1() : poolToken0;
 
-        int24 tick = OracleLibrary.consultPancakeSwap(address(currentPair), observationInterval);
+        int24 tick = OracleLibrary.consult(address(currentPair), observationInterval);
         uint256 quote = OracleLibrary.getQuoteAtTick(tick, uint128(TOKEN_DECIMALS_FACTOR), _token, outputToken);
 
         IOracleAggregatorV2 aggregator = IOracleAggregatorV2(address(DOLOMITE_REGISTRY.oracleAggregator()));
         uint8 outputTokenDecimals = aggregator.getDecimalsByToken(outputToken);
-        /*assert(outputTokenDecimals > 0);*/
+        assert(outputTokenDecimals > 0);
 
-        // @follow-up Is this standardization correct here? Also in the TWAP oracle
         return IDolomiteStructs.MonetaryPrice({
             value: _standardizeNumberOfDecimals(quote, outputTokenDecimals)
         });

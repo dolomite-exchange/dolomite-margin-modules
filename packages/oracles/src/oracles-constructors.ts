@@ -253,3 +253,11 @@ export function getTWAPPriceOracleV1ConstructorParams<T extends Network>(
 ): any[] {
   return [token.address, tokenPairs.map(pair => pair.address), core.dolomiteMargin.address];
 }
+
+export function getTWAPPriceOracleV2ConstructorParams<T extends Network>(
+  core: CoreProtocolType<T>,
+  token: IERC20,
+  tokenPair: IAlgebraV3Pool,
+): any[] {
+  return [token.address, tokenPair.address, core.dolomiteRegistry.address, core.dolomiteMargin.address];
+}

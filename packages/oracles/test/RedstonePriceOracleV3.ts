@@ -3,7 +3,7 @@ import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import {
-  OracleAggregator2__factory,
+  OracleAggregatorV2__factory,
   RedstonePriceOracleV3,
   RedstonePriceOracleV3__factory,
   TestChainlinkAggregator,
@@ -58,7 +58,7 @@ describe('RedstonePriceOracleV3', () => {
     );
     await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(dolomiteRegistryImplementation.address);
 
-    oracleAggregator = await deployMockContract(core.governance, OracleAggregator2__factory.abi);
+    oracleAggregator = await deployMockContract(core.governance, OracleAggregatorV2__factory.abi as any);
     await oracleAggregator.mock.getDecimalsByToken.withArgs(core.tokens.weth.address).returns(18);
     await oracleAggregator.mock.getDecimalsByToken.withArgs(core.tokens.dai.address).returns(18);
     await oracleAggregator.mock.getDecimalsByToken.withArgs(core.tokens.usdc.address).returns(6);
