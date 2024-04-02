@@ -1,6 +1,9 @@
 import { TestInterestSetter, TestInterestSetter__factory } from '@dolomite-exchange/modules-interest-setters/src/types';
 import { BigNumberish } from 'ethers';
-import { network } from 'hardhat';
+import { artifacts, network } from 'hardhat';
+import fs, { readFileSync } from 'fs';
+import { Artifact } from 'hardhat/types';
+import path, { join } from 'path';
 import {
   CustomTestToken,
   IERC20,
@@ -23,6 +26,7 @@ import {
   TestIsolationModeTokenVaultV1WithFreezableAndPausable,
   TestIsolationModeTokenVaultV1WithPausable,
   TestIsolationModeTokenVaultV1WithPausableAndOnlyEoa,
+  TestIsolationModeTokenVaultV1__factory,
   TestPriceOracle,
   TestPriceOracle__factory,
   TestUpgradeableAsyncIsolationModeUnwrapperTrader,
@@ -30,12 +34,13 @@ import {
   TestUpgradeableAsyncIsolationModeWrapperTrader,
   TestUpgradeableAsyncIsolationModeWrapperTrader__factory,
 } from '../../../src/types';
-import { createContractWithAbi, createContractWithLibrary } from '../../../src/utils/dolomite-utils';
+import { createContractWithAbi, createContractWithLibrary, createContractWithLibraryAndArtifact, createContractWithName } from '../../../src/utils/dolomite-utils';
 import { NetworkType } from '../../../src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';
 import {
   createAsyncIsolationModeUnwrapperTraderImpl,
   createAsyncIsolationModeWrapperTraderImpl,
+  createIsolationModeTokenVaultV1ActionsImpl,
   createRegistryProxy,
   DolomiteMargin,
 } from '../dolomite';
@@ -67,6 +72,17 @@ export async function createTestIsolationModeFactory<T extends NetworkType>(
       userVaultImplementation.address,
       core.dolomiteMargin.address,
     ],
+  );
+}
+
+export async function createTestIsolationModeTokenVaultV1<T extends NetworkType>(
+): Promise<TestIsolationModeTokenVaultV1> {
+  const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
+  const artifact = await createArtifactFromWorkspaceIfNotExists('TestIsolationModeTokenVaultV1');
+  return await createContractWithLibraryAndArtifact(
+    artifact,
+    libraries,
+    [],
   );
 }
 
@@ -213,4 +229,33 @@ export async function createTestEcosystem<T extends NetworkType>(
     testInterestSetter: testInterestSetter.connect(signer),
     testPriceOracle: testPriceOracle.connect(signer),
   };
+}
+
+// @follow-up This is causing bugs
+async function createArtifactFromWorkspaceIfNotExists(artifactName: string): Promise<Artifact> {
+  if (await artifacts.artifactExists(artifactName)) {
+    // GUARD STATEMENT!
+    return artifacts.readArtifact(artifactName);
+  }
+  const children = [
+    '../../../../../packages/base',
+  ]
+
+  const contractsFolders = ['contracts_coverage', 'contracts'];
+  for (const contractFolder of contractsFolders) {
+    for (const child of children) {
+      const artifactPath = join(
+        __dirname,
+        child,
+        `artifacts/${contractFolder}/test/${artifactName}.sol/${artifactName}.json`,
+      );
+      if (fs.existsSync(artifactPath)) {
+        const artifact = JSON.parse(readFileSync(artifactPath, 'utf8'));
+        await artifacts.saveArtifactAndDebugFile(artifact);
+        return artifact;
+      }
+    }
+  }
+
+  return Promise.reject(new Error(`Could not find ${artifactName}`));
 }

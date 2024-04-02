@@ -72,10 +72,7 @@ contract IsolationModeMigrator {
     }
 
     function migrate(uint256 _amountWei) external onlyMigrator(msg.sender) {
-        MIGRATION_TOKEN.safeTransfer(
-            msg.sender,
-            _amountWei
-        );
+        _migrate(_amountWei);
     }
 
     // ================================================
@@ -84,6 +81,13 @@ contract IsolationModeMigrator {
 
     // @follow-up Is this ok to leave with no access control?
     function executeWithdrawalFromVault(address _recipient, uint256 _amount) external {}
+
+    function _migrate(uint256 _amountWei) internal virtual {
+        MIGRATION_TOKEN.safeTransfer(
+            msg.sender,
+            _amountWei
+        );
+    }
 
     function _requireOnlyMigrator(address _from) internal view {
         Require.that(

@@ -4,6 +4,8 @@ import {
   IJonesGLPAdapter__factory,
   IJonesGLPVaultRouter,
   IJonesGLPVaultRouter__factory,
+  IJonesRouter,
+  IJonesRouter__factory,
   IJonesUSDCFarm,
   IJonesUSDCFarm__factory,
   IJonesUSDCRegistry,
@@ -28,6 +30,7 @@ import {
   JONES_JUSDC_FARM_MAP,
   JONES_JUSDC_MAP,
   JONES_JUSDC_RECEIPT_TOKEN_MAP,
+  JONES_ROUTER_MAP,
   JONES_WETH_V3_POOL_MAP,
   JONES_WHITELIST_CONTROLLER_MAP,
 } from '../../../src/utils/constants';
@@ -40,6 +43,7 @@ export interface JonesEcosystem {
   glpAdapter: IJonesGLPAdapter;
   glpVaultRouter: IJonesGLPVaultRouter;
   whitelistController: IJonesWhitelistController;
+  router: IJonesRouter;
   usdcReceiptToken: IERC4626;
   jUSDC: IERC4626;
   jUSDCFarm: IJonesUSDCFarm;
@@ -80,6 +84,7 @@ export async function createJonesEcosystem(
     jonesWethV3Pool: getContract(JONES_WETH_V3_POOL_MAP[network] as string, IAlgebraV3Pool__factory.connect, signer),
     jUSDC: getContract(JONES_JUSDC_MAP[network] as string, IERC4626__factory.connect, signer),
     jUSDCFarm: getContract(JONES_JUSDC_FARM_MAP[network] as string, IJonesUSDCFarm__factory.connect, signer),
+    router: getContract(JONES_ROUTER_MAP[network] as string, IJonesRouter__factory.connect, signer),
     usdcReceiptToken: getContract(
       JONES_JUSDC_RECEIPT_TOKEN_MAP[network] as string,
       IERC4626__factory.connect,

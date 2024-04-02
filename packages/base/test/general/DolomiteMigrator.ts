@@ -199,21 +199,24 @@ describe('DolomiteMigrator', () => {
 
   describe('#migrate', () => {
     it('should work normally when user has no balances (do nothing)', async () => {
+      const otherBorrowNumber = BigNumber.from('189');
       const accounts = [
-        { owner: userVault.address, number: BigNumber.from('189') }
+        { owner: userVault.address, number: otherBorrowNumber }
       ];
       await factory1.connect(core.governance).ownerSetUserVaultImplementation(migratorImplementation.address);
+      const vaultAddress = await factory2.getVaultByAccount(core.hhUser1.address);
+
+      await expectProtocolBalance(core, userVault.address, otherBorrowNumber, marketId1, ZERO_BI);
+      await expectProtocolBalance(core, vaultAddress, otherBorrowNumber, marketId2, ZERO_BI);
       const result = await migrator.connect(core.hhUser5).migrate(accounts, marketId1, marketId2, BYTES_EMPTY);
       await expectEvent(migrator, result, 'MigrationComplete', {
         accountOwner: userVault.address,
-        accountNumber: BigNumber.from('189'),
+        accountNumber: otherBorrowNumber,
         fromMarketId: marketId1,
         toMarketId: marketId2,
       });
-
-      const vaultAddress = await factory2.getVaultByAccount(core.hhUser1.address);
-      await expectProtocolBalance(core, userVault.address, borrowAccountNumber, marketId1, amountWei);
-      await expectProtocolBalance(core, vaultAddress, borrowAccountNumber, marketId2, ZERO_BI);
+      await expectProtocolBalance(core, userVault.address, otherBorrowNumber, marketId1, ZERO_BI);
+      await expectProtocolBalance(core, vaultAddress, otherBorrowNumber, marketId2, ZERO_BI);
     });
 
     it('should work normally when vault needs to be created', async () => {
