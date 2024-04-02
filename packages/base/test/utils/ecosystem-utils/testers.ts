@@ -34,7 +34,7 @@ import {
   TestUpgradeableAsyncIsolationModeWrapperTrader,
   TestUpgradeableAsyncIsolationModeWrapperTrader__factory,
 } from '../../../src/types';
-import { createContractWithAbi, createContractWithLibrary, createContractWithLibraryAndArtifact, createContractWithName } from '../../../src/utils/dolomite-utils';
+import { createContractWithAbi, createContractWithLibrary, createContractWithLibraryAndArtifact } from '../../../src/utils/dolomite-utils';
 import { NetworkType } from '../../../src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';
 import {
@@ -239,7 +239,7 @@ async function createArtifactFromWorkspaceIfNotExists(artifactName: string): Pro
   }
   const children = [
     '../../../../../packages/base',
-  ]
+  ];
 
   const contractsFolders = ['contracts_coverage', 'contracts'];
   for (const contractFolder of contractsFolders) {

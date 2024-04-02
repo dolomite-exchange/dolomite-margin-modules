@@ -25,13 +25,13 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 import { IDolomiteMigrator } from "../interfaces/IDolomiteMigrator.sol";
+import { IDolomiteTransformer } from "../interfaces/IDolomiteTransformer.sol";
 import { IIsolationModeMigrator } from "../isolation-mode/interfaces/IIsolationModeMigrator.sol";
 import { IIsolationModeVaultFactory } from "../isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { ExcessivelySafeCall } from "../protocol/lib/ExcessivelySafeCall.sol";
 import { Require } from "../protocol/lib/Require.sol";
-import { IDolomiteTransformer } from "../interfaces/IDolomiteTransformer.sol";
 
 
 /**

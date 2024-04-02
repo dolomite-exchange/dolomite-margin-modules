@@ -21,9 +21,7 @@
 pragma solidity ^0.8.9;
 
 import { ICustomTestToken } from "./ICustomTestToken.sol";
-import { IDolomiteTransformer } from "../interfaces/IDolomiteTransformer.sol";
 
-import "hardhat/console.sol";
 
 /**
  * @title   TestFailingTransformer
