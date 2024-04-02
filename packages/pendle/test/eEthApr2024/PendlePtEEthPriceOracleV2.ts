@@ -27,7 +27,7 @@ import {
 } from '../pendle-ecosystem-utils';
 import { ChainlinkPriceOracleV3, ChainlinkPriceOracleV3__factory, OracleAggregator, OracleAggregator__factory, RedstonePriceOracleV3, RedstonePriceOracleV3__factory } from 'packages/oracles/src/types';
 import { setNextBlockTimestamp } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
-import { getChainlinkPriceOracleV3ConstructorParamsFromChainlinkOracleV1, getOracleAggregatorConstructorParams, getRedstonePriceOracleV3ConstructorParams } from 'packages/oracles/src/oracles-constructors';
+import { getChainlinkPriceOracleV3ConstructorParamsFromChainlinkOracleV1, getOracleAggregatorV1ConstructorParams, getRedstonePriceOracleV3ConstructorParams } from 'packages/oracles/src/oracles-constructors';
 import axios from 'axios';
 
 const PT_E_ETH_PRICE = BigNumber.from('3689824302982898438870');
@@ -80,7 +80,7 @@ describe('PendlePtEEthApr2024PriceOracleV2', () => {
     oracleAggregator = (await createContractWithAbi<OracleAggregator>(
       OracleAggregator__factory.abi,
       OracleAggregator__factory.bytecode,
-      await getOracleAggregatorConstructorParams(core, chainlinkOracle, redstoneOracle),
+      await getOracleAggregatorV1ConstructorParams(core, chainlinkOracle, redstoneOracle),
     )).connect(core.governance);
     const eEth = '0x35fA164735182de50811E8e2E824cFb9B6118ac2';
     await chainlinkOracle.connect(core.governance).ownerInsertOrUpdateOracleToken(

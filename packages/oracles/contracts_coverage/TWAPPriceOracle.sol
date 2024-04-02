@@ -30,10 +30,10 @@ import { ITWAPPriceOracle } from "./interfaces/ITWAPPriceOracle.sol";
 
 
 /**
- * @title   TWAPPriceOracle
+ * @title   TWAPPriceOracleV1.sol
  * @author  Dolomite
  *
- * An implementation of the ITWAPPriceOracle interface that makes gets the TWAP from a number of LP pools
+ * An implementation of the ITWAPPriceOracleV1.sol interface that makes gets the TWAP from a number of LP pools
  */
 contract TWAPPriceOracle is ITWAPPriceOracle, OnlyDolomiteMargin {
     using EnumerableSet for EnumerableSet.AddressSet;

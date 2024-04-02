@@ -27,7 +27,7 @@ import { IOracleAggregator2 } from "./interfaces/IOracleAggregator2.sol";
 
 
 /**
- * @title   OracleAggregator
+ * @title   OracleAggregatorV1.sol
  * @author  Dolomite
  *
  * An implementation of the IDolomitePriceOracle interface that makes Chainlink prices compatible with the protocol.

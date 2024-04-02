@@ -20,32 +20,23 @@
 pragma solidity ^0.8.9;
 
 import { IDolomitePriceOracle } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomitePriceOracle.sol"; // solhint-disable-line max-line-length
+import { IChainlinkPriceOracleV3 } from "./IChainlinkPriceOracleV3.sol";
 
 
 /**
- * @title   IOracleAggregator2
+ * @title   IOracleAggregatorV1.sol
  * @author  Dolomite
  *
  * An interface of IDolomitePriceOracle that aggregates all oracles into one contract
  */
-interface IOracleAggregator2 is IDolomitePriceOracle {
-
-    struct TokenInfo {
-        OracleInfo[] oracleInfos;
-        uint8 decimals;
-        address token;
-    }
-
-    struct OracleInfo {
-        address oracle;
-        address tokenPair;
-        uint256 weight;
-    }
+interface IOracleAggregatorV1 is IDolomitePriceOracle {
 
     // ============ Events ============
 
     event TokenInsertedOrUpdated(
-        TokenInfo info
+        address indexed token,
+        address indexed oracle,
+        address indexed tokenPair
     );
 
     // ============ Admin Functions ============
@@ -53,28 +44,29 @@ interface IOracleAggregator2 is IDolomitePriceOracle {
     /**
      * @dev Insert or update a token in the oracle. This function can only be called by the owner of DolomiteMargin.
      *
-     * @param  _info    The info for the token
+     * @param  _token   The token whose Chainlink aggregator should be inserted or updated
+     * @param  _oracle  The oracle for the token
      */
-    function ownerInsertOrUpdateToken(
-        TokenInfo memory _info
+    function ownerInsertOrUpdateOracle(
+        address _token,
+        address _oracle,
+        address _tokenPair
     )
     external;
 
     // ============ Getter Functions ============
 
-    // /**
-    //  *
-    //  * @param  _token  The token whose oracle should be retrieved
-    //  * @return         The oracle that corresponds with this token
-    //  */
-    // function getOracleByToken(address _token) external view returns (IChainlinkPriceOracleV3);
+    /**
+     *
+     * @param  _token  The token whose oracle should be retrieved
+     * @return         The oracle that corresponds with this token
+     */
+    function getOracleByToken(address _token) external view returns (IChainlinkPriceOracleV3);
 
-    // /**
-    //  *
-    //  * @param  _token  The token whose oracle should be retrieved
-    //  * @return         The tokenPair that corresponds with this token
-    //  */
-    // function getTokenPairByToken(address _token) external view returns (address);
-
-    function getDecimalsByToken(address _token) external view returns (uint8);
+    /**
+     *
+     * @param  _token  The token whose oracle should be retrieved
+     * @return         The tokenPair that corresponds with this token
+     */
+    function getTokenPairByToken(address _token) external view returns (address);
 }

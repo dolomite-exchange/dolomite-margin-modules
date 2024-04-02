@@ -23,20 +23,20 @@ import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/he
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IChainlinkPriceOracleV3 } from "./interfaces/IChainlinkPriceOracleV3.sol";
-import { IOracleAggregator } from "./interfaces/IOracleAggregator.sol";
+import { IOracleAggregatorV1 } from "./interfaces/IOracleAggregatorV1.sol";
 
 
 /**
- * @title   OracleAggregator
+ * @title   OracleAggregatorV1.sol
  * @author  Dolomite
  *
  * An implementation of the IDolomitePriceOracle interface that makes Chainlink prices compatible with the protocol.
  */
-contract OracleAggregator is OnlyDolomiteMargin, IOracleAggregator {
+contract OracleAggregatorV1 is OnlyDolomiteMargin, IOracleAggregatorV1 {
 
     // ========================= Constants =========================
 
-    bytes32 private constant _FILE = "OracleAggregator";
+    bytes32 private constant _FILE = "OracleAggregatorV1";
     uint256 private constant _ONE_DOLLAR = 10 ** 36;
 
     // ========================= Storage =========================
@@ -135,7 +135,7 @@ contract OracleAggregator is OnlyDolomiteMargin, IOracleAggregator {
             return IDolomiteStructs.MonetaryPrice({
                 value: price.value * tokenPairWith36Decimals / _ONE_DOLLAR
             });
-            
+
         }
     }
 

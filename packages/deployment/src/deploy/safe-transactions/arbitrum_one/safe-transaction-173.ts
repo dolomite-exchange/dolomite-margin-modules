@@ -1,7 +1,7 @@
 import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { getTWAPPriceOracleConstructorParams } from '@dolomite-exchange/modules-oracles/src/oracles-constructors';
+import { getTWAPPriceOracleV1ConstructorParams } from '@dolomite-exchange/modules-oracles/src/oracles-constructors';
 import { parseEther } from 'ethers/lib/utils';
 import {
   createFolder,
@@ -21,8 +21,8 @@ async function main(): Promise<DenJsonUpload> {
   const core = await setupCoreProtocol({ network, blockNumber: 0 });
 
   const dpxPriceOracle = await deployContractAndSave(
-    'TWAPPriceOracle',
-    getTWAPPriceOracleConstructorParams(core, core.tokens.dpx!, [core.camelotEcosystem!.dpxWethV3Pool]),
+    'TWAPPriceOracleV1.sol',
+    getTWAPPriceOracleV1ConstructorParams(core, core.tokens.dpx!, [core.camelotEcosystem!.dpxWethV3Pool]),
     'DPXTWAPPriceOracleV1',
   );
 

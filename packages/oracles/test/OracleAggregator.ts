@@ -5,8 +5,8 @@ import { BigNumber } from 'ethers';
 import {
   ChainlinkPriceOracleV3,
   ChainlinkPriceOracleV3__factory,
-  OracleAggregator,
-  OracleAggregator__factory,
+  OracleAggregatorV1,
+  OracleAggregatorV1__factory,
   RedstonePriceOracleV3,
   RedstonePriceOracleV3__factory,
   TestChainlinkAggregator,
@@ -17,7 +17,7 @@ import {
 } from '@dolomite-exchange/modules-base/src/types';
 import {
   getChainlinkPriceOracleV3ConstructorParamsFromChainlinkOracleV1,
-  getOracleAggregatorConstructorParams,
+  getOracleAggregatorV1ConstructorParams,
   getRedstonePriceOracleV3ConstructorParams
 } from '../src/oracles-constructors';
 import { createContractWithAbi, createTestToken } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
@@ -35,7 +35,7 @@ const BTC_PRICE = BigNumber.from('440493939086400000000000000000000');
 const USDC_PRICE = BigNumber.from('1000071010000000000000000000000');
 const TEST_TOKEN_PRICE = WETH_PRICE.mul(1).div(10);
 
-xdescribe('OracleAggregator', () => {
+xdescribe('OracleAggregatorV1', () => {
   let snapshotId: string;
 
   let core: CoreProtocolArbitrumOne;
@@ -44,7 +44,7 @@ xdescribe('OracleAggregator', () => {
   let redstoneOracle: RedstonePriceOracleV3;
   let testAggregator: TestChainlinkAggregator;
   let testToken: CustomTestToken;
-  let oracleAggregator: OracleAggregator;
+  let oracleAggregator: OracleAggregatorV1;
 
   before(async () => {
     core = await setupCoreProtocol(await getDefaultCoreProtocolConfig(Network.ArbitrumOne));
@@ -75,10 +75,10 @@ xdescribe('OracleAggregator', () => {
       )
     )).connect(core.governance);
 
-    oracleAggregator = (await createContractWithAbi<OracleAggregator>(
-      OracleAggregator__factory.abi,
-      OracleAggregator__factory.bytecode,
-      await getOracleAggregatorConstructorParams(core, chainlinkOracle, redstoneOracle),
+    oracleAggregator = (await createContractWithAbi<OracleAggregatorV1>(
+      OracleAggregatorV1__factory.abi,
+      OracleAggregatorV1__factory.bytecode,
+      await getOracleAggregatorV1ConstructorParams(core, chainlinkOracle, redstoneOracle),
     )).connect(core.governance);
 
     snapshotId = await snapshot();
@@ -90,9 +90,9 @@ xdescribe('OracleAggregator', () => {
 
   describe('#constructor', () => {
     it('should succeed when values are aligned', async () => {
-      await createContractWithAbi<OracleAggregator>(
-        OracleAggregator__factory.abi,
-        OracleAggregator__factory.bytecode,
+      await createContractWithAbi<OracleAggregatorV1>(
+        OracleAggregatorV1__factory.abi,
+        OracleAggregatorV1__factory.bytecode,
         [
           [ZERO_ADDRESS],
           [ZERO_ADDRESS],
@@ -104,9 +104,9 @@ xdescribe('OracleAggregator', () => {
 
     it('should fail when token length is not aligned', async () => {
       await expectThrow(
-        createContractWithAbi<OracleAggregator>(
-          OracleAggregator__factory.abi,
-          OracleAggregator__factory.bytecode,
+        createContractWithAbi<OracleAggregatorV1>(
+          OracleAggregatorV1__factory.abi,
+          OracleAggregatorV1__factory.bytecode,
           [
             [ZERO_ADDRESS],
             [ZERO_ADDRESS, ZERO_ADDRESS],
@@ -114,15 +114,15 @@ xdescribe('OracleAggregator', () => {
             core.dolomiteMargin.address,
           ],
         ),
-        'OracleAggregator: Invalid tokens length',
+        'OracleAggregatorV1: Invalid tokens length',
       );
     });
 
     it('should fail when token length is not aligned', async () => {
       await expectThrow(
-        createContractWithAbi<OracleAggregator>(
-          OracleAggregator__factory.abi,
-          OracleAggregator__factory.bytecode,
+        createContractWithAbi<OracleAggregatorV1>(
+          OracleAggregatorV1__factory.abi,
+          OracleAggregatorV1__factory.bytecode,
           [
             [ZERO_ADDRESS],
             [ZERO_ADDRESS],
@@ -130,7 +130,7 @@ xdescribe('OracleAggregator', () => {
             core.dolomiteMargin.address,
           ],
         ),
-        'OracleAggregator: Invalid oracles length',
+        'OracleAggregatorV1: Invalid oracles length',
       );
     });
   });
@@ -171,11 +171,11 @@ xdescribe('OracleAggregator', () => {
       const ONE_ADDRESS = '0x1000000000000000000000000000000000000000';
       await expectThrow(
         oracleAggregator.getPrice(ZERO_ADDRESS),
-        `OracleAggregator: Invalid token <${ZERO_ADDRESS}>`,
+        `OracleAggregatorV1: Invalid token <${ZERO_ADDRESS}>`,
       );
       await expectThrow(
         oracleAggregator.getPrice(ONE_ADDRESS),
-        `OracleAggregator: Invalid token <${ONE_ADDRESS}>`,
+        `OracleAggregatorV1: Invalid token <${ONE_ADDRESS}>`,
       );
     });
   });

@@ -35,7 +35,7 @@ import { IOracleAggregator2 } from"./interfaces/IOracleAggregator2.sol";
  * @title   PancakeV3PriceOracle
  * @author  Dolomite
  *
- * An implementation of the ITWAPPriceOracle interface that makes gets the TWAP from a number of LP pools
+ * An implementation of the ITWAPPriceOracleV1.sol interface that makes gets the TWAP from a number of LP pools
  */
 contract PancakeV3PriceOracle is ITWAPPriceOracle, OnlyDolomiteMargin {
     using EnumerableSet for EnumerableSet.AddressSet;

@@ -5,8 +5,8 @@ import { BigNumber } from 'ethers';
 import {
   ChainlinkPriceOracleV3,
   ChainlinkPriceOracleV3__factory,
-  OracleAggregator2,
-  OracleAggregator2__factory,
+  OracleAggregatorV2,
+  OracleAggregatorV2__factory,
   RedstonePriceOracleV3,
   RedstonePriceOracleV3__factory,
   TestChainlinkAggregator,
@@ -36,7 +36,7 @@ const WETH_PRICE = BigNumber.from('2260038782330000000000');
 const BTC_PRICE = BigNumber.from('440493939086400000000000000000000');
 const USDC_PRICE = BigNumber.from('1000071010000000000000000000000');
 
-describe('OracleAggregator2', () => {
+describe('OracleAggregatorV2', () => {
   let snapshotId: string;
 
   let core: CoreProtocolArbitrumOne;
@@ -46,7 +46,7 @@ describe('OracleAggregator2', () => {
   let testAggregator: TestChainlinkAggregator;
   let testAggregator2: TestChainlinkAggregator;
   let testToken: CustomTestToken;
-  let oracleAggregator: OracleAggregator2;
+  let oracleAggregator: OracleAggregatorV2;
 
   before(async () => {
     core = await setupCoreProtocol(await getDefaultCoreProtocolConfig(Network.ArbitrumOne));
@@ -113,9 +113,9 @@ describe('OracleAggregator2', () => {
         token: core.tokens.wbtc.address
       }
     ];
-    oracleAggregator = (await createContractWithAbi<OracleAggregator2>(
-      OracleAggregator2__factory.abi,
-      OracleAggregator2__factory.bytecode,
+    oracleAggregator = (await createContractWithAbi<OracleAggregatorV2>(
+      OracleAggregatorV2__factory.abi,
+      OracleAggregatorV2__factory.bytecode,
       [
         tokenInfos,
         core.dolomiteMargin.address
@@ -144,15 +144,15 @@ describe('OracleAggregator2', () => {
         },
       ];
       await expectThrow(
-        createContractWithAbi<OracleAggregator2>(
-          OracleAggregator2__factory.abi,
-          OracleAggregator2__factory.bytecode,
+        createContractWithAbi<OracleAggregatorV2>(
+          OracleAggregatorV2__factory.abi,
+          OracleAggregatorV2__factory.bytecode,
           [
             tokenInfos,
             core.dolomiteMargin.address,
           ],
         ),
-        'OracleAggregator2: Invalid weights',
+        'OracleAggregatorV2: Invalid weights',
       );
     });
   });
@@ -254,11 +254,11 @@ describe('OracleAggregator2', () => {
       const ONE_ADDRESS = '0x1000000000000000000000000000000000000000';
       await expectThrow(
         oracleAggregator.getPrice(ZERO_ADDRESS),
-        `OracleAggregator2: No oracles for token <${ZERO_ADDRESS}>`,
+        `OracleAggregatorV2: No oracles for token <${ZERO_ADDRESS}>`,
       );
       await expectThrow(
         oracleAggregator.getPrice(ONE_ADDRESS),
-        `OracleAggregator2: No oracles for token <${ONE_ADDRESS}>`,
+        `OracleAggregatorV2: No oracles for token <${ONE_ADDRESS}>`,
       );
     });
   });
@@ -367,7 +367,7 @@ describe('OracleAggregator2', () => {
 });
 
 async function expectTokenInfo(
-  oracleAggregator: OracleAggregator2,
+  oracleAggregator: OracleAggregatorV2,
   token: string,
   decimals: number
 ) {
@@ -377,7 +377,7 @@ async function expectTokenInfo(
 }
 
 async function expectOracleInfo(
-  oracleAggregator: OracleAggregator2,
+  oracleAggregator: OracleAggregatorV2,
   token: string,
   index: number,
   oracle: string,

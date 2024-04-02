@@ -5,7 +5,7 @@ import {
 import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { LinearStepFunctionInterestSetter__factory } from '@dolomite-exchange/modules-interest-setters/src/types';
-import { getTWAPPriceOracleConstructorParams } from '@dolomite-exchange/modules-oracles/src/oracles-constructors';
+import { getTWAPPriceOracleV1ConstructorParams } from '@dolomite-exchange/modules-oracles/src/oracles-constructors';
 import { TWAPPriceOracle__factory } from '@dolomite-exchange/modules-oracles/src/types';
 import { parseEther } from 'ethers/lib/utils';
 import { ADDRESS_ZERO, Network, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
@@ -27,8 +27,8 @@ async function main() {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
   const core = await setupCoreProtocol({ network, blockNumber: 0 });
   const grailTwapPriceOracleAddress = await deployContractAndSave(
-    'TWAPPriceOracle',
-    getTWAPPriceOracleConstructorParams(
+    'TWAPPriceOracleV1.sol',
+    getTWAPPriceOracleV1ConstructorParams(
       core,
       core.tokens.grail!,
       [core.camelotEcosystem!.grailUsdcV3Pool],

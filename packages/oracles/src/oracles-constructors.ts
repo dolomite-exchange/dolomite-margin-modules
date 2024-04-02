@@ -150,7 +150,7 @@ export async function getChainlinkPriceOracleV1ConstructorParamsFromOldPriceOrac
   return [tokens, aggregators, tokenDecimals, tokenPairs, core.dolomiteMargin.address];
 }
 
-export async function getOracleAggregatorConstructorParams(
+export async function getOracleAggregatorV1ConstructorParams(
   core: CoreProtocolArbitrumOne | CoreProtocolPolygonZkEvm,
   chainlinkOracle: ChainlinkPriceOracleV3,
   redstoneOracle: RedstonePriceOracleV3 | null
@@ -243,7 +243,7 @@ export async function getRedstonePriceOracleV3ConstructorParams<T extends Networ
   ];
 }
 
-export function getTWAPPriceOracleConstructorParams<T extends Network>(
+export function getTWAPPriceOracleV1ConstructorParams<T extends Network>(
   core: CoreProtocolType<T>,
   token: IERC20,
   tokenPairs: IAlgebraV3Pool[],

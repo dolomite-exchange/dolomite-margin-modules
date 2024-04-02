@@ -23,7 +23,7 @@ import { IDolomitePriceOracle } from "@dolomite-exchange/modules-base/contracts/
 
 
 /**
- * @title   ITWAPPriceOracle
+ * @title   ITWAPPriceOracleV1.sol
  * @author  Dolomite
  *
  * An interface of IDolomitePriceOracle that uses TWAP to get prices compatible with the protocol

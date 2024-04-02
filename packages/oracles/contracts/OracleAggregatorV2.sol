@@ -23,20 +23,20 @@ import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/he
 import { IDolomitePriceOracle } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomitePriceOracle.sol"; // solhint-disable-line max-line-length
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
-import { IOracleAggregator2 } from "./interfaces/IOracleAggregator2.sol";
+import { IOracleAggregatorV2 } from "./interfaces/IOracleAggregatorV2.sol";
 
 
 /**
- * @title   OracleAggregator2
+ * @title   OracleAggregatorV2.sol
  * @author  Dolomite
  *
  * An implementation of the IDolomitePriceOracle interface that makes Chainlink prices compatible with the protocol.
  */
-contract OracleAggregator2 is OnlyDolomiteMargin, IOracleAggregator2 {
+contract OracleAggregatorV2 is OnlyDolomiteMargin, IOracleAggregatorV2 {
 
     // ========================= Constants =========================
 
-    bytes32 private constant _FILE = "OracleAggregator2";
+    bytes32 private constant _FILE = "OracleAggregatorV2";
     uint256 private constant _ONE_DOLLAR = 10 ** 36;
     uint256 private constant _WEIGHT_TOTAL = 100;
 
