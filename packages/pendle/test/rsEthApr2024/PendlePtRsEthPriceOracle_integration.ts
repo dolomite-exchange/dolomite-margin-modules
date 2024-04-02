@@ -47,7 +47,7 @@ describe('PendlePtRsEthApr2024PriceOracle_integration', () => {
     );
     await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(dolomiteRegistryImplementation.address);
     await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkPriceOracle(
-      core.chainlinkPriceOracle!.address,
+      core.chainlinkPriceOracleOld!.address,
     );
 
     underlyingToken = core.tokens.rsEth!;

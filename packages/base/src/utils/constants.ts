@@ -1,3 +1,4 @@
+import CoreDeployments from '@dolomite-exchange/dolomite-margin/dist/migrations/deployed.json';
 import { BigNumber, BigNumberish } from 'ethers';
 import { Network } from './no-deps-constants';
 
@@ -27,11 +28,13 @@ export const ARB_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   },
 };
 
-export const CHAINLINK_PRICE_ORACLE_OLD_MAP: Record<Network.ArbitrumOne, string> = {
-  [Network.ArbitrumOne]: '0xeA3Fe12d8CC2E87f99e985EE271971C808006531',
+export const CHAINLINK_PRICE_ORACLE_OLD_MAP: Record<Network, string> = {
+  [Network.ArbitrumOne]: CoreDeployments.ChainlinkPriceOracleV1[Network.ArbitrumOne].address,
+  [Network.Base]: CoreDeployments.ChainlinkPriceOracleV1[Network.Base].address,
+  [Network.PolygonZkEvm]: CoreDeployments.ChainlinkPriceOracleV1[Network.PolygonZkEvm].address,
 };
 
-export const CHAINLINK_PRICE_ORACLE_MAP: Record<Network, string> = {
+export const CHAINLINK_PRICE_ORACLE_V1_MAP: Record<Network, string> = {
   [Network.ArbitrumOne]: '0xA07e80C08D8bae7fFA3e46534eaBdBb6Ca98da1D',
   [Network.Base]: '0xc38372FA7e6431DcC490F354a1BcC36A5D6c32E6',
   [Network.PolygonZkEvm]: '0xcE29B273fdd21cef1cE4dfd104dD608941D781a0',

@@ -81,7 +81,7 @@ async function main(): Promise<DenJsonUpload> {
     ...await prettyPrintEncodeAddMarket(
       core,
       core.tokens.radiant!,
-      core.chainlinkPriceOracle!,
+      core.chainlinkPriceOracleOld!,
       core.interestSetters.linearStepFunction14L86UInterestSetter,
       TargetCollateralization._125,
       TargetLiquidationPenalty._7,

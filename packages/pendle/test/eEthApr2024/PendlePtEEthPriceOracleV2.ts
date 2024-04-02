@@ -2,33 +2,39 @@ import {
   DolomiteRegistryImplementation,
   DolomiteRegistryImplementation__factory,
 } from '@dolomite-exchange/modules-base/src/types';
-import { CHAINLINK_PRICE_AGGREGATORS_MAP, WE_ETH_ETH_REDSTONE_FEED_MAP } from '@dolomite-exchange/modules-base/src/utils/constants';
+import {
+  CHAINLINK_PRICE_AGGREGATORS_MAP,
+  WE_ETH_ETH_REDSTONE_FEED_MAP,
+} from '@dolomite-exchange/modules-base/src/utils/constants';
 import { createContractWithAbi } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { ADDRESS_ZERO, Network, ONE_ETH_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
-import {
-  setupCoreProtocol,
-  setupTestMarket,
-} from '@dolomite-exchange/modules-base/test/utils/setup';
+import { setupCoreProtocol, setupTestMarket } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { setNextBlockTimestamp } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
+import axios from 'axios';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import {
-  IERC20,
-  PendlePtIsolationModeVaultFactory,
-  PendlePtPriceOracleV2,
-  PendleRegistry,
-} from '../../src/types';
+  getChainlinkPriceOracleV3ConstructorParamsFromChainlinkOracleV1,
+  getOracleAggregatorV1ConstructorParams,
+  getRedstonePriceOracleV3ConstructorParams,
+} from 'packages/oracles/src/oracles-constructors';
+import {
+  ChainlinkPriceOracleV3,
+  ChainlinkPriceOracleV3__factory,
+  OracleAggregatorV1,
+  OracleAggregatorV1__factory,
+  RedstonePriceOracleV3,
+  RedstonePriceOracleV3__factory,
+} from '@dolomite-exchange/modules-oracles/src/types';
+import { IERC20, PendlePtIsolationModeVaultFactory, PendlePtPriceOracleV2, PendleRegistry } from '../../src/types';
 import {
   createPendlePtIsolationModeTokenVaultV1,
   createPendlePtIsolationModeVaultFactory,
   createPendlePtPriceOracleV2,
   createPendleRegistry,
 } from '../pendle-ecosystem-utils';
-import { ChainlinkPriceOracleV3, ChainlinkPriceOracleV3__factory, OracleAggregator, OracleAggregator__factory, RedstonePriceOracleV3, RedstonePriceOracleV3__factory } from 'packages/oracles/src/types';
-import { setNextBlockTimestamp } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
-import { getChainlinkPriceOracleV3ConstructorParamsFromChainlinkOracleV1, getOracleAggregatorV1ConstructorParams, getRedstonePriceOracleV3ConstructorParams } from 'packages/oracles/src/oracles-constructors';
-import axios from 'axios';
 
 const PT_E_ETH_PRICE = BigNumber.from('3689824302982898438870');
 
@@ -39,7 +45,7 @@ describe('PendlePtEEthApr2024PriceOracleV2', () => {
   let ptOracle: PendlePtPriceOracleV2;
   let pendleRegistry: PendleRegistry;
   let factory: PendlePtIsolationModeVaultFactory;
-  let oracleAggregator: OracleAggregator;
+  let oracleAggregator: OracleAggregatorV1;
   let underlyingToken: IERC20;
 
   before(async () => {
@@ -49,7 +55,6 @@ describe('PendlePtEEthApr2024PriceOracleV2', () => {
     });
 
     underlyingToken = core.tokens.weEth!;
-    const wethAggregator = await core.chainlinkPriceOracle!.getAggregatorByToken(core.tokens.weth.address);
     const weEthAggregator = WE_ETH_ETH_REDSTONE_FEED_MAP[Network.ArbitrumOne];
     const redstoneOracle = (await createContractWithAbi<RedstonePriceOracleV3>(
       RedstonePriceOracleV3__factory.abi,
@@ -58,8 +63,8 @@ describe('PendlePtEEthApr2024PriceOracleV2', () => {
         [core.tokens.weEth],
         [weEthAggregator],
         [false],
-        core
-      )
+        core,
+      ),
     )).connect(core.governance);
 
     const dolomiteRegistryImplementation = await createContractWithAbi<DolomiteRegistryImplementation>(
@@ -75,11 +80,11 @@ describe('PendlePtEEthApr2024PriceOracleV2', () => {
       await getChainlinkPriceOracleV3ConstructorParamsFromChainlinkOracleV1(core),
     )).connect(core.governance);
     await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkPriceOracle(
-      chainlinkOracle.address
+      chainlinkOracle.address,
     );
-    oracleAggregator = (await createContractWithAbi<OracleAggregator>(
-      OracleAggregator__factory.abi,
-      OracleAggregator__factory.bytecode,
+    oracleAggregator = (await createContractWithAbi<OracleAggregatorV1>(
+      OracleAggregatorV1__factory.abi,
+      OracleAggregatorV1__factory.bytecode,
       await getOracleAggregatorV1ConstructorParams(core, chainlinkOracle, redstoneOracle),
     )).connect(core.governance);
     const eEth = '0x35fA164735182de50811E8e2E824cFb9B6118ac2';
@@ -87,12 +92,12 @@ describe('PendlePtEEthApr2024PriceOracleV2', () => {
       eEth,
       18,
       CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][core.tokens.weEth.address],
-      true
+      true,
     );
     await oracleAggregator.ownerInsertOrUpdateOracle(
       eEth,
       chainlinkOracle.address,
-      core.tokens.weEth.address
+      core.tokens.weEth.address,
     );
 
     pendleRegistry = await createPendleRegistry(
@@ -113,7 +118,7 @@ describe('PendlePtEEthApr2024PriceOracleV2', () => {
     await oracleAggregator.ownerInsertOrUpdateOracle(
       factory.address,
       ptOracle.address,
-      eEth
+      eEth,
     );
     await setupTestMarket(core, factory, true, oracleAggregator);
 
@@ -158,7 +163,8 @@ describe('PendlePtEEthApr2024PriceOracleV2', () => {
           console.log(e);
           return Promise.reject(e);
         });
-      const apiAmountOut = BigNumber.from(data.data.amountTokenOut).mul((await core.dolomiteMargin.getMarketPrice(0)).value);
+      const apiAmountOut = BigNumber.from(data.data.amountTokenOut)
+        .mul((await core.dolomiteMargin.getMarketPrice(0)).value);
       console.log('apiAmountOut: ', apiAmountOut.div(ONE_ETH_BI).toString());
       console.log('price from aggregator: ', (await core.dolomiteMargin.getMarketPrice(marketId.sub(1))).toString());
     });

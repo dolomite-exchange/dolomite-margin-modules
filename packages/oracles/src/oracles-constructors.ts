@@ -1,26 +1,29 @@
-import { IAlgebraV3Pool, IERC20 } from '@dolomite-exchange/modules-base/src/types';
-import { CoreProtocolArbitrumOne, CoreProtocolPolygonZkEvm } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import { IERC20 } from '@dolomite-exchange/modules-base/src/types';
+import {
+  CoreProtocolArbitrumOne,
+  CoreProtocolPolygonZkEvm,
+} from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { DolomiteMargin } from '@dolomite-exchange/modules-base/test/utils/dolomite';
 import { CoreProtocolType } from '@dolomite-exchange/modules-base/test/utils/setup';
+import Deployments from '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
 import { BigNumberish } from 'ethers';
-import { ADDRESS_ZERO, Network, NetworkType } from 'packages/base/src/utils/no-deps-constants';
+import { ethers } from 'hardhat';
+import { CHAINLINK_PRICE_ORACLE_OLD_MAP } from 'packages/base/src/utils/constants';
+import { Network, NetworkType } from 'packages/base/src/utils/no-deps-constants';
 import {
   ChainlinkPriceOracleV3,
+  IAlgebraV3Pool,
   IChainlinkAggregator,
   IChainlinkPriceOracleOld,
   IChainlinkPriceOracleOld__factory,
   IChainlinkPriceOracleV1__factory,
   IERC20Metadata__factory,
-  RedstonePriceOracleV2,
   RedstonePriceOracleV3,
 } from './types';
-import Deployments from '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
-import { ethers } from 'hardhat';
-import { CHAINLINK_PRICE_ORACLE_OLD_MAP } from 'packages/base/src/utils/constants';
 
 export type CoreProtocolWithChainlink<T extends Network> = Extract<CoreProtocolType<T>, {
   dolomiteMargin: DolomiteMargin<T>;
-  chainlinkPriceOracle: IChainlinkPriceOracleOld;
+  chainlinkPriceOracleOld: IChainlinkPriceOracleOld;
 }>;
 
 export async function getChainlinkPriceOracleV3ConstructorParamsFromChainlinkOracleV1ZkEvm(
@@ -153,7 +156,7 @@ export async function getChainlinkPriceOracleV1ConstructorParamsFromOldPriceOrac
 export async function getOracleAggregatorV1ConstructorParams(
   core: CoreProtocolArbitrumOne | CoreProtocolPolygonZkEvm,
   chainlinkOracle: ChainlinkPriceOracleV3,
-  redstoneOracle: RedstonePriceOracleV3 | null
+  redstoneOracle: RedstonePriceOracleV3 | null,
 ): Promise<[string[], string[], string[], string]> {
   const oldPriceOracle = IChainlinkPriceOracleV1__factory.connect(
     Deployments.ChainlinkPriceOracleV1[core.config.network].address,

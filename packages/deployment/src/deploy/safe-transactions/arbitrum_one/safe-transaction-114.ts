@@ -56,7 +56,7 @@ async function main() {
   await prettyPrintEncodeAddMarket(
     core,
     core.tokens.dpx!,
-    core.chainlinkPriceOracle!,
+    core.chainlinkPriceOracleOld!,
     altcoinInterestSetter,
     TargetCollateralization._150,
     TargetLiquidationPenalty._10,
@@ -87,7 +87,7 @@ async function main() {
   await prettyPrintEncodeAddMarket(
     core,
     core.tokens.magic!,
-    core.chainlinkPriceOracle!,
+    core.chainlinkPriceOracleOld!,
     altcoinInterestSetter,
     TargetCollateralization._150,
     TargetLiquidationPenalty._10,
@@ -105,7 +105,7 @@ async function main() {
   await prettyPrintEncodeAddMarket(
     core,
     core.tokens.pendle!,
-    core.chainlinkPriceOracle!,
+    core.chainlinkPriceOracleOld!,
     altcoinInterestSetter,
     TargetCollateralization._150,
     TargetLiquidationPenalty._10,

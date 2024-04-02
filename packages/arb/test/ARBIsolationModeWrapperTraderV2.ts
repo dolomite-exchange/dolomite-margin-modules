@@ -73,15 +73,15 @@ describe('ARBIsolationModeWrapperTraderV2', () => {
 
     unwrapper = await createARBUnwrapperTraderV2(arbFactory, core);
     wrapper = await createARBWrapperTraderV2(arbFactory, core);
-    await core.chainlinkPriceOracle!.connect(core.governance).ownerInsertOrUpdateOracleToken(
+    await core.chainlinkPriceOracleOld!.connect(core.governance).ownerInsertOrUpdateOracleToken(
       arbFactory.address,
       await arbFactory.decimals(),
-      await core.chainlinkPriceOracle!.getAggregatorByToken(core.tokens.arb!.address),
+      await core.chainlinkPriceOracleOld!.getAggregatorByToken(core.tokens.arb!.address),
       ADDRESS_ZERO,
     );
 
     dArbMarketId = await core.dolomiteMargin.getNumMarkets();
-    await setupTestMarket(core, arbFactory, true, core.chainlinkPriceOracle);
+    await setupTestMarket(core, arbFactory, true, core.chainlinkPriceOracleOld);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(arbFactory.address, true);
     await arbFactory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
 

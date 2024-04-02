@@ -247,7 +247,8 @@ interface CoreProtocolParamsArbitrumOne {
   arbEcosystem: ArbEcosystem;
   camelotEcosystem: CamelotEcosystem;
   chainlinkAutomationRegistry: IChainlinkAutomationRegistry;
-  chainlinkPriceOracle: IChainlinkPriceOracleV1;
+  chainlinkPriceOracleOld: IChainlinkPriceOracleOld;
+  chainlinkPriceOracleV1: IChainlinkPriceOracleV1;
   gmxEcosystem: GmxEcosystem;
   gmxEcosystemV2: GmxEcosystemV2;
   jonesEcosystem: JonesEcosystem;
@@ -267,7 +268,7 @@ export class CoreProtocolArbitrumOne extends CoreProtocolAbstract<Network.Arbitr
   public readonly arbEcosystem: ArbEcosystem;
   public readonly camelotEcosystem: CamelotEcosystem;
   public readonly chainlinkAutomationRegistry: IChainlinkAutomationRegistry;
-  public readonly chainlinkPriceOracle: IChainlinkPriceOracleV1;
+  public readonly chainlinkPriceOracleOld: IChainlinkPriceOracleV1;
   public readonly gmxEcosystem: GmxEcosystem;
   public readonly gmxEcosystemV2: GmxEcosystemV2;
   public readonly jonesEcosystem: JonesEcosystem;
@@ -291,7 +292,7 @@ export class CoreProtocolArbitrumOne extends CoreProtocolAbstract<Network.Arbitr
     this.arbEcosystem = arbParams.arbEcosystem;
     this.camelotEcosystem = arbParams.camelotEcosystem;
     this.chainlinkAutomationRegistry = arbParams.chainlinkAutomationRegistry;
-    this.chainlinkPriceOracle = arbParams.chainlinkPriceOracle;
+    this.chainlinkPriceOracleOld = arbParams.chainlinkPriceOracleV1;
     this.gmxEcosystem = arbParams.gmxEcosystem;
     this.gmxEcosystemV2 = arbParams.gmxEcosystemV2;
     this.jonesEcosystem = arbParams.jonesEcosystem;
@@ -308,13 +309,13 @@ export class CoreProtocolArbitrumOne extends CoreProtocolAbstract<Network.Arbitr
 }
 
 export interface CoreProtocolParamsBase {
-  chainlinkPriceOracle: IChainlinkPriceOracleOld;
+  chainlinkPriceOracleOld: IChainlinkPriceOracleOld;
   paraswapEcosystem: ParaswapEcosystem;
 }
 
 export class CoreProtocolBase extends CoreProtocolAbstract<Network.Base> {
 
-  public readonly chainlinkPriceOracle: IChainlinkPriceOracleOld;
+  public readonly chainlinkPriceOracleOld: IChainlinkPriceOracleOld;
   public readonly paraswapEcosystem: ParaswapEcosystem;
   public readonly network: Network.Base = Network.Base;
 
@@ -323,7 +324,7 @@ export class CoreProtocolBase extends CoreProtocolAbstract<Network.Base> {
     baseParams: CoreProtocolParamsBase,
   ) {
     super(params);
-    this.chainlinkPriceOracle = baseParams.chainlinkPriceOracle;
+    this.chainlinkPriceOracleOld = baseParams.chainlinkPriceOracleOld;
     this.paraswapEcosystem = baseParams.paraswapEcosystem;
   }
 }
@@ -341,7 +342,7 @@ interface CoreProtocolMarketIdsZkEvm extends CoreProtocolMarketIds {
 }
 
 export interface CoreProtocolParamsZkEvm {
-  chainlinkPriceOracle: IChainlinkPriceOracleOld;
+  chainlinkPriceOracleOld: IChainlinkPriceOracleOld;
   marketIds: CoreProtocolMarketIdsZkEvm;
   paraswapEcosystem: ParaswapEcosystem;
   tokens: CoreProtocolTokensZkEvm;
@@ -349,7 +350,7 @@ export interface CoreProtocolParamsZkEvm {
 
 export class CoreProtocolPolygonZkEvm extends CoreProtocolAbstract<Network.PolygonZkEvm> {
 
-  public readonly chainlinkPriceOracle: IChainlinkPriceOracleOld;
+  public readonly chainlinkPriceOracleOld: IChainlinkPriceOracleOld;
   public readonly paraswapEcosystem: ParaswapEcosystem;
 
   public override readonly marketIds: CoreProtocolMarketIdsZkEvm;
@@ -361,7 +362,7 @@ export class CoreProtocolPolygonZkEvm extends CoreProtocolAbstract<Network.Polyg
     zkEvmParams: CoreProtocolParamsZkEvm,
   ) {
     super(params);
-    this.chainlinkPriceOracle = zkEvmParams.chainlinkPriceOracle;
+    this.chainlinkPriceOracleOld = zkEvmParams.chainlinkPriceOracleOld;
     this.marketIds = zkEvmParams.marketIds;
     this.paraswapEcosystem = zkEvmParams.paraswapEcosystem;
     this.tokens = zkEvmParams.tokens;

@@ -1,4 +1,4 @@
-import { IAlgebraV3Pool, IAlgebraV3Pool__factory } from '../../../src/types';
+import { IAlgebraV3Pool, IAlgebraV3Pool__factory } from '@dolomite-exchange/modules-oracles/src/types';
 import { PREMIA_WETH_V3_POOL_MAP } from '../../../src/utils/constants';
 import { Network } from '../../../src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';

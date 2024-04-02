@@ -13,9 +13,8 @@ import {
   JonesUSDCIsolationModeVaultFactory,
   JonesUSDCIsolationModeVaultFactory__factory,
 } from '@dolomite-exchange/modules-jones/src/types';
+import { IAlgebraV3Pool, IAlgebraV3Pool__factory } from '@dolomite-exchange/modules-oracles/src/types';
 import {
-  IAlgebraV3Pool,
-  IAlgebraV3Pool__factory,
   IERC4626,
   IERC4626__factory,
   RegistryProxy,

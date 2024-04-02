@@ -1,5 +1,8 @@
 import Deployments, * as deployments from '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
-import { IChainlinkAutomationRegistry__factory } from '@dolomite-exchange/modules-oracles/src/types';
+import {
+  IChainlinkAutomationRegistry__factory,
+  IChainlinkPriceOracleOld__factory,
+} from '@dolomite-exchange/modules-oracles/src/types';
 import { BigNumber as ZapBigNumber } from '@dolomite-exchange/zap-sdk';
 import * as BorrowPositionProxyV2Json from '@dolomite-margin/deployed-contracts/BorrowPositionProxyV2.json';
 import * as DepositWithdrawalProxyJson from '@dolomite-margin/deployed-contracts/DepositWithdrawalProxy.json';
@@ -39,8 +42,8 @@ import {
 import {
   ARB_MAP,
   CHAINLINK_AUTOMATION_REGISTRY_MAP,
-  CHAINLINK_PRICE_AGGREGATORS_MAP,
-  CHAINLINK_PRICE_ORACLE_MAP,
+  CHAINLINK_PRICE_AGGREGATORS_MAP, CHAINLINK_PRICE_ORACLE_OLD_MAP,
+  CHAINLINK_PRICE_ORACLE_V1_MAP,
   D_ARB_MAP,
   D_GM_ARB_MAP,
   D_GM_BTC_MAP,
@@ -376,8 +379,13 @@ export async function setupCoreProtocol<T extends NetworkType>(
     governance,
   );
 
-  const chainlinkPriceOracle = getContract(
-    CHAINLINK_PRICE_ORACLE_MAP[config.network],
+  const chainlinkPriceOracleOld = getContract(
+    CHAINLINK_PRICE_ORACLE_OLD_MAP[config.network],
+    IChainlinkPriceOracleOld__factory.connect,
+    governance,
+  );
+  const chainlinkPriceOracleV1 = getContract(
+    CHAINLINK_PRICE_ORACLE_V1_MAP[config.network],
     IChainlinkPriceOracleV1__factory.connect,
     governance,
   );
@@ -509,7 +517,8 @@ export async function setupCoreProtocol<T extends NetworkType>(
     return new CoreProtocolArbitrumOne(
       coreProtocolParams as CoreProtocolParams<Network.ArbitrumOne>,
       {
-        chainlinkPriceOracle,
+        chainlinkPriceOracleOld,
+        chainlinkPriceOracleV1,
         abraEcosystem: await createAbraEcosystem(typedConfig.network, hhUser1),
         arbEcosystem: await createArbEcosystem(typedConfig.network, hhUser1),
         camelotEcosystem: await createCamelotEcosystem(typedConfig.network, hhUser1),
@@ -602,7 +611,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
     return new CoreProtocolBase(
       coreProtocolParams as CoreProtocolParams<Network.Base>,
       {
-        chainlinkPriceOracle,
+        chainlinkPriceOracleOld,
         paraswapEcosystem: await createParaswapEcosystem(typedConfig.network, hhUser1),
       },
     ) as any;
@@ -612,7 +621,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
     return new CoreProtocolPolygonZkEvm(
       coreProtocolParams as CoreProtocolParams<Network.PolygonZkEvm>,
       {
-        chainlinkPriceOracle,
+        chainlinkPriceOracleOld,
         marketIds: {
           ...coreProtocolParams.marketIds,
           matic: MATIC_MAP[typedConfig.network].marketId,
