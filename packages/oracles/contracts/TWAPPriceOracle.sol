@@ -20,13 +20,13 @@
 pragma solidity ^0.8.9;
 
 import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
-import { IAlgebraV3Pool } from "@dolomite-exchange/modules-base/contracts/interfaces/IAlgebraV3Pool.sol";
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
-import { OracleLibrary } from "@dolomite-exchange/modules-base/contracts/utils/OracleLibrary.sol";
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import { IAlgebraV3Pool } from "./interfaces/IAlgebraV3Pool.sol";
 import { ITWAPPriceOracle } from "./interfaces/ITWAPPriceOracle.sol";
+import { OracleLibrary } from "../utils/OracleLibrary.sol";
 
 
 /**
