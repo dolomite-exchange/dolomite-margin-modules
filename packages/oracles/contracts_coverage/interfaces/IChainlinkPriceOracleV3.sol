@@ -24,12 +24,12 @@ import { IChainlinkAggregator } from "./IChainlinkAggregator.sol";
 
 
 /**
- * @title   IChainlinkPriceOracleV2
+ * @title   IChainlinkPriceOracleV3
  * @author  Dolomite
  *
  * An interface of IDolomitePriceOracle that makes Chainlink prices compatible with the protocol.
  */
-interface IChainlinkPriceOracleV2 is IDolomitePriceOracle {
+interface IChainlinkPriceOracleV3 is IDolomitePriceOracle {
 
     // ============ Events ============
 
@@ -37,8 +37,7 @@ interface IChainlinkPriceOracleV2 is IDolomitePriceOracle {
 
     event TokenInsertedOrUpdated(
         address indexed token,
-        address indexed aggregator,
-        address indexed tokenPair
+        address indexed aggregator
     );
 
     // ============ Admin Functions ============
@@ -60,31 +59,13 @@ interface IChainlinkPriceOracleV2 is IDolomitePriceOracle {
      * @param  _token               The token whose Chainlink aggregator should be inserted or updated
      * @param  _tokenDecimals       The number of decimals that this token has
      * @param  _chainlinkAggregator The Chainlink aggregator that corresponds with this token
-     * @param  _tokenPair           The token pair that corresponds with this token. The zero address means USD.
-     * @param  _bypassUsdValue      True if the token does not return USD price
-     */
-    function ownerInsertOrUpdateOracleTokenWithBypass(
-        address _token,
-        uint8 _tokenDecimals,
-        address _chainlinkAggregator,
-        address _tokenPair,
-        bool _bypassUsdValue
-    )
-    external;
-
-    /**
-     * @dev Insert or update a token in the oracle. This function can only be called by the owner of DolomiteMargin.
-     *
-     * @param  _token               The token whose Chainlink aggregator should be inserted or updated
-     * @param  _tokenDecimals       The number of decimals that this token has
-     * @param  _chainlinkAggregator The Chainlink aggregator that corresponds with this token
-     * @param  _tokenPair           The token pair that corresponds with this token. The zero address means USD.
+     * @param  _invertPrice         True if should invert the price received from Chainlink
      */
     function ownerInsertOrUpdateOracleToken(
         address _token,
         uint8 _tokenDecimals,
         address _chainlinkAggregator,
-        address _tokenPair
+        bool _invertPrice
     )
     external;
 
@@ -106,10 +87,10 @@ interface IChainlinkPriceOracleV2 is IDolomitePriceOracle {
 
     /**
      *
-     * @param  _token       The token whose token pair should be retrieved
-     * @return _tokenPair   The token pair that corresponds with this token. The zero address means USD.
+     * @param  _token           The token whose token pair should be retrieved
+     * @return _invertPrice     True if should invert the price received from Chainlink
      */
-    function getTokenPairByToken(address _token) external view returns (address _tokenPair);
+    function getInvertPriceByToken(address _token) external view returns (bool _invertPrice);
 
     /**
      * @return The duration of time that must pass before a price is considered stale from a Chainlink Aggregator

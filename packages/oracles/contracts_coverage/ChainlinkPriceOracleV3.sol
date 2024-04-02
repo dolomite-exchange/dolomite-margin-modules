@@ -21,23 +21,25 @@ pragma solidity ^0.8.9;
 
 import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
+import { IDolomiteRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IDolomiteRegistry.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IChainlinkAccessControlAggregator } from "./interfaces/IChainlinkAccessControlAggregator.sol";
 import { IChainlinkAggregator } from "./interfaces/IChainlinkAggregator.sol";
-import { IChainlinkPriceOracle } from "./interfaces/IChainlinkPriceOracle.sol";
+import { IOracleAggregator2 } from"./interfaces/IOracleAggregator2.sol";
+import { IChainlinkPriceOracleV3 } from "./interfaces/IChainlinkPriceOracleV3.sol";
 
 
 /**
- * @title   ChainlinkPriceOracle
+ * @title   ChainlinkPriceOracleV3
  * @author  Dolomite
  *
  * An implementation of the IDolomitePriceOracle interface that makes Chainlink prices compatible with the protocol.
  */
-contract ChainlinkPriceOracle is IChainlinkPriceOracle, OnlyDolomiteMargin {
+contract ChainlinkPriceOracleV3 is IChainlinkPriceOracleV3, OnlyDolomiteMargin {
 
     // ========================= Constants =========================
 
-    bytes32 private constant _FILE = "ChainlinkPriceOracle";
+    bytes32 private constant _FILE = "ChainlinkPriceOracleV3";
     uint256 private constant _ONE_DOLLAR = 10 ** 36;
 
     // ========================= Storage =========================
@@ -46,10 +48,9 @@ contract ChainlinkPriceOracle is IChainlinkPriceOracle, OnlyDolomiteMargin {
 
     mapping(address => uint8) private _tokenToDecimalsMap;
 
-    /// @dev Defaults to USD if the value is the ZERO address
-    mapping(address => address) private _tokenToPairingMap;
+    mapping(address => bool) private _tokenToInvertPriceMap;
 
-    mapping(address => bool) private _tokenToBypassUsdValueMap;
+    IDolomiteRegistry public immutable DOLOMITE_REGISTRY;
 
     uint256 public stalenessThreshold;
 
@@ -61,17 +62,16 @@ contract ChainlinkPriceOracle is IChainlinkPriceOracle, OnlyDolomiteMargin {
      * @param  _tokens                  The tokens that are supported by this adapter.
      * @param  _chainlinkAggregators    The Chainlink aggregators that have on-chain prices.
      * @param  _tokenDecimals           The number of decimals that each token has.
-     * @param  _tokenPairs              The token against which this token's value is compared using the aggregator. The
-     *                                  zero address means USD.
-     * @param  _tokenToBypassUsdValue   True if the token does NOT return a USD value
+     * @param  _invertPrice             True if should invert price received from Chainlink
+     * @param  _dolomiteRegistry        The address of the DolomiteRegistry contract.
      * @param  _dolomiteMargin          The address of the DolomiteMargin contract.
      */
     constructor(
         address[] memory _tokens,
         address[] memory _chainlinkAggregators,
         uint8[] memory _tokenDecimals,
-        address[] memory _tokenPairs,
-        bool[] memory _tokenToBypassUsdValue,
+        bool[] memory _invertPrice,
+        address _dolomiteRegistry,
         address _dolomiteMargin
     )
         OnlyDolomiteMargin(_dolomiteMargin)
@@ -88,17 +88,11 @@ contract ChainlinkPriceOracle is IChainlinkPriceOracle, OnlyDolomiteMargin {
             _FILE,
             "Invalid aggregators length"
         );
-        if (_tokenDecimals.length == _tokenPairs.length) { /* FOR COVERAGE TESTING */ }
+        if (_tokenDecimals.length == _invertPrice.length) { /* FOR COVERAGE TESTING */ }
         Require.that(
-            _tokenDecimals.length == _tokenPairs.length,
+            _tokenDecimals.length == _invertPrice.length,
             _FILE,
             "Invalid decimals length"
-        );
-        if (_tokenPairs.length == _tokenToBypassUsdValue.length) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            _tokenPairs.length == _tokenToBypassUsdValue.length,
-            _FILE,
-            "Invalid pairs length"
         );
 
         uint256 tokensLength = _tokens.length;
@@ -107,12 +101,12 @@ contract ChainlinkPriceOracle is IChainlinkPriceOracle, OnlyDolomiteMargin {
                 _tokens[i],
                 _tokenDecimals[i],
                 _chainlinkAggregators[i],
-                _tokenPairs[i],
-                _tokenToBypassUsdValue[i]
+                _invertPrice[i]
             );
         }
 
         _ownerSetStalenessThreshold(36 hours);
+        DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
     }
 
     // ========================= Admin Functions =========================
@@ -130,8 +124,7 @@ contract ChainlinkPriceOracle is IChainlinkPriceOracle, OnlyDolomiteMargin {
         address _token,
         uint8 _tokenDecimals,
         address _chainlinkAggregator,
-        address _tokenPair,
-        bool _bypassUsdValue
+        bool _invertPrice
     )
     external
     onlyDolomiteMarginOwner(msg.sender)
@@ -140,8 +133,7 @@ contract ChainlinkPriceOracle is IChainlinkPriceOracle, OnlyDolomiteMargin {
             _token,
             _tokenDecimals,
             _chainlinkAggregator,
-            _tokenPair,
-            _bypassUsdValue
+            _invertPrice
         );
     }
 
@@ -161,15 +153,12 @@ contract ChainlinkPriceOracle is IChainlinkPriceOracle, OnlyDolomiteMargin {
             "Invalid token",
             _token
         );
-        if (_tokenToBypassUsdValueMap[_token]) {
-            if (msg.sender != address(DOLOMITE_MARGIN())) { /* FOR COVERAGE TESTING */ }
-            Require.that(
-                msg.sender != address(DOLOMITE_MARGIN()),
-                _FILE,
-                "Token bypasses USD value",
-                _token
-            );
-        }
+        if (msg.sender != address(DOLOMITE_MARGIN())) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            msg.sender != address(DOLOMITE_MARGIN()),
+            _FILE,
+            "DolomiteMargin cannot call"
+        );
 
         IChainlinkAggregator aggregatorProxy = _tokenToAggregatorMap[_token];
         (
@@ -202,31 +191,26 @@ contract ChainlinkPriceOracle is IChainlinkPriceOracle, OnlyDolomiteMargin {
         );
 
         uint256 chainlinkPrice = uint256(answer);
-        address tokenPair = _tokenToPairingMap[_token];
+        uint8 valueDecimals = aggregatorProxy.decimals();
+
+        if (_tokenToInvertPriceMap[_token]) {
+            uint256 decimalFactor = 10 ** uint256(valueDecimals);
+            chainlinkPrice = (decimalFactor ** 2) / chainlinkPrice;
+        }
 
         // standardize the Chainlink price to be the proper number of decimals of (36 - tokenDecimals)
+        IOracleAggregator2 aggregator = IOracleAggregator2(address(DOLOMITE_REGISTRY.oracleAggregator()));
+        uint8 tokenDecimals = aggregator.getDecimalsByToken(_token);
+        /*assert(tokenDecimals > 0);*/
         uint256 standardizedPrice = standardizeNumberOfDecimals(
-            _tokenToDecimalsMap[_token],
+            tokenDecimals,
             chainlinkPrice,
-            aggregatorProxy.decimals()
+            valueDecimals
         );
 
-        if (tokenPair == address(0)) {
-            // The pair has a USD base, we are done.
-            return IDolomiteStructs.MonetaryPrice({
-                value: standardizedPrice
-            });
-        } else {
-            // The price we just got and converted is NOT against USD. So we need to get its pair's price against USD.
-            // We can do so by recursively calling #getPrice using the `tokenPair` as the parameter instead of `token`.
-            uint256 tokenPairPrice = getPrice(tokenPair).value;
-            // Standardize the price to use 36 decimals.
-            uint256 tokenPairWith36Decimals = tokenPairPrice * (10 ** uint256(_tokenToDecimalsMap[tokenPair]));
-            // Now that the chained price uses 36 decimals (and thus is standardized), we can do easy math.
-            return IDolomiteStructs.MonetaryPrice({
-                value: standardizedPrice * tokenPairWith36Decimals / _ONE_DOLLAR
-            });
-        }
+        return IDolomiteStructs.MonetaryPrice({
+            value: standardizedPrice
+        });
     }
 
     function getAggregatorByToken(address _token) public view returns (IChainlinkAggregator) {
@@ -237,8 +221,8 @@ contract ChainlinkPriceOracle is IChainlinkPriceOracle, OnlyDolomiteMargin {
         return _tokenToDecimalsMap[_token];
     }
 
-    function getTokenPairByToken(address _token) public view returns (address _tokenPair) {
-        return _tokenToPairingMap[_token];
+    function getInvertPriceByToken(address _token) public view returns (bool _invertPrice) {
+        return _tokenToInvertPriceMap[_token];
     }
 
     /**
@@ -289,24 +273,11 @@ contract ChainlinkPriceOracle is IChainlinkPriceOracle, OnlyDolomiteMargin {
         address _token,
         uint8 _tokenDecimals,
         address _chainlinkAggregator,
-        address _tokenPair,
-        bool _bypassUsdValue
+        bool _invertPrice
     ) internal {
         _tokenToAggregatorMap[_token] = IChainlinkAggregator(_chainlinkAggregator);
         _tokenToDecimalsMap[_token] = _tokenDecimals;
-        _tokenToBypassUsdValueMap[_token] = _bypassUsdValue;
-        if (_tokenPair != address(0)) {
-            if (address(_tokenToAggregatorMap[_tokenPair]) != address(0)) { /* FOR COVERAGE TESTING */ }
-            Require.that(
-                address(_tokenToAggregatorMap[_tokenPair]) != address(0),
-                _FILE,
-                "Invalid token pair",
-                _tokenPair
-            );
-            // The aggregator's price is NOT against USD. Therefore, we need to store what it's against as well as the
-            // # of decimals the aggregator's price has.
-            _tokenToPairingMap[_token] = _tokenPair;
-        }
-        emit TokenInsertedOrUpdated(_token, _chainlinkAggregator, _tokenPair);
+        _tokenToInvertPriceMap[_token] = _invertPrice;
+        emit TokenInsertedOrUpdated(_token, _chainlinkAggregator);
     }
 }

@@ -19,6 +19,7 @@ import {
   getPendlePtIsolationModeVaultFactoryConstructorParams,
   getPendlePtIsolationModeWrapperTraderV2ConstructorParams,
   getPendlePtPriceOracleConstructorParams,
+  getPendlePtPriceOracleV2ConstructorParams,
   getPendlePtRsEthPriceOracleConstructorParams,
   getPendleRegistryConstructorParams,
   getPendleYtGLP2024IsolationModeUnwrapperTraderV2ConstructorParams,
@@ -62,6 +63,8 @@ import {
   PendlePtIsolationModeWrapperTraderV2,
   PendlePtIsolationModeWrapperTraderV2__factory,
   PendlePtPriceOracle,
+  PendlePtPriceOracleV2,
+  PendlePtPriceOracleV2__factory,
   PendlePtPriceOracle__factory,
   PendlePtRsEthPriceOracle,
   PendlePtRsEthPriceOracle__factory,
@@ -177,6 +180,18 @@ export function createPendlePtPriceOracle<T extends Network>(
     PendlePtPriceOracle__factory.abi,
     PendlePtPriceOracle__factory.bytecode,
     getPendlePtPriceOracleConstructorParams(core, dptToken, pendleRegistry, underlyingToken),
+  );
+}
+
+export function createPendlePtPriceOracleV2<T extends Network>(
+  core: CoreProtocolWithPendle<T>,
+  dptToken: IPendlePtIsolationModeVaultFactory | PendlePtIsolationModeVaultFactory,
+  pendleRegistry: IPendleRegistry | PendleRegistry,
+): Promise<PendlePtPriceOracleV2> {
+  return createContractWithAbi(
+    PendlePtPriceOracleV2__factory.abi,
+    PendlePtPriceOracleV2__factory.bytecode,
+    getPendlePtPriceOracleV2ConstructorParams(core, dptToken, pendleRegistry),
   );
 }
 

@@ -24,12 +24,12 @@ import { IChainlinkAggregator } from "./IChainlinkAggregator.sol";
 
 
 /**
- * @title   IRedstonePriceOracle
+ * @title   IRedstonePriceOracleV2
  * @author  Dolomite
  *
  * An interface of IDolomitePriceOracle that makes Redstone prices compatible with the protocol.
  */
-interface IRedstonePriceOracle is IDolomitePriceOracle {
+interface IRedstonePriceOracleV2 is IDolomitePriceOracle {
 
     // ============ Events ============
 

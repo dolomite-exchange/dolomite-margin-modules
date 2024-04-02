@@ -133,6 +133,22 @@ export function getPendlePtPriceOracleConstructorParams<T extends Network>(
   ];
 }
 
+export function getPendlePtPriceOracleV2ConstructorParams<T extends Network>(
+  core: CoreProtocolWithPendle<T>,
+  dptToken: IPendlePtIsolationModeVaultFactory | PendlePtIsolationModeVaultFactory,
+  pendleRegistry: IPendleRegistry | PendleRegistry
+): any[] {
+  if (!core.pendleEcosystem) {
+    throw new Error('Pendle ecosystem not initialized');
+  }
+
+  return [
+    dptToken.address,
+    pendleRegistry.address,
+    core.dolomiteMargin.address,
+  ];
+}
+
 export function getPendlePtRsEthPriceOracleConstructorParams<T extends Network>(
   core: CoreProtocolWithPendle<T>,
   dptToken: IPendlePtIsolationModeVaultFactory | PendlePtIsolationModeVaultFactory,
@@ -329,35 +345,5 @@ export function getPendleYtGLPPriceOracleConstructorParams(
     pendleRegistry.address,
     core.dolomiteMargin.address,
     core.marketIds.dfsGlp!,
-  ];
-}
-
-export function getSimplePtUnwrapperTraderV2ConstructorParams(
-  core: CoreProtocolArbitrumOne,
-  factory: IPendlePtIsolationModeVaultFactory | PendlePtIsolationModeVaultFactory,
-): any[] {
-  if (!core.pendleEcosystem) {
-    throw new Error('Pendle ecosystem not initialized');
-  }
-
-  return [
-    factory.address,
-    core.dolomiteMargin.address,
-    core.dolomiteRegistry.address
-  ];
-}
-
-export function getSimplePtWrapperTraderV2ConstructorParams(
-  core: CoreProtocolArbitrumOne,
-  factory: IPendlePtIsolationModeVaultFactory | PendlePtIsolationModeVaultFactory,
-): any[] {
-  if (!core.pendleEcosystem) {
-    throw new Error('Pendle ecosystem not initialized');
-  }
-
-  return [
-    factory.address,
-    core.dolomiteMargin.address,
-    core.dolomiteRegistry.address
   ];
 }

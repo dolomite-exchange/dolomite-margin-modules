@@ -1,8 +1,5 @@
 import Deployments, * as deployments from '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
-import {
-  IChainlinkAutomationRegistry__factory,
-  IChainlinkPriceOracleOld__factory,
-} from '@dolomite-exchange/modules-oracles/src/types';
+import { IChainlinkAutomationRegistry__factory } from '@dolomite-exchange/modules-oracles/src/types';
 import { BigNumber as ZapBigNumber } from '@dolomite-exchange/zap-sdk';
 import * as BorrowPositionProxyV2Json from '@dolomite-margin/deployed-contracts/BorrowPositionProxyV2.json';
 import * as DepositWithdrawalProxyJson from '@dolomite-margin/deployed-contracts/DepositWithdrawalProxy.json';
@@ -17,6 +14,7 @@ import { address } from '@dolomite-margin/dist/src';
 import { Provider } from '@ethersproject/providers';
 import { BaseContract, BigNumberish, ContractInterface, Signer } from 'ethers';
 import { ethers } from 'hardhat';
+import { IChainlinkPriceOracleV1__factory } from 'packages/oracles/src/types';
 import {
   IBorrowPositionProxyV2__factory,
   IDepositWithdrawalProxy__factory,
@@ -380,7 +378,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
 
   const chainlinkPriceOracle = getContract(
     CHAINLINK_PRICE_ORACLE_MAP[config.network],
-    IChainlinkPriceOracleOld__factory.connect,
+    IChainlinkPriceOracleV1__factory.connect,
     governance,
   );
 
