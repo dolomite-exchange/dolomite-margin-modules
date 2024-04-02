@@ -5,8 +5,8 @@ import { BigNumber } from 'ethers';
 import {
   ChainlinkPriceOracleV3,
   ChainlinkPriceOracleV3__factory,
-  OracleAggregator2,
-  OracleAggregator2__factory,
+  OracleAggregatorV2,
+  OracleAggregatorV2__factory,
   TestChainlinkAggregator,
   TestChainlinkAggregator__factory,
 } from '../src/types';
@@ -45,7 +45,7 @@ describe('ChainlinkPriceOracleV3', () => {
   let oracle: ChainlinkPriceOracleV3;
   let testAggregator: TestChainlinkAggregator;
   let testToken: CustomTestToken;
-  let oracleAggregator: OracleAggregator2;
+  let oracleAggregator: OracleAggregatorV2;
 
   before(async () => {
     core = await setupCoreProtocol(await getDefaultCoreProtocolConfig(Network.ArbitrumOne));
@@ -92,9 +92,9 @@ describe('ChainlinkPriceOracleV3', () => {
         token: core.tokens.wbtc.address
       }
     ];
-    oracleAggregator = (await createContractWithAbi<OracleAggregator2>(
-      OracleAggregator2__factory.abi,
-      OracleAggregator2__factory.bytecode,
+    oracleAggregator = (await createContractWithAbi<OracleAggregatorV2>(
+      OracleAggregatorV2__factory.abi,
+      OracleAggregatorV2__factory.bytecode,
       [
         tokenInfos,
         core.dolomiteMargin.address

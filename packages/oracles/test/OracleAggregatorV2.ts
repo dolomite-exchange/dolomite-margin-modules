@@ -289,7 +289,8 @@ describe('OracleAggregatorV2', () => {
         0,
         chainlinkOracle.address,
         core.tokens.weth.address,
-        100
+        100,
+        1,
       );
     });
 
@@ -307,9 +308,7 @@ describe('OracleAggregatorV2', () => {
         testAggregator.address,
         false
       );
-      await oracleAggregator.ownerInsertOrUpdateToken(
-        tokenInfo
-      );
+      await oracleAggregator.ownerInsertOrUpdateToken(tokenInfo);
 
       await expectTokenInfo(oracleAggregator, testToken.address, 18);
       await expectOracleInfo(
@@ -318,7 +317,8 @@ describe('OracleAggregatorV2', () => {
         0,
         chainlinkOracle.address,
         core.tokens.weth.address,
-        100
+        100,
+        1,
       );
 
       tokenInfo = {
@@ -328,9 +328,7 @@ describe('OracleAggregatorV2', () => {
         decimals: 18,
         token: testToken.address
       };
-      await oracleAggregator.ownerInsertOrUpdateToken(
-        tokenInfo,
-      );
+      await oracleAggregator.ownerInsertOrUpdateToken(tokenInfo);
       await expectTokenInfo(oracleAggregator, testToken.address, 18);
       await expectOracleInfo(
         oracleAggregator,
@@ -338,7 +336,8 @@ describe('OracleAggregatorV2', () => {
         0,
         chainlinkOracle.address,
         ADDRESS_ZERO,
-        100
+        100,
+        1,
       );
     });
 
@@ -382,9 +381,12 @@ async function expectOracleInfo(
   index: number,
   oracle: string,
   tokenPair: string,
-  weight: number
+  weight: number,
+  length: number,
 ) {
-  const oracleInfo = (await oracleAggregator.getOraclesByToken(token))[index];
+  const oracleInfos = await oracleAggregator.getOraclesByToken(token);
+  expect(oracleInfos.length).to.eq(length);
+  const oracleInfo = oracleInfos[index];
   expect(oracleInfo.oracle).to.eq(oracle);
   expect(oracleInfo.tokenPair).to.eq(tokenPair);
   expect(oracleInfo.weight).to.eq(weight);

@@ -27,7 +27,7 @@ import { IOracleAggregatorV2 } from "./interfaces/IOracleAggregatorV2.sol";
 
 
 /**
- * @title   OracleAggregatorV2.sol
+ * @title   OracleAggregatorV2
  * @author  Dolomite
  *
  * An implementation of the IDolomitePriceOracle interface that makes Chainlink prices compatible with the protocol.
@@ -74,9 +74,7 @@ contract OracleAggregatorV2 is OnlyDolomiteMargin, IOracleAggregatorV2 {
     external
     onlyDolomiteMarginOwner(msg.sender)
     {
-        _ownerInsertOrUpdateToken(
-            _info
-        );
+        _ownerInsertOrUpdateToken(_info);
     }
 
     // ========================= Public Functions =========================
@@ -99,8 +97,7 @@ contract OracleAggregatorV2 is OnlyDolomiteMargin, IOracleAggregatorV2 {
         uint256 priceTotal;
         for (uint256 i; i < oracleInfos.length; ++i) {
             OracleInfo memory oracleInfo = oracleInfos[i];
-            IDolomitePriceOracle oracle = IDolomitePriceOracle(oracleInfo.oracle);
-            IDolomiteStructs.MonetaryPrice memory price = oracle.getPrice(_token);
+            IDolomiteStructs.MonetaryPrice memory price = IDolomitePriceOracle(oracleInfo.oracle).getPrice(_token);
             address tokenPair = oracleInfo.tokenPair;
 
             if (tokenPair == address(0)) {
@@ -111,9 +108,9 @@ contract OracleAggregatorV2 is OnlyDolomiteMargin, IOracleAggregatorV2 {
                 // Standardize the price to use 36 decimals.
                 uint256 tokenPairDecimals = _tokenInfoMap[tokenPair].decimals;
                 assert(tokenPairDecimals > 0);
-                uint256 tokenPairWith36Decimals = tokenPairPrice.value * (10 ** tokenPairDecimals);
+                uint256 tokenPairValueWith36Decimals = tokenPairPrice.value * (10 ** tokenPairDecimals);
                 // Now that the chained price uses 36 decimals (and thus is standardized), we can do easy math.
-                priceTotal += price.value * tokenPairWith36Decimals * oracleInfo.weight / _ONE_DOLLAR;
+                priceTotal += price.value * tokenPairValueWith36Decimals / _ONE_DOLLAR * oracleInfo.weight;
             }
         }
 
@@ -145,11 +142,14 @@ contract OracleAggregatorV2 is OnlyDolomiteMargin, IOracleAggregatorV2 {
         _tokenInfoMap[_info.token].token = _info.token;
         _tokenInfoMap[_info.token].decimals = _info.decimals;
         for (uint256 i; i < _info.oracleInfos.length; ++i) {
-            _tokenInfoMap[_info.token].oracleInfos.push(OracleInfo({
-                oracle: _info.oracleInfos[i].oracle,
-                tokenPair: _info.oracleInfos[i].tokenPair,
-                weight: _info.oracleInfos[i].weight
-            }));
+            assert(_info.oracleInfos[i].weight > 0);
+            _tokenInfoMap[_info.token].oracleInfos.push(
+                OracleInfo({
+                    oracle: _info.oracleInfos[i].oracle,
+                    tokenPair: _info.oracleInfos[i].tokenPair,
+                    weight: _info.oracleInfos[i].weight
+                })
+            );
             weightSum += _info.oracleInfos[i].weight;
         }
 

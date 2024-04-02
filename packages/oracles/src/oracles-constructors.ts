@@ -10,6 +10,7 @@ import { BigNumberish } from 'ethers';
 import { ethers } from 'hardhat';
 import { CHAINLINK_PRICE_ORACLE_OLD_MAP } from 'packages/base/src/utils/constants';
 import { Network, NetworkType } from 'packages/base/src/utils/no-deps-constants';
+import { TokenInfo } from './index';
 import {
   ChainlinkPriceOracleV3,
   IAlgebraV3Pool,
@@ -17,7 +18,7 @@ import {
   IChainlinkPriceOracleOld,
   IChainlinkPriceOracleOld__factory,
   IChainlinkPriceOracleV1__factory,
-  IERC20Metadata__factory,
+  IERC20Metadata__factory, IRedstonePriceOracleV2__factory,
   RedstonePriceOracleV3,
 } from './types';
 
@@ -77,6 +78,7 @@ export async function getChainlinkPriceOracleV3ConstructorParamsFromChainlinkOra
       tokenDecimals.push(await oldPriceOracle.getDecimalsByToken(token));
       invertPrice.push(false);
     } else {
+      // We only want to push the second instance of seeing wstETH
       if (seenWstEth) {
         tokens.push(token);
         aggregators.push(await oldPriceOracle.getAggregatorByToken(token));
@@ -194,6 +196,64 @@ export async function getOracleAggregatorV1ConstructorParams(
   }
 
   return [tokens, oracles, tokenPairs, core.dolomiteMargin.address];
+}
+
+export async function getOracleAggregatorV2ConstructorParams(
+  core: CoreProtocolArbitrumOne | CoreProtocolPolygonZkEvm,
+  chainlinkOracle: ChainlinkPriceOracleV3,
+  redstoneOracle: RedstonePriceOracleV3,
+): Promise<[TokenInfo[], string]> {
+  const oldChainlinkPriceOracle = IChainlinkPriceOracleV1__factory.connect(
+    Deployments.ChainlinkPriceOracleV1[core.config.network].address,
+    core.hhUser1,
+  );
+  let oldRedstonePriceOracle;
+  if (core.config.network === Network.ArbitrumOne) {
+    oldRedstonePriceOracle = IRedstonePriceOracleV2__factory.connect(
+      Deployments.RedstonePriceOracleV1[core.config.network].address,
+      core.hhUser1,
+    );
+  } else {
+    oldRedstonePriceOracle = null;
+  }
+
+  const tokensInfos: TokenInfo[] = [];
+  const marketsLength = (await core.dolomiteMargin.getNumMarkets()).toNumber();
+
+  for (let i = 0; i < marketsLength; i++) {
+    const token = await core.dolomiteMargin.getMarketTokenAddress(i);
+    const oldPriceOracleAddress = await core.dolomiteMargin.getMarketPriceOracle(i);
+
+    let decimals: number;
+    let tokenPair: string;
+    let oracle: string;
+    if (oldPriceOracleAddress === oldChainlinkPriceOracle.address) {
+      decimals = await oldChainlinkPriceOracle.getDecimalsByToken(token);
+      tokenPair = await oldChainlinkPriceOracle.getTokenPairByToken(token);
+      oracle = chainlinkOracle.address;
+    } else if (oldPriceOracleAddress === oldRedstonePriceOracle?.address) {
+      decimals = await oldRedstonePriceOracle?.getDecimalsByToken(token);
+      tokenPair = await oldRedstonePriceOracle?.getTokenPairByToken(token);
+      oracle = redstoneOracle.address;
+    } else {
+      // Do nothing for now. Ideally we add the missing assets (IE TWAP)
+      continue;
+    }
+
+    tokensInfos.push({
+      token,
+      decimals,
+      oracleInfos: [
+        {
+          oracle,
+          tokenPair,
+          weight: 100,
+        },
+      ],
+    });
+  }
+
+  return [tokensInfos, core.dolomiteMargin.address];
 }
 
 export async function getChainlinkPriceOracleConstructorParams<T extends NetworkType>(

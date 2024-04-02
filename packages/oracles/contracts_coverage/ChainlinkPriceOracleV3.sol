@@ -20,13 +20,13 @@
 pragma solidity ^0.8.9;
 
 import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
-import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { IDolomiteRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IDolomiteRegistry.sol";
+import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IChainlinkAccessControlAggregator } from "./interfaces/IChainlinkAccessControlAggregator.sol";
 import { IChainlinkAggregator } from "./interfaces/IChainlinkAggregator.sol";
-import { IOracleAggregator2 } from"./interfaces/IOracleAggregator2.sol";
 import { IChainlinkPriceOracleV3 } from "./interfaces/IChainlinkPriceOracleV3.sol";
+import { IOracleAggregatorV2 } from "./interfaces/IOracleAggregatorV2.sol";
 
 
 /**
@@ -34,6 +34,7 @@ import { IChainlinkPriceOracleV3 } from "./interfaces/IChainlinkPriceOracleV3.so
  * @author  Dolomite
  *
  * An implementation of the IDolomitePriceOracle interface that makes Chainlink prices compatible with the protocol.
+ * This implementation is meant to be tied to an
  */
 contract ChainlinkPriceOracleV3 is IChainlinkPriceOracleV3, OnlyDolomiteMargin {
 
@@ -199,7 +200,7 @@ contract ChainlinkPriceOracleV3 is IChainlinkPriceOracleV3, OnlyDolomiteMargin {
         }
 
         // standardize the Chainlink price to be the proper number of decimals of (36 - tokenDecimals)
-        IOracleAggregator2 aggregator = IOracleAggregator2(address(DOLOMITE_REGISTRY.oracleAggregator()));
+        IOracleAggregatorV2 aggregator = IOracleAggregatorV2(address(DOLOMITE_REGISTRY.oracleAggregator()));
         uint8 tokenDecimals = aggregator.getDecimalsByToken(_token);
         /*assert(tokenDecimals > 0);*/
         uint256 standardizedPrice = standardizeNumberOfDecimals(

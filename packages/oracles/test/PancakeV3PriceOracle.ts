@@ -5,8 +5,8 @@ import { parseEther } from 'ethers/lib/utils';
 import {
   ChainlinkPriceOracleV3,
   ChainlinkPriceOracleV3__factory,
-  OracleAggregator2,
-  OracleAggregator2__factory,
+  OracleAggregatorV2,
+  OracleAggregatorV2__factory,
   PancakeV3PriceOracle,
   PancakeV3PriceOracle__factory
 } from '../src/types';
@@ -37,7 +37,7 @@ describe('PancakeV3PriceOracle', () => {
   let oracle: PancakeV3PriceOracle;
   let maticOracle: PancakeV3PriceOracle;
   let chainlinkOracle: ChainlinkPriceOracleV3;
-  let oracleAggregator: OracleAggregator2;
+  let oracleAggregator: OracleAggregatorV2;
 
   before(async () => {
     const blockNumber = 10_863_200;
@@ -110,9 +110,9 @@ describe('PancakeV3PriceOracle', () => {
         token: core.tokens.matic.address
       }
     ];
-    oracleAggregator = (await createContractWithAbi<OracleAggregator2>(
-      OracleAggregator2__factory.abi,
-      OracleAggregator2__factory.bytecode,
+    oracleAggregator = (await createContractWithAbi<OracleAggregatorV2>(
+      OracleAggregatorV2__factory.abi,
+      OracleAggregatorV2__factory.bytecode,
       [
         tokenInfos,
         core.dolomiteMargin.address

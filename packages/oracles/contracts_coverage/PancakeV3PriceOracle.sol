@@ -20,24 +20,24 @@
 pragma solidity ^0.8.9;
 
 import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
-import { IAlgebraV3Pool } from "@dolomite-exchange/modules-base/contracts/interfaces/IAlgebraV3Pool.sol";
-import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { IDolomiteRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IDolomiteRegistry.sol";
+import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
-import { OracleLibrary } from "@dolomite-exchange/modules-base/contracts/utils/OracleLibrary.sol";
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import { ITWAPPriceOracle } from "./interfaces/ITWAPPriceOracle.sol";
-import { IOracleAggregator2 } from"./interfaces/IOracleAggregator2.sol";
+import { IAlgebraV3Pool } from "./interfaces/IAlgebraV3Pool.sol";
+import { IOracleAggregatorV2 } from "./interfaces/IOracleAggregatorV2.sol";
+import { ITWAPPriceOracleV1 } from "./interfaces/ITWAPPriceOracleV1.sol";
+import { OracleLibrary } from "./utils/OracleLibrary.sol";
 
 
 /**
  * @title   PancakeV3PriceOracle
  * @author  Dolomite
  *
- * An implementation of the ITWAPPriceOracleV1.sol interface that makes gets the TWAP from a number of LP pools
+ * An implementation of the ITWAPPriceOracleV1.sol interface that makes gets the TWAP from an LP pool
  */
-contract PancakeV3PriceOracle is ITWAPPriceOracle, OnlyDolomiteMargin {
+contract PancakeV3PriceOracle is ITWAPPriceOracleV1, OnlyDolomiteMargin {
     using EnumerableSet for EnumerableSet.AddressSet;
 
     // ========================= Constants =========================
@@ -106,7 +106,7 @@ contract PancakeV3PriceOracle is ITWAPPriceOracle, OnlyDolomiteMargin {
         int24 tick = OracleLibrary.consultPancakeSwap(address(currentPair), observationInterval);
         uint256 quote = OracleLibrary.getQuoteAtTick(tick, uint128(TOKEN_DECIMALS_FACTOR), _token, outputToken);
 
-        IOracleAggregator2 aggregator = IOracleAggregator2(address(DOLOMITE_REGISTRY.oracleAggregator()));
+        IOracleAggregatorV2 aggregator = IOracleAggregatorV2(address(DOLOMITE_REGISTRY.oracleAggregator()));
         uint8 outputTokenDecimals = aggregator.getDecimalsByToken(outputToken);
         /*assert(outputTokenDecimals > 0);*/
 
