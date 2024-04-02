@@ -1,10 +1,6 @@
 import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
-import {
-  getGmxV2IsolationModeTokenVaultConstructorParams,
-} from '@dolomite-exchange/modules-gmx-v2/src/gmx-v2-constructors';
-import { GmxV2IsolationModeTokenVaultV1__factory } from '@dolomite-exchange/modules-gmx-v2/src/types';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
 import {
@@ -14,12 +10,11 @@ import {
 } from '../../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../utils/dry-run-utils';
 import getScriptName from '../../../utils/get-script-name';
-import Deployments from '../../deployments.json';
 
 /**
  * This script encodes the following transactions:
- * - Deploys new GMX V2 library and ActionsImpl library
- * - Deploys a new Token Vault for each GM token
+ * - Deploys new AsyncIsolationModeWrapperTraderImpl library
+ * - Deploys a new wrapper trader for each GM token
  */
 async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
