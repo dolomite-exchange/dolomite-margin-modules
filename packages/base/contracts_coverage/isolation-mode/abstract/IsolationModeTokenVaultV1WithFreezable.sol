@@ -24,6 +24,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { IsolationModeTokenVaultV1 } from "./IsolationModeTokenVaultV1.sol";
+import { IGenericTraderBase } from "../../interfaces/IGenericTraderBase.sol";
 import { IGenericTraderProxyV1 } from "../../interfaces/IGenericTraderProxyV1.sol";
 import { IHandlerRegistry } from "../../interfaces/IHandlerRegistry.sol";
 import { AccountBalanceLib } from "../../lib/AccountBalanceLib.sol";
@@ -137,15 +138,17 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
     }
 
     modifier _addCollateralAndSwapExactInputForOutputFreezableValidator(
+        uint256 _fromAccountNumber,
         uint256 _borrowAccountNumber,
         uint256 _inputMarketId,
         uint256 _outputMarketId,
         uint256 _inputAmount,
         uint256 _minOutputAmount
     ) {
-        _requireNotFrozen();
+        _requireTrustedConverterIfFrozenOrUnwrapper(_inputMarketId);
         _validateIfWrapToUnderlying(
-            /* _accountNumber = */ _borrowAccountNumber,
+            _fromAccountNumber,
+            _borrowAccountNumber,
             _inputMarketId,
             _outputMarketId,
             _inputAmount,
@@ -161,9 +164,10 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         uint256 _inputAmount,
         uint256 _minOutputAmount
     ) {
-        _requireNotFrozen();
+        _requireTrustedConverterIfFrozenOrUnwrapper(_inputMarketId);
         _validateIfWrapToUnderlying(
-            /* _accountNumber = */ _borrowAccountNumber,
+            /* _inputSourceAccountNumber */ _borrowAccountNumber,
+            _borrowAccountNumber,
             _inputMarketId,
             _outputMarketId,
             _inputAmount,
@@ -179,9 +183,10 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         uint256 _inputAmount,
         uint256 _minOutputAmount
     ) {
-        _requireNotFrozen();
+        _requireTrustedConverterIfFrozenOrUnwrapper(_marketIds[0]);
         _validateIfWrapToUnderlying(
-            /* _accountNumber = */ _tradeAccountNumber,
+            /* _inputSourceAccountNumber = */ _tradeAccountNumber,
+            _tradeAccountNumber,
             /* _inputMarketId = */ _marketIds[0],
             /* _outputMarketId = */ _marketIds[_marketIds.length - 1],
             _inputAmount,
@@ -540,6 +545,7 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         virtual
         override
         _addCollateralAndSwapExactInputForOutputFreezableValidator(
+            _fromAccountNumber,
             _borrowAccountNumber,
             /* _inputMarketId = */ _marketIdsPath[0],
             /* _outputMarketId = */ _marketIdsPath[_marketIdsPath.length - 1],
@@ -804,6 +810,13 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         );
     }
 
+    function _requireTrustedConverterIfFrozenOrUnwrapper(uint256 _inputMarketId) private view {
+        if (_inputMarketId == marketId() || isVaultFrozen()) {
+            // Only a trusted converter can initiate unwraps (via the callback) OR execute swaps if the vault is frozen
+            _requireOnlyConverter(msg.sender);
+        }
+    }
+
     function _requireVaultAccountNotFrozen(uint256 _accountNumber) private view {
         if (!isVaultAccountFrozen(_accountNumber)) { /* FOR COVERAGE TESTING */ }
         Require.that(
@@ -815,17 +828,19 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
     }
 
     function _validateIfWrapToUnderlying(
-        uint256 _accountNumber,
+        uint256 _inputSourceAccountNumber,
+        uint256 _tradeAccountNumber,
         uint256 _inputMarketId,
         uint256 _outputMarketId,
         uint256 _inputAmount,
         uint256 _minOutputAmount
     ) internal view {
         if (_outputMarketId == marketId()) {
-            _requireNotLiquidatable(_accountNumber);
+            _requireNotLiquidatable(_tradeAccountNumber);
             IsolationModeTokenVaultV1ActionsImpl.requireMinAmountIsNotTooLargeForWrapToUnderlying(
                 dolomiteRegistry(),
                 DOLOMITE_MARGIN(),
+                _inputSourceAccountNumber,
                 _inputMarketId,
                 _outputMarketId,
                 _inputAmount,

@@ -22,6 +22,7 @@ pragma solidity ^0.8.9;
 // solhint-disable max-line-length
 import { IDolomiteRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IDolomiteRegistry.sol";
 import { IGenericTraderBase } from "@dolomite-exchange/modules-base/contracts/interfaces/IGenericTraderBase.sol";
+import { IGenericTraderProxyV1 } from "@dolomite-exchange/modules-base/contracts/interfaces/IGenericTraderProxyV1.sol";
 import { IsolationModeTokenVaultV1WithFreezable } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeTokenVaultV1WithFreezable.sol";
 import { IsolationModeTokenVaultV1WithFreezableAndPausable } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeTokenVaultV1WithFreezableAndPausable.sol";
 import { IsolationModeTokenVaultV1WithPausable } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeTokenVaultV1WithPausable.sol";
@@ -171,53 +172,67 @@ contract GmxV2IsolationModeTokenVaultV1 is
         );
     }
 
-    /**
-     *
-     *  @dev  _minOutputAmountWei MUST BE greater than 0 or call will revert
-     */
+    function _addCollateralAndSwapExactInputForOutput(
+        uint256 _fromAccountNumber,
+        uint256 _borrowAccountNumber,
+        uint256[] calldata _marketIdsPath,
+        uint256 _inputAmountWei,
+        uint256 _minOutputAmountWei,
+        IGenericTraderProxyV1.TraderParam[] memory _tradersPath,
+        IDolomiteStructs.AccountInfo[] memory _makerAccounts,
+        IGenericTraderProxyV1.UserConfig memory _userConfig
+    )
+        internal
+        override
+    {
+        _validateExecutionFeeIfWrapToUnderlying(_borrowAccountNumber, _tradersPath);
+        super._addCollateralAndSwapExactInputForOutput(
+            _fromAccountNumber,
+            _borrowAccountNumber,
+            _marketIdsPath,
+            _inputAmountWei,
+            _minOutputAmountWei,
+            _tradersPath,
+            _makerAccounts,
+            _userConfig
+        );
+    }
+
+    function _swapExactInputForOutputAndRemoveCollateral(
+        uint256 _toAccountNumber,
+        uint256 _borrowAccountNumber,
+        uint256[] calldata _marketIdsPath,
+        uint256 _inputAmountWei,
+        uint256 _minOutputAmountWei,
+        IGenericTraderBase.TraderParam[] memory _tradersPath,
+        IDolomiteStructs.AccountInfo[] memory _makerAccounts,
+        IGenericTraderProxyV1.UserConfig memory _userConfig
+    )
+        internal
+        override
+    {
+        _validateExecutionFeeIfWrapToUnderlying(_borrowAccountNumber, _tradersPath);
+        super._swapExactInputForOutputAndRemoveCollateral(
+            _toAccountNumber,
+            _borrowAccountNumber,
+            _marketIdsPath,
+            _inputAmountWei,
+            _minOutputAmountWei,
+            _tradersPath,
+            _makerAccounts,
+            _userConfig
+        );
+    }
+
     function _swapExactInputForOutput(
         SwapExactInputForOutputParams memory _params
     )
-    internal
-    virtual
-    override {
-        uint256 len = _params.tradersPath.length;
-        if (_params.tradersPath[len - 1].traderType == IGenericTraderBase.TraderType.IsolationModeWrapper) {
-            GmxV2Library.depositAndApproveWethForWrapping(this);
-            if (msg.value <= IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).maxExecutionFee()) { /* FOR COVERAGE TESTING */ }
-            Require.that(
-                msg.value <= IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).maxExecutionFee(),
-                _FILE,
-                "Invalid execution fee"
-            );
-            _params.tradersPath[len - 1].tradeData = abi.encode(_params.tradeAccountNumber, abi.encode(msg.value));
-        } else {
-            if (msg.value == 0) { /* FOR COVERAGE TESTING */ }
-            Require.that(
-                msg.value == 0,
-                _FILE,
-                "Cannot send ETH for non-wrapper"
-            );
-        }
-
-        if (
-            _params.tradersPath[0].traderType == IGenericTraderBase.TraderType.IsolationModeUnwrapper ||
-            isVaultFrozen()
-        ) {
-            // Only a trusted converter can initiate unwraps (via the callback) OR execute swaps if the vault is frozen
-            _requireOnlyConverter(msg.sender);
-        }
-
-        _validateIfWrapToUnderlying(
-            _params.tradeAccountNumber,
-            _params.marketIdsPath[0],
-            _params.marketIdsPath[_params.marketIdsPath.length - 1],
-            _params.inputAmountWei,
-            _params.minOutputAmountWei
-        );
-
-        // Ignore the freezable implementation and call the pausable one directly
-        IsolationModeTokenVaultV1WithPausable._swapExactInputForOutput(_params);
+        internal
+        virtual
+        override
+    {
+        _validateExecutionFeeIfWrapToUnderlying(_params.tradeAccountNumber, _params.tradersPath);
+        super._swapExactInputForOutput(_params);
     }
 
     function _initiateUnwrapping(
@@ -304,5 +319,29 @@ contract GmxV2IsolationModeTokenVaultV1 is
             _extraData,
             CHAIN_ID
         );
+    }
+
+    function _validateExecutionFeeIfWrapToUnderlying(
+        uint256 _tradeAccountNumber,
+        IGenericTraderBase.TraderParam[] memory _tradersPath
+    ) private {
+        uint256 len = _tradersPath.length;
+        if (_tradersPath[len - 1].traderType == IGenericTraderBase.TraderType.IsolationModeWrapper) {
+            GmxV2Library.depositAndApproveWethForWrapping(this);
+            if (msg.value <= IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).maxExecutionFee()) { /* FOR COVERAGE TESTING */ }
+            Require.that(
+                msg.value <= IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).maxExecutionFee(),
+                _FILE,
+                "Invalid execution fee"
+            );
+            _tradersPath[len - 1].tradeData = abi.encode(_tradeAccountNumber, abi.encode(msg.value));
+        } else {
+            if (msg.value == 0) { /* FOR COVERAGE TESTING */ }
+            Require.that(
+                msg.value == 0,
+                _FILE,
+                "Cannot send ETH for non-wrapper"
+            );
+        }
     }
 }

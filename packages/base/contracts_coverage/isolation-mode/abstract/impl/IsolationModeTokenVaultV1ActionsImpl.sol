@@ -521,11 +521,20 @@ library IsolationModeTokenVaultV1ActionsImpl {
     function requireMinAmountIsNotTooLargeForWrapToUnderlying(
         IDolomiteRegistry _dolomiteRegistry,
         IDolomiteMargin _dolomiteMargin,
+        uint256 _accountNumber,
         uint256 _inputMarketId,
         uint256 _outputMarketId,
         uint256 _inputAmount,
         uint256 _minOutputAmount
     ) public view {
+        if (_inputAmount == type(uint256).max) {
+            IDolomiteStructs.AccountInfo memory account = IDolomiteStructs.AccountInfo({
+                owner: address(this),
+                number: _accountNumber
+            });
+            _inputAmount = _dolomiteMargin.getAccountWei(account, _inputMarketId).value;
+        }
+
         uint256 inputValue = _dolomiteMargin.getMarketPrice(_inputMarketId).value * _inputAmount;
         uint256 outputValue = _dolomiteMargin.getMarketPrice(_outputMarketId).value * _minOutputAmount;
 

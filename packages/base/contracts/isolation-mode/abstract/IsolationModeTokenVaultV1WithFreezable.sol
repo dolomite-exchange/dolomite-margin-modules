@@ -138,6 +138,7 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
     }
 
     modifier _addCollateralAndSwapExactInputForOutputFreezableValidator(
+        uint256 _fromAccountNumber,
         uint256 _borrowAccountNumber,
         uint256 _inputMarketId,
         uint256 _outputMarketId,
@@ -146,7 +147,9 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
     ) {
         _requireTrustedConverterIfFrozenOrUnwrapper(_inputMarketId);
         _validateIfWrapToUnderlying(
-            /* _accountNumber = */ _borrowAccountNumber,
+            /* _inputSourceAccountOwner */ OWNER(),
+            _fromAccountNumber,
+            _borrowAccountNumber,
             _inputMarketId,
             _outputMarketId,
             _inputAmount,
@@ -164,7 +167,9 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
     ) {
         _requireTrustedConverterIfFrozenOrUnwrapper(_inputMarketId);
         _validateIfWrapToUnderlying(
-            /* _accountNumber = */ _borrowAccountNumber,
+            /* _inputSourceAccountOwner */ address(this),
+            /* _inputSourceAccountNumber */ _borrowAccountNumber,
+            _borrowAccountNumber,
             _inputMarketId,
             _outputMarketId,
             _inputAmount,
@@ -182,7 +187,9 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
     ) {
         _requireTrustedConverterIfFrozenOrUnwrapper(_marketIds[0]);
         _validateIfWrapToUnderlying(
-            /* _accountNumber = */ _tradeAccountNumber,
+            /* _inputSourceAccountOwner */ address(this),
+            /* _inputSourceAccountNumber = */ _tradeAccountNumber,
+            _tradeAccountNumber,
             /* _inputMarketId = */ _marketIds[0],
             /* _outputMarketId = */ _marketIds[_marketIds.length - 1],
             _inputAmount,
@@ -539,6 +546,7 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         virtual
         override
         _addCollateralAndSwapExactInputForOutputFreezableValidator(
+            _fromAccountNumber,
             _borrowAccountNumber,
             /* _inputMarketId = */ _marketIdsPath[0],
             /* _outputMarketId = */ _marketIdsPath[_marketIdsPath.length - 1],
@@ -814,17 +822,21 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
     }
 
     function _validateIfWrapToUnderlying(
-        uint256 _accountNumber,
+        address _inputSourceAccountOwner,
+        uint256 _inputSourceAccountNumber,
+        uint256 _tradeAccountNumber,
         uint256 _inputMarketId,
         uint256 _outputMarketId,
         uint256 _inputAmount,
         uint256 _minOutputAmount
     ) internal view {
         if (_outputMarketId == marketId()) {
-            _requireNotLiquidatable(_accountNumber);
+            _requireNotLiquidatable(_tradeAccountNumber);
             IsolationModeTokenVaultV1ActionsImpl.requireMinAmountIsNotTooLargeForWrapToUnderlying(
                 dolomiteRegistry(),
                 DOLOMITE_MARGIN(),
+                _inputSourceAccountOwner,
+                _inputSourceAccountNumber,
                 _inputMarketId,
                 _outputMarketId,
                 _inputAmount,

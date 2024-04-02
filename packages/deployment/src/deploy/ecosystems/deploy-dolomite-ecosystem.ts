@@ -136,7 +136,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   await deployContractAndSave(
     'IsolationModeTokenVaultV1ActionsImpl',
     [],
-    'IsolationModeTokenVaultV1ActionsImplV5',
+    'IsolationModeTokenVaultV1ActionsImplV6',
   );
 
   await deployInterestSetters();

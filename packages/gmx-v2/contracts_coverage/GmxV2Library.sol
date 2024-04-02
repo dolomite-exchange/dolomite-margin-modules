@@ -196,6 +196,7 @@ library GmxV2Library {
         address longToken = factory.LONG_TOKEN();
 
         (, uint256 minOtherTokenAmount) = abi.decode(_extraData, (IDolomiteStructs.Decimal, uint256));
+        _minOutputAmount -= minOtherTokenAmount; // subtract from the total figure to get its value from the Zap SDK
         IUpgradeableAsyncIsolationModeUnwrapperTrader unwrapper = registry.getUnwrapperByToken(factory);
         IGmxExchangeRouter.CreateWithdrawalParams memory withdrawalParams = IGmxExchangeRouter.CreateWithdrawalParams(
             /* receiver = */ address(unwrapper),
@@ -438,6 +439,7 @@ library GmxV2Library {
             _extraData,
             (IDolomiteStructs.Decimal, uint256)
         );
+        _minOutputAmount -= otherMinOutputAmount;
 
         _requireMinAmountIsNotTooLargeForLiquidation(
             cache.dolomiteMargin,
