@@ -7,8 +7,6 @@ import {
   ChainlinkPriceOracleV3__factory,
   OracleAggregatorV2,
   OracleAggregatorV2__factory,
-  PancakeV3PriceOracle,
-  PancakeV3PriceOracle__factory,
   TWAPPriceOracleV2,
   TWAPPriceOracleV2__factory
 } from '../src/types';
@@ -32,8 +30,8 @@ describe('TWAPPriceOracleV2', () => {
   let snapshotId: string;
 
   let core: CoreProtocolArbitrumOne;
-  let oracle: TWAPPriceOracleV2;
-  let wethOracle: TWAPPriceOracleV2;
+  let grailUsdcOracle: TWAPPriceOracleV2;
+  let grailWethOracle: TWAPPriceOracleV2;
   let chainlinkOracle: ChainlinkPriceOracleV3;
   let oracleAggregator: OracleAggregatorV2;
 
@@ -51,19 +49,19 @@ describe('TWAPPriceOracleV2', () => {
     );
     await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(dolomiteRegistryImplementation.address);
 
-    oracle = await createContractWithAbi<TWAPPriceOracleV2>(
+    grailUsdcOracle = await createContractWithAbi<TWAPPriceOracleV2>(
       TWAPPriceOracleV2__factory.abi,
       TWAPPriceOracleV2__factory.bytecode,
-      await getTWAPPriceOracleV2ConstructorParams(
+      getTWAPPriceOracleV2ConstructorParams(
         core,
         core.tokens.grail!,
         core.camelotEcosystem.grailUsdcV3Pool
       )
     );
-    wethOracle = await createContractWithAbi<TWAPPriceOracleV2>(
+    grailWethOracle = await createContractWithAbi<TWAPPriceOracleV2>(
       TWAPPriceOracleV2__factory.abi,
       TWAPPriceOracleV2__factory.bytecode,
-      await getTWAPPriceOracleV2ConstructorParams(
+      getTWAPPriceOracleV2ConstructorParams(
         core,
         core.tokens.grail!,
         core.camelotEcosystem.grailWethV3Pool
@@ -93,18 +91,11 @@ describe('TWAPPriceOracleV2', () => {
       },
       {
         oracleInfos: [
-          { oracle: oracle.address, tokenPair: core.tokens.usdc.address, weight: 100 },
+          { oracle: grailUsdcOracle.address, tokenPair: core.tokens.usdc.address, weight: 100 },
         ],
         decimals: 18,
         token: core.tokens.grail!.address
       },
-      // {
-      //   oracleInfos: [
-      //     { oracle: maticOracle.address, tokenPair: core.tokens.matic.address, weight: 100 },
-      //   ],
-      //   decimals: 18,
-      //   token: core.tokens.matic.address
-      // }
     ];
     oracleAggregator = (await createContractWithAbi<OracleAggregatorV2>(
       OracleAggregatorV2__factory.abi,
@@ -125,11 +116,11 @@ describe('TWAPPriceOracleV2', () => {
 
   describe('#constructor', () => {
     it('should work normally', async () => {
-      expect(await oracle.TOKEN()).to.eq(core.tokens.grail!.address);
-      expect(await oracle.TOKEN_DECIMALS_FACTOR()).to.eq(parseEther('1'));
-      expect(await oracle.DOLOMITE_MARGIN()).to.eq(core.dolomiteMargin.address);
-      expect(await oracle.observationInterval()).to.eq(FIFTEEN_MINUTES);
-      expect(await oracle.PAIR()).to.eq(core.camelotEcosystem.grailUsdcV3Pool.address);
+      expect(await grailUsdcOracle.TOKEN()).to.eq(core.tokens.grail!.address);
+      expect(await grailUsdcOracle.TOKEN_DECIMALS_FACTOR()).to.eq(parseEther('1'));
+      expect(await grailUsdcOracle.DOLOMITE_MARGIN()).to.eq(core.dolomiteMargin.address);
+      expect(await grailUsdcOracle.observationInterval()).to.eq(FIFTEEN_MINUTES);
+      expect(await grailUsdcOracle.PAIR()).to.eq(core.camelotEcosystem.grailUsdcV3Pool.address);
     });
   });
 
@@ -142,8 +133,8 @@ describe('TWAPPriceOracleV2', () => {
     it('should work normally when using two pools', async () => {
       const tokenInfo: TokenInfo = {
         oracleInfos: [
-          { oracle: oracle.address, tokenPair: core.tokens.usdc.address, weight: 50 },
-          { oracle: wethOracle.address, tokenPair: core.tokens.weth.address, weight: 50 },
+          { oracle: grailUsdcOracle.address, tokenPair: core.tokens.usdc.address, weight: 50 },
+          { oracle: grailWethOracle.address, tokenPair: core.tokens.weth.address, weight: 50 },
         ],
         decimals: 18,
         token: core.tokens.grail!.address
@@ -174,7 +165,7 @@ describe('TWAPPriceOracleV2', () => {
 
     it('should fail if invalid input token', async () => {
       await expectThrow(
-        oracle.connect(core.hhUser1).getPrice(core.tokens.weth.address),
+        grailUsdcOracle.connect(core.hhUser1).getPrice(core.tokens.weth.address),
         `TWAPPriceOracleV2: Invalid token <${core.tokens.weth.address.toLowerCase()}>`,
       );
     });
@@ -183,13 +174,13 @@ describe('TWAPPriceOracleV2', () => {
   describe('#ownerSetObservationInterval', () => {
     it('works normally', async () => {
       const stalenessThreshold = ONE_DAY_SECONDS;
-      await oracle.connect(core.governance).ownerSetObservationInterval(stalenessThreshold);
-      expect(await oracle.observationInterval()).to.eq(stalenessThreshold);
+      await grailUsdcOracle.connect(core.governance).ownerSetObservationInterval(stalenessThreshold);
+      expect(await grailUsdcOracle.observationInterval()).to.eq(stalenessThreshold);
     });
 
     it('fails when invoked by non-admin', async () => {
       await expectThrow(
-        oracle.connect(core.hhUser1).ownerSetObservationInterval(ONE_DAY_SECONDS),
+        grailUsdcOracle.connect(core.hhUser1).ownerSetObservationInterval(ONE_DAY_SECONDS),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });

@@ -783,6 +783,9 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<Network, Record<string, Agg
     [WBTC_MAP[Network.ArbitrumOne].address]: {
       aggregatorAddress: '0xd0C7101eACbB49F3deCcCc166d238410D6D46d57',
     },
+    [WETH_MAP[Network.ArbitrumOne].address]: {
+      aggregatorAddress: '0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612',
+    },
     [WE_ETH_MAP[Network.ArbitrumOne].address]: {
       aggregatorAddress: '0x20bAe7e1De9c596f5F7615aeaa1342Ba99294e12',
       tokenPairAddress: WETH_MAP[Network.ArbitrumOne].address,

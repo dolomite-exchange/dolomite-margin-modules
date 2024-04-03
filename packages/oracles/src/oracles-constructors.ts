@@ -220,6 +220,7 @@ export async function getOracleAggregatorV2ConstructorParams(
     [Deployments.PendlePtWstEthJun2024PriceOracle[core.network].address]: true,
     [Deployments.PendlePtWstEthJun2025PriceOracle[core.network].address]: true,
     [Deployments.GmxV2MarketTokenPriceOracleV1[core.network].address]: true,
+    [Deployments.PendleYtGLPPriceOracle[core.network].address]: true,
   };
   const tokensInfos: TokenInfo[] = [];
   const marketsLength = (await core.dolomiteMargin.getNumMarkets()).toNumber();

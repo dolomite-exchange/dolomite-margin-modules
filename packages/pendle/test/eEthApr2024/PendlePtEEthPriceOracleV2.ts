@@ -1,6 +1,7 @@
 import {
   DolomiteRegistryImplementation,
   DolomiteRegistryImplementation__factory,
+  IERC20__factory,
 } from '@dolomite-exchange/modules-base/src/types';
 import {
   AggregatorInfo,
@@ -12,6 +13,7 @@ import { Network, ONE_ETH_BI } from '@dolomite-exchange/modules-base/src/utils/n
 import { advanceToTimestamp, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { setupCoreProtocol, setupTestMarket } from '@dolomite-exchange/modules-base/test/utils/setup';
+import * as Deployments from '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
 import {
   ChainlinkPriceOracleV3,
   ChainlinkPriceOracleV3__factory,
@@ -20,15 +22,16 @@ import {
   OracleAggregatorV2__factory,
   RedstonePriceOracleV3,
   RedstonePriceOracleV3__factory,
+  TWAPPriceOracleV2__factory,
 } from '@dolomite-exchange/modules-oracles/src/types';
 import axios from 'axios';
 import { expect } from 'chai';
 import { BaseContract, BigNumber } from 'ethers';
-import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import {
   getChainlinkPriceOracleV3ConstructorParamsFromChainlinkOracleV1,
   getOracleAggregatorV2ConstructorParams,
   getRedstonePriceOracleV3ConstructorParams,
+  getTWAPPriceOracleV2ConstructorParams,
 } from 'packages/oracles/src/oracles-constructors';
 import {
   IERC20,
@@ -43,9 +46,8 @@ import {
   createPendlePtPriceOracleV2,
   createPendleRegistry,
 } from '../pendle-ecosystem-utils';
-import * as Deployments from '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
 
-const PT_E_ETH_PRICE = BigNumber.from('3689828284230479763540');
+const PT_E_ETH_PRICE = BigNumber.from('3216021654930230741943');
 
 describe('PendlePtEEthApr2024PriceOracleV2', () => {
   let snapshotId: string;
@@ -59,7 +61,7 @@ describe('PendlePtEEthApr2024PriceOracleV2', () => {
 
   before(async () => {
     core = await setupCoreProtocol({
-      blockNumber: 187_700_000,
+      blockNumber: 197_172_300,
       network: Network.ArbitrumOne,
     });
 
@@ -126,22 +128,22 @@ describe('PendlePtEEthApr2024PriceOracleV2', () => {
       [core.tokens.grail.address]: {
         tokenPairAddress: core.tokens.weth.address,
         aggregatorAddress: Deployments.GrailTWAPPriceOracleV1[core.network].address,
-        isTwap: true,
+        camelotPool: core.camelotEcosystem.grailWethV3Pool,
       },
       [core.tokens.jones.address]: {
         tokenPairAddress: core.tokens.weth.address,
         aggregatorAddress: Deployments.JonesTWAPPriceOracleV1[core.network].address,
-        isTwap: true,
+        camelotPool: core.jonesEcosystem.jonesWethV3Pool,
       },
       [core.tokens.premia.address]: {
         tokenPairAddress: core.tokens.weth.address,
         aggregatorAddress: Deployments.PremiaTWAPPriceOracleV1[core.network].address,
-        isTwap: true,
+        camelotPool: core.premiaEcosystem.premiaWethV3Pool,
       },
       [core.tokens.dpx.address]: {
         tokenPairAddress: core.tokens.weth.address,
         aggregatorAddress: Deployments.DPXTWAPPriceOracleV1[core.network].address,
-        isTwap: true,
+        camelotPool: core.camelotEcosystem.dpxWethV3Pool,
       },
     };
     const oldTokens = Object.keys(tokensToOldOraclesMap);
@@ -152,13 +154,17 @@ describe('PendlePtEEthApr2024PriceOracleV2', () => {
         newOracle = await createPendlePtPriceOracleV2(
           core,
           IPendlePtIsolationModeVaultFactory__factory.connect(oldToken, core.hhUser1),
-          tokensToOldOraclesMap[oldToken]
+          tokensToOldOraclesMap[oldToken].pendleRegistry,
         );
-      } else if ('isTwap' in tokensToOldOraclesMap[oldToken]) {
-        newOracle = await createPendlePtPriceOracleV2(
-          core,
-          IPendlePtIsolationModeVaultFactory__factory.connect(oldToken, core.hhUser1),
-          tokensToOldOraclesMap[oldToken]
+      } else if ('camelotPool' in tokensToOldOraclesMap[oldToken]) {
+        newOracle = await createContractWithAbi(
+          TWAPPriceOracleV2__factory.abi,
+          TWAPPriceOracleV2__factory.bytecode,
+          getTWAPPriceOracleV2ConstructorParams(
+            core,
+            IERC20__factory.connect(oldToken, core.hhUser1),
+            tokensToOldOraclesMap[oldToken].camelotPool,
+          ),
         );
       } else {
         throw new Error(`Invalid token ${oldToken}`);
@@ -239,7 +245,7 @@ describe('PendlePtEEthApr2024PriceOracleV2', () => {
 
   describe('#getPrice', () => {
     it('returns the correct value under normal conditions for the dptToken', async () => {
-      await advanceToTimestamp(1709735900);
+      await advanceToTimestamp(1712153000);
       const price = await oracleAggregatorV2.getPrice(factory.address);
       expect(price.value).to.eq(PT_E_ETH_PRICE);
     });
