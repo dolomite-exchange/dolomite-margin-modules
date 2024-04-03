@@ -11,6 +11,12 @@ import { ADDRESS_ZERO, Network } from '@dolomite-exchange/modules-base/src/utils
 import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { setupCoreProtocol, setupTestMarket } from '@dolomite-exchange/modules-base/test/utils/setup';
+import {
+  ChainlinkPriceOracleV2,
+  ChainlinkPriceOracleV2__factory,
+  RedstonePriceOracleV2,
+  RedstonePriceOracleV2__factory,
+} from '@dolomite-exchange/modules-oracles/src/types';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
@@ -18,12 +24,6 @@ import {
   getChainlinkPriceOracleV2ConstructorParamsFromOldPriceOracle,
   getRedstonePriceOracleV2ConstructorParams,
 } from 'packages/oracles/src/oracles-constructors';
-import {
-  ChainlinkPriceOracleV2,
-  ChainlinkPriceOracleV2__factory,
-  RedstonePriceOracleV2,
-  RedstonePriceOracleV2__factory,
-} from '@dolomite-exchange/modules-oracles/src/types';
 import { IERC20, PendlePtIsolationModeVaultFactory, PendlePtPriceOracle, PendleRegistry } from '../../src/types';
 import {
   createPendlePtEEthPriceOracle,
@@ -51,7 +51,8 @@ describe('PendlePtEEthApr2024PriceOracle', () => {
 
     underlyingToken = core.tokens.weEth!;
     const wethAggregator = await core.chainlinkPriceOracleOld!.getAggregatorByToken(core.tokens.weth.address);
-    const weEthAggregator = REDSTONE_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne].aggregatorAddress;
+    const weEthAggregator = REDSTONE_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][underlyingToken.address]
+      .aggregatorAddress;
     const redstoneOracle = (await createContractWithAbi<RedstonePriceOracleV2>(
       RedstonePriceOracleV2__factory.abi,
       RedstonePriceOracleV2__factory.bytecode,

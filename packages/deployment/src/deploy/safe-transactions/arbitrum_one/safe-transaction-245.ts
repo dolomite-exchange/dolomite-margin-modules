@@ -1,13 +1,10 @@
-import { IERC20, IERC20__factory } from '@dolomite-exchange/modules-base/src/types';
+import { IERC20, IERC20__factory, IERC20Metadata__factory } from '@dolomite-exchange/modules-base/src/types';
 import {
   AggregatorInfo,
   CHAINLINK_PRICE_AGGREGATORS_MAP,
   REDSTONE_PRICE_AGGREGATORS_MAP,
 } from '@dolomite-exchange/modules-base/src/utils/constants';
-import {
-  createContractWithAbi,
-  getAndCheckSpecificNetwork,
-} from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { SignerWithAddressWithSafety } from '@dolomite-exchange/modules-base/src/utils/SignerWithAddressWithSafety';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
@@ -20,17 +17,18 @@ import {
 } from '@dolomite-exchange/modules-oracles/src/oracles-constructors';
 import {
   ChainlinkPriceOracleV3__factory,
+  IAlgebraV3Pool,
   IChainlinkAggregator,
   IChainlinkAggregator__factory,
   OracleAggregatorV2__factory,
   RedstonePriceOracleV3__factory,
-  TWAPPriceOracleV2__factory,
 } from '@dolomite-exchange/modules-oracles/src/types';
+import { getPendlePtPriceOracleV2ConstructorParams } from '@dolomite-exchange/modules-pendle/src/pendle-constructors';
 import { IPendlePtIsolationModeVaultFactory__factory } from '@dolomite-exchange/modules-pendle/src/types';
-import { createPendlePtPriceOracleV2 } from '@dolomite-exchange/modules-pendle/test/pendle-ecosystem-utils';
-import { BaseContract, BigNumber } from 'ethers';
+import { BigNumber } from 'ethers';
+import { formatUnits } from 'ethers/lib/utils';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
-import { ADDRESS_ZERO, Network } from 'packages/base/src/utils/no-deps-constants';
+import { ADDRESS_ZERO, Network, ONE_ETH_BI, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
 import {
   deployContractAndSave,
   EncodedTransaction,
@@ -69,8 +67,8 @@ function getChainlinkOracleData(
   ];
 }
 
-async function getNewOracleMap(core: CoreProtocolArbitrumOne): Promise<Record<string, AggregatorInfo>> {
-  const tokenToNewOracleMap: Record<string, AggregatorInfo> = {};
+async function getNewOracleMap(core: CoreProtocolArbitrumOne): Promise<Record<string, AggregatorInfo[]>> {
+  const tokenToNewOracleMap: Record<string, AggregatorInfo[]> = {};
   const tokensToOldOraclesMap: Record<string, any> = {
     [core.tokens.dPtREthJun2025.address]: {
       tokenPairAddress: core.tokens.weth.address,
@@ -93,54 +91,70 @@ async function getNewOracleMap(core: CoreProtocolArbitrumOne): Promise<Record<st
       pendleRegistry: core.pendleEcosystem.wstEthJun2025.pendleRegistry,
     },
     [core.tokens.grail.address]: {
-      tokenPairAddress: core.tokens.weth.address,
+      tokenPairAddresses: [core.tokens.weth.address, core.tokens.usdc.address],
       aggregatorAddress: Deployments.GrailTWAPPriceOracleV1[core.network].address,
-      camelotPool: core.camelotEcosystem.grailWethV3Pool,
+      camelotPools: [core.camelotEcosystem.grailWethV3Pool, core.camelotEcosystem.grailUsdcV3Pool],
+      rename: 'GrailTWAPPriceOracleV2',
     },
     [core.tokens.jones.address]: {
-      tokenPairAddress: core.tokens.weth.address,
+      tokenPairAddresses: [core.tokens.weth.address],
       aggregatorAddress: Deployments.JonesTWAPPriceOracleV1[core.network].address,
-      camelotPool: core.jonesEcosystem.jonesWethV3Pool,
+      camelotPools: [core.jonesEcosystem.jonesWethV3Pool],
+      rename: 'JonesTWAPPriceOracleV2',
     },
     [core.tokens.premia.address]: {
-      tokenPairAddress: core.tokens.weth.address,
+      tokenPairAddresses: [core.tokens.weth.address],
       aggregatorAddress: Deployments.PremiaTWAPPriceOracleV1[core.network].address,
-      camelotPool: core.premiaEcosystem.premiaWethV3Pool,
+      camelotPools: [core.premiaEcosystem.premiaWethV3Pool],
+      rename: 'PremiaTWAPPriceOracleV2',
     },
     [core.tokens.dpx.address]: {
-      tokenPairAddress: core.tokens.weth.address,
+      tokenPairAddresses: [core.tokens.weth.address],
       aggregatorAddress: Deployments.DPXTWAPPriceOracleV1[core.network].address,
-      camelotPool: core.camelotEcosystem.dpxWethV3Pool,
+      camelotPools: [core.camelotEcosystem.dpxWethV3Pool],
+      rename: 'DPXTWAPPriceOracleV2',
     },
   };
   const oldTokens = Object.keys(tokensToOldOraclesMap);
   for (let i = 0; i < oldTokens.length; i++) {
     const oldToken = oldTokens[i];
-    let newOracleAddress: string;
     if ('pendleRegistry' in tokensToOldOraclesMap[oldToken]) {
-      newOracleAddress = await createPendlePtPriceOracleV2(
-        core,
-        IPendlePtIsolationModeVaultFactory__factory.connect(oldToken, core.hhUser1),
-        tokensToOldOraclesMap[oldToken].pendleRegistry,
-      );
-    } else if ('camelotPool' in tokensToOldOraclesMap[oldToken]) {
-      newOracleAddress = await deployContractAndSave(
-        TWAPPriceOracleV2__factory.abi,
-        TWAPPriceOracleV2__factory.bytecode,
-        getTWAPPriceOracleV2ConstructorParams(
+      const newOracleAddress = await deployContractAndSave(
+        'PendlePtPriceOracleV2',
+        getPendlePtPriceOracleV2ConstructorParams(
           core,
-          IERC20__factory.connect(oldToken, core.hhUser1),
-          tokensToOldOraclesMap[oldToken].camelotPool,
+          IPendlePtIsolationModeVaultFactory__factory.connect(oldToken, core.hhUser1),
+          tokensToOldOraclesMap[oldToken].pendleRegistry,
         ),
+        tokensToOldOraclesMap[oldToken].rename,
       );
+      tokenToNewOracleMap[oldToken] = [
+        {
+          tokenPairAddress: tokensToOldOraclesMap[oldToken].tokenPairAddress,
+          aggregatorAddress: newOracleAddress,
+        },
+      ];
+    } else if ('camelotPools' in tokensToOldOraclesMap[oldToken]) {
+      tokenToNewOracleMap[oldToken] = [];
+      const pools = tokensToOldOraclesMap[oldToken].camelotPools as IAlgebraV3Pool[];
+      for (let i = 0; i < pools.length; i++) {
+        const newOracleAddress = await deployContractAndSave(
+          'TWAPPriceOracleV2',
+          getTWAPPriceOracleV2ConstructorParams(
+            core,
+            IERC20__factory.connect(oldToken, core.hhUser1),
+            pools[i],
+          ),
+          tokensToOldOraclesMap[oldToken].rename,
+        );
+        tokenToNewOracleMap[oldToken].push({
+          tokenPairAddress: tokensToOldOraclesMap[oldToken].tokenPairAddresses[i],
+          aggregatorAddress: newOracleAddress,
+        });
+      }
     } else {
       throw new Error(`Invalid token ${oldToken}`);
     }
-
-    tokenToNewOracleMap[oldToken] = {
-      tokenPairAddress: tokensToOldOraclesMap[oldToken].tokenPairAddress,
-      aggregatorAddress: newOracle.address,
-    };
   }
 
   return tokenToNewOracleMap;
@@ -246,26 +260,41 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       transactions,
       chainId: network,
     },
+    skipTimeDelay: true,
     invariants: async () => {
       assertHardhatInvariant(
         await core.dolomiteRegistry.oracleAggregator() === oracleAggregatorV2.address,
         'Invalid oracle aggregator',
       );
+      assertHardhatInvariant(
+        await chainlinkOracleV3.getInvertPriceByToken(core.tokens.eEth.address),
+        'Expected eETH to be inverted',
+      );
+      assertHardhatInvariant(
+        (await oracleAggregatorV2.getOraclesByToken(core.tokens.grail.address)).length === 2,
+        'Expected GRAIL oracles to have length = 2',
+      );
 
+      console.log('\n\tChecking price deltas...');
       for (let i = 0; i < marketsLength; i++) {
         assertHardhatInvariant(
           await core.dolomiteMargin.getMarketPriceOracle(i) === oracleAggregatorV2.address,
           'Invalid oracle address',
         );
-
+        const token = IERC20Metadata__factory.connect(
+          await core.dolomiteMargin.getMarketTokenAddress(i),
+          core.hhUser1,
+        );
+        const symbol = await token.symbol();
         const priceBefore = pricesBefore[i];
         const priceAfter = (await core.dolomiteMargin.getMarketPrice(i)).value;
-        console.log(
-          `[${i}]: price deltas`,
-          priceBefore.toString(),
-          priceAfter.toString(),
-          priceBefore.sub(priceAfter).toString(),
-        );
+        const delta = priceAfter.sub(priceBefore);
+        if (!delta.eq(ZERO_BI)) {
+          console.log(
+            `\t[${i}]: ${symbol} = `,
+            `${formatUnits(ONE_ETH_BI.mul(delta).div(priceBefore).mul(100).toString())}%`,
+          );
+        }
       }
     },
   };

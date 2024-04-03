@@ -6,10 +6,14 @@ import {
 import { DolomiteMargin } from '@dolomite-exchange/modules-base/test/utils/dolomite';
 import { CoreProtocolType } from '@dolomite-exchange/modules-base/test/utils/setup';
 import Deployments from '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
-import { BigNumberish } from 'ethers';
+import { BigNumber, BigNumberish } from 'ethers';
 import { ethers } from 'hardhat';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
-import { AggregatorInfo, CHAINLINK_PRICE_ORACLE_OLD_MAP } from 'packages/base/src/utils/constants';
+import {
+  AggregatorInfo,
+  CHAINLINK_PRICE_AGGREGATORS_MAP,
+  CHAINLINK_PRICE_ORACLE_OLD_MAP,
+} from 'packages/base/src/utils/constants';
 import { ADDRESS_ZERO, Network, NetworkType } from 'packages/base/src/utils/no-deps-constants';
 import { TokenInfo } from './index';
 import {
@@ -200,7 +204,7 @@ export async function getOracleAggregatorV2ConstructorParams(
   core: CoreProtocolArbitrumOne,
   chainlinkOracle: ChainlinkPriceOracleV3,
   redstoneOracle: RedstonePriceOracleV3,
-  tokenToNewOracleMap: Record<string, AggregatorInfo>,
+  tokenToNewOracleMap: Record<string, AggregatorInfo[]>,
 ): Promise<[TokenInfo[], string]> {
   const oldChainlinkPriceOracle = IChainlinkPriceOracleV1__factory.connect(
     Deployments.ChainlinkPriceOracleV1[core.config.network].address,
@@ -224,48 +228,85 @@ export async function getOracleAggregatorV2ConstructorParams(
   };
   const tokensInfos: TokenInfo[] = [];
   const marketsLength = (await core.dolomiteMargin.getNumMarkets()).toNumber();
+  const chainlinkPriceAggregatorMap = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network];
+  const allChainlinkTokens = Object.keys(chainlinkPriceAggregatorMap);
+  const extraTokenInfos: TokenInfo[] = [];
+  for (let i = 0; i < allChainlinkTokens.length; i++) {
+    try {
+      // Extra tokens are ones that are not listed on Dolomite but need to be present in the oracle
+      await core.dolomiteMargin.getMarketIdByTokenAddress(allChainlinkTokens[i]);
+    } catch (e) {
+      console.log('\tAdding extra token ', allChainlinkTokens[i]);
+      extraTokenInfos.push({
+        token: allChainlinkTokens[i],
+        decimals: 18,
+        oracleInfos: [
+          {
+            oracle: chainlinkOracle.address,
+            tokenPair: chainlinkPriceAggregatorMap[allChainlinkTokens[i]].tokenPairAddress ?? ADDRESS_ZERO,
+            weight: 100,
+          },
+        ],
+      });
+    }
+  }
 
   for (let i = 0; i < marketsLength; i++) {
     const token = await core.dolomiteMargin.getMarketTokenAddress(i);
     const oldOracleAddress = await core.dolomiteMargin.getMarketPriceOracle(i);
 
-    let decimals: number;
-    let tokenPair: string;
-    let oracle: string;
     if (oldOracleAddress === oldChainlinkPriceOracle.address) {
-      decimals = await oldChainlinkPriceOracle.getDecimalsByToken(token);
-      tokenPair = await oldChainlinkPriceOracle.getTokenPairByToken(token);
-      oracle = chainlinkOracle.address;
-    } else if (oldOracleAddress === oldRedstonePriceOracle?.address) {
-      decimals = await oldRedstonePriceOracle?.getDecimalsByToken(token);
-      tokenPair = await oldRedstonePriceOracle?.getTokenPairByToken(token);
-      oracle = redstoneOracle.address;
+      tokensInfos.push({
+        token,
+        decimals: await oldChainlinkPriceOracle.getDecimalsByToken(token),
+        oracleInfos: [
+          {
+            oracle: chainlinkOracle.address,
+            tokenPair: await oldChainlinkPriceOracle.getTokenPairByToken(token),
+            weight: 100,
+          },
+        ],
+      });
+    } else if (oldOracleAddress === oldRedstonePriceOracle.address) {
+      tokensInfos.push({
+        token,
+        decimals: await oldRedstonePriceOracle.getDecimalsByToken(token),
+        oracleInfos: [
+          {
+            oracle: redstoneOracle.address,
+            tokenPair: await oldRedstonePriceOracle.getTokenPairByToken(token),
+            weight: 100,
+          },
+        ],
+      });
     } else if (reusableOracles[oldOracleAddress]) {
-      decimals = 18;
-      tokenPair = ADDRESS_ZERO;
-      oracle = oldOracleAddress;
+      tokensInfos.push({
+        token,
+        decimals: 18,
+        oracleInfos: [
+          {
+            oracle: oldOracleAddress,
+            tokenPair: ADDRESS_ZERO,
+            weight: 100,
+          },
+        ],
+      });
     } else if (!!tokenToNewOracleMap[token]) {
-      decimals = await IERC20Metadata__factory.connect(token, core.hhUser1).decimals();
-      tokenPair = tokenToNewOracleMap[token].tokenPairAddress ?? ADDRESS_ZERO;
-      oracle = tokenToNewOracleMap[token].aggregatorAddress;
+      tokensInfos.push({
+        token,
+        decimals: await IERC20Metadata__factory.connect(token, core.hhUser1).decimals(),
+        oracleInfos: tokenToNewOracleMap[token].map((aggregator, _, list) => ({
+          oracle: aggregator.aggregatorAddress,
+          tokenPair: aggregator.tokenPairAddress ?? ADDRESS_ZERO,
+          weight: BigNumber.from(100).div(list.length).toNumber(),
+        })),
+      });
     } else {
       assertHardhatInvariant(false, `Invalid old oracle, found ${oldOracleAddress}`);
     }
-
-    tokensInfos.push({
-      token,
-      decimals,
-      oracleInfos: [
-        {
-          oracle,
-          tokenPair,
-          weight: 100,
-        },
-      ],
-    });
   }
 
-  return [tokensInfos, core.dolomiteMargin.address];
+  return [tokensInfos.concat(extraTokenInfos), core.dolomiteMargin.address];
 }
 
 export async function getChainlinkPriceOracleV1ConstructorParams<T extends NetworkType>(

@@ -156,7 +156,8 @@ contract ChainlinkPriceOracleV3 is IChainlinkPriceOracleV3, OnlyDolomiteMargin {
             block.timestamp - updatedAt < stalenessThreshold,
             _FILE,
             "Chainlink price expired",
-            _token
+            _token,
+            updatedAt
         );
 
         IChainlinkAccessControlAggregator controlAggregator = aggregatorProxy.aggregator();

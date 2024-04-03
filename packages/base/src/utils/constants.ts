@@ -300,6 +300,13 @@ export const ST_ETH_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   },
 };
 
+export const UNI_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0xFa7F8980b0f1E64A2062791cc3b0871572f1F7f0',
+    marketId: 12,
+  },
+};
+
 export const USDC_MAP: Record<Network, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8',
@@ -739,8 +746,10 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<Network, Record<string, Agg
     [DAI_MAP[Network.ArbitrumOne].address]: {
       aggregatorAddress: '0xc5C8E77B397E531B8EC06BFb0048328B30E9eCfB',
     },
-    [DAI_MAP[Network.ArbitrumOne].address]: {
-      aggregatorAddress: '0xc5C8E77B397E531B8EC06BFb0048328B30E9eCfB',
+    [E_ETH_MAP[Network.ArbitrumOne].address]: {
+      aggregatorAddress: '0x20bAe7e1De9c596f5F7615aeaa1342Ba99294e12',
+      tokenPairAddress: WE_ETH_MAP[Network.ArbitrumOne].address,
+      invert: true,
     },
     [GMX_MAP[Network.ArbitrumOne].address]: {
       aggregatorAddress: '0xdb98056fecfff59d032ab628337a4887110df3db',
@@ -773,6 +782,9 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<Network, Record<string, Agg
     [ST_ETH_MAP[Network.ArbitrumOne].address]: {
       aggregatorAddress: '0xded2c52b75b24732e9107377b7ba93ec1ffa4baf',
       tokenPairAddress: WETH_MAP[Network.ArbitrumOne].address,
+    },
+    [UNI_MAP[Network.ArbitrumOne].address]: {
+      aggregatorAddress: '0x9C917083fDb403ab5ADbEC26Ee294f6EcAda2720',
     },
     [USDC_MAP[Network.ArbitrumOne].address]: {
       aggregatorAddress: '0x50834F3163758fcC1Df9973b6e91f0F0F0434aD3',
