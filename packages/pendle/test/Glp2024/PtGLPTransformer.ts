@@ -6,15 +6,13 @@ import {
   IsolationModeMigrator__factory,
 } from '@dolomite-exchange/modules-base/src/types';
 import { createContractWithAbi } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
+import { BYTES_EMPTY, Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import {
-  getDefaultCoreProtocolConfig,
   setupCoreProtocol,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { BaseRouter, Router, CHAIN_ID_MAPPING } from '@pendle/sdk-v2';
-import { expectProtocolBalance, expectProtocolBalanceIsGreaterThan } from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { expectProtocolBalance } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { AccountInfoStruct } from 'packages/base/src/utils';
 import { createDolomiteRegistryImplementation } from '@dolomite-exchange/modules-base/test/utils/dolomite';
 import { IGLPIsolationModeVaultFactoryOld } from 'packages/glp/src/types';
@@ -23,7 +21,6 @@ import {
   PtGLPTransformer,
   PtGLPTransformer__factory
 } from 'packages/pendle/src/types';
-import { ONE_TENTH_OF_ONE_BIPS_NUMBER, encodeSwapExactPtForTokens } from '../pendle-utils';
 
 const defaultAccountNumber = ZERO_BI;
 const vaultAddress = '0x10dc4c2c391de5008bc4c895c3b1c3b070661674';
@@ -37,14 +34,12 @@ describe('PtGLPTransformer', () => {
   let ptGlpFactory: PendlePtGLP2024IsolationModeVaultFactory;
   let migratorImplementation: IsolationModeMigrator;
   let transformer: PtGLPTransformer;
-  let router: BaseRouter;
 
   let accounts: AccountInfoStruct[];
 
   before(async () => {
-    // @todo Move to be after expiration date of PtGLP
     core = await setupCoreProtocol({
-      blockNumber: await getRealLatestBlockNumber(true, Network.ArbitrumOne),
+      blockNumber: 195_821_400, // This is block prior to vault removing the tokens
       network: Network.ArbitrumOne,
     });
 
@@ -66,12 +61,6 @@ describe('PtGLPTransformer', () => {
       PtGLPTransformer__factory.bytecode,
       [await ptGlpFactory.pendlePtGLP2024Registry(), core.gmxEcosystem.sGlp.address]
     );
-
-    router = Router.getRouter({
-      chainId: CHAIN_ID_MAPPING.ARBITRUM,
-      provider: core.hhUser1.provider,
-      signer: core.hhUser1,
-    });
 
     const newRegistry = await createDolomiteRegistryImplementation();
     await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(newRegistry.address);
@@ -105,40 +94,28 @@ describe('PtGLPTransformer', () => {
   });
 
   describe('#transform', () => {
-    it.only('should work normally', async () => {
+    it('should work normally', async () => {
       const ptGlpAmountWei = (await core.dolomiteMargin.getAccountWei(
         { owner: vaultAddress, number: defaultAccountNumber },
         core.marketIds.dPtGlp
       )).value;
-      await router.redeemPyToToken(
-        core.pendleEcosystem.glpMar2024.ytGlpToken.address,
-        ptGlpAmountWei,
-        core.gmxEcosystem.sGlp.address as any,
-        .001
-      );
-      // const { tokenOutput, extraOrderData } = await encodeSwapExactPtForTokens(
-      //   router,
-      //   ptGlpAmountWei,
-      //   ONE_TENTH_OF_ONE_BIPS_NUMBER,
-      //   core.pendleEcosystem.glpMar2024.ptGlpMarket.address,
-      //   core.gmxEcosystem.sGlp.address
-      // );
-      // await migrator.connect(core.hhUser5).migrate(
-      //   accounts,
-      //   core.marketIds.dPtGlp,
-      //   core.marketIds.dfsGlp,
-      //   extraOrderData
-      // );
 
-      // const glpVaultAddress = await glpFactory.getVaultByAccount(vaultOwner);
-      // await expectProtocolBalance(core, vaultAddress, defaultAccountNumber, core.marketIds.dPtGlp, ZERO_BI);
-      // await expectProtocolBalanceIsGreaterThan(
-      //   core,
-      //   { owner: glpVaultAddress, number: defaultAccountNumber },
-      //   core.marketIds.dfsGlp,
-      //   tokenOutput.minTokenOut,
-      //   ZERO_BI
-      // );
+      await migrator.connect(core.hhUser5).migrate(
+        accounts,
+        core.marketIds.dPtGlp,
+        core.marketIds.dfsGlp,
+        BYTES_EMPTY
+      );
+
+      const glpVaultAddress = await glpFactory.getVaultByAccount(vaultOwner);
+      await expectProtocolBalance(core, vaultAddress, defaultAccountNumber, core.marketIds.dPtGlp, ZERO_BI);
+      await expectProtocolBalance(
+        core,
+        glpVaultAddress,
+        defaultAccountNumber,
+        core.marketIds.dfsGlp,
+        ptGlpAmountWei,
+      );
     });
   });
 });

@@ -20,13 +20,12 @@
 
 pragma solidity ^0.8.9;
 
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IDolomiteTransformer } from "@dolomite-exchange/modules-base/contracts/interfaces/IDolomiteTransformer.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IPendleGLPRegistry } from "./interfaces/IPendleGLPRegistry.sol";
 import { IPendlePtToken } from "./interfaces/IPendlePtToken.sol";
 import { IPendleRouter } from "./interfaces/IPendleRouter.sol";
 
-import "hardhat/console.sol";
 
 /**
  * @title   PtGLPTransformer
@@ -45,26 +44,32 @@ contract PtGLPTransformer is IDolomiteTransformer {
         outputToken = _outputToken;
     }
     
-    // @follow-up Do we need minAmountOut to prevent sandwich attacks?
-    function transform(uint256 _inputAmount, bytes calldata _extraData) external returns (uint256) {
-        (
-            IPendleRouter.TokenOutput memory tokenOutput
-        ) = abi.decode(_extraData, (IPendleRouter.TokenOutput));
-        console.log('tokenOut: ', tokenOutput.tokenOut);
-        // @todo set minTokenOut to _inputAmount
-        console.log('minTokenOut: ', tokenOutput.minTokenOut);
-        console.log('inputAmount: ', _inputAmount);
+    function transform(uint256 _inputAmount, bytes calldata /* extraData */) external returns (uint256) {
+        IPendleRouter.SwapData memory swapData = IPendleRouter.SwapData({
+            swapType: IPendleRouter.SwapType.NONE,
+            extRouter: address(0),
+            extCalldata: bytes(''),
+            needScale: false
+        });
+        IPendleRouter.TokenOutput memory tokenOutput = IPendleRouter.TokenOutput({
+            tokenOut: outputToken,
+            minTokenOut: _inputAmount,
+            tokenRedeemSy: outputToken,
+            bulk: address(0),
+            pendleSwap: address(0),
+            swapData: swapData
+        });
 
         IPendleRouter pendleRouter = PENDLE_REGISTRY.pendleRouter();
         PENDLE_REGISTRY.ptGlpToken().safeApprove(address(pendleRouter), _inputAmount);
-        (uint256 glpAmount,) = pendleRouter.swapExactPtForToken(
+        uint256 glpAmount = pendleRouter.redeemPyToToken(
             /* _receiver */ address(this),
-            address(PENDLE_REGISTRY.ptGlpMarket()),
+            address(PENDLE_REGISTRY.ytGlpToken()),
             _inputAmount,
             tokenOutput
         );
-        console.log('glpAmount: ', glpAmount);
-        // @todo assert inputAmount is equal to glpAmount
+
+        assert(glpAmount == _inputAmount);
         return glpAmount;
     }
 }
