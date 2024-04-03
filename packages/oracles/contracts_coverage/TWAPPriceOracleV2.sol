@@ -20,29 +20,29 @@
 pragma solidity ^0.8.9;
 
 import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
-import { IDolomiteRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IDolomiteRegistry.sol";
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import { IAlgebraV3Pool } from "./interfaces/IAlgebraV3Pool.sol";
-import { IOracleAggregatorV2 } from "./interfaces/IOracleAggregatorV2.sol";
 import { ITWAPPriceOracleV1 } from "./interfaces/ITWAPPriceOracleV1.sol";
 import { OracleLibrary } from "./utils/OracleLibrary.sol";
+import { IDolomiteRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IDolomiteRegistry.sol";
+import { IOracleAggregatorV2 } from "./interfaces/IOracleAggregatorV2.sol";
 
 
 /**
- * @title   PancakeV3PriceOracle
+ * @title   TWAPPriceOracleV2.sol
  * @author  Dolomite
  *
- * An implementation of the ITWAPPriceOracleV1.sol interface that makes gets the TWAP from an LP pool
+ * An implementation of the ITWAPPriceOracleV1.sol interface that makes gets the TWAP from a number of LP pools
  */
-contract PancakeV3PriceOracle is ITWAPPriceOracleV1, OnlyDolomiteMargin {
+contract TWAPPriceOracleV2 is ITWAPPriceOracleV1, OnlyDolomiteMargin {
     using EnumerableSet for EnumerableSet.AddressSet;
 
     // ========================= Constants =========================
 
-    bytes32 private constant _FILE = "PancakeV3PriceOracle";
+    bytes32 private constant _FILE = "TWAPPriceOracleV2";
     uint256 private constant _ONE_DOLLAR = 10 ** 36;
     uint8 private constant _ORACLE_VALUE_DECIMALS = 36;
 
@@ -103,14 +103,13 @@ contract PancakeV3PriceOracle is ITWAPPriceOracleV1, OnlyDolomiteMargin {
         address poolToken0 = currentPair.token0();
         address outputToken = poolToken0 == _token ? currentPair.token1() : poolToken0;
 
-        int24 tick = OracleLibrary.consultPancakeSwap(address(currentPair), observationInterval);
+        int24 tick = OracleLibrary.consult(address(currentPair), observationInterval);
         uint256 quote = OracleLibrary.getQuoteAtTick(tick, uint128(TOKEN_DECIMALS_FACTOR), _token, outputToken);
 
         IOracleAggregatorV2 aggregator = IOracleAggregatorV2(address(DOLOMITE_REGISTRY.oracleAggregator()));
         uint8 outputTokenDecimals = aggregator.getDecimalsByToken(outputToken);
         /*assert(outputTokenDecimals > 0);*/
 
-        // @follow-up Is this standardization correct here? Also in the TWAP oracle
         return IDolomiteStructs.MonetaryPrice({
             value: _standardizeNumberOfDecimals(quote, outputTokenDecimals)
         });
