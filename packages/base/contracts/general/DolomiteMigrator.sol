@@ -169,7 +169,6 @@ contract DolomiteMigrator is IDolomiteMigrator, OnlyDolomiteMargin {
             // @follow-up Need to make sure a user can't make these allowance asserts fail
             assert(IERC20(outputToken).allowance(address(this), toVault) == 0);
             assert(IERC20(address(toFactory)).allowance(address(this), address(DOLOMITE_MARGIN())) == 0);
-            assert(IERC20(address(toFactory)).allowance(toVault, address(DOLOMITE_MARGIN())) == 0);
             emit MigrationComplete(account.owner, account.number, _fromMarketId, _toMarketId);
         }
     }

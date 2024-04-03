@@ -26,6 +26,7 @@ import { IPendleGLPRegistry } from "./interfaces/IPendleGLPRegistry.sol";
 import { IPendlePtToken } from "./interfaces/IPendlePtToken.sol";
 import { IPendleRouter } from "./interfaces/IPendleRouter.sol";
 
+import "hardhat/console.sol";
 
 /**
  * @title   PtGLPTransformer
@@ -49,6 +50,10 @@ contract PtGLPTransformer is IDolomiteTransformer {
         (
             IPendleRouter.TokenOutput memory tokenOutput
         ) = abi.decode(_extraData, (IPendleRouter.TokenOutput));
+        console.log('tokenOut: ', tokenOutput.tokenOut);
+        // @todo set minTokenOut to _inputAmount
+        console.log('minTokenOut: ', tokenOutput.minTokenOut);
+        console.log('inputAmount: ', _inputAmount);
 
         IPendleRouter pendleRouter = PENDLE_REGISTRY.pendleRouter();
         PENDLE_REGISTRY.ptGlpToken().safeApprove(address(pendleRouter), _inputAmount);
@@ -58,6 +63,8 @@ contract PtGLPTransformer is IDolomiteTransformer {
             _inputAmount,
             tokenOutput
         );
+        console.log('glpAmount: ', glpAmount);
+        // @todo assert inputAmount is equal to glpAmount
         return glpAmount;
     }
 }
