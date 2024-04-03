@@ -1,9 +1,11 @@
+import CoreDeployments from '@dolomite-exchange/dolomite-margin/dist/migrations/deployed.json';
+import ModuleDeployments from '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
 import { time } from '@nomicfoundation/hardhat-network-helpers';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { BigNumber, BigNumberish, ContractTransaction } from 'ethers';
-import { config as hardhatConfig, ethers, network as hardhatNetwork } from 'hardhat';
+import { config as hardhatConfig, ethers, network as hardhatNetwork, tracer } from 'hardhat';
 import { HttpNetworkConfig } from 'hardhat/src/types/config';
 import { Network, networkToNetworkNameMap } from '../../src/utils/no-deps-constants';
+import { SignerWithAddressWithSafety } from '../../src/utils/SignerWithAddressWithSafety';
 
 const gasLogger: Record<string, BigNumber> = {};
 const gasLoggerNumberOfCalls: Record<string, number> = {};
@@ -39,7 +41,12 @@ export async function getRealLatestBlockNumber(
   return Number.parseInt(blockNumber, 16) - (include32BlockBuffer ? 32 : 0);
 }
 
-export async function resetFork(blockNumber: number, network: Network) {
+export async function resetForkIfPossible(blockNumber: number, network: Network) {
+  if (hardhatNetwork.name !== 'hardhat') {
+    console.log('\tSkipping forking...\n');
+    return;
+  }
+
   const networkConfig = hardhatConfig.networks?.[networkToNetworkNameMap[network]] as HttpNetworkConfig;
   await hardhatNetwork.provider.request({
     method: 'hardhat_reset',
@@ -51,6 +58,19 @@ export async function resetFork(blockNumber: number, network: Network) {
         },
       },
     ],
+  });
+
+  Object.keys(CoreDeployments).forEach(contractName => {
+    const contractAddress = (CoreDeployments as any)[contractName]?.[network]?.address;
+    if (contractAddress && tracer) {
+      tracer.nameTags[contractAddress] = contractName;
+    }
+  });
+  Object.keys(ModuleDeployments).forEach(contractName => {
+    const contractAddress = (ModuleDeployments as any)[contractName]?.[network]?.address;
+    if (contractAddress && tracer) {
+      tracer.nameTags[contractAddress] = contractName;
+    }
   });
 }
 
@@ -115,8 +135,8 @@ export async function setEtherBalance(address: string, balance: BigNumberish = '
 export async function impersonateOrFallback(
   targetAccount: string,
   giveEther: boolean,
-  fallbackSigner: SignerWithAddress,
-): Promise<SignerWithAddress> {
+  fallbackSigner: SignerWithAddressWithSafety,
+): Promise<SignerWithAddressWithSafety> {
   if (hardhatNetwork.name !== 'hardhat') {
     return fallbackSigner;
   }
@@ -127,7 +147,7 @@ export async function impersonate(
   targetAccount: string | { address: string },
   giveEther: boolean = false,
   balance = BigNumber.from('1000000000000000000'),
-): Promise<SignerWithAddress> {
+): Promise<SignerWithAddressWithSafety> {
   const targetAddress = typeof targetAccount === 'string' ? targetAccount : targetAccount.address;
   await hardhatNetwork.provider.request({
     method: 'hardhat_impersonateAccount',
@@ -136,13 +156,13 @@ export async function impersonate(
   if (giveEther) {
     await setEtherBalance(targetAddress, balance);
   }
-  return ethers.getSigner(targetAddress);
+  return SignerWithAddressWithSafety.create(targetAddress);
 }
 
 export async function impersonateAll(
   targetAccounts: string[],
   giveEther: boolean = false,
-): Promise<SignerWithAddress[]> {
+): Promise<SignerWithAddressWithSafety[]> {
   const signers = [];
   for (let i = 0; i < targetAccounts.length; i++) {
     signers[i] = await impersonate(targetAccounts[i], giveEther);

@@ -9,6 +9,7 @@ import '@typechain/hardhat';
 import chai from 'chai';
 import { solidity } from 'ethereum-waffle';
 import 'hardhat-gas-reporter';
+import 'hardhat-tracer';
 import 'solidity-coverage';
 
 import 'tsconfig-paths/register';
@@ -16,9 +17,6 @@ import 'tsconfig-paths/register';
 import { base_config } from '../../hardhat-base-config';
 
 chai.use(solidity);
-if (process.env.COVERAGE !== 'true') {
-  require('hardhat-tracer');
-}
 
 // noinspection JSUnusedGlobalSymbols
 export default base_config;

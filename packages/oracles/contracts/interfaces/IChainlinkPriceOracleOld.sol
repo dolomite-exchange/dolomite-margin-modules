@@ -27,11 +27,13 @@ import { IChainlinkAggregator } from "./IChainlinkAggregator.sol";
  * @title   IChainlinkPriceOracleOld
  * @author  Dolomite
  *
- * An interface for the old IDolomitePriceOracle interface that makes Chainlink prices compatible with the protocol.
+ * An interface of IDolomitePriceOracle that makes Chainlink prices compatible with the protocol.
  */
 interface IChainlinkPriceOracleOld is IDolomitePriceOracle {
 
     // ============ Events ============
+
+    event StalenessDurationUpdated(uint256 stalenessDuration);
 
     event TokenInsertedOrUpdated(
         address indexed token,
@@ -42,19 +44,28 @@ interface IChainlinkPriceOracleOld is IDolomitePriceOracle {
     // ============ Admin Functions ============
 
     /**
+     * @dev Sets the new `stalenessThreshold`. This function can only be called by the owner of DolomiteMargin.
+     *
+     * @param  _stalenessThreshold  The duration of time that must pass before a price is considered stale from a
+     *                              Chainlink Aggregator
+     */
+    function ownerSetStalenessThreshold(
+        uint256 _stalenessThreshold
+    )
+    external;
+
+    /**
      * @dev Insert or update a token in the oracle. This function can only be called by the owner of DolomiteMargin.
      *
      * @param  _token               The token whose Chainlink aggregator should be inserted or updated
      * @param  _tokenDecimals       The number of decimals that this token has
      * @param  _chainlinkAggregator The Chainlink aggregator that corresponds with this token
-     * @param  _aggregatorDecimals  The number of decimals this aggregator has
      * @param  _tokenPair           The token pair that corresponds with this token. The zero address means USD.
      */
-    function insertOrUpdateOracleToken(
+    function ownerInsertOrUpdateOracleToken(
         address _token,
         uint8 _tokenDecimals,
         address _chainlinkAggregator,
-        uint8 _aggregatorDecimals,
         address _tokenPair
     )
     external;
@@ -81,13 +92,6 @@ interface IChainlinkPriceOracleOld is IDolomitePriceOracle {
      * @return _tokenPair   The token pair that corresponds with this token. The zero address means USD.
      */
     function tokenToPairingMap(address _token) external view returns (address _tokenPair);
-
-    /**
-     *
-     * @param  _aggregator  The Chainlink Aggregator whose decimals should be retrieved
-     * @return              The number of decimals that this aggregator has
-     */
-    function tokenToAggregatorDecimalsMap(address _aggregator) external view returns (uint8);
 
     /**
      * @return The duration of time that must pass before a price is considered stale from a Chainlink Aggregator

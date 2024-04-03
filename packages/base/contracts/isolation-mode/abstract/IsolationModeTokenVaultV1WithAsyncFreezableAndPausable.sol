@@ -252,8 +252,12 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezableAndPausable is
         virtual
         override (IsolationModeTokenVaultV1WithAsyncFreezable, IsolationModeTokenVaultV1)
         _addCollateralAndSwapExactInputForOutputAsyncFreezableValidator(
+            _fromAccountNumber,
             _borrowAccountNumber,
-            _marketIdsPath[_marketIdsPath.length - 1]
+            /* _inputMarketId */ _marketIdsPath[0],
+            /* _outputMarketId */ _marketIdsPath[_marketIdsPath.length - 1],
+            _inputAmountWei,
+            _minOutputAmountWei
         )
     {
         IsolationModeTokenVaultV1._addCollateralAndSwapExactInputForOutput(
@@ -283,7 +287,10 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezableAndPausable is
         override (IsolationModeTokenVaultV1WithAsyncFreezable, IsolationModeTokenVaultV1)
         _swapExactInputForOutputAndRemoveCollateralAsyncFreezableValidator(
             _borrowAccountNumber,
-            _marketIdsPath[_marketIdsPath.length - 1]
+            /* _inputMarketId */ _marketIdsPath[0],
+            /* _outputMarketId */ _marketIdsPath[_marketIdsPath.length - 1],
+            _inputAmountWei,
+            _minOutputAmountWei
         )
     {
         IsolationModeTokenVaultV1._swapExactInputForOutputAndRemoveCollateral(
@@ -304,15 +311,18 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezableAndPausable is
         internal
         virtual
         override (IsolationModeTokenVaultV1WithAsyncFreezable, IsolationModeTokenVaultV1WithPausable)
-        _swapExactInputForOutputAsyncFreezableValidator(_params.tradeAccountNumber, _params.marketIdsPath)
+        _swapExactInputForOutputAsyncFreezableValidator(
+            _params.tradeAccountNumber,
+            _params.marketIdsPath,
+            _params.inputAmountWei,
+            _params.minOutputAmountWei
+        )
         _swapExactInputForOutputPausableValidator(
             _params.tradeAccountNumber,
             _params.marketIdsPath,
             _params.inputAmountWei
         )
     {
-        IsolationModeTokenVaultV1._swapExactInputForOutput(
-            _params
-        );
+        IsolationModeTokenVaultV1._swapExactInputForOutput(_params);
     }
 }

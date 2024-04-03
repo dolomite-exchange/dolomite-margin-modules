@@ -1,3 +1,4 @@
+import { expect } from 'chai';
 import { BaseContract, BigNumber } from 'ethers';
 import {
   CustomTestToken,
@@ -12,12 +13,17 @@ import {
   TestSimpleIsolationModeVaultFactory__factory,
 } from '../../src/types';
 import { createContractWithAbi, createContractWithLibrary, createTestToken } from '../../src/utils/dolomite-utils';
-import { BYTES_EMPTY, Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from '../../src/utils/no-deps-constants';
+import { BYTES_EMPTY, Network, ONE_ETH_BI, ZERO_BI } from '../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
 import { expectProtocolBalance } from '../utils/assertions';
 import { createIsolationModeTokenVaultV1ActionsImpl } from '../utils/dolomite';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from '../utils/setup';
-import { expect } from 'chai';
+import {
+  CoreProtocol,
+  getDefaultCoreProtocolConfig,
+  setupCoreProtocol,
+  setupTestMarket,
+  setupUserVaultProxy,
+} from '../utils/setup';
 import { getUnwrapZapParams } from '../utils/zap-utils';
 
 const defaultAccountNumber = 0;
@@ -83,7 +89,7 @@ describe('SimpleIsolationModeUnwrapperTraderV2', () => {
       [
         factory.address,
         core.dolomiteMargin.address,
-        core.dolomiteRegistry.address
+        core.dolomiteRegistry.address,
       ],
     );
     tokenWrapper = await createContractWithAbi<SimpleIsolationModeWrapperTraderV2>(
@@ -120,7 +126,7 @@ describe('SimpleIsolationModeUnwrapperTraderV2', () => {
         factory.address,
         underlyingToken.address,
         amountWei,
-        BYTES_EMPTY
+        BYTES_EMPTY,
       )).to.eq(amountWei);
     });
   });
@@ -147,7 +153,7 @@ describe('SimpleIsolationModeUnwrapperTraderV2', () => {
         underlyingMarketId,
         amountWei,
         tokenUnwrapper,
-        core
+        core,
       );
       await userVault.swapExactInputForOutput(
         otherAccountNumber,

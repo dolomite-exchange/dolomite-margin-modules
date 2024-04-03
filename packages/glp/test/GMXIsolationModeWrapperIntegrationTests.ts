@@ -1,23 +1,4 @@
 import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin';
-import deployments from  '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
-import {
-  GenericEventEmissionType,
-  GenericTraderParam,
-  GenericTraderType,
-  GenericUserConfig,
-} from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
-import { BigNumber, BigNumberish } from 'ethers';
-import { ethers } from 'hardhat';
-import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
-import { createTestToken, depositIntoDolomiteMargin } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { expectProtocolBalance, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { getSimpleZapParams, getUnwrapZapParams } from '@dolomite-exchange/modules-base/test/utils/zap-utils';
-import {
-  GMXIsolationModeTokenVaultV1,
-  GMXIsolationModeTokenVaultV1__factory,
-  IGLPIsolationModeVaultFactoryOld,
-  IGMXIsolationModeVaultFactory,
-} from '../src/types';
 import {
   CustomTestToken,
   IIsolationModeUnwrapperTrader,
@@ -27,19 +8,38 @@ import {
   SimpleIsolationModeWrapperTraderV2,
   SimpleIsolationModeWrapperTraderV2__factory,
 } from '@dolomite-exchange/modules-base/src/types';
+import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
+import { createTestToken, depositIntoDolomiteMargin } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import {
   getRealLatestBlockNumber,
   revertToSnapshotAndCapture,
-  snapshot
+  snapshot,
 } from '@dolomite-exchange/modules-base/test/utils';
+import { expectProtocolBalance, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import {
   setupCoreProtocol,
   setupGMXBalance,
   setupTestMarket,
   setupUserVaultProxy,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import { getSimpleZapParams, getUnwrapZapParams } from '@dolomite-exchange/modules-base/test/utils/zap-utils';
+import deployments from '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
+import {
+  GenericEventEmissionType,
+  GenericTraderParam,
+  GenericTraderType,
+  GenericUserConfig,
+} from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
+import { BigNumber, BigNumberish } from 'ethers';
+import { ethers } from 'hardhat';
+import {
+  GMXIsolationModeTokenVaultV1,
+  GMXIsolationModeTokenVaultV1__factory,
+  IGLPIsolationModeVaultFactoryOld,
+  IGMXIsolationModeVaultFactory,
+} from '../src/types';
 
 const defaultAccountNumber = '0';
 const gmxAmount = BigNumber.from('10000000000000000000'); // 10 GMX

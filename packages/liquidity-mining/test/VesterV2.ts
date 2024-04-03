@@ -12,6 +12,7 @@ import {
   ONE_ETH_BI,
   ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { SignerWithAddressWithSafety } from '@dolomite-exchange/modules-base/src/utils/SignerWithAddressWithSafety';
 import {
   advanceByTimeDelta,
   getBlockTimestamp,
@@ -36,7 +37,6 @@ import {
   setupWETHBalance,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
@@ -77,7 +77,7 @@ describe('VesterV2', () => {
   let vester: TestVesterImplementationV2;
   let oARB: OARB;
   let nextNftId: BigNumber;
-  let handler: SignerWithAddress;
+  let handler: SignerWithAddressWithSafety;
 
   before(async () => {
     core = await setupCoreProtocol({
@@ -1455,7 +1455,7 @@ describe('VesterV2', () => {
     });
   });
 
-  async function getNftId(signer: SignerWithAddress): Promise<BigNumber> {
+  async function getNftId(signer: SignerWithAddressWithSafety): Promise<BigNumber> {
     const filter = vester.filters.VestingStarted(signer.address);
     return (await vester.queryFilter(filter))[0].args.vestingId;
   }

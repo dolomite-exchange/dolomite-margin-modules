@@ -51,7 +51,9 @@ contract TestGmxV2IsolationModeTokenVaultV1 is GmxV2IsolationModeTokenVaultV1 {
 
     // ======== Constructor =========
 
-    constructor(address _weth) GmxV2IsolationModeTokenVaultV1(_weth) { /* solhint-disable-line no-empty-blocks */ }
+    constructor(address _weth, uint256 _chainId) GmxV2IsolationModeTokenVaultV1(_weth, _chainId) {
+        // solhint-disable-previous-line no-empty-blocks
+    }
 
     // ============ Functions ============
 

@@ -1,12 +1,12 @@
 import { expect } from 'chai';
+import { parseEther } from 'ethers/lib/utils';
 import { TestDolomiteMarginVersionWrapperLib, TestDolomiteMarginVersionWrapperLib__factory } from '../../src/types';
 import { createContractWithAbi } from '../../src/utils/dolomite-utils';
-import { NO_EXPIRY, Network, ZERO_BI } from '../../src/utils/no-deps-constants';
+import { Network, NO_EXPIRY, ZERO_BI } from '../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
+import { expectThrow } from '../utils/assertions';
 import { CoreProtocolArbitrumOne } from '../utils/core-protocol';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '../utils/setup';
-import { expectThrow } from '../utils/assertions';
-import { parseEther } from 'ethers/lib/utils';
 
 describe('DolomiteMarginVersionWrapperLib_Arbitrum', () => {
   let snapshotId: string;
@@ -37,7 +37,7 @@ describe('DolomiteMarginVersionWrapperLib_Arbitrum', () => {
         Network.ArbitrumOne,
         { owner: core.hhUser1.address, number: ZERO_BI },
         core.marketIds.weth,
-        core.marketIds.usdc
+        core.marketIds.usdc,
       );
       expect(spread.value).to.eq(parseEther('.05'));
     });
@@ -49,7 +49,7 @@ describe('DolomiteMarginVersionWrapperLib_Arbitrum', () => {
           Network.PolygonZkEvm,
           { owner: core.hhUser1.address, number: ZERO_BI },
           core.marketIds.weth,
-          core.marketIds.usdc
+          core.marketIds.usdc,
         ),
       );
     });
@@ -63,7 +63,7 @@ describe('DolomiteMarginVersionWrapperLib_Arbitrum', () => {
         { owner: core.hhUser1.address, number: ZERO_BI },
         core.marketIds.weth,
         core.marketIds.usdc,
-        NO_EXPIRY
+        NO_EXPIRY,
       );
     });
 
@@ -75,7 +75,7 @@ describe('DolomiteMarginVersionWrapperLib_Arbitrum', () => {
           { owner: core.hhUser1.address, number: ZERO_BI },
           core.marketIds.weth,
           core.marketIds.usdc,
-          NO_EXPIRY
+          NO_EXPIRY,
         ),
       );
     });

@@ -1,26 +1,14 @@
-import { expect } from 'chai';
-import { BigNumber } from 'ethers';
-import { parseEther } from 'ethers/lib/utils';
-import { GMX_GOV_MAP } from '@dolomite-exchange/modules-base/src/utils/constants';
-import {
-  GLPIsolationModeVaultFactory,
-  GMXIsolationModeVaultFactory,
-  GmxRegistryV1,
-  TestGLPIsolationModeTokenVaultV2,
-  TestGLPIsolationModeTokenVaultV2__factory,
-  TestGMXIsolationModeTokenVaultV1,
-  TestGMXIsolationModeTokenVaultV1__factory,
-} from '../src/types';
 import {
   SimpleIsolationModeUnwrapperTraderV2,
   SimpleIsolationModeWrapperTraderV2,
 } from '@dolomite-exchange/modules-base/src/types';
+import { GMX_GOV_MAP } from '@dolomite-exchange/modules-base/src/utils/constants';
 import { ADDRESS_ZERO, MAX_UINT_256_BI, Network, ONE_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import {
   impersonate,
   revertToSnapshotAndCapture,
   snapshot,
-  waitDays
+  waitDays,
 } from '@dolomite-exchange/modules-base/test/utils';
 import {
   expectEvent,
@@ -29,6 +17,27 @@ import {
   expectThrow,
   expectWalletBalance,
 } from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import {
+  setupCoreProtocol,
+  setupGMXBalance,
+  setupTestMarket,
+  setupUSDCBalance,
+  setupUserVaultProxy,
+} from '@dolomite-exchange/modules-base/test/utils/setup';
+import { expect } from 'chai';
+import { BigNumber } from 'ethers';
+import { parseEther } from 'ethers/lib/utils';
+import {
+  GLPIsolationModeVaultFactory,
+  GMXIsolationModeTokenVaultV1,
+  GMXIsolationModeVaultFactory,
+  GmxRegistryV1,
+  TestGLPIsolationModeTokenVaultV2,
+  TestGLPIsolationModeTokenVaultV2__factory,
+  TestGMXIsolationModeTokenVaultV1,
+  TestGMXIsolationModeTokenVaultV1__factory,
+} from '../src/types';
 import {
   createGLPIsolationModeVaultFactory,
   createGMXIsolationModeVaultFactory,
@@ -38,16 +47,7 @@ import {
   createTestGLPIsolationModeTokenVaultV2,
   createTestGMXIsolationModeTokenVaultV1,
 } from './glp-ecosystem-utils';
-import {
-  setupCoreProtocol,
-  setupGMXBalance,
-  setupTestMarket,
-  setupUSDCBalance,
-  setupUserVaultProxy,
-} from '@dolomite-exchange/modules-base/test/utils/setup';
 import { DEFAULT_BLOCK_NUMBER_FOR_GLP_WITH_VESTING } from './glp-utils';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
 const gmxAmount = parseEther('10'); // 10 GMX
 const usdcAmount = BigNumber.from('2000000000'); // 2,000 USDC
@@ -74,7 +74,7 @@ describe('GMXIsolationModeTokenVaultV1', () => {
   let gmxMarketId: BigNumber;
   let underlyingMarketIdGlp: BigNumber;
   let underlyingMarketIdGmx: BigNumber;
-  let otherImpersonator: SignerWithAddress;
+  let otherImpersonator;
 
   before(async () => {
     core = await setupCoreProtocol({

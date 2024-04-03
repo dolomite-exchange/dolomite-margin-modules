@@ -1,15 +1,3 @@
-import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
-import { expect } from 'chai';
-import { BigNumber, BigNumberish } from 'ethers';
-import {
-  GLPIsolationModeTokenVaultV1,
-  GLPIsolationModeTokenVaultV1__factory,
-  GLPIsolationModeUnwrapperTraderV2,
-  GLPIsolationModeWrapperTraderV2,
-  IERC20,
-  IGLPIsolationModeVaultFactoryOld,
-  IGmxRegistryV1,
-} from '../src/types';
 import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
 import {
   BYTES_EMPTY,
@@ -23,7 +11,7 @@ import {
   getRealLatestBlockNumber,
   revertToSnapshotAndCapture,
   snapshot,
-  waitTime
+  waitTime,
 } from '@dolomite-exchange/modules-base/test/utils';
 import {
   expectProtocolBalance,
@@ -31,20 +19,32 @@ import {
   expectProtocolBalanceIsGreaterThan,
   expectWalletBalanceOrDustyIfZero,
 } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { createGLPUnwrapperTraderV2, createGLPWrapperTraderV2 } from './glp-ecosystem-utils';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { setExpiry } from '@dolomite-exchange/modules-base/test/utils/expiry-utils';
 import { liquidateV4WithIsolationMode } from '@dolomite-exchange/modules-base/test/utils/liquidation-utils';
 import {
   setupCoreProtocol,
   setupUSDCBalance,
-  setupUserVaultProxy
+  setupUserVaultProxy,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
 import {
   checkForParaswapSuccess,
   getCalldataForParaswap,
   getParaswapTraderParamStruct,
 } from '@dolomite-exchange/modules-base/test/utils/trader-utils';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
+import { expect } from 'chai';
+import { BigNumber, BigNumberish } from 'ethers';
+import {
+  GLPIsolationModeTokenVaultV1,
+  GLPIsolationModeTokenVaultV1__factory,
+  GLPIsolationModeUnwrapperTraderV2,
+  GLPIsolationModeWrapperTraderV2,
+  IERC20,
+  IGLPIsolationModeVaultFactoryOld,
+  IGmxRegistryV1,
+} from '../src/types';
+import { createGLPUnwrapperTraderV2, createGLPWrapperTraderV2 } from './glp-ecosystem-utils';
 
 const defaultAccountNumber = '0';
 const otherAccountNumber = '420';

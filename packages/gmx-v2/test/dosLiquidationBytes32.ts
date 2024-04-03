@@ -11,9 +11,12 @@ import { takeSnapshot } from '@nomicfoundation/hardhat-network-helpers';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish, ethers } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
+import {
+  getIsolationModeFreezableLiquidatorProxyConstructorParams,
+} from 'packages/base/src/utils/constructors/dolomite';
 import { AccountStruct } from '../../base/src/utils/constants';
 import { createContractWithAbi } from '../../base/src/utils/dolomite-utils';
-import { NO_EXPIRY, Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from '../../base/src/utils/no-deps-constants';
+import { NO_EXPIRY, ONE_BI, ONE_ETH_BI, ZERO_BI } from '../../base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../../base/test/utils';
 import { expectEvent, expectProtocolBalance, expectWalletBalance } from '../../base/test/utils/assertions';
 import { createDolomiteRegistryImplementation, createEventEmitter } from '../../base/test/utils/dolomite';
@@ -26,7 +29,7 @@ import {
   setupUserVaultProxy,
   setupWETHBalance,
 } from '../../base/test/utils/setup';
-import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE } from '../src/gmx-v2-constructors';
+import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE_FOR_TESTS } from '../src/gmx-v2-constructors';
 import {
   GmxV2IsolationModeTokenVaultV1,
   GmxV2IsolationModeTokenVaultV1__factory,
@@ -49,7 +52,6 @@ import {
   getInitiateWrappingParams,
   getOracleParams,
 } from './gmx-v2-ecosystem-utils';
-import { getIsolationModeFreezableLiquidatorProxyConstructorParams } from 'packages/base/src/utils/constructors/dolomite';
 
 const defaultAccountNumber = ZERO_BI;
 const borrowAccountNumber = defaultAccountNumber.add(ONE_BI);
@@ -59,7 +61,9 @@ const amountWei = ONE_ETH_BI.mul('1234'); // 1,234
 const DEFAULT_EXTRA_DATA = ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [parseEther('.5'), ONE_BI]);
 const NEW_GENERIC_TRADER_PROXY = '0x905F3adD52F01A9069218c8D1c11E240afF61D2B';
 
-const executionFee = process.env.COVERAGE !== 'true' ? GMX_V2_EXECUTION_FEE : GMX_V2_EXECUTION_FEE.mul(10);
+const executionFee = process.env.COVERAGE !== 'true'
+  ? GMX_V2_EXECUTION_FEE_FOR_TESTS
+  : GMX_V2_EXECUTION_FEE_FOR_TESTS.mul(10);
 
 describe('POC: dosLiquidationBytes32', () => {
   let snapshotId: string;
@@ -94,7 +98,7 @@ describe('POC: dosLiquidationBytes32', () => {
     liquidatorProxy = await createContractWithAbi<IsolationModeFreezableLiquidatorProxy>(
       IsolationModeFreezableLiquidatorProxy__factory.abi,
       IsolationModeFreezableLiquidatorProxy__factory.bytecode,
-      await getIsolationModeFreezableLiquidatorProxyConstructorParams(core)
+      await getIsolationModeFreezableLiquidatorProxyConstructorParams(core),
     );
 
     const gmxV2Library = await createGmxV2Library();
@@ -108,7 +112,7 @@ describe('POC: dosLiquidationBytes32', () => {
       gmxV2Registry,
       allowableMarketIds,
       allowableMarketIds,
-      core.gmxEcosystemV2!.gmxEthUsdMarketToken,
+      core.gmxEcosystemV2!.gmTokens.ethUsd,
       userVaultImplementation,
       executionFee,
     );

@@ -133,6 +133,56 @@ export function getPendlePtPriceOracleConstructorParams<T extends Network>(
   ];
 }
 
+export function getPendlePtPriceOracleV2ConstructorParams<T extends Network>(
+  core: CoreProtocolWithPendle<T>,
+  dptToken: IPendlePtIsolationModeVaultFactory | PendlePtIsolationModeVaultFactory,
+  pendleRegistry: IPendleRegistry | PendleRegistry
+): any[] {
+  if (!core.pendleEcosystem) {
+    throw new Error('Pendle ecosystem not initialized');
+  }
+
+  return [
+    dptToken.address,
+    pendleRegistry.address,
+    core.dolomiteMargin.address,
+  ];
+}
+
+export function getPendlePtRsEthPriceOracleConstructorParams<T extends Network>(
+  core: CoreProtocolWithPendle<T>,
+  dptToken: IPendlePtIsolationModeVaultFactory | PendlePtIsolationModeVaultFactory,
+  pendleRegistry: IPendleRegistry | PendleRegistry,
+): any[] {
+  if (!core.pendleEcosystem) {
+    throw new Error('Pendle ecosystem not initialized');
+  }
+
+  return [
+    dptToken.address,
+    pendleRegistry.address,
+    core.tokens.rsEth.address,
+    core.dolomiteMargin.address,
+  ];
+}
+
+export function getPendlePtEEthPriceOracleConstructorParams<T extends Network>(
+  core: CoreProtocolWithPendle<T>,
+  dptToken: IPendlePtIsolationModeVaultFactory | PendlePtIsolationModeVaultFactory,
+  pendleRegistry: IPendleRegistry | PendleRegistry,
+): any[] {
+  if (!core.pendleEcosystem) {
+    throw new Error('Pendle ecosystem not initialized');
+  }
+
+  return [
+    dptToken.address,
+    pendleRegistry.address,
+    core.tokens.weEth.address,
+    core.dolomiteMargin.address,
+  ];
+}
+
 export function getPendlePtIsolationModeWrapperTraderV2ConstructorParams<T extends Network>(
   core: CoreProtocolWithPendle<T>,
   pendleRegistry: IPendleRegistry | PendleRegistry,

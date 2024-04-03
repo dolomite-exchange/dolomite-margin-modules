@@ -16,7 +16,6 @@ import {
   setupUserVaultProxy,
   setupWstETHBalance,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { BaseRouter, Router } from '@pendle/sdk-v2';
 import { CHAIN_ID_MAPPING } from '@pendle/sdk-v2/dist/common/ChainId';
 import { expect } from 'chai';
@@ -66,8 +65,6 @@ describe('PendlePtWstEthJun2025IsolationModeUnwrapperTraderV2', () => {
   let ptToken: IPendlePtToken;
   let ptMarket: IPendlePtMarket;
 
-  let solidUser: SignerWithAddress;
-
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
 
@@ -98,8 +95,6 @@ describe('PendlePtWstEthJun2025IsolationModeUnwrapperTraderV2', () => {
 
     await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
-
-    solidUser = core.hhUser5;
 
     await factory.createVault(core.hhUser1.address);
     const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);

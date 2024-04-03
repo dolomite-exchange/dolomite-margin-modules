@@ -30,6 +30,7 @@ import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { IIsolationModeTokenVaultV1 } from "../interfaces/IIsolationModeTokenVaultV1.sol";
 import { IIsolationModeTokenVaultV1WithFreezable } from "../interfaces/IIsolationModeTokenVaultV1WithFreezable.sol";
+import { IsolationModeTokenVaultV1ActionsImpl } from "./impl/IsolationModeTokenVaultV1ActionsImpl.sol";
 
 
 /**
@@ -113,8 +114,12 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
     }
 
     modifier _addCollateralAndSwapExactInputForOutputFreezableValidator(
+        uint256 _fromAccountNumber,
         uint256 _borrowAccountNumber,
-        uint256 _outputMarketId
+        uint256 _inputMarketId,
+        uint256 _outputMarketId,
+        uint256 _inputAmount,
+        uint256 _minOutputAmount
     ) {
         _requireNotFrozen();
         _;
@@ -122,7 +127,10 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
 
     modifier _swapExactInputForOutputAndRemoveCollateralFreezableValidator(
         uint256 _borrowAccountNumber,
-        uint256 _outputMarketId
+        uint256 _inputMarketId,
+        uint256 _outputMarketId,
+        uint256 _inputAmount,
+        uint256 _minOutputAmount
     ) {
         _requireNotFrozen();
         _;
@@ -303,8 +311,12 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         virtual
         override
         _addCollateralAndSwapExactInputForOutputFreezableValidator(
+            _fromAccountNumber,
             _borrowAccountNumber,
-            _marketIdsPath[_marketIdsPath.length - 1]
+            /* _inputMarketId = */ _marketIdsPath[0],
+            /* _outputMarketId = */ _marketIdsPath[_marketIdsPath.length - 1],
+            _inputAmountWei,
+            _minOutputAmountWei
         )
     {
         super._addCollateralAndSwapExactInputForOutput(
@@ -334,7 +346,10 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         override
         _swapExactInputForOutputAndRemoveCollateralFreezableValidator(
             _borrowAccountNumber,
-            _marketIdsPath[_marketIdsPath.length - 1]
+            /* _inputMarketId = */ _marketIdsPath[0],
+            /* _outputMarketId = */ _marketIdsPath[_marketIdsPath.length - 1],
+            _inputAmountWei,
+            _minOutputAmountWei
         )
     {
         super._swapExactInputForOutputAndRemoveCollateral(
@@ -355,7 +370,12 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         internal
         virtual
         override
-        _swapExactInputForOutputFreezableValidator(_params.tradeAccountNumber, _params.marketIdsPath)
+        _swapExactInputForOutputFreezableValidator(
+            _params.tradeAccountNumber,
+            _params.marketIdsPath,
+            _params.inputAmountWei,
+            _params.minOutputAmountWei
+        )
     {
         super._swapExactInputForOutput(
             _params

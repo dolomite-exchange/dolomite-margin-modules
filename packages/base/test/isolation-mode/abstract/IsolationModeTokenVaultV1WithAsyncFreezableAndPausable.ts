@@ -1,5 +1,4 @@
 import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin/dist/src';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { BigNumber, ContractTransaction } from 'ethers';
 import {
@@ -27,6 +26,7 @@ import {
   ONE_ETH_BI,
   ZERO_BI,
 } from '../../../src/utils/no-deps-constants';
+import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import {
   expectEvent,
@@ -78,9 +78,9 @@ describe('IsolationModeTokenVaultV1WithFreezableAndPausable', () => {
   let factory: TestFreezableIsolationModeVaultFactory;
   let userVaultImplementation: TestIsolationModeTokenVaultV1WithAsyncFreezableAndPausable;
   let userVault: TestIsolationModeTokenVaultV1WithAsyncFreezableAndPausable;
-  let impersonatedVault: SignerWithAddress;
+  let impersonatedVault: SignerWithAddressWithSafety;
 
-  let solidUser: SignerWithAddress;
+  let solidUser: SignerWithAddressWithSafety;
   let otherToken1: CustomTestToken;
   let otherToken2: CustomTestToken;
   let otherMarketId1: BigNumber;
@@ -93,7 +93,7 @@ describe('IsolationModeTokenVaultV1WithFreezableAndPausable', () => {
     userVaultImplementation = await createContractWithLibrary(
       'TestIsolationModeTokenVaultV1WithAsyncFreezableAndPausable',
       libraries,
-      [core.tokens.weth.address],
+      [core.tokens.weth.address, core.network],
     );
     const registry = await createTestHandlerRegistry(core);
     factory = await createTestFreezableIsolationModeVaultFactory(
@@ -1421,11 +1421,12 @@ describe('IsolationModeTokenVaultV1WithFreezableAndPausable', () => {
       await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId2, ZERO_BI);
       await expectProtocolBalance(core, userVault, borrowAccountNumber, otherMarketId2, otherAmountWei);
 
+      const minOutputAmount = ONE_ETH_BI;
       const zapParams = await getWrapZapParams(
         otherMarketId1,
         otherAmountWei,
         underlyingMarketId,
-        amountWei,
+        minOutputAmount,
         tokenWrapper,
         core,
       );
@@ -1440,7 +1441,7 @@ describe('IsolationModeTokenVaultV1WithFreezableAndPausable', () => {
         zapParams.userConfig,
       );
 
-      await expectProtocolBalance(core, userVault, defaultAccountNumber, underlyingMarketId, amountWei);
+      await expectProtocolBalance(core, userVault, defaultAccountNumber, underlyingMarketId, minOutputAmount);
       await expectProtocolBalance(core, userVault, borrowAccountNumber, underlyingMarketId, ZERO_BI);
       await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId1, ZERO_BI);
       await expectProtocolBalance(
@@ -1750,12 +1751,11 @@ describe('IsolationModeTokenVaultV1WithFreezableAndPausable', () => {
       expect(await userVault.isExternalRedemptionPaused()).to.be.true;
 
       const inputAmount = otherAmountWei.div(2);
-      const outputAmount = amountWei.div(2);
       const zapParams = await getWrapZapParams(
         otherMarketId1,
         inputAmount,
         underlyingMarketId,
-        outputAmount,
+        ONE_ETH_BI,
         tokenWrapper,
         core,
       );
@@ -1926,6 +1926,79 @@ describe('IsolationModeTokenVaultV1WithFreezableAndPausable', () => {
           zapParams.userConfig,
         ),
         'IsolationModeVaultV1Pausable: Unacceptable trade when paused',
+      );
+    });
+
+    it('should fail if user is underwater and attempting to initiate wrapping', async () => {
+      await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await userVault.openBorrowPosition(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        amountWei,
+      );
+
+      await userVault.transferFromPositionWithOtherToken(
+        borrowAccountNumber,
+        defaultAccountNumber,
+        core.marketIds.usdc,
+        otherAmountWei,
+        BalanceCheckFlag.None,
+      );
+
+      await core.testEcosystem!.testPriceOracle.setPrice(
+        factory.address,
+        '10',
+      );
+
+      const outputAmount = otherAmountWei.div(2);
+      const zapParams = await getSimpleZapParams(
+        otherMarketId1,
+        otherAmountWei,
+        underlyingMarketId,
+        outputAmount,
+        core,
+      );
+      await expectThrow(
+        userVault.swapExactInputForOutput(
+          borrowAccountNumber,
+          zapParams.marketIdsPath,
+          zapParams.inputAmountWei,
+          zapParams.minOutputAmountWei,
+          zapParams.tradersPath,
+          zapParams.makerAccounts,
+          zapParams.userConfig,
+        ),
+        'IsolationModeVaultV1ActionsImpl: Account liquidatable',
+      );
+    });
+
+    it('should fail if min amount out is too large for wrapping', async () => {
+      await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await userVault.openBorrowPosition(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        amountWei,
+      );
+
+      const outputAmount = otherAmountWei.div(2);
+      const zapParams = await getSimpleZapParams(
+        otherMarketId1,
+        otherAmountWei,
+        underlyingMarketId,
+        outputAmount,
+        core,
+      );
+      await expectThrow(
+        userVault.swapExactInputForOutput(
+          borrowAccountNumber,
+          zapParams.marketIdsPath,
+          zapParams.inputAmountWei,
+          ONE_ETH_BI.mul('100000000'),
+          zapParams.tradersPath,
+          zapParams.makerAccounts,
+          zapParams.userConfig,
+        ),
+        'IsolationModeVaultV1ActionsImpl: minOutputAmount too large',
       );
     });
 

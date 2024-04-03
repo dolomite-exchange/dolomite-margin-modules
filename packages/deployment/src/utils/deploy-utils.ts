@@ -166,7 +166,7 @@ function findArtifactPath(parentPath: string, artifactName: string): string | un
   return undefined;
 }
 
-async function getFreshArtifactFromWorkspace(artifactName: string) {
+export async function initializeFreshArtifactFromWorkspace(artifactName: string): Promise<void> {
   const packagesPath = '../../../../packages';
   const deploymentsArtifactsPath = path.join(__dirname, packagesPath, 'deployment', 'artifacts');
   await fsExtra.remove(deploymentsArtifactsPath);
@@ -185,6 +185,7 @@ async function getFreshArtifactFromWorkspace(artifactName: string) {
         deploymentsArtifactsPath,
         { overwrite: true },
       );
+
       const artifact = JSON.parse(readFileSync(artifactPath, 'utf8'));
       await artifacts.saveArtifactAndDebugFile(artifact);
       return;
@@ -214,16 +215,16 @@ export async function deployContractAndSave(
     file = {};
   }
 
-  await getFreshArtifactFromWorkspace(contractName);
+  await initializeFreshArtifactFromWorkspace(contractName);
   const chainId = network.config.chainId!;
   const usedContractName = contractRename ?? contractName;
   if (file[usedContractName]?.[chainId.toString()]) {
     const contract = file[usedContractName][chainId.toString()];
     console.log(`\tContract ${usedContractName} has already been deployed to chainId ${chainId} (${contract.address}). Skipping...`);
-    console.log('');
     if (!contract.isVerified) {
       await prettyPrintAndVerifyContract(file, chainId, contractName, usedContractName, args, libraries ?? {});
     }
+    console.log('');
     return contract.address;
   }
 
@@ -235,7 +236,7 @@ export async function deployContractAndSave(
       ? await createContractWithLibrary(contractName, libraries, args)
       : await createContractWithName(contractName, args);
   } catch (e) {
-    console.error(`\tCould not deploy at attempt ${attempts + 1} due to error:`, e);
+    console.error(`\tCould not deploy at attempt ${attempts + 1} due for ${contractName} to error:`, e);
     return deployContractAndSave(contractName, args, contractRename, libraries, attempts + 1);
   }
 
@@ -253,6 +254,7 @@ export async function deployContractAndSave(
   }
 
   await prettyPrintAndVerifyContract(file, chainId, contractName, usedContractName, args, libraries ?? {});
+  console.log('');
 
   return contract.address;
 }
@@ -393,9 +395,9 @@ async function prettyPrintAndVerifyContract(
 
   const contract = file[contractRename][chainId.toString()];
 
-  console.log(`========================= ${contractRename} =========================`);
-  console.log('Address: ', contract.address);
-  console.log('='.repeat(52 + contractRename.length));
+  console.log(`\t========================= ${contractRename} =========================`);
+  console.log('\tAddress: ', contract.address);
+  console.log(`\t${'='.repeat(52 + contractRename.length)}`);
 
   if (!(process.env.SKIP_VERIFICATION === 'true')) {
     console.log('\tSleeping for 5s to wait for the transaction to be indexed by Etherscan...');
@@ -534,13 +536,19 @@ export interface DenJsonUpload {
   transactions: EncodedTransaction[];
 }
 
-function isOwnerFunction(methodName: string): boolean {
+function isOwnerFunction(methodName: string, isMultisig: boolean): boolean {
   return methodName.startsWith('owner')
     || methodName === 'upgradeTo'
     || methodName === 'upgradeToAndCall'
     || methodName === 'setUserVaultImplementation'
     || methodName === 'setIsTokenConverterTrusted'
-    || methodName === 'setGmxRegistry';
+    || methodName === 'setGmxRegistry'
+    || (isMultisig && methodName === 'addOwner')
+    || (isMultisig && methodName === 'changeRequirement')
+    || (isMultisig && methodName === 'changeTimelock')
+    || (isMultisig && methodName === 'removeOver')
+    || (isMultisig && methodName === 'replaceOwner')
+    || (isMultisig && methodName === 'setSelector');
 }
 
 export async function prettyPrintEncodedDataWithTypeSafety<
@@ -581,7 +589,7 @@ export async function prettyPrintEncodedDataWithTypeSafety<
 
   if (
     typeof methodName === 'string'
-    && isOwnerFunction(methodName)
+    && isOwnerFunction(methodName, transaction.to === core.delayedMultiSig.address)
     && await core.dolomiteMargin.owner() === core.delayedMultiSig.address
   ) {
     // All owner ... functions must go to Dolomite governance first
@@ -702,11 +710,11 @@ async function getReadableArg<T extends NetworkType>(
 export async function prettyPrintEncodeInsertChainlinkOracle<T extends NetworkType>(
   core: CoreProtocolWithChainlink<T>,
   token: IERC20,
-  tokenPairAddress: address = ADDRESS_ZERO,
-  aggregatorAddress: string = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address],
+  tokenPairAddress: address | undefined = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address].tokenPairAddress,
+  aggregatorAddress: string = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address].aggregatorAddress,
 ): Promise<EncodedTransaction> {
   let tokenDecimals: number;
-  if ('stEth' in core.tokens && token.address === core.tokens.stEth.address) {
+  if ('stEth' in core.tokens && token.address === (core.tokens as any).stEth.address) {
     tokenDecimals = 18;
   } else {
     tokenDecimals = await IERC20Metadata__factory.connect(token.address, core.hhUser1).decimals();
@@ -723,14 +731,14 @@ export async function prettyPrintEncodeInsertChainlinkOracle<T extends NetworkTy
   mostRecentTokenDecimals = tokenDecimals;
   return await prettyPrintEncodedDataWithTypeSafety(
     core,
-    { chainlinkPriceOracle: core.chainlinkPriceOracle },
+    { chainlinkPriceOracle: core.chainlinkPriceOracleOld },
     'chainlinkPriceOracle',
     'ownerInsertOrUpdateOracleToken',
     [
       token.address,
       tokenDecimals,
       aggregator.address,
-      tokenPairAddress,
+      tokenPairAddress ?? ADDRESS_ZERO,
     ],
   );
 }
@@ -861,7 +869,7 @@ export function writeFile(
 
 async function isValidAmount(token: IERC20, amount: BigNumberish) {
   const realAmount = BigNumber.from(amount);
-  if (realAmount.eq(ZERO_BI)) {
+  if (realAmount.eq(ZERO_BI) || realAmount.eq('1')) {
     return true;
   }
 

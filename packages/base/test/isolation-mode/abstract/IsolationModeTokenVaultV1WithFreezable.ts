@@ -1,5 +1,4 @@
 import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin/dist/src';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { BigNumber, ContractTransaction } from 'ethers';
 import {
@@ -20,7 +19,15 @@ import {
   depositIntoDolomiteMargin,
   withdrawFromDolomiteMargin,
 } from '../../../src/utils/dolomite-utils';
-import { BYTES_EMPTY, MAX_UINT_256_BI, Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
+import {
+  BYTES_EMPTY,
+  MAX_UINT_256_BI,
+  Network,
+  ONE_BI,
+  ONE_ETH_BI,
+  ZERO_BI,
+} from '../../../src/utils/no-deps-constants';
+import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import {
   expectEvent,
@@ -74,10 +81,10 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
   let factory: TestIsolationModeFactory;
   let userVaultImplementation: TestIsolationModeTokenVaultV1WithFreezable;
   let userVault: TestIsolationModeTokenVaultV1WithFreezable;
-  let impersonatedVault: SignerWithAddress;
+  let impersonatedVault: SignerWithAddressWithSafety;
   let registry: TestHandlerRegistry;
 
-  let solidUser: SignerWithAddress;
+  let solidUser: SignerWithAddressWithSafety;
   let otherToken1: CustomTestToken;
   let otherToken2: CustomTestToken;
   let otherMarketId1: BigNumber;
@@ -1159,11 +1166,12 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
       await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId2, ZERO_BI);
       await expectProtocolBalance(core, userVault, borrowAccountNumber, otherMarketId2, otherAmountWei);
 
+      const minOutputAmount = ONE_ETH_BI;
       const zapParams = await getWrapZapParams(
         otherMarketId1,
         otherAmountWei,
         underlyingMarketId,
-        amountWei,
+        minOutputAmount,
         tokenWrapper,
         core,
       );
@@ -1178,7 +1186,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
         zapParams.userConfig,
       );
 
-      await expectProtocolBalance(core, userVault, defaultAccountNumber, underlyingMarketId, amountWei);
+      await expectProtocolBalance(core, userVault, defaultAccountNumber, underlyingMarketId, minOutputAmount);
       await expectProtocolBalance(core, userVault, borrowAccountNumber, underlyingMarketId, ZERO_BI);
       await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId1, ZERO_BI);
       await expectProtocolBalance(

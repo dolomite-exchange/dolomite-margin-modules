@@ -53,7 +53,7 @@ describe('PendlePtREthJun2025PriceOracle', () => {
     );
     await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(dolomiteRegistryImplementation.address);
     await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkPriceOracle(
-      core.chainlinkPriceOracle!.address,
+      core.chainlinkPriceOracleOld!.address,
     );
 
     underlyingToken = core.tokens.weth;
@@ -130,8 +130,8 @@ describe('PendlePtREthJun2025PriceOracle', () => {
       await advanceToTimestamp(1710000000);
       await core.dolomiteRegistry.connect(core.governance)
         .ownerSetChainlinkPriceOracle(
-        core.testEcosystem!.testPriceOracle.address
-      );
+          core.testEcosystem!.testPriceOracle.address,
+        );
       const price = await ptOracle.getPrice(factory.address);
       expect(price.value).to.eq(PT_RETH_PRICE);
     });

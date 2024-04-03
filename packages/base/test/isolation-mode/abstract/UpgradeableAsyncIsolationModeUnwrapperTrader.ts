@@ -1,16 +1,23 @@
 import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin/dist/src';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { GenericEventEmissionType } from '@dolomite-exchange/dolomite-margin/dist/src/modules/GenericTraderProxyV1';
+import { GenericTraderType } from '@dolomite-exchange/zap-sdk';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
+import { parseEther } from 'ethers/lib/utils';
+import { ethers } from 'hardhat';
+import { AccountStruct } from 'packages/base/src/utils/constants';
+import {
+  getIsolationModeFreezableLiquidatorProxyConstructorParams,
+} from 'packages/base/src/utils/constructors/dolomite';
 import {
   CustomTestToken,
   EventEmitterRegistry,
   IERC20,
   TestAsyncProtocol,
+  TestAsyncProtocol__factory,
   TestAsyncProtocolIsolationModeTokenVault,
   TestAsyncProtocolIsolationModeTokenVault__factory,
   TestAsyncProtocolIsolationModeVaultFactory,
-  TestAsyncProtocol__factory,
   TestHandlerRegistry,
   TestIsolationModeFreezableLiquidatorProxy,
   TestIsolationModeFreezableLiquidatorProxy__factory,
@@ -27,12 +34,13 @@ import {
   ADDRESS_ZERO,
   BYTES_EMPTY,
   MAX_UINT_256_BI,
-  NO_EXPIRY,
   Network,
+  NO_EXPIRY,
   ONE_BI,
   ONE_ETH_BI,
   ZERO_BI,
 } from '../../../src/utils/no-deps-constants';
+import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectEvent, expectProtocolBalance, expectThrow } from '../../utils/assertions';
 import { CoreProtocolArbitrumOne } from '../../utils/core-protocol';
@@ -47,20 +55,14 @@ import {
   createTestUpgradeableAsyncIsolationModeUnwrapperTrader,
   createTestUpgradeableAsyncIsolationModeWrapperTrader,
 } from '../../utils/ecosystem-utils/testers';
+import { liquidateV4WithZapParam } from '../../utils/liquidation-utils';
 import {
   getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupTestMarket,
   setupUserVaultProxy,
 } from '../../utils/setup';
-import { ethers } from 'hardhat';
-import { GenericTraderType } from '@dolomite-exchange/zap-sdk';
-import { GenericEventEmissionType } from '@dolomite-exchange/dolomite-margin/dist/src/modules/GenericTraderProxyV1';
-import { getIsolationModeFreezableLiquidatorProxyConstructorParams } from 'packages/base/src/utils/constructors/dolomite';
-import { parseEther } from 'ethers/lib/utils';
 import { getLiquidateIsolationModeZapPath, getUnwrapZapParams } from '../../utils/zap-utils';
-import { AccountStruct } from 'packages/base/src/utils/constants';
-import { liquidateV4WithZapParam } from '../../utils/liquidation-utils';
 
 const defaultAccountNumber = '0';
 const borrowAccountNumber = '123';
@@ -75,7 +77,7 @@ const bigOtherAmountWei = BigNumber.from('100000000000'); // $100,000
 const gasLimit = process.env.COVERAGE !== 'true' ? 10_000_000 : 100_000_000;
 const DEFAULT_ORDER_DATA = ethers.utils.defaultAbiCoder.encode(
   ['uint256', 'bytes'],
-  [ONE_BI, ethers.utils.defaultAbiCoder.encode(['uint256', 'bytes'], [0, '0x'])]
+  [ONE_BI, ethers.utils.defaultAbiCoder.encode(['uint256', 'bytes'], [0, '0x'])],
 );
 
 enum FreezeType {
@@ -102,13 +104,12 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
   let factory: TestAsyncProtocolIsolationModeVaultFactory;
   let userVaultImplementation: TestAsyncProtocolIsolationModeTokenVault;
   let userVault: TestAsyncProtocolIsolationModeTokenVault;
-  let impersonatedVault: SignerWithAddress;
-  let doloMarginImpersonator: SignerWithAddress;
+  let doloMarginImpersonator: SignerWithAddressWithSafety;
   let registry: TestHandlerRegistry;
   let liquidatorProxy: TestIsolationModeFreezableLiquidatorProxy;
   let asyncProtocol: TestAsyncProtocol;
 
-  let solidUser: SignerWithAddress;
+  let solidUser: SignerWithAddressWithSafety;
   let solidAccount: AccountStruct;
   let liquidAccount: AccountStruct;
   let otherToken1: CustomTestToken;
@@ -121,20 +122,20 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
     asyncProtocol = await createContractWithAbi<TestAsyncProtocol>(
       TestAsyncProtocol__factory.abi,
       TestAsyncProtocol__factory.bytecode,
-      []
+      [],
     );
 
     liquidatorProxy = await createContractWithAbi<TestIsolationModeFreezableLiquidatorProxy>(
       TestIsolationModeFreezableLiquidatorProxy__factory.abi,
       TestIsolationModeFreezableLiquidatorProxy__factory.bytecode,
-      getIsolationModeFreezableLiquidatorProxyConstructorParams(core)
+      getIsolationModeFreezableLiquidatorProxyConstructorParams(core),
     );
 
     const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
     userVaultImplementation = await createContractWithLibrary<TestAsyncProtocolIsolationModeTokenVault>(
       'TestAsyncProtocolIsolationModeTokenVault',
       libraries,
-      [asyncProtocol.address, core.tokens.weth.address]
+      [asyncProtocol.address, core.tokens.weth.address],
     );
     registry = await createTestHandlerRegistry(core);
     underlyingToken = asyncProtocol;
@@ -143,7 +144,7 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
       registry,
       core,
       asyncProtocol,
-      userVaultImplementation
+      userVaultImplementation,
     );
     await core.testEcosystem!.testPriceOracle.setPrice(factory.address, price);
 
@@ -166,7 +167,7 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
       core,
       registry,
       factory,
-      asyncProtocol
+      asyncProtocol,
     );
     tokenWrapper = await createTestUpgradeableAsyncIsolationModeWrapperTrader(core, registry, factory, asyncProtocol);
     await factory.connect(core.governance).ownerInitialize([tokenUnwrapper.address, tokenWrapper.address]);
@@ -185,7 +186,7 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
     await core.liquidatorAssetRegistry.ownerAddLiquidatorToAssetWhitelist(underlyingMarketId, liquidatorProxy.address);
     await core.liquidatorAssetRegistry.ownerAddLiquidatorToAssetWhitelist(
       underlyingMarketId,
-      core.liquidatorProxyV4.address
+      core.liquidatorProxyV4.address,
     );
 
     await factory.createVault(core.hhUser1.address);
@@ -193,7 +194,7 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
     userVault = setupUserVaultProxy<TestAsyncProtocolIsolationModeTokenVault>(
       vaultAddress,
       TestAsyncProtocolIsolationModeTokenVault__factory,
-      core.hhUser1
+      core.hhUser1,
     );
 
     await otherToken1.addBalance(asyncProtocol.address, amountWei.mul(10));
@@ -211,7 +212,6 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
     await otherToken2.connect(solidUser).approve(core.dolomiteMargin.address, bigOtherAmountWei);
     await depositIntoDolomiteMargin(core, solidUser, defaultAccountNumber, otherMarketId2, bigOtherAmountWei);
 
-    impersonatedVault = await impersonate(userVault.address, true);
     doloMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
     solidAccount = { owner: core.hhUser5.address, number: defaultAccountNumber };
     liquidAccount = { owner: userVault.address, number: borrowAccountNumber };
@@ -230,7 +230,7 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
         borrowAccountNumber,
         otherMarketId1,
         amountWei,
-        BalanceCheckFlag.Both
+        BalanceCheckFlag.Both,
       );
       await expectProtocolBalance(core, userVault.address, borrowAccountNumber, otherMarketId1, amountWei);
       await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, otherMarketId1, ZERO_BI);
@@ -241,7 +241,7 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
         underlyingMarketId,
         amountWei,
         tokenWrapper,
-        ZERO_BI
+        ZERO_BI,
       );
       await userVault.swapExactInputForOutput(
         borrowAccountNumber,
@@ -250,7 +250,7 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
         initiateWrappingParams.minAmountOut,
         initiateWrappingParams.traderParams,
         initiateWrappingParams.makerAccounts,
-        initiateWrappingParams.userConfig
+        initiateWrappingParams.userConfig,
       );
       const key = (await asyncProtocol.queryFilter(await asyncProtocol.filters.DepositCreated()))[0].args.key;
       await asyncProtocol.executeDeposit(key, 0);
@@ -263,7 +263,7 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
         defaultAccountNumber,
         otherMarketId2,
         borrowAmount,
-        BalanceCheckFlag.To
+        BalanceCheckFlag.To,
       );
       await expectProtocolBalance(core, userVault.address, borrowAccountNumber, underlyingMarketId, amountWei);
       await expectProtocolBalance(
@@ -271,7 +271,7 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
         userVault.address,
         borrowAccountNumber,
         otherMarketId2,
-        ZERO_BI.sub(borrowAmount)
+        ZERO_BI.sub(borrowAmount),
       );
       await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, otherMarketId2, borrowAmount);
     }
@@ -317,7 +317,7 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
       const tradeTypes = [UnwrapperTradeType.FromWithdrawal];
       const liquidationData = ethers.utils.defaultAbiCoder.encode(
         ['uint8[]', 'bytes32[]', 'bool'],
-        [tradeTypes, allKeys, true]
+        [tradeTypes, allKeys, true],
       );
       const zapParam = await getUnwrapZapParams(
         underlyingMarketId,
@@ -325,14 +325,14 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
         otherMarketId2,
         ONE_BI,
         tokenUnwrapper,
-        core
+        core,
       );
       zapParam.tradersPath[0].tradeData = liquidationData;
       await liquidateV4WithZapParam(
         core,
         solidAccount,
         liquidAccount,
-        zapParam
+        zapParam,
       );
     });
 
@@ -360,7 +360,7 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
       const tradeTypes = [UnwrapperTradeType.FromWithdrawal];
       const liquidationData = ethers.utils.defaultAbiCoder.encode(
         ['uint8[]', 'bytes32[]', 'bool'],
-        [tradeTypes, allKeys, false]
+        [tradeTypes, allKeys, false],
       );
       const zapParam = await getUnwrapZapParams(
         underlyingMarketId,
@@ -368,14 +368,14 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
         otherMarketId2,
         ONE_BI,
         tokenUnwrapper,
-        core
+        core,
       );
       zapParam.tradersPath[0].tradeData = liquidationData;
       await liquidateV4WithZapParam(
         core,
         solidAccount,
         liquidAccount,
-        zapParam
+        zapParam,
       );
     });
 
@@ -391,7 +391,7 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
         defaultAccountNumber,
         otherMarketId2,
         borrowAmount,
-        BalanceCheckFlag.To
+        BalanceCheckFlag.To,
       );
 
       await core.testEcosystem!.testPriceOracle.setPrice(factory.address, price.mul(95).div(100));
@@ -429,7 +429,7 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
       const tradeTypes = [UnwrapperTradeType.FromWithdrawal];
       const liquidationData = ethers.utils.defaultAbiCoder.encode(
         ['uint8[]', 'bytes32[]', 'bool'],
-        [tradeTypes, allKeys, true]
+        [tradeTypes, allKeys, true],
       );
       const zapParam = await getUnwrapZapParams(
         underlyingMarketId,
@@ -437,7 +437,7 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
         otherMarketId2,
         ONE_BI,
         tokenUnwrapper,
-        core
+        core,
       );
       zapParam.tradersPath[0].tradeData = liquidationData;
       await expectThrow(
@@ -445,9 +445,9 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
           core,
           solidAccount,
           liquidAccount,
-          zapParam
+          zapParam,
         ),
-        'AsyncIsolationModeUnwrapperImpl: Cant liquidate other subaccount'
+        'AsyncIsolationModeUnwrapperImpl: Cant liquidate other subaccount',
       );
     });
 
@@ -471,7 +471,7 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
       const tradeTypes = [UnwrapperTradeType.FromWithdrawal];
       const liquidationData = ethers.utils.defaultAbiCoder.encode(
         ['uint8[]', 'bytes32[]', 'bool'],
-        [tradeTypes, allKeys, true]
+        [tradeTypes, allKeys, true],
       );
       const zapParam = await getUnwrapZapParams(
         underlyingMarketId,
@@ -479,7 +479,7 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
         otherMarketId2,
         ONE_BI,
         tokenUnwrapper,
-        core
+        core,
       );
       zapParam.tradersPath[0].tradeData = liquidationData;
       await expectThrow(
@@ -487,9 +487,9 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
           core,
           solidAccount,
           liquidAccount,
-          zapParam
+          zapParam,
         ),
-        'AsyncIsolationModeUnwrapperImpl: All trades must be retryable'
+        'AsyncIsolationModeUnwrapperImpl: All trades must be retryable',
       );
     });
 
@@ -515,7 +515,7 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
       const tradeTypes = [UnwrapperTradeType.FromWithdrawal];
       const liquidationData = ethers.utils.defaultAbiCoder.encode(
         ['uint8[]', 'bytes32[]', 'bool'],
-        [tradeTypes, allKeys, true]
+        [tradeTypes, allKeys, true],
       );
       const zapParam = await getUnwrapZapParams(
         underlyingMarketId,
@@ -523,7 +523,7 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
         otherMarketId2,
         amountWei.div(2),
         tokenUnwrapper,
-        core
+        core,
       );
       zapParam.tradersPath[0].tradeData = liquidationData;
       // Throws with insufficient output amount
@@ -532,7 +532,7 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
           core,
           solidAccount,
           liquidAccount,
-          zapParam
+          zapParam,
         ),
       );
     });
@@ -541,11 +541,11 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
       await setupBalances();
       await core.testEcosystem!.testPriceOracle.setPrice(
         factory.address,
-        '10000000000000000' // $1.00
+        '10000000000000000', // $1.00
       );
       await core.testEcosystem!.testPriceOracle.setPrice(
         otherToken2.address,
-        '10000000000000000000' // $1000.00
+        '10000000000000000000', // $1000.00
       );
       const extraData = ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [parseEther('.5'), ONE_BI]);
       await liquidatorProxy.prepareForLiquidation({
@@ -565,13 +565,13 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
       const tradeTypes = [UnwrapperTradeType.FromWithdrawal];
       const liquidationData = ethers.utils.defaultAbiCoder.encode(
         ['uint8[]', 'bytes32[]', 'bool'],
-        [tradeTypes, allKeys, false]
+        [tradeTypes, allKeys, false],
       );
       const zapParam = await getLiquidateIsolationModeZapPath(
         [underlyingMarketId, otherMarketId1, otherMarketId2],
         [amountWei, amountWei.div(4), amountWei.div(4)],
         tokenUnwrapper,
-        core
+        core,
       );
       zapParam.tradersPath[0].tradeData = liquidationData;
       await expectThrow(
@@ -579,9 +579,9 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
           core,
           solidAccount,
           liquidAccount,
-          zapParam
+          zapParam,
         ),
-        'AsyncIsolationModeUnwrapperImpl: Output token mismatch'
+        'AsyncIsolationModeUnwrapperImpl: Output token mismatch',
       );
     });
   });
@@ -596,7 +596,7 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
     it('should not initialize twice', async () => {
       await expectThrow(
         tokenUnwrapper.initialize(factory.address, registry.address, core.dolomiteMargin.address),
-        'Initializable: contract is already initialized'
+        'Initializable: contract is already initialized',
       );
     });
   });
@@ -612,7 +612,7 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
         amount,
         otherToken1.address,
         ONE_BI,
-        DEFAULT_ORDER_DATA
+        DEFAULT_ORDER_DATA,
       );
     }
 
@@ -621,15 +621,15 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
       const key = (await asyncProtocol.queryFilter(await asyncProtocol.filters.WithdrawalCreated()))[0].args.key;
       const orderData = ethers.utils.defaultAbiCoder.encode(
         ['uint256', 'uint256', 'address', 'uint256', 'uint256[]', 'bytes32[]'],
-        [0, amountWei, userVault.address, borrowAccountNumber, [0, 0], [DEFAULT_KEY, key]]
+        [0, amountWei, userVault.address, borrowAccountNumber, [0, 0], [DEFAULT_KEY, key]],
       );
       await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
       await expect(
         tokenUnwrapper.connect(doloMarginImpersonator).callFunction(
           core.hhUser5.address,
           { owner: core.hhUser1.address, number: defaultAccountNumber },
-          orderData
-      )).to.not.be.reverted;
+          orderData,
+        )).to.not.be.reverted;
     });
 
     it('should fail if input amount is greater than zero but vault does not exist', async () => {
@@ -641,20 +641,20 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
         otherToken1.address,
         ONE_BI,
         false,
-        BYTES_EMPTY
+        BYTES_EMPTY,
       );
       const orderData = ethers.utils.defaultAbiCoder.encode(
         ['uint256', 'uint256', 'address', 'uint256', 'uint256[]', 'bytes32[]'],
-        [0, amountWei, userVault.address, borrowAccountNumber, [0], [DEFAULT_KEY]]
+        [0, amountWei, userVault.address, borrowAccountNumber, [0], [DEFAULT_KEY]],
       );
       await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
       await expectThrow(
         tokenUnwrapper.connect(doloMarginImpersonator).callFunction(
           core.hhUser5.address,
           { owner: core.hhUser1.address, number: defaultAccountNumber },
-          orderData
+          orderData,
         ),
-        `AsyncIsolationModeUnwrapperImpl: Invalid account owner <${userVault.address.toLowerCase()}>`
+        `AsyncIsolationModeUnwrapperImpl: Invalid account owner <${userVault.address.toLowerCase()}>`,
       );
     });
 
@@ -663,16 +663,16 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
       const key = (await asyncProtocol.queryFilter(await asyncProtocol.filters.WithdrawalCreated()))[0].args.key;
       const orderData = ethers.utils.defaultAbiCoder.encode(
         ['uint256', 'uint256', 'address', 'uint256', 'uint256[]', 'bytes32[]'],
-        [0, MAX_UINT_256_BI.sub(2), userVault.address, defaultAccountNumber, [0], [key]]
+        [0, MAX_UINT_256_BI.sub(2), userVault.address, defaultAccountNumber, [0], [key]],
       );
       await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
       await expectThrow(
         tokenUnwrapper.connect(doloMarginImpersonator).callFunction(
           core.hhUser5.address,
           { owner: core.hhUser1.address, number: defaultAccountNumber },
-          orderData
+          orderData,
         ),
-        `AsyncIsolationModeUnwrapperImpl: Insufficient balance <${amountWei}, ${MAX_UINT_256_BI.sub(2).toString()}>`
+        `AsyncIsolationModeUnwrapperImpl: Insufficient balance <${amountWei}, ${MAX_UINT_256_BI.sub(2).toString()}>`,
       );
     });
 
@@ -681,16 +681,16 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
       const key = (await asyncProtocol.queryFilter(await asyncProtocol.filters.WithdrawalCreated()))[0].args.key;
       const orderData = ethers.utils.defaultAbiCoder.encode(
         ['uint256', 'uint256', 'address', 'uint256', 'uint256[]', 'bytes32[]'],
-        [0, 0, userVault.address, defaultAccountNumber, [0], [key]]
+        [0, 0, userVault.address, defaultAccountNumber, [0], [key]],
       );
       await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
       await expectThrow(
         tokenUnwrapper.connect(doloMarginImpersonator).callFunction(
           core.hhUser5.address,
           { owner: core.hhUser1.address, number: defaultAccountNumber },
-          orderData
+          orderData,
         ),
-        'AsyncIsolationModeUnwrapperImpl: Invalid transfer amount'
+        'AsyncIsolationModeUnwrapperImpl: Invalid transfer amount',
       );
     });
 
@@ -699,32 +699,32 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
       const key = (await asyncProtocol.queryFilter(await asyncProtocol.filters.WithdrawalCreated()))[0].args.key;
       const orderData = ethers.utils.defaultAbiCoder.encode(
         ['uint256', 'uint256', 'address', 'uint256', 'uint256[]', 'bytes32[]'],
-        [0, 2, userVault.address, defaultAccountNumber, [0], [key]]
+        [0, 2, userVault.address, defaultAccountNumber, [0], [key]],
       );
       await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
       await expectThrow(
         tokenUnwrapper.connect(doloMarginImpersonator).callFunction(
           core.hhUser5.address,
           { owner: core.hhUser1.address, number: defaultAccountNumber },
-          orderData
+          orderData,
         ),
-        'AsyncIsolationModeUnwrapperImpl: Invalid transfer amount'
+        'AsyncIsolationModeUnwrapperImpl: Invalid transfer amount',
       );
     });
 
     it('should fail if vault does not exist', async () => {
       const orderData = ethers.utils.defaultAbiCoder.encode(
         ['uint256', 'uint256', 'address', 'uint256', 'uint256[]', 'bytes32[]'],
-        [0, 0, core.hhUser1.address, defaultAccountNumber, [1], [DEFAULT_KEY]]
+        [0, 0, core.hhUser1.address, defaultAccountNumber, [1], [DEFAULT_KEY]],
       );
       await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
       await expectThrow(
         tokenUnwrapper.connect(doloMarginImpersonator).callFunction(
           core.hhUser5.address,
           { owner: core.hhUser1.address, number: defaultAccountNumber },
-          orderData
+          orderData,
         ),
-        `AsyncIsolationModeUnwrapperImpl: Invalid vault <${core.hhUser1.address.toLowerCase()}>`
+        `AsyncIsolationModeUnwrapperImpl: Invalid vault <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
@@ -734,9 +734,9 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
         tokenUnwrapper.connect(core.hhUser1).callFunction(
           core.hhUser5.address,
           { owner: userVault.address, number: defaultAccountNumber },
-          BYTES_EMPTY
+          BYTES_EMPTY,
         ),
-        `OnlyDolomiteMargin: Only Dolomite can call function <${core.hhUser1.address.toLowerCase()}>`
+        `OnlyDolomiteMargin: Only Dolomite can call function <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
@@ -745,9 +745,9 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
         tokenUnwrapper.connect(doloMarginImpersonator).callFunction(
           core.hhUser1.address,
           { owner: userVault.address, number: defaultAccountNumber },
-          BYTES_EMPTY
+          BYTES_EMPTY,
         ),
-        `OnlyDolomiteMargin: Caller is not a global operator <${core.hhUser1.address.toLowerCase()}>`
+        `OnlyDolomiteMargin: Caller is not a global operator <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
@@ -763,7 +763,7 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
         amountWei,
         otherToken1.address,
         ONE_BI,
-        DEFAULT_ORDER_DATA
+        DEFAULT_ORDER_DATA,
       );
       const key = (await asyncProtocol.queryFilter(await asyncProtocol.filters.WithdrawalCreated()))[0].args.key;
       const orderData = ethers.utils.defaultAbiCoder.encode(
@@ -772,9 +772,9 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
           ONE_BI,
           ethers.utils.defaultAbiCoder.encode(
             ['uint8[]', 'bytes32[]'],
-            [[0, 0], [RANDOM_KEY, key]]
+            [[0, 0], [RANDOM_KEY, key]],
           ),
-        ]
+        ],
       );
       await asyncProtocol.addBalance(tokenUnwrapper.address, amountWei);
       await expect(
@@ -784,8 +784,8 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
           otherToken1.address,
           factory.address,
           amountWei,
-          orderData
-        )
+          orderData,
+        ),
       ).to.not.be.reverted;
     });
 
@@ -796,7 +796,7 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
         borrowAccountNumber,
         otherMarketId1,
         amountWei,
-        BalanceCheckFlag.Both
+        BalanceCheckFlag.Both,
       );
       const initiateWrappingParams = await getInitiateWrappingParams(
         borrowAccountNumber,
@@ -805,7 +805,7 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
         underlyingMarketId,
         amountWei,
         tokenWrapper,
-        ZERO_BI
+        ZERO_BI,
       );
       await userVault.swapExactInputForOutput(
         borrowAccountNumber,
@@ -814,7 +814,7 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
         initiateWrappingParams.minAmountOut,
         initiateWrappingParams.traderParams,
         initiateWrappingParams.makerAccounts,
-        initiateWrappingParams.userConfig
+        initiateWrappingParams.userConfig,
       );
       const key = (await asyncProtocol.queryFilter(await asyncProtocol.filters.DepositCreated()))[0].args.key;
       const orderData = ethers.utils.defaultAbiCoder.encode(
@@ -826,9 +826,9 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
             [
               [1, 1],
               [RANDOM_KEY, key],
-            ]
+            ],
           ),
-        ]
+        ],
       );
       await asyncProtocol.addBalance(tokenUnwrapper.address, amountWei);
       await expect(
@@ -838,8 +838,8 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
           otherToken1.address,
           factory.address,
           amountWei,
-          orderData
-        )
+          orderData,
+        ),
       ).to.not.be.reverted;
     });
 
@@ -851,9 +851,9 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
           otherToken1.address,
           core.tokens.weth.address,
           amountWei,
-          DEFAULT_ORDER_DATA
+          DEFAULT_ORDER_DATA,
         ),
-        `UpgradeableUnwrapperTraderV2: Invalid input token <${core.tokens.weth.address.toLowerCase()}>`
+        `UpgradeableUnwrapperTraderV2: Invalid input token <${core.tokens.weth.address.toLowerCase()}>`,
       );
     });
 
@@ -865,9 +865,9 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
           core.tokens.weth.address,
           factory.address,
           amountWei,
-          DEFAULT_ORDER_DATA
+          DEFAULT_ORDER_DATA,
         ),
-        `UpgradeableUnwrapperTraderV2: Invalid output token <${core.tokens.weth.address.toLowerCase()}>`
+        `UpgradeableUnwrapperTraderV2: Invalid output token <${core.tokens.weth.address.toLowerCase()}>`,
       );
     });
 
@@ -879,9 +879,9 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
           otherToken1.address,
           factory.address,
           ZERO_BI,
-          DEFAULT_ORDER_DATA
+          DEFAULT_ORDER_DATA,
         ),
-        'UpgradeableUnwrapperTraderV2: Invalid input amount'
+        'UpgradeableUnwrapperTraderV2: Invalid input amount',
       );
     });
 
@@ -893,9 +893,9 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
           otherToken1.address,
           factory.address,
           amountWei,
-          DEFAULT_ORDER_DATA
+          DEFAULT_ORDER_DATA,
         ),
-        `OnlyDolomiteMargin: Only Dolomite can call function <${core.hhUser1.address.toLowerCase()}>`
+        `OnlyDolomiteMargin: Only Dolomite can call function <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
@@ -906,28 +906,28 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
         factory.address,
         otherToken1.address,
         ONE_BI,
-        BYTES_EMPTY
+        BYTES_EMPTY,
       )).to.eq(ONE_BI);
     });
 
     it('should fail if invalid input token', async () => {
       await expectThrow(
         tokenUnwrapper.getExchangeCost(core.tokens.weth.address, otherToken1.address, ONE_BI, BYTES_EMPTY),
-        `UpgradeableUnwrapperTraderV2: Invalid input token <${core.tokens.weth.address.toLowerCase()}>`
+        `UpgradeableUnwrapperTraderV2: Invalid input token <${core.tokens.weth.address.toLowerCase()}>`,
       );
     });
 
     it('should fail if invalid output token', async () => {
       await expectThrow(
         tokenUnwrapper.getExchangeCost(factory.address, core.tokens.weth.address, ONE_BI, BYTES_EMPTY),
-        `UpgradeableUnwrapperTraderV2: Invalid output token <${core.tokens.weth.address.toLowerCase()}>`
+        `UpgradeableUnwrapperTraderV2: Invalid output token <${core.tokens.weth.address.toLowerCase()}>`,
       );
     });
 
     it('should fail if invalid input amount', async () => {
       await expectThrow(
         tokenUnwrapper.getExchangeCost(factory.address, otherToken1.address, ZERO_BI, BYTES_EMPTY),
-        'UpgradeableUnwrapperTraderV2: Invalid desired input amount'
+        'UpgradeableUnwrapperTraderV2: Invalid desired input amount',
       );
     });
   });
@@ -945,7 +945,7 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
         amountWei,
         otherToken1.address,
         amountWei,
-        DEFAULT_ORDER_DATA
+        DEFAULT_ORDER_DATA,
       );
     }
 
@@ -985,7 +985,7 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
         amountWei,
         otherToken1.address,
         amountWei,
-        DEFAULT_ORDER_DATA
+        DEFAULT_ORDER_DATA,
       );
       await userVault.setRevertFlag(2);
       const key = (await asyncProtocol.queryFilter(await asyncProtocol.filters.WithdrawalCreated()))[0].args.key;
@@ -1001,14 +1001,14 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
       await registry.connect(core.governance).ownerSetIsHandler(core.hhUser5.address, true);
       await expectThrow(
         tokenUnwrapper.connect(core.hhUser5).executeWithdrawalForRetry(DEFAULT_KEY),
-        'UpgradeableUnwrapperTraderV2: Invalid withdrawal key'
+        'UpgradeableUnwrapperTraderV2: Invalid withdrawal key',
       );
     });
 
     it('should fail if not called by handler', async () => {
       await expectThrow(
         tokenUnwrapper.connect(core.hhUser1).executeWithdrawalForRetry(DEFAULT_KEY),
-        `AsyncIsolationModeTraderBase: Only handler can call <${core.hhUser1.address.toLowerCase()}>`
+        `AsyncIsolationModeTraderBase: Only handler can call <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
@@ -1016,7 +1016,7 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
       await registry.connect(core.governance).ownerSetIsHandler(core.hhUser5.address, true);
       await expectThrow(
         tokenUnwrapper.connect(core.hhUser5).callExecuteWithdrawalForRetryAndTriggerReentrancy(DEFAULT_KEY),
-        'AsyncIsolationModeUnwrapperImpl: Reentrant call'
+        'AsyncIsolationModeUnwrapperImpl: Reentrant call',
       );
     });
   });
@@ -1034,7 +1034,7 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
         amountWei,
         otherToken1.address,
         amountWei,
-        DEFAULT_ORDER_DATA
+        DEFAULT_ORDER_DATA,
       );
       const key = (await asyncProtocol.queryFilter(await asyncProtocol.filters.WithdrawalCreated()))[0].args.key;
       await userVault.cancelWithdrawal(key);
@@ -1071,7 +1071,7 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
           inputAmount: amountWei,
           orderData: BYTES_EMPTY,
         }),
-        `AsyncIsolationModeUnwrapperImpl: Invalid input market <${core.marketIds.weth}>`
+        `AsyncIsolationModeUnwrapperImpl: Invalid input market <${core.marketIds.weth}>`,
       );
     });
 
@@ -1090,14 +1090,14 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
           inputAmount: amountWei,
           orderData: BYTES_EMPTY,
         }),
-        `AsyncIsolationModeUnwrapperImpl: Invalid output market <${core.marketIds.weth}>`
+        `AsyncIsolationModeUnwrapperImpl: Invalid output market <${core.marketIds.weth}>`,
       );
     });
 
     it('should fail if invalid order data', async () => {
       const orderData = ethers.utils.defaultAbiCoder.encode(
         ['uint256[]', 'bytes32[]', 'bool'],
-        [[0, 0], [DEFAULT_KEY], false]
+        [[0, 0], [DEFAULT_KEY], false],
       );
       await expectThrow(
         tokenUnwrapper.createActionsForUnwrapping({
@@ -1113,14 +1113,14 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
           minOutputAmount: ONE_BI,
           inputAmount: amountWei,
         }),
-        'AsyncIsolationModeUnwrapperImpl: Invalid unwrapping order data'
+        'AsyncIsolationModeUnwrapperImpl: Invalid unwrapping order data',
       );
     });
 
     it('should fail if invalid input amound', async () => {
       const orderData = ethers.utils.defaultAbiCoder.encode(
         ['uint256[]', 'bytes32[]', 'bool'],
-        [[0], [DEFAULT_KEY], false]
+        [[0], [DEFAULT_KEY], false],
       );
       await expectThrow(
         tokenUnwrapper.createActionsForUnwrapping({
@@ -1136,14 +1136,14 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
           minOutputAmount: ONE_BI,
           inputAmount: ZERO_BI,
         }),
-        'AsyncIsolationModeUnwrapperImpl: Invalid input amount'
+        'AsyncIsolationModeUnwrapperImpl: Invalid input amount',
       );
     });
 
     it('should fail if trades are not retryable', async () => {
       const orderData = ethers.utils.defaultAbiCoder.encode(
         ['uint256[]', 'bytes32[]', 'bool'],
-        [[0], [DEFAULT_KEY], false]
+        [[0], [DEFAULT_KEY], false],
       );
       await expectThrow(
         tokenUnwrapper.createActionsForUnwrapping({
@@ -1159,7 +1159,7 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
           minOutputAmount: ONE_BI,
           inputAmount: amountWei,
         }),
-        'AsyncIsolationModeUnwrapperImpl: All trades must be retryable'
+        'AsyncIsolationModeUnwrapperImpl: All trades must be retryable',
       );
     });
   });
@@ -1178,7 +1178,7 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
     it('should fail if vault does not exist', async () => {
       await expectThrow(
         tokenUnwrapper.testValidateVaultExists(factory.address, core.hhUser1.address),
-        `UpgradeableUnwrapperTraderV2: Invalid vault <${core.hhUser1.address.toLowerCase()}>`
+        `UpgradeableUnwrapperTraderV2: Invalid vault <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
@@ -1192,7 +1192,7 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
     it('should fail if balance is not sufficient', async () => {
       await expectThrow(
         tokenUnwrapper.testValidateIsBalanceSufficient(212),
-        'UpgradeableUnwrapperTraderV2: Insufficient input token <0, 212>'
+        'UpgradeableUnwrapperTraderV2: Insufficient input token <0, 212>',
       );
     });
   });
@@ -1204,7 +1204,7 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
     marketId2: BigNumberish,
     minAmountOut: BigNumberish,
     wrapper: TestUpgradeableAsyncIsolationModeWrapperTrader,
-    executionFee: BigNumberish
+    executionFee: BigNumberish,
   ): any {
     return {
       accountNumber,

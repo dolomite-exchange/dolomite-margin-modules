@@ -1,12 +1,13 @@
 import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import { GmToken } from '@dolomite-exchange/modules-base/test/utils/ecosystem-utils/gmx';
 import { BigNumber, BigNumberish } from 'ethers';
+import { parseEther } from 'ethers/lib/utils';
 import {
   GmxV2IsolationModeTokenVaultV1,
   GmxV2IsolationModeUnwrapperTraderV2,
   GmxV2IsolationModeVaultFactory,
   GmxV2IsolationModeWrapperTraderV2,
   GmxV2Registry,
-  IGmxMarketToken,
   IGmxV2IsolationModeVaultFactory,
   IGmxV2Registry,
 } from './types';
@@ -38,7 +39,8 @@ export async function getGmxV2RegistryConstructorParams(
   ];
 }
 
-export const GMX_V2_EXECUTION_FEE = BigNumber.from('13627562862500000');
+export const GMX_V2_EXECUTION_FEE = parseEther('0.005');
+export const GMX_V2_EXECUTION_FEE_FOR_TESTS = parseEther('0.015');
 export const GMX_V2_CALLBACK_GAS_LIMIT = BigNumber.from('2000000');
 
 export function getGmxV2IsolationModeVaultFactoryConstructorParams(
@@ -46,7 +48,7 @@ export function getGmxV2IsolationModeVaultFactoryConstructorParams(
   gmxRegistry: IGmxV2Registry,
   debtMarketIds: BigNumberish[],
   collateralMarketIds: BigNumberish[],
-  gmToken: IGmxMarketToken,
+  gmToken: GmToken,
   userVaultImplementation: GmxV2IsolationModeTokenVaultV1,
   executionFee: BigNumberish,
 ): any[] {
@@ -57,12 +59,12 @@ export function getGmxV2IsolationModeVaultFactoryConstructorParams(
   return [
     gmxRegistry.address,
     executionFee,
-    [
-      gmToken.address,
-      core.tokens.weth.address,
-      core.tokens.nativeUsdc!.address,
-      core.tokens.weth.address,
-    ],
+    {
+      marketToken: gmToken.marketToken.address,
+      indexToken: gmToken.indexToken.address,
+      shortToken: gmToken.shortToken.address,
+      longToken: gmToken.longToken.address,
+    },
     debtMarketIds,
     collateralMarketIds,
     core.borrowPositionProxyV2.address,
@@ -121,4 +123,14 @@ export function getGmxV2MarketTokenPriceOracleConstructorParams(
     gmxRegistryV2.address,
     core.dolomiteMargin.address,
   ];
+}
+
+export function getGmxV2IsolationModeTokenVaultConstructorParams(
+  core: CoreProtocolArbitrumOne,
+): any[] {
+  if (!core.gmxEcosystem) {
+    throw new Error('Gmx ecosystem not initialized');
+  }
+
+  return [core.tokens.weth.address, core.config.network];
 }

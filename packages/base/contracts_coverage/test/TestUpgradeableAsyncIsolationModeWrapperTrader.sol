@@ -79,12 +79,12 @@ contract TestUpgradeableAsyncIsolationModeWrapperTrader is
     }
 
     function _createDepositWithExternalProtocol(
-        address _vault,
-        address _outputTokenUnderlying,
-        uint256 _minOutputAmount,
+        address /* _vault */,
+        address /* _outputTokenUnderlying */,
+        uint256 /* _minOutputAmount */,
         address _inputToken,
         uint256 _inputAmount,
-        bytes memory _extraOrderData
+        bytes memory /* _extraOrderData */
     ) internal override returns (bytes32) {
         IERC20(_inputToken).approve(address(TEST_ASYNC_PROTOCOL), _inputAmount);
         bytes32 key = TEST_ASYNC_PROTOCOL.createDeposit(_inputToken, _inputAmount);

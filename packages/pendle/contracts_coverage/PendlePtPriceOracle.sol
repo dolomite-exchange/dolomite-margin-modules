@@ -28,8 +28,6 @@ import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/I
 import { IPendleRegistry } from "./interfaces/IPendleRegistry.sol";
 
 
-
-
 /**
  * @title   PendlePtPriceOracle
  * @author  Dolomite
@@ -105,7 +103,7 @@ contract PendlePtPriceOracle is IDolomitePriceOracle {
 
     // ============================ Internal Functions ============================
 
-    function _getCurrentPrice() internal view returns (uint256) {
+    function _getCurrentPrice() internal view virtual returns (uint256) {
         uint256 underlyingPrice = REGISTRY.dolomiteRegistry().chainlinkPriceOracle().getPrice(UNDERLYING_TOKEN).value;
         uint256 ptExchangeRate = REGISTRY.ptOracle().getPtToAssetRate(address(REGISTRY.ptMarket()), TWAP_DURATION);
         return underlyingPrice * ptExchangeRate / PT_ASSET_SCALE;

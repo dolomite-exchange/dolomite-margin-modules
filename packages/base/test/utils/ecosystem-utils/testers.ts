@@ -1,5 +1,4 @@
 import { TestInterestSetter, TestInterestSetter__factory } from '@dolomite-exchange/modules-interest-setters/src/types';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { BigNumberish } from 'ethers';
 import { network } from 'hardhat';
 import {
@@ -34,11 +33,12 @@ import {
 } from '../../../src/types';
 import { createContractWithAbi, createContractWithLibrary } from '../../../src/utils/dolomite-utils';
 import { NetworkType } from '../../../src/utils/no-deps-constants';
+import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';
 import {
   createAsyncIsolationModeUnwrapperTraderImpl,
   createAsyncIsolationModeWrapperTraderImpl,
   createRegistryProxy,
-  DolomiteMargin
+  DolomiteMargin,
 } from '../dolomite';
 import { CoreProtocolType } from '../setup';
 
@@ -189,7 +189,7 @@ export async function createTestUpgradeableAsyncIsolationModeUnwrapperTrader<T e
 
 export async function createTestEcosystem<T extends NetworkType>(
   dolomiteMargin: DolomiteMargin<T>,
-  signer: SignerWithAddress,
+  signer: SignerWithAddressWithSafety,
 ): Promise<TestEcosystem | undefined> {
   if (network.name !== 'hardhat') {
     return undefined;

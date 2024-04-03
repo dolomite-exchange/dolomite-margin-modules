@@ -9,7 +9,7 @@ import { Network, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
 import { expectEvent, expectThrow } from 'packages/base/test/utils/assertions';
 import { setupCoreProtocol, setupTestMarket } from 'packages/base/test/utils/setup';
-import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE } from '../src/gmx-v2-constructors';
+import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE_FOR_TESTS } from '../src/gmx-v2-constructors';
 import {
   GmxV2IsolationModeUnwrapperTraderV2,
   GmxV2IsolationModeVaultFactory,
@@ -66,9 +66,9 @@ describe('GmxV2MarketTokenPriceOracle', () => {
       gmxV2Registry,
       allowableMarketIds,
       allowableMarketIds,
-      core.gmxEcosystemV2!.gmxEthUsdMarketToken,
+      core.gmxEcosystemV2!.gmTokens.ethUsd,
       userVaultImplementation,
-      GMX_V2_EXECUTION_FEE,
+      GMX_V2_EXECUTION_FEE_FOR_TESTS,
     );
     unwrapper = await createGmxV2IsolationModeUnwrapperTraderV2(
       core,

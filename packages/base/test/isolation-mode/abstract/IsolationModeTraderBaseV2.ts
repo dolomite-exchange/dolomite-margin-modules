@@ -1,23 +1,24 @@
-import { expect } from 'chai';
 import {
   CustomTestToken,
-  TestAsyncIsolationModeTraderBase,
-  TestAsyncIsolationModeTraderBase__factory,
-  TestHandlerRegistry,
   TestIsolationModeFactory,
   TestIsolationModeTokenVaultV1,
   TestIsolationModeTraderBaseV2,
-  TestIsolationModeTraderBaseV2__factory
+  TestIsolationModeTraderBaseV2__factory,
 } from '@dolomite-exchange/modules-base/src/types';
-import { createContractWithAbi, createContractWithLibrary, createTestToken } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { Network, ONE_ETH_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, setEtherBalance, snapshot } from '@dolomite-exchange/modules-base/test/utils';
-import { expectEvent, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { createIsolationModeTokenVaultV1ActionsImpl, createIsolationModeTraderProxy } from '@dolomite-exchange/modules-base/test/utils/dolomite';
+import {
+  createContractWithAbi,
+  createContractWithLibrary,
+  createTestToken,
+} from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
+import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { createIsolationModeTokenVaultV1ActionsImpl } from '@dolomite-exchange/modules-base/test/utils/dolomite';
+import { expect } from 'chai';
+import { BigNumber } from 'ethers';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from 'packages/base/test/utils/setup';
 import { CoreProtocolArbitrumOne } from '../../utils/core-protocol';
-import { createTestHandlerRegistry, createTestIsolationModeFactory } from '../../utils/ecosystem-utils/testers';
-import { BigNumber } from 'ethers';
+import { createTestIsolationModeFactory } from '../../utils/ecosystem-utils/testers';
 
 describe('IsolationModeTraderBaseV2', () => {
   let snapshotId: string;
@@ -91,7 +92,7 @@ describe('IsolationModeTraderBaseV2', () => {
     it('should fail if not generic trader or trusted liquidator', async () => {
       await expectThrow(
         trader.connect(core.hhUser5).testOnlyGenericTraderOrTrustedLiquidator(),
-        `IsolationModeTraderBaseV2: Caller is not authorized <${core.hhUser5.address.toLowerCase()}>`
+        `IsolationModeTraderBaseV2: Caller is not authorized <${core.hhUser5.address.toLowerCase()}>`,
       );
     });
   });

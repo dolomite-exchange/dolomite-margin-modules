@@ -119,15 +119,28 @@ library AsyncIsolationModeUnwrapperTraderImpl {
             setWithdrawalInfo(_state, _withdrawalInfo.key, _withdrawalInfo);
         }
 
-        IIsolationModeTokenVaultV1(_withdrawalInfo.vault).swapExactInputForOutput(
-            _withdrawalInfo.accountNumber,
-            marketIdsPath,
-            _withdrawalInfo.inputAmount,
-            _withdrawalInfo.outputAmount,
-            traderParams,
-            /* _makerAccounts = */ new IDolomiteMargin.AccountInfo[](0),
-            userConfig
-        );
+        if (_withdrawalInfo.accountNumber == 0) {
+            IIsolationModeTokenVaultV1(_withdrawalInfo.vault).swapExactInputForOutputAndRemoveCollateral(
+                /* _toAccountNumber = */ 0,
+                /* _borrowAccountNumber = */ 0,
+                marketIdsPath,
+                _withdrawalInfo.inputAmount,
+                _withdrawalInfo.outputAmount,
+                traderParams,
+                /* _makerAccounts = */ new IDolomiteMargin.AccountInfo[](0),
+                userConfig
+            );
+        } else {
+            IIsolationModeTokenVaultV1(_withdrawalInfo.vault).swapExactInputForOutput(
+                _withdrawalInfo.accountNumber,
+                marketIdsPath,
+                _withdrawalInfo.inputAmount,
+                _withdrawalInfo.outputAmount,
+                traderParams,
+                /* _makerAccounts = */ new IDolomiteMargin.AccountInfo[](0),
+                userConfig
+            );
+        }
     }
 
     function callFunction(

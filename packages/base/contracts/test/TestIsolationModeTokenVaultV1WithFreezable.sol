@@ -31,7 +31,7 @@ import { IsolationModeTokenVaultV1WithFreezable } from "../isolation-mode/abstra
  * @notice  A test contract for the IsolationModeTokenVaultV1WithFreezable contract.
  */
 contract TestIsolationModeTokenVaultV1WithFreezable is IsolationModeTokenVaultV1WithFreezable {
-    
+
     // ==================================================================
     // =========================== Constants ============================
     // ==================================================================

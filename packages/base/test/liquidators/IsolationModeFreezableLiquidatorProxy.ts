@@ -1,6 +1,6 @@
 import {
   GMX_V2_CALLBACK_GAS_LIMIT,
-  GMX_V2_EXECUTION_FEE,
+  GMX_V2_EXECUTION_FEE_FOR_TESTS,
 } from '@dolomite-exchange/modules-gmx-v2/src/gmx-v2-constructors';
 import {
   GmxV2IsolationModeTokenVaultV1,
@@ -34,8 +34,6 @@ import {
   DolomiteRegistryImplementation__factory,
   EventEmitterRegistry,
   IGenericTraderProxyV1__factory,
-  IsolationModeFreezableLiquidatorProxy,
-  IsolationModeFreezableLiquidatorProxy__factory,
   TestIsolationModeFreezableLiquidatorProxy,
   TestIsolationModeFreezableLiquidatorProxy__factory,
 } from '../../src/types';
@@ -78,7 +76,9 @@ const DEFAULT_EXTRA_DATA = ethers.utils.defaultAbiCoder.encode(['uint256', 'uint
 const NEW_GENERIC_TRADER_PROXY = '0x905F3adD52F01A9069218c8D1c11E240afF61D2B';
 
 const gasLimit = process.env.COVERAGE !== 'true' ? 10_000_000 : 100_000_000;
-const executionFee = process.env.COVERAGE !== 'true' ? GMX_V2_EXECUTION_FEE : GMX_V2_EXECUTION_FEE.mul(10);
+const executionFee = process.env.COVERAGE !== 'true'
+  ? GMX_V2_EXECUTION_FEE_FOR_TESTS.mul(1)
+  : GMX_V2_EXECUTION_FEE_FOR_TESTS.mul(1);
 
 describe('IsolationModeFreezableLiquidatorProxy', () => {
   let snapshotId: string;
@@ -131,7 +131,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
       gmxV2Registry,
       allowableMarketIds,
       allowableMarketIds,
-      core.gmxEcosystemV2!.gmxEthUsdMarketToken,
+      core.gmxEcosystemV2!.gmTokens.ethUsd,
       userVaultImplementation,
       executionFee,
     );
@@ -866,7 +866,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
           expirationTimestamp: NO_EXPIRY,
           extraData: DEFAULT_EXTRA_DATA,
         }),
-        'FreezableVaultLiquidatorProxy: minOutputAmount too large',
+        'GmxV2Library: minOutputAmount too large',
       );
 
       await expectThrow(
@@ -879,7 +879,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
           expirationTimestamp: NO_EXPIRY,
           extraData: ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [parseEther('.5'), amountWei]),
         }),
-        'FreezableVaultLiquidatorProxy: minOutputAmount too large',
+        'GmxV2Library: minOutputAmount too large',
       );
 
     });
@@ -1075,7 +1075,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
         { value: BigNumber.from('150000000000000000') },
         ONE_BI,
         [core.marketIds.weth],
-        [marketId]
+        [marketId],
       );
       await liquidatorProxy.testCheckIsLiquidatable(liquidAccount);
     });

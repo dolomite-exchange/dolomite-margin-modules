@@ -45,4 +45,6 @@ interface IIsolationModeTokenVaultV1WithFreezable is IIsolationModeTokenVaultV1 
     function isVaultFrozen() external view returns (bool);
 
     function WETH() external view returns (IWETH);
+
+    function CHAIN_ID() external view returns (uint256);
 }

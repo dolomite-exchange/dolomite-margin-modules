@@ -86,13 +86,13 @@ describe('PlutusVaultGLPIsolationModeLiquidationWithZap', () => {
       decimals: 18,
       tokenAddress: factory.address,
     };
-    zap = new DolomiteZap(
-      ZapNetwork.ARBITRUM_ONE,
-      process.env.SUBGRAPH_URL as string,
-      core.hhUser1.provider!,
-      60,
-      true,
-    );
+    zap = new DolomiteZap({
+      network: ZapNetwork.ARBITRUM_ONE,
+      subgraphUrl: process.env.SUBGRAPH_URL as string,
+      web3Provider: core.hhUser1.provider!,
+      cacheSeconds: 60,
+      defaultIsLiquidation: true,
+    });
 
     await factory.createVault(core.hhUser1.address);
     const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);

@@ -1,5 +1,4 @@
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { BigNumber } from 'ethers';
 import {
   CustomTestToken,
@@ -18,6 +17,7 @@ import {
   depositIntoDolomiteMargin,
 } from '../../../src/utils/dolomite-utils';
 import { Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
+import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';
 import { revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectProtocolBalance, expectThrow, expectWalletBalance } from '../../utils/assertions';
 import { CoreProtocolArbitrumOne } from '../../utils/core-protocol';
@@ -50,7 +50,7 @@ describe('IsolationModeTokenVaultV1WithPausableAndOnlyEoa', () => {
   let contractVault: TestIsolationModeTokenVaultV1WithPausableAndOnlyEoa;
   let doAnything: TestDoAnything;
 
-  let solidUser: SignerWithAddress;
+  let solidUser: SignerWithAddressWithSafety;
   let otherToken1: CustomTestToken;
   let otherMarketId1: BigNumber;
   let otherToken2: CustomTestToken;

@@ -11,13 +11,17 @@ import {
   IsolationModeFreezableLiquidatorProxy,
   IsolationModeFreezableLiquidatorProxy__factory,
 } from 'packages/base/src/types';
+import {
+  getIsolationModeFreezableLiquidatorProxyConstructorParams,
+} from 'packages/base/src/utils/constructors/dolomite';
 import { createContractWithAbi, depositIntoDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
-import { NO_EXPIRY, ONE_BI, ONE_ETH_BI, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
+import { BYTES_ZERO, NO_EXPIRY, ONE_BI, ONE_ETH_BI, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
 import {
   expectEvent,
   expectProtocolBalance,
   expectProtocolBalanceIsGreaterThan,
+  expectThrow,
   expectWalletAllowance,
   expectWalletBalance,
 } from 'packages/base/test/utils/assertions';
@@ -34,7 +38,7 @@ import {
 } from 'packages/base/test/utils/setup';
 import { getLiquidateIsolationModeZapPath } from 'packages/base/test/utils/zap-utils';
 import { AccountStruct } from '../../../packages/base/src/utils/constants';
-import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE } from '../src/gmx-v2-constructors';
+import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE_FOR_TESTS } from '../src/gmx-v2-constructors';
 import {
   GmxV2IsolationModeTokenVaultV1,
   GmxV2IsolationModeTokenVaultV1__factory,
@@ -57,7 +61,6 @@ import {
   getInitiateWrappingParams,
   getOracleParams,
 } from './gmx-v2-ecosystem-utils';
-import { getIsolationModeFreezableLiquidatorProxyConstructorParams } from 'packages/base/src/utils/constructors/dolomite';
 
 const defaultAccountNumber = ZERO_BI;
 const borrowAccountNumber = defaultAccountNumber.add(ONE_BI);
@@ -104,7 +107,7 @@ describe('POC: liquidationFailsWhenSeverelyUnderwater', () => {
     liquidatorProxy = await createContractWithAbi<IsolationModeFreezableLiquidatorProxy>(
       IsolationModeFreezableLiquidatorProxy__factory.abi,
       IsolationModeFreezableLiquidatorProxy__factory.bytecode,
-      await getIsolationModeFreezableLiquidatorProxyConstructorParams(core)
+      await getIsolationModeFreezableLiquidatorProxyConstructorParams(core),
     );
 
     const gmxV2Library = await createGmxV2Library();
@@ -118,9 +121,9 @@ describe('POC: liquidationFailsWhenSeverelyUnderwater', () => {
       gmxV2Registry,
       allowableMarketIds,
       allowableMarketIds,
-      core.gmxEcosystemV2!.gmxEthUsdMarketToken,
+      core.gmxEcosystemV2!.gmTokens.ethUsd,
       userVaultImplementation,
-      GMX_V2_EXECUTION_FEE,
+      GMX_V2_EXECUTION_FEE_FOR_TESTS,
     );
     underlyingToken = IGmxMarketToken__factory.connect(await factory.UNDERLYING_TOKEN(), core.hhUser1);
     unwrapper = await createGmxV2IsolationModeUnwrapperTraderV2(
@@ -192,13 +195,13 @@ describe('POC: liquidationFailsWhenSeverelyUnderwater', () => {
       defaultAccountNumber,
       borrowAccountNumber,
       amountWei,
-      { value: GMX_V2_EXECUTION_FEE },
+      { value: GMX_V2_EXECUTION_FEE_FOR_TESTS },
     );
     await vault.openBorrowPosition(
       defaultAccountNumber,
       borrowAccountNumber2,
       amountWei,
-      { value: GMX_V2_EXECUTION_FEE },
+      { value: GMX_V2_EXECUTION_FEE_FOR_TESTS },
     );
     await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
     await expectProtocolBalance(core, vault.address, borrowAccountNumber2, marketId, amountWei);
@@ -261,7 +264,7 @@ describe('POC: liquidationFailsWhenSeverelyUnderwater', () => {
           marketId,
           depositMinAmountOut,
           wrapper,
-          GMX_V2_EXECUTION_FEE,
+          GMX_V2_EXECUTION_FEE_FOR_TESTS,
         );
         await vault.swapExactInputForOutput(
           initiateWrappingParams.accountNumber,
@@ -271,7 +274,7 @@ describe('POC: liquidationFailsWhenSeverelyUnderwater', () => {
           initiateWrappingParams.traderParams,
           initiateWrappingParams.makerAccounts,
           initiateWrappingParams.userConfig,
-          { value: GMX_V2_EXECUTION_FEE },
+          { value: GMX_V2_EXECUTION_FEE_FOR_TESTS },
         );
       } else if (performZapType === ZapType.Withdraw) {
         const result = await vault.initiateUnwrapping(
@@ -280,7 +283,7 @@ describe('POC: liquidationFailsWhenSeverelyUnderwater', () => {
           core.tokens.nativeUsdc!.address,
           ONE_BI,
           DEFAULT_EXTRA_DATA,
-          { value: GMX_V2_EXECUTION_FEE },
+          { value: GMX_V2_EXECUTION_FEE_FOR_TESTS },
         );
         const filter = eventEmitter.filters.AsyncWithdrawalCreated();
         withdrawalKeys.push((await eventEmitter.queryFilter(filter, result.blockNumber))[0].args.key);
@@ -330,6 +333,7 @@ describe('POC: liquidationFailsWhenSeverelyUnderwater', () => {
       WithdrawalSucceeded = 2,
       Liquidated = 3,
       Expired = 4,
+      Vaporized = 5,
     }
 
     async function checkStateAfterUnwrapping(
@@ -344,12 +348,13 @@ describe('POC: liquidationFailsWhenSeverelyUnderwater', () => {
 
       const withdrawals = await Promise.all(withdrawalKeys.map(key => unwrapper.getWithdrawalInfo(key)));
       const partitionedTotalOutputAmount = withdrawals.reduce((acc, withdrawal, i) => {
-        expect(withdrawal.key).to.eq(withdrawalKeys[i]);
         if (
           state === FinishState.WithdrawalSucceeded
           || state === FinishState.Liquidated
           || state === FinishState.Expired
+          || state === FinishState.Vaporized
         ) {
+          expect(withdrawal.key).to.eq(BYTES_ZERO);
           expect(withdrawal.vault).to.eq(ZERO_ADDRESS);
           expect(withdrawal.accountNumber).to.eq(ZERO_BI);
           expect(withdrawal.inputAmount).to.eq(ZERO_BI);
@@ -357,6 +362,7 @@ describe('POC: liquidationFailsWhenSeverelyUnderwater', () => {
           expect(withdrawal.outputAmount).to.eq(ZERO_BI);
           expect(withdrawal.isRetryable).to.eq(false);
         } else {
+          expect(withdrawal.key).to.eq(withdrawalKeys[i]);
           expect(withdrawal.vault).to.eq(vault.address);
           expect(withdrawal.accountNumber).to.eq(borrowAccountNumber);
           expect(
@@ -379,7 +385,8 @@ describe('POC: liquidationFailsWhenSeverelyUnderwater', () => {
       if (deposit &&
         (state === FinishState.WithdrawalSucceeded ||
           state === FinishState.Liquidated ||
-          state === FinishState.Expired)
+          state === FinishState.Expired ||
+          state === FinishState.Vaporized)
       ) {
         expect(deposit.vault).to.eq(ZERO_ADDRESS);
         expect(deposit.accountNumber).to.eq(ZERO_BI);
@@ -400,6 +407,7 @@ describe('POC: liquidationFailsWhenSeverelyUnderwater', () => {
         state === FinishState.WithdrawalSucceeded
         || state === FinishState.Liquidated
         || state === FinishState.Expired
+        || state === FinishState.Vaporized
       ) {
         await expectProtocolBalance(core, vault.address, accountNumber, marketId, ZERO_BI);
         expect(await vault.isVaultAccountFrozen(defaultAccountNumber)).to.eq(false);
@@ -413,20 +421,27 @@ describe('POC: liquidationFailsWhenSeverelyUnderwater', () => {
           expect(await vault.isVaultFrozen()).to.eq(false);
         }
 
-        if (state === FinishState.Liquidated) {
+        if (state === FinishState.Liquidated || state === FinishState.Vaporized) {
+          if (state === FinishState.Liquidated) {
+            await expectProtocolBalance(
+              core,
+              vault,
+              accountNumber,
+              core.marketIds.weth,
+              ZERO_BI,
+            );
+          } else {
+            const rawBalanceWei = await core.dolomiteMargin.getAccountWei(liquidAccount, marketId);
+            const balanceWei = rawBalanceWei.sign ? rawBalanceWei.value : rawBalanceWei.value.mul(-1);
+            expect(balanceWei.lt(ZERO_BI));
+          }
+
           await expectProtocolBalance(
             core,
             vault.address,
             accountNumber,
             core.marketIds.nativeUsdc!,
             outputAmount.sub(outputAmountForSwap).sub(depositAmountIn),
-          );
-          await expectProtocolBalance(
-            core,
-            vault,
-            accountNumber,
-            core.marketIds.weth,
-            ZERO_BI,
           );
           await expectProtocolBalance(
             core,
@@ -442,14 +457,25 @@ describe('POC: liquidationFailsWhenSeverelyUnderwater', () => {
             marketId,
             ZERO_BI,
           );
-          // The trader always outputs the debt amount (which means the solid account does not earn a profit in ETH)
-          await expectProtocolBalance(
-            core,
-            solidAccount.owner,
-            solidAccount.number,
-            core.marketIds.weth,
-            ZERO_BI,
-          );
+          if (state === FinishState.Liquidated) {
+            // The trader always outputs the debt amount (which means the solid account does not earn a profit in ETH)
+            await expectProtocolBalance(
+              core,
+              solidAccount.owner,
+              solidAccount.number,
+              core.marketIds.weth,
+              ZERO_BI,
+            );
+          } else {
+            // The trader always outputs the debt amount (which means the solid account does not earn a profit in ETH)
+            await expectProtocolBalance(
+              core,
+              solidAccount.owner,
+              solidAccount.number,
+              core.marketIds.weth,
+              (await core.dolomiteMargin.getAccountWei(liquidAccount, core.marketIds.weth)).value,
+            );
+          }
         } else if (state === FinishState.WithdrawalSucceeded) {
           await expectProtocolBalance(core, vault.address, accountNumber, core.marketIds.weth, wethAmount.mul(-1));
         } else {
@@ -508,7 +534,7 @@ describe('POC: liquidationFailsWhenSeverelyUnderwater', () => {
       await expectWalletAllowance(wrapper, unwrapper, core.tokens.nativeUsdc!, ZERO_BI);
     }
 
-    async function calculateZapParams(wethPrice: any) {
+    async function calculateZapParams(wethPrice: BigNumber, isFullyUnderwater: boolean) {
 
       const gmPrice = (await core.dolomiteMargin.getMarketPrice(marketId)).value;
       amountWeiForLiquidation = wethAmount.mul(wethPrice).mul(105).div(100).div(gmPrice);
@@ -521,10 +547,9 @@ describe('POC: liquidationFailsWhenSeverelyUnderwater', () => {
       const tradeTypes = allKeys.map(key => key === depositKey
         ? UnwrapperTradeType.FromDeposit
         : UnwrapperTradeType.FromWithdrawal);
-      // @follow-up Why did it not fail when I didn't have this boolean
       const liquidationData = ethers.utils.defaultAbiCoder.encode(
         ['uint8[]', 'bytes32[]', 'bool'],
-        [tradeTypes, allKeys, false],
+        [tradeTypes, allKeys, !isFullyUnderwater],
       );
       const withdrawals = await Promise.all(withdrawalKeys.map(key => unwrapper.getWithdrawalInfo(key)));
       const deposit = depositKey ? await wrapper.getDepositInfo(depositKey) : undefined;
@@ -572,9 +597,9 @@ describe('POC: liquidationFailsWhenSeverelyUnderwater', () => {
       for (const market of markets) {
         const par = await core.dolomiteMargin.getAccountPar(account, market.toNumber());
         if (par.value.isZero()) {
-
+          // Do nothing
         } else if (par.sign) {
-          console.log(`Account ${account.number} has a positive balance of ${par.value.toString()} in the market ${market}`);
+          console.log(`\tAccount ${account.number} has a positive balance of ${par.value.toString()} in the market ${market}`);
           return false;
         } else {
           hasNegative = true;
@@ -617,38 +642,36 @@ describe('POC: liquidationFailsWhenSeverelyUnderwater', () => {
 
       // user current, high, WETH price to calculate the required zapParams for calling liquidated
       const initialWethPrice = (await core.dolomiteMargin.getMarketPrice(core.marketIds.weth)).value;
-      const { zapParam: initialZapParam } = await calculateZapParams(initialWethPrice);
+      const { zapParam: zapParams1 } = await calculateZapParams(initialWethPrice, false);
 
       // Actions that are done in a liquidation: [CallFunction, Sell, CallFunction, Sell]
       // liquidation fails, since being severely undercollateralized, the entire available user amount
       // will be used. That results in the first sale action deleting the withdrawal position and when
       // the second Call action tries to invoke a function on the vault (which is now address(0)) it
       // reverts with the error: `function call to a non-contract account`
-
-      // CHANGED HERE FOR IT TO NOT BE REVERTED
-      await expect(
+      await expectThrow(
         liquidateV4WithZapParam(
           core,
           solidAccount,
           liquidAccount,
-          initialZapParam,
-        )).to.not.be.reverted;
-      return;
+          zapParams1,
+        ),
+        'function call to a non-contract account',
+      );
 
       // show account is not Vaporizable because not all of its markets are negative, specifically the GM one
-      const _isVaporizable = await isVaporizable(liquidAccount);
-      expect(_isVaporizable).to.be.false;
+      expect(await isVaporizable(liquidAccount)).to.be.false;
 
-      // decreasing the price of WETH will result in a healthier liquidation position
-      const decreasedWethPrice = initialWethPrice.mul(90).div(100);
-      await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.weth.address, decreasedWethPrice);
+      // // decreasing the price of WETH will result in a healthier liquidation position
+      // const decreasedWethPrice = initialWethPrice.mul(90).div(100);
+      // await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.weth.address, decreasedWethPrice);
 
       // we recalculate the zap params for it
       const {
         zapParam: zapParamAfterDecrease,
         totalOutputAmount: totalOutputAmountAfterDecrease,
         outputAmountForSwap: outputAmountForSwapAfterDecrease,
-      } = await calculateZapParams(decreasedWethPrice);
+      } = await calculateZapParams(initialWethPrice, true);
 
       // call liquidate with the new values and price state
       await liquidateV4WithZapParam(
@@ -661,13 +684,15 @@ describe('POC: liquidationFailsWhenSeverelyUnderwater', () => {
       // show it succeeds
       await checkStateAfterUnwrapping(
         borrowAccountNumber,
-        FinishState.Liquidated,
+        FinishState.Vaporized,
         amountWei,
         totalOutputAmountAfterDecrease,
         false,
         outputAmountForSwapAfterDecrease,
       );
-    });
 
+      // The account should be vaporizable now, since all GM should have been spent
+      expect(await isVaporizable(liquidAccount)).to.be.true;
+    });
   });
 });
