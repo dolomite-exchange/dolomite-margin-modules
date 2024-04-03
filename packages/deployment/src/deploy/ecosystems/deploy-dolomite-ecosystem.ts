@@ -117,6 +117,7 @@ async function getOracleAggregator<T extends NetworkType>(
       dolomiteRegistry,
       dolomiteMargin,
     ),
+    'ChainlinkPriceOracleV3',
   );
 
   const tokenInfos = tokens.map<TokenInfo>((token, i) => {
