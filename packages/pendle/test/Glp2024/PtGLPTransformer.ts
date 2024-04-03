@@ -65,6 +65,7 @@ describe('PtGLPTransformer', () => {
     const newRegistry = await createDolomiteRegistryImplementation();
     await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(newRegistry.address);
     await core.dolomiteRegistry.ownerSetDolomiteMigrator(migrator.address);
+
     await migrator.connect(core.governance).ownerSetTransformer(
       core.marketIds.dPtGlp,
       core.marketIds.dfsGlp,
