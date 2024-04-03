@@ -4,7 +4,7 @@ import {
 } from '@dolomite-exchange/modules-base/src/types';
 import {
   CHAINLINK_PRICE_AGGREGATORS_MAP,
-  WE_ETH_ETH_REDSTONE_FEED_MAP,
+  REDSTONE_PRICE_AGGREGATORS_MAP,
 } from '@dolomite-exchange/modules-base/src/utils/constants';
 import { createContractWithAbi } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { ADDRESS_ZERO, Network, ONE_ETH_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
@@ -55,7 +55,7 @@ describe('PendlePtEEthApr2024PriceOracle_integration', () => {
 
     underlyingToken = core.tokens.weEth!;
     const wethAggregator = await core.chainlinkPriceOracleOld!.getAggregatorByToken(core.tokens.weth.address);
-    const weEthAggregator = WE_ETH_ETH_REDSTONE_FEED_MAP[Network.ArbitrumOne];
+    const weEthAggregator = REDSTONE_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne].aggregatorAddress;
     const redstoneOracle = (await createContractWithAbi<RedstonePriceOracleV2>(
       RedstonePriceOracleV2__factory.abi,
       RedstonePriceOracleV2__factory.bytecode,
@@ -86,7 +86,7 @@ describe('PendlePtEEthApr2024PriceOracle_integration', () => {
     await chainlinkOracle.connect(core.governance).ownerInsertOrUpdateOracleTokenWithBypass(
       underlyingToken.address,
       18,
-      CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][core.tokens.weEth.address],
+      CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][core.tokens.weEth.address].aggregatorAddress,
       ADDRESS_ZERO,
       true,
     );

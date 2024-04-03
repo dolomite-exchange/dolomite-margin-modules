@@ -73,8 +73,8 @@ async function main(): Promise<DryRunOutput<Network.PolygonZkEvm>> {
         'Invalid Chainlink price aggregator for USDC',
       );
       assertHardhatInvariant(
-        (await core.chainlinkPriceOracleOld.getAggregatorByToken(core.tokens.usdc.address))
-        === CHAINLINK_PRICE_AGGREGATORS_MAP[Network.PolygonZkEvm][core.tokens.usdc.address],
+        (await core.chainlinkPriceOracleOld.tokenToAggregatorMap(core.tokens.usdc.address))
+        === CHAINLINK_PRICE_AGGREGATORS_MAP[Network.PolygonZkEvm][core.tokens.usdc.address].aggregatorAddress,
         'Invalid Chainlink price aggregator for USDC',
       );
     },

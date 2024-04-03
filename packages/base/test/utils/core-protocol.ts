@@ -66,6 +66,7 @@ interface CoreProtocolTokensArbitrumOne extends CoreProtocolTokens {
   dPtWstEthJun2025: IERC20;
   dpx: IERC20;
   dYtGlp: IERC20;
+  eEth: IERC20;
   gmx: IERC20;
   grail: IERC20;
   jones: IERC20;

@@ -118,7 +118,6 @@ describe('ChainlinkPriceOracleV3', () => {
         [
           [ZERO_ADDRESS],
           [ZERO_ADDRESS],
-          [8],
           [false],
           core.dolomiteRegistry.address,
           core.dolomiteMargin.address,
@@ -134,7 +133,6 @@ describe('ChainlinkPriceOracleV3', () => {
           [
             [ZERO_ADDRESS],
             [ZERO_ADDRESS, ZERO_ADDRESS],
-            [8, 8],
             [false, false],
             core.dolomiteRegistry.address,
             core.dolomiteMargin.address,
@@ -152,31 +150,12 @@ describe('ChainlinkPriceOracleV3', () => {
           [
             [ZERO_ADDRESS, ZERO_ADDRESS],
             [ZERO_ADDRESS, ZERO_ADDRESS],
-            [8],
-            [false, false],
-            core.dolomiteRegistry.address,
-            core.dolomiteMargin.address,
-          ],
-        ),
-        'ChainlinkPriceOracleV3: Invalid aggregators length',
-      );
-    });
-
-    it('should fail when decimals length is not aligned', async () => {
-      await expectThrow(
-        createContractWithAbi<ChainlinkPriceOracleV3>(
-          ChainlinkPriceOracleV3__factory.abi,
-          ChainlinkPriceOracleV3__factory.bytecode,
-          [
-            [ZERO_ADDRESS, ZERO_ADDRESS],
-            [ZERO_ADDRESS, ZERO_ADDRESS],
-            [8, 8],
             [false],
             core.dolomiteRegistry.address,
             core.dolomiteMargin.address,
           ],
         ),
-        'ChainlinkPriceOracleV3: Invalid decimals length',
+        'ChainlinkPriceOracleV3: Invalid aggregators length',
       );
     });
   });
@@ -195,7 +174,6 @@ describe('ChainlinkPriceOracleV3', () => {
     it('returns the inverse if invertPrice is true', async () => {
       await oracle.ownerInsertOrUpdateOracleToken(
         testToken.address,
-        18,
         testAggregator.address,
         true
       );
@@ -216,7 +194,6 @@ describe('ChainlinkPriceOracleV3', () => {
       const doloImpersonator = await impersonate(core.dolomiteMargin.address, true);
       await oracle.ownerInsertOrUpdateOracleToken(
         testToken.address,
-        18,
         testAggregator.address,
         false
       );
@@ -241,7 +218,6 @@ describe('ChainlinkPriceOracleV3', () => {
     it('reverts when the price is expired', async () => {
       await oracle.ownerInsertOrUpdateOracleToken(
         testToken.address,
-        18,
         testAggregator.address,
         false
       );
@@ -258,7 +234,6 @@ describe('ChainlinkPriceOracleV3', () => {
       await testAggregator.setMinAnswer(MAX_INT_192_BI);
       await oracle.ownerInsertOrUpdateOracleToken(
         testToken.address,
-        18,
         testAggregator.address,
         false
       );
@@ -273,7 +248,6 @@ describe('ChainlinkPriceOracleV3', () => {
       await testAggregator.setMaxAnswer(ONE_BI);
       await oracle.ownerInsertOrUpdateOracleToken(
         testToken.address,
-        18,
         testAggregator.address,
         false
       );
@@ -320,11 +294,9 @@ describe('ChainlinkPriceOracleV3', () => {
       const tokenAddress = testToken.address;
       await oracle.ownerInsertOrUpdateOracleToken(
         tokenAddress,
-        18,
         testAggregator.address,
         false
       );
-      expect(await oracle.getDecimalsByToken(tokenAddress)).to.eq(18);
       expect(await oracle.getAggregatorByToken(tokenAddress)).to.eq(testAggregator.address);
       expect(await oracle.getInvertPriceByToken(tokenAddress)).to.eq(false);
     });
@@ -333,11 +305,9 @@ describe('ChainlinkPriceOracleV3', () => {
       const tokenAddress = core.tokens.wbtc.address;
       await oracle.ownerInsertOrUpdateOracleToken(
         tokenAddress,
-        11,
         testAggregator.address,
         true
       );
-      expect(await oracle.getDecimalsByToken(tokenAddress)).to.eq(11);
       expect(await oracle.getAggregatorByToken(tokenAddress)).to.eq(testAggregator.address);
       expect(await oracle.getInvertPriceByToken(tokenAddress)).to.eq(true);
     });
@@ -346,7 +316,6 @@ describe('ChainlinkPriceOracleV3', () => {
       await expectThrow(
         oracle.connect(core.hhUser1).ownerInsertOrUpdateOracleToken(
           testToken.address,
-          9,
           testAggregator.address,
           false
         ),

@@ -13,7 +13,7 @@ import {
 } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { expect } from 'chai';
 import { DolomiteRegistryImplementation, DolomiteRegistryImplementation__factory } from 'packages/base/src/types';
-import { CHAINLINK_PRICE_AGGREGATORS_MAP, WE_ETH_ETH_REDSTONE_FEED_MAP } from 'packages/base/src/utils/constants';
+import { CHAINLINK_PRICE_AGGREGATORS_MAP, REDSTONE_PRICE_AGGREGATORS_MAP } from 'packages/base/src/utils/constants';
 import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
 import {
   getChainlinkPriceOracleV2ConstructorParamsFromOldPriceOracle,
@@ -81,7 +81,7 @@ describe('PendlePtEEthApr2024IsolationModeTokenVaultV1', () => {
     wrapper = await createPendlePtIsolationModeWrapperTraderV2(core, pendleRegistry, underlyingToken, factory);
 
     const wethAggregator = await core.chainlinkPriceOracleOld!.getAggregatorByToken(core.tokens.weth.address);
-    const weEthAggregator = WE_ETH_ETH_REDSTONE_FEED_MAP[Network.ArbitrumOne];
+    const weEthAggregator = REDSTONE_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne].aggregatorAddress;
     const redstoneOracle = (await createContractWithAbi<RedstonePriceOracleV2>(
       RedstonePriceOracleV2__factory.abi,
       RedstonePriceOracleV2__factory.bytecode,
@@ -112,7 +112,7 @@ describe('PendlePtEEthApr2024IsolationModeTokenVaultV1', () => {
     await chainlinkOracle.connect(core.governance).ownerInsertOrUpdateOracleTokenWithBypass(
       underlyingToken.address,
       18,
-      CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][core.tokens.weEth.address],
+      CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][core.tokens.weEth.address].aggregatorAddress,
       ADDRESS_ZERO,
       true,
     );

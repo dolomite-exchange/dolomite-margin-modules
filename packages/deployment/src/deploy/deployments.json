@@ -1047,7 +1047,7 @@
       "isVerified": true
     }
   },
-  "JonesUSDCWithChainlinkAutomationPriceOracle": {
+  "JonesUSDCWithChainlinkAutomationPriceOracleV1": {
     "42161": {
       "address": "0x42f596850B23D3B6c06ef9Eb6914DDd7F6A13488",
       "transaction": "0x0c351cfa79696d77d42e014d80b070085768779975507e48e8863e154bf8b0d0",

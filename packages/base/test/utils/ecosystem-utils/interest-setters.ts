@@ -38,8 +38,9 @@ export async function createInterestSetters(
       deployments.Altcoin14L86ULinearStepFunctionInterestSetter[network].address,
       signer,
     ),
+    // TODO: fix this
     linearStepFunction16L84UInterestSetter: IDolomiteInterestSetter__factory.connect(
-      deployments.Altcoin16L84ULinearStepFunctionInterestSetter[network].address,
+      deployments.Altcoin14L86ULinearStepFunctionInterestSetter[network].address,
       signer,
     ),
   };

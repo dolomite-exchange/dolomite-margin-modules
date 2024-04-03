@@ -43,6 +43,7 @@ contract OracleAggregatorV2 is OnlyDolomiteMargin, IOracleAggregatorV2 {
     // ========================= Storage =========================
 
     mapping(address => TokenInfo) private _tokenInfoMap;
+    bool private _initialized;
 
     // ========================= Constructor =========================
 
@@ -60,9 +61,7 @@ contract OracleAggregatorV2 is OnlyDolomiteMargin, IOracleAggregatorV2 {
     {
         uint256 infosLength = _infos.length;
         for (uint256 i; i < infosLength; ++i) {
-            _ownerInsertOrUpdateToken(
-                _infos[i]
-            );
+            _ownerInsertOrUpdateToken(_infos[i]);
         }
     }
 
