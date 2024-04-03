@@ -20,16 +20,12 @@
 
 pragma solidity ^0.8.9;
 
-import { IsolationModeMigrator } from "@dolomite-exchange/modules-base/contracts/isolation-mode/IsolationModeMigrator.sol";
+import { IsolationModeMigrator } from "@dolomite-exchange/modules-base/contracts/isolation-mode/IsolationModeMigrator.sol"; // solhint-disable-line max-line-length
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { IDolomiteRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IDolomiteRegistry.sol";
-import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
-import { IIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
-import { IJonesRouter } from "./interfaces/IJonesRouter.sol";
 import { IJonesUSDCRegistry } from "./interfaces/IJonesUSDCRegistry.sol";
 
-import "hardhat/console.sol";
+
 
 /**
  * @title   JonesIsolationModeMigrator

@@ -21,7 +21,8 @@ import { createDolomiteRegistryImplementation } from '@dolomite-exchange/modules
 import { createTestIsolationModeFactory, createTestIsolationModeTokenVaultV1 } from '@dolomite-exchange/modules-base/test/utils/ecosystem-utils/testers';
 import { BigNumber } from 'ethers';
 import {
-  IJonesUSDCRegistry,
+  IJonesStableCompoundV1__factory,
+  IJonesStableVaultV1__factory,
   JonesIsolationModeMigrator,
   JonesIsolationModeMigrator__factory,
   JonesUSDCIsolationModeTokenVaultV2,
@@ -33,6 +34,10 @@ import {
 const defaultAccountNumber = ZERO_BI;
 const borrowAccountNumber = BigNumber.from('1459905207403129169267937088594887067712932414205099848310575336716887654304');
 const USER_ACCOUNT = '0x52256ef863a713Ef349ae6E97A7E8f35785145dE';
+const JONES_ROUTER_V1 = '0x2F43c6475f1ecBD051cE486A9f3Ccc4b03F3d713';
+const JONES_TRACKER_V1 = '0xEB23C7e19DB72F9a728fD64E1CAA459E457cfaca';
+const JONES_STABLE_COMPOUND_V1 = '0xe66998533a1992ecE9eA99cDf47686F4fc8458E0';
+const JONES_STABLE_VAULT_V1 = '0xa485a0bc44988B95245D5F20497CCaFF58a73E99';
 
 describe('JonesIsolationModeMigrator', () => {
   let snapshotId: string;
@@ -44,7 +49,9 @@ describe('JonesIsolationModeMigrator', () => {
   let migratorImplementation: JonesIsolationModeMigrator;
   let userVault: JonesUSDCIsolationModeTokenVaultV2;
   let transformer: JonesUSDCTransformer;
-  let jonesUSDCRegistry: IJonesUSDCRegistry;
+  let defaultAmount: BigNumber;
+  let borrowAmount: BigNumber;
+  let collateralAmount: BigNumber;
 
   let accounts: AccountInfoStruct[];
 
@@ -73,7 +80,12 @@ describe('JonesIsolationModeMigrator', () => {
     migratorImplementation = await createContractWithAbi<JonesIsolationModeMigrator>(
       JonesIsolationModeMigrator__factory.abi,
       JonesIsolationModeMigrator__factory.bytecode,
-      [core.jonesEcosystem.live.jonesUSDCRegistry.address, core.dolomiteRegistry.address, factory.address, core.jonesEcosystem!.jUSDC.address]
+      [
+        core.jonesEcosystem.live.jonesUSDCRegistry.address,
+        core.dolomiteRegistry.address,
+        factory.address,
+        core.jonesEcosystem!.jUSDC.address
+      ]
     );
     transformer = await createContractWithAbi<JonesUSDCTransformer>(
       JonesUSDCTransformer__factory.abi,
@@ -84,7 +96,10 @@ describe('JonesIsolationModeMigrator', () => {
 
     await factory.connect(core.governance).ownerInitialize([]);
     await factory.connect(core.governance).ownerSetIsTokenConverterTrusted(migrator.address, true);
-    await core.jonesEcosystem.live.jUSDCIsolationModeFactory.connect(core.governance).ownerSetIsTokenConverterTrusted(migrator.address, true);
+    await core.jonesEcosystem.live.jUSDCIsolationModeFactory.connect(core.governance).ownerSetIsTokenConverterTrusted(
+      migrator.address,
+      true
+    );
 
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(migrator.address, true);
@@ -105,23 +120,36 @@ describe('JonesIsolationModeMigrator', () => {
     await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(newRegistry.address);
     await core.dolomiteRegistry.ownerSetDolomiteMigrator(migrator.address);
 
-    const compoundUVRT = BigNumber.from('3021493084998000546098497');
-    const stableVaultTotalSupply = BigNumber.from('5385659097882000000000000');
-    const jUSDCAmount = BigNumber.from('2704988861998979196642458');
     const routerAdmin = await impersonate('0xc8ce0aC725f914dBf1D743D51B6e222b79F479f1', true);
+    const jonesStableCompound = await IJonesStableCompoundV1__factory.connect(JONES_STABLE_COMPOUND_V1, routerAdmin);
+    const jonesStableVault = await IJonesStableVaultV1__factory.connect(JONES_STABLE_VAULT_V1, routerAdmin);
 
+    const compoundUVRT = await jonesStableCompound.totalAssets();
     await core.jonesEcosystem.router.connect(routerAdmin).initialize(
-      '0x2F43c6475f1ecBD051cE486A9f3Ccc4b03F3d713',
-      '0xEB23C7e19DB72F9a728fD64E1CAA459E457cfaca',
-      '0x2ACc798DA9487fdD7F4F653e04D8E8411cd73e88',
-      '0x2ACc798DA9487fdD7F4F653e04D8E8411cd73e88',
+      JONES_ROUTER_V1,
+      JONES_TRACKER_V1,
+      core.jonesEcosystem.whitelistController.address,
+      core.jonesEcosystem.whitelistController.address,
       newjUSDC.address,
       ADDRESS_ZERO,
       compoundUVRT,
-      stableVaultTotalSupply.sub(compoundUVRT),
-      jUSDCAmount
+      (await jonesStableVault.totalSupply()).sub(compoundUVRT),
+      await jonesStableCompound.totalSupply()
     );
     await core.jonesEcosystem.whitelistController.connect(routerAdmin).addToWhitelistContracts(migrator.address);
+
+    defaultAmount = (await core.dolomiteMargin.getAccountWei(
+      { owner: userVault.address, number: defaultAccountNumber },
+      core.marketIds.djUSDC
+    )).value;
+    collateralAmount = (await core.dolomiteMargin.getAccountWei(
+      { owner: userVault.address, number: borrowAccountNumber },
+      core.marketIds.djUSDC
+    )).value;
+    borrowAmount = (await core.dolomiteMargin.getAccountWei(
+      { owner: userVault.address, number: borrowAccountNumber },
+      core.marketIds.usdc
+    )).value;
 
     snapshotId = await snapshot();
   });
@@ -139,12 +167,20 @@ describe('JonesIsolationModeMigrator', () => {
 
   describe('#migrate', () => {
     it('should work normally when user has no balances (do nothing)', async () => {
-      await core.jonesEcosystem.live.jUSDCIsolationModeFactory.connect(core.governance).ownerSetUserVaultImplementation(migratorImplementation.address);
+      await core.jonesEcosystem.live.jUSDCIsolationModeFactory.connect(core.governance).ownerSetUserVaultImplementation(
+        migratorImplementation.address
+      );
       const otherBorrowNumber = BigNumber.from('189');
       const accounts = [
         { owner: userVault.address, number: otherBorrowNumber }
       ];
-      const result = await migrator.connect(core.hhUser5).migrate(accounts, core.marketIds.djUSDC, marketId, BYTES_EMPTY);
+
+      const result = await migrator.connect(core.hhUser5).migrate(
+        accounts,
+        core.marketIds.djUSDC,
+        marketId,
+        BYTES_EMPTY
+      );
       await expectEvent(migrator, result, 'MigrationComplete', {
         accountOwner: userVault.address,
         accountNumber: otherBorrowNumber,
@@ -158,11 +194,16 @@ describe('JonesIsolationModeMigrator', () => {
     });
 
     it('should work normally when user has staked and non-staked balance', async () => {
-      await core.jonesEcosystem.live.jUSDCIsolationModeFactory.connect(core.governance).ownerSetUserVaultImplementation(migratorImplementation.address);
-      const defaultAmount = await core.dolomiteMargin.getAccountWei({ owner: userVault.address, number: defaultAccountNumber }, core.marketIds.djUSDC);
-      const collateralAmount = await core.dolomiteMargin.getAccountWei({ owner: userVault.address, number: borrowAccountNumber }, core.marketIds.djUSDC);
-      const borrowAmount = await core.dolomiteMargin.getAccountWei({ owner: userVault.address, number: borrowAccountNumber }, core.marketIds.usdc);
-      const result = await migrator.connect(core.hhUser5).migrate(accounts, core.marketIds.djUSDC, marketId, BYTES_EMPTY);
+      await core.jonesEcosystem.live.jUSDCIsolationModeFactory.connect(core.governance).ownerSetUserVaultImplementation(
+        migratorImplementation.address
+      );
+
+      const result = await migrator.connect(core.hhUser5).migrate(
+        accounts,
+        core.marketIds.djUSDC,
+        marketId,
+        BYTES_EMPTY
+      );
       await expectEvent(migrator, result, 'MigrationComplete', {
         accountOwner: userVault.address,
         accountNumber: defaultAccountNumber,
@@ -172,23 +213,33 @@ describe('JonesIsolationModeMigrator', () => {
 
       const vaultAddress = await factory.getVaultByAccount(USER_ACCOUNT);
       await expectProtocolBalance(core, userVault.address, defaultAccountNumber, core.marketIds.djUSDC, ZERO_BI);
-      await expectProtocolBalance(core, vaultAddress, defaultAccountNumber, marketId, defaultAmount.value);
+      await expectProtocolBalance(core, vaultAddress, defaultAccountNumber, marketId, defaultAmount);
 
       await expectProtocolBalance(core, userVault.address, borrowAccountNumber, core.marketIds.djUSDC, ZERO_BI);
       await expectProtocolBalance(core, userVault.address, borrowAccountNumber, core.marketIds.usdc, ZERO_BI);
-      await expectProtocolBalance(core, vaultAddress, borrowAccountNumber, marketId, collateralAmount.value);
-      await expectProtocolBalance(core, vaultAddress, borrowAccountNumber, core.marketIds.usdc, ZERO_BI.sub(borrowAmount.value));
+      await expectProtocolBalance(core, vaultAddress, borrowAccountNumber, marketId, collateralAmount);
+      await expectProtocolBalance(
+        core,
+        vaultAddress,
+        borrowAccountNumber,
+        core.marketIds.usdc,
+        ZERO_BI.sub(borrowAmount)
+      );
     });
 
     it('should work normally when user has no staked balance', async () => {
       const amount = await userVault.stakedBalanceOf();
       await userVault.unstake(amount);
+      await core.jonesEcosystem.live.jUSDCIsolationModeFactory.connect(core.governance).ownerSetUserVaultImplementation(
+        migratorImplementation.address
+      );
 
-      await core.jonesEcosystem.live.jUSDCIsolationModeFactory.connect(core.governance).ownerSetUserVaultImplementation(migratorImplementation.address);
-      const defaultAmount = await core.dolomiteMargin.getAccountWei({ owner: userVault.address, number: defaultAccountNumber }, core.marketIds.djUSDC);
-      const collateralAmount = await core.dolomiteMargin.getAccountWei({ owner: userVault.address, number: borrowAccountNumber }, core.marketIds.djUSDC);
-      const borrowAmount = await core.dolomiteMargin.getAccountWei({ owner: userVault.address, number: borrowAccountNumber }, core.marketIds.usdc);
-      const result = await migrator.connect(core.hhUser5).migrate(accounts, core.marketIds.djUSDC, marketId, BYTES_EMPTY);
+      const result = await migrator.connect(core.hhUser5).migrate(
+        accounts,
+        core.marketIds.djUSDC,
+        marketId,
+        BYTES_EMPTY
+      );
       await expectEvent(migrator, result, 'MigrationComplete', {
         accountOwner: userVault.address,
         accountNumber: defaultAccountNumber,
@@ -198,12 +249,18 @@ describe('JonesIsolationModeMigrator', () => {
 
       const vaultAddress = await factory.getVaultByAccount(USER_ACCOUNT);
       await expectProtocolBalance(core, userVault.address, defaultAccountNumber, core.marketIds.djUSDC, ZERO_BI);
-      await expectProtocolBalance(core, vaultAddress, defaultAccountNumber, marketId, defaultAmount.value);
+      await expectProtocolBalance(core, vaultAddress, defaultAccountNumber, marketId, defaultAmount);
 
       await expectProtocolBalance(core, userVault.address, borrowAccountNumber, core.marketIds.djUSDC, ZERO_BI);
       await expectProtocolBalance(core, userVault.address, borrowAccountNumber, core.marketIds.usdc, ZERO_BI);
-      await expectProtocolBalance(core, vaultAddress, borrowAccountNumber, marketId, collateralAmount.value);
-      await expectProtocolBalance(core, vaultAddress, borrowAccountNumber, core.marketIds.usdc, ZERO_BI.sub(borrowAmount.value));
+      await expectProtocolBalance(core, vaultAddress, borrowAccountNumber, marketId, collateralAmount);
+      await expectProtocolBalance(
+        core,
+        vaultAddress,
+        borrowAccountNumber,
+        core.marketIds.usdc,
+        ZERO_BI.sub(borrowAmount)
+      );
     });
   });
 });

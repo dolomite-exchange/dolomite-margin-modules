@@ -21,9 +21,10 @@
 pragma solidity ^0.8.9;
 
 import { IDolomiteTransformer } from "@dolomite-exchange/modules-base/contracts/interfaces/IDolomiteTransformer.sol";
-import { IJonesRouter } from "./interfaces/IJonesRouter.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { IJonesRouter } from "./interfaces/IJonesRouter.sol";
+
 
 
 /**
@@ -35,8 +36,8 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 contract JonesUSDCTransformer is IDolomiteTransformer {
     using SafeERC20 for IERC20;
 
-    address public immutable outputToken;
     address public immutable oldjUsdc;
+    address public immutable outputToken; // new jUSDC
     IJonesRouter public immutable router;
 
     constructor(address _oldjUsdc, address _newjUsdc, address _router) {
