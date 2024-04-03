@@ -50,14 +50,14 @@ async function main(): Promise<DryRunOutput<Network.PolygonZkEvm>> {
       { dolomiteRegistry: core.dolomiteRegistry },
       'dolomiteRegistry',
       'ownerSetChainlinkPriceOracle',
-      [core.chainlinkPriceOracle.address],
+      [core.chainlinkPriceOracleOld.address],
     ),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       { dolomiteMargin: core.dolomiteMargin },
       'dolomiteMargin',
       'ownerSetPriceOracle',
-      [core.marketIds.weth, core.chainlinkPriceOracle.address],
+      [core.marketIds.weth, core.chainlinkPriceOracleOld.address],
     ),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
@@ -69,7 +69,7 @@ async function main(): Promise<DryRunOutput<Network.PolygonZkEvm>> {
     ...await prettyPrintEncodeAddMarket(
       core,
       core.tokens.dai,
-      core.chainlinkPriceOracle,
+      core.chainlinkPriceOracleOld,
       core.interestSetters.linearStepFunction10L90U95OInterestSetter,
       TargetCollateralization.Base,
       TargetLiquidationPenalty.Base,
@@ -80,7 +80,7 @@ async function main(): Promise<DryRunOutput<Network.PolygonZkEvm>> {
     ...await prettyPrintEncodeAddMarket(
       core,
       core.tokens.usdc,
-      core.chainlinkPriceOracle,
+      core.chainlinkPriceOracleOld,
       core.interestSetters.linearStepFunction10L90U95OInterestSetter,
       TargetCollateralization.Base,
       TargetLiquidationPenalty.Base,
@@ -91,7 +91,7 @@ async function main(): Promise<DryRunOutput<Network.PolygonZkEvm>> {
     ...await prettyPrintEncodeAddMarket(
       core,
       core.tokens.link,
-      core.chainlinkPriceOracle,
+      core.chainlinkPriceOracleOld,
       core.interestSetters.linearStepFunction14L86UInterestSetter,
       TargetCollateralization.Base,
       TargetLiquidationPenalty.Base,
@@ -102,7 +102,7 @@ async function main(): Promise<DryRunOutput<Network.PolygonZkEvm>> {
     ...await prettyPrintEncodeAddMarket(
       core,
       core.tokens.wbtc,
-      core.chainlinkPriceOracle,
+      core.chainlinkPriceOracleOld,
       core.interestSetters.linearStepFunction14L86UInterestSetter,
       TargetCollateralization.Base,
       TargetLiquidationPenalty.Base,
@@ -113,7 +113,7 @@ async function main(): Promise<DryRunOutput<Network.PolygonZkEvm>> {
     ...await prettyPrintEncodeAddMarket(
       core,
       core.tokens.usdt,
-      core.chainlinkPriceOracle,
+      core.chainlinkPriceOracleOld,
       core.interestSetters.linearStepFunction10L90U95OInterestSetter,
       TargetCollateralization.Base,
       TargetLiquidationPenalty.Base,
@@ -124,7 +124,7 @@ async function main(): Promise<DryRunOutput<Network.PolygonZkEvm>> {
     ...await prettyPrintEncodeAddMarket(
       core,
       core.tokens.matic,
-      core.chainlinkPriceOracle,
+      core.chainlinkPriceOracleOld,
       core.interestSetters.linearStepFunction14L86UInterestSetter,
       TargetCollateralization.Base,
       TargetLiquidationPenalty.Base,
@@ -142,11 +142,11 @@ async function main(): Promise<DryRunOutput<Network.PolygonZkEvm>> {
     scriptName: getScriptName(__filename),
     invariants: async () => {
       assertHardhatInvariant(
-        await core.dolomiteRegistry.chainlinkPriceOracle() === core.chainlinkPriceOracle.address,
+        await core.dolomiteRegistry.chainlinkPriceOracle() === core.chainlinkPriceOracleOld.address,
         'Invalid chainlink price oracle on registry',
       );
       assertHardhatInvariant(
-        await core.dolomiteMargin.getMarketPriceOracle(core.marketIds.weth) === core.chainlinkPriceOracle.address,
+        await core.dolomiteMargin.getMarketPriceOracle(core.marketIds.weth) === core.chainlinkPriceOracleOld.address,
         'Invalid chainlink price oracle for WETH',
       );
       assertHardhatInvariant(

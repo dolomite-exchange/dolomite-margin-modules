@@ -4,26 +4,26 @@ import {
 } from '@dolomite-exchange/modules-base/src/types';
 import {
   CHAINLINK_PRICE_AGGREGATORS_MAP,
-  WE_ETH_ETH_REDSTONE_FEED_MAP,
+  REDSTONE_PRICE_AGGREGATORS_MAP,
 } from '@dolomite-exchange/modules-base/src/utils/constants';
 import { createContractWithAbi } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { ADDRESS_ZERO, Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { setupCoreProtocol, setupTestMarket } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { setNextBlockTimestamp } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
+import {
+  ChainlinkPriceOracleV2,
+  ChainlinkPriceOracleV2__factory,
+  RedstonePriceOracleV2,
+  RedstonePriceOracleV2__factory,
+} from '@dolomite-exchange/modules-oracles/src/types';
+import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import {
-  getChainlinkPriceOracleConstructorParamsFromOldPriceOracle,
-  getRedstonePriceOracleConstructorParams,
+  getChainlinkPriceOracleV2ConstructorParamsFromOldPriceOracle,
+  getRedstonePriceOracleV2ConstructorParams,
 } from 'packages/oracles/src/oracles-constructors';
-import {
-  ChainlinkPriceOracle,
-  ChainlinkPriceOracle__factory,
-  RedstonePriceOracle,
-  RedstonePriceOracle__factory,
-} from 'packages/oracles/src/types';
 import { IERC20, PendlePtIsolationModeVaultFactory, PendlePtPriceOracle, PendleRegistry } from '../../src/types';
 import {
   createPendlePtEEthPriceOracle,
@@ -50,12 +50,13 @@ describe('PendlePtEEthApr2024PriceOracle', () => {
     });
 
     underlyingToken = core.tokens.weEth!;
-    const wethAggregator = await core.chainlinkPriceOracle!.getAggregatorByToken(core.tokens.weth.address);
-    const weEthAggregator = WE_ETH_ETH_REDSTONE_FEED_MAP[Network.ArbitrumOne];
-    const redstoneOracle = (await createContractWithAbi<RedstonePriceOracle>(
-      RedstonePriceOracle__factory.abi,
-      RedstonePriceOracle__factory.bytecode,
-      await getRedstonePriceOracleConstructorParams(
+    const wethAggregator = await core.chainlinkPriceOracleOld!.getAggregatorByToken(core.tokens.weth.address);
+    const weEthAggregator = REDSTONE_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][underlyingToken.address]
+      .aggregatorAddress;
+    const redstoneOracle = (await createContractWithAbi<RedstonePriceOracleV2>(
+      RedstonePriceOracleV2__factory.abi,
+      RedstonePriceOracleV2__factory.bytecode,
+      await getRedstonePriceOracleV2ConstructorParams(
         [core.tokens.weth, underlyingToken],
         [wethAggregator, weEthAggregator],
         [ADDRESS_ZERO, core.tokens.weth.address],
@@ -71,19 +72,19 @@ describe('PendlePtEEthApr2024PriceOracle', () => {
     );
     await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(dolomiteRegistryImplementation.address);
     await core.dolomiteRegistry.connect(core.governance).ownerSetRedstonePriceOracle(redstoneOracle.address);
-    const chainlinkOracle = (await createContractWithAbi<ChainlinkPriceOracle>(
-      ChainlinkPriceOracle__factory.abi,
-      ChainlinkPriceOracle__factory.bytecode,
-      await getChainlinkPriceOracleConstructorParamsFromOldPriceOracle(core),
+    const chainlinkOracle = (await createContractWithAbi<ChainlinkPriceOracleV2>(
+      ChainlinkPriceOracleV2__factory.abi,
+      ChainlinkPriceOracleV2__factory.bytecode,
+      await getChainlinkPriceOracleV2ConstructorParamsFromOldPriceOracle(core),
     )).connect(core.governance);
     await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkPriceOracle(
       chainlinkOracle.address,
     );
-    await chainlinkOracle.connect(core.governance).ownerInsertOrUpdateOracleToken(
-      underlyingToken.address,
+    await chainlinkOracle.connect(core.governance).ownerInsertOrUpdateOracleTokenWithBypass(
+      core.tokens.weEth.address,
       18,
-      CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][core.tokens.weEth.address],
-      ADDRESS_ZERO,
+      CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][core.tokens.weEth.address].aggregatorAddress,
+      ZERO_ADDRESS,
       true,
     );
 
@@ -122,7 +123,6 @@ describe('PendlePtEEthApr2024PriceOracle', () => {
 
   describe('#getPrice', () => {
     it('returns the correct value under normal conditions for the dptToken', async () => {
-      await setNextBlockTimestamp(1709735900);
       const price = await ptOracle.getPrice(factory.address);
       expect(price.value).to.eq(PT_E_ETH_PRICE);
     });

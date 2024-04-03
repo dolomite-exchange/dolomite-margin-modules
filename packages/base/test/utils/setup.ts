@@ -17,6 +17,7 @@ import { address } from '@dolomite-margin/dist/src';
 import { Provider } from '@ethersproject/providers';
 import { BaseContract, BigNumberish, ContractInterface, Signer } from 'ethers';
 import { ethers } from 'hardhat';
+import { IChainlinkPriceOracleV1__factory } from 'packages/oracles/src/types';
 import {
   IBorrowPositionProxyV2__factory,
   IDepositWithdrawalProxy__factory,
@@ -41,8 +42,8 @@ import {
 import {
   ARB_MAP,
   CHAINLINK_AUTOMATION_REGISTRY_MAP,
-  CHAINLINK_PRICE_AGGREGATORS_MAP,
-  CHAINLINK_PRICE_ORACLE_MAP,
+  CHAINLINK_PRICE_AGGREGATORS_MAP, CHAINLINK_PRICE_ORACLE_OLD_MAP,
+  CHAINLINK_PRICE_ORACLE_V1_MAP,
   D_ARB_MAP,
   D_GM_ARB_MAP,
   D_GM_BTC_MAP,
@@ -59,7 +60,7 @@ import {
   DPT_WST_ETH_JUN_2024_MAP,
   DPT_WST_ETH_JUN_2025_MAP,
   DPX_MAP,
-  DYT_GLP_2024_MAP,
+  DYT_GLP_2024_MAP, E_ETH_MAP,
   GMX_MAP,
   GRAIL_MAP,
   JONES_MAP,
@@ -119,6 +120,7 @@ export interface CoreProtocolSetupConfig<T extends NetworkType> {
    */
   readonly blockNumber: number;
   readonly network: T;
+  readonly skipForking?: boolean;
 }
 
 export interface CoreProtocolConfigParent<T extends NetworkType> {
@@ -358,7 +360,9 @@ export type CoreProtocolType<T extends NetworkType> = T extends Network.Arbitrum
 export async function setupCoreProtocol<T extends NetworkType>(
   config: Readonly<CoreProtocolSetupConfig<T>>,
 ): Promise<CoreProtocolType<T>> {
-  await resetForkIfPossible(config.blockNumber, config.network);
+  if (!config.skipForking) {
+    await resetForkIfPossible(config.blockNumber, config.network);
+  }
 
   const dolomiteMarginAddress = DolomiteMarginJson.networks[config.network].address;
   const [hhUser1, hhUser2, hhUser3, hhUser4, hhUser5] = await Promise.all((await ethers.getSigners())
@@ -378,9 +382,14 @@ export async function setupCoreProtocol<T extends NetworkType>(
     governance,
   );
 
-  const chainlinkPriceOracle = getContract(
-    CHAINLINK_PRICE_ORACLE_MAP[config.network],
+  const chainlinkPriceOracleOld = getContract(
+    CHAINLINK_PRICE_ORACLE_OLD_MAP[config.network],
     IChainlinkPriceOracleOld__factory.connect,
+    governance,
+  );
+  const chainlinkPriceOracleV1 = getContract(
+    CHAINLINK_PRICE_ORACLE_V1_MAP[config.network],
+    IChainlinkPriceOracleV1__factory.connect,
     governance,
   );
 
@@ -511,7 +520,8 @@ export async function setupCoreProtocol<T extends NetworkType>(
     return new CoreProtocolArbitrumOne(
       coreProtocolParams as CoreProtocolParams<Network.ArbitrumOne>,
       {
-        chainlinkPriceOracle,
+        chainlinkPriceOracleOld,
+        chainlinkPriceOracleV1,
         abraEcosystem: await createAbraEcosystem(typedConfig.network, hhUser1),
         arbEcosystem: await createArbEcosystem(typedConfig.network, hhUser1),
         camelotEcosystem: await createCamelotEcosystem(typedConfig.network, hhUser1),
@@ -580,6 +590,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
           dPtWstEthJun2025: IERC20__factory.connect(DPT_WST_ETH_JUN_2025_MAP[typedConfig.network]!.address, hhUser1),
           dpx: IERC20__factory.connect(DPX_MAP[typedConfig.network]!.address, hhUser1),
           dYtGlp: IERC20__factory.connect(DYT_GLP_2024_MAP[typedConfig.network]!.address, hhUser1),
+          eEth: IERC20__factory.connect(E_ETH_MAP[typedConfig.network]!.address, hhUser1),
           gmx: IERC20__factory.connect(GMX_MAP[typedConfig.network]!.address, hhUser1),
           grail: IERC20__factory.connect(GRAIL_MAP[typedConfig.network]!.address, hhUser1),
           jones: IERC20__factory.connect(JONES_MAP[typedConfig.network]!.address, hhUser1),
@@ -604,7 +615,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
     return new CoreProtocolBase(
       coreProtocolParams as CoreProtocolParams<Network.Base>,
       {
-        chainlinkPriceOracle,
+        chainlinkPriceOracleOld,
         paraswapEcosystem: await createParaswapEcosystem(typedConfig.network, hhUser1),
       },
     ) as any;
@@ -614,7 +625,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
     return new CoreProtocolPolygonZkEvm(
       coreProtocolParams as CoreProtocolParams<Network.PolygonZkEvm>,
       {
-        chainlinkPriceOracle,
+        chainlinkPriceOracleOld,
         marketIds: {
           ...coreProtocolParams.marketIds,
           matic: MATIC_MAP[typedConfig.network].marketId,

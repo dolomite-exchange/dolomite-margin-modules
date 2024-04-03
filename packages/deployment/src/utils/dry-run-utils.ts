@@ -5,7 +5,7 @@ import {
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { advanceByTimeDelta, impersonate } from '@dolomite-exchange/modules-base/test/utils';
 import { CoreProtocolType } from '@dolomite-exchange/modules-base/test/utils/setup';
-import hardhat, { ethers } from 'hardhat';
+import hardhat from 'hardhat';
 import { createFolder, DenJsonUpload, readDeploymentFile, writeDeploymentFile, writeFile } from './deploy-utils';
 
 const CHUNK_SIZE = 16;
@@ -15,6 +15,7 @@ export interface DryRunOutput<T extends NetworkType> {
   readonly upload: DenJsonUpload;
   readonly core: CoreProtocolType<T>;
   readonly scriptName: string;
+  readonly skipTimeDelay?: boolean;
   readonly invariants?: () => Promise<void>;
 }
 
@@ -53,6 +54,13 @@ async function doStuffInternal<T extends NetworkType>(
       const delayedMultiSig = result.core.delayedMultiSig.connect(signer);
       const filter = delayedMultiSig.filters.Submission();
       const transactionIds = [];
+      const timeDelay = result.skipTimeDelay ? 0 : await delayedMultiSig.secondsTimeLocked();
+
+      if (result.skipTimeDelay) {
+        console.log('\tSkipping time delay...');
+        const impersonator = await impersonate(delayedMultiSig.address, true);
+        await delayedMultiSig.connect(impersonator).changeTimeLock(0);
+      }
 
       for (const transaction of result.upload.transactions) {
         let txResult;
@@ -73,7 +81,7 @@ async function doStuffInternal<T extends NetworkType>(
       }
 
       console.log('\tSubmitted transactions. Advancing time forward...');
-      await advanceByTimeDelta((await delayedMultiSig.secondsTimeLocked()) + 1);
+      await advanceByTimeDelta(timeDelay + 1);
 
       console.log('\tExecuting chunked transactions...');
       const transactionIdChunks = chunkify(transactionIds, CHUNK_SIZE);

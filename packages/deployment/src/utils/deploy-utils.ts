@@ -710,11 +710,11 @@ async function getReadableArg<T extends NetworkType>(
 export async function prettyPrintEncodeInsertChainlinkOracle<T extends NetworkType>(
   core: CoreProtocolWithChainlink<T>,
   token: IERC20,
-  tokenPairAddress: address = ADDRESS_ZERO,
-  aggregatorAddress: string = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address],
+  tokenPairAddress: address | undefined = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address].tokenPairAddress,
+  aggregatorAddress: string = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address].aggregatorAddress,
 ): Promise<EncodedTransaction> {
   let tokenDecimals: number;
-  if ('stEth' in core.tokens && token.address === core.tokens.stEth.address) {
+  if ('stEth' in core.tokens && token.address === (core.tokens as any).stEth.address) {
     tokenDecimals = 18;
   } else {
     tokenDecimals = await IERC20Metadata__factory.connect(token.address, core.hhUser1).decimals();
@@ -731,14 +731,14 @@ export async function prettyPrintEncodeInsertChainlinkOracle<T extends NetworkTy
   mostRecentTokenDecimals = tokenDecimals;
   return await prettyPrintEncodedDataWithTypeSafety(
     core,
-    { chainlinkPriceOracle: core.chainlinkPriceOracle },
+    { chainlinkPriceOracle: core.chainlinkPriceOracleOld },
     'chainlinkPriceOracle',
     'ownerInsertOrUpdateOracleToken',
     [
       token.address,
       tokenDecimals,
       aggregator.address,
-      tokenPairAddress,
+      tokenPairAddress ?? ADDRESS_ZERO,
     ],
   );
 }
