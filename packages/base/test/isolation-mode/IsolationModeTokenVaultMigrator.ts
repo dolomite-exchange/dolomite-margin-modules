@@ -1,8 +1,8 @@
 import { expect } from 'chai';
 import {
   CustomTestToken,
-  IsolationModeMigrator,
-  IsolationModeMigrator__factory,
+  IsolationModeTokenVaultMigrator,
+  IsolationModeTokenVaultMigrator__factory,
   TestIsolationModeFactory,
   TestIsolationModeTokenVaultV1,
 } from '../../src/types';
@@ -25,14 +25,14 @@ import { BigNumber } from 'ethers';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
-describe('IsolationModeMigrator', () => {
+describe('IsolationModeTokenVaultMigrator', () => {
   let snapshotId: string;
   let core: CoreProtocolArbitrumOne;
   let underlyingToken: CustomTestToken;
   let factory: TestIsolationModeFactory;
   let userVaultImplementation: TestIsolationModeTokenVaultV1;
-  let migratorImplementation: IsolationModeMigrator;
-  let userVault: IsolationModeMigrator;
+  let migratorImplementation: IsolationModeTokenVaultMigrator;
+  let userVault: IsolationModeTokenVaultMigrator;
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
@@ -63,15 +63,15 @@ describe('IsolationModeMigrator', () => {
 
     await factory.createVault(core.hhUser1.address);
     const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);
-    userVault = setupUserVaultProxy<IsolationModeMigrator>(
+    userVault = setupUserVaultProxy<IsolationModeTokenVaultMigrator>(
       vaultAddress,
-      IsolationModeMigrator__factory,
+      IsolationModeTokenVaultMigrator__factory,
       core.hhUser1,
     );
 
-    migratorImplementation = await createContractWithAbi<IsolationModeMigrator>(
-      IsolationModeMigrator__factory.abi,
-      IsolationModeMigrator__factory.bytecode,
+    migratorImplementation = await createContractWithAbi<IsolationModeTokenVaultMigrator>(
+      IsolationModeTokenVaultMigrator__factory.abi,
+      IsolationModeTokenVaultMigrator__factory.bytecode,
       [core.dolomiteRegistry.address, factory.address, underlyingToken.address]
     );
     await factory.connect(core.governance).ownerSetUserVaultImplementation(migratorImplementation.address);
@@ -85,8 +85,8 @@ describe('IsolationModeMigrator', () => {
 
   describe('#constructor', () => {
     it('should work normally', async () => {
-      expect(await userVault.dolomiteRegistry()).to.eq(core.dolomiteRegistry.address);
-      expect(await userVault.vaultFactory()).to.eq(factory.address);
+      expect(await userVault.DOLOMITE_REGISTRY()).to.eq(core.dolomiteRegistry.address);
+      expect(await userVault.VAULT_FACTORY()).to.eq(factory.address);
     });
   });
 
@@ -100,7 +100,7 @@ describe('IsolationModeMigrator', () => {
     it('should fail if not called by migrator', async () => {
       await expectThrow(
         userVault.connect(core.hhUser1).migrate(amountWei),
-        `IsolationModeMigrator: Caller is not migrator <${core.hhUser1.address.toLowerCase()}>`,
+        `IsolationModeTokenVaultMigrator: Caller is not migrator <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });

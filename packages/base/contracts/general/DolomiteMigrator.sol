@@ -26,7 +26,7 @@ import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 import { IDolomiteMigrator } from "../interfaces/IDolomiteMigrator.sol";
 import { IDolomiteTransformer } from "../interfaces/IDolomiteTransformer.sol";
-import { IIsolationModeMigrator } from "../isolation-mode/interfaces/IIsolationModeMigrator.sol";
+import { IIsolationModeTokenVaultMigrator } from "../isolation-mode/interfaces/IIsolationModeTokenVaultMigrator.sol";
 import { IIsolationModeVaultFactory } from "../isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
@@ -85,7 +85,6 @@ contract DolomiteMigrator is IDolomiteMigrator, OnlyDolomiteMargin {
     // =================== Functions ==================
     // ================================================
 
-    // @follow-up should handler be stored in this contract or on a registry contract?
     function migrate(
         IDolomiteStructs.AccountInfo[] calldata _accounts,
         uint256 _fromMarketId,
@@ -155,8 +154,10 @@ contract DolomiteMigrator is IDolomiteMigrator, OnlyDolomiteMargin {
             uint256 amountWei = DOLOMITE_MARGIN().getAccountWei(account, _fromMarketId).value;
             uint256 amountOut;
             if (amountWei > 0) {
-                IIsolationModeMigrator(account.owner).migrate(amountWei);
-                amountOut = _delegateCallToTransformer(_fromMarketId, _toMarketId, amountWei, _extraData);
+                // TODO: assert balance after minus balance before == amountWei
+                IIsolationModeTokenVaultMigrator(account.owner).migrate(amountWei);
+                // TODO: assert balance before minus balance after == amountOut
+                amountOut = _transformAndGetAmountOut(_fromMarketId, _toMarketId, amountWei, _extraData);
 
                 fromFactory.enqueueTransferFromDolomiteMargin(account.owner, amountWei);
                 toFactory.enqueueTransferIntoDolomiteMargin(toVault, amountOut);
@@ -164,16 +165,28 @@ contract DolomiteMigrator is IDolomiteMigrator, OnlyDolomiteMargin {
                 IERC20(address(toFactory)).safeApprove(address(DOLOMITE_MARGIN()), amountOut);
             }
 
-            _craftAndExecuteActions(account, toVault, _fromMarketId, _toMarketId, amountOut, amountWei > 0);
+            // Even if the amount in this sub account is 0, we still need to transfer the position (which could contain
+            // other assets)
+            _craftAndExecuteActions(
+                account,
+                toVault,
+                _fromMarketId,
+                _toMarketId,
+                amountOut,
+                /* _hasFromMarketIdBalance */ amountWei > 0
+            );
 
-            // @follow-up Need to make sure a user can't make these allowance asserts fail
             assert(IERC20(outputToken).allowance(address(this), toVault) == 0);
             assert(IERC20(address(toFactory)).allowance(address(this), address(DOLOMITE_MARGIN())) == 0);
+            if (amountWei > 0) {
+                // TODO: assert the current transfer cursor has been executed from each factory
+            }
+
             emit MigrationComplete(account.owner, account.number, _fromMarketId, _toMarketId);
         }
     }
 
-    function _delegateCallToTransformer(
+    function _transformAndGetAmountOut(
         uint256 _fromMarketId,
         uint256 _toMarketId,
         uint256 _amount,
@@ -181,7 +194,6 @@ contract DolomiteMigrator is IDolomiteMigrator, OnlyDolomiteMargin {
     ) internal returns (uint256) {
         address transformer = marketIdsToTransformer[_fromMarketId][_toMarketId];
         assert(transformer != address(0));
-        // @follow-up Want to use a library instead to delegate call?
         (bool success, bytes memory data) = transformer.delegatecall(
             abi.encodeWithSelector(IDolomiteTransformer.transform.selector, _amount, _extraData)
         );
@@ -223,6 +235,8 @@ contract DolomiteMigrator is IDolomiteMigrator, OnlyDolomiteMargin {
             _hasFromMarketIdBalance ? marketsWithBalances.length + 1 : marketsWithBalances.length
         );
         // @follow-up Do we want this here? If not, it will revert instead of No-Op
+        // TODO: I'd rather Require.that(actions.length > 0) since we should only ever call this if a migration needs to
+        //       occur for that sub account
         if (actions.length == 0) {
             return;
         }
