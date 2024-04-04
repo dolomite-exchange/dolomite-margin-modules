@@ -1,7 +1,7 @@
 import Deployments, * as deployments from '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
 import {
   IChainlinkAutomationRegistry__factory,
-  IChainlinkPriceOracleOld__factory,
+  IChainlinkPriceOracleOld__factory, IChainlinkPriceOracleV3__factory, OracleAggregatorV2__factory,
 } from '@dolomite-exchange/modules-oracles/src/types';
 import { BigNumber as ZapBigNumber } from '@dolomite-exchange/zap-sdk';
 import * as BorrowPositionProxyV2Json from '@dolomite-margin/deployed-contracts/BorrowPositionProxyV2.json';
@@ -42,7 +42,8 @@ import {
 import {
   ARB_MAP,
   CHAINLINK_AUTOMATION_REGISTRY_MAP,
-  CHAINLINK_PRICE_AGGREGATORS_MAP, CHAINLINK_PRICE_ORACLE_OLD_MAP,
+  CHAINLINK_PRICE_AGGREGATORS_MAP,
+  CHAINLINK_PRICE_ORACLE_OLD_MAP,
   CHAINLINK_PRICE_ORACLE_V1_MAP,
   D_ARB_MAP,
   D_GM_ARB_MAP,
@@ -60,7 +61,9 @@ import {
   DPT_WST_ETH_JUN_2024_MAP,
   DPT_WST_ETH_JUN_2025_MAP,
   DPX_MAP,
-  DYT_GLP_2024_MAP, E_ETH_MAP,
+  DYT_GLP_2024_MAP,
+  E_ETH_MAP,
+  EZ_ETH_MAP,
   GMX_MAP,
   GRAIL_MAP,
   JONES_MAP,
@@ -392,6 +395,11 @@ export async function setupCoreProtocol<T extends NetworkType>(
     IChainlinkPriceOracleV1__factory.connect,
     governance,
   );
+  const chainlinkPriceOracleV3 = getContract(
+    Deployments.ChainlinkPriceOracleV3[config.network]?.address,
+    IChainlinkPriceOracleV3__factory.connect,
+    governance,
+  );
 
   const delayedMultiSig = IPartiallyDelayedMultiSig__factory.connect(
     await dolomiteMargin.connect(hhUser1).owner(),
@@ -453,6 +461,12 @@ export async function setupCoreProtocol<T extends NetworkType>(
     governance,
   );
 
+  const oracleAggregatorV2 = getContract(
+    Deployments.OracleAggregatorV2[config.network].address,
+    OracleAggregatorV2__factory.connect,
+    governance,
+  );
+
   const testEcosystem = await createTestEcosystem(dolomiteMargin, governance);
 
   const tokenVaultActionsLibraries = await createTokenVaultActionsLibraries(config);
@@ -473,6 +487,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
     liquidatorAssetRegistry,
     liquidatorProxyV1,
     liquidatorProxyV4,
+    oracleAggregatorV2,
     testEcosystem,
     tokenVaultActionsLibraries,
     hhUser1,
@@ -522,6 +537,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
       {
         chainlinkPriceOracleOld,
         chainlinkPriceOracleV1,
+        chainlinkPriceOracleV3,
         abraEcosystem: await createAbraEcosystem(typedConfig.network, hhUser1),
         arbEcosystem: await createArbEcosystem(typedConfig.network, hhUser1),
         camelotEcosystem: await createCamelotEcosystem(typedConfig.network, hhUser1),
@@ -591,6 +607,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
           dpx: IERC20__factory.connect(DPX_MAP[typedConfig.network]!.address, hhUser1),
           dYtGlp: IERC20__factory.connect(DYT_GLP_2024_MAP[typedConfig.network]!.address, hhUser1),
           eEth: IERC20__factory.connect(E_ETH_MAP[typedConfig.network]!.address, hhUser1),
+          ezEth: IERC20__factory.connect(EZ_ETH_MAP[typedConfig.network]!.address, hhUser1),
           gmx: IERC20__factory.connect(GMX_MAP[typedConfig.network]!.address, hhUser1),
           grail: IERC20__factory.connect(GRAIL_MAP[typedConfig.network]!.address, hhUser1),
           jones: IERC20__factory.connect(JONES_MAP[typedConfig.network]!.address, hhUser1),

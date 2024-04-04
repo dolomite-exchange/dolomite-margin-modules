@@ -6,9 +6,15 @@ import {
 import { advanceByTimeDelta, impersonate } from '@dolomite-exchange/modules-base/test/utils';
 import { CoreProtocolType } from '@dolomite-exchange/modules-base/test/utils/setup';
 import hardhat from 'hardhat';
-import { createFolder, DenJsonUpload, readDeploymentFile, writeDeploymentFile, writeFile } from './deploy-utils';
+import {
+  createFolder,
+  DenJsonUpload,
+  EncodedTransaction,
+  readDeploymentFile,
+  writeDeploymentFile,
+  writeFile,
+} from './deploy-utils';
 
-const CHUNK_SIZE = 16;
 const HARDHAT_CHAIN_ID = '31337';
 
 export interface DryRunOutput<T extends NetworkType> {
@@ -17,14 +23,6 @@ export interface DryRunOutput<T extends NetworkType> {
   readonly scriptName: string;
   readonly skipTimeDelay?: boolean;
   readonly invariants?: () => Promise<void>;
-}
-
-function chunkify<T>(array: T[], chunkSize: number): T[][] {
-  const result = [];
-  for (let i = 0; i < array.length; i += chunkSize) {
-    result.push(array.slice(i, i + chunkSize));
-  }
-  return result;
 }
 
 function cleanHardhatDeployment(): void {
@@ -83,10 +81,17 @@ async function doStuffInternal<T extends NetworkType>(
       console.log('\tSubmitted transactions. Advancing time forward...');
       await advanceByTimeDelta(timeDelay + 1);
 
-      console.log('\tExecuting chunked transactions...');
-      const transactionIdChunks = chunkify(transactionIds, CHUNK_SIZE);
-      for (const transactionIdChunk of transactionIdChunks) {
-        await delayedMultiSig.executeMultipleTransactions(transactionIdChunk);
+      console.log('\tExecuting transactions...');
+      for (const transactionId of transactionIds) {
+        try {
+          await delayedMultiSig.executeMultipleTransactions([transactionId]);
+        } catch (e: any) {
+          const transactionIndex = transactionId.sub(transactionIds[0]).toNumber();
+          throw new Error(
+            `Execution of transaction with ID ${transactionId.toString()} failed due to error: ${e.message}\n
+            transaction: ${JSON.stringify(result.upload.transactions[transactionIndex], undefined, 2)}`,
+          );
+        }
       }
       console.log('\tAdmin transactions succeeded!');
     }

@@ -74,69 +74,74 @@ async function getNewOracleMap(core: CoreProtocolArbitrumOne): Promise<Record<st
       tokenPairAddress: core.tokens.weth.address,
       aggregatorAddress: Deployments.PendlePtREthJun2025PriceOracle[core.network].address,
       pendleRegistry: core.pendleEcosystem.rEthJun2025.pendleRegistry,
+      rename: 'PendlePtREthJun2025PriceOracleV2',
     },
     [core.tokens.dPtWeEthApr2024.address]: {
       tokenPairAddress: core.tokens.eEth.address,
       aggregatorAddress: Deployments.PendlePtWeETHApr2024PriceOracle[core.network].address,
       pendleRegistry: core.pendleEcosystem.weEthApr2024.pendleRegistry,
+      rename: 'PendlePtWeETHApr2024PriceOracleV2',
     },
     [core.tokens.dPtWstEthJun2024.address]: {
       tokenPairAddress: core.tokens.stEth.address,
       aggregatorAddress: Deployments.PendlePtWstEthJun2024PriceOracle[core.network].address,
       pendleRegistry: core.pendleEcosystem.wstEthJun2024.pendleRegistry,
+      rename: 'PendlePtWstEthJun2024PriceOracleV2',
     },
     [core.tokens.dPtWstEthJun2025.address]: {
       tokenPairAddress: core.tokens.stEth.address,
-      aggregatorAddress: Deployments.PendlePtWstEthJun2024PriceOracle[core.network].address,
+      aggregatorAddress: Deployments.PendlePtWstEthJun2025PriceOracle[core.network].address,
       pendleRegistry: core.pendleEcosystem.wstEthJun2025.pendleRegistry,
+      rename: 'PendlePtWstEthJun2025PriceOracleV2',
     },
     [core.tokens.grail.address]: {
       tokenPairAddresses: [core.tokens.weth.address, core.tokens.usdc.address],
       aggregatorAddress: Deployments.GrailTWAPPriceOracleV1[core.network].address,
       camelotPools: [core.camelotEcosystem.grailWethV3Pool, core.camelotEcosystem.grailUsdcV3Pool],
-      rename: 'GrailTWAPPriceOracleV2',
+      renames: ['GrailWethTWAPPriceOracleV2', 'GrailUsdcTWAPPriceOracleV2'],
     },
     [core.tokens.jones.address]: {
       tokenPairAddresses: [core.tokens.weth.address],
       aggregatorAddress: Deployments.JonesTWAPPriceOracleV1[core.network].address,
       camelotPools: [core.jonesEcosystem.jonesWethV3Pool],
-      rename: 'JonesTWAPPriceOracleV2',
+      renames: ['JonesTWAPPriceOracleV2'],
     },
     [core.tokens.premia.address]: {
       tokenPairAddresses: [core.tokens.weth.address],
       aggregatorAddress: Deployments.PremiaTWAPPriceOracleV1[core.network].address,
       camelotPools: [core.premiaEcosystem.premiaWethV3Pool],
-      rename: 'PremiaTWAPPriceOracleV2',
+      renames: ['PremiaTWAPPriceOracleV2'],
     },
     [core.tokens.dpx.address]: {
       tokenPairAddresses: [core.tokens.weth.address],
       aggregatorAddress: Deployments.DPXTWAPPriceOracleV1[core.network].address,
       camelotPools: [core.camelotEcosystem.dpxWethV3Pool],
-      rename: 'DPXTWAPPriceOracleV2',
+      renames: ['DPXTWAPPriceOracleV2'],
     },
   };
   const oldTokens = Object.keys(tokensToOldOraclesMap);
   for (let i = 0; i < oldTokens.length; i++) {
     const oldToken = oldTokens[i];
-    if ('pendleRegistry' in tokensToOldOraclesMap[oldToken]) {
+    const oldOracle = tokensToOldOraclesMap[oldToken];
+    if ('pendleRegistry' in oldOracle && 'rename' in oldOracle) {
       const newOracleAddress = await deployContractAndSave(
         'PendlePtPriceOracleV2',
         getPendlePtPriceOracleV2ConstructorParams(
           core,
           IPendlePtIsolationModeVaultFactory__factory.connect(oldToken, core.hhUser1),
-          tokensToOldOraclesMap[oldToken].pendleRegistry,
+          oldOracle.pendleRegistry,
         ),
-        tokensToOldOraclesMap[oldToken].rename,
+        oldOracle.rename,
       );
       tokenToNewOracleMap[oldToken] = [
         {
-          tokenPairAddress: tokensToOldOraclesMap[oldToken].tokenPairAddress,
+          tokenPairAddress: oldOracle.tokenPairAddress,
           aggregatorAddress: newOracleAddress,
         },
       ];
-    } else if ('camelotPools' in tokensToOldOraclesMap[oldToken]) {
+    } else if ('camelotPools' in oldOracle && 'renames' in oldOracle) {
       tokenToNewOracleMap[oldToken] = [];
-      const pools = tokensToOldOraclesMap[oldToken].camelotPools as IAlgebraV3Pool[];
+      const pools = oldOracle.camelotPools as IAlgebraV3Pool[];
       for (let i = 0; i < pools.length; i++) {
         const newOracleAddress = await deployContractAndSave(
           'TWAPPriceOracleV2',
@@ -145,10 +150,10 @@ async function getNewOracleMap(core: CoreProtocolArbitrumOne): Promise<Record<st
             IERC20__factory.connect(oldToken, core.hhUser1),
             pools[i],
           ),
-          tokensToOldOraclesMap[oldToken].rename,
+          oldOracle.renames[i],
         );
         tokenToNewOracleMap[oldToken].push({
-          tokenPairAddress: tokensToOldOraclesMap[oldToken].tokenPairAddresses[i],
+          tokenPairAddress: oldOracle.tokenPairAddresses[i],
           aggregatorAddress: newOracleAddress,
         });
       }
@@ -214,10 +219,10 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   );
   const oracleAggregatorV2 = OracleAggregatorV2__factory.connect(oracleAggregatorV2Address, core.hhUser1);
 
-  const dolomiteRegistryImplementationV7Address = await deployContractAndSave(
+  const dolomiteRegistryImplementationV8Address = await deployContractAndSave(
     'DolomiteRegistryImplementation',
     [],
-    'DolomiteRegistryImplementationV7',
+    'DolomiteRegistryImplementationV8',
   );
 
   const transactions: EncodedTransaction[] = [];
@@ -227,7 +232,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       core,
       'dolomiteRegistryProxy',
       'upgradeTo',
-      [dolomiteRegistryImplementationV7Address],
+      [dolomiteRegistryImplementationV8Address],
     ),
     await prettyPrintEncodedDataWithTypeSafety(
       core,

@@ -111,6 +111,15 @@ interface IPartiallyDelayedMultiSig {
     ) external;
 
     /**
+     * Allows an owner to execute a confirmed transaction.
+     *
+     * @param  transactionId  Transaction ID.
+     */
+    function executeTransaction(
+        uint256 transactionId
+    ) external;
+
+    /**
      * Allows an owner to revoke a confirmation for a transaction.
      *
      * @param  transactionId  Transaction ID.

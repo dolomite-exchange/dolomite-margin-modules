@@ -179,6 +179,13 @@ export const E_ETH_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   },
 };
 
+export const EZ_ETH_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0x2416092f143378750bb29b79eD961ab195CcEea5',
+    marketId: 37,
+  },
+};
+
 export const GRAIL_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x3d9907F9a368ad0a51Be60f7Da3b97cf940982D8',
@@ -557,20 +564,36 @@ export const PARASWAP_TRANSFER_PROXY_MAP: Record<Network, string> = {
   [Network.PolygonZkEvm]: '0xC8a21FcD5A100c3ecc037c97e2f9C53a8D3A02A1',
 };
 
+export const PENDLE_PT_E_ETH_APR_2024_MARKET_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0xE11f9786B06438456b044B3E21712228ADcAA0D1',
+};
+
+export const PENDLE_PT_E_ETH_APR_2024_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x9bEcd6b4Fb076348A455518aea23d3799361FE95',
+};
+
+export const PENDLE_PT_E_ETH_JUN_2024_MARKET_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x952083cde7aaa11ab8449057f7de23a970aa8472',
+};
+
+export const PENDLE_PT_E_ETH_JUN_2024_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x1c27ad8a19ba026adabd615f6bc77158130cfbe4',
+};
+
+export const PENDLE_PT_EZ_ETH_JUN_2024_MARKET_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x5E03C94Fc5Fb2E21882000A96Df0b63d2c4312e2',
+};
+
+export const PENDLE_PT_EZ_ETH_JUN_2024_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x8EA5040d423410f1fdc363379Af88e1DB5eA1C34',
+};
+
 export const PENDLE_PT_GLP_2024_MARKET_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x7D49E5Adc0EAAD9C027857767638613253eF125f',
 };
 
 export const PENDLE_PT_GLP_2024_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x96015D0Fb97139567a9ba675951816a0Bb719E3c',
-};
-
-export const PENDLE_PT_E_ETH_2024_MARKET_MAP: Record<Network.ArbitrumOne, string> = {
-  [Network.ArbitrumOne]: '0xE11f9786B06438456b044B3E21712228ADcAA0D1',
-};
-
-export const PENDLE_PT_E_ETH_2024_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
-  [Network.ArbitrumOne]: '0x9bEcd6b4Fb076348A455518aea23d3799361FE95',
 };
 
 export const PENDLE_PT_RETH_MARKET_MAP: Record<Network.ArbitrumOne, string> = {
@@ -611,6 +634,10 @@ export const PENDLE_PT_ORACLE_MAP: Record<Network.ArbitrumOne, string> = {
 
 export const PENDLE_ROUTER_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x0000000001E4ef00d069e71d6bA041b0A16F7eA0',
+};
+
+export const PENDLE_SY_EZ_ETH_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x0dE802e3D6Cc9145A150bBDc8da9F988a98c5202',
 };
 
 export const PENDLE_SY_GLP_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
@@ -750,6 +777,10 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<Network, Record<string, Agg
       aggregatorAddress: '0x20bAe7e1De9c596f5F7615aeaa1342Ba99294e12',
       tokenPairAddress: WE_ETH_MAP[Network.ArbitrumOne].address,
       invert: true,
+    },
+    [EZ_ETH_MAP[Network.ArbitrumOne].address]: {
+      aggregatorAddress: '0x989a480b6054389075CBCdC385C18CfB6FC08186',
+      tokenPairAddress: WETH_MAP[Network.ArbitrumOne].address,
     },
     [GMX_MAP[Network.ArbitrumOne].address]: {
       aggregatorAddress: '0xdb98056fecfff59d032ab628337a4887110df3db',
