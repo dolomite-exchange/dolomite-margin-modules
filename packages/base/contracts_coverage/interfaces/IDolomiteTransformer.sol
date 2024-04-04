@@ -29,6 +29,8 @@ pragma solidity ^0.8.9;
  */
 interface IDolomiteTransformer {
 
+    function inputToken() external view returns (address);
+
     function outputToken() external view returns (address);
 
     function transform(uint256 amount, bytes calldata /* _extraData */) external returns (uint256);

@@ -36,18 +36,18 @@ import { IJonesRouter } from "./interfaces/IJonesRouter.sol";
 contract JonesUSDCTransformer is IDolomiteTransformer {
     using SafeERC20 for IERC20;
 
-    address public immutable oldjUsdc;
+    address public immutable inputToken; // old jUSDC
     address public immutable outputToken; // new jUSDC
     IJonesRouter public immutable router;
 
     constructor(address _oldjUsdc, address _newjUsdc, address _router) {
-        oldjUsdc = _oldjUsdc;
+        inputToken = _oldjUsdc;
         outputToken = _newjUsdc;
         router = IJonesRouter(_router);
     }
     
     function transform(uint256 amount, bytes calldata /* _extraData */) external returns (uint256) {
-        IERC20(oldjUsdc).safeApprove(address(router), amount);
+        IERC20(inputToken).safeApprove(address(router), amount);
         (uint256 newjUSDC, uint256 compoundAmount) = router.migratePosition();
         return (newjUSDC + compoundAmount);
     }

@@ -4,11 +4,13 @@ import {
   IsolationModeTokenVaultMigrator,
   IsolationModeTokenVaultMigrator__factory,
   TestIsolationModeFactory,
+  TestIsolationModeTokenVaultMigrator,
+  TestIsolationModeTokenVaultMigrator__factory,
   TestIsolationModeTokenVaultV1,
 } from '../../src/types';
 import { createContractWithAbi, createContractWithLibrary, createTestToken } from '../../src/utils/dolomite-utils';
 import { Network } from '../../src/utils/no-deps-constants';
-import { revertToSnapshotAndCapture, snapshot } from '../utils';
+import { impersonate, revertToSnapshotAndCapture, snapshot } from '../utils';
 import { CoreProtocolArbitrumOne } from '../utils/core-protocol';
 import {
   disableInterestAccrual,
@@ -69,10 +71,10 @@ describe('IsolationModeTokenVaultMigrator', () => {
       core.hhUser1,
     );
 
-    migratorImplementation = await createContractWithAbi<IsolationModeTokenVaultMigrator>(
-      IsolationModeTokenVaultMigrator__factory.abi,
-      IsolationModeTokenVaultMigrator__factory.bytecode,
-      [core.dolomiteRegistry.address, factory.address, underlyingToken.address]
+    migratorImplementation = await createContractWithAbi<TestIsolationModeTokenVaultMigrator>(
+      TestIsolationModeTokenVaultMigrator__factory.abi,
+      TestIsolationModeTokenVaultMigrator__factory.bytecode,
+      [core.dolomiteRegistry.address, underlyingToken.address, factory.address]
     );
     await factory.connect(core.governance).ownerSetUserVaultImplementation(migratorImplementation.address);
 
@@ -107,8 +109,16 @@ describe('IsolationModeTokenVaultMigrator', () => {
 
   describe('#executeWithdrawalFromVault', async () => {
     it('should work normally (do nothing)', async () => {
-      await expect(() => userVault.executeWithdrawalFromVault(OTHER_ADDRESS, amountWei))
+      const factoryImpersonator = await impersonate(factory.address, true);
+      await expect(() => userVault.connect(factoryImpersonator).executeWithdrawalFromVault(OTHER_ADDRESS, amountWei))
         .to.changeTokenBalance(underlyingToken, userVault, 0);
+    });
+
+    it('should fail if not called by factory', async () => {
+      await expectThrow(
+        userVault.executeWithdrawalFromVault(OTHER_ADDRESS, amountWei),
+        'IsolationModeTokenVaultMigrator: Only factory can call'
+      );
     });
   });
 });

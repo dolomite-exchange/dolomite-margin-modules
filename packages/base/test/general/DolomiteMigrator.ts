@@ -3,13 +3,15 @@ import {
   CustomTestToken,
   DolomiteMigrator,
   DolomiteMigrator__factory,
-  IsolationModeMigrator,
-  IsolationModeMigrator__factory,
+  IsolationModeTokenVaultMigrator,
+  IsolationModeTokenVaultMigrator__factory,
   TestFailingTransformer,
   TestFailingTransformerBytes,
   TestFailingTransformerBytes__factory,
   TestFailingTransformer__factory,
   TestIsolationModeFactory,
+  TestIsolationModeTokenVaultMigrator,
+  TestIsolationModeTokenVaultMigrator__factory,
   TestIsolationModeTokenVaultV1,
   TestIsolationModeTokenVaultV1__factory,
   TestTransformer,
@@ -53,7 +55,7 @@ describe('DolomiteMigrator', () => {
   let factory1: TestIsolationModeFactory;
   let factory2: TestIsolationModeFactory;
   let userVaultImplementation: TestIsolationModeTokenVaultV1;
-  let migratorImplementation: IsolationModeMigrator;
+  let migratorImplementation: IsolationModeTokenVaultMigrator;
   let userVault: TestIsolationModeTokenVaultV1;
   let transformer: TestTransformer;
 
@@ -94,10 +96,10 @@ describe('DolomiteMigrator', () => {
       DolomiteMigrator__factory.bytecode,
       [core.dolomiteMargin.address, core.hhUser5.address],
     );
-    migratorImplementation = await createContractWithAbi<IsolationModeMigrator>(
-      IsolationModeMigrator__factory.abi,
-      IsolationModeMigrator__factory.bytecode,
-      [core.dolomiteRegistry.address, factory1.address, underlyingToken1.address]
+    migratorImplementation = await createContractWithAbi<TestIsolationModeTokenVaultMigrator>(
+      TestIsolationModeTokenVaultMigrator__factory.abi,
+      TestIsolationModeTokenVaultMigrator__factory.bytecode,
+      [core.dolomiteRegistry.address, underlyingToken1.address, factory1.address]
     );
     transformer = await createContractWithAbi<TestTransformer>(
       TestTransformer__factory.abi,
@@ -198,27 +200,6 @@ describe('DolomiteMigrator', () => {
   });
 
   describe('#migrate', () => {
-    it('should work normally when user has no balances (do nothing)', async () => {
-      const otherBorrowNumber = BigNumber.from('189');
-      const accounts = [
-        { owner: userVault.address, number: otherBorrowNumber }
-      ];
-      await factory1.connect(core.governance).ownerSetUserVaultImplementation(migratorImplementation.address);
-      const vaultAddress = await factory2.getVaultByAccount(core.hhUser1.address);
-
-      await expectProtocolBalance(core, userVault.address, otherBorrowNumber, marketId1, ZERO_BI);
-      await expectProtocolBalance(core, vaultAddress, otherBorrowNumber, marketId2, ZERO_BI);
-      const result = await migrator.connect(core.hhUser5).migrate(accounts, marketId1, marketId2, BYTES_EMPTY);
-      await expectEvent(migrator, result, 'MigrationComplete', {
-        accountOwner: userVault.address,
-        accountNumber: otherBorrowNumber,
-        fromMarketId: marketId1,
-        toMarketId: marketId2,
-      });
-      await expectProtocolBalance(core, userVault.address, otherBorrowNumber, marketId1, ZERO_BI);
-      await expectProtocolBalance(core, vaultAddress, otherBorrowNumber, marketId2, ZERO_BI);
-    });
-
     it('should work normally when vault needs to be created', async () => {
       await factory1.connect(core.governance).ownerSetUserVaultImplementation(migratorImplementation.address);
       const result = await migrator.connect(core.hhUser5).migrate(accounts, marketId1, marketId2, BYTES_EMPTY);
@@ -315,6 +296,22 @@ describe('DolomiteMigrator', () => {
       const vaultAddress = await factory2.getVaultByAccount(core.hhUser1.address);
       await expectProtocolBalance(core, userVault.address, borrowAccountNumber, marketId1, ZERO_BI);
       await expectProtocolBalance(core, vaultAddress, borrowAccountNumber, marketId2, amountWei);
+    });
+
+    it('should fail when user has no balances', async () => {
+      const otherBorrowNumber = BigNumber.from('189');
+      const accounts = [
+        { owner: userVault.address, number: otherBorrowNumber }
+      ];
+      await factory1.connect(core.governance).ownerSetUserVaultImplementation(migratorImplementation.address);
+      const vaultAddress = await factory2.getVaultByAccount(core.hhUser1.address);
+
+      await expectProtocolBalance(core, userVault.address, otherBorrowNumber, marketId1, ZERO_BI);
+      await expectProtocolBalance(core, vaultAddress, otherBorrowNumber, marketId2, ZERO_BI);
+      await expectThrow(
+        migrator.connect(core.hhUser5).migrate(accounts, marketId1, marketId2, BYTES_EMPTY),
+        'DolomiteMigrator: No actions to execute'
+      );
     });
 
     it('should fail if transformer returns invalid data', async () => {

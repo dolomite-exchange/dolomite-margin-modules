@@ -209,6 +209,11 @@ interface IIsolationModeVaultFactory is IOnlyDolomiteMargin {
     function isIsolationAsset() external view returns (bool);
 
     /**
+     * @return  Returns the current transfer cursor
+     */
+    function transferCursor() external view returns (uint256);
+
+    /**
      *
      * @param  _transferCursor   The cursor used to key into the mapping of queued transfers
      * @return The transfer enqueued in the mapping at the cursor's position

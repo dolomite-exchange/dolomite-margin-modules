@@ -20,13 +20,13 @@
 
 pragma solidity ^0.8.9;
 
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IDolomiteTransformer } from "@dolomite-exchange/modules-base/contracts/interfaces/IDolomiteTransformer.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IPendleGLPRegistry } from "./interfaces/IPendleGLPRegistry.sol";
 import { IPendlePtToken } from "./interfaces/IPendlePtToken.sol";
 import { IPendleRouter } from "./interfaces/IPendleRouter.sol";
 
-import "hardhat/console.sol";
 
 /**
  * @title   PtGLPTransformer
@@ -35,13 +35,15 @@ import "hardhat/console.sol";
  * @notice  Contract for PtGLP transformer implementation
  */
 contract PtGLPTransformer is IDolomiteTransformer {
-    using SafeERC20 for IPendlePtToken;
+    using SafeERC20 for IERC20;
 
     IPendleGLPRegistry public immutable PENDLE_REGISTRY; // solhint-disable-line var-name-mixedcase
+    address public immutable inputToken;
     address public immutable outputToken;
 
     constructor(address _pendleRegistry, address _outputToken) {
         PENDLE_REGISTRY = IPendleGLPRegistry(_pendleRegistry);
+        inputToken = address(PENDLE_REGISTRY.ptGlpToken());
         outputToken = _outputToken;
     }
 
@@ -62,7 +64,7 @@ contract PtGLPTransformer is IDolomiteTransformer {
         });
 
         IPendleRouter pendleRouter = PENDLE_REGISTRY.pendleRouter();
-        PENDLE_REGISTRY.ptGlpToken().safeApprove(address(pendleRouter), _inputAmount);
+        IERC20(inputToken).safeApprove(address(pendleRouter), _inputAmount);
         uint256 glpAmount = pendleRouter.redeemPyToToken(
             /* _receiver */ address(this),
             address(PENDLE_REGISTRY.ytGlpToken()),

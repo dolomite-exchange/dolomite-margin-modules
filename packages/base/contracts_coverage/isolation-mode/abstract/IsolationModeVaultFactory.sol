@@ -307,7 +307,6 @@ abstract contract IsolationModeVaultFactory is
     override
     requireIsVault(msg.sender) {
         address vault = msg.sender;
-        _approve(vault, address(DOLOMITE_MARGIN()), _amountWei);
         _enqueueTransfer(
             vault,
             address(DOLOMITE_MARGIN()),
@@ -462,10 +461,10 @@ abstract contract IsolationModeVaultFactory is
             _approve(oldTransfer.vault, oldTransfer.to, 0);
         }
 
-        // if (_to == address(DOLOMITE_MARGIN())) {
-        //     // Approve the queued transfer amount from the vault contract into DolomiteMargin from this contract
-        //     _approve(_vault, _to, _amount);
-        // }
+        if (_from == _vault && _to == address(DOLOMITE_MARGIN())) {
+            // Approve the queued transfer amount from the vault contract into DolomiteMargin from this contract
+            _approve(_vault, _to, _amount);
+        }
         // add 1 to the cursor for any enqueue, allowing anyone to overwrite stale enqueues in case a developer
         // doesn't integrate with this contract properly
         transferCursor += 1;

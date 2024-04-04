@@ -20,18 +20,28 @@
 
 pragma solidity ^0.8.9;
 
+import { IsolationModeTokenVaultMigrator } from "../isolation-mode/IsolationModeTokenVaultMigrator.sol";
+
 
 /**
- * @title   IDolomiteTransformer
+ * @title   TestIsolationModeTokenVaultMigrator
  * @author  Dolomite
  *
- * @notice  Interface for a transformer implementation
+ * @notice  Test migrator contract that lets the tester set the vault factory slot
  */
-interface IDolomiteTransformer {
+contract TestIsolationModeTokenVaultMigrator is IsolationModeTokenVaultMigrator {
 
-    function inputToken() external view returns (address);
+    // ================================================
+    // =================== Constructor ================
+    // ================================================
 
-    function outputToken() external view returns (address);
-
-    function transform(uint256 amount, bytes calldata /* _extraData */) external returns (uint256);
+    constructor(
+        address _dolomiteRegistry,
+        address _migrationToken,
+        address _vaultFactory
+    )
+        IsolationModeTokenVaultMigrator(_dolomiteRegistry, _migrationToken)
+    {
+        _setAddress(_VAULT_FACTORY_SLOT, _vaultFactory);
+    }
 }

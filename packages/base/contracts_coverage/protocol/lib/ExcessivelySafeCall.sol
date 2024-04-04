@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 /*
 
     Copyright 2022 Dolomite.
@@ -20,7 +21,10 @@ pragma solidity ^0.8.9;
 
 
 /**
- * @author https://github.com/nomad-xyz
+ * @title   ExcessivelySafeCall
+ * @author  https://github.com/nomad-xyz
+ *
+ * @notice  This contract should be used to call other contracts that are potentially untrusted
  */
 library ExcessivelySafeCall {
 
@@ -32,21 +36,23 @@ library ExcessivelySafeCall {
         (isSuccess, returnData) = _target.staticcall(abi.encodeWithSelector(_selector, _calldata));
     }
 
-    /// @notice Use when you _really_ really _really_ don't trust the called
-    /// contract. This prevents the called contract from causing reversion of
-    /// the caller in as many ways as we can.
-    /// @dev The main difference between this and a solidity low-level call is
-    /// that we limit the number of bytes that the callee can cause to be
-    /// copied to caller memory. This prevents stupid things like malicious
-    /// contracts returning 10,000,000 bytes causing a local OOG when copying
-    /// to memory.
-    /// @param _target The address to call
-    /// @param _gas The amount of gas to forward to the remote contract
-    /// @param _maxCopy The maximum number of bytes of returndata to copy
-    /// to memory.
-    /// @param _calldata The data to send to the remote contract
-    /// @return success and returndata, as `.call()`. Returndata is capped to
-    /// `_maxCopy` bytes.
+    /**
+     * @notice Use when you _really_ really _really_ don't trust the called
+     * contract. This prevents the called contract from causing reversion of
+     * the caller in as many ways as we can.
+     *
+     * @dev The main difference between this and a solidity low-level call is
+     * that we limit the number of bytes that the callee can cause to be
+     * copied to caller memory. This prevents stupid things like malicious
+     * contracts returning 10,000,000 bytes causing a local OOG when copying
+     * to memory.
+     *
+     * @param  _target      The address to call
+     * @param  _gas         The amount of gas to forward to the remote contract
+     * @param  _maxCopy     The maximum number of bytes of returndata to copy to memory.
+     * @param  _calldata    The data to send to the remote contract
+     * @return  success and returndata, as `.call()`. Returndata is capped to `_maxCopy` bytes.
+     */
     function excessivelySafeCall(
         address _target,
         uint256 _gas,
@@ -86,21 +92,23 @@ library ExcessivelySafeCall {
         return (_success, _returndata);
     }
 
-    /// @notice Use when you _really_ really _really_ don't trust the called
-    /// contract. This prevents the called contract from causing reversion of
-    /// the caller in as many ways as we can.
-    /// @dev The main difference between this and a solidity low-level call is
-    /// that we limit the number of bytes that the callee can cause to be
-    /// copied to caller memory. This prevents stupid things like malicious
-    /// contracts returning 10,000,000 bytes causing a local OOG when copying
-    /// to memory.
-    /// @param _target The address to call
-    /// @param _gas The amount of gas to forward to the remote contract
-    /// @param _maxCopy The maximum number of bytes of returndata to copy
-    /// to memory.
-    /// @param _calldata The data to send to the remote contract
-    /// @return success and returndata, as `.call()`. Returndata is capped to
-    /// `_maxCopy` bytes.
+    /**
+     * @notice Use when you _really_ really _really_ don't trust the called
+     * contract. This prevents the called contract from causing reversion of
+     * the caller in as many ways as we can.
+     *
+     * @dev The main difference between this and a solidity low-level call is
+     * that we limit the number of bytes that the callee can cause to be
+     * copied to caller memory. This prevents stupid things like malicious
+     * contracts returning 10,000,000 bytes causing a local OOG when copying
+     * to memory.
+     *
+     * @param  _target      The address to call
+     * @param  _gas         The amount of gas to forward to the remote contract
+     * @param  _maxCopy     The maximum number of bytes of returndata to copy to memory.
+     * @param  _calldata    The data to send to the remote contract
+     * @return success and returndata, as `.call()`. Returndata is capped to `_maxCopy` bytes.
+     */
     function excessivelySafeStaticCall(
         address _target,
         uint256 _gas,

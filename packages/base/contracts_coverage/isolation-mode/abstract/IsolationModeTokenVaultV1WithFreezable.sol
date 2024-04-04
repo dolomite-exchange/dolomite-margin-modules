@@ -143,7 +143,7 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         uint256 _inputAmount,
         uint256 _minOutputAmount
     ) {
-        _requireNotFrozen();
+        _requireTrustedConverterIfFrozenOrUnwrapper(_inputMarketId);
         _validateIfWrapToUnderlying(
             /* _accountNumber = */ _borrowAccountNumber,
             _inputMarketId,
@@ -161,7 +161,7 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         uint256 _inputAmount,
         uint256 _minOutputAmount
     ) {
-        _requireNotFrozen();
+        _requireTrustedConverterIfFrozenOrUnwrapper(_inputMarketId);
         _validateIfWrapToUnderlying(
             /* _accountNumber = */ _borrowAccountNumber,
             _inputMarketId,
@@ -179,7 +179,7 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         uint256 _inputAmount,
         uint256 _minOutputAmount
     ) {
-        _requireNotFrozen();
+        _requireTrustedConverterIfFrozenOrUnwrapper(_marketIds[0]);
         _validateIfWrapToUnderlying(
             /* _accountNumber = */ _tradeAccountNumber,
             /* _inputMarketId = */ _marketIds[0],
@@ -802,6 +802,13 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
             _FILE,
             "Vault is frozen"
         );
+    }
+
+    function _requireTrustedConverterIfFrozenOrUnwrapper(uint256 _inputMarketId) private view {
+        if (_inputMarketId == marketId() || isVaultFrozen()) {
+            // Only a trusted converter can initiate unwraps (via the callback) OR execute swaps if the vault is frozen
+            _requireOnlyConverter(msg.sender);
+        }
     }
 
     function _requireVaultAccountNotFrozen(uint256 _accountNumber) private view {

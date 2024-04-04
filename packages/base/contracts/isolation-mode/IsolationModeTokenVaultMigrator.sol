@@ -73,8 +73,12 @@ contract IsolationModeTokenVaultMigrator is IIsolationModeTokenVaultMigrator, Pr
         _migrate(_amountWei);
     }
 
-    function executeWithdrawalFromVault(address _recipient, uint256 _amount) external {
-        // TODO: assert it's being called by the vault factory
+    function executeWithdrawalFromVault(address /* _recipient */, uint256 /* _amount */) external {
+        Require.that(
+            msg.sender == VAULT_FACTORY(),
+            _FILE,
+            "Only factory can call"
+        );
     }
 
     function VAULT_FACTORY() public view returns (address) {

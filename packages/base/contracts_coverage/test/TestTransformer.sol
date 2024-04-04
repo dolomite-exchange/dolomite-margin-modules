@@ -32,16 +32,16 @@ import { IDolomiteTransformer } from "../interfaces/IDolomiteTransformer.sol";
  */
 contract TestTransformer is IDolomiteTransformer {
 
-    ICustomTestToken public immutable tokenFrom;
+    address public immutable inputToken;
     address public immutable outputToken;
 
-    constructor(address _tokenFrom, address _tokenTo) {
-        tokenFrom = ICustomTestToken(_tokenFrom);
+    constructor(address _inputToken, address _tokenTo) {
+        inputToken = _inputToken;
         outputToken = _tokenTo;
     }
 
     function transform(uint256 amount, bytes calldata /* _extraData */) external returns (uint256) {
-        tokenFrom.burn(amount);
+        ICustomTestToken(inputToken).burn(amount);
         ICustomTestToken(outputToken).addBalance(address(this), amount);
         return amount;
     }

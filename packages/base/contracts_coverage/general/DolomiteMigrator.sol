@@ -25,14 +25,15 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 import { IDolomiteMigrator } from "../interfaces/IDolomiteMigrator.sol";
-import { IIsolationModeMigrator } from "../isolation-mode/interfaces/IIsolationModeMigrator.sol";
+import { IDolomiteTransformer } from "../interfaces/IDolomiteTransformer.sol";
+import { IIsolationModeTokenVaultMigrator } from "../isolation-mode/interfaces/IIsolationModeTokenVaultMigrator.sol";
 import { IIsolationModeVaultFactory } from "../isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { ExcessivelySafeCall } from "../protocol/lib/ExcessivelySafeCall.sol";
 import { Require } from "../protocol/lib/Require.sol";
-import { IDolomiteTransformer } from "../interfaces/IDolomiteTransformer.sol";
 
+import "hardhat/console.sol";
 
 /**
  * @title   DolomiteMigrator
@@ -86,7 +87,6 @@ contract DolomiteMigrator is IDolomiteMigrator, OnlyDolomiteMargin {
     // =================== Functions ==================
     // ================================================
 
-    // @follow-up should handler be stored in this contract or on a registry contract?
     function migrate(
         IDolomiteStructs.AccountInfo[] calldata _accounts,
         uint256 _fromMarketId,
@@ -140,10 +140,11 @@ contract DolomiteMigrator is IDolomiteMigrator, OnlyDolomiteMargin {
             DOLOMITE_MARGIN().getMarketTokenAddress(_toMarketId)
         );
 
-        address outputToken = IDolomiteTransformer(marketIdsToTransformer[_fromMarketId][_toMarketId]).outputToken();
+        IERC20 inputToken = IERC20(IDolomiteTransformer(marketIdsToTransformer[_fromMarketId][_toMarketId]).inputToken());
+        IERC20 outputToken = IERC20(IDolomiteTransformer(marketIdsToTransformer[_fromMarketId][_toMarketId]).outputToken());
+
         for (uint256 i; i < _accounts.length; ++i) {
             IDolomiteStructs.AccountInfo memory account = _accounts[i];
-
             address owner = fromFactory.getAccountByVault(account.owner);
             if (owner != address(0)) { /* FOR COVERAGE TESTING */ }
             Require.that(
@@ -156,34 +157,60 @@ contract DolomiteMigrator is IDolomiteMigrator, OnlyDolomiteMargin {
                 toVault = toFactory.createVault(owner);
             }
 
-            uint256 amountWei = DOLOMITE_MARGIN().getAccountWei(account, _fromMarketId).value;
+            uint256 fromMarketId = _fromMarketId;
+            uint256 toMarketId = _toMarketId;
+            bytes memory extraData = _extraData;
+            uint256 amountWei = DOLOMITE_MARGIN().getAccountWei(account, fromMarketId).value;
             uint256 amountOut;
+
             if (amountWei > 0) {
-                IIsolationModeMigrator(account.owner).migrate(amountWei);
-                amountOut = _delegateCallToTransformer(_fromMarketId, _toMarketId, amountWei, _extraData);
+                {
+                    uint256 preBal = inputToken.balanceOf(address(this));
+                    IIsolationModeTokenVaultMigrator(account.owner).migrate(amountWei);
+                    uint256 postBal = inputToken.balanceOf(address(this));
+                    /*assert(postBal - preBal == amountWei);*/
+
+                    preBal = outputToken.balanceOf(address(this));
+                    amountOut = _transformAndGetAmountOut(fromMarketId, toMarketId, amountWei, extraData);
+                    postBal = outputToken.balanceOf(address(this));
+                    /*assert(postBal - preBal == amountOut);*/
+                }
+
 
                 fromFactory.enqueueTransferFromDolomiteMargin(account.owner, amountWei);
                 toFactory.enqueueTransferIntoDolomiteMargin(toVault, amountOut);
-                IERC20(outputToken).safeApprove(toVault, amountOut);
+                outputToken.safeApprove(toVault, amountOut);
                 IERC20(address(toFactory)).safeApprove(address(DOLOMITE_MARGIN()), amountOut);
-
-                // @note Will remove these. Just here for debugging
-                // assert(IERC20(outputToken).allowance(address(this), toVault) > 0);
-                // assert(IERC20(address(toFactory)).allowance(toVault, address(DOLOMITE_MARGIN())) > 0);
-                // assert(IERC20(address(toFactory)).allowance(address(this), address(DOLOMITE_MARGIN())) > 0);
             }
 
-            _craftAndExecuteActions(account, toVault, _fromMarketId, _toMarketId, amountOut, amountWei > 0);
+            // Even if the amount in this sub account is 0, we still need to transfer the position (which could contain
+            // other assets)
+            _craftAndExecuteActions(
+                account,
+                toVault,
+                fromMarketId,
+                toMarketId,
+                amountOut,
+                /* _hasFromMarketIdBalance */ amountWei > 0
+            );
 
             /*assert(IERC20(outputToken).allowance(address(this), toVault) == 0);*/
             /*assert(IERC20(address(toFactory)).allowance(address(this), address(DOLOMITE_MARGIN())) == 0);*/
-            // @follow-up This final assert is failing. This extra approval also happens with a normal wrapping
-            /*assert(IERC20(address(toFactory)).allowance(toVault, address(DOLOMITE_MARGIN())) == 0);*/
-            emit MigrationComplete(account.owner, account.number, _fromMarketId, _toMarketId);
+            if (amountWei > 0) {
+                // TODO: assert the current transfer cursor has been executed from each factory
+                {
+                    IIsolationModeVaultFactory.QueuedTransfer memory transfer = fromFactory.getQueuedTransferByCursor(fromFactory.transferCursor());
+                    /*assert(transfer.isExecuted);*/
+                    transfer = toFactory.getQueuedTransferByCursor(toFactory.transferCursor());
+                    /*assert(transfer.isExecuted);*/
+                }
+            }
+
+            emit MigrationComplete(account.owner, account.number, fromMarketId, toMarketId);
         }
     }
 
-    function _delegateCallToTransformer(
+    function _transformAndGetAmountOut(
         uint256 _fromMarketId,
         uint256 _toMarketId,
         uint256 _amount,
@@ -191,7 +218,6 @@ contract DolomiteMigrator is IDolomiteMigrator, OnlyDolomiteMargin {
     ) internal returns (uint256) {
         address transformer = marketIdsToTransformer[_fromMarketId][_toMarketId];
         /*assert(transformer != address(0));*/
-        // @follow-up Want to use a library instead to delegate call?
         (bool success, bytes memory data) = transformer.delegatecall(
             abi.encodeWithSelector(IDolomiteTransformer.transform.selector, _amount, _extraData)
         );
@@ -234,10 +260,12 @@ contract DolomiteMigrator is IDolomiteMigrator, OnlyDolomiteMargin {
         IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](
             _hasFromMarketIdBalance ? marketsWithBalances.length + 1 : marketsWithBalances.length
         );
-        // @follow-up Do we want this here? If not, it will revert
-        if (actions.length == 0) {
-            return;
-        }
+        if (actions.length > 0) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            actions.length > 0,
+            _FILE,
+            "No actions to execute"
+        );
 
         if (_hasFromMarketIdBalance) {
             actions[0] = AccountActionLib.encodeWithdrawalAction(

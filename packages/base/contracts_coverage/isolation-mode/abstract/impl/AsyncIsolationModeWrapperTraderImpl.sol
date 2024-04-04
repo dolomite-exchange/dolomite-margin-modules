@@ -89,15 +89,28 @@ library AsyncIsolationModeWrapperTraderImpl {
         uint256 outputAmount = _depositInfo.inputAmount;
 
         UpgradeableAsyncIsolationModeUnwrapperTrader(payable(traderParams[0].trader)).handleCallbackFromWrapperBefore();
-        IIsolationModeTokenVaultV1(_depositInfo.vault).swapExactInputForOutput(
-            _depositInfo.accountNumber,
-            marketIdsPath,
-            /* _inputAmountWei = */ _depositInfo.outputAmount,
-            outputAmount,
-            traderParams,
-            /* _makerAccounts = */ new IDolomiteMargin.AccountInfo[](0),
-            userConfig
-        );
+        if (_depositInfo.accountNumber == 0) {
+            IIsolationModeTokenVaultV1(_depositInfo.vault).swapExactInputForOutputAndRemoveCollateral(
+                /* _toAccountNumber = */ 0,
+                /* _borrowAccountNumber = */ 0,
+                marketIdsPath,
+                /* _inputAmountWei = */ _depositInfo.outputAmount,
+                outputAmount,
+                traderParams,
+                /* _makerAccounts = */ new IDolomiteMargin.AccountInfo[](0),
+                userConfig
+            );
+        } else {
+            IIsolationModeTokenVaultV1(_depositInfo.vault).swapExactInputForOutput(
+                _depositInfo.accountNumber,
+                marketIdsPath,
+                /* _inputAmountWei = */ _depositInfo.outputAmount,
+                outputAmount,
+                traderParams,
+                /* _makerAccounts = */ new IDolomiteMargin.AccountInfo[](0),
+                userConfig
+            );
+        }
         UpgradeableAsyncIsolationModeUnwrapperTrader(payable(traderParams[0].trader)).handleCallbackFromWrapperAfter();
     }
 

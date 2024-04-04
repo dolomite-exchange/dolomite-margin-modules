@@ -135,11 +135,15 @@ contract DolomiteMigrator is IDolomiteMigrator, OnlyDolomiteMargin {
         IIsolationModeVaultFactory toFactory = IIsolationModeVaultFactory(
             DOLOMITE_MARGIN().getMarketTokenAddress(_toMarketId)
         );
+        IERC20 inputToken = IERC20(
+            IDolomiteTransformer(marketIdsToTransformer[_fromMarketId][_toMarketId]).inputToken()
+        );
+        IERC20 outputToken = IERC20(
+            IDolomiteTransformer(marketIdsToTransformer[_fromMarketId][_toMarketId]).outputToken()
+        );
 
-        address outputToken = IDolomiteTransformer(marketIdsToTransformer[_fromMarketId][_toMarketId]).outputToken();
         for (uint256 i; i < _accounts.length; ++i) {
             IDolomiteStructs.AccountInfo memory account = _accounts[i];
-
             address owner = fromFactory.getAccountByVault(account.owner);
             Require.that(
                 owner != address(0),
@@ -151,17 +155,29 @@ contract DolomiteMigrator is IDolomiteMigrator, OnlyDolomiteMargin {
                 toVault = toFactory.createVault(owner);
             }
 
-            uint256 amountWei = DOLOMITE_MARGIN().getAccountWei(account, _fromMarketId).value;
+            uint256 fromMarketId = _fromMarketId;
+            uint256 toMarketId = _toMarketId;
+            bytes memory extraData = _extraData;
+            uint256 amountWei = DOLOMITE_MARGIN().getAccountWei(account, fromMarketId).value;
             uint256 amountOut;
+
             if (amountWei > 0) {
-                // TODO: assert balance after minus balance before == amountWei
-                IIsolationModeTokenVaultMigrator(account.owner).migrate(amountWei);
-                // TODO: assert balance before minus balance after == amountOut
-                amountOut = _transformAndGetAmountOut(_fromMarketId, _toMarketId, amountWei, _extraData);
+                {
+                    uint256 preBal = inputToken.balanceOf(address(this));
+                    IIsolationModeTokenVaultMigrator(account.owner).migrate(amountWei);
+                    uint256 postBal = inputToken.balanceOf(address(this));
+                    assert(postBal - preBal == amountWei);
+
+                    preBal = outputToken.balanceOf(address(this));
+                    amountOut = _transformAndGetAmountOut(fromMarketId, toMarketId, amountWei, extraData);
+                    postBal = outputToken.balanceOf(address(this));
+                    assert(postBal - preBal == amountOut);
+                }
+
 
                 fromFactory.enqueueTransferFromDolomiteMargin(account.owner, amountWei);
                 toFactory.enqueueTransferIntoDolomiteMargin(toVault, amountOut);
-                IERC20(outputToken).safeApprove(toVault, amountOut);
+                outputToken.safeApprove(toVault, amountOut);
                 IERC20(address(toFactory)).safeApprove(address(DOLOMITE_MARGIN()), amountOut);
             }
 
@@ -170,19 +186,26 @@ contract DolomiteMigrator is IDolomiteMigrator, OnlyDolomiteMargin {
             _craftAndExecuteActions(
                 account,
                 toVault,
-                _fromMarketId,
-                _toMarketId,
+                fromMarketId,
+                toMarketId,
                 amountOut,
                 /* _hasFromMarketIdBalance */ amountWei > 0
             );
 
-            assert(IERC20(outputToken).allowance(address(this), toVault) == 0);
+            assert(outputToken.allowance(address(this), toVault) == 0);
             assert(IERC20(address(toFactory)).allowance(address(this), address(DOLOMITE_MARGIN())) == 0);
             if (amountWei > 0) {
-                // TODO: assert the current transfer cursor has been executed from each factory
+                {
+                    IIsolationModeVaultFactory.QueuedTransfer memory transfer = fromFactory.getQueuedTransferByCursor(
+                        fromFactory.transferCursor()
+                    );
+                    assert(transfer.isExecuted);
+                    transfer = toFactory.getQueuedTransferByCursor(toFactory.transferCursor());
+                    assert(transfer.isExecuted);
+                }
             }
 
-            emit MigrationComplete(account.owner, account.number, _fromMarketId, _toMarketId);
+            emit MigrationComplete(account.owner, account.number, fromMarketId, toMarketId);
         }
     }
 
@@ -234,12 +257,11 @@ contract DolomiteMigrator is IDolomiteMigrator, OnlyDolomiteMargin {
         IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](
             _hasFromMarketIdBalance ? marketsWithBalances.length + 1 : marketsWithBalances.length
         );
-        // @follow-up Do we want this here? If not, it will revert instead of No-Op
-        // TODO: I'd rather Require.that(actions.length > 0) since we should only ever call this if a migration needs to
-        //       occur for that sub account
-        if (actions.length == 0) {
-            return;
-        }
+        Require.that(
+            actions.length > 0,
+            _FILE,
+            "No actions to execute"
+        );
 
         if (_hasFromMarketIdBalance) {
             actions[0] = AccountActionLib.encodeWithdrawalAction(

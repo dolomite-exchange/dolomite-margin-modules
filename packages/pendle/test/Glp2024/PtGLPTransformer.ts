@@ -2,8 +2,8 @@ import { expect } from 'chai';
 import {
   DolomiteMigrator,
   DolomiteMigrator__factory,
-  IsolationModeMigrator,
-  IsolationModeMigrator__factory,
+  IsolationModeTokenVaultMigrator,
+  IsolationModeTokenVaultMigrator__factory,
 } from '@dolomite-exchange/modules-base/src/types';
 import { createContractWithAbi } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { BYTES_EMPTY, Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
@@ -32,7 +32,7 @@ describe('PtGLPTransformer', () => {
   let migrator: DolomiteMigrator;
   let glpFactory: IGLPIsolationModeVaultFactoryOld;
   let ptGlpFactory: PendlePtGLP2024IsolationModeVaultFactory;
-  let migratorImplementation: IsolationModeMigrator;
+  let migratorImplementation: IsolationModeTokenVaultMigrator;
   let transformer: PtGLPTransformer;
 
   let accounts: AccountInfoStruct[];
@@ -51,10 +51,10 @@ describe('PtGLPTransformer', () => {
       DolomiteMigrator__factory.bytecode,
       [core.dolomiteMargin.address, core.hhUser5.address],
     );
-    migratorImplementation = await createContractWithAbi<IsolationModeMigrator>(
-      IsolationModeMigrator__factory.abi,
-      IsolationModeMigrator__factory.bytecode,
-      [core.dolomiteRegistry.address, ptGlpFactory.address, core.pendleEcosystem.glpMar2024.ptGlpToken.address]
+    migratorImplementation = await createContractWithAbi<IsolationModeTokenVaultMigrator>(
+      IsolationModeTokenVaultMigrator__factory.abi,
+      IsolationModeTokenVaultMigrator__factory.bytecode,
+      [core.dolomiteRegistry.address, core.pendleEcosystem.glpMar2024.ptGlpToken.address]
     );
     transformer = await createContractWithAbi<PtGLPTransformer>(
       PtGLPTransformer__factory.abi,

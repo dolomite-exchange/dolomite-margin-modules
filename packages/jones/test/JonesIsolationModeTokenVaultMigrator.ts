@@ -15,7 +15,7 @@ import {
   setupTestMarket,
   setupUserVaultProxy
 } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { expectEvent, expectProtocolBalance } from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { expectEvent, expectProtocolBalance, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { AccountInfoStruct } from 'packages/base/src/utils';
 import { createDolomiteRegistryImplementation } from '@dolomite-exchange/modules-base/test/utils/dolomite';
 import { createTestIsolationModeFactory, createTestIsolationModeTokenVaultV1 } from '@dolomite-exchange/modules-base/test/utils/ecosystem-utils/testers';
@@ -23,8 +23,8 @@ import { BigNumber } from 'ethers';
 import {
   IJonesStableCompoundV1__factory,
   IJonesStableVaultV1__factory,
-  JonesIsolationModeMigrator,
-  JonesIsolationModeMigrator__factory,
+  JonesIsolationModeTokenVaultMigrator,
+  JonesIsolationModeTokenVaultMigrator__factory,
   JonesUSDCIsolationModeTokenVaultV2,
   JonesUSDCIsolationModeTokenVaultV2__factory,
   JonesUSDCTransformer,
@@ -39,15 +39,16 @@ const JONES_TRACKER_V1 = '0xEB23C7e19DB72F9a728fD64E1CAA459E457cfaca';
 const JONES_STABLE_COMPOUND_V1 = '0xe66998533a1992ecE9eA99cDf47686F4fc8458E0';
 const JONES_STABLE_VAULT_V1 = '0xa485a0bc44988B95245D5F20497CCaFF58a73E99';
 
-describe('JonesIsolationModeMigrator', () => {
+describe('JonesIsolationModeTokenVaultMigrator', () => {
   let snapshotId: string;
   let core: CoreProtocolArbitrumOne;
   let migrator: DolomiteMigrator;
   let newjUSDC: CustomTestToken;
   let marketId: BigNumber;
   let factory: TestIsolationModeFactory;
-  let migratorImplementation: JonesIsolationModeMigrator;
+  let migratorImplementation: JonesIsolationModeTokenVaultMigrator;
   let userVault: JonesUSDCIsolationModeTokenVaultV2;
+  let userVaultMigrator: JonesIsolationModeTokenVaultMigrator;
   let transformer: JonesUSDCTransformer;
   let defaultAmount: BigNumber;
   let borrowAmount: BigNumber;
@@ -77,13 +78,12 @@ describe('JonesIsolationModeMigrator', () => {
       DolomiteMigrator__factory.bytecode,
       [core.dolomiteMargin.address, core.hhUser5.address],
     );
-    migratorImplementation = await createContractWithAbi<JonesIsolationModeMigrator>(
-      JonesIsolationModeMigrator__factory.abi,
-      JonesIsolationModeMigrator__factory.bytecode,
+    migratorImplementation = await createContractWithAbi<JonesIsolationModeTokenVaultMigrator>(
+      JonesIsolationModeTokenVaultMigrator__factory.abi,
+      JonesIsolationModeTokenVaultMigrator__factory.bytecode,
       [
         core.jonesEcosystem.live.jonesUSDCRegistry.address,
         core.dolomiteRegistry.address,
-        factory.address,
         core.jonesEcosystem!.jUSDC.address
       ]
     );
@@ -110,6 +110,10 @@ describe('JonesIsolationModeMigrator', () => {
       vaultAddress,
       JonesUSDCIsolationModeTokenVaultV2__factory,
       userImpersonator,
+    );
+    userVaultMigrator = await JonesIsolationModeTokenVaultMigrator__factory.connect(
+      userVault.address,
+      core.hhUser1
     );
     accounts = [
       { owner: vaultAddress, number: defaultAccountNumber },
@@ -162,11 +166,17 @@ describe('JonesIsolationModeMigrator', () => {
     it('should work normally', async () => {
       expect(await migrator.DOLOMITE_MARGIN()).to.eq(core.dolomiteMargin.address);
       expect(await migrator.handler()).to.eq(core.hhUser5.address);
+
+      await core.jonesEcosystem.live.jUSDCIsolationModeFactory.connect(core.governance).ownerSetUserVaultImplementation(
+        migratorImplementation.address
+      );
+      expect(await userVaultMigrator.isMigrationInitialized()).to.eq(false);
+      expect(await userVaultMigrator.VAULT_FACTORY()).to.eq(core.jonesEcosystem.live.jUSDCIsolationModeFactory.address);
     });
   });
 
   describe('#migrate', () => {
-    it('should work normally when user has no balances (do nothing)', async () => {
+    it('should fail when user has no balances', async () => {
       await core.jonesEcosystem.live.jUSDCIsolationModeFactory.connect(core.governance).ownerSetUserVaultImplementation(
         migratorImplementation.address
       );
@@ -175,22 +185,15 @@ describe('JonesIsolationModeMigrator', () => {
         { owner: userVault.address, number: otherBorrowNumber }
       ];
 
-      const result = await migrator.connect(core.hhUser5).migrate(
-        accounts,
-        core.marketIds.djUSDC,
-        marketId,
-        BYTES_EMPTY
+      await expectThrow(
+        migrator.connect(core.hhUser5).migrate(
+          accounts,
+          core.marketIds.djUSDC,
+          marketId,
+          BYTES_EMPTY
+        ),
+        'DolomiteMigrator: No actions to execute'
       );
-      await expectEvent(migrator, result, 'MigrationComplete', {
-        accountOwner: userVault.address,
-        accountNumber: otherBorrowNumber,
-        fromMarketId: core.marketIds.djUSDC,
-        toMarketId: marketId,
-      });
-
-      const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);
-      await expectProtocolBalance(core, userVault.address, otherBorrowNumber, core.marketIds.djUSDC, ZERO_BI);
-      await expectProtocolBalance(core, vaultAddress, otherBorrowNumber, marketId, ZERO_BI);
     });
 
     it('should work normally when user has staked and non-staked balance', async () => {
@@ -212,6 +215,7 @@ describe('JonesIsolationModeMigrator', () => {
       });
 
       const vaultAddress = await factory.getVaultByAccount(USER_ACCOUNT);
+      expect(await userVaultMigrator.isMigrationInitialized()).to.eq(true);
       await expectProtocolBalance(core, userVault.address, defaultAccountNumber, core.marketIds.djUSDC, ZERO_BI);
       await expectProtocolBalance(core, vaultAddress, defaultAccountNumber, marketId, defaultAmount);
 
@@ -248,6 +252,7 @@ describe('JonesIsolationModeMigrator', () => {
       });
 
       const vaultAddress = await factory.getVaultByAccount(USER_ACCOUNT);
+      expect(await userVaultMigrator.isMigrationInitialized()).to.eq(true);
       await expectProtocolBalance(core, userVault.address, defaultAccountNumber, core.marketIds.djUSDC, ZERO_BI);
       await expectProtocolBalance(core, vaultAddress, defaultAccountNumber, marketId, defaultAmount);
 
