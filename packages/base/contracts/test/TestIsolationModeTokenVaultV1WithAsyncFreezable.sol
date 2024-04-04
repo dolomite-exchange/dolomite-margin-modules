@@ -43,7 +43,7 @@ contract TestIsolationModeTokenVaultV1WithAsyncFreezable is IsolationModeTokenVa
     bytes32 private constant _FILE = "TestAsyncFreezableIsolationVault";
 
     // solhint-disable-next-line no-empty-blocks
-    constructor(address _weth) IsolationModeTokenVaultV1WithAsyncFreezable(_weth) {}
+    constructor(address _weth, uint256 _chainId) IsolationModeTokenVaultV1WithAsyncFreezable(_weth, _chainId) {}
 
     function dolomiteRegistry() public override view returns (IDolomiteRegistry) {
         return TestSimpleIsolationModeVaultFactory(VAULT_FACTORY()).dolomiteRegistry();

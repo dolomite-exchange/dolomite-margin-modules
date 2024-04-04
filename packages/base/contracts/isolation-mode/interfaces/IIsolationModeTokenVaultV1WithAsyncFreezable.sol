@@ -139,4 +139,6 @@ interface IIsolationModeTokenVaultV1WithAsyncFreezable is IIsolationModeTokenVau
     function isVaultAccountFrozen(uint256 _accountNumber) external view returns (bool);
 
     function WETH() external view returns (IWETH);
+
+    function CHAIN_ID() external view returns (uint256);
 }

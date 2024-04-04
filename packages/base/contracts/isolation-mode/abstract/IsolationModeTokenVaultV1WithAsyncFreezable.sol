@@ -36,6 +36,7 @@ import { IFreezableIsolationModeVaultFactory } from "../interfaces/IFreezableIso
 import { IIsolationModeTokenVaultV1 } from "../interfaces/IIsolationModeTokenVaultV1.sol";
 import { IIsolationModeTokenVaultV1WithAsyncFreezable } from "../interfaces/IIsolationModeTokenVaultV1WithAsyncFreezable.sol"; // solhint-disable-line max-line-length
 import { IIsolationModeTokenVaultV1WithFreezable } from "../interfaces/IIsolationModeTokenVaultV1WithFreezable.sol";
+import { IsolationModeTokenVaultV1ActionsImpl } from "./impl/IsolationModeTokenVaultV1ActionsImpl.sol";
 
 
 /**
@@ -67,6 +68,7 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezable is
     // ==================================================================
 
     IWETH public immutable override WETH; // solhint-disable-line var-name-mixedcase
+    uint256 public immutable override CHAIN_ID; // solhint-disable-line var-name-mixedcase
 
     // ===================================================
     // ==================== Modifiers ====================
@@ -102,35 +104,62 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezable is
     }
 
     modifier _addCollateralAndSwapExactInputForOutputAsyncFreezableValidator(
+        uint256 _fromAccountNumber,
         uint256 _borrowAccountNumber,
-        uint256 _outputMarketId
+        uint256 _inputMarketId,
+        uint256 _outputMarketId,
+        uint256 _inputAmount,
+        uint256 _minOutputAmount
     ) {
-        _requireNotFrozen();
-        _requireNotLiquidatableIfWrapToUnderlying(
-            /* _accountNumber = */ _borrowAccountNumber,
-            /* _outputMarketId = */ _outputMarketId
+        _requireTrustedConverterIfFrozenOrUnwrapper(_inputMarketId);
+        _validateIfWrapToUnderlying(
+            /* _inputSourceAccountOwner */ OWNER(),
+            _fromAccountNumber,
+            _borrowAccountNumber,
+            _inputMarketId,
+            _outputMarketId,
+            _inputAmount,
+            _minOutputAmount
         );
         _;
     }
 
     modifier _swapExactInputForOutputAndRemoveCollateralAsyncFreezableValidator(
         uint256 _borrowAccountNumber,
-        uint256 _outputMarketId
+        uint256 _inputMarketId,
+        uint256 _outputMarketId,
+        uint256 _inputAmount,
+        uint256 _minOutputAmount
     ) {
-        _requireNotFrozen();
-        _requireNotLiquidatableIfWrapToUnderlying(
-            /* _accountNumber = */ _borrowAccountNumber,
-            /* _outputMarketId = */ _outputMarketId
+        _requireTrustedConverterIfFrozenOrUnwrapper(_inputMarketId);
+        _validateIfWrapToUnderlying(
+            /* _inputSourceAccountOwner */ address(this),
+            /* _inputSourceAccountNumber */ _borrowAccountNumber,
+            _borrowAccountNumber,
+            _inputMarketId,
+            _outputMarketId,
+            _inputAmount,
+            _minOutputAmount
         );
         _;
         _refundExecutionFeeIfNecessary(_borrowAccountNumber);
     }
 
-    modifier _swapExactInputForOutputAsyncFreezableValidator(uint256 _tradeAccountNumber, uint256[] memory _marketIds) {
-        _requireNotFrozen();
-        _requireNotLiquidatableIfWrapToUnderlying(
-            /* _accountNumber = */ _tradeAccountNumber,
-            /* _outputMarketId = */ _marketIds[_marketIds.length - 1]
+    modifier _swapExactInputForOutputAsyncFreezableValidator(
+        uint256 _tradeAccountNumber,
+        uint256[] memory _marketIds,
+        uint256 _inputAmount,
+        uint256 _minOutputAmount
+    ) {
+        _requireTrustedConverterIfFrozenOrUnwrapper(_marketIds[0]);
+        _validateIfWrapToUnderlying(
+            /* _inputSourceAccountOwner */ address(this),
+            /* _inputSourceAccountNumber = */ _tradeAccountNumber,
+            _tradeAccountNumber,
+            /* _inputMarketId = */ _marketIds[0],
+            /* _outputMarketId = */ _marketIds[_marketIds.length - 1],
+            _inputAmount,
+            _minOutputAmount
         );
         _;
     }
@@ -144,8 +173,9 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezable is
     // --======================== Constructors ==========================
     // ==================================================================
 
-    constructor(address _weth) {
+    constructor(address _weth, uint256 _chainId) {
         WETH = IWETH(_weth);
+        CHAIN_ID = _chainId;
     }
 
     // ==================================================================
@@ -185,7 +215,10 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezable is
         _beforeInitiateUnwrapping(
             _tradeAccountNumber,
             _inputAmount,
-            /* _isLiquidation = */ false
+            _outputToken,
+            _minOutputAmount,
+            /* _isLiquidation = */ false,
+            _extraData
         );
         _initiateUnwrapping(
             _tradeAccountNumber,
@@ -212,7 +245,10 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezable is
         _beforeInitiateUnwrapping(
             _tradeAccountNumber,
             _inputAmount,
-            /* _isLiquidation = */ true
+            _outputToken,
+            _minOutputAmount,
+            /* _isLiquidation = */ true,
+            _extraData
         );
         _initiateUnwrapping(
             _tradeAccountNumber,
@@ -294,10 +330,10 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezable is
     }
 
     function isVaultFrozen()
-    public 
-    override(IIsolationModeTokenVaultV1WithFreezable, IsolationModeTokenVaultV1WithFreezable) 
-    virtual 
-    view 
+    public
+    override(IIsolationModeTokenVaultV1WithFreezable, IsolationModeTokenVaultV1WithFreezable)
+    virtual
+    view
     returns (bool) {
         return IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).isVaultFrozen(address(this));
     }
@@ -481,8 +517,12 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezable is
         virtual
         override
         _addCollateralAndSwapExactInputForOutputAsyncFreezableValidator(
+            _fromAccountNumber,
             _borrowAccountNumber,
-            _marketIdsPath[_marketIdsPath.length - 1]
+            /* _inputMarketId = */ _marketIdsPath[0],
+            /* _outputMarketId = */ _marketIdsPath[_marketIdsPath.length - 1],
+            _inputAmountWei,
+            _minOutputAmountWei
         )
     {
         super._addCollateralAndSwapExactInputForOutput(
@@ -512,7 +552,10 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezable is
         override
         _swapExactInputForOutputAndRemoveCollateralAsyncFreezableValidator(
             _borrowAccountNumber,
-            _marketIdsPath[_marketIdsPath.length - 1]
+            /* _inputMarketId = */ _marketIdsPath[0],
+            /* _outputMarketId = */ _marketIdsPath[_marketIdsPath.length - 1],
+            _inputAmountWei,
+            _minOutputAmountWei
         )
     {
         super._swapExactInputForOutputAndRemoveCollateral(
@@ -533,11 +576,14 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezable is
         internal
         virtual
         override
-        _swapExactInputForOutputAsyncFreezableValidator(_params.tradeAccountNumber, _params.marketIdsPath)
+        _swapExactInputForOutputAsyncFreezableValidator(
+            _params.tradeAccountNumber,
+            _params.marketIdsPath,
+            _params.inputAmountWei,
+            _params.minOutputAmountWei
+        )
     {
-        super._swapExactInputForOutput(
-            _params
-        );
+        super._swapExactInputForOutput(_params);
     }
 
     // ==================================================================
@@ -588,9 +634,109 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezable is
         );
     }
 
-    // ==================================================================
-    // ======================== Private Functions =======================
-    // ==================================================================
+    function _beforeInitiateUnwrapping(
+        uint256 _tradeAccountNumber,
+        uint256 _inputAmount,
+        address _outputToken,
+        uint256 _minOutputAmount,
+        bool _isLiquidation,
+        bytes calldata _extraData
+    ) internal virtual view {
+        // Disallow the withdrawal if we're attempting to OVER withdraw. This can happen due to a pending deposit OR if
+        // the user inputs a number that's too large
+        _validateWithdrawalAmountForUnwrapping(
+            _tradeAccountNumber,
+            _inputAmount,
+            _isLiquidation
+        );
+
+        _validateMinAmountIsNotTooLarge(
+            _tradeAccountNumber,
+            _inputAmount,
+            _outputToken,
+            _minOutputAmount,
+            _isLiquidation,
+            _extraData
+        );
+    }
+
+    function _validateIfWrapToUnderlying(
+        address _inputSourceAccountOwner,
+        uint256 _inputSourceAccountNumber,
+        uint256 _tradeAccountNumber,
+        uint256 _inputMarketId,
+        uint256 _outputMarketId,
+        uint256 _inputAmount,
+        uint256 _minOutputAmount
+    ) internal view {
+        if (_outputMarketId == marketId()) {
+            _requireNotLiquidatable(_tradeAccountNumber);
+            IsolationModeTokenVaultV1ActionsImpl.requireMinAmountIsNotTooLargeForWrapToUnderlying(
+                dolomiteRegistry(),
+                DOLOMITE_MARGIN(),
+                _inputSourceAccountOwner,
+                _inputSourceAccountNumber,
+                _inputMarketId,
+                _outputMarketId,
+                _inputAmount,
+                _minOutputAmount
+            );
+        }
+    }
+
+    /// @dev    This is mainly used to make sure that the account is not attempting to prevent liquidation by submitting
+    ///         transactions that are guaranteed to fail via submitting a min amount that's unreasonable
+    function _validateMinAmountIsNotTooLarge(
+        uint256 _tradeAccountNumber,
+        uint256 _inputAmount,
+        address _outputToken,
+        uint256 _minOutputAmount,
+        bool _isLiquidation,
+        bytes calldata /* _extraData */
+    ) internal virtual view {
+        if (!_isLiquidation) {
+            // GUARD statement
+            return;
+        }
+
+        IDolomiteStructs.AccountInfo memory liquidAccount = IDolomiteStructs.AccountInfo({
+            owner: address(this),
+            number: _tradeAccountNumber
+        });
+        IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
+        IsolationModeTokenVaultV1ActionsImpl.requireMinAmountIsNotTooLargeForLiquidation(
+            dolomiteMargin,
+            CHAIN_ID,
+            liquidAccount,
+            marketId(),
+            dolomiteMargin.getMarketIdByTokenAddress(_outputToken),
+            _inputAmount,
+            _minOutputAmount
+        );
+    }
+
+    function _requireNotLiquidatableIfWrapToUnderlying(
+        uint256 _accountNumber,
+        uint256 _outputMarketId
+    ) internal view {
+        uint256 underlyingMarketId = DOLOMITE_MARGIN().getMarketIdByTokenAddress(VAULT_FACTORY());
+        if (_outputMarketId== underlyingMarketId) {
+            _requireNotLiquidatable(_accountNumber);
+        }
+    }
+
+    function _requireVaultAccountNotFrozen(uint256 _accountNumber) internal view {
+        Require.that(
+            !isVaultAccountFrozen(_accountNumber),
+            _FILE,
+            "Vault account is frozen",
+            _accountNumber
+        );
+    }
+
+    // ========================================
+    // ========== Private Functions ===========
+    // ========================================
 
     function _refundExecutionFeeIfNecessary(uint256 _borrowAccountNumber) private {
         IDolomiteStructs.AccountInfo memory borrowAccountInfo = IDolomiteStructs.AccountInfo({
@@ -606,18 +752,11 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezable is
         }
     }
 
-    function _beforeInitiateUnwrapping(
-        uint256 _tradeAccountNumber,
-        uint256 _inputAmount,
-        bool _isLiquidation
-    ) private view {
-        // Disallow the withdrawal if we're attempting to OVER withdraw. This can happen due to a pending deposit OR if
-        // the user inputs a number that's too large
-        _validateWithdrawalAmountForUnwrapping(
-            _tradeAccountNumber,
-            _inputAmount,
-            _isLiquidation
-        );
+    function _requireTrustedConverterIfFrozenOrUnwrapper(uint256 _inputMarketId) private view {
+        if (_inputMarketId == marketId() || isVaultFrozen()) {
+            // Only a trusted converter can initiate unwraps (via the callback) OR execute swaps if the vault is frozen
+            _requireOnlyConverter(msg.sender);
+        }
     }
 
     function _validateWithdrawalAmountForUnwrapping(
@@ -678,22 +817,4 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezable is
         }
     }
 
-    function _requireNotLiquidatableIfWrapToUnderlying(
-        uint256 _accountNumber,
-        uint256 _outputMarketId
-    ) internal view {
-        uint256 underlyingMarketId = DOLOMITE_MARGIN().getMarketIdByTokenAddress(VAULT_FACTORY());
-        if (_outputMarketId== underlyingMarketId) {
-            _requireNotLiquidatable(_accountNumber);
-        }
-    }
-
-    function _requireVaultAccountNotFrozen(uint256 _accountNumber) internal view {
-        Require.that(
-            !isVaultAccountFrozen(_accountNumber),
-            _FILE,
-            "Vault account is frozen",
-            _accountNumber
-        );
-    }
 }

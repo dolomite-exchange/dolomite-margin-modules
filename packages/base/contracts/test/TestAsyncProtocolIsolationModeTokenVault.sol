@@ -64,7 +64,7 @@ contract TestAsyncProtocolIsolationModeTokenVault is
         address _weth,
         uint256 _chainId
     )
-        IsolationModeTokenVaultV1WithFreezable(_weth, _chainId)
+        IsolationModeTokenVaultV1WithAsyncFreezable(_weth, _chainId)
     {
         TEST_ASYNC_PROTOCOL = ITestAsyncProtocol(_testAsyncProtocol);
     }
