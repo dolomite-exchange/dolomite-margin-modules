@@ -26,10 +26,11 @@ import { BigNumber } from 'ethers';
 
 const defaultAccountNumber = ZERO_BI;
 const vaultAddress = '0x10dc4c2c391de5008bc4c895c3b1c3b070661674';
-const vaultAddress2 = '0x02f78ebb68d234c0c7fe94b85de39d21d1102f6b';
 const vaultOwner = '0x9958Ed7f2441c208821Ea14643224812A006D221';
-const borrowAccount1 = BigNumber.from('4211115166896119896340262904855120100885563956626545700858695746739717416654')
-const borrowAccount2 = BigNumber.from('54588878184938659795385687626756517841802839253616459311414872509276303196718')
+const vaultAddress2 = '0x02f78ebb68d234c0c7fe94b85de39d21d1102f6b';
+const vaultOwner2 = '0x8A8841F4AB46A052139e0DE31B1e693382193813';
+const borrowAccount1 = BigNumber.from('4211115166896119896340262904855120100885563956626545700858695746739717416654');
+const borrowAccount2 = BigNumber.from('54588878184938659795385687626756517841802839253616459311414872509276303196718');
 
 const integrationAccounts: AccountInfoStruct[] = [
   { owner: vaultAddress, number: defaultAccountNumber },
@@ -167,7 +168,7 @@ describe('PtGLPTransformer', () => {
       );
 
       const glpVaultAddress = await glpFactory.getVaultByAccount(vaultOwner);
-      const glpVaultAddress2 = await glpFactory.getVaultByAccount('0x8A8841F4AB46A052139e0DE31B1e693382193813');
+      const glpVaultAddress2 = await glpFactory.getVaultByAccount(vaultOwner2);
       await expectProtocolBalance(core, vaultAddress, defaultAccountNumber, core.marketIds.dPtGlp, ZERO_BI);
       await expectProtocolBalance(
         core,
@@ -180,13 +181,31 @@ describe('PtGLPTransformer', () => {
       await expectProtocolBalance(core, vaultAddress2, borrowAccount1, core.marketIds.dPtGlp, ZERO_BI);
       await expectProtocolBalance(core, vaultAddress2, borrowAccount1, core.marketIds.wbtc, ZERO_BI);
       await expectProtocolBalance(core, vaultAddress2, borrowAccount1, core.marketIds.weth, ZERO_BI);
-      await expectProtocolBalance(core, glpVaultAddress2, borrowAccount1, core.marketIds.wbtc, ZERO_BI.sub(borrowAmountWbtc1.value));
-      await expectProtocolBalance(core, glpVaultAddress2, borrowAccount1, core.marketIds.weth, ZERO_BI.sub(borrowAmountWeth1.value));
+      await expectProtocolBalance(
+        core,
+        glpVaultAddress2,
+        borrowAccount1,
+        core.marketIds.wbtc,
+        ZERO_BI.sub(borrowAmountWbtc1.value)
+      );
+      await expectProtocolBalance(
+        core,
+        glpVaultAddress2,
+        borrowAccount1,
+        core.marketIds.weth,
+        ZERO_BI.sub(borrowAmountWeth1.value)
+      );
       await expectProtocolBalance(core, glpVaultAddress2, borrowAccount1, core.marketIds.dfsGlp, supplyAmount.value);
 
       await expectProtocolBalance(core, vaultAddress2, borrowAccount2, core.marketIds.dPtGlp, ZERO_BI);
       await expectProtocolBalance(core, glpVaultAddress2, borrowAccount2, core.marketIds.dfsGlp, supplyAmount2.value);
-      await expectProtocolBalance(core, glpVaultAddress2, borrowAccount2, core.marketIds.nativeUsdc, ZERO_BI.sub(borrowAmountUsdc2.value));
+      await expectProtocolBalance(
+        core,
+        glpVaultAddress2,
+        borrowAccount2,
+        core.marketIds.nativeUsdc,
+        ZERO_BI.sub(borrowAmountUsdc2.value)
+      );
     });
   });
 });
