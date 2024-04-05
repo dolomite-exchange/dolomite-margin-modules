@@ -57,7 +57,7 @@ const MINUS_ONE_BI = {
 
 const EXECUTION_FEE = ONE_ETH_BI.div(4);
 
-describe('FreezableIsolationModeVaultFactory', () => {
+describe('AsyncFreezableIsolationModeVaultFactory', () => {
   let snapshotId: string;
 
   let core: CoreProtocolArbitrumOne;
@@ -68,7 +68,6 @@ describe('FreezableIsolationModeVaultFactory', () => {
   let factory: TestFreezableIsolationModeVaultFactory;
   let userVaultImplementation: TestIsolationModeTokenVaultV1WithAsyncFreezable;
   let userVault: TestIsolationModeTokenVaultV1WithAsyncFreezable;
-  let impersonatedVault: SignerWithAddressWithSafety;
   let registry: TestHandlerRegistry;
 
   let solidUser: SignerWithAddressWithSafety;
@@ -84,7 +83,7 @@ describe('FreezableIsolationModeVaultFactory', () => {
     userVaultImplementation = await createContractWithLibrary<TestIsolationModeTokenVaultV1WithAsyncFreezable>(
       'TestIsolationModeTokenVaultV1WithAsyncFreezable',
       libraries,
-      [],
+      [core.tokens.weth, core.network],
     );
     registry = await createTestHandlerRegistry(core);
     factory = await createTestFreezableIsolationModeVaultFactory(
@@ -159,8 +158,6 @@ describe('FreezableIsolationModeVaultFactory', () => {
     await otherToken2.connect(solidUser).addBalance(solidUser.address, bigOtherAmountWei);
     await otherToken2.connect(solidUser).approve(core.dolomiteMargin.address, bigOtherAmountWei);
     await depositIntoDolomiteMargin(core, solidUser, defaultAccountNumber, otherMarketId2, bigOtherAmountWei);
-
-    impersonatedVault = await impersonate(userVault.address, true);
 
     snapshotId = await snapshot();
   });

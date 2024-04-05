@@ -897,7 +897,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
       await expectProtocolBalance(core, userVault, borrowAccountNumber, otherMarketId2, outputAmount);
     });
 
-    it('should work normally for isolation unwrapper', async () => {
+    it('should fail when unwrapping but not call by a trusted converter', async () => {
       await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
 
       await expectProtocolBalance(core, userVault, defaultAccountNumber, underlyingMarketId, amountWei);
@@ -916,23 +916,19 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
         tokenUnwrapper,
         core,
       );
-      await userVault.addCollateralAndSwapExactInputForOutput(
-        defaultAccountNumber,
-        borrowAccountNumber,
-        zapParams.marketIdsPath,
-        zapParams.inputAmountWei,
-        zapParams.minOutputAmountWei,
-        zapParams.tradersPath,
-        zapParams.makerAccounts,
-        zapParams.userConfig,
+      await expectThrow(
+        userVault.addCollateralAndSwapExactInputForOutput(
+          defaultAccountNumber,
+          borrowAccountNumber,
+          zapParams.marketIdsPath,
+          zapParams.inputAmountWei,
+          zapParams.minOutputAmountWei,
+          zapParams.tradersPath,
+          zapParams.makerAccounts,
+          zapParams.userConfig,
+        ),
+        `IsolationModeTokenVaultV1: Only converter can call <${core.hhUser1.address.toLowerCase()}>`
       );
-
-      await expectProtocolBalance(core, userVault, defaultAccountNumber, underlyingMarketId, ZERO_BI);
-      await expectProtocolBalance(core, userVault, borrowAccountNumber, underlyingMarketId, ZERO_BI);
-      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId1, otherAmountWei);
-      await expectProtocolBalance(core, userVault, borrowAccountNumber, otherMarketId1, outputAmount);
-      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId2, otherAmountWei);
-      await expectProtocolBalance(core, userVault, borrowAccountNumber, otherMarketId2, ZERO_BI);
     });
 
     it('should fail when not called by vault owner or converter', async () => {

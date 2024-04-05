@@ -20,7 +20,7 @@
 
 pragma solidity ^0.8.9;
 
-import { TestFreezableIsolationModeVaultFactory } from "./TestFreezableIsolationModeVaultFactory.sol";
+import { TestIsolationModeVaultFactory } from "./TestIsolationModeVaultFactory.sol";
 import { MinimalERC20 } from "../general/MinimalERC20.sol";
 import { AsyncFreezableIsolationModeVaultFactory } from "../isolation-mode/abstract/AsyncFreezableIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 
@@ -32,7 +32,7 @@ import { AsyncFreezableIsolationModeVaultFactory } from "../isolation-mode/abstr
  * @notice  This contract is used to test the FreezableIsolationModeVaultFactory contract.
  */
 contract TestAsyncFreezableIsolationModeVaultFactory is
-    TestFreezableIsolationModeVaultFactory,
+    TestIsolationModeVaultFactory,
     AsyncFreezableIsolationModeVaultFactory
 {
 
@@ -45,7 +45,7 @@ contract TestAsyncFreezableIsolationModeVaultFactory is
         address _userVaultImplementation,
         address _dolomiteMargin
     )
-    TestFreezableIsolationModeVaultFactory(
+    TestIsolationModeVaultFactory(
         _dolomiteRegistry,
         _underlyingToken,
         _borrowPositionProxy,
@@ -62,7 +62,7 @@ contract TestAsyncFreezableIsolationModeVaultFactory is
         address _owner,
         address _spender,
         uint256 _amount
-    ) internal override (TestFreezableIsolationModeVaultFactory, MinimalERC20) {
-        TestFreezableIsolationModeVaultFactory._spendAllowance(_owner, _spender, _amount);
+    ) internal override (TestIsolationModeVaultFactory, MinimalERC20) {
+        TestIsolationModeVaultFactory._spendAllowance(_owner, _spender, _amount);
     }
 }
