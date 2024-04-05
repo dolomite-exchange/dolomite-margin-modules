@@ -23,6 +23,8 @@ import {
 } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import {
   ADDRESS_ZERO,
+  Network,
+  networkToNetworkNameMap,
   NetworkType,
   TEN_BI,
   ZERO_BI,
@@ -35,7 +37,7 @@ import {
   getPendlePtIsolationModeUnwrapperTraderV2ConstructorParams,
   getPendlePtIsolationModeVaultFactoryConstructorParams,
   getPendlePtIsolationModeWrapperTraderV2ConstructorParams,
-  getPendlePtPriceOracleConstructorParams,
+  getPendlePtPriceOracleV2ConstructorParams,
   getPendleRegistryConstructorParams,
 } from '@dolomite-exchange/modules-pendle/src/pendle-constructors';
 import {
@@ -50,8 +52,8 @@ import {
   PendlePtIsolationModeVaultFactory__factory,
   PendlePtIsolationModeWrapperTraderV2,
   PendlePtIsolationModeWrapperTraderV2__factory,
-  PendlePtPriceOracle,
-  PendlePtPriceOracle__factory,
+  PendlePtPriceOracleV2,
+  PendlePtPriceOracleV2__factory,
   PendleRegistry__factory,
 } from '@dolomite-exchange/modules-pendle/src/types';
 import { Etherscan } from '@nomicfoundation/hardhat-verify/etherscan';
@@ -62,6 +64,7 @@ import { commify, formatEther, FormatTypes, ParamType, parseEther } from 'ethers
 import fs, { readFileSync } from 'fs';
 import fsExtra from 'fs-extra';
 import hardhat, { artifacts, ethers, network } from 'hardhat';
+import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import path, { join } from 'path';
 
 type ChainId = string;
@@ -216,7 +219,12 @@ export async function deployContractAndSave(
   }
 
   await initializeFreshArtifactFromWorkspace(contractName);
-  const chainId = network.config.chainId!;
+  const networkName = process.env.NETWORK ?? '';
+  const chainId = hardhat.userConfig.networks![networkName]!.chainId;
+  assertHardhatInvariant(
+    typeof chainId === 'number' && networkToNetworkNameMap[chainId.toString() as Network] === networkName,
+    `Invalid chainId, found: ${chainId}`,
+  );
   const usedContractName = contractRename ?? contractName;
   if (file[usedContractName]?.[chainId.toString()]) {
     const contract = file[usedContractName][chainId.toString()];
@@ -228,7 +236,7 @@ export async function deployContractAndSave(
     return contract.address;
   }
 
-  console.log(`\tDeploying ${usedContractName} to chainId ${chainId}...`);
+  console.log(`\tDeploying ${usedContractName} to network ${network.name}...`);
 
   let contract: BaseContract;
   try {
@@ -270,7 +278,7 @@ export function getTokenVaultLibrary<T extends NetworkType>(core: CoreProtocolTy
 
 export interface PendlePtSystem {
   factory: PendlePtIsolationModeVaultFactory;
-  oracle: PendlePtPriceOracle;
+  oracle: PendlePtPriceOracleV2;
   unwrapper: PendlePtIsolationModeUnwrapperTraderV2;
   wrapper: PendlePtIsolationModeWrapperTraderV2;
 }
@@ -284,6 +292,26 @@ export async function deployPendlePtSystem<T extends NetworkType>(
   syToken: IPendleSyToken,
   underlyingToken: IERC20,
 ): Promise<PendlePtSystem> {
+  const officialPtName = await IERC20Metadata__factory.connect(ptToken.address, ptToken.signer).name();
+  const [syOfficial, ptOfficial] = await ptMarket.readTokens();
+  const syTokensIn = await syToken.getTokensIn();
+  if (!officialPtName.includes(ptName.substring(ptName.length - 7).toUpperCase())) {
+    return Promise.reject(new Error('ptName does not match official PT name on chain'));
+  }
+  if (syOfficial !== syToken.address) {
+    return Promise.reject(new Error(`SY does not match official SY on chain: ${syOfficial} / ${syToken.address}`));
+  }
+  if (ptOfficial !== ptToken.address) {
+    return Promise.reject(new Error(`PT does not match official PT on chain: ${ptOfficial} / ${ptToken.address}`));
+  }
+  if (syTokensIn[0] !== underlyingToken.address) {
+    return Promise.reject(
+      new Error(`Underlying does not match official underlying on chain: ${syTokensIn.join(', ')}`),
+    );
+  }
+
+  console.log(`\tDoing deployment for ${officialPtName}`);
+
   const libraries = getTokenVaultLibrary(core);
   const userVaultImplementationAddress = await deployContractAndSave(
     'PendlePtIsolationModeTokenVaultV1',
@@ -329,11 +357,11 @@ export async function deployPendlePtSystem<T extends NetworkType>(
   );
 
   const oracleAddress = await deployContractAndSave(
-    'PendlePtPriceOracle',
-    getPendlePtPriceOracleConstructorParams(core, factory, registry, underlyingToken),
-    `PendlePt${ptName}PriceOracle`,
+    'PendlePtPriceOracleV2',
+    getPendlePtPriceOracleV2ConstructorParams(core, factory, registry),
+    `PendlePt${ptName}PriceOracleV2`,
   );
-  const oracle = PendlePtPriceOracle__factory.connect(oracleAddress, core.governance);
+  const oracle = PendlePtPriceOracleV2__factory.connect(oracleAddress, core.governance);
 
   return {
     factory,
@@ -512,7 +540,8 @@ function isMarketIdParam(paramType: ParamType): boolean {
 
 function isTokenParam(paramType: ParamType): boolean {
   return (paramType.name.includes('token') || paramType.name.includes('Token'))
-    && !paramType.name.toLowerCase().includes('decimals');
+    && !paramType.name.toLowerCase().includes('decimals')
+  // && paramType.;
 }
 
 function isChainlinkAggregatorParam(paramType: ParamType): boolean {
@@ -620,6 +649,7 @@ async function getReadableArg<T extends NetworkType>(
   arg: any,
   decimals?: number,
   index?: number,
+  nestedLevel: number = 3,
 ): Promise<string> {
   let formattedInputParamName: string;
   if (typeof index !== 'undefined') {
@@ -630,14 +660,15 @@ async function getReadableArg<T extends NetworkType>(
 
   if (Array.isArray(arg)) {
     // remove the [] at the end
-    const subParamType = ParamType.fromString(
-      `${inputParamType.type.slice(0, -2)} ${inputParamType.name}`,
-      false,
-    );
+    const subParamType = ParamType.fromObject({
+      ...inputParamType.arrayChildren,
+      name: inputParamType.name,
+    });
     const formattedArgs = await Promise.all(arg.map(async (value, i) => {
-      return await getReadableArg(core, subParamType, value, decimals, i);
+      return await getReadableArg(core, subParamType, value, decimals, i, nestedLevel + 1);
     }));
-    return `${formattedInputParamName} = [\n\t\t\t\t${formattedArgs.join(' ,\n\t\t\t\t')}\n\t\t\t]`;
+    const tabs = '\t'.repeat(nestedLevel);
+    return `${formattedInputParamName} = [\n${tabs}\t${formattedArgs.join(` ,\n${tabs}\t`)}\n${tabs}]`;
   }
 
   if (isMarketIdParam(inputParamType)) {
@@ -692,11 +723,18 @@ async function getReadableArg<T extends NetworkType>(
     const values: string[] = [];
     const keys = Object.keys(arg);
     for (let i = 0; i < keys.length; i++) {
-      const key = keys[i];
       const componentPiece = inputParamType.components[i];
-      values.push(await getReadableArg(core, componentPiece, arg[key], decimals, index));
+      values.push(await getReadableArg(
+        core,
+        componentPiece,
+        arg[componentPiece.name],
+        decimals,
+        index,
+        nestedLevel + 1,
+      ));
     }
-    return `${formattedInputParamName} = {\n\t\t\t\t${values.join(' ,\n\t\t\t\t')}\n\t\t\t}`;
+    const tabs = '\t'.repeat(nestedLevel);
+    return `${formattedInputParamName} = {\n${tabs}\t${values.join(` ,\n${tabs}\t`)}\n${tabs}}`;
   }
 
   if (BigNumber.isBigNumber(arg) && typeof decimals !== 'undefined') {

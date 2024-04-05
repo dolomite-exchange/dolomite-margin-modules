@@ -1,16 +1,9 @@
 import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { getPendlePtEEthPriceOracleConstructorParams } from '@dolomite-exchange/modules-pendle/src/pendle-constructors';
-import { PendlePtIsolationModeVaultFactory__factory } from '@dolomite-exchange/modules-pendle/src/types';
-import { formatEther, parseEther } from 'ethers/lib/utils';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
-import { Network, ONE_BI } from 'packages/base/src/utils/no-deps-constants';
-import {
-  deployContractAndSave,
-  EncodedTransaction,
-  prettyPrintEncodedDataWithTypeSafety,
-} from '../../../utils/deploy-utils';
+import { Network } from 'packages/base/src/utils/no-deps-constants';
+import { EncodedTransaction, prettyPrintEncodedDataWithTypeSafety } from '../../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../utils/dry-run-utils';
 import getScriptName from '../../../utils/get-script-name';
 
