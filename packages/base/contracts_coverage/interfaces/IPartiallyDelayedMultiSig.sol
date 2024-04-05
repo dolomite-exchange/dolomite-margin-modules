@@ -64,6 +64,16 @@ interface IPartiallyDelayedMultiSig {
     // ===================================================
 
     /**
+     * Changes the duration of the time lock for transactions.
+     *
+     * @param  _secondsTimeLocked  Duration needed after a transaction is confirmed and before it
+     *                             becomes executable, in seconds.
+     */
+    function changeTimeLock(
+        uint32 _secondsTimeLocked
+    ) external;
+
+    /**
      * Adds or removes functions that can be executed instantly. Transaction must be sent by wallet.
      *
      * @param  destination  Destination address of function. Zero address allows the function to be
@@ -98,6 +108,15 @@ interface IPartiallyDelayedMultiSig {
      */
     function executeMultipleTransactions(
         uint256[] calldata transactionIds
+    ) external;
+
+    /**
+     * Allows an owner to execute a confirmed transaction.
+     *
+     * @param  transactionId  Transaction ID.
+     */
+    function executeTransaction(
+        uint256 transactionId
     ) external;
 
     /**
