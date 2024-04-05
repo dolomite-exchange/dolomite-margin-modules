@@ -3,7 +3,6 @@ import { expect } from 'chai';
 import { BigNumber, ContractTransaction } from 'ethers';
 import {
   CustomTestToken,
-  TestHandlerRegistry,
   TestIsolationModeFactory,
   TestIsolationModeTokenVaultV1WithFreezable,
   TestIsolationModeTokenVaultV1WithFreezable__factory,
@@ -19,30 +18,13 @@ import {
   depositIntoDolomiteMargin,
   withdrawFromDolomiteMargin,
 } from '../../../src/utils/dolomite-utils';
-import {
-  BYTES_EMPTY,
-  MAX_UINT_256_BI,
-  Network,
-  ONE_BI,
-  ONE_ETH_BI,
-  ZERO_BI,
-} from '../../../src/utils/no-deps-constants';
+import { MAX_UINT_256_BI, Network, ONE_ETH_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
-import {
-  expectEvent,
-  expectProtocolBalance,
-  expectThrow,
-  expectTotalSupply,
-  expectWalletBalance,
-} from '../../utils/assertions';
+import { expectProtocolBalance, expectThrow, expectTotalSupply, expectWalletBalance } from '../../utils/assertions';
 import { CoreProtocolArbitrumOne } from '../../utils/core-protocol';
 import { createIsolationModeTokenVaultV1ActionsImpl } from '../../utils/dolomite';
-import {
-  createTestFreezableIsolationModeVaultFactory,
-  createTestHandlerRegistry,
-  createTestIsolationModeFactory,
-} from '../../utils/ecosystem-utils/testers';
+import { createTestIsolationModeFactory } from '../../utils/ecosystem-utils/testers';
 import {
   getDefaultCoreProtocolConfig,
   setupCoreProtocol,
@@ -55,20 +37,7 @@ const defaultAccountNumber = '0';
 const borrowAccountNumber = '123';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
 const otherAmountWei = BigNumber.from('10000000'); // $10
-const usdcAmount = BigNumber.from('100000000'); // $100
 const bigOtherAmountWei = BigNumber.from('100000000000'); // $100,000
-
-enum FreezeType {
-  Deposit = 0,
-  Withdrawal = 1,
-}
-
-const PLUS_ONE_BI = {
-  sign: true,
-  value: ONE_BI,
-};
-
-const EXECUTION_FEE = ONE_ETH_BI.div(4);
 
 describe('IsolationModeTokenVaultV1WithFreezable', () => {
   let snapshotId: string;
@@ -81,8 +50,6 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
   let factory: TestIsolationModeFactory;
   let userVaultImplementation: TestIsolationModeTokenVaultV1WithFreezable;
   let userVault: TestIsolationModeTokenVaultV1WithFreezable;
-  let impersonatedVault: SignerWithAddressWithSafety;
-  let registry: TestHandlerRegistry;
 
   let solidUser: SignerWithAddressWithSafety;
   let otherToken1: CustomTestToken;
@@ -99,7 +66,6 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
       libraries,
       [],
     );
-    registry = await createTestHandlerRegistry(core);
     factory = await createTestIsolationModeFactory(
       core,
       underlyingToken,
@@ -171,8 +137,6 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
     await otherToken2.connect(solidUser).approve(core.dolomiteMargin.address, bigOtherAmountWei);
     await depositIntoDolomiteMargin(core, solidUser, defaultAccountNumber, otherMarketId2, bigOtherAmountWei);
 
-    impersonatedVault = await impersonate(userVault.address, true);
-
     snapshotId = await snapshot();
   });
 
@@ -180,12 +144,8 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
     snapshotId = await revertToSnapshotAndCapture(snapshotId);
   });
 
-  async function freezeVault(
-    accountNumber: BigNumber = ZERO_BI,
-  ): Promise<ContractTransaction> {
-    return userVault.setIsVaultFrozen(
-      true
-    );
+  async function freezeVault(): Promise<ContractTransaction> {
+    return userVault.setIsVaultFrozen(true);
   }
 
   describe('basic read functions', () => {

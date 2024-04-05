@@ -20,12 +20,12 @@
 
 pragma solidity ^0.8.9;
 
-import { TestIsolationModeFactory } from "./TestIsolationModeFactory.sol";
+import { TestIsolationModeVaultFactory } from "./TestIsolationModeVaultFactory.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IsolationModeTokenVaultV1 } from "../isolation-mode/abstract/IsolationModeTokenVaultV1.sol";
 import { IsolationModeTokenVaultV1WithAsyncFreezable } from "../isolation-mode/abstract/IsolationModeTokenVaultV1WithAsyncFreezable.sol"; // solhint-disable-line max-line-length
 import { IsolationModeTokenVaultV1WithAsyncFreezableAndPausable } from "../isolation-mode/abstract/IsolationModeTokenVaultV1WithAsyncFreezableAndPausable.sol"; // solhint-disable-line max-line-length
-import { IFreezableIsolationModeVaultFactory } from "../isolation-mode/interfaces/IFreezableIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
+import { IAsyncFreezableIsolationModeVaultFactory } from "../isolation-mode/interfaces/IAsyncFreezableIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 
 
@@ -53,7 +53,7 @@ contract TestIsolationModeTokenVaultV1WithAsyncFreezableAndPausable is Isolation
         view
         returns (IDolomiteRegistry)
     {
-        return TestIsolationModeFactory(VAULT_FACTORY()).dolomiteRegistry();
+        return TestIsolationModeVaultFactory(VAULT_FACTORY()).dolomiteRegistry();
     }
 
     function isExternalRedemptionPaused() public override view returns (bool) {
@@ -69,10 +69,10 @@ contract TestIsolationModeTokenVaultV1WithAsyncFreezableAndPausable is Isolation
         bytes calldata /* _extraData */
     ) internal override {
         if (_isLiquidation) {
-            IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).setVaultAccountPendingAmountForFrozenStatus(
+            IAsyncFreezableIsolationModeVaultFactory(VAULT_FACTORY()).setVaultAccountPendingAmountForFrozenStatus(
                 /* _vault = */ address(this),
                 _tradeAccountNumber,
-                IFreezableIsolationModeVaultFactory.FreezeType.Withdrawal,
+                IAsyncFreezableIsolationModeVaultFactory.FreezeType.Withdrawal,
                 /* _amountDeltaWei = */ IDolomiteStructs.Wei({
                     sign: true,
                     value: _inputAmount

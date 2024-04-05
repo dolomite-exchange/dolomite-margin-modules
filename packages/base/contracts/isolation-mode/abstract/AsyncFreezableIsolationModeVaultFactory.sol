@@ -26,18 +26,18 @@ import { AccountActionLib } from "../../lib/AccountActionLib.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { TypesLib } from "../../protocol/lib/TypesLib.sol";
-import { IFreezableIsolationModeVaultFactory } from "../interfaces/IFreezableIsolationModeVaultFactory.sol";
+import { IAsyncFreezableIsolationModeVaultFactory } from "../interfaces/IAsyncFreezableIsolationModeVaultFactory.sol";
 import { IIsolationModeTokenVaultV1WithAsyncFreezable } from "../interfaces/IIsolationModeTokenVaultV1WithAsyncFreezable.sol"; // solhint-disable-line max-line-length
 
 
 /**
- * @title   FreezableIsolationModeVaultFactory
+ * @title   AsyncFreezableIsolationModeVaultFactory
  * @author  Dolomite
  *
  * @notice  Abstract contract for allowing freezable vaults (usually for handling async requests)
  */
-abstract contract FreezableIsolationModeVaultFactory is
-    IFreezableIsolationModeVaultFactory,
+abstract contract AsyncFreezableIsolationModeVaultFactory is
+    IAsyncFreezableIsolationModeVaultFactory,
     IsolationModeVaultFactory
 {
     using TypesLib for IDolomiteStructs.Wei;

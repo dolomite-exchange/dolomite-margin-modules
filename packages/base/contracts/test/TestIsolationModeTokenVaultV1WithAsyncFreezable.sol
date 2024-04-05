@@ -23,7 +23,7 @@ pragma solidity ^0.8.9;
 import { TestSimpleIsolationModeVaultFactory } from "./TestSimpleIsolationModeVaultFactory.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IsolationModeTokenVaultV1WithAsyncFreezable } from "../isolation-mode/abstract/IsolationModeTokenVaultV1WithAsyncFreezable.sol"; // solhint-disable-line max-line-length
-import { IFreezableIsolationModeVaultFactory } from "../isolation-mode/interfaces/IFreezableIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
+import { IAsyncFreezableIsolationModeVaultFactory } from "../isolation-mode/interfaces/IAsyncFreezableIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../protocol/lib/Require.sol";
 
@@ -61,7 +61,7 @@ contract TestIsolationModeTokenVaultV1WithAsyncFreezable is IsolationModeTokenVa
     internal
     override {
         Require.that(
-            msg.value == IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).executionFee(),
+            msg.value == IAsyncFreezableIsolationModeVaultFactory(VAULT_FACTORY()).executionFee(),
             _FILE,
             'Invalid execution fee'
         );
@@ -78,10 +78,10 @@ contract TestIsolationModeTokenVaultV1WithAsyncFreezable is IsolationModeTokenVa
         bytes calldata /* _extraData */
     ) internal override {
         if (_isLiquidation) {
-            IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).setVaultAccountPendingAmountForFrozenStatus(
+            IAsyncFreezableIsolationModeVaultFactory(VAULT_FACTORY()).setVaultAccountPendingAmountForFrozenStatus(
                 /* _vault = */ address(this),
                 _tradeAccountNumber,
-                IFreezableIsolationModeVaultFactory.FreezeType.Withdrawal,
+                IAsyncFreezableIsolationModeVaultFactory.FreezeType.Withdrawal,
                 /* _amountDeltaWei = */ IDolomiteStructs.Wei({
                     sign: true,
                     value: _inputAmount

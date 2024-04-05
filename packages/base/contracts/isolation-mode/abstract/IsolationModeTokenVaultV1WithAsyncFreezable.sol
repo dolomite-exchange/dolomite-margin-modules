@@ -32,7 +32,7 @@ import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 import { IWETH } from "../../protocol/interfaces/IWETH.sol";
 import { Require } from "../../protocol/lib/Require.sol";
-import { IFreezableIsolationModeVaultFactory } from "../interfaces/IFreezableIsolationModeVaultFactory.sol";
+import { IAsyncFreezableIsolationModeVaultFactory } from "../interfaces/IAsyncFreezableIsolationModeVaultFactory.sol";
 import { IIsolationModeTokenVaultV1 } from "../interfaces/IIsolationModeTokenVaultV1.sol";
 import { IIsolationModeTokenVaultV1WithAsyncFreezable } from "../interfaces/IIsolationModeTokenVaultV1WithAsyncFreezable.sol"; // solhint-disable-line max-line-length
 import { IIsolationModeTokenVaultV1WithFreezable } from "../interfaces/IIsolationModeTokenVaultV1WithFreezable.sol";
@@ -275,7 +275,7 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezable is
                 IERC20(UNDERLYING_TOKEN()).safeTransferFrom(_from, address(this), _amount);
             } else {
                 IERC20(UNDERLYING_TOKEN()).safeTransferFrom(
-                    address(handlerRegistry().getWrapperByToken(IFreezableIsolationModeVaultFactory(VAULT_FACTORY()))),
+                    address(handlerRegistry().getWrapperByToken(IAsyncFreezableIsolationModeVaultFactory(VAULT_FACTORY()))),
                     address(this),
                     _amount
                 );
@@ -322,7 +322,7 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezable is
     }
 
     function handlerRegistry() public view returns (IHandlerRegistry) {
-        return IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).handlerRegistry();
+        return IAsyncFreezableIsolationModeVaultFactory(VAULT_FACTORY()).handlerRegistry();
     }
 
     function getExecutionFeeForAccountNumber(uint256 _accountNumber) public view returns (uint256) {
@@ -335,17 +335,17 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezable is
     virtual
     view
     returns (bool) {
-        return IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).isVaultFrozen(address(this));
+        return IAsyncFreezableIsolationModeVaultFactory(VAULT_FACTORY()).isVaultFrozen(address(this));
     }
 
     function isVaultAccountFrozen(uint256 _accountNumber) public virtual view returns (bool) {
-        return IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).isVaultAccountFrozen(address(this), _accountNumber);
+        return IAsyncFreezableIsolationModeVaultFactory(VAULT_FACTORY()).isVaultAccountFrozen(address(this), _accountNumber);
     }
 
     function getOutputTokenByVaultAccount(
         uint256 _accountNumber
     ) public view returns (address) {
-        return IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).getOutputTokenByAccount(
+        return IAsyncFreezableIsolationModeVaultFactory(VAULT_FACTORY()).getOutputTokenByAccount(
             address(this),
             _accountNumber
         );
@@ -625,7 +625,7 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezable is
     function _validateIsLiquidator(address _from) internal view {
         Require.that(
             dolomiteRegistry().liquidatorAssetRegistry().isAssetWhitelistedForLiquidation(
-                IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).marketId(),
+                IAsyncFreezableIsolationModeVaultFactory(VAULT_FACTORY()).marketId(),
                 _from
             ),
             _FILE,
@@ -770,17 +770,17 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezable is
             "Invalid withdrawal amount"
         );
 
-        IFreezableIsolationModeVaultFactory factory = IFreezableIsolationModeVaultFactory(VAULT_FACTORY());
+        IAsyncFreezableIsolationModeVaultFactory factory = IAsyncFreezableIsolationModeVaultFactory(VAULT_FACTORY());
         address vault = address(this);
         uint256 withdrawalPendingAmount = factory.getPendingAmountByAccount(
             vault,
             _accountNumber,
-            IFreezableIsolationModeVaultFactory.FreezeType.Withdrawal
+            IAsyncFreezableIsolationModeVaultFactory.FreezeType.Withdrawal
         );
         uint256 depositPendingAmount = factory.getPendingAmountByAccount(
             vault,
             _accountNumber,
-            IFreezableIsolationModeVaultFactory.FreezeType.Deposit
+            IAsyncFreezableIsolationModeVaultFactory.FreezeType.Deposit
         );
 
         IDolomiteStructs.AccountInfo memory accountInfo = IDolomiteStructs.AccountInfo({

@@ -1,5 +1,4 @@
 import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin/dist/src';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { BigNumber, ContractTransaction } from 'ethers';
 import {
@@ -20,7 +19,15 @@ import {
   depositIntoDolomiteMargin,
   withdrawFromDolomiteMargin,
 } from '../../../src/utils/dolomite-utils';
-import { BYTES_EMPTY, MAX_UINT_256_BI, Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
+import {
+  BYTES_EMPTY,
+  MAX_UINT_256_BI,
+  Network,
+  ONE_BI,
+  ONE_ETH_BI,
+  ZERO_BI,
+} from '../../../src/utils/no-deps-constants';
+import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import {
   expectEvent,
@@ -73,10 +80,10 @@ describe('IsolationModeTokenVaultV1WithAsyncFreezable', () => {
   let factory: TestFreezableIsolationModeVaultFactory;
   let userVaultImplementation: TestIsolationModeTokenVaultV1WithAsyncFreezable;
   let userVault: TestIsolationModeTokenVaultV1WithAsyncFreezable;
-  let impersonatedVault: SignerWithAddress;
+  let impersonatedVault: SignerWithAddressWithSafety;
   let registry: TestHandlerRegistry;
 
-  let solidUser: SignerWithAddress;
+  let solidUser: SignerWithAddressWithSafety;
   let otherToken1: CustomTestToken;
   let otherToken2: CustomTestToken;
   let otherMarketId1: BigNumber;
@@ -89,7 +96,7 @@ describe('IsolationModeTokenVaultV1WithAsyncFreezable', () => {
     userVaultImplementation = await createContractWithLibrary<TestIsolationModeTokenVaultV1WithAsyncFreezable>(
       'TestIsolationModeTokenVaultV1WithAsyncFreezable',
       libraries,
-      [core.tokens.weth.address],
+      [core.tokens.weth.address, core.network],
     );
     registry = await createTestHandlerRegistry(core);
     factory = await createTestFreezableIsolationModeVaultFactory(
@@ -389,8 +396,8 @@ describe('IsolationModeTokenVaultV1WithAsyncFreezable', () => {
       await expect(
         () => userVault.closeBorrowPositionWithUnderlyingVaultToken(
           borrowAccountNumber,
-          defaultAccountNumber
-      )).to.changeEtherBalance(core.hhUser1, ONE_ETH_BI);
+          defaultAccountNumber,
+        )).to.changeEtherBalance(core.hhUser1, ONE_ETH_BI);
       expect(await userVault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(ZERO_BI);
 
       await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, underlyingMarketId, ZERO_BI);
@@ -1816,7 +1823,7 @@ describe('IsolationModeTokenVaultV1WithAsyncFreezable', () => {
         amountWei,
         otherToken1.address,
         ONE_BI,
-        BYTES_EMPTY
+        BYTES_EMPTY,
       );
     });
 
@@ -1827,7 +1834,7 @@ describe('IsolationModeTokenVaultV1WithAsyncFreezable', () => {
           amountWei,
           otherToken1.address,
           ONE_BI,
-          BYTES_EMPTY
+          BYTES_EMPTY,
         ),
         `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
       );
@@ -1841,9 +1848,9 @@ describe('IsolationModeTokenVaultV1WithAsyncFreezable', () => {
           ZERO_BI,
           otherToken1.address,
           ONE_BI,
-          BYTES_EMPTY
+          BYTES_EMPTY,
         ),
-        'IsolationVaultV1AsyncFreezable: Invalid withdrawal amount'
+        'IsolationVaultV1AsyncFreezable: Invalid withdrawal amount',
       );
     });
 
@@ -1855,9 +1862,9 @@ describe('IsolationModeTokenVaultV1WithAsyncFreezable', () => {
           amountWei.add(1),
           otherToken1.address,
           ONE_BI,
-          BYTES_EMPTY
+          BYTES_EMPTY,
         ),
-        `IsolationVaultV1AsyncFreezable: Withdrawal too large <${userVault.address.toLowerCase()}, ${defaultAccountNumber}>`
+        `IsolationVaultV1AsyncFreezable: Withdrawal too large <${userVault.address.toLowerCase()}, ${defaultAccountNumber}>`,
       );
     });
 
@@ -1867,7 +1874,7 @@ describe('IsolationModeTokenVaultV1WithAsyncFreezable', () => {
         defaultAccountNumber,
         FreezeType.Deposit,
         PLUS_ONE_BI,
-        otherToken1.address
+        otherToken1.address,
       );
       await expectThrow(
         userVault.initiateUnwrapping(
@@ -1875,7 +1882,7 @@ describe('IsolationModeTokenVaultV1WithAsyncFreezable', () => {
           amountWei,
           otherToken1.address,
           ONE_BI,
-          BYTES_EMPTY
+          BYTES_EMPTY,
         ),
         'IsolationModeVaultV1Freezable: Vault is frozen',
       );
@@ -1886,19 +1893,19 @@ describe('IsolationModeTokenVaultV1WithAsyncFreezable', () => {
       await userVault.openBorrowPosition(
         defaultAccountNumber,
         borrowAccountNumber,
-        amountWei
+        amountWei,
       );
       await userVault.transferFromPositionWithOtherToken(
         borrowAccountNumber,
         defaultAccountNumber,
         core.marketIds.usdc,
         usdcAmount,
-        BalanceCheckFlag.None
+        BalanceCheckFlag.None,
       );
 
       await core.testEcosystem!.testPriceOracle.setPrice(
         factory.address,
-        '10'
+        '10',
       );
       await expectThrow(
         userVault.initiateUnwrapping(
@@ -1906,7 +1913,7 @@ describe('IsolationModeTokenVaultV1WithAsyncFreezable', () => {
           amountWei,
           otherToken1.address,
           ONE_BI,
-          BYTES_EMPTY
+          BYTES_EMPTY,
         ),
         'IsolationModeVaultV1ActionsImpl: Account liquidatable',
       );
@@ -1919,9 +1926,9 @@ describe('IsolationModeTokenVaultV1WithAsyncFreezable', () => {
           amountWei,
           otherToken1.address,
           ONE_BI,
-          BYTES_EMPTY
+          BYTES_EMPTY,
         ),
-        'IsolationModeTokenVaultV1: Reentrant call'
+        'IsolationModeTokenVaultV1: Reentrant call',
       );
     });
   });
@@ -1934,7 +1941,7 @@ describe('IsolationModeTokenVaultV1WithAsyncFreezable', () => {
         amountWei,
         otherToken1.address,
         ONE_BI,
-        BYTES_EMPTY
+        BYTES_EMPTY,
       );
     });
 
@@ -1947,7 +1954,7 @@ describe('IsolationModeTokenVaultV1WithAsyncFreezable', () => {
           amountWei,
           otherToken1.address,
           ONE_BI,
-          BYTES_EMPTY
+          BYTES_EMPTY,
         ),
         `IsolationVaultV1AsyncFreezable: Only liquidator can call <${core.hhUser3.address.toLowerCase()}>`,
       );
@@ -1961,9 +1968,9 @@ describe('IsolationModeTokenVaultV1WithAsyncFreezable', () => {
           amountWei.sub(1),
           otherToken1.address,
           ONE_BI,
-          BYTES_EMPTY
+          BYTES_EMPTY,
         ),
-        `IsolationVaultV1AsyncFreezable: Liquidation must be full balance <${userVault.address.toLowerCase()}, ${defaultAccountNumber}>`
+        `IsolationVaultV1AsyncFreezable: Liquidation must be full balance <${userVault.address.toLowerCase()}, ${defaultAccountNumber}>`,
       );
     });
 
@@ -1974,9 +1981,9 @@ describe('IsolationModeTokenVaultV1WithAsyncFreezable', () => {
           amountWei,
           otherToken1.address,
           ONE_BI,
-          BYTES_EMPTY
+          BYTES_EMPTY,
         ),
-        `IsolationVaultV1AsyncFreezable: Account is frozen <${userVault.address.toLowerCase()}, ${defaultAccountNumber}>`
+        `IsolationVaultV1AsyncFreezable: Account is frozen <${userVault.address.toLowerCase()}, ${defaultAccountNumber}>`,
       );
     });
 
@@ -1987,9 +1994,9 @@ describe('IsolationModeTokenVaultV1WithAsyncFreezable', () => {
           amountWei,
           otherToken1.address,
           ONE_BI,
-          BYTES_EMPTY
+          BYTES_EMPTY,
         ),
-        'IsolationModeTokenVaultV1: Reentrant call'
+        'IsolationModeTokenVaultV1: Reentrant call',
       );
     });
   });
@@ -2005,11 +2012,11 @@ describe('IsolationModeTokenVaultV1WithAsyncFreezable', () => {
         defaultAccountNumber,
         FreezeType.Deposit,
         PLUS_ONE_BI,
-        otherToken1.address
+        otherToken1.address,
       );
       await expectThrow(
         userVault.testRequireVaultAccountNotFrozen(defaultAccountNumber),
-        ''
+        '',
       );
     });
   });

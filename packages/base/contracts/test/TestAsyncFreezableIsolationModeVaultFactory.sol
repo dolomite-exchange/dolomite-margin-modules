@@ -20,18 +20,21 @@
 
 pragma solidity ^0.8.9;
 
-import { TestIsolationModeFactory } from "./TestIsolationModeFactory.sol";
+import { TestFreezableIsolationModeVaultFactory } from "./TestFreezableIsolationModeVaultFactory.sol";
 import { MinimalERC20 } from "../general/MinimalERC20.sol";
-import { FreezableIsolationModeVaultFactory } from "../isolation-mode/abstract/FreezableIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
+import { AsyncFreezableIsolationModeVaultFactory } from "../isolation-mode/abstract/AsyncFreezableIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 
 
 /**
- * @title   TestFreezableIsolationModeFactory
+ * @title   TestAsyncFreezableIsolationModeVaultFactory
  * @author  Dolomite
  *
  * @notice  This contract is used to test the FreezableIsolationModeVaultFactory contract.
  */
-contract TestFreezableIsolationModeVaultFactory is TestIsolationModeFactory, FreezableIsolationModeVaultFactory {
+contract TestAsyncFreezableIsolationModeVaultFactory is
+    TestFreezableIsolationModeVaultFactory,
+    AsyncFreezableIsolationModeVaultFactory
+{
 
     constructor(
         uint256 _executionFee,
@@ -42,14 +45,14 @@ contract TestFreezableIsolationModeVaultFactory is TestIsolationModeFactory, Fre
         address _userVaultImplementation,
         address _dolomiteMargin
     )
-    TestIsolationModeFactory(
+    TestFreezableIsolationModeVaultFactory(
         _dolomiteRegistry,
         _underlyingToken,
         _borrowPositionProxy,
         _userVaultImplementation,
         _dolomiteMargin
     )
-    FreezableIsolationModeVaultFactory(
+    AsyncFreezableIsolationModeVaultFactory(
         _executionFee,
         _handlerRegistry
     )
@@ -59,7 +62,7 @@ contract TestFreezableIsolationModeVaultFactory is TestIsolationModeFactory, Fre
         address _owner,
         address _spender,
         uint256 _amount
-    ) internal override (TestIsolationModeFactory, MinimalERC20) {
-        TestIsolationModeFactory._spendAllowance(_owner, _spender, _amount);
+    ) internal override (TestFreezableIsolationModeVaultFactory, MinimalERC20) {
+        TestFreezableIsolationModeVaultFactory._spendAllowance(_owner, _spender, _amount);
     }
 }

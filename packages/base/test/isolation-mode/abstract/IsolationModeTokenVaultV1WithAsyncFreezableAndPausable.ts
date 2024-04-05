@@ -67,7 +67,7 @@ const PLUS_ONE_BI = {
 
 const EXECUTION_FEE = ONE_ETH_BI.div(4);
 
-describe('IsolationModeTokenVaultV1WithFreezableAndPausable', () => {
+describe('IsolationModeTokenVaultV1WithAsyncFreezableAndPausable', () => {
   let snapshotId: string;
 
   let core: CoreProtocolArbitrumOne;
@@ -254,7 +254,6 @@ describe('IsolationModeTokenVaultV1WithFreezableAndPausable', () => {
       );
     });
 
-    // @todo fix
     it('should fail if vault is frozen', async () => {
       await freezeVault();
       await expectThrow(

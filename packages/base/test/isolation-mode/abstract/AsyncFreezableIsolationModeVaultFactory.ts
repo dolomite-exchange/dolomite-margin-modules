@@ -1,12 +1,12 @@
 import { expect } from 'chai';
-import { BigNumber, ContractTransaction } from 'ethers';
+import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import {
   CustomTestToken,
   TestFreezableIsolationModeVaultFactory,
   TestHandlerRegistry,
-  TestIsolationModeTokenVaultV1WithFreezable,
-  TestIsolationModeTokenVaultV1WithFreezable__factory,
+  TestIsolationModeTokenVaultV1WithAsyncFreezable,
+  TestIsolationModeTokenVaultV1WithAsyncFreezable__factory,
   TestIsolationModeUnwrapperTraderV2,
   TestIsolationModeUnwrapperTraderV2__factory,
   TestIsolationModeWrapperTraderV2,
@@ -66,8 +66,8 @@ describe('FreezableIsolationModeVaultFactory', () => {
   let tokenUnwrapper: TestIsolationModeUnwrapperTraderV2;
   let tokenWrapper: TestIsolationModeWrapperTraderV2;
   let factory: TestFreezableIsolationModeVaultFactory;
-  let userVaultImplementation: TestIsolationModeTokenVaultV1WithFreezable;
-  let userVault: TestIsolationModeTokenVaultV1WithFreezable;
+  let userVaultImplementation: TestIsolationModeTokenVaultV1WithAsyncFreezable;
+  let userVault: TestIsolationModeTokenVaultV1WithAsyncFreezable;
   let impersonatedVault: SignerWithAddressWithSafety;
   let registry: TestHandlerRegistry;
 
@@ -81,10 +81,10 @@ describe('FreezableIsolationModeVaultFactory', () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     underlyingToken = await createTestToken();
     const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
-    userVaultImplementation = await createContractWithLibrary<TestIsolationModeTokenVaultV1WithFreezable>(
-      'TestIsolationModeTokenVaultV1WithFreezable',
+    userVaultImplementation = await createContractWithLibrary<TestIsolationModeTokenVaultV1WithAsyncFreezable>(
+      'TestIsolationModeTokenVaultV1WithAsyncFreezable',
       libraries,
-      [core.tokens.weth.address],
+      [],
     );
     registry = await createTestHandlerRegistry(core);
     factory = await createTestFreezableIsolationModeVaultFactory(
@@ -135,9 +135,9 @@ describe('FreezableIsolationModeVaultFactory', () => {
 
     await factory.createVault(core.hhUser1.address);
     const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);
-    userVault = setupUserVaultProxy<TestIsolationModeTokenVaultV1WithFreezable>(
+    userVault = setupUserVaultProxy<TestIsolationModeTokenVaultV1WithAsyncFreezable>(
       vaultAddress,
-      TestIsolationModeTokenVaultV1WithFreezable__factory,
+      TestIsolationModeTokenVaultV1WithAsyncFreezable__factory,
       core.hhUser1,
     );
 
@@ -168,18 +168,6 @@ describe('FreezableIsolationModeVaultFactory', () => {
   beforeEach(async () => {
     snapshotId = await revertToSnapshotAndCapture(snapshotId);
   });
-
-  async function freezeVault(
-    accountNumber: BigNumber = ZERO_BI,
-  ): Promise<ContractTransaction> {
-    return factory.connect(impersonatedVault).setVaultAccountPendingAmountForFrozenStatus(
-      userVault.address,
-      accountNumber,
-      FreezeType.Deposit,
-      PLUS_ONE_BI,
-      core.tokens.usdc.address,
-    );
-  }
 
   describe('#constructor', () => {
     it('should work', async () => {
@@ -264,7 +252,7 @@ describe('FreezableIsolationModeVaultFactory', () => {
       );
     });
 
-    it('should fail if not token coverter', async () => {
+    it('should fail if not token converter', async () => {
       await expectThrow(
         factory.connect(core.hhUser2).setIsVaultDepositSourceWrapper(userVault.address, true),
         `IsolationModeVaultFactory: Caller is not a token converter <${core.hhUser2.address.toLowerCase()}>`,

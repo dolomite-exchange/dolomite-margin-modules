@@ -25,13 +25,13 @@ import { IHandlerRegistry } from "../../interfaces/IHandlerRegistry.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 
 /**
- * @title   IFreezableIsolationModeVaultFactory
+ * @title   IAsyncFreezableIsolationModeVaultFactory
  * @author  Dolomite
  *
  * @notice  A wrapper contract around a certain token to offer isolation mode features for DolomiteMargin and freezable
  *          vaults.
  */
-interface IFreezableIsolationModeVaultFactory is IIsolationModeVaultFactory {
+interface IAsyncFreezableIsolationModeVaultFactory is IIsolationModeVaultFactory {
 
     // ==========================================================
     // ========================= Enums ==========================
