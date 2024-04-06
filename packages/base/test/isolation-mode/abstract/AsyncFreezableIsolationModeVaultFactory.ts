@@ -25,7 +25,7 @@ import { expectEvent, expectProtocolBalance, expectThrow } from '../../utils/ass
 import { CoreProtocolArbitrumOne } from '../../utils/core-protocol';
 import { createIsolationModeTokenVaultV1ActionsImpl } from '../../utils/dolomite';
 import {
-  createTestFreezableIsolationModeVaultFactory,
+  createTestAsyncFreezableIsolationModeVaultFactory,
   createTestHandlerRegistry,
 } from '../../utils/ecosystem-utils/testers';
 import {
@@ -86,7 +86,7 @@ describe('AsyncFreezableIsolationModeVaultFactory', () => {
       [core.tokens.weth, core.network],
     );
     registry = await createTestHandlerRegistry(core);
-    factory = await createTestFreezableIsolationModeVaultFactory(
+    factory = await createTestAsyncFreezableIsolationModeVaultFactory(
       EXECUTION_FEE,
       registry,
       core,

@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import { BigNumber, ContractTransaction } from 'ethers';
 import {
   CustomTestToken,
-  TestFreezableIsolationModeVaultFactory,
+  TestAsyncFreezableIsolationModeVaultFactory,
   TestHandlerRegistry,
   TestIsolationModeTokenVaultV1WithAsyncFreezable,
   TestIsolationModeTokenVaultV1WithAsyncFreezable__factory,
@@ -39,7 +39,7 @@ import {
 import { CoreProtocolArbitrumOne } from '../../utils/core-protocol';
 import { createIsolationModeTokenVaultV1ActionsImpl } from '../../utils/dolomite';
 import {
-  createTestFreezableIsolationModeVaultFactory,
+  createTestAsyncFreezableIsolationModeVaultFactory,
   createTestHandlerRegistry,
 } from '../../utils/ecosystem-utils/testers';
 import {
@@ -77,7 +77,7 @@ describe('IsolationModeTokenVaultV1WithAsyncFreezable', () => {
   let underlyingMarketId: BigNumber;
   let tokenUnwrapper: TestIsolationModeUnwrapperTraderV2;
   let tokenWrapper: TestIsolationModeWrapperTraderV2;
-  let factory: TestFreezableIsolationModeVaultFactory;
+  let factory: TestAsyncFreezableIsolationModeVaultFactory;
   let userVaultImplementation: TestIsolationModeTokenVaultV1WithAsyncFreezable;
   let userVault: TestIsolationModeTokenVaultV1WithAsyncFreezable;
   let impersonatedVault: SignerWithAddressWithSafety;
@@ -99,7 +99,7 @@ describe('IsolationModeTokenVaultV1WithAsyncFreezable', () => {
       [core.tokens.weth.address, core.network],
     );
     registry = await createTestHandlerRegistry(core);
-    factory = await createTestFreezableIsolationModeVaultFactory(
+    factory = await createTestAsyncFreezableIsolationModeVaultFactory(
       EXECUTION_FEE,
       registry,
       core,
@@ -1432,7 +1432,7 @@ describe('IsolationModeTokenVaultV1WithAsyncFreezable', () => {
           zapParams.makerAccounts,
           zapParams.userConfig,
         ),
-        'IsolationModeVaultV1Freezable: Vault is frozen',
+        `IsolationModeTokenVaultV1: Only converter can call <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
@@ -1689,7 +1689,7 @@ describe('IsolationModeTokenVaultV1WithAsyncFreezable', () => {
           zapParams.makerAccounts,
           zapParams.userConfig,
         ),
-        'IsolationModeVaultV1Freezable: Vault is frozen',
+        `IsolationModeTokenVaultV1: Only converter can call <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 

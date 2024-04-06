@@ -79,28 +79,76 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezable is
         _;
     }
 
-    modifier _closeBorrowPositionWithUnderlyingVaultTokenAsyncFreezableValidator(uint256 _borrowAccountNumber) {
-        _requireNotFrozen();
+    modifier _depositIntoVaultForDolomiteMarginAsyncFreezableValidator(uint256 _accountNumber) {
+        _requireVaultAccountNotFrozen(_accountNumber);
+        _;
+    }
+
+    modifier _withdrawFromVaultForDolomiteMarginAsyncFreezableValidator(uint256 _accountNumber) {
+        _requireVaultAccountNotFrozen(_accountNumber);
+        _;
+    }
+
+    modifier _openBorrowPositionAsyncFreezableValidator(
+        uint256 _fromAccountNumber,
+        uint256 _borrowAccountNumber
+    ) {
+        _requireVaultAccountNotFrozen(_fromAccountNumber);
+        _requireVaultAccountNotFrozen(_borrowAccountNumber);
+        _;
+    }
+
+    modifier _closeBorrowPositionWithUnderlyingVaultTokenAsyncFreezableValidator(
+        uint256 _borrowAccountNumber,
+        uint256 _toAccountNumber
+    ) {
+        _requireVaultAccountNotFrozen(_borrowAccountNumber);
+        _requireVaultAccountNotFrozen(_toAccountNumber);
         _;
         _refundExecutionFeeIfNecessary(_borrowAccountNumber);
     }
 
-    modifier _closeBorrowPositionWithOtherTokensAsyncFreezableValidator(uint256 _borrowAccountNumber) {
-        _requireNotFrozen();
+    modifier _closeBorrowPositionWithOtherTokensAsyncFreezableValidator(
+        uint256 _borrowAccountNumber
+    ) {
+        _requireVaultAccountNotFrozen(_borrowAccountNumber);
         _;
         _refundExecutionFeeIfNecessary(_borrowAccountNumber);
     }
 
-    modifier _transferFromPositionWithUnderlyingTokenAsyncFreezableValidator(uint256 _borrowAccountNumber) {
-        _requireNotFrozen();
+    modifier _transferIntoPositionWithUnderlyingTokenAsyncFreezableValidator(
+        uint256 _fromAccountNumber,
+        uint256 _borrowAccountNumber
+    ) {
+        _requireVaultAccountNotFrozen(_fromAccountNumber);
+        _requireVaultAccountNotFrozen(_borrowAccountNumber);
+        _;
+    }
+
+    modifier _transferIntoPositionWithOtherTokenAsyncFreezableValidator(uint256 _borrowAccountNumber) {
+        _requireVaultAccountNotFrozen(_borrowAccountNumber);
+        _;
+    }
+
+    modifier _transferFromPositionWithUnderlyingTokenAsyncFreezableValidator(
+        uint256 _borrowAccountNumber,
+        uint256 _toAccountNumber
+    ) {
+        _requireVaultAccountNotFrozen(_borrowAccountNumber);
+        _requireVaultAccountNotFrozen(_toAccountNumber);
         _;
         _refundExecutionFeeIfNecessary(_borrowAccountNumber);
     }
 
     modifier _transferFromPositionWithOtherTokenAsyncFreezableValidator(uint256 _borrowAccountNumber) {
-        _requireNotFrozen();
+        _requireVaultAccountNotFrozen(_borrowAccountNumber);
         _;
         _refundExecutionFeeIfNecessary(_borrowAccountNumber);
+    }
+
+    modifier _repayAllForBorrowPositionAsyncFreezableValidator(uint256 _borrowAccountNumber) {
+        _requireVaultAccountNotFrozen(_borrowAccountNumber);
+        _;
     }
 
     modifier _addCollateralAndSwapExactInputForOutputAsyncFreezableValidator(
@@ -366,9 +414,9 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezable is
         internal
         virtual
         override
-        _depositIntoVaultForDolomiteMarginFreezableValidator(_toAccountNumber)
+        _depositIntoVaultForDolomiteMarginAsyncFreezableValidator(_toAccountNumber)
     {
-        super._depositIntoVaultForDolomiteMargin(_toAccountNumber, _amountWei);
+        IsolationModeTokenVaultV1._depositIntoVaultForDolomiteMargin(_toAccountNumber, _amountWei);
     }
 
     function _withdrawFromVaultForDolomiteMargin(
@@ -378,9 +426,9 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezable is
         internal
         virtual
         override
-        _withdrawFromVaultForDolomiteMarginFreezableValidator(_fromAccountNumber)
+        _withdrawFromVaultForDolomiteMarginAsyncFreezableValidator(_fromAccountNumber)
     {
-        super._withdrawFromVaultForDolomiteMargin(_fromAccountNumber, _amountWei);
+        IsolationModeTokenVaultV1._withdrawFromVaultForDolomiteMargin(_fromAccountNumber, _amountWei);
     }
 
     function _openBorrowPosition(
@@ -391,9 +439,9 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezable is
         internal
         virtual
         override
-        _openBorrowPositionFreezableValidator
+        _openBorrowPositionAsyncFreezableValidator(_fromAccountNumber, _toAccountNumber)
     {
-        super._openBorrowPosition(_fromAccountNumber, _toAccountNumber, _amountWei);
+        IsolationModeTokenVaultV1._openBorrowPosition(_fromAccountNumber, _toAccountNumber, _amountWei);
     }
 
     function _closeBorrowPositionWithUnderlyingVaultToken(
@@ -403,9 +451,9 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezable is
         internal
         virtual
         override
-        _closeBorrowPositionWithUnderlyingVaultTokenAsyncFreezableValidator(_borrowAccountNumber)
+        _closeBorrowPositionWithUnderlyingVaultTokenAsyncFreezableValidator(_borrowAccountNumber, _toAccountNumber)
     {
-        super._closeBorrowPositionWithUnderlyingVaultToken(_borrowAccountNumber, _toAccountNumber);
+        IsolationModeTokenVaultV1._closeBorrowPositionWithUnderlyingVaultToken(_borrowAccountNumber, _toAccountNumber);
     }
 
     function _closeBorrowPositionWithOtherTokens(
@@ -418,7 +466,11 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezable is
         override
         _closeBorrowPositionWithOtherTokensAsyncFreezableValidator(_borrowAccountNumber)
     {
-        super._closeBorrowPositionWithOtherTokens(_borrowAccountNumber, _toAccountNumber, _collateralMarketIds);
+        IsolationModeTokenVaultV1._closeBorrowPositionWithOtherTokens(
+            _borrowAccountNumber,
+            _toAccountNumber,
+            _collateralMarketIds
+        );
     }
 
     function _transferIntoPositionWithUnderlyingToken(
@@ -429,9 +481,13 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezable is
         internal
         virtual
         override
-        _transferIntoPositionWithUnderlyingTokenFreezableValidator
+        _transferIntoPositionWithUnderlyingTokenAsyncFreezableValidator(_fromAccountNumber, _borrowAccountNumber)
     {
-        super._transferIntoPositionWithUnderlyingToken(_fromAccountNumber, _borrowAccountNumber, _amountWei);
+        IsolationModeTokenVaultV1._transferIntoPositionWithUnderlyingToken(
+            _fromAccountNumber,
+            _borrowAccountNumber,
+            _amountWei
+        );
     }
 
     function _transferIntoPositionWithOtherToken(
@@ -444,9 +500,9 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezable is
         internal
         virtual
         override
-        _transferIntoPositionWithOtherTokenFreezableValidator
+        _transferIntoPositionWithOtherTokenAsyncFreezableValidator(_borrowAccountNumber)
     {
-        super._transferIntoPositionWithOtherToken(
+        IsolationModeTokenVaultV1._transferIntoPositionWithOtherToken(
             _fromAccountNumber,
             _borrowAccountNumber,
             _marketId,
@@ -463,9 +519,13 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezable is
         internal
         virtual
         override
-        _transferFromPositionWithUnderlyingTokenAsyncFreezableValidator(_borrowAccountNumber)
+        _transferFromPositionWithUnderlyingTokenAsyncFreezableValidator(_borrowAccountNumber, _toAccountNumber)
     {
-        super._transferFromPositionWithUnderlyingToken(_borrowAccountNumber, _toAccountNumber, _amountWei);
+        IsolationModeTokenVaultV1._transferFromPositionWithUnderlyingToken(
+            _borrowAccountNumber,
+            _toAccountNumber,
+            _amountWei
+        );
     }
 
     function _transferFromPositionWithOtherToken(
@@ -480,7 +540,7 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezable is
         override
         _transferFromPositionWithOtherTokenAsyncFreezableValidator(_borrowAccountNumber)
     {
-        super._transferFromPositionWithOtherToken(
+        IsolationModeTokenVaultV1._transferFromPositionWithOtherToken(
             _borrowAccountNumber,
             _toAccountNumber,
             _marketId,
@@ -498,9 +558,14 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezable is
         internal
         virtual
         override
-        _repayAllForBorrowPositionFreezableValidator
+        _repayAllForBorrowPositionAsyncFreezableValidator(_borrowAccountNumber)
     {
-        super._repayAllForBorrowPosition(_fromAccountNumber, _borrowAccountNumber, _marketId, _balanceCheckFlag);
+        IsolationModeTokenVaultV1._repayAllForBorrowPosition(
+            _fromAccountNumber,
+            _borrowAccountNumber,
+            _marketId,
+            _balanceCheckFlag
+        );
     }
 
     function _addCollateralAndSwapExactInputForOutput(
@@ -525,7 +590,7 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezable is
             _minOutputAmountWei
         )
     {
-        super._addCollateralAndSwapExactInputForOutput(
+        IsolationModeTokenVaultV1._addCollateralAndSwapExactInputForOutput(
             _fromAccountNumber,
             _borrowAccountNumber,
             _marketIdsPath,
@@ -558,7 +623,7 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezable is
             _minOutputAmountWei
         )
     {
-        super._swapExactInputForOutputAndRemoveCollateral(
+        IsolationModeTokenVaultV1._swapExactInputForOutputAndRemoveCollateral(
             _toAccountNumber,
             _borrowAccountNumber,
             _marketIdsPath,
@@ -583,7 +648,7 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezable is
             _params.minOutputAmountWei
         )
     {
-        super._swapExactInputForOutput(_params);
+        IsolationModeTokenVaultV1._swapExactInputForOutput(_params);
     }
 
     // ==================================================================

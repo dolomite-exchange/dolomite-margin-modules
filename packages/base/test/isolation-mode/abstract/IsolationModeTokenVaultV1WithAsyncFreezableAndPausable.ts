@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import { BigNumber, ContractTransaction } from 'ethers';
 import {
   CustomTestToken,
-  TestFreezableIsolationModeVaultFactory,
+  TestAsyncFreezableIsolationModeVaultFactory,
   TestIsolationModeTokenVaultV1WithAsyncFreezableAndPausable,
   TestIsolationModeTokenVaultV1WithAsyncFreezableAndPausable__factory,
   TestIsolationModeUnwrapperTraderV2,
@@ -38,7 +38,7 @@ import {
 import { CoreProtocolArbitrumOne } from '../../utils/core-protocol';
 import { createIsolationModeTokenVaultV1ActionsImpl } from '../../utils/dolomite';
 import {
-  createTestFreezableIsolationModeVaultFactory,
+  createTestAsyncFreezableIsolationModeVaultFactory,
   createTestHandlerRegistry,
 } from '../../utils/ecosystem-utils/testers';
 import {
@@ -75,7 +75,7 @@ describe('IsolationModeTokenVaultV1WithAsyncFreezableAndPausable', () => {
   let underlyingMarketId: BigNumber;
   let tokenUnwrapper: TestIsolationModeUnwrapperTraderV2;
   let tokenWrapper: TestIsolationModeWrapperTraderV2;
-  let factory: TestFreezableIsolationModeVaultFactory;
+  let factory: TestAsyncFreezableIsolationModeVaultFactory;
   let userVaultImplementation: TestIsolationModeTokenVaultV1WithAsyncFreezableAndPausable;
   let userVault: TestIsolationModeTokenVaultV1WithAsyncFreezableAndPausable;
   let impersonatedVault: SignerWithAddressWithSafety;
@@ -96,7 +96,7 @@ describe('IsolationModeTokenVaultV1WithAsyncFreezableAndPausable', () => {
       [core.tokens.weth.address, core.network],
     );
     const registry = await createTestHandlerRegistry(core);
-    factory = await createTestFreezableIsolationModeVaultFactory(
+    factory = await createTestAsyncFreezableIsolationModeVaultFactory(
       EXECUTION_FEE,
       registry,
       core,
