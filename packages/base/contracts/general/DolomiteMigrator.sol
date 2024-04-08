@@ -54,6 +54,7 @@ contract DolomiteMigrator is IDolomiteMigrator, OnlyDolomiteMargin {
     // =================== State Variables ============
     // ================================================
 
+    // @todo Add solo allowable markets to transformer struct
     mapping(uint256 => mapping(uint256 => address)) public marketIdsToTransformer;
     address public handler;
 
@@ -94,6 +95,15 @@ contract DolomiteMigrator is IDolomiteMigrator, OnlyDolomiteMargin {
         _migrate(_accounts, _fromMarketId, _toMarketId, _extraData);
     }
 
+    function migrate(
+        uint256 _accountNumber,
+        uint256 _fromMarketId,
+        uint256 _toMarketId,
+        bytes calldata _extraData
+    ) external {
+
+    }
+
     function ownerSetTransformer(
         uint256 _fromMarketId,
         uint256 _toMarketId,
@@ -118,6 +128,7 @@ contract DolomiteMigrator is IDolomiteMigrator, OnlyDolomiteMargin {
         uint256 _toMarketId,
         bytes calldata _extraData
     ) internal virtual {
+        // @todo maybe move these checks to an internal private function and call also from solo migrate function
         Require.that(
             _fromMarketId != _toMarketId,
             _FILE,
