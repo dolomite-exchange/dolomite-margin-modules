@@ -55,16 +55,16 @@ contract GMXIsolationModeTokenVaultV1 is
     bytes32 private constant _FILE = "GMXIsolationModeTokenVaultV1";
     bytes32 private constant _SHOULD_SKIP_TRANSFER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.shouldSkipTransfer")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _IS_DEPOSIT_SOURCE_GLP_VAULT = bytes32(uint256(keccak256("eip1967.proxy.isDepositSourceGLPVault")) - 1); // solhint-disable-line max-line-length
-    bytes32 private constant _IS_VAULT_FROZEN = bytes32(uint256(keccak256("eip1967.proxy.isVaultFrozen")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _RECIPIENT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.recipient")) - 1); // solhint-disable-line max-line-length
-    bytes32 private constant _TEMP_BAL_SLOT = bytes32(uint256(keccak256("eip1967.proxy.tempBal")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _TEMP_BALANCE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.tempBalance")) - 1); // solhint-disable-line max-line-length
     uint256 private constant _DEFAULT_ACCOUNT_NUMBER = 0;
 
     modifier onlyHandler(address _handler) {
         Require.that(
-            _handler == registry().handler(),
+            registry().isHandler(_handler),
             _FILE,
-            "Invalid handler"
+            "Invalid handler",
+            _handler
         );
         _;
     }
@@ -99,8 +99,14 @@ contract GMXIsolationModeTokenVaultV1 is
     }
 
     function requestAccountTransfer(address _recipient) external onlyVaultOwner(msg.sender) {
+        Require.that(
+            !isVaultFrozen(),
+            _FILE,
+            "Transfer already in progress"
+        );
+
         _setAddress(_RECIPIENT_SLOT, _recipient);
-        _setUint256(_TEMP_BAL_SLOT, 0);
+        _setUint256(_TEMP_BALANCE_SLOT, 0);
         emit AccountTransferRequested(_recipient);
     }
 
@@ -121,7 +127,7 @@ contract GMXIsolationModeTokenVaultV1 is
 
         uint256 gmxAccountWei = DOLOMITE_MARGIN().getAccountWei(
             gmxAccountInfo,
-            IGMXIsolationModeVaultFactory(VAULT_FACTORY()).marketId()
+            marketId()
         ).value;
         uint256 glpAccountWei = DOLOMITE_MARGIN().getAccountWei(
             glpAccountInfo,
@@ -216,14 +222,14 @@ contract GMXIsolationModeTokenVaultV1 is
         return _getUint256(_IS_DEPOSIT_SOURCE_GLP_VAULT) == 1;
     }
 
-    function isVaultFrozen() 
-    public 
-    view 
+    function isVaultFrozen()
+    public
+    view
     override(IIsolationModeTokenVaultV1WithFreezable, IsolationModeTokenVaultV1WithFreezable)
     returns (bool) {
         address glpVault = registry().glpVaultFactory().getVaultByAccount(OWNER());
-        return _getAddress(_RECIPIENT_SLOT) != address(0) ||
-        registry().gmxRewardsRouter().pendingReceivers(glpVault) != address(0);
+        return _getAddress(_RECIPIENT_SLOT) != address(0)
+            || registry().gmxRewardsRouter().pendingReceivers(glpVault) != address(0);
     }
 
     function registry() public view returns (IGmxRegistryV1) {
@@ -239,6 +245,10 @@ contract GMXIsolationModeTokenVaultV1 is
         return registry().dolomiteRegistry();
     }
 
+    // ==================================================================
+    // ======================== Internal Functions ======================
+    // ==================================================================
+
     function _withdrawFromVaultForDolomiteMargin(
         uint256 _fromAccountNumber,
         uint256 _amountWei
@@ -252,15 +262,17 @@ contract GMXIsolationModeTokenVaultV1 is
     function _swapExactInputForOutput(
         SwapExactInputForOutputParams memory _params
     ) internal override {
-        super._swapExactInputForOutput(
-            _params
-        );
+        super._swapExactInputForOutput(_params);
 
         address glpVault = registry().glpVaultFactory().getVaultByAccount(OWNER());
         IGLPIsolationModeTokenVaultV2(glpVault).sweepGmxTokensIntoGmxVault();
     }
 
-    function _stakeGmx(uint256 _amount) internal {
+    // ==================================================================
+    // ======================== Private Functions =======================
+    // ==================================================================
+
+    function _stakeGmx(uint256 _amount) private {
         address glpVault = registry().glpVaultFactory().getVaultByAccount(OWNER());
         assert(glpVault != address(0));
 
@@ -269,33 +281,34 @@ contract GMXIsolationModeTokenVaultV1 is
         IGLPIsolationModeTokenVaultV2(glpVault).stakeGmx(_amount);
     }
 
-    function _confirmAccountTransfer(address _glpVault, uint256 _gmxVal, uint256 _glpVal) internal {
+    function _confirmAccountTransfer(address _glpVault, uint256 _gmxValue, uint256 _glpValue) private {
         Require.that(
             isVaultFrozen(),
             _FILE,
             "Transfer not in progress"
         );
 
-        uint256 bal = super.underlyingBalanceOf();
-        if (bal > 0) {
-            _stakeGmx(bal);
-        }
-
         address recipient = _getAddress(_RECIPIENT_SLOT);
+        // Set the recipient to 0x0 here, so we can call `_stakeGmx`
         _setAddress(_RECIPIENT_SLOT, address(0));
 
-        if (_gmxVal > 0) {
+        uint256 balance = super.underlyingBalanceOf();
+        if (balance > 0) {
+            _stakeGmx(balance);
+        }
+
+        if (_gmxValue > 0) {
             _setShouldSkipTransfer(true);
-            _setUint256(_TEMP_BAL_SLOT, _gmxVal);
-            _withdrawFromVaultForDolomiteMargin(_DEFAULT_ACCOUNT_NUMBER, _gmxVal);
+            _setUint256(_TEMP_BALANCE_SLOT, _gmxValue);
+            _withdrawFromVaultForDolomiteMargin(_DEFAULT_ACCOUNT_NUMBER, _gmxValue);
             assert(!shouldSkipTransfer());
         }
 
-        IGLPIsolationModeTokenVaultV2(_glpVault).signalAccountTransfer(recipient, _glpVal);
+        IGLPIsolationModeTokenVaultV2(_glpVault).signalAccountTransfer(recipient, _glpValue);
         emit AccountTransferSignaled(recipient);
     }
 
-    function _cancelAccountTransfer(address _glpVault) internal {
+    function _cancelAccountTransfer(address _glpVault) private {
         Require.that(
             isVaultFrozen(),
             _FILE,
@@ -305,21 +318,26 @@ contract GMXIsolationModeTokenVaultV1 is
 
         IGLPIsolationModeTokenVaultV2(_glpVault).cancelAccountTransfer();
 
-        uint256 tempBal = _getUint256(_TEMP_BAL_SLOT);
-        if (tempBal > 0) {
+        uint256 tempBalance = _getUint256(_TEMP_BALANCE_SLOT);
+        if (tempBalance > 0) {
+            Require.that(
+                underlyingBalanceOf() >= tempBalance,
+                _FILE,
+                "Invalid underlying balance of"
+            );
             _setShouldSkipTransfer(true);
-            _setUint256(_TEMP_BAL_SLOT, 0);
-            _depositIntoVaultForDolomiteMargin(_DEFAULT_ACCOUNT_NUMBER, tempBal);
+            _setUint256(_TEMP_BALANCE_SLOT, 0);
+            _depositIntoVaultForDolomiteMargin(_DEFAULT_ACCOUNT_NUMBER, tempBalance);
             assert(!shouldSkipTransfer());
         }
         emit AccountTransferCanceled();
     }
 
-    function _setShouldSkipTransfer(bool _shouldSkipTransfer) internal {
+    function _setShouldSkipTransfer(bool _shouldSkipTransfer) private {
         _setUint256(_SHOULD_SKIP_TRANSFER_SLOT, _shouldSkipTransfer ? 1 : 0);
     }
 
-    function _setIsDepositSourceGLPVault(bool _isDepositSourceGLPVault) internal {
+    function _setIsDepositSourceGLPVault(bool _isDepositSourceGLPVault) private {
         _setUint256(_IS_DEPOSIT_SOURCE_GLP_VAULT, _isDepositSourceGLPVault ? 1 : 0);
     }
 }

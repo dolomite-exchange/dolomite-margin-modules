@@ -175,8 +175,8 @@ contract GmxRegistryV1 is IGmxRegistryV1, BaseRegistry {
         _ownerSetVGmx(_vGmx);
     }
 
-    function ownerSetHandler(address _handler) external override onlyDolomiteMarginOwner(msg.sender) {
-        _ownerSetHandler(_handler);
+    function ownerSetIsHandler(address _handler, bool _isTrusted) external override onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetIsHandler(_handler, _isTrusted);
     }
 
     function bnGmx() external view returns (address) {
@@ -243,8 +243,8 @@ contract GmxRegistryV1 is IGmxRegistryV1, BaseRegistry {
         return _getAddress(_V_GMX_SLOT);
     }
 
-    function handler() external view returns (address) {
-        return _getAddress(_HANDLER_SLOT);
+    function isHandler(address _handler) external view returns (bool) {
+        return _getUint256(keccak256(abi.encode(_HANDLER_SLOT, _handler))) == 1;
     }
 
     // ==================== Internal Functions =========================
@@ -409,13 +409,13 @@ contract GmxRegistryV1 is IGmxRegistryV1, BaseRegistry {
         emit VGmxSet(_vGmx);
     }
 
-    function _ownerSetHandler(address _handler) internal {
+    function _ownerSetIsHandler(address _handler, bool _isTrusted) internal {
         Require.that(
             _handler != address(0),
             _FILE,
             "Invalid handler address"
         );
-        _setAddress(_HANDLER_SLOT, _handler);
-        emit HandlerSet(_handler);
+        _setUint256(keccak256(abi.encode(_HANDLER_SLOT, _handler)), _isTrusted ? 1 : 0);
+        emit HandlerSet(_handler, _isTrusted);
     }
 }

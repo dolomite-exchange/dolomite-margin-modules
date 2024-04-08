@@ -60,7 +60,7 @@ interface IGmxRegistryV1 is IBaseRegistry {
     event SbfGmxSet(address _sbfGmx);
     event VGlpSet(address _vGlp);
     event VGmxSet(address _vGmx);
-    event HandlerSet(address _handler);
+    event HandlerSet(address _handler, bool _isTrusted);
 
     // ===================================================
     // ==================== Functions ====================

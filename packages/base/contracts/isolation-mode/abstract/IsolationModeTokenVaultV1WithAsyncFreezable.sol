@@ -387,7 +387,10 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezable is
     }
 
     function isVaultAccountFrozen(uint256 _accountNumber) public virtual view returns (bool) {
-        return IAsyncFreezableIsolationModeVaultFactory(VAULT_FACTORY()).isVaultAccountFrozen(address(this), _accountNumber);
+        return IAsyncFreezableIsolationModeVaultFactory(VAULT_FACTORY()).isVaultAccountFrozen(
+            address(this),
+            _accountNumber
+        );
     }
 
     function getOutputTokenByVaultAccount(

@@ -3,7 +3,6 @@ import { expect } from 'chai';
 import { BigNumber, ContractTransaction } from 'ethers';
 import {
   CustomTestToken,
-  TestIsolationModeFactory,
   TestIsolationModeTokenVaultV1WithFreezable,
   TestIsolationModeTokenVaultV1WithFreezable__factory,
   TestIsolationModeUnwrapperTraderV2,
@@ -11,6 +10,7 @@ import {
   TestIsolationModeWrapperTraderV2,
   TestIsolationModeWrapperTraderV2__factory,
 } from '../../../src/types';
+import { TestIsolationModeFactory } from '../../../src/types/contracts/test/TestIsolationModeFactory';
 import {
   createContractWithAbi,
   createContractWithLibrary,
@@ -24,7 +24,7 @@ import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectProtocolBalance, expectThrow, expectTotalSupply, expectWalletBalance } from '../../utils/assertions';
 import { CoreProtocolArbitrumOne } from '../../utils/core-protocol';
 import { createIsolationModeTokenVaultV1ActionsImpl } from '../../utils/dolomite';
-import { createTestIsolationModeFactory } from '../../utils/ecosystem-utils/testers';
+import { createTestIsolationModeVaultFactory } from '../../utils/ecosystem-utils/testers';
 import {
   getDefaultCoreProtocolConfig,
   setupCoreProtocol,
@@ -66,7 +66,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
       libraries,
       [],
     );
-    factory = await createTestIsolationModeFactory(
+    factory = await createTestIsolationModeVaultFactory(
       core,
       underlyingToken,
       userVaultImplementation,
@@ -897,7 +897,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
       await expectProtocolBalance(core, userVault, borrowAccountNumber, otherMarketId2, outputAmount);
     });
 
-    it('should fail when unwrapping but not call by a trusted converter', async () => {
+    it('should work when unwrapping but not call by a trusted converter', async () => {
       await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
 
       await expectProtocolBalance(core, userVault, defaultAccountNumber, underlyingMarketId, amountWei);
@@ -916,19 +916,23 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
         tokenUnwrapper,
         core,
       );
-      await expectThrow(
-        userVault.addCollateralAndSwapExactInputForOutput(
-          defaultAccountNumber,
-          borrowAccountNumber,
-          zapParams.marketIdsPath,
-          zapParams.inputAmountWei,
-          zapParams.minOutputAmountWei,
-          zapParams.tradersPath,
-          zapParams.makerAccounts,
-          zapParams.userConfig,
-        ),
-        `IsolationModeTokenVaultV1: Only converter can call <${core.hhUser1.address.toLowerCase()}>`
+      await userVault.addCollateralAndSwapExactInputForOutput(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        zapParams.marketIdsPath,
+        zapParams.inputAmountWei,
+        zapParams.minOutputAmountWei,
+        zapParams.tradersPath,
+        zapParams.makerAccounts,
+        zapParams.userConfig,
       );
+
+      await expectProtocolBalance(core, userVault, defaultAccountNumber, underlyingMarketId, ZERO_BI);
+      await expectProtocolBalance(core, userVault, borrowAccountNumber, underlyingMarketId, ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId1, otherAmountWei);
+      await expectProtocolBalance(core, userVault, borrowAccountNumber, otherMarketId1, outputAmount);
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId2, otherAmountWei);
+      await expectProtocolBalance(core, userVault, borrowAccountNumber, otherMarketId2, ZERO_BI);
     });
 
     it('should fail when not called by vault owner or converter', async () => {

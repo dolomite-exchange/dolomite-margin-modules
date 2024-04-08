@@ -1,6 +1,12 @@
 import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
 import { GMX_GOV_MAP } from '@dolomite-exchange/modules-base/src/utils/constants';
-import { MAX_UINT_256_BI, Network, ONE_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import {
+  ADDRESS_ZERO,
+  MAX_UINT_256_BI,
+  Network,
+  ONE_BI,
+  ZERO_BI,
+} from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import {
   impersonate,
   revertToSnapshotAndCapture,
@@ -138,6 +144,23 @@ describe('GLPIsolationModeTokenVaultV2', () => {
   beforeEach(async () => {
     snapshotId = await revertToSnapshotAndCapture(snapshotId);
   });
+
+  async function freezeVault() {
+    let gmxVaultAddress = await gmxFactory.getVaultByAccount(core.hhUser1.address);
+    if (gmxVaultAddress === ADDRESS_ZERO) {
+      await gmxFactory.createVault(core.hhUser1.address);
+    }
+    gmxVaultAddress = await gmxFactory.getVaultByAccount(core.hhUser1.address);
+    const gmxVault = GMXIsolationModeTokenVaultV1__factory.connect(gmxVaultAddress, core.hhUser1);
+    await gmxVault.requestAccountTransfer(core.hhUser1.address);
+  }
+
+  async function expectVaultIsFrozen(promiseFn: Promise<any>) {
+    await expectThrow(
+      promiseFn,
+      'IsolationModeVaultV1Freezable: Vault is frozen'
+    );
+  }
 
   async function doHandleRewardsWithWaitTime(daysToWait: number) {
     if (daysToWait > 0) {
@@ -511,6 +534,21 @@ describe('GLPIsolationModeTokenVaultV2', () => {
         'GLPIsolationModeTokenVaultV2: Can only deposit ETH if claiming',
       );
     });
+
+    it('should fail when vault is frozen', async () => {
+      await freezeVault();
+      await expectVaultIsFrozen(
+        glpVault.handleRewards(
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+        ),
+      );
+    });
   });
 
   describe('#handleRewardsWithSpecificDepositAccountNumber', () => {
@@ -824,6 +862,22 @@ describe('GLPIsolationModeTokenVaultV2', () => {
         'GLPIsolationModeTokenVaultV2: Can only deposit ETH if claiming',
       );
     });
+
+    it('should fail when vault is frozen', async () => {
+      await freezeVault();
+      await expectVaultIsFrozen(
+        glpVault.handleRewardsWithSpecificDepositAccountNumber(
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          0,
+        ),
+      );
+    });
   });
 
   describe('#stakeGmx', () => {
@@ -833,6 +887,15 @@ describe('GLPIsolationModeTokenVaultV2', () => {
         'GLPIsolationModeTokenVaultV2: Invalid GMX vault',
       );
     });
+
+    it('should fail when vault is frozen', async () => {
+      await freezeVault();
+      await expectVaultIsFrozen(
+        glpVault.stakeGmx(
+          0,
+        ),
+      );
+    });
   });
 
   describe('#unstakeGmx', () => {
@@ -840,6 +903,15 @@ describe('GLPIsolationModeTokenVaultV2', () => {
       await expectThrow(
         glpVault.connect(core.hhUser1).unstakeGmx(gmxAmount),
         'GLPIsolationModeTokenVaultV2: Invalid GMX vault',
+      );
+    });
+
+    it('should fail when vault is frozen', async () => {
+      await freezeVault();
+      await expectVaultIsFrozen(
+        glpVault.unstakeGmx(
+          0,
+        ),
       );
     });
   });
@@ -861,6 +933,15 @@ describe('GLPIsolationModeTokenVaultV2', () => {
       await expectThrow(
         glpVault.connect(core.hhUser2).stakeEsGmx(esGmxAmount),
         `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail when vault is frozen', async () => {
+      await freezeVault();
+      await expectVaultIsFrozen(
+        glpVault.stakeEsGmx(
+          0,
+        ),
       );
     });
   });
@@ -886,6 +967,15 @@ describe('GLPIsolationModeTokenVaultV2', () => {
         `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
+
+    it('should fail when vault is frozen', async () => {
+      await freezeVault();
+      await expectVaultIsFrozen(
+        glpVault.unstakeEsGmx(
+          0,
+        ),
+      );
+    });
   });
 
   describe('#vestGlp', () => {
@@ -905,6 +995,15 @@ describe('GLPIsolationModeTokenVaultV2', () => {
       await expectThrow(
         glpVault.connect(core.hhUser2).vestGlp(esGmxAmount),
         `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail when vault is frozen', async () => {
+      await freezeVault();
+      await expectVaultIsFrozen(
+        glpVault.vestGlp(
+          0,
+        ),
       );
     });
   });
@@ -980,6 +1079,15 @@ describe('GLPIsolationModeTokenVaultV2', () => {
         `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
+
+    it('should fail when vault is frozen', async () => {
+      await freezeVault();
+      await expectVaultIsFrozen(
+        glpVault.unvestGlp(
+          false,
+        ),
+      );
+    });
   });
 
   describe('#vestGmx', () => {
@@ -989,6 +1097,15 @@ describe('GLPIsolationModeTokenVaultV2', () => {
         'GLPIsolationModeTokenVaultV2: Invalid GMX vault',
       );
     });
+
+    it('should fail when vault is frozen', async () => {
+      await freezeVault();
+      await expectVaultIsFrozen(
+        glpVault.vestGmx(
+          0,
+        ),
+      );
+    });
   });
 
   describe('#unvestGmx', () => {
@@ -996,6 +1113,16 @@ describe('GLPIsolationModeTokenVaultV2', () => {
       await expectThrow(
         glpVault.connect(core.hhUser1).unvestGmx(true, true),
         'GLPIsolationModeTokenVaultV2: Invalid GMX vault',
+      );
+    });
+
+    it('should fail when vault is frozen', async () => {
+      await freezeVault();
+      await expectVaultIsFrozen(
+        glpVault.unvestGmx(
+          false,
+          false,
+        ),
       );
     });
   });
@@ -1364,6 +1491,15 @@ describe('GLPIsolationModeTokenVaultV2', () => {
         `GLPIsolationModeTokenVaultV2: Only GMX factory can sync <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
+
+    it('should fail when vault is frozen', async () => {
+      await freezeVault();
+      await expectVaultIsFrozen(
+        glpVault.sync(
+          ADDRESS_ZERO,
+        ),
+      );
+    });
   });
 
   describe('#sweep', () => {
@@ -1402,6 +1538,13 @@ describe('GLPIsolationModeTokenVaultV2', () => {
       await expectThrow(
         glpVault.connect(core.hhUser1).sweepGmxTokensIntoGmxVault(),
         'GLPIsolationModeTokenVaultV2: Invalid GMX vault',
+      );
+    });
+
+    it('should fail when vault is frozen', async () => {
+      await freezeVault();
+      await expectVaultIsFrozen(
+        glpVault.sweepGmxTokensIntoGmxVault(),
       );
     });
   });
@@ -1466,6 +1609,13 @@ describe('GLPIsolationModeTokenVaultV2', () => {
       await expectThrow(
         glpVault.connect(core.hhUser1).maxGmxUnstakeAmount(),
         'GLPIsolationModeTokenVaultV2: Invalid GMX vault',
+      );
+    });
+
+    it('should fail when vault is frozen', async () => {
+      await freezeVault();
+      await expectVaultIsFrozen(
+        glpVault.maxGmxUnstakeAmount(),
       );
     });
   });

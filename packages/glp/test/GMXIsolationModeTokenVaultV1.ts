@@ -4,6 +4,7 @@ import {
 } from '@dolomite-exchange/modules-base/src/types';
 import { GMX_GOV_MAP } from '@dolomite-exchange/modules-base/src/utils/constants';
 import { ADDRESS_ZERO, MAX_UINT_256_BI, Network, ONE_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { SignerWithAddressWithSafety } from '@dolomite-exchange/modules-base/src/utils/SignerWithAddressWithSafety';
 import {
   impersonate,
   revertToSnapshotAndCapture,
@@ -54,12 +55,16 @@ const usdcAmount = BigNumber.from('2000000000'); // 2,000 USDC
 const amountWei = BigNumber.from('1250000000000000000000'); // 1,250 GLP tokens
 const esGmxAmount = parseEther('0.01'); // 0.01 esGMX tokens
 const accountNumber = ZERO_BI;
-const otherAccountNumber = BigNumber.from('123');
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
 // @todo test transfer signal, user cancels and then handler sends the cancellation
 // @todo test transfer signal, handler cancels and then user cancels
 // @todo signal goes through, handler confirms, and then user cancels prior to accepting transfer
+// @todo signal goes through, handler confirms, and the amount of GLP is 0
+// @todo signal goes through, handler confirms, and the amount of GMX is 0
+// @todo signal goes through, handler confirms, and the amount of GMX and GLP is 0
+//    (this is valid since they can still transfer esGMX)
+// @todo signal goes through, handler confirms, and the amount of GMX and GLP is 0
 describe('GMXIsolationModeTokenVaultV1', () => {
   let snapshotId: string;
 
@@ -71,10 +76,9 @@ describe('GMXIsolationModeTokenVaultV1', () => {
   let glpFactory: GLPIsolationModeVaultFactory;
   let gmxVault: TestGMXIsolationModeTokenVaultV1;
   let glpVault: TestGLPIsolationModeTokenVaultV2;
-  let gmxMarketId: BigNumber;
   let underlyingMarketIdGlp: BigNumber;
   let underlyingMarketIdGmx: BigNumber;
-  let otherImpersonator;
+  let otherImpersonator: SignerWithAddressWithSafety;
 
   before(async () => {
     core = await setupCoreProtocol({
@@ -103,13 +107,12 @@ describe('GMXIsolationModeTokenVaultV1', () => {
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(gmxFactory.address, true);
     await gmxFactory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
 
-    gmxMarketId = await core.dolomiteMargin.getNumMarkets();
     await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.gmx!.address, '1000000000000000000');
     await setupTestMarket(core, core.tokens.gmx!, false);
 
     await gmxRegistry.connect(core.governance).ownerSetGlpVaultFactory(glpFactory.address);
     await gmxRegistry.connect(core.governance).ownerSetGmxVaultFactory(gmxFactory.address);
-    await gmxRegistry.connect(core.governance).ownerSetHandler(core.hhUser5.address);
+    await gmxRegistry.connect(core.governance).ownerSetIsHandler(core.hhUser5.address, true);
 
     await gmxFactory.createVault(core.hhUser1.address);
     gmxVault = setupUserVaultProxy<TestGMXIsolationModeTokenVaultV1>(
@@ -171,11 +174,13 @@ describe('GMXIsolationModeTokenVaultV1', () => {
     await gmxVault.requestAccountTransfer(OTHER_ADDRESS);
     expect(await gmxVault.isVaultFrozen()).to.be.true;
     expect(await glpVault.isVaultFrozen()).to.be.true;
+    expect(await gmxVault.recipient()).to.eq(OTHER_ADDRESS);
 
     const result = await gmxVault.connect(core.hhUser5).signalAccountTransfer(gmxAmount, glpAmount);
     await expectEvent(gmxVault, result, 'AccountTransferSignaled', {
       recipient: OTHER_ADDRESS
     });
+    expect(await gmxVault.recipient()).to.eq(ADDRESS_ZERO);
     expect(await core.gmxEcosystem.gmxRewardsRouterV2.pendingReceivers(glpVault.address)).to.eq(OTHER_ADDRESS);
     expect(await gmxVault.isVaultFrozen()).to.be.true;
     expect(await glpVault.isVaultFrozen()).to.be.true;
@@ -200,10 +205,22 @@ describe('GMXIsolationModeTokenVaultV1', () => {
         `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
+
+    it('should fail if transfer is already in progress', async () => {
+      const result = await gmxVault.requestAccountTransfer(OTHER_ADDRESS);
+      await expectEvent(gmxVault, result, 'AccountTransferRequested', {
+        recipient: OTHER_ADDRESS,
+      });
+
+      await expectThrow(
+        gmxVault.requestAccountTransfer(OTHER_ADDRESS),
+        'GMXIsolationModeTokenVaultV1: Transfer already in progress',
+      );
+    });
   });
 
   describe('#signalAccountTransfer', () => {
-    it('should work normally with staked gmx bal', async () => {
+    it('should work normally with staked gmx balance', async () => {
       await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
       await gmxVault.depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
       await requestTransferAndSignal(gmxAmount, ZERO_BI);
@@ -221,7 +238,7 @@ describe('GMXIsolationModeTokenVaultV1', () => {
       await expectProtocolBalance(core, glpVault.address, accountNumber, underlyingMarketIdGlp, ZERO_BI);
     });
 
-    it('should work normally with glp bal', async () => {
+    it('should work normally with glp balance', async () => {
       await glpVault.depositIntoVaultForDolomiteMargin(accountNumber, amountWei);
       await requestTransferAndSignal(ZERO_BI, amountWei);
 
@@ -237,7 +254,7 @@ describe('GMXIsolationModeTokenVaultV1', () => {
       await expectProtocolBalance(core, glpVault.address, accountNumber, underlyingMarketIdGlp, ZERO_BI);
     });
 
-    it('should work normally with glp and gmx bal', async () => {
+    it('should work normally with glp and gmx balance', async () => {
       await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
       await gmxVault.depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
       await glpVault.depositIntoVaultForDolomiteMargin(accountNumber, amountWei);
@@ -316,7 +333,7 @@ describe('GMXIsolationModeTokenVaultV1', () => {
     it('should fail if not called by valid handler', async () => {
       await expectThrow(
         gmxVault.connect(core.hhUser1).signalAccountTransfer(gmxAmount, ZERO_BI),
-        'GMXIsolationModeTokenVaultV1: Invalid handler',
+        `GMXIsolationModeTokenVaultV1: Invalid handler <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });

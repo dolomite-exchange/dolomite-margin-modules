@@ -3,7 +3,7 @@ import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import {
   CustomTestToken,
-  TestFreezableIsolationModeVaultFactory,
+  TestAsyncFreezableIsolationModeVaultFactory,
   TestHandlerRegistry,
   TestIsolationModeTokenVaultV1WithAsyncFreezable,
   TestIsolationModeTokenVaultV1WithAsyncFreezable__factory,
@@ -65,7 +65,7 @@ describe('AsyncFreezableIsolationModeVaultFactory', () => {
   let underlyingMarketId: BigNumber;
   let tokenUnwrapper: TestIsolationModeUnwrapperTraderV2;
   let tokenWrapper: TestIsolationModeWrapperTraderV2;
-  let factory: TestFreezableIsolationModeVaultFactory;
+  let factory: TestAsyncFreezableIsolationModeVaultFactory;
   let userVaultImplementation: TestIsolationModeTokenVaultV1WithAsyncFreezable;
   let userVault: TestIsolationModeTokenVaultV1WithAsyncFreezable;
   let registry: TestHandlerRegistry;
@@ -83,7 +83,7 @@ describe('AsyncFreezableIsolationModeVaultFactory', () => {
     userVaultImplementation = await createContractWithLibrary<TestIsolationModeTokenVaultV1WithAsyncFreezable>(
       'TestIsolationModeTokenVaultV1WithAsyncFreezable',
       libraries,
-      [core.tokens.weth, core.network],
+      [core.tokens.weth.address, core.network],
     );
     registry = await createTestHandlerRegistry(core);
     factory = await createTestAsyncFreezableIsolationModeVaultFactory(
