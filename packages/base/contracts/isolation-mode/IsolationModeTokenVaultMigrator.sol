@@ -73,7 +73,7 @@ contract IsolationModeTokenVaultMigrator is IIsolationModeTokenVaultMigrator, Pr
         _migrate(_amountWei);
     }
 
-    function executeWithdrawalFromVault(address /* _recipient */, uint256 /* _amount */) external {
+    function executeWithdrawalFromVault(address /* _recipient */, uint256 /* _amount */) external view {
         Require.that(
             msg.sender == VAULT_FACTORY(),
             _FILE,

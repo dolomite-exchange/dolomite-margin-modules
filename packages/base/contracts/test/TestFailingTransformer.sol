@@ -20,6 +20,7 @@
 
 pragma solidity ^0.8.9;
 
+import { IDolomiteTransformer } from "../interfaces/IDolomiteTransformer.sol";
 
 
 /**
@@ -28,7 +29,7 @@ pragma solidity ^0.8.9;
  *
  * @notice  Test contract for a transformer implementation
  */
-contract TestFailingTransformer {
+contract TestFailingTransformer is IDolomiteTransformer {
 
     address public immutable inputToken;
     address public immutable outputToken;
@@ -37,8 +38,8 @@ contract TestFailingTransformer {
         inputToken = _inputToken;
         outputToken = _outputToken;
     }
-    
-    function transform(uint256 amount, bytes calldata /* _extraData */) external returns (uint256) {
+
+    function transform(uint256 /* _amount */, bytes calldata /* _extraData */) external pure returns (uint256) {
         revert("Call failed");
     }
 }
@@ -51,8 +52,9 @@ contract TestFailingTransformerBytes {
         inputToken = _inputToken;
         outputToken = _outputToken;
     }
-    
-    function transform(uint256 amount, bytes calldata /* _extraData */) external returns (bytes memory) {
-        return abi.encode(amount, amount);
+
+    function transform(uint256 _amount, bytes calldata /* _extraData */) external pure returns (bytes memory) {
+        // This function purposefully does not adhere to the `IDolomiteTransformer` interface
+        return abi.encode(_amount, _amount);
     }
 }
