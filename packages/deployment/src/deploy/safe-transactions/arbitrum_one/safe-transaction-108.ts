@@ -96,9 +96,9 @@ async function main() {
   await prettyPrintEncodedDataWithTypeSafety(
     core,
     core.pendleEcosystem!.glpMar2024,
-    'dYtGlp2024',
+    'dYtGlpMar2024',
     'ownerSetAllowableDebtMarketIds',
-    [await appendNativeUsdcToDebtMarketIdList(core, core.pendleEcosystem!.glpMar2024.dYtGlp2024)],
+    [await appendNativeUsdcToDebtMarketIdList(core, core.pendleEcosystem!.glpMar2024.dYtGlpMar2024)],
   );
 }
 

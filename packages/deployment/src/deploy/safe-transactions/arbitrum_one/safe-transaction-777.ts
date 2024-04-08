@@ -1,3 +1,4 @@
+import { IERC20 } from '@dolomite-exchange/modules-base/src/types';
 import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
@@ -5,6 +6,7 @@ import {
   getPendlePtIsolationModeUnwrapperTraderV3ConstructorParams,
   getPendlePtIsolationModeWrapperTraderV3ConstructorParams
 } from '@dolomite-exchange/modules-pendle/src/pendle-constructors';
+import { IPendleRegistry, PendlePtIsolationModeVaultFactory } from '@dolomite-exchange/modules-pendle/src/types';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
 import {
@@ -13,16 +15,19 @@ import {
 } from '../../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../utils/dry-run-utils';
 import getScriptName from '../../../utils/get-script-name';
+import Deployments from '../../deployments.json';
 
-// @follow-up Do you prefer to use these constants in the object below? Or keep as is where I put the addresses directly in the object
-const rEthJun2025WrapperAddress = '0x78BBFe4e48E20B1e6016afB7e9Bc8a1D1A51266A';
-const rEthJun2025UnwrapperAddress = '0xc16A0611DA04181AaaA2C750479aC0d8F17F6898';
-const wsEthJun2024UnwrapperAddress = '0x5BFEE4e3853d499e4B149C4F18c91F59A45C422E';
-const wsEthJun2024WrapperAddress = '0x0196D6e6c2879fac66307d877b033463A23A1740';
-const wsEthJun2025UnwrapperAddress = '0x4673B24a8C3c7A6EaaAF32D520bf88A52a21d81a';
-const wsEthJun2025WrapperAddress = '0xc8475C99bcCC93Bafb7A211CF339c8C07A628527';
-const weEthApr2024UnwrapperAddress = '0x422c8E352461e35d80106519636A657C35986203';
-const weEthApr2024WrapperAddress = '0x80aE22E33Fc6066ACA9F9da6621Feeb0C86Ad426';
+interface Factory {
+  pendleRegistry: IPendleRegistry;
+  factory: PendlePtIsolationModeVaultFactory;
+  underlyingToken: IERC20;
+  oldWrapper: string;
+  oldUnwrapper: string;
+  newWrapper: string | undefined;
+  newUnwrapper: string | undefined;
+  rename: string;
+  newVersion: 'V3' | 'V5';
+}
 
 /**
  * This script encodes the following transactions:
@@ -31,6 +36,7 @@ const weEthApr2024WrapperAddress = '0x80aE22E33Fc6066ACA9F9da6621Feeb0C86Ad426';
  *      wstEthJun2024
  *      wstEthJun2025
  *      eEthApr2024
+ *      ezEthJun2024
  * - Disables the old wrapper and unwrappers for those markets
  * - Enables the new wrapper and unwrappers for those markets
  * - Update pendle router
@@ -40,103 +46,123 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
 
   const transactions = [];
-  const factories = [
+  const factories: Factory[] = [
     {
-      name: 'dPtREthJun2025',
-      market: core.pendleEcosystem.rEthJun2025,
+      pendleRegistry: core.pendleEcosystem.rEthJun2025.pendleRegistry,
       factory: core.pendleEcosystem.rEthJun2025.dPtREthJun2025,
       underlyingToken: core.tokens.rEth,
-      wrapper: '0x78BBFe4e48E20B1e6016afB7e9Bc8a1D1A51266A',
-      unwrapper: '0xc16A0611DA04181AaaA2C750479aC0d8F17F6898',
-      newWrapper: '',
-      newUnwrapper: '',
+      oldWrapper: Deployments.PendlePtREthJun2025IsolationModeWrapperTraderV4[network].address,
+      oldUnwrapper: Deployments.PendlePtREthJun2025IsolationModeUnwrapperTraderV4[network].address,
+      newWrapper: undefined,
+      newUnwrapper: undefined,
+      rename: 'REthJun2025',
+      newVersion: 'V5',
     },
     {
-      name: 'dPtWstEthJun2024',
-      market: core.pendleEcosystem.wstEthJun2024,
+      pendleRegistry: core.pendleEcosystem.wstEthJun2024.pendleRegistry,
       factory: core.pendleEcosystem.wstEthJun2024.dPtWstEthJun2024,
       underlyingToken: core.tokens.wstEth,
-      wrapper: '0x0196D6e6c2879fac66307d877b033463A23A1740',
-      unwrapper: '0x5BFEE4e3853d499e4B149C4F18c91F59A45C422E',
-      newWrapper: '',
-      newUnwrapper: '',
+      oldWrapper: Deployments.PendlePtWstEthJun2024IsolationModeWrapperTraderV4[network].address,
+      oldUnwrapper: Deployments.PendlePtWstEthJun2024IsolationModeUnwrapperTraderV4[network].address,
+      newWrapper: undefined,
+      newUnwrapper: undefined,
+      rename: 'WstEthJun2024',
+      newVersion: 'V5',
     },
     {
-      name: 'dPtWstEthJun2025',
-      market: core.pendleEcosystem.wstEthJun2025,
+      pendleRegistry: core.pendleEcosystem.wstEthJun2025.pendleRegistry,
       factory: core.pendleEcosystem.wstEthJun2025.dPtWstEthJun2025,
       underlyingToken: core.tokens.wstEth,
-      wrapper: '0xc8475C99bcCC93Bafb7A211CF339c8C07A628527',
-      unwrapper: '0x4673B24a8C3c7A6EaaAF32D520bf88A52a21d81a',
-      newWrapper: '',
-      newUnwrapper: '',
+      oldWrapper: Deployments.PendlePtWstEthJun2025IsolationModeWrapperTraderV4[network].address,
+      oldUnwrapper: Deployments.PendlePtWstEthJun2025IsolationModeUnwrapperTraderV4[network].address,
+      newWrapper: undefined,
+      newUnwrapper: undefined,
+      rename: 'WstEthJun2025',
+      newVersion: 'V5',
     },
     {
-      name: 'dPtWeEthApr2024',
-      market: core.pendleEcosystem.weEthApr2024,
+      pendleRegistry: core.pendleEcosystem.weEthApr2024.pendleRegistry,
       factory: core.pendleEcosystem.weEthApr2024.dPtWeEthApr2024,
       underlyingToken: core.tokens.weEth,
-      wrapper: '0x80aE22E33Fc6066ACA9F9da6621Feeb0C86Ad426',
-      unwrapper: '0x422c8E352461e35d80106519636A657C35986203',
-      newWrapper: '',
-      newUnwrapper: '',
+      oldWrapper: Deployments.PendlePtWeETHApr2024IsolationModeWrapperTraderV2[network].address,
+      oldUnwrapper: Deployments.PendlePtWeETHApr2024IsolationModeUnwrapperTraderV2[network].address,
+      newWrapper: undefined,
+      newUnwrapper: undefined,
+      rename: 'WeETHApr2024',
+      newVersion: 'V3',
+    },
+    {
+      pendleRegistry: core.pendleEcosystem.ezEthJun2024.pendleRegistry,
+      factory: core.pendleEcosystem.ezEthJun2024.dPtEzEthJun2024,
+      underlyingToken: core.tokens.ezEth,
+      oldWrapper: Deployments.PendlePtEzETHJun2024IsolationModeWrapperTraderV2[network].address,
+      oldUnwrapper: Deployments.PendlePtEzETHJun2024IsolationModeUnwrapperTraderV2[network].address,
+      newWrapper: undefined,
+      newUnwrapper: undefined,
+      rename: 'EzETHJun2024',
+      newVersion: 'V3',
     },
   ];
 
   for (let i = 0; i < factories.length; i++) {
-    transactions.push(
-      await prettyPrintEncodedDataWithTypeSafety(
-        core,
-        factories[i].market,
-        factories[i].name as any,
-        'ownerSetIsTokenConverterTrusted',
-        [factories[i].wrapper, false],
-      ),
-    );
-    transactions.push(
-      await prettyPrintEncodedDataWithTypeSafety(
-        core,
-        factories[i].market,
-        factories[i].name as any,
-        'ownerSetIsTokenConverterTrusted',
-        [factories[i].unwrapper, false],
-      ),
-    );
     factories[i].newUnwrapper = await deployContractAndSave(
       'PendlePtIsolationModeUnwrapperTraderV3',
       getPendlePtIsolationModeUnwrapperTraderV3ConstructorParams(
         core,
-        factories[i].market.pendleRegistry,
+        factories[i].pendleRegistry,
         factories[i].underlyingToken,
         factories[i].factory
-      )
+      ),
+      `PendlePt${factories[i].rename}IsolationModeUnwrapperTrader${factories[i].newVersion}`,
     );
 
     factories[i].newWrapper = await deployContractAndSave(
       'PendlePtIsolationModeWrapperTraderV3',
       getPendlePtIsolationModeWrapperTraderV3ConstructorParams(
         core,
-        factories[i].market.pendleRegistry,
+        factories[i].pendleRegistry,
         factories[i].underlyingToken,
         factories[i].factory
-      )
+      ),
+      `PendlePt${factories[i].rename}IsolationModeWrapperTrader${factories[i].newVersion}`,
     );
+  }
+
+  for (let i = 0; i < factories.length; i++) {
     transactions.push(
       await prettyPrintEncodedDataWithTypeSafety(
         core,
-        factories[i].market,
-        factories[i].name as any,
+        { factory: factories[i].factory },
+        'factory',
         'ownerSetIsTokenConverterTrusted',
-        [factories[i].newWrapper, true],
+        [factories[i].oldWrapper, false],
       ),
     );
     transactions.push(
       await prettyPrintEncodedDataWithTypeSafety(
         core,
-        factories[i].market,
-        factories[i].name as any,
+        { factory: factories[i].factory },
+        'factory',
         'ownerSetIsTokenConverterTrusted',
-        [factories[i].newUnwrapper, true],
+        [factories[i].oldUnwrapper, false],
+      ),
+    );
+    transactions.push(
+      await prettyPrintEncodedDataWithTypeSafety(
+        core,
+        { factory: factories[i].factory },
+        'factory',
+        'ownerSetIsTokenConverterTrusted',
+        [factories[i].newWrapper!, true],
+      ),
+    );
+    transactions.push(
+      await prettyPrintEncodedDataWithTypeSafety(
+        core,
+        { factory: factories[i].factory },
+        'factory',
+        'ownerSetIsTokenConverterTrusted',
+        [factories[i].newUnwrapper!, true],
       ),
     );
   }
@@ -150,21 +176,20 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     },
     invariants: async () => {
       for (let i = 0; i < factories.length; i++) {
-        // @follow-up Are these asserts sufficient? Or do you want other ones for underlying token, etc.?
         assertHardhatInvariant(
-          await factories[i].factory.isTokenConverterTrusted(factories[i].newWrapper),
+          await factories[i].factory.isTokenConverterTrusted(factories[i].newWrapper!),
           'New wrapper is not trusted'
         );
         assertHardhatInvariant(
-          await factories[i].factory.isTokenConverterTrusted(factories[i].newUnwrapper),
+          await factories[i].factory.isTokenConverterTrusted(factories[i].newUnwrapper!),
           'New unwrapper is not trusted'
         );
         assertHardhatInvariant(
-          !(await factories[i].factory.isTokenConverterTrusted(factories[i].wrapper)),
+          !(await factories[i].factory.isTokenConverterTrusted(factories[i].oldWrapper)),
           'Old wrapper is trusted'
         );
         assertHardhatInvariant(
-          !(await factories[i].factory.isTokenConverterTrusted(factories[i].unwrapper)),
+          !(await factories[i].factory.isTokenConverterTrusted(factories[i].oldUnwrapper)),
           'Old unwrapper is trusted'
         );
       }

@@ -325,7 +325,7 @@ async function deployPtGlpUpdates(core: CoreProtocolArbitrumOne): Promise<Encode
     'PendlePtGLP2024IsolationModeUnwrapperTraderV2',
     getPendlePtGLP2024IsolationModeUnwrapperTraderV2ConstructorParams(
       core,
-      core.pendleEcosystem!.glpMar2024.dPtGlp2024,
+      core.pendleEcosystem!.glpMar2024.dPtGlpMar2024,
       core.pendleEcosystem!.glpMar2024.pendleRegistry,
     ),
     'PendlePtGLP2024IsolationModeUnwrapperTraderV4',
@@ -334,7 +334,7 @@ async function deployPtGlpUpdates(core: CoreProtocolArbitrumOne): Promise<Encode
     'PendlePtGLP2024IsolationModeWrapperTraderV2',
     getPendlePtGLP2024IsolationModeWrapperTraderV2ConstructorParams(
       core,
-      core.pendleEcosystem!.glpMar2024.dPtGlp2024,
+      core.pendleEcosystem!.glpMar2024.dPtGlpMar2024,
       core.pendleEcosystem!.glpMar2024.pendleRegistry,
     ),
     'PendlePtGLP2024IsolationModeWrapperTraderV4',
@@ -344,7 +344,7 @@ async function deployPtGlpUpdates(core: CoreProtocolArbitrumOne): Promise<Encode
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       core.pendleEcosystem!.glpMar2024,
-      'dPtGlp2024',
+      'dPtGlpMar2024',
       'ownerSetIsTokenConverterTrusted',
       [Deployments.PendlePtGLP2024IsolationModeUnwrapperTraderV3['42161'].address, false],
     ),
@@ -353,7 +353,7 @@ async function deployPtGlpUpdates(core: CoreProtocolArbitrumOne): Promise<Encode
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       core.pendleEcosystem!.glpMar2024,
-      'dPtGlp2024',
+      'dPtGlpMar2024',
       'ownerSetIsTokenConverterTrusted',
       [Deployments.PendlePtGLP2024IsolationModeWrapperTraderV3['42161'].address, false],
     ),
@@ -362,7 +362,7 @@ async function deployPtGlpUpdates(core: CoreProtocolArbitrumOne): Promise<Encode
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       core.pendleEcosystem!.glpMar2024,
-      'dPtGlp2024',
+      'dPtGlpMar2024',
       'ownerSetIsTokenConverterTrusted',
       [unwrapperV4, true],
     ),
@@ -371,7 +371,7 @@ async function deployPtGlpUpdates(core: CoreProtocolArbitrumOne): Promise<Encode
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       core.pendleEcosystem!.glpMar2024,
-      'dPtGlp2024',
+      'dPtGlpMar2024',
       'ownerSetIsTokenConverterTrusted',
       [wrapperV4, true],
     ),
@@ -384,7 +384,7 @@ async function deployYtGlpUpdates(core: CoreProtocolArbitrumOne): Promise<Encode
     'PendleYtGLP2024IsolationModeUnwrapperTraderV2',
     getPendleYtGLP2024IsolationModeUnwrapperTraderV2ConstructorParams(
       core,
-      core.pendleEcosystem!.glpMar2024.dYtGlp2024,
+      core.pendleEcosystem!.glpMar2024.dYtGlpMar2024,
       core.pendleEcosystem!.glpMar2024.pendleRegistry,
     ),
     'PendleYtGLP2024IsolationModeUnwrapperTraderV4',
@@ -393,7 +393,7 @@ async function deployYtGlpUpdates(core: CoreProtocolArbitrumOne): Promise<Encode
     'PendleYtGLP2024IsolationModeWrapperTraderV2',
     getPendleYtGLP2024IsolationModeWrapperTraderV2ConstructorParams(
       core,
-      core.pendleEcosystem!.glpMar2024.dYtGlp2024,
+      core.pendleEcosystem!.glpMar2024.dYtGlpMar2024,
       core.pendleEcosystem!.glpMar2024.pendleRegistry,
     ),
     'PendleYtGLP2024IsolationModeWrapperTraderV4',
@@ -403,7 +403,7 @@ async function deployYtGlpUpdates(core: CoreProtocolArbitrumOne): Promise<Encode
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       core.pendleEcosystem!.glpMar2024,
-      'dYtGlp2024',
+      'dYtGlpMar2024',
       'ownerSetIsTokenConverterTrusted',
       [Deployments.PendleYtGLP2024IsolationModeUnwrapperTraderV3['42161'].address, false],
     ),
@@ -412,7 +412,7 @@ async function deployYtGlpUpdates(core: CoreProtocolArbitrumOne): Promise<Encode
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       core.pendleEcosystem!.glpMar2024,
-      'dYtGlp2024',
+      'dYtGlpMar2024',
       'ownerSetIsTokenConverterTrusted',
       [Deployments.PendleYtGLP2024IsolationModeWrapperTraderV3['42161'].address, false],
     ),
@@ -421,7 +421,7 @@ async function deployYtGlpUpdates(core: CoreProtocolArbitrumOne): Promise<Encode
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       core.pendleEcosystem!.glpMar2024,
-      'dYtGlp2024',
+      'dYtGlpMar2024',
       'ownerSetIsTokenConverterTrusted',
       [unwrapperV4, true],
     ),
@@ -430,7 +430,7 @@ async function deployYtGlpUpdates(core: CoreProtocolArbitrumOne): Promise<Encode
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       core.pendleEcosystem!.glpMar2024,
-      'dYtGlp2024',
+      'dYtGlpMar2024',
       'ownerSetIsTokenConverterTrusted',
       [wrapperV4, true],
     ),
