@@ -24,7 +24,6 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { IsolationModeTokenVaultV1 } from "./IsolationModeTokenVaultV1.sol";
-import { IGenericTraderBase } from "../../interfaces/IGenericTraderBase.sol";
 import { IGenericTraderProxyV1 } from "../../interfaces/IGenericTraderProxyV1.sol";
 import { IHandlerRegistry } from "../../interfaces/IHandlerRegistry.sol";
 import { AccountBalanceLib } from "../../lib/AccountBalanceLib.sol";
@@ -147,6 +146,7 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
     ) {
         _requireTrustedConverterIfFrozenOrUnwrapper(_inputMarketId);
         _validateIfWrapToUnderlying(
+            /* _inputSourceAccountOwner */ OWNER(),
             _fromAccountNumber,
             _borrowAccountNumber,
             _inputMarketId,
@@ -166,6 +166,7 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
     ) {
         _requireTrustedConverterIfFrozenOrUnwrapper(_inputMarketId);
         _validateIfWrapToUnderlying(
+            /* _inputSourceAccountOwner */ address(this),
             /* _inputSourceAccountNumber */ _borrowAccountNumber,
             _borrowAccountNumber,
             _inputMarketId,
@@ -185,6 +186,7 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
     ) {
         _requireTrustedConverterIfFrozenOrUnwrapper(_marketIds[0]);
         _validateIfWrapToUnderlying(
+            /* _inputSourceAccountOwner */ address(this),
             /* _inputSourceAccountNumber = */ _tradeAccountNumber,
             _tradeAccountNumber,
             /* _inputMarketId = */ _marketIds[0],
@@ -828,6 +830,7 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
     }
 
     function _validateIfWrapToUnderlying(
+        address _inputSourceAccountOwner,
         uint256 _inputSourceAccountNumber,
         uint256 _tradeAccountNumber,
         uint256 _inputMarketId,
@@ -840,6 +843,7 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
             IsolationModeTokenVaultV1ActionsImpl.requireMinAmountIsNotTooLargeForWrapToUnderlying(
                 dolomiteRegistry(),
                 DOLOMITE_MARGIN(),
+                _inputSourceAccountOwner,
                 _inputSourceAccountNumber,
                 _inputMarketId,
                 _outputMarketId,
