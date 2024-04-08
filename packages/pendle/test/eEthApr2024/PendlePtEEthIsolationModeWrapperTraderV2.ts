@@ -1,5 +1,10 @@
 import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
-import { ADDRESS_ZERO, BYTES_EMPTY, Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import {
+  ADDRESS_ZERO,
+  BYTES_EMPTY,
+  Network,
+  ZERO_BI,
+} from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import {
   encodeExternalSellActionDataWithNoData,
   impersonate,
@@ -21,6 +26,19 @@ import { CHAIN_ID_MAPPING } from '@pendle/sdk-v2/dist/common/ChainId';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
+import { DolomiteRegistryImplementation, DolomiteRegistryImplementation__factory } from 'packages/base/src/types';
+import { CHAINLINK_PRICE_AGGREGATORS_MAP, REDSTONE_PRICE_AGGREGATORS_MAP } from 'packages/base/src/utils/constants';
+import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
+import {
+  getChainlinkPriceOracleV2ConstructorParamsFromOldPriceOracle,
+  getRedstonePriceOracleV2ConstructorParams,
+} from 'packages/oracles/src/oracles-constructors';
+import {
+  ChainlinkPriceOracleV2,
+  ChainlinkPriceOracleV2__factory,
+  RedstonePriceOracleV2,
+  RedstonePriceOracleV2__factory,
+} from '@dolomite-exchange/modules-oracles/src/types';
 import {
   IERC20,
   IPendlePtMarket,
@@ -42,16 +60,6 @@ import {
   createPendleRegistry,
 } from '../pendle-ecosystem-utils';
 import { encodeSwapExactTokensForPt, ONE_TENTH_OF_ONE_BIPS_NUMBER } from '../pendle-utils';
-import {
-  ChainlinkPriceOracleV2,
-  ChainlinkPriceOracleV2__factory,
-  RedstonePriceOracleV2,
-  RedstonePriceOracleV2__factory
-} from 'packages/oracles/src/types';
-import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
-import { CHAINLINK_PRICE_AGGREGATORS_MAP, WE_ETH_ETH_REDSTONE_FEED_MAP } from 'packages/base/src/utils/constants';
-import { DolomiteRegistryImplementation, DolomiteRegistryImplementation__factory } from 'packages/base/src/types';
-import { getChainlinkPriceOracleV2ConstructorParamsFromOldPriceOracle, getRedstonePriceOracleV2ConstructorParams } from 'packages/oracles/src/oracles-constructors';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // 200 units of underlying
@@ -90,8 +98,8 @@ describe('PendlePtEEthApr2024IsolationModeWrapperTraderV2', () => {
     underlyingToken = core.tokens.weEth!;
 
     underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
-    const wethAggregator = await core.chainlinkPriceOracle!.getAggregatorByToken(core.tokens.weth.address);
-    const weEthAggregator = WE_ETH_ETH_REDSTONE_FEED_MAP[Network.ArbitrumOne];
+    const wethAggregator = await core.chainlinkPriceOracleOld!.getAggregatorByToken(core.tokens.weth.address);
+    const weEthAggregator = REDSTONE_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne].aggregatorAddress;
     const redstoneOracle = (await createContractWithAbi<RedstonePriceOracleV2>(
       RedstonePriceOracleV2__factory.abi,
       RedstonePriceOracleV2__factory.bytecode,
@@ -100,8 +108,8 @@ describe('PendlePtEEthApr2024IsolationModeWrapperTraderV2', () => {
         [wethAggregator, weEthAggregator],
         [ADDRESS_ZERO, core.tokens.weth.address],
         [false, false],
-        core
-      )
+        core,
+      ),
     )).connect(core.governance);
     await setupTestMarket(core, core.tokens.weEth, false, redstoneOracle);
 
@@ -134,14 +142,14 @@ describe('PendlePtEEthApr2024IsolationModeWrapperTraderV2', () => {
       await getChainlinkPriceOracleV2ConstructorParamsFromOldPriceOracle(core),
     )).connect(core.governance);
     await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkPriceOracle(
-      chainlinkOracle.address
+      chainlinkOracle.address,
     );
     await chainlinkOracle.connect(core.governance).ownerInsertOrUpdateOracleTokenWithBypass(
       underlyingToken.address,
       18,
-      CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][core.tokens.weEth.address],
+      CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][core.tokens.weEth.address].aggregatorAddress,
       ADDRESS_ZERO,
-      true
+      true,
     );
     priceOracle = await createPendlePtEEthPriceOracle(core, factory, pendleRegistry);
     marketId = await core.dolomiteMargin.getNumMarkets();

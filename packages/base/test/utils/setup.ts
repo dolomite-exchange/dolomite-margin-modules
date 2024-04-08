@@ -1,9 +1,9 @@
 import Deployments, * as deployments from '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
 import {
   IChainlinkAutomationRegistry__factory,
-  IChainlinkPriceOracleOld__factory,
+  IChainlinkPriceOracleOld__factory, IChainlinkPriceOracleV3__factory, OracleAggregatorV2__factory,
 } from '@dolomite-exchange/modules-oracles/src/types';
-import { BigNumber as ZapBigNumber } from '@dolomite-exchange/zap-sdk/dist';
+import { BigNumber as ZapBigNumber } from '@dolomite-exchange/zap-sdk';
 import * as BorrowPositionProxyV2Json from '@dolomite-margin/deployed-contracts/BorrowPositionProxyV2.json';
 import * as DepositWithdrawalProxyJson from '@dolomite-margin/deployed-contracts/DepositWithdrawalProxy.json';
 import * as DolomiteMarginJson from '@dolomite-margin/deployed-contracts/DolomiteMargin.json';
@@ -15,9 +15,9 @@ import * as LiquidatorProxyV4WithGenericTraderJson
   from '@dolomite-margin/deployed-contracts/LiquidatorProxyV4WithGenericTrader.json';
 import { address } from '@dolomite-margin/dist/src';
 import { Provider } from '@ethersproject/providers';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { BaseContract, BigNumberish, ContractInterface, Signer } from 'ethers';
-import { ethers, network } from 'hardhat';
+import { ethers } from 'hardhat';
+import { IChainlinkPriceOracleV1__factory } from 'packages/oracles/src/types';
 import {
   IBorrowPositionProxyV2__factory,
   IDepositWithdrawalProxy__factory,
@@ -43,19 +43,27 @@ import {
   ARB_MAP,
   CHAINLINK_AUTOMATION_REGISTRY_MAP,
   CHAINLINK_PRICE_AGGREGATORS_MAP,
-  CHAINLINK_PRICE_ORACLE_MAP,
+  CHAINLINK_PRICE_ORACLE_OLD_MAP,
+  CHAINLINK_PRICE_ORACLE_V1_MAP,
   D_ARB_MAP,
+  D_GM_ARB_MAP,
+  D_GM_BTC_MAP,
+  D_GM_ETH_MAP,
+  D_GM_LINK_MAP,
   D_GMX_MAP,
   DAI_MAP,
   DFS_GLP_MAP,
   DJ_USDC,
   DPLV_GLP_MAP,
   DPT_GLP_2024_MAP,
-  DPT_R_ETH_JUN_2025_MAP, DPT_WE_ETH_APR_2024_MAP,
+  DPT_R_ETH_JUN_2025_MAP,
+  DPT_WE_ETH_APR_2024_MAP,
   DPT_WST_ETH_JUN_2024_MAP,
   DPT_WST_ETH_JUN_2025_MAP,
   DPX_MAP,
   DYT_GLP_2024_MAP,
+  E_ETH_MAP,
+  EZ_ETH_MAP,
   GMX_MAP,
   GRAIL_MAP,
   JONES_MAP,
@@ -81,6 +89,7 @@ import {
   WST_ETH_MAP,
 } from '../../src/utils/constants';
 import { Network, NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP, NetworkType } from '../../src/utils/no-deps-constants';
+import { SignerWithAddressWithSafety } from '../../src/utils/SignerWithAddressWithSafety';
 import {
   CoreProtocolAbstract,
   CoreProtocolArbitrumOne,
@@ -103,8 +112,7 @@ import { createPlutusEcosystem } from './ecosystem-utils/plutus';
 import { createPremiaEcosystem } from './ecosystem-utils/premia';
 import { createTestEcosystem } from './ecosystem-utils/testers';
 import { createUmamiEcosystem } from './ecosystem-utils/umami';
-import { impersonate, impersonateOrFallback, resetFork } from './index';
-import { IChainlinkPriceOracleV1__factory } from 'packages/oracles/src/types';
+import { impersonate, impersonateOrFallback, resetForkIfPossible } from './index';
 
 /**
  * Config to for setting up tests in the `before` function
@@ -115,6 +123,7 @@ export interface CoreProtocolSetupConfig<T extends NetworkType> {
    */
   readonly blockNumber: number;
   readonly network: T;
+  readonly skipForking?: boolean;
 }
 
 export interface CoreProtocolConfigParent<T extends NetworkType> {
@@ -160,7 +169,7 @@ export async function enableInterestAccrual<T extends NetworkType>(
 
 export async function setupWETHBalance<T extends NetworkType>(
   core: CoreProtocolAbstract<T>,
-  signer: SignerWithAddress,
+  signer: SignerWithAddressWithSafety,
   amount: BigNumberish,
   spender: { address: string },
 ) {
@@ -170,7 +179,7 @@ export async function setupWETHBalance<T extends NetworkType>(
 
 export async function setupARBBalance(
   core: CoreProtocolArbitrumOne,
-  signer: SignerWithAddress,
+  signer: SignerWithAddressWithSafety,
   amount: BigNumberish,
   spender: { address: string },
 ) {
@@ -182,7 +191,7 @@ export async function setupARBBalance(
 
 export async function setupDAIBalance<T extends NetworkType>(
   core: CoreProtocolAbstract<T>,
-  signer: SignerWithAddress,
+  signer: SignerWithAddressWithSafety,
   amount: BigNumberish,
   spender: { address: string },
 ) {
@@ -194,7 +203,7 @@ export async function setupDAIBalance<T extends NetworkType>(
 
 export async function setupNativeUSDCBalance(
   core: CoreProtocolArbitrumOne,
-  signer: SignerWithAddress,
+  signer: SignerWithAddressWithSafety,
   amount: BigNumberish,
   spender: { address: string },
 ) {
@@ -206,7 +215,7 @@ export async function setupNativeUSDCBalance(
 
 export async function setupUSDCBalance<T extends NetworkType>(
   core: CoreProtocolAbstract<T>,
-  signer: SignerWithAddress,
+  signer: SignerWithAddressWithSafety,
   amount: BigNumberish,
   spender: { address: string },
 ) {
@@ -218,20 +227,20 @@ export async function setupUSDCBalance<T extends NetworkType>(
 
 export async function setupGMBalance(
   core: CoreProtocolArbitrumOne,
-  signer: SignerWithAddress,
+  signer: { address: string },
   amount: BigNumberish,
   spender?: { address: string },
 ) {
   const controller = await impersonate(core.gmxEcosystemV2!.gmxExchangeRouter.address, true);
   await core.gmxEcosystemV2!.gmxEthUsdMarketToken.connect(controller).mint(signer.address, amount);
-  if (spender) {
+  if (signer instanceof SignerWithAddressWithSafety && spender) {
     await core.gmxEcosystemV2!.gmxEthUsdMarketToken.connect(signer).approve(spender.address, amount);
   }
 }
 
 export async function setupGMXBalance(
   core: { tokens: { gmx: IERC20 } },
-  signer: SignerWithAddress,
+  signer: SignerWithAddressWithSafety,
   amount: BigNumberish,
   spender: { address: string },
 ) {
@@ -243,7 +252,7 @@ export async function setupGMXBalance(
 
 export async function setupRsEthBalance(
   core: { tokens: { rsEth: IERC20 } },
-  signer: SignerWithAddress,
+  signer: SignerWithAddressWithSafety,
   amount: BigNumberish,
   spender: { address: string },
 ) {
@@ -255,7 +264,7 @@ export async function setupRsEthBalance(
 
 export async function setupRETHBalance(
   core: { tokens: { rEth: IERC20 } },
-  signer: SignerWithAddress,
+  signer: SignerWithAddressWithSafety,
   amount: BigNumberish,
   spender: { address: string },
 ) {
@@ -267,7 +276,7 @@ export async function setupRETHBalance(
 
 export async function setupWeEthBalance(
   core: { tokens: { weEth: IERC20 } },
-  signer: SignerWithAddress,
+  signer: SignerWithAddressWithSafety,
   amount: BigNumberish,
   spender: { address: string },
 ) {
@@ -279,7 +288,7 @@ export async function setupWeEthBalance(
 
 export async function setupWstETHBalance(
   core: { tokens: { wstEth: IERC20 } },
-  signer: SignerWithAddress,
+  signer: SignerWithAddressWithSafety,
   amount: BigNumberish,
   spender: { address: string },
 ) {
@@ -292,7 +301,7 @@ export async function setupWstETHBalance(
 export function setupUserVaultProxy<T extends BaseContract>(
   vault: address,
   factoryInterface: { abi: ContractInterface },
-  signer?: SignerWithAddress,
+  signer?: SignerWithAddressWithSafety,
 ): T {
   return new BaseContract(
     vault,
@@ -354,15 +363,14 @@ export type CoreProtocolType<T extends NetworkType> = T extends Network.Arbitrum
 export async function setupCoreProtocol<T extends NetworkType>(
   config: Readonly<CoreProtocolSetupConfig<T>>,
 ): Promise<CoreProtocolType<T>> {
-  if (network.name === 'hardhat') {
-    await resetFork(config.blockNumber, config.network);
-  } else {
-    console.log('\tSkipping forking...\n');
+  if (!config.skipForking) {
+    await resetForkIfPossible(config.blockNumber, config.network);
   }
 
   const dolomiteMarginAddress = DolomiteMarginJson.networks[config.network].address;
-  const [hhUser1, hhUser2, hhUser3, hhUser4, hhUser5] = await ethers.getSigners();
-  const governance: SignerWithAddress = await impersonateOrFallback(
+  const [hhUser1, hhUser2, hhUser3, hhUser4, hhUser5] = await Promise.all((await ethers.getSigners())
+    .map(s => SignerWithAddressWithSafety.create(s.address)));
+  const governance: SignerWithAddressWithSafety = await impersonateOrFallback(
     await IDolomiteMargin__factory.connect(dolomiteMarginAddress, hhUser1).owner(),
     true,
     hhUser1,
@@ -377,9 +385,19 @@ export async function setupCoreProtocol<T extends NetworkType>(
     governance,
   );
 
-  const chainlinkPriceOracle = getContract(
-    CHAINLINK_PRICE_ORACLE_MAP[config.network],
+  const chainlinkPriceOracleOld = getContract(
+    CHAINLINK_PRICE_ORACLE_OLD_MAP[config.network],
+    IChainlinkPriceOracleOld__factory.connect,
+    governance,
+  );
+  const chainlinkPriceOracleV1 = getContract(
+    CHAINLINK_PRICE_ORACLE_V1_MAP[config.network],
     IChainlinkPriceOracleV1__factory.connect,
+    governance,
+  );
+  const chainlinkPriceOracleV3 = getContract(
+    Deployments.ChainlinkPriceOracleV3[config.network]?.address,
+    IChainlinkPriceOracleV3__factory.connect,
     governance,
   );
 
@@ -443,6 +461,12 @@ export async function setupCoreProtocol<T extends NetworkType>(
     governance,
   );
 
+  const oracleAggregatorV2 = getContract(
+    Deployments.OracleAggregatorV2[config.network].address,
+    OracleAggregatorV2__factory.connect,
+    governance,
+  );
+
   const testEcosystem = await createTestEcosystem(dolomiteMargin, governance);
 
   const tokenVaultActionsLibraries = await createTokenVaultActionsLibraries(config);
@@ -463,6 +487,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
     liquidatorAssetRegistry,
     liquidatorProxyV1,
     liquidatorProxyV4,
+    oracleAggregatorV2,
     testEcosystem,
     tokenVaultActionsLibraries,
     hhUser1,
@@ -510,7 +535,9 @@ export async function setupCoreProtocol<T extends NetworkType>(
     return new CoreProtocolArbitrumOne(
       coreProtocolParams as CoreProtocolParams<Network.ArbitrumOne>,
       {
-        chainlinkPriceOracle,
+        chainlinkPriceOracleOld,
+        chainlinkPriceOracleV1,
+        chainlinkPriceOracleV3,
         abraEcosystem: await createAbraEcosystem(typedConfig.network, hhUser1),
         arbEcosystem: await createArbEcosystem(typedConfig.network, hhUser1),
         camelotEcosystem: await createCamelotEcosystem(typedConfig.network, hhUser1),
@@ -534,6 +561,10 @@ export async function setupCoreProtocol<T extends NetworkType>(
           dArb: D_ARB_MAP[typedConfig.network]!.marketId,
           dfsGlp: DFS_GLP_MAP[typedConfig.network]!.marketId,
           dGmx: D_GMX_MAP[typedConfig.network]!.marketId,
+          dGmArb: D_GM_ARB_MAP[typedConfig.network]!.marketId,
+          dGmBtc: D_GM_BTC_MAP[typedConfig.network]!.marketId,
+          dGmEth: D_GM_ETH_MAP[typedConfig.network]!.marketId,
+          dGmLink: D_GM_LINK_MAP[typedConfig.network]!.marketId,
           djUSDC: DJ_USDC[typedConfig.network]!.marketId,
           dplvGlp: DPLV_GLP_MAP[typedConfig.network]!.marketId,
           dPtGlp: DPT_GLP_2024_MAP[typedConfig.network]!.marketId,
@@ -564,6 +595,10 @@ export async function setupCoreProtocol<T extends NetworkType>(
           dArb: IERC20__factory.connect(D_ARB_MAP[typedConfig.network]!.address, hhUser1),
           dfsGlp: IERC20__factory.connect(DFS_GLP_MAP[typedConfig.network]!.address, hhUser1),
           dGmx: IERC20__factory.connect(D_GMX_MAP[typedConfig.network]!.address, hhUser1),
+          dGmArb: IERC20__factory.connect(D_GM_ARB_MAP[typedConfig.network]!.address, hhUser1),
+          dGmBtc: IERC20__factory.connect(D_GM_BTC_MAP[typedConfig.network]!.address, hhUser1),
+          dGmEth: IERC20__factory.connect(D_GM_ETH_MAP[typedConfig.network]!.address, hhUser1),
+          dGmLink: IERC20__factory.connect(D_GM_LINK_MAP[typedConfig.network]!.address, hhUser1),
           dPtGlp: IERC20__factory.connect(DPT_GLP_2024_MAP[typedConfig.network]!.address, hhUser1),
           dPtREthJun2025: IERC20__factory.connect(DPT_R_ETH_JUN_2025_MAP[typedConfig.network]!.address, hhUser1),
           dPtWeEthApr2024: IERC20__factory.connect(DPT_WE_ETH_APR_2024_MAP[typedConfig.network]!.address, hhUser1),
@@ -571,6 +606,8 @@ export async function setupCoreProtocol<T extends NetworkType>(
           dPtWstEthJun2025: IERC20__factory.connect(DPT_WST_ETH_JUN_2025_MAP[typedConfig.network]!.address, hhUser1),
           dpx: IERC20__factory.connect(DPX_MAP[typedConfig.network]!.address, hhUser1),
           dYtGlp: IERC20__factory.connect(DYT_GLP_2024_MAP[typedConfig.network]!.address, hhUser1),
+          eEth: IERC20__factory.connect(E_ETH_MAP[typedConfig.network]!.address, hhUser1),
+          ezEth: IERC20__factory.connect(EZ_ETH_MAP[typedConfig.network]!.address, hhUser1),
           gmx: IERC20__factory.connect(GMX_MAP[typedConfig.network]!.address, hhUser1),
           grail: IERC20__factory.connect(GRAIL_MAP[typedConfig.network]!.address, hhUser1),
           jones: IERC20__factory.connect(JONES_MAP[typedConfig.network]!.address, hhUser1),
@@ -595,7 +632,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
     return new CoreProtocolBase(
       coreProtocolParams as CoreProtocolParams<Network.Base>,
       {
-        chainlinkPriceOracle,
+        chainlinkPriceOracleOld,
         paraswapEcosystem: await createParaswapEcosystem(typedConfig.network, hhUser1),
       },
     ) as any;
@@ -605,7 +642,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
     return new CoreProtocolPolygonZkEvm(
       coreProtocolParams as CoreProtocolParams<Network.PolygonZkEvm>,
       {
-        chainlinkPriceOracle,
+        chainlinkPriceOracleOld,
         marketIds: {
           ...coreProtocolParams.marketIds,
           matic: MATIC_MAP[typedConfig.network].marketId,
@@ -664,17 +701,23 @@ export async function setupTestMarket<T extends NetworkType>(
 async function createTokenVaultActionsLibraries<T extends NetworkType>(
   config: CoreProtocolSetupConfig<T>,
 ): Promise<Record<string, string>> {
-  const tokenVaultPrefix = 'IsolationModeTokenVaultV1ActionsImpl';
+  return {
+    IsolationModeTokenVaultV1ActionsImpl: getMaxDeploymentVersionAddressByDeploymentKey(
+      'IsolationModeTokenVaultV1ActionsImpl',
+      config.network,
+    ),
+  };
+}
+
+export function getMaxDeploymentVersionAddressByDeploymentKey(key: string, network: Network): address {
   const maxTokenVaultVersion = Object.keys(deployments)
-    .filter(k => k.startsWith(tokenVaultPrefix) && (deployments as any)[k][config.network])
+    .filter(k => k.startsWith(key) && (deployments as any)[k][network])
     .sort((a, b) => a < b ? 1 : -1)[0];
   if (!maxTokenVaultVersion) {
-    return Promise.reject(new Error(`Could not find token vault for network ${config.network}`));
+    throw new Error(`Could not find ${key} for network ${network}`);
   }
 
-  return {
-    IsolationModeTokenVaultV1ActionsImpl: (deployments as any)[maxTokenVaultVersion][config.network].address,
-  };
+  return (deployments as any)[maxTokenVaultVersion][network].address;
 }
 
 export function getContract<T>(

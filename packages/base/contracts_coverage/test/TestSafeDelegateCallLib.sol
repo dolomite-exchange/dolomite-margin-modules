@@ -47,11 +47,11 @@ contract TestSafeDelegateCallLib {
         value = _value;
     }
 
-    function revertFunction() external {
+    function revertFunction() external pure {
         revert();
     }
 
-    function revertFunctionWithMessage() external {
+    function revertFunctionWithMessage() external pure {
         revert("TestSafeDelegateCallLib: revertFunction");
     }
 }

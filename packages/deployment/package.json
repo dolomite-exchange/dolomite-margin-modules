@@ -1,6 +1,6 @@
 {
   "name": "@dolomite-exchange/modules-deployments",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "scripts": {
     "build": "hardhat compile",
     "clean": "hardhat clean",
@@ -15,7 +15,10 @@
     "deploy:paraswap-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts paraswap",
     "execute:arbitrum": "NETWORK=arbitrum_one ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
     "execute:base": "NETWORK=base ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
-    "execute:polygon_zkevm": "NETWORK=polygon_zkevm ts-node src/deploy/safe-transactions/execute-safe-transaction.ts"
+    "execute:polygon_zkevm": "NETWORK=polygon_zkevm ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
+    "verify:arbitrum": "hardhat --network arbitrum_one run src/utils/verify-contract.ts",
+    "verify:base": "hardhat --network base run src/utils/verify-contract.ts",
+    "verify:polygon_zkevm": "hardhat --network polygon_zkevm run src/utils/verify-contract.ts"
   },
   "private": false,
   "files": [

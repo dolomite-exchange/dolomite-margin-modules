@@ -21,16 +21,10 @@ pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
+import { AggregatorTraderBase } from "./AggregatorTraderBase.sol";
 import { IParaswapAugustusRouter } from "../interfaces/traders/IParaswapAugustusRouter.sol";
 import { ERC20Lib } from "../lib/ERC20Lib.sol";
-import { IDolomiteMarginExchangeWrapper } from "../protocol/interfaces/IDolomiteMarginExchangeWrapper.sol";
 import { Require } from "../protocol/lib/Require.sol";
-
-
-
-
-
 
 
 /**
@@ -39,7 +33,7 @@ import { Require } from "../protocol/lib/Require.sol";
  *
  * Contract for performing an external trade with Paraswap using typesafe decoding of the function calls.
  */
-contract ParaswapAggregatorTraderV2 is OnlyDolomiteMargin, IDolomiteMarginExchangeWrapper {
+contract ParaswapAggregatorTraderV2 is AggregatorTraderBase {
     using SafeERC20 for IERC20;
 
     // ============ Constants ============
@@ -62,7 +56,7 @@ contract ParaswapAggregatorTraderV2 is OnlyDolomiteMargin, IDolomiteMarginExchan
         address _paraswapTransferProxy,
         address _dolomiteMargin
     )
-    OnlyDolomiteMargin(_dolomiteMargin)
+    AggregatorTraderBase(_dolomiteMargin)
     {
         PARASWAP_AUGUSTUS_ROUTER = IParaswapAugustusRouter(_paraswapAugustusRouter);
         PARASWAP_TRANSFER_PROXY = _paraswapTransferProxy;
@@ -159,21 +153,6 @@ contract ParaswapAggregatorTraderV2 is OnlyDolomiteMargin, IDolomiteMarginExchan
                 Require.stringifyFunctionSelector(_paraswapFunctionSelector),
                 ">"
             )));
-        }
-    }
-
-    function _getScaledExpectedOutputAmount(
-        uint256 _originalInputAmount,
-        uint256 _actualInputAmount,
-        uint256 _expectedOutputAmount
-    ) private pure returns (uint256) {
-        if (_originalInputAmount >= _actualInputAmount) {
-            return _expectedOutputAmount;
-        } else {
-            // The amount inputted to the Paraswap API was less than what we're actually trading. Scale up the expected
-            // amount out, so the user doesn't pay unnecessary positive slippage
-            uint256 percentageUp = _actualInputAmount * _SCALE_AMOUNT / _originalInputAmount;
-            return _expectedOutputAmount * percentageUp / _SCALE_AMOUNT;
         }
     }
 }

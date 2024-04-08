@@ -28,7 +28,7 @@ import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertio
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { parseEther } from 'ethers/lib/utils';
 import { getRedstonePriceOracleV2ConstructorParams } from '../src/oracles-constructors';
-import { WE_ETH_ETH_REDSTONE_FEED_MAP } from 'packages/base/src/utils/constants';
+import { REDSTONE_PRICE_AGGREGATORS_MAP } from 'packages/base/src/utils/constants';
 
 const WE_ETH_PRICE = BigNumber.from('3966474866008054000000');
 const TEST_TOKEN_PRICE = parseEther('1');
@@ -63,7 +63,7 @@ describe('RedstonePriceOracleV2', () => {
       testAggregator.address,
       testAggregator.address,
       testAggregator.address,
-      WE_ETH_ETH_REDSTONE_FEED_MAP[Network.ArbitrumOne],
+      REDSTONE_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][core.tokens.weEth.address].aggregatorAddress,
     ];
     oracle = (await createContractWithAbi<RedstonePriceOracleV2>(
       RedstonePriceOracleV2__factory.abi,

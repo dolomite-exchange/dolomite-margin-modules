@@ -60,7 +60,13 @@ contract TestAsyncProtocolIsolationModeTokenVault is
     // ========================== Constructors ==========================
     // ==================================================================
 
-    constructor(address _testAsyncProtocol, address _weth) IsolationModeTokenVaultV1WithFreezable(_weth) {
+    constructor(
+        address _testAsyncProtocol,
+        address _weth,
+        uint256 _chainId
+    )
+        IsolationModeTokenVaultV1WithFreezable(_weth, _chainId)
+    {
         TEST_ASYNC_PROTOCOL = ITestAsyncProtocol(_testAsyncProtocol);
     }
 
@@ -106,7 +112,7 @@ contract TestAsyncProtocolIsolationModeTokenVault is
     function isExternalRedemptionPaused()
         public
         override
-        view
+        pure
         returns (bool)
     {
         return false;
@@ -151,23 +157,7 @@ contract TestAsyncProtocolIsolationModeTokenVault is
             );
         }
 
-        if (
-            _params.tradersPath[0].traderType == IGenericTraderBase.TraderType.IsolationModeUnwrapper
-            || isVaultFrozen()
-        ) {
-            // Only a trusted converter can initiate unwraps (via the callback) OR execute swaps if the vault is frozen
-            _requireOnlyConverter(msg.sender);
-        }
-
-        // Ignore the freezable implementation and call the pausable one directly
-        // Need to still allow the unwrapper so can't call freezable modifier
-        _requireNotLiquidatableIfWrapToUnderlying(
-            _params.tradeAccountNumber,
-            _params.marketIdsPath[_params.marketIdsPath.length - 1]
-        );
-        IsolationModeTokenVaultV1WithPausable._swapExactInputForOutput(
-            _params
-        );
+        super._swapExactInputForOutput(_params);
 
         if (revertFlag == 1) {
             revert("Reverting");

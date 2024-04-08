@@ -1,6 +1,7 @@
 import { IERC4626, RegistryProxy__factory } from '@dolomite-exchange/modules-base/src/types';
 import { createContractWithName } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { Network, ONE_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { SignerWithAddressWithSafety } from '@dolomite-exchange/modules-base/src/utils/SignerWithAddressWithSafety';
 import {
   advanceByTimeDelta,
   impersonate,
@@ -19,7 +20,6 @@ import {
   setupUSDCBalance,
   setupUserVaultProxy,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
 import {
@@ -44,7 +44,7 @@ describe('JonesUSDCIsolationModeTokenVaultV2', () => {
   let jonesUSDCRegistry: IJonesUSDCRegistry;
   let factory: JonesUSDCIsolationModeVaultFactory;
   let vault: JonesUSDCIsolationModeTokenVaultV2;
-  let governor: SignerWithAddress;
+  let governor: SignerWithAddressWithSafety;
 
   before(async () => {
     core = await setupCoreProtocol({

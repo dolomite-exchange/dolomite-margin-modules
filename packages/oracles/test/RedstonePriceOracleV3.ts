@@ -1,35 +1,33 @@
+import {
+  CustomTestToken,
+  DolomiteRegistryImplementation,
+  DolomiteRegistryImplementation__factory,
+} from '@dolomite-exchange/modules-base/src/types';
+import { createContractWithAbi, createTestToken } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import { ADDRESS_ZERO, Network, ONE_DAY_SECONDS } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import {
+  impersonate,
+  revertToSnapshotAndCapture,
+  snapshot,
+  waitTime,
+} from '@dolomite-exchange/modules-base/test/utils';
+import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
+import { deployMockContract, MockContract } from 'ethereum-waffle';
 import { BigNumber } from 'ethers';
+import { parseEther } from 'ethers/lib/utils';
+import { REDSTONE_PRICE_AGGREGATORS_MAP } from 'packages/base/src/utils/constants';
+import { getRedstonePriceOracleV3ConstructorParams } from '../src/oracles-constructors';
 import {
-  OracleAggregator2__factory,
+  OracleAggregatorV2__factory,
   RedstonePriceOracleV3,
   RedstonePriceOracleV3__factory,
   TestChainlinkAggregator,
   TestChainlinkAggregator__factory,
 } from '../src/types';
-import {
-  CustomTestToken, DolomiteRegistryImplementation, DolomiteRegistryImplementation__factory,
-} from '@dolomite-exchange/modules-base/src/types';
-import { createContractWithAbi, createTestToken } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import {
-  ADDRESS_ZERO,
-  Network,
-  ONE_DAY_SECONDS,
-} from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import {
-  impersonate,
-  revertToSnapshotAndCapture,
-  snapshot,
-  waitTime
-} from '@dolomite-exchange/modules-base/test/utils';
-import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { parseEther } from 'ethers/lib/utils';
-import { getRedstonePriceOracleV3ConstructorParams } from '../src/oracles-constructors';
-import { WE_ETH_ETH_REDSTONE_FEED_MAP } from 'packages/base/src/utils/constants';
-import { MockContract, deployMockContract } from 'ethereum-waffle';
 
 const TEST_TOKEN_PRICE = parseEther('1');
 const USDC_PRICE = TEST_TOKEN_PRICE.mul(BigNumber.from(10).pow(12));
@@ -58,7 +56,7 @@ describe('RedstonePriceOracleV3', () => {
     );
     await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(dolomiteRegistryImplementation.address);
 
-    oracleAggregator = await deployMockContract(core.governance, OracleAggregator2__factory.abi);
+    oracleAggregator = await deployMockContract(core.governance, OracleAggregatorV2__factory.abi as any);
     await oracleAggregator.mock.getDecimalsByToken.withArgs(core.tokens.weth.address).returns(18);
     await oracleAggregator.mock.getDecimalsByToken.withArgs(core.tokens.dai.address).returns(18);
     await oracleAggregator.mock.getDecimalsByToken.withArgs(core.tokens.usdc.address).returns(6);
@@ -73,22 +71,24 @@ describe('RedstonePriceOracleV3', () => {
     testToken = await createTestToken();
     await testAggregator.setLatestAnswer(TEST_TOKEN_PRICE); // 0.1E
     await testAggregator.setDecimals(18);
-    const aggregators = [
-      ADDRESS_ZERO,
-      testAggregator.address,
-      testAggregator.address,
-      testAggregator.address,
-      WE_ETH_ETH_REDSTONE_FEED_MAP[Network.ArbitrumOne],
+    const aggregators: any[] = [
+      { address: ADDRESS_ZERO },
+      testAggregator,
+      testAggregator,
+      testAggregator,
+      { address: REDSTONE_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][core.tokens.weEth.address].aggregatorAddress },
     ];
+    const tokens = [core.tokens.weth, core.tokens.dai, core.tokens.usdc, core.tokens.wbtc, core.tokens.weEth];
     oracle = (await createContractWithAbi<RedstonePriceOracleV3>(
       RedstonePriceOracleV3__factory.abi,
       RedstonePriceOracleV3__factory.bytecode,
-      await getRedstonePriceOracleV3ConstructorParams(
-        [core.tokens.weth, core.tokens.dai, core.tokens.usdc, core.tokens.wbtc, core.tokens.weEth],
+      getRedstonePriceOracleV3ConstructorParams(
+        tokens,
         aggregators,
         [false, false, false, false, false],
-        core
-      )
+        core.dolomiteRegistry,
+        core.dolomiteMargin,
+      ),
     )).connect(core.governance);
     await core.dolomiteRegistry.connect(core.governance).ownerSetOracleAggregator(oracleAggregator.address);
 
@@ -107,7 +107,6 @@ describe('RedstonePriceOracleV3', () => {
         [
           [ZERO_ADDRESS],
           [ZERO_ADDRESS],
-          [8],
           [false],
           core.dolomiteRegistry.address,
           core.dolomiteMargin.address,
@@ -123,7 +122,6 @@ describe('RedstonePriceOracleV3', () => {
           [
             [ZERO_ADDRESS],
             [ZERO_ADDRESS, ZERO_ADDRESS],
-            [8, 8],
             [false, false],
             core.dolomiteRegistry.address,
             core.dolomiteMargin.address,
@@ -141,31 +139,12 @@ describe('RedstonePriceOracleV3', () => {
           [
             [ZERO_ADDRESS, ZERO_ADDRESS],
             [ZERO_ADDRESS, ZERO_ADDRESS],
-            [8],
-            [false, false],
-            core.dolomiteRegistry.address,
-            core.dolomiteMargin.address,
-          ],
-        ),
-        'RedstonePriceOracleV3: Invalid aggregators length',
-      );
-    });
-
-    it('should fail when token decimal length is not aligned', async () => {
-      await expectThrow(
-        createContractWithAbi<RedstonePriceOracleV3>(
-          RedstonePriceOracleV3__factory.abi,
-          RedstonePriceOracleV3__factory.bytecode,
-          [
-            [ZERO_ADDRESS, ZERO_ADDRESS],
-            [ZERO_ADDRESS, ZERO_ADDRESS],
-            [8, 8],
             [false],
             core.dolomiteRegistry.address,
             core.dolomiteMargin.address,
           ],
         ),
-        'RedstonePriceOracleV3: Invalid decimals length',
+        'RedstonePriceOracleV3: Invalid aggregators length',
       );
     });
   });
@@ -185,9 +164,8 @@ describe('RedstonePriceOracleV3', () => {
       await oracleAggregator.mock.getDecimalsByToken.withArgs(testToken.address).returns(18);
       await oracle.connect(core.governance).ownerInsertOrUpdateOracleToken(
         testToken.address,
-        18,
         testAggregator.address,
-        true
+        true,
       );
       await testAggregator.setLatestAnswer(parseEther('.5'));
       const price = await oracle.getPrice(testToken.address);
@@ -198,9 +176,8 @@ describe('RedstonePriceOracleV3', () => {
       const doloImpersonator = await impersonate(core.dolomiteMargin.address, true);
       await oracle.connect(core.governance).ownerInsertOrUpdateOracleToken(
         testToken.address,
-        18,
         testAggregator.address,
-        false
+        false,
       );
       await expectThrow(
         oracle.connect(doloImpersonator).getPrice(testToken.address),
@@ -223,9 +200,8 @@ describe('RedstonePriceOracleV3', () => {
     it('reverts when the price is expired', async () => {
       await oracle.ownerInsertOrUpdateOracleToken(
         testToken.address,
-        18,
         testAggregator.address,
-        false
+        false,
       );
       await testAggregator.setLatestAnswer(BigNumber.from('20000000000')); // $200
       await waitTime((60 * 60 * 36) + 1); // prices expire in 36 hours by default
@@ -272,11 +248,9 @@ describe('RedstonePriceOracleV3', () => {
       const tokenAddress = testToken.address;
       await oracle.ownerInsertOrUpdateOracleToken(
         tokenAddress,
-        18,
         testAggregator.address,
-        false
+        false,
       );
-      expect(await oracle.getDecimalsByToken(tokenAddress)).to.eq(18);
       expect(await oracle.getAggregatorByToken(tokenAddress)).to.eq(testAggregator.address);
       expect(await oracle.getInvertPriceByToken(tokenAddress)).to.eq(false);
     });
@@ -285,11 +259,9 @@ describe('RedstonePriceOracleV3', () => {
       const tokenAddress = core.tokens.wbtc.address;
       await oracle.ownerInsertOrUpdateOracleToken(
         tokenAddress,
-        11,
         testAggregator.address,
-        true
+        true,
       );
-      expect(await oracle.getDecimalsByToken(tokenAddress)).to.eq(11);
       expect(await oracle.getAggregatorByToken(tokenAddress)).to.eq(testAggregator.address);
       expect(await oracle.getInvertPriceByToken(tokenAddress)).to.eq(true);
     });
@@ -298,9 +270,8 @@ describe('RedstonePriceOracleV3', () => {
       await expectThrow(
         oracle.connect(core.hhUser1).ownerInsertOrUpdateOracleToken(
           testToken.address,
-          9,
           testAggregator.address,
-          false
+          false,
         ),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );

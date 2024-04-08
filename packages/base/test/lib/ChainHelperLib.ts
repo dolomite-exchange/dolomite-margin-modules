@@ -1,10 +1,8 @@
 import { expect } from 'chai';
 import { TestChainHelperLib, TestChainHelperLib__factory } from '../../src/types';
 import { createContractWithAbi } from '../../src/utils/dolomite-utils';
-import { Network, ZERO_BI } from '../../src/utils/no-deps-constants';
+import { ZERO_BI } from '../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
-import { CoreProtocolArbitrumOne } from '../utils/core-protocol';
-import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '../utils/setup';
 
 const ARBITRUM_ONE = 42161;
 const ARBITRUM_SEPOLIA = 421614;

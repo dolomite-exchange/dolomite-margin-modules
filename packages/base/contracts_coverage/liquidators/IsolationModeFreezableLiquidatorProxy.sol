@@ -27,9 +27,7 @@ import { IIsolationModeFreezableLiquidatorProxy } from "../isolation-mode/interf
 import { IIsolationModeTokenVaultV1WithFreezable } from "../isolation-mode/interfaces/IIsolationModeTokenVaultV1WithFreezable.sol"; // solhint-disable-line max-line-length
 import { IIsolationModeVaultFactory } from "../isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
 import { DolomiteMarginVersionWrapperLib } from "../lib/DolomiteMarginVersionWrapperLib.sol";
-import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
-import { DecimalLib } from "../protocol/lib/DecimalLib.sol";
 import { Require } from "../protocol/lib/Require.sol";
 
 
@@ -44,8 +42,6 @@ contract IsolationModeFreezableLiquidatorProxy is
     BaseLiquidatorProxy,
     ReentrancyGuard
 {
-    using DecimalLib for uint256;
-    using DecimalLib for IDolomiteStructs.Decimal;
     using DolomiteMarginVersionWrapperLib for *;
 
     // ============================ Constants ============================
@@ -100,27 +96,6 @@ contract IsolationModeFreezableLiquidatorProxy is
             marketInfos,
             _params.outputMarketId,
             _params.expirationTimestamp
-        );
-
-        (IDolomiteStructs.Decimal memory weight, uint256 otherMinOutputAmount) = abi.decode(
-            _params.extraData,
-            (IDolomiteStructs.Decimal, uint256)
-        );
-
-        _checkMinAmountIsNotTooLarge(
-            _params.liquidAccount,
-            _params.freezableMarketId,
-            _params.outputMarketId,
-            _params.inputTokenAmount.mul(DecimalLib.oneSub(weight)),
-            _params.minOutputAmount
-        );
-
-        _checkMinAmountIsNotTooLarge(
-            _params.liquidAccount,
-            _params.freezableMarketId,
-            _params.outputMarketId,
-            _params.inputTokenAmount.mul(weight),
-            otherMinOutputAmount
         );
 
         address outputToken = DOLOMITE_MARGIN().getMarketTokenAddress(_params.outputMarketId);
@@ -199,33 +174,6 @@ contract IsolationModeFreezableLiquidatorProxy is
                 || !_isCollateralized(_liquidSupplyValue.value, _liquidBorrowValue.value, marginRatio),
             _FILE,
             "Liquid account not liquidatable"
-        );
-    }
-
-    function _checkMinAmountIsNotTooLarge(
-        IDolomiteStructs.AccountInfo memory _liquidAccount,
-        uint256 _inputMarketId,
-        uint256 _outputMarketId,
-        uint256 _inputTokenAmount,
-        uint256 _minOutputAmount
-    ) internal view {
-        uint256 inputValue = DOLOMITE_MARGIN().getMarketPrice(_inputMarketId).value * _inputTokenAmount;
-        uint256 outputValue = DOLOMITE_MARGIN().getMarketPrice(_outputMarketId).value * _minOutputAmount;
-
-        IDolomiteMargin.Decimal memory spread = DOLOMITE_MARGIN().getVersionedLiquidationSpreadForPair(
-            CHAIN_ID,
-            _liquidAccount,
-            /* heldMarketId = */ _inputMarketId,
-            /* ownedMarketId = */ _outputMarketId
-        );
-        spread.value /= 2;
-        uint256 inputValueAdj = inputValue - inputValue.mul(spread);
-
-        if (outputValue <= inputValueAdj) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            outputValue <= inputValueAdj,
-            _FILE,
-            "minOutputAmount too large"
         );
     }
 }

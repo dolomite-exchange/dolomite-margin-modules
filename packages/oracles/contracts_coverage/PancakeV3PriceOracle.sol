@@ -20,24 +20,24 @@
 pragma solidity ^0.8.9;
 
 import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
-import { IAlgebraV3Pool } from "@dolomite-exchange/modules-base/contracts/interfaces/IAlgebraV3Pool.sol";
-import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { IDolomiteRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IDolomiteRegistry.sol";
+import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
-import { OracleLibrary } from "@dolomite-exchange/modules-base/contracts/utils/OracleLibrary.sol";
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import { ITWAPPriceOracle } from "./interfaces/ITWAPPriceOracle.sol";
-import { IOracleAggregator2 } from"./interfaces/IOracleAggregator2.sol";
+import { IAlgebraV3Pool } from "./interfaces/IAlgebraV3Pool.sol";
+import { IOracleAggregatorV2 } from "./interfaces/IOracleAggregatorV2.sol";
+import { ITWAPPriceOracleV1 } from "./interfaces/ITWAPPriceOracleV1.sol";
+import { OracleLibrary } from "./utils/OracleLibrary.sol";
 
 
 /**
  * @title   PancakeV3PriceOracle
  * @author  Dolomite
  *
- * An implementation of the ITWAPPriceOracle interface that makes gets the TWAP from a number of LP pools
+ * An implementation of the ITWAPPriceOracleV1.sol interface that makes gets the TWAP from an LP pool
  */
-contract PancakeV3PriceOracle is ITWAPPriceOracle, OnlyDolomiteMargin {
+contract PancakeV3PriceOracle is ITWAPPriceOracleV1, OnlyDolomiteMargin {
     using EnumerableSet for EnumerableSet.AddressSet;
 
     // ========================= Constants =========================
@@ -48,10 +48,10 @@ contract PancakeV3PriceOracle is ITWAPPriceOracle, OnlyDolomiteMargin {
 
     // ========================= Storage =========================
 
-    address public pair;
     uint32 public observationInterval;
 
     address public immutable TOKEN; // solhint-disable-line var-name-mixedcase
+    address public immutable PAIR;
     uint256 public immutable TOKEN_DECIMALS_FACTOR; // solhint-disable-line var-name-mixedcase
     IDolomiteRegistry public immutable DOLOMITE_REGISTRY;
 
@@ -64,7 +64,7 @@ contract PancakeV3PriceOracle is ITWAPPriceOracle, OnlyDolomiteMargin {
         address _dolomiteMargin
     ) OnlyDolomiteMargin(_dolomiteMargin) {
         TOKEN = _token;
-        pair = _pair;
+        PAIR = _pair;
         _ownerSetObservationInterval(15 minutes);
 
         TOKEN_DECIMALS_FACTOR = 10 ** IERC20Metadata(_token).decimals();
@@ -98,7 +98,7 @@ contract PancakeV3PriceOracle is ITWAPPriceOracle, OnlyDolomiteMargin {
             _token
         );
 
-        IAlgebraV3Pool currentPair = IAlgebraV3Pool(pair);
+        IAlgebraV3Pool currentPair = IAlgebraV3Pool(PAIR);
 
         address poolToken0 = currentPair.token0();
         address outputToken = poolToken0 == _token ? currentPair.token1() : poolToken0;
@@ -106,7 +106,7 @@ contract PancakeV3PriceOracle is ITWAPPriceOracle, OnlyDolomiteMargin {
         int24 tick = OracleLibrary.consultPancakeSwap(address(currentPair), observationInterval);
         uint256 quote = OracleLibrary.getQuoteAtTick(tick, uint128(TOKEN_DECIMALS_FACTOR), _token, outputToken);
 
-        IOracleAggregator2 aggregator = IOracleAggregator2(address(DOLOMITE_REGISTRY.oracleAggregator()));
+        IOracleAggregatorV2 aggregator = IOracleAggregatorV2(address(DOLOMITE_REGISTRY.oracleAggregator()));
         uint8 outputTokenDecimals = aggregator.getDecimalsByToken(outputToken);
         /*assert(outputTokenDecimals > 0);*/
 

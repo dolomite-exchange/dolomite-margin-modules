@@ -24,12 +24,12 @@ import { IChainlinkPriceOracleV3 } from "./IChainlinkPriceOracleV3.sol";
 
 
 /**
- * @title   IOracleAggregator
+ * @title   IOracleAggregatorV1.sol
  * @author  Dolomite
  *
  * An interface of IDolomitePriceOracle that aggregates all oracles into one contract
  */
-interface IOracleAggregator is IDolomitePriceOracle {
+interface IOracleAggregatorV1 is IDolomitePriceOracle {
 
     // ============ Events ============
 

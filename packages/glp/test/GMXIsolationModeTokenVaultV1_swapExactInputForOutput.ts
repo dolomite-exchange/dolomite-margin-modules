@@ -1,8 +1,27 @@
-import { BigNumber, BigNumberish } from 'ethers';
-import deployments from  '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
-import { parseEther } from 'ethers/lib/utils';
+import {
+  SimpleIsolationModeUnwrapperTraderV2,
+  SimpleIsolationModeUnwrapperTraderV2__factory,
+} from '@dolomite-exchange/modules-base/src/types';
 import { GMX_GOV_MAP } from '@dolomite-exchange/modules-base/src/utils/constants';
+import { Network, ONE_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import {
+  getRealLatestBlockNumber,
+  impersonate,
+  revertToSnapshotAndCapture,
+  snapshot,
+  waitDays,
+} from '@dolomite-exchange/modules-base/test/utils';
+import { expectProtocolBalance } from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import {
+  setupCoreProtocol,
+  setupGMXBalance,
+  setupUserVaultProxy,
+} from '@dolomite-exchange/modules-base/test/utils/setup';
 import { getUnwrapZapParams } from '@dolomite-exchange/modules-base/test/utils/zap-utils';
+import deployments from '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
+import { BigNumber, BigNumberish } from 'ethers';
+import { parseEther } from 'ethers/lib/utils';
 import {
   IGLPIsolationModeVaultFactoryOld,
   IGMXIsolationModeVaultFactory,
@@ -11,26 +30,7 @@ import {
   TestGMXIsolationModeTokenVaultV1,
   TestGMXIsolationModeTokenVaultV1__factory,
 } from '../src/types';
-import {
-  SimpleIsolationModeUnwrapperTraderV2,
-  SimpleIsolationModeUnwrapperTraderV2__factory,
-} from '@dolomite-exchange/modules-base/src/types';
-import { Network, ONE_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import {
-  getRealLatestBlockNumber,
-  impersonate,
-  revertToSnapshotAndCapture,
-  snapshot,
-  waitDays
-} from '@dolomite-exchange/modules-base/test/utils';
-import { expectProtocolBalance, } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import {
-  setupCoreProtocol,
-  setupGMXBalance,
-  setupUserVaultProxy,
-} from '@dolomite-exchange/modules-base/test/utils/setup';
 import { createGMXIsolationModeTokenVaultV1 } from './glp-ecosystem-utils';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 
 const gmxAmount = parseEther('10'); // 10 GMX
 const esGmxAmount = parseEther('0.01'); // 0.01 esGMX tokens

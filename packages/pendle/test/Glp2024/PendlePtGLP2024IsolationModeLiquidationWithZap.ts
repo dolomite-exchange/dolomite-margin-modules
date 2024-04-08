@@ -1,4 +1,3 @@
-import deployments from '@dolomite-exchange/dolomite-margin-modules/scripts/deployments.json';
 import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
 import { Network, ONE_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import {
@@ -28,6 +27,7 @@ import {
   setupUserVaultProxy,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { checkForParaswapSuccess } from '@dolomite-exchange/modules-base/test/utils/trader-utils';
+import deployments from '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
 import { ApiToken, DolomiteZap, Network as ZapNetwork } from '@dolomite-exchange/zap-sdk';
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 import { BaseRouter, Router } from '@pendle/sdk-v2';
@@ -43,7 +43,6 @@ import {
   PendlePtGLP2024IsolationModeUnwrapperTraderV2__factory,
   PendlePtGLP2024IsolationModeVaultFactory,
   PendlePtGLP2024IsolationModeVaultFactory__factory,
-  PendlePtGLP2024IsolationModeWrapperTraderV2__factory,
 } from '../../src/types';
 
 const defaultAccountNumber = '0';
@@ -83,14 +82,14 @@ describe('PendlePtGLP2024IsolationModeLiquidationWithZap', () => {
       network: Network.ArbitrumOne,
     });
     const cacheDurationSeconds = 60;
-    zap = new DolomiteZap(
-      ZapNetwork.ARBITRUM_ONE,
-      process.env.SUBGRAPH_URL as string,
-      core.hhUser1.provider!,
-      cacheDurationSeconds,
-      true,
-      defaultSlippage,
-    );
+    zap = new DolomiteZap({
+      network: ZapNetwork.ARBITRUM_ONE,
+      subgraphUrl: process.env.SUBGRAPH_URL as string,
+      web3Provider: core.hhUser1.provider!,
+      cacheSeconds: cacheDurationSeconds,
+      defaultIsLiquidation: true,
+      defaultSlippageTolerance: defaultSlippage,
+    });
     underlyingToken = core.pendleEcosystem!.glpMar2024.ptGlpToken.connect(core.hhUser1);
     factory = PendlePtGLP2024IsolationModeVaultFactory__factory.connect(
       deployments.PendlePtGLP2024IsolationModeVaultFactory[Network.ArbitrumOne].address,

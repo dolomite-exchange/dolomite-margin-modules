@@ -20,16 +20,15 @@
 pragma solidity ^0.8.9;
 
 import { IDolomitePriceOracle } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomitePriceOracle.sol"; // solhint-disable-line max-line-length
-import { IChainlinkPriceOracleV3 } from "./IChainlinkPriceOracleV3.sol";
 
 
 /**
- * @title   IOracleAggregator
+ * @title   IOracleAggregatorV2.sol
  * @author  Dolomite
  *
  * An interface of IDolomitePriceOracle that aggregates all oracles into one contract
  */
-interface IOracleAggregator2 is IDolomitePriceOracle {
+interface IOracleAggregatorV2 is IDolomitePriceOracle {
 
     struct TokenInfo {
         OracleInfo[] oracleInfos;
@@ -63,19 +62,9 @@ interface IOracleAggregator2 is IDolomitePriceOracle {
 
     // ============ Getter Functions ============
 
-    // /**
-    //  *
-    //  * @param  _token  The token whose oracle should be retrieved
-    //  * @return         The oracle that corresponds with this token
-    //  */
-    // function getOracleByToken(address _token) external view returns (IChainlinkPriceOracleV3);
-
-    // /**
-    //  *
-    //  * @param  _token  The token whose oracle should be retrieved
-    //  * @return         The tokenPair that corresponds with this token
-    //  */
-    // function getTokenPairByToken(address _token) external view returns (address);
-
     function getDecimalsByToken(address _token) external view returns (uint8);
+
+    function getTokenInfo(address _token) external view returns (TokenInfo memory);
+
+    function getOraclesByToken(address _token) external view returns (OracleInfo[] memory);
 }

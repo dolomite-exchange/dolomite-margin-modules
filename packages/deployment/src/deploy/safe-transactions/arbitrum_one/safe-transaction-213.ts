@@ -1,6 +1,6 @@
 import {
   CHAINLINK_PRICE_AGGREGATORS_MAP,
-  WE_ETH_ETH_REDSTONE_FEED_MAP,
+  REDSTONE_PRICE_AGGREGATORS_MAP,
 } from '@dolomite-exchange/modules-base/src/utils/constants';
 import {
   TargetCollateralization,
@@ -9,8 +9,8 @@ import {
 import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { getRedstonePriceOracleConstructorParams } from '@dolomite-exchange/modules-oracles/src/oracles-constructors';
-import { RedstonePriceOracle__factory } from '@dolomite-exchange/modules-oracles/src/types';
+import { getRedstonePriceOracleV2ConstructorParams } from '@dolomite-exchange/modules-oracles/src/oracles-constructors';
+import { RedstonePriceOracleV2__factory } from '@dolomite-exchange/modules-oracles/src/types';
 import { parseEther } from 'ethers/lib/utils';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { ADDRESS_ZERO, Network, ONE_BI } from 'packages/base/src/utils/no-deps-constants';
@@ -34,21 +34,21 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
   let incrementor = 0;
 
-  const wethAggregator = await core.chainlinkPriceOracle.getAggregatorByToken(core.tokens.weth.address);
-  const weEthAggregator = WE_ETH_ETH_REDSTONE_FEED_MAP[Network.ArbitrumOne];
+  const wethAggregator = await core.chainlinkPriceOracleOld.getAggregatorByToken(core.tokens.weth.address);
 
+  const aggregatorInfo = REDSTONE_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][core.tokens.weEth.address];
   const redstonePriceOracleAddress = await deployContractAndSave(
     'RedstonePriceOracle',
-    await getRedstonePriceOracleConstructorParams(
+    await getRedstonePriceOracleV2ConstructorParams(
       [core.tokens.weth, core.tokens.weEth!],
-      [wethAggregator, weEthAggregator],
-      [ADDRESS_ZERO, core.tokens.weth.address],
+      [wethAggregator, aggregatorInfo.aggregatorAddress],
+      [ADDRESS_ZERO, aggregatorInfo.tokenPairAddress!],
       [false, false],
       core,
     ),
     'RedstonePriceOracleV1',
   );
-  const redstonePriceOracle = RedstonePriceOracle__factory.connect(redstonePriceOracleAddress, core.hhUser1);
+  const redstonePriceOracle = RedstonePriceOracleV2__factory.connect(redstonePriceOracleAddress, core.hhUser1);
   const numMarkets = await core.dolomiteMargin.getNumMarkets();
 
   const weEthMarketId = numMarkets.add(incrementor++);
@@ -87,12 +87,12 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       core,
-      'chainlinkPriceOracle',
+      'chainlinkPriceOracleOld',
       'ownerInsertOrUpdateOracleToken',
       [
         core.tokens.weEth.address,
         18,
-        CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][core.tokens.weEth.address],
+        CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][core.tokens.weEth.address].aggregatorAddress,
         ADDRESS_ZERO,
       ],
     ),

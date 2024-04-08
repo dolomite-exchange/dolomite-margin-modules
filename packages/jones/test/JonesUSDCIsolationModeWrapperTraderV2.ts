@@ -19,7 +19,6 @@ import {
   setupUserVaultProxy,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { IGmxRegistryV1 } from '@dolomite-exchange/modules-glp/src/types';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
@@ -65,7 +64,6 @@ describe('JonesUSDCIsolationModeWrapperTraderV2', () => {
   let vault: JonesUSDCIsolationModeTokenVaultV1;
   let priceOracle: JonesUSDCPriceOracle;
   let defaultAccount: AccountInfoStruct;
-  let solidUser: SignerWithAddress;
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
@@ -107,8 +105,6 @@ describe('JonesUSDCIsolationModeWrapperTraderV2', () => {
 
     await factory.connect(core.governance).ownerInitialize([wrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
-
-    solidUser = core.hhUser5;
 
     await factory.createVault(core.hhUser1.address);
     const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);

@@ -26,7 +26,7 @@ import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/
 import { IChainlinkAccessControlAggregator } from "./interfaces/IChainlinkAccessControlAggregator.sol";
 import { IChainlinkAggregator } from "./interfaces/IChainlinkAggregator.sol";
 import { IChainlinkPriceOracleV3 } from "./interfaces/IChainlinkPriceOracleV3.sol";
-import { IOracleAggregator2 } from "./interfaces/IOracleAggregator2.sol";
+import { IOracleAggregatorV2 } from "./interfaces/IOracleAggregatorV2.sol";
 
 
 /**
@@ -34,6 +34,7 @@ import { IOracleAggregator2 } from "./interfaces/IOracleAggregator2.sol";
  * @author  Dolomite
  *
  * An implementation of the IDolomitePriceOracle interface that makes Chainlink prices compatible with the protocol.
+ * This implementation is meant to be tied to an
  */
 contract ChainlinkPriceOracleV3 is IChainlinkPriceOracleV3, OnlyDolomiteMargin {
 
@@ -45,8 +46,6 @@ contract ChainlinkPriceOracleV3 is IChainlinkPriceOracleV3, OnlyDolomiteMargin {
     // ========================= Storage =========================
 
     mapping(address => IChainlinkAggregator) private _tokenToAggregatorMap;
-
-    mapping(address => uint8) private _tokenToDecimalsMap;
 
     mapping(address => bool) private _tokenToInvertPriceMap;
 
@@ -61,7 +60,6 @@ contract ChainlinkPriceOracleV3 is IChainlinkPriceOracleV3, OnlyDolomiteMargin {
      *
      * @param  _tokens                  The tokens that are supported by this adapter.
      * @param  _chainlinkAggregators    The Chainlink aggregators that have on-chain prices.
-     * @param  _tokenDecimals           The number of decimals that each token has.
      * @param  _invertPrice             True if should invert price received from Chainlink
      * @param  _dolomiteRegistry        The address of the DolomiteRegistry contract.
      * @param  _dolomiteMargin          The address of the DolomiteMargin contract.
@@ -69,7 +67,6 @@ contract ChainlinkPriceOracleV3 is IChainlinkPriceOracleV3, OnlyDolomiteMargin {
     constructor(
         address[] memory _tokens,
         address[] memory _chainlinkAggregators,
-        uint8[] memory _tokenDecimals,
         bool[] memory _invertPrice,
         address _dolomiteRegistry,
         address _dolomiteMargin
@@ -82,21 +79,15 @@ contract ChainlinkPriceOracleV3 is IChainlinkPriceOracleV3, OnlyDolomiteMargin {
             "Invalid tokens length"
         );
         Require.that(
-            _chainlinkAggregators.length == _tokenDecimals.length,
+            _chainlinkAggregators.length == _invertPrice.length,
             _FILE,
             "Invalid aggregators length"
-        );
-        Require.that(
-            _tokenDecimals.length == _invertPrice.length,
-            _FILE,
-            "Invalid decimals length"
         );
 
         uint256 tokensLength = _tokens.length;
         for (uint256 i; i < tokensLength; ++i) {
             _ownerInsertOrUpdateOracleToken(
                 _tokens[i],
-                _tokenDecimals[i],
                 _chainlinkAggregators[i],
                 _invertPrice[i]
             );
@@ -119,7 +110,6 @@ contract ChainlinkPriceOracleV3 is IChainlinkPriceOracleV3, OnlyDolomiteMargin {
 
     function ownerInsertOrUpdateOracleToken(
         address _token,
-        uint8 _tokenDecimals,
         address _chainlinkAggregator,
         bool _invertPrice
     )
@@ -128,7 +118,6 @@ contract ChainlinkPriceOracleV3 is IChainlinkPriceOracleV3, OnlyDolomiteMargin {
     {
         _ownerInsertOrUpdateOracleToken(
             _token,
-            _tokenDecimals,
             _chainlinkAggregator,
             _invertPrice
         );
@@ -167,7 +156,8 @@ contract ChainlinkPriceOracleV3 is IChainlinkPriceOracleV3, OnlyDolomiteMargin {
             block.timestamp - updatedAt < stalenessThreshold,
             _FILE,
             "Chainlink price expired",
-            _token
+            _token,
+            updatedAt
         );
 
         IChainlinkAccessControlAggregator controlAggregator = aggregatorProxy.aggregator();
@@ -191,7 +181,7 @@ contract ChainlinkPriceOracleV3 is IChainlinkPriceOracleV3, OnlyDolomiteMargin {
         }
 
         // standardize the Chainlink price to be the proper number of decimals of (36 - tokenDecimals)
-        IOracleAggregator2 aggregator = IOracleAggregator2(address(DOLOMITE_REGISTRY.oracleAggregator()));
+        IOracleAggregatorV2 aggregator = IOracleAggregatorV2(address(DOLOMITE_REGISTRY.oracleAggregator()));
         uint8 tokenDecimals = aggregator.getDecimalsByToken(_token);
         assert(tokenDecimals > 0);
         uint256 standardizedPrice = standardizeNumberOfDecimals(
@@ -207,10 +197,6 @@ contract ChainlinkPriceOracleV3 is IChainlinkPriceOracleV3, OnlyDolomiteMargin {
 
     function getAggregatorByToken(address _token) public view returns (IChainlinkAggregator) {
         return _tokenToAggregatorMap[_token];
-    }
-
-    function getDecimalsByToken(address _token) public view returns (uint8) {
-        return _tokenToDecimalsMap[_token];
     }
 
     function getInvertPriceByToken(address _token) public view returns (bool _invertPrice) {
@@ -261,12 +247,10 @@ contract ChainlinkPriceOracleV3 is IChainlinkPriceOracleV3, OnlyDolomiteMargin {
 
     function _ownerInsertOrUpdateOracleToken(
         address _token,
-        uint8 _tokenDecimals,
         address _chainlinkAggregator,
         bool _invertPrice
     ) internal {
         _tokenToAggregatorMap[_token] = IChainlinkAggregator(_chainlinkAggregator);
-        _tokenToDecimalsMap[_token] = _tokenDecimals;
         _tokenToInvertPriceMap[_token] = _invertPrice;
         emit TokenInsertedOrUpdated(_token, _chainlinkAggregator);
     }

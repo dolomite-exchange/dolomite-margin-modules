@@ -57,13 +57,11 @@ interface IChainlinkPriceOracleV3 is IDolomitePriceOracle {
      * @dev Insert or update a token in the oracle. This function can only be called by the owner of DolomiteMargin.
      *
      * @param  _token               The token whose Chainlink aggregator should be inserted or updated
-     * @param  _tokenDecimals       The number of decimals that this token has
      * @param  _chainlinkAggregator The Chainlink aggregator that corresponds with this token
      * @param  _invertPrice         True if should invert the price received from Chainlink
      */
     function ownerInsertOrUpdateOracleToken(
         address _token,
-        uint8 _tokenDecimals,
         address _chainlinkAggregator,
         bool _invertPrice
     )
@@ -77,13 +75,6 @@ interface IChainlinkPriceOracleV3 is IDolomitePriceOracle {
      * @return         The aggregator that corresponds with this token
      */
     function getAggregatorByToken(address _token) external view returns (IChainlinkAggregator);
-
-    /**
-     *
-     * @param  _token The token whose decimals should be retrieved
-     * @return        The number of decimals that this token has
-     */
-    function getDecimalsByToken(address _token) external view returns (uint8);
 
     /**
      *

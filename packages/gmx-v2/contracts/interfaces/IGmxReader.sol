@@ -365,6 +365,22 @@ interface IGmxReader {
     error MaskIndexOutOfBounds(uint256 index, string label);
     error DuplicatedIndex(uint256 index, string label);
 
+    // =============== Structs ==============
+
+    // @dev SwapFees struct to contain swap fee values
+    // @param  feeReceiverAmount    The fee amount for the fee receiver
+    // @param  feeAmountForPool     The fee amount for the pool
+    // @param  amountAfterFees      The output amount after fees
+    struct SwapFees {
+        uint256 feeReceiverAmount;
+        uint256 feeAmountForPool;
+        uint256 amountAfterFees;
+
+        address uiFeeReceiver;
+        uint256 uiFeeReceiverFactor;
+        uint256 uiFeeAmount;
+    }
+
     // =============== Functions ==============
 
     function getMarketTokenPrice(
@@ -413,6 +429,15 @@ interface IGmxReader {
         GmxPrice.PriceProps memory _tokenInPrice,
         GmxPrice.PriceProps memory _tokenOutPrice
     ) external view returns (int256, int256);
+
+    function getSwapAmountOut(
+        IGmxDataStore _dataStore,
+        GmxMarket.MarketProps memory _market,
+        GmxMarket.MarketPrices memory _prices,
+        address _tokenIn,
+        uint256 _amountIn,
+        address _uiFeeReceiver
+    ) external view returns (uint256, int256, SwapFees memory fees);
 
     function getDepositAmountOut(
         IGmxDataStore _dataStore,

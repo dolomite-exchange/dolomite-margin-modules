@@ -1,4 +1,4 @@
-import deployments from '@dolomite-exchange/dolomite-margin-modules/scripts/deployments.json';
+import deployments from '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
 import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
 import { depositIntoDolomiteMargin } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import {
@@ -23,7 +23,7 @@ import {
   setupUSDCBalance,
   setupUserVaultProxy,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { ApiToken, DolomiteZap, Network as ZapNetwork } from '@dolomite-exchange/zap-sdk/dist';
+import { ApiToken, DolomiteZap, Network as ZapNetwork } from '@dolomite-exchange/zap-sdk';
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
@@ -121,11 +121,11 @@ describe('JonesUSDCIsolationModeLiquidationWithZap', () => {
       decimals: 18,
       tokenAddress: factory.address,
     };
-    zap = new DolomiteZap(
-      ZapNetwork.ARBITRUM_ONE,
-      process.env.SUBGRAPH_URL as string,
-      core.hhUser1.provider!,
-    );
+    zap = new DolomiteZap({
+      network: ZapNetwork.ARBITRUM_ONE,
+      subgraphUrl: process.env.SUBGRAPH_URL as string,
+      web3Provider: core.hhUser1.provider!,
+    });
 
     // admin setup
     await priceOracle.connect(core.governance).ownerSetGracePeriod(ONE_WEEK_SECONDS * 52);

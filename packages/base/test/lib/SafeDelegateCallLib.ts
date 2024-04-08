@@ -1,10 +1,7 @@
 import { expect } from 'chai';
 import { TestSafeDelegateCallLib } from '../../src/types';
 import { createContractWithLibrary, createContractWithName } from '../../src/utils/dolomite-utils';
-import { Network } from '../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
-import { CoreProtocolArbitrumOne } from '../utils/core-protocol';
-import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '../utils/setup';
 import { expectThrow } from '../utils/assertions';
 
 describe('SafeDelegateCallLib', () => {

@@ -20,53 +20,52 @@
 pragma solidity ^0.8.9;
 
 import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
-import { IAlgebraV3Pool } from "@dolomite-exchange/modules-base/contracts/interfaces/IAlgebraV3Pool.sol";
+import { IDolomiteRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IDolomiteRegistry.sol";
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
-import { OracleLibrary } from "@dolomite-exchange/modules-base/contracts/utils/OracleLibrary.sol";
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import { ITWAPPriceOracle } from "./interfaces/ITWAPPriceOracle.sol";
+import { IAlgebraV3Pool } from "./interfaces/IAlgebraV3Pool.sol";
+import { IOracleAggregatorV2 } from "./interfaces/IOracleAggregatorV2.sol";
+import { ITWAPPriceOracleV1 } from "./interfaces/ITWAPPriceOracleV1.sol";
+import { OracleLibrary } from "./utils/OracleLibrary.sol";
 
 
 /**
- * @title   TWAPPriceOracle
+ * @title   TWAPPriceOracleV2
  * @author  Dolomite
  *
- * An implementation of the ITWAPPriceOracle interface that makes gets the TWAP from a number of LP pools
+ * An implementation of the ITWAPPriceOracleV1.sol interface that makes gets the TWAP from a number of LP pools
  */
-contract TWAPPriceOracle is ITWAPPriceOracle, OnlyDolomiteMargin {
-    using EnumerableSet for EnumerableSet.AddressSet;
+contract TWAPPriceOracleV2 is ITWAPPriceOracleV1, OnlyDolomiteMargin {
 
     // ========================= Constants =========================
 
-    bytes32 private constant _FILE = "TWAPPriceOracle";
+    bytes32 private constant _FILE = "TWAPPriceOracleV2";
     uint256 private constant _ONE_DOLLAR = 10 ** 36;
-    uint8 private constant _ORACLE_VALUE_DECIMALS = 36;
 
     // ========================= Storage =========================
-
-    EnumerableSet.AddressSet private _pairs;
 
     uint32 public observationInterval;
 
     address public immutable TOKEN; // solhint-disable-line var-name-mixedcase
+    address public immutable PAIR;
     uint256 public immutable TOKEN_DECIMALS_FACTOR; // solhint-disable-line var-name-mixedcase
+    IDolomiteRegistry public immutable DOLOMITE_REGISTRY;
 
     // ========================= Constructor =========================
 
     constructor(
         address _token,
-        address[] memory _tokenPairs,
+        address _pair,
+        address _dolomiteRegistry,
         address _dolomiteMargin
     ) OnlyDolomiteMargin(_dolomiteMargin) {
         TOKEN = _token;
-        for (uint256 i; i < _tokenPairs.length; ++i) {
-            _ownerAddPair(_tokenPairs[i]);
-        }
+        PAIR = _pair;
         _ownerSetObservationInterval(15 minutes);
 
         TOKEN_DECIMALS_FACTOR = 10 ** IERC20Metadata(_token).decimals();
+        DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
     }
 
     // ========================= Admin Functions =========================
@@ -80,29 +79,7 @@ contract TWAPPriceOracle is ITWAPPriceOracle, OnlyDolomiteMargin {
         _ownerSetObservationInterval(_observationInterval);
     }
 
-    function ownerAddPair(
-        address _pair
-    )
-        external
-        onlyDolomiteMarginOwner(msg.sender)
-    {
-        _ownerAddPair(_pair);
-    }
-
-    function ownerRemovePair(
-        address _pairAddress
-    )
-        external
-        onlyDolomiteMarginOwner(msg.sender)
-    {
-        _ownerRemovePair(_pairAddress);
-    }
-
     // ========================= Public Functions =========================
-
-    function getPairs() external view returns (address[] memory) {
-        return _pairs.values();
-    }
 
     function getPrice(
         address _token
@@ -110,62 +87,31 @@ contract TWAPPriceOracle is ITWAPPriceOracle, OnlyDolomiteMargin {
     public
     view
     returns (IDolomiteStructs.MonetaryPrice memory) {
-        uint256 len = _pairs.length();
         Require.that(
             _token == TOKEN,
             _FILE,
             "Invalid token",
             _token
         );
-        Require.that(
-            len > 0,
-            _FILE,
-            "Oracle contains no pairs"
-        );
 
-        uint256 totalPrice;
-        for (uint256 i; i < len; ++i) {
-            IAlgebraV3Pool currentPair = IAlgebraV3Pool(_pairs.at(i));
+        IAlgebraV3Pool currentPair = IAlgebraV3Pool(PAIR);
 
-            address poolToken0 = currentPair.token0();
-            address outputToken = poolToken0 == _token ? currentPair.token1() : poolToken0;
+        address poolToken0 = currentPair.token0();
+        address outputToken = poolToken0 == _token ? currentPair.token1() : poolToken0;
 
-            int24 tick = OracleLibrary.consult(address(currentPair), observationInterval);
-            uint256 quote = OracleLibrary.getQuoteAtTick(tick, uint128(TOKEN_DECIMALS_FACTOR), _token, outputToken);
-            IDolomiteStructs.MonetaryPrice memory price =
-                DOLOMITE_MARGIN().getMarketPrice(DOLOMITE_MARGIN().getMarketIdByTokenAddress(outputToken));
+        int24 tick = OracleLibrary.consult(address(currentPair), observationInterval);
+        uint256 quote = OracleLibrary.getQuoteAtTick(tick, uint128(TOKEN_DECIMALS_FACTOR), _token, outputToken);
 
-            totalPrice += _standardizeNumberOfDecimals(price.value * quote, _ORACLE_VALUE_DECIMALS);
-        }
+        IOracleAggregatorV2 aggregator = IOracleAggregatorV2(address(DOLOMITE_REGISTRY.oracleAggregator()));
+        uint8 outputTokenDecimals = aggregator.getDecimalsByToken(outputToken);
+        assert(outputTokenDecimals > 0);
 
         return IDolomiteStructs.MonetaryPrice({
-            value: totalPrice / len
+            value: _standardizeNumberOfDecimals(quote, outputTokenDecimals)
         });
     }
 
     // ========================= Internal Functions =========================
-
-    function _ownerAddPair(
-        address _pair
-    )
-    internal {
-        IAlgebraV3Pool pool = IAlgebraV3Pool(_pair);
-        Require.that(
-            pool.token0() == TOKEN || pool.token1() == TOKEN,
-            _FILE,
-            "Pair must contain oracle token"
-        );
-        _pairs.add(_pair);
-        emit PairAdded(_pair);
-    }
-
-    function _ownerRemovePair(
-        address _pairAddress
-    )
-    internal {
-        _pairs.remove(_pairAddress);
-        emit PairRemoved(_pairAddress);
-    }
 
     function _ownerSetObservationInterval(
         uint32 _observationInterval

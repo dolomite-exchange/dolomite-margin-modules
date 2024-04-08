@@ -1,6 +1,6 @@
+import { SignerWithAddressWithSafety } from '@dolomite-exchange/modules-base/src/utils/SignerWithAddressWithSafety';
 import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
@@ -31,7 +31,7 @@ describe('VesterExploder', () => {
   let vesterExploder: VesterExploder;
   let oARB: OARB;
   let nextNftId: BigNumber;
-  let handler: SignerWithAddress;
+  let handler: SignerWithAddressWithSafety;
 
   before(async () => {
     core = await setupCoreProtocol({

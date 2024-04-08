@@ -1,4 +1,31 @@
 import {
+  RegistryProxy,
+  RegistryProxy__factory,
+  SimpleIsolationModeUnwrapperTraderV2,
+  SimpleIsolationModeUnwrapperTraderV2__factory,
+  SimpleIsolationModeWrapperTraderV2,
+  SimpleIsolationModeWrapperTraderV2__factory,
+} from '@dolomite-exchange/modules-base/src/types';
+import {
+  createContractWithAbi,
+  createContractWithLibrary,
+} from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import { createIsolationModeTokenVaultV1ActionsImpl } from '@dolomite-exchange/modules-base/test/utils/dolomite';
+import {
+  getGLPIsolationModeUnwrapperTraderV2ConstructorParams,
+  getGLPIsolationModeVaultFactoryConstructorParams,
+  getGLPIsolationModeWrapperTraderV2ConstructorParams,
+  getGLPPriceOracleV1ConstructorParams,
+  getGLPUnwrapperTraderV1ConstructorParams,
+  getGLPWrapperTraderV1ConstructorParams,
+  getGMXIsolationModeVaultFactoryConstructorParams,
+  getGmxRegistryConstructorParams,
+  getGMXUnwrapperTraderV2ConstructorParams,
+  getGMXWrapperTraderV2ConstructorParams,
+  GmxUserVaultImplementation,
+} from '../src/glp-constructors';
+import {
   GLPIsolationModeTokenVaultV1,
   GLPIsolationModeTokenVaultV2,
   GLPIsolationModeUnwrapperTraderV1,
@@ -26,33 +53,6 @@ import {
   TestGLPIsolationModeTokenVaultV2,
   TestGMXIsolationModeTokenVaultV1,
 } from '../src/types';
-import {
-  RegistryProxy,
-  RegistryProxy__factory,
-  SimpleIsolationModeUnwrapperTraderV2,
-  SimpleIsolationModeUnwrapperTraderV2__factory,
-  SimpleIsolationModeWrapperTraderV2,
-  SimpleIsolationModeWrapperTraderV2__factory
-} from '@dolomite-exchange/modules-base/src/types';
-import {
-  getGLPIsolationModeUnwrapperTraderV2ConstructorParams,
-  getGLPIsolationModeVaultFactoryConstructorParams,
-  getGLPIsolationModeWrapperTraderV2ConstructorParams,
-  getGLPPriceOracleV1ConstructorParams,
-  getGLPUnwrapperTraderV1ConstructorParams,
-  getGLPWrapperTraderV1ConstructorParams,
-  getGMXIsolationModeVaultFactoryConstructorParams,
-  getGmxRegistryConstructorParams,
-  getGMXUnwrapperTraderV2ConstructorParams,
-  getGMXWrapperTraderV2ConstructorParams,
-  GmxUserVaultImplementation,
-} from '../src/glp-constructors';
-import {
-  createContractWithAbi,
-  createContractWithLibrary
-} from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { createIsolationModeTokenVaultV1ActionsImpl, } from '@dolomite-exchange/modules-base/test/utils/dolomite';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 
 export async function createGLPPriceOracleV1(
   dfsGlp: IGLPIsolationModeVaultFactory | GLPIsolationModeVaultFactory,

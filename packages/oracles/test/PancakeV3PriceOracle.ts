@@ -5,8 +5,8 @@ import { parseEther } from 'ethers/lib/utils';
 import {
   ChainlinkPriceOracleV3,
   ChainlinkPriceOracleV3__factory,
-  OracleAggregator2,
-  OracleAggregator2__factory,
+  OracleAggregatorV2,
+  OracleAggregatorV2__factory,
   PancakeV3PriceOracle,
   PancakeV3PriceOracle__factory
 } from '../src/types';
@@ -37,7 +37,7 @@ describe('PancakeV3PriceOracle', () => {
   let oracle: PancakeV3PriceOracle;
   let maticOracle: PancakeV3PriceOracle;
   let chainlinkOracle: ChainlinkPriceOracleV3;
-  let oracleAggregator: OracleAggregator2;
+  let oracleAggregator: OracleAggregatorV2;
 
   before(async () => {
     const blockNumber = 10_863_200;
@@ -110,9 +110,9 @@ describe('PancakeV3PriceOracle', () => {
         token: core.tokens.matic.address
       }
     ];
-    oracleAggregator = (await createContractWithAbi<OracleAggregator2>(
-      OracleAggregator2__factory.abi,
-      OracleAggregator2__factory.bytecode,
+    oracleAggregator = (await createContractWithAbi<OracleAggregatorV2>(
+      OracleAggregatorV2__factory.abi,
+      OracleAggregatorV2__factory.bytecode,
       [
         tokenInfos,
         core.dolomiteMargin.address
@@ -133,7 +133,7 @@ describe('PancakeV3PriceOracle', () => {
       expect(await oracle.TOKEN_DECIMALS_FACTOR()).to.eq(parseEther('1'));
       expect(await oracle.DOLOMITE_MARGIN()).to.eq(core.dolomiteMargin.address);
       expect(await oracle.observationInterval()).to.eq(FIFTEEN_MINUTES);
-      expect(await oracle.pair()).to.eq(CAKE_USDC_PAIR);
+      expect(await oracle.PAIR()).to.eq(CAKE_USDC_PAIR);
     });
   });
 
@@ -143,7 +143,7 @@ describe('PancakeV3PriceOracle', () => {
       expect(price.value).to.eq(CAKE_PRICE_USDC_POOL);
     });
 
-    // Using USDT and WETH pool to test with token0 as output token
+    // Using MATIC and WETH pool to test with token0 as output token
     it('should work normally when output token is token0', async () => {
       const otherOracle = await createContractWithAbi<PancakeV3PriceOracle>(
         PancakeV3PriceOracle__factory.abi,

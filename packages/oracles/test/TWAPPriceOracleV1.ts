@@ -2,9 +2,9 @@ import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/ut
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
-import { TWAPPriceOracle, TWAPPriceOracle__factory } from '../src/types';
+import { TWAPPriceOracleV1, TWAPPriceOracleV1__factory } from '../src/types';
 import { TestPair, TestPair__factory } from '@dolomite-exchange/modules-base/src/types';
-import { getTWAPPriceOracleConstructorParams } from '../src/oracles-constructors';
+import { getTWAPPriceOracleV1ConstructorParams } from '../src/oracles-constructors';
 import { createContractWithAbi } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { Network, ONE_DAY_SECONDS } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
@@ -19,11 +19,11 @@ const GRAIL_PRICE_WETH_POOL = BigNumber.from('792088096763836295510');
 const ARB_PRICE_WETH_POOL = BigNumber.from('920176763082082501');
 const FIFTEEN_MINUTES = BigNumber.from('900');
 
-describe('TWAPPriceOracle', () => {
+describe('TWAPPriceOracleV1', () => {
   let snapshotId: string;
 
   let core: CoreProtocolArbitrumOne;
-  let oracle: TWAPPriceOracle;
+  let oracle: TWAPPriceOracleV1;
 
   before(async () => {
     // Setting to block when ARB was not very volatile
@@ -33,10 +33,10 @@ describe('TWAPPriceOracle', () => {
       network: Network.ArbitrumOne,
     });
 
-    oracle = await createContractWithAbi<TWAPPriceOracle>(
-      TWAPPriceOracle__factory.abi,
-      TWAPPriceOracle__factory.bytecode,
-      getTWAPPriceOracleConstructorParams(
+    oracle = await createContractWithAbi<TWAPPriceOracleV1>(
+      TWAPPriceOracleV1__factory.abi,
+      TWAPPriceOracleV1__factory.bytecode,
+      getTWAPPriceOracleV1ConstructorParams(
         core,
         core.tokens.grail!,
         [core.camelotEcosystem!.grailUsdcV3Pool],
@@ -81,9 +81,9 @@ describe('TWAPPriceOracle', () => {
 
     // No pool with GRAIL for this so testing with ETH and ARB pool
     it('should work normally when output token is token0', async () => {
-      const otherOracle = await createContractWithAbi<TWAPPriceOracle>(
-        TWAPPriceOracle__factory.abi,
-        TWAPPriceOracle__factory.bytecode,
+      const otherOracle = await createContractWithAbi<TWAPPriceOracleV1>(
+        TWAPPriceOracleV1__factory.abi,
+        TWAPPriceOracleV1__factory.bytecode,
         [ARB_TOKEN, [ARB_WETH_POOL], core.dolomiteMargin.address],
       );
       const price = (await otherOracle.getPrice(ARB_TOKEN)).value;
@@ -101,7 +101,7 @@ describe('TWAPPriceOracle', () => {
     it('should fail if invalid input token', async () => {
       await expectThrow(
         oracle.connect(core.hhUser1).getPrice(core.tokens.weth.address),
-        `TWAPPriceOracle: Invalid token <${core.tokens.weth.address.toLowerCase()}>`,
+        `TWAPPriceOracleV1: Invalid token <${core.tokens.weth.address.toLowerCase()}>`,
       );
     });
 
@@ -109,7 +109,7 @@ describe('TWAPPriceOracle', () => {
       await oracle.connect(core.governance).ownerRemovePair(core.camelotEcosystem!.grailUsdcV3Pool.address);
       await expectThrow(
         oracle.connect(core.hhUser1).getPrice(core.tokens.grail!.address),
-        'TWAPPriceOracle: Oracle contains no pairs',
+        'TWAPPriceOracleV1: Oracle contains no pairs',
       );
     });
   });
@@ -161,7 +161,7 @@ describe('TWAPPriceOracle', () => {
       );
       await expectThrow(
         oracle.connect(core.governance).ownerAddPair(myPair.address),
-        'TWAPPriceOracle: Pair must contain oracle token',
+        'TWAPPriceOracleV1: Pair must contain oracle token',
       );
     });
 

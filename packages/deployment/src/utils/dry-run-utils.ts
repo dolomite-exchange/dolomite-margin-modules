@@ -6,24 +6,23 @@ import {
 import { advanceByTimeDelta, impersonate } from '@dolomite-exchange/modules-base/test/utils';
 import { CoreProtocolType } from '@dolomite-exchange/modules-base/test/utils/setup';
 import hardhat from 'hardhat';
-import { createFolder, DenJsonUpload, readDeploymentFile, writeDeploymentFile, writeFile } from './deploy-utils';
+import {
+  createFolder,
+  DenJsonUpload,
+  EncodedTransaction,
+  readDeploymentFile,
+  writeDeploymentFile,
+  writeFile,
+} from './deploy-utils';
 
-const CHUNK_SIZE = 16;
 const HARDHAT_CHAIN_ID = '31337';
 
 export interface DryRunOutput<T extends NetworkType> {
   readonly upload: DenJsonUpload;
   readonly core: CoreProtocolType<T>;
   readonly scriptName: string;
+  readonly skipTimeDelay?: boolean;
   readonly invariants?: () => Promise<void>;
-}
-
-function chunkify<T>(array: T[], chunkSize: number): T[][] {
-  const result = [];
-  for (let i = 0; i < array.length; i += chunkSize) {
-    result.push(array.slice(i, i + chunkSize));
-  }
-  return result;
 }
 
 function cleanHardhatDeployment(): void {
@@ -47,35 +46,55 @@ async function doStuffInternal<T extends NetworkType>(
   if (hardhat.network.name === 'hardhat') {
     const result = await executionFn();
 
-    console.log('\tSimulating admin transactions...');
-    const signer = await impersonate((await result.core.delayedMultiSig.getOwners())[0], true);
-    const delayedMultiSig = result.core.delayedMultiSig.connect(signer);
-    const filter = delayedMultiSig.filters.Submission();
-    const transactionIds = [];
-    for (const transaction of result.upload.transactions) {
-      let txResult;
-      if (transaction.to === result.core.delayedMultiSig.address) {
-        txResult = await signer.sendTransaction({
-          to: transaction.to,
-          data: transaction.data,
-          from: signer.address,
-        });
-      } else {
-        txResult = await delayedMultiSig.submitTransaction(transaction.to, ZERO_BI, transaction.data);
+    if (result.core) {
+      console.log('\tSimulating admin transactions...');
+      const signer = await impersonate((await result.core.delayedMultiSig.getOwners())[0], true);
+      const delayedMultiSig = result.core.delayedMultiSig.connect(signer);
+      const filter = delayedMultiSig.filters.Submission();
+      const transactionIds = [];
+      const timeDelay = result.skipTimeDelay ? 0 : await delayedMultiSig.secondsTimeLocked();
+
+      if (result.skipTimeDelay) {
+        console.log('\tSkipping time delay...');
+        const impersonator = await impersonate(delayedMultiSig.address, true);
+        await delayedMultiSig.connect(impersonator).changeTimeLock(0);
       }
 
-      transactionIds.push((await delayedMultiSig.queryFilter(filter, txResult.blockHash))[0].args.transactionId);
-    }
+      for (const transaction of result.upload.transactions) {
+        let txResult;
+        if (transaction.to === result.core.delayedMultiSig.address) {
+          txResult = await signer.sendTransaction({
+            to: transaction.to,
+            data: transaction.data,
+            from: signer.address,
+          });
+        } else {
+          txResult = await delayedMultiSig.submitTransaction(transaction.to, ZERO_BI, transaction.data);
+        }
 
-    console.log('\tSubmitted transactions. Advancing time forward...');
-    await advanceByTimeDelta((await delayedMultiSig.secondsTimeLocked()) + 1);
+        const submissionEvent = (await delayedMultiSig.queryFilter(filter, txResult.blockHash))[0];
+        if (submissionEvent) {
+          transactionIds.push(submissionEvent.args.transactionId);
+        }
+      }
 
-    console.log('\tExecuting chunked transactions...');
-    const transactionIdChunks = chunkify(transactionIds, CHUNK_SIZE);
-    for (const transactionIdChunk of transactionIdChunks) {
-      await delayedMultiSig.executeMultipleTransactions(transactionIdChunk);
+      console.log('\tSubmitted transactions. Advancing time forward...');
+      await advanceByTimeDelta(timeDelay + 1);
+
+      console.log('\tExecuting transactions...');
+      for (const transactionId of transactionIds) {
+        try {
+          await delayedMultiSig.executeMultipleTransactions([transactionId]);
+        } catch (e: any) {
+          const transactionIndex = transactionId.sub(transactionIds[0]).toNumber();
+          throw new Error(
+            `Execution of transaction with ID ${transactionId.toString()} failed due to error: ${e.message}\n
+            transaction: ${JSON.stringify(result.upload.transactions[transactionIndex], undefined, 2)}`,
+          );
+        }
+      }
+      console.log('\tAdmin transactions succeeded!');
     }
-    console.log('\tAdmin transactions succeeded!');
 
     if (result.invariants) {
       console.log('\tChecking invariants...');
@@ -108,6 +127,7 @@ export async function doDryRunAndCheckDeployment<T extends NetworkType>(
       process.exit(0);
     })
     .catch(e => {
+      cleanHardhatDeployment();
       console.error(new Error(e.stack));
       process.exit(1);
     });

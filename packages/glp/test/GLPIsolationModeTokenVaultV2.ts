@@ -1,8 +1,29 @@
+import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
+import { GMX_GOV_MAP } from '@dolomite-exchange/modules-base/src/utils/constants';
+import { MAX_UINT_256_BI, Network, ONE_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import {
+  impersonate,
+  revertToSnapshotAndCapture,
+  snapshot,
+  waitDays,
+} from '@dolomite-exchange/modules-base/test/utils';
+import {
+  expectProtocolBalance,
+  expectThrow,
+  expectWalletBalance,
+} from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import {
+  setupCoreProtocol,
+  setupGMXBalance,
+  setupTestMarket,
+  setupUSDCBalance,
+  setupUserVaultProxy,
+} from '@dolomite-exchange/modules-base/test/utils/setup';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
-import { GMX_GOV_MAP } from '@dolomite-exchange/modules-base/src/utils/constants';
 import {
   GLPIsolationModeTokenVaultV1,
   GLPIsolationModeTokenVaultV1__factory,
@@ -16,34 +37,13 @@ import {
   TestGLPIsolationModeTokenVaultV2,
   TestGLPIsolationModeTokenVaultV2__factory,
 } from '../src/types';
-import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
-import { MAX_UINT_256_BI, Network, ONE_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import {
-  impersonate,
-  revertToSnapshotAndCapture,
-  snapshot,
-  waitDays
-} from '@dolomite-exchange/modules-base/test/utils';
-import {
-  expectProtocolBalance,
-  expectThrow,
-  expectWalletBalance
-} from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
   createGMXIsolationModeTokenVaultV1,
   createGMXIsolationModeVaultFactory,
   createGmxRegistry,
   createTestGLPIsolationModeTokenVaultV2,
 } from './glp-ecosystem-utils';
-import {
-  setupCoreProtocol,
-  setupGMXBalance,
-  setupTestMarket,
-  setupUSDCBalance,
-  setupUserVaultProxy,
-} from '@dolomite-exchange/modules-base/test/utils/setup';
 import { DEFAULT_BLOCK_NUMBER_FOR_GLP_WITH_VESTING } from './glp-utils';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 
 const gmxAmount = BigNumber.from('10000000000000000000'); // 10 GMX
 const usdcAmount = BigNumber.from('2000000000'); // 2,000 USDC

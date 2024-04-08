@@ -7,8 +7,8 @@
     "test": "hardhat --network hardhat test",
     "coverage": "yarn coverage:prepare && COVERAGE=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat coverage --testfiles \"test/*.ts\" --solcoverjs ../../.solcover.js --network hardhat",
     "coverage:prepare": "ts-node ../../scripts/fix-contracts-for-coverage.ts gmx-v2",
-    "coverage:specific": "yarn coverage:prepare && COVERAGE=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat coverage --testfiles \"test/general/BaseRegistry.ts\" --solcoverjs ../../.solcover.js --network hardhat",
-    "test:specific": "TEST_SPECIFIC=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat --network hardhat test test/general/BaseRegistry.ts",
+    "coverage:specific": "yarn coverage:prepare && COVERAGE=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat coverage --testfiles \"test/GmxV2IsolationModeTokenVaultV1.ts\" --solcoverjs ../../.solcover.js --network hardhat",
+    "test:specific": "TEST_SPECIFIC=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat --network hardhat test test/GmxV2IsolationModeWrapperTraderV2.ts",
     "lint": "yarn lint:sol && yarn lint:ts",
     "lint:sol": "hardhat check && python ../../scripts/lint-contracts.py fix gmx-v2",
     "lint:ts": "tslint --project ../../ -t verbose 'src/**/*.ts' 'test/**/*.ts'"

@@ -1,16 +1,27 @@
-import {
-  AmountDenomination,
-  AmountReference,
-  BalanceCheckFlag,
-} from '@dolomite-margin/dist/src';
+import { AmountDenomination, AmountReference, BalanceCheckFlag } from '@dolomite-margin/dist/src';
 import { expect } from 'chai';
-import { BigNumber, ethers } from 'ethers';
-import { CustomTestToken, TestAccountActionLib, TestAccountActionLib__factory, TestExpirationLib } from '../../src/types';
-import { createContractWithAbi, createContractWithLibrary, createContractWithName, createTestToken } from '../../src/utils/dolomite-utils';
+import { BigNumber } from 'ethers';
+import {
+  CustomTestToken,
+  TestAccountActionLib,
+  TestAccountActionLib__factory,
+  TestExpirationLib,
+} from '../../src/types';
+import {
+  createContractWithAbi,
+  createContractWithLibrary,
+  createContractWithName,
+  createTestToken,
+} from '../../src/utils/dolomite-utils';
 import { Network, ONE_BI, ZERO_BI } from '../../src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../utils';
 import { CoreProtocolArbitrumOne } from '../utils/core-protocol';
-import { disableInterestAccrual, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '../utils/setup';
+import {
+  disableInterestAccrual,
+  getDefaultCoreProtocolConfig,
+  setupCoreProtocol,
+  setupTestMarket,
+} from '../utils/setup';
 
 const amountWei = BigNumber.from('200000000');
 const amountWeiBig = BigNumber.from('500000000');
@@ -102,7 +113,7 @@ describe('ExpirationLib', () => {
         otherMarketId,
         AmountDenomination.Wei,
         ONE_BI,
-        BalanceCheckFlag.None
+        BalanceCheckFlag.None,
       );
       const accountId = '0';
       const expiryTimeDelta = '3600';
@@ -125,14 +136,14 @@ describe('ExpirationLib', () => {
         otherMarketId,
         AmountDenomination.Wei,
         ONE_BI,
-        BalanceCheckFlag.None
+        BalanceCheckFlag.None,
       );
       await testLib.clearExpirationIfNeeded(
         core.dolomiteMargin.address,
         core.dolomiteRegistry.address,
         core.hhUser1.address,
         otherAccountNumber,
-        otherMarketId
+        otherMarketId,
       );
       expect(await core.expiry.getExpiry(otherAccountStruct, otherMarketId)).to.eq(ZERO_BI);
     });
@@ -160,7 +171,7 @@ describe('ExpirationLib', () => {
         otherMarketId,
         AmountDenomination.Wei,
         ONE_BI,
-        BalanceCheckFlag.None
+        BalanceCheckFlag.None,
       );
       const accountId = '0';
       const expiryTimeDelta = '3600';
@@ -187,7 +198,7 @@ describe('ExpirationLib', () => {
         core.dolomiteRegistry.address,
         core.hhUser1.address,
         otherAccountNumber,
-        otherMarketId
+        otherMarketId,
       );
       expect(await core.expiry.getExpiry(otherAccountStruct, otherMarketId)).to.eq(ZERO_BI);
     });
@@ -198,11 +209,11 @@ describe('ExpirationLib', () => {
         core.dolomiteRegistry.address,
         core.hhUser1.address,
         otherAccountNumber,
-        otherMarketId
+        otherMarketId,
       );
       expect(await core.expiry.getExpiry(
         { owner: core.hhUser1.address, number: otherAccountNumber },
-        otherMarketId
+        otherMarketId,
       )).to.eq(ZERO_BI);
     });
   });

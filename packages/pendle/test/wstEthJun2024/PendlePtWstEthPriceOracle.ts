@@ -16,6 +16,7 @@ import {
 } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
+import { parseEther } from 'ethers/lib/utils';
 import {
   IERC20,
   PendlePtIsolationModeVaultFactory,
@@ -32,7 +33,6 @@ import {
   createPendlePtPriceOracle,
   createPendleRegistry,
 } from '../pendle-ecosystem-utils';
-import { parseEther } from 'ethers/lib/utils';
 
 const PT_WST_ETH_PRICE = BigNumber.from('5018321015037081078544705');
 
@@ -56,10 +56,10 @@ describe('PendlePtWstEthJun2024PriceOracle', () => {
     );
     await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(dolomiteRegistryImplementation.address);
     await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkPriceOracle(
-      core.chainlinkPriceOracle!.address,
+      core.chainlinkPriceOracleOld!.address,
     );
     underlyingToken = core.tokens.stEth!;
-    await core.chainlinkPriceOracle!.connect(core.governance).ownerInsertOrUpdateOracleToken(
+    await core.chainlinkPriceOracleOld!.connect(core.governance).ownerInsertOrUpdateOracleToken(
       underlyingToken.address,
       18,
       STETH_USD_CHAINLINK_FEED_MAP[core.config.network]!,
@@ -175,8 +175,8 @@ describe('PendlePtWstEthJun2024PriceOracle', () => {
       await advanceToTimestamp(1705000000);
       await core.dolomiteRegistry.connect(core.governance)
         .ownerSetChainlinkPriceOracle(
-        core.testEcosystem!.testPriceOracle.address
-      );
+          core.testEcosystem!.testPriceOracle.address,
+        );
       const price = await ptOracle.getPrice(factory.address);
       expect(price.value).to.eq(PT_WST_ETH_PRICE);
     });
@@ -210,7 +210,7 @@ describe('PendlePtWstEthJun2024PriceOracle', () => {
   });
 
   async function freezeAndGetOraclePrice(token: IERC20): Promise<BigNumber> {
-    const price = await core.chainlinkPriceOracle!.getPrice(token.address);
+    const price = await core.chainlinkPriceOracleOld!.getPrice(token.address);
     await core.testEcosystem!.testPriceOracle.setPrice(token.address, price.value);
     return price.value;
   }

@@ -114,6 +114,18 @@ contract TestGmxReader is IGmxReader {
         return (0, 0);
     }
 
+    function getSwapAmountOut(
+        IGmxDataStore /* _dataStore */,
+        GmxMarket.MarketProps memory /* _market */,
+        GmxMarket.MarketPrices memory /* _prices */,
+        address /* _tokenIn */,
+        uint256 /* _amountIn */,
+        address /* _uiFeeReceiver */
+    ) external pure returns (uint256, int256, SwapFees memory fees) {
+        return (0, 0, SwapFees(0, 0, 0, address(0), 0, 0));
+    }
+
+
     function getDepositAmountOut(
         IGmxDataStore /* _dataStore */,
         GmxMarket.MarketProps memory /* _market */,

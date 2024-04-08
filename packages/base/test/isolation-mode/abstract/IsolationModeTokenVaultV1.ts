@@ -1,5 +1,4 @@
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import {
@@ -20,6 +19,7 @@ import {
   withdrawFromDolomiteMargin,
 } from '../../../src/utils/dolomite-utils';
 import { MAX_UINT_256_BI, Network, ONE_ETH_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
+import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectProtocolBalance, expectThrow, expectTotalSupply, expectWalletBalance } from '../../utils/assertions';
 import { CoreProtocolArbitrumOne } from '../../utils/core-protocol';
@@ -52,7 +52,7 @@ describe('IsolationModeTokenVaultV1', () => {
   let userVaultImplementation: TestIsolationModeTokenVaultV1;
   let userVault: TestIsolationModeTokenVaultV1;
 
-  let solidUser: SignerWithAddress;
+  let solidUser: SignerWithAddressWithSafety;
   let otherToken1: CustomTestToken;
   let otherToken2: CustomTestToken;
   let otherMarketId1: BigNumber;
@@ -2118,23 +2118,23 @@ describe('IsolationModeTokenVaultV1', () => {
       await userVault.openBorrowPosition(
         defaultAccountNumber,
         borrowAccountNumber,
-        amountWei
+        amountWei,
       );
       await userVault.transferFromPositionWithOtherToken(
         borrowAccountNumber,
         defaultAccountNumber,
         core.marketIds.usdc,
         usdcAmount,
-        BalanceCheckFlag.None
+        BalanceCheckFlag.None,
       );
 
       await core.testEcosystem!.testPriceOracle.setPrice(
         factory.address,
-        '10'
+        '10',
       );
       await expectThrow(
         userVault.connect(core.hhUser1).testRequireNotLiquidatable(borrowAccountNumber),
-        'IsolationModeVaultV1ActionsImpl: Account liquidatable'
+        'IsolationModeVaultV1ActionsImpl: Account liquidatable',
       );
     });
   });
@@ -2163,14 +2163,14 @@ describe('IsolationModeTokenVaultV1', () => {
     it('should fail if len is 0', async () => {
       await expectThrow(
         userVault.testBinarySearch([], 0, 0, 0),
-        'BaseLiquidatorProxy: Market not found'
+        'BaseLiquidatorProxy: Market not found',
       );
     });
 
     it('should fail if len is 1 and marketIds are not equal', async () => {
       await expectThrow(
         userVault.testBinarySearch([0], 0, 1, 3),
-        'BaseLiquidatorProxy: Market not found'
+        'BaseLiquidatorProxy: Market not found',
       );
     });
   });

@@ -1,13 +1,13 @@
+import { BigNumber } from 'ethers';
+import { GenericTraderParamStruct } from 'packages/base/src/utils';
 import { BYTES_EMPTY, BYTES_ZERO, Network, ONE_BI, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
 import { EventEmitterRegistry, IIsolationModeVaultFactory, IIsolationModeVaultFactory__factory } from '../../src/types';
-import { CoreProtocolArbitrumOne } from '../utils/core-protocol';
-import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '../utils/setup';
-import { createEventEmitter } from '../utils/dolomite';
+import { SignerWithAddressWithSafety } from '../../src/utils/SignerWithAddressWithSafety';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import { BigNumber } from 'ethers';
 import { expectEvent, expectThrow } from '../utils/assertions';
-import { GenericTraderParamStruct } from 'packages/base/src/utils';
+import { CoreProtocolArbitrumOne } from '../utils/core-protocol';
+import { createEventEmitter } from '../utils/dolomite';
+import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '../utils/setup';
 
 describe('EventEmitterRegistry', () => {
   let snapshotId: string;
@@ -15,7 +15,7 @@ describe('EventEmitterRegistry', () => {
   let core: CoreProtocolArbitrumOne;
   let eventEmitter: EventEmitterRegistry;
   let factory: IIsolationModeVaultFactory;
-  let defaultAccountOwner: SignerWithAddress;
+  let defaultAccountOwner: SignerWithAddressWithSafety;
   let defaultAccountNumber: BigNumber;
 
   before(async () => {
@@ -23,7 +23,7 @@ describe('EventEmitterRegistry', () => {
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(core.hhUser5.address, true);
     factory = await IIsolationModeVaultFactory__factory.connect(
       core.tokens.dArb!.address,
-      core.governance
+      core.governance,
     );
     await factory.ownerSetIsTokenConverterTrusted(core.hhUser5.address, true);
 
@@ -42,25 +42,27 @@ describe('EventEmitterRegistry', () => {
     it('should fail when called again', async () => {
       await expectThrow(
         eventEmitter.initialize(),
-        'Initializable: contract is already initialized'
+        'Initializable: contract is already initialized',
       );
     });
   });
 
   describe('#emitZapExecuted', () => {
     it('should work normally', async () => {
-      const marketIdsPath : any[] = [];
-      const tradersPath : GenericTraderParamStruct[] = [{
-        traderType: 0,
-        makerAccountIndex: 0,
-        trader: core.hhUser2.address,
-        tradeData: '0x',
-      }];
+      const marketIdsPath: any[] = [];
+      const tradersPath: GenericTraderParamStruct[] = [
+        {
+          traderType: 0,
+          makerAccountIndex: 0,
+          trader: core.hhUser2.address,
+          tradeData: '0x',
+        },
+      ];
       const result = await eventEmitter.connect(core.hhUser5).emitZapExecuted(
         defaultAccountOwner.address,
         defaultAccountNumber,
         marketIdsPath,
-        tradersPath
+        tradersPath,
       );
       await expectEvent(eventEmitter, result, 'ZapExecuted', {});
     });
@@ -71,14 +73,16 @@ describe('EventEmitterRegistry', () => {
           defaultAccountOwner.address,
           defaultAccountNumber,
           [],
-          [{
-            traderType: 0,
-            makerAccountIndex: 0,
-            trader: core.hhUser2.address,
-            tradeData: '0x',
-          }]
+          [
+            {
+              traderType: 0,
+              makerAccountIndex: 0,
+              trader: core.hhUser2.address,
+              tradeData: '0x',
+            },
+          ],
         ),
-        `OnlyDolomiteMargin: Caller is not a global operator <${core.hhUser2.address.toLowerCase()}>`
+        `OnlyDolomiteMargin: Caller is not a global operator <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
   });
@@ -87,7 +91,7 @@ describe('EventEmitterRegistry', () => {
     it('should work normally', async () => {
       const result = await eventEmitter.connect(core.hhUser5).emitBorrowPositionOpen(
         defaultAccountOwner.address,
-        defaultAccountNumber
+        defaultAccountNumber,
       );
       await expectEvent(eventEmitter, result, 'BorrowPositionOpen', {});
     });
@@ -96,9 +100,9 @@ describe('EventEmitterRegistry', () => {
       await expectThrow(
         eventEmitter.connect(core.hhUser2).emitBorrowPositionOpen(
           defaultAccountOwner.address,
-          defaultAccountNumber
+          defaultAccountNumber,
         ),
-        `OnlyDolomiteMargin: Caller is not a global operator <${core.hhUser2.address.toLowerCase()}>`
+        `OnlyDolomiteMargin: Caller is not a global operator <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
   });
@@ -130,7 +134,7 @@ describe('EventEmitterRegistry', () => {
           { deltaWei: { sign: true, value: ZERO_BI }, newPar: { sign: true, value: ZERO_BI } },
           { deltaWei: { sign: true, value: ZERO_BI }, newPar: { sign: true, value: ZERO_BI } },
         ),
-        `OnlyDolomiteMargin: Caller is not a global operator <${core.hhUser2.address.toLowerCase()}>`
+        `OnlyDolomiteMargin: Caller is not a global operator <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
   });
@@ -163,7 +167,7 @@ describe('EventEmitterRegistry', () => {
           { deltaWei: { sign: true, value: ZERO_BI }, newPar: { sign: true, value: ZERO_BI } },
           { deltaWei: { sign: true, value: ZERO_BI }, newPar: { sign: true, value: ZERO_BI } },
         ),
-        `OnlyDolomiteMargin: Caller is not a global operator <${core.hhUser2.address.toLowerCase()}>`
+        `OnlyDolomiteMargin: Caller is not a global operator <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
   });
@@ -177,12 +181,12 @@ describe('EventEmitterRegistry', () => {
         inputToken: factory.address,
         inputAmount: ONE_BI,
         outputAmount: ONE_BI,
-        isRetryable: false
+        isRetryable: false,
       };
       const result = await eventEmitter.connect(core.hhUser5).emitAsyncDepositCreated(
         BYTES_ZERO,
         factory.address,
-        deposit
+        deposit,
       );
       await expectEvent(eventEmitter, result, 'AsyncDepositCreated', {});
     });
@@ -195,15 +199,15 @@ describe('EventEmitterRegistry', () => {
         inputToken: factory.address,
         inputAmount: ONE_BI,
         outputAmount: ONE_BI,
-        isRetryable: false
+        isRetryable: false,
       };
       await expectThrow(
         eventEmitter.connect(core.hhUser2).emitAsyncDepositCreated(
           BYTES_ZERO,
           factory.address,
-          deposit
+          deposit,
         ),
-        `EventEmitter: Caller is not a converter <${core.hhUser2.address.toLowerCase()}>`
+        `EventEmitter: Caller is not a converter <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
   });
@@ -213,7 +217,7 @@ describe('EventEmitterRegistry', () => {
       const result = await eventEmitter.connect(core.hhUser5).emitAsyncDepositOutputAmountUpdated(
         BYTES_ZERO,
         factory.address,
-        ONE_BI
+        ONE_BI,
       );
       await expectEvent(eventEmitter, result, 'AsyncDepositOutputAmountUpdated', {});
     });
@@ -223,9 +227,9 @@ describe('EventEmitterRegistry', () => {
         eventEmitter.connect(core.hhUser2).emitAsyncDepositOutputAmountUpdated(
           BYTES_ZERO,
           factory.address,
-          ONE_BI
+          ONE_BI,
         ),
-        `EventEmitter: Caller is not a converter <${core.hhUser2.address.toLowerCase()}>`
+        `EventEmitter: Caller is not a converter <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
   });
@@ -245,7 +249,7 @@ describe('EventEmitterRegistry', () => {
           BYTES_ZERO,
           factory.address,
         ),
-        `EventEmitter: Caller is not a converter <${core.hhUser2.address.toLowerCase()}>`
+        `EventEmitter: Caller is not a converter <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
   });
@@ -255,7 +259,7 @@ describe('EventEmitterRegistry', () => {
       const result = await eventEmitter.connect(core.hhUser5).emitAsyncDepositFailed(
         BYTES_ZERO,
         factory.address,
-        'Tuff'
+        'Tuff',
       );
       await expectEvent(eventEmitter, result, 'AsyncDepositFailed', {});
     });
@@ -265,9 +269,9 @@ describe('EventEmitterRegistry', () => {
         eventEmitter.connect(core.hhUser2).emitAsyncDepositFailed(
           BYTES_ZERO,
           factory.address,
-          'Tuff'
+          'Tuff',
         ),
-        `EventEmitter: Caller is not a converter <${core.hhUser2.address.toLowerCase()}>`
+        `EventEmitter: Caller is not a converter <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
   });
@@ -287,7 +291,7 @@ describe('EventEmitterRegistry', () => {
           BYTES_ZERO,
           factory.address,
         ),
-        `EventEmitter: Caller is not a converter <${core.hhUser2.address.toLowerCase()}>`
+        `EventEmitter: Caller is not a converter <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
   });
@@ -297,7 +301,7 @@ describe('EventEmitterRegistry', () => {
       const result = await eventEmitter.connect(core.hhUser5).emitAsyncDepositCancelledFailed(
         BYTES_ZERO,
         factory.address,
-        'Tuff'
+        'Tuff',
       );
       await expectEvent(eventEmitter, result, 'AsyncDepositCancelledFailed', {});
     });
@@ -307,9 +311,9 @@ describe('EventEmitterRegistry', () => {
         eventEmitter.connect(core.hhUser2).emitAsyncDepositCancelledFailed(
           BYTES_ZERO,
           factory.address,
-          'Tuff'
+          'Tuff',
         ),
-        `EventEmitter: Caller is not a converter <${core.hhUser2.address.toLowerCase()}>`
+        `EventEmitter: Caller is not a converter <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
   });
@@ -325,12 +329,12 @@ describe('EventEmitterRegistry', () => {
         outputAmount: ONE_BI,
         isRetryable: false,
         isLiquidation: false,
-        extraData: BYTES_EMPTY
+        extraData: BYTES_EMPTY,
       };
       const result = await eventEmitter.connect(core.hhUser5).emitAsyncWithdrawalCreated(
         BYTES_ZERO,
         factory.address,
-        withdrawal
+        withdrawal,
       );
       await expectEvent(eventEmitter, result, 'AsyncWithdrawalCreated', {});
     });
@@ -345,15 +349,15 @@ describe('EventEmitterRegistry', () => {
         outputAmount: ONE_BI,
         isRetryable: false,
         isLiquidation: false,
-        extraData: BYTES_EMPTY
+        extraData: BYTES_EMPTY,
       };
       await expectThrow(
         eventEmitter.connect(core.hhUser2).emitAsyncWithdrawalCreated(
           BYTES_ZERO,
           factory.address,
-          withdrawal
+          withdrawal,
         ),
-        `EventEmitter: Caller is not a converter <${core.hhUser2.address.toLowerCase()}>`
+        `EventEmitter: Caller is not a converter <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
   });
@@ -363,7 +367,7 @@ describe('EventEmitterRegistry', () => {
       const result = await eventEmitter.connect(core.hhUser5).emitAsyncWithdrawalOutputAmountUpdated(
         BYTES_ZERO,
         factory.address,
-        ONE_BI
+        ONE_BI,
       );
       await expectEvent(eventEmitter, result, 'AsyncWithdrawalOutputAmountUpdated', {});
     });
@@ -373,9 +377,9 @@ describe('EventEmitterRegistry', () => {
         eventEmitter.connect(core.hhUser2).emitAsyncWithdrawalOutputAmountUpdated(
           BYTES_ZERO,
           factory.address,
-          ONE_BI
+          ONE_BI,
         ),
-        `EventEmitter: Caller is not a converter <${core.hhUser2.address.toLowerCase()}>`
+        `EventEmitter: Caller is not a converter <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
   });
@@ -395,7 +399,7 @@ describe('EventEmitterRegistry', () => {
           BYTES_ZERO,
           factory.address,
         ),
-        `EventEmitter: Caller is not a converter <${core.hhUser2.address.toLowerCase()}>`
+        `EventEmitter: Caller is not a converter <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
   });
@@ -405,7 +409,7 @@ describe('EventEmitterRegistry', () => {
       const result = await eventEmitter.connect(core.hhUser5).emitAsyncWithdrawalFailed(
         BYTES_ZERO,
         factory.address,
-        'Tuff'
+        'Tuff',
       );
       await expectEvent(eventEmitter, result, 'AsyncWithdrawalFailed', {});
     });
@@ -415,9 +419,9 @@ describe('EventEmitterRegistry', () => {
         eventEmitter.connect(core.hhUser2).emitAsyncWithdrawalFailed(
           BYTES_ZERO,
           factory.address,
-          'Tuff'
+          'Tuff',
         ),
-        `EventEmitter: Caller is not a converter <${core.hhUser2.address.toLowerCase()}>`
+        `EventEmitter: Caller is not a converter <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
   });
@@ -437,7 +441,7 @@ describe('EventEmitterRegistry', () => {
           BYTES_ZERO,
           factory.address,
         ),
-        `EventEmitter: Caller is not a converter <${core.hhUser2.address.toLowerCase()}>`
+        `EventEmitter: Caller is not a converter <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
   });

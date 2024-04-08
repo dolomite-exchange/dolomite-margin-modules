@@ -3,19 +3,39 @@ import {
   DolomiteRegistryImplementation__factory,
   EventEmitterRegistry__factory,
   IDolomiteMargin__factory,
-  IDolomiteMarginV2__factory,
+  IDolomiteMarginV2__factory, IDolomiteRegistry, IDolomiteRegistry__factory,
+  IERC20__factory,
+  IERC20Metadata__factory,
 } from '@dolomite-exchange/modules-base/src/types';
-import { SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL } from '@dolomite-exchange/modules-base/src/utils/constants';
+import {
+  CHAINLINK_PRICE_AGGREGATORS_MAP,
+  SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL,
+} from '@dolomite-exchange/modules-base/src/utils/constants';
 import { getRegistryProxyConstructorParams } from '@dolomite-exchange/modules-base/src/utils/constructors/dolomite';
 import { getAnyNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { Network, NetworkType } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { ADDRESS_ZERO, Network, NetworkType } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { getRealLatestBlockNumber, resetForkIfPossible } from '@dolomite-exchange/modules-base/test/utils';
 import { DolomiteMargin } from '@dolomite-exchange/modules-base/test/utils/dolomite';
+import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import {
   getLinearStepFunctionInterestSetterConstructorParams,
 } from '@dolomite-exchange/modules-interest-setters/src/interest-setters-constructors';
+import { TokenInfo } from '@dolomite-exchange/modules-oracles/src';
+import {
+  getChainlinkPriceOracleV3ConstructorParams,
+} from '@dolomite-exchange/modules-oracles/src/oracles-constructors';
+import {
+  IChainlinkAggregator__factory,
+  OracleAggregatorV2,
+  OracleAggregatorV2__factory,
+} from '@dolomite-exchange/modules-oracles/src/types';
 import { parseEther } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
-import { deployContractAndSave } from '../../utils/deploy-utils';
+import {
+  deployContractAndSave,
+  EncodedTransaction,
+  prettyPrintEncodedDataWithTypeSafety,
+} from '../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../utils/dry-run-utils';
 import getScriptName from '../../utils/get-script-name';
 
@@ -57,22 +77,86 @@ async function deployInterestSetters(): Promise<void> {
     ),
     'Altcoin14L86ULinearStepFunctionInterestSetter',
   );
+  await deployContractAndSave(
+    'LinearStepFunctionInterestSetter',
+    getLinearStepFunctionInterestSetterConstructorParams(
+      parseEther('0.16'),
+      parseEther('0.84'),
+      NINETY_PERCENT,
+    ),
+    'Altcoin16L84ULinearStepFunctionInterestSetter',
+  );
+}
+
+async function getOracleAggregator<T extends NetworkType>(
+  network: T,
+  dolomiteRegistry: IDolomiteRegistry,
+  dolomiteMargin: DolomiteMargin<T>,
+): Promise<OracleAggregatorV2> {
+  const tokens = Object.keys(CHAINLINK_PRICE_AGGREGATORS_MAP[network])
+    .map(t => IERC20__factory.connect(t, dolomiteMargin.signer));
+
+  const aggregators = tokens.map(t => IChainlinkAggregator__factory.connect(
+    CHAINLINK_PRICE_AGGREGATORS_MAP[network][t.address].aggregatorAddress,
+    dolomiteMargin.signer,
+  ));
+  const decimals = await Promise.all(tokens.map(t => IERC20Metadata__factory.connect(t.address, t.signer).decimals()));
+  const tokenPairs = tokens.map(t =>
+    IERC20__factory.connect(
+      CHAINLINK_PRICE_AGGREGATORS_MAP[network][t.address].tokenPairAddress ?? ADDRESS_ZERO,
+      dolomiteMargin.signer,
+    ),
+  );
+  const invertPrices = tokens.map(() => false);
+  const chainlinkPriceOracleAddress = await deployContractAndSave(
+    'ChainlinkPriceOracleV3',
+    getChainlinkPriceOracleV3ConstructorParams<T>(
+      tokens,
+      aggregators,
+      invertPrices,
+      dolomiteRegistry,
+      dolomiteMargin,
+    ),
+    'ChainlinkPriceOracleV3',
+  );
+
+  const tokenInfos = tokens.map<TokenInfo>((token, i) => {
+    return {
+      token: token.address,
+      decimals: decimals[i],
+      oracleInfos: [
+        {
+          oracle: chainlinkPriceOracleAddress,
+          weight: 100,
+          tokenPair: tokenPairs[i].address,
+        },
+      ],
+    };
+  });
+  const oracleAggregatorAddress = await deployContractAndSave(
+    'OracleAggregatorV2',
+    [tokenInfos as any[], dolomiteMargin.address],
+    'OracleAggregatorV2',
+  );
+  return OracleAggregatorV2__factory.connect(oracleAggregatorAddress, dolomiteMargin.signer);
 }
 
 async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   const network = await getAnyNetwork() as T;
-  const [hh1User1] = await ethers.getSigners();
+  await resetForkIfPossible(await getRealLatestBlockNumber(true, network), network);
+  const [hhUser1] = await ethers.getSigners();
+  const transactions: EncodedTransaction[] = [];
 
   let dolomiteMargin: DolomiteMargin<T>;
   if (network === Network.ArbitrumOne) {
     dolomiteMargin = IDolomiteMargin__factory.connect(
       CoreDeployments.DolomiteMargin[network].address,
-      hh1User1,
+      hhUser1,
     ) as DolomiteMargin<T>;
   } else {
     dolomiteMargin = IDolomiteMarginV2__factory.connect(
       CoreDeployments.DolomiteMargin[network].address,
-      hh1User1,
+      hhUser1,
     ) as DolomiteMargin<T>;
   }
 
@@ -83,7 +167,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   );
   const eventEmitterRegistry = EventEmitterRegistry__factory.connect(
     eventEmitterRegistryImplementationAddress,
-    hh1User1,
+    hhUser1,
   );
   const eventEmitterRegistryCalldata = await eventEmitterRegistry.populateTransaction.initialize();
   const eventEmitterAddress = await deployContractAndSave(
@@ -99,11 +183,11 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   const registryImplementationAddress = await deployContractAndSave(
     'DolomiteRegistryImplementation',
     [],
-    'DolomiteRegistryImplementationV6',
+    'DolomiteRegistryImplementationV7',
   );
   const registryImplementation = DolomiteRegistryImplementation__factory.connect(
     registryImplementationAddress,
-    hh1User1,
+    hhUser1,
   );
   const registryImplementationCalldata = await registryImplementation.populateTransaction.initialize(
     CoreDeployments.GenericTraderProxyV1[network].address,
@@ -111,9 +195,8 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL,
     CoreDeployments.LiquidatorAssetRegistry[network].address,
     eventEmitterAddress,
-    CoreDeployments.ChainlinkPriceOracleV1[network].address,
   );
-  await deployContractAndSave(
+  const dolomiteRegistryAddress = await deployContractAndSave(
     'RegistryProxy',
     getRegistryProxyConstructorParams(
       registryImplementationAddress,
@@ -122,13 +205,33 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     ),
     'DolomiteRegistryProxy',
   );
+  const dolomiteRegistry = IDolomiteRegistry__factory.connect(dolomiteRegistryAddress, hhUser1);
+
+  const oracleAggregator = await getOracleAggregator(network, dolomiteRegistry, dolomiteMargin);
+
   await deployContractAndSave(
     'IsolationModeTokenVaultV1ActionsImpl',
     [],
-    'IsolationModeTokenVaultV1ActionsImplV3',
+    'IsolationModeTokenVaultV1ActionsImplV7',
   );
 
   await deployInterestSetters();
+
+  const core = await setupCoreProtocol({
+    network,
+    blockNumber: 0,
+    skipForking: true,
+  });
+
+  transactions.push(
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { dolomiteRegistry },
+      'dolomiteRegistry',
+      'ownerSetOracleAggregator',
+      [oracleAggregator.address],
+    )
+  );
 
   return {
     core: null as any,
@@ -136,8 +239,8 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     },
     scriptName: getScriptName(__filename),
     upload: {
+      transactions,
       chainId: network,
-      transactions: [],
     },
   };
 }

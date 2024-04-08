@@ -7,8 +7,8 @@ import {
   VesterProxy,
   VesterProxy__factory,
 } from '@dolomite-exchange/modules-liquidity-mining/src/types';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { Network } from '../../../src/utils/no-deps-constants';
+import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';
 
 export interface LiquidityMiningEcosystem {
   oArbVester: VesterImplementationV1;
@@ -18,7 +18,7 @@ export interface LiquidityMiningEcosystem {
 
 export async function createLiquidityMiningEcosystem(
   network: Network,
-  signer: SignerWithAddress,
+  signer: SignerWithAddressWithSafety,
 ): Promise<LiquidityMiningEcosystem> {
   if (network !== '42161') {
     return Promise.reject(`Invalid network, found ${network}`);

@@ -1,6 +1,5 @@
 import { address } from '@dolomite-exchange/dolomite-margin';
 import { ActionType, AmountDenomination, AmountReference } from '@dolomite-margin/dist/src';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { BaseContract, BigNumber, BigNumberish, BytesLike } from 'ethers';
 import hardhat, { ethers } from 'hardhat';
 import { CoreProtocolType } from '../../test/utils/setup';
@@ -12,6 +11,7 @@ import {
 } from '../types';
 import { ActionArgsStruct } from './index';
 import { MAX_UINT_256_BI, Network, networkToNetworkNameMap, NetworkType } from './no-deps-constants';
+import { SignerWithAddressWithSafety } from './SignerWithAddressWithSafety';
 
 /**
  * @return  The deployed contract
@@ -72,7 +72,7 @@ export async function createTestVaultToken(asset: { address: string }): Promise<
 export function createDepositAction(
   amount: BigNumberish,
   tokenId: BigNumberish,
-  accountOwner: SignerWithAddress,
+  accountOwner: SignerWithAddressWithSafety,
   fromAddress?: string,
 ): ActionArgsStruct {
   return {
@@ -95,7 +95,7 @@ export function createDepositAction(
 export function createWithdrawAction(
   amount: BigNumberish,
   tokenId: BigNumberish,
-  accountOwner: SignerWithAddress,
+  accountOwner: SignerWithAddressWithSafety,
   toAddress?: string,
 ): ActionArgsStruct {
   return {
@@ -117,7 +117,7 @@ export function createWithdrawAction(
 
 export async function depositIntoDolomiteMargin<T extends NetworkType>(
   core: CoreProtocolType<T>,
-  accountOwner: SignerWithAddress,
+  accountOwner: SignerWithAddressWithSafety,
   accountNumber: BigNumberish,
   tokenId: BigNumberish,
   amount: BigNumberish,
@@ -133,7 +133,7 @@ export async function depositIntoDolomiteMargin<T extends NetworkType>(
 
 export async function withdrawFromDolomiteMargin<T extends NetworkType>(
   core: CoreProtocolType<T>,
-  user: SignerWithAddress,
+  user: SignerWithAddressWithSafety,
   accountId: BigNumberish,
   tokenId: BigNumberish,
   amount: BigNumberish,

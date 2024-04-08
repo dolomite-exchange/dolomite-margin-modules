@@ -3,30 +3,26 @@ import {
   DolomiteRegistryImplementation__factory,
 } from '@dolomite-exchange/modules-base/src/types';
 import { createContractWithAbi } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import {
-  setupCoreProtocol,
-  setupTestMarket,
-} from '@dolomite-exchange/modules-base/test/utils/setup';
+  getRealLatestBlockNumber,
+  revertToSnapshotAndCapture,
+  snapshot,
+} from '@dolomite-exchange/modules-base/test/utils';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import { setupCoreProtocol, setupTestMarket } from '@dolomite-exchange/modules-base/test/utils/setup';
+import axios from 'axios';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
-import {
-  IERC20,
-  PendlePtIsolationModeVaultFactory,
-  PendlePtPriceOracle,
-  PendleRegistry,
-} from '../../src/types';
+import { RS_ETH_CAMELOT_POOL_MAP } from 'packages/base/src/utils/constants';
+import { ADDRESS_ZERO, Network, ONE_ETH_BI } from 'packages/base/src/utils/no-deps-constants';
+import { TWAPPriceOracle, TWAPPriceOracle__factory } from 'packages/oracles/src/types';
+import { IERC20, PendlePtIsolationModeVaultFactory, PendlePtPriceOracle, PendleRegistry } from '../../src/types';
 import {
   createPendlePtIsolationModeTokenVaultV1,
   createPendlePtIsolationModeVaultFactory,
   createPendlePtRsEthPriceOracle,
   createPendleRegistry,
 } from '../pendle-ecosystem-utils';
-import { TWAPPriceOracle, TWAPPriceOracle__factory } from 'packages/oracles/src/types';
-import { ADDRESS_ZERO, Network, ONE_ETH_BI } from 'packages/base/src/utils/no-deps-constants';
-import axios from 'axios';
-import { RS_ETH_CAMELOT_POOL_MAP } from 'packages/base/src/utils/constants';
 
 describe('PendlePtRsEthApr2024PriceOracle_integration', () => {
   let snapshotId: string;
@@ -51,14 +47,14 @@ describe('PendlePtRsEthApr2024PriceOracle_integration', () => {
     );
     await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(dolomiteRegistryImplementation.address);
     await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkPriceOracle(
-      core.chainlinkPriceOracle!.address,
+      core.chainlinkPriceOracleOld!.address,
     );
 
     underlyingToken = core.tokens.rsEth!;
     const twapPriceOracle = await createContractWithAbi<TWAPPriceOracle>(
       TWAPPriceOracle__factory.abi,
       TWAPPriceOracle__factory.bytecode,
-      [core.tokens.rsEth.address, [RS_ETH_CAMELOT_POOL_MAP[Network.ArbitrumOne]], core.dolomiteMargin.address]
+      [core.tokens.rsEth.address, [RS_ETH_CAMELOT_POOL_MAP[Network.ArbitrumOne]], core.dolomiteMargin.address],
     );
     underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, core.tokens.rsEth, false, twapPriceOracle);

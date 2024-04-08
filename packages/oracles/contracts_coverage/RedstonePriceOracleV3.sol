@@ -20,12 +20,12 @@
 pragma solidity ^0.8.9;
 
 import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
-import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { IDolomiteRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IDolomiteRegistry.sol";
+import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IChainlinkAggregator } from "./interfaces/IChainlinkAggregator.sol";
+import { IOracleAggregatorV2 } from "./interfaces/IOracleAggregatorV2.sol";
 import { IRedstonePriceOracleV3 } from "./interfaces/IRedstonePriceOracleV3.sol";
-import { IOracleAggregator2 } from"./interfaces/IOracleAggregator2.sol";
 
 
 /**
@@ -183,7 +183,7 @@ contract RedstonePriceOracleV3 is IRedstonePriceOracleV3, OnlyDolomiteMargin {
         }
 
         // standardize the Chainlink price to be the proper number of decimals of (36 - tokenDecimals)
-        IOracleAggregator2 aggregator = IOracleAggregator2(address(DOLOMITE_REGISTRY.oracleAggregator()));
+        IOracleAggregatorV2 aggregator = IOracleAggregatorV2(address(DOLOMITE_REGISTRY.oracleAggregator()));
         uint8 tokenDecimals = aggregator.getDecimalsByToken(_token);
         /*assert(tokenDecimals > 0);*/
         uint256 standardizedPrice = standardizeNumberOfDecimals(
