@@ -108,7 +108,7 @@ interface IPendleRouterV3 {
         FillOrderParams[] flashFills;
         bytes optData;
     }
-    
+
     struct Order {
         uint256 salt;
         uint256 expiry;
@@ -170,4 +170,11 @@ interface IPendleRouterV3 {
         uint256 netSyIn,
         uint256 minPyOut
     ) external returns (uint256 netPyOut);
+
+    function redeemPyToToken(
+        address receiver,
+        address YT,
+        uint256 netPyIn,
+        TokenOutput calldata output
+    ) external returns (uint256 netTokenOut);
 }

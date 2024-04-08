@@ -24,6 +24,7 @@ import { IsolationModeUnwrapperTraderV2 } from "@dolomite-exchange/modules-base/
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { IPendlePtMarket } from "./interfaces/IPendlePtMarket.sol";
 import { IPendlePtToken } from "./interfaces/IPendlePtToken.sol";
 import { IPendleRegistry } from "./interfaces/IPendleRegistry.sol";
 import { IPendleRouterV3 } from "./interfaces/IPendleRouterV3.sol";
@@ -90,21 +91,36 @@ contract PendlePtIsolationModeUnwrapperTraderV3 is IsolationModeUnwrapperTraderV
         override
         returns (uint256)
     {
-        (
-            IPendleRouterV3.TokenOutput memory tokenOutput,
-            IPendleRouterV3.LimitOrderData memory limitOrderData
-        ) = abi.decode(_extraOrderData, (IPendleRouterV3.TokenOutput, IPendleRouterV3.LimitOrderData));
-
         // redeem pt for underlying
         IPendleRouterV3 pendleRouter = IPendleRouterV3(address(PENDLE_REGISTRY.pendleRouter()));
         IERC20(VAULT_FACTORY.UNDERLYING_TOKEN()).safeApprove(address(pendleRouter), _inputAmount);
-        (uint256 outputAmount,,) = pendleRouter.swapExactPtForToken(
-            /* _receiver */ address(this),
-            address(PENDLE_REGISTRY.ptMarket()),
-            _inputAmount,
-            tokenOutput,
-            limitOrderData
-        );
+
+        uint256 outputAmount;
+        IPendlePtMarket market = PENDLE_REGISTRY.ptMarket();
+        if (!market.isExpired()) {
+            (
+                IPendleRouterV3.TokenOutput memory tokenOutput,
+                IPendleRouterV3.LimitOrderData memory limitOrderData
+            ) = abi.decode(_extraOrderData, (IPendleRouterV3.TokenOutput, IPendleRouterV3.LimitOrderData));
+            (outputAmount,,) = pendleRouter.swapExactPtForToken(
+                /* _receiver */ address(this),
+                address(market),
+                _inputAmount,
+                tokenOutput,
+                limitOrderData
+            );
+        } else {
+            // TODO: test this
+            (IPendleRouterV3.TokenOutput memory tokenOutput) =
+                                abi.decode(_extraOrderData, (IPendleRouterV3.TokenOutput));
+            (,, address yt) = market.readTokens();
+            outputAmount = pendleRouter.redeemPyToToken(
+                /* _receiver */ address(this),
+                yt,
+                _inputAmount,
+                tokenOutput
+            );
+        }
 
         return outputAmount;
     }
