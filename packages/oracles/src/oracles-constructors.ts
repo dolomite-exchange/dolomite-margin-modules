@@ -22,16 +22,22 @@ import {
   IChainlinkAggregator,
   IChainlinkPriceOracleOld,
   IChainlinkPriceOracleOld__factory,
-  IChainlinkPriceOracleV1__factory,
+  IChainlinkPriceOracleV1__factory, IChainlinkPriceOracleV3,
   IDolomiteRegistry,
   IERC20Metadata__factory,
-  IRedstonePriceOracleV2__factory,
+  IRedstonePriceOracleV2__factory, OracleAggregatorV2,
   RedstonePriceOracleV3,
 } from './types';
 
-export type CoreProtocolWithChainlink<T extends Network> = Extract<CoreProtocolType<T>, {
+export type CoreProtocolWithChainlinkOld<T extends Network> = Extract<CoreProtocolType<T>, {
   dolomiteMargin: DolomiteMargin<T>;
   chainlinkPriceOracleOld: IChainlinkPriceOracleOld;
+}>;
+
+export type CoreProtocolWithChainlinkV3<T extends Network> = Extract<CoreProtocolType<T>, {
+  dolomiteMargin: DolomiteMargin<T>;
+  chainlinkPriceOracleV3: IChainlinkPriceOracleV3;
+  oracleAggregatorV2: OracleAggregatorV2;
 }>;
 
 export async function getChainlinkPriceOracleV3ConstructorParamsFromChainlinkOracleV1ZkEvm(

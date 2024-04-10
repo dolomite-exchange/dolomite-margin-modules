@@ -20,7 +20,7 @@
 
 pragma solidity ^0.8.9;
 
-import { IOARB } from "./IOARB.sol";
+import { IERC20Mintable } from "./IERC20Mintable.sol";
 
 
 /**
@@ -61,7 +61,7 @@ interface IVesterV1 {
     event ClosePositionWindowSet(uint256 closePositionWindow);
     event EmergencyWithdrawTaxSet(uint256 emergencyWithdrawTax);
     event ForceClosePositionTaxSet(uint256 forceClosePositionTax);
-    event PromisedArbTokensSet(uint256 promisedArbTokensSet);
+    event PromisedTokensSet(uint256 promisedTokensSet);
     event VestingPositionCreated(VestingPosition vestingPosition);
     event VestingPositionCleared(uint256 id);
     event BaseURISet(string baseURI);
@@ -79,7 +79,7 @@ interface IVesterV1 {
      *                                          Bypassing should only be used under emergency scenarios in which the
      *                                          owner needs to pull all of the funds
      */
-    function ownerWithdrawArb(
+    function ownerWithdrawToken(
         address _to,
         uint256 _amount,
         bool _shouldBypassAvailableAmounts
@@ -177,19 +177,19 @@ interface IVesterV1 {
     // =================================================
 
     /**
-     * @return The amount of ARB tokens available for vesting. Vesting ARB tokens is reserved by pairing with oARB.
+     * @return The amount of tokens available for vesting. Vesting tokens is reserved by pairing with oToken.
      */
-    function availableArbTokens() external view returns (uint256);
+    function availableTokens() external view returns (uint256);
 
     /**
      * @return The amount of ARB tokens committed to active oARB vesting positions
      */
-    function promisedArbTokens() external view returns (uint256);
+    function promisedTokens() external view returns (uint256);
 
     /**
-     *  @return The oARB token contract address
+     *  @return The oToken token contract address
      */
-    function oARB() external view returns (IOARB);
+    function oToken() external view returns (IERC20Mintable);
 
     /**
      * @return The duration in seconds that users may execute the matured positions before it becomes force-closed

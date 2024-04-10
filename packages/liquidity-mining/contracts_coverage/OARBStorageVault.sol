@@ -24,7 +24,7 @@ import { IOARB } from "./interfaces/IOARB.sol";
 
 
 /**
- * @title   OARBStorageVault
+ * @title   MintableStorageVault.sol
  * @author  Dolomite
  *
  * OARB Storage Vault contract that mints oARB when pullTokensFromVault is called

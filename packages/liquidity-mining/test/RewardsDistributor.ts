@@ -1,8 +1,10 @@
+import { EventEmitterRegistry, EventEmitterRegistry__factory } from '@dolomite-exchange/modules-base/src/types';
 import { createContractWithAbi } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectEvent, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import { createEventEmitter } from '@dolomite-exchange/modules-base/test/utils/dolomite';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { expect } from 'chai';
 import { defaultAbiCoder, keccak256 } from 'ethers/lib/utils';
@@ -16,7 +18,7 @@ const user2Rewards = [15, 25];
 describe('RewardsDistributor', () => {
   let snapshotId: string;
   let core: CoreProtocolArbitrumOne;
-  let oARB: OARB;
+  let token: OARB;
   let rewardsDistributor: RewardsDistributor;
   let merkleRoot1: string;
   let merkleRoot2: string;
@@ -27,9 +29,16 @@ describe('RewardsDistributor', () => {
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
-    oARB = await createOARB(core);
-    rewardsDistributor = await createRewardsDistributor(core, oARB, [core.hhUser5.address]);
+    token = await createOARB(core);
+    rewardsDistributor = await createRewardsDistributor(core, token, [core.hhUser5.address]);
     await core.dolomiteMargin.ownerSetGlobalOperator(rewardsDistributor.address, true);
+
+    const eventEmitterImplementation = await createContractWithAbi<EventEmitterRegistry>(
+      EventEmitterRegistry__factory.abi,
+      EventEmitterRegistry__factory.bytecode,
+      [],
+    );
+    await core.eventEmitterRegistryProxy.upgradeTo(eventEmitterImplementation.address);
 
     const rewards1 = [
       { address: core.hhUser1.address, rewards: user1Rewards[0] },
@@ -69,7 +78,7 @@ describe('RewardsDistributor', () => {
   describe('#constructor', () => {
     it('should work normally', async () => {
       expect(await rewardsDistributor.DOLOMITE_MARGIN()).to.eq(core.dolomiteMargin.address);
-      expect(await rewardsDistributor.oARB()).to.eq(oARB.address);
+      expect(await rewardsDistributor.token()).to.eq(token.address);
       expect(await rewardsDistributor.isHandler(core.hhUser5.address)).to.eq(true);
     });
   });
@@ -78,21 +87,28 @@ describe('RewardsDistributor', () => {
     it('should work normally', async () => {
       const epoch1 = 1;
       const epoch2 = 2;
-      await rewardsDistributor.connect(core.hhUser1).claim(
+      const result = await rewardsDistributor.connect(core.hhUser1).claim(
         [{ epoch: epoch1, amount: user1Rewards[0], proof: validProofUser1Epoch1 }],
       );
-      expect(await oARB.balanceOf(core.hhUser1.address)).to.eq(user1Rewards[0]);
+      await expectEvent(core.eventEmitterRegistry, result, 'RewardClaimed', {
+        distributor: rewardsDistributor.address,
+        user: core.hhUser1.address,
+        epoch: epoch1,
+        amount: user1Rewards[0],
+      });
+
+      expect(await token.balanceOf(core.hhUser1.address)).to.eq(user1Rewards[0]);
       expect(await rewardsDistributor.getClaimStatusByUserAndEpoch(core.hhUser1.address, epoch1)).to.be.true;
       expect(await rewardsDistributor.getClaimStatusByUserAndEpoch(core.hhUser1.address, epoch2)).to.be.false;
 
-      expect(await oARB.balanceOf(core.hhUser2.address)).to.eq(ZERO_BI);
+      expect(await token.balanceOf(core.hhUser2.address)).to.eq(ZERO_BI);
       expect(await rewardsDistributor.getClaimStatusByUserAndEpoch(core.hhUser2.address, epoch1)).to.be.false;
       expect(await rewardsDistributor.getClaimStatusByUserAndEpoch(core.hhUser2.address, epoch2)).to.be.false;
 
       await rewardsDistributor.connect(core.hhUser2).claim(
         [{ epoch: epoch2, amount: user2Rewards[1], proof: validProofUser2Epoch2 }],
       );
-      expect(await oARB.balanceOf(core.hhUser2.address)).to.eq(user2Rewards[1]);
+      expect(await token.balanceOf(core.hhUser2.address)).to.eq(user2Rewards[1]);
       expect(await rewardsDistributor.getClaimStatusByUserAndEpoch(core.hhUser2.address, epoch1)).to.be.false;
       expect(await rewardsDistributor.getClaimStatusByUserAndEpoch(core.hhUser2.address, epoch2)).to.be.true;
     });
@@ -104,9 +120,16 @@ describe('RewardsDistributor', () => {
         { epoch: epoch1, amount: user1Rewards[0], proof: validProofUser1Epoch1 },
         { epoch: epoch2, amount: user1Rewards[1], proof: validProofUser1Epoch2 },
       ]);
-      expect(await oARB.balanceOf(core.hhUser1.address)).to.eq(user1Rewards[0] + user1Rewards[1]);
+      expect(await token.balanceOf(core.hhUser1.address)).to.eq(user1Rewards[0] + user1Rewards[1]);
       expect(await rewardsDistributor.getClaimStatusByUserAndEpoch(core.hhUser1.address, epoch1)).to.be.true;
       expect(await rewardsDistributor.getClaimStatusByUserAndEpoch(core.hhUser1.address, epoch2)).to.be.true;
+    });
+
+    it('should fail if claims is length 0', async () => {
+      await expectThrow(
+        rewardsDistributor.connect(core.hhUser1).claim([]),
+        'RewardsDistributor: Invalid claim infos',
+      );
     });
 
     it('should fail if tokens already claimed', async () => {
@@ -155,7 +178,7 @@ describe('RewardsDistributor', () => {
     });
   });
 
-  describe('#setMerkleRoot', () => {
+  describe('#ownerSetMerkleRoot', () => {
     it('should work normally for owner', async () => {
       expect(await rewardsDistributor.getMerkleRootByEpoch(1)).to.eq(merkleRoot1);
       const result = await rewardsDistributor.connect(core.governance).ownerSetMerkleRoot(1, merkleRoot2);
@@ -191,24 +214,24 @@ describe('RewardsDistributor', () => {
     });
   });
 
-  describe('#setOARB', () => {
+  describe('#ownerSetToken', () => {
     it('should work normally', async () => {
       const newOARB = await createContractWithAbi<OARB>(
         OARB__factory.abi,
         OARB__factory.bytecode,
         [core.dolomiteMargin.address],
       );
-      expect(await rewardsDistributor.oARB()).to.eq(oARB.address);
-      const result = await rewardsDistributor.connect(core.governance).ownerSetOARB(newOARB.address);
-      await expectEvent(rewardsDistributor, result, 'OARBSet', {
-        oARB: newOARB.address,
+      expect(await rewardsDistributor.token()).to.eq(token.address);
+      const result = await rewardsDistributor.connect(core.governance).ownerSetToken(newOARB.address);
+      await expectEvent(rewardsDistributor, result, 'TokenSet', {
+        token: newOARB.address,
       });
-      expect(await rewardsDistributor.oARB()).to.eq(newOARB.address);
+      expect(await rewardsDistributor.token()).to.eq(newOARB.address);
     });
 
     it('should fail when not called by dolomite margin owner', async () => {
       await expectThrow(
-        rewardsDistributor.connect(core.hhUser1).ownerSetOARB(core.hhUser1.address),
+        rewardsDistributor.connect(core.hhUser1).ownerSetToken(core.hhUser1.address),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
