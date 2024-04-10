@@ -175,7 +175,10 @@ contract GmxRegistryV1 is IGmxRegistryV1, BaseRegistry {
         _ownerSetVGmx(_vGmx);
     }
 
-    function ownerSetIsHandler(address _handler, bool _isTrusted) external override onlyDolomiteMarginOwner(msg.sender) {
+    function ownerSetIsHandler(
+        address _handler,
+        bool _isTrusted
+    ) external override onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetIsHandler(_handler, _isTrusted);
     }
 

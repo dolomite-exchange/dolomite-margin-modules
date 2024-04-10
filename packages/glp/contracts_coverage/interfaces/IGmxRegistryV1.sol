@@ -98,7 +98,7 @@ interface IGmxRegistryV1 is IBaseRegistry {
 
     function ownerSetVGmx(address _vGmx) external;
 
-    function ownerSetHandler(address _handler) external;
+    function ownerSetIsHandler(address _handler, bool _isTrusted) external;
 
     function bnGmx() external view returns (address);
 
@@ -132,5 +132,5 @@ interface IGmxRegistryV1 is IBaseRegistry {
 
     function vGmx() external view returns (address);
 
-    function handler() external view returns (address);
+    function isHandler(address _handler) external view returns (bool);
 }
