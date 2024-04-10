@@ -32,6 +32,9 @@ const vaultOwner2 = '0x8A8841F4AB46A052139e0DE31B1e693382193813';
 const borrowAccount1 = BigNumber.from('4211115166896119896340262904855120100885563956626545700858695746739717416654');
 const borrowAccount2 = BigNumber.from('54588878184938659795385687626756517841802839253616459311414872509276303196718');
 
+const soloMigrate = 'migrate(uint256,uint256,uint256,bytes)';
+const accountsMigrate = 'migrate((address,uint256)[],uint256,uint256,bytes)';
+
 const integrationAccounts: AccountInfoStruct[] = [
   { owner: vaultAddress, number: defaultAccountNumber },
   { owner: vaultAddress2, number: borrowAccount1 },
@@ -83,7 +86,8 @@ describe('PtGLPTransformer', () => {
     await migrator.connect(core.governance).ownerSetTransformer(
       core.marketIds.dPtGlp,
       core.marketIds.dfsGlp,
-      transformer.address
+      transformer.address,
+      false
     );
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(migrator.address, true);
     await ptGlpFactory.connect(core.governance).ownerSetIsTokenConverterTrusted(migrator.address, true);
@@ -115,7 +119,7 @@ describe('PtGLPTransformer', () => {
         core.marketIds.dPtGlp
       )).value;
 
-      await migrator.connect(core.hhUser5).migrate(
+      await migrator.connect(core.hhUser5)[accountsMigrate](
         accounts,
         core.marketIds.dPtGlp,
         core.marketIds.dfsGlp,
@@ -160,7 +164,7 @@ describe('PtGLPTransformer', () => {
         { owner: vaultAddress2, number: borrowAccount2 },
         core.marketIds.nativeUsdc
       );
-      await migrator.connect(core.hhUser5).migrate(
+      await migrator.connect(core.hhUser5)[accountsMigrate](
         integrationAccounts,
         core.marketIds.dPtGlp,
         core.marketIds.dfsGlp,
