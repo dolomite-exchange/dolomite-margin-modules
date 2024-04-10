@@ -33,5 +33,5 @@ interface IDolomiteTransformer {
 
     function outputToken() external view returns (address);
 
-    function transform(uint256 amount, bytes calldata /* _extraData */) external returns (uint256);
+    function transform(uint256 amount, bytes calldata _extraData) external returns (uint256);
 }

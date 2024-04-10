@@ -2014,7 +2014,8 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
           ONE_BI,
           BYTES_EMPTY,
         ),
-        `IsolationModeVaultV1Freezable: Account is frozen <${userVault.address.toLowerCase()}, ${defaultAccountNumber}>`,
+        `IsolationModeVaultV1Freezable: Account is frozen <${userVault.address.toLowerCase()}, ${
+          defaultAccountNumber}>`,
       );
     });
 

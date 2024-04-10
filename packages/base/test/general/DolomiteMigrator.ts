@@ -4,7 +4,6 @@ import {
   DolomiteMigrator,
   DolomiteMigrator__factory,
   IsolationModeTokenVaultMigrator,
-  IsolationModeTokenVaultMigrator__factory,
   TestFailingTransformer,
   TestFailingTransformerBytes,
   TestFailingTransformerBytes__factory,
