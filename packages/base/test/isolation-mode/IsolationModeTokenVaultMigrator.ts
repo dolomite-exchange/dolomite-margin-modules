@@ -110,8 +110,9 @@ describe('IsolationModeTokenVaultMigrator', () => {
   describe('#executeWithdrawalFromVault', async () => {
     it('should work normally (do nothing)', async () => {
       const factoryImpersonator = await impersonate(factory.address, true);
-      await expect(() => userVault.connect(factoryImpersonator).executeWithdrawalFromVault(OTHER_ADDRESS, amountWei))
-        .to.changeTokenBalance(underlyingToken, userVault, 0);
+      const preBal = await underlyingToken.balanceOf(userVault.address);
+      await userVault.connect(factoryImpersonator).executeWithdrawalFromVault(OTHER_ADDRESS, amountWei);
+      expect(await underlyingToken.balanceOf(userVault.address)).to.eq(preBal);
     });
 
     it('should fail if not called by factory', async () => {

@@ -38,4 +38,6 @@ interface IIsolationModeTokenVaultMigrator {
     function MIGRATION_TOKEN() external view returns (IERC20);
 
     function migrate(uint256 _amountWei) external;
+
+    function executeWithdrawalFromVault(address _recipient, uint256 _amount) external;
 }

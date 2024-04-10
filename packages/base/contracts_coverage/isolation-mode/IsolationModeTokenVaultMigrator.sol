@@ -69,11 +69,12 @@ contract IsolationModeTokenVaultMigrator is IIsolationModeTokenVaultMigrator, Pr
         MIGRATION_TOKEN = IERC20(_migrationToken);
     }
 
+    // @audit Will adding a migrate function to the normal isolation mode vault cause security issues?
     function migrate(uint256 _amountWei) external onlyMigrator(msg.sender) {
         _migrate(_amountWei);
     }
 
-    function executeWithdrawalFromVault(address /* _recipient */, uint256 /* _amount */) external {
+    function executeWithdrawalFromVault(address /* _recipient */, uint256 /* _amount */) external view {
         if (msg.sender == VAULT_FACTORY()) { /* FOR COVERAGE TESTING */ }
         Require.that(
             msg.sender == VAULT_FACTORY(),

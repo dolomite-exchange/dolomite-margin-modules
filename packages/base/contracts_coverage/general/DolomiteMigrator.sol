@@ -33,7 +33,6 @@ import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { ExcessivelySafeCall } from "../protocol/lib/ExcessivelySafeCall.sol";
 import { Require } from "../protocol/lib/Require.sol";
 
-import "hardhat/console.sol";
 
 /**
  * @title   DolomiteMigrator
@@ -55,7 +54,8 @@ contract DolomiteMigrator is IDolomiteMigrator, OnlyDolomiteMargin {
     // =================== State Variables ============
     // ================================================
 
-    mapping(uint256 => mapping(uint256 => address)) public marketIdsToTransformer;
+    // @todo Add solo allowable markets to transformer struct
+    mapping(uint256 => mapping(uint256 => Transformer)) public marketIdsToTransformer;
     address public handler;
 
     // ================================================
@@ -93,15 +93,32 @@ contract DolomiteMigrator is IDolomiteMigrator, OnlyDolomiteMargin {
         uint256 _toMarketId,
         bytes calldata _extraData
     ) external onlyHandler(msg.sender) {
+        _checkMarketIds(_fromMarketId, _toMarketId, /* _soloCall = */ false);
         _migrate(_accounts, _fromMarketId, _toMarketId, _extraData);
+    }
+
+    function migrate(
+        uint256 _accountNumber,
+        uint256 _fromMarketId,
+        uint256 _toMarketId,
+        bytes calldata _extraData
+    ) external {
+        _checkMarketIds(_fromMarketId, _toMarketId, /* _soloCall = */ true);
+        IDolomiteStructs.AccountInfo[] memory accounts = new IDolomiteStructs.AccountInfo[](1);
+        accounts[0] = IDolomiteStructs.AccountInfo({
+            owner: msg.sender,
+            number: _accountNumber
+        });
+        _migrate(accounts, _fromMarketId, _toMarketId, _extraData);
     }
 
     function ownerSetTransformer(
         uint256 _fromMarketId,
         uint256 _toMarketId,
-        address _transformer
+        address _transformer,
+        bool _soloAllowable
     ) external onlyDolomiteMarginOwner(msg.sender) {
-        _ownerSetTransformer(_fromMarketId, _toMarketId, _transformer);
+        _ownerSetTransformer(_fromMarketId, _toMarketId, _transformer, _soloAllowable);
     }
 
     function ownerSetHandler(
@@ -115,24 +132,11 @@ contract DolomiteMigrator is IDolomiteMigrator, OnlyDolomiteMargin {
     // ================================================
 
     function _migrate(
-        IDolomiteStructs.AccountInfo[] calldata _accounts,
+        IDolomiteStructs.AccountInfo[] memory _accounts,
         uint256 _fromMarketId,
         uint256 _toMarketId,
-        bytes calldata _extraData
+        bytes memory _extraData
     ) internal virtual {
-        if (_fromMarketId != _toMarketId) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            _fromMarketId != _toMarketId,
-            _FILE,
-            "Cannot migrate to same market"
-        );
-        if (_isIsolationModeMarket(_fromMarketId) && _isIsolationModeMarket(_toMarketId)) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            _isIsolationModeMarket(_fromMarketId) && _isIsolationModeMarket(_toMarketId),
-            _FILE,
-            "Markets must be isolation mode"
-        );
-
         IIsolationModeVaultFactory fromFactory = IIsolationModeVaultFactory(
             DOLOMITE_MARGIN().getMarketTokenAddress(_fromMarketId)
         );
@@ -140,8 +144,10 @@ contract DolomiteMigrator is IDolomiteMigrator, OnlyDolomiteMargin {
             DOLOMITE_MARGIN().getMarketTokenAddress(_toMarketId)
         );
 
-        IERC20 inputToken = IERC20(IDolomiteTransformer(marketIdsToTransformer[_fromMarketId][_toMarketId]).inputToken());
-        IERC20 outputToken = IERC20(IDolomiteTransformer(marketIdsToTransformer[_fromMarketId][_toMarketId]).outputToken());
+        IDolomiteTransformer transformer = IDolomiteTransformer(
+            marketIdsToTransformer[_fromMarketId][_toMarketId].transformer
+        );
+        IERC20 outputToken = IERC20(transformer.outputToken());
 
         for (uint256 i; i < _accounts.length; ++i) {
             IDolomiteStructs.AccountInfo memory account = _accounts[i];
@@ -165,9 +171,9 @@ contract DolomiteMigrator is IDolomiteMigrator, OnlyDolomiteMargin {
 
             if (amountWei > 0) {
                 {
-                    uint256 preBal = inputToken.balanceOf(address(this));
+                    uint256 preBal = IERC20(transformer.inputToken()).balanceOf(address(this));
                     IIsolationModeTokenVaultMigrator(account.owner).migrate(amountWei);
-                    uint256 postBal = inputToken.balanceOf(address(this));
+                    uint256 postBal = IERC20(transformer.inputToken()).balanceOf(address(this));
                     /*assert(postBal - preBal == amountWei);*/
 
                     preBal = outputToken.balanceOf(address(this));
@@ -194,16 +200,15 @@ contract DolomiteMigrator is IDolomiteMigrator, OnlyDolomiteMargin {
                 /* _hasFromMarketIdBalance */ amountWei > 0
             );
 
-            /*assert(IERC20(outputToken).allowance(address(this), toVault) == 0);*/
+            /*assert(outputToken.allowance(address(this), toVault) == 0);*/
             /*assert(IERC20(address(toFactory)).allowance(address(this), address(DOLOMITE_MARGIN())) == 0);*/
             if (amountWei > 0) {
-                // TODO: assert the current transfer cursor has been executed from each factory
-                {
-                    IIsolationModeVaultFactory.QueuedTransfer memory transfer = fromFactory.getQueuedTransferByCursor(fromFactory.transferCursor());
-                    /*assert(transfer.isExecuted);*/
-                    transfer = toFactory.getQueuedTransferByCursor(toFactory.transferCursor());
-                    /*assert(transfer.isExecuted);*/
-                }
+                IIsolationModeVaultFactory.QueuedTransfer memory transfer = fromFactory.getQueuedTransferByCursor(
+                    fromFactory.transferCursor()
+                );
+                /*assert(transfer.isExecuted);*/
+                transfer = toFactory.getQueuedTransferByCursor(toFactory.transferCursor());
+                /*assert(transfer.isExecuted);*/
             }
 
             emit MigrationComplete(account.owner, account.number, fromMarketId, toMarketId);
@@ -216,7 +221,7 @@ contract DolomiteMigrator is IDolomiteMigrator, OnlyDolomiteMargin {
         uint256 _amount,
         bytes memory _extraData
     ) internal returns (uint256) {
-        address transformer = marketIdsToTransformer[_fromMarketId][_toMarketId];
+        address transformer = marketIdsToTransformer[_fromMarketId][_toMarketId].transformer;
         /*assert(transformer != address(0));*/
         (bool success, bytes memory data) = transformer.delegatecall(
             abi.encodeWithSelector(IDolomiteTransformer.transform.selector, _amount, _extraData)
@@ -310,10 +315,39 @@ contract DolomiteMigrator is IDolomiteMigrator, OnlyDolomiteMargin {
         DOLOMITE_MARGIN().operate(accounts, actions);
     }
 
+    function _checkMarketIds(
+        uint256 _fromMarketId,
+        uint256 _toMarketId,
+        bool _soloCall
+    ) internal view {
+        if (_fromMarketId != _toMarketId) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            _fromMarketId != _toMarketId,
+            _FILE,
+            "Cannot migrate to same market"
+        );
+        if (_isIsolationModeMarket(_fromMarketId) && _isIsolationModeMarket(_toMarketId)) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            _isIsolationModeMarket(_fromMarketId) && _isIsolationModeMarket(_toMarketId),
+            _FILE,
+            "Markets must be isolation mode"
+        );
+
+        if (_soloCall) {
+            if (marketIdsToTransformer[_fromMarketId][_toMarketId].soloAllowable) { /* FOR COVERAGE TESTING */ }
+            Require.that(
+                marketIdsToTransformer[_fromMarketId][_toMarketId].soloAllowable,
+                _FILE,
+                "Solo migration not allowed"
+            );
+        }
+    }
+
     function _ownerSetTransformer(
         uint256 _fromMarketId,
         uint256 _toMarketId,
-        address _transformer
+        address _transformer,
+        bool _soloAllowable
     ) internal {
         if (_transformer != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
@@ -322,7 +356,10 @@ contract DolomiteMigrator is IDolomiteMigrator, OnlyDolomiteMargin {
             "Invalid transformer"
         );
 
-        marketIdsToTransformer[_fromMarketId][_toMarketId] = _transformer;
+        marketIdsToTransformer[_fromMarketId][_toMarketId] = Transformer({
+            transformer: _transformer,
+            soloAllowable: _soloAllowable
+        });
         emit TransformerSet(_fromMarketId, _toMarketId, _transformer);
     }
 
