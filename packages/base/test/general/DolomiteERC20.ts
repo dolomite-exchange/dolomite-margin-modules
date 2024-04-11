@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { DolomiteERC20, DolomiteERC20__factory } from '../../src/types';
+import { DolomiteERC20, DolomiteERC20__factory, TestDolomiteERC20User, TestDolomiteERC20User__factory } from '../../src/types';
 import { createContractWithAbi, depositIntoDolomiteMargin } from '../../src/utils/dolomite-utils';
 import { ADDRESS_ZERO, MAX_UINT_256_BI, Network, ONE_DAY_SECONDS, ONE_ETH_BI, ZERO_BI } from '../../src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../utils';
@@ -62,6 +62,28 @@ describe('DolomiteERC20', () => {
       expect(await token.balanceOf(core.hhUser2.address)).to.eq(parValue);
       await expectProtocolBalance(core, core.hhUser1, ZERO_BI, core.marketIds.usdc, ZERO_BI);
       expect((await core.dolomiteMargin.getAccountPar(accountInfo2, core.marketIds.usdc)).value).to.eq(parValue);
+    });
+
+    it('should approve tx.origin & msg.sender', async () => {
+      const doloErc20User = await createContractWithAbi<TestDolomiteERC20User>(
+        TestDolomiteERC20User__factory.abi,
+        TestDolomiteERC20User__factory.bytecode,
+        [token.address],
+      );
+      const userImpersonator = await impersonate(doloErc20User.address, true);
+      await setupUSDCBalance(core, userImpersonator, usdcAmount.mul(10), core.dolomiteMargin);
+      await depositIntoDolomiteMargin(core, userImpersonator, ZERO_BI, core.marketIds.usdc, usdcAmount);
+      const parValue = (await core.dolomiteMargin.getAccountPar(
+        { owner: doloErc20User.address, number: 0 },
+        core.marketIds.usdc
+      )).value;
+      expect(await token.balanceOf(doloErc20User.address)).to.eq(parValue);
+
+      expect(await token.isValidReceiver(core.hhUser2.address)).to.be.false;
+      expect(await token.isValidReceiver(doloErc20User.address)).to.be.false;
+      await doloErc20User.connect(core.hhUser2).transfer(core.hhUser2.address, parValue);
+      expect(await token.isValidReceiver(core.hhUser2.address)).to.be.true;
+      expect(await token.balanceOf(core.hhUser2.address)).to.eq(parValue);
     });
 
     it('should fail if from zero address', async () => {

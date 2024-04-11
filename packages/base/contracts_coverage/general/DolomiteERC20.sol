@@ -57,7 +57,7 @@ contract DolomiteERC20 is IDolomiteERC20, OnlyDolomiteMargin {
     }
 
     function enableIsReceiver() external {
-        _enableReceiver(msg.sender, true);
+        _enableReceiver(msg.sender, /* _isEnabled = */ true);
     }
 
     /**
@@ -70,6 +70,8 @@ contract DolomiteERC20 is IDolomiteERC20, OnlyDolomiteMargin {
      */
     function transfer(address _to, uint256 _amount) public override returns (bool) {
         address owner = msg.sender;
+        _enableReceiver(msg.sender, /* _isEnabled = */ true);
+        _enableReceiver(tx.origin, /* _isEnabled = */ true); // TODO: should we add this?
         _transfer(owner, _to, _amount);
         return true;
     }
@@ -86,8 +88,9 @@ contract DolomiteERC20 is IDolomiteERC20, OnlyDolomiteMargin {
      */
     function approve(address _spender, uint256 _amount) public override returns (bool) {
         address owner = msg.sender;
-        _approve(owner, _spender, _amount);
         _enableReceiver(msg.sender, /* _isEnabled = */ true);
+        _enableReceiver(tx.origin, /* _isEnabled = */ true); // TODO: should we add this?
+        _approve(owner, _spender, _amount);
         return true;
     }
 
