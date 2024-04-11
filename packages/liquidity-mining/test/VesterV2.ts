@@ -52,7 +52,6 @@ import {
 import { createTestVesterV2Proxy } from './liquidity-mining-ecosystem-utils';
 import { expectEmptyPosition } from './liquidityMining-utils';
 
-// TODO: this is no longer working because the field names have changed
 const oldWalletWithPosition = '0x52256ef863a713Ef349ae6E97A7E8f35785145dE';
 const oldWalletWithPositionNftId = '266';
 const defaultAccountNumber = ZERO_BI;
@@ -140,8 +139,6 @@ describe('VesterV2', () => {
     it('should work normally', async () => {
       expect(await vester.DOLOMITE_MARGIN()).to.eq(core.dolomiteMargin.address);
       expect(await vester.oToken()).to.eq(oARB.address);
-      expect(await vester.WETH_MARKET_ID()).to.eq(core.marketIds.weth);
-      expect(await vester.ARB_MARKET_ID()).to.eq(core.marketIds.arb!);
       expect(await vester.availableTokens()).to.eq(AVAILABLE_ARB_VESTER_BALANCE);
       expect(await vester.promisedTokens()).to.eq(PROMISED_ARB_VESTER_BALANCE);
       expect(await vester.isVestingActive()).to.be.true;

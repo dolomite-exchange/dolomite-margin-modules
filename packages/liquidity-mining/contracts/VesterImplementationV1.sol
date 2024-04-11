@@ -42,8 +42,8 @@ import { IVesterV1 } from "./interfaces/IVesterV1.sol";
  * @title   VesterImplementationV1
  * @author  Dolomite
  *
- * An implementation of the IVesterV1 interface that allows users to buy ARB at a discount if they vest ARB and oARB for
- * a certain amount of time
+ * @notice  An implementation of the IVesterV1 interface that allows users to buy PAIR_TOKEN at a discount if they vest
+ *          PAIR_TOKEN and oToken for a certain amount of time.
  */
 contract VesterImplementationV1 is
     ProxyContractHelpers,
@@ -68,8 +68,8 @@ contract VesterImplementationV1 is
 
     bytes32 private constant _NEXT_ID_SLOT = bytes32(uint256(keccak256("eip1967.proxy.nextId")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _VESTING_POSITIONS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.vestingPositions")) - 1); // solhint-disable-line max-line-length
-    bytes32 private constant _PROMISED_ARB_TOKENS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.promisedTokens")) - 1); // solhint-disable-line max-line-length
-    bytes32 private constant _OARB_SLOT = bytes32(uint256(keccak256("eip1967.proxy.oarb")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _PROMISED_TOKENS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.promisedTokens")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _O_TOKEN_SLOT = bytes32(uint256(keccak256("eip1967.proxy.oToken")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _CLOSE_POSITION_WINDOW_SLOT = bytes32(uint256(keccak256("eip1967.proxy.closePositionWindow")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _FORCE_CLOSE_POSITION_TAX_SLOT = bytes32(uint256(keccak256("eip1967.proxy.forceClosePositionTax")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _EMERGENCY_WITHDRAW_TAX_SLOT = bytes32(uint256(keccak256("eip1967.proxy.emergencyWithdrawTax")) - 1); // solhint-disable-line max-line-length
@@ -84,8 +84,8 @@ contract VesterImplementationV1 is
     IDolomiteRegistry public immutable DOLOMITE_REGISTRY; // solhint-disable-line
     IWETH public immutable WETH; // solhint-disable-line
     uint256 public immutable WETH_MARKET_ID; // solhint-disable-line
-    IERC20 public immutable ARB; // solhint-disable-line
-    uint256 public immutable ARB_MARKET_ID; // solhint-disable-line
+    IERC20 public immutable PAIR_TOKEN; // solhint-disable-line
+    uint256 public immutable PAIR_MARKET_ID; // solhint-disable-line
 
     // =========================================================
     // ======================= Modifiers =======================
@@ -108,13 +108,13 @@ contract VesterImplementationV1 is
         address _dolomiteMargin,
         address _dolomiteRegistry,
         IWETH _weth,
-        IERC20 _arb
+        IERC20 _pairToken
     ) OnlyDolomiteMargin(_dolomiteMargin) {
         DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
         WETH = _weth;
         WETH_MARKET_ID = DOLOMITE_MARGIN().getMarketIdByTokenAddress(address(_weth));
-        ARB = _arb;
-        ARB_MARKET_ID = DOLOMITE_MARGIN().getMarketIdByTokenAddress(address(_arb));
+        PAIR_TOKEN = _pairToken;
+        PAIR_MARKET_ID = DOLOMITE_MARGIN().getMarketIdByTokenAddress(address(_pairToken));
     }
 
     function initialize(
@@ -123,14 +123,19 @@ contract VesterImplementationV1 is
         external
         initializer
     {
-        (address _oARB, string memory _baseUri) = abi.decode(_data, (address, string));
+        (
+            address _oToken,
+            string memory _baseUri,
+            string memory _name,
+            string memory _symbol
+        ) = abi.decode(_data, (address, string, string, string));
         _ownerSetIsVestingActive(true);
-        _ownerSetOARB(_oARB);
+        _ownerSetOToken(_oToken);
         _ownerSetClosePositionWindow(1 weeks);
         _ownerSetForceClosePositionTax(500); // 5%
         _ownerSetEmergencyWithdrawTax(0); // 0%
         _ownerSetBaseURI(_baseUri);
-        __ERC721_init("Dolomite oARB Vesting", "voARB");
+        __ERC721_init(_name, _symbol);
     }
 
     // ==================================================================
@@ -147,9 +152,9 @@ contract VesterImplementationV1 is
         returns (uint256)
     {
         Require.that(
-            ARB.balanceOf(address(this)) >= _amount + promisedTokens(),
+            PAIR_TOKEN.balanceOf(address(this)) >= _amount + promisedTokens(),
             _FILE,
-            "Not enough ARB tokens available"
+            "Not enough rewards available"
         );
         Require.that(
             _duration >= _MIN_DURATION && _duration <= _MAX_DURATION && _duration % _MIN_DURATION == 0,
@@ -180,7 +185,7 @@ contract VesterImplementationV1 is
             /* fromAccountNumber = */ _fromAccountNumber,
             /* toAccount = */ address(this),
             /* toAccountNumber = */ uint256(keccak256(abi.encodePacked(msg.sender, nftId))),
-            /* marketId */ ARB_MARKET_ID,
+            /* marketId */ PAIR_MARKET_ID,
             /* amount */ _amount
         );
 
@@ -217,23 +222,23 @@ contract VesterImplementationV1 is
 
         _closePosition(position);
 
-        // Burn oARB and deposit ARB tokens back into dolomite
+        // Burn oToken and deposit PAIR_TOKEN tokens back into dolomite
         oToken().burn(position.amount);
         _transfer(
             /* fromAccount = */ address(this),
             /* fromAccountNumber = */ accountNumber,
             /* toAccount = */ positionOwner,
             /* toAccountNumber = */ _toAccountNumber,
-            /* marketId */ ARB_MARKET_ID,
+            /* marketId */ PAIR_MARKET_ID,
             /* amount */ type(uint256).max
         );
 
         // Calculate price
         uint256 discount = _calculateDiscount(position.duration);
         uint256 wethPrice = DOLOMITE_MARGIN().getMarketPrice(WETH_MARKET_ID).value;
-        uint256 arbPriceAdj = DOLOMITE_MARGIN().getMarketPrice(ARB_MARKET_ID).value * discount / _BASE;
+        uint256 pairPriceAdj = DOLOMITE_MARGIN().getMarketPrice(PAIR_MARKET_ID).value * discount / _BASE;
 
-        uint256 cost = position.amount * arbPriceAdj / wethPrice;
+        uint256 cost = position.amount * pairPriceAdj / wethPrice;
         Require.that(
             cost <= _maxPaymentAmount,
             _FILE,
@@ -249,8 +254,8 @@ contract VesterImplementationV1 is
             /* amount */ cost
         );
 
-        // Deposit purchased ARB tokens into dolomite, clear vesting position, and refund
-        _depositARBIntoDolomite(positionOwner, _toAccountNumber, position.amount);
+        // Deposit purchased pair tokens into dolomite, clear vesting position, and refund
+        _depositIntoDolomite(positionOwner, _toAccountNumber, position.amount);
 
         emit PositionClosed(positionOwner, _id, cost);
     }
@@ -271,17 +276,17 @@ contract VesterImplementationV1 is
 
         _closePosition(position);
 
-        // Burn oARB and transfer ARB tokens back to user"s dolomite account minus tax amount
-        uint256 arbTax = position.amount * forceClosePositionTax() / _BASE;
+        // Burn oToken and transfer PAIR_TOKEN tokens back to user's dolomite account minus tax amount
+        uint256 pairTax = position.amount * forceClosePositionTax() / _BASE;
         oToken().burn(position.amount);
-        if (arbTax > 0) {
+        if (pairTax > 0) {
             _transfer(
                 /* _fromAccount = */ address(this),
                 /* _fromAccountNumber = */ accountNumber,
                 /* _toAccount = */ DOLOMITE_MARGIN().owner(),
                 /* _toAccountNumber = */ _DEFAULT_ACCOUNT_NUMBER,
-                /* _marketId = */ ARB_MARKET_ID,
-                /* _amountWei */ arbTax
+                /* _marketId = */ PAIR_MARKET_ID,
+                /* _amountWei */ pairTax
             );
         }
 
@@ -290,14 +295,14 @@ contract VesterImplementationV1 is
             /* _fromAccountNumber = */ accountNumber,
             /* _toAccount = */ positionOwner,
             /* _toAccountNumber = */ _DEFAULT_ACCOUNT_NUMBER,
-            /* _marketId = */ ARB_MARKET_ID,
+            /* _marketId = */ PAIR_MARKET_ID,
             /* _amountWei */ type(uint256).max
         );
 
-        emit PositionForceClosed(positionOwner, _id, arbTax);
+        emit PositionForceClosed(positionOwner, _id, pairTax);
     }
 
-    // WARNING: This will forfeit all vesting progress and burn any locked oARB
+    // WARNING: This will forfeit all vesting progress and burn any locked oToken
     function emergencyWithdraw(uint256 _id) external {
         VestingPosition memory position = _getVestingPositionSlot(_id);
         uint256 accountNumber = uint256(keccak256(abi.encodePacked(position.creator, _id)));
@@ -308,17 +313,17 @@ contract VesterImplementationV1 is
             "Invalid position owner"
         );
 
-        // Transfer arb back to the user and burn ARB
+        // Transfer PAIR_TOKEN back to the user and burn PAIR_TOKEN
         oToken().burn(position.amount);
-        uint256 arbTax = position.amount * emergencyWithdrawTax() / _BASE;
-        if (arbTax > 0) {
+        uint256 pairTokenTax = position.amount * emergencyWithdrawTax() / _BASE;
+        if (pairTokenTax > 0) {
             _transfer(
                 /* _fromAccount = */ address(this),
                 /* _fromAccountNumber = */ accountNumber,
                 /* _toAccount = */ DOLOMITE_MARGIN().owner(),
                 /* _toAccountNumber = */ _DEFAULT_ACCOUNT_NUMBER,
-                /* _marketId = */ ARB_MARKET_ID,
-                /* _amountWei */ arbTax
+                /* _marketId = */ PAIR_MARKET_ID,
+                /* _amountWei */ pairTokenTax
             );
         }
 
@@ -327,13 +332,13 @@ contract VesterImplementationV1 is
             /* _fromAccountNumber = */ accountNumber,
             /* _toAccount = */ owner,
             /* _toAccountNumber = */ _DEFAULT_ACCOUNT_NUMBER,
-            /* _marketId = */ ARB_MARKET_ID,
+            /* _marketId = */ PAIR_MARKET_ID,
             /* _amountWei */ type(uint256).max
         );
 
         _closePosition(position);
 
-        emit EmergencyWithdraw(owner, _id, arbTax);
+        emit EmergencyWithdraw(owner, _id, pairTokenTax);
     }
 
     // ==================================================================
@@ -354,7 +359,7 @@ contract VesterImplementationV1 is
                 "Insufficient available tokens"
             );
         }
-        ARB.safeTransfer(_to, _amount);
+        PAIR_TOKEN.safeTransfer(_to, _amount);
     }
 
     function ownerSetIsVestingActive(
@@ -365,12 +370,12 @@ contract VesterImplementationV1 is
         _ownerSetIsVestingActive(_isVestingActive);
     }
 
-    function ownerSetOARB(
-        address _oARB
+    function ownerSetOToken(
+        address _oToken
     )
     external
     onlyDolomiteMarginOwner(msg.sender) {
-        _ownerSetOARB(_oARB);
+        _ownerSetOToken(_oToken);
     }
 
     function ownerSetClosePositionWindow(
@@ -410,15 +415,15 @@ contract VesterImplementationV1 is
     // ==================================================================
 
     function availableTokens() public view returns (uint256) {
-        return ARB.balanceOf(address(this)) - promisedTokens();
+        return PAIR_TOKEN.balanceOf(address(this)) - promisedTokens();
     }
 
     function promisedTokens() public view returns (uint256) {
-        return _getUint256(_PROMISED_ARB_TOKENS_SLOT);
+        return _getUint256(_PROMISED_TOKENS_SLOT);
     }
 
     function oToken() public view returns (IERC20Mintable) {
-        return IERC20Mintable(_getAddress(_OARB_SLOT));
+        return IERC20Mintable(_getAddress(_O_TOKEN_SLOT));
     }
 
     function closePositionWindow() public view returns (uint256) {
@@ -462,14 +467,14 @@ contract VesterImplementationV1 is
         emit VestingActiveSet(_isVestingActive);
     }
 
-    function _ownerSetOARB(address _oARB) internal {
+    function _ownerSetOToken(address _oToken) internal {
         Require.that(
             promisedTokens() == 0,
             _FILE,
             "Outstanding vesting positions"
         );
-        _setAddress(_OARB_SLOT, _oARB);
-        emit OARBSet(_oARB);
+        _setAddress(_O_TOKEN_SLOT, _oToken);
+        emit OTokenSet(_oToken);
     }
 
     function _ownerSetClosePositionWindow(uint256 _closePositionWindow) internal {
@@ -551,20 +556,19 @@ contract VesterImplementationV1 is
         );
     }
 
-    function _depositARBIntoDolomite(
+    function _depositIntoDolomite(
         address _account,
         uint256 _toAccountNumber,
         uint256 _amount
     ) internal {
         IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
-        IERC20 arb = IERC20(DOLOMITE_MARGIN().getMarketTokenAddress(ARB_MARKET_ID));
-        arb.safeApprove(address(dolomiteMargin), _amount);
+        PAIR_TOKEN.safeApprove(address(dolomiteMargin), _amount);
         AccountActionLib.deposit(
             dolomiteMargin,
             _account,
             /* _fromAccount = */ address(this),
             _toAccountNumber,
-            ARB_MARKET_ID,
+            PAIR_MARKET_ID,
             IDolomiteStructs.AssetAmount({
                 sign: true,
                 denomination: IDolomiteStructs.AssetDenomination.Wei,
@@ -585,7 +589,7 @@ contract VesterImplementationV1 is
     }
 
     function _setPromisedTokens(uint256 _promisedTokens) internal {
-        _setUint256(_PROMISED_ARB_TOKENS_SLOT, _promisedTokens);
+        _setUint256(_PROMISED_TOKENS_SLOT, _promisedTokens);
         emit PromisedTokensSet(_promisedTokens);
     }
 

@@ -38,6 +38,7 @@ library VesterImplementationLibForV2 {
     bytes32 private constant _FILE = "VesterImplementationLibForV2";
     uint256 private constant _MIN_VESTING_DURATION = 1 weeks;
     uint256 private constant _MAX_VESTING_DURATION = 40 weeks;
+    uint256 private constant _GRANDFATHERED_UPGRADED_MIN_DURATION = 8 weeks;
     uint256 private constant _OLD_MAX_VESTING_DURATION = 4 weeks;
 
     // ======================================================
@@ -84,8 +85,21 @@ library VesterImplementationLibForV2 {
         uint256 _duration,
         uint256 _nftId
     ) public view returns (uint256) {
-        uint256 numberOfWeeks = _duration / _MIN_VESTING_DURATION;
-        return 10_000 - (250 * numberOfWeeks);
+        if (_nftId <= _implementation.grandfatheredIdCutoff() && _duration < _GRANDFATHERED_UPGRADED_MIN_DURATION) {
+            if (_duration == 1 weeks) {
+                return 9_750;
+            } else if (_duration == 2 weeks) {
+                return 9_500;
+            } else if (_duration == 3 weeks) {
+                return 9_000;
+            } else {
+                assert(_duration == 4 weeks);
+                return 8_000;
+            }
+        } else {
+            uint256 numberOfWeeks = _duration / _MIN_VESTING_DURATION;
+            return 10_000 - (250 * numberOfWeeks);
+        }
     }
 
     function minVestingDuration() public pure returns (uint256) {
@@ -94,5 +108,13 @@ library VesterImplementationLibForV2 {
 
     function maxVestingDuration() public pure returns (uint256) {
         return _MAX_VESTING_DURATION;
+    }
+
+    function grandfatheredUpgradedMinVestingDuration() public pure returns (uint256) {
+        return _GRANDFATHERED_UPGRADED_MIN_DURATION;
+    }
+
+    function oldMaxVestingDuration() public pure returns (uint256) {
+        return _OLD_MAX_VESTING_DURATION;
     }
 }

@@ -54,10 +54,10 @@ interface IVesterV1 {
 
     event VestingStarted(address indexed owner, uint256 duration, uint256 amount, uint256 vestingId);
     event PositionClosed(address indexed owner, uint256 vestingId, uint256 ethCostPaid);
-    event PositionForceClosed(address indexed owner, uint256 vestingId, uint256 arbTax);
-    event EmergencyWithdraw(address indexed owner, uint256 vestingId, uint256 arbTax);
+    event PositionForceClosed(address indexed owner, uint256 vestingId, uint256 pairTax);
+    event EmergencyWithdraw(address indexed owner, uint256 vestingId, uint256 pairTax);
     event VestingActiveSet(bool vestingActive);
-    event OARBSet(address oARB);
+    event OTokenSet(address oToken);
     event ClosePositionWindowSet(uint256 closePositionWindow);
     event EmergencyWithdrawTaxSet(uint256 emergencyWithdrawTax);
     event ForceClosePositionTaxSet(uint256 forceClosePositionTax);
@@ -91,6 +91,14 @@ interface IVesterV1 {
      * @param  _isVestingActive   True if creating new vests is allowed, or false to disable it
      */
     function ownerSetIsVestingActive(bool _isVestingActive) external;
+
+    /**
+     * @notice  Sets the oToken address. Reverts if there are any outstanding promised tokens. Callable by Dolomite
+     *          Margin owner
+     *
+     * @param  _oToken   The oToken to be used for vesting into PAIR_TOKEN
+     */
+    function ownerSetOToken(address _oToken) external;
 
     /**
      * @notice  Sets the close position window. Callable by Dolomite Margin owner
