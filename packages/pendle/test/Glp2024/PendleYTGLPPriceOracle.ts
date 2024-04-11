@@ -124,7 +124,7 @@ describe('PendleYtGLPPriceOracle', () => {
     // @todo fix
     it('returns the correct value under normal conditions for dytGLP', async () => {
       await increaseToTimestamp(timestampTeleport);
-      expect((await core.dolomiteMargin.getMarketPrice(core.marketIds.dPtGlp!)).value).to.eq(PT_GLP_PRICE);
+      expect((await core.dolomiteMargin.getMarketPrice(core.marketIds.dPtGlpMar2024!)).value).to.eq(PT_GLP_PRICE);
       expect((await core.dolomiteMargin.getMarketPrice(core.marketIds.dfsGlp!)).value).to.eq(GLP_PRICE);
       expect((await ytGlpOracle.getPrice(factory.address)).value).to.eq(YT_GLP_PRICE);
 

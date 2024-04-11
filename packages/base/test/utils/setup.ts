@@ -567,7 +567,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
           dGmLink: D_GM_LINK_MAP[typedConfig.network]!.marketId,
           djUSDC: DJ_USDC[typedConfig.network]!.marketId,
           dplvGlp: DPLV_GLP_MAP[typedConfig.network]!.marketId,
-          dPtGlp: DPT_GLP_2024_MAP[typedConfig.network]!.marketId,
+          dPtGlpMar2024: DPT_GLP_2024_MAP[typedConfig.network]!.marketId,
           dPtREthJun2025: DPT_R_ETH_JUN_2025_MAP[typedConfig.network]!.marketId,
           dPtWeEthApr2024: DPT_WE_ETH_APR_2024_MAP[typedConfig.network]!.marketId,
           dPtWstEthJun2024: DPT_WST_ETH_JUN_2024_MAP[typedConfig.network]!.marketId,

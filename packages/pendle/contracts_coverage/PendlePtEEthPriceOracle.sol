@@ -20,12 +20,7 @@
 
 pragma solidity ^0.8.9;
 
-import { IDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomitePriceOracle } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomitePriceOracle.sol"; // solhint-disable-line max-line-length
-import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
-import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
-import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import { IPendleRegistry } from "./interfaces/IPendleRegistry.sol";
 import { PendlePtPriceOracle } from "./PendlePtPriceOracle.sol";
 
 
@@ -60,6 +55,9 @@ contract PendlePtEEthPriceOracle is PendlePtPriceOracle {
         uint256 weETHExchangeRate = REGISTRY.dolomiteRegistry().chainlinkPriceOracle().getPrice(UNDERLYING_TOKEN).value;
         // weEth -> USD
         uint256 underlyingPrice = REGISTRY.dolomiteRegistry().redstonePriceOracle().getPrice(UNDERLYING_TOKEN).value;
-        return underlyingPrice * ptExchangeRate * WE_ETH_ASSET_SCALE / (PT_ASSET_SCALE * weETHExchangeRate);
+
+        return _applyDeductionCoefficient(
+            underlyingPrice * ptExchangeRate * WE_ETH_ASSET_SCALE / (PT_ASSET_SCALE * weETHExchangeRate)
+        );
     }
 }

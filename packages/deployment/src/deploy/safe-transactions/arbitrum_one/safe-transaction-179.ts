@@ -243,7 +243,7 @@ async function main(): Promise<DenJsonUpload> {
   transactions.push(
     ...await getIsolationModeTokenVaultTransactions(
       core,
-      core.marketIds.dPtGlp!,
+      core.marketIds.dPtGlpMar2024!,
       ptGlpUserVaultImplementationAddress,
     ),
   );

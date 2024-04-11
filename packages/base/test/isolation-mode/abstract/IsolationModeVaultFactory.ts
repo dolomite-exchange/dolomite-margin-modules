@@ -809,7 +809,7 @@ describe('IsolationModeVaultFactory', () => {
       await factory.connect(core.governance).ownerSetIsTokenConverterTrusted(core.hhUser2.address, true);
 
       await factory.connect(core.hhUser2).enqueueTransferIntoDolomiteMargin(vaultAddress, amountWei);
-      expect(await factory.allowance(vaultAddress, core.dolomiteMargin.address)).to.eq(amountWei);
+      expect(await factory.allowance(vaultAddress, core.dolomiteMargin.address)).to.eq(ZERO_BI);
       expect(await factory.transferCursor()).to.eq(1);
 
       const result = await factory.connect(core.hhUser2)

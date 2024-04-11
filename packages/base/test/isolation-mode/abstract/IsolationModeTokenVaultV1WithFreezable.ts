@@ -7,10 +7,10 @@ import {
   TestIsolationModeTokenVaultV1WithFreezable__factory,
   TestIsolationModeUnwrapperTraderV2,
   TestIsolationModeUnwrapperTraderV2__factory,
+  TestIsolationModeVaultFactory,
   TestIsolationModeWrapperTraderV2,
   TestIsolationModeWrapperTraderV2__factory,
 } from '../../../src/types';
-import { TestIsolationModeFactory } from '../../../src/types/contracts/test/TestIsolationModeFactory';
 import {
   createContractWithAbi,
   createContractWithLibrary,
@@ -47,7 +47,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
   let underlyingMarketId: BigNumber;
   let tokenUnwrapper: TestIsolationModeUnwrapperTraderV2;
   let tokenWrapper: TestIsolationModeWrapperTraderV2;
-  let factory: TestIsolationModeFactory;
+  let factory: TestIsolationModeVaultFactory;
   let userVaultImplementation: TestIsolationModeTokenVaultV1WithFreezable;
   let userVault: TestIsolationModeTokenVaultV1WithFreezable;
 

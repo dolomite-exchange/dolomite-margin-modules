@@ -20,12 +20,7 @@
 
 pragma solidity ^0.8.9;
 
-import { IDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomitePriceOracle } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomitePriceOracle.sol"; // solhint-disable-line max-line-length
-import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
-import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
-import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import { IPendleRegistry } from "./interfaces/IPendleRegistry.sol";
 import { PendlePtPriceOracle } from "./PendlePtPriceOracle.sol";
 
 
@@ -53,8 +48,10 @@ contract PendlePtRsEthPriceOracle is PendlePtPriceOracle {
     // ============================ Internal Functions ============================
 
     function _getCurrentPrice() internal view override returns (uint256) {
-        uint256 underlyingPrice = DOLOMITE_MARGIN.getMarketPrice(DOLOMITE_MARGIN.getMarketIdByTokenAddress(UNDERLYING_TOKEN)).value;
+        uint256 underlyingPrice = DOLOMITE_MARGIN().getMarketPrice(
+            DOLOMITE_MARGIN().getMarketIdByTokenAddress(UNDERLYING_TOKEN)
+        ).value;
         uint256 ptExchangeRate = REGISTRY.ptOracle().getPtToAssetRate(address(REGISTRY.ptMarket()), TWAP_DURATION);
-        return underlyingPrice * ptExchangeRate / PT_ASSET_SCALE;
+        return _applyDeductionCoefficient(underlyingPrice * ptExchangeRate / PT_ASSET_SCALE);
     }
 }

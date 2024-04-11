@@ -242,6 +242,30 @@ describe('DolomiteRegistryImplementation', () => {
     });
   });
 
+  describe('#ownerSetDolomiteMigrator', () => {
+    it('should work normally', async () => {
+      const result = await registry.connect(core.governance).ownerSetDolomiteMigrator(OTHER_ADDRESS);
+      await expectEvent(registry, result, 'DolomiteMigratorSet', {
+        dolomiteMigrator: OTHER_ADDRESS,
+      });
+      expect(await registry.dolomiteMigrator()).to.equal(OTHER_ADDRESS);
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetDolomiteMigrator(OTHER_ADDRESS),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetDolomiteMigrator(ZERO_ADDRESS),
+        'DolomiteRegistryImplementation: Invalid dolomiteMigrator',
+      );
+    });
+  });
+
   describe('#ownerSetRedstonePriceOracle', () => {
     it('should work normally', async () => {
       const result = await registry.connect(core.governance).ownerSetRedstonePriceOracle(OTHER_ADDRESS);

@@ -541,6 +541,10 @@ export const JONES_JUSDC_RECEIPT_TOKEN_MAP: Record<Network.ArbitrumOne, string> 
   [Network.ArbitrumOne]: '0xa485a0bc44988B95245D5F20497CCaFF58a73E99',
 };
 
+export const JONES_ROUTER_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x4bC4D296DfCe661F34DD72D642d2A7C348E22A04',
+};
+
 export const JONES_WETH_V3_POOL_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x0e878029D18cD7F630823439cf389d1601d9dbD9',
 };
