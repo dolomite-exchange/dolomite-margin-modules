@@ -145,12 +145,6 @@ interface IVesterV2 is IVesterV1 {
 
     /**
      *
-     * @return The last ID from a V1 position that was grandfathered into the old vesting regime.
-     */
-    function grandfatheredIdCutoff() external view returns (uint256);
-
-    /**
-     *
      * @return The amount of ETH required to initiate a level update request
      */
     function levelRequestFee() external view returns (uint256);

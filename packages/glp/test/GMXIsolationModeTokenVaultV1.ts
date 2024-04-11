@@ -212,7 +212,6 @@ describe('GMXIsolationModeTokenVaultV1', () => {
   });
 
   describe('#signalAccountTransfer', () => {
-    // @todo signal goes through, handler confirms, and the amount of GLP is 0
     it('should work normally with staked gmx balance', async () => {
       await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
       await gmxVault.depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
@@ -222,7 +221,6 @@ describe('GMXIsolationModeTokenVaultV1', () => {
       expect(await gmxVault.underlyingBalanceOf()).to.eq(ZERO_BI);
       expect(await glpVault.gmxBalanceOf()).to.eq(ZERO_BI);
       expect(await core.gmxEcosystem!.sbfGmx.balanceOf(glpVault.address)).to.eq(ZERO_BI);
-      // @follow-up Why not equal? I'm guessing it accrues but not certain
       expect(await core.gmxEcosystem!.sbfGmx.balanceOf(OTHER_ADDRESS)).to.gte(gmxAmount);
 
       expect(await gmxVault.isVaultFrozen()).to.be.false;
@@ -231,7 +229,6 @@ describe('GMXIsolationModeTokenVaultV1', () => {
       await expectProtocolBalance(core, glpVault.address, accountNumber, underlyingMarketIdGlp, ZERO_BI);
     });
 
-    // @todo signal goes through, handler confirms, and the amount of GMX is 0
     it('should work normally with glp balance', async () => {
       await glpVault.depositIntoVaultForDolomiteMargin(accountNumber, amountWei);
       await requestTransferAndSignal(ZERO_BI, amountWei);
@@ -258,7 +255,6 @@ describe('GMXIsolationModeTokenVaultV1', () => {
       expect(await gmxVault.underlyingBalanceOf()).to.eq(ZERO_BI);
       expect(await glpVault.gmxBalanceOf()).to.eq(ZERO_BI);
       expect(await core.gmxEcosystem!.sbfGmx.balanceOf(glpVault.address)).to.eq(ZERO_BI);
-      // @follow-up Why not equal
       expect(await core.gmxEcosystem!.sbfGmx.balanceOf(OTHER_ADDRESS)).to.gte(gmxAmount);
       expect(await core.gmxEcosystem!.fsGlp.balanceOf(OTHER_ADDRESS)).to.eq(amountWei);
 
@@ -276,8 +272,6 @@ describe('GMXIsolationModeTokenVaultV1', () => {
       expect(await core.gmxEcosystem.gmx.balanceOf(gmxVault.address)).to.eq(ZERO_BI);
     });
 
-    // @todo signal goes through, handler confirms, and the amount of GMX and GLP is 0
-    //    (this is valid since they can still transfer esGMX)
     it('should work normally if user has no gmx or glp balance but has esGMX', async () => {
       await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
       await gmxVault.depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
@@ -309,7 +303,6 @@ describe('GMXIsolationModeTokenVaultV1', () => {
       await expectProtocolBalance(core, glpVault.address, accountNumber, underlyingMarketIdGlp, ZERO_BI);
     });
 
-    // @todo signal goes through, handler confirms, and the amount of GMX and GLP is 0
     it('should work normally if user has no gmx or glp balance', async () => {
       await requestTransferAndSignal(ZERO_BI, ZERO_BI);
 
@@ -317,7 +310,6 @@ describe('GMXIsolationModeTokenVaultV1', () => {
       expect(await gmxVault.underlyingBalanceOf()).to.eq(ZERO_BI);
       expect(await glpVault.gmxBalanceOf()).to.eq(ZERO_BI);
       expect(await core.gmxEcosystem!.sbfGmx.balanceOf(glpVault.address)).to.eq(ZERO_BI);
-      // @follow-up Why not equal
       expect(await core.gmxEcosystem!.sbfGmx.balanceOf(OTHER_ADDRESS)).to.gte(ZERO_BI);
       expect(await core.gmxEcosystem!.fsGlp.balanceOf(OTHER_ADDRESS)).to.eq(ZERO_BI);
 
@@ -384,7 +376,6 @@ describe('GMXIsolationModeTokenVaultV1', () => {
   });
 
   describe('#cancelAccountTransfer', () => {
-    // @todo test transfer signal, user cancels and then handler sends the cancellation
     it('should work normally after user requests transfer', async () => {
       await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
       await gmxVault.depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
@@ -404,7 +395,6 @@ describe('GMXIsolationModeTokenVaultV1', () => {
       );
     });
 
-    // @todo signal goes through, handler confirms, and then user cancels prior to accepting transfer
     it('should work normally with gmx bal', async () => {
       await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
       await gmxVault.depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
@@ -423,7 +413,6 @@ describe('GMXIsolationModeTokenVaultV1', () => {
       );
     });
 
-    // @todo test transfer signal, user cancels and then handler sends the cancellation
     it('should work normally with glp bal', async () => {
       await glpVault.depositIntoVaultForDolomiteMargin(accountNumber, amountWei);
       await requestTransferAndSignal(ZERO_BI, amountWei);
@@ -440,7 +429,6 @@ describe('GMXIsolationModeTokenVaultV1', () => {
       );
     });
 
-    // @todo test transfer signal, user cancels and then handler sends the cancellation
     it('should work normally with gmx and glp bal', async () => {
       await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
       await gmxVault.depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
@@ -459,7 +447,6 @@ describe('GMXIsolationModeTokenVaultV1', () => {
       );
     });
 
-    // @todo test transfer signal, handler cancels and then user cancels
     it('should fail if transfer was already cancelled by handler', async () => {
       await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
       await gmxVault.depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);

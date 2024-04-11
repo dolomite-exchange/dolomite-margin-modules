@@ -52,6 +52,7 @@ import {
 import { createTestVesterV2Proxy } from './liquidity-mining-ecosystem-utils';
 import { expectEmptyPosition } from './liquidityMining-utils';
 
+// TODO: this is no longer working because the field names have changed
 const oldWalletWithPosition = '0x52256ef863a713Ef349ae6E97A7E8f35785145dE';
 const oldWalletWithPositionNftId = '266';
 const defaultAccountNumber = ZERO_BI;
@@ -92,7 +93,7 @@ describe('VesterV2', () => {
     vester = await createTestVesterV2Proxy(core, handler);
     nextNftId = (await vester.nextNftId()).add(1);
 
-    oARB = await OARB__factory.connect(await vester.oARB(), core.hhUser1);
+    oARB = await OARB__factory.connect(await vester.oToken(), core.hhUser1);
 
     await setupUSDCBalance(core, core.hhUser1, usdcAmount.mul(2), core.dolomiteMargin);
     await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.usdc, usdcAmount);
@@ -138,11 +139,11 @@ describe('VesterV2', () => {
   describe('#initializer', () => {
     it('should work normally', async () => {
       expect(await vester.DOLOMITE_MARGIN()).to.eq(core.dolomiteMargin.address);
-      expect(await vester.oARB()).to.eq(oARB.address);
+      expect(await vester.oToken()).to.eq(oARB.address);
       expect(await vester.WETH_MARKET_ID()).to.eq(core.marketIds.weth);
       expect(await vester.ARB_MARKET_ID()).to.eq(core.marketIds.arb!);
-      expect(await vester.availableArbTokens()).to.eq(AVAILABLE_ARB_VESTER_BALANCE);
-      expect(await vester.promisedArbTokens()).to.eq(PROMISED_ARB_VESTER_BALANCE);
+      expect(await vester.availableTokens()).to.eq(AVAILABLE_ARB_VESTER_BALANCE);
+      expect(await vester.promisedTokens()).to.eq(PROMISED_ARB_VESTER_BALANCE);
       expect(await vester.isVestingActive()).to.be.true;
       expect(await vester.forceClosePositionTax()).to.eq(FORCE_CLOSE_POSITION_TAX);
       expect(await vester.emergencyWithdrawTax()).to.eq(EMERGENCY_WITHDRAW_TAX);
@@ -205,8 +206,8 @@ describe('VesterV2', () => {
         const amountAtIndex = ONE_ETH_BI.mul(i + 1);
         await expectWalletBalance(vester, oARB, OARB_VESTER_BALANCE.add(amountAtIndex));
         await expectProtocolBalance(core, vester, vesterAccountNumber, core.marketIds.arb!!, ONE_ETH_BI);
-        expect(await vester.promisedArbTokens()).to.eq(PROMISED_ARB_VESTER_BALANCE.add(amountAtIndex));
-        expect(await vester.availableArbTokens()).to.eq(AVAILABLE_ARB_VESTER_BALANCE.sub(amountAtIndex));
+        expect(await vester.promisedTokens()).to.eq(PROMISED_ARB_VESTER_BALANCE.add(amountAtIndex));
+        expect(await vester.availableTokens()).to.eq(AVAILABLE_ARB_VESTER_BALANCE.sub(amountAtIndex));
 
         const position = await vester.vestingPositions(nextId);
         expect(position.id).to.eq(nextId);
@@ -363,8 +364,8 @@ describe('VesterV2', () => {
         WETH_BALANCE.sub(ethCost),
       );
       await expectProtocolBalance(core, core.governance, ZERO_BI, core.marketIds.weth, ethCost);
-      expect(await vester.promisedArbTokens()).to.eq(PROMISED_ARB_VESTER_BALANCE);
-      expect(await vester.availableArbTokens()).to.eq(AVAILABLE_ARB_VESTER_BALANCE.sub(ONE_ETH_BI));
+      expect(await vester.promisedTokens()).to.eq(PROMISED_ARB_VESTER_BALANCE);
+      expect(await vester.availableTokens()).to.eq(AVAILABLE_ARB_VESTER_BALANCE.sub(ONE_ETH_BI));
 
       expectEmptyPosition(await vester.vestingPositions(nextNftId));
       await expectThrow(
@@ -404,8 +405,8 @@ describe('VesterV2', () => {
         WETH_BALANCE.sub(parseEther('0.975')),
       );
       await expectProtocolBalance(core, core.governance, ZERO_BI, core.marketIds.weth, parseEther('0.975'));
-      expect(await vester.promisedArbTokens()).to.eq(PROMISED_ARB_VESTER_BALANCE);
-      expect(await vester.availableArbTokens()).to.eq(AVAILABLE_ARB_VESTER_BALANCE.sub(ONE_ETH_BI));
+      expect(await vester.promisedTokens()).to.eq(PROMISED_ARB_VESTER_BALANCE);
+      expect(await vester.availableTokens()).to.eq(AVAILABLE_ARB_VESTER_BALANCE.sub(ONE_ETH_BI));
 
       expectEmptyPosition(await vester.vestingPositions(nextNftId));
       await expectThrow(
@@ -452,8 +453,8 @@ describe('VesterV2', () => {
         WETH_BALANCE.sub(arbAmount.mul(8).div(10)),
       );
       await expectProtocolBalance(core, core.governance, ZERO_BI, core.marketIds.weth, arbAmount.mul(8).div(10));
-      expect(await vester.promisedArbTokens()).to.eq(PROMISED_ARB_VESTER_BALANCE.sub(arbAmount));
-      expect(await vester.availableArbTokens()).to.eq(AVAILABLE_ARB_VESTER_BALANCE);
+      expect(await vester.promisedTokens()).to.eq(PROMISED_ARB_VESTER_BALANCE.sub(arbAmount));
+      expect(await vester.availableTokens()).to.eq(AVAILABLE_ARB_VESTER_BALANCE);
 
       expectEmptyPosition(await vester.vestingPositions(nextNftId));
       await expectThrow(
@@ -512,8 +513,8 @@ describe('VesterV2', () => {
         ZERO_BI
         ,
       );
-      expect(await vester.promisedArbTokens()).to.eq(PROMISED_ARB_VESTER_BALANCE.sub(vestingPosition.amount));
-      expect(await vester.availableArbTokens()).to.eq(AVAILABLE_ARB_VESTER_BALANCE);
+      expect(await vester.promisedTokens()).to.eq(PROMISED_ARB_VESTER_BALANCE.sub(vestingPosition.amount));
+      expect(await vester.availableTokens()).to.eq(AVAILABLE_ARB_VESTER_BALANCE);
 
       expectEmptyPosition(await vester.vestingPositions(nextNftId));
       await expectThrow(
@@ -572,8 +573,8 @@ describe('VesterV2', () => {
         ZERO_BI
         ,
       );
-      expect(await vester.promisedArbTokens()).to.eq(PROMISED_ARB_VESTER_BALANCE.sub(vestingPosition.amount));
-      expect(await vester.availableArbTokens()).to.eq(AVAILABLE_ARB_VESTER_BALANCE);
+      expect(await vester.promisedTokens()).to.eq(PROMISED_ARB_VESTER_BALANCE.sub(vestingPosition.amount));
+      expect(await vester.availableTokens()).to.eq(AVAILABLE_ARB_VESTER_BALANCE);
 
       expectEmptyPosition(await vester.vestingPositions(nextNftId));
       await expectThrow(
@@ -632,8 +633,8 @@ describe('VesterV2', () => {
         ZERO_BI
         ,
       );
-      expect(await vester.promisedArbTokens()).to.eq(PROMISED_ARB_VESTER_BALANCE.sub(vestingPosition.amount));
-      expect(await vester.availableArbTokens()).to.eq(AVAILABLE_ARB_VESTER_BALANCE);
+      expect(await vester.promisedTokens()).to.eq(PROMISED_ARB_VESTER_BALANCE.sub(vestingPosition.amount));
+      expect(await vester.availableTokens()).to.eq(AVAILABLE_ARB_VESTER_BALANCE);
 
       expectEmptyPosition(await vester.vestingPositions(nextNftId));
       await expectThrow(
@@ -692,8 +693,8 @@ describe('VesterV2', () => {
         ZERO_BI
         ,
       );
-      expect(await vester.promisedArbTokens()).to.eq(PROMISED_ARB_VESTER_BALANCE.sub(vestingPosition.amount));
-      expect(await vester.availableArbTokens()).to.eq(AVAILABLE_ARB_VESTER_BALANCE);
+      expect(await vester.promisedTokens()).to.eq(PROMISED_ARB_VESTER_BALANCE.sub(vestingPosition.amount));
+      expect(await vester.availableTokens()).to.eq(AVAILABLE_ARB_VESTER_BALANCE);
 
       expectEmptyPosition(await vester.vestingPositions(nextNftId));
       await expectThrow(
@@ -737,8 +738,8 @@ describe('VesterV2', () => {
         WETH_BALANCE.sub(parseEther('0.975')),
       );
       await expectProtocolBalance(core, core.governance, ZERO_BI, core.marketIds.weth, parseEther('0.975'));
-      expect(await vester.promisedArbTokens()).to.eq(PROMISED_ARB_VESTER_BALANCE);
-      expect(await vester.availableArbTokens()).to.eq(AVAILABLE_ARB_VESTER_BALANCE.sub(ONE_ETH_BI));
+      expect(await vester.promisedTokens()).to.eq(PROMISED_ARB_VESTER_BALANCE);
+      expect(await vester.availableTokens()).to.eq(AVAILABLE_ARB_VESTER_BALANCE.sub(ONE_ETH_BI));
 
       expectEmptyPosition(await vester.vestingPositions(nextNftId));
       await expectThrow(
@@ -782,8 +783,8 @@ describe('VesterV2', () => {
         WETH_BALANCE,
       );
       await expectProtocolBalance(core, core.governance, ZERO_BI, core.marketIds.weth, ZERO_BI);
-      expect(await vester.promisedArbTokens()).to.eq(PROMISED_ARB_VESTER_BALANCE);
-      expect(await vester.availableArbTokens()).to.eq(AVAILABLE_ARB_VESTER_BALANCE.sub(ONE_ETH_BI));
+      expect(await vester.promisedTokens()).to.eq(PROMISED_ARB_VESTER_BALANCE);
+      expect(await vester.availableTokens()).to.eq(AVAILABLE_ARB_VESTER_BALANCE.sub(ONE_ETH_BI));
 
       expectEmptyPosition(await vester.vestingPositions(nextNftId));
       await expectThrow(
@@ -823,8 +824,8 @@ describe('VesterV2', () => {
       await expectWalletBalance(vester, oARB, OARB_VESTER_BALANCE);
       await expectProtocolBalance(core, vester, vesterAccountNumber, core.marketIds.arb!, ZERO_BI);
       await expectProtocolBalance(core, core.governance, defaultAccountNumber, core.marketIds.weth, parseEther('0.9'));
-      expect(await vester.promisedArbTokens()).to.eq(PROMISED_ARB_VESTER_BALANCE);
-      expect(await vester.availableArbTokens()).to.eq(AVAILABLE_ARB_VESTER_BALANCE.sub(ONE_ETH_BI));
+      expect(await vester.promisedTokens()).to.eq(PROMISED_ARB_VESTER_BALANCE);
+      expect(await vester.availableTokens()).to.eq(AVAILABLE_ARB_VESTER_BALANCE.sub(ONE_ETH_BI));
 
       expectEmptyPosition(await vester.vestingPositions(nextNftId));
       await expectThrow(
@@ -932,8 +933,8 @@ describe('VesterV2', () => {
       await expectWalletBalance(core.governance.address, core.tokens.arb!, ZERO_BI);
       await expectWalletBalance(vester, oARB, OARB_VESTER_BALANCE);
       await expectProtocolBalance(core, vester, vesterAccountNumber, core.marketIds.arb!, ZERO_BI);
-      expect(await vester.promisedArbTokens()).to.eq(PROMISED_ARB_VESTER_BALANCE);
-      expect(await vester.availableArbTokens()).to.eq(AVAILABLE_ARB_VESTER_BALANCE);
+      expect(await vester.promisedTokens()).to.eq(PROMISED_ARB_VESTER_BALANCE);
+      expect(await vester.availableTokens()).to.eq(AVAILABLE_ARB_VESTER_BALANCE);
 
       expectEmptyPosition(await vester.vestingPositions(nextNftId));
       await expectThrow(
@@ -967,8 +968,8 @@ describe('VesterV2', () => {
       await expectProtocolBalance(core, core.governance, ZERO_BI, core.marketIds.arb!, ZERO_BI);
       await expectWalletBalance(vester, oARB, OARB_VESTER_BALANCE);
       await expectProtocolBalance(core, vester, vesterAccountNumber, core.marketIds.arb!, ZERO_BI);
-      expect(await vester.promisedArbTokens()).to.eq(PROMISED_ARB_VESTER_BALANCE);
-      expect(await vester.availableArbTokens()).to.eq(AVAILABLE_ARB_VESTER_BALANCE);
+      expect(await vester.promisedTokens()).to.eq(PROMISED_ARB_VESTER_BALANCE);
+      expect(await vester.availableTokens()).to.eq(AVAILABLE_ARB_VESTER_BALANCE);
 
       expectEmptyPosition(await vester.vestingPositions(nextNftId));
       await expectThrow(
@@ -1030,8 +1031,8 @@ describe('VesterV2', () => {
       await expectWalletBalance(vester, oARB, OARB_VESTER_BALANCE);
       await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, core.marketIds.arb!, arbWei);
       await expectProtocolBalance(core, vester, vesterAccountNumber, core.marketIds.arb!, ZERO_BI);
-      expect(await vester.promisedArbTokens()).to.eq(PROMISED_ARB_VESTER_BALANCE);
-      expect(await vester.availableArbTokens()).to.eq(AVAILABLE_ARB_VESTER_BALANCE);
+      expect(await vester.promisedTokens()).to.eq(PROMISED_ARB_VESTER_BALANCE);
+      expect(await vester.availableTokens()).to.eq(AVAILABLE_ARB_VESTER_BALANCE);
 
       expectEmptyPosition(await vester.vestingPositions(nextNftId));
       await expectThrow(
@@ -1078,8 +1079,8 @@ describe('VesterV2', () => {
         parseEther('.05'),
       );
       await expectWalletBalance(core.governance, core.tokens.arb!, ZERO_BI);
-      expect(await vester.promisedArbTokens()).to.eq(PROMISED_ARB_VESTER_BALANCE);
-      expect(await vester.availableArbTokens()).to.eq(AVAILABLE_ARB_VESTER_BALANCE);
+      expect(await vester.promisedTokens()).to.eq(PROMISED_ARB_VESTER_BALANCE);
+      expect(await vester.availableTokens()).to.eq(AVAILABLE_ARB_VESTER_BALANCE);
 
       expectEmptyPosition(await vester.vestingPositions(nextNftId));
       await expectThrow(
@@ -1135,10 +1136,10 @@ describe('VesterV2', () => {
     });
   });
 
-  describe('#ownerWithdrawArb', () => {
+  describe('#ownerWithdrawToken', () => {
     it('should work normally when bypasses available amount', async () => {
       await expectWalletBalance(vester, core.tokens.arb!, ARB_VESTER_BALANCE);
-      await vester.connect(core.governance).ownerWithdrawArb(core.governance.address, ONE_ETH_BI, true);
+      await vester.connect(core.governance).ownerWithdrawToken(core.governance.address, ONE_ETH_BI, true);
       await expectWalletBalance(vester, core.tokens.arb!, ARB_VESTER_BALANCE.sub(ONE_ETH_BI));
     });
 
@@ -1148,19 +1149,19 @@ describe('VesterV2', () => {
 
       await vester.connect(core.hhUser1).vest(defaultAccountNumber, ONE_WEEK, ONE_ETH_BI.div(2));
       await vester.connect(core.governance)
-        .ownerWithdrawArb(core.hhUser3.address, AVAILABLE_ARB_VESTER_BALANCE.sub(ONE_ETH_BI.div(2)), false);
+        .ownerWithdrawToken(core.hhUser3.address, AVAILABLE_ARB_VESTER_BALANCE.sub(ONE_ETH_BI.div(2)), false);
       await expectWalletBalance(vester, core.tokens.arb!, PROMISED_ARB_VESTER_BALANCE.add(ONE_ETH_BI.div(2)));
       await expectWalletBalance(core.hhUser3, core.tokens.arb!, AVAILABLE_ARB_VESTER_BALANCE.sub(ONE_ETH_BI.div(2)));
 
       await expectThrow(
-        vester.connect(core.governance).ownerWithdrawArb(core.governance.address, ONE_ETH_BI.div(2), false),
+        vester.connect(core.governance).ownerWithdrawToken(core.governance.address, ONE_ETH_BI.div(2), false),
         'VesterImplementationV2: Insufficient available tokens',
       );
     });
 
     it('should fail if not called by dolomite margin owner', async () => {
       await expectThrow(
-        vester.connect(core.hhUser1).ownerWithdrawArb(core.governance.address, ONE_ETH_BI, true),
+        vester.connect(core.hhUser1).ownerWithdrawToken(core.governance.address, ONE_ETH_BI, true),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });

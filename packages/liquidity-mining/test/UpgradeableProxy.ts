@@ -16,11 +16,11 @@ import {
   TestVesterImplementationV2__factory,
   VesterImplementationLibForV2,
   VesterImplementationLibForV2__factory,
-  VesterProxy,
-  VesterProxy__factory,
+  UpgradeableProxy,
+  UpgradeableProxy__factory,
 } from '../src/types';
 
-describe('VesterProxy', () => {
+describe('UpgradeableProxy', () => {
   let snapshotId: string;
 
   let core: CoreProtocolArbitrumOne;
@@ -28,7 +28,7 @@ describe('VesterProxy', () => {
   let oARB: OARB;
   let library: VesterImplementationLibForV2;
 
-  let proxy: VesterProxy;
+  let proxy: UpgradeableProxy;
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
@@ -54,9 +54,9 @@ describe('VesterProxy', () => {
       defaultAbiCoder.encode(['address'], [oARB.address]),
     );
 
-    proxy = await createContractWithAbi<VesterProxy>(
-      VesterProxy__factory.abi,
-      VesterProxy__factory.bytecode,
+    proxy = await createContractWithAbi<UpgradeableProxy>(
+      UpgradeableProxy__factory.abi,
+      UpgradeableProxy__factory.bytecode,
       [implementation.address, core.dolomiteMargin.address, calldata.data!],
     );
 
@@ -105,7 +105,7 @@ describe('VesterProxy', () => {
     it('should fail when new implementation is not a contract', async () => {
       await expectThrow(
         proxy.connect(core.governance).upgradeTo(core.hhUser1.address),
-        'IsolationModeVesterProxy: Implementation is not a contract',
+        'UpgradeableProxy: Implementation is not a contract',
       );
     });
   });
@@ -146,7 +146,7 @@ describe('VesterProxy', () => {
       const calldata = await implementation.populateTransaction.forceClosePositionTax();
       await expectThrow(
         proxy.connect(core.governance).upgradeToAndCall(core.hhUser1.address, calldata.data!),
-        'IsolationModeVesterProxy: Implementation is not a contract',
+        'UpgradeableProxy: Implementation is not a contract',
       );
     });
 

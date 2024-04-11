@@ -32,6 +32,7 @@ import { ValidationLib } from "../lib/ValidationLib.sol";
 import { IDolomitePriceOracle } from "../protocol/interfaces/IDolomitePriceOracle.sol";
 import { Require } from "../protocol/lib/Require.sol";
 
+
 /**
  * @title   DolomiteRegistryImplementation
  * @author  Dolomite

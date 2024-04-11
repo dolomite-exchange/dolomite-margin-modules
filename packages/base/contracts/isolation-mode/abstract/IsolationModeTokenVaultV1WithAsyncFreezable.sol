@@ -783,16 +783,6 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezable is
         );
     }
 
-    function _requireNotLiquidatableIfWrapToUnderlying(
-        uint256 _accountNumber,
-        uint256 _outputMarketId
-    ) internal view {
-        uint256 underlyingMarketId = DOLOMITE_MARGIN().getMarketIdByTokenAddress(VAULT_FACTORY());
-        if (_outputMarketId== underlyingMarketId) {
-            _requireNotLiquidatable(_accountNumber);
-        }
-    }
-
     function _requireVaultAccountNotFrozen(uint256 _accountNumber) internal view {
         Require.that(
             !isVaultAccountFrozen(_accountNumber),
