@@ -1,12 +1,11 @@
 import { DolomiteMigrator__factory } from '@dolomite-exchange/modules-base/src/types';
 import {
-  getIsolationModeTokenVaultMigratorConstructorParams
+  getIsolationModeTokenVaultMigratorConstructorParams,
 } from '@dolomite-exchange/modules-base/src/utils/constructors/dolomite';
 import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { getRealLatestBlockNumber, impersonate } from '@dolomite-exchange/modules-base/test/utils';
 import { expectProtocolBalance } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
-import hardhat from 'hardhat';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { BYTES_EMPTY, Network, ONE_BI, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
 import {
@@ -31,6 +30,7 @@ const handlerAddress = '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe'; // Level In
  * - Sets the Dolomite Migrator as a trusted token converter on the PT-GLP (MAR 2024) factory
  * - Sets the Dolomite Migrator as a trusted token converter on the GLP factory
  * - Attaches the PT-GLP (MAR 2024) token vault migrator to the PT-GLP (MAR 2024) factory
+ * - Lowers the supply cap of PT-GLP (MAR 2024) to 1 unit
  */
 async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
