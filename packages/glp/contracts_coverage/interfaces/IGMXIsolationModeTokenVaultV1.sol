@@ -20,6 +20,8 @@
 
 pragma solidity ^0.8.9;
 
+import { IIsolationModeTokenVaultV1WithFreezable } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeTokenVaultV1WithFreezable.sol"; // solhint-disable-line max-line-length
+
 
 /**
  * @title   IGMXIsolationModeTokenVaultV1
@@ -28,7 +30,11 @@ pragma solidity ^0.8.9;
  * @notice  This interface defines the functions that are available on the GMXIsolationModeTokenVaultV1 implementation
  *          contract for each user's proxy vault.
  */
-interface IGMXIsolationModeTokenVaultV1 {
+interface IGMXIsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1WithFreezable {
+
+    event AccountTransferRequested(address _receiver);
+    event AccountTransferSignaled(address _receiver);
+    event AccountTransferCanceled();
 
     function stakeGmx(uint256 _amount) external;
 
@@ -37,6 +43,12 @@ interface IGMXIsolationModeTokenVaultV1 {
     function vestGmx(uint256 _esGmxAmount) external;
 
     function unvestGmx(bool _shouldStakeGmx) external;
+
+    function requestAccountTransfer(address _recipient) external;
+
+    function signalAccountTransfer(uint256 _gmxVirtualBalance, uint256 _glpVirtualBalance) external;
+
+    function cancelAccountTransfer() external;
 
     function setShouldSkipTransfer(bool _shouldSkipTransfer) external;
 

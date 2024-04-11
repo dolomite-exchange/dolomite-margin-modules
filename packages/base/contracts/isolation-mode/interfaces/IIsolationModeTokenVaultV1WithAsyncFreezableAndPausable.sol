@@ -20,28 +20,17 @@
 
 pragma solidity ^0.8.9;
 
+import { IIsolationModeTokenVaultV1WithAsyncFreezable } from "./IIsolationModeTokenVaultV1WithAsyncFreezable.sol";
+import { IIsolationModeTokenVaultV1WithPausable } from "./IIsolationModeTokenVaultV1WithPausable.sol";
+
 
 /**
- * @title   IAlgebraV3Pool
+ * @title   IIsolationModeTokenVaultV1WithAsyncFreezableAndPausable
  * @author  Dolomite
  *
- * @notice  Interface for Algebra V3 pools
+ * @notice Interface for the implementation contract used by proxy user vault contracts.
  */
-interface IAlgebraV3Pool {
-
-    function getTimepoints(
-        uint32[] calldata secondsAgos
-    )
-    external
-    view
-    returns (
-        int56[] memory tickCumulatives,
-        uint160[] memory secondsPerLiquidityCumulatives,
-        uint112[] memory volatilityCumulatives,
-        uint256[] memory volumePerAvgLiquiditys
-    );
-
-    function token0() external view returns (address);
-
-    function token1() external view returns (address);
-}
+interface IIsolationModeTokenVaultV1WithAsyncFreezableAndPausable is // solhint-disable-line no-empty-blocks
+    IIsolationModeTokenVaultV1WithAsyncFreezable,
+    IIsolationModeTokenVaultV1WithPausable
+{}

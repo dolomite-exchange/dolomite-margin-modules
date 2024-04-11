@@ -28,12 +28,12 @@ import { IIsolationModeUpgradeableProxy } from "../isolation-mode/interfaces/IIs
 
 
 /**
- * @title   TestIsolationModeFactory
+ * @title   TestIsolationModeVaultFactory
  * @author  Dolomite
  *
  * @notice  This contract is used to test the IsolationModeVaultFactory contract.
  */
-contract TestIsolationModeFactory is IsolationModeVaultFactory {
+contract TestIsolationModeVaultFactory is IsolationModeVaultFactory {
 
     uint256[] private _allowableDebtMarketIds;
     uint256[] private _allowableCollateralMarketIds;

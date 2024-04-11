@@ -20,28 +20,28 @@
 
 pragma solidity ^0.8.9;
 
-import { TestIsolationModeFactory } from "./TestIsolationModeFactory.sol";
+import { TestIsolationModeVaultFactory } from "./TestIsolationModeVaultFactory.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IsolationModeTokenVaultV1 } from "../isolation-mode/abstract/IsolationModeTokenVaultV1.sol";
-import { IsolationModeTokenVaultV1WithFreezable } from "../isolation-mode/abstract/IsolationModeTokenVaultV1WithFreezable.sol"; // solhint-disable-line max-line-length
-import { IsolationModeTokenVaultV1WithFreezableAndPausable } from "../isolation-mode/abstract/IsolationModeTokenVaultV1WithFreezableAndPausable.sol"; // solhint-disable-line max-line-length
-import { IFreezableIsolationModeVaultFactory } from "../isolation-mode/interfaces/IFreezableIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
+import { IsolationModeTokenVaultV1WithAsyncFreezable } from "../isolation-mode/abstract/IsolationModeTokenVaultV1WithAsyncFreezable.sol"; // solhint-disable-line max-line-length
+import { IsolationModeTokenVaultV1WithAsyncFreezableAndPausable } from "../isolation-mode/abstract/IsolationModeTokenVaultV1WithAsyncFreezableAndPausable.sol"; // solhint-disable-line max-line-length
+import { IAsyncFreezableIsolationModeVaultFactory } from "../isolation-mode/interfaces/IAsyncFreezableIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 
 
 /**
- * @title   TestIsolationModeTokenVaultV1WithFreezableAndPausable
+ * @title   TestIsolationModeTokenVaultV1WithAsyncFreezableAndPausable
  * @author  Dolomite
  *
  * @notice  A test contract for the TestIsolationModeTokenVaultV1WithFreezableAndPausable contract.
  */
-contract TestIsolationModeTokenVaultV1WithFreezableAndPausable is IsolationModeTokenVaultV1WithFreezableAndPausable {
+contract TestIsolationModeTokenVaultV1WithAsyncFreezableAndPausable is IsolationModeTokenVaultV1WithAsyncFreezableAndPausable { // solhint-disable-line max-line-length
 
     // solhint-disable-next-line max-line-length
     bytes32 private constant _IS_EXTERNAL_REDEMPTION_PAUSED_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isExternalRedemptionPaused")) - 1);
 
     // solhint-disable-next-line no-empty-blocks
-    constructor(address _weth, uint256 _chainId) IsolationModeTokenVaultV1WithFreezable(_weth, _chainId) {}
+    constructor(address _weth, uint256 _chainId) IsolationModeTokenVaultV1WithAsyncFreezable(_weth, _chainId) {}
 
     function setIsExternalRedemptionPaused(bool _newIsExternalRedemptionPaused) public {
         _setUint256(_IS_EXTERNAL_REDEMPTION_PAUSED_SLOT, _newIsExternalRedemptionPaused ? 1 : 0);
@@ -53,7 +53,7 @@ contract TestIsolationModeTokenVaultV1WithFreezableAndPausable is IsolationModeT
         view
         returns (IDolomiteRegistry)
     {
-        return TestIsolationModeFactory(VAULT_FACTORY()).dolomiteRegistry();
+        return TestIsolationModeVaultFactory(VAULT_FACTORY()).dolomiteRegistry();
     }
 
     function isExternalRedemptionPaused() public override view returns (bool) {
@@ -69,10 +69,10 @@ contract TestIsolationModeTokenVaultV1WithFreezableAndPausable is IsolationModeT
         bytes calldata /* _extraData */
     ) internal override {
         if (_isLiquidation) {
-            IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).setVaultAccountPendingAmountForFrozenStatus(
+            IAsyncFreezableIsolationModeVaultFactory(VAULT_FACTORY()).setVaultAccountPendingAmountForFrozenStatus(
                 /* _vault = */ address(this),
                 _tradeAccountNumber,
-                IFreezableIsolationModeVaultFactory.FreezeType.Withdrawal,
+                IAsyncFreezableIsolationModeVaultFactory.FreezeType.Withdrawal,
                 /* _amountDeltaWei = */ IDolomiteStructs.Wei({
                     sign: true,
                     value: _inputAmount

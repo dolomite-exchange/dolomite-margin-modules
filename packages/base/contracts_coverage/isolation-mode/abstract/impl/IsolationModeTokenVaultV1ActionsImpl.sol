@@ -20,18 +20,18 @@
 pragma solidity ^0.8.9;
 
 import { BaseLiquidatorProxy } from "../../../general/BaseLiquidatorProxy.sol";
+import { IDolomiteRegistry } from "../../../interfaces/IDolomiteRegistry.sol";
 import { IGenericTraderProxyV1 } from "../../../interfaces/IGenericTraderProxyV1.sol";
 import { AccountActionLib } from "../../../lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "../../../lib/AccountBalanceLib.sol";
+import { DolomiteMarginVersionWrapperLib } from "../../../lib/DolomiteMarginVersionWrapperLib.sol";
 import { InterestIndexLib } from "../../../lib/InterestIndexLib.sol";
 import { IDolomiteMargin } from "../../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../../../protocol/interfaces/IDolomiteStructs.sol";
 import { BitsLib } from "../../../protocol/lib/BitsLib.sol";
 import { DecimalLib } from "../../../protocol/lib/DecimalLib.sol";
-import { DolomiteMarginVersionWrapperLib } from "../../../lib/DolomiteMarginVersionWrapperLib.sol";
 import { Require } from "../../../protocol/lib/Require.sol";
 import { TypesLib } from "../../../protocol/lib/TypesLib.sol";
-import { IDolomiteRegistry } from "../../../interfaces/IDolomiteRegistry.sol";
 import { IIsolationModeTokenVaultV1 } from "../../interfaces/IIsolationModeTokenVaultV1.sol";
 import { IIsolationModeVaultFactory } from "../../interfaces/IIsolationModeVaultFactory.sol";
 
@@ -521,6 +521,7 @@ library IsolationModeTokenVaultV1ActionsImpl {
     function requireMinAmountIsNotTooLargeForWrapToUnderlying(
         IDolomiteRegistry _dolomiteRegistry,
         IDolomiteMargin _dolomiteMargin,
+        address _accountOwner,
         uint256 _accountNumber,
         uint256 _inputMarketId,
         uint256 _outputMarketId,
@@ -529,7 +530,7 @@ library IsolationModeTokenVaultV1ActionsImpl {
     ) public view {
         if (_inputAmount == type(uint256).max) {
             IDolomiteStructs.AccountInfo memory account = IDolomiteStructs.AccountInfo({
-                owner: address(this),
+                owner: _accountOwner,
                 number: _accountNumber
             });
             _inputAmount = _dolomiteMargin.getAccountWei(account, _inputMarketId).value;

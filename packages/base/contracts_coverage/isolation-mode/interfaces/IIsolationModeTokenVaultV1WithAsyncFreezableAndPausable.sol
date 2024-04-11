@@ -20,17 +20,17 @@
 
 pragma solidity ^0.8.9;
 
-import { IIsolationModeTokenVaultV1WithFreezable } from "./IIsolationModeTokenVaultV1WithFreezable.sol";
+import { IIsolationModeTokenVaultV1WithAsyncFreezable } from "./IIsolationModeTokenVaultV1WithAsyncFreezable.sol";
 import { IIsolationModeTokenVaultV1WithPausable } from "./IIsolationModeTokenVaultV1WithPausable.sol";
 
 
 /**
- * @title   IIsolationModeTokenVaultV1WithFreezableAndPausable
+ * @title   IIsolationModeTokenVaultV1WithAsyncFreezableAndPausable
  * @author  Dolomite
  *
  * @notice Interface for the implementation contract used by proxy user vault contracts.
  */
-interface IIsolationModeTokenVaultV1WithFreezableAndPausable is // solhint-disable-line no-empty-blocks
-    IIsolationModeTokenVaultV1WithFreezable,
+interface IIsolationModeTokenVaultV1WithAsyncFreezableAndPausable is // solhint-disable-line no-empty-blocks
+    IIsolationModeTokenVaultV1WithAsyncFreezable,
     IIsolationModeTokenVaultV1WithPausable
 {}

@@ -32,6 +32,7 @@ import { ValidationLib } from "../lib/ValidationLib.sol";
 import { IDolomitePriceOracle } from "../protocol/interfaces/IDolomitePriceOracle.sol";
 import { Require } from "../protocol/lib/Require.sol";
 
+
 /**
  * @title   DolomiteRegistryImplementation
  * @author  Dolomite
@@ -64,15 +65,13 @@ contract DolomiteRegistryImplementation is
         address _expiry,
         uint256 _slippageToleranceForPauseSentinel,
         address _liquidatorAssetRegistry,
-        address _eventEmitter,
-        address _chainlinkPriceOracle
+        address _eventEmitter
     ) external initializer {
         _ownerSetGenericTraderProxy(_genericTraderProxy);
         _ownerSetExpiry(_expiry);
         _ownerSetSlippageToleranceForPauseSentinel(_slippageToleranceForPauseSentinel);
         _ownerSetLiquidatorAssetRegistry(_liquidatorAssetRegistry);
         _ownerSetEventEmitter(_eventEmitter);
-        _ownerSetChainlinkPriceOracle(_chainlinkPriceOracle);
     }
 
     // ===================== Functions =====================

@@ -265,6 +265,17 @@ contract EventEmitterRegistry is
         emit AsyncWithdrawalCancelled(_key, _token);
     }
 
+    function emitRewardClaimed(
+        address _user,
+        uint256 _epoch,
+        uint256 _amount
+    )
+        external
+        onlyDolomiteMarginGlobalOperator(msg.sender)
+    {
+        emit RewardClaimed(msg.sender, _user, _epoch, _amount);
+    }
+
     // =================================================
     // ============== Internal Functions ===============
     // =================================================

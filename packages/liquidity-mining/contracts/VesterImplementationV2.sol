@@ -69,13 +69,12 @@ contract VesterImplementationV2 is
     bytes32 private constant _NEXT_ID_SLOT = bytes32(uint256(keccak256("eip1967.proxy.nextId")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _VESTING_POSITIONS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.vestingPositions")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _PROMISED_TOKENS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.promisedTokens")) - 1); // solhint-disable-line max-line-length
-    bytes32 private constant _TOKEN_SLOT = bytes32(uint256(keccak256("eip1967.proxy.token")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _O_TOKEN_SLOT = bytes32(uint256(keccak256("eip1967.proxy.oToken")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _CLOSE_POSITION_WINDOW_SLOT = bytes32(uint256(keccak256("eip1967.proxy.closePositionWindow")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _FORCE_CLOSE_POSITION_TAX_SLOT = bytes32(uint256(keccak256("eip1967.proxy.forceClosePositionTax")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _EMERGENCY_WITHDRAW_TAX_SLOT = bytes32(uint256(keccak256("eip1967.proxy.emergencyWithdrawTax")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _IS_VESTING_ACTIVE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isVestingActive")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _BASE_URI_SLOT = bytes32(uint256(keccak256("eip1967.proxy.baseURI")) - 1); // solhint-disable-line max-line-length
-    bytes32 private constant _GRANDFATHERED_ID_CUTOFF_SLOT = bytes32(uint256(keccak256("eip1967.proxy.grandfatheredIdCutoff")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _NEXT_REQUEST_ID_SLOT = bytes32(uint256(keccak256("eip1967.proxy.nextRequestId")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _IS_HANDLER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isHandler")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _LEVEL_EXPIRATION_WINDOW_SLOT = bytes32(uint256(keccak256("eip1967.proxy.levelExpirationWindow")) - 1); // solhint-disable-line max-line-length
@@ -97,7 +96,6 @@ contract VesterImplementationV2 is
 
     uint256 private immutable _MIN_VESTING_DURATION; // solhint-disable-line
     uint256 private immutable _MAX_VESTING_DURATION; // solhint-disable-line
-    uint256 private immutable _OLD_MAX_VESTING_DURATION; // solhint-disable-line
 
     // =========================================================
     // ======================= Modifiers =======================
@@ -131,7 +129,6 @@ contract VesterImplementationV2 is
 
         _MIN_VESTING_DURATION = VesterImplementationLibForV2.minVestingDuration();
         _MAX_VESTING_DURATION = VesterImplementationLibForV2.maxVestingDuration();
-        _OLD_MAX_VESTING_DURATION = VesterImplementationLibForV2.oldMaxVestingDuration();
     }
 
     function initialize(
@@ -140,11 +137,12 @@ contract VesterImplementationV2 is
         external
         reinitializer(/* version = */ 2)
     {
-        address _initialHandler = abi.decode(_data, (address));
-        _setUint256(_GRANDFATHERED_ID_CUTOFF_SLOT, _nextNftId());
+        (address _initialHandler, address _oToken) = abi.decode(_data, (address, address));
+        _ownerSetHandler(_initialHandler, /* _isHandler = */ true);
+        _setAddress(_O_TOKEN_SLOT, _oToken);
+
         _ownerSetLevelExpirationWindow(/* _levelExpirationWindow = */ 4 weeks);
         _ownerSetLevelRequestFee(/* _fee = */ 0.0003 ether);
-        _ownerSetHandler(_initialHandler, /* _isHandler = */ true);
         _ownerSetLevelBoostThreshold(/* _level = */ 4);
     }
 
@@ -516,7 +514,7 @@ contract VesterImplementationV2 is
     }
 
     function oToken() public view returns (IERC20Mintable) {
-        return IERC20Mintable(_getAddress(_TOKEN_SLOT));
+        return IERC20Mintable(_getAddress(_O_TOKEN_SLOT));
     }
 
     function closePositionWindow() public view returns (uint256) {
@@ -550,10 +548,6 @@ contract VesterImplementationV2 is
 
     function levelBoostThreshold() public view returns (uint8) {
         return uint8(_getUint256(_LEVEL_BOOST_THRESHOLD_SLOT));
-    }
-
-    function grandfatheredIdCutoff() public view returns (uint256) {
-        return _getUint256(_GRANDFATHERED_ID_CUTOFF_SLOT);
     }
 
     function levelExpirationWindow() public view returns (uint256) {

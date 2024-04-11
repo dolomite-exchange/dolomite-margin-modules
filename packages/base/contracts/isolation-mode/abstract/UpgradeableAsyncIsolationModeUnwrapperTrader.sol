@@ -27,7 +27,7 @@ import { IHandlerRegistry } from "../../interfaces/IHandlerRegistry.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../../protocol/lib/Require.sol";
-import { IFreezableIsolationModeVaultFactory } from "../interfaces/IFreezableIsolationModeVaultFactory.sol";
+import { IAsyncFreezableIsolationModeVaultFactory } from "../interfaces/IAsyncFreezableIsolationModeVaultFactory.sol";
 import { IIsolationModeUnwrapperTraderV2 } from "../interfaces/IIsolationModeUnwrapperTraderV2.sol";
 import { IIsolationModeVaultFactory } from "../interfaces/IIsolationModeVaultFactory.sol";
 import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "../interfaces/IUpgradeableAsyncIsolationModeUnwrapperTrader.sol"; //solhint-disable-line max-line-length
@@ -343,10 +343,10 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
         bool _isPositive,
         address _outputToken
     ) internal {
-        IFreezableIsolationModeVaultFactory(address(VAULT_FACTORY())).setVaultAccountPendingAmountForFrozenStatus(
+        IAsyncFreezableIsolationModeVaultFactory(address(VAULT_FACTORY())).setVaultAccountPendingAmountForFrozenStatus(
             _vault,
             _accountNumber,
-            IFreezableIsolationModeVaultFactory.FreezeType.Withdrawal,
+            IAsyncFreezableIsolationModeVaultFactory.FreezeType.Withdrawal,
             /* _amountWei = */ IDolomiteStructs.Wei({
                 sign: _isPositive,
                 value: _amountDeltaWei

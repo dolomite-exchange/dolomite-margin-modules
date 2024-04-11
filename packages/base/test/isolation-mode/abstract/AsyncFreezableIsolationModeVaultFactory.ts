@@ -1,12 +1,12 @@
 import { expect } from 'chai';
-import { BigNumber, ContractTransaction } from 'ethers';
+import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import {
   CustomTestToken,
-  TestFreezableIsolationModeVaultFactory,
+  TestAsyncFreezableIsolationModeVaultFactory,
   TestHandlerRegistry,
-  TestIsolationModeTokenVaultV1WithFreezable,
-  TestIsolationModeTokenVaultV1WithFreezable__factory,
+  TestIsolationModeTokenVaultV1WithAsyncFreezable,
+  TestIsolationModeTokenVaultV1WithAsyncFreezable__factory,
   TestIsolationModeUnwrapperTraderV2,
   TestIsolationModeUnwrapperTraderV2__factory,
   TestIsolationModeWrapperTraderV2,
@@ -25,7 +25,7 @@ import { expectEvent, expectProtocolBalance, expectThrow } from '../../utils/ass
 import { CoreProtocolArbitrumOne } from '../../utils/core-protocol';
 import { createIsolationModeTokenVaultV1ActionsImpl } from '../../utils/dolomite';
 import {
-  createTestFreezableIsolationModeVaultFactory,
+  createTestAsyncFreezableIsolationModeVaultFactory,
   createTestHandlerRegistry,
 } from '../../utils/ecosystem-utils/testers';
 import {
@@ -57,7 +57,7 @@ const MINUS_ONE_BI = {
 
 const EXECUTION_FEE = ONE_ETH_BI.div(4);
 
-describe('FreezableIsolationModeVaultFactory', () => {
+describe('AsyncFreezableIsolationModeVaultFactory', () => {
   let snapshotId: string;
 
   let core: CoreProtocolArbitrumOne;
@@ -65,10 +65,9 @@ describe('FreezableIsolationModeVaultFactory', () => {
   let underlyingMarketId: BigNumber;
   let tokenUnwrapper: TestIsolationModeUnwrapperTraderV2;
   let tokenWrapper: TestIsolationModeWrapperTraderV2;
-  let factory: TestFreezableIsolationModeVaultFactory;
-  let userVaultImplementation: TestIsolationModeTokenVaultV1WithFreezable;
-  let userVault: TestIsolationModeTokenVaultV1WithFreezable;
-  let impersonatedVault: SignerWithAddressWithSafety;
+  let factory: TestAsyncFreezableIsolationModeVaultFactory;
+  let userVaultImplementation: TestIsolationModeTokenVaultV1WithAsyncFreezable;
+  let userVault: TestIsolationModeTokenVaultV1WithAsyncFreezable;
   let registry: TestHandlerRegistry;
 
   let solidUser: SignerWithAddressWithSafety;
@@ -81,13 +80,13 @@ describe('FreezableIsolationModeVaultFactory', () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     underlyingToken = await createTestToken();
     const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
-    userVaultImplementation = await createContractWithLibrary<TestIsolationModeTokenVaultV1WithFreezable>(
-      'TestIsolationModeTokenVaultV1WithFreezable',
+    userVaultImplementation = await createContractWithLibrary<TestIsolationModeTokenVaultV1WithAsyncFreezable>(
+      'TestIsolationModeTokenVaultV1WithAsyncFreezable',
       libraries,
-      [core.tokens.weth.address],
+      [core.tokens.weth.address, core.network],
     );
     registry = await createTestHandlerRegistry(core);
-    factory = await createTestFreezableIsolationModeVaultFactory(
+    factory = await createTestAsyncFreezableIsolationModeVaultFactory(
       EXECUTION_FEE,
       registry,
       core,
@@ -135,9 +134,9 @@ describe('FreezableIsolationModeVaultFactory', () => {
 
     await factory.createVault(core.hhUser1.address);
     const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);
-    userVault = setupUserVaultProxy<TestIsolationModeTokenVaultV1WithFreezable>(
+    userVault = setupUserVaultProxy<TestIsolationModeTokenVaultV1WithAsyncFreezable>(
       vaultAddress,
-      TestIsolationModeTokenVaultV1WithFreezable__factory,
+      TestIsolationModeTokenVaultV1WithAsyncFreezable__factory,
       core.hhUser1,
     );
 
@@ -160,26 +159,12 @@ describe('FreezableIsolationModeVaultFactory', () => {
     await otherToken2.connect(solidUser).approve(core.dolomiteMargin.address, bigOtherAmountWei);
     await depositIntoDolomiteMargin(core, solidUser, defaultAccountNumber, otherMarketId2, bigOtherAmountWei);
 
-    impersonatedVault = await impersonate(userVault.address, true);
-
     snapshotId = await snapshot();
   });
 
   beforeEach(async () => {
     snapshotId = await revertToSnapshotAndCapture(snapshotId);
   });
-
-  async function freezeVault(
-    accountNumber: BigNumber = ZERO_BI,
-  ): Promise<ContractTransaction> {
-    return factory.connect(impersonatedVault).setVaultAccountPendingAmountForFrozenStatus(
-      userVault.address,
-      accountNumber,
-      FreezeType.Deposit,
-      PLUS_ONE_BI,
-      core.tokens.usdc.address,
-    );
-  }
 
   describe('#constructor', () => {
     it('should work', async () => {
@@ -264,7 +249,7 @@ describe('FreezableIsolationModeVaultFactory', () => {
       );
     });
 
-    it('should fail if not token coverter', async () => {
+    it('should fail if not token converter', async () => {
       await expectThrow(
         factory.connect(core.hhUser2).setIsVaultDepositSourceWrapper(userVault.address, true),
         `IsolationModeVaultFactory: Caller is not a token converter <${core.hhUser2.address.toLowerCase()}>`,

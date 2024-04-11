@@ -5,22 +5,22 @@ import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertio
 import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { expect } from 'chai';
-import { OARB, OARBStorageVault, OARBStorageVault__factory } from '../src/types';
+import { OARB, MintableStorageVault, MintableStorageVault__factory } from '../src/types';
 import { createOARB } from './liquidity-mining-ecosystem-utils';
 
 // OARB Storage Vault contract is not in use in production. These tests don't all pass
-xdescribe('OARBStorageVault', () => {
+xdescribe('MintableStorageVault', () => {
   let snapshotId: string;
   let core: CoreProtocolArbitrumOne;
   let oARB: OARB;
-  let oARBStorageVault: OARBStorageVault;
+  let oARBStorageVault: MintableStorageVault;
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     oARB = await createOARB(core);
-    oARBStorageVault = await createContractWithAbi<OARBStorageVault>(
-      OARBStorageVault__factory.abi,
-      OARBStorageVault__factory.bytecode,
+    oARBStorageVault = await createContractWithAbi<MintableStorageVault>(
+      MintableStorageVault__factory.abi,
+      MintableStorageVault__factory.bytecode,
       [core.dolomiteMargin.address, oARB.address],
     );
     await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
