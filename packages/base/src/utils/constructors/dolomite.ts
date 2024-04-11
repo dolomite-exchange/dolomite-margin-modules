@@ -1,4 +1,3 @@
-import { UpgradeableProxy } from '@dolomite-exchange/modules-liquidity-mining/src/types';
 import { BigNumber, BigNumberish } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { DolomiteMargin } from '../../../test/utils/dolomite';
@@ -183,4 +182,11 @@ export function getOwnerAddMarketParametersForIsolationMode<T extends NetworkTyp
     isCollateralOnly,
     earningsRateOverride,
   );
+}
+
+export function getIsolationModeTokenVaultMigratorConstructorParams<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  token: IERC20,
+): any[] {
+  return [core.dolomiteRegistry.address, token.address];
 }

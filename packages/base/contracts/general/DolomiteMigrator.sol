@@ -95,7 +95,7 @@ contract DolomiteMigrator is IDolomiteMigrator, OnlyDolomiteMargin {
         _migrate(_accounts, _fromMarketId, _toMarketId, _extraData);
     }
 
-    function migrate(
+    function selfMigrate(
         uint256 _accountNumber,
         uint256 _fromMarketId,
         uint256 _toMarketId,
@@ -169,15 +169,15 @@ contract DolomiteMigrator is IDolomiteMigrator, OnlyDolomiteMargin {
 
             if (amountWei > 0) {
                 {
-                    uint256 preBal = IERC20(transformer.inputToken()).balanceOf(address(this));
+                    uint256 preBalance = IERC20(transformer.inputToken()).balanceOf(address(this));
                     IIsolationModeTokenVaultMigrator(account.owner).migrate(amountWei);
-                    uint256 postBal = IERC20(transformer.inputToken()).balanceOf(address(this));
-                    assert(postBal - preBal == amountWei);
+                    uint256 postBalance = IERC20(transformer.inputToken()).balanceOf(address(this));
+                    assert(postBalance - preBalance == amountWei);
 
-                    preBal = outputToken.balanceOf(address(this));
+                    preBalance = outputToken.balanceOf(address(this));
                     amountOut = _transformAndGetAmountOut(fromMarketId, toMarketId, amountWei, extraData);
-                    postBal = outputToken.balanceOf(address(this));
-                    assert(postBal - preBal == amountOut);
+                    postBalance = outputToken.balanceOf(address(this));
+                    assert(postBalance - preBalance == amountOut);
                 }
 
 

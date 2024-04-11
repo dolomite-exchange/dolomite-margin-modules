@@ -62,6 +62,13 @@ interface IDolomiteMigrator {
         bytes calldata _extraData
     ) external;
 
+    function selfMigrate(
+        uint256 _accountNumber,
+        uint256 _fromMarketId,
+        uint256 _toMarketId,
+        bytes calldata _extraData
+    ) external;
+
     function ownerSetTransformer(
         uint256 _fromMarketId,
         uint256 _toMarketId,

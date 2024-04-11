@@ -1,28 +1,28 @@
-import { expect } from 'chai';
 import {
   DolomiteMigrator,
   DolomiteMigrator__factory,
   IsolationModeTokenVaultMigrator,
   IsolationModeTokenVaultMigrator__factory,
 } from '@dolomite-exchange/modules-base/src/types';
+import {
+  getIsolationModeTokenVaultMigratorConstructorParams,
+} from '@dolomite-exchange/modules-base/src/utils/constructors/dolomite';
 import { createContractWithAbi } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { BYTES_EMPTY, Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
-import {
-  disableInterestAccrual,
-  setupCoreProtocol,
-} from '@dolomite-exchange/modules-base/test/utils/setup';
 import { expectProtocolBalance } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { AccountInfoStruct } from 'packages/base/src/utils';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { createDolomiteRegistryImplementation } from '@dolomite-exchange/modules-base/test/utils/dolomite';
+import { disableInterestAccrual, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { expect } from 'chai';
+import { BigNumber } from 'ethers';
+import { AccountInfoStruct } from 'packages/base/src/utils';
 import { IGLPIsolationModeVaultFactoryOld } from 'packages/glp/src/types';
 import {
   PendlePtGLP2024IsolationModeVaultFactory,
   PtGLPTransformer,
-  PtGLPTransformer__factory
+  PtGLPTransformer__factory,
 } from 'packages/pendle/src/types';
-import { BigNumber } from 'ethers';
 
 const defaultAccountNumber = ZERO_BI;
 const vaultAddress = '0x10dc4c2c391de5008bc4c895c3b1c3b070661674';
@@ -32,22 +32,19 @@ const vaultOwner2 = '0x8A8841F4AB46A052139e0DE31B1e693382193813';
 const borrowAccount1 = BigNumber.from('4211115166896119896340262904855120100885563956626545700858695746739717416654');
 const borrowAccount2 = BigNumber.from('54588878184938659795385687626756517841802839253616459311414872509276303196718');
 
-const soloMigrate = 'migrate(uint256,uint256,uint256,bytes)';
-const accountsMigrate = 'migrate((address,uint256)[],uint256,uint256,bytes)';
-
 const integrationAccounts: AccountInfoStruct[] = [
   { owner: vaultAddress, number: defaultAccountNumber },
   { owner: vaultAddress2, number: borrowAccount1 },
-  { owner: vaultAddress2, number: borrowAccount2 }
+  { owner: vaultAddress2, number: borrowAccount2 },
 ];
 
-describe('PtGLPTransformer', () => {
+describe('PtGLPIsolationModeTokenVaultMigrator', () => {
   let snapshotId: string;
   let core: CoreProtocolArbitrumOne;
   let migrator: DolomiteMigrator;
   let glpFactory: IGLPIsolationModeVaultFactoryOld;
   let ptGlpFactory: PendlePtGLP2024IsolationModeVaultFactory;
-  let migratorImplementation: IsolationModeTokenVaultMigrator;
+  let tokenVaultMigratorImplementation: IsolationModeTokenVaultMigrator;
   let transformer: PtGLPTransformer;
 
   let accounts: AccountInfoStruct[];
@@ -68,15 +65,15 @@ describe('PtGLPTransformer', () => {
       DolomiteMigrator__factory.bytecode,
       [core.dolomiteMargin.address, core.hhUser5.address],
     );
-    migratorImplementation = await createContractWithAbi<IsolationModeTokenVaultMigrator>(
+    tokenVaultMigratorImplementation = await createContractWithAbi<IsolationModeTokenVaultMigrator>(
       IsolationModeTokenVaultMigrator__factory.abi,
       IsolationModeTokenVaultMigrator__factory.bytecode,
-      [core.dolomiteRegistry.address, core.pendleEcosystem.glpMar2024.ptGlpToken.address]
+      getIsolationModeTokenVaultMigratorConstructorParams(core, core.pendleEcosystem.glpMar2024.ptGlpToken),
     );
     transformer = await createContractWithAbi<PtGLPTransformer>(
       PtGLPTransformer__factory.abi,
       PtGLPTransformer__factory.bytecode,
-      [await ptGlpFactory.pendlePtGLP2024Registry(), core.gmxEcosystem.sGlp.address]
+      [await ptGlpFactory.pendlePtGLP2024Registry(), core.gmxEcosystem.sGlp.address],
     );
 
     const newRegistry = await createDolomiteRegistryImplementation();
@@ -84,20 +81,20 @@ describe('PtGLPTransformer', () => {
     await core.dolomiteRegistry.ownerSetDolomiteMigrator(migrator.address);
 
     await migrator.connect(core.governance).ownerSetTransformer(
-      core.marketIds.dPtGlp,
+      core.marketIds.dPtGlpMar2024,
       core.marketIds.dfsGlp,
       transformer.address,
-      false
+      false,
     );
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(migrator.address, true);
     await ptGlpFactory.connect(core.governance).ownerSetIsTokenConverterTrusted(migrator.address, true);
     await glpFactory.connect(core.governance).setIsTokenConverterTrusted(migrator.address, true);
+    await ptGlpFactory.connect(core.governance)
+      .ownerSetUserVaultImplementation(tokenVaultMigratorImplementation.address);
 
     accounts = [
-      { owner: vaultAddress, number: defaultAccountNumber }
+      { owner: vaultAddress, number: defaultAccountNumber },
     ];
-
-    await ptGlpFactory.connect(core.governance).ownerSetUserVaultImplementation(migratorImplementation.address);
 
     snapshotId = await snapshot();
   });
@@ -116,18 +113,18 @@ describe('PtGLPTransformer', () => {
     it('should work normally', async () => {
       const ptGlpAmountWei = (await core.dolomiteMargin.getAccountWei(
         { owner: vaultAddress, number: defaultAccountNumber },
-        core.marketIds.dPtGlp
+        core.marketIds.dPtGlpMar2024,
       )).value;
 
-      await migrator.connect(core.hhUser5)[accountsMigrate](
+      await migrator.connect(core.hhUser5).migrate(
         accounts,
-        core.marketIds.dPtGlp,
+        core.marketIds.dPtGlpMar2024,
         core.marketIds.dfsGlp,
-        BYTES_EMPTY
+        BYTES_EMPTY,
       );
 
       const glpVaultAddress = await glpFactory.getVaultByAccount(vaultOwner);
-      await expectProtocolBalance(core, vaultAddress, defaultAccountNumber, core.marketIds.dPtGlp, ZERO_BI);
+      await expectProtocolBalance(core, vaultAddress, defaultAccountNumber, core.marketIds.dPtGlpMar2024, ZERO_BI);
       await expectProtocolBalance(
         core,
         glpVaultAddress,
@@ -140,40 +137,40 @@ describe('PtGLPTransformer', () => {
     it('should work normally for integration accounts', async () => {
       const ptGlpAmountWei = (await core.dolomiteMargin.getAccountWei(
         { owner: vaultAddress, number: defaultAccountNumber },
-        core.marketIds.dPtGlp
+        core.marketIds.dPtGlpMar2024,
       )).value;
 
       const supplyAmount = await core.dolomiteMargin.getAccountWei(
         { owner: '0x02f78ebb68d234c0c7fe94b85de39d21d1102f6b', number: borrowAccount1 },
-        core.marketIds.dPtGlp
+        core.marketIds.dPtGlpMar2024,
       );
       const supplyAmount2 = await core.dolomiteMargin.getAccountWei(
         { owner: '0x02f78ebb68d234c0c7fe94b85de39d21d1102f6b', number: borrowAccount2 },
-        core.marketIds.dPtGlp
+        core.marketIds.dPtGlpMar2024,
       );
 
       const borrowAmountWeth1 = await core.dolomiteMargin.getAccountWei(
         { owner: vaultAddress2, number: borrowAccount1 },
-        core.marketIds.weth
+        core.marketIds.weth,
       );
       const borrowAmountWbtc1 = await core.dolomiteMargin.getAccountWei(
         { owner: vaultAddress2, number: borrowAccount1 },
-        core.marketIds.wbtc
+        core.marketIds.wbtc,
       );
       const borrowAmountUsdc2 = await core.dolomiteMargin.getAccountWei(
         { owner: vaultAddress2, number: borrowAccount2 },
-        core.marketIds.nativeUsdc
+        core.marketIds.nativeUsdc,
       );
-      await migrator.connect(core.hhUser5)[accountsMigrate](
+      await migrator.connect(core.hhUser5).migrate(
         integrationAccounts,
-        core.marketIds.dPtGlp,
+        core.marketIds.dPtGlpMar2024,
         core.marketIds.dfsGlp,
-        BYTES_EMPTY
+        BYTES_EMPTY,
       );
 
       const glpVaultAddress = await glpFactory.getVaultByAccount(vaultOwner);
       const glpVaultAddress2 = await glpFactory.getVaultByAccount(vaultOwner2);
-      await expectProtocolBalance(core, vaultAddress, defaultAccountNumber, core.marketIds.dPtGlp, ZERO_BI);
+      await expectProtocolBalance(core, vaultAddress, defaultAccountNumber, core.marketIds.dPtGlpMar2024, ZERO_BI);
       await expectProtocolBalance(
         core,
         glpVaultAddress,
@@ -182,7 +179,7 @@ describe('PtGLPTransformer', () => {
         ptGlpAmountWei,
       );
 
-      await expectProtocolBalance(core, vaultAddress2, borrowAccount1, core.marketIds.dPtGlp, ZERO_BI);
+      await expectProtocolBalance(core, vaultAddress2, borrowAccount1, core.marketIds.dPtGlpMar2024, ZERO_BI);
       await expectProtocolBalance(core, vaultAddress2, borrowAccount1, core.marketIds.wbtc, ZERO_BI);
       await expectProtocolBalance(core, vaultAddress2, borrowAccount1, core.marketIds.weth, ZERO_BI);
       await expectProtocolBalance(
@@ -190,25 +187,25 @@ describe('PtGLPTransformer', () => {
         glpVaultAddress2,
         borrowAccount1,
         core.marketIds.wbtc,
-        ZERO_BI.sub(borrowAmountWbtc1.value)
+        ZERO_BI.sub(borrowAmountWbtc1.value),
       );
       await expectProtocolBalance(
         core,
         glpVaultAddress2,
         borrowAccount1,
         core.marketIds.weth,
-        ZERO_BI.sub(borrowAmountWeth1.value)
+        ZERO_BI.sub(borrowAmountWeth1.value),
       );
       await expectProtocolBalance(core, glpVaultAddress2, borrowAccount1, core.marketIds.dfsGlp, supplyAmount.value);
 
-      await expectProtocolBalance(core, vaultAddress2, borrowAccount2, core.marketIds.dPtGlp, ZERO_BI);
+      await expectProtocolBalance(core, vaultAddress2, borrowAccount2, core.marketIds.dPtGlpMar2024, ZERO_BI);
       await expectProtocolBalance(core, glpVaultAddress2, borrowAccount2, core.marketIds.dfsGlp, supplyAmount2.value);
       await expectProtocolBalance(
         core,
         glpVaultAddress2,
         borrowAccount2,
         core.marketIds.nativeUsdc,
-        ZERO_BI.sub(borrowAmountUsdc2.value)
+        ZERO_BI.sub(borrowAmountUsdc2.value),
       );
     });
   });

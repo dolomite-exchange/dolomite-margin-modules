@@ -8,7 +8,7 @@ import {
   TestFailingTransformerBytes,
   TestFailingTransformerBytes__factory,
   TestFailingTransformer__factory,
-  TestIsolationModeFactory,
+  TestIsolationModeVaultFactory,
   TestIsolationModeTokenVaultMigrator,
   TestIsolationModeTokenVaultMigrator__factory,
   TestIsolationModeTokenVaultV1,
@@ -32,7 +32,7 @@ import {
 import { expectEvent, expectProtocolBalance, expectThrow } from '../utils/assertions';
 import { AccountInfoStruct } from 'packages/base/src/utils';
 import { createDolomiteRegistryImplementation, createIsolationModeTokenVaultV1ActionsImpl } from '../utils/dolomite';
-import { createTestIsolationModeFactory } from '../utils/ecosystem-utils/testers';
+import { createTestIsolationModeVaultFactory } from '../utils/ecosystem-utils/testers';
 import { BigNumber } from 'ethers';
 import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin';
 
@@ -43,9 +43,6 @@ const amountWei = BigNumber.from('200000000000000000000'); // $200
 const usdcAmount = BigNumber.from('200000000'); // $200
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
-const soloMigrate = 'migrate(uint256,uint256,uint256,bytes)';
-const accountsMigrate = 'migrate((address,uint256)[],uint256,uint256,bytes)';
-
 describe('DolomiteMigrator', () => {
   let snapshotId: string;
   let core: CoreProtocolArbitrumOne;
@@ -54,8 +51,8 @@ describe('DolomiteMigrator', () => {
   let underlyingToken2: CustomTestToken;
   let marketId1: BigNumber;
   let marketId2: BigNumber;
-  let factory1: TestIsolationModeFactory;
-  let factory2: TestIsolationModeFactory;
+  let factory1: TestIsolationModeVaultFactory;
+  let factory2: TestIsolationModeVaultFactory;
   let userVaultImplementation: TestIsolationModeTokenVaultV1;
   let migratorImplementation: IsolationModeTokenVaultMigrator;
   let userVault: TestIsolationModeTokenVaultV1;
@@ -76,7 +73,7 @@ describe('DolomiteMigrator', () => {
     );
 
     underlyingToken1 = await createTestToken();
-    factory1 = await createTestIsolationModeFactory(core, underlyingToken1, userVaultImplementation);
+    factory1 = await createTestIsolationModeVaultFactory(core, underlyingToken1, userVaultImplementation);
     await core.testEcosystem!.testPriceOracle.setPrice(
       factory1.address,
       '1000000000000000000', // $1.00
@@ -85,7 +82,7 @@ describe('DolomiteMigrator', () => {
     await setupTestMarket(core, factory1, true);
 
     underlyingToken2 = await createTestToken();
-    factory2 = await createTestIsolationModeFactory(core, underlyingToken2, userVaultImplementation);
+    factory2 = await createTestIsolationModeVaultFactory(core, underlyingToken2, userVaultImplementation);
     await core.testEcosystem!.testPriceOracle.setPrice(
       factory2.address,
       '1000000000000000000', // $1.00
@@ -217,8 +214,8 @@ describe('DolomiteMigrator', () => {
     it('should work normally', async () => {
       await migrator.connect(core.governance).ownerSetTransformer(marketId1, marketId2, transformer.address, true);
       await factory1.connect(core.governance).ownerSetUserVaultImplementation(migratorImplementation.address);
-      const vaultImperonsator = await impersonate(userVault.address, true);
-      const result = await migrator.connect(vaultImperonsator)[soloMigrate](
+      const vaultImpersonator = await impersonate(userVault.address, true);
+      const result = await migrator.connect(vaultImpersonator).selfMigrate(
         borrowAccountNumber,
         marketId1,
         marketId2,
@@ -238,7 +235,7 @@ describe('DolomiteMigrator', () => {
 
     it('should fail if transformer is not solo allowable', async () => {
       await expectThrow(
-        migrator.connect(core.hhUser5)[soloMigrate](borrowAccountNumber, marketId1, marketId2, BYTES_EMPTY),
+        migrator.connect(core.hhUser5).selfMigrate(borrowAccountNumber, marketId1, marketId2, BYTES_EMPTY),
         'DolomiteMigrator: Solo migration not allowed'
       );
     });
@@ -247,7 +244,7 @@ describe('DolomiteMigrator', () => {
   describe('#migrate', () => {
     it('should work normally when vault needs to be created', async () => {
       await factory1.connect(core.governance).ownerSetUserVaultImplementation(migratorImplementation.address);
-      const result = await migrator.connect(core.hhUser5)[accountsMigrate](accounts, marketId1, marketId2, BYTES_EMPTY);
+      const result = await migrator.connect(core.hhUser5).migrate(accounts, marketId1, marketId2, BYTES_EMPTY);
       await expectEvent(migrator, result, 'MigrationComplete', {
         accountOwner: userVault.address,
         accountNumber: borrowAccountNumber,
@@ -277,7 +274,7 @@ describe('DolomiteMigrator', () => {
       );
 
       await factory1.connect(core.governance).ownerSetUserVaultImplementation(migratorImplementation.address);
-      const result = await migrator.connect(core.hhUser5)[accountsMigrate](accounts, marketId1, marketId2, BYTES_EMPTY);
+      const result = await migrator.connect(core.hhUser5).migrate(accounts, marketId1, marketId2, BYTES_EMPTY);
       await expectEvent(migrator, result, 'MigrationComplete', {
         accountOwner: userVault.address,
         accountNumber: borrowAccountNumber,
@@ -309,7 +306,7 @@ describe('DolomiteMigrator', () => {
         BalanceCheckFlag.None
       );
       await factory1.connect(core.governance).ownerSetUserVaultImplementation(migratorImplementation.address);
-      const result = await migrator.connect(core.hhUser5)[accountsMigrate](accounts, marketId1, marketId2, BYTES_EMPTY);
+      const result = await migrator.connect(core.hhUser5).migrate(accounts, marketId1, marketId2, BYTES_EMPTY);
       await expectEvent(migrator, result, 'MigrationComplete', {
         accountOwner: userVault.address,
         accountNumber: borrowAccountNumber2,
@@ -331,7 +328,7 @@ describe('DolomiteMigrator', () => {
       await factory2.createVault(core.hhUser1.address);
       await factory1.connect(core.governance).ownerSetUserVaultImplementation(migratorImplementation.address);
 
-      const result = await migrator.connect(core.hhUser5)[accountsMigrate](accounts, marketId1, marketId2, BYTES_EMPTY);
+      const result = await migrator.connect(core.hhUser5).migrate(accounts, marketId1, marketId2, BYTES_EMPTY);
       await expectEvent(migrator, result, 'MigrationComplete', {
         accountOwner: userVault.address,
         accountNumber: borrowAccountNumber,
@@ -354,7 +351,7 @@ describe('DolomiteMigrator', () => {
       await expectProtocolBalance(core, userVault.address, otherBorrowNumber, marketId1, ZERO_BI);
       await expectProtocolBalance(core, vaultAddress, otherBorrowNumber, marketId2, ZERO_BI);
       await expectThrow(
-        migrator.connect(core.hhUser5)[accountsMigrate](accounts, marketId1, marketId2, BYTES_EMPTY),
+        migrator.connect(core.hhUser5).migrate(accounts, marketId1, marketId2, BYTES_EMPTY),
         'DolomiteMigrator: No actions to execute'
       );
     });
@@ -369,7 +366,7 @@ describe('DolomiteMigrator', () => {
       await migrator.connect(core.governance).ownerSetTransformer(marketId1, marketId2, newTransformer.address, false);
 
       await expectThrow(
-        migrator.connect(core.hhUser5)[accountsMigrate](accounts, marketId1, marketId2, BYTES_EMPTY),
+        migrator.connect(core.hhUser5).migrate(accounts, marketId1, marketId2, BYTES_EMPTY),
         'DolomiteMigrator: Invalid return data'
       );
     });
@@ -384,28 +381,28 @@ describe('DolomiteMigrator', () => {
       await migrator.connect(core.governance).ownerSetTransformer(marketId1, marketId2, newTransformer.address, false);
 
       await expectThrow(
-        migrator.connect(core.hhUser5)[accountsMigrate](accounts, marketId1, marketId2, BYTES_EMPTY),
+        migrator.connect(core.hhUser5).migrate(accounts, marketId1, marketId2, BYTES_EMPTY),
         'DolomiteMigrator: Transformer call failed'
       );
     });
 
     it('should fail if toMarketId equals fromMarketId', async () => {
       await expectThrow(
-        migrator.connect(core.hhUser5)[accountsMigrate](accounts, marketId1, marketId1, BYTES_EMPTY),
+        migrator.connect(core.hhUser5).migrate(accounts, marketId1, marketId1, BYTES_EMPTY),
         'DolomiteMigrator: Cannot migrate to same market'
       );
     });
 
     it('should fail if fromMarketId is not an isolation mode factory', async () => {
       await expectThrow(
-        migrator.connect(core.hhUser5)[accountsMigrate](accounts, core.marketIds.usdc, marketId2, BYTES_EMPTY),
+        migrator.connect(core.hhUser5).migrate(accounts, core.marketIds.usdc, marketId2, BYTES_EMPTY),
         'DolomiteMigrator: Markets must be isolation mode'
       );
     });
 
     it('should fail if toMarketId is not an isolation mode factory', async () => {
       await expectThrow(
-        migrator.connect(core.hhUser5)[accountsMigrate](accounts, marketId1, core.marketIds.usdc, BYTES_EMPTY),
+        migrator.connect(core.hhUser5).migrate(accounts, marketId1, core.marketIds.usdc, BYTES_EMPTY),
         'DolomiteMigrator: Markets must be isolation mode'
       );
     });
@@ -415,14 +412,14 @@ describe('DolomiteMigrator', () => {
         { owner: core.hhUser1.address, number: defaultAccountNumber }
       ];
       await expectThrow(
-        migrator.connect(core.hhUser5)[accountsMigrate](accounts, marketId1, marketId2, BYTES_EMPTY),
+        migrator.connect(core.hhUser5).migrate(accounts, marketId1, marketId2, BYTES_EMPTY),
         'DolomiteMigrator: Invalid vault'
       );
     });
 
     it('should fail if not called by handler', async () => {
       await expectThrow(
-        migrator.connect(core.hhUser1)[accountsMigrate](accounts, marketId1, marketId2, BYTES_EMPTY),
+        migrator.connect(core.hhUser1).migrate(accounts, marketId1, marketId2, BYTES_EMPTY),
         'DolomiteMigrator: Caller is not handler'
       );
     });

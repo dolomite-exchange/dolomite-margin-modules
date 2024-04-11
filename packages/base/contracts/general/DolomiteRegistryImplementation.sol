@@ -67,13 +67,15 @@ contract DolomiteRegistryImplementation is
         address _expiry,
         uint256 _slippageToleranceForPauseSentinel,
         address _liquidatorAssetRegistry,
-        address _eventEmitter
+        address _eventEmitter,
+        address _dolomiteMigrator
     ) external initializer {
         _ownerSetGenericTraderProxy(_genericTraderProxy);
         _ownerSetExpiry(_expiry);
         _ownerSetSlippageToleranceForPauseSentinel(_slippageToleranceForPauseSentinel);
         _ownerSetLiquidatorAssetRegistry(_liquidatorAssetRegistry);
         _ownerSetEventEmitter(_eventEmitter);
+        _ownerSetDolomiteMigrator(_dolomiteMigrator);
     }
 
     // ===================== Functions =====================

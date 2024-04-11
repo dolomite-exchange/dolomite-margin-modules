@@ -26,7 +26,6 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { IJonesRouter } from "./interfaces/IJonesRouter.sol";
 
 
-
 /**
  * @title   JonesUSDCTransformer
  * @author  Dolomite
@@ -40,12 +39,12 @@ contract JonesUSDCTransformer is IDolomiteTransformer {
     address public immutable outputToken; // new jUSDC
     IJonesRouter public immutable router;
 
-    constructor(address _oldjUsdc, address _newjUsdc, address _router) {
-        inputToken = _oldjUsdc;
-        outputToken = _newjUsdc;
+    constructor(address _oldJonesUsdc, address _newJonesUsdc, address _router) {
+        inputToken = _oldJonesUsdc;
+        outputToken = _newJonesUsdc;
         router = IJonesRouter(_router);
     }
-    
+
     function transform(uint256 amount, bytes calldata /* _extraData */) external returns (uint256) {
         IERC20(inputToken).safeApprove(address(router), amount);
         (uint256 newjUSDC, uint256 compoundAmount) = router.migratePosition();
