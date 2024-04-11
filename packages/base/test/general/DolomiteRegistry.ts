@@ -21,12 +21,11 @@ describe('DolomiteRegistryImplementation', () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     implementation = await createDolomiteRegistryImplementation();
     const calldata = await implementation.populateTransaction.initialize(
-      core.genericTraderProxy!.address,
-      core.expiry!.address,
+      core.genericTraderProxy.address,
+      core.expiry.address,
       core.constants.slippageToleranceForPauseSentinel,
       core.liquidatorAssetRegistry.address,
       core.eventEmitterRegistryProxy.address,
-      core.chainlinkPriceOracle.address,
     );
     const registryProxy = await createRegistryProxy(implementation.address, calldata.data!, core);
     registry = DolomiteRegistryImplementation__factory.connect(registryProxy.address, core.governance);
@@ -40,19 +39,23 @@ describe('DolomiteRegistryImplementation', () => {
 
   describe('#initialize', () => {
     it('should initialize variables properly', async () => {
-      expect(await registry.genericTraderProxy()).to.equal(core.genericTraderProxy!.address);
-      expect(await registry.expiry()).to.equal(core.expiry!.address);
+      expect(await registry.genericTraderProxy()).to.equal(core.genericTraderProxy.address);
+      expect(await registry.expiry()).to.equal(core.expiry.address);
+      expect(await registry.slippageToleranceForPauseSentinel())
+        .to
+        .equal(core.constants.slippageToleranceForPauseSentinel);
+      expect(await registry.liquidatorAssetRegistry()).to.equal(core.liquidatorAssetRegistry.address);
+      expect(await registry.eventEmitter()).to.equal(core.eventEmitterRegistryProxy.address);
     });
 
     it('should fail to initialize if already initialized', async () => {
       await expectThrow(
         registry.initialize(
-          core.genericTraderProxy!.address,
-          core.expiry!.address,
+          core.genericTraderProxy.address,
+          core.expiry.address,
           core.constants.slippageToleranceForPauseSentinel,
           core.liquidatorAssetRegistry.address,
           core.eventEmitterRegistryProxy.address,
-          core.chainlinkPriceOracle.address,
         ),
         'Initializable: contract is already initialized',
       );
@@ -67,7 +70,7 @@ describe('DolomiteRegistryImplementation', () => {
 
   describe('#ownerSetGenericTraderProxy', () => {
     it('should work normally', async () => {
-      const genericTraderProxy = core.genericTraderProxy!.address;
+      const genericTraderProxy = core.genericTraderProxy.address;
       const result = await registry.connect(core.governance).ownerSetGenericTraderProxy(genericTraderProxy);
       await expectEvent(registry, result, 'GenericTraderProxySet', {
         genericTraderProxy,
@@ -99,7 +102,7 @@ describe('DolomiteRegistryImplementation', () => {
 
   describe('#ownerSetExpiry', () => {
     it('should work normally', async () => {
-      const expiryAddress = core.expiry!.address;
+      const expiryAddress = core.expiry.address;
       const result = await registry.connect(core.governance).ownerSetExpiry(expiryAddress);
       await expectEvent(registry, result, 'ExpirySet', {
         expiryAddress,
@@ -161,7 +164,7 @@ describe('DolomiteRegistryImplementation', () => {
 
   describe('#ownerSetLiquidatorAssetRegistry', () => {
     it('should work normally', async () => {
-      const liquidatorAssetRegistry = core.liquidatorAssetRegistry!.address;
+      const liquidatorAssetRegistry = core.liquidatorAssetRegistry.address;
       const result = await registry.connect(core.governance).ownerSetLiquidatorAssetRegistry(liquidatorAssetRegistry);
       await expectEvent(registry, result, 'LiquidatorAssetRegistrySet', {
         liquidatorAssetRegistry,
@@ -283,6 +286,30 @@ describe('DolomiteRegistryImplementation', () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetRedstonePriceOracle(ZERO_ADDRESS),
         'DolomiteRegistryImplementation: Invalid redstonePriceOracle',
+      );
+    });
+  });
+
+  describe('#ownerSetOracleAggregator', () => {
+    it('should work normally', async () => {
+      const result = await registry.connect(core.governance).ownerSetOracleAggregator(OTHER_ADDRESS);
+      await expectEvent(registry, result, 'OracleAggregatorSet', {
+        oracleAggregator: OTHER_ADDRESS,
+      });
+      expect(await registry.oracleAggregator()).to.equal(OTHER_ADDRESS);
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetOracleAggregator(OTHER_ADDRESS),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetOracleAggregator(ZERO_ADDRESS),
+        'DolomiteRegistryImplementation: Invalid oracleAggregator',
       );
     });
   });

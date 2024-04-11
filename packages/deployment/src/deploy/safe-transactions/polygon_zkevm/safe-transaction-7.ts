@@ -39,7 +39,7 @@ async function main(): Promise<DryRunOutput<Network.PolygonZkEvm>> {
     ...await prettyPrintEncodeAddMarket(
       core,
       core.tokens.usdc,
-      core.chainlinkPriceOracle,
+      core.chainlinkPriceOracleOld,
       core.interestSetters.linearStepFunction10L90U95OInterestSetter,
       TargetCollateralization.Base,
       TargetLiquidationPenalty.Base,
@@ -69,12 +69,12 @@ async function main(): Promise<DryRunOutput<Network.PolygonZkEvm>> {
         'Invalid collateral token for USDC market ID',
       );
       assertHardhatInvariant(
-        (await core.dolomiteMargin.getMarketPriceOracle(core.marketIds.usdc)) === core.chainlinkPriceOracle.address,
+        (await core.dolomiteMargin.getMarketPriceOracle(core.marketIds.usdc)) === core.chainlinkPriceOracleOld.address,
         'Invalid Chainlink price aggregator for USDC',
       );
       assertHardhatInvariant(
-        (await core.chainlinkPriceOracle.getAggregatorByToken(core.tokens.usdc.address))
-        === CHAINLINK_PRICE_AGGREGATORS_MAP[Network.PolygonZkEvm][core.tokens.usdc.address],
+        (await core.chainlinkPriceOracleOld.tokenToAggregatorMap(core.tokens.usdc.address))
+        === CHAINLINK_PRICE_AGGREGATORS_MAP[Network.PolygonZkEvm][core.tokens.usdc.address].aggregatorAddress,
         'Invalid Chainlink price aggregator for USDC',
       );
     },

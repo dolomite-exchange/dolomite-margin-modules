@@ -28,7 +28,7 @@ import { InterestIndexLib } from "../../lib/InterestIndexLib.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../../protocol/lib/Require.sol";
-import { IFreezableIsolationModeVaultFactory } from "../interfaces/IFreezableIsolationModeVaultFactory.sol";
+import { IAsyncFreezableIsolationModeVaultFactory } from "../interfaces/IAsyncFreezableIsolationModeVaultFactory.sol";
 import { IIsolationModeVaultFactory } from "../interfaces/IIsolationModeVaultFactory.sol";
 import { IIsolationModeWrapperTraderV2 } from "../interfaces/IIsolationModeWrapperTraderV2.sol";
 import { IUpgradeableAsyncIsolationModeWrapperTrader } from "../interfaces/IUpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable-line max-line-length
@@ -261,7 +261,7 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
         // Account number is set by the Token Vault so we know it's safe to use
         (uint256 accountNumber, bytes memory _extraOrderData) = abi.decode(_orderData, (uint256, bytes));
 
-        IFreezableIsolationModeVaultFactory factory = IFreezableIsolationModeVaultFactory(address(VAULT_FACTORY()));
+        IAsyncFreezableIsolationModeVaultFactory factory = IAsyncFreezableIsolationModeVaultFactory(address(VAULT_FACTORY()));
 
         // Disallow the deposit if there's already an action waiting for it
         Require.that(
@@ -323,7 +323,7 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
         DepositInfo memory depositInfo = _getDepositSlot(_key);
         _validateDepositExists(depositInfo);
 
-        IFreezableIsolationModeVaultFactory factory = IFreezableIsolationModeVaultFactory(address(VAULT_FACTORY()));
+        IAsyncFreezableIsolationModeVaultFactory factory = IAsyncFreezableIsolationModeVaultFactory(address(VAULT_FACTORY()));
         IERC20 underlyingToken = IERC20(factory.UNDERLYING_TOKEN());
         // We just need to blind transfer the min amount to the vault
         underlyingToken.safeTransfer(depositInfo.vault, _minMarketTokens);
@@ -390,7 +390,7 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
     }
 
     function _depositIntoDefaultPositionAndClearDeposit(
-        IFreezableIsolationModeVaultFactory _factory,
+        IAsyncFreezableIsolationModeVaultFactory _factory,
         DepositInfo memory _depositInfo,
         uint256 _depositAmountWei
     ) internal {
@@ -466,10 +466,10 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
         bool _isPositive,
         address _conversionToken
     ) internal {
-        IFreezableIsolationModeVaultFactory(address(VAULT_FACTORY())).setVaultAccountPendingAmountForFrozenStatus(
+        IAsyncFreezableIsolationModeVaultFactory(address(VAULT_FACTORY())).setVaultAccountPendingAmountForFrozenStatus(
             _vault,
             _accountNumber,
-            IFreezableIsolationModeVaultFactory.FreezeType.Deposit,
+            IAsyncFreezableIsolationModeVaultFactory.FreezeType.Deposit,
                 /* _amountDeltaWei = */ IDolomiteStructs.Wei({
                 sign: _isPositive,
                 value: _amountDeltaWei

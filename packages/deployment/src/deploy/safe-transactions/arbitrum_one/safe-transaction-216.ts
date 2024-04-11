@@ -5,7 +5,7 @@ import { getPendlePtEEthPriceOracleConstructorParams } from '@dolomite-exchange/
 import { PendlePtIsolationModeVaultFactory__factory } from '@dolomite-exchange/modules-pendle/src/types';
 import { formatEther, parseEther } from 'ethers/lib/utils';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
-import { Network, ONE_BI } from 'packages/base/src/utils/no-deps-constants';
+import { Network } from 'packages/base/src/utils/no-deps-constants';
 import {
   deployContractAndSave,
   EncodedTransaction,

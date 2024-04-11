@@ -20,14 +20,14 @@
 
 pragma solidity ^0.8.9;
 
-import { IOARB } from "./IOARB.sol";
+import { IERC20Mintable } from "./IERC20Mintable.sol";
 
 
 /**
  * @title   IRewardsDistributor
  * @author  Dolomite
  *
- * @notice  Interface oARB rewards distributor
+ * @notice  Interface for token rewards distributor
  */
 interface IRewardsDistributor {
 
@@ -49,9 +49,7 @@ interface IRewardsDistributor {
 
     event MerkleRootSet(uint256 epoch, bytes32 merkleRoot);
 
-    event OARBSet(IOARB oARB);
-
-    event Claimed(address indexed user, uint256 epoch, uint256 amount);
+    event TokenSet(IERC20Mintable token);
 
     // ======================================================
     // ================== External Functions ================
@@ -63,11 +61,11 @@ interface IRewardsDistributor {
 
     function handlerSetMerkleRoot(uint256 _epoch, bytes32 _merkleRoot) external;
 
-    function ownerSetOARB(IOARB _oARB) external;
+    function ownerSetToken(IERC20Mintable _token) external;
 
     /**
      *
-     * @param  _claimInfo  Array of ClaimInfo structs used to claim oARB for the given user
+     * @param  _claimInfo  Array of ClaimInfo structs used to claim token for the given user
      */
     function claim(ClaimInfo[] calldata _claimInfo) external;
 
@@ -93,5 +91,5 @@ interface IRewardsDistributor {
      */
     function getClaimStatusByUserAndEpoch(address _user, uint256 _epoch) external view returns (bool);
 
-    function oARB() external view returns (IOARB);
+    function token() external view returns (IERC20Mintable);
 }

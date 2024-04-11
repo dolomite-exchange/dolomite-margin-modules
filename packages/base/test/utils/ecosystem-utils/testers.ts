@@ -15,15 +15,15 @@ import {
   TestAsyncProtocolIsolationModeVaultFactory__factory,
   TestDolomiteMarginExchangeWrapper,
   TestDolomiteMarginExchangeWrapper__factory,
-  TestFreezableIsolationModeVaultFactory,
-  TestFreezableIsolationModeVaultFactory__factory,
+  TestAsyncFreezableIsolationModeVaultFactory,
+  TestAsyncFreezableIsolationModeVaultFactory__factory,
   TestHandlerRegistry,
   TestHandlerRegistry__factory,
-  TestIsolationModeFactory,
-  TestIsolationModeFactory__factory,
+  TestIsolationModeVaultFactory,
+  TestIsolationModeVaultFactory__factory,
   TestIsolationModeTokenVaultV1,
   TestIsolationModeTokenVaultV1WithFreezable,
-  TestIsolationModeTokenVaultV1WithFreezableAndPausable,
+  TestIsolationModeTokenVaultV1WithAsyncFreezableAndPausable,
   TestIsolationModeTokenVaultV1WithPausable,
   TestIsolationModeTokenVaultV1WithPausableAndOnlyEoa,
   TestIsolationModeTokenVaultV1__factory,
@@ -33,6 +33,7 @@ import {
   TestUpgradeableAsyncIsolationModeUnwrapperTrader__factory,
   TestUpgradeableAsyncIsolationModeWrapperTrader,
   TestUpgradeableAsyncIsolationModeWrapperTrader__factory,
+  TestIsolationModeTokenVaultV1WithAsyncFreezable,
 } from '../../../src/types';
 import { createContractWithAbi, createContractWithLibrary, createContractWithLibraryAndArtifact } from '../../../src/utils/dolomite-utils';
 import { NetworkType } from '../../../src/utils/no-deps-constants';
@@ -57,14 +58,14 @@ export interface TestEcosystem {
   testPriceOracle: TestPriceOracle;
 }
 
-export async function createTestIsolationModeFactory<T extends NetworkType>(
+export async function createTestIsolationModeVaultFactory<T extends NetworkType>(
   core: CoreProtocolType<T>,
   underlyingToken: CustomTestToken,
-  userVaultImplementation: TestIsolationModeTokenVault,
-): Promise<TestIsolationModeFactory> {
-  return await createContractWithAbi<TestIsolationModeFactory>(
-    TestIsolationModeFactory__factory.abi,
-    TestIsolationModeFactory__factory.bytecode,
+  userVaultImplementation: TestIsolationModeTokenVault | IIsolationModeTokenVaultV1,
+): Promise<TestIsolationModeVaultFactory> {
+  return await createContractWithAbi<TestIsolationModeVaultFactory>(
+    TestIsolationModeVaultFactory__factory.abi,
+    TestIsolationModeVaultFactory__factory.bytecode,
     [
       core.dolomiteRegistry.address,
       underlyingToken.address,
@@ -88,7 +89,8 @@ export async function createTestIsolationModeTokenVaultV1<T extends NetworkType>
 
 type FreezableVault =
   TestIsolationModeTokenVaultV1WithFreezable
-  | TestIsolationModeTokenVaultV1WithFreezableAndPausable;
+  | TestIsolationModeTokenVaultV1WithAsyncFreezable
+  | TestIsolationModeTokenVaultV1WithAsyncFreezableAndPausable;
 
 export async function createTestHandlerRegistry<T extends NetworkType>(
   core: CoreProtocolType<T>,
@@ -103,16 +105,16 @@ export async function createTestHandlerRegistry<T extends NetworkType>(
   return TestHandlerRegistry__factory.connect(proxy.address, core.hhUser1);
 }
 
-export async function createTestFreezableIsolationModeVaultFactory<T extends NetworkType>(
+export async function createTestAsyncFreezableIsolationModeVaultFactory<T extends NetworkType>(
   executionFee: BigNumberish,
   registry: TestHandlerRegistry,
   core: CoreProtocolType<T>,
   underlyingToken: CustomTestToken | IERC20,
   userVaultImplementation: FreezableVault | IIsolationModeTokenVaultV1,
-): Promise<TestFreezableIsolationModeVaultFactory> {
-  return await createContractWithAbi<TestFreezableIsolationModeVaultFactory>(
-    TestFreezableIsolationModeVaultFactory__factory.abi,
-    TestFreezableIsolationModeVaultFactory__factory.bytecode,
+): Promise<TestAsyncFreezableIsolationModeVaultFactory> {
+  return await createContractWithAbi<TestAsyncFreezableIsolationModeVaultFactory>(
+    TestAsyncFreezableIsolationModeVaultFactory__factory.abi,
+    TestAsyncFreezableIsolationModeVaultFactory__factory.bytecode,
     [
       executionFee,
       registry.address,
@@ -150,7 +152,7 @@ export async function createTestAsyncProtocolIsolationModeVaultFactory<T extends
 export async function createTestUpgradeableAsyncIsolationModeWrapperTrader<T extends NetworkType>(
   core: CoreProtocolType<T>,
   registry: TestHandlerRegistry,
-  factory: TestFreezableIsolationModeVaultFactory,
+  factory: TestAsyncFreezableIsolationModeVaultFactory,
   asyncProtocol: TestAsyncProtocol,
 ): Promise<TestUpgradeableAsyncIsolationModeWrapperTrader> {
   const libraries = await createAsyncIsolationModeWrapperTraderImpl();
@@ -177,7 +179,7 @@ export async function createTestUpgradeableAsyncIsolationModeWrapperTrader<T ext
 export async function createTestUpgradeableAsyncIsolationModeUnwrapperTrader<T extends NetworkType>(
   core: CoreProtocolType<T>,
   registry: TestHandlerRegistry,
-  factory: TestFreezableIsolationModeVaultFactory,
+  factory: TestAsyncFreezableIsolationModeVaultFactory,
   asyncProtocol: TestAsyncProtocol,
 ): Promise<TestUpgradeableAsyncIsolationModeUnwrapperTrader> {
   const libraries = await createAsyncIsolationModeUnwrapperTraderImpl();

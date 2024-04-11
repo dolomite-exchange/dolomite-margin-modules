@@ -1,6 +1,6 @@
 import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { ethers } from 'ethers';
-import { OARB, VesterImplementationV1, VesterImplementationV2, VesterProxy } from './types';
+import { IERC20, OARB, UpgradeableProxy, VesterImplementationV1, VesterImplementationV2 } from './types';
 
 export function getVesterImplementationConstructorParams(core: CoreProtocolArbitrumOne): any[] {
   return [
@@ -29,7 +29,7 @@ export function getOARBConstructorParams(core: CoreProtocolArbitrumOne): any[] {
 
 export function getVesterExploderConstructorParams(
   core: CoreProtocolArbitrumOne,
-  vester: VesterImplementationV1 | VesterImplementationV2 | VesterProxy,
+  vester: VesterImplementationV1 | VesterImplementationV2 | UpgradeableProxy,
 ): any[] {
   return [
     vester.address,
@@ -40,8 +40,8 @@ export function getVesterExploderConstructorParams(
 
 export function getRewardsDistributorConstructorParams(
   core: CoreProtocolArbitrumOne,
-  oARB: OARB,
+  oToken: IERC20,
   initialHandlers: string[],
 ): any[] {
-  return [core.dolomiteMargin.address, oARB.address, initialHandlers];
+  return [core.dolomiteMargin.address, oToken.address, initialHandlers, core.dolomiteRegistry.address];
 }

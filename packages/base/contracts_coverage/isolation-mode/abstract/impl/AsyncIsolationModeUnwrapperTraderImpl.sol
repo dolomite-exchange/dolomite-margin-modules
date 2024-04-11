@@ -32,9 +32,9 @@ import { IDolomiteMargin } from "../../../protocol/interfaces/IDolomiteMargin.so
 import { IDolomiteStructs } from "../../../protocol/interfaces/IDolomiteStructs.sol";
 import { DecimalLib } from "../../../protocol/lib/DecimalLib.sol";
 import { Require } from "../../../protocol/lib/Require.sol";
-import { IFreezableIsolationModeVaultFactory } from "../../interfaces/IFreezableIsolationModeVaultFactory.sol";
+import { IAsyncFreezableIsolationModeVaultFactory } from "../../interfaces/IAsyncFreezableIsolationModeVaultFactory.sol";
 import { IIsolationModeTokenVaultV1 } from "../../interfaces/IIsolationModeTokenVaultV1.sol";
-import { IIsolationModeTokenVaultV1WithFreezable } from "../../interfaces/IIsolationModeTokenVaultV1WithFreezable.sol"; // solhint-disable-line max-line-length
+import { IIsolationModeTokenVaultV1WithAsyncFreezable } from "../../interfaces/IIsolationModeTokenVaultV1WithAsyncFreezable.sol"; // solhint-disable-line max-line-length
 import { IIsolationModeUnwrapperTraderV2 } from "../../interfaces/IIsolationModeUnwrapperTraderV2.sol";
 import { IIsolationModeVaultFactory } from "../../interfaces/IIsolationModeVaultFactory.sol";
 import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "../../interfaces/IUpgradeableAsyncIsolationModeUnwrapperTrader.sol"; // solhint-disable-line max-line-length
@@ -151,7 +151,7 @@ library AsyncIsolationModeUnwrapperTraderImpl {
         bytes calldata _data
     ) external {
         IUpgradeableAsyncIsolationModeUnwrapperTrader.State storage state = _state;
-        IFreezableIsolationModeVaultFactory factory = IFreezableIsolationModeVaultFactory(address(state.vaultFactory));
+        IAsyncFreezableIsolationModeVaultFactory factory = IAsyncFreezableIsolationModeVaultFactory(address(state.vaultFactory));
         (
             IDolomiteStructs.AssetReference assetReference,
             uint256 transferAmount,
@@ -237,7 +237,7 @@ library AsyncIsolationModeUnwrapperTraderImpl {
             inputAmount += inputAmountForIteration;
         }
 
-        uint256 underlyingVirtualBalance = IIsolationModeTokenVaultV1WithFreezable(vault).virtualBalance();
+        uint256 underlyingVirtualBalance = IIsolationModeTokenVaultV1WithAsyncFreezable(vault).virtualBalance();
         if (underlyingVirtualBalance >= transferAmount) { /* FOR COVERAGE TESTING */ }
         Require.that(
             underlyingVirtualBalance >= transferAmount,
@@ -584,10 +584,10 @@ library AsyncIsolationModeUnwrapperTraderImpl {
         bool _isPositive,
         address _outputToken
     ) internal {
-        IFreezableIsolationModeVaultFactory(_vaultFactory).setVaultAccountPendingAmountForFrozenStatus(
+        IAsyncFreezableIsolationModeVaultFactory(_vaultFactory).setVaultAccountPendingAmountForFrozenStatus(
             _vault,
             _accountNumber,
-            IFreezableIsolationModeVaultFactory.FreezeType.Withdrawal,
+            IAsyncFreezableIsolationModeVaultFactory.FreezeType.Withdrawal,
             /* _amountWei = */ IDolomiteStructs.Wei({
                 sign: _isPositive,
                 value: _amountDeltaWei

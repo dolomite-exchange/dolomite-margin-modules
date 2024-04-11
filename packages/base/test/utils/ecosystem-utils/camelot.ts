@@ -1,4 +1,4 @@
-import { IAlgebraV3Pool, IAlgebraV3Pool__factory } from '../../../src/types';
+import { IAlgebraV3Pool, IAlgebraV3Pool__factory } from '@dolomite-exchange/modules-oracles/src/types';
 import {
   DPX_WETH_V3_POOL_MAP,
   GRAIL_USDC_V3_POOL_MAP,
