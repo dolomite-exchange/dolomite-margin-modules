@@ -22,7 +22,7 @@ pragma solidity ^0.8.9;
 
 import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import { IOARB } from "./interfaces/IOARB.sol";
+import { IERC20Mintable } from "./interfaces/IERC20Mintable.sol";
 
 
 /**
@@ -31,7 +31,7 @@ import { IOARB } from "./interfaces/IOARB.sol";
  *
  * ERC20 contract for oARB tokens
  */
-contract OARB is ERC20, OnlyDolomiteMargin, IOARB {
+contract OARB is ERC20, OnlyDolomiteMargin, IERC20Mintable {
 
     // ===================================================
     // ==================== Constants ====================

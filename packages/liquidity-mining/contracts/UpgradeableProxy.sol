@@ -21,22 +21,21 @@
 pragma solidity ^0.8.9;
 
 import { OnlyDolomiteMarginForUpgradeable } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMarginForUpgradeable.sol"; // solhint-disable-line max-line-length
-import { ProxyContractHelpers } from "@dolomite-exchange/modules-base/contracts/helpers/ProxyContractHelpers.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 
 
 /**
- * @title   VesterProxy
+ * @title   UpgradeableProxy
  * @author  Dolomite
  *
  * @notice  Base contract for the upgradeable vester contract
  */
-contract VesterProxy is ProxyContractHelpers, OnlyDolomiteMarginForUpgradeable {
+contract UpgradeableProxy is OnlyDolomiteMarginForUpgradeable {
 
     // ============ Constants ============
 
-    bytes32 private constant _FILE = "IsolationModeVesterProxy";
+    bytes32 private constant _FILE = "UpgradeableProxy";
     bytes32 private constant _IMPLEMENTATION_SLOT = bytes32(uint256(keccak256("eip1967.proxy.implementation")) - 1);
 
     // ===================== Events =====================
@@ -55,7 +54,7 @@ contract VesterProxy is ProxyContractHelpers, OnlyDolomiteMarginForUpgradeable {
         Address.functionDelegateCall(
             implementation(),
             _initializationCalldata,
-            "IsolationModeTraderProxy: Initialization failed"
+            "UpgradeableProxy: Initialization failed"
         );
     }
 
@@ -77,7 +76,7 @@ contract VesterProxy is ProxyContractHelpers, OnlyDolomiteMarginForUpgradeable {
         bytes calldata _upgradeCalldata
     ) external onlyDolomiteMarginOwner(msg.sender) {
         _setImplementation(_newImplementation);
-        Address.functionDelegateCall(implementation(), _upgradeCalldata, "RegistryProxy: Upgrade failed");
+        Address.functionDelegateCall(implementation(), _upgradeCalldata, "UpgradeableProxy: Upgrade failed");
     }
 
     function implementation() public view returns (address) {

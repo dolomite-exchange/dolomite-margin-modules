@@ -34,7 +34,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { ERC721 } from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
-import { IOARB } from "./interfaces/IOARB.sol";
+import { IERC20Mintable } from "./interfaces/IERC20Mintable.sol";
 import { IVesterV1 } from "./interfaces/IVesterV1.sol";
 
 
@@ -53,7 +53,7 @@ contract VesterImplementationV1 is
     IVesterV1
 {
     using SafeERC20 for IERC20;
-    using SafeERC20 for IOARB;
+    using SafeERC20 for IERC20Mintable;
 
     // ===================================================
     // ==================== Constants ====================
@@ -68,7 +68,7 @@ contract VesterImplementationV1 is
 
     bytes32 private constant _NEXT_ID_SLOT = bytes32(uint256(keccak256("eip1967.proxy.nextId")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _VESTING_POSITIONS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.vestingPositions")) - 1); // solhint-disable-line max-line-length
-    bytes32 private constant _PROMISED_ARB_TOKENS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.promisedArbTokens")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _PROMISED_ARB_TOKENS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.promisedTokens")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _OARB_SLOT = bytes32(uint256(keccak256("eip1967.proxy.oarb")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _CLOSE_POSITION_WINDOW_SLOT = bytes32(uint256(keccak256("eip1967.proxy.closePositionWindow")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _FORCE_CLOSE_POSITION_TAX_SLOT = bytes32(uint256(keccak256("eip1967.proxy.forceClosePositionTax")) - 1); // solhint-disable-line max-line-length
@@ -147,7 +147,7 @@ contract VesterImplementationV1 is
         returns (uint256)
     {
         Require.that(
-            ARB.balanceOf(address(this)) >= _amount + promisedArbTokens(),
+            ARB.balanceOf(address(this)) >= _amount + promisedTokens(),
             _FILE,
             "Not enough ARB tokens available"
         );
@@ -170,11 +170,11 @@ contract VesterImplementationV1 is
                 amount: _amount
             })
         );
-        _setPromisedArbTokens(promisedArbTokens() + _amount);
+        _setPromisedTokens(promisedTokens() + _amount);
 
         _mint(msg.sender, nftId);
         // Transfer amounts in to hash of id and msg.sender
-        oARB().safeTransferFrom(msg.sender, address(this), _amount);
+        IERC20(address(oToken())).safeTransferFrom(msg.sender, address(this), _amount);
         _transfer(
             /* fromAccount = */ msg.sender,
             /* fromAccountNumber = */ _fromAccountNumber,
@@ -218,7 +218,7 @@ contract VesterImplementationV1 is
         _closePosition(position);
 
         // Burn oARB and deposit ARB tokens back into dolomite
-        oARB().burn(position.amount);
+        oToken().burn(position.amount);
         _transfer(
             /* fromAccount = */ address(this),
             /* fromAccountNumber = */ accountNumber,
@@ -273,7 +273,7 @@ contract VesterImplementationV1 is
 
         // Burn oARB and transfer ARB tokens back to user"s dolomite account minus tax amount
         uint256 arbTax = position.amount * forceClosePositionTax() / _BASE;
-        oARB().burn(position.amount);
+        oToken().burn(position.amount);
         if (arbTax > 0) {
             _transfer(
                 /* _fromAccount = */ address(this),
@@ -309,7 +309,7 @@ contract VesterImplementationV1 is
         );
 
         // Transfer arb back to the user and burn ARB
-        oARB().burn(position.amount);
+        oToken().burn(position.amount);
         uint256 arbTax = position.amount * emergencyWithdrawTax() / _BASE;
         if (arbTax > 0) {
             _transfer(
@@ -340,7 +340,7 @@ contract VesterImplementationV1 is
     // ======================= Admin Functions ==========================
     // ==================================================================
 
-    function ownerWithdrawArb(
+    function ownerWithdrawToken(
         address _to,
         uint256 _amount,
         bool _shouldBypassAvailableAmounts
@@ -349,7 +349,7 @@ contract VesterImplementationV1 is
     onlyDolomiteMarginOwner(msg.sender) {
         if (!_shouldBypassAvailableAmounts) {
             Require.that(
-                _amount <= availableArbTokens(),
+                _amount <= availableTokens(),
                 _FILE,
                 "Insufficient available tokens"
             );
@@ -409,16 +409,16 @@ contract VesterImplementationV1 is
     // ======================= View Functions ===========================
     // ==================================================================
 
-    function availableArbTokens() public view returns (uint256) {
-        return ARB.balanceOf(address(this)) - promisedArbTokens();
+    function availableTokens() public view returns (uint256) {
+        return ARB.balanceOf(address(this)) - promisedTokens();
     }
 
-    function promisedArbTokens() public view returns (uint256) {
+    function promisedTokens() public view returns (uint256) {
         return _getUint256(_PROMISED_ARB_TOKENS_SLOT);
     }
 
-    function oARB() public view returns (IOARB) {
-        return IOARB(_getAddress(_OARB_SLOT));
+    function oToken() public view returns (IERC20Mintable) {
+        return IERC20Mintable(_getAddress(_OARB_SLOT));
     }
 
     function closePositionWindow() public view returns (uint256) {
@@ -464,7 +464,7 @@ contract VesterImplementationV1 is
 
     function _ownerSetOARB(address _oARB) internal {
         Require.that(
-            promisedArbTokens() == 0,
+            promisedTokens() == 0,
             _FILE,
             "Outstanding vesting positions"
         );
@@ -517,7 +517,7 @@ contract VesterImplementationV1 is
     }
 
     function _closePosition(VestingPosition memory _position) internal {
-        _setPromisedArbTokens(promisedArbTokens() - _position.amount);
+        _setPromisedTokens(promisedTokens() - _position.amount);
         _burn(_position.id);
         _clearVestingPosition(_position.id);
     }
@@ -584,9 +584,9 @@ contract VesterImplementationV1 is
         emit VestingPositionCreated(_vestingPosition);
     }
 
-    function _setPromisedArbTokens(uint256 _promisedArbTokens) internal {
-        _setUint256(_PROMISED_ARB_TOKENS_SLOT, _promisedArbTokens);
-        emit PromisedArbTokensSet(_promisedArbTokens);
+    function _setPromisedTokens(uint256 _promisedTokens) internal {
+        _setUint256(_PROMISED_ARB_TOKENS_SLOT, _promisedTokens);
+        emit PromisedTokensSet(_promisedTokens);
     }
 
     function _clearVestingPosition(uint256 _id) internal {

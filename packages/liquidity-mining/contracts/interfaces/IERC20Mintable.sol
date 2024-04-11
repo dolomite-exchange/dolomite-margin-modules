@@ -20,30 +20,28 @@
 
 pragma solidity ^0.8.9;
 
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
 
 /**
- * @title   IOARB
+ * @title   IERC20Mintable
  * @author  Dolomite
  *
- * @notice  Interface for oARB token
+ * @notice  Interface for mintable and burnable tokens
  */
-interface IOARB is IERC20 {
+interface IERC20Mintable {
 
     // ======================================================
     // ================== External Functions ================
     // ======================================================
 
     /**
-     * @notice  Mints the provided amount of oARB tokens. Can only be called by dolomite global operator
+     * @notice  Mints the provided amount of tokens. Can only be called by dolomite global operator
      *
      * @param  _amount  The amount of tokens to mint
      */
     function mint(uint256 _amount) external;
 
     /**
-     * @notice  Burns the provided amount of oARB tokens. Can only be called by dolomite global operator
+     * @notice  Burns the provided amount of tokens. Can only be called by dolomite global operator
      *
      * @param  _amount  The amount of tokens to burn
      */

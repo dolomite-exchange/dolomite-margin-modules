@@ -331,6 +331,13 @@
       "isVerified": true
     }
   },
+  "EventEmitterRegistryImplementationV3": {
+    "42161": {
+      "address": "0xcc6f8FD443DC165Dafa7bD32219B1e817F2335b9",
+      "transaction": "0xa754d2af4628f35f3f5d4768bda322a863083a27df2748c3cfd9e7b74107489f",
+      "isVerified": true
+    }
+  },
   "EventEmitterRegistryProxy": {
     "1101": {
       "address": "0x2e9BE819D04CB62bF3816B627c9DfF819136CEc4",
@@ -1149,6 +1156,27 @@
     "42161": {
       "address": "0x298a07c4A5B6BC32e1eF37Bf5cCB3a17C106224d",
       "transaction": "0xea1808406618555a384ad69f524f892a0655191ea908863e000fb5bfefd7673d",
+      "isVerified": true
+    }
+  },
+  "MineralDistributor": {
+    "42161": {
+      "address": "0x2E3D10CC42227aF0ce908F00C76fFe1dE1728b4B",
+      "transaction": "0x2fdefdd4979fc6d697f2b7cb60537122cff4bffa145ece6514a2604c2dc1969c",
+      "isVerified": true
+    }
+  },
+  "MineralTokenImplementationV1": {
+    "42161": {
+      "address": "0xd81bc90E4F329bE8519cefE00B55BB1c327401ad",
+      "transaction": "0x921c854365c5460ac34450b8e8f9ff31f6174f9adf6de278ebee7db59b8c0b0a",
+      "isVerified": true
+    }
+  },
+  "MineralTokenProxy": {
+    "42161": {
+      "address": "0x946f4A316e8Ae3c7fDCdf86E84496c3Ee3fbF26d",
+      "transaction": "0xace4df273f7f62f0fe6ba57be19d2d48a04c86e309fd2be4fa786168458d070b",
       "isVerified": true
     }
   },

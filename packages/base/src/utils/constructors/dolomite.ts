@@ -1,3 +1,4 @@
+import { UpgradeableProxy } from '@dolomite-exchange/modules-liquidity-mining/src/types';
 import { BigNumber, BigNumberish } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { DolomiteMargin } from '../../../test/utils/dolomite';
@@ -32,6 +33,14 @@ export enum TargetLiquidationPenalty {
 }
 
 export function getRegistryProxyConstructorParams<T extends NetworkType>(
+  implementationAddress: string,
+  implementationCalldata: string,
+  dolomiteMargin: DolomiteMargin<T>,
+): any[] {
+  return [implementationAddress, dolomiteMargin.address, implementationCalldata];
+}
+
+export function getUpgradeableProxyConstructorParams<T extends NetworkType>(
   implementationAddress: string,
   implementationCalldata: string,
   dolomiteMargin: DolomiteMargin<T>,
