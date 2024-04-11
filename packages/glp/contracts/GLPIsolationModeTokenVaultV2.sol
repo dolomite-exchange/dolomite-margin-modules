@@ -157,12 +157,12 @@ contract GLPIsolationModeTokenVaultV2 is
 
     function signalAccountTransfer(
         address _receiver,
-        uint256 _glpBal
+        uint256 _glpBalance
     ) external onlyGmxVault(msg.sender) {
-        if (_glpBal > 0) {
+        if (_glpBalance > 0) {
             _setShouldSkipTransfer(true);
-            _setUint256(_TEMP_BALANCE_SLOT, _glpBal);
-            _withdrawFromVaultForDolomiteMargin(_DEFAULT_ACCOUNT_NUMBER, _glpBal);
+            _setUint256(_TEMP_BALANCE_SLOT, _glpBalance);
+            _withdrawFromVaultForDolomiteMargin(_DEFAULT_ACCOUNT_NUMBER, _glpBalance);
             assert(!shouldSkipTransfer());
         } else {
             _setUint256(_TEMP_BALANCE_SLOT, 0);
