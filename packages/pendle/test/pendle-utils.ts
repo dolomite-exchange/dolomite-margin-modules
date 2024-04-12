@@ -65,6 +65,7 @@ export async function encodeSwapExactPtForTokens(
 
 export async function encodeRedeemPyToToken(
   ptAmountIn: BigNumberish,
+  minOutputAmount: BigNumberish,
   tokenOut: string,
 ): Promise<{
   extraOrderData: string
@@ -74,7 +75,7 @@ export async function encodeRedeemPyToToken(
     [
       [
         tokenOut,
-        1,
+        minOutputAmount,
         tokenOut,
         ADDRESS_ZERO,
         [

@@ -192,7 +192,6 @@ describe('PendlePtWstEthJun2024IsolationModeUnwrapperTraderV3', () => {
     it('should work when called with the normal conditions when market is expired', async () => {
       await freezeAndGetOraclePrice(underlyingToken);
       await core.dolomiteRegistry.ownerSetChainlinkPriceOracle(core.testEcosystem!.testPriceOracle.address);
-      await setNextBlockTimestamp(MARKET_EXPIRY.mul(2));
       await increaseToTimestamp(MARKET_EXPIRY.toNumber());
 
       const solidAccountId = 0;
@@ -200,6 +199,7 @@ describe('PendlePtWstEthJun2024IsolationModeUnwrapperTraderV3', () => {
 
       const { extraOrderData } = await encodeRedeemPyToToken(
         amountWei,
+        ONE_BI,
         underlyingToken.address,
       );
 
