@@ -63,6 +63,33 @@ export async function encodeSwapExactPtForTokens(
   return { extraOrderData, tokenOutput: tokenOutput as any };
 }
 
+export async function encodeRedeemPyToToken(
+  ptAmountIn: BigNumberish,
+  tokenOut: string,
+): Promise<{
+  extraOrderData: string
+}> {
+  const extraOrderData = ethers.utils.defaultAbiCoder.encode(
+    ['tuple(address,uint256,address,address,tuple(uint8,address,bytes,bool))'],
+    [
+      [
+        tokenOut,
+        1,
+        tokenOut,
+        ADDRESS_ZERO,
+        [
+          0,
+          ADDRESS_ZERO,
+          BYTES_EMPTY,
+          false,
+        ],
+      ],
+    ],
+  );
+
+  return { extraOrderData }
+}
+
 export async function encodeSwapExactPtForTokensV3(
   router: BaseRouter,
   ptAmountIn: BigNumberish,

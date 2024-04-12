@@ -1,8 +1,9 @@
 import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
-import { BYTES_EMPTY, Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { BYTES_EMPTY, Network, ONE_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import {
   encodeExternalSellActionDataWithNoData,
   impersonate,
+  increaseToTimestamp,
   revertToSnapshotAndCapture,
   snapshot,
 } from '@dolomite-exchange/modules-base/test/utils';
@@ -42,11 +43,14 @@ import {
   createPendlePtPriceOracle,
   createPendleRegistry,
 } from '../pendle-ecosystem-utils';
-import { encodeSwapExactPtForTokensV3, ONE_TENTH_OF_ONE_BIPS_NUMBER } from '../pendle-utils';
+import { encodeRedeemPyToToken, encodeSwapExactPtForTokensV3, ONE_TENTH_OF_ONE_BIPS_NUMBER } from '../pendle-utils';
+import { setNextBlockTimestamp } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
 const otherAmountWei = BigNumber.from('10000000'); // $10
+const MARKET_EXPIRY = BigNumber.from('1719446400');
+const WST_ETH_OUTPUT_AMOUNT = BigNumber.from('173526162727070471205'); // ptWst is redeemable to 1 stEth worth of wstEth
 
 describe('PendlePtWstEthJun2024IsolationModeUnwrapperTraderV3', () => {
   let snapshotId: string;
@@ -144,7 +148,7 @@ describe('PendlePtWstEthJun2024IsolationModeUnwrapperTraderV3', () => {
   });
 
   describe('Actions.Call and Actions.Sell for non-liquidation', () => {
-    it('should work when called with the normal conditions', async () => {
+    it('should work when called with the normal conditions when market is not expired', async () => {
       const solidAccountId = 0;
       const liquidAccountId = 0;
 
@@ -183,6 +187,49 @@ describe('PendlePtWstEthJun2024IsolationModeUnwrapperTraderV3', () => {
       const otherBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, underlyingMarketId);
       expect(otherBalanceWei.sign).to.eq(true);
       expect(otherBalanceWei.value).to.be.gt(tokenOutput.minTokenOut);
+    });
+
+    it('should work when called with the normal conditions when market is expired', async () => {
+      await freezeAndGetOraclePrice(underlyingToken);
+      await core.dolomiteRegistry.ownerSetChainlinkPriceOracle(core.testEcosystem!.testPriceOracle.address);
+      await setNextBlockTimestamp(MARKET_EXPIRY.mul(2));
+      await increaseToTimestamp(MARKET_EXPIRY.toNumber());
+
+      const solidAccountId = 0;
+      const liquidAccountId = 0;
+
+      const { extraOrderData } = await encodeRedeemPyToToken(
+        amountWei,
+        underlyingToken.address,
+      );
+
+      const actions = await unwrapper.createActionsForUnwrapping({
+        primaryAccountId: solidAccountId,
+        otherAccountId: liquidAccountId,
+        primaryAccountOwner: vault.address,
+        primaryAccountNumber: defaultAccountNumber,
+        otherAccountOwner: vault.address,
+        otherAccountNumber: defaultAccountNumber,
+        outputMarket: underlyingMarketId,
+        inputMarket: marketId,
+        minOutputAmount: ONE_BI,
+        inputAmount: amountWei,
+        orderData: extraOrderData,
+      });
+
+      const genericTrader = await impersonate(core.genericTraderProxy!, true);
+      await core.dolomiteMargin.connect(genericTrader).operate(
+        [defaultAccount],
+        actions,
+      );
+
+      const underlyingBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, marketId);
+      expect(underlyingBalanceWei.value).to.eq(ZERO_BI);
+      expect(await vault.underlyingBalanceOf()).to.eq(ZERO_BI);
+
+      const otherBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, underlyingMarketId);
+      expect(otherBalanceWei.sign).to.eq(true);
+      expect(otherBalanceWei.value).to.eq(WST_ETH_OUTPUT_AMOUNT);
     });
   });
 
@@ -281,4 +328,12 @@ describe('PendlePtWstEthJun2024IsolationModeUnwrapperTraderV3', () => {
       );
     });
   });
+
+  async function freezeAndGetOraclePrice(token: IERC20): Promise<BigNumber> {
+    const marketId = await core.dolomiteMargin.getMarketIdByTokenAddress(token.address);
+    const price = await core.dolomiteMargin.getMarketPrice(marketId);
+    await core.testEcosystem!.testPriceOracle.setPrice(token.address, price.value);
+    await core.dolomiteMargin.ownerSetPriceOracle(marketId, core.testEcosystem!.testPriceOracle.address);
+    return price.value;
+  }
 });

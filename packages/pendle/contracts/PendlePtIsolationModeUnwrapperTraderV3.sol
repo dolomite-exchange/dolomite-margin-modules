@@ -110,7 +110,6 @@ contract PendlePtIsolationModeUnwrapperTraderV3 is IsolationModeUnwrapperTraderV
                 limitOrderData
             );
         } else {
-            // TODO: test this
             (IPendleRouterV3.TokenOutput memory tokenOutput) =
                                 abi.decode(_extraOrderData, (IPendleRouterV3.TokenOutput));
             (,, address yt) = market.readTokens();
