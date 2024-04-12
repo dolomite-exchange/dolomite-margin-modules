@@ -184,6 +184,13 @@ export function getOwnerAddMarketParametersForIsolationMode<T extends NetworkTyp
   );
 }
 
+export function getDolomiteMigratorConstructorParams<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  handler: string,
+): any[] {
+  return [core.dolomiteRegistry.address, handler, core.dolomiteMargin.address];
+}
+
 export function getIsolationModeTokenVaultMigratorConstructorParams<T extends NetworkType>(
   core: CoreProtocolType<T>,
   token: IERC20,

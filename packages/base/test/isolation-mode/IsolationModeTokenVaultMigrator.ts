@@ -3,7 +3,7 @@ import {
   CustomTestToken,
   IsolationModeTokenVaultMigrator,
   IsolationModeTokenVaultMigrator__factory,
-  TestIsolationModeFactory,
+  TestIsolationModeVaultFactory,
   TestIsolationModeTokenVaultMigrator,
   TestIsolationModeTokenVaultMigrator__factory,
   TestIsolationModeTokenVaultV1,
@@ -21,7 +21,7 @@ import {
 } from '../utils/setup';
 import { expectThrow } from '../utils/assertions';
 import { createDolomiteRegistryImplementation, createIsolationModeTokenVaultV1ActionsImpl } from '../utils/dolomite';
-import { createTestIsolationModeFactory } from '../utils/ecosystem-utils/testers';
+import { createTestIsolationModeVaultFactory } from '../utils/ecosystem-utils/testers';
 import { BigNumber } from 'ethers';
 
 const amountWei = BigNumber.from('200000000000000000000'); // $200
@@ -31,7 +31,7 @@ describe('IsolationModeTokenVaultMigrator', () => {
   let snapshotId: string;
   let core: CoreProtocolArbitrumOne;
   let underlyingToken: CustomTestToken;
-  let factory: TestIsolationModeFactory;
+  let factory: TestIsolationModeVaultFactory;
   let userVaultImplementation: TestIsolationModeTokenVaultV1;
   let migratorImplementation: IsolationModeTokenVaultMigrator;
   let userVault: IsolationModeTokenVaultMigrator;
@@ -53,7 +53,7 @@ describe('IsolationModeTokenVaultMigrator', () => {
     );
 
     underlyingToken = await createTestToken();
-    factory = await createTestIsolationModeFactory(core, underlyingToken, userVaultImplementation);
+    factory = await createTestIsolationModeVaultFactory(core, underlyingToken, userVaultImplementation);
     await core.testEcosystem!.testPriceOracle.setPrice(
       factory.address,
       '1000000000000000000', // $1.00
