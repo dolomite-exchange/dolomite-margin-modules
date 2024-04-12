@@ -87,7 +87,7 @@ export async function encodeRedeemPyToToken(
     ],
   );
 
-  return { extraOrderData }
+  return { extraOrderData };
 }
 
 export async function encodeSwapExactPtForTokensV3(
