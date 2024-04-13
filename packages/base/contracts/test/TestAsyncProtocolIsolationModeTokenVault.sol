@@ -26,9 +26,9 @@ import { ITestAsyncProtocol } from "./ITestAsyncProtocol.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IGenericTraderBase } from "../interfaces/IGenericTraderBase.sol";
 import { IHandlerRegistry } from "../interfaces/IHandlerRegistry.sol";
-import { IsolationModeTokenVaultV1WithFreezable } from "../isolation-mode/abstract/IsolationModeTokenVaultV1WithFreezable.sol";
-import { IsolationModeTokenVaultV1WithFreezableAndPausable } from "../isolation-mode/abstract/IsolationModeTokenVaultV1WithFreezableAndPausable.sol";
-import { IFreezableIsolationModeVaultFactory } from "../isolation-mode/interfaces/IFreezableIsolationModeVaultFactory.sol";
+import { IsolationModeTokenVaultV1WithAsyncFreezable } from "../isolation-mode/abstract/IsolationModeTokenVaultV1WithAsyncFreezable.sol";
+import { IsolationModeTokenVaultV1WithAsyncFreezableAndPausable } from "../isolation-mode/abstract/IsolationModeTokenVaultV1WithAsyncFreezableAndPausable.sol";
+import { IAsyncFreezableIsolationModeVaultFactory } from "../isolation-mode/interfaces/IAsyncFreezableIsolationModeVaultFactory.sol";
 import { IIsolationModeVaultFactory } from "../isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
 import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "../isolation-mode/interfaces/IUpgradeableAsyncIsolationModeUnwrapperTrader.sol";
 import { IUpgradeableAsyncIsolationModeWrapperTrader } from "../isolation-mode/interfaces/IUpgradeableAsyncIsolationModeWrapperTrader.sol";
@@ -43,7 +43,7 @@ import { Require } from "../protocol/lib/Require.sol";
  * @dev     Test contract for AsyncProtocolIsolationModeTokenVault
  */
 contract TestAsyncProtocolIsolationModeTokenVault is
-    IsolationModeTokenVaultV1WithFreezableAndPausable
+    IsolationModeTokenVaultV1WithAsyncFreezableAndPausable
 {
     using SafeERC20 for IERC20;
 
@@ -64,7 +64,7 @@ contract TestAsyncProtocolIsolationModeTokenVault is
         address _weth,
         uint256 _chainId
     )
-        IsolationModeTokenVaultV1WithFreezable(_weth, _chainId)
+        IsolationModeTokenVaultV1WithAsyncFreezable(_weth, _chainId)
     {
         TEST_ASYNC_PROTOCOL = ITestAsyncProtocol(_testAsyncProtocol);
     }
@@ -80,7 +80,7 @@ contract TestAsyncProtocolIsolationModeTokenVault is
      */
     function cancelDeposit(bytes32 _key) external onlyVaultOwner(msg.sender) {
         IUpgradeableAsyncIsolationModeWrapperTrader wrapper =
-                                registry().getWrapperByToken(IFreezableIsolationModeVaultFactory(VAULT_FACTORY()));
+                                registry().getWrapperByToken(IAsyncFreezableIsolationModeVaultFactory(VAULT_FACTORY()));
         _validateVaultOwnerForStruct(wrapper.getDepositInfo(_key).vault);
         wrapper.initiateCancelDeposit(_key);
     }
@@ -91,7 +91,7 @@ contract TestAsyncProtocolIsolationModeTokenVault is
      */
     function cancelWithdrawal(bytes32 _key) external onlyVaultOwner(msg.sender) {
         IUpgradeableAsyncIsolationModeUnwrapperTrader unwrapper =
-                                registry().getUnwrapperByToken(IFreezableIsolationModeVaultFactory(VAULT_FACTORY()));
+                                registry().getUnwrapperByToken(IAsyncFreezableIsolationModeVaultFactory(VAULT_FACTORY()));
         IUpgradeableAsyncIsolationModeUnwrapperTrader.WithdrawalInfo memory withdrawalInfo
             = unwrapper.getWithdrawalInfo(_key);
         _validateVaultOwnerForStruct(withdrawalInfo.vault);
@@ -117,7 +117,7 @@ contract TestAsyncProtocolIsolationModeTokenVault is
     }
 
     function registry() public view returns (IHandlerRegistry) {
-        return IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).handlerRegistry();
+        return IAsyncFreezableIsolationModeVaultFactory(VAULT_FACTORY()).handlerRegistry();
     }
 
     function dolomiteRegistry()
@@ -173,7 +173,7 @@ contract TestAsyncProtocolIsolationModeTokenVault is
         bool _isLiquidation,
         bytes calldata _extraData
     ) internal override {
-        IFreezableIsolationModeVaultFactory factory = IFreezableIsolationModeVaultFactory(VAULT_FACTORY());
+        IAsyncFreezableIsolationModeVaultFactory factory = IAsyncFreezableIsolationModeVaultFactory(VAULT_FACTORY());
         Require.that(
             registry().getUnwrapperByToken(factory).isValidOutputToken(_outputToken),
             _FILE,
@@ -181,7 +181,7 @@ contract TestAsyncProtocolIsolationModeTokenVault is
         );
 
         Require.that(
-            msg.value <= IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).maxExecutionFee(),
+            msg.value <= IAsyncFreezableIsolationModeVaultFactory(VAULT_FACTORY()).maxExecutionFee(),
             _FILE,
             "Invalid execution fee"
         );

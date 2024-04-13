@@ -1,3 +1,4 @@
+import { getUpgradeableProxyConstructorParams } from '@dolomite-exchange/modules-base/src/utils/constructors/dolomite';
 import { SignerWithAddressWithSafety } from '@dolomite-exchange/modules-base/src/utils/SignerWithAddressWithSafety';
 import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { ethers } from 'ethers';
@@ -9,6 +10,9 @@ import {
   getVesterImplementationConstructorParams,
 } from '../src/liquidity-mining-constructors';
 import {
+  IERC20,
+  MineralToken,
+  MineralToken__factory,
   OARB,
   OARB__factory,
   RewardsDistributor,
@@ -17,12 +21,12 @@ import {
   TestVesterImplementationV1__factory,
   TestVesterImplementationV2,
   TestVesterImplementationV2__factory,
+  UpgradeableProxy,
+  UpgradeableProxy__factory,
   VesterExploder,
   VesterExploder__factory,
   VesterImplementationLibForV2,
   VesterImplementationLibForV2__factory,
-  VesterProxy,
-  VesterProxy__factory,
 } from '../src/types';
 
 export async function createTestVesterV1Proxy(
@@ -42,9 +46,9 @@ export async function createTestVesterV1Proxy(
   );
   const calldata = await implementation.populateTransaction.initialize(bytes);
 
-  const vesterProxy = await createContractWithAbi<VesterProxy>(
-    VesterProxy__factory.abi,
-    VesterProxy__factory.bytecode,
+  const vesterProxy = await createContractWithAbi<UpgradeableProxy>(
+    UpgradeableProxy__factory.abi,
+    UpgradeableProxy__factory.bytecode,
     [implementation.address, core.dolomiteMargin.address, calldata.data!],
   );
 
@@ -66,7 +70,10 @@ export async function createTestVesterV2Proxy(
     getVesterImplementationConstructorParams(core),
   );
 
-  const bytes = ethers.utils.defaultAbiCoder.encode(['address'], [handler.address]);
+  const bytes = ethers.utils.defaultAbiCoder.encode(
+    ['address', 'address'],
+    [handler.address, core.liquidityMiningEcosystem.oArb.address],
+  );
   const calldata = await implementation.populateTransaction.initialize(bytes);
 
   const vesterProxy = core.liquidityMiningEcosystem!.oArbVesterProxy;
@@ -80,7 +87,7 @@ export async function createTestVesterV2Proxy(
 
 export async function createVesterExploder(
   core: CoreProtocolArbitrumOne,
-  vester: TestVesterImplementationV2 | TestVesterImplementationV1 | VesterProxy,
+  vester: TestVesterImplementationV2 | TestVesterImplementationV1 | UpgradeableProxy,
 ): Promise<VesterExploder> {
   return createContractWithAbi<VesterExploder>(
     VesterExploder__factory.abi,
@@ -97,14 +104,31 @@ export async function createOARB(core: CoreProtocolArbitrumOne): Promise<OARB> {
   );
 }
 
+export async function createMineralToken(core: CoreProtocolArbitrumOne): Promise<MineralToken> {
+  const implementation = await createContractWithAbi<MineralToken>(
+    MineralToken__factory.abi,
+    MineralToken__factory.bytecode,
+    [core.dolomiteMargin.address],
+  );
+  const initializeCalldata = await implementation.populateTransaction.initialize();
+
+  const proxy = await createContractWithAbi<UpgradeableProxy>(
+    UpgradeableProxy__factory.abi,
+    UpgradeableProxy__factory.bytecode,
+    getUpgradeableProxyConstructorParams(implementation.address, initializeCalldata.data!, core.dolomiteMargin),
+  );
+
+  return MineralToken__factory.connect(proxy.address, core.hhUser1);
+}
+
 export async function createRewardsDistributor(
   core: CoreProtocolArbitrumOne,
-  oARB: OARB,
+  oToken: IERC20,
   initialHandlers: string[],
 ): Promise<RewardsDistributor> {
   return createContractWithAbi<RewardsDistributor>(
     RewardsDistributor__factory.abi,
     RewardsDistributor__factory.bytecode,
-    getRewardsDistributorConstructorParams(core, oARB, initialHandlers),
+    getRewardsDistributorConstructorParams(core, oToken, initialHandlers),
   );
 }

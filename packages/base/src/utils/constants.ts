@@ -380,6 +380,13 @@ export const WST_ETH_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   },
 };
 
+export const XAI_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0x4Cb9a7AE498CEDcBb5EAe9f25736aE7d428C9D66',
+    marketId: 39,
+  },
+};
+
 // ************************* External Addresses *************************
 
 export const BN_GMX_MAP: Record<Network.ArbitrumOne, string> = {
@@ -532,6 +539,10 @@ export const JONES_JUSDC_FARM_MAP: Record<Network.ArbitrumOne, string> = {
 
 export const JONES_JUSDC_RECEIPT_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0xa485a0bc44988B95245D5F20497CCaFF58a73E99',
+};
+
+export const JONES_ROUTER_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x4bC4D296DfCe661F34DD72D642d2A7C348E22A04',
 };
 
 export const JONES_WETH_V3_POOL_MAP: Record<Network.ArbitrumOne, string> = {
@@ -841,6 +852,9 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<Network, Record<string, Agg
     [WST_ETH_MAP[Network.ArbitrumOne].address]: {
       aggregatorAddress: '0xb1552c5e96b312d0bf8b554186f846c40614a540',
       tokenPairAddress: WETH_MAP[Network.ArbitrumOne].address,
+    },
+    [XAI_MAP[Network.ArbitrumOne].address]: {
+      aggregatorAddress: '0x806c532D543352e7C344ba6C7F3F00Bfbd309Af1',
     },
   }, // already deployed
   [Network.Base]: {

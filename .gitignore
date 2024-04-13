@@ -27,3 +27,5 @@ packages/*/coverage_2/
 dist/
 
 output/
+
+yarn-error.log

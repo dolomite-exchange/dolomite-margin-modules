@@ -30,7 +30,10 @@ import {
   ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { CoreProtocolType } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { CoreProtocolWithChainlink } from '@dolomite-exchange/modules-oracles/src/oracles-constructors';
+import {
+  CoreProtocolWithChainlinkOld,
+  CoreProtocolWithChainlinkV3,
+} from '@dolomite-exchange/modules-oracles/src/oracles-constructors';
 import { IChainlinkAggregator__factory } from '@dolomite-exchange/modules-oracles/src/types';
 import {
   CoreProtocolWithPendle,
@@ -540,8 +543,7 @@ function isMarketIdParam(paramType: ParamType): boolean {
 
 function isTokenParam(paramType: ParamType): boolean {
   return (paramType.name.includes('token') || paramType.name.includes('Token'))
-    && !paramType.name.toLowerCase().includes('decimals')
-  // && paramType.;
+    && !paramType.name.toLowerCase().includes('decimals');
 }
 
 function isChainlinkAggregatorParam(paramType: ParamType): boolean {
@@ -746,13 +748,14 @@ async function getReadableArg<T extends NetworkType>(
 }
 
 export async function prettyPrintEncodeInsertChainlinkOracle<T extends NetworkType>(
-  core: CoreProtocolWithChainlink<T>,
+  core: CoreProtocolWithChainlinkOld<T>,
   token: IERC20,
   tokenPairAddress: address | undefined = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address].tokenPairAddress,
   aggregatorAddress: string = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address].aggregatorAddress,
 ): Promise<EncodedTransaction> {
+  const invalidTokens = ['stEth', 'eEth'];
   let tokenDecimals: number;
-  if ('stEth' in core.tokens && token.address === (core.tokens as any).stEth.address) {
+  if (invalidTokens.some(t => t in core.tokens && token.address === (core.tokens as any)[t].address)) {
     tokenDecimals = 18;
   } else {
     tokenDecimals = await IERC20Metadata__factory.connect(token.address, core.hhUser1).decimals();
@@ -779,6 +782,64 @@ export async function prettyPrintEncodeInsertChainlinkOracle<T extends NetworkTy
       tokenPairAddress ?? ADDRESS_ZERO,
     ],
   );
+}
+
+export async function prettyPrintEncodeInsertChainlinkOracleV3<T extends NetworkType>(
+  core: CoreProtocolWithChainlinkV3<T>,
+  token: IERC20,
+  invertPrice: boolean,
+  tokenPairAddress: address | undefined = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address].tokenPairAddress,
+  aggregatorAddress: string = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address].aggregatorAddress,
+): Promise<EncodedTransaction[]> {
+  const invalidTokens = ['stEth', 'eEth'];
+  let tokenDecimals: number;
+  if (invalidTokens.some(t => t in core.tokens && token.address === (core.tokens as any)[t].address)) {
+    tokenDecimals = 18;
+  } else {
+    tokenDecimals = await IERC20Metadata__factory.connect(token.address, core.hhUser1).decimals();
+  }
+
+  const aggregator = IChainlinkAggregator__factory.connect(aggregatorAddress, core.governance);
+
+  const description = await aggregator.description();
+  const symbol = await IERC20Metadata__factory.connect(token.address, token.signer).symbol();
+  if (!description.includes(symbol) && !description.includes(symbol.substring(1))) {
+    return Promise.reject(new Error(`Invalid aggregator for symbol, found: ${description}, expected: ${symbol}`));
+  }
+
+  mostRecentTokenDecimals = tokenDecimals;
+  return [
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { chainlinkPriceOracle: core.chainlinkPriceOracleV3 },
+      'chainlinkPriceOracle',
+      'ownerInsertOrUpdateOracleToken',
+      [
+        token.address,
+        aggregator.address,
+        invertPrice,
+      ],
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { oracleAggregatorV2: core.oracleAggregatorV2 },
+      'oracleAggregatorV2',
+      'ownerInsertOrUpdateToken',
+      [
+        {
+          token: token.address,
+          decimals: tokenDecimals,
+          oracleInfos: [
+            {
+              oracle: core.chainlinkPriceOracleV3.address,
+              tokenPair: tokenPairAddress ?? ADDRESS_ZERO,
+              weight: 100,
+            },
+          ],
+        },
+      ],
+    ),
+  ];
 }
 
 export async function prettyPrintEncodeAddIsolationModeMarket<T extends NetworkType>(

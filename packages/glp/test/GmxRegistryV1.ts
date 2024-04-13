@@ -43,6 +43,7 @@ describe('GmxRegistryV1', () => {
       expect(await registry.sbfGmx()).to.equal(core.gmxEcosystem!.sbfGmx.address);
       expect(await registry.vGlp()).to.equal(core.gmxEcosystem!.vGlp.address);
       expect(await registry.vGmx()).to.equal(core.gmxEcosystem!.vGmx.address);
+      expect(await registry.vGmx()).to.equal(core.gmxEcosystem!.vGmx.address);
       expect(await registry.dolomiteRegistry()).to.equal(core.dolomiteRegistry.address);
     });
 
@@ -452,6 +453,32 @@ describe('GmxRegistryV1', () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetVGmx(ZERO_ADDRESS),
         'GmxRegistryV1: Invalid vGmx address',
+      );
+    });
+  });
+
+  describe.only('#ownerSetIsHandler', () => {
+    it('should work normally', async () => {
+      expect(await registry.isHandler(OTHER_ADDRESS)).to.equal(false);
+      const result = await registry.connect(core.governance).ownerSetIsHandler(OTHER_ADDRESS, true);
+      await expectEvent(registry, result, 'HandlerSet', {
+        handler: OTHER_ADDRESS,
+        isTrusted: true,
+      });
+      expect(await registry.isHandler(OTHER_ADDRESS)).to.equal(true);
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetIsHandler(OTHER_ADDRESS, true),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetIsHandler(ZERO_ADDRESS, true),
+        'GmxRegistryV1: Invalid handler address',
       );
     });
   });

@@ -28,9 +28,9 @@ import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/
 import { TypesLib } from "@dolomite-exchange/modules-base/contracts/protocol/lib/TypesLib.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol"; 
+import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import { IEmitterMultipleRewardTokens } from "./interfaces/IEmitterMultipleRewardTokens.sol";
-import { IOARB } from "./interfaces/IOARB.sol";
+import { IERC20Mintable } from "./interfaces/IERC20Mintable.sol";
 import { IStorageVault } from "./interfaces/IStorageVault.sol";
 
 
@@ -38,12 +38,12 @@ import { IStorageVault } from "./interfaces/IStorageVault.sol";
  * @title   EmitterMultipleRewardTokens
  * @author  Dolomite
  *
- * An implementation of the IEmitterMultipleREwardTokens interface 
+ * An implementation of the IEmitterMultipleREwardTokens interface
  * that grants users oARB rewards for staking assets
  * WARNING: THIS CODE HAS NOT BEEN THOROUGHLY TESTED AND IS NOT PRODUCTION READY
  */
 contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewardTokens {
-    using SafeERC20 for IOARB;
+    using SafeERC20 for IERC20Mintable;
     using EnumerableSet for EnumerableSet.UintSet;
     using EnumerableSet for EnumerableSet.AddressSet;
     using TypesLib for IDolomiteStructs.Par;
@@ -68,7 +68,7 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
     mapping(uint256 => PoolInfo) public poolInfo;
     mapping(address => RewardToken) public rewardTokenInfo;
 
-    uint256 public rewardTokenPerSecond; 
+    uint256 public rewardTokenPerSecond;
     uint256 public totalAllocPoint;
     uint256 public startTime;
 
@@ -124,7 +124,7 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
             /* _marketId = */ _marketId,
             /* _amountWei */ _amountWei
         );
-        IDolomiteStructs.Par memory changeAccountPar = 
+        IDolomiteStructs.Par memory changeAccountPar =
             DOLOMITE_MARGIN().getAccountPar(info, _marketId).sub(beforeAccountPar);
         assert(changeAccountPar.sign);
 
@@ -137,10 +137,10 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
         if (cachedAmount > 0) {
             for (uint256 i; i < len; i++) {
                 RewardToken memory rewardToken = rewardTokenInfo[_rewardTokens.at(i)];
-                uint256 pending = 
+                uint256 pending =
                     (cachedAmount * pool.accRewardTokenPerShares[rewardToken.token] / _SCALE)
                         - user.rewardDebts[rewardToken.token];
-                user.rewardDebts[rewardToken.token] = 
+                user.rewardDebts[rewardToken.token] =
                     user.amount * pool.accRewardTokenPerShares[rewardToken.token] / _SCALE;
 
                 IStorageVault(rewardToken.tokenStorageVault).pullTokensFromVault(pending);
@@ -157,7 +157,7 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
     ) external {
         PoolInfo storage pool = poolInfo[_marketId];
         UserInfo storage user = userInfo[_marketId][msg.sender];
-        IDolomiteStructs.AccountInfo memory info = IDolomiteStructs.AccountInfo({ 
+        IDolomiteStructs.AccountInfo memory info = IDolomiteStructs.AccountInfo({
             owner: address(this),
             number: uint256(uint160(msg.sender))
         });
@@ -195,7 +195,7 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
                 /* _marketId = */ _marketId,
                 /* _amountWei */ withdrawalAmount
             );
-            IDolomiteStructs.Par memory changeAccountPar = 
+            IDolomiteStructs.Par memory changeAccountPar =
                 beforeAccountPar.sub(DOLOMITE_MARGIN().getAccountPar(info, _marketId));
             assert(changeAccountPar.sign);
 
@@ -207,10 +207,10 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
         if (cachedAmount > 0) {
             for (uint256 i; i < len; i++) {
                 RewardToken memory rewardToken = rewardTokenInfo[_rewardTokens.at(i)];
-                uint256 pending = 
+                uint256 pending =
                     (cachedAmount * pool.accRewardTokenPerShares[rewardToken.token] / _SCALE)
                         - user.rewardDebts[rewardToken.token];
-                user.rewardDebts[rewardToken.token] = 
+                user.rewardDebts[rewardToken.token] =
                     user.amount * pool.accRewardTokenPerShares[rewardToken.token] / _SCALE;
 
                 IStorageVault(rewardToken.tokenStorageVault).pullTokensFromVault(pending);
@@ -224,7 +224,7 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
     function emergencyWithdraw(uint256 _marketId) external {
         PoolInfo storage pool = poolInfo[_marketId];
         UserInfo storage user = userInfo[_marketId][msg.sender];
-        IDolomiteStructs.AccountInfo memory info = IDolomiteStructs.AccountInfo({ 
+        IDolomiteStructs.AccountInfo memory info = IDolomiteStructs.AccountInfo({
             owner: address(this),
             number: uint256(uint160(msg.sender))
         });
@@ -252,7 +252,7 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
             /* _marketId = */ _marketId,
             /* _amountWei */ amountWei
         );
-        IDolomiteStructs.Par memory changeAccountPar = 
+        IDolomiteStructs.Par memory changeAccountPar =
             beforeAccountPar.sub(DOLOMITE_MARGIN().getAccountPar(info, _marketId));
         assert(changeAccountPar.sign);
 
@@ -285,10 +285,10 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
             }
 
             if (rewardToken.isAccruing) {
-                uint256 reward = 
+                uint256 reward =
                     rewardTokenPerSecond * pool.allocPoint * (block.timestamp - pool.lastRewardTimes[rewardToken.token])
                         / totalAllocPoint;
-                pool.accRewardTokenPerShares[rewardToken.token] 
+                pool.accRewardTokenPerShares[rewardToken.token]
                     = pool.accRewardTokenPerShares[rewardToken.token] + (reward * _SCALE / supply);
                 pool.lastRewardTimes[rewardToken.token] = block.timestamp;
             }
@@ -299,23 +299,23 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
         uint256 _marketId,
         address _user,
         address _rewardToken
-    ) 
-    external 
-    view 
+    )
+    external
+    view
     returns (uint256) {
         return userInfo[_marketId][_user].rewardDebts[_rewardToken];
     }
 
-    function poolLastRewardTime(uint256 _marketId, address _rewardToken) 
-    external 
-    view 
+    function poolLastRewardTime(uint256 _marketId, address _rewardToken)
+    external
+    view
     returns (uint256) {
         return poolInfo[_marketId].lastRewardTimes[_rewardToken];
     }
 
-    function poolAccRewardTokenPerShares(uint256 _marketId, address _rewardToken) 
-    external 
-    view 
+    function poolAccRewardTokenPerShares(uint256 _marketId, address _rewardToken)
+    external
+    view
     returns (uint256) {
         return poolInfo[_marketId].accRewardTokenPerShares[_rewardToken];
     }
@@ -328,8 +328,8 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
         address _token,
         address _tokenStorageVault,
         bool _isAccruing
-    ) 
-    external 
+    )
+    external
     onlyDolomiteMarginOwner(msg.sender) {
         Require.that(
             !_rewardTokens.contains(_token),
@@ -348,8 +348,8 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
 
     function ownerEnableRewardToken(
         address _token
-    ) 
-    external 
+    )
+    external
     onlyDolomiteMarginOwner(msg.sender) {
         Require.that(
             _rewardTokens.contains(_token),
@@ -364,8 +364,8 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
 
     function ownerDisableRewardToken(
         address _token
-    ) 
-    external 
+    )
+    external
     onlyDolomiteMarginOwner(msg.sender) {
         Require.that(
             _rewardTokens.contains(_token),
@@ -379,8 +379,8 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
 
     function ownerRemoveRewardToken(
         address _token
-    ) 
-    external 
+    )
+    external
     onlyDolomiteMarginOwner(msg.sender) {
         Require.that(
             _rewardTokens.contains(_token),
@@ -395,8 +395,8 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
         uint256 _marketId,
         uint256 _allocPoint,
         bool _withUpdate
-    ) 
-    external 
+    )
+    external
     onlyDolomiteMarginOwner(msg.sender) {
         Require.that(
             !_pools.contains(_marketId),
@@ -425,8 +425,8 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
     function ownerSetPool(
         uint256 _marketId,
         uint256 _allocPoint
-    ) 
-    external 
+    )
+    external
     onlyDolomiteMarginOwner(msg.sender) {
         Require.that(
             _pools.contains(_marketId),
@@ -439,8 +439,8 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
 
     function ownerSetRewardTokenPerSecond(
         uint256 _rewardTokenPerSecond
-    ) 
-    external 
+    )
+    external
     onlyDolomiteMarginOwner(msg.sender) {
         massUpdatePools();
         rewardTokenPerSecond = _rewardTokenPerSecond;

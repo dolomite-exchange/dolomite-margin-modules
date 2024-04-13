@@ -39,6 +39,14 @@ export function getRegistryProxyConstructorParams<T extends NetworkType>(
   return [implementationAddress, dolomiteMargin.address, implementationCalldata];
 }
 
+export function getUpgradeableProxyConstructorParams<T extends NetworkType>(
+  implementationAddress: string,
+  implementationCalldata: string,
+  dolomiteMargin: DolomiteMargin<T>,
+): any[] {
+  return [implementationAddress, dolomiteMargin.address, implementationCalldata];
+}
+
 export function getIsolationModeFreezableLiquidatorProxyConstructorParams<T extends Network>(
   core: CoreProtocolType<T>,
 ): any[] {
@@ -174,4 +182,18 @@ export function getOwnerAddMarketParametersForIsolationMode<T extends NetworkTyp
     isCollateralOnly,
     earningsRateOverride,
   );
+}
+
+export function getDolomiteMigratorConstructorParams<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  handler: string,
+): any[] {
+  return [core.dolomiteRegistry.address, handler, core.dolomiteMargin.address];
+}
+
+export function getIsolationModeTokenVaultMigratorConstructorParams<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  token: IERC20,
+): any[] {
+  return [core.dolomiteRegistry.address, token.address];
 }

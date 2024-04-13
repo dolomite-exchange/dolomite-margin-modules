@@ -23,6 +23,7 @@ pragma solidity ^0.8.9;
 import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import { OnlyDolomiteMarginForUpgradeable } from "../helpers/OnlyDolomiteMarginForUpgradeable.sol";
 import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
+import { IDolomiteMigrator } from "../interfaces/IDolomiteMigrator.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IEventEmitterRegistry } from "../interfaces/IEventEmitterRegistry.sol";
 import { IExpiry } from "../interfaces/IExpiry.sol";
@@ -31,6 +32,7 @@ import { ILiquidatorAssetRegistry } from "../interfaces/ILiquidatorAssetRegistry
 import { ValidationLib } from "../lib/ValidationLib.sol";
 import { IDolomitePriceOracle } from "../protocol/interfaces/IDolomitePriceOracle.sol";
 import { Require } from "../protocol/lib/Require.sol";
+
 
 /**
  * @title   DolomiteRegistryImplementation
@@ -48,6 +50,7 @@ contract DolomiteRegistryImplementation is
     // ===================== Constants =====================
 
     bytes32 private constant _FILE = "DolomiteRegistryImplementation";
+    bytes32 private constant _DOLOMITE_MIGRATOR_SLOT = bytes32(uint256(keccak256("eip1967.proxy.dolomiteMigrator")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _GENERIC_TRADER_PROXY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.genericTraderProxy")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _EXPIRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.expiry")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL_SLOT = bytes32(uint256(keccak256("eip1967.proxy.slippageToleranceForPauseSentinel")) - 1); // solhint-disable-line max-line-length
@@ -64,15 +67,13 @@ contract DolomiteRegistryImplementation is
         address _expiry,
         uint256 _slippageToleranceForPauseSentinel,
         address _liquidatorAssetRegistry,
-        address _eventEmitter,
-        address _chainlinkPriceOracle
+        address _eventEmitter
     ) external initializer {
         _ownerSetGenericTraderProxy(_genericTraderProxy);
         _ownerSetExpiry(_expiry);
         _ownerSetSlippageToleranceForPauseSentinel(_slippageToleranceForPauseSentinel);
         _ownerSetLiquidatorAssetRegistry(_liquidatorAssetRegistry);
         _ownerSetEventEmitter(_eventEmitter);
-        _ownerSetChainlinkPriceOracle(_chainlinkPriceOracle);
     }
 
     // ===================== Functions =====================
@@ -125,6 +126,14 @@ contract DolomiteRegistryImplementation is
         _ownerSetChainlinkPriceOracle(_chainlinkPriceOracle);
     }
 
+    function ownerSetDolomiteMigrator(
+        address _dolomiteMigrator
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetDolomiteMigrator(_dolomiteMigrator);
+    }
+
     function ownerSetRedstonePriceOracle(
         address _redstonePriceOracle
     )
@@ -165,6 +174,10 @@ contract DolomiteRegistryImplementation is
 
     function chainlinkPriceOracle() external view returns (IDolomitePriceOracle) {
         return IDolomitePriceOracle(_getAddress(_CHAINLINK_PRICE_ORACLE_SLOT));
+    }
+
+    function dolomiteMigrator() external view returns (IDolomiteMigrator) {
+        return IDolomiteMigrator(_getAddress(_DOLOMITE_MIGRATOR_SLOT));
     }
 
     function redstonePriceOracle() external view returns (IDolomitePriceOracle) {
@@ -281,6 +294,20 @@ contract DolomiteRegistryImplementation is
 
         _setAddress(_CHAINLINK_PRICE_ORACLE_SLOT, _chainlinkPriceOracle);
         emit ChainlinkPriceOracleSet(_chainlinkPriceOracle);
+    }
+
+    function _ownerSetDolomiteMigrator(
+        address _dolomiteMigrator
+    ) internal {
+        if (_dolomiteMigrator != address(0)) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            _dolomiteMigrator != address(0),
+            _FILE,
+            "Invalid dolomiteMigrator"
+        );
+
+        _setAddress(_DOLOMITE_MIGRATOR_SLOT, _dolomiteMigrator);
+        emit DolomiteMigratorSet(_dolomiteMigrator);
     }
 
     function _ownerSetRedstonePriceOracle(

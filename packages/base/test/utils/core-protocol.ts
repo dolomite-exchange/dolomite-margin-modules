@@ -87,6 +87,7 @@ interface CoreProtocolTokensArbitrumOne extends CoreProtocolTokens {
   wbtc: IERC20;
   weEth: IERC20;
   wstEth: IERC20;
+  xai: IERC20;
 }
 
 interface CoreProtocolMarketIdsArbitrumOne extends CoreProtocolMarketIds {
@@ -100,7 +101,7 @@ interface CoreProtocolMarketIdsArbitrumOne extends CoreProtocolMarketIds {
   dGmLink: BigNumberish;
   djUSDC: BigNumberish;
   dplvGlp: BigNumberish;
-  dPtGlp: BigNumberish;
+  dPtGlpMar2024: BigNumberish;
   dPtWeEthApr2024: BigNumberish;
   dPtREthJun2025: BigNumberish;
   dPtWstEthJun2024: BigNumberish;
@@ -121,6 +122,7 @@ interface CoreProtocolMarketIdsArbitrumOne extends CoreProtocolMarketIds {
   usdt: BigNumberish;
   wbtc: BigNumberish;
   wstEth: BigNumberish;
+  xai: BigNumberish;
 }
 
 export interface CoreProtocolParams<T extends NetworkType> {

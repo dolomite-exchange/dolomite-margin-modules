@@ -449,7 +449,7 @@ abstract contract IsolationModeVaultFactory is
             _approve(oldTransfer.vault, oldTransfer.to, 0);
         }
 
-        if (_to == address(DOLOMITE_MARGIN())) {
+        if (_from == _vault && _to == address(DOLOMITE_MARGIN())) {
             // Approve the queued transfer amount from the vault contract into DolomiteMargin from this contract
             _approve(_vault, _to, _amount);
         }

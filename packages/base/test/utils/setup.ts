@@ -86,7 +86,7 @@ import {
   WBTC_MAP,
   WE_ETH_MAP,
   WETH_MAP,
-  WST_ETH_MAP,
+  WST_ETH_MAP, XAI_MAP,
 } from '../../src/utils/constants';
 import { Network, NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP, NetworkType } from '../../src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '../../src/utils/SignerWithAddressWithSafety';
@@ -567,7 +567,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
           dGmLink: D_GM_LINK_MAP[typedConfig.network]!.marketId,
           djUSDC: DJ_USDC[typedConfig.network]!.marketId,
           dplvGlp: DPLV_GLP_MAP[typedConfig.network]!.marketId,
-          dPtGlp: DPT_GLP_2024_MAP[typedConfig.network]!.marketId,
+          dPtGlpMar2024: DPT_GLP_2024_MAP[typedConfig.network]!.marketId,
           dPtREthJun2025: DPT_R_ETH_JUN_2025_MAP[typedConfig.network]!.marketId,
           dPtWeEthApr2024: DPT_WE_ETH_APR_2024_MAP[typedConfig.network]!.marketId,
           dPtWstEthJun2024: DPT_WST_ETH_JUN_2024_MAP[typedConfig.network]!.marketId,
@@ -588,6 +588,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
           usdt: USDT_MAP[typedConfig.network]!.marketId,
           wbtc: WBTC_MAP[typedConfig.network]!.marketId,
           wstEth: WST_ETH_MAP[typedConfig.network]!.marketId,
+          xai: XAI_MAP[typedConfig.network]!.marketId,
         },
         tokens: {
           ...coreProtocolParams.tokens,
@@ -623,6 +624,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
           wbtc: IERC20__factory.connect(WBTC_MAP[typedConfig.network].address, hhUser1),
           weEth: IERC20__factory.connect(WE_ETH_MAP[typedConfig.network]!.address, hhUser1),
           wstEth: IERC20__factory.connect(WST_ETH_MAP[typedConfig.network]!.address, hhUser1),
+          xai: IERC20__factory.connect(XAI_MAP[typedConfig.network]!.address, hhUser1),
         },
       },
     ) as any;
