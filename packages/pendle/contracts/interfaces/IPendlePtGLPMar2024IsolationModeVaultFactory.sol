@@ -30,7 +30,7 @@ import { IPendleGLPRegistry } from "./IPendleGLPRegistry.sol";
  *
  * @notice  Interface for a subclass of IsolationModeVaultFactory that creates vaults for ptGLP tokens.
  */
-interface IPendlePtGLP2024IsolationModeVaultFactory is IIsolationModeVaultFactory {
+interface IPendlePtGLPMar2024IsolationModeVaultFactory is IIsolationModeVaultFactory {
 
     // ================================================
     // ==================== Events ====================

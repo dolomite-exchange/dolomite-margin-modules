@@ -25,7 +25,7 @@ import { IsolationModeTokenVaultV1 } from "@dolomite-exchange/modules-base/contr
 import { IsolationModeTokenVaultV1WithPausable } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeTokenVaultV1WithPausable.sol"; // solhint-disable-line max-line-length
 import { IPendleGLPRegistry } from "./interfaces/IPendleGLPRegistry.sol";
 import { IPendlePtGLP2024IsolationModeTokenVaultV1 } from "./interfaces/IPendlePtGLP2024IsolationModeTokenVaultV1.sol";
-import { IPendlePtGLP2024IsolationModeVaultFactory } from "./interfaces/IPendlePtGLP2024IsolationModeVaultFactory.sol";
+import {IPendlePtGLPMar2024IsolationModeVaultFactory} from "./interfaces/IPendlePtGLP2024IsolationModeVaultFactory.sol";
 
 
 /**
@@ -51,7 +51,7 @@ contract PendlePtGLP2024IsolationModeTokenVaultV1 is
     // ==================================================================
 
     function registry() public view returns (IPendleGLPRegistry) {
-        return IPendlePtGLP2024IsolationModeVaultFactory(VAULT_FACTORY()).pendlePtGLP2024Registry();
+        return IPendlePtGLPMar2024IsolationModeVaultFactory(VAULT_FACTORY()).pendlePtGLP2024Registry();
     }
 
     function dolomiteRegistry()

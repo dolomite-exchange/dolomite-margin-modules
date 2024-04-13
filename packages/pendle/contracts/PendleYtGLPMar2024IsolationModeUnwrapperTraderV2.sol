@@ -26,24 +26,24 @@ import { IGmxRegistryV1 } from "@dolomite-exchange/modules-glp/contracts/interfa
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IPendleGLPRegistry } from "./interfaces/IPendleGLPRegistry.sol";
-import { IPendlePtToken } from "./interfaces/IPendlePtToken.sol";
 import { IPendleRouter } from "./interfaces/IPendleRouter.sol";
+import { IPendleYtToken } from "./interfaces/IPendleYtToken.sol";
 
 
 /**
- * @title   PendlePtGLP2024IsolationModeUnwrapperTraderV2
+ * @title   PendleYtGLP2024MarIsolationModeUnwrapperTraderV2
  * @author  Dolomite
  *
- * @notice  Used for unwrapping ptGLP (via swapping against the Pendle AMM then redeeming the underlying GLP to
+ * @notice  Used for unwrapping ytGLP (via swapping against the Pendle AMM then redeeming the underlying GLP to
  *          USDC).
  */
-contract PendlePtGLP2024IsolationModeUnwrapperTraderV2 is IsolationModeUnwrapperTraderV2 {
+contract PendleYtGLP2024MarIsolationModeUnwrapperTraderV2 is IsolationModeUnwrapperTraderV2 {
     using SafeERC20 for IERC20;
-    using SafeERC20 for IPendlePtToken;
+    using SafeERC20 for IPendleYtToken;
 
     // ============ Constants ============
 
-    bytes32 private constant _FILE = "PendlePtGLP2024UnwrapperV2";
+    bytes32 private constant _FILE = "PendleYtGLP2024UnwrapperV2";
 
     // ============ Constructor ============
 
@@ -55,13 +55,13 @@ contract PendlePtGLP2024IsolationModeUnwrapperTraderV2 is IsolationModeUnwrapper
     constructor(
         address _pendleRegistry,
         address _gmxRegistry,
-        address _dptGlp,
+        address _dytGlp,
         address _dolomiteMargin
     )
     IsolationModeUnwrapperTraderV2(
-        _dptGlp,
+        _dytGlp,
         _dolomiteMargin,
-        address(IPendleGLPRegistry(_pendleRegistry).dolomiteRegistry())
+        address(IGmxRegistryV1(_gmxRegistry).dolomiteRegistry())
     ) {
         PENDLE_REGISTRY = IPendleGLPRegistry(_pendleRegistry);
         GMX_REGISTRY = IGmxRegistryV1(_gmxRegistry);
@@ -71,7 +71,7 @@ contract PendlePtGLP2024IsolationModeUnwrapperTraderV2 is IsolationModeUnwrapper
     // ============= Public Functions =============
     // ============================================
 
-    function isValidOutputToken(address _outputToken) public override view returns (bool) {
+    function isValidOutputToken(address _outputToken) public view override returns (bool) {
         return GMX_REGISTRY.gmxVault().whitelistedTokens(_outputToken);
     }
 
@@ -96,10 +96,10 @@ contract PendlePtGLP2024IsolationModeUnwrapperTraderV2 is IsolationModeUnwrapper
             IPendleRouter.TokenOutput memory tokenOutput
         ) = abi.decode(_extraOrderData, (IPendleRouter.TokenOutput));
 
-        // redeem ptGLP for GLP
+        // redeem ytGLP for GLP
         IPendleRouter pendleRouter = PENDLE_REGISTRY.pendleRouter();
-        PENDLE_REGISTRY.ptGlpToken().safeApprove(address(pendleRouter), _inputAmount);
-        (uint256 glpAmount,) = pendleRouter.swapExactPtForToken(
+        PENDLE_REGISTRY.ytGlpToken().safeApprove(address(pendleRouter), _inputAmount);
+        (uint256 glpAmount, ) = pendleRouter.swapExactYtForToken(
             /* _receiver */ address(this),
             address(PENDLE_REGISTRY.ptGlpMarket()),
             _inputAmount,

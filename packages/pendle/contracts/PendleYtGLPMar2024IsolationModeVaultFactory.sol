@@ -23,20 +23,20 @@ pragma solidity ^0.8.9;
 import { SimpleIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/SimpleIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IPendleGLPRegistry } from "./interfaces/IPendleGLPRegistry.sol";
-import { IPendleYtGLP2024IsolationModeVaultFactory } from "./interfaces/IPendleYtGLP2024IsolationModeVaultFactory.sol";
+import { IPendleYtGLPMar2024IsolationModeVaultFactory } from "./interfaces/IPendleYtGLPMar2024IsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { IPendleYtToken } from "./interfaces/IPendleYtToken.sol";
 
 
 
 /**
- * @title   PendleYtGLP2024IsolationModeVaultFactory
+ * @title   PendleYtGLPMar2024IsolationModeVaultFactory
  * @author  Dolomite
  *
  * @notice  The wrapper around the ytGLP token that is used to create user vaults and manage the entry points that a
  *          user can use to interact with DolomiteMargin from the vault.
  */
-contract PendleYtGLP2024IsolationModeVaultFactory is
-    IPendleYtGLP2024IsolationModeVaultFactory,
+contract PendleYtGLPMar2024IsolationModeVaultFactory is
+    IPendleYtGLPMar2024IsolationModeVaultFactory,
     SimpleIsolationModeVaultFactory
 {
     // ============ Constants ============
