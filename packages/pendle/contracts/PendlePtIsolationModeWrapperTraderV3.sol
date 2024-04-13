@@ -76,11 +76,11 @@ contract PendlePtIsolationModeWrapperTraderV3 is IsolationModeWrapperTraderV2 {
     // ============================================
 
     function _exchangeIntoUnderlyingToken(
-        address,
-        address,
-        address,
+        address /* _tradeOriginator */,
+        address /* _receiver */,
+        address /* _outputTokenUnderlying */,
         uint256 _minOutputAmount,
-        address,
+        address /* _inputToken */,
         uint256 _inputAmount,
         bytes memory _extraOrderData
     )
