@@ -6,30 +6,30 @@ import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '@dolomite-excha
 import { expect } from 'chai';
 import {
   PendleGLPRegistry,
-  PendlePtGLP2024IsolationModeTokenVaultV1,
-  PendlePtGLP2024IsolationModeVaultFactory,
+  PendlePtGLPMar2024IsolationModeTokenVaultV1,
+  PendlePtGLPMar2024IsolationModeVaultFactory,
 } from '../../src/types';
 import {
   createPendleGLPRegistry,
-  createPendlePtGLP2024IsolationModeTokenVaultV1,
-  createPendlePtGLP2024IsolationModeVaultFactory,
+  createPendlePtGLPMar2024IsolationModeTokenVaultV1,
+  createPendlePtGLPMar2024IsolationModeVaultFactory,
 } from '../pendle-ecosystem-utils';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
-describe('PendlePtGLP2024IsolationModeVaultFactory', () => {
+describe('PendlePtGLPMar2024IsolationModeVaultFactory', () => {
   let snapshotId: string;
 
   let core: CoreProtocolArbitrumOne;
   let pendleRegistry: PendleGLPRegistry;
-  let vaultImplementation: PendlePtGLP2024IsolationModeTokenVaultV1;
-  let factory: PendlePtGLP2024IsolationModeVaultFactory;
+  let vaultImplementation: PendlePtGLPMar2024IsolationModeTokenVaultV1;
+  let factory: PendlePtGLPMar2024IsolationModeVaultFactory;
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     pendleRegistry = await createPendleGLPRegistry(core);
-    vaultImplementation = await createPendlePtGLP2024IsolationModeTokenVaultV1();
-    factory = await createPendlePtGLP2024IsolationModeVaultFactory(
+    vaultImplementation = await createPendlePtGLPMar2024IsolationModeTokenVaultV1();
+    factory = await createPendlePtGLPMar2024IsolationModeVaultFactory(
       core,
       pendleRegistry,
       core.pendleEcosystem!.glpMar2024.ptGlpToken,
@@ -56,7 +56,7 @@ describe('PendlePtGLP2024IsolationModeVaultFactory', () => {
   describe('#ownerSetPendleGLPRegistry', () => {
     it('should work normally', async () => {
       const result = await factory.connect(core.governance).ownerSetPendlePtGLP2024Registry(OTHER_ADDRESS);
-      await expectEvent(factory, result, 'PendlePtGLP2024RegistrySet', {
+      await expectEvent(factory, result, 'PendlePtGLPMar2024RegistrySet', {
         pendlePtGLP2024Registry: OTHER_ADDRESS,
       });
       expect(await factory.pendlePtGLP2024Registry()).to.equal(OTHER_ADDRESS);

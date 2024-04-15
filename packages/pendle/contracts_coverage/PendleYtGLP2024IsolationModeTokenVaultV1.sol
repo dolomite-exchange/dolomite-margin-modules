@@ -41,7 +41,7 @@ import { IPendleYtToken } from "./interfaces/IPendleYtToken.sol";
 
 
 /**
- * @title   PendleYtGLP2024IsolationModeTokenVaultV1
+ * @title   PendleYtGLPMar2024IsolationModeTokenVaultV1.sol
  * @author  Dolomite
  *
  * @notice  Implementation (for an upgradeable proxy) for a per-user vault that holds the ytGLP (March 2024 expiration)

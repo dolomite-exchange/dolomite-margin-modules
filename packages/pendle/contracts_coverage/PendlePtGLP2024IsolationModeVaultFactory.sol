@@ -26,7 +26,7 @@ import { IPendlePtGLP2024IsolationModeVaultFactory } from "./interfaces/IPendleP
 
 
 /**
- * @title   PendlePtGLP2024IsolationModeVaultFactory
+ * @title   PendlePtGLPMar2024IsolationModeVaultFactory.sol
  * @author  Dolomite
  *
  * @notice  The wrapper around the ptGLP token that is used to create user vaults and manage the entry points that a

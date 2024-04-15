@@ -36,40 +36,40 @@ import { expect } from 'chai';
 import 'dotenv/config';
 import { BigNumber } from 'ethers';
 import {
-  IPendleYtToken,
-  PendleYtGLP2024IsolationModeTokenVaultV1,
-  PendleYtGLP2024IsolationModeTokenVaultV1__factory,
-  PendleYtGLP2024IsolationModeUnwrapperTraderV2,
-  PendleYtGLP2024IsolationModeUnwrapperTraderV2__factory,
-  PendleYtGLP2024IsolationModeVaultFactory,
-  PendleYtGLP2024IsolationModeVaultFactory__factory,
+  IPendlePtToken,
+  PendlePtGLPMar2024IsolationModeTokenVaultV1,
+  PendlePtGLPMar2024IsolationModeTokenVaultV1__factory,
+  PendlePtGLPMar2024IsolationModeUnwrapperTraderV2,
+  PendlePtGLPMar2024IsolationModeUnwrapperTraderV2__factory,
+  PendlePtGLPMar2024IsolationModeVaultFactory,
+  PendlePtGLPMar2024IsolationModeVaultFactory__factory,
 } from '../../src/types';
 
 const defaultAccountNumber = '0';
 const borrowAccountNumber = '420';
-const heldAmountWei = BigNumber.from('2000000000000000000000'); // 2000 units
-const minCollateralizationNumerator = BigNumber.from('150');
+const heldAmountWei = BigNumber.from('200000000000000000000'); // 200 units
+const minCollateralizationNumerator = BigNumber.from('120');
 const minCollateralizationDenominator = BigNumber.from('100');
-const liquidationSpreadNumerator = BigNumber.from('110');
+const liquidationSpreadNumerator = BigNumber.from('105');
 const liquidationSpreadDenominator = BigNumber.from('100');
-const expirationCollateralizationNumerator = BigNumber.from('175');
+const expirationCollateralizationNumerator = BigNumber.from('150');
 const expirationCollateralizationDenominator = BigNumber.from('100');
 
-describe('PendleYtGLP2024IsolationModeLiquidationWithZap', () => {
+describe('PendlePtGLPMar2024IsolationModeLiquidationWithZap', () => {
   let snapshotId: string;
 
   let core: CoreProtocolArbitrumOne;
-  let underlyingToken: IPendleYtToken;
+  let underlyingToken: IPendlePtToken;
   let underlyingMarketId: BigNumber;
-  let unwrapper: PendleYtGLP2024IsolationModeUnwrapperTraderV2;
-  let factory: PendleYtGLP2024IsolationModeVaultFactory;
-  let vault: PendleYtGLP2024IsolationModeTokenVaultV1;
+  let unwrapper: PendlePtGLPMar2024IsolationModeUnwrapperTraderV2;
+  let factory: PendlePtGLPMar2024IsolationModeVaultFactory;
+  let vault: PendlePtGLPMar2024IsolationModeTokenVaultV1;
   let defaultAccountStruct: AccountInfoStruct;
   let liquidAccountStruct: AccountInfoStruct;
   let solidAccountStruct: AccountInfoStruct;
   let router: BaseRouter;
   let zap: DolomiteZap;
-  let ytGlpApiToken: ApiToken;
+  let ptGlpApiToken: ApiToken;
 
   const defaultSlippageNumerator = BigNumber.from('10');
   const defaultSlippageDenominator = BigNumber.from('10000');
@@ -90,19 +90,19 @@ describe('PendleYtGLP2024IsolationModeLiquidationWithZap', () => {
       defaultIsLiquidation: true,
       defaultSlippageTolerance: defaultSlippage,
     });
-    underlyingToken = core.pendleEcosystem!.glpMar2024.ytGlpToken.connect(core.hhUser1);
-    factory = PendleYtGLP2024IsolationModeVaultFactory__factory.connect(
-      deployments.PendleYtGLP2024IsolationModeVaultFactory[Network.ArbitrumOne].address,
+    underlyingToken = core.pendleEcosystem!.glpMar2024.ptGlpToken.connect(core.hhUser1);
+    factory = PendlePtGLPMar2024IsolationModeVaultFactory__factory.connect(
+      deployments.PendlePtGLPMar2024IsolationModeVaultFactory[Network.ArbitrumOne].address,
       core.hhUser1,
     );
-    unwrapper = PendleYtGLP2024IsolationModeUnwrapperTraderV2__factory.connect(
-      deployments.PendleYtGLP2024IsolationModeUnwrapperTraderV2[Network.ArbitrumOne].address,
+    unwrapper = PendlePtGLPMar2024IsolationModeUnwrapperTraderV2__factory.connect(
+      deployments.PendlePtGLPMar2024IsolationModeUnwrapperTraderV2[Network.ArbitrumOne].address,
       core.hhUser1,
     );
     underlyingMarketId = await core.dolomiteMargin.getMarketIdByTokenAddress(factory.address);
-    ytGlpApiToken = {
+    ptGlpApiToken = {
       marketId: toZapBigNumber(underlyingMarketId.toNumber()),
-      symbol: 'YT-GLP',
+      symbol: 'PT-GLP',
       name: 'Isolation Mode:',
       decimals: 18,
       tokenAddress: factory.address,
@@ -114,9 +114,9 @@ describe('PendleYtGLP2024IsolationModeLiquidationWithZap', () => {
 
     await factory.createVault(core.hhUser1.address);
     const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);
-    vault = setupUserVaultProxy<PendleYtGLP2024IsolationModeTokenVaultV1>(
+    vault = setupUserVaultProxy<PendlePtGLPMar2024IsolationModeTokenVaultV1>(
       vaultAddress,
-      PendleYtGLP2024IsolationModeTokenVaultV1__factory,
+      PendlePtGLPMar2024IsolationModeTokenVaultV1__factory,
       core.hhUser1,
     );
     defaultAccountStruct = { owner: vault.address, number: defaultAccountNumber };
@@ -140,13 +140,13 @@ describe('PendleYtGLP2024IsolationModeLiquidationWithZap', () => {
     await core.gmxEcosystem!.sGlp.connect(core.hhUser1)
       .approve(core.pendleEcosystem!.pendleRouter.address, glpAmount);
 
-    await router.swapExactTokenForYt(
+    await router.swapExactTokenForPt(
       core.pendleEcosystem!.glpMar2024.ptGlpMarket.address as any,
       core.gmxEcosystem!.sGlp.address as any,
       glpAmount,
       defaultSlippage,
     );
-    await core.pendleEcosystem!.glpMar2024.ytGlpToken.connect(core.hhUser1).approve(vault.address, heldAmountWei);
+    await core.pendleEcosystem!.glpMar2024.ptGlpToken.connect(core.hhUser1).approve(vault.address, heldAmountWei);
     await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, heldAmountWei);
 
     expect(await underlyingToken.connect(core.hhUser1).balanceOf(vault.address)).to.eq(heldAmountWei);
@@ -188,14 +188,14 @@ describe('PendleYtGLP2024IsolationModeLiquidationWithZap', () => {
         .lt(newAccountValues[1].value.mul(minCollateralizationNumerator).div(minCollateralizationDenominator));
 
       const owedMarketPrice = await core.dolomiteMargin.getMarketPrice(core.marketIds.usdc);
-      const ytGlpPrice = await core.dolomiteMargin.getMarketPrice(underlyingMarketId);
+      const ptGlpPrice = await core.dolomiteMargin.getMarketPrice(underlyingMarketId);
       const owedAmount = await core.dolomiteMargin.getAccountWei(liquidAccountStruct, core.marketIds.usdc);
       const heldUpdatedWithReward = await owedAmount.value
         .mul(owedMarketPrice.value.mul(liquidationSpreadNumerator).div(liquidationSpreadDenominator))
-        .div(ytGlpPrice.value);
+        .div(ptGlpPrice.value);
 
       const zapOutputs = await zap.getSwapExactTokensForTokensParams(
-        ytGlpApiToken,
+        ptGlpApiToken,
         toZapBigNumber(heldUpdatedWithReward),
         core.apiTokens.usdc,
         toZapBigNumber(owedAmount.value),
@@ -246,7 +246,7 @@ describe('PendleYtGLP2024IsolationModeLiquidationWithZap', () => {
       );
       await expectWalletBalance(core.liquidatorProxyV4!.address, factory, ZERO_BI);
       await expectWalletBalance(core.liquidatorProxyV4!.address, core.tokens.weth, ZERO_BI);
-      await expectWalletBalance(unwrapper, core.pendleEcosystem!.glpMar2024.ytGlpToken, ZERO_BI);
+      await expectWalletBalance(unwrapper, core.pendleEcosystem!.glpMar2024.ptGlpToken, ZERO_BI);
       await expectWalletBalance(unwrapper, core.gmxEcosystem!.fsGlp, ZERO_BI);
       await expectWalletBalance(unwrapper, core.tokens.usdc, ZERO_BI);
     });
@@ -286,7 +286,7 @@ describe('PendleYtGLP2024IsolationModeLiquidationWithZap', () => {
         .div(glpPrice.value);
 
       const zapOutputs = await zap.getSwapExactTokensForTokensParams(
-        ytGlpApiToken,
+        ptGlpApiToken,
         toZapBigNumber(heldUpdatedWithReward),
         core.apiTokens.weth,
         toZapBigNumber(wethDebtAmount),
@@ -348,7 +348,7 @@ describe('PendleYtGLP2024IsolationModeLiquidationWithZap', () => {
       await expectWalletBalance(core.liquidatorProxyV4!.address, factory, ZERO_BI);
       await expectWalletBalance(core.liquidatorProxyV4!.address, core.tokens.usdc, ZERO_BI);
       await expectWalletBalance(core.liquidatorProxyV4!.address, core.tokens.weth, ZERO_BI);
-      await expectWalletBalance(unwrapper, core.pendleEcosystem!.glpMar2024.ytGlpToken, ZERO_BI);
+      await expectWalletBalance(unwrapper, core.pendleEcosystem!.glpMar2024.ptGlpToken, ZERO_BI);
       await expectWalletBalance(unwrapper, core.gmxEcosystem!.fsGlp, ZERO_BI);
       await expectWalletBalance(unwrapper, core.tokens.usdc, ZERO_BI);
       await expectWalletBalance(unwrapper, core.tokens.weth, ZERO_BI);
@@ -394,7 +394,7 @@ describe('PendleYtGLP2024IsolationModeLiquidationWithZap', () => {
       const heldUpdatedWithReward = usdcDebtAmount.mul(owedPriceAdj.value).div(heldPrice.value);
 
       const zapOutputs = await zap.getSwapExactTokensForTokensParams(
-        ytGlpApiToken,
+        ptGlpApiToken,
         toZapBigNumber(heldUpdatedWithReward),
         core.apiTokens.usdc,
         toZapBigNumber(usdcDebtAmount),
@@ -424,7 +424,7 @@ describe('PendleYtGLP2024IsolationModeLiquidationWithZap', () => {
         solidAccountStruct,
         core.marketIds.usdc,
         usdcAmountOut.sub(usdcDebtAmount),
-        '100',
+        '5',
       );
       await expectProtocolBalanceIsGreaterThan(
         core,
@@ -449,16 +449,16 @@ describe('PendleYtGLP2024IsolationModeLiquidationWithZap', () => {
       await expectWalletBalance(core.liquidatorProxyV4!.address, factory, ZERO_BI);
       await expectWalletBalance(core.liquidatorProxyV4!.address, core.tokens.usdc, ZERO_BI);
       await expectWalletBalance(core.liquidatorProxyV4!.address, core.tokens.weth, ZERO_BI);
-      await expectWalletBalance(unwrapper, core.pendleEcosystem!.glpMar2024.ytGlpToken, ZERO_BI);
+      await expectWalletBalance(unwrapper, core.pendleEcosystem!.glpMar2024.ptGlpToken, ZERO_BI);
       await expectWalletBalance(unwrapper, core.gmxEcosystem!.fsGlp, ZERO_BI);
       await expectWalletBalance(unwrapper, core.tokens.usdc, ZERO_BI);
       await expectWalletBalance(unwrapper, core.tokens.weth, ZERO_BI);
     });
 
     it('should work when expired account is borrowing a different output token (WETH)', async () => {
-      const ytGlpPrice = await core.dolomiteMargin.getMarketPrice(underlyingMarketId);
+      const ptGlpPrice = await core.dolomiteMargin.getMarketPrice(underlyingMarketId);
       const wethPrice = await core.dolomiteMargin.getMarketPrice(core.marketIds.weth);
-      const wethDebtAmount = heldAmountWei.mul(ytGlpPrice.value)
+      const wethDebtAmount = heldAmountWei.mul(ptGlpPrice.value)
         .mul(expirationCollateralizationDenominator)
         .div(expirationCollateralizationNumerator)
         .div(wethPrice.value);
@@ -493,7 +493,7 @@ describe('PendleYtGLP2024IsolationModeLiquidationWithZap', () => {
       const heldUpdatedWithReward = owedAmount.mul(owedPriceAdj.value).div(heldPrice.value);
 
       const zapOutputs = await zap.getSwapExactTokensForTokensParams(
-        ytGlpApiToken,
+        ptGlpApiToken,
         toZapBigNumber(heldUpdatedWithReward),
         core.apiTokens.weth,
         toZapBigNumber(wethDebtAmount),
@@ -558,7 +558,7 @@ describe('PendleYtGLP2024IsolationModeLiquidationWithZap', () => {
       await expectWalletBalance(core.liquidatorProxyV4!.address, factory, ZERO_BI);
       await expectWalletBalance(core.liquidatorProxyV4!.address, core.tokens.usdc, ZERO_BI);
       await expectWalletBalance(core.liquidatorProxyV4!.address, core.tokens.weth, ZERO_BI);
-      await expectWalletBalance(unwrapper, core.pendleEcosystem!.glpMar2024.ytGlpToken, ZERO_BI);
+      await expectWalletBalance(unwrapper, core.pendleEcosystem!.glpMar2024.ptGlpToken, ZERO_BI);
       await expectWalletBalance(unwrapper, core.gmxEcosystem!.fsGlp, ZERO_BI);
       await expectWalletBalance(unwrapper, core.tokens.usdc, ZERO_BI);
       await expectWalletBalance(unwrapper, core.tokens.weth, ZERO_BI);

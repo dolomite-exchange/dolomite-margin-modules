@@ -72,6 +72,7 @@ interface CoreProtocolTokensArbitrumOne extends CoreProtocolTokens {
   dYtGlp: IERC20;
   eEth: IERC20;
   ezEth: IERC20;
+  sGlp: IERC20;
   gmx: IERC20;
   grail: IERC20;
   jones: IERC20;
@@ -108,6 +109,7 @@ interface CoreProtocolMarketIdsArbitrumOne extends CoreProtocolMarketIds {
   dPtWstEthJun2025: BigNumberish;
   dpx: BigNumberish;
   dYtGlp: BigNumberish;
+  sGlp: BigNumberish;
   gmx: BigNumberish;
   grail: BigNumberish;
   jones: BigNumberish;

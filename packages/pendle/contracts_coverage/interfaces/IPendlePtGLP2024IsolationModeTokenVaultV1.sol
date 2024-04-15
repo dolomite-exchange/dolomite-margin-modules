@@ -25,7 +25,7 @@ import { IPendleGLPRegistry } from "./IPendleGLPRegistry.sol";
 
 
 /**
- * @title   IPendlePtGLP2024IsolationModeTokenVaultV1
+ * @title   IPendlePtGLPMar2024IsolationModeTokenVaultV1.sol
  * @author  Dolomite
  *
  * @notice  Interface for a subclass of IsolationModeTokenVaultV1 that serves as the implementation for the user's proxy

@@ -30,7 +30,7 @@ import { IPendleRouter } from "./interfaces/IPendleRouter.sol";
 
 
 /**
- * @title   PendleYtGLP2024IsolationModeWrapperTraderV2
+ * @title   PendleYtGLPMar2024IsolationModeWrapperTraderV2.sol
  * @author  Dolomite
  *
  * @notice  Used for wrapping ytGLP (via swapping against the Pendle AMM then redeeming the underlying GLP to

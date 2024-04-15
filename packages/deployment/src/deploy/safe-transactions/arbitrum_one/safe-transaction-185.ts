@@ -94,9 +94,9 @@ async function main(): Promise<DenJsonUpload> {
     libraries,
   );
   const ptGlpUserVaultImplementationAddress = await deployContractAndSave(
-    'PendlePtGLP2024IsolationModeTokenVaultV1',
+    'PendlePtGLPMar2024IsolationModeTokenVaultV1',
     [],
-    'PendlePtGLP2024IsolationModeTokenVaultV4',
+    'PendlePtGLPMar2024IsolationModeTokenVaultV4',
     libraries,
   );
   const ytGlpUserVaultImplementationAddress = await deployContractAndSave(

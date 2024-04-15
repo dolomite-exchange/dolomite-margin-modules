@@ -31,7 +31,7 @@ import {
   createGLPIsolationModeTokenVaultV1,
   createGLPIsolationModeVaultFactory,
   createGLPPriceOracleV1,
-  createGLPWrapperTraderV1,
+  createGLPIsolationModeWrapperTraderV1,
   createGmxRegistry,
 } from './glp-ecosystem-utils';
 
@@ -66,7 +66,7 @@ describe('GLPIsolationModeWrapperTraderV1', () => {
     await setupTestMarket(core, factory, true, priceOracle);
     await core.dolomiteMargin.ownerSetPriceOracle(underlyingMarketId, priceOracle.address);
 
-    wrapper = await createGLPWrapperTraderV1(core, factory, gmxRegistry);
+    wrapper = await createGLPIsolationModeWrapperTraderV1(core, factory, gmxRegistry);
     await factory.connect(core.governance).ownerInitialize([wrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
 

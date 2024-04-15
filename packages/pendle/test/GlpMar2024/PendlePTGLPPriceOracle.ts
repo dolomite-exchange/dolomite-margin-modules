@@ -13,15 +13,15 @@ import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
 import {
   PendleGLPRegistry,
-  PendlePtGLP2024IsolationModeVaultFactory,
+  PendlePtGLPMar2024IsolationModeVaultFactory,
   PendlePtGLPPriceOracle,
   TestPendlePtOracle,
   TestPendlePtOracle__factory,
 } from '../../src/types';
 import {
   createPendleGLPRegistry,
-  createPendlePtGLP2024IsolationModeTokenVaultV1,
-  createPendlePtGLP2024IsolationModeVaultFactory,
+  createPendlePtGLPMar2024IsolationModeTokenVaultV1,
+  createPendlePtGLPMar2024IsolationModeVaultFactory,
   createPendlePtGLPPriceOracle,
 } from '../pendle-ecosystem-utils';
 
@@ -38,15 +38,15 @@ describe('PendlePtGLPPriceOracle', () => {
   let core: CoreProtocolArbitrumOne;
   let ptGlpOracle: PendlePtGLPPriceOracle;
   let pendleRegistry: PendleGLPRegistry;
-  let factory: PendlePtGLP2024IsolationModeVaultFactory;
+  let factory: PendlePtGLPMar2024IsolationModeVaultFactory;
   let marketId: BigNumberish;
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
 
     pendleRegistry = await createPendleGLPRegistry(core);
-    const userVaultImplementation = await createPendlePtGLP2024IsolationModeTokenVaultV1();
-    factory = await createPendlePtGLP2024IsolationModeVaultFactory(
+    const userVaultImplementation = await createPendlePtGLPMar2024IsolationModeTokenVaultV1();
+    factory = await createPendlePtGLPMar2024IsolationModeVaultFactory(
       core,
       pendleRegistry,
       core.pendleEcosystem!.glpMar2024.ptGlpToken,

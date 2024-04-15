@@ -21,21 +21,17 @@
 pragma solidity ^0.8.9;
 
 import { IIsolationModeTokenVaultV1 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
+import { IPendleGLPRegistry } from "./IPendleGLPRegistry.sol";
 
 
 /**
- * @title   IPendleYtGLP2024IsolationModeTokenVaultV1
+ * @title   IPendlePtGLPMar2024IsolationModeTokenVaultV1
  * @author  Dolomite
  *
  * @notice  Interface for a subclass of IsolationModeTokenVaultV1 that serves as the implementation for the user's proxy
- *          vault for ytGLP tokens.
+ *          vault for ptGLP tokens.
  */
-interface IPendleYtGLP2024IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
+interface IPendlePtGLPMar2024IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
 
-    function redeemDueInterestAndRewards(
-        bool _redeemInterest,
-        bool _redeemRewards,
-        bool[] memory _depositRewardsIntoDolomite,
-        bool _depositInterestIntoDolomite
-    ) external;
+    function registry() external view returns (IPendleGLPRegistry);
 }

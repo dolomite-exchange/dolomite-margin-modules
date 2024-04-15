@@ -647,6 +647,10 @@ export const PENDLE_ROUTER_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x0000000001E4ef00d069e71d6bA041b0A16F7eA0',
 };
 
+export const PENDLE_ROUTER_V3_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x00000000005BBB0EF59571E58418F9a4357b68A0',
+};
+
 export const PENDLE_SY_EZ_ETH_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x0dE802e3D6Cc9145A150bBDc8da9F988a98c5202',
 };
@@ -695,8 +699,11 @@ export const PREMIA_WETH_V3_POOL_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0xc3e254E39c45c7886A12455cb8207c808486FAC3',
 };
 
-export const S_GLP_MAP: Record<Network.ArbitrumOne, string> = {
-  [Network.ArbitrumOne]: '0x5402B5F40310bDED796c7D0F3FF6683f5C0cFfdf',
+export const S_GLP_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0x5402B5F40310bDED796c7D0F3FF6683f5C0cFfdf',
+    marketId: 40,
+  },
 };
 
 /**

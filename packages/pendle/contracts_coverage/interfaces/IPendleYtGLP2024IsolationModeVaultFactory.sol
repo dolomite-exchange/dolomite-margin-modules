@@ -24,7 +24,7 @@ import { IIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/cont
 import { IPendleGLPRegistry } from "./IPendleGLPRegistry.sol";
 
 /**
- * @title   IPendleYtGLP2024IsolationModeVaultFactory
+ * @title   IPendleYtGLPMar2024IsolationModeVaultFactory.sol
  * @author  Dolomite
  *
  * @notice  Interface for a subclass of IsolationModeVaultFactory that creates vaults for ytGLP tokens.

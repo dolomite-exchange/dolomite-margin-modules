@@ -318,13 +318,12 @@
     query-string "^6.9.0"
     web3 "1.2.1"
 
-"@dolomite-exchange/zap-sdk@^0.2.31":
-  version "0.2.31"
-  resolved "https://registry.yarnpkg.com/@dolomite-exchange/zap-sdk/-/zap-sdk-0.2.31.tgz#73a3b38deff0283bcf99429f2777eaf3fb07c70f"
-  integrity sha512-+BIvC/8g/M2OQnF4HGtHe23weLrODqz5l5U0otdUO9NedE0Hp297t9A2PQ2tNMP4duT9yxFeZMQFHaQs6OnQTw==
+"@dolomite-exchange/zap-sdk@^0.2.44-f":
+  version "0.2.44-f"
+  resolved "https://registry.yarnpkg.com/@dolomite-exchange/zap-sdk/-/zap-sdk-0.2.44-f.tgz#dfc2720cd434c94709fc5c07e57342e5583442a3"
+  integrity sha512-I1zPyxKQDsE932noJWi7QI6CMy8XbR6JyBh14C9r0uq8bqBblMniZVN11x6rfh2A1ye57VHAH+SudFog9GthTA==
   dependencies:
-    "@dolomite-exchange/modules-deployments" "^0.0.4"
-    "@pendle/sdk-v2" "^2.8.2"
+    "@dolomite-exchange/modules-deployments" "^0.0.9-c"
     axios "^1.6.2"
     bignumber.js "^9.1.1"
     dotenv-flow "^0.4.0"

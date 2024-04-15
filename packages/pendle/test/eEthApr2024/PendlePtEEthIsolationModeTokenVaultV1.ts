@@ -11,10 +11,6 @@ import {
   setupTestMarket,
   setupUserVaultProxy,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { expect } from 'chai';
-import { DolomiteRegistryImplementation, DolomiteRegistryImplementation__factory } from 'packages/base/src/types';
-import { CHAINLINK_PRICE_AGGREGATORS_MAP, REDSTONE_PRICE_AGGREGATORS_MAP } from 'packages/base/src/utils/constants';
-import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
 import {
   getChainlinkPriceOracleV2ConstructorParamsFromOldPriceOracle,
   getRedstonePriceOracleV2ConstructorParams,
@@ -25,6 +21,10 @@ import {
   RedstonePriceOracleV2,
   RedstonePriceOracleV2__factory,
 } from '@dolomite-exchange/modules-oracles/src/types';
+import { expect } from 'chai';
+import { DolomiteRegistryImplementation, DolomiteRegistryImplementation__factory } from 'packages/base/src/types';
+import { CHAINLINK_PRICE_AGGREGATORS_MAP, REDSTONE_PRICE_AGGREGATORS_MAP } from 'packages/base/src/utils/constants';
+import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
 import {
   IPendlePtToken,
   PendlePtIsolationModeTokenVaultV1,
@@ -81,7 +81,8 @@ describe('PendlePtEEthApr2024IsolationModeTokenVaultV1', () => {
     wrapper = await createPendlePtIsolationModeWrapperTraderV2(core, pendleRegistry, underlyingToken, factory);
 
     const wethAggregator = await core.chainlinkPriceOracleOld!.getAggregatorByToken(core.tokens.weth.address);
-    const weEthAggregator = REDSTONE_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne].aggregatorAddress;
+    const redstoneAggregatorMap = REDSTONE_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne];
+    const weEthAggregator = redstoneAggregatorMap[core.tokens.weEth.address].aggregatorAddress;
     const redstoneOracle = (await createContractWithAbi<RedstonePriceOracleV2>(
       RedstonePriceOracleV2__factory.abi,
       RedstonePriceOracleV2__factory.bytecode,

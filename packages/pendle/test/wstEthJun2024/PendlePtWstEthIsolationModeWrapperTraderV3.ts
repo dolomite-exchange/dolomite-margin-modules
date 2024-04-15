@@ -1,10 +1,5 @@
 import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
-import {
-  ADDRESS_ZERO,
-  BYTES_EMPTY,
-  Network,
-  ZERO_BI,
-} from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { BYTES_EMPTY, Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import {
   encodeExternalSellActionDataWithNoData,
   impersonate,
@@ -15,10 +10,11 @@ import { expectThrow, expectWalletBalance } from '@dolomite-exchange/modules-bas
 import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { setupNewGenericTraderProxy } from '@dolomite-exchange/modules-base/test/utils/dolomite';
 import {
+  getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupTestMarket,
   setupUserVaultProxy,
-  setupWeEthBalance,
+  setupWstETHBalance,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { BaseRouter, Router } from '@pendle/sdk-v2';
@@ -26,50 +22,37 @@ import { CHAIN_ID_MAPPING } from '@pendle/sdk-v2/dist/common/ChainId';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
-import { DolomiteRegistryImplementation, DolomiteRegistryImplementation__factory } from 'packages/base/src/types';
-import { CHAINLINK_PRICE_AGGREGATORS_MAP, REDSTONE_PRICE_AGGREGATORS_MAP } from 'packages/base/src/utils/constants';
-import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
-import {
-  getChainlinkPriceOracleV2ConstructorParamsFromOldPriceOracle,
-  getRedstonePriceOracleV2ConstructorParams,
-} from 'packages/oracles/src/oracles-constructors';
-import {
-  ChainlinkPriceOracleV2,
-  ChainlinkPriceOracleV2__factory,
-  RedstonePriceOracleV2,
-  RedstonePriceOracleV2__factory,
-} from '@dolomite-exchange/modules-oracles/src/types';
 import {
   IERC20,
   IPendlePtMarket,
   IPendlePtToken,
   PendlePtIsolationModeTokenVaultV1,
   PendlePtIsolationModeTokenVaultV1__factory,
-  PendlePtIsolationModeUnwrapperTraderV2,
+  PendlePtIsolationModeUnwrapperTraderV3,
   PendlePtIsolationModeVaultFactory,
-  PendlePtIsolationModeWrapperTraderV2,
+  PendlePtIsolationModeWrapperTraderV3,
   PendlePtPriceOracle,
   PendleRegistry,
 } from '../../src/types';
 import {
-  createPendlePtEEthPriceOracle,
   createPendlePtIsolationModeTokenVaultV1,
-  createPendlePtIsolationModeUnwrapperTraderV2,
+  createPendlePtIsolationModeUnwrapperTraderV3,
   createPendlePtIsolationModeVaultFactory,
-  createPendlePtIsolationModeWrapperTraderV2,
+  createPendlePtIsolationModeWrapperTraderV3,
+  createPendlePtPriceOracle,
   createPendleRegistry,
 } from '../pendle-ecosystem-utils';
-import { encodeSwapExactTokensForPt, ONE_TENTH_OF_ONE_BIPS_NUMBER } from '../pendle-utils';
+import { encodeSwapExactTokensForPtV3, ONE_TENTH_OF_ONE_BIPS_NUMBER } from '../pendle-utils';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // 200 units of underlying
 const otherAmountWei = BigNumber.from('10000000'); // $10
-const weEthAmount = parseEther('500');
+const wstEthAmount = parseEther('500');
 const usableAmount = parseEther('10');
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
-describe('PendlePtEEthApr2024IsolationModeWrapperTraderV2', () => {
+describe('PendlePtWstEthJun2024IsolationModeWrapperTraderV3', () => {
   let snapshotId: string;
 
   let core: CoreProtocolArbitrumOne;
@@ -79,8 +62,8 @@ describe('PendlePtEEthApr2024IsolationModeWrapperTraderV2', () => {
   let underlyingToken: IERC20;
   let underlyingMarketId: BigNumberish;
   let pendleRegistry: PendleRegistry;
-  let unwrapper: PendlePtIsolationModeUnwrapperTraderV2;
-  let wrapper: PendlePtIsolationModeWrapperTraderV2;
+  let unwrapper: PendlePtIsolationModeUnwrapperTraderV3;
+  let wrapper: PendlePtIsolationModeWrapperTraderV3;
   let factory: PendlePtIsolationModeVaultFactory;
   let vault: PendlePtIsolationModeTokenVaultV1;
   let priceOracle: PendlePtPriceOracle;
@@ -88,39 +71,21 @@ describe('PendlePtEEthApr2024IsolationModeWrapperTraderV2', () => {
   let router: BaseRouter;
 
   before(async () => {
-    core = await setupCoreProtocol({
-      blockNumber: 187_700_000,
-      network: Network.ArbitrumOne,
-    });
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
 
-    ptMarket = core.pendleEcosystem!.weEthApr2024.ptWeEthMarket;
-    ptToken = core.pendleEcosystem!.weEthApr2024.ptWeEthToken.connect(core.hhUser1);
-    underlyingToken = core.tokens.weEth!;
-
-    underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
-    const wethAggregator = await core.chainlinkPriceOracleOld!.getAggregatorByToken(core.tokens.weth.address);
-    const redstoneAggregatorMap = REDSTONE_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne];
-    const weEthAggregator = redstoneAggregatorMap[core.tokens.weEth.address].aggregatorAddress;
-    const redstoneOracle = (await createContractWithAbi<RedstonePriceOracleV2>(
-      RedstonePriceOracleV2__factory.abi,
-      RedstonePriceOracleV2__factory.bytecode,
-      await getRedstonePriceOracleV2ConstructorParams(
-        [core.tokens.weth, underlyingToken],
-        [wethAggregator, weEthAggregator],
-        [ADDRESS_ZERO, core.tokens.weth.address],
-        [false, false],
-        core,
-      ),
-    )).connect(core.governance);
-    await setupTestMarket(core, core.tokens.weEth, false, redstoneOracle);
+    ptMarket = core.pendleEcosystem!.wstEthJun2024.ptWstEthMarket;
+    ptToken = core.pendleEcosystem!.wstEthJun2024.ptWstEthToken.connect(core.hhUser1);
+    underlyingToken = core.tokens.wstEth!;
+    underlyingMarketId = core.marketIds.wstEth!;
 
     const userVaultImplementation = await createPendlePtIsolationModeTokenVaultV1();
     pendleRegistry = await createPendleRegistry(
       core,
       ptMarket,
-      core.pendleEcosystem!.weEthApr2024.ptOracle,
-      core.pendleEcosystem!.syWeEthToken,
+      core.pendleEcosystem!.wstEthJun2024.ptOracle,
+      core.pendleEcosystem!.syWstEthToken,
     );
+    await pendleRegistry.connect(core.governance).ownerSetPendleRouter(core.pendleEcosystem.pendleRouterV3.address);
     factory = await createPendlePtIsolationModeVaultFactory(
       core,
       pendleRegistry,
@@ -128,33 +93,13 @@ describe('PendlePtEEthApr2024IsolationModeWrapperTraderV2', () => {
       userVaultImplementation,
     );
 
-    unwrapper = await createPendlePtIsolationModeUnwrapperTraderV2(core, pendleRegistry, underlyingToken, factory);
-    wrapper = await createPendlePtIsolationModeWrapperTraderV2(core, pendleRegistry, underlyingToken, factory);
-    const dolomiteRegistryImplementation = await createContractWithAbi<DolomiteRegistryImplementation>(
-      DolomiteRegistryImplementation__factory.abi,
-      DolomiteRegistryImplementation__factory.bytecode,
-      [],
-    );
-    await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(dolomiteRegistryImplementation.address);
-    await core.dolomiteRegistry.connect(core.governance).ownerSetRedstonePriceOracle(redstoneOracle.address);
-    const chainlinkOracle = (await createContractWithAbi<ChainlinkPriceOracleV2>(
-      ChainlinkPriceOracleV2__factory.abi,
-      ChainlinkPriceOracleV2__factory.bytecode,
-      await getChainlinkPriceOracleV2ConstructorParamsFromOldPriceOracle(core),
-    )).connect(core.governance);
-    await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkPriceOracle(
-      chainlinkOracle.address,
-    );
-    await chainlinkOracle.connect(core.governance).ownerInsertOrUpdateOracleTokenWithBypass(
-      underlyingToken.address,
-      18,
-      CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][core.tokens.weEth.address].aggregatorAddress,
-      ADDRESS_ZERO,
-      true,
-    );
-    priceOracle = await createPendlePtEEthPriceOracle(core, factory, pendleRegistry);
+    unwrapper = await createPendlePtIsolationModeUnwrapperTraderV3(core, pendleRegistry, underlyingToken, factory);
+    wrapper = await createPendlePtIsolationModeWrapperTraderV3(core, pendleRegistry, underlyingToken, factory);
+    priceOracle = await createPendlePtPriceOracle(core, factory, pendleRegistry, underlyingToken);
+
     marketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, factory, true, priceOracle);
+    await core.dolomiteMargin.ownerSetPriceOracle(marketId, priceOracle.address);
 
     await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
@@ -174,12 +119,12 @@ describe('PendlePtEEthApr2024IsolationModeWrapperTraderV2', () => {
       signer: core.hhUser1,
     });
 
-    await setupWeEthBalance(core, core.hhUser1, weEthAmount, core.pendleEcosystem!.pendleRouter);
+    await setupWstETHBalance(core, core.hhUser1, wstEthAmount, core.pendleEcosystem!.pendleRouter);
 
     await router.swapExactTokenForPt(
       ptMarket.address as any,
       underlyingToken.address as any,
-      weEthAmount.div(2),
+      wstEthAmount.div(2),
       ONE_TENTH_OF_ONE_BIPS_NUMBER,
     );
     await ptToken.connect(core.hhUser1).approve(vault.address, amountWei);
@@ -202,7 +147,7 @@ describe('PendlePtEEthApr2024IsolationModeWrapperTraderV2', () => {
       const solidAccountId = 0;
       const liquidAccountId = 0;
 
-      const { extraOrderData, approxParams } = await encodeSwapExactTokensForPt(
+      const { extraOrderData, approxParams } = await encodeSwapExactTokensForPtV3(
         router,
         usableAmount,
         ONE_TENTH_OF_ONE_BIPS_NUMBER,
@@ -225,7 +170,6 @@ describe('PendlePtEEthApr2024IsolationModeWrapperTraderV2', () => {
       });
 
       await underlyingToken.connect(core.hhUser1).transfer(core.dolomiteMargin.address, parseEther('10'));
-
       const genericTrader = await impersonate(core.genericTraderProxy!, true);
       await core.dolomiteMargin.connect(genericTrader).operate(
         [defaultAccount],
@@ -339,7 +283,7 @@ describe('PendlePtEEthApr2024IsolationModeWrapperTraderV2', () => {
     it('should fail because it is not implemented', async () => {
       await expectThrow(
         wrapper.getExchangeCost(underlyingToken.address, factory.address, amountWei, BYTES_EMPTY),
-        'PendlePtWrapperV2: getExchangeCost is not implemented',
+        'PendlePtWrapperV3: getExchangeCost is not implemented',
       );
     });
   });

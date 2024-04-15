@@ -1,7 +1,9 @@
 import Deployments, * as deployments from '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
 import {
   IChainlinkAutomationRegistry__factory,
-  IChainlinkPriceOracleOld__factory, IChainlinkPriceOracleV3__factory, OracleAggregatorV2__factory,
+  IChainlinkPriceOracleOld__factory,
+  IChainlinkPriceOracleV3__factory,
+  OracleAggregatorV2__factory,
 } from '@dolomite-exchange/modules-oracles/src/types';
 import { BigNumber as ZapBigNumber } from '@dolomite-exchange/zap-sdk';
 import * as BorrowPositionProxyV2Json from '@dolomite-margin/deployed-contracts/BorrowPositionProxyV2.json';
@@ -78,6 +80,7 @@ import {
   RDNT_MAP,
   RETH_MAP,
   RS_ETH_MAP,
+  S_GLP_MAP,
   SIZE_MAP,
   SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL,
   ST_ETH_MAP,
@@ -86,7 +89,8 @@ import {
   WBTC_MAP,
   WE_ETH_MAP,
   WETH_MAP,
-  WST_ETH_MAP, XAI_MAP,
+  WST_ETH_MAP,
+  XAI_MAP,
 } from '../../src/utils/constants';
 import { Network, NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP, NetworkType } from '../../src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '../../src/utils/SignerWithAddressWithSafety';
@@ -574,6 +578,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
           dPtWstEthJun2025: DPT_WST_ETH_JUN_2025_MAP[typedConfig.network]!.marketId,
           dpx: DPX_MAP[typedConfig.network]!.marketId,
           dYtGlp: DYT_GLP_2024_MAP[typedConfig.network]!.marketId,
+          sGlp: S_GLP_MAP[typedConfig.network]!.marketId,
           gmx: GMX_MAP[typedConfig.network]!.marketId,
           grail: GRAIL_MAP[typedConfig.network]!.marketId,
           jones: JONES_MAP[typedConfig.network]!.marketId,
@@ -609,6 +614,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
           dYtGlp: IERC20__factory.connect(DYT_GLP_2024_MAP[typedConfig.network]!.address, hhUser1),
           eEth: IERC20__factory.connect(E_ETH_MAP[typedConfig.network]!.address, hhUser1),
           ezEth: IERC20__factory.connect(EZ_ETH_MAP[typedConfig.network]!.address, hhUser1),
+          sGlp: IERC20__factory.connect(S_GLP_MAP[typedConfig.network]!.address, hhUser1),
           gmx: IERC20__factory.connect(GMX_MAP[typedConfig.network]!.address, hhUser1),
           grail: IERC20__factory.connect(GRAIL_MAP[typedConfig.network]!.address, hhUser1),
           jones: IERC20__factory.connect(JONES_MAP[typedConfig.network]!.address, hhUser1),

@@ -33,5 +33,5 @@ interface IPendlePtMarket is IERC20 {
 
     function isExpired() external view returns (bool);
 
-    function readTokens() external view returns (address _sy, address _pt, address _yt);
+    function readTokens() external view returns (address sy, address pt, address yt);
 }

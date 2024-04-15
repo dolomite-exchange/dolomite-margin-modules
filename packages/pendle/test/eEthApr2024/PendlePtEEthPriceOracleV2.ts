@@ -1,8 +1,4 @@
-import {
-  DolomiteRegistryImplementation,
-  DolomiteRegistryImplementation__factory,
-  IERC20__factory,
-} from '@dolomite-exchange/modules-base/src/types';
+import { IERC20__factory } from '@dolomite-exchange/modules-base/src/types';
 import {
   AggregatorInfo,
   CHAINLINK_PRICE_AGGREGATORS_MAP,
@@ -81,14 +77,8 @@ describe('PendlePtEEthApr2024PriceOracleV2', () => {
         core.dolomiteMargin,
       ),
     );
-
-    const dolomiteRegistryImplementation = await createContractWithAbi<DolomiteRegistryImplementation>(
-      DolomiteRegistryImplementation__factory.abi,
-      DolomiteRegistryImplementation__factory.bytecode,
-      [],
-    );
-    await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(dolomiteRegistryImplementation.address);
     await core.dolomiteRegistry.connect(core.governance).ownerSetRedstonePriceOracle(redstoneOracle.address);
+
     const chainlinkOracle = await createContractWithAbi<ChainlinkPriceOracleV3>(
       ChainlinkPriceOracleV3__factory.abi,
       ChainlinkPriceOracleV3__factory.bytecode,
@@ -96,14 +86,13 @@ describe('PendlePtEEthApr2024PriceOracleV2', () => {
     );
     await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkPriceOracle(chainlinkOracle.address);
 
-    const eEth = '0x35fA164735182de50811E8e2E824cFb9B6118ac2';
     await chainlinkOracle.connect(core.governance).ownerInsertOrUpdateOracleToken(
-      eEth,
+      core.tokens.eEth.address,
       CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][underlyingToken.address].aggregatorAddress,
       true,
     );
 
-    const tokenToNewOracleMap: Record<string, AggregatorInfo> = {};
+    const tokenToNewOracleMap: Record<string, AggregatorInfo[]> = {};
     const tokensToOldOraclesMap: Record<string, any> = {
       [core.tokens.dPtREthJun2025.address]: {
         tokenPairAddress: core.tokens.weth.address,
@@ -170,10 +159,12 @@ describe('PendlePtEEthApr2024PriceOracleV2', () => {
         throw new Error(`Invalid token ${oldToken}`);
       }
 
-      tokenToNewOracleMap[oldToken] = {
-        tokenPairAddress: tokensToOldOraclesMap[oldToken].tokenPairAddress,
-        aggregatorAddress: newOracle.address,
-      };
+      tokenToNewOracleMap[oldToken] = [
+        {
+          tokenPairAddress: tokensToOldOraclesMap[oldToken].tokenPairAddress,
+          aggregatorAddress: newOracle.address,
+        },
+      ];
     }
     oracleAggregatorV2 = await createContractWithAbi<OracleAggregatorV2>(
       OracleAggregatorV2__factory.abi,
@@ -183,7 +174,7 @@ describe('PendlePtEEthApr2024PriceOracleV2', () => {
     await core.dolomiteRegistry.connect(core.governance).ownerSetOracleAggregator(oracleAggregatorV2.address);
 
     await oracleAggregatorV2.connect(core.governance).ownerInsertOrUpdateToken({
-      token: eEth,
+      token: core.tokens.eEth.address,
       decimals: 18,
       oracleInfos: [
         {
@@ -216,7 +207,7 @@ describe('PendlePtEEthApr2024PriceOracleV2', () => {
         {
           oracle: ptOracle.address,
           weight: 100,
-          tokenPair: eEth,
+          tokenPair: core.tokens.eEth.address,
         },
       ],
     });
