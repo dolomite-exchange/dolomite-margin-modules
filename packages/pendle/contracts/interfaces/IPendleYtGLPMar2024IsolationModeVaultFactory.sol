@@ -24,12 +24,12 @@ import { IIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/cont
 import { IPendleGLPRegistry } from "./IPendleGLPRegistry.sol";
 
 /**
- * @title   IPendleYtGLP2024IsolationModeVaultFactory
+ * @title   IPendleYtGLPMar2024IsolationModeVaultFactory
  * @author  Dolomite
  *
  * @notice  Interface for a subclass of IsolationModeVaultFactory that creates vaults for ytGLP tokens.
  */
-interface IPendleYtGLP2024IsolationModeVaultFactory is IIsolationModeVaultFactory {
+interface IPendleYtGLPMar2024IsolationModeVaultFactory is IIsolationModeVaultFactory {
     // ================================================
     // ==================== Events ====================
     // ================================================

@@ -30,13 +30,13 @@ import { IPendleRouter } from "./interfaces/IPendleRouter.sol";
 
 
 /**
- * @title   PendleYtGLP2024IsolationModeWrapperTraderV2
+ * @title   PendleYtGLPMar2024IsolationModeWrapperTraderV2
  * @author  Dolomite
  *
  * @notice  Used for wrapping ytGLP (via swapping against the Pendle AMM then redeeming the underlying GLP to
  *          USDC).
  */
-contract PendleYtGLP2024IsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2 {
+contract PendleYtGLPMar2024IsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2 {
     using SafeERC20 for IERC20;
 
     // ============ Constants ============

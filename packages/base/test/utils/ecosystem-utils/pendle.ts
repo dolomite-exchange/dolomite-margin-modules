@@ -16,12 +16,12 @@ import {
   IPendleSyToken__factory,
   IPendleYtToken,
   IPendleYtToken__factory,
-  PendlePtGLP2024IsolationModeVaultFactory,
-  PendlePtGLP2024IsolationModeVaultFactory__factory,
+  PendlePtGLPMar2024IsolationModeVaultFactory,
+  PendlePtGLPMar2024IsolationModeVaultFactory__factory,
   PendlePtIsolationModeVaultFactory,
   PendlePtIsolationModeVaultFactory__factory,
-  PendleYtGLP2024IsolationModeVaultFactory,
-  PendleYtGLP2024IsolationModeVaultFactory__factory,
+  PendleYtGLPMar2024IsolationModeVaultFactory,
+  PendleYtGLPMar2024IsolationModeVaultFactory__factory,
 } from '@dolomite-exchange/modules-pendle/src/types';
 import { RegistryProxy, RegistryProxy__factory } from '../../../src/types';
 import {
@@ -73,8 +73,8 @@ export interface PendleEcosystem {
     ptGlpToken: IPendlePtToken;
     ptOracle: IPendlePtOracle;
     ytGlpToken: IPendleYtToken;
-    dPtGlpMar2024: PendlePtGLP2024IsolationModeVaultFactory;
-    dYtGlpMar2024: PendleYtGLP2024IsolationModeVaultFactory;
+    dPtGlpMar2024: PendlePtGLPMar2024IsolationModeVaultFactory;
+    dYtGlpMar2024: PendleYtGLPMar2024IsolationModeVaultFactory;
   };
   rEthJun2025: {
     dPtREthJun2025: PendlePtIsolationModeVaultFactory;
@@ -171,12 +171,12 @@ export async function createPendleEcosystem(
     },
     glpMar2024: {
       pendleRegistry: getContract(
-        (Deployments.PendleGLP2024RegistryProxy as any)[network]?.address,
+        (Deployments.PendleGLPMar2024RegistryProxy as any)[network]?.address,
         IPendleGLPRegistry__factory.connect,
         signer,
       ),
       pendleRegistryProxy: getContract(
-        (Deployments.PendleGLP2024RegistryProxy as any)[network]?.address,
+        (Deployments.PendleGLPMar2024RegistryProxy as any)[network]?.address,
         RegistryProxy__factory.connect,
         signer,
       ),
@@ -201,13 +201,13 @@ export async function createPendleEcosystem(
         signer,
       ),
       dPtGlpMar2024: getContract(
-        (Deployments.PendlePtGLP2024IsolationModeVaultFactory as any)[network]?.address,
-        PendlePtGLP2024IsolationModeVaultFactory__factory.connect,
+        (Deployments.PendlePtGLPMar2024IsolationModeVaultFactory as any)[network]?.address,
+        PendlePtGLPMar2024IsolationModeVaultFactory__factory.connect,
         signer,
       ),
       dYtGlpMar2024: getContract(
-        (Deployments.PendleYtGLP2024IsolationModeVaultFactory as any)[network]?.address,
-        PendleYtGLP2024IsolationModeVaultFactory__factory.connect,
+        (Deployments.PendleYtGLPMar2024IsolationModeVaultFactory as any)[network]?.address,
+        PendleYtGLPMar2024IsolationModeVaultFactory__factory.connect,
         signer,
       ),
     },

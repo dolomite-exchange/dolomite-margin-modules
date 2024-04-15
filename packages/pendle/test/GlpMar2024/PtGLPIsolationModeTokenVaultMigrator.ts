@@ -19,7 +19,7 @@ import { BigNumber } from 'ethers';
 import { AccountInfoStruct } from 'packages/base/src/utils';
 import { IGLPIsolationModeVaultFactoryOld } from 'packages/glp/src/types';
 import {
-  PendlePtGLP2024IsolationModeVaultFactory,
+  PendlePtGLPMar2024IsolationModeVaultFactory,
   PtGLPTransformer,
   PtGLPTransformer__factory,
 } from 'packages/pendle/src/types';
@@ -43,7 +43,7 @@ describe('PtGLPIsolationModeTokenVaultMigrator', () => {
   let core: CoreProtocolArbitrumOne;
   let migrator: DolomiteMigrator;
   let glpFactory: IGLPIsolationModeVaultFactoryOld;
-  let ptGlpFactory: PendlePtGLP2024IsolationModeVaultFactory;
+  let ptGlpFactory: PendlePtGLPMar2024IsolationModeVaultFactory;
   let tokenVaultMigratorImplementation: IsolationModeTokenVaultMigrator;
   let transformer: PtGLPTransformer;
 

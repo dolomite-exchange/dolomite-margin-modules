@@ -4,7 +4,7 @@ import {
   GLPIsolationModeVaultFactory,
   GMXIsolationModeTokenVaultV1,
   GMXIsolationModeVaultFactory,
-  GmxRegistryV1,
+  GmxRegistryV1, IERC20,
   IGLPIsolationModeTokenVaultV1,
   IGLPIsolationModeVaultFactory,
   IGLPIsolationModeVaultFactoryOld,
@@ -16,13 +16,13 @@ import {
 import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 
 export function getGLPPriceOracleV1ConstructorParams(
-  dfsGlp: IGLPIsolationModeVaultFactory | GLPIsolationModeVaultFactory | IGLPIsolationModeVaultFactoryOld,
+  dfsGlp: IGLPIsolationModeVaultFactory | GLPIsolationModeVaultFactory | IGLPIsolationModeVaultFactoryOld | IERC20,
   gmxRegistry: IGmxRegistryV1 | GmxRegistryV1,
 ): any[] {
   return [gmxRegistry.address, dfsGlp.address];
 }
 
-export function getGLPUnwrapperTraderV1ConstructorParams(
+export function getGLPIsolationModeUnwrapperTraderV1ConstructorParams(
   core: CoreProtocolArbitrumOne,
   dfsGlp: IGLPIsolationModeVaultFactory | GLPIsolationModeVaultFactory,
   gmxRegistry: IGmxRegistryV1 | GmxRegistryV1,
@@ -43,6 +43,18 @@ export function getGLPIsolationModeUnwrapperTraderV2ConstructorParams(
   return [
     gmxRegistry.address,
     dfsGlp.address,
+    core.dolomiteMargin.address,
+  ];
+}
+
+export function getGLPUnwrapperTraderV2ConstructorParams(
+  core: CoreProtocolArbitrumOne,
+  sGlp: IERC20,
+  gmxRegistry: IGmxRegistryV1 | GmxRegistryV1,
+): any[] {
+  return [
+    sGlp.address,
+    gmxRegistry.address,
     core.dolomiteMargin.address,
   ];
 }
@@ -79,6 +91,18 @@ export function getGLPWrapperTraderV1ConstructorParams(
     core.tokens.usdc.address,
     gmxRegistry.address,
     dfsGlp.address,
+    core.dolomiteMargin.address,
+  ];
+}
+
+export function getGLPWrapperTraderV2ConstructorParams(
+  core: CoreProtocolArbitrumOne,
+  fsGlp: IERC20,
+  gmxRegistry: IGmxRegistryV1 | GmxRegistryV1,
+): any[] {
+  return [
+    fsGlp.address,
+    gmxRegistry.address,
     core.dolomiteMargin.address,
   ];
 }

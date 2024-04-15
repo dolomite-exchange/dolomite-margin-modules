@@ -25,7 +25,7 @@ import { IPendleGLPRegistry } from "./IPendleGLPRegistry.sol";
 
 
 /**
- * @title   IPendlePtGLP2024IsolationModeVaultFactory
+ * @title   IPendlePtGLPMar2024IsolationModeVaultFactory
  * @author  Dolomite
  *
  * @notice  Interface for a subclass of IsolationModeVaultFactory that creates vaults for ptGLP tokens.

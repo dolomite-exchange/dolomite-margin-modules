@@ -24,13 +24,13 @@ import { IIsolationModeTokenVaultV1 } from "@dolomite-exchange/modules-base/cont
 
 
 /**
- * @title   IPendleYtGLP2024IsolationModeTokenVaultV1
+ * @title   IPendleYtGLPMar2024IsolationModeTokenVaultV1
  * @author  Dolomite
  *
  * @notice  Interface for a subclass of IsolationModeTokenVaultV1 that serves as the implementation for the user's proxy
  *          vault for ytGLP tokens.
  */
-interface IPendleYtGLP2024IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
+interface IPendleYtGLPMar2024IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
 
     function redeemDueInterestAndRewards(
         bool _redeemInterest,

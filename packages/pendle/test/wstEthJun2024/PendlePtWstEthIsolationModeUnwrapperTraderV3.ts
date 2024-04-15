@@ -17,7 +17,6 @@ import {
   setupUserVaultProxy,
   setupWstETHBalance,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { BaseRouter, Router } from '@pendle/sdk-v2';
 import { CHAIN_ID_MAPPING } from '@pendle/sdk-v2/dist/common/ChainId';
 import { expect } from 'chai';
@@ -44,7 +43,6 @@ import {
   createPendleRegistry,
 } from '../pendle-ecosystem-utils';
 import { encodeRedeemPyToToken, encodeSwapExactPtForTokensV3, ONE_TENTH_OF_ONE_BIPS_NUMBER } from '../pendle-utils';
-import { setNextBlockTimestamp } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
@@ -64,14 +62,11 @@ describe('PendlePtWstEthJun2024IsolationModeUnwrapperTraderV3', () => {
   let factory: PendlePtIsolationModeVaultFactory;
   let marketId: BigNumber;
   let vault: PendlePtIsolationModeTokenVaultV1;
-  let vaultSigner: SignerWithAddress;
   let priceOracle: PendlePtPriceOracle;
   let defaultAccount: AccountInfoStruct;
   let router: BaseRouter;
   let ptToken: IPendlePtToken;
   let ptMarket: IPendlePtMarket;
-
-  let solidUser: SignerWithAddress;
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
@@ -105,8 +100,6 @@ describe('PendlePtWstEthJun2024IsolationModeUnwrapperTraderV3', () => {
     await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
 
-    solidUser = core.hhUser5;
-
     await factory.createVault(core.hhUser1.address);
     const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);
     vault = setupUserVaultProxy<PendlePtIsolationModeTokenVaultV1>(
@@ -114,7 +107,6 @@ describe('PendlePtWstEthJun2024IsolationModeUnwrapperTraderV3', () => {
       PendlePtIsolationModeTokenVaultV1__factory,
       core.hhUser1,
     );
-    vaultSigner = await impersonate(vault.address, true);
     defaultAccount = { owner: vault.address, number: defaultAccountNumber };
 
     router = Router.getRouter({

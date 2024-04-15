@@ -25,19 +25,19 @@ import {
   IGmxRegistryV1,
   IPendlePtToken,
   PendleGLPRegistry,
-  PendlePtGLP2024IsolationModeTokenVaultV1,
-  PendlePtGLP2024IsolationModeTokenVaultV1__factory,
-  PendlePtGLP2024IsolationModeUnwrapperTraderV2,
-  PendlePtGLP2024IsolationModeVaultFactory,
-  PendlePtGLP2024IsolationModeWrapperTraderV2,
+  PendlePtGLPMar2024IsolationModeTokenVaultV1,
+  PendlePtGLPMar2024IsolationModeTokenVaultV1__factory,
+  PendlePtGLPMar2024IsolationModeUnwrapperTraderV2,
+  PendlePtGLPMar2024IsolationModeVaultFactory,
+  PendlePtGLPMar2024IsolationModeWrapperTraderV2,
   PendlePtGLPPriceOracle,
 } from '../../src/types';
 import {
   createPendleGLPRegistry,
-  createPendlePtGLP2024IsolationModeTokenVaultV1,
-  createPendlePtGLP2024IsolationModeUnwrapperTraderV2,
-  createPendlePtGLP2024IsolationModeVaultFactory,
-  createPendlePtGLP2024IsolationModeWrapperTraderV2,
+  createPendlePtGLPMar2024IsolationModeTokenVaultV1,
+  createPendlePtGLPMar2024IsolationModeUnwrapperTraderV2,
+  createPendlePtGLPMar2024IsolationModeVaultFactory,
+  createPendlePtGLPMar2024IsolationModeWrapperTraderV2,
   createPendlePtGLPPriceOracle,
 } from '../pendle-ecosystem-utils';
 import { encodeSwapExactTokensForPt, ONE_TENTH_OF_ONE_BIPS_NUMBER } from '../pendle-utils';
@@ -51,7 +51,7 @@ const FIVE_BIPS = 0.0005;
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
-describe('PendlePtGLP2024IsolationModeWrapperTraderV2', () => {
+describe('PendlePtGLPMar2024IsolationModeWrapperTraderV2', () => {
   let snapshotId: string;
 
   let core: CoreProtocolArbitrumOne;
@@ -59,10 +59,10 @@ describe('PendlePtGLP2024IsolationModeWrapperTraderV2', () => {
   let underlyingMarketId: BigNumber;
   let gmxRegistry: IGmxRegistryV1;
   let pendleRegistry: PendleGLPRegistry;
-  let unwrapper: PendlePtGLP2024IsolationModeUnwrapperTraderV2;
-  let wrapper: PendlePtGLP2024IsolationModeWrapperTraderV2;
-  let factory: PendlePtGLP2024IsolationModeVaultFactory;
-  let vault: PendlePtGLP2024IsolationModeTokenVaultV1;
+  let unwrapper: PendlePtGLPMar2024IsolationModeUnwrapperTraderV2;
+  let wrapper: PendlePtGLPMar2024IsolationModeWrapperTraderV2;
+  let factory: PendlePtGLPMar2024IsolationModeVaultFactory;
+  let vault: PendlePtGLPMar2024IsolationModeTokenVaultV1;
   let priceOracle: PendlePtGLPPriceOracle;
   let defaultAccount: AccountInfoStruct;
   let router: BaseRouter;
@@ -71,18 +71,18 @@ describe('PendlePtGLP2024IsolationModeWrapperTraderV2', () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     underlyingToken = core.pendleEcosystem!.glpMar2024.ptGlpToken.connect(core.hhUser1);
 
-    const userVaultImplementation = await createPendlePtGLP2024IsolationModeTokenVaultV1();
+    const userVaultImplementation = await createPendlePtGLPMar2024IsolationModeTokenVaultV1();
     gmxRegistry = core.gmxEcosystem!.live.gmxRegistry!;
     pendleRegistry = await createPendleGLPRegistry(core);
-    factory = await createPendlePtGLP2024IsolationModeVaultFactory(
+    factory = await createPendlePtGLPMar2024IsolationModeVaultFactory(
       core,
       pendleRegistry,
       underlyingToken,
       userVaultImplementation,
     );
 
-    unwrapper = await createPendlePtGLP2024IsolationModeUnwrapperTraderV2(core, factory, pendleRegistry);
-    wrapper = await createPendlePtGLP2024IsolationModeWrapperTraderV2(core, factory, pendleRegistry);
+    unwrapper = await createPendlePtGLPMar2024IsolationModeUnwrapperTraderV2(core, factory, pendleRegistry);
+    wrapper = await createPendlePtGLPMar2024IsolationModeWrapperTraderV2(core, factory, pendleRegistry);
     priceOracle = await createPendlePtGLPPriceOracle(core, factory, pendleRegistry);
 
     underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
@@ -94,9 +94,9 @@ describe('PendlePtGLP2024IsolationModeWrapperTraderV2', () => {
 
     await factory.createVault(core.hhUser1.address);
     const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);
-    vault = setupUserVaultProxy<PendlePtGLP2024IsolationModeTokenVaultV1>(
+    vault = setupUserVaultProxy<PendlePtGLPMar2024IsolationModeTokenVaultV1>(
       vaultAddress,
-      PendlePtGLP2024IsolationModeTokenVaultV1__factory,
+      PendlePtGLPMar2024IsolationModeTokenVaultV1__factory,
       core.hhUser1,
     );
     defaultAccount = { owner: vault.address, number: defaultAccountNumber };
@@ -287,7 +287,7 @@ describe('PendlePtGLP2024IsolationModeWrapperTraderV2', () => {
     it('should fail because it is not implemented', async () => {
       await expectThrow(
         wrapper.getExchangeCost(core.tokens.usdc.address, factory.address, amountWei, BYTES_EMPTY),
-        'PendlePtGLP2024WrapperV2: getExchangeCost is not implemented',
+        'PendlePtGLPMar2024WrapperV2: getExchangeCost is not implemented',
       );
     });
   });

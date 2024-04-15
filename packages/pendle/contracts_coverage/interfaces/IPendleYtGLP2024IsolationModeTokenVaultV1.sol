@@ -24,7 +24,7 @@ import { IIsolationModeTokenVaultV1 } from "@dolomite-exchange/modules-base/cont
 
 
 /**
- * @title   IPendleYtGLP2024IsolationModeTokenVaultV1
+ * @title   IPendleYtGLPMar2024IsolationModeTokenVaultV1.sol
  * @author  Dolomite
  *
  * @notice  Interface for a subclass of IsolationModeTokenVaultV1 that serves as the implementation for the user's proxy

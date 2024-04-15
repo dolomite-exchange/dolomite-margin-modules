@@ -29,13 +29,13 @@ import { IPendleGLPRegistry } from "./interfaces/IPendleGLPRegistry.sol";
 import { IPendleRouter } from "./interfaces/IPendleRouter.sol";
 
 /**
- * @title   PendlePtGLP2024IsolationModeWrapperTraderV2
+ * @title   PendlePtGLPMar2024IsolationModeWrapperTraderV2
  * @author  Dolomite
  *
  * @notice  Used for wrapping ptGLP (via swapping against the Pendle AMM then redeeming the underlying GLP to
  *          USDC).
  */
-contract PendlePtGLP2024IsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2 {
+contract PendlePtGLPMar2024IsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2 {
     using SafeERC20 for IERC20;
 
     // ============ Constants ============

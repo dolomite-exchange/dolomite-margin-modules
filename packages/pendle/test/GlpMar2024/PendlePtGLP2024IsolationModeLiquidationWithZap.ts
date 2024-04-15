@@ -37,12 +37,12 @@ import 'dotenv/config';
 import { BigNumber } from 'ethers';
 import {
   IPendlePtToken,
-  PendlePtGLP2024IsolationModeTokenVaultV1,
-  PendlePtGLP2024IsolationModeTokenVaultV1__factory,
-  PendlePtGLP2024IsolationModeUnwrapperTraderV2,
-  PendlePtGLP2024IsolationModeUnwrapperTraderV2__factory,
-  PendlePtGLP2024IsolationModeVaultFactory,
-  PendlePtGLP2024IsolationModeVaultFactory__factory,
+  PendlePtGLPMar2024IsolationModeTokenVaultV1,
+  PendlePtGLPMar2024IsolationModeTokenVaultV1__factory,
+  PendlePtGLPMar2024IsolationModeUnwrapperTraderV2,
+  PendlePtGLPMar2024IsolationModeUnwrapperTraderV2__factory,
+  PendlePtGLPMar2024IsolationModeVaultFactory,
+  PendlePtGLPMar2024IsolationModeVaultFactory__factory,
 } from '../../src/types';
 
 const defaultAccountNumber = '0';
@@ -55,15 +55,15 @@ const liquidationSpreadDenominator = BigNumber.from('100');
 const expirationCollateralizationNumerator = BigNumber.from('150');
 const expirationCollateralizationDenominator = BigNumber.from('100');
 
-describe('PendlePtGLP2024IsolationModeLiquidationWithZap', () => {
+describe('PendlePtGLPMar2024IsolationModeLiquidationWithZap', () => {
   let snapshotId: string;
 
   let core: CoreProtocolArbitrumOne;
   let underlyingToken: IPendlePtToken;
   let underlyingMarketId: BigNumber;
-  let unwrapper: PendlePtGLP2024IsolationModeUnwrapperTraderV2;
-  let factory: PendlePtGLP2024IsolationModeVaultFactory;
-  let vault: PendlePtGLP2024IsolationModeTokenVaultV1;
+  let unwrapper: PendlePtGLPMar2024IsolationModeUnwrapperTraderV2;
+  let factory: PendlePtGLPMar2024IsolationModeVaultFactory;
+  let vault: PendlePtGLPMar2024IsolationModeTokenVaultV1;
   let defaultAccountStruct: AccountInfoStruct;
   let liquidAccountStruct: AccountInfoStruct;
   let solidAccountStruct: AccountInfoStruct;
@@ -91,12 +91,12 @@ describe('PendlePtGLP2024IsolationModeLiquidationWithZap', () => {
       defaultSlippageTolerance: defaultSlippage,
     });
     underlyingToken = core.pendleEcosystem!.glpMar2024.ptGlpToken.connect(core.hhUser1);
-    factory = PendlePtGLP2024IsolationModeVaultFactory__factory.connect(
-      deployments.PendlePtGLP2024IsolationModeVaultFactory[Network.ArbitrumOne].address,
+    factory = PendlePtGLPMar2024IsolationModeVaultFactory__factory.connect(
+      deployments.PendlePtGLPMar2024IsolationModeVaultFactory[Network.ArbitrumOne].address,
       core.hhUser1,
     );
-    unwrapper = PendlePtGLP2024IsolationModeUnwrapperTraderV2__factory.connect(
-      deployments.PendlePtGLP2024IsolationModeUnwrapperTraderV2[Network.ArbitrumOne].address,
+    unwrapper = PendlePtGLPMar2024IsolationModeUnwrapperTraderV2__factory.connect(
+      deployments.PendlePtGLPMar2024IsolationModeUnwrapperTraderV2[Network.ArbitrumOne].address,
       core.hhUser1,
     );
     underlyingMarketId = await core.dolomiteMargin.getMarketIdByTokenAddress(factory.address);
@@ -114,9 +114,9 @@ describe('PendlePtGLP2024IsolationModeLiquidationWithZap', () => {
 
     await factory.createVault(core.hhUser1.address);
     const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);
-    vault = setupUserVaultProxy<PendlePtGLP2024IsolationModeTokenVaultV1>(
+    vault = setupUserVaultProxy<PendlePtGLPMar2024IsolationModeTokenVaultV1>(
       vaultAddress,
-      PendlePtGLP2024IsolationModeTokenVaultV1__factory,
+      PendlePtGLPMar2024IsolationModeTokenVaultV1__factory,
       core.hhUser1,
     );
     defaultAccountStruct = { owner: vault.address, number: defaultAccountNumber };

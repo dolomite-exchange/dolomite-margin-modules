@@ -7,24 +7,24 @@ import { Network } from 'packages/base/src/utils/no-deps-constants';
 import {
   IERC20,
   IPendleGLPRegistry,
-  IPendlePtGLP2024IsolationModeTokenVaultV1,
-  IPendlePtGLP2024IsolationModeVaultFactory,
+  IPendlePtGLPMar2024IsolationModeTokenVaultV1,
+  IPendlePtGLPMar2024IsolationModeVaultFactory,
   IPendlePtIsolationModeVaultFactory,
   IPendlePtMarket,
   IPendlePtOracle,
   IPendlePtToken,
   IPendleRegistry,
   IPendleSyToken,
-  IPendleYtGLP2024IsolationModeTokenVaultV1,
-  IPendleYtGLP2024IsolationModeVaultFactory,
+  IPendleYtGLPMar2024IsolationModeTokenVaultV1,
+  IPendleYtGLPMar2024IsolationModeVaultFactory,
   IPendleYtToken,
   PendleGLPRegistry,
-  PendlePtGLP2024IsolationModeTokenVaultV1,
-  PendlePtGLP2024IsolationModeVaultFactory,
+  PendlePtGLPMar2024IsolationModeTokenVaultV1,
+  PendlePtGLPMar2024IsolationModeVaultFactory,
   PendlePtIsolationModeVaultFactory,
   PendleRegistry,
-  PendleYtGLP2024IsolationModeTokenVaultV1,
-  PendleYtGLP2024IsolationModeVaultFactory,
+  PendleYtGLPMar2024IsolationModeTokenVaultV1,
+  PendleYtGLPMar2024IsolationModeVaultFactory,
 } from './types';
 
 export type CoreProtocolWithPendle<T extends Network> = Extract<CoreProtocolType<T>, {
@@ -34,7 +34,7 @@ export type CoreProtocolWithPendle<T extends Network> = Extract<CoreProtocolType
 
 export function getPendlePtGLPPriceOracleConstructorParams(
   core: CoreProtocolArbitrumOne,
-  dptGlp: IPendlePtGLP2024IsolationModeVaultFactory | PendlePtGLP2024IsolationModeVaultFactory,
+  dptGlp: IPendlePtGLPMar2024IsolationModeVaultFactory | PendlePtGLPMar2024IsolationModeVaultFactory,
   pendleRegistry: IPendleGLPRegistry | PendleGLPRegistry,
 ): any[] {
   if (!core.pendleEcosystem) {
@@ -100,7 +100,7 @@ export function getPendlePtIsolationModeVaultFactoryConstructorParams<T extends 
   core: CoreProtocolWithPendle<T>,
   registry: IPendleRegistry | PendleRegistry,
   ptToken: IPendlePtToken,
-  userVaultImplementation: IPendlePtGLP2024IsolationModeTokenVaultV1 | PendlePtGLP2024IsolationModeTokenVaultV1,
+  userVaultImplementation: IPendlePtGLPMar2024IsolationModeTokenVaultV1 | PendlePtGLPMar2024IsolationModeTokenVaultV1,
 ): any[] {
   if (!core.pendleEcosystem) {
     throw new Error('Pendle ecosystem not initialized');
@@ -136,7 +136,7 @@ export function getPendlePtPriceOracleConstructorParams<T extends Network>(
 export function getPendlePtPriceOracleV2ConstructorParams<T extends Network>(
   core: CoreProtocolWithPendle<T>,
   dptToken: IPendlePtIsolationModeVaultFactory | PendlePtIsolationModeVaultFactory,
-  pendleRegistry: IPendleRegistry | PendleRegistry
+  pendleRegistry: IPendleRegistry | PendleRegistry,
 ): any[] {
   if (!core.pendleEcosystem) {
     throw new Error('Pendle ecosystem not initialized');
@@ -203,7 +203,7 @@ export function getPendlePtIsolationModeWrapperTraderV2ConstructorParams<T exten
 
 export function getPendlePtIsolationModeWrapperTraderV3ConstructorParams<T extends Network>(
   core: CoreProtocolWithPendle<T>,
-  pendleRegistry: IPendleRegistry | PendleRegistry,
+  pendleRegistry: IPendleRegistry | PendleRegistry | IPendleGLPRegistry,
   underlyingToken: IERC20,
   dptFactory: IPendlePtIsolationModeVaultFactory | PendlePtIsolationModeVaultFactory,
 ): any[] {
@@ -239,7 +239,7 @@ export function getPendlePtIsolationModeUnwrapperTraderV2ConstructorParams<T ext
 
 export function getPendlePtIsolationModeUnwrapperTraderV3ConstructorParams<T extends Network>(
   core: CoreProtocolWithPendle<T>,
-  pendleRegistry: IPendleRegistry | PendleRegistry,
+  pendleRegistry: IPendleRegistry | PendleRegistry | IPendleGLPRegistry,
   underlyingToken: IERC20,
   dptToken: IPendlePtIsolationModeVaultFactory | PendlePtIsolationModeVaultFactory,
 ): any[] {
@@ -255,9 +255,9 @@ export function getPendlePtIsolationModeUnwrapperTraderV3ConstructorParams<T ext
   ];
 }
 
-export function getPendlePtGLP2024IsolationModeUnwrapperTraderV2ConstructorParams(
+export function getPendlePtGLPMar2024IsolationModeUnwrapperTraderV2ConstructorParams(
   core: CoreProtocolArbitrumOne,
-  dptGlp: IPendlePtGLP2024IsolationModeVaultFactory | PendlePtGLP2024IsolationModeVaultFactory,
+  dptGlp: IPendlePtGLPMar2024IsolationModeVaultFactory | PendlePtGLPMar2024IsolationModeVaultFactory,
   pendleRegistry: IPendleGLPRegistry | PendleGLPRegistry,
 ): any[] {
   if (!core.pendleEcosystem) {
@@ -272,11 +272,11 @@ export function getPendlePtGLP2024IsolationModeUnwrapperTraderV2ConstructorParam
   ];
 }
 
-export function getPendlePtGLP2024IsolationModeVaultFactoryConstructorParams(
+export function getPendlePtGLPMar2024IsolationModeVaultFactoryConstructorParams(
   core: CoreProtocolArbitrumOne,
   pendleRegistry: IPendleGLPRegistry | PendleGLPRegistry,
   ptGlpToken: IPendlePtToken,
-  userVaultImplementation: IPendlePtGLP2024IsolationModeTokenVaultV1 | PendlePtGLP2024IsolationModeTokenVaultV1,
+  userVaultImplementation: IPendlePtGLPMar2024IsolationModeTokenVaultV1 | PendlePtGLPMar2024IsolationModeTokenVaultV1,
 ): any[] {
   if (!core.pendleEcosystem) {
     throw new Error('Pendle ecosystem not initialized');
@@ -291,13 +291,13 @@ export function getPendlePtGLP2024IsolationModeVaultFactoryConstructorParams(
   ];
 }
 
-export function getPendleYtGLP2024IsolationModeVaultFactoryConstructorParams(
+export function getPendleYtGLPMar2024IsolationModeVaultFactoryConstructorParams(
   core: CoreProtocolArbitrumOne,
   pendleRegistry: IPendleGLPRegistry | PendleGLPRegistry,
   debtMarketIds: BigNumberish[],
   collateralMarketIds: BigNumberish[],
   ytGlpToken: IPendleYtToken,
-  userVaultImplementation: IPendleYtGLP2024IsolationModeTokenVaultV1 | PendleYtGLP2024IsolationModeTokenVaultV1,
+  userVaultImplementation: IPendleYtGLPMar2024IsolationModeTokenVaultV1 | PendleYtGLPMar2024IsolationModeTokenVaultV1,
 ): any[] {
   if (!core.pendleEcosystem) {
     throw new Error('Pendle ecosystem not initialized');
@@ -316,9 +316,9 @@ export function getPendleYtGLP2024IsolationModeVaultFactoryConstructorParams(
   ];
 }
 
-export function getPendlePtGLP2024IsolationModeWrapperTraderV2ConstructorParams(
+export function getPendlePtGLPMar2024IsolationModeWrapperTraderV2ConstructorParams(
   core: CoreProtocolArbitrumOne,
-  dptGlp: IPendlePtGLP2024IsolationModeVaultFactory | PendlePtGLP2024IsolationModeVaultFactory,
+  dptGlp: IPendlePtGLPMar2024IsolationModeVaultFactory | PendlePtGLPMar2024IsolationModeVaultFactory,
   pendleRegistry: IPendleGLPRegistry | PendleGLPRegistry,
 ): any[] {
   if (!core.pendleEcosystem) {
@@ -333,9 +333,9 @@ export function getPendlePtGLP2024IsolationModeWrapperTraderV2ConstructorParams(
   ];
 }
 
-export function getPendleYtGLP2024IsolationModeUnwrapperTraderV2ConstructorParams(
+export function getPendleYtGLPMar2024IsolationModeUnwrapperTraderV2ConstructorParams(
   core: CoreProtocolArbitrumOne,
-  dytGlp: IPendleYtGLP2024IsolationModeVaultFactory | PendleYtGLP2024IsolationModeVaultFactory,
+  dytGlp: IPendleYtGLPMar2024IsolationModeVaultFactory | PendleYtGLPMar2024IsolationModeVaultFactory,
   pendleRegistry: IPendleGLPRegistry | PendleGLPRegistry,
 ): any[] {
   if (!core.pendleEcosystem) {
@@ -350,9 +350,9 @@ export function getPendleYtGLP2024IsolationModeUnwrapperTraderV2ConstructorParam
   ];
 }
 
-export function getPendleYtGLP2024IsolationModeWrapperTraderV2ConstructorParams(
+export function getPendleYtGLPMar2024IsolationModeWrapperTraderV2ConstructorParams(
   core: CoreProtocolArbitrumOne,
-  dytGlp: IPendleYtGLP2024IsolationModeVaultFactory | PendleYtGLP2024IsolationModeVaultFactory,
+  dytGlp: IPendleYtGLPMar2024IsolationModeVaultFactory | PendleYtGLPMar2024IsolationModeVaultFactory,
   pendleRegistry: IPendleGLPRegistry | PendleGLPRegistry,
 ): any[] {
   if (!core.pendleEcosystem) {
@@ -369,7 +369,7 @@ export function getPendleYtGLP2024IsolationModeWrapperTraderV2ConstructorParams(
 
 export function getPendleYtGLPPriceOracleConstructorParams(
   core: CoreProtocolArbitrumOne,
-  dytGlp: IPendleYtGLP2024IsolationModeVaultFactory | PendleYtGLP2024IsolationModeVaultFactory,
+  dytGlp: IPendleYtGLPMar2024IsolationModeVaultFactory | PendleYtGLPMar2024IsolationModeVaultFactory,
   pendleRegistry: IPendleGLPRegistry | PendleGLPRegistry,
 ): any[] {
   if (!core.pendleEcosystem) {

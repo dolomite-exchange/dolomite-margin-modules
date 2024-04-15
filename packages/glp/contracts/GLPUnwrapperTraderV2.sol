@@ -24,25 +24,24 @@ import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/he
 import { IDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteMarginExchangeWrapper } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteMarginExchangeWrapper.sol"; // solhint-disable-line max-line-length
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
-import { GLPMathLib } from "@dolomite-exchange/modules-glp/contracts/GLPMathLib.sol";
-import { IGmxRegistryV1 } from "@dolomite-exchange/modules-glp/contracts/interfaces/IGmxRegistryV1.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { GLPMathLib } from "./GLPMathLib.sol";
+import { IGmxRegistryV1 } from "./interfaces/IGmxRegistryV1.sol";
 
 
 /**
- * @title   MagicGLPUnwrapperTraderV2
+ * @title   GLPUnwrapperTraderV2
  * @author  Dolomite
  *
- * @notice  Used for unwrapping magicGLP (via redeeming from the ERC 4626 vault then redeeming the underlying GLP to
- *          USDC).
+ * @notice  Used for unwrapping GLP into any supported asset
  */
-contract MagicGLPUnwrapperTraderV2 is IDolomiteMarginExchangeWrapper, OnlyDolomiteMargin {
+contract GLPUnwrapperTraderV2 is IDolomiteMarginExchangeWrapper, OnlyDolomiteMargin {
     using SafeERC20 for IERC20;
 
     // ============ Constants ============
 
-    bytes32 private constant _FILE = "MagicGLPUnwrapperTraderV2";
+    bytes32 private constant _FILE = "GLPUnwrapperTraderV2";
 
     // ============ Constructor ============
 
@@ -52,14 +51,14 @@ contract MagicGLPUnwrapperTraderV2 is IDolomiteMarginExchangeWrapper, OnlyDolomi
     // ============ Constructor ============
 
     constructor(
-        address _magicGlp,
+        address _glp,
         address _gmxRegistry,
         address _dolomiteMargin
     )
     OnlyDolomiteMargin(
         _dolomiteMargin
     ) {
-        GLP = IERC4626(_magicGlp);
+        GLP = IERC20(_glp);
         GMX_REGISTRY = IGmxRegistryV1(_gmxRegistry);
     }
 
@@ -68,7 +67,7 @@ contract MagicGLPUnwrapperTraderV2 is IDolomiteMarginExchangeWrapper, OnlyDolomi
     // ============================================
 
     function exchange(
-        address,
+        address /* _tradeOriginator */,
         address _receiver,
         address _outputToken,
         address _inputToken,
@@ -138,8 +137,7 @@ contract MagicGLPUnwrapperTraderV2 is IDolomiteMarginExchangeWrapper, OnlyDolomi
             "Invalid desired input amount"
         );
 
-        uint256 glpAmount = GLP.previewRedeem(_desiredInputAmount);
-        uint256 usdgAmount = GLPMathLib.getUsdgAmountForSell(GMX_REGISTRY, glpAmount);
+        uint256 usdgAmount = GLPMathLib.getUsdgAmountForSell(GMX_REGISTRY, _desiredInputAmount);
         return GLPMathLib.getGlpRedemptionAmount(GMX_REGISTRY.gmxVault(), _outputToken, usdgAmount);
     }
 }

@@ -699,8 +699,11 @@ export const PREMIA_WETH_V3_POOL_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0xc3e254E39c45c7886A12455cb8207c808486FAC3',
 };
 
-export const S_GLP_MAP: Record<Network.ArbitrumOne, string> = {
-  [Network.ArbitrumOne]: '0x5402B5F40310bDED796c7D0F3FF6683f5C0cFfdf',
+export const S_GLP_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0x5402B5F40310bDED796c7D0F3FF6683f5C0cFfdf',
+    marketId: 40,
+  },
 };
 
 /**

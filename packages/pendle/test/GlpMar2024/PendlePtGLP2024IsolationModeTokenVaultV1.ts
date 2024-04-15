@@ -15,33 +15,33 @@ import {
   IPendlePtToken,
   IPendleSyToken__factory,
   PendleGLPRegistry,
-  PendlePtGLP2024IsolationModeTokenVaultV1,
-  PendlePtGLP2024IsolationModeTokenVaultV1__factory,
-  PendlePtGLP2024IsolationModeUnwrapperTraderV2,
-  PendlePtGLP2024IsolationModeVaultFactory,
-  PendlePtGLP2024IsolationModeWrapperTraderV2,
+  PendlePtGLPMar2024IsolationModeTokenVaultV1,
+  PendlePtGLPMar2024IsolationModeTokenVaultV1__factory,
+  PendlePtGLPMar2024IsolationModeUnwrapperTraderV2,
+  PendlePtGLPMar2024IsolationModeVaultFactory,
+  PendlePtGLPMar2024IsolationModeWrapperTraderV2,
   PendlePtGLPPriceOracle,
 } from '../../src/types';
 import {
   createPendleGLPRegistry,
-  createPendlePtGLP2024IsolationModeTokenVaultV1,
-  createPendlePtGLP2024IsolationModeUnwrapperTraderV2,
-  createPendlePtGLP2024IsolationModeVaultFactory,
-  createPendlePtGLP2024IsolationModeWrapperTraderV2,
+  createPendlePtGLPMar2024IsolationModeTokenVaultV1,
+  createPendlePtGLPMar2024IsolationModeUnwrapperTraderV2,
+  createPendlePtGLPMar2024IsolationModeVaultFactory,
+  createPendlePtGLPMar2024IsolationModeWrapperTraderV2,
   createPendlePtGLPPriceOracle,
 } from '../pendle-ecosystem-utils';
 
-describe('PendlePtGLP2024IsolationModeTokenVaultV1', () => {
+describe('PendlePtGLPMar2024IsolationModeTokenVaultV1', () => {
   let snapshotId: string;
 
   let core: CoreProtocolArbitrumOne;
   let underlyingToken: IPendlePtToken;
   let pendleRegistry: PendleGLPRegistry;
-  let unwrapper: PendlePtGLP2024IsolationModeUnwrapperTraderV2;
-  let wrapper: PendlePtGLP2024IsolationModeWrapperTraderV2;
+  let unwrapper: PendlePtGLPMar2024IsolationModeUnwrapperTraderV2;
+  let wrapper: PendlePtGLPMar2024IsolationModeWrapperTraderV2;
   let priceOracle: PendlePtGLPPriceOracle;
-  let factory: PendlePtGLP2024IsolationModeVaultFactory;
-  let vault: PendlePtGLP2024IsolationModeTokenVaultV1;
+  let factory: PendlePtGLPMar2024IsolationModeVaultFactory;
+  let vault: PendlePtGLPMar2024IsolationModeTokenVaultV1;
   let underlyingMarketId: BigNumber;
   let rewardToken: IERC20;
   let farm: IPlutusVaultGLPFarm;
@@ -51,16 +51,16 @@ describe('PendlePtGLP2024IsolationModeTokenVaultV1', () => {
     underlyingToken = core.pendleEcosystem!.glpMar2024.ptGlpToken.connect(core.hhUser1);
     rewardToken = core.plutusEcosystem!.plsToken.connect(core.hhUser1);
     farm = core.plutusEcosystem!.plvGlpFarm.connect(core.hhUser1);
-    const userVaultImplementation = await createPendlePtGLP2024IsolationModeTokenVaultV1();
+    const userVaultImplementation = await createPendlePtGLPMar2024IsolationModeTokenVaultV1();
     pendleRegistry = await createPendleGLPRegistry(core);
-    factory = await createPendlePtGLP2024IsolationModeVaultFactory(
+    factory = await createPendlePtGLPMar2024IsolationModeVaultFactory(
       core,
       pendleRegistry,
       underlyingToken,
       userVaultImplementation,
     );
-    unwrapper = await createPendlePtGLP2024IsolationModeUnwrapperTraderV2(core, factory, pendleRegistry);
-    wrapper = await createPendlePtGLP2024IsolationModeWrapperTraderV2(core, factory, pendleRegistry);
+    unwrapper = await createPendlePtGLPMar2024IsolationModeUnwrapperTraderV2(core, factory, pendleRegistry);
+    wrapper = await createPendlePtGLPMar2024IsolationModeWrapperTraderV2(core, factory, pendleRegistry);
     priceOracle = await createPendlePtGLPPriceOracle(core, factory, pendleRegistry);
 
     underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
@@ -71,9 +71,9 @@ describe('PendlePtGLP2024IsolationModeTokenVaultV1', () => {
 
     await factory.createVault(core.hhUser1.address);
     const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);
-    vault = setupUserVaultProxy<PendlePtGLP2024IsolationModeTokenVaultV1>(
+    vault = setupUserVaultProxy<PendlePtGLPMar2024IsolationModeTokenVaultV1>(
       vaultAddress,
-      PendlePtGLP2024IsolationModeTokenVaultV1__factory,
+      PendlePtGLPMar2024IsolationModeTokenVaultV1__factory,
       core.hhUser1,
     );
 

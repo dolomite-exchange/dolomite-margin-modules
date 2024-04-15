@@ -31,13 +31,13 @@ import { IPendleYtToken } from "./interfaces/IPendleYtToken.sol";
 
 
 /**
- * @title   PendleYtGLP2024MarIsolationModeUnwrapperTraderV2
+ * @title   PendleYtGLPMar2024IsolationModeUnwrapperTraderV2
  * @author  Dolomite
  *
  * @notice  Used for unwrapping ytGLP (via swapping against the Pendle AMM then redeeming the underlying GLP to
  *          USDC).
  */
-contract PendleYtGLP2024MarIsolationModeUnwrapperTraderV2 is IsolationModeUnwrapperTraderV2 {
+contract PendleYtGLPMar2024IsolationModeUnwrapperTraderV2 is IsolationModeUnwrapperTraderV2 {
     using SafeERC20 for IERC20;
     using SafeERC20 for IPendleYtToken;
 

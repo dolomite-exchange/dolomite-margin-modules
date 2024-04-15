@@ -21,55 +21,53 @@
 pragma solidity ^0.8.9;
 
 import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
-import { IERC4626 } from "@dolomite-exchange/modules-base/contracts/interfaces/IERC4626.sol";
 import { IDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteMarginExchangeWrapper } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteMarginExchangeWrapper.sol"; // solhint-disable-line max-line-length
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
-import { GLPMathLib } from "@dolomite-exchange/modules-glp/contracts/GLPMathLib.sol";
-import { IGmxRegistryV1 } from "@dolomite-exchange/modules-glp/contracts/interfaces/IGmxRegistryV1.sol";
-import { IGmxVault } from "@dolomite-exchange/modules-glp/contracts/interfaces/IGmxVault.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { GLPMathLib } from "./GLPMathLib.sol";
+import { IGmxRegistryV1 } from "./interfaces/IGmxRegistryV1.sol";
+import { IGmxVault } from "./interfaces/IGmxVault.sol";
 
 
 /**
- * @title   MagicGLPWrapperTraderV2
+ * @title   GLPWrapperTraderV2
  * @author  Dolomite
  *
- * @notice  Used for wrapping any supported token into magicGLP. Upon settlement, the minted magicGLP is sent to
- *          DolomiteMargin.
+ * @notice  Used for wrapping any supported token into GLP
  */
-contract MagicGLPWrapperTraderV2 is IDolomiteMarginExchangeWrapper, OnlyDolomiteMargin {
+contract GLPWrapperTraderV2 is IDolomiteMarginExchangeWrapper, OnlyDolomiteMargin {
     using GLPMathLib for IGmxVault;
     using SafeERC20 for IERC20;
 
     // ============ Constants ============
 
-    bytes32 private constant _FILE = "MagicGLPWrapperTraderV2";
+    bytes32 private constant _FILE = "GLPWrapperTraderV2";
 
     // ============ Constructor ============
 
-    IERC4626 public immutable MAGIC_GLP; // solhint-disable-line var-name-mixedcase
+    IERC20 public immutable GLP; // solhint-disable-line var-name-mixedcase
     IGmxRegistryV1 public immutable GMX_REGISTRY; // solhint-disable-line var-name-mixedcase
 
     // ============ Constructor ============
 
     constructor(
-        address _magicGlp,
+        address _glp,
         address _gmxRegistry,
         address _dolomiteMargin
     )
     OnlyDolomiteMargin(
         _dolomiteMargin
     ) {
-        MAGIC_GLP = IERC4626(_magicGlp);
+        GLP = IERC20(_glp);
         GMX_REGISTRY = IGmxRegistryV1(_gmxRegistry);
     }
 
     // ============ External Functions ============
 
     function exchange(
-        address,
+        address /* _tradeOriginator */,
         address _receiver,
         address _outputToken,
         address _inputToken,
@@ -86,7 +84,7 @@ contract MagicGLPWrapperTraderV2 is IDolomiteMarginExchangeWrapper, OnlyDolomite
             _inputToken
         );
         Require.that(
-            _outputToken == address(MAGIC_GLP),
+            _outputToken == address(GLP),
             _FILE,
             "Invalid output token",
             _outputToken
@@ -107,23 +105,16 @@ contract MagicGLPWrapperTraderV2 is IDolomiteMarginExchangeWrapper, OnlyDolomite
             minOutputAmount
         );
 
-        // approve GLP and mint magicGLP
-        IERC20(GMX_REGISTRY.sGlp()).safeApprove(address(MAGIC_GLP), glpAmount);
-        uint256 magicGlpAmount = MAGIC_GLP.deposit(
-            glpAmount,
-            /* _receiver = */ address(this)
-        );
-
-        // approve magicGLP for receiver and return the amount
-        IERC20(_outputToken).safeApprove(_receiver, magicGlpAmount);
-        return magicGlpAmount;
+        // approve GLP for receiver and return the amount
+        IERC20(_outputToken).safeApprove(_receiver, glpAmount);
+        return glpAmount;
     }
 
     function getExchangeCost(
         address _inputToken,
         address _outputToken,
         uint256 _desiredInputAmount,
-        bytes memory
+        bytes memory /* _orderData */
     )
     public
     override
@@ -136,7 +127,7 @@ contract MagicGLPWrapperTraderV2 is IDolomiteMarginExchangeWrapper, OnlyDolomite
             _inputToken
         );
         Require.that(
-            _outputToken == address(MAGIC_GLP),
+            _outputToken == address(GLP),
             _FILE,
             "Invalid output token",
             _outputToken
@@ -148,7 +139,6 @@ contract MagicGLPWrapperTraderV2 is IDolomiteMarginExchangeWrapper, OnlyDolomite
         );
 
         uint256 usdgAmount = GMX_REGISTRY.gmxVault().getUsdgAmountForBuy(_inputToken, _desiredInputAmount);
-        uint256 glpAmount = GLPMathLib.getGlpMintAmount(GMX_REGISTRY, usdgAmount);
-        return MAGIC_GLP.previewDeposit(glpAmount);
+        return GLPMathLib.getGlpMintAmount(GMX_REGISTRY, usdgAmount);
     }
 }

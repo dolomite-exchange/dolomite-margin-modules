@@ -25,13 +25,13 @@ import { IPendleGLPRegistry } from "./IPendleGLPRegistry.sol";
 
 
 /**
- * @title   IPendlePtGLP2024IsolationModeTokenVaultV1
+ * @title   IPendlePtGLPMar2024IsolationModeTokenVaultV1
  * @author  Dolomite
  *
  * @notice  Interface for a subclass of IsolationModeTokenVaultV1 that serves as the implementation for the user's proxy
  *          vault for ptGLP tokens.
  */
-interface IPendlePtGLP2024IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
+interface IPendlePtGLPMar2024IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
 
     function registry() external view returns (IPendleGLPRegistry);
 }

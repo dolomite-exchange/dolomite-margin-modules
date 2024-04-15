@@ -24,7 +24,7 @@ import { PendleYtGLP2024IsolationModeTokenVaultV1 } from "../PendleYtGLP2024Isol
 
 
 /**
- * @title   TestPendleYtGLP2024IsolationModeTokenVaultV1
+ * @title   TestPendleYtGLPMar2024IsolationModeTokenVaultV1.sol
  * @author  Dolomite
  *
  * @notice  Test implementation for exposing areas for coverage testing
