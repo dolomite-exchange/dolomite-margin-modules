@@ -31,6 +31,12 @@ import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/I
  */
 interface IDolomiteERC20 is IERC20Metadata {
 
+    struct MetadataStruct {
+        string name;
+        string symbol;
+        uint8 decimals;
+    }
+
     // ========================================================
     // ======================== Events ========================
     // ========================================================

@@ -4,6 +4,7 @@
 pragma solidity ^0.8.9;
 
 import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
+import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
 import { IDolomiteERC20 } from "../interfaces/IDolomiteERC20.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
@@ -11,6 +12,7 @@ import { InterestIndexLib } from "../lib/InterestIndexLib.sol";
 import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { DolomiteMarginMath } from "../protocol/lib/DolomiteMarginMath.sol";
+import { Require } from "../protocol/lib/Require.sol";
 
 
 /**
@@ -19,20 +21,15 @@ import { DolomiteMarginMath } from "../protocol/lib/DolomiteMarginMath.sol";
  *
  * @dev Implementation of the {IERC20} interface that wraps around a user's Dolomite Balance.
  */
-contract DolomiteERC20 is IDolomiteERC20, OnlyDolomiteMargin {
+contract DolomiteERC20 is IDolomiteERC20, ProxyContractHelpers, OnlyDolomiteMargin {
     using AccountActionLib for IDolomiteMargin;
     using DolomiteMarginMath for uint256;
     using InterestIndexLib for IDolomiteMargin;
 
-    mapping(address => mapping(address => uint256)) private _allowances;
-
+    bytes32 private constant _METADATA_SLOT = bytes32(uint256(keccak256("eip1967.proxy.metadata")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _ALLOWANCES_SLOT = bytes32(uint256(keccak256("eip1967.proxy.allowances")) - 1); // solhint-disable-line max-line-length
     /// @dev mapping containing users that may receive token transfers
-    mapping(address => bool) private _validReceivers;
-
-    // strings cannot be immutable
-    string private _NAME; // solhint-disable-line var-name-mixedcase
-    string private _SYMBOL; // solhint-disable-line var-name-mixedcase
-    uint8 private immutable _DECIMALS; // strings cannot be immutable
+    bytes32 private constant _VALID_RECEIVERS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.validReceivers")) - 1); // solhint-disable-line max-line-length
 
     uint256 public immutable MARKET_ID; // strings cannot be immutable
     address public immutable UNDERLYING_TOKEN; // strings cannot be immutable
@@ -44,9 +41,13 @@ contract DolomiteERC20 is IDolomiteERC20, OnlyDolomiteMargin {
         uint256 _marketId,
         address _dolomiteMargin
     ) OnlyDolomiteMargin(_dolomiteMargin) {
-        _NAME = _name;
-        _SYMBOL = _symbol;
-        _DECIMALS = _decimals;
+
+        MetadataStruct memory metadata = MetadataStruct({
+            name: _name,
+            symbol: _symbol,
+            decimals: _decimals
+        });
+        _setMetadataStruct(metadata);
 
         MARKET_ID = _marketId;
         UNDERLYING_TOKEN = DOLOMITE_MARGIN().getMarketTokenAddress(_marketId);
@@ -125,7 +126,7 @@ contract DolomiteERC20 is IDolomiteERC20, OnlyDolomiteMargin {
      * @dev Returns the name of the token.
      */
     function name() public view override returns (string memory) {
-        return _NAME;
+        return _getMetadataSlot().name;
     }
 
     /**
@@ -133,7 +134,7 @@ contract DolomiteERC20 is IDolomiteERC20, OnlyDolomiteMargin {
      * name.
      */
     function symbol() public view override returns (string memory) {
-        return _SYMBOL;
+        return _getMetadataSlot().symbol;
     }
 
     /**
@@ -150,11 +151,12 @@ contract DolomiteERC20 is IDolomiteERC20, OnlyDolomiteMargin {
      * {IERC20-balanceOf} and {IERC20-transfer}.
      */
     function decimals() public view override returns (uint8) {
-        return _DECIMALS;
+        return _getMetadataSlot().decimals;
     }
 
     function isValidReceiver(address _receiver) public view returns (bool) {
-        return _validReceivers[_receiver];
+        bytes32 slot = keccak256(abi.encode(_receiver, _VALID_RECEIVERS_SLOT));
+        return _getUint256(slot) == 1;
     }
 
     /**
@@ -203,14 +205,16 @@ contract DolomiteERC20 is IDolomiteERC20, OnlyDolomiteMargin {
      * @dev See {IERC20-allowance}.
      */
     function allowance(address _owner, address _spender) public view override returns (uint256) {
-        return _allowances[_owner][_spender];
+        bytes32 slot = keccak256(abi.encode(_spender, keccak256(abi.encode(_owner, _ALLOWANCES_SLOT))));
+        return _getUint256(slot);
     }
 
     /**
      * @dev Sets the following `_receiver` is enabled or not.
      */
     function _enableReceiver(address _receiver, bool _isEnabled) internal {
-        _validReceivers[_receiver] = _isEnabled;
+        bytes32 slot = keccak256(abi.encode(_receiver, _VALID_RECEIVERS_SLOT));
+        _setUint256(slot, _isEnabled ? 1 : 0);
         emit LogSetReceiver(_receiver, _isEnabled);
     }
 
@@ -247,7 +251,7 @@ contract DolomiteERC20 is IDolomiteERC20, OnlyDolomiteMargin {
             "ERC20: Transfer amount exceeds balance"
         );
         require(
-            _validReceivers[_to],
+            isValidReceiver(_to),
             "ERC20: Transfers can only be made to valid receivers"
         );
 
@@ -292,7 +296,8 @@ contract DolomiteERC20 is IDolomiteERC20, OnlyDolomiteMargin {
             "ERC20: Approve to the zero address"
         );
 
-        _allowances[_owner][_spender] = _amount;
+        bytes32 slot = keccak256(abi.encode(_spender, keccak256(abi.encode(_owner, _ALLOWANCES_SLOT))));
+        _setUint256(slot, _amount);
         emit Approval(_owner, _spender, _amount);
     }
 
@@ -318,6 +323,21 @@ contract DolomiteERC20 is IDolomiteERC20, OnlyDolomiteMargin {
             unchecked {
                 _approve(_owner, _spender, currentAllowance - _amount);
             }
+        }
+    }
+
+    function _setMetadataStruct(MetadataStruct memory _metadata) internal {
+        MetadataStruct storage metadata = _getMetadataSlot();
+        metadata.name = _metadata.name;
+        metadata.symbol = _metadata.symbol;
+        metadata.decimals = _metadata.decimals;
+    }
+
+    function _getMetadataSlot() internal pure returns (MetadataStruct storage metadata) {
+        bytes32 slot = _METADATA_SLOT;
+        // solhint-disable-next-line no-inline-assembly
+        assembly {
+            metadata.slot := slot
         }
     }
 }

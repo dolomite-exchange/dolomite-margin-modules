@@ -71,6 +71,13 @@ abstract contract ProxyContractHelpers {
         }
     }
 
+    function _setBytes32(bytes32 slot, bytes32 _value) internal {
+        // solhint-disable-next-line no-inline-assembly
+        assembly {
+            sstore(slot, _value)
+        }
+    }
+
     function _getAddress(bytes32 slot) internal view returns (address value) {
         // solhint-disable-next-line no-inline-assembly
         assembly {
@@ -79,6 +86,13 @@ abstract contract ProxyContractHelpers {
     }
 
     function _getUint256(bytes32 slot) internal view returns (uint256 value) {
+        // solhint-disable-next-line no-inline-assembly
+        assembly {
+            value := sload(slot)
+        }
+    }
+
+    function _getBytes32(bytes32 slot) internal view returns (bytes32 value) {
         // solhint-disable-next-line no-inline-assembly
         assembly {
             value := sload(slot)
