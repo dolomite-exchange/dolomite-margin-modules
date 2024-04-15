@@ -58,7 +58,7 @@ export async function getPendleGLPRegistryConstructorParams(
   }
 
   const calldata = await implementation.populateTransaction.initialize(
-    core.pendleEcosystem!.pendleRouter.address,
+    core.pendleEcosystem!.pendleRouterV3.address,
     core.pendleEcosystem!.glpMar2024.ptGlpMarket.address,
     core.pendleEcosystem!.glpMar2024.ptGlpToken.address,
     core.pendleEcosystem!.glpMar2024.ptOracle.address,
@@ -82,7 +82,7 @@ export async function getPendleRegistryConstructorParams<T extends Network>(
   syToken: IPendleSyToken,
 ): Promise<any[]> {
   const calldata = await implementation.populateTransaction.initialize(
-    core.pendleEcosystem!.pendleRouter.address,
+    core.pendleEcosystem!.pendleRouterV3.address,
     ptMarket.address,
     ptOracle.address,
     syToken.address,

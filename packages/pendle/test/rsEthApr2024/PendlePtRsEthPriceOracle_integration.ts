@@ -10,12 +10,13 @@ import {
 } from '@dolomite-exchange/modules-base/test/utils';
 import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { setupCoreProtocol, setupTestMarket } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { getTWAPPriceOracleV2ConstructorParams } from '@dolomite-exchange/modules-oracles/src/oracles-constructors';
 import axios from 'axios';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { RS_ETH_CAMELOT_POOL_MAP } from 'packages/base/src/utils/constants';
 import { ADDRESS_ZERO, Network, ONE_ETH_BI } from 'packages/base/src/utils/no-deps-constants';
-import { TWAPPriceOracle, TWAPPriceOracle__factory } from 'packages/oracles/src/types';
+import { IAlgebraV3Pool__factory, TWAPPriceOracleV2, TWAPPriceOracleV2__factory } from 'packages/oracles/src/types';
 import { IERC20, PendlePtIsolationModeVaultFactory, PendlePtPriceOracle, PendleRegistry } from '../../src/types';
 import {
   createPendlePtIsolationModeTokenVaultV1,
@@ -51,10 +52,14 @@ describe('PendlePtRsEthApr2024PriceOracle_integration', () => {
     );
 
     underlyingToken = core.tokens.rsEth!;
-    const twapPriceOracle = await createContractWithAbi<TWAPPriceOracle>(
-      TWAPPriceOracle__factory.abi,
-      TWAPPriceOracle__factory.bytecode,
-      [core.tokens.rsEth.address, [RS_ETH_CAMELOT_POOL_MAP[Network.ArbitrumOne]], core.dolomiteMargin.address],
+    const tokenPair = IAlgebraV3Pool__factory.connect(
+      RS_ETH_CAMELOT_POOL_MAP[Network.ArbitrumOne]!,
+      core.hhUser1,
+    );
+    const twapPriceOracle = await createContractWithAbi<TWAPPriceOracleV2>(
+      TWAPPriceOracleV2__factory.abi,
+      TWAPPriceOracleV2__factory.bytecode,
+      getTWAPPriceOracleV2ConstructorParams(core, core.tokens.rsEth, tokenPair),
     );
     underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, core.tokens.rsEth, false, twapPriceOracle);

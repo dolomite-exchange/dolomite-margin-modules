@@ -11,10 +11,11 @@ import {
   setupTestMarket,
   setupUserVaultProxy,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { getTWAPPriceOracleV2ConstructorParams } from '@dolomite-exchange/modules-oracles/src/oracles-constructors';
 import { expect } from 'chai';
 import { RS_ETH_CAMELOT_POOL_MAP } from 'packages/base/src/utils/constants';
 import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
-import { TWAPPriceOracle, TWAPPriceOracle__factory } from 'packages/oracles/src/types';
+import { IAlgebraV3Pool__factory, TWAPPriceOracleV2, TWAPPriceOracleV2__factory } from 'packages/oracles/src/types';
 import {
   IPendlePtToken,
   PendlePtIsolationModeTokenVaultV1,
@@ -53,10 +54,14 @@ describe('PendlePtRsEthApr2024IsolationModeTokenVaultV1', () => {
     });
 
     const underlyingToken = core.tokens.rsEth!;
-    const twapPriceOracle = await createContractWithAbi<TWAPPriceOracle>(
-      TWAPPriceOracle__factory.abi,
-      TWAPPriceOracle__factory.bytecode,
-      [core.tokens.rsEth.address, [RS_ETH_CAMELOT_POOL_MAP[Network.ArbitrumOne]], core.dolomiteMargin.address],
+    const tokenPair = IAlgebraV3Pool__factory.connect(
+      RS_ETH_CAMELOT_POOL_MAP[Network.ArbitrumOne]!,
+      core.hhUser1,
+    );
+    const twapPriceOracle = await createContractWithAbi<TWAPPriceOracleV2>(
+      TWAPPriceOracleV2__factory.abi,
+      TWAPPriceOracleV2__factory.bytecode,
+      getTWAPPriceOracleV2ConstructorParams(core, core.tokens.rsEth, tokenPair),
     );
     const rsEthMarketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, core.tokens.rsEth, false, twapPriceOracle);
