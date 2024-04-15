@@ -45,6 +45,11 @@ contract CustomTestToken is ERC20, ICustomTestToken {
         _mint(_receiver, _amount);
     }
 
+    function mint(uint256 _amount, address _receiver) external returns (uint256) {
+        _mint(_receiver, _amount);
+        return (_amount);
+    }
+
     function burn(uint256 _amount) external {
         _burn(msg.sender, _amount);
     }

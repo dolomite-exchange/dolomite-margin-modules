@@ -20,7 +20,7 @@
 
 pragma solidity ^0.8.9;
 
-import { TestFreezableIsolationModeVaultFactory } from "./TestFreezableIsolationModeFactory.sol";
+import { TestAsyncFreezableIsolationModeVaultFactory } from "./TestAsyncFreezableIsolationModeVaultFactory.sol";
 
 
 /**
@@ -29,7 +29,7 @@ import { TestFreezableIsolationModeVaultFactory } from "./TestFreezableIsolation
  *
  * @notice  Test implementation AsyncProtocolIsolationModeVaultFactory
  */
-contract TestAsyncProtocolIsolationModeVaultFactory is TestFreezableIsolationModeVaultFactory {
+contract TestAsyncProtocolIsolationModeVaultFactory is TestAsyncFreezableIsolationModeVaultFactory {
 
     // ============ Enums ============
 
@@ -58,7 +58,7 @@ contract TestAsyncProtocolIsolationModeVaultFactory is TestFreezableIsolationMod
         address _userVaultImplementation,
         address _dolomiteMargin
     )
-    TestFreezableIsolationModeVaultFactory(
+    TestAsyncFreezableIsolationModeVaultFactory(
         _executionFee,
         _handlerRegistry,
         _dolomiteRegistry,

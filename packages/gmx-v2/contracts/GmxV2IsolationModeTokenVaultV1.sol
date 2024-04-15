@@ -23,10 +23,9 @@ pragma solidity ^0.8.9;
 import { IDolomiteRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IDolomiteRegistry.sol";
 import { IGenericTraderBase } from "@dolomite-exchange/modules-base/contracts/interfaces/IGenericTraderBase.sol";
 import { IGenericTraderProxyV1 } from "@dolomite-exchange/modules-base/contracts/interfaces/IGenericTraderProxyV1.sol";
-import { IsolationModeTokenVaultV1WithFreezable } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeTokenVaultV1WithFreezable.sol";
-import { IsolationModeTokenVaultV1WithFreezableAndPausable } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeTokenVaultV1WithFreezableAndPausable.sol";
-import { IsolationModeTokenVaultV1WithPausable } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeTokenVaultV1WithPausable.sol";
-import { IFreezableIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IFreezableIsolationModeVaultFactory.sol";
+import { IsolationModeTokenVaultV1WithAsyncFreezable } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeTokenVaultV1WithAsyncFreezable.sol";
+import { IsolationModeTokenVaultV1WithAsyncFreezableAndPausable } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeTokenVaultV1WithAsyncFreezableAndPausable.sol";
+import { IAsyncFreezableIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IAsyncFreezableIsolationModeVaultFactory.sol";
 import { IIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
 import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IUpgradeableAsyncIsolationModeUnwrapperTrader.sol";
 import { IUpgradeableAsyncIsolationModeWrapperTrader } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IUpgradeableAsyncIsolationModeWrapperTrader.sol";
@@ -54,7 +53,7 @@ import { IGmxV2IsolationModeVaultFactory } from "./interfaces/IGmxV2IsolationMod
  */
 contract GmxV2IsolationModeTokenVaultV1 is
     IGmxV2IsolationModeTokenVaultV1,
-    IsolationModeTokenVaultV1WithFreezableAndPausable
+    IsolationModeTokenVaultV1WithAsyncFreezableAndPausable
 {
     using DecimalLib for uint256;
     using DecimalLib for IDolomiteStructs.Decimal;
@@ -71,7 +70,7 @@ contract GmxV2IsolationModeTokenVaultV1 is
     // ========================== Constructors ==========================
     // ==================================================================
 
-    constructor(address _weth, uint256 _chainId) IsolationModeTokenVaultV1WithFreezable(_weth, _chainId) {
+    constructor(address _weth, uint256 _chainId) IsolationModeTokenVaultV1WithAsyncFreezable(_weth, _chainId) {
         // solhint-disable-line no-empty-blocks
     }
 
@@ -249,7 +248,7 @@ contract GmxV2IsolationModeTokenVaultV1 is
         );
 
         Require.that(
-            msg.value <= IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).maxExecutionFee(),
+            msg.value <= IAsyncFreezableIsolationModeVaultFactory(VAULT_FACTORY()).maxExecutionFee(),
             _FILE,
             "Invalid execution fee"
         );
@@ -324,7 +323,7 @@ contract GmxV2IsolationModeTokenVaultV1 is
         if (_tradersPath[len - 1].traderType == IGenericTraderBase.TraderType.IsolationModeWrapper) {
             GmxV2Library.depositAndApproveWethForWrapping(this);
             Require.that(
-                msg.value <= IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).maxExecutionFee(),
+                msg.value <= IAsyncFreezableIsolationModeVaultFactory(VAULT_FACTORY()).maxExecutionFee(),
                 _FILE,
                 "Invalid execution fee"
             );

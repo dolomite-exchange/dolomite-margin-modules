@@ -20,7 +20,7 @@
 
 pragma solidity ^0.8.9;
 
-import { TestIsolationModeFactory } from "./TestIsolationModeFactory.sol";
+import { TestIsolationModeVaultFactory } from "./TestIsolationModeVaultFactory.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IsolationModeTokenVaultV1 } from "../isolation-mode/abstract/IsolationModeTokenVaultV1.sol";
 import { IsolationModeTokenVaultV1WithPausableAndOnlyEoa } from "../isolation-mode/abstract/IsolationModeTokenVaultV1WithPausableAndOnlyEoa.sol"; // solhint-disable-line max-line-length
@@ -49,7 +49,7 @@ contract TestIsolationModeTokenVaultV1WithPausableAndOnlyEoa is
         view
         returns (IDolomiteRegistry)
     {
-        return TestIsolationModeFactory(VAULT_FACTORY()).dolomiteRegistry();
+        return TestIsolationModeVaultFactory(VAULT_FACTORY()).dolomiteRegistry();
     }
 
     function isExternalRedemptionPaused() public override view returns (bool) {

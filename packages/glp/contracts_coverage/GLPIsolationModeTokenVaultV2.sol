@@ -23,6 +23,8 @@ pragma solidity ^0.8.9;
 // solhint-disable max-line-length
 import { IDolomiteRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IDolomiteRegistry.sol";
 import { IsolationModeTokenVaultV1 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeTokenVaultV1.sol";
+import { IsolationModeTokenVaultV1WithFreezable } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeTokenVaultV1WithFreezable.sol";
+import { IIsolationModeTokenVaultV1WithFreezable } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeTokenVaultV1WithFreezable.sol";
 import { IIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -30,6 +32,7 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { IGLPIsolationModeTokenVaultV2 } from "./interfaces/IGLPIsolationModeTokenVaultV2.sol";
 import { IGLPIsolationModeVaultFactory } from "./interfaces/IGLPIsolationModeVaultFactory.sol";
+import { IGMXIsolationModeTokenVaultV1 } from "./interfaces/IGMXIsolationModeTokenVaultV1.sol";
 import { IGmxRegistryV1 } from "./interfaces/IGmxRegistryV1.sol";
 import { IGmxRewardRouterV2 } from "./interfaces/IGmxRewardRouterV2.sol";
 import { IGmxRewardTracker } from "./interfaces/IGmxRewardTracker.sol";
@@ -49,7 +52,7 @@ import { ISGMX } from "./interfaces/ISGMX.sol";
  */
 contract GLPIsolationModeTokenVaultV2 is
     IGLPIsolationModeTokenVaultV2,
-    IsolationModeTokenVaultV1
+    IsolationModeTokenVaultV1WithFreezable
 {
     using SafeERC20 for IERC20;
 
@@ -58,6 +61,8 @@ contract GLPIsolationModeTokenVaultV2 is
     // ==================================================================
 
     bytes32 private constant _FILE = "GLPIsolationModeTokenVaultV2";
+    bytes32 private constant _TEMP_BALANCE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.tempBalance")) - 1);
+    bytes32 private constant _SHOULD_SKIP_TRANSFER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.shouldSkipTransfer")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _IS_ACCEPTING_FULL_ACCOUNT_TRANSFER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isAcceptingFullAccountTransfer")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _HAS_ACCEPTED_FULL_ACCOUNT_TRANSFER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.hasAcceptedFullAccountTransfer")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _HAS_SYNCED = bytes32(uint256(keccak256("eip1967.proxy.hasSynced")) - 1);
@@ -89,6 +94,7 @@ contract GLPIsolationModeTokenVaultV2 is
     external
     override
     nonReentrant
+    requireNotFrozen
     onlyVaultOwner(msg.sender) {
         _handleRewards(
             _shouldClaimGmx,
@@ -115,6 +121,7 @@ contract GLPIsolationModeTokenVaultV2 is
     external
     override
     nonReentrant
+    requireNotFrozen
     onlyVaultOwner(msg.sender) {
         _handleRewards(
             _shouldClaimGmx,
@@ -128,25 +135,64 @@ contract GLPIsolationModeTokenVaultV2 is
         );
     }
 
-    function stakeGmx(uint256 _amount) external override onlyGmxVault(msg.sender) {
+    function stakeGmx(uint256 _amount) external override requireNotFrozen onlyGmxVault(msg.sender) {
         IERC20 _gmx = gmx();
         _gmx.safeTransferFrom(msg.sender, address(this), _amount);
 
         _stakeGmx(_gmx, _amount);
     }
 
-    function unstakeGmx(uint256 _amount) external override onlyGmxVault(msg.sender) {
+    function unstakeGmx(uint256 _amount) external override requireNotFrozen onlyGmxVault(msg.sender) {
         gmxRewardsRouter().unstakeGmx(_amount);
 
         gmx().safeTransfer(msg.sender, _amount);
     }
 
-    function stakeEsGmx(uint256 _amount) external override onlyVaultOwner(msg.sender) {
+    function stakeEsGmx(uint256 _amount) external override requireNotFrozen onlyVaultOwner(msg.sender) {
         gmxRewardsRouter().stakeEsGmx(_amount);
     }
 
-    function unstakeEsGmx(uint256 _amount) external override onlyVaultOwner(msg.sender) {
+    function unstakeEsGmx(uint256 _amount) external override requireNotFrozen onlyVaultOwner(msg.sender) {
         gmxRewardsRouter().unstakeEsGmx(_amount);
+    }
+
+    function signalAccountTransfer(
+        address _receiver,
+        uint256 _glpBal
+    ) external onlyGmxVault(msg.sender) {
+        if (_glpBal > 0) {
+            _setShouldSkipTransfer(true);
+            _setUint256(_TEMP_BALANCE_SLOT, _glpBal);
+            _withdrawFromVaultForDolomiteMargin(_DEFAULT_ACCOUNT_NUMBER, _glpBal);
+            /*assert(!shouldSkipTransfer());*/
+        } else {
+            _setUint256(_TEMP_BALANCE_SLOT, 0);
+        }
+
+        gmx().approve(address(sGmx()), type(uint256).max);
+        gmxRewardsRouter().signalTransfer(_receiver);
+    }
+
+    function cancelAccountTransfer() external onlyGmxVault(msg.sender) {
+        if (IGMXIsolationModeTokenVaultV1(msg.sender).isVaultFrozen()) {
+            gmx().approve(address(sGmx()), 0);
+            gmxRewardsRouter().signalTransfer(address(0));
+
+            uint256 tempBal = _getUint256(_TEMP_BALANCE_SLOT);
+            if (tempBal > 0) {
+                if (underlyingBalanceOf() >= tempBal) { /* FOR COVERAGE TESTING */ }
+                Require.that(
+                    underlyingBalanceOf() >= tempBal,
+                    _FILE,
+                    "Invalid underlying balance of"
+                );
+
+                _setShouldSkipTransfer(true);
+                _setUint256(_TEMP_BALANCE_SLOT, 0);
+                _depositIntoVaultForDolomiteMargin(_DEFAULT_ACCOUNT_NUMBER, tempBal);
+                /*assert(!shouldSkipTransfer());*/
+            }
+        }
     }
 
     function acceptFullAccountTransfer(
@@ -155,6 +201,7 @@ contract GLPIsolationModeTokenVaultV2 is
     external
     override
     nonReentrant
+    requireNotFrozen
     onlyVaultOwnerOrVaultFactory(msg.sender) {
         if (_sender != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
@@ -197,23 +244,26 @@ contract GLPIsolationModeTokenVaultV2 is
         _setHasAcceptedFullAccountTransfer(true);
     }
 
-    function vestGlp(uint256 _esGmxAmount) external override onlyVaultOwner(msg.sender) {
+    function vestGlp(uint256 _esGmxAmount) external override requireNotFrozen onlyVaultOwner(msg.sender) {
         _vestEsGmx(vGlp(), _esGmxAmount);
     }
 
-    function unvestGlp(bool _shouldStakeGmx) external override onlyVaultOwner(msg.sender) {
+    function unvestGlp(bool _shouldStakeGmx) external override requireNotFrozen onlyVaultOwner(msg.sender) {
         _unvestEsGmx(vGlp(), _shouldStakeGmx, true);
     }
 
-    function vestGmx(uint256 _esGmxAmount) external override onlyGmxVault(msg.sender) {
+    function vestGmx(uint256 _esGmxAmount) external override requireNotFrozen onlyGmxVault(msg.sender) {
         _vestEsGmx(vGmx(), _esGmxAmount);
     }
 
-    function unvestGmx(bool _shouldStakeGmx, bool _addDepositIntoDolomite) external override onlyGmxVault(msg.sender) {
+    function unvestGmx(
+        bool _shouldStakeGmx,
+        bool _addDepositIntoDolomite
+    ) external override requireNotFrozen onlyGmxVault(msg.sender) {
         _unvestEsGmx(vGmx(), _shouldStakeGmx, _addDepositIntoDolomite);
     }
 
-    function sweepGmxTokensIntoGmxVault() external onlyGmxVault(msg.sender) {
+    function sweepGmxTokensIntoGmxVault() external requireNotFrozen onlyGmxVault(msg.sender) {
         _depositIntoGMXVault(
             /* _gmxVault = */ msg.sender,
             /* _accountNumber = */ _DEFAULT_ACCOUNT_NUMBER,
@@ -222,7 +272,7 @@ contract GLPIsolationModeTokenVaultV2 is
         );
     }
 
-    function sync(address _gmxVault) external {
+    function sync(address _gmxVault) external requireNotFrozen {
         if (msg.sender == address(registry().gmxVaultFactory())) { /* FOR COVERAGE TESTING */ }
         Require.that(
             msg.sender == address(registry().gmxVaultFactory()),
@@ -233,7 +283,7 @@ contract GLPIsolationModeTokenVaultV2 is
         _sync(_gmxVault);
     }
 
-    function maxGmxUnstakeAmount() external onlyGmxVault(msg.sender) returns (uint256) {
+    function maxGmxUnstakeAmount() external requireNotFrozen onlyGmxVault(msg.sender) returns (uint256) {
         uint256 bnGmxAmount = _claimAndStakeBnGmx();
         uint256 sbfGmxBalance = IERC20(sbfGmx()).balanceOf(address(this));
         uint256 totalStakedBalance = sGmx().stakedAmounts(address(this)); // staked-GMX + staked-esGMX total balance
@@ -263,6 +313,11 @@ contract GLPIsolationModeTokenVaultV2 is
     public
     override
     onlyVaultFactory(msg.sender) {
+        if (shouldSkipTransfer()) {
+            _setShouldSkipTransfer(false);
+            return;
+        }
+
         if (isAcceptingFullAccountTransfer()) {
             // The fsGLP is already in this vault, so don't materialize a transfer from the vault owner
             /*assert(_amount == underlyingBalanceOf());*/
@@ -278,6 +333,11 @@ contract GLPIsolationModeTokenVaultV2 is
     public
     override
     onlyVaultFactory(msg.sender) {
+        if (shouldSkipTransfer()) {
+            _setShouldSkipTransfer(false);
+            return;
+        }
+
         if (super.underlyingBalanceOf() < _amount) {
             // There's not enough value in the vault to cover the withdrawal, so we need to withdraw from vGLP
             vGlp().withdraw();
@@ -289,12 +349,21 @@ contract GLPIsolationModeTokenVaultV2 is
         sGlp().safeTransfer(_recipient, _amount);
     }
 
+    function isVaultFrozen() public view override returns (bool) {
+        address gmxVault = registry().gmxVaultFactory().getVaultByAccount(OWNER());
+        return gmxVault == address(0) ? false : IIsolationModeTokenVaultV1WithFreezable(gmxVault).isVaultFrozen();
+    }
+
     function esGmx() public view returns (IERC20) {
         return IERC20(registry().esGmx());
     }
 
     function gmxRewardsRouter() public view returns (IGmxRewardRouterV2) {
         return registry().gmxRewardsRouter();
+    }
+
+    function shouldSkipTransfer() public view returns (bool) {
+        return _getUint256(_SHOULD_SKIP_TRANSFER_SLOT) == 1;
     }
 
     function underlyingBalanceOf() public view override returns (uint256) {
@@ -371,7 +440,7 @@ contract GLPIsolationModeTokenVaultV2 is
 
     function dolomiteRegistry()
         public
-        override(IsolationModeTokenVaultV1)
+        override
         view
         returns (IDolomiteRegistry)
     {
@@ -563,11 +632,14 @@ contract GLPIsolationModeTokenVaultV2 is
         );
     }
 
+    // ==================================================================
+    // ======================== Private Functions =======================
+    // ==================================================================
 
     function _getPairAmountNeededForEsGmxVesting(
         IGmxVester _vester,
         uint256 _esGmxAmount
-    ) internal view returns (uint256) {
+    ) private view returns (uint256) {
         address account = address(this);
         uint256 pairAmount = _vester.pairAmounts(account);
         uint256 nextPairAmount = _vester.getPairAmount(account, _esGmxAmount + _vester.balanceOf(account));
@@ -576,5 +648,9 @@ contract GLPIsolationModeTokenVaultV2 is
         } else {
             return 0;
         }
+    }
+
+    function _setShouldSkipTransfer(bool _shouldSkipTransfer) private {
+        _setUint256(_SHOULD_SKIP_TRANSFER_SLOT, _shouldSkipTransfer ? 1 : 0);
     }
 }

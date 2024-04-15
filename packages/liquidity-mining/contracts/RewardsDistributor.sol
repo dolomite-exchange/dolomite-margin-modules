@@ -21,10 +21,12 @@
 pragma solidity ^0.8.9;
 
 import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
+import { IDolomiteRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IDolomiteRegistry.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { MerkleProof } from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
-import { IOARB } from "./interfaces/IOARB.sol";
+import { IERC20Mintable } from "./interfaces/IERC20Mintable.sol";
 import { IRewardsDistributor } from "./interfaces/IRewardsDistributor.sol";
 
 
@@ -32,10 +34,10 @@ import { IRewardsDistributor } from "./interfaces/IRewardsDistributor.sol";
  * @title   RewardsDistributor
  * @author  Dolomite
  *
- * Rewards Distributor contract for oARB tokens
+ * Rewards Distributor contract for token tokens
  */
 contract RewardsDistributor is OnlyDolomiteMargin, IRewardsDistributor {
-    using SafeERC20 for IOARB;
+    using SafeERC20 for IERC20;
 
     // ===================================================
     // ==================== Constants ====================
@@ -47,7 +49,9 @@ contract RewardsDistributor is OnlyDolomiteMargin, IRewardsDistributor {
     // ==================== State Variables ==============
     // ===================================================
 
-    IOARB public override oARB;
+    IDolomiteRegistry public immutable DOLOMITE_REGISTRY; // solhint -disable-line mixed-case
+
+    IERC20Mintable public override token;
 
     mapping(address => bool) private _handlerMap;
     mapping(uint256 => bytes32) private _epochToMerkleRootMap;
@@ -73,14 +77,17 @@ contract RewardsDistributor is OnlyDolomiteMargin, IRewardsDistributor {
 
     constructor(
         address _dolomiteMargin,
-        IOARB _oARB,
-        address[] memory _initialHandlers
+        IERC20Mintable _token,
+        address[] memory _initialHandlers,
+        address _dolomiteRegistry
     ) OnlyDolomiteMargin(_dolomiteMargin) {
-        oARB = _oARB;
+        token = _token;
 
         for (uint256 i; i < _initialHandlers.length; ++i) {
             _ownerSetHandler(_initialHandlers[i], /* _isHandler = */ true);
         }
+
+        DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
     }
 
     // ======================================================
@@ -99,9 +106,9 @@ contract RewardsDistributor is OnlyDolomiteMargin, IRewardsDistributor {
         _ownerSetMerkleRoot(_epoch, _merkleRoot);
     }
 
-    function ownerSetOARB(IOARB _oARB) external onlyDolomiteMarginOwner(msg.sender) {
-        oARB = _oARB;
-        emit OARBSet(_oARB);
+    function ownerSetToken(IERC20Mintable _token) external onlyDolomiteMarginOwner(msg.sender) {
+        token = _token;
+        emit TokenSet(_token);
     }
 
     // ==============================================================
@@ -110,6 +117,13 @@ contract RewardsDistributor is OnlyDolomiteMargin, IRewardsDistributor {
 
     function claim(ClaimInfo[] calldata _claimInfo) external {
         uint256 len = _claimInfo.length;
+        Require.that(
+            len > 0,
+            _FILE,
+            "Invalid claim infos"
+        );
+
+        uint256 claimAmount = 0;
         for (uint256 i; i < len; ++i) {
             Require.that(
                 _verifyMerkleProof(_claimInfo[i]),
@@ -123,11 +137,16 @@ contract RewardsDistributor is OnlyDolomiteMargin, IRewardsDistributor {
             );
 
             _userToEpochToClaimStatusMap[msg.sender][_claimInfo[i].epoch] = true;
-            oARB.mint(_claimInfo[i].amount);
-            oARB.safeTransfer(msg.sender, _claimInfo[i].amount);
-
-            emit Claimed(msg.sender, _claimInfo[i].epoch, _claimInfo[i].amount);
+            claimAmount += _claimInfo[i].amount;
+            DOLOMITE_REGISTRY.eventEmitter().emitRewardClaimed(
+                msg.sender,
+                _claimInfo[i].epoch,
+                _claimInfo[i].amount
+            );
         }
+
+        token.mint(claimAmount);
+        IERC20(address(token)).safeTransfer(msg.sender, claimAmount);
     }
 
     // ==============================================================

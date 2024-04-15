@@ -45,7 +45,7 @@ async function main() {
     core,
     'dolomiteMargin',
     'ownerSetMaxWei',
-    [core.marketIds.dPtGlp!, BigNumber.from(1_000_000).mul(BigNumber.from(10).pow(18))],
+    [core.marketIds.dPtGlpMar2024!, BigNumber.from(1_000_000).mul(BigNumber.from(10).pow(18))],
   );
 }
 

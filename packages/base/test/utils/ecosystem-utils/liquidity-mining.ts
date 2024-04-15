@@ -4,8 +4,8 @@ import {
   VesterImplementationV1__factory,
   VesterImplementationV2,
   VesterImplementationV2__factory,
-  VesterProxy,
-  VesterProxy__factory,
+  UpgradeableProxy,
+  UpgradeableProxy__factory, OARB__factory, OARB,
 } from '@dolomite-exchange/modules-liquidity-mining/src/types';
 import { Network } from '../../../src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';
@@ -13,7 +13,8 @@ import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddres
 export interface LiquidityMiningEcosystem {
   oArbVester: VesterImplementationV1;
   oArbVesterV2: VesterImplementationV2;
-  oArbVesterProxy: VesterProxy;
+  oArbVesterProxy: UpgradeableProxy;
+  oArb: OARB;
 }
 
 export async function createLiquidityMiningEcosystem(
@@ -27,6 +28,7 @@ export async function createLiquidityMiningEcosystem(
   return {
     oArbVester: VesterImplementationV1__factory.connect(deployments.VesterProxy[network].address, signer),
     oArbVesterV2: VesterImplementationV2__factory.connect(deployments.VesterProxy[network].address, signer),
-    oArbVesterProxy: VesterProxy__factory.connect(deployments.VesterProxy[network].address, signer),
+    oArbVesterProxy: UpgradeableProxy__factory.connect(deployments.VesterProxy[network].address, signer),
+    oArb: OARB__factory.connect(deployments.OARB[network].address, signer),
   };
 }
