@@ -64,7 +64,7 @@ describe('DolomiteERC20', () => {
       expect((await core.dolomiteMargin.getAccountPar(accountInfo2, core.marketIds.usdc)).value).to.eq(parValue);
     });
 
-    it('should approve tx.origin & msg.sender', async () => {
+    it('should enable tx.origin & msg.sender', async () => {
       const doloErc20User = await createContractWithAbi<TestDolomiteERC20User>(
         TestDolomiteERC20User__factory.abi,
         TestDolomiteERC20User__factory.bytecode,
@@ -83,6 +83,7 @@ describe('DolomiteERC20', () => {
       expect(await token.isValidReceiver(doloErc20User.address)).to.be.false;
       await doloErc20User.connect(core.hhUser2).transfer(core.hhUser2.address, parValue);
       expect(await token.isValidReceiver(core.hhUser2.address)).to.be.true;
+      expect(await token.isValidReceiver(doloErc20User.address)).to.be.true;
       expect(await token.balanceOf(core.hhUser2.address)).to.eq(parValue);
     });
 
@@ -120,6 +121,20 @@ describe('DolomiteERC20', () => {
     it('should work normally', async () => {
       await token.approve(core.hhUser2.address, 100);
       expect(await token.allowance(core.hhUser1.address, core.hhUser2.address)).to.eq(100);
+    });
+
+    it('should enable tx.origin & msg.sender', async () => {
+      const doloErc20User = await createContractWithAbi<TestDolomiteERC20User>(
+        TestDolomiteERC20User__factory.abi,
+        TestDolomiteERC20User__factory.bytecode,
+        [token.address],
+      );
+
+      expect(await token.isValidReceiver(core.hhUser2.address)).to.be.false;
+      expect(await token.isValidReceiver(doloErc20User.address)).to.be.false;
+      await doloErc20User.connect(core.hhUser2).approve(core.hhUser2.address, parValue);
+      expect(await token.isValidReceiver(core.hhUser2.address)).to.be.true;
+      expect(await token.isValidReceiver(doloErc20User.address)).to.be.true;
     });
 
     it('should fail if from zero address', async () => {

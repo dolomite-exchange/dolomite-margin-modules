@@ -155,8 +155,9 @@ contract DolomiteERC20 is IDolomiteERC20, ProxyContractHelpers, OnlyDolomiteMarg
     }
 
     function isValidReceiver(address _receiver) public view returns (bool) {
-        bytes32 slot = keccak256(abi.encode(_receiver, _VALID_RECEIVERS_SLOT));
-        return _getUint256(slot) == 1;
+        // bytes32 slot = keccak256(abi.encode(_receiver, _VALID_RECEIVERS_SLOT));
+        // return _getUint256(slot) == 1;
+        return _getUint256FromMap(_VALID_RECEIVERS_SLOT, _receiver) == 1;
     }
 
     /**
@@ -205,16 +206,14 @@ contract DolomiteERC20 is IDolomiteERC20, ProxyContractHelpers, OnlyDolomiteMarg
      * @dev See {IERC20-allowance}.
      */
     function allowance(address _owner, address _spender) public view override returns (uint256) {
-        bytes32 slot = keccak256(abi.encode(_spender, keccak256(abi.encode(_owner, _ALLOWANCES_SLOT))));
-        return _getUint256(slot);
+        return _getUint256InNestedMap(_ALLOWANCES_SLOT, _owner, _spender);
     }
 
     /**
      * @dev Sets the following `_receiver` is enabled or not.
      */
     function _enableReceiver(address _receiver, bool _isEnabled) internal {
-        bytes32 slot = keccak256(abi.encode(_receiver, _VALID_RECEIVERS_SLOT));
-        _setUint256(slot, _isEnabled ? 1 : 0);
+        _setUint256InMap(_VALID_RECEIVERS_SLOT, _receiver, _isEnabled ? 1 : 0);
         emit LogSetReceiver(_receiver, _isEnabled);
     }
 
@@ -296,8 +295,7 @@ contract DolomiteERC20 is IDolomiteERC20, ProxyContractHelpers, OnlyDolomiteMarg
             "ERC20: Approve to the zero address"
         );
 
-        bytes32 slot = keccak256(abi.encode(_spender, keccak256(abi.encode(_owner, _ALLOWANCES_SLOT))));
-        _setUint256(slot, _amount);
+        _setUint256InNestedMap(_ALLOWANCES_SLOT, _owner, _spender, _amount);
         emit Approval(_owner, _spender, _amount);
     }
 

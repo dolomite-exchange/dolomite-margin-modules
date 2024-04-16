@@ -25,4 +25,8 @@ contract TestDolomiteERC20User {
     function transfer(address to, uint256 amount) external {
         DOLOMITE_ERC20.transfer(to, amount);
     }
+
+    function approve(address spender, uint256 amount) external {
+        DOLOMITE_ERC20.approve(spender, amount);
+    }
 }
