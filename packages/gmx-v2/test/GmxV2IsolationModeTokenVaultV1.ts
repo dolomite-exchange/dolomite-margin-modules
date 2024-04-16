@@ -121,7 +121,12 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
     underlyingToken = core.gmxEcosystemV2!.gmxEthUsdMarketToken.connect(core.hhUser1);
     const gmxV2Library = await createGmxV2Library();
     const userVaultImplementation = await createTestGmxV2IsolationModeTokenVaultV1(core);
+
     gmxV2Registry = await createGmxV2Registry(core, GMX_V2_CALLBACK_GAS_LIMIT);
+    await gmxV2Registry.connect(core.governance).ownerSetGmxMarketToIndexToken(
+      underlyingToken.address,
+      core.gmxEcosystemV2.gmTokens.ethUsd.indexToken.address
+    );
 
     allowableMarketIds = [core.marketIds.nativeUsdc!, core.marketIds.weth];
     factory = await createGmxV2IsolationModeVaultFactory(
@@ -229,6 +234,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
     await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(newRegistry.address);
     await core.dolomiteRegistry.connect(core.governance).ownerSetEventEmitter(eventEmitter.address);
     await core.dolomiteRegistry.connect(core.governance).ownerSetGenericTraderProxy(NEW_GENERIC_TRADER_PROXY);
+    await core.dolomiteRegistry.connect(core.governance).ownerSetOracleAggregator(core.chainlinkPriceOracleOld.address);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(NEW_GENERIC_TRADER_PROXY, true);
     const trader = await IGenericTraderProxyV1__factory.connect(
       NEW_GENERIC_TRADER_PROXY,
@@ -409,7 +415,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           DEFAULT_EXTRA_DATA,
           { value: executionFee },
         ),
-        'IsolationModeVaultV1Freezable: Invalid withdrawal amount',
+        'IsolationVaultV1AsyncFreezable: Invalid withdrawal amount',
       );
     });
 
@@ -451,7 +457,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           DEFAULT_EXTRA_DATA,
           { value: executionFee },
         ),
-        `IsolationModeVaultV1Freezable: Withdrawal too large <${vault.address.toLowerCase()}, ${borrowAccountNumber}>`,
+        `IsolationVaultV1AsyncFreezable: Withdrawal too large <${vault.address.toLowerCase()}, ${borrowAccountNumber}>`,
       );
     });
 
@@ -554,7 +560,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           DEFAULT_EXTRA_DATA,
           { value: executionFee },
         ),
-        `IsolationModeVaultV1Freezable: Only liquidator can call <${core.hhUser1.address.toLowerCase()}>`,
+        `IsolationVaultV1AsyncFreezable: Only liquidator can call <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
@@ -795,7 +801,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       await vault.connect(impersonatedFactory).setShouldVaultSkipTransfer(true);
       await expectThrow(
         vault.connect(impersonatedFactory).executeDepositIntoVault(wrapper.address, ONE_ETH_BI),
-        'IsolationModeVaultV1Freezable: Vault should be frozen',
+        'IsolationVaultV1AsyncFreezable: Vault should be frozen',
       );
     });
 
@@ -827,7 +833,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       await vault.connect(impersonatedFactory).setShouldVaultSkipTransfer(true);
       await expectThrow(
         vault.connect(impersonatedFactory).executeWithdrawalFromVault(core.hhUser1.address, ZERO_BI),
-        'IsolationModeVaultV1Freezable: Vault should be frozen',
+        'IsolationVaultV1AsyncFreezable: Vault should be frozen',
       );
     });
 

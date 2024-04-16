@@ -22,7 +22,7 @@ pragma solidity ^0.8.9;
 
 // solhint-disable max-line-length
 import { SimpleIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/SimpleIsolationModeVaultFactory.sol";
-import { FreezableIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/FreezableIsolationModeVaultFactory.sol";
+import { AsyncFreezableIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/AsyncFreezableIsolationModeVaultFactory.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import { GmxV2Library } from "./GmxV2Library.sol";
 import { IGmxV2IsolationModeVaultFactory } from "./interfaces/IGmxV2IsolationModeVaultFactory.sol";
@@ -40,7 +40,7 @@ import { IGmxV2Registry } from "./interfaces/IGmxV2Registry.sol";
  */
 contract GmxV2IsolationModeVaultFactory is
     IGmxV2IsolationModeVaultFactory,
-    FreezableIsolationModeVaultFactory,
+    AsyncFreezableIsolationModeVaultFactory,
     SimpleIsolationModeVaultFactory
 {
     using EnumerableSet for EnumerableSet.UintSet;
@@ -79,7 +79,7 @@ contract GmxV2IsolationModeVaultFactory is
         _userVaultImplementation,
         _dolomiteMargin
     )
-    FreezableIsolationModeVaultFactory(
+    AsyncFreezableIsolationModeVaultFactory(
         _executionFee,
         _gmxV2Registry
     )

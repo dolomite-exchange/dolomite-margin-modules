@@ -398,4 +398,31 @@ describe('GmxV2Registry', () => {
       );
     });
   });
+
+  describe('#ownerSetGmxMarketToIndexToken', () => {
+    it('should work normally', async () => {
+      const marketTokenAddress = core.gmxEcosystemV2.gmTokens.btcUsd.marketToken.address;
+      expect(await gmxV2Registry.gmxMarketToIndexToken(marketTokenAddress)).to.eq(ZERO_ADDRESS);
+
+      const result = await gmxV2Registry.connect(core.governance).ownerSetGmxMarketToIndexToken(
+        marketTokenAddress,
+        OTHER_ADDRESS_1
+      );
+      await expectEvent(gmxV2Registry, result, 'GmxMarketToIndexTokenSet', {
+        marketToken: marketTokenAddress,
+        indexToken: OTHER_ADDRESS_1
+      });
+      expect(await gmxV2Registry.gmxMarketToIndexToken(marketTokenAddress)).to.eq(OTHER_ADDRESS_1);
+    });
+
+    it('should fail if not called by dolomite owner', async () => {
+      await expectThrow(
+        gmxV2Registry.connect(core.hhUser1).ownerSetGmxMarketToIndexToken(
+          core.gmxEcosystemV2.gmTokens.btcUsd.marketToken.address,
+          OTHER_ADDRESS_1
+        ),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+  });
 });

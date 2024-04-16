@@ -30,6 +30,7 @@ import { IGmxV2Registry } from "./interfaces/IGmxV2Registry.sol";
 import { GmxMarket } from "./lib/GmxMarket.sol";
 import { GmxPrice } from "./lib/GmxPrice.sol";
 
+import "hardhat/console.sol";
 
 /**
  * @title   GmxV2MarketTokenPriceOracle
@@ -149,11 +150,11 @@ contract GmxV2MarketTokenPriceOracle is IGmxV2MarketTokenPriceOracle, OnlyDolomi
         GmxPrice.PriceProps memory _longTokenPriceProps,
         GmxPrice.PriceProps memory _shortTokenPriceProps
     ) internal view returns (uint256) {
-        uint256 indexTokenPrice = DOLOMITE_MARGIN().getMarketPrice(_factory.INDEX_TOKEN_MARKET_ID()).value;
+        uint256 indexTokenPrice = REGISTRY.dolomiteRegistry().oracleAggregator().getPrice(REGISTRY.gmxMarketToIndexToken(_factory.UNDERLYING_TOKEN())).value;
 
         GmxMarket.MarketProps memory marketProps = GmxMarket.MarketProps({
             marketToken: _factory.UNDERLYING_TOKEN(),
-            indexToken: _factory.INDEX_TOKEN(),
+            indexToken: REGISTRY.gmxMarketToIndexToken(_factory.UNDERLYING_TOKEN()),
             longToken: _factory.LONG_TOKEN(),
             shortToken: _factory.SHORT_TOKEN()
         });
