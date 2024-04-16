@@ -95,7 +95,9 @@ describe('GmxV2MarketTokenPriceOracle', () => {
 
     const newRegistry = await createDolomiteRegistryImplementation();
     await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(newRegistry.address);
-    await core.dolomiteRegistry.connect(core.governance).ownerSetOracleAggregator(await core.dolomiteMargin.getMarketPriceOracle(0));
+    await core.dolomiteRegistry.connect(core.governance).ownerSetOracleAggregator(
+      await core.dolomiteMargin.getMarketPriceOracle(core.marketIds.weth)
+    );
     gmPriceOracle = await createGmxV2MarketTokenPriceOracle(core, gmxV2Registry);
     await gmPriceOracle.connect(core.governance).ownerSetMarketToken(factory.address, true);
 

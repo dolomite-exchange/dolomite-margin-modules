@@ -292,7 +292,9 @@ library GmxV2Library {
         );
 
         GmxMarket.MarketPrices memory marketPrices = _getGmxMarketPrices(
-            _registry.dolomiteRegistry().oracleAggregator().getPrice(_registry.gmxMarketToIndexToken(underlyingToken)).value,
+            _registry.dolomiteRegistry().oracleAggregator().getPrice(
+                _registry.gmxMarketToIndexToken(underlyingToken)
+            ).value,
             _dolomiteMargin.getMarketPrice(_factory.LONG_TOKEN_MARKET_ID()).value,
             _dolomiteMargin.getMarketPrice(_factory.SHORT_TOKEN_MARKET_ID()).value
         );
