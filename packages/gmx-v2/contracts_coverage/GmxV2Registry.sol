@@ -51,6 +51,7 @@ contract GmxV2Registry is IGmxV2Registry, BaseRegistry, HandlerRegistry {
     bytes32 private constant _GMX_DATASTORE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxDataStore")) - 1);
     bytes32 private constant _GMX_DEPOSIT_VAULT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxDepositVault")) - 1);
     bytes32 private constant _GMX_EXCHANGE_ROUTER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxExchangeRouter")) - 1);
+    bytes32 private constant _GMX_MARKET_TO_INDEX_TOKEN_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxMarketToIndexToken")) - 1);
     bytes32 private constant _GMX_READER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxReader")) - 1);
     bytes32 private constant _GMX_ROUTER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxRouter")) - 1);
     bytes32 private constant _GMX_WITHDRAWAL_VAULT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxWithdrawalVault")) - 1);
@@ -129,6 +130,15 @@ contract GmxV2Registry is IGmxV2Registry, BaseRegistry, HandlerRegistry {
         _ownerSetGmxWithdrawalVault(_gmxWithdrawalVault);
     }
 
+    function ownerSetGmxMarketToIndexToken(
+        address _marketToken,
+        address _indexToken
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetGmxMarketToIndexToken(_marketToken, _indexToken);
+    }
+
     // ==================== Views ====================
 
     function gmxDataStore() external view returns (IGmxDataStore) {
@@ -167,6 +177,11 @@ contract GmxV2Registry is IGmxV2Registry, BaseRegistry, HandlerRegistry {
 
     function gmxWithdrawalHandler() public view returns (IGmxWithdrawalHandler) {
         return IGmxExchangeRouter(_getAddress(_GMX_EXCHANGE_ROUTER_SLOT)).withdrawalHandler();
+    }
+
+    function gmxMarketToIndexToken(address _marketToken) external view returns (address) {
+        bytes32 slot = keccak256(abi.encode(_marketToken, _GMX_MARKET_TO_INDEX_TOKEN_SLOT));
+        return _getAddress(slot);
     }
 
     // ============================================================
@@ -237,5 +252,11 @@ contract GmxV2Registry is IGmxV2Registry, BaseRegistry, HandlerRegistry {
         );
         _setAddress(_GMX_WITHDRAWAL_VAULT_SLOT, _gmxWithdrawalVault);
         emit GmxWithdrawalVaultSet(_gmxWithdrawalVault);
+    }
+
+    function _ownerSetGmxMarketToIndexToken(address _marketToken, address _indexToken) internal {
+        bytes32 slot = keccak256(abi.encode(_marketToken, _GMX_MARKET_TO_INDEX_TOKEN_SLOT));
+        _setAddress(slot, _indexToken);
+        emit GmxMarketToIndexTokenSet(_marketToken, _indexToken);
     }
 }
