@@ -22,8 +22,8 @@ import {
   getPendlePtGLPMar2024IsolationModeWrapperTraderV2ConstructorParams,
   getPendlePtIsolationModeUnwrapperTraderV2ConstructorParams,
   getPendlePtIsolationModeWrapperTraderV2ConstructorParams,
-  getPendleYtGLP2024IsolationModeUnwrapperTraderV2ConstructorParams,
-  getPendleYtGLP2024IsolationModeWrapperTraderV2ConstructorParams,
+  getPendleYtGLPMar2024IsolationModeUnwrapperTraderV2ConstructorParams,
+  getPendleYtGLPMar2024IsolationModeWrapperTraderV2ConstructorParams,
 } from '@dolomite-exchange/modules-pendle/src/pendle-constructors';
 import {
   getPlutusVaultGLPIsolationModeUnwrapperTraderV2ConstructorParams,
@@ -380,22 +380,22 @@ async function deployPtGlpUpdates(core: CoreProtocolArbitrumOne): Promise<Encode
 
 async function deployYtGlpUpdates(core: CoreProtocolArbitrumOne): Promise<EncodedTransaction[]> {
   const unwrapperV3 = await deployContractAndSave(
-    'PendleYtGLP2024IsolationModeUnwrapperTraderV2',
-    getPendleYtGLP2024IsolationModeUnwrapperTraderV2ConstructorParams(
+    'PendleYtGLPMar2024IsolationModeUnwrapperTraderV2',
+    getPendleYtGLPMar2024IsolationModeUnwrapperTraderV2ConstructorParams(
       core,
       core.pendleEcosystem!.glpMar2024.dYtGlpMar2024,
       core.pendleEcosystem!.glpMar2024.pendleRegistry,
     ),
-    'PendleYtGLP2024IsolationModeUnwrapperTraderV3',
+    'PendleYtGLPMar2024IsolationModeUnwrapperTraderV3',
   );
   const wrapperV3 = await deployContractAndSave(
-    'PendleYtGLP2024IsolationModeWrapperTraderV2',
-    getPendleYtGLP2024IsolationModeWrapperTraderV2ConstructorParams(
+    'PendleYtGLPMar2024IsolationModeWrapperTraderV2',
+    getPendleYtGLPMar2024IsolationModeWrapperTraderV2ConstructorParams(
       core,
       core.pendleEcosystem!.glpMar2024.dYtGlpMar2024,
       core.pendleEcosystem!.glpMar2024.pendleRegistry,
     ),
-    'PendleYtGLP2024IsolationModeWrapperTraderV3',
+    'PendleYtGLPMar2024IsolationModeWrapperTraderV3',
   );
   const transactions = [];
   transactions.push(
@@ -404,7 +404,7 @@ async function deployYtGlpUpdates(core: CoreProtocolArbitrumOne): Promise<Encode
       core.pendleEcosystem!.glpMar2024,
       'dYtGlpMar2024',
       'ownerSetIsTokenConverterTrusted',
-      [Deployments.PendleYtGLP2024IsolationModeUnwrapperTraderV2['42161'].address, false],
+      [Deployments.PendleYtGLPMar2024IsolationModeUnwrapperTraderV2['42161'].address, false],
     ),
   );
   transactions.push(
@@ -413,7 +413,7 @@ async function deployYtGlpUpdates(core: CoreProtocolArbitrumOne): Promise<Encode
       core.pendleEcosystem!.glpMar2024,
       'dYtGlpMar2024',
       'ownerSetIsTokenConverterTrusted',
-      [Deployments.PendleYtGLP2024IsolationModeWrapperTraderV2['42161'].address, false],
+      [Deployments.PendleYtGLPMar2024IsolationModeWrapperTraderV2['42161'].address, false],
     ),
   );
   transactions.push(

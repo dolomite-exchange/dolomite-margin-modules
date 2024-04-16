@@ -1409,8 +1409,8 @@
   },
   "PendlePtGLPMar2024IsolationModeUnwrapperTraderV5": {
     "42161": {
-      "address": "0x29Be234D34eA0538CAB09Eb2575a3037D5fa413d",
-      "transaction": "0x8fc7e7b07d2aae2b58289e48d5c284da86be1b25861b0843d4abed7a16dd1653",
+      "address": "0x35FAF6b3f1DdE3B9f7CAcA5F7c75544B5724A966",
+      "transaction": "0xa26c6ac9db03f9f1159cdf1281bcba43768240cd390841885653ee710c2a864d",
       "isVerified": true
     }
   },
@@ -1444,8 +1444,8 @@
   },
   "PendlePtGLPMar2024IsolationModeWrapperTraderV5": {
     "42161": {
-      "address": "0x04Cd942E5BAb40774d3d1Bd33FA90b22691D7a12",
-      "transaction": "0x0eb1f75e87e194e980850ca05926ba21c55a662b4a4efe7532d69961d7ebe482",
+      "address": "0xA4F7Fda96bCE84b3Ae352C98dDaf56e0edE4B91d",
+      "transaction": "0x22c903264652fca9ce11983c8aeb685dcd89ede9ca683df6b2e63746810a9ad7",
       "isVerified": true
     }
   },
