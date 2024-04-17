@@ -75,7 +75,7 @@ describe('PendlePtRsEthApr2024IsolationModeUnwrapperTraderV2', () => {
       network: Network.ArbitrumOne,
     });
 
-    ptMarket = core.pendleEcosystem!.rsEthApr2024.ptRsEthMarket.connect(core.hhUser1);
+    ptMarket = core.pendleEcosystem!.rsEthApr2024.rsEthMarket.connect(core.hhUser1);
     ptToken = core.pendleEcosystem!.rsEthApr2024.ptRsEthToken.connect(core.hhUser1);
     underlyingToken = core.tokens.rsEth!;
 
@@ -95,7 +95,7 @@ describe('PendlePtRsEthApr2024IsolationModeUnwrapperTraderV2', () => {
     const userVaultImplementation = await createPendlePtIsolationModeTokenVaultV1();
     pendleRegistry = await createPendleRegistry(
       core,
-      core.pendleEcosystem!.rsEthApr2024.ptRsEthMarket,
+      core.pendleEcosystem!.rsEthApr2024.rsEthMarket,
       core.pendleEcosystem!.rsEthApr2024.ptOracle,
       core.pendleEcosystem!.syREthToken,
     );

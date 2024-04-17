@@ -71,7 +71,7 @@ describe('PendlePtRsEthApr2024IsolationModeTokenVaultV1', () => {
     const userVaultImplementation = await createPendlePtIsolationModeTokenVaultV1();
     pendleRegistry = await createPendleRegistry(
       core,
-      core.pendleEcosystem!.rsEthApr2024.ptRsEthMarket,
+      core.pendleEcosystem!.rsEthApr2024.rsEthMarket,
       core.pendleEcosystem!.rsEthApr2024.ptOracle,
       core.pendleEcosystem!.syRsEthToken,
     );

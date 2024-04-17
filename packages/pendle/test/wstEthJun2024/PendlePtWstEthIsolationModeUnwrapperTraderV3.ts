@@ -71,12 +71,12 @@ describe('PendlePtWstEthJun2024IsolationModeUnwrapperTraderV3', () => {
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
 
-    ptMarket = core.pendleEcosystem!.wstEthJun2024.ptWstEthMarket.connect(core.hhUser1);
+    ptMarket = core.pendleEcosystem!.wstEthJun2024.wstEthMarket.connect(core.hhUser1);
     ptToken = core.pendleEcosystem!.wstEthJun2024.ptWstEthToken.connect(core.hhUser1);
     const userVaultImplementation = await createPendlePtIsolationModeTokenVaultV1();
     pendleRegistry = await createPendleRegistry(
       core,
-      core.pendleEcosystem!.wstEthJun2024.ptWstEthMarket,
+      core.pendleEcosystem!.wstEthJun2024.wstEthMarket,
       core.pendleEcosystem!.wstEthJun2024.ptOracle,
       core.pendleEcosystem!.syWstEthToken,
     );

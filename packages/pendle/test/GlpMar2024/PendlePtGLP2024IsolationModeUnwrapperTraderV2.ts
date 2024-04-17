@@ -109,7 +109,7 @@ describe('PendlePtGLPMar2024IsolationModeUnwrapperTraderV2', () => {
       .approve(core.pendleEcosystem!.pendleRouter.address, glpAmount);
 
     await router.swapExactTokenForPt(
-      core.pendleEcosystem!.glpMar2024.ptGlpMarket.address as any,
+      core.pendleEcosystem!.glpMar2024.glpMarket.address as any,
       core.gmxEcosystem!.sGlp.address as any,
       glpAmount,
       ONE_TENTH_OF_ONE_BIPS_NUMBER,
@@ -138,7 +138,7 @@ describe('PendlePtGLPMar2024IsolationModeUnwrapperTraderV2', () => {
         router,
         amountWei,
         ONE_TENTH_OF_ONE_BIPS_NUMBER,
-        core.pendleEcosystem.glpMar2024.ptGlpMarket.address,
+        core.pendleEcosystem.glpMar2024.glpMarket.address,
         core.gmxEcosystem.sGlp.address,
       );
       const amountOut = await core.gmxEcosystem!.live.glpIsolationModeUnwrapperTraderV1!.connect(core.hhUser5)

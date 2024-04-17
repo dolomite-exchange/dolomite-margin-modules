@@ -30,10 +30,10 @@ describe('PendleGLPRegistry', () => {
   describe('#initialize', () => {
     it('should initialize variables properly', async () => {
       expect(await registry.pendleRouter()).to.equal(core.pendleEcosystem!.pendleRouter.address);
-      expect(await registry.ptGlpMarket()).to.equal(core.pendleEcosystem!.glpMar2024.ptGlpMarket.address);
+      expect(await registry.ptGlpMarket()).to.equal(core.pendleEcosystem!.glpMar2024.glpMarket.address);
       expect(await registry.ptGlpToken()).to.equal(core.pendleEcosystem!.glpMar2024.ptGlpToken.address);
       expect(await registry.ptOracle()).to.equal(core.pendleEcosystem!.glpMar2024.ptOracle.address);
-      expect(await registry.syGlpToken()).to.equal(core.pendleEcosystem!.syGlpToken.address);
+      expect(await registry.syGlpToken()).to.equal(core.pendleEcosystem!.syGlpMar2024Token.address);
       expect(await registry.ytGlpToken()).to.equal(core.pendleEcosystem!.glpMar2024.ytGlpToken.address);
       expect(await registry.dolomiteRegistry()).to.equal(core.dolomiteRegistry.address);
     });
@@ -42,10 +42,10 @@ describe('PendleGLPRegistry', () => {
       await expectThrow(
         registry.initialize(
           core.pendleEcosystem!.pendleRouter.address,
-          core.pendleEcosystem!.glpMar2024.ptGlpMarket.address,
+          core.pendleEcosystem!.glpMar2024.glpMarket.address,
           core.pendleEcosystem!.glpMar2024.ptGlpToken.address,
           core.pendleEcosystem!.glpMar2024.ptOracle.address,
-          core.pendleEcosystem!.syGlpToken.address,
+          core.pendleEcosystem!.syGlpMar2024Token.address,
           core.pendleEcosystem!.glpMar2024.ytGlpToken.address,
           core.dolomiteRegistry.address,
         ),
