@@ -20,8 +20,9 @@ const GMX_BTC_PLACEHOLDER_ADDRESS = '0x47904963fc8b2340414262125aF798B9655E58Cd'
 
 /**
  * This script encodes the following transactions:
- * - Deploys new GMX V2 library and ActionsImpl library
- * - Deploys a new Token Vault for each GM token
+ * - Deploys a new instance of the GMX V2 token vault with a new library
+ * - Deploys a new instance of the GMX V2 registry
+ * - Initialized the gm market token and corresponding index token on the registry
  */
 async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
