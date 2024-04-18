@@ -349,15 +349,15 @@ export async function deployPendlePtSystem<T extends NetworkType>(
   const factory = PendlePtIsolationModeVaultFactory__factory.connect(factoryAddress, core.governance);
 
   const unwrapperAddress = await deployContractAndSave(
-    'PendlePtIsolationModeUnwrapperTraderV2',
+    'PendlePtIsolationModeUnwrapperTraderV3',
     getPendlePtIsolationModeUnwrapperTraderV2ConstructorParams(core, registry, underlyingToken, factory),
-    `PendlePt${ptName}IsolationModeUnwrapperTraderV2`,
+    `PendlePt${ptName}IsolationModeUnwrapperTraderV3`,
   );
 
   const wrapperAddress = await deployContractAndSave(
-    'PendlePtIsolationModeWrapperTraderV2',
+    'PendlePtIsolationModeWrapperTraderV3',
     getPendlePtIsolationModeWrapperTraderV2ConstructorParams(core, registry, underlyingToken, factory),
-    `PendlePt${ptName}IsolationModeWrapperTraderV2`,
+    `PendlePt${ptName}IsolationModeWrapperTraderV3`,
   );
 
   const oracleAddress = await deployContractAndSave(
