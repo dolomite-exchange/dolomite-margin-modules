@@ -42,6 +42,8 @@ import {
   GmxV2IsolationModeWrapperTraderV2,
   GmxV2IsolationModeWrapperTraderV2__factory,
   GmxV2Library,
+  GmxV2LibrarySingleSided,
+  GmxV2LibrarySingleSided__factory,
   GmxV2Library__factory,
   GmxV2MarketTokenPriceOracle,
   GmxV2MarketTokenPriceOracle__factory,
@@ -106,6 +108,14 @@ export async function createGmxV2Library(): Promise<GmxV2Library> {
   return createContractWithAbi<GmxV2Library>(
     GmxV2Library__factory.abi,
     GmxV2Library__factory.bytecode,
+    [],
+  );
+}
+
+export async function createGmxV2LibrarySingleSided(): Promise<GmxV2LibrarySingleSided> {
+  return createContractWithAbi<GmxV2LibrarySingleSided>(
+    GmxV2LibrarySingleSided__factory.abi,
+    GmxV2LibrarySingleSided__factory.bytecode,
     [],
   );
 }
@@ -358,6 +368,27 @@ export function getInitiateUnwrappingParams(
       balanceCheckFlag: BalanceCheckFlag.None,
       eventType: GenericEventEmissionType.None,
     },
+  };
+}
+
+export function getSingleSidedOracleParams(token1: string) {
+  return {
+    signerInfo: '1',
+    tokens: [],
+    compactedMinOracleBlockNumbers: [],
+    compactedMaxOracleBlockNumbers: [],
+    compactedOracleTimestamps: [],
+    compactedDecimals: [],
+    compactedMinPrices: [],
+    compactedMinPricesIndexes: [],
+    compactedMaxPrices: [],
+    compactedMaxPricesIndexes: [],
+    signatures: [],
+    priceFeedTokens: [
+      token1,
+    ],
+    realtimeFeedTokens: [],
+    realtimeFeedData: [],
   };
 }
 

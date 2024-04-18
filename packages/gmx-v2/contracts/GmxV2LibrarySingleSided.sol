@@ -46,12 +46,12 @@ import { GmxPrice } from "./lib/GmxPrice.sol";
 
 
 /**
- * @title   GmxV2Library
+ * @title   GmxV2LibrarySingleSided
  * @author  Dolomite
  *
  * @notice  Library contract for the GmxV2IsolationModeTokenVaultV1 contract to reduce code size
  */
-library GmxV2Library {
+library GmxV2LibrarySingleSided {
     using DecimalLib for *;
     using DolomiteMarginVersionWrapperLib for *;
     using SafeERC20 for IERC20;
@@ -200,10 +200,8 @@ library GmxV2Library {
             /* callbackContract = */ address(unwrapper),
             /* uiFeeReceiver = */ address(0),
             /* market = */ swapPath[0],
-            // /* longTokenSwapPath = */ outputToken == longToken ? new address[](0) : swapPath,
-            // /* shortTokenSwapPath = */ outputToken != longToken ? new address[](0) : swapPath,
-            new address[](0),
-            new address[](0),
+            /* longTokenSwapPath = */ new address[](0),
+            /* shortTokenSwapPath = */ new address[](0),
             /* minLongTokenAmount = */ longToken == outputToken ? _minOutputAmount : minOtherTokenAmount,
             /* minShortTokenAmount = */ longToken != outputToken ? _minOutputAmount : minOtherTokenAmount,
             /* shouldUnwrapNativeToken = */ false,
