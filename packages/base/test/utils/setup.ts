@@ -117,6 +117,7 @@ import { createPremiaEcosystem } from './ecosystem-utils/premia';
 import { createTestEcosystem } from './ecosystem-utils/testers';
 import { createUmamiEcosystem } from './ecosystem-utils/umami';
 import { impersonate, impersonateOrFallback, resetForkIfPossible } from './index';
+import { IGmxMarketToken } from 'packages/gmx-v2/src/types';
 
 /**
  * Config to for setting up tests in the `before` function
@@ -181,6 +182,18 @@ export async function setupWETHBalance<T extends NetworkType>(
   await core.tokens.weth.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
+export async function setupWBTCBalance<T extends NetworkType>(
+  core: CoreProtocolArbitrumOne,
+  signer: SignerWithAddressWithSafety,
+  amount: BigNumberish,
+  spender: { address: string },
+) {
+  const whaleAddress = '0x078f358208685046a11c85e8ad32895ded33a249'; // Aave Token
+  const whaleSigner = await impersonate(whaleAddress, true);
+  await core.tokens.wbtc.connect(whaleSigner).transfer(signer.address, amount);
+  await core.tokens.wbtc.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
+}
+
 export async function setupARBBalance(
   core: CoreProtocolArbitrumOne,
   signer: SignerWithAddressWithSafety,
@@ -231,14 +244,15 @@ export async function setupUSDCBalance<T extends NetworkType>(
 
 export async function setupGMBalance(
   core: CoreProtocolArbitrumOne,
+  gmToken: IGmxMarketToken,
   signer: { address: string },
   amount: BigNumberish,
   spender?: { address: string },
 ) {
   const controller = await impersonate(core.gmxEcosystemV2!.gmxExchangeRouter.address, true);
-  await core.gmxEcosystemV2!.gmxEthUsdMarketToken.connect(controller).mint(signer.address, amount);
+  await gmToken.connect(controller).mint(signer.address, amount);
   if (signer instanceof SignerWithAddressWithSafety && spender) {
-    await core.gmxEcosystemV2!.gmxEthUsdMarketToken.connect(signer).approve(spender.address, amount);
+    await gmToken.connect(signer).approve(spender.address, amount);
   }
 }
 
