@@ -109,7 +109,7 @@ interface CoreProtocolMarketIdsArbitrumOne extends CoreProtocolMarketIds {
   dPtWstEthJun2025: BigNumberish;
   dpx: BigNumberish;
   dYtGlp: BigNumberish;
-  sGlp: BigNumberish;
+  ezEth: BigNumberish;
   gmx: BigNumberish;
   grail: BigNumberish;
   jones: BigNumberish;
@@ -122,7 +122,9 @@ interface CoreProtocolMarketIdsArbitrumOne extends CoreProtocolMarketIds {
   radiant: BigNumberish;
   pendle: BigNumberish;
   usdt: BigNumberish;
+  sGlp: BigNumberish;
   wbtc: BigNumberish;
+  weEth: BigNumberish;
   wstEth: BigNumberish;
   xai: BigNumberish;
 }
