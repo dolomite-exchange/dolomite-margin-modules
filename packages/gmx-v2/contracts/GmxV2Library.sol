@@ -44,6 +44,8 @@ import { GmxMarket } from "./lib/GmxMarket.sol";
 import { GmxPrice } from "./lib/GmxPrice.sol";
 // solhint-enable max-line-length
 
+import "hardhat/console.sol";
+
 
 /**
  * @title   GmxV2Library
@@ -200,10 +202,8 @@ library GmxV2Library {
             /* callbackContract = */ address(unwrapper),
             /* uiFeeReceiver = */ address(0),
             /* market = */ swapPath[0],
-            // /* longTokenSwapPath = */ outputToken == longToken ? new address[](0) : swapPath,
-            // /* shortTokenSwapPath = */ outputToken != longToken ? new address[](0) : swapPath,
-            new address[](0),
-            new address[](0),
+                /* longTokenSwapPath = */ outputToken == longToken ? new address[](0) : swapPath,
+                /* shortTokenSwapPath = */ outputToken != longToken ? new address[](0) : swapPath,
             /* minLongTokenAmount = */ longToken == outputToken ? _minOutputAmount : minOtherTokenAmount,
             /* minShortTokenAmount = */ longToken != outputToken ? _minOutputAmount : minOtherTokenAmount,
             /* shouldUnwrapNativeToken = */ false,
@@ -211,6 +211,10 @@ library GmxV2Library {
             /* callbackGasLimit = */ registry.callbackGasLimit()
         );
 
+        if (longToken == factory.SHORT_TOKEN()) {
+            withdrawalParams.longTokenSwapPath = new address[](0);
+            withdrawalParams.shortTokenSwapPath = new address[](0);
+        }
         return exchangeRouter.createWithdrawal(withdrawalParams);
     }
 
@@ -321,6 +325,10 @@ library GmxV2Library {
 
         uint256 maxCallbackGasLimit = dataStore.getUint(_MAX_CALLBACK_GAS_LIMIT_KEY);
 
+        console.log(isShortPnlTooLarge);
+        console.log(isLongPnlTooLarge);
+        console.log(_registry.callbackGasLimit());
+        console.log(maxCallbackGasLimit);
         return isShortPnlTooLarge || isLongPnlTooLarge || _registry.callbackGasLimit() > maxCallbackGasLimit;
     }
 

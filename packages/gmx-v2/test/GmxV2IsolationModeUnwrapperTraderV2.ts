@@ -257,7 +257,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
 
   describe('#initiateCancelWithdrawal', () => {
     it('should work when called by vault', async () => {
-      await setupGMBalance(core, core.hhUser1, amountWei, vault);
+      await setupGMBalance(core, underlyingToken, core.hhUser1, amountWei, vault);
       await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await expectProtocolBalance(core, vault.address, defaultAccountNumber, marketId, amountWei);
 
@@ -293,7 +293,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
     });
 
     it('should work when called by a handler', async () => {
-      await setupGMBalance(core, core.hhUser1, amountWei, vault);
+      await setupGMBalance(core, underlyingToken, core.hhUser1, amountWei, vault);
       await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await expectProtocolBalance(core, vault.address, defaultAccountNumber, marketId, amountWei);
 
@@ -343,7 +343,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
     let withdrawalKey: string;
 
     beforeEach(async () => {
-      await setupGMBalance(core, core.hhUser1, amountWei, vault);
+      await setupGMBalance(core, underlyingToken, core.hhUser1, amountWei, vault);
       await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await vault.openBorrowPosition(
         defaultAccountNumber,
@@ -486,7 +486,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
 
   describe('#afterWithdrawalCancellation', () => {
     it('should work normally', async () => {
-      await setupGMBalance(core, core.hhUser1, amountWei, vault);
+      await setupGMBalance(core, underlyingToken, core.hhUser1, amountWei, vault);
       await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await expectProtocolBalance(core, vault.address, defaultAccountNumber, marketId, amountWei);
 
@@ -522,7 +522,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
     });
 
     it('should work normally when execution fails because minAmountOut is too large', async () => {
-      await setupGMBalance(core, core.hhUser1, amountWei, vault);
+      await setupGMBalance(core, underlyingToken, core.hhUser1, amountWei, vault);
       await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await vault.openBorrowPosition(
         defaultAccountNumber,
@@ -566,7 +566,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
     });
 
     it('should work normally when execution fails because minAmountOutShort is too large', async () => {
-      await setupGMBalance(core, core.hhUser1, amountWei, vault);
+      await setupGMBalance(core, underlyingToken, core.hhUser1, amountWei, vault);
       await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await vault.openBorrowPosition(
         defaultAccountNumber,
@@ -679,7 +679,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
     let withdrawalKey: string;
 
     async function setupBalances(outputToken: IERC20) {
-      await setupGMBalance(core, core.hhUser1, amountWei, vault);
+      await setupGMBalance(core, underlyingToken, core.hhUser1, amountWei, vault);
       await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await vault.openBorrowPosition(
         defaultAccountNumber,
@@ -724,7 +724,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
     }
 
     it('should work normally for long token from account number 0', async () => {
-      await setupGMBalance(core, core.hhUser1, amountWei, vault);
+      await setupGMBalance(core, underlyingToken, core.hhUser1, amountWei, vault);
       await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await expectProtocolBalance(core, vault, defaultAccountNumber, marketId, amountWei);
       await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, wethAmount);
@@ -910,7 +910,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
     });
 
     it('should work normally if user sends extra amount to withdrawal vault', async () => {
-      await setupGMBalance(core, core.gmxEcosystemV2!.gmxWithdrawalVault, ONE_BI);
+      await setupGMBalance(core, underlyingToken, core.gmxEcosystemV2!.gmxWithdrawalVault, ONE_BI);
       await setupBalances(core.tokens.weth);
       const result = await core.gmxEcosystemV2!.gmxWithdrawalHandler.connect(core.gmxEcosystemV2!.gmxExecutor)
         .executeWithdrawal(
@@ -950,7 +950,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
     // This POC from Guardian now fails
     xit('Send 1 Wei to Withdrawal Vault to Revert On afterWithdrawalExecution Validation', async () => {
       // Send 1 wei of GM to withdrawal vault prior to initiating a withdrawal
-      await setupGMBalance(core, core.gmxEcosystemV2?.gmxWithdrawalVault!, 1);
+      await setupGMBalance(core, underlyingToken, core.gmxEcosystemV2?.gmxWithdrawalVault!, 1);
       // A withdrawal for amountWei + 1 is created
       await setupBalances(core.tokens.nativeUsdc!);
       // The protocol has amountWei GM prior to withdrawal execution
@@ -1370,7 +1370,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
   describe('#executeWithdrawalForRetry', () => {
     it('should work normally', async () => {
       await gmxV2Registry.connect(core.governance).ownerSetIsHandler(core.hhUser1.address, true);
-      await setupGMBalance(core, core.hhUser1, amountWei, vault);
+      await setupGMBalance(core, underlyingToken, core.hhUser1, amountWei, vault);
       await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await vault.openBorrowPosition(
         defaultAccountNumber,
@@ -1463,7 +1463,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
 
     it('should fail if the withdrawal cannot be retried', async () => {
       await gmxV2Registry.connect(core.governance).ownerSetIsHandler(core.hhUser1.address, true);
-      await setupGMBalance(core, core.hhUser1, amountWei, vault);
+      await setupGMBalance(core, underlyingToken, core.hhUser1, amountWei, vault);
       await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await vault.openBorrowPosition(
         defaultAccountNumber,
@@ -1555,7 +1555,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
     it('should fail if transfer amount is zero or gt withdrawal amount', async () => {
       const dolomiteMarginCaller = await impersonate(core.dolomiteMargin.address, true);
       const vaultCaller = await impersonate(vault.address, true);
-      await setupGMBalance(core, core.hhUser1, amountWei, vault);
+      await setupGMBalance(core, underlyingToken, core.hhUser1, amountWei, vault);
       await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await vault.openBorrowPosition(
         defaultAccountNumber,
@@ -1614,7 +1614,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       const dolomiteMarginCaller = await impersonate(core.dolomiteMargin.address, true);
       const vaultCaller = await impersonate(vault.address, true);
 
-      await setupGMBalance(core, core.hhUser1, amountWei, vault);
+      await setupGMBalance(core, underlyingToken, core.hhUser1, amountWei, vault);
       await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await vault.openBorrowPosition(
         defaultAccountNumber,
@@ -1668,7 +1668,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
     let withdrawalKey: string;
 
     beforeEach(async () => {
-      await setupGMBalance(core, core.hhUser1, amountWei, vault);
+      await setupGMBalance(core, underlyingToken, core.hhUser1, amountWei, vault);
       await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await vault.openBorrowPosition(
         defaultAccountNumber,
