@@ -46,7 +46,7 @@ describe('JonesUSDCPriceOracle', () => {
     factory = await createJonesUSDCIsolationModeVaultFactory(
       core,
       jonesUSDCRegistry,
-      core.jonesEcosystem!.jUSDC,
+      core.jonesEcosystem!.jUsdcOld,
       userVaultImplementation,
     );
     unwrapperTraderForLiquidation = await createJonesUSDCIsolationModeUnwrapperTraderV2ForLiquidation(

@@ -853,6 +853,7 @@ export async function prettyPrintEncodeAddIsolationModeMarket<T extends NetworkT
   targetCollateralization: TargetCollateralization,
   targetLiquidationPremium: TargetLiquidationPenalty,
   maxSupplyWei: BigNumberish,
+  additionalConverters: BaseContract[] = [],
 ): Promise<EncodedTransaction[]> {
   const transactions: EncodedTransaction[] = await prettyPrintEncodeAddMarket(
     core,
@@ -872,7 +873,7 @@ export async function prettyPrintEncodeAddIsolationModeMarket<T extends NetworkT
       { factory },
       'factory',
       'ownerInitialize',
-      [[unwrapper.address, wrapper.address]],
+      [[unwrapper.address, wrapper.address, ...additionalConverters.map(c => c.address)]],
     ),
   );
   transactions.push(

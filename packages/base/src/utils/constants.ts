@@ -111,6 +111,13 @@ export const D_GM_LINK_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
 
 export const DJ_USDC: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
+    address: '',
+    marketId: 43,
+  },
+};
+
+export const DJ_USDC_OLD: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
     address: '0x2aDba3f917bb0Af2530F8F295aD2a6fF1111Fc05',
     marketId: 10,
   },
@@ -530,6 +537,10 @@ export const JONES_GLP_VAULT_ROUTER_MAP: Record<Network.ArbitrumOne, string> = {
 };
 
 export const JONES_JUSDC_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '', // TODO:FIX ME
+};
+
+export const JONES_JUSDC_OLD_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0xe66998533a1992ecE9eA99cDf47686F4fc8458E0',
 };
 

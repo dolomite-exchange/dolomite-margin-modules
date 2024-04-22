@@ -43,7 +43,7 @@ describe('JonesUSDCIsolationModeVaultFactory', () => {
     factory = await createJonesUSDCIsolationModeVaultFactory(
       core,
       jonesUSDCRegistry,
-      core.jonesEcosystem!.jUSDC,
+      core.jonesEcosystem!.jUsdcOld,
       (vaultImplementation as any) as JonesUSDCIsolationModeTokenVaultV1,
     );
 
@@ -82,7 +82,7 @@ describe('JonesUSDCIsolationModeVaultFactory', () => {
   describe('#contructor', () => {
     it('should initialize variables properly', async () => {
       expect(await factory.jonesUSDCRegistry()).to.equal(jonesUSDCRegistry.address);
-      expect(await factory.UNDERLYING_TOKEN()).to.equal(core.jonesEcosystem!.jUSDC.address);
+      expect(await factory.UNDERLYING_TOKEN()).to.equal(core.jonesEcosystem!.jUsdcOld.address);
       expect(await factory.BORROW_POSITION_PROXY()).to.equal(core.borrowPositionProxyV2.address);
       expect(await factory.userVaultImplementation()).to.equal(vaultImplementation.address);
       expect(await factory.DOLOMITE_MARGIN()).to.equal(core.dolomiteMargin.address);

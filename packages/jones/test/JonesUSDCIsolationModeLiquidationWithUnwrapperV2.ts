@@ -91,7 +91,7 @@ describe('JonesUSDCLiquidationWithUnwrapperV2', () => {
       blockNumber,
       network,
     });
-    underlyingToken = core.jonesEcosystem.jUSDC.connect(core.hhUser1);
+    underlyingToken = core.jonesEcosystem.jUsdcOld.connect(core.hhUser1);
     const userVaultImplementation = await createJonesUSDCIsolationModeTokenVaultV1();
     jonesUSDCRegistry = await createJonesUSDCRegistry(core);
     factory = await createJonesUSDCIsolationModeVaultFactory(
@@ -142,7 +142,7 @@ describe('JonesUSDCLiquidationWithUnwrapperV2', () => {
 
     await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.jonesEcosystem.glpAdapter);
     await core.jonesEcosystem.glpAdapter.connect(core.hhUser1).depositStable(usableUsdcAmount, true);
-    await core.jonesEcosystem.jUSDC.connect(core.hhUser1).approve(vault.address, heldAmountWei);
+    await core.jonesEcosystem.jUsdcOld.connect(core.hhUser1).approve(vault.address, heldAmountWei);
     await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, heldAmountWei);
 
     expect(await underlyingToken.connect(core.hhUser1).balanceOf(vault.address)).to.eq(heldAmountWei);
@@ -255,7 +255,7 @@ describe('JonesUSDCLiquidationWithUnwrapperV2', () => {
       await expectWalletBalanceOrDustyIfZero(
         core,
         unwrapperForLiquidation.address,
-        core.jonesEcosystem.jUSDC.address,
+        core.jonesEcosystem.jUsdcOld.address,
         ZERO_BI,
       );
       await expectWalletBalanceOrDustyIfZero(core, unwrapperForLiquidation.address, core.tokens.usdc.address, ZERO_BI);
@@ -355,7 +355,7 @@ describe('JonesUSDCLiquidationWithUnwrapperV2', () => {
       await expectWalletBalanceOrDustyIfZero(
         core,
         unwrapperForLiquidation.address,
-        core.jonesEcosystem.jUSDC.address,
+        core.jonesEcosystem.jUsdcOld.address,
         ZERO_BI,
       );
       await expectWalletBalanceOrDustyIfZero(core, unwrapperForLiquidation.address, core.tokens.usdc.address, ZERO_BI);

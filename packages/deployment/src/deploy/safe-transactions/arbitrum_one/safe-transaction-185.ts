@@ -150,7 +150,7 @@ async function main(): Promise<DenJsonUpload> {
   transactions.push(
     ...await getIsolationModeTokenVaultTransactions(
       core,
-      core.marketIds.djUSDC!,
+      core.marketIds.djUsdcOld!,
       jonesUsdcUserVaultImplementationAddress,
     ),
   );

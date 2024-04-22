@@ -51,10 +51,10 @@ describe('JonesUSDCIsolationModeTokenVaultV2', () => {
       blockNumber: 155_091_000,
       network: Network.ArbitrumOne,
     });
-    underlyingToken = core.jonesEcosystem!.jUSDC.connect(core.hhUser1);
+    underlyingToken = core.jonesEcosystem!.jUsdcOld.connect(core.hhUser1);
     const userVaultImplementation = await createJonesUSDCIsolationModeTokenVaultV2();
     jonesUSDCRegistry = core.jonesEcosystem!.live.jonesUSDCRegistry;
-    factory = core.jonesEcosystem!.live.jUSDCIsolationModeFactory;
+    factory = core.jonesEcosystem!.live.jUSDCIsolationModeFactoryOld;
     marketId = await core.dolomiteMargin.getMarketIdByTokenAddress(factory.address);
     governor = await impersonate('0x4817cA4DF701d554D78Aa3d142b62C162C682ee1', true);
 
@@ -79,7 +79,7 @@ describe('JonesUSDCIsolationModeTokenVaultV2', () => {
 
     await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.jonesEcosystem!.glpAdapter);
     await core.jonesEcosystem!.glpAdapter.connect(core.hhUser1).depositStable(usableUsdcAmount, true);
-    await core.jonesEcosystem!.jUSDC.connect(core.hhUser1).approve(vault.address, amountWei);
+    await core.jonesEcosystem!.jUsdcOld.connect(core.hhUser1).approve(vault.address, amountWei);
     await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
 
     snapshotId = await snapshot();

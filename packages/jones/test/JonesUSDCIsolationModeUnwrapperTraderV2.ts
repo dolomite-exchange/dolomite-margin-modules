@@ -64,7 +64,7 @@ describe('JonesUSDCIsolationModeUnwrapperTraderV2', () => {
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
-    underlyingToken = core.jonesEcosystem!.jUSDC;
+    underlyingToken = core.jonesEcosystem!.jUsdcOld;
     const userVaultImplementation = await createJonesUSDCIsolationModeTokenVaultV1();
     jonesUSDCRegistry = await createJonesUSDCRegistry(core);
     factory = await createJonesUSDCIsolationModeVaultFactory(
@@ -116,7 +116,7 @@ describe('JonesUSDCIsolationModeUnwrapperTraderV2', () => {
 
     await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.jonesEcosystem!.glpAdapter);
     await core.jonesEcosystem!.glpAdapter.connect(core.hhUser1).depositStable(usableUsdcAmount, true);
-    await core.jonesEcosystem!.jUSDC.connect(core.hhUser1).approve(vault.address, amountWei);
+    await core.jonesEcosystem!.jUsdcOld.connect(core.hhUser1).approve(vault.address, amountWei);
     await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
 
     expect(await underlyingToken.balanceOf(vault.address)).to.eq(amountWei);
@@ -249,7 +249,7 @@ describe('JonesUSDCIsolationModeUnwrapperTraderV2', () => {
 
     it('should fail if output token is incorrect', async () => {
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
-      await core.jonesEcosystem!.jUSDC.connect(core.hhUser1).transfer(unwrapperTraderForLiquidation.address, amountWei);
+      await core.jonesEcosystem!.jUsdcOld.connect(core.hhUser1).transfer(unwrapperTraderForLiquidation.address, amountWei);
       await expectThrow(
         unwrapperTraderForLiquidation.connect(dolomiteMarginImpersonator).exchange(
           core.hhUser1.address,
@@ -265,7 +265,7 @@ describe('JonesUSDCIsolationModeUnwrapperTraderV2', () => {
 
     it('should fail if input amount is incorrect', async () => {
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
-      await core.jonesEcosystem!.jUSDC.connect(core.hhUser1).transfer(unwrapperTraderForLiquidation.address, amountWei);
+      await core.jonesEcosystem!.jUsdcOld.connect(core.hhUser1).transfer(unwrapperTraderForLiquidation.address, amountWei);
       await expectThrow(
         unwrapperTraderForLiquidation.connect(dolomiteMarginImpersonator).exchange(
           core.hhUser1.address,

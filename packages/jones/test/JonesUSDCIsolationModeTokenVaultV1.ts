@@ -43,7 +43,7 @@ describe('JonesUSDCIsolationModeTokenVaultV1', () => {
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
-    underlyingToken = core.jonesEcosystem!.jUSDC.connect(core.hhUser1);
+    underlyingToken = core.jonesEcosystem!.jUsdcOld.connect(core.hhUser1);
     const userVaultImplementation = await createJonesUSDCIsolationModeTokenVaultV1();
     jonesUSDCRegistry = await createJonesUSDCRegistry(core);
     factory = await createJonesUSDCIsolationModeVaultFactory(

@@ -20,7 +20,7 @@ export async function getJonesUSDCRegistryConstructorParams(
     core.jonesEcosystem.glpVaultRouter.address,
     core.jonesEcosystem.whitelistController.address,
     core.jonesEcosystem.usdcReceiptToken.address,
-    core.jonesEcosystem.jUSDC.address,
+    core.jonesEcosystem.jUsdcOld.address,
     core.jonesEcosystem.jUSDCFarm.address,
     core.dolomiteRegistry.address,
   );

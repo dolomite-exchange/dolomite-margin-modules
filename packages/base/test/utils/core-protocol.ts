@@ -8,7 +8,7 @@ import { BigNumberish } from 'ethers';
 import { Network, NetworkType } from 'packages/base/src/utils/no-deps-constants';
 import {
   IBorrowPositionProxyV2,
-  IDepositWithdrawalProxy,
+  IDepositWithdrawalProxy, IDolomiteMigrator,
   IDolomiteRegistry,
   IERC20,
   IEventEmitterRegistry,
@@ -100,7 +100,8 @@ interface CoreProtocolMarketIdsArbitrumOne extends CoreProtocolMarketIds {
   dGmBtc: BigNumberish;
   dGmEth: BigNumberish;
   dGmLink: BigNumberish;
-  djUSDC: BigNumberish;
+  djUsdc: BigNumberish;
+  djUsdcOld: BigNumberish;
   dplvGlp: BigNumberish;
   dPtGlpMar2024: BigNumberish;
   dPtWeEthApr2024: BigNumberish;
@@ -265,6 +266,7 @@ interface CoreProtocolParamsArbitrumOne {
   chainlinkPriceOracleOld: IChainlinkPriceOracleOld;
   chainlinkPriceOracleV1: IChainlinkPriceOracleV1;
   chainlinkPriceOracleV3: IChainlinkPriceOracleV3;
+  dolomiteMigrator: IDolomiteMigrator;
   gmxEcosystem: GmxEcosystem;
   gmxEcosystemV2: GmxEcosystemV2;
   jonesEcosystem: JonesEcosystem;
@@ -286,6 +288,7 @@ export class CoreProtocolArbitrumOne extends CoreProtocolAbstract<Network.Arbitr
   public readonly chainlinkAutomationRegistry: IChainlinkAutomationRegistry;
   public readonly chainlinkPriceOracleOld: IChainlinkPriceOracleV1;
   public readonly chainlinkPriceOracleV3: IChainlinkPriceOracleV3;
+  public readonly dolomiteMigrator: IDolomiteMigrator;
   public readonly gmxEcosystem: GmxEcosystem;
   public readonly gmxEcosystemV2: GmxEcosystemV2;
   public readonly jonesEcosystem: JonesEcosystem;
@@ -311,6 +314,7 @@ export class CoreProtocolArbitrumOne extends CoreProtocolAbstract<Network.Arbitr
     this.chainlinkAutomationRegistry = arbParams.chainlinkAutomationRegistry;
     this.chainlinkPriceOracleOld = arbParams.chainlinkPriceOracleV1;
     this.chainlinkPriceOracleV3 = arbParams.chainlinkPriceOracleV3;
+    this.dolomiteMigrator = arbParams.dolomiteMigrator;
     this.gmxEcosystem = arbParams.gmxEcosystem;
     this.gmxEcosystemV2 = arbParams.gmxEcosystemV2;
     this.jonesEcosystem = arbParams.jonesEcosystem;

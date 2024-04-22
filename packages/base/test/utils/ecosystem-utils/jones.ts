@@ -26,8 +26,8 @@ import {
   JONES_ECOSYSTEM_GOVERNOR_MAP,
   JONES_GLP_ADAPTER_MAP,
   JONES_GLP_VAULT_ROUTER_MAP,
-  JONES_JUSDC_FARM_MAP,
-  JONES_JUSDC_MAP,
+  JONES_JUSDC_FARM_MAP, JONES_JUSDC_MAP,
+  JONES_JUSDC_OLD_MAP,
   JONES_JUSDC_RECEIPT_TOKEN_MAP,
   JONES_ROUTER_MAP,
   JONES_WETH_V3_POOL_MAP,
@@ -44,12 +44,13 @@ export interface JonesEcosystem {
   whitelistController: IJonesWhitelistController;
   router: IJonesRouter;
   usdcReceiptToken: IERC4626;
-  jUSDC: IERC4626;
+  jUsdc: IERC4626;
+  jUsdcOld: IERC4626;
   jUSDCFarm: IJonesUSDCFarm;
   admin: SignerWithAddressWithSafety;
   jonesWethV3Pool: IAlgebraV3Pool;
   live: {
-    jUSDCIsolationModeFactory: JonesUSDCIsolationModeVaultFactory;
+    jUSDCIsolationModeFactoryOld: JonesUSDCIsolationModeVaultFactory;
     jonesUSDCRegistry: IJonesUSDCRegistry;
     jonesUSDCRegistryProxy: RegistryProxy;
   };
@@ -81,7 +82,8 @@ export async function createJonesEcosystem(
       signer,
     ),
     jonesWethV3Pool: getContract(JONES_WETH_V3_POOL_MAP[network] as string, IAlgebraV3Pool__factory.connect, signer),
-    jUSDC: getContract(JONES_JUSDC_MAP[network] as string, IERC4626__factory.connect, signer),
+    jUsdc: getContract(JONES_JUSDC_MAP[network] as string, IERC4626__factory.connect, signer),
+    jUsdcOld: getContract(JONES_JUSDC_OLD_MAP[network] as string, IERC4626__factory.connect, signer),
     jUSDCFarm: getContract(JONES_JUSDC_FARM_MAP[network] as string, IJonesUSDCFarm__factory.connect, signer),
     router: getContract(JONES_ROUTER_MAP[network] as string, IJonesRouter__factory.connect, signer),
     usdcReceiptToken: getContract(
@@ -91,18 +93,18 @@ export async function createJonesEcosystem(
     ),
     whitelistController: whitelist,
     live: {
-      jUSDCIsolationModeFactory: getContract(
-        (Deployments.JonesUSDCIsolationModeVaultFactory as any)[network]?.address,
+      jUSDCIsolationModeFactoryOld: getContract(
+        (Deployments.JonesUSDCV1IsolationModeVaultFactory as any)[network]?.address,
         JonesUSDCIsolationModeVaultFactory__factory.connect,
         signer,
       ),
       jonesUSDCRegistry: getContract(
-        (Deployments.JonesUSDCRegistryProxy as any)[network]?.address,
+        (Deployments.JonesUSDCV1RegistryProxy as any)[network]?.address,
         IJonesUSDCRegistry__factory.connect,
         signer,
       ),
       jonesUSDCRegistryProxy: getContract(
-        (Deployments.JonesUSDCRegistryProxy as any)[network]?.address,
+        (Deployments.JonesUSDCV1RegistryProxy as any)[network]?.address,
         RegistryProxy__factory.connect,
         signer,
       ),
