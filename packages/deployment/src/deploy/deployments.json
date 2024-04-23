@@ -887,6 +887,13 @@
       "isVerified": true
     }
   },
+  "GravitaOArbToken": {
+    "42161": {
+      "address": "0xC5e16f5009776aB645d6719B72962892428b2ac2",
+      "transaction": "0xed0d706a0fa45817b89a8cc205810fd0fe9410d795e8a2603091c64a5a497d92",
+      "isVerified": true
+    }
+  },
   "IsolationModeFreezableLiquidatorProxyV1": {
     "42161": {
       "address": "0xADEa94E726Ab96b6377e5dff5c24A73130D16026",

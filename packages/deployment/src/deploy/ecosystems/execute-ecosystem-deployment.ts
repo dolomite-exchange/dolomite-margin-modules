@@ -12,7 +12,7 @@ if (!ecosystemName) {
 
 const networkName = process.env.NETWORK;
 if (!networkName || !ALL_NETWORKS.includes(networkName as any)) {
-  throw new Error(`Invalid network name, found: ${networkName}. Expected one of ${ALL_NETWORKS.join(', ')}`);
+  throw new Error(`Invalid NETWORK name, found: ${networkName}. Expected one of ${ALL_NETWORKS.join(', ')}`);
 }
 
 const filePath = path.resolve(__dirname, `deploy-${ecosystemName}-ecosystem.ts`);

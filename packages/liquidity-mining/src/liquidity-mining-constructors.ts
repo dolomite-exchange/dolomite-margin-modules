@@ -45,3 +45,7 @@ export function getRewardsDistributorConstructorParams(
 ): any[] {
   return [core.dolomiteMargin.address, oToken.address, initialHandlers, core.dolomiteRegistry.address];
 }
+
+export function getExternalOARBConstructorParams(owner: string, name: string, symbol: string): any[] {
+  return [owner, name, symbol];
+}
