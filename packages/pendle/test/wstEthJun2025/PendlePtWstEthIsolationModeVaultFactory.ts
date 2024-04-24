@@ -25,7 +25,7 @@ describe('PendlePtWstEthJun2025IsolationModeVaultFactory', () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     pendleRegistry = await createPendleRegistry(
       core,
-      core.pendleEcosystem!.wstEthJun2025.ptWstEthMarket,
+      core.pendleEcosystem!.wstEthJun2025.wstEthMarket,
       core.pendleEcosystem!.wstEthJun2025.ptOracle,
       core.pendleEcosystem!.syWstEthToken,
     );

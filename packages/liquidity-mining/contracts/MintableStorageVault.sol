@@ -25,7 +25,7 @@ import { IERC20Mintable } from "./interfaces/IERC20Mintable.sol";
 
 
 /**
- * @title   MintableStorageVault.sol
+ * @title   MintableStorageVault
  * @author  Dolomite
  *
  * OARB Storage Vault contract that mints oARB when pullTokensFromVault is called

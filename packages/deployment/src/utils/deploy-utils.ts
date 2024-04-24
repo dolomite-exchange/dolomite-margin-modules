@@ -298,8 +298,9 @@ export async function deployPendlePtSystem<T extends NetworkType>(
   const officialPtName = await IERC20Metadata__factory.connect(ptToken.address, ptToken.signer).name();
   const [syOfficial, ptOfficial] = await ptMarket.readTokens();
   const syTokensIn = await syToken.getTokensIn();
-  if (!officialPtName.includes(ptName.substring(ptName.length - 7).toUpperCase())) {
-    return Promise.reject(new Error('ptName does not match official PT name on chain'));
+  const ptNamePart = ptName.substring(0, ptName.length - 7);
+  if (!officialPtName.toUpperCase().includes(ptNamePart.toUpperCase())) {
+    return Promise.reject(new Error(`ptName does not match official PT name on chain. official: [${officialPtName}], found: [${ptNamePart}]`));
   }
   if (syOfficial !== syToken.address) {
     return Promise.reject(new Error(`SY does not match official SY on chain: ${syOfficial} / ${syToken.address}`));
@@ -307,9 +308,9 @@ export async function deployPendlePtSystem<T extends NetworkType>(
   if (ptOfficial !== ptToken.address) {
     return Promise.reject(new Error(`PT does not match official PT on chain: ${ptOfficial} / ${ptToken.address}`));
   }
-  if (syTokensIn[0] !== underlyingToken.address) {
+  if (!syTokensIn.some(t => t === underlyingToken.address)) {
     return Promise.reject(
-      new Error(`Underlying does not match official underlying on chain: ${syTokensIn.join(', ')}`),
+      new Error(`Underlying does not match official underlying on chain: underlying=[${underlyingToken.address}] official=[${syTokensIn.join(', ')}]`),
     );
   }
 
@@ -348,15 +349,15 @@ export async function deployPendlePtSystem<T extends NetworkType>(
   const factory = PendlePtIsolationModeVaultFactory__factory.connect(factoryAddress, core.governance);
 
   const unwrapperAddress = await deployContractAndSave(
-    'PendlePtIsolationModeUnwrapperTraderV2',
+    'PendlePtIsolationModeUnwrapperTraderV3',
     getPendlePtIsolationModeUnwrapperTraderV2ConstructorParams(core, registry, underlyingToken, factory),
-    `PendlePt${ptName}IsolationModeUnwrapperTraderV2`,
+    `PendlePt${ptName}IsolationModeUnwrapperTraderV3`,
   );
 
   const wrapperAddress = await deployContractAndSave(
-    'PendlePtIsolationModeWrapperTraderV2',
+    'PendlePtIsolationModeWrapperTraderV3',
     getPendlePtIsolationModeWrapperTraderV2ConstructorParams(core, registry, underlyingToken, factory),
-    `PendlePt${ptName}IsolationModeWrapperTraderV2`,
+    `PendlePt${ptName}IsolationModeWrapperTraderV3`,
   );
 
   const oracleAddress = await deployContractAndSave(

@@ -73,7 +73,7 @@ describe('PendlePtWstEthJun2024IsolationModeWrapperTraderV2', () => {
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
 
-    ptMarket = core.pendleEcosystem!.wstEthJun2024.ptWstEthMarket;
+    ptMarket = core.pendleEcosystem!.wstEthJun2024.wstEthMarket;
     ptToken = core.pendleEcosystem!.wstEthJun2024.ptWstEthToken.connect(core.hhUser1);
     underlyingToken = core.tokens.wstEth!;
     underlyingMarketId = core.marketIds.wstEth!;

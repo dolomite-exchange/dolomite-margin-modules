@@ -59,10 +59,10 @@ export async function getPendleGLPRegistryConstructorParams(
 
   const calldata = await implementation.populateTransaction.initialize(
     core.pendleEcosystem!.pendleRouterV3.address,
-    core.pendleEcosystem!.glpMar2024.ptGlpMarket.address,
+    core.pendleEcosystem!.glpMar2024.glpMarket.address,
     core.pendleEcosystem!.glpMar2024.ptGlpToken.address,
     core.pendleEcosystem!.glpMar2024.ptOracle.address,
-    core.pendleEcosystem!.syGlpToken.address,
+    core.pendleEcosystem!.syGlpMar2024Token.address,
     core.pendleEcosystem!.glpMar2024.ytGlpToken.address,
     core.dolomiteRegistry.address,
   );

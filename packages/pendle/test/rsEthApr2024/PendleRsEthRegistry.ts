@@ -27,7 +27,7 @@ describe('PendleRsEthApr2024Registry', () => {
       blockNumber: await getRealLatestBlockNumber(true, Network.ArbitrumOne),
       network: Network.ArbitrumOne,
     });
-    ptMarket = core.pendleEcosystem!.rsEthApr2024.ptRsEthMarket;
+    ptMarket = core.pendleEcosystem!.rsEthApr2024.rsEthMarket;
     syToken = core.pendleEcosystem!.syRsEthToken;
 
     registry = await createPendleRegistry(core, ptMarket, core.pendleEcosystem!.rsEthApr2024.ptOracle, syToken);

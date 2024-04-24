@@ -67,7 +67,7 @@ describe('PendlePtRsEthApr2024PriceOracle_integration', () => {
 
     pendleRegistry = await createPendleRegistry(
       core,
-      core.pendleEcosystem!.rsEthApr2024.ptRsEthMarket,
+      core.pendleEcosystem!.rsEthApr2024.rsEthMarket,
       core.pendleEcosystem!.rsEthApr2024.ptOracle,
       core.pendleEcosystem!.syRsEthToken,
     );
@@ -87,7 +87,7 @@ describe('PendlePtRsEthApr2024PriceOracle_integration', () => {
       params: {
         chainId: Network.ArbitrumOne.toString(),
         receiverAddr: core.hhUser1.address.toLowerCase(),
-        marketAddr: core.pendleEcosystem.rsEthApr2024.ptRsEthMarket.address,
+        marketAddr: core.pendleEcosystem.rsEthApr2024.rsEthMarket.address,
         amountPtIn: ONE_ETH_BI.toString(),
         tokenOutAddr: ADDRESS_ZERO,
         syTokenOutAddr: core.tokens.rsEth.address,

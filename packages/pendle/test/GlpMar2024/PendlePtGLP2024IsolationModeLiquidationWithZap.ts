@@ -141,7 +141,7 @@ describe('PendlePtGLPMar2024IsolationModeLiquidationWithZap', () => {
       .approve(core.pendleEcosystem!.pendleRouter.address, glpAmount);
 
     await router.swapExactTokenForPt(
-      core.pendleEcosystem!.glpMar2024.ptGlpMarket.address as any,
+      core.pendleEcosystem!.glpMar2024.glpMarket.address as any,
       core.gmxEcosystem!.sGlp.address as any,
       glpAmount,
       defaultSlippage,

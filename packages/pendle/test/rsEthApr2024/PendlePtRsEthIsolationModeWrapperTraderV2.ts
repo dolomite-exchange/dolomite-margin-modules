@@ -80,7 +80,7 @@ describe('PendlePtRsEthApr2024IsolationModeWrapperTraderV2', () => {
       network: Network.ArbitrumOne,
     });
 
-    ptMarket = core.pendleEcosystem!.rsEthApr2024.ptRsEthMarket;
+    ptMarket = core.pendleEcosystem!.rsEthApr2024.rsEthMarket;
     ptToken = core.pendleEcosystem!.rsEthApr2024.ptRsEthToken.connect(core.hhUser1);
 
     underlyingToken = core.tokens.rsEth!;
