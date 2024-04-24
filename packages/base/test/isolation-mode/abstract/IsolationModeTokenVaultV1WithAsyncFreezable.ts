@@ -1,6 +1,9 @@
 import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin/dist/src';
+import { GenericTraderType } from '@dolomite-exchange/zap-sdk';
+import { GenericEventEmissionType } from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish, ContractTransaction } from 'ethers';
+import { parseEther } from 'ethers/lib/utils';
 import {
   CustomTestToken,
   TestAsyncFreezableIsolationModeVaultFactory,
@@ -20,6 +23,7 @@ import {
   withdrawFromDolomiteMargin,
 } from '../../../src/utils/dolomite-utils';
 import {
+  ADDRESS_ZERO,
   BYTES_EMPTY,
   MAX_UINT_256_BI,
   Network,
@@ -1175,6 +1179,30 @@ describe('IsolationModeTokenVaultV1WithAsyncFreezable', () => {
         `IsolationModeTokenVaultV1: Only converter can call <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
+
+    it.only('should fail marketIds path > 2', async () => {
+      await expectThrow(
+        userVault.addCollateralAndSwapExactInputForOutput(
+          defaultAccountNumber,
+          borrowAccountNumber,
+          [core.marketIds.usdc, core.marketIds.nativeUsdc, underlyingMarketId],
+          amountWei,
+          ONE_BI,
+          [
+            {
+              trader: ADDRESS_ZERO,
+              traderType: GenericTraderType.IsolationModeWrapper,
+              tradeData: BYTES_EMPTY,
+              makerAccountIndex: 0,
+            },
+          ],
+          [],
+          { deadline: 12312312311, eventType: GenericEventEmissionType.None, balanceCheckFlag: BalanceCheckFlag.None },
+          { value: parseEther('0.01') },
+        ),
+        'IsolationVaultV1AsyncFreezable: Invalid marketIds path for wrap',
+      );
+    });
   });
 
   describe('#swapExactInputForOutputAndRemoveCollateral', () => {
@@ -1516,6 +1544,30 @@ describe('IsolationModeTokenVaultV1WithAsyncFreezable', () => {
         `IsolationModeTokenVaultV1: Only converter can call <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
+
+    it.only('should fail marketIds path > 2', async () => {
+      await expectThrow(
+        userVault.swapExactInputForOutputAndRemoveCollateral(
+          defaultAccountNumber,
+          borrowAccountNumber,
+          [core.marketIds.usdc, core.marketIds.nativeUsdc, underlyingMarketId],
+          amountWei,
+          ONE_BI,
+          [
+            {
+              trader: ADDRESS_ZERO,
+              traderType: GenericTraderType.IsolationModeWrapper,
+              tradeData: BYTES_EMPTY,
+              makerAccountIndex: 0,
+            },
+          ],
+          [],
+          { deadline: 12312312311, eventType: GenericEventEmissionType.None, balanceCheckFlag: BalanceCheckFlag.None },
+          { value: parseEther('0.01') },
+        ),
+        'IsolationVaultV1AsyncFreezable: Invalid marketIds path for wrap',
+      );
+    });
   });
 
   describe('#swapExactInputForOutput', () => {
@@ -1774,6 +1826,28 @@ describe('IsolationModeTokenVaultV1WithAsyncFreezable', () => {
       );
     });
 
+    it.only('should fail marketIds path > 2', async () => {
+      await expectThrow(
+        userVault.swapExactInputForOutput(
+          borrowAccountNumber,
+          [core.marketIds.usdc, core.marketIds.nativeUsdc, underlyingMarketId],
+          100,
+          1,
+          [
+            {
+              trader: ADDRESS_ZERO,
+              traderType: GenericTraderType.IsolationModeWrapper,
+              tradeData: BYTES_EMPTY,
+              makerAccountIndex: 0,
+            },
+          ],
+          [],
+          { deadline: 12312312311, eventType: GenericEventEmissionType.None, balanceCheckFlag: BalanceCheckFlag.None },
+          { value: parseEther('0.01') },
+        ),
+        'IsolationVaultV1AsyncFreezable: Invalid marketIds path for wrap',
+      );
+    });
   });
 
   describe('#executeDepositIntoVault', () => {

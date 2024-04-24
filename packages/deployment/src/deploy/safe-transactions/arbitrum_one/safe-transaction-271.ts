@@ -77,7 +77,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   );
 
   const dJusdcAddress = await deployContractAndSave(
-    'JonesUSDCIsolationModeVaultFactory',
+    'JonesUSDCV2IsolationModeVaultFactory',
     getJonesUSDCIsolationModeVaultFactoryConstructorParams(
       core,
       jUsdcRegistryProxy,
@@ -91,7 +91,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const jUsdcOracleAddress = await deployContractAndSave(
     'JonesUSDCWithChainlinkAutomationPriceOracle',
     getJonesUSDCWithChainlinkAutomationPriceOracleConstructorParams(core, jUsdcRegistryProxy, dJusdc),
-    'JonesUSDCWithChainlinkAutomationPriceOracleV2',
+    'JonesUSDCV2WithChainlinkAutomationPriceOracleV1',
   );
   const jUsdcOracle = JonesUSDCWithChainlinkAutomationPriceOracle__factory.connect(jUsdcOracleAddress, core.hhUser1);
 
@@ -232,6 +232,11 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       assertHardhatInvariant(
         await core.dolomiteRegistry.dolomiteMigrator() === core.dolomiteMigrator.address,
         'dolomiteMigrator must be set on Dolomite Registry',
+      );
+
+      assertHardhatInvariant(
+        await dJusdc.decimals() === 18,
+        'Invalid decimals',
       );
 
       const transformerStruct = await core.dolomiteMigrator.getTransformerByMarketIds(
