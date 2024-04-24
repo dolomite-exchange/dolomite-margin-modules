@@ -7,11 +7,9 @@ import {
   MAX_UINT_256_BI,
   Network,
   ONE_BI,
-  ONE_ETH_BI,
   ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import {
-  getRealLatestBlockNumber,
   impersonate,
   revertToSnapshotAndCapture,
   setEtherBalance,
@@ -37,7 +35,6 @@ import { BigNumber, BigNumberish, ethers } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import {
   disableInterestAccrual,
-  getDefaultCoreProtocolConfigForGmxV2,
   setupCoreProtocol,
   setupGMBalance,
   setupNativeUSDCBalance,

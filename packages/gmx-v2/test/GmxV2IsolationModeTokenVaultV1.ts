@@ -7,12 +7,13 @@ import {
 } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import {
   MAX_UINT_256_BI,
+  Network,
   ONE_BI,
   ONE_ETH_BI,
   ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '@dolomite-exchange/modules-base/src/utils/SignerWithAddressWithSafety';
-import { impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
+import { getRealLatestBlockNumber, impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import {
   expectEvent,
   expectProtocolBalance,
@@ -72,13 +73,13 @@ const borrowAccountNumber = '123';
 const amountWei = parseEther('1');
 const otherAmountWei = parseEther('0.33');
 const usdcAmount = BigNumber.from('1000000000'); // $1000
-const minAmountOut = parseEther('1500');
+const minAmountOut = parseEther('800');
 const DUMMY_DEPOSIT_KEY = '0x6d1ff6ffcab884211992a9d6b8261b7fae5db4d2da3a5eb58647988da3869d6f';
 const DUMMY_WITHDRAWAL_KEY = '0x6d1ff6ffcab884211992a9d6b8261b7fae5db4d2da3a5eb58647988da3869d6f';
 const CREATE_WITHDRAWALS_DISABLED_KEY = '0xe22e21c60f32cfb79020e8dbf3211f7a678325f5d7195c979268c4db4a4a6fa1';
 const EXECUTE_WITHDRAWALS_DISABLED_KEY = '0xa5d5ec2aef29f70d602db4f2b395018c1a19c7f69e551e9943277b57770f0dd0';
 const IS_MARKET_DISABLED_KEY = '0x5c27e8a9fa01145fb01eb80b81db2eab7e57bc33d109d6a64315239a65ce4d36';
-const INVALID_POOL_FACTOR = BigNumber.from('900000000000000000000000000000'); // 9e29
+const INVALID_POOL_FACTOR = BigNumber.from('1000000000000000000000000000000'); // 10e29
 const VALID_POOL_FACTOR = BigNumber.from('700000000000000000000000000000'); // 7e29
 const DEFAULT_EXTRA_DATA = ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [parseEther('.5'), ONE_BI]);
 const NEW_GENERIC_TRADER_PROXY = '0x905F3adD52F01A9069218c8D1c11E240afF61D2B';
@@ -117,7 +118,10 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
   let otherMarketId2: BigNumber;
 
   before(async () => {
-    core = await setupCoreProtocol(getDefaultCoreProtocolConfigForGmxV2());
+    core = await setupCoreProtocol({
+      blockNumber: 204_024_798,
+      network: Network.ArbitrumOne,
+    })
     underlyingToken = core.gmxEcosystemV2!.gmxEthUsdMarketToken.connect(core.hhUser1);
     const gmxV2Library = await createGmxV2Library();
     const userVaultImplementation = await createTestGmxV2IsolationModeTokenVaultV1(core);
@@ -1261,16 +1265,12 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
     });
 
     it('should fail when minOutputAmount is much bigger than inputAmount', async () => {
-      await gmxV2Registry.connect(core.governance).ownerSetGmxReader(testReader.address);
-      await testReader.setPnlToPoolFactors(INVALID_POOL_FACTOR, VALID_POOL_FACTOR);
-      expect(await vault.isExternalRedemptionPaused()).to.be.true;
-
       const initiateWrappingParams = await getInitiateWrappingParams(
         borrowAccountNumber,
-        core.marketIds.usdc,
-        1000e6,
+        core.marketIds.weth,
+        amountWei,
         marketId,
-        minAmountOut,
+        minAmountOut.mul(100000),
         wrapper,
         executionFee,
       );

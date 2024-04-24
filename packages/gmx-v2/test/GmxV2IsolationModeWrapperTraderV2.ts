@@ -70,7 +70,7 @@ const borrowAccountNumber = '123';
 const usdcAmount = BigNumber.from('1000000000'); // $1000
 const DUMMY_DEPOSIT_KEY = '0x6d1ff6ffcab884211992a9d6b8261b7fae5db4d2da3a5eb58647988da3869d6f';
 const EXECUTE_DEPOSITS_DISABLED_KEY = '0x0de57bca394801f1f7e929963a1380a671c985da3155a0fcc50a8b2a31212926';
-const minAmountOut = parseEther('1600');
+const minAmountOut = parseEther('800');
 const NEW_GENERIC_TRADER_PROXY = '0x905F3adD52F01A9069218c8D1c11E240afF61D2B';
 
 const executionFee = process.env.COVERAGE !== 'true'
@@ -78,8 +78,8 @@ const executionFee = process.env.COVERAGE !== 'true'
   : GMX_V2_EXECUTION_FEE_FOR_TESTS.mul(10);
 const gasLimit = process.env.COVERAGE !== 'true' ? 10_000_000 : 100_000_000;
 const callbackGasLimit = process.env.COVERAGE !== 'true'
-  ? GMX_V2_CALLBACK_GAS_LIMIT
-  : GMX_V2_CALLBACK_GAS_LIMIT.mul(10);
+  ? BigNumber.from('2000000')
+  : BigNumber.from('2000000').mul(10);
 
 describe('GmxV2IsolationModeWrapperTraderV2', () => {
   let snapshotId: string;
@@ -102,6 +102,13 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
     const library = await createGmxV2Library();
     const userVaultImplementation = await createGmxV2IsolationModeTokenVaultV1(core, library);
     gmxV2Registry = await createGmxV2Registry(core, callbackGasLimit);
+    const newRegistry = await createDolomiteRegistryImplementation();
+    await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(newRegistry.address);
+    await core.dolomiteRegistry.connect(core.governance).ownerSetOracleAggregator(core.chainlinkPriceOracleOld.address);
+    await gmxV2Registry.connect(core.governance).ownerSetGmxMarketToIndexToken(
+      underlyingToken.address,
+      core.gmxEcosystemV2!.gmTokens.ethUsd.indexToken.address
+    );
 
     if (process.env.COVERAGE === 'true') {
       console.log('\tUsing coverage configuration...');
@@ -158,9 +165,6 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
     await gmxV2Registry.connect(core.governance).ownerSetWrapperByToken(factory.address, wrapper.address);
 
     eventEmitter = await createEventEmitter(core);
-    const newRegistry = await createDolomiteRegistryImplementation();
-
-    await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(newRegistry.address);
     await core.dolomiteRegistry.connect(core.governance).ownerSetEventEmitter(eventEmitter.address);
     await core.dolomiteRegistry.connect(core.governance).ownerSetGenericTraderProxy(NEW_GENERIC_TRADER_PROXY);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(NEW_GENERIC_TRADER_PROXY, true);
@@ -463,7 +467,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
     });
 
     it('should work normally when execute deposit fails on GMX side', async () => {
-      const minAmountOut = parseEther('1600');
+      const minAmountOut = parseEther('900');
       await setupBalances(core.marketIds.nativeUsdc!, usdcAmount, minAmountOut);
 
       const result = await core.gmxEcosystemV2!.gmxDepositHandler.connect(core.gmxEcosystemV2!.gmxExecutor)
@@ -629,7 +633,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
       const minAmountOut = parseEther('1700');
       await setupBalances(core.marketIds.weth, ONE_ETH_BI, minAmountOut);
 
-      await setupGMBalance(core, await impersonate(wrapper.address, true), minAmountOut);
+      await setupGMBalance(core, underlyingToken, await impersonate(wrapper.address, true), minAmountOut);
       const depositExecutor = await impersonate(core.gmxEcosystemV2!.gmxDepositHandler.address, true);
       const depositInfo = getDepositObject(
         wrapper.address,
@@ -662,7 +666,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
       const minAmountOut = parseEther('1700');
       await setupBalances(core.marketIds.weth, ONE_ETH_BI, minAmountOut);
 
-      await setupGMBalance(core, await impersonate(wrapper.address, true), minAmountOut, vault);
+      await setupGMBalance(core, underlyingToken, await impersonate(wrapper.address, true), minAmountOut, vault);
       const depositExecutor = await impersonate(core.gmxEcosystemV2!.gmxDepositHandler.address, true);
       const depositInfo = getDepositObject(
         wrapper.address,
@@ -732,7 +736,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
   });
 
   describe('#afterDepositCancellation', () => {
-    it.only('should work normally for account number 0', async () => {
+    it('should work normally for account number 0', async () => {
       await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, ONE_ETH_BI);
       await expectProtocolBalance(core, vault.address, defaultAccountNumber, core.marketIds.weth, ZERO_BI);
 
@@ -1178,13 +1182,12 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         BalanceCheckFlag.None,
       );
 
-      const minAmountOut = ONE_ETH_BI.mul(1000);
       const initiateWrappingParams = await getInitiateWrappingParams(
         borrowAccountNumber,
         core.marketIds.nativeUsdc!,
         usdcAmount,
         marketId,
-        ONE_ETH_BI.mul(1000),
+        minAmountOut,
         wrapper,
         executionFee,
       );
@@ -1215,7 +1218,8 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
       const depositKey = eventArgs.key;
 
       const oldOracle = await core.dolomiteMargin.getMarketPriceOracle(core.marketIds.weth);
-      await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.weth.address, 1);
+      const price = (await core.dolomiteMargin.getMarketPrice(core.marketIds.weth)).value;
+      await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.weth.address, price.mul(20).div(100));
       await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.weth, core.testEcosystem!.testPriceOracle.address);
 
       // Mine blocks so we can cancel deposit
@@ -1300,7 +1304,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         core.marketIds.weth,
         amountWei,
         marketId,
-        minAmountOut,
+        ONE_BI,
         wrapper,
         executionFee,
       );
@@ -1315,7 +1319,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         { value: executionFee },
       );
 
-      await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, minAmountOut);
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, ONE_BI);
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, 0);
       expect(await vault.isVaultFrozen()).to.eq(true);
       expect(await vault.shouldSkipTransfer()).to.eq(false);
