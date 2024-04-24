@@ -121,7 +121,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
     core = await setupCoreProtocol({
       blockNumber: 204_024_798,
       network: Network.ArbitrumOne,
-    })
+    });
     underlyingToken = core.gmxEcosystemV2!.gmxEthUsdMarketToken.connect(core.hhUser1);
     const gmxV2Library = await createGmxV2Library();
     const userVaultImplementation = await createTestGmxV2IsolationModeTokenVaultV1(core);
