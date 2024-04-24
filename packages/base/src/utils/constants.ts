@@ -471,6 +471,10 @@ export const GMX_ETH_USD_MARKET_TOKEN_MAP: Record<Network.ArbitrumOne, string> =
   [Network.ArbitrumOne]: '0x70d95587d40A2caf56bd97485aB3Eec10Bee6336',
 };
 
+export const GMX_ETH_MARKET_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x450bb6774Dd8a756274E0ab4107953259d2ac541',
+};
+
 export const GMX_LINK_USD_MARKET_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x7f1fa204bb700853D36994DA19F830b6Ad18455C',
 };
@@ -773,6 +777,10 @@ export const V_GMX_MAP: Record<Network.ArbitrumOne, string> = {
 };
 
 // ************************* Chainlink *************************
+
+export const BTC_CHAINLINK_FEED_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x6ce185860a4963106506C203335A2910413708e9',
+};
 
 export const STETH_USD_CHAINLINK_FEED_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x07c5b924399cc23c24a95c8743de4006a32b7f2a',

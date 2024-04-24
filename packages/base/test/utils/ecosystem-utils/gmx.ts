@@ -77,6 +77,7 @@ import {
   GMX_DATASTORE_MAP,
   GMX_DEPOSIT_HANDLER_MAP,
   GMX_DEPOSIT_VAULT_MAP,
+  GMX_ETH_MARKET_TOKEN_MAP,
   GMX_ETH_USD_MARKET_TOKEN_MAP,
   GMX_EXCHANGE_ROUTER_MAP,
   GMX_EXECUTOR_MAP,
@@ -151,6 +152,7 @@ export interface GmxEcosystemV2 {
     ethUsd: GmToken;
     linkUsd: GmToken;
     btc: GmToken;
+    eth: GmToken;
   };
   gmxEthUsdMarketToken: IGmxMarketToken;
   gmxExchangeRouter: IGmxExchangeRouter;
@@ -360,6 +362,18 @@ export async function createGmxEcosystemV2(
         shortToken: IERC20__factory.connect(WBTC_MAP[network].address, signer),
         longMarketId: WBTC_MAP[network].marketId,
         shortMarketId: WBTC_MAP[network].marketId,
+      },
+      eth: {
+        marketToken: getContract(
+          GMX_ETH_MARKET_TOKEN_MAP[network],
+          IGmxMarketToken__factory.connect,
+          signer,
+        ),
+        indexToken: IERC20__factory.connect(WETH_MAP[network].address, signer),
+        longToken: IERC20__factory.connect(WETH_MAP[network].address, signer),
+        shortToken: IERC20__factory.connect(WETH_MAP[network].address, signer),
+        longMarketId: WETH_MAP[network].marketId,
+        shortMarketId: WETH_MAP[network].marketId,
       }
     },
     gmxEthUsdMarketToken: getContract(
