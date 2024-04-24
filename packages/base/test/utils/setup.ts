@@ -1,3 +1,4 @@
+import CoreDeployments from '@dolomite-exchange/dolomite-margin/dist/migrations/deployed.json';
 import Deployments, * as deployments from '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
 import {
   IChainlinkAutomationRegistry__factory,
@@ -22,11 +23,12 @@ import { ethers } from 'hardhat';
 import { IChainlinkPriceOracleV1__factory } from 'packages/oracles/src/types';
 import {
   IBorrowPositionProxyV2__factory,
-  IDepositWithdrawalProxy__factory,
+  IDepositWithdrawalProxy__factory, IDolomiteAccountValuesReader__factory,
   IDolomiteMargin,
   IDolomiteMargin__factory,
   IDolomiteMarginV2,
   IDolomiteMarginV2__factory,
+  IDolomiteMigrator__factory,
   IDolomiteRegistry__factory,
   IERC20,
   IERC20__factory,
@@ -54,8 +56,8 @@ import {
   D_GM_LINK_MAP,
   D_GMX_MAP,
   DAI_MAP,
-  DFS_GLP_MAP,
-  DJ_USDC,
+  DFS_GLP_MAP, DJ_USDC,
+  DJ_USDC_OLD,
   DPLV_GLP_MAP,
   DPT_GLP_2024_MAP,
   DPT_R_ETH_JUN_2025_MAP,
@@ -563,6 +565,14 @@ export async function setupCoreProtocol<T extends NetworkType>(
           CHAINLINK_AUTOMATION_REGISTRY_MAP[typedConfig.network],
           governance,
         ),
+        dolomiteAccountValuesReader: IDolomiteAccountValuesReader__factory.connect(
+          CoreDeployments.AccountValuesReader[typedConfig.network].address,
+          hhUser1,
+        ),
+        dolomiteMigrator: IDolomiteMigrator__factory.connect(
+          Deployments.DolomiteMigratorV2[typedConfig.network].address,
+          hhUser1,
+        ),
         gmxEcosystem: await createGmxEcosystem(typedConfig.network, hhUser1),
         gmxEcosystemV2: await createGmxEcosystemV2(typedConfig.network, hhUser1),
         jonesEcosystem: await createJonesEcosystem(typedConfig.network, hhUser1),
@@ -583,7 +593,8 @@ export async function setupCoreProtocol<T extends NetworkType>(
           dGmBtc: D_GM_BTC_MAP[typedConfig.network]!.marketId,
           dGmEth: D_GM_ETH_MAP[typedConfig.network]!.marketId,
           dGmLink: D_GM_LINK_MAP[typedConfig.network]!.marketId,
-          djUSDC: DJ_USDC[typedConfig.network]!.marketId,
+          djUsdc: DJ_USDC[typedConfig.network]!.marketId,
+          djUsdcOld: DJ_USDC_OLD[typedConfig.network]!.marketId,
           dplvGlp: DPLV_GLP_MAP[typedConfig.network]!.marketId,
           dPtGlpMar2024: DPT_GLP_2024_MAP[typedConfig.network]!.marketId,
           dPtREthJun2025: DPT_R_ETH_JUN_2025_MAP[typedConfig.network]!.marketId,

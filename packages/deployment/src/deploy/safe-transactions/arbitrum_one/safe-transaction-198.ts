@@ -28,7 +28,7 @@ async function main(): Promise<DenJsonUpload> {
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       core.jonesEcosystem!.live,
-      'jUSDCIsolationModeFactory',
+      'jUSDCIsolationModeFactoryOld',
       'ownerSetUserVaultImplementation',
       [vaultV7],
     ),

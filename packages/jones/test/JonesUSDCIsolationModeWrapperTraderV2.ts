@@ -67,7 +67,7 @@ describe('JonesUSDCIsolationModeWrapperTraderV2', () => {
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
-    underlyingToken = core.jonesEcosystem!.jUSDC.connect(core.hhUser1);
+    underlyingToken = core.jonesEcosystem!.jUsdcOld.connect(core.hhUser1);
 
     const userVaultImplementation = await createJonesUSDCIsolationModeTokenVaultV1();
     gmxRegistry = core.gmxEcosystem!.live.gmxRegistry!;
@@ -75,7 +75,7 @@ describe('JonesUSDCIsolationModeWrapperTraderV2', () => {
     factory = await createJonesUSDCIsolationModeVaultFactory(
       core,
       jonesUSDCRegistry,
-      core.jonesEcosystem!.jUSDC,
+      core.jonesEcosystem!.jUsdcOld,
       userVaultImplementation,
     );
 
@@ -117,7 +117,7 @@ describe('JonesUSDCIsolationModeWrapperTraderV2', () => {
 
     await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.jonesEcosystem!.glpAdapter);
     await core.jonesEcosystem!.glpAdapter.connect(core.hhUser1).depositStable(usableUsdcAmount, true);
-    await core.jonesEcosystem!.jUSDC.connect(core.hhUser1).approve(vault.address, amountWei);
+    await core.jonesEcosystem!.jUsdcOld.connect(core.hhUser1).approve(vault.address, amountWei);
     await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
 
     expect(await underlyingToken.balanceOf(vault.address)).to.eq(amountWei);

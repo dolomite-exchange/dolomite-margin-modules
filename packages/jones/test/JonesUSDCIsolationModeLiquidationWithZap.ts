@@ -85,7 +85,7 @@ describe('JonesUSDCIsolationModeLiquidationWithZap', () => {
     });
     await freezeAndGetOraclePrice(core.tokens.usdc);
     await disableInterestAccrual(core, core.marketIds.usdc);
-    underlyingToken = core.jonesEcosystem!.jUSDC.connect(core.hhUser1);
+    underlyingToken = core.jonesEcosystem!.jUsdcOld.connect(core.hhUser1);
     jonesUSDCRegistry = await JonesUSDCRegistry__factory.connect(
       deployments.JonesUSDCRegistryProxy[network].address,
       core.hhUser1,
@@ -148,7 +148,7 @@ describe('JonesUSDCIsolationModeLiquidationWithZap', () => {
     await core.dolomiteMargin.ownerSetMaxWei(heldMarketId, 0);
     await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.jonesEcosystem!.glpAdapter);
     await core.jonesEcosystem!.glpAdapter.connect(core.hhUser1).depositStable(usableUsdcAmount, true);
-    await core.jonesEcosystem!.jUSDC.connect(core.hhUser1).approve(vault.address, heldAmountWei);
+    await core.jonesEcosystem!.jUsdcOld.connect(core.hhUser1).approve(vault.address, heldAmountWei);
     await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, heldAmountWei);
 
     expect(await underlyingToken.connect(core.hhUser1).balanceOf(vault.address)).to.eq(ZERO_BI);
@@ -264,7 +264,7 @@ describe('JonesUSDCIsolationModeLiquidationWithZap', () => {
 
       await expectWalletBalanceOrDustyIfZero(core, core.liquidatorProxyV4!.address, factory.address, ZERO_BI);
       await expectWalletBalanceOrDustyIfZero(core, core.liquidatorProxyV4!.address, core.tokens.weth.address, ZERO_BI);
-      await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.jonesEcosystem!.jUSDC.address, ZERO_BI);
+      await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.jonesEcosystem!.jUsdcOld.address, ZERO_BI);
       await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.tokens.usdc.address, ZERO_BI);
     });
   });
@@ -364,7 +364,7 @@ describe('JonesUSDCIsolationModeLiquidationWithZap', () => {
 
       await expectWalletBalanceOrDustyIfZero(core, core.liquidatorProxyV4!.address, factory.address, ZERO_BI);
       await expectWalletBalanceOrDustyIfZero(core, core.liquidatorProxyV4!.address, core.tokens.weth.address, ZERO_BI);
-      await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.jonesEcosystem!.jUSDC.address, ZERO_BI);
+      await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.jonesEcosystem!.jUsdcOld.address, ZERO_BI);
       await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.tokens.usdc.address, ZERO_BI);
     });
   });

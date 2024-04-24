@@ -77,7 +77,7 @@ describe('JonesUSDCWithChainlinkAutomationPriceOracle', () => {
     retentionFee = (await jonesController.getRoleInfo(role)).jUSDC_RETENTION;
     retentionFeeBase = await jonesController.BASIS_POINTS();
 
-    jUSDC = core.jonesEcosystem!.jUSDC;
+    jUSDC = core.jonesEcosystem!.jUsdcOld;
     jUSDCNoSupply = await createTestVaultToken(core.tokens.usdc!);
     await setupUSDCBalance(core, core.hhUser1, 1000e6, core.dolomiteMargin);
     await core.tokens.usdc!.connect(core.hhUser1).transfer(jUSDCNoSupply.address, 100e6);
@@ -189,7 +189,7 @@ describe('JonesUSDCWithChainlinkAutomationPriceOracle', () => {
     });
 
     it('fails when jUSDC is not borrowable', async () => {
-      await core.dolomiteMargin.ownerSetIsClosing(core.marketIds.djUSDC!, false);
+      await core.dolomiteMargin.ownerSetIsClosing(core.marketIds.djUsdcOld!, false);
       await expectThrow(
         jonesUSDCWithChainlinkAutomationPriceOracle.getPrice(factory.address),
         'jUSDCWithChainlinkPriceOracle: jUSDC cannot be borrowable',
