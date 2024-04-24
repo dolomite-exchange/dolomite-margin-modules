@@ -11,7 +11,10 @@ import {
   CHAINLINK_PRICE_AGGREGATORS_MAP,
   SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL,
 } from '@dolomite-exchange/modules-base/src/utils/constants';
-import { getRegistryProxyConstructorParams } from '@dolomite-exchange/modules-base/src/utils/constructors/dolomite';
+import {
+  getDolomiteMigratorConstructorParams,
+  getRegistryProxyConstructorParams,
+} from '@dolomite-exchange/modules-base/src/utils/constructors/dolomite';
 import { getAnyNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { ADDRESS_ZERO, Network, NetworkType } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber, resetForkIfPossible } from '@dolomite-exchange/modules-base/test/utils';
@@ -38,6 +41,8 @@ import {
 } from '../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../utils/dry-run-utils';
 import getScriptName from '../../utils/get-script-name';
+
+const handlerAddress = '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe'; // Level Initiator
 
 async function deployInterestSetters(): Promise<void> {
   const NINETY_PERCENT = parseEther('0.90');
@@ -207,12 +212,33 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   );
   const dolomiteRegistry = IDolomiteRegistry__factory.connect(dolomiteRegistryAddress, hhUser1);
 
+  const dolomiteMigratorAddress = await deployContractAndSave(
+    'DolomiteMigrator',
+    getDolomiteMigratorConstructorParams(dolomiteMargin, dolomiteRegistry, handlerAddress),
+    'DolomiteMigratorV1',
+  );
   const oracleAggregator = await getOracleAggregator(network, dolomiteRegistry, dolomiteMargin);
+
+  if (await dolomiteRegistry.dolomiteMigrator() !== ADDRESS_ZERO) {
+    await dolomiteRegistry.lazyInitialize(dolomiteMigratorAddress, oracleAggregator.address);
+  }
 
   await deployContractAndSave(
     'IsolationModeTokenVaultV1ActionsImpl',
     [],
-    'IsolationModeTokenVaultV1ActionsImplV7',
+    'IsolationModeTokenVaultV1ActionsImplV1',
+  );
+
+  await deployContractAndSave(
+    'AsyncIsolationModeUnwrapperTraderImpl',
+    [],
+    'AsyncIsolationModeUnwrapperTraderImplV1',
+  );
+
+  await deployContractAndSave(
+    'AsyncIsolationModeWrapperTraderImpl',
+    [],
+    'AsyncIsolationModeWrapperTraderImplV1',
   );
 
   await deployInterestSetters();
@@ -228,9 +254,16 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
       core,
       { dolomiteRegistry },
       'dolomiteRegistry',
+      'ownerSetDolomiteMigrator',
+      [dolomiteMigratorAddress],
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { dolomiteRegistry },
+      'dolomiteRegistry',
       'ownerSetOracleAggregator',
       [oracleAggregator.address],
-    )
+    ),
   );
 
   return {

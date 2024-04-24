@@ -5,7 +5,7 @@ import { CoreProtocolType } from '../../../test/utils/setup';
 import {
   EventEmitterRegistry,
   IDolomiteMargin,
-  IDolomiteMarginV2,
+  IDolomiteMarginV2, IDolomiteRegistry,
   IERC20,
   IIsolationModeVaultFactory,
 } from '../../types';
@@ -185,10 +185,11 @@ export function getOwnerAddMarketParametersForIsolationMode<T extends NetworkTyp
 }
 
 export function getDolomiteMigratorConstructorParams<T extends NetworkType>(
-  core: CoreProtocolType<T>,
+  dolomiteMargin: DolomiteMargin<T>,
+  dolomiteRegistry: IDolomiteRegistry,
   handler: string,
 ): any[] {
-  return [core.dolomiteRegistry.address, handler, core.dolomiteMargin.address];
+  return [dolomiteRegistry.address, handler, dolomiteMargin.address];
 }
 
 export function getIsolationModeTokenVaultMigratorConstructorParams<T extends NetworkType>(
