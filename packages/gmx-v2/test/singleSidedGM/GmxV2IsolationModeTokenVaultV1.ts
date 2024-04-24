@@ -68,7 +68,7 @@ import {
   getInitiateUnwrappingParams,
   getInitiateWrappingParams,
 } from '../gmx-v2-ecosystem-utils';
-import { GMX_BTC_PLACEHOLDER_MAP } from 'packages/base/src/utils/constants';
+import { BTC_CHAINLINK_FEED_MAP, GMX_BTC_PLACEHOLDER_MAP } from 'packages/base/src/utils/constants';
 import { TokenInfo } from 'packages/oracles/src';
 
 const defaultAccountNumber = '0';
@@ -130,11 +130,14 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
     const gmxV2Library = await createGmxV2Library();
     const userVaultImplementation = await createTestGmxV2IsolationModeTokenVaultV1(core);
     gmxV2Registry = await createGmxV2Registry(core, GMX_V2_CALLBACK_GAS_LIMIT);
-    await gmxV2Registry.connect(core.governance).ownerSetGmxMarketToIndexToken(underlyingToken.address, core.gmxEcosystemV2!.gmTokens.btc.indexToken.address);
+    await gmxV2Registry.connect(core.governance).ownerSetGmxMarketToIndexToken(
+      underlyingToken.address,
+      core.gmxEcosystemV2!.gmTokens.btc.indexToken.address
+    );
 
     await core.chainlinkPriceOracleV3.ownerInsertOrUpdateOracleToken(
       GMX_BTC_PLACEHOLDER_MAP[Network.ArbitrumOne].address,
-      '0x6ce185860a4963106506C203335A2910413708e9',
+      BTC_CHAINLINK_FEED_MAP[Network.ArbitrumOne],
       false
     );
     const tokenInfo: TokenInfo = {

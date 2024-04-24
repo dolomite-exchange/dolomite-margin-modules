@@ -34,13 +34,12 @@ import { GMX_BTC_PLACEHOLDER_MAP } from 'packages/base/src/utils/constants';
 import { TokenInfo } from 'packages/oracles/src';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 
-const GM_ETH_USD_PRICE_NO_MAX_WEI = BigNumber.from('919979975416060612'); // $0.9199
+const GM_ETH_USD_PRICE_NO_MAX_WEI = BigNumber.from('938018184670068755'); // $0.938
 const MAX_WEI = BigNumber.from('10000000000000000000000000'); // 10M tokens
 const NEGATIVE_PRICE = BigNumber.from('-5');
-const FEE_BASIS_POINTS = BigNumber.from('7');
+const FEE_BASIS_POINTS = BigNumber.from('0'); // No swap fee
 const BASIS_POINTS = BigNumber.from('10000');
 const GMX_DECIMAL_ADJUSTMENT = BigNumber.from('1000000000000');
-const blockNumber = 128_276_157;
 
 describe('GmxV2MarketTokenPriceOracle', () => {
   let snapshotId: string;
@@ -58,8 +57,7 @@ describe('GmxV2MarketTokenPriceOracle', () => {
 
   before(async () => {
     core = await setupCoreProtocol({
-      // blockNumber: 202_381_251,
-      blockNumber: await getRealLatestBlockNumber(true, Network.ArbitrumOne),
+      blockNumber: 204_300_000,
       network: Network.ArbitrumOne
     });
     underlyingToken = core.gmxEcosystemV2!.gmTokens.btc.marketToken.connect(core.hhUser1);
@@ -69,6 +67,8 @@ describe('GmxV2MarketTokenPriceOracle', () => {
       underlyingToken.address,
       core.gmxEcosystemV2.gmTokens.btc.indexToken.address
     );
+
+    // for GM BTC
     await core.chainlinkPriceOracleV3.ownerInsertOrUpdateOracleToken(
       GMX_BTC_PLACEHOLDER_MAP[Network.ArbitrumOne].address,
       '0x6ce185860a4963106506C203335A2910413708e9',
@@ -78,7 +78,7 @@ describe('GmxV2MarketTokenPriceOracle', () => {
       oracleInfos: [
         { oracle: core.chainlinkPriceOracleV3.address, tokenPair: ZERO_ADDRESS, weight: 100 }
       ],
-      decimals: 18,
+      decimals: 8,
       token: GMX_BTC_PLACEHOLDER_MAP[Network.ArbitrumOne].address
     };
     await core.oracleAggregatorV2.ownerInsertOrUpdateToken(tokenInfo);
@@ -110,11 +110,6 @@ describe('GmxV2MarketTokenPriceOracle', () => {
       gmxV2Registry,
     );
 
-    const newRegistry = await createDolomiteRegistryImplementation();
-    await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(newRegistry.address);
-    await core.dolomiteRegistry.connect(core.governance).ownerSetOracleAggregator(
-      await core.dolomiteMargin.getMarketPriceOracle(core.marketIds.weth)
-    );
     gmPriceOracle = await createGmxV2MarketTokenPriceOracle(core, gmxV2Registry);
     await gmPriceOracle.connect(core.governance).ownerSetMarketToken(factory.address, true);
 
@@ -149,18 +144,18 @@ describe('GmxV2MarketTokenPriceOracle', () => {
 
   describe('#getFeeBpByMarketToken', () => {
     it('should work normally', async () => {
-      expect(await gmPriceOracle.getFeeBpByMarketToken(core.gmxEcosystemV2!.gmxEthUsdMarketToken.address))
+      expect(await gmPriceOracle.getFeeBpByMarketToken(core.gmxEcosystemV2!.gmTokens.btc.marketToken.address))
         .to
         .eq(FEE_BASIS_POINTS);
     });
   });
 
   describe('#getPrice', () => {
-    it.only('returns the correct value when there is no max wei', async () => {
+    it('returns the correct value when there is no max wei', async () => {
       // Have to be at specific timestamp to get consistent price
       // Setup core protocol sometimes ends at different timestamps which threw off the test
-      // await setNextBlockTimestamp(1713465800);
-      // await mine();
+      await setNextBlockTimestamp(1714000000);
+      await mine();
       expect((await gmPriceOracle.getPrice(factory.address)).value).to.eq(GM_ETH_USD_PRICE_NO_MAX_WEI);
     });
 
@@ -168,7 +163,7 @@ describe('GmxV2MarketTokenPriceOracle', () => {
       // Have to be at specific timestamp to get consistent price
       // Setup core protocol sometimes ends at different timestamps which threw off the test
       await core.dolomiteMargin.ownerSetMaxWei(marketId, MAX_WEI); // 10M tokens
-      await setNextBlockTimestamp(1693923100);
+      await setNextBlockTimestamp(1714000000);
       await mine();
       // Should be same as above as we no longer factor it into slippage
       expect((await gmPriceOracle.getPrice(factory.address)).value).to.eq(GM_ETH_USD_PRICE_NO_MAX_WEI);
@@ -181,7 +176,7 @@ describe('GmxV2MarketTokenPriceOracle', () => {
       await gmxV2Registry.connect(core.governance).ownerSetGmxReader(testReader.address);
       const price = BigNumber.from('1000000000000000000000000000000');
       await testReader.setMarketPrice(price);
-      await setNextBlockTimestamp(1693923100);
+      await setNextBlockTimestamp(1714000000);
       await mine();
       expect((await gmPriceOracle.getPrice(factory.address)).value)
         .to
