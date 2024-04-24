@@ -1,3 +1,4 @@
+import CoreDeployments from '@dolomite-exchange/dolomite-margin/dist/migrations/deployed.json';
 import Deployments, * as deployments from '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
 import {
   IChainlinkAutomationRegistry__factory,
@@ -22,7 +23,7 @@ import { ethers } from 'hardhat';
 import { IChainlinkPriceOracleV1__factory } from 'packages/oracles/src/types';
 import {
   IBorrowPositionProxyV2__factory,
-  IDepositWithdrawalProxy__factory,
+  IDepositWithdrawalProxy__factory, IDolomiteAccountValuesReader__factory,
   IDolomiteMargin,
   IDolomiteMargin__factory,
   IDolomiteMarginV2,
@@ -549,6 +550,10 @@ export async function setupCoreProtocol<T extends NetworkType>(
         chainlinkAutomationRegistry: IChainlinkAutomationRegistry__factory.connect(
           CHAINLINK_AUTOMATION_REGISTRY_MAP[typedConfig.network],
           governance,
+        ),
+        dolomiteAccountValuesReader: IDolomiteAccountValuesReader__factory.connect(
+          CoreDeployments.AccountValuesReader[typedConfig.network].address,
+          hhUser1,
         ),
         dolomiteMigrator: IDolomiteMigrator__factory.connect(
           Deployments.DolomiteMigratorV2[typedConfig.network].address,

@@ -1,14 +1,18 @@
 import {
   IChainlinkAutomationRegistry,
   IChainlinkPriceOracleOld,
-  IChainlinkPriceOracleV3, OracleAggregatorV2,
+  IChainlinkPriceOracleV3,
+  OracleAggregatorV2,
 } from '@dolomite-exchange/modules-oracles/src/types';
 import { ApiToken, DolomiteZap } from '@dolomite-exchange/zap-sdk';
 import { BigNumberish } from 'ethers';
 import { Network, NetworkType } from 'packages/base/src/utils/no-deps-constants';
+import { IChainlinkPriceOracleV1 } from 'packages/oracles/src/types';
 import {
   IBorrowPositionProxyV2,
-  IDepositWithdrawalProxy, IDolomiteMigrator,
+  IDepositWithdrawalProxy,
+  IDolomiteAccountValuesReader,
+  IDolomiteMigrator,
   IDolomiteRegistry,
   IERC20,
   IEventEmitterRegistry,
@@ -38,7 +42,6 @@ import { PremiaEcosystem } from './ecosystem-utils/premia';
 import { TestEcosystem } from './ecosystem-utils/testers';
 import { UmamiEcosystem } from './ecosystem-utils/umami';
 import { CoreProtocolConfig } from './setup';
-import { IChainlinkPriceOracleV1 } from 'packages/oracles/src/types';
 
 interface CoreProtocolTokens {
   dai: IERC20;
@@ -266,6 +269,7 @@ interface CoreProtocolParamsArbitrumOne {
   chainlinkPriceOracleOld: IChainlinkPriceOracleOld;
   chainlinkPriceOracleV1: IChainlinkPriceOracleV1;
   chainlinkPriceOracleV3: IChainlinkPriceOracleV3;
+  dolomiteAccountValuesReader: IDolomiteAccountValuesReader;
   dolomiteMigrator: IDolomiteMigrator;
   gmxEcosystem: GmxEcosystem;
   gmxEcosystemV2: GmxEcosystemV2;
@@ -288,6 +292,7 @@ export class CoreProtocolArbitrumOne extends CoreProtocolAbstract<Network.Arbitr
   public readonly chainlinkAutomationRegistry: IChainlinkAutomationRegistry;
   public readonly chainlinkPriceOracleOld: IChainlinkPriceOracleV1;
   public readonly chainlinkPriceOracleV3: IChainlinkPriceOracleV3;
+  public readonly dolomiteAccountValuesReader: IDolomiteAccountValuesReader;
   public readonly dolomiteMigrator: IDolomiteMigrator;
   public readonly gmxEcosystem: GmxEcosystem;
   public readonly gmxEcosystemV2: GmxEcosystemV2;
@@ -314,6 +319,7 @@ export class CoreProtocolArbitrumOne extends CoreProtocolAbstract<Network.Arbitr
     this.chainlinkAutomationRegistry = arbParams.chainlinkAutomationRegistry;
     this.chainlinkPriceOracleOld = arbParams.chainlinkPriceOracleV1;
     this.chainlinkPriceOracleV3 = arbParams.chainlinkPriceOracleV3;
+    this.dolomiteAccountValuesReader = arbParams.dolomiteAccountValuesReader;
     this.dolomiteMigrator = arbParams.dolomiteMigrator;
     this.gmxEcosystem = arbParams.gmxEcosystem;
     this.gmxEcosystemV2 = arbParams.gmxEcosystemV2;
