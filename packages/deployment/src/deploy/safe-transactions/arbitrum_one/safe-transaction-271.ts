@@ -69,7 +69,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     'JonesUSDCIsolationModeTokenVaultV1',
     [],
     'JonesUSDCV2IsolationModeTokenVaultV1',
-    core.tokenVaultActionsLibraries,
+    core.libraries.tokenVaultActionsImpl,
   );
   const jUsdcUserVaultImplementation = JonesUSDCIsolationModeTokenVaultV1__factory.connect(
     jUsdcUserVaultImplementationAddress,

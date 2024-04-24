@@ -21,7 +21,7 @@ async function main(): Promise<DenJsonUpload> {
     'JonesUSDCIsolationModeTokenVaultV2',
     [],
     'JonesUSDCIsolationModeTokenVaultV8',
-    core.tokenVaultActionsLibraries,
+    core.libraries.tokenVaultActionsImpl,
   );
 
   const transactions = [

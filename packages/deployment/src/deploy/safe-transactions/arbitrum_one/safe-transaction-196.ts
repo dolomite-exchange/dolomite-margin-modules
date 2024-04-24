@@ -38,7 +38,7 @@ async function main(): Promise<DryRunOutput<typeof network>> {
     'GMXIsolationModeTokenVaultV1',
     [],
     'GMXIsolationModeTokenVaultV6',
-    core.tokenVaultActionsLibraries,
+    core.libraries.tokenVaultActionsImpl,
   );
   const gmxIsolationModeVaultV6 = GMXIsolationModeTokenVaultV1__factory.connect(
     gmxIsolationModeVaultV6Address,

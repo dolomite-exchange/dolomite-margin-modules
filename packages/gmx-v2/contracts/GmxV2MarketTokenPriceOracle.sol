@@ -152,9 +152,7 @@ contract GmxV2MarketTokenPriceOracle is IGmxV2MarketTokenPriceOracle, OnlyDolomi
         address underlyingToken = _factory.UNDERLYING_TOKEN();
         address indexToken = REGISTRY.gmxMarketToIndexToken(underlyingToken);
 
-        uint256 indexTokenPrice = REGISTRY.dolomiteRegistry().oracleAggregator().getPrice(
-            indexToken
-        ).value;
+        uint256 indexTokenPrice = REGISTRY.dolomiteRegistry().oracleAggregator().getPrice(indexToken).value;
 
         GmxMarket.MarketProps memory marketProps = GmxMarket.MarketProps({
             marketToken: underlyingToken,

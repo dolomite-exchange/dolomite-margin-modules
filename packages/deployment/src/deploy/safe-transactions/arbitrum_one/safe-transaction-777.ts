@@ -45,7 +45,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     'GmxV2IsolationModeTokenVaultV1',
     getGmxV2IsolationModeTokenVaultConstructorParams(core),
     'GmxV2IsolationModeTokenVaultV13',
-    { ...core.tokenVaultActionsLibraries, ...gmxV2Libraries },
+    { ...core.libraries.tokenVaultActionsImpl, ...gmxV2Libraries },
   );
   const gmxV2TokenVault = GmxV2IsolationModeTokenVaultV1__factory.connect(gmxV2TokenVaultAddress, core.hhUser1);
   const gmxV2RegistryProxy = RegistryProxy__factory.connect(core.gmxEcosystemV2.live.registry.address, core.hhUser1);
