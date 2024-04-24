@@ -853,7 +853,14 @@ export async function prettyPrintEncodeAddIsolationModeMarket<T extends NetworkT
   targetCollateralization: TargetCollateralization,
   targetLiquidationPremium: TargetLiquidationPenalty,
   maxSupplyWei: BigNumberish,
-  additionalConverters: BaseContract[] = [],
+  options: {
+    additionalConverters: BaseContract[],
+    skipAmountValidation: boolean,
+    decimals?: number,
+  } = {
+    additionalConverters: [],
+    skipAmountValidation: false,
+  },
 ): Promise<EncodedTransaction[]> {
   const transactions: EncodedTransaction[] = await prettyPrintEncodeAddMarket(
     core,
@@ -865,6 +872,8 @@ export async function prettyPrintEncodeAddIsolationModeMarket<T extends NetworkT
     maxSupplyWei,
     ZERO_BI,
     true,
+    ZERO_BI,
+    options,
   );
 
   transactions.push(
@@ -873,7 +882,7 @@ export async function prettyPrintEncodeAddIsolationModeMarket<T extends NetworkT
       { factory },
       'factory',
       'ownerInitialize',
-      [[unwrapper.address, wrapper.address, ...additionalConverters.map(c => c.address)]],
+      [[unwrapper.address, wrapper.address, ...options.additionalConverters.map(c => c.address)]],
     ),
   );
   transactions.push(
@@ -908,12 +917,17 @@ export async function prettyPrintEncodeAddMarket<T extends NetworkType>(
   maxBorrowWei: BigNumberish,
   isCollateralOnly: boolean,
   earningsRateOverride: BigNumberish = ZERO_BI,
+  options: {
+    skipAmountValidation: boolean
+  } = {
+    skipAmountValidation: false
+  },
 ): Promise<EncodedTransaction[]> {
-  if (!await isValidAmount(token, maxSupplyWei)) {
+  if (!options.skipAmountValidation && !await isValidAmount(token, maxSupplyWei)) {
     const name = await getFormattedTokenName(core, token.address);
     return Promise.reject(new Error(`Invalid max supply wei for ${name}, found: ${maxSupplyWei.toString()}`));
   }
-  if (!await isValidAmount(token, maxBorrowWei)) {
+  if (!options.skipAmountValidation && !await isValidAmount(token, maxBorrowWei)) {
     const name = await getFormattedTokenName(core, token.address);
     return Promise.reject(new Error(`Invalid max borrow wei for ${name}, found: ${maxBorrowWei.toString()}`));
   }

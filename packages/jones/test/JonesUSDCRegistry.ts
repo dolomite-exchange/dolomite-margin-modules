@@ -61,7 +61,7 @@ describe('JonesUSDCRegistry', () => {
       );
       expect(await registry.glpAdapter()).to.equal(core.jonesEcosystem!.glpAdapter.address);
       expect(await registry.glpVaultRouter()).to.equal(core.jonesEcosystem!.glpVaultRouter.address);
-      expect(await registry.whitelistController()).to.equal(core.jonesEcosystem!.whitelistController.address);
+      expect(await registry.whitelistController()).to.equal(core.jonesEcosystem!.whitelistControllerV1.address);
       expect(await registry.usdcReceiptToken()).to.equal(core.jonesEcosystem!.usdcReceiptToken.address);
       expect(await registry.jUSDC()).to.equal(core.jonesEcosystem!.jUsdcOld.address);
       expect(await registry.dolomiteRegistry()).to.equal(core.dolomiteRegistry.address);
@@ -74,7 +74,7 @@ describe('JonesUSDCRegistry', () => {
         registry.initialize(
           core.jonesEcosystem!.glpAdapter.address,
           core.jonesEcosystem!.glpVaultRouter.address,
-          core.jonesEcosystem!.whitelistController.address,
+          core.jonesEcosystem!.whitelistControllerV1.address,
           core.jonesEcosystem!.usdcReceiptToken.address,
           core.jonesEcosystem!.jUsdcOld.address,
           core.jonesEcosystem!.jUSDCFarm.address,

@@ -18,7 +18,7 @@ export async function getJonesUSDCRegistryConstructorParams(
   const calldata = await implementation.populateTransaction.initialize(
     core.jonesEcosystem.glpAdapter.address,
     core.jonesEcosystem.glpVaultRouter.address,
-    core.jonesEcosystem.whitelistController.address,
+    core.jonesEcosystem.whitelistControllerV1.address,
     core.jonesEcosystem.usdcReceiptToken.address,
     core.jonesEcosystem.jUsdcOld.address,
     core.jonesEcosystem.jUSDCFarm.address,

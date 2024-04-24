@@ -5,6 +5,7 @@ import {
 import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { getRealLatestBlockNumber, impersonate } from '@dolomite-exchange/modules-base/test/utils';
 import { expectProtocolBalance } from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { initializeNewJUsdc } from '@dolomite-exchange/modules-base/test/utils/ecosystem-utils/jones';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import {
   getJonesUSDCIsolationModeUnwrapperTraderV2ForLiquidationConstructorParams,
@@ -18,8 +19,9 @@ import {
   JonesUSDCIsolationModeTokenVaultV1__factory,
   JonesUSDCIsolationModeUnwrapperTraderV2__factory,
   JonesUSDCIsolationModeUnwrapperTraderV2ForLiquidation__factory,
-  JonesUSDCIsolationModeVaultFactory__factory, JonesUSDCIsolationModeWrapperTraderV2__factory,
+  JonesUSDCIsolationModeWrapperTraderV2__factory,
   JonesUSDCRegistry__factory,
+  JonesUSDCV2IsolationModeVaultFactory__factory,
   JonesUSDCWithChainlinkAutomationPriceOracle__factory,
 } from '@dolomite-exchange/modules-jones/src/types';
 import { parseEther } from 'ethers/lib/utils';
@@ -38,17 +40,9 @@ const handlerAddress = '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe'; // Level In
 
 /**
  * This script encodes the following transactions:
- * - Creates the Dolomite Migrator contract
- * - Creates the PT-GLP (MAR 2024) token vault migrator
- * - Creates the PT-GLP (MAR 2024) transformer
- * - Creates the new Dolomite Registry
- * - Attaches the Dolomite Migrator to the new Dolomite Registry implementation
- * - Attaches the PT-GLP (MAR 2024) transformer to the Dolomite Migrator
- * - Sets the Dolomite Migrator as a global operator on Dolomite Margin
- * - Sets the Dolomite Migrator as a trusted token converter on the PT-GLP (MAR 2024) factory
- * - Sets the Dolomite Migrator as a trusted token converter on the GLP factory
- * - Attaches the PT-GLP (MAR 2024) token vault migrator to the PT-GLP (MAR 2024) factory
- * - Lowers the supply cap of PT-GLP (MAR 2024) to 1 unit
+ * - Deploys the new jUSDC
+ * - Initializes the migrator for old jUSDC to new
+ * - Disables the old jUSDC
  */
 async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
@@ -73,8 +67,9 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
 
   const jUsdcUserVaultImplementationAddress = await deployContractAndSave(
     'JonesUSDCIsolationModeTokenVaultV1',
-    await getJonesUSDCRegistryConstructorParams(jUsdcRegistryImplementation, core),
+    [],
     'JonesUSDCV2IsolationModeTokenVaultV1',
+    core.tokenVaultActionsLibraries,
   );
   const jUsdcUserVaultImplementation = JonesUSDCIsolationModeTokenVaultV1__factory.connect(
     jUsdcUserVaultImplementationAddress,
@@ -91,7 +86,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     ),
     'JonesUSDCV2IsolationModeVaultFactory',
   );
-  const dJusdc = JonesUSDCIsolationModeVaultFactory__factory.connect(dJusdcAddress, core.hhUser1);
+  const dJusdc = JonesUSDCV2IsolationModeVaultFactory__factory.connect(dJusdcAddress, core.hhUser1);
 
   const jUsdcOracleAddress = await deployContractAndSave(
     'JonesUSDCWithChainlinkAutomationPriceOracle',
@@ -192,7 +187,10 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       TargetCollateralization.Base,
       TargetLiquidationPenalty.Base,
       parseEther('250000'),
-      [unwrapperForLiquidation],
+      {
+        additionalConverters: [unwrapperForLiquidation],
+        skipAmountValidation: true,
+      },
     ),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
@@ -229,6 +227,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       transactions,
       chainId: network,
     },
+    skipTimeDelay: true,
     invariants: async () => {
       assertHardhatInvariant(
         await core.dolomiteRegistry.dolomiteMigrator() === core.dolomiteMigrator.address,
@@ -285,6 +284,10 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       )).value;
       console.log('\tjUSDC (OLD) balance before:', jUsdcOldAmountWeiBefore.toString());
       console.log('\tjUSDC (NEW) balance before:', jUsdcNewAmountWeiBefore.toString());
+
+      await initializeNewJUsdc(core);
+
+      console.log('\tjUSDC (NEW) decimals:', await core.jonesEcosystem.jUsdc.decimals());
 
       await core.dolomiteMigrator.connect(handler).migrate(
         integrationAccounts,

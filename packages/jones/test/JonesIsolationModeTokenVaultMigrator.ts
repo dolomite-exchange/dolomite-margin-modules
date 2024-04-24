@@ -6,7 +6,6 @@ import {
 } from '@dolomite-exchange/modules-base/src/types';
 import { createContractWithAbi, createTestToken } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import {
-  ADDRESS_ZERO,
   BYTES_EMPTY,
   Network,
   ZERO_BI,
@@ -15,6 +14,7 @@ import { impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exc
 import { expectEvent, expectProtocolBalance, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { createDolomiteRegistryImplementation } from '@dolomite-exchange/modules-base/test/utils/dolomite';
+import { initializeNewJUsdc } from '@dolomite-exchange/modules-base/test/utils/ecosystem-utils/jones';
 import {
   createTestIsolationModeTokenVaultV1,
   createTestIsolationModeVaultFactory,
@@ -50,11 +50,6 @@ const VAULT_ADDRESS1 = '0x5C851Fd710B83705BE1cabf9D6CBd41F3544be0E';
 
 const USER_ACCOUNT2 = '0x2010aEbD2826893408019F47d1F4d11bA0a518a0';
 const VAULT_ADDRESS2 = '0x90B6B4c18F2250E4D381BaD44a3f8236Cf6228d9';
-
-const JONES_ROUTER_V1 = '0x2F43c6475f1ecBD051cE486A9f3Ccc4b03F3d713';
-const JONES_TRACKER_V1 = '0xEB23C7e19DB72F9a728fD64E1CAA459E457cfaca';
-const JONES_STABLE_COMPOUND_V1 = '0xe66998533a1992ecE9eA99cDf47686F4fc8458E0';
-const JONES_STABLE_VAULT_V1 = '0xa485a0bc44988B95245D5F20497CCaFF58a73E99';
 
 const integrationAccounts: AccountInfoStruct[] = [
   { owner: VAULT_ADDRESS1, number: ZERO_BI },
@@ -162,23 +157,7 @@ describe('JonesIsolationModeTokenVaultMigrator', () => {
     await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(newRegistry.address);
     await core.dolomiteRegistry.ownerSetDolomiteMigrator(migrator.address);
 
-    const routerAdmin = await impersonate('0xc8ce0aC725f914dBf1D743D51B6e222b79F479f1', true);
-    const jonesStableCompound = await IJonesStableCompoundV1__factory.connect(JONES_STABLE_COMPOUND_V1, routerAdmin);
-    const jonesStableVault = await IJonesStableVaultV1__factory.connect(JONES_STABLE_VAULT_V1, routerAdmin);
-
-    const compoundUVRT = await jonesStableCompound.totalAssets();
-    await core.jonesEcosystem.router.connect(routerAdmin).initialize(
-      JONES_ROUTER_V1,
-      JONES_TRACKER_V1,
-      core.jonesEcosystem.whitelistController.address,
-      core.jonesEcosystem.whitelistController.address,
-      newjUSDC.address,
-      ADDRESS_ZERO,
-      compoundUVRT,
-      (await jonesStableVault.totalSupply()).sub(compoundUVRT),
-      await jonesStableCompound.totalSupply(),
-    );
-    await core.jonesEcosystem.whitelistController.connect(routerAdmin).addToWhitelistContracts(migrator.address);
+    await initializeNewJUsdc(core, newjUSDC);
 
     defaultAmount1 = (await core.dolomiteMargin.getAccountWei(
       { owner: VAULT_ADDRESS1, number: defaultAccountNumber },

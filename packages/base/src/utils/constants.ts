@@ -536,8 +536,8 @@ export const JONES_GLP_VAULT_ROUTER_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x2F43c6475f1ecBD051cE486A9f3Ccc4b03F3d713',
 };
 
-export const JONES_JUSDC_MAP: Record<Network.ArbitrumOne, string> = {
-  [Network.ArbitrumOne]: '', // TODO:FIX ME
+export const JONES_JUSDC_V2_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0xB0BDE111812EAC913b392D80D51966eC977bE3A2',
 };
 
 export const JONES_JUSDC_OLD_MAP: Record<Network.ArbitrumOne, string> = {
@@ -552,16 +552,20 @@ export const JONES_JUSDC_RECEIPT_TOKEN_MAP: Record<Network.ArbitrumOne, string> 
   [Network.ArbitrumOne]: '0xa485a0bc44988B95245D5F20497CCaFF58a73E99',
 };
 
-export const JONES_ROUTER_MAP: Record<Network.ArbitrumOne, string> = {
-  [Network.ArbitrumOne]: '0x4bC4D296DfCe661F34DD72D642d2A7C348E22A04',
+export const JONES_ROUTER_V2_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x9c895CcDd1da452eb390803d48155e38f9fC2e4d',
 };
 
 export const JONES_WETH_V3_POOL_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x0e878029D18cD7F630823439cf389d1601d9dbD9',
 };
 
-export const JONES_WHITELIST_CONTROLLER_MAP: Record<Network.ArbitrumOne, string> = {
+export const JONES_WHITELIST_CONTROLLER_V1_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x2ACc798DA9487fdD7F4F653e04D8E8411cd73e88',
+};
+
+export const JONES_WHITELIST_CONTROLLER_V2_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0xDe3476a7C0a408325385605203665A8836c2bcca',
 };
 
 export const ODOS_ROUTER_MAP: Record<Network.ArbitrumOne, string> = {

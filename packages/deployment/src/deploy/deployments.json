@@ -970,6 +970,13 @@
       "isVerified": true
     }
   },
+  "JonesIsolationModeTokenVaultMigratorV1": {
+    "42161": {
+      "address": "0x6b4ab9B50f451F58f41A36BcA95d61Dd02c384a8",
+      "transaction": "0x2c84484d273f2163d9d20f267845ae4a75655358bfd451f811caf6b5127ce060",
+      "isVerified": true
+    }
+  },
   "JonesTWAPPriceOracleV1": {
     "42161": {
       "address": "0x7Dc900EE1ada0Cb1B45c3C10B829682187d5e127",
@@ -981,6 +988,13 @@
     "42161": {
       "address": "0x289F703af4999dC51189Cd023a6873Fd6141D645",
       "transaction": "0x950db5054df9a894a58ee4c46f807adf6b73be186d3f80f0f39e32240786c2a8",
+      "isVerified": true
+    }
+  },
+  "JonesUSDCTransformerV1": {
+    "42161": {
+      "address": "0x370A47aFF17249d010DB21db53F3691190F10cC3",
+      "transaction": "0x94e5885b67708a4d501ec066bd3dab6c3f8d79ad51064efc998a50e4abca9075",
       "isVerified": true
     }
   },
@@ -1142,6 +1156,62 @@
     "42161": {
       "address": "0x42f596850B23D3B6c06ef9Eb6914DDd7F6A13488",
       "transaction": "0x0c351cfa79696d77d42e014d80b070085768779975507e48e8863e154bf8b0d0",
+      "isVerified": true
+    }
+  },
+  "JonesUSDCV2IsolationModeTokenVaultV1": {
+    "42161": {
+      "address": "0x2Eb27406b550269E25aae0c22E77943c61bE5bc4",
+      "transaction": "0xf21c56cbad18803cf19c8602dba1b1451862b0691a4a5a03f1d395184b2ef19e",
+      "isVerified": true
+    }
+  },
+  "JonesUSDCV2IsolationModeUnwrapperTraderV2": {
+    "42161": {
+      "address": "0x7AbE6b1D9D02D15cb65b65Fb1a3dB8F8556c878e",
+      "transaction": "0x02f05c3af2fa08b623a7ab0517fc92934b52c75a204ffd9211107b1c2f86d205",
+      "isVerified": true
+    }
+  },
+  "JonesUSDCV2IsolationModeUnwrapperTraderV2ForLiquidation": {
+    "42161": {
+      "address": "0xCC7ac40f2D5BCAABD6cE9beF91B26eD297fbEc5c",
+      "transaction": "0xeb837d83a1aca0db2967170adbfc442e6e739548ba37c84d48fb682f30fc8eb0",
+      "isVerified": true
+    }
+  },
+  "JonesUSDCV2IsolationModeVaultFactory": {
+    "42161": {
+      "address": "0x8BFc421E3353809598aee362b4883D1cC8e330A4",
+      "transaction": "0x33b49ec6b5b8c8cdcabd4c8e37d8a76014a1cc59f790df2ac8cd1015f4da0b8a",
+      "isVerified": true
+    }
+  },
+  "JonesUSDCV2IsolationModeWrapperTraderV2": {
+    "42161": {
+      "address": "0xEFF8A5308818d0C09Df5776cC1CB69AC39e2D6f0",
+      "transaction": "0x12c347e47b4ad43e590822c92dce666178f00aabeee36af00095f96a7640198f",
+      "isVerified": true
+    }
+  },
+  "JonesUSDCV2RegistryImplementationV1": {
+    "42161": {
+      "address": "0x482c1bF61895c3D5A7a51700E11379eA18612B77",
+      "transaction": "0xd06c1a4e580467d045f4778f7e85902505b82aeed10f9466881c01add57a97c9",
+      "isVerified": true
+    }
+  },
+  "JonesUSDCV2RegistryProxy": {
+    "42161": {
+      "address": "0x33D83dC5Fc1F1f7559167936E204A1b53dEB5315",
+      "transaction": "0x1a74aa82e11273ffb6cd88302689224524825b195da7be5c3b6f4515bbcfc19e",
+      "isVerified": true
+    }
+  },
+  "JonesUSDCWithChainlinkAutomationPriceOracleV2": {
+    "42161": {
+      "address": "0xDF235fD6AeA537bFF6c7500C490FfB016babA67d",
+      "transaction": "0xfffad5596f3adeea8c35570d34644ce88be19bcd89cd61b119c1b5f91829534c",
       "isVerified": true
     }
   },

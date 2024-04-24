@@ -10,15 +10,15 @@ export async function createRoleAndWhitelistTrader(
   unwrapper: JonesUSDCIsolationModeUnwrapperTraderV2,
   wrapper: JonesUSDCIsolationModeWrapperTraderV2,
 ) {
-  const owner = await impersonate(await core.jonesEcosystem!.whitelistController.owner(), true);
-  await core.jonesEcosystem!.whitelistController.connect(owner).createRole(TRADER_ROLE, {
+  const owner = await impersonate(await core.jonesEcosystem!.whitelistControllerV1.owner(), true);
+  await core.jonesEcosystem!.whitelistControllerV1.connect(owner).createRole(TRADER_ROLE, {
     jGLP_BYPASS_CAP: true,
     jUSDC_BYPASS_TIME: true,
     jGLP_RETENTION: '30000000000',
     jUSDC_RETENTION: '9700000000',
   });
-  await core.jonesEcosystem!.whitelistController.connect(owner).addToRole(TRADER_ROLE, unwrapper.address);
+  await core.jonesEcosystem!.whitelistControllerV1.connect(owner).addToRole(TRADER_ROLE, unwrapper.address);
 
-  await core.jonesEcosystem!.whitelistController.connect(owner).addToWhitelistContracts(unwrapper.address);
-  await core.jonesEcosystem!.whitelistController.connect(owner).addToWhitelistContracts(wrapper.address);
+  await core.jonesEcosystem!.whitelistControllerV1.connect(owner).addToWhitelistContracts(unwrapper.address);
+  await core.jonesEcosystem!.whitelistControllerV1.connect(owner).addToWhitelistContracts(wrapper.address);
 }

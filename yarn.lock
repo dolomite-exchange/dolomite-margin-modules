@@ -301,10 +301,10 @@
     enabled "2.0.x"
     kuler "^2.0.0"
 
-"@dolomite-exchange/dolomite-margin@^0.11.1":
-  version "0.11.1"
-  resolved "https://registry.yarnpkg.com/@dolomite-exchange/dolomite-margin/-/dolomite-margin-0.11.1.tgz#6f3cb95e6349bb1b73eeab25a680e7396ed3a1ef"
-  integrity sha512-7r3FoufuzPJv6a8w2YwGgyRdGC0z8Pw7IeqBx0o0OEHjJHAXDR0LBi8MzIxsOez/m9jbNHe8mrbezJu6+8YxOw==
+"@dolomite-exchange/dolomite-margin@^0.11.4":
+  version "0.11.4"
+  resolved "https://registry.yarnpkg.com/@dolomite-exchange/dolomite-margin/-/dolomite-margin-0.11.4.tgz#faeb66fd200bd97987bd12e8216b7119fa7f6e01"
+  integrity sha512-OEb5+NJUC3spN6nnq9Lg3fryoGXKxSfp8+wfiSkRxx0k7Y///Yv0eaY1cg+/BfKMcBWWsuHsZs3eJwpU272dCQ==
   dependencies:
     "@openzeppelin/contracts" "^2.5.1"
     "@types/web3" "1.0.18"
@@ -318,12 +318,12 @@
     query-string "^6.9.0"
     web3 "1.2.1"
 
-"@dolomite-exchange/zap-sdk@^0.2.44-f":
-  version "0.2.44-f"
-  resolved "https://registry.yarnpkg.com/@dolomite-exchange/zap-sdk/-/zap-sdk-0.2.44-f.tgz#dfc2720cd434c94709fc5c07e57342e5583442a3"
-  integrity sha512-I1zPyxKQDsE932noJWi7QI6CMy8XbR6JyBh14C9r0uq8bqBblMniZVN11x6rfh2A1ye57VHAH+SudFog9GthTA==
+"@dolomite-exchange/zap-sdk@^0.2.47-a":
+  version "0.2.47-a"
+  resolved "https://registry.yarnpkg.com/@dolomite-exchange/zap-sdk/-/zap-sdk-0.2.47-a.tgz#cd75391d81806604dd6a529b7e2c726cb783e2ce"
+  integrity sha512-GfXMKkNASpSILDMntTGBgyf0akh5VUNcsKKfuR6p0UtvDOyb9V5uioILmyt8L5RzYs1ApulT8+cOjhjE8IHvkQ==
   dependencies:
-    "@dolomite-exchange/modules-deployments" "^0.0.9-c"
+    "@dolomite-exchange/modules-deployments" "^0.0.12-a"
     axios "^1.6.2"
     bignumber.js "^9.1.1"
     dotenv-flow "^0.4.0"
