@@ -4,8 +4,12 @@ import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/se
 import {
   getGmxV2IsolationModeTokenVaultConstructorParams,
 } from '@dolomite-exchange/modules-gmx-v2/src/gmx-v2-constructors';
-import { GmxV2IsolationModeTokenVaultV1__factory, GmxV2Registry__factory } from '@dolomite-exchange/modules-gmx-v2/src/types';
+import {
+  GmxV2IsolationModeTokenVaultV1__factory,
+  GmxV2Registry__factory,
+} from '@dolomite-exchange/modules-gmx-v2/src/types';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
+import { RegistryProxy__factory } from 'packages/base/src/types';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
 import {
   deployContractAndSave,
@@ -14,7 +18,6 @@ import {
 } from '../../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../utils/dry-run-utils';
 import getScriptName from '../../../utils/get-script-name';
-import { RegistryProxy__factory } from 'packages/base/src/types';
 
 const GMX_BTC_PLACEHOLDER_ADDRESS = '0x47904963fc8b2340414262125aF798B9655E58Cd';
 
@@ -44,14 +47,14 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const gmxV2TokenVaultAddress = await deployContractAndSave(
     'GmxV2IsolationModeTokenVaultV1',
     getGmxV2IsolationModeTokenVaultConstructorParams(core),
-    'GmxV2IsolationModeTokenVaultV13',
+    'GmxV2IsolationModeTokenVaultV14',
     { ...core.libraries.tokenVaultActionsImpl, ...gmxV2Libraries },
   );
   const gmxV2TokenVault = GmxV2IsolationModeTokenVaultV1__factory.connect(gmxV2TokenVaultAddress, core.hhUser1);
   const gmxV2RegistryProxy = RegistryProxy__factory.connect(core.gmxEcosystemV2.live.registry.address, core.hhUser1);
   const gmxV2RegistryImplementation = GmxV2Registry__factory.connect(
     core.gmxEcosystemV2.live.registry.address,
-    core.hhUser1
+    core.hhUser1,
   );
 
   const factories = [
@@ -64,7 +67,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     core.tokens.arb.address,
     GMX_BTC_PLACEHOLDER_ADDRESS,
     core.tokens.weth.address,
-    core.tokens.link.address
+    core.tokens.link.address,
   ];
 
   const transactions: EncodedTransaction[] = [];
@@ -114,11 +117,11 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
             await factory.userVaultImplementation() === gmxV2TokenVaultAddress,
             `Invalid token vault at index [${i}]`,
           );
+
+          const underlyingToken = await factory.UNDERLYING_TOKEN();
           assertHardhatInvariant(
-            await gmxV2RegistryImplementation.gmxMarketToIndexToken(
-              await factory.UNDERLYING_TOKEN()
-            ) === indexTokens[i],
-            'Invalid index token for GMX market'
+            await gmxV2RegistryImplementation.gmxMarketToIndexToken(underlyingToken) === indexTokens[i],
+            'Invalid index token for GMX market',
           );
         }),
       );

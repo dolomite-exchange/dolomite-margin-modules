@@ -178,7 +178,7 @@ export async function initializeFreshArtifactFromWorkspace(artifactName: string)
   await fsExtra.remove(deploymentsArtifactsPath);
 
   const workspaces = fs.readdirSync(join(__dirname, packagesPath), { withFileTypes: true })
-    .filter(d => d.isDirectory())
+    .filter(d => d.isDirectory() && !d.name.includes('deployment'))
     .map(d => path.join(packagesPath, d.name));
 
   const contractsFolder = process.env.COVERAGE === 'true' ? 'contracts_coverage' : 'contracts';

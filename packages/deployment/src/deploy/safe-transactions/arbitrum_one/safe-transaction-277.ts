@@ -3,10 +3,9 @@ import {
   TargetLiquidationPenalty,
 } from '@dolomite-exchange/modules-base/src/utils/constructors/dolomite';
 import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
+import { getRealLatestBlockNumber, impersonate } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import {
-  getGmxV2IsolationModeTokenVaultConstructorParams,
   getGmxV2IsolationModeUnwrapperTraderV2ConstructorParams,
   getGmxV2IsolationModeVaultFactoryConstructorParams,
   getGmxV2IsolationModeWrapperTraderV2ConstructorParams,
@@ -27,6 +26,7 @@ import {
 } from '@dolomite-exchange/modules-gmx-v2/src/types';
 import { BigNumberish } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
+import hardhat from 'hardhat';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { ADDRESS_ZERO, Network } from 'packages/base/src/utils/no-deps-constants';
 import {
@@ -39,36 +39,33 @@ import {
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../utils/dry-run-utils';
 import getScriptName from '../../../utils/get-script-name';
 
+import ModuleDeployments from '../../deployments.json';
+
 /**
  * This script encodes the following transactions:
- * - Deploys new unwrapper / wrapper contracts for PT-wstETH (Jun 2024)
- * - Deploys new unwrapper / wrapper contracts for PT-wstETH (Jun 2025)
+ * - Deploys new single-sided gmBTC
+ * - Deploys new single-sided gmETH
  */
 async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
   const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
 
-  const gmxV2RegistryImplementationV2Address = await deployContractAndSave(
-    'GmxV2Registry',
-    [],
-    'GmxV2RegistryImplementationV2',
-  );
+  if (hardhat.network.name === 'hardhat') {
+    const impersonator1 = await impersonate(core.delayedMultiSig.address, true);
+    await core.delayedMultiSig.connect(impersonator1).changeTimeLock(0);
+    console.log('Timelock skipped');
 
-  const gmxV2LibraryAddress = await deployContractAndSave(
-    'GmxV2Library',
-    [],
-    'GmxV2LibraryV5',
-  );
-  const gmxV2Libraries = { GmxV2Library: gmxV2LibraryAddress };
+    const [owner1] = await core.delayedMultiSig.getOwners();
+    const multisigOwner = await impersonate(owner1, true);
+    await core.delayedMultiSig.connect(multisigOwner)
+      .executeMultipleTransactions([815, 816, 817, 818, 819, 820, 821, 822, 823]);
+    console.log('Transactions executed');
+  }
 
-  // @follow-up Check the version number here
-  const gmxV2TokenVaultAddress = await deployContractAndSave(
-    'GmxV2IsolationModeTokenVaultV1',
-    getGmxV2IsolationModeTokenVaultConstructorParams(core),
-    'GmxV2IsolationModeTokenVaultV14',
-    { ...core.libraries.tokenVaultActionsImpl, ...gmxV2Libraries },
+  const gmxV2TokenVault = GmxV2IsolationModeTokenVaultV1__factory.connect(
+    ModuleDeployments.GmxV2IsolationModeTokenVaultV14[network].address,
+    core.hhUser1,
   );
-  const gmxV2TokenVault = GmxV2IsolationModeTokenVaultV1__factory.connect(gmxV2TokenVaultAddress, core.hhUser1);
 
   const otherStablecoinMarketIds = [
     core.marketIds.nativeUsdc,
@@ -88,21 +85,20 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     core.gmxEcosystemV2.gmTokens.btc,
     core.gmxEcosystemV2.gmTokens.eth,
   ];
-  // @follow-up What to make supply caps
   const supplyCaps = [
     parseEther(`${3_000_000}`),
-    parseEther(`${5_000_000}`),
+    parseEther(`${2_000_000}`),
   ];
   const gmNames = [
-    'SS-BTC',
-    'SS-ETH',
+    'SingleSidedBTC',
+    'SingleSidedETH',
   ];
 
   const unwrapperImplementationAddress = await deployContractAndSave(
     'GmxV2IsolationModeUnwrapperTraderV2',
     [core.tokens.weth.address],
     'GmxV2IsolationModeUnwrapperTraderImplementationV5',
-    { ...gmxV2Libraries, ...core.libraries.unwrapperTraderImpl },
+    { ...core.gmxEcosystemV2.live.gmxV2LibraryMap, ...core.libraries.unwrapperTraderImpl },
   );
   const unwrapperImplementation = GmxV2IsolationModeUnwrapperTraderV2__factory.connect(
     unwrapperImplementationAddress,
@@ -113,7 +109,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     'GmxV2IsolationModeWrapperTraderV2',
     [core.tokens.weth.address],
     'GmxV2IsolationModeWrapperTraderImplementationV6',
-    { ...gmxV2Libraries, ...core.libraries.wrapperTraderImpl },
+    { ...core.gmxEcosystemV2.live.gmxV2LibraryMap, ...core.libraries.wrapperTraderImpl },
   );
   const wrapperImplementation = GmxV2IsolationModeWrapperTraderV2__factory.connect(
     wrapperImplementationAddress,
@@ -137,7 +133,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
         GMX_V2_EXECUTION_FEE,
       ),
       `GmxV2${gmNames[i]}IsolationModeVaultFactory`,
-      gmxV2Libraries,
+      core.gmxEcosystemV2.live.gmxV2LibraryMap,
     );
     const factory = GmxV2IsolationModeVaultFactory__factory.connect(factoryAddress, core.hhUser1);
 
@@ -175,16 +171,6 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   }
 
   const transactions: EncodedTransaction[] = [];
-
-  transactions.push(
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { registry: core.gmxEcosystemV2.live.registryProxy },
-      'registry',
-      'upgradeTo',
-      [gmxV2RegistryImplementationV2Address],
-    ),
-  );
 
   transactions.push(
     ...await prettyPrintEncodeInsertChainlinkOracleV3(
