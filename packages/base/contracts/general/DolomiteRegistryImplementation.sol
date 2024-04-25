@@ -67,15 +67,27 @@ contract DolomiteRegistryImplementation is
         address _expiry,
         uint256 _slippageToleranceForPauseSentinel,
         address _liquidatorAssetRegistry,
-        address _eventEmitter,
-        address _dolomiteMigrator
+        address _eventEmitter
     ) external initializer {
         _ownerSetGenericTraderProxy(_genericTraderProxy);
         _ownerSetExpiry(_expiry);
         _ownerSetSlippageToleranceForPauseSentinel(_slippageToleranceForPauseSentinel);
         _ownerSetLiquidatorAssetRegistry(_liquidatorAssetRegistry);
         _ownerSetEventEmitter(_eventEmitter);
+    }
+
+    function lazyInitialize(
+        address _dolomiteMigrator,
+        address _oracleAggregator
+    ) external {
+        Require.that(
+            address(dolomiteMigrator()) == address(0) && address(oracleAggregator()) == address(0),
+            _FILE,
+            "Already initialized"
+        );
+
         _ownerSetDolomiteMigrator(_dolomiteMigrator);
+        _ownerSetOracleAggregator(_oracleAggregator);
     }
 
     // ===================== Functions =====================
@@ -154,43 +166,43 @@ contract DolomiteRegistryImplementation is
 
     // ========================== View Functions =========================
 
-    function genericTraderProxy() external view returns (IGenericTraderProxyV1) {
+    function genericTraderProxy() public view returns (IGenericTraderProxyV1) {
         return IGenericTraderProxyV1(_getAddress(_GENERIC_TRADER_PROXY_SLOT));
     }
 
-    function expiry() external view returns (IExpiry) {
+    function expiry() public view returns (IExpiry) {
         return IExpiry(_getAddress(_EXPIRY_SLOT));
     }
 
-    function slippageToleranceForPauseSentinel() external view returns (uint256) {
+    function slippageToleranceForPauseSentinel() public view returns (uint256) {
         return _getUint256(_SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL_SLOT);
     }
 
-    function liquidatorAssetRegistry() external view returns (ILiquidatorAssetRegistry) {
+    function liquidatorAssetRegistry() public view returns (ILiquidatorAssetRegistry) {
         return ILiquidatorAssetRegistry(_getAddress(_LIQUIDATOR_ASSET_REGISTRY_SLOT));
     }
 
-    function eventEmitter() external view returns (IEventEmitterRegistry) {
+    function eventEmitter() public view returns (IEventEmitterRegistry) {
         return IEventEmitterRegistry(_getAddress(_EVENT_EMITTER_SLOT));
     }
 
-    function chainlinkPriceOracle() external view returns (IDolomitePriceOracle) {
+    function chainlinkPriceOracle() public view returns (IDolomitePriceOracle) {
         return IDolomitePriceOracle(_getAddress(_CHAINLINK_PRICE_ORACLE_SLOT));
     }
 
-    function dolomiteMigrator() external view returns (IDolomiteMigrator) {
+    function dolomiteMigrator() public view returns (IDolomiteMigrator) {
         return IDolomiteMigrator(_getAddress(_DOLOMITE_MIGRATOR_SLOT));
     }
 
-    function redstonePriceOracle() external view returns (IDolomitePriceOracle) {
+    function redstonePriceOracle() public view returns (IDolomitePriceOracle) {
         return IDolomitePriceOracle(_getAddress(_REDSTONE_PRICE_ORACLE_SLOT));
     }
 
-    function oracleAggregator() external view returns (IDolomitePriceOracle) {
+    function oracleAggregator() public view returns (IDolomitePriceOracle) {
         return IDolomitePriceOracle(_getAddress(_ORACLE_AGGREGATOR_SLOT));
     }
 
-    function slippageToleranceForPauseSentinelBase() external pure returns (uint256) {
+    function slippageToleranceForPauseSentinelBase() public pure returns (uint256) {
         return 1e18;
     }
 

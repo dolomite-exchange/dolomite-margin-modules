@@ -99,7 +99,7 @@ describe('DolomiteMigrator', () => {
     migrator = await createContractWithAbi<DolomiteMigrator>(
       DolomiteMigrator__factory.abi,
       DolomiteMigrator__factory.bytecode,
-      getDolomiteMigratorConstructorParams(core, core.hhUser5.address),
+      getDolomiteMigratorConstructorParams(core.dolomiteMargin, core.dolomiteRegistry, core.hhUser5.address),
     );
     migratorImplementation = await createContractWithAbi<TestIsolationModeTokenVaultMigrator>(
       TestIsolationModeTokenVaultMigrator__factory.abi,

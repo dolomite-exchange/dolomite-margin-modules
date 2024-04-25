@@ -1,90 +1,74 @@
 import {
-  IIsolationModeVaultFactory,
-  IsolationModeFreezableLiquidatorProxy__factory,
-} from '@dolomite-exchange/modules-base/src/types';
-import {
-  getIsolationModeFreezableLiquidatorProxyConstructorParams,
   TargetCollateralization,
   TargetLiquidationPenalty,
 } from '@dolomite-exchange/modules-base/src/utils/constructors/dolomite';
 import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
+import { getRealLatestBlockNumber, impersonate } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import {
-  getGmxV2IsolationModeTokenVaultConstructorParams,
   getGmxV2IsolationModeUnwrapperTraderV2ConstructorParams,
   getGmxV2IsolationModeVaultFactoryConstructorParams,
   getGmxV2IsolationModeWrapperTraderV2ConstructorParams,
   getGmxV2MarketTokenPriceOracleConstructorParams,
-  getGmxV2RegistryConstructorParams,
-  GMX_V2_CALLBACK_GAS_LIMIT,
   GMX_V2_EXECUTION_FEE,
 } from '@dolomite-exchange/modules-gmx-v2/src/gmx-v2-constructors';
 import {
   GmxV2IsolationModeTokenVaultV1__factory,
   GmxV2IsolationModeUnwrapperTraderV2__factory,
+  GmxV2IsolationModeVaultFactory,
+  GmxV2IsolationModeVaultFactory__factory,
   GmxV2IsolationModeWrapperTraderV2__factory,
   GmxV2MarketTokenPriceOracle__factory,
-  GmxV2Registry__factory,
   IGmxV2IsolationModeUnwrapperTraderV2,
   IGmxV2IsolationModeUnwrapperTraderV2__factory,
-  IGmxV2IsolationModeVaultFactory__factory,
   IGmxV2IsolationModeWrapperTraderV2,
   IGmxV2IsolationModeWrapperTraderV2__factory,
-  IGmxV2Registry__factory,
 } from '@dolomite-exchange/modules-gmx-v2/src/types';
 import { BigNumberish } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
+import hardhat from 'hardhat';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
-import { Network } from 'packages/base/src/utils/no-deps-constants';
+import { ADDRESS_ZERO, Network } from 'packages/base/src/utils/no-deps-constants';
 import {
   deployContractAndSave,
   EncodedTransaction,
   prettyPrintEncodeAddIsolationModeMarket,
   prettyPrintEncodedDataWithTypeSafety,
+  prettyPrintEncodeInsertChainlinkOracleV3,
 } from '../../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../utils/dry-run-utils';
 import getScriptName from '../../../utils/get-script-name';
 
+import ModuleDeployments from '../../deployments.json';
+
 /**
  * This script encodes the following transactions:
- * - Deploys new unwrapper / wrapper contracts for PT-wstETH (Jun 2024)
- * - Deploys new unwrapper / wrapper contracts for PT-wstETH (Jun 2025)
+ * - Deploys new single-sided gmBTC
+ * - Deploys new single-sided gmETH
  */
 async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
   const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
 
-  const gmxV2RegistryImplementationAddress = await deployContractAndSave(
-    'GmxV2Registry',
-    [],
-    'GmxV2RegistryImplementationV1',
-  );
-  const gmxV2RegistryImplementation = GmxV2Registry__factory.connect(gmxV2RegistryImplementationAddress, core.hhUser1);
+  if (hardhat.network.name === 'hardhat') {
+    const impersonator1 = await impersonate(core.delayedMultiSig.address, true);
+    await core.delayedMultiSig.connect(impersonator1).changeTimeLock(0);
+    console.log('Timelock skipped');
 
-  const gmxV2RegistryProxyAddress = await deployContractAndSave(
-    'RegistryProxy',
-    await getGmxV2RegistryConstructorParams(core, gmxV2RegistryImplementation, GMX_V2_CALLBACK_GAS_LIMIT),
-    'GmxV2RegistryProxy',
-  );
-  const gmxV2RegistryProxy = IGmxV2Registry__factory.connect(gmxV2RegistryProxyAddress, core.hhUser1);
+    const [owner1] = await core.delayedMultiSig.getOwners();
+    const multisigOwner = await impersonate(owner1, true);
+    await core.delayedMultiSig.connect(multisigOwner)
+      .executeMultipleTransactions([815, 816, 817, 818, 819, 820, 821, 822, 823]);
+    console.log('Transactions executed');
+  }
 
-  const gmxV2LibraryAddress = await deployContractAndSave(
-    'GmxV2Library',
-    [],
-    'GmxV2LibraryV1',
+  const gmxV2TokenVault = GmxV2IsolationModeTokenVaultV1__factory.connect(
+    ModuleDeployments.GmxV2IsolationModeTokenVaultV14[network].address,
+    core.hhUser1,
   );
-  const gmxV2Libraries = { GmxV2Library: gmxV2LibraryAddress };
-
-  const gmxV2TokenVaultAddress = await deployContractAndSave(
-    'GmxV2IsolationModeTokenVaultV1',
-    getGmxV2IsolationModeTokenVaultConstructorParams(core),
-    'GmxV2IsolationModeTokenVaultV1',
-    { ...core.libraries.tokenVaultActionsImpl, ...gmxV2Libraries },
-  );
-  const gmxV2TokenVault = GmxV2IsolationModeTokenVaultV1__factory.connect(gmxV2TokenVaultAddress, core.hhUser1);
 
   const otherStablecoinMarketIds = [
+    core.marketIds.nativeUsdc,
     core.marketIds.usdc,
     core.marketIds.usdt,
     core.marketIds.dai,
@@ -92,63 +76,47 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   ];
   const gmxV2PriceOracleAddress = await deployContractAndSave(
     'GmxV2MarketTokenPriceOracle',
-    getGmxV2MarketTokenPriceOracleConstructorParams(core, gmxV2RegistryProxy),
-    'GmxV2MarketTokenPriceOracleV1',
+    getGmxV2MarketTokenPriceOracleConstructorParams(core, core.gmxEcosystemV2.live.registry),
+    'GmxV2MarketTokenPriceOracleV2',
   );
   const gmxV2PriceOracle = GmxV2MarketTokenPriceOracle__factory.connect(gmxV2PriceOracleAddress, core.hhUser1);
 
   const gmTokens = [
-    core.gmxEcosystemV2.gmTokens.arbUsd,
-    core.gmxEcosystemV2.gmTokens.btcUsd,
-    core.gmxEcosystemV2.gmTokens.ethUsd,
-    core.gmxEcosystemV2.gmTokens.linkUsd,
+    core.gmxEcosystemV2.gmTokens.btc,
+    core.gmxEcosystemV2.gmTokens.eth,
   ];
   const supplyCaps = [
     parseEther(`${3_000_000}`),
-    parseEther(`${5_000_000}`),
-    parseEther(`${5_000_000}`),
     parseEther(`${2_000_000}`),
   ];
   const gmNames = [
-    'ARB',
-    'BTC',
-    'ETH',
-    'LINK',
+    'SingleSidedBTC',
+    'SingleSidedETH',
   ];
 
-  const asyncUnwrapperLibAddress = await deployContractAndSave(
-    'AsyncIsolationModeUnwrapperTraderImpl',
-    [],
-    'AsyncIsolationModeUnwrapperTraderImplV1',
-  );
   const unwrapperImplementationAddress = await deployContractAndSave(
     'GmxV2IsolationModeUnwrapperTraderV2',
     [core.tokens.weth.address],
-    'GmxV2IsolationModeUnwrapperTraderImplementationV2',
-    { ...gmxV2Libraries, AsyncIsolationModeUnwrapperTraderImpl: asyncUnwrapperLibAddress },
+    'GmxV2IsolationModeUnwrapperTraderImplementationV5',
+    { ...core.gmxEcosystemV2.live.gmxV2LibraryMap, ...core.libraries.unwrapperTraderImpl },
   );
   const unwrapperImplementation = GmxV2IsolationModeUnwrapperTraderV2__factory.connect(
     unwrapperImplementationAddress,
     core.hhUser1,
   );
 
-  const asyncWrapperLibAddress = await deployContractAndSave(
-    'AsyncIsolationModeWrapperTraderImpl',
-    [],
-    'AsyncIsolationModeWrapperTraderImplV1',
-  );
   const wrapperImplementationAddress = await deployContractAndSave(
     'GmxV2IsolationModeWrapperTraderV2',
     [core.tokens.weth.address],
-    'GmxV2IsolationModeWrapperTraderImplementationV2',
-    { ...gmxV2Libraries, AsyncIsolationModeWrapperTraderImpl: asyncWrapperLibAddress },
+    'GmxV2IsolationModeWrapperTraderImplementationV6',
+    { ...core.gmxEcosystemV2.live.gmxV2LibraryMap, ...core.libraries.wrapperTraderImpl },
   );
   const wrapperImplementation = GmxV2IsolationModeWrapperTraderV2__factory.connect(
     wrapperImplementationAddress,
     core.hhUser1,
   );
 
-  const factories: IIsolationModeVaultFactory[] = [];
+  const factories: GmxV2IsolationModeVaultFactory[] = [];
   const unwrappers: IGmxV2IsolationModeUnwrapperTraderV2[] = [];
   const wrappers: IGmxV2IsolationModeWrapperTraderV2[] = [];
 
@@ -157,17 +125,17 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       'GmxV2IsolationModeVaultFactory',
       getGmxV2IsolationModeVaultFactoryConstructorParams(
         core,
-        gmxV2RegistryProxy,
-        [gmTokens[i].longMarketId, core.marketIds.nativeUsdc, ...otherStablecoinMarketIds],
-        [gmTokens[i].longMarketId, core.marketIds.nativeUsdc, ...otherStablecoinMarketIds],
+        core.gmxEcosystemV2.live.registry,
+        [gmTokens[i].longMarketId, gmTokens[i].longMarketId, ...otherStablecoinMarketIds],
+        [gmTokens[i].longMarketId, gmTokens[i].longMarketId, ...otherStablecoinMarketIds],
         gmTokens[i],
         gmxV2TokenVault,
         GMX_V2_EXECUTION_FEE,
       ),
       `GmxV2${gmNames[i]}IsolationModeVaultFactory`,
-      gmxV2Libraries,
+      core.gmxEcosystemV2.live.gmxV2LibraryMap,
     );
-    const factory = IGmxV2IsolationModeVaultFactory__factory.connect(factoryAddress, core.hhUser1);
+    const factory = GmxV2IsolationModeVaultFactory__factory.connect(factoryAddress, core.hhUser1);
 
     const unwrapperProxyAddress = await deployContractAndSave(
       'IsolationModeTraderProxy',
@@ -175,7 +143,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
         core,
         unwrapperImplementation,
         factory,
-        gmxV2RegistryProxy,
+        core.gmxEcosystemV2.live.registry,
       ),
       `GmxV2${gmNames[i]}AsyncIsolationModeUnwrapperTraderProxyV2`,
     );
@@ -186,7 +154,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
         core,
         wrapperImplementation,
         factory,
-        gmxV2RegistryProxy,
+        core.gmxEcosystemV2.live.registry,
       ),
       `GmxV2${gmNames[i]}AsyncIsolationModeWrapperTraderProxyV2`,
     );
@@ -196,68 +164,72 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     wrappers.push(IGmxV2IsolationModeWrapperTraderV2__factory.connect(wrapperProxyAddress, core.hhUser1));
   }
 
-  const freezableLiquidatorProxyAddress = await deployContractAndSave(
-    'IsolationModeFreezableLiquidatorProxy',
-    getIsolationModeFreezableLiquidatorProxyConstructorParams(core),
-    'IsolationModeFreezableLiquidatorProxyV1',
-  );
-  const freezableLiquidatorProxy = IsolationModeFreezableLiquidatorProxy__factory.connect(
-    freezableLiquidatorProxyAddress,
-    core.hhUser1,
-  );
-
   const marketId = await core.dolomiteMargin.getNumMarkets();
   const gmMarketIds: BigNumberish[] = [];
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < gmTokens.length; i++) {
     gmMarketIds.push(marketId.add(i));
   }
 
-  const transactions: EncodedTransaction[] = [
-    await prettyPrintEncodedDataWithTypeSafety(
+  const transactions: EncodedTransaction[] = [];
+
+  transactions.push(
+    ...await prettyPrintEncodeInsertChainlinkOracleV3(
       core,
-      { dolomiteMargin: core.dolomiteMargin },
-      'dolomiteMargin',
-      'ownerSetGlobalOperator',
-      [freezableLiquidatorProxy.address, true],
+      core.gmxEcosystemV2.gmTokens.btc.indexToken,
+      false,
     ),
-    ...await Promise.all(
-      factories.map(factory =>
-        prettyPrintEncodedDataWithTypeSafety(
-          core,
-          { gmxV2PriceOracle },
-          'gmxV2PriceOracle',
-          'ownerSetMarketToken',
-          [factory.address, true],
-        ),
+  );
+
+  for (let i = 0; i < factories.length; i++) {
+    const factory = factories[i];
+    transactions.push(
+      await prettyPrintEncodedDataWithTypeSafety(
+        core,
+        core.gmxEcosystemV2.live,
+        'registry',
+        'ownerSetGmxMarketToIndexToken',
+        [gmTokens[i].marketToken.address, gmTokens[i].indexToken.address],
       ),
-    ),
-    ...await Promise.all(
-      gmMarketIds.map(marketId =>
-        prettyPrintEncodedDataWithTypeSafety(
-          core,
-          core,
-          'liquidatorAssetRegistry',
-          'ownerAddLiquidatorToAssetWhitelist',
-          [marketId, freezableLiquidatorProxyAddress],
-        ),
+      await prettyPrintEncodedDataWithTypeSafety(
+        core,
+        { gmxV2PriceOracle },
+        'gmxV2PriceOracle',
+        'ownerSetMarketToken',
+        [factory.address, true],
       ),
-    ),
-    ...(
-      await Promise.all(
-        factories.map((factory, i) => prettyPrintEncodeAddIsolationModeMarket(
-          core,
-          factory,
-          gmxV2PriceOracle,
-          unwrappers[i],
-          wrappers[i],
-          gmMarketIds[i],
-          TargetCollateralization._120,
-          TargetLiquidationPenalty.Base,
-          supplyCaps[i],
-        )),
-      )
-    ).reduce((acc, cur) => acc.concat(cur), []),
-  ];
+      await prettyPrintEncodedDataWithTypeSafety(
+        core,
+        { oracleAggregatorV2: core.oracleAggregatorV2 },
+        'oracleAggregatorV2',
+        'ownerInsertOrUpdateToken',
+        [
+          {
+            decimals: await factory.decimals(),
+            token: factory.address,
+            oracleInfos: [
+              {
+                oracle: gmxV2PriceOracle.address,
+                weight: 100,
+                tokenPair: ADDRESS_ZERO,
+              },
+            ],
+          },
+        ],
+      ),
+      ...await prettyPrintEncodeAddIsolationModeMarket(
+        core,
+        factory,
+        core.oracleAggregatorV2,
+        unwrappers[i],
+        wrappers[i],
+        gmMarketIds[i],
+        TargetCollateralization._120,
+        TargetLiquidationPenalty.Base,
+        supplyCaps[i],
+        { isAsyncAsset: true },
+      ),
+    );
+  }
 
   return {
     core,
@@ -268,11 +240,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     },
     invariants: async () => {
       assertHardhatInvariant(
-        await core.dolomiteMargin.getIsGlobalOperator(freezableLiquidatorProxy.address),
-        'freezableLiquidatorProxy must be global operator',
-      );
-      assertHardhatInvariant(
-        factories.length === 4,
+        factories.length === 2,
         'Invalid # of factories',
       );
       for (let i = 0; i < factories.length; i += 1) {
@@ -282,7 +250,8 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
         );
         const liquidators = await core.liquidatorAssetRegistry.getLiquidatorsForAsset(gmMarketIds[i]);
         assertHardhatInvariant(
-          liquidators[0] === freezableLiquidatorProxy.address && liquidators[1] === core.liquidatorProxyV4.address,
+          liquidators[0] === core.liquidatorProxyV4.address &&
+          liquidators[1] === core.freezableLiquidatorProxy.address,
           'Invalid whitelisted liquidators',
         );
         assertHardhatInvariant(
@@ -290,6 +259,9 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
           && await factories[i].isTokenConverterTrusted(wrappers[i].address),
           'Invalid token converters',
         );
+
+        const price = await core.dolomiteMargin.getMarketPrice(gmMarketIds[i]);
+        console.log(`\tOracle price for ${gmNames[i]}: `, price.value.toString());
       }
     },
   };

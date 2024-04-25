@@ -117,7 +117,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
         await factory.allowableCollateralMarketIds(),
         [core.marketIds.nativeUsdc!, core.marketIds.weth, marketId],
       );
-      expect(await factory.UNDERLYING_TOKEN()).to.equal(core.gmxEcosystemV2!.gmTokens.ethUsd);
+      expect(await factory.UNDERLYING_TOKEN()).to.equal(core.gmxEcosystemV2!.gmTokens.ethUsd.marketToken.address);
       expect(await factory.BORROW_POSITION_PROXY()).to.equal(core.borrowPositionProxyV2.address);
       expect(await factory.userVaultImplementation()).to.equal(vaultImplementation.address);
       expect(await factory.DOLOMITE_MARGIN()).to.equal(core.dolomiteMargin.address);

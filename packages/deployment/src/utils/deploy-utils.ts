@@ -178,7 +178,7 @@ export async function initializeFreshArtifactFromWorkspace(artifactName: string)
   await fsExtra.remove(deploymentsArtifactsPath);
 
   const workspaces = fs.readdirSync(join(__dirname, packagesPath), { withFileTypes: true })
-    .filter(d => d.isDirectory())
+    .filter(d => d.isDirectory() && !d.name.includes('deployment'))
     .map(d => path.join(packagesPath, d.name));
 
   const contractsFolder = process.env.COVERAGE === 'true' ? 'contracts_coverage' : 'contracts';
@@ -310,7 +310,8 @@ export async function deployPendlePtSystem<T extends NetworkType>(
   }
   if (!syTokensIn.some(t => t === underlyingToken.address)) {
     return Promise.reject(
-      new Error(`Underlying does not match official underlying on chain: underlying=[${underlyingToken.address}] official=[${syTokensIn.join(', ')}]`),
+      new Error(`Underlying does not match official underlying on chain: underlying=[${underlyingToken.address}] official=[${syTokensIn.join(
+        ', ')}]`),
     );
   }
 
@@ -792,10 +793,29 @@ export async function prettyPrintEncodeInsertChainlinkOracleV3<T extends Network
   tokenPairAddress: address | undefined = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address].tokenPairAddress,
   aggregatorAddress: string = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address].aggregatorAddress,
 ): Promise<EncodedTransaction[]> {
-  const invalidTokens = ['stEth', 'eEth'];
+  const invalidTokenMap: Record<Network, Record<string, { symbol: string; decimals: number }>> = {
+    [Network.PolygonZkEvm]: {},
+    [Network.Base]: {},
+    [Network.ArbitrumOne]: {
+      [core.tokens.stEth.address]: {
+        symbol: 'stETH',
+        decimals: 18,
+      },
+      [core.tokens.eEth.address]: {
+        symbol: 'eETH',
+        decimals: 18,
+      },
+      [core.tokens.gmxBtc.address]: {
+        symbol: 'btc',
+        decimals: 8,
+      },
+    },
+  };
+  const invalidTokenSettings = invalidTokenMap[core.network][token.address];
+
   let tokenDecimals: number;
-  if (invalidTokens.some(t => t in core.tokens && token.address === (core.tokens as any)[t].address)) {
-    tokenDecimals = 18;
+  if (invalidTokenSettings) {
+    tokenDecimals = invalidTokenSettings.decimals;
   } else {
     tokenDecimals = await IERC20Metadata__factory.connect(token.address, core.hhUser1).decimals();
   }
@@ -803,8 +823,17 @@ export async function prettyPrintEncodeInsertChainlinkOracleV3<T extends Network
   const aggregator = IChainlinkAggregator__factory.connect(aggregatorAddress, core.governance);
 
   const description = await aggregator.description();
-  const symbol = await IERC20Metadata__factory.connect(token.address, token.signer).symbol();
-  if (!description.includes(symbol) && !description.includes(symbol.substring(1))) {
+  let symbol: string;
+  if (invalidTokenSettings) {
+    symbol = invalidTokenSettings.symbol;
+  } else {
+    symbol = await IERC20Metadata__factory.connect(token.address, token.signer).symbol();
+  }
+
+  if (
+    !description.toUpperCase().includes(symbol.toUpperCase()) &&
+    !description.toUpperCase().includes(symbol.toUpperCase().substring(1))
+  ) {
     return Promise.reject(new Error(`Invalid aggregator for symbol, found: ${description}, expected: ${symbol}`));
   }
 
@@ -843,6 +872,13 @@ export async function prettyPrintEncodeInsertChainlinkOracleV3<T extends Network
   ];
 }
 
+export interface AddMarketOptions {
+  additionalConverters?: BaseContract[];
+  skipAmountValidation?: boolean;
+  isAsyncAsset?: boolean;
+  decimals?: number;
+}
+
 export async function prettyPrintEncodeAddIsolationModeMarket<T extends NetworkType>(
   core: CoreProtocolType<T>,
   factory: IIsolationModeVaultFactory,
@@ -853,14 +889,7 @@ export async function prettyPrintEncodeAddIsolationModeMarket<T extends NetworkT
   targetCollateralization: TargetCollateralization,
   targetLiquidationPremium: TargetLiquidationPenalty,
   maxSupplyWei: BigNumberish,
-  options: {
-    additionalConverters: BaseContract[],
-    skipAmountValidation: boolean,
-    decimals?: number,
-  } = {
-    additionalConverters: [],
-    skipAmountValidation: false,
-  },
+  options: AddMarketOptions = {},
 ): Promise<EncodedTransaction[]> {
   const transactions: EncodedTransaction[] = await prettyPrintEncodeAddMarket(
     core,
@@ -882,10 +911,8 @@ export async function prettyPrintEncodeAddIsolationModeMarket<T extends NetworkT
       { factory },
       'factory',
       'ownerInitialize',
-      [[unwrapper.address, wrapper.address, ...options.additionalConverters.map(c => c.address)]],
+      [[unwrapper.address, wrapper.address, ...(options.additionalConverters ?? []).map(c => c.address)]],
     ),
-  );
-  transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       { dolomiteMargin: core.dolomiteMargin },
@@ -893,8 +920,6 @@ export async function prettyPrintEncodeAddIsolationModeMarket<T extends NetworkT
       'ownerSetGlobalOperator',
       [factory.address, true],
     ),
-  );
-  transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       { liquidatorAssetRegistry: core.liquidatorAssetRegistry },
@@ -903,6 +928,19 @@ export async function prettyPrintEncodeAddIsolationModeMarket<T extends NetworkT
       [marketId, core.liquidatorProxyV4.address],
     ),
   );
+
+  if (options.isAsyncAsset) {
+    transactions.push(
+      await prettyPrintEncodedDataWithTypeSafety(
+        core,
+        { liquidatorAssetRegistry: core.liquidatorAssetRegistry },
+        'liquidatorAssetRegistry',
+        'ownerAddLiquidatorToAssetWhitelist',
+        [marketId, core.freezableLiquidatorProxy.address],
+      ),
+    );
+  }
+
   return transactions;
 }
 
@@ -917,11 +955,7 @@ export async function prettyPrintEncodeAddMarket<T extends NetworkType>(
   maxBorrowWei: BigNumberish,
   isCollateralOnly: boolean,
   earningsRateOverride: BigNumberish = ZERO_BI,
-  options: {
-    skipAmountValidation: boolean
-  } = {
-    skipAmountValidation: false
-  },
+  options: AddMarketOptions = {},
 ): Promise<EncodedTransaction[]> {
   if (!options.skipAmountValidation && !await isValidAmount(token, maxSupplyWei)) {
     const name = await getFormattedTokenName(core, token.address);

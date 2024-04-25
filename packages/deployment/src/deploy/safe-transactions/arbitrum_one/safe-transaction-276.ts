@@ -4,8 +4,12 @@ import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/se
 import {
   getGmxV2IsolationModeTokenVaultConstructorParams,
 } from '@dolomite-exchange/modules-gmx-v2/src/gmx-v2-constructors';
-import { GmxV2IsolationModeTokenVaultV1__factory } from '@dolomite-exchange/modules-gmx-v2/src/types';
+import {
+  GmxV2IsolationModeTokenVaultV1__factory,
+  GmxV2Registry__factory,
+} from '@dolomite-exchange/modules-gmx-v2/src/types';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
+import { RegistryProxy__factory } from 'packages/base/src/types';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
 import {
   deployContractAndSave,
@@ -15,22 +19,43 @@ import {
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../utils/dry-run-utils';
 import getScriptName from '../../../utils/get-script-name';
 
+const GMX_BTC_PLACEHOLDER_ADDRESS = '0x47904963fc8b2340414262125aF798B9655E58Cd';
+
 /**
  * This script encodes the following transactions:
- * - Deploys new ActionsImpl library
- * - Deploys a new Token Vault for each GM token
+ * - Deploys a new instance of the GMX V2 token vault with a new library
+ * - Deploys a new instance of the GMX V2 registry
+ * - Initialized the gm market token and corresponding index token on the registry
  */
 async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
   const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
 
+  const gmxV2LibraryAddress = await deployContractAndSave(
+    'GmxV2Library',
+    [],
+    'GmxV2LibraryV5',
+  );
+  const gmxV2Libraries = { GmxV2Library: gmxV2LibraryAddress };
+
+  const gmxV2RegistryImplementationAddress = await deployContractAndSave(
+    'GmxV2Registry',
+    [],
+    'GmxV2RegistryImplementationV2',
+  );
+
   const gmxV2TokenVaultAddress = await deployContractAndSave(
     'GmxV2IsolationModeTokenVaultV1',
     getGmxV2IsolationModeTokenVaultConstructorParams(core),
-    'GmxV2IsolationModeTokenVaultV11',
-    { ...core.libraries.tokenVaultActionsImpl, ...core.gmxEcosystemV2.live.gmxV2LibraryMap },
+    'GmxV2IsolationModeTokenVaultV14',
+    { ...core.libraries.tokenVaultActionsImpl, ...gmxV2Libraries },
   );
   const gmxV2TokenVault = GmxV2IsolationModeTokenVaultV1__factory.connect(gmxV2TokenVaultAddress, core.hhUser1);
+  const gmxV2RegistryProxy = RegistryProxy__factory.connect(core.gmxEcosystemV2.live.registry.address, core.hhUser1);
+  const gmxV2RegistryImplementation = GmxV2Registry__factory.connect(
+    core.gmxEcosystemV2.live.registry.address,
+    core.hhUser1,
+  );
 
   const factories = [
     core.gmxEcosystemV2.live.gmArb.factory,
@@ -38,13 +63,36 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     core.gmxEcosystemV2.live.gmEth.factory,
     core.gmxEcosystemV2.live.gmLink.factory,
   ];
+  const indexTokens = [
+    core.tokens.arb.address,
+    GMX_BTC_PLACEHOLDER_ADDRESS,
+    core.tokens.weth.address,
+    core.tokens.link.address,
+  ];
 
   const transactions: EncodedTransaction[] = [];
+  transactions.push(
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { gmxV2RegistryProxy },
+      'gmxV2RegistryProxy',
+      'upgradeTo',
+      [gmxV2RegistryImplementationAddress],
+    ),
+  );
 
   for (let i = 0; i < factories.length; i += 1) {
     const factory = factories[i];
+    const marketToken = await factory.UNDERLYING_TOKEN();
 
     transactions.push(
+      await prettyPrintEncodedDataWithTypeSafety(
+        core,
+        core.gmxEcosystemV2.live,
+        'registry',
+        'ownerSetGmxMarketToIndexToken',
+        [marketToken, indexTokens[i]],
+      ),
       await prettyPrintEncodedDataWithTypeSafety(
         core,
         { factory },
@@ -68,6 +116,12 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
           assertHardhatInvariant(
             await factory.userVaultImplementation() === gmxV2TokenVaultAddress,
             `Invalid token vault at index [${i}]`,
+          );
+
+          const underlyingToken = await factory.UNDERLYING_TOKEN();
+          assertHardhatInvariant(
+            await gmxV2RegistryImplementation.gmxMarketToIndexToken(underlyingToken) === indexTokens[i],
+            'Invalid index token for GMX market',
           );
         }),
       );

@@ -34,7 +34,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
 
   const dolomiteMigratorV2Address = await deployContractAndSave(
     'DolomiteMigrator',
-    getDolomiteMigratorConstructorParams(core, handlerAddress),
+    getDolomiteMigratorConstructorParams(core.dolomiteMargin, core.dolomiteRegistry, handlerAddress),
     'DolomiteMigratorV2',
   );
   const dolomiteMigratorV2 = DolomiteMigrator__factory.connect(dolomiteMigratorV2Address, core.hhUser1);

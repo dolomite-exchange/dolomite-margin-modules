@@ -20,7 +20,7 @@ import {
   ILiquidatorAssetRegistry,
   ILiquidatorProxyV1,
   ILiquidatorProxyV4WithGenericTrader,
-  IPartiallyDelayedMultiSig,
+  IPartiallyDelayedMultiSig, IsolationModeFreezableLiquidatorProxy,
   IWETH,
   RegistryProxy,
 } from '../../src/types';
@@ -42,6 +42,12 @@ import { PremiaEcosystem } from './ecosystem-utils/premia';
 import { TestEcosystem } from './ecosystem-utils/testers';
 import { UmamiEcosystem } from './ecosystem-utils/umami';
 import { CoreProtocolConfig } from './setup';
+
+export interface LibraryMaps {
+  tokenVaultActionsImpl: Record<string, string>;
+  unwrapperTraderImpl: Record<string, string>;
+  wrapperTraderImpl: Record<string, string>;
+}
 
 interface CoreProtocolTokens {
   dai: IERC20;
@@ -77,6 +83,7 @@ interface CoreProtocolTokensArbitrumOne extends CoreProtocolTokens {
   ezEth: IERC20;
   sGlp: IERC20;
   gmx: IERC20;
+  gmxBtc: IERC20;
   grail: IERC20;
   jones: IERC20;
   magic: IERC20;
@@ -153,14 +160,15 @@ export interface CoreProtocolParams<T extends NetworkType> {
   eventEmitterRegistry: IEventEmitterRegistry;
   eventEmitterRegistryProxy: RegistryProxy;
   expiry: Expiry<T>;
+  freezableLiquidatorProxy: IsolationModeFreezableLiquidatorProxy;
   genericTraderProxy: IGenericTraderProxyV1;
   interestSetters: InterestSetters;
+  libraries: LibraryMaps;
   liquidatorAssetRegistry: ILiquidatorAssetRegistry;
   liquidatorProxyV1: ILiquidatorProxyV1;
   liquidatorProxyV4: ILiquidatorProxyV4WithGenericTrader;
   oracleAggregatorV2: OracleAggregatorV2;
   testEcosystem: TestEcosystem | undefined;
-  tokenVaultActionsLibraries: Record<string, string>;
   marketIds: CoreProtocolMarketIds;
   apiTokens: {
     usdc: ApiToken;
@@ -202,14 +210,15 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
   public readonly eventEmitterRegistry: IEventEmitterRegistry;
   public readonly eventEmitterRegistryProxy: RegistryProxy;
   public readonly expiry: Expiry<T>;
+  public readonly freezableLiquidatorProxy: IsolationModeFreezableLiquidatorProxy;
   public readonly genericTraderProxy: IGenericTraderProxyV1;
   public readonly interestSetters: InterestSetters;
+  public readonly libraries: LibraryMaps;
   public readonly liquidatorAssetRegistry: ILiquidatorAssetRegistry;
   public readonly liquidatorProxyV1: ILiquidatorProxyV1;
   public readonly liquidatorProxyV4: ILiquidatorProxyV4WithGenericTrader;
   public readonly oracleAggregatorV2: OracleAggregatorV2;
   public readonly testEcosystem: TestEcosystem | undefined;
-  public readonly tokenVaultActionsLibraries: Record<string, string>;
   /// =========================
   /// Markets and Tokens
   /// =========================
@@ -247,14 +256,15 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
     this.eventEmitterRegistry = params.eventEmitterRegistry;
     this.eventEmitterRegistryProxy = params.eventEmitterRegistryProxy;
     this.expiry = params.expiry;
+    this.freezableLiquidatorProxy = params.freezableLiquidatorProxy;
     this.genericTraderProxy = params.genericTraderProxy;
     this.interestSetters = params.interestSetters;
+    this.libraries = params.libraries;
     this.liquidatorAssetRegistry = params.liquidatorAssetRegistry;
     this.liquidatorProxyV1 = params.liquidatorProxyV1;
     this.liquidatorProxyV4 = params.liquidatorProxyV4;
     this.oracleAggregatorV2 = params.oracleAggregatorV2;
     this.testEcosystem = params.testEcosystem;
-    this.tokenVaultActionsLibraries = params.tokenVaultActionsLibraries;
     this.marketIds = params.marketIds;
     this.apiTokens = params.apiTokens;
     this.tokens = params.tokens;
