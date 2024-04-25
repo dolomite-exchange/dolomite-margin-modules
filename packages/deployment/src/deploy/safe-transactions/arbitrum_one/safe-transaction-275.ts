@@ -1,8 +1,6 @@
 import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { expect } from 'chai';
-import { parseEther } from 'ethers/lib/utils';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
 import { EncodedTransaction, prettyPrintEncodedDataWithTypeSafety } from '../../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../utils/dry-run-utils';
@@ -46,7 +44,8 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       transactions,
       chainId: network,
     },
-    invariants: async () => {},
+    invariants: async () => {
+    },
   };
 }
 
