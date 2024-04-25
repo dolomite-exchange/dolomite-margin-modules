@@ -63,6 +63,23 @@ export async function expectProtocolBalanceIsGreaterThan<T extends Network>(
     .gte(expectedBalanceWithMarginOfError);
 }
 
+export async function expectProtocolBalanceIsLessThan<T extends Network>(
+  coreProtocol: CoreProtocolType<T>,
+  accountStruct: AccountStruct,
+  marketId: BigNumberish,
+  expectedBalance: BigNumberish,
+  marginOfErrorBps: BigNumberish,
+) {
+  assertHardhatInvariant(BigNumber.from(marginOfErrorBps).lte(10000), 'Margin of error must be less than 10000 bps');
+
+  const expectedBalanceWithMarginOfError = BigNumber.from(expectedBalance)
+    .sub(BigNumber.from(expectedBalance).mul(marginOfErrorBps).div('10000'));
+  const balance = await coreProtocol.dolomiteMargin.getAccountWei(accountStruct, marketId);
+  expect(valueStructToBigNumber(balance))
+    .to
+    .lte(expectedBalanceWithMarginOfError);
+}
+
 const ONE_CENT: BigNumber = BigNumber.from('10000000000000000000000000000000000'); // $1 eq 1e36. Take off 2 decimals
 
 export async function expectWalletBalanceOrDustyIfZero<T extends Network>(
