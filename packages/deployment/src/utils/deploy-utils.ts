@@ -793,13 +793,29 @@ export async function prettyPrintEncodeInsertChainlinkOracleV3<T extends Network
   tokenPairAddress: address | undefined = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address].tokenPairAddress,
   aggregatorAddress: string = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address].aggregatorAddress,
 ): Promise<EncodedTransaction[]> {
-  const invalidTokensArbitrum = ['stEth', 'eEth', 'gmxBtc'];
+  const invalidTokenMap: Record<Network, Record<string, { symbol: string; decimals: number }>> = {
+    [Network.PolygonZkEvm]: {},
+    [Network.Base]: {},
+    [Network.ArbitrumOne]: {
+      [core.tokens.stEth.address]: {
+        symbol: 'stETH',
+        decimals: 18,
+      },
+      [core.tokens.eEth.address]: {
+        symbol: 'eETH',
+        decimals: 18,
+      },
+      [core.tokens.gmxBtc.address]: {
+        symbol: 'btc',
+        decimals: 8,
+      },
+    },
+  };
+  const invalidTokenSettings = invalidTokenMap[core.network][token.address];
+
   let tokenDecimals: number;
-  if (
-    core.network === Network.ArbitrumOne &&
-    invalidTokensArbitrum.some(t => t in core.tokens && token.address === (core.tokens as any)[t].address)
-  ) {
-    tokenDecimals = 18;
+  if (invalidTokenSettings) {
+    tokenDecimals = invalidTokenSettings.decimals;
   } else {
     tokenDecimals = await IERC20Metadata__factory.connect(token.address, core.hhUser1).decimals();
   }
@@ -808,14 +824,8 @@ export async function prettyPrintEncodeInsertChainlinkOracleV3<T extends Network
 
   const description = await aggregator.description();
   let symbol: string;
-  if (
-    core.network === Network.ArbitrumOne &&
-    invalidTokensArbitrum.some(t => t in core.tokens && token.address === (core.tokens as any)[t].address)
-  ) {
-    symbol = invalidTokensArbitrum.find(t => t in core.tokens && token.address === (core.tokens as any)[t].address)!;
-    if (symbol === 'gmxBtc') {
-      symbol = 'btc';
-    }
+  if (invalidTokenSettings) {
+    symbol = invalidTokenSettings.symbol;
   } else {
     symbol = await IERC20Metadata__factory.connect(token.address, token.signer).symbol();
   }

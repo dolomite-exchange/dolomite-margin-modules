@@ -6,7 +6,7 @@ import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { LinearStepFunctionInterestSetter__factory } from '@dolomite-exchange/modules-interest-setters/src/types';
 import { getTWAPPriceOracleV1ConstructorParams } from '@dolomite-exchange/modules-oracles/src/oracles-constructors';
-import { TWAPPriceOracle__factory } from '@dolomite-exchange/modules-oracles/src/types';
+import { TWAPPriceOracleV1__factory } from '@dolomite-exchange/modules-oracles/src/types';
 import { parseEther } from 'ethers/lib/utils';
 import { ADDRESS_ZERO, Network, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
 import {
@@ -35,7 +35,7 @@ async function main() {
     ),
     'GrailTWAPPriceOracleV1',
   );
-  const grailTwapPriceOracle = TWAPPriceOracle__factory.connect(grailTwapPriceOracleAddress, core.hhUser1);
+  const grailTwapPriceOracle = TWAPPriceOracleV1__factory.connect(grailTwapPriceOracleAddress, core.hhUser1);
 
   const altcoinInterestSetterAddress = await deployLinearInterestSetterAndSave(
     InterestSetterType.Altcoin,
@@ -48,7 +48,7 @@ async function main() {
   );
 
   await prettyPrintEncodeInsertChainlinkOracle(
-    core,
+    core as any,
     core.tokens.dpx!,
     ADDRESS_ZERO,
   );
@@ -79,7 +79,7 @@ async function main() {
   );
 
   await prettyPrintEncodeInsertChainlinkOracle(
-    core,
+    core as any,
     core.tokens.magic!,
     ADDRESS_ZERO,
   );
@@ -97,7 +97,7 @@ async function main() {
   );
 
   await prettyPrintEncodeInsertChainlinkOracle(
-    core,
+    core as any,
     core.tokens.pendle!,
     ADDRESS_ZERO,
   );
