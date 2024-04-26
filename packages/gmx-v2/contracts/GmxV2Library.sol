@@ -209,6 +209,10 @@ library GmxV2Library {
             /* callbackGasLimit = */ registry.callbackGasLimit()
         );
 
+        if (longToken == factory.SHORT_TOKEN()) {
+            withdrawalParams.longTokenSwapPath = new address[](0);
+            withdrawalParams.shortTokenSwapPath = new address[](0);
+        }
         return exchangeRouter.createWithdrawal(withdrawalParams);
     }
 
@@ -292,7 +296,9 @@ library GmxV2Library {
         );
 
         GmxMarket.MarketPrices memory marketPrices = _getGmxMarketPrices(
-            _dolomiteMargin.getMarketPrice(_factory.INDEX_TOKEN_MARKET_ID()).value,
+            _registry.dolomiteRegistry().oracleAggregator().getPrice(
+                _registry.gmxMarketToIndexToken(underlyingToken)
+            ).value,
             _dolomiteMargin.getMarketPrice(_factory.LONG_TOKEN_MARKET_ID()).value,
             _dolomiteMargin.getMarketPrice(_factory.SHORT_TOKEN_MARKET_ID()).value
         );

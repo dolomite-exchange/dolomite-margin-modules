@@ -53,7 +53,7 @@ interface IGmxV2IsolationModeVaultFactory is IAsyncFreezableIsolationModeVaultFa
 
     function LONG_TOKEN() external view returns (address);
 
-    function INDEX_TOKEN_MARKET_ID() external view returns (uint256);
+    // function INDEX_TOKEN_MARKET_ID() external view returns (uint256);
 
     function SHORT_TOKEN_MARKET_ID() external view returns (uint256);
 

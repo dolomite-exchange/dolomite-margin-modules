@@ -29,7 +29,7 @@ import { IPendleGLPRegistry } from "./interfaces/IPendleGLPRegistry.sol";
 import { IPendleRouter } from "./interfaces/IPendleRouter.sol";
 
 /**
- * @title   PendlePtGLP2024IsolationModeWrapperTraderV2
+ * @title   PendlePtGLPMar2024IsolationModeWrapperTraderV2.sol
  * @author  Dolomite
  *
  * @notice  Used for wrapping ptGLP (via swapping against the Pendle AMM then redeeming the underlying GLP to

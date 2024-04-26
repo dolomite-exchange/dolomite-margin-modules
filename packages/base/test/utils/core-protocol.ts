@@ -1,14 +1,18 @@
 import {
   IChainlinkAutomationRegistry,
   IChainlinkPriceOracleOld,
-  IChainlinkPriceOracleV3, OracleAggregatorV2,
+  IChainlinkPriceOracleV3,
+  OracleAggregatorV2,
 } from '@dolomite-exchange/modules-oracles/src/types';
 import { ApiToken, DolomiteZap } from '@dolomite-exchange/zap-sdk';
 import { BigNumberish } from 'ethers';
 import { Network, NetworkType } from 'packages/base/src/utils/no-deps-constants';
+import { IChainlinkPriceOracleV1 } from 'packages/oracles/src/types';
 import {
   IBorrowPositionProxyV2,
   IDepositWithdrawalProxy,
+  IDolomiteAccountValuesReader,
+  IDolomiteMigrator,
   IDolomiteRegistry,
   IERC20,
   IEventEmitterRegistry,
@@ -16,7 +20,7 @@ import {
   ILiquidatorAssetRegistry,
   ILiquidatorProxyV1,
   ILiquidatorProxyV4WithGenericTrader,
-  IPartiallyDelayedMultiSig,
+  IPartiallyDelayedMultiSig, IsolationModeFreezableLiquidatorProxy,
   IWETH,
   RegistryProxy,
 } from '../../src/types';
@@ -38,7 +42,12 @@ import { PremiaEcosystem } from './ecosystem-utils/premia';
 import { TestEcosystem } from './ecosystem-utils/testers';
 import { UmamiEcosystem } from './ecosystem-utils/umami';
 import { CoreProtocolConfig } from './setup';
-import { IChainlinkPriceOracleV1 } from 'packages/oracles/src/types';
+
+export interface LibraryMaps {
+  tokenVaultActionsImpl: Record<string, string>;
+  unwrapperTraderImpl: Record<string, string>;
+  wrapperTraderImpl: Record<string, string>;
+}
 
 interface CoreProtocolTokens {
   dai: IERC20;
@@ -72,7 +81,9 @@ interface CoreProtocolTokensArbitrumOne extends CoreProtocolTokens {
   dYtGlp: IERC20;
   eEth: IERC20;
   ezEth: IERC20;
+  sGlp: IERC20;
   gmx: IERC20;
+  gmxBtc: IERC20;
   grail: IERC20;
   jones: IERC20;
   magic: IERC20;
@@ -99,15 +110,19 @@ interface CoreProtocolMarketIdsArbitrumOne extends CoreProtocolMarketIds {
   dGmBtc: BigNumberish;
   dGmEth: BigNumberish;
   dGmLink: BigNumberish;
-  djUSDC: BigNumberish;
+  djUsdc: BigNumberish;
+  djUsdcOld: BigNumberish;
   dplvGlp: BigNumberish;
+  dPtEzEthJun2024: BigNumberish;
   dPtGlpMar2024: BigNumberish;
   dPtWeEthApr2024: BigNumberish;
+  dPtWeEthJun2024: BigNumberish;
   dPtREthJun2025: BigNumberish;
   dPtWstEthJun2024: BigNumberish;
   dPtWstEthJun2025: BigNumberish;
   dpx: BigNumberish;
   dYtGlp: BigNumberish;
+  ezEth: BigNumberish;
   gmx: BigNumberish;
   grail: BigNumberish;
   jones: BigNumberish;
@@ -120,7 +135,9 @@ interface CoreProtocolMarketIdsArbitrumOne extends CoreProtocolMarketIds {
   radiant: BigNumberish;
   pendle: BigNumberish;
   usdt: BigNumberish;
+  sGlp: BigNumberish;
   wbtc: BigNumberish;
+  weEth: BigNumberish;
   wstEth: BigNumberish;
   xai: BigNumberish;
 }
@@ -143,14 +160,15 @@ export interface CoreProtocolParams<T extends NetworkType> {
   eventEmitterRegistry: IEventEmitterRegistry;
   eventEmitterRegistryProxy: RegistryProxy;
   expiry: Expiry<T>;
+  freezableLiquidatorProxy: IsolationModeFreezableLiquidatorProxy;
   genericTraderProxy: IGenericTraderProxyV1;
   interestSetters: InterestSetters;
+  libraries: LibraryMaps;
   liquidatorAssetRegistry: ILiquidatorAssetRegistry;
   liquidatorProxyV1: ILiquidatorProxyV1;
   liquidatorProxyV4: ILiquidatorProxyV4WithGenericTrader;
   oracleAggregatorV2: OracleAggregatorV2;
   testEcosystem: TestEcosystem | undefined;
-  tokenVaultActionsLibraries: Record<string, string>;
   marketIds: CoreProtocolMarketIds;
   apiTokens: {
     usdc: ApiToken;
@@ -192,14 +210,15 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
   public readonly eventEmitterRegistry: IEventEmitterRegistry;
   public readonly eventEmitterRegistryProxy: RegistryProxy;
   public readonly expiry: Expiry<T>;
+  public readonly freezableLiquidatorProxy: IsolationModeFreezableLiquidatorProxy;
   public readonly genericTraderProxy: IGenericTraderProxyV1;
   public readonly interestSetters: InterestSetters;
+  public readonly libraries: LibraryMaps;
   public readonly liquidatorAssetRegistry: ILiquidatorAssetRegistry;
   public readonly liquidatorProxyV1: ILiquidatorProxyV1;
   public readonly liquidatorProxyV4: ILiquidatorProxyV4WithGenericTrader;
   public readonly oracleAggregatorV2: OracleAggregatorV2;
   public readonly testEcosystem: TestEcosystem | undefined;
-  public readonly tokenVaultActionsLibraries: Record<string, string>;
   /// =========================
   /// Markets and Tokens
   /// =========================
@@ -237,14 +256,15 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
     this.eventEmitterRegistry = params.eventEmitterRegistry;
     this.eventEmitterRegistryProxy = params.eventEmitterRegistryProxy;
     this.expiry = params.expiry;
+    this.freezableLiquidatorProxy = params.freezableLiquidatorProxy;
     this.genericTraderProxy = params.genericTraderProxy;
     this.interestSetters = params.interestSetters;
+    this.libraries = params.libraries;
     this.liquidatorAssetRegistry = params.liquidatorAssetRegistry;
     this.liquidatorProxyV1 = params.liquidatorProxyV1;
     this.liquidatorProxyV4 = params.liquidatorProxyV4;
     this.oracleAggregatorV2 = params.oracleAggregatorV2;
     this.testEcosystem = params.testEcosystem;
-    this.tokenVaultActionsLibraries = params.tokenVaultActionsLibraries;
     this.marketIds = params.marketIds;
     this.apiTokens = params.apiTokens;
     this.tokens = params.tokens;
@@ -261,6 +281,8 @@ interface CoreProtocolParamsArbitrumOne {
   chainlinkPriceOracleOld: IChainlinkPriceOracleOld;
   chainlinkPriceOracleV1: IChainlinkPriceOracleV1;
   chainlinkPriceOracleV3: IChainlinkPriceOracleV3;
+  dolomiteAccountValuesReader: IDolomiteAccountValuesReader;
+  dolomiteMigrator: IDolomiteMigrator;
   gmxEcosystem: GmxEcosystem;
   gmxEcosystemV2: GmxEcosystemV2;
   jonesEcosystem: JonesEcosystem;
@@ -282,6 +304,8 @@ export class CoreProtocolArbitrumOne extends CoreProtocolAbstract<Network.Arbitr
   public readonly chainlinkAutomationRegistry: IChainlinkAutomationRegistry;
   public readonly chainlinkPriceOracleOld: IChainlinkPriceOracleV1;
   public readonly chainlinkPriceOracleV3: IChainlinkPriceOracleV3;
+  public readonly dolomiteAccountValuesReader: IDolomiteAccountValuesReader;
+  public readonly dolomiteMigrator: IDolomiteMigrator;
   public readonly gmxEcosystem: GmxEcosystem;
   public readonly gmxEcosystemV2: GmxEcosystemV2;
   public readonly jonesEcosystem: JonesEcosystem;
@@ -307,6 +331,8 @@ export class CoreProtocolArbitrumOne extends CoreProtocolAbstract<Network.Arbitr
     this.chainlinkAutomationRegistry = arbParams.chainlinkAutomationRegistry;
     this.chainlinkPriceOracleOld = arbParams.chainlinkPriceOracleV1;
     this.chainlinkPriceOracleV3 = arbParams.chainlinkPriceOracleV3;
+    this.dolomiteAccountValuesReader = arbParams.dolomiteAccountValuesReader;
+    this.dolomiteMigrator = arbParams.dolomiteMigrator;
     this.gmxEcosystem = arbParams.gmxEcosystem;
     this.gmxEcosystemV2 = arbParams.gmxEcosystemV2;
     this.jonesEcosystem = arbParams.jonesEcosystem;

@@ -1,7 +1,10 @@
+import CoreDeployments from '@dolomite-exchange/dolomite-margin/dist/migrations/deployed.json';
 import Deployments, * as deployments from '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
 import {
   IChainlinkAutomationRegistry__factory,
-  IChainlinkPriceOracleOld__factory, IChainlinkPriceOracleV3__factory, OracleAggregatorV2__factory,
+  IChainlinkPriceOracleOld__factory,
+  IChainlinkPriceOracleV3__factory,
+  OracleAggregatorV2__factory,
 } from '@dolomite-exchange/modules-oracles/src/types';
 import { BigNumber as ZapBigNumber } from '@dolomite-exchange/zap-sdk';
 import * as BorrowPositionProxyV2Json from '@dolomite-margin/deployed-contracts/BorrowPositionProxyV2.json';
@@ -17,14 +20,17 @@ import { address } from '@dolomite-margin/dist/src';
 import { Provider } from '@ethersproject/providers';
 import { BaseContract, BigNumberish, ContractInterface, Signer } from 'ethers';
 import { ethers } from 'hardhat';
+import { IGmxMarketToken } from 'packages/gmx-v2/src/types';
 import { IChainlinkPriceOracleV1__factory } from 'packages/oracles/src/types';
 import {
   IBorrowPositionProxyV2__factory,
   IDepositWithdrawalProxy__factory,
+  IDolomiteAccountValuesReader__factory,
   IDolomiteMargin,
   IDolomiteMargin__factory,
   IDolomiteMarginV2,
   IDolomiteMarginV2__factory,
+  IDolomiteMigrator__factory,
   IDolomiteRegistry__factory,
   IERC20,
   IERC20__factory,
@@ -35,7 +41,7 @@ import {
   ILiquidatorAssetRegistry__factory,
   ILiquidatorProxyV1__factory,
   ILiquidatorProxyV4WithGenericTrader__factory,
-  IPartiallyDelayedMultiSig__factory,
+  IPartiallyDelayedMultiSig__factory, IsolationModeFreezableLiquidatorProxy__factory,
   IWETH__factory,
   RegistryProxy__factory,
 } from '../../src/types';
@@ -54,16 +60,19 @@ import {
   DAI_MAP,
   DFS_GLP_MAP,
   DJ_USDC,
+  DJ_USDC_OLD,
   DPLV_GLP_MAP,
-  DPT_GLP_2024_MAP,
+  DPT_EZ_ETH_JUN_2024_MAP,
+  DPT_GLP_MAR_2024_MAP,
   DPT_R_ETH_JUN_2025_MAP,
   DPT_WE_ETH_APR_2024_MAP,
+  DPT_WE_ETH_JUN_2024_MAP,
   DPT_WST_ETH_JUN_2024_MAP,
   DPT_WST_ETH_JUN_2025_MAP,
   DPX_MAP,
   DYT_GLP_2024_MAP,
   E_ETH_MAP,
-  EZ_ETH_MAP,
+  EZ_ETH_MAP, GMX_BTC_PLACEHOLDER_MAP,
   GMX_MAP,
   GRAIL_MAP,
   JONES_MAP,
@@ -78,6 +87,7 @@ import {
   RDNT_MAP,
   RETH_MAP,
   RS_ETH_MAP,
+  S_GLP_MAP,
   SIZE_MAP,
   SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL,
   ST_ETH_MAP,
@@ -86,7 +96,8 @@ import {
   WBTC_MAP,
   WE_ETH_MAP,
   WETH_MAP,
-  WST_ETH_MAP, XAI_MAP,
+  WST_ETH_MAP,
+  XAI_MAP,
 } from '../../src/utils/constants';
 import { Network, NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP, NetworkType } from '../../src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '../../src/utils/SignerWithAddressWithSafety';
@@ -95,7 +106,7 @@ import {
   CoreProtocolArbitrumOne,
   CoreProtocolBase,
   CoreProtocolParams,
-  CoreProtocolPolygonZkEvm,
+  CoreProtocolPolygonZkEvm, LibraryMaps,
 } from './core-protocol';
 import { DolomiteMargin, Expiry } from './dolomite';
 import { createAbraEcosystem } from './ecosystem-utils/abra';
@@ -177,6 +188,18 @@ export async function setupWETHBalance<T extends NetworkType>(
   await core.tokens.weth.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
+export async function setupWBTCBalance<T extends NetworkType>(
+  core: CoreProtocolArbitrumOne,
+  signer: SignerWithAddressWithSafety,
+  amount: BigNumberish,
+  spender: { address: string },
+) {
+  const whaleAddress = '0x078f358208685046a11c85e8ad32895ded33a249'; // Aave Token
+  const whaleSigner = await impersonate(whaleAddress, true);
+  await core.tokens.wbtc.connect(whaleSigner).transfer(signer.address, amount);
+  await core.tokens.wbtc.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
+}
+
 export async function setupARBBalance(
   core: CoreProtocolArbitrumOne,
   signer: SignerWithAddressWithSafety,
@@ -227,14 +250,15 @@ export async function setupUSDCBalance<T extends NetworkType>(
 
 export async function setupGMBalance(
   core: CoreProtocolArbitrumOne,
+  gmToken: IGmxMarketToken,
   signer: { address: string },
   amount: BigNumberish,
   spender?: { address: string },
 ) {
   const controller = await impersonate(core.gmxEcosystemV2!.gmxExchangeRouter.address, true);
-  await core.gmxEcosystemV2!.gmxEthUsdMarketToken.connect(controller).mint(signer.address, amount);
+  await gmToken.connect(controller).mint(signer.address, amount);
   if (signer instanceof SignerWithAddressWithSafety && spender) {
-    await core.gmxEcosystemV2!.gmxEthUsdMarketToken.connect(signer).approve(spender.address, amount);
+    await gmToken.connect(signer).approve(spender.address, amount);
   }
 }
 
@@ -437,6 +461,11 @@ export async function setupCoreProtocol<T extends NetworkType>(
     ? IExpiry__factory.connect(ExpiryJson.networks[config.network].address, governance)
     : IExpiryV2__factory.connect(ExpiryJson.networks[config.network].address, governance)) as Expiry<T>;
 
+  const freezableLiquidatorProxy = IsolationModeFreezableLiquidatorProxy__factory.connect(
+    getMaxDeploymentVersionAddressByDeploymentKey('IsolationModeFreezableLiquidatorProxy', config.network),
+    governance,
+  );
+
   const genericTraderProxy = getContract(
     IGenericTraderProxyV1Json.networks[config.network].address,
     IGenericTraderProxyV1__factory.connect,
@@ -469,7 +498,11 @@ export async function setupCoreProtocol<T extends NetworkType>(
 
   const testEcosystem = await createTestEcosystem(dolomiteMargin, governance);
 
-  const tokenVaultActionsLibraries = await createTokenVaultActionsLibraries(config);
+  const libraries: LibraryMaps = {
+    tokenVaultActionsImpl: createTokenVaultActionsLibraries(config),
+    unwrapperTraderImpl: createAsyncUnwrapperImplLibraries(config),
+    wrapperTraderImpl: createAsyncWrapperImplLibraries(config),
+  };
 
   const coreProtocolParams: CoreProtocolParams<T> = {
     borrowPositionProxyV2,
@@ -481,15 +514,16 @@ export async function setupCoreProtocol<T extends NetworkType>(
     eventEmitterRegistry,
     eventEmitterRegistryProxy,
     expiry,
+    freezableLiquidatorProxy,
     genericTraderProxy,
     governance,
     interestSetters,
+    libraries,
     liquidatorAssetRegistry,
     liquidatorProxyV1,
     liquidatorProxyV4,
     oracleAggregatorV2,
     testEcosystem,
-    tokenVaultActionsLibraries,
     hhUser1,
     hhUser2,
     hhUser3,
@@ -545,6 +579,15 @@ export async function setupCoreProtocol<T extends NetworkType>(
           CHAINLINK_AUTOMATION_REGISTRY_MAP[typedConfig.network],
           governance,
         ),
+        // @follow-up This doesn't work
+        dolomiteAccountValuesReader: IDolomiteAccountValuesReader__factory.connect(
+          CoreDeployments.BorrowPositionProxyV2[typedConfig.network].address,
+          hhUser1,
+        ),
+        dolomiteMigrator: IDolomiteMigrator__factory.connect(
+          Deployments.DolomiteMigratorV2[typedConfig.network].address,
+          hhUser1,
+        ),
         gmxEcosystem: await createGmxEcosystem(typedConfig.network, hhUser1),
         gmxEcosystemV2: await createGmxEcosystemV2(typedConfig.network, hhUser1),
         jonesEcosystem: await createJonesEcosystem(typedConfig.network, hhUser1),
@@ -565,15 +608,20 @@ export async function setupCoreProtocol<T extends NetworkType>(
           dGmBtc: D_GM_BTC_MAP[typedConfig.network]!.marketId,
           dGmEth: D_GM_ETH_MAP[typedConfig.network]!.marketId,
           dGmLink: D_GM_LINK_MAP[typedConfig.network]!.marketId,
-          djUSDC: DJ_USDC[typedConfig.network]!.marketId,
+          djUsdc: DJ_USDC[typedConfig.network]!.marketId,
+          djUsdcOld: DJ_USDC_OLD[typedConfig.network]!.marketId,
           dplvGlp: DPLV_GLP_MAP[typedConfig.network]!.marketId,
-          dPtGlpMar2024: DPT_GLP_2024_MAP[typedConfig.network]!.marketId,
+          dPtEzEthJun2024: DPT_EZ_ETH_JUN_2024_MAP[typedConfig.network]!.marketId,
+          dPtGlpMar2024: DPT_GLP_MAR_2024_MAP[typedConfig.network]!.marketId,
           dPtREthJun2025: DPT_R_ETH_JUN_2025_MAP[typedConfig.network]!.marketId,
           dPtWeEthApr2024: DPT_WE_ETH_APR_2024_MAP[typedConfig.network]!.marketId,
+          dPtWeEthJun2024: DPT_WE_ETH_JUN_2024_MAP[typedConfig.network]!.marketId,
           dPtWstEthJun2024: DPT_WST_ETH_JUN_2024_MAP[typedConfig.network]!.marketId,
           dPtWstEthJun2025: DPT_WST_ETH_JUN_2025_MAP[typedConfig.network]!.marketId,
           dpx: DPX_MAP[typedConfig.network]!.marketId,
           dYtGlp: DYT_GLP_2024_MAP[typedConfig.network]!.marketId,
+          ezEth: EZ_ETH_MAP[typedConfig.network]!.marketId,
+          sGlp: S_GLP_MAP[typedConfig.network]!.marketId,
           gmx: GMX_MAP[typedConfig.network]!.marketId,
           grail: GRAIL_MAP[typedConfig.network]!.marketId,
           jones: JONES_MAP[typedConfig.network]!.marketId,
@@ -587,6 +635,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
           pendle: PENDLE_MAP[typedConfig.network]!.marketId,
           usdt: USDT_MAP[typedConfig.network]!.marketId,
           wbtc: WBTC_MAP[typedConfig.network]!.marketId,
+          weEth: WE_ETH_MAP[typedConfig.network]!.marketId,
           wstEth: WST_ETH_MAP[typedConfig.network]!.marketId,
           xai: XAI_MAP[typedConfig.network]!.marketId,
         },
@@ -600,7 +649,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
           dGmBtc: IERC20__factory.connect(D_GM_BTC_MAP[typedConfig.network]!.address, hhUser1),
           dGmEth: IERC20__factory.connect(D_GM_ETH_MAP[typedConfig.network]!.address, hhUser1),
           dGmLink: IERC20__factory.connect(D_GM_LINK_MAP[typedConfig.network]!.address, hhUser1),
-          dPtGlp: IERC20__factory.connect(DPT_GLP_2024_MAP[typedConfig.network]!.address, hhUser1),
+          dPtGlp: IERC20__factory.connect(DPT_GLP_MAR_2024_MAP[typedConfig.network]!.address, hhUser1),
           dPtREthJun2025: IERC20__factory.connect(DPT_R_ETH_JUN_2025_MAP[typedConfig.network]!.address, hhUser1),
           dPtWeEthApr2024: IERC20__factory.connect(DPT_WE_ETH_APR_2024_MAP[typedConfig.network]!.address, hhUser1),
           dPtWstEthJun2024: IERC20__factory.connect(DPT_WST_ETH_JUN_2024_MAP[typedConfig.network]!.address, hhUser1),
@@ -610,6 +659,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
           eEth: IERC20__factory.connect(E_ETH_MAP[typedConfig.network]!.address, hhUser1),
           ezEth: IERC20__factory.connect(EZ_ETH_MAP[typedConfig.network]!.address, hhUser1),
           gmx: IERC20__factory.connect(GMX_MAP[typedConfig.network]!.address, hhUser1),
+          gmxBtc: IERC20__factory.connect(GMX_BTC_PLACEHOLDER_MAP[typedConfig.network]!.address, hhUser1),
           grail: IERC20__factory.connect(GRAIL_MAP[typedConfig.network]!.address, hhUser1),
           jones: IERC20__factory.connect(JONES_MAP[typedConfig.network]!.address, hhUser1),
           magic: IERC20__factory.connect(MAGIC_MAP[typedConfig.network]!.address, hhUser1),
@@ -619,6 +669,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
           rEth: IERC20__factory.connect(RETH_MAP[typedConfig.network]!.address, hhUser1),
           rsEth: IERC20__factory.connect(RS_ETH_MAP[typedConfig.network]!.address, hhUser1),
           radiant: IERC20__factory.connect(RDNT_MAP[typedConfig.network]!.address, hhUser1),
+          sGlp: IERC20__factory.connect(S_GLP_MAP[typedConfig.network]!.address, hhUser1),
           size: IERC20__factory.connect(SIZE_MAP[typedConfig.network]!.address, hhUser1),
           stEth: IERC20__factory.connect(ST_ETH_MAP[typedConfig.network]!.address, hhUser1),
           wbtc: IERC20__factory.connect(WBTC_MAP[typedConfig.network].address, hhUser1),
@@ -700,12 +751,34 @@ export async function setupTestMarket<T extends NetworkType>(
   }
 }
 
-async function createTokenVaultActionsLibraries<T extends NetworkType>(
+function createTokenVaultActionsLibraries<T extends NetworkType>(
   config: CoreProtocolSetupConfig<T>,
-): Promise<Record<string, string>> {
+): Record<string, string> {
   return {
     IsolationModeTokenVaultV1ActionsImpl: getMaxDeploymentVersionAddressByDeploymentKey(
       'IsolationModeTokenVaultV1ActionsImpl',
+      config.network,
+    ),
+  };
+}
+
+function createAsyncUnwrapperImplLibraries<T extends NetworkType>(
+  config: CoreProtocolSetupConfig<T>,
+): Record<string, string> {
+  return {
+    AsyncIsolationModeUnwrapperTraderImpl: getMaxDeploymentVersionAddressByDeploymentKey(
+      'AsyncIsolationModeUnwrapperTraderImpl',
+      config.network,
+    ),
+  };
+}
+
+function createAsyncWrapperImplLibraries<T extends NetworkType>(
+  config: CoreProtocolSetupConfig<T>,
+): Record<string, string> {
+  return {
+    AsyncIsolationModeWrapperTraderImpl: getMaxDeploymentVersionAddressByDeploymentKey(
+      'AsyncIsolationModeWrapperTraderImpl',
       config.network,
     ),
   };

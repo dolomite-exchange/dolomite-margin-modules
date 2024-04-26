@@ -38,7 +38,7 @@ import {
   IGLPIsolationModeVaultFactoryOld,
   IGmxRegistryV1,
 } from '../src/types';
-import { createGLPUnwrapperTraderV2, createGLPWrapperTraderV2 } from './glp-ecosystem-utils';
+import { createGLPIsolationModeUnwrapperTraderV2, createGLPIsolationModeWrapperTraderV2 } from './glp-ecosystem-utils';
 
 const defaultAccountNumber = '0';
 const otherAccountNumber = '420';
@@ -91,8 +91,8 @@ describe('GLPIsolationModeLiquidationWithZap', () => {
       web3Provider: core.hhUser1.provider!,
     });
 
-    unwrapper = await createGLPUnwrapperTraderV2(core, factory, gmxRegistry);
-    wrapper = await createGLPWrapperTraderV2(core, factory, gmxRegistry);
+    unwrapper = await createGLPIsolationModeUnwrapperTraderV2(core, factory, gmxRegistry);
+    wrapper = await createGLPIsolationModeWrapperTraderV2(core, factory, gmxRegistry);
     await factory.connect(core.governance).setIsTokenConverterTrusted(unwrapper.address, true);
     await factory.connect(core.governance).setIsTokenConverterTrusted(wrapper.address, true);
 

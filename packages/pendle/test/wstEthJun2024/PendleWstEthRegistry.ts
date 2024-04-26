@@ -20,7 +20,7 @@ describe('PendleWstEthJun2024Registry', () => {
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
-    ptMarket = core.pendleEcosystem!.wstEthJun2024.ptWstEthMarket;
+    ptMarket = core.pendleEcosystem!.wstEthJun2024.wstEthMarket;
     syToken = core.pendleEcosystem!.syWstEthToken;
 
     registry = await createPendleRegistry(core, ptMarket, core.pendleEcosystem!.wstEthJun2024.ptOracle, syToken);

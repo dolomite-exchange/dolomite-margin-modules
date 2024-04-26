@@ -25,6 +25,7 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 import { IDolomiteMigrator } from "../interfaces/IDolomiteMigrator.sol";
+import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IDolomiteTransformer } from "../interfaces/IDolomiteTransformer.sol";
 import { IIsolationModeTokenVaultMigrator } from "../isolation-mode/interfaces/IIsolationModeTokenVaultMigrator.sol";
 import { IIsolationModeVaultFactory } from "../isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
@@ -54,7 +55,10 @@ contract DolomiteMigrator is IDolomiteMigrator, OnlyDolomiteMargin {
     // =================== State Variables ============
     // ================================================
 
-    mapping(uint256 => mapping(uint256 => Transformer)) public marketIdsToTransformer;
+    mapping(uint256 => mapping(uint256 => Transformer)) private _marketIdsToTransformer;
+
+    IDolomiteRegistry public immutable DOLOMITE_REGISTRY; // solhint-disable-line var-name-mixedcase
+
     address public handler;
 
     // ================================================
@@ -75,9 +79,11 @@ contract DolomiteMigrator is IDolomiteMigrator, OnlyDolomiteMargin {
     // ================================================
 
     constructor(
-        address _dolomiteMargin,
-        address _handler
+        address _dolomiteRegistry,
+        address _handler,
+        address _dolomiteMargin
     ) OnlyDolomiteMargin(_dolomiteMargin) {
+        DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
         _ownerSetHandler(_handler);
     }
 
@@ -126,6 +132,13 @@ contract DolomiteMigrator is IDolomiteMigrator, OnlyDolomiteMargin {
         _ownerSetHandler(_handler);
     }
 
+    function getTransformerByMarketIds(
+        uint256 _fromMarketId,
+        uint256 _toMarketId
+    ) external view returns (Transformer memory) {
+        return _marketIdsToTransformer[_fromMarketId][_toMarketId];
+    }
+
     // ================================================
     // ================ Internal Functions ============
     // ================================================
@@ -144,7 +157,7 @@ contract DolomiteMigrator is IDolomiteMigrator, OnlyDolomiteMargin {
         );
 
         IDolomiteTransformer transformer = IDolomiteTransformer(
-            marketIdsToTransformer[_fromMarketId][_toMarketId].transformer
+            _marketIdsToTransformer[_fromMarketId][_toMarketId].transformer
         );
         IERC20 outputToken = IERC20(transformer.outputToken());
 
@@ -219,7 +232,7 @@ contract DolomiteMigrator is IDolomiteMigrator, OnlyDolomiteMargin {
         uint256 _amount,
         bytes memory _extraData
     ) internal returns (uint256) {
-        address transformer = marketIdsToTransformer[_fromMarketId][_toMarketId].transformer;
+        address transformer = _marketIdsToTransformer[_fromMarketId][_toMarketId].transformer;
         assert(transformer != address(0));
         (bool success, bytes memory data) = transformer.delegatecall(
             abi.encodeWithSelector(IDolomiteTransformer.transform.selector, _amount, _extraData)
@@ -307,6 +320,10 @@ contract DolomiteMigrator is IDolomiteMigrator, OnlyDolomiteMargin {
             );
         }
 
+        if (_account.number > 100) {
+            DOLOMITE_REGISTRY.eventEmitter().emitBorrowPositionOpen(_toVault, _account.number);
+        }
+
         DOLOMITE_MARGIN().operate(accounts, actions);
     }
 
@@ -328,7 +345,7 @@ contract DolomiteMigrator is IDolomiteMigrator, OnlyDolomiteMargin {
 
         if (_soloCall) {
             Require.that(
-                marketIdsToTransformer[_fromMarketId][_toMarketId].soloAllowable,
+                _marketIdsToTransformer[_fromMarketId][_toMarketId].soloAllowable,
                 _FILE,
                 "Solo migration not allowed"
             );
@@ -347,7 +364,7 @@ contract DolomiteMigrator is IDolomiteMigrator, OnlyDolomiteMargin {
             "Invalid transformer"
         );
 
-        marketIdsToTransformer[_fromMarketId][_toMarketId] = Transformer({
+        _marketIdsToTransformer[_fromMarketId][_toMarketId] = Transformer({
             transformer: _transformer,
             soloAllowable: _soloAllowable
         });

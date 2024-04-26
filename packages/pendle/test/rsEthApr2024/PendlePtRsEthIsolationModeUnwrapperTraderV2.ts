@@ -13,6 +13,7 @@ import {
   setupTestMarket,
   setupUserVaultProxy,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { getTWAPPriceOracleV2ConstructorParams } from '@dolomite-exchange/modules-oracles/src/oracles-constructors';
 import { BaseRouter, Router } from '@pendle/sdk-v2';
 import { CHAIN_ID_MAPPING } from '@pendle/sdk-v2/dist/common/ChainId';
 import { expect } from 'chai';
@@ -22,7 +23,7 @@ import { RS_ETH_CAMELOT_POOL_MAP } from 'packages/base/src/utils/constants';
 import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
 import { expectThrow } from 'packages/base/test/utils/assertions';
 import { setupNewGenericTraderProxy } from 'packages/base/test/utils/dolomite';
-import { TWAPPriceOracle, TWAPPriceOracle__factory } from 'packages/oracles/src/types';
+import { IAlgebraV3Pool__factory, TWAPPriceOracleV2, TWAPPriceOracleV2__factory } from 'packages/oracles/src/types';
 import {
   IERC20,
   IPendlePtMarket,
@@ -74,14 +75,18 @@ describe('PendlePtRsEthApr2024IsolationModeUnwrapperTraderV2', () => {
       network: Network.ArbitrumOne,
     });
 
-    ptMarket = core.pendleEcosystem!.rsEthApr2024.ptRsEthMarket.connect(core.hhUser1);
+    ptMarket = core.pendleEcosystem!.rsEthApr2024.rsEthMarket.connect(core.hhUser1);
     ptToken = core.pendleEcosystem!.rsEthApr2024.ptRsEthToken.connect(core.hhUser1);
     underlyingToken = core.tokens.rsEth!;
 
-    const twapPriceOracle = await createContractWithAbi<TWAPPriceOracle>(
-      TWAPPriceOracle__factory.abi,
-      TWAPPriceOracle__factory.bytecode,
-      [core.tokens.rsEth.address, [RS_ETH_CAMELOT_POOL_MAP[Network.ArbitrumOne]], core.dolomiteMargin.address],
+    const tokenPair = IAlgebraV3Pool__factory.connect(
+      RS_ETH_CAMELOT_POOL_MAP[Network.ArbitrumOne]!,
+      core.hhUser1,
+    );
+    const twapPriceOracle = await createContractWithAbi<TWAPPriceOracleV2>(
+      TWAPPriceOracleV2__factory.abi,
+      TWAPPriceOracleV2__factory.bytecode,
+      getTWAPPriceOracleV2ConstructorParams(core, core.tokens.rsEth, tokenPair),
     );
     underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, core.tokens.rsEth, false, twapPriceOracle);
@@ -90,7 +95,7 @@ describe('PendlePtRsEthApr2024IsolationModeUnwrapperTraderV2', () => {
     const userVaultImplementation = await createPendlePtIsolationModeTokenVaultV1();
     pendleRegistry = await createPendleRegistry(
       core,
-      core.pendleEcosystem!.rsEthApr2024.ptRsEthMarket,
+      core.pendleEcosystem!.rsEthApr2024.rsEthMarket,
       core.pendleEcosystem!.rsEthApr2024.ptOracle,
       core.pendleEcosystem!.syREthToken,
     );

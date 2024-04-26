@@ -149,11 +149,14 @@ contract GmxV2MarketTokenPriceOracle is IGmxV2MarketTokenPriceOracle, OnlyDolomi
         GmxPrice.PriceProps memory _longTokenPriceProps,
         GmxPrice.PriceProps memory _shortTokenPriceProps
     ) internal view returns (uint256) {
-        uint256 indexTokenPrice = DOLOMITE_MARGIN().getMarketPrice(_factory.INDEX_TOKEN_MARKET_ID()).value;
+        address underlyingToken = _factory.UNDERLYING_TOKEN();
+        address indexToken = REGISTRY.gmxMarketToIndexToken(underlyingToken);
+
+        uint256 indexTokenPrice = REGISTRY.dolomiteRegistry().oracleAggregator().getPrice(indexToken).value;
 
         GmxMarket.MarketProps memory marketProps = GmxMarket.MarketProps({
-            marketToken: _factory.UNDERLYING_TOKEN(),
-            indexToken: _factory.INDEX_TOKEN(),
+            marketToken: underlyingToken,
+            indexToken: indexToken,
             longToken: _factory.LONG_TOKEN(),
             shortToken: _factory.SHORT_TOKEN()
         });

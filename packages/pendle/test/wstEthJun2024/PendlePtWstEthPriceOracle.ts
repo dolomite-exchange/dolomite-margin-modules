@@ -69,7 +69,7 @@ describe('PendlePtWstEthJun2024PriceOracle', () => {
 
     pendleRegistry = await createPendleRegistry(
       core,
-      core.pendleEcosystem!.wstEthJun2024.ptWstEthMarket,
+      core.pendleEcosystem!.wstEthJun2024.wstEthMarket,
       core.pendleEcosystem!.wstEthJun2024.ptOracle,
       core.pendleEcosystem!.syWstEthToken,
     );

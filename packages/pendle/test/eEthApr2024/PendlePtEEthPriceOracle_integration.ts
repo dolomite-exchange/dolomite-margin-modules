@@ -45,7 +45,6 @@ describe('PendlePtEEthApr2024PriceOracle_integration', () => {
   let pendleRegistry: PendleRegistry;
   let factory: PendlePtIsolationModeVaultFactory;
   let underlyingToken: IERC20;
-  let apiAmountOut: BigNumber;
 
   before(async () => {
     core = await setupCoreProtocol({
@@ -55,7 +54,8 @@ describe('PendlePtEEthApr2024PriceOracle_integration', () => {
 
     underlyingToken = core.tokens.weEth!;
     const wethAggregator = await core.chainlinkPriceOracleOld!.getAggregatorByToken(core.tokens.weth.address);
-    const weEthAggregator = REDSTONE_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne].aggregatorAddress;
+    const redstoneAggregatorMap = REDSTONE_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne];
+    const weEthAggregator = redstoneAggregatorMap[core.tokens.weEth.address].aggregatorAddress;
     const redstoneOracle = (await createContractWithAbi<RedstonePriceOracleV2>(
       RedstonePriceOracleV2__factory.abi,
       RedstonePriceOracleV2__factory.bytecode,
@@ -93,7 +93,7 @@ describe('PendlePtEEthApr2024PriceOracle_integration', () => {
 
     pendleRegistry = await createPendleRegistry(
       core,
-      core.pendleEcosystem!.weEthApr2024.ptWeEthMarket,
+      core.pendleEcosystem!.weEthApr2024.weEthMarket,
       core.pendleEcosystem!.weEthApr2024.ptOracle,
       core.pendleEcosystem!.syWeEthToken,
     );
@@ -108,25 +108,6 @@ describe('PendlePtEEthApr2024PriceOracle_integration', () => {
     ptOracle = await createPendlePtEEthPriceOracle(core, factory, pendleRegistry);
     await setupTestMarket(core, factory, true, ptOracle);
     await ptOracle.connect(core.governance).ownerSetDeductionCoefficient(parseEther('.001'));
-
-    const BASE_URL = 'https://api-v2.pendle.finance/sdk/api/v1';
-    const data = await axios.get(`${BASE_URL}/swapExactPtForToken`, {
-      params: {
-        chainId: Network.ArbitrumOne.toString(),
-        receiverAddr: core.hhUser1.address.toLowerCase(),
-        marketAddr: core.pendleEcosystem.weEthApr2024.ptWeEthMarket.address,
-        amountPtIn: ONE_ETH_BI.toString(),
-        tokenOutAddr: ADDRESS_ZERO,
-        syTokenOutAddr: core.tokens.weEth.address,
-        slippage: '0.0001',
-      },
-    })
-      .then(result => result.data)
-      .catch(e => {
-        console.log(e);
-        return Promise.reject(e);
-      });
-    apiAmountOut = BigNumber.from(data.data.amountTokenOut).mul((await core.dolomiteMargin.getMarketPrice(0)).value);
 
     snapshotId = await snapshot();
   });
@@ -146,6 +127,27 @@ describe('PendlePtEEthApr2024PriceOracle_integration', () => {
 
   describe('#getPrice', () => {
     it('returns the correct value under normal conditions for the dptToken', async () => {
+      const BASE_URL = 'https://api-v2.pendle.finance/sdk/api/v1';
+      const data = await axios.get(`${BASE_URL}/swapExactPtForToken`, {
+        params: {
+          chainId: Network.ArbitrumOne.toString(),
+          receiverAddr: core.hhUser1.address.toLowerCase(),
+          marketAddr: core.pendleEcosystem.weEthApr2024.weEthMarket.address,
+          amountPtIn: ONE_ETH_BI.toString(),
+          tokenOutAddr: ADDRESS_ZERO,
+          syTokenOutAddr: core.tokens.weEth.address,
+          slippage: '0.0001',
+        },
+      })
+      .then(result => result.data)
+      .catch(e => {
+        console.log(e);
+        return Promise.reject(e);
+      });
+      const apiAmountOut = BigNumber.from(data.data.amountTokenOut).mul(
+        (await core.dolomiteMargin.getMarketPrice(0)).value
+      );
+
       if (process.env.COVERAGE === 'true') {
         return;
       }

@@ -23,7 +23,7 @@ async function main(): Promise<DenJsonUpload> {
     'JonesUSDCIsolationModeTokenVaultV2',
     [],
     undefined,
-    core.tokenVaultActionsLibraries,
+    core.libraries.tokenVaultActionsImpl,
   );
   const jonesUSDCRegistryAddress = await deployContractAndSave(
     'JonesUSDCRegistry',
@@ -53,7 +53,7 @@ async function main(): Promise<DenJsonUpload> {
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       core.jonesEcosystem!.live,
-      'jUSDCIsolationModeFactory',
+      'jUSDCIsolationModeFactoryOld',
       'ownerSetUserVaultImplementation',
       [jUSDCTokenVaultV2Address],
     ),

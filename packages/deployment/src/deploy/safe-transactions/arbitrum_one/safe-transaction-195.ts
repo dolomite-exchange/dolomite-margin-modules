@@ -21,14 +21,14 @@ async function main(): Promise<DenJsonUpload> {
     'JonesUSDCIsolationModeTokenVaultV2',
     [],
     'JonesUSDCIsolationModeTokenVaultV7',
-    core.tokenVaultActionsLibraries,
+    core.libraries.tokenVaultActionsImpl,
   );
 
   const transactions = [
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       core.jonesEcosystem!.live,
-      'jUSDCIsolationModeFactory',
+      'jUSDCIsolationModeFactoryOld',
       'ownerSetUserVaultImplementation',
       [vaultV7],
     ),

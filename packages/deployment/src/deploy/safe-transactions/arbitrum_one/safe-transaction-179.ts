@@ -134,9 +134,9 @@ async function main(): Promise<DenJsonUpload> {
     libraries,
   );
   const ptGlpUserVaultImplementationAddress = await deployContractAndSave(
-    'PendlePtGLP2024IsolationModeTokenVaultV1',
+    'PendlePtGLPMar2024IsolationModeTokenVaultV1',
     [],
-    'PendlePtGLP2024IsolationModeTokenVaultV3',
+    'PendlePtGLPMar2024IsolationModeTokenVaultV3',
     libraries,
   );
   const ytGlpUserVaultImplementationAddress = await deployContractAndSave(
@@ -236,7 +236,7 @@ async function main(): Promise<DenJsonUpload> {
   transactions.push(
     ...await getIsolationModeTokenVaultTransactions(
       core,
-      core.marketIds.djUSDC!,
+      core.marketIds.djUsdcOld!,
       jonesUsdcUserVaultImplementationAddress,
     ),
   );

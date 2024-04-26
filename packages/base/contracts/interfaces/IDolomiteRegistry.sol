@@ -51,8 +51,10 @@ interface IDolomiteRegistry {
     event OracleAggregatorSet(address indexed _oracleAggregator);
 
     // ========================================================
-    // =================== Admin Functions ====================
+    // =================== Write Functions ====================
     // ========================================================
+
+    function lazyInitialize(address _dolomiteMigrator, address _oracleAggregator) external;
 
     /**
      *
@@ -142,6 +144,9 @@ interface IDolomiteRegistry {
      */
     function chainlinkPriceOracle() external view returns (IDolomitePriceOracle);
 
+    /**
+     * @return The address of the migrator contract
+     */
     function dolomiteMigrator() external view returns (IDolomiteMigrator);
 
     /**

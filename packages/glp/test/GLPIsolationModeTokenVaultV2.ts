@@ -54,7 +54,6 @@ import { DEFAULT_BLOCK_NUMBER_FOR_GLP_WITH_VESTING } from './glp-utils';
 const gmxAmount = BigNumber.from('10000000000000000000'); // 10 GMX
 const usdcAmount = BigNumber.from('2000000000'); // 2,000 USDC
 const amountWei = BigNumber.from('1250000000000000000000'); // 1,250 GLP tokens
-const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
 const esGmxAmount = BigNumber.from('10000000000000000'); // 0.01 esGMX tokens
 const accountNumber = ZERO_BI;

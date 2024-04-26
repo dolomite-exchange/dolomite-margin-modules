@@ -56,7 +56,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const weEthPendleSystem = await deployPendlePtSystem(
     core,
     'WeETHApr2024',
-    core.pendleEcosystem.weEthApr2024.ptWeEthMarket,
+    core.pendleEcosystem.weEthApr2024.weEthMarket,
     core.pendleEcosystem.weEthApr2024.ptOracle,
     core.pendleEcosystem.weEthApr2024.ptWeEthToken,
     core.pendleEcosystem.syWeEthToken,

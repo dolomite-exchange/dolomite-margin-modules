@@ -6,14 +6,7 @@ import {
 import { advanceByTimeDelta, impersonate } from '@dolomite-exchange/modules-base/test/utils';
 import { CoreProtocolType } from '@dolomite-exchange/modules-base/test/utils/setup';
 import hardhat from 'hardhat';
-import {
-  createFolder,
-  DenJsonUpload,
-  EncodedTransaction,
-  readDeploymentFile,
-  writeDeploymentFile,
-  writeFile,
-} from './deploy-utils';
+import { createFolder, DenJsonUpload, readDeploymentFile, writeDeploymentFile, writeFile } from './deploy-utils';
 
 const HARDHAT_CHAIN_ID = '31337';
 

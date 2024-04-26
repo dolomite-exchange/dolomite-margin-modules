@@ -31,6 +31,10 @@ import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
  */
 interface IDolomiteMigrator {
 
+    // ================================================
+    // ==================== Structs ===================
+    // ================================================
+
     struct Transformer {
         address transformer;
         bool soloAllowable;
@@ -77,4 +81,9 @@ interface IDolomiteMigrator {
     ) external;
 
     function ownerSetHandler(address _handler) external;
+
+    function getTransformerByMarketIds(
+        uint256 _fromMarketId,
+        uint256 _toMarketId
+    ) external view returns (Transformer memory);
 }

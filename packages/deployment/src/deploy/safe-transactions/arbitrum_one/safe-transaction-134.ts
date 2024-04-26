@@ -5,7 +5,7 @@ import {
 import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { getTWAPPriceOracleV1ConstructorParams } from '@dolomite-exchange/modules-oracles/src/oracles-constructors';
-import { TWAPPriceOracle__factory } from '@dolomite-exchange/modules-oracles/src/types';
+import { TWAPPriceOracleV1__factory } from '@dolomite-exchange/modules-oracles/src/types';
 import { parseEther } from 'ethers/lib/utils';
 import { ADDRESS_ZERO, Network, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
 import {
@@ -30,23 +30,23 @@ async function main(): Promise<DenJsonUpload> {
   const core = await setupCoreProtocol({ network, blockNumber: 0 });
 
   const jonesTwapAddress = await deployContractAndSave(
-    'TWAPPriceOracleV1.sol',
+    'TWAPPriceOracleV1',
     getTWAPPriceOracleV1ConstructorParams(core, core.tokens.jones!, [core.jonesEcosystem!.jonesWethV3Pool]),
     'JonesTWAPPriceOracleV1',
   );
-  const jonesTwap = TWAPPriceOracle__factory.connect(jonesTwapAddress, core.governance);
+  const jonesTwap = TWAPPriceOracleV1__factory.connect(jonesTwapAddress, core.governance);
 
   const premiaTwapAddress = await deployContractAndSave(
-    'TWAPPriceOracleV1.sol',
+    'TWAPPriceOracleV1',
     getTWAPPriceOracleV1ConstructorParams(core, core.tokens.premia!, [core.premiaEcosystem!.premiaWethV3Pool]),
     'PremiaTWAPPriceOracleV1',
   );
-  const premiaTwap = TWAPPriceOracle__factory.connect(premiaTwapAddress, core.governance);
+  const premiaTwap = TWAPPriceOracleV1__factory.connect(premiaTwapAddress, core.governance);
 
   const transactions: EncodedTransaction[] = [];
   transactions.push(
     await prettyPrintEncodeInsertChainlinkOracle(
-      core,
+      core as any,
       core.tokens.radiant!,
       ADDRESS_ZERO,
     ),

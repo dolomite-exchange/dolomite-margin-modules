@@ -35,7 +35,7 @@ const handlerAddress = '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe'; // Level In
 async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
   const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
-  const dPtGlp2024 = core.pendleEcosystem.glpMar2024.dPtGlp2024;
+  const dPtGlp2024 = core.pendleEcosystem.glpMar2024.dPtGlpMar2024;
 
   const dolomiteMigratorAddress = await deployContractAndSave(
     'DolomiteMigrator',
@@ -139,7 +139,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
         'dolomiteMigrator must be set on Dolomite Registry',
       );
 
-      const transformerStruct = await dolomiteMigrator.marketIdsToTransformer(
+      const transformerStruct = await dolomiteMigrator.getTransformerByMarketIds(
         core.marketIds.dPtGlpMar2024,
         core.marketIds.dfsGlp,
       );

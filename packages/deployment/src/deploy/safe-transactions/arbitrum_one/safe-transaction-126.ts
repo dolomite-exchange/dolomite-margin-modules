@@ -33,7 +33,7 @@ async function main(): Promise<DenJsonUpload> {
   const rEthSystem = await deployPendlePtSystem(
     core,
     PtName.REthJun2025,
-    core.pendleEcosystem!.rEthJun2025.ptREthMarket,
+    core.pendleEcosystem!.rEthJun2025.rEthMarket,
     core.pendleEcosystem!.rEthJun2025.ptOracle,
     core.pendleEcosystem!.rEthJun2025.ptREthToken,
     core.pendleEcosystem!.syREthToken,
@@ -42,7 +42,7 @@ async function main(): Promise<DenJsonUpload> {
   const wstEthJun2024System = await deployPendlePtSystem(
     core,
     PtName.WstEthJun2024,
-    core.pendleEcosystem!.wstEthJun2024.ptWstEthMarket,
+    core.pendleEcosystem!.wstEthJun2024.wstEthMarket,
     core.pendleEcosystem!.wstEthJun2024.ptOracle,
     core.pendleEcosystem!.wstEthJun2024.ptWstEthToken,
     core.pendleEcosystem!.syWstEthToken,
@@ -51,7 +51,7 @@ async function main(): Promise<DenJsonUpload> {
   const wstEthJun2025System = await deployPendlePtSystem(
     core,
     PtName.WstEthJun2025,
-    core.pendleEcosystem!.wstEthJun2025.ptWstEthMarket,
+    core.pendleEcosystem!.wstEthJun2025.wstEthMarket,
     core.pendleEcosystem!.wstEthJun2025.ptOracle,
     core.pendleEcosystem!.wstEthJun2025.ptWstEthToken,
     core.pendleEcosystem!.syWstEthToken,

@@ -36,7 +36,7 @@ describe('JonesUSDCRegistry', () => {
     const factory = await createJonesUSDCIsolationModeVaultFactory(
       core,
       registry,
-      core.jonesEcosystem!.jUSDC,
+      core.jonesEcosystem!.jUsdcOld,
       userVaultImplementation,
     );
     unwrapperForZap = await createJonesUSDCIsolationModeUnwrapperTraderV2ForZap(core, registry, factory);
@@ -61,9 +61,9 @@ describe('JonesUSDCRegistry', () => {
       );
       expect(await registry.glpAdapter()).to.equal(core.jonesEcosystem!.glpAdapter.address);
       expect(await registry.glpVaultRouter()).to.equal(core.jonesEcosystem!.glpVaultRouter.address);
-      expect(await registry.whitelistController()).to.equal(core.jonesEcosystem!.whitelistController.address);
+      expect(await registry.whitelistController()).to.equal(core.jonesEcosystem!.whitelistControllerV1.address);
       expect(await registry.usdcReceiptToken()).to.equal(core.jonesEcosystem!.usdcReceiptToken.address);
-      expect(await registry.jUSDC()).to.equal(core.jonesEcosystem!.jUSDC.address);
+      expect(await registry.jUSDC()).to.equal(core.jonesEcosystem!.jUsdcOld.address);
       expect(await registry.dolomiteRegistry()).to.equal(core.dolomiteRegistry.address);
       expect(await registry.unwrapperTraderForLiquidation()).to.equal(unwrapperForLiquidation.address);
       expect(await registry.unwrapperTraderForZap()).to.equal(unwrapperForZap.address);
@@ -74,9 +74,9 @@ describe('JonesUSDCRegistry', () => {
         registry.initialize(
           core.jonesEcosystem!.glpAdapter.address,
           core.jonesEcosystem!.glpVaultRouter.address,
-          core.jonesEcosystem!.whitelistController.address,
+          core.jonesEcosystem!.whitelistControllerV1.address,
           core.jonesEcosystem!.usdcReceiptToken.address,
-          core.jonesEcosystem!.jUSDC.address,
+          core.jonesEcosystem!.jUsdcOld.address,
           core.jonesEcosystem!.jUSDCFarm.address,
           core.dolomiteRegistry.address,
         ),

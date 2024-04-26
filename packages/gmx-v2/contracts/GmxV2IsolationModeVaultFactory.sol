@@ -55,7 +55,7 @@ contract GmxV2IsolationModeVaultFactory is
     address public immutable override SHORT_TOKEN; // solhint-disable-line var-name-mixedcase
     address public immutable override LONG_TOKEN; // solhint-disable-line var-name-mixedcase
     address public immutable override INDEX_TOKEN; // solhint-disable-line var-name-mixedcase
-    uint256 public immutable INDEX_TOKEN_MARKET_ID; // solhint-disable-line var-name-mixedcase
+    // uint256 public immutable INDEX_TOKEN_MARKET_ID; // solhint-disable-line var-name-mixedcase
     uint256 public immutable SHORT_TOKEN_MARKET_ID; // solhint-disable-line var-name-mixedcase
     uint256 public immutable LONG_TOKEN_MARKET_ID; // solhint-disable-line var-name-mixedcase
 
@@ -85,7 +85,7 @@ contract GmxV2IsolationModeVaultFactory is
     )
     {
         INDEX_TOKEN = _tokenAndMarketAddresses.indexToken;
-        INDEX_TOKEN_MARKET_ID = DOLOMITE_MARGIN().getMarketIdByTokenAddress(INDEX_TOKEN);
+        // INDEX_TOKEN_MARKET_ID = DOLOMITE_MARGIN().getMarketIdByTokenAddress(INDEX_TOKEN);
         SHORT_TOKEN = _tokenAndMarketAddresses.shortToken;
         SHORT_TOKEN_MARKET_ID = DOLOMITE_MARGIN().getMarketIdByTokenAddress(SHORT_TOKEN);
         LONG_TOKEN = _tokenAndMarketAddresses.longToken;

@@ -32,7 +32,7 @@ describe('PendlePtRsEthApr2024IsolationModeVaultFactory', () => {
     });
     pendleRegistry = await createPendleRegistry(
       core,
-      core.pendleEcosystem!.rsEthApr2024.ptRsEthMarket,
+      core.pendleEcosystem!.rsEthApr2024.rsEthMarket,
       core.pendleEcosystem!.rsEthApr2024.ptOracle,
       core.pendleEcosystem!.syRsEthToken,
     );

@@ -51,6 +51,7 @@ interface IGmxV2Registry is IBaseRegistry, IHandlerRegistry {
     event GmxWithdrawalVaultSet(address _gmxDepositVault);
     event GmxV2UnwrapperTraderSet(address _gmxV2UnwrapperTrader);
     event GmxV2WrapperTraderSet(address _gmxV2WrapperTrader);
+    event GmxMarketToIndexTokenSet(address _marketToken, address _indexToken);
 
     // ===================================================
     // ==================== Functions ====================
@@ -68,6 +69,8 @@ interface IGmxV2Registry is IBaseRegistry, IHandlerRegistry {
 
     function ownerSetGmxWithdrawalVault(address _gmxWithdrawalVault) external;
 
+    function ownerSetGmxMarketToIndexToken(address _marketToken, address _indexToken) external;
+
     function gmxExchangeRouter() external view returns (IGmxExchangeRouter);
 
     function gmxDataStore() external view returns (IGmxDataStore);
@@ -83,4 +86,6 @@ interface IGmxV2Registry is IBaseRegistry, IHandlerRegistry {
     function gmxWithdrawalHandler() external view returns (IGmxWithdrawalHandler);
 
     function gmxWithdrawalVault() external view returns (address);
+
+    function gmxMarketToIndexToken(address _marketToken) external view returns (address);
 }

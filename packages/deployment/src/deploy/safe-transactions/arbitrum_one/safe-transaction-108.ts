@@ -1,12 +1,12 @@
 import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
+import Deployments from '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
 import {
-  getChainlinkPriceOracleConstructorParamsFromOldPriceOracle,
+  getChainlinkPriceOracleV1ConstructorParamsFromOldPriceOracle,
 } from '@dolomite-exchange/modules-oracles/src/oracles-constructors';
 import { getPendleYtGLPPriceOracleConstructorParams } from '@dolomite-exchange/modules-pendle/src/pendle-constructors';
-import { IPendleYtGLP2024IsolationModeVaultFactory__factory } from '@dolomite-exchange/modules-pendle/src/types';
-import Deployments from  '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
+import { IPendleYtGLPMar2024IsolationModeVaultFactory__factory } from '@dolomite-exchange/modules-pendle/src/types';
 import { BigNumber } from 'ethers';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
 import { deployContractAndSave, prettyPrintEncodedDataWithTypeSafety } from '../../../utils/deploy-utils';
@@ -20,7 +20,7 @@ import { deployContractAndSave, prettyPrintEncodedDataWithTypeSafety } from '../
 async function main() {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
   const core = await setupCoreProtocol({ network, blockNumber: 0 });
-  const chainlinkPriceOracleParams = await getChainlinkPriceOracleConstructorParamsFromOldPriceOracle(core);
+  const chainlinkPriceOracleParams = await getChainlinkPriceOracleV1ConstructorParamsFromOldPriceOracle(core);
   const chainlinkPriceOracleAddress = await deployContractAndSave(
     'ChainlinkPriceOracle',
     chainlinkPriceOracleParams,
@@ -30,7 +30,7 @@ async function main() {
     'PendleYtGLPPriceOracle',
     getPendleYtGLPPriceOracleConstructorParams(
       core,
-      IPendleYtGLP2024IsolationModeVaultFactory__factory.connect(core.tokens.dYtGlp!.address, core.hhUser1),
+      IPendleYtGLPMar2024IsolationModeVaultFactory__factory.connect(core.tokens.dYtGlp!.address, core.hhUser1),
       core.pendleEcosystem!.glpMar2024.pendleRegistry,
     ),
   );
@@ -75,30 +75,30 @@ async function main() {
     core,
     'dolomiteMargin',
     'ownerSetPriceOracle',
-    [core.marketIds.djUSDC!, Deployments.JonesUSDCWithChainlinkAutomationPriceOracle[network].address],
+    [core.marketIds.djUsdcOld!, Deployments.JonesUSDCWithChainlinkAutomationPriceOracleV1[network].address],
   );
 
   await prettyPrintEncodedDataWithTypeSafety(
     core,
     core.jonesEcosystem!.live,
-    'jUSDCIsolationModeFactory',
+    'jUSDCIsolationModeFactoryOld',
     'ownerSetAllowableDebtMarketIds',
-    [await appendNativeUsdcToDebtMarketIdList(core, core.jonesEcosystem!.live.jUSDCIsolationModeFactory)],
+    [await appendNativeUsdcToDebtMarketIdList(core, core.jonesEcosystem!.live.jUSDCIsolationModeFactoryOld)],
   );
   await prettyPrintEncodedDataWithTypeSafety(
     core,
     core.jonesEcosystem!.live,
-    'jUSDCIsolationModeFactory',
+    'jUSDCIsolationModeFactoryOld',
     'ownerSetAllowableCollateralMarketIds',
-    [await appendNativeUsdcToCollateralMarketIdList(core, core.jonesEcosystem!.live.jUSDCIsolationModeFactory)],
+    [await appendNativeUsdcToCollateralMarketIdList(core, core.jonesEcosystem!.live.jUSDCIsolationModeFactoryOld)],
   );
 
   await prettyPrintEncodedDataWithTypeSafety(
     core,
     core.pendleEcosystem!.glpMar2024,
-    'dYtGlp2024',
+    'dYtGlpMar2024',
     'ownerSetAllowableDebtMarketIds',
-    [await appendNativeUsdcToDebtMarketIdList(core, core.pendleEcosystem!.glpMar2024.dYtGlp2024)],
+    [await appendNativeUsdcToDebtMarketIdList(core, core.pendleEcosystem!.glpMar2024.dYtGlpMar2024)],
   );
 }
 

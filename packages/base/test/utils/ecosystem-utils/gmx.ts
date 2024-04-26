@@ -71,10 +71,13 @@ import {
   GLP_MAP,
   GLP_REWARD_ROUTER_MAP,
   GMX_ARB_USD_MARKET_TOKEN_MAP,
+  GMX_BTC_MARKET_TOKEN_MAP,
+  GMX_BTC_PLACEHOLDER_MAP,
   GMX_BTC_USD_MARKET_TOKEN_MAP,
   GMX_DATASTORE_MAP,
   GMX_DEPOSIT_HANDLER_MAP,
   GMX_DEPOSIT_VAULT_MAP,
+  GMX_ETH_MARKET_TOKEN_MAP,
   GMX_ETH_USD_MARKET_TOKEN_MAP,
   GMX_EXCHANGE_ROUTER_MAP,
   GMX_EXECUTOR_MAP,
@@ -148,6 +151,8 @@ export interface GmxEcosystemV2 {
     btcUsd: GmToken;
     ethUsd: GmToken;
     linkUsd: GmToken;
+    btc: GmToken;
+    eth: GmToken;
   };
   gmxEthUsdMarketToken: IGmxMarketToken;
   gmxExchangeRouter: IGmxExchangeRouter;
@@ -212,39 +217,39 @@ export async function createGmxEcosystem(network: Network, signer: SignerWithAdd
     signer,
   );
   return {
-    bnGmx: getContract(BN_GMX_MAP[network] as string, IERC20__factory.connect, signer),
-    esGmx: getContract(ES_GMX_MAP[network] as string, IERC20Mintable__factory.connect, signer),
+    bnGmx: getContract(BN_GMX_MAP[network], IERC20__factory.connect, signer),
+    esGmx: getContract(ES_GMX_MAP[network], IERC20Mintable__factory.connect, signer),
     esGmxDistributorForStakedGlp: esGmxDistributorForGlp.connect(esGmxAdminForGlp),
     esGmxDistributorForStakedGmx: esGmxDistributorForGmx.connect(esGmxAdminForGmx),
-    fsGlp: getContract(FS_GLP_MAP[network] as string, IERC20__factory.connect, signer),
-    glp: getContract(GLP_MAP[network] as string, IERC20__factory.connect, signer),
+    fsGlp: getContract(FS_GLP_MAP[network], IERC20__factory.connect, signer),
+    glp: getContract(GLP_MAP[network], IERC20__factory.connect, signer),
     glpManager: getContract(
-      GLP_MANAGER_MAP[network] as string,
+      GLP_MANAGER_MAP[network],
       IGLPManager__factory.connect,
       signer,
     ),
     glpRewardsRouter: getContract(
-      GLP_REWARD_ROUTER_MAP[network] as string,
+      GLP_REWARD_ROUTER_MAP[network],
       IGLPRewardsRouterV2__factory.connect,
       signer,
     ),
     gmx: getContract(GMX_MAP[network]!.address, IERC20__factory.connect, signer),
     gmxRewardsRouterV2: getContract(
-      GMX_REWARD_ROUTER_V2_MAP[network] as string,
+      GMX_REWARD_ROUTER_V2_MAP[network],
       IGmxRewardRouterV2__factory.connect,
       signer,
     ),
     gmxRewardsRouterV3: getContract(
-      GMX_REWARD_ROUTER_V3_MAP[network] as string,
+      GMX_REWARD_ROUTER_V3_MAP[network],
       IGmxRewardRouterV2__factory.connect,
       signer,
     ),
-    gmxVault: getContract(GMX_VAULT_MAP[network] as string, IGmxVault__factory.connect, signer),
-    sGlp: getContract(S_GLP_MAP[network] as string, IERC20__factory.connect, signer),
-    sGmx: getContract(S_GMX_MAP[network] as string, ISGMX__factory.connect, signer),
-    sbfGmx: getContract(SBF_GMX_MAP[network] as string, IERC20__factory.connect, signer),
-    vGlp: getContract(V_GLP_MAP[network] as string, IGmxVester__factory.connect, signer),
-    vGmx: getContract(V_GMX_MAP[network] as string, IGmxVester__factory.connect, signer),
+    gmxVault: getContract(GMX_VAULT_MAP[network], IGmxVault__factory.connect, signer),
+    sGlp: getContract(S_GLP_MAP[network].address, IERC20__factory.connect, signer),
+    sGmx: getContract(S_GMX_MAP[network], ISGMX__factory.connect, signer),
+    sbfGmx: getContract(SBF_GMX_MAP[network], IERC20__factory.connect, signer),
+    vGlp: getContract(V_GLP_MAP[network], IGmxVester__factory.connect, signer),
+    vGmx: getContract(V_GMX_MAP[network], IGmxVester__factory.connect, signer),
     live: {
       dGlp: getContract(
         (Deployments.GLPIsolationModeVaultFactory as any)[network]?.address,
@@ -292,15 +297,15 @@ export async function createGmxEcosystemV2(
 
   return {
     gmxDepositHandler: getContract(
-      GMX_DEPOSIT_HANDLER_MAP[network] as string,
+      GMX_DEPOSIT_HANDLER_MAP[network],
       IGmxDepositHandler__factory.connect,
       signer,
     ),
-    gmxDepositVault: await impersonateOrFallback(GMX_DEPOSIT_VAULT_MAP[network] as string, true, signer),
+    gmxDepositVault: await impersonateOrFallback(GMX_DEPOSIT_VAULT_MAP[network], true, signer),
     gmTokens: {
       ethUsd: {
         marketToken: getContract(
-          GMX_ETH_USD_MARKET_TOKEN_MAP[network] as string,
+          GMX_ETH_USD_MARKET_TOKEN_MAP[network],
           IGmxMarketToken__factory.connect,
           signer,
         ),
@@ -312,7 +317,7 @@ export async function createGmxEcosystemV2(
       },
       btcUsd: {
         marketToken: getContract(
-          GMX_BTC_USD_MARKET_TOKEN_MAP[network] as string,
+          GMX_BTC_USD_MARKET_TOKEN_MAP[network],
           IGmxMarketToken__factory.connect,
           signer,
         ),
@@ -324,7 +329,7 @@ export async function createGmxEcosystemV2(
       },
       arbUsd: {
         marketToken: getContract(
-          GMX_ARB_USD_MARKET_TOKEN_MAP[network] as string,
+          GMX_ARB_USD_MARKET_TOKEN_MAP[network],
           IGmxMarketToken__factory.connect,
           signer,
         ),
@@ -336,7 +341,7 @@ export async function createGmxEcosystemV2(
       },
       linkUsd: {
         marketToken: getContract(
-          GMX_LINK_USD_MARKET_TOKEN_MAP[network] as string,
+          GMX_LINK_USD_MARKET_TOKEN_MAP[network],
           IGmxMarketToken__factory.connect,
           signer,
         ),
@@ -346,27 +351,51 @@ export async function createGmxEcosystemV2(
         longMarketId: LINK_MAP[network].marketId,
         shortMarketId: NATIVE_USDC_MAP[network].marketId,
       },
+      btc: {
+        marketToken: getContract(
+          GMX_BTC_MARKET_TOKEN_MAP[network],
+          IGmxMarketToken__factory.connect,
+          signer,
+        ),
+        indexToken: IERC20__factory.connect(GMX_BTC_PLACEHOLDER_MAP[network].address, signer),
+        longToken: IERC20__factory.connect(WBTC_MAP[network].address, signer),
+        shortToken: IERC20__factory.connect(WBTC_MAP[network].address, signer),
+        longMarketId: WBTC_MAP[network].marketId,
+        shortMarketId: WBTC_MAP[network].marketId,
+      },
+      eth: {
+        marketToken: getContract(
+          GMX_ETH_MARKET_TOKEN_MAP[network],
+          IGmxMarketToken__factory.connect,
+          signer,
+        ),
+        indexToken: IERC20__factory.connect(WETH_MAP[network].address, signer),
+        longToken: IERC20__factory.connect(WETH_MAP[network].address, signer),
+        shortToken: IERC20__factory.connect(WETH_MAP[network].address, signer),
+        longMarketId: WETH_MAP[network].marketId,
+        shortMarketId: WETH_MAP[network].marketId,
+      }
     },
     gmxEthUsdMarketToken: getContract(
-      GMX_ETH_USD_MARKET_TOKEN_MAP[network] as string,
+      GMX_ETH_USD_MARKET_TOKEN_MAP[network],
       IGmxMarketToken__factory.connect,
       signer,
     ),
     gmxDataStore: getContract(
-      GMX_DATASTORE_MAP[network] as string,
+      GMX_DATASTORE_MAP[network],
       IGmxDataStore__factory.connect,
       signer,
     ),
     gmxExchangeRouter: getContract(
-      GMX_EXCHANGE_ROUTER_MAP[network] as string,
+      GMX_EXCHANGE_ROUTER_MAP[network],
       IGmxExchangeRouter__factory.connect,
       signer,
     ),
-    gmxExecutor: await impersonateOrFallback(GMX_EXECUTOR_MAP[network] as string, true, signer),
-    gmxReader: getContract(GMX_READER_MAP[network] as string, IGmxReader__factory.connect, signer),
-    gmxRouter: getContract(GMX_ROUTER_MAP[network] as string, IGmxRouter__factory.connect, signer),
+    gmxExecutor: await impersonateOrFallback(GMX_EXECUTOR_MAP[network], true, signer),
+    gmxReader: getContract(GMX_READER_MAP[network], IGmxReader__factory.connect, signer),
+    gmxRouter: getContract(GMX_ROUTER_MAP[network], IGmxRouter__factory.connect, signer),
     gmxWithdrawalHandler: getContract(
-      GMX_WITHDRAWAL_HANDLER_MAP[network] as string,
+      GMX_WITHDRAWAL_HANDLER_MAP[network],
       IGmxWithdrawalHandler__factory.connect,
       signer,
     ),

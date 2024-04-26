@@ -16,6 +16,7 @@ import {
   GmxV2IsolationModeWrapperTraderV2,
   GmxV2MarketTokenPriceOracle,
   GmxV2Registry,
+  IGmxMarketToken,
   TestGmxReader,
   TestGmxReader__factory,
 } from '../src/types';
@@ -28,6 +29,7 @@ import {
   createGmxV2MarketTokenPriceOracle,
   createGmxV2Registry,
 } from './gmx-v2-ecosystem-utils';
+import { createDolomiteRegistryImplementation } from 'packages/base/test/utils/dolomite';
 
 const GM_ETH_USD_PRICE_NO_MAX_WEI = BigNumber.from('919979975416060612'); // $0.9199
 const MAX_WEI = BigNumber.from('10000000000000000000000000'); // 10M tokens
@@ -41,6 +43,7 @@ describe('GmxV2MarketTokenPriceOracle', () => {
   let snapshotId: string;
 
   let core: CoreProtocolArbitrumOne;
+  let underlyingToken: IGmxMarketToken;
   let allowableMarketIds: BigNumberish[];
   let gmPriceOracle: GmxV2MarketTokenPriceOracle;
   let gmxV2Registry: GmxV2Registry;
@@ -55,7 +58,14 @@ describe('GmxV2MarketTokenPriceOracle', () => {
       blockNumber,
       network: Network.ArbitrumOne,
     });
+    underlyingToken = core.gmxEcosystemV2!.gmxEthUsdMarketToken.connect(core.hhUser1);
+
     gmxV2Registry = await createGmxV2Registry(core, GMX_V2_CALLBACK_GAS_LIMIT);
+    await gmxV2Registry.connect(core.governance).ownerSetGmxMarketToIndexToken(
+      underlyingToken.address,
+      core.gmxEcosystemV2.gmTokens.ethUsd.indexToken.address
+    );
+
     const gmxV2Library = await createGmxV2Library();
     const userVaultImplementation = await createGmxV2IsolationModeTokenVaultV1(core, gmxV2Library);
 
@@ -83,8 +93,14 @@ describe('GmxV2MarketTokenPriceOracle', () => {
       gmxV2Registry,
     );
 
+    const newRegistry = await createDolomiteRegistryImplementation();
+    await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(newRegistry.address);
+    await core.dolomiteRegistry.connect(core.governance).ownerSetOracleAggregator(
+      await core.dolomiteMargin.getMarketPriceOracle(core.marketIds.weth)
+    );
     gmPriceOracle = await createGmxV2MarketTokenPriceOracle(core, gmxV2Registry);
     await gmPriceOracle.connect(core.governance).ownerSetMarketToken(factory.address, true);
+
     marketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, factory, true, gmPriceOracle);
 

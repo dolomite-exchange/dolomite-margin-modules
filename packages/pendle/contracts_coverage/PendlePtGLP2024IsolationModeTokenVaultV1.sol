@@ -29,7 +29,7 @@ import { IPendlePtGLP2024IsolationModeVaultFactory } from "./interfaces/IPendleP
 
 
 /**
- * @title   PendlePtGLP2024IsolationModeTokenVaultV1
+ * @title   PendlePtGLPMar2024IsolationModeTokenVaultV1.sol
  * @author  Dolomite
  *
  * @notice  Implementation (for an upgradeable proxy) for a per-user vault that holds the ptGLP (March 2024 expiration)
