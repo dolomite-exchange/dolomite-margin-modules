@@ -318,7 +318,9 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezable is
                 IERC20(UNDERLYING_TOKEN()).safeTransferFrom(_from, address(this), _amount);
             } else {
                 IERC20(UNDERLYING_TOKEN()).safeTransferFrom(
-                    address(handlerRegistry().getWrapperByToken(IAsyncFreezableIsolationModeVaultFactory(VAULT_FACTORY()))),
+                    address(handlerRegistry().getWrapperByToken(
+                        IAsyncFreezableIsolationModeVaultFactory(VAULT_FACTORY())
+                    )),
                     address(this),
                     _amount
                 );
