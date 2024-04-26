@@ -16,6 +16,7 @@ import {
   RegistryProxy__factory,
 } from '../../src/types';
 import {
+  getDolomiteErc20ProxyConstructorParams,
   getEventEmitterRegistryConstructorParams,
   getIsolationModeTraderProxyConstructorParams,
   getRegistryProxyConstructorParams,
@@ -50,6 +51,18 @@ export async function createRegistryProxy(
     RegistryProxy__factory.abi,
     RegistryProxy__factory.bytecode,
     getRegistryProxyConstructorParams(implementationAddress, initializationCalldata, core.dolomiteMargin),
+  );
+}
+
+export async function createDolomiteErc20Proxy(
+  implementationAddress: string,
+  marketId: BigNumberish,
+  core: CoreProtocolType<NetworkType>,
+): Promise<RegistryProxy> {
+  return createContractWithAbi(
+    RegistryProxy__factory.abi,
+    RegistryProxy__factory.bytecode,
+    getDolomiteErc20ProxyConstructorParams(core, implementationAddress, marketId),
   );
 }
 
