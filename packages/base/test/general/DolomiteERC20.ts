@@ -1,14 +1,28 @@
+import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
 import { expect } from 'chai';
-import { DolomiteERC20, DolomiteERC20__factory, TestDolomiteERC20User, TestDolomiteERC20User__factory } from '../../src/types';
-import { createContractWithAbi, depositIntoDolomiteMargin } from '../../src/utils/dolomite-utils';
-import { ADDRESS_ZERO, MAX_UINT_256_BI, Network, ONE_DAY_SECONDS, ONE_ETH_BI, ZERO_BI } from '../../src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, snapshot } from '../utils';
-import { expectProtocolBalance, expectThrow } from '../utils/assertions';
-import { CoreProtocolArbitrumOne } from '../utils/core-protocol';
-import { getDefaultCoreProtocolConfig, setupCoreProtocol, setupUSDCBalance } from '../utils/setup';
 import { BigNumber } from 'ethers';
 import { AccountInfoStruct } from 'packages/base/src/utils';
-import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
+import {
+  DolomiteERC20,
+  DolomiteERC20__factory,
+  TestDolomiteERC20User,
+  TestDolomiteERC20User__factory,
+} from '../../src/types';
+import { getDolomiteErc20ProxyConstructorParams } from '../../src/utils/constructors/dolomite';
+import { createContractWithAbi, depositIntoDolomiteMargin } from '../../src/utils/dolomite-utils';
+import {
+  ADDRESS_ZERO,
+  MAX_UINT_256_BI,
+  Network,
+  ONE_DAY_SECONDS,
+  ONE_ETH_BI,
+  ZERO_BI,
+} from '../../src/utils/no-deps-constants';
+import { impersonate, revertToSnapshotAndCapture, snapshot } from '../utils';
+import { expectEvent, expectNotEvent, expectProtocolBalance, expectThrow } from '../utils/assertions';
+import { CoreProtocolArbitrumOne } from '../utils/core-protocol';
+import { createRegistryProxy } from '../utils/dolomite';
+import { getDefaultCoreProtocolConfig, setupCoreProtocol, setupUSDCBalance } from '../utils/setup';
 
 const usdcAmount = BigNumber.from('100000000'); // 100 USDC
 
@@ -22,11 +36,14 @@ describe('DolomiteERC20', () => {
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
-    token = await createContractWithAbi<DolomiteERC20>(
+    const implementation = await createContractWithAbi<DolomiteERC20>(
       DolomiteERC20__factory.abi,
       DolomiteERC20__factory.bytecode,
-      ['Dolomite USDC', 'dUSDC', 6, core.marketIds.usdc, core.dolomiteMargin.address],
+      [],
     );
+    const calldata = await getDolomiteErc20ProxyConstructorParams(core, implementation, core.marketIds.usdc);
+    const tokenProxy = await createRegistryProxy(implementation.address, calldata, core);
+    token = DolomiteERC20__factory.connect(tokenProxy.address, core.hhUser1);
 
     await setupUSDCBalance(core, core.hhUser1, usdcAmount.mul(10), core.dolomiteMargin);
     await depositIntoDolomiteMargin(core, core.hhUser1, ZERO_BI, core.marketIds.usdc, usdcAmount);
@@ -43,13 +60,17 @@ describe('DolomiteERC20', () => {
     snapshotId = await revertToSnapshotAndCapture(snapshotId);
   });
 
-  describe('#constructor', () => {
+  describe('#initialize', () => {
     it('should work normally', async () => {
-      expect(await token.name()).to.eq('Dolomite USDC');
+      expect(await token.name()).to.eq('Dolomite: USDC');
       expect(await token.symbol()).to.eq('dUSDC');
       expect(await token.decimals()).to.eq(6);
-      expect(await token.MARKET_ID()).to.eq(core.marketIds.usdc);
-      expect(await token.UNDERLYING_TOKEN()).to.eq(core.tokens.usdc.address);
+      expect(await token.marketId()).to.eq(core.marketIds.usdc);
+      expect(await token.underlyingToken()).to.eq(core.tokens.usdc.address);
+    });
+
+    it('should not be callable again', async () => {
+      await expectThrow(token.initialize('', '', 18, 0));
     });
   });
 
@@ -75,7 +96,7 @@ describe('DolomiteERC20', () => {
       await depositIntoDolomiteMargin(core, userImpersonator, ZERO_BI, core.marketIds.usdc, usdcAmount);
       const parValue = (await core.dolomiteMargin.getAccountPar(
         { owner: doloErc20User.address, number: 0 },
-        core.marketIds.usdc
+        core.marketIds.usdc,
       )).value;
       expect(await token.balanceOf(doloErc20User.address)).to.eq(parValue);
 
@@ -221,7 +242,13 @@ describe('DolomiteERC20', () => {
   describe('#enableIsReceiver', () => {
     it('should work normally', async () => {
       expect(await token.isValidReceiver(core.hhUser2.address)).to.be.false;
-      await token.connect(core.hhUser2).enableIsReceiver();
+
+      const result1 = await token.connect(core.hhUser2).enableIsReceiver();
+      await expectEvent(token, result1, 'LogSetReceiver', {});
+      expect(await token.isValidReceiver(core.hhUser2.address)).to.be.true;
+
+      const result2 = await token.connect(core.hhUser2).enableIsReceiver();
+      await expectNotEvent(token, result2, 'LogSetReceiver');
       expect(await token.isValidReceiver(core.hhUser2.address)).to.be.true;
     });
   });
@@ -252,6 +279,25 @@ describe('DolomiteERC20', () => {
     });
   });
 
+  describe('#name', () => {
+    it('should work normally', async () => {
+      expect(await token.name()).to.eq('Dolomite: USDC');
+    });
+  });
+
+  describe('#symbol', () => {
+    it('should work normally', async () => {
+      const symbol = (await core.dolomiteMargin.getMarketTotalPar(core.marketIds.usdc)).supply;
+      expect(await token.symbol()).to.eq('dUSDC');
+    });
+  });
+
+  describe('#decimals', () => {
+    it('should work normally', async () => {
+      expect(await token.decimals()).to.eq(6);
+    });
+  });
+
   describe('#unscaledTotalSupply', () => {
     it('should work normally', async () => {
       const totalSupply = (await core.dolomiteMargin.getMarketTotalPar(core.marketIds.usdc)).supply;
@@ -259,7 +305,7 @@ describe('DolomiteERC20', () => {
 
       // Can be one wei off due to rounding
       expect((await token.unscaledTotalSupply()).toNumber()).to.approximately(
-        totalSupply.mul(index.supply).div(ONE_ETH_BI).toNumber(), 1
+        totalSupply.mul(index.supply).div(ONE_ETH_BI).toNumber(), 1,
       );
     });
   });

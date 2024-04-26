@@ -3,10 +3,13 @@ import { parseEther } from 'ethers/lib/utils';
 import { DolomiteMargin } from '../../../test/utils/dolomite';
 import { CoreProtocolType } from '../../../test/utils/setup';
 import {
+  DolomiteERC20,
   EventEmitterRegistry,
   IDolomiteMargin,
-  IDolomiteMarginV2, IDolomiteRegistry,
+  IDolomiteMarginV2,
+  IDolomiteRegistry,
   IERC20,
+  IERC20Metadata__factory,
   IIsolationModeVaultFactory,
 } from '../../types';
 import { IDolomiteInterestSetter, IDolomiteStructs } from '../../types/contracts/protocol/interfaces/IDolomiteMargin';
@@ -190,6 +193,25 @@ export function getDolomiteMigratorConstructorParams<T extends NetworkType>(
   handler: string,
 ): any[] {
   return [dolomiteRegistry.address, handler, dolomiteMargin.address];
+}
+
+export async function getDolomiteErc20ProxyConstructorParams<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  implementation: DolomiteERC20,
+  marketId: BigNumberish,
+): Promise<any[]> {
+  const token = IERC20Metadata__factory.connect(
+    await core.dolomiteMargin.getMarketTokenAddress(marketId),
+    core.hhUser1,
+  );
+  const symbol = await token.symbol();
+  const transaction = await implementation.populateTransaction.initialize(
+    `Dolomite: ${symbol}`,
+    `d${symbol}`,
+    await token.decimals(),
+    marketId,
+  );
+  return [implementation.address, core.dolomiteMargin.address, transaction.data!];
 }
 
 export function getIsolationModeTokenVaultMigratorConstructorParams<T extends NetworkType>(
