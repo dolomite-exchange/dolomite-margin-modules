@@ -2,6 +2,7 @@ import { address } from '@dolomite-margin/dist/src';
 import { BigNumberish } from 'ethers';
 import { Network, NetworkType } from 'packages/base/src/utils/no-deps-constants';
 import {
+  DolomiteERC20,
   DolomiteRegistryImplementation,
   DolomiteRegistryImplementation__factory,
   EventEmitterRegistry,
@@ -55,14 +56,14 @@ export async function createRegistryProxy(
 }
 
 export async function createDolomiteErc20Proxy(
-  implementationAddress: string,
+  implementation: DolomiteERC20,
   marketId: BigNumberish,
   core: CoreProtocolType<NetworkType>,
 ): Promise<RegistryProxy> {
   return createContractWithAbi(
     RegistryProxy__factory.abi,
     RegistryProxy__factory.bytecode,
-    getDolomiteErc20ProxyConstructorParams(core, implementationAddress, marketId),
+    await getDolomiteErc20ProxyConstructorParams(core, implementation, marketId),
   );
 }
 

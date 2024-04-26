@@ -8,7 +8,6 @@ import {
   TestDolomiteERC20User,
   TestDolomiteERC20User__factory,
 } from '../../src/types';
-import { getDolomiteErc20ProxyConstructorParams } from '../../src/utils/constructors/dolomite';
 import { createContractWithAbi, depositIntoDolomiteMargin } from '../../src/utils/dolomite-utils';
 import {
   ADDRESS_ZERO,
@@ -21,7 +20,7 @@ import {
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../utils';
 import { expectEvent, expectNotEvent, expectProtocolBalance, expectThrow } from '../utils/assertions';
 import { CoreProtocolArbitrumOne } from '../utils/core-protocol';
-import { createRegistryProxy } from '../utils/dolomite';
+import { createDolomiteErc20Proxy } from '../utils/dolomite';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol, setupUSDCBalance } from '../utils/setup';
 
 const usdcAmount = BigNumber.from('100000000'); // 100 USDC
@@ -41,8 +40,7 @@ describe('DolomiteERC20', () => {
       DolomiteERC20__factory.bytecode,
       [],
     );
-    const calldata = await getDolomiteErc20ProxyConstructorParams(core, implementation, core.marketIds.usdc);
-    const tokenProxy = await createRegistryProxy(implementation.address, calldata, core);
+    const tokenProxy = await createDolomiteErc20Proxy(implementation, core.marketIds.usdc, core);
     token = DolomiteERC20__factory.connect(tokenProxy.address, core.hhUser1);
 
     await setupUSDCBalance(core, core.hhUser1, usdcAmount.mul(10), core.dolomiteMargin);
@@ -287,7 +285,6 @@ describe('DolomiteERC20', () => {
 
   describe('#symbol', () => {
     it('should work normally', async () => {
-      const symbol = (await core.dolomiteMargin.getMarketTotalPar(core.marketIds.usdc)).supply;
       expect(await token.symbol()).to.eq('dUSDC');
     });
   });
