@@ -143,7 +143,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
     gmxV2Registry = await createGmxV2Registry(core, callbackGasLimit);
     const newRegistry = await createDolomiteRegistryImplementation();
     await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(newRegistry.address);
-    await core.dolomiteRegistry.connect(core.governance).ownerSetOracleAggregator(core.chainlinkPriceOracleOld.address);
+    await core.dolomiteRegistry.connect(core.governance).ownerSetOracleAggregator(core.chainlinkPriceOracleV1.address);
     await gmxV2Registry.connect(core.governance).ownerSetGmxMarketToIndexToken(
       underlyingToken.address,
       core.gmxEcosystemV2!.gmTokens.ethUsd.indexToken.address

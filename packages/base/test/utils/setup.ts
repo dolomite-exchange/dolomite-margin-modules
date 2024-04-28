@@ -2,7 +2,6 @@ import CoreDeployments from '@dolomite-exchange/dolomite-margin/dist/migrations/
 import Deployments, * as deployments from '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
 import {
   IChainlinkAutomationRegistry__factory,
-  IChainlinkPriceOracleOld__factory,
   IChainlinkPriceOracleV3__factory,
   OracleAggregatorV2__factory,
 } from '@dolomite-exchange/modules-oracles/src/types';
@@ -41,7 +40,8 @@ import {
   ILiquidatorAssetRegistry__factory,
   ILiquidatorProxyV1__factory,
   ILiquidatorProxyV4WithGenericTrader__factory,
-  IPartiallyDelayedMultiSig__factory, IsolationModeFreezableLiquidatorProxy__factory,
+  IPartiallyDelayedMultiSig__factory,
+  IsolationModeFreezableLiquidatorProxy__factory,
   IWETH__factory,
   RegistryProxy__factory,
 } from '../../src/types';
@@ -49,7 +49,6 @@ import {
   ARB_MAP,
   CHAINLINK_AUTOMATION_REGISTRY_MAP,
   CHAINLINK_PRICE_AGGREGATORS_MAP,
-  CHAINLINK_PRICE_ORACLE_OLD_MAP,
   CHAINLINK_PRICE_ORACLE_V1_MAP,
   D_ARB_MAP,
   D_GM_ARB_MAP,
@@ -72,7 +71,8 @@ import {
   DPX_MAP,
   DYT_GLP_2024_MAP,
   E_ETH_MAP,
-  EZ_ETH_MAP, GMX_BTC_PLACEHOLDER_MAP,
+  EZ_ETH_MAP,
+  GMX_BTC_PLACEHOLDER_MAP,
   GMX_MAP,
   GRAIL_MAP,
   JONES_MAP,
@@ -106,7 +106,8 @@ import {
   CoreProtocolArbitrumOne,
   CoreProtocolBase,
   CoreProtocolParams,
-  CoreProtocolPolygonZkEvm, LibraryMaps,
+  CoreProtocolPolygonZkEvm,
+  LibraryMaps,
 } from './core-protocol';
 import { DolomiteMargin, Expiry } from './dolomite';
 import { createAbraEcosystem } from './ecosystem-utils/abra';
@@ -212,8 +213,8 @@ export async function setupARBBalance(
   await core.tokens.arb!.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
-export async function setupDAIBalance<T extends NetworkType>(
-  core: CoreProtocolAbstract<T>,
+export async function setupDAIBalance(
+  core: { tokens: { dai: IERC20 } },
   signer: SignerWithAddressWithSafety,
   amount: BigNumberish,
   spender: { address: string },
@@ -409,11 +410,6 @@ export async function setupCoreProtocol<T extends NetworkType>(
     governance,
   );
 
-  const chainlinkPriceOracleOld = getContract(
-    CHAINLINK_PRICE_ORACLE_OLD_MAP[config.network],
-    IChainlinkPriceOracleOld__factory.connect,
-    governance,
-  );
   const chainlinkPriceOracleV1 = getContract(
     CHAINLINK_PRICE_ORACLE_V1_MAP[config.network],
     IChainlinkPriceOracleV1__factory.connect,
@@ -506,6 +502,8 @@ export async function setupCoreProtocol<T extends NetworkType>(
 
   const coreProtocolParams: CoreProtocolParams<T> = {
     borrowPositionProxyV2,
+    chainlinkPriceOracleV1,
+    chainlinkPriceOracleV3,
     delayedMultiSig,
     depositWithdrawalProxy,
     dolomiteMargin,
@@ -551,14 +549,10 @@ export async function setupCoreProtocol<T extends NetworkType>(
       chainlinkAggregators: CHAINLINK_PRICE_AGGREGATORS_MAP[config.network],
     },
     marketIds: {
-      dai: DAI_MAP[config.network].marketId,
-      link: LINK_MAP[config.network].marketId,
       usdc: USDC_MAP[config.network].marketId,
       weth: WETH_MAP[config.network].marketId,
     },
     tokens: {
-      dai: IERC20__factory.connect(DAI_MAP[config.network].address, hhUser1),
-      link: IERC20__factory.connect(LINK_MAP[config.network].address, hhUser1),
       usdc: IERC20__factory.connect(USDC_MAP[config.network].address, hhUser1),
       weth: IWETH__factory.connect(WETH_MAP[config.network].address, hhUser1),
     },
@@ -569,7 +563,6 @@ export async function setupCoreProtocol<T extends NetworkType>(
     return new CoreProtocolArbitrumOne(
       coreProtocolParams as CoreProtocolParams<Network.ArbitrumOne>,
       {
-        chainlinkPriceOracleOld,
         chainlinkPriceOracleV1,
         chainlinkPriceOracleV3,
         abraEcosystem: await createAbraEcosystem(typedConfig.network, hhUser1),
@@ -642,6 +635,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
         tokens: {
           ...coreProtocolParams.tokens,
           arb: IERC20__factory.connect(ARB_MAP[typedConfig.network]!.address, hhUser1),
+          dai: IERC20__factory.connect(DAI_MAP[typedConfig.network]!.address, hhUser1),
           dArb: IERC20__factory.connect(D_ARB_MAP[typedConfig.network]!.address, hhUser1),
           dfsGlp: IERC20__factory.connect(DFS_GLP_MAP[typedConfig.network]!.address, hhUser1),
           dGmx: IERC20__factory.connect(D_GMX_MAP[typedConfig.network]!.address, hhUser1),
@@ -662,6 +656,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
           gmxBtc: IERC20__factory.connect(GMX_BTC_PLACEHOLDER_MAP[typedConfig.network]!.address, hhUser1),
           grail: IERC20__factory.connect(GRAIL_MAP[typedConfig.network]!.address, hhUser1),
           jones: IERC20__factory.connect(JONES_MAP[typedConfig.network]!.address, hhUser1),
+          link: IERC20__factory.connect(LINK_MAP[typedConfig.network]!.address, hhUser1),
           magic: IERC20__factory.connect(MAGIC_MAP[typedConfig.network]!.address, hhUser1),
           nativeUsdc: IERC20__factory.connect(NATIVE_USDC_MAP[typedConfig.network]!.address, hhUser1),
           premia: IERC20__factory.connect(PREMIA_MAP[typedConfig.network]!.address, hhUser1),
@@ -685,7 +680,6 @@ export async function setupCoreProtocol<T extends NetworkType>(
     return new CoreProtocolBase(
       coreProtocolParams as CoreProtocolParams<Network.Base>,
       {
-        chainlinkPriceOracleOld,
         paraswapEcosystem: await createParaswapEcosystem(typedConfig.network, hhUser1),
       },
     ) as any;
@@ -695,9 +689,10 @@ export async function setupCoreProtocol<T extends NetworkType>(
     return new CoreProtocolPolygonZkEvm(
       coreProtocolParams as CoreProtocolParams<Network.PolygonZkEvm>,
       {
-        chainlinkPriceOracleOld,
         marketIds: {
           ...coreProtocolParams.marketIds,
+          dai: DAI_MAP[typedConfig.network]!.marketId,
+          link: LINK_MAP[typedConfig.network]!.marketId,
           matic: MATIC_MAP[typedConfig.network].marketId,
           usdt: USDT_MAP[typedConfig.network].marketId,
           wbtc: WBTC_MAP[typedConfig.network].marketId,
@@ -705,6 +700,8 @@ export async function setupCoreProtocol<T extends NetworkType>(
         paraswapEcosystem: await createParaswapEcosystem(typedConfig.network, hhUser1),
         tokens: {
           ...coreProtocolParams.tokens,
+          dai: IERC20__factory.connect(DAI_MAP[typedConfig.network]!.address, hhUser1),
+          link: IERC20__factory.connect(LINK_MAP[typedConfig.network]!.address, hhUser1),
           matic: IERC20__factory.connect(MATIC_MAP[typedConfig.network].address, hhUser1),
           usdt: IERC20__factory.connect(USDT_MAP[typedConfig.network].address, hhUser1),
           wbtc: IERC20__factory.connect(WBTC_MAP[typedConfig.network].address, hhUser1),

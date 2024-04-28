@@ -1,6 +1,5 @@
 import {
   IChainlinkAutomationRegistry,
-  IChainlinkPriceOracleOld,
   IChainlinkPriceOracleV3,
   OracleAggregatorV2,
 } from '@dolomite-exchange/modules-oracles/src/types';
@@ -20,7 +19,8 @@ import {
   ILiquidatorAssetRegistry,
   ILiquidatorProxyV1,
   ILiquidatorProxyV4WithGenericTrader,
-  IPartiallyDelayedMultiSig, IsolationModeFreezableLiquidatorProxy,
+  IPartiallyDelayedMultiSig,
+  IsolationModeFreezableLiquidatorProxy,
   IWETH,
   RegistryProxy,
 } from '../../src/types';
@@ -50,21 +50,18 @@ export interface LibraryMaps {
 }
 
 interface CoreProtocolTokens {
-  dai: IERC20;
-  link: IERC20;
   usdc: IERC20;
   weth: IWETH;
 }
 
 interface CoreProtocolMarketIds {
-  dai: BigNumberish;
-  link: BigNumberish;
   usdc: BigNumberish;
   weth: BigNumberish;
 }
 
 interface CoreProtocolTokensArbitrumOne extends CoreProtocolTokens {
   arb: IERC20;
+  dai: IERC20;
   dArb: IERC20;
   dfsGlp: IERC20;
   dGmx: IERC20;
@@ -86,6 +83,7 @@ interface CoreProtocolTokensArbitrumOne extends CoreProtocolTokens {
   gmxBtc: IERC20;
   grail: IERC20;
   jones: IERC20;
+  link: IERC20;
   magic: IERC20;
   nativeUsdc: IERC20;
   premia: IERC20;
@@ -152,6 +150,8 @@ export interface CoreProtocolParams<T extends NetworkType> {
   hhUser5: SignerWithAddressWithSafety;
   borrowPositionProxyV2: IBorrowPositionProxyV2;
   constants: CoreProtocolConstants<T>;
+  chainlinkPriceOracleV1: IChainlinkPriceOracleV1;
+  chainlinkPriceOracleV3: IChainlinkPriceOracleV3;
   delayedMultiSig: IPartiallyDelayedMultiSig;
   depositWithdrawalProxy: IDepositWithdrawalProxy;
   dolomiteMargin: DolomiteMargin<T>;
@@ -201,6 +201,8 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
   /// Contracts and Ecosystems
   /// =========================
   public readonly borrowPositionProxyV2: IBorrowPositionProxyV2;
+  public readonly chainlinkPriceOracleV1: IChainlinkPriceOracleV1;
+  public readonly chainlinkPriceOracleV3: IChainlinkPriceOracleV3;
   public readonly constants: CoreProtocolConstants<T>;
   public readonly delayedMultiSig: IPartiallyDelayedMultiSig;
   public readonly depositWithdrawalProxy: IDepositWithdrawalProxy;
@@ -247,6 +249,8 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
     this.hhUser4 = params.hhUser4;
     this.hhUser5 = params.hhUser5;
     this.borrowPositionProxyV2 = params.borrowPositionProxyV2;
+    this.chainlinkPriceOracleV1 = params.chainlinkPriceOracleV1;
+    this.chainlinkPriceOracleV3 = params.chainlinkPriceOracleV3;
     this.constants = params.constants;
     this.delayedMultiSig = params.delayedMultiSig;
     this.depositWithdrawalProxy = params.depositWithdrawalProxy;
@@ -278,7 +282,6 @@ interface CoreProtocolParamsArbitrumOne {
   arbEcosystem: ArbEcosystem;
   camelotEcosystem: CamelotEcosystem;
   chainlinkAutomationRegistry: IChainlinkAutomationRegistry;
-  chainlinkPriceOracleOld: IChainlinkPriceOracleOld;
   chainlinkPriceOracleV1: IChainlinkPriceOracleV1;
   chainlinkPriceOracleV3: IChainlinkPriceOracleV3;
   dolomiteAccountValuesReader: IDolomiteAccountValuesReader;
@@ -302,8 +305,6 @@ export class CoreProtocolArbitrumOne extends CoreProtocolAbstract<Network.Arbitr
   public readonly arbEcosystem: ArbEcosystem;
   public readonly camelotEcosystem: CamelotEcosystem;
   public readonly chainlinkAutomationRegistry: IChainlinkAutomationRegistry;
-  public readonly chainlinkPriceOracleOld: IChainlinkPriceOracleV1;
-  public readonly chainlinkPriceOracleV3: IChainlinkPriceOracleV3;
   public readonly dolomiteAccountValuesReader: IDolomiteAccountValuesReader;
   public readonly dolomiteMigrator: IDolomiteMigrator;
   public readonly gmxEcosystem: GmxEcosystem;
@@ -329,8 +330,6 @@ export class CoreProtocolArbitrumOne extends CoreProtocolAbstract<Network.Arbitr
     this.arbEcosystem = arbParams.arbEcosystem;
     this.camelotEcosystem = arbParams.camelotEcosystem;
     this.chainlinkAutomationRegistry = arbParams.chainlinkAutomationRegistry;
-    this.chainlinkPriceOracleOld = arbParams.chainlinkPriceOracleV1;
-    this.chainlinkPriceOracleV3 = arbParams.chainlinkPriceOracleV3;
     this.dolomiteAccountValuesReader = arbParams.dolomiteAccountValuesReader;
     this.dolomiteMigrator = arbParams.dolomiteMigrator;
     this.gmxEcosystem = arbParams.gmxEcosystem;
@@ -349,13 +348,11 @@ export class CoreProtocolArbitrumOne extends CoreProtocolAbstract<Network.Arbitr
 }
 
 export interface CoreProtocolParamsBase {
-  chainlinkPriceOracleOld: IChainlinkPriceOracleOld;
   paraswapEcosystem: ParaswapEcosystem;
 }
 
 export class CoreProtocolBase extends CoreProtocolAbstract<Network.Base> {
 
-  public readonly chainlinkPriceOracleOld: IChainlinkPriceOracleOld;
   public readonly paraswapEcosystem: ParaswapEcosystem;
   public readonly network: Network.Base = Network.Base;
 
@@ -364,25 +361,27 @@ export class CoreProtocolBase extends CoreProtocolAbstract<Network.Base> {
     baseParams: CoreProtocolParamsBase,
   ) {
     super(params);
-    this.chainlinkPriceOracleOld = baseParams.chainlinkPriceOracleOld;
     this.paraswapEcosystem = baseParams.paraswapEcosystem;
   }
 }
 
 interface CoreProtocolTokensZkEvm extends CoreProtocolTokens {
+  dai: IERC20;
+  link: IERC20;
   matic: IERC20;
   usdt: IERC20;
   wbtc: IERC20;
 }
 
 interface CoreProtocolMarketIdsZkEvm extends CoreProtocolMarketIds {
+  dai: BigNumberish;
+  link: BigNumberish;
   matic: BigNumberish;
   usdt: BigNumberish;
   wbtc: BigNumberish;
 }
 
 export interface CoreProtocolParamsZkEvm {
-  chainlinkPriceOracleOld: IChainlinkPriceOracleOld;
   marketIds: CoreProtocolMarketIdsZkEvm;
   paraswapEcosystem: ParaswapEcosystem;
   tokens: CoreProtocolTokensZkEvm;
@@ -390,7 +389,6 @@ export interface CoreProtocolParamsZkEvm {
 
 export class CoreProtocolPolygonZkEvm extends CoreProtocolAbstract<Network.PolygonZkEvm> {
 
-  public readonly chainlinkPriceOracleOld: IChainlinkPriceOracleOld;
   public readonly paraswapEcosystem: ParaswapEcosystem;
 
   public override readonly marketIds: CoreProtocolMarketIdsZkEvm;
@@ -402,7 +400,6 @@ export class CoreProtocolPolygonZkEvm extends CoreProtocolAbstract<Network.Polyg
     zkEvmParams: CoreProtocolParamsZkEvm,
   ) {
     super(params);
-    this.chainlinkPriceOracleOld = zkEvmParams.chainlinkPriceOracleOld;
     this.marketIds = zkEvmParams.marketIds;
     this.paraswapEcosystem = zkEvmParams.paraswapEcosystem;
     this.tokens = zkEvmParams.tokens;

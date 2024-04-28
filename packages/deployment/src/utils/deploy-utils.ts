@@ -774,7 +774,7 @@ export async function prettyPrintEncodeInsertChainlinkOracle<T extends NetworkTy
   mostRecentTokenDecimals = tokenDecimals;
   return await prettyPrintEncodedDataWithTypeSafety(
     core,
-    { chainlinkPriceOracle: core.chainlinkPriceOracleOld },
+    { chainlinkPriceOracle: core.chainlinkPriceOracleV1 },
     'chainlinkPriceOracle',
     'ownerInsertOrUpdateOracleToken',
     [

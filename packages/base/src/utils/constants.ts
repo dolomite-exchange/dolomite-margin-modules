@@ -6,6 +6,7 @@ export interface AccountStruct {
   owner: string;
   number: BigNumberish;
 }
+
 interface TokenWithMarketId {
   address: string;
   marketId: number;
@@ -14,9 +15,9 @@ interface TokenWithMarketId {
 type ArbitrumOrZkEvm = Network.ArbitrumOne | Network.PolygonZkEvm;
 
 export const SUBGRAPH_URL_MAP: Record<Network, string> = {
-  [Network.PolygonZkEvm]: 'https://api.studio.thegraph.com/query/47377/dolomite-polygon-zkevm/version/latest',
-  [Network.Base]: 'https://api.studio.thegraph.com/query/47377/dolomite-base/version/latest',
   [Network.ArbitrumOne]: 'https://api.thegraph.com/subgraphs/name/dolomite-exchange/dolomite-v2-arbitrum',
+  [Network.Base]: 'https://api.studio.thegraph.com/query/47377/dolomite-base/version/latest',
+  [Network.PolygonZkEvm]: 'https://api.studio.thegraph.com/query/47377/dolomite-polygon-zkevm/version/latest',
 };
 
 // ************************* External Contract Addresses *************************
@@ -28,16 +29,12 @@ export const ARB_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   },
 };
 
-export const CHAINLINK_PRICE_ORACLE_OLD_MAP: Record<Network, string> = {
+export const CHAINLINK_PRICE_ORACLE_V1_MAP: Record<Network, string> = {
   [Network.ArbitrumOne]: CoreDeployments.ChainlinkPriceOracleV1[Network.ArbitrumOne].address,
   [Network.Base]: CoreDeployments.ChainlinkPriceOracleV1[Network.Base].address,
+  [Network.Mantle]: CoreDeployments.ChainlinkPriceOracleV1[Network.Mantle].address,
   [Network.PolygonZkEvm]: CoreDeployments.ChainlinkPriceOracleV1[Network.PolygonZkEvm].address,
-};
-
-export const CHAINLINK_PRICE_ORACLE_V1_MAP: Record<Network, string> = {
-  [Network.ArbitrumOne]: '0xA07e80C08D8bae7fFA3e46534eaBdBb6Ca98da1D',
-  [Network.Base]: '0xc38372FA7e6431DcC490F354a1BcC36A5D6c32E6',
-  [Network.PolygonZkEvm]: '0xcE29B273fdd21cef1cE4dfd104dD608941D781a0',
+  [Network.XLayer]: CoreDeployments.ChainlinkPriceOracleV1[Network.XLayer].address,
 };
 
 export const CHAINLINK_AUTOMATION_REGISTRY_MAP: Record<Network.ArbitrumOne | Network.Base, string> = {
@@ -45,7 +42,7 @@ export const CHAINLINK_AUTOMATION_REGISTRY_MAP: Record<Network.ArbitrumOne | Net
   [Network.Base]: '0xE226D5aCae908252CcA3F6CEFa577527650a9e1e',
 };
 
-export const DAI_MAP: Record<Network, TokenWithMarketId> = {
+export const DAI_MAP: Record<Network, TokenWithMarketId | undefined> = {
   [Network.ArbitrumOne]: {
     address: '0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1',
     marketId: 1,
@@ -54,10 +51,12 @@ export const DAI_MAP: Record<Network, TokenWithMarketId> = {
     address: '0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb',
     marketId: 1,
   },
+  [Network.Mantle]: undefined,
   [Network.PolygonZkEvm]: {
     address: '0xC5015b9d9161Dca7e18e32f6f25C4aD850731Fd4',
     marketId: 1,
   },
+  [Network.XLayer]: undefined,
 };
 
 export const D_ARB_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
@@ -221,7 +220,7 @@ export const JONES_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   },
 };
 
-export const LINK_MAP: Record<Network, TokenWithMarketId> = {
+export const LINK_MAP: Record<Network, TokenWithMarketId | undefined> = {
   [Network.ArbitrumOne]: {
     address: '0xf97f4df75117a78c1A5a0DBb814Af92458539FB4',
     marketId: 3,
@@ -230,10 +229,12 @@ export const LINK_MAP: Record<Network, TokenWithMarketId> = {
     address: '0x88Fb150BDc53A65fe94Dea0c9BA0a6dAf8C6e196',
     marketId: 3,
   },
+  [Network.Mantle]: undefined,
   [Network.PolygonZkEvm]: {
     address: '0x4B16e4752711A7ABEc32799C976F3CeFc0111f2B',
     marketId: 3,
   },
+  [Network.XLayer]: undefined,
 };
 
 export const MAGIC_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
@@ -344,9 +345,17 @@ export const USDC_MAP: Record<Network, TokenWithMarketId> = {
     address: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
     marketId: 2,
   },
+  [Network.Mantle]: {
+    address: '0x09Bc4E0D864854c6aFB6eB9A9cdF58aC190D0dF9',
+    marketId: 2,
+  },
   [Network.PolygonZkEvm]: {
     address: '0x37eAA0eF3549a5Bb7D431be78a3D99BD360d19e5',
     marketId: 7,
+  },
+  [Network.XLayer]: {
+    address: '0x74b7F16337b8972027F6196A17a631aC6dE26d22',
+    marketId: 2,
   },
 };
 
@@ -381,8 +390,16 @@ export const WETH_MAP: Record<Network, TokenWithMarketId> = {
     address: '0x4200000000000000000000000000000000000006',
     marketId: 0,
   },
+  [Network.Mantle]: {
+    address: '0xdEAddEaDdeadDEadDEADDEAddEADDEAddead1111',
+    marketId: 0,
+  },
   [Network.PolygonZkEvm]: {
     address: '0x4F9A0e7FD2Bf6067db6994CF12E4495Df938E6e9',
+    marketId: 0,
+  },
+  [Network.XLayer]: {
+    address: '0x5A77f1443D16ee5761d310e38b62f77f726bC71c',
     marketId: 0,
   },
 };
@@ -391,6 +408,20 @@ export const WE_ETH_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x35751007a407ca6FEFfE80b3cB397736D2cf4dbe',
     marketId: 35,
+  },
+};
+
+export const WMNT_MAP: Record<Network.Mantle, TokenWithMarketId> = {
+  [Network.Mantle]: {
+    address: '0x78c1b0C915c4FAA5FffA6CAbf0219DA63d7f4cb8',
+    marketId: 1,
+  },
+};
+
+export const WOKB_MAP: Record<Network.XLayer, TokenWithMarketId> = {
+  [Network.XLayer]: {
+    address: '0xe538905cf8410324e03A5A23C1c177a474D59b2b',
+    marketId: 1,
   },
 };
 
@@ -453,7 +484,7 @@ export const GMX_BTC_PLACEHOLDER_MAP: Record<Network.ArbitrumOne, TokenWithMarke
   [Network.ArbitrumOne]: {
     address: '0x47904963fc8b2340414262125aF798B9655E58Cd',
     marketId: -1,
-  }
+  },
 };
 
 export const GMX_DEPOSIT_HANDLER_MAP: Record<Network.ArbitrumOne, string> = {
@@ -855,7 +886,7 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<Network, Record<string, Agg
     [D_GMX_MAP[Network.ArbitrumOne].address]: {
       aggregatorAddress: '0xdb98056fecfff59d032ab628337a4887110df3db',
     },
-    [DAI_MAP[Network.ArbitrumOne].address]: {
+    [DAI_MAP[Network.ArbitrumOne]!.address]: {
       aggregatorAddress: '0xc5C8E77B397E531B8EC06BFb0048328B30E9eCfB',
     },
     [E_ETH_MAP[Network.ArbitrumOne].address]: {
@@ -931,7 +962,7 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<Network, Record<string, Agg
     [WETH_MAP[Network.Base].address]: {
       aggregatorAddress: '0x71041dddad3595F9CEd3DcCFBe3D1F4b0a16Bb70',
     },
-    [DAI_MAP[Network.Base].address]: {
+    [DAI_MAP[Network.Base]!.address]: {
       aggregatorAddress: '0x591e79239a7d679378eC8c847e5038150364C78F',
     },
     [USDC_MAP[Network.Base].address]: undefined as any, // TODO
@@ -943,7 +974,7 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<Network, Record<string, Agg
     [WETH_MAP[Network.PolygonZkEvm].address]: {
       aggregatorAddress: '0x97d9F9A00dEE0004BE8ca0A8fa374d486567eE2D',
     },
-    [DAI_MAP[Network.PolygonZkEvm].address]: {
+    [DAI_MAP[Network.PolygonZkEvm]!.address]: {
       aggregatorAddress: '0xa4Fd5C39d975067c877F287E78D600da07E8344c',
     },
     [USDC_MAP[Network.PolygonZkEvm].address]: {

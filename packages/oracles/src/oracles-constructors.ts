@@ -12,7 +12,7 @@ import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import {
   AggregatorInfo,
   CHAINLINK_PRICE_AGGREGATORS_MAP,
-  CHAINLINK_PRICE_ORACLE_OLD_MAP,
+  CHAINLINK_PRICE_ORACLE_V1_MAP,
 } from 'packages/base/src/utils/constants';
 import { ADDRESS_ZERO, Network, NetworkType } from 'packages/base/src/utils/no-deps-constants';
 import { TokenInfo } from './index';
@@ -31,7 +31,7 @@ import {
 
 export type CoreProtocolWithChainlinkOld<T extends Network> = Extract<CoreProtocolType<T>, {
   dolomiteMargin: DolomiteMargin<T>;
-  chainlinkPriceOracleOld: IChainlinkPriceOracleOld;
+  chainlinkPriceOracleV1: IChainlinkPriceOracleOld;
 }>;
 
 export type CoreProtocolWithChainlinkV3<T extends Network> = Extract<CoreProtocolType<T>, {
@@ -142,7 +142,7 @@ export async function getChainlinkPriceOracleV1ConstructorParamsFromOldPriceOrac
   core: CoreProtocolArbitrumOne,
 ): Promise<[string[], string[], BigNumberish[], string[], string]> {
   const oldPriceOracle = IChainlinkPriceOracleOld__factory.connect(
-    CHAINLINK_PRICE_ORACLE_OLD_MAP[core.config.network],
+    CHAINLINK_PRICE_ORACLE_V1_MAP[core.config.network],
     core.hhUser1,
   );
   const tokens: string[] = [];
@@ -224,7 +224,7 @@ export async function getOracleAggregatorV2ConstructorParams(
   const reusableOracles = {
     [Deployments.PlutusVaultGLPWithChainlinkAutomationPriceOracleV3[core.network].address]: true,
     [Deployments.GLPPriceOracleV1[core.network].address]: true,
-    [Deployments.JonesUSDCWithChainlinkAutomationPriceOracleV1[core.network].address]: true,
+    [Deployments.JonesUSDCV1WithChainlinkAutomationPriceOracleV1[core.network].address]: true,
     [Deployments.MagicGLPWithChainlinkAutomationPriceOracle[core.network].address]: true,
     [Deployments.PendlePtGLPPriceOracle[core.network].address]: true,
     [Deployments.PendlePtWstEthJun2024PriceOracle[core.network].address]: true,
