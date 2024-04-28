@@ -249,7 +249,7 @@ export async function getOracleAggregatorV2ConstructorParams(
         oracleInfos: [
           {
             oracle: chainlinkOracle.address,
-            tokenPair: chainlinkPriceAggregatorMap[allChainlinkTokens[i]].tokenPairAddress ?? ADDRESS_ZERO,
+            tokenPair: chainlinkPriceAggregatorMap[allChainlinkTokens[i]]!.tokenPairAddress ?? ADDRESS_ZERO,
             weight: 100,
           },
         ],
@@ -366,14 +366,14 @@ export async function getRedstonePriceOracleV2ConstructorParams<T extends Networ
 export function getRedstonePriceOracleV3ConstructorParams<T extends NetworkType>(
   tokens: IERC20[],
   redstoneAggregators: IChainlinkAggregator[],
-  invertPrice: boolean[],
+  invertPrices: boolean[],
   dolomiteRegistry: IDolomiteRegistry,
   dolomiteMargin: DolomiteMargin<T>,
 ): [string[], string[], boolean[], string, string] {
   return [
     tokens.map(t => t.address),
     redstoneAggregators.map(r => r.address),
-    invertPrice,
+    invertPrices,
     dolomiteRegistry.address,
     dolomiteMargin.address,
   ];

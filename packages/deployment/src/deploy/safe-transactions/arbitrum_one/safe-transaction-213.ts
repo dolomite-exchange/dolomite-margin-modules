@@ -92,7 +92,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       [
         core.tokens.weEth.address,
         18,
-        CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][core.tokens.weEth.address].aggregatorAddress,
+        CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][core.tokens.weEth.address]!.aggregatorAddress,
         ADDRESS_ZERO,
       ],
     ),

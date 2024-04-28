@@ -578,10 +578,12 @@ export const GRAIL_WETH_V3_POOL_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x60451B6aC55E3C5F0f3aeE31519670EcC62DC28f',
 };
 
-export const KYBER_AGGREGATOR_ROUTER_MAP: Record<Network, string> = {
+export const KYBER_AGGREGATOR_ROUTER_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumOne]: '0x6131B5fae19EA4f9D964eAc0408E4408b66337b5',
   [Network.Base]: '0x6131B5fae19EA4f9D964eAc0408E4408b66337b5',
+  [Network.Mantle]: '0x6131B5fae19EA4f9D964eAc0408E4408b66337b5',
   [Network.PolygonZkEvm]: '0x6131B5fae19EA4f9D964eAc0408E4408b66337b5',
+  [Network.XLayer]: undefined,
 };
 
 export const JONES_ECOSYSTEM_GOVERNOR_MAP: Record<Network.ArbitrumOne, string> = {
@@ -632,22 +634,28 @@ export const ODOS_ROUTER_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0xa669e7A0d4b3e4Fa48af2dE86BD4CD7126Be4e13',
 };
 
-export const PARASWAP_AUGUSTUS_ROUTER_MAP: Record<Network, string> = {
+export const PARASWAP_AUGUSTUS_ROUTER_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumOne]: '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57',
   [Network.Base]: '0x59C7C832e96D2568bea6db468C1aAdcbbDa08A52',
+  [Network.Mantle]: undefined,
   [Network.PolygonZkEvm]: '0xB83B554730d29cE4Cb55BB42206c3E2c03E4A40A',
+  [Network.XLayer]: undefined,
 };
 
-export const PARASWAP_FEE_CLAIMER_MAP: Record<Network, string> = {
+export const PARASWAP_FEE_CLAIMER_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumOne]: '0xA7465CCD97899edcf11C56D2d26B49125674e45F',
   [Network.Base]: '0x9aaB4B24541af30fD72784ED98D8756ac0eFb3C7',
+  [Network.Mantle]: undefined,
   [Network.PolygonZkEvm]: '0x593F39A4Ba26A9c8ed2128ac95D109E8e403C485',
+  [Network.XLayer]: undefined,
 };
 
-export const PARASWAP_TRANSFER_PROXY_MAP: Record<Network, string> = {
+export const PARASWAP_TRANSFER_PROXY_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumOne]: '0x216B4B4Ba9F3e719726886d34a177484278Bfcae',
   [Network.Base]: '0x93aAAe79a53759cD164340E4C8766E4Db5331cD7',
+  [Network.Mantle]: undefined,
   [Network.PolygonZkEvm]: '0xC8a21FcD5A100c3ecc037c97e2f9C53a8D3A02A1',
+  [Network.XLayer]: undefined,
 };
 
 export const PENDLE_E_ETH_APR_2024_MARKET_MAP: Record<Network.ArbitrumOne, string> = {
@@ -872,7 +880,7 @@ export interface AggregatorInfo {
   invert?: boolean;
 }
 
-export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<Network, Record<string, AggregatorInfo>> = {
+export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<Network, Record<string, AggregatorInfo | undefined>> = {
   [Network.ArbitrumOne]: {
     [ARB_MAP[Network.ArbitrumOne].address]: {
       aggregatorAddress: '0xb2A824043730FE05F3DA2efaFa1CBbe83fa548D6',
@@ -904,7 +912,7 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<Network, Record<string, Agg
     [GMX_MAP[Network.ArbitrumOne].address]: {
       aggregatorAddress: '0xdb98056fecfff59d032ab628337a4887110df3db',
     },
-    [LINK_MAP[Network.ArbitrumOne].address]: {
+    [LINK_MAP[Network.ArbitrumOne]!.address]: {
       aggregatorAddress: '0x86E53CF1B870786351Da77A57575e79CB55812CB',
     },
     [MAGIC_MAP[Network.ArbitrumOne].address]: {
@@ -966,10 +974,11 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<Network, Record<string, Agg
       aggregatorAddress: '0x591e79239a7d679378eC8c847e5038150364C78F',
     },
     [USDC_MAP[Network.Base].address]: undefined as any, // TODO
-    [LINK_MAP[Network.Base].address]: {
+    [LINK_MAP[Network.Base]!.address]: {
       aggregatorAddress: '0xc5E65227fe3385B88468F9A01600017cDC9F3A12',
     },
   },
+  [Network.Mantle]: {},
   [Network.PolygonZkEvm]: {
     [WETH_MAP[Network.PolygonZkEvm].address]: {
       aggregatorAddress: '0x97d9F9A00dEE0004BE8ca0A8fa374d486567eE2D',
@@ -980,7 +989,7 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<Network, Record<string, Agg
     [USDC_MAP[Network.PolygonZkEvm].address]: {
       aggregatorAddress: '0x0167D934CB7240e65c35e347F00Ca5b12567523a',
     },
-    [LINK_MAP[Network.PolygonZkEvm].address]: {
+    [LINK_MAP[Network.PolygonZkEvm]!.address]: {
       aggregatorAddress: '0x2eeCADd4D8d3a4939440f07419741C4898095317',
     },
     [USDT_MAP[Network.PolygonZkEvm].address]: {
@@ -993,11 +1002,14 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<Network, Record<string, Agg
       aggregatorAddress: '0x7C85dD6eBc1d318E909F22d51e756Cf066643341',
     },
   },
+  [Network.XLayer]: {
+    // TODO
+  },
 };
 
 // ************************* Redstone *************************
 
-export const REDSTONE_PRICE_AGGREGATORS_MAP: Record<Network.ArbitrumOne, Record<string, AggregatorInfo>> = {
+export const REDSTONE_PRICE_AGGREGATORS_MAP: Record<Network.ArbitrumOne, Record<string, AggregatorInfo | undefined>> = {
   [Network.ArbitrumOne]: {
     [WE_ETH_MAP[Network.ArbitrumOne].address]: {
       aggregatorAddress: '0xA736eAe8805dDeFFba40cAB8c99bCB309dEaBd9B',

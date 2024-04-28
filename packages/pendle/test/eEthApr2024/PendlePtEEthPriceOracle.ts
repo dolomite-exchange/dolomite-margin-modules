@@ -83,7 +83,7 @@ describe('PendlePtEEthApr2024PriceOracle', () => {
     await chainlinkOracle.connect(core.governance).ownerInsertOrUpdateOracleTokenWithBypass(
       core.tokens.weEth.address,
       18,
-      CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][core.tokens.weEth.address].aggregatorAddress,
+      CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][core.tokens.weEth.address]!.aggregatorAddress,
       ZERO_ADDRESS,
       true,
     );
