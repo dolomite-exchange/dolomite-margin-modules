@@ -3,7 +3,8 @@ import '@nomiclabs/hardhat-etherscan';
 import '@typechain/hardhat';
 import 'hardhat-gas-reporter';
 import {
-  Network, NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP,
+  Network,
+  NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP,
   NetworkName,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import dotenv from 'dotenv';
@@ -69,9 +70,9 @@ export const base_config: HardhatUserConfig = {
         [Network.PolygonZkEvm]: {
           hardforkHistory: {
             berlin: NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP[Network.PolygonZkEvm] - 1,
-          }
-        }
-      }
+          },
+        },
+      },
     },
     [NetworkName.ArbitrumOne]: {
       chainId: parseInt(Network.ArbitrumOne, 10),

@@ -9,7 +9,12 @@ import {
   IIsolationModeVaultFactory,
   IIsolationModeWrapperTraderV2,
 } from '@dolomite-exchange/modules-base/src/types';
-import { CHAINLINK_PRICE_AGGREGATORS_MAP } from '@dolomite-exchange/modules-base/src/utils/constants';
+import {
+  CHAINLINK_PRICE_AGGREGATORS_MAP,
+  E_ETH_MAP,
+  GMX_BTC_PLACEHOLDER_MAP,
+  ST_ETH_MAP,
+} from '@dolomite-exchange/modules-base/src/utils/constants';
 import {
   getLiquidationPremiumForTargetLiquidationPenalty,
   getMarginPremiumForTargetCollateralization,
@@ -29,6 +34,7 @@ import {
   TEN_BI,
   ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { CoreProtocolXLayer } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { CoreProtocolType } from '@dolomite-exchange/modules-base/test/utils/setup';
 import {
   CoreProtocolWithChainlinkOld,
@@ -199,6 +205,29 @@ export async function initializeFreshArtifactFromWorkspace(artifactName: string)
   }
 
   return Promise.reject(new Error(`Could not find ${artifactName}`));
+}
+
+/**
+ * @param nameWithoutVersionPostfix IE IsolationModeTokenVault
+ * @param defaultVersion The version that should be declared if no other version exists
+ */
+export function getLatestVersionByName(nameWithoutVersionPostfix: string, defaultVersion: number) {
+  const lastChar = nameWithoutVersionPostfix.substring(nameWithoutVersionPostfix.length - 1);
+  if (!Number.isNaN(parseInt(lastChar, 10))) {
+    throw new Error('Name cannot include version declaration');
+  }
+
+  const maxVersion = Object.keys(readDeploymentFile()).reduce((max, curr) => {
+    if (curr.includes(nameWithoutVersionPostfix)) {
+      // Add 1 for the `V`
+      const currentVersion = parseInt(curr.substring(nameWithoutVersionPostfix.length + 1), 10);
+      return currentVersion > max ? currentVersion : max;
+    }
+
+    return max;
+  }, defaultVersion);
+
+  return `${nameWithoutVersionPostfix}V${maxVersion}`;
 }
 
 export async function deployContractAndSave(
@@ -752,8 +781,8 @@ async function getReadableArg<T extends NetworkType>(
 export async function prettyPrintEncodeInsertChainlinkOracle<T extends NetworkType>(
   core: CoreProtocolWithChainlinkOld<T>,
   token: IERC20,
-  tokenPairAddress: address | undefined = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address].tokenPairAddress,
-  aggregatorAddress: string = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address].aggregatorAddress,
+  tokenPairAddress: string | undefined = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address]!.tokenPairAddress,
+  aggregatorAddress: string = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address]!.aggregatorAddress,
 ): Promise<EncodedTransaction> {
   const invalidTokens = ['stEth', 'eEth'];
   let tokenDecimals: number;
@@ -790,26 +819,28 @@ export async function prettyPrintEncodeInsertChainlinkOracleV3<T extends Network
   core: CoreProtocolWithChainlinkV3<T>,
   token: IERC20,
   invertPrice: boolean,
-  tokenPairAddress: address | undefined = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address].tokenPairAddress,
-  aggregatorAddress: string = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address].aggregatorAddress,
+  tokenPairAddress: string | undefined = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address]!.tokenPairAddress,
+  aggregatorAddress: string = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address]!.aggregatorAddress,
 ): Promise<EncodedTransaction[]> {
   const invalidTokenMap: Record<Network, Record<string, { symbol: string; decimals: number }>> = {
-    [Network.PolygonZkEvm]: {},
-    [Network.Base]: {},
     [Network.ArbitrumOne]: {
-      [core.tokens.stEth.address]: {
+      [ST_ETH_MAP[Network.ArbitrumOne].address]: {
         symbol: 'stETH',
         decimals: 18,
       },
-      [core.tokens.eEth.address]: {
+      [E_ETH_MAP[Network.ArbitrumOne].address]: {
         symbol: 'eETH',
         decimals: 18,
       },
-      [core.tokens.gmxBtc.address]: {
+      [GMX_BTC_PLACEHOLDER_MAP[Network.ArbitrumOne].address]: {
         symbol: 'btc',
         decimals: 8,
       },
     },
+    [Network.Base]: {},
+    [Network.Mantle]: {},
+    [Network.PolygonZkEvm]: {},
+    [Network.XLayer]: {},
   };
   const invalidTokenSettings = invalidTokenMap[core.network][token.address];
 
@@ -862,6 +893,77 @@ export async function prettyPrintEncodeInsertChainlinkOracleV3<T extends Network
           oracleInfos: [
             {
               oracle: core.chainlinkPriceOracleV3.address,
+              tokenPair: tokenPairAddress ?? ADDRESS_ZERO,
+              weight: 100,
+            },
+          ],
+        },
+      ],
+    ),
+  ];
+}
+
+export async function prettyPrintEncodeInsertOkxOracleV3(
+  core: CoreProtocolXLayer,
+  token: IERC20,
+  invertPrice: boolean,
+  tokenPairAddress: string | undefined = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address]!.tokenPairAddress,
+  aggregatorAddress: string = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address]!.aggregatorAddress,
+): Promise<EncodedTransaction[]> {
+  const invalidTokenMap: Record<Network.XLayer, Record<string, { symbol: string; decimals: number }>> = {
+    [Network.XLayer]: {},
+  };
+  const invalidTokenSettings = invalidTokenMap[core.network][token.address];
+
+  let tokenDecimals: number;
+  if (invalidTokenSettings) {
+    tokenDecimals = invalidTokenSettings.decimals;
+  } else {
+    tokenDecimals = await IERC20Metadata__factory.connect(token.address, core.hhUser1).decimals();
+  }
+
+  const aggregator = IChainlinkAggregator__factory.connect(aggregatorAddress, core.governance);
+
+  const description = await aggregator.description();
+  let symbol: string;
+  if (invalidTokenSettings) {
+    symbol = invalidTokenSettings.symbol;
+  } else {
+    symbol = await IERC20Metadata__factory.connect(token.address, token.signer).symbol();
+  }
+
+  if (
+    !description.toUpperCase().includes(symbol.toUpperCase()) &&
+    !description.toUpperCase().includes(symbol.toUpperCase().substring(1))
+  ) {
+    return Promise.reject(new Error(`Invalid aggregator for symbol, found: ${description}, expected: ${symbol}`));
+  }
+
+  mostRecentTokenDecimals = tokenDecimals;
+  return [
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { okxPriceOracle: core.okxPriceOracleV3 },
+      'okxPriceOracle',
+      'ownerInsertOrUpdateOracleToken',
+      [
+        token.address,
+        aggregator.address,
+        invertPrice,
+      ],
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { oracleAggregatorV2: core.oracleAggregatorV2 },
+      'oracleAggregatorV2',
+      'ownerInsertOrUpdateToken',
+      [
+        {
+          token: token.address,
+          decimals: tokenDecimals,
+          oracleInfos: [
+            {
+              oracle: core.okxPriceOracleV3.address,
               tokenPair: tokenPairAddress ?? ADDRESS_ZERO,
               weight: 100,
             },

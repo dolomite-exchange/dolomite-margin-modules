@@ -3,6 +3,7 @@ import Deployments, * as deployments from '@dolomite-exchange/modules-deployment
 import {
   IChainlinkAutomationRegistry__factory,
   IChainlinkPriceOracleV3__factory,
+  OkxPriceOracleV3__factory,
   OracleAggregatorV2__factory,
 } from '@dolomite-exchange/modules-oracles/src/types';
 import { BigNumber as ZapBigNumber } from '@dolomite-exchange/zap-sdk';
@@ -96,6 +97,8 @@ import {
   WBTC_MAP,
   WE_ETH_MAP,
   WETH_MAP,
+  WMNT_MAP,
+  WOKB_MAP,
   WST_ETH_MAP,
   XAI_MAP,
 } from '../../src/utils/constants';
@@ -105,8 +108,10 @@ import {
   CoreProtocolAbstract,
   CoreProtocolArbitrumOne,
   CoreProtocolBase,
+  CoreProtocolMantle,
   CoreProtocolParams,
   CoreProtocolPolygonZkEvm,
+  CoreProtocolXLayer,
   LibraryMaps,
 } from './core-protocol';
 import { DolomiteMargin, Expiry } from './dolomite';
@@ -118,6 +123,7 @@ import { createInterestSetters } from './ecosystem-utils/interest-setters';
 import { createJonesEcosystem } from './ecosystem-utils/jones';
 import { createLiquidityMiningEcosystem } from './ecosystem-utils/liquidity-mining';
 import { createOdosEcosystem } from './ecosystem-utils/odos';
+import { createOkxEcosystem } from './ecosystem-utils/okx';
 import { createParaswapEcosystem } from './ecosystem-utils/paraswap';
 import { createPendleEcosystem } from './ecosystem-utils/pendle';
 import { createPlutusEcosystem } from './ecosystem-utils/plutus';
@@ -152,15 +158,25 @@ interface CoreProtocolConfigBase extends CoreProtocolConfigParent<Network.Base> 
   readonly base: boolean;
 }
 
+interface CoreProtocolConfigMantle extends CoreProtocolConfigParent<Network.Mantle> {
+  readonly mantle: boolean;
+}
+
 interface CoreProtocolConfigPolygonZkEvm extends CoreProtocolConfigParent<Network.PolygonZkEvm> {
   readonly polygonZkEvm: boolean;
 }
 
+interface CoreProtocolConfigXLayer extends CoreProtocolConfigParent<Network.XLayer> {
+  readonly xLayer: boolean;
+}
+
 export type CoreProtocolConfig<T extends NetworkType> = T extends Network.ArbitrumOne
   ? CoreProtocolConfigArbitrumOne
-  : T extends Network.Base ? CoreProtocolConfigBase : T extends Network.PolygonZkEvm
-    ? CoreProtocolConfigPolygonZkEvm
-    : never;
+  : T extends Network.Base ? CoreProtocolConfigBase
+    : T extends Network.Mantle ? CoreProtocolConfigMantle
+      : T extends Network.PolygonZkEvm ? CoreProtocolConfigPolygonZkEvm
+        : T extends Network.XLayer ? CoreProtocolConfigXLayer
+          : never;
 
 export async function disableInterestAccrual<T extends NetworkType>(
   core: CoreProtocolAbstract<T>,
@@ -358,6 +374,15 @@ function getCoreProtocolConfig<T extends NetworkType>(network: T, blockNumber: n
     } as CoreProtocolConfigBase as any;
   }
 
+  if (network === Network.Mantle) {
+    return {
+      network,
+      blockNumber,
+      networkNumber: parseInt(network, 10),
+      mantle: true,
+    } as CoreProtocolConfigMantle as any;
+  }
+
   if (network === Network.PolygonZkEvm) {
     return {
       network,
@@ -365,6 +390,15 @@ function getCoreProtocolConfig<T extends NetworkType>(network: T, blockNumber: n
       networkNumber: parseInt(network, 10),
       polygonZkEvm: true,
     } as CoreProtocolConfigPolygonZkEvm as any;
+  }
+
+  if (network === Network.XLayer) {
+    return {
+      network,
+      blockNumber,
+      networkNumber: parseInt(network, 10),
+      xLayer: true,
+    } as CoreProtocolConfigXLayer as any;
   }
 
   throw new Error(`Invalid network, found: ${network}`);
@@ -382,8 +416,32 @@ export function getDefaultCoreProtocolConfigForGmxV2(): CoreProtocolConfig<Netwo
 export type CoreProtocolType<T extends NetworkType> = T extends Network.ArbitrumOne
   ? CoreProtocolArbitrumOne
   : T extends Network.Base ? CoreProtocolBase
-    : T extends Network.PolygonZkEvm ? CoreProtocolPolygonZkEvm
-      : never;
+    : T extends Network.Mantle ? CoreProtocolMantle
+      : T extends Network.PolygonZkEvm ? CoreProtocolPolygonZkEvm
+        : T extends Network.XLayer ? CoreProtocolXLayer
+          : never;
+
+export function getDolomiteMarginContract<T extends NetworkType>(
+  config: CoreProtocolSetupConfig<T>,
+  signer: SignerWithAddressWithSafety,
+): DolomiteMargin<T> {
+  return (
+    config.network === Network.ArbitrumOne
+      ? IDolomiteMargin__factory.connect(DolomiteMarginJson.networks[config.network].address, signer)
+      : IDolomiteMarginV2__factory.connect(DolomiteMarginJson.networks[config.network].address, signer)
+  ) as DolomiteMargin<T>;
+}
+
+export function getExpiryContract<T extends NetworkType>(
+  config: CoreProtocolSetupConfig<T>,
+  signer: SignerWithAddressWithSafety,
+): Expiry<T> {
+  return (
+    config.network === Network.ArbitrumOne
+      ? IExpiry__factory.connect(ExpiryJson.networks[config.network].address, signer)
+      : IExpiryV2__factory.connect(ExpiryJson.networks[config.network].address, signer)
+  ) as Expiry<T>;
+}
 
 export async function setupCoreProtocol<T extends NetworkType>(
   config: Readonly<CoreProtocolSetupConfig<T>>,
@@ -401,9 +459,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
     hhUser1,
   );
 
-  const dolomiteMargin = (config.network === Network.ArbitrumOne
-    ? IDolomiteMargin__factory.connect(dolomiteMarginAddress, governance)
-    : IDolomiteMarginV2__factory.connect(dolomiteMarginAddress, governance)) as DolomiteMargin<T>;
+  const dolomiteMargin = getDolomiteMarginContract<T>(config, governance);
 
   const borrowPositionProxyV2 = IBorrowPositionProxyV2__factory.connect(
     BorrowPositionProxyV2Json.networks[config.network].address,
@@ -453,9 +509,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
     governance,
   );
 
-  const expiry = (config.network === Network.ArbitrumOne
-    ? IExpiry__factory.connect(ExpiryJson.networks[config.network].address, governance)
-    : IExpiryV2__factory.connect(ExpiryJson.networks[config.network].address, governance)) as Expiry<T>;
+  const expiry = getExpiryContract<T>(config, governance);
 
   const freezableLiquidatorProxy = IsolationModeFreezableLiquidatorProxy__factory.connect(
     getMaxDeploymentVersionAddressByDeploymentKey('IsolationModeFreezableLiquidatorProxy', config.network),
@@ -684,6 +738,26 @@ export async function setupCoreProtocol<T extends NetworkType>(
       },
     ) as any;
   }
+  if (config.network === Network.Mantle) {
+    const typedConfig = config as CoreProtocolSetupConfig<Network.Mantle>;
+    return new CoreProtocolMantle(
+      coreProtocolParams as CoreProtocolParams<Network.Mantle>,
+      {
+        marketIds: {
+          ...coreProtocolParams.marketIds,
+          usdt: USDT_MAP[typedConfig.network].marketId,
+          wbtc: WBTC_MAP[typedConfig.network].marketId,
+          wmnt: WMNT_MAP[typedConfig.network].marketId,
+        },
+        tokens: {
+          ...coreProtocolParams.tokens,
+          usdt: IERC20__factory.connect(USDT_MAP[typedConfig.network].address, hhUser1),
+          wbtc: IERC20__factory.connect(WBTC_MAP[typedConfig.network].address, hhUser1),
+          wmnt: IERC20__factory.connect(WMNT_MAP[typedConfig.network].address, hhUser1),
+        },
+      },
+    ) as any;
+  }
   if (config.network === Network.PolygonZkEvm) {
     const typedConfig = config as CoreProtocolSetupConfig<Network.PolygonZkEvm>;
     return new CoreProtocolPolygonZkEvm(
@@ -705,6 +779,31 @@ export async function setupCoreProtocol<T extends NetworkType>(
           matic: IERC20__factory.connect(MATIC_MAP[typedConfig.network].address, hhUser1),
           usdt: IERC20__factory.connect(USDT_MAP[typedConfig.network].address, hhUser1),
           wbtc: IERC20__factory.connect(WBTC_MAP[typedConfig.network].address, hhUser1),
+        },
+      },
+    ) as any;
+  }
+  if (config.network === Network.XLayer) {
+    const typedConfig = config as CoreProtocolSetupConfig<Network.XLayer>;
+    return new CoreProtocolXLayer(
+      coreProtocolParams as CoreProtocolParams<Network.XLayer>,
+      {
+        marketIds: {
+          ...coreProtocolParams.marketIds,
+          usdt: USDT_MAP[typedConfig.network].marketId,
+          wbtc: WBTC_MAP[typedConfig.network].marketId,
+          wokb: WOKB_MAP[typedConfig.network].marketId,
+        },
+        okxEcosystem: await createOkxEcosystem(typedConfig.network, hhUser1),
+        okxPriceOracleV3: OkxPriceOracleV3__factory.connect(
+          Deployments.OkxPriceOracleV3[typedConfig.network].address,
+          hhUser1,
+        ),
+        tokens: {
+          ...coreProtocolParams.tokens,
+          usdt: IERC20__factory.connect(USDT_MAP[typedConfig.network].address, hhUser1),
+          wbtc: IERC20__factory.connect(WBTC_MAP[typedConfig.network].address, hhUser1),
+          wokb: IERC20__factory.connect(WOKB_MAP[typedConfig.network].address, hhUser1),
         },
       },
     ) as any;

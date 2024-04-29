@@ -1,6 +1,6 @@
 import {
   IChainlinkAutomationRegistry,
-  IChainlinkPriceOracleV3,
+  IChainlinkPriceOracleV3, OkxPriceOracleV3,
   OracleAggregatorV2,
 } from '@dolomite-exchange/modules-oracles/src/types';
 import { ApiToken, DolomiteZap } from '@dolomite-exchange/zap-sdk';
@@ -36,6 +36,7 @@ import { JonesEcosystem } from './ecosystem-utils/jones';
 import { LiquidityMiningEcosystem } from './ecosystem-utils/liquidity-mining';
 import { OdosEcosystem } from './ecosystem-utils/odos';
 import { ParaswapEcosystem } from './ecosystem-utils/paraswap';
+import { OkxEcosystem } from './ecosystem-utils/okx';
 import { PendleEcosystem } from './ecosystem-utils/pendle';
 import { PlutusEcosystem } from './ecosystem-utils/plutus';
 import { PremiaEcosystem } from './ecosystem-utils/premia';
@@ -365,7 +366,40 @@ export class CoreProtocolBase extends CoreProtocolAbstract<Network.Base> {
   }
 }
 
-interface CoreProtocolTokensZkEvm extends CoreProtocolTokens {
+interface CoreProtocolTokensMantle extends CoreProtocolTokens {
+  wmnt: IERC20;
+  usdt: IERC20;
+  wbtc: IERC20;
+}
+
+interface CoreProtocolMarketIdsMantle extends CoreProtocolMarketIds {
+  wmnt: BigNumberish;
+  usdt: BigNumberish;
+  wbtc: BigNumberish;
+}
+
+export interface CoreProtocolParamsMantle {
+  marketIds: CoreProtocolMarketIdsMantle;
+  tokens: CoreProtocolTokensMantle;
+}
+
+export class CoreProtocolMantle extends CoreProtocolAbstract<Network.Mantle> {
+
+  public override readonly marketIds: CoreProtocolMarketIdsMantle;
+  public override readonly tokens: CoreProtocolTokensMantle;
+  public readonly network: Network.Mantle = Network.Mantle;
+
+  constructor(
+    params: CoreProtocolParams<Network.Mantle>,
+    mantleParams: CoreProtocolParamsMantle,
+  ) {
+    super(params);
+    this.marketIds = mantleParams.marketIds;
+    this.tokens = mantleParams.tokens;
+  }
+}
+
+interface CoreProtocolTokensPolygonZkEvm extends CoreProtocolTokens {
   dai: IERC20;
   link: IERC20;
   matic: IERC20;
@@ -373,7 +407,7 @@ interface CoreProtocolTokensZkEvm extends CoreProtocolTokens {
   wbtc: IERC20;
 }
 
-interface CoreProtocolMarketIdsZkEvm extends CoreProtocolMarketIds {
+interface CoreProtocolMarketIdsPolygonZkEvm extends CoreProtocolMarketIds {
   dai: BigNumberish;
   link: BigNumberish;
   matic: BigNumberish;
@@ -381,27 +415,67 @@ interface CoreProtocolMarketIdsZkEvm extends CoreProtocolMarketIds {
   wbtc: BigNumberish;
 }
 
-export interface CoreProtocolParamsZkEvm {
-  marketIds: CoreProtocolMarketIdsZkEvm;
+export interface CoreProtocolParamsPolygonZkEvm {
+  marketIds: CoreProtocolMarketIdsPolygonZkEvm;
   paraswapEcosystem: ParaswapEcosystem;
-  tokens: CoreProtocolTokensZkEvm;
+  tokens: CoreProtocolTokensPolygonZkEvm;
 }
 
 export class CoreProtocolPolygonZkEvm extends CoreProtocolAbstract<Network.PolygonZkEvm> {
 
   public readonly paraswapEcosystem: ParaswapEcosystem;
 
-  public override readonly marketIds: CoreProtocolMarketIdsZkEvm;
-  public override readonly tokens: CoreProtocolTokensZkEvm;
+  public override readonly marketIds: CoreProtocolMarketIdsPolygonZkEvm;
+  public override readonly tokens: CoreProtocolTokensPolygonZkEvm;
   public readonly network: Network.PolygonZkEvm = Network.PolygonZkEvm;
 
   constructor(
     params: CoreProtocolParams<Network.PolygonZkEvm>,
-    zkEvmParams: CoreProtocolParamsZkEvm,
+    zkEvmParams: CoreProtocolParamsPolygonZkEvm,
   ) {
     super(params);
     this.marketIds = zkEvmParams.marketIds;
     this.paraswapEcosystem = zkEvmParams.paraswapEcosystem;
     this.tokens = zkEvmParams.tokens;
+  }
+}
+
+interface CoreProtocolTokensXLayer extends CoreProtocolTokens {
+  wokb: IERC20;
+  usdt: IERC20;
+  wbtc: IERC20;
+}
+
+interface CoreProtocolMarketIdsXLayer extends CoreProtocolMarketIds {
+  wokb: BigNumberish;
+  usdt: BigNumberish;
+  wbtc: BigNumberish;
+}
+
+export interface CoreProtocolParamsXLayer {
+  marketIds: CoreProtocolMarketIdsXLayer;
+  okxEcosystem: OkxEcosystem;
+  okxPriceOracleV3: OkxPriceOracleV3;
+  tokens: CoreProtocolTokensXLayer;
+}
+
+export class CoreProtocolXLayer extends CoreProtocolAbstract<Network.XLayer> {
+
+  public readonly okxEcosystem: OkxEcosystem;
+  public readonly okxPriceOracleV3: OkxPriceOracleV3;
+
+  public override readonly marketIds: CoreProtocolMarketIdsXLayer;
+  public override readonly tokens: CoreProtocolTokensXLayer;
+  public readonly network: Network.XLayer = Network.XLayer;
+
+  constructor(
+    params: CoreProtocolParams<Network.XLayer>,
+    xLayerParams: CoreProtocolParamsXLayer,
+  ) {
+    super(params);
+    this.marketIds = xLayerParams.marketIds;
+    this.okxEcosystem = xLayerParams.okxEcosystem;
+    this.okxPriceOracleV3 = xLayerParams.okxPriceOracleV3;
+    this.tokens = xLayerParams.tokens;
   }
 }

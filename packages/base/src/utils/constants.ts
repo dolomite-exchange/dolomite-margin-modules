@@ -1,6 +1,9 @@
 import CoreDeployments from '@dolomite-exchange/dolomite-margin/dist/migrations/deployed.json';
+import { IChainlinkAggregator, IChainlinkAggregator__factory } from '@dolomite-exchange/modules-oracles/src/types';
 import { BigNumber, BigNumberish } from 'ethers';
-import { Network } from './no-deps-constants';
+import { CoreProtocolType } from '../../test/utils/setup';
+import { IERC20 } from '../types';
+import { Network, NetworkType } from './no-deps-constants';
 
 export interface AccountStruct {
   owner: string;
@@ -12,7 +15,7 @@ interface TokenWithMarketId {
   marketId: number;
 }
 
-type ArbitrumOrZkEvm = Network.ArbitrumOne | Network.PolygonZkEvm;
+type EverythingButBase = Network.ArbitrumOne | Network.Mantle | Network.PolygonZkEvm | Network.XLayer;
 
 export const SUBGRAPH_URL_MAP: Record<Network, string> = {
   [Network.ArbitrumOne]: 'https://api.thegraph.com/subgraphs/name/dolomite-exchange/dolomite-v2-arbitrum',
@@ -359,25 +362,41 @@ export const USDC_MAP: Record<Network, TokenWithMarketId> = {
   },
 };
 
-export const USDT_MAP: Record<ArbitrumOrZkEvm, TokenWithMarketId> = {
+export const USDT_MAP: Record<EverythingButBase, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9',
+    marketId: 5,
+  },
+  [Network.Mantle]: {
+    address: '0x201EBa5CC46D216Ce6DC03F6a759e8E766e956aE',
     marketId: 5,
   },
   [Network.PolygonZkEvm]: {
     address: '0x1E4a5963aBFD975d8c9021ce480b42188849D41d',
     marketId: 5,
   },
+  [Network.XLayer]: {
+    address: '0x1E4a5963aBFD975d8c9021ce480b42188849D41d',
+    marketId: 4,
+  },
 };
 
-export const WBTC_MAP: Record<ArbitrumOrZkEvm, TokenWithMarketId> = {
+export const WBTC_MAP: Record<EverythingButBase, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f',
+    marketId: 4,
+  },
+  [Network.Mantle]: {
+    address: '0xCAbAE6f6Ea1ecaB08Ad02fE02ce9A44F09aebfA2',
     marketId: 4,
   },
   [Network.PolygonZkEvm]: {
     address: '0xEA034fb02eB1808C2cc3adbC15f447B93CbE08e1',
     marketId: 4,
+  },
+  [Network.XLayer]: {
+    address: '0xEA034fb02eB1808C2cc3adbC15f447B93CbE08e1',
+    marketId: 3,
   },
 };
 
@@ -1003,9 +1022,47 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<Network, Record<string, Agg
     },
   },
   [Network.XLayer]: {
-    // TODO
+    [WETH_MAP[Network.XLayer].address]: {
+      aggregatorAddress: '0x98ff91433c992153A8D6507cEA5b791Df69d7c99',
+    },
+    [WOKB_MAP[Network.XLayer].address]: {
+      aggregatorAddress: '0x90AB4bc4991c71889A67F25eec044fD90E255e77',
+    },
+    [USDC_MAP[Network.XLayer].address]: {
+      aggregatorAddress: '0xc975719d0ec39bb8880444acea9cc8d29a35e4d4',
+    },
+    [WBTC_MAP[Network.XLayer].address]: {
+      aggregatorAddress: '0x3C7dCE5F83E99452CD399a1bCa5542BEd979E6CA',
+    },
+    [USDT_MAP[Network.XLayer].address]: {
+      aggregatorAddress: '0xB249978EfdB8E01D5266F926409870c1Ec7336EA',
+    },
   },
 };
+
+export function getChainlinkPriceAggregatorInfoByToken<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  token: IERC20,
+): AggregatorInfo | undefined {
+  return CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address];
+}
+
+export function getChainlinkPriceAggregatorByToken<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  token: IERC20,
+): IChainlinkAggregator {
+  return IChainlinkAggregator__factory.connect(
+    CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address]!.aggregatorAddress,
+    core.hhUser1,
+  );
+}
+
+export function getChainlinkPairTokenAddressByToken<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  token: IERC20,
+): string | undefined {
+  return CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address]!.tokenPairAddress;
+}
 
 // ************************* Redstone *************************
 

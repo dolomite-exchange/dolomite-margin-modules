@@ -20,18 +20,19 @@ import {
   ChainlinkPriceOracleV3,
   IAlgebraV3Pool,
   IChainlinkAggregator,
-  IChainlinkPriceOracleOld,
-  IChainlinkPriceOracleOld__factory,
-  IChainlinkPriceOracleV1__factory, IChainlinkPriceOracleV3,
+  IChainlinkPriceOracleV1,
+  IChainlinkPriceOracleV1__factory,
+  IChainlinkPriceOracleV3,
   IDolomiteRegistry,
   IERC20Metadata__factory,
-  IRedstonePriceOracleV2__factory, OracleAggregatorV2,
+  IRedstonePriceOracleV2__factory,
+  OracleAggregatorV2,
   RedstonePriceOracleV3,
 } from './types';
 
 export type CoreProtocolWithChainlinkOld<T extends Network> = Extract<CoreProtocolType<T>, {
   dolomiteMargin: DolomiteMargin<T>;
-  chainlinkPriceOracleV1: IChainlinkPriceOracleOld;
+  chainlinkPriceOracleV1: IChainlinkPriceOracleV1;
 }>;
 
 export type CoreProtocolWithChainlinkV3<T extends Network> = Extract<CoreProtocolType<T>, {
@@ -141,7 +142,7 @@ export async function getChainlinkPriceOracleV2ConstructorParamsFromOldPriceOrac
 export async function getChainlinkPriceOracleV1ConstructorParamsFromOldPriceOracle(
   core: CoreProtocolArbitrumOne,
 ): Promise<[string[], string[], BigNumberish[], string[], string]> {
-  const oldPriceOracle = IChainlinkPriceOracleOld__factory.connect(
+  const oldPriceOracle = IChainlinkPriceOracleV1__factory.connect(
     CHAINLINK_PRICE_ORACLE_V1_MAP[core.config.network],
     core.hhUser1,
   );
@@ -155,9 +156,9 @@ export async function getChainlinkPriceOracleV1ConstructorParamsFromOldPriceOrac
     const priceOracle = await core.dolomiteMargin.getMarketPriceOracle(i);
     if (priceOracle === oldPriceOracle.address) {
       tokens.push(token);
-      aggregators.push(await oldPriceOracle.tokenToAggregatorMap(token));
-      tokenDecimals.push(await oldPriceOracle.tokenToDecimalsMap(token));
-      tokenPairs.push(await oldPriceOracle.tokenToPairingMap(token));
+      aggregators.push(await oldPriceOracle.getAggregatorByToken(token));
+      tokenDecimals.push(await oldPriceOracle.getDecimalsByToken(token));
+      tokenPairs.push(await oldPriceOracle.getTokenPairByToken(token));
     }
   }
   return [tokens, aggregators, tokenDecimals, tokenPairs, core.dolomiteMargin.address];

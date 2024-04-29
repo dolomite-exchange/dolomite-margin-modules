@@ -26,7 +26,7 @@ export const networkToNetworkNameMap: Record<Network, NetworkName> = {
   [Network.Base]: NetworkName.Base,
   [Network.Mantle]: NetworkName.Mantle,
   [Network.PolygonZkEvm]: NetworkName.PolygonZkEvm,
-  [Network.XLayer]: NetworkName.Mantle,
+  [Network.XLayer]: NetworkName.XLayer,
 };
 
 const typedNetworkIdString = process.env.NETWORK_ID || Network.ArbitrumOne;
@@ -39,7 +39,7 @@ export const NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP: Record<Network, number> = {
   [Network.Base]: 10_050_058,
   [Network.Mantle]: 63_096_200,
   [Network.PolygonZkEvm]: 9_860_500,
-  [Network.XLayer]: 836_760,
+  [Network.XLayer]: 854_000,
 };
 
 export const DEFAULT_BLOCK_NUMBER = NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP[NETWORK_ID];

@@ -41,8 +41,8 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     'RedstonePriceOracle',
     await getRedstonePriceOracleV2ConstructorParams(
       [core.tokens.weth, core.tokens.weEth!],
-      [wethAggregator, aggregatorInfo.aggregatorAddress],
-      [ADDRESS_ZERO, aggregatorInfo.tokenPairAddress!],
+      [wethAggregator, aggregatorInfo!.aggregatorAddress],
+      [ADDRESS_ZERO, aggregatorInfo!.tokenPairAddress!],
       [false, false],
       core,
     ),
