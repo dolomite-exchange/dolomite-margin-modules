@@ -27,7 +27,6 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { IPendleRegistry } from "./interfaces/IPendleRegistry.sol";
 import { IPendleRouterV3 } from "./interfaces/IPendleRouterV3.sol";
 
-import "hardhat/console.sol";
 
 /**
  * @title   PendleYtIsolationModeWrapperTraderV2
@@ -93,7 +92,10 @@ contract PendleYtIsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2 {
             IPendleRouterV3.ApproxParams memory guessYtOut,
             IPendleRouterV3.TokenInput memory tokenInput,
             IPendleRouterV3.LimitOrderData memory limitOrderData
-        ) = abi.decode(_extraOrderData, (IPendleRouterV3.ApproxParams, IPendleRouterV3.TokenInput, IPendleRouterV3.LimitOrderData));
+        ) = abi.decode(
+            _extraOrderData,
+            (IPendleRouterV3.ApproxParams, IPendleRouterV3.TokenInput, IPendleRouterV3.LimitOrderData)
+        );
 
         IPendleRouterV3 pendleRouter = IPendleRouterV3(address(PENDLE_REGISTRY.pendleRouter()));
         UNDERLYING_TOKEN.safeApprove(address(pendleRouter), _inputAmount);

@@ -44,7 +44,7 @@ import { encodeSwapExactTokensForYtV3 } from '../pendle-utils';
 import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin';
 
 const defaultAccountNumber = '0';
-const otherAccountNumber = '123';
+const borrowAccountNumber = '123';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
 const otherAmountWei = BigNumber.from('10000000'); // $10
 const usdcAmount = amountWei.div(1e12).mul(8);
@@ -69,7 +69,6 @@ describe('PendleYtEEthJun2024IsolationModeWrapperTraderV2', () => {
   let vault: PendleYtIsolationModeTokenVaultV1;
   let priceOracle: PendleYtPriceOracle;
   let defaultAccount: AccountInfoStruct;
-  let router: BaseRouter;
 
   before(async () => {
     core = await setupCoreProtocol({
@@ -86,7 +85,6 @@ describe('PendleYtEEthJun2024IsolationModeWrapperTraderV2', () => {
       core.pendleEcosystem!.weEthJun2024.ptOracle,
       core.pendleEcosystem!.syWeEthToken,
     );
-    // await pendleRegistry.connect(core.governance).ownerSetPendleRouter('0x888888888889758F76e7103c6CbF23ABbF58F946');
     factory = await createPendleYtIsolationModeVaultFactory(
       core,
       pendleRegistry,
@@ -113,20 +111,20 @@ describe('PendleYtEEthJun2024IsolationModeWrapperTraderV2', () => {
       PendleYtIsolationModeTokenVaultV1__factory,
       core.hhUser1,
     );
-    defaultAccount = { owner: vault.address, number: otherAccountNumber };
+    defaultAccount = { owner: vault.address, number: borrowAccountNumber };
 
     await setupWeEthBalance(core, core.hhUser1, ONE_ETH_BI, core.dolomiteMargin);
     await depositIntoDolomiteMargin(core, core.hhUser1, ZERO_BI, core.marketIds.weEth, ONE_ETH_BI);
     await vault.transferIntoPositionWithOtherToken(
       ZERO_BI,
-      otherAccountNumber,
+      borrowAccountNumber,
       core.marketIds.weEth,
       ONE_ETH_BI,
       BalanceCheckFlag.Both
     );
 
-    await expectProtocolBalance(core, vault, otherAccountNumber, core.marketIds.weEth, ONE_ETH_BI);
-    expect((await core.dolomiteMargin.getAccountWei({ owner: vault.address, number: otherAccountNumber}, core.marketIds.weEth)).value).to.eq(ONE_ETH_BI);
+    await expectProtocolBalance(core, vault, borrowAccountNumber, core.marketIds.weEth, ONE_ETH_BI);
+    expect((await core.dolomiteMargin.getAccountWei(defaultAccount, core.marketIds.weEth)).value).to.eq(ONE_ETH_BI);
 
     await setupNewGenericTraderProxy(core, underlyingMarketId);
 
@@ -155,9 +153,9 @@ describe('PendleYtEEthJun2024IsolationModeWrapperTraderV2', () => {
         primaryAccountId: solidAccountId,
         otherAccountId: liquidAccountId,
         primaryAccountOwner: ZERO_ADDRESS,
-        primaryAccountNumber: otherAccountNumber,
+        primaryAccountNumber: borrowAccountNumber,
         otherAccountOwner: ZERO_ADDRESS,
-        otherAccountNumber: otherAccountNumber,
+        otherAccountNumber: borrowAccountNumber,
         outputMarket: underlyingMarketId,
         inputMarket: core.marketIds.weEth,
         minOutputAmount: ONE_BI,
@@ -168,7 +166,7 @@ describe('PendleYtEEthJun2024IsolationModeWrapperTraderV2', () => {
       const genericTrader = await impersonate(core.genericTraderProxy!, true);
       await expectWalletBalance(wrapper.address, underlyingYtToken, ZERO_BI);
       await core.dolomiteMargin.connect(genericTrader).operate([defaultAccount], actions);
-      
+
       const underlyingBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, underlyingMarketId);
       expect(underlyingBalanceWei.value).to.gte(minAmountOut);
       expect(underlyingBalanceWei.sign).to.eq(true);

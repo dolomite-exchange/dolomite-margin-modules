@@ -54,7 +54,6 @@ describe('PendleYtEEthIsolationModeUnwrapperTraderV2', () => {
   let underlyingYtToken: IPendleYtToken;
   let syToken: IPendleSyToken;
   let underlyingMarketId: BigNumber;
-  let gmxRegistry: IGmxRegistryV1;
   let pendleRegistry: PendleRegistry;
   let unwrapper: PendleYtIsolationModeUnwrapperTraderV2;
   let wrapper: PendleYtIsolationModeWrapperTraderV2;

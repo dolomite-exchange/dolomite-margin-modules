@@ -196,7 +196,6 @@ export function createPendleYtIsolationModeVaultFactory(
   );
 }
 
-
 export function createPendlePtIsolationModeWrapperTraderV2<T extends Network>(
   core: CoreProtocolWithPendle<T>,
   pendleRegistry: IPendleRegistry | PendleRegistry,

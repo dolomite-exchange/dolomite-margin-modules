@@ -28,7 +28,6 @@ import { IPendleRegistry } from "./interfaces/IPendleRegistry.sol";
 import { IPendleRouterV3 } from "./interfaces/IPendleRouterV3.sol";
 import { IPendleYtToken } from "./interfaces/IPendleYtToken.sol";
 
-import "hardhat/console.sol";
 
 /**
  * @title   PendleYtIsolationModeUnwrapperTraderV2
