@@ -55,6 +55,7 @@ import {
   PENDLE_YT_GLP_SEP_2024_TOKEN_MAP,
   PENDLE_PT_GLP_SEP_2024_TOKEN_MAP,
   PENDLE_SY_GLP_SEP_2024_TOKEN_MAP,
+  PENDLE_YT_E_ETH_JUN_2024_TOKEN_MAP,
 } from '../../../src/utils/constants';
 import { Network } from '../../../src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';
@@ -111,6 +112,7 @@ export interface PendleEcosystem {
     ptOracle: IPendlePtOracle;
     weEthMarket: IPendlePtMarket;
     ptWeEthToken: IPendlePtToken;
+    ytWeEthToken: IPendleYtToken;
   };
   wstEthJun2024: {
     dPtWstEthJun2024: PendlePtIsolationModeVaultFactory;
@@ -331,6 +333,11 @@ export async function createPendleEcosystem(
         PENDLE_PT_E_ETH_JUN_2024_TOKEN_MAP[network] as string,
         IPendlePtToken__factory.connect,
         signer,
+      ),
+      ytWeEthToken: getContract(
+        PENDLE_YT_E_ETH_JUN_2024_TOKEN_MAP[network] as string,
+        IPendleYtToken__factory.connect,
+        signer
       ),
     },
     wstEthJun2024: {

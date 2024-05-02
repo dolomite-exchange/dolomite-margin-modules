@@ -28,6 +28,10 @@ import {
   getPendleYtGLPMar2024IsolationModeVaultFactoryConstructorParams,
   getPendleYtGLPMar2024IsolationModeWrapperTraderV2ConstructorParams,
   getPendleYtGLPPriceOracleConstructorParams,
+  getPendleYtIsolationModeUnwrapperTraderV2ConstructorParams,
+  getPendleYtIsolationModeVaultFactoryConstructorParams,
+  getPendleYtIsolationModeWrapperTraderV2ConstructorParams,
+  getPendleYtPriceOracleConstructorParams,
 } from '../src/pendle-constructors';
 import {
   IERC20,
@@ -43,6 +47,8 @@ import {
   IPendleSyToken,
   IPendleYtGLPMar2024IsolationModeTokenVaultV1,
   IPendleYtGLPMar2024IsolationModeVaultFactory,
+  IPendleYtIsolationModeTokenVaultV1,
+  IPendleYtIsolationModeVaultFactory,
   IPendleYtToken,
   PendleGLPRegistry,
   PendleGLPRegistry__factory,
@@ -85,6 +91,15 @@ import {
   PendleYtGLPMar2024IsolationModeWrapperTraderV2__factory,
   PendleYtGLPPriceOracle,
   PendleYtGLPPriceOracle__factory,
+  PendleYtIsolationModeTokenVaultV1,
+  PendleYtIsolationModeUnwrapperTraderV2,
+  PendleYtIsolationModeUnwrapperTraderV2__factory,
+  PendleYtIsolationModeVaultFactory,
+  PendleYtIsolationModeVaultFactory__factory,
+  PendleYtIsolationModeWrapperTraderV2,
+  PendleYtIsolationModeWrapperTraderV2__factory,
+  PendleYtPriceOracle,
+  PendleYtPriceOracle__factory,
   TestPendleYtGLPMar2024IsolationModeTokenVaultV1,
 } from '../src/types';
 
@@ -132,6 +147,15 @@ export async function createPendlePtIsolationModeTokenVaultV1(): Promise<PendleP
   );
 }
 
+export async function createPendleYtIsolationModeTokenVaultV1(): Promise<PendleYtIsolationModeTokenVaultV1> {
+  const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
+  return createContractWithLibrary<PendleYtIsolationModeTokenVaultV1>(
+    'PendleYtIsolationModeTokenVaultV1',
+    { ...libraries },
+    [],
+  );
+}
+
 export function createPendlePtIsolationModeVaultFactory<T extends Network>(
   core: CoreProtocolWithPendle<T>,
   registry: IPendleRegistry | PendleRegistry,
@@ -149,6 +173,29 @@ export function createPendlePtIsolationModeVaultFactory<T extends Network>(
     ),
   );
 }
+
+export function createPendleYtIsolationModeVaultFactory(
+  core: CoreProtocolArbitrumOne,
+  pendleRegistry: IPendleRegistry | PendleRegistry,
+  debtMarketIds: BigNumberish[],
+  collateralMarketIds: BigNumberish[],
+  ytToken: IPendleYtToken,
+  userVaultImplementation: IPendleYtIsolationModeTokenVaultV1 | PendleYtIsolationModeTokenVaultV1,
+): Promise<PendleYtIsolationModeVaultFactory> {
+  return createContractWithAbi<PendleYtIsolationModeVaultFactory>(
+    PendleYtIsolationModeVaultFactory__factory.abi,
+    PendleYtIsolationModeVaultFactory__factory.bytecode,
+    getPendleYtIsolationModeVaultFactoryConstructorParams(
+      core,
+      pendleRegistry,
+      debtMarketIds,
+      collateralMarketIds,
+      ytToken,
+      userVaultImplementation,
+    ),
+  );
+}
+
 
 export function createPendlePtIsolationModeWrapperTraderV2<T extends Network>(
   core: CoreProtocolWithPendle<T>,
@@ -189,6 +236,32 @@ export function createPendlePtIsolationModeUnwrapperTraderV2<T extends Network>(
   );
 }
 
+export function createPendleYtIsolationModeUnwrapperTraderV2(
+  core: CoreProtocolArbitrumOne,
+  underlyingToken: IERC20,
+  dytToken: IPendleYtIsolationModeVaultFactory | PendleYtIsolationModeVaultFactory,
+  pendleRegistry: IPendleRegistry | PendleRegistry,
+): Promise<PendleYtIsolationModeUnwrapperTraderV2> {
+  return createContractWithAbi(
+    PendleYtIsolationModeUnwrapperTraderV2__factory.abi,
+    PendleYtIsolationModeUnwrapperTraderV2__factory.bytecode,
+    getPendleYtIsolationModeUnwrapperTraderV2ConstructorParams(core, underlyingToken, pendleRegistry, dytToken),
+  );
+}
+
+export function createPendleYtIsolationModeWrapperTraderV2<T extends Network>(
+  core: CoreProtocolWithPendle<T>,
+  underlyingToken: IERC20,
+  dytToken: IPendleYtIsolationModeVaultFactory | PendleYtIsolationModeVaultFactory,
+  pendleRegistry: IPendleRegistry | PendleRegistry,
+): Promise<PendleYtIsolationModeWrapperTraderV2> {
+  return createContractWithAbi(
+    PendleYtIsolationModeWrapperTraderV2__factory.abi,
+    PendleYtIsolationModeWrapperTraderV2__factory.bytecode,
+    getPendleYtIsolationModeWrapperTraderV2ConstructorParams(core, underlyingToken, pendleRegistry, dytToken),
+  );
+}
+
 export function createPendlePtIsolationModeUnwrapperTraderV3<T extends Network>(
   core: CoreProtocolWithPendle<T>,
   pendleRegistry: IPendleRegistry | PendleRegistry,
@@ -199,6 +272,19 @@ export function createPendlePtIsolationModeUnwrapperTraderV3<T extends Network>(
     PendlePtIsolationModeUnwrapperTraderV3__factory.abi,
     PendlePtIsolationModeUnwrapperTraderV3__factory.bytecode,
     getPendlePtIsolationModeUnwrapperTraderV3ConstructorParams(core, pendleRegistry, underlyingToken, dptToken),
+  );
+}
+
+export function createPendleYtPriceOracle(
+  core: CoreProtocolArbitrumOne,
+  dytToken: IPendleYtIsolationModeVaultFactory | PendleYtIsolationModeVaultFactory,
+  pendleRegistry: IPendleRegistry | PendleRegistry,
+  underlyingToken: IERC20,
+): Promise<PendleYtPriceOracle> {
+  return createContractWithAbi(
+    PendleYtPriceOracle__factory.abi,
+    PendleYtPriceOracle__factory.bytecode,
+    getPendleYtPriceOracleConstructorParams(core, dytToken, pendleRegistry, underlyingToken),
   );
 }
 
