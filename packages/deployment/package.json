@@ -1,6 +1,6 @@
 {
   "name": "@dolomite-exchange/modules-deployments",
-  "version": "0.0.13",
+  "version": "0.0.14",
   "scripts": {
     "build": "hardhat compile",
     "clean": "hardhat clean",
@@ -22,7 +22,8 @@
     "execute:x_layer": "NETWORK=x_layer ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
     "verify:arbitrum": "hardhat --network arbitrum_one run src/utils/verify-contract.ts",
     "verify:base": "hardhat --network base run src/utils/verify-contract.ts",
-    "verify:polygon_zkevm": "hardhat --network polygon_zkevm run src/utils/verify-contract.ts"
+    "verify:polygon_zkevm": "hardhat --network polygon_zkevm run src/utils/verify-contract.ts",
+    "verify:contract": "hardhat --network arbitrum_one run src/utils/verify-contract.ts"
   },
   "private": false,
   "files": [
