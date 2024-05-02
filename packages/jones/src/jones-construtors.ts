@@ -11,16 +11,10 @@ export async function getJonesUSDCRegistryConstructorParams(
   implementation: JonesUSDCRegistry,
   core: CoreProtocolArbitrumOne,
 ): Promise<any[]> {
-  if (!core.jonesEcosystem) {
-    throw new Error('Jones ecosystem not initialized');
-  }
-
   const calldata = await implementation.populateTransaction.initialize(
-    core.jonesEcosystem.glpAdapter.address,
-    core.jonesEcosystem.glpVaultRouter.address,
-    core.jonesEcosystem.whitelistControllerV1.address,
-    core.jonesEcosystem.usdcReceiptToken.address,
-    core.jonesEcosystem.jUsdcOld.address,
+    core.jonesEcosystem.jUSDCRouter.address,
+    core.jonesEcosystem.whitelistControllerV2.address,
+    core.jonesEcosystem.jUSDCV2.address,
     core.jonesEcosystem.jUSDCFarm.address,
     core.dolomiteRegistry.address,
   );
@@ -37,14 +31,10 @@ export function getJonesUSDCPriceOracleConstructorParams(
   jonesUSDCRegistry: IJonesUSDCRegistry | JonesUSDCRegistry,
   djUSDCToken: { address: address },
 ): any[] {
-  if (!core.jonesEcosystem) {
-    throw new Error('Jones ecosystem not initialized');
-  }
-
   return [
     core.dolomiteMargin.address,
     jonesUSDCRegistry.address,
-    core.marketIds.usdc,
+    core.marketIds.nativeUsdc,
     djUSDCToken.address,
   ];
 }
@@ -54,15 +44,11 @@ export function getJonesUSDCWithChainlinkAutomationPriceOracleConstructorParams(
   jonesUSDCRegistry: IJonesUSDCRegistry | JonesUSDCRegistry,
   djUSDCToken: { address: address },
 ): any[] {
-  if (!core.jonesEcosystem) {
-    throw new Error('Jones ecosystem not initialized');
-  }
-
   return [
     core.dolomiteMargin.address,
     core.chainlinkAutomationRegistry.address,
     jonesUSDCRegistry.address,
-    core.marketIds.usdc,
+    core.marketIds.nativeUsdc,
     djUSDCToken.address,
   ];
 }
@@ -72,12 +58,8 @@ export function getJonesUSDCIsolationModeUnwrapperTraderV2ForLiquidationConstruc
   jonesUSDCRegistry: IJonesUSDCRegistry | JonesUSDCRegistry,
   djUSDCToken: { address: address },
 ): any[] {
-  if (!core.jonesEcosystem) {
-    throw new Error('Jones ecosystem not initialized');
-  }
-
   return [
-    core.tokens.usdc!.address,
+    core.tokens.nativeUsdc.address,
     jonesUSDCRegistry.address,
     djUSDCToken.address,
     core.dolomiteMargin.address,
@@ -89,12 +71,8 @@ export function getJonesUSDCIsolationModeUnwrapperTraderV2ForZapConstructorParam
   jonesUSDCRegistry: IJonesUSDCRegistry | JonesUSDCRegistry,
   djUSDCToken: { address: address },
 ): any[] {
-  if (!core.jonesEcosystem) {
-    throw new Error('Jones ecosystem not initialized');
-  }
-
   return [
-    core.tokens.usdc!.address,
+    core.tokens.nativeUsdc.address,
     jonesUSDCRegistry.address,
     djUSDCToken.address,
     core.dolomiteMargin.address,
@@ -107,13 +85,9 @@ export function getJonesUSDCIsolationModeVaultFactoryConstructorParams(
   jUSDCToken: { address: address },
   userVaultImplementation: IJonesUSDCIsolationModeTokenVaultV1 | JonesUSDCIsolationModeTokenVaultV1,
 ): any[] {
-  if (!core.jonesEcosystem) {
-    throw new Error('Jones ecosystem not initialized');
-  }
-
   return [
     jonesUSDCRegistry.address,
-    [core.marketIds.usdc],
+    [core.marketIds.nativeUsdc],
     [],
     jUSDCToken.address,
     core.borrowPositionProxyV2.address,
@@ -127,12 +101,8 @@ export function getJonesUSDCIsolationModeWrapperTraderV2ConstructorParams(
   jonesUSDCRegistry: IJonesUSDCRegistry | JonesUSDCRegistry,
   djUSDCToken: { address: address },
 ): any[] {
-  if (!core.jonesEcosystem) {
-    throw new Error('Jones ecosystem not initialized');
-  }
-
   return [
-    core.tokens.usdc!.address,
+    core.tokens.nativeUsdc.address,
     jonesUSDCRegistry.address,
     djUSDCToken.address,
     core.dolomiteMargin.address,

@@ -24,8 +24,8 @@ import { liquidateV4WithIsolationMode } from '@dolomite-exchange/modules-base/te
 import {
   CoreProtocolType,
   setupCoreProtocol,
+  setupNativeUSDCBalance,
   setupTestMarket,
-  setupUSDCBalance,
   setupUserVaultProxy,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
@@ -52,7 +52,7 @@ import {
   createJonesUSDCPriceOracle,
   createJonesUSDCRegistry,
 } from './jones-ecosystem-utils';
-import { createRoleAndWhitelistTrader } from './jones-utils';
+import { createRoleAndWhitelistTraderV2 } from './jones-utils';
 
 const defaultAccountNumber = '0';
 const otherAccountNumber = '420';
@@ -91,7 +91,7 @@ describe('JonesUSDCLiquidationWithUnwrapperV2', () => {
       blockNumber,
       network,
     });
-    underlyingToken = core.jonesEcosystem.jUsdcOld.connect(core.hhUser1);
+    underlyingToken = core.jonesEcosystem.jUSDCV2.connect(core.hhUser1);
     const userVaultImplementation = await createJonesUSDCIsolationModeTokenVaultV1();
     jonesUSDCRegistry = await createJonesUSDCRegistry(core);
     factory = await createJonesUSDCIsolationModeVaultFactory(
@@ -115,7 +115,7 @@ describe('JonesUSDCLiquidationWithUnwrapperV2', () => {
       unwrapperForZap.address,
     );
     wrapper = await createJonesUSDCIsolationModeWrapperTraderV2(core, jonesUSDCRegistry, factory);
-    await createRoleAndWhitelistTrader(core, unwrapperForLiquidation, wrapper);
+    await createRoleAndWhitelistTraderV2(core, unwrapperForLiquidation, wrapper);
     priceOracle = await createJonesUSDCPriceOracle(core, jonesUSDCRegistry, factory);
 
     underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
@@ -140,16 +140,16 @@ describe('JonesUSDCLiquidationWithUnwrapperV2', () => {
     liquidAccountStruct = { owner: vault.address, number: otherAccountNumber };
     solidAccountStruct = { owner: core.hhUser5.address, number: defaultAccountNumber };
 
-    await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.jonesEcosystem.glpAdapter);
-    await core.jonesEcosystem.glpAdapter.connect(core.hhUser1).depositStable(usableUsdcAmount, true);
-    await core.jonesEcosystem.jUsdcOld.connect(core.hhUser1).approve(vault.address, heldAmountWei);
+    await setupNativeUSDCBalance(core, core.hhUser1, usdcAmount, core.jonesEcosystem.jUSDCRouter);
+    await core.jonesEcosystem.jUSDCRouter.connect(core.hhUser1).deposit(usableUsdcAmount, core.hhUser1.address);
+    await core.jonesEcosystem.jUSDCV2.connect(core.hhUser1).approve(vault.address, heldAmountWei);
     await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, heldAmountWei);
 
     expect(await underlyingToken.connect(core.hhUser1).balanceOf(vault.address)).to.eq(heldAmountWei);
     expect((await core.dolomiteMargin.getAccountWei(defaultAccountStruct, underlyingMarketId)).value)
       .to
       .eq(heldAmountWei);
-    await freezeAndGetOraclePrice(core.tokens.usdc);
+    await freezeAndGetOraclePrice(core.tokens.nativeUsdc);
 
     snapshotId = await snapshot();
   });
@@ -163,7 +163,7 @@ describe('JonesUSDCLiquidationWithUnwrapperV2', () => {
       const [supplyValue, borrowValue] = await core.dolomiteMargin.getAccountValues(defaultAccountStruct);
       expect(borrowValue.value).to.eq(ZERO_BI);
 
-      const usdcPrice = await core.dolomiteMargin.getMarketPrice(core.marketIds.usdc);
+      const usdcPrice = await core.dolomiteMargin.getMarketPrice(core.marketIds.nativeUsdc);
       const usdcDebtAmountBefore = supplyValue.value
         .mul(minCollateralizationDenominator)
         .div(minCollateralizationNumerator)
@@ -172,21 +172,21 @@ describe('JonesUSDCLiquidationWithUnwrapperV2', () => {
       await vault.transferFromPositionWithOtherToken(
         otherAccountNumber,
         defaultAccountNumber,
-        core.marketIds.usdc,
+        core.marketIds.nativeUsdc,
         usdcDebtAmountBefore,
         BalanceCheckFlag.To,
       );
       await core.testEcosystem!.testInterestSetter.setInterestRate(
-        core.tokens.usdc.address,
+        core.tokens.nativeUsdc.address,
         { value: '33295281582' }, // 100% APR
       );
       await core.dolomiteMargin.ownerSetInterestSetter(
-        core.marketIds.usdc,
+        core.marketIds.nativeUsdc,
         core.testEcosystem!.testInterestSetter.address,
       );
       await waitDays(10); // accrue interest to push towards liquidation
       // deposit 0 to refresh account index
-      await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.usdc, ZERO_BI);
+      await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.nativeUsdc, ZERO_BI);
 
       const newAccountValues = await core.dolomiteMargin.getAccountValues(liquidAccountStruct);
       // check that the position is indeed under collateralized
@@ -203,7 +203,7 @@ describe('JonesUSDCLiquidationWithUnwrapperV2', () => {
         core,
         solidAccountStruct,
         liquidAccountStruct,
-        [underlyingMarketId, core.marketIds.usdc],
+        [underlyingMarketId, core.marketIds.nativeUsdc],
         unwrapperForLiquidation,
       );
       const receipt = await txResult.wait();
@@ -211,11 +211,11 @@ describe('JonesUSDCLiquidationWithUnwrapperV2', () => {
 
       const heldUsdcAfter = (await core.dolomiteMargin.getAccountWei(
         solidAccountStruct,
-        core.marketIds.usdc,
+        core.marketIds.nativeUsdc,
       )).value;
       const usdcOutputAmount = await unwrapperForLiquidation.getExchangeCost(
         factory.address,
-        core.tokens.usdc.address,
+        core.tokens.nativeUsdc.address,
         heldUpdatedWithReward,
         BYTES_EMPTY,
         { blockTag: txResult.blockNumber },
@@ -231,7 +231,7 @@ describe('JonesUSDCLiquidationWithUnwrapperV2', () => {
       await expectProtocolBalanceIsGreaterThan(
         core,
         solidAccountStruct,
-        core.marketIds.usdc,
+        core.marketIds.nativeUsdc,
         heldUsdcAfter.sub(usdcOutputAmount),
         '5',
       );
@@ -246,7 +246,7 @@ describe('JonesUSDCLiquidationWithUnwrapperV2', () => {
         core,
         liquidAccountStruct.owner,
         liquidAccountStruct.number,
-        core.marketIds.usdc,
+        core.marketIds.nativeUsdc,
         ZERO_BI,
       );
 
@@ -255,10 +255,15 @@ describe('JonesUSDCLiquidationWithUnwrapperV2', () => {
       await expectWalletBalanceOrDustyIfZero(
         core,
         unwrapperForLiquidation.address,
-        core.jonesEcosystem.jUsdcOld.address,
+        core.jonesEcosystem.jUSDCV2.address,
         ZERO_BI,
       );
-      await expectWalletBalanceOrDustyIfZero(core, unwrapperForLiquidation.address, core.tokens.usdc.address, ZERO_BI);
+      await expectWalletBalanceOrDustyIfZero(
+        core,
+        unwrapperForLiquidation.address,
+        core.tokens.nativeUsdc.address,
+        ZERO_BI,
+      );
     });
   });
 
@@ -268,22 +273,22 @@ describe('JonesUSDCLiquidationWithUnwrapperV2', () => {
       const [supplyValue, borrowValue] = await core.dolomiteMargin.getAccountValues(liquidAccountStruct);
       expect(borrowValue.value).to.eq(ZERO_BI);
 
-      const usdcPrice = await core.dolomiteMargin.getMarketPrice(core.marketIds.usdc);
+      const usdcPrice = await core.dolomiteMargin.getMarketPrice(core.marketIds.nativeUsdc);
       const usdcDebtAmount = supplyValue.value.mul(expirationCollateralizationDenominator)
         .div(expirationCollateralizationNumerator)
         .div(usdcPrice.value);
       await vault.transferFromPositionWithOtherToken(
         otherAccountNumber,
         defaultAccountNumber,
-        core.marketIds.usdc,
+        core.marketIds.nativeUsdc,
         usdcDebtAmount,
         BalanceCheckFlag.To,
       );
 
-      await setExpiry(core, liquidAccountStruct, core.marketIds.usdc, 1);
+      await setExpiry(core, liquidAccountStruct, core.marketIds.nativeUsdc, 1);
       const rampTime = await core.expiry.g_expiryRampTime();
       await waitTime(rampTime.add(ONE_BI).toNumber());
-      const expiry = await core.expiry.getExpiry(liquidAccountStruct, core.marketIds.usdc);
+      const expiry = await core.expiry.getExpiry(liquidAccountStruct, core.marketIds.nativeUsdc);
       expect(expiry).to.not.eq(0);
 
       const newAccountValues = await core.dolomiteMargin.getAccountValues(liquidAccountStruct);
@@ -294,7 +299,7 @@ describe('JonesUSDCLiquidationWithUnwrapperV2', () => {
 
       const [heldPrice, owedPriceAdj] = await core.expiry.getSpreadAdjustedPrices(
         underlyingMarketId,
-        core.marketIds.usdc,
+        core.marketIds.nativeUsdc,
         expiry,
       );
 
@@ -304,7 +309,7 @@ describe('JonesUSDCLiquidationWithUnwrapperV2', () => {
         core,
         solidAccountStruct,
         liquidAccountStruct,
-        [underlyingMarketId, core.marketIds.usdc],
+        [underlyingMarketId, core.marketIds.nativeUsdc],
         unwrapperForLiquidation,
         BYTES_EMPTY,
         NO_PARASWAP_TRADER_PARAM,
@@ -315,7 +320,7 @@ describe('JonesUSDCLiquidationWithUnwrapperV2', () => {
 
       const usdcOutputAmount = await unwrapperForLiquidation.getExchangeCost(
         factory.address,
-        core.tokens.usdc.address,
+        core.tokens.nativeUsdc.address,
         heldUpdatedWithReward,
         BYTES_EMPTY,
         { blockTag: txResult.blockNumber },
@@ -331,7 +336,7 @@ describe('JonesUSDCLiquidationWithUnwrapperV2', () => {
       await expectProtocolBalanceIsGreaterThan(
         core,
         solidAccountStruct,
-        core.marketIds.usdc,
+        core.marketIds.nativeUsdc,
         usdcOutputAmount.sub(usdcDebtAmount),
         '5',
       );
@@ -346,7 +351,7 @@ describe('JonesUSDCLiquidationWithUnwrapperV2', () => {
         core,
         liquidAccountStruct.owner,
         liquidAccountStruct.number,
-        core.marketIds.usdc,
+        core.marketIds.nativeUsdc,
         ZERO_BI,
       );
 
@@ -355,10 +360,15 @@ describe('JonesUSDCLiquidationWithUnwrapperV2', () => {
       await expectWalletBalanceOrDustyIfZero(
         core,
         unwrapperForLiquidation.address,
-        core.jonesEcosystem.jUsdcOld.address,
+        core.jonesEcosystem.jUSDCV2.address,
         ZERO_BI,
       );
-      await expectWalletBalanceOrDustyIfZero(core, unwrapperForLiquidation.address, core.tokens.usdc.address, ZERO_BI);
+      await expectWalletBalanceOrDustyIfZero(
+        core,
+        unwrapperForLiquidation.address,
+        core.tokens.nativeUsdc.address,
+        ZERO_BI,
+      );
     });
   });
 

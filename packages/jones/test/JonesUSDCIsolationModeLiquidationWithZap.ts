@@ -43,7 +43,7 @@ import {
   JonesUSDCWithChainlinkAutomationPriceOracle,
   JonesUSDCWithChainlinkAutomationPriceOracle__factory,
 } from '../src/types';
-import { createRoleAndWhitelistTrader } from './jones-utils';
+import { createRoleAndWhitelistTraderV1 } from './jones-utils';
 
 const defaultAccountNumber = '0';
 const otherAccountNumber = '420';
@@ -85,7 +85,7 @@ describe('JonesUSDCIsolationModeLiquidationWithZap', () => {
     });
     await freezeAndGetOraclePrice(core.tokens.usdc);
     await disableInterestAccrual(core, core.marketIds.usdc);
-    underlyingToken = core.jonesEcosystem!.jUsdcOld.connect(core.hhUser1);
+    underlyingToken = core.jonesEcosystem!.jUSDCV1.connect(core.hhUser1);
     jonesUSDCRegistry = await JonesUSDCRegistry__factory.connect(
       deployments.JonesUSDCRegistryProxy[network].address,
       core.hhUser1,
@@ -106,7 +106,7 @@ describe('JonesUSDCIsolationModeLiquidationWithZap', () => {
       deployments.JonesUSDCIsolationModeWrapperTraderV2[network].address,
       core.hhUser1,
     );
-    await createRoleAndWhitelistTrader(core, unwrapper, wrapper);
+    await createRoleAndWhitelistTraderV1(core, unwrapper, wrapper);
     priceOracle = JonesUSDCWithChainlinkAutomationPriceOracle__factory.connect(
       deployments.JonesUSDCWithChainlinkAutomationPriceOracle[network].address,
       core.hhUser1,
@@ -148,7 +148,7 @@ describe('JonesUSDCIsolationModeLiquidationWithZap', () => {
     await core.dolomiteMargin.ownerSetMaxWei(heldMarketId, 0);
     await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.jonesEcosystem!.glpAdapter);
     await core.jonesEcosystem!.glpAdapter.connect(core.hhUser1).depositStable(usableUsdcAmount, true);
-    await core.jonesEcosystem!.jUsdcOld.connect(core.hhUser1).approve(vault.address, heldAmountWei);
+    await core.jonesEcosystem!.jUSDCV1.connect(core.hhUser1).approve(vault.address, heldAmountWei);
     await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, heldAmountWei);
 
     expect(await underlyingToken.connect(core.hhUser1).balanceOf(vault.address)).to.eq(ZERO_BI);
@@ -264,7 +264,7 @@ describe('JonesUSDCIsolationModeLiquidationWithZap', () => {
 
       await expectWalletBalanceOrDustyIfZero(core, core.liquidatorProxyV4!.address, factory.address, ZERO_BI);
       await expectWalletBalanceOrDustyIfZero(core, core.liquidatorProxyV4!.address, core.tokens.weth.address, ZERO_BI);
-      await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.jonesEcosystem!.jUsdcOld.address, ZERO_BI);
+      await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.jonesEcosystem!.jUSDCV1.address, ZERO_BI);
       await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.tokens.usdc.address, ZERO_BI);
     });
   });
@@ -364,7 +364,7 @@ describe('JonesUSDCIsolationModeLiquidationWithZap', () => {
 
       await expectWalletBalanceOrDustyIfZero(core, core.liquidatorProxyV4!.address, factory.address, ZERO_BI);
       await expectWalletBalanceOrDustyIfZero(core, core.liquidatorProxyV4!.address, core.tokens.weth.address, ZERO_BI);
-      await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.jonesEcosystem!.jUsdcOld.address, ZERO_BI);
+      await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.jonesEcosystem!.jUSDCV1.address, ZERO_BI);
       await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.tokens.usdc.address, ZERO_BI);
     });
   });

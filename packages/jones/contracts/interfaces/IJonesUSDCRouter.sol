@@ -25,7 +25,7 @@ pragma solidity ^0.8.9;
  * @title   IJonesUSDCRouter
  * @author  Dolomite
  *
- * @notice  Interface for interacting with Jones DAO's jUSDC router (0x42EfE3E686808ccA051A49BCDE34C5CbA2EBEfc1). The
+ * @notice  Interface for interacting with Jones DAO's jUSDC router (0x9c895CcDd1da452eb390803d48155e38f9fC2e4d). The
  *          adapter serves as the primary entry/exit point for users looking to mint/redeem jUSDC.
  */
 interface IJonesUSDCRouter {
@@ -37,17 +37,17 @@ interface IJonesUSDCRouter {
      * @param  _receiver    The address who will receive the shares.
      * @return The amount that were minted and received.
      */
-    function deposit(uint256 _assets, address _receiver) external nonReentrant whenNotPaused returns (uint256);
+    function deposit(uint256 _assets, address _receiver) external returns (uint256);
 
     /**
      * @notice Requests to withdraw the given amount of shares from the message sender's balance.
      * The withdrawal request will be added to the total amount of withdrawal requests, and will be
      * added to the user's total withdrawal requests.
      *
-     * @param    _shares        The amount of shares to withdraw.
-     * @param    _receiver      The address that will receive the assets.
-     * @param    _minAmountOut  Min Amount that should be received.
-     * @param    _enforceData   The data needed to enforce payback.
+     * @param  _shares        The amount of shares to withdraw.
+     * @param  _receiver      The address that will receive the assets.
+     * @param  _minAmountOut  Min Amount that should be received.
+     * @param  _enforceData   The data needed to enforce payback.
      * @return true if msg.sender bypass cooldown.
      * @return Amount of assets.
      */
@@ -57,4 +57,14 @@ interface IJonesUSDCRouter {
         uint256 _minAmountOut,
         bytes calldata _enforceData
     ) external returns (bool, uint256);
+
+    /**
+     * Pauses any depositing/withdrawing on the router
+     */
+    function pause() external;
+
+    /**
+     * @return True if depositing/withdrawing is now paused
+     */
+    function isPaused() external view returns (bool);
 }

@@ -32,6 +32,8 @@ import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 interface IDepositWithdrawalProxy {
     // ========================= Functions =========================
 
+    function initializeETHMarket(address payable _weth) external;
+
     /**
      *
      * @param  _toAccountIndex  The index into which `msg.sender` will be depositing

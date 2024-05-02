@@ -23,11 +23,10 @@ pragma solidity ^0.8.9;
 import { BaseRegistry } from "@dolomite-exchange/modules-base/contracts/general/BaseRegistry.sol";
 import { IERC4626 } from "@dolomite-exchange/modules-base/contracts/interfaces/IERC4626.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
-import { IJonesGLPAdapter } from "./interfaces/IJonesGLPAdapter.sol";
-import { IJonesGLPVaultRouter } from "./interfaces/IJonesGLPVaultRouter.sol";
 import { IJonesUSDCFarm } from "./interfaces/IJonesUSDCFarm.sol";
 import { IJonesUSDCRegistry } from "./interfaces/IJonesUSDCRegistry.sol";
-import { IJonesWhitelistController } from "./interfaces/IJonesWhitelistController.sol";
+import { IJonesUSDCRouter } from "./interfaces/IJonesUSDCRegistry.sol";
+import { IJonesWhitelistControllerV2 } from "./interfaces/IJonesWhitelistControllerV2.sol";
 
 
 /**
@@ -45,10 +44,8 @@ contract JonesUSDCRegistry is IJonesUSDCRegistry, BaseRegistry {
 
     // solhint-disable max-line-length
     bytes32 private constant _FILE = "JonesUSDCRegistry";
-    bytes32 private constant _GLP_ADAPTER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.glpAdapter")) - 1);
-    bytes32 private constant _GLP_VAULT_ROUTER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.glpVaultRouter")) - 1);
+    bytes32 private constant _JUSDC_ROUTER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.jUSDCRouter")) - 1);
     bytes32 private constant _WHITELIST_CONTROLLER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.whitelistController")) - 1);
-    bytes32 private constant _USDC_RECEIPT_TOKEN_SLOT = bytes32(uint256(keccak256("eip1967.proxy.usdcReceiptToken")) - 1);
     bytes32 private constant _JUSDC_SLOT = bytes32(uint256(keccak256("eip1967.proxy.jUSDC")) - 1);
     bytes32 private constant _UNWRAPPER_TRADER_FOR_LIQUIDATION_SLOT = bytes32(uint256(keccak256("eip1967.proxy.unwrapperTraderForLiquidation")) - 1);
     bytes32 private constant _UNWRAPPER_TRADER_FOR_ZAP_SLOT = bytes32(uint256(keccak256("eip1967.proxy.unwrapperTraderForZap")) - 1);
@@ -58,18 +55,14 @@ contract JonesUSDCRegistry is IJonesUSDCRegistry, BaseRegistry {
     // ==================== Initializers ====================
 
     function initialize(
-        address _glpAdapter,
-        address _glpVaultRouter,
+        address _jUSDCRouter,
         address _whitelistController,
-        address _usdcReceiptToken,
         address _jUSDC,
         address _jonesUSDCFarm,
         address _dolomiteRegistry
     ) external initializer {
-        _ownerSetGlpAdapter(_glpAdapter);
-        _ownerSetGlpVaultRouter(_glpVaultRouter);
+        _ownerSetJUsdcRouter(_jUSDCRouter);
         _ownerSetWhitelistController(_whitelistController);
-        _ownerSetUsdcReceiptToken(_usdcReceiptToken);
         _ownerSetJUSDC(_jUSDC);
         _ownerSetJUSDCFarm(_jonesUSDCFarm);
         _ownerSetDolomiteRegistry(_dolomiteRegistry);
@@ -90,20 +83,12 @@ contract JonesUSDCRegistry is IJonesUSDCRegistry, BaseRegistry {
 
     // ==================== Admin Methods ====================
 
-    function ownerSetGlpAdapter(
-        address _glpAdapter
+    function ownerSetJUsdcRouter(
+        address _jUsdcRouter
     )
     external
     onlyDolomiteMarginOwner(msg.sender) {
-        _ownerSetGlpAdapter(_glpAdapter);
-    }
-
-    function ownerSetGlpVaultRouter(
-        address _glpVaultRouter
-    )
-    external
-    onlyDolomiteMarginOwner(msg.sender) {
-        _ownerSetGlpVaultRouter(_glpVaultRouter);
+        _ownerSetJUsdcRouter(_jUsdcRouter);
     }
 
     function ownerSetWhitelistController(
@@ -112,14 +97,6 @@ contract JonesUSDCRegistry is IJonesUSDCRegistry, BaseRegistry {
     external
     onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetWhitelistController(_whitelistController);
-    }
-
-    function ownerSetUsdcReceiptToken(
-        address _usdcReceiptToken
-    )
-    external
-    onlyDolomiteMarginOwner(msg.sender) {
-        _ownerSetUsdcReceiptToken(_usdcReceiptToken);
     }
 
     function ownerSetJUSDC(
@@ -156,20 +133,12 @@ contract JonesUSDCRegistry is IJonesUSDCRegistry, BaseRegistry {
 
     // ==================== Public Methods ====================
 
-    function glpAdapter() public view returns (IJonesGLPAdapter) {
-        return IJonesGLPAdapter(_getAddress(_GLP_ADAPTER_SLOT));
+    function jUSDCRouter() public view returns (IJonesUSDCRouter) {
+        return IJonesUSDCRouter(_getAddress(_JUSDC_ROUTER_SLOT));
     }
 
-    function glpVaultRouter() public view returns (IJonesGLPVaultRouter) {
-        return IJonesGLPVaultRouter(_getAddress(_GLP_VAULT_ROUTER_SLOT));
-    }
-
-    function whitelistController() public view returns (IJonesWhitelistController) {
-        return IJonesWhitelistController(_getAddress(_WHITELIST_CONTROLLER_SLOT));
-    }
-
-    function usdcReceiptToken() public view returns (IERC4626) {
-        return IERC4626(_getAddress(_USDC_RECEIPT_TOKEN_SLOT));
+    function whitelistController() public view returns (IJonesWhitelistControllerV2) {
+        return IJonesWhitelistControllerV2(_getAddress(_WHITELIST_CONTROLLER_SLOT));
     }
 
     function jUSDC() public view returns (IERC4626) {
@@ -190,24 +159,14 @@ contract JonesUSDCRegistry is IJonesUSDCRegistry, BaseRegistry {
 
     // ==================== Private Functions ====================
 
-    function _ownerSetGlpAdapter(address _glpAdapter) internal {
+    function _ownerSetJUsdcRouter(address _jusdcRouter) internal {
         Require.that(
-            _glpAdapter != address(0),
+            _jusdcRouter != address(0),
             _FILE,
-            "Invalid glpAdapter address"
+            "Invalid jusdcRouter address"
         );
-        _setAddress(_GLP_ADAPTER_SLOT, _glpAdapter);
-        emit GlpAdapterSet(_glpAdapter);
-    }
-
-    function _ownerSetGlpVaultRouter(address _glpVaultRouter) internal {
-        Require.that(
-            _glpVaultRouter != address(0),
-            _FILE,
-            "Invalid glpVaultRouter address"
-        );
-        _setAddress(_GLP_VAULT_ROUTER_SLOT, _glpVaultRouter);
-        emit GlpVaultRouterSet(_glpVaultRouter);
+        _setAddress(_JUSDC_ROUTER_SLOT, _jusdcRouter);
+        emit JUSDCRouterSet(_jusdcRouter);
     }
 
     function _ownerSetWhitelistController(address _whitelistController) internal {
@@ -218,16 +177,6 @@ contract JonesUSDCRegistry is IJonesUSDCRegistry, BaseRegistry {
         );
         _setAddress(_WHITELIST_CONTROLLER_SLOT, _whitelistController);
         emit WhitelistControllerSet(_whitelistController);
-    }
-
-    function _ownerSetUsdcReceiptToken(address _usdcReceiptToken) internal {
-        Require.that(
-            _usdcReceiptToken != address(0),
-            _FILE,
-            "Invalid usdcReceiptToken address"
-        );
-        _setAddress(_USDC_RECEIPT_TOKEN_SLOT, _usdcReceiptToken);
-        emit UsdcReceiptTokenSet(_usdcReceiptToken);
     }
 
     function _ownerSetJUSDC(address _jUSDC) internal {

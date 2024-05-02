@@ -20,7 +20,9 @@ type EverythingButBase = Network.ArbitrumOne | Network.Mantle | Network.PolygonZ
 export const SUBGRAPH_URL_MAP: Record<Network, string> = {
   [Network.ArbitrumOne]: 'https://api.thegraph.com/subgraphs/name/dolomite-exchange/dolomite-v2-arbitrum',
   [Network.Base]: 'https://api.studio.thegraph.com/query/47377/dolomite-base/version/latest',
+  [Network.Mantle]: 'https://api.studio.thegraph.com/query/47377/dolomite-mantle/version/latest',
   [Network.PolygonZkEvm]: 'https://api.studio.thegraph.com/query/47377/dolomite-polygon-zkevm/version/latest',
+  [Network.XLayer]: 'https://api.studio.thegraph.com/query/47377/dolomite-x-layer/version/latest',
 };
 
 // ************************* External Contract Addresses *************************
@@ -605,16 +607,16 @@ export const KYBER_AGGREGATOR_ROUTER_MAP: Record<Network, string | undefined> = 
   [Network.XLayer]: undefined,
 };
 
-export const JONES_ECOSYSTEM_GOVERNOR_MAP: Record<Network.ArbitrumOne, string> = {
+export const JONES_ECOSYSTEM_GOVERNOR_V1_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0xDD0556DDCFE7CdaB3540E7F09cB366f498d90774',
 };
 
-export const JONES_GLP_ADAPTER_MAP: Record<Network.ArbitrumOne, string> = {
-  [Network.ArbitrumOne]: '0x42EfE3E686808ccA051A49BCDE34C5CbA2EBEfc1',
+export const JONES_ECOSYSTEM_GOVERNOR_V2_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0xc8ce0aC725f914dBf1D743D51B6e222b79F479f1',
 };
 
-export const JONES_GLP_VAULT_ROUTER_MAP: Record<Network.ArbitrumOne, string> = {
-  [Network.ArbitrumOne]: '0x2F43c6475f1ecBD051cE486A9f3Ccc4b03F3d713',
+export const JONES_USDC_ROUTER_ROUTER_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x9c895CcDd1da452eb390803d48155e38f9fC2e4d',
 };
 
 export const JONES_JUSDC_V2_MAP: Record<Network.ArbitrumOne, string> = {
@@ -651,6 +653,14 @@ export const JONES_WHITELIST_CONTROLLER_V2_MAP: Record<Network.ArbitrumOne, stri
 
 export const ODOS_ROUTER_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0xa669e7A0d4b3e4Fa48af2dE86BD4CD7126Be4e13',
+};
+
+export const OKX_DEX_ROUTER_MAP: Record<Network.XLayer, string> = {
+  [Network.XLayer]: '0x127a986cE31AA2ea8E1a6a0F0D5b7E5dbaD7b0bE',
+};
+
+export const OKX_DEX_TRANSFER_PROXY_MAP: Record<Network.XLayer, string> = {
+  [Network.XLayer]: '0x8b773D83bc66Be128c60e07E17C8901f7a64F000',
 };
 
 export const PARASWAP_AUGUSTUS_ROUTER_MAP: Record<Network, string | undefined> = {

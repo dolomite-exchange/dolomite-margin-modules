@@ -211,7 +211,7 @@ export async function initializeFreshArtifactFromWorkspace(artifactName: string)
  * @param nameWithoutVersionPostfix IE IsolationModeTokenVault
  * @param defaultVersion The version that should be declared if no other version exists
  */
-export function getLatestVersionByName(nameWithoutVersionPostfix: string, defaultVersion: number) {
+export function getMaxDeploymentVersionNameByDeploymentKey(nameWithoutVersionPostfix: string, defaultVersion: number) {
   const lastChar = nameWithoutVersionPostfix.substring(nameWithoutVersionPostfix.length - 1);
   if (!Number.isNaN(parseInt(lastChar, 10))) {
     throw new Error('Name cannot include version declaration');

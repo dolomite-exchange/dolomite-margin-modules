@@ -208,6 +208,13 @@ async function main(): Promise<DryRunOutput<Network.XLayer>> {
       parseUsdt(`${9_000_000}`),
       false,
     ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { proxy: core.depositWithdrawalProxy },
+      'proxy',
+      'initializeETHMarket',
+      [core.tokens.wokb.address],
+    ),
   );
   return {
     core,

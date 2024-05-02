@@ -22,12 +22,12 @@ pragma solidity ^0.8.9;
 
 
 /**
- * @title   IJonesWhitelistController
+ * @title   IJonesWhitelistControllerV2
  * @author  Dolomite
  *
  * @notice  Interface for Jones DAO's whitelist controller (0xDe3476a7C0a408325385605203665A8836c2bcca).
  */
-interface IJonesWhitelistController {
+interface IJonesWhitelistControllerV2 {
 
     struct RoleInfo {
         bool BYPASS_COOLDOWN; // solhint-disable-line var-name-mixedcase
@@ -49,6 +49,4 @@ interface IJonesWhitelistController {
     function getRoleInfo(bytes32 _role) external view returns (RoleInfo memory);
 
     function isWhitelistedContract(address _account) external view returns (bool);
-
-    function owner() external view returns (address);
 }

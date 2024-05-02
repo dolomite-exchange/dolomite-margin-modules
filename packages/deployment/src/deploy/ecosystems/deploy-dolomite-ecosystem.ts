@@ -45,7 +45,7 @@ import { ethers } from 'hardhat';
 import {
   deployContractAndSave,
   EncodedTransaction,
-  getLatestVersionByName,
+  getMaxDeploymentVersionNameByDeploymentKey,
   prettyPrintEncodedDataWithTypeSafety,
 } from '../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../utils/dry-run-utils';
@@ -131,7 +131,7 @@ async function getOracleAggregator<T extends NetworkType>(
       dolomiteRegistry,
       dolomiteMargin,
     ),
-    getLatestVersionByName('ChainlinkPriceOracle', 3),
+    getMaxDeploymentVersionNameByDeploymentKey('ChainlinkPriceOracle', 3),
   );
 
   const tokenInfos = tokens.map<TokenInfo>((token, i) => {
@@ -150,7 +150,7 @@ async function getOracleAggregator<T extends NetworkType>(
   const oracleAggregatorAddress = await deployContractAndSave(
     'OracleAggregatorV2',
     [tokenInfos as any[], dolomiteMargin.address],
-    getLatestVersionByName('OracleAggregator', 2),
+    getMaxDeploymentVersionNameByDeploymentKey('OracleAggregator', 2),
   );
   return OracleAggregatorV2__factory.connect(oracleAggregatorAddress, dolomiteMargin.signer);
 }
@@ -177,7 +177,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   const eventEmitterRegistryImplementationAddress = await deployContractAndSave(
     'EventEmitterRegistry',
     [],
-    getLatestVersionByName('EventEmitterRegistryImplementation', 1),
+    getMaxDeploymentVersionNameByDeploymentKey('EventEmitterRegistryImplementation', 1),
   );
   const eventEmitterRegistry = EventEmitterRegistry__factory.connect(
     eventEmitterRegistryImplementationAddress,
@@ -224,7 +224,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   const dolomiteMigratorAddress = await deployContractAndSave(
     'DolomiteMigrator',
     getDolomiteMigratorConstructorParams(dolomiteMargin, dolomiteRegistry, handlerAddress),
-    getLatestVersionByName('DolomiteMigrator', 1),
+    getMaxDeploymentVersionNameByDeploymentKey('DolomiteMigrator', 1),
   );
   const oracleAggregator = await getOracleAggregator(network, dolomiteRegistry, dolomiteMargin);
 
@@ -246,25 +246,25 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
       expiry,
       config,
     ),
-    getLatestVersionByName('IsolationModeFreezableLiquidatorProxy', 1),
+    getMaxDeploymentVersionNameByDeploymentKey('IsolationModeFreezableLiquidatorProxy', 1),
   );
 
   await deployContractAndSave(
     'IsolationModeTokenVaultV1ActionsImpl',
     [],
-    getLatestVersionByName('IsolationModeTokenVaultV1ActionsImpl', 1),
+    getMaxDeploymentVersionNameByDeploymentKey('IsolationModeTokenVaultV1ActionsImpl', 1),
   );
 
   await deployContractAndSave(
     'AsyncIsolationModeUnwrapperTraderImpl',
     [],
-    getLatestVersionByName('AsyncIsolationModeUnwrapperTraderImpl', 1),
+    getMaxDeploymentVersionNameByDeploymentKey('AsyncIsolationModeUnwrapperTraderImpl', 1),
   );
 
   await deployContractAndSave(
     'AsyncIsolationModeWrapperTraderImpl',
     [],
-    getLatestVersionByName('AsyncIsolationModeWrapperTraderImpl', 1),
+    getMaxDeploymentVersionNameByDeploymentKey('AsyncIsolationModeWrapperTraderImpl', 1),
   );
 
   await deployInterestSetters();
