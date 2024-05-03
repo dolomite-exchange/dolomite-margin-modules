@@ -579,9 +579,8 @@ export async function setupCoreProtocol<T extends NetworkType>(
           CHAINLINK_AUTOMATION_REGISTRY_MAP[typedConfig.network],
           governance,
         ),
-        // @follow-up This doesn't work
         dolomiteAccountValuesReader: IDolomiteAccountValuesReader__factory.connect(
-          CoreDeployments.BorrowPositionProxyV2[typedConfig.network].address,
+          CoreDeployments.AccountValuesReader[typedConfig.network].address,
           hhUser1,
         ),
         dolomiteMigrator: IDolomiteMigrator__factory.connect(
