@@ -22,45 +22,47 @@ pragma solidity ^0.8.9;
 
 import { IsolationModeWrapperTraderV2 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeWrapperTraderV2.sol"; // solhint-disable-line max-line-length
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
+import { IGmxRegistryV1 } from "@dolomite-exchange/modules-glp/contracts/interfaces/IGmxRegistryV1.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { IPendleRegistry } from "./interfaces/IPendleRegistry.sol";
-import { IPendleRouterV3 } from "./interfaces/IPendleRouterV3.sol";
+import { IPendleGLPRegistry } from "./interfaces/IPendleGLPRegistry.sol";
+import { IPendleRouter } from "./interfaces/IPendleRouter.sol";
 
 
 /**
- * @title   PendleYtIsolationModeWrapperTraderV2
+ * @title   PendleYtGLPMar2024IsolationModeWrapperTraderV2
  * @author  Dolomite
  *
- * @notice  Used for wrapping ytToken (via swapping against the Pendle AMM)
+ * @notice  Used for wrapping ytGLP (via swapping against the Pendle AMM then redeeming the underlying GLP to
+ *          USDC).
  */
-contract PendleYtIsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2 {
+contract PendleYtGLPMar2024IsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2 {
     using SafeERC20 for IERC20;
 
     // ============ Constants ============
 
-    bytes32 private constant _FILE = "PendleYtWrapperV2";
+    bytes32 private constant _FILE = "PendleYtGLP2024WrapperV2";
 
     // ============ Constructor ============
 
-    IPendleRegistry public immutable PENDLE_REGISTRY; // solhint-disable-line var-name-mixedcase
-    IERC20 public immutable UNDERLYING_TOKEN; // solhint-disable-line var-name-mixedcase
+    IPendleGLPRegistry public immutable PENDLE_REGISTRY; // solhint-disable-line var-name-mixedcase
+    IGmxRegistryV1 public immutable GMX_REGISTRY; // solhint-disable-line var-name-mixedcase
 
     // ============ Constructor ============
 
     constructor(
         address _pendleRegistry,
-        address _underlyingToken,
-        address _dytToken,
+        address _gmxRegistry,
+        address _dytGlp,
         address _dolomiteMargin
     )
     IsolationModeWrapperTraderV2(
-        _dytToken,
+        _dytGlp,
         _dolomiteMargin,
-        address(IPendleRegistry(_pendleRegistry).dolomiteRegistry())
+        address(IPendleGLPRegistry(_pendleRegistry).dolomiteRegistry())
     ) {
-        PENDLE_REGISTRY = IPendleRegistry(_pendleRegistry);
-        UNDERLYING_TOKEN = IERC20(_underlyingToken);
+        PENDLE_REGISTRY = IPendleGLPRegistry(_pendleRegistry);
+        GMX_REGISTRY = IGmxRegistryV1(_gmxRegistry);
     }
 
     // ============================================
@@ -68,7 +70,7 @@ contract PendleYtIsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2 {
     // ============================================
 
     function isValidInputToken(address _inputToken) public view override returns (bool) {
-        return _inputToken == address(UNDERLYING_TOKEN);
+        return GMX_REGISTRY.gmxVault().whitelistedTokens(_inputToken);
     }
 
     // ============================================
@@ -80,7 +82,7 @@ contract PendleYtIsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2 {
         address,
         address,
         uint256 _minOutputAmount,
-        address,
+        address _inputToken,
         uint256 _inputAmount,
         bytes memory _extraOrderData
     )
@@ -89,30 +91,36 @@ contract PendleYtIsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2 {
         returns (uint256)
     {
         (
-            IPendleRouterV3.ApproxParams memory guessYtOut,
-            IPendleRouterV3.TokenInput memory tokenInput,
-            IPendleRouterV3.LimitOrderData memory limitOrderData
-        ) = abi.decode(
-            _extraOrderData,
-            (IPendleRouterV3.ApproxParams, IPendleRouterV3.TokenInput, IPendleRouterV3.LimitOrderData)
-        );
+            IPendleRouter.ApproxParams memory guessYtOut,
+            IPendleRouter.TokenInput memory tokenInput
+        ) = abi.decode(_extraOrderData, (IPendleRouter.ApproxParams, IPendleRouter.TokenInput));
 
-        IPendleRouterV3 pendleRouter = IPendleRouterV3(address(PENDLE_REGISTRY.pendleRouter()));
-        UNDERLYING_TOKEN.safeApprove(address(pendleRouter), _inputAmount);
-        (uint256 ytAmount,, ) = pendleRouter.swapExactTokenForYt(
-            /* _receiver = */ address(this),
-            address(PENDLE_REGISTRY.ptMarket()),
-            _minOutputAmount,
-            guessYtOut,
-            tokenInput,
-            limitOrderData
+        // approve input token and mint GLP
+        IERC20(_inputToken).safeApprove(address(GMX_REGISTRY.glpManager()), _inputAmount);
+        uint256 glpAmount = GMX_REGISTRY.glpRewardsRouter().mintAndStakeGlp(
+            _inputToken,
+            _inputAmount,
+            /* _minUsdg = */ 0,
+            /* _minGlp = */ 0
         );
+        tokenInput.netTokenIn = glpAmount;
 
-        // console.log('ytAmount: ', ytAmount);
-        // console.log('ytBal: ', IERC20(VAULT_FACTORY.UNDERLYING_TOKEN()).balanceOf(address(this)));
-        // assert(ytAmount == IERC20(VAULT_FACTORY.UNDERLYING_TOKEN()).balanceOf(address(this)));
-        // @follow-up ok to use balance here with ytAmount being off by a little bit
-        return IERC20(VAULT_FACTORY.UNDERLYING_TOKEN()).balanceOf(address(this));
+        uint256 ytGlpAmount;
+        {
+            // Create a new scope to avoid stack too deep errors
+            // approve GLP and swap for ptGLP
+            IPendleRouter pendleRouter = PENDLE_REGISTRY.pendleRouter();
+            IERC20(GMX_REGISTRY.sGlp()).safeApprove(address(pendleRouter), glpAmount);
+            (ytGlpAmount, ) = pendleRouter.swapExactTokenForYt(
+                /* _receiver = */ address(this),
+                address(PENDLE_REGISTRY.ptGlpMarket()),
+                _minOutputAmount,
+                guessYtOut,
+                tokenInput
+            );
+        }
+
+        return ytGlpAmount;
     }
 
     function _getExchangeCost(

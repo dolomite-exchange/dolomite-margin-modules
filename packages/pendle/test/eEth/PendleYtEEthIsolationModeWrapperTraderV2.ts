@@ -17,7 +17,6 @@ import {
   setupWeEthBalance,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
-import { BaseRouter } from '@pendle/sdk-v2';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { ethers } from 'hardhat';
@@ -72,6 +71,7 @@ describe('PendleYtEEthJun2024IsolationModeWrapperTraderV2', () => {
 
   before(async () => {
     core = await setupCoreProtocol({
+      // Have to use latest block number because we use API call
       blockNumber: await getRealLatestBlockNumber(true, Network.ArbitrumOne),
       network: Network.ArbitrumOne,
     });

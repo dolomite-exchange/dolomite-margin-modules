@@ -3,15 +3,13 @@ import { createContractWithAbi } from '@dolomite-exchange/modules-base/src/utils
 import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import {
   getBlockTimestamp,
-  getRealLatestBlockNumber,
   increaseToTimestamp,
   revertToSnapshotAndCapture,
   snapshot,
 } from '@dolomite-exchange/modules-base/test/utils';
-import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { expectEvent, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import {
-  getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupTestMarket,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
@@ -20,22 +18,14 @@ import { BigNumber, BigNumberish } from 'ethers';
 import {
   IERC20,
   IPendleYtToken,
-  IPendleYtToken__factory,
-  PendleGLPRegistry,
   PendleRegistry,
-  PendleYtGLP2024IsolationModeVaultFactory,
-  PendleYtGLPPriceOracle,
   PendleYtIsolationModeVaultFactory,
   PendleYtPriceOracle,
   TestPendlePtOracle,
   TestPendlePtOracle__factory,
 } from '../../src/types';
 import {
-  createPendleGLPRegistry,
   createPendleRegistry,
-  createPendleYtGLP2024IsolationModeTokenVaultV1,
-  createPendleYtGLP2024IsolationModeVaultFactory,
-  createPendleYtGLPPriceOracle,
   createPendleYtIsolationModeTokenVaultV1,
   createPendleYtIsolationModeVaultFactory,
   createPendleYtPriceOracle,
@@ -182,6 +172,23 @@ describe('PendleYtEEthJun2024PriceOracle', () => {
       await expectThrow(
         priceOracle.getPrice(factory.address),
         'PendleYtPriceOracle: YT cannot be borrowable',
+      );
+    });
+  });
+
+  describe('#ownerSetDeductionCoefficient', () => {
+    it('should work normally', async () => {
+      const result = await priceOracle.connect(core.governance).ownerSetDeductionCoefficient(100);
+      await expectEvent(priceOracle, result, 'DeductionCoefficientSet', {
+        deductionCoefficient: 100,
+      });
+      expect(await priceOracle.deductionCoefficient()).to.eq(100);
+    });
+
+    it('should fail if not called by owner', async () => {
+      await expectThrow(
+        priceOracle.connect(core.hhUser1).ownerSetDeductionCoefficient(100),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });

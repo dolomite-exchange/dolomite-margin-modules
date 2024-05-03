@@ -20,28 +20,30 @@
 
 pragma solidity ^0.8.9;
 
-import { IsolationModeWrapperTraderV2 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeWrapperTraderV2.sol"; // solhint-disable-line max-line-length
+import { IsolationModeUnwrapperTraderV2 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeUnwrapperTraderV2.sol"; // solhint-disable-line max-line-length
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IPendleRegistry } from "./interfaces/IPendleRegistry.sol";
 import { IPendleRouterV3 } from "./interfaces/IPendleRouterV3.sol";
+import { IPendleYtToken } from "./interfaces/IPendleYtToken.sol";
 
 
 /**
- * @title   PendlePtIsolationModeWrapperTraderV3
+ * @title   PendleYtIsolationModeUnwrapperTraderV2
  * @author  Dolomite
  *
- * @notice  Used for wrapping pt (via swapping against the Pendle AMM)
+ * @notice  Used for unwrapping yt (via swapping against the Pendle AMM
  */
-contract PendlePtIsolationModeWrapperTraderV3 is IsolationModeWrapperTraderV2 {
+contract PendleYtIsolationModeUnwrapperTraderV2 is IsolationModeUnwrapperTraderV2 {
     using SafeERC20 for IERC20;
+    using SafeERC20 for IPendleYtToken;
 
     // ============ Constants ============
 
-    bytes32 private constant _FILE = "PendlePtWrapperV3";
+    bytes32 private constant _FILE = "PendleYtUnwrapperV2";
 
-    // ============ State Variables ============
+    // ============ Constructor ============
 
     IPendleRegistry public immutable PENDLE_REGISTRY; // solhint-disable-line var-name-mixedcase
     IERC20 public immutable UNDERLYING_TOKEN; // solhint-disable-line var-name-mixedcase
@@ -51,11 +53,11 @@ contract PendlePtIsolationModeWrapperTraderV3 is IsolationModeWrapperTraderV2 {
     constructor(
         address _pendleRegistry,
         address _underlyingToken,
-        address _dptToken,
+        address _dytToken,
         address _dolomiteMargin
     )
-    IsolationModeWrapperTraderV2(
-        _dptToken,
+    IsolationModeUnwrapperTraderV2(
+        _dytToken,
         _dolomiteMargin,
         address(IPendleRegistry(_pendleRegistry).dolomiteRegistry())
     ) {
@@ -67,20 +69,20 @@ contract PendlePtIsolationModeWrapperTraderV3 is IsolationModeWrapperTraderV2 {
     // ============= Public Functions =============
     // ============================================
 
-    function isValidInputToken(address _inputToken) public override view returns (bool) {
-        return _inputToken == address(UNDERLYING_TOKEN);
+    function isValidOutputToken(address _outputToken) public view override returns (bool) {
+        return _outputToken == address(UNDERLYING_TOKEN);
     }
 
     // ============================================
-    // ============ Internal Functions ============
+    // =========== Internal Functions =============
     // ============================================
 
-    function _exchangeIntoUnderlyingToken(
-        address /* _tradeOriginator */,
-        address /* _receiver */,
-        address /* _outputTokenUnderlying */,
+    function _exchangeUnderlyingTokenToOutputToken(
+        address,
+        address,
+        address /* _outputToken */,
         uint256 _minOutputAmount,
-        address /* _inputToken */,
+        address,
         uint256 _inputAmount,
         bytes memory _extraOrderData
     )
@@ -89,28 +91,27 @@ contract PendlePtIsolationModeWrapperTraderV3 is IsolationModeWrapperTraderV2 {
         returns (uint256)
     {
         (
-            IPendleRouterV3.ApproxParams memory guessPtOut,
-            IPendleRouterV3.TokenInput memory tokenInput,
-            IPendleRouterV3.LimitOrderData memory limit
-        ) = abi.decode(
-            _extraOrderData,
-            (IPendleRouterV3.ApproxParams, IPendleRouterV3.TokenInput, IPendleRouterV3.LimitOrderData)
-        );
-
-        tokenInput.netTokenIn = _inputAmount;
+            IPendleRouterV3.TokenOutput memory tokenOutput,
+            IPendleRouterV3.LimitOrderData memory limitOrderData
+        ) = abi.decode(_extraOrderData, (IPendleRouterV3.TokenOutput, IPendleRouterV3.LimitOrderData));
 
         IPendleRouterV3 pendleRouter = IPendleRouterV3(address(PENDLE_REGISTRY.pendleRouter()));
-        UNDERLYING_TOKEN.safeApprove(address(pendleRouter), _inputAmount);
-        (uint256 ptAmount,,) = pendleRouter.swapExactTokenForPt(
-            /* _receiver = */ address(this),
+        IERC20(VAULT_FACTORY.UNDERLYING_TOKEN()).safeApprove(address(pendleRouter), _inputAmount);
+        (uint256 outputAmount,, ) = pendleRouter.swapExactYtForToken(
+            /* _receiver */ address(this),
             address(PENDLE_REGISTRY.ptMarket()),
-            _minOutputAmount,
-            guessPtOut,
-            tokenInput,
-            limit
+            _inputAmount,
+            tokenOutput,
+            limitOrderData
+        );
+        if (outputAmount >= _minOutputAmount) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            outputAmount >= _minOutputAmount,
+            _FILE,
+            "Insufficient output amount"
         );
 
-        return ptAmount;
+        return outputAmount;
     }
 
     function _getExchangeCost(
@@ -122,8 +123,7 @@ contract PendlePtIsolationModeWrapperTraderV3 is IsolationModeWrapperTraderV2 {
     internal
     override
     pure
-    returns (uint256)
-    {
+    returns (uint256) {
         revert(string(abi.encodePacked(Require.stringifyTruncated(_FILE), ": getExchangeCost is not implemented")));
     }
 }

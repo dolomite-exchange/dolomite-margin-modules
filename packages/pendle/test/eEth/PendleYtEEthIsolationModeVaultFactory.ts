@@ -28,7 +28,7 @@ describe('PendleYtEEthJun2024IsolationModeVaultFactory', () => {
 
   before(async () => {
     core = await setupCoreProtocol({
-      blockNumber: await getRealLatestBlockNumber(true, Network.ArbitrumOne),
+      blockNumber: await 207_166_000,
       network: Network.ArbitrumOne,
     });
     pendleRegistry = await createPendleRegistry(
@@ -64,7 +64,7 @@ describe('PendleYtEEthJun2024IsolationModeVaultFactory', () => {
     });
   });
 
-  describe('#ownerSetPendleGLPRegistry', () => {
+  describe('#ownerSetPendleRegistry', () => {
     it('should work normally', async () => {
       const result = await factory.connect(core.governance).ownerSetPendleRegistry(OTHER_ADDRESS);
       await expectEvent(factory, result, 'PendleRegistrySet', {
@@ -76,6 +76,50 @@ describe('PendleYtEEthJun2024IsolationModeVaultFactory', () => {
     it('should fail when not called by owner', async () => {
       await expectThrow(
         factory.connect(core.hhUser1).ownerSetPendleRegistry(OTHER_ADDRESS),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+  });
+
+  describe('#ownerSetYtMaturityTimestamp', () => {
+    it('should work normally', async () => {
+      const result = await factory.connect(core.governance).ownerSetYtMaturityTimestamp(100);
+      await expectEvent(factory, result, 'YtMaturityTimestampSet', {
+        ytMaturityTimestamp: 100,
+      });
+      expect(await factory.ytMaturityTimestamp()).to.equal(100);
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        factory.connect(core.hhUser1).ownerSetYtMaturityTimestamp(100),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+  });
+
+  describe('#ownerSetAllowableDebtMarketIds', () => {
+    it('should work normally', async () => {
+      const result = await factory.connect(core.governance).ownerSetAllowableDebtMarketIds([2, 3]);
+      await expectEvent(factory, result, 'AllowableDebtMarketIdsSet', {
+        allowableDebtMarketIds: [2, 3],
+      });
+      const allowableDebtMarketIds = await factory.allowableDebtMarketIds();
+      expect(allowableDebtMarketIds.length).to.equal(2);
+      expect(allowableDebtMarketIds[0]).to.equal(2);
+      expect(allowableDebtMarketIds[1]).to.equal(3);
+    });
+
+    it('should fail if no market ids are provided', async () => {
+      await expectThrow(
+        factory.connect(core.governance).ownerSetAllowableDebtMarketIds([]),
+        'PendleYtVaultFactory: Invalid allowableDebtMarketIds',
+      );
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        factory.connect(core.hhUser1).ownerSetAllowableDebtMarketIds([2, 3]),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });

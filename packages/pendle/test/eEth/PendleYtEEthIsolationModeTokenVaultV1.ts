@@ -5,7 +5,7 @@ import {
   RegistryProxy__factory,
 } from '@dolomite-exchange/modules-base/src/types';
 import { createTestToken, depositIntoDolomiteMargin } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { MAX_UINT_256_BI, Network, ONE_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { Network, ONE_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import {
   getBlockTimestamp,
   getRealLatestBlockNumber,
@@ -19,12 +19,10 @@ import {
   expectProtocolBalanceIsGreaterThan,
   expectThrow,
   expectWalletBalance,
-  expectWalletBalanceIsGreaterThan,
 } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { createDolomiteRegistryImplementation } from '@dolomite-exchange/modules-base/test/utils/dolomite';
 import {
-  getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupTestMarket,
   setupUserVaultProxy,
@@ -44,22 +42,21 @@ import {
   IPendleSyToken__factory,
   IPendleYtToken,
   PendleRegistry,
-  PendleYtIsolationModeTokenVaultV1,
-  PendleYtIsolationModeTokenVaultV1__factory,
   PendleYtIsolationModeUnwrapperTraderV2,
   PendleYtIsolationModeVaultFactory,
   PendleYtIsolationModeWrapperTraderV2,
   PendleYtPriceOracle,
+  TestPendleYtIsolationModeTokenVaultV1,
+  TestPendleYtIsolationModeTokenVaultV1__factory,
 } from '../../src/types';
 import {
   createPendleRegistry,
-  createPendleYtIsolationModeTokenVaultV1,
   createPendleYtIsolationModeUnwrapperTraderV2,
   createPendleYtIsolationModeVaultFactory,
   createPendleYtIsolationModeWrapperTraderV2,
   createPendleYtPriceOracle,
+  createTestPendleYtIsolationModeTokenVaultV1,
 } from '../pendle-ecosystem-utils';
-import { RedstonePriceOracleV3, RedstonePriceOracleV3__factory } from 'packages/oracles/src/types';
 
 const ONE_WEEK_SECONDS = 7 * 86400;
 
@@ -79,10 +76,9 @@ describe('PendleYtEEthJun2024IsolationModeTokenVaultV1', () => {
   let wrapper: PendleYtIsolationModeWrapperTraderV2;
   let priceOracle: PendleYtPriceOracle;
   let factory: PendleYtIsolationModeVaultFactory;
-  let vault: PendleYtIsolationModeTokenVaultV1;
+  let vault: TestPendleYtIsolationModeTokenVaultV1;
   let router: BaseRouter;
   let ytBal: BigNumber;
-  let redstoneOracle: RedstonePriceOracleV3;
 
   let otherToken1: CustomTestToken;
   let otherMarketId1: BigNumber;
@@ -92,17 +88,13 @@ describe('PendleYtEEthJun2024IsolationModeTokenVaultV1', () => {
 
   before(async () => {
     core = await setupCoreProtocol({
-      blockNumber: await getRealLatestBlockNumber(true, Network.ArbitrumOne),
+      blockNumber: 207_166_000,
       network: Network.ArbitrumOne,
     });
-    redstoneOracle = await RedstonePriceOracleV3__factory.connect(
-      await core.dolomiteRegistry.redstonePriceOracle(),
-      core.governance
-    );
 
     const underlyingToken = core.tokens.weEth!;
     underlyingYtToken = core.pendleEcosystem!.weEthJun2024.ytWeEthToken.connect(core.hhUser1);
-    const userVaultImplementation = await createPendleYtIsolationModeTokenVaultV1();
+    const userVaultImplementation = await createTestPendleYtIsolationModeTokenVaultV1();
     pendleRegistry = await createPendleRegistry(
       core,
       core.pendleEcosystem!.weEthJun2024.weEthMarket,
@@ -142,9 +134,9 @@ describe('PendleYtEEthJun2024IsolationModeTokenVaultV1', () => {
 
     await factory.createVault(core.hhUser1.address);
     const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);
-    vault = setupUserVaultProxy<PendleYtIsolationModeTokenVaultV1>(
+    vault = setupUserVaultProxy<TestPendleYtIsolationModeTokenVaultV1>(
       vaultAddress,
-      PendleYtIsolationModeTokenVaultV1__factory,
+      TestPendleYtIsolationModeTokenVaultV1__factory,
       core.hhUser1,
     );
 
@@ -258,7 +250,7 @@ describe('PendleYtEEthJun2024IsolationModeTokenVaultV1', () => {
       );
     });
 
-    xit('should fail when reentrancy is triggered', async () => {
+    it('should fail when reentrancy is triggered', async () => {
       await expectThrow(
         vault.callRedeemDueInterestAndRewardsTriggerReentrancy(
           true, true, [true], false,

@@ -101,6 +101,7 @@ import {
   PendleYtPriceOracle,
   PendleYtPriceOracle__factory,
   TestPendleYtGLPMar2024IsolationModeTokenVaultV1,
+  TestPendleYtIsolationModeTokenVaultV1,
 } from '../src/types';
 
 export async function createPendleGLPRegistry(core: CoreProtocolArbitrumOne): Promise<PendleGLPRegistry> {
@@ -142,6 +143,15 @@ export async function createPendlePtIsolationModeTokenVaultV1(): Promise<PendleP
   const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
   return createContractWithLibrary<PendlePtIsolationModeTokenVaultV1>(
     'PendlePtIsolationModeTokenVaultV1',
+    { ...libraries },
+    [],
+  );
+}
+
+export async function createTestPendleYtIsolationModeTokenVaultV1(): Promise<TestPendleYtIsolationModeTokenVaultV1> {
+  const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
+  return createContractWithLibrary<TestPendleYtIsolationModeTokenVaultV1>(
+    'TestPendleYtIsolationModeTokenVaultV1',
     { ...libraries },
     [],
   );

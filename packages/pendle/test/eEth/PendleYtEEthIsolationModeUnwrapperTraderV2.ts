@@ -1,5 +1,5 @@
 import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
-import { BYTES_EMPTY, Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { BYTES_EMPTY, Network, ONE_ETH_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber, impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
@@ -16,7 +16,6 @@ import { expect } from 'chai';
 import { BigNumber, ethers } from 'ethers';
 import {
   IERC20,
-  IGmxRegistryV1,
   IPendleSyToken,
   IPendleSyToken__factory,
   IPendleYtToken,
@@ -66,6 +65,7 @@ describe('PendleYtEEthIsolationModeUnwrapperTraderV2', () => {
 
   before(async () => {
     core = await setupCoreProtocol({
+      // Have to use real latest block number because API call
       blockNumber: await getRealLatestBlockNumber(true, Network.ArbitrumOne),
       network: Network.ArbitrumOne,
     });
@@ -181,6 +181,40 @@ describe('PendleYtEEthIsolationModeUnwrapperTraderV2', () => {
       const otherBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, core.marketIds.weEth);
       expect(otherBalanceWei.sign).to.eq(true);
       expect(otherBalanceWei.value).to.be.gte(minTokenOutput);
+    });
+
+    it('should fail if output amount is insufficient', async () => {
+      const solidAccountId = 0;
+      const liquidAccountId = 0;
+
+      const { minTokenOutput, extraOrderData } = await encodeSwapExactYtForTokensV3(
+        Network.ArbitrumOne,
+        unwrapper.address,
+        core.pendleEcosystem.weEthJun2024.weEthMarket.address,
+        ytBal,
+        underlyingToken.address,
+        0.001,
+      );
+
+      const actions = await unwrapper.createActionsForUnwrapping({
+        primaryAccountId: solidAccountId,
+        otherAccountId: liquidAccountId,
+        primaryAccountOwner: vault.address,
+        primaryAccountNumber: defaultAccountNumber,
+        otherAccountOwner: vault.address,
+        otherAccountNumber: defaultAccountNumber,
+        outputMarket: core.marketIds.weEth,
+        inputMarket: underlyingMarketId,
+        minOutputAmount: BigNumber.from(minTokenOutput).pow(2),
+        inputAmount: ytBal,
+        orderData: extraOrderData,
+      });
+
+      const genericTrader = await impersonate(core.genericTraderProxy!, true);
+      await expectThrow(
+        core.dolomiteMargin.connect(genericTrader).operate([defaultAccount], actions),
+        'PendleYtUnwrapperV2: Insufficient output amount'
+      );
     });
   });
 
