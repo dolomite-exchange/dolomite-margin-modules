@@ -132,8 +132,6 @@ export function getPendleYtIsolationModeVaultFactoryConstructorParams(
   }
 
   return [
-    core.tokens.weth.address,
-    core.marketIds.weth,
     pendleRegistry.address,
     debtMarketIds,
     collateralMarketIds,

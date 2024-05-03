@@ -45,10 +45,6 @@ interface IPendleYtIsolationModeVaultFactory is IIsolationModeVaultFactory {
 
     function ownerSetYtMaturityTimestamp(uint256 _ytMaturityTimstamp) external;
 
-    function WETH() external view returns (address);
-
-    function WETH_MARKET_ID() external view returns (uint256);
-
     function pendleRegistry() external view returns (IPendleRegistry);
 
     function ytMaturityTimestamp() external view returns (uint256);
