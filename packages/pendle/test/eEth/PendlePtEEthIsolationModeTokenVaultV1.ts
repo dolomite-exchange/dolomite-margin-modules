@@ -58,7 +58,7 @@ describe('PendlePtEEthApr2024IsolationModeTokenVaultV1', () => {
 
   before(async () => {
     core = await setupCoreProtocol({
-      blockNumber: await getRealLatestBlockNumber(true, Network.ArbitrumOne),
+      blockNumber: 206_135_947,
       network: Network.ArbitrumOne,
     });
 

@@ -22,48 +22,49 @@ pragma solidity ^0.8.9;
 
 import { IsolationModeUnwrapperTraderV2 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeUnwrapperTraderV2.sol"; // solhint-disable-line max-line-length
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
+import { IGmxRegistryV1 } from "@dolomite-exchange/modules-glp/contracts/interfaces/IGmxRegistryV1.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { IPendlePtMarket } from "./interfaces/IPendlePtMarket.sol";
+import { IPendleGLPRegistry } from "./interfaces/IPendleGLPRegistry.sol";
 import { IPendlePtToken } from "./interfaces/IPendlePtToken.sol";
-import { IPendleRegistry } from "./interfaces/IPendleRegistry.sol";
-import { IPendleRouterV3 } from "./interfaces/IPendleRouterV3.sol";
+import { IPendleRouter } from "./interfaces/IPendleRouter.sol";
 
 
 /**
- * @title   PendlePtIsolationModeUnwrapperTraderV3
+ * @title   PendlePtGLPMar2024IsolationModeUnwrapperTraderV2
  * @author  Dolomite
  *
- * @notice  Used for unwrapping pt (via swapping against the Pendle AMM)
+ * @notice  Used for unwrapping ptGLP (via swapping against the Pendle AMM then redeeming the underlying GLP to
+ *          USDC).
  */
-contract PendlePtIsolationModeUnwrapperTraderV3 is IsolationModeUnwrapperTraderV2 {
+contract PendlePtGLPMar2024IsolationModeUnwrapperTraderV2 is IsolationModeUnwrapperTraderV2 {
     using SafeERC20 for IERC20;
     using SafeERC20 for IPendlePtToken;
 
     // ============ Constants ============
 
-    bytes32 private constant _FILE = "PendlePtUnwrapperV3";
+    bytes32 private constant _FILE = "PendlePtGLP2024UnwrapperV2";
 
-    // ============ State Variables ============
+    // ============ Constructor ============
 
-    IPendleRegistry public immutable PENDLE_REGISTRY; // solhint-disable-line var-name-mixedcase
-    IERC20 public immutable UNDERLYING_TOKEN; // solhint-disable-line var-name-mixedcase
+    IPendleGLPRegistry public immutable PENDLE_REGISTRY; // solhint-disable-line var-name-mixedcase
+    IGmxRegistryV1 public immutable GMX_REGISTRY; // solhint-disable-line var-name-mixedcase
 
     // ============ Constructor ============
 
     constructor(
         address _pendleRegistry,
-        address _underlyingToken,
-        address _dptToken,
+        address _gmxRegistry,
+        address _dptGlp,
         address _dolomiteMargin
     )
     IsolationModeUnwrapperTraderV2(
-        _dptToken,
+        _dptGlp,
         _dolomiteMargin,
-        address(IPendleRegistry(_pendleRegistry).dolomiteRegistry())
+        address(IPendleGLPRegistry(_pendleRegistry).dolomiteRegistry())
     ) {
-        PENDLE_REGISTRY = IPendleRegistry(_pendleRegistry);
-        UNDERLYING_TOKEN = IERC20(_underlyingToken);
+        PENDLE_REGISTRY = IPendleGLPRegistry(_pendleRegistry);
+        GMX_REGISTRY = IGmxRegistryV1(_gmxRegistry);
     }
 
     // ============================================
@@ -71,7 +72,7 @@ contract PendlePtIsolationModeUnwrapperTraderV3 is IsolationModeUnwrapperTraderV
     // ============================================
 
     function isValidOutputToken(address _outputToken) public override view returns (bool) {
-        return _outputToken == address(UNDERLYING_TOKEN);
+        return GMX_REGISTRY.gmxVault().whitelistedTokens(_outputToken);
     }
 
     // ============================================
@@ -79,11 +80,11 @@ contract PendlePtIsolationModeUnwrapperTraderV3 is IsolationModeUnwrapperTraderV
     // ============================================
 
     function _exchangeUnderlyingTokenToOutputToken(
-        address /* _tradeOriginator */,
-        address /* _receiver */,
-        address /* _outputToken */,
-        uint256 /* _minOutputAmount */,
-        address /* _inputToken */,
+        address,
+        address,
+        address _outputToken,
+        uint256 _minOutputAmount,
+        address,
         uint256 _inputAmount,
         bytes memory _extraOrderData
     )
@@ -91,37 +92,30 @@ contract PendlePtIsolationModeUnwrapperTraderV3 is IsolationModeUnwrapperTraderV
         override
         returns (uint256)
     {
-        // redeem pt for underlying
-        IPendleRouterV3 pendleRouter = IPendleRouterV3(address(PENDLE_REGISTRY.pendleRouter()));
-        IERC20(VAULT_FACTORY.UNDERLYING_TOKEN()).safeApprove(address(pendleRouter), _inputAmount);
+        (
+            IPendleRouter.TokenOutput memory tokenOutput
+        ) = abi.decode(_extraOrderData, (IPendleRouter.TokenOutput));
 
-        uint256 outputAmount;
-        IPendlePtMarket market = PENDLE_REGISTRY.ptMarket();
-        if (!market.isExpired()) {
-            (
-                IPendleRouterV3.TokenOutput memory tokenOutput,
-                IPendleRouterV3.LimitOrderData memory limitOrderData
-            ) = abi.decode(_extraOrderData, (IPendleRouterV3.TokenOutput, IPendleRouterV3.LimitOrderData));
-            (outputAmount,,) = pendleRouter.swapExactPtForToken(
-                /* _receiver */ address(this),
-                address(market),
-                _inputAmount,
-                tokenOutput,
-                limitOrderData
-            );
-        } else {
-            (IPendleRouterV3.TokenOutput memory tokenOutput) =
-                                abi.decode(_extraOrderData, (IPendleRouterV3.TokenOutput));
-            (,, address yt) = market.readTokens();
-            outputAmount = pendleRouter.redeemPyToToken(
-                /* _receiver */ address(this),
-                yt,
-                _inputAmount,
-                tokenOutput
-            );
-        }
+        // redeem ptGLP for GLP
+        IPendleRouter pendleRouter = PENDLE_REGISTRY.pendleRouter();
+        PENDLE_REGISTRY.ptGlpToken().safeApprove(address(pendleRouter), _inputAmount);
+        (uint256 glpAmount,) = pendleRouter.swapExactPtForToken(
+            /* _receiver */ address(this),
+            address(PENDLE_REGISTRY.ptGlpMarket()),
+            _inputAmount,
+            tokenOutput
+        );
 
-        return outputAmount;
+        // redeem GLP for `_outputToken`; we don't need to approve sGLP because there is a handler that auto-approves
+        // for this
+        uint256 amountOut = GMX_REGISTRY.glpRewardsRouter().unstakeAndRedeemGlp(
+            /* _tokenOut = */ _outputToken,
+            glpAmount,
+            _minOutputAmount,
+            /* _receiver = */ address(this)
+        );
+
+        return amountOut;
     }
 
     function _getExchangeCost(

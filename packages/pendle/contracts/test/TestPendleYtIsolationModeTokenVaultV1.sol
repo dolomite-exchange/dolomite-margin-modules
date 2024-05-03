@@ -20,18 +20,18 @@
 
 pragma solidity ^0.8.9;
 
-import { PendleYtGLP2024IsolationModeTokenVaultV1 } from "../PendleYtGLP2024IsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
+import { PendleYtIsolationModeTokenVaultV1 } from "../PendleYtIsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
 
 
 /**
- * @title   TestPendleYtGLPMar2024IsolationModeTokenVaultV1.sol
+ * @title   TestPendleYtIsolationModeTokenVaultV1
  * @author  Dolomite
  *
  * @notice  Test implementation for exposing areas for coverage testing
  */
-contract TestPendleYtGLP2024IsolationModeTokenVaultV1 is PendleYtGLP2024IsolationModeTokenVaultV1 {
+contract TestPendleYtIsolationModeTokenVaultV1 is PendleYtIsolationModeTokenVaultV1 {
 
-    bytes32 private constant _FILE = "TestPendleYtGLP2024UserVaultV1";
+    bytes32 private constant _FILE = "TestPendleYtUserVaultV1";
 
     function callRedeemDueInterestAndRewardsTriggerReentrancy(
         bool _redeemInterest,

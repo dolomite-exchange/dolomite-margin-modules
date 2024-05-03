@@ -24,41 +24,45 @@ import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/he
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { IPendlePtPriceOracle } from "./interfaces/IPendlePtPriceOracle.sol";
 import { IPendleRegistry } from "./interfaces/IPendleRegistry.sol";
 
 
 /**
- * @title   PendlePtPriceOracleV2
+ * @title   PendleYtPriceOracle
  * @author  Dolomite
  *
- * @notice  An implementation of the IPendlePtPriceOracle interface that gets Pendle's pt price in USD terms.
+ * @notice  An implementation of the IDolomitePriceOracle interface that gets Pendle's yt price in USD terms.
  */
-contract PendlePtPriceOracleV2 is IPendlePtPriceOracle, OnlyDolomiteMargin {
+contract PendleYtPriceOracle is IPendlePtPriceOracle, OnlyDolomiteMargin {
 
     // ============================ Constants ============================
 
-    bytes32 private constant _FILE = "PendlePtPriceOracle";
+    bytes32 private constant _FILE = "PendleYtPriceOracle";
     uint32 public constant TWAP_DURATION = 900; // 15 minutes
     uint256 public constant DEDUCTION_COEFFICIENT_BASE = 1e18;
 
     // ============================ Public State Variables ============================
 
-    address immutable public DPT_TOKEN; // solhint-disable-line var-name-mixedcase
-    IPendleRegistry immutable public REGISTRY; // solhint-disable-line var-name-mixedcase
-    uint256 immutable public PT_ASSET_SCALE; // solhint-disable-line var-name-mixedcase
+    address public immutable DYT_TOKEN; // solhint-disable-line var-name-mixedcase
+    IPendleRegistry public immutable REGISTRY; // solhint-disable-line var-name-mixedcase
+    address immutable public UNDERLYING_TOKEN; // solhint-disable-line var-name-mixedcase
+    uint256 public immutable PT_ASSET_SCALE; // solhint-disable-line var-name-mixedcase
     uint256 public deductionCoefficient;
 
     // ============================ Constructor ============================
 
     constructor(
-        address _dptToken,
+        address _dytToken,
         address _pendleRegistry,
+        address _underlyingToken,
         address _dolomiteMargin
     ) OnlyDolomiteMargin(_dolomiteMargin) {
-        DPT_TOKEN = _dptToken;
+        DYT_TOKEN = _dytToken;
         REGISTRY = IPendleRegistry(_pendleRegistry);
-        PT_ASSET_SCALE = uint256(10) ** uint256(IERC20Metadata(DPT_TOKEN).decimals());
+        UNDERLYING_TOKEN = _underlyingToken;
+        PT_ASSET_SCALE = 10 ** uint256(IERC20Metadata(DYT_TOKEN).decimals());
         _ownerSetDeductionCoefficient(0);
 
         (
@@ -84,42 +88,42 @@ contract PendlePtPriceOracleV2 is IPendlePtPriceOracle, OnlyDolomiteMargin {
     public
     view
     returns (IDolomiteStructs.MonetaryPrice memory) {
-        if (_token == address(DPT_TOKEN)) { /* FOR COVERAGE TESTING */ }
+        if (_token == address(DYT_TOKEN)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-            _token == address(DPT_TOKEN),
+            _token == address(DYT_TOKEN),
             _FILE,
-            "invalid token",
+            "Invalid token",
             _token
         );
         if (DOLOMITE_MARGIN().getMarketIsClosing(DOLOMITE_MARGIN().getMarketIdByTokenAddress(_token))) { /* FOR COVERAGE TESTING */ }
         Require.that(
             DOLOMITE_MARGIN().getMarketIsClosing(DOLOMITE_MARGIN().getMarketIdByTokenAddress(_token)),
             _FILE,
-            "PT cannot be borrowable"
+            "YT cannot be borrowable"
         );
 
+        // disallow the number to be `0` since it will cause DolomiteMargin to throw an error
         return IDolomiteStructs.MonetaryPrice({
-            value: _getCurrentPrice()
+            value: Math.max(_getCurrentPrice(), 1)
         });
     }
 
-    function getDecimalsByToken(address _token) external view returns (uint8) {
-        return IERC20Metadata(_token).decimals();
-    }
-
     // ============================ Internal Functions ============================
+
+    function _applyDeductionCoefficient(uint256 _price) internal view returns (uint256) {
+        return _price * (DEDUCTION_COEFFICIENT_BASE - deductionCoefficient) / DEDUCTION_COEFFICIENT_BASE;
+    }
 
     function _ownerSetDeductionCoefficient(uint256 _deductionCoefficient) internal {
         deductionCoefficient = _deductionCoefficient;
         emit DeductionCoefficientSet(_deductionCoefficient);
     }
 
-    function _getCurrentPrice() internal view virtual returns (uint256) {
-        uint256 ptExchangeRate = REGISTRY.ptOracle().getPtToAssetRate(address(REGISTRY.ptMarket()), TWAP_DURATION);
-        return _applyDeductionCoefficient(ptExchangeRate);
-    }
+    function _getCurrentPrice() internal view returns (uint256) {
+        uint256 underlyingPrice = REGISTRY.dolomiteRegistry().oracleAggregator().getPrice(UNDERLYING_TOKEN).value;
+        underlyingPrice = _applyDeductionCoefficient(underlyingPrice);
 
-    function _applyDeductionCoefficient(uint256 _price) internal view returns (uint256) {
-        return _price - (_price * deductionCoefficient / DEDUCTION_COEFFICIENT_BASE);
+        uint256 ptExchangeRate = REGISTRY.ptOracle().getPtToAssetRate(address(REGISTRY.ptMarket()), TWAP_DURATION);
+        return underlyingPrice * (PT_ASSET_SCALE - ptExchangeRate) / PT_ASSET_SCALE;
     }
 }

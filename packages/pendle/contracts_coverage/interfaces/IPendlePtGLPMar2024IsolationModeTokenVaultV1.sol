@@ -20,35 +20,18 @@
 
 pragma solidity ^0.8.9;
 
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { IIsolationModeTokenVaultV1 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
+import { IPendleGLPRegistry } from "./IPendleGLPRegistry.sol";
 
 
 /**
- * @title   IPendleSyToken
+ * @title   IPendlePtGLPMar2024IsolationModeTokenVaultV1
  * @author  Dolomite
  *
- * @notice  Interface for interacting with Pendle's standard yield tokens (SYs).
+ * @notice  Interface for a subclass of IsolationModeTokenVaultV1 that serves as the implementation for the user's proxy
+ *          vault for ptGLP tokens.
  */
-interface IPendleSyToken is IERC20 {
+interface IPendlePtGLPMar2024IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
 
-    function pause() external;
-
-    function transferOwnership(
-        address newOwner,
-        bool direct,
-        bool renounce
-    ) external;
-
-    function deposit(
-        address receiver,
-        address tokenIn,
-        uint256 amountTokenToDeposit,
-        uint256 minSharesOut
-    ) external payable returns (uint256 amountSharesOut);
-
-    function paused() external view returns (bool);
-
-    function owner() external view returns (address);
-
-    function getTokensIn() external view returns (address[] memory);
+    function registry() external view returns (IPendleGLPRegistry);
 }
