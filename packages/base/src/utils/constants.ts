@@ -113,14 +113,14 @@ export const D_GM_LINK_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   },
 };
 
-export const DJ_USDC: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+export const DJ_USDC_V2: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
-    address: '',
+    address: '0x14c60cB8301E879dfb9eecbEbc013353b7e33012',
     marketId: 43,
   },
 };
 
-export const DJ_USDC_OLD: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+export const DJ_USDC_V1: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x2aDba3f917bb0Af2530F8F295aD2a6fF1111Fc05',
     marketId: 10,

@@ -70,6 +70,8 @@ interface CoreProtocolTokensArbitrumOne extends CoreProtocolTokens {
   dGmBtc: IERC20;
   dGmEth: IERC20;
   dGmLink: IERC20;
+  djUsdcV1: IERC20;
+  djUsdcV2: IERC20;
   dPtGlp: IERC20;
   dPtREthJun2025: IERC20;
   dPtWeEthApr2024: IERC20;
