@@ -145,6 +145,7 @@ export async function verifyContract(
     if (e?.message.toLowerCase().includes('already verified')) {
       console.log('\tEtherscanVerification: Swallowing already verified error');
     } else if (attempts < 2) {
+      await sleep(3_000);
       await verifyContract(address, constructorArguments, contractName, libraries, attempts + 1);
     } else {
       return Promise.reject(e);
