@@ -2,12 +2,13 @@ import CoreDeployments from '@dolomite-exchange/dolomite-margin/dist/migrations/
 import {
   DolomiteRegistryImplementation__factory,
   EventEmitterRegistry__factory,
-  IDolomiteMarginV2,
   IDolomiteRegistry,
   IDolomiteRegistry__factory,
   IERC20__factory,
-  IERC20Metadata__factory, ILiquidatorAssetRegistry__factory,
+  IERC20Metadata__factory,
+  ILiquidatorAssetRegistry__factory,
   IPartiallyDelayedMultiSig__factory,
+  RegistryProxy__factory,
 } from '@dolomite-exchange/modules-base/src/types';
 import {
   CHAINLINK_PRICE_AGGREGATORS_MAP,
@@ -179,12 +180,12 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     [],
     getMaxDeploymentVersionNameByDeploymentKey('EventEmitterRegistryImplementation', 1),
   );
-  const eventEmitterRegistry = EventEmitterRegistry__factory.connect(
+  const eventEmitterRegistryImplementation = EventEmitterRegistry__factory.connect(
     eventEmitterRegistryImplementationAddress,
     hhUser1,
   );
-  const eventEmitterRegistryCalldata = await eventEmitterRegistry.populateTransaction.initialize();
-  const eventEmitterAddress = await deployContractAndSave(
+  const eventEmitterRegistryCalldata = await eventEmitterRegistryImplementation.populateTransaction.initialize();
+  const eventEmitterProxyAddress = await deployContractAndSave(
     'RegistryProxy',
     getRegistryProxyConstructorParams(
       eventEmitterRegistryImplementationAddress,
@@ -192,6 +193,10 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
       dolomiteMargin,
     ),
     'EventEmitterRegistryProxy',
+  );
+  const eventEmitterProxy = RegistryProxy__factory.connect(
+    eventEmitterProxyAddress,
+    hhUser1,
   );
 
   const registryImplementationAddress = await deployContractAndSave(
@@ -208,7 +213,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     CoreDeployments.Expiry[network].address,
     SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL,
     CoreDeployments.LiquidatorAssetRegistry[network].address,
-    eventEmitterAddress,
+    eventEmitterProxyAddress,
   );
   const dolomiteRegistryAddress = await deployContractAndSave(
     'RegistryProxy',
@@ -297,15 +302,30 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
       ),
     );
   }
-  transactions.push(
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { dolomiteMargin: dolomiteMargin as IDolomiteMarginV2 },
-      'dolomiteMargin',
-      'ownerSetGlobalOperator',
-      [isolationModeFreezableLiquidatorProxyAddress, true],
-    ),
-  );
+
+  if (await eventEmitterProxy.implementation() !== eventEmitterRegistryImplementation.address) {
+    transactions.push(
+      await prettyPrintEncodedDataWithTypeSafety(
+        core,
+        { eventEmitterProxy },
+        'eventEmitterProxy',
+        'upgradeTo',
+        [eventEmitterRegistryImplementation.address],
+      ),
+    );
+  }
+
+  if (!(await core.dolomiteMargin.getIsGlobalOperator(isolationModeFreezableLiquidatorProxyAddress))) {
+    transactions.push(
+      await prettyPrintEncodedDataWithTypeSafety(
+        core,
+        { dolomite: dolomiteMargin },
+        'dolomite',
+        'ownerSetGlobalOperator',
+        [isolationModeFreezableLiquidatorProxyAddress, true],
+      ),
+    );
+  }
 
   return {
     core: null as any,

@@ -319,6 +319,11 @@
     query-string "^6.9.0"
     web3 "1.2.1"
 
+"@dolomite-exchange/modules-deployments@^0.0.12-a":
+  version "0.0.12"
+  resolved "https://registry.yarnpkg.com/@dolomite-exchange/modules-deployments/-/modules-deployments-0.0.12.tgz#8ce88cc67be7c626f749aca124fcd7bc64cc17a7"
+  integrity sha512-za2kNUO5kMbzjXZ9MZuU8pmr9LAJ8mkdYr17OdvrK91Qive2iGSSG1VRQmaAUveQiEG5UYoBSOK5aWmi9JWHMA==
+
 "@dolomite-exchange/zap-sdk@^0.2.47-a":
   version "0.2.47-a"
   resolved "https://registry.yarnpkg.com/@dolomite-exchange/zap-sdk/-/zap-sdk-0.2.47-a.tgz#cd75391d81806604dd6a529b7e2c726cb783e2ce"

@@ -170,7 +170,7 @@ export const base_config: HardhatUserConfig = {
         chainId: parseInt(Network.Mantle, 10),
         urls: {
           apiURL: 'https://api.mantlescan.xyz/api',
-          browserURL: 'https://zkevm.mantlescan.xyz/',
+          browserURL: 'https://mantlescan.xyz',
         },
       },
       {
@@ -178,7 +178,7 @@ export const base_config: HardhatUserConfig = {
         chainId: parseInt(Network.PolygonZkEvm, 10),
         urls: {
           apiURL: 'https://api-zkevm.polygonscan.com/api',
-          browserURL: 'https://zkevm.polygonscan.com/',
+          browserURL: 'https://zkevm.polygonscan.com',
         },
       },
       {
