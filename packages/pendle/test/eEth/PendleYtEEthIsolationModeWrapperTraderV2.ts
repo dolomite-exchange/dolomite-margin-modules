@@ -114,9 +114,9 @@ describe('PendleYtEEthJun2024IsolationModeWrapperTraderV2', () => {
     defaultAccount = { owner: vault.address, number: borrowAccountNumber };
 
     await setupWeEthBalance(core, core.hhUser1, ONE_ETH_BI, core.dolomiteMargin);
-    await depositIntoDolomiteMargin(core, core.hhUser1, ZERO_BI, core.marketIds.weEth, ONE_ETH_BI);
+    await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.weEth, ONE_ETH_BI);
     await vault.transferIntoPositionWithOtherToken(
-      ZERO_BI,
+      defaultAccountNumber,
       borrowAccountNumber,
       core.marketIds.weEth,
       ONE_ETH_BI,

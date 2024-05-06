@@ -4,11 +4,10 @@ import {
   DolomiteRegistryImplementation__factory,
   RegistryProxy__factory,
 } from '@dolomite-exchange/modules-base/src/types';
-import { createTestToken, depositIntoDolomiteMargin } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import { createContractWithAbi, createTestToken, depositIntoDolomiteMargin } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { Network, ONE_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import {
   getBlockTimestamp,
-  getRealLatestBlockNumber,
   impersonate,
   increaseToTimestamp,
   revertToSnapshotAndCapture,
@@ -57,6 +56,7 @@ import {
   createPendleYtPriceOracle,
   createTestPendleYtIsolationModeTokenVaultV1,
 } from '../pendle-ecosystem-utils';
+import { TestChainlinkAggregator, TestChainlinkAggregator__factory } from 'packages/oracles/src/types';
 
 const ONE_WEEK_SECONDS = 7 * 86400;
 
@@ -64,6 +64,7 @@ const defaultAccountNumber = '0';
 const borrowAccountNumber = '123';
 const otherAmountWei = BigNumber.from('10000000'); // $10
 const initialAllowableDebtMarketIds = [0, 1];
+const REDSTONE_WEETH_ETH_AGGREGATOR = '0x119A190b510c9c0D5Ec301b60B2fE70A50356aE9';
 
 describe('PendleYtEEthJun2024IsolationModeTokenVaultV1', () => {
   let snapshotId: string;
@@ -201,6 +202,7 @@ describe('PendleYtEEthJun2024IsolationModeTokenVaultV1', () => {
     });
   });
 
+  // @note YtEEth has no reward tokens, so can't test that
   describe('#redeemDueInterestAndRewards', () => {
     it('should work normally at expiry', async () => {
       const account = { owner: core.hhUser1.address, number: defaultAccountNumber };
@@ -217,22 +219,35 @@ describe('PendleYtEEthJun2024IsolationModeTokenVaultV1', () => {
       await expectWalletBalance(core.hhUser1.address, core.tokens.weth, ZERO_BI);
     });
 
-    // @follow-up Do these markets send SY tokens as interest
     it('should send interest to user', async () => {
       const account = { owner: core.hhUser1.address, number: defaultAccountNumber };
       await expectProtocolBalance(core, account.owner, account.number, core.marketIds.weth, ZERO_BI);
       await expectWalletBalance(vault.address, core.tokens.weth, ZERO_BI);
       await expectWalletBalance(core.hhUser1.address, core.tokens.weth, ZERO_BI);
 
-      await increaseToTimestamp((await underlyingYtToken.expiry()).toNumber());
-      const preBal = await core.pendleEcosystem.syWeEthToken.balanceOf(core.hhUser1.address);
-      await vault.connect(core.hhUser1).redeemDueInterestAndRewards(true, true, [], false);
+      // Have to overwrite oracle answer to accrue interest in the market
+      await overwriteOracle(REDSTONE_WEETH_ETH_AGGREGATOR, BigNumber.from('103800000'));
+      await increaseToTimestamp((await underlyingYtToken.expiry()).sub(10).toNumber());
+
+      await vault.connect(core.hhUser1).redeemDueInterestAndRewards(true, false, [], false);
+      expect(await core.pendleEcosystem.syWeEthToken.balanceOf(core.hhUser1.address)).to.be.gte(0);
     });
 
-    it('should fail when depositing interest to user cause syWeEth is invalid market', async () => {
-      await expectThrow(
-        vault.connect(core.hhUser1).redeemDueInterestAndRewards(true, true, [], true),
-        'Getters: Invalid token',
+    it('should swap syWeEth for WeEth and deposit into dolomite for vault owner', async () => {
+      // Have to overwrite oracle answer to accrue interest in the market
+      await overwriteOracle(REDSTONE_WEETH_ETH_AGGREGATOR, BigNumber.from('103800000'));
+      await freezeAndGetOraclePrice(core.tokens.weEth);
+      await core.dolomiteRegistry.ownerSetOracleAggregator(core.testEcosystem!.testPriceOracle.address);
+      await increaseToTimestamp((await underlyingYtToken.expiry()).sub(10).toNumber());
+
+      await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, core.marketIds.weEth, ZERO_BI);
+      await vault.connect(core.hhUser1).redeemDueInterestAndRewards(true, false, [], true);
+      await expectProtocolBalanceIsGreaterThan(
+        core,
+        { owner: core.hhUser1.address, number: defaultAccountNumber },
+        core.marketIds.weEth,
+        ZERO_BI,
+        ZERO_BI
       );
     });
 
@@ -806,5 +821,21 @@ describe('PendleYtEEthJun2024IsolationModeTokenVaultV1', () => {
     await core.testEcosystem!.testPriceOracle.setPrice(token.address, price.value);
     await core.dolomiteMargin.ownerSetPriceOracle(marketId, core.testEcosystem!.testPriceOracle.address);
     return price.value;
+  }
+
+  async function overwriteOracle(oracleAddress: string, price: BigNumber) {
+    const testPriceOracle = await createContractWithAbi<TestChainlinkAggregator>(
+      TestChainlinkAggregator__factory.abi,
+      TestChainlinkAggregator__factory.bytecode,
+      []
+    );
+    const code = await ethers.provider.send('eth_getCode', [testPriceOracle.address]);
+    await ethers.provider.send('hardhat_setCode', [oracleAddress, code]);
+    const oracle = await TestChainlinkAggregator__factory.connect(
+      oracleAddress,
+      core.hhUser1
+    );
+    // Increasing the eEth-weEth exchange rate so that our YT token accrues interest
+    await oracle.setLatestAnswer(price);
   }
 });

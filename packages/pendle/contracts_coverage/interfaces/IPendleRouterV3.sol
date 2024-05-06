@@ -177,4 +177,11 @@ interface IPendleRouterV3 {
         uint256 netPyIn,
         TokenOutput calldata output
     ) external returns (uint256 netTokenOut);
+
+    function redeemSyToToken(
+        address receiver,
+        address SY,
+        uint256 netSyIn,
+        TokenOutput calldata output
+    ) external returns (uint256 netTokenOut);
 }

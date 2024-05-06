@@ -1,6 +1,5 @@
 import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import {
-  getRealLatestBlockNumber,
   revertToSnapshotAndCapture,
   snapshot,
 } from '@dolomite-exchange/modules-base/test/utils';

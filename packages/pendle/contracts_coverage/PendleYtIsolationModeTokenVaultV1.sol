@@ -35,10 +35,12 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { IPendleRegistry } from "./interfaces/IPendleRegistry.sol";
+import { IPendleRouterV3 } from "./interfaces/IPendleRouterV3.sol";
 import { IPendleYtIsolationModeTokenVaultV1 } from "./interfaces/IPendleYtIsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
 import { IPendleYtIsolationModeVaultFactory } from "./interfaces/IPendleYtIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { IPendleYtToken } from "./interfaces/IPendleYtToken.sol";
 
+import "hardhat/console.sol";
 
 /**
  * @title   PendleYtIsolationModeTokenVaultV1
@@ -158,13 +160,38 @@ contract PendleYtIsolationModeTokenVaultV1 is
         bool _depositIntoDolomite
     ) internal {
         if (_depositIntoDolomite) {
+            // @dev This will fail if outputToken is not a valid Dolomite market
+            // @follow-up Corey, this looks good to me but please double check for me
             IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
-            IERC20(_token).safeApprove(address(dolomiteMargin), _amountWei);
-            uint256 marketId = dolomiteMargin.getMarketIdByTokenAddress(_token);
+            address outputToken = registry().syToken().yieldToken();
+            IPendleRouterV3 router = IPendleRouterV3(address(registry().pendleRouter()));
+
+            IERC20(_token).safeApprove(address(registry().pendleRouter()), _amountWei);
+            uint256 amountOut = router.redeemSyToToken(
+                address(this),
+                _token,
+                _amountWei,
+                IPendleRouterV3.TokenOutput({
+                    tokenOut: outputToken,
+                    minTokenOut: 0,
+                    tokenRedeemSy: outputToken,
+                    pendleSwap: address(0),
+                    swapData: IPendleRouterV3.SwapData({
+                        swapType: IPendleRouterV3.SwapType.NONE,
+                        extRouter: address(0),
+                        extCalldata: "",
+                        needScale: false
+                    })
+                })
+            );
+            /*assert(_amountWei == amountOut);*/
+
+            uint256 marketId = dolomiteMargin.getMarketIdByTokenAddress(outputToken);
+            IERC20(outputToken).safeApprove(address(dolomiteMargin), amountOut);
             IIsolationModeVaultFactory(VAULT_FACTORY()).depositOtherTokenIntoDolomiteMarginForVaultOwner(
                 _toAccountNumber,
                 marketId,
-                _amountWei
+                amountOut
             );
         } else {
             IERC20(_token).safeTransfer(msg.sender, _amountWei);

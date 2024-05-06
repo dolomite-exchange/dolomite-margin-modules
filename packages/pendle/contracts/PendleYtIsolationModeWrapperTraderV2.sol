@@ -108,11 +108,9 @@ contract PendleYtIsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2 {
             limitOrderData
         );
 
-        // console.log('ytAmount: ', ytAmount);
-        // console.log('ytBal: ', IERC20(VAULT_FACTORY.UNDERLYING_TOKEN()).balanceOf(address(this)));
-        // assert(ytAmount == IERC20(VAULT_FACTORY.UNDERLYING_TOKEN()).balanceOf(address(this)));
-        // @follow-up ok to use balance here with ytAmount being off by a little bit
-        return IERC20(VAULT_FACTORY.UNDERLYING_TOKEN()).balanceOf(address(this));
+        uint256 bal = IERC20(VAULT_FACTORY.UNDERLYING_TOKEN()).balanceOf(address(this));
+        assert(bal >= ytAmount);
+        return bal;
     }
 
     function _getExchangeCost(

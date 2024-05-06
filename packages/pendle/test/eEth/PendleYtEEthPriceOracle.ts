@@ -32,7 +32,7 @@ import {
 } from '../pendle-ecosystem-utils';
 
 /**
- * This is the expected price at the following timestamp: 1690134516
+ * This is the expected price at the following timestamp: 1714680524
  *
  * Keep in mind that Pendle's PT prices tick upward each second so YT prices tick downward
  */
@@ -139,11 +139,13 @@ describe('PendleYtEEthJun2024PriceOracle', () => {
 
       // Verify the two equal each other, roughly. YT_GLP is rounded down because of decimal truncation
       // @follow-up I think this is off because eEth and weEth exchange rate stuff
+      // want oracle same or lower. Do a check with swap
       expect(eEthPrice.sub(PT_WE_ETH_PRICE).sub(1)).to.eq(YT_WE_ETH_PRICE);
     });
 
-    // @follow-up Any good idea how to test these now that aggregator is used in the solidity code
-    xit('returns 1 instead of 0 after maturity for dytToken', async () => {
+    it('returns 1 instead of 0 after maturity for dytToken', async () => {
+      await freezeAndGetOraclePrice(core.tokens.weEth);
+      await core.dolomiteRegistry.ownerSetOracleAggregator(core.testEcosystem!.testPriceOracle.address);
       await increaseToTimestamp((await core.pendleEcosystem.weEthJun2024.ytWeEthToken.expiry()).toNumber() + 1);
       expect((await priceOracle.getPrice(factory.address)).value).to.eq(1);
     });
@@ -192,4 +194,12 @@ describe('PendleYtEEthJun2024PriceOracle', () => {
       );
     });
   });
+
+  async function freezeAndGetOraclePrice(token: IERC20): Promise<BigNumber> {
+    const marketId = await core.dolomiteMargin.getMarketIdByTokenAddress(token.address);
+    const price = await core.dolomiteMargin.getMarketPrice(marketId);
+    await core.testEcosystem!.testPriceOracle.setPrice(token.address, price.value);
+    await core.dolomiteMargin.ownerSetPriceOracle(marketId, core.testEcosystem!.testPriceOracle.address);
+    return price.value;
+  }
 });

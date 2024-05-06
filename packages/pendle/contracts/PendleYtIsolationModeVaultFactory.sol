@@ -27,7 +27,6 @@ import { IPendleYtIsolationModeVaultFactory } from "./interfaces/IPendleYtIsolat
 import { IPendleYtToken } from "./interfaces/IPendleYtToken.sol";
 
 
-
 /**
  * @title   PendleYtIsolationModeVaultFactory
  * @author  Dolomite
@@ -45,7 +44,6 @@ contract PendleYtIsolationModeVaultFactory is
 
     // ============ Field Variables ============
 
-    // @follow-up Do you remember why WETH WETH_MARKET_ID were here? I think we can remove them
     IPendleRegistry public override pendleRegistry;
     uint256 public override ytMaturityTimestamp;
 
