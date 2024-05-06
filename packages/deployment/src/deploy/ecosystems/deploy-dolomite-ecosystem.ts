@@ -2,6 +2,7 @@ import CoreDeployments from '@dolomite-exchange/dolomite-margin/dist/migrations/
 import {
   DolomiteRegistryImplementation__factory,
   EventEmitterRegistry__factory,
+  IDolomiteMargin,
   IDolomiteRegistry,
   IDolomiteRegistry__factory,
   IERC20__factory,
@@ -47,7 +48,9 @@ import {
   deployContractAndSave,
   EncodedTransaction,
   getMaxDeploymentVersionNameByDeploymentKey,
+  getOldDeploymentVersionNamesByDeploymentKey,
   prettyPrintEncodedDataWithTypeSafety,
+  readDeploymentFile, TRANSACTION_BUILDER_VERSION,
 } from '../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../utils/dry-run-utils';
 import getScriptName from '../../utils/get-script-name';
@@ -225,6 +228,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     'DolomiteRegistryProxy',
   );
   const dolomiteRegistry = IDolomiteRegistry__factory.connect(dolomiteRegistryAddress, hhUser1);
+  const dolomiteRegistryProxy = RegistryProxy__factory.connect(dolomiteRegistryAddress, hhUser1);
 
   const dolomiteMigratorAddress = await deployContractAndSave(
     'DolomiteMigrator',
@@ -234,12 +238,15 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   const oracleAggregator = await getOracleAggregator(network, dolomiteRegistry, dolomiteMargin);
 
   let needsRegistryEncoding = true;
-  if (
-    await dolomiteRegistry.dolomiteMigrator() === ADDRESS_ZERO &&
-    await dolomiteRegistry.oracleAggregator() === ADDRESS_ZERO
-  ) {
-    needsRegistryEncoding = false;
-    await dolomiteRegistry.lazyInitialize(dolomiteMigratorAddress, oracleAggregator.address);
+  try {
+    if (
+      await dolomiteRegistry.dolomiteMigrator() === ADDRESS_ZERO &&
+      await dolomiteRegistry.oracleAggregator() === ADDRESS_ZERO
+    ) {
+      needsRegistryEncoding = false;
+      await dolomiteRegistry.lazyInitialize(dolomiteMigratorAddress, oracleAggregator.address);
+    }
+  } catch (e) {
   }
 
   const isolationModeFreezableLiquidatorProxyAddress = await deployContractAndSave(
@@ -284,6 +291,17 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     delayedMultiSig: IPartiallyDelayedMultiSig__factory.connect(governanceAddress, governance),
   } as any;
 
+  if ((await dolomiteRegistryProxy.implementation()) !== registryImplementationAddress) {
+    transactions.push(
+      await prettyPrintEncodedDataWithTypeSafety(
+        core,
+        { dolomiteRegistryProxy },
+        'dolomiteRegistryProxy',
+        'upgradeTo',
+        [registryImplementationAddress],
+      ),
+    );
+  }
   if (needsRegistryEncoding) {
     transactions.push(
       await prettyPrintEncodedDataWithTypeSafety(
@@ -319,12 +337,28 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     transactions.push(
       await prettyPrintEncodedDataWithTypeSafety(
         core,
-        { dolomite: dolomiteMargin },
+        { dolomite: dolomiteMargin as IDolomiteMargin },
         'dolomite',
         'ownerSetGlobalOperator',
         [isolationModeFreezableLiquidatorProxyAddress, true],
       ),
     );
+
+    const oldVersions = getOldDeploymentVersionNamesByDeploymentKey('IsolationModeFreezableLiquidatorProxy', 1);
+    for (let i = 0; i < oldVersions.length; i++) {
+      const oldVersion = readDeploymentFile()[oldVersions[i]][network]?.address;
+      if (oldVersion && await core.dolomiteMargin.getIsGlobalOperator(oldVersion)) {
+        transactions.push(
+          await prettyPrintEncodedDataWithTypeSafety(
+            core,
+            { dolomite: dolomiteMargin as IDolomiteMargin },
+            'dolomite',
+            'ownerSetGlobalOperator',
+            [oldVersion, false],
+          ),
+        );
+      }
+    }
   }
 
   return {
@@ -335,6 +369,10 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     upload: {
       transactions,
       chainId: network,
+      meta: {
+        name: 'Dolomite Ecosystem',
+        txBuilderVersion: TRANSACTION_BUILDER_VERSION,
+      }
     },
   };
 }

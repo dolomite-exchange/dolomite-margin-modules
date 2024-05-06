@@ -351,12 +351,14 @@ export class CoreProtocolArbitrumOne extends CoreProtocolAbstract<Network.Arbitr
 }
 
 export interface CoreProtocolParamsBase {
+  odosEcosystem: OdosEcosystem;
   paraswapEcosystem: ParaswapEcosystem;
 }
 
 export class CoreProtocolBase extends CoreProtocolAbstract<Network.Base> {
 
   public readonly paraswapEcosystem: ParaswapEcosystem;
+  public readonly odosEcosystem: OdosEcosystem;
   public readonly network: Network.Base = Network.Base;
 
   constructor(
@@ -364,6 +366,7 @@ export class CoreProtocolBase extends CoreProtocolAbstract<Network.Base> {
     baseParams: CoreProtocolParamsBase,
   ) {
     super(params);
+    this.odosEcosystem = baseParams.odosEcosystem;
     this.paraswapEcosystem = baseParams.paraswapEcosystem;
   }
 }
@@ -382,6 +385,7 @@ interface CoreProtocolMarketIdsMantle extends CoreProtocolMarketIds {
 
 export interface CoreProtocolParamsMantle {
   marketIds: CoreProtocolMarketIdsMantle;
+  odosEcosystem: OdosEcosystem;
   tokens: CoreProtocolTokensMantle;
 }
 
@@ -391,6 +395,8 @@ export class CoreProtocolMantle extends CoreProtocolAbstract<Network.Mantle> {
   public override readonly tokens: CoreProtocolTokensMantle;
   public readonly network: Network.Mantle = Network.Mantle;
 
+  public readonly odosEcosystem: OdosEcosystem;
+
   constructor(
     params: CoreProtocolParams<Network.Mantle>,
     mantleParams: CoreProtocolParamsMantle,
@@ -398,6 +404,8 @@ export class CoreProtocolMantle extends CoreProtocolAbstract<Network.Mantle> {
     super(params);
     this.marketIds = mantleParams.marketIds;
     this.tokens = mantleParams.tokens;
+
+    this.odosEcosystem = mantleParams.odosEcosystem;
   }
 }
 
@@ -425,11 +433,11 @@ export interface CoreProtocolParamsPolygonZkEvm {
 
 export class CoreProtocolPolygonZkEvm extends CoreProtocolAbstract<Network.PolygonZkEvm> {
 
-  public readonly paraswapEcosystem: ParaswapEcosystem;
-
   public override readonly marketIds: CoreProtocolMarketIdsPolygonZkEvm;
   public override readonly tokens: CoreProtocolTokensPolygonZkEvm;
   public readonly network: Network.PolygonZkEvm = Network.PolygonZkEvm;
+
+  public readonly paraswapEcosystem: ParaswapEcosystem;
 
   constructor(
     params: CoreProtocolParams<Network.PolygonZkEvm>,
@@ -437,8 +445,9 @@ export class CoreProtocolPolygonZkEvm extends CoreProtocolAbstract<Network.Polyg
   ) {
     super(params);
     this.marketIds = zkEvmParams.marketIds;
-    this.paraswapEcosystem = zkEvmParams.paraswapEcosystem;
     this.tokens = zkEvmParams.tokens;
+
+    this.paraswapEcosystem = zkEvmParams.paraswapEcosystem;
   }
 }
 

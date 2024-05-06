@@ -651,8 +651,12 @@ export const JONES_WHITELIST_CONTROLLER_V2_MAP: Record<Network.ArbitrumOne, stri
   [Network.ArbitrumOne]: '0xDe3476a7C0a408325385605203665A8836c2bcca',
 };
 
-export const ODOS_ROUTER_MAP: Record<Network.ArbitrumOne, string> = {
+export const ODOS_ROUTER_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumOne]: '0xa669e7A0d4b3e4Fa48af2dE86BD4CD7126Be4e13',
+  [Network.Base]: '0x19cEeAd7105607Cd444F5ad10dd51356436095a1',
+  [Network.Mantle]: '0xD9F4e85489aDCD0bAF0Cd63b4231c6af58c26745',
+  [Network.PolygonZkEvm]: undefined,
+  [Network.XLayer]: undefined,
 };
 
 export const OKX_DEX_ROUTER_MAP: Record<Network.XLayer, string> = {
@@ -994,7 +998,7 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<Network, Record<string, Agg
     [XAI_MAP[Network.ArbitrumOne].address]: {
       aggregatorAddress: '0x806c532D543352e7C344ba6C7F3F00Bfbd309Af1',
     },
-  }, // already deployed
+  },
   [Network.Base]: {
     [WETH_MAP[Network.Base].address]: {
       aggregatorAddress: '0x71041dddad3595F9CEd3DcCFBe3D1F4b0a16Bb70',
@@ -1002,7 +1006,9 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<Network, Record<string, Agg
     [DAI_MAP[Network.Base]!.address]: {
       aggregatorAddress: '0x591e79239a7d679378eC8c847e5038150364C78F',
     },
-    [USDC_MAP[Network.Base].address]: undefined as any, // TODO
+    [USDC_MAP[Network.Base].address]: {
+      aggregatorAddress: '0x7e860098F58bBFC8648a4311b374B1D669a2bc6B',
+    },
     [LINK_MAP[Network.Base]!.address]: {
       aggregatorAddress: '0xc5E65227fe3385B88468F9A01600017cDC9F3A12',
     },

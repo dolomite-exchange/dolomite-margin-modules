@@ -1,23 +1,23 @@
+import { IERC20__factory } from '@dolomite-exchange/modules-base/src/types';
+import { getUpgradeableProxyConstructorParams } from '@dolomite-exchange/modules-base/src/utils/constructors/dolomite';
 import { getAnyNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { NetworkType } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { getRealLatestBlockNumber, impersonate } from '@dolomite-exchange/modules-base/test/utils';
+import { expectEvent } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
+import {
+  getRewardsDistributorConstructorParams,
+} from '@dolomite-exchange/modules-liquidity-mining/src/liquidity-mining-constructors';
+import { MineralToken__factory } from '@dolomite-exchange/modules-liquidity-mining/src/types';
+import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import {
   deployContractAndSave,
   EncodedTransaction,
   getMaxDeploymentVersionNameByDeploymentKey,
-  prettyPrintEncodedDataWithTypeSafety
+  prettyPrintEncodedDataWithTypeSafety,
 } from '../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../utils/dry-run-utils';
 import getScriptName from '../../utils/get-script-name';
-import {
-  getRewardsDistributorConstructorParams
-} from '@dolomite-exchange/modules-liquidity-mining/src/liquidity-mining-constructors';
-import { getRealLatestBlockNumber, impersonate } from '@dolomite-exchange/modules-base/test/utils';
-import { MineralToken__factory } from '@dolomite-exchange/modules-liquidity-mining/src/types';
-import { expectEvent } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { getUpgradeableProxyConstructorParams } from '@dolomite-exchange/modules-base/src/utils/constructors/dolomite';
-import { IERC20__factory } from '@dolomite-exchange/modules-base/src/types';
-import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 
 async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   const network = await getAnyNetwork() as T;
@@ -71,6 +71,11 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     upload: {
       transactions,
       chainId: network,
+      version: '1.0',
+      meta: {
+        txBuilderVersion: '1.16.5',
+        name: 'Mineral Ecosystem',
+      },
     },
     invariants: async () => {
       assertHardhatInvariant(

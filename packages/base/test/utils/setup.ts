@@ -736,6 +736,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
     return new CoreProtocolBase(
       coreProtocolParams as CoreProtocolParams<Network.Base>,
       {
+        odosEcosystem: await createOdosEcosystem(typedConfig.network, hhUser1),
         paraswapEcosystem: await createParaswapEcosystem(typedConfig.network, hhUser1),
       },
     ) as any;
@@ -751,6 +752,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
           wbtc: WBTC_MAP[typedConfig.network].marketId,
           wmnt: WMNT_MAP[typedConfig.network].marketId,
         },
+        odosEcosystem: await createOdosEcosystem(typedConfig.network, hhUser1),
         tokens: {
           ...coreProtocolParams.tokens,
           usdt: IERC20__factory.connect(USDT_MAP[typedConfig.network].address, hhUser1),

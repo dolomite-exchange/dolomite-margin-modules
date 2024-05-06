@@ -83,6 +83,7 @@ export const CORE_DEPLOYMENT_FILE_NAME = path.resolve(
   __dirname,
   '../../../../node_modules/@dolomite-exchange/dolomite-margin/dist/migrations/deployed.json',
 );
+export const TRANSACTION_BUILDER_VERSION = '1.16.5';
 
 export function readDeploymentFile(): Record<string, Record<ChainId, any>> {
   return JSON.parse(fs.readFileSync(DEPLOYMENT_FILE_NAME).toString());
@@ -220,7 +221,7 @@ export function getMaxDeploymentVersionNameByDeploymentKey(nameWithoutVersionPos
 
   const maxVersion = Object.keys(readDeploymentFile()).reduce((max, curr) => {
     if (curr.includes(nameWithoutVersionPostfix)) {
-      // Add 1 for the `V`
+      // Add 1 to the length for the `V`
       const currentVersion = parseInt(curr.substring(nameWithoutVersionPostfix.length + 1), 10);
       return currentVersion > max ? currentVersion : max;
     }
@@ -229,6 +230,30 @@ export function getMaxDeploymentVersionNameByDeploymentKey(nameWithoutVersionPos
   }, defaultVersion);
 
   return `${nameWithoutVersionPostfix}V${maxVersion}`;
+}
+
+export function getOldDeploymentVersionNamesByDeploymentKey(nameWithoutVersionPostfix: string, defaultVersion: number) {
+  const lastChar = nameWithoutVersionPostfix.substring(nameWithoutVersionPostfix.length - 1);
+  if (!Number.isNaN(parseInt(lastChar, 10))) {
+    throw new Error('Name cannot include version declaration');
+  }
+
+  const [versions, maxVersion] = Object.keys(readDeploymentFile()).reduce(([versions, max], curr) => {
+    if (curr.includes(nameWithoutVersionPostfix)) {
+      // Add 1 to the length for the `V`
+      const currentVersion = parseInt(curr.substring(nameWithoutVersionPostfix.length + 1), 10);
+      return [versions.concat(currentVersion), currentVersion > max ? currentVersion : max];
+    }
+
+    return [versions, max];
+  }, [[] as number[], defaultVersion]);
+
+  return versions.reduce((acc, version) => {
+    if (version !== maxVersion) {
+      return acc.concat(`${nameWithoutVersionPostfix}V${version}`);
+    }
+    return acc;
+  }, [] as string[]);
 }
 
 export async function deployContractAndSave(
@@ -597,6 +622,14 @@ export interface EncodedTransaction {
 export interface DenJsonUpload {
   chainId: NetworkType;
   transactions: EncodedTransaction[];
+}
+
+export interface TransactionBuilderUpload extends DenJsonUpload {
+  version: '1.0';
+  meta: {
+    name: string,
+    txBuilderVersion: typeof TRANSACTION_BUILDER_VERSION;
+  };
 }
 
 function isOwnerFunction(methodName: string, isMultisig: boolean): boolean {

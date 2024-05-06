@@ -96,6 +96,7 @@ export const base_config: HardhatUserConfig = {
       chainId: parseInt(Network.PolygonZkEvm, 10),
       url: polygonZkEvmWeb3Url,
       gas: 20_000_000, // 20M gas
+      gasPrice: 1_000_000_000, // 1 gwei
       accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
     },
     [NetworkName.XLayer]: {

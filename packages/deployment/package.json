@@ -1,6 +1,6 @@
 {
   "name": "@dolomite-exchange/modules-deployments",
-  "version": "0.0.14",
+  "version": "0.0.15",
   "scripts": {
     "build": "hardhat compile",
     "clean": "hardhat clean",
