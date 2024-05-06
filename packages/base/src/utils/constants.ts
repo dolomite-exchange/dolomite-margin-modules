@@ -99,10 +99,24 @@ export const D_GM_BTC_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   },
 };
 
+export const D_GM_BTC_SINGLE_SIDED_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0xB15bbBfCff6c411410c66642306d1FfA7eCEc4D8',
+    marketId: 44,
+  },
+};
+
 export const D_GM_ETH_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x505582242757f16D72F8C4462A616E388Ca1b074',
     marketId: 33,
+  },
+};
+
+export const D_GM_ETH_SINGLE_SIDED_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0x2D165A76dd3e552DF3860789331Ab73c5a3d7F92',
+    marketId: 45,
   },
 };
 
