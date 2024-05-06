@@ -238,7 +238,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
     await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(newRegistry.address);
     await core.dolomiteRegistry.connect(core.governance).ownerSetEventEmitter(eventEmitter.address);
     await core.dolomiteRegistry.connect(core.governance).ownerSetGenericTraderProxy(NEW_GENERIC_TRADER_PROXY);
-    await core.dolomiteRegistry.connect(core.governance).ownerSetOracleAggregator(core.chainlinkPriceOracleOld.address);
+    await core.dolomiteRegistry.connect(core.governance).ownerSetOracleAggregator(core.chainlinkPriceOracleV1.address);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(NEW_GENERIC_TRADER_PROXY, true);
     const trader = await IGenericTraderProxyV1__factory.connect(
       NEW_GENERIC_TRADER_PROXY,

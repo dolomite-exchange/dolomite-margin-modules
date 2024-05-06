@@ -38,7 +38,7 @@ export function getOdosAggregatorTraderConstructorParams<T extends Network>(
   core: CoreProtocolWithOdos<T>,
 ): any[] {
   return [
-    core.odosEcosystem!.odosRouter.address,
+    core.odosEcosystem.odosRouter.address,
     core.dolomiteMargin.address,
   ];
 }

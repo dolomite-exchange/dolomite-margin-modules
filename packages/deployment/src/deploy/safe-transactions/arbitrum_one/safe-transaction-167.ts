@@ -220,8 +220,8 @@ async function deployJUsdcUpdates(core: CoreProtocolArbitrumOne): Promise<Encode
     'JonesUSDCIsolationModeUnwrapperTraderV2ForLiquidation',
     getJonesUSDCIsolationModeUnwrapperTraderV2ForLiquidationConstructorParams(
       core,
-      core.jonesEcosystem!.live.jonesUSDCRegistry,
-      core.jonesEcosystem!.live.jUSDCIsolationModeFactoryOld,
+      core.jonesEcosystem!.live.jonesUSDCV1Registry,
+      core.jonesEcosystem!.live.jUSDCV1IsolationModeFactory,
     ),
     'JonesUSDCIsolationModeUnwrapperTraderV3ForLiquidation',
   );
@@ -229,8 +229,8 @@ async function deployJUsdcUpdates(core: CoreProtocolArbitrumOne): Promise<Encode
     'JonesUSDCIsolationModeUnwrapperTraderV2',
     getJonesUSDCIsolationModeUnwrapperTraderV2ForZapConstructorParams(
       core,
-      core.jonesEcosystem!.live.jonesUSDCRegistry,
-      core.jonesEcosystem!.live.jUSDCIsolationModeFactoryOld,
+      core.jonesEcosystem!.live.jonesUSDCV1Registry,
+      core.jonesEcosystem!.live.jUSDCV1IsolationModeFactory,
     ),
     'JonesUSDCIsolationModeUnwrapperTraderV3',
   );
@@ -238,8 +238,8 @@ async function deployJUsdcUpdates(core: CoreProtocolArbitrumOne): Promise<Encode
     'JonesUSDCIsolationModeWrapperTraderV2',
     getJonesUSDCIsolationModeWrapperTraderV2ConstructorParams(
       core,
-      core.jonesEcosystem!.live.jonesUSDCRegistry,
-      core.jonesEcosystem!.live.jUSDCIsolationModeFactoryOld,
+      core.jonesEcosystem!.live.jonesUSDCV1Registry,
+      core.jonesEcosystem!.live.jUSDCV1IsolationModeFactory,
     ),
     'JonesUSDCIsolationModeWrapperTraderV3',
   );
@@ -248,7 +248,7 @@ async function deployJUsdcUpdates(core: CoreProtocolArbitrumOne): Promise<Encode
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       core.jonesEcosystem!.live,
-      'jUSDCIsolationModeFactoryOld',
+      'jUSDCV1IsolationModeFactory',
       'ownerSetIsTokenConverterTrusted',
       [Deployments.JonesUSDCIsolationModeUnwrapperTraderV2ForLiquidation['42161'].address, false],
     ),
@@ -257,7 +257,7 @@ async function deployJUsdcUpdates(core: CoreProtocolArbitrumOne): Promise<Encode
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       core.jonesEcosystem!.live,
-      'jUSDCIsolationModeFactoryOld',
+      'jUSDCV1IsolationModeFactory',
       'ownerSetIsTokenConverterTrusted',
       [Deployments.JonesUSDCIsolationModeUnwrapperTraderV2['42161'].address, false],
     ),
@@ -266,7 +266,7 @@ async function deployJUsdcUpdates(core: CoreProtocolArbitrumOne): Promise<Encode
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       core.jonesEcosystem!.live,
-      'jUSDCIsolationModeFactoryOld',
+      'jUSDCV1IsolationModeFactory',
       'ownerSetIsTokenConverterTrusted',
       [Deployments.JonesUSDCIsolationModeWrapperTraderV2['42161'].address, false],
     ),
@@ -275,7 +275,7 @@ async function deployJUsdcUpdates(core: CoreProtocolArbitrumOne): Promise<Encode
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       core.jonesEcosystem!.live,
-      'jUSDCIsolationModeFactoryOld',
+      'jUSDCV1IsolationModeFactory',
       'ownerSetIsTokenConverterTrusted',
       [unwrapperV3ForLiquidation, true],
     ),
@@ -284,7 +284,7 @@ async function deployJUsdcUpdates(core: CoreProtocolArbitrumOne): Promise<Encode
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       core.jonesEcosystem!.live,
-      'jUSDCIsolationModeFactoryOld',
+      'jUSDCV1IsolationModeFactory',
       'ownerSetIsTokenConverterTrusted',
       [unwrapperV3, true],
     ),
@@ -293,7 +293,7 @@ async function deployJUsdcUpdates(core: CoreProtocolArbitrumOne): Promise<Encode
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       core.jonesEcosystem!.live,
-      'jUSDCIsolationModeFactoryOld',
+      'jUSDCV1IsolationModeFactory',
       'ownerSetIsTokenConverterTrusted',
       [wrapperV3, true],
     ),
@@ -302,7 +302,7 @@ async function deployJUsdcUpdates(core: CoreProtocolArbitrumOne): Promise<Encode
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       core.jonesEcosystem!.live,
-      'jonesUSDCRegistry',
+      'jonesUSDCV1Registry',
       'ownerSetUnwrapperTraderForLiquidation',
       [unwrapperV3ForLiquidation],
     ),
@@ -311,7 +311,7 @@ async function deployJUsdcUpdates(core: CoreProtocolArbitrumOne): Promise<Encode
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       core.jonesEcosystem!.live,
-      'jonesUSDCRegistry',
+      'jonesUSDCV1Registry',
       'ownerSetUnwrapperTraderForZap',
       [unwrapperV3],
     ),

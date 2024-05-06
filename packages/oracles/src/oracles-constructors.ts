@@ -12,7 +12,7 @@ import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import {
   AggregatorInfo,
   CHAINLINK_PRICE_AGGREGATORS_MAP,
-  CHAINLINK_PRICE_ORACLE_OLD_MAP,
+  CHAINLINK_PRICE_ORACLE_V1_MAP,
 } from 'packages/base/src/utils/constants';
 import { ADDRESS_ZERO, Network, NetworkType } from 'packages/base/src/utils/no-deps-constants';
 import { TokenInfo } from './index';
@@ -20,18 +20,19 @@ import {
   ChainlinkPriceOracleV3,
   IAlgebraV3Pool,
   IChainlinkAggregator,
-  IChainlinkPriceOracleOld,
-  IChainlinkPriceOracleOld__factory,
-  IChainlinkPriceOracleV1__factory, IChainlinkPriceOracleV3,
+  IChainlinkPriceOracleV1,
+  IChainlinkPriceOracleV1__factory,
+  IChainlinkPriceOracleV3,
   IDolomiteRegistry,
   IERC20Metadata__factory,
-  IRedstonePriceOracleV2__factory, OracleAggregatorV2,
+  IRedstonePriceOracleV2__factory,
+  OracleAggregatorV2,
   RedstonePriceOracleV3,
 } from './types';
 
 export type CoreProtocolWithChainlinkOld<T extends Network> = Extract<CoreProtocolType<T>, {
   dolomiteMargin: DolomiteMargin<T>;
-  chainlinkPriceOracleOld: IChainlinkPriceOracleOld;
+  chainlinkPriceOracleV1: IChainlinkPriceOracleV1;
 }>;
 
 export type CoreProtocolWithChainlinkV3<T extends Network> = Extract<CoreProtocolType<T>, {
@@ -141,8 +142,8 @@ export async function getChainlinkPriceOracleV2ConstructorParamsFromOldPriceOrac
 export async function getChainlinkPriceOracleV1ConstructorParamsFromOldPriceOracle(
   core: CoreProtocolArbitrumOne,
 ): Promise<[string[], string[], BigNumberish[], string[], string]> {
-  const oldPriceOracle = IChainlinkPriceOracleOld__factory.connect(
-    CHAINLINK_PRICE_ORACLE_OLD_MAP[core.config.network],
+  const oldPriceOracle = IChainlinkPriceOracleV1__factory.connect(
+    CHAINLINK_PRICE_ORACLE_V1_MAP[core.config.network],
     core.hhUser1,
   );
   const tokens: string[] = [];
@@ -155,9 +156,9 @@ export async function getChainlinkPriceOracleV1ConstructorParamsFromOldPriceOrac
     const priceOracle = await core.dolomiteMargin.getMarketPriceOracle(i);
     if (priceOracle === oldPriceOracle.address) {
       tokens.push(token);
-      aggregators.push(await oldPriceOracle.tokenToAggregatorMap(token));
-      tokenDecimals.push(await oldPriceOracle.tokenToDecimalsMap(token));
-      tokenPairs.push(await oldPriceOracle.tokenToPairingMap(token));
+      aggregators.push(await oldPriceOracle.getAggregatorByToken(token));
+      tokenDecimals.push(await oldPriceOracle.getDecimalsByToken(token));
+      tokenPairs.push(await oldPriceOracle.getTokenPairByToken(token));
     }
   }
   return [tokens, aggregators, tokenDecimals, tokenPairs, core.dolomiteMargin.address];
@@ -224,7 +225,7 @@ export async function getOracleAggregatorV2ConstructorParams(
   const reusableOracles = {
     [Deployments.PlutusVaultGLPWithChainlinkAutomationPriceOracleV3[core.network].address]: true,
     [Deployments.GLPPriceOracleV1[core.network].address]: true,
-    [Deployments.JonesUSDCWithChainlinkAutomationPriceOracleV1[core.network].address]: true,
+    [Deployments.JonesUSDCV1WithChainlinkAutomationPriceOracleV1[core.network].address]: true,
     [Deployments.MagicGLPWithChainlinkAutomationPriceOracle[core.network].address]: true,
     [Deployments.PendlePtGLPPriceOracle[core.network].address]: true,
     [Deployments.PendlePtWstEthJun2024PriceOracle[core.network].address]: true,
@@ -249,7 +250,7 @@ export async function getOracleAggregatorV2ConstructorParams(
         oracleInfos: [
           {
             oracle: chainlinkOracle.address,
-            tokenPair: chainlinkPriceAggregatorMap[allChainlinkTokens[i]].tokenPairAddress ?? ADDRESS_ZERO,
+            tokenPair: chainlinkPriceAggregatorMap[allChainlinkTokens[i]]!.tokenPairAddress ?? ADDRESS_ZERO,
             weight: 100,
           },
         ],
@@ -366,14 +367,14 @@ export async function getRedstonePriceOracleV2ConstructorParams<T extends Networ
 export function getRedstonePriceOracleV3ConstructorParams<T extends NetworkType>(
   tokens: IERC20[],
   redstoneAggregators: IChainlinkAggregator[],
-  invertPrice: boolean[],
+  invertPrices: boolean[],
   dolomiteRegistry: IDolomiteRegistry,
   dolomiteMargin: DolomiteMargin<T>,
 ): [string[], string[], boolean[], string, string] {
   return [
     tokens.map(t => t.address),
     redstoneAggregators.map(r => r.address),
-    invertPrice,
+    invertPrices,
     dolomiteRegistry.address,
     dolomiteMargin.address,
   ];

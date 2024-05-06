@@ -10,7 +10,7 @@ import {
   CustomTestVaultToken__factory,
 } from '../types';
 import { ActionArgsStruct } from './index';
-import { MAX_UINT_256_BI, Network, networkToNetworkNameMap, NetworkType } from './no-deps-constants';
+import { MAX_UINT_256_BI, networkToNetworkNameMap, NetworkType } from './no-deps-constants';
 import { SignerWithAddressWithSafety } from './SignerWithAddressWithSafety';
 
 /**
@@ -178,12 +178,6 @@ export function heldWeiToOwedWei(
 ): BigNumber {
   return getPartialRoundUp(heldWei, heldPrice, owedPrice);
 }
-
-const NETWORK_TO_VALID_MAP: Record<NetworkType, boolean> = {
-  [Network.ArbitrumOne]: true,
-  [Network.Base]: true,
-  [Network.PolygonZkEvm]: true,
-};
 
 export async function getAnyNetwork(): Promise<NetworkType> {
   let foundNetwork;

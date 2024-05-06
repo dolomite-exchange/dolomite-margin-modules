@@ -1,6 +1,6 @@
 import { IERC4626 } from '@dolomite-exchange/modules-base/src/types';
 import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
-import { BYTES_EMPTY, Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { BYTES_EMPTY, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '@dolomite-exchange/modules-base/src/utils/SignerWithAddressWithSafety';
 import {
   encodeExternalSellActionDataWithNoData,
@@ -10,12 +10,10 @@ import {
 } from '@dolomite-exchange/modules-base/test/utils';
 import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
-import { setupNewGenericTraderProxy } from '@dolomite-exchange/modules-base/test/utils/dolomite';
 import {
-  getDefaultCoreProtocolConfig,
   setupCoreProtocol,
+  setupNativeUSDCBalance,
   setupTestMarket,
-  setupUSDCBalance,
   setupUserVaultProxy,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { expect } from 'chai';
@@ -38,7 +36,7 @@ import {
   createJonesUSDCPriceOracle,
   createJonesUSDCRegistry,
 } from './jones-ecosystem-utils';
-import { createRoleAndWhitelistTrader } from './jones-utils';
+import { createRoleAndWhitelistTraderV2, JONES_CORE_PROTOCOL_CONFIG } from './jones-utils';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
@@ -51,7 +49,7 @@ describe('JonesUSDCIsolationModeUnwrapperTraderV2', () => {
 
   let core: CoreProtocolArbitrumOne;
   let underlyingToken: IERC4626;
-  let underlyingMarketId: BigNumber;
+  let marketId: BigNumber;
   let jonesUSDCRegistry: JonesUSDCRegistry;
   let unwrapperTraderForLiquidation: JonesUSDCIsolationModeUnwrapperTraderV2;
   let wrapper: JonesUSDCIsolationModeWrapperTraderV2;
@@ -63,8 +61,8 @@ describe('JonesUSDCIsolationModeUnwrapperTraderV2', () => {
   let solidUser: SignerWithAddressWithSafety;
 
   before(async () => {
-    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
-    underlyingToken = core.jonesEcosystem!.jUsdcOld;
+    core = await setupCoreProtocol(JONES_CORE_PROTOCOL_CONFIG);
+    underlyingToken = core.jonesEcosystem.jUSDCV2.connect(core.hhUser1);
     const userVaultImplementation = await createJonesUSDCIsolationModeTokenVaultV1();
     jonesUSDCRegistry = await createJonesUSDCRegistry(core);
     factory = await createJonesUSDCIsolationModeVaultFactory(
@@ -89,17 +87,17 @@ describe('JonesUSDCIsolationModeUnwrapperTraderV2', () => {
       unwrapperTraderForZap.address,
     );
     wrapper = await createJonesUSDCIsolationModeWrapperTraderV2(core, jonesUSDCRegistry, factory);
-    await createRoleAndWhitelistTrader(core, unwrapperTraderForLiquidation, wrapper);
+    await createRoleAndWhitelistTraderV2(core, unwrapperTraderForLiquidation, wrapper);
     priceOracle = await createJonesUSDCPriceOracle(core, jonesUSDCRegistry, factory);
 
-    underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
+    marketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, factory, true, priceOracle);
-    await core.dolomiteMargin.ownerSetPriceOracle(underlyingMarketId, priceOracle.address);
+    await core.dolomiteMargin.ownerSetPriceOracle(marketId, priceOracle.address);
 
     await factory.connect(core.governance).ownerInitialize([unwrapperTraderForLiquidation.address, wrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
     await core.liquidatorAssetRegistry.ownerAddLiquidatorToAssetWhitelist(
-      underlyingMarketId,
+      marketId,
       core.liquidatorProxyV4.address,
     );
 
@@ -114,15 +112,13 @@ describe('JonesUSDCIsolationModeUnwrapperTraderV2', () => {
     );
     defaultAccount = { owner: vault.address, number: defaultAccountNumber };
 
-    await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.jonesEcosystem!.glpAdapter);
-    await core.jonesEcosystem!.glpAdapter.connect(core.hhUser1).depositStable(usableUsdcAmount, true);
-    await core.jonesEcosystem!.jUsdcOld.connect(core.hhUser1).approve(vault.address, amountWei);
+    await setupNativeUSDCBalance(core, core.hhUser1, usdcAmount, core.jonesEcosystem.jUSDCRouter);
+    await core.jonesEcosystem.jUSDCRouter.connect(core.hhUser1).deposit(usableUsdcAmount, core.hhUser1.address);
+    await underlyingToken.approve(vault.address, amountWei);
     await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
 
     expect(await underlyingToken.balanceOf(vault.address)).to.eq(amountWei);
-    expect((await core.dolomiteMargin.getAccountWei(defaultAccount, underlyingMarketId)).value).to.eq(amountWei);
-
-    await setupNewGenericTraderProxy(core, underlyingMarketId);
+    expect((await core.dolomiteMargin.getAccountWei(defaultAccount, marketId)).value).to.eq(amountWei);
 
     snapshotId = await snapshot();
   });
@@ -142,15 +138,15 @@ describe('JonesUSDCIsolationModeUnwrapperTraderV2', () => {
         primaryAccountNumber: defaultAccountNumber,
         otherAccountOwner: vault.address,
         otherAccountNumber: defaultAccountNumber,
-        outputMarket: core.marketIds.usdc,
-        inputMarket: underlyingMarketId,
+        outputMarket: core.marketIds.nativeUsdc,
+        inputMarket: marketId,
         minOutputAmount: ZERO_BI,
         inputAmount: amountWei,
         orderData: BYTES_EMPTY,
       });
 
       const genericTrader = await impersonate(core.genericTraderProxy!, true);
-      await core.liquidatorAssetRegistry.ownerAddLiquidatorToAssetWhitelist(underlyingMarketId, genericTrader.address);
+      await core.liquidatorAssetRegistry.ownerAddLiquidatorToAssetWhitelist(marketId, genericTrader.address);
       const result = await core.dolomiteMargin.connect(genericTrader).operate(
         [defaultAccount],
         actions,
@@ -159,17 +155,17 @@ describe('JonesUSDCIsolationModeUnwrapperTraderV2', () => {
       // jUSDC's value goes up every second. To get the correct amountOut, we need to use the same block #
       const amountOut = await unwrapperTraderForLiquidation.getExchangeCost(
         factory.address,
-        core.tokens.usdc.address,
+        core.tokens.nativeUsdc.address,
         amountWei,
         BYTES_EMPTY,
         { blockTag: result.blockNumber },
       );
 
-      const underlyingBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, underlyingMarketId);
+      const underlyingBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, marketId);
       expect(underlyingBalanceWei.value).to.eq(ZERO_BI);
       expect(await vault.underlyingBalanceOf()).to.eq(ZERO_BI);
 
-      const otherBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, core.marketIds.usdc);
+      const otherBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, core.marketIds.nativeUsdc);
       expect(otherBalanceWei.sign).to.eq(true);
       expect(otherBalanceWei.value).to.eq(amountOut);
     });
@@ -179,12 +175,12 @@ describe('JonesUSDCIsolationModeUnwrapperTraderV2', () => {
     it('should fail if sender function param is not a valid liquidator', async () => {
       const impersonator = await impersonate(core.dolomiteMargin.address, true);
       await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser1.address, true);
-      const liquidators = await core.liquidatorAssetRegistry.getLiquidatorsForAsset(underlyingMarketId);
+      const liquidators = await core.liquidatorAssetRegistry.getLiquidatorsForAsset(marketId);
       expect(liquidators.length).to.eq(1);
       expect(liquidators[0]).to.eq(core.liquidatorProxyV4.address);
 
       expect(await core.liquidatorAssetRegistry.isAssetWhitelistedForLiquidation(
-        underlyingMarketId,
+        marketId,
         core.hhUser1.address,
       )).to.eq(false);
       await expectThrow(
@@ -197,12 +193,12 @@ describe('JonesUSDCIsolationModeUnwrapperTraderV2', () => {
       );
 
       await core.liquidatorAssetRegistry.ownerRemoveLiquidatorFromAssetWhitelist(
-        underlyingMarketId,
+        marketId,
         core.liquidatorProxyV4.address,
       );
-      expect((await core.liquidatorAssetRegistry.getLiquidatorsForAsset(underlyingMarketId)).length).to.eq(0);
+      expect((await core.liquidatorAssetRegistry.getLiquidatorsForAsset(marketId)).length).to.eq(0);
       expect(await core.liquidatorAssetRegistry.isAssetWhitelistedForLiquidation(
-        underlyingMarketId,
+        marketId,
         core.hhUser1.address,
       )).to.eq(true); // returns true because the length is 0
 
@@ -223,7 +219,7 @@ describe('JonesUSDCIsolationModeUnwrapperTraderV2', () => {
         unwrapperTraderForLiquidation.connect(core.hhUser1).exchange(
           core.hhUser1.address,
           core.dolomiteMargin.address,
-          core.tokens.usdc.address,
+          core.tokens.nativeUsdc.address,
           factory.address,
           amountWei,
           BYTES_EMPTY,
@@ -238,7 +234,7 @@ describe('JonesUSDCIsolationModeUnwrapperTraderV2', () => {
         unwrapperTraderForLiquidation.connect(dolomiteMarginImpersonator).exchange(
           core.hhUser1.address,
           core.dolomiteMargin.address,
-          core.tokens.usdc.address,
+          core.tokens.nativeUsdc.address,
           core.tokens.weth.address,
           amountWei,
           BYTES_EMPTY,
@@ -249,7 +245,8 @@ describe('JonesUSDCIsolationModeUnwrapperTraderV2', () => {
 
     it('should fail if output token is incorrect', async () => {
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
-      await core.jonesEcosystem!.jUsdcOld.connect(core.hhUser1).transfer(unwrapperTraderForLiquidation.address, amountWei);
+      await underlyingToken
+        .transfer(unwrapperTraderForLiquidation.address, amountWei);
       await expectThrow(
         unwrapperTraderForLiquidation.connect(dolomiteMarginImpersonator).exchange(
           core.hhUser1.address,
@@ -265,12 +262,13 @@ describe('JonesUSDCIsolationModeUnwrapperTraderV2', () => {
 
     it('should fail if input amount is incorrect', async () => {
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
-      await core.jonesEcosystem!.jUsdcOld.connect(core.hhUser1).transfer(unwrapperTraderForLiquidation.address, amountWei);
+      await underlyingToken
+        .transfer(unwrapperTraderForLiquidation.address, amountWei);
       await expectThrow(
         unwrapperTraderForLiquidation.connect(dolomiteMarginImpersonator).exchange(
           core.hhUser1.address,
           core.dolomiteMargin.address,
-          core.tokens.usdc.address,
+          core.tokens.nativeUsdc.address,
           factory.address,
           ZERO_BI,
           encodeExternalSellActionDataWithNoData(otherAmountWei),
@@ -300,23 +298,18 @@ describe('JonesUSDCIsolationModeUnwrapperTraderV2', () => {
 
   describe('#getExchangeCost', () => {
     it('should work normally', async () => {
-      const receiptToken = core.jonesEcosystem!.usdcReceiptToken.connect(core.hhUser1);
-      const receiptTokenExchangeRateNumerator = await receiptToken.totalAssets();
       const jUSDCExchangeRateNumerator = await underlyingToken.totalAssets();
-      const receiptTokenExchangeRateDenominator = await await receiptToken.totalSupply();
       const jUSDCExchangeRateDenominator = await underlyingToken.totalSupply();
 
       const amountBeforeRetention = amountWei
         .mul(jUSDCExchangeRateNumerator)
-        .div(jUSDCExchangeRateDenominator)
-        .mul(receiptTokenExchangeRateNumerator)
-        .div(receiptTokenExchangeRateDenominator);
+        .div(jUSDCExchangeRateDenominator);
       const retentionFee = amountBeforeRetention.mul('97').div('10000');
       const expectedAmount = amountBeforeRetention.sub(retentionFee);
 
       expect(await unwrapperTraderForLiquidation.getExchangeCost(
         factory.address,
-        core.tokens.usdc.address,
+        core.tokens.nativeUsdc.address,
         amountWei,
         BYTES_EMPTY,
       ))
@@ -325,10 +318,7 @@ describe('JonesUSDCIsolationModeUnwrapperTraderV2', () => {
     });
 
     it('should work for 10 random numbers, as long as balance is sufficient', async () => {
-      const receiptToken = core.jonesEcosystem!.usdcReceiptToken.connect(core.hhUser1);
-      const receiptTokenExchangeRateNumerator = await receiptToken.totalAssets();
       const jUSDCExchangeRateNumerator = await underlyingToken.totalAssets();
-      const receiptTokenExchangeRateDenominator = await await receiptToken.totalSupply();
       const jUSDCExchangeRateDenominator = await underlyingToken.totalSupply();
 
       for (let i = 0; i < 10; i++) {
@@ -337,15 +327,13 @@ describe('JonesUSDCIsolationModeUnwrapperTraderV2', () => {
         const weirdAmount = amountWei.mul(randomNumber).div(101);
         const amountBeforeRetention = weirdAmount
           .mul(jUSDCExchangeRateNumerator)
-          .div(jUSDCExchangeRateDenominator)
-          .mul(receiptTokenExchangeRateNumerator)
-          .div(receiptTokenExchangeRateDenominator);
+          .div(jUSDCExchangeRateDenominator);
 
         const expectedAmount = amountBeforeRetention.sub(amountBeforeRetention.mul('97').div('10000'));
 
         expect(await unwrapperTraderForLiquidation.getExchangeCost(
           factory.address,
-          core.tokens.usdc.address,
+          core.tokens.nativeUsdc.address,
           weirdAmount,
           BYTES_EMPTY,
         ))

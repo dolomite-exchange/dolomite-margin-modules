@@ -75,13 +75,13 @@ async function main(): Promise<DenJsonUpload> {
       core,
       'dolomiteRegistry',
       'ownerSetChainlinkPriceOracle',
-      [core.chainlinkPriceOracleOld!.address],
+      [core.chainlinkPriceOracleV1!.address],
     ),
   );
   transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(
       core,
-      { chainlinkPriceOracle: core.chainlinkPriceOracleOld! },
+      { chainlinkPriceOracle: core.chainlinkPriceOracleV1! },
       'chainlinkPriceOracle',
       'ownerInsertOrUpdateOracleToken',
       [

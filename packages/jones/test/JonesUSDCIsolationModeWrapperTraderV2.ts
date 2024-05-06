@@ -1,6 +1,6 @@
 import { IERC4626 } from '@dolomite-exchange/modules-base/src/types';
 import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
-import { BYTES_EMPTY, Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { BYTES_EMPTY, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import {
   encodeExternalSellActionDataWithNoData,
   impersonate,
@@ -12,13 +12,11 @@ import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/ut
 import { setupNewGenericTraderProxy } from '@dolomite-exchange/modules-base/test/utils/dolomite';
 import {
   disableInterestAccrual,
-  getDefaultCoreProtocolConfig,
   setupCoreProtocol,
+  setupNativeUSDCBalance,
   setupTestMarket,
-  setupUSDCBalance,
   setupUserVaultProxy,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { IGmxRegistryV1 } from '@dolomite-exchange/modules-glp/src/types';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
@@ -40,7 +38,7 @@ import {
   createJonesUSDCPriceOracle,
   createJonesUSDCRegistry,
 } from './jones-ecosystem-utils';
-import { createRoleAndWhitelistTrader } from './jones-utils';
+import { createRoleAndWhitelistTraderV2, JONES_CORE_PROTOCOL_CONFIG } from './jones-utils';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
@@ -55,8 +53,7 @@ describe('JonesUSDCIsolationModeWrapperTraderV2', () => {
 
   let core: CoreProtocolArbitrumOne;
   let underlyingToken: IERC4626;
-  let underlyingMarketId: BigNumber;
-  let gmxRegistry: IGmxRegistryV1;
+  let marketId: BigNumber;
   let jonesUSDCRegistry: JonesUSDCRegistry;
   let unwrapperTraderForLiquidation: JonesUSDCIsolationModeUnwrapperTraderV2;
   let wrapper: JonesUSDCIsolationModeWrapperTraderV2;
@@ -66,16 +63,15 @@ describe('JonesUSDCIsolationModeWrapperTraderV2', () => {
   let defaultAccount: AccountInfoStruct;
 
   before(async () => {
-    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
-    underlyingToken = core.jonesEcosystem!.jUsdcOld.connect(core.hhUser1);
+    core = await setupCoreProtocol(JONES_CORE_PROTOCOL_CONFIG);
+    underlyingToken = core.jonesEcosystem.jUSDCV2.connect(core.hhUser1);
 
     const userVaultImplementation = await createJonesUSDCIsolationModeTokenVaultV1();
-    gmxRegistry = core.gmxEcosystem!.live.gmxRegistry!;
     jonesUSDCRegistry = await createJonesUSDCRegistry(core);
     factory = await createJonesUSDCIsolationModeVaultFactory(
       core,
       jonesUSDCRegistry,
-      core.jonesEcosystem!.jUsdcOld,
+      underlyingToken,
       userVaultImplementation,
     );
 
@@ -94,14 +90,14 @@ describe('JonesUSDCIsolationModeWrapperTraderV2', () => {
       unwrapperTraderForZap.address,
     );
     wrapper = await createJonesUSDCIsolationModeWrapperTraderV2(core, jonesUSDCRegistry, factory);
-    await createRoleAndWhitelistTrader(core, unwrapperTraderForLiquidation, wrapper);
+    await createRoleAndWhitelistTraderV2(core, unwrapperTraderForLiquidation, wrapper);
     priceOracle = await createJonesUSDCPriceOracle(core, jonesUSDCRegistry, factory);
 
-    await disableInterestAccrual(core, core.marketIds.usdc);
+    await disableInterestAccrual(core, core.marketIds.nativeUsdc);
 
-    underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
+    marketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, factory, true, priceOracle);
-    await core.dolomiteMargin.ownerSetPriceOracle(underlyingMarketId, priceOracle.address);
+    await core.dolomiteMargin.ownerSetPriceOracle(marketId, priceOracle.address);
 
     await factory.connect(core.governance).ownerInitialize([wrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
@@ -115,15 +111,13 @@ describe('JonesUSDCIsolationModeWrapperTraderV2', () => {
     );
     defaultAccount = { owner: vault.address, number: defaultAccountNumber };
 
-    await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.jonesEcosystem!.glpAdapter);
-    await core.jonesEcosystem!.glpAdapter.connect(core.hhUser1).depositStable(usableUsdcAmount, true);
-    await core.jonesEcosystem!.jUsdcOld.connect(core.hhUser1).approve(vault.address, amountWei);
+    await setupNativeUSDCBalance(core, core.hhUser1, usdcAmount, core.jonesEcosystem.jUSDCRouter);
+    await core.jonesEcosystem.jUSDCRouter.connect(core.hhUser1).deposit(usableUsdcAmount, core.hhUser1.address);
+    await underlyingToken.connect(core.hhUser1).approve(vault.address, amountWei);
     await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
 
     expect(await underlyingToken.balanceOf(vault.address)).to.eq(amountWei);
-    expect((await core.dolomiteMargin.getAccountWei(defaultAccount, underlyingMarketId)).value).to.eq(amountWei);
-
-    await setupNewGenericTraderProxy(core, underlyingMarketId);
+    expect((await core.dolomiteMargin.getAccountWei(defaultAccount, marketId)).value).to.eq(amountWei);
 
     snapshotId = await snapshot();
   });
@@ -143,20 +137,21 @@ describe('JonesUSDCIsolationModeWrapperTraderV2', () => {
         primaryAccountNumber: defaultAccountNumber,
         otherAccountOwner: ZERO_ADDRESS,
         otherAccountNumber: defaultAccountNumber,
-        outputMarket: underlyingMarketId,
-        inputMarket: core.marketIds.usdc,
+        outputMarket: marketId,
+        inputMarket: core.marketIds.nativeUsdc,
         minOutputAmount: ZERO_BI,
         inputAmount: usableUsdcAmount,
         orderData: BYTES_EMPTY,
       });
 
-      await core.tokens.usdc.connect(core.hhUser1).transfer(core.dolomiteMargin.address, usableUsdcAmount);
-      const genericTrader = await impersonate(core.genericTraderProxy!, true);
+      await setupNativeUSDCBalance(core, core.hhUser1, usdcAmount, core.jonesEcosystem.jUSDCRouter);
+      await core.tokens.nativeUsdc.connect(core.hhUser1).transfer(core.dolomiteMargin.address, usableUsdcAmount);
+      const genericTrader = await impersonate(core.genericTraderProxy, true);
       const result = await core.dolomiteMargin.connect(genericTrader).operate([defaultAccount], actions);
 
       // jUSDC's value goes up every second. To get the correct amountOut, we need to use the same block #
       const amountOut = await wrapper.getExchangeCost(
-        core.tokens.usdc.address,
+        core.tokens.nativeUsdc.address,
         factory.address,
         usableUsdcAmount,
         BYTES_EMPTY,
@@ -164,12 +159,12 @@ describe('JonesUSDCIsolationModeWrapperTraderV2', () => {
       );
 
       const expectedTotalBalance = amountWei.add(amountOut);
-      const underlyingBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, underlyingMarketId);
+      const underlyingBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, marketId);
       expect(underlyingBalanceWei.value).to.eq(expectedTotalBalance);
       expect(underlyingBalanceWei.sign).to.eq(true);
       expect(await vault.underlyingBalanceOf()).to.eq(expectedTotalBalance);
 
-      const otherBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, core.marketIds.usdc);
+      const otherBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, core.marketIds.nativeUsdc);
       expect(otherBalanceWei.sign).to.eq(false);
       expect(otherBalanceWei.value).to.eq(usableUsdcAmount);
     });
@@ -182,7 +177,7 @@ describe('JonesUSDCIsolationModeWrapperTraderV2', () => {
           vault.address,
           core.dolomiteMargin.address,
           factory.address,
-          core.tokens.usdc.address,
+          core.tokens.nativeUsdc.address,
           usableUsdcAmount,
           BYTES_EMPTY,
         ),
@@ -197,7 +192,7 @@ describe('JonesUSDCIsolationModeWrapperTraderV2', () => {
           core.hhUser1.address,
           core.dolomiteMargin.address,
           factory.address,
-          core.tokens.usdc.address,
+          core.tokens.nativeUsdc.address,
           usableUsdcAmount,
           BYTES_EMPTY,
         ),
@@ -227,7 +222,7 @@ describe('JonesUSDCIsolationModeWrapperTraderV2', () => {
           vault.address,
           core.dolomiteMargin.address,
           core.tokens.weth.address,
-          core.tokens.usdc.address,
+          core.tokens.nativeUsdc.address,
           amountWei,
           encodeExternalSellActionDataWithNoData(otherAmountWei),
         ),
@@ -242,7 +237,7 @@ describe('JonesUSDCIsolationModeWrapperTraderV2', () => {
           vault.address,
           core.dolomiteMargin.address,
           factory.address,
-          core.tokens.usdc.address,
+          core.tokens.nativeUsdc.address,
           ZERO_BI,
           encodeExternalSellActionDataWithNoData(ZERO_BI),
         ),
@@ -259,40 +254,20 @@ describe('JonesUSDCIsolationModeWrapperTraderV2', () => {
 
   describe('#getExchangeCost', () => {
     it('should work normally', async () => {
-      const receiptToken = core.jonesEcosystem!.usdcReceiptToken.connect(core.hhUser1);
-      const receiptTokenExchangeRateNumerator = await receiptToken.totalAssets();
-      const jUSDCExchangeRateNumerator = await underlyingToken.totalAssets();
-      const receiptTokenExchangeRateDenominator = await await receiptToken.totalSupply();
-      const jUSDCExchangeRateDenominator = await underlyingToken.totalSupply();
-
       const inputAmount = usableUsdcAmount;
-      const expectedAmount = inputAmount
-        .mul(receiptTokenExchangeRateDenominator)
-        .div(receiptTokenExchangeRateNumerator)
-        .mul(jUSDCExchangeRateDenominator)
-        .div(jUSDCExchangeRateNumerator);
-      expect(await wrapper.getExchangeCost(core.tokens.usdc.address, factory.address, inputAmount, BYTES_EMPTY))
+      const expectedAmount = await underlyingToken.previewDeposit(inputAmount);
+      expect(await wrapper.getExchangeCost(core.tokens.nativeUsdc.address, factory.address, inputAmount, BYTES_EMPTY))
         .to
         .eq(expectedAmount);
     });
 
     it('should work for 10 random numbers, as long as balance is sufficient', async () => {
-      const receiptToken = core.jonesEcosystem!.usdcReceiptToken.connect(core.hhUser1);
-      const receiptTokenExchangeRateNumerator = await receiptToken.totalAssets();
-      const jUSDCExchangeRateNumerator = await underlyingToken.totalAssets();
-      const receiptTokenExchangeRateDenominator = await await receiptToken.totalSupply();
-      const jUSDCExchangeRateDenominator = await underlyingToken.totalSupply();
-
       for (let i = 0; i < 10; i++) {
         // create a random number from 1 to 99 and divide by 101 (making the number, at-most, slightly smaller)
         const randomNumber = BigNumber.from(Math.floor(Math.random() * 99) + 1);
         const weirdAmount = usableUsdcAmount.mul(randomNumber).div(101);
-        const expectedAmount = weirdAmount
-          .mul(receiptTokenExchangeRateDenominator)
-          .div(receiptTokenExchangeRateNumerator)
-          .mul(jUSDCExchangeRateDenominator)
-          .div(jUSDCExchangeRateNumerator);
-        expect(await wrapper.getExchangeCost(core.tokens.usdc.address, factory.address, weirdAmount, BYTES_EMPTY))
+        const expectedAmount = await underlyingToken.previewDeposit(weirdAmount);
+        expect(await wrapper.getExchangeCost(core.tokens.nativeUsdc.address, factory.address, weirdAmount, BYTES_EMPTY))
           .to
           .eq(expectedAmount);
       }

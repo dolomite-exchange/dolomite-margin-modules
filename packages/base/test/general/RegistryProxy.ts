@@ -23,7 +23,7 @@ describe('RegistryProxy', () => {
       core.constants.slippageToleranceForPauseSentinel,
       core.liquidatorAssetRegistry.address,
       core.eventEmitterRegistryProxy.address,
-      core.chainlinkPriceOracleOld.address,
+      core.chainlinkPriceOracleV1.address,
     );
     registry = await createRegistryProxy(implementation.address, calldata.data!, core);
 

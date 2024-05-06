@@ -22,12 +22,12 @@ pragma solidity ^0.8.9;
 
 
 /**
- * @title   IJonesWhitelistController
+ * @title   IJonesWhitelistControllerV1
  * @author  Dolomite
  *
  * @notice  Interface for interacting with Jones DAO's whitelist controller
  */
-interface IJonesWhitelistController {
+interface IJonesWhitelistControllerV1 {
 
     struct RoleInfo {
         bool jGLP_BYPASS_CAP; // solhint-disable-line var-name-mixedcase

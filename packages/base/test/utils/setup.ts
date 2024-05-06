@@ -2,8 +2,8 @@ import CoreDeployments from '@dolomite-exchange/dolomite-margin/dist/migrations/
 import Deployments, * as deployments from '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
 import {
   IChainlinkAutomationRegistry__factory,
-  IChainlinkPriceOracleOld__factory,
   IChainlinkPriceOracleV3__factory,
+  OkxPriceOracleV3__factory,
   OracleAggregatorV2__factory,
 } from '@dolomite-exchange/modules-oracles/src/types';
 import { BigNumber as ZapBigNumber } from '@dolomite-exchange/zap-sdk';
@@ -41,7 +41,8 @@ import {
   ILiquidatorAssetRegistry__factory,
   ILiquidatorProxyV1__factory,
   ILiquidatorProxyV4WithGenericTrader__factory,
-  IPartiallyDelayedMultiSig__factory, IsolationModeFreezableLiquidatorProxy__factory,
+  IPartiallyDelayedMultiSig__factory,
+  IsolationModeFreezableLiquidatorProxy__factory,
   IWETH__factory,
   RegistryProxy__factory,
 } from '../../src/types';
@@ -49,7 +50,6 @@ import {
   ARB_MAP,
   CHAINLINK_AUTOMATION_REGISTRY_MAP,
   CHAINLINK_PRICE_AGGREGATORS_MAP,
-  CHAINLINK_PRICE_ORACLE_OLD_MAP,
   CHAINLINK_PRICE_ORACLE_V1_MAP,
   D_ARB_MAP,
   D_GM_ARB_MAP,
@@ -59,8 +59,8 @@ import {
   D_GMX_MAP,
   DAI_MAP,
   DFS_GLP_MAP,
-  DJ_USDC,
-  DJ_USDC_OLD,
+  DJ_USDC_V2,
+  DJ_USDC_V1,
   DPLV_GLP_MAP,
   DPT_EZ_ETH_JUN_2024_MAP,
   DPT_GLP_MAR_2024_MAP,
@@ -72,7 +72,8 @@ import {
   DPX_MAP,
   DYT_GLP_2024_MAP,
   E_ETH_MAP,
-  EZ_ETH_MAP, GMX_BTC_PLACEHOLDER_MAP,
+  EZ_ETH_MAP,
+  GMX_BTC_PLACEHOLDER_MAP,
   GMX_MAP,
   GRAIL_MAP,
   JONES_MAP,
@@ -96,6 +97,8 @@ import {
   WBTC_MAP,
   WE_ETH_MAP,
   WETH_MAP,
+  WMNT_MAP,
+  WOKB_MAP,
   WST_ETH_MAP,
   XAI_MAP,
 } from '../../src/utils/constants';
@@ -105,8 +108,11 @@ import {
   CoreProtocolAbstract,
   CoreProtocolArbitrumOne,
   CoreProtocolBase,
+  CoreProtocolMantle,
   CoreProtocolParams,
-  CoreProtocolPolygonZkEvm, LibraryMaps,
+  CoreProtocolPolygonZkEvm,
+  CoreProtocolXLayer,
+  LibraryMaps,
 } from './core-protocol';
 import { DolomiteMargin, Expiry } from './dolomite';
 import { createAbraEcosystem } from './ecosystem-utils/abra';
@@ -117,6 +123,7 @@ import { createInterestSetters } from './ecosystem-utils/interest-setters';
 import { createJonesEcosystem } from './ecosystem-utils/jones';
 import { createLiquidityMiningEcosystem } from './ecosystem-utils/liquidity-mining';
 import { createOdosEcosystem } from './ecosystem-utils/odos';
+import { createOkxEcosystem } from './ecosystem-utils/okx';
 import { createParaswapEcosystem } from './ecosystem-utils/paraswap';
 import { createPendleEcosystem } from './ecosystem-utils/pendle';
 import { createPlutusEcosystem } from './ecosystem-utils/plutus';
@@ -151,15 +158,25 @@ interface CoreProtocolConfigBase extends CoreProtocolConfigParent<Network.Base> 
   readonly base: boolean;
 }
 
+interface CoreProtocolConfigMantle extends CoreProtocolConfigParent<Network.Mantle> {
+  readonly mantle: boolean;
+}
+
 interface CoreProtocolConfigPolygonZkEvm extends CoreProtocolConfigParent<Network.PolygonZkEvm> {
   readonly polygonZkEvm: boolean;
 }
 
+interface CoreProtocolConfigXLayer extends CoreProtocolConfigParent<Network.XLayer> {
+  readonly xLayer: boolean;
+}
+
 export type CoreProtocolConfig<T extends NetworkType> = T extends Network.ArbitrumOne
   ? CoreProtocolConfigArbitrumOne
-  : T extends Network.Base ? CoreProtocolConfigBase : T extends Network.PolygonZkEvm
-    ? CoreProtocolConfigPolygonZkEvm
-    : never;
+  : T extends Network.Base ? CoreProtocolConfigBase
+    : T extends Network.Mantle ? CoreProtocolConfigMantle
+      : T extends Network.PolygonZkEvm ? CoreProtocolConfigPolygonZkEvm
+        : T extends Network.XLayer ? CoreProtocolConfigXLayer
+          : never;
 
 export async function disableInterestAccrual<T extends NetworkType>(
   core: CoreProtocolAbstract<T>,
@@ -212,8 +229,8 @@ export async function setupARBBalance(
   await core.tokens.arb!.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
-export async function setupDAIBalance<T extends NetworkType>(
-  core: CoreProtocolAbstract<T>,
+export async function setupDAIBalance(
+  core: { tokens: { dai: IERC20 } },
   signer: SignerWithAddressWithSafety,
   amount: BigNumberish,
   spender: { address: string },
@@ -357,6 +374,15 @@ function getCoreProtocolConfig<T extends NetworkType>(network: T, blockNumber: n
     } as CoreProtocolConfigBase as any;
   }
 
+  if (network === Network.Mantle) {
+    return {
+      network,
+      blockNumber,
+      networkNumber: parseInt(network, 10),
+      mantle: true,
+    } as CoreProtocolConfigMantle as any;
+  }
+
   if (network === Network.PolygonZkEvm) {
     return {
       network,
@@ -364,6 +390,15 @@ function getCoreProtocolConfig<T extends NetworkType>(network: T, blockNumber: n
       networkNumber: parseInt(network, 10),
       polygonZkEvm: true,
     } as CoreProtocolConfigPolygonZkEvm as any;
+  }
+
+  if (network === Network.XLayer) {
+    return {
+      network,
+      blockNumber,
+      networkNumber: parseInt(network, 10),
+      xLayer: true,
+    } as CoreProtocolConfigXLayer as any;
   }
 
   throw new Error(`Invalid network, found: ${network}`);
@@ -381,8 +416,32 @@ export function getDefaultCoreProtocolConfigForGmxV2(): CoreProtocolConfig<Netwo
 export type CoreProtocolType<T extends NetworkType> = T extends Network.ArbitrumOne
   ? CoreProtocolArbitrumOne
   : T extends Network.Base ? CoreProtocolBase
-    : T extends Network.PolygonZkEvm ? CoreProtocolPolygonZkEvm
-      : never;
+    : T extends Network.Mantle ? CoreProtocolMantle
+      : T extends Network.PolygonZkEvm ? CoreProtocolPolygonZkEvm
+        : T extends Network.XLayer ? CoreProtocolXLayer
+          : never;
+
+export function getDolomiteMarginContract<T extends NetworkType>(
+  config: CoreProtocolSetupConfig<T>,
+  signer: SignerWithAddressWithSafety,
+): DolomiteMargin<T> {
+  return (
+    config.network === Network.ArbitrumOne
+      ? IDolomiteMargin__factory.connect(DolomiteMarginJson.networks[config.network].address, signer)
+      : IDolomiteMarginV2__factory.connect(DolomiteMarginJson.networks[config.network].address, signer)
+  ) as DolomiteMargin<T>;
+}
+
+export function getExpiryContract<T extends NetworkType>(
+  config: CoreProtocolSetupConfig<T>,
+  signer: SignerWithAddressWithSafety,
+): Expiry<T> {
+  return (
+    config.network === Network.ArbitrumOne
+      ? IExpiry__factory.connect(ExpiryJson.networks[config.network].address, signer)
+      : IExpiryV2__factory.connect(ExpiryJson.networks[config.network].address, signer)
+  ) as Expiry<T>;
+}
 
 export async function setupCoreProtocol<T extends NetworkType>(
   config: Readonly<CoreProtocolSetupConfig<T>>,
@@ -400,20 +459,13 @@ export async function setupCoreProtocol<T extends NetworkType>(
     hhUser1,
   );
 
-  const dolomiteMargin = (config.network === Network.ArbitrumOne
-    ? IDolomiteMargin__factory.connect(dolomiteMarginAddress, governance)
-    : IDolomiteMarginV2__factory.connect(dolomiteMarginAddress, governance)) as DolomiteMargin<T>;
+  const dolomiteMargin = getDolomiteMarginContract<T>(config, governance);
 
   const borrowPositionProxyV2 = IBorrowPositionProxyV2__factory.connect(
     BorrowPositionProxyV2Json.networks[config.network].address,
     governance,
   );
 
-  const chainlinkPriceOracleOld = getContract(
-    CHAINLINK_PRICE_ORACLE_OLD_MAP[config.network],
-    IChainlinkPriceOracleOld__factory.connect,
-    governance,
-  );
   const chainlinkPriceOracleV1 = getContract(
     CHAINLINK_PRICE_ORACLE_V1_MAP[config.network],
     IChainlinkPriceOracleV1__factory.connect,
@@ -457,9 +509,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
     governance,
   );
 
-  const expiry = (config.network === Network.ArbitrumOne
-    ? IExpiry__factory.connect(ExpiryJson.networks[config.network].address, governance)
-    : IExpiryV2__factory.connect(ExpiryJson.networks[config.network].address, governance)) as Expiry<T>;
+  const expiry = getExpiryContract<T>(config, governance);
 
   const freezableLiquidatorProxy = IsolationModeFreezableLiquidatorProxy__factory.connect(
     getMaxDeploymentVersionAddressByDeploymentKey('IsolationModeFreezableLiquidatorProxy', config.network),
@@ -506,6 +556,8 @@ export async function setupCoreProtocol<T extends NetworkType>(
 
   const coreProtocolParams: CoreProtocolParams<T> = {
     borrowPositionProxyV2,
+    chainlinkPriceOracleV1,
+    chainlinkPriceOracleV3,
     delayedMultiSig,
     depositWithdrawalProxy,
     dolomiteMargin,
@@ -551,14 +603,10 @@ export async function setupCoreProtocol<T extends NetworkType>(
       chainlinkAggregators: CHAINLINK_PRICE_AGGREGATORS_MAP[config.network],
     },
     marketIds: {
-      dai: DAI_MAP[config.network].marketId,
-      link: LINK_MAP[config.network].marketId,
       usdc: USDC_MAP[config.network].marketId,
       weth: WETH_MAP[config.network].marketId,
     },
     tokens: {
-      dai: IERC20__factory.connect(DAI_MAP[config.network].address, hhUser1),
-      link: IERC20__factory.connect(LINK_MAP[config.network].address, hhUser1),
       usdc: IERC20__factory.connect(USDC_MAP[config.network].address, hhUser1),
       weth: IWETH__factory.connect(WETH_MAP[config.network].address, hhUser1),
     },
@@ -569,7 +617,6 @@ export async function setupCoreProtocol<T extends NetworkType>(
     return new CoreProtocolArbitrumOne(
       coreProtocolParams as CoreProtocolParams<Network.ArbitrumOne>,
       {
-        chainlinkPriceOracleOld,
         chainlinkPriceOracleV1,
         chainlinkPriceOracleV3,
         abraEcosystem: await createAbraEcosystem(typedConfig.network, hhUser1),
@@ -600,82 +647,86 @@ export async function setupCoreProtocol<T extends NetworkType>(
         umamiEcosystem: await createUmamiEcosystem(typedConfig.network, hhUser1),
         marketIds: {
           ...coreProtocolParams.marketIds,
-          arb: ARB_MAP[typedConfig.network]!.marketId,
-          dArb: D_ARB_MAP[typedConfig.network]!.marketId,
-          dfsGlp: DFS_GLP_MAP[typedConfig.network]!.marketId,
-          dGmx: D_GMX_MAP[typedConfig.network]!.marketId,
-          dGmArb: D_GM_ARB_MAP[typedConfig.network]!.marketId,
-          dGmBtc: D_GM_BTC_MAP[typedConfig.network]!.marketId,
-          dGmEth: D_GM_ETH_MAP[typedConfig.network]!.marketId,
-          dGmLink: D_GM_LINK_MAP[typedConfig.network]!.marketId,
-          djUsdc: DJ_USDC[typedConfig.network]!.marketId,
-          djUsdcOld: DJ_USDC_OLD[typedConfig.network]!.marketId,
-          dplvGlp: DPLV_GLP_MAP[typedConfig.network]!.marketId,
-          dPtEzEthJun2024: DPT_EZ_ETH_JUN_2024_MAP[typedConfig.network]!.marketId,
-          dPtGlpMar2024: DPT_GLP_MAR_2024_MAP[typedConfig.network]!.marketId,
-          dPtREthJun2025: DPT_R_ETH_JUN_2025_MAP[typedConfig.network]!.marketId,
-          dPtWeEthApr2024: DPT_WE_ETH_APR_2024_MAP[typedConfig.network]!.marketId,
-          dPtWeEthJun2024: DPT_WE_ETH_JUN_2024_MAP[typedConfig.network]!.marketId,
-          dPtWstEthJun2024: DPT_WST_ETH_JUN_2024_MAP[typedConfig.network]!.marketId,
-          dPtWstEthJun2025: DPT_WST_ETH_JUN_2025_MAP[typedConfig.network]!.marketId,
-          dpx: DPX_MAP[typedConfig.network]!.marketId,
-          dYtGlp: DYT_GLP_2024_MAP[typedConfig.network]!.marketId,
-          ezEth: EZ_ETH_MAP[typedConfig.network]!.marketId,
-          sGlp: S_GLP_MAP[typedConfig.network]!.marketId,
-          gmx: GMX_MAP[typedConfig.network]!.marketId,
-          grail: GRAIL_MAP[typedConfig.network]!.marketId,
-          jones: JONES_MAP[typedConfig.network]!.marketId,
-          magic: MAGIC_MAP[typedConfig.network]!.marketId,
-          magicGlp: MAGIC_GLP_MAP[typedConfig.network]!.marketId,
-          mim: MIM_MAP[typedConfig.network]!.marketId,
-          nativeUsdc: NATIVE_USDC_MAP[typedConfig.network]!.marketId,
-          premia: PREMIA_MAP[typedConfig.network]!.marketId,
-          rEth: RETH_MAP[typedConfig.network]!.marketId,
-          radiant: RDNT_MAP[typedConfig.network]!.marketId,
-          pendle: PENDLE_MAP[typedConfig.network]!.marketId,
-          usdt: USDT_MAP[typedConfig.network]!.marketId,
-          wbtc: WBTC_MAP[typedConfig.network]!.marketId,
-          weEth: WE_ETH_MAP[typedConfig.network]!.marketId,
-          wstEth: WST_ETH_MAP[typedConfig.network]!.marketId,
-          xai: XAI_MAP[typedConfig.network]!.marketId,
+          arb: ARB_MAP[typedConfig.network].marketId,
+          dArb: D_ARB_MAP[typedConfig.network].marketId,
+          dfsGlp: DFS_GLP_MAP[typedConfig.network].marketId,
+          dGmx: D_GMX_MAP[typedConfig.network].marketId,
+          dGmArb: D_GM_ARB_MAP[typedConfig.network].marketId,
+          dGmBtc: D_GM_BTC_MAP[typedConfig.network].marketId,
+          dGmEth: D_GM_ETH_MAP[typedConfig.network].marketId,
+          dGmLink: D_GM_LINK_MAP[typedConfig.network].marketId,
+          djUsdcV1: DJ_USDC_V1[typedConfig.network].marketId,
+          djUsdcV2: DJ_USDC_V2[typedConfig.network].marketId,
+          dplvGlp: DPLV_GLP_MAP[typedConfig.network].marketId,
+          dPtEzEthJun2024: DPT_EZ_ETH_JUN_2024_MAP[typedConfig.network].marketId,
+          dPtGlpMar2024: DPT_GLP_MAR_2024_MAP[typedConfig.network].marketId,
+          dPtREthJun2025: DPT_R_ETH_JUN_2025_MAP[typedConfig.network].marketId,
+          dPtWeEthApr2024: DPT_WE_ETH_APR_2024_MAP[typedConfig.network].marketId,
+          dPtWeEthJun2024: DPT_WE_ETH_JUN_2024_MAP[typedConfig.network].marketId,
+          dPtWstEthJun2024: DPT_WST_ETH_JUN_2024_MAP[typedConfig.network].marketId,
+          dPtWstEthJun2025: DPT_WST_ETH_JUN_2025_MAP[typedConfig.network].marketId,
+          dpx: DPX_MAP[typedConfig.network].marketId,
+          dYtGlp: DYT_GLP_2024_MAP[typedConfig.network].marketId,
+          ezEth: EZ_ETH_MAP[typedConfig.network].marketId,
+          sGlp: S_GLP_MAP[typedConfig.network].marketId,
+          gmx: GMX_MAP[typedConfig.network].marketId,
+          grail: GRAIL_MAP[typedConfig.network].marketId,
+          jones: JONES_MAP[typedConfig.network].marketId,
+          magic: MAGIC_MAP[typedConfig.network].marketId,
+          magicGlp: MAGIC_GLP_MAP[typedConfig.network].marketId,
+          mim: MIM_MAP[typedConfig.network].marketId,
+          nativeUsdc: NATIVE_USDC_MAP[typedConfig.network].marketId,
+          premia: PREMIA_MAP[typedConfig.network].marketId,
+          rEth: RETH_MAP[typedConfig.network].marketId,
+          radiant: RDNT_MAP[typedConfig.network].marketId,
+          pendle: PENDLE_MAP[typedConfig.network].marketId,
+          usdt: USDT_MAP[typedConfig.network].marketId,
+          wbtc: WBTC_MAP[typedConfig.network].marketId,
+          weEth: WE_ETH_MAP[typedConfig.network].marketId,
+          wstEth: WST_ETH_MAP[typedConfig.network].marketId,
+          xai: XAI_MAP[typedConfig.network].marketId,
         },
         tokens: {
           ...coreProtocolParams.tokens,
-          arb: IERC20__factory.connect(ARB_MAP[typedConfig.network]!.address, hhUser1),
-          dArb: IERC20__factory.connect(D_ARB_MAP[typedConfig.network]!.address, hhUser1),
-          dfsGlp: IERC20__factory.connect(DFS_GLP_MAP[typedConfig.network]!.address, hhUser1),
-          dGmx: IERC20__factory.connect(D_GMX_MAP[typedConfig.network]!.address, hhUser1),
-          dGmArb: IERC20__factory.connect(D_GM_ARB_MAP[typedConfig.network]!.address, hhUser1),
-          dGmBtc: IERC20__factory.connect(D_GM_BTC_MAP[typedConfig.network]!.address, hhUser1),
-          dGmEth: IERC20__factory.connect(D_GM_ETH_MAP[typedConfig.network]!.address, hhUser1),
-          dGmLink: IERC20__factory.connect(D_GM_LINK_MAP[typedConfig.network]!.address, hhUser1),
-          dPtGlp: IERC20__factory.connect(DPT_GLP_MAR_2024_MAP[typedConfig.network]!.address, hhUser1),
-          dPtREthJun2025: IERC20__factory.connect(DPT_R_ETH_JUN_2025_MAP[typedConfig.network]!.address, hhUser1),
-          dPtWeEthApr2024: IERC20__factory.connect(DPT_WE_ETH_APR_2024_MAP[typedConfig.network]!.address, hhUser1),
-          dPtWstEthJun2024: IERC20__factory.connect(DPT_WST_ETH_JUN_2024_MAP[typedConfig.network]!.address, hhUser1),
-          dPtWstEthJun2025: IERC20__factory.connect(DPT_WST_ETH_JUN_2025_MAP[typedConfig.network]!.address, hhUser1),
-          dpx: IERC20__factory.connect(DPX_MAP[typedConfig.network]!.address, hhUser1),
-          dYtGlp: IERC20__factory.connect(DYT_GLP_2024_MAP[typedConfig.network]!.address, hhUser1),
-          eEth: IERC20__factory.connect(E_ETH_MAP[typedConfig.network]!.address, hhUser1),
-          ezEth: IERC20__factory.connect(EZ_ETH_MAP[typedConfig.network]!.address, hhUser1),
-          gmx: IERC20__factory.connect(GMX_MAP[typedConfig.network]!.address, hhUser1),
-          gmxBtc: IERC20__factory.connect(GMX_BTC_PLACEHOLDER_MAP[typedConfig.network]!.address, hhUser1),
-          grail: IERC20__factory.connect(GRAIL_MAP[typedConfig.network]!.address, hhUser1),
-          jones: IERC20__factory.connect(JONES_MAP[typedConfig.network]!.address, hhUser1),
-          magic: IERC20__factory.connect(MAGIC_MAP[typedConfig.network]!.address, hhUser1),
-          nativeUsdc: IERC20__factory.connect(NATIVE_USDC_MAP[typedConfig.network]!.address, hhUser1),
-          premia: IERC20__factory.connect(PREMIA_MAP[typedConfig.network]!.address, hhUser1),
-          pendle: IERC20__factory.connect(PENDLE_MAP[typedConfig.network]!.address, hhUser1),
-          rEth: IERC20__factory.connect(RETH_MAP[typedConfig.network]!.address, hhUser1),
-          rsEth: IERC20__factory.connect(RS_ETH_MAP[typedConfig.network]!.address, hhUser1),
-          radiant: IERC20__factory.connect(RDNT_MAP[typedConfig.network]!.address, hhUser1),
-          sGlp: IERC20__factory.connect(S_GLP_MAP[typedConfig.network]!.address, hhUser1),
-          size: IERC20__factory.connect(SIZE_MAP[typedConfig.network]!.address, hhUser1),
-          stEth: IERC20__factory.connect(ST_ETH_MAP[typedConfig.network]!.address, hhUser1),
+          arb: IERC20__factory.connect(ARB_MAP[typedConfig.network].address, hhUser1),
+          dai: IERC20__factory.connect(DAI_MAP[typedConfig.network]!.address, hhUser1),
+          dArb: IERC20__factory.connect(D_ARB_MAP[typedConfig.network].address, hhUser1),
+          dfsGlp: IERC20__factory.connect(DFS_GLP_MAP[typedConfig.network].address, hhUser1),
+          dGmx: IERC20__factory.connect(D_GMX_MAP[typedConfig.network].address, hhUser1),
+          dGmArb: IERC20__factory.connect(D_GM_ARB_MAP[typedConfig.network].address, hhUser1),
+          dGmBtc: IERC20__factory.connect(D_GM_BTC_MAP[typedConfig.network].address, hhUser1),
+          dGmEth: IERC20__factory.connect(D_GM_ETH_MAP[typedConfig.network].address, hhUser1),
+          dGmLink: IERC20__factory.connect(D_GM_LINK_MAP[typedConfig.network].address, hhUser1),
+          djUsdcV1: IERC20__factory.connect(DJ_USDC_V1[typedConfig.network].address, hhUser1),
+          djUsdcV2: IERC20__factory.connect(DJ_USDC_V2[typedConfig.network].address, hhUser1),
+          dPtGlp: IERC20__factory.connect(DPT_GLP_MAR_2024_MAP[typedConfig.network].address, hhUser1),
+          dPtREthJun2025: IERC20__factory.connect(DPT_R_ETH_JUN_2025_MAP[typedConfig.network].address, hhUser1),
+          dPtWeEthApr2024: IERC20__factory.connect(DPT_WE_ETH_APR_2024_MAP[typedConfig.network].address, hhUser1),
+          dPtWstEthJun2024: IERC20__factory.connect(DPT_WST_ETH_JUN_2024_MAP[typedConfig.network].address, hhUser1),
+          dPtWstEthJun2025: IERC20__factory.connect(DPT_WST_ETH_JUN_2025_MAP[typedConfig.network].address, hhUser1),
+          dpx: IERC20__factory.connect(DPX_MAP[typedConfig.network].address, hhUser1),
+          dYtGlp: IERC20__factory.connect(DYT_GLP_2024_MAP[typedConfig.network].address, hhUser1),
+          eEth: IERC20__factory.connect(E_ETH_MAP[typedConfig.network].address, hhUser1),
+          ezEth: IERC20__factory.connect(EZ_ETH_MAP[typedConfig.network].address, hhUser1),
+          gmx: IERC20__factory.connect(GMX_MAP[typedConfig.network].address, hhUser1),
+          gmxBtc: IERC20__factory.connect(GMX_BTC_PLACEHOLDER_MAP[typedConfig.network].address, hhUser1),
+          grail: IERC20__factory.connect(GRAIL_MAP[typedConfig.network].address, hhUser1),
+          jones: IERC20__factory.connect(JONES_MAP[typedConfig.network].address, hhUser1),
+          link: IERC20__factory.connect(LINK_MAP[typedConfig.network]!.address, hhUser1),
+          magic: IERC20__factory.connect(MAGIC_MAP[typedConfig.network].address, hhUser1),
+          nativeUsdc: IERC20__factory.connect(NATIVE_USDC_MAP[typedConfig.network].address, hhUser1),
+          premia: IERC20__factory.connect(PREMIA_MAP[typedConfig.network].address, hhUser1),
+          pendle: IERC20__factory.connect(PENDLE_MAP[typedConfig.network].address, hhUser1),
+          rEth: IERC20__factory.connect(RETH_MAP[typedConfig.network].address, hhUser1),
+          rsEth: IERC20__factory.connect(RS_ETH_MAP[typedConfig.network].address, hhUser1),
+          radiant: IERC20__factory.connect(RDNT_MAP[typedConfig.network].address, hhUser1),
+          sGlp: IERC20__factory.connect(S_GLP_MAP[typedConfig.network].address, hhUser1),
+          size: IERC20__factory.connect(SIZE_MAP[typedConfig.network].address, hhUser1),
+          stEth: IERC20__factory.connect(ST_ETH_MAP[typedConfig.network].address, hhUser1),
           wbtc: IERC20__factory.connect(WBTC_MAP[typedConfig.network].address, hhUser1),
-          weEth: IERC20__factory.connect(WE_ETH_MAP[typedConfig.network]!.address, hhUser1),
-          wstEth: IERC20__factory.connect(WST_ETH_MAP[typedConfig.network]!.address, hhUser1),
-          xai: IERC20__factory.connect(XAI_MAP[typedConfig.network]!.address, hhUser1),
+          weEth: IERC20__factory.connect(WE_ETH_MAP[typedConfig.network].address, hhUser1),
+          wstEth: IERC20__factory.connect(WST_ETH_MAP[typedConfig.network].address, hhUser1),
+          xai: IERC20__factory.connect(XAI_MAP[typedConfig.network].address, hhUser1),
         },
       },
     ) as any;
@@ -685,8 +736,29 @@ export async function setupCoreProtocol<T extends NetworkType>(
     return new CoreProtocolBase(
       coreProtocolParams as CoreProtocolParams<Network.Base>,
       {
-        chainlinkPriceOracleOld,
+        odosEcosystem: await createOdosEcosystem(typedConfig.network, hhUser1),
         paraswapEcosystem: await createParaswapEcosystem(typedConfig.network, hhUser1),
+      },
+    ) as any;
+  }
+  if (config.network === Network.Mantle) {
+    const typedConfig = config as CoreProtocolSetupConfig<Network.Mantle>;
+    return new CoreProtocolMantle(
+      coreProtocolParams as CoreProtocolParams<Network.Mantle>,
+      {
+        marketIds: {
+          ...coreProtocolParams.marketIds,
+          usdt: USDT_MAP[typedConfig.network].marketId,
+          wbtc: WBTC_MAP[typedConfig.network].marketId,
+          wmnt: WMNT_MAP[typedConfig.network].marketId,
+        },
+        odosEcosystem: await createOdosEcosystem(typedConfig.network, hhUser1),
+        tokens: {
+          ...coreProtocolParams.tokens,
+          usdt: IERC20__factory.connect(USDT_MAP[typedConfig.network].address, hhUser1),
+          wbtc: IERC20__factory.connect(WBTC_MAP[typedConfig.network].address, hhUser1),
+          wmnt: IERC20__factory.connect(WMNT_MAP[typedConfig.network].address, hhUser1),
+        },
       },
     ) as any;
   }
@@ -695,9 +767,10 @@ export async function setupCoreProtocol<T extends NetworkType>(
     return new CoreProtocolPolygonZkEvm(
       coreProtocolParams as CoreProtocolParams<Network.PolygonZkEvm>,
       {
-        chainlinkPriceOracleOld,
         marketIds: {
           ...coreProtocolParams.marketIds,
+          dai: DAI_MAP[typedConfig.network]!.marketId,
+          link: LINK_MAP[typedConfig.network]!.marketId,
           matic: MATIC_MAP[typedConfig.network].marketId,
           usdt: USDT_MAP[typedConfig.network].marketId,
           wbtc: WBTC_MAP[typedConfig.network].marketId,
@@ -705,9 +778,36 @@ export async function setupCoreProtocol<T extends NetworkType>(
         paraswapEcosystem: await createParaswapEcosystem(typedConfig.network, hhUser1),
         tokens: {
           ...coreProtocolParams.tokens,
+          dai: IERC20__factory.connect(DAI_MAP[typedConfig.network]!.address, hhUser1),
+          link: IERC20__factory.connect(LINK_MAP[typedConfig.network]!.address, hhUser1),
           matic: IERC20__factory.connect(MATIC_MAP[typedConfig.network].address, hhUser1),
           usdt: IERC20__factory.connect(USDT_MAP[typedConfig.network].address, hhUser1),
           wbtc: IERC20__factory.connect(WBTC_MAP[typedConfig.network].address, hhUser1),
+        },
+      },
+    ) as any;
+  }
+  if (config.network === Network.XLayer) {
+    const typedConfig = config as CoreProtocolSetupConfig<Network.XLayer>;
+    return new CoreProtocolXLayer(
+      coreProtocolParams as CoreProtocolParams<Network.XLayer>,
+      {
+        marketIds: {
+          ...coreProtocolParams.marketIds,
+          usdt: USDT_MAP[typedConfig.network].marketId,
+          wbtc: WBTC_MAP[typedConfig.network].marketId,
+          wokb: WOKB_MAP[typedConfig.network].marketId,
+        },
+        okxEcosystem: await createOkxEcosystem(typedConfig.network, hhUser1),
+        okxPriceOracleV3: OkxPriceOracleV3__factory.connect(
+          Deployments.OkxPriceOracleV3[typedConfig.network].address,
+          hhUser1,
+        ),
+        tokens: {
+          ...coreProtocolParams.tokens,
+          usdt: IERC20__factory.connect(USDT_MAP[typedConfig.network].address, hhUser1),
+          wbtc: IERC20__factory.connect(WBTC_MAP[typedConfig.network].address, hhUser1),
+          wokb: IERC20__factory.connect(WOKB_MAP[typedConfig.network].address, hhUser1),
         },
       },
     ) as any;

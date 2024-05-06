@@ -50,7 +50,7 @@ describe('PendlePtEEthApr2024PriceOracle', () => {
     });
 
     underlyingToken = core.tokens.weEth!;
-    const wethAggregator = await core.chainlinkPriceOracleOld!.getAggregatorByToken(core.tokens.weth.address);
+    const wethAggregator = await core.chainlinkPriceOracleV1!.getAggregatorByToken(core.tokens.weth.address);
     const redstoneAggregatorMap = REDSTONE_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne];
     const weEthAggregator = redstoneAggregatorMap[underlyingToken.address].aggregatorAddress;
     const redstoneOracle = (await createContractWithAbi<RedstonePriceOracleV2>(
@@ -83,7 +83,7 @@ describe('PendlePtEEthApr2024PriceOracle', () => {
     await chainlinkOracle.connect(core.governance).ownerInsertOrUpdateOracleTokenWithBypass(
       core.tokens.weEth.address,
       18,
-      CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][core.tokens.weEth.address].aggregatorAddress,
+      CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][core.tokens.weEth.address]!.aggregatorAddress,
       ZERO_ADDRESS,
       true,
     );

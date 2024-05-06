@@ -2,10 +2,14 @@ import CoreDeployments from '@dolomite-exchange/dolomite-margin/dist/migrations/
 import {
   DolomiteRegistryImplementation__factory,
   EventEmitterRegistry__factory,
-  IDolomiteMargin__factory,
-  IDolomiteMarginV2__factory, IDolomiteRegistry, IDolomiteRegistry__factory,
+  IDolomiteMargin,
+  IDolomiteRegistry,
+  IDolomiteRegistry__factory,
   IERC20__factory,
   IERC20Metadata__factory,
+  ILiquidatorAssetRegistry__factory,
+  IPartiallyDelayedMultiSig__factory,
+  RegistryProxy__factory,
 } from '@dolomite-exchange/modules-base/src/types';
 import {
   CHAINLINK_PRICE_AGGREGATORS_MAP,
@@ -13,13 +17,19 @@ import {
 } from '@dolomite-exchange/modules-base/src/utils/constants';
 import {
   getDolomiteMigratorConstructorParams,
+  getIsolationModeFreezableLiquidatorProxyConstructorParamsWithoutCore,
   getRegistryProxyConstructorParams,
 } from '@dolomite-exchange/modules-base/src/utils/constructors/dolomite';
 import { getAnyNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { ADDRESS_ZERO, Network, NetworkType } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { getRealLatestBlockNumber, resetForkIfPossible } from '@dolomite-exchange/modules-base/test/utils';
+import { ADDRESS_ZERO, NetworkType } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { SignerWithAddressWithSafety } from '@dolomite-exchange/modules-base/src/utils/SignerWithAddressWithSafety';
+import {
+  getRealLatestBlockNumber,
+  impersonateOrFallback,
+  resetForkIfPossible,
+} from '@dolomite-exchange/modules-base/test/utils';
 import { DolomiteMargin } from '@dolomite-exchange/modules-base/test/utils/dolomite';
-import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { getDolomiteMarginContract, getExpiryContract } from '@dolomite-exchange/modules-base/test/utils/setup';
 import {
   getLinearStepFunctionInterestSetterConstructorParams,
 } from '@dolomite-exchange/modules-interest-setters/src/interest-setters-constructors';
@@ -37,7 +47,10 @@ import { ethers } from 'hardhat';
 import {
   deployContractAndSave,
   EncodedTransaction,
+  getMaxDeploymentVersionNameByDeploymentKey,
+  getOldDeploymentVersionNamesByDeploymentKey,
   prettyPrintEncodedDataWithTypeSafety,
+  readDeploymentFile, TRANSACTION_BUILDER_VERSION,
 } from '../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../utils/dry-run-utils';
 import getScriptName from '../../utils/get-script-name';
@@ -102,13 +115,13 @@ async function getOracleAggregator<T extends NetworkType>(
     .map(t => IERC20__factory.connect(t, dolomiteMargin.signer));
 
   const aggregators = tokens.map(t => IChainlinkAggregator__factory.connect(
-    CHAINLINK_PRICE_AGGREGATORS_MAP[network][t.address].aggregatorAddress,
+    CHAINLINK_PRICE_AGGREGATORS_MAP[network][t.address]!.aggregatorAddress,
     dolomiteMargin.signer,
   ));
   const decimals = await Promise.all(tokens.map(t => IERC20Metadata__factory.connect(t.address, t.signer).decimals()));
   const tokenPairs = tokens.map(t =>
     IERC20__factory.connect(
-      CHAINLINK_PRICE_AGGREGATORS_MAP[network][t.address].tokenPairAddress ?? ADDRESS_ZERO,
+      CHAINLINK_PRICE_AGGREGATORS_MAP[network][t.address]!.tokenPairAddress ?? ADDRESS_ZERO,
       dolomiteMargin.signer,
     ),
   );
@@ -122,7 +135,7 @@ async function getOracleAggregator<T extends NetworkType>(
       dolomiteRegistry,
       dolomiteMargin,
     ),
-    'ChainlinkPriceOracleV3',
+    getMaxDeploymentVersionNameByDeploymentKey('ChainlinkPriceOracle', 3),
   );
 
   const tokenInfos = tokens.map<TokenInfo>((token, i) => {
@@ -141,41 +154,41 @@ async function getOracleAggregator<T extends NetworkType>(
   const oracleAggregatorAddress = await deployContractAndSave(
     'OracleAggregatorV2',
     [tokenInfos as any[], dolomiteMargin.address],
-    'OracleAggregatorV2',
+    getMaxDeploymentVersionNameByDeploymentKey('OracleAggregator', 2),
   );
   return OracleAggregatorV2__factory.connect(oracleAggregatorAddress, dolomiteMargin.signer);
 }
 
 async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   const network = await getAnyNetwork() as T;
+  const config: any = {
+    network,
+    networkNumber: parseInt(network, 10),
+  };
   await resetForkIfPossible(await getRealLatestBlockNumber(true, network), network);
-  const [hhUser1] = await ethers.getSigners();
+  const [hhUser1] = await Promise.all((await ethers.getSigners())
+    .map(s => SignerWithAddressWithSafety.create(s.address)));
   const transactions: EncodedTransaction[] = [];
 
-  let dolomiteMargin: DolomiteMargin<T>;
-  if (network === Network.ArbitrumOne) {
-    dolomiteMargin = IDolomiteMargin__factory.connect(
-      CoreDeployments.DolomiteMargin[network].address,
-      hhUser1,
-    ) as DolomiteMargin<T>;
-  } else {
-    dolomiteMargin = IDolomiteMarginV2__factory.connect(
-      CoreDeployments.DolomiteMargin[network].address,
-      hhUser1,
-    ) as DolomiteMargin<T>;
-  }
+  const dolomiteMargin = getDolomiteMarginContract<T>(config, hhUser1);
+  const expiry = getExpiryContract<T>(config, hhUser1);
+
+  const liquidatorAssetRegistry = ILiquidatorAssetRegistry__factory.connect(
+    CoreDeployments.LiquidatorAssetRegistry[network].address,
+    hhUser1,
+  );
 
   const eventEmitterRegistryImplementationAddress = await deployContractAndSave(
     'EventEmitterRegistry',
     [],
-    'EventEmitterRegistryImplementationV2',
+    getMaxDeploymentVersionNameByDeploymentKey('EventEmitterRegistryImplementation', 1),
   );
-  const eventEmitterRegistry = EventEmitterRegistry__factory.connect(
+  const eventEmitterRegistryImplementation = EventEmitterRegistry__factory.connect(
     eventEmitterRegistryImplementationAddress,
     hhUser1,
   );
-  const eventEmitterRegistryCalldata = await eventEmitterRegistry.populateTransaction.initialize();
-  const eventEmitterAddress = await deployContractAndSave(
+  const eventEmitterRegistryCalldata = await eventEmitterRegistryImplementation.populateTransaction.initialize();
+  const eventEmitterProxyAddress = await deployContractAndSave(
     'RegistryProxy',
     getRegistryProxyConstructorParams(
       eventEmitterRegistryImplementationAddress,
@@ -184,11 +197,15 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     ),
     'EventEmitterRegistryProxy',
   );
+  const eventEmitterProxy = RegistryProxy__factory.connect(
+    eventEmitterProxyAddress,
+    hhUser1,
+  );
 
   const registryImplementationAddress = await deployContractAndSave(
     'DolomiteRegistryImplementation',
     [],
-    'DolomiteRegistryImplementationV7',
+    'DolomiteRegistryImplementationV9',
   );
   const registryImplementation = DolomiteRegistryImplementation__factory.connect(
     registryImplementationAddress,
@@ -199,7 +216,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     CoreDeployments.Expiry[network].address,
     SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL,
     CoreDeployments.LiquidatorAssetRegistry[network].address,
-    eventEmitterAddress,
+    eventEmitterProxyAddress,
   );
   const dolomiteRegistryAddress = await deployContractAndSave(
     'RegistryProxy',
@@ -211,60 +228,138 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     'DolomiteRegistryProxy',
   );
   const dolomiteRegistry = IDolomiteRegistry__factory.connect(dolomiteRegistryAddress, hhUser1);
+  const dolomiteRegistryProxy = RegistryProxy__factory.connect(dolomiteRegistryAddress, hhUser1);
 
   const dolomiteMigratorAddress = await deployContractAndSave(
     'DolomiteMigrator',
     getDolomiteMigratorConstructorParams(dolomiteMargin, dolomiteRegistry, handlerAddress),
-    'DolomiteMigratorV1',
+    getMaxDeploymentVersionNameByDeploymentKey('DolomiteMigrator', 1),
   );
   const oracleAggregator = await getOracleAggregator(network, dolomiteRegistry, dolomiteMargin);
 
-  if (await dolomiteRegistry.dolomiteMigrator() !== ADDRESS_ZERO) {
-    await dolomiteRegistry.lazyInitialize(dolomiteMigratorAddress, oracleAggregator.address);
+  let needsRegistryEncoding = true;
+  try {
+    if (
+      await dolomiteRegistry.dolomiteMigrator() === ADDRESS_ZERO &&
+      await dolomiteRegistry.oracleAggregator() === ADDRESS_ZERO
+    ) {
+      needsRegistryEncoding = false;
+      await dolomiteRegistry.lazyInitialize(dolomiteMigratorAddress, oracleAggregator.address);
+    }
+  } catch (e) {
   }
+
+  const isolationModeFreezableLiquidatorProxyAddress = await deployContractAndSave(
+    'IsolationModeFreezableLiquidatorProxy',
+    getIsolationModeFreezableLiquidatorProxyConstructorParamsWithoutCore(
+      dolomiteRegistry,
+      liquidatorAssetRegistry,
+      dolomiteMargin,
+      expiry,
+      config,
+    ),
+    getMaxDeploymentVersionNameByDeploymentKey('IsolationModeFreezableLiquidatorProxy', 1),
+  );
 
   await deployContractAndSave(
     'IsolationModeTokenVaultV1ActionsImpl',
     [],
-    'IsolationModeTokenVaultV1ActionsImplV1',
+    getMaxDeploymentVersionNameByDeploymentKey('IsolationModeTokenVaultV1ActionsImpl', 1),
   );
 
   await deployContractAndSave(
     'AsyncIsolationModeUnwrapperTraderImpl',
     [],
-    'AsyncIsolationModeUnwrapperTraderImplV1',
+    getMaxDeploymentVersionNameByDeploymentKey('AsyncIsolationModeUnwrapperTraderImpl', 1),
   );
 
   await deployContractAndSave(
     'AsyncIsolationModeWrapperTraderImpl',
     [],
-    'AsyncIsolationModeWrapperTraderImplV1',
+    getMaxDeploymentVersionNameByDeploymentKey('AsyncIsolationModeWrapperTraderImpl', 1),
   );
 
   await deployInterestSetters();
 
-  const core = await setupCoreProtocol({
-    network,
-    blockNumber: 0,
-    skipForking: true,
-  });
+  const governanceAddress = await dolomiteMargin.connect(hhUser1).owner();
+  const governance = await impersonateOrFallback(governanceAddress, true, hhUser1);
+  const core = {
+    config,
+    dolomiteMargin,
+    dolomiteRegistry,
+    hhUser1,
+    delayedMultiSig: IPartiallyDelayedMultiSig__factory.connect(governanceAddress, governance),
+  } as any;
 
-  transactions.push(
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { dolomiteRegistry },
-      'dolomiteRegistry',
-      'ownerSetDolomiteMigrator',
-      [dolomiteMigratorAddress],
-    ),
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { dolomiteRegistry },
-      'dolomiteRegistry',
-      'ownerSetOracleAggregator',
-      [oracleAggregator.address],
-    ),
-  );
+  if ((await dolomiteRegistryProxy.implementation()) !== registryImplementationAddress) {
+    transactions.push(
+      await prettyPrintEncodedDataWithTypeSafety(
+        core,
+        { dolomiteRegistryProxy },
+        'dolomiteRegistryProxy',
+        'upgradeTo',
+        [registryImplementationAddress],
+      ),
+    );
+  }
+  if (needsRegistryEncoding) {
+    transactions.push(
+      await prettyPrintEncodedDataWithTypeSafety(
+        core,
+        { dolomiteRegistry },
+        'dolomiteRegistry',
+        'ownerSetDolomiteMigrator',
+        [dolomiteMigratorAddress],
+      ),
+      await prettyPrintEncodedDataWithTypeSafety(
+        core,
+        { dolomiteRegistry },
+        'dolomiteRegistry',
+        'ownerSetOracleAggregator',
+        [oracleAggregator.address],
+      ),
+    );
+  }
+
+  if (await eventEmitterProxy.implementation() !== eventEmitterRegistryImplementation.address) {
+    transactions.push(
+      await prettyPrintEncodedDataWithTypeSafety(
+        core,
+        { eventEmitterProxy },
+        'eventEmitterProxy',
+        'upgradeTo',
+        [eventEmitterRegistryImplementation.address],
+      ),
+    );
+  }
+
+  if (!(await core.dolomiteMargin.getIsGlobalOperator(isolationModeFreezableLiquidatorProxyAddress))) {
+    transactions.push(
+      await prettyPrintEncodedDataWithTypeSafety(
+        core,
+        { dolomite: dolomiteMargin as IDolomiteMargin },
+        'dolomite',
+        'ownerSetGlobalOperator',
+        [isolationModeFreezableLiquidatorProxyAddress, true],
+      ),
+    );
+
+    const oldVersions = getOldDeploymentVersionNamesByDeploymentKey('IsolationModeFreezableLiquidatorProxy', 1);
+    for (let i = 0; i < oldVersions.length; i++) {
+      const oldVersion = readDeploymentFile()[oldVersions[i]][network]?.address;
+      if (oldVersion && await core.dolomiteMargin.getIsGlobalOperator(oldVersion)) {
+        transactions.push(
+          await prettyPrintEncodedDataWithTypeSafety(
+            core,
+            { dolomite: dolomiteMargin as IDolomiteMargin },
+            'dolomite',
+            'ownerSetGlobalOperator',
+            [oldVersion, false],
+          ),
+        );
+      }
+    }
+  }
 
   return {
     core: null as any,
@@ -274,6 +369,10 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     upload: {
       transactions,
       chainId: network,
+      meta: {
+        name: 'Dolomite Ecosystem',
+        txBuilderVersion: TRANSACTION_BUILDER_VERSION,
+      }
     },
   };
 }
