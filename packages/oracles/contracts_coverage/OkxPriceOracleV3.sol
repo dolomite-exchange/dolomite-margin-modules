@@ -23,24 +23,25 @@ import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/he
 import { IDolomiteRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IDolomiteRegistry.sol";
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
-import { IChainlinkAccessControlAggregator } from "./interfaces/IChainlinkAccessControlAggregator.sol";
 import { IChainlinkAggregator } from "./interfaces/IChainlinkAggregator.sol";
 import { IChainlinkPriceOracleV3 } from "./interfaces/IChainlinkPriceOracleV3.sol";
 import { IOracleAggregatorV2 } from "./interfaces/IOracleAggregatorV2.sol";
 
 
 /**
- * @title   ChainlinkPriceOracleV3
+ * @title   OkxPriceOracleV3
  * @author  Dolomite
  *
- * An implementation of the IDolomitePriceOracle interface that makes Chainlink prices compatible with the protocol.
- * This implementation is meant to be tied to an
+ * An implementation of the IDolomitePriceOracle interface that makes OKX prices compatible with the protocol. This
+ * implementation is meant to be tied to OracleAggregator.
+ *
+ * For more information, visit https://www.okx.com/xlayer/docs/developer/oracle/price-feed
  */
-contract ChainlinkPriceOracleV3 is IChainlinkPriceOracleV3, OnlyDolomiteMargin {
+contract OkxPriceOracleV3 is IChainlinkPriceOracleV3, OnlyDolomiteMargin {
 
     // ========================= Constants =========================
 
-    bytes32 private constant _FILE = "ChainlinkPriceOracleV3";
+    bytes32 private constant _FILE = "OkxPriceOracleV3";
     uint256 private constant _ONE_DOLLAR = 10 ** 36;
 
     // ========================= Storage =========================
@@ -160,40 +161,26 @@ contract ChainlinkPriceOracleV3 is IChainlinkPriceOracleV3, OnlyDolomiteMargin {
         Require.that(
             block.timestamp - updatedAt < stalenessThreshold,
             _FILE,
-            "Chainlink price expired",
+            "OKX price expired",
             _token,
             updatedAt
         );
 
-        IChainlinkAccessControlAggregator controlAggregator = aggregatorProxy.aggregator();
-        if (controlAggregator.minAnswer() < answer) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            controlAggregator.minAnswer() < answer,
-            _FILE,
-            "Chainlink price too low"
-        );
-        if (answer < controlAggregator.maxAnswer()) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            answer < controlAggregator.maxAnswer(),
-            _FILE,
-            "Chainlink price too high"
-        );
-
-        uint256 chainlinkPrice = uint256(answer);
+        uint256 okxPrice = uint256(answer);
         uint8 valueDecimals = aggregatorProxy.decimals();
 
         if (_tokenToInvertPriceMap[_token]) {
             uint256 decimalFactor = 10 ** uint256(valueDecimals);
-            chainlinkPrice = (decimalFactor ** 2) / chainlinkPrice;
+            okxPrice = (decimalFactor ** 2) / okxPrice;
         }
 
-        // standardize the Chainlink price to be the proper number of decimals of (36 - tokenDecimals)
+        // standardize the OKX price to be the proper number of decimals of (36 - tokenDecimals)
         IOracleAggregatorV2 aggregator = IOracleAggregatorV2(address(DOLOMITE_REGISTRY.oracleAggregator()));
         uint8 tokenDecimals = aggregator.getDecimalsByToken(_token);
         /*assert(tokenDecimals > 0);*/
         uint256 standardizedPrice = standardizeNumberOfDecimals(
             tokenDecimals,
-            chainlinkPrice,
+            okxPrice,
             valueDecimals
         );
 

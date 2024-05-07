@@ -3,11 +3,12 @@ import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import {
+  IRamsesPool__factory,
   RamsesLegacyPriceOracle,
   RamsesLegacyPriceOracle__factory,
 } from '../src/types';
 import { createContractWithAbi } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { ADDRESS_ZERO, Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { ADDRESS_ZERO, Network, ONE_ETH_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
@@ -87,6 +88,22 @@ describe('RamsesLegacyPriceOracle', () => {
       await increaseTo(1_715_107_400);
       const price = await core.oracleAggregatorV2.getPrice(GRAI_TOKEN);
       expect(price.value).to.eq(GRAI_PRICE_FRAX_POOL);
+    });
+
+    it('should work normally for token1', async () => {
+      const oracle = await createContractWithAbi<RamsesLegacyPriceOracle>(
+        RamsesLegacyPriceOracle__factory.abi,
+        RamsesLegacyPriceOracle__factory.bytecode,
+        [
+          FRAX_TOKEN,
+          GRAI_FRAX_POOL,
+          core.dolomiteRegistry.address,
+          core.dolomiteMargin.address,
+        ]
+      );
+      const pair = await IRamsesPool__factory.connect(GRAI_FRAX_POOL, core.hhUser1);
+      const price = await oracle.getPrice(FRAX_TOKEN);
+      expect(await pair.current(FRAX_TOKEN, ONE_ETH_BI)).to.eq(price.value);
     });
 
     it('should fail if invalid input token', async () => {

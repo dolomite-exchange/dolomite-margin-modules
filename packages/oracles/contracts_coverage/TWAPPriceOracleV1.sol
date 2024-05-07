@@ -30,7 +30,7 @@ import { OracleLibrary } from "./utils/OracleLibrary.sol";
 
 
 /**
- * @title   TWAPPriceOracleV1.sol
+ * @title   TWAPPriceOracleV1
  * @author  Dolomite
  *
  * An implementation of the ITWAPPriceOracleV1.sol interface that makes gets the TWAP from a number of LP pools

@@ -24,19 +24,19 @@ import { IDolomiteRegistry } from "@dolomite-exchange/modules-base/contracts/int
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import { IAlgebraV3Pool } from "./interfaces/IAlgebraV3Pool.sol";
 import { IOracleAggregatorV2 } from "./interfaces/IOracleAggregatorV2.sol";
+import { IRamsesCLPool } from "./interfaces/IRamsesCLPool.sol";
 import { ITWAPPriceOracleV1 } from "./interfaces/ITWAPPriceOracleV1.sol";
 import { OracleLibrary } from "./utils/OracleLibrary.sol";
 
 
 /**
- * @title   TWAPPriceOracleV2
+ * @title   RamsesCLPriceOracle
  * @author  Dolomite
  *
- * An implementation of the ITWAPPriceOracleV1.sol interface that makes gets the TWAP from a number of LP pools
+ * An implementation of the ITWAPPriceOracleV1.sol interface that gets the TWAP from an LP pool
  */
-contract TWAPPriceOracleV2 is ITWAPPriceOracleV1, OnlyDolomiteMargin {
+contract RamsesCLPriceOracle is ITWAPPriceOracleV1, OnlyDolomiteMargin {
 
     // ========================= Constants =========================
 
@@ -95,12 +95,12 @@ contract TWAPPriceOracleV2 is ITWAPPriceOracleV1, OnlyDolomiteMargin {
             _token
         );
 
-        IAlgebraV3Pool currentPair = IAlgebraV3Pool(PAIR);
+        IRamsesCLPool currentPair = IRamsesCLPool(PAIR);
 
         address poolToken0 = currentPair.token0();
         address outputToken = poolToken0 == _token ? currentPair.token1() : poolToken0;
 
-        int24 tick = OracleLibrary.consult(address(currentPair), observationInterval);
+        int24 tick = OracleLibrary.consultRamses(address(currentPair), observationInterval);
         uint256 quote = OracleLibrary.getQuoteAtTick(tick, uint128(TOKEN_DECIMALS_FACTOR), _token, outputToken);
 
         IOracleAggregatorV2 aggregator = IOracleAggregatorV2(address(DOLOMITE_REGISTRY.oracleAggregator()));

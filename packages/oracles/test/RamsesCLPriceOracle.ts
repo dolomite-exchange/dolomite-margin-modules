@@ -6,9 +6,8 @@ import {
   RamsesCLPriceOracle,
   RamsesCLPriceOracle__factory,
 } from '../src/types';
-import { DolomiteRegistryImplementation, DolomiteRegistryImplementation__factory } from '@dolomite-exchange/modules-base/src/types';
 import { createContractWithAbi } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { Network, ONE_DAY_SECONDS } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { Network, ONE_DAY_SECONDS, ONE_ETH_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectEvent, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
@@ -73,6 +72,25 @@ describe('RamsesCLPriceOracle', () => {
     it('should work normally', async () => {
       const price = await core.oracleAggregatorV2.getPrice(GRAI_TOKEN);
       expect(price.value).to.eq(GRAI_PRICE_WE_ETH_POOL);
+    });
+
+    it('should work normally with token1', async () => {
+      const oracle = await createContractWithAbi<RamsesCLPriceOracle>(
+        RamsesCLPriceOracle__factory.abi,
+        RamsesCLPriceOracle__factory.bytecode,
+        [
+          core.tokens.weEth.address,
+          GRAI_WEETH_POOL,
+          core.dolomiteRegistry.address,
+          core.dolomiteMargin.address,
+        ]
+      );
+      const weEthPriceInGrai = (await oracle.getPrice(core.tokens.weEth.address)).value;
+      const graiPrice = (await core.oracleAggregatorV2.getPrice(GRAI_TOKEN)).value;
+      const weEthPriceFromAggregator = (await core.oracleAggregatorV2.getPrice(core.tokens.weEth.address)).value;
+      // Approximately equal
+      expect(weEthPriceInGrai.mul(graiPrice).div(ONE_ETH_BI))
+        .to.be.closeTo(weEthPriceFromAggregator, BigNumber.from('10000000'));
     });
 
     it('should fail if invalid input token', async () => {
