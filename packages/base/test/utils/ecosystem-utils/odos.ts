@@ -8,7 +8,7 @@ export interface OdosEcosystem {
 }
 
 export async function createOdosEcosystem(
-  network: Network.ArbitrumOne,
+  network: Network,
   signer: SignerWithAddressWithSafety,
 ): Promise<OdosEcosystem> {
   if (!ODOS_ROUTER_MAP[network]) {

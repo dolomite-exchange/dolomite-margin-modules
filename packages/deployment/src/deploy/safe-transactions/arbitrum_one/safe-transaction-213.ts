@@ -34,15 +34,15 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
   let incrementor = 0;
 
-  const wethAggregator = await core.chainlinkPriceOracleOld.getAggregatorByToken(core.tokens.weth.address);
+  const wethAggregator = await core.chainlinkPriceOracleV1.getAggregatorByToken(core.tokens.weth.address);
 
   const aggregatorInfo = REDSTONE_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][core.tokens.weEth.address];
   const redstonePriceOracleAddress = await deployContractAndSave(
     'RedstonePriceOracle',
     await getRedstonePriceOracleV2ConstructorParams(
       [core.tokens.weth, core.tokens.weEth!],
-      [wethAggregator, aggregatorInfo.aggregatorAddress],
-      [ADDRESS_ZERO, aggregatorInfo.tokenPairAddress!],
+      [wethAggregator, aggregatorInfo!.aggregatorAddress],
+      [ADDRESS_ZERO, aggregatorInfo!.tokenPairAddress!],
       [false, false],
       core,
     ),
@@ -87,12 +87,12 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       core,
-      'chainlinkPriceOracleOld',
+      'chainlinkPriceOracleV1',
       'ownerInsertOrUpdateOracleToken',
       [
         core.tokens.weEth.address,
         18,
-        CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][core.tokens.weEth.address].aggregatorAddress,
+        CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][core.tokens.weEth.address]!.aggregatorAddress,
         ADDRESS_ZERO,
       ],
     ),

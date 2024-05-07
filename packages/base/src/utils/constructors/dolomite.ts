@@ -1,13 +1,18 @@
-import { BigNumber, BigNumberish } from 'ethers';
+import { BaseContract, BigNumber, BigNumberish } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { DolomiteMargin } from '../../../test/utils/dolomite';
-import { CoreProtocolType } from '../../../test/utils/setup';
+import { CoreProtocolConfig, CoreProtocolType } from '../../../test/utils/setup';
 import {
+  DolomiteERC20,
   EventEmitterRegistry,
   IDolomiteMargin,
-  IDolomiteMarginV2, IDolomiteRegistry,
+  IDolomiteMarginV2,
+  IDolomiteRegistry,
   IERC20,
+  IERC20Metadata__factory,
   IIsolationModeVaultFactory,
+  ILiquidatorAssetRegistry,
+  RegistryProxy,
 } from '../../types';
 import { IDolomiteInterestSetter, IDolomiteStructs } from '../../types/contracts/protocol/interfaces/IDolomiteMargin';
 import { Network, NetworkType, ZERO_BI } from '../no-deps-constants';
@@ -27,6 +32,7 @@ export enum TargetLiquidationPenalty {
   _6 = '0.06',
   _7 = '0.07',
   _8 = '0.08',
+  _9 = '0.09',
   _10 = '0.10',
   _15 = '0.15',
 }
@@ -47,15 +53,31 @@ export function getUpgradeableProxyConstructorParams<T extends NetworkType>(
   return [implementationAddress, dolomiteMargin.address, implementationCalldata];
 }
 
-export function getIsolationModeFreezableLiquidatorProxyConstructorParams<T extends Network>(
+export function getIsolationModeFreezableLiquidatorProxyConstructorParams<T extends NetworkType>(
   core: CoreProtocolType<T>,
 ): any[] {
+  return getIsolationModeFreezableLiquidatorProxyConstructorParamsWithoutCore(
+    core.dolomiteRegistry,
+    core.liquidatorAssetRegistry,
+    core.dolomiteMargin,
+    core.expiry,
+    core.config,
+  );
+}
+
+export function getIsolationModeFreezableLiquidatorProxyConstructorParamsWithoutCore<T extends NetworkType>(
+  dolomiteRegistry: IDolomiteRegistry | RegistryProxy,
+  liquidatorAssetRegistry: ILiquidatorAssetRegistry,
+  dolomiteMargin: DolomiteMargin<T>,
+  expiry: BaseContract,
+  config: CoreProtocolConfig<T>,
+): any[] {
   return [
-    core.dolomiteRegistry.address,
-    core.liquidatorAssetRegistry.address,
-    core.dolomiteMargin.address,
-    core.expiry.address,
-    core.config.networkNumber,
+    dolomiteRegistry.address,
+    liquidatorAssetRegistry.address,
+    dolomiteMargin.address,
+    expiry.address,
+    config.networkNumber,
   ];
 }
 
@@ -190,6 +212,25 @@ export function getDolomiteMigratorConstructorParams<T extends NetworkType>(
   handler: string,
 ): any[] {
   return [dolomiteRegistry.address, handler, dolomiteMargin.address];
+}
+
+export async function getDolomiteErc20ProxyConstructorParams<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  implementation: DolomiteERC20,
+  marketId: BigNumberish,
+): Promise<any[]> {
+  const token = IERC20Metadata__factory.connect(
+    await core.dolomiteMargin.getMarketTokenAddress(marketId),
+    core.hhUser1,
+  );
+  const symbol = await token.symbol();
+  const transaction = await implementation.populateTransaction.initialize(
+    `Dolomite: ${symbol}`,
+    `d${symbol}`,
+    await token.decimals(),
+    marketId,
+  );
+  return [implementation.address, core.dolomiteMargin.address, transaction.data!];
 }
 
 export function getIsolationModeTokenVaultMigratorConstructorParams<T extends NetworkType>(

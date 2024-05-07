@@ -175,7 +175,7 @@ async function main(): Promise<DenJsonUpload> {
       core,
       arbFactory,
       ADDRESS_ZERO,
-      await core.chainlinkPriceOracleOld!.getAggregatorByToken(core.tokens.arb!.address),
+      await core.chainlinkPriceOracleV1!.getAggregatorByToken(core.tokens.arb!.address),
     ),
   );
   transactions.push(
@@ -196,7 +196,7 @@ async function main(): Promise<DenJsonUpload> {
     ...await prettyPrintEncodeAddIsolationModeMarket(
       core,
       arbFactory,
-      core.chainlinkPriceOracleOld!,
+      core.chainlinkPriceOracleV1!,
       arbUnwrapper,
       arbWrapper,
       dArbMarketId,
@@ -209,7 +209,7 @@ async function main(): Promise<DenJsonUpload> {
     ...await prettyPrintEncodeAddMarket(
       core,
       core.tokens.gmx!,
-      core.chainlinkPriceOracleOld!,
+      core.chainlinkPriceOracleV1!,
       core.interestSetters.linearStepFunction8L92UInterestSetter,
       TargetCollateralization._125,
       TargetLiquidationPenalty._8,
@@ -222,7 +222,7 @@ async function main(): Promise<DenJsonUpload> {
     ...await prettyPrintEncodeAddIsolationModeMarket(
       core,
       gmxFactory,
-      core.chainlinkPriceOracleOld!,
+      core.chainlinkPriceOracleV1!,
       gmxUnwrapper,
       gmxWrapper,
       dGmxMarketId,

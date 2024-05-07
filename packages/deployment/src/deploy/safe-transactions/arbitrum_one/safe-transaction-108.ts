@@ -75,22 +75,22 @@ async function main() {
     core,
     'dolomiteMargin',
     'ownerSetPriceOracle',
-    [core.marketIds.djUsdcOld!, Deployments.JonesUSDCWithChainlinkAutomationPriceOracleV1[network].address],
+    [core.marketIds.djUsdcV1!, Deployments.JonesUSDCWithChainlinkAutomationPriceOracleV1[network].address],
   );
 
   await prettyPrintEncodedDataWithTypeSafety(
     core,
     core.jonesEcosystem!.live,
-    'jUSDCIsolationModeFactoryOld',
+    'jUSDCV1IsolationModeFactory',
     'ownerSetAllowableDebtMarketIds',
-    [await appendNativeUsdcToDebtMarketIdList(core, core.jonesEcosystem!.live.jUSDCIsolationModeFactoryOld)],
+    [await appendNativeUsdcToDebtMarketIdList(core, core.jonesEcosystem!.live.jUSDCV1IsolationModeFactory)],
   );
   await prettyPrintEncodedDataWithTypeSafety(
     core,
     core.jonesEcosystem!.live,
-    'jUSDCIsolationModeFactoryOld',
+    'jUSDCV1IsolationModeFactory',
     'ownerSetAllowableCollateralMarketIds',
-    [await appendNativeUsdcToCollateralMarketIdList(core, core.jonesEcosystem!.live.jUSDCIsolationModeFactoryOld)],
+    [await appendNativeUsdcToCollateralMarketIdList(core, core.jonesEcosystem!.live.jUSDCV1IsolationModeFactory)],
   );
 
   await prettyPrintEncodedDataWithTypeSafety(

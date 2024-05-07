@@ -1,14 +1,9 @@
 import { ADDRESSES } from '@dolomite-exchange/dolomite-margin';
 import { createTestToken } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
-import {
-  getDefaultCoreProtocolConfig,
-  setupCoreProtocol,
-  setupTestMarket,
-} from '@dolomite-exchange/modules-base/test/utils/setup';
+import { setupCoreProtocol, setupTestMarket } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
 import {
@@ -25,9 +20,10 @@ import {
   createJonesUSDCPriceOracle,
   createJonesUSDCRegistry,
 } from './jones-ecosystem-utils';
+import { JONES_CORE_PROTOCOL_CONFIG } from './jones-utils';
 
-const USDC_PRICE = BigNumber.from('1000071010000000000000000000000'); // $1.00007101
-const JONES_USDC_PRICE = BigNumber.from('1068787202667035284'); // $1.068787202667035284
+const USDC_PRICE = BigNumber.from('1000043460000000000000000000000'); // $1.00004346
+const JONES_USDC_PRICE = BigNumber.from('1122695803999545963'); // $1.122695803999545963
 
 describe('JonesUSDCPriceOracle', () => {
   let snapshotId: string;
@@ -40,13 +36,13 @@ describe('JonesUSDCPriceOracle', () => {
   let marketId: BigNumberish;
 
   before(async () => {
-    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
+    core = await setupCoreProtocol(JONES_CORE_PROTOCOL_CONFIG);
     jonesUSDCRegistry = await createJonesUSDCRegistry(core);
     const userVaultImplementation = await createJonesUSDCIsolationModeTokenVaultV1();
     factory = await createJonesUSDCIsolationModeVaultFactory(
       core,
       jonesUSDCRegistry,
-      core.jonesEcosystem!.jUsdcOld,
+      core.jonesEcosystem.jUSDCV2,
       userVaultImplementation,
     );
     unwrapperTraderForLiquidation = await createJonesUSDCIsolationModeUnwrapperTraderV2ForLiquidation(

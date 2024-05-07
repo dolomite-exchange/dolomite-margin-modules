@@ -17,9 +17,7 @@
     "deploy:coveralls": "coveralls < coverage/lcov.info",
     "lint": "yarn workspaces run lint",
     "lint:sol": "yarn workspaces run lint:sol",
-    "lint:ts": "yarn workspaces run lint:ts",
-    "sort:contracts": "hardhat --network hardhat run packages/scripts/src/utils/sort-contract.ts",
-    "verify:contract": "hardhat --network arbitrum_one run packages/scripts/src/utils/verify-contract.ts"
+    "lint:ts": "yarn workspaces run lint:ts"
   },
   "repository": "git@github.com:dolomite-exchange/dolomite-margin-modules.git",
   "author": "Dolomite",
@@ -33,7 +31,7 @@
     "@babel/core": "^7.20.5",
     "@babel/eslint-parser": "^7.19.1",
     "@chainlink/contracts": "^0.6.1",
-    "@dolomite-exchange/dolomite-margin": "^0.11.4",
+    "@dolomite-exchange/dolomite-margin": "^0.12.1",
     "@dolomite-exchange/zap-sdk": "^0.2.47-a",
     "@nomicfoundation/hardhat-network-helpers": "^1.0.10",
     "@nomicfoundation/hardhat-verify": "^2.0.4",

@@ -118,6 +118,14 @@ export async function expectEvent(
   return expect(contractTransaction).to.emit(contract, eventName);
 }
 
+export async function expectNotEvent(
+  contract: BaseContract,
+  contractTransaction: ContractTransaction,
+  eventName: string,
+): Promise<void> {
+  return expect(contractTransaction).to.not.emit(contract, eventName);
+}
+
 export async function expectProtocolBalance<T extends Network>(
   core: CoreProtocolType<T>,
   accountOwner: { address: address } | address,

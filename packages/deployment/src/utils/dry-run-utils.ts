@@ -6,12 +6,19 @@ import {
 import { advanceByTimeDelta, impersonate } from '@dolomite-exchange/modules-base/test/utils';
 import { CoreProtocolType } from '@dolomite-exchange/modules-base/test/utils/setup';
 import hardhat from 'hardhat';
-import { createFolder, DenJsonUpload, readDeploymentFile, writeDeploymentFile, writeFile } from './deploy-utils';
+import {
+  createFolder,
+  DenJsonUpload,
+  readDeploymentFile,
+  TransactionBuilderUpload,
+  writeDeploymentFile,
+  writeFile,
+} from './deploy-utils';
 
 const HARDHAT_CHAIN_ID = '31337';
 
 export interface DryRunOutput<T extends NetworkType> {
-  readonly upload: DenJsonUpload;
+  readonly upload: DenJsonUpload | TransactionBuilderUpload;
   readonly core: CoreProtocolType<T>;
   readonly scriptName: string;
   readonly skipTimeDelay?: boolean;

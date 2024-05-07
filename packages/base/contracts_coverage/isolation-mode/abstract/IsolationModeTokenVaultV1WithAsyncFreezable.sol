@@ -786,16 +786,6 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezable is
         );
     }
 
-    function _requireNotLiquidatableIfWrapToUnderlying(
-        uint256 _accountNumber,
-        uint256 _outputMarketId
-    ) internal view {
-        uint256 underlyingMarketId = DOLOMITE_MARGIN().getMarketIdByTokenAddress(VAULT_FACTORY());
-        if (_outputMarketId== underlyingMarketId) {
-            _requireNotLiquidatable(_accountNumber);
-        }
-    }
-
     function _requireVaultAccountNotFrozen(uint256 _accountNumber) internal view {
         if (!isVaultAccountFrozen(_accountNumber)) { /* FOR COVERAGE TESTING */ }
         Require.that(
@@ -819,7 +809,6 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezable is
         if (DOLOMITE_MARGIN().getAccountNumberOfMarketsWithBalances(borrowAccountInfo) == 0 && executionFee > 0) {
             // There's no assets left in the position. Issue a refund for the execution fee
             _setExecutionFeeForAccountNumber(_borrowAccountNumber, /* _executionFee = */ 0);
-            // @audit: check for any reentrancy issues! No user-level functions on the vault should be reentered
             payable(OWNER()).sendValue(executionFee);
         }
     }
