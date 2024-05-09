@@ -948,7 +948,7 @@ export interface AggregatorInfo {
   invert?: boolean;
 }
 
-export const CHRONICLE_PRICE_SCRIBES_MAP: Record<Network, Record<string, string | undefined >> = {
+export const CHRONICLE_PRICE_SCRIBES_MAP: Record<Network, Record<string, string>> = {
   [Network.ArbitrumOne]: {},
   [Network.Base]: {},
   [Network.Mantle]: {

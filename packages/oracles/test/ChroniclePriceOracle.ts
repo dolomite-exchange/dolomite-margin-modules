@@ -58,73 +58,56 @@ describe('ChroniclePriceOracle', () => {
     await testScribe.setDecimals(18);
     testToken = await createTestToken();
 
-    const scribesMantle = CHRONICLE_PRICE_SCRIBES_MAP[Network.Mantle];
+    const scribesMantle: Record<string, string> = CHRONICLE_PRICE_SCRIBES_MAP[Network.Mantle];
     oracle = await createContractWithAbi<ChroniclePriceOracle>(
       ChroniclePriceOracle__factory.abi,
       ChroniclePriceOracle__factory.bytecode,
       [
-        [core.tokens.meth.address, core.tokens.usdc.address, core.tokens.wbtc.address, core.tokens.weth.address],
-        [
-          scribesMantle[core.tokens.meth.address],
-          scribesMantle[core.tokens.usdc.address],
-          scribesMantle[core.tokens.wbtc.address],
-          scribesMantle[core.tokens.weth.address],
-        ],
+        Object.keys(scribesMantle),
+        Object.values(scribesMantle),
         [false, false, false, false],
         core.dolomiteRegistry.address,
         core.dolomiteMargin.address,
       ],
     );
     const authedImpersonator = await impersonate(CHRONICLE_AUTHED_ADDRESS, true);
-    await IChronicleScribe__factory.connect(
-      scribesMantle[core.tokens.meth.address]!,
-      authedImpersonator
-    ).kiss(oracle.address);
-    await IChronicleScribe__factory.connect(
-      scribesMantle[core.tokens.usdc.address]!,
-      authedImpersonator)
-    .kiss(oracle.address);
-    await IChronicleScribe__factory.connect(
-      scribesMantle[core.tokens.wbtc.address]!,
-      authedImpersonator
-    ).kiss(oracle.address);
-    await IChronicleScribe__factory.connect(
-      scribesMantle[core.tokens.weth.address]!,
-      authedImpersonator
-    ).kiss(oracle.address);
+    for (const scribe of Object.values(scribesMantle)) {
+      await IChronicleScribe__factory.connect(scribe, authedImpersonator).kiss(oracle.address);
+    }
 
-    const mEthTokenInfo: TokenInfo = {
-      oracleInfos: [
-        { oracle: oracle.address, tokenPair: ADDRESS_ZERO, weight: 100 },
-      ],
-      decimals: 18,
-      token: core.tokens.meth.address
-    };
-    const usdcTokenInfo: TokenInfo = {
-      oracleInfos: [
-        { oracle: oracle.address, tokenPair: ADDRESS_ZERO, weight: 100 },
-      ],
-      decimals: 6,
-      token: core.tokens.usdc.address
-    };
-    const wbtcTokenInfo: TokenInfo = {
-      oracleInfos: [
-        { oracle: oracle.address, tokenPair: ADDRESS_ZERO, weight: 100 },
-      ],
-      decimals: 8,
-      token: core.tokens.wbtc.address
-    };
-    const wethTokenInfo: TokenInfo = {
-      oracleInfos: [
-        { oracle: oracle.address, tokenPair: ADDRESS_ZERO, weight: 100 },
-      ],
-      decimals: 18,
-      token: core.tokens.weth.address
-    };
-    await core.oracleAggregatorV2.connect(core.governance).ownerInsertOrUpdateToken(mEthTokenInfo);
-    await core.oracleAggregatorV2.connect(core.governance).ownerInsertOrUpdateToken(usdcTokenInfo);
-    await core.oracleAggregatorV2.connect(core.governance).ownerInsertOrUpdateToken(wbtcTokenInfo);
-    await core.oracleAggregatorV2.connect(core.governance).ownerInsertOrUpdateToken(wethTokenInfo);
+    const tokenInfos: TokenInfo[] = [
+      {
+        oracleInfos: [
+          { oracle: oracle.address, tokenPair: ADDRESS_ZERO, weight: 100 },
+        ],
+        decimals: 18,
+        token: core.tokens.meth.address
+      },
+      {
+        oracleInfos: [
+          { oracle: oracle.address, tokenPair: ADDRESS_ZERO, weight: 100 },
+        ],
+        decimals: 6,
+        token: core.tokens.usdc.address
+      },
+      {
+        oracleInfos: [
+          { oracle: oracle.address, tokenPair: ADDRESS_ZERO, weight: 100 },
+        ],
+        decimals: 8,
+        token: core.tokens.wbtc.address
+      },
+      {
+        oracleInfos: [
+          { oracle: oracle.address, tokenPair: ADDRESS_ZERO, weight: 100 },
+        ],
+        decimals: 18,
+        token: core.tokens.weth.address
+      },
+    ];
+    for (const tokenInfo of tokenInfos) {
+      await core.oracleAggregatorV2.ownerInsertOrUpdateToken(tokenInfo);
+    }
 
     snapshotId = await snapshot();
   });
