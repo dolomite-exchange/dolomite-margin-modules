@@ -36,10 +36,10 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   );
 
   const wrappers = [
-    core.gmxEcosystemV2.live.gmArb.wrapperProxy,
-    core.gmxEcosystemV2.live.gmBtc.wrapperProxy,
-    core.gmxEcosystemV2.live.gmEth.wrapperProxy,
-    core.gmxEcosystemV2.live.gmLink.wrapperProxy,
+    core.gmxEcosystemV2.live.gmArbUsd.wrapperProxy,
+    core.gmxEcosystemV2.live.gmBtcUsd.wrapperProxy,
+    core.gmxEcosystemV2.live.gmEthUsd.wrapperProxy,
+    core.gmxEcosystemV2.live.gmLinkUsd.wrapperProxy,
   ];
 
   const transactions: EncodedTransaction[] = [];

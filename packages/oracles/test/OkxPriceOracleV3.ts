@@ -24,8 +24,8 @@ import {
   TestChainlinkAggregator__factory,
 } from '../src/types';
 
-const WETH_PRICE = BigNumber.from('3200350000000000000000');
-const BTC_PRICE = BigNumber.from('623545300000000000000000000000000');
+const WETH_PRICE = BigNumber.from('3168730000000000000000');
+const BTC_PRICE = BigNumber.from('620147200000000000000000000000000');
 
 describe('OkxPriceOracleV3', () => {
   let snapshotId: string;
@@ -182,9 +182,10 @@ describe('OkxPriceOracleV3', () => {
       );
       await testAggregator.setLatestAnswer(BigNumber.from('20000000000')); // $200
       await waitTime((60 * 60 * 36) + 1); // prices expire in 36 hours by default
+      const data = await testAggregator.latestRoundData();
       await expectThrow(
         oracle.getPrice(testToken.address),
-        `OkxPriceOracleV3: OKX price expired <${testToken.address.toLowerCase()}, 1714371147>`,
+        `OkxPriceOracleV3: OKX price expired <${testToken.address.toLowerCase()}, ${data.updatedAt.toString()}>`,
       );
     });
   });

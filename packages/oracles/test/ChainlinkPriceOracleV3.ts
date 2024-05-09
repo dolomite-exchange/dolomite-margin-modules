@@ -223,9 +223,10 @@ describe('ChainlinkPriceOracleV3', () => {
       );
       await testAggregator.setLatestAnswer(BigNumber.from('20000000000')); // $200
       await waitTime((60 * 60 * 36) + 1); // prices expire in 36 hours by default
+      const data = await testAggregator.latestRoundData();
       await expectThrow(
         oracle.getPrice(testToken.address),
-        `ChainlinkPriceOracleV3: Chainlink price expired <${testToken.address.toLowerCase()}>`,
+        `ChainlinkPriceOracleV3: Chainlink price expired <${testToken.address.toLowerCase()}, ${data.updatedAt}>`,
       );
     });
 

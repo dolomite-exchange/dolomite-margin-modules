@@ -21,31 +21,28 @@ pragma solidity ^0.8.9;
 
 import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
 import { IDolomiteRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IDolomiteRegistry.sol";
+import { IDolomitePriceOracle } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomitePriceOracle.sol"; // solhint-disable-line max-line-length
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import { IAlgebraV3Pool } from "./interfaces/IAlgebraV3Pool.sol";
 import { IOracleAggregatorV2 } from "./interfaces/IOracleAggregatorV2.sol";
-import { ITWAPPriceOracleV1 } from "./interfaces/ITWAPPriceOracleV1.sol";
-import { OracleLibrary } from "./utils/OracleLibrary.sol";
+import { IRamsesPool } from "./interfaces/IRamsesPool.sol";
 
 
 /**
- * @title   TWAPPriceOracleV2
+ * @title   RamsesLegacyPriceOracle
  * @author  Dolomite
  *
- * An implementation of the ITWAPPriceOracleV1.sol interface that makes gets the TWAP from a number of LP pools
+ * An implementation of IDolomitePriceOracle that makes gets the TWAP from a Ramses Legacy pool
  */
-contract TWAPPriceOracleV2 is ITWAPPriceOracleV1, OnlyDolomiteMargin {
+contract RamsesLegacyPriceOracle is IDolomitePriceOracle, OnlyDolomiteMargin {
 
     // ========================= Constants =========================
 
-    bytes32 private constant _FILE = "TWAPPriceOracleV2";
+    bytes32 private constant _FILE = "RamsesLegacyPriceOracle";
     uint256 private constant _ONE_DOLLAR = 10 ** 36;
 
     // ========================= Storage =========================
-
-    uint32 public observationInterval;
 
     address public immutable TOKEN; // solhint-disable-line var-name-mixedcase
     address public immutable PAIR;
@@ -62,21 +59,9 @@ contract TWAPPriceOracleV2 is ITWAPPriceOracleV1, OnlyDolomiteMargin {
     ) OnlyDolomiteMargin(_dolomiteMargin) {
         TOKEN = _token;
         PAIR = _pair;
-        _ownerSetObservationInterval(15 minutes);
 
         TOKEN_DECIMALS_FACTOR = 10 ** IERC20Metadata(_token).decimals();
         DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
-    }
-
-    // ========================= Admin Functions =========================
-
-    function ownerSetObservationInterval(
-        uint32 _observationInterval
-    )
-        external
-        onlyDolomiteMarginOwner(msg.sender)
-    {
-        _ownerSetObservationInterval(_observationInterval);
     }
 
     // ========================= Public Functions =========================
@@ -87,7 +72,6 @@ contract TWAPPriceOracleV2 is ITWAPPriceOracleV1, OnlyDolomiteMargin {
     public
     view
     returns (IDolomiteStructs.MonetaryPrice memory) {
-        if (_token == TOKEN) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _token == TOKEN,
             _FILE,
@@ -95,32 +79,25 @@ contract TWAPPriceOracleV2 is ITWAPPriceOracleV1, OnlyDolomiteMargin {
             _token
         );
 
-        IAlgebraV3Pool currentPair = IAlgebraV3Pool(PAIR);
+        IRamsesPool currentPair = IRamsesPool(PAIR);
+        address token0 = currentPair.token0();
+        address outputToken = token0 == _token ? currentPair.token1() : token0;
 
-        address poolToken0 = currentPair.token0();
-        address outputToken = poolToken0 == _token ? currentPair.token1() : poolToken0;
-
-        int24 tick = OracleLibrary.consult(address(currentPair), observationInterval);
-        uint256 quote = OracleLibrary.getQuoteAtTick(tick, uint128(TOKEN_DECIMALS_FACTOR), _token, outputToken);
+        uint256 twap = currentPair.current(
+            /* tokenIn = */ _token,
+            /* amountIn = */ TOKEN_DECIMALS_FACTOR
+        );
 
         IOracleAggregatorV2 aggregator = IOracleAggregatorV2(address(DOLOMITE_REGISTRY.oracleAggregator()));
         uint8 outputTokenDecimals = aggregator.getDecimalsByToken(outputToken);
-        /*assert(outputTokenDecimals > 0);*/
+        assert(outputTokenDecimals > 0);
 
         return IDolomiteStructs.MonetaryPrice({
-            value: _standardizeNumberOfDecimals(quote, outputTokenDecimals)
+            value: _standardizeNumberOfDecimals(twap, outputTokenDecimals)
         });
     }
 
     // ========================= Internal Functions =========================
-
-    function _ownerSetObservationInterval(
-        uint32 _observationInterval
-    )
-    internal {
-        observationInterval = _observationInterval;
-        emit ObservationIntervalUpdated(_observationInterval);
-    }
 
     function _standardizeNumberOfDecimals(
         uint256 _value,

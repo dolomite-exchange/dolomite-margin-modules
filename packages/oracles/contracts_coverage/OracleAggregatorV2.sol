@@ -27,7 +27,7 @@ import { IOracleAggregatorV2 } from "./interfaces/IOracleAggregatorV2.sol";
 
 
 /**
- * @title   OracleAggregatorV2.sol
+ * @title   OracleAggregatorV2
  * @author  Dolomite
  *
  * An implementation of the IDolomitePriceOracle interface that makes Chainlink prices compatible with the protocol.
@@ -43,6 +43,7 @@ contract OracleAggregatorV2 is OnlyDolomiteMargin, IOracleAggregatorV2 {
     // ========================= Storage =========================
 
     mapping(address => TokenInfo) private _tokenInfoMap;
+    bool private _initialized;
 
     // ========================= Constructor =========================
 
@@ -60,9 +61,7 @@ contract OracleAggregatorV2 is OnlyDolomiteMargin, IOracleAggregatorV2 {
     {
         uint256 infosLength = _infos.length;
         for (uint256 i; i < infosLength; ++i) {
-            _ownerInsertOrUpdateToken(
-                _infos[i]
-            );
+            _ownerInsertOrUpdateToken(_infos[i]);
         }
     }
 
@@ -138,7 +137,6 @@ contract OracleAggregatorV2 is OnlyDolomiteMargin, IOracleAggregatorV2 {
         TokenInfo memory _info
     ) internal {
         uint256 weightSum;
-        delete _tokenInfoMap[_info.token].oracleInfos;
         delete _tokenInfoMap[_info.token];
 
         _tokenInfoMap[_info.token].token = _info.token;
