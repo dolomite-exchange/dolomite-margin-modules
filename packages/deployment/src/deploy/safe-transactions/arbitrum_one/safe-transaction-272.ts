@@ -38,10 +38,10 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   );
 
   const factories = [
-    core.gmxEcosystemV2.live.gmArb.factory,
-    core.gmxEcosystemV2.live.gmBtc.factory,
-    core.gmxEcosystemV2.live.gmEth.factory,
-    core.gmxEcosystemV2.live.gmLink.factory,
+    core.gmxEcosystemV2.live.gmArbUsd.factory,
+    core.gmxEcosystemV2.live.gmBtcUsd.factory,
+    core.gmxEcosystemV2.live.gmEthUsd.factory,
+    core.gmxEcosystemV2.live.gmLinkUsd.factory,
   ];
 
   const transactions: EncodedTransaction[] = [];
@@ -75,7 +75,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
 
       const account = '0x52256ef863a713Ef349ae6E97A7E8f35785145dE';
       const vault = GmxV2IsolationModeTokenVaultV1__factory.connect(
-        await core.gmxEcosystemV2.live.gmBtc.factory.getVaultByAccount(account),
+        await core.gmxEcosystemV2.live.gmBtcUsd.factory.getVaultByAccount(account),
         await impersonate(account),
       );
 
