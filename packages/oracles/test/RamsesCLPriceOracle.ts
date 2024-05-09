@@ -13,7 +13,6 @@ import { expectEvent, expectThrow } from '@dolomite-exchange/modules-base/test/u
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { TokenInfo } from '../src';
 
-const GRAI_TOKEN = '0x894134a25a5faC1c2C26F1d8fBf05111a3CB9487';
 const GRAI_WEETH_POOL = '0xc23F681729AD2E970c2E630CbEf67edFab0c37e0';
 
 const GRAI_PRICE_WE_ETH_POOL = BigNumber.from('988633194952886775');
@@ -35,7 +34,7 @@ describe('RamsesCLPriceOracle', () => {
       RamsesCLPriceOracle__factory.abi,
       RamsesCLPriceOracle__factory.bytecode,
       [
-        GRAI_TOKEN,
+        core.tokens.grai.address,
         GRAI_WEETH_POOL,
         core.dolomiteRegistry.address,
         core.dolomiteMargin.address,
@@ -47,7 +46,7 @@ describe('RamsesCLPriceOracle', () => {
         { oracle: graiWeEthOracle.address, tokenPair: core.tokens.weEth.address, weight: 100 },
       ],
       decimals: 18,
-      token: GRAI_TOKEN
+      token: core.tokens.grai.address
     };
     await core.oracleAggregatorV2.connect(core.governance).ownerInsertOrUpdateToken(tokenInfo);
 
@@ -60,7 +59,7 @@ describe('RamsesCLPriceOracle', () => {
 
   describe('#constructor', () => {
     it('should work normally', async () => {
-      expect(await graiWeEthOracle.TOKEN()).to.eq(GRAI_TOKEN);
+      expect(await graiWeEthOracle.TOKEN()).to.eq(core.tokens.grai.address);
       expect(await graiWeEthOracle.TOKEN_DECIMALS_FACTOR()).to.eq(parseEther('1'));
       expect(await graiWeEthOracle.DOLOMITE_MARGIN()).to.eq(core.dolomiteMargin.address);
       expect(await graiWeEthOracle.observationInterval()).to.eq(FIFTEEN_MINUTES);
@@ -70,7 +69,7 @@ describe('RamsesCLPriceOracle', () => {
 
   describe('#getPrice', () => {
     it('should work normally', async () => {
-      const price = await core.oracleAggregatorV2.getPrice(GRAI_TOKEN);
+      const price = await core.oracleAggregatorV2.getPrice(core.tokens.grai.address);
       expect(price.value).to.eq(GRAI_PRICE_WE_ETH_POOL);
     });
 
@@ -86,7 +85,7 @@ describe('RamsesCLPriceOracle', () => {
         ]
       );
       const weEthPriceInGrai = (await oracle.getPrice(core.tokens.weEth.address)).value;
-      const graiPrice = (await core.oracleAggregatorV2.getPrice(GRAI_TOKEN)).value;
+      const graiPrice = (await core.oracleAggregatorV2.getPrice(core.tokens.grai.address)).value;
       const weEthPriceFromAggregator = (await core.oracleAggregatorV2.getPrice(core.tokens.weEth.address)).value;
       // Approximately equal
       expect(weEthPriceInGrai.mul(graiPrice).div(ONE_ETH_BI))

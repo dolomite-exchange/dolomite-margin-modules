@@ -225,6 +225,20 @@ export const EZ_ETH_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   },
 };
 
+export const FRAX_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F',
+    marketId: -1,
+  },
+};
+
+export const GRAI_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0x894134a25a5faC1c2C26F1d8fBf05111a3CB9487',
+    marketId: 46,
+  },
+};
+
 export const GRAIL_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x3d9907F9a368ad0a51Be60f7Da3b97cf940982D8',
@@ -952,6 +966,9 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<Network, Record<string, Agg
     [EZ_ETH_MAP[Network.ArbitrumOne].address]: {
       aggregatorAddress: '0x989a480b6054389075CBCdC385C18CfB6FC08186',
       tokenPairAddress: WETH_MAP[Network.ArbitrumOne].address,
+    },
+    [FRAX_MAP[Network.ArbitrumOne].address]: {
+      aggregatorAddress: '0x0809E3d38d1B4214958faf06D8b1B1a2b73f2ab8',
     },
     [GMX_MAP[Network.ArbitrumOne].address]: {
       aggregatorAddress: '0xdb98056fecfff59d032ab628337a4887110df3db',

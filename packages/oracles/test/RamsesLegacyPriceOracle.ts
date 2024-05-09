@@ -15,8 +15,6 @@ import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/se
 import { TokenInfo } from '../src';
 import { increaseTo } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
 
-const GRAI_TOKEN = '0x894134a25a5faC1c2C26F1d8fBf05111a3CB9487';
-const FRAX_TOKEN = '0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F';
 const GRAI_FRAX_POOL = '0x6E0Ced11922386900BE369cBBF3cdb971dc58487';
 const FRAX_PRICE_FEED = '0x0809E3d38d1B4214958faf06D8b1B1a2b73f2ab8';
 
@@ -38,7 +36,7 @@ describe('RamsesLegacyPriceOracle', () => {
       RamsesLegacyPriceOracle__factory.abi,
       RamsesLegacyPriceOracle__factory.bytecode,
       [
-        GRAI_TOKEN,
+        core.tokens.grai.address,
         GRAI_FRAX_POOL,
         core.dolomiteRegistry.address,
         core.dolomiteMargin.address,
@@ -47,10 +45,10 @@ describe('RamsesLegacyPriceOracle', () => {
 
     const tokenInfo: TokenInfo = {
       oracleInfos: [
-        { oracle: graiFraxOracle.address, tokenPair: FRAX_TOKEN, weight: 100 },
+        { oracle: graiFraxOracle.address, tokenPair: core.tokens.frax.address, weight: 100 },
       ],
       decimals: 18,
-      token: GRAI_TOKEN
+      token: core.tokens.grai.address
     };
     await core.oracleAggregatorV2.connect(core.governance).ownerInsertOrUpdateToken(tokenInfo);
     const frax: TokenInfo = {
@@ -58,10 +56,10 @@ describe('RamsesLegacyPriceOracle', () => {
         { oracle: core.chainlinkPriceOracleV3.address, tokenPair: ADDRESS_ZERO, weight: 100 },
       ],
       decimals: 18,
-      token: FRAX_TOKEN
+      token: core.tokens.frax.address
     };
     await core.chainlinkPriceOracleV3.connect(core.governance).ownerInsertOrUpdateOracleToken(
-      FRAX_TOKEN,
+      core.tokens.frax.address,
       FRAX_PRICE_FEED,
       false
     );
@@ -76,7 +74,7 @@ describe('RamsesLegacyPriceOracle', () => {
 
   describe('#constructor', () => {
     it('should work normally', async () => {
-      expect(await graiFraxOracle.TOKEN()).to.eq(GRAI_TOKEN);
+      expect(await graiFraxOracle.TOKEN()).to.eq(core.tokens.grai.address);
       expect(await graiFraxOracle.TOKEN_DECIMALS_FACTOR()).to.eq(parseEther('1'));
       expect(await graiFraxOracle.DOLOMITE_MARGIN()).to.eq(core.dolomiteMargin.address);
       expect(await graiFraxOracle.PAIR()).to.eq(GRAI_FRAX_POOL);
@@ -86,7 +84,7 @@ describe('RamsesLegacyPriceOracle', () => {
   describe('#getPrice', () => {
     it('should work normally', async () => {
       await increaseTo(1_715_107_400);
-      const price = await core.oracleAggregatorV2.getPrice(GRAI_TOKEN);
+      const price = await core.oracleAggregatorV2.getPrice(core.tokens.grai.address);
       expect(price.value).to.eq(GRAI_PRICE_FRAX_POOL);
     });
 
@@ -95,15 +93,15 @@ describe('RamsesLegacyPriceOracle', () => {
         RamsesLegacyPriceOracle__factory.abi,
         RamsesLegacyPriceOracle__factory.bytecode,
         [
-          FRAX_TOKEN,
+          core.tokens.frax.address,
           GRAI_FRAX_POOL,
           core.dolomiteRegistry.address,
           core.dolomiteMargin.address,
         ]
       );
       const pair = await IRamsesPool__factory.connect(GRAI_FRAX_POOL, core.hhUser1);
-      const price = await oracle.getPrice(FRAX_TOKEN);
-      expect(await pair.current(FRAX_TOKEN, ONE_ETH_BI)).to.eq(price.value);
+      const price = await oracle.getPrice(core.tokens.frax.address);
+      expect(await pair.current(core.tokens.frax.address, ONE_ETH_BI)).to.eq(price.value);
     });
 
     it('should fail if invalid input token', async () => {
