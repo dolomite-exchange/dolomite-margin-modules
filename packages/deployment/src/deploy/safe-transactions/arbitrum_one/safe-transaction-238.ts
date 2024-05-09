@@ -33,10 +33,10 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const gmxV2TokenVault = GmxV2IsolationModeTokenVaultV1__factory.connect(gmxV2TokenVaultAddress, core.hhUser1);
 
   const factories = [
-    core.gmxEcosystemV2.live.gmArb.factory,
-    core.gmxEcosystemV2.live.gmBtc.factory,
-    core.gmxEcosystemV2.live.gmEth.factory,
-    core.gmxEcosystemV2.live.gmLink.factory,
+    core.gmxEcosystemV2.live.gmArbUsd.factory,
+    core.gmxEcosystemV2.live.gmBtcUsd.factory,
+    core.gmxEcosystemV2.live.gmEthUsd.factory,
+    core.gmxEcosystemV2.live.gmLinkUsd.factory,
   ];
 
   const transactions: EncodedTransaction[] = [];

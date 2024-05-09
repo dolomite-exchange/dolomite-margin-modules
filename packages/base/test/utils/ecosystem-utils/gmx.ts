@@ -71,13 +71,13 @@ import {
   GLP_MAP,
   GLP_REWARD_ROUTER_MAP,
   GMX_ARB_USD_MARKET_TOKEN_MAP,
-  GMX_BTC_MARKET_TOKEN_MAP,
+  GMX_BTC_SINGLE_SIDED_MARKET_TOKEN_MAP,
   GMX_BTC_PLACEHOLDER_MAP,
   GMX_BTC_USD_MARKET_TOKEN_MAP,
   GMX_DATASTORE_MAP,
   GMX_DEPOSIT_HANDLER_MAP,
   GMX_DEPOSIT_VAULT_MAP,
-  GMX_ETH_MARKET_TOKEN_MAP,
+  GMX_ETH_SINGLE_SIDED_MARKET_TOKEN_MAP,
   GMX_ETH_USD_MARKET_TOKEN_MAP,
   GMX_EXCHANGE_ROUTER_MAP,
   GMX_EXECUTOR_MAP,
@@ -142,6 +142,14 @@ export interface GmToken {
   shortMarketId: BigNumberish;
 }
 
+export interface LiveGmMarket {
+  factory: GmxV2IsolationModeVaultFactory;
+  unwrapper: GmxV2IsolationModeUnwrapperTraderV2;
+  unwrapperProxy: IsolationModeTraderProxy;
+  wrapper: GmxV2IsolationModeWrapperTraderV2;
+  wrapperProxy: IsolationModeTraderProxy;
+}
+
 export interface GmxEcosystemV2 {
   gmxDataStore: IGmxDataStore;
   gmxDepositHandler: IGmxDepositHandler;
@@ -162,34 +170,12 @@ export interface GmxEcosystemV2 {
   gmxWithdrawalHandler: IGmxWithdrawalHandler;
   gmxWithdrawalVault: { address: string };
   live: {
-    gmArb: {
-      factory: GmxV2IsolationModeVaultFactory;
-      unwrapper: GmxV2IsolationModeUnwrapperTraderV2;
-      unwrapperProxy: IsolationModeTraderProxy;
-      wrapper: GmxV2IsolationModeWrapperTraderV2;
-      wrapperProxy: IsolationModeTraderProxy;
-    };
-    gmBtc: {
-      factory: GmxV2IsolationModeVaultFactory;
-      unwrapper: GmxV2IsolationModeUnwrapperTraderV2;
-      unwrapperProxy: IsolationModeTraderProxy;
-      wrapper: GmxV2IsolationModeWrapperTraderV2;
-      wrapperProxy: IsolationModeTraderProxy;
-    };
-    gmEth: {
-      factory: GmxV2IsolationModeVaultFactory;
-      unwrapper: GmxV2IsolationModeUnwrapperTraderV2;
-      unwrapperProxy: IsolationModeTraderProxy;
-      wrapper: GmxV2IsolationModeWrapperTraderV2;
-      wrapperProxy: IsolationModeTraderProxy;
-    };
-    gmLink: {
-      factory: GmxV2IsolationModeVaultFactory;
-      unwrapper: GmxV2IsolationModeUnwrapperTraderV2;
-      unwrapperProxy: IsolationModeTraderProxy;
-      wrapper: GmxV2IsolationModeWrapperTraderV2;
-      wrapperProxy: IsolationModeTraderProxy;
-    };
+    gmArbUsd: LiveGmMarket;
+    gmBtc: LiveGmMarket;
+    gmBtcUsd: LiveGmMarket;
+    gmEth: LiveGmMarket;
+    gmEthUsd: LiveGmMarket;
+    gmLinkUsd: LiveGmMarket;
     gmxV2LibraryMap: { GmxV2Library: string };
     registry: GmxV2Registry;
     registryProxy: RegistryProxy;
@@ -321,7 +307,7 @@ export async function createGmxEcosystemV2(
           IGmxMarketToken__factory.connect,
           signer,
         ),
-        indexToken: IERC20__factory.connect(WBTC_MAP[network].address, signer),
+        indexToken: IERC20__factory.connect(GMX_BTC_PLACEHOLDER_MAP[network].address, signer),
         longToken: IERC20__factory.connect(WBTC_MAP[network].address, signer),
         shortToken: IERC20__factory.connect(NATIVE_USDC_MAP[network].address, signer),
         longMarketId: WBTC_MAP[network].marketId,
@@ -345,15 +331,15 @@ export async function createGmxEcosystemV2(
           IGmxMarketToken__factory.connect,
           signer,
         ),
-        indexToken: IERC20__factory.connect(LINK_MAP[network].address, signer),
-        longToken: IERC20__factory.connect(LINK_MAP[network].address, signer),
+        indexToken: IERC20__factory.connect(LINK_MAP[network]!.address, signer),
+        longToken: IERC20__factory.connect(LINK_MAP[network]!.address, signer),
         shortToken: IERC20__factory.connect(NATIVE_USDC_MAP[network].address, signer),
-        longMarketId: LINK_MAP[network].marketId,
+        longMarketId: LINK_MAP[network]!.marketId,
         shortMarketId: NATIVE_USDC_MAP[network].marketId,
       },
       btc: {
         marketToken: getContract(
-          GMX_BTC_MARKET_TOKEN_MAP[network],
+          GMX_BTC_SINGLE_SIDED_MARKET_TOKEN_MAP[network],
           IGmxMarketToken__factory.connect,
           signer,
         ),
@@ -365,7 +351,7 @@ export async function createGmxEcosystemV2(
       },
       eth: {
         marketToken: getContract(
-          GMX_ETH_MARKET_TOKEN_MAP[network],
+          GMX_ETH_SINGLE_SIDED_MARKET_TOKEN_MAP[network],
           IGmxMarketToken__factory.connect,
           signer,
         ),
@@ -401,7 +387,7 @@ export async function createGmxEcosystemV2(
     ),
     gmxWithdrawalVault: { address: GMX_WITHDRAWAL_VAULT_MAP[network] },
     live: {
-      gmArb: {
+      gmArbUsd: {
         factory: GmxV2IsolationModeVaultFactory__factory.connect(
           Deployments.GmxV2ARBIsolationModeVaultFactory['42161'].address,
           signer,
@@ -425,6 +411,28 @@ export async function createGmxEcosystemV2(
       },
       gmBtc: {
         factory: GmxV2IsolationModeVaultFactory__factory.connect(
+          Deployments.GmxV2SingleSidedBTCIsolationModeVaultFactory['42161'].address,
+          signer,
+        ),
+        unwrapper: GmxV2IsolationModeUnwrapperTraderV2__factory.connect(
+          Deployments.GmxV2SingleSidedBTCAsyncIsolationModeUnwrapperTraderProxyV2['42161'].address,
+          signer,
+        ),
+        unwrapperProxy: IsolationModeTraderProxy__factory.connect(
+          Deployments.GmxV2SingleSidedBTCAsyncIsolationModeUnwrapperTraderProxyV2['42161'].address,
+          signer,
+        ),
+        wrapper: GmxV2IsolationModeWrapperTraderV2__factory.connect(
+          Deployments.GmxV2SingleSidedBTCAsyncIsolationModeWrapperTraderProxyV2['42161'].address,
+          signer,
+        ),
+        wrapperProxy: IsolationModeTraderProxy__factory.connect(
+          Deployments.GmxV2SingleSidedBTCAsyncIsolationModeWrapperTraderProxyV2['42161'].address,
+          signer,
+        ),
+      },
+      gmBtcUsd: {
+        factory: GmxV2IsolationModeVaultFactory__factory.connect(
           Deployments.GmxV2BTCIsolationModeVaultFactory['42161'].address,
           signer,
         ),
@@ -447,6 +455,28 @@ export async function createGmxEcosystemV2(
       },
       gmEth: {
         factory: GmxV2IsolationModeVaultFactory__factory.connect(
+          Deployments.GmxV2SingleSidedETHIsolationModeVaultFactory['42161'].address,
+          signer,
+        ),
+        unwrapper: GmxV2IsolationModeUnwrapperTraderV2__factory.connect(
+          Deployments.GmxV2SingleSidedETHAsyncIsolationModeUnwrapperTraderProxyV2['42161'].address,
+          signer,
+        ),
+        unwrapperProxy: IsolationModeTraderProxy__factory.connect(
+          Deployments.GmxV2SingleSidedETHAsyncIsolationModeUnwrapperTraderProxyV2['42161'].address,
+          signer,
+        ),
+        wrapper: GmxV2IsolationModeWrapperTraderV2__factory.connect(
+          Deployments.GmxV2SingleSidedETHAsyncIsolationModeWrapperTraderProxyV2['42161'].address,
+          signer,
+        ),
+        wrapperProxy: IsolationModeTraderProxy__factory.connect(
+          Deployments.GmxV2SingleSidedETHAsyncIsolationModeWrapperTraderProxyV2['42161'].address,
+          signer,
+        ),
+      },
+      gmEthUsd: {
+        factory: GmxV2IsolationModeVaultFactory__factory.connect(
           Deployments.GmxV2ETHIsolationModeVaultFactory['42161'].address,
           signer,
         ),
@@ -467,7 +497,7 @@ export async function createGmxEcosystemV2(
           signer,
         ),
       },
-      gmLink: {
+      gmLinkUsd: {
         factory: GmxV2IsolationModeVaultFactory__factory.connect(
           Deployments.GmxV2LINKIsolationModeVaultFactory['42161'].address,
           signer,
