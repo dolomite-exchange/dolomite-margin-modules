@@ -1143,6 +1143,13 @@
       "isVerified": true
     }
   },
+  "GraiFraxPriceOracleV1": {
+    "42161": {
+      "address": "0x44D96D7b7b655D8372680075942f1FAB41da52e0",
+      "transaction": "0x2f9a9ac3c8f08fe5ee287de954b5c91690862f10b16b9d4a68bef02b860f9829",
+      "isVerified": true
+    }
+  },
   "GrailTWAPPriceOracleV1": {
     "42161": {
       "address": "0x8dDfA821EC6000E589de93D17b75687C9ebF8b21",

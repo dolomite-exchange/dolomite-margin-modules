@@ -16,10 +16,10 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
 
   const factories = [
-    core.gmxEcosystemV2.live.gmArb.factory,
-    core.gmxEcosystemV2.live.gmBtc.factory,
-    core.gmxEcosystemV2.live.gmEth.factory,
-    core.gmxEcosystemV2.live.gmLink.factory,
+    core.gmxEcosystemV2.live.gmArbUsd.factory,
+    core.gmxEcosystemV2.live.gmBtcUsd.factory,
+    core.gmxEcosystemV2.live.gmEthUsd.factory,
+    core.gmxEcosystemV2.live.gmLinkUsd.factory,
   ];
 
   const transactions: EncodedTransaction[] = [];

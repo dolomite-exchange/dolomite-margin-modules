@@ -113,10 +113,10 @@ if (process.env.COVERAGE !== 'true') {
 
       gmxV2Registry = core.gmxEcosystemV2.live.registry;
 
-      factory = core.gmxEcosystemV2.live.gmEth.factory;
+      factory = core.gmxEcosystemV2.live.gmEthUsd.factory;
       underlyingToken = IGmxMarketToken__factory.connect(await factory.UNDERLYING_TOKEN(), core.hhUser1);
-      unwrapper = core.gmxEcosystemV2.live.gmEth.unwrapper;
-      wrapper = core.gmxEcosystemV2.live.gmEth.wrapper;
+      unwrapper = core.gmxEcosystemV2.live.gmEthUsd.unwrapper;
+      wrapper = core.gmxEcosystemV2.live.gmEthUsd.wrapper;
 
       // Use actual price oracle later
       marketId = BigNumber.from(core.marketIds.dGmEth);
@@ -137,9 +137,9 @@ if (process.env.COVERAGE !== 'true') {
 
       const unwrapperImplementation = await createGmxV2IsolationModeUnwrapperTraderV2Implementation(core, gmxV2Library);
       const wrapperImplementation = await createGmxV2IsolationModeWrapperTraderV2Implementation(core, gmxV2Library);
-      await core.gmxEcosystemV2.live.gmEth.unwrapperProxy.connect(core.governance)
+      await core.gmxEcosystemV2.live.gmEthUsd.unwrapperProxy.connect(core.governance)
         .upgradeTo(unwrapperImplementation.address);
-      await core.gmxEcosystemV2.live.gmEth.wrapperProxy.connect(core.governance)
+      await core.gmxEcosystemV2.live.gmEthUsd.wrapperProxy.connect(core.governance)
         .upgradeTo(wrapperImplementation.address);
 
       const userImplementation = await createGmxV2IsolationModeTokenVaultV1(core, gmxV2Library);

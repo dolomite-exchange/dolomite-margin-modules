@@ -82,8 +82,10 @@ interface CoreProtocolTokensArbitrumOne extends CoreProtocolTokens {
   eEth: IERC20;
   ezEth: IERC20;
   sGlp: IERC20;
+  frax: IERC20;
   gmx: IERC20;
   gmxBtc: IERC20;
+  grai: IERC20;
   grail: IERC20;
   jones: IERC20;
   link: IERC20;
@@ -128,6 +130,7 @@ interface CoreProtocolMarketIdsArbitrumOne extends CoreProtocolMarketIds {
   dYtGlp: BigNumberish;
   ezEth: BigNumberish;
   gmx: BigNumberish;
+  grai: BigNumberish;
   grail: BigNumberish;
   jones: BigNumberish;
   magic: BigNumberish;
