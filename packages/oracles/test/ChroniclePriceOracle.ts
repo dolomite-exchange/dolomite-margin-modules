@@ -30,6 +30,7 @@ import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '@dolomite-excha
 import { parseEther } from 'ethers/lib/utils';
 import { TokenInfo } from '../src';
 import { CHRONICLE_PRICE_SCRIBES_MAP } from 'packages/base/src/utils/constants';
+import { getChroniclePriceOracleConstructorParams } from '../src/oracles-constructors';
 
 const METH_PRICE = BigNumber.from('3212902127441006623686');
 const BTC_PRICE = BigNumber.from('635989069637405795488920000000000');
@@ -62,13 +63,12 @@ describe('ChroniclePriceOracle', () => {
     oracle = await createContractWithAbi<ChroniclePriceOracle>(
       ChroniclePriceOracle__factory.abi,
       ChroniclePriceOracle__factory.bytecode,
-      [
+      getChroniclePriceOracleConstructorParams(
         Object.keys(scribesMantle),
         Object.values(scribesMantle),
         [false, false, false, false],
-        core.dolomiteRegistry.address,
-        core.dolomiteMargin.address,
-      ],
+        core
+      ),
     );
     const authedImpersonator = await impersonate(CHRONICLE_AUTHED_ADDRESS, true);
     for (const scribe of Object.values(scribesMantle)) {

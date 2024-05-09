@@ -347,6 +347,21 @@ export function getChainlinkPriceOracleV3ConstructorParams<T extends NetworkType
   ];
 }
 
+export function getChroniclePriceOracleConstructorParams<T extends NetworkType>(
+  tokens: string[],
+  scribes: string[],
+  invertPrices: boolean[],
+  core: CoreProtocolType<T>,
+): [string[], string[], boolean[], string, string] {
+  return [
+    tokens,
+    scribes,
+    invertPrices,
+    core.dolomiteRegistry.address,
+    core.dolomiteMargin.address,
+  ];
+}
+
 export async function getRedstonePriceOracleV2ConstructorParams<T extends NetworkType>(
   tokens: IERC20[],
   aggregators: string[],
