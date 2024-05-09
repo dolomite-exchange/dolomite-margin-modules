@@ -83,6 +83,7 @@ import {
   MAGIC_GLP_MAP,
   MAGIC_MAP,
   MATIC_MAP,
+  METH_MAP,
   MIM_MAP,
   NATIVE_USDC_MAP,
   PENDLE_MAP,
@@ -760,6 +761,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
         odosEcosystem: await createOdosEcosystem(typedConfig.network, hhUser1),
         tokens: {
           ...coreProtocolParams.tokens,
+          meth: IERC20__factory.connect(METH_MAP[typedConfig.network].address, hhUser1),
           usdt: IERC20__factory.connect(USDT_MAP[typedConfig.network].address, hhUser1),
           wbtc: IERC20__factory.connect(WBTC_MAP[typedConfig.network].address, hhUser1),
           wmnt: IERC20__factory.connect(WMNT_MAP[typedConfig.network].address, hhUser1),

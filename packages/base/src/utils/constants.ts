@@ -416,6 +416,13 @@ export const WBTC_MAP: Record<EverythingButBase, TokenWithMarketId> = {
   },
 };
 
+export const METH_MAP: Record<Network.Mantle, TokenWithMarketId> = {
+  [Network.Mantle]: {
+    address: '0xcDA86A272531e8640cD7F1a92c01839911B90bb0',
+    marketId: 100, // @follow-up Not sure what marketId
+  }
+};
+
 export const WETH_MAP: Record<Network, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1',
@@ -926,6 +933,19 @@ export interface AggregatorInfo {
   tokenPairAddress?: string;
   invert?: boolean;
 }
+
+export const CHRONICLE_PRICE_SCRIBES_MAP: Record<Network, Record<string, string | undefined >> = {
+  [Network.ArbitrumOne]: {},
+  [Network.Base]: {},
+  [Network.Mantle]: {
+    [WETH_MAP[Network.Mantle].address]: '0x5E16CA75000fb2B9d7B1184Fa24fF5D938a345Ef',
+    [USDC_MAP[Network.Mantle].address]: '0xb9C3a09d9F73A1d5E90e6728D9c51F22CFF3bEB7',
+    [WBTC_MAP[Network.Mantle].address]: '0x36b648060bc490DefC205950d3930bF971a6951B',
+    [METH_MAP[Network.Mantle].address]: '0xfabBc20156309A0f0270ceab67EC150e537C5EDF',
+  },
+  [Network.PolygonZkEvm]: {},
+  [Network.XLayer]: {},
+};
 
 export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<Network, Record<string, AggregatorInfo | undefined>> = {
   [Network.ArbitrumOne]: {
