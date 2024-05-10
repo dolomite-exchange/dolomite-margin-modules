@@ -948,6 +948,10 @@ export interface AggregatorInfo {
   invert?: boolean;
 }
 
+export const CHRONICLE_METH_USD_SCRIBE_MAP: Record<Network.Mantle, string> = {
+  [Network.Mantle]: '0xfabBc20156309A0f0270ceab67EC150e537C5EDF',
+};
+
 export const CHRONICLE_PRICE_SCRIBES_MAP: Record<Network, Record<string, string>> = {
   [Network.ArbitrumOne]: {},
   [Network.Base]: {},
@@ -955,7 +959,7 @@ export const CHRONICLE_PRICE_SCRIBES_MAP: Record<Network, Record<string, string>
     [WETH_MAP[Network.Mantle].address]: '0x5E16CA75000fb2B9d7B1184Fa24fF5D938a345Ef',
     [USDC_MAP[Network.Mantle].address]: '0xb9C3a09d9F73A1d5E90e6728D9c51F22CFF3bEB7',
     [WBTC_MAP[Network.Mantle].address]: '0x36b648060bc490DefC205950d3930bF971a6951B',
-    [METH_MAP[Network.Mantle].address]: '0xfabBc20156309A0f0270ceab67EC150e537C5EDF',
+    [METH_MAP[Network.Mantle].address]: '0xBFE568Ea8f6bDFFe7c03F83dC8348517f8E7010A', // This is METH/ETH
   },
   [Network.PolygonZkEvm]: {},
   [Network.XLayer]: {},

@@ -32,7 +32,8 @@ import { TokenInfo } from '../src';
 import { CHRONICLE_PRICE_SCRIBES_MAP } from 'packages/base/src/utils/constants';
 import { getChroniclePriceOracleConstructorParams } from '../src/oracles-constructors';
 
-const METH_PRICE = BigNumber.from('3212902127441006623686');
+const METH_PRICE = BigNumber.from('3215188532248952085805');
+const METH_ETH_EXCHANGE_RATE = BigNumber.from('1027354527249591449');
 const BTC_PRICE = BigNumber.from('635989069637405795488920000000000');
 const WETH_PRICE = BigNumber.from('3129580341517135879233');
 
@@ -59,7 +60,7 @@ describe('ChroniclePriceOracle', () => {
     await testScribe.setDecimals(18);
     testToken = await createTestToken();
 
-    const scribesMantle: Record<string, string> = CHRONICLE_PRICE_SCRIBES_MAP[Network.Mantle];
+    const scribesMantle = CHRONICLE_PRICE_SCRIBES_MAP[Network.Mantle];
     oracle = await createContractWithAbi<ChroniclePriceOracle>(
       ChroniclePriceOracle__factory.abi,
       ChroniclePriceOracle__factory.bytecode,
@@ -81,6 +82,13 @@ describe('ChroniclePriceOracle', () => {
           { oracle: oracle.address, tokenPair: ADDRESS_ZERO, weight: 100 },
         ],
         decimals: 18,
+        token: core.tokens.weth.address
+      },
+      {
+        oracleInfos: [
+          { oracle: oracle.address, tokenPair: core.tokens.weth.address, weight: 100 },
+        ],
+        decimals: 18,
         token: core.tokens.meth.address
       },
       {
@@ -96,13 +104,6 @@ describe('ChroniclePriceOracle', () => {
         ],
         decimals: 8,
         token: core.tokens.wbtc.address
-      },
-      {
-        oracleInfos: [
-          { oracle: oracle.address, tokenPair: ADDRESS_ZERO, weight: 100 },
-        ],
-        decimals: 18,
-        token: core.tokens.weth.address
       },
     ];
     for (const tokenInfo of tokenInfos) {
@@ -168,8 +169,8 @@ describe('ChroniclePriceOracle', () => {
 
   describe('#getPrice', () => {
     it('returns the correct value for a token with 18 decimals', async () => {
-      const price = await oracle.getPrice(core.tokens.meth.address);
-      expect(price.value).to.eq(METH_PRICE);
+      expect((await oracle.getPrice(core.tokens.meth.address)).value).to.eq(METH_ETH_EXCHANGE_RATE);
+      expect((await core.oracleAggregatorV2.getPrice(core.tokens.meth.address)).value).to.eq(METH_PRICE);
     });
 
     it('returns the correct value for a token with less than 18 decimals', async () => {
