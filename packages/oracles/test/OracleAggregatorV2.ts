@@ -82,16 +82,12 @@ describe('OracleAggregatorV2', () => {
       RedstonePriceOracleV3__factory.abi,
       RedstonePriceOracleV3__factory.bytecode,
       getRedstonePriceOracleV3ConstructorParams(
-        [core.tokens.weEth],
+        core,
+        [core.tokens.weEth.address],
         [
-          IChainlinkAggregator__factory.connect(
-            REDSTONE_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][core.tokens.weEth.address].aggregatorAddress,
-            core.hhUser1,
-          ),
+          REDSTONE_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][core.tokens.weEth.address]!.aggregatorAddress,
         ],
         [false],
-        core.dolomiteRegistry,
-        core.dolomiteMargin,
       ),
     )).connect(core.governance);
 

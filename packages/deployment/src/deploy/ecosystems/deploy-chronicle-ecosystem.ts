@@ -9,14 +9,14 @@ import { CHRONICLE_PRICE_SCRIBES_MAP } from 'packages/base/src/utils/constants';
 async function main() {
   const network = await getAnyNetwork();
   if (network !== Network.Mantle) {
-    console.warn(`Invalid network for ODOS, found: ${network}`);
+    console.warn(`Invalid network for Chronicle, found: ${network}`);
     return;
   }
 
   const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
 
   const tokens = [core.tokens.meth.address];
-  const scribes = [CHRONICLE_PRICE_SCRIBES_MAP[Network.Mantle][core.tokens.meth.address]];
+  const scribes = [CHRONICLE_PRICE_SCRIBES_MAP[Network.Mantle][core.tokens.meth.address].scribeAddress];
   const invertPrices = [false];
   await deployContractAndSave(
     'ChroniclePriceOracle',

@@ -6,6 +6,8 @@ import {
   ChroniclePriceOracle,
   ChroniclePriceOracle__factory,
   IChronicleScribe__factory,
+  RedstonePriceOracleV3,
+  RedstonePriceOracleV3__factory,
   TestChronicleScribe,
   TestChronicleScribe__factory,
 } from '../src/types';
@@ -29,13 +31,13 @@ import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertio
 import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { parseEther } from 'ethers/lib/utils';
 import { TokenInfo } from '../src';
-import { CHRONICLE_PRICE_SCRIBES_MAP } from 'packages/base/src/utils/constants';
-import { getChroniclePriceOracleConstructorParams } from '../src/oracles-constructors';
+import { CHRONICLE_PRICE_SCRIBES_MAP, REDSTONE_PRICE_AGGREGATORS_MAP } from 'packages/base/src/utils/constants';
+import { getChroniclePriceOracleConstructorParams, getRedstonePriceOracleV3ConstructorParams } from '../src/oracles-constructors';
 
-const METH_PRICE = BigNumber.from('3215188532248952085805');
+const METH_PRICE = BigNumber.from('3237493823311432036070');
 const METH_ETH_EXCHANGE_RATE = BigNumber.from('1027354527249591449');
 const BTC_PRICE = BigNumber.from('635989069637405795488920000000000');
-const WETH_PRICE = BigNumber.from('3129580341517135879233');
+const WETH_PRICE = BigNumber.from('3151291727870000000000');
 
 const CHRONICLE_AUTHED_ADDRESS = '0x39abd7819e5632fa06d2ecbba45dca5c90687ee3';
 
@@ -45,6 +47,7 @@ describe('ChroniclePriceOracle', () => {
   let core: CoreProtocolMantle;
 
   let oracle: ChroniclePriceOracle;
+  let redstoneOracle: RedstonePriceOracleV3;
   let testScribe: TestChronicleScribe;
   let testToken: CustomTestToken;
 
@@ -66,20 +69,31 @@ describe('ChroniclePriceOracle', () => {
       ChroniclePriceOracle__factory.bytecode,
       getChroniclePriceOracleConstructorParams(
         Object.keys(scribesMantle),
-        Object.values(scribesMantle),
+        Object.keys(scribesMantle).map(k => scribesMantle[k].scribeAddress),
         [false, false, false, false],
         core
       ),
     );
     const authedImpersonator = await impersonate(CHRONICLE_AUTHED_ADDRESS, true);
     for (const scribe of Object.values(scribesMantle)) {
-      await IChronicleScribe__factory.connect(scribe, authedImpersonator).kiss(oracle.address);
+      await IChronicleScribe__factory.connect(scribe.scribeAddress, authedImpersonator).kiss(oracle.address);
     }
+
+    redstoneOracle = await createContractWithAbi<RedstonePriceOracleV3>(
+      RedstonePriceOracleV3__factory.abi,
+      RedstonePriceOracleV3__factory.bytecode,
+      await getRedstonePriceOracleV3ConstructorParams(
+        core,
+        [core.tokens.weth.address],
+        [REDSTONE_PRICE_AGGREGATORS_MAP[Network.Mantle][core.tokens.weth.address]!.aggregatorAddress],
+        [false],
+      ),
+    );
 
     const tokenInfos: TokenInfo[] = [
       {
         oracleInfos: [
-          { oracle: oracle.address, tokenPair: ADDRESS_ZERO, weight: 100 },
+          { oracle: redstoneOracle.address, tokenPair: ADDRESS_ZERO, weight: 100 },
         ],
         decimals: 18,
         token: core.tokens.weth.address
