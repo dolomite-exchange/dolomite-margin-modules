@@ -53,11 +53,13 @@ export interface LibraryMaps {
 interface CoreProtocolTokens {
   usdc: IERC20;
   weth: IWETH;
+  stablecoins: IERC20[];
 }
 
 interface CoreProtocolMarketIds {
   usdc: BigNumberish;
   weth: BigNumberish;
+  stablecoins: BigNumberish[];
 }
 
 interface CoreProtocolTokensArbitrumOne extends CoreProtocolTokens {
@@ -90,6 +92,7 @@ interface CoreProtocolTokensArbitrumOne extends CoreProtocolTokens {
   jones: IERC20;
   link: IERC20;
   magic: IERC20;
+  mim: IERC20;
   nativeUsdc: IERC20;
   premia: IERC20;
   rEth: IERC20;
@@ -98,6 +101,8 @@ interface CoreProtocolTokensArbitrumOne extends CoreProtocolTokens {
   pendle: IERC20;
   size: IERC20;
   stEth: IERC20;
+  uni: IERC20;
+  usdt: IERC20;
   wbtc: IERC20;
   weEth: IERC20;
   wstEth: IERC20;
@@ -133,6 +138,7 @@ interface CoreProtocolMarketIdsArbitrumOne extends CoreProtocolMarketIds {
   grai: BigNumberish;
   grail: BigNumberish;
   jones: BigNumberish;
+  link: BigNumberish;
   magic: BigNumberish;
   magicGlp: BigNumberish;
   mim: BigNumberish;
@@ -141,8 +147,9 @@ interface CoreProtocolMarketIdsArbitrumOne extends CoreProtocolMarketIds {
   rEth: BigNumberish;
   radiant: BigNumberish;
   pendle: BigNumberish;
-  usdt: BigNumberish;
   sGlp: BigNumberish;
+  uni: BigNumberish;
+  usdt: BigNumberish;
   wbtc: BigNumberish;
   weEth: BigNumberish;
   wstEth: BigNumberish;
