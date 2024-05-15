@@ -50,9 +50,17 @@ export interface LibraryMaps {
   wrapperTraderImpl: Record<string, string>;
 }
 
-interface CoreProtocolTokens {
+export type WETHType<T extends NetworkType> = T extends Network.ArbitrumOne
+  ? IWETH
+  : T extends Network.Base ? IWETH
+    : T extends Network.Mantle ? IERC20
+      : T extends Network.PolygonZkEvm ? IWETH
+        : T extends Network.XLayer ? IERC20
+          : never;
+
+interface CoreProtocolTokens<T extends NetworkType> {
   usdc: IERC20;
-  weth: IWETH;
+  weth: WETHType<T>;
   stablecoins: IERC20[];
 }
 
@@ -62,7 +70,7 @@ interface CoreProtocolMarketIds {
   stablecoins: BigNumberish[];
 }
 
-interface CoreProtocolTokensArbitrumOne extends CoreProtocolTokens {
+interface CoreProtocolTokensArbitrumOne extends CoreProtocolTokens<Network.ArbitrumOne> {
   arb: IERC20;
   dai: IERC20;
   dArb: IERC20;
@@ -190,7 +198,7 @@ export interface CoreProtocolParams<T extends NetworkType> {
     usdc: ApiToken;
     weth: ApiToken;
   };
-  tokens: CoreProtocolTokens;
+  tokens: CoreProtocolTokens<T>;
 }
 
 export interface CoreProtocolConstants<T extends NetworkType> {
@@ -248,7 +256,7 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
     usdc: ApiToken;
     weth: ApiToken;
   };
-  public readonly tokens: CoreProtocolTokens;
+  public readonly tokens: CoreProtocolTokens<T>;
 
   constructor(params: CoreProtocolParams<T>) {
     this.config = params.config;
@@ -384,8 +392,8 @@ export class CoreProtocolBase extends CoreProtocolAbstract<Network.Base> {
   }
 }
 
-interface CoreProtocolTokensMantle extends CoreProtocolTokens {
-  wmnt: IERC20;
+interface CoreProtocolTokensMantle extends CoreProtocolTokens<Network.Mantle> {
+  wmnt: IWETH;
   usdt: IERC20;
   wbtc: IERC20;
 }
@@ -422,7 +430,7 @@ export class CoreProtocolMantle extends CoreProtocolAbstract<Network.Mantle> {
   }
 }
 
-interface CoreProtocolTokensPolygonZkEvm extends CoreProtocolTokens {
+interface CoreProtocolTokensPolygonZkEvm extends CoreProtocolTokens<Network.PolygonZkEvm> {
   dai: IERC20;
   link: IERC20;
   matic: IERC20;
@@ -464,8 +472,8 @@ export class CoreProtocolPolygonZkEvm extends CoreProtocolAbstract<Network.Polyg
   }
 }
 
-interface CoreProtocolTokensXLayer extends CoreProtocolTokens {
-  wokb: IERC20;
+interface CoreProtocolTokensXLayer extends CoreProtocolTokens<Network.XLayer> {
+  wokb: IWETH;
   usdt: IERC20;
   wbtc: IERC20;
 }

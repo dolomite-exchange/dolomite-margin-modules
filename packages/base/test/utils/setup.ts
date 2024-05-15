@@ -95,7 +95,8 @@ import {
   S_GLP_MAP,
   SIZE_MAP,
   SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL,
-  ST_ETH_MAP, UNI_MAP,
+  ST_ETH_MAP,
+  UNI_MAP,
   USDC_MAP,
   USDT_MAP,
   WBTC_MAP,
@@ -114,9 +115,10 @@ import {
   CoreProtocolBase,
   CoreProtocolMantle,
   CoreProtocolParams,
+  CoreProtocolParamsMantle,
   CoreProtocolPolygonZkEvm,
   CoreProtocolXLayer,
-  LibraryMaps,
+  LibraryMaps, WETHType,
 } from './core-protocol';
 import { DolomiteMargin, Expiry } from './dolomite';
 import { createAbraEcosystem } from './ecosystem-utils/abra';
@@ -205,8 +207,24 @@ export async function setupWETHBalance<T extends NetworkType>(
   amount: BigNumberish,
   spender: { address: string },
 ) {
-  await core.tokens.weth.connect(signer).deposit({ value: amount });
-  await core.tokens.weth.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
+  if ('deposit' in core.tokens.weth) {
+    await core.tokens.weth.connect(signer).deposit({ value: amount });
+    await core.tokens.weth.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
+  } else if (core.network === Network.Mantle) {
+    // TODO:
+  } else if (core.network === Network.XLayer) {
+    // TODO:
+  }
+}
+
+export async function setupWMNTBalance(
+  core: CoreProtocolParamsMantle,
+  signer: SignerWithAddressWithSafety,
+  amount: BigNumberish,
+  spender: { address: string },
+) {
+  await core.tokens.wmnt.connect(signer).deposit({ value: amount });
+  await core.tokens.wmnt.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
 export async function setupWBTCBalance<T extends NetworkType>(
@@ -447,6 +465,21 @@ export function getExpiryContract<T extends NetworkType>(
   ) as Expiry<T>;
 }
 
+export function getWethContract<T extends NetworkType>(
+  config: CoreProtocolSetupConfig<T>,
+  signer: SignerWithAddressWithSafety,
+): WETHType<T> {
+  return (
+    (
+      config.network === Network.ArbitrumOne
+      || config.network === Network.Base
+      || config.network === Network.PolygonZkEvm
+    )
+      ? IWETH__factory.connect(WETH_MAP[config.network].address, signer)
+      : IERC20__factory.connect(ExpiryJson.networks[config.network].address, signer)
+  ) as WETHType<T>;
+}
+
 export async function setupCoreProtocol<T extends NetworkType>(
   config: Readonly<CoreProtocolSetupConfig<T>>,
 ): Promise<CoreProtocolType<T>> {
@@ -613,7 +646,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
     },
     tokens: {
       usdc: IERC20__factory.connect(USDC_MAP[config.network].address, hhUser1),
-      weth: IWETH__factory.connect(WETH_MAP[config.network].address, hhUser1),
+      weth: getWethContract(config, hhUser1),
       stablecoins: [IERC20__factory.connect(USDC_MAP[config.network].address, hhUser1)],
     },
   };
@@ -749,6 +782,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
           uni: IERC20__factory.connect(UNI_MAP[typedConfig.network].address, hhUser1),
           usdt: IERC20__factory.connect(USDT_MAP[typedConfig.network].address, hhUser1),
           wbtc: IERC20__factory.connect(WBTC_MAP[typedConfig.network].address, hhUser1),
+          weth: coreProtocolParams.tokens.weth as any,
           weEth: IERC20__factory.connect(WE_ETH_MAP[typedConfig.network].address, hhUser1),
           wstEth: IERC20__factory.connect(WST_ETH_MAP[typedConfig.network].address, hhUser1),
           xai: IERC20__factory.connect(XAI_MAP[typedConfig.network].address, hhUser1),
@@ -794,7 +828,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
           ...coreProtocolParams.tokens,
           usdt: IERC20__factory.connect(USDT_MAP[typedConfig.network].address, hhUser1),
           wbtc: IERC20__factory.connect(WBTC_MAP[typedConfig.network].address, hhUser1),
-          wmnt: IERC20__factory.connect(WMNT_MAP[typedConfig.network].address, hhUser1),
+          wmnt: IWETH__factory.connect(WMNT_MAP[typedConfig.network].address, hhUser1),
           stablecoins: [
             ...coreProtocolParams.tokens.stablecoins,
             IERC20__factory.connect(USDT_MAP[typedConfig.network].address, hhUser1),
@@ -829,6 +863,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
           matic: IERC20__factory.connect(MATIC_MAP[typedConfig.network].address, hhUser1),
           usdt: IERC20__factory.connect(USDT_MAP[typedConfig.network].address, hhUser1),
           wbtc: IERC20__factory.connect(WBTC_MAP[typedConfig.network].address, hhUser1),
+          weth: coreProtocolParams.tokens.weth as any,
           stablecoins: [
             ...coreProtocolParams.tokens.stablecoins,
             IERC20__factory.connect(DAI_MAP[typedConfig.network]!.address, hhUser1),
@@ -862,7 +897,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
           ...coreProtocolParams.tokens,
           usdt: IERC20__factory.connect(USDT_MAP[typedConfig.network].address, hhUser1),
           wbtc: IERC20__factory.connect(WBTC_MAP[typedConfig.network].address, hhUser1),
-          wokb: IERC20__factory.connect(WOKB_MAP[typedConfig.network].address, hhUser1),
+          wokb: IWETH__factory.connect(WOKB_MAP[typedConfig.network].address, hhUser1),
           stablecoins: [
             ...coreProtocolParams.tokens.stablecoins,
             IERC20__factory.connect(USDT_MAP[typedConfig.network].address, hhUser1),
