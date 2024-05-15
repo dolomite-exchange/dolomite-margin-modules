@@ -74,7 +74,8 @@ import {
   DPX_MAP,
   DYT_GLP_2024_MAP,
   E_ETH_MAP,
-  EZ_ETH_MAP, FRAX_MAP,
+  EZ_ETH_MAP,
+  FRAX_MAP,
   GMX_BTC_PLACEHOLDER_MAP,
   GMX_MAP,
   GRAI_MAP,
@@ -95,6 +96,7 @@ import {
   SIZE_MAP,
   SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL,
   ST_ETH_MAP,
+  UNI_MAP,
   USDC_MAP,
   USDT_MAP,
   WBTC_MAP,
@@ -113,9 +115,10 @@ import {
   CoreProtocolBase,
   CoreProtocolMantle,
   CoreProtocolParams,
+  CoreProtocolParamsMantle,
   CoreProtocolPolygonZkEvm,
   CoreProtocolXLayer,
-  LibraryMaps,
+  LibraryMaps, WETHType,
 } from './core-protocol';
 import { DolomiteMargin, Expiry } from './dolomite';
 import { createAbraEcosystem } from './ecosystem-utils/abra';
@@ -204,8 +207,24 @@ export async function setupWETHBalance<T extends NetworkType>(
   amount: BigNumberish,
   spender: { address: string },
 ) {
-  await core.tokens.weth.connect(signer).deposit({ value: amount });
-  await core.tokens.weth.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
+  if ('deposit' in core.tokens.weth) {
+    await core.tokens.weth.connect(signer).deposit({ value: amount });
+    await core.tokens.weth.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
+  } else if (core.network === Network.Mantle) {
+    // TODO:
+  } else if (core.network === Network.XLayer) {
+    // TODO:
+  }
+}
+
+export async function setupWMNTBalance(
+  core: CoreProtocolParamsMantle,
+  signer: SignerWithAddressWithSafety,
+  amount: BigNumberish,
+  spender: { address: string },
+) {
+  await core.tokens.wmnt.connect(signer).deposit({ value: amount });
+  await core.tokens.wmnt.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
 export async function setupWBTCBalance<T extends NetworkType>(
@@ -446,6 +465,21 @@ export function getExpiryContract<T extends NetworkType>(
   ) as Expiry<T>;
 }
 
+export function getWethContract<T extends NetworkType>(
+  config: CoreProtocolSetupConfig<T>,
+  signer: SignerWithAddressWithSafety,
+): WETHType<T> {
+  return (
+    (
+      config.network === Network.ArbitrumOne
+      || config.network === Network.Base
+      || config.network === Network.PolygonZkEvm
+    )
+      ? IWETH__factory.connect(WETH_MAP[config.network].address, signer)
+      : IERC20__factory.connect(ExpiryJson.networks[config.network].address, signer)
+  ) as WETHType<T>;
+}
+
 export async function setupCoreProtocol<T extends NetworkType>(
   config: Readonly<CoreProtocolSetupConfig<T>>,
 ): Promise<CoreProtocolType<T>> {
@@ -608,10 +642,12 @@ export async function setupCoreProtocol<T extends NetworkType>(
     marketIds: {
       usdc: USDC_MAP[config.network].marketId,
       weth: WETH_MAP[config.network].marketId,
+      stablecoins: [USDC_MAP[config.network].marketId],
     },
     tokens: {
       usdc: IERC20__factory.connect(USDC_MAP[config.network].address, hhUser1),
-      weth: IWETH__factory.connect(WETH_MAP[config.network].address, hhUser1),
+      weth: getWethContract(config, hhUser1),
+      stablecoins: [IERC20__factory.connect(USDC_MAP[config.network].address, hhUser1)],
     },
   };
 
@@ -674,11 +710,11 @@ export async function setupCoreProtocol<T extends NetworkType>(
           dpx: DPX_MAP[typedConfig.network].marketId,
           dYtGlp: DYT_GLP_2024_MAP[typedConfig.network].marketId,
           ezEth: EZ_ETH_MAP[typedConfig.network].marketId,
-          sGlp: S_GLP_MAP[typedConfig.network].marketId,
           gmx: GMX_MAP[typedConfig.network].marketId,
           grai: GRAI_MAP[typedConfig.network].marketId,
           grail: GRAIL_MAP[typedConfig.network].marketId,
           jones: JONES_MAP[typedConfig.network].marketId,
+          link: LINK_MAP[typedConfig.network]!.marketId,
           magic: MAGIC_MAP[typedConfig.network].marketId,
           magicGlp: MAGIC_GLP_MAP[typedConfig.network].marketId,
           mim: MIM_MAP[typedConfig.network].marketId,
@@ -687,11 +723,21 @@ export async function setupCoreProtocol<T extends NetworkType>(
           rEth: RETH_MAP[typedConfig.network].marketId,
           radiant: RDNT_MAP[typedConfig.network].marketId,
           pendle: PENDLE_MAP[typedConfig.network].marketId,
+          sGlp: S_GLP_MAP[typedConfig.network].marketId,
+          uni: UNI_MAP[typedConfig.network].marketId,
           usdt: USDT_MAP[typedConfig.network].marketId,
           wbtc: WBTC_MAP[typedConfig.network].marketId,
           weEth: WE_ETH_MAP[typedConfig.network].marketId,
           wstEth: WST_ETH_MAP[typedConfig.network].marketId,
           xai: XAI_MAP[typedConfig.network].marketId,
+          stablecoins: [
+            ...coreProtocolParams.marketIds.stablecoins,
+            DAI_MAP[typedConfig.network]!.marketId,
+            GRAI_MAP[typedConfig.network].marketId,
+            MIM_MAP[typedConfig.network].marketId,
+            NATIVE_USDC_MAP[typedConfig.network].marketId,
+            USDT_MAP[typedConfig.network].marketId,
+          ],
         },
         tokens: {
           ...coreProtocolParams.tokens,
@@ -723,6 +769,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
           jones: IERC20__factory.connect(JONES_MAP[typedConfig.network].address, hhUser1),
           link: IERC20__factory.connect(LINK_MAP[typedConfig.network]!.address, hhUser1),
           magic: IERC20__factory.connect(MAGIC_MAP[typedConfig.network].address, hhUser1),
+          mim: IERC20__factory.connect(MIM_MAP[typedConfig.network].address, hhUser1),
           nativeUsdc: IERC20__factory.connect(NATIVE_USDC_MAP[typedConfig.network].address, hhUser1),
           premia: IERC20__factory.connect(PREMIA_MAP[typedConfig.network].address, hhUser1),
           pendle: IERC20__factory.connect(PENDLE_MAP[typedConfig.network].address, hhUser1),
@@ -732,10 +779,21 @@ export async function setupCoreProtocol<T extends NetworkType>(
           sGlp: IERC20__factory.connect(S_GLP_MAP[typedConfig.network].address, hhUser1),
           size: IERC20__factory.connect(SIZE_MAP[typedConfig.network].address, hhUser1),
           stEth: IERC20__factory.connect(ST_ETH_MAP[typedConfig.network].address, hhUser1),
+          uni: IERC20__factory.connect(UNI_MAP[typedConfig.network].address, hhUser1),
+          usdt: IERC20__factory.connect(USDT_MAP[typedConfig.network].address, hhUser1),
           wbtc: IERC20__factory.connect(WBTC_MAP[typedConfig.network].address, hhUser1),
+          weth: coreProtocolParams.tokens.weth as any,
           weEth: IERC20__factory.connect(WE_ETH_MAP[typedConfig.network].address, hhUser1),
           wstEth: IERC20__factory.connect(WST_ETH_MAP[typedConfig.network].address, hhUser1),
           xai: IERC20__factory.connect(XAI_MAP[typedConfig.network].address, hhUser1),
+          stablecoins: [
+            ...coreProtocolParams.tokens.stablecoins,
+            IERC20__factory.connect(DAI_MAP[typedConfig.network]!.address, hhUser1),
+            IERC20__factory.connect(GRAI_MAP[typedConfig.network].address, hhUser1),
+            IERC20__factory.connect(MIM_MAP[typedConfig.network].address, hhUser1),
+            IERC20__factory.connect(NATIVE_USDC_MAP[typedConfig.network].address, hhUser1),
+            IERC20__factory.connect(USDT_MAP[typedConfig.network].address, hhUser1),
+          ],
         },
       },
     ) as any;
@@ -760,13 +818,21 @@ export async function setupCoreProtocol<T extends NetworkType>(
           usdt: USDT_MAP[typedConfig.network].marketId,
           wbtc: WBTC_MAP[typedConfig.network].marketId,
           wmnt: WMNT_MAP[typedConfig.network].marketId,
+          stablecoins: [
+            ...coreProtocolParams.marketIds.stablecoins,
+            USDT_MAP[typedConfig.network].marketId,
+          ],
         },
         odosEcosystem: await createOdosEcosystem(typedConfig.network, hhUser1),
         tokens: {
           ...coreProtocolParams.tokens,
           usdt: IERC20__factory.connect(USDT_MAP[typedConfig.network].address, hhUser1),
           wbtc: IERC20__factory.connect(WBTC_MAP[typedConfig.network].address, hhUser1),
-          wmnt: IERC20__factory.connect(WMNT_MAP[typedConfig.network].address, hhUser1),
+          wmnt: IWETH__factory.connect(WMNT_MAP[typedConfig.network].address, hhUser1),
+          stablecoins: [
+            ...coreProtocolParams.tokens.stablecoins,
+            IERC20__factory.connect(USDT_MAP[typedConfig.network].address, hhUser1),
+          ],
         },
       },
     ) as any;
@@ -783,6 +849,11 @@ export async function setupCoreProtocol<T extends NetworkType>(
           matic: MATIC_MAP[typedConfig.network].marketId,
           usdt: USDT_MAP[typedConfig.network].marketId,
           wbtc: WBTC_MAP[typedConfig.network].marketId,
+          stablecoins: [
+            ...coreProtocolParams.marketIds.stablecoins,
+            DAI_MAP[typedConfig.network]!.marketId,
+            USDT_MAP[typedConfig.network].marketId,
+          ],
         },
         paraswapEcosystem: await createParaswapEcosystem(typedConfig.network, hhUser1),
         tokens: {
@@ -792,6 +863,12 @@ export async function setupCoreProtocol<T extends NetworkType>(
           matic: IERC20__factory.connect(MATIC_MAP[typedConfig.network].address, hhUser1),
           usdt: IERC20__factory.connect(USDT_MAP[typedConfig.network].address, hhUser1),
           wbtc: IERC20__factory.connect(WBTC_MAP[typedConfig.network].address, hhUser1),
+          weth: coreProtocolParams.tokens.weth as any,
+          stablecoins: [
+            ...coreProtocolParams.tokens.stablecoins,
+            IERC20__factory.connect(DAI_MAP[typedConfig.network]!.address, hhUser1),
+            IERC20__factory.connect(USDT_MAP[typedConfig.network].address, hhUser1),
+          ],
         },
       },
     ) as any;
@@ -806,6 +883,10 @@ export async function setupCoreProtocol<T extends NetworkType>(
           usdt: USDT_MAP[typedConfig.network].marketId,
           wbtc: WBTC_MAP[typedConfig.network].marketId,
           wokb: WOKB_MAP[typedConfig.network].marketId,
+          stablecoins: [
+            ...coreProtocolParams.marketIds.stablecoins,
+            USDT_MAP[typedConfig.network].marketId,
+          ],
         },
         okxEcosystem: await createOkxEcosystem(typedConfig.network, hhUser1),
         okxPriceOracleV3: OkxPriceOracleV3__factory.connect(
@@ -816,7 +897,11 @@ export async function setupCoreProtocol<T extends NetworkType>(
           ...coreProtocolParams.tokens,
           usdt: IERC20__factory.connect(USDT_MAP[typedConfig.network].address, hhUser1),
           wbtc: IERC20__factory.connect(WBTC_MAP[typedConfig.network].address, hhUser1),
-          wokb: IERC20__factory.connect(WOKB_MAP[typedConfig.network].address, hhUser1),
+          wokb: IWETH__factory.connect(WOKB_MAP[typedConfig.network].address, hhUser1),
+          stablecoins: [
+            ...coreProtocolParams.tokens.stablecoins,
+            IERC20__factory.connect(USDT_MAP[typedConfig.network].address, hhUser1),
+          ],
         },
       },
     ) as any;
