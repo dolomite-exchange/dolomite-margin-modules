@@ -50,16 +50,19 @@ contract OkxAggregatorTrader is AggregatorTraderBase {
     // ============ Storage ============
 
     IOkxAggregator immutable public OKX_AGGREGATOR; // solhint-disable-line
+    address immutable public OKX_TRANSFER_PROXY; // solhint-disable-line
 
     // ============ Constructor ============
 
     constructor(
         address _okxAggregator,
+        address _okxTransferProxy,
         address _dolomiteMargin
     )
     AggregatorTraderBase(_dolomiteMargin)
     {
         OKX_AGGREGATOR = IOkxAggregator(_okxAggregator);
+        OKX_TRANSFER_PROXY = _okxTransferProxy;
     }
 
     // ============ Public Functions ============
