@@ -221,6 +221,11 @@ async function main(): Promise<DryRunOutput<Network.XLayer>> {
     upload: {
       transactions,
       chainId: core.network,
+      version: '1.0',
+      meta: {
+        txBuilderVersion: '1.16.5',
+        name: __filename,
+      },
     },
     scriptName: getScriptName(__filename),
     invariants: async () => {

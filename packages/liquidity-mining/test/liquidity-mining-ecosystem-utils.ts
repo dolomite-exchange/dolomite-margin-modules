@@ -72,11 +72,11 @@ export async function createTestVesterV2Proxy(
 
   const bytes = ethers.utils.defaultAbiCoder.encode(
     ['address', 'address'],
-    [handler.address, core.liquidityMiningEcosystem.oArb.address],
+    [handler.address, core.oArbLiquidityMiningEcosystem.oArb.address],
   );
   const calldata = await implementation.populateTransaction.initialize(bytes);
 
-  const vesterProxy = core.liquidityMiningEcosystem!.oArbVesterProxy;
+  const vesterProxy = core.oArbLiquidityMiningEcosystem!.oArbVesterProxy;
   await vesterProxy.connect(core.governance).upgradeToAndCall(
     implementation.address,
     calldata.data!,
