@@ -272,6 +272,7 @@ function preHash(timestamp: string, method: string, request_path: string, params
   // Create a pre-signature based on strings and parameters
   let query_string;
   if (method === 'GET' && params) {
+    // @follow-up Are you ok with using a deprecated method here? I copied this code from OKX
     query_string = `?${querystring.stringify(params)}`;
   }
   if (method === 'POST' && params) {
