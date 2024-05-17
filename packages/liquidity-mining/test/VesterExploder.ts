@@ -1,5 +1,4 @@
 import { SignerWithAddressWithSafety } from '@dolomite-exchange/modules-base/src/utils/SignerWithAddressWithSafety';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
@@ -15,6 +14,7 @@ import {
   setupCoreProtocol,
   setupWETHBalance,
 } from 'packages/base/test/utils/setup';
+import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { OARB, OARB__factory, TestVesterImplementationV2, VesterExploder } from '../src/types';
 import { createTestVesterV2Proxy, createVesterExploder } from './liquidity-mining-ecosystem-utils';
 

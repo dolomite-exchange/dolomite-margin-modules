@@ -66,7 +66,8 @@ import {
   expectWalletAllowance,
   expectWalletBalance,
 } from '../utils/assertions';
-import { CoreProtocolArbitrumOne } from '../utils/core-protocol';
+
+import { CoreProtocolArbitrumOne } from '../utils/core-protocols/core-protocol-arbitrum-one';
 import { setExpiry } from '../utils/expiry-utils';
 import { toZapBigNumber } from '../utils/liquidation-utils';
 import {

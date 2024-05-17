@@ -5,7 +5,6 @@ import {
 import { Network, ONE_ETH_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { getBlockTimestamp, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectProtocolBalance, expectWalletBalance } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import {
   disableInterestAccrual,
   getDefaultCoreProtocolConfig,
@@ -18,6 +17,7 @@ import { setNextBlockTimestamp } from '@nomicfoundation/hardhat-network-helpers/
 import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
+import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { Emitter, Emitter__factory, OARB } from '../src/types';
 import { createOARB } from './liquidity-mining-ecosystem-utils';
 

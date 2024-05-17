@@ -1,4 +1,4 @@
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
@@ -29,6 +29,7 @@ import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/se
 import { parseEther } from 'ethers/lib/utils';
 import { getRedstonePriceOracleV2ConstructorParams } from '../src/oracles-constructors';
 import { REDSTONE_PRICE_AGGREGATORS_MAP } from 'packages/base/src/utils/constants';
+import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 
 const WE_ETH_PRICE = BigNumber.from('3966474866008054000000');
 const TEST_TOKEN_PRICE = parseEther('1');

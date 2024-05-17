@@ -1,7 +1,6 @@
 import { address } from '@dolomite-exchange/dolomite-margin';
 import { RegistryProxy, RegistryProxy__factory } from '@dolomite-exchange/modules-base/src/types';
 import { createContractWithAbi } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import {
   IUmamiAssetVault,
   IUmamiAssetVaultIsolationModeTokenVaultV1,

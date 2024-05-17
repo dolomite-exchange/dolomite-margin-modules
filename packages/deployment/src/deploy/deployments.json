@@ -274,13 +274,6 @@
       "isVerified": true
     }
   },
-  "ChroniclePriceOracle": {
-    "5000": {
-      "address": "0x43C2FDB89A1C491F9FE86E1Ff05bd2BE204Ab4aE",
-      "transaction": "0xa026de8e6956a92d8d1c2b42fbc8f68d593a5f103574bf3066325a6b9c5a1ff3",
-      "isVerified": true
-    }
-  },
   "DPXTWAPPriceOracleV1": {
     "42161": {
       "address": "0xcB10913Bb95E66658BDb065EA85C7D6594AedF47",
@@ -2756,6 +2749,11 @@
     }
   },
   "RedstonePriceOracleV3": {
+    "5000": {
+      "address": "0x6B15c3F0D266be946eA2d33C40d1a7204C8403a2",
+      "transaction": "0xf560cc9e13173d45ecca1b0c3510699a321276a762a7aeae5b047fca79971e1b",
+      "isVerified": true
+    },
     "42161": {
       "address": "0x5fBAe9cbbc209efDf2054e050Baf5a0783Be01d2",
       "transaction": "0xe62098b9df8aba581c9294a0a49aa42a25ad9709dc25508eefe5d0ea4bc77447",

@@ -17,7 +17,8 @@ import { createIsolationModeTokenVaultV1ActionsImpl } from '@dolomite-exchange/m
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from 'packages/base/test/utils/setup';
-import { CoreProtocolArbitrumOne } from '../../utils/core-protocol';
+
+import { CoreProtocolArbitrumOne } from '../../utils/core-protocols/core-protocol-arbitrum-one';
 import { createTestIsolationModeFactory } from '../../utils/ecosystem-utils/testers';
 
 describe('IsolationModeTraderBaseV2', () => {

@@ -5,7 +5,8 @@ import { createContractWithAbi } from '../../src/utils/dolomite-utils';
 import { Network, NO_EXPIRY, ZERO_BI } from '../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
 import { expectThrow } from '../utils/assertions';
-import { CoreProtocolArbitrumOne } from '../utils/core-protocol';
+
+import { CoreProtocolArbitrumOne } from '../utils/core-protocols/core-protocol-arbitrum-one';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '../utils/setup';
 
 describe('DolomiteMarginVersionWrapperLib_Arbitrum', () => {

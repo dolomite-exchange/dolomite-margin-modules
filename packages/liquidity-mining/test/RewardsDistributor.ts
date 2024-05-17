@@ -3,12 +3,12 @@ import { createContractWithAbi } from '@dolomite-exchange/modules-base/src/utils
 import { Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectEvent, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { createEventEmitter } from '@dolomite-exchange/modules-base/test/utils/dolomite';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { expect } from 'chai';
 import { defaultAbiCoder, keccak256 } from 'ethers/lib/utils';
 import { MerkleTree } from 'merkletreejs';
+import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { OARB, OARB__factory, RewardsDistributor } from '../src/types';
 import { createOARB, createRewardsDistributor } from './liquidity-mining-ecosystem-utils';
 

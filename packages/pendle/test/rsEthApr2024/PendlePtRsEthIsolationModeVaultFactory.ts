@@ -5,7 +5,6 @@ import {
   snapshot,
 } from '@dolomite-exchange/modules-base/test/utils';
 import { expectEvent, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { expect } from 'chai';
 import { PendlePtIsolationModeTokenVaultV1, PendlePtIsolationModeVaultFactory, PendleRegistry } from '../../src/types';

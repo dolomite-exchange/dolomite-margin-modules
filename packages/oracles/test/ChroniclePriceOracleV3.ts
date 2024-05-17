@@ -1,19 +1,4 @@
-import { CoreProtocolMantle } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
-import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
-import { expect } from 'chai';
-import { BigNumber } from 'ethers';
-import {
-  ChroniclePriceOracle,
-  ChroniclePriceOracle__factory,
-  IChronicleScribe__factory,
-  RedstonePriceOracleV3,
-  RedstonePriceOracleV3__factory,
-  TestChronicleScribe,
-  TestChronicleScribe__factory,
-} from '../src/types';
-import {
-  CustomTestToken
-} from '@dolomite-exchange/modules-base/src/types';
+import { CustomTestToken } from '@dolomite-exchange/modules-base/src/types';
 import { createContractWithAbi, createTestToken } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import {
   ADDRESS_ZERO,
@@ -25,14 +10,30 @@ import {
   impersonate,
   revertToSnapshotAndCapture,
   snapshot,
-  waitTime
+  waitTime,
 } from '@dolomite-exchange/modules-base/test/utils';
 import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
+import { expect } from 'chai';
+import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
-import { TokenInfo } from '../src';
 import { CHRONICLE_PRICE_SCRIBES_MAP, REDSTONE_PRICE_AGGREGATORS_MAP } from 'packages/base/src/utils/constants';
-import { getChroniclePriceOracleConstructorParams, getRedstonePriceOracleV3ConstructorParams } from '../src/oracles-constructors';
+import { CoreProtocolMantle } from 'packages/base/test/utils/core-protocols/core-protocol-mantle';
+import { TokenInfo } from '../src';
+import {
+  getChroniclePriceOracleV3ConstructorParams,
+  getRedstonePriceOracleV3ConstructorParams,
+} from '../src/oracles-constructors';
+import {
+  ChroniclePriceOracleV3,
+  ChroniclePriceOracleV3__factory,
+  IChronicleScribe__factory,
+  RedstonePriceOracleV3,
+  RedstonePriceOracleV3__factory,
+  TestChronicleScribe,
+  TestChronicleScribe__factory,
+} from '../src/types';
 
 const METH_PRICE = BigNumber.from('3237493823311432036070');
 const METH_ETH_EXCHANGE_RATE = BigNumber.from('1027354527249591449');
@@ -41,18 +42,18 @@ const WETH_PRICE = BigNumber.from('3151291727870000000000');
 
 const CHRONICLE_AUTHED_ADDRESS = '0x39abd7819e5632fa06d2ecbba45dca5c90687ee3';
 
-describe('ChroniclePriceOracle', () => {
+describe('ChroniclePriceOracleV3', () => {
   let snapshotId: string;
 
   let core: CoreProtocolMantle;
 
-  let oracle: ChroniclePriceOracle;
+  let oracle: ChroniclePriceOracleV3;
   let redstoneOracle: RedstonePriceOracleV3;
   let testScribe: TestChronicleScribe;
   let testToken: CustomTestToken;
 
   before(async () => {
-    core = await setupCoreProtocol(await getDefaultCoreProtocolConfig(Network.Mantle));
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.Mantle));
 
     testScribe = await createContractWithAbi<TestChronicleScribe>(
       TestChronicleScribe__factory.abi,
@@ -64,14 +65,14 @@ describe('ChroniclePriceOracle', () => {
     testToken = await createTestToken();
 
     const scribesMantle = CHRONICLE_PRICE_SCRIBES_MAP[Network.Mantle];
-    oracle = await createContractWithAbi<ChroniclePriceOracle>(
-      ChroniclePriceOracle__factory.abi,
-      ChroniclePriceOracle__factory.bytecode,
-      getChroniclePriceOracleConstructorParams(
+    oracle = await createContractWithAbi<ChroniclePriceOracleV3>(
+      ChroniclePriceOracleV3__factory.abi,
+      ChroniclePriceOracleV3__factory.bytecode,
+      getChroniclePriceOracleV3ConstructorParams(
+        core,
         Object.keys(scribesMantle),
         Object.keys(scribesMantle).map(k => scribesMantle[k].scribeAddress),
         [false, false, false, false],
-        core
       ),
     );
     const authedImpersonator = await impersonate(CHRONICLE_AUTHED_ADDRESS, true);
@@ -96,28 +97,28 @@ describe('ChroniclePriceOracle', () => {
           { oracle: redstoneOracle.address, tokenPair: ADDRESS_ZERO, weight: 100 },
         ],
         decimals: 18,
-        token: core.tokens.weth.address
+        token: core.tokens.weth.address,
       },
       {
         oracleInfos: [
           { oracle: oracle.address, tokenPair: core.tokens.weth.address, weight: 100 },
         ],
         decimals: 18,
-        token: core.tokens.meth.address
+        token: core.tokens.meth.address,
       },
       {
         oracleInfos: [
           { oracle: oracle.address, tokenPair: ADDRESS_ZERO, weight: 100 },
         ],
         decimals: 6,
-        token: core.tokens.usdc.address
+        token: core.tokens.usdc.address,
       },
       {
         oracleInfos: [
           { oracle: oracle.address, tokenPair: ADDRESS_ZERO, weight: 100 },
         ],
         decimals: 8,
-        token: core.tokens.wbtc.address
+        token: core.tokens.wbtc.address,
       },
     ];
     for (const tokenInfo of tokenInfos) {
@@ -133,9 +134,9 @@ describe('ChroniclePriceOracle', () => {
 
   describe('#constructor', () => {
     it('should succeed when values are aligned', async () => {
-      await createContractWithAbi<ChroniclePriceOracle>(
-        ChroniclePriceOracle__factory.abi,
-        ChroniclePriceOracle__factory.bytecode,
+      await createContractWithAbi<ChroniclePriceOracleV3>(
+        ChroniclePriceOracleV3__factory.abi,
+        ChroniclePriceOracleV3__factory.bytecode,
         [
           [ZERO_ADDRESS],
           [ZERO_ADDRESS],
@@ -148,9 +149,9 @@ describe('ChroniclePriceOracle', () => {
 
     it('should fail when token length is not aligned', async () => {
       await expectThrow(
-        createContractWithAbi<ChroniclePriceOracle>(
-          ChroniclePriceOracle__factory.abi,
-          ChroniclePriceOracle__factory.bytecode,
+        createContractWithAbi<ChroniclePriceOracleV3>(
+          ChroniclePriceOracleV3__factory.abi,
+          ChroniclePriceOracleV3__factory.bytecode,
           [
             [ZERO_ADDRESS],
             [ZERO_ADDRESS, ZERO_ADDRESS],
@@ -159,15 +160,15 @@ describe('ChroniclePriceOracle', () => {
             core.dolomiteMargin.address,
           ],
         ),
-        'ChroniclePriceOracle: Invalid tokens length',
+        'ChroniclePriceOracleV3: Invalid tokens length',
       );
     });
 
     it('should fail when aggregator length is not aligned', async () => {
       await expectThrow(
-        createContractWithAbi<ChroniclePriceOracle>(
-          ChroniclePriceOracle__factory.abi,
-          ChroniclePriceOracle__factory.bytecode,
+        createContractWithAbi<ChroniclePriceOracleV3>(
+          ChroniclePriceOracleV3__factory.abi,
+          ChroniclePriceOracleV3__factory.bytecode,
           [
             [ZERO_ADDRESS, ZERO_ADDRESS],
             [ZERO_ADDRESS, ZERO_ADDRESS],
@@ -176,7 +177,7 @@ describe('ChroniclePriceOracle', () => {
             core.dolomiteMargin.address,
           ],
         ),
-        'ChroniclePriceOracle: Invalid scribes length',
+        'ChroniclePriceOracleV3: Invalid scribes length',
       );
     });
   });
@@ -196,7 +197,7 @@ describe('ChroniclePriceOracle', () => {
       await oracle.connect(core.governance).ownerInsertOrUpdateOracleToken(
         testToken.address,
         testScribe.address,
-        true
+        true,
       );
       const tokenInfo: TokenInfo = {
         oracleInfos: [
@@ -216,11 +217,11 @@ describe('ChroniclePriceOracle', () => {
       await oracle.connect(core.governance).ownerInsertOrUpdateOracleToken(
         testToken.address,
         testScribe.address,
-        false
+        false,
       );
       await expectThrow(
         oracle.connect(doloImpersonator).getPrice(testToken.address),
-        'ChroniclePriceOracle: DolomiteMargin cannot call',
+        'ChroniclePriceOracleV3: DolomiteMargin cannot call',
       );
     });
 
@@ -228,11 +229,11 @@ describe('ChroniclePriceOracle', () => {
       const ONE_ADDRESS = '0x1000000000000000000000000000000000000000';
       await expectThrow(
         oracle.getPrice(ZERO_ADDRESS),
-        `ChroniclePriceOracle: Invalid token <${ZERO_ADDRESS}>`,
+        `ChroniclePriceOracleV3: Invalid token <${ZERO_ADDRESS}>`,
       );
       await expectThrow(
         oracle.getPrice(ONE_ADDRESS),
-        `ChroniclePriceOracle: Invalid token <${ONE_ADDRESS}>`,
+        `ChroniclePriceOracleV3: Invalid token <${ONE_ADDRESS}>`,
       );
     });
 
@@ -240,14 +241,14 @@ describe('ChroniclePriceOracle', () => {
       await oracle.connect(core.governance).ownerInsertOrUpdateOracleToken(
         testToken.address,
         testScribe.address,
-        false
+        false,
       );
       await testScribe.setLatestAnswer(BigNumber.from('20000000000')); // $200
       await waitTime((60 * 60 * 36) + 1); // prices expire in 36 hours by default
       const data = await testScribe.latestRoundData();
       await expectThrow(
         oracle.getPrice(testToken.address),
-        `ChroniclePriceOracle: Chronicle price expired <${testToken.address.toLowerCase()}, ${data.updatedAt}>`,
+        `ChroniclePriceOracleV3: Chronicle price expired <${testToken.address.toLowerCase()}, ${data.updatedAt}>`,
       );
     });
   });
@@ -270,7 +271,7 @@ describe('ChroniclePriceOracle', () => {
       const stalenessThreshold = ONE_DAY_SECONDS - 1;
       await expectThrow(
         oracle.connect(core.governance).ownerSetStalenessThreshold(stalenessThreshold),
-        `ChroniclePriceOracle: Staleness threshold too low <${stalenessThreshold.toFixed()}>`,
+        `ChroniclePriceOracleV3: Staleness threshold too low <${stalenessThreshold.toFixed()}>`,
       );
     });
 
@@ -278,7 +279,7 @@ describe('ChroniclePriceOracle', () => {
       const stalenessThreshold = (ONE_DAY_SECONDS * 7) + 1;
       await expectThrow(
         oracle.connect(core.governance).ownerSetStalenessThreshold(stalenessThreshold),
-        `ChroniclePriceOracle: Staleness threshold too high <${stalenessThreshold.toFixed()}>`,
+        `ChroniclePriceOracleV3: Staleness threshold too high <${stalenessThreshold.toFixed()}>`,
       );
     });
   });
@@ -289,7 +290,7 @@ describe('ChroniclePriceOracle', () => {
       await oracle.connect(core.governance).ownerInsertOrUpdateOracleToken(
         tokenAddress,
         testScribe.address,
-        false
+        false,
       );
       expect(await oracle.getScribeByToken(tokenAddress)).to.eq(testScribe.address);
       expect(await oracle.getInvertPriceByToken(tokenAddress)).to.eq(false);
@@ -300,7 +301,7 @@ describe('ChroniclePriceOracle', () => {
       await oracle.connect(core.governance).ownerInsertOrUpdateOracleToken(
         tokenAddress,
         testScribe.address,
-        true
+        true,
       );
       expect(await oracle.getScribeByToken(tokenAddress)).to.eq(testScribe.address);
       expect(await oracle.getInvertPriceByToken(tokenAddress)).to.eq(true);
@@ -311,7 +312,7 @@ describe('ChroniclePriceOracle', () => {
         oracle.connect(core.hhUser1).ownerInsertOrUpdateOracleToken(
           testToken.address,
           testScribe.address,
-          false
+          false,
         ),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );

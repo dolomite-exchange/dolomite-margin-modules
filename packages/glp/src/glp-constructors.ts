@@ -1,3 +1,4 @@
+import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import {
   GLPIsolationModeTokenVaultV1,
   GLPIsolationModeTokenVaultV2,
@@ -13,7 +14,6 @@ import {
   TestGLPIsolationModeTokenVaultV1,
   TestGLPIsolationModeTokenVaultV2,
 } from './types';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 
 export function getGLPPriceOracleV1ConstructorParams(
   dfsGlp: IGLPIsolationModeVaultFactory | GLPIsolationModeVaultFactory | IGLPIsolationModeVaultFactoryOld | IERC20,

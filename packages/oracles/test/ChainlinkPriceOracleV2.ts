@@ -1,17 +1,4 @@
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
-import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
-import { expect } from 'chai';
-import { BigNumber } from 'ethers';
-import {
-  ChainlinkPriceOracleV2,
-  ChainlinkPriceOracleV2__factory,
-  TestChainlinkAggregator,
-  TestChainlinkAggregator__factory,
-} from '../src/types';
-import {
-  CustomTestToken,
-} from '@dolomite-exchange/modules-base/src/types';
-import { getChainlinkPriceOracleV2ConstructorParamsFromOldPriceOracle } from '../src/oracles-constructors';
+import { CustomTestToken } from '@dolomite-exchange/modules-base/src/types';
 import { createContractWithAbi, createTestToken } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import {
   ADDRESS_ZERO,
@@ -26,10 +13,21 @@ import {
   impersonate,
   revertToSnapshotAndCapture,
   snapshot,
-  waitTime
+  waitTime,
 } from '@dolomite-exchange/modules-base/test/utils';
 import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
+import { expect } from 'chai';
+import { BigNumber } from 'ethers';
+import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
+import { getChainlinkPriceOracleV2ConstructorParamsFromOldPriceOracle } from '../src/oracles-constructors';
+import {
+  ChainlinkPriceOracleV2,
+  ChainlinkPriceOracleV2__factory,
+  TestChainlinkAggregator,
+  TestChainlinkAggregator__factory,
+} from '../src/types';
 
 const WETH_PRICE = BigNumber.from('2260038782330000000000');
 const BTC_PRICE = BigNumber.from('440493939086400000000000000000000');
@@ -180,7 +178,7 @@ describe('ChainlinkPriceOracleV2', () => {
         testToken.address,
         18,
         testAggregator.address,
-        core.tokens.weth.address
+        core.tokens.weth.address,
       );
       const price = await oracle.getPrice(testToken.address);
       expect(price.value).to.eq(TEST_TOKEN_PRICE);
@@ -192,7 +190,7 @@ describe('ChainlinkPriceOracleV2', () => {
         18,
         testAggregator.address,
         ADDRESS_ZERO,
-        true
+        true,
       );
       const price = await oracle.getPrice(testToken.address);
       expect(price.value).to.eq(TEST_TOKEN_STANDARD_PRICE);
@@ -310,7 +308,7 @@ describe('ChainlinkPriceOracleV2', () => {
         18,
         testAggregator.address,
         ZERO_ADDRESS,
-        true
+        true,
       );
       expect(await oracle.getDecimalsByToken(tokenAddress)).to.eq(18);
       expect(await oracle.getAggregatorByToken(tokenAddress)).to.eq(testAggregator.address);
@@ -325,7 +323,7 @@ describe('ChainlinkPriceOracleV2', () => {
         11,
         testAggregator.address,
         core.tokens.weth.address,
-        true
+        true,
       );
       expect(await oracle.getDecimalsByToken(tokenAddress)).to.eq(11);
       expect(await oracle.getAggregatorByToken(tokenAddress)).to.eq(testAggregator.address);
@@ -340,7 +338,7 @@ describe('ChainlinkPriceOracleV2', () => {
           9,
           testAggregator.address,
           ZERO_ADDRESS,
-          false
+          false,
         ),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
@@ -355,7 +353,7 @@ describe('ChainlinkPriceOracleV2', () => {
           9,
           testAggregator.address,
           otherPairAddress,
-          false
+          false,
         ),
         `ChainlinkPriceOracleV2: Invalid token pair <${otherPairAddress.toLowerCase()}>`,
       );
@@ -367,7 +365,7 @@ describe('ChainlinkPriceOracleV2', () => {
         18,
         testAggregator.address,
         ADDRESS_ZERO,
-        false
+        false,
       );
       const marketId = await core.dolomiteMargin.getNumMarkets();
       await core.dolomiteMargin.ownerAddMarket(
@@ -446,7 +444,7 @@ describe('ChainlinkPriceOracleV2', () => {
         18,
         testAggregator.address,
         ADDRESS_ZERO,
-        false
+        false,
       );
       const marketId = await core.dolomiteMargin.getNumMarkets();
       await core.dolomiteMargin.ownerAddMarket(

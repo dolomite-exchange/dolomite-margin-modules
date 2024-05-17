@@ -4,7 +4,8 @@ import { createContractWithAbi } from '../../src/utils/dolomite-utils';
 import { ADDRESS_ZERO, Network } from '../../src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../utils';
 import { expectThrow } from '../utils/assertions';
-import { CoreProtocolArbitrumOne } from '../utils/core-protocol';
+
+import { CoreProtocolArbitrumOne } from '../utils/core-protocols/core-protocol-arbitrum-one';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '../utils/setup';
 
 describe('MinimalERC20', () => {

@@ -17,7 +17,6 @@ import {
   snapshot,
 } from '@dolomite-exchange/modules-base/test/utils';
 import { expectProtocolBalance, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import {
   setupCoreProtocol,
   setupGMXBalance,
@@ -34,6 +33,7 @@ import {
 } from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
 import { BigNumber, BigNumberish } from 'ethers';
 import { ethers } from 'hardhat';
+import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import {
   GMXIsolationModeTokenVaultV1,
   GMXIsolationModeTokenVaultV1__factory,

@@ -13,7 +13,6 @@ import {
   setupCoreProtocol,
   setupTestMarket
 } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 
 const GLP_PRICE = BigNumber.from('1157958974643177588'); // $1.157958974643177588
 

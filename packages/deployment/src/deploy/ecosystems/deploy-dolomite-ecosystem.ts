@@ -301,6 +301,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
 
   await deployInterestSetters();
 
+  // We can't set up the core protocol here because there are too many missing contracts/context
   const governanceAddress = await dolomiteMargin.connect(hhUser1).owner();
   const governance = await impersonateOrFallback(governanceAddress, true, hhUser1);
   const core = {

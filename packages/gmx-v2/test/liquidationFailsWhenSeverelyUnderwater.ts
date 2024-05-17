@@ -1,4 +1,3 @@
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
@@ -38,6 +37,7 @@ import {
 } from 'packages/base/test/utils/setup';
 import { getLiquidateIsolationModeZapPath } from 'packages/base/test/utils/zap-utils';
 import { AccountStruct } from '../../../packages/base/src/utils/constants';
+import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE_FOR_TESTS } from '../src/gmx-v2-constructors';
 import {
   GmxV2IsolationModeTokenVaultV1,

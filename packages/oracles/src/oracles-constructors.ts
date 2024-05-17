@@ -1,10 +1,6 @@
 import { IERC20 } from '@dolomite-exchange/modules-base/src/types';
-import {
-  CoreProtocolArbitrumOne,
-  CoreProtocolPolygonZkEvm,
-} from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { DolomiteMargin } from '@dolomite-exchange/modules-base/test/utils/dolomite';
-import { CoreProtocolType } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { CoreProtocolConfig, CoreProtocolType } from '@dolomite-exchange/modules-base/test/utils/setup';
 import Deployments from '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
 import { BigNumber, BigNumberish } from 'ethers';
 import { ethers } from 'hardhat';
@@ -15,9 +11,12 @@ import {
   CHAINLINK_PRICE_ORACLE_V1_MAP,
 } from 'packages/base/src/utils/constants';
 import { ADDRESS_ZERO, Network, NetworkType } from 'packages/base/src/utils/no-deps-constants';
+import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
+import { CoreProtocolPolygonZkEvm } from 'packages/base/test/utils/core-protocols/core-protocol-polygon-zkevm';
 import { TokenInfo } from './index';
 import {
   ChainlinkPriceOracleV3,
+  ChroniclePriceOracleV3,
   IAlgebraV3Pool,
   IChainlinkAggregator,
   IChainlinkPriceOracleV1,
@@ -30,14 +29,28 @@ import {
   RedstonePriceOracleV3,
 } from './types';
 
-export type CoreProtocolWithChainlinkOld<T extends Network> = Extract<CoreProtocolType<T>, {
+export type CoreProtocolWithChainlinkOld<T extends NetworkType> = Extract<CoreProtocolType<T>, {
   dolomiteMargin: DolomiteMargin<T>;
   chainlinkPriceOracleV1: IChainlinkPriceOracleV1;
 }>;
 
-export type CoreProtocolWithChainlinkV3<T extends Network> = Extract<CoreProtocolType<T>, {
+export type CoreProtocolWithChainlinkV3<T extends NetworkType> = Extract<CoreProtocolType<T>, {
   dolomiteMargin: DolomiteMargin<T>;
   chainlinkPriceOracleV3: IChainlinkPriceOracleV3;
+  oracleAggregatorV2: OracleAggregatorV2;
+}>;
+
+export type CoreProtocolWithChronicle<T extends NetworkType> = Extract<CoreProtocolType<T>, {
+  config: CoreProtocolConfig<T>
+  dolomiteMargin: DolomiteMargin<T>;
+  chroniclePriceOracleV3: ChroniclePriceOracleV3;
+  oracleAggregatorV2: OracleAggregatorV2;
+}>;
+
+export type CoreProtocolWithRedstone<T extends NetworkType> = Extract<CoreProtocolType<T>, {
+  config: CoreProtocolConfig<T>
+  dolomiteMargin: DolomiteMargin<T>;
+  redstonePriceOracleV3: RedstonePriceOracleV3;
   oracleAggregatorV2: OracleAggregatorV2;
 }>;
 
@@ -347,11 +360,11 @@ export function getChainlinkPriceOracleV3ConstructorParams<T extends NetworkType
   ];
 }
 
-export function getChroniclePriceOracleConstructorParams<T extends NetworkType>(
+export function getChroniclePriceOracleV3ConstructorParams<T extends NetworkType>(
+  core: CoreProtocolType<T>,
   tokens: string[],
   scribes: string[],
   invertPrices: boolean[],
-  core: CoreProtocolType<T>,
 ): [string[], string[], boolean[], string, string] {
   return [
     tokens,

@@ -12,7 +12,6 @@ import {
   waitTime,
 } from '@dolomite-exchange/modules-base/test/utils';
 import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
@@ -20,6 +19,7 @@ import { deployMockContract, MockContract } from 'ethereum-waffle';
 import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { REDSTONE_PRICE_AGGREGATORS_MAP } from 'packages/base/src/utils/constants';
+import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { getRedstonePriceOracleV3ConstructorParams } from '../src/oracles-constructors';
 import {
   OracleAggregatorV2__factory,
@@ -83,7 +83,7 @@ describe('RedstonePriceOracleV3', () => {
       core.tokens.dai.address,
       core.tokens.usdc.address,
       core.tokens.wbtc.address,
-      core.tokens.weEth.address
+      core.tokens.weEth.address,
     ];
     oracle = (await createContractWithAbi<RedstonePriceOracleV3>(
       RedstonePriceOracleV3__factory.abi,

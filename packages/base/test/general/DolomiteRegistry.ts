@@ -4,7 +4,8 @@ import { DolomiteRegistryImplementation, DolomiteRegistryImplementation__factory
 import { Network } from '../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
 import { expectEvent, expectThrow } from '../utils/assertions';
-import { CoreProtocolArbitrumOne } from '../utils/core-protocol';
+
+import { CoreProtocolArbitrumOne } from '../utils/core-protocols/core-protocol-arbitrum-one';
 import { createDolomiteRegistryImplementation, createRegistryProxy } from '../utils/dolomite';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '../utils/setup';
 

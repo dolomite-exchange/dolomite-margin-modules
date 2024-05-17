@@ -50,7 +50,8 @@ import {
   expectWalletAllowance,
   expectWalletBalance,
 } from '../utils/assertions';
-import { CoreProtocolArbitrumOne } from '../utils/core-protocol';
+
+import { CoreProtocolArbitrumOne } from '../utils/core-protocols/core-protocol-arbitrum-one';
 import { createDolomiteRegistryImplementation, createEventEmitter } from '../utils/dolomite';
 import { setExpiry } from '../utils/expiry-utils';
 import { liquidateV4WithZapParam } from '../utils/liquidation-utils';

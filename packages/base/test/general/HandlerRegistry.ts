@@ -9,7 +9,8 @@ import {
 } from '../../src/types';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
 import { expectEvent, expectThrow } from '../utils/assertions';
-import { CoreProtocolArbitrumOne } from '../utils/core-protocol';
+
+import { CoreProtocolArbitrumOne } from '../utils/core-protocols/core-protocol-arbitrum-one';
 import { createIsolationModeTokenVaultV1ActionsImpl } from '../utils/dolomite';
 import { createTestHandlerRegistry, createTestIsolationModeFactory } from '../utils/ecosystem-utils/testers';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '../utils/setup';

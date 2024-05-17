@@ -1,6 +1,7 @@
 import { ActionType, AmountDenomination, AmountReference } from '@dolomite-exchange/dolomite-margin/dist/src';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
+import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { GLPPriceOracleV1, GLPUnwrapperTraderV2, GmxRegistryV1 } from '../src/types';
 import { IERC20 } from '@dolomite-exchange/modules-base/src/types';
 import { AccountInfoStruct, ActionArgsStruct } from '@dolomite-exchange/modules-base/src/utils';
@@ -19,7 +20,6 @@ import {
   setupCoreProtocol, setupTestMarket,
   setupUSDCBalance,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200

@@ -2,7 +2,6 @@ import { ADDRESSES } from '@dolomite-exchange/dolomite-margin';
 import { createTestToken } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { setupCoreProtocol, setupTestMarket } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
