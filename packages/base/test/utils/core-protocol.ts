@@ -33,7 +33,7 @@ import { CamelotEcosystem } from './ecosystem-utils/camelot';
 import { GmxEcosystem, GmxEcosystemV2 } from './ecosystem-utils/gmx';
 import { InterestSetters } from './ecosystem-utils/interest-setters';
 import { JonesEcosystem } from './ecosystem-utils/jones';
-import { LiquidityMiningEcosystem } from './ecosystem-utils/liquidity-mining';
+import { MineralLiquidityMiningEcosystem, OARBLiquidityMiningEcosystem } from './ecosystem-utils/liquidity-mining';
 import { OdosEcosystem } from './ecosystem-utils/odos';
 import { ParaswapEcosystem } from './ecosystem-utils/paraswap';
 import { OkxEcosystem } from './ecosystem-utils/okx';
@@ -50,17 +50,27 @@ export interface LibraryMaps {
   wrapperTraderImpl: Record<string, string>;
 }
 
-interface CoreProtocolTokens {
+export type WETHType<T extends NetworkType> = T extends Network.ArbitrumOne
+  ? IWETH
+  : T extends Network.Base ? IWETH
+    : T extends Network.Mantle ? IERC20
+      : T extends Network.PolygonZkEvm ? IWETH
+        : T extends Network.XLayer ? IERC20
+          : never;
+
+interface CoreProtocolTokens<T extends NetworkType> {
   usdc: IERC20;
-  weth: IWETH;
+  weth: WETHType<T>;
+  stablecoins: IERC20[];
 }
 
 interface CoreProtocolMarketIds {
   usdc: BigNumberish;
   weth: BigNumberish;
+  stablecoins: BigNumberish[];
 }
 
-interface CoreProtocolTokensArbitrumOne extends CoreProtocolTokens {
+interface CoreProtocolTokensArbitrumOne extends CoreProtocolTokens<Network.ArbitrumOne> {
   arb: IERC20;
   dai: IERC20;
   dArb: IERC20;
@@ -90,6 +100,7 @@ interface CoreProtocolTokensArbitrumOne extends CoreProtocolTokens {
   jones: IERC20;
   link: IERC20;
   magic: IERC20;
+  mim: IERC20;
   nativeUsdc: IERC20;
   premia: IERC20;
   rEth: IERC20;
@@ -98,6 +109,8 @@ interface CoreProtocolTokensArbitrumOne extends CoreProtocolTokens {
   pendle: IERC20;
   size: IERC20;
   stEth: IERC20;
+  uni: IERC20;
+  usdt: IERC20;
   wbtc: IERC20;
   weEth: IERC20;
   wstEth: IERC20;
@@ -133,6 +146,7 @@ interface CoreProtocolMarketIdsArbitrumOne extends CoreProtocolMarketIds {
   grai: BigNumberish;
   grail: BigNumberish;
   jones: BigNumberish;
+  link: BigNumberish;
   magic: BigNumberish;
   magicGlp: BigNumberish;
   mim: BigNumberish;
@@ -141,8 +155,9 @@ interface CoreProtocolMarketIdsArbitrumOne extends CoreProtocolMarketIds {
   rEth: BigNumberish;
   radiant: BigNumberish;
   pendle: BigNumberish;
-  usdt: BigNumberish;
   sGlp: BigNumberish;
+  uni: BigNumberish;
+  usdt: BigNumberish;
   wbtc: BigNumberish;
   weEth: BigNumberish;
   wstEth: BigNumberish;
@@ -183,7 +198,7 @@ export interface CoreProtocolParams<T extends NetworkType> {
     usdc: ApiToken;
     weth: ApiToken;
   };
-  tokens: CoreProtocolTokens;
+  tokens: CoreProtocolTokens<T>;
 }
 
 export interface CoreProtocolConstants<T extends NetworkType> {
@@ -241,7 +256,7 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
     usdc: ApiToken;
     weth: ApiToken;
   };
-  public readonly tokens: CoreProtocolTokens;
+  public readonly tokens: CoreProtocolTokens<T>;
 
   constructor(params: CoreProtocolParams<T>) {
     this.config = params.config;
@@ -298,7 +313,8 @@ interface CoreProtocolParamsArbitrumOne {
   gmxEcosystem: GmxEcosystem;
   gmxEcosystemV2: GmxEcosystemV2;
   jonesEcosystem: JonesEcosystem;
-  liquidityMiningEcosystem: LiquidityMiningEcosystem;
+  mineralLiquidityMiningEcosystem: MineralLiquidityMiningEcosystem;
+  oArbLiquidityMiningEcosystem: OARBLiquidityMiningEcosystem;
   marketIds: CoreProtocolMarketIdsArbitrumOne;
   odosEcosystem: OdosEcosystem;
   paraswapEcosystem: ParaswapEcosystem;
@@ -319,8 +335,9 @@ export class CoreProtocolArbitrumOne extends CoreProtocolAbstract<Network.Arbitr
   public readonly gmxEcosystem: GmxEcosystem;
   public readonly gmxEcosystemV2: GmxEcosystemV2;
   public readonly jonesEcosystem: JonesEcosystem;
-  public readonly liquidityMiningEcosystem: LiquidityMiningEcosystem;
+  public readonly mineralLiquidityMiningEcosystem: MineralLiquidityMiningEcosystem;
   public override readonly marketIds: CoreProtocolMarketIdsArbitrumOne;
+  public readonly oArbLiquidityMiningEcosystem: OARBLiquidityMiningEcosystem;
   public readonly odosEcosystem: OdosEcosystem;
   public readonly paraswapEcosystem: ParaswapEcosystem;
   public readonly pendleEcosystem: PendleEcosystem;
@@ -344,7 +361,8 @@ export class CoreProtocolArbitrumOne extends CoreProtocolAbstract<Network.Arbitr
     this.gmxEcosystem = arbParams.gmxEcosystem;
     this.gmxEcosystemV2 = arbParams.gmxEcosystemV2;
     this.jonesEcosystem = arbParams.jonesEcosystem;
-    this.liquidityMiningEcosystem = arbParams.liquidityMiningEcosystem;
+    this.mineralLiquidityMiningEcosystem = arbParams.mineralLiquidityMiningEcosystem;
+    this.oArbLiquidityMiningEcosystem = arbParams.oArbLiquidityMiningEcosystem;
     this.marketIds = arbParams.marketIds;
     this.odosEcosystem = arbParams.odosEcosystem;
     this.paraswapEcosystem = arbParams.paraswapEcosystem;
@@ -377,8 +395,8 @@ export class CoreProtocolBase extends CoreProtocolAbstract<Network.Base> {
   }
 }
 
-interface CoreProtocolTokensMantle extends CoreProtocolTokens {
-  wmnt: IERC20;
+interface CoreProtocolTokensMantle extends CoreProtocolTokens<Network.Mantle> {
+  wmnt: IWETH;
   meth: IERC20;
   usdt: IERC20;
   wbtc: IERC20;
@@ -416,7 +434,7 @@ export class CoreProtocolMantle extends CoreProtocolAbstract<Network.Mantle> {
   }
 }
 
-interface CoreProtocolTokensPolygonZkEvm extends CoreProtocolTokens {
+interface CoreProtocolTokensPolygonZkEvm extends CoreProtocolTokens<Network.PolygonZkEvm> {
   dai: IERC20;
   link: IERC20;
   matic: IERC20;
@@ -458,8 +476,8 @@ export class CoreProtocolPolygonZkEvm extends CoreProtocolAbstract<Network.Polyg
   }
 }
 
-interface CoreProtocolTokensXLayer extends CoreProtocolTokens {
-  wokb: IERC20;
+interface CoreProtocolTokensXLayer extends CoreProtocolTokens<Network.XLayer> {
+  wokb: IWETH;
   usdt: IERC20;
   wbtc: IERC20;
 }
@@ -472,6 +490,7 @@ interface CoreProtocolMarketIdsXLayer extends CoreProtocolMarketIds {
 
 export interface CoreProtocolParamsXLayer {
   marketIds: CoreProtocolMarketIdsXLayer;
+  mineralLiquidityMiningEcosystem: MineralLiquidityMiningEcosystem;
   okxEcosystem: OkxEcosystem;
   okxPriceOracleV3: OkxPriceOracleV3;
   tokens: CoreProtocolTokensXLayer;
@@ -479,6 +498,7 @@ export interface CoreProtocolParamsXLayer {
 
 export class CoreProtocolXLayer extends CoreProtocolAbstract<Network.XLayer> {
 
+  public readonly mineralLiquidityMiningEcosystem: MineralLiquidityMiningEcosystem;
   public readonly okxEcosystem: OkxEcosystem;
   public readonly okxPriceOracleV3: OkxPriceOracleV3;
 
@@ -492,6 +512,7 @@ export class CoreProtocolXLayer extends CoreProtocolAbstract<Network.XLayer> {
   ) {
     super(params);
     this.marketIds = xLayerParams.marketIds;
+    this.mineralLiquidityMiningEcosystem = xLayerParams.mineralLiquidityMiningEcosystem;
     this.okxEcosystem = xLayerParams.okxEcosystem;
     this.okxPriceOracleV3 = xLayerParams.okxPriceOracleV3;
     this.tokens = xLayerParams.tokens;

@@ -1124,6 +1124,27 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<Network, Record<string, Agg
   },
 };
 
+export const INVALID_TOKEN_MAP: Record<Network, Record<string, { symbol: string; decimals: number }>> = {
+  [Network.ArbitrumOne]: {
+    [ST_ETH_MAP[Network.ArbitrumOne].address]: {
+      symbol: 'stETH',
+      decimals: 18,
+    },
+    [E_ETH_MAP[Network.ArbitrumOne].address]: {
+      symbol: 'eETH',
+      decimals: 18,
+    },
+    [GMX_BTC_PLACEHOLDER_MAP[Network.ArbitrumOne].address]: {
+      symbol: 'btc',
+      decimals: 8,
+    },
+  },
+  [Network.Base]: {},
+  [Network.Mantle]: {},
+  [Network.PolygonZkEvm]: {},
+  [Network.XLayer]: {},
+};
+
 export function getChainlinkPriceAggregatorInfoByToken<T extends NetworkType>(
   core: CoreProtocolType<T>,
   token: IERC20,

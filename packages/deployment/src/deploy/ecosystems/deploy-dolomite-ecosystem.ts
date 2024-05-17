@@ -13,6 +13,7 @@ import {
 } from '@dolomite-exchange/modules-base/src/types';
 import {
   CHAINLINK_PRICE_AGGREGATORS_MAP,
+  INVALID_TOKEN_MAP,
   SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL,
 } from '@dolomite-exchange/modules-base/src/utils/constants';
 import {
@@ -50,7 +51,8 @@ import {
   getMaxDeploymentVersionNameByDeploymentKey,
   getOldDeploymentVersionNamesByDeploymentKey,
   prettyPrintEncodedDataWithTypeSafety,
-  readDeploymentFile, TRANSACTION_BUILDER_VERSION,
+  readDeploymentFile,
+  TRANSACTION_BUILDER_VERSION,
 } from '../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../utils/dry-run-utils';
 import getScriptName from '../../utils/get-script-name';
@@ -118,7 +120,14 @@ async function getOracleAggregator<T extends NetworkType>(
     CHAINLINK_PRICE_AGGREGATORS_MAP[network][t.address]!.aggregatorAddress,
     dolomiteMargin.signer,
   ));
-  const decimals = await Promise.all(tokens.map(t => IERC20Metadata__factory.connect(t.address, t.signer).decimals()));
+  const decimals = await Promise.all(tokens.map(token => {
+    const invalidTokenSettings = INVALID_TOKEN_MAP[network][token.address];
+    if (invalidTokenSettings) {
+      return Promise.resolve(invalidTokenSettings.decimals);
+    }
+
+    return IERC20Metadata__factory.connect(token.address, token.signer).decimals();
+  }));
   const tokenPairs = tokens.map(t =>
     IERC20__factory.connect(
       CHAINLINK_PRICE_AGGREGATORS_MAP[network][t.address]!.tokenPairAddress ?? ADDRESS_ZERO,
@@ -237,14 +246,25 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   );
   const oracleAggregator = await getOracleAggregator(network, dolomiteRegistry, dolomiteMargin);
 
-  let needsRegistryEncoding = true;
+  let needsRegistryOracleAggregatorEncoding = true;
+  let needsRegistryMigratorEncoding = true;
   try {
-    if (
-      await dolomiteRegistry.dolomiteMigrator() === ADDRESS_ZERO &&
-      await dolomiteRegistry.oracleAggregator() === ADDRESS_ZERO
-    ) {
-      needsRegistryEncoding = false;
+    const foundDolomiteMigratorAddress = await dolomiteRegistry.dolomiteMigrator();
+    const foundOracleAggregatorAddress = await dolomiteRegistry.oracleAggregator();
+    if (foundDolomiteMigratorAddress === ADDRESS_ZERO && foundOracleAggregatorAddress === ADDRESS_ZERO) {
+      needsRegistryOracleAggregatorEncoding = false;
+      needsRegistryMigratorEncoding = false;
       await dolomiteRegistry.lazyInitialize(dolomiteMigratorAddress, oracleAggregator.address);
+    } else if (
+      foundDolomiteMigratorAddress === dolomiteMigratorAddress &&
+      foundOracleAggregatorAddress === oracleAggregator.address
+    ) {
+      needsRegistryOracleAggregatorEncoding = false;
+      needsRegistryMigratorEncoding = false;
+    } else if (foundDolomiteMigratorAddress === dolomiteMigratorAddress) {
+      needsRegistryMigratorEncoding = false;
+    } else if (foundOracleAggregatorAddress === oracleAggregator.address) {
+      needsRegistryOracleAggregatorEncoding = false;
     }
   } catch (e) {
   }
@@ -302,7 +322,18 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
       ),
     );
   }
-  if (needsRegistryEncoding) {
+  if (needsRegistryOracleAggregatorEncoding) {
+    transactions.push(
+      await prettyPrintEncodedDataWithTypeSafety(
+        core,
+        { dolomiteRegistry },
+        'dolomiteRegistry',
+        'ownerSetOracleAggregator',
+        [oracleAggregator.address],
+      ),
+    );
+  }
+  if (needsRegistryMigratorEncoding) {
     transactions.push(
       await prettyPrintEncodedDataWithTypeSafety(
         core,
@@ -310,13 +341,6 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
         'dolomiteRegistry',
         'ownerSetDolomiteMigrator',
         [dolomiteMigratorAddress],
-      ),
-      await prettyPrintEncodedDataWithTypeSafety(
-        core,
-        { dolomiteRegistry },
-        'dolomiteRegistry',
-        'ownerSetOracleAggregator',
-        [oracleAggregator.address],
       ),
     );
   }
@@ -344,9 +368,17 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
       ),
     );
 
-    const oldVersions = getOldDeploymentVersionNamesByDeploymentKey('IsolationModeFreezableLiquidatorProxy', 1);
-    for (let i = 0; i < oldVersions.length; i++) {
-      const oldVersion = readDeploymentFile()[oldVersions[i]][network]?.address;
+    const oldFreezableLiquidatorNames = getOldDeploymentVersionNamesByDeploymentKey(
+      'IsolationModeFreezableLiquidatorProxy',
+      1,
+    );
+    const oldFreezableLiquidatorAddresses: string[] = [];
+    for (let i = 0; i < oldFreezableLiquidatorNames.length; i++) {
+      const oldVersion = readDeploymentFile()[oldFreezableLiquidatorNames[i]][network]?.address;
+      if (oldVersion) {
+        oldFreezableLiquidatorAddresses.push(oldVersion);
+      }
+
       if (oldVersion && await core.dolomiteMargin.getIsGlobalOperator(oldVersion)) {
         transactions.push(
           await prettyPrintEncodedDataWithTypeSafety(
@@ -357,6 +389,31 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
             [oldVersion, false],
           ),
         );
+      }
+    }
+
+    const numMarkets = await dolomiteMargin.getNumMarkets();
+    for (let i = 0; i < numMarkets.toNumber(); i++) {
+      const liquidators = await liquidatorAssetRegistry.getLiquidatorsForAsset(i);
+      for (let j = 0; j < oldFreezableLiquidatorAddresses.length; j++) {
+        if (liquidators.some(l => l === oldFreezableLiquidatorAddresses[j])) {
+          transactions.push(
+            await prettyPrintEncodedDataWithTypeSafety(
+              core,
+              { registry: liquidatorAssetRegistry },
+              'registry',
+              'ownerRemoveLiquidatorFromAssetWhitelist',
+              [i, oldFreezableLiquidatorAddresses[j]],
+            ),
+            await prettyPrintEncodedDataWithTypeSafety(
+              core,
+              { registry: liquidatorAssetRegistry },
+              'registry',
+              'ownerAddLiquidatorToAssetWhitelist',
+              [i, isolationModeFreezableLiquidatorProxyAddress],
+            ),
+          );
+        }
       }
     }
   }
@@ -372,7 +429,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
       meta: {
         name: 'Dolomite Ecosystem',
         txBuilderVersion: TRANSACTION_BUILDER_VERSION,
-      }
+      },
     },
   };
 }

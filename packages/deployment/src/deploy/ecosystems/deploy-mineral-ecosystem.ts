@@ -50,6 +50,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
         '0xA238CBeb142c10Ef7Ad8442C6D1f9E89e07e7761',
         '0xbDEf2b2051E2aE113297ee8301e011FD71A83738',
         '0x52256ef863a713Ef349ae6E97A7E8f35785145dE',
+        '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe',
       ],
     ),
     'MineralDistributor',
