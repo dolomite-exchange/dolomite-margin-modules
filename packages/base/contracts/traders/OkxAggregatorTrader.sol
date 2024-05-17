@@ -263,18 +263,21 @@ contract OkxAggregatorTrader is AggregatorTraderBase {
         uint256 _actualInputAmount,
         uint256[] memory _batches
     ) internal pure returns (uint256, uint256[] memory) {
-        // @follow-up How do we want to handle rounding errors?
-        if (_actualInputAmount > _fromTokenAmount) {
-            uint256 diff = _actualInputAmount - _fromTokenAmount;
-            for (uint256 i; i < _batches.length; i++) {
-                _batches[i] += diff * _batches[i] / _fromTokenAmount;
-            }
-        } else if (_actualInputAmount < _fromTokenAmount) {
-            uint256 diff = _fromTokenAmount - _actualInputAmount;
-            for (uint256 i; i < _batches.length; i++) {
-                _batches[i] -= diff * _batches[i] / _fromTokenAmount;
-            }
+        bool up = _actualInputAmount > _fromTokenAmount;
+        uint256 diff = up ? _actualInputAmount - _fromTokenAmount : _fromTokenAmount - _actualInputAmount;
+
+        uint256 len = _batches.length;
+        uint256 amountSpentByBatches;
+        for (uint256 i; i < len; i++) {
+            uint256 adj = diff * _batches[i] / _fromTokenAmount;
+            _batches[i] = up ? _batches[i] + adj : _batches[i] - adj;
+            amountSpentByBatches += adj;
         }
+
+        assert(len > 0);
+        uint256 finalAdj = diff - amountSpentByBatches;
+        _batches[len - 1] = up ? _batches[len - 1] + finalAdj : _batches[len - 1] - finalAdj;
+
         return (_actualInputAmount, _batches);
     }
 }

@@ -269,7 +269,7 @@ describe('OkxAggregatorTrader', () => {
       const res = await trader.testGetScaledBatchAmounts(100, 106, [90, 10]);
       expect(res[0]).to.eq(106);
       expect(res[1][0]).to.eq(95);
-      expect(res[1][1]).to.eq(11); // @follow-up This fails here with rounding issue
+      expect(res[1][1]).to.eq(11);
     });
 
     it('should work normally if actualInputAmount is smaller than fromTokenAmount', async () => {
@@ -279,11 +279,30 @@ describe('OkxAggregatorTrader', () => {
       expect(res[1][1]).to.eq(8);
     });
 
+    it('should work normally if actualInputAmount is smaller than fromTokenAmount (with rounding)', async () => {
+      const res = await trader.testGetScaledBatchAmounts(100, 94, [90, 10]);
+      expect(res[0]).to.eq(94);
+      expect(res[1][0]).to.eq(85);
+      expect(res[1][1]).to.eq(9);
+    });
+
     it('should work normally if actualInputAmount is equal to fromTokenAmount', async () => {
       const res = await trader.testGetScaledBatchAmounts(100, 100, [90, 10]);
       expect(res[0]).to.eq(100);
       expect(res[1][0]).to.eq(90);
       expect(res[1][1]).to.eq(10);
+    });
+
+    it('should work normally with 1 amount', async () => {
+      let res = await trader.testGetScaledBatchAmounts(100, 90, [100]);
+      expect(res[0]).to.eq(90);
+      expect(res[1][0]).to.eq(90);
+      res = await trader.testGetScaledBatchAmounts(100, 105, [100]);
+      expect(res[0]).to.eq(105);
+      expect(res[1][0]).to.eq(105);
+      res = await trader.testGetScaledBatchAmounts(100, 100, [100]);
+      expect(res[0]).to.eq(100);
+      expect(res[1][0]).to.eq(100);
     });
   });
 
