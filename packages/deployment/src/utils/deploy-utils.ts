@@ -12,7 +12,7 @@ import {
 import {
   CHAINLINK_PRICE_AGGREGATORS_MAP,
   E_ETH_MAP,
-  GMX_BTC_PLACEHOLDER_MAP,
+  GMX_BTC_PLACEHOLDER_MAP, INVALID_TOKEN_MAP,
   ST_ETH_MAP,
 } from '@dolomite-exchange/modules-base/src/utils/constants';
 import {
@@ -120,8 +120,19 @@ export async function verifyContract(
     console.log('\tVerifying contract...');
     const artifact = await artifacts.readArtifact(contractName);
     const factory = await ethers.getContractFactoryFromArtifact(artifact, { libraries });
-
     const buildInfo = artifacts.getBuildInfoSync(contractName);
+
+    // Retrieve and override only the needed sources
+    const output = buildInfo!.output.contracts[artifact.sourceName][artifact.contractName];
+    const allSources = JSON.parse((output as any).metadata).sources as Record<string, any>;
+    buildInfo!.input.sources = Object.keys(buildInfo!.input.sources).reduce((memo, sourceName) => {
+      if (allSources[sourceName]) {
+        memo[sourceName] = buildInfo!.input.sources[sourceName];
+      }
+      return memo;
+    }, {} as Record<string, { content: string }>);
+
+    // Inject any needed libraries
     buildInfo!.input.settings.libraries = Object.keys(libraries).reduce<any>((acc, library) => {
       const artifact = artifacts.readArtifactSync(library);
       acc[`${artifact.sourceName}`] = { [library]: libraries[library] };
@@ -856,27 +867,7 @@ export async function prettyPrintEncodeInsertChainlinkOracleV3<T extends Network
   tokenPairAddress: string | undefined = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address]!.tokenPairAddress,
   aggregatorAddress: string = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address]!.aggregatorAddress,
 ): Promise<EncodedTransaction[]> {
-  const invalidTokenMap: Record<Network, Record<string, { symbol: string; decimals: number }>> = {
-    [Network.ArbitrumOne]: {
-      [ST_ETH_MAP[Network.ArbitrumOne].address]: {
-        symbol: 'stETH',
-        decimals: 18,
-      },
-      [E_ETH_MAP[Network.ArbitrumOne].address]: {
-        symbol: 'eETH',
-        decimals: 18,
-      },
-      [GMX_BTC_PLACEHOLDER_MAP[Network.ArbitrumOne].address]: {
-        symbol: 'btc',
-        decimals: 8,
-      },
-    },
-    [Network.Base]: {},
-    [Network.Mantle]: {},
-    [Network.PolygonZkEvm]: {},
-    [Network.XLayer]: {},
-  };
-  const invalidTokenSettings = invalidTokenMap[core.network][token.address];
+  const invalidTokenSettings = INVALID_TOKEN_MAP[core.network][token.address];
 
   let tokenDecimals: number;
   if (invalidTokenSettings) {
