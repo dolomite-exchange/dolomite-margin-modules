@@ -274,6 +274,13 @@
       "isVerified": true
     }
   },
+  "ChroniclePriceOracle": {
+    "5000": {
+      "address": "0x43C2FDB89A1C491F9FE86E1Ff05bd2BE204Ab4aE",
+      "transaction": "0xa026de8e6956a92d8d1c2b42fbc8f68d593a5f103574bf3066325a6b9c5a1ff3",
+      "isVerified": true
+    }
+  },
   "DPXTWAPPriceOracleV1": {
     "42161": {
       "address": "0xcB10913Bb95E66658BDb065EA85C7D6594AedF47",

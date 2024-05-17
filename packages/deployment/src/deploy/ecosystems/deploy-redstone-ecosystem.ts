@@ -4,7 +4,7 @@ import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/u
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { deployContractAndSave, EncodedTransaction, TRANSACTION_BUILDER_VERSION } from '../../utils/deploy-utils';
 import { getChroniclePriceOracleConstructorParams } from 'packages/oracles/src/oracles-constructors';
-import { CHRONICLE_PRICE_SCRIBES_MAP } from 'packages/base/src/utils/constants';
+import { CHRONICLE_PRICE_SCRIBES_MAP, REDSTONE_PRICE_AGGREGATORS_MAP } from 'packages/base/src/utils/constants';
 import getScriptName from '../../utils/get-script-name';
 import { DryRunOutput } from '../../utils/dry-run-utils';
 
@@ -12,12 +12,12 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
   const network = await getAndCheckSpecificNetwork(Network.Mantle);
   const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
 
-  const scribeMap = CHRONICLE_PRICE_SCRIBES_MAP[network];
+  const scribeMap = REDSTONE_PRICE_AGGREGATORS_MAP[network];
   const tokens = Object.keys(scribeMap);
-  const scribes = tokens.map(t => scribeMap[t].scribeAddress);
+  const scribes = tokens.map(t => scribeMap[t]?.tokenPairAddress);
   const invertPrices = tokens.map(t => scribeMap[t].invertPrice ?? false);
   await deployContractAndSave(
-    'ChroniclePriceOracle',
+    'RedstonePriceOracleV3',
     getChroniclePriceOracleConstructorParams(tokens, scribes, invertPrices, core),
   );
 

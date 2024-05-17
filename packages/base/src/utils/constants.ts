@@ -18,6 +18,7 @@ interface TokenWithMarketId {
 interface ChronicleScribe {
   scribeAddress: string;
   tokenPairAddress: string;
+  invertPrice?: boolean;
 }
 
 type EverythingButBase = Network.ArbitrumOne | Network.Mantle | Network.PolygonZkEvm | Network.XLayer;
@@ -943,19 +944,13 @@ export const STETH_USD_CHAINLINK_FEED_MAP: Record<Network.ArbitrumOne, string> =
   [Network.ArbitrumOne]: '0x07c5b924399cc23c24a95c8743de4006a32b7f2a',
 };
 
-export const STETH_ETH_CHAINLINK_FEED_MAP: Record<Network.ArbitrumOne, string> = {
-  [Network.ArbitrumOne]: '',
-};
-
 export interface AggregatorInfo {
   aggregatorAddress: string;
   tokenPairAddress?: string;
   invert?: boolean;
 }
 
-export const CHRONICLE_PRICE_SCRIBES_MAP: Record<Network, Record<string, ChronicleScribe>> = {
-  [Network.ArbitrumOne]: {},
-  [Network.Base]: {},
+export const CHRONICLE_PRICE_SCRIBES_MAP: Record<Network.Mantle, Record<string, ChronicleScribe>> = {
   [Network.Mantle]: {
     [WETH_MAP[Network.Mantle].address]: {
       scribeAddress: '0x5E16CA75000fb2B9d7B1184Fa24fF5D938a345Ef',
@@ -974,8 +969,6 @@ export const CHRONICLE_PRICE_SCRIBES_MAP: Record<Network, Record<string, Chronic
       tokenPairAddress: WETH_MAP[Network.Mantle].address,
     }
   },
-  [Network.PolygonZkEvm]: {},
-  [Network.XLayer]: {},
 };
 
 export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<Network, Record<string, AggregatorInfo | undefined>> = {

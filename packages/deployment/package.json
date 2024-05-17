@@ -10,6 +10,7 @@
     "lint:ts": "tslint --project ../../ -t verbose 'src/**/*.ts'",
     "test": "hardhat --network hardhat test",
     "deploy:chainlink-price-oracle-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts chainlink-price-oracle",
+    "deploy:chronicle-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts chronicle",
     "deploy:dolomite-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts dolomite",
     "deploy:gravita-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts gravita",
     "deploy:mineral-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts mineral",
