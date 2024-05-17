@@ -127,7 +127,10 @@ import { createCamelotEcosystem } from './ecosystem-utils/camelot';
 import { createGmxEcosystem, createGmxEcosystemV2 } from './ecosystem-utils/gmx';
 import { createInterestSetters } from './ecosystem-utils/interest-setters';
 import { createJonesEcosystem } from './ecosystem-utils/jones';
-import { createLiquidityMiningEcosystem } from './ecosystem-utils/liquidity-mining';
+import {
+  createMineralLiquidityMiningEcosystem,
+  createOARBLiquidityMiningEcosystem,
+} from './ecosystem-utils/liquidity-mining';
 import { createOdosEcosystem } from './ecosystem-utils/odos';
 import { createOkxEcosystem } from './ecosystem-utils/okx';
 import { createParaswapEcosystem } from './ecosystem-utils/paraswap';
@@ -686,7 +689,8 @@ export async function setupCoreProtocol<T extends NetworkType>(
         gmxEcosystem: await createGmxEcosystem(typedConfig.network, hhUser1),
         gmxEcosystemV2: await createGmxEcosystemV2(typedConfig.network, hhUser1),
         jonesEcosystem: await createJonesEcosystem(typedConfig.network, hhUser1),
-        liquidityMiningEcosystem: await createLiquidityMiningEcosystem(typedConfig.network, hhUser1),
+        mineralLiquidityMiningEcosystem: await createMineralLiquidityMiningEcosystem(typedConfig.network, hhUser1),
+        oArbLiquidityMiningEcosystem: await createOARBLiquidityMiningEcosystem(typedConfig.network, hhUser1),
         odosEcosystem: await createOdosEcosystem(typedConfig.network, hhUser1),
         paraswapEcosystem: await createParaswapEcosystem(typedConfig.network, hhUser1),
         pendleEcosystem: await createPendleEcosystem(typedConfig.network, hhUser1),
@@ -897,6 +901,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
             USDT_MAP[typedConfig.network].marketId,
           ],
         },
+        mineralLiquidityMiningEcosystem: await createMineralLiquidityMiningEcosystem(typedConfig.network, hhUser1),
         okxEcosystem: await createOkxEcosystem(typedConfig.network, hhUser1),
         okxPriceOracleV3: OkxPriceOracleV3__factory.connect(
           Deployments.OkxPriceOracleV3[typedConfig.network].address,

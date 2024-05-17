@@ -1205,6 +1205,33 @@
       "isVerified": true
     }
   },
+  "IsolationModeFreezableLiquidatorProxyV3": {
+    "196": {
+      "address": "0x11a7E2Ef87B50605606542783876b32667CB6bDE",
+      "transaction": "0x36e220536ba93ec03ec6c4807b47b7ce529a7a4692284443e4a95668d10fd945",
+      "isVerified": true
+    },
+    "1101": {
+      "address": "0xBF3179aD5339dCb6BD741Bc08c3011FAda586075",
+      "transaction": "0x1cc490250103da148fd77b2f08d361175c75497998cf454ced79251135ef67c5",
+      "isVerified": true
+    },
+    "5000": {
+      "address": "0xfEd1F92936fb71da71ECf2D22543A85489E259A4",
+      "transaction": "0x314e4a37840163296570994ff331f569a2295cffcb5650b0af36fd686d83e38b",
+      "isVerified": true
+    },
+    "8453": {
+      "address": "0xDD4270A8B76D67Caaf7724CA9995E5561cFb747F",
+      "transaction": "0x45d7d9b3729bed6d57e66560c3bc0666e4235b7770a9f7c1332b2003d05d0b3a",
+      "isVerified": true
+    },
+    "42161": {
+      "address": "0x76Ac5542eE033A15f78D1f8B4aD48af618a33E44",
+      "transaction": "0x38a2238aaa3985fe42bd5495805914e1a6cd992659ce016ba2f48dacf3eb3bb0",
+      "isVerified": true
+    }
+  },
   "IsolationModeTokenVaultV1ActionsImplV1": {
     "42161": {
       "address": "0x7B9F5Dfee29383D266FAdDCad0C0A70EAd9057A7",

@@ -36,7 +36,7 @@ async function main(): Promise<DenJsonUpload> {
     { VesterImplementationLibForV2: libAddress },
   );
 
-  const calldata = await core.liquidityMiningEcosystem!.oArbVester.populateTransaction.initialize(
+  const calldata = await core.oArbLiquidityMiningEcosystem!.oArbVester.populateTransaction.initialize(
     ethers.utils.defaultAbiCoder.encode(['address'], [handler]),
   );
 
@@ -44,7 +44,7 @@ async function main(): Promise<DenJsonUpload> {
   transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(
       core,
-      core.liquidityMiningEcosystem!,
+      core.oArbLiquidityMiningEcosystem!,
       'oArbVesterProxy',
       'upgradeToAndCall',
       [implementationAddress, calldata.data!],

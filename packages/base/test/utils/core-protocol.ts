@@ -33,7 +33,7 @@ import { CamelotEcosystem } from './ecosystem-utils/camelot';
 import { GmxEcosystem, GmxEcosystemV2 } from './ecosystem-utils/gmx';
 import { InterestSetters } from './ecosystem-utils/interest-setters';
 import { JonesEcosystem } from './ecosystem-utils/jones';
-import { LiquidityMiningEcosystem } from './ecosystem-utils/liquidity-mining';
+import { MineralLiquidityMiningEcosystem, OARBLiquidityMiningEcosystem } from './ecosystem-utils/liquidity-mining';
 import { OdosEcosystem } from './ecosystem-utils/odos';
 import { ParaswapEcosystem } from './ecosystem-utils/paraswap';
 import { OkxEcosystem } from './ecosystem-utils/okx';
@@ -313,7 +313,8 @@ interface CoreProtocolParamsArbitrumOne {
   gmxEcosystem: GmxEcosystem;
   gmxEcosystemV2: GmxEcosystemV2;
   jonesEcosystem: JonesEcosystem;
-  liquidityMiningEcosystem: LiquidityMiningEcosystem;
+  mineralLiquidityMiningEcosystem: MineralLiquidityMiningEcosystem;
+  oArbLiquidityMiningEcosystem: OARBLiquidityMiningEcosystem;
   marketIds: CoreProtocolMarketIdsArbitrumOne;
   odosEcosystem: OdosEcosystem;
   paraswapEcosystem: ParaswapEcosystem;
@@ -334,8 +335,9 @@ export class CoreProtocolArbitrumOne extends CoreProtocolAbstract<Network.Arbitr
   public readonly gmxEcosystem: GmxEcosystem;
   public readonly gmxEcosystemV2: GmxEcosystemV2;
   public readonly jonesEcosystem: JonesEcosystem;
-  public readonly liquidityMiningEcosystem: LiquidityMiningEcosystem;
+  public readonly mineralLiquidityMiningEcosystem: MineralLiquidityMiningEcosystem;
   public override readonly marketIds: CoreProtocolMarketIdsArbitrumOne;
+  public readonly oArbLiquidityMiningEcosystem: OARBLiquidityMiningEcosystem;
   public readonly odosEcosystem: OdosEcosystem;
   public readonly paraswapEcosystem: ParaswapEcosystem;
   public readonly pendleEcosystem: PendleEcosystem;
@@ -359,7 +361,8 @@ export class CoreProtocolArbitrumOne extends CoreProtocolAbstract<Network.Arbitr
     this.gmxEcosystem = arbParams.gmxEcosystem;
     this.gmxEcosystemV2 = arbParams.gmxEcosystemV2;
     this.jonesEcosystem = arbParams.jonesEcosystem;
-    this.liquidityMiningEcosystem = arbParams.liquidityMiningEcosystem;
+    this.mineralLiquidityMiningEcosystem = arbParams.mineralLiquidityMiningEcosystem;
+    this.oArbLiquidityMiningEcosystem = arbParams.oArbLiquidityMiningEcosystem;
     this.marketIds = arbParams.marketIds;
     this.odosEcosystem = arbParams.odosEcosystem;
     this.paraswapEcosystem = arbParams.paraswapEcosystem;
@@ -486,6 +489,7 @@ interface CoreProtocolMarketIdsXLayer extends CoreProtocolMarketIds {
 
 export interface CoreProtocolParamsXLayer {
   marketIds: CoreProtocolMarketIdsXLayer;
+  mineralLiquidityMiningEcosystem: MineralLiquidityMiningEcosystem;
   okxEcosystem: OkxEcosystem;
   okxPriceOracleV3: OkxPriceOracleV3;
   tokens: CoreProtocolTokensXLayer;
@@ -493,6 +497,7 @@ export interface CoreProtocolParamsXLayer {
 
 export class CoreProtocolXLayer extends CoreProtocolAbstract<Network.XLayer> {
 
+  public readonly mineralLiquidityMiningEcosystem: MineralLiquidityMiningEcosystem;
   public readonly okxEcosystem: OkxEcosystem;
   public readonly okxPriceOracleV3: OkxPriceOracleV3;
 
@@ -506,6 +511,7 @@ export class CoreProtocolXLayer extends CoreProtocolAbstract<Network.XLayer> {
   ) {
     super(params);
     this.marketIds = xLayerParams.marketIds;
+    this.mineralLiquidityMiningEcosystem = xLayerParams.mineralLiquidityMiningEcosystem;
     this.okxEcosystem = xLayerParams.okxEcosystem;
     this.okxPriceOracleV3 = xLayerParams.okxPriceOracleV3;
     this.tokens = xLayerParams.tokens;

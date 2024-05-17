@@ -40,7 +40,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const transactions: EncodedTransaction[] = [
     await prettyPrintEncodedDataWithTypeSafety(
       core,
-      core.liquidityMiningEcosystem,
+      core.oArbLiquidityMiningEcosystem,
       'oArbVesterProxy',
       'upgradeTo',
       [vesterAddress],
@@ -59,16 +59,16 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       const NEW_DURATION = 86_400 * 7 * 40; // 40 weeks
       const nftId = '1536';
       assertHardhatInvariant(
-        (await core.liquidityMiningEcosystem.oArbVesterV2.vestingPositions(nftId)).duration.eq(OLD_DURATION),
+        (await core.oArbLiquidityMiningEcosystem.oArbVesterV2.vestingPositions(nftId)).duration.eq(OLD_DURATION),
         'Invalid duration before',
       );
 
       const signer = await impersonate('0x33a288bcf61807582bbee86011f696830fc2a599');
-      await core.liquidityMiningEcosystem.oArbVesterV2.connect(signer)
+      await core.oArbLiquidityMiningEcosystem.oArbVesterV2.connect(signer)
         .extendDurationForPosition(nftId, NEW_DURATION);
 
       assertHardhatInvariant(
-        (await core.liquidityMiningEcosystem.oArbVesterV2.vestingPositions(nftId)).duration.eq(NEW_DURATION),
+        (await core.oArbLiquidityMiningEcosystem.oArbVesterV2.vestingPositions(nftId)).duration.eq(NEW_DURATION),
         'Invalid duration after',
       );
     },
