@@ -347,6 +347,21 @@ export function getChainlinkPriceOracleV3ConstructorParams<T extends NetworkType
   ];
 }
 
+export function getChroniclePriceOracleConstructorParams<T extends NetworkType>(
+  tokens: string[],
+  scribes: string[],
+  invertPrices: boolean[],
+  core: CoreProtocolType<T>,
+): [string[], string[], boolean[], string, string] {
+  return [
+    tokens,
+    scribes,
+    invertPrices,
+    core.dolomiteRegistry.address,
+    core.dolomiteMargin.address,
+  ];
+}
+
 export async function getRedstonePriceOracleV2ConstructorParams<T extends NetworkType>(
   tokens: IERC20[],
   aggregators: string[],
@@ -365,18 +380,17 @@ export async function getRedstonePriceOracleV2ConstructorParams<T extends Networ
 }
 
 export function getRedstonePriceOracleV3ConstructorParams<T extends NetworkType>(
-  tokens: IERC20[],
-  redstoneAggregators: IChainlinkAggregator[],
+  core: CoreProtocolType<T>,
+  tokens: string[],
+  redstoneAggregators: string[],
   invertPrices: boolean[],
-  dolomiteRegistry: IDolomiteRegistry,
-  dolomiteMargin: DolomiteMargin<T>,
 ): [string[], string[], boolean[], string, string] {
   return [
-    tokens.map(t => t.address),
-    redstoneAggregators.map(r => r.address),
+    tokens,
+    redstoneAggregators,
     invertPrices,
-    dolomiteRegistry.address,
-    dolomiteMargin.address,
+    core.dolomiteRegistry.address,
+    core.dolomiteMargin.address,
   ];
 }
 

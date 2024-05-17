@@ -3,7 +3,7 @@ import { IChainlinkAggregator, IChainlinkAggregator__factory } from '@dolomite-e
 import { BigNumber, BigNumberish } from 'ethers';
 import { CoreProtocolType } from '../../test/utils/setup';
 import { IERC20 } from '../types';
-import { Network, NetworkType } from './no-deps-constants';
+import { ADDRESS_ZERO, Network, NetworkType } from './no-deps-constants';
 
 export interface AccountStruct {
   owner: string;
@@ -13,6 +13,11 @@ export interface AccountStruct {
 interface TokenWithMarketId {
   address: string;
   marketId: number;
+}
+
+interface ChronicleScribe {
+  scribeAddress: string;
+  tokenPairAddress: string;
 }
 
 type EverythingButBase = Network.ArbitrumOne | Network.Mantle | Network.PolygonZkEvm | Network.XLayer;
@@ -428,6 +433,13 @@ export const WBTC_MAP: Record<EverythingButBase, TokenWithMarketId> = {
     address: '0xEA034fb02eB1808C2cc3adbC15f447B93CbE08e1',
     marketId: 3,
   },
+};
+
+export const METH_MAP: Record<Network.Mantle, TokenWithMarketId> = {
+  [Network.Mantle]: {
+    address: '0xcDA86A272531e8640cD7F1a92c01839911B90bb0',
+    marketId: -1,
+  }
 };
 
 export const WETH_MAP: Record<Network, TokenWithMarketId> = {
@@ -941,6 +953,31 @@ export interface AggregatorInfo {
   invert?: boolean;
 }
 
+export const CHRONICLE_PRICE_SCRIBES_MAP: Record<Network, Record<string, ChronicleScribe>> = {
+  [Network.ArbitrumOne]: {},
+  [Network.Base]: {},
+  [Network.Mantle]: {
+    [WETH_MAP[Network.Mantle].address]: {
+      scribeAddress: '0x5E16CA75000fb2B9d7B1184Fa24fF5D938a345Ef',
+      tokenPairAddress: ADDRESS_ZERO,
+    },
+    [USDC_MAP[Network.Mantle].address]: {
+      scribeAddress: '0xb9C3a09d9F73A1d5E90e6728D9c51F22CFF3bEB7',
+      tokenPairAddress: ADDRESS_ZERO,
+    },
+    [WBTC_MAP[Network.Mantle].address]: {
+      scribeAddress: '0x36b648060bc490DefC205950d3930bF971a6951B',
+      tokenPairAddress: ADDRESS_ZERO,
+    },
+    [METH_MAP[Network.Mantle].address]: {
+      scribeAddress: '0xBFE568Ea8f6bDFFe7c03F83dC8348517f8E7010A', // This is METH/ETH
+      tokenPairAddress: WETH_MAP[Network.Mantle].address,
+    }
+  },
+  [Network.PolygonZkEvm]: {},
+  [Network.XLayer]: {},
+};
+
 export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<Network, Record<string, AggregatorInfo | undefined>> = {
   [Network.ArbitrumOne]: {
     [ARB_MAP[Network.ArbitrumOne].address]: {
@@ -1134,11 +1171,20 @@ export function getChainlinkPairTokenAddressByToken<T extends NetworkType>(
 
 // ************************* Redstone *************************
 
-export const REDSTONE_PRICE_AGGREGATORS_MAP: Record<Network.ArbitrumOne, Record<string, AggregatorInfo | undefined>> = {
+export const REDSTONE_PRICE_AGGREGATORS_MAP: Record<Network, Record<string, AggregatorInfo | undefined>> = {
   [Network.ArbitrumOne]: {
     [WE_ETH_MAP[Network.ArbitrumOne].address]: {
       aggregatorAddress: '0xA736eAe8805dDeFFba40cAB8c99bCB309dEaBd9B',
       tokenPairAddress: WETH_MAP[Network.ArbitrumOne].address,
     },
   },
+  [Network.Base]: {},
+  [Network.Mantle]: {
+    [WETH_MAP[Network.Mantle].address]: {
+      aggregatorAddress: '0xFc34806fbD673c21c1AEC26d69AA247F1e69a2C6',
+      tokenPairAddress: ADDRESS_ZERO,
+    },
+  },
+  [Network.PolygonZkEvm]: {},
+  [Network.XLayer]: {},
 };

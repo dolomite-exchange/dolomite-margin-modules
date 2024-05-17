@@ -397,6 +397,7 @@ export class CoreProtocolBase extends CoreProtocolAbstract<Network.Base> {
 
 interface CoreProtocolTokensMantle extends CoreProtocolTokens<Network.Mantle> {
   wmnt: IWETH;
+  meth: IERC20;
   usdt: IERC20;
   wbtc: IERC20;
 }

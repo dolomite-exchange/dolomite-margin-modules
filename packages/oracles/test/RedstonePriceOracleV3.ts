@@ -72,22 +72,27 @@ describe('RedstonePriceOracleV3', () => {
     await testAggregator.setLatestAnswer(TEST_TOKEN_PRICE); // 0.1E
     await testAggregator.setDecimals(18);
     const aggregators: any[] = [
-      { address: ADDRESS_ZERO },
-      testAggregator,
-      testAggregator,
-      testAggregator,
-      { address: REDSTONE_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][core.tokens.weEth.address].aggregatorAddress },
+      ADDRESS_ZERO,
+      testAggregator.address,
+      testAggregator.address,
+      testAggregator.address,
+      REDSTONE_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][core.tokens.weEth.address]!.aggregatorAddress,
     ];
-    const tokens = [core.tokens.weth, core.tokens.dai, core.tokens.usdc, core.tokens.wbtc, core.tokens.weEth];
+    const tokens = [
+      core.tokens.weth.address,
+      core.tokens.dai.address,
+      core.tokens.usdc.address,
+      core.tokens.wbtc.address,
+      core.tokens.weEth.address
+    ];
     oracle = (await createContractWithAbi<RedstonePriceOracleV3>(
       RedstonePriceOracleV3__factory.abi,
       RedstonePriceOracleV3__factory.bytecode,
       getRedstonePriceOracleV3ConstructorParams(
+        core,
         tokens,
         aggregators,
         [false, false, false, false, false],
-        core.dolomiteRegistry,
-        core.dolomiteMargin,
       ),
     )).connect(core.governance);
     await core.dolomiteRegistry.connect(core.governance).ownerSetOracleAggregator(oracleAggregator.address);

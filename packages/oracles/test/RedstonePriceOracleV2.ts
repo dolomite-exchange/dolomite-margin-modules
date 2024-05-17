@@ -63,7 +63,7 @@ describe('RedstonePriceOracleV2', () => {
       testAggregator.address,
       testAggregator.address,
       testAggregator.address,
-      REDSTONE_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][core.tokens.weEth.address].aggregatorAddress,
+      REDSTONE_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][core.tokens.weEth.address]!.aggregatorAddress,
     ];
     oracle = (await createContractWithAbi<RedstonePriceOracleV2>(
       RedstonePriceOracleV2__factory.abi,
