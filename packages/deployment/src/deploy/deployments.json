@@ -193,6 +193,26 @@
     }
   },
   "AsyncIsolationModeUnwrapperTraderImplV3": {
+    "196": {
+      "address": "0x958a9C230360003b548d572Cb88bb25B8A744bf7",
+      "transaction": "0x42efff6b0adfad8d99c9c73996335fa9d87c177a1b06a445f37b7bdb24fbb0dc",
+      "isVerified": true
+    },
+    "1101": {
+      "address": "0x17C57C98B666bac9F3DCE4033180190fe923F13d",
+      "transaction": "0xdb626a43175bf5fa3632aa7efef1bb8f72d9d62b8ece5a959829bbb09fa0109e",
+      "isVerified": true
+    },
+    "5000": {
+      "address": "0x86CFc6BA3bbBC603b8deC5B032aFa10A3592470D",
+      "transaction": "0x1274adfb832959989417e7268dbc863c09613f0a1ee27b228a43e7a3a3fc1b59",
+      "isVerified": true
+    },
+    "8453": {
+      "address": "0xCAFd361FD0CdD8e6a0A58Ff492c026bd25f1E2eE",
+      "transaction": "0x6d528a1b973a6ad28e0858c6f2ca7a56afec9f7e437688cbcf725082e35fa398",
+      "isVerified": true
+    },
     "42161": {
       "address": "0xd15ff364289568Ac8958dc29F0B4f5c4D6d1F31E",
       "transaction": "0x78ca0ac55ee21ffc17e41ff35df878c9963ff0145077b9d5fbf921e4e08c692b",
