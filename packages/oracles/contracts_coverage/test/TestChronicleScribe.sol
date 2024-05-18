@@ -85,4 +85,8 @@ contract TestChronicleScribe is IChronicleScribe {
     function decimals() external view returns (uint8) {
         return _decimals;
     }
+
+    function authed() external view returns (address[] memory) {
+        return new address[](0);
+    }
 }

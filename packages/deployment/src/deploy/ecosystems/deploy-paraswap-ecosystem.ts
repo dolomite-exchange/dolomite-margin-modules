@@ -11,6 +11,10 @@ import getScriptName from '../../utils/get-script-name';
 async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   const network = await getAnyNetwork() as T;
   const core = await setupCoreProtocol<T>({ network, blockNumber: 0 });
+  if (!('paraswapEcosystem' in core)) {
+    return Promise.reject(new Error(`Invalid network, found ${network}`));
+  }
+
   await deployContractAndSave(
     'ParaswapAggregatorTraderV2',
     getParaswapAggregatorTraderConstructorParams(core),

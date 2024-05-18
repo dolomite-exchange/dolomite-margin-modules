@@ -3,16 +3,15 @@ import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-const
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { REDSTONE_PRICE_AGGREGATORS_MAP } from 'packages/base/src/utils/constants';
-import { CoreProtocolTokensMantle } from 'packages/base/test/utils/core-protocols/core-protocol-mantle';
 import { getRedstonePriceOracleV3ConstructorParams } from 'packages/oracles/src/oracles-constructors';
-import { RedstonePriceOracleV3__factory } from 'packages/oracles/src/types';
+import { IERC20__factory, RedstonePriceOracleV3__factory } from 'packages/oracles/src/types';
 import {
   deployContractAndSave,
   EncodedTransaction,
   prettyPrintEncodeInsertRedstoneOracleV3,
   TRANSACTION_BUILDER_VERSION,
 } from '../../utils/deploy-utils';
-import { DryRunOutput } from '../../utils/dry-run-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput } from '../../utils/dry-run-utils';
 import getScriptName from '../../utils/get-script-name';
 
 async function main(): Promise<DryRunOutput<Network.Mantle>> {
@@ -25,14 +24,12 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
   );
   (core as any).redstonePriceOracleV3 = RedstonePriceOracleV3__factory.connect(redstoneAddress, core.hhUser1);
 
-  const tokenMap: Omit<CoreProtocolTokensMantle, 'stablecoins'> = { ...core.tokens };
-  const tokens = Object.values(tokenMap);
+  const tokens = Object.keys(REDSTONE_PRICE_AGGREGATORS_MAP[network])
+    .map(t => IERC20__factory.connect(t, core.hhUser1));
   const transactions: EncodedTransaction[] = [];
   for (let i = 0; i < tokens.length; i++) {
     if (REDSTONE_PRICE_AGGREGATORS_MAP[network][tokens[i].address]) {
-      transactions.push(
-        ...await prettyPrintEncodeInsertRedstoneOracleV3(core, tokens[i]),
-      );
+      transactions.push(...await prettyPrintEncodeInsertRedstoneOracleV3(core, tokens[i]));
     }
   }
 
@@ -60,9 +57,4 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
   };
 }
 
-main()
-  .then(() => process.exit(0))
-  .catch((error) => {
-    console.error(error);
-    process.exit(1);
-  });
+doDryRunAndCheckDeployment(main);

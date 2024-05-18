@@ -75,6 +75,7 @@ import hardhat, { artifacts, ethers, network } from 'hardhat';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { CoreProtocolXLayer } from 'packages/base/test/utils/core-protocols/core-protocol-x-layer';
 import path, { join } from 'path';
+import { impersonate } from '@dolomite-exchange/modules-base/test/utils';
 
 type ChainId = string;
 
@@ -954,7 +955,11 @@ export async function prettyPrintEncodeInsertChronicleOracleV3(
     symbol = await IERC20Metadata__factory.connect(token.address, token.signer).symbol();
   }
 
-  console.log(`\tChronicle price for ${symbol}:`, (await scribe.latestRoundData()).answer.toString());
+  if (network.name === 'hardhat') {
+    const toller = await impersonate((await scribe.authed())[0], true);
+    await scribe.connect(toller).kiss(toller.address);
+    console.log(`\tChronicle price for ${symbol}:`, (await scribe.connect(toller).latestRoundData()).answer.toString());
+  }
 
   mostRecentTokenDecimals = tokenDecimals;
   return [
