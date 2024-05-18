@@ -179,7 +179,7 @@ function findArtifactPath(parentPath: string, artifactName: string): string | un
 
   const childDirectories = fs.readdirSync(parentPath, { withFileTypes: true });
   for (const childDirectory of childDirectories) {
-    const fullPath = path.join(parentPath, childDirectory.name);
+    const fullPath = join(parentPath, childDirectory.name);
     if (childDirectory.isDirectory() && !childDirectory.name.includes('.sol')) {
       const artifactPath = findArtifactPath(fullPath, artifactName);
       if (artifactPath) {
@@ -193,12 +193,12 @@ function findArtifactPath(parentPath: string, artifactName: string): string | un
 
 export async function initializeFreshArtifactFromWorkspace(artifactName: string): Promise<void> {
   const packagesPath = '../../../../packages';
-  const deploymentsArtifactsPath = path.join(__dirname, packagesPath, 'deployment', 'artifacts');
+  const deploymentsArtifactsPath = join(__dirname, packagesPath, 'deployment', 'artifacts');
   await fsExtra.remove(deploymentsArtifactsPath);
 
   const workspaces = fs.readdirSync(join(__dirname, packagesPath), { withFileTypes: true })
     .filter(d => d.isDirectory() && !d.name.includes('deployment'))
-    .map(d => path.join(packagesPath, d.name));
+    .map(d => join(packagesPath, d.name));
 
   const contractsFolder = process.env.COVERAGE === 'true' ? 'contracts_coverage' : 'contracts';
   for (const workspace of workspaces) {
@@ -206,7 +206,7 @@ export async function initializeFreshArtifactFromWorkspace(artifactName: string)
     const artifactPath = findArtifactPath(parentPath, artifactName);
     if (artifactPath) {
       await fsExtra.copy(
-        path.join(__dirname, workspace, 'artifacts'),
+        join(__dirname, workspace, 'artifacts'),
         deploymentsArtifactsPath,
         { overwrite: true },
       );
