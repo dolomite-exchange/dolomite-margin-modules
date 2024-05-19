@@ -40,6 +40,7 @@ const METH_ETH_EXCHANGE_RATE = BigNumber.from('1027354527249591449');
 const BTC_PRICE = BigNumber.from('635989069637405795488920000000000');
 const WETH_PRICE = BigNumber.from('3151291727870000000000');
 
+// noinspection SpellCheckingInspection
 const CHRONICLE_AUTHED_ADDRESS = '0x39abd7819e5632fa06d2ecbba45dca5c90687ee3';
 
 describe('ChroniclePriceOracleV3', () => {
@@ -83,7 +84,7 @@ describe('ChroniclePriceOracleV3', () => {
     redstoneOracle = await createContractWithAbi<RedstonePriceOracleV3>(
       RedstonePriceOracleV3__factory.abi,
       RedstonePriceOracleV3__factory.bytecode,
-      await getRedstonePriceOracleV3ConstructorParams(
+      getRedstonePriceOracleV3ConstructorParams(
         core,
         [core.tokens.weth.address],
         [REDSTONE_PRICE_AGGREGATORS_MAP[Network.Mantle][core.tokens.weth.address]!.aggregatorAddress],
