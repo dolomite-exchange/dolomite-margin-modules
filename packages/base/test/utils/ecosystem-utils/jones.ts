@@ -32,7 +32,8 @@ import {
 } from '../../../src/utils/constants';
 import { ADDRESS_ZERO, Network } from '../../../src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';
-import { CoreProtocolArbitrumOne } from '../core-protocol';
+
+import { CoreProtocolArbitrumOne } from '../core-protocols/core-protocol-arbitrum-one';
 import { impersonate, impersonateOrFallback } from '../index';
 import { getContract } from '../setup';
 

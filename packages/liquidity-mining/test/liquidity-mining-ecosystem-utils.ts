@@ -1,8 +1,8 @@
 import { getUpgradeableProxyConstructorParams } from '@dolomite-exchange/modules-base/src/utils/constructors/dolomite';
 import { SignerWithAddressWithSafety } from '@dolomite-exchange/modules-base/src/utils/SignerWithAddressWithSafety';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { ethers } from 'ethers';
 import { createContractWithAbi, createContractWithLibrary } from '../../base/src/utils/dolomite-utils';
+import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import {
   getOARBConstructorParams,
   getRewardsDistributorConstructorParams,

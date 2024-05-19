@@ -43,7 +43,8 @@ import {
 import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectEvent, expectProtocolBalance, expectThrow } from '../../utils/assertions';
-import { CoreProtocolArbitrumOne } from '../../utils/core-protocol';
+
+import { CoreProtocolArbitrumOne } from '../../utils/core-protocols/core-protocol-arbitrum-one';
 import {
   createDolomiteRegistryImplementation,
   createEventEmitter,

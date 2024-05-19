@@ -192,6 +192,33 @@
       "isVerified": true
     }
   },
+  "AsyncIsolationModeUnwrapperTraderImplV3": {
+    "196": {
+      "address": "0x958a9C230360003b548d572Cb88bb25B8A744bf7",
+      "transaction": "0x42efff6b0adfad8d99c9c73996335fa9d87c177a1b06a445f37b7bdb24fbb0dc",
+      "isVerified": true
+    },
+    "1101": {
+      "address": "0x17C57C98B666bac9F3DCE4033180190fe923F13d",
+      "transaction": "0xdb626a43175bf5fa3632aa7efef1bb8f72d9d62b8ece5a959829bbb09fa0109e",
+      "isVerified": true
+    },
+    "5000": {
+      "address": "0x86CFc6BA3bbBC603b8deC5B032aFa10A3592470D",
+      "transaction": "0x1274adfb832959989417e7268dbc863c09613f0a1ee27b228a43e7a3a3fc1b59",
+      "isVerified": true
+    },
+    "8453": {
+      "address": "0xCAFd361FD0CdD8e6a0A58Ff492c026bd25f1E2eE",
+      "transaction": "0x6d528a1b973a6ad28e0858c6f2ca7a56afec9f7e437688cbcf725082e35fa398",
+      "isVerified": true
+    },
+    "42161": {
+      "address": "0xd15ff364289568Ac8958dc29F0B4f5c4D6d1F31E",
+      "transaction": "0x78ca0ac55ee21ffc17e41ff35df878c9963ff0145077b9d5fbf921e4e08c692b",
+      "isVerified": true
+    }
+  },
   "AsyncIsolationModeWrapperTraderImplV1": {
     "42161": {
       "address": "0xFb5Ce5D42c0fa1504D041d0655a40D05815FffE7",
@@ -271,6 +298,13 @@
     "42161": {
       "address": "0x8FA6d763CA105B3C88fd01317db2E66021208451",
       "transaction": "0xc7d9a0ae24e31c28e67f60eac8f5685e030a9dc6658f38cd10a8acfedf406a3e",
+      "isVerified": true
+    }
+  },
+  "ChroniclePriceOracleV3": {
+    "5000": {
+      "address": "0xe4d3450d52EDF515433FEc12eaEFFFBfa83250b9",
+      "transaction": "0xc18333f4b12e53c193285ae97173f96870ec2eeb65d2723e9fbc02ec7f5df147",
       "isVerified": true
     }
   },
@@ -965,6 +999,13 @@
     "42161": {
       "address": "0xE87bb3F256B3034A987f7b2230d16aB2cE51E9F7",
       "transaction": "0x5e4dbf3cca9a93d40ad410e79761611b738159cd1f1243c82bc6c0c76b145db5",
+      "isVerified": true
+    }
+  },
+  "GmxV2IsolationModeUnwrapperTraderImplementationV6": {
+    "42161": {
+      "address": "0x55261CebE9a9159b69106907F84f6F881F0D4390",
+      "transaction": "0x88db76250fbfb368a0a712319e195aba5be9d635241d4ee2a4b39351da0afbe4",
       "isVerified": true
     }
   },
@@ -1677,6 +1718,11 @@
       "transaction": "0xd0d7b3bb23a8b8ff848243287dd07644a51a3c29498e41bd529f17e283d979c3",
       "isVerified": true
     },
+    "5000": {
+      "address": "0x4232FCE0D67839F4FD536990bDc02043d9Ab708a",
+      "transaction": "0x87a341ce03d1f62570a8fad84f89e768b143341d1e0611ff5289526816ec1311",
+      "isVerified": true
+    },
     "42161": {
       "address": "0x2E3D10CC42227aF0ce908F00C76fFe1dE1728b4B",
       "transaction": "0x2fdefdd4979fc6d697f2b7cb60537122cff4bffa145ece6514a2604c2dc1969c",
@@ -1689,6 +1735,11 @@
       "transaction": "0x8c831837fcd588ac57dae4b0668d6c954d899f6ba368423231650e3d18540740",
       "isVerified": true
     },
+    "5000": {
+      "address": "0x9F7779A8aF28De91262ba9d6383fEf899102E876",
+      "transaction": "0x1cf244b0338083f2ba93867cf7cf3fc06e6eee9a7cc36107d706edebdd81dd3a",
+      "isVerified": true
+    },
     "42161": {
       "address": "0xd81bc90E4F329bE8519cefE00B55BB1c327401ad",
       "transaction": "0x921c854365c5460ac34450b8e8f9ff31f6174f9adf6de278ebee7db59b8c0b0a",
@@ -1699,6 +1750,11 @@
     "196": {
       "address": "0x2A2e69A1Cce76dF1F0Ca877B3f29C7ceDf47053A",
       "transaction": "0x27b9958d09aa62f46032e4f0f725d849169406418f399f338b4177356f0cca23",
+      "isVerified": true
+    },
+    "5000": {
+      "address": "0x836b557Cf9eF29fcF49C776841191782df34e4e5",
+      "transaction": "0xf0bdd287b9bdc75f976be3d8f475e18064ae88571a6554f9733fd2bca43c4b7f",
       "isVerified": true
     },
     "42161": {
@@ -2749,6 +2805,11 @@
     }
   },
   "RedstonePriceOracleV3": {
+    "5000": {
+      "address": "0x6B15c3F0D266be946eA2d33C40d1a7204C8403a2",
+      "transaction": "0xf560cc9e13173d45ecca1b0c3510699a321276a762a7aeae5b047fca79971e1b",
+      "isVerified": true
+    },
     "42161": {
       "address": "0x5fBAe9cbbc209efDf2054e050Baf5a0783Be01d2",
       "transaction": "0xe62098b9df8aba581c9294a0a49aa42a25ad9709dc25508eefe5d0ea4bc77447",

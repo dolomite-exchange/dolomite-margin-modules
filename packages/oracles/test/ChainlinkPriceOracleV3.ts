@@ -1,4 +1,4 @@
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
@@ -33,6 +33,7 @@ import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertio
 import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { parseEther } from 'ethers/lib/utils';
 import { TokenInfo } from '../src';
+import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 
 const WETH_PRICE = BigNumber.from('2260038782330000000000');
 const BTC_PRICE = BigNumber.from('440493939086400000000000000000000');

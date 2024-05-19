@@ -29,17 +29,17 @@ import { IOracleAggregatorV2 } from "./interfaces/IOracleAggregatorV2.sol";
 
 
 /**
- * @title   ChroniclePriceOracle
+ * @title   ChroniclePriceOracleV3
  * @author  Dolomite
  *
  * An implementation of the IDolomitePriceOracle interface that makes Chronicle prices compatible with the protocol.
  * This implementation is meant to be tied to an aggregator
  */
-contract ChroniclePriceOracle is IChroniclePriceOracle, OnlyDolomiteMargin {
+contract ChroniclePriceOracleV3 is IChroniclePriceOracle, OnlyDolomiteMargin {
 
     // ========================= Constants =========================
 
-    bytes32 private constant _FILE = "ChroniclePriceOracle";
+    bytes32 private constant _FILE = "ChroniclePriceOracleV3";
     uint256 private constant _ONE_DOLLAR = 10 ** 36;
 
     // ========================= Storage =========================

@@ -11,7 +11,6 @@ import {
   snapshot,
 } from '@dolomite-exchange/modules-base/test/utils';
 import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { setupCoreProtocol, setupUSDCBalance } from '@dolomite-exchange/modules-base/test/utils/setup';
 import deployments from '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
 import { ADDRESSES } from '@dolomite-margin/dist/src';

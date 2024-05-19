@@ -34,7 +34,6 @@ import {
 } from '@dolomite-exchange/modules-base/test/utils/liquidation-utils';
 import { setupCoreProtocol, setupUSDCBalance } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { checkForParaswapSuccess } from '@dolomite-exchange/modules-base/test/utils/trader-utils';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 
 const defaultAccountNumber = '0';
 const otherAccountNumber = '420';

@@ -10,7 +10,8 @@ import { expectEvent, expectThrow } from '@dolomite-exchange/modules-base/test/u
 import { createIsolationModeTraderProxy } from '@dolomite-exchange/modules-base/test/utils/dolomite';
 import { expect } from 'chai';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol } from 'packages/base/test/utils/setup';
-import { CoreProtocolArbitrumOne } from '../../utils/core-protocol';
+
+import { CoreProtocolArbitrumOne } from '../../utils/core-protocols/core-protocol-arbitrum-one';
 import { createTestHandlerRegistry } from '../../utils/ecosystem-utils/testers';
 
 describe('AsyncIsolationModeTraderBase', () => {

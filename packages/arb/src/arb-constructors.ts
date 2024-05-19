@@ -6,7 +6,6 @@ import {
   IARBIsolationModeVaultFactory,
   IARBRegistry,
 } from './types';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 
 export async function getARBRegistryConstructorParams(
   implementation: ARBRegistry,

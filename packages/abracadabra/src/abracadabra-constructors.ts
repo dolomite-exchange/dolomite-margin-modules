@@ -1,4 +1,4 @@
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+
 
 export function getMagicGLPPriceOracleConstructorParams(core: CoreProtocolArbitrumOne): any[] {
   return [

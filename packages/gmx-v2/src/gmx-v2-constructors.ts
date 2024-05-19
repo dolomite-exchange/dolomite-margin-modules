@@ -1,7 +1,7 @@
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { GmToken } from '@dolomite-exchange/modules-base/test/utils/ecosystem-utils/gmx';
 import { BigNumber, BigNumberish } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
+import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import {
   GmxV2IsolationModeTokenVaultV1,
   GmxV2IsolationModeUnwrapperTraderV2,

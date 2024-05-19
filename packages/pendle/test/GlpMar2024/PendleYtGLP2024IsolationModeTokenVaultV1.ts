@@ -20,7 +20,6 @@ import {
   expectWalletBalance,
   expectWalletBalanceIsGreaterThan,
 } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { createDolomiteRegistryImplementation } from '@dolomite-exchange/modules-base/test/utils/dolomite';
 import {
   getDefaultCoreProtocolConfig,

@@ -5,7 +5,6 @@ import {
   IsolationModeFreezableLiquidatorProxy,
   IsolationModeFreezableLiquidatorProxy__factory,
 } from '@dolomite-exchange/modules-base/src/types';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 import { takeSnapshot } from '@nomicfoundation/hardhat-network-helpers';
 import { expect } from 'chai';
@@ -19,6 +18,7 @@ import { createContractWithAbi } from '../../base/src/utils/dolomite-utils';
 import { NO_EXPIRY, ONE_BI, ONE_ETH_BI, ZERO_BI } from '../../base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../../base/test/utils';
 import { expectEvent, expectProtocolBalance, expectWalletBalance } from '../../base/test/utils/assertions';
+import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { createDolomiteRegistryImplementation, createEventEmitter } from '../../base/test/utils/dolomite';
 import {
   disableInterestAccrual,

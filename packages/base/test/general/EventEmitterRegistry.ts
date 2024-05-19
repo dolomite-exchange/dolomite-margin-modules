@@ -5,7 +5,8 @@ import { EventEmitterRegistry, IIsolationModeVaultFactory, IIsolationModeVaultFa
 import { SignerWithAddressWithSafety } from '../../src/utils/SignerWithAddressWithSafety';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
 import { expectEvent, expectThrow } from '../utils/assertions';
-import { CoreProtocolArbitrumOne } from '../utils/core-protocol';
+
+import { CoreProtocolArbitrumOne } from '../utils/core-protocols/core-protocol-arbitrum-one';
 import { createEventEmitter } from '../utils/dolomite';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '../utils/setup';
 

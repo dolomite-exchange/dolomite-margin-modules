@@ -12,7 +12,6 @@ import {
   waitDays,
 } from '@dolomite-exchange/modules-base/test/utils';
 import { expectProtocolBalance } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import {
   setupCoreProtocol,
   setupGMXBalance,
@@ -22,6 +21,7 @@ import { getUnwrapZapParams } from '@dolomite-exchange/modules-base/test/utils/z
 import deployments from '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
 import { BigNumber, BigNumberish } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
+import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import {
   IGLPIsolationModeVaultFactoryOld,
   IGMXIsolationModeVaultFactory,

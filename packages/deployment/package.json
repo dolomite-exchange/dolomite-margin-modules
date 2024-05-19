@@ -1,6 +1,6 @@
 {
   "name": "@dolomite-exchange/modules-deployments",
-  "version": "0.0.15",
+  "version": "0.0.16",
   "scripts": {
     "build": "hardhat compile",
     "clean": "hardhat clean",
@@ -10,11 +10,13 @@
     "lint:ts": "tslint --project ../../ -t verbose 'src/**/*.ts'",
     "test": "hardhat --network hardhat test",
     "deploy:chainlink-price-oracle-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts chainlink-price-oracle",
+    "deploy:chronicle-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts chronicle",
     "deploy:dolomite-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts dolomite",
     "deploy:gravita-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts gravita",
     "deploy:mineral-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts mineral",
     "deploy:odos-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts odos",
     "deploy:paraswap-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts paraswap",
+    "deploy:redstone-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts redstone",
     "execute:arbitrum": "NETWORK=arbitrum_one ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
     "execute:base": "NETWORK=base ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
     "execute:bera": "NETWORK=bera ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",

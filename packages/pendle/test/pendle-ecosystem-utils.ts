@@ -3,7 +3,6 @@ import {
   createContractWithAbi,
   createContractWithLibrary,
 } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { createIsolationModeTokenVaultV1ActionsImpl } from '@dolomite-exchange/modules-base/test/utils/dolomite';
 import { BigNumberish } from 'ethers';
 import { Network } from 'packages/base/src/utils/no-deps-constants';

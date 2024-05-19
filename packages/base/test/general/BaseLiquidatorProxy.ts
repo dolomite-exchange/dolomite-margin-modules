@@ -11,7 +11,8 @@ import {
 import { MAX_UINT_256_BI, Network, ONE_ETH_BI, ZERO_BI } from '../../src/utils/no-deps-constants';
 import { getBlockTimestamp, impersonate, revertToSnapshotAndCapture, snapshot } from '../utils';
 import { expectThrow } from '../utils/assertions';
-import { CoreProtocolArbitrumOne } from '../utils/core-protocol';
+
+import { CoreProtocolArbitrumOne } from '../utils/core-protocols/core-protocol-arbitrum-one';
 import { setExpiry } from '../utils/expiry-utils';
 import {
   disableInterestAccrual,

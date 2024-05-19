@@ -1,4 +1,4 @@
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+
 import {
   IPlutusVaultGLPFarm,
   IPlutusVaultGLPIsolationModeVaultFactory,

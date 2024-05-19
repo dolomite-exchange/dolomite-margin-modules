@@ -9,7 +9,6 @@ import {
   createContractWithLibraryAndArtifact,
 } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { BYTES_EMPTY } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import {
   createAsyncIsolationModeUnwrapperTraderImpl,
   createAsyncIsolationModeWrapperTraderImpl,
@@ -25,6 +24,7 @@ import fs, { readFileSync } from 'fs';
 import { artifacts } from 'hardhat';
 import { Artifact } from 'hardhat/types';
 import path, { join } from 'path';
+import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import {
   getGmxV2IsolationModeTokenVaultConstructorParams,
   getGmxV2IsolationModeUnwrapperTraderV2ConstructorParams,

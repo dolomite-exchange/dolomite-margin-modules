@@ -1,5 +1,4 @@
 import { impersonate } from '@dolomite-exchange/modules-base/test/utils';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { CoreProtocolSetupConfig } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { ethers } from 'ethers';
 import { Network } from 'packages/base/src/utils/no-deps-constants';

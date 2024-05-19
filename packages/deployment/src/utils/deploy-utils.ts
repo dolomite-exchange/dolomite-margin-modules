@@ -11,9 +11,8 @@ import {
 } from '@dolomite-exchange/modules-base/src/types';
 import {
   CHAINLINK_PRICE_AGGREGATORS_MAP,
-  E_ETH_MAP,
-  GMX_BTC_PLACEHOLDER_MAP, INVALID_TOKEN_MAP,
-  ST_ETH_MAP,
+  CHRONICLE_PRICE_SCRIBES_MAP,
+  INVALID_TOKEN_MAP, REDSTONE_PRICE_AGGREGATORS_MAP,
 } from '@dolomite-exchange/modules-base/src/utils/constants';
 import {
   getLiquidationPremiumForTargetLiquidationPenalty,
@@ -34,13 +33,13 @@ import {
   TEN_BI,
   ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { CoreProtocolXLayer } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { CoreProtocolType } from '@dolomite-exchange/modules-base/test/utils/setup';
 import {
   CoreProtocolWithChainlinkOld,
   CoreProtocolWithChainlinkV3,
+  CoreProtocolWithChronicle, CoreProtocolWithRedstone,
 } from '@dolomite-exchange/modules-oracles/src/oracles-constructors';
-import { IChainlinkAggregator__factory } from '@dolomite-exchange/modules-oracles/src/types';
+import { IChainlinkAggregator__factory, IChronicleScribe__factory } from '@dolomite-exchange/modules-oracles/src/types';
 import {
   CoreProtocolWithPendle,
   getPendlePtIsolationModeUnwrapperTraderV2ConstructorParams,
@@ -74,7 +73,9 @@ import fs, { readFileSync } from 'fs';
 import fsExtra from 'fs-extra';
 import hardhat, { artifacts, ethers, network } from 'hardhat';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
+import { CoreProtocolXLayer } from 'packages/base/test/utils/core-protocols/core-protocol-x-layer';
 import path, { join } from 'path';
+import { impersonate } from '@dolomite-exchange/modules-base/test/utils';
 
 type ChainId = string;
 
@@ -179,7 +180,7 @@ function findArtifactPath(parentPath: string, artifactName: string): string | un
 
   const childDirectories = fs.readdirSync(parentPath, { withFileTypes: true });
   for (const childDirectory of childDirectories) {
-    const fullPath = path.join(parentPath, childDirectory.name);
+    const fullPath = join(parentPath, childDirectory.name);
     if (childDirectory.isDirectory() && !childDirectory.name.includes('.sol')) {
       const artifactPath = findArtifactPath(fullPath, artifactName);
       if (artifactPath) {
@@ -193,12 +194,12 @@ function findArtifactPath(parentPath: string, artifactName: string): string | un
 
 export async function initializeFreshArtifactFromWorkspace(artifactName: string): Promise<void> {
   const packagesPath = '../../../../packages';
-  const deploymentsArtifactsPath = path.join(__dirname, packagesPath, 'deployment', 'artifacts');
+  const deploymentsArtifactsPath = join(__dirname, packagesPath, 'deployment', 'artifacts');
   await fsExtra.remove(deploymentsArtifactsPath);
 
   const workspaces = fs.readdirSync(join(__dirname, packagesPath), { withFileTypes: true })
     .filter(d => d.isDirectory() && !d.name.includes('deployment'))
-    .map(d => path.join(packagesPath, d.name));
+    .map(d => join(packagesPath, d.name));
 
   const contractsFolder = process.env.COVERAGE === 'true' ? 'contracts_coverage' : 'contracts';
   for (const workspace of workspaces) {
@@ -206,7 +207,7 @@ export async function initializeFreshArtifactFromWorkspace(artifactName: string)
     const artifactPath = findArtifactPath(parentPath, artifactName);
     if (artifactPath) {
       await fsExtra.copy(
-        path.join(__dirname, workspace, 'artifacts'),
+        join(__dirname, workspace, 'artifacts'),
         deploymentsArtifactsPath,
         { overwrite: true },
       );
@@ -928,6 +929,73 @@ export async function prettyPrintEncodeInsertChainlinkOracleV3<T extends Network
   ];
 }
 
+export async function prettyPrintEncodeInsertChronicleOracleV3(
+  core: CoreProtocolWithChronicle<Network.Mantle>,
+  token: IERC20,
+  invertPrice: boolean = CHRONICLE_PRICE_SCRIBES_MAP[core.config.network][token.address].invertPrice ?? false,
+  tokenPairAddress: string | undefined
+    = CHRONICLE_PRICE_SCRIBES_MAP[core.config.network][token.address].tokenPairAddress,
+  scribeAddress: string = CHRONICLE_PRICE_SCRIBES_MAP[core.config.network][token.address].scribeAddress,
+): Promise<EncodedTransaction[]> {
+  const invalidTokenSettings = INVALID_TOKEN_MAP[Network.Mantle][token.address];
+
+  let tokenDecimals: number;
+  if (invalidTokenSettings) {
+    tokenDecimals = invalidTokenSettings.decimals;
+  } else {
+    tokenDecimals = await IERC20Metadata__factory.connect(token.address, core.hhUser1).decimals();
+  }
+
+  const scribe = IChronicleScribe__factory.connect(scribeAddress, core.governance);
+
+  let symbol: string;
+  if (invalidTokenSettings) {
+    symbol = invalidTokenSettings.symbol;
+  } else {
+    symbol = await IERC20Metadata__factory.connect(token.address, token.signer).symbol();
+  }
+
+  if (network.name === 'hardhat') {
+    const toller = await impersonate((await scribe.authed())[0], true);
+    await scribe.connect(toller).kiss(toller.address);
+    console.log(`\tChronicle price for ${symbol}:`, (await scribe.connect(toller).latestRoundData()).answer.toString());
+  }
+
+  mostRecentTokenDecimals = tokenDecimals;
+  return [
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { chroniclePriceOracle: core.chroniclePriceOracleV3 },
+      'chroniclePriceOracle',
+      'ownerInsertOrUpdateOracleToken',
+      [
+        token.address,
+        scribe.address,
+        invertPrice,
+      ],
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { oracleAggregatorV2: core.oracleAggregatorV2 },
+      'oracleAggregatorV2',
+      'ownerInsertOrUpdateToken',
+      [
+        {
+          token: token.address,
+          decimals: tokenDecimals,
+          oracleInfos: [
+            {
+              oracle: core.chroniclePriceOracleV3.address,
+              tokenPair: tokenPairAddress ?? ADDRESS_ZERO,
+              weight: 100,
+            },
+          ],
+        },
+      ],
+    ),
+  ];
+}
+
 export async function prettyPrintEncodeInsertOkxOracleV3(
   core: CoreProtocolXLayer,
   token: IERC20,
@@ -989,6 +1057,69 @@ export async function prettyPrintEncodeInsertOkxOracleV3(
           oracleInfos: [
             {
               oracle: core.okxPriceOracleV3.address,
+              tokenPair: tokenPairAddress ?? ADDRESS_ZERO,
+              weight: 100,
+            },
+          ],
+        },
+      ],
+    ),
+  ];
+}
+
+export async function prettyPrintEncodeInsertRedstoneOracleV3(
+  core: CoreProtocolWithRedstone<Network.Mantle>,
+  token: IERC20,
+  invertPrice: boolean = REDSTONE_PRICE_AGGREGATORS_MAP[core.config.network][token.address]!.invert ?? false,
+  tokenPairAddress: string | undefined
+    = REDSTONE_PRICE_AGGREGATORS_MAP[core.config.network][token.address]!.tokenPairAddress,
+  aggregatorAddress: string = REDSTONE_PRICE_AGGREGATORS_MAP[core.config.network][token.address]!.aggregatorAddress,
+): Promise<EncodedTransaction[]> {
+  const invalidTokenSettings = INVALID_TOKEN_MAP[Network.Mantle][token.address];
+
+  let tokenDecimals: number;
+  if (invalidTokenSettings) {
+    tokenDecimals = invalidTokenSettings.decimals;
+  } else {
+    tokenDecimals = await IERC20Metadata__factory.connect(token.address, core.hhUser1).decimals();
+  }
+
+  const aggregator = IChainlinkAggregator__factory.connect(aggregatorAddress, core.governance);
+
+  let symbol: string;
+  if (invalidTokenSettings) {
+    symbol = invalidTokenSettings.symbol;
+  } else {
+    symbol = await IERC20Metadata__factory.connect(token.address, token.signer).symbol();
+  }
+
+  console.log(`\tRedstone price for ${symbol}:`, (await aggregator.latestRoundData()).answer.toString());
+
+  mostRecentTokenDecimals = tokenDecimals;
+  return [
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { redstonePriceOracle: core.redstonePriceOracleV3 },
+      'redstonePriceOracle',
+      'ownerInsertOrUpdateOracleToken',
+      [
+        token.address,
+        aggregator.address,
+        invertPrice,
+      ],
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { oracleAggregatorV2: core.oracleAggregatorV2 },
+      'oracleAggregatorV2',
+      'ownerInsertOrUpdateToken',
+      [
+        {
+          token: token.address,
+          decimals: tokenDecimals,
+          oracleInfos: [
+            {
+              oracle: core.redstonePriceOracleV3.address,
               tokenPair: tokenPairAddress ?? ADDRESS_ZERO,
               weight: 100,
             },

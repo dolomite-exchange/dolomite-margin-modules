@@ -1,32 +1,59 @@
-import { getAnyNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { deployContractAndSave } from '../../utils/deploy-utils';
-import { getChroniclePriceOracleConstructorParams } from 'packages/oracles/src/oracles-constructors';
 import { CHRONICLE_PRICE_SCRIBES_MAP } from 'packages/base/src/utils/constants';
+import { getChroniclePriceOracleV3ConstructorParams } from 'packages/oracles/src/oracles-constructors';
+import { ChroniclePriceOracleV3__factory, IERC20__factory } from 'packages/oracles/src/types';
+import {
+  deployContractAndSave,
+  EncodedTransaction,
+  prettyPrintEncodeInsertChronicleOracleV3,
+  TRANSACTION_BUILDER_VERSION,
+} from '../../utils/deploy-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput } from '../../utils/dry-run-utils';
+import getScriptName from '../../utils/get-script-name';
 
-async function main() {
-  const network = await getAnyNetwork();
-  if (network !== Network.Mantle) {
-    console.warn(`Invalid network for Chronicle, found: ${network}`);
-    return;
-  }
-
+async function main(): Promise<DryRunOutput<Network.Mantle>> {
+  const network = await getAndCheckSpecificNetwork(Network.Mantle);
   const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
 
-  const tokens = [core.tokens.meth.address];
-  const scribes = [CHRONICLE_PRICE_SCRIBES_MAP[Network.Mantle][core.tokens.meth.address].scribeAddress];
-  const invertPrices = [false];
-  await deployContractAndSave(
-    'ChroniclePriceOracle',
-    getChroniclePriceOracleConstructorParams(tokens, scribes, invertPrices, core),
+  const chronicleAddress = await deployContractAndSave(
+    'ChroniclePriceOracleV3',
+    getChroniclePriceOracleV3ConstructorParams(core, [], [], []),
+    'ChroniclePriceOracleV3'
   );
+  (core as any).chroniclePriceOracle = ChroniclePriceOracleV3__factory.connect(chronicleAddress, core.hhUser1);
+
+  const tokens = Object.keys(CHRONICLE_PRICE_SCRIBES_MAP[network])
+    .map(t => IERC20__factory.connect(t, core.hhUser1));
+  const transactions: EncodedTransaction[] = [];
+  for (let i = 0; i < tokens.length; i++) {
+    if (CHRONICLE_PRICE_SCRIBES_MAP[network][tokens[i].address]) {
+      transactions.push(...await prettyPrintEncodeInsertChronicleOracleV3(core, tokens[i]));
+    }
+  }
+
+  return {
+    core,
+    invariants: async () => {
+      for (let i = 0; i < tokens.length; i++) {
+        console.log(
+          `\tPrice for ${tokens[i].address}: `,
+          (await core.oracleAggregatorV2.getPrice(tokens[i].address)).value.toString(),
+        );
+      }
+    },
+    scriptName: getScriptName(__filename),
+    upload: {
+      transactions,
+      chainId: network,
+      meta: {
+        name: 'Chronicle Ecosystem',
+        txBuilderVersion: TRANSACTION_BUILDER_VERSION,
+      },
+    },
+  };
 }
 
-main()
-  .then(() => process.exit(0))
-  .catch((error) => {
-    console.error(error);
-    process.exit(1);
-  });
+doDryRunAndCheckDeployment(main);

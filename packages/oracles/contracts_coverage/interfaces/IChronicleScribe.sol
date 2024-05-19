@@ -30,6 +30,8 @@ interface IChronicleScribe {
 
     function kiss(address who) external;
 
+    function authed() external view returns (address[] memory);
+
     function decimals() external view returns (uint8);
 
     function latestRoundData()

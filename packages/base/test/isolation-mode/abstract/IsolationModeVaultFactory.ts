@@ -31,7 +31,8 @@ import {
   expectWalletAllowance,
   expectWalletBalance,
 } from '../../utils/assertions';
-import { CoreProtocolArbitrumOne } from '../../utils/core-protocol';
+
+import { CoreProtocolArbitrumOne } from '../../utils/core-protocols/core-protocol-arbitrum-one';
 import { createIsolationModeTokenVaultV1ActionsImpl } from '../../utils/dolomite';
 import { createTestIsolationModeFactory } from '../../utils/ecosystem-utils/testers';
 import {

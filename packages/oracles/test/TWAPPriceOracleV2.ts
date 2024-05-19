@@ -1,4 +1,4 @@
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
@@ -18,6 +18,7 @@ import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules
 import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { TokenInfo } from '../src';
+import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 
 const ARB_WETH_POOL = '0xe51635ae8136aBAc44906A8f230C2D235E9c195F';
 const ARB_PRICE_WETH_POOL = BigNumber.from('920176763082082501');
