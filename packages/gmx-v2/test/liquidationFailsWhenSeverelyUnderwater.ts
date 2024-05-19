@@ -107,7 +107,7 @@ describe('POC: liquidationFailsWhenSeverelyUnderwater', () => {
     liquidatorProxy = await createContractWithAbi<IsolationModeFreezableLiquidatorProxy>(
       IsolationModeFreezableLiquidatorProxy__factory.abi,
       IsolationModeFreezableLiquidatorProxy__factory.bytecode,
-      await getIsolationModeFreezableLiquidatorProxyConstructorParams(core),
+      getIsolationModeFreezableLiquidatorProxyConstructorParams(core),
     );
 
     const gmxV2Library = await createGmxV2Library();
@@ -180,16 +180,13 @@ describe('POC: liquidationFailsWhenSeverelyUnderwater', () => {
     await core.dolomiteMargin.ownerSetGlobalOperator(NEW_GENERIC_TRADER_PROXY, true);
     await core.dolomiteMargin.ownerSetGlobalOperator(core.liquidatorProxyV4.address, true);
     await core.dolomiteRegistry.ownerSetGenericTraderProxy(NEW_GENERIC_TRADER_PROXY);
-    const trader = await IGenericTraderProxyV1__factory.connect(
-      NEW_GENERIC_TRADER_PROXY,
-      core.governance,
-    );
+    const trader = IGenericTraderProxyV1__factory.connect(NEW_GENERIC_TRADER_PROXY, core.governance);
     await trader.ownerSetEventEmitterRegistry(eventEmitter.address);
 
     solidAccount = { owner: core.hhUser5.address, number: defaultAccountNumber };
     liquidAccount = { owner: vault.address, number: borrowAccountNumber };
 
-    await setupGMBalance(core, core.hhUser1, amountWei.mul(2), vault);
+    await setupGMBalance(core, core.gmxEcosystemV2.gmxEthUsdMarketToken, core.hhUser1, amountWei.mul(2), vault);
     await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei.mul(2));
     await vault.openBorrowPosition(
       defaultAccountNumber,
@@ -264,7 +261,6 @@ describe('POC: liquidationFailsWhenSeverelyUnderwater', () => {
           marketId,
           depositMinAmountOut,
           wrapper,
-          GMX_V2_EXECUTION_FEE_FOR_TESTS,
         );
         await vault.swapExactInputForOutput(
           initiateWrappingParams.accountNumber,

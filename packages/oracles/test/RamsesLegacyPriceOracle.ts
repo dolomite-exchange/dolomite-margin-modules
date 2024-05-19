@@ -95,7 +95,7 @@ describe('RamsesLegacyPriceOracle', () => {
           core.dolomiteMargin.address,
         ],
       );
-      const pair = await IRamsesPool__factory.connect(GRAI_FRAX_POOL, core.hhUser1);
+      const pair = IRamsesPool__factory.connect(GRAI_FRAX_POOL, core.hhUser1);
       const price = await oracle.getPrice(core.tokens.frax.address);
       expect(await pair.current(core.tokens.frax.address, ONE_ETH_BI)).to.eq(price.value);
     });

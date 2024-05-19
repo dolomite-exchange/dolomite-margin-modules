@@ -177,49 +177,6 @@ export async function getChainlinkPriceOracleV1ConstructorParamsFromOldPriceOrac
   return [tokens, aggregators, tokenDecimals, tokenPairs, core.dolomiteMargin.address];
 }
 
-export async function getOracleAggregatorV1ConstructorParams(
-  core: CoreProtocolArbitrumOne | CoreProtocolPolygonZkEvm,
-  chainlinkOracle: ChainlinkPriceOracleV3,
-  redstoneOracle: RedstonePriceOracleV3 | null,
-): Promise<[string[], string[], string[], string]> {
-  const oldPriceOracle = IChainlinkPriceOracleV1__factory.connect(
-    Deployments.ChainlinkPriceOracleV1[core.config.network].address,
-    core.hhUser1,
-  );
-
-  const tokens: string[] = [];
-  const oracles: string[] = [];
-  const tokenPairs: string[] = [];
-
-  const chainlinkFilter = chainlinkOracle.filters.TokenInsertedOrUpdated();
-  let chainlinkResults;
-  if (core.config.network === Network.ArbitrumOne) {
-    chainlinkResults = await chainlinkOracle.queryFilter(chainlinkFilter);
-  } else {
-    chainlinkResults = await chainlinkOracle.queryFilter(chainlinkFilter, -9999);
-  }
-  for (let i = 0; i < chainlinkResults.length; i++) {
-    const token = ethers.utils.defaultAbiCoder.decode(['address'], chainlinkResults[i].topics[1])[0];
-    tokens.push(token);
-    oracles.push(chainlinkOracle.address);
-    tokenPairs.push(await oldPriceOracle.getTokenPairByToken(token));
-  }
-
-  if (redstoneOracle) {
-    const redstoneFilter = redstoneOracle.filters.TokenInsertedOrUpdated();
-    const redstoneResults = await redstoneOracle.queryFilter(redstoneFilter);
-    for (let i = 0; i < redstoneResults.length; i++) {
-      const token = ethers.utils.defaultAbiCoder.decode(['address'], redstoneResults[i].topics[1])[0];
-      tokens.push(token);
-      oracles.push(redstoneOracle.address);
-      // @follow-up Right now weEth is the only token so hardcoding weth as token pair
-      tokenPairs.push(core.tokens.weth.address);
-    }
-  }
-
-  return [tokens, oracles, tokenPairs, core.dolomiteMargin.address];
-}
-
 export async function getOracleAggregatorV2ConstructorParams(
   core: CoreProtocolArbitrumOne,
   chainlinkOracle: ChainlinkPriceOracleV3,
@@ -327,21 +284,6 @@ export async function getOracleAggregatorV2ConstructorParams(
   }
 
   return [tokensInfos.concat(extraTokenInfos), core.dolomiteMargin.address];
-}
-
-export async function getChainlinkPriceOracleV1ConstructorParams<T extends NetworkType>(
-  tokens: IERC20[],
-  aggregators: IChainlinkAggregator[],
-  tokenPairs: IERC20[],
-  core: CoreProtocolType<T>,
-): Promise<[string[], string[], BigNumberish[], string[], string]> {
-  return [
-    tokens.map(t => t.address),
-    aggregators.map(t => t.address),
-    await Promise.all(tokens.map(t => IERC20Metadata__factory.connect(t.address, t.signer).decimals())),
-    tokenPairs.map(t => t.address),
-    core.dolomiteMargin.address,
-  ];
 }
 
 export function getChainlinkPriceOracleV3ConstructorParams<T extends NetworkType>(

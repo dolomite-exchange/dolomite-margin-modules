@@ -12,7 +12,8 @@ import {
 import {
   CHAINLINK_PRICE_AGGREGATORS_MAP,
   CHRONICLE_PRICE_SCRIBES_MAP,
-  INVALID_TOKEN_MAP, REDSTONE_PRICE_AGGREGATORS_MAP,
+  INVALID_TOKEN_MAP,
+  REDSTONE_PRICE_AGGREGATORS_MAP,
 } from '@dolomite-exchange/modules-base/src/utils/constants';
 import {
   getLiquidationPremiumForTargetLiquidationPenalty,

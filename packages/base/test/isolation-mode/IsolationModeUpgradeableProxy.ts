@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import {
   IsolationModeUpgradeableProxy,
   IsolationModeUpgradeableProxy__factory,
-  TestIsolationModeFactory,
+  TestIsolationModeVaultFactory,
   TestIsolationModeTokenVaultV1,
   TestIsolationModeTokenVaultV1__factory,
   TestIsolationModeUnwrapperTraderV2__factory,
@@ -14,14 +14,14 @@ import { expectThrow } from '../utils/assertions';
 
 import { CoreProtocolArbitrumOne } from '../utils/core-protocols/core-protocol-arbitrum-one';
 import { createIsolationModeTokenVaultV1ActionsImpl } from '../utils/dolomite';
-import { createTestIsolationModeFactory } from '../utils/ecosystem-utils/testers';
+import { createTestIsolationModeVaultFactory } from '../utils/ecosystem-utils/testers';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from '../utils/setup';
 
 describe('IsolationModeUpgradeableProxy', () => {
   let snapshotId: string;
 
   let core: CoreProtocolArbitrumOne;
-  let factory: TestIsolationModeFactory;
+  let factory: TestIsolationModeVaultFactory;
   let userVaultImplementation: TestIsolationModeTokenVaultV1;
 
   let vaultProxy: IsolationModeUpgradeableProxy;
@@ -35,7 +35,7 @@ describe('IsolationModeUpgradeableProxy', () => {
       libraries,
       [],
     );
-    factory = await createTestIsolationModeFactory(core, underlyingToken, userVaultImplementation);
+    factory = await createTestIsolationModeVaultFactory(core, underlyingToken, userVaultImplementation);
     await core.testEcosystem!.testPriceOracle.setPrice(
       factory.address,
       '1000000000000000000', // $1.00

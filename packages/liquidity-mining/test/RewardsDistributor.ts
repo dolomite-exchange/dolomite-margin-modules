@@ -3,7 +3,7 @@ import { createContractWithAbi } from '@dolomite-exchange/modules-base/src/utils
 import { Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectEvent, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { createEventEmitter } from '@dolomite-exchange/modules-base/test/utils/dolomite';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { expect } from 'chai';
 import { defaultAbiCoder, keccak256 } from 'ethers/lib/utils';
@@ -60,10 +60,10 @@ describe('RewardsDistributor', () => {
 
     merkleRoot1 = tree1.getHexRoot();
     merkleRoot2 = tree2.getHexRoot();
-    validProofUser1Epoch1 = await tree1.getHexProof(leaves1[0]);
-    validProofUser1Epoch2 = await tree2.getHexProof(leaves2[0]);
-    validProofUser2Epoch2 = await tree2.getHexProof(leaves2[1]);
-    invalidProof = await tree1.getHexProof(invalidLeaf);
+    validProofUser1Epoch1 = tree1.getHexProof(leaves1[0]);
+    validProofUser1Epoch2 = tree2.getHexProof(leaves2[0]);
+    validProofUser2Epoch2 = tree2.getHexProof(leaves2[1]);
+    invalidProof = tree1.getHexProof(invalidLeaf);
 
     await rewardsDistributor.connect(core.governance).ownerSetMerkleRoot(1, merkleRoot1);
     await rewardsDistributor.connect(core.governance).ownerSetMerkleRoot(2, merkleRoot2);

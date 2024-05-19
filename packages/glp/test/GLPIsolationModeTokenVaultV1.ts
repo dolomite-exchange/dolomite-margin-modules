@@ -879,7 +879,7 @@ describe('GLPIsolationModeTokenVaultV1', () => {
       );
     });
 
-    it('should fail when sender is the zero addres', async () => {
+    it('should fail when sender is the zero address', async () => {
       await expectThrow(
         vault.acceptFullAccountTransfer(ZERO_ADDRESS),
         'GLPIsolationModeTokenVaultV1: Invalid sender',

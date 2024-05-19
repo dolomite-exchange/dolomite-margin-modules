@@ -46,7 +46,7 @@ describe('VesterExploder', () => {
     vester = await createTestVesterV2Proxy(core, handler);
     vesterExploder = await createVesterExploder(core, vester);
     nextNftId = (await vester.nextNftId()).add(1);
-    oARB = await OARB__factory.connect(await vester.oARB(), core.hhUser1);
+    oARB = await OARB__factory.connect(await vester.oToken(), core.hhUser1);
 
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(vesterExploder.address, true);
     await freezeAndGetOraclePrice(core.tokens.weth);

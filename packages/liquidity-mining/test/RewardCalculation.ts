@@ -210,7 +210,7 @@ xdescribe('Reward Calculation', () => {
     });
   });
 
-  describe('Reward calculations with 2 users and 2 pools with equal allocs', () => {
+  describe('Reward calculations with 2 users and 2 pools with equal allocations', () => {
     it('should calculate evenly when both deposit before startTime', async () => {
       await ethers.provider.send('evm_setAutomine', [true]);
       await emitter.connect(core.governance).ownerAddPool(core.marketIds.weth, defaultAllocPoint, false);
@@ -248,7 +248,7 @@ xdescribe('Reward Calculation', () => {
     });
   });
 
-  describe('Reward calculations with 2 users and 2 pools with unequal allocs', () => {
+  describe('Reward calculations with 2 users and 2 pools with unequal allocations', () => {
     it('should calculate correctly when both deposit before startTime and alloc is triple for one pool', async () => {
       await ethers.provider.send('evm_setAutomine', [true]);
       await emitter.connect(core.governance).ownerAddPool(core.marketIds.weth, defaultAllocPoint.mul(3), false);

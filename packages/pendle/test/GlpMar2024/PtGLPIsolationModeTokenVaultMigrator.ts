@@ -56,7 +56,7 @@ describe('PtGLPIsolationModeTokenVaultMigrator', () => {
     await disableInterestAccrual(core, core.marketIds.weth);
     await disableInterestAccrual(core, core.marketIds.wbtc);
 
-    ptGlpFactory = core.pendleEcosystem.glpMar2024.dPtGlp2024.connect(core.hhUser1);
+    ptGlpFactory = core.pendleEcosystem.glpMar2024.dPtGlpMar2024.connect(core.hhUser1);
     glpFactory = core.gmxEcosystem!.live.dGlp.connect(core.hhUser1);
 
     migrator = await createContractWithAbi<DolomiteMigrator>(

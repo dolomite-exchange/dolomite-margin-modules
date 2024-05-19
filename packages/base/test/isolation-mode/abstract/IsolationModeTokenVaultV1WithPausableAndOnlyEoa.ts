@@ -4,7 +4,7 @@ import {
   CustomTestToken,
   TestDoAnything,
   TestDoAnything__factory,
-  TestIsolationModeFactory,
+  TestIsolationModeVaultFactory,
   TestIsolationModeTokenVaultV1WithPausableAndOnlyEoa,
   TestIsolationModeTokenVaultV1WithPausableAndOnlyEoa__factory,
   TestIsolationModeUnwrapperTraderV2,
@@ -23,7 +23,7 @@ import { expectProtocolBalance, expectThrow, expectWalletBalance } from '../../u
 
 import { CoreProtocolArbitrumOne } from '../../utils/core-protocols/core-protocol-arbitrum-one';
 import { createIsolationModeTokenVaultV1ActionsImpl } from '../../utils/dolomite';
-import { createTestIsolationModeFactory } from '../../utils/ecosystem-utils/testers';
+import { createTestIsolationModeVaultFactory } from '../../utils/ecosystem-utils/testers';
 import {
   getDefaultCoreProtocolConfig,
   setupCoreProtocol,
@@ -45,7 +45,7 @@ describe('IsolationModeTokenVaultV1WithPausableAndOnlyEoa', () => {
   let underlyingToken: CustomTestToken;
   let underlyingMarketId: BigNumber;
   let tokenUnwrapper: TestIsolationModeUnwrapperTraderV2;
-  let factory: TestIsolationModeFactory;
+  let factory: TestIsolationModeVaultFactory;
   let userVaultImplementation: TestIsolationModeTokenVaultV1WithPausableAndOnlyEoa;
   let eoaVault: TestIsolationModeTokenVaultV1WithPausableAndOnlyEoa;
   let contractVault: TestIsolationModeTokenVaultV1WithPausableAndOnlyEoa;
@@ -66,7 +66,7 @@ describe('IsolationModeTokenVaultV1WithPausableAndOnlyEoa', () => {
       libraries,
       [],
     );
-    factory = await createTestIsolationModeFactory(core, underlyingToken, userVaultImplementation);
+    factory = await createTestIsolationModeVaultFactory(core, underlyingToken, userVaultImplementation);
     await core.testEcosystem!.testPriceOracle.setPrice(
       factory.address,
       '1000000000000000000', // $1.00

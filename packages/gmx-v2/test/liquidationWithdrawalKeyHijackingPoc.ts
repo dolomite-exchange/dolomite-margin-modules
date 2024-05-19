@@ -185,7 +185,13 @@ describe('POC: liquidationWithdrawalKeyHijacking', () => {
     liquidAccount = { owner: vault.address, number: borrowAccountNumber };
     liquidAccount2 = { owner: vault.address, number: borrowAccountNumber2 };
 
-    await setupGMBalance(core, core.hhUser1, amountWei.add(amountWeiForSecond), vault);
+    await setupGMBalance(
+      core,
+      core.gmxEcosystemV2.gmxEthUsdMarketToken,
+      core.hhUser1,
+      amountWei.add(amountWeiForSecond),
+      vault
+    );
     await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei.add(amountWeiForSecond));
     await vault.openBorrowPosition(
       defaultAccountNumber,

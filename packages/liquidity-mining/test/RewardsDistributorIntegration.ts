@@ -50,7 +50,7 @@ describe('RewardsDistributorIntegration', () => {
   describe('#constructor', () => {
     it('should work normally', async () => {
       expect(await rewardsDistributor.DOLOMITE_MARGIN()).to.eq(core.dolomiteMargin.address);
-      expect(await rewardsDistributor.oARB()).to.eq(oARB.address);
+      expect(await rewardsDistributor.token()).to.eq(oARB.address);
     });
   });
 

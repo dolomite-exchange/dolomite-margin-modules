@@ -37,7 +37,7 @@ describe('OkxPriceOracleV3', () => {
   let testToken: CustomTestToken;
 
   before(async () => {
-    core = await setupCoreProtocol(await getDefaultCoreProtocolConfig(Network.XLayer));
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.XLayer));
 
     testAggregator = await createContractWithAbi<TestChainlinkAggregator>(
       TestChainlinkAggregator__factory.abi,

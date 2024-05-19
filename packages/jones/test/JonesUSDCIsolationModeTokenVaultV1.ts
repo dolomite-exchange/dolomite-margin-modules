@@ -1,4 +1,4 @@
-import { BYTES_ZERO, Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { BYTES_ZERO } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import {
   setupCoreProtocol,
@@ -27,7 +27,7 @@ import {
 } from './jones-ecosystem-utils';
 import {
   createRoleAndWhitelistTraderV2,
-  DEFAULT_BLOCK_NUMBER_FOR_JUSDC_V2, JONES_CORE_PROTOCOL_CONFIG,
+  JONES_CORE_PROTOCOL_CONFIG,
   JONES_V2_WHITELIST_ADMIN,
   TRADER_ROLE,
 } from './jones-utils';

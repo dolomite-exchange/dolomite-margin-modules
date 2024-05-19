@@ -175,7 +175,7 @@ describe('UmamiAssetVaultIsolationModeLiquidationWithUnwrapperV2', () => {
         .lt(newAccountValues[1].value.mul(minCollateralizationNumerator).div(minCollateralizationDenominator));
 
       const glpUsdcPrice = await core.dolomiteMargin.getMarketPrice(underlyingMarketId);
-      const heldUpdatedWithReward = await newAccountValues[1].value.mul(liquidationSpreadNumerator)
+      const heldUpdatedWithReward = newAccountValues[1].value.mul(liquidationSpreadNumerator)
         .div(liquidationSpreadDenominator)
         .div(glpUsdcPrice.value);
 

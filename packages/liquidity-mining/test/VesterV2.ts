@@ -92,7 +92,7 @@ describe('VesterV2', () => {
     vester = await createTestVesterV2Proxy(core, handler);
     nextNftId = (await vester.nextNftId()).add(1);
 
-    oARB = await OARB__factory.connect(await vester.oToken(), core.hhUser1);
+    oARB = OARB__factory.connect(await vester.oToken(), core.hhUser1);
 
     await setupUSDCBalance(core, core.hhUser1, usdcAmount.mul(2), core.dolomiteMargin);
     await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.usdc, usdcAmount);

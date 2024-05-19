@@ -28,7 +28,7 @@ import {
   setupWETHBalance,
 } from 'packages/base/test/utils/setup';
 import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
-import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE_FOR_TESTS } from '../src/gmx-v2-constructors';
+import { GMX_V2_EXECUTION_FEE_FOR_TESTS } from '../src/gmx-v2-constructors';
 import {
   GmxV2IsolationModeTokenVaultV1,
   GmxV2IsolationModeTokenVaultV1__factory,
@@ -231,7 +231,6 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         marketId,
         minAmountOut,
         wrapper,
-        executionFee,
       );
       await vault.swapExactInputForOutput(
         borrowAccountNumber,
@@ -268,7 +267,6 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         marketId,
         minAmountOut,
         wrapper,
-        executionFee,
       );
       await vault.swapExactInputForOutput(
         borrowAccountNumber,
@@ -314,7 +312,6 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         marketId,
         minAmountOut,
         wrapper,
-        executionFee,
       );
       await expectThrow(
         vault.swapExactInputForOutput(
@@ -357,7 +354,6 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         marketId,
         minAmountOut,
         wrapper,
-        executionFee,
       );
       await vault.swapExactInputForOutput(
         borrowAccountNumber,
@@ -749,7 +745,6 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         marketId,
         minAmountOut,
         wrapper,
-        executionFee,
       );
       await vault.addCollateralAndSwapExactInputForOutput(
         defaultAccountNumber,
@@ -815,7 +810,6 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         marketId,
         minAmountOut,
         wrapper,
-        executionFee,
       );
       await vault.swapExactInputForOutput(
         borrowAccountNumber,
@@ -878,7 +872,6 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         marketId,
         minAmountOut,
         wrapper,
-        executionFee,
       );
       await vault.swapExactInputForOutput(
         borrowAccountNumber,
@@ -987,7 +980,6 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         marketId,
         minAmountOut,
         wrapper,
-        executionFee,
       );
       await vault.swapExactInputForOutput(
         borrowAccountNumber,
@@ -1050,7 +1042,6 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         marketId,
         minAmountOut,
         wrapper,
-        executionFee,
       );
       await vault.swapExactInputForOutput(
         borrowAccountNumber,
@@ -1095,7 +1086,6 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         marketId,
         minAmountOut,
         wrapper,
-        executionFee,
       );
       await vault.swapExactInputForOutput(
         borrowAccountNumber,
@@ -1139,7 +1129,6 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         marketId,
         minAmountOut,
         wrapper,
-        executionFee,
       );
       await vault.swapExactInputForOutput(
         borrowAccountNumber,
@@ -1189,7 +1178,6 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         marketId,
         minAmountOut,
         wrapper,
-        executionFee,
       );
       await vault.swapExactInputForOutput(
         borrowAccountNumber,
@@ -1306,7 +1294,6 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         marketId,
         ONE_BI,
         wrapper,
-        executionFee,
       );
       await vault.swapExactInputForOutput(
         borrowAccountNumber,

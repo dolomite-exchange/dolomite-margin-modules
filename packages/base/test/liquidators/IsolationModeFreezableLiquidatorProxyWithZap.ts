@@ -181,7 +181,7 @@ if (process.env.COVERAGE !== 'true') {
       liquidAccount = { owner: vault.address, number: borrowAccountNumber };
       liquidAccount2 = { owner: vault.address, number: borrowAccountNumber2 };
 
-      await setupGMBalance(core, core.hhUser1, amountWei.mul(2), vault);
+      await setupGMBalance(core, core.gmxEcosystemV2.gmxEthUsdMarketToken, core.hhUser1, amountWei.mul(2), vault);
       await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei.mul(2));
       await vault.openBorrowPosition(
         defaultAccountNumber,
@@ -268,7 +268,6 @@ if (process.env.COVERAGE !== 'true') {
             marketId,
             depositMinAmountOut,
             wrapper,
-            executionFee,
           );
           await vault.swapExactInputForOutput(
             initiateWrappingParams.accountNumber,

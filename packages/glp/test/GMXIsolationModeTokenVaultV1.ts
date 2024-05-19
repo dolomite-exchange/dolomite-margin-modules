@@ -31,7 +31,6 @@ import { parseEther } from 'ethers/lib/utils';
 import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import {
   GLPIsolationModeVaultFactory,
-  GMXIsolationModeTokenVaultV1,
   GMXIsolationModeVaultFactory,
   GmxRegistryV1,
   TestGLPIsolationModeTokenVaultV2,

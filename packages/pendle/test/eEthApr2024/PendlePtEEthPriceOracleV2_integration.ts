@@ -26,7 +26,6 @@ import {
 import {
   ChainlinkPriceOracleV3,
   ChainlinkPriceOracleV3__factory,
-  IChainlinkAggregator__factory,
   OracleAggregatorV2,
   OracleAggregatorV2__factory,
   RedstonePriceOracleV3,

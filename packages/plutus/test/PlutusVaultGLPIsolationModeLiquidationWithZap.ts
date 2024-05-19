@@ -155,7 +155,7 @@ describe('PlutusVaultGLPIsolationModeLiquidationWithZap', () => {
         .lt(newAccountValues[1].value.mul(minCollateralizationNumerator).div(minCollateralizationDenominator));
 
       const plvGlpPrice = await core.dolomiteMargin.getMarketPrice(heldMarketId);
-      const heldUpdatedWithReward = await newAccountValues[1].value.mul(liquidationSpreadNumerator)
+      const heldUpdatedWithReward = newAccountValues[1].value.mul(liquidationSpreadNumerator)
         .div(liquidationSpreadDenominator)
         .div(plvGlpPrice.value);
 
@@ -247,7 +247,7 @@ describe('PlutusVaultGLPIsolationModeLiquidationWithZap', () => {
         .lt(newAccountValues[1].value.mul(minCollateralizationNumerator).div(minCollateralizationDenominator));
 
       const glpPrice = await core.dolomiteMargin.getMarketPrice(heldMarketId);
-      const heldUpdatedWithReward = await newAccountValues[1].value.mul(liquidationSpreadNumerator)
+      const heldUpdatedWithReward = newAccountValues[1].value.mul(liquidationSpreadNumerator)
         .div(liquidationSpreadDenominator)
         .div(glpPrice.value);
       const usdcLiquidatorBalanceBefore = await core.tokens.usdc.connect(core.hhUser1)

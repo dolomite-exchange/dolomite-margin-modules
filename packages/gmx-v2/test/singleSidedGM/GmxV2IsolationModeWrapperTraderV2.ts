@@ -68,6 +68,7 @@ enum FreezeType {
 const defaultAccountNumber = '0';
 const borrowAccountNumber = '123';
 const usdcAmount = BigNumber.from('1000000000'); // $1000
+// noinspection SpellCheckingInspection
 const DUMMY_DEPOSIT_KEY = '0x6d1ff6ffcab884211992a9d6b8261b7fae5db4d2da3a5eb58647988da3869d6f';
 const EXECUTE_DEPOSITS_DISABLED_KEY = '0x0de57bca394801f1f7e929963a1380a671c985da3155a0fcc50a8b2a31212926';
 const minAmountOut = parseEther('1600');
@@ -247,7 +248,6 @@ describe('GmxV2IsolationModeWrapperTraderV2_singleSided', () => {
         marketId,
         minAmountOut,
         wrapper,
-        executionFee,
       );
       await vault.swapExactInputForOutput(
         borrowAccountNumber,
@@ -284,7 +284,6 @@ describe('GmxV2IsolationModeWrapperTraderV2_singleSided', () => {
         marketId,
         minAmountOut,
         wrapper,
-        executionFee,
       );
       await vault.swapExactInputForOutput(
         borrowAccountNumber,
@@ -330,7 +329,6 @@ describe('GmxV2IsolationModeWrapperTraderV2_singleSided', () => {
         marketId,
         minAmountOut,
         wrapper,
-        executionFee,
       );
       await expectThrow(
         vault.swapExactInputForOutput(
@@ -373,7 +371,6 @@ describe('GmxV2IsolationModeWrapperTraderV2_singleSided', () => {
         marketId,
         minAmountOut,
         wrapper,
-        executionFee,
       );
       await vault.swapExactInputForOutput(
         borrowAccountNumber,
@@ -778,7 +775,6 @@ describe('GmxV2IsolationModeWrapperTraderV2_singleSided', () => {
         marketId,
         minAmountOut,
         wrapper,
-        executionFee,
       );
       await vault.addCollateralAndSwapExactInputForOutput(
         defaultAccountNumber,
@@ -844,7 +840,6 @@ describe('GmxV2IsolationModeWrapperTraderV2_singleSided', () => {
         marketId,
         minAmountOut,
         wrapper,
-        executionFee,
       );
       await vault.swapExactInputForOutput(
         borrowAccountNumber,
@@ -907,7 +902,6 @@ describe('GmxV2IsolationModeWrapperTraderV2_singleSided', () => {
         marketId,
         minAmountOut,
         wrapper,
-        executionFee,
       );
       await vault.swapExactInputForOutput(
         borrowAccountNumber,
@@ -1022,7 +1016,6 @@ describe('GmxV2IsolationModeWrapperTraderV2_singleSided', () => {
         marketId,
         minAmountOut,
         wrapper,
-        executionFee,
       );
       await vault.swapExactInputForOutput(
         borrowAccountNumber,
@@ -1086,7 +1079,6 @@ describe('GmxV2IsolationModeWrapperTraderV2_singleSided', () => {
         marketId,
         minAmountOut,
         wrapper,
-        executionFee,
       );
       await vault.swapExactInputForOutput(
         borrowAccountNumber,
@@ -1131,7 +1123,6 @@ describe('GmxV2IsolationModeWrapperTraderV2_singleSided', () => {
         marketId,
         minAmountOut,
         wrapper,
-        executionFee,
       );
       await vault.swapExactInputForOutput(
         borrowAccountNumber,
@@ -1175,7 +1166,6 @@ describe('GmxV2IsolationModeWrapperTraderV2_singleSided', () => {
         marketId,
         minAmountOut,
         wrapper,
-        executionFee,
       );
       await vault.swapExactInputForOutput(
         borrowAccountNumber,
@@ -1227,7 +1217,6 @@ describe('GmxV2IsolationModeWrapperTraderV2_singleSided', () => {
         marketId,
         minAmountOut,
         wrapper,
-        executionFee,
       );
       await vault.swapExactInputForOutput(
         borrowAccountNumber,
@@ -1342,7 +1331,6 @@ describe('GmxV2IsolationModeWrapperTraderV2_singleSided', () => {
         marketId,
         minAmountOut,
         wrapper,
-        executionFee,
       );
       await vault.swapExactInputForOutput(
         borrowAccountNumber,

@@ -35,7 +35,7 @@ describe('GmxV2IsolationModeTraderBase', () => {
       core.dolomiteMargin.address,
     );
     const proxy = await createIsolationModeTraderProxy(implementation.address, calldata.data!, core);
-    trader = await TestAsyncIsolationModeTraderBase__factory.connect(proxy.address, core.hhUser1);
+    trader = TestAsyncIsolationModeTraderBase__factory.connect(proxy.address, core.hhUser1);
 
     snapshotId = await snapshot();
   });

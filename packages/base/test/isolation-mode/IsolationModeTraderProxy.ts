@@ -1,47 +1,30 @@
 import { expect } from 'chai';
 import {
-  CustomTestToken,
   IsolationModeTraderProxy,
   TestAsyncIsolationModeTraderBase,
   TestAsyncIsolationModeTraderBase__factory,
   TestHandlerRegistry,
-  TestIsolationModeFactory,
-  TestIsolationModeTokenVaultV1,
 } from '../../src/types';
-import { createContractWithAbi, createContractWithLibrary, createTestToken } from '../../src/utils/dolomite-utils';
+import { createContractWithAbi } from '../../src/utils/dolomite-utils';
 import { Network } from '../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
 import { expectEvent, expectThrow } from '../utils/assertions';
 
 import { CoreProtocolArbitrumOne } from '../utils/core-protocols/core-protocol-arbitrum-one';
-import {
-  createDolomiteRegistryImplementation,
-  createIsolationModeTokenVaultV1ActionsImpl,
-  createIsolationModeTraderProxy,
-} from '../utils/dolomite';
-import { createTestHandlerRegistry, createTestIsolationModeFactory } from '../utils/ecosystem-utils/testers';
+import { createDolomiteRegistryImplementation, createIsolationModeTraderProxy, } from '../utils/dolomite';
+import { createTestHandlerRegistry } from '../utils/ecosystem-utils/testers';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '../utils/setup';
 
 describe('IsolationModeTraderProxy', () => {
   let snapshotId: string;
 
   let core: CoreProtocolArbitrumOne;
-  let underlyingToken: CustomTestToken;
   let implementation: TestAsyncIsolationModeTraderBase;
-  let factory: TestIsolationModeFactory;
   let proxy: IsolationModeTraderProxy;
   let registry: TestHandlerRegistry;
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
-    underlyingToken = await createTestToken();
-    const vaultLibraries = await createIsolationModeTokenVaultV1ActionsImpl();
-    const userVaultImplementation = await createContractWithLibrary<TestIsolationModeTokenVaultV1>(
-      'TestIsolationModeTokenVaultV1',
-      vaultLibraries,
-      [],
-    );
-    factory = await createTestIsolationModeFactory(core, underlyingToken, userVaultImplementation);
     registry = await createTestHandlerRegistry(core);
 
     implementation = await createContractWithAbi<TestAsyncIsolationModeTraderBase>(

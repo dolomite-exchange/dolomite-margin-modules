@@ -39,6 +39,7 @@ const borrowAccountNumber2 = BigNumber.from(
   '37006701672929369981922050125951587955078822996920449191679215284242470624318');
 
 const USER_ACCOUNT1 = '0x52256ef863a713Ef349ae6E97A7E8f35785145dE';
+// noinspection SpellCheckingInspection
 const VAULT_ADDRESS1 = '0x5C851Fd710B83705BE1cabf9D6CBd41F3544be0E';
 
 const USER_ACCOUNT2 = '0x2010aEbD2826893408019F47d1F4d11bA0a518a0';
@@ -55,7 +56,7 @@ describe('JonesIsolationModeTokenVaultMigrator', () => {
   let snapshotId: string;
   let core: CoreProtocolArbitrumOne;
   let migrator: DolomiteMigrator;
-  let newjUSDC: CustomTestToken;
+  let newJUsdc: CustomTestToken;
   let marketId: BigNumber;
   let factory: TestIsolationModeVaultFactory;
   let migratorImplementation: JonesIsolationModeTokenVaultMigrator;
@@ -82,8 +83,8 @@ describe('JonesIsolationModeTokenVaultMigrator', () => {
     await disableInterestAccrual(core, core.marketIds.usdc);
 
     const userVaultImplementation = await createTestIsolationModeTokenVaultV1();
-    newjUSDC = await createTestToken();
-    factory = await createTestIsolationModeVaultFactory(core, newjUSDC, userVaultImplementation);
+    newJUsdc = await createTestToken();
+    factory = await createTestIsolationModeVaultFactory(core, newJUsdc, userVaultImplementation);
     await core.testEcosystem!.testPriceOracle.setPrice(
       factory.address,
       '1000000000000000000', // $1.00
@@ -108,7 +109,7 @@ describe('JonesIsolationModeTokenVaultMigrator', () => {
     transformer = await createContractWithAbi<JonesUSDCTransformer>(
       JonesUSDCTransformer__factory.abi,
       JonesUSDCTransformer__factory.bytecode,
-      [core.jonesEcosystem.jUSDCV1.address, newjUSDC.address, core.jonesEcosystem.router.address],
+      [core.jonesEcosystem.jUSDCV1.address, newJUsdc.address, core.jonesEcosystem.router.address],
     );
     await migrator.connect(core.governance).ownerSetTransformer(
       core.marketIds.djUsdcV1,
@@ -150,7 +151,7 @@ describe('JonesIsolationModeTokenVaultMigrator', () => {
     await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(newRegistry.address);
     await core.dolomiteRegistry.ownerSetDolomiteMigrator(migrator.address);
 
-    await initializeNewJUsdc(core, newjUSDC);
+    await initializeNewJUsdc(core, newJUsdc);
 
     defaultAmount1 = (await core.dolomiteMargin.getAccountWei(
       { owner: VAULT_ADDRESS1, number: defaultAccountNumber },

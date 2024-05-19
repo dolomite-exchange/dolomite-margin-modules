@@ -5,7 +5,7 @@ import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
 import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
 import { Network, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
-import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
+import { revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
 import { expectEvent, expectThrow } from 'packages/base/test/utils/assertions';
 import { setupCoreProtocol, setupTestMarket } from 'packages/base/test/utils/setup';
 import { CoreProtocolArbitrumOne } from '../../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
@@ -29,7 +29,6 @@ import {
   createGmxV2MarketTokenPriceOracle,
   createGmxV2Registry,
 } from '../gmx-v2-ecosystem-utils';
-import { createDolomiteRegistryImplementation } from 'packages/base/test/utils/dolomite';
 import { GMX_BTC_PLACEHOLDER_MAP } from 'packages/base/src/utils/constants';
 import { TokenInfo } from 'packages/oracles/src';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';

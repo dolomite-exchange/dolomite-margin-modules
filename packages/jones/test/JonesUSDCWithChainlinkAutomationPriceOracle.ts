@@ -145,7 +145,7 @@ describe('JonesUSDCWithChainlinkAutomationPriceOracle', () => {
       const totalAssets = await jUSDC.totalAssets();
       const totalSupply = await jUSDC.totalSupply();
 
-      const price = getjUSDCPrice(USDC_PRICE, totalAssets, totalSupply);
+      const price = getJonesUSDCPrice(USDC_PRICE, totalAssets, totalSupply);
       expect((await jonesUSDCWithChainlinkAutomationPriceOracle.getPrice(factory.address)).value).to.eq(price);
     });
 
@@ -165,7 +165,7 @@ describe('JonesUSDCWithChainlinkAutomationPriceOracle', () => {
             factory.address,
           ],
         );
-      const price = getjUSDCPrice(USDC_PRICE, BigNumber.from('0'), BigNumber.from('0'));
+      const price = getJonesUSDCPrice(USDC_PRICE, BigNumber.from('0'), BigNumber.from('0'));
       expect((await jonesUSDCWithChainlinkAutomationPriceOracleNoSupply.getPrice(factory.address)).value)
         .to.eq(price);
     });
@@ -231,13 +231,13 @@ describe('JonesUSDCWithChainlinkAutomationPriceOracle', () => {
 
       const totalAssets = await jUSDC.totalAssets();
       const totalSupply = await jUSDC.totalSupply();
-      const price = getjUSDCPrice(USDC_PRICE, totalAssets, totalSupply);
+      const price = getJonesUSDCPrice(USDC_PRICE, totalAssets, totalSupply);
       expect((await jonesUSDCWithChainlinkAutomationPriceOracle.getPrice(factory.address)).value)
         .to.eq(price);
     });
   });
 
-  function getjUSDCPrice(usdcPrice: BigNumber, totalAssets: BigNumber, totalSupply: BigNumber): BigNumber {
+  function getJonesUSDCPrice(usdcPrice: BigNumber, totalAssets: BigNumber, totalSupply: BigNumber): BigNumber {
     if (totalSupply.eq(0)) {
       const scaledPrice = usdcPrice.div(USDC_SCALE_DIFF);
       return scaledPrice.sub(scaledPrice.mul(retentionFee).div(retentionFeeBase));

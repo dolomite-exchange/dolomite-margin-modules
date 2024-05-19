@@ -11,7 +11,6 @@ import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import {
-  GLPMathLib,
   GmxRegistryV1,
   TestGLPManager,
   TestGLPManager__factory,

@@ -17,14 +17,9 @@ import { BYTES_EMPTY, Network, ONE_ETH_BI, ZERO_BI } from '../../src/utils/no-de
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
 import { expectProtocolBalance } from '../utils/assertions';
 import { createIsolationModeTokenVaultV1ActionsImpl } from '../utils/dolomite';
-import {
-  CoreProtocol,
-  getDefaultCoreProtocolConfig,
-  setupCoreProtocol,
-  setupTestMarket,
-  setupUserVaultProxy,
-} from '../utils/setup';
+import { getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket, setupUserVaultProxy, } from '../utils/setup';
 import { getUnwrapZapParams } from '../utils/zap-utils';
+import { CoreProtocolArbitrumOne } from '../utils/core-protocol';
 
 const defaultAccountNumber = 0;
 const otherAccountNumber = 123;
@@ -33,7 +28,7 @@ const amountWei = ONE_ETH_BI;
 describe('SimpleIsolationModeUnwrapperTraderV2', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let underlyingToken: CustomTestToken;
   let underlyingMarketId: BigNumber;
   let factoryMarketId: BigNumber;

@@ -42,7 +42,7 @@ describe('PendlePtREthJun2025PriceOracle', () => {
   let underlyingToken: IERC20;
 
   before(async () => {
-    core = await setupCoreProtocol(await getDefaultCoreProtocolConfig(Network.ArbitrumOne));
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     await freezeAndGetOraclePrice(core.tokens.weth);
 
     const dolomiteRegistryImplementation = await createContractWithAbi<DolomiteRegistryImplementation>(

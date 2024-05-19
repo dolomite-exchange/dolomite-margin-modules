@@ -1,6 +1,6 @@
 import {
   CustomTestToken,
-  TestIsolationModeFactory,
+  TestIsolationModeVaultFactory,
   TestIsolationModeTokenVaultV1,
   TestIsolationModeTraderBaseV2,
   TestIsolationModeTraderBaseV2__factory,
@@ -19,7 +19,7 @@ import { BigNumber } from 'ethers';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from 'packages/base/test/utils/setup';
 
 import { CoreProtocolArbitrumOne } from '../../utils/core-protocols/core-protocol-arbitrum-one';
-import { createTestIsolationModeFactory } from '../../utils/ecosystem-utils/testers';
+import { createTestIsolationModeVaultFactory } from '../../utils/ecosystem-utils/testers';
 
 describe('IsolationModeTraderBaseV2', () => {
   let snapshotId: string;
@@ -28,7 +28,7 @@ describe('IsolationModeTraderBaseV2', () => {
   let trader: TestIsolationModeTraderBaseV2;
   let underlyingToken: CustomTestToken;
   let underlyingMarketId: BigNumber;
-  let factory: TestIsolationModeFactory;
+  let factory: TestIsolationModeVaultFactory;
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
@@ -39,7 +39,7 @@ describe('IsolationModeTraderBaseV2', () => {
       libraries,
       [],
     );
-    factory = await createTestIsolationModeFactory(core, underlyingToken, userVaultImplementation);
+    factory = await createTestIsolationModeVaultFactory(core, underlyingToken, userVaultImplementation);
     await core.testEcosystem!.testPriceOracle.setPrice(
       factory.address,
       '1000000000000000000', // $1.00
