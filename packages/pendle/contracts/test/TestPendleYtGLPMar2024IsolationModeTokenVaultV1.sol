@@ -31,7 +31,7 @@ import { PendleYtGLPMar2024IsolationModeTokenVaultV1 } from "../PendleYtGLPMar20
  */
 contract TestPendleYtGLPMar2024IsolationModeTokenVaultV1 is PendleYtGLPMar2024IsolationModeTokenVaultV1 {
 
-    bytes32 private constant _FILE = "TestPendleYtGLPMar2024UserVaultV1";
+    bytes32 private constant _FILE = "TestYtGLPMar2024UserVaultV1";
 
     function callRedeemDueInterestAndRewardsTriggerReentrancy(
         bool _redeemInterest,
