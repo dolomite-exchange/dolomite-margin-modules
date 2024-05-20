@@ -101,7 +101,7 @@ import {
   ST_ETH_MAP,
   UNI_MAP,
   USDC_MAP,
-  USDT_MAP,
+  USDT_MAP, USDY_MAP,
   WBTC_MAP,
   WE_ETH_MAP,
   WETH_MAP,
@@ -487,7 +487,7 @@ export function getWethContract<T extends NetworkType>(
       || config.network === Network.PolygonZkEvm
     )
       ? IWETH__factory.connect(WETH_MAP[config.network].address, signer)
-      : IERC20__factory.connect(ExpiryJson.networks[config.network].address, signer)
+      : IERC20__factory.connect(WETH_MAP[config.network].address, signer)
   ) as WETHType<T>;
 }
 
@@ -840,12 +840,15 @@ export async function setupCoreProtocol<T extends NetworkType>(
         redstonePriceOracleV3: redstonePriceOracle,
         marketIds: {
           ...coreProtocolParams.marketIds,
+          meth: METH_MAP[typedConfig.network].marketId,
           usdt: USDT_MAP[typedConfig.network].marketId,
+          usdy: USDY_MAP[typedConfig.network].marketId,
           wbtc: WBTC_MAP[typedConfig.network].marketId,
           wmnt: WMNT_MAP[typedConfig.network].marketId,
           stablecoins: [
             ...coreProtocolParams.marketIds.stablecoins,
             USDT_MAP[typedConfig.network].marketId,
+            USDY_MAP[typedConfig.network].marketId,
           ],
         },
         odosEcosystem: await createOdosEcosystem(typedConfig.network, hhUser1),
@@ -853,11 +856,13 @@ export async function setupCoreProtocol<T extends NetworkType>(
           ...coreProtocolParams.tokens,
           meth: IERC20__factory.connect(METH_MAP[typedConfig.network].address, hhUser1),
           usdt: IERC20__factory.connect(USDT_MAP[typedConfig.network].address, hhUser1),
+          usdy: IERC20__factory.connect(USDY_MAP[typedConfig.network].address, hhUser1),
           wbtc: IERC20__factory.connect(WBTC_MAP[typedConfig.network].address, hhUser1),
           wmnt: IWETH__factory.connect(WMNT_MAP[typedConfig.network].address, hhUser1),
           stablecoins: [
             ...coreProtocolParams.tokens.stablecoins,
             IERC20__factory.connect(USDT_MAP[typedConfig.network].address, hhUser1),
+            IERC20__factory.connect(USDY_MAP[typedConfig.network].address, hhUser1),
           ],
         },
       },

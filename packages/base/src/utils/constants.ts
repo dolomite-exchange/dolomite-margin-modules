@@ -399,6 +399,13 @@ export const USDC_MAP: Record<Network, TokenWithMarketId> = {
   },
 };
 
+export const USDE_MAP: Record<Network.Mantle, TokenWithMarketId> = {
+  [Network.Mantle]: {
+    address: '0x5d3a1Ff2b6BAb83b63cd9AD0787074081a52ef34',
+    marketId: -1,
+  },
+};
+
 export const USDT_MAP: Record<EverythingButBase, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9',
@@ -406,7 +413,7 @@ export const USDT_MAP: Record<EverythingButBase, TokenWithMarketId> = {
   },
   [Network.Mantle]: {
     address: '0x201EBa5CC46D216Ce6DC03F6a759e8E766e956aE',
-    marketId: 5,
+    marketId: 4,
   },
   [Network.PolygonZkEvm]: {
     address: '0x1E4a5963aBFD975d8c9021ce480b42188849D41d',
@@ -418,10 +425,10 @@ export const USDT_MAP: Record<EverythingButBase, TokenWithMarketId> = {
   },
 };
 
-export const USDE_MAP: Record<Network.Mantle, TokenWithMarketId> = {
+export const USDY_MAP: Record<Network.Mantle, TokenWithMarketId> = {
   [Network.Mantle]: {
-    address: '0x5d3a1Ff2b6BAb83b63cd9AD0787074081a52ef34',
-    marketId: -1,
+    address: '0x5bE26527e817998A7206475496fDE1E68957c5A6',
+    marketId: 5,
   },
 };
 
@@ -447,7 +454,7 @@ export const WBTC_MAP: Record<EverythingButBase, TokenWithMarketId> = {
 export const METH_MAP: Record<Network.Mantle, TokenWithMarketId> = {
   [Network.Mantle]: {
     address: '0xcDA86A272531e8640cD7F1a92c01839911B90bb0',
-    marketId: -1,
+    marketId: 6,
   }
 };
 

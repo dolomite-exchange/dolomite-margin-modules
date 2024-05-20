@@ -11,16 +11,19 @@ import {
 } from './core-protocol-abstract';
 
 export interface CoreProtocolTokensMantle extends CoreProtocolTokens<Network.Mantle> {
-  wmnt: IWETH;
   meth: IERC20;
   usdt: IERC20;
+  usdy: IERC20;
   wbtc: IERC20;
+  wmnt: IWETH;
 }
 
 interface CoreProtocolMarketIdsMantle extends CoreProtocolMarketIds {
-  wmnt: BigNumberish;
+  meth: BigNumberish;
   usdt: BigNumberish;
+  usdy: BigNumberish;
   wbtc: BigNumberish;
+  wmnt: BigNumberish;
 }
 
 export interface CoreProtocolParamsMantle {
