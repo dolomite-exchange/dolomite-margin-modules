@@ -18,7 +18,7 @@ import {
   expectThrow,
   expectThrowWithMatchingReason,
 } from '../utils/assertions';
-import { CoreProtocolXLayer } from '../utils/core-protocol';
+import { CoreProtocolXLayer } from '../utils/core-protocols/core-protocol-x-layer';
 import { createTestOkxAggregatorTrader } from '../utils/ecosystem-utils/traders';
 import { disableInterestAccrual, setupCoreProtocol, setupUSDCBalance, setupWETHBalance } from '../utils/setup';
 import { getCalldataForOkx } from '../utils/trader-utils';
