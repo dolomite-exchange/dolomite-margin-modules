@@ -4,6 +4,7 @@ import { expectArrayEq, expectEvent, expectThrow } from '@dolomite-exchange/modu
 import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
+import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import {
   PendleGLPRegistry,
   PendleYtGLPMar2024IsolationModeTokenVaultV1,

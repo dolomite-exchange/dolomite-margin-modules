@@ -647,11 +647,12 @@ export interface TransactionBuilderUpload extends DenJsonUpload {
 
 function isOwnerFunction(methodName: string, isMultisig: boolean): boolean {
   return methodName.startsWith('owner')
+    || methodName === 'initializeETHMarket'
+    || methodName === 'setGmxRegistry'
+    || methodName === 'setIsTokenConverterTrusted'
+    || methodName === 'setUserVaultImplementation'
     || methodName === 'upgradeTo'
     || methodName === 'upgradeToAndCall'
-    || methodName === 'setUserVaultImplementation'
-    || methodName === 'setIsTokenConverterTrusted'
-    || methodName === 'setGmxRegistry'
     || (isMultisig && methodName === 'addOwner')
     || (isMultisig && methodName === 'changeRequirement')
     || (isMultisig && methodName === 'changeTimelock')

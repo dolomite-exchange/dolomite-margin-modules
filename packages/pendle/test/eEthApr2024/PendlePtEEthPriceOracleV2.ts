@@ -22,6 +22,7 @@ import {
 import axios from 'axios';
 import { expect } from 'chai';
 import { BaseContract, BigNumber } from 'ethers';
+import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import {
   getChainlinkPriceOracleV3ConstructorParamsFromChainlinkOracleV1,
   getOracleAggregatorV2ConstructorParams,

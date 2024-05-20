@@ -428,7 +428,7 @@ export const USDT_MAP: Record<EverythingButBase, TokenWithMarketId> = {
 export const USDY_MAP: Record<Network.Mantle, TokenWithMarketId> = {
   [Network.Mantle]: {
     address: '0x5bE26527e817998A7206475496fDE1E68957c5A6',
-    marketId: 5,
+    marketId: -1,
   },
 };
 
@@ -439,7 +439,7 @@ export const WBTC_MAP: Record<EverythingButBase, TokenWithMarketId> = {
   },
   [Network.Mantle]: {
     address: '0xCAbAE6f6Ea1ecaB08Ad02fE02ce9A44F09aebfA2',
-    marketId: 4,
+    marketId: 3,
   },
   [Network.PolygonZkEvm]: {
     address: '0xEA034fb02eB1808C2cc3adbC15f447B93CbE08e1',
@@ -454,7 +454,7 @@ export const WBTC_MAP: Record<EverythingButBase, TokenWithMarketId> = {
 export const METH_MAP: Record<Network.Mantle, TokenWithMarketId> = {
   [Network.Mantle]: {
     address: '0xcDA86A272531e8640cD7F1a92c01839911B90bb0',
-    marketId: 6,
+    marketId: 5,
   }
 };
 

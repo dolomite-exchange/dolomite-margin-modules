@@ -37,6 +37,7 @@ import {
   PlutusVaultGLPIsolationModeUnwrapperTraderV2,
   PlutusVaultGLPIsolationModeUnwrapperTraderV2__factory,
 } from '../src/types';
+import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 
 const defaultAccountNumber = '0';
 const otherAccountNumber = '420';

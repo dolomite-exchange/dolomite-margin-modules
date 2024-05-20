@@ -136,6 +136,9 @@ export const base_config: HardhatUserConfig = {
   gasReporter: {
     enabled: process.env.REPORT_GAS === 'true',
   },
+  tracer: {
+    tasks: ['run']
+  },
   typechain: {
     outDir: 'src/types',
     target: 'ethers-v5',

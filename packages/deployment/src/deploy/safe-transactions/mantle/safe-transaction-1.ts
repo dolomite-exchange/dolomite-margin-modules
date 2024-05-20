@@ -48,7 +48,7 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
       core.tokens.wmnt,
       core.oracleAggregatorV2,
       core.interestSetters.linearStepFunction14L86UInterestSetter,
-      TargetCollateralization._120,
+      TargetCollateralization._125,
       TargetLiquidationPenalty.Base,
       parseEther(`${25_00_000}`),
       parseEther(`${20_00_000}`),
@@ -87,17 +87,18 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
       ZERO_BI,
       false,
     ),
-    ...await prettyPrintEncodeAddMarket(
-      core,
-      core.tokens.usdy,
-      core.oracleAggregatorV2,
-      core.interestSetters.linearStepFunction16L84UInterestSetter,
-      TargetCollateralization.Base,
-      TargetLiquidationPenalty.Base,
-      parseEther(`${10_000_000}`),
-      parseEther(`${9_000_000}`),
-      false,
-    ),
+    // We don't have an oracle for this yet!
+    // ...await prettyPrintEncodeAddMarket(
+    //   core,
+    //   core.tokens.usdy,
+    //   core.oracleAggregatorV2,
+    //   core.interestSetters.linearStepFunction16L84UInterestSetter,
+    //   TargetCollateralization.Base,
+    //   TargetLiquidationPenalty.Base,
+    //   parseEther(`${10_000_000}`),
+    //   parseEther(`${9_000_000}`),
+    //   false,
+    // ),
     ...await prettyPrintEncodeAddMarket(
       core,
       core.tokens.meth,
@@ -140,7 +141,7 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
         'Invalid interest setter WETH',
       );
       assertHardhatInvariant(
-        (await core.dolomiteMargin.getNumMarkets()).eq(5),
+        (await core.dolomiteMargin.getNumMarkets()).eq(6),
         'Invalid number of markets',
       );
       assertHardhatInvariant(
@@ -163,6 +164,10 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
         (await core.dolomiteMargin.getMarketTokenAddress(core.marketIds.usdt)) === core.tokens.usdt.address,
         'Invalid usdt for market 4',
       );
+      assertHardhatInvariant(
+        (await core.dolomiteMargin.getMarketTokenAddress(core.marketIds.meth)) === core.tokens.meth.address,
+        'Invalid usdt for market 5',
+      );
 
       console.log(
         '\t Price for weth',
@@ -183,6 +188,10 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
       console.log(
         '\t Price for usdt',
         (await core.dolomiteMargin.getMarketPrice(core.marketIds.usdt)).value.toString(),
+      );
+      console.log(
+        '\t Price for meth',
+        (await core.dolomiteMargin.getMarketPrice(core.marketIds.meth)).value.toString(),
       );
     },
   };

@@ -35,6 +35,7 @@ import {
   createPendlePtIsolationModeVaultFactory,
   createPendleRegistry,
 } from '../pendle-ecosystem-utils';
+import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 
 describe('PendlePtEEthApr2024PriceOracle_integration', () => {
   let snapshotId: string;

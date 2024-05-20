@@ -16,6 +16,7 @@ import { disableInterestAccrual, setupCoreProtocol } from '@dolomite-exchange/mo
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { AccountInfoStruct } from 'packages/base/src/utils';
+import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { IGLPIsolationModeVaultFactoryOld } from 'packages/glp/src/types';
 import {
   PendlePtGLPMar2024IsolationModeVaultFactory,

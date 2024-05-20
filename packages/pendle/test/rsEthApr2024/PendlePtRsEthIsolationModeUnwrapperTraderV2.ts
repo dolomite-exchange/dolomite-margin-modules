@@ -21,6 +21,7 @@ import { AccountInfoStruct } from 'packages/base/src/utils';
 import { RS_ETH_CAMELOT_POOL_MAP } from 'packages/base/src/utils/constants';
 import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
 import { expectThrow } from 'packages/base/test/utils/assertions';
+import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { setupNewGenericTraderProxy } from 'packages/base/test/utils/dolomite';
 import { IAlgebraV3Pool__factory, TWAPPriceOracleV2, TWAPPriceOracleV2__factory } from 'packages/oracles/src/types';
 import {

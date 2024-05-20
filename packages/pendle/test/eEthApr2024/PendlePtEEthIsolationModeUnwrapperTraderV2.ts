@@ -25,6 +25,7 @@ import { AccountInfoStruct } from 'packages/base/src/utils';
 import { CHAINLINK_PRICE_AGGREGATORS_MAP, REDSTONE_PRICE_AGGREGATORS_MAP } from 'packages/base/src/utils/constants';
 import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
 import { expectThrow } from 'packages/base/test/utils/assertions';
+import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { setupNewGenericTraderProxy } from 'packages/base/test/utils/dolomite';
 import {
   getChainlinkPriceOracleV2ConstructorParamsFromOldPriceOracle,
