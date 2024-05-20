@@ -8,7 +8,6 @@ import { createContractWithAbi } from '@dolomite-exchange/modules-base/src/utils
 import { ADDRESS_ZERO, Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { advanceToTimestamp, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectEvent, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import {
   getDefaultCoreProtocolConfig,
   setupCoreProtocol,
@@ -47,7 +46,7 @@ describe('PendlePtWstEthJun2024PriceOracle', () => {
   let underlyingToken: IERC20;
 
   before(async () => {
-    core = await setupCoreProtocol(await getDefaultCoreProtocolConfig(Network.ArbitrumOne));
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
 
     const dolomiteRegistryImplementation = await createContractWithAbi<DolomiteRegistryImplementation>(
       DolomiteRegistryImplementation__factory.abi,

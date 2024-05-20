@@ -9,7 +9,6 @@ import {
   createContractWithLibraryAndArtifact,
 } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { BYTES_EMPTY } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import {
   createAsyncIsolationModeUnwrapperTraderImpl,
   createAsyncIsolationModeWrapperTraderImpl,
@@ -25,6 +24,7 @@ import fs, { readFileSync } from 'fs';
 import { artifacts } from 'hardhat';
 import { Artifact } from 'hardhat/types';
 import path, { join } from 'path';
+import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import {
   getGmxV2IsolationModeTokenVaultConstructorParams,
   getGmxV2IsolationModeUnwrapperTraderV2ConstructorParams,
@@ -42,8 +42,6 @@ import {
   GmxV2IsolationModeWrapperTraderV2,
   GmxV2IsolationModeWrapperTraderV2__factory,
   GmxV2Library,
-  GmxV2LibrarySingleSided,
-  GmxV2LibrarySingleSided__factory,
   GmxV2Library__factory,
   GmxV2MarketTokenPriceOracle,
   GmxV2MarketTokenPriceOracle__factory,
@@ -108,14 +106,6 @@ export async function createGmxV2Library(): Promise<GmxV2Library> {
   return createContractWithAbi<GmxV2Library>(
     GmxV2Library__factory.abi,
     GmxV2Library__factory.bytecode,
-    [],
-  );
-}
-
-export async function createGmxV2LibrarySingleSided(): Promise<GmxV2LibrarySingleSided> {
-  return createContractWithAbi<GmxV2LibrarySingleSided>(
-    GmxV2LibrarySingleSided__factory.abi,
-    GmxV2LibrarySingleSided__factory.bytecode,
     [],
   );
 }
@@ -317,7 +307,6 @@ export function getInitiateWrappingParams(
   marketId2: BigNumberish,
   minAmountOut: BigNumberish,
   wrapper: GmxV2IsolationModeWrapperTraderV2,
-  executionFee: BigNumberish,
 ): any {
   return {
     accountNumber,
@@ -368,27 +357,6 @@ export function getInitiateUnwrappingParams(
       balanceCheckFlag: BalanceCheckFlag.None,
       eventType: GenericEventEmissionType.None,
     },
-  };
-}
-
-export function getSingleSidedOracleParams(token1: string) {
-  return {
-    signerInfo: '1',
-    tokens: [],
-    compactedMinOracleBlockNumbers: [],
-    compactedMaxOracleBlockNumbers: [],
-    compactedOracleTimestamps: [],
-    compactedDecimals: [],
-    compactedMinPrices: [],
-    compactedMinPricesIndexes: [],
-    compactedMaxPrices: [],
-    compactedMaxPricesIndexes: [],
-    signatures: [],
-    priceFeedTokens: [
-      token1,
-    ],
-    realtimeFeedTokens: [],
-    realtimeFeedData: [],
   };
 }
 

@@ -13,7 +13,6 @@ import {
   revertToSnapshotAndCapture,
   snapshot,
 } from '@dolomite-exchange/modules-base/test/utils';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { setupCoreProtocol, setupTestMarket } from '@dolomite-exchange/modules-base/test/utils/setup';
 import axios from 'axios';
 import { expect } from 'chai';
@@ -27,7 +26,6 @@ import {
 import {
   ChainlinkPriceOracleV3,
   ChainlinkPriceOracleV3__factory,
-  IChainlinkAggregator__factory,
   OracleAggregatorV2,
   OracleAggregatorV2__factory,
   RedstonePriceOracleV3,
@@ -62,16 +60,12 @@ describe('PendlePtEEthApr2024PriceOracleV2_integration', () => {
       RedstonePriceOracleV3__factory.abi,
       RedstonePriceOracleV3__factory.bytecode,
       getRedstonePriceOracleV3ConstructorParams(
-        [core.tokens.weEth],
+        core,
+        [core.tokens.weEth.address],
         [
-          IChainlinkAggregator__factory.connect(
-            REDSTONE_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][core.tokens.weEth.address]!.aggregatorAddress,
-            core.hhUser1,
-          ),
+          REDSTONE_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][core.tokens.weEth.address]!.aggregatorAddress,
         ],
         [false],
-        core.dolomiteRegistry,
-        core.dolomiteMargin,
       ),
     )).connect(core.governance);
 

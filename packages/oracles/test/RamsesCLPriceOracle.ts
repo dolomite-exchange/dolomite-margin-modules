@@ -1,4 +1,4 @@
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
@@ -12,6 +12,7 @@ import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules
 import { expectEvent, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { TokenInfo } from '../src';
+import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 
 const GRAI_WEETH_POOL = '0xc23F681729AD2E970c2E630CbEf67edFab0c37e0';
 

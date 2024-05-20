@@ -8,7 +8,6 @@ import {
   waitDays,
 } from '@dolomite-exchange/modules-base/test/utils';
 import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import {
   setupCoreProtocol,
   setupGMXBalance,
@@ -20,6 +19,7 @@ import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
+import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import {
   GLPIsolationModeTokenVaultV1,
   GLPIsolationModeTokenVaultV1__factory,
@@ -879,7 +879,7 @@ describe('GLPIsolationModeTokenVaultV1', () => {
       );
     });
 
-    it('should fail when sender is the zero addres', async () => {
+    it('should fail when sender is the zero address', async () => {
       await expectThrow(
         vault.acceptFullAccountTransfer(ZERO_ADDRESS),
         'GLPIsolationModeTokenVaultV1: Invalid sender',

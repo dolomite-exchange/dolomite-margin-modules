@@ -1,4 +1,4 @@
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+
 import { address } from '@dolomite-margin/dist/src';
 import {
   IPlutusVaultGLPIsolationModeTokenVaultV1,

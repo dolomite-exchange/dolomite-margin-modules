@@ -13,7 +13,7 @@ import {
   ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '@dolomite-exchange/modules-base/src/utils/SignerWithAddressWithSafety';
-import { getRealLatestBlockNumber, impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
+import { impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import {
   expectEvent,
   expectProtocolBalance,
@@ -21,7 +21,6 @@ import {
   expectTotalSupply,
   expectWalletBalance,
 } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import {
   createDolomiteRegistryImplementation,
   createEventEmitter,
@@ -35,13 +34,13 @@ import { parseEther } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
 import {
   disableInterestAccrual,
-  getDefaultCoreProtocolConfigForGmxV2,
   setupCoreProtocol,
   setupGMBalance,
   setupTestMarket,
   setupUserVaultProxy,
   setupWETHBalance,
 } from 'packages/base/test/utils/setup';
+import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE_FOR_TESTS } from '../src/gmx-v2-constructors';
 import {
   GmxV2IsolationModeUnwrapperTraderV2,
@@ -74,7 +73,9 @@ const amountWei = parseEther('1');
 const otherAmountWei = parseEther('0.33');
 const usdcAmount = BigNumber.from('1000000000'); // $1000
 const minAmountOut = parseEther('800');
+// noinspection SpellCheckingInspection
 const DUMMY_DEPOSIT_KEY = '0x6d1ff6ffcab884211992a9d6b8261b7fae5db4d2da3a5eb58647988da3869d6f';
+// noinspection SpellCheckingInspection
 const DUMMY_WITHDRAWAL_KEY = '0x6d1ff6ffcab884211992a9d6b8261b7fae5db4d2da3a5eb58647988da3869d6f';
 const CREATE_WITHDRAWALS_DISABLED_KEY = '0xe22e21c60f32cfb79020e8dbf3211f7a678325f5d7195c979268c4db4a4a6fa1';
 const EXECUTE_WITHDRAWALS_DISABLED_KEY = '0xa5d5ec2aef29f70d602db4f2b395018c1a19c7f69e551e9943277b57770f0dd0';
@@ -240,7 +241,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
     await core.dolomiteRegistry.connect(core.governance).ownerSetGenericTraderProxy(NEW_GENERIC_TRADER_PROXY);
     await core.dolomiteRegistry.connect(core.governance).ownerSetOracleAggregator(core.chainlinkPriceOracleV1.address);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(NEW_GENERIC_TRADER_PROXY, true);
-    const trader = await IGenericTraderProxyV1__factory.connect(
+    const trader = IGenericTraderProxyV1__factory.connect(
       NEW_GENERIC_TRADER_PROXY,
       core.governance,
     );
@@ -603,7 +604,6 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         marketId,
         minAmountOut,
         wrapper,
-        executionFee,
       );
       await vault.swapExactInputForOutput(
         borrowAccountNumber,
@@ -646,7 +646,6 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         marketId,
         minAmountOut,
         wrapper,
-        executionFee,
       );
       await vault.swapExactInputForOutput(
         borrowAccountNumber,
@@ -957,7 +956,6 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         marketId,
         minAmountOut,
         wrapper,
-        executionFee,
       );
       await vault.swapExactInputForOutput(
         borrowAccountNumber,
@@ -1086,7 +1084,6 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         marketId,
         minAmountOut,
         wrapper,
-        executionFee,
       );
       await expectThrow(
         vault.swapExactInputForOutput(
@@ -1120,7 +1117,6 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         marketId,
         minAmountOut,
         wrapper,
-        executionFee,
       );
       await expectThrow(
         vault.swapExactInputForOutput(
@@ -1153,7 +1149,6 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         marketId,
         minAmountOut,
         wrapper,
-        ONE_ETH_BI,
       );
       await expectThrow(
         vault.swapExactInputForOutput(
@@ -1247,7 +1242,6 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         marketId,
         minAmountOut,
         wrapper,
-        executionFee,
       );
       await expectThrow(
         vault.swapExactInputForOutput(
@@ -1272,7 +1266,6 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         marketId,
         minAmountOut.mul(100000),
         wrapper,
-        executionFee,
       );
       await expectThrow(
         vault.swapExactInputForOutput(
@@ -1297,7 +1290,6 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         marketId,
         minAmountOut,
         wrapper,
-        executionFee,
       );
       await expectThrow(
         vault.connect(core.hhUser2).swapExactInputForOutput(

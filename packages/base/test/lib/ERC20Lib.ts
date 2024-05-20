@@ -4,7 +4,8 @@ import { CustomTestToken, TestERC20Lib, TestERC20Lib__factory } from '../../src/
 import { createContractWithAbi, createTestToken } from '../../src/utils/dolomite-utils';
 import { Network, ZERO_BI } from '../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
-import { CoreProtocolArbitrumOne } from '../utils/core-protocol';
+
+import { CoreProtocolArbitrumOne } from '../utils/core-protocols/core-protocol-arbitrum-one';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '../utils/setup';
 
 const amount1 = BigNumber.from('200000000');

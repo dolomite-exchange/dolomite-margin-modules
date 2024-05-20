@@ -8,7 +8,6 @@ import {
   snapshot,
 } from '@dolomite-exchange/modules-base/test/utils';
 import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import {
   getDefaultCoreProtocolConfig,
   setupCoreProtocol,
@@ -19,15 +18,15 @@ import { BigNumber, BigNumberish } from 'ethers';
 import {
   IPendleYtToken__factory,
   PendleGLPRegistry,
-  PendleYtGLP2024IsolationModeVaultFactory,
+  PendleYtGLPMar2024IsolationModeVaultFactory,
   PendleYtGLPPriceOracle,
   TestPendlePtOracle,
   TestPendlePtOracle__factory,
 } from '../../src/types';
 import {
   createPendleGLPRegistry,
-  createPendleYtGLP2024IsolationModeTokenVaultV1,
-  createPendleYtGLP2024IsolationModeVaultFactory,
+  createPendleYtGLPMar2024IsolationModeTokenVaultV1,
+  createPendleYtGLPMar2024IsolationModeVaultFactory,
   createPendleYtGLPPriceOracle,
 } from '../pendle-ecosystem-utils';
 
@@ -48,7 +47,7 @@ describe('PendleYtGLPPriceOracle', () => {
   let core: CoreProtocolArbitrumOne;
   let ytGlpOracle: PendleYtGLPPriceOracle;
   let pendleRegistry: PendleGLPRegistry;
-  let factory: PendleYtGLP2024IsolationModeVaultFactory;
+  let factory: PendleYtGLPMar2024IsolationModeVaultFactory;
   let marketId: BigNumberish;
   let timestampTeleport: number;
 
@@ -58,8 +57,8 @@ describe('PendleYtGLPPriceOracle', () => {
     timestampTeleport = timestamp + 600; // add 10 minutes
 
     pendleRegistry = await createPendleGLPRegistry(core);
-    const userVaultImplementation = await createPendleYtGLP2024IsolationModeTokenVaultV1();
-    factory = await createPendleYtGLP2024IsolationModeVaultFactory(
+    const userVaultImplementation = await createPendleYtGLPMar2024IsolationModeTokenVaultV1();
+    factory = await createPendleYtGLPMar2024IsolationModeVaultFactory(
       core,
       pendleRegistry,
       initialAllowableDebtMarketIds,

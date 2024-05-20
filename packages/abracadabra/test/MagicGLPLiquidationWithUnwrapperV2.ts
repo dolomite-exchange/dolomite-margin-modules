@@ -37,7 +37,6 @@ import {
   getCalldataForParaswap,
   getParaswapTraderParamStruct,
 } from '@dolomite-exchange/modules-base/test/utils/trader-utils';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 
 const defaultAccountNumber = '0';
 const otherAccountNumber = '420';

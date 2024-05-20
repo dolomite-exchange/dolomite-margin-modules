@@ -15,7 +15,8 @@ import { Network } from '../../src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '../../src/utils/SignerWithAddressWithSafety';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
 import { expectArrayEq, expectEvent, expectThrow } from '../utils/assertions';
-import { CoreProtocolArbitrumOne } from '../utils/core-protocol';
+
+import { CoreProtocolArbitrumOne } from '../utils/core-protocols/core-protocol-arbitrum-one';
 import { createIsolationModeTokenVaultV1ActionsImpl } from '../utils/dolomite';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '../utils/setup';
 

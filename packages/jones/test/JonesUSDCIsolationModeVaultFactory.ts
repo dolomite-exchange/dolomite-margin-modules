@@ -1,12 +1,6 @@
-import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectEvent, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
-import {
-  getDefaultCoreProtocolConfig,
-  setupCoreProtocol,
-  setupTestMarket,
-} from '@dolomite-exchange/modules-base/test/utils/setup';
+import { setupCoreProtocol, setupTestMarket, } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import {

@@ -7,7 +7,6 @@ import {
 import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { SignerWithAddressWithSafety } from '@dolomite-exchange/modules-base/src/utils/SignerWithAddressWithSafety';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import {
   getChainlinkPriceOracleV3ConstructorParams,

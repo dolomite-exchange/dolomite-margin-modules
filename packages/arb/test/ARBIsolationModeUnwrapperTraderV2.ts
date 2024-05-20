@@ -40,7 +40,6 @@ import {
   setupUserVaultProxy,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { setupNewGenericTraderProxy } from '@dolomite-exchange/modules-base/test/utils/dolomite';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200

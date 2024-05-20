@@ -1,7 +1,6 @@
 import { IIsolationModeVaultFactory__factory } from '@dolomite-exchange/modules-base/src/types';
 import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { BigNumberish } from 'ethers';
 import {

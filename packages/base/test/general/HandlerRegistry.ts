@@ -4,14 +4,15 @@ import { Network } from 'packages/base/src/utils/no-deps-constants';
 import {
   CustomTestToken,
   TestHandlerRegistry,
-  TestIsolationModeFactory,
+  TestIsolationModeVaultFactory,
   TestIsolationModeTokenVaultV1,
 } from '../../src/types';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
 import { expectEvent, expectThrow } from '../utils/assertions';
-import { CoreProtocolArbitrumOne } from '../utils/core-protocol';
+
+import { CoreProtocolArbitrumOne } from '../utils/core-protocols/core-protocol-arbitrum-one';
 import { createIsolationModeTokenVaultV1ActionsImpl } from '../utils/dolomite';
-import { createTestHandlerRegistry, createTestIsolationModeFactory } from '../utils/ecosystem-utils/testers';
+import { createTestHandlerRegistry, createTestIsolationModeVaultFactory } from '../utils/ecosystem-utils/testers';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '../utils/setup';
 
 describe('HandlerRegistry', () => {
@@ -19,7 +20,7 @@ describe('HandlerRegistry', () => {
 
   let core: CoreProtocolArbitrumOne;
   let handlerRegistry: TestHandlerRegistry;
-  let factory: TestIsolationModeFactory;
+  let factory: TestIsolationModeVaultFactory;
   let underlyingToken: CustomTestToken;
 
   before(async () => {
@@ -32,7 +33,7 @@ describe('HandlerRegistry', () => {
       libraries,
       [],
     );
-    factory = await createTestIsolationModeFactory(core, underlyingToken, userVaultImplementation);
+    factory = await createTestIsolationModeVaultFactory(core, underlyingToken, userVaultImplementation);
 
     snapshotId = await snapshot();
   });

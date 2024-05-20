@@ -3,39 +3,42 @@ import { BigNumberish } from 'ethers';
 import { artifacts, network } from 'hardhat';
 import fs, { readFileSync } from 'fs';
 import { Artifact } from 'hardhat/types';
-import path, { join } from 'path';
+import { join } from 'path';
 import {
   CustomTestToken,
   IERC20,
   IIsolationModeTokenVaultV1,
   IsolationModeTraderProxy,
   IsolationModeTraderProxy__factory,
+  TestAsyncFreezableIsolationModeVaultFactory,
+  TestAsyncFreezableIsolationModeVaultFactory__factory,
   TestAsyncProtocol,
   TestAsyncProtocolIsolationModeVaultFactory,
   TestAsyncProtocolIsolationModeVaultFactory__factory,
   TestDolomiteMarginExchangeWrapper,
   TestDolomiteMarginExchangeWrapper__factory,
-  TestAsyncFreezableIsolationModeVaultFactory,
-  TestAsyncFreezableIsolationModeVaultFactory__factory,
   TestHandlerRegistry,
   TestHandlerRegistry__factory,
-  TestIsolationModeVaultFactory,
-  TestIsolationModeVaultFactory__factory,
   TestIsolationModeTokenVaultV1,
-  TestIsolationModeTokenVaultV1WithFreezable,
+  TestIsolationModeTokenVaultV1WithAsyncFreezable,
   TestIsolationModeTokenVaultV1WithAsyncFreezableAndPausable,
+  TestIsolationModeTokenVaultV1WithFreezable,
   TestIsolationModeTokenVaultV1WithPausable,
   TestIsolationModeTokenVaultV1WithPausableAndOnlyEoa,
-  TestIsolationModeTokenVaultV1__factory,
+  TestIsolationModeVaultFactory,
+  TestIsolationModeVaultFactory__factory,
   TestPriceOracle,
   TestPriceOracle__factory,
   TestUpgradeableAsyncIsolationModeUnwrapperTrader,
   TestUpgradeableAsyncIsolationModeUnwrapperTrader__factory,
   TestUpgradeableAsyncIsolationModeWrapperTrader,
   TestUpgradeableAsyncIsolationModeWrapperTrader__factory,
-  TestIsolationModeTokenVaultV1WithAsyncFreezable,
 } from '../../../src/types';
-import { createContractWithAbi, createContractWithLibrary, createContractWithLibraryAndArtifact } from '../../../src/utils/dolomite-utils';
+import {
+  createContractWithAbi,
+  createContractWithLibrary,
+  createContractWithLibraryAndArtifact
+} from '../../../src/utils/dolomite-utils';
 import { NetworkType } from '../../../src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';
 import {
@@ -76,8 +79,7 @@ export async function createTestIsolationModeVaultFactory<T extends NetworkType>
   );
 }
 
-export async function createTestIsolationModeTokenVaultV1<T extends NetworkType>(
-): Promise<TestIsolationModeTokenVaultV1> {
+export async function createTestIsolationModeTokenVaultV1(): Promise<TestIsolationModeTokenVaultV1> {
   const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
   const artifact = await createArtifactFromWorkspaceIfNotExists('TestIsolationModeTokenVaultV1');
   return await createContractWithLibraryAndArtifact(

@@ -1,4 +1,4 @@
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+
 import { DolomiteMargin } from '@dolomite-exchange/modules-base/test/utils/dolomite';
 import { PendleEcosystem } from '@dolomite-exchange/modules-base/test/utils/ecosystem-utils/pendle';
 import { CoreProtocolType } from '@dolomite-exchange/modules-base/test/utils/setup';

@@ -8,7 +8,6 @@ import {
   revertToSnapshotAndCapture,
   snapshot,
 } from '@dolomite-exchange/modules-base/test/utils';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { setupCoreProtocol, setupTestMarket } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { getTWAPPriceOracleV2ConstructorParams } from '@dolomite-exchange/modules-oracles/src/oracles-constructors';
 import axios from 'axios';

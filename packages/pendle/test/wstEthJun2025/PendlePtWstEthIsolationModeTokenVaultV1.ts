@@ -1,6 +1,5 @@
 import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import {
   getDefaultCoreProtocolConfig,
   setupCoreProtocol,
@@ -40,7 +39,7 @@ describe('PendlePtWstEthJun2025IsolationModeTokenVaultV1', () => {
   let vault: PendlePtIsolationModeTokenVaultV1;
 
   before(async () => {
-    core = await setupCoreProtocol(await getDefaultCoreProtocolConfig(Network.ArbitrumOne));
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
 
     underlyingPtToken = core.pendleEcosystem!.wstEthJun2025.ptWstEthToken.connect(core.hhUser1);
     const userVaultImplementation = await createPendlePtIsolationModeTokenVaultV1();

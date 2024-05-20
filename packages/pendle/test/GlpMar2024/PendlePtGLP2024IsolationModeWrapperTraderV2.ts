@@ -7,7 +7,6 @@ import {
   snapshot,
 } from '@dolomite-exchange/modules-base/test/utils';
 import { expectThrow, expectWalletBalance } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { setupNewGenericTraderProxy } from '@dolomite-exchange/modules-base/test/utils/dolomite';
 import {
   getDefaultCoreProtocolConfig,
@@ -27,7 +26,6 @@ import {
   PendleGLPRegistry,
   PendlePtGLPMar2024IsolationModeTokenVaultV1,
   PendlePtGLPMar2024IsolationModeTokenVaultV1__factory,
-  PendlePtGLPMar2024IsolationModeUnwrapperTraderV2,
   PendlePtGLPMar2024IsolationModeVaultFactory,
   PendlePtGLPMar2024IsolationModeWrapperTraderV2,
   PendlePtGLPPriceOracle,
@@ -35,7 +33,6 @@ import {
 import {
   createPendleGLPRegistry,
   createPendlePtGLPMar2024IsolationModeTokenVaultV1,
-  createPendlePtGLPMar2024IsolationModeUnwrapperTraderV2,
   createPendlePtGLPMar2024IsolationModeVaultFactory,
   createPendlePtGLPMar2024IsolationModeWrapperTraderV2,
   createPendlePtGLPPriceOracle,
@@ -59,7 +56,6 @@ describe('PendlePtGLPMar2024IsolationModeWrapperTraderV2', () => {
   let underlyingMarketId: BigNumber;
   let gmxRegistry: IGmxRegistryV1;
   let pendleRegistry: PendleGLPRegistry;
-  let unwrapper: PendlePtGLPMar2024IsolationModeUnwrapperTraderV2;
   let wrapper: PendlePtGLPMar2024IsolationModeWrapperTraderV2;
   let factory: PendlePtGLPMar2024IsolationModeVaultFactory;
   let vault: PendlePtGLPMar2024IsolationModeTokenVaultV1;
@@ -81,7 +77,6 @@ describe('PendlePtGLPMar2024IsolationModeWrapperTraderV2', () => {
       userVaultImplementation,
     );
 
-    unwrapper = await createPendlePtGLPMar2024IsolationModeUnwrapperTraderV2(core, factory, pendleRegistry);
     wrapper = await createPendlePtGLPMar2024IsolationModeWrapperTraderV2(core, factory, pendleRegistry);
     priceOracle = await createPendlePtGLPPriceOracle(core, factory, pendleRegistry);
 

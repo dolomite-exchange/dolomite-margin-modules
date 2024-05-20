@@ -1,5 +1,5 @@
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { ethers } from 'ethers';
+import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { IERC20, OARB, UpgradeableProxy, VesterImplementationV1, VesterImplementationV2 } from './types';
 import { CoreProtocolType } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { NetworkType } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';

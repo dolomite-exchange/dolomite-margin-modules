@@ -22,7 +22,6 @@ import {
   expectThrow,
   expectWalletBalance,
 } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import {
   createDolomiteRegistryImplementation,
   createEventEmitter,
@@ -43,7 +42,8 @@ import {
   setupUserVaultProxy,
   setupWETHBalance,
 } from 'packages/base/test/utils/setup';
-import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE_FOR_TESTS } from '../src/gmx-v2-constructors';
+import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
+import { GMX_V2_EXECUTION_FEE_FOR_TESTS } from '../src/gmx-v2-constructors';
 import {
   GmxV2IsolationModeVaultFactory,
   GmxV2IsolationModeWrapperTraderV2,
@@ -77,6 +77,7 @@ enum ReversionType {
 
 const defaultAccountNumber = '0';
 const borrowAccountNumber = '123';
+// noinspection SpellCheckingInspection
 const DUMMY_WITHDRAWAL_KEY = '0x6d1ff6ffcab884211992a9d6b8261b7fae5db4d2da3a5eb58647988da3869d6f';
 const usdcAmount = BigNumber.from('1000000000'); // $1000
 const amountWei = parseEther('10');
@@ -229,10 +230,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
     await core.dolomiteRegistry.connect(core.governance).ownerSetEventEmitter(eventEmitter.address);
     await core.dolomiteRegistry.connect(core.governance).ownerSetGenericTraderProxy(NEW_GENERIC_TRADER_PROXY);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(NEW_GENERIC_TRADER_PROXY, true);
-    const trader = await IGenericTraderProxyV1__factory.connect(
-      NEW_GENERIC_TRADER_PROXY,
-      core.governance,
-    );
+    const trader = IGenericTraderProxyV1__factory.connect(NEW_GENERIC_TRADER_PROXY, core.governance);
     await trader.ownerSetEventEmitterRegistry(eventEmitter.address);
 
     snapshotId = await snapshot();
@@ -968,7 +966,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       // There is no USDC in the Unwrapper
       expect(await core.tokens.nativeUsdc!.balanceOf(unwrapper.address)).to.eq(0);
 
-      const result = await core
+      await core
         .gmxEcosystemV2!.gmxWithdrawalHandler.connect(
         core.gmxEcosystemV2!.gmxExecutor,
       )
@@ -1391,12 +1389,11 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         BalanceCheckFlag.None,
       );
 
-      const minAmountOut = ONE_BI;
       await vault.initiateUnwrapping(
         borrowAccountNumber,
         amountWei,
         core.tokens.weth.address,
-        minAmountOut,
+        ONE_BI,
         DEFAULT_EXTRA_DATA,
         { value: executionFee },
       );

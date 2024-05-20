@@ -1,5 +1,5 @@
 import { BaseContract } from 'ethers';
-import { IOkxAggregator__factory, IParaswapAugustusRouter__factory, IParaswapFeeClaimer__factory } from '../../../src/types';
+import { IOkxAggregator__factory } from '../../../src/types';
 import { OKX_DEX_ROUTER_MAP, OKX_DEX_TRANSFER_PROXY_MAP } from '../../../src/utils/constants';
 import { Network } from '../../../src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';

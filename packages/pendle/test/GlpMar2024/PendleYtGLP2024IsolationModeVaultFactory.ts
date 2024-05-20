@@ -1,19 +1,18 @@
 import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectArrayEq, expectEvent, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import {
   PendleGLPRegistry,
-  PendleYtGLP2024IsolationModeTokenVaultV1,
-  PendleYtGLP2024IsolationModeVaultFactory,
+  PendleYtGLPMar2024IsolationModeTokenVaultV1,
+  PendleYtGLPMar2024IsolationModeVaultFactory,
 } from '../../src/types';
 import {
   createPendleGLPRegistry,
-  createPendleYtGLP2024IsolationModeTokenVaultV1,
-  createPendleYtGLP2024IsolationModeVaultFactory,
+  createPendleYtGLPMar2024IsolationModeTokenVaultV1,
+  createPendleYtGLPMar2024IsolationModeVaultFactory,
 } from '../pendle-ecosystem-utils';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
@@ -22,19 +21,19 @@ const initialAllowableDebtMarketIds = [0, 1];
 const initialAllowableCollateralMarketIds = [2, 3];
 const newAllowableDebtMarketIds = [1, 2, 3];
 
-describe('PendleYtGLP2024IsolationModeVaultFactory', () => {
+describe('PendleYtGLPMar2024IsolationModeVaultFactory', () => {
   let snapshotId: string;
 
   let core: CoreProtocolArbitrumOne;
   let pendleRegistry: PendleGLPRegistry;
-  let vaultImplementation: PendleYtGLP2024IsolationModeTokenVaultV1;
-  let factory: PendleYtGLP2024IsolationModeVaultFactory;
+  let vaultImplementation: PendleYtGLPMar2024IsolationModeTokenVaultV1;
+  let factory: PendleYtGLPMar2024IsolationModeVaultFactory;
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     pendleRegistry = await createPendleGLPRegistry(core);
-    vaultImplementation = await createPendleYtGLP2024IsolationModeTokenVaultV1();
-    factory = await createPendleYtGLP2024IsolationModeVaultFactory(
+    vaultImplementation = await createPendleYtGLPMar2024IsolationModeTokenVaultV1();
+    factory = await createPendleYtGLPMar2024IsolationModeVaultFactory(
       core,
       pendleRegistry,
       initialAllowableDebtMarketIds,
@@ -118,7 +117,7 @@ describe('PendleYtGLP2024IsolationModeVaultFactory', () => {
     it('should fail when passed an empty array', async () => {
       await expectThrow(
         factory.connect(core.governance).ownerSetAllowableDebtMarketIds([]),
-        'PendleYtGLP2024VaultFactory: Invalid allowableDebtMarketIds',
+        'PendleYtGLPMar2024VaultFactory: Invalid allowableDebtMarketIds',
       );
     });
   });

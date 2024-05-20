@@ -1,7 +1,6 @@
 import { EventEmitterRegistry, EventEmitterRegistry__factory } from '@dolomite-exchange/modules-base/src/types';
 import { getRegistryProxyConstructorParams } from '@dolomite-exchange/modules-base/src/utils/constructors/dolomite';
 import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
 import {

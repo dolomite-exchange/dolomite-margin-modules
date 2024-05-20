@@ -9,7 +9,6 @@ import {
 import { createContractWithAbi } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { ADDRESS_ZERO, Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { advanceToTimestamp, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { setupCoreProtocol, setupTestMarket } from '@dolomite-exchange/modules-base/test/utils/setup';
 import {
   ChainlinkPriceOracleV2,
@@ -52,7 +51,7 @@ describe('PendlePtEEthApr2024PriceOracle', () => {
     underlyingToken = core.tokens.weEth!;
     const wethAggregator = await core.chainlinkPriceOracleV1!.getAggregatorByToken(core.tokens.weth.address);
     const redstoneAggregatorMap = REDSTONE_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne];
-    const weEthAggregator = redstoneAggregatorMap[underlyingToken.address].aggregatorAddress;
+    const weEthAggregator = redstoneAggregatorMap[underlyingToken.address]!.aggregatorAddress;
     const redstoneOracle = (await createContractWithAbi<RedstonePriceOracleV2>(
       RedstonePriceOracleV2__factory.abi,
       RedstonePriceOracleV2__factory.bytecode,

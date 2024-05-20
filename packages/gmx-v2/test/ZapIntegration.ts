@@ -30,7 +30,6 @@ import {
   expectWalletAllowance,
   expectWalletBalance,
 } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { toZapBigNumber } from '@dolomite-exchange/modules-base/test/utils/liquidation-utils';
 import {
   disableInterestAccrual,
@@ -62,6 +61,7 @@ import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish, ContractTransaction } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
+import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
 
 const defaultAccountNumber = ZERO_BI;
 const borrowAccountNumber = defaultAccountNumber.add(ONE_BI);
@@ -132,8 +132,6 @@ if (process.env.COVERAGE !== 'true') {
         core.gmxEcosystemV2.gmxWithdrawalVault.address,
       );
       const gmxV2Library = await createGmxV2Library();
-      // 0000000000000000000000000000000000000000000000000016da65dd1a3f08
-      // 0000000000000000000000000000000000000000000000000000000000000000
 
       const unwrapperImplementation = await createGmxV2IsolationModeUnwrapperTraderV2Implementation(core, gmxV2Library);
       const wrapperImplementation = await createGmxV2IsolationModeWrapperTraderV2Implementation(core, gmxV2Library);
@@ -162,7 +160,7 @@ if (process.env.COVERAGE !== 'true') {
       liquidAccount = { owner: vault.address, number: borrowAccountNumber };
       liquidAccount2 = { owner: vault.address, number: borrowAccountNumber2 };
 
-      await setupGMBalance(core, core.hhUser1, amountWei.mul(2), vault);
+      await setupGMBalance(core, core.gmxEcosystemV2.gmxEthUsdMarketToken, core.hhUser1, amountWei.mul(2), vault);
       await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei.mul(2));
       await vault.openBorrowPosition(
         defaultAccountNumber,

@@ -6,10 +6,10 @@ import { createContractWithAbi } from '@dolomite-exchange/modules-base/src/utils
 import { ONE_ETH_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, setEtherBalance, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectEvent, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { createIsolationModeTraderProxy } from '@dolomite-exchange/modules-base/test/utils/dolomite';
 import { expect } from 'chai';
 import { getDefaultCoreProtocolConfigForGmxV2, setupCoreProtocol } from 'packages/base/test/utils/setup';
+import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { GMX_V2_CALLBACK_GAS_LIMIT } from '../src/gmx-v2-constructors';
 import { GmxV2Registry } from '../src/types';
 import { createGmxV2Registry } from './gmx-v2-ecosystem-utils';
@@ -35,7 +35,7 @@ describe('GmxV2IsolationModeTraderBase', () => {
       core.dolomiteMargin.address,
     );
     const proxy = await createIsolationModeTraderProxy(implementation.address, calldata.data!, core);
-    trader = await TestAsyncIsolationModeTraderBase__factory.connect(proxy.address, core.hhUser1);
+    trader = TestAsyncIsolationModeTraderBase__factory.connect(proxy.address, core.hhUser1);
 
     snapshotId = await snapshot();
   });

@@ -41,7 +41,7 @@ contract PendleYtGLPMar2024IsolationModeWrapperTraderV2 is IsolationModeWrapperT
 
     // ============ Constants ============
 
-    bytes32 private constant _FILE = "PendleYtGLP2024WrapperV2";
+    bytes32 private constant _FILE = "PendleYtGLPMar2024WrapperV2";
 
     // ============ Constructor ============
 

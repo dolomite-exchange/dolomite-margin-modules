@@ -7,7 +7,6 @@ import {
 import { createContractWithAbi } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { Network, ONE_ETH_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { advanceToTimestamp, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { setupCoreProtocol, setupTestMarket } from '@dolomite-exchange/modules-base/test/utils/setup';
 import * as Deployments from '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
 import {
@@ -63,18 +62,17 @@ describe('PendlePtEEthApr2024PriceOracleV2', () => {
 
     underlyingToken = core.tokens.weEth;
     const weEthAggregator = IChainlinkAggregator__factory.connect(
-      REDSTONE_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][underlyingToken.address].aggregatorAddress,
+      REDSTONE_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][underlyingToken.address]!.aggregatorAddress,
       core.hhUser1,
     );
     const redstoneOracle = await createContractWithAbi<RedstonePriceOracleV3>(
       RedstonePriceOracleV3__factory.abi,
       RedstonePriceOracleV3__factory.bytecode,
       getRedstonePriceOracleV3ConstructorParams(
-        [underlyingToken],
-        [weEthAggregator],
+        core,
+        [underlyingToken.address],
+        [weEthAggregator.address],
         [false],
-        core.dolomiteRegistry,
-        core.dolomiteMargin,
       ),
     );
     await core.dolomiteRegistry.connect(core.governance).ownerSetRedstonePriceOracle(redstoneOracle.address);
@@ -88,7 +86,7 @@ describe('PendlePtEEthApr2024PriceOracleV2', () => {
 
     await chainlinkOracle.connect(core.governance).ownerInsertOrUpdateOracleToken(
       core.tokens.eEth.address,
-      CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][underlyingToken.address].aggregatorAddress,
+      CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][underlyingToken.address]!.aggregatorAddress,
       true,
     );
 

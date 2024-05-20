@@ -1,10 +1,12 @@
 import CoreDeployments from '@dolomite-exchange/dolomite-margin/dist/migrations/deployed.json';
 import Deployments, * as deployments from '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
 import {
+  ChroniclePriceOracleV3__factory,
   IChainlinkAutomationRegistry__factory,
   IChainlinkPriceOracleV3__factory,
   OkxPriceOracleV3__factory,
   OracleAggregatorV2__factory,
+  RedstonePriceOracleV3__factory,
 } from '@dolomite-exchange/modules-oracles/src/types';
 import { BigNumber as ZapBigNumber } from '@dolomite-exchange/zap-sdk';
 import * as BorrowPositionProxyV2Json from '@dolomite-margin/deployed-contracts/BorrowPositionProxyV2.json';
@@ -85,6 +87,7 @@ import {
   MAGIC_GLP_MAP,
   MAGIC_MAP,
   MATIC_MAP,
+  METH_MAP,
   MIM_MAP,
   NATIVE_USDC_MAP,
   PENDLE_MAP,
@@ -98,7 +101,7 @@ import {
   ST_ETH_MAP,
   UNI_MAP,
   USDC_MAP,
-  USDT_MAP,
+  USDT_MAP, USDY_MAP,
   WBTC_MAP,
   WE_ETH_MAP,
   WETH_MAP,
@@ -107,19 +110,24 @@ import {
   WST_ETH_MAP,
   XAI_MAP,
 } from '../../src/utils/constants';
-import { Network, NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP, NetworkType } from '../../src/utils/no-deps-constants';
+import {
+  ADDRESS_ZERO,
+  Network,
+  NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP,
+  NetworkType,
+} from '../../src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '../../src/utils/SignerWithAddressWithSafety';
 import {
   CoreProtocolAbstract,
-  CoreProtocolArbitrumOne,
-  CoreProtocolBase,
-  CoreProtocolMantle,
   CoreProtocolParams,
-  CoreProtocolParamsMantle,
-  CoreProtocolPolygonZkEvm,
-  CoreProtocolXLayer,
-  LibraryMaps, WETHType,
-} from './core-protocol';
+  LibraryMaps,
+  WETHType,
+} from './core-protocols/core-protocol-abstract';
+import { CoreProtocolArbitrumOne } from './core-protocols/core-protocol-arbitrum-one';
+import { CoreProtocolBase } from './core-protocols/core-protocol-base';
+import { CoreProtocolMantle, CoreProtocolParamsMantle } from './core-protocols/core-protocol-mantle';
+import { CoreProtocolPolygonZkEvm } from './core-protocols/core-protocol-polygon-zkevm';
+import { CoreProtocolXLayer } from './core-protocols/core-protocol-x-layer';
 import { DolomiteMargin, Expiry } from './dolomite';
 import { createAbraEcosystem } from './ecosystem-utils/abra';
 import { createArbEcosystem } from './ecosystem-utils/arb';
@@ -696,6 +704,10 @@ export async function setupCoreProtocol<T extends NetworkType>(
         pendleEcosystem: await createPendleEcosystem(typedConfig.network, hhUser1),
         plutusEcosystem: await createPlutusEcosystem(typedConfig.network, hhUser1),
         premiaEcosystem: await createPremiaEcosystem(typedConfig.network, hhUser1),
+        redstonePriceOracleV3: RedstonePriceOracleV3__factory.connect(
+          Deployments.RedstonePriceOracleV3[typedConfig.network].address,
+          hhUser1,
+        ),
         umamiEcosystem: await createUmamiEcosystem(typedConfig.network, hhUser1),
         marketIds: {
           ...coreProtocolParams.marketIds,
@@ -823,28 +835,44 @@ export async function setupCoreProtocol<T extends NetworkType>(
   }
   if (config.network === Network.Mantle) {
     const typedConfig = config as CoreProtocolSetupConfig<Network.Mantle>;
+    const chroniclePriceOracle = ChroniclePriceOracleV3__factory.connect(
+      getMaxDeploymentVersionAddressByDeploymentKey('ChroniclePriceOracle', Network.Mantle, ADDRESS_ZERO),
+      hhUser1,
+    );
+    const redstonePriceOracle = RedstonePriceOracleV3__factory.connect(
+      getMaxDeploymentVersionAddressByDeploymentKey('RedstonePriceOracle', Network.Mantle, ADDRESS_ZERO),
+      hhUser1,
+    );
     return new CoreProtocolMantle(
       coreProtocolParams as CoreProtocolParams<Network.Mantle>,
       {
+        chroniclePriceOracleV3: chroniclePriceOracle,
+        redstonePriceOracleV3: redstonePriceOracle,
         marketIds: {
           ...coreProtocolParams.marketIds,
+          meth: METH_MAP[typedConfig.network].marketId,
           usdt: USDT_MAP[typedConfig.network].marketId,
+          usdy: USDY_MAP[typedConfig.network].marketId,
           wbtc: WBTC_MAP[typedConfig.network].marketId,
           wmnt: WMNT_MAP[typedConfig.network].marketId,
           stablecoins: [
             ...coreProtocolParams.marketIds.stablecoins,
             USDT_MAP[typedConfig.network].marketId,
+            USDY_MAP[typedConfig.network].marketId,
           ],
         },
         odosEcosystem: await createOdosEcosystem(typedConfig.network, hhUser1),
         tokens: {
           ...coreProtocolParams.tokens,
+          meth: IERC20__factory.connect(METH_MAP[typedConfig.network].address, hhUser1),
           usdt: IERC20__factory.connect(USDT_MAP[typedConfig.network].address, hhUser1),
+          usdy: IERC20__factory.connect(USDY_MAP[typedConfig.network].address, hhUser1),
           wbtc: IERC20__factory.connect(WBTC_MAP[typedConfig.network].address, hhUser1),
           wmnt: IWETH__factory.connect(WMNT_MAP[typedConfig.network].address, hhUser1),
           stablecoins: [
             ...coreProtocolParams.tokens.stablecoins,
             IERC20__factory.connect(USDT_MAP[typedConfig.network].address, hhUser1),
+            IERC20__factory.connect(USDY_MAP[typedConfig.network].address, hhUser1),
           ],
         },
       },
@@ -992,15 +1020,23 @@ function createAsyncWrapperImplLibraries<T extends NetworkType>(
   };
 }
 
-export function getMaxDeploymentVersionAddressByDeploymentKey(key: string, network: Network): address {
-  const maxTokenVaultVersion = Object.keys(deployments)
+export function getMaxDeploymentVersionAddressByDeploymentKey(
+  key: string,
+  network: Network,
+  defaultAddress?: string,
+): address {
+  const maxVersion = Object.keys(deployments)
     .filter(k => k.startsWith(key) && (deployments as any)[k][network])
     .sort((a, b) => a < b ? 1 : -1)[0];
-  if (!maxTokenVaultVersion) {
+  if (!maxVersion && !defaultAddress) {
     throw new Error(`Could not find ${key} for network ${network}`);
   }
 
-  return (deployments as any)[maxTokenVaultVersion][network].address;
+  if ((!(deployments as any)[maxVersion] || !(deployments as any)[maxVersion][network]) && defaultAddress) {
+    return defaultAddress;
+  }
+
+  return (deployments as any)[maxVersion][network].address;
 }
 
 export function getContract<T>(

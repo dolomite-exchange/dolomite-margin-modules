@@ -22,7 +22,8 @@ import {
 import { BYTES_EMPTY, Network, ONE_ETH_BI, ZERO_BI } from '../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
 import { expectProtocolBalance } from '../utils/assertions';
-import { CoreProtocolArbitrumOne } from '../utils/core-protocol';
+
+import { CoreProtocolArbitrumOne } from '../utils/core-protocols/core-protocol-arbitrum-one';
 import { createIsolationModeTokenVaultV1ActionsImpl } from '../utils/dolomite';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from '../utils/setup';
 import { getWrapZapParams } from '../utils/zap-utils';

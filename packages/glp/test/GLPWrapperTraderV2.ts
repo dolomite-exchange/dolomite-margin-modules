@@ -9,7 +9,6 @@ import {
   snapshot,
 } from '@dolomite-exchange/modules-base/test/utils';
 import { expectProtocolBalanceDustyOrZero, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import {
   disableInterestAccrual,
   getDefaultCoreProtocolConfig,
@@ -19,6 +18,7 @@ import {
 } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
+import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { GLPWrapperTraderV2, GmxRegistryV1, IERC20 } from '../src/types';
 import { createGLPPriceOracleV1, createGLPWrapperTraderV2, createGmxRegistry } from './glp-ecosystem-utils';
 

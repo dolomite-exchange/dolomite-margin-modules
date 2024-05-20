@@ -7,13 +7,13 @@ import { createContractWithAbi, createTestToken } from '@dolomite-exchange/modul
 import { ADDRESS_ZERO, Network, ONE_ETH_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { REDSTONE_PRICE_AGGREGATORS_MAP } from 'packages/base/src/utils/constants';
+import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { TokenInfo } from '../src';
 import {
   getChainlinkPriceOracleV3ConstructorParamsFromChainlinkOracleV1,
@@ -22,7 +22,6 @@ import {
 import {
   ChainlinkPriceOracleV3,
   ChainlinkPriceOracleV3__factory,
-  IChainlinkAggregator__factory,
   OracleAggregatorV2,
   OracleAggregatorV2__factory,
   RedstonePriceOracleV3,
@@ -82,16 +81,12 @@ describe('OracleAggregatorV2', () => {
       RedstonePriceOracleV3__factory.abi,
       RedstonePriceOracleV3__factory.bytecode,
       getRedstonePriceOracleV3ConstructorParams(
-        [core.tokens.weEth],
+        core,
+        [core.tokens.weEth.address],
         [
-          IChainlinkAggregator__factory.connect(
-            REDSTONE_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][core.tokens.weEth.address].aggregatorAddress,
-            core.hhUser1,
-          ),
+          REDSTONE_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][core.tokens.weEth.address]!.aggregatorAddress,
         ],
         [false],
-        core.dolomiteRegistry,
-        core.dolomiteMargin,
       ),
     )).connect(core.governance);
 

@@ -1,4 +1,3 @@
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish, ContractTransaction, ethers } from 'ethers';
@@ -35,6 +34,7 @@ import {
 } from 'packages/base/test/utils/setup';
 import { getLiquidateIsolationModeZapPath } from 'packages/base/test/utils/zap-utils';
 import { AccountStruct } from '../../../packages/base/src/utils/constants';
+import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE_FOR_TESTS } from '../src/gmx-v2-constructors';
 import {
   GmxV2IsolationModeTokenVaultV1,
@@ -185,7 +185,13 @@ describe('POC: liquidationWithdrawalKeyHijacking', () => {
     liquidAccount = { owner: vault.address, number: borrowAccountNumber };
     liquidAccount2 = { owner: vault.address, number: borrowAccountNumber2 };
 
-    await setupGMBalance(core, core.hhUser1, amountWei.add(amountWeiForSecond), vault);
+    await setupGMBalance(
+      core,
+      core.gmxEcosystemV2.gmxEthUsdMarketToken,
+      core.hhUser1,
+      amountWei.add(amountWeiForSecond),
+      vault
+    );
     await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei.add(amountWeiForSecond));
     await vault.openBorrowPosition(
       defaultAccountNumber,

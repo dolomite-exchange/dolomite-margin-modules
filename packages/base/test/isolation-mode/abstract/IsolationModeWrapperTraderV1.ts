@@ -4,7 +4,7 @@ import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import {
   CustomTestToken,
-  TestIsolationModeFactory,
+  TestIsolationModeVaultFactory,
   TestIsolationModeTokenVaultV1,
   TestIsolationModeTokenVaultV1__factory,
   TestIsolationModeWrapperTraderV1,
@@ -21,9 +21,10 @@ import {
   snapshot,
 } from '../../utils';
 import { expectThrow } from '../../utils/assertions';
-import { CoreProtocolArbitrumOne } from '../../utils/core-protocol';
+
+import { CoreProtocolArbitrumOne } from '../../utils/core-protocols/core-protocol-arbitrum-one';
 import { createIsolationModeTokenVaultV1ActionsImpl } from '../../utils/dolomite';
-import { createTestIsolationModeFactory } from '../../utils/ecosystem-utils/testers';
+import { createTestIsolationModeVaultFactory } from '../../utils/ecosystem-utils/testers';
 import {
   getDefaultCoreProtocolConfig,
   setupCoreProtocol,
@@ -45,7 +46,7 @@ describe('IsolationModeWrapperTraderV1', () => {
   let otherToken: CustomTestToken;
   let otherMarketId: BigNumber;
   let wrapper: TestIsolationModeWrapperTraderV1;
-  let factory: TestIsolationModeFactory;
+  let factory: TestIsolationModeVaultFactory;
   let vault: TestIsolationModeTokenVaultV1;
   let defaultAccount: AccountInfoStruct;
 
@@ -61,7 +62,7 @@ describe('IsolationModeWrapperTraderV1', () => {
       libraries,
       [],
     );
-    factory = await createTestIsolationModeFactory(core, underlyingToken, userVaultImplementation);
+    factory = await createTestIsolationModeVaultFactory(core, underlyingToken, userVaultImplementation);
 
     await core.testEcosystem!.testPriceOracle.setPrice(factory.address, '1000000000000000000'); // $1.00
     underlyingMarketId = await core.dolomiteMargin.getNumMarkets();

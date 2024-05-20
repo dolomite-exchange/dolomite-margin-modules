@@ -5,7 +5,6 @@ import {
   IsolationModeFreezableLiquidatorProxy,
   IsolationModeFreezableLiquidatorProxy__factory,
 } from '@dolomite-exchange/modules-base/src/types';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 import { takeSnapshot } from '@nomicfoundation/hardhat-network-helpers';
 import { expect } from 'chai';
@@ -19,6 +18,7 @@ import { createContractWithAbi } from '../../base/src/utils/dolomite-utils';
 import { NO_EXPIRY, ONE_BI, ONE_ETH_BI, ZERO_BI } from '../../base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../../base/test/utils';
 import { expectEvent, expectProtocolBalance, expectWalletBalance } from '../../base/test/utils/assertions';
+import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { createDolomiteRegistryImplementation, createEventEmitter } from '../../base/test/utils/dolomite';
 import {
   disableInterestAccrual,
@@ -98,7 +98,7 @@ describe('POC: dosLiquidationBytes32', () => {
     liquidatorProxy = await createContractWithAbi<IsolationModeFreezableLiquidatorProxy>(
       IsolationModeFreezableLiquidatorProxy__factory.abi,
       IsolationModeFreezableLiquidatorProxy__factory.bytecode,
-      await getIsolationModeFreezableLiquidatorProxyConstructorParams(core),
+      getIsolationModeFreezableLiquidatorProxyConstructorParams(core),
     );
 
     const gmxV2Library = await createGmxV2Library();
@@ -160,12 +160,12 @@ describe('POC: dosLiquidationBytes32', () => {
     await core.dolomiteMargin.ownerSetGlobalOperator(NEW_GENERIC_TRADER_PROXY, true);
     await core.dolomiteMargin.ownerSetGlobalOperator(core.liquidatorProxyV4.address, true);
     await core.dolomiteRegistry.ownerSetGenericTraderProxy(NEW_GENERIC_TRADER_PROXY);
-    const trader = await IGenericTraderProxyV1__factory.connect(NEW_GENERIC_TRADER_PROXY, core.governance);
+    const trader = IGenericTraderProxyV1__factory.connect(NEW_GENERIC_TRADER_PROXY, core.governance);
     await trader.ownerSetEventEmitterRegistry(eventEmitter.address);
 
     liquidAccount = { owner: vault.address, number: borrowAccountNumber };
 
-    await setupGMBalance(core, core.hhUser1, amountWei.mul(2), vault);
+    await setupGMBalance(core, core.gmxEcosystemV2.gmxEthUsdMarketToken, core.hhUser1, amountWei.mul(2), vault);
     await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei.mul(2));
     await vault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei, { value: executionFee });
     await vault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber2, amountWei, { value: executionFee });
@@ -228,7 +228,6 @@ describe('POC: dosLiquidationBytes32', () => {
           marketId,
           depositMinAmountOut,
           wrapper,
-          executionFee,
         );
         await vault.swapExactInputForOutput(
           initiateWrappingParams.accountNumber,
@@ -378,6 +377,7 @@ describe('POC: dosLiquidationBytes32', () => {
             ) external returns (bytes32);
 
             function cancelWithdrawal(bytes32 _key) external;
+        }
       */
     });
   });

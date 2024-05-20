@@ -4,7 +4,6 @@ import { createTestVaultToken } from '@dolomite-exchange/modules-base/src/utils/
 import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import {
   getDefaultCoreProtocolConfig,
   setupCoreProtocol,

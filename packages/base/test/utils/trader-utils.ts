@@ -5,7 +5,8 @@ import { BigNumber, ContractTransaction } from 'ethers';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
 import { GenericTraderParamStruct } from '../../src/utils';
 import { expectThrow } from './assertions';
-import { CoreProtocolArbitrumOne } from './core-protocol';
+
+import { CoreProtocolArbitrumOne } from './core-protocols/core-protocol-arbitrum-one';
 import { CoreProtocolType } from './setup';
 import dotenv from 'dotenv';
 import path from 'path';

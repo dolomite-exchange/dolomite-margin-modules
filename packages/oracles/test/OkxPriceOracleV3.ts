@@ -9,12 +9,12 @@ import {
   waitTime,
 } from '@dolomite-exchange/modules-base/test/utils';
 import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { CoreProtocolXLayer } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
+import { CoreProtocolXLayer } from 'packages/base/test/utils/core-protocols/core-protocol-x-layer';
 import { TokenInfo } from '../src';
 import { getChainlinkPriceOracleV3ConstructorParams } from '../src/oracles-constructors';
 import {
@@ -37,7 +37,7 @@ describe('OkxPriceOracleV3', () => {
   let testToken: CustomTestToken;
 
   before(async () => {
-    core = await setupCoreProtocol(await getDefaultCoreProtocolConfig(Network.XLayer));
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.XLayer));
 
     testAggregator = await createContractWithAbi<TestChainlinkAggregator>(
       TestChainlinkAggregator__factory.abi,

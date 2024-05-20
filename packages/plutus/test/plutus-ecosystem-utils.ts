@@ -4,8 +4,7 @@ import {
   createContractWithAbi,
   createContractWithLibrary,
 } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
-import { getTokenVaultLibrary } from '@dolomite-exchange/modules-deployment/src/utils/deploy-utils';
+import { getTokenVaultLibrary } from '@dolomite-exchange/modules-deployments/src/utils/deploy-utils';
 import {
   getDolomiteCompatibleWhitelistForPlutusDAOConstructorParams,
   getPlutusVaultGLPIsolationModeUnwrapperTraderV1ConstructorParams,
