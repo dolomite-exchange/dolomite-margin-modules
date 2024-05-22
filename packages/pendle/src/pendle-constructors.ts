@@ -26,6 +26,7 @@ import {
   PendleYtGLPMar2024IsolationModeTokenVaultV1,
   PendleYtGLPMar2024IsolationModeVaultFactory,
 } from './types';
+import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 
 export type CoreProtocolWithPendle<T extends Network> = Extract<CoreProtocolType<T>, {
   dolomiteMargin: DolomiteMargin<T>;
