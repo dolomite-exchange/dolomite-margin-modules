@@ -148,6 +148,7 @@ import { createPremiaEcosystem } from './ecosystem-utils/premia';
 import { createTestEcosystem } from './ecosystem-utils/testers';
 import { createUmamiEcosystem } from './ecosystem-utils/umami';
 import { impersonate, impersonateOrFallback, resetForkIfPossible } from './index';
+import { createGammaEcosystem } from './ecosystem-utils/gamma';
 
 /**
  * Config to for setting up tests in the `before` function
@@ -684,6 +685,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
           Deployments.DolomiteMigratorV2[typedConfig.network].address,
           hhUser1,
         ),
+        gammaEcosystem: await createGammaEcosystem(typedConfig.network, hhUser1),
         gmxEcosystem: await createGmxEcosystem(typedConfig.network, hhUser1),
         gmxEcosystemV2: await createGmxEcosystemV2(typedConfig.network, hhUser1),
         jonesEcosystem: await createJonesEcosystem(typedConfig.network, hhUser1),

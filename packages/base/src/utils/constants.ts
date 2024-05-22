@@ -522,6 +522,10 @@ export const BN_GMX_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x35247165119B69A40edD5304969560D0ef486921',
 };
 
+export const DELTA_SWAP_FACTORY_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0xCb85E1222f715a81b8edaeB73b28182fa37cffA8',
+};
+
 export const DPX_WETH_V3_POOL_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x59a327d948db1810324a04d69cbe9fe9884f8f28',
 };
@@ -540,6 +544,10 @@ export const ES_GMX_DISTRIBUTOR_FOR_STAKED_GMX_MAP: Record<Network.ArbitrumOne, 
 
 export const FS_GLP_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x1aDDD80E6039594eE970E5872D247bf0414C8903',
+};
+
+export const GAMMA_POOL_WETH_USDC_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x04d24DBdd9eA6e8af5B5Eb0126797da27498DF1d',
 };
 
 /**
