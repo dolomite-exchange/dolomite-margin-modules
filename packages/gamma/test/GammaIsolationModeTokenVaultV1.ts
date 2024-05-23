@@ -1,15 +1,24 @@
 import { expect } from 'chai';
-import {
-  SimpleIsolationModeUnwrapperTraderV2,
-  SimpleIsolationModeWrapperTraderV2,
-} from '@dolomite-exchange/modules-base/src/types';
 import { Network, ONE_ETH_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectEvent, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
-import { GammaIsolationModeTokenVaultV1, GammaIsolationModeTokenVaultV1__factory, GammaIsolationModeVaultFactory, GammaRegistry } from '../src/types';
-import { createGammaIsolationModeTokenVaultV1, createGammaIsolationModeVaultFactory, createGammaRegistry, createGammaUnwrapperTraderV2, createGammaWrapperTraderV2 } from './gamma-ecosystem-utils';
+import {
+  GammaIsolationModeTokenVaultV1,
+  GammaIsolationModeTokenVaultV1__factory,
+  GammaIsolationModeUnwrapperTraderV2,
+  GammaIsolationModeVaultFactory,
+  GammaIsolationModeWrapperTraderV2,
+  GammaRegistry
+} from '../src/types';
+import {
+  createGammaIsolationModeTokenVaultV1,
+  createGammaIsolationModeVaultFactory,
+  createGammaRegistry,
+  createGammaUnwrapperTraderV2,
+  createGammaWrapperTraderV2
+} from './gamma-ecosystem-utils';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
@@ -18,8 +27,8 @@ describe('GammaIsolationModeTokenVaultV1', () => {
 
   let core: CoreProtocolArbitrumOne;
   let gammaRegistry: GammaRegistry;
-  let unwrapper: SimpleIsolationModeUnwrapperTraderV2;
-  let wrapper: SimpleIsolationModeWrapperTraderV2;
+  let unwrapper: GammaIsolationModeUnwrapperTraderV2;
+  let wrapper: GammaIsolationModeWrapperTraderV2;
   let gammaFactory: GammaIsolationModeVaultFactory;
   let gammaVault: GammaIsolationModeTokenVaultV1;
 
@@ -32,10 +41,15 @@ describe('GammaIsolationModeTokenVaultV1', () => {
     gammaRegistry = await createGammaRegistry(core);
 
     const vaultImplementation = await createGammaIsolationModeTokenVaultV1();
-    gammaFactory = await createGammaIsolationModeVaultFactory(gammaRegistry, core.gammaEcosystem.gammaPools.wethUsdc, vaultImplementation, core);
+    gammaFactory = await createGammaIsolationModeVaultFactory(
+      gammaRegistry,
+      core.gammaEcosystem.gammaPools.wethUsdc,
+      vaultImplementation,
+      core
+    );
 
-    unwrapper = await createGammaUnwrapperTraderV2(gammaFactory, core);
-    wrapper = await createGammaWrapperTraderV2(gammaFactory, core);
+    unwrapper = await createGammaUnwrapperTraderV2(core, gammaFactory, gammaRegistry);
+    wrapper = await createGammaWrapperTraderV2(core, gammaFactory, gammaRegistry);
 
     await core.testEcosystem!.testPriceOracle.setPrice(gammaFactory.address, ONE_ETH_BI);
     await setupTestMarket(core, gammaFactory, true);

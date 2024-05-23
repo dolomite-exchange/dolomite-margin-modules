@@ -1,8 +1,12 @@
 import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import {
   GammaIsolationModeTokenVaultV1,
+  GammaIsolationModeUnwrapperTraderV2,
+  GammaIsolationModeUnwrapperTraderV2__factory,
   GammaIsolationModeVaultFactory,
   GammaIsolationModeVaultFactory__factory,
+  GammaIsolationModeWrapperTraderV2,
+  GammaIsolationModeWrapperTraderV2__factory,
   GammaPoolPriceOracle,
   GammaPoolPriceOracle__factory,
   GammaRegistry,
@@ -65,24 +69,26 @@ export async function createGammaIsolationModeVaultFactory(
 }
 
 export async function createGammaUnwrapperTraderV2(
-  factory: IGammaIsolationModeVaultFactory | GammaIsolationModeVaultFactory,
   core: CoreProtocolArbitrumOne,
-): Promise<SimpleIsolationModeUnwrapperTraderV2> {
-  return createContractWithAbi<SimpleIsolationModeUnwrapperTraderV2>(
-    SimpleIsolationModeUnwrapperTraderV2__factory.abi,
-    SimpleIsolationModeUnwrapperTraderV2__factory.bytecode,
-    getGammaUnwrapperTraderV2ConstructorParams(factory, core),
+  factory: IGammaIsolationModeVaultFactory | GammaIsolationModeVaultFactory,
+  registry: IGammaRegistry | GammaRegistry,
+): Promise<GammaIsolationModeUnwrapperTraderV2> {
+  return createContractWithAbi<GammaIsolationModeUnwrapperTraderV2>(
+    GammaIsolationModeUnwrapperTraderV2__factory.abi,
+    GammaIsolationModeUnwrapperTraderV2__factory.bytecode,
+    getGammaUnwrapperTraderV2ConstructorParams(core, factory, registry),
   );
 }
 
 export async function createGammaWrapperTraderV2(
-  factory: IGammaIsolationModeVaultFactory | GammaIsolationModeVaultFactory,
   core: CoreProtocolArbitrumOne,
-): Promise<SimpleIsolationModeWrapperTraderV2> {
-  return createContractWithAbi<SimpleIsolationModeWrapperTraderV2>(
-    SimpleIsolationModeWrapperTraderV2__factory.abi,
-    SimpleIsolationModeWrapperTraderV2__factory.bytecode,
-    getGammaWrapperTraderV2ConstructorParams(factory, core),
+  factory: IGammaIsolationModeVaultFactory | GammaIsolationModeVaultFactory,
+  registry: IGammaRegistry | GammaRegistry,
+): Promise<GammaIsolationModeWrapperTraderV2> {
+  return createContractWithAbi<GammaIsolationModeWrapperTraderV2>(
+    GammaIsolationModeWrapperTraderV2__factory.abi,
+    GammaIsolationModeWrapperTraderV2__factory.bytecode,
+    getGammaWrapperTraderV2ConstructorParams(core, factory, registry),
   );
 }
 

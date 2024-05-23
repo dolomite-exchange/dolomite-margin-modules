@@ -20,6 +20,8 @@
 
 pragma solidity ^0.8.9;
 
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 
 /**
  * @title   IGammaPool
@@ -27,9 +29,18 @@ pragma solidity ^0.8.9;
  *
  * @notice  This interface defines the functions that are available on GammaPools
  */
-interface IGammaPool {
+interface IGammaPool is IERC20 {
 
     function deposit(uint256 assets, address to) external returns (uint256);
 
+    function depositReserves(
+        address _to,
+        uint256[] calldata _amountsDesired,
+        uint256[] calldata _amountsMin,
+        bytes calldata _data
+    ) external returns (uint256[] memory, uint256);
+
     function cfmm() external view returns (address);
+
+    function protocolId() external view returns (uint16);
 }

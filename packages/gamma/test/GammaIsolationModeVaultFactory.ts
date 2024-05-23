@@ -1,14 +1,16 @@
 import { expect } from 'chai';
-import {
-  SimpleIsolationModeUnwrapperTraderV2,
-  SimpleIsolationModeWrapperTraderV2,
-} from '@dolomite-exchange/modules-base/src/types';
 import { Network, ONE_ETH_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectEvent, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { setupCoreProtocol, setupTestMarket } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
-import { GammaIsolationModeTokenVaultV1, GammaIsolationModeVaultFactory, GammaRegistry } from '../src/types';
+import {
+  GammaIsolationModeTokenVaultV1,
+  GammaIsolationModeUnwrapperTraderV2,
+  GammaIsolationModeVaultFactory,
+  GammaIsolationModeWrapperTraderV2,
+  GammaRegistry
+} from '../src/types';
 import {
   createGammaIsolationModeTokenVaultV1,
   createGammaIsolationModeVaultFactory,
@@ -24,8 +26,8 @@ describe('GammaIsolationModeVaultFactory', () => {
 
   let core: CoreProtocolArbitrumOne;
   let gammaRegistry: GammaRegistry;
-  let unwrapper: SimpleIsolationModeUnwrapperTraderV2;
-  let wrapper: SimpleIsolationModeWrapperTraderV2;
+  let unwrapper: GammaIsolationModeUnwrapperTraderV2;
+  let wrapper: GammaIsolationModeWrapperTraderV2;
   let gammaFactory: GammaIsolationModeVaultFactory;
   let vaultImplementation: GammaIsolationModeTokenVaultV1;
 
@@ -45,8 +47,8 @@ describe('GammaIsolationModeVaultFactory', () => {
       core
     );
 
-    unwrapper = await createGammaUnwrapperTraderV2(gammaFactory, core);
-    wrapper = await createGammaWrapperTraderV2(gammaFactory, core);
+    unwrapper = await createGammaUnwrapperTraderV2(core, gammaFactory, gammaRegistry);
+    wrapper = await createGammaWrapperTraderV2(core, gammaFactory, gammaRegistry);
 
     await core.testEcosystem!.testPriceOracle.setPrice(gammaFactory.address, ONE_ETH_BI);
     await setupTestMarket(core, gammaFactory, true);

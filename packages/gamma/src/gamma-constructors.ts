@@ -37,23 +37,25 @@ export function getGammaIsolationModeVaultFactoryConstructorParams(
 }
 
 export function getGammaUnwrapperTraderV2ConstructorParams(
-  factory: IGammaIsolationModeVaultFactory | GammaIsolationModeVaultFactory,
   core: CoreProtocolArbitrumOne,
+  factory: IGammaIsolationModeVaultFactory | GammaIsolationModeVaultFactory,
+  registry: IGammaRegistry | GammaRegistry,
 ): any[] {
   return [
+    registry.address,
     factory.address,
     core.dolomiteMargin.address,
-    core.dolomiteRegistry.address,
   ];
 }
 
 export function getGammaWrapperTraderV2ConstructorParams(
-  factory: IGammaIsolationModeVaultFactory | GammaIsolationModeVaultFactory,
   core: CoreProtocolArbitrumOne,
+  factory: IGammaIsolationModeVaultFactory | GammaIsolationModeVaultFactory,
+  registry: IGammaRegistry | GammaRegistry,
 ): any[] {
   return [
+    registry.address,
     factory.address,
     core.dolomiteMargin.address,
-    core.dolomiteRegistry.address,
   ];
 }
