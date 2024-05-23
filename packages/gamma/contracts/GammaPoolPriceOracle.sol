@@ -120,9 +120,9 @@ contract GammaPoolPriceOracle is IGammaPoolPriceOracle, OnlyDolomiteMargin {
         uint256 usdPrice0 = oracleAggregator.getPrice(token0).value * reserve0 / _ONE;
         uint256 usdPrice1 = oracleAggregator.getPrice(token1).value * reserve1 / _ONE;
 
+        return _getWeightedGeometricMean(usdPrice0, usdPrice1, _getTotalSupplyAtWithrawal(pair));
         // @follow-up Should we do exactly what aave did with the deviation?
         // return _getArithmeticMean(usdPrice0, usdPrice1, totalSupply);
-        return _getWeightedGeometricMean(usdPrice0, usdPrice1, _getTotalSupplyAtWithrawal(pair));
     }
 
     // function _getArithmeticMean(uint256 _total0, uint256 _total1, uint256 _supply) internal pure returns (uint256) {
