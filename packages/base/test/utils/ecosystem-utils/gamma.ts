@@ -3,16 +3,19 @@ import { Network } from "packages/base/src/utils/no-deps-constants";
 import {
   IDeltaSwapFactory,
   IDeltaSwapFactory__factory,
+  IDeltaSwapRouter,
+  IDeltaSwapRouter__factory,
   IGammaPool,
   IGammaPool__factory,
   IGammaPositionManager,
   IGammaPositionManager__factory
 } from "packages/gamma/src/types";
 import { getContract } from "../setup";
-import { DELTA_SWAP_FACTORY_MAP, GAMMA_POOL_WETH_USDC_MAP, GAMMA_POSITION_MANAGER_MAP } from "packages/base/src/utils/constants";
+import { DELTA_SWAP_FACTORY_MAP, DELTA_SWAP_ROUTER_MAP, GAMMA_POOL_WETH_USDC_MAP, GAMMA_POSITION_MANAGER_MAP } from "packages/base/src/utils/constants";
 
 export interface GammaEcosystem {
   deltaSwapFactory: IDeltaSwapFactory;
+  deltaSwapRouter: IDeltaSwapRouter;
   gammaPools: {
     wethUsdc: IGammaPool;
   }
@@ -26,6 +29,7 @@ export async function createGammaEcosystem(network: Network, signer: SignerWithA
 
   return {
     deltaSwapFactory: getContract(DELTA_SWAP_FACTORY_MAP[network], IDeltaSwapFactory__factory.connect, signer),
+    deltaSwapRouter: getContract(DELTA_SWAP_ROUTER_MAP[network], IDeltaSwapRouter__factory.connect, signer),
     gammaPools: {
       wethUsdc: getContract(
         GAMMA_POOL_WETH_USDC_MAP[network], IGammaPool__factory.connect, signer),

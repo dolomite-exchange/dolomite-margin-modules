@@ -31,6 +31,11 @@ import {
   getGammaWrapperTraderV2ConstructorParams
 } from '../src/gamma-constructors';
 import { createIsolationModeTokenVaultV1ActionsImpl } from 'packages/base/test/utils/dolomite';
+import { BigNumberish, Bytes, BytesLike, ethers } from 'ethers';
+import { GenericTraderType } from '@dolomite-exchange/zap-sdk';
+import { ONE_BI } from 'packages/base/src/utils/no-deps-constants';
+import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin';
+import { GenericEventEmissionType } from '@dolomite-exchange/dolomite-margin/dist/src/modules/GenericTraderProxyV1';
 
 export async function createGammaRegistry(core: CoreProtocolArbitrumOne): Promise<GammaRegistry> {
   const implementation = await createContractWithAbi<GammaRegistry>(
@@ -104,4 +109,39 @@ export async function createGammaPoolPriceOracle(
       core.dolomiteMargin.address,
     ],
   );
+}
+
+export function getUnwrappingParams(
+  accountNumber: BigNumberish,
+  marketId1: BigNumberish,
+  amountIn: BigNumberish,
+  marketId2: BigNumberish,
+  minAmountOut: BigNumberish,
+  unwrapper: GammaIsolationModeUnwrapperTraderV2,
+  aggregator: { address: string },
+  aggregatorData: BytesLike
+): any {
+  return {
+    accountNumber,
+    amountIn,
+    minAmountOut,
+    marketPath: [marketId1, marketId2],
+    traderParams: [
+      {
+        trader: unwrapper.address,
+        traderType: GenericTraderType.IsolationModeUnwrapper,
+        tradeData: ethers.utils.defaultAbiCoder.encode(
+          ['uint256[]', 'address', 'bytes'],
+          [[ONE_BI, ONE_BI], aggregator.address, aggregatorData]
+        ),
+        makerAccountIndex: 0,
+      },
+    ],
+    makerAccounts: [],
+    userConfig: {
+      deadline: '123123123123123',
+      balanceCheckFlag: BalanceCheckFlag.None,
+      eventType: GenericEventEmissionType.None,
+    },
+  };
 }

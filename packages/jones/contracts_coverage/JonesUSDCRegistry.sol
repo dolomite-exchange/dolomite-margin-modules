@@ -86,6 +86,11 @@ contract JonesUSDCRegistry is IJonesUSDCRegistry, BaseRegistry {
         if (unwrapperTraderForLiquidation() == address(0) && unwrapperTraderForZap() == address(0)) { /* FOR COVERAGE TESTING */ }
         if (unwrapperTraderForLiquidation() == address(0) && unwrapperTraderForZap() == address(0)) { /* FOR COVERAGE TESTING */ }
         if (unwrapperTraderForLiquidation() == address(0) && unwrapperTraderForZap() == address(0)) { /* FOR COVERAGE TESTING */ }
+        if (unwrapperTraderForLiquidation() == address(0) && unwrapperTraderForZap() == address(0)) { /* FOR COVERAGE TESTING */ }
+        if (unwrapperTraderForLiquidation() == address(0) && unwrapperTraderForZap() == address(0)) { /* FOR COVERAGE TESTING */ }
+        if (unwrapperTraderForLiquidation() == address(0) && unwrapperTraderForZap() == address(0)) { /* FOR COVERAGE TESTING */ }
+        if (unwrapperTraderForLiquidation() == address(0) && unwrapperTraderForZap() == address(0)) { /* FOR COVERAGE TESTING */ }
+        if (unwrapperTraderForLiquidation() == address(0) && unwrapperTraderForZap() == address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             unwrapperTraderForLiquidation() == address(0) && unwrapperTraderForZap() == address(0),
             _FILE,
@@ -205,6 +210,11 @@ contract JonesUSDCRegistry is IJonesUSDCRegistry, BaseRegistry {
         if (_glpAdapter != address(0)) { /* FOR COVERAGE TESTING */ }
         if (_glpAdapter != address(0)) { /* FOR COVERAGE TESTING */ }
         if (_glpAdapter != address(0)) { /* FOR COVERAGE TESTING */ }
+        if (_glpAdapter != address(0)) { /* FOR COVERAGE TESTING */ }
+        if (_glpAdapter != address(0)) { /* FOR COVERAGE TESTING */ }
+        if (_glpAdapter != address(0)) { /* FOR COVERAGE TESTING */ }
+        if (_glpAdapter != address(0)) { /* FOR COVERAGE TESTING */ }
+        if (_glpAdapter != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _glpAdapter != address(0),
             _FILE,
@@ -215,6 +225,11 @@ contract JonesUSDCRegistry is IJonesUSDCRegistry, BaseRegistry {
     }
 
     function _ownerSetGlpVaultRouter(address _glpVaultRouter) internal {
+        if (_glpVaultRouter != address(0)) { /* FOR COVERAGE TESTING */ }
+        if (_glpVaultRouter != address(0)) { /* FOR COVERAGE TESTING */ }
+        if (_glpVaultRouter != address(0)) { /* FOR COVERAGE TESTING */ }
+        if (_glpVaultRouter != address(0)) { /* FOR COVERAGE TESTING */ }
+        if (_glpVaultRouter != address(0)) { /* FOR COVERAGE TESTING */ }
         if (_glpVaultRouter != address(0)) { /* FOR COVERAGE TESTING */ }
         if (_glpVaultRouter != address(0)) { /* FOR COVERAGE TESTING */ }
         if (_glpVaultRouter != address(0)) { /* FOR COVERAGE TESTING */ }
@@ -239,6 +254,11 @@ contract JonesUSDCRegistry is IJonesUSDCRegistry, BaseRegistry {
         if (_whitelistController != address(0)) { /* FOR COVERAGE TESTING */ }
         if (_whitelistController != address(0)) { /* FOR COVERAGE TESTING */ }
         if (_whitelistController != address(0)) { /* FOR COVERAGE TESTING */ }
+        if (_whitelistController != address(0)) { /* FOR COVERAGE TESTING */ }
+        if (_whitelistController != address(0)) { /* FOR COVERAGE TESTING */ }
+        if (_whitelistController != address(0)) { /* FOR COVERAGE TESTING */ }
+        if (_whitelistController != address(0)) { /* FOR COVERAGE TESTING */ }
+        if (_whitelistController != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _whitelistController != address(0),
             _FILE,
@@ -249,6 +269,11 @@ contract JonesUSDCRegistry is IJonesUSDCRegistry, BaseRegistry {
     }
 
     function _ownerSetUsdcReceiptToken(address _usdcReceiptToken) internal {
+        if (_usdcReceiptToken != address(0)) { /* FOR COVERAGE TESTING */ }
+        if (_usdcReceiptToken != address(0)) { /* FOR COVERAGE TESTING */ }
+        if (_usdcReceiptToken != address(0)) { /* FOR COVERAGE TESTING */ }
+        if (_usdcReceiptToken != address(0)) { /* FOR COVERAGE TESTING */ }
+        if (_usdcReceiptToken != address(0)) { /* FOR COVERAGE TESTING */ }
         if (_usdcReceiptToken != address(0)) { /* FOR COVERAGE TESTING */ }
         if (_usdcReceiptToken != address(0)) { /* FOR COVERAGE TESTING */ }
         if (_usdcReceiptToken != address(0)) { /* FOR COVERAGE TESTING */ }
@@ -273,6 +298,11 @@ contract JonesUSDCRegistry is IJonesUSDCRegistry, BaseRegistry {
         if (_jUSDC != address(0)) { /* FOR COVERAGE TESTING */ }
         if (_jUSDC != address(0)) { /* FOR COVERAGE TESTING */ }
         if (_jUSDC != address(0)) { /* FOR COVERAGE TESTING */ }
+        if (_jUSDC != address(0)) { /* FOR COVERAGE TESTING */ }
+        if (_jUSDC != address(0)) { /* FOR COVERAGE TESTING */ }
+        if (_jUSDC != address(0)) { /* FOR COVERAGE TESTING */ }
+        if (_jUSDC != address(0)) { /* FOR COVERAGE TESTING */ }
+        if (_jUSDC != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _jUSDC != address(0),
             _FILE,
@@ -283,6 +313,11 @@ contract JonesUSDCRegistry is IJonesUSDCRegistry, BaseRegistry {
     }
 
     function _ownerSetUnwrapperTraderForLiquidation(address _unwrapperTraderForLiquidation) internal {
+        if (_unwrapperTraderForLiquidation != address(0)) { /* FOR COVERAGE TESTING */ }
+        if (_unwrapperTraderForLiquidation != address(0)) { /* FOR COVERAGE TESTING */ }
+        if (_unwrapperTraderForLiquidation != address(0)) { /* FOR COVERAGE TESTING */ }
+        if (_unwrapperTraderForLiquidation != address(0)) { /* FOR COVERAGE TESTING */ }
+        if (_unwrapperTraderForLiquidation != address(0)) { /* FOR COVERAGE TESTING */ }
         if (_unwrapperTraderForLiquidation != address(0)) { /* FOR COVERAGE TESTING */ }
         if (_unwrapperTraderForLiquidation != address(0)) { /* FOR COVERAGE TESTING */ }
         if (_unwrapperTraderForLiquidation != address(0)) { /* FOR COVERAGE TESTING */ }
@@ -307,6 +342,11 @@ contract JonesUSDCRegistry is IJonesUSDCRegistry, BaseRegistry {
         if (_unwrapperTraderForZap != address(0)) { /* FOR COVERAGE TESTING */ }
         if (_unwrapperTraderForZap != address(0)) { /* FOR COVERAGE TESTING */ }
         if (_unwrapperTraderForZap != address(0)) { /* FOR COVERAGE TESTING */ }
+        if (_unwrapperTraderForZap != address(0)) { /* FOR COVERAGE TESTING */ }
+        if (_unwrapperTraderForZap != address(0)) { /* FOR COVERAGE TESTING */ }
+        if (_unwrapperTraderForZap != address(0)) { /* FOR COVERAGE TESTING */ }
+        if (_unwrapperTraderForZap != address(0)) { /* FOR COVERAGE TESTING */ }
+        if (_unwrapperTraderForZap != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _unwrapperTraderForZap != address(0),
             _FILE,
@@ -317,6 +357,11 @@ contract JonesUSDCRegistry is IJonesUSDCRegistry, BaseRegistry {
     }
 
     function _ownerSetJUSDCFarm(address _jUSDCFarm) internal {
+        if (_jUSDCFarm != address(0)) { /* FOR COVERAGE TESTING */ }
+        if (_jUSDCFarm != address(0)) { /* FOR COVERAGE TESTING */ }
+        if (_jUSDCFarm != address(0)) { /* FOR COVERAGE TESTING */ }
+        if (_jUSDCFarm != address(0)) { /* FOR COVERAGE TESTING */ }
+        if (_jUSDCFarm != address(0)) { /* FOR COVERAGE TESTING */ }
         if (_jUSDCFarm != address(0)) { /* FOR COVERAGE TESTING */ }
         if (_jUSDCFarm != address(0)) { /* FOR COVERAGE TESTING */ }
         if (_jUSDCFarm != address(0)) { /* FOR COVERAGE TESTING */ }

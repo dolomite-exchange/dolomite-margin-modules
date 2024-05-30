@@ -21,6 +21,8 @@
 pragma solidity ^0.8.9;
 
 import { IBaseRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IBaseRegistry.sol";
+import { IDeltaSwapRouter } from "./IDeltaSwapRouter.sol";
+import { IGammaPositionManager } from "./IGammaPositionManager.sol";
 
 
 /**
@@ -29,4 +31,28 @@ import { IBaseRegistry } from "@dolomite-exchange/modules-base/contracts/interfa
  *
  * @notice  A registry contract for storing all of the addresses that can interact with Gamma lp tokens
  */
-interface IGammaRegistry is IBaseRegistry {} // solhint-disable-line no-empty-blocks
+interface IGammaRegistry is IBaseRegistry {
+
+    // ========================================================
+    // ======================== Events ========================
+    // ========================================================
+
+    event GammaPositionManagerSet(address indexed _gammaPositionManager);
+    event DeltaSwapRouterSet(address indexed _deltaSwapRouter);
+
+    // ========================================================
+    // =================== Admin Functions ====================
+    // ========================================================
+
+    function ownerSetGammaPositionManager(address _gammaPositionManager) external;
+
+    function ownerSetDeltaSwapRouter(address _deltaSwapRouter) external;
+
+    // ========================================================
+    // =================== Getter Functions ===================
+    // ========================================================
+
+    function gammaPositionManager() external view returns (IGammaPositionManager);
+
+    function deltaSwapRouter() external view returns (IDeltaSwapRouter);
+}

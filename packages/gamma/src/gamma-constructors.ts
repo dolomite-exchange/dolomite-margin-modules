@@ -13,7 +13,11 @@ export async function getGammaRegistryConstructorParams(
   implementation: GammaRegistry,
   core: CoreProtocolArbitrumOne
 ): Promise<any[]> {
-  const calldata = await implementation.populateTransaction.initialize(core.dolomiteRegistry.address);
+  const calldata = await implementation.populateTransaction.initialize(
+    core.gammaEcosystem.positionManager.address,
+    core.gammaEcosystem.deltaSwapRouter.address,
+    core.dolomiteRegistry.address
+  );
   return [
     implementation.address,
     core.dolomiteMargin.address,

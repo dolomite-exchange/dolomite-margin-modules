@@ -1,7 +1,7 @@
 import { expect } from 'chai';
-import { MAX_UINT_256_BI, Network, ONE_ETH_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { BYTES_EMPTY, Network, ONE_BI, ONE_ETH_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
-import { expectEvent, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { expectProtocolBalance, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { setupCoreProtocol, setupNativeUSDCBalance, setupTestMarket, setupUserVaultProxy, setupWETHBalance } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import {
@@ -22,12 +22,19 @@ import {
   createGammaUnwrapperTraderV2,
   createGammaWrapperTraderV2
 } from './gamma-ecosystem-utils';
-import { BigNumber } from 'ethers';
+import { BigNumber, ethers } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { AccountInfoStruct } from 'packages/base/src/utils';
+import { depositIntoDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
+import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin';
+import { getCalldataForOdos } from 'packages/base/test/utils/trader-utils';
+import { GenericTraderType } from '@dolomite-exchange/zap-sdk';
+import { GenericEventEmissionType } from '@dolomite-exchange/dolomite-margin/dist/src/modules/GenericTraderProxyV1';
+import { createOdosAggregatorTrader } from 'packages/base/test/utils/ecosystem-utils/traders';
+import { OdosAggregatorTrader } from 'packages/base/src/types';
 
-const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 const defaultAccountNumber = '0';
+const borrowAccountNumber = '123';
 const usdcAmount = BigNumber.from('1000000000'); // $1,000
 const wethAmount = parseEther('.25');
 
@@ -43,14 +50,16 @@ describe('GammaIsolationModeWrapperTraderV2', () => {
   let vault: GammaIsolationModeTokenVaultV1;
   let gammaOracle: GammaPoolPriceOracle;
   let defaultAccount: AccountInfoStruct;
-  let amountWei: BigNumber;
   let marketId: BigNumber;
+  let odosAggregator: OdosAggregatorTrader;
 
   before(async () => {
     core = await setupCoreProtocol({
       blockNumber: 213_000_000,
       network: Network.ArbitrumOne,
     });
+
+    odosAggregator = await createOdosAggregatorTrader(core);
 
     gammaRegistry = await createGammaRegistry(core);
     gammaPool = core.gammaEcosystem.gammaPools.wethUsdc;
@@ -76,24 +85,11 @@ describe('GammaIsolationModeWrapperTraderV2', () => {
     );
     defaultAccount = { owner: vault.address, number: defaultAccountNumber };
 
-    await setupNativeUSDCBalance(core, core.hhUser1, usdcAmount, core.gammaEcosystem.positionManager);
-    await setupWETHBalance(core, core.hhUser1, wethAmount, core.gammaEcosystem.positionManager);
-    await core.gammaEcosystem.positionManager.connect(core.hhUser1).depositReserves({
-      protocolId: await gammaPool.protocolId(),
-      cfmm: await gammaPool.cfmm(),
-      to: core.hhUser1.address,
-      deadline: MAX_UINT_256_BI,
-      amountsDesired: [wethAmount, usdcAmount],
-      amountsMin: [0, 0],
-    });
-    amountWei = await gammaPool.balanceOf(core.hhUser1.address);
+    await setupNativeUSDCBalance(core, core.hhUser1, usdcAmount, core.dolomiteMargin);
+    await setupWETHBalance(core, core.hhUser1, wethAmount, core.dolomiteMargin);
 
-    await gammaPool.connect(core.hhUser1).approve(vault.address, amountWei);
-    await vault.depositIntoVaultForDolomiteMargin(ZERO_BI, amountWei);
-
-    expect(await gammaPool.balanceOf(vault.address)).gt(ZERO_BI);
-    expect(await gammaPool.balanceOf(vault.address)).to.equal(amountWei);
-    expect((await core.dolomiteMargin.getAccountWei(defaultAccount, marketId)).value).to.equal(amountWei);
+    await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.nativeUsdc, usdcAmount);
+    await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, wethAmount);
 
     snapshotId = await snapshot();
   });
@@ -108,6 +104,102 @@ describe('GammaIsolationModeWrapperTraderV2', () => {
     });
   });
 
+  describe('#exchange', () => {
+    it('should work normally for token0', async () => {
+      await vault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        core.marketIds.weth,
+        wethAmount,
+        BalanceCheckFlag.None
+      );
+      await expectProtocolBalance(core, vault, borrowAccountNumber, core.marketIds.weth, wethAmount);
+
+      const { calldata } = await getCalldataForOdos(
+        wethAmount.div(2),
+        core.tokens.weth,
+        18,
+        ONE_BI,
+        core.tokens.nativeUsdc,
+        6,
+        wrapper,
+        core
+      );
+      const odosOrderData = ethers.utils.defaultAbiCoder.encode(
+        ['uint256', 'bytes'],
+        [
+          ONE_BI,
+          calldata,
+        ],
+      );
+      await vault.swapExactInputForOutput(
+        borrowAccountNumber,
+        [core.marketIds.weth, marketId],
+        wethAmount,
+        ONE_BI,
+        [{
+          trader: wrapper.address,
+          traderType: GenericTraderType.IsolationModeWrapper,
+          tradeData: ethers.utils.defaultAbiCoder.encode(['address', 'bytes'], [odosAggregator.address, odosOrderData]),
+          makerAccountIndex: 0
+        }],
+        [],
+        {
+          deadline: '123123123123123',
+          balanceCheckFlag: BalanceCheckFlag.None,
+          eventType: GenericEventEmissionType.None,
+        }
+      );
+    });
+
+    it('should work normally for token1', async () => {
+      await vault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        core.marketIds.nativeUsdc,
+        usdcAmount,
+        BalanceCheckFlag.None
+      );
+      await expectProtocolBalance(core, vault, borrowAccountNumber, core.marketIds.nativeUsdc, usdcAmount);
+
+      const { calldata } = await getCalldataForOdos(
+        usdcAmount.div(2),
+        core.tokens.nativeUsdc,
+        6,
+        ONE_BI,
+        core.tokens.weth,
+        18,
+        wrapper,
+        core
+      );
+      const odosOrderData = ethers.utils.defaultAbiCoder.encode(
+        ['uint256', 'bytes'],
+        [
+          ONE_BI,
+          calldata,
+        ],
+      );
+      await vault.swapExactInputForOutput(
+        borrowAccountNumber,
+        [core.marketIds.nativeUsdc, marketId],
+        usdcAmount,
+        ONE_BI,
+        [{
+          trader: wrapper.address,
+          traderType: GenericTraderType.IsolationModeWrapper,
+          tradeData: ethers.utils.defaultAbiCoder.encode(['address', 'bytes'], [odosAggregator.address, odosOrderData]),
+          makerAccountIndex: 0
+        }],
+        [],
+        {
+          deadline: '123123123123123',
+          balanceCheckFlag: BalanceCheckFlag.None,
+          eventType: GenericEventEmissionType.None,
+        }
+      );
+    });
+  });
+
   describe('#isValidInputToken', () => {
     it('should return true for either pool token', async () => {
       expect(await wrapper.isValidInputToken(core.tokens.weth.address)).to.equal(true);
@@ -116,6 +208,15 @@ describe('GammaIsolationModeWrapperTraderV2', () => {
 
     it('should return false for other tokens', async () => {
       expect(await wrapper.isValidInputToken(core.tokens.dai.address)).to.equal(false);
+    });
+  });
+
+  describe('#getExchangeCost', () => {
+    it('should fail because it is not implemented', async () => {
+      await expectThrow(
+        wrapper.getExchangeCost(core.tokens.nativeUsdc.address, gammaFactory.address, ONE_ETH_BI, BYTES_EMPTY),
+        'GammaWrapperTraderV2: getExchangeCost is not implemented',
+      );
     });
   });
 });

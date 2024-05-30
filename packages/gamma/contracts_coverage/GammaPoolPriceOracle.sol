@@ -21,18 +21,17 @@
 pragma solidity ^0.8.9;
 
 import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
+import { IIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
+import { IDolomitePriceOracle } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomitePriceOracle.sol"; // solhint-disable-line max-line-length
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import { IGammaIsolationModeVaultFactory } from "./interfaces/IGammaIsolationModeVaultFactory.sol";
-import { IIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
-import { IGammaPool } from "./interfaces/IGammaPool.sol";
-import { IDeltaSwapPair } from "./interfaces/IDeltaSwapPair.sol";
+import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { IDeltaSwapFactory } from "./interfaces/IDeltaSwapFactory.sol";
+import { IDeltaSwapPair } from "./interfaces/IDeltaSwapPair.sol";
+import { IGammaPool } from "./interfaces/IGammaPool.sol";
 import { IGammaPoolPriceOracle } from "./interfaces/IGammaPoolPriceOracle.sol";
 import { IGammaRegistry } from "./interfaces/IGammaRegistry.sol";
-import { IDolomitePriceOracle } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomitePriceOracle.sol";
-import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 
 
 /**
@@ -121,16 +120,20 @@ contract GammaPoolPriceOracle is IGammaPoolPriceOracle, OnlyDolomiteMargin {
         uint256 usdPrice0 = oracleAggregator.getPrice(token0).value * reserve0 / _ONE;
         uint256 usdPrice1 = oracleAggregator.getPrice(token1).value * reserve1 / _ONE;
 
+        return _getWeightedGeometricMean(usdPrice0, usdPrice1, _getTotalSupplyAtWithrawal(pair));
         // @follow-up Should we do exactly what aave did with the deviation?
         // return _getArithmeticMean(usdPrice0, usdPrice1, totalSupply);
-        return _getWeightedGeometricMean(usdPrice0, usdPrice1, _getTotalSupplyAtWithrawal(pair));
     }
 
     // function _getArithmeticMean(uint256 _total0, uint256 _total1, uint256 _supply) internal pure returns (uint256) {
     //     return (_total0 + _total1) / _supply;
     // }
 
-    function _getWeightedGeometricMean(uint256 _total0, uint256 _total1, uint256 _supply) internal pure returns (uint256) {
+    function _getWeightedGeometricMean(
+        uint256 _total0,
+        uint256 _total1,
+        uint256 _supply
+    ) internal pure returns (uint256) {
         uint256 sqrt = Math.sqrt(_total0 * _total1);
         return sqrt * 2 * _ONE / _supply;
     }
