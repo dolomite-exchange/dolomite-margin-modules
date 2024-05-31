@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import { Network, ONE_ETH_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
-import { expectEvent, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import {
@@ -19,8 +18,6 @@ import {
   createGammaUnwrapperTraderV2,
   createGammaWrapperTraderV2
 } from './gamma-ecosystem-utils';
-
-const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
 describe('GammaIsolationModeTokenVaultV1', () => {
   let snapshotId: string;
