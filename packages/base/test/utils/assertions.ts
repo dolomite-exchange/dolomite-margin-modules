@@ -193,6 +193,30 @@ export async function expectWalletBalanceIsGreaterThan(
     );
 }
 
+export async function expectWalletBalanceIsBetween(
+  accountOwner: { address: address } | address,
+  token: { balanceOf(account: string, overrides?: CallOverrides): Promise<BigNumber>, address: address },
+  amountLowerEnd: BigNumberish,
+  amountUpperEnd: BigNumberish,
+) {
+  const owner = typeof accountOwner === 'object' ? accountOwner.address : accountOwner;
+  const balance = await token.balanceOf(owner);
+  expect(balance)
+    .to
+    .be
+    .gt(
+      amountLowerEnd,
+      `Expected ${balance.toString()} to be gt ${amountLowerEnd.toString()} for ${owner} ${token.address}`,
+    );
+  expect(balance)
+    .to
+    .be
+    .lt(
+      amountUpperEnd,
+      `Expected ${balance.toString()} to be lt ${amountUpperEnd.toString()} for ${owner} ${token.address}`,
+    );
+}
+
 export async function expectVaultBalanceToMatchAccountBalances<T extends Network>(
   core: CoreProtocolType<T>,
   vault: { underlyingBalanceOf(overrides?: CallOverrides): Promise<BigNumber> },

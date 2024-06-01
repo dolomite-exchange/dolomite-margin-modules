@@ -98,6 +98,7 @@ contract ExternalVesterImplementationV1 is
     // =========================================================
 
     modifier requireVestingActive() {
+        if (isVestingActive()) { /* FOR COVERAGE TESTING */ }
         Require.that(
             isVestingActive(),
             _FILE,
@@ -107,6 +108,7 @@ contract ExternalVesterImplementationV1 is
     }
 
     modifier onlyOwner(address _sender) {
+        if (_sender == owner()) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _sender == owner(),
             _FILE,
@@ -177,6 +179,7 @@ contract ExternalVesterImplementationV1 is
         returns (uint256)
     {
         _validateEnoughRewardsAvailable(_oTokenAmount);
+        if (_duration >= _MIN_DURATION && _duration <= _MAX_DURATION && _duration % _MIN_DURATION == 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _duration >= _MIN_DURATION && _duration <= _MAX_DURATION && _duration % _MIN_DURATION == 0,
             _FILE,
@@ -190,6 +193,7 @@ contract ExternalVesterImplementationV1 is
         uint256 pairPrice = DOLOMITE_MARGIN().getMarketPrice(PAIR_MARKET_ID).value;
         uint256 rewardPrice = DOLOMITE_MARGIN().getMarketPrice(REWARD_MARKET_ID).value;
         uint256 pairAmount = _oTokenAmount * rewardPrice / pairPrice;
+        if (pairAmount <= _maxPairAmount) { /* FOR COVERAGE TESTING */ }
         Require.that(
             pairAmount <= _maxPairAmount,
             _FILE,
@@ -267,11 +271,13 @@ contract ExternalVesterImplementationV1 is
         VestingPosition memory position = _getVestingPositionSlot(_id);
         uint256 accountNumber = calculateAccountNumber(position.creator, _id);
         address positionOwner = ownerOf(_id);
+        if (positionOwner == msg.sender) { /* FOR COVERAGE TESTING */ }
         Require.that(
             positionOwner == msg.sender,
             _FILE,
             "Invalid position owner"
         );
+        if (block.timestamp > position.startTime + position.duration) { /* FOR COVERAGE TESTING */ }
         Require.that(
             block.timestamp > position.startTime + position.duration,
             _FILE,
@@ -316,11 +322,13 @@ contract ExternalVesterImplementationV1 is
     external {
         VestingPosition memory position = _getVestingPositionSlot(_id);
         address positionOwner = ownerOf(_id);
+        if (closePositionWindow() != 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             closePositionWindow() != 0,
             _FILE,
             "Positions are not expirable"
         );
+        if (block.timestamp > position.startTime + position.duration + closePositionWindow()) { /* FOR COVERAGE TESTING */ }
         Require.that(
             block.timestamp > position.startTime + position.duration + closePositionWindow(),
             _FILE,
@@ -336,6 +344,7 @@ contract ExternalVesterImplementationV1 is
     function emergencyWithdraw(uint256 _id) external {
         VestingPosition memory position = _getVestingPositionSlot(_id);
         address positionOwner = ownerOf(_id);
+        if (positionOwner == msg.sender) { /* FOR COVERAGE TESTING */ }
         Require.that(
             positionOwner == msg.sender,
             _FILE,
@@ -356,6 +365,7 @@ contract ExternalVesterImplementationV1 is
     )
     external
     onlyOwner(msg.sender) {
+        if (DOLOMITE_MARGIN().getIsLocalOperator(msg.sender, address(this))) { /* FOR COVERAGE TESTING */ }
         Require.that(
             DOLOMITE_MARGIN().getIsLocalOperator(msg.sender, address(this)),
             _FILE,
@@ -379,6 +389,7 @@ contract ExternalVesterImplementationV1 is
     external
     onlyOwner(msg.sender) {
         if (!_shouldBypassAvailableAmounts) {
+            if (_amount <= availableTokens()) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 _amount <= availableTokens(),
                 _FILE,
@@ -395,6 +406,7 @@ contract ExternalVesterImplementationV1 is
 
     function ownerAccrueRewardTokenInterest() external onlyOwner(msg.sender) {
         // all tokens have been spent
+        if (pushedTokens() == 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             pushedTokens() == 0,
             _FILE,
@@ -553,6 +565,7 @@ contract ExternalVesterImplementationV1 is
     }
 
     function _ownerSetOToken(address _oToken) internal {
+        if (promisedTokens() == 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             promisedTokens() == 0,
             _FILE,
@@ -563,6 +576,7 @@ contract ExternalVesterImplementationV1 is
     }
 
     function _ownerSetOwner(address _owner) internal {
+        if (_owner != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _owner != address(0),
             _FILE,
@@ -573,6 +587,7 @@ contract ExternalVesterImplementationV1 is
     }
 
     function _ownerSetClosePositionWindow(uint256 _closePositionWindow) internal {
+        if (_closePositionWindow >= _MIN_DURATION || _closePositionWindow == 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _closePositionWindow >= _MIN_DURATION || _closePositionWindow == 0,
             _FILE,
@@ -583,6 +598,7 @@ contract ExternalVesterImplementationV1 is
     }
 
     function _ownerSetForceClosePositionTax(uint256 _forceClosePositionTax) internal {
+        if (_forceClosePositionTax < _BASE) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _forceClosePositionTax < _BASE,
             _FILE,
@@ -596,6 +612,7 @@ contract ExternalVesterImplementationV1 is
         uint256 _emergencyWithdrawTax
     )
     internal {
+        if (_emergencyWithdrawTax < _BASE) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _emergencyWithdrawTax < _BASE,
             _FILE,
@@ -634,13 +651,13 @@ contract ExternalVesterImplementationV1 is
             _toAccountNumber == _DEFAULT_ACCOUNT_NUMBER &&
             _marketId == REWARD_MARKET_ID
         ) {
-            assert(_amount != type(uint256).max);
+            /*assert(_amount != type(uint256).max);*/
             _setPushedTokens(pushedTokens() + _amount);
         }
 
         IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
 
-        assert(dolomiteMargin.getMarketTokenAddress(_marketId) == address(_token));
+        /*assert(dolomiteMargin.getMarketTokenAddress(_marketId) == address(_token));*/
         _token.safeApprove(address(dolomiteMargin), _amount);
 
         AccountActionLib.deposit(
@@ -668,6 +685,7 @@ contract ExternalVesterImplementationV1 is
             if (_amount != type(uint256).max) {
                 _setPushedTokens(pushedTokens() - _amount);
             } else {
+                if (pushedTokens() == 0) { /* FOR COVERAGE TESTING */ }
                 Require.that(
                     pushedTokens() == 0,
                     _FILE,
@@ -713,6 +731,7 @@ contract ExternalVesterImplementationV1 is
         uint256 rewardPriceAdj = _getRewardPriceAdj(_duration);
         uint256 paymentPrice = DOLOMITE_MARGIN().getMarketPrice(PAYMENT_MARKET_ID).value;
         paymentAmount = _oTokenAmount * rewardPriceAdj / paymentPrice;
+        if (paymentAmount <= _maxPaymentAmount) { /* FOR COVERAGE TESTING */ }
         Require.that(
             paymentAmount <= _maxPaymentAmount,
             _FILE,
@@ -815,6 +834,7 @@ contract ExternalVesterImplementationV1 is
 
     function _getRewardPriceAdj(uint256 _duration) internal view returns (uint256) {
         uint256 discount = discountCalculator().calculateDiscount(_duration);
+        if (discount <= _BASE) { /* FOR COVERAGE TESTING */ }
         Require.that(
             discount <= _BASE,
             _FILE,
@@ -827,6 +847,7 @@ contract ExternalVesterImplementationV1 is
     }
 
     function _validateEnoughRewardsAvailable(uint256 _oTokenAmount) internal view {
+        if (pushedTokens() >= _oTokenAmount + promisedTokens()) { /* FOR COVERAGE TESTING */ }
         Require.that(
             pushedTokens() >= _oTokenAmount + promisedTokens(),
             _FILE,

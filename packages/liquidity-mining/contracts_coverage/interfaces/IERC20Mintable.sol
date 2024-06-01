@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 /*
 
-    Copyright 2024 Dolomite
+    Copyright 2023 Dolomite
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -22,21 +22,28 @@ pragma solidity ^0.8.9;
 
 
 /**
- * @title   IVesterDiscountCalculator
+ * @title   IERC20Mintable
  * @author  Dolomite
  *
- * Interface for calculating the discount that must be paid by a finished oToken vesting position
+ * @notice  Interface for mintable and burnable tokens
  */
-interface IVesterDiscountCalculator {
+interface IERC20Mintable {
 
     // ======================================================
-    // ================== User Functions ===================
+    // ================== External Functions ================
     // ======================================================
 
     /**
+     * @notice  Mints the provided amount of tokens. Can only be called by dolomite global operator
      *
-     * @param  _duration    The duration of the vesting position in seconds
-     * @return  The discount to be paid by. `20%` is `2,000` and 100% is `10,000`
+     * @param  _amount  The amount of tokens to mint
      */
-    function calculateDiscount(uint256 _duration) external view returns (uint256);
+    function mint(uint256 _amount) external;
+
+    /**
+     * @notice  Burns the provided amount of tokens. Can only be called by dolomite global operator
+     *
+     * @param  _amount  The amount of tokens to burn
+     */
+    function burn(uint256 _amount) external;
 }
