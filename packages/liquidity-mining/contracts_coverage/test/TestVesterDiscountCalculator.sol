@@ -20,24 +20,22 @@
 
 pragma solidity ^0.8.9;
 
+import { IVesterDiscountCalculator } from "../interfaces/IVesterDiscountCalculator.sol";
+
 
 /**
- * @title   IVesterDiscountCalculator
+ * @title   TestVesterDiscountCalculator
  * @author  Dolomite
- *
- * Interface for calculating the discount that must be paid by a finished oToken vesting position
  */
-interface IVesterDiscountCalculator {
+contract TestVesterDiscountCalculator is IVesterDiscountCalculator {
 
-    // ======================================================
-    // ================== User Functions ===================
-    // ======================================================
+    uint256 public discount;
 
-    /**
-     *
-     * @param  _nftId       The ID of the NFT whose discount must be calculated
-     * @param  _duration    The duration of the vesting position in seconds
-     * @return  The discount to be paid by. `20%` is `2,000` and 100% is `10,000`
-     */
-    function calculateDiscount(uint256 _nftId, uint256 _duration) external view returns (uint256);
+    function setDiscount(uint256 _discount) external {
+        discount = _discount;
+    }
+
+    function calculateDiscount(uint256 /* _nftId */, uint256 /* _duration */) external view returns (uint256) {
+        return discount;
+    }
 }

@@ -1,4 +1,5 @@
 import {
+  ADDRESS_ZERO,
   MAX_UINT_256_BI,
   Network,
   ONE_BI,
@@ -39,6 +40,7 @@ import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/co
 import { ExternalOARB, IERC20, IVesterDiscountCalculator, TestExternalVesterImplementationV1 } from '../src/types';
 import {
   createExternalOARB,
+  createTestDiscountCalculator,
   createTestExternalVesterV1Proxy,
   createVesterDiscountCalculatorV1,
 } from './liquidity-mining-ecosystem-utils';
@@ -461,6 +463,33 @@ describe('ExternalVesterV1', () => {
       await expectThrow(vester.ownerOf(NFT_ID), 'ERC721: invalid token ID');
     });
 
+    it('should fail if the discount is invalid', async () => {
+      await setupAllowancesForVesting();
+      const time = ONE_WEEK.mul(40);
+      await vester.vest(time, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT);
+      const vesterAccountNumber = getVesterAccountNumber(core.hhUser1, NFT_ID);
+      await increase(time);
+
+      const paymentAmount = ZERO_BI;
+
+      await expectProtocolBalanceIsGreaterThan(
+        core,
+        { owner: vester.address, number: vesterAccountNumber },
+        pairMarketId,
+        PAIR_AMOUNT,
+        ZERO_BI,
+      );
+      const tester = await createTestDiscountCalculator();
+      await vester.connect(owner).ownerSetDiscountCalculator(tester.address);
+      const discount = 10_001;
+      await tester.setDiscount(discount);
+
+      await expectThrow(
+        vester.closePositionAndBuyTokens(NFT_ID, paymentAmount),
+        `ExternalVesterImplementationV1: Invalid discount <${discount}>`,
+      );
+    });
+
     it('should fail if cost is too high for max payment', async () => {
       await setupAllowancesForVesting();
       await vester.vest(ONE_WEEK, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT);
@@ -596,7 +625,7 @@ describe('ExternalVesterV1', () => {
       await setupAllowancesForVesting();
       await vester.vest(ONE_WEEK, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT);
       const vesterAccountNumber = getVesterAccountNumber(core.hhUser1, NFT_ID);
-      await increase(86400);
+      await increase(ONE_DAY_SECONDS);
 
       const result = await vester.connect(core.hhUser1).emergencyWithdraw(NFT_ID);
       await expectEvent(vester, result, 'EmergencyWithdraw', {
@@ -631,7 +660,7 @@ describe('ExternalVesterV1', () => {
       await setupAllowancesForVesting();
       await vester.vest(ONE_WEEK, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT);
       const vesterAccountNumber = getVesterAccountNumber(core.hhUser1, NFT_ID);
-      await increase(86400);
+      await increase(ONE_DAY_SECONDS);
 
       const result = await vester.connect(core.hhUser1).emergencyWithdraw(NFT_ID);
       const taxAmount = PAIR_AMOUNT.mul(5).div(100);
@@ -690,12 +719,14 @@ describe('ExternalVesterV1', () => {
     });
   });
 
-  describe.only('#ownerDepositRewardToken', () => {
+  describe('#ownerDepositRewardToken', () => {
     it('should work normally', async () => {
       await setupARBBalance(core, owner, REWARD_AMOUNT, vester);
       expect(await vester.pushedTokens()).to.eq(TOTAL_REWARD_AMOUNT);
 
       await vester.connect(owner).ownerDepositRewardToken(REWARD_AMOUNT);
+      await increaseByTimeDelta(ONE_DAY_SECONDS);
+
       expect(await vester.pushedTokens()).to.eq(TOTAL_REWARD_AMOUNT.add(REWARD_AMOUNT));
       await expectWalletBalance(owner, rewardToken, ZERO_BI);
       await expectProtocolBalanceIsGreaterThan(
@@ -711,7 +742,7 @@ describe('ExternalVesterV1', () => {
       await core.dolomiteMargin.connect(owner).setOperators([{ operator: vester.address, trusted: false }]);
       await expectThrow(
         vester.connect(owner).ownerDepositRewardToken(TOTAL_REWARD_AMOUNT),
-        'ExternalVesterImplementationV1: Vester is not an operator for owner',
+        'ExternalVesterImplementationV1: Vester is not operator for owner',
       );
     });
 
@@ -725,7 +756,7 @@ describe('ExternalVesterV1', () => {
 
   describe('#ownerWithdrawRewardToken', () => {
     it('should work normally when bypasses available amount', async () => {
-      await increaseByTimeDelta(86400);
+      await increaseByTimeDelta(ONE_DAY_SECONDS);
       expect(await vester.pushedTokens()).to.eq(TOTAL_REWARD_AMOUNT);
       await vester.connect(owner).ownerWithdrawRewardToken(owner.address, TOTAL_REWARD_AMOUNT, true);
 
@@ -790,6 +821,41 @@ describe('ExternalVesterV1', () => {
     });
   });
 
+  describe('#ownerAccrueRewardTokenInterest', () => {
+    it('should work normally when pushed rewards have been claimed amount', async () => {
+      await increaseByTimeDelta(ONE_DAY_SECONDS);
+      await expectWalletBalance(owner.address, rewardToken, ZERO_BI);
+      expect(await vester.pushedTokens()).to.eq(TOTAL_REWARD_AMOUNT);
+
+      await vester.connect(owner).ownerWithdrawRewardToken(owner.address, TOTAL_REWARD_AMOUNT, false);
+      await vester.connect(owner).ownerAccrueRewardTokenInterest(core.hhUser3.address);
+
+      await expectProtocolBalance(core, vester, defaultAccountNumber, rewardMarketId, ZERO_BI);
+      await expectWalletBalance(owner.address, rewardToken, TOTAL_REWARD_AMOUNT);
+      expect(await vester.pushedTokens()).to.eq(ZERO_BI);
+      await expectWalletBalanceIsBetween(
+        core.hhUser3.address,
+        rewardToken,
+        TOTAL_REWARD_AMOUNT.mul(2).div(10_000),
+        TOTAL_REWARD_AMOUNT.mul(3).div(10_000),
+      );
+    });
+
+    it('should fail if attempting to withdraw all before the pushed tokens are cleared', async () => {
+      await expectThrow(
+        vester.connect(owner).ownerAccrueRewardTokenInterest(owner.address),
+        `ExternalVesterImplementationV1: Interest cannot be withdrawn yet <${TOTAL_REWARD_AMOUNT}>`,
+      );
+    });
+
+    it('should fail if not called by the owner', async () => {
+      await expectThrow(
+        vester.connect(core.hhUser1).ownerAccrueRewardTokenInterest(owner.address),
+        `ExternalVesterImplementationV1: Sender is not owner <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+  });
+
   describe('#ownerSetIsVestingActive', () => {
     it('should work normally', async () => {
       expect(await vester.isVestingActive()).to.eq(true);
@@ -803,6 +869,57 @@ describe('ExternalVesterV1', () => {
     it('should fail if not called by the owner', async () => {
       await expectThrow(
         vester.connect(core.hhUser1).ownerSetIsVestingActive(false),
+        `ExternalVesterImplementationV1: Sender is not owner <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+  });
+
+  describe('#ownerSetDiscountCalculator', () => {
+    it('should work normally', async () => {
+      const tester = await createTestDiscountCalculator();
+      expect(await vester.discountCalculator()).to.eq(discountCalculator.address);
+      const result = await vester.connect(owner).ownerSetDiscountCalculator(tester.address);
+      await expectEvent(vester, result, 'DiscountCalculatorSet', {
+        discountCalculator: tester.address,
+      });
+      expect(await vester.discountCalculator()).to.eq(tester.address);
+    });
+
+    it('should fail if the discount calculator is invalid', async () => {
+      await expectThrow(
+        vester.connect(owner).ownerSetDiscountCalculator(ADDRESS_ZERO),
+        'ExternalVesterImplementationV1: Invalid discount calculator',
+      );
+    });
+
+    it('should fail if not called by the owner', async () => {
+      await expectThrow(
+        vester.connect(core.hhUser1).ownerSetDiscountCalculator(discountCalculator.address),
+        `ExternalVesterImplementationV1: Sender is not owner <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+  });
+
+  describe('#ownerSetOwner', () => {
+    it('should work normally', async () => {
+      expect(await vester.owner()).to.eq(owner.address);
+      const result = await vester.connect(owner).ownerSetOwner(core.hhUser4.address);
+      await expectEvent(vester, result, 'OwnerSet', {
+        owner: core.hhUser4.address,
+      });
+      expect(await vester.owner()).to.eq(core.hhUser4.address);
+    });
+
+    it('should fail if the discount calculator is invalid', async () => {
+      await expectThrow(
+        vester.connect(owner).ownerSetOwner(ADDRESS_ZERO),
+        'ExternalVesterImplementationV1: Invalid owner',
+      );
+    });
+
+    it('should fail if not called by the owner', async () => {
+      await expectThrow(
+        vester.connect(core.hhUser1).ownerSetOwner(discountCalculator.address),
         `ExternalVesterImplementationV1: Sender is not owner <${core.hhUser1.address.toLowerCase()}>`,
       );
     });

@@ -242,6 +242,7 @@ contract ExternalVesterImplementationV1 is
 
         // Deposit payment tokens into Dolomite
         uint256 paymentAmount = _doPaymentForVestExecution(
+            nftId,
             /* _duration = */ 0,
             _oTokenAmount,
             /* _positionOwner = */ msg.sender,
@@ -285,6 +286,7 @@ contract ExternalVesterImplementationV1 is
 
         // Deposit payment tokens into Dolomite
         uint256 paymentAmount = _doPaymentForVestExecution(
+            position.id,
             position.duration,
             position.oTokenAmount,
             positionOwner,
@@ -393,24 +395,29 @@ contract ExternalVesterImplementationV1 is
         );
     }
 
-    function ownerAccrueRewardTokenInterest() external onlyOwner(msg.sender) {
+    function ownerAccrueRewardTokenInterest(address _toAccount) external onlyOwner(msg.sender) {
         // all tokens have been spent
         Require.that(
             pushedTokens() == 0,
             _FILE,
-            "There are unvested tokens",
+            "Interest cannot be withdrawn yet",
             pushedTokens()
         );
 
-        AccountActionLib.transfer(
+        IDolomiteStructs.AssetAmount memory assetAmount = IDolomiteStructs.AssetAmount({
+            sign: false,
+            denomination: IDolomiteStructs.AssetDenomination.Par,
+            ref: IDolomiteStructs.AssetReference.Target,
+            value: 0
+        });
+
+        AccountActionLib.withdraw(
             DOLOMITE_MARGIN(),
             /* _accountOwner = */ address(this),
             /* _fromAccountNumber = */ _DEFAULT_ACCOUNT_NUMBER,
-            /* _toAccountOwner = */ msg.sender,
-            /* _toAccountNumber = */ _DEFAULT_ACCOUNT_NUMBER,
+            /* _toAccount = */ _toAccount,
             REWARD_MARKET_ID,
-            IDolomiteStructs.AssetDenomination.Par,
-            type(uint256).max,
+            assetAmount,
             AccountBalanceLib.BalanceCheckFlag.Both
         );
     }
@@ -548,16 +555,19 @@ contract ExternalVesterImplementationV1 is
         address _discountCalculator
     )
     internal {
+        Require.that(
+            _discountCalculator != address(0),
+            _FILE,
+            "Invalid discount calculator"
+        );
         _setAddress(_DISCOUNT_CALCULATOR_SLOT, _discountCalculator);
         emit DiscountCalculatorSet(_discountCalculator);
     }
 
     function _ownerSetOToken(address _oToken) internal {
-        Require.that(
-            promisedTokens() == 0,
-            _FILE,
-            "Outstanding vesting positions"
-        );
+        // DANGER: this should be called VERY carefully.
+        // Should not change the oToken when there are promised tokens.
+        assert(promisedTokens() == 0);
         _setAddress(_O_TOKEN_SLOT, _oToken);
         emit OTokenSet(_oToken);
     }
@@ -566,7 +576,7 @@ contract ExternalVesterImplementationV1 is
         Require.that(
             _owner != address(0),
             _FILE,
-            "Outstanding vesting positions"
+            "Invalid owner"
         );
         _setAddress(_OWNER_SLOT, _owner);
         emit OwnerSet(_owner);
@@ -665,15 +675,7 @@ contract ExternalVesterImplementationV1 is
         uint256 _amount
     ) internal {
         if (_fromAccountNumber == _DEFAULT_ACCOUNT_NUMBER && _marketId == REWARD_MARKET_ID) {
-            if (_amount != type(uint256).max) {
-                _setPushedTokens(pushedTokens() - _amount);
-            } else {
-                Require.that(
-                    pushedTokens() == 0,
-                    _FILE,
-                    "Interest cannot be withdrawn yet"
-                );
-            }
+            _setPushedTokens(pushedTokens() - _amount);
         }
 
         IDolomiteStructs.AssetAmount memory assetAmount;
@@ -704,13 +706,14 @@ contract ExternalVesterImplementationV1 is
     }
 
     function _doPaymentForVestExecution(
+        uint256 _nftId,
         uint256 _duration,
         uint256 _oTokenAmount,
         address _positionOwner,
         uint256 _maxPaymentAmount
     ) internal returns (uint256 paymentAmount) {
         // Calculate price
-        uint256 rewardPriceAdj = _getRewardPriceAdj(_duration);
+        uint256 rewardPriceAdj = _getRewardPriceAdj(_nftId, _duration);
         uint256 paymentPrice = DOLOMITE_MARGIN().getMarketPrice(PAYMENT_MARKET_ID).value;
         paymentAmount = _oTokenAmount * rewardPriceAdj / paymentPrice;
         Require.that(
@@ -813,8 +816,8 @@ contract ExternalVesterImplementationV1 is
         return _getUint256(_NEXT_ID_SLOT);
     }
 
-    function _getRewardPriceAdj(uint256 _duration) internal view returns (uint256) {
-        uint256 discount = discountCalculator().calculateDiscount(_duration);
+    function _getRewardPriceAdj(uint256 _nftId, uint256 _duration) internal view returns (uint256) {
+        uint256 discount = discountCalculator().calculateDiscount(_nftId, _duration);
         Require.that(
             discount <= _BASE,
             _FILE,

@@ -32,7 +32,7 @@ import {
   RewardsDistributor,
   RewardsDistributor__factory,
   TestExternalVesterImplementationV1,
-  TestExternalVesterImplementationV1__factory,
+  TestExternalVesterImplementationV1__factory, TestVesterDiscountCalculator, TestVesterDiscountCalculator__factory,
   TestVesterImplementationV1,
   TestVesterImplementationV1__factory,
   TestVesterImplementationV2,
@@ -176,6 +176,14 @@ export async function createTestExternalVesterV1Proxy<T extends NetworkType>(
     [implementation.address, core.dolomiteMargin.address, calldata.data!],
   );
   return TestExternalVesterImplementationV1__factory.connect(vesterProxy.address, core.hhUser1);
+}
+
+export async function createTestDiscountCalculator(): Promise<TestVesterDiscountCalculator> {
+  return createContractWithAbi<TestVesterDiscountCalculator>(
+    TestVesterDiscountCalculator__factory.abi,
+    TestVesterDiscountCalculator__factory.bytecode,
+    [],
+  );
 }
 
 export async function createVesterExploder(

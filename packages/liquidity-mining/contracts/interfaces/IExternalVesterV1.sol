@@ -109,8 +109,10 @@ interface IExternalVesterV1 {
     /**
      * @notice  Takes any interest that has accrued (in the form of REWARD_TOKEN) and transfers it from this contract to
      *          the owner. Reverts if `pushedTokens()` does not equal 0 (meaning there are still tokens being vested)
+     *
+     * @param  _toAccount   The account that should receive the accrued interest
      */
-    function ownerAccrueRewardTokenInterest() external;
+    function ownerAccrueRewardTokenInterest(address _toAccount) external;
 
     /**
      * @notice  Sets isVestingActive. Callable by the owner
