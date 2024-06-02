@@ -20,6 +20,7 @@
 
 pragma solidity ^0.8.9;
 
+import { SafeDelegateCallLib } from "@dolomite-exchange/modules-base/contracts/lib/SafeDelegateCallLib.sol";
 import { IWETH } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IWETH.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { VesterImplementationV2 } from "../VesterImplementationV2.sol";
@@ -52,7 +53,8 @@ contract TestVesterImplementationV2 is VesterImplementationV2 {
         uint256 _maxPaymentAmount
     ) external payable nonReentrant {
         // solhint-disable-next-line avoid-low-level-calls
-        (bool isSuccessful, bytes memory result) = address(this).delegatecall(
+        SafeDelegateCallLib.safeDelegateCall(
+            address(this),
             abi.encodeWithSelector(
                 this.closePositionAndBuyTokens.selector,
                 _id,
@@ -61,18 +63,6 @@ contract TestVesterImplementationV2 is VesterImplementationV2 {
                 _maxPaymentAmount
             )
         );
-        if (!isSuccessful) {
-            if (result.length < 68) {
-                revert("No reversion message!");
-            } else {
-                // solhint-disable-next-line no-inline-assembly
-                assembly {
-                    result := add(result, 0x04) // Slice the sighash.
-                }
-            }
-            (string memory errorMessage) = abi.decode(result, (string));
-            revert(errorMessage);
-        }
     }
 
     function nextNftId() external view returns (uint256) {

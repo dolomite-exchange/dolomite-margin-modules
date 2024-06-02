@@ -31,7 +31,7 @@ async function main(): Promise<DenJsonUpload> {
   );
   const implementationAddress = await deployContractAndSave(
     'VesterImplementationV2',
-    getVesterImplementationConstructorParams(core),
+    getVesterImplementationConstructorParams(core, core.tokens.arb),
     undefined,
     { VesterImplementationLibForV2: libAddress },
   );

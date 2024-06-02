@@ -23,53 +23,72 @@ pragma solidity ^0.8.9;
 import { SafeDelegateCallLib } from "@dolomite-exchange/modules-base/contracts/lib/SafeDelegateCallLib.sol";
 import { IWETH } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IWETH.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import { VesterImplementationV2 } from "../VesterImplementationV2.sol";
+import { ExternalVesterImplementationV1 } from "../ExternalVesterImplementationV1.sol";
 
 
 /**
- * @title   TestVesterImplementationV2
+ * @title   TestExternalVesterImplementationV1
  * @author  Dolomite
  *
  * @notice  Test implementation for exposing areas for coverage testing
  */
-contract TestVesterImplementationV2 is VesterImplementationV2 {
+contract TestExternalVesterImplementationV1 is ExternalVesterImplementationV1 {
 
     constructor(
         address _dolomiteMargin,
         address _dolomiteRegistry,
-        IWETH _weth,
-        IERC20 _arb
-    ) VesterImplementationV2(
+        IERC20 _pairToken,
+        IERC20 _paymentToken,
+        IERC20 _rewardToken
+    ) ExternalVesterImplementationV1(
         _dolomiteMargin,
         _dolomiteRegistry,
-        _weth,
-        _arb
+        _pairToken,
+        _paymentToken,
+        _rewardToken
     ) {} // solhint-disable-line
 
-    function callClosePositionAndBuyTokensAndTriggerReentrancy(
-        uint256 _id,
-        uint256 _fromAccountNumber,
-        uint256 _toAccountNumber,
-        uint256 _maxPaymentAmount
+    function callVestAndTriggerReentrancy(
+        uint256 _duration,
+        uint256 _oTokenAmount,
+        uint256 _maxPairAmount
     ) external payable nonReentrant {
-        // solhint-disable-next-line avoid-low-level-calls
         SafeDelegateCallLib.safeDelegateCall(
             address(this),
             abi.encodeWithSelector(
-                this.closePositionAndBuyTokens.selector,
-                _id,
-                _fromAccountNumber,
-                _toAccountNumber,
+                this.vest.selector,
+                _duration,
+                _oTokenAmount,
+                _maxPairAmount
+            )
+        );
+    }
+
+    function callVestInstantlyAndTriggerReentrancy(
+        uint256 _amount,
+        uint256 _maxPaymentAmount
+    ) external payable nonReentrant {
+        SafeDelegateCallLib.safeDelegateCall(
+            address(this),
+            abi.encodeWithSelector(
+                this.vestInstantly.selector,
+                _amount,
                 _maxPaymentAmount
             )
         );
     }
 
-    function nextNftId() external view returns (uint256) {
-        return _nextNftId();
-    }
-
-    function nextRequestId() external view returns (uint256) {
-        return _nextRequestId();
+    function callClosePositionAndBuyTokensAndTriggerReentrancy(
+        uint256 _id,
+        uint256 _maxPaymentAmount
+    ) external payable nonReentrant {
+        SafeDelegateCallLib.safeDelegateCall(
+            address(this),
+            abi.encodeWithSelector(
+                this.closePositionAndBuyTokens.selector,
+                _id,
+                _maxPaymentAmount
+            )
+        );
     }
 }
