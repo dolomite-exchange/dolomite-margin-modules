@@ -35,13 +35,14 @@ import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
+import { createTestToken } from '../../base/src/utils/dolomite-utils';
 import { SignerWithAddressWithSafety } from '../../base/src/utils/SignerWithAddressWithSafety';
 import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
-import { ExternalOARB, IERC20, IVesterDiscountCalculator, TestExternalVesterImplementationV1 } from '../src/types';
+import { ExternalOARB, IERC20, IVesterDiscountCalculator, TestVeExternalVesterImplementationV1 } from '../src/types';
 import {
   createExternalOARB,
   createTestDiscountCalculator,
-  createTestExternalVesterV1Proxy,
+  createTestVeExternalVesterV1Proxy,
   createVesterDiscountCalculatorV1,
 } from './liquidity-mining-ecosystem-utils';
 import { expectEmptyExternalVesterPosition } from './liquidityMining-utils';
@@ -51,9 +52,10 @@ const ONE_WEEK = BigNumber.from('604800');
 const CLOSE_POSITION_WINDOW = ONE_WEEK.mul(4);
 const FORCE_CLOSE_POSITION_TAX = BigNumber.from('500');
 const EMERGENCY_WITHDRAW_TAX = BigNumber.from('0');
-const NAME = 'goARB Vesting';
+const NAME = 'oARB Vesting';
 const SYMBOL = 'vgoARB';
 const BASE_URI = 'oARB LIQUIDITY MINING RULEZ';
+const NO_MARKET_ID = BigNumber.from(-1);
 
 const O_TOKEN_AMOUNT = parseEther('1');
 const PAIR_AMOUNT = BigNumber.from('1500000'); // 1.5 USDC
@@ -65,17 +67,18 @@ const TOTAL_REWARD_AMOUNT = parseEther('1000');
 const PERCENTAGE_BASE = BigNumber.from(10_000);
 
 const NFT_ID = ONE_BI;
+const VE_TOKEN_ID = ONE_BI;
 
 const PAYMENT_TOKEN_PRICE = parseEther('1000'); // $1,000
 const PAIR_TOKEN_PRICE = BigNumber.from('1000000000000000000000000000000'); // $1
 const REWARD_TOKEN_PRICE = parseEther('1.50'); // $1.50
 
-describe('ExternalVesterV1', () => {
+describe('VeExternalVesterV1', () => {
   let snapshotId: string;
 
   let core: CoreProtocolArbitrumOne;
 
-  let vester: TestExternalVesterImplementationV1;
+  let vester: TestVeExternalVesterImplementationV1;
   let discountCalculator: IVesterDiscountCalculator;
   let oToken: ExternalOARB;
   let pairMarketId: BigNumberish;
@@ -88,12 +91,14 @@ describe('ExternalVesterV1', () => {
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
-    pairToken = core.tokens.usdc;
+    const testToken = await createTestToken();
+
+    pairToken = testToken;
     paymentToken = core.tokens.weth;
-    rewardToken = core.tokens.arb;
-    pairMarketId = core.marketIds.usdc;
+    rewardToken = testToken;
+    pairMarketId = NO_MARKET_ID;
     paymentMarketId = core.marketIds.weth;
-    rewardMarketId = core.marketIds.arb;
+    rewardMarketId = NO_MARKET_ID;
 
     const interestRate = parseEther('0.30').div(ONE_DAY_SECONDS * 365); // 30% APR
     await core.testEcosystem!.testInterestSetter.setInterestRate(pairToken.address, { value: interestRate });
@@ -111,17 +116,16 @@ describe('ExternalVesterV1', () => {
     await core.dolomiteMargin.ownerSetPriceOracle(rewardMarketId, core.testEcosystem!.testPriceOracle.address);
 
     discountCalculator = await createVesterDiscountCalculatorV1();
-    owner = core.hhUser4;
-    oToken = await createExternalOARB(owner, 'Gravita oARB', 'goARB');
+    owner = core.governance;
+    oToken = await createExternalOARB(owner, 'Test oARB', 'oARB');
 
-    vester = await createTestExternalVesterV1Proxy(
+    vester = await createTestVeExternalVesterV1Proxy(
       core,
       paymentToken,
       pairToken,
       rewardToken,
       discountCalculator,
       oToken,
-      owner,
       BASE_URI,
       NAME,
       SYMBOL,
@@ -185,7 +189,6 @@ describe('ExternalVesterV1', () => {
 
       expect(await vester.discountCalculator()).to.eq(discountCalculator.address);
       expect(await vester.oToken()).to.eq(oToken.address);
-      expect(await vester.owner()).to.eq(owner.address);
       expect(await vester.pushedTokens()).to.eq(TOTAL_REWARD_AMOUNT);
       expect(await vester.availableTokens()).to.eq(TOTAL_REWARD_AMOUNT);
       expect(await vester.promisedTokens()).to.eq(ZERO_BI);
@@ -290,90 +293,6 @@ describe('ExternalVesterV1', () => {
       await setupAllowancesForVesting();
       await expectThrow(
         vester.connect(core.hhUser1).callVestAndTriggerReentrancy(ONE_WEEK, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT),
-        'ReentrancyGuardUpgradeable: Reentrant call',
-      );
-    });
-  });
-
-  describe('#vestInstantly', () => {
-    it('should work with normally', async () => {
-      await setupAllowancesForVesting();
-
-      const paymentAmount = PAYMENT_AMOUNT_BEFORE_DISCOUNT.mul(8_000).div(PERCENTAGE_BASE);
-      const result = await vester.vestInstantly(O_TOKEN_AMOUNT, MAX_PAYMENT_AMOUNT);
-      await expectEvent(vester, result, 'VestingStarted', {
-        owner: core.hhUser1.address,
-        duration: ZERO_BI,
-        oTokenAmount: O_TOKEN_AMOUNT,
-        pairAmount: ZERO_BI,
-        vestingId: NFT_ID,
-      });
-      await expectEvent(vester, result, 'PositionClosed', {
-        owner: core.hhUser1.address,
-        vestingId: NFT_ID,
-        amountPaid: paymentAmount,
-      });
-
-      await expectWalletBalance(core.hhUser1.address, oToken, ZERO_BI);
-      await expectWalletBalance(core.hhUser1.address, pairToken, PAIR_AMOUNT.mul(2));
-      await expectWalletBalance(core.hhUser1.address, paymentToken, parseEther('0.00045'));
-
-      const vesterAccountNumber = getVesterAccountNumber(core.hhUser1, NFT_ID);
-
-      await expectWalletBalance(vester, oToken, ZERO_BI);
-      await expectWalletBalance(vester, pairToken, ZERO_BI);
-      await expectWalletBalance(vester, paymentToken, ZERO_BI);
-      await expectProtocolBalance(core, vester, vesterAccountNumber, pairMarketId, ZERO_BI);
-      await expectProtocolBalance(core, vester, vesterAccountNumber, paymentMarketId, ZERO_BI);
-      // make sure interest accrues to the wallet
-      await expectProtocolBalanceIsGreaterThan(
-        core,
-        { owner: vester.address, number: ZERO_BI },
-        rewardMarketId,
-        TOTAL_REWARD_AMOUNT.sub(REWARD_AMOUNT),
-        ZERO_BI,
-      );
-      await expectProtocolBalance(core, owner, ZERO_BI, pairMarketId, ZERO_BI);
-      await expectProtocolBalance(core, owner, ZERO_BI, paymentMarketId, paymentAmount);
-      expect(await vester.pushedTokens()).to.eq(TOTAL_REWARD_AMOUNT.sub(O_TOKEN_AMOUNT));
-      expect(await vester.promisedTokens()).to.eq(ZERO_BI);
-      expect(await vester.availableTokens()).to.eq(TOTAL_REWARD_AMOUNT.sub(O_TOKEN_AMOUNT));
-
-      await expectThrow(vester.ownerOf(NFT_ID), 'ERC721: invalid token ID');
-      expectEmptyExternalVesterPosition(await vester.vestingPositions(NFT_ID));
-    });
-
-    it('should fail if PAYMENT_TOKEN exceeds max', async () => {
-      await setupAllowancesForVesting();
-
-      await expectThrow(
-        vester.connect(core.hhUser1).vestInstantly(O_TOKEN_AMOUNT, ONE_BI),
-        'ExternalVesterImplementationV1: Cost exceeds max payment amount',
-      );
-    });
-
-    it('should fail if vester has insufficient REWARD_TOKEN', async () => {
-      await setupAllowancesForVesting();
-
-      await vester.connect(owner).ownerWithdrawRewardToken(owner.address, TOTAL_REWARD_AMOUNT, false);
-      await expectThrow(
-        vester.connect(core.hhUser1).vestInstantly(O_TOKEN_AMOUNT, MAX_PAYMENT_AMOUNT),
-        'ExternalVesterImplementationV1: Not enough rewards available',
-      );
-    });
-
-    it('should fail if vesting is not active', async () => {
-      await vester.connect(owner).ownerSetIsVestingActive(false);
-      await expectThrow(
-        vester.vestInstantly(O_TOKEN_AMOUNT, MAX_PAYMENT_AMOUNT),
-        'ExternalVesterImplementationV1: Vesting not active',
-      );
-    });
-
-    it('should fail if reentered', async () => {
-      await setupAllowancesForVesting();
-      await expectThrow(
-        vester.connect(core.hhUser1).callVestInstantlyAndTriggerReentrancy(O_TOKEN_AMOUNT, MAX_PAYMENT_AMOUNT),
         'ReentrancyGuardUpgradeable: Reentrant call',
       );
     });

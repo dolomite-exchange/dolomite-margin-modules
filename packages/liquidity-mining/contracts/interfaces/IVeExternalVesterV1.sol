@@ -23,6 +23,7 @@ pragma solidity ^0.8.9;
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IERC20Mintable } from "./IERC20Mintable.sol";
 import { IVesterDiscountCalculator } from "./IVesterDiscountCalculator.sol";
+import { IVeToken } from "./IVeToken.sol";
 
 
 /**
@@ -170,6 +171,8 @@ interface IVeExternalVesterV1 {
     function REWARD_MARKET_ID() external view returns (uint256);
     function REWARD_TOKEN() external view returns (IERC20);
 
+    function VE_TOKEN() external view returns (IVeToken);
+
     /**
      *
      * @param  _data encoded bytes data that resolves to (address oToken, string _baseUri)
@@ -194,11 +197,13 @@ interface IVeExternalVesterV1 {
     /**
      * @notice  Burns the vested oToken tokens and sends vested and newly purchased ARB to user's dolomite balance
      *
-     * @param  _id                  The id of the position that is fully vested
+     * @param  _nftId               The id of the position that is fully vested
+     * @param  _veTokenId           The id of the veToken that will receive the reward tokens
      * @param  _maxPaymentAmount    The maximum amount of ETH to pay for the position
      */
     function closePositionAndBuyTokens(
-        uint256 _id,
+        uint256 _nftId,
+        uint256 _veTokenId,
         uint256 _maxPaymentAmount
     ) external;
 

@@ -14,7 +14,7 @@ import {
   getExternalVesterImplementationConstructorParams,
   getExternalVesterInitializationCalldata,
   getOARBConstructorParams,
-  getRewardsDistributorConstructorParams,
+  getRewardsDistributorConstructorParams, getVeExternalVesterInitializationCalldata,
   getVesterExploderConstructorParams,
   getVesterImplementationConstructorParams,
 } from '../src/liquidity-mining-constructors';
@@ -32,7 +32,10 @@ import {
   RewardsDistributor,
   RewardsDistributor__factory,
   TestExternalVesterImplementationV1,
-  TestExternalVesterImplementationV1__factory, TestVesterDiscountCalculator, TestVesterDiscountCalculator__factory,
+  TestExternalVesterImplementationV1__factory,
+  TestVeExternalVesterImplementationV1, TestVeExternalVesterImplementationV1__factory,
+  TestVesterDiscountCalculator,
+  TestVesterDiscountCalculator__factory,
   TestVesterImplementationV1,
   TestVesterImplementationV1__factory,
   TestVesterImplementationV2,
@@ -178,6 +181,34 @@ export async function createTestExternalVesterV1Proxy<T extends NetworkType>(
   return TestExternalVesterImplementationV1__factory.connect(vesterProxy.address, core.hhUser1);
 }
 
+export async function createTestVeExternalVesterV1Proxy<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  paymentToken: IERC20,
+  pairToken: IERC20,
+  rewardToken: IERC20,
+  discountCalculator: IVesterDiscountCalculator,
+  oToken: IERC20,
+  baseUri: string,
+  name: string,
+  symbol: string,
+): Promise<TestVeExternalVesterImplementationV1> {
+  const safeDelegateCallLib = await createContractWithName('SafeDelegateCallLib', []);
+  const implementation = await createContractWithLibrary<TestVeExternalVesterImplementationV1>(
+    'TestVeExternalVesterImplementationV1',
+    { SafeDelegateCallLib: safeDelegateCallLib.address },
+    getExternalVesterImplementationConstructorParams(core, pairToken, paymentToken, rewardToken),
+  );
+  const implementationCalldata = await implementation.populateTransaction.initialize(
+    getVeExternalVesterInitializationCalldata(discountCalculator, oToken, baseUri, name, symbol),
+  );
+  const vesterProxy = await createContractWithAbi<UpgradeableProxy>(
+    UpgradeableProxy__factory.abi,
+    UpgradeableProxy__factory.bytecode,
+    getUpgradeableProxyConstructorParams(implementation.address, implementationCalldata, core.dolomiteMargin),
+  );
+  return TestVeExternalVesterImplementationV1__factory.connect(vesterProxy.address, core.hhUser1);
+}
+
 export async function createTestDiscountCalculator(): Promise<TestVesterDiscountCalculator> {
   return createContractWithAbi<TestVesterDiscountCalculator>(
     TestVesterDiscountCalculator__factory.abi,
@@ -212,7 +243,7 @@ export async function createMineralToken(core: CoreProtocolArbitrumOne): Promise
   const proxy = await createContractWithAbi<UpgradeableProxy>(
     UpgradeableProxy__factory.abi,
     UpgradeableProxy__factory.bytecode,
-    getUpgradeableProxyConstructorParams(implementation.address, initializeCalldata.data!, core.dolomiteMargin),
+    getUpgradeableProxyConstructorParams(implementation.address, initializeCalldata, core.dolomiteMargin),
   );
 
   return MineralToken__factory.connect(proxy.address, core.hhUser1);

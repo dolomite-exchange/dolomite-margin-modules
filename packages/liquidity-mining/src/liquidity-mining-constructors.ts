@@ -55,6 +55,25 @@ export function getExternalVesterInitializationCalldata(
   );
 }
 
+export function getVeExternalVesterInitializationCalldata(
+  discountCalculator: IVesterDiscountCalculator,
+  oToken: IERC20,
+  baseUri: string,
+  name: string,
+  symbol: string,
+): string {
+  return ethers.utils.defaultAbiCoder.encode(
+    ['address', 'address', 'string', 'string', 'string'],
+    [
+      discountCalculator.address,
+      oToken.address,
+      baseUri,
+      name,
+      symbol,
+    ],
+  );
+}
+
 export async function getVesterV1ProxyConstructorParams(
   core: CoreProtocolArbitrumOne,
   vesterImplementation: VesterImplementationV1,

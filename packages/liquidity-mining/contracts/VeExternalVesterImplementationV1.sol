@@ -36,6 +36,8 @@ import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { IERC20Mintable } from "./interfaces/IERC20Mintable.sol";
 import { IVeExternalVesterV1 } from "./interfaces/IVeExternalVesterV1.sol";
 import { IVesterDiscountCalculator } from "./interfaces/IVesterDiscountCalculator.sol";
+import { IVeToken } from "./interfaces/IVeToken.sol";
+
 
 /**
  * @title   VeExternalVesterImplementationV1
@@ -60,10 +62,11 @@ contract VeExternalVesterImplementationV1 is
 
     bytes32 private constant _FILE = "VeExternalVesterImplementationV1";
     uint256 private constant _BASE = 10_000;
-    uint256 private constant _NO_MARKET_ID = -1;
+    uint256 private constant _NO_MARKET_ID = type(uint256).max;
 
     uint256 private constant _DEFAULT_ACCOUNT_NUMBER = 0;
-    uint256 private constant _VEST_DURATION = 4 weeks;
+    uint256 private constant _ONE_WEEK = 1 weeks;
+    uint256 private constant _VEST_DURATION = _ONE_WEEK * 4;
 
     // solhint-disable max-line-length
     bytes32 private constant _BASE_URI_SLOT = bytes32(uint256(keccak256("eip1967.proxy.baseURI")) - 1);
@@ -91,7 +94,7 @@ contract VeExternalVesterImplementationV1 is
     uint256 public override immutable PAYMENT_MARKET_ID; // solhint-disable-line
     IERC20 public override immutable REWARD_TOKEN; // solhint-disable-line
     uint256 public override immutable REWARD_MARKET_ID; // solhint-disable-line
-    address public override immutable VE_TOKEN; // solhint-disable-line
+    IVeToken public override immutable VE_TOKEN; // solhint-disable-line
 
     // =========================================================
     // ======================= Modifiers =======================
@@ -128,7 +131,7 @@ contract VeExternalVesterImplementationV1 is
         PAYMENT_MARKET_ID = _paymentMarketId;
         REWARD_TOKEN = _rewardToken;
         REWARD_MARKET_ID = _rewardMarketId;
-        VE_TOKEN = _veToken;
+        VE_TOKEN = IVeToken(_veToken);
     }
 
     function initialize(
@@ -148,7 +151,7 @@ contract VeExternalVesterImplementationV1 is
         _ownerSetDiscountCalculator(_discountCalculator);
         _ownerSetOToken(_oToken);
         _ownerSetClosePositionWindow(0 weeks);
-        _ownerSetForceClosePositionTax(500); // 5%
+        _ownerSetForceClosePositionTax(0); // 0%
         _ownerSetEmergencyWithdrawTax(0); // 0%
         _ownerSetBaseURI(_baseUri);
         __ERC721_init(_name, _symbol);
@@ -180,8 +183,8 @@ contract VeExternalVesterImplementationV1 is
         uint256 nftId = _nextId() + 1;
         _setNextId(nftId);
 
-        uint256 pairPrice = DOLOMITE_REGISTRY.oracleAggregator().getPrice(PAIR_TOKEN).value;
-        uint256 rewardPrice = DOLOMITE_REGISTRY.oracleAggregator().getPrice(REWARD_TOKEN).value;
+        uint256 pairPrice = DOLOMITE_REGISTRY.oracleAggregator().getPrice(address(PAIR_TOKEN)).value;
+        uint256 rewardPrice = DOLOMITE_REGISTRY.oracleAggregator().getPrice(address(REWARD_TOKEN)).value;
         uint256 pairAmount = _oTokenAmount * rewardPrice / pairPrice;
         Require.that(
             pairAmount <= _maxPairAmount,
@@ -217,14 +220,15 @@ contract VeExternalVesterImplementationV1 is
     }
 
     function closePositionAndBuyTokens(
-        uint256 _id,
+        uint256 _nftId,
+        uint256 _veTokenId,
         uint256 _maxPaymentAmount
     )
     external
     nonReentrant {
-        VestingPosition memory position = _getVestingPositionSlot(_id);
-        uint256 accountNumber = calculateAccountNumber(position.creator, _id);
-        address positionOwner = ownerOf(_id);
+        VestingPosition memory position = _getVestingPositionSlot(_nftId);
+        uint256 accountNumber = calculateAccountNumber(position.creator, _nftId);
+        address positionOwner = ownerOf(_nftId);
         Require.that(
             positionOwner == msg.sender,
             _FILE,
@@ -250,7 +254,7 @@ contract VeExternalVesterImplementationV1 is
             _maxPaymentAmount
         );
 
-        // Withdraw pair tokens from dolomite, going to account
+        // Withdraw pair tokens from Dolomite, going to account
         _withdrawFromDolomite(
             /* _fromAccountNumber = */ accountNumber,
             /* _toAccount = */ positionOwner,
@@ -259,15 +263,19 @@ contract VeExternalVesterImplementationV1 is
             /* _amount */ type(uint256).max
         );
 
-        // Withdraw reward tokens from Dolomite, going to account
+        // Withdraw reward tokens from Dolomite, going to this contract
         _withdrawFromDolomite(
             /* _fromAccountNumber = */ _DEFAULT_ACCOUNT_NUMBER,
-            /* _toAccount = */ positionOwner,
+            /* _toAccount = */ address(this),
+            /* _token */ REWARD_TOKEN,
             /* _marketId */ REWARD_MARKET_ID,
             /* amount */ position.oTokenAmount
         );
 
-        emit PositionClosed(positionOwner, _id, paymentAmount);
+        REWARD_TOKEN.safeApprove(address(VE_TOKEN), position.oTokenAmount);
+        VE_TOKEN.addToLock(_veTokenId, position.oTokenAmount);
+
+        emit PositionClosed(positionOwner, _nftId, paymentAmount);
     }
 
     function forceClosePosition(
@@ -348,6 +356,7 @@ contract VeExternalVesterImplementationV1 is
         _withdrawFromDolomite(
             _DEFAULT_ACCOUNT_NUMBER,
             /* _toAccount */ _toAccount,
+            REWARD_TOKEN,
             REWARD_MARKET_ID,
             _amount
         );
@@ -520,7 +529,7 @@ contract VeExternalVesterImplementationV1 is
 
     function _ownerSetClosePositionWindow(uint256 _closePositionWindow) internal {
         Require.that(
-            _closePositionWindow >= _MIN_DURATION || _closePositionWindow == 0,
+            _closePositionWindow >= _ONE_WEEK || _closePositionWindow == 0,
             _FILE,
             "Invalid close position window"
         );
@@ -577,7 +586,7 @@ contract VeExternalVesterImplementationV1 is
     ) internal returns (uint256 paymentAmount) {
         // Calculate price
         uint256 rewardPriceAdj = _getRewardPriceAdj(_nftId, _duration);
-        uint256 paymentPrice = DOLOMITE_REGISTRY.oracleAggregator().getPrice(PAYMENT_TOKEN).value;
+        uint256 paymentPrice = DOLOMITE_REGISTRY.oracleAggregator().getPrice(address(PAYMENT_TOKEN)).value;
         paymentAmount = _oTokenAmount * rewardPriceAdj / paymentPrice;
         Require.that(
             paymentAmount <= _maxPaymentAmount,
@@ -690,16 +699,14 @@ contract VeExternalVesterImplementationV1 is
     ) internal {
         if (
             _fromAccountNumber == _DEFAULT_ACCOUNT_NUMBER &&
-            _marketId == REWARD_MARKET_ID
+            _token == REWARD_TOKEN
         ) {
             _setPushedTokens(pushedTokens() - _amount);
         }
 
         if (_marketId == _NO_MARKET_ID) {
-            if (_amount != type(uint256).max) {
-                // Guard statement for _NO_MARKET_ID
-                _token.safeTransfer(_toAccount, _amount);
-            }
+            // Guard statement for _NO_MARKET_ID
+            _token.safeTransfer(_toAccount, _amount);
             return;
         }
 
@@ -789,7 +796,7 @@ contract VeExternalVesterImplementationV1 is
             discount
         );
 
-        uint256 rewardPrice = DOLOMITE_REGISTRY.oracleAggregator().getPrice(REWARD_TOKEN).value;
+        uint256 rewardPrice = DOLOMITE_REGISTRY.oracleAggregator().getPrice(address(REWARD_TOKEN)).value;
         return rewardPrice - (rewardPrice * discount / _BASE);
     }
 
