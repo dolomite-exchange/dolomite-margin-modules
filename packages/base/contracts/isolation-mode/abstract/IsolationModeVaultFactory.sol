@@ -52,6 +52,7 @@ abstract contract IsolationModeVaultFactory is
     // ===================================================
 
     bytes32 private constant _FILE = "IsolationModeVaultFactory";
+    address private constant _DEAD_VAULT = 0x000000000000000000000000000000000000dEaD;
 
     // ==================================================
     // ================ Immutable Fields ================
@@ -134,6 +135,8 @@ abstract contract IsolationModeVaultFactory is
         UNDERLYING_TOKEN = _underlyingToken;
         BORROW_POSITION_PROXY = IBorrowPositionProxyV2(_borrowPositionProxyV2);
         userVaultImplementation = _userVaultImplementation;
+
+        _createVault(_DEAD_VAULT);
     }
 
     // =================================================
@@ -432,8 +435,12 @@ abstract contract IsolationModeVaultFactory is
         emit VaultCreated(_account, vault);
         _vaultToUserMap[vault] = _account;
         _userToVaultMap[_account] = vault;
-        IIsolationModeUpgradeableProxy(vault).initialize(_account);
-        BORROW_POSITION_PROXY.setIsCallerAuthorized(vault, true);
+
+        if (_account != _DEAD_VAULT) {
+            IIsolationModeUpgradeableProxy(vault).initialize(_account);
+            BORROW_POSITION_PROXY.setIsCallerAuthorized(vault, true);
+        }
+
         return vault;
     }
 

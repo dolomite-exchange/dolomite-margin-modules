@@ -38,7 +38,8 @@ import { CoreProtocolType } from '@dolomite-exchange/modules-base/test/utils/set
 import {
   CoreProtocolWithChainlinkOld,
   CoreProtocolWithChainlinkV3,
-  CoreProtocolWithChronicle, CoreProtocolWithRedstone,
+  CoreProtocolWithChronicle,
+  CoreProtocolWithRedstone,
 } from '@dolomite-exchange/modules-oracles/src/oracles-constructors';
 import { IChainlinkAggregator__factory, IChronicleScribe__factory } from '@dolomite-exchange/modules-oracles/src/types';
 import {
@@ -309,11 +310,37 @@ export async function deployContractAndSave(
 
   console.log(`\tDeploying ${usedContractName} to network ${network.name}...`);
 
+  const blockNumber = await ethers.provider.getBlockNumber();
   let contract: BaseContract;
   try {
     contract = libraries
       ? await createContractWithLibrary(contractName, libraries, args)
       : await createContractWithName(contractName, args);
+
+    if (network.name !== 'hardhat') {
+      const receipt = await ethers.provider.getTransactionReceipt(contract.deployTransaction.hash);
+      const vaultCreatedTopic0 = '0x5d9c31ffa0fecffd7cf379989a3c7af252f0335e0d2a1320b55245912c781f53';
+      const event = receipt.logs.find(l => l.topics[0] === vaultCreatedTopic0);
+      if (event) {
+        const vaultAddress = ethers.utils.defaultAbiCoder.decode(['address'], event.data)[0];
+        const vaultRename = `${usedContractName}DeadProxy`;
+        file[vaultRename] = {
+          ...file[vaultRename],
+          [chainId]: {
+            address: vaultAddress,
+            transaction: contract.deployTransaction.hash,
+            isVerified: false,
+          },
+        };
+        writeDeploymentFile(file);
+
+        return deployContractAndSave(
+          'IsolationModeUpgradeableProxy',
+          [],
+          vaultRename,
+        );
+      }
+    }
   } catch (e) {
     console.error(`\tCould not deploy at attempt ${attempts + 1} due for ${contractName} to error:`, e);
     return deployContractAndSave(contractName, args, contractRename, libraries, attempts + 1);
