@@ -20,17 +20,18 @@
 pragma solidity ^0.8.9;
 
 import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
-import { IOARB } from "./interfaces/IOARB.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { IERC20Mintable } from "./interfaces/IERC20Mintable.sol";
 
 
 /**
- * @title   MintableStorageVault.sol
+ * @title   MintableStorageVault
  * @author  Dolomite
  *
  * OARB Storage Vault contract that mints oARB when pullTokensFromVault is called
  * WARNING: THIS CODE HAS NOT BEEN THOROUGHLY TESTED AND IS NOT PRODUCTION READY
  */
-contract OARBStorageVault is OnlyDolomiteMargin {
+contract MintableStorageVault is OnlyDolomiteMargin {
 
     // ===================================================
     // ==================== Constants ====================
@@ -38,7 +39,7 @@ contract OARBStorageVault is OnlyDolomiteMargin {
 
     bytes32 private constant _FILE = "oARBStorageVault";
 
-    IOARB public oARB;
+    IERC20Mintable public oARB;
 
     // ==================================================================
     // ======================= Constructor =======================
@@ -46,7 +47,7 @@ contract OARBStorageVault is OnlyDolomiteMargin {
 
     constructor(
         address _dolomiteMargin,
-        IOARB _oARB
+        IERC20Mintable _oARB
     ) OnlyDolomiteMargin(_dolomiteMargin) {
         oARB = _oARB;
     }
@@ -57,6 +58,6 @@ contract OARBStorageVault is OnlyDolomiteMargin {
 
     function pullTokensFromVault(uint256 _amount) external onlyDolomiteMarginGlobalOperator(msg.sender) {
         oARB.mint(_amount);
-        oARB.transfer(msg.sender, _amount);
+        IERC20(address(oARB)).transfer(msg.sender, _amount);
     }
 }

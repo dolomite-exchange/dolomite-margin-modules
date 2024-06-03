@@ -20,42 +20,77 @@
 
 pragma solidity ^0.8.9;
 
-import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import { IERC20Mintable } from "./interfaces/IERC20Mintable.sol";
 
 
 /**
- * @title   OARB
+ * @title   ExternalOARB
  * @author  Dolomite
  *
  * ERC20 contract for oARB tokens
  */
-contract OARB is ERC20, OnlyDolomiteMargin, IERC20Mintable {
+contract ExternalOARB is ERC20, Ownable {
+
+    // ===================================================
+    // ====================== Events =====================
+    // ===================================================
+
+    event HandlerSet(address indexed handler, bool isTrusted);
+
+    // ===================================================
+    // ==================== Modifiers ====================
+    // ===================================================
+
+    modifier onlyHandler() {
+        require(_handlersMap[msg.sender], "oARB: Invalid handler");
+        _;
+    }
 
     // ===================================================
     // ==================== Constants ====================
     // ===================================================
 
-    bytes32 private constant _FILE = "oARBToken";
+    mapping(address => bool) _handlersMap;
 
     // ==================================================================
     // ======================= Constructor =======================
     // ==================================================================
 
     constructor(
-        address _dolomiteMargin
-    ) ERC20("oARB Token", "oARB") OnlyDolomiteMargin(_dolomiteMargin) {} // solhint-disable-line no-empty-blocks
+        address _owner,
+        string memory _name,
+        string memory _symbol
+    ) ERC20(_name, _symbol) {
+        _transferOwnership(_owner);
+    }
 
     // ==================================================================
     // ======================= External Functions =======================
     // ==================================================================
 
-    function mint(uint256 _amount) external onlyDolomiteMarginGlobalOperator(msg.sender) {
+    function ownerSetHandler(address _handler, bool _isTrusted) external onlyOwner {
+        _handlersMap[_handler] = _isTrusted;
+        emit HandlerSet(_handler, _isTrusted);
+    }
+
+    function ownerMint(uint256 _amount) external onlyOwner {
         _mint(msg.sender, _amount);
     }
 
-    function burn(uint256 _amount) external onlyDolomiteMarginGlobalOperator(msg.sender) {
+    function ownerBurn(uint256 _amount) external onlyOwner {
         _burn(msg.sender, _amount);
+    }
+
+    function mint(uint256 _amount) external onlyHandler {
+        _mint(msg.sender, _amount);
+    }
+
+    function burn(uint256 _amount) external onlyHandler {
+        _burn(msg.sender, _amount);
+    }
+
+    function isHandler(address _handler) external view returns (bool) {
+        return _handlersMap[_handler];
     }
 }
