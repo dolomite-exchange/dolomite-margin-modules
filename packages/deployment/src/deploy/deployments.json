@@ -2837,6 +2837,13 @@
       "isVerified": true
     }
   },
+  "SafeGettersForDolomiteMarginV1": {
+    "42161": {
+      "address": "0x9381942De7A66fdB4741272EaB4fc0A362F7a16a",
+      "transaction": "0xb3223383cc7531c7a2ceb8dbaa4b65f99858e2ef8db3c0116a757f0795638567",
+      "isVerified": true
+    }
+  },
   "SizeTWAPPriceOracleV1": {
     "42161": {
       "address": "0xAd635C94F1855De31add582ac4ce0DaB699f9B1b",

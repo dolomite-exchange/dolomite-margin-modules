@@ -22,7 +22,7 @@ import {
   getRegistryProxyConstructorParams,
 } from '@dolomite-exchange/modules-base/src/utils/constructors/dolomite';
 import { getAnyNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { ADDRESS_ZERO, NetworkType } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { ADDRESS_ZERO, Network, NetworkType } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '@dolomite-exchange/modules-base/src/utils/SignerWithAddressWithSafety';
 import {
   getRealLatestBlockNumber,
@@ -31,13 +31,9 @@ import {
 } from '@dolomite-exchange/modules-base/test/utils';
 import { DolomiteMargin } from '@dolomite-exchange/modules-base/test/utils/dolomite';
 import { getDolomiteMarginContract, getExpiryContract } from '@dolomite-exchange/modules-base/test/utils/setup';
-import {
-  getLinearStepFunctionInterestSetterConstructorParams,
-} from '@dolomite-exchange/modules-interest-setters/src/interest-setters-constructors';
+import { getLinearStepFunctionInterestSetterConstructorParams } from '@dolomite-exchange/modules-interest-setters/src/interest-setters-constructors';
 import { TokenInfo } from '@dolomite-exchange/modules-oracles/src';
-import {
-  getChainlinkPriceOracleV3ConstructorParams,
-} from '@dolomite-exchange/modules-oracles/src/oracles-constructors';
+import { getChainlinkPriceOracleV3ConstructorParams } from '@dolomite-exchange/modules-oracles/src/oracles-constructors';
 import {
   IChainlinkAggregator__factory,
   OracleAggregatorV2,
@@ -186,6 +182,14 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     CoreDeployments.LiquidatorAssetRegistry[network].address,
     hhUser1,
   );
+
+  if (network === Network.ArbitrumOne) {
+    await deployContractAndSave(
+      'SafeGettersForDolomiteMargin',
+      [dolomiteMargin.address],
+      getMaxDeploymentVersionNameByDeploymentKey('SafeGettersForDolomiteMargin', 1),
+    );
+  }
 
   const eventEmitterRegistryImplementationAddress = await deployContractAndSave(
     'EventEmitterRegistry',
