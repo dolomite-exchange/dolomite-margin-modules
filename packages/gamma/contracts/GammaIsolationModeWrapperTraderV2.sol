@@ -101,7 +101,8 @@ contract GammaIsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2 {
         address aggregatorOutputToken = token0 == _inputToken ? token1 : token0;
 
         uint256 outputAmount = _doAggregatorSwap(_inputToken, aggregatorOutputToken, swapAmount, _extraOrderData);
-
+        // @note Take balance before and then balance after the swap and use the difference
+        // @note Use safeTransfer -- I can't believe I always do this
         uint256 amountOut1 = _depositReserves(
             aggregatorOutputToken == token0 ? outputAmount : _inputAmount - swapAmount, 
             aggregatorOutputToken == token1 ? outputAmount : _inputAmount - swapAmount,
@@ -111,6 +112,7 @@ contract GammaIsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2 {
 
         _doDeltaSwap(token0, token1);
 
+        // @note Blind balanceOf calls can be dangerous. DOS attack for example
         uint256 amountOut2 = _depositReserves(
             IERC20(token0).balanceOf(address(this)),
             IERC20(token1).balanceOf(address(this)),
@@ -137,8 +139,8 @@ contract GammaIsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2 {
         amountsMin[1] = 1;
 
         // @follow-up These safeApproves were failing because 1st depositReserves call
-        IERC20(_token0).approve(address(GAMMA_REGISTRY.gammaPositionManager()), _tokenAmount0);
-        IERC20(_token1).approve(address(GAMMA_REGISTRY.gammaPositionManager()), _tokenAmount1);
+        IERC20(_token0).safeApprove(address(GAMMA_REGISTRY.gammaPositionManager()), _tokenAmount0);
+        IERC20(_token1).safeApprove(address(GAMMA_REGISTRY.gammaPositionManager()), _tokenAmount1);
 
         IGammaPositionManager.DepositReservesParams memory depositReservesParams = 
             IGammaPositionManager.DepositReservesParams({
@@ -150,6 +152,8 @@ contract GammaIsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2 {
                 amountsMin: amountsMin
             });
         (, uint256 amountOut) = GAMMA_REGISTRY.gammaPositionManager().depositReserves(depositReservesParams);
+        IERC20(_token0).safeApprove(address(GAMMA_REGISTRY.gammaPositionManager()), 0);
+        IERC20(_token1).safeApprove(address(GAMMA_REGISTRY.gammaPositionManager()), 0);
         return amountOut;
     }
 
@@ -160,7 +164,7 @@ contract GammaIsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2 {
         bytes memory _extraOrderData
     ) internal returns (uint256) {
         (address aggregator, bytes memory aggregatorData) = abi.decode(_extraOrderData, (address, bytes));
-        IERC20(_inputToken).transfer(aggregator, _inputAmount);
+        IERC20(_inputToken).safeTransfer(aggregator, _inputAmount);
         return IDolomiteMarginExchangeWrapper(aggregator).exchange(
             /* tradeOriginator = */ address(this),
             /* receiver = */ address(this),
@@ -191,7 +195,7 @@ contract GammaIsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2 {
         IERC20(inputToken).safeApprove(address(router), amount);
         GAMMA_REGISTRY.deltaSwapRouter().swapExactTokensForTokens(
             /* amountIn = */ amount,
-            /* amountOutMin = */ 1, // @follow-up Can wrap be sandwiched? No mempool on arbitrum but maybe others
+            /* amountOutMin = */ 1,
             /* path = */ path,
             /* to = */ address(this),
             /* deadline = */ block.timestamp
@@ -203,10 +207,10 @@ contract GammaIsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2 {
         uint256 dust1 = IERC20(_token1).balanceOf(address(this));
         address owner = DOLOMITE_MARGIN().owner();
         if (dust0 > 0) {
-            IERC20(_token0).transfer(owner, dust0);
+            IERC20(_token0).safeTransfer(owner, dust0);
         }
         if (dust1 > 0) {
-            IERC20(_token1).transfer(owner, dust1);
+            IERC20(_token1).safeTransfer(owner, dust1);
         }
     }
 

@@ -118,7 +118,7 @@ contract GammaIsolationModeUnwrapperTraderV2 is IsolationModeUnwrapperTraderV2 {
         address swapToken = _outputToken == token0 ? DELTA_SWAP_PAIR.token1() : token0;
 
         uint256 swapAmount = IERC20(swapToken).balanceOf(address(this));
-        IERC20(swapToken).transfer(aggregator, swapAmount);
+        IERC20(swapToken).safeTransfer(aggregator, swapAmount);
         IDolomiteMarginExchangeWrapper(aggregator).exchange(
             /* tradeOriginator = */ address(this),
             /* receiver = */ address(this),
