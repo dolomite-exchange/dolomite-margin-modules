@@ -32,7 +32,6 @@ import { IGammaPool } from "./interfaces/IGammaPool.sol";
 import { IGammaPositionManager } from "./interfaces/IGammaPositionManager.sol";
 import { IGammaRegistry } from "./interfaces/IGammaRegistry.sol";
 
-import "hardhat/console.sol";
 
 /**
  * @title   GammaIsolationModeWrapperTraderV2
@@ -101,8 +100,12 @@ contract GammaIsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2 {
         address token1 = DELTA_SWAP_PAIR.token1();
         address aggregatorOutputToken = token0 == _inputToken ? token1 : token0;
 
-        uint256 token0PreBal = _inputToken == token0 ? IERC20(token0).balanceOf(address(this)) - _inputAmount : IERC20(token0).balanceOf(address(this));
-        uint256 token1PreBal = _inputToken == token1 ? IERC20(token1).balanceOf(address(this)) - _inputAmount : IERC20(token1).balanceOf(address(this));
+        uint256 token0PreBal = _inputToken == token0 
+            ? IERC20(token0).balanceOf(address(this)) - _inputAmount
+            : IERC20(token0).balanceOf(address(this));
+        uint256 token1PreBal = _inputToken == token1
+            ? IERC20(token1).balanceOf(address(this)) - _inputAmount
+            : IERC20(token1).balanceOf(address(this));
 
         uint256 outputAmount = _doAggregatorSwap(_inputToken, aggregatorOutputToken, swapAmount, _extraOrderData);
         uint256 amountOut1 = _depositReserves(

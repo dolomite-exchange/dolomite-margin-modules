@@ -2,7 +2,14 @@ import { expect } from 'chai';
 import { BYTES_EMPTY, Network, ONE_BI, ONE_ETH_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectProtocolBalance, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { disableInterestAccrual, setupCoreProtocol, setupNativeUSDCBalance, setupTestMarket, setupUserVaultProxy, setupWETHBalance } from '@dolomite-exchange/modules-base/test/utils/setup';
+import {
+  disableInterestAccrual,
+  setupCoreProtocol,
+  setupNativeUSDCBalance,
+  setupTestMarket,
+  setupUserVaultProxy,
+  setupWETHBalance
+} from '@dolomite-exchange/modules-base/test/utils/setup';
 import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import {
   GammaIsolationModeTokenVaultV1,
@@ -106,7 +113,7 @@ describe('GammaIsolationModeWrapperTraderV2', () => {
     });
   });
 
-  describe.only('#exchange', () => {
+  describe('#exchange', () => {
     it('should work normally for token0', async () => {
       await vault.transferIntoPositionWithOtherToken(
         defaultAccountNumber,

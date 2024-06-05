@@ -126,6 +126,9 @@ contract JonesUSDCIsolationModeTokenVaultV2 is JonesUSDCIsolationModeTokenVaultV
             if (balance >= _amount) { /* FOR COVERAGE TESTING */ }
             if (balance >= _amount) { /* FOR COVERAGE TESTING */ }
             if (balance >= _amount) { /* FOR COVERAGE TESTING */ }
+            if (balance >= _amount) { /* FOR COVERAGE TESTING */ }
+            if (balance >= _amount) { /* FOR COVERAGE TESTING */ }
+            if (balance >= _amount) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 balance >= _amount,
                 _FILE,
