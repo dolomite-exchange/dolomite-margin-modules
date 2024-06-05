@@ -35,20 +35,20 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { IPendleGLPRegistry } from "./interfaces/IPendleGLPRegistry.sol";
-import { IPendleYtGLP2024IsolationModeTokenVaultV1 } from "./interfaces/IPendleYtGLP2024IsolationModeTokenVaultV1.sol";
-import { IPendleYtGLP2024IsolationModeVaultFactory } from "./interfaces/IPendleYtGLP2024IsolationModeVaultFactory.sol";
+import { IPendleYtGLPMar2024IsolationModeTokenVaultV1 } from "./interfaces/IPendleYtGLPMar2024IsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
+import { IPendleYtGLPMar2024IsolationModeVaultFactory } from "./interfaces/IPendleYtGLPMar2024IsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { IPendleYtToken } from "./interfaces/IPendleYtToken.sol";
 
 
 /**
- * @title   PendleYtGLPMar2024IsolationModeTokenVaultV1.sol
+ * @title   PendleYtGLPMar2024IsolationModeTokenVaultV1
  * @author  Dolomite
  *
  * @notice  Implementation (for an upgradeable proxy) for a per-user vault that holds the ytGLP (March 2024 expiration)
  *          token that can be used to credit a user's Dolomite balance.
  */
-contract PendleYtGLP2024IsolationModeTokenVaultV1 is
-    IPendleYtGLP2024IsolationModeTokenVaultV1,
+contract PendleYtGLPMar2024IsolationModeTokenVaultV1 is
+IPendleYtGLPMar2024IsolationModeTokenVaultV1,
     IsolationModeTokenVaultV1WithPausable
 {
     using SafeERC20 for IERC20;
@@ -58,7 +58,7 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
     // =========================== Constants ============================
     // ==================================================================
 
-    bytes32 private constant _FILE = "PendleYtGLP2024UserVaultV1";
+    bytes32 private constant _FILE = "PendleYtGLPMar2024UserVaultV1";
     uint256 private constant _ONE_WEEK = 1 weeks;
     uint256 private constant _SAFETY_BUFFER_SECONDS = 5 minutes;
 
@@ -85,7 +85,7 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
     }
 
     function registry() public view returns (IPendleGLPRegistry) {
-        return IPendleYtGLP2024IsolationModeVaultFactory(VAULT_FACTORY()).pendleGLPRegistry();
+        return IPendleYtGLPMar2024IsolationModeVaultFactory(VAULT_FACTORY()).pendleGLPRegistry();
     }
 
     function dolomiteRegistry()
@@ -98,7 +98,7 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
     }
 
     function isExternalRedemptionPaused() public view override returns (bool) {
-        return IPendleYtGLP2024IsolationModeVaultFactory(VAULT_FACTORY()).pendleGLPRegistry().syGlpToken().paused();
+        return IPendleYtGLPMar2024IsolationModeVaultFactory(VAULT_FACTORY()).pendleGLPRegistry().syGlpToken().paused();
     }
 
     // ==================================================================
@@ -179,7 +179,8 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
         internal
         override
     {
-        uint256 ytMaturityTimestamp = IPendleYtGLP2024IsolationModeVaultFactory(VAULT_FACTORY()).ytMaturityTimestamp();
+        uint256 ytMaturityTimestamp = IPendleYtGLPMar2024IsolationModeVaultFactory(VAULT_FACTORY())
+            .ytMaturityTimestamp();
         if (block.timestamp + _ONE_WEEK < ytMaturityTimestamp) { /* FOR COVERAGE TESTING */ }
         Require.that(
             block.timestamp + _ONE_WEEK < ytMaturityTimestamp,
@@ -196,7 +197,7 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
         internal
         override
     {
-        IPendleYtGLP2024IsolationModeVaultFactory vaultFactory = IPendleYtGLP2024IsolationModeVaultFactory(
+        IPendleYtGLPMar2024IsolationModeVaultFactory vaultFactory = IPendleYtGLPMar2024IsolationModeVaultFactory(
             VAULT_FACTORY()
         );
         IDolomiteStructs.AccountInfo memory accountInfo = IDolomiteStructs.AccountInfo(
@@ -239,7 +240,7 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
         uint256 _amountWei,
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
     ) internal override {
-        IPendleYtGLP2024IsolationModeVaultFactory vaultFactory = IPendleYtGLP2024IsolationModeVaultFactory(
+        IPendleYtGLPMar2024IsolationModeVaultFactory vaultFactory = IPendleYtGLPMar2024IsolationModeVaultFactory(
             VAULT_FACTORY()
         );
         IDolomiteStructs.AccountInfo memory accountInfo = IDolomiteStructs.AccountInfo(
@@ -282,7 +283,7 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
         IDolomiteStructs.AccountInfo memory _accountInfo,
         uint256 _marketId,
         uint256 _ytMaturityTimestamp,
-        IPendleYtGLP2024IsolationModeVaultFactory vaultFactory
+        IPendleYtGLPMar2024IsolationModeVaultFactory vaultFactory
     ) internal {
         IExpiry expiry = vaultFactory.pendleGLPRegistry().dolomiteRegistry().expiry();
 
@@ -332,7 +333,7 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
         IDolomiteStructs.AccountInfo memory _accountInfo,
         IExpiry _expiry
     ) internal view returns (uint256) {
-        IPendleYtGLP2024IsolationModeVaultFactory vaultFactory = IPendleYtGLP2024IsolationModeVaultFactory(
+        IPendleYtGLPMar2024IsolationModeVaultFactory vaultFactory = IPendleYtGLPMar2024IsolationModeVaultFactory(
             VAULT_FACTORY()
         );
 
@@ -354,7 +355,7 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
         IDolomiteStructs.AccountInfo memory _accountInfo,
         uint256 _marketId,
         uint256 _inputAmountWei,
-        IPendleYtGLP2024IsolationModeVaultFactory vaultFactory
+        IPendleYtGLPMar2024IsolationModeVaultFactory vaultFactory
     ) internal view returns (IDolomiteStructs.Wei memory balanceAfterWei) {
         IDolomiteStructs.Wei memory balanceBeforeWei = vaultFactory.DOLOMITE_MARGIN().getAccountWei(
             _accountInfo,

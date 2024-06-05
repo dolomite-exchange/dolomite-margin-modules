@@ -7,7 +7,7 @@
     "test": "hardhat --network hardhat test",
     "coverage": "yarn coverage:prepare && COVERAGE=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat coverage --testfiles \"test/**/*.ts\" --solcoverjs ../../.solcover.js --network hardhat",
     "coverage:prepare": "ts-node ../../scripts/fix-contracts-for-coverage.ts pendle",
-    "coverage:specific": "yarn coverage:prepare && COVERAGE=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat coverage --testfiles \\\"test/GlpMar2024/PtGLPTransformer.ts\\\" --solcoverjs ../../.solcover.js --network hardhat",
+    "coverage:specific": "yarn coverage:prepare && COVERAGE=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat coverage --testfiles \"test/usdeJul2024/*.ts\" --solcoverjs ../../.solcover.js --network hardhat",
     "test:specific": "TEST_SPECIFIC=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat --network hardhat test test/eEthApr2024/PendlePtEEthPriceOracleV2.ts",
     "lint": "yarn lint:sol && yarn lint:ts",
     "lint:sol": "hardhat check && python3 ../../scripts/lint-contracts.py fix pendle",

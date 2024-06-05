@@ -101,6 +101,7 @@ import {
   ST_ETH_MAP,
   UNI_MAP,
   USDC_MAP,
+  USDE_MAP,
   USDT_MAP, USDY_MAP,
   WBTC_MAP,
   WE_ETH_MAP,
@@ -142,7 +143,7 @@ import {
 import { createOdosEcosystem } from './ecosystem-utils/odos';
 import { createOkxEcosystem } from './ecosystem-utils/okx';
 import { createParaswapEcosystem } from './ecosystem-utils/paraswap';
-import { createPendleEcosystem } from './ecosystem-utils/pendle';
+import { createPendleEcosystemArbitrumOne, createPendleEcosystemMantle } from './ecosystem-utils/pendle';
 import { createPlutusEcosystem } from './ecosystem-utils/plutus';
 import { createPremiaEcosystem } from './ecosystem-utils/premia';
 import { createTestEcosystem } from './ecosystem-utils/testers';
@@ -346,6 +347,18 @@ export async function setupRETHBalance(
   const whaleSigner = await impersonate(whaleAddress, true);
   await core.tokens.rEth!.connect(whaleSigner).transfer(signer.address, amount);
   await core.tokens.rEth!.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
+}
+
+export async function setupUSDEBalance(
+  core: { tokens: { usde: IERC20 } },
+  signer: SignerWithAddressWithSafety,
+  amount: BigNumberish,
+  spender: { address: string },
+) {
+  const whaleAddress = '0x5B9e411c9E50164133DE07FE1cAC05A094000105'; // Pendle SY Token
+  const whaleSigner = await impersonate(whaleAddress, true);
+  await core.tokens.usde!.connect(whaleSigner).transfer(signer.address, amount);
+  await core.tokens.usde!.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
 export async function setupWeEthBalance(
@@ -691,7 +704,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
         oArbLiquidityMiningEcosystem: await createOARBLiquidityMiningEcosystem(typedConfig.network, hhUser1),
         odosEcosystem: await createOdosEcosystem(typedConfig.network, hhUser1),
         paraswapEcosystem: await createParaswapEcosystem(typedConfig.network, hhUser1),
-        pendleEcosystem: await createPendleEcosystem(typedConfig.network, hhUser1),
+        pendleEcosystem: await createPendleEcosystemArbitrumOne(typedConfig.network, hhUser1),
         plutusEcosystem: await createPlutusEcosystem(typedConfig.network, hhUser1),
         premiaEcosystem: await createPremiaEcosystem(typedConfig.network, hhUser1),
         redstonePriceOracleV3: RedstonePriceOracleV3__factory.connect(
@@ -852,11 +865,13 @@ export async function setupCoreProtocol<T extends NetworkType>(
           ],
         },
         odosEcosystem: await createOdosEcosystem(typedConfig.network, hhUser1),
+        pendleEcosystem: await createPendleEcosystemMantle(typedConfig.network, hhUser1),
         tokens: {
           ...coreProtocolParams.tokens,
           meth: IERC20__factory.connect(METH_MAP[typedConfig.network].address, hhUser1),
           usdt: IERC20__factory.connect(USDT_MAP[typedConfig.network].address, hhUser1),
           usdy: IERC20__factory.connect(USDY_MAP[typedConfig.network].address, hhUser1),
+          usde: IERC20__factory.connect(USDE_MAP[typedConfig.network].address, hhUser1),
           wbtc: IERC20__factory.connect(WBTC_MAP[typedConfig.network].address, hhUser1),
           wmnt: IWETH__factory.connect(WMNT_MAP[typedConfig.network].address, hhUser1),
           stablecoins: [

@@ -76,11 +76,11 @@ contract PendlePtIsolationModeWrapperTraderV3 is IsolationModeWrapperTraderV2 {
     // ============================================
 
     function _exchangeIntoUnderlyingToken(
-        address,
-        address,
-        address,
+        address /* _tradeOriginator */,
+        address /* _receiver */,
+        address /* _outputTokenUnderlying */,
         uint256 _minOutputAmount,
-        address,
+        address /* _inputToken */,
         uint256 _inputAmount,
         bytes memory _extraOrderData
     )
@@ -92,7 +92,10 @@ contract PendlePtIsolationModeWrapperTraderV3 is IsolationModeWrapperTraderV2 {
             IPendleRouterV3.ApproxParams memory guessPtOut,
             IPendleRouterV3.TokenInput memory tokenInput,
             IPendleRouterV3.LimitOrderData memory limit
-        ) = abi.decode(_extraOrderData, (IPendleRouterV3.ApproxParams, IPendleRouterV3.TokenInput, IPendleRouterV3.LimitOrderData));
+        ) = abi.decode(
+            _extraOrderData,
+            (IPendleRouterV3.ApproxParams, IPendleRouterV3.TokenInput, IPendleRouterV3.LimitOrderData)
+        );
 
         tokenInput.netTokenIn = _inputAmount;
 

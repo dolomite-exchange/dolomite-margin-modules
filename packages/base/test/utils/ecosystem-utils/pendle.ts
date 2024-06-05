@@ -55,15 +55,30 @@ import {
   PENDLE_YT_GLP_SEP_2024_TOKEN_MAP,
   PENDLE_PT_GLP_SEP_2024_TOKEN_MAP,
   PENDLE_SY_GLP_SEP_2024_TOKEN_MAP,
+  PENDLE_USDE_MARKET_MAP,
+  PENDLE_PT_USDE_TOKEN_MAP,
+  PENDLE_SY_USDE_TOKEN_MAP,
 } from '../../../src/utils/constants';
 import { Network } from '../../../src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';
 import { getContract } from '../setup';
 import { IPendleRouterV3, IPendleRouterV3__factory } from 'packages/pendle/src/types';
 
-export interface PendleEcosystem {
+export interface CorePendleEcosystem {
   pendleRouter: IPendleRouter;
   pendleRouterV3: IPendleRouterV3;
+}
+
+export interface PendleEcosystemMantle extends CorePendleEcosystem {
+  usdeJul2024: {
+    ptOracle: IPendlePtOracle;
+    usdeMarket: IPendlePtMarket;
+    ptUSDeToken: IPendlePtToken;
+  };
+  syUsdeToken: IPendleSyToken;
+}
+
+export interface PendleEcosystemArbitrumOne extends CorePendleEcosystem {
   ezEthJun2024: {
     dPtEzEthJun2024: PendlePtIsolationModeVaultFactory;
     pendleRegistry: IPendleRegistry;
@@ -135,10 +150,54 @@ export interface PendleEcosystem {
   syWstEthToken: IPendleSyToken;
 }
 
-export async function createPendleEcosystem(
+export async function createPendleEcosystemMantle(
   network: Network,
   signer: SignerWithAddressWithSafety,
-): Promise<PendleEcosystem> {
+): Promise<PendleEcosystemMantle> {
+  if (network !== Network.Mantle) {
+    return Promise.reject(`Invalid network, found ${network}`);
+  }
+
+  return {
+    pendleRouter: getContract(
+      PENDLE_ROUTER_MAP[network] as string,
+      IPendleRouter__factory.connect,
+      signer,
+    ),
+    pendleRouterV3: getContract(
+      PENDLE_ROUTER_V3_MAP[network] as string,
+      IPendleRouterV3__factory.connect,
+      signer,
+    ),
+    usdeJul2024: {
+      ptOracle: getContract(
+        PENDLE_PT_ORACLE_MAP[network] as string,
+        IPendlePtOracle__factory.connect,
+        signer,
+      ),
+      usdeMarket: getContract(
+        PENDLE_USDE_MARKET_MAP[network] as string,
+        IPendlePtMarket__factory.connect,
+        signer,
+      ),
+      ptUSDeToken: getContract(
+        PENDLE_PT_USDE_TOKEN_MAP[network] as string,
+        IPendlePtToken__factory.connect,
+        signer,
+      ),
+    },
+    syUsdeToken: getContract(
+      PENDLE_SY_USDE_TOKEN_MAP[network] as string,
+      IPendleSyToken__factory.connect,
+      signer,
+    ),
+  };
+}
+
+export async function createPendleEcosystemArbitrumOne(
+  network: Network,
+  signer: SignerWithAddressWithSafety,
+): Promise<PendleEcosystemArbitrumOne> {
   if (network !== Network.ArbitrumOne) {
     return Promise.reject(`Invalid network, found ${network}`);
   }
