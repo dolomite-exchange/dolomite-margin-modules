@@ -62,9 +62,9 @@ interface IGammaPositionManager {
 
     function depositReserves(
         DepositReservesParams calldata params
-    ) external returns (uint256[] memory _reserves, uint256 _shares);
+    ) external returns (uint256[] memory, uint256);
 
     function withdrawReserves(
         WithdrawReservesParams calldata params
-    ) external returns (uint256[] memory _reserves, uint256 _assets);
+    ) external returns (uint256[] memory, uint256);
 }
