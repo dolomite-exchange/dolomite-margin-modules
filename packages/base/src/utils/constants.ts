@@ -624,6 +624,10 @@ export const GMX_LINK_USD_MARKET_TOKEN_MAP: Record<Network.ArbitrumOne, string> 
   [Network.ArbitrumOne]: '0x7f1fa204bb700853D36994DA19F830b6Ad18455C',
 };
 
+export const GMX_UNI_USD_MARKET_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0xc7Abb2C5f3BF3CEB389dF0Eecd6120D451170B50',
+};
+
 export const GMX_GOV_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0xe7E740Fa40CA16b15B621B49de8E9F0D69CF4858',
 };

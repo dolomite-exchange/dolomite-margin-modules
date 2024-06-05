@@ -1177,6 +1177,27 @@
       "isVerified": true
     }
   },
+  "GmxV2UNIAsyncIsolationModeUnwrapperTraderProxyV2": {
+    "42161": {
+      "address": "0x77a7dc42E1591575166D2A0B98e25dAc7b311317",
+      "transaction": "0xd51a44754152af763220ec9f84182c7d9f657229d95634f3e2ed0894af1ab049",
+      "isVerified": true
+    }
+  },
+  "GmxV2UNIAsyncIsolationModeWrapperTraderProxyV2": {
+    "42161": {
+      "address": "0x99190DD587d239eAA41aaa960195529bAd97b333",
+      "transaction": "0x6dd44d517495801c4824b9b33ac7a008fe9f9cf56b09ad55645af1ab3af1d6c5",
+      "isVerified": true
+    }
+  },
+  "GmxV2UNIIsolationModeVaultFactory": {
+    "42161": {
+      "address": "0x20d51CB520C4622Dcc3d7E35003dBaB07d547E7E",
+      "transaction": "0x4718e4690d3555de14f7becec8f5a68503806c7215d79d80b5e687819a34cf9e",
+      "isVerified": true
+    }
+  },
   "GraiFraxPriceOracleV1": {
     "42161": {
       "address": "0x44D96D7b7b655D8372680075942f1FAB41da52e0",
