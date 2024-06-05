@@ -34,6 +34,7 @@ import { IGammaRegistry } from "./interfaces/IGammaRegistry.sol";
 
 import "hardhat/console.sol";
 
+
 /**
  * @title   GammaIsolationModeWrapperTraderV2
  * @author  Dolomite
@@ -101,8 +102,12 @@ contract GammaIsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2 {
         address token1 = DELTA_SWAP_PAIR.token1();
         address aggregatorOutputToken = token0 == _inputToken ? token1 : token0;
 
-        uint256 token0PreBal = _inputToken == token0 ? IERC20(token0).balanceOf(address(this)) - _inputAmount : IERC20(token0).balanceOf(address(this));
-        uint256 token1PreBal = _inputToken == token1 ? IERC20(token1).balanceOf(address(this)) - _inputAmount : IERC20(token1).balanceOf(address(this));
+        uint256 token0PreBal = _inputToken == token0 
+            ? IERC20(token0).balanceOf(address(this)) - _inputAmount
+            : IERC20(token0).balanceOf(address(this));
+        uint256 token1PreBal = _inputToken == token1
+            ? IERC20(token1).balanceOf(address(this)) - _inputAmount
+            : IERC20(token1).balanceOf(address(this));
 
         uint256 outputAmount = _doAggregatorSwap(_inputToken, aggregatorOutputToken, swapAmount, _extraOrderData);
         uint256 amountOut1 = _depositReserves(
@@ -112,13 +117,11 @@ contract GammaIsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2 {
             token1
         );
 
+        uint256 amountOut2;
         (uint256 token0Amount, uint256 token1Amount) = _doDeltaSwap(token0, token1, token0PreBal, token1PreBal);
-        uint256 amountOut2 = _depositReserves(
-            token0Amount,
-            token1Amount,
-            token0,
-            token1
-        );
+        if (token0Amount > 0 && token1Amount > 0) {
+            amountOut2 = _depositReserves(token0Amount, token1Amount, token0, token1);
+        }
 
         _retrieveDust(token0, token1);
 
@@ -187,6 +190,10 @@ contract GammaIsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2 {
         if (amount == 0) {
             amount = IERC20(_token1).balanceOf(address(this)) - _token1PreBal;
             inputToken = _token1;
+        }
+
+        if (amount == 0) {
+            return (0, 0);
         }
 
         uint256 swapAmount = amount / 2;

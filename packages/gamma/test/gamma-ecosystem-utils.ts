@@ -13,7 +13,9 @@ import {
   GammaRegistry__factory,
   IGammaIsolationModeVaultFactory,
   IGammaPool,
-  IGammaRegistry
+  IGammaRegistry,
+  TestGammaIsolationModeWrapperTraderV2,
+  TestGammaIsolationModeWrapperTraderV2__factory
 } from '../src/types';
 import { createContractWithAbi, createContractWithLibrary } from 'packages/base/src/utils/dolomite-utils';
 import {
@@ -93,6 +95,18 @@ export async function createGammaWrapperTraderV2(
   return createContractWithAbi<GammaIsolationModeWrapperTraderV2>(
     GammaIsolationModeWrapperTraderV2__factory.abi,
     GammaIsolationModeWrapperTraderV2__factory.bytecode,
+    getGammaWrapperTraderV2ConstructorParams(core, factory, registry),
+  );
+}
+
+export async function createTestGammaWrapperTraderV2(
+  core: CoreProtocolArbitrumOne,
+  factory: IGammaIsolationModeVaultFactory | GammaIsolationModeVaultFactory,
+  registry: IGammaRegistry | GammaRegistry,
+): Promise<TestGammaIsolationModeWrapperTraderV2> {
+  return createContractWithAbi<TestGammaIsolationModeWrapperTraderV2>(
+    TestGammaIsolationModeWrapperTraderV2__factory.abi,
+    TestGammaIsolationModeWrapperTraderV2__factory.bytecode,
     getGammaWrapperTraderV2ConstructorParams(core, factory, registry),
   );
 }

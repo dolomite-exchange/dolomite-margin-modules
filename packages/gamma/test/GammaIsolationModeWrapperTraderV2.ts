@@ -3,7 +3,6 @@ import { BYTES_EMPTY, Network, ONE_BI, ONE_ETH_BI } from '@dolomite-exchange/mod
 import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectProtocolBalance, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
-  disableInterestAccrual,
   setupCoreProtocol,
   setupNativeUSDCBalance,
   setupTestMarket,
@@ -16,10 +15,10 @@ import {
   GammaIsolationModeTokenVaultV1__factory,
   GammaIsolationModeUnwrapperTraderV2,
   GammaIsolationModeVaultFactory,
-  GammaIsolationModeWrapperTraderV2,
   GammaPoolPriceOracle,
   GammaRegistry,
-  IGammaPool
+  IGammaPool,
+  TestGammaIsolationModeWrapperTraderV2
 } from '../src/types';
 import {
   createGammaIsolationModeTokenVaultV1,
@@ -27,7 +26,7 @@ import {
   createGammaPoolPriceOracle,
   createGammaRegistry,
   createGammaUnwrapperTraderV2,
-  createGammaWrapperTraderV2
+  createTestGammaWrapperTraderV2
 } from './gamma-ecosystem-utils';
 import { BigNumber, ethers } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
@@ -52,7 +51,7 @@ describe('GammaIsolationModeWrapperTraderV2', () => {
   let gammaPool: IGammaPool;
   let gammaRegistry: GammaRegistry;
   let unwrapper: GammaIsolationModeUnwrapperTraderV2;
-  let wrapper: GammaIsolationModeWrapperTraderV2;
+  let wrapper: TestGammaIsolationModeWrapperTraderV2;
   let gammaFactory: GammaIsolationModeVaultFactory;
   let vault: GammaIsolationModeTokenVaultV1;
   let gammaOracle: GammaPoolPriceOracle;
@@ -65,8 +64,6 @@ describe('GammaIsolationModeWrapperTraderV2', () => {
       blockNumber: await getRealLatestBlockNumber(true, Network.ArbitrumOne),
       network: Network.ArbitrumOne,
     });
-    await disableInterestAccrual(core, core.marketIds.weth);
-    await disableInterestAccrual(core, core.marketIds.nativeUsdc);
 
     odosAggregator = await createOdosAggregatorTrader(core);
 
@@ -77,7 +74,7 @@ describe('GammaIsolationModeWrapperTraderV2', () => {
     gammaFactory = await createGammaIsolationModeVaultFactory(gammaRegistry, gammaPool, vaultImplementation, core);
 
     unwrapper = await createGammaUnwrapperTraderV2(core, gammaFactory, gammaRegistry);
-    wrapper = await createGammaWrapperTraderV2(core, gammaFactory, gammaRegistry);
+    wrapper = await createTestGammaWrapperTraderV2(core, gammaFactory, gammaRegistry);
     gammaOracle = await createGammaPoolPriceOracle(core, gammaRegistry);
     await gammaOracle.connect(core.governance).ownerSetGammaPool(gammaFactory.address, true);
 
@@ -206,6 +203,84 @@ describe('GammaIsolationModeWrapperTraderV2', () => {
           eventType: GenericEventEmissionType.None,
         }
       );
+    });
+  });
+
+  describe('#_doDeltaSwap', () => {
+    it('should work normally for zero tokens', async () => {
+      const res = await wrapper.connect(core.hhUser1).callStatic.testDoDeltaSwap(0, 0);
+      expect(await core.tokens.weth.balanceOf(wrapper.address)).to.equal(res[0]);
+      expect(await core.tokens.nativeUsdc.balanceOf(wrapper.address)).to.equal(res[1]);
+    });
+
+    it('should work normally for token0', async () => {
+      await setupWETHBalance(core, core.hhUser1, ONE_ETH_BI, core.governance);
+      await core.tokens.weth.transfer(wrapper.address, ONE_ETH_BI);
+
+      const res = await wrapper.connect(core.hhUser1).callStatic.testDoDeltaSwap(0, 0);
+      await wrapper.connect(core.hhUser1).testDoDeltaSwap(0, 0);
+
+      expect(await core.tokens.weth.balanceOf(wrapper.address)).to.equal(res[0]);
+      expect(await core.tokens.nativeUsdc.balanceOf(wrapper.address)).to.equal(res[1]);
+    });
+
+    it('should work normally for token1', async () => {
+      await setupNativeUSDCBalance(core, core.hhUser1, usdcAmount, core.governance);
+      await core.tokens.nativeUsdc.transfer(wrapper.address, usdcAmount);
+
+      const res = await wrapper.connect(core.hhUser1).callStatic.testDoDeltaSwap(0, 0);
+      await wrapper.connect(core.hhUser1).testDoDeltaSwap(0, 0);
+
+      expect(await core.tokens.weth.balanceOf(wrapper.address)).to.equal(res[0]);
+      expect(await core.tokens.nativeUsdc.balanceOf(wrapper.address)).to.equal(res[1]);
+    });
+  });
+
+  describe('#_retrieveDust', () => {
+    it('should work with no dust', async () => {
+      const token0Bal = await core.tokens.weth.balanceOf(core.governance.address);
+      const token1Bal = await core.tokens.nativeUsdc.balanceOf(core.governance.address);
+      await wrapper.testRetrieveDust();
+      expect(await core.tokens.weth.balanceOf(core.governance.address)).to.equal(token0Bal);
+      expect(await core.tokens.nativeUsdc.balanceOf(core.governance.address)).to.equal(token1Bal);
+    });
+
+    it('should work with token0 dust', async () => {
+      const token0Bal = await core.tokens.weth.balanceOf(core.governance.address);
+      const token1Bal = await core.tokens.nativeUsdc.balanceOf(core.governance.address);
+
+      await setupWETHBalance(core, core.hhUser1, ONE_ETH_BI, core.governance);
+      await core.tokens.weth.transfer(wrapper.address, ONE_ETH_BI);
+      await wrapper.testRetrieveDust();
+
+      expect(await core.tokens.weth.balanceOf(core.governance.address)).to.equal(token0Bal.add(ONE_ETH_BI));
+      expect(await core.tokens.nativeUsdc.balanceOf(core.governance.address)).to.equal(token1Bal);
+    });
+
+    it('should work with token1 dust', async () => {
+      const token0Bal = await core.tokens.weth.balanceOf(core.governance.address);
+      const token1Bal = await core.tokens.nativeUsdc.balanceOf(core.governance.address);
+
+      await setupNativeUSDCBalance(core, core.hhUser1, usdcAmount, core.governance);
+      await core.tokens.nativeUsdc.transfer(wrapper.address, usdcAmount);
+      await wrapper.testRetrieveDust();
+
+      expect(await core.tokens.weth.balanceOf(core.governance.address)).to.equal(token0Bal);
+      expect(await core.tokens.nativeUsdc.balanceOf(core.governance.address)).to.equal(token1Bal.add(usdcAmount));
+    });
+
+    it('should work with both dust', async () => {
+      const token0Bal = await core.tokens.weth.balanceOf(core.governance.address);
+      const token1Bal = await core.tokens.nativeUsdc.balanceOf(core.governance.address);
+
+      await setupWETHBalance(core, core.hhUser1, ONE_ETH_BI, core.governance);
+      await setupNativeUSDCBalance(core, core.hhUser1, usdcAmount, core.governance);
+      await core.tokens.weth.transfer(wrapper.address, ONE_ETH_BI);
+      await core.tokens.nativeUsdc.transfer(wrapper.address, usdcAmount);
+      await wrapper.testRetrieveDust();
+
+      expect(await core.tokens.weth.balanceOf(core.governance.address)).to.equal(token0Bal.add(ONE_ETH_BI));
+      expect(await core.tokens.nativeUsdc.balanceOf(core.governance.address)).to.equal(token1Bal.add(usdcAmount));
     });
   });
 
