@@ -858,6 +858,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
           usdy: USDY_MAP[typedConfig.network].marketId,
           wbtc: WBTC_MAP[typedConfig.network].marketId,
           wmnt: WMNT_MAP[typedConfig.network].marketId,
+          usde: USDE_MAP[typedConfig.network].marketId,
           stablecoins: [
             ...coreProtocolParams.marketIds.stablecoins,
             USDT_MAP[typedConfig.network].marketId,

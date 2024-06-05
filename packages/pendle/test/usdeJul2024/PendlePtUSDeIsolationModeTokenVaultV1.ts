@@ -1,13 +1,11 @@
 import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { getRealLatestBlockNumber, impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
+import { impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import {
-  getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupTestMarket,
   setupUserVaultProxy,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { expect } from 'chai';
-import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import {
   IPendlePtToken,
   PendlePtIsolationModeTokenVaultV1,
@@ -15,7 +13,6 @@ import {
   PendlePtIsolationModeUnwrapperTraderV2,
   PendlePtIsolationModeVaultFactory,
   PendlePtIsolationModeWrapperTraderV2,
-  PendlePtPriceOracle,
   PendlePtPriceOracleV2,
   PendleRegistry,
 } from '../../src/types';
@@ -24,7 +21,6 @@ import {
   createPendlePtIsolationModeUnwrapperTraderV2,
   createPendlePtIsolationModeVaultFactory,
   createPendlePtIsolationModeWrapperTraderV2,
-  createPendlePtPriceOracle,
   createPendlePtPriceOracleV2,
   createPendleRegistry,
 } from '../pendle-ecosystem-utils';

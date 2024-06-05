@@ -142,10 +142,4 @@ describe('PendlePtUSDeJul2024PriceOracle', () => {
       );
     });
   });
-
-  async function freezeAndGetOraclePrice(token: IERC20): Promise<BigNumber> {
-    const price = await core.chainlinkPriceOracleV1!.getPrice(token.address);
-    await core.testEcosystem!.testPriceOracle.setPrice(token.address, price.value);
-    return price.value;
-  }
 });

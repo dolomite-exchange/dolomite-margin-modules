@@ -402,7 +402,7 @@ export const USDC_MAP: Record<Network, TokenWithMarketId> = {
 export const USDE_MAP: Record<Network.Mantle, TokenWithMarketId> = {
   [Network.Mantle]: {
     address: '0x5d3a1Ff2b6BAb83b63cd9AD0787074081a52ef34',
-    marketId: -1,
+    marketId: 6,
   },
 };
 

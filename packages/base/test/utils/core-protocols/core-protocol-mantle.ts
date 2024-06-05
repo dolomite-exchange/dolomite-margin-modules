@@ -22,6 +22,7 @@ export interface CoreProtocolTokensMantle extends CoreProtocolTokens<Network.Man
 
 interface CoreProtocolMarketIdsMantle extends CoreProtocolMarketIds {
   meth: BigNumberish;
+  usde: BigNumberish;
   usdt: BigNumberish;
   usdy: BigNumberish;
   wbtc: BigNumberish;
