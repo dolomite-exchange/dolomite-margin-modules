@@ -116,8 +116,8 @@ describe('ExternalVesterV1', () => {
 
     vester = await createTestExternalVesterV1Proxy(
       core,
-      paymentToken,
       pairToken,
+      paymentToken,
       rewardToken,
       discountCalculator,
       oToken,
