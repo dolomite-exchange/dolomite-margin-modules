@@ -32,7 +32,7 @@ import { ADDRESS_ZERO, Network } from 'packages/base/src/utils/no-deps-constants
 import {
   deployContractAndSave,
   EncodedTransaction,
-  prettyPrintEncodeAddIsolationModeMarket,
+  prettyPrintEncodeAddAsyncIsolationModeMarket,
   prettyPrintEncodedDataWithTypeSafety,
   prettyPrintEncodeInsertChainlinkOracleV3,
 } from '../../../utils/deploy-utils';
@@ -57,7 +57,8 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
 
     const [owner1] = await core.delayedMultiSig.getOwners();
     const multisigOwner = await impersonate(owner1, true);
-    await core.delayedMultiSig.connect(multisigOwner)
+    await core.delayedMultiSig
+      .connect(multisigOwner)
       .executeMultipleTransactions([815, 816, 817, 818, 819, 820, 821, 822, 823]);
     console.log('Transactions executed');
   }
@@ -81,18 +82,9 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   );
   const gmxV2PriceOracle = GmxV2MarketTokenPriceOracle__factory.connect(gmxV2PriceOracleAddress, core.hhUser1);
 
-  const gmTokens = [
-    core.gmxEcosystemV2.gmTokens.btc,
-    core.gmxEcosystemV2.gmTokens.eth,
-  ];
-  const supplyCaps = [
-    parseEther(`${3_000_000}`),
-    parseEther(`${2_000_000}`),
-  ];
-  const gmNames = [
-    'SingleSidedBTC',
-    'SingleSidedETH',
-  ];
+  const gmTokens = [core.gmxEcosystemV2.gmTokens.btc, core.gmxEcosystemV2.gmTokens.eth];
+  const supplyCaps = [parseEther(`${3_000_000}`), parseEther(`${2_000_000}`)];
+  const gmNames = ['SingleSidedBTC', 'SingleSidedETH'];
 
   const unwrapperImplementationAddress = await deployContractAndSave(
     'GmxV2IsolationModeUnwrapperTraderV2',
@@ -173,11 +165,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const transactions: EncodedTransaction[] = [];
 
   transactions.push(
-    ...await prettyPrintEncodeInsertChainlinkOracleV3(
-      core,
-      core.gmxEcosystemV2.gmTokens.btc.indexToken,
-      false,
-    ),
+    ...(await prettyPrintEncodeInsertChainlinkOracleV3(core, core.gmxEcosystemV2.gmTokens.btc.indexToken, false)),
   );
 
   for (let i = 0; i < factories.length; i++) {
@@ -216,18 +204,18 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
           },
         ],
       ),
-      ...await prettyPrintEncodeAddIsolationModeMarket(
+      ...(await prettyPrintEncodeAddAsyncIsolationModeMarket(
         core,
         factory,
         core.oracleAggregatorV2,
         unwrappers[i],
         wrappers[i],
+        core.gmxEcosystemV2.live.registry,
         gmMarketIds[i],
         TargetCollateralization._120,
         TargetLiquidationPenalty.Base,
         supplyCaps[i],
-        { isAsyncAsset: true },
-      ),
+      )),
     );
   }
 
@@ -239,24 +227,20 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       chainId: network,
     },
     invariants: async () => {
-      assertHardhatInvariant(
-        factories.length === 2,
-        'Invalid # of factories',
-      );
+      assertHardhatInvariant(factories.length === 2, 'Invalid # of factories');
       for (let i = 0; i < factories.length; i += 1) {
         assertHardhatInvariant(
-          await core.dolomiteMargin.getMarketTokenAddress(gmMarketIds[i]) === factories[i].address,
+          (await core.dolomiteMargin.getMarketTokenAddress(gmMarketIds[i])) === factories[i].address,
           `Invalid factory at index ${i}`,
         );
         const liquidators = await core.liquidatorAssetRegistry.getLiquidatorsForAsset(gmMarketIds[i]);
         assertHardhatInvariant(
-          liquidators[0] === core.liquidatorProxyV4.address &&
-          liquidators[1] === core.freezableLiquidatorProxy.address,
+          liquidators[0] === core.liquidatorProxyV4.address && liquidators[1] === core.freezableLiquidatorProxy.address,
           'Invalid whitelisted liquidators',
         );
         assertHardhatInvariant(
-          await factories[i].isTokenConverterTrusted(unwrappers[i].address)
-          && await factories[i].isTokenConverterTrusted(wrappers[i].address),
+          (await factories[i].isTokenConverterTrusted(unwrappers[i].address)) &&
+            (await factories[i].isTokenConverterTrusted(wrappers[i].address)),
           'Invalid token converters',
         );
 

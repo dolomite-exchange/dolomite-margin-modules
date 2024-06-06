@@ -1,5 +1,6 @@
 import { address } from '@dolomite-exchange/dolomite-margin';
 import {
+  HandlerRegistry,
   IDolomiteInterestSetter,
   IDolomitePriceOracle,
   IERC20,
@@ -1135,7 +1136,6 @@ export async function prettyPrintEncodeInsertRedstoneOracleV3(
 export interface AddMarketOptions {
   additionalConverters?: BaseContract[];
   skipAmountValidation?: boolean;
-  isAsyncAsset?: boolean;
   decimals?: number;
 }
 
@@ -1189,17 +1189,83 @@ export async function prettyPrintEncodeAddIsolationModeMarket<T extends NetworkT
     ),
   );
 
-  if (options.isAsyncAsset) {
-    transactions.push(
-      await prettyPrintEncodedDataWithTypeSafety(
-        core,
-        { liquidatorAssetRegistry: core.liquidatorAssetRegistry },
-        'liquidatorAssetRegistry',
-        'ownerAddLiquidatorToAssetWhitelist',
-        [marketId, core.freezableLiquidatorProxy.address],
-      ),
-    );
-  }
+  return transactions;
+}
+
+export async function prettyPrintEncodeAddAsyncIsolationModeMarket<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  factory: IIsolationModeVaultFactory,
+  oracle: IDolomitePriceOracle,
+  unwrapper: IIsolationModeUnwrapperTraderV2,
+  wrapper: IIsolationModeWrapperTraderV2,
+  handlerRegistry: HandlerRegistry,
+  marketId: BigNumberish,
+  targetCollateralization: TargetCollateralization,
+  targetLiquidationPremium: TargetLiquidationPenalty,
+  maxSupplyWei: BigNumberish,
+  options: AddMarketOptions = {},
+): Promise<EncodedTransaction[]> {
+  const transactions: EncodedTransaction[] = await prettyPrintEncodeAddMarket(
+    core,
+    IERC20__factory.connect(factory.address, factory.signer),
+    oracle,
+    core.interestSetters.alwaysZeroInterestSetter,
+    targetCollateralization,
+    targetLiquidationPremium,
+    maxSupplyWei,
+    ZERO_BI,
+    true,
+    ZERO_BI,
+    options,
+  );
+
+  transactions.push(
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { factory },
+      'factory',
+      'ownerInitialize',
+      [[unwrapper.address, wrapper.address, ...(options.additionalConverters ?? []).map(c => c.address)]],
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { dolomiteMargin: core.dolomiteMargin },
+      'dolomiteMargin',
+      'ownerSetGlobalOperator',
+      [factory.address, true],
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { liquidatorAssetRegistry: core.liquidatorAssetRegistry },
+      'liquidatorAssetRegistry',
+      'ownerAddLiquidatorToAssetWhitelist',
+      [marketId, core.liquidatorProxyV4.address],
+    ),
+  );
+
+  transactions.push(
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { liquidatorAssetRegistry: core.liquidatorAssetRegistry },
+      'liquidatorAssetRegistry',
+      'ownerAddLiquidatorToAssetWhitelist',
+      [marketId, core.freezableLiquidatorProxy.address],
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { handlerRegistry },
+      'handlerRegistry',
+      'ownerSetUnwrapperByToken',
+      [factory.address, unwrapper.address],
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { handlerRegistry },
+      'handlerRegistry',
+      'ownerSetWrapperByToken',
+      [factory.address, wrapper.address],
+    ),
+  );
 
   return transactions;
 }
