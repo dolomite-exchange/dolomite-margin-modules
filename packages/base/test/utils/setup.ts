@@ -1015,18 +1015,19 @@ export function getMaxDeploymentVersionAddressByDeploymentKey(
   network: Network,
   defaultAddress?: string,
 ): address {
-  const maxVersion = Object.keys(deployments)
-    .filter(k => k.startsWith(key) && (deployments as any)[k][network])
+  const deploymentsMap = deployments as Record<string, any>;
+  const maxVersion = Object.keys(deploymentsMap)
+    .filter(k => k.startsWith(key) && deploymentsMap[k][network])
     .sort((a, b) => a < b ? 1 : -1)[0];
   if (!maxVersion && !defaultAddress) {
     throw new Error(`Could not find ${key} for network ${network}`);
   }
 
-  if ((!(deployments as any)[maxVersion] || !(deployments as any)[maxVersion][network]) && defaultAddress) {
+  if ((!deploymentsMap[maxVersion] || !deploymentsMap[maxVersion][network]) && defaultAddress) {
     return defaultAddress;
   }
 
-  return (deployments as any)[maxVersion][network].address;
+  return deploymentsMap[maxVersion][network].address;
 }
 
 export function getContract<T>(

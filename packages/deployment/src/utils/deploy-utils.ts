@@ -198,7 +198,7 @@ function findArtifactPath(parentPath: string, artifactName: string): string | un
 export async function initializeFreshArtifactFromWorkspace(artifactName: string): Promise<void> {
   const packagesPath = '../../../../packages';
   const deploymentsArtifactsPath = join(__dirname, packagesPath, 'deployment', 'artifacts');
-  await fsExtra.remove(deploymentsArtifactsPath);
+  fsExtra.removeSync(deploymentsArtifactsPath);
 
   const workspaces = fs.readdirSync(join(__dirname, packagesPath), { withFileTypes: true })
     .filter(d => d.isDirectory() && !d.name.includes('deployment'))
@@ -216,7 +216,8 @@ export async function initializeFreshArtifactFromWorkspace(artifactName: string)
       );
 
       const artifact = JSON.parse(readFileSync(artifactPath, 'utf8'));
-      await artifacts.saveArtifactAndDebugFile(artifact);
+      const pathToBuildInfo = join(__dirname, workspace, 'artifacts', 'build-info');
+      await artifacts.saveArtifactAndDebugFile(artifact, pathToBuildInfo);
       return;
     }
   }

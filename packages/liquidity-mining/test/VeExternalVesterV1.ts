@@ -1,3 +1,4 @@
+import { CustomTestToken } from '@dolomite-exchange/modules-base/src/types';
 import {
   ADDRESS_ZERO,
   MAX_UINT_256_BI,
@@ -23,7 +24,6 @@ import {
   expectWalletBalanceIsGreaterThan,
 } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
-  getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupUSDCBalance,
   setupWETHBalance,
@@ -34,24 +34,27 @@ import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
-import { createTestToken } from '../../base/src/utils/dolomite-utils';
+import { createTestToken, withdrawFromDolomiteMargin } from '../../base/src/utils/dolomite-utils';
 import { SignerWithAddressWithSafety } from '../../base/src/utils/SignerWithAddressWithSafety';
 import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import {
   ExternalOARB,
-  IDolomiteInterestSetter, IDolomitePriceOracle,
+  IDolomiteInterestSetter,
+  IDolomitePriceOracle,
   IERC20,
-  IVesterDiscountCalculator, IVeToken,
-  TestVeExternalVesterImplementationV1
+  IERC20Metadata__factory,
+  IVesterDiscountCalculator,
+  IVeToken,
+  TestVeExternalVesterImplementationV1,
 } from '../src/types';
 import {
   createExternalOARB,
   createTestDiscountCalculator,
-  createTestVeExternalVesterV1Proxy, createTestVeToken,
+  createTestVeExternalVesterV1Proxy,
+  createTestVeToken,
   createVesterDiscountCalculatorV1,
 } from './liquidity-mining-ecosystem-utils';
 import { expectEmptyExternalVesterPosition } from './liquidityMining-utils';
-import { CustomTestToken } from '@dolomite-exchange/modules-base/src/types';
 
 const defaultAccountNumber = ZERO_BI;
 const ONE_WEEK = BigNumber.from('604800');
@@ -98,8 +101,11 @@ describe('VeExternalVesterV1', () => {
   let owner: SignerWithAddressWithSafety;
 
   before(async () => {
-    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
-    testToken = await createTestToken();
+    core = await setupCoreProtocol({
+      network: Network.ArbitrumOne,
+      blockNumber: 219_404_000,
+    });
+    testToken = await createTestToken(6);
 
     pairToken = testToken;
     paymentToken = core.tokens.weth;
@@ -121,9 +127,9 @@ describe('VeExternalVesterV1', () => {
     await testPriceOracle.setPrice(pairToken.address, PAIR_TOKEN_PRICE);
     await testPriceOracle.setPrice(paymentToken.address, PAYMENT_TOKEN_PRICE);
     await testPriceOracle.setPrice(rewardToken.address, REWARD_TOKEN_PRICE);
-    await setPriceOracle(pairMarketId, testPriceOracle);
-    await setPriceOracle(paymentMarketId, testPriceOracle);
-    await setPriceOracle(rewardMarketId, testPriceOracle);
+    await setPriceOracle(pairToken, pairMarketId, testPriceOracle);
+    await setPriceOracle(paymentToken, paymentMarketId, testPriceOracle);
+    await setPriceOracle(rewardToken, rewardMarketId, testPriceOracle);
 
     discountCalculator = await createVesterDiscountCalculatorV1();
     owner = core.governance;
@@ -147,7 +153,15 @@ describe('VeExternalVesterV1', () => {
     );
     await vester.connect(owner).ownerSetClosePositionWindow(CLOSE_POSITION_WINDOW);
 
-    await core.dolomiteMargin.connect(owner).setOperators([{ operator: vester.address, trusted: true }]);
+    await core.dolomiteMargin.connect(owner).ownerSetGlobalOperator(vester.address, true);
+    await withdrawFromDolomiteMargin(
+      core,
+      owner,
+      defaultAccountNumber,
+      core.marketIds.weth,
+      MAX_UINT_256_BI,
+      core.hhUser5.address,
+    );
 
     await oToken.connect(owner).ownerSetHandler(owner.address, true);
     await oToken.connect(owner).ownerSetHandler(vester.address, true);
@@ -174,17 +188,14 @@ describe('VeExternalVesterV1', () => {
     await expectWalletBalance(owner, pairToken, ZERO_BI);
     await expectWalletBalance(owner, paymentToken, ZERO_BI);
     await expectWalletBalance(owner, rewardToken, ZERO_BI);
-    // TODO: fix this for the NO_MARKET_ID assets
-    await expectProtocolBalance(core, owner, defaultAccountNumber, pairMarketId, ZERO_BI);
-    await expectProtocolBalance(core, owner, defaultAccountNumber, paymentMarketId, ZERO_BI);
-    await expectProtocolBalance(core, owner, defaultAccountNumber, rewardMarketId, ZERO_BI);
 
-    await expectWalletBalance(vester, pairToken, ZERO_BI);
+    await expectProtocolBalance(core, owner, defaultAccountNumber, paymentMarketId, ZERO_BI);
+
+    await expectWalletBalance(vester, pairToken, TOTAL_REWARD_AMOUNT);
     await expectWalletBalance(vester, paymentToken, ZERO_BI);
-    await expectWalletBalance(vester, rewardToken, ZERO_BI);
-    await expectProtocolBalance(core, vester, defaultAccountNumber, pairMarketId, ZERO_BI);
+    await expectWalletBalance(vester, rewardToken, TOTAL_REWARD_AMOUNT);
+
     await expectProtocolBalance(core, vester, defaultAccountNumber, paymentMarketId, ZERO_BI);
-    await expectProtocolBalance(core, vester, defaultAccountNumber, rewardMarketId, TOTAL_REWARD_AMOUNT);
 
     snapshotId = await snapshot();
   });
@@ -203,6 +214,7 @@ describe('VeExternalVesterV1', () => {
       expect(await vester.PAYMENT_MARKET_ID()).to.eq(paymentMarketId);
       expect(await vester.PAIR_MARKET_ID()).to.eq(pairMarketId);
       expect(await vester.REWARD_MARKET_ID()).to.eq(rewardMarketId);
+      expect(await vester.VE_TOKEN()).to.eq(veToken.address);
 
       expect(await vester.discountCalculator()).to.eq(discountCalculator.address);
       expect(await vester.oToken()).to.eq(oToken.address);
@@ -466,7 +478,8 @@ describe('VeExternalVesterV1', () => {
       await setupAllowancesForVesting();
       await vester.vest(FOUR_WEEKS, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT);
       await expectThrow(
-        vester.connect(core.hhUser1)
+        vester
+          .connect(core.hhUser1)
           .callClosePositionAndBuyTokensAndTriggerReentrancy(NFT_ID, VE_TOKEN_ID, MAX_UINT_256_BI),
         'ReentrancyGuardUpgradeable: Reentrant call',
       );
@@ -659,7 +672,7 @@ describe('VeExternalVesterV1', () => {
     it('should fail if not called by the owner', async () => {
       await expectThrow(
         vester.connect(core.hhUser1).ownerSetForceClosePositionTax(500),
-        `VeExternalVesterImplementationV1: Sender is not owner <${core.hhUser1.address.toLowerCase()}>`,
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
@@ -684,18 +697,10 @@ describe('VeExternalVesterV1', () => {
       );
     });
 
-    it('should fail if the owner is not a local operator', async () => {
-      await core.dolomiteMargin.connect(owner).setOperators([{ operator: vester.address, trusted: false }]);
-      await expectThrow(
-        vester.connect(owner).ownerDepositRewardToken(TOTAL_REWARD_AMOUNT),
-        'VeExternalVesterImplementationV1: Vester is not operator for owner',
-      );
-    });
-
     it('should fail if not called by the owner', async () => {
       await expectThrow(
         vester.connect(core.hhUser1).ownerDepositRewardToken(TOTAL_REWARD_AMOUNT),
-        `VeExternalVesterImplementationV1: Sender is not owner <${core.hhUser1.address.toLowerCase()}>`,
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
@@ -762,7 +767,7 @@ describe('VeExternalVesterV1', () => {
     it('should fail if not called by the owner', async () => {
       await expectThrow(
         vester.connect(core.hhUser1).ownerWithdrawRewardToken(owner.address, ONE_ETH_BI, true),
-        `VeExternalVesterImplementationV1: Sender is not owner <${core.hhUser1.address.toLowerCase()}>`,
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
@@ -797,7 +802,7 @@ describe('VeExternalVesterV1', () => {
     it('should fail if not called by the owner', async () => {
       await expectThrow(
         vester.connect(core.hhUser1).ownerAccrueRewardTokenInterest(owner.address),
-        `VeExternalVesterImplementationV1: Sender is not owner <${core.hhUser1.address.toLowerCase()}>`,
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
@@ -815,7 +820,7 @@ describe('VeExternalVesterV1', () => {
     it('should fail if not called by the owner', async () => {
       await expectThrow(
         vester.connect(core.hhUser1).ownerSetIsVestingActive(false),
-        `VeExternalVesterImplementationV1: Sender is not owner <${core.hhUser1.address.toLowerCase()}>`,
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
@@ -841,7 +846,7 @@ describe('VeExternalVesterV1', () => {
     it('should fail if not called by the owner', async () => {
       await expectThrow(
         vester.connect(core.hhUser1).ownerSetDiscountCalculator(discountCalculator.address),
-        `VeExternalVesterImplementationV1: Sender is not owner <${core.hhUser1.address.toLowerCase()}>`,
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
@@ -873,7 +878,7 @@ describe('VeExternalVesterV1', () => {
     it('should fail if not called by the owner', async () => {
       await expectThrow(
         vester.connect(core.hhUser1).ownerSetClosePositionWindow(ONE_WEEK),
-        `VeExternalVesterImplementationV1: Sender is not owner <${core.hhUser1.address.toLowerCase()}>`,
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
@@ -897,7 +902,7 @@ describe('VeExternalVesterV1', () => {
     it('should fail if not called by the owner', async () => {
       await expectThrow(
         vester.connect(core.hhUser1).ownerSetEmergencyWithdrawTax(100),
-        `VeExternalVesterImplementationV1: Sender is not owner <${core.hhUser1.address.toLowerCase()}>`,
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
@@ -915,7 +920,7 @@ describe('VeExternalVesterV1', () => {
     it('should fail if not called by the owner', async () => {
       await expectThrow(
         vester.connect(core.hhUser1).ownerSetBaseURI(baseURI),
-        `VeExternalVesterImplementationV1: Sender is not owner <${core.hhUser1.address.toLowerCase()}>`,
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
@@ -946,9 +951,21 @@ describe('VeExternalVesterV1', () => {
     }
   }
 
-  async function setPriceOracle(marketId: BigNumberish, priceOracle: IDolomitePriceOracle) {
+  async function setPriceOracle(token: IERC20, marketId: BigNumberish, priceOracle: IDolomitePriceOracle) {
+    await core.oracleAggregatorV2.connect(core.governance).ownerInsertOrUpdateToken({
+      token: token.address,
+      decimals: await IERC20Metadata__factory.connect(token.address, core.hhUser1).decimals(),
+      oracleInfos: [
+        {
+          oracle: priceOracle.address,
+          weight: 100,
+          tokenPair: ADDRESS_ZERO,
+        },
+      ],
+    });
+
     if (!BigNumber.from(marketId).eq(NO_MARKET_ID)) {
-      await core.dolomiteMargin.ownerSetPriceOracle(marketId, priceOracle.address);
+      await core.dolomiteMargin.ownerSetPriceOracle(marketId, core.oracleAggregatorV2.address);
     }
   }
 

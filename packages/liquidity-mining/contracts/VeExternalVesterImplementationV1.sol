@@ -151,7 +151,7 @@ contract VeExternalVesterImplementationV1 is
         _ownerSetDiscountCalculator(_discountCalculator);
         _ownerSetOToken(_oToken);
         _ownerSetClosePositionWindow(0 weeks);
-        _ownerSetForceClosePositionTax(0); // 0%
+        _ownerSetForceClosePositionTax(500); // 5%
         _ownerSetEmergencyWithdrawTax(0); // 0%
         _ownerSetBaseURI(_baseUri);
         __ERC721_init(_name, _symbol);
@@ -324,11 +324,6 @@ contract VeExternalVesterImplementationV1 is
     )
     external
     onlyDolomiteMarginOwner(msg.sender) {
-        Require.that(
-            DOLOMITE_MARGIN().getIsLocalOperator(msg.sender, address(this)),
-            _FILE,
-            "Vester is not operator for owner"
-        );
         REWARD_TOKEN.safeTransferFrom(msg.sender, address(this), _amount);
         _depositIntoDolomite(
             /* _toAccountOwner = */ address(this),
