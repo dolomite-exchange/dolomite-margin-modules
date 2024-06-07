@@ -22,7 +22,12 @@ import { expectEvent, expectNotEvent, expectProtocolBalance, expectThrow } from 
 
 import { CoreProtocolArbitrumOne } from '../utils/core-protocols/core-protocol-arbitrum-one';
 import { createDolomiteErc20Proxy } from '../utils/dolomite';
-import { getDefaultCoreProtocolConfig, setupCoreProtocol, setupUSDCBalance } from '../utils/setup';
+import {
+  disableInterestAccrual,
+  getDefaultCoreProtocolConfig,
+  setupCoreProtocol,
+  setupUSDCBalance
+} from '../utils/setup';
 
 const usdcAmount = BigNumber.from('100000000'); // 100 USDC
 
@@ -43,7 +48,9 @@ describe('DolomiteERC20', () => {
     );
     const tokenProxy = await createDolomiteErc20Proxy(implementation, core.marketIds.usdc, core);
     token = DolomiteERC20__factory.connect(tokenProxy.address, core.hhUser1);
+    await token.initializeVersion2();
 
+    await disableInterestAccrual(core, core.marketIds.usdc);
     await setupUSDCBalance(core, core.hhUser1, usdcAmount.mul(10), core.dolomiteMargin);
     await depositIntoDolomiteMargin(core, core.hhUser1, ZERO_BI, core.marketIds.usdc, usdcAmount);
     await core.dolomiteMargin.ownerSetGlobalOperator(token.address, true);
@@ -70,6 +77,56 @@ describe('DolomiteERC20', () => {
 
     it('should not be callable again', async () => {
       await expectThrow(token.initialize('', '', 18, 0));
+    });
+  });
+
+  describe('#initialize', () => {
+    it('should not be callable again', async () => {
+      await expectThrow(token.initializeVersion2());
+    });
+  });
+
+  describe('#mint', () => {
+    it('should work normally', async () => {
+      expect(await token.connect(core.hhUser1).callStatic.mint(usdcAmount)).to.eq(parValue);
+      const result = await token.connect(core.hhUser1).mint(usdcAmount);
+      await expectEvent(token, result, 'Transfer', {
+        from: ADDRESS_ZERO,
+        to: core.hhUser1.address,
+        value: parValue,
+      });
+
+      expect(await token.balanceOf(core.hhUser1.address)).to.eq(parValue.mul(2));
+      await expectProtocolBalance(core, core.hhUser1, ZERO_BI, core.marketIds.usdc, usdcAmount.mul(2));
+    });
+
+    it('should fail if amount is 0', async () => {
+      await expectThrow(
+        token.connect(core.hhUser1).mint(ZERO_BI),
+        'DolomiteERC20: Invalid amount',
+      );
+    });
+  });
+
+  describe('#redeem', () => {
+    it('should work normally', async () => {
+      expect(await token.connect(core.hhUser1).callStatic.redeem(parValue)).to.eq(usdcAmount);
+      const result = await token.connect(core.hhUser1).redeem(parValue);
+      await expectEvent(token, result, 'Transfer', {
+        from: core.hhUser1.address,
+        to: ADDRESS_ZERO,
+        value: parValue,
+      });
+
+      expect(await token.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1, ZERO_BI, core.marketIds.usdc, ZERO_BI);
+    });
+
+    it('should fail if amount is 0', async () => {
+      await expectThrow(
+        token.connect(core.hhUser1).redeem(ZERO_BI),
+        'DolomiteERC20: Invalid amount',
+      );
     });
   });
 
