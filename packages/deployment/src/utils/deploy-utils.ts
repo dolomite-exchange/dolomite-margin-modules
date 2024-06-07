@@ -39,7 +39,8 @@ import { CoreProtocolType } from '@dolomite-exchange/modules-base/test/utils/set
 import {
   CoreProtocolWithChainlinkOld,
   CoreProtocolWithChainlinkV3,
-  CoreProtocolWithChronicle, CoreProtocolWithRedstone,
+  CoreProtocolWithChronicle,
+  CoreProtocolWithRedstone,
 } from '@dolomite-exchange/modules-oracles/src/oracles-constructors';
 import { IChainlinkAggregator__factory, IChronicleScribe__factory } from '@dolomite-exchange/modules-oracles/src/types';
 import {
@@ -674,6 +675,7 @@ export async function prettyPrintEncodedDataWithTypeSafety<
   key: K,
   methodName: U,
   args: Parameters<T['populateTransaction'][U]>,
+  options: { skipWrappingCalldataForOwner: boolean } = { skipWrappingCalldataForOwner: false },
 ): Promise<EncodedTransaction> {
   const contract = liveMap[key];
   const transaction = await contract.populateTransaction[methodName.toString()](...(args as any));
@@ -698,12 +700,15 @@ export async function prettyPrintEncodedDataWithTypeSafety<
     console.log(''); // add a new line
   }
 
-  if (
-    typeof methodName === 'string'
-    && isOwnerFunction(methodName, transaction.to === core.delayedMultiSig.address)
-    && await core.dolomiteMargin.owner() === core.delayedMultiSig.address
-  ) {
-    // All owner ... functions must go to Dolomite governance first
+  if (options.skipWrappingCalldataForOwner) {
+    return {
+      to: transaction.to!,
+      value: transaction.value?.toString() ?? '0',
+      data: transaction.data!,
+    };
+  }
+
+  if (await core.dolomiteMargin.owner() === core.delayedMultiSig.address) {
     const outerTransaction = await core.delayedMultiSig.populateTransaction.submitTransaction(
       transaction.to!,
       transaction.value ?? ZERO_BI,
@@ -716,11 +721,7 @@ export async function prettyPrintEncodedDataWithTypeSafety<
     };
   }
 
-  return {
-    to: transaction.to!,
-    value: transaction.value?.toString() ?? '0',
-    data: transaction.data!,
-  };
+  return Promise.reject(new Error('Unknown owner function needed!'));
 }
 
 let mostRecentTokenDecimals: number | undefined = undefined;
