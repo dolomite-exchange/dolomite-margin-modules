@@ -49,9 +49,9 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const dUsdc = DolomiteERC20__factory.connect(ModuleDeployments.DolomiteUsdcToken[network].address, core.hhUser1);
 
   const wbtcInitData = await dolomiteERC20WithPayableImplementationV2.populateTransaction.initialize(
-    'Dolomite: WETH',
-    'dWETH',
-    18,
+    'Dolomite: WBTC',
+    'dWBTC',
+    8,
     core.marketIds.wbtc,
   );
   const dolomiteWbtcAddress = await deployContractAndSave(
