@@ -329,6 +329,20 @@
       "isVerified": true
     }
   },
+  "DolomiteERC20ImplementationV2": {
+    "42161": {
+      "address": "0x5a1166fBadd1C78aFe088497bEF5a23e5BaC57a1",
+      "transaction": "0x49e67a9268c2045248389c61fc0313b52fe225b143b0b758c1cf81f3612b0975",
+      "isVerified": true
+    }
+  },
+  "DolomiteERC20WithPayableImplementationV2": {
+    "42161": {
+      "address": "0x517E81E661363c7Ae152aAbB1Aa2C3aFC0460130",
+      "transaction": "0xdf1603ba77a396d5d9fd6c919f16bab7422a12de8b4892225eebf01b2608371c",
+      "isVerified": true
+    }
+  },
   "DolomiteMigratorV1": {
     "42161": {
       "address": "0x32c327aE19e226E6643eacE8BceC62cADcd0f990",
@@ -490,10 +504,17 @@
       "isVerified": true
     }
   },
+  "DolomiteWbtcToken": {
+    "42161": {
+      "address": "0xf088cC021fBc4A040bD87c137dC697e9771fD963",
+      "transaction": "0x42b66812160aa216bf3bd0e1338193529fbe87487e3c302e2b8a01b38cd0fed2",
+      "isVerified": true
+    }
+  },
   "DolomiteWethToken": {
     "42161": {
-      "address": "0xb67534C6eB4D38391D4d61eFB1EcAee167010E4C",
-      "transaction": "0x7622bae4ecbf0dd3b418666928644d4ec83fe569ed72c4ae957fd8b32e2aff4c",
+      "address": "0x1c68E777966Cc3083F0aDcDfe8Be31EB2eAFE64F",
+      "transaction": "0x5d3133fe5616a01f68fa050aea086405b635140b30b4a8a05a66f44c750a6edf",
       "isVerified": true
     }
   },
@@ -1174,6 +1195,27 @@
     "42161": {
       "address": "0x2D165A76dd3e552DF3860789331Ab73c5a3d7F92",
       "transaction": "0x6cd03f9d9cb49e4b251ee526952710d60369cb766a3f78a8bd57985e783b314a",
+      "isVerified": true
+    }
+  },
+  "GmxV2UNIAsyncIsolationModeUnwrapperTraderProxyV2": {
+    "42161": {
+      "address": "0x77a7dc42E1591575166D2A0B98e25dAc7b311317",
+      "transaction": "0xd51a44754152af763220ec9f84182c7d9f657229d95634f3e2ed0894af1ab049",
+      "isVerified": true
+    }
+  },
+  "GmxV2UNIAsyncIsolationModeWrapperTraderProxyV2": {
+    "42161": {
+      "address": "0x99190DD587d239eAA41aaa960195529bAd97b333",
+      "transaction": "0x6dd44d517495801c4824b9b33ac7a008fe9f9cf56b09ad55645af1ab3af1d6c5",
+      "isVerified": true
+    }
+  },
+  "GmxV2UNIIsolationModeVaultFactory": {
+    "42161": {
+      "address": "0x20d51CB520C4622Dcc3d7E35003dBaB07d547E7E",
+      "transaction": "0x4718e4690d3555de14f7becec8f5a68503806c7215d79d80b5e687819a34cf9e",
       "isVerified": true
     }
   },
