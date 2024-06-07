@@ -27,7 +27,7 @@ import { ADDRESS_ZERO, Network } from 'packages/base/src/utils/no-deps-constants
 import {
   deployContractAndSave,
   EncodedTransaction,
-  prettyPrintEncodeAddIsolationModeMarket,
+  prettyPrintEncodeAddAsyncIsolationModeMarket,
   prettyPrintEncodedDataWithTypeSafety,
 } from '../../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../utils/dry-run-utils';
@@ -130,6 +130,13 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       ),
       await prettyPrintEncodedDataWithTypeSafety(
         core,
+        core.gmxEcosystemV2.live,
+        'registry',
+        'ownerSetGmxMarketToIndexToken',
+        [gmTokens[i].marketToken.address, gmTokens[i].indexToken.address],
+      ),
+      await prettyPrintEncodedDataWithTypeSafety(
+        core,
         { gmxV2PriceOracle },
         'gmxV2PriceOracle',
         'ownerSetMarketToken',
@@ -154,17 +161,17 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
           },
         ],
       ),
-      ...(await prettyPrintEncodeAddIsolationModeMarket(
+      ...(await prettyPrintEncodeAddAsyncIsolationModeMarket(
         core,
         factory,
         core.oracleAggregatorV2,
         unwrappers[i],
         wrappers[i],
+        core.gmxEcosystemV2.live.registry,
         gmMarketIds[i],
         TargetCollateralization._125,
         TargetLiquidationPenalty.Base,
         supplyCaps[i],
-        { isAsyncAsset: true },
       )),
     );
   }

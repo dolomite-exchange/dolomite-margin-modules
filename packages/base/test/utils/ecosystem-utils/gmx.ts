@@ -88,7 +88,8 @@ import {
   GMX_READER_MAP,
   GMX_REWARD_ROUTER_V2_MAP,
   GMX_REWARD_ROUTER_V3_MAP,
-  GMX_ROUTER_MAP, GMX_UNI_USD_MARKET_TOKEN_MAP,
+  GMX_ROUTER_MAP,
+  GMX_UNI_USD_MARKET_TOKEN_MAP,
   GMX_VAULT_MAP,
   GMX_WITHDRAWAL_HANDLER_MAP,
   GMX_WITHDRAWAL_VAULT_MAP,
@@ -96,7 +97,8 @@ import {
   NATIVE_USDC_MAP,
   S_GLP_MAP,
   S_GMX_MAP,
-  SBF_GMX_MAP, UNI_MAP,
+  SBF_GMX_MAP,
+  UNI_MAP,
   V_GLP_MAP,
   V_GMX_MAP,
   WBTC_MAP,
@@ -179,6 +181,7 @@ export interface GmxEcosystemV2 {
     gmEth: LiveGmMarket;
     gmEthUsd: LiveGmMarket;
     gmLinkUsd: LiveGmMarket;
+    gmUniUsd: LiveGmMarket;
     gmxV2LibraryMap: { GmxV2Library: string };
     registry: GmxV2Registry;
     registryProxy: RegistryProxy;
@@ -494,6 +497,28 @@ export async function createGmxEcosystemV2(
           signer,
         ),
       },
+      gmUniUsd: {
+        factory: GmxV2IsolationModeVaultFactory__factory.connect(
+          Deployments.GmxV2UNIIsolationModeVaultFactory['42161'].address,
+          signer,
+        ),
+        unwrapper: GmxV2IsolationModeUnwrapperTraderV2__factory.connect(
+          Deployments.GmxV2UNIAsyncIsolationModeUnwrapperTraderProxyV2['42161'].address,
+          signer,
+        ),
+        unwrapperProxy: IsolationModeTraderProxy__factory.connect(
+          Deployments.GmxV2UNIAsyncIsolationModeUnwrapperTraderProxyV2['42161'].address,
+          signer,
+        ),
+        wrapper: GmxV2IsolationModeWrapperTraderV2__factory.connect(
+          Deployments.GmxV2UNIAsyncIsolationModeWrapperTraderProxyV2['42161'].address,
+          signer,
+        ),
+        wrapperProxy: IsolationModeTraderProxy__factory.connect(
+          Deployments.GmxV2UNIAsyncIsolationModeWrapperTraderProxyV2['42161'].address,
+          signer,
+        ),
+      },
       gmxV2LibraryMap: { GmxV2Library: gmxV2LibraryAddress },
       priceOracle: GmxV2MarketTokenPriceOracle__factory.connect(priceOracleAddress, signer),
       registry: GmxV2Registry__factory.connect(Deployments.GmxV2RegistryProxy['42161'].address, signer),
@@ -502,10 +527,7 @@ export async function createGmxEcosystemV2(
         unwrapperImplementationAddress,
         signer,
       ),
-      wrapperImplementation: GmxV2IsolationModeWrapperTraderV2__factory.connect(
-        wrapperImplementationAddress,
-        signer,
-      ),
+      wrapperImplementation: GmxV2IsolationModeWrapperTraderV2__factory.connect(wrapperImplementationAddress, signer),
     },
   };
 }
