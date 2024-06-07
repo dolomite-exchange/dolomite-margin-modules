@@ -86,7 +86,7 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
       'ownerSetIsTokenConverterTrusted',
       [usdeSystem.wrapper.address, true],
     ),
-  )
+  );
   return {
     core,
     upload: {
