@@ -34,7 +34,6 @@ import { IGammaRegistry } from "./interfaces/IGammaRegistry.sol";
 
 import "hardhat/console.sol";
 
-
 /**
  * @title   GammaIsolationModeWrapperTraderV2
  * @author  Dolomite
@@ -186,17 +185,15 @@ contract GammaIsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2 {
         uint256 _token1PreBal
     ) internal returns (uint256, uint256) {
         uint256 amount = IERC20(_token0).balanceOf(address(this)) - _token0PreBal;
-        address inputToken = _token0;
-        if (amount == 0) {
-            amount = IERC20(_token1).balanceOf(address(this)) - _token1PreBal;
-            inputToken = _token1;
-        }
-
-        if (amount == 0) {
-            return (0, 0);
-        }
+        address inputToken = amount == 0 ? _token1 : _token0;
+        amount = amount == 0 
+            ? IERC20(_token1).balanceOf(address(this)) - _token1PreBal 
+            : amount;
 
         uint256 swapAmount = amount / 2;
+        if (swapAmount == 0) {
+            return (0, 0);
+        }
         address[] memory path = new address[](2);
         path[0] = inputToken;
         path[1] = inputToken == _token0 ? _token1 : _token0;

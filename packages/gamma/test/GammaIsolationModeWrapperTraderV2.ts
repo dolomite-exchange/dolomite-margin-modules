@@ -1,8 +1,9 @@
 import { expect } from 'chai';
-import { BYTES_EMPTY, Network, ONE_BI, ONE_ETH_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { BYTES_EMPTY, Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
-import { expectProtocolBalance, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { expectProtocolBalance, expectProtocolBalanceIsGreaterThan, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
+  disableInterestAccrual,
   setupCoreProtocol,
   setupNativeUSDCBalance,
   setupTestMarket,
@@ -17,6 +18,9 @@ import {
   GammaIsolationModeVaultFactory,
   GammaPoolPriceOracle,
   GammaRegistry,
+  IDeltaSwapPair,
+  IDeltaSwapPair__factory,
+  IERC20,
   IGammaPool,
   TestGammaIsolationModeWrapperTraderV2
 } from '../src/types';
@@ -28,16 +32,17 @@ import {
   createGammaUnwrapperTraderV2,
   createTestGammaWrapperTraderV2
 } from './gamma-ecosystem-utils';
-import { BigNumber, ethers } from 'ethers';
+import { BigNumber, BigNumberish, ethers } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { AccountInfoStruct } from 'packages/base/src/utils';
-import { depositIntoDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
-import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin';
+import { createContractWithAbi, depositIntoDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
+import { BalanceCheckFlag, address } from '@dolomite-exchange/dolomite-margin';
 import { getCalldataForOdos } from 'packages/base/test/utils/trader-utils';
 import { GenericTraderType } from '@dolomite-exchange/zap-sdk';
 import { GenericEventEmissionType } from '@dolomite-exchange/dolomite-margin/dist/src/modules/GenericTraderProxyV1';
 import { createOdosAggregatorTrader } from 'packages/base/test/utils/ecosystem-utils/traders';
-import { OdosAggregatorTrader } from 'packages/base/src/types';
+import { OdosAggregatorTrader, TestAggregatorTrader, TestAggregatorTrader__factory } from 'packages/base/src/types';
+import { IERC20Metadata__factory } from 'packages/abracadabra/src/types';
 
 const defaultAccountNumber = '0';
 const borrowAccountNumber = '123';
@@ -49,6 +54,7 @@ describe('GammaIsolationModeWrapperTraderV2', () => {
 
   let core: CoreProtocolArbitrumOne;
   let gammaPool: IGammaPool;
+  let deltaPair: IDeltaSwapPair;
   let gammaRegistry: GammaRegistry;
   let unwrapper: GammaIsolationModeUnwrapperTraderV2;
   let wrapper: TestGammaIsolationModeWrapperTraderV2;
@@ -58,17 +64,27 @@ describe('GammaIsolationModeWrapperTraderV2', () => {
   let defaultAccount: AccountInfoStruct;
   let marketId: BigNumber;
   let odosAggregator: OdosAggregatorTrader;
+  let testAggregator: TestAggregatorTrader;
 
   before(async () => {
     core = await setupCoreProtocol({
-      blockNumber: await getRealLatestBlockNumber(true, Network.ArbitrumOne),
+      // blockNumber: await getRealLatestBlockNumber(true, Network.ArbitrumOne),
+      blockNumber: 219114000,
       network: Network.ArbitrumOne,
     });
+    await disableInterestAccrual(core, core.marketIds.weth);
+    await disableInterestAccrual(core, core.marketIds.nativeUsdc);
 
     odosAggregator = await createOdosAggregatorTrader(core);
+    testAggregator = await createContractWithAbi<TestAggregatorTrader>(
+      TestAggregatorTrader__factory.abi,
+      TestAggregatorTrader__factory.bytecode,
+      [core.dolomiteMargin.address]
+    );
 
     gammaRegistry = await createGammaRegistry(core);
     gammaPool = core.gammaEcosystem.gammaPools.wethUsdc;
+    deltaPair = IDeltaSwapPair__factory.connect(await gammaPool.cfmm(), core.hhUser1);
 
     const vaultImplementation = await createGammaIsolationModeTokenVaultV1();
     gammaFactory = await createGammaIsolationModeVaultFactory(gammaRegistry, gammaPool, vaultImplementation, core);
@@ -91,11 +107,14 @@ describe('GammaIsolationModeWrapperTraderV2', () => {
     );
     defaultAccount = { owner: vault.address, number: defaultAccountNumber };
 
-    await setupNativeUSDCBalance(core, core.hhUser1, usdcAmount, core.dolomiteMargin);
-    await setupWETHBalance(core, core.hhUser1, wethAmount, core.dolomiteMargin);
+    await setupNativeUSDCBalance(core, core.hhUser1, usdcAmount.mul(2), core.dolomiteMargin);
+    await setupWETHBalance(core, core.hhUser1, wethAmount.mul(2), core.dolomiteMargin);
 
     await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.nativeUsdc, usdcAmount);
     await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, wethAmount);
+
+    await core.tokens.nativeUsdc.connect(core.hhUser1).transfer(testAggregator.address, usdcAmount);
+    await core.tokens.weth.connect(core.hhUser1).transfer(testAggregator.address, wethAmount);
 
     snapshotId = await snapshot();
   });
@@ -111,7 +130,8 @@ describe('GammaIsolationModeWrapperTraderV2', () => {
   });
 
   describe('#exchange', () => {
-    it('should work normally for token0', async () => {
+    // use real latest block number with odos tests
+    xit('should work normally for token0 with odos', async () => {
       await vault.transferIntoPositionWithOtherToken(
         defaultAccountNumber,
         borrowAccountNumber,
@@ -121,44 +141,37 @@ describe('GammaIsolationModeWrapperTraderV2', () => {
       );
       await expectProtocolBalance(core, vault, borrowAccountNumber, core.marketIds.weth, wethAmount);
 
-      const { calldata } = await getCalldataForOdos(
-        wethAmount.div(2),
+      const params = await getOdosWrappingParams(
+        core,
+        borrowAccountNumber,
+        wethAmount,
         core.tokens.weth,
-        18,
-        ONE_BI,
+        wethAmount.div(2),
         core.tokens.nativeUsdc,
-        6,
-        wrapper,
-        core
-      );
-      const odosOrderData = ethers.utils.defaultAbiCoder.encode(
-        ['uint256', 'bytes'],
-        [
-          ONE_BI,
-          calldata,
-        ],
+        gammaFactory,
+        ONE_BI,
+        wrapper
       );
       await vault.swapExactInputForOutput(
-        borrowAccountNumber,
-        [core.marketIds.weth, marketId],
-        wethAmount,
+        params.accountNumber,
+        params.marketPath,
+        params.inputAmount,
+        params.minOutputAmount,
+        params.traderParams,
+        params.makerAccounts,
+        params.userConfig
+      );
+      await expectProtocolBalance(core, vault, borrowAccountNumber, core.marketIds.weth, ZERO_BI);
+      await expectProtocolBalanceIsGreaterThan(
+        core,
+        { owner: vault.address, number: borrowAccountNumber },
+        marketId,
         ONE_BI,
-        [{
-          trader: wrapper.address,
-          traderType: GenericTraderType.IsolationModeWrapper,
-          tradeData: ethers.utils.defaultAbiCoder.encode(['address', 'bytes'], [odosAggregator.address, odosOrderData]),
-          makerAccountIndex: 0
-        }],
-        [],
-        {
-          deadline: '123123123123123',
-          balanceCheckFlag: BalanceCheckFlag.None,
-          eventType: GenericEventEmissionType.None,
-        }
+        ZERO_BI
       );
     });
 
-    it('should work normally for token1', async () => {
+    xit('should work normally for token1 with odos', async () => {
       await vault.transferIntoPositionWithOtherToken(
         defaultAccountNumber,
         borrowAccountNumber,
@@ -168,40 +181,261 @@ describe('GammaIsolationModeWrapperTraderV2', () => {
       );
       await expectProtocolBalance(core, vault, borrowAccountNumber, core.marketIds.nativeUsdc, usdcAmount);
 
-      const { calldata } = await getCalldataForOdos(
-        usdcAmount.div(2),
+      const params = await getOdosWrappingParams(
+        core,
+        borrowAccountNumber,
+        usdcAmount,
         core.tokens.nativeUsdc,
-        6,
-        ONE_BI,
+        usdcAmount.div(2),
         core.tokens.weth,
-        18,
-        wrapper,
-        core
-      );
-      const odosOrderData = ethers.utils.defaultAbiCoder.encode(
-        ['uint256', 'bytes'],
-        [
-          ONE_BI,
-          calldata,
-        ],
+        gammaFactory,
+        ONE_BI,
+        wrapper
       );
       await vault.swapExactInputForOutput(
-        borrowAccountNumber,
-        [core.marketIds.nativeUsdc, marketId],
-        usdcAmount,
+        params.accountNumber,
+        params.marketPath,
+        params.inputAmount,
+        params.minOutputAmount,
+        params.traderParams,
+        params.makerAccounts,
+        params.userConfig
+      );
+      await expectProtocolBalance(core, vault, borrowAccountNumber, core.marketIds.nativeUsdc, ZERO_BI);
+      await expectProtocolBalanceIsGreaterThan(
+        core,
+        { owner: vault.address, number: borrowAccountNumber },
+        marketId,
         ONE_BI,
-        [{
-          trader: wrapper.address,
-          traderType: GenericTraderType.IsolationModeWrapper,
-          tradeData: ethers.utils.defaultAbiCoder.encode(['address', 'bytes'], [odosAggregator.address, odosOrderData]),
-          makerAccountIndex: 0
-        }],
-        [],
-        {
-          deadline: '123123123123123',
-          balanceCheckFlag: BalanceCheckFlag.None,
-          eventType: GenericEventEmissionType.None,
-        }
+        ZERO_BI
+      );
+    });
+
+    it('should work normally for token 0 where swap amount is lower amount desired', async () => {
+      await vault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        core.marketIds.weth,
+        wethAmount,
+        BalanceCheckFlag.None
+      );
+      await expectProtocolBalance(core, vault, borrowAccountNumber, core.marketIds.weth, wethAmount);
+
+      const params = await getTestWrappingParams(
+        core,
+        borrowAccountNumber,
+        wethAmount,
+        core.tokens.weth,
+        gammaFactory,
+        BigNumber.from('100000000'), // $100
+        ONE_BI
+      );
+      await expect(vault.swapExactInputForOutput(
+        params.accountNumber,
+        params.marketPath,
+        params.inputAmount,
+        params.minOutputAmount,
+        params.traderParams,
+        params.makerAccounts,
+        params.userConfig
+      )).to.emit(deltaPair, 'Swap').withNamedArgs({ amount1In: 0 });
+      await expectProtocolBalance(core, vault, borrowAccountNumber, core.marketIds.weth, ZERO_BI);
+      await expectProtocolBalanceIsGreaterThan(
+        core,
+        { owner: vault.address, number: borrowAccountNumber },
+        marketId,
+        ONE_BI,
+        ZERO_BI
+      );
+    });
+
+    it('should work normally for token 0 where swap amount is higher amount desired', async () => {
+      await vault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        core.marketIds.weth,
+        wethAmount,
+        BalanceCheckFlag.None
+      );
+      await expectProtocolBalance(core, vault, borrowAccountNumber, core.marketIds.weth, wethAmount);
+
+      const params = await getTestWrappingParams(
+        core,
+        borrowAccountNumber,
+        wethAmount,
+        core.tokens.weth,
+        gammaFactory,
+        BigNumber.from('1000000000'), // $1,000
+        ONE_BI
+      );
+      await expect(vault.swapExactInputForOutput(
+        params.accountNumber,
+        params.marketPath,
+        params.inputAmount,
+        params.minOutputAmount,
+        params.traderParams,
+        params.makerAccounts,
+        params.userConfig
+      )).to.emit(deltaPair, 'Swap').withNamedArgs({ amount0In: 0 });
+      await expectProtocolBalance(core, vault, borrowAccountNumber, core.marketIds.weth, ZERO_BI);
+      await expectProtocolBalanceIsGreaterThan(
+        core,
+        { owner: vault.address, number: borrowAccountNumber },
+        marketId,
+        ONE_BI,
+        ZERO_BI
+      );
+    });
+
+    it('should work normally for token 1 where swap amount is lower amount desired', async () => {
+      await vault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        core.marketIds.nativeUsdc,
+        usdcAmount,
+        BalanceCheckFlag.None
+      );
+      await expectProtocolBalance(core, vault, borrowAccountNumber, core.marketIds.nativeUsdc, usdcAmount);
+
+      const params = await getTestWrappingParams(
+        core,
+        borrowAccountNumber,
+        usdcAmount,
+        core.tokens.nativeUsdc,
+        gammaFactory,
+        parseEther('0.1'),
+        ONE_BI
+      );
+      await expect(vault.swapExactInputForOutput(
+        params.accountNumber,
+        params.marketPath,
+        params.inputAmount,
+        params.minOutputAmount,
+        params.traderParams,
+        params.makerAccounts,
+        params.userConfig
+      )).to.emit(deltaPair, 'Swap').withNamedArgs({ amount0In: 0 });
+      await expectProtocolBalance(core, vault, borrowAccountNumber, core.marketIds.nativeUsdc, ZERO_BI);
+      await expectProtocolBalanceIsGreaterThan(
+        core,
+        { owner: vault.address, number: borrowAccountNumber },
+        marketId,
+        ONE_BI,
+        ZERO_BI
+      );
+    });
+
+    it('should work normally for token 1 where swap amount is higher amount desired', async () => {
+      await vault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        core.marketIds.nativeUsdc,
+        usdcAmount,
+        BalanceCheckFlag.None
+      );
+      await expectProtocolBalance(core, vault, borrowAccountNumber, core.marketIds.nativeUsdc, usdcAmount);
+
+      const params = await getTestWrappingParams(
+        core,
+        borrowAccountNumber,
+        usdcAmount,
+        core.tokens.nativeUsdc,
+        gammaFactory,
+        parseEther('0.2'),
+        ONE_BI
+      );
+      await expect(vault.swapExactInputForOutput(
+        params.accountNumber,
+        params.marketPath,
+        params.inputAmount,
+        params.minOutputAmount,
+        params.traderParams,
+        params.makerAccounts,
+        params.userConfig
+      )).to.emit(deltaPair, 'Swap').withNamedArgs({ amount1In: 0 });
+      await expectProtocolBalance(core, vault, borrowAccountNumber, core.marketIds.nativeUsdc, ZERO_BI);
+      await expectProtocolBalanceIsGreaterThan(
+        core,
+        { owner: vault.address, number: borrowAccountNumber },
+        marketId,
+        ONE_BI,
+        ZERO_BI
+      );
+    });
+
+    it('should work normally for token 0 and no dust', async () => {
+      await vault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        core.marketIds.weth,
+        wethAmount,
+        BalanceCheckFlag.None
+      );
+      await expectProtocolBalance(core, vault, borrowAccountNumber, core.marketIds.weth, wethAmount);
+
+      const params = await getTestWrappingParams(
+        core,
+        borrowAccountNumber,
+        wethAmount,
+        core.tokens.weth,
+        gammaFactory,
+        BigNumber.from('472206338'),
+        ONE_BI
+      );
+      await vault.swapExactInputForOutput(
+        params.accountNumber,
+        params.marketPath,
+        params.inputAmount,
+        params.minOutputAmount,
+        params.traderParams,
+        params.makerAccounts,
+        params.userConfig
+      );
+      await expectProtocolBalance(core, vault, borrowAccountNumber, core.marketIds.weth, ZERO_BI);
+      await expectProtocolBalanceIsGreaterThan(
+        core,
+        { owner: vault.address, number: borrowAccountNumber },
+        marketId,
+        ONE_BI,
+        ZERO_BI
+      );
+    });
+
+    it('should work normally for token 1 and no dust', async () => {
+      await vault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        core.marketIds.nativeUsdc,
+        usdcAmount,
+        BalanceCheckFlag.None
+      );
+      await expectProtocolBalance(core, vault, borrowAccountNumber, core.marketIds.nativeUsdc, usdcAmount);
+
+      const params = await getTestWrappingParams(
+        core,
+        borrowAccountNumber,
+        usdcAmount,
+        core.tokens.nativeUsdc,
+        gammaFactory,
+        parseEther('0.132357393266501044'),
+        ONE_BI
+      );
+      await vault.swapExactInputForOutput(
+        params.accountNumber,
+        params.marketPath,
+        params.inputAmount,
+        params.minOutputAmount,
+        params.traderParams,
+        params.makerAccounts,
+        params.userConfig
+      );
+      await expectProtocolBalance(core, vault, borrowAccountNumber, core.marketIds.nativeUsdc, ZERO_BI);
+      await expectProtocolBalanceIsGreaterThan(
+        core,
+        { owner: vault.address, number: borrowAccountNumber },
+        marketId,
+        ONE_BI,
+        ZERO_BI
       );
     });
   });
@@ -303,4 +537,94 @@ describe('GammaIsolationModeWrapperTraderV2', () => {
       );
     });
   });
+
+  async function getOdosWrappingParams(
+    core: CoreProtocolArbitrumOne,
+    accountNumber: BigNumberish,
+    inputAmount: BigNumber,
+    inputToken: IERC20,
+    odosInputAmount: BigNumber,
+    odosOutputToken: IERC20,
+    outputToken: IERC20,
+    minOutputAmount: BigNumber,
+    receiver: { address: address},
+  ): Promise<any> {
+    const { calldata } = await getCalldataForOdos(
+      odosInputAmount,
+      inputToken,
+      await IERC20Metadata__factory.connect(inputToken.address, core.hhUser1).decimals(),
+      minOutputAmount,
+      odosOutputToken,
+      await IERC20Metadata__factory.connect(odosOutputToken.address, core.hhUser1).decimals(),
+      receiver,
+      core
+    );
+    const odosOrderData = ethers.utils.defaultAbiCoder.encode(
+      ['uint256', 'bytes'],
+      [
+        ONE_BI,
+        calldata,
+      ],
+    );
+    return {
+      accountNumber,
+      inputAmount,
+      minOutputAmount,
+      marketPath: [
+        await core.dolomiteMargin.getMarketIdByTokenAddress(inputToken.address),
+        await core.dolomiteMargin.getMarketIdByTokenAddress(outputToken.address)
+      ],
+      traderParams: [{
+        trader: wrapper.address,
+        traderType: GenericTraderType.IsolationModeWrapper,
+        tradeData: ethers.utils.defaultAbiCoder.encode(['address', 'bytes'], [odosAggregator.address, odosOrderData]),
+        makerAccountIndex: 0
+      }],
+      makerAccounts: [],
+      userConfig: {
+        deadline: '123123123123123',
+        balanceCheckFlag: BalanceCheckFlag.None,
+        eventType: GenericEventEmissionType.None,
+      }
+    };
+  }
+
+  async function getTestWrappingParams(
+    core: CoreProtocolArbitrumOne,
+    accountNumber: BigNumberish,
+    inputAmount: BigNumber,
+    inputToken: IERC20,
+    outputToken: IERC20,
+    minOutputAmountTrader: BigNumber,
+    minOutputAmount: BigNumber,
+  ): Promise<any> {
+    const orderData = ethers.utils.defaultAbiCoder.encode(
+      ['uint256', 'bytes'],
+      [
+        minOutputAmountTrader,
+        BYTES_EMPTY
+      ],
+    );
+    return {
+      accountNumber,
+      inputAmount,
+      minOutputAmount,
+      marketPath: [
+        await core.dolomiteMargin.getMarketIdByTokenAddress(inputToken.address),
+        await core.dolomiteMargin.getMarketIdByTokenAddress(outputToken.address)
+      ],
+      traderParams: [{
+        trader: wrapper.address,
+        traderType: GenericTraderType.IsolationModeWrapper,
+        tradeData: ethers.utils.defaultAbiCoder.encode(['address', 'bytes'], [testAggregator.address, orderData]),
+        makerAccountIndex: 0
+      }],
+      makerAccounts: [],
+      userConfig: {
+        deadline: '123123123123123',
+        balanceCheckFlag: BalanceCheckFlag.None,
+        eventType: GenericEventEmissionType.None,
+      }
+    };
+  }
 });

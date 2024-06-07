@@ -20,12 +20,12 @@
 
 pragma solidity ^0.8.9;
 
+import { InterestIndexLib } from "../lib/InterestIndexLib.sol";
+import { IDolomiteInterestSetter } from "../protocol/interfaces/IDolomiteInterestSetter.sol";
 import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
-import { IDolomiteInterestSetter } from "../protocol/interfaces/IDolomiteInterestSetter.sol";
 import { DecimalLib } from "../protocol/lib/DecimalLib.sol";
 import { DolomiteMarginMath } from "../protocol/lib/DolomiteMarginMath.sol";
-import { InterestIndexLib } from "../lib/InterestIndexLib.sol";
 
 
 /**

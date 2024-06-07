@@ -29,6 +29,15 @@ pragma solidity ^0.8.9;
  */
 interface IDeltaSwapPair {
 
+    event Swap(
+        address indexed sender,
+        uint256 amount0In,
+        uint256 amount1In,
+        uint256 amount0Out,
+        uint256 amount1Out,
+        address indexed to
+    );
+
     function mint(address _to) external returns (uint256);
 
     function swap(uint256 _amount0Out, uint256 _amount1Out, address _to, bytes calldata _data) external;
