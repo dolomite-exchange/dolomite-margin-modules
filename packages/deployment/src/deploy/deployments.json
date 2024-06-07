@@ -506,8 +506,8 @@
   },
   "DolomiteWbtcToken": {
     "42161": {
-      "address": "0xf088cC021fBc4A040bD87c137dC697e9771fD963",
-      "transaction": "0x42b66812160aa216bf3bd0e1338193529fbe87487e3c302e2b8a01b38cd0fed2",
+      "address": "0x0a52BCb532F59F6a37A9d3B5bc9FfD47E461d995",
+      "transaction": "0xbfa069948f6c6cfd57d684f92b15edf9dcace8b51872e3253b234ce79d5434c8",
       "isVerified": true
     }
   },
