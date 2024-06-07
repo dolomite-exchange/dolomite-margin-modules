@@ -3,7 +3,6 @@ import {
   TargetLiquidationPenalty,
 } from '@dolomite-exchange/modules-base/src/utils/constructors/dolomite';
 import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { parseWbtc } from '@dolomite-exchange/modules-base/src/utils/math-utils';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { parseEther } from 'ethers/lib/utils';
@@ -31,7 +30,7 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
     blockNumber: await getRealLatestBlockNumber(true, network),
   });
 
-  const USDeSystem = await deployPendlePtSystem(
+  const usdeSystem = await deployPendlePtSystem(
     core,
     'USDeJul2024',
     core.pendleEcosystem.usdeJul2024.usdeMarket,
@@ -61,10 +60,10 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
   transactions = transactions.concat(
     await prettyPrintEncodeAddIsolationModeMarket(
       core,
-      USDeSystem.factory,
-      USDeSystem.oracle,
-      USDeSystem.unwrapper,
-      USDeSystem.wrapper,
+      usdeSystem.factory,
+      usdeSystem.oracle,
+      usdeSystem.unwrapper,
+      usdeSystem.wrapper,
       ptUSDeMarketId,
       // @follow-up @Corey, I'm not sure what to put for these values
       TargetCollateralization._120,
@@ -72,6 +71,22 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
       ptUSDeMaxSupplyWei,
     ),
   );
+  transactions.push(
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { factory: usdeSystem.factory },
+      'factory',
+      'ownerSetIsTokenConverterTrusted',
+      [usdeSystem.unwrapper.address, true],
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { factory: usdeSystem.factory },
+      'factory',
+      'ownerSetIsTokenConverterTrusted',
+      [usdeSystem.wrapper.address, true],
+    ),
+  )
   return {
     core,
     upload: {
@@ -95,12 +110,27 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
         'Invalid interest setter USDe',
       );
       assertHardhatInvariant(
-        (await core.dolomiteMargin.getNumMarkets()).eq(7),
+        (await core.dolomiteMargin.getNumMarkets()).eq(8),
         'Invalid number of markets',
       );
       assertHardhatInvariant(
         (await core.dolomiteMargin.getMarketTokenAddress(core.marketIds.usde)) === core.tokens.usde.address,
         'Invalid usde for market 6',
+      );
+
+      assertHardhatInvariant(
+        (await core.dolomiteMargin.getMarketTokenAddress(7)) === usdeSystem.factory.address,
+        'Invalid ptUSDe for market 7',
+      );
+
+      assertHardhatInvariant(
+        (await usdeSystem.factory.isTokenConverterTrusted(usdeSystem.unwrapper.address)),
+        'Unwrapper not trusted',
+      );
+
+      assertHardhatInvariant(
+        (await usdeSystem.factory.isTokenConverterTrusted(usdeSystem.wrapper.address)),
+        'Wrapper not trusted',
       );
 
       console.log(

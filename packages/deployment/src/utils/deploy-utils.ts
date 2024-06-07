@@ -342,10 +342,10 @@ export async function deployContractAndSave(
 
 export function getTokenVaultLibrary<T extends NetworkType>(core: CoreProtocolType<T>): Record<string, string> {
   const libraryName = 'IsolationModeTokenVaultV1ActionsImpl';
-  const deploymentName = 'IsolationModeTokenVaultV1ActionsImplV3';
+  const deploymentName = 'IsolationModeTokenVaultV1ActionsImplV7';
   const deployments = readAllDeploymentFiles();
   return {
-    [libraryName]: deployments[deploymentName][core.config.network as '42161'].address,
+    [libraryName]: deployments[deploymentName][core.config.network].address,
   };
 }
 
