@@ -35,7 +35,7 @@ import { Require } from "../protocol/lib/Require.sol";
  * @title   DolomiteAddressRegistry
  * @author  Dolomite
  *
- * @notice  Registry contract for storing ecosystem-related addresses
+ * @notice  Registry contract for storing isolation-mode vaults and restricted accounts
  */
 contract DolomiteAddressRegistry is
     IDolomiteAddressRegistry,
@@ -54,12 +54,14 @@ contract DolomiteAddressRegistry is
     bytes32 internal constant ISOLATION_MODE_PREFIX_HASH = keccak256(bytes("Dolomite Isolation:"));
     uint256 internal constant DOLOMITE_ISOLATION_LENGTH = 19;
 
-    // ===================== Functions =====================
+    // ==================== Initializer ====================
 
     function initialize(address[] memory _factories) external initializer {
         AccountInformation storage storageStruct = _getAccountInformation();
         storageStruct.factories = _factories;
     }
+
+    // ===================== Functions =====================
 
     function registerVault(
         address _account,
@@ -77,6 +79,8 @@ contract DolomiteAddressRegistry is
     onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetRestrictedAccount(_account, _isRestricted);
     }
+
+    // ========================== View Functions =========================
 
     function isIsolationModeVault(address _vault) external view returns (bool) {
         AccountInformation storage storageStruct = _getAccountInformation();
