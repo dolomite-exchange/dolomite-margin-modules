@@ -306,6 +306,11 @@
       "address": "0xe4d3450d52EDF515433FEc12eaEFFFBfa83250b9",
       "transaction": "0xc18333f4b12e53c193285ae97173f96870ec2eeb65d2723e9fbc02ec7f5df147",
       "isVerified": true
+    },
+    "42161": {
+      "address": "0x8990A46Fd1F2E00b8eb85DAfd85735d2B5Ed4Eeb",
+      "transaction": "0xf7128c5035702bd4000863c32b410479a2fcb504ae217a785d10f87d756436d5",
+      "isVerified": true
     }
   },
   "DPXTWAPPriceOracleV1": {

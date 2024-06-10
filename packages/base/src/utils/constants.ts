@@ -343,7 +343,7 @@ export const RETH_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
 export const RS_ETH_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x4186BFC76E2E237523CBC30FD220FE055156b41F',
-    marketId: 99,
+    marketId: 49,
   },
 };
 
@@ -406,6 +406,13 @@ export const USDE_MAP: Record<Network.Mantle, TokenWithMarketId> = {
   },
 };
 
+export const USDM_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0x57F5E098CaD7A3D1Eed53991D4d66C45C9AF7812',
+    marketId: 48,
+  },
+};
+
 export const USDT_MAP: Record<EverythingButBase, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9',
@@ -455,7 +462,7 @@ export const METH_MAP: Record<Network.Mantle, TokenWithMarketId> = {
   [Network.Mantle]: {
     address: '0xcDA86A272531e8640cD7F1a92c01839911B90bb0',
     marketId: 5,
-  }
+  },
 };
 
 export const WETH_MAP: Record<Network, TokenWithMarketId> = {
@@ -1047,6 +1054,10 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<Network, Record<string, Agg
       aggregatorAddress: '0xF3272CAfe65b190e76caAF483db13424a3e23dD2',
       tokenPairAddress: WETH_MAP[Network.ArbitrumOne].address,
     },
+    [RS_ETH_MAP[Network.ArbitrumOne].address]: {
+      aggregatorAddress: '0xb0EA543f9F8d4B818550365d13F66Da747e1476A',
+      tokenPairAddress: WETH_MAP[Network.ArbitrumOne].address,
+    },
     [ST_ETH_MAP[Network.ArbitrumOne].address]: {
       aggregatorAddress: '0xded2c52b75b24732e9107377b7ba93ec1ffa4baf',
       tokenPairAddress: WETH_MAP[Network.ArbitrumOne].address,
@@ -1136,7 +1147,16 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<Network, Record<string, Agg
   },
 };
 
-export const CHRONICLE_PRICE_SCRIBES_MAP: Record<Network.Mantle, Record<string, ChronicleScribe>> = {
+export const CHRONICLE_PRICE_SCRIBES_MAP: Record<
+  Network.ArbitrumOne | Network.Mantle,
+  Record<string, ChronicleScribe>
+> = {
+  [Network.ArbitrumOne]: {
+    [USDM_MAP[Network.ArbitrumOne].address]: {
+      scribeAddress: '0xdC6720c996Fad27256c7fd6E0a271e2A4687eF18',
+      tokenPairAddress: ADDRESS_ZERO,
+    },
+  },
   [Network.Mantle]: {
     [METH_MAP[Network.Mantle].address]: {
       scribeAddress: '0xBFE568Ea8f6bDFFe7c03F83dC8348517f8E7010A',

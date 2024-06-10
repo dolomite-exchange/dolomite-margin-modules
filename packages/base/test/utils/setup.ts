@@ -100,7 +100,7 @@ import {
   SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL,
   ST_ETH_MAP,
   UNI_MAP,
-  USDC_MAP,
+  USDC_MAP, USDM_MAP,
   USDT_MAP, USDY_MAP,
   WBTC_MAP,
   WE_ETH_MAP,
@@ -676,6 +676,10 @@ export async function setupCoreProtocol<T extends NetworkType>(
           CHAINLINK_AUTOMATION_REGISTRY_MAP[typedConfig.network],
           governance,
         ),
+        chroniclePriceOracleV3: ChroniclePriceOracleV3__factory.connect(
+          Deployments.ChroniclePriceOracleV3[typedConfig.network].address,
+          hhUser1,
+        ),
         dolomiteAccountValuesReader: IDolomiteAccountValuesReader__factory.connect(
           CoreDeployments.AccountValuesReader[typedConfig.network].address,
           hhUser1,
@@ -795,6 +799,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
           size: IERC20__factory.connect(SIZE_MAP[typedConfig.network].address, hhUser1),
           stEth: IERC20__factory.connect(ST_ETH_MAP[typedConfig.network].address, hhUser1),
           uni: IERC20__factory.connect(UNI_MAP[typedConfig.network].address, hhUser1),
+          usdm: IERC20__factory.connect(USDM_MAP[typedConfig.network].address, hhUser1),
           usdt: IERC20__factory.connect(USDT_MAP[typedConfig.network].address, hhUser1),
           wbtc: IERC20__factory.connect(WBTC_MAP[typedConfig.network].address, hhUser1),
           weth: coreProtocolParams.tokens.weth as any,
