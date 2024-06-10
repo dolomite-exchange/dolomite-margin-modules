@@ -1,5 +1,6 @@
 import { BigNumberish } from 'ethers';
 import {
+  ChroniclePriceOracleV3,
   IChainlinkAutomationRegistry,
   IChainlinkPriceOracleV1,
   IChainlinkPriceOracleV3, RedstonePriceOracleV3,
@@ -65,6 +66,7 @@ interface CoreProtocolTokensArbitrumOne extends CoreProtocolTokens<Network.Arbit
   size: IERC20;
   stEth: IERC20;
   uni: IERC20;
+  usdm: IERC20;
   usdt: IERC20;
   wbtc: IERC20;
   weEth: IERC20;
@@ -126,6 +128,7 @@ interface CoreProtocolParamsArbitrumOne {
   chainlinkAutomationRegistry: IChainlinkAutomationRegistry;
   chainlinkPriceOracleV1: IChainlinkPriceOracleV1;
   chainlinkPriceOracleV3: IChainlinkPriceOracleV3;
+  chroniclePriceOracleV3: ChroniclePriceOracleV3;
   dolomiteAccountValuesReader: IDolomiteAccountValuesReader;
   dolomiteMigrator: IDolomiteMigrator;
   gmxEcosystem: GmxEcosystem;
@@ -149,6 +152,7 @@ export class CoreProtocolArbitrumOne extends CoreProtocolAbstract<Network.Arbitr
   public readonly arbEcosystem: ArbEcosystem;
   public readonly camelotEcosystem: CamelotEcosystem;
   public readonly chainlinkAutomationRegistry: IChainlinkAutomationRegistry;
+  public readonly chroniclePriceOracleV3: ChroniclePriceOracleV3;
   public readonly dolomiteAccountValuesReader: IDolomiteAccountValuesReader;
   public readonly dolomiteMigrator: IDolomiteMigrator;
   public readonly gmxEcosystem: GmxEcosystem;
@@ -176,6 +180,7 @@ export class CoreProtocolArbitrumOne extends CoreProtocolAbstract<Network.Arbitr
     this.arbEcosystem = arbParams.arbEcosystem;
     this.camelotEcosystem = arbParams.camelotEcosystem;
     this.chainlinkAutomationRegistry = arbParams.chainlinkAutomationRegistry;
+    this.chroniclePriceOracleV3 = arbParams.chroniclePriceOracleV3;
     this.dolomiteAccountValuesReader = arbParams.dolomiteAccountValuesReader;
     this.dolomiteMigrator = arbParams.dolomiteMigrator;
     this.gmxEcosystem = arbParams.gmxEcosystem;
