@@ -58,6 +58,8 @@ import {
   PENDLE_USDE_MARKET_MAP,
   PENDLE_PT_USDE_TOKEN_MAP,
   PENDLE_SY_USDE_TOKEN_MAP,
+  PENDLE_RS_ETH_SEP_2024_MARKET_MAP,
+  PENDLE_PT_RS_ETH_SEP_2024_TOKEN_MAP,
 } from '../../../src/utils/constants';
 import { Network } from '../../../src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';
@@ -114,6 +116,11 @@ export interface PendleEcosystemArbitrumOne extends CorePendleEcosystem {
     rsEthMarket: IPendlePtMarket;
     ptRsEthToken: IPendlePtToken;
   };
+  rsEthSep2024: {
+    ptOracle: IPendlePtOracle;
+    rsEthMarket: IPendlePtMarket;
+    ptRsEthToken: IPendlePtToken;
+  }
   weEthApr2024: {
     dPtWeEthApr2024: PendlePtIsolationModeVaultFactory;
     pendleRegistry: IPendleRegistry;
@@ -344,6 +351,23 @@ export async function createPendleEcosystemArbitrumOne(
       ),
       ptRsEthToken: getContract(
         PENDLE_PT_RS_ETH_TOKEN_MAP[network] as string,
+        IPendlePtToken__factory.connect,
+        signer,
+      ),
+    },
+    rsEthSep2024: {
+      ptOracle: getContract(
+        PENDLE_PT_ORACLE_MAP[network] as string,
+        IPendlePtOracle__factory.connect,
+        signer,
+      ),
+      rsEthMarket: getContract(
+        PENDLE_RS_ETH_SEP_2024_MARKET_MAP[network] as string,
+        IPendlePtMarket__factory.connect,
+        signer,
+      ),
+      ptRsEthToken: getContract(
+        PENDLE_PT_RS_ETH_SEP_2024_TOKEN_MAP[network] as string,
         IPendlePtToken__factory.connect,
         signer,
       ),

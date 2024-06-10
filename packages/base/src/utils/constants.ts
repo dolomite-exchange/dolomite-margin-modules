@@ -803,8 +803,16 @@ export const PENDLE_RS_ETH_MARKET_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x6F02C88650837C8dfe89F66723c4743E9cF833cd',
 };
 
+export const PENDLE_RS_ETH_SEP_2024_MARKET_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0xed99fc8bdb8e9e7b8240f62f69609a125a0fbf14',
+};
+
 export const PENDLE_PT_RS_ETH_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x8D164E0C662C9E199baaC9E97b6A8664c75700EA',
+};
+
+export const PENDLE_PT_RS_ETH_SEP_2024_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x30c98c0139b62290e26ac2a2158ac341dcaf1333',
 };
 
 export const PENDLE_WST_ETH_2024_MARKET_MAP: Record<Network.ArbitrumOne, string> = {
@@ -832,7 +840,7 @@ export const PENDLE_PT_USDE_TOKEN_MAP: Record<Network.Mantle, string> = {
 };
 
 export const PENDLE_PT_ORACLE_MAP: Record<Network, string> = {
-  [Network.ArbitrumOne]: '0x7e16e4253CE4a1C96422a9567B23b4b5Ebc207F1',
+  [Network.ArbitrumOne]: '0x9a9fa8338dd5e5b2188006f1cd2ef26d921650c2',
   [Network.Base]: ADDRESS_ZERO,
   [Network.Mantle]: '0x9a9Fa8338dd5E5B2188006f1Cd2Ef26d921650C2',
   [Network.PolygonZkEvm]: ADDRESS_ZERO,
@@ -1069,6 +1077,10 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<Network, Record<string, Agg
     },
     [RETH_MAP[Network.ArbitrumOne].address]: {
       aggregatorAddress: '0xF3272CAfe65b190e76caAF483db13424a3e23dD2',
+      tokenPairAddress: WETH_MAP[Network.ArbitrumOne].address,
+    },
+    [RS_ETH_MAP[Network.ArbitrumOne].address]: {
+      aggregatorAddress: '0xb0EA543f9F8d4B818550365d13F66Da747e1476A',
       tokenPairAddress: WETH_MAP[Network.ArbitrumOne].address,
     },
     [ST_ETH_MAP[Network.ArbitrumOne].address]: {
