@@ -314,4 +314,28 @@ describe('DolomiteRegistryImplementation', () => {
       );
     });
   });
+
+  describe('#ownerSetDolomiteAddressRegistry', () => {
+    it('should work normally', async () => {
+      const result = await registry.connect(core.governance).ownerSetDolomiteAddressRegistry(OTHER_ADDRESS);
+      await expectEvent(registry, result, 'DolomiteAddressRegistrySet', {
+        dolomiteAddressRegistry: OTHER_ADDRESS,
+      });
+      expect(await registry.dolomiteAddressRegistry()).to.equal(OTHER_ADDRESS);
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetDolomiteAddressRegistry(OTHER_ADDRESS),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetDolomiteAddressRegistry(ZERO_ADDRESS),
+        'DolomiteRegistryImplementation: Invalid dolomiteAddressRegistry',
+      );
+    });
+  });
 });

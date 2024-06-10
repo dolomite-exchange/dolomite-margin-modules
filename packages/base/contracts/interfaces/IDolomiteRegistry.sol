@@ -20,6 +20,7 @@
 
 pragma solidity ^0.8.9;
 
+import { IDolomiteAddressRegistry } from "./IDolomiteAddressRegistry.sol";
 import { IDolomiteMigrator } from "./IDolomiteMigrator.sol";
 import { IEventEmitterRegistry } from "./IEventEmitterRegistry.sol";
 import { IExpiry } from "./IExpiry.sol";
@@ -49,6 +50,7 @@ interface IDolomiteRegistry {
     event DolomiteMigratorSet(address indexed _dolomiteMigrator);
     event RedstonePriceOracleSet(address indexed _redstonePriceOracle);
     event OracleAggregatorSet(address indexed _oracleAggregator);
+    event DolomiteAddressRegistrySet(address indexed _dolomiteAddressRegistry);
 
     // ========================================================
     // =================== Write Functions ====================
@@ -110,6 +112,12 @@ interface IDolomiteRegistry {
      */
     function ownerSetOracleAggregator(address _oracleAggregator) external;
 
+    /**
+     *
+     * @param  _dolomiteAddressRegistry    The new address of the Dolomite address registry
+     */
+    function ownerSetDolomiteAddressRegistry(address _dolomiteAddressRegistry) external;
+
     // ========================================================
     // =================== Getter Functions ===================
     // ========================================================
@@ -158,6 +166,11 @@ interface IDolomiteRegistry {
      * @return The address of the oracle aggregator that's compatible with DolomiteMargin
      */
     function oracleAggregator() external view returns (IDolomitePriceOracle);
+
+    /**
+     * @return The address of the Dolomite address registry
+     */
+    function dolomiteAddressRegistry() external view returns (IDolomiteAddressRegistry);
 
     /**
      * @return The base (denominator) for the slippage tolerance variable. Always 1e18.

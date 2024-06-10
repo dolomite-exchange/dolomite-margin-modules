@@ -63,11 +63,13 @@ abstract contract SimpleIsolationModeVaultFactory is IsolationModeVaultFactory {
         address _underlyingToken,
         address _borrowPositionProxyV2,
         address _userVaultImplementation,
+        address _dolomiteRegistry,
         address _dolomiteMargin
     ) IsolationModeVaultFactory(
         _underlyingToken,
         _borrowPositionProxyV2,
         _userVaultImplementation,
+        _dolomiteRegistry,
         _dolomiteMargin
     ) {
         _ownerSetAllowableDebtMarketIds(_initialAllowableDebtMarketIds);

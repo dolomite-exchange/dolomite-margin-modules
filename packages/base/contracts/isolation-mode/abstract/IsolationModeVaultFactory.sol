@@ -25,6 +25,7 @@ import { IsolationModeUpgradeableProxy } from "../IsolationModeUpgradeableProxy.
 import { MinimalERC20 } from "../../general/MinimalERC20.sol";
 import { OnlyDolomiteMargin } from "../../helpers/OnlyDolomiteMargin.sol";
 import { IBorrowPositionProxyV2 } from "../../interfaces/IBorrowPositionProxyV2.sol";
+import { IDolomiteRegistry } from "../../interfaces/IDolomiteRegistry.sol";
 import { AccountActionLib } from "../../lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "../../lib/AccountBalanceLib.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
@@ -59,6 +60,7 @@ abstract contract IsolationModeVaultFactory is
 
     address public immutable override UNDERLYING_TOKEN; // solhint-disable-line var-name-mixedcase
     IBorrowPositionProxyV2 public immutable override BORROW_POSITION_PROXY; // solhint-disable-line var-name-mixedcase
+    IDolomiteRegistry public immutable DOLOMITE_REGISTRY;
 
     // ================================================
     // ==================== Fields ====================
@@ -122,6 +124,7 @@ abstract contract IsolationModeVaultFactory is
         address _underlyingToken,
         address _borrowPositionProxyV2,
         address _userVaultImplementation,
+        address _dolomiteRegistry,
         address _dolomiteMargin
     )
     MinimalERC20(
@@ -131,6 +134,7 @@ abstract contract IsolationModeVaultFactory is
     )
     OnlyDolomiteMargin(_dolomiteMargin)
     {
+        DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
         UNDERLYING_TOKEN = _underlyingToken;
         BORROW_POSITION_PROXY = IBorrowPositionProxyV2(_borrowPositionProxyV2);
         userVaultImplementation = _userVaultImplementation;
@@ -432,6 +436,7 @@ abstract contract IsolationModeVaultFactory is
         emit VaultCreated(_account, vault);
         _vaultToUserMap[vault] = _account;
         _userToVaultMap[_account] = vault;
+        DOLOMITE_REGISTRY.dolomiteAddressRegistry().registerVault(_account, vault);
         IIsolationModeUpgradeableProxy(vault).initialize(_account);
         BORROW_POSITION_PROXY.setIsCallerAuthorized(vault, true);
         return vault;

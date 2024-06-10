@@ -23,6 +23,7 @@ pragma solidity ^0.8.9;
 import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import { OnlyDolomiteMarginForUpgradeable } from "../helpers/OnlyDolomiteMarginForUpgradeable.sol";
 import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
+import { IDolomiteAddressRegistry } from "../interfaces/IDolomiteAddressRegistry.sol";
 import { IDolomiteMigrator } from "../interfaces/IDolomiteMigrator.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IEventEmitterRegistry } from "../interfaces/IEventEmitterRegistry.sol";
@@ -59,6 +60,7 @@ contract DolomiteRegistryImplementation is
     bytes32 private constant _CHAINLINK_PRICE_ORACLE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.chainlinkPriceOracle")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _REDSTONE_PRICE_ORACLE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.redstonePriceOracle")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _ORACLE_AGGREGATOR_SLOT = bytes32(uint256(keccak256("eip1967.proxy.oracleAggregator")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _DOLOMITE_ADDRESS_REGISTRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.dolomiteAddressRegistry")) - 1); // solhint-disable-line max-line-length
 
     // ==================== Constructor ====================
 
@@ -164,6 +166,14 @@ contract DolomiteRegistryImplementation is
         _ownerSetOracleAggregator(_oracleAggregator);
     }
 
+    function ownerSetDolomiteAddressRegistry(
+        address _dolomiteAddressRegistry
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetDolomiteAddressRegistry(_dolomiteAddressRegistry);
+    }
+
     // ========================== View Functions =========================
 
     function genericTraderProxy() public view returns (IGenericTraderProxyV1) {
@@ -200,6 +210,10 @@ contract DolomiteRegistryImplementation is
 
     function oracleAggregator() public view returns (IDolomitePriceOracle) {
         return IDolomitePriceOracle(_getAddress(_ORACLE_AGGREGATOR_SLOT));
+    }
+
+    function dolomiteAddressRegistry() public view returns (IDolomiteAddressRegistry) {
+        return IDolomiteAddressRegistry(_getAddress(_DOLOMITE_ADDRESS_REGISTRY_SLOT));
     }
 
     function slippageToleranceForPauseSentinelBase() public pure returns (uint256) {
@@ -341,5 +355,18 @@ contract DolomiteRegistryImplementation is
 
         _setAddress(_ORACLE_AGGREGATOR_SLOT, _oracleAggregator);
         emit OracleAggregatorSet(_oracleAggregator);
+    }
+
+    function _ownerSetDolomiteAddressRegistry(
+        address _dolomiteAddressRegistry
+    ) internal {
+        Require.that(
+            _dolomiteAddressRegistry != address(0),
+            _FILE,
+            "Invalid dolomiteAddressRegistry"
+        );
+
+        _setAddress(_DOLOMITE_ADDRESS_REGISTRY_SLOT, _dolomiteAddressRegistry);
+        emit DolomiteAddressRegistrySet(_dolomiteAddressRegistry);
     }
 }

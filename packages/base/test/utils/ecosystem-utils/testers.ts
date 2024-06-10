@@ -70,10 +70,10 @@ export async function createTestIsolationModeVaultFactory<T extends NetworkType>
     TestIsolationModeVaultFactory__factory.abi,
     TestIsolationModeVaultFactory__factory.bytecode,
     [
-      core.dolomiteRegistry.address,
       underlyingToken.address,
       core.borrowPositionProxyV2.address,
       userVaultImplementation.address,
+      core.dolomiteRegistry.address,
       core.dolomiteMargin.address,
     ],
   );
