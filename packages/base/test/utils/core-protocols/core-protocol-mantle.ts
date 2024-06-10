@@ -1,7 +1,7 @@
 import { BigNumberish } from 'ethers';
 import { ChroniclePriceOracleV3, RedstonePriceOracleV3 } from 'packages/oracles/src/types';
 import { IERC20, IWETH } from '../../../src/types';
-import { Network, NetworkType } from '../../../src/utils/no-deps-constants';
+import { Network } from '../../../src/utils/no-deps-constants';
 import { OdosEcosystem } from '../ecosystem-utils/odos';
 import {
   CoreProtocolAbstract,
