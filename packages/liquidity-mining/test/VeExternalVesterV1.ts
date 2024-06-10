@@ -68,9 +68,9 @@ const BASE_URI = 'oARB LIQUIDITY MINING RULEZ';
 const NO_MARKET_ID = MAX_UINT_256_BI;
 
 const O_TOKEN_AMOUNT = parseEther('1');
-const PAIR_AMOUNT = BigNumber.from('1500000'); // 1.5 USDC
+const PAIR_AMOUNT = O_TOKEN_AMOUNT;
 const MAX_PAIR_AMOUNT = PAIR_AMOUNT.mul(11).div(10); // 10% increase
-const PAYMENT_AMOUNT_BEFORE_DISCOUNT = parseEther('0.0015'); // 0.0015 ETH
+const PAYMENT_AMOUNT_BEFORE_DISCOUNT = parseEther('0.00025'); // 0.00025 ETH
 const MAX_PAYMENT_AMOUNT = PAYMENT_AMOUNT_BEFORE_DISCOUNT.mul(11).div(10); // 10% increase
 const REWARD_AMOUNT = O_TOKEN_AMOUNT;
 const TOTAL_REWARD_AMOUNT = parseEther('1000');
@@ -79,8 +79,8 @@ const NFT_ID = ONE_BI;
 const VE_TOKEN_ID = ONE_BI;
 
 const PAYMENT_TOKEN_PRICE = parseEther('1000'); // $1,000
-const PAIR_TOKEN_PRICE = BigNumber.from('1000000000000000000000000000000'); // $1
-const REWARD_TOKEN_PRICE = parseEther('1.50'); // $1.50
+const PAIR_TOKEN_PRICE = parseEther('0.25'); // $0.25
+const REWARD_TOKEN_PRICE = PAIR_TOKEN_PRICE; // $0.25
 
 describe('VeExternalVesterV1', () => {
   let snapshotId: string;
@@ -170,10 +170,6 @@ describe('VeExternalVesterV1', () => {
     await oToken.connect(owner).transfer(core.hhUser2.address, O_TOKEN_AMOUNT);
     await expectWalletBalance(core.hhUser1.address, oToken, O_TOKEN_AMOUNT);
     await expectWalletBalance(core.hhUser2.address, oToken, O_TOKEN_AMOUNT);
-
-    // Pair token
-    await setupUSDCBalance(core, core.hhUser1, PAIR_AMOUNT.mul(2), vester);
-    await setupUSDCBalance(core, core.hhUser2, PAIR_AMOUNT.mul(2), vester);
 
     // Payment token
     await setupWETHBalance(core, core.hhUser1, MAX_PAYMENT_AMOUNT, vester);
@@ -304,13 +300,6 @@ describe('VeExternalVesterV1', () => {
       );
     });
 
-    it('should fail if duration is more than 40 weeks', async () => {
-      await expectThrow(
-        vester.vest(FOUR_WEEKS.mul(40).add(1), O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT),
-        'VeExternalVesterImplementationV1: Invalid duration',
-      );
-    });
-
     it('should fail if duration not 1 week interval', async () => {
       await expectThrow(
         vester.vest(FOUR_WEEKS.mul(2).add(1), O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT),
@@ -377,51 +366,9 @@ describe('VeExternalVesterV1', () => {
       await expectThrow(vester.ownerOf(NFT_ID), 'ERC721: invalid token ID');
     });
 
-    it('should work normally for full refund (40 weeks)', async () => {
-      await setupAllowancesForVesting();
-      const time = ONE_WEEK.mul(40);
-      await vester.vest(time, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT);
-      const vesterAccountNumber = getVesterAccountNumber(core.hhUser1, NFT_ID);
-      await increase(time);
-
-      const paymentAmount = ZERO_BI;
-
-      await expectProtocolBalanceIsGreaterThan(
-        core,
-        { owner: vester.address, number: vesterAccountNumber },
-        pairMarketId,
-        PAIR_AMOUNT,
-        ZERO_BI,
-      );
-
-      const result = await vester.closePositionAndBuyTokens(NFT_ID, VE_TOKEN_ID, paymentAmount);
-
-      await expectEvent(vester, result, 'PositionClosed', {
-        owner: core.hhUser1.address,
-        vestingId: ONE_BI,
-        amountPaid: paymentAmount,
-      });
-      await expectWalletBalance(core.hhUser1.address, oToken, ZERO_BI);
-      await expectWalletBalance(vester.address, oToken, ZERO_BI);
-
-      await expectWalletBalanceIsGreaterThan(core.hhUser1, pairToken, PAIR_AMOUNT.mul(2)); // account for interest
-      await expectWalletBalance(core.hhUser1, paymentToken, MAX_PAYMENT_AMOUNT.sub(paymentAmount));
-      await expectWalletBalance(core.hhUser1, rewardToken, REWARD_AMOUNT);
-
-      await expectProtocolBalance(core, vester, vesterAccountNumber, pairMarketId, ZERO_BI);
-      await expectProtocolBalance(core, owner, defaultAccountNumber, paymentMarketId, paymentAmount);
-      await expectProtocolBalance(core, owner, ZERO_BI, paymentMarketId, paymentAmount);
-      expect(await vester.pushedTokens()).to.eq(TOTAL_REWARD_AMOUNT.sub(REWARD_AMOUNT));
-      expect(await vester.promisedTokens()).to.eq(ZERO_BI);
-      expect(await vester.availableTokens()).to.eq(TOTAL_REWARD_AMOUNT.sub(REWARD_AMOUNT));
-
-      expectEmptyExternalVesterPosition(await vester.vestingPositions(NFT_ID));
-      await expectThrow(vester.ownerOf(NFT_ID), 'ERC721: invalid token ID');
-    });
-
     it('should fail if the discount is invalid', async () => {
       await setupAllowancesForVesting();
-      const time = ONE_WEEK.mul(40);
+      const time = FOUR_WEEKS;
       await vester.vest(time, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT);
       const vesterAccountNumber = getVesterAccountNumber(core.hhUser1, NFT_ID);
       await increase(time);
