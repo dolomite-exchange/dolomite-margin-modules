@@ -24,12 +24,12 @@ import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableS
 
 
 /**
- * @title   IDolomiteAddressRegistry
+ * @title   IDolomiteAccountRegistry
  * @author  Dolomite
  *
  * @notice  A registry contract for storing restricted Dolomite ERC20 accounts
  */
-interface IDolomiteAddressRegistry {
+interface IDolomiteAccountRegistry {
 
     struct AccountInformation {
         mapping(address => bool) restrictedAccounts;
@@ -57,12 +57,21 @@ interface IDolomiteAddressRegistry {
     function ownerSetRestrictedAccount(
         address _account,
         bool _isRestricted
-    )
-    external;
+    ) external;
+
+    function isIsolationModeVault(address _vault) external view returns (bool);
 
     function isRestrictedAccount(address _account) external view returns (bool);
 
-    function isIsolationModeVault(address _vault) external view returns (bool);
+    /**
+     * @notice  Future-proof function for checking inclusivity for an address to be in the registry. This is mainly
+     *          useful for general-purpose contracts like dERC20 tokens that don't want to send assets to accounts that
+     *          don't want to be receivable
+     *
+     * @param  _account The account to check if it's in this registry as a restricted account or isolation mode vault
+     * @return          True if this account is an isolation mode vault or restricted
+     */
+    function isAccountInRegistry(address _account) external view returns (bool);
 
     function getAccountByVault(address _vault) external view returns (address);
 

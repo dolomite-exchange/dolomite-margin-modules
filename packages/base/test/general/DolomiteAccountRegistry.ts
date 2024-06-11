@@ -1,31 +1,31 @@
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
-import { DolomiteAddressRegistry, DolomiteAddressRegistry__factory } from '../../src/types';
+import { DolomiteAccountRegistry, DolomiteAccountRegistry__factory } from '../../src/types';
 import { Network } from '../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
 import { expectEvent, expectThrow } from '../utils/assertions';
 
 import { CoreProtocolArbitrumOne } from '../utils/core-protocols/core-protocol-arbitrum-one';
-import { createDolomiteAddressRegistryImplementation, createRegistryProxy } from '../utils/dolomite';
+import { createDolomiteAccountRegistryImplementation, createRegistryProxy } from '../utils/dolomite';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '../utils/setup';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
-describe('DolomiteAddressRegistry', () => {
+describe('DolomiteAccountRegistry', () => {
   let snapshotId: string;
 
   let core: CoreProtocolArbitrumOne;
-  let implementation: DolomiteAddressRegistry;
-  let registry: DolomiteAddressRegistry;
+  let implementation: DolomiteAccountRegistry;
+  let registry: DolomiteAccountRegistry;
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
-    implementation = await createDolomiteAddressRegistryImplementation();
+    implementation = await createDolomiteAccountRegistryImplementation();
     const calldata = await implementation.populateTransaction.initialize(
       [core.tokens.dArb.address, core.tokens.dGmx.address]
     );
     const registryProxy = await createRegistryProxy(implementation.address, calldata.data!, core);
-    registry = DolomiteAddressRegistry__factory.connect(registryProxy.address, core.governance);
+    registry = DolomiteAccountRegistry__factory.connect(registryProxy.address, core.governance);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(core.hhUser5.address, true);
 
     snapshotId = await snapshot();
@@ -89,7 +89,7 @@ describe('DolomiteAddressRegistry', () => {
     it('should fail if zero address', async () => {
       await expectThrow(
         registry.ownerSetRestrictedAccount(ZERO_ADDRESS, true),
-        'DolomiteAddressRegistry: Invalid account',
+        'DolomiteAccountRegistry: Invalid account',
       );
     });
 
@@ -107,6 +107,20 @@ describe('DolomiteAddressRegistry', () => {
       expect(await registry.isIsolationModeVault(vaultAddress)).to.be.false;
       await core.arbEcosystem.live.dArb.createVault(core.hhUser1.address);
       expect(await registry.isIsolationModeVault(vaultAddress)).to.be.true;
+    });
+  });
+
+  describe('#isAccountInRegistry', () => {
+    it('should work normally', async () => {
+      const vaultAddress = await core.arbEcosystem.live.dArb.calculateVaultByAccount(core.hhUser1.address);
+      expect(await registry.isAccountInRegistry(vaultAddress)).to.be.false;
+
+      await core.arbEcosystem.live.dArb.createVault(core.hhUser1.address);
+      expect(await registry.isAccountInRegistry(vaultAddress)).to.be.true;
+
+      expect(await registry.isRestrictedAccount(OTHER_ADDRESS)).to.be.false;
+      await registry.ownerSetRestrictedAccount(OTHER_ADDRESS, true);
+      expect(await registry.isAccountInRegistry(vaultAddress)).to.be.true;
     });
   });
 

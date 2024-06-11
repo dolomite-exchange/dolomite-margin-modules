@@ -25,20 +25,20 @@ import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/I
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import { OnlyDolomiteMarginForUpgradeable } from "../helpers/OnlyDolomiteMarginForUpgradeable.sol";
 import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
-import { IDolomiteAddressRegistry } from "../interfaces/IDolomiteAddressRegistry.sol";
+import { IDolomiteAccountRegistry } from "../interfaces/IDolomiteAccountRegistry.sol";
 import { IIsolationModeVaultFactory } from "../isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
 import { ExcessivelySafeCall } from "../protocol/lib/ExcessivelySafeCall.sol";
 import { Require } from "../protocol/lib/Require.sol";
 
 
 /**
- * @title   DolomiteAddressRegistry
+ * @title   DolomiteAccountRegistry
  * @author  Dolomite
  *
  * @notice  Registry contract for storing isolation-mode vaults and restricted accounts
  */
-contract DolomiteAddressRegistry is
-    IDolomiteAddressRegistry,
+contract DolomiteAccountRegistry is
+    IDolomiteAccountRegistry,
     ProxyContractHelpers,
     OnlyDolomiteMarginForUpgradeable,
     Initializable
@@ -47,7 +47,7 @@ contract DolomiteAddressRegistry is
 
     // ===================== Constants =====================
 
-    bytes32 private constant _FILE = "DolomiteAddressRegistry";
+    bytes32 private constant _FILE = "DolomiteAccountRegistry";
     bytes32 private constant _ACCOUNT_INFORMATION_SLOT = bytes32(uint256(keccak256("eip1967.proxy.accountInformation")) - 1); // solhint-disable-line max-line-length
 
     bytes32 internal constant GLP_ISOLATION_MODE_HASH = keccak256(bytes("Dolomite: Fee + Staked GLP"));
@@ -82,44 +82,30 @@ contract DolomiteAddressRegistry is
 
     // ========================== View Functions =========================
 
-    function isIsolationModeVault(address _vault) external view returns (bool) {
-        AccountInformation storage storageStruct = _getAccountInformation();
-        if (storageStruct.vaultToAccount[_vault] != address(0)) {
-            return true;
-        }
-
-        address[] memory factories = storageStruct.factories;
-        uint256 len = factories.length;
-        for (uint256 i = 0; i < len;) {
-            IIsolationModeVaultFactory factory = IIsolationModeVaultFactory(factories[i]);
-            if (factory.getAccountByVault(_vault) != address(0)) {
-                return true;
-            }
-
-            unchecked {
-                ++i;
-            }
-        }
-
-        return false;
+    function isIsolationModeVault(address _vault) public view returns (bool) {
+        return _isIsolationModeVault(_getAccountInformation(), _vault);
     }
 
-    function isRestrictedAccount(address _account) external view returns (bool) {
-        AccountInformation storage storageStruct = _getAccountInformation();
-        return storageStruct.restrictedAccounts[_account];
+    function isRestrictedAccount(address _account) public view returns (bool) {
+        return _isRestrictedAccount(_getAccountInformation(), _account);
     }
 
-    function getAccountByVault(address _vault) external view returns (address) {
+    function isAccountInRegistry(address _account) public view returns (bool) {
+        AccountInformation storage storageStruct = _getAccountInformation();
+        return _isRestrictedAccount(storageStruct, _account) || _isIsolationModeVault(storageStruct, _account);
+    }
+
+    function getAccountByVault(address _vault) public view returns (address) {
         AccountInformation storage storageStruct = _getAccountInformation();
         return storageStruct.vaultToAccount[_vault];
     }
 
-    function getVaultsByAccount(address _account) external view returns (address[] memory) {
+    function getVaultsByAccount(address _account) public view returns (address[] memory) {
         AccountInformation storage storageStruct = _getAccountInformation();
         return storageStruct.accountToVaults[_account].values();
     }
 
-    function getFactories() external view returns (address[] memory) {
+    function getFactories() public view returns (address[] memory) {
         return _getAccountInformation().factories;
     }
 
@@ -181,6 +167,36 @@ contract DolomiteAddressRegistry is
         AccountInformation storage storageStruct = _getAccountInformation();
         storageStruct.restrictedAccounts[_account] = _isRestricted;
         emit RestrictedAccountSet(_account, _isRestricted);
+    }
+
+    function _isRestrictedAccount(
+        AccountInformation storage _storageStruct,
+        address _account
+    ) internal view returns (bool) {
+        return _storageStruct.restrictedAccounts[_account];
+    }
+
+    function _isIsolationModeVault(
+        AccountInformation storage _storageStruct,
+        address _vault
+    ) internal view returns (bool) {
+        if (_storageStruct.vaultToAccount[_vault] != address(0)) {
+            return true;
+        }
+
+        address[] memory factories = _storageStruct.factories;
+        uint256 len = factories.length;
+        for (uint256 i; i < len;) {
+            if (IIsolationModeVaultFactory(factories[i]).getAccountByVault(_vault) != address(0)) {
+                return true;
+            }
+
+            unchecked {
+                ++i;
+            }
+        }
+
+        return false;
     }
 
     function _getAccountInformation() internal pure returns (AccountInformation storage accountInformation) {

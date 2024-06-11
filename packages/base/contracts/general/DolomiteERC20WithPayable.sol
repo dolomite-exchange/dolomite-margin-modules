@@ -54,9 +54,6 @@ contract DolomiteERC20WithPayable is
         _WETH.deposit{ value: msg.value }();
         _WETH.approve(address(DOLOMITE_MARGIN()), msg.value);
 
-        _enableReceiver(msg.sender, /* _isEnabled = */ true);
-        _enableReceiver(tx.origin, /* _isEnabled = */ true);
-
         IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
         IDolomiteStructs.AccountInfo memory account = IDolomiteStructs.AccountInfo({
             owner: msg.sender,
@@ -92,9 +89,6 @@ contract DolomiteERC20WithPayable is
             _FILE,
             "Invalid amount"
         );
-
-        _enableReceiver(msg.sender, /* _isEnabled = */ true);
-        _enableReceiver(tx.origin, /* _isEnabled = */ true);
 
         IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
         IDolomiteStructs.AccountInfo memory account = IDolomiteStructs.AccountInfo({

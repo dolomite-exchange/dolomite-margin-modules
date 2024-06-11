@@ -28,7 +28,7 @@ import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableS
 
 
 /**
- * @title   IDolomiteAddressRegistry
+ * @title   IDolomiteAccountRegistry.sol
  * @author  Dolomite
  *
  * @notice  A registry contract for storing restricted Dolomite ERC20 accounts

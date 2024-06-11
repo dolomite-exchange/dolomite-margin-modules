@@ -2,8 +2,8 @@ import { address } from '@dolomite-margin/dist/src';
 import { BigNumberish } from 'ethers';
 import { Network, NetworkType } from 'packages/base/src/utils/no-deps-constants';
 import {
-  DolomiteAddressRegistry,
-  DolomiteAddressRegistry__factory,
+  DolomiteAccountRegistry,
+  DolomiteAccountRegistry__factory,
   DolomiteERC20,
   DolomiteRegistryImplementation,
   DolomiteRegistryImplementation__factory,
@@ -69,10 +69,10 @@ export async function createDolomiteErc20Proxy(
   );
 }
 
-export async function createDolomiteAddressRegistryImplementation(): Promise<DolomiteAddressRegistry> {
+export async function createDolomiteAccountRegistryImplementation(): Promise<DolomiteAccountRegistry> {
   return createContractWithAbi(
-    DolomiteAddressRegistry__factory.abi,
-    DolomiteAddressRegistry__factory.bytecode,
+    DolomiteAccountRegistry__factory.abi,
+    DolomiteAccountRegistry__factory.bytecode,
     [],
   );
 }

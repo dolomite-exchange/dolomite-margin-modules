@@ -436,7 +436,7 @@ abstract contract IsolationModeVaultFactory is
         emit VaultCreated(_account, vault);
         _vaultToUserMap[vault] = _account;
         _userToVaultMap[_account] = vault;
-        DOLOMITE_REGISTRY.dolomiteAddressRegistry().registerVault(_account, vault);
+        DOLOMITE_REGISTRY.dolomiteAccountRegistry().registerVault(_account, vault);
         IIsolationModeUpgradeableProxy(vault).initialize(_account);
         BORROW_POSITION_PROXY.setIsCallerAuthorized(vault, true);
         return vault;

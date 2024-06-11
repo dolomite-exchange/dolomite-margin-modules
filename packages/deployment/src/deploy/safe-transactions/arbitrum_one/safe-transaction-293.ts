@@ -37,7 +37,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       core.dolomiteRegistry.address,
       core.dolomiteMargin.address,
     ],
-    'GraiFraxPriceOracleV1',
+    'GraiFraxPriceOracleV3',
   );
 
   const transactions: EncodedTransaction[] = [];

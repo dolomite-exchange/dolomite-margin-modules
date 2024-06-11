@@ -38,7 +38,7 @@ import {
 
 import { CoreProtocolArbitrumOne } from '../../utils/core-protocols/core-protocol-arbitrum-one';
 import {
-  createDolomiteAddressRegistryImplementation,
+  createDolomiteAccountRegistryImplementation,
   createIsolationModeTokenVaultV1ActionsImpl,
   createRegistryProxy
 } from '../../utils/dolomite';
@@ -140,7 +140,7 @@ describe('IsolationModeVaultFactory', () => {
 
     solidAccount = core.hhUser5;
 
-    const dolomiteAddressRegistry = await createDolomiteAddressRegistryImplementation();
+    const dolomiteAddressRegistry = await createDolomiteAccountRegistryImplementation();
     const calldata = await dolomiteAddressRegistry.populateTransaction.initialize(
       [factory.address]
     );

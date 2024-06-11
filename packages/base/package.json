@@ -8,7 +8,7 @@
     "coverage": "yarn coverage:prepare && COVERAGE=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat coverage --testfiles \"test/*.ts\" --solcoverjs ../../.solcover.js --network hardhat",
     "coverage:prepare": "ts-node ../../scripts/fix-contracts-for-coverage.ts base",
     "coverage:specific": "yarn coverage:prepare && COVERAGE=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat coverage --testfiles \"test/isolation-mode/abstract/IsolationModeVaultFactory.ts\" --solcoverjs ../../.solcover.js --network hardhat",
-    "test:specific": "TEST_SPECIFIC=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat --network hardhat test test/general/DolomiteERC20WithPayable.ts",
+    "test:specific": "TEST_SPECIFIC=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat --network hardhat test test/general/DolomiteERC20.ts",
     "lint": "yarn lint:sol && yarn lint:ts",
     "lint:sol": "hardhat check && python3 ../../scripts/lint-contracts.py fix base",
     "lint:ts": "tslint --project ../../ -t verbose 'src/**/*.ts' 'test/**/*.ts'"
