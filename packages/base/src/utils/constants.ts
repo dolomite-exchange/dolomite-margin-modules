@@ -774,12 +774,28 @@ export const PENDLE_PT_E_ETH_JUN_2024_TOKEN_MAP: Record<Network.ArbitrumOne, str
   [Network.ArbitrumOne]: '0x1c27Ad8a19Ba026ADaBD615F6Bc77158130cfBE4',
 };
 
+export const PENDLE_E_ETH_SEP_2024_MARKET_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0xf9F9779d8fF604732EBA9AD345E6A27EF5c2a9d6',
+};
+
+export const PENDLE_PT_E_ETH_SEP_2024_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0xb8b0a120F6A68Dd06209619F62429fB1a8e92feC',
+};
+
 export const PENDLE_PT_EZ_ETH_JUN_2024_MARKET_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x5E03C94Fc5Fb2E21882000A96Df0b63d2c4312e2',
 };
 
 export const PENDLE_PT_EZ_ETH_JUN_2024_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x8EA5040d423410f1fdc363379Af88e1DB5eA1C34',
+};
+
+export const PENDLE_PT_EZ_ETH_SEP_2024_MARKET_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x35f3dB08a6e9cB4391348b0B404F493E7ae264c0',
+};
+
+export const PENDLE_PT_EZ_ETH_SEP_2024_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x2CCFce9bE49465CC6f947b5F6aC9383673733Da9',
 };
 
 export const PENDLE_GLP_MAR_2024_MARKET_MAP: Record<Network.ArbitrumOne, string> = {

@@ -17,7 +17,7 @@ import {
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
-describe('PendlePtEEthApr2024IsolationModeVaultFactory', () => {
+describe('PendlePtEEthSep2024IsolationModeVaultFactory', () => {
   let snapshotId: string;
 
   let core: CoreProtocolArbitrumOne;
@@ -32,15 +32,15 @@ describe('PendlePtEEthApr2024IsolationModeVaultFactory', () => {
     });
     pendleRegistry = await createPendleRegistry(
       core,
-      core.pendleEcosystem!.weEthApr2024.weEthMarket,
-      core.pendleEcosystem!.weEthApr2024.ptOracle,
+      core.pendleEcosystem!.weEthSep2024.weEthMarket,
+      core.pendleEcosystem!.weEthSep2024.ptOracle,
       core.pendleEcosystem!.syWeEthToken,
     );
     vaultImplementation = await createPendlePtIsolationModeTokenVaultV1();
     factory = await createPendlePtIsolationModeVaultFactory(
       core,
       pendleRegistry,
-      core.pendleEcosystem!.weEthApr2024.ptWeEthToken,
+      core.pendleEcosystem!.weEthSep2024.ptWeEthToken,
       vaultImplementation,
     );
 
@@ -54,7 +54,7 @@ describe('PendlePtEEthApr2024IsolationModeVaultFactory', () => {
   describe('#contructor', () => {
     it('should initialize variables properly', async () => {
       expect(await factory.pendleRegistry()).to.equal(pendleRegistry.address);
-      expect(await factory.UNDERLYING_TOKEN()).to.equal(core.pendleEcosystem!.weEthApr2024.ptWeEthToken.address);
+      expect(await factory.UNDERLYING_TOKEN()).to.equal(core.pendleEcosystem!.weEthSep2024.ptWeEthToken.address);
       expect(await factory.BORROW_POSITION_PROXY()).to.equal(core.borrowPositionProxyV2.address);
       expect(await factory.userVaultImplementation()).to.equal(vaultImplementation.address);
       expect(await factory.DOLOMITE_MARGIN()).to.equal(core.dolomiteMargin.address);

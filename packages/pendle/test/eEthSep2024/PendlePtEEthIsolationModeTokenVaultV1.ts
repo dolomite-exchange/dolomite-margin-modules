@@ -1,4 +1,4 @@
-import { ADDRESS_ZERO, Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import {
   getRealLatestBlockNumber,
   impersonate,
@@ -10,37 +10,24 @@ import {
   setupTestMarket,
   setupUserVaultProxy,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
-import {
-  getChainlinkPriceOracleV2ConstructorParamsFromOldPriceOracle,
-  getRedstonePriceOracleV2ConstructorParams,
-} from '@dolomite-exchange/modules-oracles/src/oracles-constructors';
-import {
-  ChainlinkPriceOracleV2,
-  ChainlinkPriceOracleV2__factory,
-  RedstonePriceOracleV2,
-  RedstonePriceOracleV2__factory,
-} from '@dolomite-exchange/modules-oracles/src/types';
 import { expect } from 'chai';
-import { DolomiteRegistryImplementation, DolomiteRegistryImplementation__factory } from 'packages/base/src/types';
-import { CHAINLINK_PRICE_AGGREGATORS_MAP, REDSTONE_PRICE_AGGREGATORS_MAP } from 'packages/base/src/utils/constants';
-import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
 import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import {
   IPendlePtToken,
   PendlePtIsolationModeTokenVaultV1,
   PendlePtIsolationModeTokenVaultV1__factory,
-  PendlePtIsolationModeUnwrapperTraderV2,
+  PendlePtIsolationModeUnwrapperTraderV3,
   PendlePtIsolationModeVaultFactory,
-  PendlePtIsolationModeWrapperTraderV2,
-  PendlePtPriceOracle,
+  PendlePtIsolationModeWrapperTraderV3,
+  PendlePtPriceOracleV2,
   PendleRegistry,
 } from '../../src/types';
 import {
-  createPendlePtEEthPriceOracle,
   createPendlePtIsolationModeTokenVaultV1,
   createPendlePtIsolationModeUnwrapperTraderV2,
   createPendlePtIsolationModeVaultFactory,
   createPendlePtIsolationModeWrapperTraderV2,
+  createPendlePtPriceOracleV2,
   createPendleRegistry,
 } from '../pendle-ecosystem-utils';
 
@@ -50,9 +37,9 @@ describe('PendlePtEEthApr2024IsolationModeTokenVaultV1', () => {
   let core: CoreProtocolArbitrumOne;
   let underlyingPtToken: IPendlePtToken;
   let pendleRegistry: PendleRegistry;
-  let unwrapper: PendlePtIsolationModeUnwrapperTraderV2;
-  let wrapper: PendlePtIsolationModeWrapperTraderV2;
-  let priceOracle: PendlePtPriceOracle;
+  let unwrapper: PendlePtIsolationModeUnwrapperTraderV3;
+  let wrapper: PendlePtIsolationModeWrapperTraderV3;
+  let priceOracle: PendlePtPriceOracleV2;
   let factory: PendlePtIsolationModeVaultFactory;
   let vault: PendlePtIsolationModeTokenVaultV1;
 
@@ -63,12 +50,12 @@ describe('PendlePtEEthApr2024IsolationModeTokenVaultV1', () => {
     });
 
     const underlyingToken = core.tokens.weEth!;
-    underlyingPtToken = core.pendleEcosystem!.weEthApr2024.ptWeEthToken.connect(core.hhUser1);
+    underlyingPtToken = core.pendleEcosystem!.weEthSep2024.ptWeEthToken.connect(core.hhUser1);
     const userVaultImplementation = await createPendlePtIsolationModeTokenVaultV1();
     pendleRegistry = await createPendleRegistry(
       core,
-      core.pendleEcosystem!.weEthApr2024.weEthMarket,
-      core.pendleEcosystem!.weEthApr2024.ptOracle,
+      core.pendleEcosystem!.weEthSep2024.weEthMarket,
+      core.pendleEcosystem!.weEthSep2024.ptOracle,
       core.pendleEcosystem!.syWeEthToken,
     );
     factory = await createPendlePtIsolationModeVaultFactory(
@@ -80,45 +67,54 @@ describe('PendlePtEEthApr2024IsolationModeTokenVaultV1', () => {
     unwrapper = await createPendlePtIsolationModeUnwrapperTraderV2(core, pendleRegistry, underlyingToken, factory);
     wrapper = await createPendlePtIsolationModeWrapperTraderV2(core, pendleRegistry, underlyingToken, factory);
 
-    const wethAggregator = await core.chainlinkPriceOracleV1!.getAggregatorByToken(core.tokens.weth.address);
-    const redstoneAggregatorMap = REDSTONE_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne];
-    const weEthAggregator = redstoneAggregatorMap[core.tokens.weEth.address]!.aggregatorAddress;
-    const redstoneOracle = (await createContractWithAbi<RedstonePriceOracleV2>(
-      RedstonePriceOracleV2__factory.abi,
-      RedstonePriceOracleV2__factory.bytecode,
-      await getRedstonePriceOracleV2ConstructorParams(
-        [core.tokens.weth, underlyingToken],
-        [wethAggregator, weEthAggregator],
-        [ADDRESS_ZERO, core.tokens.weth.address],
-        [false, false],
-        core,
-      ),
-    )).connect(core.governance);
+    // const wethAggregator = await core.chainlinkPriceOracleV1!.getAggregatorByToken(core.tokens.weth.address);
+    // const redstoneAggregatorMap = REDSTONE_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne];
+    // const weEthAggregator = redstoneAggregatorMap[core.tokens.weEth.address]!.aggregatorAddress;
+    // const redstoneOracle = (await createContractWithAbi<RedstonePriceOracleV2>(
+    //   RedstonePriceOracleV2__factory.abi,
+    //   RedstonePriceOracleV2__factory.bytecode,
+    //   await getRedstonePriceOracleV2ConstructorParams(
+    //     [core.tokens.weth, underlyingToken],
+    //     [wethAggregator, weEthAggregator],
+    //     [ADDRESS_ZERO, core.tokens.weth.address],
+    //     [false, false],
+    //     core,
+    //   ),
+    // )).connect(core.governance);
 
-    const dolomiteRegistryImplementation = await createContractWithAbi<DolomiteRegistryImplementation>(
-      DolomiteRegistryImplementation__factory.abi,
-      DolomiteRegistryImplementation__factory.bytecode,
-      [],
-    );
-    await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(dolomiteRegistryImplementation.address);
-    await core.dolomiteRegistry.connect(core.governance).ownerSetRedstonePriceOracle(redstoneOracle.address);
-    const chainlinkOracle = (await createContractWithAbi<ChainlinkPriceOracleV2>(
-      ChainlinkPriceOracleV2__factory.abi,
-      ChainlinkPriceOracleV2__factory.bytecode,
-      await getChainlinkPriceOracleV2ConstructorParamsFromOldPriceOracle(core),
-    )).connect(core.governance);
-    await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkPriceOracle(
-      chainlinkOracle.address,
-    );
-    await chainlinkOracle.connect(core.governance).ownerInsertOrUpdateOracleTokenWithBypass(
-      underlyingToken.address,
-      18,
-      CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][core.tokens.weEth.address]!.aggregatorAddress,
-      ADDRESS_ZERO,
-      true,
-    );
-    priceOracle = await createPendlePtEEthPriceOracle(core, factory, pendleRegistry);
-    await setupTestMarket(core, factory, true, priceOracle);
+    // const dolomiteRegistryImplementation = await createContractWithAbi<DolomiteRegistryImplementation>(
+    //   DolomiteRegistryImplementation__factory.abi,
+    //   DolomiteRegistryImplementation__factory.bytecode,
+    //   [],
+    // );
+    // await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(dolomiteRegistryImplementation.address);
+    // await core.dolomiteRegistry.connect(core.governance).ownerSetRedstonePriceOracle(redstoneOracle.address);
+    // const chainlinkOracle = (await createContractWithAbi<ChainlinkPriceOracleV2>(
+    //   ChainlinkPriceOracleV2__factory.abi,
+    //   ChainlinkPriceOracleV2__factory.bytecode,
+    //   await getChainlinkPriceOracleV2ConstructorParamsFromOldPriceOracle(core),
+    // )).connect(core.governance);
+    // await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkPriceOracle(
+    //   chainlinkOracle.address,
+    // );
+    // await chainlinkOracle.connect(core.governance).ownerInsertOrUpdateOracleTokenWithBypass(
+    //   underlyingToken.address,
+    //   18,
+    //   CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][core.tokens.weEth.address]!.aggregatorAddress,
+    //   ADDRESS_ZERO,
+    //   true,
+    // );
+    priceOracle = await createPendlePtPriceOracleV2(core, factory, pendleRegistry);
+
+    const tokenInfo = {
+      oracleInfos: [
+        { oracle: priceOracle.address, tokenPair: underlyingToken.address, weight: 100 }
+      ],
+      decimals: 18,
+      token: factory.address
+    };
+    await core.oracleAggregatorV2.ownerInsertOrUpdateToken(tokenInfo);
+    await setupTestMarket(core, factory, true, core.oracleAggregatorV2);
 
     await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
