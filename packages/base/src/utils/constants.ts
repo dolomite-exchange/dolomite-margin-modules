@@ -811,7 +811,7 @@ export const PENDLE_RS_ETH_MARKET_MAP: Record<Network.ArbitrumOne, string> = {
 };
 
 export const PENDLE_RS_ETH_SEP_2024_MARKET_MAP: Record<Network.ArbitrumOne, string> = {
-  [Network.ArbitrumOne]: '0xed99fc8bdb8e9e7b8240f62f69609a125a0fbf14',
+  [Network.ArbitrumOne]: '0xED99fC8bdB8E9e7B8240f62f69609a125A0Fbf14',
 };
 
 export const PENDLE_PT_RS_ETH_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
@@ -819,7 +819,7 @@ export const PENDLE_PT_RS_ETH_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
 };
 
 export const PENDLE_PT_RS_ETH_SEP_2024_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
-  [Network.ArbitrumOne]: '0x30c98c0139b62290e26ac2a2158ac341dcaf1333',
+  [Network.ArbitrumOne]: '0x30c98c0139B62290E26aC2a2158AC341Dcaf1333',
 };
 
 export const PENDLE_WST_ETH_2024_MARKET_MAP: Record<Network.ArbitrumOne, string> = {
@@ -847,7 +847,7 @@ export const PENDLE_PT_USDE_TOKEN_MAP: Record<Network.Mantle, string> = {
 };
 
 export const PENDLE_PT_ORACLE_MAP: Record<Network, string> = {
-  [Network.ArbitrumOne]: '0x9a9fa8338dd5e5b2188006f1cd2ef26d921650c2',
+  [Network.ArbitrumOne]: '0x9a9Fa8338dd5E5B2188006f1Cd2Ef26d921650C2',
   [Network.Base]: ADDRESS_ZERO,
   [Network.Mantle]: '0x9a9Fa8338dd5E5B2188006f1Cd2Ef26d921650C2',
   [Network.PolygonZkEvm]: ADDRESS_ZERO,

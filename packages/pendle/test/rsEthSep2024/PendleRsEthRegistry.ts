@@ -14,7 +14,7 @@ import { createPendleRegistry } from '../pendle-ecosystem-utils';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
-describe('PendleRsEthApr2024Registry', () => {
+describe('PendleRsEthSep2024Registry', () => {
   let snapshotId: string;
 
   let core: CoreProtocolArbitrumOne;
@@ -27,10 +27,10 @@ describe('PendleRsEthApr2024Registry', () => {
       blockNumber: await getRealLatestBlockNumber(true, Network.ArbitrumOne),
       network: Network.ArbitrumOne,
     });
-    ptMarket = core.pendleEcosystem!.rsEthApr2024.rsEthMarket;
+    ptMarket = core.pendleEcosystem!.rsEthSep2024.rsEthMarket;
     syToken = core.pendleEcosystem!.syRsEthToken;
 
-    registry = await createPendleRegistry(core, ptMarket, core.pendleEcosystem!.rsEthApr2024.ptOracle, syToken);
+    registry = await createPendleRegistry(core, ptMarket, core.pendleEcosystem!.rsEthSep2024.ptOracle, syToken);
 
     snapshotId = await snapshot();
   });
@@ -41,9 +41,9 @@ describe('PendleRsEthApr2024Registry', () => {
 
   describe('#initialize', () => {
     it('should initialize variables properly', async () => {
-      expect(await registry.pendleRouter()).to.equal(core.pendleEcosystem!.pendleRouter.address);
+      expect(await registry.pendleRouter()).to.equal(core.pendleEcosystem!.pendleRouterV3.address);
       expect(await registry.ptMarket()).to.equal(ptMarket.address);
-      expect(await registry.ptOracle()).to.equal(core.pendleEcosystem!.rsEthApr2024.ptOracle.address);
+      expect(await registry.ptOracle()).to.equal(core.pendleEcosystem!.rsEthSep2024.ptOracle.address);
       expect(await registry.syToken()).to.equal(syToken.address);
       expect(await registry.dolomiteRegistry()).to.equal(core.dolomiteRegistry.address);
     });
@@ -53,7 +53,7 @@ describe('PendleRsEthApr2024Registry', () => {
         registry.initialize(
           core.pendleEcosystem!.pendleRouter.address,
           ptMarket.address,
-          core.pendleEcosystem!.rsEthApr2024.ptOracle.address,
+          core.pendleEcosystem!.rsEthSep2024.ptOracle.address,
           syToken.address,
           core.dolomiteRegistry.address,
         ),

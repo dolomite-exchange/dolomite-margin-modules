@@ -15,7 +15,7 @@ import { JonesEcosystem } from '../ecosystem-utils/jones';
 import { MineralLiquidityMiningEcosystem, OARBLiquidityMiningEcosystem } from '../ecosystem-utils/liquidity-mining';
 import { OdosEcosystem } from '../ecosystem-utils/odos';
 import { ParaswapEcosystem } from '../ecosystem-utils/paraswap';
-import { PendleEcosystem } from '../ecosystem-utils/pendle';
+import { PendleEcosystemArbitrumOne } from '../ecosystem-utils/pendle';
 import { PlutusEcosystem } from '../ecosystem-utils/plutus';
 import { PremiaEcosystem } from '../ecosystem-utils/premia';
 import { UmamiEcosystem } from '../ecosystem-utils/umami';
@@ -139,7 +139,7 @@ interface CoreProtocolParamsArbitrumOne {
   marketIds: CoreProtocolMarketIdsArbitrumOne;
   odosEcosystem: OdosEcosystem;
   paraswapEcosystem: ParaswapEcosystem;
-  pendleEcosystem: PendleEcosystem;
+  pendleEcosystem: PendleEcosystemArbitrumOne;
   plutusEcosystem: PlutusEcosystem;
   premiaEcosystem: PremiaEcosystem;
   redstonePriceOracleV3: RedstonePriceOracleV3;
@@ -163,7 +163,7 @@ export class CoreProtocolArbitrumOne extends CoreProtocolAbstract<Network.Arbitr
   public readonly oArbLiquidityMiningEcosystem: OARBLiquidityMiningEcosystem;
   public readonly odosEcosystem: OdosEcosystem;
   public readonly paraswapEcosystem: ParaswapEcosystem;
-  public readonly pendleEcosystem: PendleEcosystem;
+  public readonly pendleEcosystem: PendleEcosystemArbitrumOne;
   public readonly plutusEcosystem: PlutusEcosystem;
   public readonly premiaEcosystem: PremiaEcosystem;
   public readonly redstonePriceOracleV3: RedstonePriceOracleV3;

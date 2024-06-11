@@ -1,32 +1,26 @@
-import {
-  DolomiteRegistryImplementation,
-  DolomiteRegistryImplementation__factory,
-} from '@dolomite-exchange/modules-base/src/types';
-import { createContractWithAbi } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
+import { advanceToTimestamp, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol, setupTestMarket } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { getTWAPPriceOracleV2ConstructorParams } from '@dolomite-exchange/modules-oracles/src/oracles-constructors';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
-import { RS_ETH_CAMELOT_POOL_MAP } from 'packages/base/src/utils/constants';
+import { CHAINLINK_PRICE_AGGREGATORS_MAP } from 'packages/base/src/utils/constants';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
 import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
-import { IAlgebraV3Pool__factory, TWAPPriceOracleV2, TWAPPriceOracleV2__factory } from 'packages/oracles/src/types';
-import { IERC20, PendlePtIsolationModeVaultFactory, PendlePtPriceOracle, PendleRegistry } from '../../src/types';
+import { IERC20, PendlePtIsolationModeVaultFactory, PendlePtPriceOracleV2, PendleRegistry } from '../../src/types';
 import {
   createPendlePtIsolationModeTokenVaultV1,
   createPendlePtIsolationModeVaultFactory,
-  createPendlePtRsEthPriceOracle,
+  createPendlePtPriceOracleV2,
   createPendleRegistry,
 } from '../pendle-ecosystem-utils';
+import { TokenInfo } from 'packages/oracles/src';
 
-const PT_RS_ETH_PRICE = BigNumber.from('3682064398981067160104');
+const PT_RS_ETH_PRICE = BigNumber.from('966874469227388740');
 
 describe('PendlePtRsEthApr2024PriceOracle', () => {
   let snapshotId: string;
 
   let core: CoreProtocolArbitrumOne;
-  let ptOracle: PendlePtPriceOracle;
+  let ptOracle: PendlePtPriceOracleV2;
   let pendleRegistry: PendleRegistry;
   let factory: PendlePtIsolationModeVaultFactory;
   let underlyingToken: IERC20;
@@ -34,48 +28,45 @@ describe('PendlePtRsEthApr2024PriceOracle', () => {
 
   before(async () => {
     core = await setupCoreProtocol({
-      blockNumber: 187_700_000,
+      blockNumber: 220_737_000,
       network: Network.ArbitrumOne,
     });
-    const dolomiteRegistryImplementation = await createContractWithAbi<DolomiteRegistryImplementation>(
-      DolomiteRegistryImplementation__factory.abi,
-      DolomiteRegistryImplementation__factory.bytecode,
-      [],
-    );
-    await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(dolomiteRegistryImplementation.address);
-    await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkPriceOracle(
-      core.chainlinkPriceOracleV1!.address,
-    );
 
     underlyingToken = core.tokens.rsEth!;
-    const tokenPair = IAlgebraV3Pool__factory.connect(
-      RS_ETH_CAMELOT_POOL_MAP[Network.ArbitrumOne]!,
-      core.hhUser1,
+    await core.chainlinkPriceOracleV3.ownerInsertOrUpdateOracleToken(
+      underlyingToken.address,
+      CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][underlyingToken.address]!.aggregatorAddress,
+      false
     );
-    const twapPriceOracle = await createContractWithAbi<TWAPPriceOracleV2>(
-      TWAPPriceOracleV2__factory.abi,
-      TWAPPriceOracleV2__factory.bytecode,
-      getTWAPPriceOracleV2ConstructorParams(core, core.tokens.rsEth, tokenPair),
-    );
+    const tokenInfo: TokenInfo = {
+      oracleInfos: [
+        { oracle: core.chainlinkPriceOracleV3.address, tokenPair: core.tokens.weth.address, weight: 100 }
+      ],
+      decimals: 18,
+      token: underlyingToken.address
+    };
+    await core.oracleAggregatorV2.ownerInsertOrUpdateToken(tokenInfo);
     underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
-    await setupTestMarket(core, core.tokens.rsEth, false, twapPriceOracle);
-    await core.dolomiteMargin.connect(core.governance).ownerSetPriceOracle(underlyingMarketId, twapPriceOracle.address);
-    await freezeAndGetOraclePrice(underlyingToken);
+    await setupTestMarket(core, core.tokens.rsEth, false, core.oracleAggregatorV2);
+    await core.dolomiteMargin.connect(core.governance).ownerSetPriceOracle(
+      underlyingMarketId,
+      core.oracleAggregatorV2.address
+    );
 
+    const userVaultImplementation = await createPendlePtIsolationModeTokenVaultV1();
     pendleRegistry = await createPendleRegistry(
       core,
-      core.pendleEcosystem!.rsEthApr2024.rsEthMarket,
-      core.pendleEcosystem!.rsEthApr2024.ptOracle,
+      core.pendleEcosystem!.rsEthSep2024.rsEthMarket,
+      core.pendleEcosystem!.rsEthSep2024.ptOracle,
       core.pendleEcosystem!.syRsEthToken,
     );
-    const userVaultImplementation = await createPendlePtIsolationModeTokenVaultV1();
     factory = await createPendlePtIsolationModeVaultFactory(
       core,
       pendleRegistry,
-      core.pendleEcosystem!.weEthApr2024.ptWeEthToken,
+      core.pendleEcosystem!.rsEthSep2024.ptRsEthToken,
       userVaultImplementation,
     );
-    ptOracle = await createPendlePtRsEthPriceOracle(core, factory, pendleRegistry);
+    ptOracle = await createPendlePtPriceOracleV2(core, factory, pendleRegistry);
     await setupTestMarket(core, factory, true, ptOracle);
     await freezeAndGetOraclePrice(underlyingToken);
 
@@ -91,12 +82,12 @@ describe('PendlePtRsEthApr2024PriceOracle', () => {
       expect(await ptOracle.DPT_TOKEN()).to.eq(factory.address);
       expect(await ptOracle.REGISTRY()).to.eq(pendleRegistry.address);
       expect(await ptOracle.DOLOMITE_MARGIN()).to.eq(core.dolomiteMargin.address);
-      expect(await ptOracle.UNDERLYING_TOKEN()).to.eq(underlyingToken.address);
     });
   });
 
   describe('#getPrice', () => {
     it('returns the correct value under normal conditions for the dptToken', async () => {
+      await advanceToTimestamp(1718111300);
       await core.dolomiteRegistry.connect(core.governance)
         .ownerSetChainlinkPriceOracle(
           core.testEcosystem!.testPriceOracle.address,

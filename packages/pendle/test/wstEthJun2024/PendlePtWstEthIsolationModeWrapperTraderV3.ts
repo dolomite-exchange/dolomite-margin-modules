@@ -99,7 +99,6 @@ describe('PendlePtWstEthJun2024IsolationModeWrapperTraderV3', () => {
 
     marketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, factory, true, priceOracle);
-    await core.dolomiteMargin.ownerSetPriceOracle(marketId, priceOracle.address);
 
     await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
@@ -187,7 +186,6 @@ describe('PendlePtWstEthJun2024IsolationModeWrapperTraderV3', () => {
       expect(otherBalanceWei.sign).to.eq(false);
       expect(otherBalanceWei.value).to.eq(usableAmount);
 
-      await expectWalletBalance(wrapper.address, ptToken, ZERO_BI);
       await expectWalletBalance(wrapper.address, ptToken, ZERO_BI);
     });
   });

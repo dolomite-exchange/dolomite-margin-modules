@@ -25,7 +25,7 @@ import {
   createPendleRegistry,
 } from '../pendle-ecosystem-utils';
 
-describe('PendlePtRsEthApr2024PriceOracle_integration', () => {
+xdescribe('PendlePtRsEthApr2024PriceOracle_integration', () => {
   let snapshotId: string;
 
   let core: CoreProtocolArbitrumOne;

@@ -17,8 +17,10 @@ import {
   PendlePtIsolationModeTokenVaultV1,
   PendlePtIsolationModeTokenVaultV1__factory,
   PendlePtIsolationModeUnwrapperTraderV2,
+  PendlePtIsolationModeUnwrapperTraderV3,
   PendlePtIsolationModeVaultFactory,
   PendlePtIsolationModeWrapperTraderV2,
+  PendlePtIsolationModeWrapperTraderV3,
   PendlePtPriceOracleV2,
   PendleRegistry,
 } from '../../src/types';
@@ -38,8 +40,8 @@ describe('PendlePtRsEthSep2024IsolationModeTokenVaultV1', () => {
   let core: CoreProtocolArbitrumOne;
   let underlyingPtToken: IPendlePtToken;
   let pendleRegistry: PendleRegistry;
-  let unwrapper: PendlePtIsolationModeUnwrapperTraderV2;
-  let wrapper: PendlePtIsolationModeWrapperTraderV2;
+  let unwrapper: PendlePtIsolationModeUnwrapperTraderV3;
+  let wrapper: PendlePtIsolationModeWrapperTraderV3;
   let priceOracle: PendlePtPriceOracleV2;
   let factory: PendlePtIsolationModeVaultFactory;
   let vault: PendlePtIsolationModeTokenVaultV1;
@@ -62,11 +64,14 @@ describe('PendlePtRsEthSep2024IsolationModeTokenVaultV1', () => {
       ],
       decimals: 18,
       token: underlyingToken.address
-    }
+    };
     await core.oracleAggregatorV2.ownerInsertOrUpdateToken(tokenInfo);
     const rsEthMarketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, core.tokens.rsEth, false, core.oracleAggregatorV2);
-    await core.dolomiteMargin.connect(core.governance).ownerSetPriceOracle(rsEthMarketId, core.oracleAggregatorV2.address);
+    await core.dolomiteMargin.connect(core.governance).ownerSetPriceOracle(
+      rsEthMarketId,
+      core.oracleAggregatorV2.address
+    );
 
     underlyingPtToken = core.pendleEcosystem!.rsEthSep2024.ptRsEthToken.connect(core.hhUser1);
 
