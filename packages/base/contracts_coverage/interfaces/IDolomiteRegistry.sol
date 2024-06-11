@@ -26,6 +26,7 @@ import { IExpiry } from "./IExpiry.sol";
 import { IGenericTraderProxyV1 } from "./IGenericTraderProxyV1.sol";
 import { ILiquidatorAssetRegistry } from "./ILiquidatorAssetRegistry.sol";
 import { IDolomitePriceOracle } from "../protocol/interfaces/IDolomitePriceOracle.sol";
+import { IDolomiteAddressRegistry } from "./IDolomiteAddressRegistry.sol";
 
 
 /**
@@ -49,10 +50,13 @@ interface IDolomiteRegistry {
     event DolomiteMigratorSet(address indexed _dolomiteMigrator);
     event RedstonePriceOracleSet(address indexed _redstonePriceOracle);
     event OracleAggregatorSet(address indexed _oracleAggregator);
+    event DolomiteAddressRegistrySet(address indexed _dolomiteAddressRegistry);
 
     // ========================================================
-    // =================== Admin Functions ====================
+    // =================== Write Functions ====================
     // ========================================================
+
+    function lazyInitialize(address _dolomiteMigrator, address _oracleAggregator) external;
 
     /**
      *
@@ -108,6 +112,12 @@ interface IDolomiteRegistry {
      */
     function ownerSetOracleAggregator(address _oracleAggregator) external;
 
+    /**
+     *
+     * @param  _dolomiteAddressRegistry    The new address of the Dolomite address registry
+     */
+    function ownerSetDolomiteAddressRegistry(address _dolomiteAddressRegistry) external;
+
     // ========================================================
     // =================== Getter Functions ===================
     // ========================================================
@@ -142,6 +152,9 @@ interface IDolomiteRegistry {
      */
     function chainlinkPriceOracle() external view returns (IDolomitePriceOracle);
 
+    /**
+     * @return The address of the migrator contract
+     */
     function dolomiteMigrator() external view returns (IDolomiteMigrator);
 
     /**
@@ -153,6 +166,11 @@ interface IDolomiteRegistry {
      * @return The address of the oracle aggregator that's compatible with DolomiteMargin
      */
     function oracleAggregator() external view returns (IDolomitePriceOracle);
+
+    /**
+     * @return The address of the Dolomite address registry
+     */
+    function dolomiteAddressRegistry() external view returns (IDolomiteAddressRegistry);
 
     /**
      * @return The base (denominator) for the slippage tolerance variable. Always 1e18.

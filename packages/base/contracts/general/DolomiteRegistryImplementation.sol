@@ -23,6 +23,7 @@ pragma solidity ^0.8.9;
 import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import { OnlyDolomiteMarginForUpgradeable } from "../helpers/OnlyDolomiteMarginForUpgradeable.sol";
 import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
+import { IDolomiteAccountRegistry } from "../interfaces/IDolomiteAccountRegistry.sol";
 import { IDolomiteMigrator } from "../interfaces/IDolomiteMigrator.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IEventEmitterRegistry } from "../interfaces/IEventEmitterRegistry.sol";
@@ -50,15 +51,16 @@ contract DolomiteRegistryImplementation is
     // ===================== Constants =====================
 
     bytes32 private constant _FILE = "DolomiteRegistryImplementation";
-    bytes32 private constant _DOLOMITE_MIGRATOR_SLOT = bytes32(uint256(keccak256("eip1967.proxy.dolomiteMigrator")) - 1); // solhint-disable-line max-line-length
-    bytes32 private constant _GENERIC_TRADER_PROXY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.genericTraderProxy")) - 1); // solhint-disable-line max-line-length
-    bytes32 private constant _EXPIRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.expiry")) - 1); // solhint-disable-line max-line-length
-    bytes32 private constant _SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL_SLOT = bytes32(uint256(keccak256("eip1967.proxy.slippageToleranceForPauseSentinel")) - 1); // solhint-disable-line max-line-length
-    bytes32 private constant _LIQUIDATOR_ASSET_REGISTRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.liquidatorAssetRegistry")) - 1); // solhint-disable-line max-line-length
-    bytes32 private constant _EVENT_EMITTER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.eventEmitter")) - 1);
     bytes32 private constant _CHAINLINK_PRICE_ORACLE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.chainlinkPriceOracle")) - 1); // solhint-disable-line max-line-length
-    bytes32 private constant _REDSTONE_PRICE_ORACLE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.redstonePriceOracle")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _DOLOMITE_ACCOUNT_REGISTRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.dolomiteAccountRegistry")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _DOLOMITE_MIGRATOR_SLOT = bytes32(uint256(keccak256("eip1967.proxy.dolomiteMigrator")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _EVENT_EMITTER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.eventEmitter")) - 1);
+    bytes32 private constant _EXPIRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.expiry")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _GENERIC_TRADER_PROXY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.genericTraderProxy")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _LIQUIDATOR_ASSET_REGISTRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.liquidatorAssetRegistry")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _ORACLE_AGGREGATOR_SLOT = bytes32(uint256(keccak256("eip1967.proxy.oracleAggregator")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _REDSTONE_PRICE_ORACLE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.redstonePriceOracle")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL_SLOT = bytes32(uint256(keccak256("eip1967.proxy.slippageToleranceForPauseSentinel")) - 1); // solhint-disable-line max-line-length
 
     // ==================== Constructor ====================
 
@@ -67,13 +69,15 @@ contract DolomiteRegistryImplementation is
         address _expiry,
         uint256 _slippageToleranceForPauseSentinel,
         address _liquidatorAssetRegistry,
-        address _eventEmitter
+        address _eventEmitter,
+        address _dolomiteAccountRegistry
     ) external initializer {
         _ownerSetGenericTraderProxy(_genericTraderProxy);
         _ownerSetExpiry(_expiry);
         _ownerSetSlippageToleranceForPauseSentinel(_slippageToleranceForPauseSentinel);
         _ownerSetLiquidatorAssetRegistry(_liquidatorAssetRegistry);
         _ownerSetEventEmitter(_eventEmitter);
+        _ownerSetDolomiteAccountRegistry(_dolomiteAccountRegistry);
     }
 
     function lazyInitialize(
@@ -164,6 +168,14 @@ contract DolomiteRegistryImplementation is
         _ownerSetOracleAggregator(_oracleAggregator);
     }
 
+    function ownerSetDolomiteAccountRegistry(
+        address _dolomiteAccountRegistry
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetDolomiteAccountRegistry(_dolomiteAccountRegistry);
+    }
+
     // ========================== View Functions =========================
 
     function genericTraderProxy() public view returns (IGenericTraderProxyV1) {
@@ -200,6 +212,10 @@ contract DolomiteRegistryImplementation is
 
     function oracleAggregator() public view returns (IDolomitePriceOracle) {
         return IDolomitePriceOracle(_getAddress(_ORACLE_AGGREGATOR_SLOT));
+    }
+
+    function dolomiteAccountRegistry() public view returns (IDolomiteAccountRegistry) {
+        return IDolomiteAccountRegistry(_getAddress(_DOLOMITE_ACCOUNT_REGISTRY_SLOT));
     }
 
     function slippageToleranceForPauseSentinelBase() public pure returns (uint256) {
@@ -341,5 +357,18 @@ contract DolomiteRegistryImplementation is
 
         _setAddress(_ORACLE_AGGREGATOR_SLOT, _oracleAggregator);
         emit OracleAggregatorSet(_oracleAggregator);
+    }
+
+    function _ownerSetDolomiteAccountRegistry(
+        address _dolomiteAccountRegistry
+    ) internal {
+        Require.that(
+            _dolomiteAccountRegistry != address(0),
+            _FILE,
+            "Invalid dolomiteAccountRegistry"
+        );
+
+        _setAddress(_DOLOMITE_ACCOUNT_REGISTRY_SLOT, _dolomiteAccountRegistry);
+        emit DolomiteAccountRegistrySet(_dolomiteAccountRegistry);
     }
 }

@@ -27,7 +27,7 @@ import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/I
  * @title   IDolomiteERC20
  * @author  Dolomite
  *
- * @notice  A registry contract for storing all of the addresses that can interact with Umami's Delta Neutral vaults
+ * @notice  Interface that defines a tokenized wrapper around a user's Dolomite balance.
  */
 interface IDolomiteERC20 is IERC20Metadata {
 
@@ -50,10 +50,33 @@ interface IDolomiteERC20 is IERC20Metadata {
     function ownerSetIsReceiver(address _receiver, bool _isEnabled) external;
 
     // ========================================================
-    // ==================== Other Functions ===================
+    // ================ User Write Functions ==================
     // ========================================================
 
+    /**
+     * @notice Enables `msg.sender` as a valid receiver for dTokens.
+     */
     function enableIsReceiver() external;
+
+    /**
+     * @notice  This function does requires a token approval from `msg.sender` on DOLOMITE_MARGIN to succeed.
+     *
+     * @param  _amount  The amount of TOKEN (IE USDC) that should be pulled into this dToken contract, to emit dTOKEN
+     * @return _dAmount The amount of dTOKEN minted to `msg.sender`
+     */
+    function mint(uint256 _amount) external returns (uint256 _dAmount);
+
+    /**
+     * @notice  This function does not require a token approval from `msg.sender` to process the redemption.
+     *
+     * @param  _dAmount The amount of dTOKEN (IE dUSDC) that should be redeemed for TOKEN (IE USDC).
+     * @return _amount  The amount of TOKEN returned to `msg.sender`
+     */
+    function redeem(uint256 _dAmount) external returns (uint256 _amount);
+
+    // ========================================================
+    // ================== User Read Functions =================
+    // ========================================================
 
     /**
      * @return  The total supply of this token including any accrued interest. Calling this function every second will

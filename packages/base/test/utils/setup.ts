@@ -25,8 +25,9 @@ import { ethers } from 'hardhat';
 import { IGmxMarketToken } from 'packages/gmx-v2/src/types';
 import { IChainlinkPriceOracleV1__factory } from 'packages/oracles/src/types';
 import {
+  DolomiteERC20__factory, DolomiteERC20WithPayable__factory,
   IBorrowPositionProxyV2__factory,
-  IDepositWithdrawalProxy__factory,
+  IDepositWithdrawalProxy__factory, IDolomiteAccountRegistry__factory,
   IDolomiteAccountValuesReader__factory,
   IDolomiteMargin,
   IDolomiteMargin__factory,
@@ -93,7 +94,7 @@ import {
   PENDLE_MAP,
   PREMIA_MAP,
   RDNT_MAP,
-  RETH_MAP,
+  R_ETH_MAP,
   RS_ETH_MAP,
   S_GLP_MAP,
   SIZE_MAP,
@@ -545,6 +546,16 @@ export async function setupCoreProtocol<T extends NetworkType>(
     governance,
   );
 
+  const dolomiteAccountRegistry = IDolomiteAccountRegistry__factory.connect(
+    Deployments.DolomiteAccountRegistryProxy[config.network].address,
+    governance,
+  );
+
+  const dolomiteAccountRegistryProxy = RegistryProxy__factory.connect(
+    Deployments.DolomiteAccountRegistryProxy[config.network].address,
+    governance,
+  );
+
   const eventEmitterRegistry = getContract(
     Deployments.EventEmitterRegistryProxy[config.network].address,
     IEventEmitterRegistry__factory.connect,
@@ -611,6 +622,8 @@ export async function setupCoreProtocol<T extends NetworkType>(
     dolomiteMargin,
     dolomiteRegistry,
     dolomiteRegistryProxy,
+    dolomiteAccountRegistry,
+    dolomiteAccountRegistryProxy,
     eventEmitterRegistry,
     eventEmitterRegistryProxy,
     expiry,
@@ -688,6 +701,32 @@ export async function setupCoreProtocol<T extends NetworkType>(
           Deployments.DolomiteMigratorV2[typedConfig.network].address,
           hhUser1,
         ),
+        dTokens: {
+          usdc: DolomiteERC20__factory.connect(
+            Deployments.DolomiteUsdcToken[typedConfig.network].address,
+            hhUser1,
+          ),
+          wbtc: DolomiteERC20__factory.connect(
+            Deployments.DolomiteWbtcToken[typedConfig.network].address,
+            hhUser1,
+          ),
+          weth: DolomiteERC20WithPayable__factory.connect(
+            Deployments.DolomiteWethToken[typedConfig.network].address,
+            hhUser1,
+          ),
+          usdcProxy: RegistryProxy__factory.connect(
+            Deployments.DolomiteUsdcToken[typedConfig.network].address,
+            hhUser1,
+          ),
+          wbtcProxy: RegistryProxy__factory.connect(
+            Deployments.DolomiteWbtcToken[typedConfig.network].address,
+            hhUser1,
+          ),
+          wethProxy: RegistryProxy__factory.connect(
+            Deployments.DolomiteWethToken[typedConfig.network].address,
+            hhUser1,
+          ),
+        },
         gmxEcosystem: await createGmxEcosystem(typedConfig.network, hhUser1),
         gmxEcosystemV2: await createGmxEcosystemV2(typedConfig.network, hhUser1),
         jonesEcosystem: await createJonesEcosystem(typedConfig.network, hhUser1),
@@ -739,7 +778,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
           mim: MIM_MAP[typedConfig.network].marketId,
           nativeUsdc: NATIVE_USDC_MAP[typedConfig.network].marketId,
           premia: PREMIA_MAP[typedConfig.network].marketId,
-          rEth: RETH_MAP[typedConfig.network].marketId,
+          rEth: R_ETH_MAP[typedConfig.network].marketId,
           radiant: RDNT_MAP[typedConfig.network].marketId,
           pendle: PENDLE_MAP[typedConfig.network].marketId,
           sGlp: S_GLP_MAP[typedConfig.network].marketId,
@@ -792,7 +831,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
           nativeUsdc: IERC20__factory.connect(NATIVE_USDC_MAP[typedConfig.network].address, hhUser1),
           premia: IERC20__factory.connect(PREMIA_MAP[typedConfig.network].address, hhUser1),
           pendle: IERC20__factory.connect(PENDLE_MAP[typedConfig.network].address, hhUser1),
-          rEth: IERC20__factory.connect(RETH_MAP[typedConfig.network].address, hhUser1),
+          rEth: IERC20__factory.connect(R_ETH_MAP[typedConfig.network].address, hhUser1),
           rsEth: IERC20__factory.connect(RS_ETH_MAP[typedConfig.network].address, hhUser1),
           radiant: IERC20__factory.connect(RDNT_MAP[typedConfig.network].address, hhUser1),
           sGlp: IERC20__factory.connect(S_GLP_MAP[typedConfig.network].address, hhUser1),
@@ -1022,7 +1061,21 @@ export function getMaxDeploymentVersionAddressByDeploymentKey(
 ): address {
   const maxVersion = Object.keys(deployments)
     .filter(k => k.startsWith(key) && (deployments as any)[k][network])
-    .sort((a, b) => a < b ? 1 : -1)[0];
+    .sort((a, b) => {
+      // Add an extra 1 for the "V" in the version name
+      const subA = a.substring(key.length + 1);
+      const subB = b.substring(key.length + 1);
+      const valueA = parseInt(subA, 10);
+      const valueB = parseInt(subB, 10);
+      if (Number.isNaN(valueA)) {
+        throw new Error(`Invalid version: ${subA}`);
+      }
+      if (Number.isNaN(valueB)) {
+        throw new Error(`Invalid version: ${subB}`);
+      }
+
+      return valueB - valueA;
+    })[0];
   if (!maxVersion && !defaultAddress) {
     throw new Error(`Could not find ${key} for network ${network}`);
   }

@@ -333,7 +333,7 @@ export const RDNT_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   },
 };
 
-export const RETH_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+export const R_ETH_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0xEC70Dcb4A1EFa46b8F2D97C310C9c4790ba5ffA8',
     marketId: 15,
@@ -1050,7 +1050,7 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<Network, Record<string, Agg
     [RDNT_MAP[Network.ArbitrumOne].address]: {
       aggregatorAddress: '0x20d0fcab0ecfd078b036b6caf1fac69a6453b352',
     },
-    [RETH_MAP[Network.ArbitrumOne].address]: {
+    [R_ETH_MAP[Network.ArbitrumOne].address]: {
       aggregatorAddress: '0xF3272CAfe65b190e76caAF483db13424a3e23dD2',
       tokenPairAddress: WETH_MAP[Network.ArbitrumOne].address,
     },

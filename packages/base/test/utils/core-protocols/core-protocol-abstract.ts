@@ -3,7 +3,7 @@ import { BigNumberish } from 'ethers';
 import { IChainlinkPriceOracleV1, IChainlinkPriceOracleV3, OracleAggregatorV2 } from 'packages/oracles/src/types';
 import {
   IBorrowPositionProxyV2,
-  IDepositWithdrawalProxy,
+  IDepositWithdrawalProxy, IDolomiteAccountRegistry,
   IDolomiteRegistry,
   IERC20,
   IEventEmitterRegistry,
@@ -67,6 +67,8 @@ export interface CoreProtocolParams<T extends NetworkType> {
   dolomiteMargin: DolomiteMargin<T>;
   dolomiteRegistry: IDolomiteRegistry;
   dolomiteRegistryProxy: RegistryProxy;
+  dolomiteAccountRegistry: IDolomiteAccountRegistry;
+  dolomiteAccountRegistryProxy: RegistryProxy;
   eventEmitterRegistry: IEventEmitterRegistry;
   eventEmitterRegistryProxy: RegistryProxy;
   expiry: Expiry<T>;
@@ -119,6 +121,8 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
   public readonly dolomiteMargin: DolomiteMargin<T>;
   public readonly dolomiteRegistry: IDolomiteRegistry;
   public readonly dolomiteRegistryProxy: RegistryProxy;
+  public readonly dolomiteAccountRegistry: IDolomiteAccountRegistry;
+  public readonly dolomiteAccountRegistryProxy: RegistryProxy;
   public readonly eventEmitterRegistry: IEventEmitterRegistry;
   public readonly eventEmitterRegistryProxy: RegistryProxy;
   public readonly expiry: Expiry<T>;
@@ -167,6 +171,8 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
     this.dolomiteMargin = params.dolomiteMargin;
     this.dolomiteRegistry = params.dolomiteRegistry;
     this.dolomiteRegistryProxy = params.dolomiteRegistryProxy;
+    this.dolomiteAccountRegistry = params.dolomiteAccountRegistry;
+    this.dolomiteAccountRegistryProxy = params.dolomiteAccountRegistryProxy;
     this.eventEmitterRegistry = params.eventEmitterRegistry;
     this.eventEmitterRegistryProxy = params.eventEmitterRegistryProxy;
     this.expiry = params.expiry;
