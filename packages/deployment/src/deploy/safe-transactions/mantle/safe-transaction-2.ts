@@ -96,22 +96,6 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
       ptUSDeMaxSupplyWei,
     ),
   );
-  transactions.push(
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { factory: usdeSystem.factory },
-      'factory',
-      'ownerSetIsTokenConverterTrusted',
-      [usdeSystem.unwrapper.address, true],
-    ),
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { factory: usdeSystem.factory },
-      'factory',
-      'ownerSetIsTokenConverterTrusted',
-      [usdeSystem.wrapper.address, true],
-    ),
-  );
   return {
     core,
     upload: {
