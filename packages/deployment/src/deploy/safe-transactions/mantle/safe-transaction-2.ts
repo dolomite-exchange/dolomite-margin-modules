@@ -82,8 +82,8 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
     )
   );
   const ptUSDeMaxSupplyWei = parseEther('1000');
-  transactions = transactions.concat(
-    await prettyPrintEncodeAddIsolationModeMarket(
+  transactions.push(
+    ...await prettyPrintEncodeAddIsolationModeMarket(
       core,
       usdeSystem.factory,
       core.oracleAggregatorV2,
