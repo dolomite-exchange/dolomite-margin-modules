@@ -29,6 +29,12 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
     network,
     blockNumber: await getRealLatestBlockNumber(true, network),
   });
+  let incrementor = 0;
+  const numMarkets = await core.dolomiteMargin.getNumMarkets();
+
+  let transactions: EncodedTransaction[] = [];
+  const usdeMarketId = numMarkets.add(incrementor++);
+  const ptUSDeMarketId = numMarkets.add(incrementor++);
 
   const usdeSystem = await deployPendlePtSystem(
     core,
@@ -40,7 +46,6 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
     core.tokens.usde
   );
 
-  let transactions: EncodedTransaction[] = [];
   transactions.push(
     ...await prettyPrintEncodeAddMarket(
       core,
@@ -76,7 +81,6 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
     ],
   )
   );
-  const ptUSDeMarketId = (await core.dolomiteMargin.getNumMarkets()).add(1);
   const ptUSDeMaxSupplyWei = parseEther('1000');
   transactions = transactions.concat(
     await prettyPrintEncodeAddIsolationModeMarket(
@@ -125,9 +129,10 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
         (await core.dolomiteMargin.getNumMarkets()).eq(8),
         'Invalid number of markets',
       );
+
       assertHardhatInvariant(
         (await core.dolomiteMargin.getMarketTokenAddress(core.marketIds.usde)) === core.tokens.usde.address,
-        'Invalid USDe for market 6',
+        'Invalid USDe market ID',
       );
       assertHardhatInvariant(
         await core.dolomiteMargin.getMarketPriceOracle(core.marketIds.usde) === core.oracleAggregatorV2.address,
@@ -140,12 +145,12 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
       );
       
       assertHardhatInvariant(
-        (await core.dolomiteMargin.getMarketTokenAddress(7)) === usdeSystem.factory.address,
-        'Invalid ptUSDe for market 7',
+        (await core.dolomiteMargin.getMarketTokenAddress(ptUSDeMarketId)) === usdeSystem.factory.address,
+        'Invalid PT-USDe market ID',
       );
       assertHardhatInvariant(
-        await core.dolomiteMargin.getMarketPriceOracle(7) === core.oracleAggregatorV2.address,
-        'Invalid oracle for ptUSDe',
+        await core.dolomiteMargin.getMarketPriceOracle(ptUSDeMarketId) === core.oracleAggregatorV2.address,
+        'Invalid oracle for PT-USDe',
       );
       assertHardhatInvariant(
         (await usdeSystem.factory.isTokenConverterTrusted(usdeSystem.unwrapper.address)),
@@ -156,7 +161,7 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
         'Wrapper not trusted',
       );
       console.log(
-        '\t Price for usde',
+        '\t Price for USDe',
         (await core.dolomiteMargin.getMarketPrice(core.marketIds.usde)).value.toString(),
       );
     },
