@@ -62,24 +62,24 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
   );
   transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(
-    core,
-    core,
-    'oracleAggregatorV2',
-    'ownerInsertOrUpdateToken',
-    [
-      {
-        token: usdeSystem.factory.address,
-        decimals: await usdeSystem.factory.decimals(),
-        oracleInfos: [
-          {
-            oracle: usdeSystem.oracle.address,
-            tokenPair: core.tokens.usde.address,
-            weight: 100,
-          },
-        ],
-      },
-    ],
-  )
+      core,
+      core,
+      'oracleAggregatorV2',
+      'ownerInsertOrUpdateToken',
+      [
+        {
+          token: usdeSystem.factory.address,
+          decimals: await usdeSystem.factory.decimals(),
+          oracleInfos: [
+            {
+              oracle: usdeSystem.oracle.address,
+              tokenPair: core.tokens.usde.address,
+              weight: 100,
+            },
+          ],
+        },
+      ],
+    )
   );
   const ptUSDeMaxSupplyWei = parseEther('1000');
   transactions = transactions.concat(
@@ -127,7 +127,7 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
         === core.interestSetters.linearStepFunction14L86UInterestSetter.address,
         'Invalid interest setter USDe',
       );
-      
+
       assertHardhatInvariant(
         (await core.dolomiteMargin.getMarketTokenAddress(ptUSDeMarketId)) === usdeSystem.factory.address,
         'Invalid PT-USDe market ID',
