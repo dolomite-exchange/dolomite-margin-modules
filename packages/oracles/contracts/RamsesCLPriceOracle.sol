@@ -40,7 +40,7 @@ contract RamsesCLPriceOracle is ITWAPPriceOracleV1, OnlyDolomiteMargin {
 
     // ========================= Constants =========================
 
-    bytes32 private constant _FILE = "TWAPPriceOracleV2";
+    bytes32 private constant _FILE = "RamsesCLPriceOracle";
     uint256 private constant _ONE_DOLLAR = 10 ** 36;
 
     // ========================= Storage =========================

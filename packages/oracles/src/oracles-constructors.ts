@@ -317,6 +317,19 @@ export function getChroniclePriceOracleV3ConstructorParams<T extends NetworkType
   ];
 }
 
+export function getRamsesCLPriceOracleV3ConstructorParams<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  token: IERC20,
+  pool: string,
+): any[] {
+  return [
+    token.address,
+    pool,
+    core.dolomiteRegistry.address,
+    core.dolomiteMargin.address,
+  ];
+}
+
 export async function getRedstonePriceOracleV2ConstructorParams<T extends NetworkType>(
   tokens: IERC20[],
   aggregators: string[],

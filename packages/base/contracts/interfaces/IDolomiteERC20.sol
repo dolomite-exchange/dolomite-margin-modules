@@ -38,25 +38,8 @@ interface IDolomiteERC20 is IERC20Metadata {
     }
 
     // ========================================================
-    // ======================== Events ========================
-    // ========================================================
-
-    event LogSetReceiver(address indexed _receiver, bool _isEnabled);
-
-    // ========================================================
-    // =================== Admin Functions ====================
-    // ========================================================
-
-    function ownerSetIsReceiver(address _receiver, bool _isEnabled) external;
-
-    // ========================================================
     // ================ User Write Functions ==================
     // ========================================================
-
-    /**
-     * @notice Enables `msg.sender` as a valid receiver for dTokens.
-     */
-    function enableIsReceiver() external;
 
     /**
      * @notice  This function does requires a token approval from `msg.sender` on DOLOMITE_MARGIN to succeed.

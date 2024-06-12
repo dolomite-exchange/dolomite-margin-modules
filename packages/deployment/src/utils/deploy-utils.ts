@@ -871,8 +871,8 @@ export async function prettyPrintEncodeInsertChainlinkOracle<T extends NetworkTy
 
   const aggregator = IChainlinkAggregator__factory.connect(aggregatorAddress, core.governance);
 
-  const description = await aggregator.description();
-  const symbol = await IERC20Metadata__factory.connect(token.address, token.signer).symbol();
+  const description = (await aggregator.description()).toLowerCase();
+  const symbol = (await IERC20Metadata__factory.connect(token.address, token.signer).symbol()).toLowerCase();
   if (!description.includes(symbol) && !description.includes(symbol.substring(1))) {
     return Promise.reject(new Error(`Invalid aggregator for symbol, found: ${description}, expected: ${symbol}`));
   }
@@ -961,7 +961,7 @@ export async function prettyPrintEncodeInsertChainlinkOracleV3<T extends Network
 }
 
 export async function prettyPrintEncodeInsertChronicleOracleV3(
-  core: CoreProtocolWithChronicle<Network.Mantle>,
+  core: CoreProtocolWithChronicle<Network.ArbitrumOne | Network.Mantle>,
   token: IERC20,
   invertPrice: boolean = CHRONICLE_PRICE_SCRIBES_MAP[core.config.network][token.address].invertPrice ?? false,
   tokenPairAddress: string | undefined
@@ -988,8 +988,9 @@ export async function prettyPrintEncodeInsertChronicleOracleV3(
 
   if (network.name === 'hardhat') {
     const toller = await impersonate((await scribe.authed())[0], true);
-    await scribe.connect(toller).kiss(toller.address);
-    console.log(`\tChronicle price for ${symbol}:`, (await scribe.connect(toller).latestRoundData()).answer.toString());
+    const oracle = await impersonate(core.chroniclePriceOracleV3.address, true);
+    await scribe.connect(toller).kiss(oracle.address);
+    console.log(`\tChronicle price for ${symbol}:`, (await scribe.connect(oracle).latestRoundData()).answer.toString());
   }
 
   mostRecentTokenDecimals = tokenDecimals;

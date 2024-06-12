@@ -108,9 +108,9 @@ library AsyncIsolationModeUnwrapperTraderImpl {
             eventType: IGenericTraderProxyV1.EventEmissionType.None
         });
 
-        uint256 liquidationPenalty;
         if (_withdrawalInfo.isLiquidation) {
-            liquidationPenalty = _withdrawalInfo.outputAmount.mul(_unwrapper.DOLOMITE_MARGIN().getLiquidationSpread());
+            IDolomiteStructs.Decimal memory spread = IDolomiteStructs.Decimal({ value: 0.01 ether }); // 1% penalty
+            uint256 liquidationPenalty = _withdrawalInfo.outputAmount.mul(spread);
             IERC20(_withdrawalInfo.outputToken).safeTransfer(
                 address(_unwrapper.DOLOMITE_MARGIN()),
                 liquidationPenalty

@@ -1,10 +1,17 @@
 import { BigNumberish } from 'ethers';
 import {
+  ChroniclePriceOracleV3,
   IChainlinkAutomationRegistry,
   IChainlinkPriceOracleV1,
   IChainlinkPriceOracleV3, RedstonePriceOracleV3,
 } from 'packages/oracles/src/types';
-import { IDolomiteAccountValuesReader, IDolomiteMigrator, IERC20 } from '../../../src/types';
+import {
+  DolomiteERC20,
+  DolomiteERC20WithPayable,
+  IDolomiteAccountValuesReader,
+  IDolomiteMigrator,
+  IERC20, RegistryProxy,
+} from '../../../src/types';
 import { Network } from '../../../src/utils/no-deps-constants';
 import { AbraEcosystem } from '../ecosystem-utils/abra';
 import { ArbEcosystem } from '../ecosystem-utils/arb';
@@ -65,11 +72,21 @@ interface CoreProtocolTokensArbitrumOne extends CoreProtocolTokens<Network.Arbit
   size: IERC20;
   stEth: IERC20;
   uni: IERC20;
+  usdm: IERC20;
   usdt: IERC20;
   wbtc: IERC20;
   weEth: IERC20;
   wstEth: IERC20;
   xai: IERC20;
+}
+
+interface CoreProtocolArbitrumOneDTokens {
+  usdc: DolomiteERC20;
+  wbtc: DolomiteERC20;
+  weth: DolomiteERC20WithPayable;
+  usdcProxy: RegistryProxy;
+  wbtcProxy: RegistryProxy;
+  wethProxy: RegistryProxy;
 }
 
 interface CoreProtocolMarketIdsArbitrumOne extends CoreProtocolMarketIds {
@@ -126,8 +143,10 @@ interface CoreProtocolParamsArbitrumOne {
   chainlinkAutomationRegistry: IChainlinkAutomationRegistry;
   chainlinkPriceOracleV1: IChainlinkPriceOracleV1;
   chainlinkPriceOracleV3: IChainlinkPriceOracleV3;
+  chroniclePriceOracleV3: ChroniclePriceOracleV3;
   dolomiteAccountValuesReader: IDolomiteAccountValuesReader;
   dolomiteMigrator: IDolomiteMigrator;
+  dTokens: CoreProtocolArbitrumOneDTokens;
   gmxEcosystem: GmxEcosystem;
   gmxEcosystemV2: GmxEcosystemV2;
   jonesEcosystem: JonesEcosystem;
@@ -149,8 +168,10 @@ export class CoreProtocolArbitrumOne extends CoreProtocolAbstract<Network.Arbitr
   public readonly arbEcosystem: ArbEcosystem;
   public readonly camelotEcosystem: CamelotEcosystem;
   public readonly chainlinkAutomationRegistry: IChainlinkAutomationRegistry;
+  public readonly chroniclePriceOracleV3: ChroniclePriceOracleV3;
   public readonly dolomiteAccountValuesReader: IDolomiteAccountValuesReader;
   public readonly dolomiteMigrator: IDolomiteMigrator;
+  public readonly dTokens: CoreProtocolArbitrumOneDTokens;
   public readonly gmxEcosystem: GmxEcosystem;
   public readonly gmxEcosystemV2: GmxEcosystemV2;
   public readonly jonesEcosystem: JonesEcosystem;
@@ -176,8 +197,10 @@ export class CoreProtocolArbitrumOne extends CoreProtocolAbstract<Network.Arbitr
     this.arbEcosystem = arbParams.arbEcosystem;
     this.camelotEcosystem = arbParams.camelotEcosystem;
     this.chainlinkAutomationRegistry = arbParams.chainlinkAutomationRegistry;
+    this.chroniclePriceOracleV3 = arbParams.chroniclePriceOracleV3;
     this.dolomiteAccountValuesReader = arbParams.dolomiteAccountValuesReader;
     this.dolomiteMigrator = arbParams.dolomiteMigrator;
+    this.dTokens = arbParams.dTokens;
     this.gmxEcosystem = arbParams.gmxEcosystem;
     this.gmxEcosystemV2 = arbParams.gmxEcosystemV2;
     this.jonesEcosystem = arbParams.jonesEcosystem;
