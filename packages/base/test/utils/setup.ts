@@ -755,6 +755,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
           nativeUsdc: NATIVE_USDC_MAP[typedConfig.network].marketId,
           premia: PREMIA_MAP[typedConfig.network].marketId,
           rEth: RETH_MAP[typedConfig.network].marketId,
+          rsEth: RS_ETH_MAP[typedConfig.network].marketId,
           radiant: RDNT_MAP[typedConfig.network].marketId,
           pendle: PENDLE_MAP[typedConfig.network].marketId,
           sGlp: S_GLP_MAP[typedConfig.network].marketId,

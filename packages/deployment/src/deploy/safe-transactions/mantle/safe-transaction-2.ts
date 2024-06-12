@@ -58,13 +58,13 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
   transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(
     core,
-    { oracleAggregatorV2: core.oracleAggregatorV2 },
+    core,
     'oracleAggregatorV2',
     'ownerInsertOrUpdateToken',
     [
       {
         token: usdeSystem.factory.address,
-        decimals: 18,
+        decimals: await usdeSystem.factory.decimals(),
         oracleInfos: [
           {
             oracle: usdeSystem.oracle.address,

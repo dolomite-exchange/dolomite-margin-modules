@@ -110,6 +110,7 @@ interface CoreProtocolMarketIdsArbitrumOne extends CoreProtocolMarketIds {
   nativeUsdc: BigNumberish;
   premia: BigNumberish;
   rEth: BigNumberish;
+  rsEth: BigNumberish;
   radiant: BigNumberish;
   pendle: BigNumberish;
   sGlp: BigNumberish;
