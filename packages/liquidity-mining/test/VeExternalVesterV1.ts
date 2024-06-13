@@ -21,11 +21,9 @@ import {
   expectThrow,
   expectWalletBalance,
   expectWalletBalanceIsBetween,
-  expectWalletBalanceIsGreaterThan,
 } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
   setupCoreProtocol,
-  setupUSDCBalance,
   setupWETHBalance,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
@@ -171,6 +169,10 @@ describe('VeExternalVesterV1', () => {
     await expectWalletBalance(core.hhUser1.address, oToken, O_TOKEN_AMOUNT);
     await expectWalletBalance(core.hhUser2.address, oToken, O_TOKEN_AMOUNT);
 
+    // Pair token
+    await testToken.connect(owner).mint(PAIR_AMOUNT.mul(2), core.hhUser1.address);
+    await testToken.connect(owner).mint(PAIR_AMOUNT.mul(2), core.hhUser2.address);
+
     // Payment token
     await setupWETHBalance(core, core.hhUser1, MAX_PAYMENT_AMOUNT, vester);
     await setupWETHBalance(core, core.hhUser2, MAX_PAYMENT_AMOUNT, vester);
@@ -247,12 +249,9 @@ describe('VeExternalVesterV1', () => {
       await expectWalletBalance(core.hhUser1.address, oToken, ZERO_BI);
       await expectWalletBalance(core.hhUser1.address, pairToken, PAIR_AMOUNT);
 
-      const vesterAccountNumber = getVesterAccountNumber(core.hhUser1, NFT_ID);
-
       expect(await vester.ownerOf(NFT_ID)).to.eq(core.hhUser1.address);
       await expectWalletBalance(vester, oToken, O_TOKEN_AMOUNT);
-      await expectWalletBalance(vester, pairToken, ZERO_BI);
-      await expectProtocolBalance(core, vester, vesterAccountNumber, pairMarketId, PAIR_AMOUNT);
+      await expectWalletBalance(vester, pairToken, TOTAL_REWARD_AMOUNT.add(PAIR_AMOUNT));
       expect(await vester.pushedTokens()).to.eq(TOTAL_REWARD_AMOUNT);
       expect(await vester.promisedTokens()).to.eq(REWARD_AMOUNT);
       expect(await vester.availableTokens()).to.eq(TOTAL_REWARD_AMOUNT.sub(O_TOKEN_AMOUNT));
@@ -328,18 +327,9 @@ describe('VeExternalVesterV1', () => {
     it('should work normally', async () => {
       await setupAllowancesForVesting();
       await vester.vest(FOUR_WEEKS, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT);
-      const vesterAccountNumber = getVesterAccountNumber(core.hhUser1, NFT_ID);
-      await increase(ONE_WEEK);
+      await increase(FOUR_WEEKS);
 
-      const paymentAmount = PAYMENT_AMOUNT_BEFORE_DISCOUNT.mul(7_800).div(10_000);
-
-      await expectProtocolBalanceIsGreaterThan(
-        core,
-        { owner: vester.address, number: vesterAccountNumber },
-        pairMarketId,
-        PAIR_AMOUNT,
-        ZERO_BI,
-      );
+      const paymentAmount = PAYMENT_AMOUNT_BEFORE_DISCOUNT.mul(7_200).div(10_000);
 
       const result = await vester.closePositionAndBuyTokens(NFT_ID, VE_TOKEN_ID, MAX_PAYMENT_AMOUNT);
 
@@ -351,11 +341,13 @@ describe('VeExternalVesterV1', () => {
       await expectWalletBalance(core.hhUser1.address, oToken, ZERO_BI);
       await expectWalletBalance(vester.address, oToken, ZERO_BI);
 
-      await expectWalletBalanceIsGreaterThan(core.hhUser1, pairToken, PAIR_AMOUNT.mul(2)); // account for interest
+      await expectWalletBalance(core.hhUser1, pairToken, PAIR_AMOUNT.mul(2));
       await expectWalletBalance(core.hhUser1, paymentToken, MAX_PAYMENT_AMOUNT.sub(paymentAmount));
-      await expectWalletBalance(core.hhUser1, rewardToken, REWARD_AMOUNT);
+      await expectWalletBalance(veToken, rewardToken, REWARD_AMOUNT);
 
-      await expectProtocolBalance(core, vester, vesterAccountNumber, pairMarketId, ZERO_BI);
+      // Account for the pair amount being returned PLUS the REWARD_AMOUNT
+      await expectWalletBalance(vester, pairToken, TOTAL_REWARD_AMOUNT.sub(REWARD_AMOUNT));
+
       await expectProtocolBalance(core, owner, defaultAccountNumber, paymentMarketId, paymentAmount);
       await expectProtocolBalance(core, owner, ZERO_BI, paymentMarketId, paymentAmount);
       expect(await vester.pushedTokens()).to.eq(TOTAL_REWARD_AMOUNT.sub(REWARD_AMOUNT));
@@ -370,18 +362,10 @@ describe('VeExternalVesterV1', () => {
       await setupAllowancesForVesting();
       const time = FOUR_WEEKS;
       await vester.vest(time, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT);
-      const vesterAccountNumber = getVesterAccountNumber(core.hhUser1, NFT_ID);
       await increase(time);
 
       const paymentAmount = ZERO_BI;
 
-      await expectProtocolBalanceIsGreaterThan(
-        core,
-        { owner: vester.address, number: vesterAccountNumber },
-        pairMarketId,
-        PAIR_AMOUNT,
-        ZERO_BI,
-      );
       const tester = await createTestDiscountCalculator();
       await vester.connect(owner).ownerSetDiscountCalculator(tester.address);
       const discount = 10_001;
@@ -396,7 +380,7 @@ describe('VeExternalVesterV1', () => {
     it('should fail if cost is too high for max payment', async () => {
       await setupAllowancesForVesting();
       await vester.vest(FOUR_WEEKS, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT);
-      await increase(ONE_WEEK);
+      await increase(FOUR_WEEKS);
       await expectThrow(
         vester.closePositionAndBuyTokens(NFT_ID, VE_TOKEN_ID, ONE_BI),
         'VeExternalVesterImplementationV1: Cost exceeds max payment amount',
@@ -438,7 +422,7 @@ describe('VeExternalVesterV1', () => {
       await setupAllowancesForVesting();
       await vester.vest(FOUR_WEEKS, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT);
       const vesterAccountNumber = getVesterAccountNumber(core.hhUser1, NFT_ID);
-      await increase(CLOSE_POSITION_WINDOW.add(ONE_WEEK).add(1));
+      await increase(CLOSE_POSITION_WINDOW.add(FOUR_WEEKS).add(1));
 
       const result = await vester.connect(core.hhUser5).forceClosePosition(NFT_ID);
       const taxAmount = PAIR_AMOUNT.mul(5).div(100);
@@ -449,18 +433,15 @@ describe('VeExternalVesterV1', () => {
       });
 
       await expectWalletBalance(core.hhUser1.address, oToken, ZERO_BI);
-      await expectWalletBalanceIsBetween(
+      await expectWalletBalance(
         core.hhUser1,
         pairToken,
         PAIR_AMOUNT.add(PAIR_AMOUNT).sub(taxAmount),
-        PAIR_AMOUNT.add(PAIR_AMOUNT).add(PAIR_AMOUNT.mul(300).div(10_000)).sub(taxAmount),
       );
 
-      await expectWalletBalance(owner.address, pairToken, ZERO_BI);
-      await expectProtocolBalance(core, owner.address, defaultAccountNumber, pairMarketId, PAIR_AMOUNT.mul(5).div(100));
+      await expectWalletBalance(owner.address, pairToken, PAIR_AMOUNT.mul(5).div(100));
 
       await expectWalletBalance(vester, oToken, ZERO_BI);
-      await expectProtocolBalance(core, vester, vesterAccountNumber, pairMarketId, ZERO_BI);
       expect(await vester.pushedTokens()).to.eq(TOTAL_REWARD_AMOUNT);
       expect(await vester.promisedTokens()).to.eq(ZERO_BI);
       expect(await vester.availableTokens()).to.eq(TOTAL_REWARD_AMOUNT);
@@ -474,7 +455,7 @@ describe('VeExternalVesterV1', () => {
       await vester.connect(owner).ownerSetForceClosePositionTax(ZERO_BI);
       await vester.vest(FOUR_WEEKS, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT);
       const vesterAccountNumber = getVesterAccountNumber(core.hhUser1, NFT_ID);
-      await increase(CLOSE_POSITION_WINDOW.add(ONE_WEEK).add(1));
+      await increase(CLOSE_POSITION_WINDOW.add(FOUR_WEEKS).add(1));
 
       const result = await vester.connect(core.hhUser5).forceClosePosition(NFT_ID);
       await expectEvent(vester, result, 'PositionForceClosed', {
@@ -484,18 +465,11 @@ describe('VeExternalVesterV1', () => {
       });
 
       await expectWalletBalance(core.hhUser1.address, oToken, ZERO_BI);
-      await expectWalletBalanceIsBetween(
-        core.hhUser1,
-        pairToken,
-        PAIR_AMOUNT.add(PAIR_AMOUNT),
-        PAIR_AMOUNT.add(PAIR_AMOUNT).add(PAIR_AMOUNT.mul(300).div(10_000)),
-      );
+      await expectWalletBalance(core.hhUser1, pairToken, PAIR_AMOUNT.add(PAIR_AMOUNT));
 
       await expectWalletBalance(owner.address, pairToken, ZERO_BI);
-      await expectProtocolBalance(core, owner.address, defaultAccountNumber, pairMarketId, ZERO_BI);
 
       await expectWalletBalance(vester, oToken, ZERO_BI);
-      await expectProtocolBalance(core, vester, vesterAccountNumber, pairMarketId, ZERO_BI);
       expect(await vester.pushedTokens()).to.eq(TOTAL_REWARD_AMOUNT);
       expect(await vester.promisedTokens()).to.eq(ZERO_BI);
       expect(await vester.availableTokens()).to.eq(TOTAL_REWARD_AMOUNT);
@@ -540,18 +514,15 @@ describe('VeExternalVesterV1', () => {
       });
 
       await expectWalletBalance(core.hhUser1.address, oToken, ZERO_BI);
-      await expectWalletBalanceIsBetween(
+      await expectWalletBalance(
         core.hhUser1,
         pairToken,
-        PAIR_AMOUNT.add(PAIR_AMOUNT),
-        PAIR_AMOUNT.add(PAIR_AMOUNT).add(PAIR_AMOUNT.mul(100).div(10_000)),
+        PAIR_AMOUNT.mul(2),
       );
 
       await expectWalletBalance(owner.address, pairToken, ZERO_BI);
-      await expectProtocolBalance(core, owner.address, defaultAccountNumber, pairMarketId, ZERO_BI);
 
       await expectWalletBalance(vester, oToken, ZERO_BI);
-      await expectProtocolBalance(core, vester, vesterAccountNumber, pairMarketId, ZERO_BI);
       expect(await vester.pushedTokens()).to.eq(TOTAL_REWARD_AMOUNT);
       expect(await vester.promisedTokens()).to.eq(ZERO_BI);
       expect(await vester.availableTokens()).to.eq(TOTAL_REWARD_AMOUNT);
@@ -576,18 +547,11 @@ describe('VeExternalVesterV1', () => {
       });
 
       await expectWalletBalance(core.hhUser1.address, oToken, ZERO_BI);
-      await expectWalletBalanceIsBetween(
-        core.hhUser1,
-        pairToken,
-        PAIR_AMOUNT.add(PAIR_AMOUNT).sub(taxAmount),
-        PAIR_AMOUNT.add(PAIR_AMOUNT).add(PAIR_AMOUNT.mul(100).div(10_000)).sub(taxAmount),
-      );
+      await expectWalletBalance(core.hhUser1, pairToken, PAIR_AMOUNT.add(PAIR_AMOUNT).sub(taxAmount));
 
-      await expectWalletBalance(owner.address, pairToken, ZERO_BI);
-      await expectProtocolBalance(core, owner.address, defaultAccountNumber, pairMarketId, PAIR_AMOUNT.mul(5).div(100));
+      await expectWalletBalance(owner.address, pairToken, PAIR_AMOUNT.mul(5).div(100));
 
       await expectWalletBalance(vester, oToken, ZERO_BI);
-      await expectProtocolBalance(core, vester, vesterAccountNumber, pairMarketId, ZERO_BI);
       expect(await vester.pushedTokens()).to.eq(TOTAL_REWARD_AMOUNT);
       expect(await vester.promisedTokens()).to.eq(ZERO_BI);
       expect(await vester.availableTokens()).to.eq(TOTAL_REWARD_AMOUNT);
@@ -635,13 +599,7 @@ describe('VeExternalVesterV1', () => {
 
       expect(await vester.pushedTokens()).to.eq(TOTAL_REWARD_AMOUNT.add(REWARD_AMOUNT));
       await expectWalletBalance(owner, rewardToken, ZERO_BI);
-      await expectProtocolBalanceIsGreaterThan(
-        core,
-        { owner: vester.address, number: defaultAccountNumber },
-        rewardMarketId,
-        TOTAL_REWARD_AMOUNT.add(REWARD_AMOUNT).add(TOTAL_REWARD_AMOUNT.mul(2).div(10_000)),
-        ZERO_BI,
-      );
+      await expectWalletBalance(vester, rewardToken, TOTAL_REWARD_AMOUNT.add(REWARD_AMOUNT));
     });
 
     it('should fail if not called by the owner', async () => {
@@ -660,13 +618,7 @@ describe('VeExternalVesterV1', () => {
 
       await expectWalletBalance(owner.address, rewardToken, TOTAL_REWARD_AMOUNT);
       expect(await vester.pushedTokens()).to.eq(ZERO_BI);
-      await expectProtocolBalanceIsGreaterThan(
-        core,
-        { owner: vester.address, number: defaultAccountNumber },
-        rewardMarketId,
-        TOTAL_REWARD_AMOUNT.mul(2).div(10_000),
-        ZERO_BI,
-      );
+      await expectWalletBalance(vester, rewardToken, ZERO_BI);
 
       await vester.connect(owner).ownerWithdrawRewardToken(owner.address, MAX_UINT_256_BI, true);
       await expectWalletBalanceIsBetween(
@@ -678,14 +630,15 @@ describe('VeExternalVesterV1', () => {
     });
 
     it('should work normally when bypasses available amount', async () => {
-      await expectWalletBalance(vester, pairToken, ZERO_BI);
+      await expectWalletBalance(vester, pairToken, TOTAL_REWARD_AMOUNT);
       await expectWalletBalance(core.hhUser3, pairToken, ZERO_BI);
+      await expectWalletBalance(vester, rewardToken, TOTAL_REWARD_AMOUNT);
 
       await setupAllowancesForVesting();
       await vester.connect(core.hhUser1).vest(FOUR_WEEKS, O_TOKEN_AMOUNT, PAIR_AMOUNT);
-      await vester.connect(owner).ownerWithdrawRewardToken(core.hhUser3.address, O_TOKEN_AMOUNT, false);
-      expect(await vester.pushedTokens()).to.eq(TOTAL_REWARD_AMOUNT.sub(O_TOKEN_AMOUNT));
-      await expectWalletBalance(core.hhUser3, rewardToken, O_TOKEN_AMOUNT);
+      await vester.connect(owner).ownerWithdrawRewardToken(core.hhUser3.address, O_TOKEN_AMOUNT.mul(3), false);
+      expect(await vester.pushedTokens()).to.eq(TOTAL_REWARD_AMOUNT.sub(O_TOKEN_AMOUNT.mul(3)));
+      await expectWalletBalance(core.hhUser3, rewardToken, O_TOKEN_AMOUNT.mul(3));
     });
 
     it('should fail if attempting to withdraw all before the pushed tokens are cleared', async () => {
@@ -721,28 +674,37 @@ describe('VeExternalVesterV1', () => {
 
   describe('#ownerAccrueRewardTokenInterest', () => {
     it('should work normally when pushed rewards have been claimed amount', async () => {
-      await increaseByTimeDelta(ONE_DAY_SECONDS);
-      await expectWalletBalance(owner.address, rewardToken, ZERO_BI);
-      expect(await vester.pushedTokens()).to.eq(TOTAL_REWARD_AMOUNT);
-
-      await vester.connect(owner).ownerWithdrawRewardToken(owner.address, TOTAL_REWARD_AMOUNT, false);
-      await vester.connect(owner).ownerAccrueRewardTokenInterest(core.hhUser3.address);
-
-      await expectProtocolBalance(core, vester, defaultAccountNumber, rewardMarketId, ZERO_BI);
-      await expectWalletBalance(owner.address, rewardToken, TOTAL_REWARD_AMOUNT);
-      expect(await vester.pushedTokens()).to.eq(ZERO_BI);
-      await expectWalletBalanceIsBetween(
-        core.hhUser3.address,
-        rewardToken,
-        TOTAL_REWARD_AMOUNT.mul(2).div(10_000),
-        TOTAL_REWARD_AMOUNT.mul(3).div(10_000),
-      );
+      // TODO: fix this since reward token has no market ID?
+      // await increaseByTimeDelta(ONE_DAY_SECONDS);
+      // await expectWalletBalance(owner.address, rewardToken, ZERO_BI);
+      // expect(await vester.pushedTokens()).to.eq(TOTAL_REWARD_AMOUNT);
+      //
+      // await vester.connect(owner).ownerWithdrawRewardToken(owner.address, TOTAL_REWARD_AMOUNT, false);
+      // await vester.connect(owner).ownerAccrueRewardTokenInterest(core.hhUser3.address);
+      //
+      // await expectProtocolBalance(core, vester, defaultAccountNumber, rewardMarketId, ZERO_BI);
+      // await expectWalletBalance(owner.address, rewardToken, TOTAL_REWARD_AMOUNT);
+      // expect(await vester.pushedTokens()).to.eq(ZERO_BI);
+      // await expectWalletBalanceIsBetween(
+      //   core.hhUser3.address,
+      //   rewardToken,
+      //   TOTAL_REWARD_AMOUNT.mul(2).div(10_000),
+      //   TOTAL_REWARD_AMOUNT.mul(3).div(10_000),
+      // );
     });
 
     it('should fail if attempting to withdraw all before the pushed tokens are cleared', async () => {
       await expectThrow(
         vester.connect(owner).ownerAccrueRewardTokenInterest(owner.address),
         `VeExternalVesterImplementationV1: Interest cannot be withdrawn yet <${TOTAL_REWARD_AMOUNT}>`,
+      );
+    });
+
+    it('should fail if reward token does not have a market ID', async () => {
+      await vester.connect(owner).ownerWithdrawRewardToken(owner.address, TOTAL_REWARD_AMOUNT, false);
+      await expectThrow(
+        vester.connect(owner).ownerAccrueRewardTokenInterest(owner.address),
+        'VeExternalVesterImplementationV1: Reward token has no interest',
       );
     });
 

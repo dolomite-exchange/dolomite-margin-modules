@@ -103,7 +103,7 @@ import {
   SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL,
   ST_ETH_MAP,
   UNI_MAP,
-  USDC_MAP,
+  USDC_MAP, USDE_MAP,
   USDM_MAP,
   USDT_MAP,
   USDY_MAP,
@@ -881,6 +881,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
       tokens: {
         ...coreProtocolParams.tokens,
         meth: IERC20__factory.connect(METH_MAP[typedConfig.network].address, hhUser1),
+        usde: IERC20__factory.connect(USDE_MAP[typedConfig.network].address, hhUser1),
         usdt: IERC20__factory.connect(USDT_MAP[typedConfig.network].address, hhUser1),
         usdy: IERC20__factory.connect(USDY_MAP[typedConfig.network].address, hhUser1),
         wbtc: IERC20__factory.connect(WBTC_MAP[typedConfig.network].address, hhUser1),

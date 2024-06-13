@@ -260,7 +260,8 @@ contract VeExternalVesterImplementationV1 is
             /* _toAccount = */ positionOwner,
             PAIR_TOKEN,
             PAIR_MARKET_ID,
-            /* _amount */ type(uint256).max
+            position.oTokenAmount,
+            /* _withdrawAllIfPossible = */ true
         );
 
         // Withdraw reward tokens from Dolomite, going to this contract
@@ -269,7 +270,8 @@ contract VeExternalVesterImplementationV1 is
             /* _toAccount = */ address(this),
             /* _token */ REWARD_TOKEN,
             /* _marketId */ REWARD_MARKET_ID,
-            /* amount */ position.oTokenAmount
+            /* amount */ position.oTokenAmount,
+            /* _withdrawAllIfPossible = */ false
         );
 
         REWARD_TOKEN.safeApprove(address(VE_TOKEN), position.oTokenAmount);
@@ -353,7 +355,8 @@ contract VeExternalVesterImplementationV1 is
             /* _toAccount */ _toAccount,
             REWARD_TOKEN,
             REWARD_MARKET_ID,
-            _amount
+            _amount,
+            /* _withdrawAllIfPossible = */ false
         );
     }
 
@@ -364,6 +367,11 @@ contract VeExternalVesterImplementationV1 is
             _FILE,
             "Interest cannot be withdrawn yet",
             pushedTokens()
+        );
+        Require.that(
+            REWARD_MARKET_ID != _NO_MARKET_ID,
+            _FILE,
+            "Reward token has no interest"
         );
 
         IDolomiteStructs.AssetAmount memory assetAmount = IDolomiteStructs.AssetAmount({
@@ -609,22 +617,25 @@ contract VeExternalVesterImplementationV1 is
     ) internal returns (uint256 pairTokenTax) {
         oToken().burn(_position.oTokenAmount);
 
+        uint256 fromAccountNumber = calculateAccountNumber(_position.creator, _position.id);
         _withdrawFromDolomite(
-            /* _fromAccountNumber = */ calculateAccountNumber(_position.creator, _position.id),
+            fromAccountNumber,
             /* _toAccount = */ address(this),
             PAIR_TOKEN,
             PAIR_MARKET_ID,
-            _position.pairAmount
+            _position.pairAmount,
+            /* _withdrawAllIfPossible = */ false
         );
 
         // Withdraw the rest to collect the interest
         uint256 balanceBefore = PAIR_TOKEN.balanceOf(address(this));
         _withdrawFromDolomite(
-            /* _fromAccountNumber = */ calculateAccountNumber(_position.creator, _position.id),
+            fromAccountNumber,
             /* _toAccount = */ address(this),
             PAIR_TOKEN,
             PAIR_MARKET_ID,
-            type(uint256).max
+            /* _amount = */ 0,
+            /* _withdrawAllIfPossible = */ true
         );
         uint256 pairAmountInterest = PAIR_TOKEN.balanceOf(address(this)) - balanceBefore;
 
@@ -690,7 +701,8 @@ contract VeExternalVesterImplementationV1 is
         address _toAccount,
         IERC20 _token,
         uint256 _marketId,
-        uint256 _amount
+        uint256 _amount,
+        bool _withdrawAllIfPossible
     ) internal {
         if (
             _fromAccountNumber == _DEFAULT_ACCOUNT_NUMBER &&
@@ -706,7 +718,7 @@ contract VeExternalVesterImplementationV1 is
         }
 
         IDolomiteStructs.AssetAmount memory assetAmount;
-        if (_amount == type(uint256).max) {
+        if (_withdrawAllIfPossible) {
             assetAmount = IDolomiteStructs.AssetAmount({
                 sign: false,
                 denomination: IDolomiteStructs.AssetDenomination.Par,
