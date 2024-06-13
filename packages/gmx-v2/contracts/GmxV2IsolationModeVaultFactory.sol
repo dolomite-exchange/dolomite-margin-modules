@@ -46,6 +46,20 @@ contract GmxV2IsolationModeVaultFactory is
     using EnumerableSet for EnumerableSet.UintSet;
     using GmxV2Library for GmxV2IsolationModeVaultFactory;
 
+    // ============= Structs =============
+
+    struct ConstructorParams {
+        address gmxV2Registry;
+        uint256 executionFee;
+        MarketInfoConstructorParams tokenAndMarketAddresses;
+        uint256[] initialAllowableDebtMarketIds;
+        uint256[] initialAllowableCollateralMarketIds;
+        address borrowPositionProxyV2;
+        address userVaultImplementation;
+        address dolomiteRegistry;
+        address dolomiteMargin;
+    }
+
     // ============ Constants ============
 
     bytes32 private constant _FILE = "GmxV2IsolationModeVaultFactory"; // needed to be shortened to fit into 32 bytes
@@ -62,42 +76,36 @@ contract GmxV2IsolationModeVaultFactory is
     // ============ Constructor ============
 
     constructor(
-        address _gmxV2Registry,
-        uint256 _executionFee,
-        MarketInfoConstructorParams memory _tokenAndMarketAddresses,
-        uint256[] memory _initialAllowableDebtMarketIds,
-        uint256[] memory _initialAllowableCollateralMarketIds,
-        address _borrowPositionProxyV2,
-        address _userVaultImplementation,
-        address _dolomiteMargin
+        ConstructorParams memory _params
     )
     SimpleIsolationModeVaultFactory(
-        _initialAllowableDebtMarketIds,
-        _initialAllowableCollateralMarketIds,
-        _tokenAndMarketAddresses.marketToken,
-        _borrowPositionProxyV2,
-        _userVaultImplementation,
-        _dolomiteMargin
+        _params.initialAllowableDebtMarketIds,
+        _params.initialAllowableCollateralMarketIds,
+        _params.tokenAndMarketAddresses.marketToken,
+        _params.borrowPositionProxyV2,
+        _params.userVaultImplementation,
+        _params.dolomiteRegistry,
+        _params.dolomiteMargin
     )
     AsyncFreezableIsolationModeVaultFactory(
-        _executionFee,
-        _gmxV2Registry
+        _params.executionFee,
+        _params.gmxV2Registry
     )
     {
-        INDEX_TOKEN = _tokenAndMarketAddresses.indexToken;
+        INDEX_TOKEN = _params.tokenAndMarketAddresses.indexToken;
         // INDEX_TOKEN_MARKET_ID = DOLOMITE_MARGIN().getMarketIdByTokenAddress(INDEX_TOKEN);
-        SHORT_TOKEN = _tokenAndMarketAddresses.shortToken;
+        SHORT_TOKEN = _params.tokenAndMarketAddresses.shortToken;
         SHORT_TOKEN_MARKET_ID = DOLOMITE_MARGIN().getMarketIdByTokenAddress(SHORT_TOKEN);
-        LONG_TOKEN = _tokenAndMarketAddresses.longToken;
+        LONG_TOKEN = _params.tokenAndMarketAddresses.longToken;
         LONG_TOKEN_MARKET_ID = DOLOMITE_MARGIN().getMarketIdByTokenAddress(LONG_TOKEN);
 
         GmxV2Library.validateInitialMarketIds(
-            _initialAllowableDebtMarketIds,
+            _params.initialAllowableDebtMarketIds,
             LONG_TOKEN_MARKET_ID,
             SHORT_TOKEN_MARKET_ID
         );
         GmxV2Library.validateInitialMarketIds(
-            _initialAllowableCollateralMarketIds,
+            _params.initialAllowableCollateralMarketIds,
             LONG_TOKEN_MARKET_ID,
             SHORT_TOKEN_MARKET_ID
         );

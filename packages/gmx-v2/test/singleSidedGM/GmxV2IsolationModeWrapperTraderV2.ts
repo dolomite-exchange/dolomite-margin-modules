@@ -100,7 +100,7 @@ describe('GmxV2IsolationModeWrapperTraderV2_singleSided', () => {
 
   before(async () => {
     core = await setupCoreProtocol({
-      blockNumber: 204_024_798,
+      blockNumber: 221_294_300,
       network: Network.ArbitrumOne
     });
     underlyingToken = core.gmxEcosystemV2!.gmTokens.btc.marketToken.connect(core.hhUser1);
