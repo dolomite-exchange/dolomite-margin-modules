@@ -50,23 +50,9 @@ contract TestGmxV2IsolationModeVaultFactory is GmxV2IsolationModeVaultFactory {
     // ======== Constructor =========
 
     constructor(
-        address _gmxV2Registry,
-        uint256 _executionFee,
-        MarketInfoConstructorParams memory _tokenAndMarketAddresses,
-        uint256[] memory _initialAllowableDebtMarketIds,
-        uint256[] memory _initialAllowableCollateralMarketIds,
-        address _borrowPositionProxyV2,
-        address _userVaultImplementation,
-        address _dolomiteMargin
+        ConstructorParams memory _params
     ) GmxV2IsolationModeVaultFactory(
-        _gmxV2Registry,
-        _executionFee,
-        _tokenAndMarketAddresses,
-        _initialAllowableDebtMarketIds,
-        _initialAllowableCollateralMarketIds,
-        _borrowPositionProxyV2,
-        _userVaultImplementation,
-        _dolomiteMargin
+        _params
     ) { /* solhint-disable-line no-empty-blocks */ }
 
     // ============ Functions ============

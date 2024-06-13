@@ -1,5 +1,9 @@
 import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin';
-import { CustomTestToken, EventEmitterRegistry } from '@dolomite-exchange/modules-base/src/types';
+import {
+  CustomTestToken,
+  EventEmitterRegistry,
+  EventEmitterRegistry__factory
+} from '@dolomite-exchange/modules-base/src/types';
 import {
   createContractWithAbi,
   createTestToken,
@@ -21,10 +25,6 @@ import {
   expectTotalSupply,
   expectWalletBalance,
 } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import {
-  createDolomiteRegistryImplementation,
-  createEventEmitter,
-} from '@dolomite-exchange/modules-base/test/utils/dolomite';
 import { getSimpleZapParams } from '@dolomite-exchange/modules-base/test/utils/zap-utils';
 import { mine } from '@nomicfoundation/hardhat-network-helpers';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
@@ -47,7 +47,6 @@ import {
   GmxV2IsolationModeVaultFactory,
   GmxV2IsolationModeWrapperTraderV2,
   GmxV2Registry,
-  IGenericTraderProxyV1__factory,
   IGmxMarketToken,
   TestGmxDataStore,
   TestGmxDataStore__factory,
@@ -83,7 +82,6 @@ const IS_MARKET_DISABLED_KEY = '0x5c27e8a9fa01145fb01eb80b81db2eab7e57bc33d109d6
 const INVALID_POOL_FACTOR = BigNumber.from('1000000000000000000000000000000'); // 10e29
 const VALID_POOL_FACTOR = BigNumber.from('700000000000000000000000000000'); // 7e29
 const DEFAULT_EXTRA_DATA = ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [parseEther('.5'), ONE_BI]);
-const NEW_GENERIC_TRADER_PROXY = '0x905F3adD52F01A9069218c8D1c11E240afF61D2B';
 
 const executionFee = process.env.COVERAGE !== 'true'
   ? GMX_V2_EXECUTION_FEE_FOR_TESTS
@@ -120,7 +118,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
 
   before(async () => {
     core = await setupCoreProtocol({
-      blockNumber: 204_024_798,
+      blockNumber: 221_294_300,
       network: Network.ArbitrumOne,
     });
     underlyingToken = core.gmxEcosystemV2!.gmxEthUsdMarketToken.connect(core.hhUser1);
@@ -234,19 +232,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
     await core.liquidatorAssetRegistry.ownerAddLiquidatorToAssetWhitelist(marketId, core.hhUser5.address);
     await core.dolomiteRegistry.ownerSetLiquidatorAssetRegistry(core.liquidatorAssetRegistry.address);
 
-    eventEmitter = await createEventEmitter(core);
-    const newRegistry = await createDolomiteRegistryImplementation();
-    await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(newRegistry.address);
-    await core.dolomiteRegistry.connect(core.governance).ownerSetEventEmitter(eventEmitter.address);
-    await core.dolomiteRegistry.connect(core.governance).ownerSetGenericTraderProxy(NEW_GENERIC_TRADER_PROXY);
-    await core.dolomiteRegistry.connect(core.governance).ownerSetOracleAggregator(core.chainlinkPriceOracleV1.address);
-    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(NEW_GENERIC_TRADER_PROXY, true);
-    const trader = IGenericTraderProxyV1__factory.connect(
-      NEW_GENERIC_TRADER_PROXY,
-      core.governance,
-    );
-    await trader.ownerSetEventEmitterRegistry(eventEmitter.address);
-
+    eventEmitter = EventEmitterRegistry__factory.connect(await core.dolomiteRegistry.eventEmitter(), core.hhUser1);
     impersonatedVault = await impersonate(vault.address, true);
 
     snapshotId = await snapshot();
@@ -281,7 +267,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         borrowAccountNumber,
         amountWei,
         core.tokens.weth.address,
-        ONE_BI,
+        ONE_BI.mul(2),
         DEFAULT_EXTRA_DATA,
         { value: executionFee },
       );
@@ -294,7 +280,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       expect(await vault.isDepositSourceWrapper()).to.eq(false);
 
       const filter = eventEmitter.filters.AsyncWithdrawalCreated();
-      const eventArgs = (await eventEmitter.queryFilter(filter))[0].args;
+      const eventArgs = (await eventEmitter.queryFilter(filter, result.blockHash))[0].args;
       expect(eventArgs.token).to.eq(factory.address);
 
       const withdrawalKey = eventArgs.key;
@@ -304,7 +290,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       expect(withdrawal.accountNumber).to.eq(borrowAccountNumber);
       expect(withdrawal.inputAmount).to.eq(amountWei);
       expect(withdrawal.outputToken).to.eq(core.tokens.weth.address);
-      expect(withdrawal.outputAmount).to.eq(ONE_BI);
+      expect(withdrawal.outputAmount).to.eq(ONE_BI.add(ONE_BI));
       expect(withdrawal.isRetryable).to.eq(false);
 
       expect(eventArgs.withdrawal.key).to.eq(withdrawalKey);
@@ -312,8 +298,45 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       expect(eventArgs.withdrawal.accountNumber).to.eq(borrowAccountNumber);
       expect(eventArgs.withdrawal.inputAmount).to.eq(amountWei);
       expect(eventArgs.withdrawal.outputToken).to.eq(core.tokens.weth.address);
-      expect(eventArgs.withdrawal.outputAmount).to.eq(ONE_BI);
+      expect(eventArgs.withdrawal.outputAmount).to.eq(ONE_BI.add(ONE_BI));
       expect(eventArgs.withdrawal.isRetryable).to.eq(false);
+    });
+
+    it('should fail if amount is too small', async () => {
+      await setupGMBalance(core, underlyingToken, core.hhUser1, amountWei, vault);
+      await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await vault.openBorrowPosition(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        amountWei,
+        { value: executionFee },
+      );
+      await expectProtocolBalance(core, vault.address, defaultAccountNumber, marketId, ZERO_BI);
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
+
+      await expectThrow(
+        vault.initiateUnwrapping(
+          borrowAccountNumber,
+          amountWei,
+          core.tokens.weth.address,
+          ZERO_BI,
+          DEFAULT_EXTRA_DATA,
+          { value: executionFee },
+        ),
+        'IsolationVaultV1AsyncFreezable: Invalid minOutputAmount',
+      );
+
+      await expectThrow(
+        vault.initiateUnwrapping(
+          borrowAccountNumber,
+          amountWei,
+          core.tokens.weth.address,
+          ONE_BI,
+          DEFAULT_EXTRA_DATA,
+          { value: executionFee },
+        ),
+        'GmxV2Library: minOutputAmount too small',
+      );
     });
 
     it('should fail if user is underwater', async () => {

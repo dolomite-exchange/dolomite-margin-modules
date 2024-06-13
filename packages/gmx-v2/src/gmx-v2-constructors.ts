@@ -57,19 +57,22 @@ export function getGmxV2IsolationModeVaultFactoryConstructorParams(
   }
 
   return [
-    gmxRegistry.address,
-    executionFee,
     {
-      marketToken: gmToken.marketToken.address,
-      indexToken: gmToken.indexToken.address,
-      shortToken: gmToken.shortToken.address,
-      longToken: gmToken.longToken.address,
-    },
-    debtMarketIds,
-    collateralMarketIds,
-    core.borrowPositionProxyV2.address,
-    userVaultImplementation.address,
-    core.dolomiteMargin.address,
+      gmxV2Registry: gmxRegistry.address,
+      executionFee: BigNumber.from(executionFee),
+      tokenAndMarketAddresses: {
+        marketToken: gmToken.marketToken.address,
+        indexToken: gmToken.indexToken.address,
+        shortToken: gmToken.shortToken.address,
+        longToken: gmToken.longToken.address,
+      },
+      initialAllowableDebtMarketIds: debtMarketIds,
+      initialAllowableCollateralMarketIds: collateralMarketIds,
+      borrowPositionProxyV2: core.borrowPositionProxyV2.address,
+      userVaultImplementation: userVaultImplementation.address,
+      dolomiteRegistry: core.dolomiteRegistry.address,
+      dolomiteMargin: core.dolomiteMargin.address,
+    }
   ];
 }
 
