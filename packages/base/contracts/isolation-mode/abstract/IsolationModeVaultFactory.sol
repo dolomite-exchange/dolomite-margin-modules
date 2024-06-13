@@ -53,6 +53,7 @@ abstract contract IsolationModeVaultFactory is
     // ===================================================
 
     bytes32 private constant _FILE = "IsolationModeVaultFactory";
+    address private constant _DEAD_VAULT = 0x000000000000000000000000000000000000dEaD;
 
     // ==================================================
     // ================ Immutable Fields ================
@@ -138,6 +139,8 @@ abstract contract IsolationModeVaultFactory is
         UNDERLYING_TOKEN = _underlyingToken;
         BORROW_POSITION_PROXY = IBorrowPositionProxyV2(_borrowPositionProxyV2);
         userVaultImplementation = _userVaultImplementation;
+
+        _createVault(_DEAD_VAULT);
     }
 
     // =================================================
@@ -161,6 +164,8 @@ abstract contract IsolationModeVaultFactory is
             _FILE,
             "Market cannot allow borrowing"
         );
+
+        _initializeVault(_DEAD_VAULT, _userToVaultMap[_DEAD_VAULT]);
 
         for (uint256 i = 0; i < _tokenConverters.length; i++) {
             _ownerSetIsTokenConverterTrusted(_tokenConverters[i], true);
@@ -436,10 +441,19 @@ abstract contract IsolationModeVaultFactory is
         emit VaultCreated(_account, vault);
         _vaultToUserMap[vault] = _account;
         _userToVaultMap[_account] = vault;
-        DOLOMITE_REGISTRY.dolomiteAccountRegistry().registerVault(_account, vault);
-        IIsolationModeUpgradeableProxy(vault).initialize(_account);
-        BORROW_POSITION_PROXY.setIsCallerAuthorized(vault, true);
+
+        if (_account != _DEAD_VAULT) {
+            _initializeVault(_account, vault);
+        }
+
         return vault;
+    }
+
+    function _initializeVault(address _account, address _vault) internal {
+        assert(_account != address(0) && _vault != address(0));
+        IIsolationModeUpgradeableProxy(_vault).initialize(_account);
+        BORROW_POSITION_PROXY.setIsCallerAuthorized(_vault, true);
+        DOLOMITE_REGISTRY.dolomiteAccountRegistry().registerVault(_account, _vault);
     }
 
     function _enqueueTransfer(

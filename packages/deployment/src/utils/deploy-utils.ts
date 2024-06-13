@@ -198,7 +198,7 @@ function findArtifactPath(parentPath: string, artifactName: string): string | un
 export async function initializeFreshArtifactFromWorkspace(artifactName: string): Promise<void> {
   const packagesPath = '../../../../packages';
   const deploymentsArtifactsPath = join(__dirname, packagesPath, 'deployment', 'artifacts');
-  await fsExtra.remove(deploymentsArtifactsPath);
+  fsExtra.removeSync(deploymentsArtifactsPath);
 
   const workspaces = fs.readdirSync(join(__dirname, packagesPath), { withFileTypes: true })
     .filter(d => d.isDirectory() && !d.name.includes('deployment'))
@@ -216,7 +216,8 @@ export async function initializeFreshArtifactFromWorkspace(artifactName: string)
       );
 
       const artifact = JSON.parse(readFileSync(artifactPath, 'utf8'));
-      await artifacts.saveArtifactAndDebugFile(artifact);
+      const pathToBuildInfo = join(__dirname, workspace, 'artifacts', 'build-info');
+      await artifacts.saveArtifactAndDebugFile(artifact, pathToBuildInfo);
       return;
     }
   }
@@ -311,11 +312,37 @@ export async function deployContractAndSave(
 
   console.log(`\tDeploying ${usedContractName} to network ${network.name}...`);
 
+  const blockNumber = await ethers.provider.getBlockNumber();
   let contract: BaseContract;
   try {
     contract = libraries
       ? await createContractWithLibrary(contractName, libraries, args)
       : await createContractWithName(contractName, args);
+
+    if (network.name !== 'hardhat') {
+      const receipt = await ethers.provider.getTransactionReceipt(contract.deployTransaction.hash);
+      const vaultCreatedTopic0 = '0x5d9c31ffa0fecffd7cf379989a3c7af252f0335e0d2a1320b55245912c781f53';
+      const event = receipt.logs.find(l => l.topics[0] === vaultCreatedTopic0);
+      if (event) {
+        const vaultAddress = ethers.utils.defaultAbiCoder.decode(['address'], event.data)[0];
+        const vaultRename = `${usedContractName}DeadProxy`;
+        file[vaultRename] = {
+          ...file[vaultRename],
+          [chainId]: {
+            address: vaultAddress,
+            transaction: contract.deployTransaction.hash,
+            isVerified: false,
+          },
+        };
+        writeDeploymentFile(file);
+
+        return deployContractAndSave(
+          'IsolationModeUpgradeableProxy',
+          [],
+          vaultRename,
+        );
+      }
+    }
   } catch (e) {
     console.error(`\tCould not deploy at attempt ${attempts + 1} due for ${contractName} to error:`, e);
     return deployContractAndSave(contractName, args, contractRename, libraries, attempts + 1);
@@ -1170,17 +1197,17 @@ export async function prettyPrintEncodeAddIsolationModeMarket<T extends NetworkT
   transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(
       core,
-      { factory },
-      'factory',
-      'ownerInitialize',
-      [[unwrapper.address, wrapper.address, ...(options.additionalConverters ?? []).map(c => c.address)]],
-    ),
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
       { dolomiteMargin: core.dolomiteMargin },
       'dolomiteMargin',
       'ownerSetGlobalOperator',
       [factory.address, true],
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { factory },
+      'factory',
+      'ownerInitialize',
+      [[unwrapper.address, wrapper.address, ...(options.additionalConverters ?? []).map(c => c.address)]],
     ),
     await prettyPrintEncodedDataWithTypeSafety(
       core,

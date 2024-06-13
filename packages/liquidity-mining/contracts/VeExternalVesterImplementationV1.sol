@@ -34,22 +34,24 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { ERC721 } from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { IERC20Mintable } from "./interfaces/IERC20Mintable.sol";
-import { IExternalVesterV1 } from "./interfaces/IExternalVesterV1.sol";
+import { IVeExternalVesterV1 } from "./interfaces/IVeExternalVesterV1.sol";
 import { IVesterDiscountCalculator } from "./interfaces/IVesterDiscountCalculator.sol";
+import { IVeToken } from "./interfaces/IVeToken.sol";
+
 
 /**
- * @title   ExternalVesterImplementationV1
+ * @title   VeExternalVesterImplementationV1
  * @author  Dolomite
  *
- * @notice  An implementation of the IExternalVesterV1 interface that allows users to buy PAIR_TOKEN at a discount if
+ * @notice  An implementation of the IVeExternalVesterV1 interface that allows users to buy PAIR_TOKEN at a discount if
  *          they vest PAIR_TOKEN and oToken for a certain amount of time.
  */
-contract ExternalVesterImplementationV1 is
+contract VeExternalVesterImplementationV1 is
     ProxyContractHelpers,
     OnlyDolomiteMargin,
     ReentrancyGuardUpgradeable,
     ERC721EnumerableUpgradeable,
-    IExternalVesterV1
+    IVeExternalVesterV1
 {
     using SafeERC20 for IERC20;
     using SafeERC20 for IERC20Mintable;
@@ -58,12 +60,13 @@ contract ExternalVesterImplementationV1 is
     // ==================== Constants ====================
     // ===================================================
 
-    bytes32 private constant _FILE = "ExternalVesterImplementationV1";
+    bytes32 private constant _FILE = "VeExternalVesterImplementationV1";
     uint256 private constant _BASE = 10_000;
+    uint256 private constant _NO_MARKET_ID = type(uint256).max;
 
     uint256 private constant _DEFAULT_ACCOUNT_NUMBER = 0;
-    uint256 private constant _MIN_DURATION = 1 weeks;
-    uint256 private constant _MAX_DURATION = 40 weeks;
+    uint256 private constant _ONE_WEEK = 1 weeks;
+    uint256 private constant _VEST_DURATION = _ONE_WEEK * 4;
 
     // solhint-disable max-line-length
     bytes32 private constant _BASE_URI_SLOT = bytes32(uint256(keccak256("eip1967.proxy.baseURI")) - 1);
@@ -74,7 +77,6 @@ contract ExternalVesterImplementationV1 is
     bytes32 private constant _IS_VESTING_ACTIVE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isVestingActive")) - 1);
     bytes32 private constant _NEXT_ID_SLOT = bytes32(uint256(keccak256("eip1967.proxy.nextId")) - 1);
     bytes32 private constant _O_TOKEN_SLOT = bytes32(uint256(keccak256("eip1967.proxy.oToken")) - 1);
-    bytes32 private constant _OWNER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.owner")) - 1);
     bytes32 private constant _PROMISED_TOKENS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.promisedTokens")) - 1);
     bytes32 private constant _PUSHED_TOKENS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.pushedTokens")) - 1);
     bytes32 private constant _VERSION_SLOT = bytes32(uint256(keccak256("eip1967.proxy.version")) - 1);
@@ -92,28 +94,17 @@ contract ExternalVesterImplementationV1 is
     uint256 public override immutable PAYMENT_MARKET_ID; // solhint-disable-line
     IERC20 public override immutable REWARD_TOKEN; // solhint-disable-line
     uint256 public override immutable REWARD_MARKET_ID; // solhint-disable-line
+    IVeToken public override immutable VE_TOKEN; // solhint-disable-line
 
     // =========================================================
     // ======================= Modifiers =======================
     // =========================================================
 
     modifier requireVestingActive() {
-        if (isVestingActive()) { /* FOR COVERAGE TESTING */ }
         Require.that(
             isVestingActive(),
             _FILE,
             "Vesting not active"
-        );
-        _;
-    }
-
-    modifier onlyOwner(address _sender) {
-        if (_sender == owner()) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            _sender == owner(),
-            _FILE,
-            "Sender is not owner",
-            _sender
         );
         _;
     }
@@ -126,16 +117,21 @@ contract ExternalVesterImplementationV1 is
         address _dolomiteMargin,
         address _dolomiteRegistry,
         IERC20 _pairToken,
+        uint256 _pairMarketId,
         IERC20 _paymentToken,
-        IERC20 _rewardToken
+        uint256 _paymentMarketId,
+        IERC20 _rewardToken,
+        uint256 _rewardMarketId,
+        address _veToken
     ) OnlyDolomiteMargin(_dolomiteMargin) {
         DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
         PAIR_TOKEN = _pairToken;
-        PAIR_MARKET_ID = DOLOMITE_MARGIN().getMarketIdByTokenAddress(address(_pairToken));
+        PAIR_MARKET_ID = _pairMarketId;
         PAYMENT_TOKEN = _paymentToken;
-        PAYMENT_MARKET_ID = DOLOMITE_MARGIN().getMarketIdByTokenAddress(address(_paymentToken));
+        PAYMENT_MARKET_ID = _paymentMarketId;
         REWARD_TOKEN = _rewardToken;
-        REWARD_MARKET_ID = DOLOMITE_MARGIN().getMarketIdByTokenAddress(address(_rewardToken));
+        REWARD_MARKET_ID = _rewardMarketId;
+        VE_TOKEN = IVeToken(_veToken);
     }
 
     function initialize(
@@ -147,15 +143,13 @@ contract ExternalVesterImplementationV1 is
         (
             address _discountCalculator,
             address _oToken,
-            address _owner,
             string memory _baseUri,
             string memory _name,
             string memory _symbol
-        ) = abi.decode(_data, (address, address, address, string, string, string));
+        ) = abi.decode(_data, (address, address, string, string, string));
         _ownerSetIsVestingActive(true);
         _ownerSetDiscountCalculator(_discountCalculator);
         _ownerSetOToken(_oToken);
-        _ownerSetOwner(_owner);
         _ownerSetClosePositionWindow(0 weeks);
         _ownerSetForceClosePositionTax(500); // 5%
         _ownerSetEmergencyWithdrawTax(0); // 0%
@@ -179,9 +173,8 @@ contract ExternalVesterImplementationV1 is
         returns (uint256)
     {
         _validateEnoughRewardsAvailable(_oTokenAmount);
-        if (_duration >= _MIN_DURATION && _duration <= _MAX_DURATION && _duration % _MIN_DURATION == 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
-            _duration >= _MIN_DURATION && _duration <= _MAX_DURATION && _duration % _MIN_DURATION == 0,
+            _duration == _VEST_DURATION,
             _FILE,
             "Invalid duration"
         );
@@ -190,10 +183,9 @@ contract ExternalVesterImplementationV1 is
         uint256 nftId = _nextId() + 1;
         _setNextId(nftId);
 
-        uint256 pairPrice = DOLOMITE_MARGIN().getMarketPrice(PAIR_MARKET_ID).value;
-        uint256 rewardPrice = DOLOMITE_MARGIN().getMarketPrice(REWARD_MARKET_ID).value;
+        uint256 pairPrice = DOLOMITE_REGISTRY.oracleAggregator().getPrice(address(PAIR_TOKEN)).value;
+        uint256 rewardPrice = DOLOMITE_REGISTRY.oracleAggregator().getPrice(address(REWARD_TOKEN)).value;
         uint256 pairAmount = _oTokenAmount * rewardPrice / pairPrice;
-        if (pairAmount <= _maxPairAmount) { /* FOR COVERAGE TESTING */ }
         Require.that(
             pairAmount <= _maxPairAmount,
             _FILE,
@@ -227,58 +219,21 @@ contract ExternalVesterImplementationV1 is
         return nftId;
     }
 
-    function vestInstantly(
-        uint256 _oTokenAmount,
-        uint256 _maxPaymentAmount
-    )
-        external
-        requireVestingActive
-        nonReentrant
-    {
-        _validateEnoughRewardsAvailable(_oTokenAmount);
-
-        // Create vesting position NFT
-        uint256 nftId = _nextId() + 1;
-        _setNextId(nftId);
-
-        IERC20(address(oToken())).safeTransferFrom(msg.sender, address(this), _oTokenAmount);
-        emit VestingStarted(msg.sender, 0, _oTokenAmount, 0, nftId);
-
-        // Deposit payment tokens into Dolomite
-        uint256 paymentAmount = _doPaymentForVestExecution(
-            nftId,
-            /* _duration = */ 0,
-            _oTokenAmount,
-            /* _positionOwner = */ msg.sender,
-            _maxPaymentAmount
-        );
-        oToken().burn(_oTokenAmount);
-        _withdrawFromDolomite(
-            _DEFAULT_ACCOUNT_NUMBER,
-            /* _toAccount = */ msg.sender,
-            REWARD_MARKET_ID,
-            _oTokenAmount
-        );
-
-        emit PositionClosed(msg.sender, nftId, paymentAmount);
-    }
-
     function closePositionAndBuyTokens(
-        uint256 _id,
+        uint256 _nftId,
+        uint256 _veTokenId,
         uint256 _maxPaymentAmount
     )
     external
     nonReentrant {
-        VestingPosition memory position = _getVestingPositionSlot(_id);
-        uint256 accountNumber = calculateAccountNumber(position.creator, _id);
-        address positionOwner = ownerOf(_id);
-        if (positionOwner == msg.sender) { /* FOR COVERAGE TESTING */ }
+        VestingPosition memory position = _getVestingPositionSlot(_nftId);
+        uint256 accountNumber = calculateAccountNumber(position.creator, _nftId);
+        address positionOwner = ownerOf(_nftId);
         Require.that(
             positionOwner == msg.sender,
             _FILE,
             "Invalid position owner"
         );
-        if (block.timestamp > position.startTime + position.duration) { /* FOR COVERAGE TESTING */ }
         Require.that(
             block.timestamp > position.startTime + position.duration,
             _FILE,
@@ -299,23 +254,30 @@ contract ExternalVesterImplementationV1 is
             _maxPaymentAmount
         );
 
-        // Withdraw pair tokens from dolomite, going to account
+        // Withdraw pair tokens from Dolomite, going to account
         _withdrawFromDolomite(
             /* _fromAccountNumber = */ accountNumber,
             /* _toAccount = */ positionOwner,
-            /* _marketId */ PAIR_MARKET_ID,
-            /* _amount */ type(uint256).max
+            PAIR_TOKEN,
+            PAIR_MARKET_ID,
+            position.oTokenAmount,
+            /* _withdrawAllIfPossible = */ true
         );
 
-        // Withdraw reward tokens from Dolomite, going to account
+        // Withdraw reward tokens from Dolomite, going to this contract
         _withdrawFromDolomite(
             /* _fromAccountNumber = */ _DEFAULT_ACCOUNT_NUMBER,
-            /* _toAccount = */ positionOwner,
+            /* _toAccount = */ address(this),
+            /* _token */ REWARD_TOKEN,
             /* _marketId */ REWARD_MARKET_ID,
-            /* amount */ position.oTokenAmount
+            /* amount */ position.oTokenAmount,
+            /* _withdrawAllIfPossible = */ false
         );
 
-        emit PositionClosed(positionOwner, _id, paymentAmount);
+        REWARD_TOKEN.safeApprove(address(VE_TOKEN), position.oTokenAmount);
+        VE_TOKEN.addToLock(_veTokenId, position.oTokenAmount);
+
+        emit PositionClosed(positionOwner, _nftId, paymentAmount);
     }
 
     function forceClosePosition(
@@ -324,13 +286,11 @@ contract ExternalVesterImplementationV1 is
     external {
         VestingPosition memory position = _getVestingPositionSlot(_id);
         address positionOwner = ownerOf(_id);
-        if (closePositionWindow() != 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             closePositionWindow() != 0,
             _FILE,
             "Positions are not expirable"
         );
-        if (block.timestamp > position.startTime + position.duration + closePositionWindow()) { /* FOR COVERAGE TESTING */ }
         Require.that(
             block.timestamp > position.startTime + position.duration + closePositionWindow(),
             _FILE,
@@ -346,7 +306,6 @@ contract ExternalVesterImplementationV1 is
     function emergencyWithdraw(uint256 _id) external {
         VestingPosition memory position = _getVestingPositionSlot(_id);
         address positionOwner = ownerOf(_id);
-        if (positionOwner == msg.sender) { /* FOR COVERAGE TESTING */ }
         Require.that(
             positionOwner == msg.sender,
             _FILE,
@@ -366,13 +325,7 @@ contract ExternalVesterImplementationV1 is
         uint256 _amount
     )
     external
-    onlyOwner(msg.sender) {
-        if (DOLOMITE_MARGIN().getIsLocalOperator(msg.sender, address(this))) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            DOLOMITE_MARGIN().getIsLocalOperator(msg.sender, address(this)),
-            _FILE,
-            "Vester is not operator for owner"
-        );
+    onlyDolomiteMarginOwner(msg.sender) {
         REWARD_TOKEN.safeTransferFrom(msg.sender, address(this), _amount);
         _depositIntoDolomite(
             /* _toAccountOwner = */ address(this),
@@ -389,9 +342,8 @@ contract ExternalVesterImplementationV1 is
         bool _shouldBypassAvailableAmounts
     )
     external
-    onlyOwner(msg.sender) {
+    onlyDolomiteMarginOwner(msg.sender) {
         if (!_shouldBypassAvailableAmounts) {
-            if (_amount <= availableTokens()) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 _amount <= availableTokens(),
                 _FILE,
@@ -401,19 +353,25 @@ contract ExternalVesterImplementationV1 is
         _withdrawFromDolomite(
             _DEFAULT_ACCOUNT_NUMBER,
             /* _toAccount */ _toAccount,
+            REWARD_TOKEN,
             REWARD_MARKET_ID,
-            _amount
+            _amount,
+            /* _withdrawAllIfPossible = */ false
         );
     }
 
-    function ownerAccrueRewardTokenInterest(address _toAccount) external onlyOwner(msg.sender) {
+    function ownerAccrueRewardTokenInterest(address _toAccount) external onlyDolomiteMarginOwner(msg.sender) {
         // all tokens have been spent
-        if (pushedTokens() == 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             pushedTokens() == 0,
             _FILE,
             "Interest cannot be withdrawn yet",
             pushedTokens()
+        );
+        Require.that(
+            REWARD_MARKET_ID != _NO_MARKET_ID,
+            _FILE,
+            "Reward token has no interest"
         );
 
         IDolomiteStructs.AssetAmount memory assetAmount = IDolomiteStructs.AssetAmount({
@@ -438,7 +396,7 @@ contract ExternalVesterImplementationV1 is
         bool _isVestingActive
     )
     external
-    onlyOwner(msg.sender) {
+    onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetIsVestingActive(_isVestingActive);
     }
 
@@ -446,23 +404,15 @@ contract ExternalVesterImplementationV1 is
         address _discountCalculator
     )
     external
-    onlyOwner(msg.sender) {
+    onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetDiscountCalculator(_discountCalculator);
-    }
-
-    function ownerSetOwner(
-        address _owner
-    )
-    external
-    onlyOwner(msg.sender) {
-        _ownerSetOwner(_owner);
     }
 
     function ownerSetClosePositionWindow(
         uint256 _closePositionWindow
     )
     external
-    onlyOwner(msg.sender) {
+    onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetClosePositionWindow(_closePositionWindow);
     }
 
@@ -470,7 +420,7 @@ contract ExternalVesterImplementationV1 is
         uint256 _emergencyWithdrawTax
     )
     external
-    onlyOwner(msg.sender) {
+    onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetEmergencyWithdrawTax(_emergencyWithdrawTax);
     }
 
@@ -478,7 +428,7 @@ contract ExternalVesterImplementationV1 is
         uint256 _forceClosePositionTax
     )
     external
-    onlyOwner(msg.sender) {
+    onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetForceClosePositionTax(_forceClosePositionTax);
     }
 
@@ -486,7 +436,7 @@ contract ExternalVesterImplementationV1 is
         string memory _baseUri
     )
     external
-    onlyOwner(msg.sender) {
+    onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetBaseURI(_baseUri);
     }
 
@@ -512,10 +462,6 @@ contract ExternalVesterImplementationV1 is
 
     function oToken() public view returns (IERC20Mintable) {
         return IERC20Mintable(_getAddress(_O_TOKEN_SLOT));
-    }
-
-    function owner() public view returns (address) {
-        return _getAddress(_OWNER_SLOT);
     }
 
     function closePositionWindow() public view returns (uint256) {
@@ -567,7 +513,6 @@ contract ExternalVesterImplementationV1 is
         address _discountCalculator
     )
     internal {
-        if (_discountCalculator != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _discountCalculator != address(0),
             _FILE,
@@ -580,26 +525,14 @@ contract ExternalVesterImplementationV1 is
     function _ownerSetOToken(address _oToken) internal {
         // DANGER: this should be called VERY carefully.
         // Should not change the oToken when there are promised tokens.
-        /*assert(promisedTokens() == 0);*/
+        assert(promisedTokens() == 0);
         _setAddress(_O_TOKEN_SLOT, _oToken);
         emit OTokenSet(_oToken);
     }
 
-    function _ownerSetOwner(address _owner) internal {
-        if (_owner != address(0)) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            _owner != address(0),
-            _FILE,
-            "Invalid owner"
-        );
-        _setAddress(_OWNER_SLOT, _owner);
-        emit OwnerSet(_owner);
-    }
-
     function _ownerSetClosePositionWindow(uint256 _closePositionWindow) internal {
-        if (_closePositionWindow >= _MIN_DURATION || _closePositionWindow == 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
-            _closePositionWindow >= _MIN_DURATION || _closePositionWindow == 0,
+            _closePositionWindow >= _ONE_WEEK || _closePositionWindow == 0,
             _FILE,
             "Invalid close position window"
         );
@@ -608,7 +541,6 @@ contract ExternalVesterImplementationV1 is
     }
 
     function _ownerSetForceClosePositionTax(uint256 _forceClosePositionTax) internal {
-        if (_forceClosePositionTax < _BASE) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _forceClosePositionTax < _BASE,
             _FILE,
@@ -622,7 +554,6 @@ contract ExternalVesterImplementationV1 is
         uint256 _emergencyWithdrawTax
     )
     internal {
-        if (_emergencyWithdrawTax < _BASE) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _emergencyWithdrawTax < _BASE,
             _FILE,
@@ -649,6 +580,79 @@ contract ExternalVesterImplementationV1 is
         _clearVestingPosition(_position.id);
     }
 
+    function _doPaymentForVestExecution(
+        uint256 _nftId,
+        uint256 _duration,
+        uint256 _oTokenAmount,
+        address _positionOwner,
+        uint256 _maxPaymentAmount
+    ) internal returns (uint256 paymentAmount) {
+        // Calculate price
+        uint256 rewardPriceAdj = _getRewardPriceAdj(_nftId, _duration);
+        uint256 paymentPrice = DOLOMITE_REGISTRY.oracleAggregator().getPrice(address(PAYMENT_TOKEN)).value;
+        paymentAmount = _oTokenAmount * rewardPriceAdj / paymentPrice;
+        Require.that(
+            paymentAmount <= _maxPaymentAmount,
+            _FILE,
+            "Cost exceeds max payment amount"
+        );
+
+        // Deposit payment tokens into Dolomite, going to DOLOMITE_MARGIN_OWNER()
+        PAYMENT_TOKEN.safeTransferFrom(_positionOwner, address(this), paymentAmount);
+        _depositIntoDolomite(
+            /* _toAccountOwner = */ DOLOMITE_MARGIN_OWNER(),
+            /* _toAccountNumber = */ _DEFAULT_ACCOUNT_NUMBER,
+            /* _token = */ PAYMENT_TOKEN,
+            /* _marketId */ PAYMENT_MARKET_ID,
+            /* _amount */ paymentAmount
+        );
+
+        return paymentAmount;
+    }
+
+    function _doPairTokenPaymentsWithTax(
+        VestingPosition memory _position,
+        address _positionOwner,
+        uint256 _taxNumerator
+    ) internal returns (uint256 pairTokenTax) {
+        oToken().burn(_position.oTokenAmount);
+
+        uint256 fromAccountNumber = calculateAccountNumber(_position.creator, _position.id);
+        _withdrawFromDolomite(
+            fromAccountNumber,
+            /* _toAccount = */ address(this),
+            PAIR_TOKEN,
+            PAIR_MARKET_ID,
+            _position.pairAmount,
+            /* _withdrawAllIfPossible = */ false
+        );
+
+        // Withdraw the rest to collect the interest
+        uint256 balanceBefore = PAIR_TOKEN.balanceOf(address(this));
+        _withdrawFromDolomite(
+            fromAccountNumber,
+            /* _toAccount = */ address(this),
+            PAIR_TOKEN,
+            PAIR_MARKET_ID,
+            /* _amount = */ 0,
+            /* _withdrawAllIfPossible = */ true
+        );
+        uint256 pairAmountInterest = PAIR_TOKEN.balanceOf(address(this)) - balanceBefore;
+
+        // Only pay tax on the original pair amount
+        pairTokenTax = _position.pairAmount * _taxNumerator / _BASE;
+        if (pairTokenTax > 0) {
+            _depositIntoDolomite(
+                /* _toAccountOwner = */ DOLOMITE_MARGIN_OWNER(),
+                /* _toAccountNumber = */ _DEFAULT_ACCOUNT_NUMBER,
+                PAIR_TOKEN,
+                PAIR_MARKET_ID,
+                pairTokenTax
+            );
+        }
+        PAIR_TOKEN.safeTransfer(_positionOwner, _position.pairAmount + pairAmountInterest - pairTokenTax);
+    }
+
     function _depositIntoDolomite(
         address _toAccountOwner,
         uint256 _toAccountNumber,
@@ -661,13 +665,20 @@ contract ExternalVesterImplementationV1 is
             _toAccountNumber == _DEFAULT_ACCOUNT_NUMBER &&
             _marketId == REWARD_MARKET_ID
         ) {
-            /*assert(_amount != type(uint256).max);*/
             _setPushedTokens(pushedTokens() + _amount);
+        }
+
+        if (_marketId == _NO_MARKET_ID) {
+            // Guard statement for _NO_MARKET_ID
+            if (_toAccountOwner == DOLOMITE_MARGIN_OWNER()) {
+                _token.safeTransfer(_toAccountOwner, _amount);
+            }
+            return;
         }
 
         IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
 
-        /*assert(dolomiteMargin.getMarketTokenAddress(_marketId) == address(_token));*/
+        assert(dolomiteMargin.getMarketTokenAddress(_marketId) == address(_token));
         _token.safeApprove(address(dolomiteMargin), _amount);
 
         AccountActionLib.deposit(
@@ -688,15 +699,26 @@ contract ExternalVesterImplementationV1 is
     function _withdrawFromDolomite(
         uint256 _fromAccountNumber,
         address _toAccount,
+        IERC20 _token,
         uint256 _marketId,
-        uint256 _amount
+        uint256 _amount,
+        bool _withdrawAllIfPossible
     ) internal {
-        if (_fromAccountNumber == _DEFAULT_ACCOUNT_NUMBER && _marketId == REWARD_MARKET_ID) {
+        if (
+            _fromAccountNumber == _DEFAULT_ACCOUNT_NUMBER &&
+            _token == REWARD_TOKEN
+        ) {
             _setPushedTokens(pushedTokens() - _amount);
         }
 
+        if (_marketId == _NO_MARKET_ID) {
+            // Guard statement for _NO_MARKET_ID
+            _token.safeTransfer(_toAccount, _amount);
+            return;
+        }
+
         IDolomiteStructs.AssetAmount memory assetAmount;
-        if (_amount == type(uint256).max) {
+        if (_withdrawAllIfPossible) {
             assetAmount = IDolomiteStructs.AssetAmount({
                 sign: false,
                 denomination: IDolomiteStructs.AssetDenomination.Par,
@@ -720,68 +742,6 @@ contract ExternalVesterImplementationV1 is
             assetAmount,
             AccountBalanceLib.BalanceCheckFlag.Both
         );
-    }
-
-    function _doPaymentForVestExecution(
-        uint256 _nftId,
-        uint256 _duration,
-        uint256 _oTokenAmount,
-        address _positionOwner,
-        uint256 _maxPaymentAmount
-    ) internal returns (uint256 paymentAmount) {
-        // Calculate price
-        uint256 rewardPriceAdj = _getRewardPriceAdj(_nftId, _duration);
-        uint256 paymentPrice = DOLOMITE_MARGIN().getMarketPrice(PAYMENT_MARKET_ID).value;
-        paymentAmount = _oTokenAmount * rewardPriceAdj / paymentPrice;
-        if (paymentAmount <= _maxPaymentAmount) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            paymentAmount <= _maxPaymentAmount,
-            _FILE,
-            "Cost exceeds max payment amount"
-        );
-
-        // Deposit payment tokens into Dolomite, going to owner() (IE Gravita)
-        PAYMENT_TOKEN.safeTransferFrom(_positionOwner, address(this), paymentAmount);
-        _depositIntoDolomite(
-            /* _toAccountOwner = */ owner(),
-            /* _toAccountNumber = */ _DEFAULT_ACCOUNT_NUMBER,
-            /* _token = */ PAYMENT_TOKEN,
-            /* _marketId */ PAYMENT_MARKET_ID,
-            /* _amount */ paymentAmount
-        );
-
-        return paymentAmount;
-    }
-
-    function _doPairTokenPaymentsWithTax(
-        VestingPosition memory _position,
-        address _positionOwner,
-        uint256 _taxNumerator
-    ) internal returns (uint256 pairTokenTax) {
-        oToken().burn(_position.oTokenAmount);
-
-        uint256 balanceBefore = PAIR_TOKEN.balanceOf(address(this));
-        // Do a `withdraw all` so the user collects the interest
-        _withdrawFromDolomite(
-            /* _fromAccountNumber = */ calculateAccountNumber(_position.creator, _position.id),
-            /* _toAccount = */ address(this),
-            /* _marketId = */ PAIR_MARKET_ID,
-            /* _amountWei */ type(uint256).max
-        );
-        uint256 pairAmountPlusInterest = PAIR_TOKEN.balanceOf(address(this)) - balanceBefore;
-
-        // Only pay tax on the original pair amount
-        pairTokenTax = _position.pairAmount * _taxNumerator / _BASE;
-        if (pairTokenTax > 0) {
-            _depositIntoDolomite(
-                /* _toAccountOwner = */ owner(),
-                /* _toAccountNumber = */ _DEFAULT_ACCOUNT_NUMBER,
-                PAIR_TOKEN,
-                PAIR_MARKET_ID,
-                pairTokenTax
-            );
-        }
-        PAIR_TOKEN.safeTransfer(_positionOwner, pairAmountPlusInterest - pairTokenTax);
     }
 
     function _createVestingPosition(VestingPosition memory _vestingPosition) internal {
@@ -836,7 +796,6 @@ contract ExternalVesterImplementationV1 is
 
     function _getRewardPriceAdj(uint256 _nftId, uint256 _duration) internal view returns (uint256) {
         uint256 discount = discountCalculator().calculateDiscount(_nftId, _duration);
-        if (discount <= _BASE) { /* FOR COVERAGE TESTING */ }
         Require.that(
             discount <= _BASE,
             _FILE,
@@ -844,12 +803,11 @@ contract ExternalVesterImplementationV1 is
             discount
         );
 
-        uint256 rewardPrice = DOLOMITE_MARGIN().getMarketPrice(REWARD_MARKET_ID).value;
+        uint256 rewardPrice = DOLOMITE_REGISTRY.oracleAggregator().getPrice(address(REWARD_TOKEN)).value;
         return rewardPrice - (rewardPrice * discount / _BASE);
     }
 
     function _validateEnoughRewardsAvailable(uint256 _oTokenAmount) internal view {
-        if (pushedTokens() >= _oTokenAmount + promisedTokens()) { /* FOR COVERAGE TESTING */ }
         Require.that(
             pushedTokens() >= _oTokenAmount + promisedTokens(),
             _FILE,

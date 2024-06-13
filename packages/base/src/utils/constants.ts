@@ -1166,8 +1166,28 @@ export const CHRONICLE_PRICE_SCRIBES_MAP: Record<
       scribeAddress: '0xb9C3a09d9F73A1d5E90e6728D9c51F22CFF3bEB7',
       tokenPairAddress: ADDRESS_ZERO,
     },
+    [USDE_MAP[Network.Mantle].address]: {
+      scribeAddress: '0x8744f55149A9923a6eD525A9FEdC270FBC2E1e12',
+      tokenPairAddress: ADDRESS_ZERO,
+    },
+    [USDT_MAP[Network.Mantle].address]: {
+      scribeAddress: '0x5400f69e5A2E1712285889bB604Ed8ad44045501',
+      tokenPairAddress: ADDRESS_ZERO,
+    },
+    [USDY_MAP[Network.Mantle].address]: {
+      scribeAddress: '0xB1141B90095B6E1aB8a5769868283cFc335047f1',
+      tokenPairAddress: ADDRESS_ZERO,
+    },
     [WBTC_MAP[Network.Mantle].address]: {
       scribeAddress: '0x36b648060bc490DefC205950d3930bF971a6951B',
+      tokenPairAddress: ADDRESS_ZERO,
+    },
+    [WETH_MAP[Network.Mantle].address]: {
+      scribeAddress: '0x5E16CA75000fb2B9d7B1184Fa24fF5D938a345Ef',
+      tokenPairAddress: ADDRESS_ZERO,
+    },
+    [WMNT_MAP[Network.Mantle].address]: {
+      scribeAddress: '0xDda786905E8aFaFA0C0D50414F0f8A05a6a7901d',
       tokenPairAddress: ADDRESS_ZERO,
     },
   },

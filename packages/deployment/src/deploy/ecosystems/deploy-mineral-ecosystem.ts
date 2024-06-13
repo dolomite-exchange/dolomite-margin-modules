@@ -34,7 +34,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     'UpgradeableProxy',
     getUpgradeableProxyConstructorParams(
       mineralTokenImplementationAddress,
-      initializeCalldata.data!,
+      initializeCalldata,
       core.dolomiteMargin,
     ),
     'MineralTokenProxy',
