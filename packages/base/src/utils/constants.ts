@@ -333,7 +333,7 @@ export const RDNT_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   },
 };
 
-export const RETH_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+export const R_ETH_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0xEC70Dcb4A1EFa46b8F2D97C310C9c4790ba5ffA8',
     marketId: 15,
@@ -1098,7 +1098,7 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<Network, Record<string, Agg
     [RDNT_MAP[Network.ArbitrumOne].address]: {
       aggregatorAddress: '0x20d0fcab0ecfd078b036b6caf1fac69a6453b352',
     },
-    [RETH_MAP[Network.ArbitrumOne].address]: {
+    [R_ETH_MAP[Network.ArbitrumOne].address]: {
       aggregatorAddress: '0xF3272CAfe65b190e76caAF483db13424a3e23dD2',
       tokenPairAddress: WETH_MAP[Network.ArbitrumOne].address,
     },
@@ -1214,8 +1214,28 @@ export const CHRONICLE_PRICE_SCRIBES_MAP: Record<
       scribeAddress: '0xb9C3a09d9F73A1d5E90e6728D9c51F22CFF3bEB7',
       tokenPairAddress: ADDRESS_ZERO,
     },
+    [USDE_MAP[Network.Mantle].address]: {
+      scribeAddress: '0x8744f55149A9923a6eD525A9FEdC270FBC2E1e12',
+      tokenPairAddress: ADDRESS_ZERO,
+    },
+    [USDT_MAP[Network.Mantle].address]: {
+      scribeAddress: '0x5400f69e5A2E1712285889bB604Ed8ad44045501',
+      tokenPairAddress: ADDRESS_ZERO,
+    },
+    [USDY_MAP[Network.Mantle].address]: {
+      scribeAddress: '0xB1141B90095B6E1aB8a5769868283cFc335047f1',
+      tokenPairAddress: ADDRESS_ZERO,
+    },
     [WBTC_MAP[Network.Mantle].address]: {
       scribeAddress: '0x36b648060bc490DefC205950d3930bF971a6951B',
+      tokenPairAddress: ADDRESS_ZERO,
+    },
+    [WETH_MAP[Network.Mantle].address]: {
+      scribeAddress: '0x5E16CA75000fb2B9d7B1184Fa24fF5D938a345Ef',
+      tokenPairAddress: ADDRESS_ZERO,
+    },
+    [WMNT_MAP[Network.Mantle].address]: {
+      scribeAddress: '0xDda786905E8aFaFA0C0D50414F0f8A05a6a7901d',
       tokenPairAddress: ADDRESS_ZERO,
     },
   },

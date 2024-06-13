@@ -578,7 +578,8 @@ contract ExternalVesterImplementationV1 is
     }
 
     function _ownerSetOToken(address _oToken) internal {
-        // Should not change
+        // DANGER: this should be called VERY carefully.
+        // Should not change the oToken when there are promised tokens.
         /*assert(promisedTokens() == 0);*/
         _setAddress(_O_TOKEN_SLOT, _oToken);
         emit OTokenSet(_oToken);

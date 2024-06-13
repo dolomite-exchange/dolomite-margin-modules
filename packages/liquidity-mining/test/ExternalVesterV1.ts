@@ -89,11 +89,11 @@ describe('ExternalVesterV1', () => {
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     pairToken = core.tokens.usdc;
-    paymentMarketId = core.marketIds.weth;
     paymentToken = core.tokens.weth;
-    pairMarketId = core.marketIds.usdc;
-    rewardMarketId = core.marketIds.arb;
     rewardToken = core.tokens.arb;
+    pairMarketId = core.marketIds.usdc;
+    paymentMarketId = core.marketIds.weth;
+    rewardMarketId = core.marketIds.arb;
 
     const interestRate = parseEther('0.30').div(ONE_DAY_SECONDS * 365); // 30% APR
     await core.testEcosystem!.testInterestSetter.setInterestRate(pairToken.address, { value: interestRate });
@@ -116,8 +116,8 @@ describe('ExternalVesterV1', () => {
 
     vester = await createTestExternalVesterV1Proxy(
       core,
-      paymentToken,
       pairToken,
+      paymentToken,
       rewardToken,
       discountCalculator,
       oToken,

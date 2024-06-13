@@ -13,6 +13,7 @@ import { PendleEcosystemMantle } from '../ecosystem-utils/pendle';
 
 export interface CoreProtocolTokensMantle extends CoreProtocolTokens<Network.Mantle> {
   meth: IERC20;
+  usde: IERC20;
   usdt: IERC20;
   usdy: IERC20;
   wbtc: IERC20;

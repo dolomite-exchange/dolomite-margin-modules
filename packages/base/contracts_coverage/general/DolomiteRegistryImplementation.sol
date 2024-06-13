@@ -32,6 +32,7 @@ import { ILiquidatorAssetRegistry } from "../interfaces/ILiquidatorAssetRegistry
 import { ValidationLib } from "../lib/ValidationLib.sol";
 import { IDolomitePriceOracle } from "../protocol/interfaces/IDolomitePriceOracle.sol";
 import { Require } from "../protocol/lib/Require.sol";
+import { IDolomiteAddressRegistry } from "../interfaces/IDolomiteAddressRegistry.sol";
 
 
 /**
@@ -59,6 +60,7 @@ contract DolomiteRegistryImplementation is
     bytes32 private constant _CHAINLINK_PRICE_ORACLE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.chainlinkPriceOracle")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _REDSTONE_PRICE_ORACLE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.redstonePriceOracle")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _ORACLE_AGGREGATOR_SLOT = bytes32(uint256(keccak256("eip1967.proxy.oracleAggregator")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _DOLOMITE_ADDRESS_REGISTRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.dolomiteAddressRegistry")) - 1); // solhint-disable-line max-line-length
 
     // ==================== Constructor ====================
 
@@ -67,15 +69,28 @@ contract DolomiteRegistryImplementation is
         address _expiry,
         uint256 _slippageToleranceForPauseSentinel,
         address _liquidatorAssetRegistry,
-        address _eventEmitter,
-        address _dolomiteMigrator
+        address _eventEmitter
     ) external initializer {
         _ownerSetGenericTraderProxy(_genericTraderProxy);
         _ownerSetExpiry(_expiry);
         _ownerSetSlippageToleranceForPauseSentinel(_slippageToleranceForPauseSentinel);
         _ownerSetLiquidatorAssetRegistry(_liquidatorAssetRegistry);
         _ownerSetEventEmitter(_eventEmitter);
+    }
+
+    function lazyInitialize(
+        address _dolomiteMigrator,
+        address _oracleAggregator
+    ) external {
+        if (address(dolomiteMigrator()) == address(0) && address(oracleAggregator()) == address(0)) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            address(dolomiteMigrator()) == address(0) && address(oracleAggregator()) == address(0),
+            _FILE,
+            "Already initialized"
+        );
+
         _ownerSetDolomiteMigrator(_dolomiteMigrator);
+        _ownerSetOracleAggregator(_oracleAggregator);
     }
 
     // ===================== Functions =====================
@@ -152,45 +167,57 @@ contract DolomiteRegistryImplementation is
         _ownerSetOracleAggregator(_oracleAggregator);
     }
 
+    function ownerSetDolomiteAddressRegistry(
+        address _dolomiteAddressRegistry
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetDolomiteAddressRegistry(_dolomiteAddressRegistry);
+    }
+
     // ========================== View Functions =========================
 
-    function genericTraderProxy() external view returns (IGenericTraderProxyV1) {
+    function genericTraderProxy() public view returns (IGenericTraderProxyV1) {
         return IGenericTraderProxyV1(_getAddress(_GENERIC_TRADER_PROXY_SLOT));
     }
 
-    function expiry() external view returns (IExpiry) {
+    function expiry() public view returns (IExpiry) {
         return IExpiry(_getAddress(_EXPIRY_SLOT));
     }
 
-    function slippageToleranceForPauseSentinel() external view returns (uint256) {
+    function slippageToleranceForPauseSentinel() public view returns (uint256) {
         return _getUint256(_SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL_SLOT);
     }
 
-    function liquidatorAssetRegistry() external view returns (ILiquidatorAssetRegistry) {
+    function liquidatorAssetRegistry() public view returns (ILiquidatorAssetRegistry) {
         return ILiquidatorAssetRegistry(_getAddress(_LIQUIDATOR_ASSET_REGISTRY_SLOT));
     }
 
-    function eventEmitter() external view returns (IEventEmitterRegistry) {
+    function eventEmitter() public view returns (IEventEmitterRegistry) {
         return IEventEmitterRegistry(_getAddress(_EVENT_EMITTER_SLOT));
     }
 
-    function chainlinkPriceOracle() external view returns (IDolomitePriceOracle) {
+    function chainlinkPriceOracle() public view returns (IDolomitePriceOracle) {
         return IDolomitePriceOracle(_getAddress(_CHAINLINK_PRICE_ORACLE_SLOT));
     }
 
-    function dolomiteMigrator() external view returns (IDolomiteMigrator) {
+    function dolomiteMigrator() public view returns (IDolomiteMigrator) {
         return IDolomiteMigrator(_getAddress(_DOLOMITE_MIGRATOR_SLOT));
     }
 
-    function redstonePriceOracle() external view returns (IDolomitePriceOracle) {
+    function redstonePriceOracle() public view returns (IDolomitePriceOracle) {
         return IDolomitePriceOracle(_getAddress(_REDSTONE_PRICE_ORACLE_SLOT));
     }
 
-    function oracleAggregator() external view returns (IDolomitePriceOracle) {
+    function oracleAggregator() public view returns (IDolomitePriceOracle) {
         return IDolomitePriceOracle(_getAddress(_ORACLE_AGGREGATOR_SLOT));
     }
 
-    function slippageToleranceForPauseSentinelBase() external pure returns (uint256) {
+    function dolomiteAddressRegistry() public view returns (IDolomiteAddressRegistry) {
+        return IDolomiteAddressRegistry(_getAddress(_DOLOMITE_ADDRESS_REGISTRY_SLOT));
+    }
+
+    function slippageToleranceForPauseSentinelBase() public pure returns (uint256) {
         return 1e18;
     }
 
@@ -338,5 +365,19 @@ contract DolomiteRegistryImplementation is
 
         _setAddress(_ORACLE_AGGREGATOR_SLOT, _oracleAggregator);
         emit OracleAggregatorSet(_oracleAggregator);
+    }
+
+    function _ownerSetDolomiteAddressRegistry(
+        address _dolomiteAddressRegistry
+    ) internal {
+        if (_dolomiteAddressRegistry != address(0)) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            _dolomiteAddressRegistry != address(0),
+            _FILE,
+            "Invalid dolomiteAddressRegistry"
+        );
+
+        _setAddress(_DOLOMITE_ADDRESS_REGISTRY_SLOT, _dolomiteAddressRegistry);
+        emit DolomiteAddressRegistrySet(_dolomiteAddressRegistry);
     }
 }

@@ -70,10 +70,10 @@ export async function createTestIsolationModeVaultFactory<T extends NetworkType>
     TestIsolationModeVaultFactory__factory.abi,
     TestIsolationModeVaultFactory__factory.bytecode,
     [
-      core.dolomiteRegistry.address,
       underlyingToken.address,
       core.borrowPositionProxyV2.address,
       userVaultImplementation.address,
+      core.dolomiteRegistry.address,
       core.dolomiteMargin.address,
     ],
   );
@@ -120,8 +120,8 @@ export async function createTestAsyncFreezableIsolationModeVaultFactory<T extend
     [
       executionFee,
       registry.address,
-      core.dolomiteRegistry.address,
       underlyingToken.address,
+      core.dolomiteRegistry.address,
       core.borrowPositionProxyV2.address,
       userVaultImplementation.address,
       core.dolomiteMargin.address,
@@ -142,8 +142,8 @@ export async function createTestAsyncProtocolIsolationModeVaultFactory<T extends
     [
       executionFee,
       registry.address,
-      core.dolomiteRegistry.address,
       underlyingToken.address,
+      core.dolomiteRegistry.address,
       core.borrowPositionProxyV2.address,
       userVaultImplementation.address,
       core.dolomiteMargin.address,

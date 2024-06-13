@@ -713,6 +713,12 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezable is
             _isLiquidation
         );
 
+        Require.that(
+            _minOutputAmount > 0,
+            _FILE,
+            "Invalid minOutputAmount"
+        );
+
         _validateMinAmountIsNotTooLarge(
             _tradeAccountNumber,
             _inputAmount,

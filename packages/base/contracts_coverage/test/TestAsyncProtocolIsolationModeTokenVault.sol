@@ -90,8 +90,9 @@ contract TestAsyncProtocolIsolationModeTokenVault is
      * @param  _key Withdrawal key
      */
     function cancelWithdrawal(bytes32 _key) external onlyVaultOwner(msg.sender) {
-        IUpgradeableAsyncIsolationModeUnwrapperTrader unwrapper =
-                                registry().getUnwrapperByToken(IAsyncFreezableIsolationModeVaultFactory(VAULT_FACTORY()));
+        IUpgradeableAsyncIsolationModeUnwrapperTrader unwrapper = registry().getUnwrapperByToken(
+            IAsyncFreezableIsolationModeVaultFactory(VAULT_FACTORY())
+        );
         IUpgradeableAsyncIsolationModeUnwrapperTrader.WithdrawalInfo memory withdrawalInfo
             = unwrapper.getWithdrawalInfo(_key);
         _validateVaultOwnerForStruct(withdrawalInfo.vault);

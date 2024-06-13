@@ -53,11 +53,11 @@ export async function createContractWithLibraryAndArtifact<T extends BaseContrac
   return await ContractFactory.deploy(...args) as T;
 }
 
-export async function createTestToken(): Promise<CustomTestToken> {
+export async function createTestToken(decimals: number = 18): Promise<CustomTestToken> {
   return createContractWithAbi<CustomTestToken>(
     CustomTestToken__factory.abi,
     CustomTestToken__factory.bytecode,
-    ['Test Token', 'TEST', 18],
+    ['Test Token', 'TEST', decimals],
   );
 }
 
@@ -133,17 +133,17 @@ export async function depositIntoDolomiteMargin<T extends NetworkType>(
 
 export async function withdrawFromDolomiteMargin<T extends NetworkType>(
   core: CoreProtocolType<T>,
-  user: SignerWithAddressWithSafety,
-  accountId: BigNumberish,
-  tokenId: BigNumberish,
+  accountOwner: SignerWithAddressWithSafety,
+  accountNumber: BigNumberish,
+  marketId: BigNumberish,
   amount: BigNumberish,
   toAddress?: string,
 ): Promise<void> {
   await core.dolomiteMargin
-    .connect(user)
+    .connect(accountOwner)
     .operate(
-      [{ owner: user.address, number: accountId }],
-      [createWithdrawAction(amount, tokenId, user, toAddress)],
+      [{ owner: accountOwner.address, number: accountNumber }],
+      [createWithdrawAction(amount, marketId, accountOwner, toAddress)],
     );
 }
 
