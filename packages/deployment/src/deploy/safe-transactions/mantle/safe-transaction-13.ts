@@ -1,19 +1,8 @@
-import {
-  TargetCollateralization,
-  TargetLiquidationPenalty,
-} from '@dolomite-exchange/modules-base/src/utils/constructors/dolomite';
 import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { parseWbtc } from '@dolomite-exchange/modules-base/src/utils/math-utils';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { parseEther } from 'ethers/lib/utils';
-import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
-import { Network, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
-import {
-  EncodedTransaction,
-  prettyPrintEncodeAddMarket,
-  prettyPrintEncodedDataWithTypeSafety, prettyPrintEncodeInsertChronicleOracleV3,
-} from '../../../utils/deploy-utils';
+import { Network } from 'packages/base/src/utils/no-deps-constants';
+import { EncodedTransaction, prettyPrintEncodeInsertChronicleOracleV3 } from '../../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../utils/dry-run-utils';
 import getScriptName from '../../../utils/get-script-name';
 
@@ -32,26 +21,11 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
 
   const transactions: EncodedTransaction[] = [];
   transactions.push(
-    ...await prettyPrintEncodeInsertChronicleOracleV3(
-      core,
-      core.tokens.usde,
-    ),
-    ...await prettyPrintEncodeInsertChronicleOracleV3(
-      core,
-      core.tokens.usdt,
-    ),
-    ...await prettyPrintEncodeInsertChronicleOracleV3(
-      core,
-      core.tokens.usdy,
-    ),
-    ...await prettyPrintEncodeInsertChronicleOracleV3(
-      core,
-      core.tokens.weth,
-    ),
-    ...await prettyPrintEncodeInsertChronicleOracleV3(
-      core,
-      core.tokens.wmnt,
-    ),
+    ...(await prettyPrintEncodeInsertChronicleOracleV3(core, core.tokens.usde)),
+    ...(await prettyPrintEncodeInsertChronicleOracleV3(core, core.tokens.usdt)),
+    ...(await prettyPrintEncodeInsertChronicleOracleV3(core, core.tokens.usdy)),
+    ...(await prettyPrintEncodeInsertChronicleOracleV3(core, core.tokens.weth)),
+    ...(await prettyPrintEncodeInsertChronicleOracleV3(core, core.tokens.wmnt)),
   );
   return {
     core,
