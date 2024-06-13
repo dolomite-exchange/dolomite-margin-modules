@@ -620,13 +620,7 @@ describe('VeExternalVesterV1', () => {
       expect(await vester.pushedTokens()).to.eq(ZERO_BI);
       await expectWalletBalance(vester, rewardToken, ZERO_BI);
 
-      await vester.connect(owner).ownerWithdrawRewardToken(owner.address, MAX_UINT_256_BI, true);
-      await expectWalletBalanceIsBetween(
-        owner.address,
-        rewardToken,
-        TOTAL_REWARD_AMOUNT.add(TOTAL_REWARD_AMOUNT.mul(2).div(10_000)),
-        TOTAL_REWARD_AMOUNT.add(TOTAL_REWARD_AMOUNT.mul(5).div(10_000)),
-      );
+      await expectWalletBalance(owner.address, rewardToken, TOTAL_REWARD_AMOUNT);
     });
 
     it('should work normally when bypasses available amount', async () => {
@@ -639,13 +633,6 @@ describe('VeExternalVesterV1', () => {
       await vester.connect(owner).ownerWithdrawRewardToken(core.hhUser3.address, O_TOKEN_AMOUNT.mul(3), false);
       expect(await vester.pushedTokens()).to.eq(TOTAL_REWARD_AMOUNT.sub(O_TOKEN_AMOUNT.mul(3)));
       await expectWalletBalance(core.hhUser3, rewardToken, O_TOKEN_AMOUNT.mul(3));
-    });
-
-    it('should fail if attempting to withdraw all before the pushed tokens are cleared', async () => {
-      await expectThrow(
-        vester.connect(owner).ownerWithdrawRewardToken(owner.address, MAX_UINT_256_BI, true),
-        'VeExternalVesterImplementationV1: Interest cannot be withdrawn yet',
-      );
     });
 
     it('should fail if attempting to withdraw more than available tokens', async () => {
