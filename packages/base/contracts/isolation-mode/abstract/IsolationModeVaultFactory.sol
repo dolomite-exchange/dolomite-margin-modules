@@ -165,6 +165,8 @@ abstract contract IsolationModeVaultFactory is
             "Market cannot allow borrowing"
         );
 
+        _initializeVault(_DEAD_VAULT, _userToVaultMap[_DEAD_VAULT]);
+
         for (uint256 i = 0; i < _tokenConverters.length; i++) {
             _ownerSetIsTokenConverterTrusted(_tokenConverters[i], true);
         }
@@ -439,14 +441,19 @@ abstract contract IsolationModeVaultFactory is
         emit VaultCreated(_account, vault);
         _vaultToUserMap[vault] = _account;
         _userToVaultMap[_account] = vault;
-        DOLOMITE_REGISTRY.dolomiteAccountRegistry().registerVault(_account, vault);
 
         if (_account != _DEAD_VAULT) {
-            IIsolationModeUpgradeableProxy(vault).initialize(_account);
-            BORROW_POSITION_PROXY.setIsCallerAuthorized(vault, true);
+            _initializeVault(_account, vault);
         }
 
         return vault;
+    }
+
+    function _initializeVault(address _account, address _vault) internal {
+        assert(_account != address(0) && _vault != address(0));
+        IIsolationModeUpgradeableProxy(_vault).initialize(_account);
+        BORROW_POSITION_PROXY.setIsCallerAuthorized(_vault, true);
+        DOLOMITE_REGISTRY.dolomiteAccountRegistry().registerVault(_account, _vault);
     }
 
     function _enqueueTransfer(

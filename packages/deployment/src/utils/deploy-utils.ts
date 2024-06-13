@@ -1197,17 +1197,17 @@ export async function prettyPrintEncodeAddIsolationModeMarket<T extends NetworkT
   transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(
       core,
-      { factory },
-      'factory',
-      'ownerInitialize',
-      [[unwrapper.address, wrapper.address, ...(options.additionalConverters ?? []).map(c => c.address)]],
-    ),
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
       { dolomiteMargin: core.dolomiteMargin },
       'dolomiteMargin',
       'ownerSetGlobalOperator',
       [factory.address, true],
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { factory },
+      'factory',
+      'ownerInitialize',
+      [[unwrapper.address, wrapper.address, ...(options.additionalConverters ?? []).map(c => c.address)]],
     ),
     await prettyPrintEncodedDataWithTypeSafety(
       core,

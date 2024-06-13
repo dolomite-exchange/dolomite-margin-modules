@@ -20,11 +20,11 @@ import {
   TestIsolationModeWrapperTraderV2__factory,
   DolomiteRegistryImplementation,
   DolomiteRegistryImplementation__factory,
-  DolomiteAddressRegistry,
-  DolomiteAddressRegistry__factory,
+  DolomiteAccountRegistry,
+  DolomiteAccountRegistry__factory,
 } from '../../../src/types';
 import { createContractWithAbi, createContractWithLibrary, createTestToken } from '../../../src/utils/dolomite-utils';
-import { BYTES_EMPTY, Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
+import { ADDRESS_ZERO, BYTES_EMPTY, Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import {
@@ -44,7 +44,6 @@ import {
 } from '../../utils/dolomite';
 import { createTestIsolationModeVaultFactory } from '../../utils/ecosystem-utils/testers';
 import {
-  getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupTestMarket,
   setupUserVaultProxy,
@@ -53,6 +52,7 @@ import {
 const toAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // 200 units
 const smallAmountWei = BigNumber.from('10000000000000000000'); // 10 units
+const DEAD_ACCOUNT = '0x000000000000000000000000000000000000dEaD';
 
 describe('IsolationModeVaultFactory', () => {
   let snapshotId: string;
@@ -71,12 +71,16 @@ describe('IsolationModeVaultFactory', () => {
   let factory: TestIsolationModeVaultFactory;
   let userVaultImplementation: TestIsolationModeTokenVaultV1;
   let initializeResult: ContractTransaction;
-  let addressRegistry: DolomiteAddressRegistry;
+  let accountRegistry: DolomiteAccountRegistry;
+  let deadVault: IsolationModeUpgradeableProxy;
 
   let solidAccount: SignerWithAddressWithSafety;
 
   before(async () => {
-    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
+    core = await setupCoreProtocol({
+      network: Network.ArbitrumOne,
+      blockNumber: 221_269_900,
+    });
     underlyingToken = await createTestToken();
     otherToken = await createTestToken();
     const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
@@ -94,6 +98,13 @@ describe('IsolationModeVaultFactory', () => {
       otherToken.address,
       '1000000000000000000', // $1.00
     );
+
+    deadVault = IsolationModeUpgradeableProxy__factory.connect(
+      await factory.getVaultByAccount(DEAD_ACCOUNT),
+      core.hhUser1,
+    );
+    expect(deadVault.address).to.not.eq(ADDRESS_ZERO);
+    expect(await deadVault.isInitialized()).to.be.not.true;
 
     underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, factory, true);
@@ -130,22 +141,23 @@ describe('IsolationModeVaultFactory', () => {
       [otherToken.address, factory.address, core.dolomiteMargin.address, core.dolomiteRegistry.address],
     );
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(tokenWrapperV1.address, true);
+    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
     initializeResult = await factory.connect(core.governance).ownerInitialize([
       tokenUnwrapperV1.address,
       tokenWrapperV1.address,
       tokenUnwrapperV2.address,
       tokenWrapperV2.address,
     ]);
-    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
+    expect(await deadVault.isInitialized()).to.be.true;
 
     solidAccount = core.hhUser5;
 
-    const dolomiteAddressRegistry = await createDolomiteAccountRegistryImplementation();
-    const calldata = await dolomiteAddressRegistry.populateTransaction.initialize(
-      [factory.address]
+    const dolomiteAccountRegistry = await createDolomiteAccountRegistryImplementation();
+    const calldata = await dolomiteAccountRegistry.populateTransaction.initialize(
+      [factory.address],
     );
-    const addressRegistryProxy = await createRegistryProxy(dolomiteAddressRegistry.address, calldata.data!, core);
-    addressRegistry = DolomiteAddressRegistry__factory.connect(addressRegistryProxy.address, core.governance);
+    const accountRegistryProxy = await createRegistryProxy(dolomiteAccountRegistry.address, calldata.data!, core);
+    accountRegistry = DolomiteAccountRegistry__factory.connect(accountRegistryProxy.address, core.governance);
 
     const dolomiteRegistryImplementation = await createContractWithAbi<DolomiteRegistryImplementation>(
       DolomiteRegistryImplementation__factory.abi,
@@ -154,7 +166,7 @@ describe('IsolationModeVaultFactory', () => {
     );
 
     await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(dolomiteRegistryImplementation.address);
-    await core.dolomiteRegistry.connect(core.governance).ownerSetDolomiteAddressRegistry(addressRegistryProxy.address);
+    await core.dolomiteRegistry.connect(core.governance).ownerSetDolomiteAccountRegistry(accountRegistryProxy.address);
 
     snapshotId = await snapshot();
   });
@@ -184,8 +196,8 @@ describe('IsolationModeVaultFactory', () => {
     );
     expect(await vaultContract.isInitialized()).to.eq(true);
     expect(await vaultContract.owner()).to.eq(core.hhUser1.address);
-    expect(await addressRegistry.isIsolationModeVault(vault)).to.eq(true);
-    expect(await addressRegistry.getAccountByVault(vault)).to.eq(core.hhUser1.address);
+    expect(await accountRegistry.isIsolationModeVault(vault)).to.eq(true);
+    expect(await accountRegistry.getAccountByVault(vault)).to.eq(core.hhUser1.address);
   }
 
   describe('#initialize', () => {
