@@ -72,8 +72,8 @@ describe('PendlePtUSDeJul2024IsolationModeWrapperTraderV3', () => {
       network: Network.Mantle,
     });
 
-    ptMarket = core.pendleEcosystem!.usdeJul2024.usdeMarket;
-    ptToken = core.pendleEcosystem!.usdeJul2024.ptUSDeToken.connect(core.hhUser1);
+    ptMarket = core.pendleEcosystem.usdeJul2024.usdeMarket;
+    ptToken = core.pendleEcosystem.usdeJul2024.ptUSDeToken.connect(core.hhUser1);
     underlyingToken = core.tokens.usde!;
     underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, core.tokens.usde, false, core.oracleAggregatorV2);
@@ -82,8 +82,8 @@ describe('PendlePtUSDeJul2024IsolationModeWrapperTraderV3', () => {
     pendleRegistry = await createPendleRegistry(
       core,
       ptMarket,
-      core.pendleEcosystem!.usdeJul2024.ptOracle,
-      core.pendleEcosystem!.syUsdeToken,
+      core.pendleEcosystem.usdeJul2024.ptOracle,
+      core.pendleEcosystem.syUsdeToken,
     );
     factory = await createPendlePtIsolationModeVaultFactory(
       core,

@@ -96,7 +96,7 @@ export interface PendleEcosystemArbitrumOne extends CorePendleEcosystem {
     ptOracle: IPendlePtOracle;
     ezEthMarket: IPendlePtMarket;
     ptEzEthToken: IPendlePtToken;
-  }
+  };
   glpMar2024: {
     pendleRegistry: IPendleGLPRegistry;
     pendleRegistryProxy: RegistryProxy;
@@ -129,7 +129,7 @@ export interface PendleEcosystemArbitrumOne extends CorePendleEcosystem {
     ptOracle: IPendlePtOracle;
     rsEthMarket: IPendlePtMarket;
     ptRsEthToken: IPendlePtToken;
-  }
+  };
   weEthApr2024: {
     dPtWeEthApr2024: PendlePtIsolationModeVaultFactory;
     pendleRegistry: IPendleRegistry;

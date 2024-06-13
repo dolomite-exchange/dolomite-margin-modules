@@ -1,6 +1,6 @@
 import CoreDeployments from '@dolomite-exchange/dolomite-margin/dist/migrations/deployed.json';
 import { IChainlinkAggregator, IChainlinkAggregator__factory } from '@dolomite-exchange/modules-oracles/src/types';
-import { BigNumber, BigNumberish } from 'ethers';
+import { BigNumber, BigNumberish, ethers } from 'ethers';
 import { CoreProtocolType } from '../../test/utils/setup';
 import { IERC20 } from '../types';
 import { ADDRESS_ZERO, Network, NetworkType } from './no-deps-constants';
@@ -232,6 +232,13 @@ export const EZ_ETH_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   },
 };
 
+export const EZ_ETH_REVERSED_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: reverseAddress(EZ_ETH_MAP[Network.ArbitrumOne].address),
+    marketId: -1,
+  },
+};
+
 export const FRAX_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F',
@@ -344,6 +351,13 @@ export const RS_ETH_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x4186BFC76E2E237523CBC30FD220FE055156b41F',
     marketId: 49,
+  },
+};
+
+export const RS_ETH_REVERSED_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: reverseAddress(RS_ETH_MAP[Network.ArbitrumOne].address),
+    marketId: -1,
   },
 };
 
@@ -1034,9 +1048,17 @@ export const INVALID_TOKEN_MAP: Record<Network, Record<string, { symbol: string;
       symbol: 'eETH',
       decimals: 18,
     },
+    [EZ_ETH_REVERSED_MAP[Network.ArbitrumOne].address]: {
+      symbol: 'ezETH',
+      decimals: 18,
+    },
     [GMX_BTC_PLACEHOLDER_MAP[Network.ArbitrumOne].address]: {
       symbol: 'btc',
       decimals: 8,
+    },
+    [RS_ETH_REVERSED_MAP[Network.ArbitrumOne].address]: {
+      symbol: 'rsETH',
+      decimals: 18,
     },
   },
   [Network.Base]: {},
@@ -1070,6 +1092,11 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<Network, Record<string, Agg
     [EZ_ETH_MAP[Network.ArbitrumOne].address]: {
       aggregatorAddress: '0x989a480b6054389075CBCdC385C18CfB6FC08186',
       tokenPairAddress: WETH_MAP[Network.ArbitrumOne].address,
+    },
+    [EZ_ETH_REVERSED_MAP[Network.ArbitrumOne].address]: {
+      aggregatorAddress: '0x989a480b6054389075CBCdC385C18CfB6FC08186',
+      tokenPairAddress: WETH_MAP[Network.ArbitrumOne].address,
+      invert: true,
     },
     [FRAX_MAP[Network.ArbitrumOne].address]: {
       aggregatorAddress: '0x0809E3d38d1B4214958faf06D8b1B1a2b73f2ab8',
@@ -1105,6 +1132,11 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<Network, Record<string, Agg
     [RS_ETH_MAP[Network.ArbitrumOne].address]: {
       aggregatorAddress: '0xb0EA543f9F8d4B818550365d13F66Da747e1476A',
       tokenPairAddress: WETH_MAP[Network.ArbitrumOne].address,
+    },
+    [RS_ETH_REVERSED_MAP[Network.ArbitrumOne].address]: {
+      aggregatorAddress: '0xb0EA543f9F8d4B818550365d13F66Da747e1476A',
+      tokenPairAddress: WETH_MAP[Network.ArbitrumOne].address,
+      invert: true,
     },
     [ST_ETH_MAP[Network.ArbitrumOne].address]: {
       aggregatorAddress: '0xded2c52b75b24732e9107377b7ba93ec1ffa4baf',
@@ -1267,6 +1299,10 @@ export const REDSTONE_PRICE_AGGREGATORS_MAP: Record<ArbitrumAndMantle, Record<st
     },
   },
 };
+
+function reverseAddress(address: string): string {
+  return ethers.utils.getAddress(`0x${address.toLowerCase().substring(2).split('').reverse().join('')}`);
+}
 
 export function getChainlinkPriceAggregatorInfoByToken<T extends NetworkType>(
   core: CoreProtocolType<T>,

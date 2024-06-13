@@ -53,6 +53,7 @@ interface CoreProtocolTokensArbitrumOne extends CoreProtocolTokens<Network.Arbit
   dYtGlp: IERC20;
   eEth: IERC20;
   ezEth: IERC20;
+  ezEthReversed: IERC20;
   sGlp: IERC20;
   frax: IERC20;
   gmx: IERC20;
@@ -67,6 +68,7 @@ interface CoreProtocolTokensArbitrumOne extends CoreProtocolTokens<Network.Arbit
   premia: IERC20;
   rEth: IERC20;
   rsEth: IERC20;
+  rsEthReversed: IERC20;
   radiant: IERC20;
   pendle: IERC20;
   size: IERC20;

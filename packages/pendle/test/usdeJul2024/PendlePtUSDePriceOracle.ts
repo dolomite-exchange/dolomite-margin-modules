@@ -48,15 +48,15 @@ describe('PendlePtUSDeJul2024PriceOracle', () => {
 
     pendleRegistry = await createPendleRegistry(
       core,
-      core.pendleEcosystem!.usdeJul2024.usdeMarket,
-      core.pendleEcosystem!.usdeJul2024.ptOracle,
-      core.pendleEcosystem!.syUsdeToken,
+      core.pendleEcosystem.usdeJul2024.usdeMarket,
+      core.pendleEcosystem.usdeJul2024.ptOracle,
+      core.pendleEcosystem.syUsdeToken,
     );
     const userVaultImplementation = await createPendlePtIsolationModeTokenVaultV1();
     factory = await createPendlePtIsolationModeVaultFactory(
       core,
       pendleRegistry,
-      core.pendleEcosystem!.usdeJul2024.ptUSDeToken,
+      core.pendleEcosystem.usdeJul2024.ptUSDeToken,
       userVaultImplementation,
     );
     ptOracle = await createPendlePtPriceOracleV2(

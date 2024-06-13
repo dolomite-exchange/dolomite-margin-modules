@@ -44,13 +44,13 @@ describe('PendlePtUSDeJul2024IsolationModeTokenVaultV1', () => {
       network: Network.Mantle,
     });
 
-    underlyingPtToken = core.pendleEcosystem!.usdeJul2024.ptUSDeToken.connect(core.hhUser1);
+    underlyingPtToken = core.pendleEcosystem.usdeJul2024.ptUSDeToken.connect(core.hhUser1);
     const userVaultImplementation = await createPendlePtIsolationModeTokenVaultV1();
     pendleRegistry = await createPendleRegistry(
       core,
-      core.pendleEcosystem!.usdeJul2024.usdeMarket,
-      core.pendleEcosystem!.usdeJul2024.ptOracle,
-      core.pendleEcosystem!.syUsdeToken,
+      core.pendleEcosystem.usdeJul2024.usdeMarket,
+      core.pendleEcosystem.usdeJul2024.ptOracle,
+      core.pendleEcosystem.syUsdeToken,
     );
     factory = await createPendlePtIsolationModeVaultFactory(
       core,
@@ -96,7 +96,7 @@ describe('PendlePtUSDeJul2024IsolationModeTokenVaultV1', () => {
 
     it('should work when owner pauses syWstEth', async () => {
       expect(await vault.isExternalRedemptionPaused()).to.be.false;
-      const syWstEth = core.pendleEcosystem!.syUsdeToken;
+      const syWstEth = core.pendleEcosystem.syUsdeToken;
       const owner = await impersonate(await syWstEth.owner(), true);
       await syWstEth.connect(owner).pause();
       expect(await vault.isExternalRedemptionPaused()).to.be.true;

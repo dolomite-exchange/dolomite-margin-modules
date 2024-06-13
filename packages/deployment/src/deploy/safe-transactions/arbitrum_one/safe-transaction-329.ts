@@ -11,7 +11,7 @@ import { Network } from 'packages/base/src/utils/no-deps-constants';
 import {
   deployPendlePtSystem,
   prettyPrintEncodeAddIsolationModeMarket,
-  prettyPrintEncodedDataWithTypeSafety,
+  prettyPrintEncodedDataWithTypeSafety, prettyPrintEncodeInsertChainlinkOracleV3,
 } from '../../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../utils/dry-run-utils';
 import getScriptName from '../../../utils/get-script-name';
@@ -29,9 +29,9 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const numMarkets = await core.dolomiteMargin.getNumMarkets();
 
   const transactions = [];
-  const pteEthMarketId = numMarkets.add(incrementor++);
-  const ptezEthMarketId = numMarkets.add(incrementor++);
-  const ptrsEthMarketId = numMarkets.add(incrementor++);
+  const ptEEthMarketId = numMarkets.add(incrementor++);
+  const ptEzEthMarketId = numMarkets.add(incrementor++);
+  const ptRsEthMarketId = numMarkets.add(incrementor++);
   const weEthPendleSystem = await deployPendlePtSystem(
     core,
     'WeETHSep2024',
@@ -92,7 +92,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
           oracleInfos: [
             {
               oracle: ezEthPendleSystem.oracle.address,
-              tokenPair: core.tokens.ezEth.address,
+              tokenPair: core.tokens.ezEthReversed.address,
               weight: 100,
             },
           ],
@@ -111,12 +111,20 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
           oracleInfos: [
             {
               oracle: rsEthPendleSystem.oracle.address,
-              tokenPair: core.tokens.rsEth.address,
+              tokenPair: core.tokens.rsEthReversed.address,
               weight: 100,
             },
           ],
         },
       ],
+    ),
+    ...await prettyPrintEncodeInsertChainlinkOracleV3(
+      core,
+      core.tokens.ezEthReversed,
+    ),
+    ...await prettyPrintEncodeInsertChainlinkOracleV3(
+      core,
+      core.tokens.rsEthReversed,
     ),
     ...await prettyPrintEncodeAddIsolationModeMarket(
       core,
@@ -124,11 +132,10 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       core.oracleAggregatorV2,
       weEthPendleSystem.unwrapper,
       weEthPendleSystem.wrapper,
-      pteEthMarketId,
-      // @follow-up @Corey, I'm not sure what to put for these values
+      ptEEthMarketId,
       TargetCollateralization._120,
       TargetLiquidationPenalty._6,
-      parseEther('750'),
+      parseEther(`${3_000}`),
     ),
     ...await prettyPrintEncodeAddIsolationModeMarket(
       core,
@@ -136,11 +143,10 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       core.oracleAggregatorV2,
       ezEthPendleSystem.unwrapper,
       ezEthPendleSystem.wrapper,
-      ptezEthMarketId,
-      // @follow-up @Corey, I'm not sure what to put for these values
+      ptEzEthMarketId,
       TargetCollateralization._120,
       TargetLiquidationPenalty._6,
-      parseEther('1500000'),
+      parseEther(`${3_000}`),
     ),
     ...await prettyPrintEncodeAddIsolationModeMarket(
       core,
@@ -148,11 +154,10 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       core.oracleAggregatorV2,
       rsEthPendleSystem.unwrapper,
       rsEthPendleSystem.wrapper,
-      ptrsEthMarketId,
-      // @follow-up @Corey, I'm not sure what to put for these values
+      ptRsEthMarketId,
       TargetCollateralization._120,
       TargetLiquidationPenalty._6,
-      parseEther('750'),
+      parseEther(`${3_000}`),
     ),
   );
 
@@ -165,38 +170,30 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     },
     invariants: async () => {
       assertHardhatInvariant(
-        await core.dolomiteMargin.getMarketTokenAddress(pteEthMarketId) === weEthPendleSystem.factory.address,
+        await core.dolomiteMargin.getMarketTokenAddress(ptEEthMarketId) === weEthPendleSystem.factory.address,
         'Invalid PT-weETH market ID',
       );
       console.log(
-        '\tPT-weETH (SEP-2024) price:',
-        (await core.dolomiteMargin.getMarketPrice(pteEthMarketId)).value.toString(),
+        '\tPT-eETH (SEP-2024) price:',
+        (await core.dolomiteMargin.getMarketPrice(ptEEthMarketId)).value.toString(),
       );
 
       assertHardhatInvariant(
-        await core.dolomiteMargin.getMarketTokenAddress(ptezEthMarketId) === ezEthPendleSystem.factory.address,
-        'Invalid PT-ezETH market ID',
-      );
-      console.log(
-        '\tezEth price:',
-        (await core.dolomiteMargin.getMarketPrice(core.marketIds.ezEth)).value.toString(),
+        await core.dolomiteMargin.getMarketTokenAddress(ptEzEthMarketId) === ezEthPendleSystem.factory.address,
+        'Invalid PT-ezETH (SEP-2024) market ID',
       );
       console.log(
         '\tPT-ezETH (SEP-2024) price:',
-        (await core.dolomiteMargin.getMarketPrice(ptezEthMarketId)).value.toString(),
+        (await core.dolomiteMargin.getMarketPrice(ptEzEthMarketId)).value.toString(),
       );
 
       assertHardhatInvariant(
-        await core.dolomiteMargin.getMarketTokenAddress(ptrsEthMarketId) === rsEthPendleSystem.factory.address,
+        await core.dolomiteMargin.getMarketTokenAddress(ptRsEthMarketId) === rsEthPendleSystem.factory.address,
         'Invalid PT-rsETH market ID',
       );
       console.log(
-        '\trsEth price:',
-        (await core.dolomiteMargin.getMarketPrice(core.marketIds.rsEth)).value.toString(),
-      );
-      console.log(
         '\tPT-rsETH (SEP-2024) price:',
-        (await core.dolomiteMargin.getMarketPrice(ptrsEthMarketId)).value.toString(),
+        (await core.dolomiteMargin.getMarketPrice(ptRsEthMarketId)).value.toString(),
       );
     },
   };

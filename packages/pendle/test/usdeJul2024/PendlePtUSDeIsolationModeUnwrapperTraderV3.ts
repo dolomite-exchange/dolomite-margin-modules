@@ -68,14 +68,14 @@ describe('PendlePtUSDeJul2024IsolationModeUnwrapperTraderV3', () => {
       network: Network.Mantle,
     });
 
-    ptMarket = core.pendleEcosystem!.usdeJul2024.usdeMarket.connect(core.hhUser1);
-    ptToken = core.pendleEcosystem!.usdeJul2024.ptUSDeToken.connect(core.hhUser1);
+    ptMarket = core.pendleEcosystem.usdeJul2024.usdeMarket.connect(core.hhUser1);
+    ptToken = core.pendleEcosystem.usdeJul2024.ptUSDeToken.connect(core.hhUser1);
     const userVaultImplementation = await createPendlePtIsolationModeTokenVaultV1();
     pendleRegistry = await createPendleRegistry(
       core,
-      core.pendleEcosystem!.usdeJul2024.usdeMarket,
-      core.pendleEcosystem!.usdeJul2024.ptOracle,
-      core.pendleEcosystem!.syUsdeToken,
+      core.pendleEcosystem.usdeJul2024.usdeMarket,
+      core.pendleEcosystem.usdeJul2024.ptOracle,
+      core.pendleEcosystem.syUsdeToken,
     );
     factory = await createPendlePtIsolationModeVaultFactory(
       core,

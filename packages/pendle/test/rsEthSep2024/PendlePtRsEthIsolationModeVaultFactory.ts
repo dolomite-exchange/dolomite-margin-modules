@@ -17,7 +17,7 @@ import {
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
-describe('PendlePtRsEthApr2024IsolationModeVaultFactory', () => {
+describe('PendlePtRsEthSep2024IsolationModeVaultFactory', () => {
   let snapshotId: string;
 
   let core: CoreProtocolArbitrumOne;

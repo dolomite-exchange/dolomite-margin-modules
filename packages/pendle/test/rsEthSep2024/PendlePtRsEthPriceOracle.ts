@@ -16,7 +16,7 @@ import { TokenInfo } from 'packages/oracles/src';
 
 const PT_RS_ETH_PRICE = BigNumber.from('966874469227388740');
 
-describe('PendlePtRsEthApr2024PriceOracle', () => {
+describe('PendlePtRsEthSep2024PriceOracle', () => {
   let snapshotId: string;
 
   let core: CoreProtocolArbitrumOne;
