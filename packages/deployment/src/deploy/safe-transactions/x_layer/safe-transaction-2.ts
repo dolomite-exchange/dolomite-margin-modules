@@ -1,26 +1,8 @@
-import { IERC20Metadata__factory } from '@dolomite-exchange/modules-base/src/types';
-import { getChainlinkPriceAggregatorByToken } from '@dolomite-exchange/modules-base/src/utils/constants';
-import {
-  TargetCollateralization,
-  TargetLiquidationPenalty,
-} from '@dolomite-exchange/modules-base/src/utils/constructors/dolomite';
 import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { parseUsdt, parseWbtc } from '@dolomite-exchange/modules-base/src/utils/math-utils';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
-import {
-  getChainlinkPriceOracleV3ConstructorParams,
-} from '@dolomite-exchange/modules-oracles/src/oracles-constructors';
-import { OkxPriceOracleV3__factory } from '@dolomite-exchange/modules-oracles/src/types';
-import { parseEther } from 'ethers/lib/utils';
-import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
-import { ADDRESS_ZERO, Network, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
-import {
-  deployContractAndSave,
-  EncodedTransaction,
-  prettyPrintEncodeAddMarket,
-  prettyPrintEncodedDataWithTypeSafety,
-} from '../../../utils/deploy-utils';
+import { Network } from 'packages/base/src/utils/no-deps-constants';
+import { EncodedTransaction, prettyPrintEncodedDataWithTypeSafety } from '../../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../utils/dry-run-utils';
 import getScriptName from '../../../utils/get-script-name';
 
@@ -41,7 +23,7 @@ async function main(): Promise<DryRunOutput<Network.XLayer>> {
   transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(
       core,
-      { distributor: core.mineralLiquidityMiningEcosystem.mineralDistributor },
+      { distributor: core.liquidityMiningEcosystem.minerals.mineralDistributor },
       'distributor',
       'ownerSetHandler',
       ['0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe', true],

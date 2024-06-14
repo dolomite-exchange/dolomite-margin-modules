@@ -8,9 +8,7 @@ import getScriptName from '../../../utils/get-script-name';
 
 /**
  * This script encodes the following transactions:
- * - Sets the interest setter on WETH
- * - Sets the price oracle on WETH
- * - Adds the USDC, DAI, LINK, and MATIC markets
+ * - Sets the oracle for USDe, USDT, USDY, ETH, and MNT to Chronicle
  */
 async function main(): Promise<DryRunOutput<Network.Mantle>> {
   const network = await getAndCheckSpecificNetwork(Network.Mantle);
@@ -21,11 +19,11 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
 
   const transactions: EncodedTransaction[] = [];
   transactions.push(
-    ...(await prettyPrintEncodeInsertChronicleOracleV3(core, core.tokens.usde)),
-    ...(await prettyPrintEncodeInsertChronicleOracleV3(core, core.tokens.usdt)),
-    ...(await prettyPrintEncodeInsertChronicleOracleV3(core, core.tokens.usdy)),
-    ...(await prettyPrintEncodeInsertChronicleOracleV3(core, core.tokens.weth)),
-    ...(await prettyPrintEncodeInsertChronicleOracleV3(core, core.tokens.wmnt)),
+    ...await prettyPrintEncodeInsertChronicleOracleV3(core, core.tokens.usde),
+    ...await prettyPrintEncodeInsertChronicleOracleV3(core, core.tokens.usdt),
+    ...await prettyPrintEncodeInsertChronicleOracleV3(core, core.tokens.usdy),
+    ...await prettyPrintEncodeInsertChronicleOracleV3(core, core.tokens.weth),
+    ...await prettyPrintEncodeInsertChronicleOracleV3(core, core.tokens.wmnt),
   );
   return {
     core,
