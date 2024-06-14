@@ -35,7 +35,7 @@ export const NETWORK_ID: Network = Network[typedNetworkIdString as keyof typeof 
 export const NO_EXPIRY = BigNumber.from('0');
 
 export const NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP: Record<Network, number> = {
-  [Network.ArbitrumOne]: 167_300_000,
+  [Network.ArbitrumOne]: 221_467_300,
   [Network.Base]: 10_050_058,
   [Network.Mantle]: 63_400_000,
   [Network.PolygonZkEvm]: 9_860_500,

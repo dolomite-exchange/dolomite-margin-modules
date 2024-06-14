@@ -1,16 +1,20 @@
 import * as deployments from '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
 import {
+  ExternalOARB, ExternalOARB__factory,
+  ExternalVesterImplementationV1,
+  ExternalVesterImplementationV1__factory,
+  MineralToken,
+  MineralToken__factory,
+  OARB,
+  OARB__factory,
+  RewardsDistributor,
+  RewardsDistributor__factory,
+  UpgradeableProxy,
+  UpgradeableProxy__factory,
   VesterImplementationV1,
   VesterImplementationV1__factory,
   VesterImplementationV2,
   VesterImplementationV2__factory,
-  UpgradeableProxy,
-  UpgradeableProxy__factory,
-  OARB__factory,
-  OARB,
-  MineralToken__factory,
-  RewardsDistributor__factory,
-  RewardsDistributor, MineralToken,
 } from '@dolomite-exchange/modules-liquidity-mining/src/types';
 import { Network } from '../../../src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';
@@ -26,6 +30,39 @@ export interface OARBLiquidityMiningEcosystem {
   oArbVesterV2: VesterImplementationV2;
   oArbVesterProxy: UpgradeableProxy;
   oArb: OARB;
+}
+
+export interface GoARBLiquidityMiningEcosystem {
+  goArbVester: ExternalVesterImplementationV1;
+  goArbVesterProxy: UpgradeableProxy;
+  goArb: ExternalOARB;
+}
+
+export interface LiquidityMiningEcosystemArbitrumOne {
+  goARB: GoARBLiquidityMiningEcosystem;
+  minerals: MineralLiquidityMiningEcosystem;
+  oARB: OARBLiquidityMiningEcosystem;
+}
+
+export interface LiquidityMiningEcosystemXLayer {
+  minerals: MineralLiquidityMiningEcosystem;
+}
+
+export async function createGoARBLiquidityMiningEcosystem(
+  network: Network.ArbitrumOne,
+  signer: SignerWithAddressWithSafety,
+): Promise<GoARBLiquidityMiningEcosystem> {
+  return {
+    goArbVester: ExternalVesterImplementationV1__factory.connect(
+      deployments.GravitaExternalVesterProxy[network].address,
+      signer,
+    ),
+    goArbVesterProxy: UpgradeableProxy__factory.connect(
+      deployments.GravitaExternalVesterProxy[network].address,
+      signer,
+    ),
+    goArb: ExternalOARB__factory.connect(deployments.GravitaOArbToken[network].address, signer),
+  };
 }
 
 export async function createMineralLiquidityMiningEcosystem(

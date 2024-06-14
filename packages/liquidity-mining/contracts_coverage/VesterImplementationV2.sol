@@ -179,15 +179,14 @@ contract VesterImplementationV2 is
         uint256 nftId = _nextNftId() + 1;
         _setNextNftId(nftId);
 
-        _createVestingPosition(
-            VestingPosition({
-                creator: msg.sender,
-                id: nftId,
-                startTime: block.timestamp,
-                duration: _duration,
-                amount: _amount
-            })
-        );
+        VestingPosition memory position = VestingPosition({
+            creator: msg.sender,
+            id: nftId,
+            startTime: block.timestamp,
+            duration: _duration,
+            amount: _amount
+        });
+        _createVestingPosition(position);
         _setPromisedTokens(promisedTokens() + _amount);
 
         _mint(msg.sender, nftId);
@@ -197,7 +196,7 @@ contract VesterImplementationV2 is
             /* fromAccount = */ msg.sender,
             /* fromAccountNumber = */ _fromAccountNumber,
             /* toAccount = */ address(this),
-            /* toAccountNumber = */ uint256(keccak256(abi.encodePacked(msg.sender, nftId))),
+            /* toAccountNumber = */ _getAccountNumberByPosition(position),
             /* marketId */ _ARB_MARKET_ID,
             /* amount */ _amount
         );
@@ -268,7 +267,7 @@ contract VesterImplementationV2 is
         _transfer(
             /* fromAccount = */ positionOwner,
             /* fromAccountNumber = */ _fromAccountNumber,
-            /* toAccount = */ DOLOMITE_MARGIN().owner(),
+            /* toAccount = */ DOLOMITE_MARGIN_OWNER(),
             /* toAccountNumber = */ _DEFAULT_ACCOUNT_NUMBER,
             /* marketId */ _WETH_MARKET_ID,
             /* amount */ cost
@@ -304,7 +303,7 @@ contract VesterImplementationV2 is
             _transfer(
                 /* _fromAccount = */ address(this),
                 /* _fromAccountNumber = */ accountNumber,
-                /* _toAccount = */ DOLOMITE_MARGIN().owner(),
+                /* _toAccount = */ DOLOMITE_MARGIN_OWNER(),
                 /* _toAccountNumber = */ _DEFAULT_ACCOUNT_NUMBER,
                 /* _marketId = */ _ARB_MARKET_ID,
                 /* _amountWei */ arbTax
@@ -327,10 +326,10 @@ contract VesterImplementationV2 is
     function emergencyWithdraw(uint256 _nftId) external {
         VestingPosition memory position = _getVestingPositionSlot(_nftId);
         uint256 accountNumber = _getAccountNumberByPosition(position);
-        address owner = ownerOf(_nftId);
-        if (owner == msg.sender) { /* FOR COVERAGE TESTING */ }
+        address positionOwner = ownerOf(_nftId);
+        if (positionOwner == msg.sender) { /* FOR COVERAGE TESTING */ }
         Require.that(
-            owner == msg.sender,
+            positionOwner == msg.sender,
             _FILE,
             "Invalid position owner"
         );
@@ -342,7 +341,7 @@ contract VesterImplementationV2 is
             _transfer(
                 /* _fromAccount = */ address(this),
                 /* _fromAccountNumber = */ accountNumber,
-                /* _toAccount = */ DOLOMITE_MARGIN().owner(),
+                /* _toAccount = */ DOLOMITE_MARGIN_OWNER(),
                 /* _toAccountNumber = */ _DEFAULT_ACCOUNT_NUMBER,
                 /* _marketId = */ _ARB_MARKET_ID,
                 /* _amountWei */ arbTax
@@ -352,7 +351,7 @@ contract VesterImplementationV2 is
         _transfer(
             /* _fromAccount = */ address(this),
             /* _fromAccountNumber = */ accountNumber,
-            /* _toAccount = */ owner,
+            /* _toAccount = */ positionOwner,
             /* _toAccountNumber = */ _DEFAULT_ACCOUNT_NUMBER,
             /* _marketId = */ _ARB_MARKET_ID,
             /* _amountWei */ type(uint256).max
@@ -360,7 +359,7 @@ contract VesterImplementationV2 is
 
         _closePosition(position);
 
-        emit EmergencyWithdraw(owner, _nftId, arbTax);
+        emit EmergencyWithdraw(positionOwner, _nftId, arbTax);
     }
 
     function initiateLevelRequest(address _user) external payable {

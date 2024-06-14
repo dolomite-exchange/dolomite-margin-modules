@@ -1,20 +1,31 @@
 import { BigNumberish } from 'ethers';
 import {
+  ChroniclePriceOracleV3,
   IChainlinkAutomationRegistry,
   IChainlinkPriceOracleV1,
   IChainlinkPriceOracleV3, RedstonePriceOracleV3,
 } from 'packages/oracles/src/types';
-import { IDolomiteAccountValuesReader, IDolomiteMigrator, IERC20 } from '../../../src/types';
+import {
+  DolomiteERC20,
+  DolomiteERC20WithPayable,
+  IDolomiteAccountValuesReader,
+  IDolomiteMigrator,
+  IERC20, RegistryProxy,
+} from '../../../src/types';
 import { Network } from '../../../src/utils/no-deps-constants';
 import { AbraEcosystem } from '../ecosystem-utils/abra';
 import { ArbEcosystem } from '../ecosystem-utils/arb';
 import { CamelotEcosystem } from '../ecosystem-utils/camelot';
 import { GmxEcosystem, GmxEcosystemV2 } from '../ecosystem-utils/gmx';
 import { JonesEcosystem } from '../ecosystem-utils/jones';
-import { MineralLiquidityMiningEcosystem, OARBLiquidityMiningEcosystem } from '../ecosystem-utils/liquidity-mining';
+import {
+  LiquidityMiningEcosystemArbitrumOne,
+  MineralLiquidityMiningEcosystem,
+  OARBLiquidityMiningEcosystem,
+} from '../ecosystem-utils/liquidity-mining';
 import { OdosEcosystem } from '../ecosystem-utils/odos';
 import { ParaswapEcosystem } from '../ecosystem-utils/paraswap';
-import { PendleEcosystem } from '../ecosystem-utils/pendle';
+import { PendleEcosystemArbitrumOne } from '../ecosystem-utils/pendle';
 import { PlutusEcosystem } from '../ecosystem-utils/plutus';
 import { PremiaEcosystem } from '../ecosystem-utils/premia';
 import { UmamiEcosystem } from '../ecosystem-utils/umami';
@@ -47,6 +58,7 @@ interface CoreProtocolTokensArbitrumOne extends CoreProtocolTokens<Network.Arbit
   dYtGlp: IERC20;
   eEth: IERC20;
   ezEth: IERC20;
+  ezEthReversed: IERC20;
   sGlp: IERC20;
   frax: IERC20;
   gmx: IERC20;
@@ -61,16 +73,27 @@ interface CoreProtocolTokensArbitrumOne extends CoreProtocolTokens<Network.Arbit
   premia: IERC20;
   rEth: IERC20;
   rsEth: IERC20;
+  rsEthReversed: IERC20;
   radiant: IERC20;
   pendle: IERC20;
   size: IERC20;
   stEth: IERC20;
   uni: IERC20;
+  usdm: IERC20;
   usdt: IERC20;
   wbtc: IERC20;
   weEth: IERC20;
   wstEth: IERC20;
   xai: IERC20;
+}
+
+interface CoreProtocolArbitrumOneDTokens {
+  usdc: DolomiteERC20;
+  wbtc: DolomiteERC20;
+  weth: DolomiteERC20WithPayable;
+  usdcProxy: RegistryProxy;
+  wbtcProxy: RegistryProxy;
+  wethProxy: RegistryProxy;
 }
 
 interface CoreProtocolMarketIdsArbitrumOne extends CoreProtocolMarketIds {
@@ -109,6 +132,7 @@ interface CoreProtocolMarketIdsArbitrumOne extends CoreProtocolMarketIds {
   nativeUsdc: BigNumberish;
   premia: BigNumberish;
   rEth: BigNumberish;
+  rsEth: BigNumberish;
   radiant: BigNumberish;
   pendle: BigNumberish;
   sGlp: BigNumberish;
@@ -127,18 +151,19 @@ interface CoreProtocolParamsArbitrumOne {
   chainlinkAutomationRegistry: IChainlinkAutomationRegistry;
   chainlinkPriceOracleV1: IChainlinkPriceOracleV1;
   chainlinkPriceOracleV3: IChainlinkPriceOracleV3;
+  chroniclePriceOracleV3: ChroniclePriceOracleV3;
   dolomiteAccountValuesReader: IDolomiteAccountValuesReader;
   dolomiteMigrator: IDolomiteMigrator;
   gammaEcosystem: GammaEcosystem;
+  dTokens: CoreProtocolArbitrumOneDTokens;
   gmxEcosystem: GmxEcosystem;
   gmxEcosystemV2: GmxEcosystemV2;
   jonesEcosystem: JonesEcosystem;
-  mineralLiquidityMiningEcosystem: MineralLiquidityMiningEcosystem;
-  oArbLiquidityMiningEcosystem: OARBLiquidityMiningEcosystem;
+  liquidityMiningEcosystem: LiquidityMiningEcosystemArbitrumOne;
   marketIds: CoreProtocolMarketIdsArbitrumOne;
   odosEcosystem: OdosEcosystem;
   paraswapEcosystem: ParaswapEcosystem;
-  pendleEcosystem: PendleEcosystem;
+  pendleEcosystem: PendleEcosystemArbitrumOne;
   plutusEcosystem: PlutusEcosystem;
   premiaEcosystem: PremiaEcosystem;
   redstonePriceOracleV3: RedstonePriceOracleV3;
@@ -151,18 +176,19 @@ export class CoreProtocolArbitrumOne extends CoreProtocolAbstract<Network.Arbitr
   public readonly arbEcosystem: ArbEcosystem;
   public readonly camelotEcosystem: CamelotEcosystem;
   public readonly chainlinkAutomationRegistry: IChainlinkAutomationRegistry;
+  public readonly chroniclePriceOracleV3: ChroniclePriceOracleV3;
   public readonly dolomiteAccountValuesReader: IDolomiteAccountValuesReader;
   public readonly dolomiteMigrator: IDolomiteMigrator;
   public readonly gammaEcosystem: GammaEcosystem;
+  public readonly dTokens: CoreProtocolArbitrumOneDTokens;
   public readonly gmxEcosystem: GmxEcosystem;
   public readonly gmxEcosystemV2: GmxEcosystemV2;
   public readonly jonesEcosystem: JonesEcosystem;
-  public readonly mineralLiquidityMiningEcosystem: MineralLiquidityMiningEcosystem;
+  public readonly liquidityMiningEcosystem: LiquidityMiningEcosystemArbitrumOne;
   public override readonly marketIds: CoreProtocolMarketIdsArbitrumOne;
-  public readonly oArbLiquidityMiningEcosystem: OARBLiquidityMiningEcosystem;
   public readonly odosEcosystem: OdosEcosystem;
   public readonly paraswapEcosystem: ParaswapEcosystem;
-  public readonly pendleEcosystem: PendleEcosystem;
+  public readonly pendleEcosystem: PendleEcosystemArbitrumOne;
   public readonly plutusEcosystem: PlutusEcosystem;
   public readonly premiaEcosystem: PremiaEcosystem;
   public readonly redstonePriceOracleV3: RedstonePriceOracleV3;
@@ -179,14 +205,15 @@ export class CoreProtocolArbitrumOne extends CoreProtocolAbstract<Network.Arbitr
     this.arbEcosystem = arbParams.arbEcosystem;
     this.camelotEcosystem = arbParams.camelotEcosystem;
     this.chainlinkAutomationRegistry = arbParams.chainlinkAutomationRegistry;
+    this.chroniclePriceOracleV3 = arbParams.chroniclePriceOracleV3;
     this.dolomiteAccountValuesReader = arbParams.dolomiteAccountValuesReader;
     this.dolomiteMigrator = arbParams.dolomiteMigrator;
     this.gammaEcosystem = arbParams.gammaEcosystem;
+    this.dTokens = arbParams.dTokens;
     this.gmxEcosystem = arbParams.gmxEcosystem;
     this.gmxEcosystemV2 = arbParams.gmxEcosystemV2;
     this.jonesEcosystem = arbParams.jonesEcosystem;
-    this.mineralLiquidityMiningEcosystem = arbParams.mineralLiquidityMiningEcosystem;
-    this.oArbLiquidityMiningEcosystem = arbParams.oArbLiquidityMiningEcosystem;
+    this.liquidityMiningEcosystem = arbParams.liquidityMiningEcosystem;
     this.marketIds = arbParams.marketIds;
     this.odosEcosystem = arbParams.odosEcosystem;
     this.paraswapEcosystem = arbParams.paraswapEcosystem;

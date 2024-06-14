@@ -1,11 +1,11 @@
 import { NetworkType } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { CoreProtocolType } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { ethers } from 'ethers';
+import { BigNumberish, ethers } from 'ethers';
 import { SignerWithAddressWithSafety } from '../../base/src/utils/SignerWithAddressWithSafety';
 import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import {
   IERC20,
-  IVesterDiscountCalculator,
+  IVesterDiscountCalculator, IVeToken,
   OARB,
   UpgradeableProxy,
   VesterImplementationV1,
@@ -34,6 +34,29 @@ export function getExternalVesterImplementationConstructorParams<T extends Netwo
   ];
 }
 
+export function getVeExternalVesterImplementationConstructorParams<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  pairToken: IERC20,
+  pairMarketId: BigNumberish,
+  paymentToken: IERC20,
+  paymentMarketId: BigNumberish,
+  rewardToken: IERC20,
+  rewardMarketId: BigNumberish,
+  veToken: IVeToken,
+): any[] {
+  return [
+    core.dolomiteMargin.address,
+    core.dolomiteRegistry.address,
+    pairToken.address,
+    pairMarketId,
+    paymentToken.address,
+    paymentMarketId,
+    rewardToken.address,
+    rewardMarketId,
+    veToken.address,
+  ];
+}
+
 export function getExternalVesterInitializationCalldata(
   discountCalculator: IVesterDiscountCalculator,
   oToken: IERC20,
@@ -48,6 +71,25 @@ export function getExternalVesterInitializationCalldata(
       discountCalculator.address,
       oToken.address,
       owner instanceof SignerWithAddressWithSafety ? owner.address : owner,
+      baseUri,
+      name,
+      symbol,
+    ],
+  );
+}
+
+export function getVeExternalVesterInitializationCalldata(
+  discountCalculator: IVesterDiscountCalculator,
+  oToken: IERC20,
+  baseUri: string,
+  name: string,
+  symbol: string,
+): string {
+  return ethers.utils.defaultAbiCoder.encode(
+    ['address', 'address', 'string', 'string', 'string'],
+    [
+      discountCalculator.address,
+      oToken.address,
       baseUri,
       name,
       symbol,

@@ -55,9 +55,7 @@ contract MinimalERC20 is IERC20, IERC20Metadata {
      * construction.
      */
     constructor(string memory name_, string memory symbol_, uint8 decimals_) {
-        _name = name_;
-        _symbol = symbol_;
-        _decimals = decimals_;
+        _initializeTokenInfo(name_, symbol_, decimals_);
     }
 
     /**
@@ -168,6 +166,12 @@ contract MinimalERC20 is IERC20, IERC20Metadata {
      */
     function allowance(address owner, address spender) public view virtual override returns (uint256) {
         return _allowances[owner][spender];
+    }
+
+    function _initializeTokenInfo(string memory name_, string memory symbol_, uint8 decimals_) internal {
+        _name = name_;
+        _symbol = symbol_;
+        _decimals = decimals_;
     }
 
     /**

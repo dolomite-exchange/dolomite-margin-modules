@@ -96,7 +96,7 @@ describe('RamsesCLPriceOracle', () => {
     it('should fail if invalid input token', async () => {
       await expectThrow(
         graiWeEthOracle.connect(core.hhUser1).getPrice(core.tokens.weth.address),
-        `TWAPPriceOracleV2: Invalid token <${core.tokens.weth.address.toLowerCase()}>`,
+        `RamsesCLPriceOracle: Invalid token <${core.tokens.weth.address.toLowerCase()}>`,
       );
     });
   });

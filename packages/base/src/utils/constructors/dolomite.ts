@@ -1,4 +1,4 @@
-import { BaseContract, BigNumber, BigNumberish } from 'ethers';
+import { BaseContract, BigNumber, BigNumberish, PopulatedTransaction } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { DolomiteMargin } from '../../../test/utils/dolomite';
 import { CoreProtocolConfig, CoreProtocolType } from '../../../test/utils/setup';
@@ -47,10 +47,10 @@ export function getRegistryProxyConstructorParams<T extends NetworkType>(
 
 export function getUpgradeableProxyConstructorParams<T extends NetworkType>(
   implementationAddress: string,
-  implementationCalldata: string,
+  implementationCalldata: PopulatedTransaction,
   dolomiteMargin: DolomiteMargin<T>,
 ): any[] {
-  return [implementationAddress, dolomiteMargin.address, implementationCalldata];
+  return [implementationAddress, dolomiteMargin.address, implementationCalldata.data!];
 }
 
 export function getIsolationModeFreezableLiquidatorProxyConstructorParams<T extends NetworkType>(

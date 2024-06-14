@@ -67,7 +67,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     'UpgradeableProxy',
     getUpgradeableProxyConstructorParams(
       vesterImplementationAddress,
-      vesterImplementationCalldata.data!,
+      vesterImplementationCalldata,
       core.dolomiteMargin
     ),
     'GravitaExternalVesterProxy',

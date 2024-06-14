@@ -87,6 +87,10 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
         _executeWithdrawal(withdrawalInfo);
     }
 
+    function executeWithdrawalCancellation(bytes32 _key) external onlyHandler(msg.sender) nonReentrant {
+        _executeWithdrawalCancellation(_key);
+    }
+
     function callFunction(
         address _sender,
         IDolomiteStructs.AccountInfo calldata _accountInfo,

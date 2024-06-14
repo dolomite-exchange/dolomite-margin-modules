@@ -145,11 +145,12 @@ describe('PendlePtWstEthJun2024IsolationModeUnwrapperTraderV3', () => {
       const liquidAccountId = 0;
 
       const { tokenOutput, extraOrderData } = await encodeSwapExactPtForTokensV3(
-        router,
+        Network.ArbitrumOne,
+        unwrapper.address,
         amountWei,
-        ONE_TENTH_OF_ONE_BIPS_NUMBER,
         ptMarket.address,
         underlyingToken.address,
+        '0.002'
       );
 
       const actions = await unwrapper.createActionsForUnwrapping({

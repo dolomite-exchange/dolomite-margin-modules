@@ -28,6 +28,7 @@ import { BigNumber } from 'ethers';
 import { formatUnits } from 'ethers/lib/utils';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { ADDRESS_ZERO, Network, ONE_ETH_BI, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
+import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import {
   deployContractAndSave,
   EncodedTransaction,
@@ -38,25 +39,25 @@ import getScriptName from '../../../utils/get-script-name';
 import * as Deployments from '../../deployments.json';
 
 function getChainlinkOracleData(
-  tokenToAggregatorInfoMap: Record<string, AggregatorInfo>,
+  tokenToAggregatorInfoMap: Record<string, AggregatorInfo | undefined>,
   signer: SignerWithAddressWithSafety,
 ): [IERC20[], IChainlinkAggregator[], IERC20[], boolean[]] {
   const tokens = Object.keys(tokenToAggregatorInfoMap)
     .map(t => IERC20__factory.connect(t, signer));
   const aggregators = tokens.map(t =>
     IChainlinkAggregator__factory.connect(
-      tokenToAggregatorInfoMap[t.address].aggregatorAddress,
+      tokenToAggregatorInfoMap[t.address]!.aggregatorAddress,
       signer,
     ),
   );
   const tokenPairs = tokens.map(t =>
     IERC20__factory.connect(
-      tokenToAggregatorInfoMap[t.address].tokenPairAddress ?? ADDRESS_ZERO,
+      tokenToAggregatorInfoMap[t.address]!.tokenPairAddress ?? ADDRESS_ZERO,
       signer,
     ),
   );
   const invertPrices = tokens.map(t =>
-    tokenToAggregatorInfoMap[t.address].invert ?? false,
+    tokenToAggregatorInfoMap[t.address]!.invert ?? false,
   );
   return [
     tokens,
@@ -200,11 +201,10 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const redstoneOracleV3Address = await deployContractAndSave(
     'RedstonePriceOracleV3',
     getRedstonePriceOracleV3ConstructorParams(
-      redstoneTokens,
-      redstoneAggregators,
+      core,
+      redstoneTokens.map(t => t.address),
+      redstoneAggregators.map(a => a.address),
       redstoneInvertPrices,
-      core.dolomiteRegistry,
-      core.dolomiteMargin,
     ),
     'RedstonePriceOracleV3',
   );

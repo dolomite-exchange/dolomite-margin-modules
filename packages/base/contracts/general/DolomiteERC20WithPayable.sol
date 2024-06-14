@@ -4,21 +4,17 @@
 pragma solidity ^0.8.9;
 
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
-import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
-import { OnlyDolomiteMarginForUpgradeable } from "../helpers/OnlyDolomiteMarginForUpgradeable.sol";
-import { ReentrancyGuardUpgradeable } from "../helpers/ReentrancyGuardUpgradeable.sol";
-import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
+import { DolomiteERC20 } from "./DolomiteERC20.sol";
 import { IDolomiteERC20WithPayable } from "../interfaces/IDolomiteERC20WithPayable.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 import { InterestIndexLib } from "../lib/InterestIndexLib.sol";
 import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
-import { IWETH } from "../protocol/interfaces/IWETH.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
+import { IWETH } from "../protocol/interfaces/IWETH.sol";
 import { DolomiteMarginMath } from "../protocol/lib/DolomiteMarginMath.sol";
-import { TypesLib } from "../protocol/lib/TypesLib.sol";
 import { Require } from "../protocol/lib/Require.sol";
-import { DolomiteERC20 } from "./DolomiteERC20.sol";
+import { TypesLib } from "../protocol/lib/TypesLib.sol";
 
 
 /**
@@ -58,9 +54,6 @@ contract DolomiteERC20WithPayable is
         _WETH.deposit{ value: msg.value }();
         _WETH.approve(address(DOLOMITE_MARGIN()), msg.value);
 
-        _enableReceiver(msg.sender, /* _isEnabled = */ true);
-        _enableReceiver(tx.origin, /* _isEnabled = */ true);
-
         IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
         IDolomiteStructs.AccountInfo memory account = IDolomiteStructs.AccountInfo({
             owner: msg.sender,
@@ -96,9 +89,6 @@ contract DolomiteERC20WithPayable is
             _FILE,
             "Invalid amount"
         );
-
-        _enableReceiver(msg.sender, /* _isEnabled = */ true);
-        _enableReceiver(tx.origin, /* _isEnabled = */ true);
 
         IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
         IDolomiteStructs.AccountInfo memory account = IDolomiteStructs.AccountInfo({

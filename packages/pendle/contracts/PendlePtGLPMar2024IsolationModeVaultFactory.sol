@@ -57,6 +57,7 @@ contract PendlePtGLPMar2024IsolationModeVaultFactory is
         _ptGlp,
         _borrowPositionProxy,
         _userVaultImplementation,
+        address(IPendleGLPRegistry(_pendlePtGLP2024Registry).dolomiteRegistry()),
         _dolomiteMargin
     ) {
         pendlePtGLP2024Registry = IPendleGLPRegistry(_pendlePtGLP2024Registry);

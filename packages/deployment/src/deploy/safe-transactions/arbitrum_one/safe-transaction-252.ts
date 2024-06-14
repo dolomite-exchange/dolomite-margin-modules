@@ -40,7 +40,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     'UpgradeableProxy',
     getUpgradeableProxyConstructorParams(
       mineralTokenImplementationAddress,
-      initializeCalldata.data!,
+      initializeCalldata,
       core.dolomiteMargin,
     ),
     'MineralTokenProxy',

@@ -27,6 +27,7 @@ describe('DolomiteRegistryImplementation', () => {
       core.constants.slippageToleranceForPauseSentinel,
       core.liquidatorAssetRegistry.address,
       core.eventEmitterRegistryProxy.address,
+      core.dolomiteAccountRegistry.address,
     );
     const registryProxy = await createRegistryProxy(implementation.address, calldata.data!, core);
     registry = DolomiteRegistryImplementation__factory.connect(registryProxy.address, core.governance);
@@ -57,6 +58,7 @@ describe('DolomiteRegistryImplementation', () => {
           core.constants.slippageToleranceForPauseSentinel,
           core.liquidatorAssetRegistry.address,
           core.eventEmitterRegistryProxy.address,
+          core.dolomiteAccountRegistry.address,
         ),
         'Initializable: contract is already initialized',
       );
@@ -311,6 +313,30 @@ describe('DolomiteRegistryImplementation', () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetOracleAggregator(ZERO_ADDRESS),
         'DolomiteRegistryImplementation: Invalid oracleAggregator',
+      );
+    });
+  });
+
+  describe('#ownerSetDolomiteAccountRegistry', () => {
+    it('should work normally', async () => {
+      const result = await registry.connect(core.governance).ownerSetDolomiteAccountRegistry(OTHER_ADDRESS);
+      await expectEvent(registry, result, 'DolomiteAccountRegistrySet', {
+        dolomiteAccountRegistry: OTHER_ADDRESS,
+      });
+      expect(await registry.dolomiteAccountRegistry()).to.equal(OTHER_ADDRESS);
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetDolomiteAccountRegistry(OTHER_ADDRESS),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetDolomiteAccountRegistry(ZERO_ADDRESS),
+        'DolomiteRegistryImplementation: Invalid dolomiteAccountRegistry',
       );
     });
   });
