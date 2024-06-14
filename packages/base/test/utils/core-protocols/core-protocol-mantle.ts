@@ -18,7 +18,6 @@ export interface CoreProtocolTokensMantle extends CoreProtocolTokens<Network.Man
   usdy: IERC20;
   wbtc: IERC20;
   wmnt: IWETH;
-  usde: IERC20;
 }
 
 interface CoreProtocolMarketIdsMantle extends CoreProtocolMarketIds {

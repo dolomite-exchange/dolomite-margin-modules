@@ -642,7 +642,8 @@ async function getFormattedTokenName<T extends NetworkType>(
   const token = IERC20Metadata__factory.connect(tokenAddress, core.hhUser1);
   try {
     mostRecentTokenDecimals = await token.decimals();
-  } catch (e) {}
+  } catch (e) {
+  }
 
   const cachedName = addressToNameCache[tokenAddress.toString().toLowerCase()];
   if (typeof cachedName !== 'undefined') {
@@ -1026,9 +1027,14 @@ export async function prettyPrintEncodeInsertChronicleOracleV3(
     symbol = await IERC20Metadata__factory.connect(token.address, token.signer).symbol();
   }
 
+  const oracleAddress = core.chroniclePriceOracleV3.address;
+  if ((await scribe.bud(oracleAddress)).eq(ZERO_BI)) {
+    console.warn(`ChroniclePriceOracleV3 has not been kissed yet for scribe ${scribe.address}!`);
+  }
+
   if (network.name === 'hardhat') {
     const toller = await impersonate((await scribe.authed())[0], true);
-    const oracle = await impersonate(core.chroniclePriceOracleV3.address, true);
+    const oracle = await impersonate(oracleAddress, true);
     await scribe.connect(toller).kiss(oracle.address);
     console.log(`\tChronicle price for ${symbol}:`, (await scribe.connect(oracle).latestRoundData()).answer.toString());
   }

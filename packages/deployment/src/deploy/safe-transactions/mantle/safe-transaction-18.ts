@@ -32,8 +32,7 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
   let incrementor = 0;
   const numMarkets = await core.dolomiteMargin.getNumMarkets();
 
-  let transactions: EncodedTransaction[] = [];
-  const usdeMarketId = numMarkets.add(incrementor++);
+  const transactions: EncodedTransaction[] = [];
   const ptUSDeMarketId = numMarkets.add(incrementor++);
 
   const usdeSystem = await deployPendlePtSystem(
@@ -51,8 +50,7 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
       core,
       core.tokens.usde,
       core.oracleAggregatorV2,
-      // @follow-up @Corey, I'm not sure what to put for these values
-      core.interestSetters.linearStepFunction14L86UInterestSetter,
+      core.interestSetters.linearStepFunction16L84UInterestSetter,
       TargetCollateralization.Base,
       TargetLiquidationPenalty.Base,
       ZERO_BI,

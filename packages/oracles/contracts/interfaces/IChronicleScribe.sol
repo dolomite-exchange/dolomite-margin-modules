@@ -32,6 +32,11 @@ interface IChronicleScribe {
 
     function authed() external view returns (address[] memory);
 
+    /**
+     * @return 1 if `_who` has been kissed or 0 if it hasn't.
+     */
+    function bud(address _who) external view returns (uint256);
+
     function decimals() external view returns (uint8);
 
     function latestRoundData()
