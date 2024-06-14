@@ -18,7 +18,11 @@ import { ArbEcosystem } from '../ecosystem-utils/arb';
 import { CamelotEcosystem } from '../ecosystem-utils/camelot';
 import { GmxEcosystem, GmxEcosystemV2 } from '../ecosystem-utils/gmx';
 import { JonesEcosystem } from '../ecosystem-utils/jones';
-import { MineralLiquidityMiningEcosystem, OARBLiquidityMiningEcosystem } from '../ecosystem-utils/liquidity-mining';
+import {
+  LiquidityMiningEcosystemArbitrumOne,
+  MineralLiquidityMiningEcosystem,
+  OARBLiquidityMiningEcosystem,
+} from '../ecosystem-utils/liquidity-mining';
 import { OdosEcosystem } from '../ecosystem-utils/odos';
 import { ParaswapEcosystem } from '../ecosystem-utils/paraswap';
 import { PendleEcosystemArbitrumOne } from '../ecosystem-utils/pendle';
@@ -153,8 +157,7 @@ interface CoreProtocolParamsArbitrumOne {
   gmxEcosystem: GmxEcosystem;
   gmxEcosystemV2: GmxEcosystemV2;
   jonesEcosystem: JonesEcosystem;
-  mineralLiquidityMiningEcosystem: MineralLiquidityMiningEcosystem;
-  oArbLiquidityMiningEcosystem: OARBLiquidityMiningEcosystem;
+  liquidityMiningEcosystem: LiquidityMiningEcosystemArbitrumOne;
   marketIds: CoreProtocolMarketIdsArbitrumOne;
   odosEcosystem: OdosEcosystem;
   paraswapEcosystem: ParaswapEcosystem;
@@ -178,9 +181,8 @@ export class CoreProtocolArbitrumOne extends CoreProtocolAbstract<Network.Arbitr
   public readonly gmxEcosystem: GmxEcosystem;
   public readonly gmxEcosystemV2: GmxEcosystemV2;
   public readonly jonesEcosystem: JonesEcosystem;
-  public readonly mineralLiquidityMiningEcosystem: MineralLiquidityMiningEcosystem;
+  public readonly liquidityMiningEcosystem: LiquidityMiningEcosystemArbitrumOne;
   public override readonly marketIds: CoreProtocolMarketIdsArbitrumOne;
-  public readonly oArbLiquidityMiningEcosystem: OARBLiquidityMiningEcosystem;
   public readonly odosEcosystem: OdosEcosystem;
   public readonly paraswapEcosystem: ParaswapEcosystem;
   public readonly pendleEcosystem: PendleEcosystemArbitrumOne;
@@ -207,8 +209,7 @@ export class CoreProtocolArbitrumOne extends CoreProtocolAbstract<Network.Arbitr
     this.gmxEcosystem = arbParams.gmxEcosystem;
     this.gmxEcosystemV2 = arbParams.gmxEcosystemV2;
     this.jonesEcosystem = arbParams.jonesEcosystem;
-    this.mineralLiquidityMiningEcosystem = arbParams.mineralLiquidityMiningEcosystem;
-    this.oArbLiquidityMiningEcosystem = arbParams.oArbLiquidityMiningEcosystem;
+    this.liquidityMiningEcosystem = arbParams.liquidityMiningEcosystem;
     this.marketIds = arbParams.marketIds;
     this.odosEcosystem = arbParams.odosEcosystem;
     this.paraswapEcosystem = arbParams.paraswapEcosystem;

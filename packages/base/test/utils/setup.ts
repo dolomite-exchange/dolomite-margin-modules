@@ -144,6 +144,7 @@ import { createGmxEcosystem, createGmxEcosystemV2 } from './ecosystem-utils/gmx'
 import { createInterestSetters } from './ecosystem-utils/interest-setters';
 import { createJonesEcosystem } from './ecosystem-utils/jones';
 import {
+  createGoARBLiquidityMiningEcosystem,
   createMineralLiquidityMiningEcosystem,
   createOARBLiquidityMiningEcosystem,
 } from './ecosystem-utils/liquidity-mining';
@@ -733,8 +734,11 @@ export async function setupCoreProtocol<T extends NetworkType>(
       gmxEcosystem: await createGmxEcosystem(typedConfig.network, hhUser1),
       gmxEcosystemV2: await createGmxEcosystemV2(typedConfig.network, hhUser1),
       jonesEcosystem: await createJonesEcosystem(typedConfig.network, hhUser1),
-      mineralLiquidityMiningEcosystem: await createMineralLiquidityMiningEcosystem(typedConfig.network, hhUser1),
-      oArbLiquidityMiningEcosystem: await createOARBLiquidityMiningEcosystem(typedConfig.network, hhUser1),
+      liquidityMiningEcosystem: {
+        goARB: await createGoARBLiquidityMiningEcosystem(typedConfig.network, hhUser1),
+        minerals: await createMineralLiquidityMiningEcosystem(typedConfig.network, hhUser1),
+        oARB: await createOARBLiquidityMiningEcosystem(typedConfig.network, hhUser1),
+      },
       odosEcosystem: await createOdosEcosystem(typedConfig.network, hhUser1),
       paraswapEcosystem: await createParaswapEcosystem(typedConfig.network, hhUser1),
       pendleEcosystem: await createPendleEcosystemArbitrumOne(typedConfig.network, hhUser1),
@@ -957,7 +961,9 @@ export async function setupCoreProtocol<T extends NetworkType>(
         wokb: WOKB_MAP[typedConfig.network].marketId,
         stablecoins: [...coreProtocolParams.marketIds.stablecoins, USDT_MAP[typedConfig.network].marketId],
       },
-      mineralLiquidityMiningEcosystem: await createMineralLiquidityMiningEcosystem(typedConfig.network, hhUser1),
+      liquidityMiningEcosystem: {
+        minerals: await createMineralLiquidityMiningEcosystem(typedConfig.network, hhUser1),
+      },
       okxEcosystem: await createOkxEcosystem(typedConfig.network, hhUser1),
       okxPriceOracleV3: OkxPriceOracleV3__factory.connect(
         Deployments.OkxPriceOracleV3[typedConfig.network].address,
