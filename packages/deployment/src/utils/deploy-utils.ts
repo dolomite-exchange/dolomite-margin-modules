@@ -642,8 +642,7 @@ async function getFormattedTokenName<T extends NetworkType>(
   const token = IERC20Metadata__factory.connect(tokenAddress, core.hhUser1);
   try {
     mostRecentTokenDecimals = await token.decimals();
-  } catch (e) {
-  }
+  } catch (e) {}
 
   const cachedName = addressToNameCache[tokenAddress.toString().toLowerCase()];
   if (typeof cachedName !== 'undefined') {
@@ -1135,6 +1134,32 @@ export async function prettyPrintEncodeInsertOkxOracleV3(
       ],
     ),
   ];
+}
+
+export async function prettyPrintEncodeInsertPendlePtOracle<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  pendleSystem: PendlePtSystem,
+  token: IERC20,
+): Promise<EncodedTransaction> {
+  return prettyPrintEncodedDataWithTypeSafety(
+    core,
+    { oracleAggregatorV2: core.oracleAggregatorV2 },
+    'oracleAggregatorV2',
+    'ownerInsertOrUpdateToken',
+    [
+      {
+        token: pendleSystem.factory.address,
+        decimals: await pendleSystem.factory.decimals(),
+        oracleInfos: [
+          {
+            oracle: pendleSystem.oracle.address,
+            tokenPair: token.address,
+            weight: 100,
+          },
+        ],
+      },
+    ],
+  );
 }
 
 export async function prettyPrintEncodeInsertRedstoneOracleV3(
