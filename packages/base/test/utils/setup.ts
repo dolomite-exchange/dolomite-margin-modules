@@ -80,6 +80,7 @@ import {
   DYT_GLP_2024_MAP,
   E_ETH_MAP,
   EZ_ETH_MAP,
+  EZ_ETH_REVERSED_MAP,
   FRAX_MAP,
   GMX_BTC_PLACEHOLDER_MAP,
   GMX_MAP,
@@ -98,12 +99,14 @@ import {
   R_ETH_MAP,
   RDNT_MAP,
   RS_ETH_MAP,
+  RS_ETH_REVERSED_MAP,
   S_GLP_MAP,
   SIZE_MAP,
   SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL,
   ST_ETH_MAP,
   UNI_MAP,
-  USDC_MAP, USDE_MAP,
+  USDC_MAP,
+  USDE_MAP,
   USDM_MAP,
   USDT_MAP,
   USDY_MAP,
@@ -147,7 +150,7 @@ import {
 import { createOdosEcosystem } from './ecosystem-utils/odos';
 import { createOkxEcosystem } from './ecosystem-utils/okx';
 import { createParaswapEcosystem } from './ecosystem-utils/paraswap';
-import { createPendleEcosystem } from './ecosystem-utils/pendle';
+import { createPendleEcosystemArbitrumOne, createPendleEcosystemMantle } from './ecosystem-utils/pendle';
 import { createPlutusEcosystem } from './ecosystem-utils/plutus';
 import { createPremiaEcosystem } from './ecosystem-utils/premia';
 import { createTestEcosystem } from './ecosystem-utils/testers';
@@ -355,6 +358,18 @@ export async function setupRETHBalance(
   const whaleSigner = await impersonate(whaleAddress, true);
   await core.tokens.rEth!.connect(whaleSigner).transfer(signer.address, amount);
   await core.tokens.rEth!.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
+}
+
+export async function setupUSDEBalance(
+  core: { tokens: { usde: IERC20 } },
+  signer: SignerWithAddressWithSafety,
+  amount: BigNumberish,
+  spender: { address: string },
+) {
+  const whaleAddress = '0x5B9e411c9E50164133DE07FE1cAC05A094000105'; // Pendle SY Token
+  const whaleSigner = await impersonate(whaleAddress, true);
+  await core.tokens.usde!.connect(whaleSigner).transfer(signer.address, amount);
+  await core.tokens.usde!.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
 export async function setupWeEthBalance(
@@ -722,7 +737,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
       oArbLiquidityMiningEcosystem: await createOARBLiquidityMiningEcosystem(typedConfig.network, hhUser1),
       odosEcosystem: await createOdosEcosystem(typedConfig.network, hhUser1),
       paraswapEcosystem: await createParaswapEcosystem(typedConfig.network, hhUser1),
-      pendleEcosystem: await createPendleEcosystem(typedConfig.network, hhUser1),
+      pendleEcosystem: await createPendleEcosystemArbitrumOne(typedConfig.network, hhUser1),
       plutusEcosystem: await createPlutusEcosystem(typedConfig.network, hhUser1),
       premiaEcosystem: await createPremiaEcosystem(typedConfig.network, hhUser1),
       redstonePriceOracleV3: RedstonePriceOracleV3__factory.connect(
@@ -767,6 +782,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
         nativeUsdc: NATIVE_USDC_MAP[typedConfig.network].marketId,
         premia: PREMIA_MAP[typedConfig.network].marketId,
         rEth: R_ETH_MAP[typedConfig.network].marketId,
+        rsEth: RS_ETH_MAP[typedConfig.network].marketId,
         radiant: RDNT_MAP[typedConfig.network].marketId,
         pendle: PENDLE_MAP[typedConfig.network].marketId,
         sGlp: S_GLP_MAP[typedConfig.network].marketId,
@@ -807,6 +823,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
         dYtGlp: IERC20__factory.connect(DYT_GLP_2024_MAP[typedConfig.network].address, hhUser1),
         eEth: IERC20__factory.connect(E_ETH_MAP[typedConfig.network].address, hhUser1),
         ezEth: IERC20__factory.connect(EZ_ETH_MAP[typedConfig.network].address, hhUser1),
+        ezEthReversed: IERC20__factory.connect(EZ_ETH_REVERSED_MAP[typedConfig.network].address, hhUser1),
         frax: IERC20__factory.connect(FRAX_MAP[typedConfig.network].address, hhUser1),
         gmx: IERC20__factory.connect(GMX_MAP[typedConfig.network].address, hhUser1),
         gmxBtc: IERC20__factory.connect(GMX_BTC_PLACEHOLDER_MAP[typedConfig.network].address, hhUser1),
@@ -821,6 +838,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
         pendle: IERC20__factory.connect(PENDLE_MAP[typedConfig.network].address, hhUser1),
         rEth: IERC20__factory.connect(R_ETH_MAP[typedConfig.network].address, hhUser1),
         rsEth: IERC20__factory.connect(RS_ETH_MAP[typedConfig.network].address, hhUser1),
+        rsEthReversed: IERC20__factory.connect(RS_ETH_REVERSED_MAP[typedConfig.network].address, hhUser1),
         radiant: IERC20__factory.connect(RDNT_MAP[typedConfig.network].address, hhUser1),
         sGlp: IERC20__factory.connect(S_GLP_MAP[typedConfig.network].address, hhUser1),
         size: IERC20__factory.connect(SIZE_MAP[typedConfig.network].address, hhUser1),
@@ -871,6 +889,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
         usdy: USDY_MAP[typedConfig.network].marketId,
         wbtc: WBTC_MAP[typedConfig.network].marketId,
         wmnt: WMNT_MAP[typedConfig.network].marketId,
+        usde: USDE_MAP[typedConfig.network].marketId,
         stablecoins: [
           ...coreProtocolParams.marketIds.stablecoins,
           USDT_MAP[typedConfig.network].marketId,
@@ -878,6 +897,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
         ],
       },
       odosEcosystem: await createOdosEcosystem(typedConfig.network, hhUser1),
+      pendleEcosystem: await createPendleEcosystemMantle(typedConfig.network, hhUser1),
       tokens: {
         ...coreProtocolParams.tokens,
         meth: IERC20__factory.connect(METH_MAP[typedConfig.network].address, hhUser1),

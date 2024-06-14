@@ -22,18 +22,18 @@ pragma solidity ^0.8.9;
 
 import { IsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { IPendleGLPRegistry } from "./interfaces/IPendleGLPRegistry.sol";
-import { IPendlePtGLP2024IsolationModeVaultFactory } from "./interfaces/IPendlePtGLP2024IsolationModeVaultFactory.sol";
+import { IPendlePtGLPMar2024IsolationModeVaultFactory } from "./interfaces/IPendlePtGLPMar2024IsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 
 
 /**
- * @title   PendlePtGLPMar2024IsolationModeVaultFactory.sol
+ * @title   PendlePtGLPMar2024IsolationModeVaultFactory
  * @author  Dolomite
  *
  * @notice  The wrapper around the ptGLP token that is used to create user vaults and manage the entry points that a
  *          user can use to interact with DolomiteMargin from the vault.
  */
-contract PendlePtGLP2024IsolationModeVaultFactory is
-    IPendlePtGLP2024IsolationModeVaultFactory,
+contract PendlePtGLPMar2024IsolationModeVaultFactory is
+    IPendlePtGLPMar2024IsolationModeVaultFactory,
     IsolationModeVaultFactory
 {
     // ============ Constants ============

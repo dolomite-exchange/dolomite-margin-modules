@@ -49,4 +49,6 @@ interface IPendleSyToken is IERC20 {
     function paused() external view returns (bool);
 
     function owner() external view returns (address);
+
+    function getTokensIn() external view returns (address[] memory);
 }

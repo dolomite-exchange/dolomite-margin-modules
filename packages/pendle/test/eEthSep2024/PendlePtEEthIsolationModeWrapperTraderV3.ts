@@ -1,23 +1,20 @@
 import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
-import { BYTES_EMPTY, Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { BYTES_EMPTY, Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import {
   encodeExternalSellActionDataWithNoData,
+  getRealLatestBlockNumber,
   impersonate,
   revertToSnapshotAndCapture,
   snapshot,
 } from '@dolomite-exchange/modules-base/test/utils';
-import { expectThrow, expectWalletBalance } from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { expectProtocolBalance, expectThrow, expectWalletBalance } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { setupNewGenericTraderProxy } from '@dolomite-exchange/modules-base/test/utils/dolomite';
 import {
-  getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupTestMarket,
   setupUserVaultProxy,
-  setupWstETHBalance,
+  setupWeEthBalance,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
-import { BaseRouter, Router } from '@pendle/sdk-v2';
-import { CHAIN_ID_MAPPING } from '@pendle/sdk-v2/dist/common/ChainId';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
@@ -31,7 +28,7 @@ import {
   PendlePtIsolationModeUnwrapperTraderV3,
   PendlePtIsolationModeVaultFactory,
   PendlePtIsolationModeWrapperTraderV3,
-  PendlePtPriceOracle,
+  PendlePtPriceOracleV2,
   PendleRegistry,
 } from '../../src/types';
 import {
@@ -39,20 +36,29 @@ import {
   createPendlePtIsolationModeUnwrapperTraderV3,
   createPendlePtIsolationModeVaultFactory,
   createPendlePtIsolationModeWrapperTraderV3,
-  createPendlePtPriceOracle,
+  createPendlePtPriceOracleV2,
   createPendleRegistry,
 } from '../pendle-ecosystem-utils';
-import { encodeSwapExactTokensForPtV3, ONE_TENTH_OF_ONE_BIPS_NUMBER } from '../pendle-utils';
+import { encodeSwapExactTokensForPtV3 } from '../pendle-utils';
+import { TokenInfo } from 'packages/oracles/src';
+import { depositIntoDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
+import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin';
+import {
+  GenericEventEmissionType,
+  GenericTraderParam,
+  GenericTraderType,
+} from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
 
 const defaultAccountNumber = '0';
-const amountWei = BigNumber.from('200000000000000000000'); // 200 units of underlying
+const borrowAccountNumber = '123';
+const amountWei = parseEther('20'); // 20
 const otherAmountWei = BigNumber.from('10000000'); // $10
-const wstEthAmount = parseEther('500');
-const usableAmount = parseEther('10');
+const usableAmount = parseEther('1');
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
-describe('PendlePtWstEthJun2024IsolationModeWrapperTraderV3', () => {
+// May have to adjust chainId in hardhat config to match arbitrum on hardhat network. Signatures will fail otherwise
+describe('PendlePtEEthSep2024IsolationModeWrapperTraderV3', () => {
   let snapshotId: string;
 
   let core: CoreProtocolArbitrumOne;
@@ -60,32 +66,31 @@ describe('PendlePtWstEthJun2024IsolationModeWrapperTraderV3', () => {
   let ptMarket: IPendlePtMarket;
   let marketId: BigNumber;
   let underlyingToken: IERC20;
-  let underlyingMarketId: BigNumberish;
   let pendleRegistry: PendleRegistry;
   let unwrapper: PendlePtIsolationModeUnwrapperTraderV3;
   let wrapper: PendlePtIsolationModeWrapperTraderV3;
   let factory: PendlePtIsolationModeVaultFactory;
   let vault: PendlePtIsolationModeTokenVaultV1;
-  let priceOracle: PendlePtPriceOracle;
+  let priceOracle: PendlePtPriceOracleV2;
   let defaultAccount: AccountInfoStruct;
-  let router: BaseRouter;
 
   before(async () => {
-    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
+    core = await setupCoreProtocol({
+      blockNumber: await getRealLatestBlockNumber(true, Network.ArbitrumOne),
+      network: Network.ArbitrumOne,
+    });
 
-    ptMarket = core.pendleEcosystem!.wstEthJun2024.wstEthMarket;
-    ptToken = core.pendleEcosystem!.wstEthJun2024.ptWstEthToken.connect(core.hhUser1);
-    underlyingToken = core.tokens.wstEth!;
-    underlyingMarketId = core.marketIds.wstEth!;
+    ptMarket = core.pendleEcosystem!.weEthSep2024.weEthMarket.connect(core.hhUser1);
+    ptToken = core.pendleEcosystem!.weEthSep2024.ptWeEthToken.connect(core.hhUser1);
+    underlyingToken = core.tokens.weEth!;
 
     const userVaultImplementation = await createPendlePtIsolationModeTokenVaultV1();
     pendleRegistry = await createPendleRegistry(
       core,
-      ptMarket,
-      core.pendleEcosystem!.wstEthJun2024.ptOracle,
-      core.pendleEcosystem!.syWstEthToken,
+      core.pendleEcosystem!.weEthSep2024.weEthMarket,
+      core.pendleEcosystem!.weEthSep2024.ptOracle,
+      core.pendleEcosystem!.syWeEthToken,
     );
-    await pendleRegistry.connect(core.governance).ownerSetPendleRouter(core.pendleEcosystem.pendleRouterV3.address);
     factory = await createPendlePtIsolationModeVaultFactory(
       core,
       pendleRegistry,
@@ -95,10 +100,20 @@ describe('PendlePtWstEthJun2024IsolationModeWrapperTraderV3', () => {
 
     unwrapper = await createPendlePtIsolationModeUnwrapperTraderV3(core, pendleRegistry, underlyingToken, factory);
     wrapper = await createPendlePtIsolationModeWrapperTraderV3(core, pendleRegistry, underlyingToken, factory);
-    priceOracle = await createPendlePtPriceOracle(core, factory, pendleRegistry, underlyingToken);
+    priceOracle = await createPendlePtPriceOracleV2(core, factory, pendleRegistry);
+
+    const tokenInfo: TokenInfo = {
+      oracleInfos: [
+        { oracle: priceOracle.address, tokenPair: underlyingToken.address, weight: 100 }
+      ],
+      decimals: 18,
+      token: factory.address
+    };
+    await core.oracleAggregatorV2.ownerInsertOrUpdateToken(tokenInfo);
 
     marketId = await core.dolomiteMargin.getNumMarkets();
-    await setupTestMarket(core, factory, true, priceOracle);
+    await core.testEcosystem!.testPriceOracle.setPrice(factory.address, ONE_ETH_BI);
+    await setupTestMarket(core, factory, true, core.oracleAggregatorV2);
 
     await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
@@ -110,27 +125,18 @@ describe('PendlePtWstEthJun2024IsolationModeWrapperTraderV3', () => {
       PendlePtIsolationModeTokenVaultV1__factory,
       core.hhUser1,
     );
-    defaultAccount = { owner: vault.address, number: defaultAccountNumber };
+    defaultAccount = { owner: vault.address, number: borrowAccountNumber };
 
-    router = Router.getRouter({
-      chainId: CHAIN_ID_MAPPING.ARBITRUM,
-      provider: core.hhUser1.provider,
-      signer: core.hhUser1,
-    });
-
-    await setupWstETHBalance(core, core.hhUser1, wstEthAmount, core.pendleEcosystem!.pendleRouter);
-
-    await router.swapExactTokenForPt(
-      ptMarket.address as any,
-      underlyingToken.address as any,
-      wstEthAmount.div(2),
-      ONE_TENTH_OF_ONE_BIPS_NUMBER,
+    await setupWeEthBalance(core, core.hhUser1, amountWei, core.dolomiteMargin);
+    await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.weEth, amountWei);
+    await vault.transferIntoPositionWithOtherToken(
+      defaultAccountNumber,
+      borrowAccountNumber,
+      core.marketIds.weEth,
+      amountWei,
+      BalanceCheckFlag.Both
     );
-    await ptToken.connect(core.hhUser1).approve(vault.address, amountWei);
-    await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
-
-    expect(await ptToken.connect(core.hhUser1).balanceOf(vault.address)).to.eq(amountWei);
-    expect((await core.dolomiteMargin.getAccountWei(defaultAccount, marketId)).value).to.eq(amountWei);
+    await expectProtocolBalance(core, vault, borrowAccountNumber, core.marketIds.weEth, amountWei);
 
     await setupNewGenericTraderProxy(core, marketId);
 
@@ -143,9 +149,6 @@ describe('PendlePtWstEthJun2024IsolationModeWrapperTraderV3', () => {
 
   describe('Call and Exchange for non-liquidation sale', () => {
     it('should work when called with the normal conditions', async () => {
-      const solidAccountId = 0;
-      const liquidAccountId = 0;
-
       const { extraOrderData, approxParams } = await encodeSwapExactTokensForPtV3(
         Network.ArbitrumOne,
         wrapper.address,
@@ -154,37 +157,35 @@ describe('PendlePtWstEthJun2024IsolationModeWrapperTraderV3', () => {
         usableAmount,
         '0.002'
       );
-
-      const actions = await wrapper.createActionsForWrapping({
-        primaryAccountId: solidAccountId,
-        otherAccountId: liquidAccountId,
-        primaryAccountOwner: ZERO_ADDRESS,
-        primaryAccountNumber: defaultAccountNumber,
-        otherAccountOwner: ZERO_ADDRESS,
-        otherAccountNumber: defaultAccountNumber,
-        outputMarket: marketId,
-        inputMarket: underlyingMarketId,
-        minOutputAmount: ZERO_BI,
-        inputAmount: usableAmount,
-        orderData: extraOrderData,
-      });
-
-      await underlyingToken.connect(core.hhUser1).transfer(core.dolomiteMargin.address, parseEther('10'));
-      const genericTrader = await impersonate(core.genericTraderProxy!, true);
-      await core.dolomiteMargin.connect(genericTrader).operate(
-        [defaultAccount],
-        actions,
+      const traderParam: GenericTraderParam = {
+        trader: wrapper.address,
+        traderType: GenericTraderType.IsolationModeWrapper,
+        tradeData: extraOrderData,
+        makerAccountIndex: 0
+      };
+      await vault.swapExactInputForOutput(
+        borrowAccountNumber,
+        [core.marketIds.weEth, marketId],
+        usableAmount,
+        ONE_BI,
+        [traderParam],
+        [],
+        {
+          deadline: '123123123123123',
+          balanceCheckFlag: BalanceCheckFlag.None,
+          eventType: GenericEventEmissionType.None
+        }
       );
 
-      const expectedTotalBalance = amountWei.add(approxParams.guessOffchain);
+      const expectedTotalBalance = approxParams.guessOffchain;
       const underlyingBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, marketId);
       expect(underlyingBalanceWei.value).to.gte(expectedTotalBalance);
       expect(underlyingBalanceWei.sign).to.eq(true);
       expect(await vault.underlyingBalanceOf()).to.gte(expectedTotalBalance);
 
-      const otherBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, underlyingMarketId);
-      expect(otherBalanceWei.sign).to.eq(false);
-      expect(otherBalanceWei.value).to.eq(usableAmount);
+      const otherBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, core.marketIds.weEth);
+      expect(otherBalanceWei.sign).to.eq(true);
+      expect(otherBalanceWei.value).to.eq(amountWei.sub(usableAmount));
 
       await expectWalletBalance(wrapper.address, ptToken, ZERO_BI);
     });

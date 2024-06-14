@@ -1,21 +1,11 @@
 import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import {
-  getRealLatestBlockNumber,
-  impersonate,
-  revertToSnapshotAndCapture,
-  snapshot,
-} from '@dolomite-exchange/modules-base/test/utils';
+import { impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import {
   setupCoreProtocol,
   setupTestMarket,
   setupUserVaultProxy,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { getTWAPPriceOracleV2ConstructorParams } from '@dolomite-exchange/modules-oracles/src/oracles-constructors';
 import { expect } from 'chai';
-import { RS_ETH_CAMELOT_POOL_MAP } from 'packages/base/src/utils/constants';
-import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
-import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
-import { IAlgebraV3Pool__factory, TWAPPriceOracleV2, TWAPPriceOracleV2__factory } from 'packages/oracles/src/types';
 import {
   IPendlePtToken,
   PendlePtIsolationModeTokenVaultV1,
@@ -23,7 +13,7 @@ import {
   PendlePtIsolationModeUnwrapperTraderV2,
   PendlePtIsolationModeVaultFactory,
   PendlePtIsolationModeWrapperTraderV2,
-  PendlePtPriceOracle,
+  PendlePtPriceOracleV2,
   PendleRegistry,
 } from '../../src/types';
 import {
@@ -31,49 +21,36 @@ import {
   createPendlePtIsolationModeUnwrapperTraderV2,
   createPendlePtIsolationModeVaultFactory,
   createPendlePtIsolationModeWrapperTraderV2,
-  createPendlePtRsEthPriceOracle,
+  createPendlePtPriceOracleV2,
   createPendleRegistry,
 } from '../pendle-ecosystem-utils';
+import { CoreProtocolMantle } from 'packages/base/test/utils/core-protocols/core-protocol-mantle';
 
-describe('PendlePtRsEthApr2024IsolationModeTokenVaultV1', () => {
+describe('PendlePtUSDeJul2024IsolationModeTokenVaultV1', () => {
   let snapshotId: string;
 
-  let core: CoreProtocolArbitrumOne;
+  let core: CoreProtocolMantle;
   let underlyingPtToken: IPendlePtToken;
   let pendleRegistry: PendleRegistry;
   let unwrapper: PendlePtIsolationModeUnwrapperTraderV2;
   let wrapper: PendlePtIsolationModeWrapperTraderV2;
-  let priceOracle: PendlePtPriceOracle;
+  let priceOracle: PendlePtPriceOracleV2;
   let factory: PendlePtIsolationModeVaultFactory;
   let vault: PendlePtIsolationModeTokenVaultV1;
 
   before(async () => {
     core = await setupCoreProtocol({
-      blockNumber: await getRealLatestBlockNumber(true, Network.ArbitrumOne),
-      network: Network.ArbitrumOne,
+      blockNumber: 64_650_000,
+      network: Network.Mantle,
     });
 
-    const underlyingToken = core.tokens.rsEth!;
-    const tokenPair = IAlgebraV3Pool__factory.connect(
-      RS_ETH_CAMELOT_POOL_MAP[Network.ArbitrumOne]!,
-      core.hhUser1,
-    );
-    const twapPriceOracle = await createContractWithAbi<TWAPPriceOracleV2>(
-      TWAPPriceOracleV2__factory.abi,
-      TWAPPriceOracleV2__factory.bytecode,
-      getTWAPPriceOracleV2ConstructorParams(core, core.tokens.rsEth, tokenPair),
-    );
-    const rsEthMarketId = await core.dolomiteMargin.getNumMarkets();
-    await setupTestMarket(core, core.tokens.rsEth, false, twapPriceOracle);
-    await core.dolomiteMargin.connect(core.governance).ownerSetPriceOracle(rsEthMarketId, twapPriceOracle.address);
-    underlyingPtToken = core.pendleEcosystem!.rsEthApr2024.ptRsEthToken.connect(core.hhUser1);
-
+    underlyingPtToken = core.pendleEcosystem.usdeJul2024.ptUSDeToken.connect(core.hhUser1);
     const userVaultImplementation = await createPendlePtIsolationModeTokenVaultV1();
     pendleRegistry = await createPendleRegistry(
       core,
-      core.pendleEcosystem!.rsEthApr2024.rsEthMarket,
-      core.pendleEcosystem!.rsEthApr2024.ptOracle,
-      core.pendleEcosystem!.syRsEthToken,
+      core.pendleEcosystem.usdeJul2024.usdeMarket,
+      core.pendleEcosystem.usdeJul2024.ptOracle,
+      core.pendleEcosystem.syUsdeToken,
     );
     factory = await createPendlePtIsolationModeVaultFactory(
       core,
@@ -81,10 +58,10 @@ describe('PendlePtRsEthApr2024IsolationModeTokenVaultV1', () => {
       underlyingPtToken,
       userVaultImplementation,
     );
-
+    const underlyingToken = core.tokens.usde!;
     unwrapper = await createPendlePtIsolationModeUnwrapperTraderV2(core, pendleRegistry, underlyingToken, factory);
     wrapper = await createPendlePtIsolationModeWrapperTraderV2(core, pendleRegistry, underlyingToken, factory);
-    priceOracle = await createPendlePtRsEthPriceOracle(core, factory, pendleRegistry);
+    priceOracle = await createPendlePtPriceOracleV2(core, factory, pendleRegistry);
 
     await setupTestMarket(core, factory, true, priceOracle);
 
@@ -117,11 +94,11 @@ describe('PendlePtRsEthApr2024IsolationModeTokenVaultV1', () => {
       expect(await vault.isExternalRedemptionPaused()).to.be.false;
     });
 
-    it('should work when owner pauses syRsEth', async () => {
+    it('should work when owner pauses syWstEth', async () => {
       expect(await vault.isExternalRedemptionPaused()).to.be.false;
-      const syRsEth = core.pendleEcosystem!.syRsEthToken;
-      const owner = await impersonate(await syRsEth.owner(), true);
-      await syRsEth.connect(owner).pause();
+      const syWstEth = core.pendleEcosystem.syUsdeToken;
+      const owner = await impersonate(await syWstEth.owner(), true);
+      await syWstEth.connect(owner).pause();
       expect(await vault.isExternalRedemptionPaused()).to.be.true;
     });
   });

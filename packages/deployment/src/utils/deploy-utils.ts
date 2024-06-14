@@ -35,6 +35,7 @@ import {
   TEN_BI,
   ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { impersonate } from '@dolomite-exchange/modules-base/test/utils';
 import { CoreProtocolType } from '@dolomite-exchange/modules-base/test/utils/setup';
 import {
   CoreProtocolWithChainlinkOld,
@@ -78,7 +79,6 @@ import hardhat, { artifacts, ethers, network } from 'hardhat';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { CoreProtocolXLayer } from 'packages/base/test/utils/core-protocols/core-protocol-x-layer';
 import path, { join } from 'path';
-import { impersonate } from '@dolomite-exchange/modules-base/test/utils';
 
 type ChainId = string;
 
@@ -109,7 +109,7 @@ export async function verifyContract(
   libraries: Libraries,
   attempts: number = 0,
 ): Promise<void> {
-  const customChain = hardhat.config.etherscan.customChains.filter(c => c.network === hardhat.network.name)[0];
+  const customChain = hardhat.config.etherscan.customChains.filter((c) => c.network === hardhat.network.name)[0];
   const instance = new Etherscan(
     (hardhat.config.etherscan.apiKey as Record<string, string>)[customChain.network],
     customChain.urls.apiURL,
@@ -124,6 +124,7 @@ export async function verifyContract(
     console.log('\tVerifying contract...');
     const artifact = await artifacts.readArtifact(contractName);
     const factory = await ethers.getContractFactoryFromArtifact(artifact, { libraries });
+
     const buildInfo = artifacts.getBuildInfoSync(contractName);
 
     // Retrieve and override only the needed sources
@@ -200,29 +201,39 @@ export async function initializeFreshArtifactFromWorkspace(artifactName: string)
   const deploymentsArtifactsPath = join(__dirname, packagesPath, 'deployment', 'artifacts');
   fsExtra.removeSync(deploymentsArtifactsPath);
 
-  const workspaces = fs.readdirSync(join(__dirname, packagesPath), { withFileTypes: true })
-    .filter(d => d.isDirectory() && !d.name.includes('deployment'))
-    .map(d => join(packagesPath, d.name));
+  const workspaces = fs
+    .readdirSync(join(__dirname, packagesPath), { withFileTypes: true })
+    .filter((d) => d.isDirectory() && !d.name.includes('deployment'))
+    .map((d) => join(packagesPath, d.name));
 
   const contractsFolder = process.env.COVERAGE === 'true' ? 'contracts_coverage' : 'contracts';
   for (const workspace of workspaces) {
     const parentPath = join(__dirname, workspace, `artifacts/${contractsFolder}`);
     const artifactPath = findArtifactPath(parentPath, artifactName);
     if (artifactPath) {
-      await fsExtra.copy(
-        join(__dirname, workspace, 'artifacts'),
-        deploymentsArtifactsPath,
-        { overwrite: true },
-      );
+      await fsExtra.copy(join(__dirname, workspace, 'artifacts'), deploymentsArtifactsPath, { overwrite: true });
 
       const artifact = JSON.parse(readFileSync(artifactPath, 'utf8'));
-      const pathToBuildInfo = join(__dirname, workspace, 'artifacts', 'build-info');
+      const pathToBuildInfo = getBuildInfoFromDebugFileSync(getDebugFilePath(artifactPath));
       await artifacts.saveArtifactAndDebugFile(artifact, pathToBuildInfo);
       return;
     }
   }
 
   return Promise.reject(new Error(`Could not find ${artifactName}`));
+}
+
+function getDebugFilePath(artifactPath: string): string {
+  return artifactPath.replace(/\.json$/, '.dbg.json');
+}
+
+function getBuildInfoFromDebugFileSync(debugFilePath: string): string | undefined {
+  if (fsExtra.pathExistsSync(debugFilePath)) {
+    const { buildInfo } = fsExtra.readJsonSync(debugFilePath);
+    return path.resolve(path.dirname(debugFilePath), buildInfo);
+  }
+
+  return undefined;
 }
 
 /**
@@ -254,15 +265,18 @@ export function getOldDeploymentVersionNamesByDeploymentKey(nameWithoutVersionPo
     throw new Error('Name cannot include version declaration');
   }
 
-  const [versions, maxVersion] = Object.keys(readDeploymentFile()).reduce(([versions, max], curr) => {
-    if (curr.includes(nameWithoutVersionPostfix)) {
-      // Add 1 to the length for the `V`
-      const currentVersion = parseInt(curr.substring(nameWithoutVersionPostfix.length + 1), 10);
-      return [versions.concat(currentVersion), currentVersion > max ? currentVersion : max];
-    }
+  const [versions, maxVersion] = Object.keys(readDeploymentFile()).reduce(
+    ([versions, max], curr) => {
+      if (curr.includes(nameWithoutVersionPostfix)) {
+        // Add 1 to the length for the `V`
+        const currentVersion = parseInt(curr.substring(nameWithoutVersionPostfix.length + 1), 10);
+        return [versions.concat(currentVersion), currentVersion > max ? currentVersion : max];
+      }
 
-    return [versions, max];
-  }, [[] as number[], defaultVersion]);
+      return [versions, max];
+    },
+    [[] as number[], defaultVersion],
+  );
 
   return versions.reduce((acc, version) => {
     if (version !== maxVersion) {
@@ -302,47 +316,31 @@ export async function deployContractAndSave(
   const usedContractName = contractRename ?? contractName;
   if (file[usedContractName]?.[chainId.toString()]) {
     const contract = file[usedContractName][chainId.toString()];
-    console.log(`\tContract ${usedContractName} has already been deployed to chainId ${chainId} (${contract.address}). Skipping...`);
+    console.log(
+      `\tContract ${usedContractName} has already been deployed to chainId ${chainId} (${contract.address}). Skipping...`,
+    );
     if (!contract.isVerified) {
       await prettyPrintAndVerifyContract(file, chainId, contractName, usedContractName, args, libraries ?? {});
     }
     console.log('');
+
+    await verifyFactoryChildProxyContractIfNecessary(
+      file,
+      file[usedContractName]?.[chainId.toString()]?.transaction,
+      usedContractName,
+      chainId,
+    );
+
     return contract.address;
   }
 
   console.log(`\tDeploying ${usedContractName} to network ${network.name}...`);
 
-  const blockNumber = await ethers.provider.getBlockNumber();
   let contract: BaseContract;
   try {
     contract = libraries
       ? await createContractWithLibrary(contractName, libraries, args)
       : await createContractWithName(contractName, args);
-
-    if (network.name !== 'hardhat') {
-      const receipt = await ethers.provider.getTransactionReceipt(contract.deployTransaction.hash);
-      const vaultCreatedTopic0 = '0x5d9c31ffa0fecffd7cf379989a3c7af252f0335e0d2a1320b55245912c781f53';
-      const event = receipt.logs.find(l => l.topics[0] === vaultCreatedTopic0);
-      if (event) {
-        const vaultAddress = ethers.utils.defaultAbiCoder.decode(['address'], event.data)[0];
-        const vaultRename = `${usedContractName}DeadProxy`;
-        file[vaultRename] = {
-          ...file[vaultRename],
-          [chainId]: {
-            address: vaultAddress,
-            transaction: contract.deployTransaction.hash,
-            isVerified: false,
-          },
-        };
-        writeDeploymentFile(file);
-
-        return deployContractAndSave(
-          'IsolationModeUpgradeableProxy',
-          [],
-          vaultRename,
-        );
-      }
-    }
   } catch (e) {
     console.error(`\tCould not deploy at attempt ${attempts + 1} due for ${contractName} to error:`, e);
     return deployContractAndSave(contractName, args, contractRename, libraries, attempts + 1);
@@ -364,15 +362,57 @@ export async function deployContractAndSave(
   await prettyPrintAndVerifyContract(file, chainId, contractName, usedContractName, args, libraries ?? {});
   console.log('');
 
+  await verifyFactoryChildProxyContractIfNecessary(
+    file,
+    file[usedContractName]?.[chainId.toString()]?.transaction,
+    usedContractName,
+    chainId,
+  );
+
   return contract.address;
+}
+
+async function verifyFactoryChildProxyContractIfNecessary(
+  file: Record<string, Record<ChainId, any>>,
+  deploymentTransactionHash: string,
+  usedContractName: string,
+  chainId: number,
+) {
+  if (network.name !== 'hardhat') {
+    const receipt = await ethers.provider.getTransactionReceipt(deploymentTransactionHash);
+    const vaultCreatedTopic0 = '0x5d9c31ffa0fecffd7cf379989a3c7af252f0335e0d2a1320b55245912c781f53';
+    const event = receipt.logs.find((l) => l.topics[0] === vaultCreatedTopic0);
+    if (event) {
+      const vaultAddress = ethers.utils.defaultAbiCoder.decode(['address'], event.data)[0];
+      const vaultRename = `${usedContractName}DeadProxy`;
+      if (!file[vaultRename]?.[chainId]?.isVerified) {
+        file[vaultRename] = {
+          ...file[vaultRename],
+          [chainId]: {
+            address: vaultAddress,
+            transaction: deploymentTransactionHash,
+            isVerified: false,
+          },
+        };
+        writeDeploymentFile(file);
+        await prettyPrintAndVerifyContract(file, chainId, 'IsolationModeUpgradeableProxy', vaultRename, [], {});
+      } else {
+        console.log(
+          `\tContract ${vaultRename} has already been verified on chainId ${chainId} (${vaultAddress}). Skipping...`,
+        );
+      }
+
+      console.log('');
+    }
+  }
 }
 
 export function getTokenVaultLibrary<T extends NetworkType>(core: CoreProtocolType<T>): Record<string, string> {
   const libraryName = 'IsolationModeTokenVaultV1ActionsImpl';
-  const deploymentName = 'IsolationModeTokenVaultV1ActionsImplV3';
+  const deploymentName = 'IsolationModeTokenVaultV1ActionsImplV7';
   const deployments = readAllDeploymentFiles();
   return {
-    [libraryName]: deployments[deploymentName][core.config.network as '42161'].address,
+    [libraryName]: deployments[deploymentName][core.config.network].address,
   };
 }
 
@@ -397,7 +437,11 @@ export async function deployPendlePtSystem<T extends NetworkType>(
   const syTokensIn = await syToken.getTokensIn();
   const ptNamePart = ptName.substring(0, ptName.length - 7);
   if (!officialPtName.toUpperCase().includes(ptNamePart.toUpperCase())) {
-    return Promise.reject(new Error(`ptName does not match official PT name on chain. official: [${officialPtName}], found: [${ptNamePart}]`));
+    return Promise.reject(
+      new Error(
+        `ptName does not match official PT name on chain. official: [${officialPtName}], found: [${ptNamePart}]`,
+      ),
+    );
   }
   if (syOfficial !== syToken.address) {
     return Promise.reject(new Error(`SY does not match official SY on chain: ${syOfficial} / ${syToken.address}`));
@@ -405,20 +449,21 @@ export async function deployPendlePtSystem<T extends NetworkType>(
   if (ptOfficial !== ptToken.address) {
     return Promise.reject(new Error(`PT does not match official PT on chain: ${ptOfficial} / ${ptToken.address}`));
   }
-  if (!syTokensIn.some(t => t === underlyingToken.address)) {
+  if (!syTokensIn.some((t) => t === underlyingToken.address)) {
     return Promise.reject(
-      new Error(`Underlying does not match official underlying on chain: underlying=[${underlyingToken.address}] official=[${syTokensIn.join(
-        ', ')}]`),
+      new Error(
+        `Underlying does not match official underlying on chain: underlying=[${
+          underlyingToken.address
+        }] official=[${syTokensIn.join(', ')}]`,
+      ),
     );
   }
-
-  console.log(`\tDoing deployment for ${officialPtName}`);
 
   const libraries = getTokenVaultLibrary(core);
   const userVaultImplementationAddress = await deployContractAndSave(
     'PendlePtIsolationModeTokenVaultV1',
     [],
-    `PendlePt${ptName}IsolationModeTokenVaultV1'`,
+    `PendlePt${ptName}IsolationModeTokenVaultV1`,
     libraries,
   );
   const userVaultImplementation = PendlePtIsolationModeTokenVaultV1__factory.connect(
@@ -486,9 +531,9 @@ export async function deployLinearInterestSetterAndSave(
   upperOptimal: BigNumber,
 ): Promise<address> {
   if (
-    lowerOptimal.lt(ONE_PERCENT)
-    || upperOptimal.lt(ONE_PERCENT)
-    || !lowerOptimal.add(upperOptimal).eq(ONE_PERCENT.mul(100))
+    lowerOptimal.lt(ONE_PERCENT) ||
+    upperOptimal.lt(ONE_PERCENT) ||
+    !lowerOptimal.add(upperOptimal).eq(ONE_PERCENT.mul(100))
   ) {
     return Promise.reject(new Error('Invalid lowerOptimal and upperOptimal'));
   }
@@ -597,8 +642,7 @@ async function getFormattedTokenName<T extends NetworkType>(
   const token = IERC20Metadata__factory.connect(tokenAddress, core.hhUser1);
   try {
     mostRecentTokenDecimals = await token.decimals();
-  } catch (e) {
-  }
+  } catch (e) {}
 
   const cachedName = addressToNameCache[tokenAddress.toString().toLowerCase()];
   if (typeof cachedName !== 'undefined') {
@@ -641,8 +685,10 @@ function isMarketIdParam(paramType: ParamType): boolean {
 }
 
 function isTokenParam(paramType: ParamType): boolean {
-  return (paramType.name.includes('token') || paramType.name.includes('Token'))
-    && !paramType.name.toLowerCase().includes('decimals');
+  return (
+    (paramType.name.includes('token') || paramType.name.includes('Token')) &&
+    !paramType.name.toLowerCase().includes('decimals')
+  );
 }
 
 function isChainlinkAggregatorParam(paramType: ParamType): boolean {
@@ -650,9 +696,11 @@ function isChainlinkAggregatorParam(paramType: ParamType): boolean {
 }
 
 function isMaxWeiParam(paramType: ParamType): boolean {
-  return paramType.name.includes('maxWei')
-    || paramType.name.includes('maxSupplyWei')
-    || paramType.name.includes('maxBorrowWei');
+  return (
+    paramType.name.includes('maxWei') ||
+    paramType.name.includes('maxSupplyWei') ||
+    paramType.name.includes('maxBorrowWei')
+  );
 }
 
 export interface EncodedTransaction {
@@ -669,25 +717,27 @@ export interface DenJsonUpload {
 export interface TransactionBuilderUpload extends DenJsonUpload {
   version: '1.0';
   meta: {
-    name: string,
+    name: string;
     txBuilderVersion: typeof TRANSACTION_BUILDER_VERSION;
   };
 }
 
 function isOwnerFunction(methodName: string, isMultisig: boolean): boolean {
-  return methodName.startsWith('owner')
-    || methodName === 'initializeETHMarket'
-    || methodName === 'setGmxRegistry'
-    || methodName === 'setIsTokenConverterTrusted'
-    || methodName === 'setUserVaultImplementation'
-    || methodName === 'upgradeTo'
-    || methodName === 'upgradeToAndCall'
-    || (isMultisig && methodName === 'addOwner')
-    || (isMultisig && methodName === 'changeRequirement')
-    || (isMultisig && methodName === 'changeTimelock')
-    || (isMultisig && methodName === 'removeOver')
-    || (isMultisig && methodName === 'replaceOwner')
-    || (isMultisig && methodName === 'setSelector');
+  return (
+    methodName.startsWith('owner') ||
+    methodName === 'initializeETHMarket' ||
+    methodName === 'setGmxRegistry' ||
+    methodName === 'setIsTokenConverterTrusted' ||
+    methodName === 'setUserVaultImplementation' ||
+    methodName === 'upgradeTo' ||
+    methodName === 'upgradeToAndCall' ||
+    (isMultisig && methodName === 'addOwner') ||
+    (isMultisig && methodName === 'changeRequirement') ||
+    (isMultisig && methodName === 'changeTimelock') ||
+    (isMultisig && methodName === 'removeOver') ||
+    (isMultisig && methodName === 'replaceOwner') ||
+    (isMultisig && methodName === 'setSelector')
+  );
 }
 
 export async function prettyPrintEncodedDataWithTypeSafety<
@@ -716,7 +766,9 @@ export async function prettyPrintEncodedDataWithTypeSafety<
 
     const repeatLength = 76 + (counter - 1).toString().length + key.toString().length + methodName.toString().length;
     console.log(''); // add a new line
-    console.log(`=================================== ${counter++} - ${key}.${methodName} ===================================`);
+    console.log(
+      `=================================== ${counter++} - ${key}.${methodName} ===================================`,
+    );
     console.log('Readable:\t', `${key}.${methodName}(\n\t\t\t${mappedArgs.join(' ,\n\t\t\t')}\n\t\t)`);
     console.log(
       'To:\t\t',
@@ -735,7 +787,7 @@ export async function prettyPrintEncodedDataWithTypeSafety<
     };
   }
 
-  if (await core.dolomiteMargin.owner() === core.delayedMultiSig.address) {
+  if ((await core.dolomiteMargin.owner()) === core.delayedMultiSig.address) {
     const outerTransaction = await core.delayedMultiSig.populateTransaction.submitTransaction(
       transaction.to!,
       transaction.value ?? ZERO_BI,
@@ -774,9 +826,11 @@ async function getReadableArg<T extends NetworkType>(
       ...inputParamType.arrayChildren,
       name: inputParamType.name,
     });
-    const formattedArgs = await Promise.all(arg.map(async (value, i) => {
-      return await getReadableArg(core, subParamType, value, decimals, i, nestedLevel + 1);
-    }));
+    const formattedArgs = await Promise.all(
+      arg.map(async (value, i) => {
+        return await getReadableArg(core, subParamType, value, decimals, i, nestedLevel + 1);
+      }),
+    );
     const tabs = '\t'.repeat(nestedLevel);
     return `${formattedInputParamName} = [\n${tabs}\t${formattedArgs.join(` ,\n${tabs}\t`)}\n${tabs}]`;
   }
@@ -803,13 +857,13 @@ async function getReadableArg<T extends NetworkType>(
   if (inputParamType.type === 'address') {
     const chainId = core.config.network;
     const allDeployments = readAllDeploymentFiles();
-    Object.keys(allDeployments).forEach(key => {
+    Object.keys(allDeployments).forEach((key) => {
       if ((allDeployments as any)[key][chainId]?.address.toLowerCase() === arg.toLowerCase()) {
         specialName = ` (${key})`;
       }
     });
     if (!specialName) {
-      Object.keys(allDeployments).forEach(key => {
+      Object.keys(allDeployments).forEach((key) => {
         if ((allDeployments as any)[key][chainId]?.address.toLowerCase() === arg.toLowerCase()) {
           specialName = ` (${key})`;
         }
@@ -834,14 +888,9 @@ async function getReadableArg<T extends NetworkType>(
     const keys = Object.keys(arg);
     for (let i = 0; i < keys.length; i++) {
       const componentPiece = inputParamType.components[i];
-      values.push(await getReadableArg(
-        core,
-        componentPiece,
-        arg[componentPiece.name],
-        decimals,
-        index,
-        nestedLevel + 1,
-      ));
+      values.push(
+        await getReadableArg(core, componentPiece, arg[componentPiece.name], decimals, index, nestedLevel + 1),
+      );
     }
     const tabs = '\t'.repeat(nestedLevel);
     return `${formattedInputParamName} = {\n${tabs}\t${values.join(` ,\n${tabs}\t`)}\n${tabs}}`;
@@ -863,7 +912,7 @@ export async function prettyPrintEncodeInsertChainlinkOracle<T extends NetworkTy
 ): Promise<EncodedTransaction> {
   const invalidTokens = ['stEth', 'eEth'];
   let tokenDecimals: number;
-  if (invalidTokens.some(t => t in core.tokens && token.address === (core.tokens as any)[t].address)) {
+  if (invalidTokens.some((t) => t in core.tokens && token.address === (core.tokens as any)[t].address)) {
     tokenDecimals = 18;
   } else {
     tokenDecimals = await IERC20Metadata__factory.connect(token.address, core.hhUser1).decimals();
@@ -883,19 +932,14 @@ export async function prettyPrintEncodeInsertChainlinkOracle<T extends NetworkTy
     { chainlinkPriceOracle: core.chainlinkPriceOracleV1 },
     'chainlinkPriceOracle',
     'ownerInsertOrUpdateOracleToken',
-    [
-      token.address,
-      tokenDecimals,
-      aggregator.address,
-      tokenPairAddress ?? ADDRESS_ZERO,
-    ],
+    [token.address, tokenDecimals, aggregator.address, tokenPairAddress ?? ADDRESS_ZERO],
   );
 }
 
 export async function prettyPrintEncodeInsertChainlinkOracleV3<T extends NetworkType>(
   core: CoreProtocolWithChainlinkV3<T>,
   token: IERC20,
-  invertPrice: boolean,
+  invertPrice: boolean = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address]!.invert ?? false,
   tokenPairAddress: string | undefined = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address]!.tokenPairAddress,
   aggregatorAddress: string = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address]!.aggregatorAddress,
 ): Promise<EncodedTransaction[]> {
@@ -932,11 +976,7 @@ export async function prettyPrintEncodeInsertChainlinkOracleV3<T extends Network
       { chainlinkPriceOracle: core.chainlinkPriceOracleV3 },
       'chainlinkPriceOracle',
       'ownerInsertOrUpdateOracleToken',
-      [
-        token.address,
-        aggregator.address,
-        invertPrice,
-      ],
+      [token.address, aggregator.address, invertPrice],
     ),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
@@ -964,8 +1004,8 @@ export async function prettyPrintEncodeInsertChronicleOracleV3(
   core: CoreProtocolWithChronicle<Network.ArbitrumOne | Network.Mantle>,
   token: IERC20,
   invertPrice: boolean = CHRONICLE_PRICE_SCRIBES_MAP[core.config.network][token.address].invertPrice ?? false,
-  tokenPairAddress: string | undefined
-    = CHRONICLE_PRICE_SCRIBES_MAP[core.config.network][token.address].tokenPairAddress,
+  tokenPairAddress: string | undefined = CHRONICLE_PRICE_SCRIBES_MAP[core.config.network][token.address]
+    .tokenPairAddress,
   scribeAddress: string = CHRONICLE_PRICE_SCRIBES_MAP[core.config.network][token.address].scribeAddress,
 ): Promise<EncodedTransaction[]> {
   const invalidTokenSettings = INVALID_TOKEN_MAP[Network.Mantle][token.address];
@@ -986,9 +1026,14 @@ export async function prettyPrintEncodeInsertChronicleOracleV3(
     symbol = await IERC20Metadata__factory.connect(token.address, token.signer).symbol();
   }
 
+  const oracleAddress = core.chroniclePriceOracleV3.address;
+  if ((await scribe.bud(oracleAddress)).eq(ZERO_BI)) {
+    console.warn(`ChroniclePriceOracleV3 has not been kissed yet for scribe ${scribe.address}!`);
+  }
+
   if (network.name === 'hardhat') {
     const toller = await impersonate((await scribe.authed())[0], true);
-    const oracle = await impersonate(core.chroniclePriceOracleV3.address, true);
+    const oracle = await impersonate(oracleAddress, true);
     await scribe.connect(toller).kiss(oracle.address);
     console.log(`\tChronicle price for ${symbol}:`, (await scribe.connect(oracle).latestRoundData()).answer.toString());
   }
@@ -1000,11 +1045,7 @@ export async function prettyPrintEncodeInsertChronicleOracleV3(
       { chroniclePriceOracle: core.chroniclePriceOracleV3 },
       'chroniclePriceOracle',
       'ownerInsertOrUpdateOracleToken',
-      [
-        token.address,
-        scribe.address,
-        invertPrice,
-      ],
+      [token.address, scribe.address, invertPrice],
     ),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
@@ -1071,11 +1112,7 @@ export async function prettyPrintEncodeInsertOkxOracleV3(
       { okxPriceOracle: core.okxPriceOracleV3 },
       'okxPriceOracle',
       'ownerInsertOrUpdateOracleToken',
-      [
-        token.address,
-        aggregator.address,
-        invertPrice,
-      ],
+      [token.address, aggregator.address, invertPrice],
     ),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
@@ -1099,12 +1136,38 @@ export async function prettyPrintEncodeInsertOkxOracleV3(
   ];
 }
 
+export async function prettyPrintEncodeInsertPendlePtOracle<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  pendleSystem: PendlePtSystem,
+  token: IERC20,
+): Promise<EncodedTransaction> {
+  return prettyPrintEncodedDataWithTypeSafety(
+    core,
+    { oracleAggregatorV2: core.oracleAggregatorV2 },
+    'oracleAggregatorV2',
+    'ownerInsertOrUpdateToken',
+    [
+      {
+        token: pendleSystem.factory.address,
+        decimals: await pendleSystem.factory.decimals(),
+        oracleInfos: [
+          {
+            oracle: pendleSystem.oracle.address,
+            tokenPair: token.address,
+            weight: 100,
+          },
+        ],
+      },
+    ],
+  );
+}
+
 export async function prettyPrintEncodeInsertRedstoneOracleV3(
   core: CoreProtocolWithRedstone<Network.Mantle>,
   token: IERC20,
   invertPrice: boolean = REDSTONE_PRICE_AGGREGATORS_MAP[core.config.network][token.address]!.invert ?? false,
-  tokenPairAddress: string | undefined
-    = REDSTONE_PRICE_AGGREGATORS_MAP[core.config.network][token.address]!.tokenPairAddress,
+  tokenPairAddress: string | undefined = REDSTONE_PRICE_AGGREGATORS_MAP[core.config.network][token.address]!
+    .tokenPairAddress,
   aggregatorAddress: string = REDSTONE_PRICE_AGGREGATORS_MAP[core.config.network][token.address]!.aggregatorAddress,
 ): Promise<EncodedTransaction[]> {
   const invalidTokenSettings = INVALID_TOKEN_MAP[Network.Mantle][token.address];
@@ -1134,11 +1197,7 @@ export async function prettyPrintEncodeInsertRedstoneOracleV3(
       { redstonePriceOracle: core.redstonePriceOracleV3 },
       'redstonePriceOracle',
       'ownerInsertOrUpdateOracleToken',
-      [
-        token.address,
-        aggregator.address,
-        invertPrice,
-      ],
+      [token.address, aggregator.address, invertPrice],
     ),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
@@ -1202,13 +1261,9 @@ export async function prettyPrintEncodeAddIsolationModeMarket<T extends NetworkT
       'ownerSetGlobalOperator',
       [factory.address, true],
     ),
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { factory },
-      'factory',
-      'ownerInitialize',
-      [[unwrapper.address, wrapper.address, ...(options.additionalConverters ?? []).map(c => c.address)]],
-    ),
+    await prettyPrintEncodedDataWithTypeSafety(core, { factory }, 'factory', 'ownerInitialize', [
+      [unwrapper.address, wrapper.address, ...(options.additionalConverters ?? []).map((c) => c.address)],
+    ]),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       { liquidatorAssetRegistry: core.liquidatorAssetRegistry },
@@ -1249,13 +1304,9 @@ export async function prettyPrintEncodeAddAsyncIsolationModeMarket<T extends Net
   );
 
   transactions.push(
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { factory },
-      'factory',
-      'ownerInitialize',
-      [[unwrapper.address, wrapper.address, ...(options.additionalConverters ?? []).map(c => c.address)]],
-    ),
+    await prettyPrintEncodedDataWithTypeSafety(core, { factory }, 'factory', 'ownerInitialize', [
+      [unwrapper.address, wrapper.address, ...(options.additionalConverters ?? []).map((c) => c.address)],
+    ]),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       { dolomiteMargin: core.dolomiteMargin },
@@ -1287,13 +1338,10 @@ export async function prettyPrintEncodeAddAsyncIsolationModeMarket<T extends Net
       'ownerSetUnwrapperByToken',
       [factory.address, unwrapper.address],
     ),
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { handlerRegistry },
-      'handlerRegistry',
-      'ownerSetWrapperByToken',
-      [factory.address, wrapper.address],
-    ),
+    await prettyPrintEncodedDataWithTypeSafety(core, { handlerRegistry }, 'handlerRegistry', 'ownerSetWrapperByToken', [
+      factory.address,
+      wrapper.address,
+    ]),
   );
 
   return transactions;
@@ -1312,11 +1360,11 @@ export async function prettyPrintEncodeAddMarket<T extends NetworkType>(
   earningsRateOverride: BigNumberish = ZERO_BI,
   options: AddMarketOptions = {},
 ): Promise<EncodedTransaction[]> {
-  if (!options.skipAmountValidation && !await isValidAmount(token, maxSupplyWei)) {
+  if (!options.skipAmountValidation && !(await isValidAmount(token, maxSupplyWei))) {
     const name = await getFormattedTokenName(core, token.address);
     return Promise.reject(new Error(`Invalid max supply wei for ${name}, found: ${maxSupplyWei.toString()}`));
   }
-  if (!options.skipAmountValidation && !await isValidAmount(token, maxBorrowWei)) {
+  if (!options.skipAmountValidation && !(await isValidAmount(token, maxBorrowWei))) {
     const name = await getFormattedTokenName(core, token.address);
     return Promise.reject(new Error(`Invalid max borrow wei for ${name}, found: ${maxBorrowWei.toString()}`));
   }
@@ -1345,13 +1393,8 @@ export async function prettyPrintEncodeAddMarket<T extends NetworkType>(
   return transactions;
 }
 
-export function writeDeploymentFile(
-  fileContent: Record<string, Record<ChainId, any>>,
-) {
-  writeFile(
-    DEPLOYMENT_FILE_NAME,
-    JSON.stringify(sortFile(fileContent), null, 2),
-  );
+export function writeDeploymentFile(fileContent: Record<string, Record<ChainId, any>>) {
+  writeFile(DEPLOYMENT_FILE_NAME, JSON.stringify(sortFile(fileContent), null, 2));
 }
 
 export function createFolder(dir: string) {
@@ -1360,15 +1403,8 @@ export function createFolder(dir: string) {
   }
 }
 
-export function writeFile(
-  fileName: string,
-  fileContent: string,
-) {
-  fs.writeFileSync(
-    fileName,
-    fileContent,
-    { encoding: 'utf8', flag: 'w' },
-  );
+export function writeFile(fileName: string, fileContent: string) {
+  fs.writeFileSync(fileName, fileContent, { encoding: 'utf8', flag: 'w' });
 }
 
 async function isValidAmount(token: IERC20, amount: BigNumberish) {
