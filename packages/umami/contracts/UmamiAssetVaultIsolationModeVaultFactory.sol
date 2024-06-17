@@ -61,6 +61,7 @@ contract UmamiAssetVaultIsolationModeVaultFactory is
         _umamiAssetVaultToken,
         _borrowPositionProxy,
         _userVaultImplementation,
+        address(IUmamiAssetVaultRegistry(_umamiAssetVaultRegistry).dolomiteRegistry()),
         _dolomiteMargin
     ) {
         umamiAssetVaultRegistry = IUmamiAssetVaultRegistry(_umamiAssetVaultRegistry);
