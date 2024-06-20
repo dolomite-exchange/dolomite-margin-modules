@@ -131,6 +131,7 @@ describe('GammaIsolationModeWrapperTraderV2', () => {
 
   describe('#exchange', () => {
     // use real latest block number with odos tests
+    // @follow-up Why are these not failing? Cause zap sdk automatically puts receiver as the trader, these don't
     xit('should work normally for token0 with odos', async () => {
       await vault.transferIntoPositionWithOtherToken(
         defaultAccountNumber,

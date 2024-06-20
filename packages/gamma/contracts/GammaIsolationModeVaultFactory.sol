@@ -61,6 +61,7 @@ contract GammaIsolationModeVaultFactory is
         _gammaPool,
         _borrowPositionProxy,
         _userVaultImplementation,
+        address(IGammaRegistry(_gammaRegistry).dolomiteRegistry()),
         _dolomiteMargin
     ) {
         gammaRegistry = IGammaRegistry(_gammaRegistry);

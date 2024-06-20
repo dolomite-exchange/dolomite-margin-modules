@@ -49,6 +49,9 @@ describe('GammaPoolPriceOracle', () => {
       core
     );
     deltaPair = IDeltaSwapPair__factory.connect(await core.gammaEcosystem.gammaPools.wethUsdc.cfmm(), core.hhUser1);
+    console.log(deltaPair.address)
+    console.log(await deltaPair.token0());
+    console.log(await deltaPair.token1());
 
     gammaOracle = await createGammaPoolPriceOracle(core, gammaRegistry);
     await gammaOracle.connect(core.governance).ownerSetGammaPool(gammaFactory.address, true);

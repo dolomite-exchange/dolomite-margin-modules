@@ -28,8 +28,9 @@ import { parseEther } from 'ethers/lib/utils';
 import { AccountInfoStruct } from 'packages/base/src/utils';
 import { createOdosAggregatorTrader } from 'packages/base/test/utils/ecosystem-utils/traders';
 import { getCalldataForOdos } from 'packages/base/test/utils/trader-utils';
-import { OdosAggregatorTrader, TestAggregatorTrader, TestAggregatorTrader__factory } from 'packages/base/src/types';
+import { DolomiteRegistryImplementation, DolomiteRegistryImplementation__factory, OdosAggregatorTrader, TestAggregatorTrader, TestAggregatorTrader__factory } from 'packages/base/src/types';
 import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
+import { createDolomiteAccountRegistryImplementation, createRegistryProxy } from 'packages/base/test/utils/dolomite';
 
 const defaultAccountNumber = '0';
 const borrowAccountNumber = '123';
@@ -74,6 +75,20 @@ describe('GammaIsolationModeUnwrapperTraderV2', () => {
     const vaultImplementation = await createGammaIsolationModeTokenVaultV1();
     gammaFactory = await createGammaIsolationModeVaultFactory(gammaRegistry, gammaPool, vaultImplementation, core);
 
+    const dolomiteAccountRegistry = await createDolomiteAccountRegistryImplementation();
+    const calldata = await dolomiteAccountRegistry.populateTransaction.initialize(
+      [gammaFactory.address],
+    );
+    const accountRegistryProxy = await createRegistryProxy(dolomiteAccountRegistry.address, calldata.data!, core);
+    const dolomiteRegistryImplementation = await createContractWithAbi<DolomiteRegistryImplementation>(
+      DolomiteRegistryImplementation__factory.abi,
+      DolomiteRegistryImplementation__factory.bytecode,
+      [],
+    );
+
+    await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(dolomiteRegistryImplementation.address);
+    await core.dolomiteRegistry.connect(core.governance).ownerSetDolomiteAccountRegistry(accountRegistryProxy.address);
+
     unwrapper = await createGammaUnwrapperTraderV2(core, gammaFactory, gammaRegistry);
     wrapper = await createGammaWrapperTraderV2(core, gammaFactory, gammaRegistry);
     gammaOracle = await createGammaPoolPriceOracle(core, gammaRegistry);
@@ -104,6 +119,7 @@ describe('GammaIsolationModeUnwrapperTraderV2', () => {
       amountsMin: [0, 0],
     });
     amountWei = await gammaPool.balanceOf(core.hhUser1.address);
+    console.log(amountWei.toString());
 
     await gammaPool.connect(core.hhUser1).approve(vault.address, amountWei);
     await vault.depositIntoVaultForDolomiteMargin(ZERO_BI, amountWei);
