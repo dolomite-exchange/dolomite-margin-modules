@@ -543,6 +543,14 @@ export const BN_GMX_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x35247165119B69A40edD5304969560D0ef486921',
 };
 
+export const DELTA_SWAP_FACTORY_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0xCb85E1222f715a81b8edaeB73b28182fa37cffA8',
+};
+
+export const DELTA_SWAP_ROUTER_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x5FbE219e88f6c6F214Ce6f5B1fcAa0294F31aE1b',
+};
+
 export const DPX_WETH_V3_POOL_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x59a327d948db1810324a04d69cbe9fe9884f8f28',
 };
@@ -561,6 +569,14 @@ export const ES_GMX_DISTRIBUTOR_FOR_STAKED_GMX_MAP: Record<Network.ArbitrumOne, 
 
 export const FS_GLP_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x1aDDD80E6039594eE970E5872D247bf0414C8903',
+};
+
+export const GAMMA_POOL_WETH_USDC_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x04d24DBdd9eA6e8af5B5Eb0126797da27498DF1d',
+};
+
+export const GAMMA_POSITION_MANAGER_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x3b72616376652CC82F17Dd7A9b58F71cDB3B98b0',
 };
 
 /**

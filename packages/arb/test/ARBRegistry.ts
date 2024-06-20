@@ -5,6 +5,7 @@ import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules
 import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { createARBRegistry } from './arb-ecosystem-utils';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 
 describe('ARBRegistry', () => {
   let snapshotId: string;

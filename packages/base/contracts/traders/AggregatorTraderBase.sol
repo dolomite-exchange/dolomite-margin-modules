@@ -55,7 +55,7 @@ abstract contract AggregatorTraderBase is OnlyDolomiteMargin, IDolomiteMarginExc
         if (_originalInputAmount >= _actualInputAmount) {
             return _expectedOutputAmount;
         } else {
-            // The amount inputted to the Paraswap API was less than what we're actually trading. Scale up the expected
+            // The amount inputted to the off-chain API was less than what we're actually trading. Scale up the expected
             // amount out, so the user doesn't pay unnecessary positive slippage
             uint256 percentageUp = _actualInputAmount * _SCALE_AMOUNT / _originalInputAmount;
             return _expectedOutputAmount * percentageUp / _SCALE_AMOUNT;

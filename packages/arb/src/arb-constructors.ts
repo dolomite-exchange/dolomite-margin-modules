@@ -1,3 +1,4 @@
+import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import {
   ARBIsolationModeTokenVaultV1,
   ARBIsolationModeVaultFactory,

@@ -77,6 +77,7 @@ contract GMXIsolationModeVaultFactory is
         _gmx,
         _borrowPositionProxy,
         _userVaultImplementation,
+        address(IGmxRegistryV1(_gmxRegistry).dolomiteRegistry()),
         _dolomiteMargin
     ) {
         gmxRegistry = IGmxRegistryV1(_gmxRegistry);

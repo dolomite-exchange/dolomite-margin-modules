@@ -67,7 +67,6 @@ contract OdosAggregatorTrader is AggregatorTraderBase {
         bytes calldata _minAmountOutAndOrderData
     )
     external
-    onlyDolomiteMargin(msg.sender)
     returns (uint256) {
         ERC20Lib.resetAllowanceIfNeededAndApprove(IERC20(_inputToken), address(ODOS_ROUTER), _inputAmount);
 

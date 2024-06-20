@@ -61,6 +61,7 @@ contract ARBIsolationModeVaultFactory is
         _arb,
         _borrowPositionProxy,
         _userVaultImplementation,
+        address(IARBRegistry(_arbRegistry).dolomiteRegistry()),
         _dolomiteMargin
     ) {
         arbRegistry = IARBRegistry(_arbRegistry);

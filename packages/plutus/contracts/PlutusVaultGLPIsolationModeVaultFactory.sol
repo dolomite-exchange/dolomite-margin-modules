@@ -57,6 +57,7 @@ contract PlutusVaultGLPIsolationModeVaultFactory is
         _plvGlp,
         _borrowPositionProxy,
         _userVaultImplementation,
+        address(IPlutusVaultRegistry(_plutusVaultRegistry).dolomiteRegistry()),
         _dolomiteMargin
     ) {
         plutusVaultRegistry = IPlutusVaultRegistry(_plutusVaultRegistry);
