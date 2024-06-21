@@ -52,7 +52,7 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
       core,
       core.tokens.usde,
       core.oracleAggregatorV2,
-      core.interestSetters.linearStepFunction16L84UInterestSetter,
+      core.interestSetters.linearStepFunction16L84U90OInterestSetter,
       TargetCollateralization.Base,
       TargetLiquidationPenalty.Base,
       parseEther(`${15_000_000}`),
@@ -98,7 +98,7 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
       );
       assertHardhatInvariant(
         (await core.dolomiteMargin.getMarketInterestSetter(core.marketIds.usde)) ===
-          core.interestSetters.linearStepFunction16L84UInterestSetter.address,
+          core.interestSetters.linearStepFunction16L84U90OInterestSetter.address,
         'Invalid interest setter USDe',
       );
 

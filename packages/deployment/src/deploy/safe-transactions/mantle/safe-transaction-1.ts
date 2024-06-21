@@ -36,7 +36,7 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
       core,
       core.tokens.weth,
       core.oracleAggregatorV2,
-      core.interestSetters.linearStepFunction14L86UInterestSetter,
+      core.interestSetters.linearStepFunction14L86U90OInterestSetter,
       TargetCollateralization.Base,
       TargetLiquidationPenalty.Base,
       ZERO_BI,
@@ -47,7 +47,7 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
       core,
       core.tokens.wmnt,
       core.oracleAggregatorV2,
-      core.interestSetters.linearStepFunction14L86UInterestSetter,
+      core.interestSetters.linearStepFunction14L86U90OInterestSetter,
       TargetCollateralization._125,
       TargetLiquidationPenalty.Base,
       parseEther(`${25_00_000}`),
@@ -58,7 +58,7 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
       core,
       core.tokens.usdc,
       core.oracleAggregatorV2,
-      core.interestSetters.linearStepFunction16L84UInterestSetter,
+      core.interestSetters.linearStepFunction16L84U90OInterestSetter,
       TargetCollateralization.Base,
       TargetLiquidationPenalty.Base,
       ZERO_BI,
@@ -69,7 +69,7 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
       core,
       core.tokens.wbtc,
       core.oracleAggregatorV2,
-      core.interestSetters.linearStepFunction8L92UInterestSetter,
+      core.interestSetters.linearStepFunction8L92U90OInterestSetter,
       TargetCollateralization._125,
       TargetLiquidationPenalty._9,
       parseWbtc(`${100}`),
@@ -80,7 +80,7 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
       core,
       core.tokens.usdt,
       core.oracleAggregatorV2,
-      core.interestSetters.linearStepFunction16L84UInterestSetter,
+      core.interestSetters.linearStepFunction16L84U90OInterestSetter,
       TargetCollateralization.Base,
       TargetLiquidationPenalty.Base,
       ZERO_BI,
@@ -103,7 +103,7 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
       core,
       core.tokens.meth,
       core.oracleAggregatorV2,
-      core.interestSetters.linearStepFunction14L86UInterestSetter,
+      core.interestSetters.linearStepFunction14L86U90OInterestSetter,
       TargetCollateralization.Base,
       TargetLiquidationPenalty.Base,
       ZERO_BI,
@@ -137,7 +137,7 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
       );
       assertHardhatInvariant(
         await core.dolomiteMargin.getMarketInterestSetter(core.marketIds.weth)
-        === core.interestSetters.linearStepFunction14L86UInterestSetter.address,
+        === core.interestSetters.linearStepFunction14L86U90OInterestSetter.address,
         'Invalid interest setter WETH',
       );
       assertHardhatInvariant(

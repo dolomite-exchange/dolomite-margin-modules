@@ -60,30 +60,41 @@ const handlerAddress = '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe'; // Level In
 
 async function deployInterestSetters(): Promise<void> {
   const NINETY_PERCENT = parseEther('0.90');
+  const NINETY_FIVE_PERCENT = parseEther('0.95');
   await deployContractAndSave(
     'LinearStepFunctionInterestSetter',
     getLinearStepFunctionInterestSetterConstructorParams(parseEther('0.06'), parseEther('0.94'), NINETY_PERCENT),
-    'Stablecoin6L94ULinearStepFunctionInterestSetter',
+    'LinearStepFunction6L94U90OInterestSetter',
   );
   await deployContractAndSave(
     'LinearStepFunctionInterestSetter',
     getLinearStepFunctionInterestSetterConstructorParams(parseEther('0.08'), parseEther('0.92'), NINETY_PERCENT),
-    'Stablecoin8L92ULinearStepFunctionInterestSetter',
+    'LinearStepFunction8L92U90OInterestSetter',
   );
   await deployContractAndSave(
     'LinearStepFunctionInterestSetter',
-    getLinearStepFunctionInterestSetterConstructorParams(parseEther('0.10'), parseEther('0.90'), parseEther('0.95')),
-    'Stablecoin10L90U95OLinearStepFunctionInterestSetter',
+    getLinearStepFunctionInterestSetterConstructorParams(parseEther('0.10'), parseEther('0.90'), NINETY_PERCENT),
+    'LinearStepFunction10L90U90OInterestSetter',
+  );
+  await deployContractAndSave(
+    'LinearStepFunctionInterestSetter',
+    getLinearStepFunctionInterestSetterConstructorParams(parseEther('0.10'), parseEther('0.90'), NINETY_FIVE_PERCENT),
+    'LinearStepFunction10L90U95OInterestSetter',
+  );
+  await deployContractAndSave(
+    'LinearStepFunctionInterestSetter',
+    getLinearStepFunctionInterestSetterConstructorParams(parseEther('0.12'), parseEther('0.88'), NINETY_PERCENT),
+    'LinearStepFunction12L88U90OInterestSetter',
   );
   await deployContractAndSave(
     'LinearStepFunctionInterestSetter',
     getLinearStepFunctionInterestSetterConstructorParams(parseEther('0.14'), parseEther('0.86'), NINETY_PERCENT),
-    'Altcoin14L86ULinearStepFunctionInterestSetter',
+    'LinearStepFunction14L86U90OInterestSetter',
   );
   await deployContractAndSave(
     'LinearStepFunctionInterestSetter',
     getLinearStepFunctionInterestSetterConstructorParams(parseEther('0.16'), parseEther('0.84'), NINETY_PERCENT),
-    'Altcoin16L84ULinearStepFunctionInterestSetter',
+    'LinearStepFunction16L84U90OInterestSetter',
   );
 }
 

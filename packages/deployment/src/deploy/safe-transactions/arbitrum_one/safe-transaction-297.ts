@@ -25,9 +25,9 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     const interestSetterAddress = await core.dolomiteMargin.getMarketInterestSetter(i);
     let remappedInterestSetterAddress: string | undefined;
     if (interestSetterAddress === AAVE_STABLECOIN) {
-      remappedInterestSetterAddress = core.interestSetters.linearStepFunction16L84UInterestSetter.address;
+      remappedInterestSetterAddress = core.interestSetters.linearStepFunction16L84U90OInterestSetter.address;
     } else if (interestSetterAddress === AAVE_ALTCOIN) {
-      remappedInterestSetterAddress = core.interestSetters.linearStepFunction14L86UInterestSetter.address;
+      remappedInterestSetterAddress = core.interestSetters.linearStepFunction14L86U90OInterestSetter.address;
     }
 
     if (remappedInterestSetterAddress) {
