@@ -2768,8 +2768,8 @@
   },
   "PendlePtWeETHSep2024IsolationModeUnwrapperTraderV3": {
     "42161": {
-      "address": "0x19F44150f7c6de1879518673d00ab7839700B909",
-      "transaction": "0x2306927f0d0952db0af1ba0460972b36ec4fd16c6f3509326e72deee6c77d856",
+      "address": "0x471aaa8eCfCA9b15B327bbF8D32FD95b417d0E71",
+      "transaction": "0xb004c6339b3eb0d4ac8f16dd1508c6a8af7da834f538ef9c91f3ca9264cb8060",
       "isVerified": true
     }
   },
@@ -2789,8 +2789,8 @@
   },
   "PendlePtWeETHSep2024IsolationModeWrapperTraderV3": {
     "42161": {
-      "address": "0x3249492D3138699238Dc69d55137bacE9da489B1",
-      "transaction": "0xc95d58773b605860523f58a4ed7e4d272f5956a956e8e5245af87d78845a593f",
+      "address": "0x0B0cBcD8a12AE53ac655baA0F07D73297445bF41",
+      "transaction": "0x252515b2fe5bcb315a089d58e8c156becfd5d9e945a5f498586142ae808b5833",
       "isVerified": true
     }
   },
