@@ -1,7 +1,6 @@
 import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { parseEther } from 'ethers/lib/utils';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
 import { prettyPrintEncodedDataWithTypeSafety } from '../../../utils/deploy-utils';
@@ -10,21 +9,21 @@ import getScriptName from '../../../utils/get-script-name';
 
 /**
  * This script encodes the following transactions:
- * - Increase the supply cap of GRAI to 1M units
+ * - Change the interest rate model for GRAI to put less peg pressure
  */
 async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
   const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
-  const maxWei = `${1_000_000}`;
 
+  // TODO: add execution too.
   const transactions = [];
   transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       { dolomiteMargin: core.dolomiteMargin },
       'dolomiteMargin',
-      'ownerSetMaxWei',
-      [core.marketIds.grai, parseEther(maxWei)],
+      'ownerSetInterestSetter',
+      [core.marketIds.grai, core.interestSetters.linearStepFunction15L135U70OInterestSetter.address],
     ),
   );
 
@@ -37,8 +36,9 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     },
     invariants: async () => {
       assertHardhatInvariant(
-        (await core.dolomiteMargin.getMarketMaxWei(core.marketIds.grai)).value.eq(parseEther(maxWei)),
-        'Invalid max wei',
+        (await core.dolomiteMargin.getMarketInterestSetter(core.marketIds.grai)) ===
+          core.interestSetters.linearStepFunction15L135U70OInterestSetter.address,
+        'Invalid interest setter',
       );
     },
   };
