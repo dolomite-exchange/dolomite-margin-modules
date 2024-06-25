@@ -1,6 +1,13 @@
 import { MAX_UINT_256_BI, Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
-import { disableInterestAccrual, setupCoreProtocol, setupNativeUSDCBalance, setupTestMarket, setupUserVaultProxy, setupWETHBalance } from '@dolomite-exchange/modules-base/test/utils/setup';
+import {
+  disableInterestAccrual,
+  setupCoreProtocol,
+  setupNativeUSDCBalance,
+  setupTestMarket,
+  setupUserVaultProxy,
+  setupWETHBalance
+} from '@dolomite-exchange/modules-base/test/utils/setup';
 import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import {
   GammaIsolationModeTokenVaultV1,
@@ -9,7 +16,7 @@ import {
   GammaIsolationModeVaultFactory,
   GammaIsolationModeWrapperTraderV2,
   GammaRegistry,
-  IGammaPool
+  IGammaPool,
 } from '../src/types';
 import {
   createGammaIsolationModeTokenVaultV1,
@@ -27,9 +34,8 @@ import {
   ApiToken,
   AggregatorType
 } from '@dolomite-exchange/zap-sdk';
-import { DolomiteRegistryImplementation, DolomiteRegistryImplementation__factory } from 'packages/base/src/types';
-import { createContractWithAbi, depositIntoDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
-import { createDolomiteAccountRegistryImplementation, createRegistryProxy } from 'packages/base/test/utils/dolomite';
+import { depositIntoDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
+import { setupDolomiteAccountRegistry } from 'packages/base/test/utils/dolomite';
 import { BigNumber } from 'ethers';
 import { toZapBigNumber } from 'packages/base/test/utils/liquidation-utils';
 import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin';
@@ -38,8 +44,8 @@ import { createOdosAggregatorTrader } from 'packages/base/test/utils/ecosystem-u
 import { parseEther } from 'ethers/lib/utils';
 import { expectProtocolBalance, expectProtocolBalanceIsGreaterThan } from 'packages/base/test/utils/assertions';
 
-const usdcAmount = BigNumber.from('1000000000') // $1,000 USDC
-const wethAmount = parseEther('1');
+const usdcAmount = BigNumber.from('1000000000'); // $1,000 USDC
+const wethAmount = parseEther('.3');
 const defaultAccountNumber = ZERO_BI;
 const borrowAccountNumber = BigNumber.from('123');
 
@@ -56,18 +62,20 @@ describe('GammaZapIntegrationTests', () => {
   let gammaVault: GammaIsolationModeTokenVaultV1;
   let gammaApiToken: ApiToken;
   let nativeUsdcApiToken: ApiToken;
-  let amountWei: BigNumber;
   let zap: DolomiteZap;
 
   before(async () => {
     core = await setupCoreProtocol({
       blockNumber: await getRealLatestBlockNumber(true, Network.ArbitrumOne),
+      // blockNumber: 225340949,
       network: Network.ArbitrumOne,
     });
+    const odosAggregator = await createOdosAggregatorTrader(core);
     await disableInterestAccrual(core, core.marketIds.weth);
     await disableInterestAccrual(core, core.marketIds.nativeUsdc);
 
     gammaRegistry = await createGammaRegistry(core);
+    gammaPool = core.gammaEcosystem.gammaPools.wethUsdc;
 
     const vaultImplementation = await createGammaIsolationModeTokenVaultV1();
     gammaFactory = await createGammaIsolationModeVaultFactory(
@@ -76,29 +84,7 @@ describe('GammaZapIntegrationTests', () => {
       vaultImplementation,
       core
     );
-    zap = new DolomiteZap({
-      network: ZapNetwork.ARBITRUM_ONE,
-      subgraphUrl: process.env.SUBGRAPH_URL as string,
-      web3Provider: core.hhUser1.provider!
-    });
-    const odosAggregator = await createOdosAggregatorTrader(core);
-    zap.setAggregator(AggregatorType.Odos, odosAggregator.address);
-    gammaPool = core.gammaEcosystem.gammaPools.wethUsdc;
-
-    const dolomiteAccountRegistry = await createDolomiteAccountRegistryImplementation();
-    const calldata = await dolomiteAccountRegistry.populateTransaction.initialize(
-      [gammaFactory.address],
-    );
-    const accountRegistryProxy = await createRegistryProxy(dolomiteAccountRegistry.address, calldata.data!, core);
-
-    const dolomiteRegistryImplementation = await createContractWithAbi<DolomiteRegistryImplementation>(
-      DolomiteRegistryImplementation__factory.abi,
-      DolomiteRegistryImplementation__factory.bytecode,
-      [],
-    );
-
-    await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(dolomiteRegistryImplementation.address);
-    await core.dolomiteRegistry.connect(core.governance).ownerSetDolomiteAccountRegistry(accountRegistryProxy.address);
+    await setupDolomiteAccountRegistry(core, gammaFactory);
 
     unwrapper = await createGammaUnwrapperTraderV2(core, gammaFactory, gammaRegistry);
     wrapper = await createGammaWrapperTraderV2(core, gammaFactory, gammaRegistry);
@@ -116,18 +102,13 @@ describe('GammaZapIntegrationTests', () => {
       core.hhUser1
     );
 
-    await setupNativeUSDCBalance(core, core.hhUser1, usdcAmount, core.gammaEcosystem.positionManager);
-    await setupWETHBalance(core, core.hhUser1, wethAmount, core.gammaEcosystem.positionManager);
-    await core.gammaEcosystem.positionManager.connect(core.hhUser1).depositReserves({
-      protocolId: await gammaPool.protocolId(),
-      cfmm: await gammaPool.cfmm(),
-      to: core.hhUser1.address,
-      deadline: MAX_UINT_256_BI,
-      amountsDesired: [wethAmount, usdcAmount],
-      amountsMin: [0, 0],
+    // Zap setup
+    zap = new DolomiteZap({
+      network: ZapNetwork.ARBITRUM_ONE,
+      subgraphUrl: process.env.SUBGRAPH_URL as string,
+      web3Provider: core.hhUser1.provider!
     });
-    amountWei = await gammaPool.balanceOf(core.hhUser1.address);
-    await gammaPool.connect(core.hhUser1).approve(gammaVault.address, amountWei);
+    zap.setAggregator(AggregatorType.Odos, odosAggregator.address);
 
     gammaApiToken = {
       marketId: toZapBigNumber(marketId),
@@ -154,7 +135,7 @@ describe('GammaZapIntegrationTests', () => {
       wrapperReadableName: 'Gamma WETH/USDC Isolation Mode Wrapper',
       isAsync: false
     };
-  
+
     const GAMMA_MARKET: ApiMarket = {
       marketId: toZapBigNumber(marketId),
       symbol: 'gammaWETH/USDC',
@@ -174,10 +155,11 @@ describe('GammaZapIntegrationTests', () => {
       },
       liquidityTokenWrapperInfo: undefined
     };
-  
+
     const GAMMA_POOL = {
       // WETH - USDC pool
-      token0Address: core.tokens.weth.address,  
+      poolAddress: core.gammaEcosystem.gammaPools.wethUsdc.address,
+      token0Address: core.tokens.weth.address,
       token0MarketId: core.marketIds.weth,
       token1Address: core.tokens.nativeUsdc.address,
       token1MarketId: core.marketIds.nativeUsdc,
@@ -194,23 +176,24 @@ describe('GammaZapIntegrationTests', () => {
 
   describe('#unwrapping', () => {
     it('should work with token0', async () => {
-      await gammaVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
-      await gammaVault.transferIntoPositionWithUnderlyingToken(defaultAccountNumber, borrowAccountNumber, amountWei);
+      const amountWei = await depositGammaLPIntoDolomite(core, gammaVault, gammaPool);
       const zapOutputs = await zap.getSwapExactTokensForTokensParams(
         gammaApiToken,
         toZapBigNumber(amountWei),
         core.apiTokens.weth,
-        toZapBigNumber(ONE_BI),
-        unwrapper.address, // @follow-up Should this be user or wrapper?
+        toZapBigNumber(ONE_BI), // @follow-up Understand how this param is used
+        unwrapper.address,
         { disallowAggregator: true }
       );
 
       // swapExactInputForOutput
+      await expectProtocolBalance(core, gammaVault, borrowAccountNumber, core.marketIds.weth, ZERO_BI);
+      const minAmountOut = zapOutputs[0].amountWeisPath[1].toFixed();
       await gammaVault.swapExactInputForOutput(
         borrowAccountNumber,
         zapOutputs[0].marketIdsPath.map(marketId => marketId.toString()),
         amountWei,
-        ONE_BI,
+        minAmountOut,
         zapOutputs[0].traderParams,
         zapOutputs[0].makerAccounts,
         {
@@ -219,30 +202,35 @@ describe('GammaZapIntegrationTests', () => {
           eventType: GenericEventEmissionType.None,
         }
       );
-      // @todo maybe add math for expect amount out
       await expectProtocolBalance(core, gammaVault, borrowAccountNumber, marketId, ZERO_BI);
       await expectProtocolBalance(core, gammaVault, borrowAccountNumber, core.marketIds.nativeUsdc, ZERO_BI);
-      await expectProtocolBalanceIsGreaterThan(core, { owner: gammaVault.address, number: borrowAccountNumber }, core.marketIds.weth, ONE_BI, ZERO_BI);
+      await expectProtocolBalanceIsGreaterThan(
+        core,
+        { owner: gammaVault.address, number: borrowAccountNumber },
+        core.marketIds.weth,
+        minAmountOut,
+        ZERO_BI
+      );
     });
 
     it('should work with token1', async () => {
-      await gammaVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
-      await gammaVault.transferIntoPositionWithUnderlyingToken(defaultAccountNumber, borrowAccountNumber, amountWei);
+      const amountWei = await depositGammaLPIntoDolomite(core, gammaVault, gammaPool);
       const zapOutputs = await zap.getSwapExactTokensForTokensParams(
         gammaApiToken,
         toZapBigNumber(amountWei),
         nativeUsdcApiToken,
         toZapBigNumber(ONE_BI),
-        unwrapper.address, // @follow-up Should this be user or wrapper?
+        unwrapper.address,
         { disallowAggregator: true }
       );
 
       // swapExactInputForOutput
+      const minAmountOut = zapOutputs[0].amountWeisPath[1].toFixed();
       await gammaVault.swapExactInputForOutput(
         borrowAccountNumber,
         zapOutputs[0].marketIdsPath.map(marketId => marketId.toString()),
         amountWei,
-        ONE_BI,
+        minAmountOut,
         zapOutputs[0].traderParams,
         zapOutputs[0].makerAccounts,
         {
@@ -251,10 +239,15 @@ describe('GammaZapIntegrationTests', () => {
           eventType: GenericEventEmissionType.None,
         }
       );
-      // @todo maybe add math for expect amount out
       await expectProtocolBalance(core, gammaVault, borrowAccountNumber, core.marketIds.weth, ZERO_BI);
       await expectProtocolBalance(core, gammaVault, borrowAccountNumber, marketId, ZERO_BI);
-      await expectProtocolBalanceIsGreaterThan(core, { owner: gammaVault.address, number: borrowAccountNumber }, core.marketIds.nativeUsdc, ONE_BI, ZERO_BI);
+      await expectProtocolBalanceIsGreaterThan(
+        core,
+        { owner: gammaVault.address, number: borrowAccountNumber },
+        core.marketIds.nativeUsdc,
+        minAmountOut,
+        ZERO_BI
+      );
     });
   });
 
@@ -263,7 +256,13 @@ describe('GammaZapIntegrationTests', () => {
       // deposit weth and transfer to vault
       await setupWETHBalance(core, core.hhUser1, wethAmount, core.dolomiteMargin);
       await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, wethAmount);
-      await gammaVault.transferIntoPositionWithOtherToken(defaultAccountNumber, borrowAccountNumber, core.marketIds.weth, wethAmount, BalanceCheckFlag.Both);
+      await gammaVault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        core.marketIds.weth,
+        wethAmount,
+        BalanceCheckFlag.Both
+      );
 
       // get zap outputs
       const zapOutputs = await zap.getSwapExactTokensForTokensParams(
@@ -271,16 +270,17 @@ describe('GammaZapIntegrationTests', () => {
         toZapBigNumber(wethAmount),
         gammaApiToken,
         toZapBigNumber(ONE_BI),
-        wrapper.address, // @follow-up Should this be user or wrapper?
+        wrapper.address,
         { disallowAggregator: true }
       );
+      const minAmountOut = zapOutputs[0].amountWeisPath[1].toFixed();
 
       // swapExactInputForOutput
       await gammaVault.swapExactInputForOutput(
         borrowAccountNumber,
         zapOutputs[0].marketIdsPath.map(marketId => marketId.toString()),
         wethAmount,
-        ONE_BI,
+        minAmountOut,
         zapOutputs[0].traderParams,
         zapOutputs[0].makerAccounts,
         {
@@ -289,17 +289,28 @@ describe('GammaZapIntegrationTests', () => {
           eventType: GenericEventEmissionType.None,
         }
       );
-      // @todo maybe add math for expect amount out
       await expectProtocolBalance(core, gammaVault, borrowAccountNumber, core.marketIds.weth, ZERO_BI);
       await expectProtocolBalance(core, gammaVault, borrowAccountNumber, core.marketIds.nativeUsdc, ZERO_BI);
-      await expectProtocolBalanceIsGreaterThan(core, { owner: gammaVault.address, number: borrowAccountNumber }, marketId, ONE_BI, ZERO_BI);
+      await expectProtocolBalanceIsGreaterThan(
+        core,
+        { owner: gammaVault.address, number: borrowAccountNumber },
+        marketId,
+        minAmountOut,
+        ZERO_BI
+      );
     });
 
     it('should work with token1', async () => {
       // deposit native usdc and transfer to vault
       await setupNativeUSDCBalance(core, core.hhUser1, usdcAmount, core.dolomiteMargin);
       await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.nativeUsdc, usdcAmount);
-      await gammaVault.transferIntoPositionWithOtherToken(defaultAccountNumber, borrowAccountNumber, core.marketIds.nativeUsdc, usdcAmount, BalanceCheckFlag.Both);
+      await gammaVault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        core.marketIds.nativeUsdc,
+        usdcAmount,
+        BalanceCheckFlag.Both
+      );
 
       // get zap outputs
       const zapOutputs = await zap.getSwapExactTokensForTokensParams(
@@ -307,16 +318,17 @@ describe('GammaZapIntegrationTests', () => {
         toZapBigNumber(usdcAmount),
         gammaApiToken,
         toZapBigNumber(ONE_BI),
-        wrapper.address, // @follow-up Should this be user or wrapper?
+        wrapper.address,
         { disallowAggregator: true }
       );
+      const minAmountOut = zapOutputs[0].amountWeisPath[1].toFixed();
 
       // swapExactInputForOutput
       await gammaVault.swapExactInputForOutput(
         borrowAccountNumber,
         zapOutputs[0].marketIdsPath.map(marketId => marketId.toString()),
         usdcAmount,
-        ONE_BI,
+        minAmountOut,
         zapOutputs[0].traderParams,
         zapOutputs[0].makerAccounts,
         {
@@ -325,10 +337,39 @@ describe('GammaZapIntegrationTests', () => {
           eventType: GenericEventEmissionType.None,
         }
       );
-      // @todo maybe add math for expect amount out
       await expectProtocolBalance(core, gammaVault, borrowAccountNumber, core.marketIds.weth, ZERO_BI);
       await expectProtocolBalance(core, gammaVault, borrowAccountNumber, core.marketIds.nativeUsdc, ZERO_BI);
-      await expectProtocolBalanceIsGreaterThan(core, { owner: gammaVault.address, number: borrowAccountNumber }, marketId, ONE_BI, ZERO_BI);
+      await expectProtocolBalanceIsGreaterThan(
+        core,
+        { owner: gammaVault.address, number: borrowAccountNumber },
+        marketId,
+        minAmountOut,
+        ZERO_BI
+      );
     });
   });
 });
+
+async function depositGammaLPIntoDolomite(
+  core: CoreProtocolArbitrumOne,
+  vault: GammaIsolationModeTokenVaultV1,
+  gammaPool: IGammaPool,
+): Promise<BigNumber> {
+  await setupNativeUSDCBalance(core, core.hhUser1, usdcAmount, core.gammaEcosystem.positionManager);
+  await setupWETHBalance(core, core.hhUser1, wethAmount, core.gammaEcosystem.positionManager);
+  await core.gammaEcosystem.positionManager.connect(core.hhUser1).depositReserves({
+    protocolId: await gammaPool.protocolId(),
+    cfmm: await gammaPool.cfmm(),
+    to: core.hhUser1.address,
+    deadline: MAX_UINT_256_BI,
+    amountsDesired: [wethAmount, usdcAmount],
+    amountsMin: [0, 0],
+  });
+  const amountWei = await gammaPool.balanceOf(core.hhUser1.address);
+
+  await gammaPool.connect(core.hhUser1).approve(vault.address, amountWei);
+  await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+  await vault.transferIntoPositionWithUnderlyingToken(defaultAccountNumber, borrowAccountNumber, amountWei);
+
+  return amountWei;
+}

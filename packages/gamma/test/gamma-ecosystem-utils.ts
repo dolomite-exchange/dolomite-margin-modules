@@ -145,8 +145,8 @@ export function getUnwrappingParams(
         trader: unwrapper.address,
         traderType: GenericTraderType.IsolationModeUnwrapper,
         tradeData: ethers.utils.defaultAbiCoder.encode(
-          ['uint256[]', 'address', 'bytes'],
-          [[ONE_BI, ONE_BI], aggregator.address, aggregatorData]
+          ['address', 'bytes'],
+          [aggregator.address, aggregatorData]
         ),
         makerAccountIndex: 0,
       },

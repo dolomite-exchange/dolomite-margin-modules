@@ -64,7 +64,7 @@ contract TestAggregatorTrader is AggregatorTraderBase {
             bytes memory orderData
         ) = abi.decode(_minAmountOutAndOrderData, (uint256, bytes));
 
-        IERC20(_outputToken).transfer(_receiver, minAmountOutWei);
+        IERC20(_outputToken).safeApprove(_receiver, minAmountOutWei);
 
         return minAmountOutWei;
     }

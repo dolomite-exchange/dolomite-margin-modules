@@ -575,6 +575,14 @@ export const GAMMA_POOL_WETH_USDC_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x04d24DBdd9eA6e8af5B5Eb0126797da27498DF1d',
 };
 
+export const GAMMA_POOL_FACTORY_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0xFD513630F697A9C1731F196185fb9ebA6eAAc20B',
+};
+
+export const GAMMA_POOL_VIEWER_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x33f7fA849939dFDF758bff75cc63490f80c3c1A3',
+};
+
 export const GAMMA_POSITION_MANAGER_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x3b72616376652CC82F17Dd7A9b58F71cDB3B98b0',
 };

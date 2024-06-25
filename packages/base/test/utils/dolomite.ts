@@ -13,8 +13,10 @@ import {
   IDolomiteMarginV2,
   IExpiry,
   IExpiryV2,
+  IIsolationModeVaultFactory,
   IsolationModeTraderProxy,
   IsolationModeTraderProxy__factory,
+  IsolationModeVaultFactory,
   RegistryProxy,
   RegistryProxy__factory,
 } from '../../src/types';
@@ -130,4 +132,24 @@ export async function setupNewGenericTraderProxy<T extends NetworkType>(
 
   await core.dolomiteMargin.ownerSetGlobalOperator(core.genericTraderProxy!.address, true);
   await core.dolomiteMargin.ownerSetGlobalOperator(core.liquidatorProxyV4.address, true);
+}
+
+export async function setupDolomiteAccountRegistry<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  factory: IsolationModeVaultFactory | IIsolationModeVaultFactory
+) {
+  const dolomiteAccountRegistry = await createDolomiteAccountRegistryImplementation();
+  const calldata = await dolomiteAccountRegistry.populateTransaction.initialize(
+    [factory.address],
+  );
+  const accountRegistryProxy = await createRegistryProxy(dolomiteAccountRegistry.address, calldata.data!, core);
+
+  const dolomiteRegistryImplementation = await createContractWithAbi<DolomiteRegistryImplementation>(
+    DolomiteRegistryImplementation__factory.abi,
+    DolomiteRegistryImplementation__factory.bytecode,
+    [],
+  );
+
+  await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(dolomiteRegistryImplementation.address);
+  await core.dolomiteRegistry.connect(core.governance).ownerSetDolomiteAccountRegistry(accountRegistryProxy.address);
 }

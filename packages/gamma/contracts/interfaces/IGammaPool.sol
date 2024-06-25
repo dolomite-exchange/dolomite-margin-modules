@@ -40,6 +40,12 @@ interface IGammaPool is IERC20 {
         bytes calldata _data
     ) external returns (uint256[] memory, uint256);
 
+    function totalAssets() external view returns (uint256);
+
+    function convertToAssets(uint256 shares) external view returns (uint256);
+
+    function convertToShares(uint256 assets) external view returns (uint256);
+
     function cfmm() external view returns (address);
 
     function protocolId() external view returns (uint16);

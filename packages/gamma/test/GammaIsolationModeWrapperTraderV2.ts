@@ -43,6 +43,7 @@ import { GenericEventEmissionType } from '@dolomite-exchange/dolomite-margin/dis
 import { createOdosAggregatorTrader } from 'packages/base/test/utils/ecosystem-utils/traders';
 import { OdosAggregatorTrader, TestAggregatorTrader, TestAggregatorTrader__factory } from 'packages/base/src/types';
 import { IERC20Metadata__factory } from 'packages/abracadabra/src/types';
+import { setupDolomiteAccountRegistry } from 'packages/base/test/utils/dolomite';
 
 const defaultAccountNumber = '0';
 const borrowAccountNumber = '123';
@@ -88,6 +89,7 @@ describe('GammaIsolationModeWrapperTraderV2', () => {
 
     const vaultImplementation = await createGammaIsolationModeTokenVaultV1();
     gammaFactory = await createGammaIsolationModeVaultFactory(gammaRegistry, gammaPool, vaultImplementation, core);
+    await setupDolomiteAccountRegistry(core, gammaFactory);
 
     unwrapper = await createGammaUnwrapperTraderV2(core, gammaFactory, gammaRegistry);
     wrapper = await createTestGammaWrapperTraderV2(core, gammaFactory, gammaRegistry);

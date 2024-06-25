@@ -94,13 +94,16 @@ contract GammaIsolationModeUnwrapperTraderV2 is IsolationModeUnwrapperTraderV2 {
         returns (uint256)
     {
         (
-            uint256[] memory amountsMin,
             address aggregator,
             bytes memory aggregatorData
-        ) = abi.decode(_extraOrderData, (uint256[], address, bytes));
+        ) = abi.decode(_extraOrderData, (address, bytes));
 
         // Withdraw the assets from the LPs
         {
+            uint256[] memory amountsMin = new uint256[](2);
+            amountsMin[0] = 1;
+            amountsMin[1] = 1;
+
             IGammaPositionManager positionManager = GAMMA_REGISTRY.gammaPositionManager();
             IERC20(address(GAMMA_POOL)).safeApprove(address(positionManager), _inputAmount);
             IGammaPositionManager.WithdrawReservesParams memory withdrawReservesParams =
@@ -121,7 +124,7 @@ contract GammaIsolationModeUnwrapperTraderV2 is IsolationModeUnwrapperTraderV2 {
         // Swap half of the output via the aggregator
         uint256 swapAmount = IERC20(swapToken).balanceOf(address(this));
         IERC20(swapToken).safeTransfer(aggregator, swapAmount);
-        IDolomiteMarginExchangeWrapper(aggregator).exchange(
+        uint256 outputAmount = IDolomiteMarginExchangeWrapper(aggregator).exchange(
             /* tradeOriginator = */ address(this),
             /* receiver = */ address(this),
             /* outputToken = */ _outputToken,
@@ -130,6 +133,7 @@ contract GammaIsolationModeUnwrapperTraderV2 is IsolationModeUnwrapperTraderV2 {
             /* minAmountOutAndOrderData = */ aggregatorData
         );
 
+        IERC20(_outputToken).safeTransferFrom(aggregator, address(this), outputAmount);
         return IERC20(_outputToken).balanceOf(address(this));
     }
 

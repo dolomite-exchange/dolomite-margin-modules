@@ -32,7 +32,6 @@ import { IGammaPool } from "./interfaces/IGammaPool.sol";
 import { IGammaPositionManager } from "./interfaces/IGammaPositionManager.sol";
 import { IGammaRegistry } from "./interfaces/IGammaRegistry.sol";
 
-import "hardhat/console.sol";
 
 /**
  * @title   GammaIsolationModeWrapperTraderV2
@@ -168,7 +167,7 @@ contract GammaIsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2 {
     ) internal returns (uint256) {
         (address aggregator, bytes memory aggregatorData) = abi.decode(_extraOrderData, (address, bytes));
         IERC20(_inputToken).safeTransfer(aggregator, _inputAmount);
-        return IDolomiteMarginExchangeWrapper(aggregator).exchange(
+        uint256 outputAmount = IDolomiteMarginExchangeWrapper(aggregator).exchange(
             /* tradeOriginator = */ address(this),
             /* receiver = */ address(this),
             /* outputToken = */ _outputToken,
@@ -176,6 +175,8 @@ contract GammaIsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2 {
             /* inputAmount = */ _inputAmount,
             /* minAmountOutAndOrderData */ aggregatorData
         );
+        IERC20(_outputToken).safeTransferFrom(aggregator, address(this), outputAmount);
+        return outputAmount;
     }
 
     function _doDeltaSwap(

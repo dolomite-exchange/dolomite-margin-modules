@@ -18,6 +18,7 @@ import {
   createGammaUnwrapperTraderV2,
   createGammaWrapperTraderV2
 } from './gamma-ecosystem-utils';
+import { setupDolomiteAccountRegistry } from 'packages/base/test/utils/dolomite';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
@@ -46,6 +47,7 @@ describe('GammaIsolationModeVaultFactory', () => {
       vaultImplementation,
       core
     );
+    await setupDolomiteAccountRegistry(core, gammaFactory);
 
     unwrapper = await createGammaUnwrapperTraderV2(core, gammaFactory, gammaRegistry);
     wrapper = await createGammaWrapperTraderV2(core, gammaFactory, gammaRegistry);

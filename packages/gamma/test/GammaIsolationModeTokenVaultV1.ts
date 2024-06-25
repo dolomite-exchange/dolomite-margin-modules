@@ -18,6 +18,7 @@ import {
   createGammaUnwrapperTraderV2,
   createGammaWrapperTraderV2
 } from './gamma-ecosystem-utils';
+import { setupDolomiteAccountRegistry } from 'packages/base/test/utils/dolomite';
 
 describe('GammaIsolationModeTokenVaultV1', () => {
   let snapshotId: string;
@@ -44,6 +45,7 @@ describe('GammaIsolationModeTokenVaultV1', () => {
       vaultImplementation,
       core
     );
+    await setupDolomiteAccountRegistry(core, gammaFactory);
 
     unwrapper = await createGammaUnwrapperTraderV2(core, gammaFactory, gammaRegistry);
     wrapper = await createGammaWrapperTraderV2(core, gammaFactory, gammaRegistry);

@@ -10,7 +10,8 @@ import {
   GammaPoolPriceOracle,
   GammaRegistry,
   IDeltaSwapPair,
-  IDeltaSwapPair__factory
+  IDeltaSwapPair__factory,
+  IGammaPool
 } from '../src/types';
 import {
   createGammaIsolationModeTokenVaultV1,
@@ -49,9 +50,6 @@ describe('GammaPoolPriceOracle', () => {
       core
     );
     deltaPair = IDeltaSwapPair__factory.connect(await core.gammaEcosystem.gammaPools.wethUsdc.cfmm(), core.hhUser1);
-    console.log(deltaPair.address)
-    console.log(await deltaPair.token0());
-    console.log(await deltaPair.token1());
 
     gammaOracle = await createGammaPoolPriceOracle(core, gammaRegistry);
     await gammaOracle.connect(core.governance).ownerSetGammaPool(gammaFactory.address, true);
@@ -89,20 +87,20 @@ describe('GammaPoolPriceOracle', () => {
   describe('#getPrice', () => {
     it('should work normally', async () => {
       expect((await gammaOracle.getPrice(gammaFactory.address)).value).to.equal(
-        await getDeltaPairLPPriceNoFee(core, deltaPair, false)
+        await getDeltaPairLPPriceNoFee(core, core.gammaEcosystem.gammaPools.wethUsdc, deltaPair, false)
       );
     });
 
     it('should work normally when fees are on', async () => {
       expect((await gammaOracle.getPrice(gammaFactory.address)).value).to.equal(
-        await getDeltaPairLPPriceNoFee(core, deltaPair, false)
+        await getDeltaPairLPPriceNoFee(core, core.gammaEcosystem.gammaPools.wethUsdc, deltaPair, false)
       );
 
       // Set feeSetter and check price is same
       const feeSetter = await impersonate(await core.gammaEcosystem.deltaSwapFactory.feeToSetter(), true);
       await core.gammaEcosystem.deltaSwapFactory.connect(feeSetter).setFeeTo(core.hhUser1.address);
       expect((await gammaOracle.getPrice(gammaFactory.address)).value).to.equal(
-        await getDeltaPairLPPriceNoFee(core, deltaPair, false)
+        await getDeltaPairLPPriceNoFee(core, core.gammaEcosystem.gammaPools.wethUsdc, deltaPair, false)
       );
 
       // Accrue fees for pool and check oracle price
@@ -119,7 +117,7 @@ describe('GammaPoolPriceOracle', () => {
       await core.tokens.nativeUsdc.connect(core.hhUser1).transfer(deltaPair.address, usdcAmount);
       await deltaPair.connect(core.hhUser1).swap(parseEther('.2'), 0, core.hhUser1.address, '0x');
       expect((await gammaOracle.getPrice(gammaFactory.address)).value).to.equal(
-        await getDeltaPairLPPriceNoFee(core, deltaPair, true)
+        await getDeltaPairLPPriceNoFee(core, core.gammaEcosystem.gammaPools.wethUsdc, deltaPair, true)
       );
 
       // Mint again so kLast == k, and no fees are removed from price
@@ -127,7 +125,7 @@ describe('GammaPoolPriceOracle', () => {
       await core.tokens.weth.connect(core.hhUser1).transfer(deltaPair.address, wethAmount);
       await deltaPair.connect(core.hhUser1).mint(core.hhUser1.address);
       expect((await gammaOracle.getPrice(gammaFactory.address)).value).to.equal(
-        await getDeltaPairLPPriceNoFee(core, deltaPair, false)
+        await getDeltaPairLPPriceNoFee(core, core.gammaEcosystem.gammaPools.wethUsdc, deltaPair, false)
       );
     });
   });
@@ -135,6 +133,7 @@ describe('GammaPoolPriceOracle', () => {
 
 async function getDeltaPairLPPriceNoFee(
   core: CoreProtocolArbitrumOne,
+  gammaPool: IGammaPool,
   deltaPair: IDeltaSwapPair,
   feeOn: boolean
 ): Promise<BigNumber> {
@@ -156,7 +155,8 @@ async function getDeltaPairLPPriceNoFee(
   const price1 = (await core.oracleAggregatorV2.getPrice(await deltaPair.token1())).value;
   const value0 = reserves[0].mul(price0).div(ONE_ETH_BI);
   const value1 = reserves[1].mul(price1).div(ONE_ETH_BI);
-  return sqrt(value0.mul(value1)).mul(ONE_ETH_BI).mul(2).div(supply);
+  const lpPrice = sqrt(value0.mul(value1)).mul(ONE_ETH_BI).mul(2).div(supply);
+  return lpPrice.mul(await gammaPool.totalAssets()).div(await gammaPool.totalSupply());
 }
 
 const ONE = BigNumber.from(1);
