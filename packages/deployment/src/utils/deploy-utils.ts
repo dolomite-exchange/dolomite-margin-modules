@@ -286,6 +286,7 @@ export function getOldDeploymentVersionNamesByDeploymentKey(nameWithoutVersionPo
   }, [] as string[]);
 }
 
+let nonce: number | undefined = undefined;
 export async function deployContractAndSave(
   contractName: string,
   args: ConstructorArgument[],
@@ -338,9 +339,14 @@ export async function deployContractAndSave(
 
   let contract: BaseContract;
   try {
+    if (nonce === undefined) {
+      const signer = ethers.provider.getSigner(0);
+      nonce = await ethers.provider.getTransactionCount(await signer.getAddress());
+    }
     contract = libraries
-      ? await createContractWithLibrary(contractName, libraries, args)
-      : await createContractWithName(contractName, args);
+      ? await createContractWithLibrary(contractName, libraries, args, { nonce })
+      : await createContractWithName(contractName, args, { nonce });
+    nonce += 1;
   } catch (e) {
     console.error(`\tCould not deploy at attempt ${attempts + 1} due for ${contractName} to error:`, e);
     return deployContractAndSave(contractName, args, contractRename, libraries, attempts + 1);
@@ -381,7 +387,7 @@ async function verifyFactoryChildProxyContractIfNecessary(
   if (network.name !== 'hardhat') {
     const receipt = await ethers.provider.getTransactionReceipt(deploymentTransactionHash);
     const vaultCreatedTopic0 = '0x5d9c31ffa0fecffd7cf379989a3c7af252f0335e0d2a1320b55245912c781f53';
-    const event = receipt.logs.find((l) => l.topics[0] === vaultCreatedTopic0);
+    const event = receipt?.logs.find((l) => l.topics[0] === vaultCreatedTopic0);
     if (event) {
       const vaultAddress = ethers.utils.defaultAbiCoder.decode(['address'], event.data)[0];
       const vaultRename = `${usedContractName}DeadProxy`;
@@ -575,8 +581,8 @@ async function prettyPrintAndVerifyContract(
   console.log(`\t${'='.repeat(52 + contractRename.length)}`);
 
   if (!(process.env.SKIP_VERIFICATION === 'true')) {
-    console.log('\tSleeping for 5s to wait for the transaction to be indexed by Etherscan...');
-    await sleep(3000);
+    console.log('\tSleeping for 5s to wait for the transaction to be indexed by the block explorer...');
+    await sleep(5000);
     const artifact = await artifacts.readArtifact(contractName);
     await verifyContract(contract.address, [...args], `${artifact.sourceName}:${contractName}`, libraries);
     file[contractRename][chainId].isVerified = true;

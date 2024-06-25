@@ -19,18 +19,20 @@ import { SignerWithAddressWithSafety } from './SignerWithAddressWithSafety';
 export async function createContractWithName<T extends BaseContract>(
   contractName: string,
   args: any[],
+  options?: {},
 ): Promise<T> {
   const ContractFactory = await ethers.getContractFactory(contractName);
-  return await ContractFactory.deploy(...args) as T;
+  return await ContractFactory.deploy(...(options ? [...args, options] : [...args])) as T;
 }
 
 export async function createContractWithAbi<T extends BaseContract>(
   abi: readonly any[],
   bytecode: BytesLike,
   args: (number | string | BigNumberish | object | undefined)[],
+  options?: {},
 ): Promise<T> {
   const ContractFactory = await ethers.getContractFactory(abi as any[], bytecode);
-  return await ContractFactory.deploy(...args) as T;
+  return await ContractFactory.deploy(...(options ? [...args, options] : [...args])) as T;
 }
 
 export type LibraryName = string;
@@ -39,9 +41,10 @@ export async function createContractWithLibrary<T extends BaseContract>(
   name: string,
   libraries: Record<LibraryName, address>,
   args: (number | string | BigNumberish | boolean | object)[],
+  options?: {},
 ): Promise<T> {
   const ContractFactory = await ethers.getContractFactory(name, { libraries });
-  return await ContractFactory.deploy(...args) as T;
+  return await ContractFactory.deploy(...(options ? [...args, options] : [...args])) as T;
 }
 
 export async function createContractWithLibraryAndArtifact<T extends BaseContract>(

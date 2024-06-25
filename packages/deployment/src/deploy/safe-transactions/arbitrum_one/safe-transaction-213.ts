@@ -101,7 +101,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       core,
       'dolomiteMargin',
       'ownerSetInterestSetter',
-      [core.marketIds.weth, core.interestSetters.linearStepFunction14L86UInterestSetter.address],
+      [core.marketIds.weth, core.interestSetters.linearStepFunction14L86U90OInterestSetter.address],
     ),
     ...await prettyPrintEncodeAddMarket(
       core,
@@ -137,7 +137,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     invariants: async () => {
       assertHardhatInvariant(
         await core.dolomiteMargin.getMarketInterestSetter(core.marketIds.weth)
-        === core.interestSetters.linearStepFunction14L86UInterestSetter.address,
+        === core.interestSetters.linearStepFunction14L86U90OInterestSetter.address,
         'Invalid interest setter',
       );
       assertHardhatInvariant(

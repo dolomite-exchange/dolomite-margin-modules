@@ -222,7 +222,7 @@ export async function enableInterestAccrual<T extends NetworkType>(
 ) {
   return core.dolomiteMargin.ownerSetInterestSetter(
     marketId,
-    core.interestSetters.linearStepFunction8L92UInterestSetter.address,
+    core.interestSetters.linearStepFunction8L92U90OInterestSetter.address,
   );
 }
 
