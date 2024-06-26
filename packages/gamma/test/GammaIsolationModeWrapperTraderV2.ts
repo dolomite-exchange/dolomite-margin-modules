@@ -69,8 +69,8 @@ describe('GammaIsolationModeWrapperTraderV2', () => {
 
   before(async () => {
     core = await setupCoreProtocol({
-      // blockNumber: await getRealLatestBlockNumber(true, Network.ArbitrumOne),
-      blockNumber: 219114000,
+      blockNumber: await getRealLatestBlockNumber(true, Network.ArbitrumOne),
+      // blockNumber: 219114000,
       network: Network.ArbitrumOne,
     });
     await disableInterestAccrual(core, core.marketIds.weth);
@@ -133,7 +133,6 @@ describe('GammaIsolationModeWrapperTraderV2', () => {
 
   describe('#exchange', () => {
     // use real latest block number with odos tests
-    // @follow-up Why are these not failing? Cause zap sdk automatically puts receiver as the trader, these don't
     xit('should work normally for token0 with odos', async () => {
       await vault.transferIntoPositionWithOtherToken(
         defaultAccountNumber,
@@ -153,7 +152,7 @@ describe('GammaIsolationModeWrapperTraderV2', () => {
         core.tokens.nativeUsdc,
         gammaFactory,
         ONE_BI,
-        wrapper
+        odosAggregator
       );
       await vault.swapExactInputForOutput(
         params.accountNumber,
@@ -193,7 +192,7 @@ describe('GammaIsolationModeWrapperTraderV2', () => {
         core.tokens.weth,
         gammaFactory,
         ONE_BI,
-        wrapper
+        odosAggregator
       );
       await vault.swapExactInputForOutput(
         params.accountNumber,

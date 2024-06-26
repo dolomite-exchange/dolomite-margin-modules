@@ -67,7 +67,6 @@ describe('GammaZapIntegrationTests', () => {
   before(async () => {
     core = await setupCoreProtocol({
       blockNumber: await getRealLatestBlockNumber(true, Network.ArbitrumOne),
-      // blockNumber: 225340949,
       network: Network.ArbitrumOne,
     });
     const odosAggregator = await createOdosAggregatorTrader(core);
@@ -181,7 +180,7 @@ describe('GammaZapIntegrationTests', () => {
         gammaApiToken,
         toZapBigNumber(amountWei),
         core.apiTokens.weth,
-        toZapBigNumber(ONE_BI), // @follow-up Understand how this param is used
+        toZapBigNumber(ONE_BI), // @follow-up Corey do you want to test with a different value here?
         unwrapper.address,
         { disallowAggregator: true }
       );
