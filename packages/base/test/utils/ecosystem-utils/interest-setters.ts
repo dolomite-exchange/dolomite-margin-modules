@@ -17,6 +17,8 @@ export interface InterestSetters {
   linearStepFunction15L135U80OInterestSetter: IDolomiteInterestSetter;
   linearStepFunction15L135U85OInterestSetter: IDolomiteInterestSetter;
   linearStepFunction15L135U90OInterestSetter: IDolomiteInterestSetter;
+  linearStepFunction16L84U70OInterestSetter: IDolomiteInterestSetter;
+  linearStepFunction16L84U80OInterestSetter: IDolomiteInterestSetter;
   linearStepFunction16L84U90OInterestSetter: IDolomiteInterestSetter;
 }
 
@@ -53,10 +55,6 @@ export async function createInterestSetters(
       deployments.LinearStepFunction14L86U90OInterestSetter[network].address,
       signer,
     ),
-    linearStepFunction16L84U90OInterestSetter: IDolomiteInterestSetter__factory.connect(
-      deployments.LinearStepFunction16L84U90OInterestSetter[network].address,
-      signer,
-    ),
     linearStepFunction15L135U70OInterestSetter: IDolomiteInterestSetter__factory.connect(
       deployments.LinearStepFunction15L135U70OInterestSetter[network].address,
       signer,
@@ -75,6 +73,18 @@ export async function createInterestSetters(
     ),
     linearStepFunction15L135U90OInterestSetter: IDolomiteInterestSetter__factory.connect(
       deployments.LinearStepFunction15L135U90OInterestSetter[network].address,
+      signer,
+    ),
+    linearStepFunction16L84U70OInterestSetter: IDolomiteInterestSetter__factory.connect(
+      deployments.LinearStepFunction16L84U70OInterestSetter[network].address,
+      signer,
+    ),
+    linearStepFunction16L84U80OInterestSetter: IDolomiteInterestSetter__factory.connect(
+      deployments.LinearStepFunction16L84U80OInterestSetter[network].address,
+      signer,
+    ),
+    linearStepFunction16L84U90OInterestSetter: IDolomiteInterestSetter__factory.connect(
+      deployments.LinearStepFunction16L84U90OInterestSetter[network].address,
       signer,
     ),
   };

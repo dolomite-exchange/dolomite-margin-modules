@@ -716,6 +716,7 @@ export interface EncodedTransaction {
 }
 
 export interface DenJsonUpload {
+  addExecuteImmediatelyTransactions?: boolean;
   chainId: NetworkType;
   transactions: EncodedTransaction[];
 }
