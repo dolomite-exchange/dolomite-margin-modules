@@ -15,7 +15,6 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
   const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
 
-  // TODO: add execution too.
   const transactions = [];
   transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(
