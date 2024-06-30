@@ -130,6 +130,7 @@ async function doStuffInternal<T extends NetworkType>(executionFn: () => Promise
             'delayedMultisig',
             'executeMultipleTransactions',
             [transactionIds],
+            { skipWrappingCalldataInSubmitTransaction: true },
           ),
         );
       }

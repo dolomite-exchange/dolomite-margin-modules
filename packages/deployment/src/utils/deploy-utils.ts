@@ -759,7 +759,7 @@ export async function prettyPrintEncodedDataWithTypeSafety<
   key: K,
   methodName: U,
   args: Parameters<T['populateTransaction'][U]>,
-  options: { skipWrappingCalldataForOwner: boolean } = { skipWrappingCalldataForOwner: false },
+  options: { skipWrappingCalldataInSubmitTransaction: boolean } = { skipWrappingCalldataInSubmitTransaction: false },
 ): Promise<EncodedTransaction> {
   const contract = liveMap[key];
   const transaction = await contract.populateTransaction[methodName.toString()](...(args as any));
@@ -786,7 +786,7 @@ export async function prettyPrintEncodedDataWithTypeSafety<
     console.log(''); // add a new line
   }
 
-  if (options.skipWrappingCalldataForOwner) {
+  if (options.skipWrappingCalldataInSubmitTransaction) {
     return {
       to: transaction.to!,
       value: transaction.value?.toString() ?? '0',
