@@ -116,6 +116,7 @@ import {
   WMNT_MAP,
   WOKB_MAP,
   WST_ETH_MAP,
+  WUSDM_MAP,
   XAI_MAP,
 } from '../../src/utils/constants';
 import {
@@ -309,6 +310,18 @@ export async function setupUSDCBalance<T extends NetworkType>(
   const whaleSigner = await impersonate(whaleAddress, true);
   await core.tokens.usdc.connect(whaleSigner).transfer(signer.address, amount);
   await core.tokens.usdc.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
+}
+
+export async function setupUSDMBalance(
+  core: CoreProtocolArbitrumOne,
+  signer: SignerWithAddressWithSafety,
+  amount: BigNumberish,
+  spender: { address: string },
+) {
+  const whaleAddress = '0x4bD135524897333bec344e50ddD85126554E58B4';
+  const whaleSigner = await impersonate(whaleAddress, true);
+  await core.tokens.usdm.connect(whaleSigner).transfer(signer.address, amount);
+  await core.tokens.usdm.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
 export async function setupGMBalance(
@@ -795,6 +808,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
         wbtc: WBTC_MAP[typedConfig.network].marketId,
         weEth: WE_ETH_MAP[typedConfig.network].marketId,
         wstEth: WST_ETH_MAP[typedConfig.network].marketId,
+        wusdm: WUSDM_MAP[typedConfig.network].marketId,
         xai: XAI_MAP[typedConfig.network].marketId,
         stablecoins: [
           ...coreProtocolParams.marketIds.stablecoins,
@@ -854,6 +868,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
         weth: coreProtocolParams.tokens.weth as any,
         weEth: IERC20__factory.connect(WE_ETH_MAP[typedConfig.network].address, hhUser1),
         wstEth: IERC20__factory.connect(WST_ETH_MAP[typedConfig.network].address, hhUser1),
+        wusdm: IERC20__factory.connect(WUSDM_MAP[typedConfig.network].address, hhUser1),
         xai: IERC20__factory.connect(XAI_MAP[typedConfig.network].address, hhUser1),
         stablecoins: [
           ...coreProtocolParams.tokens.stablecoins,
