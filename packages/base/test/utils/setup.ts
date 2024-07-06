@@ -107,7 +107,7 @@ import {
   UNI_MAP,
   USDC_MAP,
   USDE_MAP,
-  USDM_MAP,
+  W_USDM_MAP,
   USDT_MAP,
   USDY_MAP,
   WBTC_MAP,
@@ -688,6 +688,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
       usdc: USDC_MAP[config.network].marketId,
       weth: WETH_MAP[config.network].marketId,
       stablecoins: [USDC_MAP[config.network].marketId],
+      stablecoinsWithUnifiedInterestRateModels: [USDC_MAP[config.network].marketId],
     },
     tokens: {
       usdc: IERC20__factory.connect(USDC_MAP[config.network].address, hhUser1),
@@ -795,11 +796,20 @@ export async function setupCoreProtocol<T extends NetworkType>(
         wbtc: WBTC_MAP[typedConfig.network].marketId,
         weEth: WE_ETH_MAP[typedConfig.network].marketId,
         wstEth: WST_ETH_MAP[typedConfig.network].marketId,
+        wusdm: W_USDM_MAP[typedConfig.network].marketId,
         xai: XAI_MAP[typedConfig.network].marketId,
         stablecoins: [
           ...coreProtocolParams.marketIds.stablecoins,
           DAI_MAP[typedConfig.network]!.marketId,
           GRAI_MAP[typedConfig.network].marketId,
+          MIM_MAP[typedConfig.network].marketId,
+          NATIVE_USDC_MAP[typedConfig.network].marketId,
+          W_USDM_MAP[typedConfig.network].marketId,
+          USDT_MAP[typedConfig.network].marketId,
+        ],
+        stablecoinsWithUnifiedInterestRateModels: [
+          ...coreProtocolParams.marketIds.stablecoins,
+          DAI_MAP[typedConfig.network]!.marketId,
           MIM_MAP[typedConfig.network].marketId,
           NATIVE_USDC_MAP[typedConfig.network].marketId,
           USDT_MAP[typedConfig.network].marketId,
@@ -848,12 +858,12 @@ export async function setupCoreProtocol<T extends NetworkType>(
         size: IERC20__factory.connect(SIZE_MAP[typedConfig.network].address, hhUser1),
         stEth: IERC20__factory.connect(ST_ETH_MAP[typedConfig.network].address, hhUser1),
         uni: IERC20__factory.connect(UNI_MAP[typedConfig.network].address, hhUser1),
-        usdm: IERC20__factory.connect(USDM_MAP[typedConfig.network].address, hhUser1),
         usdt: IERC20__factory.connect(USDT_MAP[typedConfig.network].address, hhUser1),
         wbtc: IERC20__factory.connect(WBTC_MAP[typedConfig.network].address, hhUser1),
         weth: coreProtocolParams.tokens.weth as any,
         weEth: IERC20__factory.connect(WE_ETH_MAP[typedConfig.network].address, hhUser1),
         wstEth: IERC20__factory.connect(WST_ETH_MAP[typedConfig.network].address, hhUser1),
+        wusdm: IERC20__factory.connect(W_USDM_MAP[typedConfig.network].address, hhUser1),
         xai: IERC20__factory.connect(XAI_MAP[typedConfig.network].address, hhUser1),
         stablecoins: [
           ...coreProtocolParams.tokens.stablecoins,
@@ -862,6 +872,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
           IERC20__factory.connect(MIM_MAP[typedConfig.network].address, hhUser1),
           IERC20__factory.connect(NATIVE_USDC_MAP[typedConfig.network].address, hhUser1),
           IERC20__factory.connect(USDT_MAP[typedConfig.network].address, hhUser1),
+          IERC20__factory.connect(W_USDM_MAP[typedConfig.network].address, hhUser1),
         ],
       },
     }) as any;
@@ -895,6 +906,11 @@ export async function setupCoreProtocol<T extends NetworkType>(
         wmnt: WMNT_MAP[typedConfig.network].marketId,
         usde: USDE_MAP[typedConfig.network].marketId,
         stablecoins: [
+          ...coreProtocolParams.marketIds.stablecoins,
+          USDT_MAP[typedConfig.network].marketId,
+          USDY_MAP[typedConfig.network].marketId,
+        ],
+        stablecoinsWithUnifiedInterestRateModels: [
           ...coreProtocolParams.marketIds.stablecoins,
           USDT_MAP[typedConfig.network].marketId,
           USDY_MAP[typedConfig.network].marketId,
@@ -933,6 +949,11 @@ export async function setupCoreProtocol<T extends NetworkType>(
           DAI_MAP[typedConfig.network]!.marketId,
           USDT_MAP[typedConfig.network].marketId,
         ],
+        stablecoinsWithUnifiedInterestRateModels: [
+          ...coreProtocolParams.marketIds.stablecoins,
+          DAI_MAP[typedConfig.network]!.marketId,
+          USDT_MAP[typedConfig.network].marketId,
+        ],
       },
       paraswapEcosystem: await createParaswapEcosystem(typedConfig.network, hhUser1),
       tokens: {
@@ -960,6 +981,10 @@ export async function setupCoreProtocol<T extends NetworkType>(
         wbtc: WBTC_MAP[typedConfig.network].marketId,
         wokb: WOKB_MAP[typedConfig.network].marketId,
         stablecoins: [...coreProtocolParams.marketIds.stablecoins, USDT_MAP[typedConfig.network].marketId],
+        stablecoinsWithUnifiedInterestRateModels: [
+          ...coreProtocolParams.marketIds.stablecoins,
+          USDT_MAP[typedConfig.network].marketId,
+        ],
       },
       liquidityMiningEcosystem: {
         minerals: await createMineralLiquidityMiningEcosystem(typedConfig.network, hhUser1),

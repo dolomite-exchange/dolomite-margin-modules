@@ -81,12 +81,6 @@ library AsyncIsolationModeUnwrapperTraderImpl {
         UpgradeableAsyncIsolationModeUnwrapperTrader _unwrapper,
         IUpgradeableAsyncIsolationModeUnwrapperTrader.WithdrawalInfo memory _withdrawalInfo
     ) external {
-        _unwrapper.HANDLER_REGISTRY().dolomiteRegistry().eventEmitter().emitAsyncWithdrawalOutputAmountUpdated(
-            _withdrawalInfo.key,
-            address(_unwrapper.VAULT_FACTORY()),
-            _withdrawalInfo.outputAmount
-        );
-
         uint256[] memory marketIdsPath = new uint256[](2);
         marketIdsPath[0] = _unwrapper.VAULT_FACTORY().marketId();
         marketIdsPath[1] = _unwrapper.DOLOMITE_MARGIN().getMarketIdByTokenAddress(_withdrawalInfo.outputToken);
@@ -297,7 +291,6 @@ library AsyncIsolationModeUnwrapperTraderImpl {
                 );
                 withdrawalInfo.inputAmount -= inputAmountToCollect;
                 withdrawalInfo.outputAmount -= outputAmountToCollect;
-                state.withdrawalInfo[key] = withdrawalInfo;
                 setWithdrawalInfo(state, key, withdrawalInfo);
                 _updateVaultPendingAmount(
                     state.vaultFactory,

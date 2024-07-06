@@ -420,7 +420,7 @@ export const USDE_MAP: Record<Network.Mantle, TokenWithMarketId> = {
   },
 };
 
-export const USDM_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+export const W_USDM_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x57F5E098CaD7A3D1Eed53991D4d66C45C9AF7812',
     marketId: 48,
@@ -1232,7 +1232,7 @@ export const CHRONICLE_PRICE_SCRIBES_MAP: Record<
   Record<string, ChronicleScribe>
 > = {
   [Network.ArbitrumOne]: {
-    [USDM_MAP[Network.ArbitrumOne].address]: {
+    [W_USDM_MAP[Network.ArbitrumOne].address]: {
       scribeAddress: '0xdC6720c996Fad27256c7fd6E0a271e2A4687eF18',
       tokenPairAddress: ADDRESS_ZERO,
     },

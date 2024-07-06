@@ -165,6 +165,33 @@
       "isVerified": true
     }
   },
+  "AsyncIsolationModeUnwrapperTraderImplV4": {
+    "196": {
+      "address": "0x82B931E867Fd16603a48eb667Bde2FF2654Dc08c",
+      "transaction": "0x063b6e90302c147e13da8dcddfee64381503f1b28ffeb7b1792450638a96be35",
+      "isVerified": true
+    },
+    "1101": {
+      "address": "0xfA73dCeA6396ed966F87787b38B6915dAB367c9a",
+      "transaction": "0xf1261337106ec7a857819e99c13a022078afc0f28779ddea8e5839e88203fb10",
+      "isVerified": true
+    },
+    "5000": {
+      "address": "0x07932299a91fe5A0C900D0987486115fBb30ACCD",
+      "transaction": "0x01fc6f2cc815dfffc1ad70565f52140a38f8034c9b8743281da4744ead54b8ac",
+      "isVerified": true
+    },
+    "8453": {
+      "address": "0x630130f96808a40331ba3BB9C827e81b5a88D7f6",
+      "transaction": "0x7cc52641525e63397f3d3306b1019d27eb3c886353687d7be10b7513179ece0c",
+      "isVerified": true
+    },
+    "42161": {
+      "address": "0xDB00380710E79B63E02A96c2bbb0230315a445a7",
+      "transaction": "0x078e31a609804c1255c0949fc83db643cb2f7ccde8ba875d63960902390085fe",
+      "isVerified": true
+    }
+  },
   "AsyncIsolationModeWrapperTraderImplV1": {
     "42161": {
       "address": "0xFb5Ce5D42c0fa1504D041d0655a40D05815FffE7",
@@ -1090,6 +1117,13 @@
       "isVerified": true
     }
   },
+  "GmxV2IsolationModeUnwrapperTraderImplementationV8": {
+    "42161": {
+      "address": "0xecCD34D6B320EEAeBC7041450600c7cE7571EaB6",
+      "transaction": "0x73dcf8687cbb545dc4211e62bf422e3c54aea9721769c1b03307eacce5821ce4",
+      "isVerified": true
+    }
+  },
   "GmxV2IsolationModeWrapperTraderImplementationV2": {
     "42161": {
       "address": "0xA3B49d5649040C766B82d63faB1e44556e7f8898",
@@ -1122,6 +1156,13 @@
     "42161": {
       "address": "0xAf9ab89B49AD3Eb32593952c001807A38c4fBACF",
       "transaction": "0xf6ec760bb7611f0f6e950b3b65ab22bbfa1a3e3d2bba62e6e382ba2ce5d41476",
+      "isVerified": true
+    }
+  },
+  "GmxV2IsolationModeWrapperTraderImplementationV7": {
+    "42161": {
+      "address": "0x66502C4a505f10B5D0BCeEf038ad56A7C1D8A9DB",
+      "transaction": "0x9c17060bb6dfc030db59f47e0a94d11366e6eee5e84cd3274f1a7c9abad0727e",
       "isVerified": true
     }
   },
