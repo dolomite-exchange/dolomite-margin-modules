@@ -1,7 +1,6 @@
 import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { parseEther } from 'ethers/lib/utils';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
 import { prettyPrintEncodedDataWithTypeSafety } from '../../../utils/deploy-utils';
