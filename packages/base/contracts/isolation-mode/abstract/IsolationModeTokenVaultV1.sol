@@ -33,7 +33,6 @@ import { IIsolationModeTokenVaultV1 } from "../interfaces/IIsolationModeTokenVau
 import { IIsolationModeVaultFactory } from "../interfaces/IIsolationModeVaultFactory.sol";
 import { IsolationModeTokenVaultV1ActionsImpl } from "./impl/IsolationModeTokenVaultV1ActionsImpl.sol";
 
-import "hardhat/console.sol";
 
 /**
  * @title   IsolationModeTokenVaultV1
@@ -123,7 +122,10 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
 
         for (uint256 i; i < len; ++i) {
             Require.that(
-                _binarySearch(allowedSelectors, abi.decode(_calls[i], (bytes4))),
+                IsolationModeTokenVaultV1ActionsImpl.selectorBinarySearch(
+                    allowedSelectors,
+                    abi.decode(_calls[i], (bytes4))
+                ),
                 _FILE,
                 "Disallowed multicall function"
             );
@@ -736,30 +738,6 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
             _FILE,
             "Cannot send ETH"
         );
-    }
-
-    // @follow-up @Corey, is it ok to have another _binarySearch function?
-    function _binarySearch(bytes4[] memory _allowedSelectors, bytes4 _selector) internal pure returns (bool) {
-        if (_allowedSelectors.length == 0) {
-            return false;
-        }
-
-        uint256 low = 0;
-        uint256 high = _allowedSelectors.length - 1;
-        if (_selector < _allowedSelectors[low] || _selector > _allowedSelectors[high]) {
-            return false;
-        }
-        while (low <= high) {
-            uint256 mid = (low + high) / 2;
-            if (_allowedSelectors[mid] == _selector) {
-                return true;
-            } else if (_allowedSelectors[mid] < _selector) {
-                low = mid + 1;
-            } else {
-                high = mid - 1;
-            }
-        }
-        return false;
     }
 
     // ===========================================

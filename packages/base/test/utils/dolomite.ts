@@ -90,7 +90,7 @@ export async function createAndUpgradeDolomiteRegistry<T extends NetworkType>(
 ): Promise<void> {
   const implementation = await createDolomiteRegistryImplementation();
   await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(implementation.address);
-} 
+}
 
 export async function createIsolationModeTraderProxy<T extends NetworkType>(
   implementationAddress: string,

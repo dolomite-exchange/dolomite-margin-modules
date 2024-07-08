@@ -28,8 +28,8 @@ import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { SimpleIsolationModeTokenVaultV1 } from "../isolation-mode/SimpleIsolationModeTokenVaultV1.sol";
 import { IsolationModeTokenVaultV1 } from "../isolation-mode/abstract/IsolationModeTokenVaultV1.sol";
 import { IsolationModeTokenVaultV1ActionsImpl } from "../isolation-mode/abstract/impl/IsolationModeTokenVaultV1ActionsImpl.sol"; // solhint-disable-line max-line-length
-import { IIsolationModeVaultFactory } from "../isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
 import { IIsolationModeTokenVaultV1 } from "../isolation-mode/interfaces/IIsolationModeTokenVaultV1.sol";
+import { IIsolationModeVaultFactory } from "../isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
 import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 
@@ -160,7 +160,7 @@ contract TestIsolationModeTokenVaultV1 is SimpleIsolationModeTokenVaultV1 {
         bytes4[] memory _selectors,
         bytes4 _selector
     ) external pure returns (bool) {
-        return _binarySearch(_selectors, _selector);
+        return IsolationModeTokenVaultV1ActionsImpl.selectorBinarySearch(_selectors, _selector);
     }
 
     function dolomiteRegistry() public override(IsolationModeTokenVaultV1) view returns (IDolomiteRegistry) {

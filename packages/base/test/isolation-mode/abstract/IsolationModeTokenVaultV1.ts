@@ -24,7 +24,7 @@ import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectProtocolBalance, expectThrow, expectTotalSupply, expectWalletBalance } from '../../utils/assertions';
 
 import { CoreProtocolArbitrumOne } from '../../utils/core-protocols/core-protocol-arbitrum-one';
-import { createAndUpgradeDolomiteRegistry, createDolomiteRegistryImplementation, createIsolationModeTokenVaultV1ActionsImpl } from '../../utils/dolomite';
+import { createAndUpgradeDolomiteRegistry, createIsolationModeTokenVaultV1ActionsImpl } from '../../utils/dolomite';
 import { createTestIsolationModeVaultFactory } from '../../utils/ecosystem-utils/testers';
 import {
   getDefaultCoreProtocolConfig,
@@ -184,7 +184,10 @@ describe('IsolationModeTokenVaultV1', () => {
 
   describe('#multicall', () => {
     it('should work normally with one deposit into vault', async () =>  {
-      const calldata = await userVault.populateTransaction.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      const calldata = await userVault.populateTransaction.depositIntoVaultForDolomiteMargin(
+        defaultAccountNumber,
+        amountWei
+      );
       await userVault.multicall([calldata.data!]);
 
       await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, isolationModeMarketId, ZERO_BI);
@@ -199,7 +202,10 @@ describe('IsolationModeTokenVaultV1', () => {
     it('should work normally with multiple deposits into vault', async () => {
       await underlyingToken.connect(core.hhUser1).addBalance(core.hhUser1.address, amountWei);
       await underlyingToken.connect(core.hhUser1).approve(userVault.address, amountWei.mul(2));
-      const calldata = await userVault.populateTransaction.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      const calldata = await userVault.populateTransaction.depositIntoVaultForDolomiteMargin(
+        defaultAccountNumber,
+        amountWei
+      );
       await userVault.multicall([calldata.data!, calldata.data!]);
 
       await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, isolationModeMarketId, ZERO_BI);
@@ -245,7 +251,10 @@ describe('IsolationModeTokenVaultV1', () => {
     });
 
     it('should work with multicall', async () => {
-      const calldata = await userVault.populateTransaction.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      const calldata = await userVault.populateTransaction.depositIntoVaultForDolomiteMargin(
+        defaultAccountNumber,
+        amountWei
+      );
       await userVault.multicall([calldata.data!]);
 
       await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, isolationModeMarketId, ZERO_BI);
@@ -311,7 +320,10 @@ describe('IsolationModeTokenVaultV1', () => {
 
     it('should work with multicall', async () => {
       await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
-      const calldata = await userVault.populateTransaction.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      const calldata = await userVault.populateTransaction.withdrawFromVaultForDolomiteMargin(
+        defaultAccountNumber,
+        amountWei
+      );
       await userVault.multicall([calldata.data!]);
 
       await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, isolationModeMarketId, ZERO_BI);
