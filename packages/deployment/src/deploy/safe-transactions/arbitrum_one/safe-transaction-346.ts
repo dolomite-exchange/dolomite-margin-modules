@@ -9,7 +9,7 @@ import getScriptName from '../../../utils/get-script-name';
 
 /**
  * This script encodes the following transactions:
- * - Change the interest rate model for GRAI to put less peg pressure
+ * - Updates interest rate models for ezETH, rsETH, and weETH
  */
 async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
@@ -22,7 +22,21 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       { dolomiteMargin: core.dolomiteMargin },
       'dolomiteMargin',
       'ownerSetInterestSetter',
-      [core.marketIds.grai, core.interestSetters.linearStepFunction15L135U70OInterestSetter.address],
+      [core.marketIds.ezEth, core.interestSetters.linearStepFunction16L84U80OInterestSetter.address],
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { dolomiteMargin: core.dolomiteMargin },
+      'dolomiteMargin',
+      'ownerSetInterestSetter',
+      [core.marketIds.rsEth, core.interestSetters.linearStepFunction16L84U80OInterestSetter.address],
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { dolomiteMargin: core.dolomiteMargin },
+      'dolomiteMargin',
+      'ownerSetInterestSetter',
+      [core.marketIds.weEth, core.interestSetters.linearStepFunction16L84U80OInterestSetter.address],
     ),
   );
 
@@ -31,13 +45,22 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     scriptName: getScriptName(__filename),
     upload: {
       transactions,
+      addExecuteImmediatelyTransactions: true,
       chainId: network,
     },
     invariants: async () => {
+      const interestSetter = core.interestSetters.linearStepFunction16L84U80OInterestSetter;
       assertHardhatInvariant(
-        (await core.dolomiteMargin.getMarketInterestSetter(core.marketIds.grai)) ===
-          core.interestSetters.linearStepFunction15L135U70OInterestSetter.address,
-        'Invalid interest setter',
+        (await core.dolomiteMargin.getMarketInterestSetter(core.marketIds.ezEth)) === interestSetter.address,
+        'Invalid interest setter for ezETH',
+      );
+      assertHardhatInvariant(
+        (await core.dolomiteMargin.getMarketInterestSetter(core.marketIds.rsEth)) === interestSetter.address,
+        'Invalid interest setter for rsEth',
+      );
+      assertHardhatInvariant(
+        (await core.dolomiteMargin.getMarketInterestSetter(core.marketIds.weEth)) === interestSetter.address,
+        'Invalid interest setter for weEth',
       );
     },
   };

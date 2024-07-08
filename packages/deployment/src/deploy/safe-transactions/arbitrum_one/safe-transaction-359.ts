@@ -9,36 +9,43 @@ import getScriptName from '../../../utils/get-script-name';
 
 /**
  * This script encodes the following transactions:
- * - Change the interest rate model for GRAI to put less peg pressure
+ * - Update the interest rate model for all stables to use optimal rate of 14%
  */
 async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
   const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
 
+  const stablecoins = core.marketIds.stablecoinsWithUnifiedInterestRateModels;
+
   const transactions = [];
-  transactions.push(
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { dolomiteMargin: core.dolomiteMargin },
-      'dolomiteMargin',
-      'ownerSetInterestSetter',
-      [core.marketIds.grai, core.interestSetters.linearStepFunction15L135U70OInterestSetter.address],
-    ),
-  );
+  for (let i = 0; i < stablecoins.length; i++) {
+    transactions.push(
+      await prettyPrintEncodedDataWithTypeSafety(
+        core,
+        { dolomiteMargin: core.dolomiteMargin },
+        'dolomiteMargin',
+        'ownerSetInterestSetter',
+        [stablecoins[i], core.interestSetters.linearStepFunction14L86U90OInterestSetter.address],
+      ),
+    );
+  }
 
   return {
     core,
     scriptName: getScriptName(__filename),
     upload: {
       transactions,
+      addExecuteImmediatelyTransactions: true,
       chainId: network,
     },
     invariants: async () => {
-      assertHardhatInvariant(
-        (await core.dolomiteMargin.getMarketInterestSetter(core.marketIds.grai)) ===
-          core.interestSetters.linearStepFunction15L135U70OInterestSetter.address,
-        'Invalid interest setter',
-      );
+      const interestSetterAddress = core.interestSetters.linearStepFunction14L86U90OInterestSetter.address;
+      for (let i = 0; i < stablecoins.length; i++) {
+        assertHardhatInvariant(
+          (await core.dolomiteMargin.getMarketInterestSetter(stablecoins[i])) === interestSetterAddress,
+          `Invalid interest setter for ${stablecoins[i]}`
+        );
+      }
     },
   };
 }

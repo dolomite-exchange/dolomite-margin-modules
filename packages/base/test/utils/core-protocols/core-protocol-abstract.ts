@@ -48,6 +48,7 @@ export interface CoreProtocolMarketIds {
   usdc: BigNumberish;
   weth: BigNumberish;
   stablecoins: BigNumberish[];
+  stablecoinsWithUnifiedInterestRateModels: BigNumberish[];
 }
 
 export interface CoreProtocolParams<T extends NetworkType> {
