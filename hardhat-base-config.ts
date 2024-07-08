@@ -15,6 +15,10 @@ import path from 'path';
 dotenv.config({ path: path.resolve(process.cwd(), '../../.env') });
 
 // RPC URLs
+const mainnetWeb3Url = process.env.MAINNET_WEB3_PROVIDER_URL;
+if (!mainnetWeb3Url) {
+  throw new Error('No MAINNET_WEB3_PROVIDER_URL provided!');
+}
 const arbitrumOneWeb3Url = process.env.ARBITRUM_ONE_WEB3_PROVIDER_URL;
 if (!arbitrumOneWeb3Url) {
   throw new Error('No ARBITRUM_ONE_WEB3_PROVIDER_URL provided!');
@@ -73,6 +77,12 @@ export const base_config: HardhatUserConfig = {
           },
         },
       },
+    },
+    mainnet: {
+      chainId: 1,
+      url: mainnetWeb3Url,
+      gas: 30_000_000, // 30M gas
+      accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
     },
     [NetworkName.ArbitrumOne]: {
       chainId: parseInt(Network.ArbitrumOne, 10),

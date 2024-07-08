@@ -913,7 +913,6 @@ export async function setupCoreProtocol<T extends NetworkType>(
         stablecoinsWithUnifiedInterestRateModels: [
           ...coreProtocolParams.marketIds.stablecoins,
           USDT_MAP[typedConfig.network].marketId,
-          USDY_MAP[typedConfig.network].marketId,
         ],
       },
       odosEcosystem: await createOdosEcosystem(typedConfig.network, hhUser1),
