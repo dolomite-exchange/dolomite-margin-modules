@@ -85,6 +85,13 @@ export async function createDolomiteRegistryImplementation(): Promise<DolomiteRe
   );
 }
 
+export async function createAndUpgradeDolomiteRegistry<T extends NetworkType>(
+  core: CoreProtocolType<T>
+): Promise<void> {
+  const implementation = await createDolomiteRegistryImplementation();
+  await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(implementation.address);
+} 
+
 export async function createIsolationModeTraderProxy<T extends NetworkType>(
   implementationAddress: string,
   initializationCalldata: string,

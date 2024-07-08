@@ -23,6 +23,7 @@ pragma solidity ^0.8.9;
 import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import { OnlyDolomiteMarginForUpgradeable } from "../helpers/OnlyDolomiteMarginForUpgradeable.sol";
 import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
+import { IDolomiteAccountRegistry } from "../interfaces/IDolomiteAccountRegistry.sol";
 import { IDolomiteMigrator } from "../interfaces/IDolomiteMigrator.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IEventEmitterRegistry } from "../interfaces/IEventEmitterRegistry.sol";
@@ -32,7 +33,6 @@ import { ILiquidatorAssetRegistry } from "../interfaces/ILiquidatorAssetRegistry
 import { ValidationLib } from "../lib/ValidationLib.sol";
 import { IDolomitePriceOracle } from "../protocol/interfaces/IDolomitePriceOracle.sol";
 import { Require } from "../protocol/lib/Require.sol";
-import { IDolomiteAddressRegistry } from "../interfaces/IDolomiteAddressRegistry.sol";
 
 
 /**
@@ -51,16 +51,17 @@ contract DolomiteRegistryImplementation is
     // ===================== Constants =====================
 
     bytes32 private constant _FILE = "DolomiteRegistryImplementation";
-    bytes32 private constant _DOLOMITE_MIGRATOR_SLOT = bytes32(uint256(keccak256("eip1967.proxy.dolomiteMigrator")) - 1); // solhint-disable-line max-line-length
-    bytes32 private constant _GENERIC_TRADER_PROXY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.genericTraderProxy")) - 1); // solhint-disable-line max-line-length
-    bytes32 private constant _EXPIRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.expiry")) - 1); // solhint-disable-line max-line-length
-    bytes32 private constant _SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL_SLOT = bytes32(uint256(keccak256("eip1967.proxy.slippageToleranceForPauseSentinel")) - 1); // solhint-disable-line max-line-length
-    bytes32 private constant _LIQUIDATOR_ASSET_REGISTRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.liquidatorAssetRegistry")) - 1); // solhint-disable-line max-line-length
-    bytes32 private constant _EVENT_EMITTER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.eventEmitter")) - 1);
     bytes32 private constant _CHAINLINK_PRICE_ORACLE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.chainlinkPriceOracle")) - 1); // solhint-disable-line max-line-length
-    bytes32 private constant _REDSTONE_PRICE_ORACLE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.redstonePriceOracle")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _DOLOMITE_ACCOUNT_REGISTRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.dolomiteAccountRegistry")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _DOLOMITE_MIGRATOR_SLOT = bytes32(uint256(keccak256("eip1967.proxy.dolomiteMigrator")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _EVENT_EMITTER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.eventEmitter")) - 1);
+    bytes32 private constant _EXPIRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.expiry")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _GENERIC_TRADER_PROXY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.genericTraderProxy")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _LIQUIDATOR_ASSET_REGISTRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.liquidatorAssetRegistry")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _ORACLE_AGGREGATOR_SLOT = bytes32(uint256(keccak256("eip1967.proxy.oracleAggregator")) - 1); // solhint-disable-line max-line-length
-    bytes32 private constant _DOLOMITE_ADDRESS_REGISTRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.dolomiteAddressRegistry")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _REDSTONE_PRICE_ORACLE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.redstonePriceOracle")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL_SLOT = bytes32(uint256(keccak256("eip1967.proxy.slippageToleranceForPauseSentinel")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _ISOLATION_MODE_STORAGE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isolationModeStorage")) - 1); // solhint-disable-line max-line-length
 
     // ==================== Constructor ====================
 
@@ -69,13 +70,15 @@ contract DolomiteRegistryImplementation is
         address _expiry,
         uint256 _slippageToleranceForPauseSentinel,
         address _liquidatorAssetRegistry,
-        address _eventEmitter
+        address _eventEmitter,
+        address _dolomiteAccountRegistry
     ) external initializer {
         _ownerSetGenericTraderProxy(_genericTraderProxy);
         _ownerSetExpiry(_expiry);
         _ownerSetSlippageToleranceForPauseSentinel(_slippageToleranceForPauseSentinel);
         _ownerSetLiquidatorAssetRegistry(_liquidatorAssetRegistry);
         _ownerSetEventEmitter(_eventEmitter);
+        _ownerSetDolomiteAccountRegistry(_dolomiteAccountRegistry);
     }
 
     function lazyInitialize(
@@ -167,12 +170,20 @@ contract DolomiteRegistryImplementation is
         _ownerSetOracleAggregator(_oracleAggregator);
     }
 
-    function ownerSetDolomiteAddressRegistry(
-        address _dolomiteAddressRegistry
+    function ownerSetDolomiteAccountRegistry(
+        address _dolomiteAccountRegistry
     )
     external
     onlyDolomiteMarginOwner(msg.sender) {
-        _ownerSetDolomiteAddressRegistry(_dolomiteAddressRegistry);
+        _ownerSetDolomiteAccountRegistry(_dolomiteAccountRegistry);
+    }
+
+    function ownerSetIsolationModeMulticallFunctions(
+        bytes4[] memory _selectors
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetIsolationModeMulticallFunctions(_selectors);
     }
 
     // ========================== View Functions =========================
@@ -213,8 +224,18 @@ contract DolomiteRegistryImplementation is
         return IDolomitePriceOracle(_getAddress(_ORACLE_AGGREGATOR_SLOT));
     }
 
-    function dolomiteAddressRegistry() public view returns (IDolomiteAddressRegistry) {
-        return IDolomiteAddressRegistry(_getAddress(_DOLOMITE_ADDRESS_REGISTRY_SLOT));
+    function dolomiteAccountRegistry() public view returns (IDolomiteAccountRegistry) {
+        return IDolomiteAccountRegistry(_getAddress(_DOLOMITE_ACCOUNT_REGISTRY_SLOT));
+    }
+
+    function isolationModeMulticallFunctions() public view returns (bytes4[] memory) {
+        IsolationModeStorage storage ims;
+        bytes32 slot = _ISOLATION_MODE_STORAGE_SLOT;
+        assembly {
+            ims.slot := slot
+        }
+
+        return ims.isolationModeMulticallFunctions;
     }
 
     function slippageToleranceForPauseSentinelBase() public pure returns (uint256) {
@@ -367,17 +388,42 @@ contract DolomiteRegistryImplementation is
         emit OracleAggregatorSet(_oracleAggregator);
     }
 
-    function _ownerSetDolomiteAddressRegistry(
-        address _dolomiteAddressRegistry
+    function _ownerSetDolomiteAccountRegistry(
+        address _dolomiteAccountRegistry
     ) internal {
-        if (_dolomiteAddressRegistry != address(0)) { /* FOR COVERAGE TESTING */ }
+        if (_dolomiteAccountRegistry != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-            _dolomiteAddressRegistry != address(0),
+            _dolomiteAccountRegistry != address(0),
             _FILE,
-            "Invalid dolomiteAddressRegistry"
+            "Invalid dolomiteAccountRegistry"
         );
 
-        _setAddress(_DOLOMITE_ADDRESS_REGISTRY_SLOT, _dolomiteAddressRegistry);
-        emit DolomiteAddressRegistrySet(_dolomiteAddressRegistry);
+        _setAddress(_DOLOMITE_ACCOUNT_REGISTRY_SLOT, _dolomiteAccountRegistry);
+        emit DolomiteAccountRegistrySet(_dolomiteAccountRegistry);
+    }
+
+    function _ownerSetIsolationModeMulticallFunctions(
+        bytes4[] memory _selectors
+    ) internal {
+        uint256 len = _selectors.length;
+        if (len > 0) {
+            for (uint256 i; i < len - 1; ++i) {
+                if (_selectors[i] < _selectors[i + 1]) { /* FOR COVERAGE TESTING */ }
+                Require.that(
+                    _selectors[i] < _selectors[i + 1],
+                    _FILE,
+                    "Selectors not sorted"
+                );
+            }
+        }
+
+        IsolationModeStorage storage ims;
+        bytes32 slot = _ISOLATION_MODE_STORAGE_SLOT;
+        assembly {
+            ims.slot := slot
+        }
+
+        ims.isolationModeMulticallFunctions = _selectors;
+        emit IsolationModeMulticallFunctionsSet(_selectors);
     }
 }

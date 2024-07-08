@@ -29,6 +29,7 @@ import { SimpleIsolationModeTokenVaultV1 } from "../isolation-mode/SimpleIsolati
 import { IsolationModeTokenVaultV1 } from "../isolation-mode/abstract/IsolationModeTokenVaultV1.sol";
 import { IsolationModeTokenVaultV1ActionsImpl } from "../isolation-mode/abstract/impl/IsolationModeTokenVaultV1ActionsImpl.sol"; // solhint-disable-line max-line-length
 import { IIsolationModeVaultFactory } from "../isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
+import { IIsolationModeTokenVaultV1 } from "../isolation-mode/interfaces/IIsolationModeTokenVaultV1.sol";
 import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 
@@ -140,6 +141,26 @@ contract TestIsolationModeTokenVaultV1 is SimpleIsolationModeTokenVaultV1 {
 
     function testRequireOnlyConverter() external view {
         _requireOnlyConverter(msg.sender);
+    }
+
+    function testGetFunctionSelectors() external view returns (bytes4[] memory) {
+        bytes4[] memory selectors = new bytes4[](8);
+        selectors[0] = IIsolationModeTokenVaultV1.depositIntoVaultForDolomiteMargin.selector;
+        selectors[1] = IIsolationModeTokenVaultV1.withdrawFromVaultForDolomiteMargin.selector;
+        selectors[2] = IIsolationModeTokenVaultV1.openBorrowPosition.selector;
+        selectors[3] = IIsolationModeTokenVaultV1.transferIntoPositionWithUnderlyingToken.selector;
+        selectors[4] = IIsolationModeTokenVaultV1.transferIntoPositionWithOtherToken.selector;
+        selectors[5] = IIsolationModeTokenVaultV1.transferFromPositionWithUnderlyingToken.selector;
+        selectors[6] = IIsolationModeTokenVaultV1.transferFromPositionWithOtherToken.selector;
+        selectors[7] = IIsolationModeTokenVaultV1.swapExactInputForOutput.selector;
+        return selectors;
+    }
+
+    function testSelectorBinarySearch(
+        bytes4[] memory _selectors,
+        bytes4 _selector
+    ) external pure returns (bool) {
+        return _binarySearch(_selectors, _selector);
     }
 
     function dolomiteRegistry() public override(IsolationModeTokenVaultV1) view returns (IDolomiteRegistry) {

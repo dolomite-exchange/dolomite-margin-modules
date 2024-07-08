@@ -37,6 +37,10 @@ import { IDolomitePriceOracle } from "../protocol/interfaces/IDolomitePriceOracl
  */
 interface IDolomiteRegistry {
 
+    struct IsolationModeStorage {
+        bytes4[] isolationModeMulticallFunctions;
+    }
+
     // ========================================================
     // ======================== Events ========================
     // ========================================================
@@ -51,6 +55,7 @@ interface IDolomiteRegistry {
     event RedstonePriceOracleSet(address indexed _redstonePriceOracle);
     event OracleAggregatorSet(address indexed _oracleAggregator);
     event DolomiteAccountRegistrySet(address indexed _dolomiteAccountRegistry);
+    event IsolationModeMulticallFunctionsSet(bytes4[] _selectors);
 
     // ========================================================
     // =================== Write Functions ====================
@@ -118,6 +123,12 @@ interface IDolomiteRegistry {
      */
     function ownerSetDolomiteAccountRegistry(address _dolomiteAccountRegistry) external;
 
+    /**
+     *
+     * @param  _selectors    Allowed function selectors for isolation mode multicall
+     */
+    function ownerSetIsolationModeMulticallFunctions(bytes4[] memory _selectors) external;
+
     // ========================================================
     // =================== Getter Functions ===================
     // ========================================================
@@ -171,6 +182,11 @@ interface IDolomiteRegistry {
      * @return The address of the Dolomite address registry
      */
     function dolomiteAccountRegistry() external view returns (IDolomiteAccountRegistry);
+
+    /**
+     * @return The array of allowed function selectors for isolation mode multicall
+     */
+    function isolationModeMulticallFunctions() external view returns (bytes4[] memory);
 
     /**
      * @return The base (denominator) for the slippage tolerance variable. Always 1e18.

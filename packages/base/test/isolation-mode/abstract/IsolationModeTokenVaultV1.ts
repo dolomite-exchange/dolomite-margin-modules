@@ -24,7 +24,7 @@ import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectProtocolBalance, expectThrow, expectTotalSupply, expectWalletBalance } from '../../utils/assertions';
 
 import { CoreProtocolArbitrumOne } from '../../utils/core-protocols/core-protocol-arbitrum-one';
-import { createIsolationModeTokenVaultV1ActionsImpl } from '../../utils/dolomite';
+import { createAndUpgradeDolomiteRegistry, createDolomiteRegistryImplementation, createIsolationModeTokenVaultV1ActionsImpl } from '../../utils/dolomite';
 import { createTestIsolationModeVaultFactory } from '../../utils/ecosystem-utils/testers';
 import {
   getDefaultCoreProtocolConfig,
@@ -134,6 +134,10 @@ describe('IsolationModeTokenVaultV1', () => {
     await otherToken2.connect(solidUser).addBalance(solidUser.address, bigOtherAmountWei);
     await otherToken2.connect(solidUser).approve(core.dolomiteMargin.address, bigOtherAmountWei);
     await depositIntoDolomiteMargin(core, solidUser, defaultAccountNumber, otherMarketId2, bigOtherAmountWei);
+
+    await createAndUpgradeDolomiteRegistry(core);
+    const selectors = [...await userVaultImplementation.testGetFunctionSelectors()];
+    await core.dolomiteRegistry.ownerSetIsolationModeMulticallFunctions(selectors.sort());
 
     snapshotId = await snapshot();
   });
@@ -2378,6 +2382,23 @@ describe('IsolationModeTokenVaultV1', () => {
         userVault.testBinarySearch([0], 0, 1, 3),
         'BaseLiquidatorProxy: Market not found',
       );
+    });
+  });
+
+  describe('#testSelectorBinarySearch', () => {
+    it('should return false if no selectors are provided', async () => {
+      expect(await userVault.testSelectorBinarySearch([], '0x12345678')).to.equal(false);
+    });
+
+    it('should return false if selector is lower or greater than provided selectors', async () => {
+      expect(await userVault.testSelectorBinarySearch(
+        ['0x22222222', '0x88888888'],
+        '0x11111111'
+      )).to.equal(false);
+      expect(await userVault.testSelectorBinarySearch(
+        ['0x22222222', '0x88888888'],
+        '0x99999999'
+      )).to.equal(false);
     });
   });
 

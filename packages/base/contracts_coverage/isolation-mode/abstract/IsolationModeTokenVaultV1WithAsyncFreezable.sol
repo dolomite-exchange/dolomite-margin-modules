@@ -716,6 +716,13 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezable is
             _isLiquidation
         );
 
+        if (_minOutputAmount > 0) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            _minOutputAmount > 0,
+            _FILE,
+            "Invalid minOutputAmount"
+        );
+
         _validateMinAmountIsNotTooLarge(
             _tradeAccountNumber,
             _inputAmount,
