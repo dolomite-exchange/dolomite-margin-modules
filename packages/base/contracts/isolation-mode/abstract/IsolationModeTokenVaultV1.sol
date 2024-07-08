@@ -33,6 +33,7 @@ import { IIsolationModeTokenVaultV1 } from "../interfaces/IIsolationModeTokenVau
 import { IIsolationModeVaultFactory } from "../interfaces/IIsolationModeVaultFactory.sol";
 import { IsolationModeTokenVaultV1ActionsImpl } from "./impl/IsolationModeTokenVaultV1ActionsImpl.sol";
 
+import "hardhat/console.sol";
 
 /**
  * @title   IsolationModeTokenVaultV1
@@ -110,6 +111,23 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
 
     function initialize() external {
         _initialize();
+    }
+
+    function multicall(bytes[] memory _calls) external {
+        _multicall(_calls);
+    }
+
+    function _multicall(bytes[] memory _calls) internal {
+        uint256 len = _calls.length;
+        for (uint256 i; i < len; ++i) {
+            _checkFunctionSelector(abi.decode(_calls[i], (bytes4)));
+            (bool success, ) = address(this).delegatecall(_calls[i]);
+            Require.that(
+                success,
+                _FILE,
+                "Multicall failed" // @follow-up do we want better error messages?
+            );
+        }
     }
 
     function depositIntoVaultForDolomiteMargin(
@@ -711,6 +729,25 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
             _FILE,
             "Cannot send ETH"
         );
+    }
+
+    function _checkFunctionSelector(bytes4 _selector) internal virtual view {
+        // @follow-up Are you ok doing it like this or would you prefer some time of enumerable set?
+        if (_selector != IIsolationModeTokenVaultV1.depositIntoVaultForDolomiteMargin.selector
+            && _selector != IIsolationModeTokenVaultV1.withdrawFromVaultForDolomiteMargin.selector
+            && _selector != IIsolationModeTokenVaultV1.openBorrowPosition.selector
+            && _selector != IIsolationModeTokenVaultV1.transferIntoPositionWithUnderlyingToken.selector
+            && _selector != IIsolationModeTokenVaultV1.transferIntoPositionWithOtherToken.selector
+            && _selector != IIsolationModeTokenVaultV1.transferFromPositionWithUnderlyingToken.selector
+            && _selector != IIsolationModeTokenVaultV1.transferFromPositionWithOtherToken.selector
+            && _selector != IIsolationModeTokenVaultV1.swapExactInputForOutput.selector
+        ) {
+            Require.that(
+                false,
+                _FILE,
+                "Disallowed multicall function"
+            );
+        }
     }
 
     // ===========================================
