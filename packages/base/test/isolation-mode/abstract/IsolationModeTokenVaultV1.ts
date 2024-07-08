@@ -235,6 +235,17 @@ describe('IsolationModeTokenVaultV1', () => {
         'IsolationModeTokenVaultV1: Disallowed multicall function'
       );
     });
+
+    it('should fail if not called by owner', async () => {
+      const calldata = await userVault.populateTransaction.depositIntoVaultForDolomiteMargin(
+        defaultAccountNumber,
+        amountWei
+      );
+      await expectThrow(
+        userVault.connect(core.hhUser2).multicall([calldata.data!]),
+        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
+      );
+    });
   });
 
   describe('#depositIntoVaultForDolomiteMargin', () => {

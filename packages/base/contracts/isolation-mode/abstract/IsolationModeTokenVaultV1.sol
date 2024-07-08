@@ -112,31 +112,12 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
         _initialize();
     }
 
-    function multicall(bytes[] memory _calls) external {
+    function multicall(
+        bytes[] memory _calls
+    )
+    external
+    onlyVaultOwner(msg.sender) {
         _multicall(_calls);
-    }
-
-    function _multicall(bytes[] memory _calls) internal {
-        bytes4[] memory allowedSelectors = dolomiteRegistry().isolationModeMulticallFunctions();
-        uint256 len = _calls.length;
-
-        for (uint256 i; i < len; ++i) {
-            Require.that(
-                IsolationModeTokenVaultV1ActionsImpl.selectorBinarySearch(
-                    allowedSelectors,
-                    abi.decode(_calls[i], (bytes4))
-                ),
-                _FILE,
-                "Disallowed multicall function"
-            );
-
-            (bool success, ) = address(this).delegatecall(_calls[i]);
-            Require.that(
-                success,
-                _FILE,
-                "Multicall failed" // @follow-up do we want better error messages?
-            );
-        }
     }
 
     function depositIntoVaultForDolomiteMargin(
@@ -443,6 +424,29 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
         );
 
         _setUint256(_REENTRANCY_GUARD_SLOT, _NOT_ENTERED);
+    }
+
+    function _multicall(bytes[] memory _calls) internal {
+        bytes4[] memory allowedSelectors = dolomiteRegistry().isolationModeMulticallFunctions();
+        uint256 len = _calls.length;
+
+        for (uint256 i; i < len; ++i) {
+            Require.that(
+                IsolationModeTokenVaultV1ActionsImpl.selectorBinarySearch(
+                    allowedSelectors,
+                    abi.decode(_calls[i], (bytes4))
+                ),
+                _FILE,
+                "Disallowed multicall function"
+            );
+
+            (bool success, ) = address(this).delegatecall(_calls[i]);
+            Require.that(
+                success,
+                _FILE,
+                "Multicall failed" // @follow-up do we want better error messages?
+            );
+        }
     }
 
     function _depositIntoVaultForDolomiteMargin(
