@@ -33,6 +33,7 @@ import {
   setupUserVaultProxy,
 } from '../../utils/setup';
 import { getSimpleZapParams, getUnwrapZapParams, getWrapZapParams } from '../../utils/zap-utils';
+import { createSafeDelegateLibrary } from '../../utils/ecosystem-utils/general';
 
 const defaultAccountNumber = '0';
 const borrowAccountNumber = '123';
@@ -63,9 +64,10 @@ describe('IsolationModeTokenVaultV1', () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     underlyingToken = await createTestToken();
     const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
+    const delegateCallLib = await createSafeDelegateLibrary();
     userVaultImplementation = await createContractWithLibrary(
       'TestIsolationModeTokenVaultV1',
-      libraries,
+      { ...libraries, SafeDelegateCallLib: delegateCallLib.address },
       [],
     );
     factory = await createTestIsolationModeVaultFactory(core, underlyingToken, userVaultImplementation);
@@ -233,6 +235,17 @@ describe('IsolationModeTokenVaultV1', () => {
       await expectThrow(
         userVault.multicall([calldata.data!]),
         'IsolationModeTokenVaultV1: Disallowed multicall function'
+      );
+    });
+
+    it('should revert with correct message if one multicall fails', async () => {
+      const calldata = await userVault.populateTransaction.depositIntoVaultForDolomiteMargin(
+        defaultAccountNumber,
+        amountWei
+      );
+      await expectThrow(
+        userVault.multicall([calldata.data!, calldata.data!]),
+        'Token: transferFrom failed'
       );
     });
 
