@@ -116,8 +116,8 @@ import {
   WMNT_MAP,
   WOKB_MAP,
   WST_ETH_MAP,
-  WUSDM_MAP,
-  XAI_MAP, WO_ETH_MAP,
+  XAI_MAP,
+  WO_ETH_MAP, USDM_MAP,
 } from '../../src/utils/constants';
 import {
   ADDRESS_ZERO,
@@ -872,6 +872,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
         size: IERC20__factory.connect(SIZE_MAP[typedConfig.network].address, hhUser1),
         stEth: IERC20__factory.connect(ST_ETH_MAP[typedConfig.network].address, hhUser1),
         uni: IERC20__factory.connect(UNI_MAP[typedConfig.network].address, hhUser1),
+        usdm: IERC20__factory.connect(USDM_MAP[typedConfig.network].address, hhUser1),
         usdt: IERC20__factory.connect(USDT_MAP[typedConfig.network].address, hhUser1),
         wbtc: IERC20__factory.connect(WBTC_MAP[typedConfig.network].address, hhUser1),
         weth: coreProtocolParams.tokens.weth as any,

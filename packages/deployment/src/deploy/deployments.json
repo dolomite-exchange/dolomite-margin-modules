@@ -3581,6 +3581,13 @@
     }
   },
   "TestAdminPriceOracleV1": {},
+  "USDMRouter": {
+    "42161": {
+      "address": "0xa9B377B97395C4031750cE8E9397c00c577F6C6D",
+      "transaction": "0x1e3c9519fa4cda8f528578b08b0d1e576a6367853cdf5e558c5bd9a03792c3da",
+      "isVerified": true
+    }
+  },
   "VesterExploder": {
     "42161": {
       "address": "0x2c9052bB57898C3C2c6239F3d69567FC5962CB62",

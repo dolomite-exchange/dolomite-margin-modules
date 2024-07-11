@@ -420,13 +420,6 @@ export const USDE_MAP: Record<Network.Mantle, TokenWithMarketId> = {
   },
 };
 
-export const W_USDM_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
-  [Network.ArbitrumOne]: {
-    address: '0x57F5E098CaD7A3D1Eed53991D4d66C45C9AF7812',
-    marketId: 48,
-  },
-};
-
 export const USDM_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x59D9356E565Ab3A36dD77763Fc0d87fEaf85508C',
@@ -457,6 +450,13 @@ export const USDY_MAP: Record<Network.Mantle, TokenWithMarketId> = {
   [Network.Mantle]: {
     address: '0x5bE26527e817998A7206475496fDE1E68957c5A6',
     marketId: 8,
+  },
+};
+
+export const W_USDM_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0x57F5E098CaD7A3D1Eed53991D4d66C45C9AF7812',
+    marketId: 48,
   },
 };
 
