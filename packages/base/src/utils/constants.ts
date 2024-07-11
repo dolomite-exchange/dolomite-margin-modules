@@ -420,10 +420,10 @@ export const USDE_MAP: Record<Network.Mantle, TokenWithMarketId> = {
   },
 };
 
-export const W_USDM_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+export const USDM_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
-    address: '0x57F5E098CaD7A3D1Eed53991D4d66C45C9AF7812',
-    marketId: 48,
+    address: '0x59D9356E565Ab3A36dD77763Fc0d87fEaf85508C',
+    marketId: -1,
   },
 };
 
@@ -450,6 +450,13 @@ export const USDY_MAP: Record<Network.Mantle, TokenWithMarketId> = {
   [Network.Mantle]: {
     address: '0x5bE26527e817998A7206475496fDE1E68957c5A6',
     marketId: 8,
+  },
+};
+
+export const W_USDM_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0x57F5E098CaD7A3D1Eed53991D4d66C45C9AF7812',
+    marketId: 48,
   },
 };
 
@@ -506,6 +513,13 @@ export const WE_ETH_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x35751007a407ca6FEFfE80b3cB397736D2cf4dbe',
     marketId: 35,
+  },
+};
+
+export const WO_ETH_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0xD8724322f44E5c58D7A815F542036fb17DbbF839',
+    marketId: 53,
   },
 };
 
@@ -1161,6 +1175,10 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<Network, Record<string, Agg
       aggregatorAddress: '0x20bAe7e1De9c596f5F7615aeaa1342Ba99294e12',
       tokenPairAddress: WETH_MAP[Network.ArbitrumOne].address,
       invert: true,
+    },
+    [WO_ETH_MAP[Network.ArbitrumOne].address]: {
+      aggregatorAddress: '0x03a1f4b19aaeA6e68f0f104dc4346dA3E942cC45',
+      tokenPairAddress: WETH_MAP[Network.ArbitrumOne].address,
     },
     [WST_ETH_MAP[Network.ArbitrumOne].address]: {
       aggregatorAddress: '0xb1552c5e96b312d0bf8b554186f846c40614a540',

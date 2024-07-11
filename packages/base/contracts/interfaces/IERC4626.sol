@@ -36,6 +36,8 @@ interface IERC4626 is IERC20, IERC20Metadata {
 
     function deposit(uint256 _assets, address _receiver) external returns (uint256 _shares);
 
+    function withdraw(uint256 assets, address receiver, address owner) external returns (uint256 _shares);
+
     function mint(uint256 _shares, address _receiver) external returns (uint256 _assets);
 
     function asset() external view returns (address);

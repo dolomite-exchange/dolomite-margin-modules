@@ -117,6 +117,7 @@ import {
   WOKB_MAP,
   WST_ETH_MAP,
   XAI_MAP,
+  WO_ETH_MAP, USDM_MAP,
 } from '../../src/utils/constants';
 import {
   ADDRESS_ZERO,
@@ -309,6 +310,18 @@ export async function setupUSDCBalance<T extends NetworkType>(
   const whaleSigner = await impersonate(whaleAddress, true);
   await core.tokens.usdc.connect(whaleSigner).transfer(signer.address, amount);
   await core.tokens.usdc.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
+}
+
+export async function setupUSDMBalance(
+  core: CoreProtocolArbitrumOne,
+  signer: SignerWithAddressWithSafety,
+  amount: BigNumberish,
+  spender: { address: string },
+) {
+  const whaleAddress = '0x4bD135524897333bec344e50ddD85126554E58B4';
+  const whaleSigner = await impersonate(whaleAddress, true);
+  await core.tokens.usdm.connect(whaleSigner).transfer(signer.address, amount);
+  await core.tokens.usdm.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
 export async function setupGMBalance(
@@ -795,6 +808,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
         usdt: USDT_MAP[typedConfig.network].marketId,
         wbtc: WBTC_MAP[typedConfig.network].marketId,
         weEth: WE_ETH_MAP[typedConfig.network].marketId,
+        woEth: WO_ETH_MAP[typedConfig.network].marketId,
         wstEth: WST_ETH_MAP[typedConfig.network].marketId,
         wusdm: W_USDM_MAP[typedConfig.network].marketId,
         xai: XAI_MAP[typedConfig.network].marketId,
@@ -858,10 +872,12 @@ export async function setupCoreProtocol<T extends NetworkType>(
         size: IERC20__factory.connect(SIZE_MAP[typedConfig.network].address, hhUser1),
         stEth: IERC20__factory.connect(ST_ETH_MAP[typedConfig.network].address, hhUser1),
         uni: IERC20__factory.connect(UNI_MAP[typedConfig.network].address, hhUser1),
+        usdm: IERC20__factory.connect(USDM_MAP[typedConfig.network].address, hhUser1),
         usdt: IERC20__factory.connect(USDT_MAP[typedConfig.network].address, hhUser1),
         wbtc: IERC20__factory.connect(WBTC_MAP[typedConfig.network].address, hhUser1),
         weth: coreProtocolParams.tokens.weth as any,
         weEth: IERC20__factory.connect(WE_ETH_MAP[typedConfig.network].address, hhUser1),
+        woEth: IERC20__factory.connect(WO_ETH_MAP[typedConfig.network].address, hhUser1),
         wstEth: IERC20__factory.connect(WST_ETH_MAP[typedConfig.network].address, hhUser1),
         wusdm: IERC20__factory.connect(W_USDM_MAP[typedConfig.network].address, hhUser1),
         xai: IERC20__factory.connect(XAI_MAP[typedConfig.network].address, hhUser1),
