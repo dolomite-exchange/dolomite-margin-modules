@@ -79,6 +79,7 @@ interface CoreProtocolTokensArbitrumOne extends CoreProtocolTokens<Network.Arbit
   usdt: IERC20;
   wbtc: IERC20;
   weEth: IERC20;
+  woEth: IERC20;
   wstEth: IERC20;
   wusdm: IERC20;
   xai: IERC20;
@@ -137,6 +138,7 @@ interface CoreProtocolMarketIdsArbitrumOne extends CoreProtocolMarketIds {
   usdt: BigNumberish;
   wbtc: BigNumberish;
   weEth: BigNumberish;
+  woEth: BigNumberish;
   wstEth: BigNumberish;
   wusdm: BigNumberish;
   xai: BigNumberish;
