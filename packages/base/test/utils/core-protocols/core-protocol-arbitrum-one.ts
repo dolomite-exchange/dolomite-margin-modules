@@ -3,14 +3,16 @@ import {
   ChroniclePriceOracleV3,
   IChainlinkAutomationRegistry,
   IChainlinkPriceOracleV1,
-  IChainlinkPriceOracleV3, RedstonePriceOracleV3,
+  IChainlinkPriceOracleV3,
+  RedstonePriceOracleV3,
 } from 'packages/oracles/src/types';
 import {
   DolomiteERC20,
   DolomiteERC20WithPayable,
   IDolomiteAccountValuesReader,
   IDolomiteMigrator,
-  IERC20, RegistryProxy,
+  IERC20,
+  RegistryProxy,
 } from '../../../src/types';
 import { Network } from '../../../src/utils/no-deps-constants';
 import { AbraEcosystem } from '../ecosystem-utils/abra';
@@ -18,11 +20,7 @@ import { ArbEcosystem } from '../ecosystem-utils/arb';
 import { CamelotEcosystem } from '../ecosystem-utils/camelot';
 import { GmxEcosystem, GmxEcosystemV2 } from '../ecosystem-utils/gmx';
 import { JonesEcosystem } from '../ecosystem-utils/jones';
-import {
-  LiquidityMiningEcosystemArbitrumOne,
-  MineralLiquidityMiningEcosystem,
-  OARBLiquidityMiningEcosystem,
-} from '../ecosystem-utils/liquidity-mining';
+import { LiquidityMiningEcosystemArbitrumOne } from '../ecosystem-utils/liquidity-mining';
 import { OdosEcosystem } from '../ecosystem-utils/odos';
 import { ParaswapEcosystem } from '../ecosystem-utils/paraswap';
 import { PendleEcosystemArbitrumOne } from '../ecosystem-utils/pendle';
@@ -78,10 +76,10 @@ interface CoreProtocolTokensArbitrumOne extends CoreProtocolTokens<Network.Arbit
   size: IERC20;
   stEth: IERC20;
   uni: IERC20;
-  usdm: IERC20;
   usdt: IERC20;
   wbtc: IERC20;
   weEth: IERC20;
+  woEth: IERC20;
   wstEth: IERC20;
   wusdm: IERC20;
   xai: IERC20;
@@ -140,6 +138,7 @@ interface CoreProtocolMarketIdsArbitrumOne extends CoreProtocolMarketIds {
   usdt: BigNumberish;
   wbtc: BigNumberish;
   weEth: BigNumberish;
+  woEth: BigNumberish;
   wstEth: BigNumberish;
   wusdm: BigNumberish;
   xai: BigNumberish;
@@ -195,10 +194,7 @@ export class CoreProtocolArbitrumOne extends CoreProtocolAbstract<Network.Arbitr
   public readonly umamiEcosystem: UmamiEcosystem;
   public readonly network: Network.ArbitrumOne = Network.ArbitrumOne;
 
-  constructor(
-    params: CoreProtocolParams<Network.ArbitrumOne>,
-    arbParams: CoreProtocolParamsArbitrumOne,
-  ) {
+  constructor(params: CoreProtocolParams<Network.ArbitrumOne>, arbParams: CoreProtocolParamsArbitrumOne) {
     super(params);
     this.abraEcosystem = arbParams.abraEcosystem;
     this.arbEcosystem = arbParams.arbEcosystem;

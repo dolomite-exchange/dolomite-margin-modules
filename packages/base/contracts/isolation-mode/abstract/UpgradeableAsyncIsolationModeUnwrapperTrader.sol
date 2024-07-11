@@ -91,6 +91,13 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
         _executeWithdrawalCancellation(_key);
     }
 
+    function emitWithdrawalExecuted(bytes32 _key) external onlyHandler(msg.sender) {
+        HANDLER_REGISTRY().dolomiteRegistry().eventEmitter().emitAsyncWithdrawalExecuted(
+            _key,
+            address(VAULT_FACTORY())
+        );
+    }
+
     function callFunction(
         address _sender,
         IDolomiteStructs.AccountInfo calldata _accountInfo,
@@ -292,6 +299,12 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
     }
 
     function _executeWithdrawal(WithdrawalInfo memory _withdrawalInfo) internal virtual {
+        HANDLER_REGISTRY().dolomiteRegistry().eventEmitter().emitAsyncWithdrawalOutputAmountUpdated(
+            _withdrawalInfo.key,
+            address(VAULT_FACTORY()),
+            _withdrawalInfo.outputAmount
+        );
+
         State storage state = _getStorageSlot();
         try state.swapExactInputForOutputForWithdrawal(
             /* _unwrapper = */ this,

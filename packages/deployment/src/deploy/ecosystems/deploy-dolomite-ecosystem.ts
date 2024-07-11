@@ -8,6 +8,8 @@ import {
   IDolomiteRegistry__factory,
   IERC20__factory,
   IERC20Metadata__factory,
+  IGenericTraderProxyV1,
+  IGenericTraderProxyV1__factory,
   ILiquidatorAssetRegistry__factory,
   IPartiallyDelayedMultiSig__factory,
   RegistryProxy,
@@ -59,7 +61,6 @@ import getScriptName from '../../utils/get-script-name';
 const handlerAddress = '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe'; // Level Initiator
 
 async function deployInterestSetters(): Promise<void> {
-
   await deployContractAndSave(
     'LinearStepFunctionInterestSetter',
     getLinearStepFunctionInterestSetterConstructorParams(parseEther('0.06'), parseEther('0.94'), parseEther('0.90')),
@@ -376,6 +377,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   await deployInterestSetters();
 
   // We can't set up the core protocol here because there are too many missing contracts/context
+  const genericTraderAddress = CoreDeployments.GenericTraderProxyV1[network].address;
   const governanceAddress = await dolomiteMargin.connect(hhUser1).owner();
   const governance = await impersonateOrFallback(governanceAddress, true, hhUser1);
   const core = {
@@ -384,6 +386,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     dolomiteRegistry,
     hhUser1,
     delayedMultiSig: IPartiallyDelayedMultiSig__factory.connect(governanceAddress, governance),
+    genericTraderProxy: IGenericTraderProxyV1__factory.connect(genericTraderAddress, governance),
   } as any;
 
   if ((await dolomiteRegistryProxy.implementation()) !== registryImplementationAddress) {
@@ -436,6 +439,19 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
       await prettyPrintEncodedDataWithTypeSafety(core, { eventEmitterProxy }, 'eventEmitterProxy', 'upgradeTo', [
         eventEmitterRegistryImplementation.address,
       ]),
+    );
+  }
+
+  const genericTraderProxy = core.genericTraderProxy as IGenericTraderProxyV1;
+  if ((await genericTraderProxy.EVENT_EMITTER_REGISTRY()) !== eventEmitterProxy.address) {
+    transactions.push(
+      await prettyPrintEncodedDataWithTypeSafety(
+        core,
+        { genericTraderProxy },
+        'genericTraderProxy',
+        'ownerSetEventEmitterRegistry',
+        [eventEmitterProxy.address],
+      ),
     );
   }
 

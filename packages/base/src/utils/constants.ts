@@ -420,7 +420,7 @@ export const USDE_MAP: Record<Network.Mantle, TokenWithMarketId> = {
   },
 };
 
-export const WUSDM_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+export const W_USDM_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x57F5E098CaD7A3D1Eed53991D4d66C45C9AF7812',
     marketId: 48,
@@ -513,6 +513,13 @@ export const WE_ETH_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x35751007a407ca6FEFfE80b3cB397736D2cf4dbe',
     marketId: 35,
+  },
+};
+
+export const WO_ETH_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0xD8724322f44E5c58D7A815F542036fb17DbbF839',
+    marketId: 53,
   },
 };
 
@@ -1169,6 +1176,10 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<Network, Record<string, Agg
       tokenPairAddress: WETH_MAP[Network.ArbitrumOne].address,
       invert: true,
     },
+    [WO_ETH_MAP[Network.ArbitrumOne].address]: {
+      aggregatorAddress: '0x03a1f4b19aaeA6e68f0f104dc4346dA3E942cC45',
+      tokenPairAddress: WETH_MAP[Network.ArbitrumOne].address,
+    },
     [WST_ETH_MAP[Network.ArbitrumOne].address]: {
       aggregatorAddress: '0xb1552c5e96b312d0bf8b554186f846c40614a540',
       tokenPairAddress: WETH_MAP[Network.ArbitrumOne].address,
@@ -1239,7 +1250,7 @@ export const CHRONICLE_PRICE_SCRIBES_MAP: Record<
   Record<string, ChronicleScribe>
 > = {
   [Network.ArbitrumOne]: {
-    [USDM_MAP[Network.ArbitrumOne].address]: {
+    [W_USDM_MAP[Network.ArbitrumOne].address]: {
       scribeAddress: '0xdC6720c996Fad27256c7fd6E0a271e2A4687eF18',
       tokenPairAddress: ADDRESS_ZERO,
     },
