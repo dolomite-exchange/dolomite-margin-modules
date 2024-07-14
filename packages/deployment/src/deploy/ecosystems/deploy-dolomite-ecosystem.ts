@@ -45,6 +45,7 @@ import {
 } from '@dolomite-exchange/modules-oracles/src/types';
 import { parseEther } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
+import { CoreProtocolAbstract } from 'packages/base/test/utils/core-protocols/core-protocol-abstract';
 import ModuleDeployments from '../../deploy/deployments.json';
 import {
   deployContractAndSave,
@@ -522,12 +523,16 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
         CoreDeployments.PartiallyDelayedMultiSig[network].address,
         hhUser1,
       ),
-    } as any,
+      config: {
+        network,
+      }
+    } as CoreProtocolAbstract<T> as any,
     invariants: async () => {},
     scriptName: getScriptName(__filename),
     upload: {
       transactions,
       chainId: network,
+      addExecuteImmediatelyTransactions: true,
       meta: {
         name: 'Dolomite Ecosystem',
         txBuilderVersion: TRANSACTION_BUILDER_VERSION,

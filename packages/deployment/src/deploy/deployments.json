@@ -656,7 +656,33 @@
       "isVerified": true
     }
   },
-  "EventEmitterRegistryImplementationV4": {},
+  "EventEmitterRegistryImplementationV4": {
+    "196": {
+      "address": "0xc35CD779A0616370bCfed0dcebab08B07969f996",
+      "transaction": "0x522414fc1b4a0d38f14bede9b1cfe3b3b902d54c54a0abf00acbca41f67eb51c",
+      "isVerified": true
+    },
+    "1101": {
+      "address": "0x9C356E2E169DA4A1d760181aAD99b8efEBDd5022",
+      "transaction": "0x8f73a11eb1fa281357e79973b11f85661626dcaaa19848f7365b5ae4f5244625",
+      "isVerified": true
+    },
+    "5000": {
+      "address": "0x093b0659a02D6472864E6e42AD18540393f6302f",
+      "transaction": "0x4b279e8e67a56d749add24876261e31dc2c1cb89f328d7558143c21138e36ccd",
+      "isVerified": true
+    },
+    "8453": {
+      "address": "0xEfE0899F16367cb74819dbb6F89dD7d41ea255fC",
+      "transaction": "0xa6cd5085fb9804dcdc881772be593de8c69f42ba47c4f8b6dd46d6a3f270b3a8",
+      "isVerified": true
+    },
+    "42161": {
+      "address": "0x1804BcC142191B90Cc0A7116685cdf24F29318C3",
+      "transaction": "0x5feecd0facfc8d7ff936b4268997fda486cafc0e4a5b1163d40c4b3ba1016250",
+      "isVerified": true
+    }
+  },
   "EventEmitterRegistryProxy": {
     "196": {
       "address": "0xd86233E2E53a87F0735C5643f3189cfEC07269bF",
