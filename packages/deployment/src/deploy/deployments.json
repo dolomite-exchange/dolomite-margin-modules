@@ -656,6 +656,7 @@
       "isVerified": true
     }
   },
+  "EventEmitterRegistryImplementationV4": {},
   "EventEmitterRegistryProxy": {
     "196": {
       "address": "0xd86233E2E53a87F0735C5643f3189cfEC07269bF",

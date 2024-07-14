@@ -29,7 +29,6 @@
     "verify:polygon_zkevm": "hardhat --network polygon_zkevm run src/utils/verify-contract.ts",
     "verify:contract": "hardhat --network $NETWORK run src/utils/verify-contract.ts"
   },
-  "private": false,
   "files": [
     "src/deploy/deployments.json"
   ],

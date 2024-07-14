@@ -13,7 +13,6 @@
     "lint:sol": "hardhat check && python ../../scripts/lint-contracts.py fix interest-setters",
     "lint:ts": "tslint --project ../../ -t verbose 'src/**/*.ts' 'test/**/*.ts'"
   },
-  "private": false,
   "files": [
     "contracts/**/*",
     "!contracts/test/*"
