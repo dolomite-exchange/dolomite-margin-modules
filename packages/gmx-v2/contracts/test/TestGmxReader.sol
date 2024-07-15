@@ -132,7 +132,9 @@ contract TestGmxReader is IGmxReader {
         GmxMarket.MarketPrices memory /* _prices */,
         uint256 /* _longTokenAmount */,
         uint256 /* _shortTokenAmount */,
-        address /* _uiFeeReceiver */
+        address /* _uiFeeReceiver */,
+        SwapPricingType /* _swapPricingType */,
+        bool /* includeVirtualInventoryImpact */
     ) external pure returns (uint256) {
         return 0;
     }
@@ -142,7 +144,8 @@ contract TestGmxReader is IGmxReader {
         GmxMarket.MarketProps memory /* _market */,
         GmxMarket.MarketPrices memory /* _prices */,
         uint256 /* _marketTokenAmount */,
-        address /* _uiFeeReceiver */
+        address /* _uiFeeReceiver */,
+        SwapPricingType /* _swapPricingType */
     ) external pure returns (uint256, uint256) {
         return (0, 0);
     }
