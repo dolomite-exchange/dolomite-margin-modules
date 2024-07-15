@@ -365,6 +365,14 @@ export const RS_ETH_CAMELOT_POOL_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0xb355cce5cbaf411bd56e3b092f5aa10a894083ae',
 };
 
+export const AAVE_LENDING_POOL_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x794a61358D6845594F94dc1DB02A252b5b4814aD',
+};
+
+export const AAVE_NATIVE_USDC_A_TOKEN: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x724dc807b04555b71ed48a6896b6F41593b8C637',
+};
+
 export const SIZE_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x939727d85d99d0ac339bf1b76dfe30ca27c19067',
