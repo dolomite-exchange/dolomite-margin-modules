@@ -44,15 +44,14 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     upload: {
       transactions,
       chainId: network,
+      addExecuteImmediatelyTransactions: true,
     },
     skipTimeDelay: true,
     invariants: async () => {
       const gmxV2Ecosystem = core.gmxEcosystemV2.live;
 
-      expect(await gmxV2Ecosystem.registry.gmxExchangeRouter())
-        .to.eq(GMX_EXCHANGE_ROUTER_MAP[network]);
-      expect(await gmxV2Ecosystem.registry.gmxReader())
-        .to.eq(GMX_READER_MAP[network]);
+      expect(await gmxV2Ecosystem.registry.gmxExchangeRouter()).to.eq(GMX_EXCHANGE_ROUTER_MAP[network]);
+      expect(await gmxV2Ecosystem.registry.gmxReader()).to.eq(GMX_READER_MAP[network]);
     },
   };
 }
