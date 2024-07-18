@@ -16,9 +16,6 @@ import 'tsconfig-paths/register';
 import { base_config } from '../../hardhat-base-config';
 
 chai.use(solidity);
-if (process.env.COVERAGE !== 'true') {
-  require('hardhat-tracer');
-}
 
 // noinspection JSUnusedGlobalSymbols
 export default {
