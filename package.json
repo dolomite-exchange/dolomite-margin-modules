@@ -67,6 +67,7 @@
     "fs-extra": "^11.2.0",
     "hardhat": "^2.19.5",
     "hardhat-gas-reporter": "^1.0.9",
+    "hardhat-tracer": "^3.0.3",
     "solidity-coverage": "^0.8.5",
     "ts-node": "^10.5.0",
     "tslint": "^6.1.3",
@@ -76,8 +77,5 @@
   "private": true,
   "workspaces": [
     "packages/*"
-  ],
-  "dependencies": {
-    "hardhat-tracer": "^3.0.3"
-  }
+  ]
 }
