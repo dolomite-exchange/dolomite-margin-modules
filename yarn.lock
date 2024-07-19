@@ -4120,7 +4120,7 @@ ethers@^4.0.20:
     uuid "2.0.1"
     xmlhttprequest "1.8.0"
 
-ethers@^5.5.3, ethers@^5.6.0, ethers@^5.7.2:
+ethers@^5.5.3, ethers@^5.6.0, ethers@^5.6.1, ethers@^5.7.2:
   version "5.7.2"
   resolved "https://registry.yarnpkg.com/ethers/-/ethers-5.7.2.tgz#3a7deeabbb8c030d4126b24f84e525466145872e"
   integrity sha512-wswUsmWo1aOK8rR7DIKiWSw9DbLWe6x98Jrn8wcTflTVvaXhAMaB5zGAXy0GYQEQp9iO1iSHWVyARQm11zUtyg==
@@ -4915,6 +4915,16 @@ hardhat-gas-reporter@^1.0.9:
     array-uniq "1.0.3"
     eth-gas-reporter "^0.2.25"
     sha1 "^1.1.1"
+
+hardhat-tracer@^3.0.3:
+  version "3.0.3"
+  resolved "https://registry.yarnpkg.com/hardhat-tracer/-/hardhat-tracer-3.0.3.tgz#99cf884706b29d53875547f1917760997ed94994"
+  integrity sha512-Uto+JQGayzZRnwdUyM1Un0zmFth+j3jkijHxls75BCTEBHXvAilUO20UloT+b2DYWVCcKn5GRuRpxjSQEV4QYg==
+  dependencies:
+    chalk "^4.1.2"
+    debug "^4.3.4"
+    ethers "^5.6.1"
+    semver "^7.6.2"
 
 hardhat@^2.19.5:
   version "2.22.6"
@@ -7180,7 +7190,7 @@ semver@^6.3.0, semver@^6.3.1:
   resolved "https://registry.yarnpkg.com/semver/-/semver-6.3.1.tgz#556d2ef8689146e46dcea4bfdd095f3434dffcb4"
   integrity sha512-BR7VvDCVHO+q2xBEWskxS6DJE1qRnb7DxzUrogb71CWoSficBxYsiAGd+Kl0mmq/MprG9yArRkyrQxTO6XjMzA==
 
-semver@^7.3.4, semver@^7.3.7, semver@^7.5.2:
+semver@^7.3.4, semver@^7.3.7, semver@^7.5.2, semver@^7.6.2:
   version "7.6.3"
   resolved "https://registry.yarnpkg.com/semver/-/semver-7.6.3.tgz#980f7b5550bc175fb4dc09403085627f9eb33143"
   integrity sha512-oVekP1cKtI+CTDvHWYFUcMtsK/00wmAEfyqKfNdARm8u1wNVhSgaX7A8d4UuIlUI5e84iEwOhs7ZPYRmzU9U6A==

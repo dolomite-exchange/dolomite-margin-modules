@@ -76,5 +76,8 @@
   "private": true,
   "workspaces": [
     "packages/*"
-  ]
+  ],
+  "dependencies": {
+    "hardhat-tracer": "^3.0.3"
+  }
 }
