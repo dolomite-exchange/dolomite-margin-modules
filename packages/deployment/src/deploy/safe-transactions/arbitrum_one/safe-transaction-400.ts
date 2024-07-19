@@ -18,8 +18,6 @@ const liquidatorProxyV4OldAddress = '0x34975624E992bF5c094EF0CF3344660f7AaB9CB3'
  * - Sets the Generic Trader Proxy as a global operator of Dolomite Margin
  * - Sets the Liquidator Proxy V4 as a global operator of Dolomite Margin
  * - Sets the Generic Trader Proxy on the Dolomite Registry
- * - Sets the Liquidator Proxy V4 on the Dolomite Registry
- * - Upgrades each Isolation Mode vault to use the new ActionsLib
  * - For each isolation mode asset, resets the Liquidator Asset Registry to use the new Liquidator Proxy V4
  */
 
