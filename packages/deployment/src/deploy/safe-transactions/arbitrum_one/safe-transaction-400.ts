@@ -1,14 +1,14 @@
-import { BigNumberish } from "ethers";
-import { assertHardhatInvariant } from "hardhat/internal/core/errors";
-import { IERC20Metadata__factory } from "packages/base/src/types";
-import { getAndCheckSpecificNetwork } from "packages/base/src/utils/dolomite-utils";
-import { Network } from "packages/base/src/utils/no-deps-constants";
-import { getRealLatestBlockNumber } from "packages/base/test/utils";
-import { CoreProtocolArbitrumOne } from "packages/base/test/utils/core-protocols/core-protocol-arbitrum-one";
-import { setupCoreProtocol } from "packages/base/test/utils/setup";
-import { EncodedTransaction, prettyPrintEncodedDataWithTypeSafety } from "packages/deployment/src/utils/deploy-utils";
-import { doDryRunAndCheckDeployment, DryRunOutput } from "packages/deployment/src/utils/dry-run-utils";
-import getScriptName from "packages/deployment/src/utils/get-script-name";
+import { BigNumberish } from 'ethers';
+import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
+import { IERC20Metadata__factory } from 'packages/base/src/types';
+import { getAndCheckSpecificNetwork } from 'packages/base/src/utils/dolomite-utils';
+import { Network } from 'packages/base/src/utils/no-deps-constants';
+import { getRealLatestBlockNumber } from 'packages/base/test/utils';
+import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
+import { setupCoreProtocol } from 'packages/base/test/utils/setup';
+import { EncodedTransaction, prettyPrintEncodedDataWithTypeSafety } from 'packages/deployment/src/utils/deploy-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput } from 'packages/deployment/src/utils/dry-run-utils';
+import getScriptName from 'packages/deployment/src/utils/get-script-name';
 
 const genericTraderProxyV1OldAddress = '0x905F3adD52F01A9069218c8D1c11E240afF61D2B';
 const liquidatorProxyV4OldAddress = '0x34975624E992bF5c094EF0CF3344660f7AaB9CB3';
@@ -100,8 +100,14 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       chainId: network,
     },
     invariants: async () => {
-      // assertHardhatInvariant(core.genericTraderProxy.address !== genericTraderProxyV1OldAddress, 'Generic Trader Proxy not updated');
-      // assertHardhatInvariant(core.liquidatorProxyV4.address !== liquidatorProxyV4OldAddress, 'Liquidator Proxy not updated');
+      assertHardhatInvariant(
+        core.genericTraderProxy.address !== genericTraderProxyV1OldAddress,
+        'Generic Trader Proxy not updated'
+      );
+      assertHardhatInvariant(
+        core.liquidatorProxyV4.address !== liquidatorProxyV4OldAddress,
+        'Liquidator Proxy not updated'
+      );
       assertHardhatInvariant(
         !(await core.dolomiteMargin.getIsGlobalOperator(genericTraderProxyV1OldAddress)),
         'Invalid global operator',
