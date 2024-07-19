@@ -1,4 +1,5 @@
 import { BigNumberish } from "ethers";
+import { assertHardhatInvariant } from "hardhat/internal/core/errors";
 import { IERC20Metadata__factory } from "packages/base/src/types";
 import { getAndCheckSpecificNetwork } from "packages/base/src/utils/dolomite-utils";
 import { Network } from "packages/base/src/utils/no-deps-constants";
@@ -99,6 +100,47 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       chainId: network,
     },
     invariants: async () => {
+      // assertHardhatInvariant(core.genericTraderProxy.address !== genericTraderProxyV1OldAddress, 'Generic Trader Proxy not updated');
+      // assertHardhatInvariant(core.liquidatorProxyV4.address !== liquidatorProxyV4OldAddress, 'Liquidator Proxy not updated');
+      assertHardhatInvariant(
+        !(await core.dolomiteMargin.getIsGlobalOperator(genericTraderProxyV1OldAddress)),
+        'Invalid global operator',
+      );
+      assertHardhatInvariant(
+        await core.dolomiteMargin.getIsGlobalOperator(core.genericTraderProxy.address),
+        'Invalid global operator',
+      );
+      assertHardhatInvariant(
+        !(await core.dolomiteMargin.getIsGlobalOperator(liquidatorProxyV4OldAddress)),
+        'Invalid global operator',
+      );
+      assertHardhatInvariant(
+        await core.dolomiteMargin.getIsGlobalOperator(core.liquidatorProxyV4.address),
+        'Invalid global operator',
+      );
+      assertHardhatInvariant(
+        await core.dolomiteRegistry.genericTraderProxy() === core.genericTraderProxy.address,
+        'Invalid generic trader proxy'
+      );
+
+      const numMarkets = await core.dolomiteMargin.getNumMarkets();
+      for (let i = 0; numMarkets.gt(i); i++) {
+        const tokenName = await IERC20Metadata__factory.connect(
+          await core.dolomiteMargin.getMarketTokenAddress(i),
+          core.governance
+        ).name();
+
+        if (tokenName.startsWith('Dolomite Isolation:') || tokenName.startsWith('Dolomite:')) {
+          assertHardhatInvariant(
+            !(await core.liquidatorAssetRegistry.isAssetWhitelistedForLiquidation(i, liquidatorProxyV4OldAddress)),
+            'Invalid liquidator proxy'
+          );
+          assertHardhatInvariant(
+            await core.liquidatorAssetRegistry.isAssetWhitelistedForLiquidation(i, core.liquidatorProxyV4.address),
+            'Invalid liquidator proxy'
+          );
+        }
+      }
     },
   };
 }
