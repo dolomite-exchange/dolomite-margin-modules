@@ -27,6 +27,10 @@ const baseWeb3Url = process.env.BASE_WEB3_PROVIDER_URL;
 if (!baseWeb3Url) {
   throw new Error('No BASE_WEB3_PROVIDER_URL provided!');
 }
+const berachainWeb3Url = process.env.BERACHAIN_WEB3_PROVIDER_URL;
+if (!berachainWeb3Url) {
+  throw new Error('No BERACHAIN_WEB3_PROVIDER_URL provided!');
+}
 const mantleWeb3Url = process.env.MANTLE_WEB3_PROVIDER_URL;
 if (!mantleWeb3Url) {
   throw new Error('No MANTLE_WEB3_PROVIDER_URL provided!');
@@ -48,6 +52,10 @@ if (!arbiscanApiKey) {
 const basescanApiKey = process.env.BASESCAN_API_KEY;
 if (!basescanApiKey) {
   throw new Error('No BASESCAN_API_KEY provided!');
+}
+const berascanApiKey = process.env.BERASCAN_API_KEY;
+if (!berascanApiKey) {
+  throw new Error('No BERASCAN_API_KEY provided!');
 }
 const mantlescanApiKey = process.env.MANTLESCAN_API_KEY;
 if (!mantlescanApiKey) {
@@ -93,6 +101,12 @@ export const base_config: HardhatUserConfig = {
     [NetworkName.Base]: {
       chainId: parseInt(Network.Base, 10),
       url: baseWeb3Url,
+      gas: 20_000_000, // 20M gas
+      accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
+    },
+    [NetworkName.Berachain]: {
+      chainId: parseInt(Network.Berachain, 10),
+      url: berachainWeb3Url,
       gas: 20_000_000, // 20M gas
       accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
     },
@@ -147,7 +161,7 @@ export const base_config: HardhatUserConfig = {
     enabled: process.env.REPORT_GAS === 'true',
   },
   tracer: {
-    tasks: ['run']
+    tasks: ['run'],
   },
   typechain: {
     outDir: 'src/types',
@@ -158,6 +172,7 @@ export const base_config: HardhatUserConfig = {
     apiKey: {
       [NetworkName.ArbitrumOne]: arbiscanApiKey,
       [NetworkName.Base]: basescanApiKey,
+      [NetworkName.Berachain]: berascanApiKey,
       [NetworkName.Mantle]: mantlescanApiKey,
       [NetworkName.PolygonZkEvm]: polygonscanApiKey,
       [NetworkName.XLayer]: xLayerApiKey,
@@ -177,6 +192,14 @@ export const base_config: HardhatUserConfig = {
         urls: {
           apiURL: 'https://api.basescan.org/api',
           browserURL: 'https://basescan.org/',
+        },
+      },
+      {
+        network: NetworkName.Berachain,
+        chainId: parseInt(Network.Berachain, 10),
+        urls: {
+          apiURL: 'https://api.routescan.io/v2/network/testnet/evm/80084/etherscan/api',
+          browserURL: 'https://bartio.beratrail.io/address',
         },
       },
       {

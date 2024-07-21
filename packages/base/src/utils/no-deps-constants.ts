@@ -6,16 +6,24 @@ import { GenericTraderParamStruct } from './index';
 export enum Network {
   ArbitrumOne = '42161',
   Base = '8453',
+  Berachain = '80084',
   Mantle = '5000',
   PolygonZkEvm = '1101',
   XLayer = '196',
 }
 
-export type NetworkType = Network.ArbitrumOne | Network.Base | Network.Mantle | Network.PolygonZkEvm | Network.XLayer;
+export type NetworkType =
+  Network.ArbitrumOne
+  | Network.Base
+  | Network.Berachain
+  | Network.Mantle
+  | Network.PolygonZkEvm
+  | Network.XLayer;
 
 export enum NetworkName {
   ArbitrumOne = 'arbitrum_one',
   Base = 'base',
+  Berachain = 'berachain',
   Mantle = 'mantle',
   PolygonZkEvm = 'polygon_zkevm',
   XLayer = 'x_layer',
@@ -24,6 +32,7 @@ export enum NetworkName {
 export const networkToNetworkNameMap: Record<Network, NetworkName> = {
   [Network.ArbitrumOne]: NetworkName.ArbitrumOne,
   [Network.Base]: NetworkName.Base,
+  [Network.Berachain]: NetworkName.Berachain,
   [Network.Mantle]: NetworkName.Mantle,
   [Network.PolygonZkEvm]: NetworkName.PolygonZkEvm,
   [Network.XLayer]: NetworkName.XLayer,
@@ -37,6 +46,7 @@ export const NO_EXPIRY = BigNumber.from('0');
 export const NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP: Record<Network, number> = {
   [Network.ArbitrumOne]: 221_467_300,
   [Network.Base]: 10_050_058,
+  [Network.Berachain]: 1_708_014,
   [Network.Mantle]: 63_400_000,
   [Network.PolygonZkEvm]: 9_860_500,
   [Network.XLayer]: 854_000,

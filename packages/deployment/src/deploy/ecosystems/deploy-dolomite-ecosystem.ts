@@ -35,9 +35,13 @@ import {
 } from '@dolomite-exchange/modules-base/test/utils';
 import { DolomiteMargin } from '@dolomite-exchange/modules-base/test/utils/dolomite';
 import { getDolomiteMarginContract, getExpiryContract } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { getLinearStepFunctionInterestSetterConstructorParams } from '@dolomite-exchange/modules-interest-setters/src/interest-setters-constructors';
+import {
+  getLinearStepFunctionInterestSetterConstructorParams,
+} from '@dolomite-exchange/modules-interest-setters/src/interest-setters-constructors';
 import { TokenInfo } from '@dolomite-exchange/modules-oracles/src';
-import { getChainlinkPriceOracleV3ConstructorParams as getChainlinkPriceOracleV3ConstructorParams } from '@dolomite-exchange/modules-oracles/src/oracles-constructors';
+import {
+  getChainlinkPriceOracleV3ConstructorParams as getChainlinkPriceOracleV3ConstructorParams,
+} from '@dolomite-exchange/modules-oracles/src/oracles-constructors';
 import {
   IChainlinkAggregator__factory,
   OracleAggregatorV2,
@@ -321,7 +325,8 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     const foundDolomiteAccountRegistryAddress = await dolomiteRegistry.dolomiteAccountRegistry();
     needsRegistryDolomiteAccountRegistryEncoding =
       foundDolomiteAccountRegistryAddress !== dolomiteAccountRegistryProxy.address;
-  } catch (e) {}
+  } catch (e) {
+  }
 
   let needsRegistryMigratorEncoding = true;
   let needsRegistryOracleAggregatorEncoding = true;
@@ -343,7 +348,8 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     } else if (foundOracleAggregatorAddress === oracleAggregator.address) {
       needsRegistryOracleAggregatorEncoding = false;
     }
-  } catch (e) {}
+  } catch (e) {
+  }
 
   const isolationModeFreezableLiquidatorProxyAddress = await deployContractAndSave(
     'IsolationModeFreezableLiquidatorProxy',
@@ -376,6 +382,14 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   );
 
   await deployInterestSetters();
+
+  if (network === '80084') {
+    // Berachain testnet
+    await deployContractAndSave(
+      'TestPriceOracle',
+      [],
+    );
+  }
 
   // We can't set up the core protocol here because there are too many missing contracts/context
   const genericTraderAddress = CoreDeployments.GenericTraderProxyV1[network].address;
@@ -525,9 +539,10 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
       ),
       config: {
         network,
-      }
+      },
     } as CoreProtocolAbstract<T> as any,
-    invariants: async () => {},
+    invariants: async () => {
+    },
     scriptName: getScriptName(__filename),
     upload: {
       transactions,

@@ -417,7 +417,7 @@ __metadata:
     "@babel/core": "npm:^7.20.5"
     "@babel/eslint-parser": "npm:^7.19.1"
     "@chainlink/contracts": "npm:^0.6.1"
-    "@dolomite-exchange/dolomite-margin": "npm:^0.12.1"
+    "@dolomite-exchange/dolomite-margin": "npm:^0.12.9"
     "@dolomite-exchange/zap-sdk": "npm:^0.2.47-a"
     "@nomicfoundation/hardhat-network-helpers": "npm:^1.0.10"
     "@nomicfoundation/hardhat-verify": "npm:^2.0.4"
@@ -463,9 +463,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@dolomite-exchange/dolomite-margin@npm:^0.12.1":
-  version: 0.12.1
-  resolution: "@dolomite-exchange/dolomite-margin@npm:0.12.1"
+"@dolomite-exchange/dolomite-margin@npm:^0.12.9":
+  version: 0.12.9
+  resolution: "@dolomite-exchange/dolomite-margin@npm:0.12.9"
   dependencies:
     "@openzeppelin/contracts": "npm:^2.5.1"
     "@poanet/solidity-flattener": "npm:^3.0.9"
@@ -479,7 +479,7 @@ __metadata:
     ethers: "npm:4.0.39"
     query-string: "npm:^6.9.0"
     web3: "npm:1.2.1"
-  checksum: 4aa237e89e625fff3ab0f3fdc312b9bead91846c6dc333b2884346b2ab283e25c1f2a2b0ecb73468c4c792a47cfc854c41c2d9a51536f059ab740a39fb2166a3
+  checksum: 8b176809c673bbdd20f536ff8259d7c0707be5e851b671d0aff962d57b88889b0b492b595a3963d7a089c7d70a070933d46054e2b1c52145d0702be3e48af446
   languageName: node
   linkType: hard
 
@@ -541,6 +541,12 @@ __metadata:
 "@dolomite-exchange/modules-liquidity-mining@workspace:packages/liquidity-mining":
   version: 0.0.0-use.local
   resolution: "@dolomite-exchange/modules-liquidity-mining@workspace:packages/liquidity-mining"
+  languageName: unknown
+  linkType: soft
+
+"@dolomite-exchange/modules-mountain@workspace:packages/mountain":
+  version: 0.0.0-use.local
+  resolution: "@dolomite-exchange/modules-mountain@workspace:packages/mountain"
   languageName: unknown
   linkType: soft
 

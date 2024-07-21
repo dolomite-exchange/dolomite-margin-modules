@@ -341,7 +341,7 @@ export async function deployContractAndSave(
   try {
     if (nonce === undefined) {
       const signer = ethers.provider.getSigner(0);
-      nonce = await ethers.provider.getTransactionCount(await signer.getAddress());
+      nonce = await ethers.provider.getTransactionCount(await signer.getAddress(), 'pending');
     }
     contract = libraries
       ? await createContractWithLibrary(contractName, libraries, args, { nonce })
@@ -349,6 +349,14 @@ export async function deployContractAndSave(
     nonce += 1;
   } catch (e) {
     console.error(`\tCould not deploy at attempt ${attempts + 1} due for ${contractName} to error:`, e);
+    console.log(); // print new line
+
+    const errorMessage = (e as any).message;
+    if (errorMessage.includes('nonce has already been used') || errorMessage.includes('replacement fee too low')) {
+      console.log('\tRe-fetching nonce...');
+      const signer = ethers.provider.getSigner(0);
+      nonce = await ethers.provider.getTransactionCount(await signer.getAddress(), 'pending');
+    }
     return deployContractAndSave(contractName, args, contractRename, libraries, attempts + 1);
   }
 
@@ -1169,8 +1177,8 @@ export async function prettyPrintEncodeInsertPendlePtOracle<T extends NetworkTyp
   );
 }
 
-export async function prettyPrintEncodeInsertRedstoneOracleV3(
-  core: CoreProtocolWithRedstone<Network.Mantle>,
+export async function prettyPrintEncodeInsertRedstoneOracleV3<T extends NetworkType>(
+  core: CoreProtocolWithRedstone<T>,
   token: IERC20,
   invertPrice: boolean = REDSTONE_PRICE_AGGREGATORS_MAP[core.config.network][token.address]!.invert ?? false,
   tokenPairAddress: string | undefined = REDSTONE_PRICE_AGGREGATORS_MAP[core.config.network][token.address]!

@@ -85,7 +85,7 @@ import {
   GMX_BTC_PLACEHOLDER_MAP,
   GMX_MAP,
   GRAI_MAP,
-  GRAIL_MAP,
+  GRAIL_MAP, HONEY_MAP,
   JONES_MAP,
   LINK_MAP,
   MAGIC_GLP_MAP,
@@ -107,17 +107,18 @@ import {
   UNI_MAP,
   USDC_MAP,
   USDE_MAP,
-  W_USDM_MAP,
+  USDM_MAP,
   USDT_MAP,
   USDY_MAP,
+  W_USDM_MAP, WBERA_MAP,
   WBTC_MAP,
   WE_ETH_MAP,
   WETH_MAP,
   WMNT_MAP,
+  WO_ETH_MAP,
   WOKB_MAP,
   WST_ETH_MAP,
   XAI_MAP,
-  WO_ETH_MAP, USDM_MAP,
 } from '../../src/utils/constants';
 import {
   ADDRESS_ZERO,
@@ -158,6 +159,7 @@ import { createPremiaEcosystem } from './ecosystem-utils/premia';
 import { createTestEcosystem } from './ecosystem-utils/testers';
 import { createUmamiEcosystem } from './ecosystem-utils/umami';
 import { impersonate, impersonateOrFallback, resetForkIfPossible } from './index';
+import { CoreProtocolBerachain } from './core-protocols/core-protocol-berachain';
 
 /**
  * Config to for setting up tests in the `before` function
@@ -185,6 +187,10 @@ interface CoreProtocolConfigBase extends CoreProtocolConfigParent<Network.Base> 
   readonly base: boolean;
 }
 
+interface CoreProtocolConfigBerachain extends CoreProtocolConfigParent<Network.Berachain> {
+  readonly berachain: boolean;
+}
+
 interface CoreProtocolConfigMantle extends CoreProtocolConfigParent<Network.Mantle> {
   readonly mantle: boolean;
 }
@@ -200,14 +206,14 @@ interface CoreProtocolConfigXLayer extends CoreProtocolConfigParent<Network.XLay
 export type CoreProtocolConfig<T extends NetworkType> = T extends Network.ArbitrumOne
   ? CoreProtocolConfigArbitrumOne
   : T extends Network.Base
-  ? CoreProtocolConfigBase
-  : T extends Network.Mantle
-  ? CoreProtocolConfigMantle
-  : T extends Network.PolygonZkEvm
-  ? CoreProtocolConfigPolygonZkEvm
-  : T extends Network.XLayer
-  ? CoreProtocolConfigXLayer
-  : never;
+    ? CoreProtocolConfigBase
+    : T extends Network.Mantle
+      ? CoreProtocolConfigMantle
+      : T extends Network.PolygonZkEvm
+        ? CoreProtocolConfigPolygonZkEvm
+        : T extends Network.XLayer
+          ? CoreProtocolConfigXLayer
+          : never;
 
 export async function disableInterestAccrual<T extends NetworkType>(
   core: CoreProtocolAbstract<T>,
@@ -441,6 +447,15 @@ function getCoreProtocolConfig<T extends NetworkType>(network: T, blockNumber: n
     } as CoreProtocolConfigBase as any;
   }
 
+  if (network === Network.Berachain) {
+    return {
+      network,
+      blockNumber,
+      networkNumber: parseInt(network, 10),
+      berachain: true,
+    } as CoreProtocolConfigBerachain as any;
+  }
+
   if (network === Network.Mantle) {
     return {
       network,
@@ -483,14 +498,16 @@ export function getDefaultCoreProtocolConfigForGmxV2(): CoreProtocolConfig<Netwo
 export type CoreProtocolType<T extends NetworkType> = T extends Network.ArbitrumOne
   ? CoreProtocolArbitrumOne
   : T extends Network.Base
-  ? CoreProtocolBase
-  : T extends Network.Mantle
-  ? CoreProtocolMantle
-  : T extends Network.PolygonZkEvm
-  ? CoreProtocolPolygonZkEvm
-  : T extends Network.XLayer
-  ? CoreProtocolXLayer
-  : never;
+    ? CoreProtocolBase
+    : T extends Network.Berachain
+      ? CoreProtocolBerachain
+      : T extends Network.Mantle
+        ? CoreProtocolMantle
+        : T extends Network.PolygonZkEvm
+          ? CoreProtocolPolygonZkEvm
+          : T extends Network.XLayer
+            ? CoreProtocolXLayer
+            : never;
 
 export function getDolomiteMarginContract<T extends NetworkType>(
   config: CoreProtocolSetupConfig<T>,
@@ -898,6 +915,42 @@ export async function setupCoreProtocol<T extends NetworkType>(
     return new CoreProtocolBase(coreProtocolParams as CoreProtocolParams<Network.Base>, {
       odosEcosystem: await createOdosEcosystem(typedConfig.network, hhUser1),
       paraswapEcosystem: await createParaswapEcosystem(typedConfig.network, hhUser1),
+    }) as any;
+  }
+  if (config.network === Network.Berachain) {
+    const typedConfig = config as CoreProtocolSetupConfig<Network.Berachain>;
+    const chroniclePriceOracle = ChroniclePriceOracleV3__factory.connect(
+      getMaxDeploymentVersionAddressByDeploymentKey('ChroniclePriceOracle', Network.Berachain, ADDRESS_ZERO),
+      hhUser1,
+    );
+    const redstonePriceOracle = RedstonePriceOracleV3__factory.connect(
+      getMaxDeploymentVersionAddressByDeploymentKey('RedstonePriceOracle', Network.Berachain, ADDRESS_ZERO),
+      hhUser1,
+    );
+    return new CoreProtocolBerachain(coreProtocolParams as CoreProtocolParams<Network.Berachain>, {
+      redstonePriceOracleV3: redstonePriceOracle,
+      marketIds: {
+        ...coreProtocolParams.marketIds,
+        honey: HONEY_MAP[typedConfig.network].marketId,
+        wbera: WBERA_MAP[typedConfig.network].marketId,
+        stablecoins: [
+          ...coreProtocolParams.marketIds.stablecoins,
+          HONEY_MAP[typedConfig.network].marketId,
+        ],
+        stablecoinsWithUnifiedInterestRateModels: [
+          ...coreProtocolParams.marketIds.stablecoins,
+          HONEY_MAP[typedConfig.network].marketId,
+        ],
+      },
+      tokens: {
+        ...coreProtocolParams.tokens,
+        honey: IERC20__factory.connect(HONEY_MAP[typedConfig.network].address, hhUser1),
+        wbera: IWETH__factory.connect(WBERA_MAP[typedConfig.network].address, hhUser1),
+        stablecoins: [
+          ...coreProtocolParams.tokens.stablecoins,
+          IERC20__factory.connect(HONEY_MAP[typedConfig.network].address, hhUser1),
+        ],
+      },
     }) as any;
   }
   if (config.network === Network.Mantle) {
