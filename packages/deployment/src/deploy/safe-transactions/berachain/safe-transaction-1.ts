@@ -142,6 +142,13 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     ),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
+      { dolomiteMargin: core.dolomiteMargin },
+      'dolomiteMargin',
+      'ownerSetGlobalOperator',
+      [core.depositWithdrawalProxy.address, true],
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
       { proxy: core.depositWithdrawalProxy },
       'proxy',
       'initializePayableMarket',
