@@ -63,13 +63,51 @@ interface IDolomiteOwner {
     // =================== Admin Functions ====================
     // ========================================================
 
+    function ownerAddRole(bytes32 _role) external;
+
+    function ownerRemoveRole(bytes32 _role) external;
+
+    function ownerAddRoleAddresses(bytes32 _role, address[] calldata _addresses) external;
+
+    function ownerRemoveRoleAddresses(bytes32 _role, address[] calldata _addresses) external;
+
+    function ownerAddRoleFunctionSelectors(bytes32 _role, bytes4[] calldata _selectors) external;
+
+    function ownerRemoveRoleFunctionSelectors(bytes32 _role, bytes4[] calldata _selectors) external;
+
+    function ownerAddRoleToAddressFunctionSelectors(bytes32 _role, address _destination, bytes4[] calldata _selectors) external;
+
+    function ownerRemoveRoleToAddressFunctionSelectors(bytes32 _role, address _destination, bytes4[] calldata _selectors) external;
+
+    function ownerCancelTransaction(uint256 _transactionId) external;
 
     // ========================================================
     // =================== Transaction Functions ====================
     // ========================================================
 
+    function submitTransaction(address _destination, uint256 _value, bytes calldata _data) external returns (uint256);
+
+    function executeTransactions(uint256[] calldata _transactionIds) external;
+
+    function executeTransaction(uint256 _transactionId) external;
+
+    function submitTransactionAndExecute(address _destination, uint256 _value, bytes calldata _data) external;
+
     // ========================================================
     // =================== Getter Functions ===================
     // ========================================================
 
+    function getRoles() external view returns (bytes32[] memory);
+
+    function getRoleAddresses(bytes32 _role) external view returns (address[] memory);
+
+    function getRoleFunctionSelectors(bytes32 _role) external view returns (bytes32[] memory);
+
+    function getRoleToAddressFunctionSelectors(bytes32 _role, address _destination) external view returns (bytes32[] memory);
+
+    function getUserToRoles(address _user) external view returns (bytes32[] memory);
+
+    function getTransactionCount(bool _pending, bool _executed) external view returns (uint256);
+
+    function getTransactionIds(uint256 _from, uint256 _to, bool _pending, bool _executed) external view returns (uint256[] memory);
 }

@@ -30,7 +30,7 @@ import { Require } from "../protocol/lib/Require.sol";
  * @title   DolomiteOwner
  * @author  Dolomite
  *
- * @notice  Dolomite Owner contract that sets roles for specific ownable functions
+ * @notice  DolomiteOwner contract that enables an admin to set roles and permissions for other addresses
  */
 contract DolomiteOwner is IDolomiteOwner, AccessControl {
     using EnumerableSet for EnumerableSet.AddressSet;
@@ -53,13 +53,12 @@ contract DolomiteOwner is IDolomiteOwner, AccessControl {
     // ================================================
 
     EnumerableSet.Bytes32Set private _roles;
-    mapping(address => EnumerableSet.Bytes32Set) private _addressToRoles;
+    mapping(address => EnumerableSet.Bytes32Set) private _userToRoles;
     mapping(bytes32 => EnumerableSet.AddressSet) private _roleToAddresses;
     mapping(bytes32 => EnumerableSet.Bytes32Set) private _roleToFunctionSelectors;
     mapping(bytes32 => mapping(address => EnumerableSet.Bytes32Set)) private _roleToAddressToFunctionSelectors;
 
     mapping (uint256 => Transaction) public transactions;
-    mapping (uint256 => mapping (address => bool)) public confirmations;
     uint256 public transactionCount;
 
     // ================================================
@@ -97,7 +96,7 @@ contract DolomiteOwner is IDolomiteOwner, AccessControl {
     // =================== Admin Functions ============
     // ================================================
 
-    // @follow-up Do we want to add checks to confirm it doesn't already exist?
+    // @follow-up Do we want to add checks to confirm that values don't already exist in enumerable set?
     function ownerAddRole(
         bytes32 _role
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
@@ -132,6 +131,7 @@ contract DolomiteOwner is IDolomiteOwner, AccessControl {
         bytes32 _role,
         address[] calldata _addresses
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        // @follow-up Remove this check? This way admin could unlist the role and then adjust the allowed addresses
         Require.that(
             _roles.contains(_role),
             _FILE,
@@ -164,6 +164,7 @@ contract DolomiteOwner is IDolomiteOwner, AccessControl {
         bytes32 _role,
         bytes4[] calldata _selectors
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        // @follow-up Remove this as well?
         Require.that(
             _roles.contains(_role),
             _FILE,
@@ -253,11 +254,12 @@ contract DolomiteOwner is IDolomiteOwner, AccessControl {
                 4. If the role is no longer valid, transaction is not approved
                 5. If the role is valid, check if the transaction is approved for that role
         */
+        // @follow-up I can't tell if there is a better way to do this with the boolean
         bool approved;
         if (hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
             approved = true;
         } else {
-            bytes32[] memory userRoles = _addressToRoles[msg.sender].values();
+            bytes32[] memory userRoles = _userToRoles[msg.sender].values();
             for (uint256 i; i < userRoles.length; ++i) {
                 bytes32 role = userRoles[i];
                 if (!_roles.contains(role) || role == EXECUTOR_ROLE) {
@@ -290,6 +292,7 @@ contract DolomiteOwner is IDolomiteOwner, AccessControl {
         uint256 transactionId
     ) public transactionExists(transactionId) {
         Transaction storage txn = transactions[transactionId];
+        // @follow-up In the case of executing multiple transactions, the address will be checked each time. Should we adjust setup?
         Require.that(
             hasRole(EXECUTOR_ROLE, msg.sender) || hasRole(DEFAULT_ADMIN_ROLE, msg.sender),
             _FILE,
@@ -302,6 +305,7 @@ contract DolomiteOwner is IDolomiteOwner, AccessControl {
         );
 
         txn.executed = true;
+        // @follow-up Do we want to return the transaction return data?
         txn.destination.functionCallWithValue(txn.data, txn.value);
         emit TransactionExecuted(transactionId);
     }
@@ -342,22 +346,22 @@ contract DolomiteOwner is IDolomiteOwner, AccessControl {
         return _roleToAddressToFunctionSelectors[_role][_destination].values();
     }
 
-    function getAddressToRoles(
-        address _address
+    function getUserToRoles(
+        address _user
     ) external view returns (bytes32[] memory) {
-        return _addressToRoles[_address].values();
+        return _userToRoles[_user].values();
     }
 
     // @follow-up Should we add a bool for cancelled?
     function getTransactionCount(
-        bool pending,
-        bool executed
-    ) public view returns (uint256) {
+        bool _pending,
+        bool _executed
+    ) external view returns (uint256) {
         uint256 count = 0;
         for (uint256 i; i < transactionCount; ++i) {
             if (
-                (pending && !transactions[i].executed && !transactions[i].cancelled)
-                || (executed && transactions[i].executed)
+                (_pending && !transactions[i].executed && !transactions[i].cancelled)
+                || (_executed && transactions[i].executed)
             ) {
                 count += 1;
             }
@@ -365,12 +369,13 @@ contract DolomiteOwner is IDolomiteOwner, AccessControl {
         return count;
     }
 
+    // @follow-up I adjusted this logic a bit from the original repo. Can you double check my logic?
     function getTransactionIds(
         uint256 from,
         uint256 to,
         bool pending,
         bool executed
-    ) public view returns (uint256[] memory) {
+    ) external view returns (uint256[] memory) {
         if (to > transactionCount) {
             to = transactionCount;
         }
@@ -441,12 +446,12 @@ contract DolomiteOwner is IDolomiteOwner, AccessControl {
     }
 
     function _grantRole(bytes32 role, address account) internal override {
-        _addressToRoles[account].add(role);
+        _userToRoles[account].add(role);
         return super._grantRole(role, account);
     }
 
     function _revokeRole(bytes32 role, address account) internal override {
-        _addressToRoles[account].remove(role);
+        _userToRoles[account].remove(role);
         return super._revokeRole(role, account);
     }
 }

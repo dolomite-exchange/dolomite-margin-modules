@@ -4,7 +4,6 @@ import { ADDRESS_ZERO, BYTES_EMPTY, BYTES_ZERO, Network } from 'packages/base/sr
 import {
   DolomiteOwner,
   DolomiteOwner__factory,
-  Ownable__factory,
 } from '../../src/types';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
 import { expectEvent, expectThrow } from '../utils/assertions';
@@ -12,6 +11,7 @@ import { expectEvent, expectThrow } from '../utils/assertions';
 import { CoreProtocolArbitrumOne } from '../utils/core-protocols/core-protocol-arbitrum-one';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '../utils/setup';
 import { BytesLike } from 'ethers';
+import { Ownable__factory } from 'packages/liquidity-mining/src/types';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 const BYTES32_OTHER_SELECTOR = '0x1234567800000000000000000000000000000000000000000000000000000000';
@@ -535,10 +535,10 @@ describe('DolomiteOwner', () => {
   describe('#grantRole', () => {
     it('should work normally', async () => {
       await dolomiteOwner.ownerAddRole(securityCouncilRole);
-      expect(await dolomiteOwner.getAddressToRoles(core.hhUser1.address)).to.deep.equal([]);
+      expect(await dolomiteOwner.getUserToRoles(core.hhUser1.address)).to.deep.equal([]);
 
       await dolomiteOwner.grantRole(securityCouncilRole, core.hhUser1.address);
-      expect(await dolomiteOwner.getAddressToRoles(core.hhUser1.address)).to.deep.equal([securityCouncilRole]);
+      expect(await dolomiteOwner.getUserToRoles(core.hhUser1.address)).to.deep.equal([securityCouncilRole]);
       expect(await dolomiteOwner.hasRole(securityCouncilRole, core.hhUser1.address)).to.be.true;
     });
   });
@@ -546,12 +546,12 @@ describe('DolomiteOwner', () => {
   describe('#revokeRole', () => {
     it('should work normally', async () => {
       await dolomiteOwner.ownerAddRole(securityCouncilRole);
-      expect(await dolomiteOwner.getAddressToRoles(core.hhUser1.address)).to.deep.equal([]);
+      expect(await dolomiteOwner.getUserToRoles(core.hhUser1.address)).to.deep.equal([]);
 
       await dolomiteOwner.grantRole(securityCouncilRole, core.hhUser1.address);
-      expect(await dolomiteOwner.getAddressToRoles(core.hhUser1.address)).to.deep.equal([securityCouncilRole]);
+      expect(await dolomiteOwner.getUserToRoles(core.hhUser1.address)).to.deep.equal([securityCouncilRole]);
       await dolomiteOwner.revokeRole(securityCouncilRole, core.hhUser1.address);
-      expect(await dolomiteOwner.getAddressToRoles(core.hhUser1.address)).to.deep.equal([]);
+      expect(await dolomiteOwner.getUserToRoles(core.hhUser1.address)).to.deep.equal([]);
     });
   });
 
