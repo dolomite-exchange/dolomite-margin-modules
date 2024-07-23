@@ -20,13 +20,18 @@
 
 pragma solidity ^0.8.9;
 
-import { IBaseRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IBaseRegistry.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 
 /**
- * @title   IMNTRegistry.sol.sol
+ * @title   IARB
  * @author  Dolomite
  *
- * @notice  A registry contract for storing all of the addresses that can interact with the ARB token
+ * @notice  This interface defines the functions that are available on the ARB token contract.
  */
-interface IARBRegistry is IBaseRegistry {} // solhint-disable-line no-empty-blocks
+interface IARB is IERC20 {
+
+    function delegate(address _delegatee) external;
+
+    function delegates(address _account) external view returns (address);
+}

@@ -20,13 +20,15 @@
 
 pragma solidity ^0.8.9;
 
-import { IBaseRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IBaseRegistry.sol";
-
 
 /**
- * @title   IMNTRegistry.sol.sol
+ * @title   IMantlePauser
  * @author  Dolomite
  *
- * @notice  A registry contract for storing all of the addresses that can interact with the ARB token
+ * @notice  This interface defines the functions that are available on the Mantle Rewards station contract
+ *          (https://mantlescan.xyz/address/0xD2ED344A33910465c03A52b7551f34048dE9ec5c).
  */
-interface IARBRegistry is IBaseRegistry {} // solhint-disable-line no-empty-blocks
+interface IMantlePauser {
+
+    function isStakingPaused() external view returns (bool);
+}

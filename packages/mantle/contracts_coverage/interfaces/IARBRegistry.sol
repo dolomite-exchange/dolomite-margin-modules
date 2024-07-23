@@ -24,7 +24,7 @@ import { IBaseRegistry } from "@dolomite-exchange/modules-base/contracts/interfa
 
 
 /**
- * @title   IMNTRegistry.sol.sol
+ * @title   IMNTRegistry.sol
  * @author  Dolomite
  *
  * @notice  A registry contract for storing all of the addresses that can interact with the ARB token

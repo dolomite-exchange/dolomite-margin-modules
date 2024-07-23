@@ -18,13 +18,13 @@ import {
   createARBRegistry,
   createARBUnwrapperTraderV2,
   createARBWrapperTraderV2,
-} from './arb-ecosystem-utils';
+} from './mnt-ecosystem-utils';
 import {
   setupCoreProtocol,
   setupTestMarket,
   setupUserVaultProxy
 } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { DEFAULT_BLOCK_NUMBER_FOR_ARB_TESTS } from './arb-utils';
+import { DEFAULT_BLOCK_NUMBER_FOR_MNT_TESTS } from './mnt-utils';
 
 describe('ARBIsolationModeTokenVaultV1', () => {
   let snapshotId: string;
@@ -38,7 +38,7 @@ describe('ARBIsolationModeTokenVaultV1', () => {
 
   before(async () => {
     core = await setupCoreProtocol({
-      blockNumber: DEFAULT_BLOCK_NUMBER_FOR_ARB_TESTS,
+      blockNumber: DEFAULT_BLOCK_NUMBER_FOR_MNT_TESTS,
       network: Network.ArbitrumOne,
     });
 

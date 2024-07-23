@@ -23,54 +23,55 @@ pragma solidity ^0.8.9;
 import { IsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { IARBIsolationModeVaultFactory } from "./interfaces/IARBIsolationModeVaultFactory.sol";
-import { IARBRegistry } from "./interfaces/IARBRegistry.sol";
+import { IMNTIsolationModeVaultFactory } from "./interfaces/IMNTIsolationModeVaultFactory.sol";
+import { IMNTRegistry } from "./interfaces/IMNTRegistry.sol";
 
 
 /**
- * @title   MNTIsolationModeVaultFactory.sol
+ * @title   MNTIsolationModeVaultFactory
  * @author  Dolomite
  *
  * @notice  The wrapper around the GMX token that is used to create user vaults and manage the entry points that a
  *          user can use to interact with DolomiteMargin from the vault.
  */
-contract ARBIsolationModeVaultFactory is
-    IARBIsolationModeVaultFactory,
+contract MNTIsolationModeVaultFactory is
+    IMNTIsolationModeVaultFactory,
     IsolationModeVaultFactory
 {
     using SafeERC20 for IERC20;
 
     // ============ Constants ============
 
-    bytes32 private constant _FILE = "ARBIsolationModeVaultFactory";
+    bytes32 private constant _FILE = "MNTIsolationModeVaultFactory";
 
     // ============ Field Variables ============
 
-    IARBRegistry public override arbRegistry;
+    IMNTRegistry public override mntRegistry;
 
     // ============ Constructor ============
 
     constructor(
-        address _arbRegistry,
-        address _arb, // this serves as the underlying token
+        address _mntRegistry,
+        address _mnt, // this serves as the underlying token
         address _borrowPositionProxy,
         address _userVaultImplementation,
         address _dolomiteMargin
     )
     IsolationModeVaultFactory(
-        _arb,
+        _mnt,
         _borrowPositionProxy,
         _userVaultImplementation,
+        address(IMNTRegistry(_mntRegistry).dolomiteRegistry()),
         _dolomiteMargin
     ) {
-        arbRegistry = IARBRegistry(_arbRegistry);
+        mntRegistry = IMNTRegistry(_mntRegistry);
     }
 
     // ============ External Functions ============
 
-    function setARBRegistry(address _arbRegistry) external override onlyDolomiteMarginOwner(msg.sender) {
-        arbRegistry = IARBRegistry(_arbRegistry);
-        emit ARBRegistrySet(_arbRegistry);
+    function setMNTRegistry(address _mntRegistry) external override onlyDolomiteMarginOwner(msg.sender) {
+        mntRegistry = IMNTRegistry(_mntRegistry);
+        emit MNTRegistrySet(_mntRegistry);
     }
 
     function allowableDebtMarketIds() external pure returns (uint256[] memory) {

@@ -21,28 +21,28 @@
 pragma solidity ^0.8.9;
 
 import { IIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
-import { IARBRegistry } from "./IARBRegistry.sol";
+import { IMNTRegistry } from "./IMNTRegistry.sol";
 
 
 /**
- * @title   IMNTIsolationModeVaultFactory.sol
+ * @title   IMNTIsolationModeVaultFactory
  * @author  Dolomite
  *
- * @notice  Interface for a subclass of IsolationModeVaultFactory that creates vaults for ARB tokens.
+ * @notice  Interface for a subclass of IsolationModeVaultFactory that creates vaults for MNT tokens.
  */
-interface IARBIsolationModeVaultFactory is IIsolationModeVaultFactory {
+interface IMNTIsolationModeVaultFactory is IIsolationModeVaultFactory {
 
     // ================================================
     // ==================== Events ====================
     // ================================================
 
-    event ARBRegistrySet(address _gmxRegistry);
+    event MNTRegistrySet(address _mntRegistry);
 
     // ===================================================
     // ==================== Functions ====================
     // ===================================================
 
-    function setARBRegistry(address _gmxRegistry) external;
+    function setMNTRegistry(address _mntRegistry) external;
 
-    function arbRegistry() external view returns (IARBRegistry);
+    function mntRegistry() external view returns (IMNTRegistry);
 }
