@@ -230,6 +230,23 @@ contract DolomiteOwner is IDolomiteOwner, AccessControl {
     // ============= Transaction Functions ============
     // ================================================
 
+    function submitTransactionAndExecute(
+        address _destination,
+        uint256 _value,
+        bytes memory _data
+    ) external {
+        uint256 transactionId = submitTransaction(_destination, _value, _data);
+        executeTransaction(transactionId);
+    }
+
+    function executeTransactions(
+        uint256[] memory transactionId
+    ) external {
+        for (uint256 i; i < transactionId.length; i++) {
+            executeTransaction(transactionId[i]);
+        }
+    }
+
     function submitTransaction(
         address _destination,
         uint256 _value,
@@ -281,14 +298,6 @@ contract DolomiteOwner is IDolomiteOwner, AccessControl {
         return _addTransaction(_destination, _value, _data);
     }
 
-    function executeTransactions(
-        uint256[] memory transactionId
-    ) public {
-        for (uint256 i; i < transactionId.length; i++) {
-            executeTransaction(transactionId[i]);
-        }
-    }
-
     function executeTransaction(
         uint256 transactionId
     ) public transactionExists(transactionId) {
@@ -309,15 +318,6 @@ contract DolomiteOwner is IDolomiteOwner, AccessControl {
         // @follow-up Do we want to return the transaction return data?
         txn.destination.functionCallWithValue(txn.data, txn.value);
         emit TransactionExecuted(transactionId);
-    }
-
-    function submitTransactionAndExecute(
-        address _destination,
-        uint256 _value,
-        bytes memory _data
-    ) public {
-        uint256 transactionId = submitTransaction(_destination, _value, _data);
-        executeTransaction(transactionId);
     }
 
     // ================================================
