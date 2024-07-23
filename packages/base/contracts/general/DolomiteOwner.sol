@@ -26,6 +26,7 @@ import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableS
 import { IDolomiteOwner } from "../interfaces/IDolomiteOwner.sol";
 import { Require } from "../protocol/lib/Require.sol";
 
+
 /**
  * @title   DolomiteOwner
  * @author  Dolomite
