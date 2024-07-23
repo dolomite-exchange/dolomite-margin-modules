@@ -123,13 +123,6 @@ describe('DolomiteOwner', () => {
       expect(await dolomiteOwner.getRoleAddresses(securityCouncilRole)).to.deep.equal([]);
     });
 
-    it('should fail if invalid role', async () => {
-      await expectThrow(
-        dolomiteOwner.ownerRemoveRoleAddresses(BAD_ROLE, [OTHER_ADDRESS]),
-        'DolomiteOwner: Invalid role'
-      );
-    });
-
     it('should fail if not called by DEFAULT_ADMIN', async () => {
       await expectThrow(
         dolomiteOwner.connect(core.hhUser1).ownerRemoveRoleAddresses(securityCouncilRole, [OTHER_ADDRESS]),
@@ -177,13 +170,6 @@ describe('DolomiteOwner', () => {
         selectors: [BYTES4_OTHER_SELECTOR],
       });
       expect(await dolomiteOwner.getRoleFunctionSelectors(securityCouncilRole)).to.deep.equal([]);
-    });
-
-    it('should fail if invalid role', async () => {
-      await expectThrow(
-        dolomiteOwner.ownerRemoveRoleFunctionSelectors(BAD_ROLE, [BYTES4_OTHER_SELECTOR]),
-        'DolomiteOwner: Invalid role'
-      );
     });
 
     it('should fail if not called by DEFAULT_ADMIN', async () => {
@@ -255,13 +241,6 @@ describe('DolomiteOwner', () => {
         securityCouncilRole,
         core.dolomiteRegistry.address)
       ).to.deep.equal([]);
-    });
-
-    it('should fail if invalid role', async () => {
-      await expectThrow(
-        dolomiteOwner.ownerRemoveRoleToAddressFunctionSelectors(BAD_ROLE, OTHER_ADDRESS, ['0x12345678']),
-        'DolomiteOwner: Invalid role'
-      );
     });
 
     it('should fail if not called by DEFAULT_ADMIN', async () => {
@@ -512,7 +491,7 @@ describe('DolomiteOwner', () => {
   });
 
   describe('#executeTransactions', () => {
-    it('should work normally', async () => {
+    it('should work normally for default admin', async () => {
       const data = await core.dolomiteRegistry.populateTransaction.ownerSetChainlinkPriceOracle(OTHER_ADDRESS);
       await dolomiteOwner.submitTransaction(core.dolomiteRegistry.address, 0, data.data!);
 
@@ -522,6 +501,35 @@ describe('DolomiteOwner', () => {
       await dolomiteOwner.executeTransactions([0, 1]);
       expect(await core.dolomiteRegistry.chainlinkPriceOracle()).to.eq(OTHER_ADDRESS);
       expect(await core.dolomiteRegistry.eventEmitter()).to.eq(OTHER_ADDRESS);
+    });
+
+    it('should work normally for executor role', async () => {
+      const executorRole = await dolomiteOwner.EXECUTOR_ROLE();
+      await dolomiteOwner.ownerAddRole(executorRole);
+      await dolomiteOwner.grantRole(executorRole, core.hhUser1.address);
+
+      const data = await core.dolomiteRegistry.populateTransaction.ownerSetChainlinkPriceOracle(OTHER_ADDRESS);
+      await dolomiteOwner.submitTransaction(core.dolomiteRegistry.address, 0, data.data!);
+
+      const data2 = await core.dolomiteRegistry.populateTransaction.ownerSetEventEmitter(OTHER_ADDRESS);
+      await dolomiteOwner.submitTransaction(core.dolomiteRegistry.address, 0, data2.data!);
+
+      await dolomiteOwner.connect(core.hhUser1).executeTransactions([0, 1]);
+      expect(await core.dolomiteRegistry.chainlinkPriceOracle()).to.eq(OTHER_ADDRESS);
+      expect(await core.dolomiteRegistry.eventEmitter()).to.eq(OTHER_ADDRESS);
+    });
+
+    it('should fail if user is not admin or executor', async () => {
+      const data = await core.dolomiteRegistry.populateTransaction.ownerSetChainlinkPriceOracle(OTHER_ADDRESS);
+      await dolomiteOwner.submitTransaction(core.dolomiteRegistry.address, 0, data.data!);
+
+      const data2 = await core.dolomiteRegistry.populateTransaction.ownerSetEventEmitter(OTHER_ADDRESS);
+      await dolomiteOwner.submitTransaction(core.dolomiteRegistry.address, 0, data2.data!);
+
+      await expectThrow(
+        dolomiteOwner.connect(core.hhUser1).executeTransactions([0, 1]),
+        'DolomiteOwner: Invalid executor'
+      );
     });
   });
 

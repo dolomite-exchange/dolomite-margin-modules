@@ -26,6 +26,7 @@ import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableS
 import { IDolomiteOwner } from "../interfaces/IDolomiteOwner.sol";
 import { Require } from "../protocol/lib/Require.sol";
 
+
 /**
  * @title   DolomiteOwner
  * @author  Dolomite
@@ -85,6 +86,26 @@ contract DolomiteOwner is IDolomiteOwner, AccessControl {
         _;
     }
 
+    modifier validExecutor(address _sender) {
+        if (hasRole(EXECUTOR_ROLE, _sender) || hasRole(DEFAULT_ADMIN_ROLE, _sender)) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            hasRole(EXECUTOR_ROLE, _sender) || hasRole(DEFAULT_ADMIN_ROLE, _sender),
+            _FILE,
+            "Invalid executor"
+        );
+        _;
+    }
+
+    modifier activeRole(bytes32 _role) {
+        if (_roles.contains(_role)) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            _roles.contains(_role),
+            _FILE,
+            "Invalid role"
+        );
+        _;
+    }
+
     // ================================================
     // =================== Constructor ================
     // ================================================
@@ -98,7 +119,6 @@ contract DolomiteOwner is IDolomiteOwner, AccessControl {
     // =================== Admin Functions ============
     // ================================================
 
-    // @follow-up Do we want to add checks to confirm that values don't already exist in enumerable set?
     function ownerAddRole(
         bytes32 _role
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
@@ -116,14 +136,7 @@ contract DolomiteOwner is IDolomiteOwner, AccessControl {
     function ownerAddRoleAddresses(
         bytes32 _role,
         address[] calldata _addresses
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (_roles.contains(_role)) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            _roles.contains(_role),
-            _FILE,
-            "Invalid role"
-        );
-
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) activeRole(_role) {
         for (uint256 i; i < _addresses.length; i++) {
             _roleToAddresses[_role].add(_addresses[i]);
         }
@@ -134,14 +147,6 @@ contract DolomiteOwner is IDolomiteOwner, AccessControl {
         bytes32 _role,
         address[] calldata _addresses
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        // @follow-up Remove this check? This way admin could unlist the role and then adjust the allowed addresses
-        if (_roles.contains(_role)) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            _roles.contains(_role),
-            _FILE,
-            "Invalid role"
-        );
-
         for (uint256 i; i < _addresses.length; i++) {
             _roleToAddresses[_role].remove(_addresses[i]);
         }
@@ -151,14 +156,7 @@ contract DolomiteOwner is IDolomiteOwner, AccessControl {
     function ownerAddRoleFunctionSelectors(
         bytes32 _role,
         bytes4[] calldata _selectors
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (_roles.contains(_role)) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            _roles.contains(_role),
-            _FILE,
-            "Invalid role"
-        );
-
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) activeRole(_role) {
         for (uint256 i; i < _selectors.length; i++) {
             _roleToFunctionSelectors[_role].add(bytes32(_selectors[i]));
         }
@@ -169,14 +167,6 @@ contract DolomiteOwner is IDolomiteOwner, AccessControl {
         bytes32 _role,
         bytes4[] calldata _selectors
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        // @follow-up Remove this as well?
-        if (_roles.contains(_role)) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            _roles.contains(_role),
-            _FILE,
-            "Invalid role"
-        );
-
         for (uint256 i; i < _selectors.length; i++) {
             _roleToFunctionSelectors[_role].remove(bytes32(_selectors[i]));
         }
@@ -187,14 +177,7 @@ contract DolomiteOwner is IDolomiteOwner, AccessControl {
         bytes32 _role,
         address _destination,
         bytes4[] calldata _selectors
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (_roles.contains(_role)) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            _roles.contains(_role),
-            _FILE,
-            "Invalid role"
-        );
-
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) activeRole(_role){
         for (uint256 i; i < _selectors.length; i++) {
             _roleToAddressToFunctionSelectors[_role][_destination].add(_selectors[i]);
         }
@@ -206,13 +189,6 @@ contract DolomiteOwner is IDolomiteOwner, AccessControl {
         address _destination,
         bytes4[] calldata _selectors
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (_roles.contains(_role)) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            _roles.contains(_role),
-            _FILE,
-            "Invalid role"
-        );
-
         for (uint256 i; i < _selectors.length; i++) {
             _roleToAddressToFunctionSelectors[_role][_destination].remove(_selectors[i]);
         }
@@ -237,6 +213,26 @@ contract DolomiteOwner is IDolomiteOwner, AccessControl {
     // ================================================
     // ============= Transaction Functions ============
     // ================================================
+
+    function submitTransactionAndExecute(
+        address _destination,
+        uint256 _value,
+        bytes memory _data
+    ) external returns (bytes memory) {
+        uint256 transactionId = submitTransaction(_destination, _value, _data);
+        return executeTransaction(transactionId);
+    }
+
+    function executeTransactions(
+        uint256[] memory transactionIds
+    ) external validExecutor(msg.sender) returns (bytes[] memory) {
+        bytes[] memory returnDatas = new bytes[](transactionIds.length);
+        for (uint256 i; i < transactionIds.length; i++) {
+            returnDatas[i] = _executeTransaction(transactionIds[i]);
+        }
+
+        return returnDatas;
+    }
 
     function submitTransaction(
         address _destination,
@@ -263,7 +259,6 @@ contract DolomiteOwner is IDolomiteOwner, AccessControl {
                 4. If the role is no longer valid, transaction is not approved
                 5. If the role is valid, check if the transaction is approved for that role
         */
-        // @follow-up I can't tell if there is a better way to do this with the boolean
         bool approved;
         if (hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
             approved = true;
@@ -272,6 +267,8 @@ contract DolomiteOwner is IDolomiteOwner, AccessControl {
             for (uint256 i; i < userRoles.length; ++i) {
                 bytes32 role = userRoles[i];
                 if (!_roles.contains(role) || role == EXECUTOR_ROLE) {
+                    // If the role does not exist or is an executor, they don't have approval
+                    // No need to check inthe following if statement
                     continue;
                 }
                 if (_checkApprovedTransaction(role, _destination, selector)) {
@@ -290,45 +287,10 @@ contract DolomiteOwner is IDolomiteOwner, AccessControl {
         return _addTransaction(_destination, _value, _data);
     }
 
-    function executeTransactions(
-        uint256[] memory transactionId
-    ) public {
-        for (uint256 i; i < transactionId.length; i++) {
-            executeTransaction(transactionId[i]);
-        }
-    }
-
     function executeTransaction(
         uint256 transactionId
-    ) public transactionExists(transactionId) {
-        Transaction storage txn = transactions[transactionId];
-        // @follow-up In the case of executing multiple transactions, the address will be checked each time. Should we adjust setup?
-        if (hasRole(EXECUTOR_ROLE, msg.sender) || hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            hasRole(EXECUTOR_ROLE, msg.sender) || hasRole(DEFAULT_ADMIN_ROLE, msg.sender),
-            _FILE,
-            "Invalid executor"
-        );
-        if (!txn.executed && !txn.cancelled) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            !txn.executed && !txn.cancelled,
-            _FILE,
-            "Transaction not executable"
-        );
-
-        txn.executed = true;
-        // @follow-up Do we want to return the transaction return data?
-        txn.destination.functionCallWithValue(txn.data, txn.value);
-        emit TransactionExecuted(transactionId);
-    }
-
-    function submitTransactionAndExecute(
-        address _destination,
-        uint256 _value,
-        bytes memory _data
-    ) public {
-        uint256 transactionId = submitTransaction(_destination, _value, _data);
-        executeTransaction(transactionId);
+    ) public validExecutor(msg.sender) returns (bytes memory){
+        return _executeTransaction(transactionId);
     }
 
     // ================================================
@@ -364,7 +326,6 @@ contract DolomiteOwner is IDolomiteOwner, AccessControl {
         return _userToRoles[_user].values();
     }
 
-    // @follow-up Should we add a bool for cancelled?
     function getTransactionCount(
         bool _pending,
         bool _executed
@@ -413,6 +374,24 @@ contract DolomiteOwner is IDolomiteOwner, AccessControl {
     // ================================================
     // ============= Internal Functions ===============
     // ================================================
+
+    function _executeTransaction(
+        uint256 transactionId
+    ) internal transactionExists(transactionId) returns (bytes memory) {
+        Transaction storage txn = transactions[transactionId];
+        if (!txn.executed && !txn.cancelled) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            !txn.executed && !txn.cancelled,
+            _FILE,
+            "Transaction not executable"
+        );
+
+        txn.executed = true;
+        bytes memory returnData = txn.destination.functionCallWithValue(txn.data, txn.value);
+
+        emit TransactionExecuted(transactionId);
+        return returnData;
+    }
 
     function _addTransaction(
         address destination,
