@@ -70,7 +70,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
         'Invalid market id'
       );
 
-      // @follow-up Price is coming to $1 exactly. Is that normal?
+      // @follow-up Price is coming to $1 exactly on Arbitrum but not Ethereum mainnet. Seems fishy
       console.log(
         '\t Price for usde',
         (await core.oracleAggregatorV2.getPrice(core.tokens.usde.address)).value.toString(),
