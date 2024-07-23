@@ -889,6 +889,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
         size: IERC20__factory.connect(SIZE_MAP[typedConfig.network].address, hhUser1),
         stEth: IERC20__factory.connect(ST_ETH_MAP[typedConfig.network].address, hhUser1),
         uni: IERC20__factory.connect(UNI_MAP[typedConfig.network].address, hhUser1),
+        usde: IERC20__factory.connect(USDE_MAP[typedConfig.network]!.address, hhUser1),
         usdm: IERC20__factory.connect(USDM_MAP[typedConfig.network].address, hhUser1),
         usdt: IERC20__factory.connect(USDT_MAP[typedConfig.network].address, hhUser1),
         wbtc: IERC20__factory.connect(WBTC_MAP[typedConfig.network].address, hhUser1),
@@ -973,7 +974,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
         usdy: USDY_MAP[typedConfig.network].marketId,
         wbtc: WBTC_MAP[typedConfig.network].marketId,
         wmnt: WMNT_MAP[typedConfig.network].marketId,
-        usde: USDE_MAP[typedConfig.network].marketId,
+        usde: USDE_MAP[typedConfig.network]!.marketId,
         stablecoins: [
           ...coreProtocolParams.marketIds.stablecoins,
           USDT_MAP[typedConfig.network].marketId,
@@ -989,7 +990,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
       tokens: {
         ...coreProtocolParams.tokens,
         meth: IERC20__factory.connect(METH_MAP[typedConfig.network].address, hhUser1),
-        usde: IERC20__factory.connect(USDE_MAP[typedConfig.network].address, hhUser1),
+        usde: IERC20__factory.connect(USDE_MAP[typedConfig.network]!.address, hhUser1),
         usdt: IERC20__factory.connect(USDT_MAP[typedConfig.network].address, hhUser1),
         usdy: IERC20__factory.connect(USDY_MAP[typedConfig.network].address, hhUser1),
         wbtc: IERC20__factory.connect(WBTC_MAP[typedConfig.network].address, hhUser1),

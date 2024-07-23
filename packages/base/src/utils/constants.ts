@@ -428,11 +428,19 @@ export const USDC_MAP: Record<Network, TokenWithMarketId> = {
   },
 };
 
-export const USDE_MAP: Record<Network.Mantle, TokenWithMarketId> = {
+export const USDE_MAP: Record<Network, TokenWithMarketId | undefined> = {
+  [Network.ArbitrumOne]: {
+    address: '0x5d3a1Ff2b6BAb83b63cd9AD0787074081a52ef34',
+    marketId: -1
+  },
+  [Network.Base]: undefined,
+  [Network.Berachain]: undefined,
   [Network.Mantle]: {
     address: '0x5d3a1Ff2b6BAb83b63cd9AD0787074081a52ef34',
     marketId: 6,
   },
+  [Network.PolygonZkEvm]: undefined,
+  [Network.XLayer]: undefined,
 };
 
 export const USDM_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
@@ -1197,6 +1205,9 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<Network, Record<string, Agg
     [USDC_MAP[Network.ArbitrumOne].address]: {
       aggregatorAddress: '0x50834F3163758fcC1Df9973b6e91f0F0F0434aD3',
     },
+    [USDE_MAP[Network.ArbitrumOne]!.address]: {
+      aggregatorAddress: '0x88AC7Bca36567525A866138F03a6F6844868E0Bc',
+    },
     [USDT_MAP[Network.ArbitrumOne].address]: {
       aggregatorAddress: '0x3f3f5dF88dC9F13eac63DF89EC16ef6e7E25DdE7',
     },
@@ -1300,7 +1311,7 @@ export const CHRONICLE_PRICE_SCRIBES_MAP: Record<
       scribeAddress: '0xb9C3a09d9F73A1d5E90e6728D9c51F22CFF3bEB7',
       tokenPairAddress: ADDRESS_ZERO,
     },
-    [USDE_MAP[Network.Mantle].address]: {
+    [USDE_MAP[Network.Mantle]!.address]: {
       scribeAddress: '0x8744f55149A9923a6eD525A9FEdC270FBC2E1e12',
       tokenPairAddress: ADDRESS_ZERO,
     },
@@ -1343,7 +1354,7 @@ export const REDSTONE_PRICE_AGGREGATORS_MAP: Record<
     },
   },
   [Network.Mantle]: {
-    [USDE_MAP[Network.Mantle].address]: {
+    [USDE_MAP[Network.Mantle]!.address]: {
       aggregatorAddress: '0x3DFA26B9A15D37190bB8e50aE093730DcA88973E',
       tokenPairAddress: ADDRESS_ZERO,
     },
