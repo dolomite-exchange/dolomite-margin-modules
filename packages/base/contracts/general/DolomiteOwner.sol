@@ -199,6 +199,7 @@ contract DolomiteOwner is IDolomiteOwner, AccessControl {
         address _destination,
         bytes4[] calldata _selectors
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        // @follow-up Remove this check too?
         Require.that(
             _roles.contains(_role),
             _FILE,
@@ -292,7 +293,7 @@ contract DolomiteOwner is IDolomiteOwner, AccessControl {
         uint256 transactionId
     ) public transactionExists(transactionId) {
         Transaction storage txn = transactions[transactionId];
-        // @follow-up In the case of executing multiple transactions, the address will be checked each time. Should we adjust setup?
+        // @follow-up In the case of executing multiple transactions, the address will be checked each time. Should we adjust the setup so this doesn't happen?
         Require.that(
             hasRole(EXECUTOR_ROLE, msg.sender) || hasRole(DEFAULT_ADMIN_ROLE, msg.sender),
             _FILE,
