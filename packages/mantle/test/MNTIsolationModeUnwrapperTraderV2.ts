@@ -5,6 +5,7 @@ import {
 import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
 import { BYTES_EMPTY, Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import {
+  advanceByTimeDelta,
   encodeExternalSellActionDataWithNoData,
   impersonate,
   revertToSnapshotAndCapture,
@@ -36,6 +37,7 @@ import {
   createMNTUnwrapperTraderV2,
   createMNTWrapperTraderV2,
 } from './mnt-ecosystem-utils';
+import { sleep } from '@openzeppelin/upgrades';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
@@ -64,6 +66,7 @@ describe('MNTIsolationModeUnwrapperTraderV2', () => {
 
     unwrapper = await createMNTUnwrapperTraderV2(mntFactory, core);
     wrapper = await createMNTWrapperTraderV2(mntFactory, core);
+
     await core.oracleAggregatorV2.connect(core.governance).ownerInsertOrUpdateToken({
       token: mntFactory.address,
       decimals: 18,
@@ -93,8 +96,6 @@ describe('MNTIsolationModeUnwrapperTraderV2', () => {
       number: defaultAccountNumber,
     };
 
-    await setupNewGenericTraderProxy(core, dMntMarketId);
-
     snapshotId = await snapshot();
   });
 
@@ -106,6 +107,9 @@ describe('MNTIsolationModeUnwrapperTraderV2', () => {
     it('should work when called with the normal conditions', async () => {
       await setupWMNTBalance(core, core.hhUser1, amountWei, mntVault);
       await mntVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+
+      const cooldown = (await core.mantleRewardStation.cooldown()).toNumber() + 1_000;
+      await advanceByTimeDelta(cooldown);
 
       const solidAccountId = 0;
       const liquidAccountId = 0;

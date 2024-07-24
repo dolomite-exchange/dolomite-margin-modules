@@ -6,6 +6,7 @@ import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
 import { depositIntoDolomiteMargin } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { BYTES_EMPTY, Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import {
+  advanceByTimeDelta,
   encodeExternalSellActionDataWithNoData,
   impersonate,
   revertToSnapshotAndCapture,
@@ -111,6 +112,10 @@ describe('MNTIsolationModeWrapperTraderV2', () => {
     it('should work when called with the normal conditions', async () => {
       await setupWMNTBalance(core, core.hhUser1, amountWei, core.dolomiteMargin);
       await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.wmnt, amountWei);
+
+      const cooldown = (await core.mantleRewardStation.cooldown()).toNumber() + 1_000;
+      await advanceByTimeDelta(cooldown);
+
       await mntVault.transferIntoPositionWithOtherToken(
         defaultAccountNumber,
         otherAccountNumber,
