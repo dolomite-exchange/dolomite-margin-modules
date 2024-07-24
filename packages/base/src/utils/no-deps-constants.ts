@@ -47,7 +47,7 @@ export const NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP: Record<Network, number> = {
   [Network.ArbitrumOne]: 221_467_300,
   [Network.Base]: 10_050_058,
   [Network.Berachain]: 1_708_014,
-  [Network.Mantle]: 63_400_000,
+  [Network.Mantle]: 66_804_500,
   [Network.PolygonZkEvm]: 9_860_500,
   [Network.XLayer]: 854_000,
 };

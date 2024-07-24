@@ -1,59 +1,66 @@
-import { expect } from 'chai';
-import { ARBIsolationModeTokenVaultV1, ARBIsolationModeVaultFactory, ARBRegistry, } from '../src/types';
 import {
   SimpleIsolationModeUnwrapperTraderV2,
   SimpleIsolationModeWrapperTraderV2,
 } from '@dolomite-exchange/modules-base/src/types';
-import { ADDRESS_ZERO, Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectEvent, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import {
-  createARBIsolationModeTokenVaultV1,
-  createARBIsolationModeVaultFactory,
-  createARBRegistry,
-  createARBUnwrapperTraderV2,
-  createARBWrapperTraderV2,
-} from './mnt-ecosystem-utils';
 import { setupCoreProtocol, setupTestMarket } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { expect } from 'chai';
+import { CoreProtocolMantle } from 'packages/base/test/utils/core-protocols/core-protocol-mantle';
+import { MNTIsolationModeTokenVaultV1, MNTIsolationModeVaultFactory, MNTRegistry } from '../src/types';
+import {
+  createMNTIsolationModeTokenVaultV1,
+  createMNTIsolationModeVaultFactory,
+  createMNTRegistry,
+  createMNTUnwrapperTraderV2,
+  createMNTWrapperTraderV2,
+} from './mnt-ecosystem-utils';
 import { DEFAULT_BLOCK_NUMBER_FOR_MNT_TESTS } from './mnt-utils';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
-describe('ARBIsolationModeVaultFactory', () => {
+describe('MNTIsolationModeVaultFactory', () => {
   let snapshotId: string;
 
-  let core: CoreProtocolArbitrumOne;
-  let arbRegistry: ARBRegistry;
+  let core: CoreProtocolMantle;
+  let mntRegistry: MNTRegistry;
   let unwrapper: SimpleIsolationModeUnwrapperTraderV2;
   let wrapper: SimpleIsolationModeWrapperTraderV2;
-  let arbFactory: ARBIsolationModeVaultFactory;
-  let vaultImplementation: ARBIsolationModeTokenVaultV1;
+  let mntFactory: MNTIsolationModeVaultFactory;
+  let vaultImplementation: MNTIsolationModeTokenVaultV1;
 
   before(async () => {
     core = await setupCoreProtocol({
       blockNumber: DEFAULT_BLOCK_NUMBER_FOR_MNT_TESTS,
-      network: Network.ArbitrumOne,
+      network: Network.Mantle,
     });
 
-    arbRegistry = await createARBRegistry(core);
+    mntRegistry = await createMNTRegistry(core);
 
-    vaultImplementation = await createARBIsolationModeTokenVaultV1();
-    arbFactory = await createARBIsolationModeVaultFactory(arbRegistry, vaultImplementation, core);
+    vaultImplementation = await createMNTIsolationModeTokenVaultV1();
+    mntFactory = await createMNTIsolationModeVaultFactory(mntRegistry, vaultImplementation, core);
 
-    unwrapper = await createARBUnwrapperTraderV2(arbFactory, core);
-    wrapper = await createARBWrapperTraderV2(arbFactory, core);
-    await core.chainlinkPriceOracleV1!.connect(core.governance).ownerInsertOrUpdateOracleToken(
-      arbFactory.address,
-      await arbFactory.decimals(),
-      await core.chainlinkPriceOracleV1!.getAggregatorByToken(core.tokens.arb!.address),
-      ADDRESS_ZERO,
-    );
+    unwrapper = await createMNTUnwrapperTraderV2(mntFactory, core);
+    wrapper = await createMNTWrapperTraderV2(mntFactory, core);
+    await core.oracleAggregatorV2.connect(core.governance).ownerInsertOrUpdateToken({
+      token: mntFactory.address,
+      decimals: 18,
+      oracleInfos: await core.oracleAggregatorV2.getOraclesByToken(core.tokens.wmnt.address),
+    });
+    await core.chroniclePriceOracleV3
+      .connect(core.governance)
+      .ownerInsertOrUpdateOracleToken(
+        mntFactory.address,
+        await core.chroniclePriceOracleV3.getScribeByToken(core.tokens.wmnt.address),
+        false,
+      );
 
-    await setupTestMarket(core, arbFactory, true, core.chainlinkPriceOracleV1);
-    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(arbFactory.address, true);
-    await arbFactory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
+    await setupTestMarket(core, mntFactory, true, core.oracleAggregatorV2);
+    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(mntFactory.address, true);
+    await mntFactory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
 
-    await arbFactory.createVault(core.hhUser1.address);
+    await mntFactory.createVault(core.hhUser1.address);
 
     snapshotId = await snapshot();
   });
@@ -64,26 +71,26 @@ describe('ARBIsolationModeVaultFactory', () => {
 
   describe('#contructor', () => {
     it('should initialize variables properly', async () => {
-      expect(await arbFactory.arbRegistry()).to.equal(arbRegistry.address);
-      expect(await arbFactory.UNDERLYING_TOKEN()).to.equal(core.tokens.arb!.address);
-      expect(await arbFactory.BORROW_POSITION_PROXY()).to.equal(core.borrowPositionProxyV2.address);
-      expect(await arbFactory.userVaultImplementation()).to.equal(vaultImplementation.address);
-      expect(await arbFactory.DOLOMITE_MARGIN()).to.equal(core.dolomiteMargin.address);
+      expect(await mntFactory.mntRegistry()).to.equal(mntRegistry.address);
+      expect(await mntFactory.UNDERLYING_TOKEN()).to.equal(core.tokens.wmnt.address);
+      expect(await mntFactory.BORROW_POSITION_PROXY()).to.equal(core.borrowPositionProxyV2.address);
+      expect(await mntFactory.userVaultImplementation()).to.equal(vaultImplementation.address);
+      expect(await mntFactory.DOLOMITE_MARGIN()).to.equal(core.dolomiteMargin.address);
     });
   });
 
-  describe('#setARBRegistry', () => {
+  describe('#setMNTRegistry', () => {
     it('should work normally', async () => {
-      const result = await arbFactory.connect(core.governance).setARBRegistry(OTHER_ADDRESS);
-      await expectEvent(arbFactory, result, 'ARBRegistrySet', {
-        arbRegistry: OTHER_ADDRESS,
+      const result = await mntFactory.connect(core.governance).setMNTRegistry(OTHER_ADDRESS);
+      await expectEvent(mntFactory, result, 'MNTRegistrySet', {
+        mntRegistry: OTHER_ADDRESS,
       });
-      expect(await arbFactory.arbRegistry()).to.equal(OTHER_ADDRESS);
+      expect(await mntFactory.mntRegistry()).to.equal(OTHER_ADDRESS);
     });
 
     it('should fail when not called by owner', async () => {
       await expectThrow(
-        arbFactory.connect(core.hhUser1).setARBRegistry(OTHER_ADDRESS),
+        mntFactory.connect(core.hhUser1).setMNTRegistry(OTHER_ADDRESS),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
@@ -91,13 +98,13 @@ describe('ARBIsolationModeVaultFactory', () => {
 
   describe('#allowableCollateralMarketIds', () => {
     it('should work normally', async () => {
-      expect(await arbFactory.allowableCollateralMarketIds()).to.deep.equal([]);
+      expect(await mntFactory.allowableCollateralMarketIds()).to.deep.equal([]);
     });
   });
 
   describe('#allowableDebtMarketIds', () => {
     it('should work normally', async () => {
-      expect(await arbFactory.allowableDebtMarketIds()).to.deep.equal([]);
+      expect(await mntFactory.allowableDebtMarketIds()).to.deep.equal([]);
     });
   });
 });

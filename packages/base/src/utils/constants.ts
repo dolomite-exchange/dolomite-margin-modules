@@ -309,6 +309,10 @@ export const MAGIC_GLP_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   },
 };
 
+export const MANTLE_REWARD_STATION_MAP: Record<Network.Mantle, string> = {
+  [Network.Mantle]: '0xeD884f0460A634C69dbb7def54858465808AACEf',
+};
+
 export const MATIC_MAP: Record<Network.PolygonZkEvm, TokenWithMarketId> = {
   [Network.PolygonZkEvm]: {
     address: '0xa2036f0538221a77A3937F1379699f44945018d0',

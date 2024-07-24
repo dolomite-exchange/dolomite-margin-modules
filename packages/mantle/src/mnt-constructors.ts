@@ -1,29 +1,28 @@
 import { CoreProtocolMantle } from 'packages/base/test/utils/core-protocols/core-protocol-mantle';
 import {
-  MNTIsolationModeTokenVaultV1,
-  MNTIsolationModeVaultFactory,
-  MNTRegistry,
   IMNTIsolationModeTokenVaultV1,
   IMNTIsolationModeVaultFactory,
   IMNTRegistry,
+  MNTIsolationModeTokenVaultV1,
+  MNTIsolationModeVaultFactory,
+  MNTRegistry,
 } from './types';
 
 export async function getMNTRegistryConstructorParams(
   implementation: MNTRegistry,
-  core: CoreProtocolMantle
+  core: CoreProtocolMantle,
 ): Promise<any[]> {
-  const calldata = await implementation.populateTransaction.initialize(core.dolomiteRegistry.address);
-  return [
-    implementation.address,
-    core.dolomiteMargin.address,
-    calldata.data,
-  ];
+  const calldata = await implementation.populateTransaction.initialize(
+    core.dolomiteRegistry.address,
+    core.mantleRewardStation.address,
+  );
+  return [implementation.address, core.dolomiteMargin.address, calldata.data];
 }
 
 export function getMNTIsolationModeVaultFactoryConstructorParams(
   mntRegistry: IMNTRegistry | MNTRegistry,
   vaultImplementation: IMNTIsolationModeTokenVaultV1 | MNTIsolationModeTokenVaultV1,
-  core: CoreProtocolMantle
+  core: CoreProtocolMantle,
 ): any[] {
   return [
     mntRegistry.address,
@@ -38,20 +37,12 @@ export function getMNTUnwrapperTraderV2ConstructorParams(
   factory: IMNTIsolationModeVaultFactory | MNTIsolationModeVaultFactory,
   core: CoreProtocolMantle,
 ): any[] {
-  return [
-    factory.address,
-    core.dolomiteMargin.address,
-    core.dolomiteRegistry.address,
-  ];
+  return [factory.address, core.dolomiteMargin.address, core.dolomiteRegistry.address];
 }
 
 export function getMNTWrapperTraderV2ConstructorParams(
   factory: IMNTIsolationModeVaultFactory | MNTIsolationModeVaultFactory,
   core: CoreProtocolMantle,
 ): any[] {
-  return [
-    factory.address,
-    core.dolomiteMargin.address,
-    core.dolomiteRegistry.address,
-  ];
+  return [factory.address, core.dolomiteMargin.address, core.dolomiteRegistry.address];
 }

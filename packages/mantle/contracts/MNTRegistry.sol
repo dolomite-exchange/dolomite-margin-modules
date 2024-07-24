@@ -47,8 +47,12 @@ contract MNTRegistry is IMNTRegistry, BaseRegistry {
 
     // ==================== Initializer ====================
 
-    function initialize(address _dolomiteRegistry) external initializer {
+    function initialize(
+        address _dolomiteRegistry,
+        address _mantleRewardStation
+    ) external initializer {
         _ownerSetDolomiteRegistry(_dolomiteRegistry);
+        _ownerSetMantleRewardStation(_mantleRewardStation);
     }
 
     function ownerSetMantleRewardStation(
