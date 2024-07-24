@@ -31,6 +31,7 @@ pragma solidity ^0.8.9;
 interface IMNTIsolationModeTokenVaultV1 {
 
     event LastStakeTimestampSet(uint256 _timestamp);
+    event IsCurrencyTransferSet(bool _isCurrencyTransfer);
 
     /**
      *

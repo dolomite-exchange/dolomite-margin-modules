@@ -22,8 +22,8 @@ pragma solidity ^0.8.9;
 
 import { BaseRegistry } from "@dolomite-exchange/modules-base/contracts/general/BaseRegistry.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
-import { IMantleRewardStation } from "./interfaces/IMantleRewardStation.sol";
 import { IMNTRegistry } from "./interfaces/IMNTRegistry.sol";
+import { IMantleRewardStation } from "./interfaces/IMantleRewardStation.sol";
 
 
 

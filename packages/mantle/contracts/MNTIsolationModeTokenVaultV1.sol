@@ -22,13 +22,15 @@ pragma solidity ^0.8.9;
 
 import { IDolomiteRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IDolomiteRegistry.sol";
 import { IsolationModeTokenVaultV1WithPausable } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeTokenVaultV1WithPausable.sol"; // solhint-disable-line max-line-length
-import { IIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { IWETH } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IWETH.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
-import { IMantleRewardStation } from "./interfaces/IMantleRewardStation.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { IMNTIsolationModeTokenVaultV1 } from "./interfaces/IMNTIsolationModeTokenVaultV1.sol";
 import { IMNTIsolationModeVaultFactory } from "./interfaces/IMNTIsolationModeVaultFactory.sol";
 import { IMNTRegistry } from "./interfaces/IMNTRegistry.sol";
+import { IMantleRewardStation } from "./interfaces/IMantleRewardStation.sol";
 
 /**
  * @title   MNTIsolationModeTokenVaultV1
@@ -43,6 +45,9 @@ contract MNTIsolationModeTokenVaultV1 is
     IMNTIsolationModeTokenVaultV1,
     IsolationModeTokenVaultV1WithPausable
 {
+    using Address for address payable;
+    using SafeERC20 for IERC20;
+
     // ==================================================================
     // =========================== Constants ============================
     // ==================================================================
@@ -50,6 +55,7 @@ contract MNTIsolationModeTokenVaultV1 is
     // solhint-disable max-line-length
     bytes32 private constant _FILE = "MNTIsolationModeTokenVaultV1";
     bytes32 private constant _LAST_STAKE_TIMESTAMP_SLOT = bytes32(uint256(keccak256("eip1967.proxy.lastStakeTimestamp")) - 1);
+    bytes32 private constant _IS_CURRENCY_TRANSFER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isCurrencyTransfer")) - 1);
     // solhint-enable max-line-length
 
     uint256 public constant STAKE_ADDITIONAL_COOLDOWN = 15 seconds;
@@ -58,11 +64,55 @@ contract MNTIsolationModeTokenVaultV1 is
     // ======================== Public Functions ========================
     // ==================================================================
 
-    function stake(uint256 _amount) external {
+    receive() external payable {
+        Require.that(
+            msg.sender == UNDERLYING_TOKEN() || msg.sender == address(registry().mantleRewardStation()),
+            _FILE,
+            "Invalid currency sender",
+            msg.sender
+        );
+    }
+
+    function depositPayableIntoVaultForDolomiteMargin(
+        uint256 _toAccountNumber
+    )
+    external
+    payable
+    nonReentrant
+    onlyVaultOwnerOrVaultFactory(msg.sender) {
+        _setIsCurrencyTransfer(/* _isCurrencyTransfer = */ true);
+        IWETH(UNDERLYING_TOKEN()).deposit{value: msg.value}();
+        _depositIntoVaultForDolomiteMargin(_toAccountNumber, msg.value);
+        assert(!isCurrencyTransfer());
+    }
+
+    function withdrawPayableFromVaultForDolomiteMargin(
+        uint256 _fromAccountNumber,
+        uint256 _amountWei
+    )
+    external
+    nonReentrant
+    onlyVaultOwner(msg.sender) {
+        _setIsCurrencyTransfer(/* _isCurrencyTransfer = */ true);
+        _withdrawFromVaultForDolomiteMargin(_fromAccountNumber, _amountWei);
+        assert(!isCurrencyTransfer());
+    }
+
+    function stake(
+        uint256 _amount
+    )
+    external
+    nonReentrant
+    onlyVaultOwner(msg.sender) {
         _stake(_amount);
     }
 
-    function unstake(uint256 _amount) external {
+    function unstake(
+        uint256 _amount
+    )
+    external
+    nonReentrant
+    onlyVaultOwner(msg.sender) {
         _unstake(_amount);
     }
 
@@ -71,8 +121,13 @@ contract MNTIsolationModeTokenVaultV1 is
         uint256 _amount
     )
     public
-    override {
-        super.executeDepositIntoVault(_from, _amount);
+    override
+    onlyVaultFactory(msg.sender) {
+        if (isCurrencyTransfer()) {
+            _setIsCurrencyTransfer(/* _isCurrencyTransfer = */ false);
+        } else {
+            IERC20(UNDERLYING_TOKEN()).safeTransferFrom(_from, address(this), _amount);
+        }
         _stake(_amount);
     }
 
@@ -81,12 +136,21 @@ contract MNTIsolationModeTokenVaultV1 is
         uint256 _amount
     )
     public
-    override {
+    override
+    onlyVaultFactory(msg.sender) {
         uint256 unstakedBalance = super.underlyingBalanceOf();
         if (unstakedBalance < _amount) {
             _unstake(_amount - unstakedBalance);
         }
-        super.executeWithdrawalFromVault(_recipient, _amount);
+
+        assert(_recipient != address(this));
+        if (isCurrencyTransfer()) {
+            _setIsCurrencyTransfer(/* _isCurrencyTransfer = */ false);
+            IWETH(UNDERLYING_TOKEN()).withdraw(_amount);
+            payable(_recipient).sendValue(_amount);
+        } else {
+            IERC20(UNDERLYING_TOKEN()).safeTransfer(_recipient, _amount);
+        }
     }
 
     function underlyingBalanceOf() public override virtual view returns (uint256) {
@@ -103,6 +167,10 @@ contract MNTIsolationModeTokenVaultV1 is
 
     function lastStakeTimestamp() public view returns (uint256) {
         return _getUint256(_LAST_STAKE_TIMESTAMP_SLOT);
+    }
+
+    function isCurrencyTransfer() public view returns (bool) {
+        return _getUint256(_IS_CURRENCY_TRANSFER_SLOT) == 1;
     }
 
     function dolomiteRegistry()
@@ -159,5 +227,10 @@ contract MNTIsolationModeTokenVaultV1 is
     function _setLastStakeTimestamp(uint256 _blockTimestamp) internal {
         _setUint256(_LAST_STAKE_TIMESTAMP_SLOT, _blockTimestamp);
         emit LastStakeTimestampSet(_blockTimestamp);
+    }
+
+    function _setIsCurrencyTransfer(bool _isCurrencyTransfer) internal {
+        _setUint256(_IS_CURRENCY_TRANSFER_SLOT, _isCurrencyTransfer ? 1 : 0);
+        emit IsCurrencyTransferSet(_isCurrencyTransfer);
     }
 }

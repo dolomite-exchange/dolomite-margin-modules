@@ -37,12 +37,10 @@ describe('MNTIsolationModeTokenVaultV1', () => {
   let mntVault: MNTIsolationModeTokenVaultV1;
 
   before(async () => {
-    console.log('STEP 1');
     core = await setupCoreProtocol({
       blockNumber: DEFAULT_BLOCK_NUMBER_FOR_MNT_TESTS,
       network: Network.Mantle,
     });
-    console.log('STEP 2');
 
     mntRegistry = await createMNTRegistry(core);
 
@@ -65,16 +63,11 @@ describe('MNTIsolationModeTokenVaultV1', () => {
         false,
       );
 
-    console.log('STEP 1');
     await setupTestMarket(core, mntFactory, true, core.oracleAggregatorV2);
-    console.log('STEP 2');
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(mntFactory.address, true);
-    console.log('STEP 3');
     await mntFactory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
-    console.log('STEP 4');
 
     await mntFactory.createVault(core.hhUser1.address);
-    console.log('STEP 5');
     mntVault = setupUserVaultProxy<MNTIsolationModeTokenVaultV1>(
       await mntFactory.getVaultByAccount(core.hhUser1.address),
       MNTIsolationModeTokenVaultV1__factory,
