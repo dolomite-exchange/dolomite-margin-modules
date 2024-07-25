@@ -51,6 +51,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     // =====================================================
 
     bytes32 private constant _FILE = "GmxV2IsolationModeWrapperV2";
+    bool public CHECK_LONG_TOKEN;
 
     // =====================================================
     // ==================== Constructor ====================
@@ -67,9 +68,11 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     function initialize(
         address _dGM,
         address _dolomiteMargin,
-        address _gmxV2Registry
+        address _gmxV2Registry,
+        bool _checkLongToken
     ) external initializer {
         _initializeWrapperTrader(_dGM, _gmxV2Registry, _dolomiteMargin);
+        CHECK_LONG_TOKEN = _checkLongToken;
     }
 
     function afterDepositExecution(
@@ -124,11 +127,13 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     )
     public
     view
+    virtual
     override(UpgradeableAsyncIsolationModeWrapperTrader, IIsolationModeWrapperTraderV2)
     returns (bool) {
         return GmxV2Library.isValidInputOrOutputToken(
             IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())),
-            _inputToken
+            _inputToken,
+            CHECK_LONG_TOKEN
         );
     }
 

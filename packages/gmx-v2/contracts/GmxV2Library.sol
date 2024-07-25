@@ -26,6 +26,7 @@ import { IIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/cont
 import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IUpgradeableAsyncIsolationModeUnwrapperTrader.sol"; // solhint-disable-line max-line-length
 import { DolomiteMarginVersionWrapperLib } from "@dolomite-exchange/modules-base/contracts/lib/DolomiteMarginVersionWrapperLib.sol";
 import { IDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteMargin.sol";
+import { IDolomitePriceOracle } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomitePriceOracle.sol";
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { IWETH } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IWETH.sol";
 import { DecimalLib } from "@dolomite-exchange/modules-base/contracts/protocol/lib/DecimalLib.sol";
@@ -43,6 +44,8 @@ import { GmxEventUtils } from "./lib/GmxEventUtils.sol";
 import { GmxMarket } from "./lib/GmxMarket.sol";
 import { GmxPrice } from "./lib/GmxPrice.sol";
 // solhint-enable max-line-length
+
+import "hardhat/console.sol";
 
 
 /**
@@ -236,8 +239,12 @@ library GmxV2Library {
 
     function isValidInputOrOutputToken(
         IGmxV2IsolationModeVaultFactory _factory,
-        address _token
+        address _token,
+        bool _checkLongToken
     ) public view returns (bool) {
+        if (!_checkLongToken) {
+            return _token == _factory.SHORT_TOKEN();
+        }
         return _token == _factory.LONG_TOKEN() || _token == _factory.SHORT_TOKEN();
     }
 
@@ -293,6 +300,7 @@ library GmxV2Library {
             }
         }
 
+        console.log('here middle of pause');
         uint256 maxPnlForWithdrawalsShort = dataStore.getUint(
             _maxPnlFactorKey(_MAX_PNL_FACTOR_FOR_WITHDRAWALS_KEY, underlyingToken, /* _isLong = */ false)
         );
@@ -300,12 +308,13 @@ library GmxV2Library {
             _maxPnlFactorKey(_MAX_PNL_FACTOR_FOR_WITHDRAWALS_KEY, underlyingToken, /* _isLong = */ true)
         );
 
+        IDolomitePriceOracle aggregator = _registry.dolomiteRegistry().oracleAggregator();
         GmxMarket.MarketPrices memory marketPrices = _getGmxMarketPrices(
-            _registry.dolomiteRegistry().oracleAggregator().getPrice(
+            aggregator.getPrice(
                 _registry.gmxMarketToIndexToken(underlyingToken)
             ).value,
-            _dolomiteMargin.getMarketPrice(_factory.LONG_TOKEN_MARKET_ID()).value,
-            _dolomiteMargin.getMarketPrice(_factory.SHORT_TOKEN_MARKET_ID()).value
+            aggregator.getPrice(_factory.LONG_TOKEN()).value,
+            aggregator.getPrice(_factory.SHORT_TOKEN()).value
         );
 
         int256 shortPnlToPoolFactor = _registry.gmxReader().getPnlToPoolFactor(
@@ -323,10 +332,19 @@ library GmxV2Library {
             /* _maximize = */ true
         );
 
+        console.logInt(shortPnlToPoolFactor);
+        console.log('maxPnlForWithdrawalsShort: ', maxPnlForWithdrawalsShort);
+
         bool isShortPnlTooLarge = shortPnlToPoolFactor > int256(maxPnlForWithdrawalsShort);
         bool isLongPnlTooLarge = longPnlToPoolFactor > int256(maxPnlForWithdrawalsLong);
 
         uint256 maxCallbackGasLimit = dataStore.getUint(_MAX_CALLBACK_GAS_LIMIT_KEY);
+        {
+        console.log('isShortPnlTooLarge: ', isShortPnlTooLarge);
+        console.log('isLongPnlTooLarge: ', isLongPnlTooLarge);
+        // console.log('maxCallbackGasLimit: ', maxCallbackGasLimit);
+        // console.log('callbackGasLimit: ', _registry.callbackGasLimit());
+        }
 
         return isShortPnlTooLarge || isLongPnlTooLarge || _registry.callbackGasLimit() > maxCallbackGasLimit;
     }
@@ -336,17 +354,30 @@ library GmxV2Library {
         uint256 _longMarketId,
         uint256 _shortMarketId
     ) public pure {
-        Require.that(
-            _marketIds.length >= 2,
-            _FILE,
-            "Invalid market IDs length"
-        );
-        Require.that(
-            (_marketIds[0] == _longMarketId && _marketIds[1] == _shortMarketId)
-            || (_marketIds[0] == _shortMarketId && _marketIds[1] == _longMarketId),
-            _FILE,
-            "Invalid market IDs"
-        );
+        if (_longMarketId == type(uint256).max) {
+            Require.that(
+                _marketIds.length == 1,
+                _FILE,
+                "Invalid market IDs length"
+            );
+            Require.that(
+                _marketIds[0] == _shortMarketId,
+                _FILE,
+                "Invalid market IDs"
+            );
+        } else {
+            Require.that(
+                _marketIds.length >= 2,
+                _FILE,
+                "Invalid market IDs length"
+            );
+            Require.that(
+                (_marketIds[0] == _longMarketId && _marketIds[1] == _shortMarketId)
+                || (_marketIds[0] == _shortMarketId && _marketIds[1] == _longMarketId),
+                _FILE,
+                "Invalid market IDs"
+            );
+        }
     }
 
     function validateEventDataForWithdrawal(
