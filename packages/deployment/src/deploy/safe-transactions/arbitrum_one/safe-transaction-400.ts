@@ -33,7 +33,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const transactions: EncodedTransaction[] = [];
   transactions.push(
     ...(await prettyPrintEncodeInsertChainlinkOracleV3(core, core.tokens.usde)),
-  )
+  );
   transactions.push(
     ...(await prettyPrintEncodeAddMarket(
       core,
@@ -61,8 +61,8 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     scriptName: getScriptName(__filename),
     invariants: async () => {
       assertHardhatInvariant(
-        await core.chainlinkPriceOracleV3.getAggregatorByToken(core.tokens.usde.address) 
-          == (CHAINLINK_PRICE_AGGREGATORS_MAP[network][core.tokens.usde.address]!.aggregatorAddress),
+        await core.chainlinkPriceOracleV3.getAggregatorByToken(core.tokens.usde.address)
+          === (CHAINLINK_PRICE_AGGREGATORS_MAP[network][core.tokens.usde.address]!.aggregatorAddress),
         'Chainlink aggregator not set'
       );
       assertHardhatInvariant(

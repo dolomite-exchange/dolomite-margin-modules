@@ -216,7 +216,8 @@ export function createPendlePtPriceOracleV2<T extends Network>(
   );
 }
 
-export async function createPendlePtGLPMar2024IsolationModeTokenVaultV1(): Promise<PendlePtGLPMar2024IsolationModeTokenVaultV1> {
+export async function createPendlePtGLPMar2024IsolationModeTokenVaultV1(
+): Promise<PendlePtGLPMar2024IsolationModeTokenVaultV1> {
   const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
   return createContractWithLibrary<PendlePtGLPMar2024IsolationModeTokenVaultV1>(
     'PendlePtGLPMar2024IsolationModeTokenVaultV1',
@@ -279,12 +280,14 @@ export function createPendlePtGLPMar2024IsolationModeVaultFactory(
   );
 }
 
-export async function createPendleYtGLPMar2024IsolationModeTokenVaultV1(): Promise<PendleYtGLPMar2024IsolationModeTokenVaultV1> {
+export async function createPendleYtGLPMar2024IsolationModeTokenVaultV1(
+): Promise<PendleYtGLPMar2024IsolationModeTokenVaultV1> {
   const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
   return createContractWithLibrary('PendleYtGLPMar2024IsolationModeTokenVaultV1', libraries, []);
 }
 
-export async function createTestPendleYtGLPMar2024IsolationModeTokenVaultV1(): Promise<TestPendleYtGLPMar2024IsolationModeTokenVaultV1> {
+export async function createTestPendleYtGLPMar2024IsolationModeTokenVaultV1(
+): Promise<TestPendleYtGLPMar2024IsolationModeTokenVaultV1> {
   const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
   return createContractWithLibrary('TestPendleYtGLPMar2024IsolationModeTokenVaultV1', libraries, []);
 }

@@ -84,7 +84,10 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
         await usdeSystem.factory.isTokenConverterTrusted(usdeSystem.wrapper.address),
         'Wrapper not trusted',
       );
-      console.log('\tPrice for ptUSDe Dec 2024: ', (await core.dolomiteMargin.getMarketPrice(marketId)).value.toString());
+      console.log(
+        '\tPrice for ptUSDe Dec 2024: ',
+        (await core.dolomiteMargin.getMarketPrice(marketId)).value.toString()
+      );
     },
   };
 }
