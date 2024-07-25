@@ -66,6 +66,8 @@ export const ZERO_BI = BigNumber.from('0');
 
 export const ONE_BI = BigNumber.from('1');
 
+export const TWO_BI = BigNumber.from('2');
+
 export const ONE_ETH_BI = BigNumber.from('1000000000000000000');
 
 export const TEN_BI = BigNumber.from('10');

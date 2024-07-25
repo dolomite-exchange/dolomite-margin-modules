@@ -79,7 +79,7 @@ contract MNTIsolationModeTokenVaultV1 is
     external
     payable
     nonReentrant
-    onlyVaultOwnerOrVaultFactory(msg.sender) {
+    onlyVaultOwner(msg.sender) {
         _setIsCurrencyTransfer(/* _isCurrencyTransfer = */ true);
         IWETH(UNDERLYING_TOKEN()).deposit{value: msg.value}();
         _depositIntoVaultForDolomiteMargin(_toAccountNumber, msg.value);

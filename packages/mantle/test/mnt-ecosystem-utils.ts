@@ -26,6 +26,7 @@ import {
   MNTIsolationModeVaultFactory__factory,
   MNTRegistry,
   MNTRegistry__factory,
+  TestMNTIsolationModeTokenVaultV1,
 } from '../src/types';
 
 export async function createMNTRegistry(core: CoreProtocolMantle): Promise<MNTRegistry> {
@@ -45,6 +46,11 @@ export async function createMNTRegistry(core: CoreProtocolMantle): Promise<MNTRe
 export async function createMNTIsolationModeTokenVaultV1(): Promise<MNTIsolationModeTokenVaultV1> {
   const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
   return createContractWithLibrary<MNTIsolationModeTokenVaultV1>('MNTIsolationModeTokenVaultV1', libraries, []);
+}
+
+export async function createTestMNTIsolationModeTokenVaultV1(): Promise<TestMNTIsolationModeTokenVaultV1> {
+  const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
+  return createContractWithLibrary<TestMNTIsolationModeTokenVaultV1>('TestMNTIsolationModeTokenVaultV1', libraries, []);
 }
 
 export async function createMNTIsolationModeVaultFactory(

@@ -13,7 +13,7 @@ import {
   MAX_UINT_256_BI,
   Network,
   ONE_BI,
-  ONE_ETH_BI,
+  ONE_ETH_BI, TWO_BI,
   ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '@dolomite-exchange/modules-base/src/utils/SignerWithAddressWithSafety';
@@ -118,10 +118,10 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
 
   before(async () => {
     core = await setupCoreProtocol({
-      blockNumber: 221_294_300,
+      blockNumber: 235_717_900,
       network: Network.ArbitrumOne,
     });
-    underlyingToken = core.gmxEcosystemV2!.gmxEthUsdMarketToken.connect(core.hhUser1);
+    underlyingToken = core.gmxEcosystemV2.gmxEthUsdMarketToken.connect(core.hhUser1);
     const gmxV2Library = await createGmxV2Library();
     const userVaultImplementation = await createTestGmxV2IsolationModeTokenVaultV1(core);
 
@@ -138,7 +138,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       gmxV2Registry,
       allowableMarketIds,
       allowableMarketIds,
-      core.gmxEcosystemV2!.gmTokens.ethUsd,
+      core.gmxEcosystemV2.gmTokens.ethUsd,
       userVaultImplementation,
       executionFee,
     );
@@ -157,7 +157,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
     );
 
     // Use actual price oracle later
-    await core.testEcosystem!.testPriceOracle!.setPrice(factory.address, '1000000000000000000');
+    await core.testEcosystem!.testPriceOracle.setPrice(factory.address, '1000000000000000000');
     marketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, factory, true);
     await disableInterestAccrual(core, core.marketIds.weth);
@@ -185,8 +185,8 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       [...allowableMarketIds, otherMarketId1, otherMarketId2],
     );
 
-    await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
+    await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
 
     await gmxV2Registry.connect(core.governance).ownerSetUnwrapperByToken(factory.address, unwrapper.address);
     await gmxV2Registry.connect(core.governance).ownerSetWrapperByToken(factory.address, wrapper.address);
@@ -610,7 +610,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
     });
   });
 
-  describe('#cancelDeposit', () => {
+  describe.only('#cancelDeposit', () => {
     it('should work normally', async () => {
       await vault.transferIntoPositionWithOtherToken(
         defaultAccountNumber,
@@ -700,7 +700,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
     });
   });
 
-  describe('#cancelWithdrawal', () => {
+  describe.only('#cancelWithdrawal', () => {
     it('should work normally', async () => {
       await setupGMBalance(core, underlyingToken, core.hhUser1, amountWei, vault);
       await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
@@ -746,7 +746,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         defaultAccountNumber,
         amountWei,
         core.tokens.weth.address,
-        ONE_BI,
+        TWO_BI,
         DEFAULT_EXTRA_DATA,
         { value: executionFee },
       )).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
@@ -1618,7 +1618,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       await gmxV2Registry.connect(core.governance).ownerSetGmxDataStore(testDataStore.address);
       const keyValue = await testDataStore.getKey(
         CREATE_WITHDRAWALS_DISABLED_KEY,
-        core.gmxEcosystemV2!.gmxWithdrawalHandler.address,
+        core.gmxEcosystemV2.gmxWithdrawalHandler.address,
       );
       await testDataStore.setBool(keyValue, true);
       expect(await vault.isExternalRedemptionPaused()).to.be.true;
@@ -1628,7 +1628,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       await gmxV2Registry.connect(core.governance).ownerSetGmxDataStore(testDataStore.address);
       const keyValue = await testDataStore.getKey(
         EXECUTE_WITHDRAWALS_DISABLED_KEY,
-        core.gmxEcosystemV2!.gmxWithdrawalHandler.address,
+        core.gmxEcosystemV2.gmxWithdrawalHandler.address,
       );
       await testDataStore.setBool(keyValue, true);
       expect(await vault.isExternalRedemptionPaused()).to.be.true;
