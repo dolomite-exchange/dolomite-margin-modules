@@ -69,23 +69,14 @@ describe('PendlePtUSDeJul2024IsolationModeWrapperTraderV3', () => {
 
   before(async () => {
     core = await setupCoreProtocol({
-      blockNumber: await getRealLatestBlockNumber(true, Network.Mantle),
+      blockNumber: 66_900_050,
       network: Network.Mantle,
     });
 
     ptMarket = core.pendleEcosystem.usdeDec2024.usdeMarket;
     ptToken = core.pendleEcosystem.usdeDec2024.ptUSDeToken.connect(core.hhUser1);
     underlyingToken = core.tokens.usde!;
-    underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
-
-    const oracleState = await core.pendleEcosystem.usdeDec2024.ptOracle.getOracleState(ptMarket.address, 900);
-    if (oracleState.increaseCardinalityRequired) {
-      await ptMarket.increaseObservationsCardinalityNext(901);
-    }
-    if (oracleState.oldestObservationSatisfied) {
-      await increase(900);
-      await ptMarket.swapExactPtForSy(core.hhUser1.address, 0, BYTES_EMPTY);
-    }
+    underlyingMarketId = core.marketIds.usde;
 
     const userVaultImplementation = await createPendlePtIsolationModeTokenVaultV1();
     pendleRegistry = await createPendleRegistry(
@@ -108,8 +99,8 @@ describe('PendlePtUSDeJul2024IsolationModeWrapperTraderV3', () => {
     marketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, factory, true, priceOracle);
 
-    await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
+    await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
 
     await factory.createVault(core.hhUser1.address);
     const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);

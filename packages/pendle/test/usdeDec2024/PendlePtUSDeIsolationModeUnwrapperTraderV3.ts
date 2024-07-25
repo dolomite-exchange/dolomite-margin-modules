@@ -2,7 +2,6 @@ import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
 import { BYTES_EMPTY, Network, ONE_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import {
   encodeExternalSellActionDataWithNoData,
-  getRealLatestBlockNumber,
   impersonate,
   revertToSnapshotAndCapture,
   snapshot,
@@ -40,7 +39,6 @@ import {
 } from '../pendle-ecosystem-utils';
 import { encodeSwapExactPtForTokensV3, encodeSwapExactTokensForPtV3 } from '../pendle-utils';
 import { CoreProtocolMantle } from 'packages/base/test/utils/core-protocols/core-protocol-mantle';
-import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('20000000000000000000'); // 20
@@ -51,7 +49,6 @@ describe('PendlePtUSDeDec2024IsolationModeUnwrapperTraderV3', () => {
 
   let core: CoreProtocolMantle;
   let underlyingToken: IERC20;
-  let underlyingMarketId: BigNumber;
   let pendleRegistry: PendleRegistry;
   let unwrapper: PendlePtIsolationModeUnwrapperTraderV2;
   let wrapper: PendlePtIsolationModeWrapperTraderV2;
@@ -65,22 +62,13 @@ describe('PendlePtUSDeDec2024IsolationModeUnwrapperTraderV3', () => {
 
   before(async () => {
     core = await setupCoreProtocol({
-      blockNumber: await getRealLatestBlockNumber(true, Network.Mantle),
+      blockNumber: 66_900_050,
       network: Network.Mantle,
     });
 
     ptMarket = core.pendleEcosystem.usdeDec2024.usdeMarket.connect(core.hhUser1);
     ptToken = core.pendleEcosystem.usdeDec2024.ptUSDeToken.connect(core.hhUser1);
     underlyingToken = core.tokens.usde;
-
-    const oracleState = await core.pendleEcosystem.usdeDec2024.ptOracle.getOracleState(ptMarket.address, 900);
-    if (oracleState.increaseCardinalityRequired) {
-      await ptMarket.increaseObservationsCardinalityNext(901);
-    }
-    if (oracleState.oldestObservationSatisfied) {
-      await increase(900);
-      await ptMarket.swapExactPtForSy(core.hhUser1.address, 0, BYTES_EMPTY);
-    }
 
     const userVaultImplementation = await createPendlePtIsolationModeTokenVaultV1();
     pendleRegistry = await createPendleRegistry(
@@ -171,7 +159,7 @@ describe('PendlePtUSDeDec2024IsolationModeUnwrapperTraderV3', () => {
         primaryAccountNumber: defaultAccountNumber,
         otherAccountOwner: vault.address,
         otherAccountNumber: defaultAccountNumber,
-        outputMarket: underlyingMarketId,
+        outputMarket: core.marketIds.usde,
         inputMarket: marketId,
         inputAmount: amountWei,
         orderData: extraOrderData
@@ -187,7 +175,7 @@ describe('PendlePtUSDeDec2024IsolationModeUnwrapperTraderV3', () => {
       expect(underlyingBalanceWei.value).to.eq(ZERO_BI);
       expect(await vault.underlyingBalanceOf()).to.eq(ZERO_BI);
 
-      const otherBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, underlyingMarketId);
+      const otherBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, core.marketIds.usde);
       expect(otherBalanceWei.sign).to.eq(true);
       expect(otherBalanceWei.value).to.be.gt(minOutputAmount);
     });

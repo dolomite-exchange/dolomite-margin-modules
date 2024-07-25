@@ -13,7 +13,7 @@ import { CoreProtocolMantle } from 'packages/base/test/utils/core-protocols/core
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
-describe('PendlePtUSDeJul2024IsolationModeVaultFactory', () => {
+describe('PendlePtUSDeDec2024IsolationModeVaultFactory', () => {
   let snapshotId: string;
 
   let core: CoreProtocolMantle;
@@ -23,7 +23,7 @@ describe('PendlePtUSDeJul2024IsolationModeVaultFactory', () => {
 
   before(async () => {
     core = await setupCoreProtocol({
-      blockNumber: 66_850_000,
+      blockNumber: 66_900_050,
       network: Network.Mantle,
     });
     pendleRegistry = await createPendleRegistry(
@@ -50,7 +50,7 @@ describe('PendlePtUSDeJul2024IsolationModeVaultFactory', () => {
   describe('#contructor', () => {
     it('should initialize variables properly', async () => {
       expect(await factory.pendleRegistry()).to.equal(pendleRegistry.address);
-      expect(await factory.UNDERLYING_TOKEN()).to.equal(core.pendleEcosystem.usdeJul2024.ptUSDeToken.address);
+      expect(await factory.UNDERLYING_TOKEN()).to.equal(core.pendleEcosystem.usdeDec2024.ptUSDeToken.address);
       expect(await factory.BORROW_POSITION_PROXY()).to.equal(core.borrowPositionProxyV2.address);
       expect(await factory.userVaultImplementation()).to.equal(vaultImplementation.address);
       expect(await factory.DOLOMITE_MARGIN()).to.equal(core.dolomiteMargin.address);

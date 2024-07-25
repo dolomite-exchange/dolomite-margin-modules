@@ -41,22 +41,11 @@ describe('PendlePtUSDeDec2024IsolationModeTokenVaultV1', () => {
 
   before(async () => {
     core = await setupCoreProtocol({
-      blockNumber: await getRealLatestBlockNumber(true, Network.Mantle),
+      blockNumber: 66_900_050,
       network: Network.Mantle,
     });
 
     underlyingPtToken = core.pendleEcosystem.usdeDec2024.ptUSDeToken.connect(core.hhUser1);
-    const ptMarket = core.pendleEcosystem.usdeDec2024.usdeMarket;
-  
-    const oracleState = await core.pendleEcosystem.usdeDec2024.ptOracle.getOracleState(ptMarket.address, 900);
-    if (oracleState.increaseCardinalityRequired) {
-      await ptMarket.increaseObservationsCardinalityNext(901);
-    }
-    if (oracleState.oldestObservationSatisfied) {
-      await increase(900);
-      await ptMarket.swapExactPtForSy(core.hhUser1.address, 0, BYTES_EMPTY);
-    }
-
     const userVaultImplementation = await createPendlePtIsolationModeTokenVaultV1();
     pendleRegistry = await createPendleRegistry(
       core,

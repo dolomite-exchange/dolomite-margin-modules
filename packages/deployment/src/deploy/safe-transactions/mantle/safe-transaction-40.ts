@@ -31,22 +31,6 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
 
   const transactions: EncodedTransaction[] = [];
 
-  let oracleState = await core.pendleEcosystem.usdeDec2024.ptOracle.getOracleState(
-    core.pendleEcosystem.usdeDec2024.usdeMarket.address,
-    900
-  );
-  console.log(oracleState);
-  if (oracleState.increaseCardinalityRequired) {
-    await core.pendleEcosystem.usdeDec2024.usdeMarket.increaseObservationsCardinalityNext(
-      oracleState.cardinalityRequired
-    );
-  }
-  oracleState = await core.pendleEcosystem.usdeDec2024.ptOracle.getOracleState(
-    core.pendleEcosystem.usdeDec2024.usdeMarket.address,
-    900
-  );
-  console.log(oracleState);
-
   const usdeSystem = await deployPendlePtSystem(
     core,
     'USDeDec2024',

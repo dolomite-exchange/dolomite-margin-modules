@@ -1,6 +1,6 @@
 import { ADDRESSES } from '@dolomite-exchange/dolomite-margin';
 import { createContractWithAbi } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { BYTES_EMPTY, Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { advanceToTimestamp, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
@@ -25,9 +25,8 @@ import {
   createPendleRegistry,
 } from '../pendle-ecosystem-utils';
 import { CoreProtocolMantle } from 'packages/base/test/utils/core-protocols/core-protocol-mantle';
-import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
 
-const PT_USDE_PRICE = BigNumber.from('958657134500514025');
+const PT_USDE_PRICE = BigNumber.from('960525221082506151');
 
 describe('PendlePtUSDeDec2024PriceOracle', () => {
   let snapshotId: string;
@@ -41,13 +40,11 @@ describe('PendlePtUSDeDec2024PriceOracle', () => {
 
   before(async () => {
     core = await setupCoreProtocol({
-      blockNumber: 66_850_000,
+      blockNumber: 66_900_050,
       network: Network.Mantle,
     });
 
     underlyingToken = core.tokens.usde!;
-    const ptMarket = core.pendleEcosystem.usdeDec2024.usdeMarket;
-
     pendleRegistry = await createPendleRegistry(
       core,
       core.pendleEcosystem.usdeDec2024.usdeMarket,
@@ -61,15 +58,6 @@ describe('PendlePtUSDeDec2024PriceOracle', () => {
       core.pendleEcosystem.usdeDec2024.ptUSDeToken,
       userVaultImplementation,
     );
-
-    const oracleState = await core.pendleEcosystem.usdeDec2024.ptOracle.getOracleState(ptMarket.address, 900);
-    if (oracleState.increaseCardinalityRequired) {
-      await ptMarket.increaseObservationsCardinalityNext(901);
-    }
-    if (oracleState.oldestObservationSatisfied) {
-      await increase(900);
-      await ptMarket.swapExactPtForSy(core.hhUser1.address, 0, BYTES_EMPTY);
-    }
 
     ptOracle = await createPendlePtPriceOracleV2(
       core,
@@ -126,7 +114,7 @@ describe('PendlePtUSDeDec2024PriceOracle', () => {
 
   describe('#getPrice', () => {
     it('returns the correct value under normal conditions for the dptToken', async () => {
-      await advanceToTimestamp(1717500000);
+      await advanceToTimestamp(1721950000);
       const price = await ptOracle.getPrice(factory.address);
       expect(price.value).to.eq(PT_USDE_PRICE);
     });
