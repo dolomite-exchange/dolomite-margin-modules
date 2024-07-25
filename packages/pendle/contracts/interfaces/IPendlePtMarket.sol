@@ -34,4 +34,8 @@ interface IPendlePtMarket is IERC20 {
     function isExpired() external view returns (bool);
 
     function readTokens() external view returns (address sy, address pt, address yt);
+
+    function increaseObservationsCardinalityNext(uint16 _newObservationCardinality) external;
+
+    function swapExactPtForSy(address _receiver, uint256 _exactPtIn, bytes calldata data) external;
 }

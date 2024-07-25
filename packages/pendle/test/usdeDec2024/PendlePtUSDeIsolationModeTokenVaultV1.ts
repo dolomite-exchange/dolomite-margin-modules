@@ -1,5 +1,5 @@
-import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
+import { BYTES_EMPTY, Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { getRealLatestBlockNumber, impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import {
   setupCoreProtocol,
   setupTestMarket,
@@ -25,8 +25,9 @@ import {
   createPendleRegistry,
 } from '../pendle-ecosystem-utils';
 import { CoreProtocolMantle } from 'packages/base/test/utils/core-protocols/core-protocol-mantle';
+import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
 
-describe('PendlePtUSDeJul2024IsolationModeTokenVaultV1', () => {
+describe('PendlePtUSDeDec2024IsolationModeTokenVaultV1', () => {
   let snapshotId: string;
 
   let core: CoreProtocolMantle;
@@ -40,17 +41,28 @@ describe('PendlePtUSDeJul2024IsolationModeTokenVaultV1', () => {
 
   before(async () => {
     core = await setupCoreProtocol({
-      blockNumber: 64_650_000,
+      blockNumber: await getRealLatestBlockNumber(true, Network.Mantle),
       network: Network.Mantle,
     });
 
-    underlyingPtToken = core.pendleEcosystem.usdeJul2024.ptUSDeToken.connect(core.hhUser1);
+    underlyingPtToken = core.pendleEcosystem.usdeDec2024.ptUSDeToken.connect(core.hhUser1);
+    const ptMarket = core.pendleEcosystem.usdeDec2024.usdeMarket;
+  
+    const oracleState = await core.pendleEcosystem.usdeDec2024.ptOracle.getOracleState(ptMarket.address, 900);
+    if (oracleState.increaseCardinalityRequired) {
+      await ptMarket.increaseObservationsCardinalityNext(901);
+    }
+    if (oracleState.oldestObservationSatisfied) {
+      await increase(900);
+      await ptMarket.swapExactPtForSy(core.hhUser1.address, 0, BYTES_EMPTY);
+    }
+
     const userVaultImplementation = await createPendlePtIsolationModeTokenVaultV1();
     pendleRegistry = await createPendleRegistry(
       core,
-      core.pendleEcosystem.usdeJul2024.usdeMarket,
-      core.pendleEcosystem.usdeJul2024.ptOracle,
-      core.pendleEcosystem.syUsdeToken,
+      core.pendleEcosystem.usdeDec2024.usdeMarket,
+      core.pendleEcosystem.usdeDec2024.ptOracle,
+      core.pendleEcosystem.usdeDec2024.syUsdeToken,
     );
     factory = await createPendlePtIsolationModeVaultFactory(
       core,
@@ -65,8 +77,8 @@ describe('PendlePtUSDeJul2024IsolationModeTokenVaultV1', () => {
 
     await setupTestMarket(core, factory, true, priceOracle);
 
-    await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
+    await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
 
     await factory.createVault(core.hhUser1.address);
     const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);
@@ -96,9 +108,9 @@ describe('PendlePtUSDeJul2024IsolationModeTokenVaultV1', () => {
 
     it('should work when owner pauses syWstEth', async () => {
       expect(await vault.isExternalRedemptionPaused()).to.be.false;
-      const syWstEth = core.pendleEcosystem.syUsdeToken;
-      const owner = await impersonate(await syWstEth.owner(), true);
-      await syWstEth.connect(owner).pause();
+      const syToken = core.pendleEcosystem.usdeDec2024.syUsdeToken;
+      const owner = await impersonate(await syToken.owner(), true);
+      await syToken.connect(owner).pause();
       expect(await vault.isExternalRedemptionPaused()).to.be.true;
     });
   });

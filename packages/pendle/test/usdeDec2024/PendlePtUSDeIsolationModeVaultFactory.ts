@@ -23,20 +23,20 @@ describe('PendlePtUSDeJul2024IsolationModeVaultFactory', () => {
 
   before(async () => {
     core = await setupCoreProtocol({
-      blockNumber: 64_650_000,
+      blockNumber: 66_850_000,
       network: Network.Mantle,
     });
     pendleRegistry = await createPendleRegistry(
       core,
-      core.pendleEcosystem.usdeJul2024.usdeMarket,
-      core.pendleEcosystem.usdeJul2024.ptOracle,
-      core.pendleEcosystem.syUsdeToken,
+      core.pendleEcosystem.usdeDec2024.usdeMarket,
+      core.pendleEcosystem.usdeDec2024.ptOracle,
+      core.pendleEcosystem.usdeDec2024.syUsdeToken,
     );
     vaultImplementation = await createPendlePtIsolationModeTokenVaultV1();
     factory = await createPendlePtIsolationModeVaultFactory(
       core,
       pendleRegistry,
-      core.pendleEcosystem.usdeJul2024.ptUSDeToken,
+      core.pendleEcosystem.usdeDec2024.ptUSDeToken,
       vaultImplementation,
     );
 

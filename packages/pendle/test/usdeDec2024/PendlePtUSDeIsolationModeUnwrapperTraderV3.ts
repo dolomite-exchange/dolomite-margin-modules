@@ -7,7 +7,7 @@ import {
   revertToSnapshotAndCapture,
   snapshot,
 } from '@dolomite-exchange/modules-base/test/utils';
-import { expectThrow, expectWalletBalance } from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { setupNewGenericTraderProxy } from '@dolomite-exchange/modules-base/test/utils/dolomite';
 import {
   setupCoreProtocol,
@@ -15,9 +15,8 @@ import {
   setupUSDEBalance,
   setupUserVaultProxy,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
-import { BigNumber, BigNumberish } from 'ethers';
+import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import {
   IERC20,
@@ -25,9 +24,9 @@ import {
   IPendlePtToken,
   PendlePtIsolationModeTokenVaultV1,
   PendlePtIsolationModeTokenVaultV1__factory,
-  PendlePtIsolationModeUnwrapperTraderV3,
+  PendlePtIsolationModeUnwrapperTraderV2,
   PendlePtIsolationModeVaultFactory,
-  PendlePtIsolationModeWrapperTraderV3,
+  PendlePtIsolationModeWrapperTraderV2,
   PendlePtPriceOracleV2,
   PendleRegistry,
 } from '../../src/types';
@@ -39,32 +38,30 @@ import {
   createPendlePtPriceOracleV2,
   createPendleRegistry,
 } from '../pendle-ecosystem-utils';
-import { encodeSwapExactTokensForPtV3 } from '../pendle-utils';
+import { encodeSwapExactPtForTokensV3, encodeSwapExactTokensForPtV3 } from '../pendle-utils';
 import { CoreProtocolMantle } from 'packages/base/test/utils/core-protocols/core-protocol-mantle';
+import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('20000000000000000000'); // 20
 const otherAmountWei = BigNumber.from('10000000'); // $10
-const usableAmount = parseEther('10');
 
-const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
-
-describe('PendlePtUSDeJul2024IsolationModeWrapperTraderV3', () => {
+describe('PendlePtUSDeDec2024IsolationModeUnwrapperTraderV3', () => {
   let snapshotId: string;
 
   let core: CoreProtocolMantle;
-  let ptToken: IPendlePtToken;
-  let ptMarket: IPendlePtMarket;
-  let marketId: BigNumber;
   let underlyingToken: IERC20;
-  let underlyingMarketId: BigNumberish;
+  let underlyingMarketId: BigNumber;
   let pendleRegistry: PendleRegistry;
-  let unwrapper: PendlePtIsolationModeUnwrapperTraderV3;
-  let wrapper: PendlePtIsolationModeWrapperTraderV3;
+  let unwrapper: PendlePtIsolationModeUnwrapperTraderV2;
+  let wrapper: PendlePtIsolationModeWrapperTraderV2;
   let factory: PendlePtIsolationModeVaultFactory;
+  let marketId: BigNumber;
   let vault: PendlePtIsolationModeTokenVaultV1;
   let priceOracle: PendlePtPriceOracleV2;
   let defaultAccount: AccountInfoStruct;
+  let ptToken: IPendlePtToken;
+  let ptMarket: IPendlePtMarket;
 
   before(async () => {
     core = await setupCoreProtocol({
@@ -72,18 +69,25 @@ describe('PendlePtUSDeJul2024IsolationModeWrapperTraderV3', () => {
       network: Network.Mantle,
     });
 
-    ptMarket = core.pendleEcosystem.usdeJul2024.usdeMarket;
-    ptToken = core.pendleEcosystem.usdeJul2024.ptUSDeToken.connect(core.hhUser1);
-    underlyingToken = core.tokens.usde!;
-    underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
-    await setupTestMarket(core, core.tokens.usde, false, core.oracleAggregatorV2);
+    ptMarket = core.pendleEcosystem.usdeDec2024.usdeMarket.connect(core.hhUser1);
+    ptToken = core.pendleEcosystem.usdeDec2024.ptUSDeToken.connect(core.hhUser1);
+    underlyingToken = core.tokens.usde;
+
+    const oracleState = await core.pendleEcosystem.usdeDec2024.ptOracle.getOracleState(ptMarket.address, 900);
+    if (oracleState.increaseCardinalityRequired) {
+      await ptMarket.increaseObservationsCardinalityNext(901);
+    }
+    if (oracleState.oldestObservationSatisfied) {
+      await increase(900);
+      await ptMarket.swapExactPtForSy(core.hhUser1.address, 0, BYTES_EMPTY);
+    }
 
     const userVaultImplementation = await createPendlePtIsolationModeTokenVaultV1();
     pendleRegistry = await createPendleRegistry(
       core,
-      ptMarket,
-      core.pendleEcosystem.usdeJul2024.ptOracle,
-      core.pendleEcosystem.syUsdeToken,
+      core.pendleEcosystem.usdeDec2024.usdeMarket,
+      core.pendleEcosystem.usdeDec2024.ptOracle,
+      core.pendleEcosystem.usdeDec2024.syUsdeToken,
     );
     factory = await createPendlePtIsolationModeVaultFactory(
       core,
@@ -99,8 +103,8 @@ describe('PendlePtUSDeJul2024IsolationModeWrapperTraderV3', () => {
     marketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, factory, true, priceOracle);
 
-    await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
+    await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
 
     await factory.createVault(core.hhUser1.address);
     const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);
@@ -145,150 +149,142 @@ describe('PendlePtUSDeJul2024IsolationModeWrapperTraderV3', () => {
     snapshotId = await revertToSnapshotAndCapture(snapshotId);
   });
 
-  describe('Call and Exchange for non-liquidation sale', () => {
+  describe('Actions.Call and Actions.Sell for non-liquidation', () => {
     it('should work when called with the normal conditions', async () => {
       const solidAccountId = 0;
       const liquidAccountId = 0;
 
-      const { extraOrderData, approxParams } = await encodeSwapExactTokensForPtV3(
+      const { minOutputAmount, extraOrderData } = await encodeSwapExactPtForTokensV3(
         Network.Mantle,
-        wrapper.address,
+        unwrapper.address,
+        amountWei,
         ptMarket.address,
         underlyingToken.address,
-        usableAmount,
-        '0.002',
+        '0.002'
       );
 
-      const actions = await wrapper.createActionsForWrapping({
+      const actions = await unwrapper.createActionsForUnwrapping({
+        minOutputAmount,
         primaryAccountId: solidAccountId,
         otherAccountId: liquidAccountId,
-        primaryAccountOwner: ZERO_ADDRESS,
+        primaryAccountOwner: vault.address,
         primaryAccountNumber: defaultAccountNumber,
-        otherAccountOwner: ZERO_ADDRESS,
+        otherAccountOwner: vault.address,
         otherAccountNumber: defaultAccountNumber,
-        outputMarket: marketId,
-        inputMarket: underlyingMarketId,
-        minOutputAmount: ZERO_BI,
-        inputAmount: usableAmount,
-        orderData: extraOrderData,
+        outputMarket: underlyingMarketId,
+        inputMarket: marketId,
+        inputAmount: amountWei,
+        orderData: extraOrderData
       });
 
-      await setupUSDEBalance(core, core.hhUser1, parseEther('10'), core.pendleEcosystem.pendleRouterV3);
-      await underlyingToken.connect(core.hhUser1).transfer(core.dolomiteMargin.address, parseEther('10'));
       const genericTrader = await impersonate(core.genericTraderProxy!, true);
       await core.dolomiteMargin.connect(genericTrader).operate(
         [defaultAccount],
         actions,
       );
 
-      const expectedTotalBalance = amountWei.add(approxParams.guessOffchain);
       const underlyingBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, marketId);
-      expect(underlyingBalanceWei.value).to.gte(expectedTotalBalance);
-      expect(underlyingBalanceWei.sign).to.eq(true);
-      expect(await vault.underlyingBalanceOf()).to.gte(expectedTotalBalance);
+      expect(underlyingBalanceWei.value).to.eq(ZERO_BI);
+      expect(await vault.underlyingBalanceOf()).to.eq(ZERO_BI);
 
       const otherBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, underlyingMarketId);
-      expect(otherBalanceWei.sign).to.eq(false);
-      expect(otherBalanceWei.value).to.eq(usableAmount);
-
-      await expectWalletBalance(wrapper.address, ptToken, ZERO_BI);
-      await expectWalletBalance(wrapper.address, ptToken, ZERO_BI);
+      expect(otherBalanceWei.sign).to.eq(true);
+      expect(otherBalanceWei.value).to.be.gt(minOutputAmount);
     });
   });
 
   describe('#exchange', () => {
     it('should fail if not called by DolomiteMargin', async () => {
       await expectThrow(
-        wrapper.connect(core.hhUser1).exchange(
+        unwrapper.connect(core.hhUser1).exchange(
           vault.address,
           core.dolomiteMargin.address,
+          underlyingToken.address,
           factory.address,
-          ptToken.address,
-          usableAmount,
+          amountWei,
           BYTES_EMPTY,
         ),
         `OnlyDolomiteMargin: Only Dolomite can call function <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
-    it('should fail if trade originator is not a vault', async () => {
+    it('should fail if input token is incorrect', async () => {
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
       await expectThrow(
-        wrapper.connect(dolomiteMarginImpersonator).exchange(
-          core.hhUser1.address,
-          core.dolomiteMargin.address,
-          factory.address,
-          ptToken.address,
-          usableAmount,
-          encodeExternalSellActionDataWithNoData(ZERO_BI),
-        ),
-        `IsolationModeWrapperTraderV2: Invalid trade originator <${core.hhUser1.address.toLowerCase()}>`,
-      );
-    });
-
-    it('should fail if input token is not whitelisted', async () => {
-      const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
-      await expectThrow(
-        wrapper.connect(dolomiteMarginImpersonator).exchange(
+        unwrapper.connect(dolomiteMarginImpersonator).exchange(
           vault.address,
           core.dolomiteMargin.address,
-          factory.address,
-          OTHER_ADDRESS,
-          usableAmount,
-          encodeExternalSellActionDataWithNoData(ZERO_BI),
+          underlyingToken.address,
+          core.tokens.weth.address,
+          amountWei,
+          BYTES_EMPTY,
         ),
-        `IsolationModeWrapperTraderV2: Invalid input token <${OTHER_ADDRESS.toLowerCase()}>`,
+        `IsolationModeUnwrapperTraderV2: Invalid input token <${core.tokens.weth.address.toLowerCase()}>`,
       );
     });
 
     it('should fail if output token is incorrect', async () => {
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
+      await ptToken.connect(core.hhUser1).transfer(unwrapper.address, amountWei);
       await expectThrow(
-        wrapper.connect(dolomiteMarginImpersonator).exchange(
+        unwrapper.connect(dolomiteMarginImpersonator).exchange(
           vault.address,
           core.dolomiteMargin.address,
-          OTHER_ADDRESS,
-          underlyingToken.address,
+          core.tokens.weth.address,
+          factory.address,
           amountWei,
           encodeExternalSellActionDataWithNoData(otherAmountWei),
         ),
-        `IsolationModeWrapperTraderV2: Invalid output token <${OTHER_ADDRESS.toLowerCase()}>`,
+        `IsolationModeUnwrapperTraderV2: Invalid output token <${core.tokens.weth.address.toLowerCase()}>`,
       );
     });
 
-    it('should fail if the input amount is 0', async () => {
+    it('should fail if input amount is incorrect', async () => {
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
+      await ptToken.connect(core.hhUser1).transfer(unwrapper.address, amountWei);
       await expectThrow(
-        wrapper.connect(dolomiteMarginImpersonator).exchange(
+        unwrapper.connect(dolomiteMarginImpersonator).exchange(
           vault.address,
           core.dolomiteMargin.address,
-          factory.address,
           underlyingToken.address,
+          factory.address,
           ZERO_BI,
-          encodeExternalSellActionDataWithNoData(ZERO_BI),
+          encodeExternalSellActionDataWithNoData(otherAmountWei),
         ),
-        'IsolationModeWrapperTraderV2: Invalid input amount',
+        'IsolationModeUnwrapperTraderV2: Invalid input amount',
       );
     });
   });
 
-  describe('#pendleVaultRegistry', () => {
+  describe('#token', () => {
     it('should work', async () => {
-      expect(await wrapper.PENDLE_REGISTRY()).to.eq(pendleRegistry.address);
+      expect(await unwrapper.token()).to.eq(factory.address);
+    });
+  });
+
+  describe('#actionsLength', () => {
+    it('should work', async () => {
+      expect(await unwrapper.actionsLength()).to.eq(2);
     });
   });
 
   describe('#UNDERLYING_TOKEN', () => {
     it('should work', async () => {
-      expect(await wrapper.UNDERLYING_TOKEN()).to.eq(underlyingToken.address);
+      expect(await unwrapper.UNDERLYING_TOKEN()).to.eq(underlyingToken.address);
+    });
+  });
+
+  describe('#pendleRegistry', () => {
+    it('should work', async () => {
+      expect(await unwrapper.PENDLE_REGISTRY()).to.eq(pendleRegistry.address);
     });
   });
 
   describe('#getExchangeCost', () => {
     it('should fail because it is not implemented', async () => {
       await expectThrow(
-        wrapper.getExchangeCost(underlyingToken.address, factory.address, amountWei, BYTES_EMPTY),
-        'PendlePtWrapperV3: getExchangeCost is not implemented',
+        unwrapper.getExchangeCost(factory.address, underlyingToken.address, amountWei, BYTES_EMPTY),
+        'PendlePtUnwrapperV3: getExchangeCost is not implemented',
       );
     });
   });
