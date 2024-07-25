@@ -921,12 +921,20 @@ export const PENDLE_PT_WST_ETH_2025_TOKEN_MAP: Record<Network.ArbitrumOne, strin
   [Network.ArbitrumOne]: '0x1255638EFeca62e12E344E0b6B22ea853eC6e2c7',
 };
 
-export const PENDLE_USDE_MARKET_MAP: Record<Network.Mantle, string> = {
+export const PENDLE_USDE_JUL_2024_MARKET_MAP: Record<Network.Mantle, string> = {
   [Network.Mantle]: '0x7dc07C575A0c512422dCab82CE9Ed74dB58Be30C',
 };
 
-export const PENDLE_PT_USDE_TOKEN_MAP: Record<Network.Mantle, string> = {
+export const PENDLE_PT_USDE_JUL_2024_TOKEN_MAP: Record<Network.Mantle, string> = {
   [Network.Mantle]: '0xba567Cf0d8230c0AD8D8bFc50E587E06d6F118E9',
+};
+
+export const PENDLE_USDE_DEC_2024_MARKET_MAP: Record<Network.Mantle, string> = {
+  [Network.Mantle]: '0x2ddd4808fbb2e08b563af99b8f340433c32c8cc2',
+};
+
+export const PENDLE_PT_USDE_DEC_2024_TOKEN_MAP: Record<Network.Mantle, string> = {
+  [Network.Mantle]: '0x8be66A48EA1f4AFF89cd2beb50B02D901Dfb9584',
 };
 
 export const PENDLE_PT_ORACLE_MAP: Record<Network, string> = {
@@ -976,8 +984,12 @@ export const PENDLE_SY_RS_ETH_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0xf176fB51F4eB826136a54FDc71C50fCd2202E272',
 };
 
-export const PENDLE_SY_USDE_TOKEN_MAP: Record<Network.Mantle, string> = {
+export const PENDLE_SY_USDE_JUL_2024_TOKEN_MAP: Record<Network.Mantle, string> = {
   [Network.Mantle]: '0x5B9e411c9E50164133DE07FE1cAC05A094000105',
+};
+
+export const PENDLE_SY_USDE_DEC_2024_TOKEN_MAP: Record<Network.Mantle, string> = {
+  [Network.Mantle]: '0x9660AC0cB085F8Fb39a6F383cF2067785364f924',
 };
 
 export const PENDLE_SY_WE_ETH_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {

@@ -55,15 +55,18 @@ import {
   PENDLE_YT_GLP_SEP_2024_TOKEN_MAP,
   PENDLE_PT_GLP_SEP_2024_TOKEN_MAP,
   PENDLE_SY_GLP_SEP_2024_TOKEN_MAP,
-  PENDLE_USDE_MARKET_MAP,
-  PENDLE_PT_USDE_TOKEN_MAP,
-  PENDLE_SY_USDE_TOKEN_MAP,
   PENDLE_RS_ETH_SEP_2024_MARKET_MAP,
   PENDLE_PT_RS_ETH_SEP_2024_TOKEN_MAP,
   PENDLE_PT_EZ_ETH_SEP_2024_MARKET_MAP,
   PENDLE_PT_EZ_ETH_SEP_2024_TOKEN_MAP,
   PENDLE_E_ETH_SEP_2024_MARKET_MAP,
   PENDLE_PT_E_ETH_SEP_2024_TOKEN_MAP,
+  PENDLE_PT_USDE_DEC_2024_TOKEN_MAP,
+  PENDLE_PT_USDE_JUL_2024_TOKEN_MAP,
+  PENDLE_USDE_DEC_2024_MARKET_MAP,
+  PENDLE_USDE_JUL_2024_MARKET_MAP,
+  PENDLE_SY_USDE_DEC_2024_TOKEN_MAP,
+  PENDLE_SY_USDE_JUL_2024_TOKEN_MAP,
 } from '../../../src/utils/constants';
 import { Network } from '../../../src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';
@@ -80,8 +83,14 @@ export interface PendleEcosystemMantle extends CorePendleEcosystem {
     ptOracle: IPendlePtOracle;
     usdeMarket: IPendlePtMarket;
     ptUSDeToken: IPendlePtToken;
+    syUsdeToken: IPendleSyToken;
   };
-  syUsdeToken: IPendleSyToken;
+  usdeDec2024: {
+    ptOracle: IPendlePtOracle;
+    usdeMarket: IPendlePtMarket;
+    ptUSDeToken: IPendlePtToken;
+    syUsdeToken: IPendleSyToken;
+  };
 }
 
 export interface PendleEcosystemArbitrumOne extends CorePendleEcosystem {
@@ -202,21 +211,43 @@ export async function createPendleEcosystemMantle(
         signer,
       ),
       usdeMarket: getContract(
-        PENDLE_USDE_MARKET_MAP[network] as string,
+        PENDLE_USDE_JUL_2024_MARKET_MAP[network] as string,
         IPendlePtMarket__factory.connect,
         signer,
       ),
       ptUSDeToken: getContract(
-        PENDLE_PT_USDE_TOKEN_MAP[network] as string,
+        PENDLE_PT_USDE_JUL_2024_TOKEN_MAP[network] as string,
         IPendlePtToken__factory.connect,
         signer,
       ),
+      syUsdeToken: getContract(
+        PENDLE_SY_USDE_JUL_2024_TOKEN_MAP[network] as string,
+        IPendleSyToken__factory.connect,
+        signer,
+      ),
     },
-    syUsdeToken: getContract(
-      PENDLE_SY_USDE_TOKEN_MAP[network] as string,
-      IPendleSyToken__factory.connect,
-      signer,
-    ),
+    usdeDec2024: {
+      ptOracle: getContract(
+        PENDLE_PT_ORACLE_MAP[network] as string,
+        IPendlePtOracle__factory.connect,
+        signer,
+      ),
+      usdeMarket: getContract(
+        PENDLE_USDE_DEC_2024_MARKET_MAP[network] as string,
+        IPendlePtMarket__factory.connect,
+        signer,
+      ),
+      ptUSDeToken: getContract(
+        PENDLE_PT_USDE_DEC_2024_TOKEN_MAP[network] as string,
+        IPendlePtToken__factory.connect,
+        signer,
+      ),
+      syUsdeToken: getContract(
+        PENDLE_SY_USDE_DEC_2024_TOKEN_MAP[network] as string,
+        IPendleSyToken__factory.connect,
+        signer,
+      ),
+    },
   };
 }
 
