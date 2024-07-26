@@ -12,19 +12,18 @@ import {
   snapshot,
 } from '@dolomite-exchange/modules-base/test/utils';
 import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { setupNewGenericTraderProxy } from '@dolomite-exchange/modules-base/test/utils/dolomite';
 import {
   disableInterestAccrual,
   getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupTestMarket,
   setupUserVaultProxy,
-  setupWMNTBalance,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { expect } from 'chai';
-import { BigNumber } from 'ethers';
+import { BigNumber, BigNumberish } from 'ethers';
 import { CoreProtocolMantle } from 'packages/base/test/utils/core-protocols/core-protocol-mantle';
 import {
+  IWETH,
   MNTIsolationModeTokenVaultV1,
   MNTIsolationModeTokenVaultV1__factory,
   MNTIsolationModeVaultFactory,
@@ -36,8 +35,8 @@ import {
   createMNTRegistry,
   createMNTUnwrapperTraderV2,
   createMNTWrapperTraderV2,
+  setupWmntToken,
 } from './mnt-ecosystem-utils';
-import { sleep } from '@openzeppelin/upgrades';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
@@ -54,15 +53,20 @@ describe('MNTIsolationModeUnwrapperTraderV2', () => {
   let mntVault: MNTIsolationModeTokenVaultV1;
   let dMntMarketId: BigNumber;
   let defaultAccount: AccountInfoStruct;
+  let underlyingToken: IWETH;
+  let underlyingMarketId: BigNumberish;
 
   before(async () => {
     core = await setupCoreProtocol(await getDefaultCoreProtocolConfig(Network.Mantle));
-    await disableInterestAccrual(core, core.marketIds.wmnt);
 
     mntRegistry = await createMNTRegistry(core);
 
+    underlyingToken = await setupWmntToken(core);
+    underlyingMarketId = await core.dolomiteMargin.getMarketIdByTokenAddress(underlyingToken.address);
+    await disableInterestAccrual(core, underlyingMarketId);
+
     const vaultImplementation = await createMNTIsolationModeTokenVaultV1();
-    mntFactory = await createMNTIsolationModeVaultFactory(mntRegistry, vaultImplementation, core);
+    mntFactory = await createMNTIsolationModeVaultFactory(mntRegistry, vaultImplementation, underlyingToken, core);
 
     unwrapper = await createMNTUnwrapperTraderV2(mntFactory, core);
     wrapper = await createMNTWrapperTraderV2(mntFactory, core);
@@ -70,13 +74,13 @@ describe('MNTIsolationModeUnwrapperTraderV2', () => {
     await core.oracleAggregatorV2.connect(core.governance).ownerInsertOrUpdateToken({
       token: mntFactory.address,
       decimals: 18,
-      oracleInfos: await core.oracleAggregatorV2.getOraclesByToken(core.tokens.wmnt.address),
+      oracleInfos: await core.oracleAggregatorV2.getOraclesByToken(underlyingToken.address),
     });
     await core.chroniclePriceOracleV3
       .connect(core.governance)
       .ownerInsertOrUpdateOracleToken(
         mntFactory.address,
-        await core.chroniclePriceOracleV3.getScribeByToken(core.tokens.wmnt.address),
+        await core.chroniclePriceOracleV3.getScribeByToken(underlyingToken.address),
         false,
       );
 
@@ -105,8 +109,7 @@ describe('MNTIsolationModeUnwrapperTraderV2', () => {
 
   describe('Actions.Call and Actions.Sell for non-liquidation', () => {
     it('should work when called with the normal conditions', async () => {
-      await setupWMNTBalance(core, core.hhUser1, amountWei, mntVault);
-      await mntVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await mntVault.depositPayableIntoVaultForDolomiteMargin(defaultAccountNumber, { value: amountWei });
 
       const cooldown = (await core.mantleRewardStation.cooldown()).toNumber() + 1_000;
       await advanceByTimeDelta(cooldown);
@@ -121,7 +124,7 @@ describe('MNTIsolationModeUnwrapperTraderV2', () => {
         otherAccountOwner: mntVault.address,
         otherAccountNumber: defaultAccountNumber,
         inputMarket: dMntMarketId,
-        outputMarket: core.marketIds.wmnt,
+        outputMarket: underlyingMarketId,
         inputAmount: amountWei,
         minOutputAmount: ZERO_BI,
         orderData: BYTES_EMPTY,
@@ -134,7 +137,7 @@ describe('MNTIsolationModeUnwrapperTraderV2', () => {
       expect(underlyingBalanceWei.value).to.eq(ZERO_BI);
       expect(await mntVault.underlyingBalanceOf()).to.eq(ZERO_BI);
 
-      const otherBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, core.marketIds.wmnt);
+      const otherBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, underlyingMarketId);
       expect(otherBalanceWei.sign).to.eq(true);
       expect(otherBalanceWei.value).to.eq(amountWei);
     });
@@ -176,8 +179,8 @@ describe('MNTIsolationModeUnwrapperTraderV2', () => {
 
     it('should fail if output token is incorrect', async () => {
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
-      await setupWMNTBalance(core, core.hhUser1, amountWei, unwrapper);
-      await core.tokens.wmnt.connect(core.hhUser1).transfer(unwrapper.address, amountWei);
+      await underlyingToken.deposit({ value: amountWei });
+      await underlyingToken.connect(core.hhUser1).transfer(unwrapper.address, amountWei);
       await expectThrow(
         unwrapper
           .connect(dolomiteMarginImpersonator)
@@ -195,15 +198,15 @@ describe('MNTIsolationModeUnwrapperTraderV2', () => {
 
     it('should fail if input amount is incorrect', async () => {
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
-      await setupWMNTBalance(core, core.hhUser1, amountWei, unwrapper);
-      await core.tokens.wmnt.connect(core.hhUser1).transfer(unwrapper.address, amountWei);
+      await underlyingToken.deposit({ value: amountWei });
+      await underlyingToken.connect(core.hhUser1).transfer(unwrapper.address, amountWei);
       await expectThrow(
         unwrapper
           .connect(dolomiteMarginImpersonator)
           .exchange(
             core.hhUser1.address,
             core.dolomiteMargin.address,
-            core.tokens.wmnt.address,
+            underlyingToken.address,
             mntFactory.address,
             ZERO_BI,
             encodeExternalSellActionDataWithNoData(otherAmountWei),
@@ -227,7 +230,7 @@ describe('MNTIsolationModeUnwrapperTraderV2', () => {
 
   describe('#isValidOutputToken', () => {
     it('should work with MNT', async () => {
-      expect(await unwrapper.isValidOutputToken(core.tokens.wmnt.address)).to.eq(true);
+      expect(await unwrapper.isValidOutputToken(underlyingToken.address)).to.eq(true);
     });
 
     it('should fail with any other token', async () => {
@@ -238,7 +241,7 @@ describe('MNTIsolationModeUnwrapperTraderV2', () => {
   describe('#getExchangeCost', () => {
     it('should work normally', async () => {
       expect(
-        await unwrapper.getExchangeCost(mntFactory.address, core.tokens.wmnt.address, amountWei, BYTES_EMPTY),
+        await unwrapper.getExchangeCost(mntFactory.address, underlyingToken.address, amountWei, BYTES_EMPTY),
       ).to.eq(amountWei);
     });
   });

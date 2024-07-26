@@ -22,23 +22,38 @@ pragma solidity ^0.8.9;
 
 
 /**
- * @title   IMNTIsolationModeTokenVaultV1.sol
+ * @title   IMNTIsolationModeTokenVaultV1
  * @author  Dolomite
  *
- * @notice  This interface defines the functions that are available on the MNTIsolationModeTokenVaultV1.sol implementation
+ * @notice  This interface defines the functions that are available on the MNTIsolationModeTokenVaultV1 implementation
  *          contract for each user's proxy vault.
  */
-interface IARBIsolationModeTokenVaultV1 {
+interface IMNTIsolationModeTokenVaultV1 {
+
+    event LastStakeTimestampSet(uint256 _timestamp);
+    event IsCurrencyTransferSet(bool _isCurrencyTransfer);
 
     /**
      *
-     * @param  _delegatee   The address to which this vault should delegate its voting power
+     * @param  _amount  The amount of MNT to stake
      */
-    function delegate(address _delegatee) external;
+    function stake(uint256 _amount) external;
+
 
     /**
      *
-     * @return The address to which this vault is delegating. Defaults to the vault owner
+     * @param  _amount  The amount of MNT to unstake
      */
-    function delegates() external view returns (address);
+    function unstake(uint256 _amount) external;
+
+    /**
+     *
+     * @return The amount that this vault has staked in the Mantle Reward Station
+     */
+    function stakedBalance() external view returns (uint256);
+
+    /**
+     * @return The timestamp at which the user last staked in the reward station
+     */
+    function lastStakeTimestamp() external view returns (uint256);
 }

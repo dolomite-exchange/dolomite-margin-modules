@@ -2,7 +2,7 @@ import { CoreProtocolMantle } from 'packages/base/test/utils/core-protocols/core
 import {
   IMNTIsolationModeTokenVaultV1,
   IMNTIsolationModeVaultFactory,
-  IMNTRegistry,
+  IMNTRegistry, IWETH,
   MNTIsolationModeTokenVaultV1,
   MNTIsolationModeVaultFactory,
   MNTRegistry,
@@ -22,11 +22,12 @@ export async function getMNTRegistryConstructorParams(
 export function getMNTIsolationModeVaultFactoryConstructorParams(
   mntRegistry: IMNTRegistry | MNTRegistry,
   vaultImplementation: IMNTIsolationModeTokenVaultV1 | MNTIsolationModeTokenVaultV1,
+  wmnt: IWETH,
   core: CoreProtocolMantle,
 ): any[] {
   return [
     mntRegistry.address,
-    core.tokens.wmnt.address,
+    wmnt.address,
     core.borrowPositionProxyV2.address,
     vaultImplementation.address,
     core.dolomiteMargin.address,

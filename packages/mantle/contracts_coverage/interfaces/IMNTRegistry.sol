@@ -21,12 +21,20 @@
 pragma solidity ^0.8.9;
 
 import { IBaseRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IBaseRegistry.sol";
+import { IMantleRewardStation } from "./IMantleRewardStation.sol";
 
 
 /**
- * @title   IMNTRegistry.sol
+ * @title   IMNTRegistry
  * @author  Dolomite
  *
- * @notice  A registry contract for storing all of the addresses that can interact with the ARB token
+ * @notice  A registry contract for storing all of the addresses that can interact with Mantle
  */
-interface IARBRegistry is IBaseRegistry {} // solhint-disable-line no-empty-blocks
+interface IMNTRegistry is IBaseRegistry {
+
+    event MantleRewardStationSet(address _station);
+
+    function ownerSetMantleRewardStation(address _mantleRewardStation) external;
+
+    function mantleRewardStation() external view returns (IMantleRewardStation);
+}

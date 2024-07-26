@@ -39,7 +39,7 @@ describe('MNTIsolationModeVaultFactory', () => {
     mntRegistry = await createMNTRegistry(core);
 
     vaultImplementation = await createMNTIsolationModeTokenVaultV1();
-    mntFactory = await createMNTIsolationModeVaultFactory(mntRegistry, vaultImplementation, core);
+    mntFactory = await createMNTIsolationModeVaultFactory(mntRegistry, vaultImplementation, core.tokens.wmnt, core);
 
     unwrapper = await createMNTUnwrapperTraderV2(mntFactory, core);
     wrapper = await createMNTWrapperTraderV2(mntFactory, core);

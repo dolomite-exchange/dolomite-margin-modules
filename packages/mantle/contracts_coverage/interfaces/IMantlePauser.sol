@@ -20,18 +20,15 @@
 
 pragma solidity ^0.8.9;
 
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
 
 /**
- * @title   IARB
+ * @title   IMantlePauser
  * @author  Dolomite
  *
- * @notice  This interface defines the functions that are available on the ARB token contract.
+ * @notice  This interface defines the functions that are available on the Mantle Rewards station contract
+ *          (https://mantlescan.xyz/address/0xD2ED344A33910465c03A52b7551f34048dE9ec5c).
  */
-interface IARB is IERC20 {
+interface IMantlePauser {
 
-    function delegate(address _delegatee) external;
-
-    function delegates(address _account) external view returns (address);
+    function isStakingPaused() external view returns (bool);
 }

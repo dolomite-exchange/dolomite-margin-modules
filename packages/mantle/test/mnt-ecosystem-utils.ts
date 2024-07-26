@@ -8,10 +8,11 @@ import {
 } from '@dolomite-exchange/modules-base/src/types';
 import {
   createContractWithAbi,
-  createContractWithLibrary,
+  createContractWithLibrary, createContractWithName,
 } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { createIsolationModeTokenVaultV1ActionsImpl } from '@dolomite-exchange/modules-base/test/utils/dolomite';
 import { CoreProtocolMantle } from 'packages/base/test/utils/core-protocols/core-protocol-mantle';
+import { setupTestMarket } from 'packages/base/test/utils/setup';
 import {
   getMNTIsolationModeVaultFactoryConstructorParams,
   getMNTRegistryConstructorParams,
@@ -20,14 +21,41 @@ import {
 } from '../src/mnt-constructors';
 import {
   IMNTIsolationModeVaultFactory,
-  IMNTRegistry,
+  IMNTRegistry, IWETH,
   MNTIsolationModeTokenVaultV1,
   MNTIsolationModeVaultFactory,
   MNTIsolationModeVaultFactory__factory,
   MNTRegistry,
   MNTRegistry__factory,
-  TestMNTIsolationModeTokenVaultV1,
+  TestMNTIsolationModeTokenVaultV1, TestWMNT,
 } from '../src/types';
+
+export async function setupWmntToken(core: CoreProtocolMantle): Promise<IWETH> {
+  if (process.env.COVERAGE === 'true') {
+    console.log('\tUsing TestWMNT for coverage...');
+    const wmnt = await createContractWithName<TestWMNT>('TestWMNT', []);
+    await core.chroniclePriceOracleV3.connect(core.governance).ownerInsertOrUpdateOracleToken(
+      wmnt.address,
+      await core.chroniclePriceOracleV3.getScribeByToken(core.tokens.wmnt.address),
+      false,
+    );
+    await core.oracleAggregatorV2.connect(core.governance).ownerInsertOrUpdateToken({
+      token: wmnt.address,
+      decimals: 18,
+      oracleInfos: await core.oracleAggregatorV2.getOraclesByToken(core.tokens.wmnt.address),
+    });
+    await setupTestMarket(
+      core,
+      wmnt,
+      false,
+      core.oracleAggregatorV2,
+    );
+
+    return wmnt;
+  }
+
+  return core.tokens.wmnt;
+}
 
 export async function createMNTRegistry(core: CoreProtocolMantle): Promise<MNTRegistry> {
   const implementation = await createContractWithAbi<MNTRegistry>(
@@ -56,12 +84,13 @@ export async function createTestMNTIsolationModeTokenVaultV1(): Promise<TestMNTI
 export async function createMNTIsolationModeVaultFactory(
   arbRegistry: IMNTRegistry | MNTRegistry,
   userVaultImplementation: MNTIsolationModeTokenVaultV1,
+  wmnt: IWETH,
   core: CoreProtocolMantle,
 ): Promise<MNTIsolationModeVaultFactory> {
   return createContractWithAbi<MNTIsolationModeVaultFactory>(
     MNTIsolationModeVaultFactory__factory.abi,
     MNTIsolationModeVaultFactory__factory.bytecode,
-    getMNTIsolationModeVaultFactoryConstructorParams(arbRegistry, userVaultImplementation, core),
+    getMNTIsolationModeVaultFactoryConstructorParams(arbRegistry, userVaultImplementation, wmnt, core),
   );
 }
 
