@@ -5,7 +5,6 @@ import {
 import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
@@ -13,7 +12,6 @@ import {
   deployPendlePtSystem,
   EncodedTransaction,
   prettyPrintEncodeAddIsolationModeMarket,
-  prettyPrintEncodeAddMarket,
   prettyPrintEncodeInsertPendlePtOracle,
 } from '../../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../utils/dry-run-utils';
@@ -34,31 +32,19 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
   const numMarkets = await core.dolomiteMargin.getNumMarkets();
 
   const transactions: EncodedTransaction[] = [];
-  const usdeMarketId = numMarkets.add(incrementor++);
   const ptUsdeMarketId = numMarkets.add(incrementor++);
 
   const usdeSystem = await deployPendlePtSystem(
     core,
-    'USDeJul2024',
-    core.pendleEcosystem.usdeJul2024.usdeMarket,
-    core.pendleEcosystem.usdeJul2024.ptOracle,
-    core.pendleEcosystem.usdeJul2024.ptUSDeToken,
-    core.pendleEcosystem.usdeJul2024.syUsdeToken,
+    'USDeDec2024',
+    core.pendleEcosystem.usdeDec2024.usdeMarket,
+    core.pendleEcosystem.usdeDec2024.ptOracle,
+    core.pendleEcosystem.usdeDec2024.ptUSDeToken,
+    core.pendleEcosystem.usdeDec2024.syUsdeToken,
     core.tokens.usde,
   );
 
   transactions.push(
-    ...(await prettyPrintEncodeAddMarket(
-      core,
-      core.tokens.usde,
-      core.oracleAggregatorV2,
-      core.interestSetters.linearStepFunction16L84U90OInterestSetter,
-      TargetCollateralization.Base,
-      TargetLiquidationPenalty.Base,
-      parseEther(`${15_000_000}`),
-      parseEther(`${10_000_000}`),
-      false,
-    )),
     await prettyPrintEncodeInsertPendlePtOracle(core, usdeSystem, core.tokens.usde),
     ...(await prettyPrintEncodeAddIsolationModeMarket(
       core,
@@ -69,7 +55,7 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
       ptUsdeMarketId,
       TargetCollateralization.Base,
       TargetLiquidationPenalty.Base,
-      parseEther(`${15_000_000}`),
+      parseEther(`${1_000_000}`),
     )),
   );
   return {
@@ -85,22 +71,7 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
     },
     scriptName: getScriptName(__filename),
     invariants: async () => {
-      assertHardhatInvariant((await core.dolomiteMargin.getNumMarkets()).eq(8), 'Invalid number of markets');
-
-      assertHardhatInvariant(
-        (await core.dolomiteMargin.getMarketTokenAddress(core.marketIds.usde)) === core.tokens.usde.address,
-        'Invalid USDe market ID',
-      );
-      assertHardhatInvariant(BigNumber.from(core.marketIds.usde).eq(usdeMarketId), 'Invalid USDe market ID');
-      assertHardhatInvariant(
-        (await core.dolomiteMargin.getMarketPriceOracle(core.marketIds.usde)) === core.oracleAggregatorV2.address,
-        'Invalid oracle for USDe',
-      );
-      assertHardhatInvariant(
-        (await core.dolomiteMargin.getMarketInterestSetter(core.marketIds.usde)) ===
-          core.interestSetters.linearStepFunction16L84U90OInterestSetter.address,
-        'Invalid interest setter USDe',
-      );
+      assertHardhatInvariant((await core.dolomiteMargin.getNumMarkets()).eq(11), 'Invalid number of markets');
 
       assertHardhatInvariant(
         (await core.dolomiteMargin.getMarketTokenAddress(ptUsdeMarketId)) === usdeSystem.factory.address,
@@ -118,7 +89,7 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
         await usdeSystem.factory.isTokenConverterTrusted(usdeSystem.wrapper.address),
         'Wrapper not trusted',
       );
-      console.log('\tPrice for USDe', (await core.dolomiteMargin.getMarketPrice(core.marketIds.usde)).value.toString());
+      console.log('\tPrice for USDe', (await core.dolomiteMargin.getMarketPrice(ptUsdeMarketId)).value.toString());
     },
   };
 }

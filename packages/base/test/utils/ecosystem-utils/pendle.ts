@@ -25,45 +25,48 @@ import {
 } from '@dolomite-exchange/modules-pendle/src/types';
 import { RegistryProxy, RegistryProxy__factory } from '../../../src/types';
 import {
-  PENDLE_E_ETH_APR_2024_MARKET_MAP,
+  PENDLE_MARKET_E_ETH_APR_2024_MAP,
+  PENDLE_MARKET_E_ETH_JUN_2024_MAP,
+  PENDLE_MARKET_E_ETH_SEP_2024_MAP,
+  PENDLE_MARKET_EZ_ETH_JUN_2024_MAP,
+  PENDLE_MARKET_EZ_ETH_SEP_2024_MAP,
+  PENDLE_MARKET_GLP_MAR_2024_MAP,
+  PENDLE_MARKET_GLP_SEP_2024_MAP,
+  PENDLE_MARKET_RETH_MAP,
+  PENDLE_MARKET_RS_ETH_APR_2024_MAP,
+  PENDLE_MARKET_RS_ETH_SEP_2024_MAP,
+  PENDLE_MARKET_USDE_DEC_2024_MAP,
+  PENDLE_MARKET_USDE_JUL_2024_MAP,
+  PENDLE_MARKET_WST_ETH_2024_MAP,
+  PENDLE_MARKET_WST_ETH_2025_MAP,
   PENDLE_PT_E_ETH_APR_2024_TOKEN_MAP,
-  PENDLE_E_ETH_JUN_2024_MARKET_MAP,
   PENDLE_PT_E_ETH_JUN_2024_TOKEN_MAP,
-  PENDLE_PT_EZ_ETH_JUN_2024_MARKET_MAP,
-  PENDLE_PT_EZ_ETH_JUN_2024_TOKEN_MAP,
-  PENDLE_GLP_MAR_2024_MARKET_MAP,
+  PENDLE_PT_E_ETH_SEP_2024_TOKEN_MAP,
+  PENDLE_PT_EZ_ETH_JUN_2024_MAP,
+  PENDLE_PT_EZ_ETH_SEP_2024_TOKEN_MAP,
   PENDLE_PT_GLP_MAR_2024_TOKEN_MAP,
-  PENDLE_GLP_SEP_2024_MARKET_MAP,
+  PENDLE_PT_GLP_SEP_2024_TOKEN_MAP,
   PENDLE_PT_ORACLE_MAP,
-  PENDLE_RETH_MARKET_MAP,
   PENDLE_PT_RETH_TOKEN_MAP,
-  PENDLE_RS_ETH_MARKET_MAP,
+  PENDLE_PT_RS_ETH_SEP_2024_TOKEN_MAP,
   PENDLE_PT_RS_ETH_TOKEN_MAP,
-  PENDLE_WST_ETH_2024_MARKET_MAP,
+  PENDLE_PT_USDE_DEC_2024_MAP,
+  PENDLE_PT_USDE_JUL_2024_MAP,
   PENDLE_PT_WST_ETH_2024_TOKEN_MAP,
-  PENDLE_WST_ETH_2025_MARKET_MAP,
   PENDLE_PT_WST_ETH_2025_TOKEN_MAP,
   PENDLE_ROUTER_MAP,
   PENDLE_ROUTER_V3_MAP,
   PENDLE_SY_EZ_ETH_TOKEN_MAP,
   PENDLE_SY_GLP_MAR_2024_TOKEN_MAP,
+  PENDLE_SY_GLP_SEP_2024_TOKEN_MAP,
   PENDLE_SY_RETH_TOKEN_MAP,
   PENDLE_SY_RS_ETH_TOKEN_MAP,
+  PENDLE_SY_USDE_DEC_2024_MAP,
+  PENDLE_SY_USDE_JUL_2024_MAP,
   PENDLE_SY_WE_ETH_TOKEN_MAP,
   PENDLE_SY_WST_ETH_TOKEN_MAP,
   PENDLE_YT_GLP_MAR_2024_TOKEN_MAP,
   PENDLE_YT_GLP_SEP_2024_TOKEN_MAP,
-  PENDLE_PT_GLP_SEP_2024_TOKEN_MAP,
-  PENDLE_SY_GLP_SEP_2024_TOKEN_MAP,
-  PENDLE_USDE_MARKET_MAP,
-  PENDLE_PT_USDE_TOKEN_MAP,
-  PENDLE_SY_USDE_TOKEN_MAP,
-  PENDLE_RS_ETH_SEP_2024_MARKET_MAP,
-  PENDLE_PT_RS_ETH_SEP_2024_TOKEN_MAP,
-  PENDLE_PT_EZ_ETH_SEP_2024_MARKET_MAP,
-  PENDLE_PT_EZ_ETH_SEP_2024_TOKEN_MAP,
-  PENDLE_E_ETH_SEP_2024_MARKET_MAP,
-  PENDLE_PT_E_ETH_SEP_2024_TOKEN_MAP,
 } from '../../../src/utils/constants';
 import { Network } from '../../../src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';
@@ -80,8 +83,14 @@ export interface PendleEcosystemMantle extends CorePendleEcosystem {
     ptOracle: IPendlePtOracle;
     usdeMarket: IPendlePtMarket;
     ptUSDeToken: IPendlePtToken;
+    syUsdeToken: IPendleSyToken;
   };
-  syUsdeToken: IPendleSyToken;
+  usdeDec2024: {
+    ptOracle: IPendlePtOracle;
+    usdeMarket: IPendlePtMarket;
+    ptUSDeToken: IPendlePtToken;
+    syUsdeToken: IPendleSyToken;
+  };
 }
 
 export interface PendleEcosystemArbitrumOne extends CorePendleEcosystem {
@@ -202,21 +211,43 @@ export async function createPendleEcosystemMantle(
         signer,
       ),
       usdeMarket: getContract(
-        PENDLE_USDE_MARKET_MAP[network] as string,
+        PENDLE_MARKET_USDE_JUL_2024_MAP[network] as string,
         IPendlePtMarket__factory.connect,
         signer,
       ),
       ptUSDeToken: getContract(
-        PENDLE_PT_USDE_TOKEN_MAP[network] as string,
+        PENDLE_PT_USDE_JUL_2024_MAP[network] as string,
         IPendlePtToken__factory.connect,
         signer,
       ),
+      syUsdeToken: getContract(
+        PENDLE_SY_USDE_JUL_2024_MAP[network] as string,
+        IPendleSyToken__factory.connect,
+        signer,
+      ),
     },
-    syUsdeToken: getContract(
-      PENDLE_SY_USDE_TOKEN_MAP[network] as string,
-      IPendleSyToken__factory.connect,
-      signer,
-    ),
+    usdeDec2024: {
+      ptOracle: getContract(
+        PENDLE_PT_ORACLE_MAP[network] as string,
+        IPendlePtOracle__factory.connect,
+        signer,
+      ),
+      usdeMarket: getContract(
+        PENDLE_MARKET_USDE_DEC_2024_MAP[network] as string,
+        IPendlePtMarket__factory.connect,
+        signer,
+      ),
+      ptUSDeToken: getContract(
+        PENDLE_PT_USDE_DEC_2024_MAP[network] as string,
+        IPendlePtToken__factory.connect,
+        signer,
+      ),
+      syUsdeToken: getContract(
+        PENDLE_SY_USDE_DEC_2024_MAP[network] as string,
+        IPendleSyToken__factory.connect,
+        signer,
+      ),
+    },
   };
 }
 
@@ -256,12 +287,12 @@ export async function createPendleEcosystemArbitrumOne(
         signer,
       ),
       ezEthMarket: getContract(
-        PENDLE_PT_EZ_ETH_JUN_2024_MARKET_MAP[network] as string,
+        PENDLE_MARKET_EZ_ETH_JUN_2024_MAP[network] as string,
         IPendlePtMarket__factory.connect,
         signer,
       ),
       ptEzEthToken: getContract(
-        PENDLE_PT_EZ_ETH_JUN_2024_TOKEN_MAP[network] as string,
+        PENDLE_PT_EZ_ETH_JUN_2024_MAP[network] as string,
         IPendlePtToken__factory.connect,
         signer,
       ),
@@ -283,7 +314,7 @@ export async function createPendleEcosystemArbitrumOne(
         signer,
       ),
       ezEthMarket: getContract(
-        PENDLE_PT_EZ_ETH_SEP_2024_MARKET_MAP[network] as string,
+        PENDLE_MARKET_EZ_ETH_SEP_2024_MAP[network] as string,
         IPendlePtMarket__factory.connect,
         signer,
       ),
@@ -305,7 +336,7 @@ export async function createPendleEcosystemArbitrumOne(
         signer,
       ),
       glpMarket: getContract(
-        PENDLE_GLP_MAR_2024_MARKET_MAP[network] as string,
+        PENDLE_MARKET_GLP_MAR_2024_MAP[network] as string,
         IPendlePtMarket__factory.connect,
         signer,
       ),
@@ -337,7 +368,7 @@ export async function createPendleEcosystemArbitrumOne(
     },
     glpSep2024: {
       glpMarket: getContract(
-        PENDLE_GLP_SEP_2024_MARKET_MAP[network] as string,
+        PENDLE_MARKET_GLP_SEP_2024_MAP[network] as string,
         IPendlePtMarket__factory.connect,
         signer,
       ),
@@ -374,7 +405,7 @@ export async function createPendleEcosystemArbitrumOne(
         signer,
       ),
       rEthMarket: getContract(
-        PENDLE_RETH_MARKET_MAP[network] as string,
+        PENDLE_MARKET_RETH_MAP[network] as string,
         IPendlePtMarket__factory.connect,
         signer,
       ),
@@ -391,7 +422,7 @@ export async function createPendleEcosystemArbitrumOne(
         signer,
       ),
       rsEthMarket: getContract(
-        PENDLE_RS_ETH_MARKET_MAP[network] as string,
+        PENDLE_MARKET_RS_ETH_APR_2024_MAP[network] as string,
         IPendlePtMarket__factory.connect,
         signer,
       ),
@@ -418,7 +449,7 @@ export async function createPendleEcosystemArbitrumOne(
         signer,
       ),
       rsEthMarket: getContract(
-        PENDLE_RS_ETH_SEP_2024_MARKET_MAP[network] as string,
+        PENDLE_MARKET_RS_ETH_SEP_2024_MAP[network] as string,
         IPendlePtMarket__factory.connect,
         signer,
       ),
@@ -445,7 +476,7 @@ export async function createPendleEcosystemArbitrumOne(
         signer,
       ),
       weEthMarket: getContract(
-        PENDLE_E_ETH_APR_2024_MARKET_MAP[network] as string,
+        PENDLE_MARKET_E_ETH_APR_2024_MAP[network] as string,
         IPendlePtMarket__factory.connect,
         signer,
       ),
@@ -462,7 +493,7 @@ export async function createPendleEcosystemArbitrumOne(
         signer,
       ),
       weEthMarket: getContract(
-        PENDLE_E_ETH_JUN_2024_MARKET_MAP[network] as string,
+        PENDLE_MARKET_E_ETH_JUN_2024_MAP[network] as string,
         IPendlePtMarket__factory.connect,
         signer,
       ),
@@ -489,7 +520,7 @@ export async function createPendleEcosystemArbitrumOne(
         signer,
       ),
       weEthMarket: getContract(
-        PENDLE_E_ETH_SEP_2024_MARKET_MAP[network] as string,
+        PENDLE_MARKET_E_ETH_SEP_2024_MAP[network] as string,
         IPendlePtMarket__factory.connect,
         signer,
       ),
@@ -516,7 +547,7 @@ export async function createPendleEcosystemArbitrumOne(
         signer,
       ),
       wstEthMarket: getContract(
-        PENDLE_WST_ETH_2024_MARKET_MAP[network] as string,
+        PENDLE_MARKET_WST_ETH_2024_MAP[network] as string,
         IPendlePtMarket__factory.connect,
         signer,
       ),
@@ -543,7 +574,7 @@ export async function createPendleEcosystemArbitrumOne(
         signer,
       ),
       wstEthMarket: getContract(
-        PENDLE_WST_ETH_2025_MARKET_MAP[network] as string,
+        PENDLE_MARKET_WST_ETH_2025_MAP[network] as string,
         IPendlePtMarket__factory.connect,
         signer,
       ),

@@ -27,7 +27,8 @@ import {
   MNTIsolationModeVaultFactory__factory,
   MNTRegistry,
   MNTRegistry__factory,
-  TestMNTIsolationModeTokenVaultV1, TestWMNT,
+  TestMNTIsolationModeTokenVaultV1,
+  TestWMNT,
 } from '../src/types';
 
 export async function setupWmntToken(core: CoreProtocolMantle): Promise<IWETH> {
