@@ -5,17 +5,18 @@ pragma solidity ^0.8.9;
 
 import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import { OnlyDolomiteMarginForUpgradeable } from "../helpers/OnlyDolomiteMarginForUpgradeable.sol";
-import { ReentrancyGuardUpgradeable } from "../helpers/ReentrancyGuardUpgradeable.sol";
 import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
+import { ReentrancyGuardUpgradeable } from "../helpers/ReentrancyGuardUpgradeable.sol";
 import { IDolomiteERC20 } from "../interfaces/IDolomiteERC20.sol";
+import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 import { InterestIndexLib } from "../lib/InterestIndexLib.sol";
 import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { DolomiteMarginMath } from "../protocol/lib/DolomiteMarginMath.sol";
-import { TypesLib } from "../protocol/lib/TypesLib.sol";
 import { Require } from "../protocol/lib/Require.sol";
+import { TypesLib } from "../protocol/lib/TypesLib.sol";
 
 
 /**
@@ -39,11 +40,11 @@ contract DolomiteERC20 is
 
     bytes32 private constant _FILE = "DolomiteERC20";
 
-    bytes32 private constant _METADATA_SLOT = bytes32(uint256(keccak256("eip1967.proxy.metadata")) - 1);
     bytes32 private constant _ALLOWANCES_SLOT = bytes32(uint256(keccak256("eip1967.proxy.allowances")) - 1);
+    bytes32 private constant _DOLOMITE_REGISTRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.dolomiteRegistry")) - 1); // solhint-disable-line max-line-length
     /// @dev mapping containing users that may receive token transfers
-    bytes32 private constant _VALID_RECEIVERS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.validReceivers")) - 1);
     bytes32 private constant _MARKET_ID_SLOT = bytes32(uint256(keccak256("eip1967.proxy.marketId")) - 1);
+    bytes32 private constant _METADATA_SLOT = bytes32(uint256(keccak256("eip1967.proxy.metadata")) - 1);
     bytes32 private constant _UNDERLYING_TOKEN_SLOT = bytes32(uint256(keccak256("eip1967.proxy.underlyingToken")) - 1);
 
     uint256 private constant _DEFAULT_ACCOUNT_NUMBER = 0;
@@ -69,12 +70,8 @@ contract DolomiteERC20 is
         __ReentrancyGuardUpgradeable__init();
     }
 
-    function ownerSetIsReceiver(address _receiver, bool _isEnabled) external onlyDolomiteMarginOwner(msg.sender) {
-        _enableReceiver(_receiver, _isEnabled);
-    }
-
-    function enableIsReceiver() external {
-        _enableReceiver(msg.sender, /* _isEnabled = */ true);
+    function initializeVersion3(address _dolomiteRegistry) external reinitializer(3) {
+        _setAddress(_DOLOMITE_REGISTRY_SLOT, _dolomiteRegistry);
     }
 
     function mint(uint256 _amount) external nonReentrant returns (uint256) {
@@ -84,9 +81,6 @@ contract DolomiteERC20 is
             _FILE,
             "Invalid amount"
         );
-
-        _enableReceiver(msg.sender, /* _isEnabled = */ true);
-        _enableReceiver(tx.origin, /* _isEnabled = */ true);
 
         IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
         IDolomiteStructs.AccountInfo memory account = IDolomiteStructs.AccountInfo({
@@ -124,9 +118,6 @@ contract DolomiteERC20 is
             _FILE,
             "Invalid amount"
         );
-
-        _enableReceiver(msg.sender, /* _isEnabled = */ true);
-        _enableReceiver(tx.origin, /* _isEnabled = */ true);
 
         IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
         IDolomiteStructs.AccountInfo memory account = IDolomiteStructs.AccountInfo({
@@ -168,8 +159,6 @@ contract DolomiteERC20 is
      */
     function transfer(address _to, uint256 _amount) public override returns (bool) {
         address owner = msg.sender;
-        _enableReceiver(msg.sender, /* _isEnabled = */ true);
-        _enableReceiver(tx.origin, /* _isEnabled = */ true);
         _transfer(owner, _to, _amount);
         return true;
     }
@@ -186,8 +175,6 @@ contract DolomiteERC20 is
      */
     function approve(address _spender, uint256 _amount) public override returns (bool) {
         address owner = msg.sender;
-        _enableReceiver(msg.sender, /* _isEnabled = */ true);
-        _enableReceiver(tx.origin, /* _isEnabled = */ true);
         _approve(owner, _spender, _amount);
         return true;
     }
@@ -214,7 +201,6 @@ contract DolomiteERC20 is
         uint256 _amount
     ) public override returns (bool) {
         address _spender = msg.sender;
-        _enableReceiver(msg.sender, /* _isEnabled = */ true);
         _spendAllowance(from, _spender, _amount);
         _transfer(from, to, _amount);
         return true;
@@ -253,7 +239,7 @@ contract DolomiteERC20 is
     }
 
     function isValidReceiver(address _receiver) public view returns (bool) {
-        return _getUint256FromMap(_VALID_RECEIVERS_SLOT, _receiver) == 1;
+        return !dolomiteRegistry().dolomiteAccountRegistry().isAccountInRegistry(_receiver);
     }
 
     function marketId() public view returns (uint256) {
@@ -262,6 +248,10 @@ contract DolomiteERC20 is
 
     function underlyingToken() public view returns (address) {
         return _getAddress(_UNDERLYING_TOKEN_SLOT);
+    }
+
+    function dolomiteRegistry() public view returns (IDolomiteRegistry) {
+        return IDolomiteRegistry(_getAddress(_DOLOMITE_REGISTRY_SLOT));
     }
 
     /**
@@ -311,19 +301,6 @@ contract DolomiteERC20 is
      */
     function allowance(address _owner, address _spender) public view override returns (uint256) {
         return _getUint256InNestedMap(_ALLOWANCES_SLOT, _owner, _spender);
-    }
-
-    /**
-     * @dev Sets the following `_receiver` is enabled or not.
-     */
-    function _enableReceiver(address _receiver, bool _isEnabled) internal {
-        bool previousValue = _getUint256FromMap(_VALID_RECEIVERS_SLOT, _receiver) == 1;
-        if (previousValue == _isEnabled) {
-            // No need to redundantly set storage and emit an event
-            return;
-        }
-        _setUint256InMap(_VALID_RECEIVERS_SLOT, _receiver, _isEnabled ? 1 : 0);
-        emit LogSetReceiver(_receiver, _isEnabled);
     }
 
     /**

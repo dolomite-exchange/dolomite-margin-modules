@@ -70,6 +70,8 @@ interface IUpgradeableAsyncIsolationModeWrapperTrader is IIsolationModeWrapperTr
         DepositInfo calldata _depositInfo
     ) external;
 
+    function emitDepositCancelled(bytes32 _key) external;
+
     function getDepositInfo(bytes32 _key) external view returns (DepositInfo memory);
 
     function VAULT_FACTORY() external view returns (IIsolationModeVaultFactory);
