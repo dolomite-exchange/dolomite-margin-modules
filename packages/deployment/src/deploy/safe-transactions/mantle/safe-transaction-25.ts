@@ -62,6 +62,7 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
     core,
     upload: {
       transactions,
+      addExecuteImmediatelyTransactions: true,
       chainId: core.network,
       version: '1.0',
       meta: {
