@@ -64,7 +64,8 @@ import {
   D_GM_BTC_SINGLE_SIDED_MAP,
   D_GM_ETH_MAP,
   D_GM_ETH_SINGLE_SIDED_MAP,
-  D_GM_LINK_MAP, D_GM_UNI_MAP,
+  D_GM_LINK_MAP,
+  D_GM_UNI_MAP,
   D_GMX_MAP,
   DAI_MAP,
   DFS_GLP_MAP,
@@ -212,6 +213,8 @@ export type CoreProtocolConfig<T extends NetworkType> = T extends Network.Arbitr
   ? CoreProtocolConfigArbitrumOne
   : T extends Network.Base
   ? CoreProtocolConfigBase
+  : T extends Network.Berachain
+  ? CoreProtocolConfigBerachain
   : T extends Network.Mantle
   ? CoreProtocolConfigMantle
   : T extends Network.PolygonZkEvm
