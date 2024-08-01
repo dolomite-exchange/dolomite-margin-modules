@@ -20,6 +20,8 @@
 
 pragma solidity ^0.8.9;
 
+import { IIsolationModeTokenVaultWithPayableCurrencyV1 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeTokenVaultWithPayableCurrencyV1.sol"; // solhint-disable-line
+
 
 /**
  * @title   IMNTIsolationModeTokenVaultV1
@@ -28,7 +30,7 @@ pragma solidity ^0.8.9;
  * @notice  This interface defines the functions that are available on the MNTIsolationModeTokenVaultV1 implementation
  *          contract for each user's proxy vault.
  */
-interface IMNTIsolationModeTokenVaultV1 {
+interface IMNTIsolationModeTokenVaultV1 is IIsolationModeTokenVaultWithPayableCurrencyV1 {
 
     event LastStakeTimestampSet(uint256 _timestamp);
     event IsCurrencyTransferSet(bool _isCurrencyTransfer);

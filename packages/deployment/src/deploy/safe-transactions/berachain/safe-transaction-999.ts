@@ -1,25 +1,14 @@
-import {
-  TargetCollateralization,
-  TargetLiquidationPenalty,
-} from '@dolomite-exchange/modules-base/src/utils/constructors/dolomite';
+import { IERC20, TestPriceOracle__factory } from '@dolomite-exchange/modules-base/src/types';
 import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
+import { CoreProtocolBerachain } from '@dolomite-exchange/modules-base/test/utils/core-protocols/core-protocol-berachain';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
-import { ADDRESS_ZERO, Network, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
-import {
-  EncodedTransaction,
-  prettyPrintEncodeAddMarket,
-  prettyPrintEncodedDataWithTypeSafety,
-} from '../../../utils/deploy-utils';
+import { BigNumberish } from 'ethers';
+import { Network } from 'packages/base/src/utils/no-deps-constants';
+import { EncodedTransaction, prettyPrintEncodedDataWithTypeSafety } from '../../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../utils/dry-run-utils';
 import getScriptName from '../../../utils/get-script-name';
-import { IERC20, IERC20Metadata__factory, TestPriceOracle__factory } from '@dolomite-exchange/modules-base/src/types';
 import ModuleDeployments from '../../deployments.json';
-import {
-  CoreProtocolBerachain,
-} from '@dolomite-exchange/modules-base/test/utils/core-protocols/core-protocol-berachain';
-import { BigNumberish } from 'ethers';
 
 async function encodeTestOracle(
   token: IERC20,
@@ -32,13 +21,10 @@ async function encodeTestOracle(
   );
 
   return [
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { testPriceOracle },
-      'testPriceOracle',
-      'setPrice',
-      [token.address, price],
-    ),
+    await prettyPrintEncodedDataWithTypeSafety(core, { testPriceOracle }, 'testPriceOracle', 'setPrice', [
+      token.address,
+      price,
+    ]),
   ];
 }
 
@@ -57,14 +43,10 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
 
   if (network === '80084') {
     console.log('\tSetting test prices for Bera Bartio...');
-    transactions.push(
-      ...await encodeTestOracle(
-        core.tokens.wbera,
-        '50000000000000000000',
-        core,
-      ),
-    );
+    transactions.push(...(await encodeTestOracle(core.tokens.wbera, '50000000000000000000', core)));
   }
+
+  console.log('payable', await core.depositWithdrawalProxy.WRAPPED_PAYABLE_TOKEN());
 
   return {
     core,

@@ -141,4 +141,8 @@ interface IDepositWithdrawalProxy {
         uint256 _amountPar,
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
     ) external;
+
+    function WRAPPED_PAYABLE_TOKEN() external view returns (address);
+
+    function PAYABLE_MARKET_ID() external view returns (uint256);
 }
