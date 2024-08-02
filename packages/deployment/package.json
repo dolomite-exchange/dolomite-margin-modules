@@ -1,6 +1,6 @@
 {
   "name": "@dolomite-exchange/modules-deployments",
-  "version": "0.0.22",
+  "version": "0.0.23",
   "scripts": {
     "build": "hardhat compile",
     "clean": "hardhat clean",
@@ -19,7 +19,8 @@
     "deploy:redstone-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts redstone",
     "execute:arbitrum": "NETWORK=arbitrum_one ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
     "execute:base": "NETWORK=base ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
-    "execute:bera": "NETWORK=bera ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
+    "execute:berachain": "NETWORK=berachain ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
+    "execute:golem-analyzer": "NETWORK=mainnet hardhat run src/deploy/other/golem-multisig-analyzer.ts",
     "execute:mantle": "NETWORK=mantle ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
     "execute:polygon_zkevm": "NETWORK=polygon_zkevm ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
     "execute:x_layer": "NETWORK=x_layer ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
@@ -28,7 +29,6 @@
     "verify:polygon_zkevm": "hardhat --network polygon_zkevm run src/utils/verify-contract.ts",
     "verify:contract": "hardhat --network $NETWORK run src/utils/verify-contract.ts"
   },
-  "private": false,
   "files": [
     "src/deploy/deployments.json"
   ],

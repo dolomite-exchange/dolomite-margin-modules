@@ -3,7 +3,8 @@ import { BigNumberish } from 'ethers';
 import { IChainlinkPriceOracleV1, IChainlinkPriceOracleV3, OracleAggregatorV2 } from 'packages/oracles/src/types';
 import {
   IBorrowPositionProxyV2,
-  IDepositWithdrawalProxy, IDolomiteAccountRegistry,
+  IDepositWithdrawalProxy,
+  IDolomiteAccountRegistry,
   IDolomiteRegistry,
   IERC20,
   IEventEmitterRegistry,
@@ -33,10 +34,11 @@ export interface LibraryMaps {
 export type WETHType<T extends NetworkType> = T extends Network.ArbitrumOne
   ? IWETH
   : T extends Network.Base ? IWETH
-    : T extends Network.Mantle ? IERC20
-      : T extends Network.PolygonZkEvm ? IWETH
-        : T extends Network.XLayer ? IERC20
-          : never;
+    : T extends Network.Berachain ? IERC20
+      : T extends Network.Mantle ? IERC20
+        : T extends Network.PolygonZkEvm ? IWETH
+          : T extends Network.XLayer ? IERC20
+            : never;
 
 export interface CoreProtocolTokens<T extends NetworkType> {
   usdc: IERC20;
@@ -48,6 +50,7 @@ export interface CoreProtocolMarketIds {
   usdc: BigNumberish;
   weth: BigNumberish;
   stablecoins: BigNumberish[];
+  stablecoinsWithUnifiedInterestRateModels: BigNumberish[];
 }
 
 export interface CoreProtocolParams<T extends NetworkType> {

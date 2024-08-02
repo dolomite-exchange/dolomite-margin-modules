@@ -8,6 +8,8 @@ import {
   IDolomiteRegistry__factory,
   IERC20__factory,
   IERC20Metadata__factory,
+  IGenericTraderProxyV1,
+  IGenericTraderProxyV1__factory,
   ILiquidatorAssetRegistry__factory,
   IPartiallyDelayedMultiSig__factory,
   RegistryProxy,
@@ -33,9 +35,13 @@ import {
 } from '@dolomite-exchange/modules-base/test/utils';
 import { DolomiteMargin } from '@dolomite-exchange/modules-base/test/utils/dolomite';
 import { getDolomiteMarginContract, getExpiryContract } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { getLinearStepFunctionInterestSetterConstructorParams } from '@dolomite-exchange/modules-interest-setters/src/interest-setters-constructors';
+import {
+  getLinearStepFunctionInterestSetterConstructorParams,
+} from '@dolomite-exchange/modules-interest-setters/src/interest-setters-constructors';
 import { TokenInfo } from '@dolomite-exchange/modules-oracles/src';
-import { getChainlinkPriceOracleV3ConstructorParams as getChainlinkPriceOracleV3ConstructorParams } from '@dolomite-exchange/modules-oracles/src/oracles-constructors';
+import {
+  getChainlinkPriceOracleV3ConstructorParams as getChainlinkPriceOracleV3ConstructorParams,
+} from '@dolomite-exchange/modules-oracles/src/oracles-constructors';
 import {
   IChainlinkAggregator__factory,
   OracleAggregatorV2,
@@ -43,6 +49,7 @@ import {
 } from '@dolomite-exchange/modules-oracles/src/types';
 import { parseEther } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
+import { CoreProtocolAbstract } from 'packages/base/test/utils/core-protocols/core-protocol-abstract';
 import ModuleDeployments from '../../deploy/deployments.json';
 import {
   deployContractAndSave,
@@ -59,7 +66,6 @@ import getScriptName from '../../utils/get-script-name';
 const handlerAddress = '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe'; // Level Initiator
 
 async function deployInterestSetters(): Promise<void> {
-
   await deployContractAndSave(
     'LinearStepFunctionInterestSetter',
     getLinearStepFunctionInterestSetterConstructorParams(parseEther('0.06'), parseEther('0.94'), parseEther('0.90')),
@@ -319,7 +325,8 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     const foundDolomiteAccountRegistryAddress = await dolomiteRegistry.dolomiteAccountRegistry();
     needsRegistryDolomiteAccountRegistryEncoding =
       foundDolomiteAccountRegistryAddress !== dolomiteAccountRegistryProxy.address;
-  } catch (e) {}
+  } catch (e) {
+  }
 
   let needsRegistryMigratorEncoding = true;
   let needsRegistryOracleAggregatorEncoding = true;
@@ -341,7 +348,8 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     } else if (foundOracleAggregatorAddress === oracleAggregator.address) {
       needsRegistryOracleAggregatorEncoding = false;
     }
-  } catch (e) {}
+  } catch (e) {
+  }
 
   const isolationModeFreezableLiquidatorProxyAddress = await deployContractAndSave(
     'IsolationModeFreezableLiquidatorProxy',
@@ -375,7 +383,16 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
 
   await deployInterestSetters();
 
+  if (network === '80084') {
+    // Berachain testnet
+    await deployContractAndSave(
+      'TestPriceOracle',
+      [],
+    );
+  }
+
   // We can't set up the core protocol here because there are too many missing contracts/context
+  const genericTraderAddress = CoreDeployments.GenericTraderProxyV1[network].address;
   const governanceAddress = await dolomiteMargin.connect(hhUser1).owner();
   const governance = await impersonateOrFallback(governanceAddress, true, hhUser1);
   const core = {
@@ -384,6 +401,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     dolomiteRegistry,
     hhUser1,
     delayedMultiSig: IPartiallyDelayedMultiSig__factory.connect(governanceAddress, governance),
+    genericTraderProxy: IGenericTraderProxyV1__factory.connect(genericTraderAddress, governance),
   } as any;
 
   if ((await dolomiteRegistryProxy.implementation()) !== registryImplementationAddress) {
@@ -436,6 +454,19 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
       await prettyPrintEncodedDataWithTypeSafety(core, { eventEmitterProxy }, 'eventEmitterProxy', 'upgradeTo', [
         eventEmitterRegistryImplementation.address,
       ]),
+    );
+  }
+
+  const genericTraderProxy = core.genericTraderProxy as IGenericTraderProxyV1;
+  if ((await genericTraderProxy.EVENT_EMITTER_REGISTRY()) !== eventEmitterProxy.address) {
+    transactions.push(
+      await prettyPrintEncodedDataWithTypeSafety(
+        core,
+        { genericTraderProxy },
+        'genericTraderProxy',
+        'ownerSetEventEmitterRegistry',
+        [eventEmitterProxy.address],
+      ),
     );
   }
 
@@ -506,12 +537,17 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
         CoreDeployments.PartiallyDelayedMultiSig[network].address,
         hhUser1,
       ),
-    } as any,
-    invariants: async () => {},
+      config: {
+        network,
+      },
+    } as CoreProtocolAbstract<T> as any,
+    invariants: async () => {
+    },
     scriptName: getScriptName(__filename),
     upload: {
       transactions,
       chainId: network,
+      addExecuteImmediatelyTransactions: true,
       meta: {
         name: 'Dolomite Ecosystem',
         txBuilderVersion: TRANSACTION_BUILDER_VERSION,

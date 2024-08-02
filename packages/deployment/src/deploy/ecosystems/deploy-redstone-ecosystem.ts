@@ -14,8 +14,9 @@ import {
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../utils/dry-run-utils';
 import getScriptName from '../../utils/get-script-name';
 
-async function main(): Promise<DryRunOutput<Network.Mantle>> {
-  const network = await getAndCheckSpecificNetwork(Network.Mantle);
+async function main(): Promise<DryRunOutput<Network.Berachain>> {
+  const network = await getAndCheckSpecificNetwork(Network.Berachain);
+
   const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
 
   const redstoneAddress = await deployContractAndSave(

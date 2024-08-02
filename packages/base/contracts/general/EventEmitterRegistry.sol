@@ -265,6 +265,20 @@ contract EventEmitterRegistry is
         emit AsyncWithdrawalCancelled(_key, _token);
     }
 
+    function emitDistributorRegistered(
+        address _oTokenAddress,
+        address _pairToken,
+        address _paymentToken
+    )
+        external
+        onlyDolomiteMarginGlobalOperator(msg.sender)
+    {
+        // The pair token and the payment token must be valid markets
+        DOLOMITE_MARGIN().getMarketIdByTokenAddress(_pairToken);
+        DOLOMITE_MARGIN().getMarketIdByTokenAddress(_paymentToken);
+        emit DistributorRegistered(_oTokenAddress, _pairToken, _paymentToken);
+    }
+
     function emitRewardClaimed(
         address _user,
         uint256 _epoch,

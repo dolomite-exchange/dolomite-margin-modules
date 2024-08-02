@@ -32,9 +32,9 @@ networkNames.forEach((networkName) => {
   const filePath = path.resolve(__dirname, `deploy-${ecosystemName}-ecosystem.ts`);
   if (!skipDryRun) {
     console.log('');
-    console.log('===========================================================');
-    console.log('==================== Executing Dry Run ====================');
-    console.log('===========================================================');
+    console.log(`===========================================================${'='.repeat(4 + networkName.length)}`);
+    console.log(`==================== Executing Dry Run (${networkName}) ====================`);
+    console.log(`===========================================================${'='.repeat(4 + networkName.length)}`);
     console.log('');
     try {
       execSync(`NETWORK=${networkName} hardhat --network hardhat run ${filePath}`, { stdio: 'inherit' });
@@ -46,9 +46,9 @@ networkNames.forEach((networkName) => {
 
   if (!dryRunOnly) {
     console.log('');
-    console.log('===========================================================');
-    console.log('==================== Executing Real Run ===================');
-    console.log('===========================================================');
+    console.log(`===========================================================${'='.repeat(4 + networkName.length)}`);
+    console.log(`==================== Executing Real Run (${networkName}) ====================`);
+    console.log(`===========================================================${'='.repeat(4 + networkName.length)}`);
     console.log('');
     try {
       execSync(`NETWORK=${networkName} hardhat --network ${networkName} run ${filePath}`, { stdio: 'inherit' });

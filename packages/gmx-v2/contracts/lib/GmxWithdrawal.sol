@@ -66,6 +66,7 @@ library GmxWithdrawal {
         uint256 minLongTokenAmount;
         uint256 minShortTokenAmount;
         uint256 updatedAtBlock;
+        uint256 updatedAtTime;
         uint256 executionFee;
         uint256 callbackGasLimit;
     }

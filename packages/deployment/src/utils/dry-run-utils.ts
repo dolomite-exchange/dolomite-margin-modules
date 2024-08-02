@@ -111,7 +111,7 @@ async function doStuffInternal<T extends NetworkType>(executionFn: () => Promise
         return;
       }
 
-      if (result.upload.addExecuteImmediatelyTransactions) {
+      if (result.upload.addExecuteImmediatelyTransactions && result.upload.transactions.length > 0) {
         let transactionCount = (await result.core.delayedMultiSig.transactionCount()).toNumber();
         const submitTransactionMethodId = '0xc6427474';
         const transactionIds: number[] = [];

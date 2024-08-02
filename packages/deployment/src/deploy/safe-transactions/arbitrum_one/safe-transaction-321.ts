@@ -34,7 +34,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     console.log('\tTransactions executed');
 
     const scribe = IChronicleScribe__factory.connect(
-      CHRONICLE_PRICE_SCRIBES_MAP[network][core.tokens.usdm.address].scribeAddress,
+      CHRONICLE_PRICE_SCRIBES_MAP[network][core.tokens.wusdm.address].scribeAddress,
       core.governance,
     );
     const toller = await impersonate((await scribe.authed())[0], true);
@@ -46,7 +46,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   transactions.push(
     ...(await prettyPrintEncodeAddMarket(
       core,
-      core.tokens.usdm,
+      core.tokens.wusdm,
       core.oracleAggregatorV2,
       core.interestSetters.linearStepFunction8L92U90OInterestSetter,
       TargetCollateralization.Base,
