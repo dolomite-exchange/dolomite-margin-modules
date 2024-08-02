@@ -118,7 +118,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
     )
     external
     onlyVaultOwner(msg.sender) {
-        _multicall(_calls);
+        IsolationModeTokenVaultV1ActionsImpl.multicall(_calls, dolomiteRegistry());
     }
 
     function depositIntoVaultForDolomiteMargin(
@@ -425,24 +425,6 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
         );
 
         _setUint256(_REENTRANCY_GUARD_SLOT, _NOT_ENTERED);
-    }
-
-    function _multicall(bytes[] memory _calls) internal {
-        bytes4[] memory allowedSelectors = dolomiteRegistry().isolationModeMulticallFunctions();
-        uint256 len = _calls.length;
-
-        for (uint256 i; i < len; ++i) {
-            Require.that(
-                IsolationModeTokenVaultV1ActionsImpl.selectorBinarySearch(
-                    allowedSelectors,
-                    abi.decode(_calls[i], (bytes4))
-                ),
-                _FILE,
-                "Disallowed multicall function"
-            );
-
-            SafeDelegateCallLib.safeDelegateCall(address(this), _calls[i]);
-        }
     }
 
     function _depositIntoVaultForDolomiteMargin(
