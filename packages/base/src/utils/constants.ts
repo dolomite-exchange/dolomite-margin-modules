@@ -172,6 +172,13 @@ export const DPT_EZ_ETH_JUN_2024_MAP: Record<Network.ArbitrumOne, TokenWithMarke
   },
 };
 
+export const DPT_EZ_ETH_SEP_2024_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0x9Fb5a64Ce2F659a6039aa57d45975fC097b3F373',
+    marketId: 51,
+  },
+};
+
 export const DPT_GLP_MAR_2024_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x7b07E78561a3C2C1Eade652A2a92Da150743F4D7',
@@ -186,6 +193,13 @@ export const DPT_R_ETH_JUN_2025_MAP: Record<Network.ArbitrumOne, TokenWithMarket
   },
 };
 
+export const DPT_RS_ETH_SEP_2024_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0xCeC868060a724199c0fbf62e61449175690a55bD',
+    marketId: 52,
+  },
+};
+
 export const DPT_WE_ETH_APR_2024_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0xa2e14377fA6ce3556E2248559E85dc44260e362f',
@@ -197,6 +211,13 @@ export const DPT_WE_ETH_JUN_2024_MAP: Record<Network.ArbitrumOne, TokenWithMarke
   [Network.ArbitrumOne]: {
     address: '0x6Cc56e9cA71147D40b10a8cB8cBe911C1Faf4Cf8',
     marketId: 42,
+  },
+};
+
+export const DPT_WE_ETH_SEP_2024_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0x4B82bd687042c4Ea68A2A45b8204dA74be0FB493',
+    marketId: 50,
   },
 };
 
