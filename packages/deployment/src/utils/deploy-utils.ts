@@ -287,6 +287,7 @@ export function getOldDeploymentVersionNamesByDeploymentKey(nameWithoutVersionPo
 }
 
 let nonce: number | undefined = undefined;
+
 export async function deployContractAndSave(
   contractName: string,
   args: ConstructorArgument[],
@@ -656,7 +657,8 @@ async function getFormattedTokenName<T extends NetworkType>(
   const token = IERC20Metadata__factory.connect(tokenAddress, core.hhUser1);
   try {
     mostRecentTokenDecimals = await token.decimals();
-  } catch (e) {}
+  } catch (e) {
+  }
 
   const cachedName = addressToNameCache[tokenAddress.toString().toLowerCase()];
   if (typeof cachedName !== 'undefined') {
@@ -782,9 +784,9 @@ export async function prettyPrintEncodedDataWithTypeSafety<
     const repeatLength = 76 + (counter - 1).toString().length + key.toString().length + methodName.toString().length;
     console.log(''); // add a new line
     console.log(
-      `=================================== ${counter++} - ${key}.${methodName} ===================================`,
+      `=================================== ${counter++} - ${String(key)}.${String(methodName)} ===================================`,
     );
-    console.log('Readable:\t', `${key}.${methodName}(\n\t\t\t${mappedArgs.join(' ,\n\t\t\t')}\n\t\t)`);
+    console.log('Readable:\t', `${String(key)}.${String(methodName)}(\n\t\t\t${mappedArgs.join(' ,\n\t\t\t')}\n\t\t)`);
     console.log(
       'To:\t\t',
       (await getReadableArg(core, ParamType.fromString('address to'), transaction.to)).substring(13),

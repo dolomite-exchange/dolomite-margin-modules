@@ -43,7 +43,7 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
     core.pendleEcosystem.usdeJul2024.usdeMarket,
     core.pendleEcosystem.usdeJul2024.ptOracle,
     core.pendleEcosystem.usdeJul2024.ptUSDeToken,
-    core.pendleEcosystem.syUsdeToken,
+    core.pendleEcosystem.usdeJul2024.syUsdeToken,
     core.tokens.usde,
   );
 
