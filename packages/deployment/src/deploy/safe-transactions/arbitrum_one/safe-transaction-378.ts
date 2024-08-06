@@ -9,7 +9,7 @@ import getScriptName from '../../../utils/get-script-name';
 
 /**
  * This script encodes the following transactions:
- * - Sets the liquidator for the PT-eETH token
+ * - Update the interest rate model for PENDLE
  */
 async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
@@ -19,10 +19,10 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(
       core,
-      { liquidatorAssetRegistry: core.liquidatorAssetRegistry },
-      'liquidatorAssetRegistry',
-      'ownerAddLiquidatorToAssetWhitelist',
-      [core.marketIds.dPtWeEthApr2024, core.liquidatorProxyV4.address],
+      { dolomiteMargin: core.dolomiteMargin },
+      'dolomiteMargin',
+      'ownerSetInterestSetter',
+      [core.marketIds.pendle, core.interestSetters.linearStepFunction16L84U70OInterestSetter.address],
     ),
   );
 
@@ -36,11 +36,9 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     },
     invariants: async () => {
       assertHardhatInvariant(
-        await core.liquidatorAssetRegistry.isAssetWhitelistedForLiquidation(
-          core.marketIds.dPtWeEthApr2024,
-          core.liquidatorProxyV4.address,
-        ),
-        'Asset not whitelisted',
+        (await core.dolomiteMargin.getMarketInterestSetter(core.marketIds.pendle)) ===
+          core.interestSetters.linearStepFunction16L84U70OInterestSetter.address,
+        'Invalid interest setter',
       );
     },
   };
