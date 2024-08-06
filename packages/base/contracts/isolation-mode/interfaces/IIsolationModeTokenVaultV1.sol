@@ -57,6 +57,12 @@ interface IIsolationModeTokenVaultV1 {
     function initialize() external;
 
     /**
+     * @notice  End-user function for calling more than one vault function at a time. Should only
+     *          be executable by the vault owner.
+     */
+    function multicall(bytes[] calldata _calls) external;
+
+    /**
      * @notice  End-user function for depositing the vault factory's underlying token into DolomiteMargin. Should only
      *          be executable by the vault owner OR the vault factory.
      */
