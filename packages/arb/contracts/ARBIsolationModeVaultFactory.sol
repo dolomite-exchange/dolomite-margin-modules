@@ -28,7 +28,7 @@ import { IARBRegistry } from "./interfaces/IARBRegistry.sol";
 
 
 /**
- * @title   ARBIsolationModeVaultFactory
+ * @title   MNTIsolationModeVaultFactory.sol
  * @author  Dolomite
  *
  * @notice  The wrapper around the GMX token that is used to create user vaults and manage the entry points that a
@@ -61,6 +61,7 @@ contract ARBIsolationModeVaultFactory is
         _arb,
         _borrowPositionProxy,
         _userVaultImplementation,
+        address(IARBRegistry(_arbRegistry).dolomiteRegistry()),
         _dolomiteMargin
     ) {
         arbRegistry = IARBRegistry(_arbRegistry);

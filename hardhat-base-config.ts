@@ -15,6 +15,10 @@ import path from 'path';
 dotenv.config({ path: path.resolve(process.cwd(), '../../.env') });
 
 // RPC URLs
+const mainnetWeb3Url = process.env.MAINNET_WEB3_PROVIDER_URL;
+if (!mainnetWeb3Url) {
+  throw new Error('No MAINNET_WEB3_PROVIDER_URL provided!');
+}
 const arbitrumOneWeb3Url = process.env.ARBITRUM_ONE_WEB3_PROVIDER_URL;
 if (!arbitrumOneWeb3Url) {
   throw new Error('No ARBITRUM_ONE_WEB3_PROVIDER_URL provided!');
@@ -22,6 +26,10 @@ if (!arbitrumOneWeb3Url) {
 const baseWeb3Url = process.env.BASE_WEB3_PROVIDER_URL;
 if (!baseWeb3Url) {
   throw new Error('No BASE_WEB3_PROVIDER_URL provided!');
+}
+const berachainWeb3Url = process.env.BERACHAIN_WEB3_PROVIDER_URL;
+if (!berachainWeb3Url) {
+  throw new Error('No BERACHAIN_WEB3_PROVIDER_URL provided!');
 }
 const mantleWeb3Url = process.env.MANTLE_WEB3_PROVIDER_URL;
 if (!mantleWeb3Url) {
@@ -44,6 +52,10 @@ if (!arbiscanApiKey) {
 const basescanApiKey = process.env.BASESCAN_API_KEY;
 if (!basescanApiKey) {
   throw new Error('No BASESCAN_API_KEY provided!');
+}
+const berascanApiKey = process.env.BERASCAN_API_KEY;
+if (!berascanApiKey) {
+  throw new Error('No BERASCAN_API_KEY provided!');
 }
 const mantlescanApiKey = process.env.MANTLESCAN_API_KEY;
 if (!mantlescanApiKey) {
@@ -74,6 +86,12 @@ export const base_config: HardhatUserConfig = {
         },
       },
     },
+    mainnet: {
+      chainId: 1,
+      url: mainnetWeb3Url,
+      gas: 30_000_000, // 30M gas
+      accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
+    },
     [NetworkName.ArbitrumOne]: {
       chainId: parseInt(Network.ArbitrumOne, 10),
       url: arbitrumOneWeb3Url,
@@ -83,6 +101,12 @@ export const base_config: HardhatUserConfig = {
     [NetworkName.Base]: {
       chainId: parseInt(Network.Base, 10),
       url: baseWeb3Url,
+      gas: 20_000_000, // 20M gas
+      accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
+    },
+    [NetworkName.Berachain]: {
+      chainId: parseInt(Network.Berachain, 10),
+      url: berachainWeb3Url,
       gas: 20_000_000, // 20M gas
       accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
     },
@@ -136,9 +160,6 @@ export const base_config: HardhatUserConfig = {
   gasReporter: {
     enabled: process.env.REPORT_GAS === 'true',
   },
-  tracer: {
-    tasks: ['run']
-  },
   typechain: {
     outDir: 'src/types',
     target: 'ethers-v5',
@@ -148,6 +169,7 @@ export const base_config: HardhatUserConfig = {
     apiKey: {
       [NetworkName.ArbitrumOne]: arbiscanApiKey,
       [NetworkName.Base]: basescanApiKey,
+      [NetworkName.Berachain]: berascanApiKey,
       [NetworkName.Mantle]: mantlescanApiKey,
       [NetworkName.PolygonZkEvm]: polygonscanApiKey,
       [NetworkName.XLayer]: xLayerApiKey,
@@ -167,6 +189,14 @@ export const base_config: HardhatUserConfig = {
         urls: {
           apiURL: 'https://api.basescan.org/api',
           browserURL: 'https://basescan.org/',
+        },
+      },
+      {
+        network: NetworkName.Berachain,
+        chainId: parseInt(Network.Berachain, 10),
+        urls: {
+          apiURL: 'https://api.routescan.io/v2/network/testnet/evm/80084/etherscan/api',
+          browserURL: 'https://bartio.beratrail.io/address',
         },
       },
       {
