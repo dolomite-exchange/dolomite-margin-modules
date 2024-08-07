@@ -150,6 +150,7 @@ export async function createGmxV2IsolationModeVaultFactory(
   gmToken: GmToken,
   userVaultImplementation: GmxV2IsolationModeTokenVaultV1,
   executionFee: BigNumberish,
+  longTokenListed: boolean = true,
 ): Promise<GmxV2IsolationModeVaultFactory> {
   const artifact = await createArtifactFromWorkspaceIfNotExists('GmxV2IsolationModeVaultFactory');
   return createContractWithLibraryAndArtifact<GmxV2IsolationModeVaultFactory>(
@@ -163,6 +164,7 @@ export async function createGmxV2IsolationModeVaultFactory(
       gmToken,
       userVaultImplementation,
       executionFee,
+      longTokenListed
     ),
   );
 }
@@ -176,6 +178,7 @@ export async function createTestGmxV2IsolationModeVaultFactory(
   gmToken: GmToken,
   userVaultImplementation: GmxV2IsolationModeTokenVaultV1,
   executionFee: BigNumberish,
+  longTokenListed: boolean = true,
 ): Promise<TestGmxV2IsolationModeVaultFactory> {
   const artifact = await createArtifactFromWorkspaceIfNotExists('TestGmxV2IsolationModeVaultFactory');
   return createContractWithLibraryAndArtifact<TestGmxV2IsolationModeVaultFactory>(
@@ -189,6 +192,7 @@ export async function createTestGmxV2IsolationModeVaultFactory(
       gmToken,
       userVaultImplementation,
       executionFee,
+      longTokenListed
     ),
   );
 }
@@ -211,6 +215,7 @@ export async function createGmxV2IsolationModeUnwrapperTraderV2(
   dGM: IGmxV2IsolationModeVaultFactory | GmxV2IsolationModeVaultFactory,
   gmxV2Library: GmxV2Library,
   gmxV2Registry: IGmxV2Registry | GmxV2Registry,
+  longTokenListed: boolean = true,
 ): Promise<GmxV2IsolationModeUnwrapperTraderV2> {
   const implementation = await createGmxV2IsolationModeUnwrapperTraderV2Implementation(core, gmxV2Library);
   const proxy = await createContractWithAbi<IsolationModeTraderProxy>(
@@ -221,6 +226,7 @@ export async function createGmxV2IsolationModeUnwrapperTraderV2(
       implementation,
       dGM,
       gmxV2Registry,
+      longTokenListed
     ),
   );
 
@@ -233,6 +239,7 @@ export async function createTestGmxV2IsolationModeUnwrapperTraderV2(
   gmxV2Library: GmxV2Library,
   safeDelegateCallLibrary: BaseContract,
   gmxV2Registry: IGmxV2Registry | GmxV2Registry,
+  longTokenListed: boolean = true,
 ): Promise<TestGmxV2IsolationModeUnwrapperTraderV2> {
   const artifact = await createArtifactFromWorkspaceIfNotExists('TestGmxV2IsolationModeUnwrapperTraderV2');
   const libraries = await createAsyncIsolationModeUnwrapperTraderImpl();
@@ -250,6 +257,7 @@ export async function createTestGmxV2IsolationModeUnwrapperTraderV2(
       implementation,
       dGM,
       gmxV2Registry,
+      longTokenListed
     ),
   );
 
@@ -274,6 +282,7 @@ export async function createGmxV2IsolationModeWrapperTraderV2(
   dGM: IGmxV2IsolationModeVaultFactory | GmxV2IsolationModeVaultFactory,
   library: GmxV2Library,
   gmxV2Registry: IGmxV2Registry | GmxV2Registry,
+  longTokenListed: boolean = true,
 ): Promise<GmxV2IsolationModeWrapperTraderV2> {
   const implementation = await createGmxV2IsolationModeWrapperTraderV2Implementation(core, library);
   const proxy = await createContractWithAbi<IsolationModeTraderProxy>(
@@ -284,6 +293,7 @@ export async function createGmxV2IsolationModeWrapperTraderV2(
       implementation,
       dGM,
       gmxV2Registry,
+      longTokenListed,
     ),
   );
   return GmxV2IsolationModeWrapperTraderV2__factory.connect(proxy.address, core.hhUser1);

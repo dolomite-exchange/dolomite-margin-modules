@@ -51,6 +51,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     // =====================================================
 
     bytes32 private constant _FILE = "GmxV2IsolationModeUnwrapperV2";
+    bool public CHECK_LONG_TOKEN;
 
     // =====================================================
     // ===================== Modifiers =====================
@@ -76,10 +77,12 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     function initialize(
         address _dGM,
         address _dolomiteMargin,
-        address _gmxV2Registry
+        address _gmxV2Registry,
+        bool _checkLongToken
     )
     external initializer {
         _initializeUnwrapperTrader(_dGM, _gmxV2Registry, _dolomiteMargin);
+        CHECK_LONG_TOKEN = _checkLongToken;
     }
 
     function vaultInitiateUnwrapping(
@@ -182,11 +185,13 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     )
     public
     view
+    virtual
     override(UpgradeableAsyncIsolationModeUnwrapperTrader, IIsolationModeUnwrapperTraderV2)
     returns (bool) {
         return GmxV2Library.isValidInputOrOutputToken(
             IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())),
-            _outputToken
+            _outputToken,
+            CHECK_LONG_TOKEN
         );
     }
 

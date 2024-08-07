@@ -127,13 +127,13 @@ contract GmxV2MarketTokenPriceOracle is IGmxV2MarketTokenPriceOracle, OnlyDolomi
     function _getCurrentPrice(address _token) internal view returns (uint256) {
         IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(_token);
 
-        uint256 longTokenPrice = DOLOMITE_MARGIN().getMarketPrice(factory.LONG_TOKEN_MARKET_ID()).value;
+        uint256 longTokenPrice = REGISTRY.dolomiteRegistry().oracleAggregator().getPrice(factory.LONG_TOKEN()).value;
         GmxPrice.PriceProps memory longTokenPriceProps = GmxPrice.PriceProps({
             min: _adjustDownForBasisPoints(longTokenPrice, PRICE_DEVIATION_BP) / GMX_DECIMAL_ADJUSTMENT,
             max: _adjustUpForBasisPoints(longTokenPrice, PRICE_DEVIATION_BP) / GMX_DECIMAL_ADJUSTMENT
         });
 
-        uint256 shortTokenPrice = DOLOMITE_MARGIN().getMarketPrice(factory.SHORT_TOKEN_MARKET_ID()).value;
+        uint256 shortTokenPrice = REGISTRY.dolomiteRegistry().oracleAggregator().getPrice(factory.SHORT_TOKEN()).value;
         GmxPrice.PriceProps memory shortTokenPriceProps = GmxPrice.PriceProps({
             min: _adjustDownForBasisPoints(shortTokenPrice, PRICE_DEVIATION_BP) / GMX_DECIMAL_ADJUSTMENT,
             max: _adjustUpForBasisPoints(shortTokenPrice, PRICE_DEVIATION_BP) / GMX_DECIMAL_ADJUSTMENT

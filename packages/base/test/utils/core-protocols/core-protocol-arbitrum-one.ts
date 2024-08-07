@@ -74,6 +74,7 @@ interface CoreProtocolTokensArbitrumOne extends CoreProtocolTokens<Network.Arbit
   radiant: IERC20;
   pendle: IERC20;
   size: IERC20;
+  sol: IERC20;
   stEth: IERC20;
   uni: IERC20;
   usdm: IERC20;

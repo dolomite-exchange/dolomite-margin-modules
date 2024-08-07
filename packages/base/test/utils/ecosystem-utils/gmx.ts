@@ -89,6 +89,7 @@ import {
   GMX_REWARD_ROUTER_V2_MAP,
   GMX_REWARD_ROUTER_V3_MAP,
   GMX_ROUTER_MAP,
+  GMX_SOL_USD_MARKET_TOKEN_MAP,
   GMX_UNI_USD_MARKET_TOKEN_MAP,
   GMX_VAULT_MAP,
   GMX_WITHDRAWAL_HANDLER_MAP,
@@ -98,6 +99,7 @@ import {
   S_GLP_MAP,
   S_GMX_MAP,
   SBF_GMX_MAP,
+  SOL_MAP,
   UNI_MAP,
   V_GLP_MAP,
   V_GMX_MAP,
@@ -163,6 +165,7 @@ export interface GmxEcosystemV2 {
     btcUsd: GmToken;
     ethUsd: GmToken;
     linkUsd: GmToken;
+    solUsd: GmToken;
     uniUsd: GmToken;
     btc: GmToken;
     eth: GmToken;
@@ -317,6 +320,14 @@ export async function createGmxEcosystemV2(
         longToken: IERC20__factory.connect(LINK_MAP[network]!.address, signer),
         shortToken: IERC20__factory.connect(NATIVE_USDC_MAP[network].address, signer),
         longMarketId: LINK_MAP[network]!.marketId,
+        shortMarketId: NATIVE_USDC_MAP[network].marketId,
+      },
+      solUsd: {
+        marketToken: getContract(GMX_SOL_USD_MARKET_TOKEN_MAP[network], IGmxMarketToken__factory.connect, signer),
+        indexToken: IERC20__factory.connect(SOL_MAP[network].address, signer),
+        longToken: IERC20__factory.connect(SOL_MAP[network].address, signer),
+        shortToken: IERC20__factory.connect(NATIVE_USDC_MAP[network].address, signer),
+        longMarketId: -1,
         shortMarketId: NATIVE_USDC_MAP[network].marketId,
       },
       uniUsd: {

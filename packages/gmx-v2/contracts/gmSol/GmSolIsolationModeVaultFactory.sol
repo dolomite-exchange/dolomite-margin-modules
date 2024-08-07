@@ -24,17 +24,18 @@ pragma solidity ^0.8.9;
 import { SimpleIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/SimpleIsolationModeVaultFactory.sol";
 import { AsyncFreezableIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/AsyncFreezableIsolationModeVaultFactory.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import { GmxV2Library } from "./GmxV2Library.sol";
-import { IGmxV2IsolationModeVaultFactory } from "./interfaces/IGmxV2IsolationModeVaultFactory.sol";
-import { IGmxV2Registry } from "./interfaces/IGmxV2Registry.sol";
+import { GmxV2Library } from "../GmxV2Library.sol";
+import { IGmxV2IsolationModeVaultFactory } from "../interfaces/IGmxV2IsolationModeVaultFactory.sol";
+import { IGmxV2Registry } from "../interfaces/IGmxV2Registry.sol";
+import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 // solhint-enable max-line-length
 
 
 /**
- * @title   GmxV2IsolationModeVaultFactory
+ * @title   GmSolIsolationModeVaultFactory
  * @author  Dolomite
  *
- * @notice  The wrapper around the GM token that is used to create user vaults and manage the entry points that a
+ * @notice  The wrapper around the GMSol token that is used to create user vaults and manage the entry points that a
  *          user can use to interact with DolomiteMargin from the vault.
  * @dev     Swap-only GMX markets ARE NOT supported by this vault factory
  */
@@ -52,7 +53,6 @@ contract GmxV2IsolationModeVaultFactory is
         address gmxV2Registry;
         uint256 executionFee;
         MarketInfoConstructorParams tokenAndMarketAddresses;
-        bool longTokenListed;
         uint256[] initialAllowableDebtMarketIds;
         uint256[] initialAllowableCollateralMarketIds;
         address borrowPositionProxyV2;
@@ -98,17 +98,19 @@ contract GmxV2IsolationModeVaultFactory is
         SHORT_TOKEN = _params.tokenAndMarketAddresses.shortToken;
         SHORT_TOKEN_MARKET_ID = DOLOMITE_MARGIN().getMarketIdByTokenAddress(SHORT_TOKEN);
         LONG_TOKEN = _params.tokenAndMarketAddresses.longToken;
-        LONG_TOKEN_MARKET_ID = _params.longTokenListed ? DOLOMITE_MARGIN().getMarketIdByTokenAddress(LONG_TOKEN) : type(uint256).max;
+        LONG_TOKEN_MARKET_ID = type(uint256).max; // This is set to max because the long token is not listed on Dolomite
 
-        GmxV2Library.validateInitialMarketIds(
-            _params.initialAllowableDebtMarketIds,
-            LONG_TOKEN_MARKET_ID,
-            SHORT_TOKEN_MARKET_ID
+        Require.that(
+            _params.initialAllowableDebtMarketIds.length == 1
+                && _params.initialAllowableDebtMarketIds[0] == SHORT_TOKEN_MARKET_ID,
+            _FILE,
+            "Invalid debt markets"
         );
-        GmxV2Library.validateInitialMarketIds(
-            _params.initialAllowableCollateralMarketIds,
-            LONG_TOKEN_MARKET_ID,
-            SHORT_TOKEN_MARKET_ID
+        Require.that(
+            _params.initialAllowableCollateralMarketIds.length == 1
+                && _params.initialAllowableCollateralMarketIds[0] == SHORT_TOKEN_MARKET_ID,
+            _FILE,
+            "Invalid collateral markets"
         );
     }
 
