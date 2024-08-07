@@ -243,35 +243,6 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
         );
     }
 
-    function openBorrowPositionAndSwapExactInputForOutput(
-        uint256 _fromAccountNumber,
-        uint256 _borrowAccountNumber,
-        uint256[] calldata _marketIdsPath,
-        uint256 _inputAmountWei,
-        uint256 _minOutputAmountWei,
-        IGenericTraderProxyV1.TraderParam[] calldata _tradersPath,
-        IDolomiteMargin.AccountInfo[] calldata _makerAccounts,
-        IGenericTraderProxyV1.UserConfig calldata _userConfig
-    )
-        external
-        payable
-        nonReentrant
-        onlyVaultOwnerOrConverter(msg.sender)
-    {
-        _checkMsgValue();
-        _openBorrowPosition(_fromAccountNumber, _borrowAccountNumber, /* _amountWei = */ 0);
-        _addCollateralAndSwapExactInputForOutput(
-            _fromAccountNumber,
-            _borrowAccountNumber,
-            _marketIdsPath,
-            _inputAmountWei,
-            _minOutputAmountWei,
-            _tradersPath,
-            _makerAccounts,
-            _userConfig
-        );
-    }
-
     function addCollateralAndSwapExactInputForOutput(
         uint256 _fromAccountNumber,
         uint256 _borrowAccountNumber,

@@ -45,8 +45,6 @@ import { GmxMarket } from "./lib/GmxMarket.sol";
 import { GmxPrice } from "./lib/GmxPrice.sol";
 // solhint-enable max-line-length
 
-import "hardhat/console.sol";
-
 
 /**
  * @title   GmxV2Library
@@ -300,7 +298,6 @@ library GmxV2Library {
             }
         }
 
-        console.log('here middle of pause');
         uint256 maxPnlForWithdrawalsShort = dataStore.getUint(
             _maxPnlFactorKey(_MAX_PNL_FACTOR_FOR_WITHDRAWALS_KEY, underlyingToken, /* _isLong = */ false)
         );
@@ -332,19 +329,10 @@ library GmxV2Library {
             /* _maximize = */ true
         );
 
-        console.logInt(shortPnlToPoolFactor);
-        console.log('maxPnlForWithdrawalsShort: ', maxPnlForWithdrawalsShort);
-
         bool isShortPnlTooLarge = shortPnlToPoolFactor > int256(maxPnlForWithdrawalsShort);
         bool isLongPnlTooLarge = longPnlToPoolFactor > int256(maxPnlForWithdrawalsLong);
 
         uint256 maxCallbackGasLimit = dataStore.getUint(_MAX_CALLBACK_GAS_LIMIT_KEY);
-        {
-        console.log('isShortPnlTooLarge: ', isShortPnlTooLarge);
-        console.log('isLongPnlTooLarge: ', isLongPnlTooLarge);
-        // console.log('maxCallbackGasLimit: ', maxCallbackGasLimit);
-        // console.log('callbackGasLimit: ', _registry.callbackGasLimit());
-        }
 
         return isShortPnlTooLarge || isLongPnlTooLarge || _registry.callbackGasLimit() > maxCallbackGasLimit;
     }
@@ -356,7 +344,7 @@ library GmxV2Library {
     ) public pure {
         if (_longMarketId == type(uint256).max) {
             Require.that(
-                _marketIds.length == 1,
+                _marketIds.length >= 1,
                 _FILE,
                 "Invalid market IDs length"
             );
