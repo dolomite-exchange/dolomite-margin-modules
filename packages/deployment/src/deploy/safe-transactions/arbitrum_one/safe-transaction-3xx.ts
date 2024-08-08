@@ -31,6 +31,19 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     GmxV2Library: gmxV2LibraryAddress,
   };
 
+  const glpTokenVaultAddress = await deployContractAndSave(
+    'GLPIsolationModeTokenVaultV2',
+    [],
+    'GLPIsolationModeTokenVaultV6',
+    libraries,
+  );
+
+  const plvGlpTokenVaultAddress = await deployContractAndSave(
+    'GLPIsolationModeTokenVaultV2',
+    [],
+    'GLPIsolationModeTokenVaultV6',
+    libraries,
+  );
   // TODO: deploy all of the new token vaults
   // TODO: Add each vault to the factory via `ownerSetUserVaultImplementation`
 
