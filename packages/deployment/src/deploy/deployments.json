@@ -3508,6 +3508,48 @@
       "isVerified": true
     }
   },
+  "PendlePtmETHDec2024IsolationModeTokenVaultV1": {
+    "5000": {
+      "address": "0xCcC43e1571322528bEC9d7D26814D58229103D50",
+      "transaction": "0xc435cdf8898052b9db3fe58eeae11f9be9fd662219dfaf3c5a6c8a13e8d281cd",
+      "isVerified": false
+    }
+  },
+  "PendlePtmETHDec2024IsolationModeUnwrapperTraderV3": {
+    "5000": {
+      "address": "0x63BD442334D457B58742a72B88abeaeFfef6D451",
+      "transaction": "0xee39f372e64da35cac9af55fcec62c634e3e96a63106fd7e6f13d9ae76c46c1d",
+      "isVerified": false
+    }
+  },
+  "PendlePtmETHDec2024IsolationModeVaultFactory": {
+    "5000": {
+      "address": "0x5b12E419A57e3102eC1d47BD11BA5EC87EF264fb",
+      "transaction": "0xdcbfce366398649f6e0068ade9974b2fd2e9aafb671bb7bdd020059e4f38135d",
+      "isVerified": false
+    }
+  },
+  "PendlePtmETHDec2024IsolationModeVaultFactoryDeadProxy": {
+    "5000": {
+      "address": "0xf709BcBB8b7306f2fA40ED42aDBe3FcFdC8cCAa1",
+      "transaction": "0xdcbfce366398649f6e0068ade9974b2fd2e9aafb671bb7bdd020059e4f38135d",
+      "isVerified": false
+    }
+  },
+  "PendlePtmETHDec2024IsolationModeWrapperTraderV3": {
+    "5000": {
+      "address": "0x987AFbff1487BF2B6B9b19238C1cfbcFd1D8A7b1",
+      "transaction": "0x9ad55e953b5edd01ddce6c2218eb48d947b9715400a4e92eba95fd1d15d736bb",
+      "isVerified": false
+    }
+  },
+  "PendlePtmETHDec2024PriceOracleV2": {
+    "5000": {
+      "address": "0xb5995593302979dd399F902F37063Ac1805139FE",
+      "transaction": "0x1590bcf6d12e72e3f6851420989e04f6214a474f88201c1fc8935496b494840b",
+      "isVerified": false
+    }
+  },
   "PendleREthJun2025RegistryProxy": {
     "42161": {
       "address": "0x6c05D61095Ca5369E789099c0f610Ea05b8F0056",
@@ -3665,6 +3707,13 @@
       "address": "0xB1d583D7112Bd7eFeC095d72c45c59C8EA818c9B",
       "transaction": "0x46bd79bed7aee4b4609e58547a6dd2e4c8923653c00b7d6568b20e3e160007e3",
       "isVerified": true
+    }
+  },
+  "PendlemETHDec2024RegistryProxy": {
+    "5000": {
+      "address": "0xd86233E2E53a87F0735C5643f3189cfEC07269bF",
+      "transaction": "0x955dc8048f032a729897a4624fa728841ab1a8d7259a645641f1dab2ac9b11bf",
+      "isVerified": false
     }
   },
   "PlutusVaultGLPIsolationModeTokenVaultV1": {

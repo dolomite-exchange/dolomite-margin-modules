@@ -11,7 +11,7 @@ import { Network } from 'packages/base/src/utils/no-deps-constants';
 import {
   deployPendlePtSystem,
   EncodedTransaction,
-  prettyPrintEncodeAddIsolationModeMarket,
+  prettyPrintEncodeAddIsolationModeMarket, prettyPrintEncodedDataWithTypeSafety,
   prettyPrintEncodeInsertPendlePtOracle,
 } from '../../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../utils/dry-run-utils';
@@ -19,8 +19,7 @@ import getScriptName from '../../../utils/get-script-name';
 
 /**
  * This script encodes the following transactions:
- * - Adds the USDe markets
- * - Sets up the ptUSDe ecosystem
+ * - Sets up the PT-mETH ecosystem
  */
 async function main(): Promise<DryRunOutput<Network.Mantle>> {
   const network = await getAndCheckSpecificNetwork(Network.Mantle);
@@ -32,31 +31,45 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
   const numMarkets = await core.dolomiteMargin.getNumMarkets();
 
   const transactions: EncodedTransaction[] = [];
-  const ptUsdeMarketId = numMarkets.add(incrementor++);
+  const ptMethMarketId = numMarkets.add(incrementor++);
 
-  const usdeSystem = await deployPendlePtSystem(
+  const methSystem = await deployPendlePtSystem(
     core,
-    'USDeDec2024',
-    core.pendleEcosystem.usdeDec2024.usdeMarket,
-    core.pendleEcosystem.usdeDec2024.ptOracle,
-    core.pendleEcosystem.usdeDec2024.ptUSDeToken,
-    core.pendleEcosystem.usdeDec2024.syUsdeToken,
-    core.tokens.usde,
+    'mETHDec2024',
+    core.pendleEcosystem.methDec2024.methMarket,
+    core.pendleEcosystem.methDec2024.ptOracle,
+    core.pendleEcosystem.methDec2024.ptMethToken,
+    core.pendleEcosystem.methDec2024.syMethToken,
+    core.tokens.meth,
   );
 
   transactions.push(
-    await prettyPrintEncodeInsertPendlePtOracle(core, usdeSystem, core.tokens.usde),
+    await prettyPrintEncodeInsertPendlePtOracle(core, methSystem, core.tokens.weth),
     ...(await prettyPrintEncodeAddIsolationModeMarket(
       core,
-      usdeSystem.factory,
+      methSystem.factory,
       core.oracleAggregatorV2,
-      usdeSystem.unwrapper,
-      usdeSystem.wrapper,
-      ptUsdeMarketId,
-      TargetCollateralization.Base,
-      TargetLiquidationPenalty.Base,
-      parseEther(`${1_000_000}`),
+      methSystem.unwrapper,
+      methSystem.wrapper,
+      ptMethMarketId,
+      TargetCollateralization._120,
+      TargetLiquidationPenalty._6,
+      parseEther(`${1_000}`),
     )),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { dolomiteMargin: core.dolomiteMargin },
+      'dolomiteMargin',
+      'ownerSetInterestSetter',
+      [core.marketIds.meth, core.interestSetters.linearStepFunction8L92U90OInterestSetter.address],
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { dolomiteMargin: core.dolomiteMargin },
+      'dolomiteMargin',
+      'ownerSetInterestSetter',
+      [core.marketIds.meth, core.interestSetters.linearStepFunction12L88U90OInterestSetter.address],
+    ),
   );
   return {
     core,
@@ -72,25 +85,23 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
     },
     scriptName: getScriptName(__filename),
     invariants: async () => {
-      assertHardhatInvariant((await core.dolomiteMargin.getNumMarkets()).eq(11), 'Invalid number of markets');
-
       assertHardhatInvariant(
-        (await core.dolomiteMargin.getMarketTokenAddress(ptUsdeMarketId)) === usdeSystem.factory.address,
-        'Invalid PT-USDe market ID',
+        (await core.dolomiteMargin.getMarketTokenAddress(ptMethMarketId)) === methSystem.factory.address,
+        'Invalid PT-mETH market ID',
       );
       assertHardhatInvariant(
-        (await core.dolomiteMargin.getMarketPriceOracle(ptUsdeMarketId)) === core.oracleAggregatorV2.address,
-        'Invalid oracle for PT-USDe',
+        (await core.dolomiteMargin.getMarketPriceOracle(ptMethMarketId)) === core.oracleAggregatorV2.address,
+        'Invalid oracle for PT-mETH',
       );
       assertHardhatInvariant(
-        await usdeSystem.factory.isTokenConverterTrusted(usdeSystem.unwrapper.address),
+        await methSystem.factory.isTokenConverterTrusted(methSystem.unwrapper.address),
         'Unwrapper not trusted',
       );
       assertHardhatInvariant(
-        await usdeSystem.factory.isTokenConverterTrusted(usdeSystem.wrapper.address),
+        await methSystem.factory.isTokenConverterTrusted(methSystem.wrapper.address),
         'Wrapper not trusted',
       );
-      console.log('\tPrice for USDe', (await core.dolomiteMargin.getMarketPrice(ptUsdeMarketId)).value.toString());
+      console.log('\tPrice for PT-mETH', (await core.dolomiteMargin.getMarketPrice(ptMethMarketId)).value.toString());
     },
   };
 }
