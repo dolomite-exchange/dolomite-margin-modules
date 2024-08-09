@@ -877,7 +877,11 @@ export const PENDLE_MARKET_EZ_ETH_SEP_2024_MAP: Record<Network.ArbitrumOne, stri
   [Network.ArbitrumOne]: '0x35f3dB08a6e9cB4391348b0B404F493E7ae264c0',
 };
 
-export const PENDLE_MARKET_RETH_MAP: Record<Network.ArbitrumOne, string> = {
+export const PENDLE_MARKET_METH_DEC_2024_MAP: Record<Network.Mantle, string> = {
+  [Network.Mantle]: '0x99E83709846b6cB82d47a0D78b175E68497EA28B',
+};
+
+export const PENDLE_MARKET_RETH_JUN_2025_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x14FbC760eFaF36781cB0eb3Cb255aD976117B9Bd',
 };
 
@@ -917,7 +921,7 @@ export const PENDLE_PT_E_ETH_SEP_2024_TOKEN_MAP: Record<Network.ArbitrumOne, str
   [Network.ArbitrumOne]: '0xb8b0a120F6A68Dd06209619F62429fB1a8e92feC',
 };
 
-export const PENDLE_PT_EZ_ETH_JUN_2024_MAP: Record<Network.ArbitrumOne, string> = {
+export const PENDLE_PT_EZ_ETH_JUN_2024_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x8EA5040d423410f1fdc363379Af88e1DB5eA1C34',
 };
 
@@ -933,7 +937,11 @@ export const PENDLE_PT_GLP_SEP_2024_TOKEN_MAP: Record<Network.ArbitrumOne, strin
   [Network.ArbitrumOne]: '0x89cD713a6607787F93d6743E67777Be9Ad73c54b',
 };
 
-export const PENDLE_PT_RETH_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
+export const PENDLE_PT_METH_DEC_2024_TOKEN_MAP: Record<Network.Mantle, string> = {
+  [Network.Mantle]: '0x1333B49BBdD06544a25647f9127358D9A9486105',
+};
+
+export const PENDLE_PT_RETH_JUN_2025_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x685155D3BD593508Fe32Be39729810A591ED9c87',
 };
 
@@ -998,6 +1006,10 @@ export const PENDLE_SY_GLP_MAR_2024_TOKEN_MAP: Record<Network.ArbitrumOne, strin
 
 export const PENDLE_SY_GLP_SEP_2024_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0xd1F7d5fec6EB532847e552269c905Ac489992Ef6',
+};
+
+export const PENDLE_SY_METH_DEC_2024_TOKEN_MAP: Record<Network.Mantle, string> = {
+  [Network.Mantle]: '0x9Ab557331dDada945eB2eCE19b90Bd7a843F8665',
 };
 
 export const PENDLE_SY_RETH_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
