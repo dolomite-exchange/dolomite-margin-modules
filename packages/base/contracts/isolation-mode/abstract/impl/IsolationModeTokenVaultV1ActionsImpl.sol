@@ -26,6 +26,7 @@ import { AccountActionLib } from "../../../lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "../../../lib/AccountBalanceLib.sol";
 import { DolomiteMarginVersionWrapperLib } from "../../../lib/DolomiteMarginVersionWrapperLib.sol";
 import { InterestIndexLib } from "../../../lib/InterestIndexLib.sol";
+import { SafeDelegateCallLib } from "../../../lib/SafeDelegateCallLib.sol";
 import { IDolomiteMargin } from "../../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../../../protocol/interfaces/IDolomiteStructs.sol";
 import { BitsLib } from "../../../protocol/lib/BitsLib.sol";
@@ -57,6 +58,27 @@ library IsolationModeTokenVaultV1ActionsImpl {
     // ===================================================
     // ==================== Functions ====================
     // ===================================================
+
+    function multicall(
+        bytes[] memory _calls,
+        IDolomiteRegistry _dolomiteRegistry
+    ) public {
+        bytes4[] memory allowedSelectors = _dolomiteRegistry.isolationModeMulticallFunctions();
+        uint256 len = _calls.length;
+
+        for (uint256 i; i < len; ++i) {
+            Require.that(
+                selectorBinarySearch(
+                    allowedSelectors,
+                    abi.decode(_calls[i], (bytes4))
+                ),
+                _FILE,
+                "Disallowed multicall function"
+            );
+
+            SafeDelegateCallLib.safeDelegateCall(address(this), _calls[i]);
+        }
+    }
 
     function depositIntoVaultForDolomiteMargin(
         IIsolationModeTokenVaultV1 _vault,

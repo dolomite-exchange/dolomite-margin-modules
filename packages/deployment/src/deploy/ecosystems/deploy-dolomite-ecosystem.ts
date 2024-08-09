@@ -509,7 +509,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     for (let i = 0; i < numMarkets.toNumber(); i++) {
       const liquidators = await liquidatorAssetRegistry.getLiquidatorsForAsset(i);
       for (let j = 0; j < oldFreezableLiquidatorAddresses.length; j++) {
-        if (liquidators.some((l) => l === oldFreezableLiquidatorAddresses[j])) {
+        if (liquidators.some(l => l === oldFreezableLiquidatorAddresses[j])) {
           transactions.push(
             await prettyPrintEncodedDataWithTypeSafety(
               core,

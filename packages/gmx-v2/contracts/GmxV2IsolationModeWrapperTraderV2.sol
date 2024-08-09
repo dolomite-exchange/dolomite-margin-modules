@@ -150,7 +150,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     ) internal override returns (bytes32) {
         // New scope for the "stack too deep" error
         uint256 ethExecutionFee = abi.decode(_extraOrderData, (uint256));
-        return GmxV2Library.createDeposit(
+        return GmxV2Library.wrapperCreateDeposit(
             IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())),
             GMX_REGISTRY_V2(),
             WETH,

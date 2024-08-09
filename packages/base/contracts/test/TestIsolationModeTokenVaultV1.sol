@@ -143,7 +143,7 @@ contract TestIsolationModeTokenVaultV1 is SimpleIsolationModeTokenVaultV1 {
         _requireOnlyConverter(msg.sender);
     }
 
-    function testGetFunctionSelectors() external view returns (bytes4[] memory) {
+    function testGetFunctionSelectors() external pure returns (bytes4[] memory) {
         bytes4[] memory selectors = new bytes4[](8);
         selectors[0] = IIsolationModeTokenVaultV1.depositIntoVaultForDolomiteMargin.selector;
         selectors[1] = IIsolationModeTokenVaultV1.withdrawFromVaultForDolomiteMargin.selector;

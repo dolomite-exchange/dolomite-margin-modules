@@ -94,7 +94,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         address vault = msg.sender;
         _validateVaultExists(factory, vault);
 
-        bytes32 withdrawalKey = GmxV2Library.executeInitiateUnwrapping(
+        bytes32 withdrawalKey = GmxV2Library.unwrapperExecuteInitiateUnwrapping(
             factory,
             vault,
             _inputAmount,
@@ -117,7 +117,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     }
 
     function initiateCancelWithdrawal(bytes32 _key) external {
-        GmxV2Library.initiateCancelWithdrawal(/* _unwrapper = */ this, _key);
+        GmxV2Library.unwrapperInitiateCancelWithdrawal(/* _unwrapper = */ this, _key);
     }
 
     function handleCallbackFromWrapperBefore() external onlyWrapperCaller(msg.sender) {
