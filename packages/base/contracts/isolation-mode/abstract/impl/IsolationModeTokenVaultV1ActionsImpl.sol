@@ -26,6 +26,7 @@ import { AccountActionLib } from "../../../lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "../../../lib/AccountBalanceLib.sol";
 import { DolomiteMarginVersionWrapperLib } from "../../../lib/DolomiteMarginVersionWrapperLib.sol";
 import { InterestIndexLib } from "../../../lib/InterestIndexLib.sol";
+import { SafeDelegateCallLib } from "../../../lib/SafeDelegateCallLib.sol";
 import { IDolomiteMargin } from "../../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../../../protocol/interfaces/IDolomiteStructs.sol";
 import { BitsLib } from "../../../protocol/lib/BitsLib.sol";
@@ -57,6 +58,27 @@ library IsolationModeTokenVaultV1ActionsImpl {
     // ===================================================
     // ==================== Functions ====================
     // ===================================================
+
+    function multicall(
+        bytes[] memory _calls,
+        IDolomiteRegistry _dolomiteRegistry
+    ) public {
+        bytes4[] memory allowedSelectors = _dolomiteRegistry.isolationModeMulticallFunctions();
+        uint256 len = _calls.length;
+
+        for (uint256 i; i < len; ++i) {
+            Require.that(
+                selectorBinarySearch(
+                    allowedSelectors,
+                    abi.decode(_calls[i], (bytes4))
+                ),
+                _FILE,
+                "Disallowed multicall function"
+            );
+
+            SafeDelegateCallLib.safeDelegateCall(address(this), _calls[i]);
+        }
+    }
 
     function depositIntoVaultForDolomiteMargin(
         IIsolationModeTokenVaultV1 _vault,
@@ -542,6 +564,29 @@ library IsolationModeTokenVaultV1ActionsImpl {
             _FILE,
             "minOutputAmount too large"
         );
+    }
+
+    function selectorBinarySearch(bytes4[] memory _allowedSelectors, bytes4 _selector) public pure returns (bool) {
+        if (_allowedSelectors.length == 0) {
+            return false;
+        }
+
+        uint256 low = 0;
+        uint256 high = _allowedSelectors.length - 1;
+        if (_selector < _allowedSelectors[low] || _selector > _allowedSelectors[high]) {
+            return false;
+        }
+        while (low <= high) {
+            uint256 mid = (low + high) / 2;
+            if (_allowedSelectors[mid] == _selector) {
+                return true;
+            } else if (_allowedSelectors[mid] < _selector) {
+                low = mid + 1;
+            } else {
+                high = mid - 1;
+            }
+        }
+        return false;
     }
 
     // ===================================================

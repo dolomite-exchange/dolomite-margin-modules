@@ -54,9 +54,9 @@ abstract contract OnlyDolomiteMarginForUpgradeable is IOnlyDolomiteMargin, Proxy
     }
 
     modifier onlyDolomiteMarginOwner(address _from) {
-        if (_from == DOLOMITE_MARGIN().owner()) { /* FOR COVERAGE TESTING */ }
+        if (_from == DOLOMITE_MARGIN_OWNER()) { /* FOR COVERAGE TESTING */ }
         Require.that(
-            _from == DOLOMITE_MARGIN().owner(),
+            _from == DOLOMITE_MARGIN_OWNER(),
             _FILE,
             "Caller is not owner of Dolomite",
             _from
@@ -79,6 +79,10 @@ abstract contract OnlyDolomiteMarginForUpgradeable is IOnlyDolomiteMargin, Proxy
 
     function DOLOMITE_MARGIN() public virtual view returns (IDolomiteMargin) {
         return IDolomiteMargin(_getAddress(_DOLOMITE_MARGIN_SLOT));
+    }
+
+    function DOLOMITE_MARGIN_OWNER() public view returns (address) {
+        return DOLOMITE_MARGIN().owner();
     }
 
     function _setDolomiteMarginViaSlot(address _dolomiteMargin) internal {

@@ -73,6 +73,12 @@ interface IUpgradeableAsyncIsolationModeUnwrapperTrader is IIsolationModeUnwrapp
     // ==================== Functions ====================
     // ===================================================
 
+    function executeWithdrawalForRetry(bytes32 _key) external;
+
+    function executeWithdrawalCancellation(bytes32 _key) external;
+
+    function emitWithdrawalExecuted(bytes32 _key) external;
+
     /**
      * Notifies the unwrapper that it'll be entered for a trade from the unwrapper. This allows it to modify the action
      * length

@@ -27,6 +27,7 @@ import { IBorrowPositionProxyV2 } from "../../interfaces/IBorrowPositionProxyV2.
 import { IDolomiteRegistry } from "../../interfaces/IDolomiteRegistry.sol";
 import { IGenericTraderProxyV1 } from "../../interfaces/IGenericTraderProxyV1.sol";
 import { AccountBalanceLib } from "../../lib/AccountBalanceLib.sol";
+import { SafeDelegateCallLib } from "../../lib/SafeDelegateCallLib.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { IIsolationModeTokenVaultV1 } from "../interfaces/IIsolationModeTokenVaultV1.sol";
@@ -110,6 +111,14 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
 
     function initialize() external {
         _initialize();
+    }
+
+    function multicall(
+        bytes[] memory _calls
+    )
+    external
+    onlyVaultOwner(msg.sender) {
+        IsolationModeTokenVaultV1ActionsImpl.multicall(_calls, dolomiteRegistry());
     }
 
     function depositIntoVaultForDolomiteMargin(
