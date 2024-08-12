@@ -61,6 +61,7 @@ contract JonesUSDCV2IsolationModeVaultFactory is
         _jUSDC,
         _borrowPositionProxy,
         _userVaultImplementation,
+        address(IJonesUSDCRegistry(_jonesUSDCRegistry).dolomiteRegistry()),
         _dolomiteMargin
     ) {
         jonesUSDCRegistry = IJonesUSDCRegistry(_jonesUSDCRegistry);

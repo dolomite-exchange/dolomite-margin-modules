@@ -7,7 +7,7 @@ async function main() {
   const sourceName = artifacts.readArtifactSync(contractName).sourceName;
   const libraries = {};
   await verifyContract(
-    '0x62AFa676d0eef443c9013A33DCD7cd966e883515',
+    '0x2A0c9632B1F75d78F6b1F175Ed222EC77c2b11De',
     [],
     `${sourceName}:${contractName}`,
     libraries,

@@ -287,6 +287,7 @@ export function getOldDeploymentVersionNamesByDeploymentKey(nameWithoutVersionPo
 }
 
 let nonce: number | undefined = undefined;
+
 export async function deployContractAndSave(
   contractName: string,
   args: ConstructorArgument[],
@@ -341,7 +342,7 @@ export async function deployContractAndSave(
   try {
     if (nonce === undefined) {
       const signer = ethers.provider.getSigner(0);
-      nonce = await ethers.provider.getTransactionCount(await signer.getAddress());
+      nonce = await ethers.provider.getTransactionCount(await signer.getAddress(), 'pending');
     }
     contract = libraries
       ? await createContractWithLibrary(contractName, libraries, args, { nonce })
@@ -349,6 +350,14 @@ export async function deployContractAndSave(
     nonce += 1;
   } catch (e) {
     console.error(`\tCould not deploy at attempt ${attempts + 1} due for ${contractName} to error:`, e);
+    console.log(); // print new line
+
+    const errorMessage = (e as any).message;
+    if (errorMessage.includes('nonce has already been used') || errorMessage.includes('replacement fee too low')) {
+      console.log('\tRe-fetching nonce...');
+      const signer = ethers.provider.getSigner(0);
+      nonce = await ethers.provider.getTransactionCount(await signer.getAddress(), 'pending');
+    }
     return deployContractAndSave(contractName, args, contractRename, libraries, attempts + 1);
   }
 
@@ -648,7 +657,8 @@ async function getFormattedTokenName<T extends NetworkType>(
   const token = IERC20Metadata__factory.connect(tokenAddress, core.hhUser1);
   try {
     mostRecentTokenDecimals = await token.decimals();
-  } catch (e) {}
+  } catch (e) {
+  }
 
   const cachedName = addressToNameCache[tokenAddress.toString().toLowerCase()];
   if (typeof cachedName !== 'undefined') {
@@ -774,9 +784,9 @@ export async function prettyPrintEncodedDataWithTypeSafety<
     const repeatLength = 76 + (counter - 1).toString().length + key.toString().length + methodName.toString().length;
     console.log(''); // add a new line
     console.log(
-      `=================================== ${counter++} - ${key}.${methodName} ===================================`,
+      `=================================== ${counter++} - ${String(key)}.${String(methodName)} ===================================`,
     );
-    console.log('Readable:\t', `${key}.${methodName}(\n\t\t\t${mappedArgs.join(' ,\n\t\t\t')}\n\t\t)`);
+    console.log('Readable:\t', `${String(key)}.${String(methodName)}(\n\t\t\t${mappedArgs.join(' ,\n\t\t\t')}\n\t\t)`);
     console.log(
       'To:\t\t',
       (await getReadableArg(core, ParamType.fromString('address to'), transaction.to)).substring(13),
@@ -1169,8 +1179,8 @@ export async function prettyPrintEncodeInsertPendlePtOracle<T extends NetworkTyp
   );
 }
 
-export async function prettyPrintEncodeInsertRedstoneOracleV3(
-  core: CoreProtocolWithRedstone<Network.Mantle>,
+export async function prettyPrintEncodeInsertRedstoneOracleV3<T extends NetworkType>(
+  core: CoreProtocolWithRedstone<T>,
   token: IERC20,
   invertPrice: boolean = REDSTONE_PRICE_AGGREGATORS_MAP[core.config.network][token.address]!.invert ?? false,
   tokenPairAddress: string | undefined = REDSTONE_PRICE_AGGREGATORS_MAP[core.config.network][token.address]!
