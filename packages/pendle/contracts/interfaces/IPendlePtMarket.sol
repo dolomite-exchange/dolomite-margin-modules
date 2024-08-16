@@ -31,6 +31,8 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
  */
 interface IPendlePtMarket is IERC20 {
 
+    function increaseObservationsCardinalityNext(uint16 _cardinalityNext) external;
+
     function isExpired() external view returns (bool);
 
     function readTokens() external view returns (address sy, address pt, address yt);

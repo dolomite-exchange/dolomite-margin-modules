@@ -78,6 +78,8 @@ contract GmxV2IsolationModeTokenVaultV1 is
     // ======================== Public Functions ========================
     // ==================================================================
 
+    receive() external payable {} // solhint-disable-line no-empty-blocks
+
     /**
      *
      * @param  _key Deposit key

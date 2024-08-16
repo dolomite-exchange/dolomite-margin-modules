@@ -107,14 +107,18 @@ interface CoreProtocolMarketIdsArbitrumOne extends CoreProtocolMarketIds {
   dGmEth: BigNumberish;
   dGmEthSingleSided: BigNumberish;
   dGmLink: BigNumberish;
+  dGmUni: BigNumberish;
   djUsdcV1: BigNumberish;
   djUsdcV2: BigNumberish;
   dplvGlp: BigNumberish;
   dPtEzEthJun2024: BigNumberish;
+  dPtEzEthSep2024: BigNumberish;
   dPtGlpMar2024: BigNumberish;
   dPtWeEthApr2024: BigNumberish;
   dPtWeEthJun2024: BigNumberish;
+  dPtWeEthSep2024: BigNumberish;
   dPtREthJun2025: BigNumberish;
+  dPtRsEthSep2024: BigNumberish;
   dPtWstEthJun2024: BigNumberish;
   dPtWstEthJun2025: BigNumberish;
   dai: BigNumberish;

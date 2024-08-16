@@ -47,7 +47,7 @@ export const NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP: Record<Network, number> = {
   [Network.ArbitrumOne]: 221_467_300,
   [Network.Base]: 10_050_058,
   [Network.Berachain]: 1_708_014,
-  [Network.Mantle]: 63_400_000,
+  [Network.Mantle]: 66_804_500,
   [Network.PolygonZkEvm]: 9_860_500,
   [Network.XLayer]: 854_000,
 };
@@ -65,6 +65,8 @@ export const ADDRESS_ZERO = '0x0000000000000000000000000000000000000000';
 export const ZERO_BI = BigNumber.from('0');
 
 export const ONE_BI = BigNumber.from('1');
+
+export const TWO_BI = BigNumber.from('2');
 
 export const ONE_ETH_BI = BigNumber.from('1000000000000000000');
 

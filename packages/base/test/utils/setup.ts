@@ -20,9 +20,11 @@ import * as LiquidatorProxyV4WithGenericTraderJson
   from '@dolomite-margin/deployed-contracts/LiquidatorProxyV4WithGenericTrader.json';
 import { address } from '@dolomite-margin/dist/src';
 import { Provider } from '@ethersproject/providers';
-import { BaseContract, BigNumberish, ContractInterface, Signer } from 'ethers';
+import { BaseContract, BigNumber, BigNumberish, ContractInterface, Signer } from 'ethers';
+import { parseEther } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
 import { IGmxMarketToken } from 'packages/gmx-v2/src/types';
+import { IMantleRewardStation__factory } from 'packages/mantle/src/types';
 import { IChainlinkPriceOracleV1__factory } from 'packages/oracles/src/types';
 import {
   DolomiteERC20__factory,
@@ -63,17 +65,18 @@ import {
   D_GM_ETH_MAP,
   D_GM_ETH_SINGLE_SIDED_MAP,
   D_GM_LINK_MAP,
+  D_GM_UNI_MAP,
   D_GMX_MAP,
   DAI_MAP,
   DFS_GLP_MAP,
   DJ_USDC_V1,
   DJ_USDC_V2,
   DPLV_GLP_MAP,
-  DPT_EZ_ETH_JUN_2024_MAP,
+  DPT_EZ_ETH_JUN_2024_MAP, DPT_EZ_ETH_SEP_2024_MAP,
   DPT_GLP_MAR_2024_MAP,
-  DPT_R_ETH_JUN_2025_MAP,
+  DPT_R_ETH_JUN_2025_MAP, DPT_RS_ETH_SEP_2024_MAP,
   DPT_WE_ETH_APR_2024_MAP,
-  DPT_WE_ETH_JUN_2024_MAP,
+  DPT_WE_ETH_JUN_2024_MAP, DPT_WE_ETH_SEP_2024_MAP,
   DPT_WST_ETH_JUN_2024_MAP,
   DPT_WST_ETH_JUN_2025_MAP,
   DPX_MAP,
@@ -85,11 +88,13 @@ import {
   GMX_BTC_PLACEHOLDER_MAP,
   GMX_MAP,
   GRAI_MAP,
-  GRAIL_MAP, HONEY_MAP,
+  GRAIL_MAP,
+  HONEY_MAP,
   JONES_MAP,
   LINK_MAP,
   MAGIC_GLP_MAP,
   MAGIC_MAP,
+  MANTLE_REWARD_STATION_MAP,
   MATIC_MAP,
   METH_MAP,
   MIM_MAP,
@@ -111,7 +116,8 @@ import {
   USDM_MAP,
   USDT_MAP,
   USDY_MAP,
-  W_USDM_MAP, WBERA_MAP,
+  W_USDM_MAP,
+  WBERA_MAP,
   WBTC_MAP,
   WE_ETH_MAP,
   WETH_MAP,
@@ -136,6 +142,7 @@ import {
 } from './core-protocols/core-protocol-abstract';
 import { CoreProtocolArbitrumOne } from './core-protocols/core-protocol-arbitrum-one';
 import { CoreProtocolBase } from './core-protocols/core-protocol-base';
+import { CoreProtocolBerachain } from './core-protocols/core-protocol-berachain';
 import { CoreProtocolMantle, CoreProtocolParamsMantle } from './core-protocols/core-protocol-mantle';
 import { CoreProtocolPolygonZkEvm } from './core-protocols/core-protocol-polygon-zkevm';
 import { CoreProtocolXLayer } from './core-protocols/core-protocol-x-layer';
@@ -160,7 +167,6 @@ import { createPremiaEcosystem } from './ecosystem-utils/premia';
 import { createTestEcosystem } from './ecosystem-utils/testers';
 import { createUmamiEcosystem } from './ecosystem-utils/umami';
 import { impersonate, impersonateOrFallback, resetForkIfPossible } from './index';
-import { CoreProtocolBerachain } from './core-protocols/core-protocol-berachain';
 
 /**
  * Config to for setting up tests in the `before` function
@@ -207,14 +213,16 @@ interface CoreProtocolConfigXLayer extends CoreProtocolConfigParent<Network.XLay
 export type CoreProtocolConfig<T extends NetworkType> = T extends Network.ArbitrumOne
   ? CoreProtocolConfigArbitrumOne
   : T extends Network.Base
-    ? CoreProtocolConfigBase
-    : T extends Network.Mantle
-      ? CoreProtocolConfigMantle
-      : T extends Network.PolygonZkEvm
-        ? CoreProtocolConfigPolygonZkEvm
-        : T extends Network.XLayer
-          ? CoreProtocolConfigXLayer
-          : never;
+  ? CoreProtocolConfigBase
+  : T extends Network.Berachain
+  ? CoreProtocolConfigBerachain
+  : T extends Network.Mantle
+  ? CoreProtocolConfigMantle
+  : T extends Network.PolygonZkEvm
+  ? CoreProtocolConfigPolygonZkEvm
+  : T extends Network.XLayer
+  ? CoreProtocolConfigXLayer
+  : never;
 
 export async function disableInterestAccrual<T extends NetworkType>(
   core: CoreProtocolAbstract<T>,
@@ -255,6 +263,7 @@ export async function setupWMNTBalance(
   amount: BigNumberish,
   spender: { address: string },
 ) {
+  await impersonate(signer, true, BigNumber.from(amount).add(parseEther('1')));
   await core.tokens.wmnt.connect(signer).deposit({ value: amount });
   await core.tokens.wmnt.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
@@ -499,16 +508,16 @@ export function getDefaultCoreProtocolConfigForGmxV2(): CoreProtocolConfig<Netwo
 export type CoreProtocolType<T extends NetworkType> = T extends Network.ArbitrumOne
   ? CoreProtocolArbitrumOne
   : T extends Network.Base
-    ? CoreProtocolBase
-    : T extends Network.Berachain
-      ? CoreProtocolBerachain
-      : T extends Network.Mantle
-        ? CoreProtocolMantle
-        : T extends Network.PolygonZkEvm
-          ? CoreProtocolPolygonZkEvm
-          : T extends Network.XLayer
-            ? CoreProtocolXLayer
-            : never;
+  ? CoreProtocolBase
+  : T extends Network.Berachain
+  ? CoreProtocolBerachain
+  : T extends Network.Mantle
+  ? CoreProtocolMantle
+  : T extends Network.PolygonZkEvm
+  ? CoreProtocolPolygonZkEvm
+  : T extends Network.XLayer
+  ? CoreProtocolXLayer
+  : never;
 
 export function getDolomiteMarginContract<T extends NetworkType>(
   config: CoreProtocolSetupConfig<T>,
@@ -793,14 +802,18 @@ export async function setupCoreProtocol<T extends NetworkType>(
         dGmEth: D_GM_ETH_MAP[typedConfig.network].marketId,
         dGmEthSingleSided: D_GM_ETH_SINGLE_SIDED_MAP[typedConfig.network].marketId,
         dGmLink: D_GM_LINK_MAP[typedConfig.network].marketId,
+        dGmUni: D_GM_UNI_MAP[typedConfig.network].marketId,
         djUsdcV1: DJ_USDC_V1[typedConfig.network].marketId,
         djUsdcV2: DJ_USDC_V2[typedConfig.network].marketId,
         dplvGlp: DPLV_GLP_MAP[typedConfig.network].marketId,
         dPtEzEthJun2024: DPT_EZ_ETH_JUN_2024_MAP[typedConfig.network].marketId,
+        dPtEzEthSep2024: DPT_EZ_ETH_SEP_2024_MAP[typedConfig.network].marketId,
         dPtGlpMar2024: DPT_GLP_MAR_2024_MAP[typedConfig.network].marketId,
         dPtREthJun2025: DPT_R_ETH_JUN_2025_MAP[typedConfig.network].marketId,
+        dPtRsEthSep2024: DPT_RS_ETH_SEP_2024_MAP[typedConfig.network].marketId,
         dPtWeEthApr2024: DPT_WE_ETH_APR_2024_MAP[typedConfig.network].marketId,
         dPtWeEthJun2024: DPT_WE_ETH_JUN_2024_MAP[typedConfig.network].marketId,
+        dPtWeEthSep2024: DPT_WE_ETH_SEP_2024_MAP[typedConfig.network].marketId,
         dPtWstEthJun2024: DPT_WST_ETH_JUN_2024_MAP[typedConfig.network].marketId,
         dPtWstEthJun2025: DPT_WST_ETH_JUN_2025_MAP[typedConfig.network].marketId,
         dai: DAI_MAP[typedConfig.network]!.marketId,
@@ -935,10 +948,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
         ...coreProtocolParams.marketIds,
         honey: HONEY_MAP[typedConfig.network].marketId,
         wbera: WBERA_MAP[typedConfig.network].marketId,
-        stablecoins: [
-          ...coreProtocolParams.marketIds.stablecoins,
-          HONEY_MAP[typedConfig.network].marketId,
-        ],
+        stablecoins: [...coreProtocolParams.marketIds.stablecoins, HONEY_MAP[typedConfig.network].marketId],
         stablecoinsWithUnifiedInterestRateModels: [
           ...coreProtocolParams.marketIds.stablecoins,
           HONEY_MAP[typedConfig.network].marketId,
@@ -967,7 +977,10 @@ export async function setupCoreProtocol<T extends NetworkType>(
     );
     return new CoreProtocolMantle(coreProtocolParams as CoreProtocolParams<Network.Mantle>, {
       chroniclePriceOracleV3: chroniclePriceOracle,
-      redstonePriceOracleV3: redstonePriceOracle,
+      mantleRewardStation: IMantleRewardStation__factory.connect(
+        MANTLE_REWARD_STATION_MAP[typedConfig.network],
+        hhUser1,
+      ),
       marketIds: {
         ...coreProtocolParams.marketIds,
         meth: METH_MAP[typedConfig.network].marketId,
@@ -988,6 +1001,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
       },
       odosEcosystem: await createOdosEcosystem(typedConfig.network, hhUser1),
       pendleEcosystem: await createPendleEcosystemMantle(typedConfig.network, hhUser1),
+      redstonePriceOracleV3: redstonePriceOracle,
       tokens: {
         ...coreProtocolParams.tokens,
         meth: IERC20__factory.connect(METH_MAP[typedConfig.network].address, hhUser1),
