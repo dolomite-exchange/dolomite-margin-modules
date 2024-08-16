@@ -10,7 +10,7 @@ import {
   EventEmitterRegistry,
   EventEmitterRegistry__factory,
   IDolomiteMargin,
-  IDolomiteMarginV2,
+  IDolomiteMarginV2, IERC20Metadata__factory,
   IExpiry,
   IExpiryV2,
   IsolationModeTraderProxy,
@@ -130,4 +130,13 @@ export async function setupNewGenericTraderProxy<T extends NetworkType>(
 
   await core.dolomiteMargin.ownerSetGlobalOperator(core.genericTraderProxy!.address, true);
   await core.dolomiteMargin.ownerSetGlobalOperator(core.liquidatorProxyV4.address, true);
+}
+
+export async function isIsolationMode(marketId: BigNumberish, core: CoreProtocolType<any>): Promise<boolean> {
+  const tokenName = await IERC20Metadata__factory.connect(
+    await core.dolomiteMargin.getMarketTokenAddress(marketId),
+    core.governance
+  ).name();
+
+  return tokenName.startsWith('Dolomite Isolation:') || tokenName.startsWith('Dolomite:');
 }
