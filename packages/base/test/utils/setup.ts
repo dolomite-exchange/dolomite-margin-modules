@@ -347,7 +347,7 @@ export async function setupGMBalance(
   amount: BigNumberish,
   spender?: { address: string },
 ) {
-  const controller = await impersonate(core.gmxEcosystemV2!.gmxExchangeRouter.address, true);
+  const controller = await impersonate(core.gmxV2Ecosystem!.gmxExchangeRouter.address, true);
   await gmToken.connect(controller).mint(signer.address, amount);
   if (signer instanceof SignerWithAddressWithSafety && spender) {
     await gmToken.connect(signer).approve(spender.address, amount);

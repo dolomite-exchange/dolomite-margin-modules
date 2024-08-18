@@ -156,7 +156,7 @@ export interface LiveGmMarket {
   wrapperProxy: IsolationModeTraderProxy;
 }
 
-export interface GmxEcosystemV2 {
+export interface GmxV2Ecosystem {
   gmxDataStore: IGmxDataStore;
   gmxDepositHandler: IGmxDepositHandler;
   gmxDepositVault: { address: string };
@@ -270,7 +270,7 @@ export async function createGmxEcosystem(network: Network, signer: SignerWithAdd
 export async function createGmxEcosystemV2(
   network: Network,
   signer: SignerWithAddressWithSafety,
-): Promise<GmxEcosystemV2> {
+): Promise<GmxV2Ecosystem> {
   if (network !== Network.ArbitrumOne) {
     return Promise.reject(`Invalid network, found ${network}`);
   }

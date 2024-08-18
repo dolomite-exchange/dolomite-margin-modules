@@ -150,7 +150,7 @@ export async function createGmxV2IsolationModeVaultFactory(
   gmToken: GmToken,
   userVaultImplementation: GmxV2IsolationModeTokenVaultV1,
   executionFee: BigNumberish,
-  longTokenListed: boolean = true,
+  skipLongToken: boolean = false,
 ): Promise<GmxV2IsolationModeVaultFactory> {
   const artifact = await createArtifactFromWorkspaceIfNotExists('GmxV2IsolationModeVaultFactory');
   return createContractWithLibraryAndArtifact<GmxV2IsolationModeVaultFactory>(
@@ -164,7 +164,7 @@ export async function createGmxV2IsolationModeVaultFactory(
       gmToken,
       userVaultImplementation,
       executionFee,
-      longTokenListed
+      skipLongToken
     ),
   );
 }
@@ -215,7 +215,7 @@ export async function createGmxV2IsolationModeUnwrapperTraderV2(
   dGM: IGmxV2IsolationModeVaultFactory | GmxV2IsolationModeVaultFactory,
   gmxV2Library: GmxV2Library,
   gmxV2Registry: IGmxV2Registry | GmxV2Registry,
-  longTokenListed: boolean = true,
+  skipLongToken: boolean = false,
 ): Promise<GmxV2IsolationModeUnwrapperTraderV2> {
   const implementation = await createGmxV2IsolationModeUnwrapperTraderV2Implementation(core, gmxV2Library);
   const proxy = await createContractWithAbi<IsolationModeTraderProxy>(
@@ -226,7 +226,7 @@ export async function createGmxV2IsolationModeUnwrapperTraderV2(
       implementation,
       dGM,
       gmxV2Registry,
-      longTokenListed
+      skipLongToken
     ),
   );
 
@@ -239,7 +239,7 @@ export async function createTestGmxV2IsolationModeUnwrapperTraderV2(
   gmxV2Library: GmxV2Library,
   safeDelegateCallLibrary: BaseContract,
   gmxV2Registry: IGmxV2Registry | GmxV2Registry,
-  longTokenListed: boolean = true,
+  skipLongToken: boolean = false,
 ): Promise<TestGmxV2IsolationModeUnwrapperTraderV2> {
   const artifact = await createArtifactFromWorkspaceIfNotExists('TestGmxV2IsolationModeUnwrapperTraderV2');
   const libraries = await createAsyncIsolationModeUnwrapperTraderImpl();
@@ -257,7 +257,7 @@ export async function createTestGmxV2IsolationModeUnwrapperTraderV2(
       implementation,
       dGM,
       gmxV2Registry,
-      longTokenListed
+      skipLongToken
     ),
   );
 
@@ -422,6 +422,7 @@ export function getWithdrawalObject(
       executionFee,
       callbackGasLimit,
       updatedAtBlock: 123123123,
+      updatedAtTime: 321321321,
     },
     flags: {
       shouldUnwrapNativeToken: false,
@@ -544,6 +545,7 @@ export function getDepositObject(
       initialLongTokenAmount: longAmount,
       initialShortTokenAmount: shortAmount,
       updatedAtBlock: 123123123,
+      updatedAtTime: 321321321,
     },
     flags: {
       shouldUnwrapNativeToken: false,

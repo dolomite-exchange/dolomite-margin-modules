@@ -118,7 +118,6 @@ contract GmxV2IsolationModeTokenVaultV1 is
     {
         return GmxV2Library.isExternalRedemptionPaused(
             registry(),
-            DOLOMITE_MARGIN(),
             IGmxV2IsolationModeVaultFactory(VAULT_FACTORY())
         );
     }

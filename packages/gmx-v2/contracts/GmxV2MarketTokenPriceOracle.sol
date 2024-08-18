@@ -22,6 +22,7 @@ pragma solidity ^0.8.9;
 
 import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
+import { IDolomitePriceOracle } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomitePriceOracle.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { IGmxV2IsolationModeVaultFactory } from "./interfaces/IGmxV2IsolationModeVaultFactory.sol";
@@ -127,32 +128,34 @@ contract GmxV2MarketTokenPriceOracle is IGmxV2MarketTokenPriceOracle, OnlyDolomi
     function _getCurrentPrice(address _token) internal view returns (uint256) {
         IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(_token);
 
-        uint256 longTokenPrice = REGISTRY.dolomiteRegistry().oracleAggregator().getPrice(factory.LONG_TOKEN()).value;
+        IDolomitePriceOracle aggregator = REGISTRY.dolomiteRegistry().oracleAggregator();
+        uint256 longTokenPrice = aggregator.getPrice(factory.LONG_TOKEN()).value;
         GmxPrice.PriceProps memory longTokenPriceProps = GmxPrice.PriceProps({
             min: _adjustDownForBasisPoints(longTokenPrice, PRICE_DEVIATION_BP) / GMX_DECIMAL_ADJUSTMENT,
             max: _adjustUpForBasisPoints(longTokenPrice, PRICE_DEVIATION_BP) / GMX_DECIMAL_ADJUSTMENT
         });
 
-        uint256 shortTokenPrice = REGISTRY.dolomiteRegistry().oracleAggregator().getPrice(factory.SHORT_TOKEN()).value;
+        uint256 shortTokenPrice = aggregator.getPrice(factory.SHORT_TOKEN()).value;
         GmxPrice.PriceProps memory shortTokenPriceProps = GmxPrice.PriceProps({
             min: _adjustDownForBasisPoints(shortTokenPrice, PRICE_DEVIATION_BP) / GMX_DECIMAL_ADJUSTMENT,
             max: _adjustUpForBasisPoints(shortTokenPrice, PRICE_DEVIATION_BP) / GMX_DECIMAL_ADJUSTMENT
         });
 
-        uint256 gmPrice = _getGmTokenPrice(factory, longTokenPriceProps, shortTokenPriceProps);
+        uint256 gmPrice = _getGmTokenPrice(factory, aggregator, longTokenPriceProps, shortTokenPriceProps);
 
         return _adjustDownForBasisPoints(gmPrice, getFeeBpByMarketToken(factory.UNDERLYING_TOKEN()));
     }
 
     function _getGmTokenPrice(
         IGmxV2IsolationModeVaultFactory _factory,
+        IDolomitePriceOracle _aggregator,
         GmxPrice.PriceProps memory _longTokenPriceProps,
         GmxPrice.PriceProps memory _shortTokenPriceProps
     ) internal view returns (uint256) {
         address underlyingToken = _factory.UNDERLYING_TOKEN();
         address indexToken = REGISTRY.gmxMarketToIndexToken(underlyingToken);
 
-        uint256 indexTokenPrice = REGISTRY.dolomiteRegistry().oracleAggregator().getPrice(indexToken).value;
+        uint256 indexTokenPrice = _aggregator.getPrice(indexToken).value;
 
         GmxMarket.MarketProps memory marketProps = GmxMarket.MarketProps({
             marketToken: underlyingToken,

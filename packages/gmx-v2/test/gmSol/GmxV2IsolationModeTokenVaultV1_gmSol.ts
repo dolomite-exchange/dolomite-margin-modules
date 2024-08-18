@@ -123,14 +123,14 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       blockNumber: await getRealLatestBlockNumber(true, Network.ArbitrumOne),
       network: Network.ArbitrumOne,
     });
-    underlyingToken = core.gmxEcosystemV2!.gmTokens.solUsd.marketToken.connect(core.hhUser1);
+    underlyingToken = core.gmxV2Ecosystem!.gmTokens.solUsd.marketToken.connect(core.hhUser1);
     const gmxV2Library = await createGmxV2Library();
     const userVaultImplementation = await createTestGmxV2IsolationModeTokenVaultV1(core);
 
     gmxV2Registry = await createGmxV2Registry(core, GMX_V2_CALLBACK_GAS_LIMIT);
     await gmxV2Registry.connect(core.governance).ownerSetGmxMarketToIndexToken(
       underlyingToken.address,
-      core.gmxEcosystemV2.gmTokens.solUsd.indexToken.address
+      core.gmxV2Ecosystem.gmTokens.solUsd.indexToken.address
     );
 
     allowableMarketIds = [core.marketIds.nativeUsdc!];
@@ -140,10 +140,10 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       gmxV2Registry,
       allowableMarketIds,
       allowableMarketIds,
-      core.gmxEcosystemV2!.gmTokens.solUsd,
+      core.gmxV2Ecosystem!.gmTokens.solUsd,
       userVaultImplementation,
       executionFee,
-      /* longTokenListed */ false
+      /* skipLongToken */ true
     );
     impersonatedFactory = await impersonate(factory.address, true);
     unwrapper = await createGmxV2IsolationModeUnwrapperTraderV2(
@@ -151,14 +151,14 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       factory,
       gmxV2Library,
       gmxV2Registry,
-      /* longTokenListed */ false
+      /* skipLongToken */ true
     );
     wrapper = await createGmxV2IsolationModeWrapperTraderV2(
       core,
       factory,
       gmxV2Library,
       gmxV2Registry,
-      /* longTokenListed */ false
+      /* skipLongToken */ true
     );
 
     // Use actual price oracle later
@@ -1645,7 +1645,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       await gmxV2Registry.connect(core.governance).ownerSetGmxDataStore(testDataStore.address);
       const keyValue = await testDataStore.getKey(
         CREATE_WITHDRAWALS_DISABLED_KEY,
-        core.gmxEcosystemV2!.gmxWithdrawalHandler.address,
+        core.gmxV2Ecosystem!.gmxWithdrawalHandler.address,
       );
       await testDataStore.setBool(keyValue, true);
       expect(await vault.isExternalRedemptionPaused()).to.be.true;
@@ -1655,7 +1655,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       await gmxV2Registry.connect(core.governance).ownerSetGmxDataStore(testDataStore.address);
       const keyValue = await testDataStore.getKey(
         EXECUTE_WITHDRAWALS_DISABLED_KEY,
-        core.gmxEcosystemV2!.gmxWithdrawalHandler.address,
+        core.gmxV2Ecosystem!.gmxWithdrawalHandler.address,
       );
       await testDataStore.setBool(keyValue, true);
       expect(await vault.isExternalRedemptionPaused()).to.be.true;

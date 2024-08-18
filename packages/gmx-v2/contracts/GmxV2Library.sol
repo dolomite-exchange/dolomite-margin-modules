@@ -24,6 +24,7 @@ import { IAsyncIsolationModeTraderBase } from "@dolomite-exchange/modules-base/c
 import { IIsolationModeUpgradeableProxy } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeUpgradeableProxy.sol";
 import { IIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
 import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IUpgradeableAsyncIsolationModeUnwrapperTrader.sol"; // solhint-disable-line max-line-length
+import { IUpgradeableAsyncIsolationModeWrapperTrader } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IUpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable-line max-line-length
 import { DolomiteMarginVersionWrapperLib } from "@dolomite-exchange/modules-base/contracts/lib/DolomiteMarginVersionWrapperLib.sol";
 import { IDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomitePriceOracle } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomitePriceOracle.sol";
@@ -38,14 +39,13 @@ import { IGmxDataStore } from "./interfaces/IGmxDataStore.sol";
 import { IGmxExchangeRouter } from "./interfaces/IGmxExchangeRouter.sol";
 import { IGmxV2IsolationModeTokenVaultV1 } from "./interfaces/IGmxV2IsolationModeTokenVaultV1.sol";
 import { IGmxV2IsolationModeUnwrapperTraderV2 } from "./interfaces/IGmxV2IsolationModeUnwrapperTraderV2.sol";
+import { IGmxV2IsolationModeWrapperTraderV2 } from "./interfaces/IGmxV2IsolationModeWrapperTraderV2.sol";
 import { IGmxV2IsolationModeVaultFactory } from "./interfaces/IGmxV2IsolationModeVaultFactory.sol";
 import { IGmxV2Registry } from "./interfaces/IGmxV2Registry.sol";
 import { GmxEventUtils } from "./lib/GmxEventUtils.sol";
 import { GmxMarket } from "./lib/GmxMarket.sol";
 import { GmxPrice } from "./lib/GmxPrice.sol";
 // solhint-enable max-line-length
-
-import "hardhat/console.sol";
 
 
 /**
@@ -147,6 +147,17 @@ library GmxV2Library {
         return exchangeRouter.createDeposit(depositParams);
     }
 
+    function initiateCancelDeposit(IGmxV2IsolationModeWrapperTraderV2 _wrapper, bytes32 _key) public {
+        IUpgradeableAsyncIsolationModeWrapperTrader.DepositInfo memory depositInfo = _wrapper.getDepositInfo(_key);
+        Require.that(
+            msg.sender == depositInfo.vault
+                || IAsyncIsolationModeTraderBase(address(_wrapper)).isHandler(msg.sender),
+            _FILE,
+            "Only vault or handler can cancel"
+        );
+        _wrapper.GMX_REGISTRY_V2().gmxExchangeRouter().cancelDeposit(_key);
+    }
+
     function initiateCancelWithdrawal(IGmxV2IsolationModeUnwrapperTraderV2 _unwrapper, bytes32 _key) public {
         IUpgradeableAsyncIsolationModeUnwrapperTrader.WithdrawalInfo memory withdrawalInfo =
                             _unwrapper.getWithdrawalInfo(_key);
@@ -240,9 +251,9 @@ library GmxV2Library {
     function isValidInputOrOutputToken(
         IGmxV2IsolationModeVaultFactory _factory,
         address _token,
-        bool _checkLongToken
+        bool _skipLongToken
     ) public view returns (bool) {
-        if (!_checkLongToken) {
+        if (_skipLongToken) {
             return _token == _factory.SHORT_TOKEN();
         }
         return _token == _factory.LONG_TOKEN() || _token == _factory.SHORT_TOKEN();
@@ -267,7 +278,6 @@ library GmxV2Library {
 
     function isExternalRedemptionPaused(
         IGmxV2Registry _registry,
-        IDolomiteMargin _dolomiteMargin,
         IGmxV2IsolationModeVaultFactory _factory
     ) public view returns (bool) {
         address underlyingToken = _factory.UNDERLYING_TOKEN();
@@ -300,7 +310,6 @@ library GmxV2Library {
             }
         }
 
-        console.log('here middle of pause');
         uint256 maxPnlForWithdrawalsShort = dataStore.getUint(
             _maxPnlFactorKey(_MAX_PNL_FACTOR_FOR_WITHDRAWALS_KEY, underlyingToken, /* _isLong = */ false)
         );
@@ -332,19 +341,10 @@ library GmxV2Library {
             /* _maximize = */ true
         );
 
-        console.logInt(shortPnlToPoolFactor);
-        console.log('maxPnlForWithdrawalsShort: ', maxPnlForWithdrawalsShort);
-
         bool isShortPnlTooLarge = shortPnlToPoolFactor > int256(maxPnlForWithdrawalsShort);
         bool isLongPnlTooLarge = longPnlToPoolFactor > int256(maxPnlForWithdrawalsLong);
 
         uint256 maxCallbackGasLimit = dataStore.getUint(_MAX_CALLBACK_GAS_LIMIT_KEY);
-        {
-        console.log('isShortPnlTooLarge: ', isShortPnlTooLarge);
-        console.log('isLongPnlTooLarge: ', isLongPnlTooLarge);
-        // console.log('maxCallbackGasLimit: ', maxCallbackGasLimit);
-        // console.log('callbackGasLimit: ', _registry.callbackGasLimit());
-        }
 
         return isShortPnlTooLarge || isLongPnlTooLarge || _registry.callbackGasLimit() > maxCallbackGasLimit;
     }
@@ -356,7 +356,7 @@ library GmxV2Library {
     ) public pure {
         if (_longMarketId == type(uint256).max) {
             Require.that(
-                _marketIds.length == 1,
+                _marketIds.length >= 1,
                 _FILE,
                 "Invalid market IDs length"
             );
@@ -382,12 +382,19 @@ library GmxV2Library {
 
     function validateEventDataForWithdrawal(
         IGmxV2IsolationModeVaultFactory _factory,
+        uint256 _marketTokenAmount,
         GmxEventUtils.AddressKeyValue memory _outputTokenAddress,
         GmxEventUtils.UintKeyValue memory _outputTokenAmount,
         GmxEventUtils.AddressKeyValue memory _secondaryOutputTokenAddress,
         GmxEventUtils.UintKeyValue memory _secondaryOutputTokenAmount,
         IGmxV2IsolationModeUnwrapperTraderV2.WithdrawalInfo memory _withdrawalInfo
     ) public view {
+        Require.that(
+            _marketTokenAmount >= _withdrawalInfo.inputAmount,
+            _FILE,
+            "Invalid market token amount"
+        );
+
         Require.that(
             keccak256(abi.encodePacked(_outputTokenAddress.key))
                 == keccak256(abi.encodePacked("outputToken")),

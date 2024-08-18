@@ -1,59 +1,180 @@
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { getAndCheckSpecificNetwork } from 'packages/base/src/utils/dolomite-utils';
-import { Network } from 'packages/base/src/utils/no-deps-constants';
+import { ADDRESS_ZERO, Network } from 'packages/base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from 'packages/base/test/utils';
-import { isIsolationMode } from 'packages/base/test/utils/dolomite';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
-import { EncodedTransaction, prettyPrintEncodedDataWithTypeSafety } from 'packages/deployment/src/utils/deploy-utils';
+import {
+  deployContractAndSave,
+  EncodedTransaction,
+  prettyPrintEncodedDataWithTypeSafety,
+} from 'packages/deployment/src/utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput } from 'packages/deployment/src/utils/dry-run-utils';
 import getScriptName from 'packages/deployment/src/utils/get-script-name';
+import {
+  getGmxV2MarketTokenPriceOracleConstructorParams,
+} from '@dolomite-exchange/modules-gmx-v2/src/gmx-v2-constructors';
+import {
+  GmxV2IsolationModeVaultFactory,
+  GmxV2MarketTokenPriceOracle,
+  GmxV2MarketTokenPriceOracle__factory,
+} from '@dolomite-exchange/modules-gmx-v2/src/types';
+import {
+  CoreProtocolArbitrumOne,
+} from '@dolomite-exchange/modules-base/test/utils/core-protocols/core-protocol-arbitrum-one';
+import { IERC20, IsolationModeTraderProxy } from '@dolomite-exchange/modules-base/src/types';
+import { formatUnits } from 'ethers/lib/utils';
+import { LiveGmMarket } from '@dolomite-exchange/modules-base/test/utils/ecosystem-utils/gmx';
 
-const OLD_ADDRESSES: Record<'GenericTraderProxyV1' | 'LiquidatorProxyV4WithGenericTrader', any> = {
-  GenericTraderProxyV1: {
-    address: '0xe50c3118349f09abafc1bb01ad5cb946b1de83f6',
-    transactionHash: '0xb74148f90d9cba2bcfcca7c7189bff24c72705339afc64577d71f498a8fbda39',
-  },
-  LiquidatorProxyV4WithGenericTrader: {
-    address: '0x34975624E992bF5c094EF0CF3344660f7AaB9CB3',
-    transactionHash: '0x865d8530dc2ff97a3a42739ba1ba0aaf59960ec8f74f47cec2bc0a1495cb6ada',
-  },
-};
+async function encodeSetMarketToken(
+  core: CoreProtocolArbitrumOne,
+  gmxMarketTokenPriceOracle: GmxV2MarketTokenPriceOracle,
+  token: IERC20,
+): Promise<EncodedTransaction> {
+  return prettyPrintEncodedDataWithTypeSafety(
+    core,
+    { gmxMarketTokenPriceOracle },
+    'gmxMarketTokenPriceOracle',
+    'ownerSetMarketToken',
+    [token.address, true],
+  );
+}
+
+async function encodeSetOracleAggregator(
+  core: CoreProtocolArbitrumOne,
+  gmxMarketTokenPriceOracle: GmxV2MarketTokenPriceOracle,
+  token: IERC20,
+): Promise<EncodedTransaction> {
+  return prettyPrintEncodedDataWithTypeSafety(
+    core,
+    { oracleAggregator: core.oracleAggregatorV2 },
+    'oracleAggregator',
+    'ownerInsertOrUpdateToken',
+    [{
+      oracleInfos: [{
+        oracle: gmxMarketTokenPriceOracle.address,
+        tokenPair: ADDRESS_ZERO,
+        weight: 100,
+      }],
+      decimals: 18,
+      token: token.address,
+    }],
+  );
+}
+
+async function encodeSetUserVaultImplementation(
+  core: CoreProtocolArbitrumOne,
+  factory: GmxV2IsolationModeVaultFactory,
+  userVaultAddress: string,
+): Promise<EncodedTransaction> {
+  return prettyPrintEncodedDataWithTypeSafety(
+    core,
+    { factory },
+    'factory',
+    'ownerSetUserVaultImplementation',
+    [userVaultAddress],
+  );
+}
+
+async function encodeSetUnwrapper(
+  core: CoreProtocolArbitrumOne,
+  unwrapper: IsolationModeTraderProxy,
+  unwrapperAddress: string,
+): Promise<EncodedTransaction> {
+  return prettyPrintEncodedDataWithTypeSafety(
+    core,
+    { unwrapper },
+    'unwrapper',
+    'upgradeTo',
+    [unwrapperAddress],
+  );
+}
+
+async function encodeSetWrapper(
+  core: CoreProtocolArbitrumOne,
+  wrapper: IsolationModeTraderProxy,
+  wrapperAddress: string,
+): Promise<EncodedTransaction> {
+  return prettyPrintEncodedDataWithTypeSafety(
+    core,
+    { wrapper },
+    'wrapper',
+    'upgradeTo',
+    [wrapperAddress],
+  );
+}
+
+async function printPrice(core: CoreProtocolArbitrumOne, token: IERC20, name: string) {
+  const priceStruct = await core.dolomiteMargin.getMarketPrice(
+    await core.dolomiteMargin.getMarketIdByTokenAddress(token.address),
+  );
+  console.log(`${name} price: ${formatUnits(priceStruct.value)}`);
+}
 
 /**
  * This script encodes the following transactions:
- * - Removes the old GenericTraderProxy as a global operator of Dolomite Margin
- * - Removes the old LiquidatorProxyV4 as a global operator of Dolomite Margin
- * - For each isolation mode asset, removes the old LiquidatorProxyV4 from the LiquidatorAssetRegistry
+ * - Sets each GM-Factory as the market token on the new GMX V2 Price oracle
+ * - Sets the new GMX V2 price oracle on the oracle aggregator for each GM-Factory
+ * - Sets the new user vault implementation for each GM-Factory
+ * - Sets the new unwrapper trader implementation each GM-Factory unwrapper
+ * - Sets the new wrapper trader implementation each GM-Factory wrapper
  */
 async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
   const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
 
-  const transactions: EncodedTransaction[] = [];
-  transactions.push(
-    await prettyPrintEncodedDataWithTypeSafety(core, core, 'dolomiteMargin', 'ownerSetGlobalOperator', [
-      OLD_ADDRESSES.GenericTraderProxyV1.address,
-      false,
-    ]),
-    await prettyPrintEncodedDataWithTypeSafety(core, core, 'dolomiteMargin', 'ownerSetGlobalOperator', [
-      OLD_ADDRESSES.LiquidatorProxyV4WithGenericTrader.address,
-      false,
-    ]),
+  const gmxV2LibraryAddress = await deployContractAndSave(
+    'GmxV2Library',
+    [],
+    'GmxV2LibraryV7',
+  );
+  const userVaultImplementationAddress = await deployContractAndSave(
+    'GmxV2IsolationModeTokenVaultV1',
+    [core.tokens.weth.address, network],
+    'GmxV2IsolationModeTokenVaultV14',
+    { GmxV2Library: gmxV2LibraryAddress, ...core.libraries.tokenVaultActionsImpl },
+  );
+  const unwrapperImplementationAddress = await deployContractAndSave(
+    'GmxV2IsolationModeUnwrapperTraderV2',
+    [core.tokens.weth.address],
+    'GmxV2IsolationModeUnwrapperTraderImplementationV10',
+    { GmxV2Library: gmxV2LibraryAddress, ...core.libraries.unwrapperTraderImpl },
+  );
+  const wrapperImplementationAddress = await deployContractAndSave(
+    'GmxV2IsolationModeWrapperTraderV2',
+    [core.tokens.weth.address],
+    'GmxV2IsolationModeWrapperTraderImplementationV9',
+    { GmxV2Library: gmxV2LibraryAddress, ...core.libraries.wrapperTraderImpl },
   );
 
-  const numMarkets = await core.dolomiteMargin.getNumMarkets();
-  for (let i = 0; numMarkets.gt(i); i++) {
-    if (await isIsolationMode(i, core)) {
-      transactions.push(
-        await prettyPrintEncodedDataWithTypeSafety(
-          core,
-          core,
-          'liquidatorAssetRegistry',
-          'ownerRemoveLiquidatorFromAssetWhitelist',
-          [i, OLD_ADDRESSES.LiquidatorProxyV4WithGenericTrader.address],
-        ),
-      );
-    }
+  const gmxMarketPriceOracleAddress = await deployContractAndSave(
+    'GmxV2MarketTokenPriceOracle',
+    getGmxV2MarketTokenPriceOracleConstructorParams(core, core.gmxV2Ecosystem.live.registry),
+    'GmxV2MarketTokenPriceOracleV3',
+  );
+  const gmxMarketTokenPriceOracle = GmxV2MarketTokenPriceOracle__factory.connect(
+    gmxMarketPriceOracleAddress,
+    core.hhUser1,
+  );
+
+  const liveMarkets: [LiveGmMarket, string][] = [
+    [core.gmxV2Ecosystem.live.gmArbUsd, 'gmArbUsd'],
+    [core.gmxV2Ecosystem.live.gmBtc, 'gmBtc'],
+    [core.gmxV2Ecosystem.live.gmBtcUsd, 'gmBtcUsd'],
+    [core.gmxV2Ecosystem.live.gmEth, 'gmEth'],
+    [core.gmxV2Ecosystem.live.gmEthUsd, 'gmEthUsd'],
+    [core.gmxV2Ecosystem.live.gmLinkUsd, 'gmLinkUsd'],
+    [core.gmxV2Ecosystem.live.gmUniUsd, 'gmUniUsd'],
+  ];
+
+  const transactions: EncodedTransaction[] = [];
+  for (const [liveMarket] of liveMarkets) {
+    transactions.push(
+      await encodeSetMarketToken(core, gmxMarketTokenPriceOracle, liveMarket.factory),
+      await encodeSetOracleAggregator(core, gmxMarketTokenPriceOracle, liveMarket.factory),
+      await encodeSetUserVaultImplementation(core, liveMarket.factory, userVaultImplementationAddress),
+      await encodeSetUnwrapper(core, liveMarket.unwrapperProxy, unwrapperImplementationAddress),
+      await encodeSetWrapper(core, liveMarket.wrapperProxy, wrapperImplementationAddress),
+    );
   }
 
   return {
@@ -65,26 +186,23 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       chainId: network,
     },
     invariants: async () => {
-      assertHardhatInvariant(
-        !(await core.dolomiteMargin.getIsGlobalOperator(OLD_ADDRESSES.GenericTraderProxyV1.address)),
-        'Invalid global operator',
-      );
-      assertHardhatInvariant(
-        !(await core.dolomiteMargin.getIsGlobalOperator(OLD_ADDRESSES.LiquidatorProxyV4WithGenericTrader.address)),
-        'Invalid global operator',
-      );
+      for (const [liveMarket, label] of liveMarkets) {
+        assertHardhatInvariant(
+          await liveMarket.factory.userVaultImplementation() === userVaultImplementationAddress,
+          `Invalid user vault implementation for ${label}`,
+        );
 
-      const numMarkets = await core.dolomiteMargin.getNumMarkets();
-      for (let i = 0; numMarkets.gt(i); i++) {
-        if (await isIsolationMode(i, core)) {
-          assertHardhatInvariant(
-            !(await core.liquidatorAssetRegistry.isAssetWhitelistedForLiquidation(
-              i,
-              OLD_ADDRESSES.LiquidatorProxyV4WithGenericTrader.address,
-            )),
-            'Invalid liquidator proxy',
-          );
-        }
+        assertHardhatInvariant(
+          await liveMarket.unwrapperProxy.implementation() === unwrapperImplementationAddress,
+          `Invalid unwrapper implementation for ${label}`,
+        );
+
+        assertHardhatInvariant(
+          await liveMarket.wrapperProxy.implementation() === wrapperImplementationAddress,
+          `Invalid wrapper implementation for ${label}`,
+        );
+
+        await printPrice(core, liveMarket.factory, label);
       }
     },
   };
