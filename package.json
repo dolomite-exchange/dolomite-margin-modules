@@ -1,6 +1,6 @@
 {
   "name": "@dolomite-exchange/dolomite-margin-modules",
-  "version": "0.0.13",
+  "version": "1.22.19",
   "description": "Repository uses the DolomiteMargin instance on Arbitrum One for testing new modules and features against the live deployment.",
   "directories": {
     "test": "test"
