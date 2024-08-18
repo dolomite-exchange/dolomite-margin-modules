@@ -24,7 +24,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
   const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
 
-  const gmxV2Libraries = core.gmxEcosystemV2.live.gmxV2LibraryMap;
+  const gmxV2Libraries = core.gmxV2Ecosystem.live.gmxV2LibraryMap;
 
   const tokenVaultActionsAddress = await deployContractAndSave(
     'IsolationModeTokenVaultV1ActionsImpl',
@@ -41,10 +41,10 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const gmxV2TokenVault = GmxV2IsolationModeTokenVaultV1__factory.connect(gmxV2TokenVaultAddress, core.hhUser1);
 
   const factories = [
-    core.gmxEcosystemV2.live.gmArbUsd.factory,
-    core.gmxEcosystemV2.live.gmBtcUsd.factory,
-    core.gmxEcosystemV2.live.gmEthUsd.factory,
-    core.gmxEcosystemV2.live.gmLinkUsd.factory,
+    core.gmxV2Ecosystem.live.gmArbUsd.factory,
+    core.gmxV2Ecosystem.live.gmBtcUsd.factory,
+    core.gmxV2Ecosystem.live.gmEthUsd.factory,
+    core.gmxV2Ecosystem.live.gmLinkUsd.factory,
   ];
 
   const transactions: EncodedTransaction[] = [];

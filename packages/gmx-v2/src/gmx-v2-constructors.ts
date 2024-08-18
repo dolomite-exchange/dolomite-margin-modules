@@ -22,12 +22,12 @@ export async function getGmxV2RegistryConstructorParams(
   }
 
   const calldata = await implementation.populateTransaction.initialize(
-    core.gmxEcosystemV2!.gmxDataStore.address,
-    core.gmxEcosystemV2!.gmxDepositVault.address,
-    core.gmxEcosystemV2!.gmxExchangeRouter.address,
-    core.gmxEcosystemV2!.gmxReader.address,
-    core.gmxEcosystemV2!.gmxRouter.address,
-    core.gmxEcosystemV2!.gmxWithdrawalVault.address,
+    core.gmxV2Ecosystem!.gmxDataStore.address,
+    core.gmxV2Ecosystem!.gmxDepositVault.address,
+    core.gmxV2Ecosystem!.gmxExchangeRouter.address,
+    core.gmxV2Ecosystem!.gmxReader.address,
+    core.gmxV2Ecosystem!.gmxRouter.address,
+    core.gmxV2Ecosystem!.gmxWithdrawalVault.address,
     callbackGasLimit,
     core.dolomiteRegistry.address,
   );
@@ -51,6 +51,7 @@ export function getGmxV2IsolationModeVaultFactoryConstructorParams(
   gmToken: GmToken,
   userVaultImplementation: GmxV2IsolationModeTokenVaultV1,
   executionFee: BigNumberish,
+  skipLongToken: boolean
 ): any[] {
   if (!core.gmxEcosystem) {
     throw new Error('Gmx ecosystem not initialized');
@@ -66,6 +67,7 @@ export function getGmxV2IsolationModeVaultFactoryConstructorParams(
         shortToken: gmToken.shortToken.address,
         longToken: gmToken.longToken.address,
       },
+      skipLongToken: skipLongToken,
       initialAllowableDebtMarketIds: debtMarketIds,
       initialAllowableCollateralMarketIds: collateralMarketIds,
       borrowPositionProxyV2: core.borrowPositionProxyV2.address,
@@ -81,11 +83,13 @@ export async function getGmxV2IsolationModeUnwrapperTraderV2ConstructorParams(
   implementation: GmxV2IsolationModeUnwrapperTraderV2,
   dGM: IGmxV2IsolationModeVaultFactory | GmxV2IsolationModeVaultFactory,
   gmxRegistryV2: IGmxV2Registry | GmxV2Registry,
+  skipLongToken: boolean
 ): Promise<any[]> {
   const calldata = await implementation.populateTransaction.initialize(
     dGM.address,
     core.dolomiteMargin.address,
     gmxRegistryV2.address,
+    skipLongToken
   );
 
   return [
@@ -100,11 +104,13 @@ export async function getGmxV2IsolationModeWrapperTraderV2ConstructorParams(
   implementation: GmxV2IsolationModeWrapperTraderV2,
   dGM: IGmxV2IsolationModeVaultFactory | GmxV2IsolationModeVaultFactory,
   gmxRegistryV2: IGmxV2Registry | GmxV2Registry,
+  skipLongToken: boolean
 ): Promise<any[]> {
   const calldata = await implementation.populateTransaction.initialize(
     dGM.address,
     core.dolomiteMargin.address,
     gmxRegistryV2.address,
+    skipLongToken
   );
 
   return [

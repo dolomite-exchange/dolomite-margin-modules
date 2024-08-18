@@ -72,11 +72,11 @@ import {
   DJ_USDC_V1,
   DJ_USDC_V2,
   DPLV_GLP_MAP,
-  DPT_EZ_ETH_JUN_2024_MAP,
+  DPT_EZ_ETH_JUN_2024_MAP, DPT_EZ_ETH_SEP_2024_MAP,
   DPT_GLP_MAR_2024_MAP,
-  DPT_R_ETH_JUN_2025_MAP,
+  DPT_R_ETH_JUN_2025_MAP, DPT_RS_ETH_SEP_2024_MAP,
   DPT_WE_ETH_APR_2024_MAP,
-  DPT_WE_ETH_JUN_2024_MAP,
+  DPT_WE_ETH_JUN_2024_MAP, DPT_WE_ETH_SEP_2024_MAP,
   DPT_WST_ETH_JUN_2024_MAP,
   DPT_WST_ETH_JUN_2025_MAP,
   DPX_MAP,
@@ -108,6 +108,7 @@ import {
   S_GLP_MAP,
   SIZE_MAP,
   SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL,
+  SOL_MAP,
   ST_ETH_MAP,
   UNI_MAP,
   USDC_MAP,
@@ -346,7 +347,7 @@ export async function setupGMBalance(
   amount: BigNumberish,
   spender?: { address: string },
 ) {
-  const controller = await impersonate(core.gmxEcosystemV2!.gmxExchangeRouter.address, true);
+  const controller = await impersonate(core.gmxV2Ecosystem!.gmxExchangeRouter.address, true);
   await gmToken.connect(controller).mint(signer.address, amount);
   if (signer instanceof SignerWithAddressWithSafety && spender) {
     await gmToken.connect(signer).approve(spender.address, amount);
@@ -806,10 +807,13 @@ export async function setupCoreProtocol<T extends NetworkType>(
         djUsdcV2: DJ_USDC_V2[typedConfig.network].marketId,
         dplvGlp: DPLV_GLP_MAP[typedConfig.network].marketId,
         dPtEzEthJun2024: DPT_EZ_ETH_JUN_2024_MAP[typedConfig.network].marketId,
+        dPtEzEthSep2024: DPT_EZ_ETH_SEP_2024_MAP[typedConfig.network].marketId,
         dPtGlpMar2024: DPT_GLP_MAR_2024_MAP[typedConfig.network].marketId,
         dPtREthJun2025: DPT_R_ETH_JUN_2025_MAP[typedConfig.network].marketId,
+        dPtRsEthSep2024: DPT_RS_ETH_SEP_2024_MAP[typedConfig.network].marketId,
         dPtWeEthApr2024: DPT_WE_ETH_APR_2024_MAP[typedConfig.network].marketId,
         dPtWeEthJun2024: DPT_WE_ETH_JUN_2024_MAP[typedConfig.network].marketId,
+        dPtWeEthSep2024: DPT_WE_ETH_SEP_2024_MAP[typedConfig.network].marketId,
         dPtWstEthJun2024: DPT_WST_ETH_JUN_2024_MAP[typedConfig.network].marketId,
         dPtWstEthJun2025: DPT_WST_ETH_JUN_2025_MAP[typedConfig.network].marketId,
         dai: DAI_MAP[typedConfig.network]!.marketId,
@@ -897,6 +901,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
         radiant: IERC20__factory.connect(RDNT_MAP[typedConfig.network].address, hhUser1),
         sGlp: IERC20__factory.connect(S_GLP_MAP[typedConfig.network].address, hhUser1),
         size: IERC20__factory.connect(SIZE_MAP[typedConfig.network].address, hhUser1),
+        sol: IERC20__factory.connect(SOL_MAP[typedConfig.network].address, hhUser1),
         stEth: IERC20__factory.connect(ST_ETH_MAP[typedConfig.network].address, hhUser1),
         uni: IERC20__factory.connect(UNI_MAP[typedConfig.network].address, hhUser1),
         usdm: IERC20__factory.connect(USDM_MAP[typedConfig.network].address, hhUser1),

@@ -18,17 +18,17 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const transactions = [
     await prettyPrintEncodedDataWithTypeSafety(
       core,
-      { registry: core.gmxEcosystemV2.live.registry },
+      { registry: core.gmxV2Ecosystem.live.registry },
       'registry',
       'ownerSetGmxDepositVault',
-      [core.gmxEcosystemV2.gmxDepositVault.address],
+      [core.gmxV2Ecosystem.gmxDepositVault.address],
     ),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
-      { registry: core.gmxEcosystemV2.live.registry },
+      { registry: core.gmxV2Ecosystem.live.registry },
       'registry',
       'ownerSetGmxWithdrawalVault',
-      [core.gmxEcosystemV2.gmxWithdrawalVault.address],
+      [core.gmxV2Ecosystem.gmxWithdrawalVault.address],
     ),
   ];
 
@@ -41,11 +41,11 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     scriptName: getScriptName(__filename),
     invariants: async () => {
       assertHardhatInvariant(
-        await core.gmxEcosystemV2.live.registry.gmxDepositVault() === core.gmxEcosystemV2.gmxDepositVault.address,
+        await core.gmxV2Ecosystem.live.registry.gmxDepositVault() === core.gmxV2Ecosystem.gmxDepositVault.address,
         'Invalid deposit vault',
       );
       assertHardhatInvariant(
-        await core.gmxEcosystemV2.live.registry.gmxWithdrawalVault() === core.gmxEcosystemV2.gmxWithdrawalVault.address,
+        await core.gmxV2Ecosystem.live.registry.gmxWithdrawalVault() === core.gmxV2Ecosystem.gmxWithdrawalVault.address,
         'Invalid withdrawal vault',
       );
     },

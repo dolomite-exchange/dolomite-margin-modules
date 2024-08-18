@@ -51,6 +51,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     // =====================================================
 
     bytes32 private constant _FILE = "GmxV2IsolationModeWrapperV2";
+    bytes32 private constant _SKIP_LONG_TOKEN = bytes32(uint256(keccak256("eip1967.proxy.skipLongToken")) - 1);
 
     // =====================================================
     // ==================== Constructor ====================
@@ -67,9 +68,11 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     function initialize(
         address _dGM,
         address _dolomiteMargin,
-        address _gmxV2Registry
+        address _gmxV2Registry,
+        bool _skipLongToken
     ) external initializer {
         _initializeWrapperTrader(_dGM, _gmxV2Registry, _dolomiteMargin);
+        _setUint256(_SKIP_LONG_TOKEN, _skipLongToken ? 1 : 0);
     }
 
     function afterDepositExecution(
@@ -102,7 +105,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     )
     external
     onlyHandler(msg.sender) {
-        DepositInfo memory depositInfo = _getDepositSlot(_key);
+        DepositInfo memory depositInfo = getDepositInfo(_key);
         depositInfo.isRetryable = true;
         AsyncIsolationModeWrapperTraderImpl.setDepositInfo(_getStorageSlot(), _key, depositInfo);
 
@@ -110,13 +113,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     }
 
     function initiateCancelDeposit(bytes32 _key) external {
-        DepositInfo memory depositInfo = _getDepositSlot(_key);
-        Require.that(
-            msg.sender == depositInfo.vault || isHandler(msg.sender),
-            _FILE,
-            "Only vault or handler can cancel"
-        );
-        GMX_REGISTRY_V2().gmxExchangeRouter().cancelDeposit(_key);
+        GmxV2Library.initiateCancelDeposit(/* _wrapper = */ this, _key);
     }
 
     function isValidInputToken(
@@ -124,12 +121,18 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     )
     public
     view
+    virtual
     override(UpgradeableAsyncIsolationModeWrapperTrader, IIsolationModeWrapperTraderV2)
     returns (bool) {
         return GmxV2Library.isValidInputOrOutputToken(
             IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())),
-            _inputToken
+            _inputToken,
+            skipLongToken()
         );
+    }
+
+    function skipLongToken() public view returns (bool) {
+        return _getUint256(_SKIP_LONG_TOKEN) == 1;
     }
 
     function GMX_REGISTRY_V2() public view returns (IGmxV2Registry) {

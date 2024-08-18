@@ -29,6 +29,7 @@ import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "@dolomite-exchang
 import { IUpgradeableAsyncIsolationModeWrapperTrader } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IUpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable-line max-line-length
 import { DolomiteMarginVersionWrapperLib } from "@dolomite-exchange/modules-base/contracts/lib/DolomiteMarginVersionWrapperLib.sol";
 import { IDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteMargin.sol";
+import { IDolomitePriceOracle } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomitePriceOracle.sol";
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { IWETH } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IWETH.sol";
 import { DecimalLib } from "@dolomite-exchange/modules-base/contracts/protocol/lib/DecimalLib.sol";
@@ -40,6 +41,7 @@ import { IGmxDataStore } from "./interfaces/IGmxDataStore.sol";
 import { IGmxExchangeRouter } from "./interfaces/IGmxExchangeRouter.sol";
 import { IGmxV2IsolationModeTokenVaultV1 } from "./interfaces/IGmxV2IsolationModeTokenVaultV1.sol";
 import { IGmxV2IsolationModeUnwrapperTraderV2 } from "./interfaces/IGmxV2IsolationModeUnwrapperTraderV2.sol";
+import { IGmxV2IsolationModeWrapperTraderV2 } from "./interfaces/IGmxV2IsolationModeWrapperTraderV2.sol";
 import { IGmxV2IsolationModeVaultFactory } from "./interfaces/IGmxV2IsolationModeVaultFactory.sol";
 import { IGmxV2Registry } from "./interfaces/IGmxV2Registry.sol";
 import { GmxEventUtils } from "./lib/GmxEventUtils.sol";
@@ -145,6 +147,17 @@ library GmxV2Library {
         );
 
         return exchangeRouter.createDeposit(depositParams);
+    }
+
+    function initiateCancelDeposit(IGmxV2IsolationModeWrapperTraderV2 _wrapper, bytes32 _key) public {
+        IUpgradeableAsyncIsolationModeWrapperTrader.DepositInfo memory depositInfo = _wrapper.getDepositInfo(_key);
+        Require.that(
+            msg.sender == depositInfo.vault
+                || IAsyncIsolationModeTraderBase(address(_wrapper)).isHandler(msg.sender),
+            _FILE,
+            "Only vault or handler can cancel"
+        );
+        _wrapper.GMX_REGISTRY_V2().gmxExchangeRouter().cancelDeposit(_key);
     }
 
     function unwrapperInitiateCancelWithdrawal(IGmxV2IsolationModeUnwrapperTraderV2 _unwrapper, bytes32 _key) public {
@@ -272,8 +285,12 @@ library GmxV2Library {
 
     function isValidInputOrOutputToken(
         IGmxV2IsolationModeVaultFactory _factory,
-        address _token
+        address _token,
+        bool _skipLongToken
     ) public view returns (bool) {
+        if (_skipLongToken) {
+            return _token == _factory.SHORT_TOKEN();
+        }
         return _token == _factory.LONG_TOKEN() || _token == _factory.SHORT_TOKEN();
     }
 
@@ -296,7 +313,6 @@ library GmxV2Library {
 
     function isExternalRedemptionPaused(
         IGmxV2Registry _registry,
-        IDolomiteMargin _dolomiteMargin,
         IGmxV2IsolationModeVaultFactory _factory
     ) public view returns (bool) {
         address underlyingToken = _factory.UNDERLYING_TOKEN();
@@ -336,12 +352,13 @@ library GmxV2Library {
             _maxPnlFactorKey(_MAX_PNL_FACTOR_FOR_WITHDRAWALS_KEY, underlyingToken, /* _isLong = */ true)
         );
 
+        IDolomitePriceOracle aggregator = _registry.dolomiteRegistry().oracleAggregator();
         GmxMarket.MarketPrices memory marketPrices = _getGmxMarketPrices(
-            _registry.dolomiteRegistry().oracleAggregator().getPrice(
+            aggregator.getPrice(
                 _registry.gmxMarketToIndexToken(underlyingToken)
             ).value,
-            _dolomiteMargin.getMarketPrice(_factory.LONG_TOKEN_MARKET_ID()).value,
-            _dolomiteMargin.getMarketPrice(_factory.SHORT_TOKEN_MARKET_ID()).value
+            aggregator.getPrice(_factory.LONG_TOKEN()).value,
+            aggregator.getPrice(_factory.SHORT_TOKEN()).value
         );
 
         int256 shortPnlToPoolFactor = _registry.gmxReader().getPnlToPoolFactor(
@@ -372,27 +389,47 @@ library GmxV2Library {
         uint256 _longMarketId,
         uint256 _shortMarketId
     ) public pure {
-        Require.that(
-            _marketIds.length >= 2,
-            _FILE,
-            "Invalid market IDs length"
-        );
-        Require.that(
-            (_marketIds[0] == _longMarketId && _marketIds[1] == _shortMarketId)
-            || (_marketIds[0] == _shortMarketId && _marketIds[1] == _longMarketId),
-            _FILE,
-            "Invalid market IDs"
-        );
+        if (_longMarketId == type(uint256).max) {
+            Require.that(
+                _marketIds.length >= 1,
+                _FILE,
+                "Invalid market IDs length"
+            );
+            Require.that(
+                _marketIds[0] == _shortMarketId,
+                _FILE,
+                "Invalid market IDs"
+            );
+        } else {
+            Require.that(
+                _marketIds.length >= 2,
+                _FILE,
+                "Invalid market IDs length"
+            );
+            Require.that(
+                (_marketIds[0] == _longMarketId && _marketIds[1] == _shortMarketId)
+                || (_marketIds[0] == _shortMarketId && _marketIds[1] == _longMarketId),
+                _FILE,
+                "Invalid market IDs"
+            );
+        }
     }
 
     function validateEventDataForWithdrawal(
         IGmxV2IsolationModeVaultFactory _factory,
+        uint256 _marketTokenAmount,
         GmxEventUtils.AddressKeyValue memory _outputTokenAddress,
         GmxEventUtils.UintKeyValue memory _outputTokenAmount,
         GmxEventUtils.AddressKeyValue memory _secondaryOutputTokenAddress,
         GmxEventUtils.UintKeyValue memory _secondaryOutputTokenAmount,
         IGmxV2IsolationModeUnwrapperTraderV2.WithdrawalInfo memory _withdrawalInfo
     ) public view {
+        Require.that(
+            _marketTokenAmount >= _withdrawalInfo.inputAmount,
+            _FILE,
+            "Invalid market token amount"
+        );
+
         Require.that(
             keccak256(abi.encodePacked(_outputTokenAddress.key))
                 == keccak256(abi.encodePacked("outputToken")),

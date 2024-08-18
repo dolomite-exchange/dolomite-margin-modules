@@ -18,7 +18,7 @@ import { Network } from '../../../src/utils/no-deps-constants';
 import { AbraEcosystem } from '../ecosystem-utils/abra';
 import { ArbEcosystem } from '../ecosystem-utils/arb';
 import { CamelotEcosystem } from '../ecosystem-utils/camelot';
-import { GmxEcosystem, GmxEcosystemV2 } from '../ecosystem-utils/gmx';
+import { GmxEcosystem, GmxV2Ecosystem } from '../ecosystem-utils/gmx';
 import { JonesEcosystem } from '../ecosystem-utils/jones';
 import { LiquidityMiningEcosystemArbitrumOne } from '../ecosystem-utils/liquidity-mining';
 import { OdosEcosystem } from '../ecosystem-utils/odos';
@@ -74,6 +74,7 @@ interface CoreProtocolTokensArbitrumOne extends CoreProtocolTokens<Network.Arbit
   radiant: IERC20;
   pendle: IERC20;
   size: IERC20;
+  sol: IERC20;
   stEth: IERC20;
   uni: IERC20;
   usdm: IERC20;
@@ -111,10 +112,13 @@ interface CoreProtocolMarketIdsArbitrumOne extends CoreProtocolMarketIds {
   djUsdcV2: BigNumberish;
   dplvGlp: BigNumberish;
   dPtEzEthJun2024: BigNumberish;
+  dPtEzEthSep2024: BigNumberish;
   dPtGlpMar2024: BigNumberish;
   dPtWeEthApr2024: BigNumberish;
   dPtWeEthJun2024: BigNumberish;
+  dPtWeEthSep2024: BigNumberish;
   dPtREthJun2025: BigNumberish;
+  dPtRsEthSep2024: BigNumberish;
   dPtWstEthJun2024: BigNumberish;
   dPtWstEthJun2025: BigNumberish;
   dai: BigNumberish;
@@ -158,7 +162,7 @@ interface CoreProtocolParamsArbitrumOne {
   dolomiteMigrator: IDolomiteMigrator;
   dTokens: CoreProtocolArbitrumOneDTokens;
   gmxEcosystem: GmxEcosystem;
-  gmxEcosystemV2: GmxEcosystemV2;
+  gmxEcosystemV2: GmxV2Ecosystem;
   jonesEcosystem: JonesEcosystem;
   liquidityMiningEcosystem: LiquidityMiningEcosystemArbitrumOne;
   marketIds: CoreProtocolMarketIdsArbitrumOne;
@@ -182,7 +186,7 @@ export class CoreProtocolArbitrumOne extends CoreProtocolAbstract<Network.Arbitr
   public readonly dolomiteMigrator: IDolomiteMigrator;
   public readonly dTokens: CoreProtocolArbitrumOneDTokens;
   public readonly gmxEcosystem: GmxEcosystem;
-  public readonly gmxEcosystemV2: GmxEcosystemV2;
+  public readonly gmxV2Ecosystem: GmxV2Ecosystem;
   public readonly jonesEcosystem: JonesEcosystem;
   public readonly liquidityMiningEcosystem: LiquidityMiningEcosystemArbitrumOne;
   public override readonly marketIds: CoreProtocolMarketIdsArbitrumOne;
@@ -207,7 +211,7 @@ export class CoreProtocolArbitrumOne extends CoreProtocolAbstract<Network.Arbitr
     this.dolomiteMigrator = arbParams.dolomiteMigrator;
     this.dTokens = arbParams.dTokens;
     this.gmxEcosystem = arbParams.gmxEcosystem;
-    this.gmxEcosystemV2 = arbParams.gmxEcosystemV2;
+    this.gmxV2Ecosystem = arbParams.gmxEcosystemV2;
     this.jonesEcosystem = arbParams.jonesEcosystem;
     this.liquidityMiningEcosystem = arbParams.liquidityMiningEcosystem;
     this.marketIds = arbParams.marketIds;

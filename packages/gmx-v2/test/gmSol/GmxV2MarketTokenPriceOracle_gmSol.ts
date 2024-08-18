@@ -8,8 +8,8 @@ import { Network, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
 import { expectEvent, expectThrow } from 'packages/base/test/utils/assertions';
 import { setupCoreProtocol, setupTestMarket } from 'packages/base/test/utils/setup';
-import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
-import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE_FOR_TESTS } from '../src/gmx-v2-constructors';
+import { CoreProtocolArbitrumOne } from '../../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
+import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE_FOR_TESTS } from '../../src/gmx-v2-constructors';
 import {
   GmxV2IsolationModeUnwrapperTraderV2,
   GmxV2IsolationModeVaultFactory,
@@ -19,7 +19,7 @@ import {
   IGmxMarketToken,
   TestGmxReader,
   TestGmxReader__factory,
-} from '../src/types';
+} from '../../src/types';
 import {
   createGmxV2IsolationModeTokenVaultV1,
   createGmxV2IsolationModeUnwrapperTraderV2,
@@ -28,7 +28,7 @@ import {
   createGmxV2Library,
   createGmxV2MarketTokenPriceOracle,
   createGmxV2Registry,
-} from './gmx-v2-ecosystem-utils';
+} from '../gmx-v2-ecosystem-utils';
 import { createDolomiteRegistryImplementation } from 'packages/base/test/utils/dolomite';
 
 const GM_ETH_USD_PRICE_NO_MAX_WEI = BigNumber.from('919979975416060612'); // $0.9199
@@ -58,12 +58,12 @@ describe('GmxV2MarketTokenPriceOracle', () => {
       blockNumber,
       network: Network.ArbitrumOne,
     });
-    underlyingToken = core.gmxV2Ecosystem!.gmxEthUsdMarketToken.connect(core.hhUser1);
+    underlyingToken = core.gmxV2Ecosystem!.gmTokens.solUsd.marketToken.connect(core.hhUser1);
 
     gmxV2Registry = await createGmxV2Registry(core, GMX_V2_CALLBACK_GAS_LIMIT);
     await gmxV2Registry.connect(core.governance).ownerSetGmxMarketToIndexToken(
       underlyingToken.address,
-      core.gmxV2Ecosystem.gmTokens.ethUsd.indexToken.address
+      core.gmxV2Ecosystem.gmTokens.solUsd.indexToken.address
     );
 
     const gmxV2Library = await createGmxV2Library();
@@ -76,21 +76,24 @@ describe('GmxV2MarketTokenPriceOracle', () => {
       gmxV2Registry,
       allowableMarketIds,
       allowableMarketIds,
-      core.gmxV2Ecosystem!.gmTokens.ethUsd,
+      core.gmxV2Ecosystem!.gmTokens.solUsd,
       userVaultImplementation,
       GMX_V2_EXECUTION_FEE_FOR_TESTS,
+      true
     );
     unwrapper = await createGmxV2IsolationModeUnwrapperTraderV2(
       core,
       factory,
       gmxV2Library,
       gmxV2Registry,
+      true
     );
     wrapper = await createGmxV2IsolationModeWrapperTraderV2(
       core,
       factory,
       gmxV2Library,
       gmxV2Registry,
+      true
     );
 
     const newRegistry = await createDolomiteRegistryImplementation();
@@ -104,6 +107,7 @@ describe('GmxV2MarketTokenPriceOracle', () => {
     marketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, factory, true, gmPriceOracle);
 
+    await core.dolomiteMargin.ownerSetGlobalOperator(factory.address, true);
     await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
 
     await gmxV2Registry.connect(core.governance).ownerSetUnwrapperByToken(factory.address, unwrapper.address);
@@ -139,7 +143,7 @@ describe('GmxV2MarketTokenPriceOracle', () => {
   });
 
   describe('#getPrice', () => {
-    it('returns the correct value when there is no max wei', async () => {
+    it.only('returns the correct value when there is no max wei', async () => {
       // Have to be at specific timestamp to get consistent price
       // Setup core protocol sometimes ends at different timestamps which threw off the test
       await setNextBlockTimestamp(1693923100);

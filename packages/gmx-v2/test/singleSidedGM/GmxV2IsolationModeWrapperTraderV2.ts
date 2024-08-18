@@ -103,13 +103,13 @@ describe('GmxV2IsolationModeWrapperTraderV2_singleSided', () => {
       blockNumber: 221_294_300,
       network: Network.ArbitrumOne
     });
-    underlyingToken = core.gmxEcosystemV2!.gmTokens.btc.marketToken.connect(core.hhUser1);
+    underlyingToken = core.gmxV2Ecosystem!.gmTokens.btc.marketToken.connect(core.hhUser1);
     const library = await createGmxV2Library();
     const userVaultImplementation = await createGmxV2IsolationModeTokenVaultV1(core, library);
     gmxV2Registry = await createGmxV2Registry(core, callbackGasLimit);
     await gmxV2Registry.connect(core.governance).ownerSetGmxMarketToIndexToken(
       underlyingToken.address,
-      core.gmxEcosystemV2!.gmTokens.btc.indexToken.address
+      core.gmxV2Ecosystem!.gmTokens.btc.indexToken.address
     );
 
     await core.chainlinkPriceOracleV3.ownerInsertOrUpdateOracleToken(
@@ -128,7 +128,7 @@ describe('GmxV2IsolationModeWrapperTraderV2_singleSided', () => {
 
     if (process.env.COVERAGE === 'true') {
       console.log('\tUsing coverage configuration...');
-      const dataStore = core.gmxEcosystemV2!.gmxDataStore;
+      const dataStore = core.gmxV2Ecosystem!.gmxDataStore;
       const callbackKey = ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(
         ['string'],
         ['MAX_CALLBACK_GAS_LIMIT'],
@@ -149,7 +149,7 @@ describe('GmxV2IsolationModeWrapperTraderV2_singleSided', () => {
       gmxV2Registry,
       [...allowableMarketIds, core.marketIds.nativeUsdc, core.marketIds.weth],
       allowableMarketIds,
-      core.gmxEcosystemV2!.gmTokens.btc,
+      core.gmxV2Ecosystem!.gmTokens.btc,
       userVaultImplementation,
       executionFee,
     );
@@ -204,7 +204,7 @@ describe('GmxV2IsolationModeWrapperTraderV2_singleSided', () => {
     await setupWBTCBalance(core, core.hhUser1, wbtcAmount, core.dolomiteMargin);
     await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.wbtc, wbtcAmount);
 
-    await setEtherBalance(core.gmxEcosystemV2!.gmxExecutor.address, parseEther('100'));
+    await setEtherBalance(core.gmxV2Ecosystem!.gmxExecutor.address, parseEther('100'));
 
     snapshotId = await snapshot();
   });
@@ -306,12 +306,12 @@ describe('GmxV2IsolationModeWrapperTraderV2_singleSided', () => {
     it('should fail if execute deposit feature is disabled', async () => {
       const controllerKey = ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['string'], ['CONTROLLER']));
       const roleStore = IGmxRoleStore__factory.connect(
-        await core.gmxEcosystemV2!.gmxDataStore.roleStore(),
+        await core.gmxV2Ecosystem!.gmxDataStore.roleStore(),
         core.hhUser1,
       );
       const controllers = await roleStore.getRoleMembers(controllerKey, 0, 1);
       const controller = await impersonate(controllers[0], true);
-      await core.gmxEcosystemV2!.gmxDataStore.connect(controller).setBool(EXECUTE_DEPOSITS_DISABLED_KEY, true);
+      await core.gmxV2Ecosystem!.gmxDataStore.connect(controller).setBool(EXECUTE_DEPOSITS_DISABLED_KEY, true);
 
       await vault.transferIntoPositionWithOtherToken(
         defaultAccountNumber,
@@ -430,7 +430,7 @@ describe('GmxV2IsolationModeWrapperTraderV2_singleSided', () => {
     it('should work normally with long token', async () => {
       const minAmountOut = parseEther('100');
       await setupBalances(core.marketIds.wbtc, wbtcAmount, minAmountOut);
-      const result = await core.gmxEcosystemV2!.gmxDepositHandler.connect(core.gmxEcosystemV2!.gmxExecutor)
+      const result = await core.gmxV2Ecosystem!.gmxDepositHandler.connect(core.gmxV2Ecosystem!.gmxExecutor)
         .executeDeposit(
           depositKey,
           getOracleParams(core.tokens.wbtc.address, GMX_BTC_PLACEHOLDER_MAP[Network.ArbitrumOne].address),
@@ -456,7 +456,7 @@ describe('GmxV2IsolationModeWrapperTraderV2_singleSided', () => {
       const minAmountOut = parseEther('800');
       await setupBalances(core.marketIds.wbtc, usdcAmount, minAmountOut);
 
-      const result = await core.gmxEcosystemV2!.gmxDepositHandler.connect(core.gmxEcosystemV2!.gmxExecutor)
+      const result = await core.gmxV2Ecosystem!.gmxDepositHandler.connect(core.gmxV2Ecosystem!.gmxExecutor)
         .executeDeposit(
           depositKey,
           getOracleParams(core.tokens.weth.address, core.tokens.nativeUsdc!.address),
@@ -482,7 +482,7 @@ describe('GmxV2IsolationModeWrapperTraderV2_singleSided', () => {
       const minAmountOut = parseEther('7100');
       await setupBalances(core.marketIds.wbtc, wbtcAmount, minAmountOut);
 
-      const result = await core.gmxEcosystemV2!.gmxDepositHandler.connect(core.gmxEcosystemV2!.gmxExecutor)
+      const result = await core.gmxV2Ecosystem!.gmxDepositHandler.connect(core.gmxV2Ecosystem!.gmxExecutor)
         .executeDeposit(
           depositKey,
           getOracleParams(core.tokens.wbtc.address, GMX_BTC_PLACEHOLDER_MAP[Network.ArbitrumOne].address),
@@ -510,7 +510,7 @@ describe('GmxV2IsolationModeWrapperTraderV2_singleSided', () => {
       await expectWalletBalance(core.hhUser1, underlyingToken, ZERO_BI);
 
       await core.dolomiteMargin.ownerSetMaxWei(marketId, ONE_BI);
-      const result = await core.gmxEcosystemV2!.gmxDepositHandler.connect(core.gmxEcosystemV2!.gmxExecutor)
+      const result = await core.gmxV2Ecosystem!.gmxDepositHandler.connect(core.gmxV2Ecosystem!.gmxExecutor)
         .executeDeposit(
           depositKey,
           getOracleParams(core.tokens.wbtc.address, GMX_BTC_PLACEHOLDER_MAP[Network.ArbitrumOne].address),
@@ -544,7 +544,7 @@ describe('GmxV2IsolationModeWrapperTraderV2_singleSided', () => {
 
       const ethDiff = parseEther('0.00001');
       await core.dolomiteMargin.ownerSetMaxWei(marketId, parseEther('800').add(ethDiff));
-      const result = await core.gmxEcosystemV2!.gmxDepositHandler.connect(core.gmxEcosystemV2!.gmxExecutor)
+      const result = await core.gmxV2Ecosystem!.gmxDepositHandler.connect(core.gmxV2Ecosystem!.gmxExecutor)
         .executeDeposit(
           depositKey,
           getOracleParams(core.tokens.wbtc.address, GMX_BTC_PLACEHOLDER_MAP[Network.ArbitrumOne].address),
@@ -596,7 +596,7 @@ describe('GmxV2IsolationModeWrapperTraderV2_singleSided', () => {
       );
       await core.testEcosystem!.testPriceOracle.setPrice(factory.address, ONE_BI); // as close to 0 as possible
       await core.dolomiteMargin.ownerSetPriceOracle(marketId, core.testEcosystem!.testPriceOracle.address);
-      const result = await core.gmxEcosystemV2!.gmxDepositHandler.connect(core.gmxEcosystemV2!.gmxExecutor)
+      const result = await core.gmxV2Ecosystem!.gmxDepositHandler.connect(core.gmxV2Ecosystem!.gmxExecutor)
         .executeDeposit(
           depositKey,
           getOracleParams(core.tokens.wbtc.address, GMX_BTC_PLACEHOLDER_MAP[Network.ArbitrumOne].address),
@@ -631,7 +631,7 @@ describe('GmxV2IsolationModeWrapperTraderV2_singleSided', () => {
       await setupBalances(core.marketIds.wbtc!, wbtcAmount, minAmountOut);
 
       await factory.setReversionType(ReversionType.Assert);
-      const result = await core.gmxEcosystemV2!.gmxDepositHandler.connect(core.gmxEcosystemV2!.gmxExecutor)
+      const result = await core.gmxV2Ecosystem!.gmxDepositHandler.connect(core.gmxV2Ecosystem!.gmxExecutor)
         .executeDeposit(
           depositKey,
           getOracleParams(core.tokens.wbtc.address, GMX_BTC_PLACEHOLDER_MAP[Network.ArbitrumOne].address),
@@ -660,7 +660,7 @@ describe('GmxV2IsolationModeWrapperTraderV2_singleSided', () => {
       await setupBalances(core.marketIds.wbtc, wbtcAmount, minAmountOut);
 
       await setupGMBalance(core, underlyingToken, await impersonate(wrapper.address, true), minAmountOut);
-      const depositExecutor = await impersonate(core.gmxEcosystemV2!.gmxDepositHandler.address, true);
+      const depositExecutor = await impersonate(core.gmxV2Ecosystem!.gmxDepositHandler.address, true);
       const depositInfo = getDepositObject(
         wrapper.address,
         underlyingToken.address,
@@ -693,7 +693,7 @@ describe('GmxV2IsolationModeWrapperTraderV2_singleSided', () => {
       await setupBalances(core.marketIds.wbtc, wbtcAmount, minAmountOut);
 
       await setupGMBalance(core, underlyingToken, await impersonate(wrapper.address, true), minAmountOut, vault);
-      const depositExecutor = await impersonate(core.gmxEcosystemV2!.gmxDepositHandler.address, true);
+      const depositExecutor = await impersonate(core.gmxV2Ecosystem!.gmxDepositHandler.address, true);
       const depositInfo = getDepositObject(
         wrapper.address,
         underlyingToken.address,
@@ -738,7 +738,7 @@ describe('GmxV2IsolationModeWrapperTraderV2_singleSided', () => {
     });
 
     it('should fail when deposit was not created through wrapper', async () => {
-      const depositExecutor = await impersonate(core.gmxEcosystemV2!.gmxDepositHandler.address, true);
+      const depositExecutor = await impersonate(core.gmxV2Ecosystem!.gmxDepositHandler.address, true);
       const depositInfo = getDepositObject(
         wrapper.address,
         underlyingToken.address,
@@ -963,7 +963,7 @@ describe('GmxV2IsolationModeWrapperTraderV2_singleSided', () => {
     });
 
     it('should fail when deposit was not created through wrapper', async () => {
-      const depositExecutor = await impersonate(core.gmxEcosystemV2!.gmxDepositHandler.address, true);
+      const depositExecutor = await impersonate(core.gmxV2Ecosystem!.gmxDepositHandler.address, true);
       const depositInfo = getDepositObject(
         wrapper.address,
         underlyingToken.address,
@@ -1107,7 +1107,7 @@ describe('GmxV2IsolationModeWrapperTraderV2_singleSided', () => {
     });
 
     it('should work normally when called by valid handler', async () => {
-      const depositExecutor = await impersonate(core.gmxEcosystemV2!.gmxDepositHandler.address, true);
+      const depositExecutor = await impersonate(core.gmxV2Ecosystem!.gmxDepositHandler.address, true);
       await vault.transferIntoPositionWithOtherToken(
         defaultAccountNumber,
         borrowAccountNumber,
@@ -1185,7 +1185,7 @@ describe('GmxV2IsolationModeWrapperTraderV2_singleSided', () => {
 
       await expectThrow(
         wrapper.connect(core.hhUser1).initiateCancelDeposit(depositKey),
-        'GmxV2IsolationModeWrapperV2: Only vault or handler can cancel',
+        'GmxV2Library: Only vault or handler can cancel',
       );
     });
   });

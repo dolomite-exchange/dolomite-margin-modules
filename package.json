@@ -1,6 +1,6 @@
 {
   "name": "@dolomite-exchange/dolomite-margin-modules",
-  "version": "0.0.13",
+  "version": "1.22.19",
   "description": "Repository uses the DolomiteMargin instance on Arbitrum One for testing new modules and features against the live deployment.",
   "directories": {
     "test": "test"
@@ -30,7 +30,7 @@
     "@babel/core": "^7.20.5",
     "@babel/eslint-parser": "^7.19.1",
     "@chainlink/contracts": "^0.6.1",
-    "@dolomite-exchange/dolomite-margin": "^0.12.9",
+    "@dolomite-exchange/dolomite-margin": "^0.12.12",
     "@dolomite-exchange/zap-sdk": "^0.2.47-a",
     "@nomicfoundation/hardhat-network-helpers": "^1.0.10",
     "@nomicfoundation/hardhat-verify": "^2.0.4",

@@ -52,6 +52,7 @@ contract GmxV2IsolationModeVaultFactory is
         address gmxV2Registry;
         uint256 executionFee;
         MarketInfoConstructorParams tokenAndMarketAddresses;
+        bool skipLongToken;
         uint256[] initialAllowableDebtMarketIds;
         uint256[] initialAllowableCollateralMarketIds;
         address borrowPositionProxyV2;
@@ -69,7 +70,6 @@ contract GmxV2IsolationModeVaultFactory is
     address public immutable override SHORT_TOKEN; // solhint-disable-line var-name-mixedcase
     address public immutable override LONG_TOKEN; // solhint-disable-line var-name-mixedcase
     address public immutable override INDEX_TOKEN; // solhint-disable-line var-name-mixedcase
-    // uint256 public immutable INDEX_TOKEN_MARKET_ID; // solhint-disable-line var-name-mixedcase
     uint256 public immutable SHORT_TOKEN_MARKET_ID; // solhint-disable-line var-name-mixedcase
     uint256 public immutable LONG_TOKEN_MARKET_ID; // solhint-disable-line var-name-mixedcase
 
@@ -93,11 +93,12 @@ contract GmxV2IsolationModeVaultFactory is
     )
     {
         INDEX_TOKEN = _params.tokenAndMarketAddresses.indexToken;
-        // INDEX_TOKEN_MARKET_ID = DOLOMITE_MARGIN().getMarketIdByTokenAddress(INDEX_TOKEN);
         SHORT_TOKEN = _params.tokenAndMarketAddresses.shortToken;
         SHORT_TOKEN_MARKET_ID = DOLOMITE_MARGIN().getMarketIdByTokenAddress(SHORT_TOKEN);
         LONG_TOKEN = _params.tokenAndMarketAddresses.longToken;
-        LONG_TOKEN_MARKET_ID = DOLOMITE_MARGIN().getMarketIdByTokenAddress(LONG_TOKEN);
+        LONG_TOKEN_MARKET_ID = _params.skipLongToken
+            ? type(uint256).max
+            : DOLOMITE_MARGIN().getMarketIdByTokenAddress(LONG_TOKEN);
 
         GmxV2Library.validateInitialMarketIds(
             _params.initialAllowableDebtMarketIds,
