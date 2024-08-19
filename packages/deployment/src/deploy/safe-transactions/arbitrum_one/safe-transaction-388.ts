@@ -19,7 +19,7 @@ import { CHAINLINK_PRICE_AGGREGATORS_MAP } from '@dolomite-exchange/modules-base
 
 /**
  * This script encodes the following transactions:
- * - Update the interest rate model for PENDLE
+ * - Adds support for USDe on Dolomite
  */
 async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
@@ -39,8 +39,8 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       core.interestSetters.linearStepFunction14L86U90OInterestSetter,
       TargetCollateralization.Base,
       TargetLiquidationPenalty.Base,
-      parseEther(`${5_000_000}`),
-      parseEther(`${3_000_000}`),
+      parseEther(`${10_000_000}`),
+      parseEther(`${8_000_000}`),
       false,
     )));
 

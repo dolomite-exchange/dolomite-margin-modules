@@ -15,9 +15,9 @@
     "coverage:prepare": "yarn workspaces foreach run coverage:prepare",
     "test": "yarn workspaces foreach run test",
     "deploy:coveralls": "coveralls < coverage/lcov.info",
-    "lint": "yarn workspaces foreach run lint",
-    "lint:sol": "yarn workspaces foreach run lint:sol",
-    "lint:ts": "yarn workspaces foreach run lint:ts"
+    "lint": "yarn workspaces run lint",
+    "lint:sol": "yarn workspaces run lint:sol",
+    "lint:ts": "yarn workspaces run lint:ts"
   },
   "repository": "git@github.com:dolomite-exchange/dolomite-margin-modules.git",
   "author": "Dolomite",
