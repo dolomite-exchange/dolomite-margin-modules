@@ -6,7 +6,6 @@ import {
   ONE_BI,
   ONE_DAY_SECONDS,
   ONE_ETH_BI,
-  ONE_WEEK_SECONDS,
   ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import {
@@ -22,7 +21,6 @@ import {
   expectWalletBalance,
 } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
-  disableInterestAccrual,
   setupCoreProtocol,
   setupWETHBalance,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
@@ -60,6 +58,7 @@ import { expectEmptyExternalVesterPosition } from './liquidityMining-utils';
 
 const defaultAccountNumber = ZERO_BI;
 const ONE_WEEK = BigNumber.from('604800');
+const TWO_YEARS = BigNumber.from(ONE_DAY_SECONDS).mul(365).mul(2);
 const CLOSE_POSITION_WINDOW = ONE_WEEK;
 const FORCE_CLOSE_POSITION_TAX = BigNumber.from('500');
 const EMERGENCY_WITHDRAW_TAX = BigNumber.from('0');
@@ -340,11 +339,13 @@ describe('VotingEscrow integration tests', () => {
 
       await pairToken.addBalance(core.hhUser1.address, 1);
       await pairToken.connect(core.hhUser1).approve(veToken.address, 1);
-      await veToken.create_lock(1, 365 * 2 * ONE_DAY_SECONDS);
+      await veToken.create_lock(1, TWO_YEARS);
       await veToken.approve(vester.address, 1);
 
       const paymentAmount = PAYMENT_AMOUNT_BEFORE_DISCOUNT.mul(5_000).div(10_000);
       const result = await vester.closePositionAndBuyTokens(NFT_ID, VE_TOKEN_ID, ZERO_BI, MAX_PAYMENT_AMOUNT);
+      const veNft = await veToken.locked(VE_TOKEN_ID);
+      expect(veNft.amount).to.eq(O_TOKEN_AMOUNT.add(1));
 
       await expectEvent(vester, result, 'PositionClosed', {
         owner: core.hhUser1.address,
@@ -369,6 +370,10 @@ describe('VotingEscrow integration tests', () => {
 
       expectEmptyExternalVesterPosition(await vester.vestingPositions(NFT_ID));
       await expectThrow(vester.ownerOf(NFT_ID), 'ERC721: invalid token ID');
+
+      await increase(TWO_YEARS);
+      await expect(() => veToken.connect(core.hhUser1).withdraw(VE_TOKEN_ID))
+        .to.changeTokenBalance(rewardToken, core.hhUser1, O_TOKEN_AMOUNT.add(1));
     });
 
     it('should work normally when creating new veNFTId', async () => {
@@ -381,9 +386,11 @@ describe('VotingEscrow integration tests', () => {
       const result = await vester.closePositionAndBuyTokens(
         NFT_ID,
         MAX_UINT_256_BI,
-        365 * 2 * ONE_DAY_SECONDS,
+        TWO_YEARS,
         MAX_PAYMENT_AMOUNT
       );
+      const veNft = await veToken.locked(VE_TOKEN_ID);
+      expect(veNft.amount).to.eq(O_TOKEN_AMOUNT);
 
       await expectEvent(vester, result, 'PositionClosed', {
         owner: core.hhUser1.address,
@@ -408,6 +415,10 @@ describe('VotingEscrow integration tests', () => {
 
       expectEmptyExternalVesterPosition(await vester.vestingPositions(NFT_ID));
       await expectThrow(vester.ownerOf(NFT_ID), 'ERC721: invalid token ID');
+
+      await increase(TWO_YEARS);
+      await expect(() => veToken.connect(core.hhUser1).withdraw(VE_TOKEN_ID))
+        .to.changeTokenBalance(rewardToken, core.hhUser1, O_TOKEN_AMOUNT);
     });
 
     it('should fail if veNft is already unlocked', async () => {
