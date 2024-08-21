@@ -20,28 +20,18 @@
 
 pragma solidity ^0.8.9;
 
-import { IVesterDiscountCalculator } from "../interfaces/IVesterDiscountCalculator.sol";
-
-
 /**
- * @title   TestVesterDiscountCalculator
+ * @title   IVeFeeCalculator
  * @author  Dolomite
- *
- * Test implementation for IVesterDiscountCalculator
  */
-contract TestVesterDiscountCalculator is IVesterDiscountCalculator {
+interface IVeFeeCalculator {
 
-    uint256 public discount;
+    event BurnFeeSet(uint256 burnFee);
+    event DecayTimestampSet(uint256 decayTimestamp);
 
-    function setDiscount(uint256 _discount) external {
-        discount = _discount;
-    }
+    function ownerSetBurnFee(uint256 _burnFee) external;
 
-    function calculateDiscount(
-        uint256 /* _nftId */,
-        uint256 /* _duration */,
-        bytes memory /* _extraData */
-    ) external view returns (uint256) {
-        return discount;
-    }
+    function ownerSetDecayTimestamp(uint256 _decayTimestamp) external;
+
+    function getEarlyWithdrawalFees(uint256 _amount, uint256 _lockEndTime) external view returns (uint256, uint256);
 }

@@ -20,28 +20,16 @@
 
 pragma solidity ^0.8.9;
 
-import { IVesterDiscountCalculator } from "../interfaces/IVesterDiscountCalculator.sol";
-
 
 /**
- * @title   TestVesterDiscountCalculator
+ * @title   VoterAlwaysActive
  * @author  Dolomite
  *
- * Test implementation for IVesterDiscountCalculator
+ * Voter implementation to be used by VotingEscrow which always returns false for stale
  */
-contract TestVesterDiscountCalculator is IVesterDiscountCalculator {
+contract VoterAlwaysActive {
 
-    uint256 public discount;
-
-    function setDiscount(uint256 _discount) external {
-        discount = _discount;
-    }
-
-    function calculateDiscount(
-        uint256 /* _nftId */,
-        uint256 /* _duration */,
-        bytes memory /* _extraData */
-    ) external view returns (uint256) {
-        return discount;
+    function stale(uint256 _tokenId) external view returns (bool) {
+        return false;
     }
 }

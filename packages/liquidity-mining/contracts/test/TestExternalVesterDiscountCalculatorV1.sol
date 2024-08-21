@@ -20,28 +20,31 @@
 
 pragma solidity ^0.8.9;
 
-import { IVesterDiscountCalculator } from "../interfaces/IVesterDiscountCalculator.sol";
+import { ExternalVesterDiscountCalculatorV1 } from "../ExternalVesterDiscountCalculatorV1.sol";
 
 
 /**
- * @title   TestVesterDiscountCalculator
+ * @title   TestExternalVesterDiscountCalculatorV1
  * @author  Dolomite
  *
- * Test implementation for IVesterDiscountCalculator
+ * Test implementation for ExternalVesterDiscountCalculatorV1
  */
-contract TestVesterDiscountCalculator is IVesterDiscountCalculator {
+contract TestExternalVesterDiscountCalculatorV1 is ExternalVesterDiscountCalculatorV1 {
 
-    uint256 public discount;
+    constructor(address _veToken) ExternalVesterDiscountCalculatorV1(_veToken) {}
 
-    function setDiscount(uint256 _discount) external {
-        discount = _discount;
-    }
-
-    function calculateDiscount(
-        uint256 /* _nftId */,
-        uint256 /* _duration */,
-        bytes memory /* _extraData */
+    function testLinearDecayMax(
+        uint256 _startValue,
+        uint256 _endValue,
+        uint256 _startTime,
+        uint256 _duration
     ) external view returns (uint256) {
-        return discount;
+        return _calculateLinearDecay(
+            _startValue,
+            _endValue,
+            _startTime,
+            _duration,
+            block.timestamp
+        );
     }
 }

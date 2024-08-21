@@ -35,8 +35,8 @@ import { ERC721 } from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { IERC20Mintable } from "./interfaces/IERC20Mintable.sol";
 import { IVeExternalVesterV1 } from "./interfaces/IVeExternalVesterV1.sol";
-import { IVesterDiscountCalculator } from "./interfaces/IVesterDiscountCalculator.sol";
 import { IVeToken } from "./interfaces/IVeToken.sol";
+import { IVesterDiscountCalculator } from "./interfaces/IVesterDiscountCalculator.sol";
 
 
 /**
@@ -62,11 +62,12 @@ contract VeExternalVesterImplementationV1 is
 
     bytes32 private constant _FILE = "VeExternalVesterImplementationV1";
     uint256 private constant _BASE = 10_000;
+    uint256 private constant _ONE_ETH_BASE = 1 ether;
     uint256 private constant _NO_MARKET_ID = type(uint256).max;
 
     uint256 private constant _DEFAULT_ACCOUNT_NUMBER = 0;
     uint256 private constant _ONE_WEEK = 1 weeks;
-    uint256 private constant _VEST_DURATION = _ONE_WEEK * 4;
+    uint256 private constant _VEST_DURATION = _ONE_WEEK;
 
     // solhint-disable max-line-length
     bytes32 private constant _BASE_URI_SLOT = bytes32(uint256(keccak256("eip1967.proxy.baseURI")) - 1);
@@ -222,6 +223,7 @@ contract VeExternalVesterImplementationV1 is
     function closePositionAndBuyTokens(
         uint256 _nftId,
         uint256 _veTokenId,
+        uint256 _veLockDuration,
         uint256 _maxPaymentAmount
     )
     external
@@ -251,7 +253,9 @@ contract VeExternalVesterImplementationV1 is
             position.duration,
             position.oTokenAmount,
             positionOwner,
-            _maxPaymentAmount
+            _maxPaymentAmount,
+            _veTokenId,
+            _veLockDuration
         );
 
         // Withdraw pair tokens from Dolomite, going to account
@@ -275,7 +279,17 @@ contract VeExternalVesterImplementationV1 is
         );
 
         REWARD_TOKEN.safeApprove(address(VE_TOKEN), position.oTokenAmount);
-        VE_TOKEN.addToLock(_veTokenId, position.oTokenAmount);
+
+        if (_veTokenId == type(uint256).max) {
+            // @follow-up Do we want to return this tokenId since we're creating a new one?
+            _veTokenId = VE_TOKEN.create_lock_for(
+                position.oTokenAmount,
+                _veLockDuration,
+                msg.sender
+            );
+        } else {
+            VE_TOKEN.increase_amount(_veTokenId, position.oTokenAmount);
+        }
 
         emit PositionClosed(positionOwner, _nftId, paymentAmount);
     }
@@ -585,10 +599,12 @@ contract VeExternalVesterImplementationV1 is
         uint256 _duration,
         uint256 _oTokenAmount,
         address _positionOwner,
-        uint256 _maxPaymentAmount
+        uint256 _maxPaymentAmount,
+        uint256 _veTokenId,
+        uint256 _veLockDuration
     ) internal returns (uint256 paymentAmount) {
         // Calculate price
-        uint256 rewardPriceAdj = _getRewardPriceAdj(_nftId, _duration);
+        uint256 rewardPriceAdj = _getRewardPriceAdj(_nftId, _duration, _veTokenId, _veLockDuration);
         uint256 paymentPrice = DOLOMITE_REGISTRY.oracleAggregator().getPrice(address(PAYMENT_TOKEN)).value;
         paymentAmount = _oTokenAmount * rewardPriceAdj / paymentPrice;
         Require.that(
@@ -794,17 +810,23 @@ contract VeExternalVesterImplementationV1 is
         return _getUint256(_NEXT_ID_SLOT);
     }
 
-    function _getRewardPriceAdj(uint256 _nftId, uint256 _duration) internal view returns (uint256) {
-        uint256 discount = discountCalculator().calculateDiscount(_nftId, _duration);
+    function _getRewardPriceAdj(
+        uint256 _nftId,
+        uint256 _duration,
+        uint256 _veTokenId,
+        uint256 _veLockDuration
+    ) internal view returns (uint256) {
+        bytes memory extraBytes = abi.encode(_veTokenId, _veLockDuration);
+        uint256 discount = discountCalculator().calculateDiscount(_nftId, _duration, extraBytes);
         Require.that(
-            discount <= _BASE,
+            discount <= _ONE_ETH_BASE,
             _FILE,
             "Invalid discount",
             discount
         );
 
         uint256 rewardPrice = DOLOMITE_REGISTRY.oracleAggregator().getPrice(address(REWARD_TOKEN)).value;
-        return rewardPrice - (rewardPrice * discount / _BASE);
+        return rewardPrice - (rewardPrice * discount / _ONE_ETH_BASE);
     }
 
     function _validateEnoughRewardsAvailable(uint256 _oTokenAmount) internal view {

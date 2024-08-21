@@ -19,6 +19,14 @@ export interface ExternalVestingPositionStruct {
   pairAmount: BigNumberish;
 }
 
+export interface ExternalVestingPositionStructV2 {
+  creator: string;
+  id: BigNumberish;
+  startTime: BigNumberish;
+  duration: BigNumberish;
+  amount: BigNumberish;
+}
+
 export function expectEmptyPosition(position: VestingPositionStruct) {
   expect(position.creator).to.eq(ZERO_ADDRESS);
   expect(position.id).to.eq(0);
@@ -34,4 +42,12 @@ export function expectEmptyExternalVesterPosition(position: ExternalVestingPosit
   expect(position.duration).to.eq(0);
   expect(position.oTokenAmount).to.eq(0);
   expect(position.pairAmount).to.eq(0);
+}
+
+export function expectEmptyExternalVesterPositionV2(position: ExternalVestingPositionStructV2) {
+  expect(position.creator).to.eq(ZERO_ADDRESS);
+  expect(position.id).to.eq(0);
+  expect(position.startTime).to.eq(0);
+  expect(position.duration).to.eq(0);
+  expect(position.amount).to.eq(0);
 }

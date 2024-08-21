@@ -20,28 +20,17 @@
 
 pragma solidity ^0.8.9;
 
-import { IVesterDiscountCalculator } from "../interfaces/IVesterDiscountCalculator.sol";
-
-
 /**
- * @title   TestVesterDiscountCalculator
+ * @title   IBuybackPool
  * @author  Dolomite
- *
- * Test implementation for IVesterDiscountCalculator
  */
-contract TestVesterDiscountCalculator is IVesterDiscountCalculator {
+interface IBuybackPool {
 
-    uint256 public discount;
+    event ExchangeRateSet(uint256 exchangeRate);
 
-    function setDiscount(uint256 _discount) external {
-        discount = _discount;
-    }
+    function exchange(uint256 _paymentAmount) external;
 
-    function calculateDiscount(
-        uint256 /* _nftId */,
-        uint256 /* _duration */,
-        bytes memory /* _extraData */
-    ) external view returns (uint256) {
-        return discount;
-    }
+    function ownerSetExchangeRate(uint256 _exchangeRate) external;
+
+    function ownerWithdrawPaymentToken() external;
 }

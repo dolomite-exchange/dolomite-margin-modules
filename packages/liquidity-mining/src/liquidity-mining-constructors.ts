@@ -10,6 +10,7 @@ import {
   UpgradeableProxy,
   VesterImplementationV1,
   VesterImplementationV2,
+  VotingEscrow,
 } from './types';
 
 export function getVesterImplementationConstructorParams<T extends NetworkType>(
@@ -17,6 +18,12 @@ export function getVesterImplementationConstructorParams<T extends NetworkType>(
   rewardToken: IERC20,
 ): any[] {
   return [core.dolomiteMargin.address, core.dolomiteRegistry.address, core.tokens.weth.address, rewardToken.address];
+}
+
+export function getExternalVesterDiscountCalculatorConstructorParams(
+  veToken: VotingEscrow | IVeToken
+): any[] {
+  return [veToken.address];
 }
 
 export function getExternalVesterImplementationConstructorParams<T extends NetworkType>(
@@ -42,7 +49,7 @@ export function getVeExternalVesterImplementationConstructorParams<T extends Net
   paymentMarketId: BigNumberish,
   rewardToken: IERC20,
   rewardMarketId: BigNumberish,
-  veToken: IVeToken,
+  veToken: VotingEscrow | IVeToken,
 ): any[] {
   return [
     core.dolomiteMargin.address,
@@ -130,4 +137,16 @@ export function getRewardsDistributorConstructorParams<T extends NetworkType>(
 
 export function getExternalOARBConstructorParams(owner: string, name: string, symbol: string): any[] {
   return [owner, name, symbol];
+}
+
+export function getVeFeeCalculatorConstructorParams(core: CoreProtocolArbitrumOne): any[] {
+  return [core.dolomiteMargin.address];
+}
+
+export function getBuybackPoolConstructorParams(
+  core: CoreProtocolArbitrumOne,
+  rewardToken: IERC20,
+  paymentToken: IERC20,
+): any[] {
+  return [rewardToken.address, paymentToken.address, core.dolomiteMargin.address];
 }

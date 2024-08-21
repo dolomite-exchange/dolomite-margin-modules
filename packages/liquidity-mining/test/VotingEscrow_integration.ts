@@ -22,6 +22,7 @@ import {
   expectWalletBalance,
 } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
+  disableInterestAccrual,
   setupCoreProtocol,
   setupWETHBalance,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
@@ -31,9 +32,9 @@ import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
-import { createTestToken, withdrawFromDolomiteMargin } from '../../base/src/utils/dolomite-utils';
-import { SignerWithAddressWithSafety } from '../../base/src/utils/SignerWithAddressWithSafety';
-import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
+import { createContractWithAbi, createTestToken, withdrawFromDolomiteMargin } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import { SignerWithAddressWithSafety } from '@dolomite-exchange/modules-base/src/utils/SignerWithAddressWithSafety';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import {
   ExternalOARB,
   IDolomiteInterestSetter,
@@ -41,15 +42,19 @@ import {
   IERC20,
   IERC20Metadata__factory,
   IVesterDiscountCalculator,
-  IVeToken,
   TestVeExternalVesterImplementationV1,
+  VeFeeCalculator,
+  VoterAlwaysActive,
+  VoterAlwaysActive__factory,
+  VotingEscrow,
 } from '../src/types';
 import {
   createExternalOARB,
+  createExternalVesterDiscountCalculatorV1,
   createTestDiscountCalculator,
   createTestVeExternalVesterV1Proxy,
-  createTestVeToken,
-  createVesterDiscountCalculatorV1,
+  createVeFeeCalculator,
+  createVotingEscrow,
 } from './liquidity-mining-ecosystem-utils';
 import { expectEmptyExternalVesterPosition } from './liquidityMining-utils';
 
@@ -78,22 +83,25 @@ const PAYMENT_TOKEN_PRICE = parseEther('1000'); // $1,000
 const PAIR_TOKEN_PRICE = parseEther('0.25'); // $0.25
 const REWARD_TOKEN_PRICE = PAIR_TOKEN_PRICE; // $0.25
 
-describe('VeExternalVesterV1', () => {
+const BUYBACK_POOL_ADDRESS = '0x1111111111111111111111111111111111111111';
+
+describe('VotingEscrow integration tests', () => {
   let snapshotId: string;
 
   let core: CoreProtocolArbitrumOne;
 
   let vester: TestVeExternalVesterImplementationV1;
   let discountCalculator: IVesterDiscountCalculator;
+  let feeCalculator: VeFeeCalculator;
   let oToken: ExternalOARB;
   let testToken: CustomTestToken;
   let pairMarketId: BigNumberish;
-  let pairToken: IERC20;
+  let pairToken: CustomTestToken;
   let paymentMarketId: BigNumberish;
   let paymentToken: IERC20;
   let rewardMarketId: BigNumberish;
   let rewardToken: IERC20;
-  let veToken: IVeToken;
+  let veToken: VotingEscrow;
   let owner: SignerWithAddressWithSafety;
 
   before(async () => {
@@ -127,10 +135,23 @@ describe('VeExternalVesterV1', () => {
     await setPriceOracle(paymentToken, paymentMarketId, testPriceOracle);
     await setPriceOracle(rewardToken, rewardMarketId, testPriceOracle);
 
-    discountCalculator = await createVesterDiscountCalculatorV1();
     owner = core.governance;
-    oToken = await createExternalOARB(owner, 'Test oARB', 'oARB');
-    veToken = await createTestVeToken(rewardToken);
+    const voter = await createContractWithAbi<VoterAlwaysActive>(
+      VoterAlwaysActive__factory.abi,
+      VoterAlwaysActive__factory.bytecode,
+      []
+    );
+    oToken = await createExternalOARB(owner, 'Test oToken', 'oToken');
+    feeCalculator = await createVeFeeCalculator(core);
+    veToken = await createVotingEscrow(
+      core,
+      rewardToken,
+      voter.address,
+      feeCalculator,
+      ADDRESS_ZERO,
+      BUYBACK_POOL_ADDRESS
+    );
+    discountCalculator = await createExternalVesterDiscountCalculatorV1(veToken);
 
     vester = await createTestVeExternalVesterV1Proxy(
       core,
@@ -147,6 +168,7 @@ describe('VeExternalVesterV1', () => {
       NAME,
       SYMBOL,
     );
+    await veToken.connect(core.governance).setVester(vester.address);
     await vester.connect(owner).ownerSetClosePositionWindow(CLOSE_POSITION_WINDOW);
 
     await core.dolomiteMargin.connect(owner).ownerSetGlobalOperator(vester.address, true);
@@ -296,7 +318,7 @@ describe('VeExternalVesterV1', () => {
     it('should fail if vesting is not active', async () => {
       await vester.connect(owner).ownerSetIsVestingActive(false);
       await expectThrow(
-        vester.vest(ONE_WEEK, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT),
+        vester.vest(ONE_WEEK.mul(2).add(1), O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT),
         'VeExternalVesterImplementationV1: Vesting not active',
       );
     });
@@ -316,8 +338,12 @@ describe('VeExternalVesterV1', () => {
       await vester.vest(ONE_WEEK, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT);
       await increase(ONE_WEEK);
 
-      const paymentAmount = PAYMENT_AMOUNT_BEFORE_DISCOUNT.mul(7_800).div(10_000);
+      await pairToken.addBalance(core.hhUser1.address, 1);
+      await pairToken.connect(core.hhUser1).approve(veToken.address, 1);
+      await veToken.create_lock(1, 365 * 2 * ONE_DAY_SECONDS);
+      await veToken.approve(vester.address, 1);
 
+      const paymentAmount = PAYMENT_AMOUNT_BEFORE_DISCOUNT.mul(5_000).div(10_000);
       const result = await vester.closePositionAndBuyTokens(NFT_ID, VE_TOKEN_ID, ZERO_BI, MAX_PAYMENT_AMOUNT);
 
       await expectEvent(vester, result, 'PositionClosed', {
@@ -330,7 +356,7 @@ describe('VeExternalVesterV1', () => {
 
       await expectWalletBalance(core.hhUser1, pairToken, PAIR_AMOUNT.mul(2));
       await expectWalletBalance(core.hhUser1, paymentToken, MAX_PAYMENT_AMOUNT.sub(paymentAmount));
-      await expectWalletBalance(veToken, rewardToken, REWARD_AMOUNT);
+      await expectWalletBalance(veToken, rewardToken, REWARD_AMOUNT.add(1));
 
       // Account for the pair amount being returned PLUS the REWARD_AMOUNT
       await expectWalletBalance(vester, pairToken, TOTAL_REWARD_AMOUNT.sub(REWARD_AMOUNT));
@@ -350,12 +376,12 @@ describe('VeExternalVesterV1', () => {
       await vester.vest(ONE_WEEK, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT);
       await increase(ONE_WEEK);
 
-      const paymentAmount = PAYMENT_AMOUNT_BEFORE_DISCOUNT.mul(7_800).div(10_000);
+      const paymentAmount = PAYMENT_AMOUNT_BEFORE_DISCOUNT.mul(5_000).div(10_000);
 
       const result = await vester.closePositionAndBuyTokens(
         NFT_ID,
         MAX_UINT_256_BI,
-        ONE_WEEK_SECONDS,
+        365 * 2 * ONE_DAY_SECONDS,
         MAX_PAYMENT_AMOUNT
       );
 
@@ -384,6 +410,26 @@ describe('VeExternalVesterV1', () => {
       await expectThrow(vester.ownerOf(NFT_ID), 'ERC721: invalid token ID');
     });
 
+    it('should fail if veNft is already unlocked', async () => {
+      await pairToken.addBalance(core.hhUser1.address, 1);
+      await pairToken.connect(core.hhUser1).approve(veToken.address, 1);
+      await veToken.create_lock(1, ONE_WEEK);
+
+      await setupAllowancesForVesting();
+      await vester.vest(ONE_WEEK, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT);
+      await increase(ONE_WEEK);
+
+      await expectThrow(
+        vester.closePositionAndBuyTokens(
+          NFT_ID,
+          VE_TOKEN_ID,
+          ZERO_BI,
+          MAX_PAYMENT_AMOUNT
+        ),
+      'ExternalVeDiscountCalculatorV1: veNft is not locked'
+      );
+    });
+
     it('should fail if the discount is invalid', async () => {
       await setupAllowancesForVesting();
       const time = ONE_WEEK;
@@ -394,17 +440,20 @@ describe('VeExternalVesterV1', () => {
 
       const tester = await createTestDiscountCalculator();
       await vester.connect(owner).ownerSetDiscountCalculator(tester.address);
-      const discount = 10_001;
-      await tester.setDiscount(discount);
+      await tester.setDiscount(ONE_ETH_BI.add(1));
 
       await expectThrow(
         vester.closePositionAndBuyTokens(NFT_ID, VE_TOKEN_ID, ZERO_BI, paymentAmount),
-        `VeExternalVesterImplementationV1: Invalid discount <${discount}>`,
+        `VeExternalVesterImplementationV1: Invalid discount <${ONE_ETH_BI.add(1).toString()}>`,
       );
     });
 
     it('should fail if cost is too high for max payment', async () => {
+      await pairToken.addBalance(core.hhUser1.address, 1);
+      await pairToken.connect(core.hhUser1).approve(veToken.address, 1);
+      await veToken.create_lock(1, 365 * ONE_DAY_SECONDS);
       await setupAllowancesForVesting();
+
       await vester.vest(ONE_WEEK, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT);
       await increase(ONE_WEEK);
       await expectThrow(

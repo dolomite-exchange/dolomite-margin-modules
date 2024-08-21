@@ -6,23 +6,30 @@ import {
   createContractWithLibrary,
   createContractWithName,
 } from '../../base/src/utils/dolomite-utils';
-import { NetworkType } from '../../base/src/utils/no-deps-constants';
+import { ADDRESS_ZERO, NetworkType } from '../../base/src/utils/no-deps-constants';
 import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { CoreProtocolType } from '../../base/test/utils/setup';
 import {
+  getBuybackPoolConstructorParams,
   getExternalOARBConstructorParams,
+  getExternalVesterDiscountCalculatorConstructorParams,
   getExternalVesterImplementationConstructorParams,
   getExternalVesterInitializationCalldata,
   getOARBConstructorParams,
   getRewardsDistributorConstructorParams,
   getVeExternalVesterImplementationConstructorParams,
   getVeExternalVesterInitializationCalldata,
+  getVeFeeCalculatorConstructorParams,
   getVesterExploderConstructorParams,
   getVesterImplementationConstructorParams,
 } from '../src/liquidity-mining-constructors';
 import {
+  BuybackPool,
+  BuybackPool__factory,
   ExternalOARB,
   ExternalOARB__factory,
+  ExternalVesterDiscountCalculatorV1,
+  ExternalVesterDiscountCalculatorV1__factory,
   ExternalVesterImplementationV1,
   ExternalVesterImplementationV1__factory,
   IERC20,
@@ -33,6 +40,8 @@ import {
   OARB__factory,
   RewardsDistributor,
   RewardsDistributor__factory,
+  TestExternalVesterDiscountCalculatorV1,
+  TestExternalVesterDiscountCalculatorV1__factory,
   TestExternalVesterImplementationV1,
   TestExternalVesterImplementationV1__factory,
   TestVeExternalVesterImplementationV1,
@@ -45,13 +54,18 @@ import {
   TestVesterImplementationV2__factory, TestVeToken, TestVeToken__factory,
   UpgradeableProxy,
   UpgradeableProxy__factory,
+  VeFeeCalculator,
+  VeFeeCalculator__factory,
   VesterDiscountCalculatorV1,
   VesterDiscountCalculatorV1__factory,
   VesterExploder,
   VesterExploder__factory,
   VesterImplementationLibForV2,
   VesterImplementationLibForV2__factory,
+  VotingEscrow,
+  VotingEscrow__factory,
 } from '../src/types';
+import { CustomTestToken } from 'packages/base/src/types';
 
 export async function createTestVesterV1Proxy(
   core: CoreProtocolArbitrumOne,
@@ -93,11 +107,11 @@ export async function createTestVesterV2Proxy(
 
   const bytes = ethers.utils.defaultAbiCoder.encode(
     ['address', 'address'],
-    [handler.address, core.oArbLiquidityMiningEcosystem.oArb.address],
+    [handler.address, core.liquidityMiningEcosystem.oARB.oArb.address],
   );
   const calldata = await implementation.populateTransaction.initialize(bytes);
 
-  const vesterProxy = core.oArbLiquidityMiningEcosystem!.oArbVesterProxy;
+  const vesterProxy = core.liquidityMiningEcosystem.oARB.oArbVesterProxy;
   await vesterProxy.connect(core.governance).upgradeToAndCall(implementation.address, calldata.data!);
 
   return TestVesterImplementationV2__factory.connect(vesterProxy.address, core.hhUser1);
@@ -134,6 +148,26 @@ export async function createVesterDiscountCalculatorV1(): Promise<VesterDiscount
     VesterDiscountCalculatorV1__factory.abi,
     VesterDiscountCalculatorV1__factory.bytecode,
     [],
+  );
+}
+
+export async function createTestExternalVesterDiscountCalculatorV1(
+  veToken: VotingEscrow | IVeToken,
+): Promise<TestExternalVesterDiscountCalculatorV1> {
+  return createContractWithAbi<TestExternalVesterDiscountCalculatorV1>(
+    TestExternalVesterDiscountCalculatorV1__factory.abi,
+    TestExternalVesterDiscountCalculatorV1__factory.bytecode,
+    getExternalVesterDiscountCalculatorConstructorParams(veToken),
+  );
+}
+
+export async function createExternalVesterDiscountCalculatorV1(
+  veToken: VotingEscrow | IVeToken,
+): Promise<ExternalVesterDiscountCalculatorV1> {
+  return createContractWithAbi<ExternalVesterDiscountCalculatorV1>(
+    ExternalVesterDiscountCalculatorV1__factory.abi,
+    ExternalVesterDiscountCalculatorV1__factory.bytecode,
+    getExternalVesterDiscountCalculatorConstructorParams(veToken),
   );
 }
 
@@ -202,7 +236,7 @@ export async function createTestVeExternalVesterV1Proxy<T extends NetworkType>(
   paymentMarketId: BigNumberish,
   rewardToken: IERC20,
   rewardMarketId: BigNumberish,
-  veToken: IVeToken,
+  veToken: VotingEscrow | IVeToken,
   discountCalculator: IVesterDiscountCalculator,
   oToken: IERC20,
   baseUri: string,
@@ -284,5 +318,58 @@ export async function createRewardsDistributor(
     RewardsDistributor__factory.abi,
     RewardsDistributor__factory.bytecode,
     getRewardsDistributorConstructorParams(core, oToken, initialHandlers),
+  );
+}
+
+export async function createVotingEscrow(
+  core: CoreProtocolArbitrumOne,
+  token: IERC20 | CustomTestToken,
+  voter: string,
+  feeCalculator: VeFeeCalculator,
+  vester: string,
+  buybackPool: string,
+): Promise<VotingEscrow> {
+  const implementation = await createContractWithAbi<VotingEscrow>(
+    VotingEscrow__factory.abi,
+    VotingEscrow__factory.bytecode,
+    [],
+  );
+  const initializeCalldata = await implementation.populateTransaction.initialize(
+    token.address,
+    ADDRESS_ZERO,
+    voter,
+    feeCalculator.address,
+    vester,
+    buybackPool,
+    core.governance.address
+  );
+
+  const proxy = await createContractWithAbi<UpgradeableProxy>(
+    UpgradeableProxy__factory.abi,
+    UpgradeableProxy__factory.bytecode,
+    getUpgradeableProxyConstructorParams(implementation.address, initializeCalldata, core.dolomiteMargin),
+  );
+  return VotingEscrow__factory.connect(proxy.address, core.hhUser1);
+}
+
+export async function createVeFeeCalculator(
+  core: CoreProtocolArbitrumOne
+): Promise<VeFeeCalculator> {
+  return createContractWithAbi<VeFeeCalculator>(
+    VeFeeCalculator__factory.abi,
+    VeFeeCalculator__factory.bytecode,
+    getVeFeeCalculatorConstructorParams(core),
+  );
+}
+
+export async function createBuybackPool(
+  core: CoreProtocolArbitrumOne,
+  rewardToken: CustomTestToken,
+  paymentToken: IERC20,
+): Promise<BuybackPool> {
+  return createContractWithAbi<BuybackPool>(
+    BuybackPool__factory.abi,
+    BuybackPool__factory.bytecode,
+    getBuybackPoolConstructorParams(core, rewardToken, paymentToken),
   );
 }
