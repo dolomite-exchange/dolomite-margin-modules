@@ -38,10 +38,11 @@ contract VeFeeCalculator is IVeFeeCalculator, OnlyDolomiteMargin {
 
     bytes32 private constant _FILE = "VeFeeCalculator";
     uint256 private constant BASE = 1 ether;
-    uint256 private constant TWO_YEARS = 2 * 365 days;
+    uint256 private constant TWO_YEARS = 104 weeks;
 
     uint256 private constant _STARTING_RECOUP_FEE = .5 ether; // 50%
-    uint256 private constant _STARTING_BURN_FEE = .4 ether; // 40%
+    uint256 private constant _FORTY_PERCENT = .4 ether; // 40%
+    uint256 private constant _FIVE_PERCENT = .05 ether; // 5%
     uint256 private constant _DECAY_DURATION = 8 weeks;
 
     // =========================================================
@@ -82,22 +83,8 @@ contract VeFeeCalculator is IVeFeeCalculator, OnlyDolomiteMargin {
         }
 
         assert(decayTimestamp != 0);
-        uint256 burnFeeAmount = _calculateLinearDecay(
-            /* startValue = */ _STARTING_BURN_FEE,
-            /* endValue = */ burnFee,
-            /* startTime = */ decayTimestamp,
-            /* duration = */ _DECAY_DURATION,
-            /* time = */ block.timestamp
-        ) * _amount / BASE;
-
-        // @dev scales down from 50% to 5% from 2 years to 1 week, then locked at 5% for last week
-        uint256 recoupFeeAmount = _calculateLinearDecay(
-            /* startValue = */ _STARTING_RECOUP_FEE,
-            /* endValue = */ .05 ether,
-            /* startTime = */ _lockEndTime - TWO_YEARS,
-            /* duration = */ TWO_YEARS - 1 weeks,
-            /* time = */ block.timestamp
-        ) * _amount / BASE;
+        uint256 burnFeeAmount = _calculateBurnFee() * _amount / BASE;
+        uint256 recoupFeeAmount = _calculateRecoupFee(_lockEndTime - block.timestamp) * _amount / BASE;
 
         return (burnFeeAmount, recoupFeeAmount);
     }
@@ -116,22 +103,28 @@ contract VeFeeCalculator is IVeFeeCalculator, OnlyDolomiteMargin {
         emit DecayTimestampSet(_decayTimestamp);
     }
 
-    function _calculateLinearDecay(
-        uint256 _startValue,
-        uint256 _endValue,
-        uint256 _startTime,
-        uint256 _duration,
-        uint256 _time
-    ) internal pure returns (uint256) {
-        if (_time >= _startTime + _duration) {
-            return _endValue;
-        } else if (_time <= _startTime) {
-            return _startValue;
-        } else {
-            return
-                _startValue -
-                ((_startValue - _endValue) * (_time - _startTime)) /
-                _duration;
+    function _calculateBurnFee() internal view returns (uint256) {
+        uint256 duration = block.timestamp - decayTimestamp;
+        if (duration >= _DECAY_DURATION) {
+            return burnFee;
         }
+
+        // @dev linear formula where y intercept is 40% and slope is -35% over 8 weeks
+        // @dev slope will change if the burnFee is updated.
+        uint256 slope = _FORTY_PERCENT - burnFee;
+        return _FORTY_PERCENT - (duration * slope) / _DECAY_DURATION;
+    }
+
+    // @dev linear formula where y intercept is 5% for the first week then slope is 45% over 103 weeks
+    function _calculateRecoupFee(uint256 _duration) internal pure returns (uint256) {
+        if (_duration <= 1 weeks) {
+            return _FIVE_PERCENT;
+        }
+
+        _duration = _duration - 1 weeks;
+        uint256 changeY = _duration * (_STARTING_RECOUP_FEE - _FIVE_PERCENT) / (TWO_YEARS - 1 weeks);
+        uint256 fee = _FIVE_PERCENT + changeY;
+
+        return fee > _STARTING_RECOUP_FEE ? _STARTING_RECOUP_FEE : fee;
     }
 }

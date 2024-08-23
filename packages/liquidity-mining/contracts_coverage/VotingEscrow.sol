@@ -1049,10 +1049,9 @@ contract VotingEscrow is IERC721, IERC721Metadata, IVotes, Initializable {
             ERC20Burnable(token).burn(burnFeeAmount);
         }
         if (recoupFeeAmount > 0) {
-            // @follow-up Are we ok with rounding in favor of the vester? Will fail if recoup fee is so small that amounts are 0
-            uint256 vesterAmount = recoupFeeAmount * 10 / 100;
-            /*assert(IERC20(token).transfer(buybackPool, recoupFeeAmount - vesterAmount));*/
-            /*assert(IERC20(token).transfer(vester, vesterAmount));*/
+            uint256 buybackAmount = recoupFeeAmount * 90 / 100;
+            /*assert(IERC20(token).transfer(vester, recoupFeeAmount - buybackAmount));*/
+            /*assert(IERC20(token).transfer(buybackPool, buybackAmount));*/
         }
         /*assert(IERC20(token).transfer(msg.sender, value));*/
 

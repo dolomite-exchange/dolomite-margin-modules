@@ -49,7 +49,6 @@ export function getVeExternalVesterImplementationConstructorParams<T extends Net
   paymentMarketId: BigNumberish,
   rewardToken: IERC20,
   rewardMarketId: BigNumberish,
-  veToken: VotingEscrow | IVeToken,
 ): any[] {
   return [
     core.dolomiteMargin.address,
@@ -60,7 +59,6 @@ export function getVeExternalVesterImplementationConstructorParams<T extends Net
     paymentMarketId,
     rewardToken.address,
     rewardMarketId,
-    veToken.address,
   ];
 }
 

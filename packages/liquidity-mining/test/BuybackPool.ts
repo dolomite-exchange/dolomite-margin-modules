@@ -63,14 +63,14 @@ describe('BuybackPool', () => {
   describe('#ownerWithdrawpaymentToken', () => {
     it('should work normally', async () => {
       await paymentToken.addBalance(buybackPool.address, tokenAmount);
-      await buybackPool.connect(core.governance).ownerWithdrawPaymentToken();
+      await buybackPool.connect(core.governance).ownerWithdrawPaymentToken(core.governance.address);
       expect(await paymentToken.balanceOf(buybackPool.address)).to.eq(0);
       expect(await paymentToken.balanceOf(core.governance.address)).to.eq(tokenAmount);
     });
 
     it('should fail if not called by owner', async () => {
       await expectThrow(
-        buybackPool.connect(core.hhUser1).ownerWithdrawPaymentToken(),
+        buybackPool.connect(core.hhUser1).ownerWithdrawPaymentToken(core.governance.address),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
@@ -78,12 +78,12 @@ describe('BuybackPool', () => {
 
   describe('#ownerSetExchangeRate', () => {
     it('should work normally', async () => {
-      expect(await buybackPool.exchangeRate()).to.eq(20);
-      const res = await buybackPool.connect(core.governance).ownerSetExchangeRate(50);
+      expect(await buybackPool.exchangeRate()).to.eq(parseEther('.05'));
+      const res = await buybackPool.connect(core.governance).ownerSetExchangeRate(parseEther('.5'));
       await expectEvent(buybackPool, res, 'ExchangeRateSet',
-        { exchangeRate: 50 }
+        { exchangeRate: parseEther('.5') }
       );
-      expect(await buybackPool.exchangeRate()).to.eq(50);
+      expect(await buybackPool.exchangeRate()).to.eq(parseEther('.5'));
     });
 
     it('should fail if not called by owner', async () => {

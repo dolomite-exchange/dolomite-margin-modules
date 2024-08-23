@@ -41,8 +41,7 @@ contract TestVeExternalVesterImplementationV1 is VeExternalVesterImplementationV
         IERC20 _paymentToken,
         uint256 _paymentMarketId,
         IERC20 _rewardToken,
-        uint256 _rewardMarketId,
-        address _veToken
+        uint256 _rewardMarketId
     ) VeExternalVesterImplementationV1(
         _dolomiteMargin,
         _dolomiteRegistry,
@@ -51,8 +50,7 @@ contract TestVeExternalVesterImplementationV1 is VeExternalVesterImplementationV
         _paymentToken,
         _paymentMarketId,
         _rewardToken,
-        _rewardMarketId,
-        _veToken
+        _rewardMarketId
     ) {} // solhint-disable-line
 
     function callVestAndTriggerReentrancy(

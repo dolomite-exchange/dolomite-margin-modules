@@ -20,9 +20,12 @@
 
 pragma solidity ^0.8.9;
 
+
 /**
  * @title   IVeFeeCalculator
  * @author  Dolomite
+ *
+ * @notice  Interface for vesting fee calculator
  */
 interface IVeFeeCalculator {
 

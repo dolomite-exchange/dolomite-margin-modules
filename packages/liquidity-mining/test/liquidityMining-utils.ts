@@ -1,6 +1,7 @@
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
-import { BigNumberish } from 'ethers';
+import { BigNumber, BigNumberish } from 'ethers';
+import { ONE_WEEK_SECONDS } from 'packages/base/src/utils/no-deps-constants';
 
 export interface VestingPositionStruct {
   creator: string;
@@ -50,4 +51,13 @@ export function expectEmptyExternalVesterPositionV2(position: ExternalVestingPos
   expect(position.startTime).to.eq(0);
   expect(position.duration).to.eq(0);
   expect(position.amount).to.eq(0);
+}
+
+export function convertToNearestWeek(
+  timestamp: BigNumber,
+  duration: BigNumber
+): BigNumber {
+  const increasedTimestamp = timestamp.add(duration);
+  const divisor = increasedTimestamp.div(ONE_WEEK_SECONDS);
+  return BigNumber.from(ONE_WEEK_SECONDS).mul(divisor);
 }

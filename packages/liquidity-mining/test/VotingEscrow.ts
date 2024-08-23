@@ -61,9 +61,12 @@ describe('VotingEscrow', () => {
 
   describe('#withdraw', () => {
     it('should work normally if lock is expired', async () => {
+      console.log(await token.balanceOf(core.hhUser1.address));
       await token.addBalance(core.hhUser1.address, ONE_ETH_BI);
+      console.log(await token.balanceOf(core.hhUser1.address));
       await token.connect(core.hhUser1).approve(veToken.address, ONE_ETH_BI);
       await veToken.connect(core.hhUser1).create_lock(ONE_ETH_BI, TWO_YEARS_SECONDS);
+      console.log(await token.balanceOf(core.hhUser1.address));
       expect(await token.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
 
       await increase(TWO_YEARS_SECONDS);
@@ -88,6 +91,23 @@ describe('VotingEscrow', () => {
       expect(await token.totalSupply()).to.eq(parseEther('.95'));
       expect(await token.balanceOf(BUYBACK_POOL_ADDRESS)).to.eq(parseEther('.045'));
       expect(await token.balanceOf(VESTER_ADDRESS)).to.eq(parseEther('.005'));
+    });
+
+    it('recoup fee should round in favor of the vester', async () => {
+      await token.addBalance(core.hhUser1.address, 100);
+      await token.connect(core.hhUser1).approve(veToken.address, 100);
+
+      await veToken.connect(core.hhUser1).create_lock(100, TWO_YEARS_SECONDS);
+      await increase(TWO_YEARS_SECONDS - ONE_WEEK_SECONDS);
+      await veToken.connect(core.hhUser1).withdraw(1);
+      // 5% burned
+      // 5% * 90% sent to buyback pool (4.5 but should round down to 4)
+      // 5% * 10% sent to vester (.5 but rounds up to 1)
+      // 90% returned to user
+      expect(await token.balanceOf(core.hhUser1.address)).to.eq(90);
+      expect(await token.totalSupply()).to.eq(95);
+      expect(await token.balanceOf(BUYBACK_POOL_ADDRESS)).to.eq(4);
+      expect(await token.balanceOf(VESTER_ADDRESS)).to.eq(1);
     });
   });
 

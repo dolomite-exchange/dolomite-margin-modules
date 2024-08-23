@@ -40,8 +40,6 @@ import {
   OARB__factory,
   RewardsDistributor,
   RewardsDistributor__factory,
-  TestExternalVesterDiscountCalculatorV1,
-  TestExternalVesterDiscountCalculatorV1__factory,
   TestExternalVesterImplementationV1,
   TestExternalVesterImplementationV1__factory,
   TestVeExternalVesterImplementationV1,
@@ -151,16 +149,6 @@ export async function createVesterDiscountCalculatorV1(): Promise<VesterDiscount
   );
 }
 
-export async function createTestExternalVesterDiscountCalculatorV1(
-  veToken: VotingEscrow | IVeToken,
-): Promise<TestExternalVesterDiscountCalculatorV1> {
-  return createContractWithAbi<TestExternalVesterDiscountCalculatorV1>(
-    TestExternalVesterDiscountCalculatorV1__factory.abi,
-    TestExternalVesterDiscountCalculatorV1__factory.bytecode,
-    getExternalVesterDiscountCalculatorConstructorParams(veToken),
-  );
-}
-
 export async function createExternalVesterDiscountCalculatorV1(
   veToken: VotingEscrow | IVeToken,
 ): Promise<ExternalVesterDiscountCalculatorV1> {
@@ -236,7 +224,6 @@ export async function createTestVeExternalVesterV1Proxy<T extends NetworkType>(
   paymentMarketId: BigNumberish,
   rewardToken: IERC20,
   rewardMarketId: BigNumberish,
-  veToken: VotingEscrow | IVeToken,
   discountCalculator: IVesterDiscountCalculator,
   oToken: IERC20,
   baseUri: string,
@@ -255,7 +242,6 @@ export async function createTestVeExternalVesterV1Proxy<T extends NetworkType>(
       paymentMarketId,
       rewardToken,
       rewardMarketId,
-      veToken,
     ),
   );
   const implementationCalldata = await implementation.populateTransaction.initialize(

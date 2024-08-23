@@ -54,7 +54,7 @@ import {
   createVeFeeCalculator,
   createVotingEscrow,
 } from './liquidity-mining-ecosystem-utils';
-import { expectEmptyExternalVesterPosition } from './liquidityMining-utils';
+import { convertToNearestWeek, expectEmptyExternalVesterPosition } from './liquidityMining-utils';
 
 const defaultAccountNumber = ZERO_BI;
 const ONE_WEEK = BigNumber.from('604800');
@@ -142,6 +142,7 @@ describe('VotingEscrow integration tests', () => {
     );
     oToken = await createExternalOARB(owner, 'Test oToken', 'oToken');
     feeCalculator = await createVeFeeCalculator(core);
+
     veToken = await createVotingEscrow(
       core,
       rewardToken,
@@ -151,7 +152,6 @@ describe('VotingEscrow integration tests', () => {
       BUYBACK_POOL_ADDRESS
     );
     discountCalculator = await createExternalVesterDiscountCalculatorV1(veToken);
-
     vester = await createTestVeExternalVesterV1Proxy(
       core,
       pairToken,
@@ -160,14 +160,15 @@ describe('VotingEscrow integration tests', () => {
       paymentMarketId,
       rewardToken,
       rewardMarketId,
-      veToken,
       discountCalculator,
       oToken,
       BASE_URI,
       NAME,
       SYMBOL,
     );
+    // @follow-up Order gets weird here
     await veToken.connect(core.governance).setVester(vester.address);
+    await vester.lazyInitialize(veToken.address);
     await vester.connect(owner).ownerSetClosePositionWindow(CLOSE_POSITION_WINDOW);
 
     await core.dolomiteMargin.connect(owner).ownerSetGlobalOperator(vester.address, true);
@@ -383,10 +384,11 @@ describe('VotingEscrow integration tests', () => {
 
       const paymentAmount = PAYMENT_AMOUNT_BEFORE_DISCOUNT.mul(5_000).div(10_000);
 
+      const timestamp = BigNumber.from(await getBlockTimestamp(await ethers.provider.getBlockNumber()));
       const result = await vester.closePositionAndBuyTokens(
         NFT_ID,
         MAX_UINT_256_BI,
-        TWO_YEARS,
+        convertToNearestWeek(timestamp, TWO_YEARS),
         MAX_PAYMENT_AMOUNT
       );
       const veNft = await veToken.locked(VE_TOKEN_ID);
@@ -437,7 +439,7 @@ describe('VotingEscrow integration tests', () => {
           ZERO_BI,
           MAX_PAYMENT_AMOUNT
         ),
-      'ExternalVeDiscountCalculatorV1: veNft is not locked'
+      'ExternalVeDiscountCalculatorV1: Invalid veLockEndTime'
       );
     });
 

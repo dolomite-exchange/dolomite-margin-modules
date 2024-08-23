@@ -117,17 +117,25 @@ describe('VeFeeCalculator', () => {
       expect(fees[1]).to.eq(parseEther('.5'));
     });
 
-    it('recoup fee should work normally with half the time left (365 + 3.5 days)', async () => {
+    it('fees should work normally for 2 year lock with different amount', async () => {
+      await feeCalculator.connect(core.governance).ownerSetDecayTimestamp(1);
       await increaseTo(TIMESTAMP);
-      const fees = await feeCalculator.getEarlyWithdrawalFees(tokenAmount, TIMESTAMP + ONE_DAY_SECONDS * 368.5);
+      const fees = await feeCalculator.getEarlyWithdrawalFees(parseEther('10'), TIMESTAMP + TWO_YEARS_SECONDS);
+      expect(fees[0]).to.eq(parseEther('.5'));
+      expect(fees[1]).to.eq(parseEther('5'));
+    });
+
+    it('recoup fee should work normally with half the time left (103 / 2 weeks) + 1 week', async () => {
+      await increaseTo(TIMESTAMP);
+      const fees = await feeCalculator.getEarlyWithdrawalFees(tokenAmount, TIMESTAMP + ONE_WEEK_SECONDS * 52.5);
       expect(fees[1]).to.eq(parseEther('.275'));
     });
 
-    it('recoup fee should work normally with one quarter of the time left (half of a year + 1.75 days)', async () => {
+    it('recoup fee should work normally with one quarter of the time left (103 / 4) + 1 week', async () => {
       await increaseTo(TIMESTAMP);
       const fees = await feeCalculator.getEarlyWithdrawalFees(
         tokenAmount,
-        TIMESTAMP + ONE_YEAR_SECONDS + 5.25 * ONE_DAY_SECONDS
+        TIMESTAMP + ONE_WEEK_SECONDS * 26.75
       );
       expect(fees[1]).to.eq(parseEther('.1625'));
     });

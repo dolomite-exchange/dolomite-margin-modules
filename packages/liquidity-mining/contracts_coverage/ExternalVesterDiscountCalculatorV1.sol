@@ -36,10 +36,10 @@ contract ExternalVesterDiscountCalculatorV1 is IVesterDiscountCalculator {
     bytes32 private constant _FILE = "ExternalVeDiscountCalculatorV1";
 
     uint256 public constant BASE = 1 ether;
-    uint256 public constant TWO_YEARS = 2 * 365 days;
+    uint256 public constant TWO_YEARS = 104 weeks;
 
-    uint256 public constant MAX_LOCK_DISCOUNT = .5 ether;
-    uint256 public constant END_LOCK_DISCOUNT = .05 ether;
+    uint256 public constant FIFTY_PERCENT = .5 ether;
+    uint256 public constant FIVE_PERCENT = .05 ether;
 
     IVeToken public immutable veToken;
 
@@ -52,61 +52,53 @@ contract ExternalVesterDiscountCalculatorV1 is IVesterDiscountCalculator {
         uint256 /* _duration */,
         bytes memory _extraBytes
     ) external view returns (uint256) {
-        // @todo add tests for this logic adjustment
-        (uint256 veNftId, uint256 veLockDuration) = abi.decode(_extraBytes, (uint256, uint256));
-        uint256 lockEnd;
-        if (veNftId == type(uint256).max) {
-            lockEnd = block.timestamp + veLockDuration; // @audit This could be a little off because VotingEscrow rounds down to nearest week
-        } else {
-            lockEnd = veToken.locked(veNftId).end;
+        (uint256 veNftId, uint256 veLockEndTime) = abi.decode(_extraBytes, (uint256, uint256));
+        if (veNftId != type(uint256).max) {
+            veLockEndTime = veToken.locked(veNftId).end;
         }
-        if (block.timestamp < lockEnd) { /* FOR COVERAGE TESTING */ }
+        if (veLockEndTime > block.timestamp && veLockEndTime % 1 weeks == 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
-            block.timestamp < lockEnd,
+            veLockEndTime > block.timestamp && veLockEndTime % 1 weeks == 0,
             _FILE,
-            "veNft is not locked"
+            "Invalid veLockEndTime"
         );
 
-        if (lockEnd - block.timestamp >= 103 weeks) {
-            return MAX_LOCK_DISCOUNT;
-        }
-
-        // @dev linearly decays from 50% to 5% from 2 years to 1 week, then linearly from 5% to 0% over last week
-        if (lockEnd - block.timestamp > 1 weeks) {
-            return _calculateLinearDecay(
-                MAX_LOCK_DISCOUNT,
-                END_LOCK_DISCOUNT,
-                lockEnd - TWO_YEARS,
-                TWO_YEARS - 1 weeks,
-                block.timestamp
-            );
+        // @dev linearly decays from 50% to 5% from 104 weeks to 1 week, then linearly from 5% to 0% over the last week
+        uint256 duration = veLockEndTime - block.timestamp;
+        if (duration > 1 weeks) {
+            return calculateLinearDiscount(duration - 1 weeks);
         } else {
-            return _calculateLinearDecay(
-                END_LOCK_DISCOUNT,
-                0,
-                lockEnd - 1 weeks,
-                1 weeks,
-                block.timestamp
-            );
+            return calculateLinearDiscountWithinOneWeek(duration);
         }
     }
 
-    function _calculateLinearDecay(
-        uint256 _startValue,
-        uint256 _endValue,
-        uint256 _startTime,
-        uint256 _duration,
-        uint256 _time
+    // @dev Linear formula where y intercept is 5% and slope is 45% over 103 weeks
+    function calculateLinearDiscount(
+        uint256 _lockDuration
+    ) public pure returns (uint256) {
+        _lockDuration = _roundUpToNearestWholeWeek(_lockDuration);
+
+        uint256 changeY = _lockDuration * (FIFTY_PERCENT - FIVE_PERCENT) / (TWO_YEARS - 1 weeks);
+        uint256 discount = FIVE_PERCENT + changeY;
+
+        return discount > FIFTY_PERCENT ? FIFTY_PERCENT : discount;
+    }
+
+    // @dev Linear formula where y intercept is 0% and slope is 5% over 1 week
+    function calculateLinearDiscountWithinOneWeek(
+        uint256 _lockDuration
+    ) public pure returns (uint256) {
+        uint256 discount = FIVE_PERCENT * _lockDuration / 1 weeks;
+        return discount > FIVE_PERCENT ? FIVE_PERCENT : discount;
+    }
+
+    function _roundUpToNearestWholeWeek(
+        uint256 _duration
     ) internal pure returns (uint256) {
-        if (_time >= _startTime + _duration) {
-            return _endValue;
-        } else if (_time <= _startTime) {
-            return _startValue;
+        if (_duration % 1 weeks == 0) {
+            return _duration;
         } else {
-            return
-                _startValue -
-                ((_startValue - _endValue) * (_time - _startTime)) /
-                _duration;
+            return (_duration / 1 weeks * 1 weeks) + 1 weeks;
         }
     }
 }

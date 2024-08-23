@@ -20,9 +20,12 @@
 
 pragma solidity ^0.8.9;
 
+
 /**
  * @title   IBuybackPool
  * @author  Dolomite
+ *
+ * @notice  Interface for buyback pool
  */
 interface IBuybackPool {
 
@@ -32,5 +35,5 @@ interface IBuybackPool {
 
     function ownerSetExchangeRate(uint256 _exchangeRate) external;
 
-    function ownerWithdrawPaymentToken() external;
+    function ownerWithdrawPaymentToken(address _receiver) external;
 }

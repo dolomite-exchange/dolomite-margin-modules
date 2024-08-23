@@ -24,6 +24,8 @@ import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/he
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IBuybackPool } from "./interfaces/IBuybackPool.sol";
+import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
+import { DecimalLib } from "@dolomite-exchange/modules-base/contracts/protocol/lib/DecimalLib.sol";
 
 
 /**
@@ -34,6 +36,7 @@ import { IBuybackPool } from "./interfaces/IBuybackPool.sol";
  */
 contract BuybackPool is IBuybackPool, OnlyDolomiteMargin {
     using SafeERC20 for IERC20;
+    using DecimalLib for uint256;
 
     // ===================================================
     // ==================== Immutables ====================
@@ -46,8 +49,8 @@ contract BuybackPool is IBuybackPool, OnlyDolomiteMargin {
     // ==================== State Variables ====================
     // =========================================================
 
-    // @follow-up Is this an ok way to do this?
-    uint256 public exchangeRate = 20; // 1 exchange token = 20 payment tokens
+    // @dev 5%
+    IDolomiteStructs.Decimal public exchangeRate = IDolomiteStructs.Decimal({ value: .05 ether });
 
     // ===========================================================
     // ======================= Constructor =======================
@@ -67,8 +70,7 @@ contract BuybackPool is IBuybackPool, OnlyDolomiteMargin {
     // ==================================================================
 
     function exchange(uint256 _paymentAmount) external {
-        // @follow-up Do we want to add a safety check for precision loss?
-        uint256 exchangeAmount = _paymentAmount / exchangeRate;
+        uint256 exchangeAmount = _paymentAmount.mul(exchangeRate);
         PAYMENT_TOKEN.safeTransferFrom(msg.sender, address(this), _paymentAmount);
         EXCHANGE_TOKEN.safeTransfer(msg.sender, exchangeAmount);
     }
@@ -79,9 +81,9 @@ contract BuybackPool is IBuybackPool, OnlyDolomiteMargin {
         _ownerSetExchangeRate(_exchangeRate);
     }
 
-    function ownerWithdrawPaymentToken() external onlyDolomiteMarginOwner(msg.sender) {
+    function ownerWithdrawPaymentToken(address _receiver) external onlyDolomiteMarginOwner(msg.sender) {
         uint256 bal = PAYMENT_TOKEN.balanceOf(address(this));
-        PAYMENT_TOKEN.safeTransfer(msg.sender, bal);
+        PAYMENT_TOKEN.safeTransfer(_receiver, bal);
     }
 
     // ==================================================================
@@ -91,7 +93,7 @@ contract BuybackPool is IBuybackPool, OnlyDolomiteMargin {
     function _ownerSetExchangeRate(
         uint256 _exchangeRate
     ) internal {
-        exchangeRate = _exchangeRate;
+        exchangeRate = IDolomiteStructs.Decimal({ value: _exchangeRate });
         emit ExchangeRateSet(_exchangeRate);
     }
 }

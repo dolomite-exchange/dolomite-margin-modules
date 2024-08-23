@@ -76,5 +76,8 @@
   "private": true,
   "workspaces": [
     "packages/*"
-  ]
+  ],
+  "dependencies": {
+    "merkletreejs": "^0.4.0"
+  }
 }

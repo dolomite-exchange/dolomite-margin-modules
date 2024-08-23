@@ -95,7 +95,7 @@ contract VeExternalVesterImplementationV1 is
     uint256 public override immutable PAYMENT_MARKET_ID; // solhint-disable-line
     IERC20 public override immutable REWARD_TOKEN; // solhint-disable-line
     uint256 public override immutable REWARD_MARKET_ID; // solhint-disable-line
-    IVeToken public override immutable VE_TOKEN; // solhint-disable-line
+    IVeToken public override VE_TOKEN; // solhint-disable-line
 
     // =========================================================
     // ======================= Modifiers =======================
@@ -122,8 +122,7 @@ contract VeExternalVesterImplementationV1 is
         IERC20 _paymentToken,
         uint256 _paymentMarketId,
         IERC20 _rewardToken,
-        uint256 _rewardMarketId,
-        address _veToken
+        uint256 _rewardMarketId
     ) OnlyDolomiteMargin(_dolomiteMargin) {
         DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
         PAIR_TOKEN = _pairToken;
@@ -132,7 +131,6 @@ contract VeExternalVesterImplementationV1 is
         PAYMENT_MARKET_ID = _paymentMarketId;
         REWARD_TOKEN = _rewardToken;
         REWARD_MARKET_ID = _rewardMarketId;
-        VE_TOKEN = IVeToken(_veToken);
     }
 
     function initialize(
@@ -157,6 +155,18 @@ contract VeExternalVesterImplementationV1 is
         _ownerSetBaseURI(_baseUri);
         __ERC721_init(_name, _symbol);
         __ReentrancyGuardUpgradeable__init();
+    }
+
+    function lazyInitialize(
+        address _veToken
+    ) external {
+        Require.that(
+            address(VE_TOKEN) == address(0),
+            _FILE,
+            "veToken already initialized"
+        );
+        VE_TOKEN = IVeToken(_veToken);
+        emit VeTokenSet(_veToken);
     }
 
     // ==================================================================
@@ -223,11 +233,12 @@ contract VeExternalVesterImplementationV1 is
     function closePositionAndBuyTokens(
         uint256 _nftId,
         uint256 _veTokenId,
-        uint256 _veLockDuration,
+        uint256 _veLockEndTime,
         uint256 _maxPaymentAmount
     )
     external
-    nonReentrant {
+    nonReentrant 
+    returns (uint256) {
         VestingPosition memory position = _getVestingPositionSlot(_nftId);
         uint256 accountNumber = calculateAccountNumber(position.creator, _nftId);
         address positionOwner = ownerOf(_nftId);
@@ -255,7 +266,7 @@ contract VeExternalVesterImplementationV1 is
             positionOwner,
             _maxPaymentAmount,
             _veTokenId,
-            _veLockDuration
+            _veLockEndTime
         );
 
         // Withdraw pair tokens from Dolomite, going to account
@@ -281,10 +292,9 @@ contract VeExternalVesterImplementationV1 is
         REWARD_TOKEN.safeApprove(address(VE_TOKEN), position.oTokenAmount);
 
         if (_veTokenId == type(uint256).max) {
-            // @follow-up Do we want to return this tokenId since we're creating a new one?
             _veTokenId = VE_TOKEN.create_lock_for(
                 position.oTokenAmount,
-                _veLockDuration,
+                _veLockEndTime - block.timestamp,
                 msg.sender
             );
         } else {
@@ -292,6 +302,7 @@ contract VeExternalVesterImplementationV1 is
         }
 
         emit PositionClosed(positionOwner, _nftId, paymentAmount);
+        return _veTokenId;
     }
 
     function forceClosePosition(
@@ -601,10 +612,10 @@ contract VeExternalVesterImplementationV1 is
         address _positionOwner,
         uint256 _maxPaymentAmount,
         uint256 _veTokenId,
-        uint256 _veLockDuration
+        uint256 _veLockEndTime
     ) internal returns (uint256 paymentAmount) {
         // Calculate price
-        uint256 rewardPriceAdj = _getRewardPriceAdj(_nftId, _duration, _veTokenId, _veLockDuration);
+        uint256 rewardPriceAdj = _getRewardPriceAdj(_nftId, _duration, _veTokenId, _veLockEndTime);
         uint256 paymentPrice = DOLOMITE_REGISTRY.oracleAggregator().getPrice(address(PAYMENT_TOKEN)).value;
         paymentAmount = _oTokenAmount * rewardPriceAdj / paymentPrice;
         Require.that(
@@ -814,9 +825,9 @@ contract VeExternalVesterImplementationV1 is
         uint256 _nftId,
         uint256 _duration,
         uint256 _veTokenId,
-        uint256 _veLockDuration
+        uint256 _veLockEndTime
     ) internal view returns (uint256) {
-        bytes memory extraBytes = abi.encode(_veTokenId, _veLockDuration);
+        bytes memory extraBytes = abi.encode(_veTokenId, _veLockEndTime);
         uint256 discount = discountCalculator().calculateDiscount(_nftId, _duration, extraBytes);
         Require.that(
             discount <= _ONE_ETH_BASE,

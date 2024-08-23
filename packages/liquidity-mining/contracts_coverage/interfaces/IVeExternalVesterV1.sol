@@ -74,6 +74,7 @@ interface IVeExternalVesterV1 {
     event ForceClosePositionTaxSet(uint256 forceClosePositionTax);
     event PromisedTokensSet(uint256 promisedTokens);
     event PushedTokensSet(uint256 pushedTokens);
+    event VeTokenSet(address veToken);
     event VestingPositionCreated(VestingPosition vestingPosition);
     event VestingPositionCleared(uint256 id);
     event BaseURISet(string baseURI);
@@ -207,7 +208,7 @@ interface IVeExternalVesterV1 {
         uint256 _veTokenId,
         uint256 _lockDuration,
         uint256 _maxPaymentAmount
-    ) external;
+    ) external returns (uint256);
 
     /**
      * @notice  Burns the vested oToken tokens and sends vested ARB back to position owner's dolomite balance

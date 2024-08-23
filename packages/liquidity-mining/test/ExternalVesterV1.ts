@@ -296,7 +296,7 @@ describe('ExternalVesterV1', () => {
   });
 
   describe('#vestInstantly', () => {
-    it('should work with normally', async () => {
+    it.only('should work with normally', async () => {
       await setupAllowancesForVesting();
 
       const paymentAmount = PAYMENT_AMOUNT_BEFORE_DISCOUNT.mul(8_000).div(PERCENTAGE_BASE);

@@ -35,5 +35,5 @@ interface IBuybackPool {
 
     function ownerSetExchangeRate(uint256 _exchangeRate) external;
 
-    function ownerWithdrawPaymentToken() external;
+    function ownerWithdrawPaymentToken(address _receiver) external;
 }

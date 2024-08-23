@@ -41,20 +41,21 @@ import {
   IERC20,
   IERC20Metadata__factory,
   IVesterDiscountCalculator,
-  IVeToken,
   TestVeExternalVesterImplementationV1,
+  TestVeToken,
 } from '../src/types';
 import {
   createExternalOARB,
+  createExternalVesterDiscountCalculatorV1,
   createTestDiscountCalculator,
   createTestVeExternalVesterV1Proxy,
   createTestVeToken,
-  createVesterDiscountCalculatorV1,
 } from './liquidity-mining-ecosystem-utils';
-import { expectEmptyExternalVesterPosition } from './liquidityMining-utils';
+import { convertToNearestWeek, expectEmptyExternalVesterPosition } from './liquidityMining-utils';
 
 const defaultAccountNumber = ZERO_BI;
 const ONE_WEEK = BigNumber.from('604800');
+const TWO_YEARS = ONE_WEEK.mul(104);
 const CLOSE_POSITION_WINDOW = ONE_WEEK;
 const FORCE_CLOSE_POSITION_TAX = BigNumber.from('500');
 const EMERGENCY_WITHDRAW_TAX = BigNumber.from('0');
@@ -93,7 +94,7 @@ describe('VeExternalVesterV1', () => {
   let paymentToken: IERC20;
   let rewardMarketId: BigNumberish;
   let rewardToken: IERC20;
-  let veToken: IVeToken;
+  let veToken: TestVeToken;
   let owner: SignerWithAddressWithSafety;
 
   before(async () => {
@@ -127,10 +128,10 @@ describe('VeExternalVesterV1', () => {
     await setPriceOracle(paymentToken, paymentMarketId, testPriceOracle);
     await setPriceOracle(rewardToken, rewardMarketId, testPriceOracle);
 
-    discountCalculator = await createVesterDiscountCalculatorV1();
     owner = core.governance;
     oToken = await createExternalOARB(owner, 'Test oARB', 'oARB');
     veToken = await createTestVeToken(rewardToken);
+    discountCalculator = await createExternalVesterDiscountCalculatorV1(veToken);
 
     vester = await createTestVeExternalVesterV1Proxy(
       core,
@@ -140,13 +141,13 @@ describe('VeExternalVesterV1', () => {
       paymentMarketId,
       rewardToken,
       rewardMarketId,
-      veToken,
       discountCalculator,
       oToken,
       BASE_URI,
       NAME,
       SYMBOL,
     );
+    await vester.lazyInitialize(veToken.address);
     await vester.connect(owner).ownerSetClosePositionWindow(CLOSE_POSITION_WINDOW);
 
     await core.dolomiteMargin.connect(owner).ownerSetGlobalOperator(vester.address, true);
@@ -229,6 +230,38 @@ describe('VeExternalVesterV1', () => {
     it('should fail if already initialized', async () => {
       const bytes = ethers.utils.defaultAbiCoder.encode(['address', 'string'], [ZERO_ADDRESS, 'hello there']);
       await expectThrow(vester.connect(owner).initialize(bytes), 'Initializable: contract is already initialized');
+    });
+  });
+
+  describe('#lazyInitialize', () => {
+    it('should work normally', async () => {
+      const newVester = await createTestVeExternalVesterV1Proxy(
+        core,
+        pairToken,
+        pairMarketId,
+        paymentToken,
+        paymentMarketId,
+        rewardToken,
+        rewardMarketId,
+        discountCalculator,
+        oToken,
+        BASE_URI,
+        NAME,
+        SYMBOL,
+      );
+      expect(await newVester.VE_TOKEN()).to.eq(ADDRESS_ZERO);
+      const res = await newVester.lazyInitialize(veToken.address);
+      await expectEvent(newVester, res, 'VeTokenSet', {
+        veToken: veToken.address,
+      });
+      expect(await vester.VE_TOKEN()).to.eq(veToken.address);
+    });
+
+    it('should fail if already initialized', async () => {
+      await expectThrow(
+        vester.lazyInitialize(veToken.address),
+        'VeExternalVesterImplementationV1: veToken already initialized'
+      );
     });
   });
 
@@ -316,7 +349,12 @@ describe('VeExternalVesterV1', () => {
       await vester.vest(ONE_WEEK, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT);
       await increase(ONE_WEEK);
 
-      const paymentAmount = PAYMENT_AMOUNT_BEFORE_DISCOUNT.mul(7_800).div(10_000);
+      const timestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
+      await veToken.setAmountAndEnd(
+        O_TOKEN_AMOUNT,
+        convertToNearestWeek(BigNumber.from(timestamp), TWO_YEARS)
+      );
+      const paymentAmount = PAYMENT_AMOUNT_BEFORE_DISCOUNT.mul(5_000).div(10_000);
 
       const result = await vester.closePositionAndBuyTokens(NFT_ID, VE_TOKEN_ID, ZERO_BI, MAX_PAYMENT_AMOUNT);
 
@@ -350,12 +388,13 @@ describe('VeExternalVesterV1', () => {
       await vester.vest(ONE_WEEK, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT);
       await increase(ONE_WEEK);
 
-      const paymentAmount = PAYMENT_AMOUNT_BEFORE_DISCOUNT.mul(7_800).div(10_000);
+      const paymentAmount = PAYMENT_AMOUNT_BEFORE_DISCOUNT.mul(5_000).div(10_000);
 
+      const timestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
       const result = await vester.closePositionAndBuyTokens(
         NFT_ID,
         MAX_UINT_256_BI,
-        ONE_WEEK_SECONDS,
+        convertToNearestWeek(BigNumber.from(timestamp), TWO_YEARS),
         MAX_PAYMENT_AMOUNT
       );
 
@@ -394,7 +433,7 @@ describe('VeExternalVesterV1', () => {
 
       const tester = await createTestDiscountCalculator();
       await vester.connect(owner).ownerSetDiscountCalculator(tester.address);
-      const discount = 10_001;
+      const discount = ONE_ETH_BI.add(1);
       await tester.setDiscount(discount);
 
       await expectThrow(
@@ -407,8 +446,9 @@ describe('VeExternalVesterV1', () => {
       await setupAllowancesForVesting();
       await vester.vest(ONE_WEEK, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT);
       await increase(ONE_WEEK);
+      const timestamp = BigNumber.from(await getBlockTimestamp(await ethers.provider.getBlockNumber()));
       await expectThrow(
-        vester.closePositionAndBuyTokens(NFT_ID, VE_TOKEN_ID, ZERO_BI, ONE_BI),
+        vester.closePositionAndBuyTokens(NFT_ID, MAX_UINT_256_BI, convertToNearestWeek(timestamp, ONE_WEEK), ONE_BI),
         'VeExternalVesterImplementationV1: Cost exceeds max payment amount',
       );
     });
