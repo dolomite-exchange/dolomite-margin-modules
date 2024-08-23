@@ -49,8 +49,7 @@ contract BuybackPool is IBuybackPool, OnlyDolomiteMargin {
     // ==================== State Variables ====================
     // =========================================================
 
-    // @dev 5%
-    IDolomiteStructs.Decimal public exchangeRate = IDolomiteStructs.Decimal({ value: .05 ether });
+    IDolomiteStructs.Decimal public exchangeRate;
 
     // ===========================================================
     // ======================= Constructor =======================
@@ -63,6 +62,7 @@ contract BuybackPool is IBuybackPool, OnlyDolomiteMargin {
     ) OnlyDolomiteMargin(_dolomiteMargin) {
         EXCHANGE_TOKEN = IERC20(_exchangeToken);
         PAYMENT_TOKEN = IERC20(_paymentToken);
+        _ownerSetExchangeRate(.05 ether); // 5%
     }
 
     // ==================================================================
