@@ -1,12 +1,12 @@
 import { CustomTestToken } from 'packages/base/src/types';
 import { createContractWithAbi, createTestToken } from 'packages/base/src/utils/dolomite-utils';
-import { ADDRESS_ZERO, Network, ONE_DAY_SECONDS, ONE_ETH_BI, ONE_WEEK_SECONDS, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
+import { Network, ONE_DAY_SECONDS, ONE_ETH_BI, ONE_WEEK_SECONDS, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
 import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
 import { revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
 import { expect } from 'chai';
 import { expectThrow } from 'packages/base/test/utils/assertions';
-import { increase, increaseTo } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
+import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
 import { parseEther } from 'ethers/lib/utils';
 import { VeFeeCalculator, VoterAlwaysActive, VoterAlwaysActive__factory, VotingEscrow } from '../src/types';
 import { createVeFeeCalculator, createVotingEscrow } from './liquidity-mining-ecosystem-utils';

@@ -15,7 +15,7 @@ import { increaseTo } from '@nomicfoundation/hardhat-network-helpers/dist/src/he
 import { ethers } from 'hardhat';
 import { parseEther } from 'ethers/lib/utils';
 import { expectThrow } from 'packages/base/test/utils/assertions';
-import { BigNumber, BigNumberish } from 'ethers';
+import { BigNumber } from 'ethers';
 import { convertToNearestWeek } from './liquidityMining-utils';
 
 const NFT_ID = 0;

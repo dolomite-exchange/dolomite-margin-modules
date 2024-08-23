@@ -6,7 +6,6 @@ import {
   ONE_BI,
   ONE_DAY_SECONDS,
   ONE_ETH_BI,
-  ONE_WEEK_SECONDS,
   ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import {
