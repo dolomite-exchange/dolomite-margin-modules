@@ -33,6 +33,7 @@ import { BitsLib } from "../../../protocol/lib/BitsLib.sol";
 import { DecimalLib } from "../../../protocol/lib/DecimalLib.sol";
 import { Require } from "../../../protocol/lib/Require.sol";
 import { TypesLib } from "../../../protocol/lib/TypesLib.sol";
+import { IEventEmitterRegistry } from "../../interfaces/IEventEmitterRegistry.sol";
 import { IIsolationModeTokenVaultV1 } from "../../interfaces/IIsolationModeTokenVaultV1.sol";
 import { IIsolationModeVaultFactory } from "../../interfaces/IIsolationModeVaultFactory.sol";
 
@@ -120,6 +121,45 @@ library IsolationModeTokenVaultV1ActionsImpl {
             _vault.marketId(),
             _amountWei,
             AccountBalanceLib.BalanceCheckFlag.Both
+        );
+    }
+
+    function openMarginPosition(
+        IIsolationModeTokenVaultV1 _vault,
+        uint256 _fromAccountNumber,
+        uint256 _toAccountNumber,
+        uint256 _borrowMarketId,
+        uint256 _amountWei
+    ) public {
+        transferIntoPositionWithUnderlyingToken(
+            _vault,
+            _fromAccountNumber,
+            _toAccountNumber,
+            _amountWei
+        );
+        IEventEmitterRegistry.BalanceUpdate memory zeroUpdate;
+        IEventEmitterRegistry.BalanceUpdate memory marginDepositUpdate = IEventEmitterRegistry.BalanceUpdate({
+            deltaWei: IDolomiteStructs.Wei({
+                sign: true,
+                value: _amountWei
+            }),
+            newPar: _vault.DOLOMITE_MARGIN().getAccountPar(
+                IDolomiteStructs.AccountInfo({
+                    owner: address(this),
+                    number: _toAccountNumber
+                }),
+                _vault.marketId()
+            )
+        });
+        _vault.dolomiteRegistry().eventEmitter().emitMarginPositionOpen(
+            _vault,
+            _toAccountNumber,
+            /* _inputToken */ _vault.DOLOMITE_MARGIN().getMarketTokenAddress(_borrowMarketId),
+            /* _outputToken */ _vault.VAULT_FACTORY(),
+            /* _depositToken */ _vault.VAULT_FACTORY(),
+            zeroUpdate,
+            marginDepositUpdate,
+            marginDepositUpdate
         );
     }
 

@@ -86,6 +86,18 @@ interface IIsolationModeTokenVaultV1 {
     ) external payable;
 
     /**
+     * @notice  End-user function for opening a margin position involving the vault factory's underlying token. Should
+     *          only be executable by the vault owner. Reverts if `_fromAccountNumber` is not 0 or if `_toAccountNumber`
+     *          is 0. The `_borrowMarketId` is unused except for emitting the event needed to index the Subgraph.
+     */
+    function openMarginPosition(
+        uint256 _fromAccountNumber,
+        uint256 _toAccountNumber,
+        uint256 _borrowMarketId,
+        uint256 _amountWei
+    ) external payable;
+
+    /**
      * @notice  End-user function for closing a borrow position involving the vault factory's underlying token. Should
      *          only be executable by the vault owner. Reverts if `_borrowAccountNumber` is 0 or if `_toAccountNumber`
      *          is not 0.
