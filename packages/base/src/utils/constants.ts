@@ -259,7 +259,7 @@ export const DYT_GLP_2024_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = 
 export const DOGE_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0xC4da4c24fd591125c3F47b340b6f4f76111883d8',
-    marketId: -1,
+    marketId: -1, // does not exist; purely here for the Chainlink oracle pairing
   },
 };
 
@@ -484,7 +484,7 @@ export const USDC_MAP: Record<Network, TokenWithMarketId> = {
 export const USDE_MAP: Record<Network.ArbitrumOne | Network.Mantle, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x5d3a1Ff2b6BAb83b63cd9AD0787074081a52ef34',
-    marketId: -1
+    marketId: 54,
   },
   [Network.Mantle]: {
     address: '0x5d3a1Ff2b6BAb83b63cd9AD0787074081a52ef34',

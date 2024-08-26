@@ -145,7 +145,7 @@ export interface GmToken {
   indexToken: IERC20;
   longToken: IERC20;
   shortToken: IERC20;
-  longMarketId: BigNumberish | null;
+  longMarketId: BigNumberish | -1;
   shortMarketId: BigNumberish;
 }
 
@@ -305,7 +305,7 @@ export async function createGmxEcosystemV2(
         indexToken: IERC20__factory.connect(AAVE_MAP[network].address, signer),
         longToken: IERC20__factory.connect(AAVE_MAP[network].address, signer),
         shortToken: IERC20__factory.connect(NATIVE_USDC_MAP[network].address, signer),
-        longMarketId: null,
+        longMarketId: AAVE_MAP[network].marketId,
         shortMarketId: NATIVE_USDC_MAP[network].marketId,
       },
       arbUsd: {
@@ -385,7 +385,7 @@ export async function createGmxEcosystemV2(
         indexToken: IERC20__factory.connect(SOL_MAP[network].address, signer),
         longToken: IERC20__factory.connect(SOL_MAP[network].address, signer),
         shortToken: IERC20__factory.connect(NATIVE_USDC_MAP[network].address, signer),
-        longMarketId: null,
+        longMarketId: SOL_MAP[network].marketId,
         shortMarketId: NATIVE_USDC_MAP[network].marketId,
       },
       uniUsd: {

@@ -53,10 +53,6 @@ export function getGmxV2IsolationModeVaultFactoryConstructorParams(
   executionFee: BigNumberish,
   skipLongToken: boolean
 ): any[] {
-  if (!core.gmxEcosystem) {
-    throw new Error('Gmx ecosystem not initialized');
-  }
-
   return [
     {
       gmxV2Registry: gmxRegistry.address,

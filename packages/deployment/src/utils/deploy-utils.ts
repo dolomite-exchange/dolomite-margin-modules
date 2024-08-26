@@ -1394,27 +1394,55 @@ export async function prettyPrintEncodeAddGmxV2Market(
   maxSupplyWei: BigNumberish,
   options: AddMarketOptions = {},
 ): Promise<EncodedTransaction[]> {
-  const transactions = await prettyPrintEncodeAddAsyncIsolationModeMarket(
-    core,
-    factory,
-    oracle,
-    unwrapper,
-    wrapper,
-    handlerRegistry,
-    marketId,
-    targetCollateralization,
-    targetLiquidationPremium,
-    maxSupplyWei,
-    options,
-  );
-
-  transactions.push(
+  const transactions = [
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { gmxV2PriceOracle: core.gmxV2Ecosystem.live.priceOracle },
+      'gmxV2PriceOracle',
+      'ownerSetMarketToken',
+      [factory.address, true],
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { oracleAggregatorV2: core.oracleAggregatorV2 },
+      'oracleAggregatorV2',
+      'ownerInsertOrUpdateToken',
+      [
+        {
+          decimals: await IERC20Metadata__factory.connect(factory.address, factory.signer).decimals(),
+          token: factory.address,
+          oracleInfos: [
+            {
+              oracle: core.gmxV2Ecosystem.live.priceOracle.address,
+              weight: 100,
+              tokenPair: ADDRESS_ZERO,
+            },
+          ],
+        },
+      ],
+    ),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       { gmxV2Registry: core.gmxV2Ecosystem.live.registry },
       'gmxV2Registry',
       'ownerSetGmxMarketToIndexToken',
       [factory.address, await factory.INDEX_TOKEN()],
+    ),
+  ];
+
+  transactions.push(
+    ...await prettyPrintEncodeAddAsyncIsolationModeMarket(
+      core,
+      factory,
+      oracle,
+      unwrapper,
+      wrapper,
+      handlerRegistry,
+      marketId,
+      targetCollateralization,
+      targetLiquidationPremium,
+      maxSupplyWei,
+      options,
     ),
   );
 
