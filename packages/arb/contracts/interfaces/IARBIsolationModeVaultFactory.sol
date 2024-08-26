@@ -25,7 +25,7 @@ import { IARBRegistry } from "./IARBRegistry.sol";
 
 
 /**
- * @title   IMNTIsolationModeVaultFactory.sol
+ * @title   IARBIsolationModeVaultFactory
  * @author  Dolomite
  *
  * @notice  Interface for a subclass of IsolationModeVaultFactory that creates vaults for ARB tokens.

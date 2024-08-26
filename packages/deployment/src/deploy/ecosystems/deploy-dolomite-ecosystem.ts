@@ -9,7 +9,7 @@ import {
   IERC20__factory,
   IERC20Metadata__factory,
   IGenericTraderProxyV1,
-  IGenericTraderProxyV1__factory,
+  IGenericTraderProxyV1__factory, IIsolationModeTokenVaultV1__factory,
   ILiquidatorAssetRegistry__factory,
   IPartiallyDelayedMultiSig__factory,
   RegistryProxy,
@@ -329,6 +329,12 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   );
 
   await deployContractAndSave(
+    'SafeDelegateCallLib',
+    [],
+    getMaxDeploymentVersionNameByDeploymentKey('SafeDelegateCallLib', 1),
+  );
+
+  await deployContractAndSave(
     'IsolationModeTokenVaultV1ActionsImpl',
     [],
     getMaxDeploymentVersionNameByDeploymentKey('IsolationModeTokenVaultV1ActionsImpl', 1),
@@ -566,6 +572,28 @@ async function encodeDolomiteRegistryMigrations(
       ),
     );
   }
+
+  // TODO: selectors may throw
+  let selectors: string[];
+  try {
+    selectors = await dolomiteRegistry.isolationModeMulticallFunctions();
+  } catch (e) {
+    selectors = [];
+  }
+  const fragmentNames = [
+    'depositIntoVaultForDolomiteMargin',
+    'withdrawFromVaultForDolomiteMargin',
+    'openBorrowPosition',
+    'openMarginPosition',
+    'transferIntoPositionWithUnderlyingToken',
+    'transferIntoPositionWithOtherToken',
+    'transferFromPositionWithUnderlyingToken',
+    'transferFromPositionWithOtherToken',
+    'swapExactInputForOutput',
+  ];
+  const fragments = fragmentNames
+    .map((name) => IIsolationModeTokenVaultV1__factory.createInterface().getSighash(name))
+    .sort((a, b) => parseInt(a, 16) - parseInt(b, 16));
 }
 
 // noinspection JSIgnoredPromiseFromCall

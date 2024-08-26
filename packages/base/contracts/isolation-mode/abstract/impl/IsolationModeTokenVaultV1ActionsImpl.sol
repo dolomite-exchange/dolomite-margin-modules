@@ -21,6 +21,7 @@ pragma solidity ^0.8.9;
 
 import { BaseLiquidatorProxy } from "../../../general/BaseLiquidatorProxy.sol";
 import { IDolomiteRegistry } from "../../../interfaces/IDolomiteRegistry.sol";
+import { IEventEmitterRegistry } from "../../../interfaces/IEventEmitterRegistry.sol";
 import { IGenericTraderProxyV1 } from "../../../interfaces/IGenericTraderProxyV1.sol";
 import { AccountActionLib } from "../../../lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "../../../lib/AccountBalanceLib.sol";
@@ -33,7 +34,6 @@ import { BitsLib } from "../../../protocol/lib/BitsLib.sol";
 import { DecimalLib } from "../../../protocol/lib/DecimalLib.sol";
 import { Require } from "../../../protocol/lib/Require.sol";
 import { TypesLib } from "../../../protocol/lib/TypesLib.sol";
-import { IEventEmitterRegistry } from "../../interfaces/IEventEmitterRegistry.sol";
 import { IIsolationModeTokenVaultV1 } from "../../interfaces/IIsolationModeTokenVaultV1.sol";
 import { IIsolationModeVaultFactory } from "../../interfaces/IIsolationModeVaultFactory.sol";
 
@@ -152,7 +152,7 @@ library IsolationModeTokenVaultV1ActionsImpl {
             )
         });
         _vault.dolomiteRegistry().eventEmitter().emitMarginPositionOpen(
-            _vault,
+            address(_vault),
             _toAccountNumber,
             /* _inputToken */ _vault.DOLOMITE_MARGIN().getMarketTokenAddress(_borrowMarketId),
             /* _outputToken */ _vault.VAULT_FACTORY(),

@@ -63,26 +63,27 @@ import {
   RegistryProxy__factory,
 } from '../../../src/types';
 import {
+  AAVE_MAP,
   ARB_MAP,
-  BN_GMX_MAP,
+  BN_GMX_MAP, DOGE_MAP,
   ES_GMX_DISTRIBUTOR_FOR_STAKED_GLP_MAP,
   ES_GMX_DISTRIBUTOR_FOR_STAKED_GMX_MAP,
   ES_GMX_MAP,
   FS_GLP_MAP,
   GLP_MANAGER_MAP,
   GLP_MAP,
-  GLP_REWARD_ROUTER_MAP,
+  GLP_REWARD_ROUTER_MAP, GMX_AAVE_USD_MARKET_TOKEN_MAP,
   GMX_ARB_USD_MARKET_TOKEN_MAP,
   GMX_BTC_PLACEHOLDER_MAP,
   GMX_BTC_SINGLE_SIDED_MARKET_TOKEN_MAP,
   GMX_BTC_USD_MARKET_TOKEN_MAP,
   GMX_DATASTORE_MAP,
   GMX_DEPOSIT_HANDLER_MAP,
-  GMX_DEPOSIT_VAULT_MAP,
+  GMX_DEPOSIT_VAULT_MAP, GMX_DOGE_USD_MARKET_TOKEN_MAP,
   GMX_ETH_SINGLE_SIDED_MARKET_TOKEN_MAP,
   GMX_ETH_USD_MARKET_TOKEN_MAP,
   GMX_EXCHANGE_ROUTER_MAP,
-  GMX_EXECUTOR_MAP,
+  GMX_EXECUTOR_MAP, GMX_GMX_USD_MARKET_TOKEN_MAP,
   GMX_LINK_USD_MARKET_TOKEN_MAP,
   GMX_MAP,
   GMX_READER_MAP,
@@ -93,18 +94,18 @@ import {
   GMX_UNI_USD_MARKET_TOKEN_MAP,
   GMX_VAULT_MAP,
   GMX_WITHDRAWAL_HANDLER_MAP,
-  GMX_WITHDRAWAL_VAULT_MAP,
+  GMX_WITHDRAWAL_VAULT_MAP, GMX_WST_ETH_USD_MARKET_TOKEN_MAP,
   LINK_MAP,
   NATIVE_USDC_MAP,
   S_GLP_MAP,
   S_GMX_MAP,
   SBF_GMX_MAP,
   SOL_MAP,
-  UNI_MAP,
+  UNI_MAP, USDE_MAP,
   V_GLP_MAP,
   V_GMX_MAP,
   WBTC_MAP,
-  WETH_MAP,
+  WETH_MAP, WST_ETH_MAP,
 } from '../../../src/utils/constants';
 import { Network } from '../../../src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';
@@ -144,7 +145,7 @@ export interface GmToken {
   indexToken: IERC20;
   longToken: IERC20;
   shortToken: IERC20;
-  longMarketId: BigNumberish;
+  longMarketId: BigNumberish | null;
   shortMarketId: BigNumberish;
 }
 
@@ -161,14 +162,18 @@ export interface GmxV2Ecosystem {
   gmxDepositHandler: IGmxDepositHandler;
   gmxDepositVault: { address: string };
   gmTokens: {
+    aaveUsd: GmToken;
     arbUsd: GmToken;
+    btc: GmToken;
     btcUsd: GmToken;
+    dogeUsd: GmToken;
+    eth: GmToken;
     ethUsd: GmToken;
+    gmxUsd: GmToken;
     linkUsd: GmToken;
     solUsd: GmToken;
     uniUsd: GmToken;
-    btc: GmToken;
-    eth: GmToken;
+    wstEthUsd: GmToken;
   };
   gmxEthUsdMarketToken: IGmxMarketToken;
   gmxExchangeRouter: IGmxExchangeRouter;
@@ -178,13 +183,18 @@ export interface GmxV2Ecosystem {
   gmxWithdrawalHandler: IGmxWithdrawalHandler;
   gmxWithdrawalVault: { address: string };
   live: {
+    // gmAaveUsd: LiveGmMarket;
     gmArbUsd: LiveGmMarket;
     gmBtc: LiveGmMarket;
     gmBtcUsd: LiveGmMarket;
+    // gmDogeUsd: LiveGmMarket;
     gmEth: LiveGmMarket;
     gmEthUsd: LiveGmMarket;
+    // gmGmxUsd: LiveGmMarket;
     gmLinkUsd: LiveGmMarket;
+    // gmSolUsd: LiveGmMarket;
     gmUniUsd: LiveGmMarket;
+    // gmWstEthUsd: LiveGmMarket;
     gmxV2LibraryMap: { GmxV2Library: string };
     registry: GmxV2Registry;
     registryProxy: RegistryProxy;
@@ -290,13 +300,33 @@ export async function createGmxEcosystemV2(
     gmxDepositHandler: getContract(GMX_DEPOSIT_HANDLER_MAP[network], IGmxDepositHandler__factory.connect, signer),
     gmxDepositVault: await impersonateOrFallback(GMX_DEPOSIT_VAULT_MAP[network], true, signer),
     gmTokens: {
-      ethUsd: {
-        marketToken: getContract(GMX_ETH_USD_MARKET_TOKEN_MAP[network], IGmxMarketToken__factory.connect, signer),
-        indexToken: IERC20__factory.connect(WETH_MAP[network].address, signer),
-        longToken: IERC20__factory.connect(WETH_MAP[network].address, signer),
+      aaveUsd: {
+        marketToken: getContract(GMX_AAVE_USD_MARKET_TOKEN_MAP[network], IGmxMarketToken__factory.connect, signer),
+        indexToken: IERC20__factory.connect(AAVE_MAP[network].address, signer),
+        longToken: IERC20__factory.connect(AAVE_MAP[network].address, signer),
         shortToken: IERC20__factory.connect(NATIVE_USDC_MAP[network].address, signer),
-        longMarketId: WETH_MAP[network].marketId,
+        longMarketId: null,
         shortMarketId: NATIVE_USDC_MAP[network].marketId,
+      },
+      arbUsd: {
+        marketToken: getContract(GMX_ARB_USD_MARKET_TOKEN_MAP[network], IGmxMarketToken__factory.connect, signer),
+        indexToken: IERC20__factory.connect(ARB_MAP[network].address, signer),
+        longToken: IERC20__factory.connect(ARB_MAP[network].address, signer),
+        shortToken: IERC20__factory.connect(NATIVE_USDC_MAP[network].address, signer),
+        longMarketId: ARB_MAP[network].marketId,
+        shortMarketId: NATIVE_USDC_MAP[network].marketId,
+      },
+      btc: {
+        marketToken: getContract(
+          GMX_BTC_SINGLE_SIDED_MARKET_TOKEN_MAP[network],
+          IGmxMarketToken__factory.connect,
+          signer,
+        ),
+        indexToken: IERC20__factory.connect(GMX_BTC_PLACEHOLDER_MAP[network].address, signer),
+        longToken: IERC20__factory.connect(WBTC_MAP[network].address, signer),
+        shortToken: IERC20__factory.connect(WBTC_MAP[network].address, signer),
+        longMarketId: WBTC_MAP[network].marketId,
+        shortMarketId: WBTC_MAP[network].marketId,
       },
       btcUsd: {
         marketToken: getContract(GMX_BTC_USD_MARKET_TOKEN_MAP[network], IGmxMarketToken__factory.connect, signer),
@@ -306,12 +336,40 @@ export async function createGmxEcosystemV2(
         longMarketId: WBTC_MAP[network].marketId,
         shortMarketId: NATIVE_USDC_MAP[network].marketId,
       },
-      arbUsd: {
-        marketToken: getContract(GMX_ARB_USD_MARKET_TOKEN_MAP[network], IGmxMarketToken__factory.connect, signer),
-        indexToken: IERC20__factory.connect(ARB_MAP[network].address, signer),
-        longToken: IERC20__factory.connect(ARB_MAP[network].address, signer),
+      dogeUsd: {
+        marketToken: getContract(GMX_DOGE_USD_MARKET_TOKEN_MAP[network], IGmxMarketToken__factory.connect, signer),
+        indexToken: IERC20__factory.connect(DOGE_MAP[network].address, signer),
+        longToken: IERC20__factory.connect(WETH_MAP[network].address, signer),
         shortToken: IERC20__factory.connect(NATIVE_USDC_MAP[network].address, signer),
-        longMarketId: ARB_MAP[network].marketId,
+        longMarketId: WETH_MAP[network].marketId,
+        shortMarketId: NATIVE_USDC_MAP[network].marketId,
+      },
+      eth: {
+        marketToken: getContract(
+          GMX_ETH_SINGLE_SIDED_MARKET_TOKEN_MAP[network],
+          IGmxMarketToken__factory.connect,
+          signer,
+        ),
+        indexToken: IERC20__factory.connect(WETH_MAP[network].address, signer),
+        longToken: IERC20__factory.connect(WETH_MAP[network].address, signer),
+        shortToken: IERC20__factory.connect(WETH_MAP[network].address, signer),
+        longMarketId: WETH_MAP[network].marketId,
+        shortMarketId: WETH_MAP[network].marketId,
+      },
+      ethUsd: {
+        marketToken: getContract(GMX_ETH_USD_MARKET_TOKEN_MAP[network], IGmxMarketToken__factory.connect, signer),
+        indexToken: IERC20__factory.connect(WETH_MAP[network].address, signer),
+        longToken: IERC20__factory.connect(WETH_MAP[network].address, signer),
+        shortToken: IERC20__factory.connect(NATIVE_USDC_MAP[network].address, signer),
+        longMarketId: WETH_MAP[network].marketId,
+        shortMarketId: NATIVE_USDC_MAP[network].marketId,
+      },
+      gmxUsd: {
+        marketToken: getContract(GMX_GMX_USD_MARKET_TOKEN_MAP[network], IGmxMarketToken__factory.connect, signer),
+        indexToken: IERC20__factory.connect(GMX_MAP[network].address, signer),
+        longToken: IERC20__factory.connect(GMX_MAP[network].address, signer),
+        shortToken: IERC20__factory.connect(NATIVE_USDC_MAP[network].address, signer),
+        longMarketId: GMX_MAP[network].marketId,
         shortMarketId: NATIVE_USDC_MAP[network].marketId,
       },
       linkUsd: {
@@ -327,7 +385,7 @@ export async function createGmxEcosystemV2(
         indexToken: IERC20__factory.connect(SOL_MAP[network].address, signer),
         longToken: IERC20__factory.connect(SOL_MAP[network].address, signer),
         shortToken: IERC20__factory.connect(NATIVE_USDC_MAP[network].address, signer),
-        longMarketId: -1,
+        longMarketId: null,
         shortMarketId: NATIVE_USDC_MAP[network].marketId,
       },
       uniUsd: {
@@ -338,29 +396,13 @@ export async function createGmxEcosystemV2(
         longMarketId: UNI_MAP[network].marketId,
         shortMarketId: NATIVE_USDC_MAP[network].marketId,
       },
-      btc: {
-        marketToken: getContract(
-          GMX_BTC_SINGLE_SIDED_MARKET_TOKEN_MAP[network],
-          IGmxMarketToken__factory.connect,
-          signer,
-        ),
-        indexToken: IERC20__factory.connect(GMX_BTC_PLACEHOLDER_MAP[network].address, signer),
-        longToken: IERC20__factory.connect(WBTC_MAP[network].address, signer),
-        shortToken: IERC20__factory.connect(WBTC_MAP[network].address, signer),
-        longMarketId: WBTC_MAP[network].marketId,
-        shortMarketId: WBTC_MAP[network].marketId,
-      },
-      eth: {
-        marketToken: getContract(
-          GMX_ETH_SINGLE_SIDED_MARKET_TOKEN_MAP[network],
-          IGmxMarketToken__factory.connect,
-          signer,
-        ),
+      wstEthUsd: {
+        marketToken: getContract(GMX_WST_ETH_USD_MARKET_TOKEN_MAP[network], IGmxMarketToken__factory.connect, signer),
         indexToken: IERC20__factory.connect(WETH_MAP[network].address, signer),
-        longToken: IERC20__factory.connect(WETH_MAP[network].address, signer),
-        shortToken: IERC20__factory.connect(WETH_MAP[network].address, signer),
-        longMarketId: WETH_MAP[network].marketId,
-        shortMarketId: WETH_MAP[network].marketId,
+        longToken: IERC20__factory.connect(WST_ETH_MAP[network].address, signer),
+        shortToken: IERC20__factory.connect(USDE_MAP[network].address, signer),
+        longMarketId: WST_ETH_MAP[network].marketId,
+        shortMarketId: USDE_MAP[network].marketId,
       },
     },
     gmxEthUsdMarketToken: getContract(GMX_ETH_USD_MARKET_TOKEN_MAP[network], IGmxMarketToken__factory.connect, signer),

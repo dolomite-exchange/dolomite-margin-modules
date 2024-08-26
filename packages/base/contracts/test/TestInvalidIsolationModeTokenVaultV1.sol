@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 /*
 
-    Copyright 2024 Dolomite
+    Copyright 2023 Dolomite
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -20,23 +20,16 @@
 
 pragma solidity ^0.8.9;
 
-import { IVesterDiscountCalculator } from "./interfaces/IVesterDiscountCalculator.sol";
-
 
 /**
- * @title   VesterDiscountCalculatorV1
+ * @title   TestInvalidIsolationModeTokenVaultV1
  * @author  Dolomite
  *
+ * @notice  A test contract for the IsolationModeTokenVaultV1 contract.
  */
-contract VesterDiscountCalculatorV1 is IVesterDiscountCalculator {
+contract TestInvalidIsolationModeTokenVaultV1 {
 
-    /// @dev 20% for instant exit
-    uint256 public constant BASE = 2_000;
-    /// @dev 2% per week
-    uint256 public constant AMOUNT_PER_WEEK = 200;
-    uint256 public constant ONE_WEEK_SECONDS = 1 weeks;
-
-    function calculateDiscount(uint256 /* _nftId */, uint256 _duration) external pure returns (uint256) {
-        return BASE + (AMOUNT_PER_WEEK * _duration / ONE_WEEK_SECONDS);
+    function VAULT_FACTORY() external pure returns (address) {
+        return 0x34DF4E8062A8C8Ae97E3382B452bd7BF60542698;
     }
 }

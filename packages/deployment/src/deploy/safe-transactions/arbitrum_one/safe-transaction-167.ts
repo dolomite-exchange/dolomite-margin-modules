@@ -105,7 +105,7 @@ async function deployPlutusVaultGlpUpdates(core: CoreProtocolArbitrumOne): Promi
     getPlutusVaultGLPIsolationModeUnwrapperTraderV2ConstructorParams(
       core,
       core.plutusEcosystem!.live.plutusVaultRegistry,
-      core.plutusEcosystem!.live.plvGlpIsolationModeFactory,
+      core.plutusEcosystem!.live.dPlvGlp,
     ),
     'PlutusVaultGLPIsolationModeUnwrapperTraderV3',
   );
@@ -114,7 +114,7 @@ async function deployPlutusVaultGlpUpdates(core: CoreProtocolArbitrumOne): Promi
     getPlutusVaultGLPIsolationModeWrapperTraderV2ConstructorParams(
       core,
       core.plutusEcosystem!.live.plutusVaultRegistry,
-      core.plutusEcosystem!.live.plvGlpIsolationModeFactory,
+      core.plutusEcosystem!.live.dPlvGlp,
     ),
     'PlutusVaultGLPIsolationModeWrapperTraderV3',
   );
@@ -123,7 +123,7 @@ async function deployPlutusVaultGlpUpdates(core: CoreProtocolArbitrumOne): Promi
     getPlutusVaultGLPWithChainlinkAutomationPriceOracleConstructorParams(
       core,
       core.plutusEcosystem!.live.plutusVaultRegistry,
-      core.plutusEcosystem!.live.plvGlpIsolationModeFactory,
+      core.plutusEcosystem!.live.dPlvGlp,
       PlutusVaultGLPIsolationModeUnwrapperTraderV2__factory.connect(unwrapperV3, core.hhUser1),
     ),
     'PlutusVaultGLPWithChainlinkAutomationPriceOracleV2',
@@ -134,7 +134,7 @@ async function deployPlutusVaultGlpUpdates(core: CoreProtocolArbitrumOne): Promi
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       core.plutusEcosystem!.live,
-      'plvGlpIsolationModeFactory',
+      'dPlvGlp',
       'ownerSetIsTokenConverterTrusted',
       [Deployments.PlutusVaultGLPIsolationModeUnwrapperTraderV2['42161'].address, false],
     ),
@@ -143,7 +143,7 @@ async function deployPlutusVaultGlpUpdates(core: CoreProtocolArbitrumOne): Promi
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       core.plutusEcosystem!.live,
-      'plvGlpIsolationModeFactory',
+      'dPlvGlp',
       'ownerSetIsTokenConverterTrusted',
       [Deployments.PlutusVaultGLPIsolationModeWrapperTraderV2['42161'].address, false],
     ),
@@ -152,7 +152,7 @@ async function deployPlutusVaultGlpUpdates(core: CoreProtocolArbitrumOne): Promi
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       core.plutusEcosystem!.live,
-      'plvGlpIsolationModeFactory',
+      'dPlvGlp',
       'ownerSetIsTokenConverterTrusted',
       [unwrapperV3, true],
     ),
@@ -161,7 +161,7 @@ async function deployPlutusVaultGlpUpdates(core: CoreProtocolArbitrumOne): Promi
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       core.plutusEcosystem!.live,
-      'plvGlpIsolationModeFactory',
+      'dPlvGlp',
       'ownerSetIsTokenConverterTrusted',
       [wrapperV3, true],
     ),

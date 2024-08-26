@@ -38,7 +38,6 @@ import { IJonesWhitelistControllerV2 } from "./interfaces/IJonesWhitelistControl
  *          is it cannot be borrowed by other users, may only be seized via liquidation, and cannot be held in the same
  *          position as other "isolated" tokens.
  */
-// @todo fix overrides
 contract JonesUSDCIsolationModeTokenVaultV1 is
     IJonesUSDCIsolationModeTokenVaultV1,
     IsolationModeTokenVaultV1WithPausableAndOnlyEoa

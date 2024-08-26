@@ -137,6 +137,19 @@ contract GmxV2IsolationModeTokenVaultV1 is
         _setExecutionFeeForAccountNumber(_toAccountNumber, msg.value);
     }
 
+    function _openMarginPosition(
+        uint256 _fromAccountNumber,
+        uint256 _toAccountNumber,
+        uint256 _borrowMarketId,
+        uint256 _amountWei
+    )
+    internal
+    override {
+        GmxV2Library.validateExecutionFee(/* _vault = */ this, _toAccountNumber);
+        super._openMarginPosition(_fromAccountNumber, _toAccountNumber, _borrowMarketId, _amountWei);
+        _setExecutionFeeForAccountNumber(_toAccountNumber, msg.value);
+    }
+
     function _transferIntoPositionWithUnderlyingToken(
         uint256 _fromAccountNumber,
         uint256 _borrowAccountNumber,

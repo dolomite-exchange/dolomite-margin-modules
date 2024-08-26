@@ -1,5 +1,3 @@
-
-
 export function getMagicGLPPriceOracleConstructorParams(core: CoreProtocolArbitrumOne): any[] {
   return [
     core.dolomiteMargin.address,

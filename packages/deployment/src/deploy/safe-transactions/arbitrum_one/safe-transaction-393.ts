@@ -25,91 +25,6 @@ import { IERC20, IsolationModeTraderProxy } from '@dolomite-exchange/modules-bas
 import { formatUnits } from 'ethers/lib/utils';
 import { LiveGmMarket } from '@dolomite-exchange/modules-base/test/utils/ecosystem-utils/gmx';
 
-async function encodeSetMarketToken(
-  core: CoreProtocolArbitrumOne,
-  gmxMarketTokenPriceOracle: GmxV2MarketTokenPriceOracle,
-  token: IERC20,
-): Promise<EncodedTransaction> {
-  return prettyPrintEncodedDataWithTypeSafety(
-    core,
-    { gmxMarketTokenPriceOracle },
-    'gmxMarketTokenPriceOracle',
-    'ownerSetMarketToken',
-    [token.address, true],
-  );
-}
-
-async function encodeSetOracleAggregator(
-  core: CoreProtocolArbitrumOne,
-  gmxMarketTokenPriceOracle: GmxV2MarketTokenPriceOracle,
-  token: IERC20,
-): Promise<EncodedTransaction> {
-  return prettyPrintEncodedDataWithTypeSafety(
-    core,
-    { oracleAggregator: core.oracleAggregatorV2 },
-    'oracleAggregator',
-    'ownerInsertOrUpdateToken',
-    [{
-      oracleInfos: [{
-        oracle: gmxMarketTokenPriceOracle.address,
-        tokenPair: ADDRESS_ZERO,
-        weight: 100,
-      }],
-      decimals: 18,
-      token: token.address,
-    }],
-  );
-}
-
-async function encodeSetUserVaultImplementation(
-  core: CoreProtocolArbitrumOne,
-  factory: GmxV2IsolationModeVaultFactory,
-  userVaultAddress: string,
-): Promise<EncodedTransaction> {
-  return prettyPrintEncodedDataWithTypeSafety(
-    core,
-    { factory },
-    'factory',
-    'ownerSetUserVaultImplementation',
-    [userVaultAddress],
-  );
-}
-
-async function encodeSetUnwrapper(
-  core: CoreProtocolArbitrumOne,
-  unwrapper: IsolationModeTraderProxy,
-  unwrapperAddress: string,
-): Promise<EncodedTransaction> {
-  return prettyPrintEncodedDataWithTypeSafety(
-    core,
-    { unwrapper },
-    'unwrapper',
-    'upgradeTo',
-    [unwrapperAddress],
-  );
-}
-
-async function encodeSetWrapper(
-  core: CoreProtocolArbitrumOne,
-  wrapper: IsolationModeTraderProxy,
-  wrapperAddress: string,
-): Promise<EncodedTransaction> {
-  return prettyPrintEncodedDataWithTypeSafety(
-    core,
-    { wrapper },
-    'wrapper',
-    'upgradeTo',
-    [wrapperAddress],
-  );
-}
-
-async function printPrice(core: CoreProtocolArbitrumOne, token: IERC20, name: string) {
-  const priceStruct = await core.dolomiteMargin.getMarketPrice(
-    await core.dolomiteMargin.getMarketIdByTokenAddress(token.address),
-  );
-  console.log(`${name} price: ${formatUnits(priceStruct.value)}`);
-}
-
 /**
  * This script encodes the following transactions:
  * - Sets each GM-Factory as the market token on the new GMX V2 Price oracle
@@ -206,6 +121,91 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       }
     },
   };
+}
+
+async function encodeSetMarketToken(
+  core: CoreProtocolArbitrumOne,
+  gmxMarketTokenPriceOracle: GmxV2MarketTokenPriceOracle,
+  token: IERC20,
+): Promise<EncodedTransaction> {
+  return prettyPrintEncodedDataWithTypeSafety(
+    core,
+    { gmxMarketTokenPriceOracle },
+    'gmxMarketTokenPriceOracle',
+    'ownerSetMarketToken',
+    [token.address, true],
+  );
+}
+
+async function encodeSetOracleAggregator(
+  core: CoreProtocolArbitrumOne,
+  gmxMarketTokenPriceOracle: GmxV2MarketTokenPriceOracle,
+  token: IERC20,
+): Promise<EncodedTransaction> {
+  return prettyPrintEncodedDataWithTypeSafety(
+    core,
+    { oracleAggregator: core.oracleAggregatorV2 },
+    'oracleAggregator',
+    'ownerInsertOrUpdateToken',
+    [{
+      oracleInfos: [{
+        oracle: gmxMarketTokenPriceOracle.address,
+        tokenPair: ADDRESS_ZERO,
+        weight: 100,
+      }],
+      decimals: 18,
+      token: token.address,
+    }],
+  );
+}
+
+async function encodeSetUserVaultImplementation(
+  core: CoreProtocolArbitrumOne,
+  factory: GmxV2IsolationModeVaultFactory,
+  userVaultAddress: string,
+): Promise<EncodedTransaction> {
+  return prettyPrintEncodedDataWithTypeSafety(
+    core,
+    { factory },
+    'factory',
+    'ownerSetUserVaultImplementation',
+    [userVaultAddress],
+  );
+}
+
+async function encodeSetUnwrapper(
+  core: CoreProtocolArbitrumOne,
+  unwrapper: IsolationModeTraderProxy,
+  unwrapperAddress: string,
+): Promise<EncodedTransaction> {
+  return prettyPrintEncodedDataWithTypeSafety(
+    core,
+    { unwrapper },
+    'unwrapper',
+    'upgradeTo',
+    [unwrapperAddress],
+  );
+}
+
+async function encodeSetWrapper(
+  core: CoreProtocolArbitrumOne,
+  wrapper: IsolationModeTraderProxy,
+  wrapperAddress: string,
+): Promise<EncodedTransaction> {
+  return prettyPrintEncodedDataWithTypeSafety(
+    core,
+    { wrapper },
+    'wrapper',
+    'upgradeTo',
+    [wrapperAddress],
+  );
+}
+
+async function printPrice(core: CoreProtocolArbitrumOne, token: IERC20, name: string) {
+  const priceStruct = await core.dolomiteMargin.getMarketPrice(
+    await core.dolomiteMargin.getMarketIdByTokenAddress(token.address),
+  );
+  console.log(`${name} price: ${formatUnits(priceStruct.value)}`);
 }
 
 doDryRunAndCheckDeployment(main);
