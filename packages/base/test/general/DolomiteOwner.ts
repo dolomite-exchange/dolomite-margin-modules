@@ -12,6 +12,7 @@ import { CoreProtocolArbitrumOne } from '../utils/core-protocols/core-protocol-a
 import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '../utils/setup';
 import { BytesLike } from 'ethers';
 import { Ownable__factory } from 'packages/liquidity-mining/src/types';
+import { createDolomiteOwner } from '../utils/dolomite';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 const BYTES32_OTHER_SELECTOR = '0x1234567800000000000000000000000000000000000000000000000000000000';
@@ -28,11 +29,7 @@ describe('DolomiteOwner', () => {
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
 
-    dolomiteOwner = (await createContractWithAbi<DolomiteOwner>(
-      DolomiteOwner__factory.abi,
-      DolomiteOwner__factory.bytecode,
-      [core.governance.address]
-    )).connect(core.governance);
+    dolomiteOwner = (await createDolomiteOwner(core)).connect(core.governance);
     securityCouncilRole = await dolomiteOwner.SECURITY_COUNCIL_ROLE();
     const ownable = Ownable__factory.connect(core.dolomiteMargin.address, core.governance);
     await ownable.transferOwnership(dolomiteOwner.address);

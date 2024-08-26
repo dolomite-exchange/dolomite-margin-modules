@@ -5,6 +5,8 @@ import {
   DolomiteAccountRegistry,
   DolomiteAccountRegistry__factory,
   DolomiteERC20,
+  DolomiteOwner,
+  DolomiteOwner__factory,
   DolomiteRegistryImplementation,
   DolomiteRegistryImplementation__factory,
   EventEmitterRegistry,
@@ -82,6 +84,16 @@ export async function createDolomiteRegistryImplementation(): Promise<DolomiteRe
     DolomiteRegistryImplementation__factory.abi,
     DolomiteRegistryImplementation__factory.bytecode,
     [],
+  );
+}
+
+export async function createDolomiteOwner(
+  core: CoreProtocolType<NetworkType>,
+): Promise<DolomiteOwner> {
+  return createContractWithAbi(
+    DolomiteOwner__factory.abi,
+    DolomiteOwner__factory.bytecode,
+    [core.governance.address],
   );
 }
 

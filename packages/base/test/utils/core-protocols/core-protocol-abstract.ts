@@ -2,6 +2,7 @@ import { ApiToken, DolomiteZap } from '@dolomite-exchange/zap-sdk';
 import { BigNumberish } from 'ethers';
 import { IChainlinkPriceOracleV1, IChainlinkPriceOracleV3, OracleAggregatorV2 } from 'packages/oracles/src/types';
 import {
+  DolomiteOwner,
   IBorrowPositionProxyV2,
   IDepositWithdrawalProxy, IDolomiteAccountRegistry,
   IDolomiteRegistry,
@@ -81,6 +82,7 @@ export interface CoreProtocolParams<T extends NetworkType> {
   liquidatorProxyV1: ILiquidatorProxyV1;
   liquidatorProxyV4: ILiquidatorProxyV4WithGenericTrader;
   oracleAggregatorV2: OracleAggregatorV2;
+  ownerAdapter: DolomiteOwner;
   testEcosystem: TestEcosystem | undefined;
   marketIds: CoreProtocolMarketIds;
   apiTokens: {
@@ -135,6 +137,7 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
   public readonly liquidatorProxyV1: ILiquidatorProxyV1;
   public readonly liquidatorProxyV4: ILiquidatorProxyV4WithGenericTrader;
   public readonly oracleAggregatorV2: OracleAggregatorV2;
+  public readonly ownerAdapter: DolomiteOwner;
   public readonly testEcosystem: TestEcosystem | undefined;
   /// =========================
   /// Markets and Tokens
@@ -185,6 +188,7 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
     this.liquidatorProxyV1 = params.liquidatorProxyV1;
     this.liquidatorProxyV4 = params.liquidatorProxyV4;
     this.oracleAggregatorV2 = params.oracleAggregatorV2;
+    this.ownerAdapter = params.ownerAdapter;
     this.testEcosystem = params.testEcosystem;
     this.marketIds = params.marketIds;
     this.apiTokens = params.apiTokens;

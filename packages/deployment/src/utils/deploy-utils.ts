@@ -794,8 +794,8 @@ export async function prettyPrintEncodedDataWithTypeSafety<
     };
   }
 
-  if ((await core.dolomiteMargin.owner()) === core.delayedMultiSig.address) {
-    const outerTransaction = await core.delayedMultiSig.populateTransaction.submitTransaction(
+  if ((await core.dolomiteMargin.owner()) === core.ownerAdapter.address) {
+    const outerTransaction = await core.ownerAdapter.populateTransaction.submitTransaction(
       transaction.to!,
       transaction.value ?? ZERO_BI,
       transaction.data!,

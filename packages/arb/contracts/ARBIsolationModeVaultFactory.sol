@@ -55,12 +55,14 @@ contract ARBIsolationModeVaultFactory is
         address _arb, // this serves as the underlying token
         address _borrowPositionProxy,
         address _userVaultImplementation,
+        address _dolomiteRegistry,
         address _dolomiteMargin
     )
     IsolationModeVaultFactory(
         _arb,
         _borrowPositionProxy,
         _userVaultImplementation,
+        _dolomiteRegistry,
         _dolomiteMargin
     ) {
         arbRegistry = IARBRegistry(_arbRegistry);

@@ -71,12 +71,14 @@ contract GMXIsolationModeVaultFactory is
         address _gmx, // this serves as the underlying token
         address _borrowPositionProxy,
         address _userVaultImplementation,
+        address _dolomiteRegistry,
         address _dolomiteMargin
     )
     IsolationModeVaultFactory(
         _gmx,
         _borrowPositionProxy,
         _userVaultImplementation,
+        _dolomiteRegistry,
         _dolomiteMargin
     ) {
         gmxRegistry = IGmxRegistryV1(_gmxRegistry);
