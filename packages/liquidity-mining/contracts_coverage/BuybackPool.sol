@@ -21,11 +21,11 @@
 pragma solidity ^0.8.9;
 
 import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
+import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
+import { DecimalLib } from "@dolomite-exchange/modules-base/contracts/protocol/lib/DecimalLib.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IBuybackPool } from "./interfaces/IBuybackPool.sol";
-import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
-import { DecimalLib } from "@dolomite-exchange/modules-base/contracts/protocol/lib/DecimalLib.sol";
 
 
 /**
@@ -49,8 +49,7 @@ contract BuybackPool is IBuybackPool, OnlyDolomiteMargin {
     // ==================== State Variables ====================
     // =========================================================
 
-    // @dev 5%
-    IDolomiteStructs.Decimal public exchangeRate = IDolomiteStructs.Decimal({ value: .05 ether });
+    IDolomiteStructs.Decimal public exchangeRate;
 
     // ===========================================================
     // ======================= Constructor =======================
@@ -63,6 +62,7 @@ contract BuybackPool is IBuybackPool, OnlyDolomiteMargin {
     ) OnlyDolomiteMargin(_dolomiteMargin) {
         EXCHANGE_TOKEN = IERC20(_exchangeToken);
         PAYMENT_TOKEN = IERC20(_paymentToken);
+        _ownerSetExchangeRate(.05 ether); // 5%
     }
 
     // ==================================================================

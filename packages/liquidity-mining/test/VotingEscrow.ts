@@ -61,12 +61,9 @@ describe('VotingEscrow', () => {
 
   describe('#withdraw', () => {
     it('should work normally if lock is expired', async () => {
-      console.log(await token.balanceOf(core.hhUser1.address));
       await token.addBalance(core.hhUser1.address, ONE_ETH_BI);
-      console.log(await token.balanceOf(core.hhUser1.address));
       await token.connect(core.hhUser1).approve(veToken.address, ONE_ETH_BI);
       await veToken.connect(core.hhUser1).create_lock(ONE_ETH_BI, TWO_YEARS_SECONDS);
-      console.log(await token.balanceOf(core.hhUser1.address));
       expect(await token.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
 
       await increase(TWO_YEARS_SECONDS);

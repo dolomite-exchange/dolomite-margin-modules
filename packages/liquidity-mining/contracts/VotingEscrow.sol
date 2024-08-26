@@ -7,6 +7,7 @@ import {IERC721, IERC721Metadata} from "@openzeppelin/contracts/token/ERC721/ext
 import {IVotes} from "@openzeppelin/contracts/governance/utils/IVotes.sol";
 import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IVeArtProxy} from "./interfaces/IVeArtProxy.sol";
 import {IVotingEscrow} from "./interfaces/IVotingEscrow.sol";
 import {IVoter} from "./interfaces/IVoter.sol";
@@ -21,6 +22,8 @@ import {ERC20Burnable} from "@openzeppelin/contracts/token/ERC20/extensions/ERC2
 /// @author Modified from Nouns DAO (https://github.com/withtally/my-nft-dao-project/blob/main/contracts/ERC721Checkpointable.sol)
 /// @dev Vote weight decays linearly over time. Lock time cannot be more than `MAXTIME` (4 years).
 contract VotingEscrow is IERC721, IERC721Metadata, IVotes, Initializable {
+    using SafeERC20 for IERC20;
+
     enum DepositType {
         DEPOSIT_FOR_TYPE,
         CREATE_LOCK_TYPE,
@@ -860,7 +863,7 @@ contract VotingEscrow is IERC721, IERC721Metadata, IVotes, Initializable {
             (deposit_type != DepositType.MERGE_TYPE &&
                 deposit_type != DepositType.SPLIT_TYPE)
         ) {
-            assert(IERC20(token).transferFrom(from, address(this), _value));
+            IERC20(token).safeTransferFrom(from, address(this), _value);
         }
 
         emit Deposit(
@@ -1050,10 +1053,10 @@ contract VotingEscrow is IERC721, IERC721Metadata, IVotes, Initializable {
         }
         if (recoupFeeAmount > 0) {
             uint256 buybackAmount = recoupFeeAmount * 90 / 100;
-            assert(IERC20(token).transfer(vester, recoupFeeAmount - buybackAmount));
-            assert(IERC20(token).transfer(buybackPool, buybackAmount));
+            IERC20(token).safeTransfer(vester, recoupFeeAmount - buybackAmount);
+            IERC20(token).safeTransfer(buybackPool, buybackAmount);
         }
-        assert(IERC20(token).transfer(msg.sender, value));
+        IERC20(token).safeTransfer(msg.sender, value);
 
         // Burn the NFT
         _burn(_tokenId);

@@ -121,7 +121,7 @@ contract VeFeeCalculator is IVeFeeCalculator, OnlyDolomiteMargin {
             return _FIVE_PERCENT;
         }
 
-        _duration = _duration - 1 weeks;
+        _duration = _duration - 1 weeks; // @dev since linear decay is over 103 weeks need to adjust by 1 week
         uint256 changeY = _duration * (_STARTING_RECOUP_FEE - _FIVE_PERCENT) / (TWO_YEARS - 1 weeks);
         uint256 fee = _FIVE_PERCENT + changeY;
 
