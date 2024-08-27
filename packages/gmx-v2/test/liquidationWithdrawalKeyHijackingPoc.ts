@@ -116,7 +116,7 @@ describe('POC: liquidationWithdrawalKeyHijacking', () => {
       gmxV2Registry,
       allowableMarketIds,
       allowableMarketIds,
-      core.gmxEcosystemV2!.gmTokens.ethUsd,
+      core.gmxV2Ecosystem!.gmTokens.ethUsd,
       userVaultImplementation,
       GMX_V2_EXECUTION_FEE_FOR_TESTS,
     );
@@ -187,7 +187,7 @@ describe('POC: liquidationWithdrawalKeyHijacking', () => {
 
     await setupGMBalance(
       core,
-      core.gmxEcosystemV2.gmxEthUsdMarketToken,
+      core.gmxV2Ecosystem.gmxEthUsdMarketToken,
       core.hhUser1,
       amountWei.add(amountWeiForSecond),
       vault
@@ -265,7 +265,7 @@ describe('POC: liquidationWithdrawalKeyHijacking', () => {
     }
 
     async function performUnwrapping(_withdrawalKey: any): Promise<ContractTransaction> {
-      return await core.gmxEcosystemV2!.gmxWithdrawalHandler.connect(core.gmxEcosystemV2!.gmxExecutor)
+      return await core.gmxV2Ecosystem!.gmxWithdrawalHandler.connect(core.gmxV2Ecosystem!.gmxExecutor)
         .executeWithdrawal(
           _withdrawalKey,
           getOracleParams(core.tokens.weth.address, core.tokens.nativeUsdc!.address),

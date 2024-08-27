@@ -31,7 +31,7 @@ import { IARBRegistry } from "./interfaces/IARBRegistry.sol";
 
 
 /**
- * @title   MNTIsolationModeTokenVaultV1.sol
+ * @title   ARBIsolationModeTokenVaultV1
  * @author  Dolomite
  *
  * @notice  Implementation (for an upgradeable proxy) for a per-user vault that holds the GMX token that can be used to

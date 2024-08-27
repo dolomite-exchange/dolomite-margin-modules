@@ -21,7 +21,6 @@
 pragma solidity ^0.8.9;
 
 import { SafeDelegateCallLib } from "@dolomite-exchange/modules-base/contracts/lib/SafeDelegateCallLib.sol";
-import { IWETH } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IWETH.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { VeExternalVesterImplementationV1 } from "../VeExternalVesterImplementationV1.sol";
 

@@ -27,6 +27,7 @@ import { IVeToken } from "../interfaces/IVeToken.sol";
 /**
  * @title   TestVeToken
  * @author  Dolomite
+ *
  */
 contract TestVeToken is IVeToken {
 

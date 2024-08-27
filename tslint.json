@@ -32,6 +32,7 @@
     "prefer-array-literal": false,
     "align": false,
     "no-increment-decrement": false,
-    "ter-func-call-spacing": false
+    "ter-func-call-spacing": false,
+    "object-literal-shorthand": false
   }
 }

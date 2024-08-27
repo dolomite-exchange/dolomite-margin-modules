@@ -26,7 +26,7 @@ import { IARBRegistry } from "./interfaces/IARBRegistry.sol";
 
 
 /**
- * @title   MNTRegistry.sol
+ * @title   ARBRegistry
  * @author  Dolomite
  *
  * @notice  Implementation for a registry that contains all of the Arbitrum-related addresses. This registry is needed

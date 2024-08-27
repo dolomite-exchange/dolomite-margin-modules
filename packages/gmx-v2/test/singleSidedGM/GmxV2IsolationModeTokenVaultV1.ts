@@ -131,13 +131,13 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       blockNumber: await getRealLatestBlockNumber(true, Network.ArbitrumOne),
       network: Network.ArbitrumOne
     });
-    underlyingToken = core.gmxEcosystemV2!.gmTokens.btc.marketToken.connect(core.hhUser1);
+    underlyingToken = core.gmxV2Ecosystem!.gmTokens.btc.marketToken.connect(core.hhUser1);
     const gmxV2Library = await createGmxV2Library();
     const userVaultImplementation = await createTestGmxV2IsolationModeTokenVaultV1(core);
     gmxV2Registry = await createGmxV2Registry(core, GMX_V2_CALLBACK_GAS_LIMIT);
     await gmxV2Registry.connect(core.governance).ownerSetGmxMarketToIndexToken(
       underlyingToken.address,
-      core.gmxEcosystemV2!.gmTokens.btc.indexToken.address
+      core.gmxV2Ecosystem!.gmTokens.btc.indexToken.address
     );
 
     await core.chainlinkPriceOracleV3.ownerInsertOrUpdateOracleToken(
@@ -161,7 +161,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       gmxV2Registry,
       allowableMarketIds,
       allowableMarketIds,
-      core.gmxEcosystemV2!.gmTokens.btc,
+      core.gmxV2Ecosystem!.gmTokens.btc,
       userVaultImplementation,
       executionFee,
     );
@@ -1619,7 +1619,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       await gmxV2Registry.connect(core.governance).ownerSetGmxDataStore(testDataStore.address);
       const keyValue = await testDataStore.getKey(
         CREATE_WITHDRAWALS_DISABLED_KEY,
-        core.gmxEcosystemV2!.gmxWithdrawalHandler.address,
+        core.gmxV2Ecosystem!.gmxWithdrawalHandler.address,
       );
       await testDataStore.setBool(keyValue, true);
       expect(await vault.isExternalRedemptionPaused()).to.be.true;
@@ -1629,7 +1629,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       await gmxV2Registry.connect(core.governance).ownerSetGmxDataStore(testDataStore.address);
       const keyValue = await testDataStore.getKey(
         EXECUTE_WITHDRAWALS_DISABLED_KEY,
-        core.gmxEcosystemV2!.gmxWithdrawalHandler.address,
+        core.gmxV2Ecosystem!.gmxWithdrawalHandler.address,
       );
       await testDataStore.setBool(keyValue, true);
       expect(await vault.isExternalRedemptionPaused()).to.be.true;

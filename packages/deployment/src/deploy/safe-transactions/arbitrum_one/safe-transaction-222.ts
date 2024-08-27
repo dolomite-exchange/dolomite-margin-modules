@@ -78,22 +78,22 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
 
   const oldFreezableLiquidatorProxyAddress = Deployments.IsolationModeFreezableLiquidatorProxyV1[network].address;
   const factories = [
-    core.gmxEcosystemV2.live.gmArbUsd.factory,
-    core.gmxEcosystemV2.live.gmBtcUsd.factory,
-    core.gmxEcosystemV2.live.gmEthUsd.factory,
-    core.gmxEcosystemV2.live.gmLinkUsd.factory,
+    core.gmxV2Ecosystem.live.gmArbUsd.factory,
+    core.gmxV2Ecosystem.live.gmBtcUsd.factory,
+    core.gmxV2Ecosystem.live.gmEthUsd.factory,
+    core.gmxV2Ecosystem.live.gmLinkUsd.factory,
   ];
   const unwrappers = [
-    core.gmxEcosystemV2.live.gmArbUsd.unwrapperProxy,
-    core.gmxEcosystemV2.live.gmBtcUsd.unwrapperProxy,
-    core.gmxEcosystemV2.live.gmEthUsd.unwrapperProxy,
-    core.gmxEcosystemV2.live.gmLinkUsd.unwrapperProxy,
+    core.gmxV2Ecosystem.live.gmArbUsd.unwrapperProxy,
+    core.gmxV2Ecosystem.live.gmBtcUsd.unwrapperProxy,
+    core.gmxV2Ecosystem.live.gmEthUsd.unwrapperProxy,
+    core.gmxV2Ecosystem.live.gmLinkUsd.unwrapperProxy,
   ];
   const wrappers = [
-    core.gmxEcosystemV2.live.gmArbUsd.wrapperProxy,
-    core.gmxEcosystemV2.live.gmBtcUsd.wrapperProxy,
-    core.gmxEcosystemV2.live.gmEthUsd.wrapperProxy,
-    core.gmxEcosystemV2.live.gmLinkUsd.wrapperProxy,
+    core.gmxV2Ecosystem.live.gmArbUsd.wrapperProxy,
+    core.gmxV2Ecosystem.live.gmBtcUsd.wrapperProxy,
+    core.gmxV2Ecosystem.live.gmEthUsd.wrapperProxy,
+    core.gmxV2Ecosystem.live.gmLinkUsd.wrapperProxy,
   ];
   const marketIds = await Promise.all(factories.map(f => core.dolomiteMargin.getMarketIdByTokenAddress(f.address)));
 
@@ -114,21 +114,21 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     ),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
-      { registry: core.gmxEcosystemV2.live.registry },
+      { registry: core.gmxV2Ecosystem.live.registry },
       'registry',
       'ownerSetGmxDepositVault',
-      [core.gmxEcosystemV2.gmxDepositVault.address],
+      [core.gmxV2Ecosystem.gmxDepositVault.address],
     ),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
-      { registry: core.gmxEcosystemV2.live.registry },
+      { registry: core.gmxV2Ecosystem.live.registry },
       'registry',
       'ownerSetGmxWithdrawalVault',
-      [core.gmxEcosystemV2.gmxWithdrawalVault.address],
+      [core.gmxV2Ecosystem.gmxWithdrawalVault.address],
     ),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
-      { registry: core.gmxEcosystemV2.live.registry },
+      { registry: core.gmxV2Ecosystem.live.registry },
       'registry',
       'ownerSetIsHandler',
       [LIQUIDATOR_ADDRESS, true],
@@ -152,14 +152,14 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
           ),
           prettyPrintEncodedDataWithTypeSafety(
             core,
-            { registry: core.gmxEcosystemV2.live.registry },
+            { registry: core.gmxV2Ecosystem.live.registry },
             'registry',
             'ownerSetUnwrapperByToken',
             [factories[i].address, unwrappers[i].address],
           ),
           prettyPrintEncodedDataWithTypeSafety(
             core,
-            { registry: core.gmxEcosystemV2.live.registry },
+            { registry: core.gmxV2Ecosystem.live.registry },
             'registry',
             'ownerSetWrapperByToken',
             [factories[i].address, wrappers[i].address],
@@ -211,15 +211,15 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
         'freezableLiquidatorProxy must be global operator',
       );
       assertHardhatInvariant(
-        await core.gmxEcosystemV2.live.registry.gmxDepositVault() === core.gmxEcosystemV2.gmxDepositVault.address,
+        await core.gmxV2Ecosystem.live.registry.gmxDepositVault() === core.gmxV2Ecosystem.gmxDepositVault.address,
         'gmxDepositVault is invalid',
       );
       assertHardhatInvariant(
-        await core.gmxEcosystemV2.live.registry.gmxWithdrawalVault() === core.gmxEcosystemV2.gmxWithdrawalVault.address,
+        await core.gmxV2Ecosystem.live.registry.gmxWithdrawalVault() === core.gmxV2Ecosystem.gmxWithdrawalVault.address,
         'gmxWithdrawalVault is invalid',
       );
       assertHardhatInvariant(
-        await core.gmxEcosystemV2.live.registry.isHandler(LIQUIDATOR_ADDRESS),
+        await core.gmxV2Ecosystem.live.registry.isHandler(LIQUIDATOR_ADDRESS),
         'liquidator must be set as a handler',
       );
       await Promise.all(
@@ -243,11 +243,11 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
             'Old liquidator asset registry must be added to liquidation whitelist',
           );
           assertHardhatInvariant(
-            await core.gmxEcosystemV2.live.registry.getUnwrapperByToken(factory.address) === unwrappers[i].address,
+            await core.gmxV2Ecosystem.live.registry.getUnwrapperByToken(factory.address) === unwrappers[i].address,
             `Unwrapper not set on registry at index ${i}`,
           );
           assertHardhatInvariant(
-            await core.gmxEcosystemV2.live.registry.getWrapperByToken(factory.address) === wrappers[i].address,
+            await core.gmxV2Ecosystem.live.registry.getWrapperByToken(factory.address) === wrappers[i].address,
             `Wrapper not set on registry at index ${i}`,
           );
           assertHardhatInvariant(

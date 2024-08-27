@@ -2,8 +2,9 @@ import { BigNumber } from 'ethers';
 import { GenericTraderParamStruct } from 'packages/base/src/utils';
 import { BYTES_EMPTY, BYTES_ZERO, Network, ONE_BI, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
 import { EventEmitterRegistry, IIsolationModeVaultFactory, IIsolationModeVaultFactory__factory } from '../../src/types';
+import { createContractWithName } from '../../src/utils/dolomite-utils';
 import { SignerWithAddressWithSafety } from '../../src/utils/SignerWithAddressWithSafety';
-import { revertToSnapshotAndCapture, snapshot } from '../utils';
+import { impersonate, revertToSnapshotAndCapture, snapshot } from '../utils';
 import { expectEvent, expectThrow } from '../utils/assertions';
 
 import { CoreProtocolArbitrumOne } from '../utils/core-protocols/core-protocol-arbitrum-one';
@@ -123,7 +124,23 @@ describe('EventEmitterRegistry', () => {
       await expectEvent(eventEmitter, result, 'MarginPositionOpen', {});
     });
 
-    it('should fail if not called by global operator', async () => {
+    it('should work normally when called by an isolation mode vault', async () => {
+      const vault = await core.gmxEcosystem.live.dGlp.getVaultByAccount('0x52256ef863a713Ef349ae6E97A7E8f35785145dE');
+      const impersonated = await impersonate(vault, true);
+      const result = await eventEmitter.connect(impersonated).emitMarginPositionOpen(
+        defaultAccountOwner.address,
+        defaultAccountNumber,
+        core.tokens.weth.address,
+        core.tokens.usdc.address,
+        core.tokens.weth.address,
+        { deltaWei: { sign: true, value: ZERO_BI }, newPar: { sign: true, value: ZERO_BI } },
+        { deltaWei: { sign: true, value: ZERO_BI }, newPar: { sign: true, value: ZERO_BI } },
+        { deltaWei: { sign: true, value: ZERO_BI }, newPar: { sign: true, value: ZERO_BI } },
+      );
+      await expectEvent(eventEmitter, result, 'MarginPositionOpen', {});
+    });
+
+    it('should fail if not called by the token vault or global operator', async () => {
       await expectThrow(
         eventEmitter.connect(core.hhUser2).emitMarginPositionOpen(
           defaultAccountOwner.address,
@@ -135,7 +152,25 @@ describe('EventEmitterRegistry', () => {
           { deltaWei: { sign: true, value: ZERO_BI }, newPar: { sign: true, value: ZERO_BI } },
           { deltaWei: { sign: true, value: ZERO_BI }, newPar: { sign: true, value: ZERO_BI } },
         ),
-        `OnlyDolomiteMargin: Caller is not a global operator <${core.hhUser2.address.toLowerCase()}>`,
+        `EventEmitter: Caller is not authorized <${core.hhUser2.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if called by a malicious token vault', async () => {
+      const vault = await createContractWithName('TestInvalidIsolationModeTokenVaultV1', []);
+      const impersonated = await impersonate(vault.address, true);
+      await expectThrow(
+        eventEmitter.connect(impersonated).emitMarginPositionOpen(
+          defaultAccountOwner.address,
+          defaultAccountNumber,
+          core.tokens.weth.address,
+          core.tokens.usdc.address,
+          core.tokens.weth.address,
+          { deltaWei: { sign: true, value: ZERO_BI }, newPar: { sign: true, value: ZERO_BI } },
+          { deltaWei: { sign: true, value: ZERO_BI }, newPar: { sign: true, value: ZERO_BI } },
+          { deltaWei: { sign: true, value: ZERO_BI }, newPar: { sign: true, value: ZERO_BI } },
+        ),
+        `EventEmitter: Caller is not a token vault <${impersonated.address.toLowerCase()}>`,
       );
     });
   });

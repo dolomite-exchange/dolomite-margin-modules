@@ -10,7 +10,8 @@ import {
   EventEmitterRegistry,
   EventEmitterRegistry__factory,
   IDolomiteMargin,
-  IDolomiteMarginV2, IERC20Metadata__factory,
+  IDolomiteMarginV2,
+  IERC20Metadata__factory,
   IExpiry,
   IExpiryV2,
   IsolationModeTraderProxy,
@@ -24,14 +25,24 @@ import {
   getIsolationModeTraderProxyConstructorParams,
   getRegistryProxyConstructorParams,
 } from '../../src/utils/constructors/dolomite';
-import { createContractWithAbi, createContractWithName, LibraryName } from '../../src/utils/dolomite-utils';
+import {
+  createContractWithAbi,
+  createContractWithLibrary,
+  createContractWithName,
+  LibraryName,
+} from '../../src/utils/dolomite-utils';
 import { CoreProtocolType } from './setup';
 
 export type DolomiteMargin<T extends NetworkType> = T extends Network.ArbitrumOne ? IDolomiteMargin : IDolomiteMarginV2;
 export type Expiry<T extends NetworkType> = T extends Network.ArbitrumOne ? IExpiry : IExpiryV2;
 
 export async function createIsolationModeTokenVaultV1ActionsImpl(): Promise<Record<LibraryName, address>> {
-  const contract = await createContractWithName('IsolationModeTokenVaultV1ActionsImpl', []);
+  const safeDelegateCallLib = await createContractWithName('SafeDelegateCallLib', []);
+  const contract = await createContractWithLibrary(
+    'IsolationModeTokenVaultV1ActionsImpl',
+    { SafeDelegateCallLib: safeDelegateCallLib.address },
+    [],
+  );
   return { IsolationModeTokenVaultV1ActionsImpl: contract.address };
 }
 
@@ -70,11 +81,7 @@ export async function createDolomiteErc20Proxy(
 }
 
 export async function createDolomiteAccountRegistryImplementation(): Promise<DolomiteAccountRegistry> {
-  return createContractWithAbi(
-    DolomiteAccountRegistry__factory.abi,
-    DolomiteAccountRegistry__factory.bytecode,
-    [],
-  );
+  return createContractWithAbi(DolomiteAccountRegistry__factory.abi, DolomiteAccountRegistry__factory.bytecode, []);
 }
 
 export async function createDolomiteRegistryImplementation(): Promise<DolomiteRegistryImplementation> {
@@ -83,6 +90,13 @@ export async function createDolomiteRegistryImplementation(): Promise<DolomiteRe
     DolomiteRegistryImplementation__factory.bytecode,
     [],
   );
+}
+
+export async function createAndUpgradeDolomiteRegistry<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+): Promise<void> {
+  const implementation = await createDolomiteRegistryImplementation();
+  await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(implementation.address);
 }
 
 export async function createIsolationModeTraderProxy<T extends NetworkType>(
@@ -121,12 +135,8 @@ export async function setupNewGenericTraderProxy<T extends NetworkType>(
   await core.dolomiteRegistryProxy.upgradeTo(implementation.address);
 
   await core.dolomiteRegistry!.ownerSetGenericTraderProxy(core.genericTraderProxy!.address);
-  await core.dolomiteRegistry!
-    .ownerSetLiquidatorAssetRegistry(core.liquidatorAssetRegistry!.address);
-  await core.liquidatorAssetRegistry.ownerAddLiquidatorToAssetWhitelist(
-    marketId,
-    core.liquidatorProxyV4.address,
-  );
+  await core.dolomiteRegistry!.ownerSetLiquidatorAssetRegistry(core.liquidatorAssetRegistry!.address);
+  await core.liquidatorAssetRegistry.ownerAddLiquidatorToAssetWhitelist(marketId, core.liquidatorProxyV4.address);
 
   await core.dolomiteMargin.ownerSetGlobalOperator(core.genericTraderProxy!.address, true);
   await core.dolomiteMargin.ownerSetGlobalOperator(core.liquidatorProxyV4.address, true);
@@ -135,7 +145,7 @@ export async function setupNewGenericTraderProxy<T extends NetworkType>(
 export async function isIsolationMode(marketId: BigNumberish, core: CoreProtocolType<any>): Promise<boolean> {
   const tokenName = await IERC20Metadata__factory.connect(
     await core.dolomiteMargin.getMarketTokenAddress(marketId),
-    core.governance
+    core.governance,
   ).name();
 
   return tokenName.startsWith('Dolomite Isolation:') || tokenName.startsWith('Dolomite:');

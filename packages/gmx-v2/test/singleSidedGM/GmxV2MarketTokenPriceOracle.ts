@@ -59,12 +59,12 @@ describe('GmxV2MarketTokenPriceOracle', () => {
       blockNumber: 204_300_000,
       network: Network.ArbitrumOne
     });
-    underlyingToken = core.gmxEcosystemV2!.gmTokens.btc.marketToken.connect(core.hhUser1);
+    underlyingToken = core.gmxV2Ecosystem!.gmTokens.btc.marketToken.connect(core.hhUser1);
 
     gmxV2Registry = await createGmxV2Registry(core, GMX_V2_CALLBACK_GAS_LIMIT);
     await gmxV2Registry.connect(core.governance).ownerSetGmxMarketToIndexToken(
       underlyingToken.address,
-      core.gmxEcosystemV2.gmTokens.btc.indexToken.address
+      core.gmxV2Ecosystem.gmTokens.btc.indexToken.address
     );
 
     // for GM BTC
@@ -92,7 +92,7 @@ describe('GmxV2MarketTokenPriceOracle', () => {
       gmxV2Registry,
       allowableMarketIds,
       allowableMarketIds,
-      core.gmxEcosystemV2!.gmTokens.btc,
+      core.gmxV2Ecosystem!.gmTokens.btc,
       userVaultImplementation,
       GMX_V2_EXECUTION_FEE_FOR_TESTS,
     );
@@ -143,7 +143,7 @@ describe('GmxV2MarketTokenPriceOracle', () => {
 
   describe('#getFeeBpByMarketToken', () => {
     it('should work normally', async () => {
-      expect(await gmPriceOracle.getFeeBpByMarketToken(core.gmxEcosystemV2!.gmTokens.btc.marketToken.address))
+      expect(await gmPriceOracle.getFeeBpByMarketToken(core.gmxV2Ecosystem!.gmTokens.btc.marketToken.address))
         .to
         .eq(FEE_BASIS_POINTS);
     });

@@ -51,6 +51,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     // =====================================================
 
     bytes32 private constant _FILE = "GmxV2IsolationModeUnwrapperV2";
+    bytes32 private constant _SKIP_LONG_TOKEN = bytes32(uint256(keccak256("eip1967.proxy.skipLongToken")) - 1);
 
     // =====================================================
     // ===================== Modifiers =====================
@@ -76,10 +77,12 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     function initialize(
         address _dGM,
         address _dolomiteMargin,
-        address _gmxV2Registry
+        address _gmxV2Registry,
+        bool _skipLongToken
     )
     external initializer {
         _initializeUnwrapperTrader(_dGM, _gmxV2Registry, _dolomiteMargin);
+        _setUint256(_SKIP_LONG_TOKEN, _skipLongToken ? 1 : 0);
     }
 
     function vaultInitiateUnwrapping(
@@ -91,12 +94,11 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         bytes calldata _extraData
     ) external payable {
         IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY()));
-        address vault = msg.sender;
-        _validateVaultExists(factory, vault);
+        _validateVaultExists(factory, /* _vault = */ msg.sender);
 
-        bytes32 withdrawalKey = GmxV2Library.executeInitiateUnwrapping(
+        bytes32 withdrawalKey = GmxV2Library.unwrapperExecuteInitiateUnwrapping(
             factory,
-            vault,
+            /* _vault = */ msg.sender,
             _inputAmount,
             _outputToken,
             _minOutputAmount,
@@ -106,7 +108,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
 
         _vaultCreateWithdrawalInfo(
             withdrawalKey,
-            vault,
+            /* _vault = */ msg.sender,
             _tradeAccountNumber,
             _inputAmount,
             _outputToken,
@@ -117,7 +119,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     }
 
     function initiateCancelWithdrawal(bytes32 _key) external {
-        GmxV2Library.initiateCancelWithdrawal(/* _unwrapper = */ this, _key);
+        GmxV2Library.unwrapperInitiateCancelWithdrawal(/* _unwrapper = */ this, _key);
     }
 
     function handleCallbackFromWrapperBefore() external onlyWrapperCaller(msg.sender) {
@@ -136,18 +138,14 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     external
     nonReentrant
     onlyHandler(msg.sender) {
-        WithdrawalInfo memory withdrawalInfo = _getWithdrawalSlot(_key);
+        WithdrawalInfo memory withdrawalInfo = getWithdrawalInfo(_key);
         _validateWithdrawalExists(withdrawalInfo);
-        Require.that(
-            _withdrawal.numbers.marketTokenAmount >= withdrawalInfo.inputAmount,
-            _FILE,
-            "Invalid market token amount"
-        );
 
         GmxEventUtils.UintKeyValue memory outputTokenAmount = _eventData.uintItems.items[0];
         GmxEventUtils.UintKeyValue memory secondaryOutputTokenAmount = _eventData.uintItems.items[1];
         GmxV2Library.validateEventDataForWithdrawal(
             IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())),
+            _withdrawal.numbers.marketTokenAmount,
             /* _outputTokenAddress = */ _eventData.addressItems.items[0],
             outputTokenAmount,
             /* _secondaryOutputTokenAddress = */ _eventData.addressItems.items[1],
@@ -182,20 +180,22 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     )
     public
     view
+    virtual
     override(UpgradeableAsyncIsolationModeUnwrapperTrader, IIsolationModeUnwrapperTraderV2)
     returns (bool) {
         return GmxV2Library.isValidInputOrOutputToken(
             IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())),
-            _outputToken
+            _outputToken,
+            skipLongToken()
         );
+    }
+
+    function skipLongToken() public view returns (bool) {
+        return _getUint256(_SKIP_LONG_TOKEN) == 1;
     }
 
     function GMX_REGISTRY_V2() public view returns (IGmxV2Registry) {
         return IGmxV2Registry(address(HANDLER_REGISTRY()));
-    }
-
-    function getWithdrawalInfo(bytes32 _key) public view returns (WithdrawalInfo memory) {
-        return _getWithdrawalSlot(_key);
     }
 
     // ============================================

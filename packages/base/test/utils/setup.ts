@@ -108,6 +108,7 @@ import {
   S_GLP_MAP,
   SIZE_MAP,
   SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL,
+  SOL_MAP,
   ST_ETH_MAP,
   UNI_MAP,
   USDC_MAP,
@@ -346,7 +347,7 @@ export async function setupGMBalance(
   amount: BigNumberish,
   spender?: { address: string },
 ) {
-  const controller = await impersonate(core.gmxEcosystemV2!.gmxExchangeRouter.address, true);
+  const controller = await impersonate(core.gmxV2Ecosystem!.gmxExchangeRouter.address, true);
   await gmToken.connect(controller).mint(signer.address, amount);
   if (signer instanceof SignerWithAddressWithSafety && spender) {
     await gmToken.connect(signer).approve(spender.address, amount);
@@ -849,6 +850,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
           MIM_MAP[typedConfig.network].marketId,
           NATIVE_USDC_MAP[typedConfig.network].marketId,
           W_USDM_MAP[typedConfig.network].marketId,
+          USDE_MAP[typedConfig.network].marketId,
           USDT_MAP[typedConfig.network].marketId,
         ],
         stablecoinsWithUnifiedInterestRateModels: [
@@ -856,6 +858,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
           DAI_MAP[typedConfig.network]!.marketId,
           MIM_MAP[typedConfig.network].marketId,
           NATIVE_USDC_MAP[typedConfig.network].marketId,
+          USDE_MAP[typedConfig.network].marketId,
           USDT_MAP[typedConfig.network].marketId,
         ],
       },
@@ -900,8 +903,10 @@ export async function setupCoreProtocol<T extends NetworkType>(
         radiant: IERC20__factory.connect(RDNT_MAP[typedConfig.network].address, hhUser1),
         sGlp: IERC20__factory.connect(S_GLP_MAP[typedConfig.network].address, hhUser1),
         size: IERC20__factory.connect(SIZE_MAP[typedConfig.network].address, hhUser1),
+        sol: IERC20__factory.connect(SOL_MAP[typedConfig.network].address, hhUser1),
         stEth: IERC20__factory.connect(ST_ETH_MAP[typedConfig.network].address, hhUser1),
         uni: IERC20__factory.connect(UNI_MAP[typedConfig.network].address, hhUser1),
+        usde: IERC20__factory.connect(USDE_MAP[typedConfig.network].address, hhUser1),
         usdm: IERC20__factory.connect(USDM_MAP[typedConfig.network].address, hhUser1),
         usdt: IERC20__factory.connect(USDT_MAP[typedConfig.network].address, hhUser1),
         wbtc: IERC20__factory.connect(WBTC_MAP[typedConfig.network].address, hhUser1),
@@ -917,6 +922,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
           IERC20__factory.connect(GRAI_MAP[typedConfig.network].address, hhUser1),
           IERC20__factory.connect(MIM_MAP[typedConfig.network].address, hhUser1),
           IERC20__factory.connect(NATIVE_USDC_MAP[typedConfig.network].address, hhUser1),
+          IERC20__factory.connect(USDE_MAP[typedConfig.network].address, hhUser1),
           IERC20__factory.connect(USDT_MAP[typedConfig.network].address, hhUser1),
           IERC20__factory.connect(W_USDM_MAP[typedConfig.network].address, hhUser1),
         ],

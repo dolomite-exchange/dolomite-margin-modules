@@ -112,7 +112,7 @@ describe('POC: dosLiquidationBytes32', () => {
       gmxV2Registry,
       allowableMarketIds,
       allowableMarketIds,
-      core.gmxEcosystemV2!.gmTokens.ethUsd,
+      core.gmxV2Ecosystem!.gmTokens.ethUsd,
       userVaultImplementation,
       executionFee,
     );
@@ -165,7 +165,7 @@ describe('POC: dosLiquidationBytes32', () => {
 
     liquidAccount = { owner: vault.address, number: borrowAccountNumber };
 
-    await setupGMBalance(core, core.gmxEcosystemV2.gmxEthUsdMarketToken, core.hhUser1, amountWei.mul(2), vault);
+    await setupGMBalance(core, core.gmxV2Ecosystem.gmxEthUsdMarketToken, core.hhUser1, amountWei.mul(2), vault);
     await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei.mul(2));
     await vault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei, { value: executionFee });
     await vault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber2, amountWei, { value: executionFee });
@@ -284,7 +284,7 @@ describe('POC: dosLiquidationBytes32', () => {
         .key;
 
       const result = await core
-        .gmxEcosystemV2!.gmxWithdrawalHandler.connect(core.gmxEcosystemV2!.gmxExecutor)
+        .gmxV2Ecosystem!.gmxWithdrawalHandler.connect(core.gmxV2Ecosystem!.gmxExecutor)
         .executeWithdrawal(withdrawalKey, getOracleParams(core.tokens.weth.address, core.tokens.nativeUsdc!.address), {
           gasLimit: 20_500_000,
         });

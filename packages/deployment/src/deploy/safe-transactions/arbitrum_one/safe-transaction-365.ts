@@ -20,7 +20,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(
       core,
-      { registry: core.gmxEcosystemV2.live.registry },
+      { registry: core.gmxV2Ecosystem.live.registry },
       'registry',
       'ownerSetGmxExchangeRouter',
       [
@@ -29,7 +29,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     ),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
-      { registry: core.gmxEcosystemV2.live.registry },
+      { registry: core.gmxV2Ecosystem.live.registry },
       'registry',
       'ownerSetGmxReader',
       [
@@ -48,7 +48,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     },
     skipTimeDelay: true,
     invariants: async () => {
-      const gmxV2Ecosystem = core.gmxEcosystemV2.live;
+      const gmxV2Ecosystem = core.gmxV2Ecosystem.live;
 
       expect(await gmxV2Ecosystem.registry.gmxExchangeRouter()).to.eq(GMX_EXCHANGE_ROUTER_MAP[network]);
       expect(await gmxV2Ecosystem.registry.gmxReader()).to.eq(GMX_READER_MAP[network]);
