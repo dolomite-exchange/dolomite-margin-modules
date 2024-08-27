@@ -1338,9 +1338,6 @@ export async function prettyPrintEncodeAddAsyncIsolationModeMarket<T extends Net
   );
 
   transactions.push(
-    await prettyPrintEncodedDataWithTypeSafety(core, { factory }, 'factory', 'ownerInitialize', [
-      [unwrapper.address, wrapper.address, ...(options.additionalConverters ?? []).map((c) => c.address)],
-    ]),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       { dolomiteMargin: core.dolomiteMargin },
@@ -1348,6 +1345,9 @@ export async function prettyPrintEncodeAddAsyncIsolationModeMarket<T extends Net
       'ownerSetGlobalOperator',
       [factory.address, true],
     ),
+    await prettyPrintEncodedDataWithTypeSafety(core, { factory }, 'factory', 'ownerInitialize', [
+      [unwrapper.address, wrapper.address, ...(options.additionalConverters ?? []).map((c) => c.address)],
+    ]),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       { liquidatorAssetRegistry: core.liquidatorAssetRegistry },
@@ -1384,7 +1384,6 @@ export async function prettyPrintEncodeAddAsyncIsolationModeMarket<T extends Net
 export async function prettyPrintEncodeAddGmxV2Market(
   core: CoreProtocolArbitrumOne,
   factory: IGmxV2IsolationModeVaultFactory,
-  oracle: IDolomitePriceOracle,
   unwrapper: IIsolationModeUnwrapperTraderV2,
   wrapper: IIsolationModeWrapperTraderV2,
   handlerRegistry: HandlerRegistry,
@@ -1394,7 +1393,7 @@ export async function prettyPrintEncodeAddGmxV2Market(
   maxSupplyWei: BigNumberish,
   options: AddMarketOptions = {},
 ): Promise<EncodedTransaction[]> {
-  const transactions = [
+  return [
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       { gmxV2PriceOracle: core.gmxV2Ecosystem.live.priceOracle },
@@ -1426,15 +1425,12 @@ export async function prettyPrintEncodeAddGmxV2Market(
       { gmxV2Registry: core.gmxV2Ecosystem.live.registry },
       'gmxV2Registry',
       'ownerSetGmxMarketToIndexToken',
-      [factory.address, await factory.INDEX_TOKEN()],
+      [await factory.UNDERLYING_TOKEN(), await factory.INDEX_TOKEN()],
     ),
-  ];
-
-  transactions.push(
     ...await prettyPrintEncodeAddAsyncIsolationModeMarket(
       core,
       factory,
-      oracle,
+      core.oracleAggregatorV2,
       unwrapper,
       wrapper,
       handlerRegistry,
@@ -1444,9 +1440,7 @@ export async function prettyPrintEncodeAddGmxV2Market(
       maxSupplyWei,
       options,
     ),
-  );
-
-  return transactions;
+  ];
 }
 
 export async function prettyPrintEncodeAddMarket<T extends NetworkType>(

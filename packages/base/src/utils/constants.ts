@@ -1189,8 +1189,8 @@ export interface AggregatorInfo {
 
 export const INVALID_TOKEN_MAP: Record<Network, Record<string, { symbol: string; decimals: number }>> = {
   [Network.ArbitrumOne]: {
-    [ST_ETH_MAP[Network.ArbitrumOne].address]: {
-      symbol: 'stETH',
+    [DOGE_MAP[Network.ArbitrumOne].address]: {
+      symbol: 'DOGE',
       decimals: 18,
     },
     [E_ETH_MAP[Network.ArbitrumOne].address]: {
@@ -1207,6 +1207,10 @@ export const INVALID_TOKEN_MAP: Record<Network, Record<string, { symbol: string;
     },
     [RS_ETH_REVERSED_MAP[Network.ArbitrumOne].address]: {
       symbol: 'rsETH',
+      decimals: 18,
+    },
+    [ST_ETH_MAP[Network.ArbitrumOne].address]: {
+      symbol: 'stETH',
       decimals: 18,
     },
   },

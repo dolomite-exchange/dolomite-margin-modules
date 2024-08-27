@@ -27,7 +27,7 @@ import { Network } from 'packages/base/src/utils/no-deps-constants';
 import {
   deployContractAndSave,
   EncodedTransaction,
-  prettyPrintEncodeAddGmxV2Market, prettyPrintEncodedDataWithTypeSafety,
+  prettyPrintEncodeAddGmxV2Market, prettyPrintEncodedDataWithTypeSafety, prettyPrintEncodeInsertChainlinkOracleV3,
 } from '../../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../utils/dry-run-utils';
 import getScriptName from '../../../utils/get-script-name';
@@ -36,8 +36,7 @@ import ModuleDeployments from '../../deployments.json';
 
 /**
  * This script encodes the following transactions:
- * - Deploys new gmUNI vault
- * - Increases the PT-ezETH supply cap to 3,000
+ * - Lists new GM assets (AAVE, DOGE, GMX, SOL, and wstETH)
  */
 async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
@@ -159,26 +158,17 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   }
 
   const transactions: EncodedTransaction[] = [
-    await prettyPrintEncodedDataWithTypeSafety(
+    ...await prettyPrintEncodeInsertChainlinkOracleV3(
       core,
-      { dolomiteMargin: core.dolomiteMargin },
-      'dolomiteMargin',
-      'ownerSetIsClosing',
-      [core.marketIds.gmx, false],
+      core.gmxV2Ecosystem.gmTokens.aaveUsd.longToken,
     ),
-    await prettyPrintEncodedDataWithTypeSafety(
+    ...await prettyPrintEncodeInsertChainlinkOracleV3(
       core,
-      { dolomiteMargin: core.dolomiteMargin },
-      'dolomiteMargin',
-      'ownerSetMaxWei',
-      [core.marketIds.gmx, parseEther(`${50_000}`)],
+      core.gmxV2Ecosystem.gmTokens.dogeUsd.indexToken,
     ),
-    await prettyPrintEncodedDataWithTypeSafety(
+    ...await prettyPrintEncodeInsertChainlinkOracleV3(
       core,
-      { dolomiteMargin: core.dolomiteMargin },
-      'dolomiteMargin',
-      'ownerSetMaxWei',
-      [core.marketIds.dGmx, parseEther(`${100_000}`)],
+      core.gmxV2Ecosystem.gmTokens.solUsd.longToken,
     ),
   ];
 
@@ -188,7 +178,6 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       ...await prettyPrintEncodeAddGmxV2Market(
         core,
         factory,
-        core.oracleAggregatorV2,
         unwrappers[i],
         wrappers[i],
         core.gmxV2Ecosystem.live.registry,
@@ -206,6 +195,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     upload: {
       transactions,
       chainId: network,
+      addExecuteImmediatelyTransactions: true,
     },
     invariants: async () => {
       for (let i = 0; i < factories.length; i += 1) {
