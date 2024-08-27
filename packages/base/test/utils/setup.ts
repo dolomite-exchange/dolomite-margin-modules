@@ -166,6 +166,7 @@ import { createPremiaEcosystem } from './ecosystem-utils/premia';
 import { createTestEcosystem } from './ecosystem-utils/testers';
 import { createUmamiEcosystem } from './ecosystem-utils/umami';
 import { impersonate, impersonateOrFallback, resetForkIfPossible } from './index';
+import { createOogaBoogaEcosystem } from './ecosystem-utils/ooga-booga';
 
 /**
  * Config to for setting up tests in the `before` function
@@ -545,7 +546,7 @@ export function getWethContract<T extends NetworkType>(
   signer: SignerWithAddressWithSafety,
 ): WETHType<T> {
   return (
-    config.network === Network.ArbitrumOne || config.network === Network.Base || config.network === Network.PolygonZkEvm
+    config.network === Network.ArbitrumOne || config.network === Network.Base || config.network === Network.PolygonZkEvm || config.network === Network.Berachain
       ? IWETH__factory.connect(WETH_MAP[config.network].address, signer)
       : IERC20__factory.connect(WETH_MAP[config.network].address, signer)
   ) as WETHType<T>;
@@ -956,11 +957,13 @@ export async function setupCoreProtocol<T extends NetworkType>(
         ...coreProtocolParams.tokens,
         honey: IERC20__factory.connect(HONEY_MAP[typedConfig.network].address, hhUser1),
         wbera: IWETH__factory.connect(WBERA_MAP[typedConfig.network].address, hhUser1),
+        weth: coreProtocolParams.tokens.weth as any,
         stablecoins: [
           ...coreProtocolParams.tokens.stablecoins,
           IERC20__factory.connect(HONEY_MAP[typedConfig.network].address, hhUser1),
         ],
       },
+      oogaBoogaEcosystem: await createOogaBoogaEcosystem(typedConfig.network, hhUser1)
     }) as any;
   }
   if (config.network === Network.Mantle) {
