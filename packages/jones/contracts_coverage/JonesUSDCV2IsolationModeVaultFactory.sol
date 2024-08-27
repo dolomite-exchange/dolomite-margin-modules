@@ -26,13 +26,13 @@ import { IJonesUSDCRegistry } from "./interfaces/IJonesUSDCRegistry.sol";
 
 
 /**
- * @title   JonesUSDCIsolationModeVaultFactory
+ * @title   JonesUSDCV2IsolationModeVaultFactory
  * @author  Dolomite
  *
  * @notice  The wrapper around the plvGLP token that is used to create user vaults and manage the entry points that a
  *          user can use to interact with DolomiteMargin from the vault.
  */
-contract JonesUSDCIsolationModeVaultFactory is
+contract JonesUSDCV2IsolationModeVaultFactory is
     IJonesUSDCIsolationModeVaultFactory,
     SimpleIsolationModeVaultFactory
 {
@@ -66,6 +66,11 @@ contract JonesUSDCIsolationModeVaultFactory is
         _dolomiteMargin
     ) {
         jonesUSDCRegistry = IJonesUSDCRegistry(_jonesUSDCRegistry);
+        _initializeTokenInfo(
+            /* name_ = */ "Dolomite Isolation: Jones USDC",
+            /* symbol_ = */ "djUSDC",
+            /* decimals_ = */ 18
+        );
     }
 
     // ============ External Functions ============

@@ -22,18 +22,16 @@ pragma solidity ^0.8.9;
 
 
 /**
- * @title   IJonesWhitelistController
+ * @title   IJonesWhitelistControllerV2
  * @author  Dolomite
  *
- * @notice  Interface for interacting with Jones DAO's whitelist controller
+ * @notice  Interface for Jones DAO's whitelist controller (0xDe3476a7C0a408325385605203665A8836c2bcca).
  */
-interface IJonesWhitelistController {
+interface IJonesWhitelistControllerV2 {
 
     struct RoleInfo {
-        bool jGLP_BYPASS_CAP; // solhint-disable-line var-name-mixedcase
-        bool jUSDC_BYPASS_TIME; // solhint-disable-line var-name-mixedcase
-        uint256 jGLP_RETENTION; // solhint-disable-line var-name-mixedcase
-        uint256 jUSDC_RETENTION; // solhint-disable-line var-name-mixedcase
+        bool BYPASS_COOLDOWN; // solhint-disable-line var-name-mixedcase
+        uint256 INCENTIVE_RETENTION; // solhint-disable-line var-name-mixedcase
     }
 
     function createRole(bytes32 _roleName, RoleInfo memory _roleInfo) external;
@@ -42,17 +40,13 @@ interface IJonesWhitelistController {
 
     function removeUserFromRole(address _account) external;
 
-    function addToWhitelistContracts(address _account) external;
+    function addToWhitelist(address _account) external;
 
-    function removeFromWhitelistContract(address _account) external;
+    function removeFromWhitelist(address _account) external;
 
     function getUserRole(address _account) external view returns (bytes32);
 
     function getRoleInfo(bytes32 _role) external view returns (RoleInfo memory);
 
     function isWhitelistedContract(address _account) external view returns (bool);
-
-    function owner() external view returns (address);
-
-    function BASIS_POINTS() external pure returns (uint256);
 }
