@@ -141,7 +141,7 @@ library AsyncIsolationModeWrapperTraderImpl {
             /* _trader = */ address(this),
             /* _amountInWei = */ _params.inputAmount,
             /* _amountOutMinWei = */ _params.minOutputAmount,
-            abi.encode(_params.otherAccountNumber, _params.orderData)
+            _params.orderData
         );
 
         return actions;

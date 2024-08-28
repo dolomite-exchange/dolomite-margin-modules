@@ -241,7 +241,7 @@ library GmxV2Library {
         IGmxV2IsolationModeTokenVaultV1 _vault,
         uint256 _tradeAccountNumber,
         IGenericTraderBase.TraderParam[] memory _tradersPath
-    ) public {
+    ) public returns (IGenericTraderBase.TraderParam[] memory) {
         uint256 len = _tradersPath.length;
         if (_tradersPath[len - 1].traderType == IGenericTraderBase.TraderType.IsolationModeWrapper) {
             _depositAndApproveWethForWrapping(_vault);
@@ -258,6 +258,7 @@ library GmxV2Library {
                 "Cannot send ETH for non-wrapper"
             );
         }
+        return _tradersPath;
     }
 
     function vaultCancelDeposit(IGmxV2IsolationModeTokenVaultV1 _vault, bytes32 _key) public {
