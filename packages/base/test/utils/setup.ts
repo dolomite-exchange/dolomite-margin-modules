@@ -500,7 +500,7 @@ export function getDefaultCoreProtocolConfigForGmxV2(): CoreProtocolConfig<Netwo
   return {
     network: Network.ArbitrumOne,
     networkNumber: parseInt(Network.ArbitrumOne, 10),
-    blockNumber: 164_788_000,
+    blockNumber: 247_303_500,
     arbitrumOne: true,
   };
 }

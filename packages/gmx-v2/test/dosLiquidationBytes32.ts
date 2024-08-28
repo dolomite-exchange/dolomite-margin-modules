@@ -15,7 +15,7 @@ import {
 } from 'packages/base/src/utils/constructors/dolomite';
 import { AccountStruct } from '../../base/src/utils/constants';
 import { createContractWithAbi } from '../../base/src/utils/dolomite-utils';
-import { NO_EXPIRY, ONE_BI, ONE_ETH_BI, ZERO_BI } from '../../base/src/utils/no-deps-constants';
+import { NO_EXPIRY, ONE_BI, ONE_ETH_BI, TWO_BI, ZERO_BI } from '../../base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../../base/test/utils';
 import { expectEvent, expectProtocolBalance, expectWalletBalance } from '../../base/test/utils/assertions';
 import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
@@ -122,6 +122,10 @@ describe('POC: dosLiquidationBytes32', () => {
     const priceOracle = await createGmxV2MarketTokenPriceOracle(core, gmxV2Registry);
     await priceOracle.connect(core.governance).ownerSetMarketToken(factory.address, true);
 
+    await gmxV2Registry
+      .connect(core.governance)
+      .ownerSetGmxMarketToIndexToken(underlyingToken.address, core.gmxV2Ecosystem.gmTokens.ethUsd.indexToken.address);
+
     // Use actual price oracle later
     marketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, factory, true, priceOracle);
@@ -130,9 +134,8 @@ describe('POC: dosLiquidationBytes32', () => {
 
     await factory.connect(core.governance).ownerSetAllowableCollateralMarketIds([...allowableMarketIds, marketId]);
 
-    await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
-    // await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
+    await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
 
     await gmxV2Registry.connect(core.governance).ownerSetUnwrapperByToken(factory.address, unwrapper.address);
     await gmxV2Registry.connect(core.governance).ownerSetWrapperByToken(factory.address, wrapper.address);
@@ -268,13 +271,13 @@ describe('POC: dosLiquidationBytes32', () => {
       // take a snapshot of the current state of the blockchain
       const beforePrepareForLiquidationSnapshot = await takeSnapshot();
 
-      // do a normal liquidation with extraData as ONE_BI_ENCODED (1) to show that it works
+      // do a normal liquidation with extraData as TWO_BI (2) to show that it works
       const prepareForLiquidationResult = await liquidatorProxy.prepareForLiquidation({
         liquidAccount,
         freezableMarketId: marketId,
         inputTokenAmount: amountWei,
         outputMarketId: core.marketIds.nativeUsdc!,
-        minOutputAmount: ONE_BI,
+        minOutputAmount: TWO_BI,
         expirationTimestamp: NO_EXPIRY,
         extraData: DEFAULT_EXTRA_DATA,
       });
@@ -315,7 +318,7 @@ describe('POC: dosLiquidationBytes32', () => {
           freezableMarketId: marketId,
           inputTokenAmount: amountWei,
           outputMarketId: core.marketIds.nativeUsdc!,
-          minOutputAmount: ONE_BI,
+          minOutputAmount: TWO_BI,
           expirationTimestamp: NO_EXPIRY,
           extraData: _extraData,
         },

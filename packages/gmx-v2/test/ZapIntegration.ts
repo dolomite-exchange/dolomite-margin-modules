@@ -1,16 +1,6 @@
-import {
-  IEventEmitterRegistry,
-  TestIsolationModeFreezableLiquidatorProxy,
-  TestIsolationModeFreezableLiquidatorProxy__factory,
-} from '@dolomite-exchange/modules-base/src/types';
+import { IEventEmitterRegistry } from '@dolomite-exchange/modules-base/src/types';
 import { AccountStruct } from '@dolomite-exchange/modules-base/src/utils/constants';
-import {
-  getIsolationModeFreezableLiquidatorProxyConstructorParams,
-} from '@dolomite-exchange/modules-base/src/utils/constructors/dolomite';
-import {
-  createContractWithAbi,
-  depositIntoDolomiteMargin,
-} from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import { depositIntoDolomiteMargin } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import {
   BYTES_ZERO,
   Network,
@@ -50,8 +40,6 @@ import {
 } from '@dolomite-exchange/modules-gmx-v2/src/types';
 import {
   createGmxV2IsolationModeTokenVaultV1,
-  createGmxV2IsolationModeUnwrapperTraderV2Implementation,
-  createGmxV2IsolationModeWrapperTraderV2Implementation,
   createGmxV2Library,
   getOracleParams,
 } from '@dolomite-exchange/modules-gmx-v2/test/gmx-v2-ecosystem-utils';
@@ -86,7 +74,6 @@ if (process.env.COVERAGE !== 'true') {
     let factory: GmxV2IsolationModeVaultFactory;
     let vault: GmxV2IsolationModeTokenVaultV1;
     let marketId: BigNumber;
-    let liquidatorProxy: TestIsolationModeFreezableLiquidatorProxy;
     let eventEmitter: IEventEmitterRegistry;
 
     let solidAccount: AccountStruct;
@@ -105,12 +92,6 @@ if (process.env.COVERAGE !== 'true') {
         blockNumber: await getRealLatestBlockNumber(true, network),
       });
 
-      liquidatorProxy = await createContractWithAbi<TestIsolationModeFreezableLiquidatorProxy>(
-        TestIsolationModeFreezableLiquidatorProxy__factory.abi,
-        TestIsolationModeFreezableLiquidatorProxy__factory.bytecode,
-        getIsolationModeFreezableLiquidatorProxyConstructorParams(core),
-      );
-
       gmxV2Registry = core.gmxV2Ecosystem.live.registry;
 
       factory = core.gmxV2Ecosystem.live.gmEthUsd.factory;
@@ -128,17 +109,10 @@ if (process.env.COVERAGE !== 'true') {
       await gmxV2Registry.connect(core.governance).ownerSetUnwrapperByToken(factory.address, unwrapper.address);
       await gmxV2Registry.connect(core.governance).ownerSetWrapperByToken(factory.address, wrapper.address);
       await gmxV2Registry.connect(core.governance).ownerSetGmxDepositVault(core.gmxV2Ecosystem.gmxDepositVault.address);
-      await gmxV2Registry.connect(core.governance).ownerSetGmxWithdrawalVault(
-        core.gmxV2Ecosystem.gmxWithdrawalVault.address,
-      );
+      await gmxV2Registry
+        .connect(core.governance)
+        .ownerSetGmxWithdrawalVault(core.gmxV2Ecosystem.gmxWithdrawalVault.address);
       const gmxV2Library = await createGmxV2Library();
-
-      const unwrapperImplementation = await createGmxV2IsolationModeUnwrapperTraderV2Implementation(core, gmxV2Library);
-      const wrapperImplementation = await createGmxV2IsolationModeWrapperTraderV2Implementation(core, gmxV2Library);
-      await core.gmxV2Ecosystem.live.gmEthUsd.unwrapperProxy.connect(core.governance)
-        .upgradeTo(unwrapperImplementation.address);
-      await core.gmxV2Ecosystem.live.gmEthUsd.wrapperProxy.connect(core.governance)
-        .upgradeTo(wrapperImplementation.address);
 
       const userImplementation = await createGmxV2IsolationModeTokenVaultV1(core, gmxV2Library);
       await factory.connect(core.governance).ownerSetUserVaultImplementation(userImplementation.address);
@@ -154,26 +128,14 @@ if (process.env.COVERAGE !== 'true') {
       await setupWETHBalance(core, core.hhUser1, amountWei, core.dolomiteMargin);
       await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, amountWei);
 
-      await core.liquidatorAssetRegistry.ownerAddLiquidatorToAssetWhitelist(marketId, liquidatorProxy.address);
-
       solidAccount = { owner: core.hhUser5.address, number: defaultAccountNumber };
       liquidAccount = { owner: vault.address, number: borrowAccountNumber };
       liquidAccount2 = { owner: vault.address, number: borrowAccountNumber2 };
 
       await setupGMBalance(core, core.gmxV2Ecosystem.gmxEthUsdMarketToken, core.hhUser1, amountWei.mul(2), vault);
       await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei.mul(2));
-      await vault.openBorrowPosition(
-        defaultAccountNumber,
-        borrowAccountNumber,
-        amountWei,
-        { value: executionFee },
-      );
-      await vault.openBorrowPosition(
-        defaultAccountNumber,
-        borrowAccountNumber2,
-        amountWei,
-        { value: executionFee },
-      );
+      await vault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei, { value: executionFee });
+      await vault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber2, amountWei, { value: executionFee });
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
       await expectProtocolBalance(core, vault.address, borrowAccountNumber2, marketId, amountWei);
       await expectWalletBalance(vault, underlyingToken, amountWei.mul(2));
@@ -207,9 +169,7 @@ if (process.env.COVERAGE !== 'true') {
         };
       }
 
-      async function setupBalances(
-        account: BigNumber,
-      ) {
+      async function setupBalances(account: BigNumber) {
         // Create debt for the position
         const gmPrice = (await core.dolomiteMargin.getMarketPrice(marketId)).value;
         const wethPrice = (await core.dolomiteMargin.getMarketPrice(core.marketIds.weth)).value;
@@ -243,7 +203,8 @@ if (process.env.COVERAGE !== 'true') {
           const filter = eventEmitter.filters.AsyncWithdrawalCreated();
           withdrawalKeys.push((await eventEmitter.queryFilter(filter))[0].args.key);
         }
-        return await core.gmxV2Ecosystem!.gmxWithdrawalHandler.connect(core.gmxV2Ecosystem!.gmxExecutor)
+        return await core
+          .gmxV2Ecosystem!.gmxWithdrawalHandler.connect(core.gmxV2Ecosystem!.gmxExecutor)
           .executeWithdrawal(
             withdrawalKeys[withdrawalKeys.length - 1],
             getOracleParams(core.tokens.weth.address, core.tokens.nativeUsdc!.address),
@@ -268,12 +229,12 @@ if (process.env.COVERAGE !== 'true') {
       ) {
         await expectWalletBalance(vault, underlyingToken, vaultErc20Balance);
 
-        const withdrawals = await Promise.all(withdrawalKeys.map(key => unwrapper.getWithdrawalInfo(key)));
+        const withdrawals = await Promise.all(withdrawalKeys.map((key) => unwrapper.getWithdrawalInfo(key)));
         const partitionedTotalOutputAmount = withdrawals.reduce<Record<string, BigNumber>>((acc, withdrawal, i) => {
           if (
-            state === FinishState.WithdrawalSucceeded
-            || state === FinishState.Liquidated
-            || state === FinishState.Expired
+            state === FinishState.WithdrawalSucceeded ||
+            state === FinishState.Liquidated ||
+            state === FinishState.Expired
           ) {
             expect(withdrawal.key).to.eq(BYTES_ZERO);
             expect(withdrawal.vault).to.eq(ZERO_ADDRESS);
@@ -287,9 +248,9 @@ if (process.env.COVERAGE !== 'true') {
             expect(withdrawal.vault).to.eq(vault.address);
             expect(withdrawal.accountNumber).to.eq(borrowAccountNumber);
             expect(
-              withdrawal.inputAmount.eq(amountWei)
-              || withdrawal.inputAmount.eq(smallAmountWei)
-              || withdrawal.inputAmount.eq(amountWei.sub(smallAmountWei)),
+              withdrawal.inputAmount.eq(amountWei) ||
+                withdrawal.inputAmount.eq(smallAmountWei) ||
+                withdrawal.inputAmount.eq(amountWei.sub(smallAmountWei)),
             ).to.eq(true);
             expect(withdrawal.outputToken).to.eq(core.tokens.nativeUsdc!.address);
             expect(withdrawal.outputAmount).to.gt(ZERO_BI);
@@ -303,7 +264,8 @@ if (process.env.COVERAGE !== 'true') {
         }, {} as any);
 
         const deposit = depositKey ? await wrapper.getDepositInfo(depositKey) : undefined;
-        if (deposit &&
+        if (
+          deposit &&
           (state === FinishState.WithdrawalSucceeded ||
             state === FinishState.Liquidated ||
             state === FinishState.Expired)
@@ -324,9 +286,9 @@ if (process.env.COVERAGE !== 'true') {
         }
 
         if (
-          state === FinishState.WithdrawalSucceeded
-          || state === FinishState.Liquidated
-          || state === FinishState.Expired
+          state === FinishState.WithdrawalSucceeded ||
+          state === FinishState.Liquidated ||
+          state === FinishState.Expired
         ) {
           await expectProtocolBalance(core, vault.address, accountNumber, marketId, ZERO_BI);
           expect(await vault.isVaultAccountFrozen(defaultAccountNumber)).to.eq(false);
@@ -348,13 +310,7 @@ if (process.env.COVERAGE !== 'true') {
               core.marketIds.nativeUsdc!,
               outputAmount.sub(outputAmountForSwap).sub(depositAmountIn),
             );
-            await expectProtocolBalance(
-              core,
-              vault,
-              accountNumber,
-              core.marketIds.weth,
-              ZERO_BI,
-            );
+            await expectProtocolBalance(core, vault, accountNumber, core.marketIds.weth, ZERO_BI);
             await expectProtocolBalance(
               core,
               solidAccount.owner,
@@ -362,21 +318,9 @@ if (process.env.COVERAGE !== 'true') {
               core.marketIds.nativeUsdc!,
               ZERO_BI,
             );
-            await expectProtocolBalance(
-              core,
-              solidAccount.owner,
-              solidAccount.number,
-              marketId,
-              ZERO_BI,
-            );
+            await expectProtocolBalance(core, solidAccount.owner, solidAccount.number, marketId, ZERO_BI);
             // The trader always outputs the debt amount (which means the solid account does not earn a profit in ETH)
-            await expectProtocolBalance(
-              core,
-              solidAccount.owner,
-              solidAccount.number,
-              core.marketIds.weth,
-              ZERO_BI,
-            );
+            await expectProtocolBalance(core, solidAccount.owner, solidAccount.number, core.marketIds.weth, ZERO_BI);
           } else if (state === FinishState.WithdrawalSucceeded) {
             const wethOutputAmount = partitionedTotalOutputAmount[core.tokens.weth.address];
             if (wethOutputAmount && wethOutputAmount.gt(0)) {
@@ -399,13 +343,7 @@ if (process.env.COVERAGE !== 'true') {
           }
         } else {
           await expectProtocolBalance(core, vault.address, accountNumber, marketId, totalAmountWei);
-          await expectProtocolBalance(
-            core,
-            vault.address,
-            accountNumber,
-            core.marketIds.weth,
-            wethAmount.mul(-1),
-          );
+          await expectProtocolBalance(core, vault.address, accountNumber, core.marketIds.weth, wethAmount.mul(-1));
           expect(await vault.isVaultAccountFrozen(defaultAccountNumber)).to.eq(false);
           expect(await vault.isVaultAccountFrozen(accountNumber)).to.eq(true);
           expect(await vault.isVaultFrozen()).to.eq(true);

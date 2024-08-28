@@ -34,7 +34,7 @@ import { BigNumber, BigNumberish } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import hardhat, { ethers } from 'hardhat';
 import {
-  disableInterestAccrual,
+  disableInterestAccrual, getDefaultCoreProtocolConfigForGmxV2,
   setupCoreProtocol,
   setupGMBalance,
   setupTestMarket,
@@ -117,10 +117,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
   let otherMarketId2: BigNumber;
 
   before(async () => {
-    core = await setupCoreProtocol({
-      blockNumber: 235_717_900,
-      network: Network.ArbitrumOne,
-    });
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfigForGmxV2());
     underlyingToken = core.gmxV2Ecosystem.gmxEthUsdMarketToken.connect(core.hhUser1);
     const gmxV2Library = await createGmxV2Library();
     const userVaultImplementation = await createTestGmxV2IsolationModeTokenVaultV1(core);
@@ -130,7 +127,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       .connect(core.governance)
       .ownerSetGmxMarketToIndexToken(underlyingToken.address, core.gmxV2Ecosystem.gmTokens.ethUsd.indexToken.address);
 
-    allowableMarketIds = [core.marketIds.nativeUsdc!, core.marketIds.weth];
+    allowableMarketIds = [core.marketIds.nativeUsdc, core.marketIds.weth];
     factory = await createGmxV2IsolationModeVaultFactory(
       core,
       gmxV2Library,
@@ -406,7 +403,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         vault.initiateUnwrapping(borrowAccountNumber, amountWei, core.tokens.weth.address, ONE_BI, DEFAULT_EXTRA_DATA, {
           value: ONE_ETH_BI.add(1),
         }),
-        'GmxV2IsolationModeVaultV1: Invalid execution fee',
+        'GmxV2Library: Invalid execution fee',
       );
     });
 
@@ -608,7 +605,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       await mine(1200);
       await expectThrow(
         vault2.cancelDeposit(depositKey),
-        `GmxV2IsolationModeVaultV1: Invalid vault owner <${vault.address.toLowerCase()}>`,
+        `GmxV2Library: Invalid vault owner <${vault.address.toLowerCase()}>`,
       );
     });
 
@@ -689,7 +686,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       await mine(1200);
       await expectThrow(
         vault.cancelWithdrawal(withdrawalKey),
-        'GmxV2IsolationModeVaultV1: Withdrawal from liquidation',
+        'GmxV2Library: Withdrawal from liquidation',
       );
     });
 
@@ -723,7 +720,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       await mine(1200);
       await expectThrow(
         vault2.cancelWithdrawal(withdrawalKey),
-        `GmxV2IsolationModeVaultV1: Invalid vault owner <${vault.address.toLowerCase()}>`,
+        `GmxV2Library: Invalid vault owner <${vault.address.toLowerCase()}>`,
       );
     });
 
@@ -996,7 +993,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
 
       const initiateWrappingParams = await getInitiateWrappingParams(
         borrowAccountNumber,
-        core.marketIds.nativeUsdc!,
+        core.marketIds.nativeUsdc,
         usdcAmount,
         marketId,
         minAmountOut,
@@ -1111,7 +1108,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           zapParams.userConfig,
           { value: ONE_BI },
         ),
-        'GmxV2IsolationModeVaultV1: Cannot send ETH for non-wrapper',
+        'GmxV2Library: Cannot send ETH for non-wrapper',
       );
     });
 
