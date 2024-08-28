@@ -48,7 +48,6 @@ export function getOogaBoogaAggregatorTraderConstructorParams(
 ): any[] {
   return [
     core.oogaBoogaEcosystem.oogaBoogaRouter.address,
-    core.oogaBoogaEcosystem.oogaBoogaExecutor.address,
     core.dolomiteMargin.address,
   ];
 }

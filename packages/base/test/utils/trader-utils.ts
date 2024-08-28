@@ -1,4 +1,4 @@
-import { address } from '@dolomite-exchange/dolomite-margin';
+import { address, Trade } from '@dolomite-exchange/dolomite-margin';
 import { GenericTraderType } from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
 import axios from 'axios';
 import { BigNumber, ContractTransaction } from 'ethers';
@@ -100,6 +100,33 @@ export async function getCalldataForOdos<T extends Network>(
   return {
     calldata: `0x${result.transaction.data.slice(10)}`, // get rid of the method ID
     outputAmount: BigNumber.from(result.outputTokens?.[0]?.amount),
+  };
+}
+
+export async function getCalldataForOogaBooga(
+  inputToken: { address: address },
+  inputAmount: BigNumber,
+  outputToken: { address: address },
+  receiver: { address: address },
+): Promise<TraderOutput> {
+  const result = await axios.get('https://bartio.api.oogabooga.io/v1/swap', {
+      headers: { Authorization: 'Bearer 7nG3aKxmGsEf7TzqPgpuoqSXjS22AZDxC8qxwZkXOIQ' },
+      params: {
+        tokenIn: inputToken.address,
+        tokenOut: outputToken.address,
+        amount: inputAmount.toString(),
+        to: receiver.address
+      }
+  })
+    .then(response => response.data)
+    .catch((error) => {
+      console.error('Found error in prices', error);
+      throw error;
+    });
+
+  return {
+    calldata: `0x${result.tx.data.slice(10)}`, // get rid of the method ID
+    outputAmount: BigNumber.from(result.routerParams.swapTokenInfo.outputQuote)
   };
 }
 

@@ -9,8 +9,8 @@
     "packages/scripts/src/deploy/deployments.json"
   ],
   "scripts": {
-    "build": "yarn workspaces foreach run build",
-    "clean": "yarn workspaces foreach run clean",
+    "build": "yarn workspaces run build",
+    "clean": "yarn workspaces run clean",
     "coverage": "yarn workspaces foreach run coverage",
     "coverage:prepare": "yarn workspaces foreach run coverage:prepare",
     "test": "yarn workspaces foreach run test",

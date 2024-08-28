@@ -3,22 +3,28 @@ import { BigNumber } from 'ethers';
 import { OogaBoogaAggregatorTrader } from '../../src/types';
 import { AccountStruct } from '../../src/utils/constants';
 import { depositIntoDolomiteMargin } from '../../src/utils/dolomite-utils';
-import { BYTES_EMPTY, Network, ONE_ETH_BI, ZERO_BI } from '../../src/utils/no-deps-constants';
+import { BYTES_EMPTY, Network, ZERO_BI } from '../../src/utils/no-deps-constants';
 import {
+  getRealLatestBlockNumber,
   revertToSnapshotAndCapture,
   snapshot,
 } from '../utils';
 import {
+  expectProtocolBalance,
+  expectProtocolBalanceIsGreaterThan,
   expectThrow,
 } from '../utils/assertions';
 
 import { createOogaBoogaAggregatorTrader } from '../utils/ecosystem-utils/traders';
-import { disableInterestAccrual, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket, setupWETHBalance } from '../utils/setup';
+import { disableInterestAccrual, setupCoreProtocol, setupWBERABalance } from '../utils/setup';
 import { CoreProtocolBerachain } from '../utils/core-protocols/core-protocol-berachain';
+import { getCalldataForOogaBooga } from '../utils/trader-utils';
+import { ethers } from 'hardhat';
+import { ActionType, AmountDenomination, AmountReference } from '@dolomite-exchange/dolomite-margin';
 
 const defaultAccountNumber = '0';
 const amountIn = BigNumber.from('1000000000000000000');
-const minAmountOut = BigNumber.from('123123123');
+const minAmountOut = BigNumber.from('30000000')
 
 describe('OogaBoogaAggregatorTrader', () => {
   let snapshotId: string;
@@ -28,18 +34,19 @@ describe('OogaBoogaAggregatorTrader', () => {
   let defaultAccount: AccountStruct;
 
   before(async () => {
-    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.Berachain));
+    core = await setupCoreProtocol({
+      blockNumber: await getRealLatestBlockNumber(true, Network.Berachain),
+      network: Network.Berachain,
+    });
 
     trader = (await createOogaBoogaAggregatorTrader(core)).connect(core.hhUser1);
     defaultAccount = { owner: core.hhUser1.address, number: defaultAccountNumber };
 
     // prevent interest accrual between calls
-    await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.weth.address, ONE_ETH_BI);
-    await setupTestMarket(core, core.tokens.weth, false);
-    await disableInterestAccrual(core, core.marketIds.weth);
+    await disableInterestAccrual(core, core.marketIds.wbera);
 
-    await setupWETHBalance(core, core.hhUser1, amountIn, { address: core.dolomiteMargin.address });
-    await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, amountIn);
+    await setupWBERABalance(core, core.hhUser1, amountIn, { address: core.dolomiteMargin.address });
+    await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.wbera, amountIn);
 
     snapshotId = await snapshot();
   });
@@ -51,30 +58,123 @@ describe('OogaBoogaAggregatorTrader', () => {
   describe('#contructor', () => {
     it('should initialize variables properly', async () => {
       expect(await trader.OOGA_BOOGA_ROUTER()).to.equal(core.oogaBoogaEcosystem.oogaBoogaRouter.address);
-      expect(await trader.OOGA_BOOGA_EXECUTOR()).to.equal(core.oogaBoogaEcosystem.oogaBoogaExecutor.address);
     });
   });
 
   describe('#exchange', () => {
-    it('should succeed under normal conditions', async () => {
+    it('should succeed for normal swap', async () => {
+      const { calldata } = await getCalldataForOogaBooga(
+        core.tokens.wbera,
+        amountIn,
+        core.tokens.usdc,
+        trader
+      );
+
+      await doSwapAndCheckResults(calldata);
+    });
+
+    it('should succeed for normal swap when inputAmount is different', async () => {
+      const { calldata } = await getCalldataForOogaBooga(
+        core.tokens.wbera,
+        amountIn.mul(9).div(10),
+        core.tokens.usdc,
+        trader
+      );
+
+      await doSwapAndCheckResults(calldata);
     });
 
     it('should fail when caller is not DolomiteMargin', async () => {
+      await expectThrow(
+        trader.connect(core.hhUser1).exchange(
+          core.hhUser1.address,
+          core.dolomiteMargin.address,
+          core.tokens.wbera.address,
+          core.tokens.usdc.address,
+          ZERO_BI,
+          BYTES_EMPTY,
+        ),
+        `OnlyDolomiteMargin: Only Dolomite can call function <${core.hhUser1.address.toLowerCase()}>`,
+      );
     });
 
     it('should fail when output is insufficient', async () => {
-    });
+      const { calldata, outputAmount } = await getCalldataForOogaBooga(
+        core.tokens.wbera,
+        amountIn,
+        core.tokens.usdc,
+        trader
+      );
+      const actualOrderData = ethers.utils.defaultAbiCoder.encode(
+        ['uint256', 'bytes'],
+        [
+          outputAmount.mul(2),
+          calldata,
+        ],
+      );
 
-    it('should fail when Paraswap fails', async () => {
+      await expectThrow(
+        core.dolomiteMargin.connect(core.hhUser1).operate(
+          [{ owner: core.hhUser1.address, number: defaultAccountNumber }],
+          [
+            {
+              actionType: ActionType.Sell,
+              primaryMarketId: core.marketIds.wbera,
+              secondaryMarketId: core.marketIds.usdc,
+              accountId: 0,
+              otherAccountId: 0,
+              amount: {
+                sign: false,
+                denomination: AmountDenomination.Wei,
+                ref: AmountReference.Delta,
+                value: amountIn,
+              },
+              otherAddress: trader.address,
+              data: actualOrderData,
+            },
+          ],
+        ),
+      );
     });
   });
 
   describe('#getExchangeCost', () => {
     it('should always fail', async () => {
       await expectThrow(
-        trader.getExchangeCost(core.tokens.weth.address, core.tokens.usdc.address, ZERO_BI, BYTES_EMPTY),
+        trader.getExchangeCost(core.tokens.wbera.address, core.tokens.usdc.address, ZERO_BI, BYTES_EMPTY),
         'OogaBoogaAggregatorTrader: getExchangeCost not implemented',
       );
     });
   });
+
+  async function doSwapAndCheckResults(
+    calldata: string
+  ) {
+    const actualOrderData = ethers.utils.defaultAbiCoder.encode(
+      ['uint256', 'bytes'],
+      [
+        minAmountOut,
+        calldata,
+      ],
+    );
+    await core.dolomiteMargin.connect(core.hhUser1).operate(
+      [{ owner: core.hhUser1.address, number: defaultAccountNumber }],
+      [
+        {
+          actionType: ActionType.Sell,
+          primaryMarketId: core.marketIds.wbera,
+          secondaryMarketId: core.marketIds.usdc,
+          accountId: 0,
+          otherAccountId: 0,
+          amount: { sign: false, denomination: AmountDenomination.Wei, ref: AmountReference.Delta, value: amountIn },
+          otherAddress: trader.address,
+          data: actualOrderData,
+        },
+      ],
+    );
+    expect(await core.tokens.wbera.balanceOf(trader.address)).to.eq(ZERO_BI);
+    expect(await core.tokens.usdc.balanceOf(trader.address)).to.eq(ZERO_BI);
+    await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.wbera, ZERO_BI);
+    await expectProtocolBalanceIsGreaterThan(core, defaultAccount, core.marketIds.usdc, minAmountOut, 0);
+  }
 });

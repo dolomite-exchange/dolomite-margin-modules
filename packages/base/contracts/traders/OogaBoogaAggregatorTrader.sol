@@ -21,19 +21,19 @@ pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
+import { AggregatorTraderBase } from "./AggregatorTraderBase.sol";
 import { ERC20Lib } from "../lib/ERC20Lib.sol";
-import { IDolomiteMarginExchangeWrapper } from "../protocol/interfaces/IDolomiteMarginExchangeWrapper.sol";
 import { Require } from "../protocol/lib/Require.sol";
+import { IOogaBoogaRouter } from "../interfaces/traders/IOogaBoogaRouter.sol";
 
 
 /**
  * @title   OogaBoogaAggregatorTrader
  * @author  Dolomite
  *
- * Contract for performing an external trade with Paraswap.
+ * Contract for performing an external trade with Ooga Booga.
  */
-contract OogaBoogaAggregatorTrader is OnlyDolomiteMargin, IDolomiteMarginExchangeWrapper {
+contract OogaBoogaAggregatorTrader is AggregatorTraderBase {
     using SafeERC20 for IERC20;
 
     // ============ Constants ============
@@ -42,20 +42,17 @@ contract OogaBoogaAggregatorTrader is OnlyDolomiteMargin, IDolomiteMarginExchang
 
     // ============ Storage ============
 
-    address immutable public OOGA_BOOGA_ROUTER; // solhint-disable-line
-    address immutable public OOGA_BOOGA_EXECUTOR; // solhint-disable-line
+    IOogaBoogaRouter immutable public OOGA_BOOGA_ROUTER; // solhint-disable-line
 
     // ============ Constructor ============
 
     constructor(
         address _oogaBoogaRouter,
-        address _oogaBoogaExecutor,
         address _dolomiteMargin
     )
-    OnlyDolomiteMargin(_dolomiteMargin)
+        AggregatorTraderBase(_dolomiteMargin)
     {
-        OOGA_BOOGA_ROUTER = _oogaBoogaRouter;
-        OOGA_BOOGA_EXECUTOR = _oogaBoogaExecutor;
+        OOGA_BOOGA_ROUTER = IOogaBoogaRouter(_oogaBoogaRouter);
     }
 
     // ============ Public Functions ============
@@ -71,26 +68,49 @@ contract OogaBoogaAggregatorTrader is OnlyDolomiteMargin, IDolomiteMarginExchang
     external
     onlyDolomiteMargin(msg.sender)
     returns (uint256) {
-        ERC20Lib.resetAllowanceIfNeededAndApprove(IERC20(_inputToken), OOGA_BOOGA_ROUTER, _inputAmount);
+        ERC20Lib.resetAllowanceIfNeededAndApprove(IERC20(_inputToken), address(OOGA_BOOGA_ROUTER), _inputAmount);
 
-        (uint256 minAmountOutWei, bytes memory orderData) = abi.decode(_minAmountOutAndOrderData, (uint256, bytes));
-        (bytes memory paraswapCallData) = abi.decode(orderData, (bytes));
+        (
+            uint256 minAmountOutWei,
+            bytes memory orderData
+        ) = abi.decode(_minAmountOutAndOrderData, (uint256, bytes));
 
-        _callAndCheckSuccess(paraswapCallData);
+        uint256 outputAmount;
+        {
+            // Create a new scope to avoid "stack the stack too deep" error
+            (
+                IOogaBoogaRouter.swapTokenInfo memory tokenInfo,
+                bytes memory pathDefinition,
+                address executor,
+                uint32 referralCode
+            ) = abi.decode(orderData, (IOogaBoogaRouter.swapTokenInfo, bytes, address, uint32));
+            tokenInfo.outputQuote = _getScaledExpectedOutputAmount(
+                tokenInfo.inputAmount,
+                _inputAmount,
+                tokenInfo.outputQuote
+            );
+            tokenInfo.outputMin = minAmountOutWei;
+            tokenInfo.inputAmount = _inputAmount;
 
-        uint256 amount = IERC20(_outputToken).balanceOf(address(this));
+            outputAmount = OOGA_BOOGA_ROUTER.swap(
+                tokenInfo,
+                pathDefinition,
+                executor,
+                referralCode
+            );
+        }
 
         Require.that(
-            amount >= minAmountOutWei,
+            outputAmount >= minAmountOutWei,
             _FILE,
             "Insufficient output amount",
-            amount,
+            outputAmount,
             minAmountOutWei
         );
 
-        IERC20(_outputToken).safeApprove(_receiver, amount);
+        IERC20(_outputToken).safeApprove(_receiver, outputAmount);
 
-        return amount;
+        return outputAmount;
     }
 
     function getExchangeCost(
@@ -103,23 +123,5 @@ contract OogaBoogaAggregatorTrader is OnlyDolomiteMargin, IDolomiteMarginExchang
     pure
     returns (uint256) {
         revert(string(abi.encodePacked(Require.stringifyTruncated(_FILE), ": getExchangeCost not implemented")));
-    }
-
-    // ============ Private Functions ============
-
-    function _callAndCheckSuccess(bytes memory _paraswapCallData) internal {
-        // solhint-disable-next-line avoid-low-level-calls
-        (bool success, bytes memory result) = OOGA_BOOGA_ROUTER.call(_paraswapCallData);
-        if (!success) {
-            if (result.length < 68) {
-                revert(string(abi.encodePacked(Require.stringifyTruncated(_FILE), ": revert")));
-            } else {
-                // solhint-disable-next-line no-inline-assembly
-                assembly {
-                    result := add(result, 0x04)
-                }
-                revert(string(abi.encodePacked(Require.stringifyTruncated(_FILE), ": ", abi.decode(result, (string)))));
-            }
-        }
     }
 }
