@@ -7,7 +7,11 @@ import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
 import { Network, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
 import { expectEvent, expectThrow } from 'packages/base/test/utils/assertions';
-import { setupCoreProtocol, setupTestMarket } from 'packages/base/test/utils/setup';
+import {
+  getDefaultCoreProtocolConfigForGmxV2,
+  setupCoreProtocol,
+  setupTestMarket,
+} from 'packages/base/test/utils/setup';
 import { CoreProtocolArbitrumOne } from '../../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE_FOR_TESTS } from '../../src/gmx-v2-constructors';
 import {
@@ -33,7 +37,7 @@ import { GMX_BTC_PLACEHOLDER_MAP } from 'packages/base/src/utils/constants';
 import { TokenInfo } from 'packages/oracles/src';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 
-const GM_ETH_USD_PRICE_NO_MAX_WEI = BigNumber.from('938018184670068755'); // $0.938
+const GM_ETH_USD_PRICE_NO_MAX_WEI = BigNumber.from('1429233203551247357'); // $1.4292
 const MAX_WEI = BigNumber.from('10000000000000000000000000'); // 10M tokens
 const NEGATIVE_PRICE = BigNumber.from('-5');
 const FEE_BASIS_POINTS = BigNumber.from('0'); // No swap fee
@@ -55,10 +59,7 @@ describe('GmxV2MarketTokenPriceOracle', () => {
   let testReader: TestGmxReader;
 
   before(async () => {
-    core = await setupCoreProtocol({
-      blockNumber: 204_300_000,
-      network: Network.ArbitrumOne
-    });
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfigForGmxV2());
     underlyingToken = core.gmxV2Ecosystem!.gmTokens.btc.marketToken.connect(core.hhUser1);
 
     gmxV2Registry = await createGmxV2Registry(core, GMX_V2_CALLBACK_GAS_LIMIT);
@@ -115,6 +116,7 @@ describe('GmxV2MarketTokenPriceOracle', () => {
     marketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, factory, true, gmPriceOracle);
 
+    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
     await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
 
     await gmxV2Registry.connect(core.governance).ownerSetUnwrapperByToken(factory.address, unwrapper.address);
