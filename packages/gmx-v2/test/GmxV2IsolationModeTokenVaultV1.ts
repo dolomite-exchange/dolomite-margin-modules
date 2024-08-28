@@ -527,7 +527,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
   });
 
   describe('#cancelDeposit', () => {
-    it.only('should work normally', async () => {
+    it('should work normally', async () => {
       await vault.transferIntoPositionWithOtherToken(
         defaultAccountNumber,
         borrowAccountNumber,
@@ -570,7 +570,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       expect(await vault.isVaultFrozen()).to.eq(false);
     });
 
-    xit('should fail if a user attempts to cancel a different users deposit', async () => {
+    it('should fail if a user attempts to cancel a different users deposit', async () => {
       await vault.transferIntoPositionWithOtherToken(
         defaultAccountNumber,
         borrowAccountNumber,
@@ -856,7 +856,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
   });
 
   describe('#swapExactInputForOutput', () => {
-    xit('should work normally for wrapping', async () => {
+    it('should work normally for wrapping', async () => {
       await vault.transferIntoPositionWithOtherToken(
         defaultAccountNumber,
         borrowAccountNumber,
@@ -1046,7 +1046,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       );
     });
 
-    xit('should fail if ETH sent is greater than max execution fee', async () => {
+    it('should fail if ETH sent is greater than max execution fee', async () => {
       await vault.transferIntoPositionWithOtherToken(
         defaultAccountNumber,
         borrowAccountNumber,

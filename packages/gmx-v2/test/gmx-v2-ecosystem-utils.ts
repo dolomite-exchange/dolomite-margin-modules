@@ -370,25 +370,11 @@ export function getInitiateUnwrappingParams(
   };
 }
 
-export function getOracleParams(token1: string, token2: string) {
+export function getOracleParams(token1: string, token2: string, provider: string) {
   return {
-    signerInfo: '1',
-    tokens: [],
-    compactedMinOracleBlockNumbers: [],
-    compactedMaxOracleBlockNumbers: [],
-    compactedOracleTimestamps: [],
-    compactedDecimals: [],
-    compactedMinPrices: [],
-    compactedMinPricesIndexes: [],
-    compactedMaxPrices: [],
-    compactedMaxPricesIndexes: [],
-    signatures: [],
-    priceFeedTokens: [
-      token1,
-      token2,
-    ],
-    realtimeFeedTokens: [],
-    realtimeFeedData: [],
+    tokens: [token1, token2],
+    providers: [provider, provider],
+      data: [BYTES_EMPTY, BYTES_EMPTY],
   };
 }
 
@@ -622,4 +608,16 @@ export function getDepositObject(
     };
   }
   return { deposit, eventData };
+}
+
+export function getOracleProviderForTokenKey(token: { address: string}) {
+  const oracleProviderString = ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(["string"], ["ORACLE_PROVIDER_FOR_TOKEN"]));
+  const key = ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(["bytes32", "address"], [oracleProviderString, token.address]))
+  return key;
+}
+
+export function getOracleProviderEnabledKey(provider: { address: string}) {
+  const providerEnabled = ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(["string"], ["IS_ORACLE_PROVIDER_ENABLED"]));
+  const key = ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(["bytes32", "address"], [providerEnabled, provider.address]))
+  return key;
 }
