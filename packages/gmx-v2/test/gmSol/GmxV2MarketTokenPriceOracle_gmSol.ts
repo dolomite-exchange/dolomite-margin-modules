@@ -7,7 +7,11 @@ import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
 import { Network, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
 import { expectEvent, expectThrow } from 'packages/base/test/utils/assertions';
-import { setupCoreProtocol, setupTestMarket } from 'packages/base/test/utils/setup';
+import {
+  getDefaultCoreProtocolConfigForGmxV2,
+  setupCoreProtocol,
+  setupTestMarket,
+} from 'packages/base/test/utils/setup';
 import { CoreProtocolArbitrumOne } from '../../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE_FOR_TESTS } from '../../src/gmx-v2-constructors';
 import {
@@ -54,10 +58,7 @@ describe('GmxV2MarketTokenPriceOracle', () => {
   let testReader: TestGmxReader;
 
   before(async () => {
-    core = await setupCoreProtocol({
-      blockNumber,
-      network: Network.ArbitrumOne,
-    });
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfigForGmxV2());
     underlyingToken = core.gmxV2Ecosystem!.gmTokens.solUsd.marketToken.connect(core.hhUser1);
 
     gmxV2Registry = await createGmxV2Registry(core, GMX_V2_CALLBACK_GAS_LIMIT);

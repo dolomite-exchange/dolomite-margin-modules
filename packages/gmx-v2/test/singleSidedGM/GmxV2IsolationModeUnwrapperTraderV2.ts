@@ -33,7 +33,7 @@ import { expect } from 'chai';
 import { BigNumber, BigNumberish, ethers } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import {
-  disableInterestAccrual,
+  disableInterestAccrual, getDefaultCoreProtocolConfigForGmxV2,
   setupCoreProtocol,
   setupGMBalance,
   setupNativeUSDCBalance,
@@ -135,10 +135,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2_singleSided', () => {
   let marketId: BigNumber;
 
   before(async () => {
-    core = await setupCoreProtocol({
-      blockNumber: 221_294_300,
-      network: Network.ArbitrumOne
-    });
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfigForGmxV2());
     underlyingToken = core.gmxV2Ecosystem!.gmTokens.btc.marketToken.connect(core.hhUser1);
     const gmxV2Library = await createGmxV2Library();
     const safeDelegateCallLibrary = await createSafeDelegateLibrary();
@@ -213,8 +210,8 @@ describe('GmxV2IsolationModeUnwrapperTraderV2_singleSided', () => {
     await disableInterestAccrual(core, core.marketIds.wbtc);
     await disableInterestAccrual(core, core.marketIds.nativeUsdc!);
 
-    await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
+    await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
 
     await factory.createVault(core.hhUser1.address);
     await factory.createVault(core.hhUser2.address);

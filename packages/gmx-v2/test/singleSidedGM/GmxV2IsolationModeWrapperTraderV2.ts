@@ -18,7 +18,7 @@ import {
 } from 'packages/base/test/utils/assertions';
 import { createDolomiteRegistryImplementation, createEventEmitter } from 'packages/base/test/utils/dolomite';
 import {
-  disableInterestAccrual,
+  disableInterestAccrual, getDefaultCoreProtocolConfigForGmxV2,
   setupCoreProtocol,
   setupGMBalance,
   setupTestMarket,
@@ -99,10 +99,7 @@ describe('GmxV2IsolationModeWrapperTraderV2_singleSided', () => {
   let marketId: BigNumber;
 
   before(async () => {
-    core = await setupCoreProtocol({
-      blockNumber: 221_294_300,
-      network: Network.ArbitrumOne
-    });
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfigForGmxV2());
     underlyingToken = core.gmxV2Ecosystem!.gmTokens.btc.marketToken.connect(core.hhUser1);
     const library = await createGmxV2Library();
     const userVaultImplementation = await createGmxV2IsolationModeTokenVaultV1(core, library);
@@ -174,8 +171,8 @@ describe('GmxV2IsolationModeWrapperTraderV2_singleSided', () => {
     await disableInterestAccrual(core, core.marketIds.wbtc);
     await disableInterestAccrual(core, core.marketIds.nativeUsdc!);
 
-    await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
+    await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
 
     await gmxV2Registry.connect(core.governance).ownerSetUnwrapperByToken(factory.address, unwrapper.address);
     await gmxV2Registry.connect(core.governance).ownerSetWrapperByToken(factory.address, wrapper.address);
