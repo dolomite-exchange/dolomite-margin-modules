@@ -20,7 +20,7 @@
 
 pragma solidity ^0.8.9;
 
-import { IDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteMargin.sol";
+import { IDolomitePriceOracle } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomitePriceOracle.sol"; // solhint-disable-line max-line-length
 
 
 /**
@@ -32,7 +32,7 @@ import { IDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/proto
 contract TestOracleProvider {
 
     bytes32 private constant _FILE = "TestOracleProvider";
-    IDolomiteMargin public immutable DOLOMITE_MARGIN;
+    IDolomitePriceOracle public immutable ORACLE_AGGREGATOR;
 
     struct ValidatedPrice {
         address token;
@@ -42,12 +42,12 @@ contract TestOracleProvider {
         address provider;
     }
 
-    constructor(address _dolomiteMargin) {
-        DOLOMITE_MARGIN = IDolomiteMargin(_dolomiteMargin);
+    constructor(address _oracleAggregator) {
+        ORACLE_AGGREGATOR = IDolomitePriceOracle(_oracleAggregator);
     }
 
     function getOraclePrice(address _token, bytes memory _data) external returns (ValidatedPrice memory) {
-        uint256 price = DOLOMITE_MARGIN.getMarketPrice(DOLOMITE_MARGIN.getMarketIdByTokenAddress(_token)).value;
+        uint256 price = ORACLE_AGGREGATOR.getPrice(_token).value;
         price = price / 10 ** 6;
 
         return ValidatedPrice({

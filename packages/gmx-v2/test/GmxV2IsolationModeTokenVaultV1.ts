@@ -11,7 +11,6 @@ import {
 } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import {
   MAX_UINT_256_BI,
-  Network,
   ONE_BI,
   ONE_ETH_BI,
   TWO_BI,
