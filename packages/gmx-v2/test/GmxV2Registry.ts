@@ -57,7 +57,7 @@ describe('GmxV2Registry', () => {
       gmxV2Registry,
       allowableMarketIds,
       allowableMarketIds,
-      core.gmxEcosystemV2!.gmTokens.ethUsd,
+      core.gmxV2Ecosystem!.gmTokens.ethUsd,
       userVaultImplementation,
       GMX_V2_EXECUTION_FEE_FOR_TESTS,
     );
@@ -86,14 +86,14 @@ describe('GmxV2Registry', () => {
 
   describe('#initialize', () => {
     it('should initialize variables properly', async () => {
-      expect(await gmxV2Registry.gmxExchangeRouter()).to.eq(core.gmxEcosystemV2!.gmxExchangeRouter.address);
-      expect(await gmxV2Registry.gmxDataStore()).to.eq(core.gmxEcosystemV2!.gmxDataStore.address);
-      expect(await gmxV2Registry.gmxReader()).to.eq(core.gmxEcosystemV2!.gmxReader.address);
-      expect(await gmxV2Registry.gmxRouter()).to.eq(core.gmxEcosystemV2!.gmxRouter.address);
-      expect(await gmxV2Registry.gmxDepositHandler()).to.eq(core.gmxEcosystemV2!.gmxDepositHandler.address);
-      expect(await gmxV2Registry.gmxDepositVault()).to.eq(core.gmxEcosystemV2!.gmxDepositVault.address);
-      expect(await gmxV2Registry.gmxWithdrawalHandler()).to.eq(core.gmxEcosystemV2!.gmxWithdrawalHandler.address);
-      expect(await gmxV2Registry.gmxWithdrawalVault()).to.eq(core.gmxEcosystemV2!.gmxWithdrawalVault.address);
+      expect(await gmxV2Registry.gmxExchangeRouter()).to.eq(core.gmxV2Ecosystem!.gmxExchangeRouter.address);
+      expect(await gmxV2Registry.gmxDataStore()).to.eq(core.gmxV2Ecosystem!.gmxDataStore.address);
+      expect(await gmxV2Registry.gmxReader()).to.eq(core.gmxV2Ecosystem!.gmxReader.address);
+      expect(await gmxV2Registry.gmxRouter()).to.eq(core.gmxV2Ecosystem!.gmxRouter.address);
+      expect(await gmxV2Registry.gmxDepositHandler()).to.eq(core.gmxV2Ecosystem!.gmxDepositHandler.address);
+      expect(await gmxV2Registry.gmxDepositVault()).to.eq(core.gmxV2Ecosystem!.gmxDepositVault.address);
+      expect(await gmxV2Registry.gmxWithdrawalHandler()).to.eq(core.gmxV2Ecosystem!.gmxWithdrawalHandler.address);
+      expect(await gmxV2Registry.gmxWithdrawalVault()).to.eq(core.gmxV2Ecosystem!.gmxWithdrawalVault.address);
       expect(await gmxV2Registry.getUnwrapperByToken(core.tokens.weth.address)).to.eq(ZERO_ADDRESS);
       expect(await gmxV2Registry.getWrapperByToken(core.tokens.weth.address)).to.eq(ZERO_ADDRESS);
       expect(await gmxV2Registry.dolomiteRegistry()).to.eq(core.dolomiteRegistry.address);
@@ -103,12 +103,12 @@ describe('GmxV2Registry', () => {
     it('should not initialize twice', async () => {
       await expectThrow(
         gmxV2Registry.initialize(
-          core.gmxEcosystemV2!.gmxDataStore.address,
-          core.gmxEcosystemV2!.gmxDepositVault.address,
-          core.gmxEcosystemV2!.gmxExchangeRouter.address,
-          core.gmxEcosystemV2!.gmxReader.address,
-          core.gmxEcosystemV2!.gmxRouter.address,
-          core.gmxEcosystemV2!.gmxWithdrawalVault.address,
+          core.gmxV2Ecosystem!.gmxDataStore.address,
+          core.gmxV2Ecosystem!.gmxDepositVault.address,
+          core.gmxV2Ecosystem!.gmxExchangeRouter.address,
+          core.gmxV2Ecosystem!.gmxReader.address,
+          core.gmxV2Ecosystem!.gmxRouter.address,
+          core.gmxV2Ecosystem!.gmxWithdrawalVault.address,
           GMX_V2_CALLBACK_GAS_LIMIT,
           core.dolomiteRegistry.address,
         ),
@@ -144,7 +144,7 @@ describe('GmxV2Registry', () => {
         gmxV2Registry,
         allowableMarketIds,
         allowableMarketIds,
-        core.gmxEcosystemV2!.gmTokens.ethUsd,
+        core.gmxV2Ecosystem!.gmTokens.ethUsd,
         userVaultImplementation,
         GMX_V2_EXECUTION_FEE_FOR_TESTS,
       );
@@ -195,7 +195,7 @@ describe('GmxV2Registry', () => {
         gmxV2Registry,
         allowableMarketIds,
         allowableMarketIds,
-        core.gmxEcosystemV2!.gmTokens.ethUsd,
+        core.gmxV2Ecosystem!.gmTokens.ethUsd,
         userVaultImplementation,
         GMX_V2_EXECUTION_FEE_FOR_TESTS,
       );
@@ -366,20 +366,20 @@ describe('GmxV2Registry', () => {
   describe('#ownerSetIsHandler', () => {
     it('should work normally', async () => {
       const result = await gmxV2Registry.connect(core.governance).ownerSetIsHandler(
-        core.gmxEcosystemV2!.gmxDepositHandler.address,
+        core.gmxV2Ecosystem!.gmxDepositHandler.address,
         true,
       );
       await expectEvent(gmxV2Registry, result, 'HandlerSet', {
-        handler: core.gmxEcosystemV2!.gmxDepositHandler.address,
+        handler: core.gmxV2Ecosystem!.gmxDepositHandler.address,
         isTrusted: true,
       });
 
-      expect(await gmxV2Registry.isHandler(core.gmxEcosystemV2!.gmxDepositHandler.address)).to.eq(true);
+      expect(await gmxV2Registry.isHandler(core.gmxV2Ecosystem!.gmxDepositHandler.address)).to.eq(true);
     });
 
     it('should failed if not called by dolomite owner', async () => {
       await expectThrow(
-        gmxV2Registry.connect(core.hhUser1).ownerSetIsHandler(core.gmxEcosystemV2!.gmxDepositHandler.address, true),
+        gmxV2Registry.connect(core.hhUser1).ownerSetIsHandler(core.gmxV2Ecosystem!.gmxDepositHandler.address, true),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
@@ -401,7 +401,7 @@ describe('GmxV2Registry', () => {
 
   describe('#ownerSetGmxMarketToIndexToken', () => {
     it('should work normally', async () => {
-      const marketTokenAddress = core.gmxEcosystemV2.gmTokens.btcUsd.marketToken.address;
+      const marketTokenAddress = core.gmxV2Ecosystem.gmTokens.btcUsd.marketToken.address;
       expect(await gmxV2Registry.gmxMarketToIndexToken(marketTokenAddress)).to.eq(ZERO_ADDRESS);
 
       const result = await gmxV2Registry.connect(core.governance).ownerSetGmxMarketToIndexToken(
@@ -418,7 +418,7 @@ describe('GmxV2Registry', () => {
     it('should fail if not called by dolomite owner', async () => {
       await expectThrow(
         gmxV2Registry.connect(core.hhUser1).ownerSetGmxMarketToIndexToken(
-          core.gmxEcosystemV2.gmTokens.btcUsd.marketToken.address,
+          core.gmxV2Ecosystem.gmTokens.btcUsd.marketToken.address,
           OTHER_ADDRESS_1
         ),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,

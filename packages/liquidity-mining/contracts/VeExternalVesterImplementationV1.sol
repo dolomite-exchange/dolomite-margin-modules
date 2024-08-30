@@ -35,8 +35,8 @@ import { ERC721 } from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { IERC20Mintable } from "./interfaces/IERC20Mintable.sol";
 import { IVeExternalVesterV1 } from "./interfaces/IVeExternalVesterV1.sol";
-import { IVesterDiscountCalculator } from "./interfaces/IVesterDiscountCalculator.sol";
 import { IVeToken } from "./interfaces/IVeToken.sol";
+import { IVesterDiscountCalculator } from "./interfaces/IVesterDiscountCalculator.sol";
 
 
 /**

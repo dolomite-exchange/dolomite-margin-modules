@@ -22,8 +22,8 @@ pragma solidity ^0.8.9;
 
 import { IBaseRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IBaseRegistry.sol";
 import { IERC4626 } from "@dolomite-exchange/modules-base/contracts/interfaces/IERC4626.sol";
-import { IJonesUSDCRouter } from "./IJonesUSDCRouter.sol";
 import { IJonesUSDCFarm } from "./IJonesUSDCFarm.sol";
+import { IJonesUSDCRouter } from "./IJonesUSDCRouter.sol";
 import { IJonesWhitelistControllerV2 } from "./IJonesWhitelistControllerV2.sol";
 
 

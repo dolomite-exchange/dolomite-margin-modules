@@ -21,13 +21,13 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
 
   const factories: GmxV2IsolationModeVaultFactory[] = [
-    core.gmxEcosystemV2.live.gmArbUsd.factory,
-    core.gmxEcosystemV2.live.gmBtcUsd.factory,
-    core.gmxEcosystemV2.live.gmEthUsd.factory,
-    core.gmxEcosystemV2.live.gmLinkUsd.factory,
-    core.gmxEcosystemV2.live.gmUniUsd.factory,
-    core.gmxEcosystemV2.live.gmBtc.factory,
-    core.gmxEcosystemV2.live.gmEth.factory,
+    core.gmxV2Ecosystem.live.gmArbUsd.factory,
+    core.gmxV2Ecosystem.live.gmBtcUsd.factory,
+    core.gmxV2Ecosystem.live.gmEthUsd.factory,
+    core.gmxV2Ecosystem.live.gmLinkUsd.factory,
+    core.gmxV2Ecosystem.live.gmUniUsd.factory,
+    core.gmxV2Ecosystem.live.gmBtc.factory,
+    core.gmxV2Ecosystem.live.gmEth.factory,
   ];
   const longMarketIds = await Promise.all(factories.map((f) => f.LONG_TOKEN_MARKET_ID()));
   const stablecoins = core.marketIds.stablecoins;
@@ -36,24 +36,24 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   stablecoins[0] = stablecoins[usdcIndex];
   stablecoins[usdcIndex] = firstValue;
 
-  const registry = core.gmxEcosystemV2.live.registry;
+  const registry = core.gmxV2Ecosystem.live.registry;
 
   const transactions: EncodedTransaction[] = [];
   transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(
       core,
-      { factory: core.gmxEcosystemV2.live.gmUniUsd.factory },
+      { factory: core.gmxV2Ecosystem.live.gmUniUsd.factory },
       'factory',
       'ownerSetExecutionFee',
       [GMX_V2_EXECUTION_FEE],
     ),
     await prettyPrintEncodedDataWithTypeSafety(core, { registry }, 'registry', 'ownerSetUnwrapperByToken', [
-      core.gmxEcosystemV2.live.gmUniUsd.factory.address,
-      core.gmxEcosystemV2.live.gmUniUsd.unwrapper.address,
+      core.gmxV2Ecosystem.live.gmUniUsd.factory.address,
+      core.gmxV2Ecosystem.live.gmUniUsd.unwrapper.address,
     ]),
     await prettyPrintEncodedDataWithTypeSafety(core, { registry }, 'registry', 'ownerSetWrapperByToken', [
-      core.gmxEcosystemV2.live.gmUniUsd.factory.address,
-      core.gmxEcosystemV2.live.gmUniUsd.wrapper.address,
+      core.gmxV2Ecosystem.live.gmUniUsd.factory.address,
+      core.gmxV2Ecosystem.live.gmUniUsd.wrapper.address,
     ]),
   );
 
@@ -76,13 +76,13 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       chainId: network,
     },
     invariants: async () => {
-      const uniFactory = core.gmxEcosystemV2.live.gmUniUsd.factory;
+      const uniFactory = core.gmxV2Ecosystem.live.gmUniUsd.factory;
       assertHardhatInvariant(
-        await registry.getUnwrapperByToken(uniFactory.address) === core.gmxEcosystemV2.live.gmUniUsd.unwrapper.address,
+        await registry.getUnwrapperByToken(uniFactory.address) === core.gmxV2Ecosystem.live.gmUniUsd.unwrapper.address,
         'Invalid unwrapper',
       );
       assertHardhatInvariant(
-        await registry.getWrapperByToken(uniFactory.address) === core.gmxEcosystemV2.live.gmUniUsd.wrapper.address,
+        await registry.getWrapperByToken(uniFactory.address) === core.gmxV2Ecosystem.live.gmUniUsd.wrapper.address,
         'Invalid wrapper',
       );
       assertHardhatInvariant(

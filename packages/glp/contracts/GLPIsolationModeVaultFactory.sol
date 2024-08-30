@@ -56,14 +56,13 @@ contract GLPIsolationModeVaultFactory is
         address _fsGlp, // this serves as the underlying token
         address _borrowPositionProxy,
         address _userVaultImplementation,
-        address _dolomiteRegistry,
         address _dolomiteMargin
     )
     IsolationModeVaultFactory(
         _fsGlp,
         _borrowPositionProxy,
         _userVaultImplementation,
-        _dolomiteRegistry,
+        address(IGmxRegistryV1(_gmxRegistry).dolomiteRegistry()),
         _dolomiteMargin
     ) {
         WETH = _weth;

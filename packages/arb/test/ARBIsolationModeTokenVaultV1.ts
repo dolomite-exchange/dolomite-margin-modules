@@ -110,7 +110,7 @@ describe('ARBIsolationModeTokenVaultV1', () => {
     it('should fail if set to 0 address', async () => {
       await expectThrow(
         arbVault.delegate(ADDRESS_ZERO),
-        'ARBIsolationModeTokenVaultV1: Invalid delegatee',
+        'MNTIsolationModeTokenVaultV1.sol: Invalid delegatee',
       );
     });
   });

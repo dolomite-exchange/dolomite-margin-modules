@@ -66,7 +66,7 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
     )
     external
     onlyHandler(msg.sender) {
-        DepositInfo memory depositInfo = _getDepositSlot(_key);
+        DepositInfo memory depositInfo = getDepositInfo(_key);
         _validateIsRetryable(depositInfo.isRetryable);
 
         _executeDepositCancellation(depositInfo);
@@ -91,10 +91,10 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
             _depositInfo.inputToken
         );
 
-        // Get the delta by subtracting the old value (retrieved via `_getDepositSlot(_key)`) from the new one.
+        // Get the delta by subtracting the old value (retrieved via `getDepositInfo(_key)`) from the new one.
         // We should never underflow because this is only ever called when the deposit is reduced in size (hence the
         // function name)
-        uint256 deltaInputWei = _getDepositSlot(_key).inputAmount - _depositInfo.inputAmount;
+        uint256 deltaInputWei = getDepositInfo(_key).inputAmount - _depositInfo.inputAmount;
         IERC20(_depositInfo.inputToken).safeApprove(msg.sender, deltaInputWei);
 
         AsyncIsolationModeWrapperTraderImpl.setDepositInfo(_getStorageSlot(), _key, _depositInfo);
@@ -228,7 +228,8 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
     }
 
     function getDepositInfo(bytes32 _key) public view returns (DepositInfo memory) {
-        return _getDepositSlot(_key);
+        State storage state = _getStorageSlot();
+        return state.depositInfo[_key];
     }
 
     function emitDepositCancelled(bytes32 _key) public onlyHandler(msg.sender) {
@@ -326,7 +327,7 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
         uint256 _receivedMarketTokens,
         uint256 _minMarketTokens
     ) internal virtual {
-        DepositInfo memory depositInfo = _getDepositSlot(_key);
+        DepositInfo memory depositInfo = getDepositInfo(_key);
         _validateDepositExists(depositInfo);
 
         IAsyncFreezableIsolationModeVaultFactory factory = IAsyncFreezableIsolationModeVaultFactory(
@@ -505,11 +506,6 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
     virtual
     view
     returns (uint256);
-
-    function _getDepositSlot(bytes32 _key) internal view returns (DepositInfo storage info) {
-        State storage state = _getStorageSlot();
-        return state.depositInfo[_key];
-    }
 
     function _validateDepositExists(DepositInfo memory _depositInfo) internal pure {
         Require.that(

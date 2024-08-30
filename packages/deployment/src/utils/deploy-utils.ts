@@ -79,6 +79,10 @@ import hardhat, { artifacts, ethers, network } from 'hardhat';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { CoreProtocolXLayer } from 'packages/base/test/utils/core-protocols/core-protocol-x-layer';
 import path, { join } from 'path';
+import {
+  CoreProtocolArbitrumOne,
+} from '@dolomite-exchange/modules-base/test/utils/core-protocols/core-protocol-arbitrum-one';
+import { IGmxV2IsolationModeVaultFactory } from '@dolomite-exchange/modules-gmx-v2/src/types';
 
 type ChainId = string;
 
@@ -287,6 +291,7 @@ export function getOldDeploymentVersionNamesByDeploymentKey(nameWithoutVersionPo
 }
 
 let nonce: number | undefined = undefined;
+
 export async function deployContractAndSave(
   contractName: string,
   args: ConstructorArgument[],
@@ -341,7 +346,7 @@ export async function deployContractAndSave(
   try {
     if (nonce === undefined) {
       const signer = ethers.provider.getSigner(0);
-      nonce = await ethers.provider.getTransactionCount(await signer.getAddress());
+      nonce = await ethers.provider.getTransactionCount(await signer.getAddress(), 'pending');
     }
     contract = libraries
       ? await createContractWithLibrary(contractName, libraries, args, { nonce })
@@ -349,6 +354,14 @@ export async function deployContractAndSave(
     nonce += 1;
   } catch (e) {
     console.error(`\tCould not deploy at attempt ${attempts + 1} due for ${contractName} to error:`, e);
+    console.log(); // print new line
+
+    const errorMessage = (e as any).message;
+    if (errorMessage.includes('nonce has already been used') || errorMessage.includes('replacement fee too low')) {
+      console.log('\tRe-fetching nonce...');
+      const signer = ethers.provider.getSigner(0);
+      nonce = await ethers.provider.getTransactionCount(await signer.getAddress(), 'pending');
+    }
     return deployContractAndSave(contractName, args, contractRename, libraries, attempts + 1);
   }
 
@@ -554,7 +567,20 @@ export async function deployLinearInterestSetterAndSave(
 }
 
 export function sortFile(file: Record<string, Record<ChainId, any>>) {
-  const sortedFileKeys = Object.keys(file).sort();
+  const sortedFileKeys = Object.keys(file).sort((a, b) => {
+    const aSplitPoint = a.search(/V\d+$/);
+    const bSplitPoint = b.search(/V\d+$/);
+    if (aSplitPoint !== -1 && bSplitPoint !== -1) {
+      const aBase = a.substring(0, aSplitPoint);
+      const bBase = b.substring(0, bSplitPoint);
+      if (aBase === bBase) {
+        const aVersion = a.substring(aSplitPoint + 1);
+        const bVersion = b.substring(bSplitPoint + 1);
+        return parseInt(aVersion, 10) - parseInt(bVersion, 10);
+      }
+    }
+    return a.localeCompare(b);
+  });
   const sortedFile: Record<string, Record<ChainId, any>> = {};
   for (const key of sortedFileKeys) {
     sortedFile[key] = file[key];
@@ -648,7 +674,8 @@ async function getFormattedTokenName<T extends NetworkType>(
   const token = IERC20Metadata__factory.connect(tokenAddress, core.hhUser1);
   try {
     mostRecentTokenDecimals = await token.decimals();
-  } catch (e) {}
+  } catch (e) {
+  }
 
   const cachedName = addressToNameCache[tokenAddress.toString().toLowerCase()];
   if (typeof cachedName !== 'undefined') {
@@ -774,9 +801,9 @@ export async function prettyPrintEncodedDataWithTypeSafety<
     const repeatLength = 76 + (counter - 1).toString().length + key.toString().length + methodName.toString().length;
     console.log(''); // add a new line
     console.log(
-      `=================================== ${counter++} - ${key}.${methodName} ===================================`,
+      `=================================== ${counter++} - ${String(key)}.${String(methodName)} ===================================`,
     );
-    console.log('Readable:\t', `${key}.${methodName}(\n\t\t\t${mappedArgs.join(' ,\n\t\t\t')}\n\t\t)`);
+    console.log('Readable:\t', `${String(key)}.${String(methodName)}(\n\t\t\t${mappedArgs.join(' ,\n\t\t\t')}\n\t\t)`);
     console.log(
       'To:\t\t',
       (await getReadableArg(core, ParamType.fromString('address to'), transaction.to)).substring(13),
@@ -1169,8 +1196,8 @@ export async function prettyPrintEncodeInsertPendlePtOracle<T extends NetworkTyp
   );
 }
 
-export async function prettyPrintEncodeInsertRedstoneOracleV3(
-  core: CoreProtocolWithRedstone<Network.Mantle>,
+export async function prettyPrintEncodeInsertRedstoneOracleV3<T extends NetworkType>(
+  core: CoreProtocolWithRedstone<T>,
   token: IERC20,
   invertPrice: boolean = REDSTONE_PRICE_AGGREGATORS_MAP[core.config.network][token.address]!.invert ?? false,
   tokenPairAddress: string | undefined = REDSTONE_PRICE_AGGREGATORS_MAP[core.config.network][token.address]!
@@ -1311,9 +1338,6 @@ export async function prettyPrintEncodeAddAsyncIsolationModeMarket<T extends Net
   );
 
   transactions.push(
-    await prettyPrintEncodedDataWithTypeSafety(core, { factory }, 'factory', 'ownerInitialize', [
-      [unwrapper.address, wrapper.address, ...(options.additionalConverters ?? []).map((c) => c.address)],
-    ]),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       { dolomiteMargin: core.dolomiteMargin },
@@ -1321,6 +1345,9 @@ export async function prettyPrintEncodeAddAsyncIsolationModeMarket<T extends Net
       'ownerSetGlobalOperator',
       [factory.address, true],
     ),
+    await prettyPrintEncodedDataWithTypeSafety(core, { factory }, 'factory', 'ownerInitialize', [
+      [unwrapper.address, wrapper.address, ...(options.additionalConverters ?? []).map((c) => c.address)],
+    ]),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       { liquidatorAssetRegistry: core.liquidatorAssetRegistry },
@@ -1352,6 +1379,68 @@ export async function prettyPrintEncodeAddAsyncIsolationModeMarket<T extends Net
   );
 
   return transactions;
+}
+
+export async function prettyPrintEncodeAddGmxV2Market(
+  core: CoreProtocolArbitrumOne,
+  factory: IGmxV2IsolationModeVaultFactory,
+  unwrapper: IIsolationModeUnwrapperTraderV2,
+  wrapper: IIsolationModeWrapperTraderV2,
+  handlerRegistry: HandlerRegistry,
+  marketId: BigNumberish,
+  targetCollateralization: TargetCollateralization,
+  targetLiquidationPremium: TargetLiquidationPenalty,
+  maxSupplyWei: BigNumberish,
+  options: AddMarketOptions = {},
+): Promise<EncodedTransaction[]> {
+  return [
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { gmxV2PriceOracle: core.gmxV2Ecosystem.live.priceOracle },
+      'gmxV2PriceOracle',
+      'ownerSetMarketToken',
+      [factory.address, true],
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { oracleAggregatorV2: core.oracleAggregatorV2 },
+      'oracleAggregatorV2',
+      'ownerInsertOrUpdateToken',
+      [
+        {
+          decimals: await IERC20Metadata__factory.connect(factory.address, factory.signer).decimals(),
+          token: factory.address,
+          oracleInfos: [
+            {
+              oracle: core.gmxV2Ecosystem.live.priceOracle.address,
+              weight: 100,
+              tokenPair: ADDRESS_ZERO,
+            },
+          ],
+        },
+      ],
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { gmxV2Registry: core.gmxV2Ecosystem.live.registry },
+      'gmxV2Registry',
+      'ownerSetGmxMarketToIndexToken',
+      [await factory.UNDERLYING_TOKEN(), await factory.INDEX_TOKEN()],
+    ),
+    ...await prettyPrintEncodeAddAsyncIsolationModeMarket(
+      core,
+      factory,
+      core.oracleAggregatorV2,
+      unwrapper,
+      wrapper,
+      handlerRegistry,
+      marketId,
+      targetCollateralization,
+      targetLiquidationPremium,
+      maxSupplyWei,
+      options,
+    ),
+  ];
 }
 
 export async function prettyPrintEncodeAddMarket<T extends NetworkType>(

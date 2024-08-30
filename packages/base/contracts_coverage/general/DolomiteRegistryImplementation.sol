@@ -61,6 +61,7 @@ contract DolomiteRegistryImplementation is
     bytes32 private constant _ORACLE_AGGREGATOR_SLOT = bytes32(uint256(keccak256("eip1967.proxy.oracleAggregator")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _REDSTONE_PRICE_ORACLE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.redstonePriceOracle")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL_SLOT = bytes32(uint256(keccak256("eip1967.proxy.slippageToleranceForPauseSentinel")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _ISOLATION_MODE_STORAGE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isolationModeStorage")) - 1); // solhint-disable-line max-line-length
 
     // ==================== Constructor ====================
 
@@ -177,6 +178,14 @@ contract DolomiteRegistryImplementation is
         _ownerSetDolomiteAccountRegistry(_dolomiteAccountRegistry);
     }
 
+    function ownerSetIsolationModeMulticallFunctions(
+        bytes4[] memory _selectors
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetIsolationModeMulticallFunctions(_selectors);
+    }
+
     // ========================== View Functions =========================
 
     function genericTraderProxy() public view returns (IGenericTraderProxyV1) {
@@ -217,6 +226,16 @@ contract DolomiteRegistryImplementation is
 
     function dolomiteAccountRegistry() public view returns (IDolomiteAccountRegistry) {
         return IDolomiteAccountRegistry(_getAddress(_DOLOMITE_ACCOUNT_REGISTRY_SLOT));
+    }
+
+    function isolationModeMulticallFunctions() public view returns (bytes4[] memory) {
+        IsolationModeStorage storage ims;
+        bytes32 slot = _ISOLATION_MODE_STORAGE_SLOT;
+        assembly {
+            ims.slot := slot
+        }
+
+        return ims.isolationModeMulticallFunctions;
     }
 
     function slippageToleranceForPauseSentinelBase() public pure returns (uint256) {
@@ -381,5 +400,30 @@ contract DolomiteRegistryImplementation is
 
         _setAddress(_DOLOMITE_ACCOUNT_REGISTRY_SLOT, _dolomiteAccountRegistry);
         emit DolomiteAccountRegistrySet(_dolomiteAccountRegistry);
+    }
+
+    function _ownerSetIsolationModeMulticallFunctions(
+        bytes4[] memory _selectors
+    ) internal {
+        uint256 len = _selectors.length;
+        if (len > 0) {
+            for (uint256 i; i < len - 1; ++i) {
+                if (_selectors[i] < _selectors[i + 1]) { /* FOR COVERAGE TESTING */ }
+                Require.that(
+                    _selectors[i] < _selectors[i + 1],
+                    _FILE,
+                    "Selectors not sorted"
+                );
+            }
+        }
+
+        IsolationModeStorage storage ims;
+        bytes32 slot = _ISOLATION_MODE_STORAGE_SLOT;
+        assembly {
+            ims.slot := slot
+        }
+
+        ims.isolationModeMulticallFunctions = _selectors;
+        emit IsolationModeMulticallFunctionsSet(_selectors);
     }
 }

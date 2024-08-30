@@ -51,14 +51,13 @@ contract PlutusVaultGLPIsolationModeVaultFactory is
         address _plvGlp, // this serves as the underlying token
         address _borrowPositionProxy,
         address _userVaultImplementation,
-        address _dolomiteRegistry,
         address _dolomiteMargin
     )
     IsolationModeVaultFactory(
         _plvGlp,
         _borrowPositionProxy,
         _userVaultImplementation,
-        _dolomiteRegistry,
+        address(IPlutusVaultRegistry(_plutusVaultRegistry).dolomiteRegistry()),
         _dolomiteMargin
     ) {
         plutusVaultRegistry = IPlutusVaultRegistry(_plutusVaultRegistry);

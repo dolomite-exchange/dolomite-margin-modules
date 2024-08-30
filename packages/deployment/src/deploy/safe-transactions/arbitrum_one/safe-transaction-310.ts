@@ -49,13 +49,13 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     core.hhUser1,
   );
 
-  const gmTokens = [core.gmxEcosystemV2.gmTokens.uniUsd];
+  const gmTokens = [core.gmxV2Ecosystem.gmTokens.uniUsd];
   const supplyCaps = [parseEther(`${600_000}`)];
   const gmNames = ['UNI'];
 
-  const unwrapperImplementation = core.gmxEcosystemV2.live.unwrapperImplementation;
-  const wrapperImplementation = core.gmxEcosystemV2.live.wrapperImplementation;
-  const gmxV2PriceOracle = core.gmxEcosystemV2.live.priceOracle;
+  const unwrapperImplementation = core.gmxV2Ecosystem.live.unwrapperImplementation;
+  const wrapperImplementation = core.gmxV2Ecosystem.live.wrapperImplementation;
+  const gmxV2PriceOracle = core.gmxV2Ecosystem.live.priceOracle;
 
   const factories: GmxV2IsolationModeVaultFactory[] = [];
   const unwrappers: IGmxV2IsolationModeUnwrapperTraderV2[] = [];
@@ -71,15 +71,16 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       'GmxV2IsolationModeVaultFactory',
       getGmxV2IsolationModeVaultFactoryConstructorParams(
         core,
-        core.gmxEcosystemV2.live.registry,
+        core.gmxV2Ecosystem.live.registry,
         [gmTokens[i].longMarketId, ...core.marketIds.stablecoins],
         [gmTokens[i].longMarketId, ...core.marketIds.stablecoins],
         gmTokens[i],
         gmxV2TokenVault,
         GMX_V2_EXECUTION_FEE,
+        false,
       ),
       `GmxV2${gmNames[i]}IsolationModeVaultFactory`,
-      core.gmxEcosystemV2.live.gmxV2LibraryMap,
+      core.gmxV2Ecosystem.live.gmxV2LibraryMap,
     );
     const factory = GmxV2IsolationModeVaultFactory__factory.connect(factoryAddress, core.hhUser1);
 
@@ -89,7 +90,8 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
         core,
         unwrapperImplementation,
         factory,
-        core.gmxEcosystemV2.live.registry,
+        core.gmxV2Ecosystem.live.registry,
+        false,
       ),
       `GmxV2${gmNames[i]}AsyncIsolationModeUnwrapperTraderProxyV2`,
     );
@@ -100,7 +102,8 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
         core,
         wrapperImplementation,
         factory,
-        core.gmxEcosystemV2.live.registry,
+        core.gmxV2Ecosystem.live.registry,
+        false,
       ),
       `GmxV2${gmNames[i]}AsyncIsolationModeWrapperTraderProxyV2`,
     );
@@ -123,14 +126,14 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     transactions.push(
       await prettyPrintEncodedDataWithTypeSafety(
         core,
-        core.gmxEcosystemV2.live,
+        core.gmxV2Ecosystem.live,
         'registry',
         'ownerSetGmxMarketToIndexToken',
         [gmTokens[i].marketToken.address, gmTokens[i].indexToken.address],
       ),
       await prettyPrintEncodedDataWithTypeSafety(
         core,
-        core.gmxEcosystemV2.live,
+        core.gmxV2Ecosystem.live,
         'registry',
         'ownerSetGmxMarketToIndexToken',
         [gmTokens[i].marketToken.address, gmTokens[i].indexToken.address],
@@ -167,7 +170,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
         core.oracleAggregatorV2,
         unwrappers[i],
         wrappers[i],
-        core.gmxEcosystemV2.live.registry,
+        core.gmxV2Ecosystem.live.registry,
         gmMarketIds[i],
         TargetCollateralization._125,
         TargetLiquidationPenalty.Base,
