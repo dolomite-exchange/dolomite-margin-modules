@@ -102,7 +102,7 @@ enum FreezeType {
   Withdrawal = 1,
 }
 
-describe('GmxV2IsolationModeTokenVaultV1', () => {
+describe('GmxV2IsolationModeTokenVaultV1_singleSided', () => {
   let snapshotId: string;
 
   let core: CoreProtocolArbitrumOne;
@@ -1411,7 +1411,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       expect(result).to.changeEtherBalances([core.hhUser1], [executionFee]);
     });
 
-    it.only('should not refund execution fee when position is not closed', async () => {
+    it('should not refund execution fee when position is not closed', async () => {
       await setupGMBalance(core, underlyingToken, core.hhUser1, amountWei, vault);
       await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await vault.openBorrowPosition(

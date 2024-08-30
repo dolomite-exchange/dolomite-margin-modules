@@ -1750,7 +1750,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2_singleSided', () => {
         borrowAccountNumber,
         amountWei,
         core.tokens.wbtc.address,
-        ONE_BI,
+        TWO_BI,
         DEFAULT_EXTRA_DATA,
         { value: executionFee },
       );

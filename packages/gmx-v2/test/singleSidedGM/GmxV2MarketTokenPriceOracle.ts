@@ -45,7 +45,7 @@ const BASIS_POINTS = BigNumber.from('10000');
 const GMX_DECIMAL_ADJUSTMENT = BigNumber.from('1000000000000');
 const NEXT_TIMESTAMP = 1724775550;
 
-describe('GmxV2MarketTokenPriceOracle', () => {
+describe('GmxV2MarketTokenPriceOracle_singleSided', () => {
   let snapshotId: string;
 
   let core: CoreProtocolArbitrumOne;

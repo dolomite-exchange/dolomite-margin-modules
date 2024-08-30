@@ -95,7 +95,7 @@ enum FreezeType {
   Withdrawal = 1,
 }
 
-describe('GmxV2IsolationModeTokenVaultV1', () => {
+describe('GmxV2IsolationModeTokenVaultV1_gmSol', () => {
   let snapshotId: string;
 
   let core: CoreProtocolArbitrumOne;
