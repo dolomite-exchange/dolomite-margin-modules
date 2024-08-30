@@ -24,7 +24,6 @@ import { ActionType, AmountDenomination, AmountReference } from '@dolomite-excha
 
 const defaultAccountNumber = '0';
 const amountIn = BigNumber.from('1000000000000000000');
-const minAmountOut = BigNumber.from('30000000')
 
 describe('OogaBoogaAggregatorTrader', () => {
   let snapshotId: string;
@@ -63,25 +62,25 @@ describe('OogaBoogaAggregatorTrader', () => {
 
   describe('#exchange', () => {
     it('should succeed for normal swap', async () => {
-      const { calldata } = await getCalldataForOogaBooga(
+      const { calldata, outputAmount } = await getCalldataForOogaBooga(
         core.tokens.wbera,
         amountIn,
         core.tokens.usdc,
         trader
       );
 
-      await doSwapAndCheckResults(calldata);
+      await doSwapAndCheckResults(calldata, outputAmount);
     });
 
     it('should succeed for normal swap when inputAmount is different', async () => {
-      const { calldata } = await getCalldataForOogaBooga(
+      const { calldata, outputAmount } = await getCalldataForOogaBooga(
         core.tokens.wbera,
         amountIn.mul(9).div(10),
         core.tokens.usdc,
         trader
       );
 
-      await doSwapAndCheckResults(calldata);
+      await doSwapAndCheckResults(calldata, outputAmount);
     });
 
     it('should fail when caller is not DolomiteMargin', async () => {
@@ -148,12 +147,13 @@ describe('OogaBoogaAggregatorTrader', () => {
   });
 
   async function doSwapAndCheckResults(
-    calldata: string
+    calldata: string,
+    outputAmount: BigNumber
   ) {
     const actualOrderData = ethers.utils.defaultAbiCoder.encode(
       ['uint256', 'bytes'],
       [
-        minAmountOut,
+        outputAmount,
         calldata,
       ],
     );
@@ -175,6 +175,6 @@ describe('OogaBoogaAggregatorTrader', () => {
     expect(await core.tokens.wbera.balanceOf(trader.address)).to.eq(ZERO_BI);
     expect(await core.tokens.usdc.balanceOf(trader.address)).to.eq(ZERO_BI);
     await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.wbera, ZERO_BI);
-    await expectProtocolBalanceIsGreaterThan(core, defaultAccount, core.marketIds.usdc, minAmountOut, 0);
+    await expectProtocolBalanceIsGreaterThan(core, defaultAccount, core.marketIds.usdc, outputAmount, 0);
   }
 });

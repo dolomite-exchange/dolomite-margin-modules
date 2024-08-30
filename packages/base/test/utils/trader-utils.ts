@@ -126,7 +126,7 @@ export async function getCalldataForOogaBooga(
 
   return {
     calldata: `0x${result.tx.data.slice(10)}`, // get rid of the method ID
-    outputAmount: BigNumber.from(result.routerParams.swapTokenInfo.outputQuote)
+    outputAmount: BigNumber.from(result.routerParams.swapTokenInfo.outputMin)
   };
 }
 
