@@ -26,6 +26,7 @@ import { IVesterDiscountCalculator } from "./interfaces/IVesterDiscountCalculato
 /**
  * @title   VesterDiscountCalculatorV1
  * @author  Dolomite
+ *
  */
 contract VesterDiscountCalculatorV1 is IVesterDiscountCalculator {
 

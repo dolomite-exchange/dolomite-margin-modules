@@ -72,7 +72,7 @@ describe('PlutusVaultGLPIsolationModeLiquidationWithZap', () => {
       network,
     });
     underlyingToken = core.plutusEcosystem!.plvGlp.connect(core.hhUser1);
-    factory = core.plutusEcosystem!.live.plvGlpIsolationModeFactory.connect(core.hhUser1);
+    factory = core.plutusEcosystem!.live.dPlvGlp.connect(core.hhUser1);
     unwrapper = PlutusVaultGLPIsolationModeUnwrapperTraderV2__factory.connect(
       deployments.PlutusVaultGLPIsolationModeUnwrapperTraderV4[network].address,
       core.hhUser1,

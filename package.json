@@ -1,6 +1,6 @@
 {
   "name": "@dolomite-exchange/dolomite-margin-modules",
-  "version": "0.0.13",
+  "version": "1.22.19",
   "description": "Repository uses the DolomiteMargin instance on Arbitrum One for testing new modules and features against the live deployment.",
   "directories": {
     "test": "test"
@@ -11,13 +11,13 @@
   "scripts": {
     "build": "yarn workspaces run build",
     "clean": "yarn workspaces run clean",
-    "coverage": "yarn workspaces foreach run coverage",
-    "coverage:prepare": "yarn workspaces foreach run coverage:prepare",
-    "test": "yarn workspaces foreach run test",
+    "coverage": "yarn workspaces run coverage",
+    "coverage:prepare": "yarn workspaces run coverage:prepare",
+    "test": "yarn workspaces run test",
     "deploy:coveralls": "coveralls < coverage/lcov.info",
-    "lint": "yarn workspaces foreach run lint",
-    "lint:sol": "yarn workspaces foreach run lint:sol",
-    "lint:ts": "yarn workspaces foreach run lint:ts"
+    "lint": "yarn workspaces run lint",
+    "lint:sol": "yarn workspaces run lint:sol",
+    "lint:ts": "yarn workspaces run lint:ts"
   },
   "repository": "git@github.com:dolomite-exchange/dolomite-margin-modules.git",
   "author": "Dolomite",

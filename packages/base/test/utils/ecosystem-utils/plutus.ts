@@ -31,7 +31,7 @@ export interface PlutusEcosystem {
     dolomiteWhitelistForGlpDepositor: DolomiteCompatibleWhitelistForPlutusDAO;
     dolomiteWhitelistForPlutusChef: DolomiteCompatibleWhitelistForPlutusDAO;
     plutusVaultRegistry: IPlutusVaultRegistry;
-    plvGlpIsolationModeFactory: IPlutusVaultGLPIsolationModeVaultFactory;
+    dPlvGlp: IPlutusVaultGLPIsolationModeVaultFactory;
     plvGlpIsolationModeUnwrapperTraderV1: PlutusVaultGLPIsolationModeUnwrapperTraderV1;
     plvGlpIsolationModeWrapperTraderV1: PlutusVaultGLPIsolationModeWrapperTraderV1;
   };
@@ -76,7 +76,7 @@ export async function createPlutusEcosystem(
         IPlutusVaultRegistry__factory.connect,
         signer,
       ),
-      plvGlpIsolationModeFactory: getContract(
+      dPlvGlp: getContract(
         (Deployments.PlutusVaultGLPIsolationModeVaultFactory as any)[network]?.address,
         IPlutusVaultGLPIsolationModeVaultFactory__factory.connect,
         signer,

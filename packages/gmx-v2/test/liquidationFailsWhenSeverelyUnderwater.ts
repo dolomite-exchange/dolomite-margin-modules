@@ -121,7 +121,7 @@ describe('POC: liquidationFailsWhenSeverelyUnderwater', () => {
       gmxV2Registry,
       allowableMarketIds,
       allowableMarketIds,
-      core.gmxEcosystemV2!.gmTokens.ethUsd,
+      core.gmxV2Ecosystem!.gmTokens.ethUsd,
       userVaultImplementation,
       GMX_V2_EXECUTION_FEE_FOR_TESTS,
     );
@@ -186,7 +186,7 @@ describe('POC: liquidationFailsWhenSeverelyUnderwater', () => {
     solidAccount = { owner: core.hhUser5.address, number: defaultAccountNumber };
     liquidAccount = { owner: vault.address, number: borrowAccountNumber };
 
-    await setupGMBalance(core, core.gmxEcosystemV2.gmxEthUsdMarketToken, core.hhUser1, amountWei.mul(2), vault);
+    await setupGMBalance(core, core.gmxV2Ecosystem.gmxEthUsdMarketToken, core.hhUser1, amountWei.mul(2), vault);
     await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei.mul(2));
     await vault.openBorrowPosition(
       defaultAccountNumber,
@@ -311,7 +311,7 @@ describe('POC: liquidationFailsWhenSeverelyUnderwater', () => {
         const filter = eventEmitter.filters.AsyncWithdrawalCreated();
         withdrawalKeys.push((await eventEmitter.queryFilter(filter))[0].args.key);
       }
-      return await core.gmxEcosystemV2!.gmxWithdrawalHandler.connect(core.gmxEcosystemV2!.gmxExecutor)
+      return await core.gmxV2Ecosystem!.gmxWithdrawalHandler.connect(core.gmxV2Ecosystem!.gmxExecutor)
         .executeWithdrawal(
           withdrawalKeys[withdrawalKeys.length - 1],
           getOracleParams(core.tokens.weth.address, core.tokens.nativeUsdc!.address),

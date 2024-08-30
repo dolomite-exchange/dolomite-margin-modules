@@ -22,8 +22,8 @@ pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IERC20Mintable } from "./IERC20Mintable.sol";
-import { IVesterDiscountCalculator } from "./IVesterDiscountCalculator.sol";
 import { IVeToken } from "./IVeToken.sol";
+import { IVesterDiscountCalculator } from "./IVesterDiscountCalculator.sol";
 
 
 /**

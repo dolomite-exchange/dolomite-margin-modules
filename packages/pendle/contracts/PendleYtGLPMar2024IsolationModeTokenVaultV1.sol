@@ -189,6 +189,25 @@ IPendleYtGLPMar2024IsolationModeTokenVaultV1,
         super._openBorrowPosition(_fromAccountNumber, _toAccountNumber, _amountWei);
     }
 
+    function _openMarginPosition(
+        uint256 _fromAccountNumber,
+        uint256 _toAccountNumber,
+        uint256 _borrowMarketId,
+        uint256 _amountWei
+    )
+    internal
+    override {
+        uint256 ytMaturityTimestamp = IPendleYtGLPMar2024IsolationModeVaultFactory(VAULT_FACTORY())
+            .ytMaturityTimestamp();
+        Require.that(
+            block.timestamp + _ONE_WEEK < ytMaturityTimestamp,
+            _FILE,
+            "Too close to expiry"
+        );
+
+        super._openMarginPosition(_fromAccountNumber, _toAccountNumber, _borrowMarketId, _amountWei);
+    }
+
     function _swapExactInputForOutput(
         SwapExactInputForOutputParams memory _params
     )
