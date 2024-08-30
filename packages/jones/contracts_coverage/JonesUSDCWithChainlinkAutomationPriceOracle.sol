@@ -100,9 +100,9 @@ contract JonesUSDCWithChainlinkAutomationPriceOracle is ChainlinkAutomationPrice
     }
 
     function _getCurrentPrice() internal view override returns (uint256) {
-        uint256 usdcPrice = DOLOMITE_MARGIN().getMarketPrice(USDC_MARKET_ID).value / _USDC_SCALE_DIFF;
+        uint256 usdcPrice = DOLOMITE_MARGIN().getMarketPrice(USDC_MARKET_ID).value;
         uint256 price = exchangeRateDenominator == 0
-            ? usdcPrice
+            ? usdcPrice / _USDC_SCALE_DIFF
             : usdcPrice * exchangeRateNumerator / exchangeRateDenominator;
         (uint256 retentionFee, uint256 retentionFeeBase) = JONES_USDC_REGISTRY.getRetentionFee(
             JONES_USDC_REGISTRY.unwrapperTraderForLiquidation()

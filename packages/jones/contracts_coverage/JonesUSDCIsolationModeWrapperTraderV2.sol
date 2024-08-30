@@ -23,6 +23,7 @@ pragma solidity ^0.8.9;
 import { IsolationModeWrapperTraderV2 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeWrapperTraderV2.sol"; // solhint-disable-line max-line-length
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IJonesUSDCRegistry } from "./interfaces/IJonesUSDCRegistry.sol";
+import { IJonesUSDCRouter } from "./interfaces/IJonesUSDCRouter.sol";
 
 
 /**
@@ -84,8 +85,9 @@ contract JonesUSDCIsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2 {
     internal
     override
     returns (uint256) {
-        USDC.approve(address(JONES_USDC_REGISTRY.glpAdapter()), _inputAmount);
-        return JONES_USDC_REGISTRY.glpAdapter().depositStable(_inputAmount, /* _compound = */ true);
+        IJonesUSDCRouter router = JONES_USDC_REGISTRY.jUSDCRouter();
+        USDC.approve(address(router), _inputAmount);
+        return router.deposit(_inputAmount, /* _receiver = */ address(this));
     }
 
     function _getExchangeCost(
@@ -98,7 +100,6 @@ contract JonesUSDCIsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2 {
     override
     view
     returns (uint256) {
-        uint256 receiptTokenAmount = JONES_USDC_REGISTRY.usdcReceiptToken().previewDeposit(_desiredInputAmount);
-        return JONES_USDC_REGISTRY.jUSDC().previewDeposit(receiptTokenAmount);
+        return JONES_USDC_REGISTRY.jUSDC().previewDeposit(_desiredInputAmount);
     }
 }

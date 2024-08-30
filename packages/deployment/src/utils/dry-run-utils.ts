@@ -3,7 +3,6 @@ import {
   NetworkType,
   ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { advanceByTimeDelta, impersonate } from '@dolomite-exchange/modules-base/test/utils';
 import { CoreProtocolType } from '@dolomite-exchange/modules-base/test/utils/setup';
 import hardhat from 'hardhat';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
@@ -48,44 +47,32 @@ async function doStuffInternal<T extends NetworkType>(executionFn: () => Promise
 
     if (result.core) {
       console.log('\tSimulating admin transactions...');
-      const signer = await impersonate((await result.core.delayedMultiSig.getOwners())[0], true);
-      const delayedMultiSig = result.core.delayedMultiSig.connect(signer);
-      const filter = delayedMultiSig.filters.Submission();
+      const filter = result.core.ownerAdapter.filters.TransactionSubmitted();
       const transactionIds = [];
-      const timeDelay = result.skipTimeDelay ? 0 : await delayedMultiSig.secondsTimeLocked();
-
-      if (result.skipTimeDelay) {
-        console.log('\tSkipping time delay...');
-        const impersonator = await impersonate(delayedMultiSig.address, true);
-        await delayedMultiSig.connect(impersonator).changeTimeLock(0);
-      }
 
       for (const transaction of result.upload.transactions) {
         let txResult;
-        if (transaction.to === result.core.delayedMultiSig.address) {
-          txResult = await signer.sendTransaction({
+        if (transaction.to === result.core.ownerAdapter.address) {
+          txResult = await result.core.governance.sendTransaction({
             to: transaction.to,
             data: transaction.data,
-            from: signer.address,
+            from: result.core.governance.address,
           });
         } else {
-          txResult = await delayedMultiSig.submitTransaction(transaction.to, ZERO_BI, transaction.data);
+          txResult = await result.core.ownerAdapter.submitTransaction(transaction.to, ZERO_BI, transaction.data);
         }
 
-        const submissionEvent = (await delayedMultiSig.queryFilter(filter, txResult.blockHash))[0];
+        const submissionEvent = (await result.core.ownerAdapter.queryFilter(filter, txResult.blockHash))[0];
         if (submissionEvent) {
           transactionIds.push(submissionEvent.args.transactionId);
         }
       }
 
-      console.log('\tSubmitted transactions. Advancing time forward...');
-      await advanceByTimeDelta(timeDelay + 1);
-
       console.log('\tExecuting transactions...');
       for (const transactionId of transactionIds) {
         try {
           hardhat.tracer.enabled = true;
-          await delayedMultiSig.executeMultipleTransactions([transactionId], {});
+          await result.core.ownerAdapter.executeTransactions([transactionId], {});
           hardhat.tracer.enabled = false;
         } catch (e: any) {
           const transactionIndex = transactionId.sub(transactionIds[0]).toNumber();
@@ -112,7 +99,7 @@ async function doStuffInternal<T extends NetworkType>(executionFn: () => Promise
       }
 
       if (result.upload.addExecuteImmediatelyTransactions && result.upload.transactions.length > 0) {
-        let transactionCount = (await result.core.delayedMultiSig.transactionCount()).toNumber();
+        let transactionCount = (await result.core.ownerAdapter.transactionCount()).toNumber();
         const submitTransactionMethodId = '0xc6427474';
         const transactionIds: number[] = [];
         result.upload.transactions.forEach((t) => {
@@ -126,9 +113,9 @@ async function doStuffInternal<T extends NetworkType>(executionFn: () => Promise
         result.upload.transactions.push(
           await prettyPrintEncodedDataWithTypeSafety(
             result.core,
-            { delayedMultisig: result.core.delayedMultiSig },
-            'delayedMultisig',
-            'executeMultipleTransactions',
+            { ownerAdapter: result.core.ownerAdapter },
+            'ownerAdapter',
+            'executeTransactions',
             [transactionIds],
             { skipWrappingCalldataInSubmitTransaction: true },
           ),

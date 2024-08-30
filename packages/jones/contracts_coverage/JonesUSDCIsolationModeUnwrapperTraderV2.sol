@@ -79,7 +79,7 @@ contract JonesUSDCIsolationModeUnwrapperTraderV2 is IsolationModeUnwrapperTrader
         address,
         address,
         address,
-        uint256,
+        uint256 _minOutputAmount,
         address,
         uint256 _inputAmount,
         bytes memory
@@ -87,7 +87,13 @@ contract JonesUSDCIsolationModeUnwrapperTraderV2 is IsolationModeUnwrapperTrader
     internal
     override
     returns (uint256) {
-        return JONES_USDC_REGISTRY.glpVaultRouter().stableWithdrawalSignal(_inputAmount, /* _compound = */ true);
+        (, uint256 amountOut) = JONES_USDC_REGISTRY.jUSDCRouter().withdrawRequest(
+            _inputAmount,
+            /* _receiver = */ address(this),
+            _minOutputAmount,
+            /* _enforceData = */ bytes("")
+        );
+        return amountOut;
     }
 
     function _getExchangeCost(
@@ -101,8 +107,7 @@ contract JonesUSDCIsolationModeUnwrapperTraderV2 is IsolationModeUnwrapperTrader
     view
     returns (uint256) {
         (uint256 retentionFee, uint256 retentionFeeBase) = JONES_USDC_REGISTRY.getRetentionFee(address(this));
-        uint256 receiptTokenAmount = JONES_USDC_REGISTRY.jUSDC().previewRedeem(_desiredInputAmount);
-        uint256 usdcAmount = JONES_USDC_REGISTRY.usdcReceiptToken().previewRedeem(receiptTokenAmount);
+        uint256 usdcAmount = JONES_USDC_REGISTRY.jUSDC().previewRedeem(_desiredInputAmount);
         return usdcAmount - (usdcAmount * retentionFee / retentionFeeBase);
     }
 }

@@ -20,15 +20,28 @@
 
 pragma solidity ^0.8.9;
 
+import { IERC4626 } from "@dolomite-exchange/modules-base/contracts/interfaces/IERC4626.sol";
+
 
 /**
- * @title   IJonesGLPAdapter
+ * @title   IJonesUSDC
  * @author  Dolomite
  *
- * @notice  Interface for interacting with Jones DAO's GLP adapter (0x42EfE3E686808ccA051A49BCDE34C5CbA2EBEfc1). The
- *          adapter serves as the primary entry/exit point for users looking to mint/redeem jUSDC.
+ * @notice  Interface for interacting with Jones DAO's jUSDC V2 contract
+ *          (0xB0BDE111812EAC913b392D80D51966eC977bE3A2)
  */
-interface IJonesGLPAdapter {
+interface IJonesUSDC is IERC4626 {
 
-    function depositStable(uint256 _assets, bool _compound) external returns (uint256);
+    // ==================================================================
+    // ========================== Functions =============================
+    // ==================================================================
+
+    function initialize(
+        address _asset,
+        address _enforceHub,
+        string calldata _name,
+        string calldata _symbol
+    ) external;
+
+    function addOperator(address _newOperator) external;
 }

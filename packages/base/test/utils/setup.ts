@@ -29,6 +29,7 @@ import { IChainlinkPriceOracleV1__factory } from 'packages/oracles/src/types';
 import {
   DolomiteERC20__factory,
   DolomiteERC20WithPayable__factory,
+  DolomiteOwner__factory,
   IBorrowPositionProxyV2__factory,
   IDepositWithdrawalProxy__factory,
   IDolomiteAccountRegistry__factory,
@@ -146,7 +147,7 @@ import { CoreProtocolBerachain } from './core-protocols/core-protocol-berachain'
 import { CoreProtocolMantle, CoreProtocolParamsMantle } from './core-protocols/core-protocol-mantle';
 import { CoreProtocolPolygonZkEvm } from './core-protocols/core-protocol-polygon-zkevm';
 import { CoreProtocolXLayer } from './core-protocols/core-protocol-x-layer';
-import { DolomiteMargin, Expiry } from './dolomite';
+import { createDolomiteOwner, DolomiteMargin, Expiry } from './dolomite';
 import { createAbraEcosystem } from './ecosystem-utils/abra';
 import { createArbEcosystem } from './ecosystem-utils/arb';
 import { createCamelotEcosystem } from './ecosystem-utils/camelot';
@@ -167,6 +168,7 @@ import { createPremiaEcosystem } from './ecosystem-utils/premia';
 import { createTestEcosystem } from './ecosystem-utils/testers';
 import { createUmamiEcosystem } from './ecosystem-utils/umami';
 import { impersonate, impersonateOrFallback, resetForkIfPossible } from './index';
+import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
 
 /**
  * Config to for setting up tests in the `before` function
@@ -666,6 +668,17 @@ export async function setupCoreProtocol<T extends NetworkType>(
     governance,
   );
 
+  let ownerAdapter;
+  try {
+    ownerAdapter = getContract(
+      Deployments.DolomiteOwner[config.network].address,
+      DolomiteOwner__factory.connect,
+      governance,
+    );
+  } catch {
+    ownerAdapter = null;
+  }
+
   const testEcosystem = await createTestEcosystem(dolomiteMargin, governance);
 
   const libraries: LibraryMaps = {
@@ -697,6 +710,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
     liquidatorProxyV1,
     liquidatorProxyV4,
     oracleAggregatorV2,
+    ownerAdapter,
     testEcosystem,
     hhUser1,
     hhUser2,

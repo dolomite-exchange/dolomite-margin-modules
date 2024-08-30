@@ -27,7 +27,7 @@ import { IJonesUSDCRegistry } from "./interfaces/IJonesUSDCRegistry.sol";
 
 
 /**
- * @title   JonesIsolationModeMigrator
+ * @title   JonesIsolationModeTokenVaultMigrator
  * @author  Dolomite
  *
  * @notice  Migrator contract for Jones USDC

@@ -50,12 +50,12 @@ describe('SimpleIsolationModeVaultFactory', () => {
       TestSimpleIsolationModeVaultFactory__factory.abi,
       TestSimpleIsolationModeVaultFactory__factory.bytecode,
       [
-        core.dolomiteRegistry.address,
         initialAllowableDebtMarketIds,
         initialAllowableCollateralMarketIds,
         underlyingToken.address,
         core.borrowPositionProxyV2.address,
         userVaultImplementation.address,
+        core.dolomiteRegistry.address,
         core.dolomiteMargin.address,
       ],
     );
