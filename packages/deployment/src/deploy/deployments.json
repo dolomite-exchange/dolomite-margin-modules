@@ -446,7 +446,7 @@
       "isVerified": true
     }
   },
-  "Dolomite //RegistryImplementationV1": {
+  "DolomiteRegistryImplementationV1": {
     "42161": {
       "address": "0x5343C6a56C60e836182bF4B669BC57d9b888199c",
       "transaction": "0xf662a1368cebe39f49545ba9cb40b17153abe65b1ed9151f274b43440fb7fabe",
