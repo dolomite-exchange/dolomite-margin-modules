@@ -1,4 +1,4 @@
-import { address, Trade } from '@dolomite-exchange/dolomite-margin';
+import { address } from '@dolomite-exchange/dolomite-margin';
 import { GenericTraderType } from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
 import axios from 'axios';
 import { BigNumber, ContractTransaction } from 'ethers';

@@ -34,7 +34,7 @@ export interface LibraryMaps {
 export type WETHType<T extends NetworkType> = T extends Network.ArbitrumOne
   ? IWETH
   : T extends Network.Base ? IWETH
-    : T extends Network.Berachain ? IWETH
+    : T extends Network.Berachain ? IERC20
       : T extends Network.Mantle ? IERC20
         : T extends Network.PolygonZkEvm ? IWETH
           : T extends Network.XLayer ? IERC20

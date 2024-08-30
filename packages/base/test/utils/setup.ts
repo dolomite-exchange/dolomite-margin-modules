@@ -556,7 +556,7 @@ export function getWethContract<T extends NetworkType>(
   signer: SignerWithAddressWithSafety,
 ): WETHType<T> {
   return (
-    config.network === Network.ArbitrumOne || config.network === Network.Base || config.network === Network.PolygonZkEvm || config.network === Network.Berachain
+    config.network === Network.ArbitrumOne || config.network === Network.Base || config.network === Network.PolygonZkEvm
       ? IWETH__factory.connect(WETH_MAP[config.network].address, signer)
       : IERC20__factory.connect(WETH_MAP[config.network].address, signer)
   ) as WETHType<T>;
@@ -967,7 +967,6 @@ export async function setupCoreProtocol<T extends NetworkType>(
         ...coreProtocolParams.tokens,
         honey: IERC20__factory.connect(HONEY_MAP[typedConfig.network].address, hhUser1),
         wbera: IWETH__factory.connect(WBERA_MAP[typedConfig.network].address, hhUser1),
-        weth: coreProtocolParams.tokens.weth as any,
         stablecoins: [
           ...coreProtocolParams.tokens.stablecoins,
           IERC20__factory.connect(HONEY_MAP[typedConfig.network].address, hhUser1),
