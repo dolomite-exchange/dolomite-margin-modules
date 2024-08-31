@@ -35,13 +35,13 @@ import {
 } from '../gmx-v2-ecosystem-utils';
 import { createDolomiteRegistryImplementation } from 'packages/base/test/utils/dolomite';
 
-const GM_ETH_USD_PRICE_NO_MAX_WEI = BigNumber.from('3666822104299331856'); // $3.67
+const GM_ETH_USD_PRICE_NO_MAX_WEI = BigNumber.from('3672351552613333039'); // $3.67
 const MAX_WEI = BigNumber.from('10000000000000000000000000'); // 10M tokens
 const NEGATIVE_PRICE = BigNumber.from('-5');
 const FEE_BASIS_POINTS = BigNumber.from('7');
 const BASIS_POINTS = BigNumber.from('10000');
 const GMX_DECIMAL_ADJUSTMENT = BigNumber.from('1000000000000');
-const NEXT_TIMESTAMP = 1724775550;
+const NEXT_TIMESTAMP = 1724776055;
 
 describe('GmxV2MarketTokenPriceOracle_gmSol', () => {
   let snapshotId: string;

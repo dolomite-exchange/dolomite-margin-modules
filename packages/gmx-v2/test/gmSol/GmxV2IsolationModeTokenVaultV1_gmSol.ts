@@ -12,14 +12,13 @@ import {
 import {
   ADDRESS_ZERO,
   MAX_UINT_256_BI,
-  Network,
   ONE_BI,
   ONE_ETH_BI,
   TWO_BI,
   ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '@dolomite-exchange/modules-base/src/utils/SignerWithAddressWithSafety';
-import { getRealLatestBlockNumber, impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
+import { impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import {
   expectEvent,
   expectProtocolBalance,

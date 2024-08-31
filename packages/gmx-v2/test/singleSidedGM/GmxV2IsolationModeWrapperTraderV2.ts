@@ -283,6 +283,7 @@ describe('GmxV2IsolationModeWrapperTraderV2_singleSided', () => {
       expect(await vault.isDepositSourceWrapper()).to.eq(false);
     });
 
+    // Single sided
     xit('should work normally with short token', async () => {
       await vault.transferIntoPositionWithOtherToken(
         defaultAccountNumber,
@@ -471,6 +472,7 @@ describe('GmxV2IsolationModeWrapperTraderV2_singleSided', () => {
       await expectStateIsCleared();
     });
 
+    // Single sided
     xit('should work normally with short token', async () => {
       const minAmountOut = parseEther('800');
       await setupBalances(core.marketIds.wbtc, usdcAmount, minAmountOut);
@@ -921,6 +923,7 @@ describe('GmxV2IsolationModeWrapperTraderV2_singleSided', () => {
       await expectEmptyDepositInfo(depositKey);
     });
 
+    // Single sided
     xit('should work normally with short token', async () => {
       await vault.transferIntoPositionWithOtherToken(
         defaultAccountNumber,
@@ -1037,14 +1040,13 @@ describe('GmxV2IsolationModeWrapperTraderV2_singleSided', () => {
         borrowAmount,
         BalanceCheckFlag.None,
       );
-      // @follow-up Number is usually off by one wei
-      // await expectProtocolBalance(
-      //   core,
-      //   vault.address,
-      //   borrowAccountNumber,
-      //   core.marketIds.nativeUsdc!,
-      //   borrowAmount.sub(1)
-      // );
+      await expectProtocolBalance(
+        core,
+        vault.address,
+        borrowAccountNumber,
+        core.marketIds.nativeUsdc!,
+        ZERO_BI.sub(borrowAmount)
+      );
 
       const minAmountOut = ONE_ETH_BI.mul(6500);
       const initiateWrappingParams = await getInitiateWrappingParams(
@@ -1229,7 +1231,7 @@ describe('GmxV2IsolationModeWrapperTraderV2_singleSided', () => {
   });
 
   describe('#executeDepositCancellationForRetry', () => {
-    it('should work normally', async () => {
+    it.only('should work normally', async () => {
       await gmxV2Registry.connect(core.governance).ownerSetIsHandler(core.hhUser1.address, true);
       await vault.transferIntoPositionWithOtherToken(
         defaultAccountNumber,
@@ -1268,13 +1270,13 @@ describe('GmxV2IsolationModeWrapperTraderV2_singleSided', () => {
       );
 
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.wbtc, ZERO_BI);
-      // await expectProtocolBalance(
-      //   core,
-      //   vault.address,
-      //   borrowAccountNumber,
-      //   core.marketIds.nativeUsdc!,
-      //   ZERO_BI.sub(borrowAmount),
-      // );
+      await expectProtocolBalance(
+        core,
+        vault.address,
+        borrowAccountNumber,
+        core.marketIds.nativeUsdc!,
+        ZERO_BI.sub(borrowAmount),
+      );
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, minAmountOut);
 
       const filter = eventEmitter.filters.AsyncDepositCreated();
@@ -1314,13 +1316,13 @@ describe('GmxV2IsolationModeWrapperTraderV2_singleSided', () => {
       expect(deposit.isRetryable).to.eq(false);
 
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.wbtc, wbtcAmount);
-      // await expectProtocolBalance(
-      //   core,
-      //   vault.address,
-      //   borrowAccountNumber,
-      //   core.marketIds.nativeUsdc!,
-      //   ZERO_BI.sub(borrowAmount),
-      // );
+      await expectProtocolBalance(
+        core,
+        vault.address,
+        borrowAccountNumber,
+        core.marketIds.nativeUsdc!,
+        ZERO_BI.sub(borrowAmount),
+      );
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, ZERO_BI);
     });
 

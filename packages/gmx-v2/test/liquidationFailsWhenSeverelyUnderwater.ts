@@ -44,6 +44,9 @@ import {
   GmxV2Registry,
   IGmxMarketToken,
   IGmxMarketToken__factory,
+  IGmxRoleStore__factory,
+  TestOracleProvider,
+  TestOracleProvider__factory,
 } from '../src/types';
 import {
   createGmxV2IsolationModeTokenVaultV1,
@@ -55,6 +58,8 @@ import {
   createGmxV2Registry,
   getInitiateWrappingParams,
   getOracleParams,
+  getOracleProviderEnabledKey,
+  getOracleProviderForTokenKey,
 } from './gmx-v2-ecosystem-utils';
 
 const defaultAccountNumber = ZERO_BI;
@@ -79,6 +84,7 @@ describe('POC: liquidationFailsWhenSeverelyUnderwater', () => {
   let marketId: BigNumber;
   let liquidatorProxy: IsolationModeFreezableLiquidatorProxy;
   let eventEmitter: EventEmitterRegistry;
+  let testOracleProvider: TestOracleProvider;
 
   let solidAccount: AccountStruct;
   let liquidAccount: AccountStruct;
@@ -124,6 +130,24 @@ describe('POC: liquidationFailsWhenSeverelyUnderwater', () => {
     await gmxV2Registry
       .connect(core.governance)
       .ownerSetGmxMarketToIndexToken(underlyingToken.address, core.gmxV2Ecosystem.gmTokens.ethUsd.indexToken.address);
+
+    const dataStore = core.gmxV2Ecosystem.gmxDataStore;
+    const controllerKey = ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['string'], ['CONTROLLER']));
+    const roleStore = IGmxRoleStore__factory.connect(await dataStore.roleStore(), core.hhUser1);
+    const controllers = await roleStore.getRoleMembers(controllerKey, 0, 1);
+    const controller = await impersonate(controllers[0], true);
+
+    testOracleProvider = await createContractWithAbi<TestOracleProvider>(
+      TestOracleProvider__factory.abi,
+      TestOracleProvider__factory.bytecode,
+      [core.oracleAggregatorV2.address]
+    );
+    const oracleProviderEnabledKey = getOracleProviderEnabledKey(testOracleProvider);
+    const usdcProviderKey = getOracleProviderForTokenKey(core.tokens.nativeUsdc);
+    const wethProviderKey = getOracleProviderForTokenKey(core.tokens.weth);
+    await dataStore.connect(controller).setBool(oracleProviderEnabledKey, true);
+    await dataStore.connect(controller).setAddress(usdcProviderKey, testOracleProvider.address);
+    await dataStore.connect(controller).setAddress(wethProviderKey, testOracleProvider.address);
 
     // Use actual price oracle later
     marketId = await core.dolomiteMargin.getNumMarkets();
@@ -284,7 +308,10 @@ describe('POC: liquidationFailsWhenSeverelyUnderwater', () => {
         .gmxV2Ecosystem!.gmxWithdrawalHandler.connect(core.gmxV2Ecosystem!.gmxExecutor)
         .executeWithdrawal(
           withdrawalKeys[withdrawalKeys.length - 1],
-          getOracleParams(core.tokens.weth.address, core.tokens.nativeUsdc!.address),
+          getOracleParams(
+            [core.tokens.weth.address, core.tokens.nativeUsdc.address],
+            [testOracleProvider.address, testOracleProvider.address]
+          ),
           { gasLimit: 10_000_000 },
         );
     }

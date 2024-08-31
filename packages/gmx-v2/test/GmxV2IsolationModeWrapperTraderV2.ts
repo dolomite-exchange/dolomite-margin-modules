@@ -1165,7 +1165,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         vault.address,
         borrowAccountNumber,
         core.marketIds.nativeUsdc,
-        ZERO_BI.sub(usdcAmount.mul(3).div(2)).sub(2), // 2 wei off probably because of par value stuff
+        ZERO_BI.sub(usdcAmount.mul(3).div(2)),
       );
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, minAmountOut);
 
@@ -1210,7 +1210,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         vault.address,
         borrowAccountNumber,
         core.marketIds.nativeUsdc,
-        ZERO_BI.sub(usdcAmount.div(2)).sub(2),
+        ZERO_BI.sub(usdcAmount.div(2)),
       );
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, ZERO_BI);
     });

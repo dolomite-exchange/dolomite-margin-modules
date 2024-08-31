@@ -873,6 +873,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2_singleSided', () => {
       expect(await underlyingToken.balanceOf(vault.address)).to.eq(ZERO_BI);
     });
 
+    // Short and long are the same for single sided
     xit('should work normally with actual oracle params and short token', async () => {
       await setupBalances(core.tokens.nativeUsdc!);
       const result = await core.gmxV2Ecosystem!.gmxWithdrawalHandler.connect(core.gmxV2Ecosystem!.gmxExecutor)
@@ -1821,7 +1822,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2_singleSided', () => {
       );
     });
 
-    xit('should not work if the input amount is too large', async () => {
+    xit('should not work if the input amount is 0', async () => {
       await expectThrow(
         unwrapper.createActionsForUnwrapping({
           primaryAccountId: ZERO_BI,
@@ -1833,7 +1834,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2_singleSided', () => {
           outputMarket: core.marketIds.wbtc,
           inputMarket: marketId,
           minOutputAmount: ONE_BI,
-          inputAmount: amountWei.add(1),
+          inputAmount: ZERO_BI,
           orderData: encodeWithdrawalKey(UnwrapTradeType.ForWithdrawal, withdrawalKey),
         }),
         'AsyncIsolationModeUnwrapperImpl: Invalid input amount',

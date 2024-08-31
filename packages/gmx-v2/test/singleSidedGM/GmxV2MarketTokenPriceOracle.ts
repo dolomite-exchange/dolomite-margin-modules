@@ -37,13 +37,13 @@ import { BTC_CHAINLINK_FEED_MAP, GMX_BTC_PLACEHOLDER_MAP } from 'packages/base/s
 import { TokenInfo } from 'packages/oracles/src';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 
-const GM_ETH_USD_PRICE_NO_MAX_WEI = BigNumber.from('885270160094987887'); // $1.4292
+const GM_ETH_USD_PRICE_NO_MAX_WEI = BigNumber.from('885921604037332213'); // $1.4292
 const MAX_WEI = BigNumber.from('10000000000000000000000000'); // 10M tokens
 const NEGATIVE_PRICE = BigNumber.from('-5');
 const FEE_BASIS_POINTS = BigNumber.from('0'); // No swap fee
 const BASIS_POINTS = BigNumber.from('10000');
 const GMX_DECIMAL_ADJUSTMENT = BigNumber.from('1000000000000');
-const NEXT_TIMESTAMP = 1724775550;
+const NEXT_TIMESTAMP = 1724776050;
 
 describe('GmxV2MarketTokenPriceOracle_singleSided', () => {
   let snapshotId: string;

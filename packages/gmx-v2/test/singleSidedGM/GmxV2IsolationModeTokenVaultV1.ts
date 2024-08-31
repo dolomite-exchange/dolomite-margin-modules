@@ -1149,7 +1149,7 @@ describe('GmxV2IsolationModeTokenVaultV1_singleSided', () => {
       );
     });
 
-    xit('should fail if ETH sent is greater than max execution fee', async () => {
+    it('should fail if ETH sent is greater than max execution fee', async () => {
       await vault.transferIntoPositionWithOtherToken(
         defaultAccountNumber,
         borrowAccountNumber,
