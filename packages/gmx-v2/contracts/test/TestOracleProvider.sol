@@ -46,7 +46,7 @@ contract TestOracleProvider {
         ORACLE_AGGREGATOR = IDolomitePriceOracle(_oracleAggregator);
     }
 
-    function getOraclePrice(address _token, bytes memory _data) external returns (ValidatedPrice memory) {
+    function getOraclePrice(address _token, bytes memory /* _data */) external view returns (ValidatedPrice memory) {
         uint256 price = ORACLE_AGGREGATOR.getPrice(_token).value;
         price = price / 10 ** 6;
 
