@@ -19,8 +19,7 @@ import getScriptName from 'packages/deployment/src/utils/get-script-name';
 
 /**
  * This script encodes the following transactions:
- * - Sets each GM-Factory as the market token on the new GMX V2 Price oracle
- * - Sets the new GMX V2 price oracle on the oracle aggregator for each GM-Factory
+ * - Deploys the new GMX V2 Library
  * - Sets the new user vault implementation for each GM-Factory
  * - Sets the new unwrapper trader implementation each GM-Factory unwrapper
  * - Sets the new wrapper trader implementation each GM-Factory wrapper
