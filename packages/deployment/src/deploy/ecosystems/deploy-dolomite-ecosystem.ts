@@ -9,7 +9,8 @@ import {
   IERC20__factory,
   IERC20Metadata__factory,
   IGenericTraderProxyV1,
-  IGenericTraderProxyV1__factory, IIsolationModeTokenVaultV1__factory,
+  IGenericTraderProxyV1__factory,
+  IIsolationModeTokenVaultV1__factory,
   ILiquidatorAssetRegistry__factory,
   IPartiallyDelayedMultiSig__factory,
   RegistryProxy,
@@ -45,6 +46,7 @@ import {
 } from '@dolomite-exchange/modules-oracles/src/types';
 import { parseEther } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
+import { isArraysEqual } from 'packages/base/src/utils';
 import { CoreProtocolAbstract } from 'packages/base/test/utils/core-protocols/core-protocol-abstract';
 import ModuleDeployments from '../../deploy/deployments.json';
 import {
@@ -328,7 +330,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     getMaxDeploymentVersionNameByDeploymentKey('IsolationModeFreezableLiquidatorProxy', 1),
   );
 
-  await deployContractAndSave(
+  const safeDelegateCallLibAddress = await deployContractAndSave(
     'SafeDelegateCallLib',
     [],
     getMaxDeploymentVersionNameByDeploymentKey('SafeDelegateCallLib', 1),
@@ -338,6 +340,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     'IsolationModeTokenVaultV1ActionsImpl',
     [],
     getMaxDeploymentVersionNameByDeploymentKey('IsolationModeTokenVaultV1ActionsImpl', 1),
+    { SafeDelegateCallLib: safeDelegateCallLibAddress },
   );
 
   await deployContractAndSave(
@@ -573,14 +576,13 @@ async function encodeDolomiteRegistryMigrations(
     );
   }
 
-  // TODO: selectors may throw
   let selectors: string[];
   try {
     selectors = await dolomiteRegistry.isolationModeMulticallFunctions();
   } catch (e) {
     selectors = [];
   }
-  const fragmentNames = [
+  const functionNames = [
     'depositIntoVaultForDolomiteMargin',
     'withdrawFromVaultForDolomiteMargin',
     'openBorrowPosition',
@@ -591,9 +593,20 @@ async function encodeDolomiteRegistryMigrations(
     'transferFromPositionWithOtherToken',
     'swapExactInputForOutput',
   ];
-  const fragments = fragmentNames
+  const expectedSelectors = functionNames
     .map((name) => IIsolationModeTokenVaultV1__factory.createInterface().getSighash(name))
     .sort((a, b) => parseInt(a, 16) - parseInt(b, 16));
+  if (!isArraysEqual(selectors, expectedSelectors)) {
+    transactions.push(
+      await prettyPrintEncodedDataWithTypeSafety(
+        core,
+        { dolomiteRegistry },
+        'dolomiteRegistry',
+        'ownerSetIsolationModeMulticallFunctions',
+        [expectedSelectors],
+      ),
+    );
+  }
 }
 
 // noinspection JSIgnoredPromiseFromCall
