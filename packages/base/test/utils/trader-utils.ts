@@ -110,7 +110,7 @@ export async function getCalldataForOogaBooga(
   receiver: { address: address },
 ): Promise<TraderOutput> {
   const result = await axios.get('https://bartio.api.oogabooga.io/v1/swap', {
-      headers: { Authorization: 'Bearer 7nG3aKxmGsEf7TzqPgpuoqSXjS22AZDxC8qxwZkXOIQ' },
+      headers: { Authorization: `Bearer ${process.env.OOGA_BOOGA_SECRET_KEY}` },
       params: {
         tokenIn: inputToken.address,
         tokenOut: outputToken.address,
