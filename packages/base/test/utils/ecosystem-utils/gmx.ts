@@ -190,18 +190,18 @@ export interface GmxV2Ecosystem {
   gmxWithdrawalHandler: IGmxWithdrawalHandler;
   gmxWithdrawalVault: { address: string };
   live: {
-    // gmAaveUsd: LiveGmMarket;
+    gmAaveUsd: LiveGmMarket;
     gmArbUsd: LiveGmMarket;
     gmBtc: LiveGmMarket;
     gmBtcUsd: LiveGmMarket;
-    // gmDogeUsd: LiveGmMarket;
+    gmDogeUsd: LiveGmMarket;
     gmEth: LiveGmMarket;
     gmEthUsd: LiveGmMarket;
-    // gmGmxUsd: LiveGmMarket;
+    gmGmxUsd: LiveGmMarket;
     gmLinkUsd: LiveGmMarket;
-    // gmSolUsd: LiveGmMarket;
+    gmSolUsd: LiveGmMarket;
     gmUniUsd: LiveGmMarket;
-    // gmWstEthUsd: LiveGmMarket;
+    gmWstEthUsd: LiveGmMarket;
     gmxV2LibraryMap: { GmxV2Library: string };
     registry: GmxV2Registry;
     registryProxy: RegistryProxy;
@@ -425,6 +425,28 @@ export async function createGmxEcosystemV2(
     ),
     gmxWithdrawalVault: { address: GMX_WITHDRAWAL_VAULT_MAP[network] },
     live: {
+      gmAaveUsd: {
+        factory: GmxV2IsolationModeVaultFactory__factory.connect(
+          Deployments.GmxV2AAVEIsolationModeVaultFactory['42161'].address,
+          signer,
+        ),
+        unwrapper: GmxV2IsolationModeUnwrapperTraderV2__factory.connect(
+          Deployments.GmxV2AAVEAsyncIsolationModeUnwrapperTraderProxyV2['42161'].address,
+          signer,
+        ),
+        unwrapperProxy: IsolationModeTraderProxy__factory.connect(
+          Deployments.GmxV2AAVEAsyncIsolationModeUnwrapperTraderProxyV2['42161'].address,
+          signer,
+        ),
+        wrapper: GmxV2IsolationModeWrapperTraderV2__factory.connect(
+          Deployments.GmxV2AAVEAsyncIsolationModeWrapperTraderProxyV2['42161'].address,
+          signer,
+        ),
+        wrapperProxy: IsolationModeTraderProxy__factory.connect(
+          Deployments.GmxV2AAVEAsyncIsolationModeWrapperTraderProxyV2['42161'].address,
+          signer,
+        ),
+      },
       gmArbUsd: {
         factory: GmxV2IsolationModeVaultFactory__factory.connect(
           Deployments.GmxV2ARBIsolationModeVaultFactory['42161'].address,
@@ -491,6 +513,28 @@ export async function createGmxEcosystemV2(
           signer,
         ),
       },
+      gmDogeUsd: {
+        factory: GmxV2IsolationModeVaultFactory__factory.connect(
+          Deployments.GmxV2DOGEIsolationModeVaultFactory['42161'].address,
+          signer,
+        ),
+        unwrapper: GmxV2IsolationModeUnwrapperTraderV2__factory.connect(
+          Deployments.GmxV2DOGEAsyncIsolationModeUnwrapperTraderProxyV2['42161'].address,
+          signer,
+        ),
+        unwrapperProxy: IsolationModeTraderProxy__factory.connect(
+          Deployments.GmxV2DOGEAsyncIsolationModeUnwrapperTraderProxyV2['42161'].address,
+          signer,
+        ),
+        wrapper: GmxV2IsolationModeWrapperTraderV2__factory.connect(
+          Deployments.GmxV2DOGEAsyncIsolationModeWrapperTraderProxyV2['42161'].address,
+          signer,
+        ),
+        wrapperProxy: IsolationModeTraderProxy__factory.connect(
+          Deployments.GmxV2DOGEAsyncIsolationModeWrapperTraderProxyV2['42161'].address,
+          signer,
+        ),
+      },
       gmEth: {
         factory: GmxV2IsolationModeVaultFactory__factory.connect(
           Deployments.GmxV2SingleSidedETHIsolationModeVaultFactory['42161'].address,
@@ -535,6 +579,28 @@ export async function createGmxEcosystemV2(
           signer,
         ),
       },
+      gmGmxUsd: {
+        factory: GmxV2IsolationModeVaultFactory__factory.connect(
+          Deployments.GmxV2GMXIsolationModeVaultFactory['42161'].address,
+          signer,
+        ),
+        unwrapper: GmxV2IsolationModeUnwrapperTraderV2__factory.connect(
+          Deployments.GmxV2GMXAsyncIsolationModeUnwrapperTraderProxyV2['42161'].address,
+          signer,
+        ),
+        unwrapperProxy: IsolationModeTraderProxy__factory.connect(
+          Deployments.GmxV2GMXAsyncIsolationModeUnwrapperTraderProxyV2['42161'].address,
+          signer,
+        ),
+        wrapper: GmxV2IsolationModeWrapperTraderV2__factory.connect(
+          Deployments.GmxV2GMXAsyncIsolationModeWrapperTraderProxyV2['42161'].address,
+          signer,
+        ),
+        wrapperProxy: IsolationModeTraderProxy__factory.connect(
+          Deployments.GmxV2GMXAsyncIsolationModeWrapperTraderProxyV2['42161'].address,
+          signer,
+        ),
+      },
       gmLinkUsd: {
         factory: GmxV2IsolationModeVaultFactory__factory.connect(
           Deployments.GmxV2LINKIsolationModeVaultFactory['42161'].address,
@@ -557,6 +623,28 @@ export async function createGmxEcosystemV2(
           signer,
         ),
       },
+      gmSolUsd: {
+        factory: GmxV2IsolationModeVaultFactory__factory.connect(
+          Deployments.GmxV2SOLIsolationModeVaultFactory['42161'].address,
+          signer,
+        ),
+        unwrapper: GmxV2IsolationModeUnwrapperTraderV2__factory.connect(
+          Deployments.GmxV2SOLAsyncIsolationModeUnwrapperTraderProxyV2['42161'].address,
+          signer,
+        ),
+        unwrapperProxy: IsolationModeTraderProxy__factory.connect(
+          Deployments.GmxV2SOLAsyncIsolationModeUnwrapperTraderProxyV2['42161'].address,
+          signer,
+        ),
+        wrapper: GmxV2IsolationModeWrapperTraderV2__factory.connect(
+          Deployments.GmxV2SOLAsyncIsolationModeWrapperTraderProxyV2['42161'].address,
+          signer,
+        ),
+        wrapperProxy: IsolationModeTraderProxy__factory.connect(
+          Deployments.GmxV2SOLAsyncIsolationModeWrapperTraderProxyV2['42161'].address,
+          signer,
+        ),
+      },
       gmUniUsd: {
         factory: GmxV2IsolationModeVaultFactory__factory.connect(
           Deployments.GmxV2UNIIsolationModeVaultFactory['42161'].address,
@@ -576,6 +664,28 @@ export async function createGmxEcosystemV2(
         ),
         wrapperProxy: IsolationModeTraderProxy__factory.connect(
           Deployments.GmxV2UNIAsyncIsolationModeWrapperTraderProxyV2['42161'].address,
+          signer,
+        ),
+      },
+      gmWstEthUsd: {
+        factory: GmxV2IsolationModeVaultFactory__factory.connect(
+          Deployments.GmxV2WstETHIsolationModeVaultFactory['42161'].address,
+          signer,
+        ),
+        unwrapper: GmxV2IsolationModeUnwrapperTraderV2__factory.connect(
+          Deployments.GmxV2WstETHAsyncIsolationModeUnwrapperTraderProxyV2['42161'].address,
+          signer,
+        ),
+        unwrapperProxy: IsolationModeTraderProxy__factory.connect(
+          Deployments.GmxV2WstETHAsyncIsolationModeUnwrapperTraderProxyV2['42161'].address,
+          signer,
+        ),
+        wrapper: GmxV2IsolationModeWrapperTraderV2__factory.connect(
+          Deployments.GmxV2WstETHAsyncIsolationModeWrapperTraderProxyV2['42161'].address,
+          signer,
+        ),
+        wrapperProxy: IsolationModeTraderProxy__factory.connect(
+          Deployments.GmxV2WstETHAsyncIsolationModeWrapperTraderProxyV2['42161'].address,
           signer,
         ),
       },
