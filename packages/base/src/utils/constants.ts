@@ -25,12 +25,12 @@ type EverythingButBase = Network.ArbitrumOne | Network.Mantle | Network.PolygonZ
 type ArbitrumAndBerachainAndMantle = Network.ArbitrumOne | Network.Berachain | Network.Mantle;
 
 export const SUBGRAPH_URL_MAP: Record<Network, string> = {
-  [Network.ArbitrumOne]: 'https://api.thegraph.com/subgraphs/name/dolomite-exchange/dolomite-v2-arbitrum',
-  [Network.Base]: 'https://api.studio.thegraph.com/query/47377/dolomite-base/version/latest',
-  [Network.Berachain]: 'https://api.goldsky.com/api/public/project_clyuw4gvq4d5801tegx0aafpu/subgraphs/dolomite-berachain/v0.1.1-h/gn',
-  [Network.Mantle]: 'https://api.studio.thegraph.com/query/47377/dolomite-mantle/version/latest',
-  [Network.PolygonZkEvm]: 'https://api.studio.thegraph.com/query/47377/dolomite-polygon-zkevm/version/latest',
-  [Network.XLayer]: 'https://api.studio.thegraph.com/query/47377/dolomite-x-layer/version/latest',
+  [Network.ArbitrumOne]: 'https://subgraphapi.dolomite.io/api/public/1301d2d1-7a9d-4be4-9e9a-061cb8611549/subgraphs/dolomite-arbitrum/v0.1.2/gn',
+  [Network.Base]: 'https://subgraphapi.dolomite.io/api/public/1301d2d1-7a9d-4be4-9e9a-061cb8611549/subgraphs/dolomite-base/v0.1.2/gn',
+  [Network.Berachain]: 'https://subgraphapi.dolomite.io/api/public/1301d2d1-7a9d-4be4-9e9a-061cb8611549/subgraphs/dolomite-berachain/v0.1.2/gn',
+  [Network.Mantle]: 'https://subgraphapi.dolomite.io/api/public/1301d2d1-7a9d-4be4-9e9a-061cb8611549/subgraphs/dolomite-mantle/v0.1.2/gn',
+  [Network.PolygonZkEvm]: 'https://subgraphapi.dolomite.io/api/public/1301d2d1-7a9d-4be4-9e9a-061cb8611549/subgraphs/dolomite-polygon-zkevm/v0.1.2/gn',
+  [Network.XLayer]: 'https://subgraphapi.dolomite.io/api/public/1301d2d1-7a9d-4be4-9e9a-061cb8611549/subgraphs/dolomite-x-layer/v0.1.2/gn',
 };
 
 // ************************* External Contract Addresses *************************
