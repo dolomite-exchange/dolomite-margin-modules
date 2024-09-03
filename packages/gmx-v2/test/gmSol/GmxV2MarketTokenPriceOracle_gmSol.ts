@@ -7,7 +7,11 @@ import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
 import { Network, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
 import { expectEvent, expectThrow } from 'packages/base/test/utils/assertions';
-import { setupCoreProtocol, setupTestMarket } from 'packages/base/test/utils/setup';
+import {
+  getDefaultCoreProtocolConfigForGmxV2,
+  setupCoreProtocol,
+  setupTestMarket,
+} from 'packages/base/test/utils/setup';
 import { CoreProtocolArbitrumOne } from '../../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE_FOR_TESTS } from '../../src/gmx-v2-constructors';
 import {
@@ -31,15 +35,15 @@ import {
 } from '../gmx-v2-ecosystem-utils';
 import { createDolomiteRegistryImplementation } from 'packages/base/test/utils/dolomite';
 
-const GM_ETH_USD_PRICE_NO_MAX_WEI = BigNumber.from('919979975416060612'); // $0.9199
+const GM_ETH_USD_PRICE_NO_MAX_WEI = BigNumber.from('3672351552613333039'); // $3.67
 const MAX_WEI = BigNumber.from('10000000000000000000000000'); // 10M tokens
 const NEGATIVE_PRICE = BigNumber.from('-5');
 const FEE_BASIS_POINTS = BigNumber.from('7');
 const BASIS_POINTS = BigNumber.from('10000');
 const GMX_DECIMAL_ADJUSTMENT = BigNumber.from('1000000000000');
-const blockNumber = 128_276_157;
+const NEXT_TIMESTAMP = 1724776055;
 
-describe('GmxV2MarketTokenPriceOracle', () => {
+describe('GmxV2MarketTokenPriceOracle_gmSol', () => {
   let snapshotId: string;
 
   let core: CoreProtocolArbitrumOne;
@@ -54,10 +58,7 @@ describe('GmxV2MarketTokenPriceOracle', () => {
   let testReader: TestGmxReader;
 
   before(async () => {
-    core = await setupCoreProtocol({
-      blockNumber,
-      network: Network.ArbitrumOne,
-    });
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfigForGmxV2());
     underlyingToken = core.gmxV2Ecosystem!.gmTokens.solUsd.marketToken.connect(core.hhUser1);
 
     gmxV2Registry = await createGmxV2Registry(core, GMX_V2_CALLBACK_GAS_LIMIT);
@@ -143,10 +144,10 @@ describe('GmxV2MarketTokenPriceOracle', () => {
   });
 
   describe('#getPrice', () => {
-    it.only('returns the correct value when there is no max wei', async () => {
+    it('returns the correct value when there is no max wei', async () => {
       // Have to be at specific timestamp to get consistent price
       // Setup core protocol sometimes ends at different timestamps which threw off the test
-      await setNextBlockTimestamp(1693923100);
+      await setNextBlockTimestamp(NEXT_TIMESTAMP);
       await mine();
       expect((await gmPriceOracle.getPrice(factory.address)).value).to.eq(GM_ETH_USD_PRICE_NO_MAX_WEI);
     });
@@ -155,7 +156,7 @@ describe('GmxV2MarketTokenPriceOracle', () => {
       // Have to be at specific timestamp to get consistent price
       // Setup core protocol sometimes ends at different timestamps which threw off the test
       await core.dolomiteMargin.ownerSetMaxWei(marketId, MAX_WEI); // 10M tokens
-      await setNextBlockTimestamp(1693923100);
+      await setNextBlockTimestamp(NEXT_TIMESTAMP);
       await mine();
       // Should be same as above as we no longer factor it into slippage
       expect((await gmPriceOracle.getPrice(factory.address)).value).to.eq(GM_ETH_USD_PRICE_NO_MAX_WEI);
@@ -168,7 +169,7 @@ describe('GmxV2MarketTokenPriceOracle', () => {
       await gmxV2Registry.connect(core.governance).ownerSetGmxReader(testReader.address);
       const price = BigNumber.from('1000000000000000000000000000000');
       await testReader.setMarketPrice(price);
-      await setNextBlockTimestamp(1693923100);
+      await setNextBlockTimestamp(NEXT_TIMESTAMP);
       await mine();
       expect((await gmPriceOracle.getPrice(factory.address)).value)
         .to

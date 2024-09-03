@@ -241,7 +241,7 @@ library GmxV2Library {
         IGmxV2IsolationModeTokenVaultV1 _vault,
         uint256 _tradeAccountNumber,
         IGenericTraderBase.TraderParam[] memory _tradersPath
-    ) public {
+    ) public returns (IGenericTraderBase.TraderParam[] memory) {
         uint256 len = _tradersPath.length;
         if (_tradersPath[len - 1].traderType == IGenericTraderBase.TraderType.IsolationModeWrapper) {
             _depositAndApproveWethForWrapping(_vault);
@@ -258,6 +258,7 @@ library GmxV2Library {
                 "Cannot send ETH for non-wrapper"
             );
         }
+        return _tradersPath;
     }
 
     function vaultCancelDeposit(IGmxV2IsolationModeTokenVaultV1 _vault, bytes32 _key) public {
@@ -430,30 +431,10 @@ library GmxV2Library {
             "Invalid market token amount"
         );
 
-        Require.that(
-            keccak256(abi.encodePacked(_outputTokenAddress.key))
-                == keccak256(abi.encodePacked("outputToken")),
-            _FILE,
-            "Unexpected outputToken"
-        );
-        Require.that(
-            keccak256(abi.encodePacked(_outputTokenAmount.key))
-                == keccak256(abi.encodePacked("outputAmount")),
-            _FILE,
-            "Unexpected outputAmount"
-        );
-        Require.that(
-            keccak256(abi.encodePacked(_secondaryOutputTokenAddress.key))
-                == keccak256(abi.encodePacked("secondaryOutputToken")),
-            _FILE,
-            "Unexpected secondaryOutputToken"
-        );
-        Require.that(
-            keccak256(abi.encodePacked(_secondaryOutputTokenAmount.key))
-                == keccak256(abi.encodePacked("secondaryOutputAmount")),
-            _FILE,
-            "Unexpected secondaryOutputAmount"
-        );
+        _validateEventData(_outputTokenAddress.key, "outputToken");
+        _validateEventData(_outputTokenAmount.key, "outputAmount");
+        _validateEventData(_secondaryOutputTokenAddress.key, "secondaryOutputToken");
+        _validateEventData(_secondaryOutputTokenAmount.key, "secondaryOutputAmount");
 
         if (_withdrawalInfo.outputToken == _factory.LONG_TOKEN()) {
             Require.that(
@@ -622,5 +603,13 @@ library GmxV2Library {
 
     function _isMarketDisableKey(address _market) private pure returns (bytes32) {
         return keccak256(abi.encode(_IS_MARKET_DISABLED, _market));
+    }
+
+    function _validateEventData(string memory _foundKey, string memory _expectedKey) private pure {
+        Require.that(
+            keccak256(abi.encodePacked(_foundKey)) == keccak256(abi.encodePacked(_expectedKey)),
+            _FILE,
+            bytes32(abi.encodePacked("Unexpected ", _expectedKey))
+        );
     }
 }
