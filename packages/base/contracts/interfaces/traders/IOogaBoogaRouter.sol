@@ -1,6 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.9;
 
+/**
+ * @title   IOogaBoogaRouter
+ *
+ * @notice  Interface for executing trades via OogaBooga
+ */
 interface IOogaBoogaRouter {
     /// @dev Contains all information needed to describe the input and output for a swap
     struct permit2Info {
@@ -48,10 +53,10 @@ interface IOogaBoogaRouter {
         bool registered;
     }
     /// @notice Externally facing interface for swapping two tokens
-    /// @param tokenInfo All information about the tokens being swapped
-    /// @param pathDefinition Encoded path definition for executor
-    /// @param executor Address of contract that will execute the path
-    /// @param referralCode referral code to specify the source of the swap
+    /// @param  tokenInfo All information about the tokens being swapped
+    /// @param  pathDefinition Encoded path definition for executor
+    /// @param  executor Address of contract that will execute the path
+    /// @param  referralCode referral code to specify the source of the swap
 
     function swap(swapTokenInfo memory tokenInfo, bytes calldata pathDefinition, address executor, uint32 referralCode)
         external
@@ -59,11 +64,11 @@ interface IOogaBoogaRouter {
         returns (uint256 amountOut);
 
     /// @notice Externally facing interface for swapping two tokens
-    /// @param permit2 All additional info for Permit2 transfers
-    /// @param tokenInfo All information about the tokens being swapped
-    /// @param pathDefinition Encoded path definition for executor
-    /// @param executor Address of contract that will execute the path
-    /// @param referralCode referral code to specify the source of the swap
+    /// @param  permit2 All additional info for Permit2 transfers
+    /// @param  tokenInfo All information about the tokens being swapped
+    /// @param  pathDefinition Encoded path definition for executor
+    /// @param  executor Address of contract that will execute the path
+    /// @param  referralCode referral code to specify the source of the swap
     function swapPermit2(
         permit2Info memory permit2,
         swapTokenInfo memory tokenInfo,
@@ -73,11 +78,11 @@ interface IOogaBoogaRouter {
     ) external returns (uint256 amountOut);
 
     /// @notice Externally facing interface for swapping two tokens
-    /// @param permit All additional info for ERC20Permit transfers
-    /// @param tokenInfo All information about the tokens being swapped
-    /// @param pathDefinition Encoded path definition for executor
-    /// @param executor Address of contract that will execute the path
-    /// @param referralCode referral code to specify the source of the swap
+    /// @param  permit All additional info for ERC20Permit transfers
+    /// @param  tokenInfo All information about the tokens being swapped
+    /// @param  pathDefinition Encoded path definition for executor
+    /// @param  executor Address of contract that will execute the path
+    /// @param  referralCode referral code to specify the source of the swap
     function swapERC20Permit(
         erc20PermitInfo calldata permit,
         swapTokenInfo calldata tokenInfo,
