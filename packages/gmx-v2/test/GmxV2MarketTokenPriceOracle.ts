@@ -35,13 +35,13 @@ import {
   createGmxV2Registry,
 } from './gmx-v2-ecosystem-utils';
 
-const GM_ETH_USD_PRICE_NO_MAX_WEI = BigNumber.from('1429233203551247357'); // $1.4292
+const GM_ETH_USD_PRICE_NO_MAX_WEI = BigNumber.from('1429636905295331641'); // $1.4292
 const MAX_WEI = BigNumber.from('10000000000000000000000000'); // 10M tokens
 const NEGATIVE_PRICE = BigNumber.from('-5');
 const FEE_BASIS_POINTS = BigNumber.from('7');
 const BASIS_POINTS = BigNumber.from('10000');
 const GMX_DECIMAL_ADJUSTMENT = BigNumber.from('1000000000000');
-const NEXT_TIMESTAMP = 1724775550;
+const NEXT_TIMESTAMP = 1724776050;
 
 describe('GmxV2MarketTokenPriceOracle', () => {
   let snapshotId: string;

@@ -33,18 +33,19 @@ import {
   createGmxV2MarketTokenPriceOracle,
   createGmxV2Registry,
 } from '../gmx-v2-ecosystem-utils';
-import { GMX_BTC_PLACEHOLDER_MAP } from 'packages/base/src/utils/constants';
+import { BTC_CHAINLINK_FEED_MAP, GMX_BTC_PLACEHOLDER_MAP } from 'packages/base/src/utils/constants';
 import { TokenInfo } from 'packages/oracles/src';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 
-const GM_ETH_USD_PRICE_NO_MAX_WEI = BigNumber.from('1429233203551247357'); // $1.4292
+const GM_ETH_USD_PRICE_NO_MAX_WEI = BigNumber.from('885921604037332213'); // $1.4292
 const MAX_WEI = BigNumber.from('10000000000000000000000000'); // 10M tokens
 const NEGATIVE_PRICE = BigNumber.from('-5');
 const FEE_BASIS_POINTS = BigNumber.from('0'); // No swap fee
 const BASIS_POINTS = BigNumber.from('10000');
 const GMX_DECIMAL_ADJUSTMENT = BigNumber.from('1000000000000');
+const NEXT_TIMESTAMP = 1724776050;
 
-describe('GmxV2MarketTokenPriceOracle', () => {
+describe('GmxV2MarketTokenPriceOracle_singleSided', () => {
   let snapshotId: string;
 
   let core: CoreProtocolArbitrumOne;
@@ -71,7 +72,7 @@ describe('GmxV2MarketTokenPriceOracle', () => {
     // for GM BTC
     await core.chainlinkPriceOracleV3.ownerInsertOrUpdateOracleToken(
       GMX_BTC_PLACEHOLDER_MAP[Network.ArbitrumOne].address,
-      '0x6ce185860a4963106506C203335A2910413708e9',
+      BTC_CHAINLINK_FEED_MAP[Network.ArbitrumOne],
       false
     );
     const tokenInfo: TokenInfo = {
@@ -155,7 +156,7 @@ describe('GmxV2MarketTokenPriceOracle', () => {
     it('returns the correct value when there is no max wei', async () => {
       // Have to be at specific timestamp to get consistent price
       // Setup core protocol sometimes ends at different timestamps which threw off the test
-      await setNextBlockTimestamp(1714000000);
+      await setNextBlockTimestamp(NEXT_TIMESTAMP);
       await mine();
       expect((await gmPriceOracle.getPrice(factory.address)).value).to.eq(GM_ETH_USD_PRICE_NO_MAX_WEI);
     });
@@ -164,7 +165,7 @@ describe('GmxV2MarketTokenPriceOracle', () => {
       // Have to be at specific timestamp to get consistent price
       // Setup core protocol sometimes ends at different timestamps which threw off the test
       await core.dolomiteMargin.ownerSetMaxWei(marketId, MAX_WEI); // 10M tokens
-      await setNextBlockTimestamp(1714000000);
+      await setNextBlockTimestamp(NEXT_TIMESTAMP);
       await mine();
       // Should be same as above as we no longer factor it into slippage
       expect((await gmPriceOracle.getPrice(factory.address)).value).to.eq(GM_ETH_USD_PRICE_NO_MAX_WEI);
@@ -177,7 +178,7 @@ describe('GmxV2MarketTokenPriceOracle', () => {
       await gmxV2Registry.connect(core.governance).ownerSetGmxReader(testReader.address);
       const price = BigNumber.from('1000000000000000000000000000000');
       await testReader.setMarketPrice(price);
-      await setNextBlockTimestamp(1714000000);
+      await setNextBlockTimestamp(NEXT_TIMESTAMP);
       await mine();
       expect((await gmPriceOracle.getPrice(factory.address)).value)
         .to

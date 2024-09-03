@@ -11,7 +11,6 @@ import {
 } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import {
   MAX_UINT_256_BI,
-  Network,
   ONE_BI,
   ONE_ETH_BI,
   TWO_BI,
@@ -403,7 +402,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         vault.initiateUnwrapping(borrowAccountNumber, amountWei, core.tokens.weth.address, ONE_BI, DEFAULT_EXTRA_DATA, {
           value: ONE_ETH_BI.add(1),
         }),
-        'GmxV2Library: Invalid execution fee',
+        'GmxV2IsolationModeVaultV1: Invalid execution fee',
       );
     });
 
@@ -555,8 +554,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         { value: executionFee },
       );
       const filter = eventEmitter.filters.AsyncDepositCreated(undefined, factory.address);
-      const results = await eventEmitter.queryFilter(filter);
-      const depositKey = (await eventEmitter.queryFilter(filter))[0].args.key;
+      const depositKey = (await eventEmitter.queryFilter(filter, txResult.blockHash))[0].args.key;
       expect(await vault.isVaultFrozen()).to.eq(true);
 
       // Mine blocks so we can cancel deposit
@@ -587,7 +585,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         minAmountOut,
         wrapper,
       );
-      await vault.swapExactInputForOutput(
+      const res = await vault.swapExactInputForOutput(
         borrowAccountNumber,
         initiateWrappingParams.marketPath,
         initiateWrappingParams.amountIn,
@@ -598,7 +596,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         { value: executionFee },
       );
       const filter = eventEmitter.filters.AsyncDepositCreated(undefined, factory.address);
-      const depositKey = (await eventEmitter.queryFilter(filter))[0].args.key;
+      const depositKey = (await eventEmitter.queryFilter(filter, res.blockHash))[0].args.key;
       expect(await vault.isVaultFrozen()).to.eq(true);
 
       // Mine blocks so we can cancel deposit
@@ -623,19 +621,18 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await expectProtocolBalance(core, vault.address, defaultAccountNumber, marketId, amountWei);
 
-      await expect(() =>
-        vault.initiateUnwrapping(
-          defaultAccountNumber,
-          amountWei,
-          core.tokens.weth.address,
-          minAmountOut,
-          DEFAULT_EXTRA_DATA,
-          { value: executionFee },
-        ),
-      ).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
+      const res = await vault.initiateUnwrapping(
+        defaultAccountNumber,
+        amountWei,
+        core.tokens.weth.address,
+        minAmountOut,
+        DEFAULT_EXTRA_DATA,
+        { value: executionFee },
+      );
+      await expectWalletBalance(vault, underlyingToken, ZERO_BI);
 
       const filter = eventEmitter.filters.AsyncWithdrawalCreated(undefined, factory.address);
-      const withdrawalKey = (await eventEmitter.queryFilter(filter))[0].args.key;
+      const withdrawalKey = (await eventEmitter.queryFilter(filter, res.blockHash))[0].args.key;
 
       await expectProtocolBalance(core, vault.address, defaultAccountNumber, marketId, amountWei);
       await expectProtocolBalance(core, vault.address, defaultAccountNumber, core.marketIds.weth, 0);
@@ -661,19 +658,17 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await expectProtocolBalance(core, vault.address, defaultAccountNumber, marketId, amountWei);
 
-      await expect(() =>
-        vault.initiateUnwrappingWithLiquidationTrue(
-          defaultAccountNumber,
-          amountWei,
-          core.tokens.weth.address,
-          TWO_BI,
-          DEFAULT_EXTRA_DATA,
-          { value: executionFee },
-        ),
-      ).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
+      const res = await vault.initiateUnwrappingWithLiquidationTrue(
+        defaultAccountNumber,
+        amountWei,
+        core.tokens.weth.address,
+        TWO_BI,
+        DEFAULT_EXTRA_DATA,
+        { value: executionFee },
+      );
 
       const filter = eventEmitter.filters.AsyncWithdrawalCreated(undefined, factory.address);
-      const withdrawalKey = (await eventEmitter.queryFilter(filter))[0].args.key;
+      const withdrawalKey = (await eventEmitter.queryFilter(filter, res.blockHash))[0].args.key;
 
       await expectProtocolBalance(core, vault.address, defaultAccountNumber, marketId, amountWei);
       await expectProtocolBalance(core, vault.address, defaultAccountNumber, core.marketIds.weth, 0);
@@ -695,19 +690,18 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await expectProtocolBalance(core, vault.address, defaultAccountNumber, marketId, amountWei);
 
-      await expect(() =>
-        vault.initiateUnwrapping(
-          defaultAccountNumber,
-          amountWei,
-          core.tokens.weth.address,
-          TWO_BI,
-          DEFAULT_EXTRA_DATA,
-          { value: executionFee },
-        ),
-      ).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
+      const res = await vault.initiateUnwrapping(
+        defaultAccountNumber,
+        amountWei,
+        core.tokens.weth.address,
+        TWO_BI,
+        DEFAULT_EXTRA_DATA,
+        { value: executionFee },
+      );
+      await expectWalletBalance(vault, underlyingToken, ZERO_BI);
 
       const filter = eventEmitter.filters.AsyncWithdrawalCreated(undefined, factory.address);
-      const withdrawalKey = (await eventEmitter.queryFilter(filter))[0].args.key;
+      const withdrawalKey = (await eventEmitter.queryFilter(filter, res.blockHash))[0].args.key;
 
       await expectProtocolBalance(core, vault.address, defaultAccountNumber, marketId, amountWei);
       await expectProtocolBalance(core, vault.address, defaultAccountNumber, core.marketIds.weth, 0);
@@ -1075,7 +1069,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           initiateWrappingParams.userConfig,
           { value: ONE_ETH_BI.mul(2) },
         ),
-        'GmxV2IsolationModeVaultV1: Invalid execution fee',
+        'GmxV2Library: Invalid execution fee',
       );
     });
 

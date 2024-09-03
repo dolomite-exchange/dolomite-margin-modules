@@ -1,6 +1,6 @@
 import { IEventEmitterRegistry } from '@dolomite-exchange/modules-base/src/types';
 import { AccountStruct } from '@dolomite-exchange/modules-base/src/utils/constants';
-import { depositIntoDolomiteMargin } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import { createContractWithAbi, depositIntoDolomiteMargin } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import {
   BYTES_ZERO,
   Network,
@@ -10,6 +10,7 @@ import {
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import {
   getRealLatestBlockNumber,
+  impersonate,
   revertToSnapshotAndCapture,
   snapshot,
 } from '@dolomite-exchange/modules-base/test/utils';
@@ -36,12 +37,17 @@ import {
   GmxV2IsolationModeWrapperTraderV2,
   IGmxMarketToken,
   IGmxMarketToken__factory,
+  IGmxRoleStore__factory,
   IGmxV2Registry,
+  TestOracleProvider,
+  TestOracleProvider__factory,
 } from '@dolomite-exchange/modules-gmx-v2/src/types';
 import {
   createGmxV2IsolationModeTokenVaultV1,
   createGmxV2Library,
   getOracleParams,
+  getOracleProviderEnabledKey,
+  getOracleProviderForTokenKey,
 } from '@dolomite-exchange/modules-gmx-v2/test/gmx-v2-ecosystem-utils';
 import { ZapConfig, ZapOutputParam } from '@dolomite-exchange/zap-sdk';
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
@@ -50,6 +56,7 @@ import { expect } from 'chai';
 import { BigNumber, BigNumberish, ContractTransaction } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
+import { ethers } from 'hardhat';
 
 const defaultAccountNumber = ZERO_BI;
 const borrowAccountNumber = defaultAccountNumber.add(ONE_BI);
@@ -75,6 +82,7 @@ if (process.env.COVERAGE !== 'true') {
     let vault: GmxV2IsolationModeTokenVaultV1;
     let marketId: BigNumber;
     let eventEmitter: IEventEmitterRegistry;
+    let testOracleProvider: TestOracleProvider;
 
     let solidAccount: AccountStruct;
     let liquidAccount: AccountStruct;
@@ -143,6 +151,24 @@ if (process.env.COVERAGE !== 'true') {
       expect(await vault.isVaultAccountFrozen(borrowAccountNumber)).to.eq(false);
       expect(await vault.isVaultAccountFrozen(borrowAccountNumber2)).to.eq(false);
 
+      const dataStore = core.gmxV2Ecosystem.gmxDataStore;
+      const controllerKey = ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['string'], ['CONTROLLER']));
+      const roleStore = IGmxRoleStore__factory.connect(await dataStore.roleStore(), core.hhUser1);
+      const controllers = await roleStore.getRoleMembers(controllerKey, 0, 1);
+      const controller = await impersonate(controllers[0], true);
+
+      testOracleProvider = await createContractWithAbi<TestOracleProvider>(
+        TestOracleProvider__factory.abi,
+        TestOracleProvider__factory.bytecode,
+        [core.oracleAggregatorV2.address]
+      );
+      const oracleProviderEnabledKey = getOracleProviderEnabledKey(testOracleProvider);
+      const usdcProviderKey = getOracleProviderForTokenKey(core.tokens.nativeUsdc);
+      const wethProviderKey = getOracleProviderForTokenKey(core.tokens.weth);
+      await dataStore.connect(controller).setBool(oracleProviderEnabledKey, true);
+      await dataStore.connect(controller).setAddress(usdcProviderKey, testOracleProvider.address);
+      await dataStore.connect(controller).setAddress(wethProviderKey, testOracleProvider.address);
+
       eventEmitter = core.eventEmitterRegistry;
 
       snapshotId = await snapshot();
@@ -207,7 +233,10 @@ if (process.env.COVERAGE !== 'true') {
           .gmxV2Ecosystem!.gmxWithdrawalHandler.connect(core.gmxV2Ecosystem!.gmxExecutor)
           .executeWithdrawal(
             withdrawalKeys[withdrawalKeys.length - 1],
-            getOracleParams(core.tokens.weth.address, core.tokens.nativeUsdc!.address),
+            getOracleParams(
+              [core.tokens.weth.address, core.tokens.nativeUsdc.address],
+              [testOracleProvider.address, testOracleProvider.address]
+            ),
             { gasLimit },
           );
       }

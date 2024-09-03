@@ -10,11 +10,11 @@ import {
   Network,
   ONE_BI,
   ONE_ETH_BI,
+  TWO_BI,
   ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '@dolomite-exchange/modules-base/src/utils/SignerWithAddressWithSafety';
 import {
-  getRealLatestBlockNumber,
   impersonate,
   revertToSnapshotAndCapture,
   snapshot
@@ -102,7 +102,7 @@ enum FreezeType {
   Withdrawal = 1,
 }
 
-describe('GmxV2IsolationModeTokenVaultV1', () => {
+describe('GmxV2IsolationModeTokenVaultV1_singleSided', () => {
   let snapshotId: string;
 
   let core: CoreProtocolArbitrumOne;
@@ -298,7 +298,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         borrowAccountNumber,
         amountWei,
         core.tokens.wbtc.address,
-        ONE_BI,
+        TWO_BI,
         DEFAULT_EXTRA_DATA,
         { value: executionFee },
       );
@@ -311,7 +311,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       expect(await vault.isDepositSourceWrapper()).to.eq(false);
 
       const filter = eventEmitter.filters.AsyncWithdrawalCreated();
-      const eventArgs = (await eventEmitter.queryFilter(filter))[0].args;
+      const eventArgs = (await eventEmitter.queryFilter(filter, result.blockHash))[0].args;
       expect(eventArgs.token).to.eq(factory.address);
 
       const withdrawalKey = eventArgs.key;
@@ -321,7 +321,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       expect(withdrawal.accountNumber).to.eq(borrowAccountNumber);
       expect(withdrawal.inputAmount).to.eq(amountWei);
       expect(withdrawal.outputToken).to.eq(core.tokens.wbtc.address);
-      expect(withdrawal.outputAmount).to.eq(ONE_BI);
+      expect(withdrawal.outputAmount).to.eq(TWO_BI);
       expect(withdrawal.isRetryable).to.eq(false);
 
       expect(eventArgs.withdrawal.key).to.eq(withdrawalKey);
@@ -329,7 +329,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       expect(eventArgs.withdrawal.accountNumber).to.eq(borrowAccountNumber);
       expect(eventArgs.withdrawal.inputAmount).to.eq(amountWei);
       expect(eventArgs.withdrawal.outputToken).to.eq(core.tokens.wbtc.address);
-      expect(eventArgs.withdrawal.outputAmount).to.eq(ONE_BI);
+      expect(eventArgs.withdrawal.outputAmount).to.eq(TWO_BI);
       expect(eventArgs.withdrawal.isRetryable).to.eq(false);
     });
 
@@ -682,7 +682,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       await mine(1200);
       await expectThrow(
         vault2.cancelDeposit(depositKey),
-        `GmxV2IsolationModeVaultV1: Invalid vault owner <${vault.address.toLowerCase()}>`,
+        `GmxV2Library: Invalid vault owner <${vault.address.toLowerCase()}>`,
       );
     });
 
@@ -740,7 +740,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         defaultAccountNumber,
         amountWei,
         core.tokens.wbtc.address,
-        ONE_BI,
+        TWO_BI,
         DEFAULT_EXTRA_DATA,
         { value: executionFee },
       )).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
@@ -759,7 +759,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       await mine(1200);
       await expectThrow(
         vault.cancelWithdrawal(withdrawalKey),
-        'GmxV2IsolationModeVaultV1: Withdrawal from liquidation',
+        'GmxV2Library: Withdrawal from liquidation',
       );
     });
 
@@ -772,7 +772,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         defaultAccountNumber,
         amountWei,
         core.tokens.wbtc.address,
-        ONE_BI,
+        TWO_BI,
         DEFAULT_EXTRA_DATA,
         { value: executionFee },
       )).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
@@ -791,7 +791,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       await mine(1200);
       await expectThrow(
         vault2.cancelWithdrawal(withdrawalKey),
-        `GmxV2IsolationModeVaultV1: Invalid vault owner <${vault.address.toLowerCase()}>`,
+        `GmxV2Library: Invalid vault owner <${vault.address.toLowerCase()}>`,
       );
     });
 
@@ -1178,7 +1178,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           initiateWrappingParams.userConfig,
           { value: ONE_ETH_BI.mul(2) },
         ),
-        'GmxV2IsolationModeVaultV1: Invalid execution fee',
+        'GmxV2Library: Invalid execution fee',
       );
     });
 
@@ -1211,7 +1211,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           zapParams.userConfig,
           { value: ONE_BI },
         ),
-        'GmxV2IsolationModeVaultV1: Cannot send ETH for non-wrapper',
+        'GmxV2Library: Cannot send ETH for non-wrapper',
       );
     });
 
