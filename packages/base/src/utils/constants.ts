@@ -867,6 +867,14 @@ export const OKX_DEX_TRANSFER_PROXY_MAP: Record<Network.XLayer, string> = {
   [Network.XLayer]: '0x8b773D83bc66Be128c60e07E17C8901f7a64F000',
 };
 
+export const OOGA_BOOGA_ROUTER_MAP: Record<Network.Berachain, string> = {
+  [Network.Berachain]: '0x7bC98B68bCBb16cEC81EdDcEa1A3746Fdc5025A4',
+};
+
+export const OOGA_BOOGA_EXECUTOR_MAP: Record<Network.Berachain, string> = {
+  [Network.Berachain]: '0xDa547d8ce09e23E9e8053dd187B58841B5fB8D5d',
+};
+
 export const PARASWAP_AUGUSTUS_ROUTER_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumOne]: '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57',
   [Network.Base]: '0x59C7C832e96D2568bea6db468C1aAdcbbDa08A52',
