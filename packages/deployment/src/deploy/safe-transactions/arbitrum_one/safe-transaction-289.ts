@@ -20,41 +20,41 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(
       core,
-      { registry: core.gmxEcosystemV2.live.registry },
+      { registry: core.gmxV2Ecosystem.live.registry },
       'registry',
       'ownerSetUnwrapperByToken',
       [
-        core.gmxEcosystemV2.live.gmBtc.factory.address,
+        core.gmxV2Ecosystem.live.gmBtc.factory.address,
         ModuleDeployments.GmxV2SingleSidedBTCAsyncIsolationModeUnwrapperTraderProxyV2[network].address,
       ],
     ),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
-      { registry: core.gmxEcosystemV2.live.registry },
+      { registry: core.gmxV2Ecosystem.live.registry },
       'registry',
       'ownerSetWrapperByToken',
       [
-        core.gmxEcosystemV2.live.gmBtc.factory.address,
+        core.gmxV2Ecosystem.live.gmBtc.factory.address,
         ModuleDeployments.GmxV2SingleSidedBTCAsyncIsolationModeWrapperTraderProxyV2[network].address,
       ],
     ),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
-      { registry: core.gmxEcosystemV2.live.registry },
+      { registry: core.gmxV2Ecosystem.live.registry },
       'registry',
       'ownerSetUnwrapperByToken',
       [
-        core.gmxEcosystemV2.live.gmEth.factory.address,
+        core.gmxV2Ecosystem.live.gmEth.factory.address,
         ModuleDeployments.GmxV2SingleSidedETHAsyncIsolationModeUnwrapperTraderProxyV2[network].address,
       ],
     ),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
-      { registry: core.gmxEcosystemV2.live.registry },
+      { registry: core.gmxV2Ecosystem.live.registry },
       'registry',
       'ownerSetWrapperByToken',
       [
-        core.gmxEcosystemV2.live.gmEth.factory.address,
+        core.gmxV2Ecosystem.live.gmEth.factory.address,
         ModuleDeployments.GmxV2SingleSidedETHAsyncIsolationModeWrapperTraderProxyV2[network].address,
       ],
     ),
@@ -69,7 +69,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     },
     skipTimeDelay: true,
     invariants: async () => {
-      const gmxV2Ecosystem = core.gmxEcosystemV2.live;
+      const gmxV2Ecosystem = core.gmxV2Ecosystem.live;
 
       expect(await gmxV2Ecosystem.registry.getUnwrapperByToken(gmxV2Ecosystem.gmBtc.factory.address))
         .to.eq(ModuleDeployments.GmxV2SingleSidedBTCAsyncIsolationModeUnwrapperTraderProxyV2[network].address);

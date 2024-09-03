@@ -14,7 +14,6 @@
     "lint:sol": "hardhat check && python3 ../../scripts/lint-contracts.py fix glp",
     "lint:ts": "tslint --project ../../ -t verbose 'src/**/*.ts' 'test/**/*.ts'"
   },
-  "private": false,
   "files": [
     "contracts/**/*",
     "!contracts/test/*"

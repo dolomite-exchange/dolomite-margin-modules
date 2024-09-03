@@ -64,7 +64,7 @@ async function main(): Promise<DryRunOutput<Network.PolygonZkEvm>> {
       { dolomiteMargin: core.dolomiteMargin },
       'dolomiteMargin',
       'ownerSetInterestSetter',
-      [core.marketIds.weth, core.interestSetters.linearStepFunction14L86UInterestSetter.address],
+      [core.marketIds.weth, core.interestSetters.linearStepFunction14L86U90OInterestSetter.address],
     ),
     ...await prettyPrintEncodeAddMarket(
       core,
@@ -92,7 +92,7 @@ async function main(): Promise<DryRunOutput<Network.PolygonZkEvm>> {
       core,
       core.tokens.link,
       core.chainlinkPriceOracleV1,
-      core.interestSetters.linearStepFunction14L86UInterestSetter,
+      core.interestSetters.linearStepFunction14L86U90OInterestSetter,
       TargetCollateralization.Base,
       TargetLiquidationPenalty.Base,
       parseEther(`${5_000}`),
@@ -103,7 +103,7 @@ async function main(): Promise<DryRunOutput<Network.PolygonZkEvm>> {
       core,
       core.tokens.wbtc,
       core.chainlinkPriceOracleV1,
-      core.interestSetters.linearStepFunction14L86UInterestSetter,
+      core.interestSetters.linearStepFunction14L86U90OInterestSetter,
       TargetCollateralization.Base,
       TargetLiquidationPenalty.Base,
       parseWbtc(`${5_000}`),
@@ -125,7 +125,7 @@ async function main(): Promise<DryRunOutput<Network.PolygonZkEvm>> {
       core,
       core.tokens.matic,
       core.chainlinkPriceOracleV1,
-      core.interestSetters.linearStepFunction14L86UInterestSetter,
+      core.interestSetters.linearStepFunction14L86U90OInterestSetter,
       TargetCollateralization.Base,
       TargetLiquidationPenalty.Base,
       parseEther(`${10_000_000}`),
@@ -151,7 +151,7 @@ async function main(): Promise<DryRunOutput<Network.PolygonZkEvm>> {
       );
       assertHardhatInvariant(
         await core.dolomiteMargin.getMarketInterestSetter(core.marketIds.weth)
-        === core.interestSetters.linearStepFunction14L86UInterestSetter.address,
+        === core.interestSetters.linearStepFunction14L86U90OInterestSetter.address,
         'Invalid chainlink price oracle for WETH',
       );
       assertHardhatInvariant(

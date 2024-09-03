@@ -19,18 +19,20 @@ import { SignerWithAddressWithSafety } from './SignerWithAddressWithSafety';
 export async function createContractWithName<T extends BaseContract>(
   contractName: string,
   args: any[],
+  options?: {},
 ): Promise<T> {
   const ContractFactory = await ethers.getContractFactory(contractName);
-  return await ContractFactory.deploy(...args) as T;
+  return await ContractFactory.deploy(...(options ? [...args, options] : [...args])) as T;
 }
 
 export async function createContractWithAbi<T extends BaseContract>(
   abi: readonly any[],
   bytecode: BytesLike,
   args: (number | string | BigNumberish | object | undefined)[],
+  options?: {},
 ): Promise<T> {
   const ContractFactory = await ethers.getContractFactory(abi as any[], bytecode);
-  return await ContractFactory.deploy(...args) as T;
+  return await ContractFactory.deploy(...(options ? [...args, options] : [...args])) as T;
 }
 
 export type LibraryName = string;
@@ -39,9 +41,10 @@ export async function createContractWithLibrary<T extends BaseContract>(
   name: string,
   libraries: Record<LibraryName, address>,
   args: (number | string | BigNumberish | boolean | object)[],
+  options?: {},
 ): Promise<T> {
   const ContractFactory = await ethers.getContractFactory(name, { libraries });
-  return await ContractFactory.deploy(...args) as T;
+  return await ContractFactory.deploy(...(options ? [...args, options] : [...args])) as T;
 }
 
 export async function createContractWithLibraryAndArtifact<T extends BaseContract>(
@@ -53,11 +56,11 @@ export async function createContractWithLibraryAndArtifact<T extends BaseContrac
   return await ContractFactory.deploy(...args) as T;
 }
 
-export async function createTestToken(): Promise<CustomTestToken> {
+export async function createTestToken(decimals: number = 18): Promise<CustomTestToken> {
   return createContractWithAbi<CustomTestToken>(
     CustomTestToken__factory.abi,
     CustomTestToken__factory.bytecode,
-    ['Test Token', 'TEST', 18],
+    ['Test Token', 'TEST', decimals],
   );
 }
 
@@ -133,17 +136,17 @@ export async function depositIntoDolomiteMargin<T extends NetworkType>(
 
 export async function withdrawFromDolomiteMargin<T extends NetworkType>(
   core: CoreProtocolType<T>,
-  user: SignerWithAddressWithSafety,
-  accountId: BigNumberish,
-  tokenId: BigNumberish,
+  accountOwner: SignerWithAddressWithSafety,
+  accountNumber: BigNumberish,
+  marketId: BigNumberish,
   amount: BigNumberish,
   toAddress?: string,
 ): Promise<void> {
   await core.dolomiteMargin
-    .connect(user)
+    .connect(accountOwner)
     .operate(
-      [{ owner: user.address, number: accountId }],
-      [createWithdrawAction(amount, tokenId, user, toAddress)],
+      [{ owner: accountOwner.address, number: accountNumber }],
+      [createWithdrawAction(amount, marketId, accountOwner, toAddress)],
     );
 }
 

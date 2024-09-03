@@ -4,10 +4,15 @@ import { setNextBlockTimestamp } from '@nomicfoundation/hardhat-network-helpers/
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
 import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
-import { Network, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
+import { ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
 import { expectEvent, expectThrow } from 'packages/base/test/utils/assertions';
-import { setupCoreProtocol, setupTestMarket } from 'packages/base/test/utils/setup';
+import { createDolomiteRegistryImplementation } from 'packages/base/test/utils/dolomite';
+import {
+  getDefaultCoreProtocolConfigForGmxV2,
+  setupCoreProtocol,
+  setupTestMarket,
+} from 'packages/base/test/utils/setup';
 import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE_FOR_TESTS } from '../src/gmx-v2-constructors';
 import {
@@ -29,15 +34,14 @@ import {
   createGmxV2MarketTokenPriceOracle,
   createGmxV2Registry,
 } from './gmx-v2-ecosystem-utils';
-import { createDolomiteRegistryImplementation } from 'packages/base/test/utils/dolomite';
 
-const GM_ETH_USD_PRICE_NO_MAX_WEI = BigNumber.from('919979975416060612'); // $0.9199
+const GM_ETH_USD_PRICE_NO_MAX_WEI = BigNumber.from('1429636905295331641'); // $1.4292
 const MAX_WEI = BigNumber.from('10000000000000000000000000'); // 10M tokens
 const NEGATIVE_PRICE = BigNumber.from('-5');
 const FEE_BASIS_POINTS = BigNumber.from('7');
 const BASIS_POINTS = BigNumber.from('10000');
 const GMX_DECIMAL_ADJUSTMENT = BigNumber.from('1000000000000');
-const blockNumber = 128_276_157;
+const NEXT_TIMESTAMP = 1724776050;
 
 describe('GmxV2MarketTokenPriceOracle', () => {
   let snapshotId: string;
@@ -54,66 +58,49 @@ describe('GmxV2MarketTokenPriceOracle', () => {
   let testReader: TestGmxReader;
 
   before(async () => {
-    core = await setupCoreProtocol({
-      blockNumber,
-      network: Network.ArbitrumOne,
-    });
-    underlyingToken = core.gmxEcosystemV2!.gmxEthUsdMarketToken.connect(core.hhUser1);
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfigForGmxV2());
+    underlyingToken = core.gmxV2Ecosystem.gmxEthUsdMarketToken.connect(core.hhUser1);
 
     gmxV2Registry = await createGmxV2Registry(core, GMX_V2_CALLBACK_GAS_LIMIT);
-    await gmxV2Registry.connect(core.governance).ownerSetGmxMarketToIndexToken(
-      underlyingToken.address,
-      core.gmxEcosystemV2.gmTokens.ethUsd.indexToken.address
-    );
+    await gmxV2Registry
+      .connect(core.governance)
+      .ownerSetGmxMarketToIndexToken(underlyingToken.address, core.gmxV2Ecosystem.gmTokens.ethUsd.indexToken.address);
 
     const gmxV2Library = await createGmxV2Library();
     const userVaultImplementation = await createGmxV2IsolationModeTokenVaultV1(core, gmxV2Library);
 
-    allowableMarketIds = [core.marketIds.nativeUsdc!, core.marketIds.weth];
+    allowableMarketIds = [core.marketIds.nativeUsdc, core.marketIds.weth];
     factory = await createGmxV2IsolationModeVaultFactory(
       core,
       gmxV2Library,
       gmxV2Registry,
       allowableMarketIds,
       allowableMarketIds,
-      core.gmxEcosystemV2!.gmTokens.ethUsd,
+      core.gmxV2Ecosystem.gmTokens.ethUsd,
       userVaultImplementation,
       GMX_V2_EXECUTION_FEE_FOR_TESTS,
     );
-    unwrapper = await createGmxV2IsolationModeUnwrapperTraderV2(
-      core,
-      factory,
-      gmxV2Library,
-      gmxV2Registry,
-    );
-    wrapper = await createGmxV2IsolationModeWrapperTraderV2(
-      core,
-      factory,
-      gmxV2Library,
-      gmxV2Registry,
-    );
+    unwrapper = await createGmxV2IsolationModeUnwrapperTraderV2(core, factory, gmxV2Library, gmxV2Registry);
+    wrapper = await createGmxV2IsolationModeWrapperTraderV2(core, factory, gmxV2Library, gmxV2Registry);
 
     const newRegistry = await createDolomiteRegistryImplementation();
     await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(newRegistry.address);
-    await core.dolomiteRegistry.connect(core.governance).ownerSetOracleAggregator(
-      await core.dolomiteMargin.getMarketPriceOracle(core.marketIds.weth)
-    );
+    await core.dolomiteRegistry
+      .connect(core.governance)
+      .ownerSetOracleAggregator(await core.dolomiteMargin.getMarketPriceOracle(core.marketIds.weth));
     gmPriceOracle = await createGmxV2MarketTokenPriceOracle(core, gmxV2Registry);
     await gmPriceOracle.connect(core.governance).ownerSetMarketToken(factory.address, true);
 
     marketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, factory, true, gmPriceOracle);
 
+    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
     await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
 
     await gmxV2Registry.connect(core.governance).ownerSetUnwrapperByToken(factory.address, unwrapper.address);
     await gmxV2Registry.connect(core.governance).ownerSetWrapperByToken(factory.address, wrapper.address);
 
-    testReader = await createContractWithAbi(
-      TestGmxReader__factory.abi,
-      TestGmxReader__factory.bytecode,
-      [],
-    );
+    testReader = await createContractWithAbi(TestGmxReader__factory.abi, TestGmxReader__factory.bytecode, []);
 
     snapshotId = await snapshot();
   });
@@ -132,9 +119,9 @@ describe('GmxV2MarketTokenPriceOracle', () => {
 
   describe('#getFeeBpByMarketToken', () => {
     it('should work normally', async () => {
-      expect(await gmPriceOracle.getFeeBpByMarketToken(core.gmxEcosystemV2!.gmxEthUsdMarketToken.address))
-        .to
-        .eq(FEE_BASIS_POINTS);
+      expect(await gmPriceOracle.getFeeBpByMarketToken(core.gmxV2Ecosystem.gmxEthUsdMarketToken.address)).to.eq(
+        FEE_BASIS_POINTS,
+      );
     });
   });
 
@@ -142,7 +129,7 @@ describe('GmxV2MarketTokenPriceOracle', () => {
     it('returns the correct value when there is no max wei', async () => {
       // Have to be at specific timestamp to get consistent price
       // Setup core protocol sometimes ends at different timestamps which threw off the test
-      await setNextBlockTimestamp(1693923100);
+      await setNextBlockTimestamp(NEXT_TIMESTAMP);
       await mine();
       expect((await gmPriceOracle.getPrice(factory.address)).value).to.eq(GM_ETH_USD_PRICE_NO_MAX_WEI);
     });
@@ -151,7 +138,7 @@ describe('GmxV2MarketTokenPriceOracle', () => {
       // Have to be at specific timestamp to get consistent price
       // Setup core protocol sometimes ends at different timestamps which threw off the test
       await core.dolomiteMargin.ownerSetMaxWei(marketId, MAX_WEI); // 10M tokens
-      await setNextBlockTimestamp(1693923100);
+      await setNextBlockTimestamp(NEXT_TIMESTAMP);
       await mine();
       // Should be same as above as we no longer factor it into slippage
       expect((await gmPriceOracle.getPrice(factory.address)).value).to.eq(GM_ETH_USD_PRICE_NO_MAX_WEI);
@@ -164,11 +151,11 @@ describe('GmxV2MarketTokenPriceOracle', () => {
       await gmxV2Registry.connect(core.governance).ownerSetGmxReader(testReader.address);
       const price = BigNumber.from('1000000000000000000000000000000');
       await testReader.setMarketPrice(price);
-      await setNextBlockTimestamp(1693923100);
+      await setNextBlockTimestamp(NEXT_TIMESTAMP);
       await mine();
-      expect((await gmPriceOracle.getPrice(factory.address)).value)
-        .to
-        .eq(price.mul(BASIS_POINTS.sub(FEE_BASIS_POINTS)).div(BASIS_POINTS).div(GMX_DECIMAL_ADJUSTMENT));
+      expect((await gmPriceOracle.getPrice(factory.address)).value).to.eq(
+        price.mul(BASIS_POINTS.sub(FEE_BASIS_POINTS)).div(BASIS_POINTS).div(GMX_DECIMAL_ADJUSTMENT),
+      );
     });
 
     it('should fail when token sent is not a valid token', async () => {

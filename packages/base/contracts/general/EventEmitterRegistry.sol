@@ -26,8 +26,10 @@ import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
 import { IEventEmitterRegistry } from "../interfaces/IEventEmitterRegistry.sol";
 import { IGenericTraderBase } from "../interfaces/IGenericTraderBase.sol";
 import { IIsolationModeVaultFactory } from "../isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
+import { IIsolationModeTokenVaultV1 } from "../isolation-mode/interfaces/IIsolationModeTokenVaultV1.sol";
 import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "../isolation-mode/interfaces/IUpgradeableAsyncIsolationModeUnwrapperTrader.sol"; // solhint-disable max-line-length
 import { IUpgradeableAsyncIsolationModeWrapperTrader } from "../isolation-mode/interfaces/IUpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable max-line-length
+import { ExcessivelySafeCall } from "../protocol/lib/ExcessivelySafeCall.sol";
 import { Require } from "../protocol/lib/Require.sol";
 
 
@@ -109,8 +111,8 @@ contract EventEmitterRegistry is
         BalanceUpdate calldata _marginDepositUpdate
     )
         external
-        onlyDolomiteMarginGlobalOperator(msg.sender)
     {
+        _validateOnlyGlobalOperatorOrIsolationModeVault(msg.sender);
         emit MarginPositionOpen(
             _accountOwner,
             _accountNumber,
@@ -265,6 +267,20 @@ contract EventEmitterRegistry is
         emit AsyncWithdrawalCancelled(_key, _token);
     }
 
+    function emitDistributorRegistered(
+        address _oTokenAddress,
+        address _pairToken,
+        address _paymentToken
+    )
+        external
+        onlyDolomiteMarginGlobalOperator(msg.sender)
+    {
+        // The pair token and the payment token must be valid markets
+        DOLOMITE_MARGIN().getMarketIdByTokenAddress(_pairToken);
+        DOLOMITE_MARGIN().getMarketIdByTokenAddress(_paymentToken);
+        emit DistributorRegistered(_oTokenAddress, _pairToken, _paymentToken);
+    }
+
     function emitRewardClaimed(
         address _user,
         uint256 _epoch,
@@ -288,6 +304,37 @@ contract EventEmitterRegistry is
             IIsolationModeVaultFactory(_token).isTokenConverterTrusted(_from),
             _FILE,
             "Caller is not a converter",
+            _from
+        );
+    }
+
+    function _validateOnlyGlobalOperatorOrIsolationModeVault(address _from) internal view {
+        if (DOLOMITE_MARGIN().getIsGlobalOperator(_from)) {
+            return;
+        }
+
+        (bool isSuccess, bytes memory returnData) = ExcessivelySafeCall.safeStaticCall(
+            _from,
+            IIsolationModeTokenVaultV1.VAULT_FACTORY.selector,
+            bytes("")
+        );
+
+        Require.that(
+            isSuccess && returnData.length > 0,
+            _FILE,
+            "Caller is not authorized",
+            _from
+        );
+
+        (address factory) = abi.decode(returnData, (address));
+
+        // getMarketIdByTokenAddress throws if the token is not listed.
+        assert(DOLOMITE_MARGIN().getMarketIdByTokenAddress(factory) != 0);
+
+        Require.that(
+            IIsolationModeVaultFactory(factory).getAccountByVault(_from) != address(0),
+            _FILE,
+            "Caller is not a token vault",
             _from
         );
     }

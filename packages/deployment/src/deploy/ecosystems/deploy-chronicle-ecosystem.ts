@@ -1,5 +1,5 @@
-import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { getAnyNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import { Network, NetworkType } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { CHRONICLE_PRICE_SCRIBES_MAP } from 'packages/base/src/utils/constants';
@@ -14,28 +14,31 @@ import {
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../utils/dry-run-utils';
 import getScriptName from '../../utils/get-script-name';
 
-async function main(): Promise<DryRunOutput<Network.Mantle>> {
-  const network = await getAndCheckSpecificNetwork(Network.Mantle);
+async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
+  const rawNetwork = (await getAnyNetwork()) as T;
+  if (rawNetwork !== Network.ArbitrumOne && rawNetwork !== Network.Mantle) {
+    return Promise.reject(new Error(`Invalid network: ${rawNetwork}`));
+  }
+  const network = rawNetwork as Network.ArbitrumOne | Network.Mantle;
   const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
 
   const chronicleAddress = await deployContractAndSave(
     'ChroniclePriceOracleV3',
     getChroniclePriceOracleV3ConstructorParams(core, [], [], []),
-    'ChroniclePriceOracleV3'
+    'ChroniclePriceOracleV3',
   );
-  (core as any).chroniclePriceOracle = ChroniclePriceOracleV3__factory.connect(chronicleAddress, core.hhUser1);
+  (core as any).chroniclePriceOracleV3 = ChroniclePriceOracleV3__factory.connect(chronicleAddress, core.hhUser1);
 
-  const tokens = Object.keys(CHRONICLE_PRICE_SCRIBES_MAP[network])
-    .map(t => IERC20__factory.connect(t, core.hhUser1));
+  const tokens = Object.keys(CHRONICLE_PRICE_SCRIBES_MAP[network]).map((t) => IERC20__factory.connect(t, core.hhUser1));
   const transactions: EncodedTransaction[] = [];
   for (let i = 0; i < tokens.length; i++) {
     if (CHRONICLE_PRICE_SCRIBES_MAP[network][tokens[i].address]) {
-      transactions.push(...await prettyPrintEncodeInsertChronicleOracleV3(core, tokens[i]));
+      transactions.push(...(await prettyPrintEncodeInsertChronicleOracleV3(core, tokens[i])));
     }
   }
 
   return {
-    core,
+    core: core as any,
     invariants: async () => {
       for (let i = 0; i < tokens.length; i++) {
         console.log(

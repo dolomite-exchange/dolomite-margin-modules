@@ -552,6 +552,29 @@ library IsolationModeTokenVaultV1ActionsImpl {
         );
     }
 
+    function selectorBinarySearch(bytes4[] memory _allowedSelectors, bytes4 _selector) public pure returns (bool) {
+        if (_allowedSelectors.length == 0) {
+            return false;
+        }
+
+        uint256 low = 0;
+        uint256 high = _allowedSelectors.length - 1;
+        if (_selector < _allowedSelectors[low] || _selector > _allowedSelectors[high]) {
+            return false;
+        }
+        while (low <= high) {
+            uint256 mid = (low + high) / 2;
+            if (_allowedSelectors[mid] == _selector) {
+                return true;
+            } else if (_allowedSelectors[mid] < _selector) {
+                low = mid + 1;
+            } else {
+                high = mid - 1;
+            }
+        }
+        return false;
+    }
+
     // ===================================================
     // ==================== Private ======================
     // ===================================================

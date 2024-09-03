@@ -69,6 +69,7 @@ contract PendleYtGLPMar2024IsolationModeVaultFactory is
         _ytGlp,
         _borrowPositionProxyV2,
         _userVaultImplementation,
+        address(IPendleGLPRegistry(_pendleGLPRegistry).dolomiteRegistry()),
         _dolomiteMargin
     ) {
         WETH = _weth;

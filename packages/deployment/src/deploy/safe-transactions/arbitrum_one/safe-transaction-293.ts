@@ -37,7 +37,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       core.dolomiteRegistry.address,
       core.dolomiteMargin.address,
     ],
-    'GraiFraxPriceOracleV1',
+    'GraiFraxPriceOracleV3',
   );
 
   const transactions: EncodedTransaction[] = [];
@@ -66,7 +66,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       core,
       core.tokens.grai,
       core.oracleAggregatorV2,
-      core.interestSetters.linearStepFunction16L84UInterestSetter,
+      core.interestSetters.linearStepFunction16L84U90OInterestSetter,
       TargetCollateralization._125,
       TargetLiquidationPenalty._7,
       parseEther(`${100_000}`),

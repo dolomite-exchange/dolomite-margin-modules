@@ -254,8 +254,7 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezableAndPausable is
         _addCollateralAndSwapExactInputForOutputAsyncFreezableValidator(
             _fromAccountNumber,
             _borrowAccountNumber,
-            /* _inputMarketId */ _marketIdsPath[0],
-            /* _outputMarketId */ _marketIdsPath[_marketIdsPath.length - 1],
+            _marketIdsPath,
             _inputAmountWei,
             _minOutputAmountWei
         )
@@ -287,8 +286,7 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezableAndPausable is
         override (IsolationModeTokenVaultV1WithAsyncFreezable, IsolationModeTokenVaultV1)
         _swapExactInputForOutputAndRemoveCollateralAsyncFreezableValidator(
             _borrowAccountNumber,
-            /* _inputMarketId */ _marketIdsPath[0],
-            /* _outputMarketId */ _marketIdsPath[_marketIdsPath.length - 1],
+            _marketIdsPath,
             _inputAmountWei,
             _minOutputAmountWei
         )

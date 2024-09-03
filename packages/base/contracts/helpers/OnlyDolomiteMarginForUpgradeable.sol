@@ -43,32 +43,17 @@ abstract contract OnlyDolomiteMarginForUpgradeable is IOnlyDolomiteMargin, Proxy
     // ============ Modifiers ============
 
     modifier onlyDolomiteMargin(address _from) {
-        Require.that(
-            _from == address(DOLOMITE_MARGIN()),
-            _FILE,
-            "Only Dolomite can call function",
-            _from
-        );
+        _requireOnlyDolomiteMargin(_from);
         _;
     }
 
     modifier onlyDolomiteMarginOwner(address _from) {
-        Require.that(
-            _from == DOLOMITE_MARGIN().owner(),
-            _FILE,
-            "Caller is not owner of Dolomite",
-            _from
-        );
+        _requireOnlyDolomiteMarginOwner(_from);
         _;
     }
 
     modifier onlyDolomiteMarginGlobalOperator(address _from) {
-        Require.that(
-            DOLOMITE_MARGIN().getIsGlobalOperator(_from),
-            _FILE,
-            "Caller is not a global operator",
-            _from
-        );
+        _requireOnlyDolomiteMarginGlobalOperator(_from);
         _;
     }
 
@@ -78,7 +63,38 @@ abstract contract OnlyDolomiteMarginForUpgradeable is IOnlyDolomiteMargin, Proxy
         return IDolomiteMargin(_getAddress(_DOLOMITE_MARGIN_SLOT));
     }
 
+    function DOLOMITE_MARGIN_OWNER() public view returns (address) {
+        return DOLOMITE_MARGIN().owner();
+    }
+
     function _setDolomiteMarginViaSlot(address _dolomiteMargin) internal {
         _setAddress(_DOLOMITE_MARGIN_SLOT, _dolomiteMargin);
+    }
+
+    function _requireOnlyDolomiteMargin(address _from) internal view {
+        Require.that(
+            _from == address(DOLOMITE_MARGIN()),
+            _FILE,
+            "Only Dolomite can call function",
+            _from
+        );
+    }
+
+    function _requireOnlyDolomiteMarginOwner(address _from) internal view {
+        Require.that(
+            _from == DOLOMITE_MARGIN_OWNER(),
+            _FILE,
+            "Caller is not owner of Dolomite",
+            _from
+        );
+    }
+
+    function _requireOnlyDolomiteMarginGlobalOperator(address _from) internal view {
+        Require.that(
+            DOLOMITE_MARGIN().getIsGlobalOperator(_from),
+            _FILE,
+            "Caller is not a global operator",
+            _from
+        );
     }
 }

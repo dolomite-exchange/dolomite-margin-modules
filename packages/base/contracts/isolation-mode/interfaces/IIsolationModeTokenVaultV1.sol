@@ -57,6 +57,12 @@ interface IIsolationModeTokenVaultV1 {
     function initialize() external;
 
     /**
+     * @notice  End-user function for calling more than one vault function at a time. Should only
+     *          be executable by the vault owner.
+     */
+    function multicall(bytes[] calldata _calls) external;
+
+    /**
      * @notice  End-user function for depositing the vault factory's underlying token into DolomiteMargin. Should only
      *          be executable by the vault owner OR the vault factory.
      */
@@ -76,6 +82,18 @@ interface IIsolationModeTokenVaultV1 {
     function openBorrowPosition(
         uint256 _fromAccountNumber,
         uint256 _toAccountNumber,
+        uint256 _amountWei
+    ) external payable;
+
+    /**
+     * @notice  End-user function for opening a margin position involving the vault factory's underlying token. Should
+     *          only be executable by the vault owner. Reverts if `_fromAccountNumber` is not 0 or if `_toAccountNumber`
+     *          is 0. The `_borrowMarketId` is unused except for emitting the event needed to index the Subgraph.
+     */
+    function openMarginPosition(
+        uint256 _fromAccountNumber,
+        uint256 _toAccountNumber,
+        uint256 _borrowMarketId,
         uint256 _amountWei
     ) external payable;
 

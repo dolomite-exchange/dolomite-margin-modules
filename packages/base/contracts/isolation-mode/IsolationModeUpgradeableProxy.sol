@@ -20,6 +20,7 @@
 
 pragma solidity ^0.8.9;
 
+import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
 import { Require } from "../protocol/lib/Require.sol";
 import { IIsolationModeTokenVaultV1 } from "./interfaces/IIsolationModeTokenVaultV1.sol";
@@ -38,6 +39,7 @@ contract IsolationModeUpgradeableProxy is
     IIsolationModeUpgradeableProxy,
     ProxyContractHelpers
 {
+    using Address for address;
 
     // ============ Constants ============
 
@@ -65,7 +67,9 @@ contract IsolationModeUpgradeableProxy is
 
     // ============ Functions ============
 
-    receive() external payable {} // solhint-disable-line no-empty-blocks
+    receive() external payable requireIsInitialized {
+        _callImplementation(implementation());
+    }
 
     // solhint-disable-next-line payable-fallback
     fallback() external payable requireIsInitialized {

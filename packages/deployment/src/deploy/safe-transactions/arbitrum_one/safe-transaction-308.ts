@@ -19,7 +19,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(
       core,
-      { mineralDistributor: core.mineralLiquidityMiningEcosystem.mineralDistributor },
+      { mineralDistributor: core.liquidityMiningEcosystem.minerals.mineralDistributor },
       'mineralDistributor',
       'ownerSetHandler',
       ['0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe', true],

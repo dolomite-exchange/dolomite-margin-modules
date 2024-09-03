@@ -61,7 +61,9 @@ contract RegistryProxy is ProxyContractHelpers, OnlyDolomiteMarginForUpgradeable
 
     // ===================== Functions =====================
 
-    fallback() external {
+    receive() external payable {} // solhint-disable-line no-empty-blocks
+
+    fallback() external payable {
         // solhint-disable-previous-line payable-fallback
         _callImplementation(implementation());
     }

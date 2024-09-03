@@ -1,20 +1,29 @@
 import { BigNumberish } from 'ethers';
 import {
+  ChroniclePriceOracleV3,
   IChainlinkAutomationRegistry,
   IChainlinkPriceOracleV1,
-  IChainlinkPriceOracleV3, RedstonePriceOracleV3,
+  IChainlinkPriceOracleV3,
+  RedstonePriceOracleV3,
 } from 'packages/oracles/src/types';
-import { IDolomiteAccountValuesReader, IDolomiteMigrator, IERC20 } from '../../../src/types';
+import {
+  DolomiteERC20,
+  DolomiteERC20WithPayable,
+  IDolomiteAccountValuesReader,
+  IDolomiteMigrator,
+  IERC20,
+  RegistryProxy,
+} from '../../../src/types';
 import { Network } from '../../../src/utils/no-deps-constants';
 import { AbraEcosystem } from '../ecosystem-utils/abra';
 import { ArbEcosystem } from '../ecosystem-utils/arb';
 import { CamelotEcosystem } from '../ecosystem-utils/camelot';
-import { GmxEcosystem, GmxEcosystemV2 } from '../ecosystem-utils/gmx';
+import { GmxEcosystem, GmxV2Ecosystem } from '../ecosystem-utils/gmx';
 import { JonesEcosystem } from '../ecosystem-utils/jones';
-import { MineralLiquidityMiningEcosystem, OARBLiquidityMiningEcosystem } from '../ecosystem-utils/liquidity-mining';
+import { LiquidityMiningEcosystemArbitrumOne } from '../ecosystem-utils/liquidity-mining';
 import { OdosEcosystem } from '../ecosystem-utils/odos';
 import { ParaswapEcosystem } from '../ecosystem-utils/paraswap';
-import { PendleEcosystem } from '../ecosystem-utils/pendle';
+import { PendleEcosystemArbitrumOne } from '../ecosystem-utils/pendle';
 import { PlutusEcosystem } from '../ecosystem-utils/plutus';
 import { PremiaEcosystem } from '../ecosystem-utils/premia';
 import { UmamiEcosystem } from '../ecosystem-utils/umami';
@@ -46,6 +55,7 @@ interface CoreProtocolTokensArbitrumOne extends CoreProtocolTokens<Network.Arbit
   dYtGlp: IERC20;
   eEth: IERC20;
   ezEth: IERC20;
+  ezEthReversed: IERC20;
   sGlp: IERC20;
   frax: IERC20;
   gmx: IERC20;
@@ -60,16 +70,31 @@ interface CoreProtocolTokensArbitrumOne extends CoreProtocolTokens<Network.Arbit
   premia: IERC20;
   rEth: IERC20;
   rsEth: IERC20;
+  rsEthReversed: IERC20;
   radiant: IERC20;
   pendle: IERC20;
   size: IERC20;
+  sol: IERC20;
   stEth: IERC20;
   uni: IERC20;
+  usde: IERC20;
+  usdm: IERC20;
   usdt: IERC20;
   wbtc: IERC20;
   weEth: IERC20;
+  woEth: IERC20;
   wstEth: IERC20;
+  wusdm: IERC20;
   xai: IERC20;
+}
+
+interface CoreProtocolArbitrumOneDTokens {
+  usdc: DolomiteERC20;
+  wbtc: DolomiteERC20;
+  weth: DolomiteERC20WithPayable;
+  usdcProxy: RegistryProxy;
+  wbtcProxy: RegistryProxy;
+  wethProxy: RegistryProxy;
 }
 
 interface CoreProtocolMarketIdsArbitrumOne extends CoreProtocolMarketIds {
@@ -83,14 +108,18 @@ interface CoreProtocolMarketIdsArbitrumOne extends CoreProtocolMarketIds {
   dGmEth: BigNumberish;
   dGmEthSingleSided: BigNumberish;
   dGmLink: BigNumberish;
+  dGmUni: BigNumberish;
   djUsdcV1: BigNumberish;
   djUsdcV2: BigNumberish;
   dplvGlp: BigNumberish;
   dPtEzEthJun2024: BigNumberish;
+  dPtEzEthSep2024: BigNumberish;
   dPtGlpMar2024: BigNumberish;
   dPtWeEthApr2024: BigNumberish;
   dPtWeEthJun2024: BigNumberish;
+  dPtWeEthSep2024: BigNumberish;
   dPtREthJun2025: BigNumberish;
+  dPtRsEthSep2024: BigNumberish;
   dPtWstEthJun2024: BigNumberish;
   dPtWstEthJun2025: BigNumberish;
   dai: BigNumberish;
@@ -108,6 +137,7 @@ interface CoreProtocolMarketIdsArbitrumOne extends CoreProtocolMarketIds {
   nativeUsdc: BigNumberish;
   premia: BigNumberish;
   rEth: BigNumberish;
+  rsEth: BigNumberish;
   radiant: BigNumberish;
   pendle: BigNumberish;
   sGlp: BigNumberish;
@@ -115,7 +145,9 @@ interface CoreProtocolMarketIdsArbitrumOne extends CoreProtocolMarketIds {
   usdt: BigNumberish;
   wbtc: BigNumberish;
   weEth: BigNumberish;
+  woEth: BigNumberish;
   wstEth: BigNumberish;
+  wusdm: BigNumberish;
   xai: BigNumberish;
 }
 
@@ -126,17 +158,18 @@ interface CoreProtocolParamsArbitrumOne {
   chainlinkAutomationRegistry: IChainlinkAutomationRegistry;
   chainlinkPriceOracleV1: IChainlinkPriceOracleV1;
   chainlinkPriceOracleV3: IChainlinkPriceOracleV3;
+  chroniclePriceOracleV3: ChroniclePriceOracleV3;
   dolomiteAccountValuesReader: IDolomiteAccountValuesReader;
   dolomiteMigrator: IDolomiteMigrator;
+  dTokens: CoreProtocolArbitrumOneDTokens;
   gmxEcosystem: GmxEcosystem;
-  gmxEcosystemV2: GmxEcosystemV2;
+  gmxEcosystemV2: GmxV2Ecosystem;
   jonesEcosystem: JonesEcosystem;
-  mineralLiquidityMiningEcosystem: MineralLiquidityMiningEcosystem;
-  oArbLiquidityMiningEcosystem: OARBLiquidityMiningEcosystem;
+  liquidityMiningEcosystem: LiquidityMiningEcosystemArbitrumOne;
   marketIds: CoreProtocolMarketIdsArbitrumOne;
   odosEcosystem: OdosEcosystem;
   paraswapEcosystem: ParaswapEcosystem;
-  pendleEcosystem: PendleEcosystem;
+  pendleEcosystem: PendleEcosystemArbitrumOne;
   plutusEcosystem: PlutusEcosystem;
   premiaEcosystem: PremiaEcosystem;
   redstonePriceOracleV3: RedstonePriceOracleV3;
@@ -149,17 +182,18 @@ export class CoreProtocolArbitrumOne extends CoreProtocolAbstract<Network.Arbitr
   public readonly arbEcosystem: ArbEcosystem;
   public readonly camelotEcosystem: CamelotEcosystem;
   public readonly chainlinkAutomationRegistry: IChainlinkAutomationRegistry;
+  public readonly chroniclePriceOracleV3: ChroniclePriceOracleV3;
   public readonly dolomiteAccountValuesReader: IDolomiteAccountValuesReader;
   public readonly dolomiteMigrator: IDolomiteMigrator;
+  public readonly dTokens: CoreProtocolArbitrumOneDTokens;
   public readonly gmxEcosystem: GmxEcosystem;
-  public readonly gmxEcosystemV2: GmxEcosystemV2;
+  public readonly gmxV2Ecosystem: GmxV2Ecosystem;
   public readonly jonesEcosystem: JonesEcosystem;
-  public readonly mineralLiquidityMiningEcosystem: MineralLiquidityMiningEcosystem;
+  public readonly liquidityMiningEcosystem: LiquidityMiningEcosystemArbitrumOne;
   public override readonly marketIds: CoreProtocolMarketIdsArbitrumOne;
-  public readonly oArbLiquidityMiningEcosystem: OARBLiquidityMiningEcosystem;
   public readonly odosEcosystem: OdosEcosystem;
   public readonly paraswapEcosystem: ParaswapEcosystem;
-  public readonly pendleEcosystem: PendleEcosystem;
+  public readonly pendleEcosystem: PendleEcosystemArbitrumOne;
   public readonly plutusEcosystem: PlutusEcosystem;
   public readonly premiaEcosystem: PremiaEcosystem;
   public readonly redstonePriceOracleV3: RedstonePriceOracleV3;
@@ -167,22 +201,20 @@ export class CoreProtocolArbitrumOne extends CoreProtocolAbstract<Network.Arbitr
   public readonly umamiEcosystem: UmamiEcosystem;
   public readonly network: Network.ArbitrumOne = Network.ArbitrumOne;
 
-  constructor(
-    params: CoreProtocolParams<Network.ArbitrumOne>,
-    arbParams: CoreProtocolParamsArbitrumOne,
-  ) {
+  constructor(params: CoreProtocolParams<Network.ArbitrumOne>, arbParams: CoreProtocolParamsArbitrumOne) {
     super(params);
     this.abraEcosystem = arbParams.abraEcosystem;
     this.arbEcosystem = arbParams.arbEcosystem;
     this.camelotEcosystem = arbParams.camelotEcosystem;
     this.chainlinkAutomationRegistry = arbParams.chainlinkAutomationRegistry;
+    this.chroniclePriceOracleV3 = arbParams.chroniclePriceOracleV3;
     this.dolomiteAccountValuesReader = arbParams.dolomiteAccountValuesReader;
     this.dolomiteMigrator = arbParams.dolomiteMigrator;
+    this.dTokens = arbParams.dTokens;
     this.gmxEcosystem = arbParams.gmxEcosystem;
-    this.gmxEcosystemV2 = arbParams.gmxEcosystemV2;
+    this.gmxV2Ecosystem = arbParams.gmxEcosystemV2;
     this.jonesEcosystem = arbParams.jonesEcosystem;
-    this.mineralLiquidityMiningEcosystem = arbParams.mineralLiquidityMiningEcosystem;
-    this.oArbLiquidityMiningEcosystem = arbParams.oArbLiquidityMiningEcosystem;
+    this.liquidityMiningEcosystem = arbParams.liquidityMiningEcosystem;
     this.marketIds = arbParams.marketIds;
     this.odosEcosystem = arbParams.odosEcosystem;
     this.paraswapEcosystem = arbParams.paraswapEcosystem;

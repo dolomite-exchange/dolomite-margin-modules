@@ -34,7 +34,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
         { dolomite: core.dolomiteMargin },
         'dolomite',
         'ownerSetInterestSetter',
-        [altCoins[i], core.interestSetters.linearStepFunction8L92UInterestSetter.address],
+        [altCoins[i], core.interestSetters.linearStepFunction8L92U90OInterestSetter.address],
       ),
     );
   }
@@ -79,7 +79,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       for (let i = 0; i < altCoins.length; i++) {
         expect(await core.dolomiteMargin.getMarketInterestSetter(altCoins[i]))
           .to
-          .eq(core.interestSetters.linearStepFunction8L92UInterestSetter.address);
+          .eq(core.interestSetters.linearStepFunction8L92U90OInterestSetter.address);
       }
     },
   };

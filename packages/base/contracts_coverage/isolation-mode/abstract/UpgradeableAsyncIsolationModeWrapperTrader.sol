@@ -239,6 +239,10 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
         return _getDepositSlot(_key);
     }
 
+    function emitDepositCancelled(bytes32 _key) public onlyHandler(msg.sender) {
+        HANDLER_REGISTRY().dolomiteRegistry().eventEmitter().emitAsyncDepositCancelled(_key, address(VAULT_FACTORY()));
+    }
+
     // ============ Internal Functions ============
 
     function _initializeWrapperTrader(
@@ -269,7 +273,9 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
         // Account number is set by the Token Vault so we know it's safe to use
         (uint256 accountNumber, bytes memory _extraOrderData) = abi.decode(_orderData, (uint256, bytes));
 
-        IAsyncFreezableIsolationModeVaultFactory factory = IAsyncFreezableIsolationModeVaultFactory(address(VAULT_FACTORY()));
+        IAsyncFreezableIsolationModeVaultFactory factory = IAsyncFreezableIsolationModeVaultFactory(
+            address(VAULT_FACTORY())
+        );
 
         // Disallow the deposit if there's already an action waiting for it
         if (!factory.isVaultFrozen(_tradeOriginator)) { /* FOR COVERAGE TESTING */ }
@@ -332,7 +338,9 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
         DepositInfo memory depositInfo = _getDepositSlot(_key);
         _validateDepositExists(depositInfo);
 
-        IAsyncFreezableIsolationModeVaultFactory factory = IAsyncFreezableIsolationModeVaultFactory(address(VAULT_FACTORY()));
+        IAsyncFreezableIsolationModeVaultFactory factory = IAsyncFreezableIsolationModeVaultFactory(
+            address(VAULT_FACTORY())
+        );
         IERC20 underlyingToken = IERC20(factory.UNDERLYING_TOKEN());
         // We just need to blind transfer the min amount to the vault
         underlyingToken.safeTransfer(depositInfo.vault, _minMarketTokens);

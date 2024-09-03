@@ -210,7 +210,7 @@ async function main(): Promise<DenJsonUpload> {
       core,
       core.tokens.gmx!,
       core.chainlinkPriceOracleV1!,
-      core.interestSetters.linearStepFunction8L92UInterestSetter,
+      core.interestSetters.linearStepFunction8L92U90OInterestSetter,
       TargetCollateralization._125,
       TargetLiquidationPenalty._8,
       ONE_BI, // ONE unit of collateral

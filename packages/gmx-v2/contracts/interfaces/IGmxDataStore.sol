@@ -31,6 +31,8 @@ import { IGmxRoleStore } from "./IGmxRoleStore.sol";
  */
 interface IGmxDataStore {
 
+    function setAddress(bytes32 _key, address _address) external returns (address);
+
     function setUint(bytes32 _key, uint256 _value) external returns (uint256);
 
     function setBool(bytes32 _key, bool _bool) external returns (bool);
@@ -38,6 +40,8 @@ interface IGmxDataStore {
     function getBool(bytes32 _key) external view returns (bool);
 
     function getUint(bytes32 _key) external view returns (uint256);
+
+    function getAddress(bytes32 _key) external view returns (address);
 
     function roleStore() external view returns (IGmxRoleStore);
 }

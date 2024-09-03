@@ -26,10 +26,11 @@ import { AccountBalanceLib } from "@dolomite-exchange/modules-base/contracts/lib
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { TypesLib } from "@dolomite-exchange/modules-base/contracts/protocol/lib/TypesLib.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import { IERC20Mintable } from "./interfaces/IERC20Mintable.sol";
 import { IEmitter } from "./interfaces/IEmitter.sol";
-import { IOARB } from "./interfaces/IOARB.sol";
 
 
 /**
@@ -40,7 +41,7 @@ import { IOARB } from "./interfaces/IOARB.sol";
  * WARNING: THIS CODE HAS NOT BEEN THOROUGHLY TESTED AND IS NOT PRODUCTION READY
  */
 contract Emitter is OnlyDolomiteMargin, IEmitter {
-    using SafeERC20 for IOARB;
+    using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.UintSet;
     using TypesLib for IDolomiteStructs.Par;
 
@@ -62,7 +63,7 @@ contract Emitter is OnlyDolomiteMargin, IEmitter {
     mapping(uint256 => mapping(address => UserInfo)) public userInfo;
     mapping(uint256 => PoolInfo) public poolInfo;
 
-    IOARB public oARB;
+    IERC20Mintable public oARB;
     uint256 public oARBPerSecond;
     uint256 public totalAllocPoint;
     uint256 public startTime;
@@ -79,7 +80,7 @@ contract Emitter is OnlyDolomiteMargin, IEmitter {
         uint256 _startTime
     ) OnlyDolomiteMargin(_dolomiteMargin) {
         DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
-        oARB = IOARB(_oARB);
+        oARB = IERC20Mintable(_oARB);
         oARBPerSecond = _oARBPerSecond;
         startTime = _startTime;
     }
@@ -122,7 +123,7 @@ contract Emitter is OnlyDolomiteMargin, IEmitter {
         if (user.amount > 0) {
             uint256 pending = user.amount * pool.accOARBPerShare / _SCALE - user.rewardDebt;
             oARB.mint(pending);
-            oARB.transfer(msg.sender, pending);
+            IERC20(address(oARB)).safeTransfer(msg.sender, pending);
         }
 
         IDolomiteStructs.Par memory beforeAccountPar = DOLOMITE_MARGIN().getAccountPar(info, _marketId);
@@ -186,7 +187,7 @@ contract Emitter is OnlyDolomiteMargin, IEmitter {
 
         uint256 pending = user.amount * pool.accOARBPerShare / _SCALE - user.rewardDebt;
         oARB.mint(pending);
-        oARB.transfer(msg.sender, pending);
+        IERC20(address(oARB)).safeTransfer(msg.sender, pending);
 
         // We calculate the change in par value based on the transfer of the wei amount
         if(withdrawalAmount > 0) {
@@ -320,7 +321,7 @@ contract Emitter is OnlyDolomiteMargin, IEmitter {
 
     function ownerCreateNewCampaign(
         uint256 _startTime,
-        IOARB _oARB
+        IERC20Mintable _oARB
     ) external onlyDolomiteMarginOwner(msg.sender) {
         if (_startTime >= block.timestamp) { /* FOR COVERAGE TESTING */ }
         Require.that(

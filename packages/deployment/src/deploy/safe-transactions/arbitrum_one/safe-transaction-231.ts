@@ -34,7 +34,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
         { dolomiteMargin: core.dolomiteMargin },
         'dolomiteMargin',
         'ownerSetInterestSetter',
-        [stable, core.interestSetters.linearStepFunction16L84UInterestSetter.address],
+        [stable, core.interestSetters.linearStepFunction16L84U90OInterestSetter.address],
       ),
     );
   }
@@ -51,7 +51,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
         const stable = stables[i];
         assertHardhatInvariant(
           await core.dolomiteMargin.getMarketInterestSetter(stable)
-          === core.interestSetters.linearStepFunction16L84UInterestSetter.address,
+          === core.interestSetters.linearStepFunction16L84U90OInterestSetter.address,
           `Invalid interest setter found for ${stable.toString()}`,
         );
       }
