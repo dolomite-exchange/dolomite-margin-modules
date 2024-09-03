@@ -115,7 +115,8 @@ export async function getCalldataForOogaBooga(
         tokenIn: inputToken.address,
         tokenOut: outputToken.address,
         amount: inputAmount.toString(),
-        to: receiver.address
+        to: receiver.address,
+        slippage: '0.02' // 2%
       }
   })
     .then(response => response.data)
@@ -126,7 +127,7 @@ export async function getCalldataForOogaBooga(
 
   return {
     calldata: `0x${result.tx.data.slice(10)}`, // get rid of the method ID
-    outputAmount: BigNumber.from(result.routerParams.swapTokenInfo.outputMin)
+    outputAmount: BigNumber.from(result.routerParams.swapTokenInfo.outputMin) // @follow-up Use min or quote here?
   };
 }
 
