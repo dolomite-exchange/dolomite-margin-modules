@@ -23,7 +23,6 @@ describe('PendlePtMntOct2024PriceOracle', () => {
   let pendleRegistry: PendleRegistry;
   let factory: PendlePtIsolationModeVaultFactory;
   let underlyingToken: IERC20;
-  let underlyingMarketId: BigNumber;
 
   before(async () => {
     const blockNumber = 68_670_570;

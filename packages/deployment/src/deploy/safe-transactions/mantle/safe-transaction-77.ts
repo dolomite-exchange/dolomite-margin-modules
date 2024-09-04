@@ -17,7 +17,6 @@ import {
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../utils/dry-run-utils';
 import getScriptName from '../../../utils/get-script-name';
 
-
 /**
  * This script encodes the following transactions:
  * - Sets up the PT-Mnt ecosystem
@@ -28,11 +27,9 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
     network,
     blockNumber: await getRealLatestBlockNumber(true, network),
   });
-  let incrementor = 0;
-  const numMarkets = await core.dolomiteMargin.getNumMarkets();
 
   const transactions: EncodedTransaction[] = [];
-  const ptMntMarketId = numMarkets.add(incrementor++);
+  const ptMntMarketId = await core.dolomiteMargin.getNumMarkets();
 
   const mntSystem = await deployPendlePtSystem(
     core,

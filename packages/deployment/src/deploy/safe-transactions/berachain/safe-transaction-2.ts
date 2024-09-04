@@ -7,7 +7,6 @@ import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../utils/dry-run
 import getScriptName from '../../../utils/get-script-name';
 import { getOogaBoogaAggregatorTraderConstructorParams } from 'packages/base/src/utils/constructors/traders';
 
-
 /**
  * This script encodes the following transactions:
  * - Deploys the OogaBoogaAggregatorTrader
