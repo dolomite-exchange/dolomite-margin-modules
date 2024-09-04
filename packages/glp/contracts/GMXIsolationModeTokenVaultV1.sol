@@ -31,6 +31,7 @@ import { IGLPIsolationModeTokenVaultV2 } from "./interfaces/IGLPIsolationModeTok
 import { IGMXIsolationModeTokenVaultV1 } from "./interfaces/IGMXIsolationModeTokenVaultV1.sol";
 import { IGMXIsolationModeVaultFactory } from "./interfaces/IGMXIsolationModeVaultFactory.sol";
 import { IGmxRegistryV1 } from "./interfaces/IGmxRegistryV1.sol";
+import { IAccountTransferReceiver } from "./interfaces/IAccountTransferReceiver.sol";
 
 
 /**
@@ -98,16 +99,18 @@ contract GMXIsolationModeTokenVaultV1 is
         IGLPIsolationModeTokenVaultV2(glpVault).unvestGmx(_shouldStakeGmx, /* _addDepositIntoDolomite = */ true);
     }
 
-    function requestAccountTransfer(address _recipient) external onlyVaultOwner(msg.sender) {
+    function requestAccountTransfer() external onlyVaultOwner(msg.sender) {
         Require.that(
             !isVaultFrozen(),
             _FILE,
             "Transfer already in progress"
         );
 
-        _setAddress(_RECIPIENT_SLOT, _recipient);
+        address glpVault = registry().glpVaultFactory().getVaultByAccount(OWNER());
+        address recipient = IGLPIsolationModeTokenVaultV2(glpVault).getAccountTransferOutReceiverAddress();
+        _setAddress(_RECIPIENT_SLOT, recipient);
         _setUint256(_TEMP_BALANCE_SLOT, 0);
-        emit AccountTransferRequested(_recipient);
+        emit AccountTransferRequested(recipient);
     }
 
     function signalAccountTransfer(
@@ -228,8 +231,14 @@ contract GMXIsolationModeTokenVaultV1 is
     override(IIsolationModeTokenVaultV1WithFreezable, IsolationModeTokenVaultV1WithFreezable)
     returns (bool) {
         address glpVault = registry().glpVaultFactory().getVaultByAccount(OWNER());
-        return _getAddress(_RECIPIENT_SLOT) != address(0)
-            || registry().gmxRewardsRouter().pendingReceivers(glpVault) != address(0);
+        IAccountTransferReceiver receiver = IGLPIsolationModeTokenVaultV2(glpVault).accountTransferReceiver();
+
+        if (address(receiver) == address(0)) {
+            return _getAddress(_RECIPIENT_SLOT) != address(0);
+        } else {
+            return _getAddress(_RECIPIENT_SLOT) != address(0)
+                || receiver.canAcceptTransfer();
+        }
     }
 
     function registry() public view returns (IGmxRegistryV1) {
@@ -304,7 +313,7 @@ contract GMXIsolationModeTokenVaultV1 is
             assert(!shouldSkipTransfer());
         }
 
-        IGLPIsolationModeTokenVaultV2(_glpVault).signalAccountTransfer(recipient, _glpValue);
+        IGLPIsolationModeTokenVaultV2(_glpVault).signalAccountTransfer(_glpValue);
         emit AccountTransferSignaled(recipient);
     }
 

@@ -21,6 +21,7 @@
 pragma solidity ^0.8.9;
 
 import { IGmxRegistryV1 } from "./IGmxRegistryV1.sol";
+import { IAccountTransferReceiver } from "./IAccountTransferReceiver.sol";
 
 
 /**
@@ -110,10 +111,9 @@ interface IGLPIsolationModeTokenVaultV2 {
     /**
      * @notice  Signals a full account transfer to the recipient. This function must be called by the gmx vault
      *
-     * @param  _recipient   The address of the recipient who will receive this vault's entire account
      * @param  _glpBal      The account wei of the glp vault in the underlying glp market
      */
-    function signalAccountTransfer(address _recipient, uint256 _glpBal) external;
+    function signalAccountTransfer(uint256 _glpBal) external;
 
     /**
      * @notice  Cancels a full account transfer that has already been signaled. 
@@ -196,4 +196,14 @@ interface IGLPIsolationModeTokenVaultV2 {
      * @return The amount of GMX tokens the user owns
      */
     function gmxBalanceOf() external view returns (uint256);
+
+    /**
+     * @return The address for the AccountTransferOutReceiver contract that will be deployed
+     */
+    function getAccountTransferOutReceiverAddress() external view returns (address);
+
+    /**
+     * @return The address for the AccountTransferOutReceiver contract
+     */
+    function accountTransferReceiver() external view returns (IAccountTransferReceiver);
 }

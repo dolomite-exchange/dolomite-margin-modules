@@ -44,7 +44,7 @@ interface IGMXIsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1WithFreezab
 
     function unvestGmx(bool _shouldStakeGmx) external;
 
-    function requestAccountTransfer(address _recipient) external;
+    function requestAccountTransfer() external;
 
     function signalAccountTransfer(uint256 _gmxVirtualBalance, uint256 _glpVirtualBalance) external;
 

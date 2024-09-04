@@ -38,6 +38,8 @@ import { IGmxRewardRouterV2 } from "./interfaces/IGmxRewardRouterV2.sol";
 import { IGmxRewardTracker } from "./interfaces/IGmxRewardTracker.sol";
 import { IGmxVester } from "./interfaces/IGmxVester.sol";
 import { ISGMX } from "./interfaces/ISGMX.sol";
+import { AccountTransferReceiver } from "./AccountTransferReceiver.sol";
+import { IAccountTransferReceiver } from "./interfaces/IAccountTransferReceiver.sol";
 // solhint-enable max-line-length
 
 
@@ -66,6 +68,7 @@ contract GLPIsolationModeTokenVaultV2 is
     bytes32 private constant _IS_ACCEPTING_FULL_ACCOUNT_TRANSFER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isAcceptingFullAccountTransfer")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _HAS_ACCEPTED_FULL_ACCOUNT_TRANSFER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.hasAcceptedFullAccountTransfer")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _HAS_SYNCED = bytes32(uint256(keccak256("eip1967.proxy.hasSynced")) - 1);
+    bytes32 private constant _ACCOUNT_TRANSFER_RECEIVER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.accountTransferReceiver")) - 1);
     uint256 private constant _DEFAULT_ACCOUNT_NUMBER = 0;
 
     modifier onlyGmxVault(address _sender) {
@@ -156,7 +159,6 @@ contract GLPIsolationModeTokenVaultV2 is
     }
 
     function signalAccountTransfer(
-        address _receiver,
         uint256 _glpBalance
     ) external onlyGmxVault(msg.sender) {
         if (_glpBalance > 0) {
@@ -168,14 +170,32 @@ contract GLPIsolationModeTokenVaultV2 is
             _setUint256(_TEMP_BALANCE_SLOT, 0);
         }
 
-        gmx().approve(address(sGmx()), type(uint256).max);
-        gmxRewardsRouter().signalTransfer(_receiver);
+        IAccountTransferReceiver receiver = accountTransferReceiver();
+        if (address(receiver) == address(0)) {
+            bytes32 salt = keccak256(abi.encode(OWNER()));
+            receiver = new AccountTransferReceiver{ salt: salt }(
+                address(this),
+                OWNER(),
+                address(gmxRewardsRouter()),
+                address(gmx()),
+                address(sGmx()),
+                sbfGmx()
+            );
+            _setAddress(_ACCOUNT_TRANSFER_RECEIVER_SLOT, address(receiver));
+
+            gmx().safeApprove(address(sGmx()), type(uint256).max);
+            IERC20(sbfGmx()).safeApprove(address(receiver), type(uint256).max);
+            gmxRewardsRouter().signalTransfer(address(receiver));
+        } else {
+            receiver.setCanAcceptTransfer(true);
+        }
+
     }
 
     function cancelAccountTransfer() external onlyGmxVault(msg.sender) {
         if (IGMXIsolationModeTokenVaultV1(msg.sender).isVaultFrozen()) {
-            gmx().approve(address(sGmx()), 0);
-            gmxRewardsRouter().signalTransfer(address(0));
+            // gmx().safeApprove(address(sGmx()), 0); @follow-up Do we need to reset this?
+            accountTransferReceiver().setCanAcceptTransfer(false);
 
             uint256 tempBal = _getUint256(_TEMP_BALANCE_SLOT);
             if (tempBal > 0) {
@@ -393,6 +413,27 @@ contract GLPIsolationModeTokenVaultV2 is
         return _getPairAmountNeededForEsGmxVesting(vGmx(), _esGmxAmount);
     }
 
+    function getAccountTransferOutReceiverAddress() public view returns (address) {
+        bytes32 salt = keccak256(abi.encode(OWNER()));
+        bytes32 deploymentHash = keccak256(abi.encodePacked(
+            bytes1(0xff),
+            address(this),
+            salt,
+            keccak256(abi.encodePacked(
+                type(AccountTransferReceiver).creationCode,
+                abi.encode(
+                    address(this),
+                    OWNER(),
+                    address(gmxRewardsRouter()),
+                    address(gmx()),
+                    address(sGmx()),
+                    sbfGmx()
+                )
+            ))
+        ));
+        return address(uint160(uint256(deploymentHash)));
+    }
+
     function gmx() public view returns (IERC20) {
         return IERC20(registry().gmx());
     }
@@ -427,6 +468,10 @@ contract GLPIsolationModeTokenVaultV2 is
 
     function hasSynced() public view returns (bool) {
         return _getUint256(_HAS_SYNCED) == 1;
+    }
+
+    function accountTransferReceiver() public view returns (IAccountTransferReceiver) {
+        return IAccountTransferReceiver(_getAddress(_ACCOUNT_TRANSFER_RECEIVER_SLOT));
     }
 
     function registry() public view returns (IGmxRegistryV1) {
