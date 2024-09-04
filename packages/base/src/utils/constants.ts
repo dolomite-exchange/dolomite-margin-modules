@@ -934,6 +934,10 @@ export const PENDLE_MARKET_METH_DEC_2024_MAP: Record<Network.Mantle, string> = {
   [Network.Mantle]: '0x99E83709846b6cB82d47a0D78b175E68497EA28B',
 };
 
+export const PENDLE_MARKET_MNT_OCT_2024_MAP: Record<Network.Mantle, string> = {
+  [Network.Mantle]: '0x4604FC1C52cBfc38C4E6DFd2CD2a9bF5b84f65Cb',
+};
+
 export const PENDLE_MARKET_RETH_JUN_2025_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x14FbC760eFaF36781cB0eb3Cb255aD976117B9Bd',
 };
@@ -992,6 +996,10 @@ export const PENDLE_PT_GLP_SEP_2024_TOKEN_MAP: Record<Network.ArbitrumOne, strin
 
 export const PENDLE_PT_METH_DEC_2024_TOKEN_MAP: Record<Network.Mantle, string> = {
   [Network.Mantle]: '0x1333B49BBdD06544a25647f9127358D9A9486105',
+};
+
+export const PENDLE_PT_MNT_OCT_2024_TOKEN_MAP: Record<Network.Mantle, string> = {
+  [Network.Mantle]: '0xC57c7Be308cf2f52dcF095d8D4C67d5984270da0',
 };
 
 export const PENDLE_PT_RETH_JUN_2025_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
@@ -1063,6 +1071,10 @@ export const PENDLE_SY_GLP_SEP_2024_TOKEN_MAP: Record<Network.ArbitrumOne, strin
 
 export const PENDLE_SY_METH_DEC_2024_TOKEN_MAP: Record<Network.Mantle, string> = {
   [Network.Mantle]: '0x9Ab557331dDada945eB2eCE19b90Bd7a843F8665',
+};
+
+export const PENDLE_SY_MNT_OCT_2024_TOKEN_MAP: Record<Network.Mantle, string> = {
+  [Network.Mantle]: '0xdDceEc69d4A705970A5C60C8e6406ec81F2370bC',
 };
 
 export const PENDLE_SY_RETH_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {

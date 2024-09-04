@@ -34,6 +34,7 @@ import {
   PENDLE_MARKET_GLP_MAR_2024_MAP,
   PENDLE_MARKET_GLP_SEP_2024_MAP,
   PENDLE_MARKET_METH_DEC_2024_MAP,
+  PENDLE_MARKET_MNT_OCT_2024_MAP,
   PENDLE_MARKET_RETH_JUN_2025_MAP,
   PENDLE_MARKET_RS_ETH_APR_2024_MAP,
   PENDLE_MARKET_RS_ETH_SEP_2024_MAP,
@@ -49,6 +50,7 @@ import {
   PENDLE_PT_GLP_MAR_2024_TOKEN_MAP,
   PENDLE_PT_GLP_SEP_2024_TOKEN_MAP,
   PENDLE_PT_METH_DEC_2024_TOKEN_MAP,
+  PENDLE_PT_MNT_OCT_2024_TOKEN_MAP,
   PENDLE_PT_ORACLE_MAP,
   PENDLE_PT_RETH_JUN_2025_TOKEN_MAP,
   PENDLE_PT_RS_ETH_SEP_2024_TOKEN_MAP,
@@ -63,6 +65,7 @@ import {
   PENDLE_SY_GLP_MAR_2024_TOKEN_MAP,
   PENDLE_SY_GLP_SEP_2024_TOKEN_MAP,
   PENDLE_SY_METH_DEC_2024_TOKEN_MAP,
+  PENDLE_SY_MNT_OCT_2024_TOKEN_MAP,
   PENDLE_SY_RETH_TOKEN_MAP,
   PENDLE_SY_RS_ETH_TOKEN_MAP,
   PENDLE_SY_USDE_DEC_2024_MAP,
@@ -87,6 +90,12 @@ export interface PendleEcosystemMantle extends CorePendleEcosystem {
     methMarket: IPendlePtMarket;
     ptMethToken: IPendlePtToken;
     syMethToken: IPendleSyToken;
+  };
+  mntOct2024: {
+    ptOracle: IPendlePtOracle;
+    mntMarket: IPendlePtMarket;
+    ptMntToken: IPendlePtToken;
+    syMntToken: IPendleSyToken
   };
   usdeJul2024: {
     ptOracle: IPendlePtOracle;
@@ -222,6 +231,24 @@ export async function createPendleEcosystemMantle(
       ),
       syMethToken: getContract(
         PENDLE_SY_METH_DEC_2024_TOKEN_MAP[network] as string,
+        IPendleSyToken__factory.connect,
+        signer,
+      ),
+    },
+    mntOct2024: {
+      ptOracle: getContract(PENDLE_PT_ORACLE_MAP[network] as string, IPendlePtOracle__factory.connect, signer),
+      mntMarket: getContract(
+        PENDLE_MARKET_MNT_OCT_2024_MAP[network] as string,
+        IPendlePtMarket__factory.connect,
+        signer,
+      ),
+      ptMntToken: getContract(
+        PENDLE_PT_MNT_OCT_2024_TOKEN_MAP[network] as string,
+        IPendlePtToken__factory.connect,
+        signer,
+      ),
+      syMntToken: getContract(
+        PENDLE_SY_MNT_OCT_2024_TOKEN_MAP[network] as string,
         IPendleSyToken__factory.connect,
         signer,
       ),
