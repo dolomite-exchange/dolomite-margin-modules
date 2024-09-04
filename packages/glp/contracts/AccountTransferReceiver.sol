@@ -42,17 +42,10 @@ contract AccountTransferReceiver is IAccountTransferReceiver {
     bytes32 private constant _FILE = "AccountTransferReceiver";
 
     address public immutable owner;
-    address public immutable vault;
     IGmxRewardRouterV2 public immutable rewardsRouter;
     address public immutable gmx;
     address public immutable sGmx;
     address public immutable sbfGmx;
-
-    // ==================================================================
-    // =========================== State Variables ======================
-    // ==================================================================
-
-    bool public canAcceptTransfer;
 
     // ==================================================================
     // =========================== Modifiers ============================
@@ -67,19 +60,11 @@ contract AccountTransferReceiver is IAccountTransferReceiver {
         _;
     }
 
-    modifier onlyVault() {
-        Require.that(
-            msg.sender == vault,
-            _FILE,
-            "Caller must be vault"
-        );
-        _;
-    }
-
     // ==================================================================
     // =========================== Constructor ==========================
     // ==================================================================
 
+    // @todo Provide gmx registry instead
     constructor(
         address _vault,
         address _owner,
@@ -89,40 +74,24 @@ contract AccountTransferReceiver is IAccountTransferReceiver {
         address _sbfGmx
     ) {
         owner = _owner;
-        vault = _vault;
         rewardsRouter = IGmxRewardRouterV2(_rewardsRouter);
-        canAcceptTransfer = true;
         gmx = _gmx;
         sGmx = _sGmx;
         sbfGmx = _sbfGmx;
+
+        rewardsRouter.acceptTransfer(_vault);
     }
 
     // ==================================================================
     // =========================== Public Functions =====================
     // ==================================================================
 
-    function acceptAccountTransfer() external onlyOwner {
-        Require.that(
-            canAcceptTransfer,
-            _FILE,
-            "Cannot accept transfer"
-        );
-        rewardsRouter.acceptTransfer(vault);
-        canAcceptTransfer = false;
-    }
-
     function signalAccountTransfer(address _receiver) external onlyOwner {
+        // @follow-up Confirm again this approval is needed
+        // @todo Set up SignalAccountTransferImplementation on GmxRegistry. This contract delegatecalls to that contract
+        // @todo Make sure receiver is not the vault
         IERC20(gmx).approve(address(sGmx), type(uint256).max);
         IERC20(sbfGmx).approve(_receiver, type(uint256).max);
         rewardsRouter.signalTransfer(_receiver);
-    }
-
-    function transferTokensOut(address _token, address _receiver) external onlyOwner {
-        uint256 bal = IERC20(_token).balanceOf(address(this));
-        IERC20(_token).transfer(_receiver, bal);
-    }
-
-    function setCanAcceptTransfer(bool _canAcceptTransfer) external onlyVault {
-        canAcceptTransfer = _canAcceptTransfer;
     }
 }

@@ -189,6 +189,7 @@ contract GLPIsolationModeTokenVaultV2 is
         } else {
             receiver.setCanAcceptTransfer(true);
         }
+        receiver.acceptAccountTransfer();
 
     }
 
@@ -213,6 +214,7 @@ contract GLPIsolationModeTokenVaultV2 is
         }
     }
 
+    // @todo If a user does a full transfer out, they can no longer do acceptFullAccountTransfer
     function acceptFullAccountTransfer(
         address _sender
     )
