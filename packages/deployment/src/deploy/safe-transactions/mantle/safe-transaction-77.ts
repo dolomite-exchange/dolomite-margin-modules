@@ -50,9 +50,9 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
       mntSystem.unwrapper,
       mntSystem.wrapper,
       ptMntMarketId,
-      TargetCollateralization._120,
-      TargetLiquidationPenalty._6,
-      parseEther(`${1_000}`),
+      TargetCollateralization._125,
+      TargetLiquidationPenalty.Base,
+      parseEther(`${1_000}`), // @follow-up @Corey need to confirm this max supply wei
     )),
   );
   return {
