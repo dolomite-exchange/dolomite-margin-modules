@@ -76,10 +76,8 @@ export const base_config: HardhatUserConfig = {
   networks: {
     hardhat: {
       allowUnlimitedContractSize: true,
-      // gas: 50_000_000,
-      gas: 500_000_000,
+      gas: 50_000_000,
       blockGasLimit: 100000000429720,
-      chainId: 5000,
       chains: {
         [Network.PolygonZkEvm]: {
           hardforkHistory: {
