@@ -19,7 +19,7 @@ import getScriptName from '../../../utils/get-script-name';
 
 /**
  * This script encodes the following transactions:
- * - Sets up the PT-Mnt ecosystem
+ * - Sets up the PT-MNT ecosystem
  */
 async function main(): Promise<DryRunOutput<Network.Mantle>> {
   const network = await getAndCheckSpecificNetwork(Network.Mantle);
@@ -52,7 +52,7 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
       ptMntMarketId,
       TargetCollateralization._125,
       TargetLiquidationPenalty.Base,
-      parseEther(`${1_000}`), // @follow-up @Corey need to confirm this max supply wei
+      parseEther(`${500_000}`),
     )),
   );
   return {
@@ -71,11 +71,11 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
     invariants: async () => {
       assertHardhatInvariant(
         (await core.dolomiteMargin.getMarketTokenAddress(ptMntMarketId)) === mntSystem.factory.address,
-        'Invalid PT-mETH market ID',
+        'Invalid PT-MNT market ID',
       );
       assertHardhatInvariant(
         (await core.dolomiteMargin.getMarketPriceOracle(ptMntMarketId)) === core.oracleAggregatorV2.address,
-        'Invalid oracle for PT-mETH',
+        'Invalid oracle for PT-MNT',
       );
       assertHardhatInvariant(
         await mntSystem.factory.isTokenConverterTrusted(mntSystem.unwrapper.address),
@@ -85,7 +85,7 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
         await mntSystem.factory.isTokenConverterTrusted(mntSystem.wrapper.address),
         'Wrapper not trusted',
       );
-      console.log('\tPrice for PT-mETH', (await core.dolomiteMargin.getMarketPrice(ptMntMarketId)).value.toString());
+      console.log('\tPrice for PT-MNT', (await core.dolomiteMargin.getMarketPrice(ptMntMarketId)).value.toString());
     },
   };
 }
