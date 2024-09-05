@@ -29,9 +29,6 @@ import { IGmxRegistryV1 } from "./interfaces/IGmxRegistryV1.sol";
 import { IGmxVault } from "./interfaces/IGmxVault.sol";
 
 
-
-
-
 /**
  * @title   GLPPriceOracleV1
  * @author  Dolomite

@@ -50,6 +50,7 @@ import {
   createTestGLPIsolationModeTokenVaultV2,
 } from './glp-ecosystem-utils';
 import { DEFAULT_BLOCK_NUMBER_FOR_GLP_WITH_VESTING } from './glp-utils';
+import { createAndUpgradeDolomiteRegistry, createDolomiteAccountRegistryImplementation, createRegistryProxy } from 'packages/base/test/utils/dolomite';
 
 const gmxAmount = BigNumber.from('10000000000000000000'); // 10 GMX
 const usdcAmount = BigNumber.from('2000000000'); // 2,000 USDC
@@ -76,7 +77,15 @@ describe('GLPIsolationModeTokenVaultV2', () => {
       blockNumber: DEFAULT_BLOCK_NUMBER_FOR_GLP_WITH_VESTING,
       network: Network.ArbitrumOne,
     });
+    await createAndUpgradeDolomiteRegistry(core);
     gmxRegistry = await createGmxRegistry(core);
+
+    const accountRegistryImplemenation = await createDolomiteAccountRegistryImplementation();
+    const calldata = await accountRegistryImplemenation.populateTransaction.initialize(
+      [core.tokens.dArb.address, core.tokens.dGmx.address]
+    );
+    const registryProxy = await createRegistryProxy(accountRegistryImplemenation.address, calldata.data!, core);
+    await core.dolomiteRegistry.connect(core.governance).ownerSetDolomiteAccountRegistry(registryProxy.address);
 
     const vaultImplementation = await createTestGLPIsolationModeTokenVaultV2();
     glpFactory = core.gmxEcosystem!.live.dGlp;
@@ -152,7 +161,7 @@ describe('GLPIsolationModeTokenVaultV2', () => {
     }
     gmxVaultAddress = await gmxFactory.getVaultByAccount(core.hhUser1.address);
     const gmxVault = GMXIsolationModeTokenVaultV1__factory.connect(gmxVaultAddress, core.hhUser1);
-    await gmxVault.requestAccountTransfer(core.hhUser1.address);
+    await gmxVault.requestAccountTransfer();
   }
 
   async function expectVaultIsFrozen(promiseFn: Promise<any>) {
@@ -1130,16 +1139,7 @@ describe('GLPIsolationModeTokenVaultV2', () => {
   describe('#signalAccountTransfer', () => {
     it('should fail if not called by gmx vault', async () => {
       await expectThrow(
-        glpVault.connect(core.hhUser1).signalAccountTransfer(core.hhUser2.address, ZERO_BI),
-        'GLPIsolationModeTokenVaultV2: Invalid GMX vault',
-      );
-    });
-  });
-
-  describe('#cancelAccountTransfer', () => {
-    it('should fail if not called by gmx vault', async () => {
-      await expectThrow(
-        glpVault.connect(core.hhUser1).cancelAccountTransfer(),
+        glpVault.connect(core.hhUser1).signalAccountTransfer(ZERO_BI),
         'GLPIsolationModeTokenVaultV2: Invalid GMX vault',
       );
     });

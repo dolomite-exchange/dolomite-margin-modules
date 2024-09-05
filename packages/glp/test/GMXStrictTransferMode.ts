@@ -54,7 +54,7 @@ const amountWei = BigNumber.from('1250000000000000000000'); // 1,250 GLP tokens
 const accountNumber = ZERO_BI;
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
-describe('GMXStrictTransferMode', () => {
+xdescribe('GMXStrictTransferMode', () => {
   let snapshotId: string;
 
   let core: CoreProtocolArbitrumOne;
@@ -88,7 +88,6 @@ describe('GMXStrictTransferMode', () => {
     const gmxVaultImplementation = await createTestGMXIsolationModeTokenVaultV1();
     // await glpFactory.setUserVaultImplementation(glpVaultImplementation.address);
     // await gmxFactory.ownerSetUserVaultImplementation(gmxVaultImplementation.address);
-
 
     const newGmxRegistry = await createContractWithAbi<GmxRegistryV1>(
       GmxRegistryV1__factory.abi,

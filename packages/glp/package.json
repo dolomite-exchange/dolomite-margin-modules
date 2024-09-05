@@ -7,9 +7,10 @@
     "test": "hardhat --network hardhat test",
     "coverage": "yarn coverage:prepare && COVERAGE=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat coverage --testfiles \"test/*.ts\" --solcoverjs ../../.solcover.js --network hardhat",
     "coverage:prepare": "ts-node ../../scripts/fix-contracts-for-coverage.ts glp",
-    "coverage:specific": "yarn coverage:prepare && COVERAGE=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat coverage --testfiles \"test/(GMXIsolationModeTokenVaultV1*|GLPIsolationModeTokenVaultV2).ts\" --solcoverjs ../../.solcover.js --network hardhat",
-    "test:specific": "TEST_SPECIFIC=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat --network hardhat test test/GMXIsolationModeTokenVaultV1_accountTransfers.ts",
-    "test:specific2": "TEST_SPECIFIC=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat --network hardhat test test/GLPWrapperTraderV2.ts",
+    "coverage:specific": "yarn coverage:prepare && COVERAGE=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat coverage --testfiles \"test/GMXIsolationModeTokenVaultV1_accountTransfers.ts\" --solcoverjs ../../.solcover.js",
+    "coverage:specific2": "yarn coverage:prepare && COVERAGE=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat coverage --testfiles \"test/(GMXIsolationModeTokenVaultV1*|GLPIsolationModeTokenVaultV2).ts\" --solcoverjs ../../.solcover.js",
+    "test:specific": "TEST_SPECIFIC=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat --network hardhat test test/GMXIsolationModeTokenVaultV1_swapExactInputForOutput.ts",
+    "test:specific2": "TEST_SPECIFIC=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat --network hardhat test test/AccountTransferReceiver.ts",
     "lint": "yarn lint:sol && yarn lint:ts",
     "lint:sol": "hardhat check && python3 ../../scripts/lint-contracts.py fix glp",
     "lint:ts": "tslint --project ../../ -t verbose 'src/**/*.ts' 'test/**/*.ts'"

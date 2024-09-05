@@ -30,6 +30,7 @@ import { IGMXIsolationModeVaultFactory } from "./interfaces/IGMXIsolationModeVau
 import { IGmxRegistryV1 } from "./interfaces/IGmxRegistryV1.sol";
 import { IGmxRewardRouterV2 } from "./interfaces/IGmxRewardRouterV2.sol";
 import { IGmxVault } from "./interfaces/IGmxVault.sol";
+import { ISignalAccountTransferImplementation } from "./interfaces/ISignalAccountTransferImplementation.sol";
 
 
 /**
@@ -80,6 +81,7 @@ contract GmxRegistryV1 is IGmxRegistryV1, BaseRegistry {
     bytes32 private constant _S_GLP_SLOT = bytes32(uint256(keccak256("eip1967.proxy.sGlp")) - 1);
     bytes32 private constant _S_GMX_SLOT = bytes32(uint256(keccak256("eip1967.proxy.sGmx")) - 1);
     bytes32 private constant _SBF_GMX_SLOT = bytes32(uint256(keccak256("eip1967.proxy.sbfGmx")) - 1);
+    bytes32 private constant _SIGNAL_ACCOUNT_TRANSFER_IMPL_SLOT = bytes32(uint256(keccak256("eip1967.proxy.signalAccountTransferImpl")) - 1);
     bytes32 private constant _V_GLP_SLOT = bytes32(uint256(keccak256("eip1967.proxy.vGlp")) - 1);
     bytes32 private constant _V_GMX_SLOT = bytes32(uint256(keccak256("eip1967.proxy.vGmx")) - 1);
     bytes32 private constant _HANDLER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.handler")) - 1);
@@ -167,6 +169,12 @@ contract GmxRegistryV1 is IGmxRegistryV1, BaseRegistry {
         _ownerSetSbfGmx(_sbfGmx);
     }
 
+    function ownerSetSignalAccountTransferImpl(
+        address _signalAccountTransferImpl
+    ) external override onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetSignalAccountTransferImpl(_signalAccountTransferImpl);
+    }
+
     function ownerSetVGlp(address _vGlp) external override onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetVGlp(_vGlp);
     }
@@ -236,6 +244,10 @@ contract GmxRegistryV1 is IGmxRegistryV1, BaseRegistry {
 
     function sbfGmx() external view returns (address) {
         return _getAddress(_SBF_GMX_SLOT);
+    }
+
+    function signalAccountTransferImpl() external view returns (ISignalAccountTransferImplementation) {
+        return ISignalAccountTransferImplementation(_getAddress(_SIGNAL_ACCOUNT_TRANSFER_IMPL_SLOT));
     }
 
     function vGlp() external view returns (address) {
@@ -390,6 +402,16 @@ contract GmxRegistryV1 is IGmxRegistryV1, BaseRegistry {
         );
         _setAddress(_SBF_GMX_SLOT, _sbfGmx);
         emit SbfGmxSet(_sbfGmx);
+    }
+
+    function _ownerSetSignalAccountTransferImpl(address _signalAccountTransferImpl) internal {
+        Require.that(
+            _signalAccountTransferImpl != address(0),
+            _FILE,
+            "Invalid impl address"
+        );
+        _setAddress(_SIGNAL_ACCOUNT_TRANSFER_IMPL_SLOT, _signalAccountTransferImpl);
+        emit SignalAccountTransferImplSet(_signalAccountTransferImpl);
     }
 
     function _ownerSetVGlp(address _vGlp) internal {

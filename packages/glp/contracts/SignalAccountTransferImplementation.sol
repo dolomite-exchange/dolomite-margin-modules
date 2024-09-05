@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 /*
 
-    Copyright 2023 Dolomite
+    Copyright 2024 Dolomite
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -20,32 +20,33 @@
 
 pragma solidity ^0.8.9;
 
-import { GMXIsolationModeTokenVaultV1 } from "../GMXIsolationModeTokenVaultV1.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { IGmxRegistryV1 } from "./interfaces/IGmxRegistryV1.sol";
+import { ISignalAccountTransferImplementation } from "./interfaces/ISignalAccountTransferImplementation.sol";
 
 
 /**
- * @title   TestGMXIsolationModeTokenVaultV1
+ * @title   SignalAccountTransferImplementation
  * @author  Dolomite
  *
- * @notice  Implementation (for an upgradeable proxy) for a per-user vault that holds the GMX token that can be used to
- *          to credit a user's Dolomite balance. GMX held in the vault is considered to be in isolation mode - that is
- *          it cannot be borrowed by other users, may only be seized via liquidation, and cannot be held in the same
- *          position as other "isolated" tokens.
+ * @notice  Implementation contract to signal account transfers on GMX
  */
-contract TestGMXIsolationModeTokenVaultV1 is GMXIsolationModeTokenVaultV1 {
+contract SignalAccountTransferImplementation is ISignalAccountTransferImplementation {
 
     // ==================================================================
     // =========================== Constants ============================
     // ==================================================================
 
-    bytes32 private constant _FILE = "TestGMXIsolationModeTokenVaultV1";
-    bytes32 private constant _TRANSFER_REQUESTED_SLOT = bytes32(uint256(keccak256("eip1967.proxy.transferRequested")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _FILE = "SignalAccountTransferImpl";
 
     // ==================================================================
-    // =========================== Functions ============================
+    // =========================== Public Functions =====================
     // ==================================================================
 
-    function transferRequested() external view returns (bool) {
-        return _getUint256(_TRANSFER_REQUESTED_SLOT) == 1;
+    function signalAccountTransfer(address _receiver, IGmxRegistryV1 _registry) external {
+        // @follow-up Do we want to use safe approve? Normal approve seems fine in this case
+        _registry.gmx().approve(address(_registry.sGmx()), type(uint256).max);
+        IERC20(_registry.sbfGmx()).approve(_receiver, type(uint256).max);
+        _registry.gmxRewardsRouter().signalTransfer(_receiver);
     }
 }

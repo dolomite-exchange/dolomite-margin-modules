@@ -20,16 +20,17 @@
 
 pragma solidity ^0.8.9;
 
+import { IGmxRegistryV1 } from "./IGmxRegistryV1.sol";
+
 
 /**
- * @title   IAccountTransferReceiver
+ * @title   ISignalAccountTransferImplementation
  * @author  Dolomite
  *
- * @notice  Interface for AccountTransferReceiver
+ * @notice  Interface for SignalAccountTransferImplementation
  */
-interface IAccountTransferReceiver {
+interface ISignalAccountTransferImplementation {
 
-    event AccountTransferSignaled(address receiver);
 
-    function signalAccountTransfer(address _receiver) external;
+    function signalAccountTransfer(address _receiver, IGmxRegistryV1 _registry) external;
 }

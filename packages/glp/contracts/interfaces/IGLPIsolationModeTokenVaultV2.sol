@@ -21,7 +21,6 @@
 pragma solidity ^0.8.9;
 
 import { IGmxRegistryV1 } from "./IGmxRegistryV1.sol";
-import { IAccountTransferReceiver } from "./IAccountTransferReceiver.sol";
 
 
 /**
@@ -116,13 +115,6 @@ interface IGLPIsolationModeTokenVaultV2 {
     function signalAccountTransfer(uint256 _glpBal) external;
 
     /**
-     * @notice  Cancels a full account transfer that has already been signaled. 
-     *          This function must be called by the gmx vault
-     *
-     */
-    function cancelAccountTransfer() external;
-
-    /**
      * @notice  Accepts a full account transfer from the sender's GMX account. There must not be any tokens in vesting
      *          and this contract must not have interacted with GMX yet for this to function. This function must be
      *          called by the vault owner.
@@ -201,9 +193,4 @@ interface IGLPIsolationModeTokenVaultV2 {
      * @return The address for the AccountTransferOutReceiver contract that will be deployed
      */
     function getAccountTransferOutReceiverAddress() external view returns (address);
-
-    /**
-     * @return The address for the AccountTransferOutReceiver contract
-     */
-    function accountTransferReceiver() external view returns (IAccountTransferReceiver);
 }

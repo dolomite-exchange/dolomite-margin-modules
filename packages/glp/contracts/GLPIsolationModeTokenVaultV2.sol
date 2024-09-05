@@ -30,16 +30,14 @@ import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
+import { AccountTransferReceiver } from "./AccountTransferReceiver.sol";
 import { IGLPIsolationModeTokenVaultV2 } from "./interfaces/IGLPIsolationModeTokenVaultV2.sol";
 import { IGLPIsolationModeVaultFactory } from "./interfaces/IGLPIsolationModeVaultFactory.sol";
-import { IGMXIsolationModeTokenVaultV1 } from "./interfaces/IGMXIsolationModeTokenVaultV1.sol";
 import { IGmxRegistryV1 } from "./interfaces/IGmxRegistryV1.sol";
 import { IGmxRewardRouterV2 } from "./interfaces/IGmxRewardRouterV2.sol";
 import { IGmxRewardTracker } from "./interfaces/IGmxRewardTracker.sol";
 import { IGmxVester } from "./interfaces/IGmxVester.sol";
 import { ISGMX } from "./interfaces/ISGMX.sol";
-import { AccountTransferReceiver } from "./AccountTransferReceiver.sol";
-import { IAccountTransferReceiver } from "./interfaces/IAccountTransferReceiver.sol";
 // solhint-enable max-line-length
 
 
@@ -67,8 +65,8 @@ contract GLPIsolationModeTokenVaultV2 is
     bytes32 private constant _SHOULD_SKIP_TRANSFER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.shouldSkipTransfer")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _IS_ACCEPTING_FULL_ACCOUNT_TRANSFER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isAcceptingFullAccountTransfer")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _HAS_ACCEPTED_FULL_ACCOUNT_TRANSFER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.hasAcceptedFullAccountTransfer")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _HAS_ACCOUNT_TRANSFERRED_OUT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.hasAccountTransferredOut")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _HAS_SYNCED = bytes32(uint256(keccak256("eip1967.proxy.hasSynced")) - 1);
-    bytes32 private constant _ACCOUNT_TRANSFER_RECEIVER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.accountTransferReceiver")) - 1);
     uint256 private constant _DEFAULT_ACCOUNT_NUMBER = 0;
 
     modifier onlyGmxVault(address _sender) {
@@ -161,60 +159,35 @@ contract GLPIsolationModeTokenVaultV2 is
     function signalAccountTransfer(
         uint256 _glpBalance
     ) external onlyGmxVault(msg.sender) {
+        Require.that(
+            !hasAccountTransferredOut(),
+            _FILE,
+            "Cannot transfer more than once"
+        );
         if (_glpBalance > 0) {
             _setShouldSkipTransfer(true);
-            _setUint256(_TEMP_BALANCE_SLOT, _glpBalance);
             _withdrawFromVaultForDolomiteMargin(_DEFAULT_ACCOUNT_NUMBER, _glpBalance);
             assert(!shouldSkipTransfer());
-        } else {
-            _setUint256(_TEMP_BALANCE_SLOT, 0);
         }
 
-        IAccountTransferReceiver receiver = accountTransferReceiver();
-        if (address(receiver) == address(0)) {
-            bytes32 salt = keccak256(abi.encode(OWNER()));
-            receiver = new AccountTransferReceiver{ salt: salt }(
-                address(this),
-                OWNER(),
-                address(gmxRewardsRouter()),
-                address(gmx()),
-                address(sGmx()),
-                sbfGmx()
-            );
-            _setAddress(_ACCOUNT_TRANSFER_RECEIVER_SLOT, address(receiver));
+        // @follow-up Approvals, overkill or is this good?
+        address receiver = getAccountTransferOutReceiverAddress();
+        gmx().safeApprove(address(sGmx()), type(uint256).max);
+        IERC20(sbfGmx()).safeApprove(receiver, type(uint256).max);
+        gmxRewardsRouter().signalTransfer(receiver);
+        _setUint256(_HAS_ACCOUNT_TRANSFERRED_OUT_SLOT, 1);
 
-            gmx().safeApprove(address(sGmx()), type(uint256).max);
-            IERC20(sbfGmx()).safeApprove(address(receiver), type(uint256).max);
-            gmxRewardsRouter().signalTransfer(address(receiver));
-        } else {
-            receiver.setCanAcceptTransfer(true);
-        }
-        receiver.acceptAccountTransfer();
+        bytes32 salt = keccak256(abi.encode(OWNER()));
+        new AccountTransferReceiver{ salt: salt }(
+            address(this),
+            OWNER(),
+            address(registry())
+        );
 
+        gmx().safeApprove(address(sGmx()), 0);
+        IERC20(sbfGmx()).safeApprove(receiver, 0);
     }
 
-    function cancelAccountTransfer() external onlyGmxVault(msg.sender) {
-        if (IGMXIsolationModeTokenVaultV1(msg.sender).isVaultFrozen()) {
-            // gmx().safeApprove(address(sGmx()), 0); @follow-up Do we need to reset this?
-            accountTransferReceiver().setCanAcceptTransfer(false);
-
-            uint256 tempBal = _getUint256(_TEMP_BALANCE_SLOT);
-            if (tempBal > 0) {
-                Require.that(
-                    underlyingBalanceOf() >= tempBal,
-                    _FILE,
-                    "Invalid underlying balance of"
-                );
-
-                _setShouldSkipTransfer(true);
-                _setUint256(_TEMP_BALANCE_SLOT, 0);
-                _depositIntoVaultForDolomiteMargin(_DEFAULT_ACCOUNT_NUMBER, tempBal);
-                assert(!shouldSkipTransfer());
-            }
-        }
-    }
-
-    // @todo If a user does a full transfer out, they can no longer do acceptFullAccountTransfer
     function acceptFullAccountTransfer(
         address _sender
     )
@@ -229,7 +202,10 @@ contract GLPIsolationModeTokenVaultV2 is
             "Invalid sender"
         );
         Require.that(
-            !hasAcceptedFullAccountTransfer() && underlyingBalanceOf() == 0 && gmxBalanceOf() == 0,
+            !hasAccountTransferredOut() 
+            && !hasAcceptedFullAccountTransfer()
+            && underlyingBalanceOf() == 0
+            && gmxBalanceOf() == 0,
             _FILE,
             "Cannot transfer more than once"
         );
@@ -330,11 +306,6 @@ contract GLPIsolationModeTokenVaultV2 is
     public
     override
     onlyVaultFactory(msg.sender) {
-        if (shouldSkipTransfer()) {
-            _setShouldSkipTransfer(false);
-            return;
-        }
-
         if (isAcceptingFullAccountTransfer()) {
             // The fsGLP is already in this vault, so don't materialize a transfer from the vault owner
             assert(_amount == underlyingBalanceOf());
@@ -426,10 +397,7 @@ contract GLPIsolationModeTokenVaultV2 is
                 abi.encode(
                     address(this),
                     OWNER(),
-                    address(gmxRewardsRouter()),
-                    address(gmx()),
-                    address(sGmx()),
-                    sbfGmx()
+                    address(registry())
                 )
             ))
         ));
@@ -468,12 +436,12 @@ contract GLPIsolationModeTokenVaultV2 is
         return _getUint256(_HAS_ACCEPTED_FULL_ACCOUNT_TRANSFER_SLOT) == 1;
     }
 
-    function hasSynced() public view returns (bool) {
-        return _getUint256(_HAS_SYNCED) == 1;
+    function hasAccountTransferredOut() public view returns (bool) {
+        return _getUint256(_HAS_ACCOUNT_TRANSFERRED_OUT_SLOT) == 1;
     }
 
-    function accountTransferReceiver() public view returns (IAccountTransferReceiver) {
-        return IAccountTransferReceiver(_getAddress(_ACCOUNT_TRANSFER_RECEIVER_SLOT));
+    function hasSynced() public view returns (bool) {
+        return _getUint256(_HAS_SYNCED) == 1;
     }
 
     function registry() public view returns (IGmxRegistryV1) {

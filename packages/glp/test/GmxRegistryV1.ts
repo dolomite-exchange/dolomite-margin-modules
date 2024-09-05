@@ -409,6 +409,30 @@ describe('GmxRegistryV1', () => {
     });
   });
 
+  describe('#ownerSetSignalAccountTransferImpl', () => {
+    it('should work normally', async () => {
+      const result = await registry.connect(core.governance).ownerSetSignalAccountTransferImpl(OTHER_ADDRESS);
+      await expectEvent(registry, result, 'SignalAccountTransferImplSet', {
+        signalAccountTransferImpl: OTHER_ADDRESS,
+      });
+      expect(await registry.signalAccountTransferImpl()).to.equal(OTHER_ADDRESS);
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetSignalAccountTransferImpl(OTHER_ADDRESS),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetSignalAccountTransferImpl(ZERO_ADDRESS),
+        'GmxRegistryV1: Invalid impl address',
+      );
+    });
+  });
+
   describe('#ownerSetVGlp', () => {
     it('should work normally', async () => {
       const result = await registry.connect(core.governance).ownerSetVGlp(OTHER_ADDRESS);
@@ -457,7 +481,7 @@ describe('GmxRegistryV1', () => {
     });
   });
 
-  describe.only('#ownerSetIsHandler', () => {
+  describe('#ownerSetIsHandler', () => {
     it('should work normally', async () => {
       expect(await registry.isHandler(OTHER_ADDRESS)).to.equal(false);
       const result = await registry.connect(core.governance).ownerSetIsHandler(OTHER_ADDRESS, true);

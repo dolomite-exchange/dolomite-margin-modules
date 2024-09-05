@@ -20,11 +20,13 @@
 
 pragma solidity ^0.8.9;
 
-import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { IAccountTransferReceiver } from "./interfaces/IAccountTransferReceiver.sol";
-import { IGmxRegistryV1 } from "./interfaces/IGmxRegistryV1.sol";
 import { ISignalAccountTransferImplementation } from "./interfaces/ISignalAccountTransferImplementation.sol";
+import { IGmxRegistryV1 } from "./interfaces/IGmxRegistryV1.sol";
+import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 
 /**
@@ -50,6 +52,7 @@ contract AccountTransferReceiver is IAccountTransferReceiver {
     // ==================================================================
 
     modifier onlyOwner() {
+        if (msg.sender == owner) { /* FOR COVERAGE TESTING */ }
         Require.that(
             msg.sender == owner,
             _FILE,
@@ -79,6 +82,7 @@ contract AccountTransferReceiver is IAccountTransferReceiver {
     // ==================================================================
 
     function signalAccountTransfer(address _receiver) external onlyOwner {
+        if (_receiver != vault) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _receiver != vault,
             _FILE,

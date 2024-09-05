@@ -27,6 +27,7 @@ import { IGLPIsolationModeVaultFactory } from "./IGLPIsolationModeVaultFactory.s
 import { IGLPManager } from "./IGLPManager.sol";
 import { IGLPRewardsRouterV2 } from "./IGLPRewardsRouterV2.sol";
 import { IGMXIsolationModeVaultFactory } from "./IGMXIsolationModeVaultFactory.sol";
+import { ISignalAccountTransferImplementation } from "./ISignalAccountTransferImplementation.sol";
 import { IGmxRegistryV1 } from "./IGmxRegistryV1.sol";
 import { IGmxRewardRouterV2 } from "./IGmxRewardRouterV2.sol";
 import { IGmxVault } from "./IGmxVault.sol";
@@ -58,6 +59,7 @@ interface IGmxRegistryV1 is IBaseRegistry {
     event SGlpSet(address _sGlp);
     event SGmxSet(address _sGmx);
     event SbfGmxSet(address _sbfGmx);
+    event SignalAccountTransferImplSet(address _signalAccountTransferImpl);
     event VGlpSet(address _vGlp);
     event VGmxSet(address _vGmx);
     event HandlerSet(address _handler, bool _isTrusted);
@@ -94,6 +96,8 @@ interface IGmxRegistryV1 is IBaseRegistry {
 
     function ownerSetSbfGmx(address _sbfGmx) external;
 
+    function ownerSetSignalAccountTransferImpl(address _signalAccountTransferImpl) external;
+
     function ownerSetVGlp(address _vGlp) external;
 
     function ownerSetVGmx(address _vGmx) external;
@@ -127,6 +131,8 @@ interface IGmxRegistryV1 is IBaseRegistry {
     function sGmx() external view returns (address);
 
     function sbfGmx() external view returns (address);
+
+    function signalAccountTransferImpl() external view returns (ISignalAccountTransferImplementation);
 
     function vGlp() external view returns (address);
 

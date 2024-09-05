@@ -38,6 +38,8 @@ import { IGmxRewardRouterV2 } from "./interfaces/IGmxRewardRouterV2.sol";
 import { IGmxRewardTracker } from "./interfaces/IGmxRewardTracker.sol";
 import { IGmxVester } from "./interfaces/IGmxVester.sol";
 import { ISGMX } from "./interfaces/ISGMX.sol";
+import { AccountTransferReceiver } from "./AccountTransferReceiver.sol";
+import { IAccountTransferReceiver } from "./interfaces/IAccountTransferReceiver.sol";
 // solhint-enable max-line-length
 
 
@@ -65,6 +67,7 @@ contract GLPIsolationModeTokenVaultV2 is
     bytes32 private constant _SHOULD_SKIP_TRANSFER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.shouldSkipTransfer")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _IS_ACCEPTING_FULL_ACCOUNT_TRANSFER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isAcceptingFullAccountTransfer")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _HAS_ACCEPTED_FULL_ACCOUNT_TRANSFER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.hasAcceptedFullAccountTransfer")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _HAS_ACCOUNT_TRANSFERRED_OUT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.hasAccountTransferredOut")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _HAS_SYNCED = bytes32(uint256(keccak256("eip1967.proxy.hasSynced")) - 1);
     uint256 private constant _DEFAULT_ACCOUNT_NUMBER = 0;
 
@@ -157,42 +160,36 @@ contract GLPIsolationModeTokenVaultV2 is
     }
 
     function signalAccountTransfer(
-        address _receiver,
-        uint256 _glpBal
+        uint256 _glpBalance
     ) external onlyGmxVault(msg.sender) {
-        if (_glpBal > 0) {
+        if (!hasAccountTransferredOut()) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            !hasAccountTransferredOut(),
+            _FILE,
+            "Cannot transfer more than once"
+        );
+        if (_glpBalance > 0) {
             _setShouldSkipTransfer(true);
-            _setUint256(_TEMP_BALANCE_SLOT, _glpBal);
-            _withdrawFromVaultForDolomiteMargin(_DEFAULT_ACCOUNT_NUMBER, _glpBal);
+            _withdrawFromVaultForDolomiteMargin(_DEFAULT_ACCOUNT_NUMBER, _glpBalance);
             /*assert(!shouldSkipTransfer());*/
-        } else {
-            _setUint256(_TEMP_BALANCE_SLOT, 0);
         }
 
-        gmx().approve(address(sGmx()), type(uint256).max);
-        gmxRewardsRouter().signalTransfer(_receiver);
-    }
+        // @follow-up Approvals, overkill or is this good?
+        address receiver = getAccountTransferOutReceiverAddress();
+        gmx().safeApprove(address(sGmx()), type(uint256).max);
+        IERC20(sbfGmx()).safeApprove(receiver, type(uint256).max);
+        gmxRewardsRouter().signalTransfer(receiver);
+        _setUint256(_HAS_ACCOUNT_TRANSFERRED_OUT_SLOT, 1);
 
-    function cancelAccountTransfer() external onlyGmxVault(msg.sender) {
-        if (IGMXIsolationModeTokenVaultV1(msg.sender).isVaultFrozen()) {
-            gmx().approve(address(sGmx()), 0);
-            gmxRewardsRouter().signalTransfer(address(0));
+        bytes32 salt = keccak256(abi.encode(OWNER()));
+        new AccountTransferReceiver{ salt: salt }(
+            address(this),
+            OWNER(),
+            address(registry())
+        );
 
-            uint256 tempBal = _getUint256(_TEMP_BALANCE_SLOT);
-            if (tempBal > 0) {
-                if (underlyingBalanceOf() >= tempBal) { /* FOR COVERAGE TESTING */ }
-                Require.that(
-                    underlyingBalanceOf() >= tempBal,
-                    _FILE,
-                    "Invalid underlying balance of"
-                );
-
-                _setShouldSkipTransfer(true);
-                _setUint256(_TEMP_BALANCE_SLOT, 0);
-                _depositIntoVaultForDolomiteMargin(_DEFAULT_ACCOUNT_NUMBER, tempBal);
-                /*assert(!shouldSkipTransfer());*/
-            }
-        }
+        gmx().safeApprove(address(sGmx()), 0);
+        IERC20(sbfGmx()).safeApprove(receiver, 0);
     }
 
     function acceptFullAccountTransfer(
@@ -209,9 +206,9 @@ contract GLPIsolationModeTokenVaultV2 is
             _FILE,
             "Invalid sender"
         );
-        if (!hasAcceptedFullAccountTransfer() && underlyingBalanceOf() == 0 && gmxBalanceOf() == 0) { /* FOR COVERAGE TESTING */ }
+        if (!hasAccountTransferredOut() && !hasAcceptedFullAccountTransfer() && underlyingBalanceOf() == 0 && gmxBalanceOf() == 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
-            !hasAcceptedFullAccountTransfer() && underlyingBalanceOf() == 0 && gmxBalanceOf() == 0,
+            !hasAccountTransferredOut() && !hasAcceptedFullAccountTransfer() && underlyingBalanceOf() == 0 && gmxBalanceOf() == 0,
             _FILE,
             "Cannot transfer more than once"
         );
@@ -398,6 +395,24 @@ contract GLPIsolationModeTokenVaultV2 is
         return _getPairAmountNeededForEsGmxVesting(vGmx(), _esGmxAmount);
     }
 
+    function getAccountTransferOutReceiverAddress() public view returns (address) {
+        bytes32 salt = keccak256(abi.encode(OWNER()));
+        bytes32 deploymentHash = keccak256(abi.encodePacked(
+            bytes1(0xff),
+            address(this),
+            salt,
+            keccak256(abi.encodePacked(
+                type(AccountTransferReceiver).creationCode,
+                abi.encode(
+                    address(this),
+                    OWNER(),
+                    address(registry())
+                )
+            ))
+        ));
+        return address(uint160(uint256(deploymentHash)));
+    }
+
     function gmx() public view returns (IERC20) {
         return IERC20(registry().gmx());
     }
@@ -428,6 +443,10 @@ contract GLPIsolationModeTokenVaultV2 is
 
     function hasAcceptedFullAccountTransfer() public view returns (bool) {
         return _getUint256(_HAS_ACCEPTED_FULL_ACCOUNT_TRANSFER_SLOT) == 1;
+    }
+
+    function hasAccountTransferredOut() public view returns (bool) {
+        return _getUint256(_HAS_ACCOUNT_TRANSFERRED_OUT_SLOT) == 1;
     }
 
     function hasSynced() public view returns (bool) {
