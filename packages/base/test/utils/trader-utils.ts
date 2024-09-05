@@ -103,6 +103,34 @@ export async function getCalldataForOdos<T extends Network>(
   };
 }
 
+export async function getCalldataForOogaBooga(
+  inputToken: { address: address },
+  inputAmount: BigNumber,
+  outputToken: { address: address },
+  receiver: { address: address },
+): Promise<TraderOutput> {
+  const result = await axios.get('https://bartio.api.oogabooga.io/v1/swap', {
+      headers: { Authorization: `Bearer ${process.env.OOGA_BOOGA_SECRET_KEY}` },
+      params: {
+        tokenIn: inputToken.address,
+        tokenOut: outputToken.address,
+        amount: inputAmount.toString(),
+        to: receiver.address,
+        slippage: '0.02' // 2%
+      }
+  })
+    .then(response => response.data)
+    .catch((error) => {
+      console.error('Found error in prices', error);
+      throw error;
+    });
+
+  return {
+    calldata: `0x${result.tx.data.slice(10)}`, // get rid of the method ID
+    outputAmount: BigNumber.from(result.routerParams.swapTokenInfo.outputMin) // @follow-up Use min or quote here?
+  };
+}
+
 export async function getCalldataForParaswap<T extends Network>(
   inputAmount: BigNumber,
   inputToken: { address: address },

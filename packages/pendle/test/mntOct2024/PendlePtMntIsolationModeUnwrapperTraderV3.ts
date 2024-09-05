@@ -8,16 +8,14 @@ import {
 } from '@dolomite-exchange/modules-base/test/utils';
 import {
   setupCoreProtocol,
-  setupRsEthBalance,
   setupTestMarket,
   setupUserVaultProxy,
+  setupWMNTBalance,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { AccountInfoStruct } from 'packages/base/src/utils';
-import { CHAINLINK_PRICE_AGGREGATORS_MAP } from 'packages/base/src/utils/constants';
 import { expectThrow } from 'packages/base/test/utils/assertions';
-import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { setupNewGenericTraderProxy } from 'packages/base/test/utils/dolomite';
 import {
   IERC20,
@@ -40,16 +38,18 @@ import {
   createPendleRegistry,
 } from '../pendle-ecosystem-utils';
 import { encodeSwapExactPtForTokensV3, encodeSwapExactTokensForPtV3 } from '../pendle-utils';
-import { TokenInfo } from 'packages/oracles/src';
+import { CoreProtocolMantle } from 'packages/base/test/utils/core-protocols/core-protocol-mantle';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('20000000000000000000'); // 20
 const otherAmountWei = BigNumber.from('10000000'); // $10
 
-describe('PendlePtRsEthSep2024IsolationModeUnwrapperTraderV2', () => {
+// @DEV You will need to adjust the chainId and gas in the hardhat config to match Mantle chain id
+//      if Pendle API returns a signature
+describe('PendlePtMntOct2024IsolationModeUnwrapperTraderV3', () => {
   let snapshotId: string;
 
-  let core: CoreProtocolArbitrumOne;
+  let core: CoreProtocolMantle;
   let underlyingToken: IERC20;
   let underlyingMarketId: BigNumber;
   let pendleRegistry: PendleRegistry;
@@ -66,40 +66,21 @@ describe('PendlePtRsEthSep2024IsolationModeUnwrapperTraderV2', () => {
 
   before(async () => {
     core = await setupCoreProtocol({
-      blockNumber: await getRealLatestBlockNumber(true, Network.ArbitrumOne),
-      network: Network.ArbitrumOne,
+      blockNumber: await getRealLatestBlockNumber(true, Network.Mantle),
+      network: Network.Mantle,
     });
 
-    ptMarket = core.pendleEcosystem!.rsEthSep2024.rsEthMarket.connect(core.hhUser1);
-    ptToken = core.pendleEcosystem!.rsEthSep2024.ptRsEthToken.connect(core.hhUser1);
-    underlyingToken = core.tokens.rsEth!;
-
-    await core.chainlinkPriceOracleV3.ownerInsertOrUpdateOracleToken(
-      underlyingToken.address,
-      CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][underlyingToken.address]!.aggregatorAddress,
-      false
-    );
-    let tokenInfo: TokenInfo = {
-      oracleInfos: [
-        { oracle: core.chainlinkPriceOracleV3.address, tokenPair: core.tokens.weth.address, weight: 100 }
-      ],
-      decimals: 18,
-      token: underlyingToken.address
-    };
-    await core.oracleAggregatorV2.ownerInsertOrUpdateToken(tokenInfo);
-    underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
-    await setupTestMarket(core, core.tokens.rsEth, false, core.oracleAggregatorV2);
-    await core.dolomiteMargin.connect(core.governance).ownerSetPriceOracle(
-      underlyingMarketId,
-      core.oracleAggregatorV2.address
-    );
+    ptMarket = core.pendleEcosystem!.mntOct2024.mntMarket.connect(core.hhUser1);
+    ptToken = core.pendleEcosystem!.mntOct2024.ptMntToken.connect(core.hhUser1);
+    underlyingToken = core.tokens.wmnt!;
+    underlyingMarketId = BigNumber.from(core.marketIds.wmnt);
 
     const userVaultImplementation = await createPendlePtIsolationModeTokenVaultV1();
     pendleRegistry = await createPendleRegistry(
       core,
-      core.pendleEcosystem!.rsEthSep2024.rsEthMarket,
-      core.pendleEcosystem!.rsEthSep2024.ptOracle,
-      core.pendleEcosystem!.syREthToken,
+      core.pendleEcosystem!.mntOct2024.mntMarket,
+      core.pendleEcosystem!.mntOct2024.ptOracle,
+      core.pendleEcosystem!.mntOct2024.syMntToken,
     );
     factory = await createPendlePtIsolationModeVaultFactory(
       core,
@@ -112,7 +93,7 @@ describe('PendlePtRsEthSep2024IsolationModeUnwrapperTraderV2', () => {
     wrapper = await createPendlePtIsolationModeWrapperTraderV3(core, pendleRegistry, underlyingToken, factory);
     priceOracle = await createPendlePtPriceOracleV2(core, factory, pendleRegistry);
 
-    tokenInfo = {
+    const tokenInfo = {
       oracleInfos: [
         { oracle: priceOracle.address, tokenPair: underlyingToken.address, weight: 100 }
       ],
@@ -124,8 +105,8 @@ describe('PendlePtRsEthSep2024IsolationModeUnwrapperTraderV2', () => {
     marketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, factory, true, core.oracleAggregatorV2);
 
-    await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
+    await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
 
     await factory.createVault(core.hhUser1.address);
     const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);
@@ -136,9 +117,9 @@ describe('PendlePtRsEthSep2024IsolationModeUnwrapperTraderV2', () => {
     );
     defaultAccount = { owner: vault.address, number: defaultAccountNumber };
 
-    await setupRsEthBalance(core, core.hhUser1, amountWei, core.pendleEcosystem!.pendleRouterV3);
+    await setupWMNTBalance(core, core.hhUser1, amountWei, core.pendleEcosystem!.pendleRouterV3);
     const { tokenInput, approxParams, limitOrderData } = await encodeSwapExactTokensForPtV3(
-      Network.ArbitrumOne,
+      Network.Mantle,
       core.hhUser1.address,
       ptMarket.address,
       underlyingToken.address,
@@ -154,7 +135,7 @@ describe('PendlePtRsEthSep2024IsolationModeUnwrapperTraderV2', () => {
       limitOrderData, // LimitOrderData
     );
 
-    ptBal = await core.pendleEcosystem.rsEthSep2024.ptRsEthToken.balanceOf(core.hhUser1.address);
+    ptBal = await ptToken.balanceOf(core.hhUser1.address);
     await ptToken.connect(core.hhUser1).approve(vault.address, ptBal);
     await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, ptBal);
 
@@ -173,7 +154,7 @@ describe('PendlePtRsEthSep2024IsolationModeUnwrapperTraderV2', () => {
       const liquidAccountId = 0;
 
       const { minOutputAmount, extraOrderData } = await encodeSwapExactPtForTokensV3(
-        Network.ArbitrumOne,
+        Network.Mantle,
         unwrapper.address,
         ptBal,
         ptMarket.address,

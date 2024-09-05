@@ -167,6 +167,7 @@ import { createPremiaEcosystem } from './ecosystem-utils/premia';
 import { createTestEcosystem } from './ecosystem-utils/testers';
 import { createUmamiEcosystem } from './ecosystem-utils/umami';
 import { impersonate, impersonateOrFallback, resetForkIfPossible } from './index';
+import { createOogaBoogaEcosystem } from './ecosystem-utils/ooga-booga';
 
 /**
  * Config to for setting up tests in the `before` function
@@ -239,6 +240,16 @@ export async function enableInterestAccrual<T extends NetworkType>(
     marketId,
     core.interestSetters.linearStepFunction8L92U90OInterestSetter.address,
   );
+}
+
+export async function setupWBERABalance(
+  core: CoreProtocolBerachain,
+  signer: SignerWithAddressWithSafety,
+  amount: BigNumberish,
+  spender: { address: string },
+) {
+  await core.tokens.wbera.connect(signer).deposit({ value: amount });
+  await core.tokens.wbera.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
 export async function setupWETHBalance<T extends NetworkType>(
@@ -967,6 +978,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
           IERC20__factory.connect(HONEY_MAP[typedConfig.network].address, hhUser1),
         ],
       },
+      oogaBoogaEcosystem: await createOogaBoogaEcosystem(typedConfig.network, hhUser1)
     }) as any;
   }
   if (config.network === Network.Mantle) {

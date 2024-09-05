@@ -867,6 +867,14 @@ export const OKX_DEX_TRANSFER_PROXY_MAP: Record<Network.XLayer, string> = {
   [Network.XLayer]: '0x8b773D83bc66Be128c60e07E17C8901f7a64F000',
 };
 
+export const OOGA_BOOGA_ROUTER_MAP: Record<Network.Berachain, string> = {
+  [Network.Berachain]: '0x7bC98B68bCBb16cEC81EdDcEa1A3746Fdc5025A4',
+};
+
+export const OOGA_BOOGA_EXECUTOR_MAP: Record<Network.Berachain, string> = {
+  [Network.Berachain]: '0xDa547d8ce09e23E9e8053dd187B58841B5fB8D5d',
+};
+
 export const PARASWAP_AUGUSTUS_ROUTER_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumOne]: '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57',
   [Network.Base]: '0x59C7C832e96D2568bea6db468C1aAdcbbDa08A52',
@@ -924,6 +932,10 @@ export const PENDLE_MARKET_EZ_ETH_SEP_2024_MAP: Record<Network.ArbitrumOne, stri
 
 export const PENDLE_MARKET_METH_DEC_2024_MAP: Record<Network.Mantle, string> = {
   [Network.Mantle]: '0x99E83709846b6cB82d47a0D78b175E68497EA28B',
+};
+
+export const PENDLE_MARKET_MNT_OCT_2024_MAP: Record<Network.Mantle, string> = {
+  [Network.Mantle]: '0x4604FC1C52cBfc38C4E6DFd2CD2a9bF5b84f65Cb',
 };
 
 export const PENDLE_MARKET_RETH_JUN_2025_MAP: Record<Network.ArbitrumOne, string> = {
@@ -984,6 +996,10 @@ export const PENDLE_PT_GLP_SEP_2024_TOKEN_MAP: Record<Network.ArbitrumOne, strin
 
 export const PENDLE_PT_METH_DEC_2024_TOKEN_MAP: Record<Network.Mantle, string> = {
   [Network.Mantle]: '0x1333B49BBdD06544a25647f9127358D9A9486105',
+};
+
+export const PENDLE_PT_MNT_OCT_2024_TOKEN_MAP: Record<Network.Mantle, string> = {
+  [Network.Mantle]: '0xC57c7Be308cf2f52dcF095d8D4C67d5984270da0',
 };
 
 export const PENDLE_PT_RETH_JUN_2025_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
@@ -1055,6 +1071,10 @@ export const PENDLE_SY_GLP_SEP_2024_TOKEN_MAP: Record<Network.ArbitrumOne, strin
 
 export const PENDLE_SY_METH_DEC_2024_TOKEN_MAP: Record<Network.Mantle, string> = {
   [Network.Mantle]: '0x9Ab557331dDada945eB2eCE19b90Bd7a843F8665',
+};
+
+export const PENDLE_SY_MNT_OCT_2024_TOKEN_MAP: Record<Network.Mantle, string> = {
+  [Network.Mantle]: '0xdDceEc69d4A705970A5C60C8e6406ec81F2370bC',
 };
 
 export const PENDLE_SY_RETH_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
