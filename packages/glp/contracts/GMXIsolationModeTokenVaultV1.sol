@@ -282,7 +282,7 @@ contract GMXIsolationModeTokenVaultV1 is
             "Transfer not in progress"
         );
 
-        // Set transfer requested slot to false so we can signal on GLP vault
+        // Set transfer requested slot to false so we can stake GMX if need be
         _setUint256(_TRANSFER_REQUESTED_SLOT, 0);
 
         uint256 balance = super.underlyingBalanceOf();
