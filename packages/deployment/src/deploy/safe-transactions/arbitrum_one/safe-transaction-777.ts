@@ -11,7 +11,7 @@ import { Network } from 'packages/base/src/utils/no-deps-constants';
 import {
   deployPendlePtSystem,
   prettyPrintEncodeAddIsolationModeMarket,
-  prettyPrintEncodedDataWithTypeSafety
+  prettyPrintEncodedDataWithTypeSafety,
 } from '../../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../utils/dry-run-utils';
 import getScriptName from '../../../utils/get-script-name';
@@ -81,7 +81,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
           oracleInfos: [
             {
               oracle: rsEthPendleSystem.oracle.address,
-              tokenPair: core.tokens.rsEth.address,
+              tokenPair: core.tokens.weth.address,
               weight: 100,
             },
           ],

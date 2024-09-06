@@ -1,10 +1,15 @@
-import { advanceToTimestamp, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
+import { ADDRESS_ZERO, Network, ONE_ETH_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import {
+  getRealLatestBlockNumber,
+  revertToSnapshotAndCapture,
+  snapshot,
+} from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol, setupTestMarket } from '@dolomite-exchange/modules-base/test/utils/setup';
+import axios from 'axios';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
-import { Network } from 'packages/base/src/utils/no-deps-constants';
 import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
-import { IERC20, PendlePtIsolationModeVaultFactory, PendlePtPriceOracleV2, PendleRegistry } from '../../src/types';
+import { PendlePtIsolationModeVaultFactory, PendlePtPriceOracleV2, PendleRegistry } from '../../src/types';
 import {
   createPendlePtIsolationModeTokenVaultV1,
   createPendlePtIsolationModeVaultFactory,
@@ -12,9 +17,7 @@ import {
   createPendleRegistry,
 } from '../pendle-ecosystem-utils';
 
-const PT_RS_ETH_PRICE = BigNumber.from('2207227206779889489578');
-
-describe('PendlePtRsEthDec2024PriceOracle', () => {
+describe('PendlePtRsEthDec2024PriceOracleV2_integration', () => {
   let snapshotId: string;
 
   let core: CoreProtocolArbitrumOne;
@@ -24,7 +27,7 @@ describe('PendlePtRsEthDec2024PriceOracle', () => {
 
   before(async () => {
     core = await setupCoreProtocol({
-      blockNumber: 250_769_568,
+      blockNumber: await getRealLatestBlockNumber(true, Network.ArbitrumOne),
       network: Network.ArbitrumOne,
     });
 
@@ -42,7 +45,6 @@ describe('PendlePtRsEthDec2024PriceOracle', () => {
       userVaultImplementation,
     );
     ptOracle = await createPendlePtPriceOracleV2(core, factory, pendleRegistry);
-
     const tokenInfo = {
       oracleInfos: [
         { oracle: ptOracle.address, tokenPair: core.tokens.weth.address, weight: 100 }
@@ -73,9 +75,33 @@ describe('PendlePtRsEthDec2024PriceOracle', () => {
 
   describe('#getPrice', () => {
     it('returns the correct value under normal conditions for the dptToken', async () => {
-      await advanceToTimestamp(1725647670);
-      const price = await core.oracleAggregatorV2.getPrice(factory.address);
-      expect(price.value).to.eq(PT_RS_ETH_PRICE);
+      const BASE_URL = 'https://api-v2.pendle.finance/sdk/api/v1';
+      const data = await axios.get(`${BASE_URL}/swapExactPtForToken`, {
+        params: {
+          chainId: Network.ArbitrumOne.toString(),
+          receiverAddr: core.hhUser1.address.toLowerCase(),
+          marketAddr: core.pendleEcosystem.rsEthDec2024.rsEthMarket.address,
+          amountPtIn: ONE_ETH_BI.toString(),
+          tokenOutAddr: ADDRESS_ZERO,
+          syTokenOutAddr: core.tokens.rsEth.address,
+          slippage: '0.0001',
+        },
+      })
+        .then(result => result.data)
+        .catch(e => {
+          console.log(e);
+          return Promise.reject(e);
+        });
+      const apiAmountOut = BigNumber.from(data.data.amountTokenOut).mul(
+        (await core.dolomiteMargin.getMarketPrice(0)).value,
+      );
+
+      if (process.env.COVERAGE === 'true') {
+        return;
+      }
+      const price = (await core.dolomiteMargin.getMarketPrice(await factory.marketId())).value;
+      expect(apiAmountOut.div(ONE_ETH_BI)).to.be.gte(price.mul(995).div(1000));
+      expect(apiAmountOut.div(ONE_ETH_BI)).to.be.lte(price.mul(1005).div(1000));
     });
   });
 });

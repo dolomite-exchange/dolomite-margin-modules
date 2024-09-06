@@ -10,18 +10,14 @@ import {
   setupUserVaultProxy,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { expect } from 'chai';
-import { CHAINLINK_PRICE_AGGREGATORS_MAP } from 'packages/base/src/utils/constants';
 import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import {
   IERC20,
   IPendlePtToken,
-  IPendleSyToken,
   PendlePtIsolationModeTokenVaultV1,
   PendlePtIsolationModeTokenVaultV1__factory,
-  PendlePtIsolationModeUnwrapperTraderV2,
   PendlePtIsolationModeUnwrapperTraderV3,
   PendlePtIsolationModeVaultFactory,
-  PendlePtIsolationModeWrapperTraderV2,
   PendlePtIsolationModeWrapperTraderV3,
   PendlePtPriceOracleV2,
   PendleRegistry,
@@ -34,7 +30,6 @@ import {
   createPendlePtPriceOracleV2,
   createPendleRegistry,
 } from '../pendle-ecosystem-utils';
-import { TokenInfo } from 'packages/oracles/src';
 
 describe('PendlePtRsEthDec2024IsolationModeTokenVaultV1', () => {
   let snapshotId: string;
