@@ -25,13 +25,15 @@ import {
 import {
   createPendlePtIsolationModeTokenVaultV1,
   createPendlePtIsolationModeUnwrapperTraderV2,
+  createPendlePtIsolationModeUnwrapperTraderV3,
   createPendlePtIsolationModeVaultFactory,
   createPendlePtIsolationModeWrapperTraderV2,
+  createPendlePtIsolationModeWrapperTraderV3,
   createPendlePtPriceOracleV2,
   createPendleRegistry,
 } from '../pendle-ecosystem-utils';
 
-describe('PendlePtEEthApr2024IsolationModeTokenVaultV1', () => {
+describe('PendlePtEEthDec2024IsolationModeTokenVaultV1', () => {
   let snapshotId: string;
 
   let core: CoreProtocolArbitrumOne;
@@ -50,12 +52,12 @@ describe('PendlePtEEthApr2024IsolationModeTokenVaultV1', () => {
     });
 
     const underlyingToken = core.tokens.weEth!;
-    underlyingPtToken = core.pendleEcosystem!.weEthSep2024.ptWeEthToken.connect(core.hhUser1);
+    underlyingPtToken = core.pendleEcosystem!.weEthDec2024.ptWeEthToken.connect(core.hhUser1);
     const userVaultImplementation = await createPendlePtIsolationModeTokenVaultV1();
     pendleRegistry = await createPendleRegistry(
       core,
-      core.pendleEcosystem!.weEthSep2024.weEthMarket,
-      core.pendleEcosystem!.weEthSep2024.ptOracle,
+      core.pendleEcosystem!.weEthDec2024.weEthMarket,
+      core.pendleEcosystem!.weEthDec2024.ptOracle,
       core.pendleEcosystem!.syWeEthToken,
     );
     factory = await createPendlePtIsolationModeVaultFactory(
@@ -64,46 +66,8 @@ describe('PendlePtEEthApr2024IsolationModeTokenVaultV1', () => {
       underlyingPtToken,
       userVaultImplementation,
     );
-    unwrapper = await createPendlePtIsolationModeUnwrapperTraderV2(core, pendleRegistry, underlyingToken, factory);
-    wrapper = await createPendlePtIsolationModeWrapperTraderV2(core, pendleRegistry, underlyingToken, factory);
-
-    // const wethAggregator = await core.chainlinkPriceOracleV1!.getAggregatorByToken(core.tokens.weth.address);
-    // const redstoneAggregatorMap = REDSTONE_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne];
-    // const weEthAggregator = redstoneAggregatorMap[core.tokens.weEth.address]!.aggregatorAddress;
-    // const redstoneOracle = (await createContractWithAbi<RedstonePriceOracleV2>(
-    //   RedstonePriceOracleV2__factory.abi,
-    //   RedstonePriceOracleV2__factory.bytecode,
-    //   await getRedstonePriceOracleV2ConstructorParams(
-    //     [core.tokens.weth, underlyingToken],
-    //     [wethAggregator, weEthAggregator],
-    //     [ADDRESS_ZERO, core.tokens.weth.address],
-    //     [false, false],
-    //     core,
-    //   ),
-    // )).connect(core.governance);
-
-    // const dolomiteRegistryImplementation = await createContractWithAbi<DolomiteRegistryImplementation>(
-    //   DolomiteRegistryImplementation__factory.abi,
-    //   DolomiteRegistryImplementation__factory.bytecode,
-    //   [],
-    // );
-    // await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(dolomiteRegistryImplementation.address);
-    // await core.dolomiteRegistry.connect(core.governance).ownerSetRedstonePriceOracle(redstoneOracle.address);
-    // const chainlinkOracle = (await createContractWithAbi<ChainlinkPriceOracleV2>(
-    //   ChainlinkPriceOracleV2__factory.abi,
-    //   ChainlinkPriceOracleV2__factory.bytecode,
-    //   await getChainlinkPriceOracleV2ConstructorParamsFromOldPriceOracle(core),
-    // )).connect(core.governance);
-    // await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkPriceOracle(
-    //   chainlinkOracle.address,
-    // );
-    // await chainlinkOracle.connect(core.governance).ownerInsertOrUpdateOracleTokenWithBypass(
-    //   underlyingToken.address,
-    //   18,
-    //   CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][core.tokens.weEth.address]!.aggregatorAddress,
-    //   ADDRESS_ZERO,
-    //   true,
-    // );
+    unwrapper = await createPendlePtIsolationModeUnwrapperTraderV3(core, pendleRegistry, underlyingToken, factory);
+    wrapper = await createPendlePtIsolationModeWrapperTraderV3(core, pendleRegistry, underlyingToken, factory);
     priceOracle = await createPendlePtPriceOracleV2(core, factory, pendleRegistry);
 
     const tokenInfo = {
@@ -116,8 +80,8 @@ describe('PendlePtEEthApr2024IsolationModeTokenVaultV1', () => {
     await core.oracleAggregatorV2.ownerInsertOrUpdateToken(tokenInfo);
     await setupTestMarket(core, factory, true, core.oracleAggregatorV2);
 
-    await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
+    await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
 
     await factory.createVault(core.hhUser1.address);
     const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);
@@ -147,9 +111,9 @@ describe('PendlePtEEthApr2024IsolationModeTokenVaultV1', () => {
 
     it('should work when owner pauses syWstEth', async () => {
       expect(await vault.isExternalRedemptionPaused()).to.be.false;
-      const syWeEth = core.pendleEcosystem!.syWeEthToken;
-      const owner = await impersonate(await syWeEth.owner(), true);
-      await syWeEth.connect(owner).pause();
+      const syToken = core.pendleEcosystem!.syWeEthToken;
+      const owner = await impersonate(await syToken.owner(), true);
+      await syToken.connect(owner).pause();
       expect(await vault.isExternalRedemptionPaused()).to.be.true;
     });
   });

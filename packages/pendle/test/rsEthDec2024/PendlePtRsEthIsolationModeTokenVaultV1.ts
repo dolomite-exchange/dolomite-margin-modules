@@ -13,7 +13,9 @@ import { expect } from 'chai';
 import { CHAINLINK_PRICE_AGGREGATORS_MAP } from 'packages/base/src/utils/constants';
 import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import {
+  IERC20,
   IPendlePtToken,
+  IPendleSyToken,
   PendlePtIsolationModeTokenVaultV1,
   PendlePtIsolationModeTokenVaultV1__factory,
   PendlePtIsolationModeUnwrapperTraderV2,
@@ -34,11 +36,12 @@ import {
 } from '../pendle-ecosystem-utils';
 import { TokenInfo } from 'packages/oracles/src';
 
-describe('PendlePtRsEthSep2024IsolationModeTokenVaultV1', () => {
+describe('PendlePtRsEthDec2024IsolationModeTokenVaultV1', () => {
   let snapshotId: string;
 
   let core: CoreProtocolArbitrumOne;
   let underlyingPtToken: IPendlePtToken;
+  let underlyingToken: IERC20;
   let pendleRegistry: PendleRegistry;
   let unwrapper: PendlePtIsolationModeUnwrapperTraderV3;
   let wrapper: PendlePtIsolationModeWrapperTraderV3;
@@ -48,38 +51,18 @@ describe('PendlePtRsEthSep2024IsolationModeTokenVaultV1', () => {
 
   before(async () => {
     core = await setupCoreProtocol({
-      blockNumber: 220_486_000,
+      blockNumber: 250_691_450,
       network: Network.ArbitrumOne,
     });
 
-    const underlyingToken = core.tokens.rsEth!;
-    await core.chainlinkPriceOracleV3.ownerInsertOrUpdateOracleToken(
-      underlyingToken.address,
-      CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][underlyingToken.address]!.aggregatorAddress,
-      false
-    );
-    const tokenInfo: TokenInfo = {
-      oracleInfos: [
-        { oracle: core.chainlinkPriceOracleV3.address, tokenPair: core.tokens.weth.address, weight: 100 }
-      ],
-      decimals: 18,
-      token: underlyingToken.address
-    };
-    await core.oracleAggregatorV2.ownerInsertOrUpdateToken(tokenInfo);
-    const rsEthMarketId = await core.dolomiteMargin.getNumMarkets();
-    await setupTestMarket(core, core.tokens.rsEth, false, core.oracleAggregatorV2);
-    await core.dolomiteMargin.connect(core.governance).ownerSetPriceOracle(
-      rsEthMarketId,
-      core.oracleAggregatorV2.address
-    );
-
-    underlyingPtToken = core.pendleEcosystem!.rsEthSep2024.ptRsEthToken.connect(core.hhUser1);
+    underlyingToken = core.tokens.rsEth;
+    underlyingPtToken = core.pendleEcosystem!.rsEthDec2024.ptRsEthToken.connect(core.hhUser1);
 
     const userVaultImplementation = await createPendlePtIsolationModeTokenVaultV1();
     pendleRegistry = await createPendleRegistry(
       core,
-      core.pendleEcosystem!.rsEthSep2024.rsEthMarket,
-      core.pendleEcosystem!.rsEthSep2024.ptOracle,
+      core.pendleEcosystem!.rsEthDec2024.rsEthMarket,
+      core.pendleEcosystem!.rsEthDec2024.ptOracle,
       core.pendleEcosystem!.syRsEthToken,
     );
     factory = await createPendlePtIsolationModeVaultFactory(
@@ -95,8 +78,8 @@ describe('PendlePtRsEthSep2024IsolationModeTokenVaultV1', () => {
 
     await setupTestMarket(core, factory, true, priceOracle);
 
-    await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
+    await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
 
     await factory.createVault(core.hhUser1.address);
     const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);
@@ -126,9 +109,9 @@ describe('PendlePtRsEthSep2024IsolationModeTokenVaultV1', () => {
 
     it('should work when owner pauses syRsEth', async () => {
       expect(await vault.isExternalRedemptionPaused()).to.be.false;
-      const syRsEth = core.pendleEcosystem!.syRsEthToken;
-      const owner = await impersonate(await syRsEth.owner(), true);
-      await syRsEth.connect(owner).pause();
+      const syToken = core.pendleEcosystem!.syRsEthToken;
+      const owner = await impersonate(await syToken.owner(), true);
+      await syToken.connect(owner).pause();
       expect(await vault.isExternalRedemptionPaused()).to.be.true;
     });
   });
