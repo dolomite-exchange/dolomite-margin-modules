@@ -19,54 +19,54 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
 
   const unwrapperProxies = [
-    core.gmxEcosystemV2.live.gmArbUsd.unwrapperProxy,
-    core.gmxEcosystemV2.live.gmBtc.unwrapperProxy,
-    core.gmxEcosystemV2.live.gmBtcUsd.unwrapperProxy,
-    core.gmxEcosystemV2.live.gmEth.unwrapperProxy,
-    core.gmxEcosystemV2.live.gmEthUsd.unwrapperProxy,
-    core.gmxEcosystemV2.live.gmLinkUsd.unwrapperProxy,
-    core.gmxEcosystemV2.live.gmUniUsd.unwrapperProxy,
+    core.gmxV2Ecosystem.live.gmArbUsd.unwrapperProxy,
+    core.gmxV2Ecosystem.live.gmBtc.unwrapperProxy,
+    core.gmxV2Ecosystem.live.gmBtcUsd.unwrapperProxy,
+    core.gmxV2Ecosystem.live.gmEth.unwrapperProxy,
+    core.gmxV2Ecosystem.live.gmEthUsd.unwrapperProxy,
+    core.gmxV2Ecosystem.live.gmLinkUsd.unwrapperProxy,
+    core.gmxV2Ecosystem.live.gmUniUsd.unwrapperProxy,
   ];
   const wrapperProxies = [
-    core.gmxEcosystemV2.live.gmArbUsd.wrapperProxy,
-    core.gmxEcosystemV2.live.gmBtc.wrapperProxy,
-    core.gmxEcosystemV2.live.gmBtcUsd.wrapperProxy,
-    core.gmxEcosystemV2.live.gmEth.wrapperProxy,
-    core.gmxEcosystemV2.live.gmEthUsd.wrapperProxy,
-    core.gmxEcosystemV2.live.gmLinkUsd.wrapperProxy,
-    core.gmxEcosystemV2.live.gmUniUsd.wrapperProxy,
+    core.gmxV2Ecosystem.live.gmArbUsd.wrapperProxy,
+    core.gmxV2Ecosystem.live.gmBtc.wrapperProxy,
+    core.gmxV2Ecosystem.live.gmBtcUsd.wrapperProxy,
+    core.gmxV2Ecosystem.live.gmEth.wrapperProxy,
+    core.gmxV2Ecosystem.live.gmEthUsd.wrapperProxy,
+    core.gmxV2Ecosystem.live.gmLinkUsd.wrapperProxy,
+    core.gmxV2Ecosystem.live.gmUniUsd.wrapperProxy,
   ];
 
   const unwrappers = [
-    core.gmxEcosystemV2.live.gmArbUsd.unwrapper,
-    core.gmxEcosystemV2.live.gmBtc.unwrapper,
-    core.gmxEcosystemV2.live.gmBtcUsd.unwrapper,
-    core.gmxEcosystemV2.live.gmEth.unwrapper,
-    core.gmxEcosystemV2.live.gmEthUsd.unwrapper,
-    core.gmxEcosystemV2.live.gmLinkUsd.unwrapper,
-    core.gmxEcosystemV2.live.gmUniUsd.unwrapper,
+    core.gmxV2Ecosystem.live.gmArbUsd.unwrapper,
+    core.gmxV2Ecosystem.live.gmBtc.unwrapper,
+    core.gmxV2Ecosystem.live.gmBtcUsd.unwrapper,
+    core.gmxV2Ecosystem.live.gmEth.unwrapper,
+    core.gmxV2Ecosystem.live.gmEthUsd.unwrapper,
+    core.gmxV2Ecosystem.live.gmLinkUsd.unwrapper,
+    core.gmxV2Ecosystem.live.gmUniUsd.unwrapper,
   ];
   const wrappers = [
-    core.gmxEcosystemV2.live.gmArbUsd.wrapper,
-    core.gmxEcosystemV2.live.gmBtc.wrapper,
-    core.gmxEcosystemV2.live.gmBtcUsd.wrapper,
-    core.gmxEcosystemV2.live.gmEth.wrapper,
-    core.gmxEcosystemV2.live.gmEthUsd.wrapper,
-    core.gmxEcosystemV2.live.gmLinkUsd.wrapper,
-    core.gmxEcosystemV2.live.gmUniUsd.wrapper,
+    core.gmxV2Ecosystem.live.gmArbUsd.wrapper,
+    core.gmxV2Ecosystem.live.gmBtc.wrapper,
+    core.gmxV2Ecosystem.live.gmBtcUsd.wrapper,
+    core.gmxV2Ecosystem.live.gmEth.wrapper,
+    core.gmxV2Ecosystem.live.gmEthUsd.wrapper,
+    core.gmxV2Ecosystem.live.gmLinkUsd.wrapper,
+    core.gmxV2Ecosystem.live.gmUniUsd.wrapper,
   ];
 
   const unwrapperImplementationAddress = await deployContractAndSave(
     'GmxV2IsolationModeUnwrapperTraderV2',
     [core.tokens.weth.address],
     'GmxV2IsolationModeUnwrapperTraderImplementationV9',
-    { ...core.libraries.unwrapperTraderImpl, ...core.gmxEcosystemV2.live.gmxV2LibraryMap },
+    { ...core.libraries.unwrapperTraderImpl, ...core.gmxV2Ecosystem.live.gmxV2LibraryMap },
   );
   const wrapperImplementationAddress = await deployContractAndSave(
     'GmxV2IsolationModeWrapperTraderV2',
     [core.tokens.weth.address],
     'GmxV2IsolationModeWrapperTraderImplementationV8',
-    { ...core.libraries.wrapperTraderImpl, ...core.gmxEcosystemV2.live.gmxV2LibraryMap },
+    { ...core.libraries.wrapperTraderImpl, ...core.gmxV2Ecosystem.live.gmxV2LibraryMap },
   );
 
   const transactions = [];

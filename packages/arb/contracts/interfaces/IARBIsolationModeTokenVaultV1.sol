@@ -22,10 +22,10 @@ pragma solidity ^0.8.9;
 
 
 /**
- * @title   IMNTIsolationModeTokenVaultV1.sol
+ * @title   IARBIsolationModeTokenVaultV1
  * @author  Dolomite
  *
- * @notice  This interface defines the functions that are available on the MNTIsolationModeTokenVaultV1.sol implementation
+ * @notice  This interface defines the functions that are available on the ARBIsolationModeTokenVaultV1 implementation
  *          contract for each user's proxy vault.
  */
 interface IARBIsolationModeTokenVaultV1 {

@@ -28,7 +28,7 @@ import { IARBRegistry } from "./interfaces/IARBRegistry.sol";
 
 
 /**
- * @title   MNTIsolationModeVaultFactory.sol
+ * @title   ARBIsolationModeVaultFactory
  * @author  Dolomite
  *
  * @notice  The wrapper around the GMX token that is used to create user vaults and manage the entry points that a

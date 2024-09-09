@@ -5,15 +5,10 @@ import { parseEther } from 'ethers/lib/utils';
 import {
   DolomiteRegistryImplementation,
   DolomiteRegistryImplementation__factory,
-  EventEmitterRegistry,
   IsolationModeFreezableLiquidatorProxy,
-  IsolationModeFreezableLiquidatorProxy__factory,
 } from 'packages/base/src/types';
-import {
-  getIsolationModeFreezableLiquidatorProxyConstructorParams,
-} from 'packages/base/src/utils/constructors/dolomite';
 import { createContractWithAbi, depositIntoDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
-import { NO_EXPIRY, ONE_BI, ONE_ETH_BI, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
+import { NO_EXPIRY, ONE_BI, ONE_ETH_BI, TWO_BI, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
 import {
   expectEvent,
@@ -21,7 +16,7 @@ import {
   expectThrow,
   expectWalletBalance,
 } from 'packages/base/test/utils/assertions';
-import { createDolomiteRegistryImplementation, createEventEmitter } from 'packages/base/test/utils/dolomite';
+import { createDolomiteRegistryImplementation } from 'packages/base/test/utils/dolomite';
 import { liquidateV4WithZapParam } from 'packages/base/test/utils/liquidation-utils';
 import {
   disableInterestAccrual,
@@ -43,9 +38,12 @@ import {
   GmxV2IsolationModeVaultFactory,
   GmxV2IsolationModeWrapperTraderV2,
   GmxV2Registry,
-  IGenericTraderProxyV1__factory,
+  IEventEmitterRegistry,
   IGmxMarketToken,
   IGmxMarketToken__factory,
+  IGmxRoleStore__factory,
+  TestOracleProvider,
+  TestOracleProvider__factory,
 } from '../src/types';
 import {
   createGmxV2IsolationModeTokenVaultV1,
@@ -56,6 +54,8 @@ import {
   createGmxV2MarketTokenPriceOracle,
   createGmxV2Registry,
   getOracleParams,
+  getOracleProviderEnabledKey,
+  getOracleProviderForTokenKey,
 } from './gmx-v2-ecosystem-utils';
 
 const defaultAccountNumber = ZERO_BI;
@@ -65,7 +65,6 @@ const borrowAccountNumber2 = borrowAccountNumber.add(ONE_BI);
 const amountWei = ONE_ETH_BI.mul('1235');
 const amountWeiForSecond = ONE_ETH_BI.mul('1234');
 const DEFAULT_EXTRA_DATA = ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [parseEther('.5'), ONE_BI]);
-const NEW_GENERIC_TRADER_PROXY = '0x905F3adD52F01A9069218c8D1c11E240afF61D2B';
 
 describe('POC: liquidationWithdrawalKeyHijacking', () => {
   let snapshotId: string;
@@ -80,7 +79,8 @@ describe('POC: liquidationWithdrawalKeyHijacking', () => {
   let vault: GmxV2IsolationModeTokenVaultV1;
   let marketId: BigNumber;
   let liquidatorProxy: IsolationModeFreezableLiquidatorProxy;
-  let eventEmitter: EventEmitterRegistry;
+  let eventEmitter: IEventEmitterRegistry;
+  let testOracleProvider: TestOracleProvider;
 
   let solidAccount: AccountStruct;
   let liquidAccount: AccountStruct;
@@ -99,60 +99,66 @@ describe('POC: liquidationWithdrawalKeyHijacking', () => {
     );
     await core.dolomiteRegistryProxy.upgradeTo(newImplementation.address);
 
-    liquidatorProxy = await createContractWithAbi<IsolationModeFreezableLiquidatorProxy>(
-      IsolationModeFreezableLiquidatorProxy__factory.abi,
-      IsolationModeFreezableLiquidatorProxy__factory.bytecode,
-      await getIsolationModeFreezableLiquidatorProxyConstructorParams(core),
-    );
+    liquidatorProxy = core.freezableLiquidatorProxy;
 
     const gmxV2Library = await createGmxV2Library();
     const userVaultImplementation = await createGmxV2IsolationModeTokenVaultV1(core, gmxV2Library);
     gmxV2Registry = await createGmxV2Registry(core, GMX_V2_CALLBACK_GAS_LIMIT);
 
-    allowableMarketIds = [core.marketIds.nativeUsdc!, core.marketIds.weth];
+    allowableMarketIds = [core.marketIds.nativeUsdc, core.marketIds.weth];
     factory = await createGmxV2IsolationModeVaultFactory(
       core,
       gmxV2Library,
       gmxV2Registry,
       allowableMarketIds,
       allowableMarketIds,
-      core.gmxEcosystemV2!.gmTokens.ethUsd,
+      core.gmxV2Ecosystem.gmTokens.ethUsd,
       userVaultImplementation,
       GMX_V2_EXECUTION_FEE_FOR_TESTS,
     );
     underlyingToken = IGmxMarketToken__factory.connect(await factory.UNDERLYING_TOKEN(), core.hhUser1);
-    unwrapper = await createGmxV2IsolationModeUnwrapperTraderV2(
-      core,
-      factory,
-      gmxV2Library,
-      gmxV2Registry,
-    );
-    wrapper = await createGmxV2IsolationModeWrapperTraderV2(
-      core,
-      factory,
-      gmxV2Library,
-      gmxV2Registry,
-    );
+    unwrapper = await createGmxV2IsolationModeUnwrapperTraderV2(core, factory, gmxV2Library, gmxV2Registry);
+    wrapper = await createGmxV2IsolationModeWrapperTraderV2(core, factory, gmxV2Library, gmxV2Registry);
     const priceOracle = await createGmxV2MarketTokenPriceOracle(core, gmxV2Registry);
     await priceOracle.connect(core.governance).ownerSetMarketToken(factory.address, true);
+
+    await gmxV2Registry
+      .connect(core.governance)
+      .ownerSetGmxMarketToIndexToken(underlyingToken.address, core.gmxV2Ecosystem.gmTokens.ethUsd.indexToken.address);
+
+    const dataStore = core.gmxV2Ecosystem.gmxDataStore;
+    const controllerKey = ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['string'], ['CONTROLLER']));
+    const roleStore = IGmxRoleStore__factory.connect(await dataStore.roleStore(), core.hhUser1);
+    const controllers = await roleStore.getRoleMembers(controllerKey, 0, 1);
+    const controller = await impersonate(controllers[0], true);
+
+    testOracleProvider = await createContractWithAbi<TestOracleProvider>(
+      TestOracleProvider__factory.abi,
+      TestOracleProvider__factory.bytecode,
+      [core.oracleAggregatorV2.address]
+    );
+    const oracleProviderEnabledKey = getOracleProviderEnabledKey(testOracleProvider);
+    const usdcProviderKey = getOracleProviderForTokenKey(core.tokens.nativeUsdc);
+    const wethProviderKey = getOracleProviderForTokenKey(core.tokens.weth);
+    await dataStore.connect(controller).setBool(oracleProviderEnabledKey, true);
+    await dataStore.connect(controller).setAddress(usdcProviderKey, testOracleProvider.address);
+    await dataStore.connect(controller).setAddress(wethProviderKey, testOracleProvider.address);
 
     // Use actual price oracle later
     marketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, factory, true, priceOracle);
     await disableInterestAccrual(core, core.marketIds.weth);
-    await disableInterestAccrual(core, core.marketIds.nativeUsdc!);
+    await disableInterestAccrual(core, core.marketIds.nativeUsdc);
 
-    await factory.connect(core.governance).ownerSetAllowableCollateralMarketIds(
-      [...allowableMarketIds, marketId],
-    );
+    await factory.connect(core.governance).ownerSetAllowableCollateralMarketIds([...allowableMarketIds, marketId]);
 
-    await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
+    await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
 
     await gmxV2Registry.connect(core.governance).ownerSetUnwrapperByToken(factory.address, unwrapper.address);
     await gmxV2Registry.connect(core.governance).ownerSetWrapperByToken(factory.address, wrapper.address);
 
-    eventEmitter = await createEventEmitter(core);
+    eventEmitter = core.eventEmitterRegistry;
     const newRegistry = await createDolomiteRegistryImplementation();
     await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(newRegistry.address);
     await core.dolomiteRegistry.connect(core.governance).ownerSetEventEmitter(eventEmitter.address);
@@ -168,18 +174,8 @@ describe('POC: liquidationWithdrawalKeyHijacking', () => {
     await setupWETHBalance(core, core.hhUser1, amountWei, core.dolomiteMargin);
     await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, amountWei);
 
-    await core.dolomiteRegistry.ownerSetLiquidatorAssetRegistry(core.liquidatorAssetRegistry.address);
     await core.liquidatorAssetRegistry.ownerAddLiquidatorToAssetWhitelist(marketId, core.liquidatorProxyV4.address);
     await core.liquidatorAssetRegistry.ownerAddLiquidatorToAssetWhitelist(marketId, liquidatorProxy.address);
-    await core.dolomiteMargin.ownerSetGlobalOperator(liquidatorProxy.address, true);
-    await core.dolomiteMargin.ownerSetGlobalOperator(NEW_GENERIC_TRADER_PROXY, true);
-    await core.dolomiteMargin.ownerSetGlobalOperator(core.liquidatorProxyV4.address, true);
-    await core.dolomiteRegistry.ownerSetGenericTraderProxy(NEW_GENERIC_TRADER_PROXY);
-    const trader = await IGenericTraderProxyV1__factory.connect(
-      NEW_GENERIC_TRADER_PROXY,
-      core.governance,
-    );
-    await trader.ownerSetEventEmitterRegistry(eventEmitter.address);
 
     solidAccount = { owner: core.hhUser5.address, number: defaultAccountNumber };
     liquidAccount = { owner: vault.address, number: borrowAccountNumber };
@@ -187,24 +183,18 @@ describe('POC: liquidationWithdrawalKeyHijacking', () => {
 
     await setupGMBalance(
       core,
-      core.gmxEcosystemV2.gmxEthUsdMarketToken,
+      core.gmxV2Ecosystem.gmxEthUsdMarketToken,
       core.hhUser1,
       amountWei.add(amountWeiForSecond),
-      vault
+      vault,
     );
     await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei.add(amountWeiForSecond));
-    await vault.openBorrowPosition(
-      defaultAccountNumber,
-      borrowAccountNumber,
-      amountWei,
-      { value: GMX_V2_EXECUTION_FEE_FOR_TESTS },
-    );
-    await vault.openBorrowPosition(
-      defaultAccountNumber,
-      borrowAccountNumber2,
-      amountWeiForSecond,
-      { value: GMX_V2_EXECUTION_FEE_FOR_TESTS },
-    );
+    await vault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei, {
+      value: GMX_V2_EXECUTION_FEE_FOR_TESTS,
+    });
+    await vault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber2, amountWeiForSecond, {
+      value: GMX_V2_EXECUTION_FEE_FOR_TESTS,
+    });
 
     await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
     await expectProtocolBalance(core, vault.address, borrowAccountNumber2, marketId, amountWeiForSecond);
@@ -224,11 +214,7 @@ describe('POC: liquidationWithdrawalKeyHijacking', () => {
   });
 
   describe('#prepareForLiquidation', () => {
-
-    async function setupBalances(
-      account: BigNumber,
-      amount: BigNumber,
-    ) {
+    async function setupBalances(account: BigNumber, amount: BigNumber) {
       // Create debt for the position
       let gmPrice = (await core.dolomiteMargin.getMarketPrice(marketId)).value;
       let _wethPrice = (await core.dolomiteMargin.getMarketPrice(core.marketIds.weth)).value;
@@ -265,11 +251,15 @@ describe('POC: liquidationWithdrawalKeyHijacking', () => {
     }
 
     async function performUnwrapping(_withdrawalKey: any): Promise<ContractTransaction> {
-      return await core.gmxEcosystemV2!.gmxWithdrawalHandler.connect(core.gmxEcosystemV2!.gmxExecutor)
+      return await core
+        .gmxV2Ecosystem.gmxWithdrawalHandler.connect(core.gmxV2Ecosystem.gmxExecutor)
         .executeWithdrawal(
           _withdrawalKey,
-          getOracleParams(core.tokens.weth.address, core.tokens.nativeUsdc!.address),
-          { gasLimit: 10_000_000 },
+          getOracleParams(
+            [core.tokens.weth.address, core.tokens.nativeUsdc.address],
+            [testOracleProvider.address, testOracleProvider.address]
+          ),
+          { gasLimit: 10_000_000 }
         );
     }
 
@@ -287,16 +277,14 @@ describe('POC: liquidationWithdrawalKeyHijacking', () => {
         liquidAccount: _liquidAccount,
         freezableMarketId: marketId,
         inputTokenAmount: amountWei,
-        outputMarketId: core.marketIds.nativeUsdc!,
-        minOutputAmount: ONE_BI,
+        outputMarketId: core.marketIds.nativeUsdc,
+        minOutputAmount: TWO_BI,
         expirationTimestamp: NO_EXPIRY,
         extraData: DEFAULT_EXTRA_DATA,
       });
       const filter = eventEmitter.filters.AsyncWithdrawalCreated();
-      const withdrawalKey = (await eventEmitter.queryFilter(
-        filter,
-        prepareForLiquidationResult.blockNumber,
-      ))[0].args.key;
+      const withdrawalKey = (await eventEmitter.queryFilter(filter, prepareForLiquidationResult.blockNumber))[0].args
+        .key;
       const result = await performUnwrapping(withdrawalKey);
 
       await expectEvent(eventEmitter, result, 'AsyncWithdrawalFailed', {
@@ -317,36 +305,28 @@ describe('POC: liquidationWithdrawalKeyHijacking', () => {
     ) {
       // Give the contract the WETH needed to complete the exchange
       const testTrader = await impersonate(core.testEcosystem!.testExchangeWrapper.address, true, _wethAmount.mul(10));
-      await setupWETHBalance(
-        core,
-        testTrader,
-        _wethAmount.mul(5),
-        { address: '0x000000000000000000000000000000000000dead' },
-      );
+      await setupWETHBalance(core, testTrader, _wethAmount.mul(5), {
+        address: '0x000000000000000000000000000000000000dead',
+      });
 
       const allKeys = _withdrawals.concat(_deposits);
-      const tradeTypes = Array(
-        _withdrawals.length,
-      ).fill(UnwrapperTradeType.FromWithdrawal).concat(
-        Array(
-          _deposits.length,
-        ).fill(UnwrapperTradeType.FromWithdrawal));
+      const tradeTypes = Array(_withdrawals.length)
+        .fill(UnwrapperTradeType.FromWithdrawal)
+        .concat(Array(_deposits.length).fill(UnwrapperTradeType.FromWithdrawal));
 
       const liquidationData = ethers.utils.defaultAbiCoder.encode(
         ['uint8[]', 'bytes32[]', 'bool'],
         [tradeTypes, allKeys, true],
       );
-      const withdrawals = await Promise.all(withdrawalKeys.map(key => unwrapper.getWithdrawalInfo(key)));
+      const withdrawals = await Promise.all(withdrawalKeys.map((key) => unwrapper.getWithdrawalInfo(key)));
       const deposit = depositKey ? await wrapper.getDepositInfo(depositKey) : undefined;
       const allStructs = withdrawals
-        .map(w => ({ inputAmount: w.inputAmount, outputAmount: w.outputAmount }))
+        .map((w) => ({ inputAmount: w.inputAmount, outputAmount: w.outputAmount }))
         .concat(deposit ? [{ inputAmount: deposit.outputAmount, outputAmount: deposit.inputAmount }] : []);
-      const outputAmountForSwap = allStructs
-        .reduce((acc, struct) => {
+      const outputAmountForSwap = allStructs.reduce(
+        (acc, struct) => {
           if (acc.input.gt(ZERO_BI)) {
-            const inputAmount = acc.input.lt(struct.inputAmount)
-              ? acc.input
-              : struct.inputAmount;
+            const inputAmount = acc.input.lt(struct.inputAmount) ? acc.input : struct.inputAmount;
             const outputAmount = acc.input.lt(struct.inputAmount)
               ? struct.outputAmount.mul(acc.input).div(struct.inputAmount)
               : struct.outputAmount;
@@ -355,22 +335,18 @@ describe('POC: liquidationWithdrawalKeyHijacking', () => {
             acc.output = acc.output.add(outputAmount);
           }
           return acc;
-        }, { output: ZERO_BI, input: _amountWeiForLiquidation })
-        .output;
+        },
+        { output: ZERO_BI, input: _amountWeiForLiquidation },
+      ).output;
 
       const zapParam = await getLiquidateIsolationModeZapPath(
-        [marketId, core.marketIds.nativeUsdc!, core.marketIds.weth],
+        [marketId, core.marketIds.nativeUsdc, core.marketIds.weth],
         [_amountWeiForLiquidation, outputAmountForSwap, _wethAmount],
         unwrapper,
         core,
       );
       zapParam.tradersPath[0].tradeData = liquidationData;
-      await liquidateV4WithZapParam(
-        core,
-        _solidAccount,
-        _liquidAccount,
-        zapParam,
-      );
+      await liquidateV4WithZapParam(core, _solidAccount, _liquidAccount, zapParam);
     }
 
     async function getMarketBalances(account: any) {
@@ -395,10 +371,10 @@ describe('POC: liquidationWithdrawalKeyHijacking', () => {
     */
     it('Withdrawal Keys Misused by Differing Subaccount in Liquidations', async () => {
       // with the specific initial prices only the first borrower, "borrowAccountNumber" is undercollateralized
-      const {
-        amountWeiForLiquidation: _amountWeiForLiquidationOne,
-        wethAmount: _wethAmountOne,
-      } = await setupBalances(borrowAccountNumber, amountWei);
+      const { amountWeiForLiquidation: _amountWeiForLiquidationOne, wethAmount: _wethAmountOne } = await setupBalances(
+        borrowAccountNumber,
+        amountWei,
+      );
 
       const {
         amountWeiForLiquidation: _amountWeiForLiquidationTwo,
@@ -425,7 +401,8 @@ describe('POC: liquidationWithdrawalKeyHijacking', () => {
       );
 
       console.log(
-        ' 4. We decrease the price of WETH by 65% so that the first borrower is undercollateralized but his liquidation will not use up his entire available amount. We do this to avoid the AIMUTI-1 bug');
+        ' 4. We decrease the price of WETH by 65% so that the first borrower is undercollateralized but his liquidation will not use up his entire available amount. We do this to avoid the AIMUTI-1 bug',
+      );
       const decreasedWethPrice = initialWethPrice.mul(35).div(100);
       await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.weth.address, decreasedWethPrice);
 
@@ -435,19 +412,20 @@ describe('POC: liquidationWithdrawalKeyHijacking', () => {
       expect(liquidAccountOneBeforeBalances.get(core.marketIds.weth.toString())?.isZero()).to.be.false;
 
       // balance 0
-      expect(liquidAccountOneBeforeBalances.get(core.marketIds.nativeUsdc!.toString()) === undefined).to.be.true;
+      expect(liquidAccountOneBeforeBalances.get(core.marketIds.nativeUsdc.toString()) === undefined).to.be.true;
 
       const liquidAccountTwoBeforeBalances = await getMarketBalances(liquidAccount2);
-      expect(liquidAccountTwoBeforeBalances.get(marketId.toString())?.toString())
-        .to
-        .be
-        .equal(amountWeiForSecond.toString());
+      expect(liquidAccountTwoBeforeBalances.get(marketId.toString())?.toString()).to.be.equal(
+        amountWeiForSecond.toString(),
+      );
       expect(liquidAccountTwoBeforeBalances.get(core.marketIds.weth.toString())?.isZero()).to.be.false;
 
       // balance 0
-      expect(liquidAccountTwoBeforeBalances.get(core.marketIds.nativeUsdc!.toString()) === undefined).to.be.true;
+      expect(liquidAccountTwoBeforeBalances.get(core.marketIds.nativeUsdc.toString()) === undefined).to.be.true;
 
-      console.log(` 6. Liquidating account ${liquidAccount.number} but using accounts' ${borrowAccountNumber2} key: ${secondBorrowerKey}`);
+      console.log(
+        ` 6. Liquidating account ${liquidAccount.number} but using accounts' ${borrowAccountNumber2} key: ${secondBorrowerKey}`,
+      );
       // IMPORTANT - This POC should cut off here because executeProxyLiquidation should fail
       await expectThrow(
         executeProxyLiquidation(
@@ -463,7 +441,8 @@ describe('POC: liquidationWithdrawalKeyHijacking', () => {
       return;
 
       console.log(
-        ' 7. Balances for accounts after liquidations show no change to second account and first account has only liquidation output token');
+        ' 7. Balances for accounts after liquidations show no change to second account and first account has only liquidation output token',
+      );
       const liquidAccountOneAfterBalances = await getMarketBalances(liquidAccount);
 
       // balance 0
@@ -473,33 +452,32 @@ describe('POC: liquidationWithdrawalKeyHijacking', () => {
       expect(liquidAccountOneAfterBalances.get(core.marketIds.weth.toString()) === undefined).to.be.true;
 
       // liquidation output token was in USDC
-      expect(liquidAccountOneAfterBalances.get(core.marketIds.nativeUsdc!.toString())?.isZero()).to.be.false;
+      expect(liquidAccountOneAfterBalances.get(core.marketIds.nativeUsdc.toString())?.isZero()).to.be.false;
 
       const liquidAccountTwoAfterBalances = await getMarketBalances(liquidAccount2);
-      expect(liquidAccountTwoAfterBalances.get(marketId.toString()))
-        .to
-        .be
-        .equal(liquidAccountTwoBeforeBalances.get(marketId.toString()));
-      expect(liquidAccountTwoAfterBalances.get(core.marketIds.weth.toString()))
-        .to
-        .be
-        .equal(liquidAccountTwoBeforeBalances.get(core.marketIds.weth.toString()));
-      expect(liquidAccountTwoAfterBalances.get(core.marketIds.nativeUsdc!.toString()))
-        .to
-        .be
-        .equal(liquidAccountTwoBeforeBalances.get(core.marketIds.nativeUsdc!.toString()));
+      expect(liquidAccountTwoAfterBalances.get(marketId.toString())).to.be.equal(
+        liquidAccountTwoBeforeBalances.get(marketId.toString()),
+      );
+      expect(liquidAccountTwoAfterBalances.get(core.marketIds.weth.toString())).to.be.equal(
+        liquidAccountTwoBeforeBalances.get(core.marketIds.weth.toString()),
+      );
+      expect(liquidAccountTwoAfterBalances.get(core.marketIds.nativeUsdc.toString())).to.be.equal(
+        liquidAccountTwoBeforeBalances.get(core.marketIds.nativeUsdc.toString()),
+      );
 
-      console.log(` 8. Since account ${liquidAccount.number} is now over-collateralized, the operation to retrieve his failed withdrawal can be initiated by a trusted handler`);
+      console.log(
+        ` 8. Since account ${liquidAccount.number} is now over-collateralized, the operation to retrieve his failed withdrawal can be initiated by a trusted handler`,
+      );
       await gmxV2Registry.connect(core.governance).ownerSetIsHandler(core.hhUser1.address, true);
       const unwrapperAsTrustedHandler = unwrapper.connect(core.hhUser1);
-      const result = await unwrapperAsTrustedHandler.executeWithdrawalForRetry(
-        firstBorrowerKey,
-        { gasLimit: 30_000_000 },
-      );
+      const result = await unwrapperAsTrustedHandler.executeWithdrawalForRetry(firstBorrowerKey, {
+        gasLimit: 30_000_000,
+      });
       await result.wait();
 
       console.log(
-        ' 9. But this operation will fail since adding the extra funds from the initial key would be interpreted by DolomiteMargin as an increase in borrowing from the GM market, which is a closed market');
+        ' 9. But this operation will fail since adding the extra funds from the initial key would be interpreted by DolomiteMargin as an increase in borrowing from the GM market, which is a closed market',
+      );
       await expectEvent(eventEmitter, result, 'AsyncWithdrawalFailed', {
         key: firstBorrowerKey,
         token: factory.address,
@@ -507,9 +485,11 @@ describe('POC: liquidationWithdrawalKeyHijacking', () => {
       });
 
       console.log(
-        '10. The second position has also become over-collateralize during the price variation we did at (4) so continuing liquidation will fail regardless of withdrawal key');
+        '10. The second position has also become over-collateralize during the price variation we did at (4) so continuing liquidation will fail regardless of withdrawal key',
+      );
       console.log(
-        '11. If we try to liquidate using the second key (already used), even if the second account would be liquidatable, it reverts on the amount check since it is done first');
+        '11. If we try to liquidate using the second key (already used), even if the second account would be liquidatable, it reverts on the amount check since it is done first',
+      );
       await expectThrow(
         executeProxyLiquidation(
           solidAccount,
@@ -522,7 +502,8 @@ describe('POC: liquidationWithdrawalKeyHijacking', () => {
         'AsyncIsolationModeUnwrapperImpl: Invalid input amount',
       );
       console.log(
-        '12. If we try to liquidate using the unused first key, it reverts because the second account became over-collateralized due to price variations');
+        '12. If we try to liquidate using the unused first key, it reverts because the second account became over-collateralized due to price variations',
+      );
       await expectThrow(
         executeProxyLiquidation(
           solidAccount,
@@ -536,14 +517,16 @@ describe('POC: liquidationWithdrawalKeyHijacking', () => {
       );
 
       console.log(
-        '13. Also the second account cannot get his withdrawal back since the withdrawal info was cleared by the first liquidator');
+        '13. Also the second account cannot get his withdrawal back since the withdrawal info was cleared by the first liquidator',
+      );
       await expectThrow(
         unwrapperAsTrustedHandler.executeWithdrawalForRetry(secondBorrowerKey),
         'UpgradeableUnwrapperTraderV2: Invalid withdrawal key',
       );
 
       console.log(
-        '14. This leaves the vault frozen until the second account is again liquidatable and then it must use the first key');
+        '14. This leaves the vault frozen until the second account is again liquidatable and then it must use the first key',
+      );
       console.log('15. Since the vault is frozen, any and all operations from any other sub-accounts are also frozen');
       expect(await vault.isVaultFrozen()).to.be.true;
 
@@ -553,7 +536,8 @@ describe('POC: liquidationWithdrawalKeyHijacking', () => {
       await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.weth.address, increasedWethPrice2);
 
       console.log(
-        '17. And show that it cannot be liquidated using the first borrower key since doing so would be interpreted by DolomiteMargin as taking on extra debt and it reverts');
+        '17. And show that it cannot be liquidated using the first borrower key since doing so would be interpreted by DolomiteMargin as taking on extra debt and it reverts',
+      );
       await expectThrow(
         executeProxyLiquidation(
           solidAccount,

@@ -82,7 +82,7 @@ describe('PlutusVaultGLPLiquidationWithUnwrapperV2', () => {
     });
     underlyingToken = core.plutusEcosystem!.plvGlp.connect(core.hhUser1);
     plutusVaultRegistry = await createPlutusVaultRegistry(core);
-    factory = core.plutusEcosystem!.live.plvGlpIsolationModeFactory.connect(core.hhUser1);
+    factory = core.plutusEcosystem!.live.dPlvGlp.connect(core.hhUser1);
     unwrapper = await createPlutusVaultGLPIsolationModeUnwrapperTraderV2(core, plutusVaultRegistry, factory);
     wrapper = await createPlutusVaultGLPIsolationModeWrapperTraderV2(core, plutusVaultRegistry, factory);
 

@@ -79,6 +79,10 @@ import hardhat, { artifacts, ethers, network } from 'hardhat';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { CoreProtocolXLayer } from 'packages/base/test/utils/core-protocols/core-protocol-x-layer';
 import path, { join } from 'path';
+import {
+  CoreProtocolArbitrumOne,
+} from '@dolomite-exchange/modules-base/test/utils/core-protocols/core-protocol-arbitrum-one';
+import { IGmxV2IsolationModeVaultFactory } from '@dolomite-exchange/modules-gmx-v2/src/types';
 
 type ChainId = string;
 
@@ -563,7 +567,20 @@ export async function deployLinearInterestSetterAndSave(
 }
 
 export function sortFile(file: Record<string, Record<ChainId, any>>) {
-  const sortedFileKeys = Object.keys(file).sort();
+  const sortedFileKeys = Object.keys(file).sort((a, b) => {
+    const aSplitPoint = a.search(/V\d+$/);
+    const bSplitPoint = b.search(/V\d+$/);
+    if (aSplitPoint !== -1 && bSplitPoint !== -1) {
+      const aBase = a.substring(0, aSplitPoint);
+      const bBase = b.substring(0, bSplitPoint);
+      if (aBase === bBase) {
+        const aVersion = a.substring(aSplitPoint + 1);
+        const bVersion = b.substring(bSplitPoint + 1);
+        return parseInt(aVersion, 10) - parseInt(bVersion, 10);
+      }
+    }
+    return a.localeCompare(b);
+  });
   const sortedFile: Record<string, Record<ChainId, any>> = {};
   for (const key of sortedFileKeys) {
     sortedFile[key] = file[key];
@@ -1321,9 +1338,6 @@ export async function prettyPrintEncodeAddAsyncIsolationModeMarket<T extends Net
   );
 
   transactions.push(
-    await prettyPrintEncodedDataWithTypeSafety(core, { factory }, 'factory', 'ownerInitialize', [
-      [unwrapper.address, wrapper.address, ...(options.additionalConverters ?? []).map((c) => c.address)],
-    ]),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       { dolomiteMargin: core.dolomiteMargin },
@@ -1331,6 +1345,9 @@ export async function prettyPrintEncodeAddAsyncIsolationModeMarket<T extends Net
       'ownerSetGlobalOperator',
       [factory.address, true],
     ),
+    await prettyPrintEncodedDataWithTypeSafety(core, { factory }, 'factory', 'ownerInitialize', [
+      [unwrapper.address, wrapper.address, ...(options.additionalConverters ?? []).map((c) => c.address)],
+    ]),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       { liquidatorAssetRegistry: core.liquidatorAssetRegistry },
@@ -1362,6 +1379,68 @@ export async function prettyPrintEncodeAddAsyncIsolationModeMarket<T extends Net
   );
 
   return transactions;
+}
+
+export async function prettyPrintEncodeAddGmxV2Market(
+  core: CoreProtocolArbitrumOne,
+  factory: IGmxV2IsolationModeVaultFactory,
+  unwrapper: IIsolationModeUnwrapperTraderV2,
+  wrapper: IIsolationModeWrapperTraderV2,
+  handlerRegistry: HandlerRegistry,
+  marketId: BigNumberish,
+  targetCollateralization: TargetCollateralization,
+  targetLiquidationPremium: TargetLiquidationPenalty,
+  maxSupplyWei: BigNumberish,
+  options: AddMarketOptions = {},
+): Promise<EncodedTransaction[]> {
+  return [
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { gmxV2PriceOracle: core.gmxV2Ecosystem.live.priceOracle },
+      'gmxV2PriceOracle',
+      'ownerSetMarketToken',
+      [factory.address, true],
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { oracleAggregatorV2: core.oracleAggregatorV2 },
+      'oracleAggregatorV2',
+      'ownerInsertOrUpdateToken',
+      [
+        {
+          decimals: await IERC20Metadata__factory.connect(factory.address, factory.signer).decimals(),
+          token: factory.address,
+          oracleInfos: [
+            {
+              oracle: core.gmxV2Ecosystem.live.priceOracle.address,
+              weight: 100,
+              tokenPair: ADDRESS_ZERO,
+            },
+          ],
+        },
+      ],
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { gmxV2Registry: core.gmxV2Ecosystem.live.registry },
+      'gmxV2Registry',
+      'ownerSetGmxMarketToIndexToken',
+      [await factory.UNDERLYING_TOKEN(), await factory.INDEX_TOKEN()],
+    ),
+    ...await prettyPrintEncodeAddAsyncIsolationModeMarket(
+      core,
+      factory,
+      core.oracleAggregatorV2,
+      unwrapper,
+      wrapper,
+      handlerRegistry,
+      marketId,
+      targetCollateralization,
+      targetLiquidationPremium,
+      maxSupplyWei,
+      options,
+    ),
+  ];
 }
 
 export async function prettyPrintEncodeAddMarket<T extends NetworkType>(

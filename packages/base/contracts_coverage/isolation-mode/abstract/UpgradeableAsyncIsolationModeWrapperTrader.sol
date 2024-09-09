@@ -239,6 +239,10 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
         return _getDepositSlot(_key);
     }
 
+    function emitDepositCancelled(bytes32 _key) public onlyHandler(msg.sender) {
+        HANDLER_REGISTRY().dolomiteRegistry().eventEmitter().emitAsyncDepositCancelled(_key, address(VAULT_FACTORY()));
+    }
+
     // ============ Internal Functions ============
 
     function _initializeWrapperTrader(

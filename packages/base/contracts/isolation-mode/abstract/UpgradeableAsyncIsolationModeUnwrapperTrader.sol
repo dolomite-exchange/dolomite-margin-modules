@@ -81,7 +81,7 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
     // ======================== External Functions ========================
 
     function executeWithdrawalForRetry(bytes32 _key) external onlyHandler(msg.sender) nonReentrant {
-        WithdrawalInfo memory withdrawalInfo = _getWithdrawalSlot(_key);
+        WithdrawalInfo memory withdrawalInfo = getWithdrawalInfo(_key);
         _validateWithdrawalExists(withdrawalInfo);
         _validateIsRetryable(withdrawalInfo.isRetryable);
         _executeWithdrawal(withdrawalInfo);
@@ -242,6 +242,11 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
         return IHandlerRegistry(state.handlerRegistry);
     }
 
+    function getWithdrawalInfo(bytes32 _key) public view returns (WithdrawalInfo memory info) {
+        State storage state = _getStorageSlot();
+        return state.withdrawalInfo[_key];
+    }
+
     // ============ Internal Functions ============
 
     function _initializeUnwrapperTrader(
@@ -266,7 +271,7 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
     ) internal {
 
         // Panic if the key is already used
-        assert(_getWithdrawalSlot(_key).vault == address(0));
+        assert(getWithdrawalInfo(_key).vault == address(0));
 
         WithdrawalInfo memory withdrawalInfo = WithdrawalInfo({
             key: _key,
@@ -330,7 +335,7 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
     }
 
     function _executeWithdrawalCancellation(bytes32 _key) internal virtual {
-        WithdrawalInfo memory withdrawalInfo = _getWithdrawalSlot(_key);
+        WithdrawalInfo memory withdrawalInfo = getWithdrawalInfo(_key);
         _validateWithdrawalExists(withdrawalInfo);
 
         IIsolationModeVaultFactory factory = VAULT_FACTORY();
@@ -402,11 +407,6 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
         uint256 _desiredInputAmount,
         bytes memory _orderData
     ) internal virtual view returns (uint256);
-
-    function _getWithdrawalSlot(bytes32 _key) internal view returns (WithdrawalInfo storage info) {
-        State storage state = _getStorageSlot();
-        return state.withdrawalInfo[_key];
-    }
 
     function _validateWithdrawalExists(WithdrawalInfo memory _withdrawalInfo) internal pure {
         Require.that(

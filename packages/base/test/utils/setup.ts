@@ -108,6 +108,7 @@ import {
   S_GLP_MAP,
   SIZE_MAP,
   SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL,
+  SOL_MAP,
   ST_ETH_MAP,
   UNI_MAP,
   USDC_MAP,
@@ -166,6 +167,7 @@ import { createPremiaEcosystem } from './ecosystem-utils/premia';
 import { createTestEcosystem } from './ecosystem-utils/testers';
 import { createUmamiEcosystem } from './ecosystem-utils/umami';
 import { impersonate, impersonateOrFallback, resetForkIfPossible } from './index';
+import { createOogaBoogaEcosystem } from './ecosystem-utils/ooga-booga';
 
 /**
  * Config to for setting up tests in the `before` function
@@ -238,6 +240,16 @@ export async function enableInterestAccrual<T extends NetworkType>(
     marketId,
     core.interestSetters.linearStepFunction8L92U90OInterestSetter.address,
   );
+}
+
+export async function setupWBERABalance(
+  core: CoreProtocolBerachain,
+  signer: SignerWithAddressWithSafety,
+  amount: BigNumberish,
+  spender: { address: string },
+) {
+  await core.tokens.wbera.connect(signer).deposit({ value: amount });
+  await core.tokens.wbera.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
 export async function setupWETHBalance<T extends NetworkType>(
@@ -346,7 +358,7 @@ export async function setupGMBalance(
   amount: BigNumberish,
   spender?: { address: string },
 ) {
-  const controller = await impersonate(core.gmxEcosystemV2!.gmxExchangeRouter.address, true);
+  const controller = await impersonate(core.gmxV2Ecosystem!.gmxExchangeRouter.address, true);
   await gmToken.connect(controller).mint(signer.address, amount);
   if (signer instanceof SignerWithAddressWithSafety && spender) {
     await gmToken.connect(signer).approve(spender.address, amount);
@@ -499,7 +511,7 @@ export function getDefaultCoreProtocolConfigForGmxV2(): CoreProtocolConfig<Netwo
   return {
     network: Network.ArbitrumOne,
     networkNumber: parseInt(Network.ArbitrumOne, 10),
-    blockNumber: 164_788_000,
+    blockNumber: 247_305_500,
     arbitrumOne: true,
   };
 }
@@ -849,6 +861,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
           MIM_MAP[typedConfig.network].marketId,
           NATIVE_USDC_MAP[typedConfig.network].marketId,
           W_USDM_MAP[typedConfig.network].marketId,
+          USDE_MAP[typedConfig.network].marketId,
           USDT_MAP[typedConfig.network].marketId,
         ],
         stablecoinsWithUnifiedInterestRateModels: [
@@ -856,6 +869,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
           DAI_MAP[typedConfig.network]!.marketId,
           MIM_MAP[typedConfig.network].marketId,
           NATIVE_USDC_MAP[typedConfig.network].marketId,
+          USDE_MAP[typedConfig.network].marketId,
           USDT_MAP[typedConfig.network].marketId,
         ],
       },
@@ -900,8 +914,10 @@ export async function setupCoreProtocol<T extends NetworkType>(
         radiant: IERC20__factory.connect(RDNT_MAP[typedConfig.network].address, hhUser1),
         sGlp: IERC20__factory.connect(S_GLP_MAP[typedConfig.network].address, hhUser1),
         size: IERC20__factory.connect(SIZE_MAP[typedConfig.network].address, hhUser1),
+        sol: IERC20__factory.connect(SOL_MAP[typedConfig.network].address, hhUser1),
         stEth: IERC20__factory.connect(ST_ETH_MAP[typedConfig.network].address, hhUser1),
         uni: IERC20__factory.connect(UNI_MAP[typedConfig.network].address, hhUser1),
+        usde: IERC20__factory.connect(USDE_MAP[typedConfig.network].address, hhUser1),
         usdm: IERC20__factory.connect(USDM_MAP[typedConfig.network].address, hhUser1),
         usdt: IERC20__factory.connect(USDT_MAP[typedConfig.network].address, hhUser1),
         wbtc: IERC20__factory.connect(WBTC_MAP[typedConfig.network].address, hhUser1),
@@ -917,6 +933,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
           IERC20__factory.connect(GRAI_MAP[typedConfig.network].address, hhUser1),
           IERC20__factory.connect(MIM_MAP[typedConfig.network].address, hhUser1),
           IERC20__factory.connect(NATIVE_USDC_MAP[typedConfig.network].address, hhUser1),
+          IERC20__factory.connect(USDE_MAP[typedConfig.network].address, hhUser1),
           IERC20__factory.connect(USDT_MAP[typedConfig.network].address, hhUser1),
           IERC20__factory.connect(W_USDM_MAP[typedConfig.network].address, hhUser1),
         ],
@@ -961,6 +978,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
           IERC20__factory.connect(HONEY_MAP[typedConfig.network].address, hhUser1),
         ],
       },
+      oogaBoogaEcosystem: await createOogaBoogaEcosystem(typedConfig.network, hhUser1)
     }) as any;
   }
   if (config.network === Network.Mantle) {

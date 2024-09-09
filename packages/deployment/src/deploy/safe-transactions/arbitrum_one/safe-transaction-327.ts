@@ -26,22 +26,22 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
 
   const factories: GmxV2IsolationModeVaultFactory[] = [
-    core.gmxEcosystemV2.live.gmArbUsd.factory,
-    core.gmxEcosystemV2.live.gmBtcUsd.factory,
-    core.gmxEcosystemV2.live.gmEthUsd.factory,
-    core.gmxEcosystemV2.live.gmLinkUsd.factory,
-    core.gmxEcosystemV2.live.gmUniUsd.factory,
-    core.gmxEcosystemV2.live.gmBtc.factory,
-    core.gmxEcosystemV2.live.gmEth.factory,
+    core.gmxV2Ecosystem.live.gmArbUsd.factory,
+    core.gmxV2Ecosystem.live.gmBtcUsd.factory,
+    core.gmxV2Ecosystem.live.gmEthUsd.factory,
+    core.gmxV2Ecosystem.live.gmLinkUsd.factory,
+    core.gmxV2Ecosystem.live.gmUniUsd.factory,
+    core.gmxV2Ecosystem.live.gmBtc.factory,
+    core.gmxV2Ecosystem.live.gmEth.factory,
   ];
   const unwrappers: IsolationModeTraderProxy[] = [
-    core.gmxEcosystemV2.live.gmArbUsd.unwrapperProxy,
-    core.gmxEcosystemV2.live.gmBtcUsd.unwrapperProxy,
-    core.gmxEcosystemV2.live.gmEthUsd.unwrapperProxy,
-    core.gmxEcosystemV2.live.gmLinkUsd.unwrapperProxy,
-    core.gmxEcosystemV2.live.gmUniUsd.unwrapperProxy,
-    core.gmxEcosystemV2.live.gmBtc.unwrapperProxy,
-    core.gmxEcosystemV2.live.gmEth.unwrapperProxy,
+    core.gmxV2Ecosystem.live.gmArbUsd.unwrapperProxy,
+    core.gmxV2Ecosystem.live.gmBtcUsd.unwrapperProxy,
+    core.gmxV2Ecosystem.live.gmEthUsd.unwrapperProxy,
+    core.gmxV2Ecosystem.live.gmLinkUsd.unwrapperProxy,
+    core.gmxV2Ecosystem.live.gmUniUsd.unwrapperProxy,
+    core.gmxV2Ecosystem.live.gmBtc.unwrapperProxy,
+    core.gmxV2Ecosystem.live.gmEth.unwrapperProxy,
   ];
 
   const libraryAddress = await deployContractAndSave(

@@ -39,6 +39,12 @@ contract TestGmxDataStore is IGmxDataStore {
 
     mapping(bytes32 => bool) public boolValues;
     mapping(bytes32 => uint256) public uintValues;
+    mapping(bytes32 => address) public addressValues;
+
+    function setAddress(bytes32 _key, address _value) external returns (address) {
+        addressValues[_key] = _value;
+        return _value;
+    }
 
     function setUint(bytes32 _key, uint256 _value) external returns (uint256) {
         uintValues[_key] = _value;
@@ -48,6 +54,10 @@ contract TestGmxDataStore is IGmxDataStore {
     function setBool(bytes32 _key, bool _value) external returns (bool) {
         boolValues[_key] = _value;
         return _value;
+    }
+
+    function getAddress(bytes32 _key) external view returns (address) {
+        return addressValues[_key];
     }
 
     function getBool(bytes32 _key) external view returns (bool) {

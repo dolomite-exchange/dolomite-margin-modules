@@ -29,16 +29,16 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     'GmxV2IsolationModeUnwrapperTraderV2',
     [core.tokens.weth.address],
     'GmxV2IsolationModeUnwrapperTraderImplementationV6',
-    { ...core.gmxEcosystemV2.live.gmxV2LibraryMap, AsyncIsolationModeUnwrapperTraderImpl: unwrapperLibAddress },
+    { ...core.gmxV2Ecosystem.live.gmxV2LibraryMap, AsyncIsolationModeUnwrapperTraderImpl: unwrapperLibAddress },
   );
 
   const unwrapperProxies = [
-    core.gmxEcosystemV2.live.gmArbUsd.unwrapperProxy,
-    core.gmxEcosystemV2.live.gmBtcUsd.unwrapperProxy,
-    core.gmxEcosystemV2.live.gmEthUsd.unwrapperProxy,
-    core.gmxEcosystemV2.live.gmLinkUsd.unwrapperProxy,
-    core.gmxEcosystemV2.live.gmBtc.unwrapperProxy,
-    core.gmxEcosystemV2.live.gmEth.unwrapperProxy,
+    core.gmxV2Ecosystem.live.gmArbUsd.unwrapperProxy,
+    core.gmxV2Ecosystem.live.gmBtcUsd.unwrapperProxy,
+    core.gmxV2Ecosystem.live.gmEthUsd.unwrapperProxy,
+    core.gmxV2Ecosystem.live.gmLinkUsd.unwrapperProxy,
+    core.gmxV2Ecosystem.live.gmBtc.unwrapperProxy,
+    core.gmxV2Ecosystem.live.gmEth.unwrapperProxy,
   ];
 
   const transactions: EncodedTransaction[] = [];
@@ -60,28 +60,28 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       { multisig: core.delayedMultiSig },
       'multisig',
       'setSelector',
-      [core.gmxEcosystemV2.live.gmBtc.unwrapperProxy.address, '0x3659cfe6', true],
+      [core.gmxV2Ecosystem.live.gmBtc.unwrapperProxy.address, '0x3659cfe6', true],
     ),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       { multisig: core.delayedMultiSig },
       'multisig',
       'setSelector',
-      [core.gmxEcosystemV2.live.gmEth.unwrapperProxy.address, '0x3659cfe6', true],
+      [core.gmxV2Ecosystem.live.gmEth.unwrapperProxy.address, '0x3659cfe6', true],
     ),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       { multisig: core.delayedMultiSig },
       'multisig',
       'setSelector',
-      [core.gmxEcosystemV2.live.gmBtc.wrapperProxy.address, '0x3659cfe6', true],
+      [core.gmxV2Ecosystem.live.gmBtc.wrapperProxy.address, '0x3659cfe6', true],
     ),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       { multisig: core.delayedMultiSig },
       'multisig',
       'setSelector',
-      [core.gmxEcosystemV2.live.gmEth.wrapperProxy.address, '0x3659cfe6', true],
+      [core.gmxV2Ecosystem.live.gmEth.wrapperProxy.address, '0x3659cfe6', true],
     ),
   );
 

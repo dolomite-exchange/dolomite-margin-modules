@@ -8,6 +8,7 @@ import {
 import { IERC20, IWETH } from '../../../src/types';
 import { BigNumberish } from 'ethers';
 import { RedstonePriceOracleV3 } from '@dolomite-exchange/modules-oracles/src/types';
+import { OogaBoogaEcosystem } from '../ecosystem-utils/ooga-booga';
 
 export interface CoreProtocolTokensBerachain extends CoreProtocolTokens<Network.Berachain> {
   honey: IERC20;
@@ -23,6 +24,7 @@ export interface CoreProtocolParamsBerachain {
   marketIds: CoreProtocolMarketIdsBerachain;
   redstonePriceOracleV3: RedstonePriceOracleV3;
   tokens: CoreProtocolTokensBerachain;
+  oogaBoogaEcosystem: OogaBoogaEcosystem;
 }
 
 export class CoreProtocolBerachain extends CoreProtocolAbstract<Network.Berachain> {
@@ -32,6 +34,8 @@ export class CoreProtocolBerachain extends CoreProtocolAbstract<Network.Berachai
   public readonly redstonePriceOracleV3: RedstonePriceOracleV3;
   public readonly tokens: CoreProtocolTokensBerachain;
 
+  public readonly oogaBoogaEcosystem: OogaBoogaEcosystem;
+
   constructor(
     params: CoreProtocolParams<Network.Berachain>,
     berachainParams: CoreProtocolParamsBerachain,
@@ -40,5 +44,6 @@ export class CoreProtocolBerachain extends CoreProtocolAbstract<Network.Berachai
     this.marketIds = berachainParams.marketIds;
     this.redstonePriceOracleV3 = berachainParams.redstonePriceOracleV3;
     this.tokens = berachainParams.tokens;
+    this.oogaBoogaEcosystem = berachainParams.oogaBoogaEcosystem;
   }
 }

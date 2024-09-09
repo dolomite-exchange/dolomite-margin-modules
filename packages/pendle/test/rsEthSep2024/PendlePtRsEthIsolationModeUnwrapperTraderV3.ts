@@ -1,4 +1,4 @@
-import { BYTES_EMPTY, Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { BYTES_EMPTY, Network, ONE_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import {
   encodeExternalSellActionDataWithNoData,
   getRealLatestBlockNumber,
@@ -12,7 +12,6 @@ import {
   setupTestMarket,
   setupUserVaultProxy,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { BaseRouter } from '@pendle/sdk-v2';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { AccountInfoStruct } from 'packages/base/src/utils';

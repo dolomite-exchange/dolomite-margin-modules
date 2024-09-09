@@ -30,42 +30,16 @@ import { GmxPrice } from "./GmxPrice.sol";
  */
 library GmxOracleUtils {
 
-    /**
-     * @dev SetPricesParams struct for values required in Oracle.setPrices
-     *
-     *
-     * @param  signerInfo                   The compacted indexes of signers, the index is used to retrieve the signer
-     *                                      address from the OracleStore
-     * @param  tokens                       The list of tokens to set prices for
-     * @param  compactedOracleBlockNumbers  The compacted oracle block numbers
-     * @param  compactedOracleTimestamps    The compacted oracle timestamps
-     * @param  compactedDecimals            The compacted decimals for prices
-     * @param  compactedMinPrices           The compacted min prices
-     * @param  compactedMinPricesIndexes    The compacted min price indexes
-     * @param  compactedMaxPrices           The compacted max prices
-     * @param  compactedMaxPricesIndexes    The compacted max price indexes
-     * @param  signatures                   The signatures of the oracle signers
-     * @param  priceFeedTokens              The tokens to set prices for based on an external price feed value
-     */
     struct SetPricesParams {
-        uint256 signerInfo;
         address[] tokens;
-        uint256[] compactedMinOracleBlockNumbers;
-        uint256[] compactedMaxOracleBlockNumbers;
-        uint256[] compactedOracleTimestamps;
-        uint256[] compactedDecimals;
-        uint256[] compactedMinPrices;
-        uint256[] compactedMinPricesIndexes;
-        uint256[] compactedMaxPrices;
-        uint256[] compactedMaxPricesIndexes;
-        bytes[] signatures;
-        address[] priceFeedTokens;
-        address[] realtimeFeedTokens;
-        bytes[] realtimeFeedData;
+        address[] providers;
+        bytes[] data;
     }
 
     struct SimulatePricesParams {
         address[] primaryTokens;
         GmxPrice.PriceProps[] primaryPrices;
+        uint256 minTimestamp;
+        uint256 maxTimestamp;
     }
 }

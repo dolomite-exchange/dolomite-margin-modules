@@ -98,10 +98,10 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const gmxV2PriceOracle = GmxV2MarketTokenPriceOracle__factory.connect(gmxV2PriceOracleAddress, core.hhUser1);
 
   const gmTokens = [
-    core.gmxEcosystemV2.gmTokens.arbUsd,
-    core.gmxEcosystemV2.gmTokens.btcUsd,
-    core.gmxEcosystemV2.gmTokens.ethUsd,
-    core.gmxEcosystemV2.gmTokens.linkUsd,
+    core.gmxV2Ecosystem.gmTokens.arbUsd,
+    core.gmxV2Ecosystem.gmTokens.btcUsd,
+    core.gmxV2Ecosystem.gmTokens.ethUsd,
+    core.gmxV2Ecosystem.gmTokens.linkUsd,
   ];
   const supplyCaps = [
     parseEther(`${3_000_000}`),
@@ -163,6 +163,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
         gmTokens[i],
         gmxV2TokenVault,
         GMX_V2_EXECUTION_FEE,
+        false,
       ),
       `GmxV2${gmNames[i]}IsolationModeVaultFactory`,
       gmxV2Libraries,
@@ -176,6 +177,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
         unwrapperImplementation,
         factory,
         gmxV2RegistryProxy,
+        false,
       ),
       `GmxV2${gmNames[i]}AsyncIsolationModeUnwrapperTraderProxyV2`,
     );
@@ -187,6 +189,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
         wrapperImplementation,
         factory,
         gmxV2RegistryProxy,
+        false,
       ),
       `GmxV2${gmNames[i]}AsyncIsolationModeWrapperTraderProxyV2`,
     );
