@@ -675,6 +675,26 @@ export const GLP_REWARD_ROUTER_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0xB95DB5B167D75e6d04227CfFFA61069348d271F5',
 };
 
+export const GLV_HANDLER_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x26DdDaA629Bb35FC1853d051561f2200dD190588',
+};
+
+export const GLV_READER_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0xd4f522c4339Ae0A90a156bd716715547e44Bed65',
+};
+
+export const GLV_ROUTER_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x75eAFD2B4e306Dad8dd6334456F8018218Bc9882',
+};
+
+export const GLV_VAULT_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x393053B58f9678C9c28c2cE941fF6cac49C3F8f9',
+};
+
+export const GLV_TOKEN_WETH_USDC_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x528A5bac7E746C9A509A1f4F6dF58A03d44279F9',
+};
+
 export const GMX_BTC_PLACEHOLDER_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x47904963fc8b2340414262125aF798B9655E58Cd',

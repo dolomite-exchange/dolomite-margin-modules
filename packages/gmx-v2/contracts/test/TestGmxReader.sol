@@ -52,6 +52,18 @@ contract TestGmxReader is IGmxReader {
         marketPrice = _marketPrice;
     }
 
+    function getMarket(
+        IGmxDataStore /* _dataStore */,
+        address /* _marketKey */
+    ) external pure returns (GmxMarket.MarketProps memory) {
+        return GmxMarket.MarketProps({
+            marketToken: address(0),
+            indexToken: address(0),
+            longToken: address(0),
+            shortToken: address(0)
+        });
+    }
+
     function getPnlToPoolFactor(
         IGmxDataStore /* dataStore */,
         address /* marketAddress */,

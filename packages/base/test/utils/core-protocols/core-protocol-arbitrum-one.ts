@@ -33,6 +33,7 @@ import {
   CoreProtocolParams,
   CoreProtocolTokens,
 } from './core-protocol-abstract';
+import { GlvEcosystem } from '../ecosystem-utils/glv';
 
 interface CoreProtocolTokensArbitrumOne extends CoreProtocolTokens<Network.ArbitrumOne> {
   arb: IERC20;
@@ -162,6 +163,7 @@ interface CoreProtocolParamsArbitrumOne {
   dolomiteAccountValuesReader: IDolomiteAccountValuesReader;
   dolomiteMigrator: IDolomiteMigrator;
   dTokens: CoreProtocolArbitrumOneDTokens;
+  glvEcosystem: GlvEcosystem;
   gmxEcosystem: GmxEcosystem;
   gmxEcosystemV2: GmxV2Ecosystem;
   jonesEcosystem: JonesEcosystem;
@@ -186,6 +188,7 @@ export class CoreProtocolArbitrumOne extends CoreProtocolAbstract<Network.Arbitr
   public readonly dolomiteAccountValuesReader: IDolomiteAccountValuesReader;
   public readonly dolomiteMigrator: IDolomiteMigrator;
   public readonly dTokens: CoreProtocolArbitrumOneDTokens;
+  public readonly glvEcosystem: GlvEcosystem;
   public readonly gmxEcosystem: GmxEcosystem;
   public readonly gmxV2Ecosystem: GmxV2Ecosystem;
   public readonly jonesEcosystem: JonesEcosystem;
@@ -211,6 +214,7 @@ export class CoreProtocolArbitrumOne extends CoreProtocolAbstract<Network.Arbitr
     this.dolomiteAccountValuesReader = arbParams.dolomiteAccountValuesReader;
     this.dolomiteMigrator = arbParams.dolomiteMigrator;
     this.dTokens = arbParams.dTokens;
+    this.glvEcosystem = arbParams.glvEcosystem;
     this.gmxEcosystem = arbParams.gmxEcosystem;
     this.gmxV2Ecosystem = arbParams.gmxEcosystemV2;
     this.jonesEcosystem = arbParams.jonesEcosystem;

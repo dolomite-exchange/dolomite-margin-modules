@@ -1,0 +1,638 @@
+import { CoreProtocolArbitrumOne } from "packages/base/test/utils/core-protocols/core-protocol-arbitrum-one";
+import { GlvIsolationModeTokenVaultV1, GlvIsolationModeUnwrapperTraderV2, GlvIsolationModeUnwrapperTraderV2__factory, GlvIsolationModeVaultFactory, GlvIsolationModeWrapperTraderV2, GlvIsolationModeWrapperTraderV2__factory, GlvLibrary, GlvLibrary__factory, GlvRegistry, GlvRegistry__factory, GlvTokenPriceOracle, GlvTokenPriceOracle__factory, GmxV2Library, IGlvIsolationModeVaultFactory, IGlvRegistry, IGlvToken, TestGlvIsolationModeTokenVaultV1, TestGlvIsolationModeUnwrapperTraderV2, TestGlvIsolationModeUnwrapperTraderV2__factory, TestGlvIsolationModeVaultFactory } from "../src/types";
+import { BaseContract, BigNumber, BigNumberish, ethers } from "ethers";
+import { createContractWithAbi, createContractWithLibraryAndArtifact } from "packages/base/src/utils/dolomite-utils";
+import { IsolationModeTraderProxy, IsolationModeTraderProxy__factory, RegistryProxy, RegistryProxy__factory } from "packages/base/src/types";
+import { getGlvIsolationModeTokenVaultConstructorParams, getGlvIsolationModeUnwrapperTraderV2ConstructorParams, getGlvIsolationModeVaultFactoryConstructorParams, getGlvIsolationModeWrapperTraderV2ConstructorParams, getGlvRegistryConstructorParams, getGlvTokenPriceOracleConstructorParams } from "../src/glv-constructors";
+import { artifacts } from "hardhat";
+import fs, { readFileSync } from 'fs';
+import path, { join } from 'path';
+import { Artifact } from "hardhat/types";
+import { createAsyncIsolationModeUnwrapperTraderImpl, createAsyncIsolationModeWrapperTraderImpl, createIsolationModeTokenVaultV1ActionsImpl } from "packages/base/test/utils/dolomite";
+import { GlvToken } from "packages/base/test/utils/ecosystem-utils/glv";
+import { createSafeDelegateLibrary } from "packages/base/test/utils/ecosystem-utils/general";
+import { BalanceCheckFlag } from "@dolomite-exchange/dolomite-margin";
+import { GenericEventEmissionType } from "@dolomite-exchange/dolomite-margin/dist/src/modules/GenericTraderProxyV1";
+import { GenericTraderType } from "@dolomite-exchange/zap-sdk";
+import { ADDRESS_ZERO, BYTES_EMPTY, ZERO_BI } from "packages/base/src/utils/no-deps-constants";
+import { IGmxMarketToken, TestOracleProvider } from "packages/gmx-v2/src/types";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { SignerWithAddressWithSafety } from "packages/base/src/utils/SignerWithAddressWithSafety";
+import { createGmxV2Library, getOracleProviderForTokenKey } from "packages/gmx-v2/test/gmx-v2-ecosystem-utils";
+import { GMX_V2_CALLBACK_GAS_LIMIT } from "packages/gmx-v2/src/gmx-v2-constructors";
+import { createContract } from "@openzeppelin/upgrades/lib/artifacts/Contract";
+
+async function createArtifactFromWorkspaceIfNotExists(artifactName: string): Promise<Artifact> {
+  if (await artifacts.artifactExists(artifactName)) {
+    // GUARD STATEMENT!
+    return artifacts.readArtifact(artifactName);
+  }
+
+  const packagesPath = '../../../packages';
+  const children = fs.readdirSync(join(__dirname, packagesPath), { withFileTypes: true })
+    .filter(d => d.isDirectory())
+    .map(d => path.join(packagesPath, d.name));
+
+  const contractsFolders = ['contracts_coverage', 'contracts'];
+  for (const contractFolder of contractsFolders) {
+    for (const child of children) {
+      const artifactPath = join(
+        __dirname,
+        child,
+        `artifacts/${contractFolder}/${artifactName}.sol/${artifactName}.json`,
+      );
+      if (fs.existsSync(artifactPath)) {
+        const artifact = JSON.parse(readFileSync(artifactPath, 'utf8'));
+        await artifacts.saveArtifactAndDebugFile(artifact);
+        return artifact;
+      }
+    }
+  }
+
+  return Promise.reject(new Error(`Could not find ${artifactName}`));
+}
+
+
+export async function createGlvIsolationModeTokenVaultV1(
+  core: CoreProtocolArbitrumOne,
+  library: GlvLibrary,
+  gmxV2Library: GmxV2Library,
+): Promise<GlvIsolationModeTokenVaultV1> {
+  const artifact = await createArtifactFromWorkspaceIfNotExists('GlvIsolationModeTokenVaultV1');
+  const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
+  return await createContractWithLibraryAndArtifact<GlvIsolationModeTokenVaultV1>(
+    artifact,
+    { GlvLibrary: library.address, GmxV2Library: gmxV2Library.address, ...libraries },
+    getGlvIsolationModeTokenVaultConstructorParams(core),
+  );
+}
+
+export async function createGlvLibrary(): Promise<GlvLibrary> {
+  return createContractWithAbi<GlvLibrary>(
+    GlvLibrary__factory.abi,
+    GlvLibrary__factory.bytecode,
+    [],
+  );
+}
+
+export async function createTestGlvIsolationModeTokenVaultV1(
+  core: CoreProtocolArbitrumOne,
+): Promise<TestGlvIsolationModeTokenVaultV1> {
+  const actionsLib = await createIsolationModeTokenVaultV1ActionsImpl();
+  const safeDelegateCallLibrary = await createSafeDelegateLibrary();
+  const glvLibrary = await createGlvLibrary();
+  const gmxV2Library = await createGmxV2Library();
+  const artifact = await createArtifactFromWorkspaceIfNotExists('TestGlvIsolationModeTokenVaultV1');
+  return await createContractWithLibraryAndArtifact<TestGlvIsolationModeTokenVaultV1>(
+    artifact,
+    {
+      GlvLibrary: glvLibrary.address,
+      GmxV2Library: gmxV2Library.address,
+      SafeDelegateCallLib: safeDelegateCallLibrary.address,
+      IsolationModeTokenVaultV1ActionsImpl: Object.values(actionsLib)[0],
+    },
+    getGlvIsolationModeTokenVaultConstructorParams(core),
+  );
+}
+
+export async function createGlvIsolationModeVaultFactory(
+  core: CoreProtocolArbitrumOne,
+  gmxV2Library: GmxV2Library,
+  glvRegistry: IGlvRegistry,
+  debtMarketIds: BigNumberish[],
+  collateralMarketIds: BigNumberish[],
+  glvToken: GlvToken,
+  userVaultImplementation: GlvIsolationModeTokenVaultV1,
+  executionFee: BigNumberish,
+  skipLongToken: boolean = false,
+): Promise<GlvIsolationModeVaultFactory> {
+  const artifact = await createArtifactFromWorkspaceIfNotExists('GlvIsolationModeVaultFactory');
+  return createContractWithLibraryAndArtifact<GlvIsolationModeVaultFactory>(
+    artifact,
+    { GmxV2Library: gmxV2Library.address },
+    getGlvIsolationModeVaultFactoryConstructorParams(
+      core,
+      glvRegistry,
+      debtMarketIds,
+      collateralMarketIds,
+      glvToken,
+      userVaultImplementation,
+      executionFee,
+      skipLongToken
+    ),
+  );
+}
+
+export async function createTestGlvIsolationModeVaultFactory(
+  core: CoreProtocolArbitrumOne,
+  gmxV2library: GmxV2Library,
+  glvRegistry: IGlvRegistry,
+  debtMarketIds: BigNumberish[],
+  collateralMarketIds: BigNumberish[],
+  glvToken: GlvToken,
+  userVaultImplementation: GlvIsolationModeTokenVaultV1,
+  executionFee: BigNumberish,
+  skipLongToken: boolean = false,
+): Promise<TestGlvIsolationModeVaultFactory> {
+  const artifact = await createArtifactFromWorkspaceIfNotExists('TestGlvIsolationModeVaultFactory');
+  return createContractWithLibraryAndArtifact<TestGlvIsolationModeVaultFactory>(
+    artifact,
+    { GmxV2Library: gmxV2library.address },
+    getGlvIsolationModeVaultFactoryConstructorParams(
+      core,
+      glvRegistry,
+      debtMarketIds,
+      collateralMarketIds,
+      glvToken,
+      userVaultImplementation,
+      executionFee,
+      skipLongToken
+    ),
+  );
+}
+
+export async function createGlvRegistry(
+  core: CoreProtocolArbitrumOne,
+  gmToken: IGmxMarketToken,
+  callbackGasLimit: BigNumberish,
+): Promise<GlvRegistry> {
+  const implementation = await createContractWithAbi<GlvRegistry>(
+    GlvRegistry__factory.abi,
+    GlvRegistry__factory.bytecode,
+    [],
+  );
+  const proxy = await createContractWithAbi<RegistryProxy>(
+    RegistryProxy__factory.abi,
+    RegistryProxy__factory.bytecode,
+    await getGlvRegistryConstructorParams(core, implementation, gmToken, callbackGasLimit),
+  );
+  return GlvRegistry__factory.connect(proxy.address, core.hhUser1);
+}
+
+export async function createGlvIsolationModeUnwrapperTraderV2Implementation(
+  core: CoreProtocolArbitrumOne,
+  glvLibrary: GlvLibrary,
+  gmxV2Library: GmxV2Library,
+): Promise<GlvIsolationModeUnwrapperTraderV2> {
+  const artifact = await createArtifactFromWorkspaceIfNotExists('GlvIsolationModeUnwrapperTraderV2');
+  const libraries = await createAsyncIsolationModeUnwrapperTraderImpl();
+  return await createContractWithLibraryAndArtifact<GlvIsolationModeUnwrapperTraderV2>(
+    artifact,
+    { GlvLibrary: glvLibrary.address, GmxV2Library: gmxV2Library.address, ...libraries },
+    [core.tokens.weth.address],
+  );
+}
+
+export async function createGlvIsolationModeUnwrapperTraderV2(
+  core: CoreProtocolArbitrumOne,
+  dGlv: IGlvIsolationModeVaultFactory | GlvIsolationModeVaultFactory,
+  glvLibrary: GlvLibrary,
+  gmxV2Library: GmxV2Library,
+  glvRegistry: IGlvRegistry | GlvRegistry,
+  skipLongToken: boolean = false,
+): Promise<GlvIsolationModeUnwrapperTraderV2> {
+  const implementation = await createGlvIsolationModeUnwrapperTraderV2Implementation(core, glvLibrary, gmxV2Library);
+  const proxy = await createContractWithAbi<IsolationModeTraderProxy>(
+    IsolationModeTraderProxy__factory.abi,
+    IsolationModeTraderProxy__factory.bytecode,
+    await getGlvIsolationModeUnwrapperTraderV2ConstructorParams(
+      core,
+      implementation,
+      dGlv,
+      glvRegistry,
+      skipLongToken
+    ),
+  );
+
+  return GlvIsolationModeUnwrapperTraderV2__factory.connect(proxy.address, core.hhUser1);
+}
+
+export async function createTestGlvIsolationModeUnwrapperTraderV2(
+  core: CoreProtocolArbitrumOne,
+  dGlv: IGlvIsolationModeVaultFactory | GlvIsolationModeVaultFactory,
+  glvLibrary: GlvLibrary,
+  gmxV2Library: GmxV2Library,
+  safeDelegateCallLibrary: BaseContract,
+  glvRegistry: IGlvRegistry | GlvRegistry,
+  skipLongToken: boolean = false,
+): Promise<TestGlvIsolationModeUnwrapperTraderV2> {
+  const artifact = await createArtifactFromWorkspaceIfNotExists('TestGlvIsolationModeUnwrapperTraderV2');
+  const libraries = await createAsyncIsolationModeUnwrapperTraderImpl();
+  const implementation = await createContractWithLibraryAndArtifact<TestGlvIsolationModeUnwrapperTraderV2>(
+    artifact,
+    { GlvLibrary: glvLibrary.address, GmxV2Library: gmxV2Library.address, SafeDelegateCallLib: safeDelegateCallLibrary.address, ...libraries },
+    [core.tokens.weth.address],
+  );
+  const proxy = await createContractWithAbi<IsolationModeTraderProxy>(
+    IsolationModeTraderProxy__factory.abi,
+    IsolationModeTraderProxy__factory.bytecode,
+    await getGlvIsolationModeUnwrapperTraderV2ConstructorParams(
+      core,
+      implementation,
+      dGlv,
+      glvRegistry,
+      skipLongToken
+    ),
+  );
+
+  return TestGlvIsolationModeUnwrapperTraderV2__factory.connect(proxy.address, core.hhUser1);
+}
+
+export async function createGlvIsolationModeWrapperTraderV2Implementation(
+  core: CoreProtocolArbitrumOne,
+  library: GlvLibrary,
+  gmxV2Library: GmxV2Library,
+): Promise<GlvIsolationModeWrapperTraderV2> {
+  const artifact = await createArtifactFromWorkspaceIfNotExists('GlvIsolationModeWrapperTraderV2');
+  const libraries = await createAsyncIsolationModeWrapperTraderImpl();
+  return await createContractWithLibraryAndArtifact<GlvIsolationModeWrapperTraderV2>(
+    artifact,
+    { GlvLibrary: library.address, GmxV2Library: gmxV2Library.address, ...libraries },
+    [core.tokens.weth.address],
+  );
+}
+
+export async function createGlvIsolationModeWrapperTraderV2(
+  core: CoreProtocolArbitrumOne,
+  dGM: IGlvIsolationModeVaultFactory | GlvIsolationModeVaultFactory,
+  library: GlvLibrary,
+  gmxV2Library: GmxV2Library,
+  glvRegistry: IGlvRegistry | GlvRegistry,
+  skipLongToken: boolean = false,
+): Promise<GlvIsolationModeWrapperTraderV2> {
+  const implementation = await createGlvIsolationModeWrapperTraderV2Implementation(core, library, gmxV2Library);
+  const proxy = await createContractWithAbi<IsolationModeTraderProxy>(
+    IsolationModeTraderProxy__factory.abi,
+    IsolationModeTraderProxy__factory.bytecode,
+    await getGlvIsolationModeWrapperTraderV2ConstructorParams(
+      core,
+      implementation,
+      dGM,
+      glvRegistry,
+      skipLongToken,
+    ),
+  );
+  return GlvIsolationModeWrapperTraderV2__factory.connect(proxy.address, core.hhUser1);
+}
+
+export async function createGlvTokenPriceOracle(
+  core: CoreProtocolArbitrumOne,
+  glvRegistry: IGlvRegistry | GlvRegistry,
+): Promise<GlvTokenPriceOracle> {
+  return createContractWithAbi(
+    GlvTokenPriceOracle__factory.abi,
+    GlvTokenPriceOracle__factory.bytecode,
+    getGlvTokenPriceOracleConstructorParams(core, glvRegistry),
+  );
+}
+
+export function getInitiateWrappingParams(
+  accountNumber: BigNumberish,
+  marketId1: BigNumberish,
+  amountIn: BigNumberish,
+  marketId2: BigNumberish,
+  minAmountOut: BigNumberish,
+  wrapper: GlvIsolationModeWrapperTraderV2,
+): any {
+  return {
+    accountNumber,
+    amountIn,
+    minAmountOut,
+    marketPath: [marketId1, marketId2],
+    traderParams: [
+      {
+        trader: wrapper.address,
+        traderType: GenericTraderType.IsolationModeWrapper,
+        tradeData: BYTES_EMPTY,
+        makerAccountIndex: 0,
+      },
+    ],
+    makerAccounts: [],
+    userConfig: {
+      deadline: '123123123123123',
+      balanceCheckFlag: BalanceCheckFlag.None,
+      eventType: GenericEventEmissionType.None,
+    },
+  };
+}
+
+export function getInitiateUnwrappingParams(
+  accountNumber: BigNumberish,
+  marketId1: BigNumberish,
+  amountIn: BigNumberish,
+  marketId2: BigNumberish,
+  minAmountOut: BigNumberish,
+  unwrapper: GlvIsolationModeUnwrapperTraderV2,
+  executionFee: BigNumberish,
+): any {
+  return {
+    amountIn,
+    minAmountOut,
+    marketPath: [marketId1, marketId2],
+    traderParams: [
+      {
+        trader: unwrapper.address,
+        traderType: GenericTraderType.IsolationModeUnwrapper,
+        tradeData: ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [accountNumber, executionFee]),
+        makerAccountIndex: 0,
+      },
+    ],
+    makerAccounts: [],
+    userConfig: {
+      deadline: '123123123123123',
+      balanceCheckFlag: BalanceCheckFlag.None,
+      eventType: GenericEventEmissionType.None,
+    },
+  };
+}
+
+export async function getGlvOracleParams(
+  core: CoreProtocolArbitrumOne,
+  controller: SignerWithAddressWithSafety,
+  glvToken: GlvToken,
+  provider: TestOracleProvider
+) {
+  const tokens = [];
+  const providers = [];
+  const data = [];
+
+  const dataStore = core.gmxV2Ecosystem.gmxDataStore;
+  const glvTokenInfo = await core.glvEcosystem.glvReader.getGlvInfo(dataStore.address, glvToken.glvToken.address);
+  let tokenKey;
+
+  tokenKey = getOracleProviderForTokenKey({ address: glvTokenInfo.glv.shortToken });
+  await dataStore.connect(controller).setAddress(tokenKey, provider.address);
+  tokens.push(glvTokenInfo.glv.shortToken);
+  providers.push(provider.address);
+  data.push(BYTES_EMPTY);
+
+  tokenKey = getOracleProviderForTokenKey({ address: glvTokenInfo.glv.longToken });
+  await dataStore.connect(controller).setAddress(tokenKey, provider.address);
+  tokens.push(glvTokenInfo.glv.longToken);
+  providers.push(provider.address);
+  data.push(BYTES_EMPTY);
+
+  for (const market of glvTokenInfo.markets) {
+    const index = (await core.gmxV2Ecosystem.gmxReader.getMarket(dataStore.address, market)).indexToken;
+    if (!tokens.includes(index)) {
+      tokenKey = getOracleProviderForTokenKey({ address: index });
+      await dataStore.connect(controller).setAddress(tokenKey, provider.address);
+      tokens.push(index);
+      providers.push(provider.address);
+      data.push(BYTES_EMPTY);
+    }
+  }
+
+  return {
+    tokens,
+    providers,
+    data
+  }
+}
+
+export function getGlvDepositObject(
+  wrapper: string,
+  glv: string,
+  marketToken: string,
+  longToken: string,
+  shortToken: string,
+  longAmount: BigNumber,
+  shortAmount: BigNumber,
+  minGlvTokens: BigNumber,
+  executionFee: BigNumber,
+  receivedGlvToken: BigNumber = BigNumber.from('0'),
+  callbackGasLimit: BigNumber = GMX_V2_CALLBACK_GAS_LIMIT,
+) {
+  const deposit = {
+    addresses: {
+      account: wrapper,
+      receiver: wrapper,
+      callbackContract: wrapper,
+      uiFeeReceiver: ADDRESS_ZERO,
+      glv: glv,
+      market: marketToken,
+      initialLongToken: longToken,
+      initialShortToken: shortToken,
+      longTokenSwapPath: [],
+      shortTokenSwapPath: [],
+    },
+    numbers: {
+      marketTokenAmount: ZERO_BI,
+      minGlvTokens,
+      executionFee,
+      callbackGasLimit,
+      initialLongTokenAmount: longAmount,
+      initialShortTokenAmount: shortAmount,
+      updatedAtTime: 321321321,
+    },
+    flags: {
+      shouldUnwrapNativeToken: false,
+      isMarketTokenDeposit: false
+    },
+  };
+
+  let eventData;
+  if (receivedGlvToken.eq(0)) {
+    eventData = {
+      addressItems: {
+        items: [],
+        arrayItems: [],
+      },
+      uintItems: {
+        items: [],
+        arrayItems: [],
+      },
+      intItems: {
+        items: [],
+        arrayItems: [],
+      },
+      boolItems: {
+        items: [],
+        arrayItems: [],
+      },
+      bytes32Items: {
+        items: [],
+        arrayItems: [],
+      },
+      bytesItems: {
+        items: [],
+        arrayItems: [],
+      },
+      stringItems: {
+        items: [],
+        arrayItems: [],
+      },
+    };
+  } else {
+    eventData = {
+      addressItems: {
+        items: [],
+        arrayItems: [],
+      },
+      uintItems: {
+        items: [
+          {
+            key: 'receivedGlvTokens',
+            value: receivedGlvToken,
+          },
+        ],
+        arrayItems: [],
+      },
+      intItems: {
+        items: [],
+        arrayItems: [],
+      },
+      boolItems: {
+        items: [],
+        arrayItems: [],
+      },
+      bytes32Items: {
+        items: [],
+        arrayItems: [],
+      },
+      bytesItems: {
+        items: [],
+        arrayItems: [],
+      },
+      stringItems: {
+        items: [],
+        arrayItems: [],
+      },
+    };
+  }
+  return { deposit, eventData };
+}
+
+
+export function getGlvWithdrawalObject(
+  unwrapper: string,
+  glv: string,
+  marketToken: string,
+  minLongTokenAmount: BigNumber,
+  minShortTokenAmount: BigNumber,
+  glvTokenAmount: BigNumber,
+  executionFee: BigNumber,
+  outputToken: string,
+  secondaryOutputToken: string,
+  outputAmount: BigNumber = BigNumber.from('0'),
+  secondaryOutputAmount: BigNumber = BigNumber.from('0'),
+  callbackGasLimit: BigNumber = GMX_V2_CALLBACK_GAS_LIMIT,
+) {
+  const withdrawal = {
+    addresses: {
+      account: unwrapper,
+      receiver: unwrapper,
+      callbackContract: unwrapper,
+      uiFeeReceiver: ADDRESS_ZERO,
+      market: marketToken,
+      glv: glv,
+      longTokenSwapPath: [],
+      shortTokenSwapPath: [],
+    },
+    numbers: {
+      glvTokenAmount,
+      minLongTokenAmount,
+      minShortTokenAmount,
+      executionFee,
+      callbackGasLimit,
+      updatedAtTime: 321321321,
+    },
+    flags: {
+      shouldUnwrapNativeToken: false,
+    },
+  };
+
+  let eventData;
+  if (outputAmount.eq(0) && secondaryOutputAmount.eq(0)) {
+    eventData = {
+      addressItems: {
+        items: [],
+        arrayItems: [],
+      },
+      uintItems: {
+        items: [],
+        arrayItems: [],
+      },
+      intItems: {
+        items: [],
+        arrayItems: [],
+      },
+      boolItems: {
+        items: [],
+        arrayItems: [],
+      },
+      bytes32Items: {
+        items: [],
+        arrayItems: [],
+      },
+      bytesItems: {
+        items: [],
+        arrayItems: [],
+      },
+      stringItems: {
+        items: [],
+        arrayItems: [],
+      },
+    };
+  } else {
+    eventData = {
+      addressItems: {
+        items: [
+          {
+            key: 'outputToken',
+            value: outputToken,
+          },
+          {
+            key: 'secondaryOutputToken',
+            value: secondaryOutputToken,
+          },
+        ],
+        arrayItems: [],
+      },
+      uintItems: {
+        items: [
+          {
+            key: 'outputAmount',
+            value: outputAmount,
+          },
+          {
+            key: 'secondaryOutputAmount',
+            value: secondaryOutputAmount,
+          },
+        ],
+        arrayItems: [],
+      },
+      intItems: {
+        items: [],
+        arrayItems: [],
+      },
+      boolItems: {
+        items: [],
+        arrayItems: [],
+      },
+      bytes32Items: {
+        items: [],
+        arrayItems: [],
+      },
+      bytesItems: {
+        items: [],
+        arrayItems: [],
+      },
+      stringItems: {
+        items: [],
+        arrayItems: [],
+      },
+    };
+  }
+  return { withdrawal, eventData };
+}
+
+export function getKey(key: string, types: string[], values: any[]): string {
+  const stringBytes = ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['string'], [key]));
+  return ethers.utils.keccak256(
+    ethers.utils.defaultAbiCoder.encode(
+      ['bytes32', ...types],
+      [stringBytes, ...values]
+    )
+  );
+}

@@ -168,6 +168,8 @@ import { createTestEcosystem } from './ecosystem-utils/testers';
 import { createUmamiEcosystem } from './ecosystem-utils/umami';
 import { impersonate, impersonateOrFallback, resetForkIfPossible } from './index';
 import { createOogaBoogaEcosystem } from './ecosystem-utils/ooga-booga';
+import { createGlvEcosystem } from './ecosystem-utils/glv';
+import { IGlvToken } from 'packages/glv/src/types';
 
 /**
  * Config to for setting up tests in the `before` function
@@ -376,6 +378,21 @@ export async function setupGMXBalance(
   await core.tokens.gmx!.connect(whaleSigner).transfer(signer.address, amount);
   await core.tokens.gmx!.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
+
+export async function setupGLVBalance(
+  core: CoreProtocolArbitrumOne,
+  glvToken: IGlvToken,
+  signer: { address: string },
+  amount: BigNumberish,
+  spender?: { address: string },
+) {
+  const controller = await impersonate(core.gmxV2Ecosystem!.gmxExchangeRouter.address, true);
+  await glvToken.connect(controller).mint(signer.address, amount);
+  if (signer instanceof SignerWithAddressWithSafety && spender) {
+    await glvToken.connect(signer).approve(spender.address, amount);
+  }
+}
+
 
 export async function setupRsEthBalance(
   core: { tokens: { rsEth: IERC20 } },
@@ -783,6 +800,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
         wbtcProxy: RegistryProxy__factory.connect(Deployments.DolomiteWbtcToken[typedConfig.network].address, hhUser1),
         wethProxy: RegistryProxy__factory.connect(Deployments.DolomiteWethToken[typedConfig.network].address, hhUser1),
       },
+      glvEcosystem: await createGlvEcosystem(typedConfig.network, hhUser1),
       gmxEcosystem: await createGmxEcosystem(typedConfig.network, hhUser1),
       gmxEcosystemV2: await createGmxEcosystemV2(typedConfig.network, hhUser1),
       jonesEcosystem: await createJonesEcosystem(typedConfig.network, hhUser1),

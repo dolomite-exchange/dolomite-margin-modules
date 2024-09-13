@@ -21,6 +21,7 @@
 pragma solidity ^0.8.9;
 
 import { IDolomitePriceOracle } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomitePriceOracle.sol"; // solhint-disable-line max-line-length
+import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol"; // solhint-disable-line max-line-length
 
 
 /**
@@ -47,15 +48,24 @@ contract TestOracleProvider {
     }
 
     function getOraclePrice(address _token, bytes memory /* _data */) external view returns (ValidatedPrice memory) {
-        uint256 price = ORACLE_AGGREGATOR.getPrice(_token).value;
-        price = price / 10 ** 6;
+        try ORACLE_AGGREGATOR.getPrice(_token) returns (IDolomiteStructs.MonetaryPrice memory price) {
+            uint256 priceUint = price.value / 10 ** 6;
 
-        return ValidatedPrice({
-            token: _token,
-            min: price,
-            max: price,
-            timestamp: block.timestamp,
-            provider: address(this)
-        });
+            return ValidatedPrice({
+                token: _token,
+                min: priceUint,
+                max: priceUint,
+                timestamp: block.timestamp,
+                provider: address(this)
+            });
+        } catch {
+            return ValidatedPrice({
+                token: _token,
+                min: 1 ether,
+                max: 1 ether,
+                timestamp: block.timestamp,
+                provider: address(this)
+            });
+        }
     }
 }
