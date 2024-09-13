@@ -3,21 +3,34 @@ import { mine } from '@nomicfoundation/hardhat-network-helpers';
 import { setNextBlockTimestamp } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
-import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
 import { ADDRESS_ZERO, Network, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
 import { expectEvent, expectThrow } from 'packages/base/test/utils/assertions';
 import { createDolomiteRegistryImplementation } from 'packages/base/test/utils/dolomite';
 import {
-  getDefaultCoreProtocolConfigForGmxV2,
   setupCoreProtocol,
   setupTestMarket,
 } from 'packages/base/test/utils/setup';
 import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
-import { GlvIsolationModeUnwrapperTraderV2, GlvIsolationModeVaultFactory, GlvIsolationModeWrapperTraderV2, GlvRegistry, GlvTokenPriceOracle, IGlvToken } from '../src/types';
+import {
+  GlvIsolationModeUnwrapperTraderV2,
+  GlvIsolationModeVaultFactory,
+  GlvIsolationModeWrapperTraderV2,
+  GlvRegistry,
+  GlvTokenPriceOracle,
+  IGlvToken
+} from '../src/types';
 import { IGmxMarketToken } from 'packages/gmx-v2/src/types';
-import { createGlvIsolationModeTokenVaultV1, createGlvIsolationModeUnwrapperTraderV2, createGlvIsolationModeVaultFactory, createGlvIsolationModeWrapperTraderV2, createGlvLibrary, createGlvRegistry, createGlvTokenPriceOracle } from './glv-ecosystem-utils';
-import { createGmxV2Library, createGmxV2MarketTokenPriceOracle } from 'packages/gmx-v2/test/gmx-v2-ecosystem-utils';
+import {
+  createGlvIsolationModeTokenVaultV1,
+  createGlvIsolationModeUnwrapperTraderV2,
+  createGlvIsolationModeVaultFactory,
+  createGlvIsolationModeWrapperTraderV2,
+  createGlvLibrary,
+  createGlvRegistry,
+  createGlvTokenPriceOracle
+} from './glv-ecosystem-utils';
+import { createGmxV2Library } from 'packages/gmx-v2/test/gmx-v2-ecosystem-utils';
 import { createSafeDelegateLibrary } from 'packages/base/test/utils/ecosystem-utils/general';
 import { GMX_V2_EXECUTION_FEE_FOR_TESTS } from 'packages/gmx-v2/src/gmx-v2-constructors';
 
@@ -210,94 +223,93 @@ describe('GlvTokenPriceOracle', () => {
 });
 
 async function setupNewOracleAggregatorTokens(core: CoreProtocolArbitrumOne) {
-    await core.chainlinkPriceOracleV3.ownerInsertOrUpdateOracleToken(
-      '0x7D7F1765aCbaF847b9A1f7137FE8Ed4931FbfEbA', // ATOM - good
-      '0xCDA67618e51762235eacA373894F0C79256768fa',
-      false
-    );
-    await core.oracleAggregatorV2.ownerInsertOrUpdateToken({
-      oracleInfos: [{
-        oracle: core.chainlinkPriceOracleV3.address,
-        tokenPair: ADDRESS_ZERO,
-        weight: 100
-      }],
-      token: '0x7D7F1765aCbaF847b9A1f7137FE8Ed4931FbfEbA',
-      decimals: 6
-    });
+  await core.chainlinkPriceOracleV3.ownerInsertOrUpdateOracleToken(
+    '0x7D7F1765aCbaF847b9A1f7137FE8Ed4931FbfEbA', // ATOM - good
+    '0xCDA67618e51762235eacA373894F0C79256768fa',
+    false
+  );
+  await core.oracleAggregatorV2.ownerInsertOrUpdateToken({
+    oracleInfos: [{
+      oracle: core.chainlinkPriceOracleV3.address,
+      tokenPair: ADDRESS_ZERO,
+      weight: 100
+    }],
+    token: '0x7D7F1765aCbaF847b9A1f7137FE8Ed4931FbfEbA',
+    decimals: 6
+  });
 
-    await core.chainlinkPriceOracleV3.ownerInsertOrUpdateOracleToken(
-      '0xC4da4c24fd591125c3F47b340b6f4f76111883d8', // DOGE - good
-      '0x9A7FB1b3950837a8D9b40517626E11D4127C098C',
-      false
-    );
-    await core.oracleAggregatorV2.ownerInsertOrUpdateToken({
-      oracleInfos: [{
-        oracle: core.chainlinkPriceOracleV3.address,
-        tokenPair: ADDRESS_ZERO,
-        weight: 100
-      }],
-      token: '0xC4da4c24fd591125c3F47b340b6f4f76111883d8',
-      decimals: 8
-    });
+  await core.chainlinkPriceOracleV3.ownerInsertOrUpdateOracleToken(
+    '0xC4da4c24fd591125c3F47b340b6f4f76111883d8', // DOGE - good
+    '0x9A7FB1b3950837a8D9b40517626E11D4127C098C',
+    false
+  );
+  await core.oracleAggregatorV2.ownerInsertOrUpdateToken({
+    oracleInfos: [{
+      oracle: core.chainlinkPriceOracleV3.address,
+      tokenPair: ADDRESS_ZERO,
+      weight: 100
+    }],
+    token: '0xC4da4c24fd591125c3F47b340b6f4f76111883d8',
+    decimals: 8
+  });
 
+  await core.chainlinkPriceOracleV3.ownerInsertOrUpdateOracleToken(
+    '0x1FF7F3EFBb9481Cbd7db4F932cBCD4467144237C', // NEAR - good
+    '0xBF5C3fB2633e924598A46B9D07a174a9DBcF57C0',
+    false
+  );
+  await core.oracleAggregatorV2.ownerInsertOrUpdateToken({
+    oracleInfos: [{
+      oracle: core.chainlinkPriceOracleV3.address,
+      tokenPair: ADDRESS_ZERO,
+      weight: 100
+    }],
+    token: '0x1FF7F3EFBb9481Cbd7db4F932cBCD4467144237C',
+    decimals: 24
+  });
 
-    await core.chainlinkPriceOracleV3.ownerInsertOrUpdateOracleToken(
-      '0x1FF7F3EFBb9481Cbd7db4F932cBCD4467144237C', // NEAR - good
-      '0xBF5C3fB2633e924598A46B9D07a174a9DBcF57C0',
-      false
-    );
-    await core.oracleAggregatorV2.ownerInsertOrUpdateToken({
-      oracleInfos: [{
-        oracle: core.chainlinkPriceOracleV3.address,
-        tokenPair: ADDRESS_ZERO,
-        weight: 100
-      }],
-      token: '0x1FF7F3EFBb9481Cbd7db4F932cBCD4467144237C',
-      decimals: 24
-    });
+  await core.chainlinkPriceOracleV3.ownerInsertOrUpdateOracleToken(
+    '0xc14e065b0067dE91534e032868f5Ac6ecf2c6868', // XRP
+    '0xB4AD57B52aB9141de9926a3e0C8dc6264c2ef205',
+    false
+  );
+  await core.oracleAggregatorV2.ownerInsertOrUpdateToken({
+    oracleInfos: [{
+      oracle: core.chainlinkPriceOracleV3.address,
+      tokenPair: ADDRESS_ZERO,
+      weight: 100
+    }],
+    token: '0xc14e065b0067dE91534e032868f5Ac6ecf2c6868',
+    decimals: 6
+  });
 
-    await core.chainlinkPriceOracleV3.ownerInsertOrUpdateOracleToken(
-      '0xc14e065b0067dE91534e032868f5Ac6ecf2c6868', // XRP
-      '0xB4AD57B52aB9141de9926a3e0C8dc6264c2ef205',
-      false
-    );
-    await core.oracleAggregatorV2.ownerInsertOrUpdateToken({
-      oracleInfos: [{
-        oracle: core.chainlinkPriceOracleV3.address,
-        tokenPair: ADDRESS_ZERO,
-        weight: 100
-      }],
-      token: '0xc14e065b0067dE91534e032868f5Ac6ecf2c6868',
-      decimals: 6
-    });
+  await core.chainlinkPriceOracleV3.ownerInsertOrUpdateOracleToken(
+    '0xB46A094Bc4B0adBD801E14b9DB95e05E28962764', // LTC
+    '0x5698690a7B7B84F6aa985ef7690A8A7288FBc9c8',
+    false
+  );
+  await core.oracleAggregatorV2.ownerInsertOrUpdateToken({
+    oracleInfos: [{
+      oracle: core.chainlinkPriceOracleV3.address,
+      tokenPair: ADDRESS_ZERO,
+      weight: 100
+    }],
+    token: '0xB46A094Bc4B0adBD801E14b9DB95e05E28962764',
+    decimals: 8
+  });
 
-    await core.chainlinkPriceOracleV3.ownerInsertOrUpdateOracleToken(
-      '0xB46A094Bc4B0adBD801E14b9DB95e05E28962764', // LTC
-      '0x5698690a7B7B84F6aa985ef7690A8A7288FBc9c8',
-      false
-    );
-    await core.oracleAggregatorV2.ownerInsertOrUpdateToken({
-      oracleInfos: [{
-        oracle: core.chainlinkPriceOracleV3.address,
-        tokenPair: ADDRESS_ZERO,
-        weight: 100
-      }],
-      token: '0xB46A094Bc4B0adBD801E14b9DB95e05E28962764',
-      decimals: 8
-    });
-
-    // await core.chainlinkPriceOracleV3.ownerInsertOrUpdateOracleToken(
-    //   '0x3E57D02f9d196873e55727382974b02EdebE6bfd', // SHIB
-    //   '',
-    //   false
-    // );
-    // await core.oracleAggregatorV2.ownerInsertOrUpdateToken({
-    //   oracleInfos: [{
-    //     oracle: core.chainlinkPriceOracleV3.address,
-    //     tokenPair: ADDRESS_ZERO,
-    //     weight: 100
-    //   }],
-    //   token: '0x3E57D02f9d196873e55727382974b02EdebE6bfd',
-    //   decimals: 24
-    // });
+  // await core.chainlinkPriceOracleV3.ownerInsertOrUpdateOracleToken(
+  //   '0x3E57D02f9d196873e55727382974b02EdebE6bfd', // SHIB
+  //   '',
+  //   false
+  // );
+  // await core.oracleAggregatorV2.ownerInsertOrUpdateToken({
+  //   oracleInfos: [{
+  //     oracle: core.chainlinkPriceOracleV3.address,
+  //     tokenPair: ADDRESS_ZERO,
+  //     weight: 100
+  //   }],
+  //   token: '0x3E57D02f9d196873e55727382974b02EdebE6bfd',
+  //   decimals: 24
+  // });
 }

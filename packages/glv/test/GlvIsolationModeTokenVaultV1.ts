@@ -1156,7 +1156,11 @@ describe('GlvIsolationModeTokenVaultV1', () => {
     });
 
     it('should fail when redemptions are paused', async () => {
-      const key = getKey('EXECUTE_GLV_WITHDRAWAL_FEATURE_DISABLED', ['address'], [core.glvEcosystem.glvHandler.address]);
+      const key = getKey(
+        'EXECUTE_GLV_WITHDRAWAL_FEATURE_DISABLED',
+        ['address'],
+        [core.glvEcosystem.glvHandler.address]
+      );
       await core.gmxV2Ecosystem.gmxDataStore.connect(controller).setBool(key, true);
       expect(await vault.isExternalRedemptionPaused()).to.be.true;
 
@@ -1487,13 +1491,22 @@ describe('GlvIsolationModeTokenVaultV1', () => {
     });
 
     it('should return true if execute withdrawals are disabled', async () => {
-      const key = getKey('EXECUTE_GLV_WITHDRAWAL_FEATURE_DISABLED', ['address'], [core.glvEcosystem.glvHandler.address]);
+      const key = getKey(
+        'EXECUTE_GLV_WITHDRAWAL_FEATURE_DISABLED',
+        ['address'],
+        [core.glvEcosystem.glvHandler.address]
+      );
       await core.gmxV2Ecosystem.gmxDataStore.connect(controller).setBool(key, true);
       expect(await vault.isExternalRedemptionPaused()).to.be.true;
     });
 
     it('should return false if short and long are less than max pnl', async () => {
-      const withdrawalsBytes32 = ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['string'], ['MAX_PNL_FACTOR_FOR_WITHDRAWALS']));
+      const withdrawalsBytes32 = ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(
+          ['string'],
+          ['MAX_PNL_FACTOR_FOR_WITHDRAWALS']
+        )
+      );
       const longKey = getKey(
         'MAX_PNL_FACTOR',
         ['bytes32', 'address', 'bool'],

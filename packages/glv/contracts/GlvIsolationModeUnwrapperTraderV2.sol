@@ -26,17 +26,16 @@ import { UpgradeableAsyncIsolationModeUnwrapperTrader } from "@dolomite-exchange
 import { AsyncIsolationModeUnwrapperTraderImpl } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/impl/AsyncIsolationModeUnwrapperTraderImpl.sol"; // solhint-disable-line max-line-length
 import { IIsolationModeUnwrapperTraderV2 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeUnwrapperTraderV2.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
-import { GlvLibrary } from "./GlvLibrary.sol";
 import { GmxV2Library } from "@dolomite-exchange/modules-gmx-v2/contracts/GmxV2Library.sol";
 import { IGmxV2IsolationModeVaultFactory } from "@dolomite-exchange/modules-gmx-v2/contracts/interfaces/IGmxV2IsolationModeVaultFactory.sol";
+import { GmxEventUtils } from "@dolomite-exchange/modules-gmx-v2/contracts/lib/GmxEventUtils.sol";
+import { GlvLibrary } from "./GlvLibrary.sol";
 import { IGlvIsolationModeUnwrapperTraderV2 } from "./interfaces/IGlvIsolationModeUnwrapperTraderV2.sol";
 import { IGlvIsolationModeVaultFactory } from "./interfaces/IGlvIsolationModeVaultFactory.sol";
 import { IGlvRegistry } from "./interfaces/IGlvRegistry.sol";
-import { GmxEventUtils } from "@dolomite-exchange/modules-gmx-v2/contracts/lib/GmxEventUtils.sol";
 import { GlvWithdrawal } from "./lib/GlvWithdrawal.sol";
 // solhint-enable max-line-length
 
-import "hardhat/console.sol";
 
 /**
  * @title   GlvIsolationModeUnwrapperTraderV2

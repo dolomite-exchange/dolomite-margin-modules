@@ -18,7 +18,6 @@ import {
 import { createDolomiteRegistryImplementation } from 'packages/base/test/utils/dolomite';
 import {
   disableInterestAccrual,
-  getDefaultCoreProtocolConfigForGmxV2,
   setupCoreProtocol,
   setupGMBalance,
   setupNativeUSDCBalance,
@@ -28,12 +27,32 @@ import {
 } from 'packages/base/test/utils/setup';
 import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { GMX_V2_EXECUTION_FEE_FOR_TESTS } from 'packages/gmx-v2/src/gmx-v2-constructors';
-import { GlvIsolationModeTokenVaultV1, GlvIsolationModeTokenVaultV1__factory, GlvIsolationModeUnwrapperTraderV2, GlvIsolationModeVaultFactory, GlvIsolationModeWrapperTraderV2, GlvRegistry, IEventEmitterRegistry, IGlvToken, IGmxRoleStore__factory, TestGlvIsolationModeVaultFactory } from '../src/types';
+import {
+  GlvIsolationModeTokenVaultV1,
+  GlvIsolationModeTokenVaultV1__factory,
+  GlvIsolationModeUnwrapperTraderV2,
+  GlvIsolationModeWrapperTraderV2,
+  GlvRegistry,
+  IEventEmitterRegistry,
+  IGlvToken,
+  IGmxRoleStore__factory,
+  TestGlvIsolationModeVaultFactory
+} from '../src/types';
 import { IGmxMarketToken, TestOracleProvider, TestOracleProvider__factory } from 'packages/gmx-v2/src/types';
-import { createGlvIsolationModeUnwrapperTraderV2, createGlvIsolationModeVaultFactory, createGlvIsolationModeWrapperTraderV2, createGlvLibrary, createGlvRegistry, createTestGlvIsolationModeTokenVaultV1, createTestGlvIsolationModeVaultFactory, getGlvDepositObject, getGlvOracleParams, getInitiateWrappingParams } from './glv-ecosystem-utils';
+import {
+  createGlvIsolationModeUnwrapperTraderV2,
+  createGlvIsolationModeWrapperTraderV2,
+  createGlvLibrary,
+  createGlvRegistry,
+  createTestGlvIsolationModeTokenVaultV1,
+  createTestGlvIsolationModeVaultFactory,
+  getGlvDepositObject,
+  getGlvOracleParams,
+  getInitiateWrappingParams
+} from './glv-ecosystem-utils';
 import { createSafeDelegateLibrary } from 'packages/base/test/utils/ecosystem-utils/general';
 import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
-import { createGmxV2Library, getDepositObject, getOracleProviderEnabledKey } from 'packages/gmx-v2/test/gmx-v2-ecosystem-utils';
+import { createGmxV2Library, getOracleProviderEnabledKey } from 'packages/gmx-v2/test/gmx-v2-ecosystem-utils';
 
 enum ReversionType {
   None = 0,
@@ -302,7 +321,10 @@ describe('GlvIsolationModeWrapperTraderV2', () => {
     });
 
     it('should fail if execute deposit feature is disabled', async () => {
-      await core.gmxV2Ecosystem.gmxDataStore.connect(controller).setBool(EXECUTE_GLV_DEPOSIT_FEATURE_DISABLED_KEY, true);
+      await core.gmxV2Ecosystem.gmxDataStore.connect(controller).setBool(
+        EXECUTE_GLV_DEPOSIT_FEATURE_DISABLED_KEY,
+        true
+      );
 
       await vault.transferIntoPositionWithOtherToken(
         defaultAccountNumber,
@@ -557,7 +579,10 @@ describe('GlvIsolationModeWrapperTraderV2', () => {
     it('should work when deposit fails due to insufficient collateralization', async () => {
       const minAmountOut = parseEther('.001');
       await setupBalances(core.marketIds.nativeUsdc, usdcAmount, minAmountOut, async () => {
-        await core.testEcosystem!.testPriceOracle.setPrice(factory.address, parseEther('10000')); // means $10 of collateral
+        await core.testEcosystem!.testPriceOracle.setPrice(
+          factory.address,
+          parseEther('10000')
+        ); // means $10 of collateral
         const borrowAmount = parseEther('.001');
         await vault.transferFromPositionWithOtherToken(
           borrowAccountNumber,
@@ -678,7 +703,11 @@ describe('GlvIsolationModeWrapperTraderV2', () => {
       );
       depositInfo.eventData.uintItems.items[0].key = 'receivedBadTokens';
       await expectThrow(
-        wrapper.connect(depositExecutor).afterGlvDepositExecution(depositKey, depositInfo.deposit, depositInfo.eventData),
+        wrapper.connect(depositExecutor).afterGlvDepositExecution(
+          depositKey,
+          depositInfo.deposit,
+          depositInfo.eventData
+        ),
         'GlvIsolationModeWrapperV2: Unexpected receivedGlvTokens',
       );
     });
@@ -964,9 +993,18 @@ describe('GlvIsolationModeWrapperTraderV2', () => {
         BalanceCheckFlag.None,
       );
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.nativeUsdc, usdcAmount);
-      await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, wethAmount.mul(-1).sub(1));
+      await expectProtocolBalance(
+        core,
+        vault.address,
+        borrowAccountNumber,
+        core.marketIds.weth,
+        wethAmount.mul(-1).sub(1)
+      );
 
-      await core.testEcosystem!.testPriceOracle.setPrice(factory.address, parseEther('100000')); // means $100 of collateral
+      await core.testEcosystem!.testPriceOracle.setPrice(
+        factory.address,
+        parseEther('100000')
+      ); // means $100 of collateral
       const initiateWrappingParams = await getInitiateWrappingParams(
         borrowAccountNumber,
         core.marketIds.nativeUsdc,
@@ -1159,7 +1197,10 @@ describe('GlvIsolationModeWrapperTraderV2', () => {
         BalanceCheckFlag.None,
       );
 
-      await core.testEcosystem!.testPriceOracle.setPrice(factory.address, parseEther('100000')); // means $100 of collateral
+      await core.testEcosystem!.testPriceOracle.setPrice(
+        factory.address,
+        parseEther('100000')
+      ); // means $100 of collateral
       const initiateWrappingParams = await getInitiateWrappingParams(
         borrowAccountNumber,
         core.marketIds.nativeUsdc,

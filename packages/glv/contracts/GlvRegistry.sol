@@ -25,14 +25,12 @@ import { HandlerRegistry } from "@dolomite-exchange/modules-base/contracts/gener
 import { IHandlerRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IHandlerRegistry.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IGmxDataStore } from "@dolomite-exchange/modules-gmx-v2/contracts/interfaces/IGmxDataStore.sol";
-import { IGmxDepositHandler } from "@dolomite-exchange/modules-gmx-v2/contracts/interfaces/IGmxDepositHandler.sol";
 import { IGmxExchangeRouter } from "@dolomite-exchange/modules-gmx-v2/contracts/interfaces/IGmxExchangeRouter.sol";
 import { IGmxReader } from "@dolomite-exchange/modules-gmx-v2/contracts/interfaces/IGmxReader.sol";
-import { IGlvReader } from "./interfaces/IGlvReader.sol";
-import { IGlvRouter } from "./interfaces/IGlvRouter.sol";
 import { IGlvHandler } from "./interfaces/IGlvHandler.sol";
+import { IGlvReader } from "./interfaces/IGlvReader.sol";
 import { IGlvRegistry } from "./interfaces/IGlvRegistry.sol";
-import { IGmxWithdrawalHandler } from "@dolomite-exchange/modules-gmx-v2/contracts/interfaces/IGmxWithdrawalHandler.sol";
+import { IGlvRouter } from "./interfaces/IGlvRouter.sol";
 
 /**
  * @title   GlvRegistry

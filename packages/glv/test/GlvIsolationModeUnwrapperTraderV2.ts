@@ -32,7 +32,6 @@ import { BigNumber, BigNumberish, ethers } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import {
   disableInterestAccrual,
-  getDefaultCoreProtocolConfigForGmxV2,
   setupCoreProtocol,
   setupGLVBalance,
   setupGMBalance,
@@ -55,12 +54,19 @@ import {
   TestGlvIsolationModeUnwrapperTraderV2,
 } from '../src/types';
 import { GMX_V2_EXECUTION_FEE_FOR_TESTS } from 'packages/gmx-v2/src/gmx-v2-constructors';
-import { createGlvIsolationModeUnwrapperTraderV2, createGlvIsolationModeVaultFactory, createGlvIsolationModeWrapperTraderV2, createGlvLibrary, createGlvRegistry, createTestGlvIsolationModeTokenVaultV1, createTestGlvIsolationModeUnwrapperTraderV2, getGlvOracleParams, getGlvWithdrawalObject } from './glv-ecosystem-utils';
+import {
+  createGlvIsolationModeVaultFactory,
+  createGlvIsolationModeWrapperTraderV2,
+  createGlvLibrary,
+  createGlvRegistry,
+  createTestGlvIsolationModeTokenVaultV1,
+  createTestGlvIsolationModeUnwrapperTraderV2,
+  getGlvOracleParams,
+  getGlvWithdrawalObject
+} from './glv-ecosystem-utils';
 import { IGmxMarketToken, TestOracleProvider, TestOracleProvider__factory } from 'packages/gmx-v2/src/types';
-import { createGmxV2Library, getOracleParams, getOracleProviderEnabledKey, getOracleProviderForTokenKey, getWithdrawalObject } from 'packages/gmx-v2/test/gmx-v2-ecosystem-utils';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { createGmxV2Library, getOracleProviderEnabledKey } from 'packages/gmx-v2/test/gmx-v2-ecosystem-utils';
 import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
-import { TokenInfo } from 'packages/oracles/src';
 
 enum ReversionType {
   None = 0,
@@ -1379,7 +1385,10 @@ describe('GlvIsolationModeUnwrapperTraderV2', () => {
       await setupGLVBalance(core, underlyingToken, core.hhUser1, amountWei, vault);
       await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await vault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei, { value: executionFee });
-      await core.testEcosystem!.testPriceOracle.setPrice(factory.address, parseEther('10000')); // means $100 of collateral
+      await core.testEcosystem!.testPriceOracle.setPrice(
+        factory.address,
+        parseEther('10000')
+      ); // means $100 of collateral
       const borrowAmount = BigNumber.from('60000000'); // $60
       await vault.transferFromPositionWithOtherToken(
         borrowAccountNumber,
@@ -1467,7 +1476,10 @@ describe('GlvIsolationModeUnwrapperTraderV2', () => {
       await setupGLVBalance(core, underlyingToken, core.hhUser1, amountWei, vault);
       await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await vault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei, { value: executionFee });
-      await core.testEcosystem!.testPriceOracle.setPrice(factory.address, parseEther('10000')); // means $100 of collateral
+      await core.testEcosystem!.testPriceOracle.setPrice(
+        factory.address,
+        parseEther('10000')
+      ); // means $100 of collateral
       const usdcAmount = BigNumber.from('60000000');
       await vault.transferFromPositionWithOtherToken(
         borrowAccountNumber,

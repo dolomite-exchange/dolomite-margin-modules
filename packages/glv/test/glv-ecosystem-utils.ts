@@ -1,26 +1,55 @@
-import { CoreProtocolArbitrumOne } from "packages/base/test/utils/core-protocols/core-protocol-arbitrum-one";
-import { GlvIsolationModeTokenVaultV1, GlvIsolationModeUnwrapperTraderV2, GlvIsolationModeUnwrapperTraderV2__factory, GlvIsolationModeVaultFactory, GlvIsolationModeWrapperTraderV2, GlvIsolationModeWrapperTraderV2__factory, GlvLibrary, GlvLibrary__factory, GlvRegistry, GlvRegistry__factory, GlvTokenPriceOracle, GlvTokenPriceOracle__factory, GmxV2Library, IGlvIsolationModeVaultFactory, IGlvRegistry, IGlvToken, TestGlvIsolationModeTokenVaultV1, TestGlvIsolationModeUnwrapperTraderV2, TestGlvIsolationModeUnwrapperTraderV2__factory, TestGlvIsolationModeVaultFactory } from "../src/types";
-import { BaseContract, BigNumber, BigNumberish, ethers } from "ethers";
-import { createContractWithAbi, createContractWithLibraryAndArtifact } from "packages/base/src/utils/dolomite-utils";
-import { IsolationModeTraderProxy, IsolationModeTraderProxy__factory, RegistryProxy, RegistryProxy__factory } from "packages/base/src/types";
-import { getGlvIsolationModeTokenVaultConstructorParams, getGlvIsolationModeUnwrapperTraderV2ConstructorParams, getGlvIsolationModeVaultFactoryConstructorParams, getGlvIsolationModeWrapperTraderV2ConstructorParams, getGlvRegistryConstructorParams, getGlvTokenPriceOracleConstructorParams } from "../src/glv-constructors";
-import { artifacts } from "hardhat";
+import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
+import {
+  GlvIsolationModeTokenVaultV1,
+  GlvIsolationModeUnwrapperTraderV2,
+  GlvIsolationModeUnwrapperTraderV2__factory,
+  GlvIsolationModeVaultFactory,
+  GlvIsolationModeWrapperTraderV2,
+  GlvIsolationModeWrapperTraderV2__factory,
+  GlvLibrary,
+  GlvLibrary__factory,
+  GlvRegistry,
+  GlvRegistry__factory,
+  GlvTokenPriceOracle,
+  GlvTokenPriceOracle__factory,
+  GmxV2Library,
+  IGlvIsolationModeVaultFactory,
+  IGlvRegistry,
+  TestGlvIsolationModeTokenVaultV1,
+  TestGlvIsolationModeUnwrapperTraderV2,
+  TestGlvIsolationModeUnwrapperTraderV2__factory,
+  TestGlvIsolationModeVaultFactory
+} from '../src/types';
+import { BaseContract, BigNumber, BigNumberish, ethers } from 'ethers';
+import { createContractWithAbi, createContractWithLibraryAndArtifact } from 'packages/base/src/utils/dolomite-utils';
+import { IsolationModeTraderProxy, IsolationModeTraderProxy__factory, RegistryProxy, RegistryProxy__factory } from 'packages/base/src/types';
+import {
+  getGlvIsolationModeTokenVaultConstructorParams,
+  getGlvIsolationModeUnwrapperTraderV2ConstructorParams,
+  getGlvIsolationModeVaultFactoryConstructorParams,
+  getGlvIsolationModeWrapperTraderV2ConstructorParams,
+  getGlvRegistryConstructorParams,
+  getGlvTokenPriceOracleConstructorParams
+} from '../src/glv-constructors';
+import { artifacts } from 'hardhat';
 import fs, { readFileSync } from 'fs';
 import path, { join } from 'path';
-import { Artifact } from "hardhat/types";
-import { createAsyncIsolationModeUnwrapperTraderImpl, createAsyncIsolationModeWrapperTraderImpl, createIsolationModeTokenVaultV1ActionsImpl } from "packages/base/test/utils/dolomite";
-import { GlvToken } from "packages/base/test/utils/ecosystem-utils/glv";
-import { createSafeDelegateLibrary } from "packages/base/test/utils/ecosystem-utils/general";
-import { BalanceCheckFlag } from "@dolomite-exchange/dolomite-margin";
-import { GenericEventEmissionType } from "@dolomite-exchange/dolomite-margin/dist/src/modules/GenericTraderProxyV1";
-import { GenericTraderType } from "@dolomite-exchange/zap-sdk";
-import { ADDRESS_ZERO, BYTES_EMPTY, ZERO_BI } from "packages/base/src/utils/no-deps-constants";
-import { IGmxMarketToken, TestOracleProvider } from "packages/gmx-v2/src/types";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { SignerWithAddressWithSafety } from "packages/base/src/utils/SignerWithAddressWithSafety";
-import { createGmxV2Library, getOracleProviderForTokenKey } from "packages/gmx-v2/test/gmx-v2-ecosystem-utils";
-import { GMX_V2_CALLBACK_GAS_LIMIT } from "packages/gmx-v2/src/gmx-v2-constructors";
-import { createContract } from "@openzeppelin/upgrades/lib/artifacts/Contract";
+import { Artifact } from 'hardhat/types';
+import {
+  createAsyncIsolationModeUnwrapperTraderImpl,
+  createAsyncIsolationModeWrapperTraderImpl,
+  createIsolationModeTokenVaultV1ActionsImpl
+} from 'packages/base/test/utils/dolomite';
+import { GlvToken } from 'packages/base/test/utils/ecosystem-utils/glv';
+import { createSafeDelegateLibrary } from 'packages/base/test/utils/ecosystem-utils/general';
+import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin';
+import { GenericEventEmissionType } from '@dolomite-exchange/dolomite-margin/dist/src/modules/GenericTraderProxyV1';
+import { GenericTraderType } from '@dolomite-exchange/zap-sdk';
+import { ADDRESS_ZERO, BYTES_EMPTY, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
+import { IGmxMarketToken, TestOracleProvider } from 'packages/gmx-v2/src/types';
+import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
+import { createGmxV2Library, getOracleProviderForTokenKey } from 'packages/gmx-v2/test/gmx-v2-ecosystem-utils';
+import { GMX_V2_CALLBACK_GAS_LIMIT } from 'packages/gmx-v2/src/gmx-v2-constructors';
 
 async function createArtifactFromWorkspaceIfNotExists(artifactName: string): Promise<Artifact> {
   if (await artifacts.artifactExists(artifactName)) {
@@ -51,7 +80,6 @@ async function createArtifactFromWorkspaceIfNotExists(artifactName: string): Pro
 
   return Promise.reject(new Error(`Could not find ${artifactName}`));
 }
-
 
 export async function createGlvIsolationModeTokenVaultV1(
   core: CoreProtocolArbitrumOne,
@@ -220,7 +248,12 @@ export async function createTestGlvIsolationModeUnwrapperTraderV2(
   const libraries = await createAsyncIsolationModeUnwrapperTraderImpl();
   const implementation = await createContractWithLibraryAndArtifact<TestGlvIsolationModeUnwrapperTraderV2>(
     artifact,
-    { GlvLibrary: glvLibrary.address, GmxV2Library: gmxV2Library.address, SafeDelegateCallLib: safeDelegateCallLibrary.address, ...libraries },
+    {
+      GlvLibrary: glvLibrary.address,
+      GmxV2Library: gmxV2Library.address,
+      SafeDelegateCallLib: safeDelegateCallLibrary.address,
+      ...libraries
+    },
     [core.tokens.weth.address],
   );
   const proxy = await createContractWithAbi<IsolationModeTraderProxy>(
@@ -387,7 +420,7 @@ export async function getGlvOracleParams(
     tokens,
     providers,
     data
-  }
+  };
 }
 
 export function getGlvDepositObject(
@@ -417,10 +450,10 @@ export function getGlvDepositObject(
       shortTokenSwapPath: [],
     },
     numbers: {
-      marketTokenAmount: ZERO_BI,
       minGlvTokens,
       executionFee,
       callbackGasLimit,
+      marketTokenAmount: ZERO_BI,
       initialLongTokenAmount: longAmount,
       initialShortTokenAmount: shortAmount,
       updatedAtTime: 321321321,
@@ -502,7 +535,6 @@ export function getGlvDepositObject(
   }
   return { deposit, eventData };
 }
-
 
 export function getGlvWithdrawalObject(
   unwrapper: string,

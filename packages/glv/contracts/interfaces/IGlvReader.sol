@@ -2,14 +2,12 @@
 
 pragma solidity ^0.8.0;
 
-import { GlvPosition } from "../lib/GlvPosition.sol";
-import { GlvDeposit } from "../lib/GlvDeposit.sol";
-import { GlvWithdrawal } from "../lib/GlvWithdrawal.sol";
-import { GlvShift } from "../lib/GlvShift.sol";
-import { GlvMarket } from "../lib/GlvMarket.sol";
-import { GlvPrice } from "../lib/GlvPrice.sol";
-import { Glv } from "../lib/Glv.sol";
 import { IGmxDataStore } from "@dolomite-exchange/modules-gmx-v2/contracts/interfaces/IGmxDataStore.sol";
+import { Glv } from "../lib/Glv.sol";
+import { GlvDeposit } from "../lib/GlvDeposit.sol";
+import { GlvPrice } from "../lib/GlvPrice.sol";
+import { GlvShift } from "../lib/GlvShift.sol";
+import { GlvWithdrawal } from "../lib/GlvWithdrawal.sol";
 
 
 interface IGlvReader {

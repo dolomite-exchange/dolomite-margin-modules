@@ -26,9 +26,9 @@ import { IHandlerRegistry } from "@dolomite-exchange/modules-base/contracts/inte
 import { IGmxDataStore } from "@dolomite-exchange/modules-gmx-v2/contracts/interfaces/IGmxDataStore.sol";
 import { IGmxExchangeRouter } from "@dolomite-exchange/modules-gmx-v2/contracts/interfaces/IGmxExchangeRouter.sol";
 import { IGmxReader } from "@dolomite-exchange/modules-gmx-v2/contracts/interfaces/IGmxReader.sol";
+import { IGlvHandler } from "./IGlvHandler.sol";
 import { IGlvReader } from "./IGlvReader.sol";
 import { IGlvRouter } from "./IGlvRouter.sol";
-import { IGlvHandler } from "./IGlvHandler.sol";
 
 
 /**

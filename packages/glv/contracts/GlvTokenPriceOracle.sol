@@ -24,17 +24,13 @@ import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/he
 import { IDolomitePriceOracle } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomitePriceOracle.sol"; // solhint-disable-line max-line-length
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
-import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import { IGlvIsolationModeVaultFactory } from "./interfaces/IGlvIsolationModeVaultFactory.sol";
-import { IGlvTokenPriceOracle } from "./interfaces/IGlvTokenPriceOracle.sol";
-import { IGlvRegistry } from "./interfaces/IGlvRegistry.sol";
-import { IGlvReader } from "./interfaces/IGlvReader.sol";
-import { IGmxReader } from "@dolomite-exchange/modules-gmx-v2/contracts/interfaces/IGmxReader.sol";
 import { IGmxDataStore } from "@dolomite-exchange/modules-gmx-v2/contracts/interfaces/IGmxDataStore.sol";
-import { GmxMarket } from "@dolomite-exchange/modules-gmx-v2/contracts/lib/GmxMarket.sol";
+import { IGlvIsolationModeVaultFactory } from "./interfaces/IGlvIsolationModeVaultFactory.sol";
+import { IGlvReader } from "./interfaces/IGlvReader.sol";
+import { IGlvRegistry } from "./interfaces/IGlvRegistry.sol";
+import { IGlvTokenPriceOracle } from "./interfaces/IGlvTokenPriceOracle.sol";
 import { GlvPrice } from "./lib/GlvPrice.sol";
 
-import "hardhat/console.sol";
 
 /**
  * @title   GlvTokenPriceOracle

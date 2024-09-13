@@ -20,10 +20,7 @@
 pragma solidity ^0.8.9;
 
 // solhint-disable max-line-length
-import { IGenericTraderBase } from "@dolomite-exchange/modules-base/contracts/interfaces/IGenericTraderBase.sol";
-import { IAsyncFreezableIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IAsyncFreezableIsolationModeVaultFactory.sol";
 import { IAsyncIsolationModeTraderBase } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IAsyncIsolationModeTraderBase.sol";
-import { IIsolationModeUpgradeableProxy } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeUpgradeableProxy.sol";
 import { IIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
 import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IUpgradeableAsyncIsolationModeUnwrapperTrader.sol"; // solhint-disable-line max-line-length
 import { IUpgradeableAsyncIsolationModeWrapperTrader } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IUpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable-line max-line-length
@@ -35,25 +32,21 @@ import { IWETH } from "@dolomite-exchange/modules-base/contracts/protocol/interf
 import { DecimalLib } from "@dolomite-exchange/modules-base/contracts/protocol/lib/DecimalLib.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { TypesLib } from "@dolomite-exchange/modules-base/contracts/protocol/lib/TypesLib.sol";
+import { IGmxDataStore } from "@dolomite-exchange/modules-gmx-v2/contracts/interfaces/IGmxDataStore.sol";
+import { GmxEventUtils } from "@dolomite-exchange/modules-gmx-v2/contracts/lib/GmxEventUtils.sol";
+import { GmxMarket } from "@dolomite-exchange/modules-gmx-v2/contracts/lib/GmxMarket.sol";
+import { GmxPrice } from "@dolomite-exchange/modules-gmx-v2/contracts/lib/GmxPrice.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { IGmxDataStore } from "@dolomite-exchange/modules-gmx-v2/contracts/interfaces/IGmxDataStore.sol";
-import { IGmxExchangeRouter } from "@dolomite-exchange/modules-gmx-v2/contracts/interfaces/IGmxExchangeRouter.sol";
 import { IGlvIsolationModeTokenVaultV1 } from "./interfaces/IGlvIsolationModeTokenVaultV1.sol";
 import { IGlvIsolationModeUnwrapperTraderV2 } from "./interfaces/IGlvIsolationModeUnwrapperTraderV2.sol";
 import { IGlvIsolationModeVaultFactory } from "./interfaces/IGlvIsolationModeVaultFactory.sol";
 import { IGlvIsolationModeWrapperTraderV2 } from "./interfaces/IGlvIsolationModeWrapperTraderV2.sol";
 import { IGlvRegistry } from "./interfaces/IGlvRegistry.sol";
 import { IGlvRouter } from "./interfaces/IGlvRouter.sol";
-import { GlvWithdrawalUtils } from "./lib/GlvWithdrawalUtils.sol";
 import { GlvDepositUtils } from "./lib/GlvDepositUtils.sol";
-import { GmxEventUtils } from "@dolomite-exchange/modules-gmx-v2/contracts/lib/GmxEventUtils.sol";
-import { GmxMarket } from "@dolomite-exchange/modules-gmx-v2/contracts/lib/GmxMarket.sol";
-import { GmxPrice } from "@dolomite-exchange/modules-gmx-v2/contracts/lib/GmxPrice.sol";
-import { GmxV2Library } from "@dolomite-exchange/modules-gmx-v2/contracts/GmxV2Library.sol";
+import { GlvWithdrawalUtils } from "./lib/GlvWithdrawalUtils.sol";
 // solhint-enable max-line-length
-
-import "hardhat/console.sol";
 
 
 /**

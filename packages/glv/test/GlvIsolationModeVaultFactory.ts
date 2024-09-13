@@ -9,8 +9,23 @@ import {
   setupUserVaultProxy,
 } from 'packages/base/test/utils/setup';
 import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
-import { GlvIsolationModeTokenVaultV1, GlvIsolationModeTokenVaultV1__factory, GlvIsolationModeUnwrapperTraderV2, GlvIsolationModeVaultFactory, GlvIsolationModeWrapperTraderV2, GlvLibrary, GlvRegistry } from '../src/types';
-import { createGlvIsolationModeTokenVaultV1, createGlvIsolationModeUnwrapperTraderV2, createGlvIsolationModeVaultFactory, createGlvIsolationModeWrapperTraderV2, createGlvLibrary, createGlvRegistry } from './glv-ecosystem-utils';
+import {
+  GlvIsolationModeTokenVaultV1,
+  GlvIsolationModeTokenVaultV1__factory,
+  GlvIsolationModeUnwrapperTraderV2,
+  GlvIsolationModeVaultFactory,
+  GlvIsolationModeWrapperTraderV2,
+  GlvLibrary,
+  GlvRegistry
+} from '../src/types';
+import {
+  createGlvIsolationModeTokenVaultV1,
+  createGlvIsolationModeUnwrapperTraderV2,
+  createGlvIsolationModeVaultFactory,
+  createGlvIsolationModeWrapperTraderV2,
+  createGlvLibrary,
+  createGlvRegistry
+} from './glv-ecosystem-utils';
 import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE_FOR_TESTS } from 'packages/gmx-v2/src/gmx-v2-constructors';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
 import { createGmxV2Library } from 'packages/gmx-v2/test/gmx-v2-ecosystem-utils';
@@ -41,7 +56,11 @@ describe('GlvIsolationModeVaultFactory', () => {
       blockNumber: 252_102_600,
       network: Network.ArbitrumOne
     });
-    glvRegistry = await createGlvRegistry(core, core.gmxV2Ecosystem.gmTokens.ethUsd.marketToken, GMX_V2_CALLBACK_GAS_LIMIT);
+    glvRegistry = await createGlvRegistry(
+      core,
+      core.gmxV2Ecosystem.gmTokens.ethUsd.marketToken,
+      GMX_V2_CALLBACK_GAS_LIMIT
+    );
     glvLibrary = await createGlvLibrary();
     gmxV2Library = await createGmxV2Library();
     vaultImplementation = await createGlvIsolationModeTokenVaultV1(core, glvLibrary, gmxV2Library);

@@ -23,14 +23,13 @@ pragma solidity ^0.8.9;
 // solhint-disable max-line-length
 import { SimpleIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/SimpleIsolationModeVaultFactory.sol";
 import { AsyncFreezableIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/AsyncFreezableIsolationModeVaultFactory.sol";
+import { GmxV2Library } from "@dolomite-exchange/modules-gmx-v2/contracts/GmxV2Library.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import { GlvLibrary } from "./GlvLibrary.sol";
-import { GmxV2Library } from "@dolomite-exchange/modules-gmx-v2/contracts/GmxV2Library.sol";
 import { IGlvIsolationModeVaultFactory } from "./interfaces/IGlvIsolationModeVaultFactory.sol";
 import { IGlvRegistry } from "./interfaces/IGlvRegistry.sol";
 // solhint-enable max-line-length
 
-import "hardhat/console.sol";
 
 /**
  * @title   GlvIsolationModeVaultFactory

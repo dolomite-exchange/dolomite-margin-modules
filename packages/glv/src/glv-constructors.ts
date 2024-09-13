@@ -1,8 +1,16 @@
-import { CoreProtocolArbitrumOne } from "packages/base/test/utils/core-protocols/core-protocol-arbitrum-one";
-import { GlvIsolationModeTokenVaultV1, GlvIsolationModeUnwrapperTraderV2, GlvIsolationModeVaultFactory, GlvIsolationModeWrapperTraderV2, GlvRegistry, IGlvIsolationModeVaultFactory, IGlvRegistry, IGlvToken } from "./types";
-import { BigNumber, BigNumberish } from "ethers";
-import { GlvToken } from "packages/base/test/utils/ecosystem-utils/glv";
-import { IGmxMarketToken } from "packages/gmx-v2/src/types";
+import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
+import {
+  GlvIsolationModeTokenVaultV1,
+  GlvIsolationModeUnwrapperTraderV2,
+  GlvIsolationModeVaultFactory,
+  GlvIsolationModeWrapperTraderV2,
+  GlvRegistry,
+  IGlvIsolationModeVaultFactory,
+  IGlvRegistry,
+} from './types';
+import { BigNumber, BigNumberish } from 'ethers';
+import { GlvToken } from 'packages/base/test/utils/ecosystem-utils/glv';
+import { IGmxMarketToken } from 'packages/gmx-v2/src/types';
 
 export async function getGlvRegistryConstructorParams(
   core: CoreProtocolArbitrumOne,
