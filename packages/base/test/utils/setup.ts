@@ -59,24 +59,32 @@ import {
   CHAINLINK_PRICE_AGGREGATORS_MAP,
   CHAINLINK_PRICE_ORACLE_V1_MAP,
   D_ARB_MAP,
-  D_GM_ARB_MAP,
+  D_GM_AAVE_USD_MAP,
+  D_GM_ARB_USD_MAP,
   D_GM_BTC_MAP,
-  D_GM_BTC_SINGLE_SIDED_MAP,
+  D_GM_BTC_USD_MAP,
+  D_GM_DOGE_USD_MAP,
   D_GM_ETH_MAP,
-  D_GM_ETH_SINGLE_SIDED_MAP,
-  D_GM_LINK_MAP,
-  D_GM_UNI_MAP,
+  D_GM_ETH_USD_MAP,
+  D_GM_GMX_USD_MAP,
+  D_GM_LINK_USD_MAP,
+  D_GM_SOL_USD_MAP,
+  D_GM_UNI_USD_MAP,
+  D_GM_WST_ETH_USD_MAP,
   D_GMX_MAP,
   DAI_MAP,
   DFS_GLP_MAP,
   DJ_USDC_V1,
   DJ_USDC_V2,
   DPLV_GLP_MAP,
-  DPT_EZ_ETH_JUN_2024_MAP, DPT_EZ_ETH_SEP_2024_MAP,
+  DPT_EZ_ETH_JUN_2024_MAP,
+  DPT_EZ_ETH_SEP_2024_MAP,
   DPT_GLP_MAR_2024_MAP,
-  DPT_R_ETH_JUN_2025_MAP, DPT_RS_ETH_SEP_2024_MAP,
+  DPT_R_ETH_JUN_2025_MAP,
+  DPT_RS_ETH_SEP_2024_MAP,
   DPT_WE_ETH_APR_2024_MAP,
-  DPT_WE_ETH_JUN_2024_MAP, DPT_WE_ETH_SEP_2024_MAP,
+  DPT_WE_ETH_JUN_2024_MAP,
+  DPT_WE_ETH_SEP_2024_MAP,
   DPT_WST_ETH_JUN_2024_MAP,
   DPT_WST_ETH_JUN_2025_MAP,
   DPX_MAP,
@@ -160,6 +168,7 @@ import {
 } from './ecosystem-utils/liquidity-mining';
 import { createOdosEcosystem } from './ecosystem-utils/odos';
 import { createOkxEcosystem } from './ecosystem-utils/okx';
+import { createOogaBoogaEcosystem } from './ecosystem-utils/ooga-booga';
 import { createParaswapEcosystem } from './ecosystem-utils/paraswap';
 import { createPendleEcosystemArbitrumOne, createPendleEcosystemMantle } from './ecosystem-utils/pendle';
 import { createPlutusEcosystem } from './ecosystem-utils/plutus';
@@ -167,7 +176,6 @@ import { createPremiaEcosystem } from './ecosystem-utils/premia';
 import { createTestEcosystem } from './ecosystem-utils/testers';
 import { createUmamiEcosystem } from './ecosystem-utils/umami';
 import { impersonate, impersonateOrFallback, resetForkIfPossible } from './index';
-import { createOogaBoogaEcosystem } from './ecosystem-utils/ooga-booga';
 
 /**
  * Config to for setting up tests in the `before` function
@@ -807,13 +815,18 @@ export async function setupCoreProtocol<T extends NetworkType>(
         dArb: D_ARB_MAP[typedConfig.network].marketId,
         dfsGlp: DFS_GLP_MAP[typedConfig.network].marketId,
         dGmx: D_GMX_MAP[typedConfig.network].marketId,
-        dGmArb: D_GM_ARB_MAP[typedConfig.network].marketId,
+        dGmAaveUsd: D_GM_AAVE_USD_MAP[typedConfig.network].marketId,
+        dGmArbUsd: D_GM_ARB_USD_MAP[typedConfig.network].marketId,
+        dGmBtcUsd: D_GM_BTC_USD_MAP[typedConfig.network].marketId,
         dGmBtc: D_GM_BTC_MAP[typedConfig.network].marketId,
-        dGmBtcSingleSided: D_GM_BTC_SINGLE_SIDED_MAP[typedConfig.network].marketId,
+        dGmDogeUsd: D_GM_DOGE_USD_MAP[typedConfig.network].marketId,
+        dGmEthUsd: D_GM_ETH_USD_MAP[typedConfig.network].marketId,
         dGmEth: D_GM_ETH_MAP[typedConfig.network].marketId,
-        dGmEthSingleSided: D_GM_ETH_SINGLE_SIDED_MAP[typedConfig.network].marketId,
-        dGmLink: D_GM_LINK_MAP[typedConfig.network].marketId,
-        dGmUni: D_GM_UNI_MAP[typedConfig.network].marketId,
+        dGmGmxUsd: D_GM_GMX_USD_MAP[typedConfig.network].marketId,
+        dGmLinkUsd: D_GM_LINK_USD_MAP[typedConfig.network].marketId,
+        dGmSolUsd: D_GM_SOL_USD_MAP[typedConfig.network].marketId,
+        dGmUniUsd: D_GM_UNI_USD_MAP[typedConfig.network].marketId,
+        dGmWstEthUsd: D_GM_WST_ETH_USD_MAP[typedConfig.network].marketId,
         djUsdcV1: DJ_USDC_V1[typedConfig.network].marketId,
         djUsdcV2: DJ_USDC_V2[typedConfig.network].marketId,
         dplvGlp: DPLV_GLP_MAP[typedConfig.network].marketId,
@@ -880,10 +893,10 @@ export async function setupCoreProtocol<T extends NetworkType>(
         dArb: IERC20__factory.connect(D_ARB_MAP[typedConfig.network].address, hhUser1),
         dfsGlp: IERC20__factory.connect(DFS_GLP_MAP[typedConfig.network].address, hhUser1),
         dGmx: IERC20__factory.connect(D_GMX_MAP[typedConfig.network].address, hhUser1),
-        dGmArb: IERC20__factory.connect(D_GM_ARB_MAP[typedConfig.network].address, hhUser1),
-        dGmBtc: IERC20__factory.connect(D_GM_BTC_MAP[typedConfig.network].address, hhUser1),
-        dGmEth: IERC20__factory.connect(D_GM_ETH_MAP[typedConfig.network].address, hhUser1),
-        dGmLink: IERC20__factory.connect(D_GM_LINK_MAP[typedConfig.network].address, hhUser1),
+        dGmArb: IERC20__factory.connect(D_GM_ARB_USD_MAP[typedConfig.network].address, hhUser1),
+        dGmBtc: IERC20__factory.connect(D_GM_BTC_USD_MAP[typedConfig.network].address, hhUser1),
+        dGmEth: IERC20__factory.connect(D_GM_ETH_USD_MAP[typedConfig.network].address, hhUser1),
+        dGmLink: IERC20__factory.connect(D_GM_LINK_USD_MAP[typedConfig.network].address, hhUser1),
         djUsdcV1: IERC20__factory.connect(DJ_USDC_V1[typedConfig.network].address, hhUser1),
         djUsdcV2: IERC20__factory.connect(DJ_USDC_V2[typedConfig.network].address, hhUser1),
         dPtGlp: IERC20__factory.connect(DPT_GLP_MAR_2024_MAP[typedConfig.network].address, hhUser1),
@@ -978,7 +991,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
           IERC20__factory.connect(HONEY_MAP[typedConfig.network].address, hhUser1),
         ],
       },
-      oogaBoogaEcosystem: await createOogaBoogaEcosystem(typedConfig.network, hhUser1)
+      oogaBoogaEcosystem: await createOogaBoogaEcosystem(typedConfig.network, hhUser1),
     }) as any;
   }
   if (config.network === Network.Mantle) {

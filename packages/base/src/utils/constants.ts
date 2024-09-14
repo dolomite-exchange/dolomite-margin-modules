@@ -102,7 +102,14 @@ export const D_GMX_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   },
 };
 
-export const D_GM_ARB_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+export const D_GM_AAVE_USD_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0x24C9121C75c099b38D40020872B8A0d2C27c614D',
+    marketId: 55,
+  },
+};
+
+export const D_GM_ARB_USD_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x2c799166c9f0DbF9EFC5004cbCe4c5A37fA39329',
     marketId: 31,
@@ -111,43 +118,71 @@ export const D_GM_ARB_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
 
 export const D_GM_BTC_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
-    address: '0x1E8e8B7a2F827b3bc12B00eE402145061b7050eF',
-    marketId: 32,
-  },
-};
-
-export const D_GM_BTC_SINGLE_SIDED_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
-  [Network.ArbitrumOne]: {
     address: '0xB15bbBfCff6c411410c66642306d1FfA7eCEc4D8',
     marketId: 44,
   },
 };
 
-export const D_GM_ETH_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+export const D_GM_BTC_USD_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
-    address: '0x505582242757f16D72F8C4462A616E388Ca1b074',
-    marketId: 33,
+    address: '0x1E8e8B7a2F827b3bc12B00eE402145061b7050eF',
+    marketId: 32,
   },
 };
 
-export const D_GM_ETH_SINGLE_SIDED_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+export const D_GM_DOGE_USD_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0x1BEEd3b7D1237B7773b5C4c249933E3Ca5e027c1',
+    marketId: 56,
+  },
+};
+
+export const D_GM_ETH_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x2D165A76dd3e552DF3860789331Ab73c5a3d7F92',
     marketId: 45,
   },
 };
 
-export const D_GM_LINK_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+export const D_GM_ETH_USD_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0x505582242757f16D72F8C4462A616E388Ca1b074',
+    marketId: 33,
+  },
+};
+
+export const D_GM_GMX_USD_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0x5c99f6cf6069698D234D50Bf69EBd2f53e45ED1c',
+    marketId: 57,
+  },
+};
+
+export const D_GM_LINK_USD_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x18cB14564FBb015BD3439220D177799355abC0E0',
     marketId: 34,
   },
 };
 
-export const D_GM_UNI_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+export const D_GM_SOL_USD_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0x1EBB1c7023aDdbb2B6e30e6F4C8D4A4440Bfd412',
+    marketId: 58,
+  },
+};
+
+export const D_GM_UNI_USD_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x20d51CB520C4622Dcc3d7E35003dBaB07d547E7E',
     marketId: 47,
+  },
+};
+
+export const D_GM_WST_ETH_USD_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0xc587646f67b38739006ED0200e2E0a26FDb01c9B',
+    marketId: 59,
   },
 };
 
