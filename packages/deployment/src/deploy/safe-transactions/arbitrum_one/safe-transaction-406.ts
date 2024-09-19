@@ -97,7 +97,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       ptEEthMarketId,
       TargetCollateralization._120,
       TargetLiquidationPenalty._6,
-      parseEther(`${3_000}`),
+      parseEther(`${4_000}`),
     ),
     ...await prettyPrintEncodeAddIsolationModeMarket(
       core,
@@ -108,7 +108,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       ptRsEthMarketId,
       TargetCollateralization._120,
       TargetLiquidationPenalty._6,
-      parseEther(`${3_000}`),
+      parseEther(`${2_000}`),
     ),
   );
 
