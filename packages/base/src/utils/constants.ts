@@ -961,6 +961,10 @@ export const PENDLE_MARKET_E_ETH_SEP_2024_MAP: Record<Network.ArbitrumOne, strin
   [Network.ArbitrumOne]: '0xf9F9779d8fF604732EBA9AD345E6A27EF5c2a9d6',
 };
 
+export const PENDLE_MARKET_E_ETH_DEC_2024_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x6b92feB89ED16AA971B096e247Fe234dB4Aaa262',
+};
+
 export const PENDLE_MARKET_EZ_ETH_SEP_2024_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x35f3dB08a6e9cB4391348b0B404F493E7ae264c0',
 };
@@ -983,6 +987,10 @@ export const PENDLE_MARKET_RS_ETH_APR_2024_MAP: Record<Network.ArbitrumOne, stri
 
 export const PENDLE_MARKET_RS_ETH_SEP_2024_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0xED99fC8bdB8E9e7B8240f62f69609a125A0Fbf14',
+};
+
+export const PENDLE_MARKET_RS_ETH_DEC_2024_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0xcB471665BF23B2Ac6196D84D947490fd5571215f',
 };
 
 export const PENDLE_MARKET_USDE_DEC_2024_MAP: Record<Network.Mantle, string> = {
@@ -1011,6 +1019,10 @@ export const PENDLE_PT_E_ETH_JUN_2024_TOKEN_MAP: Record<Network.ArbitrumOne, str
 
 export const PENDLE_PT_E_ETH_SEP_2024_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0xb8b0a120F6A68Dd06209619F62429fB1a8e92feC',
+};
+
+export const PENDLE_PT_E_ETH_DEC_2024_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0xE2B2D203577c7cb3D043E89cCf90b5E24d19b66f',
 };
 
 export const PENDLE_PT_EZ_ETH_JUN_2024_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
@@ -1047,6 +1059,10 @@ export const PENDLE_PT_RS_ETH_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
 
 export const PENDLE_PT_RS_ETH_SEP_2024_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x30c98c0139B62290E26aC2a2158AC341Dcaf1333',
+};
+
+export const PENDLE_PT_RS_ETH_DEC_2024_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x355ec27c9d4530dE01A103FA27F884a2F3dA65ef',
 };
 
 export const PENDLE_PT_USDE_DEC_2024_MAP: Record<Network.Mantle, string> = {
