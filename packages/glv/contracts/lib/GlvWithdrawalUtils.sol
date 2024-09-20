@@ -1,7 +1,13 @@
 // SPDX-License-Identifier: BUSL-1.1
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.9;
 
+
+/**
+ * @title   GlvWithdrawalUtils
+ *
+ * @notice  GlvWithdrawalUtils library from GMX
+ */
 library GlvWithdrawalUtils {
 
     struct CreateGlvWithdrawalParams {
@@ -18,32 +24,4 @@ library GlvWithdrawalUtils {
         uint256 executionFee;
         uint256 callbackGasLimit;
     }
-
-    // struct ExecuteGlvWithdrawalParams {
-    //     DataStore dataStore;
-    //     EventEmitter eventEmitter;
-    //     GlvVault glvVault;
-    //     Oracle oracle;
-    //     bytes32 key;
-    //     uint256 startingGas;
-    //     address keeper;
-    // }
-
-    // struct ExecuteGlvWithdrawalCache {
-    //     uint256 glvValue;
-    //     uint256 marketCount;
-    //     uint256 oraclePriceCount;
-    //     uint256 marketTokenAmount;
-    // }
-
-    // struct CancelGlvWithdrawalParams {
-    //     DataStore dataStore;
-    //     EventEmitter eventEmitter;
-    //     GlvVault glvVault;
-    //     bytes32 key;
-    //     address keeper;
-    //     uint256 startingGas;
-    //     string reason;
-    //     bytes reasonBytes;
-    // }
 }

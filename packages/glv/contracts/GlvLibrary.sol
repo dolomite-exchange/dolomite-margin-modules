@@ -21,7 +21,6 @@ pragma solidity ^0.8.9;
 
 // solhint-disable max-line-length
 import { IAsyncIsolationModeTraderBase } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IAsyncIsolationModeTraderBase.sol";
-import { IIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
 import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IUpgradeableAsyncIsolationModeUnwrapperTrader.sol"; // solhint-disable-line max-line-length
 import { IUpgradeableAsyncIsolationModeWrapperTrader } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IUpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable-line max-line-length
 import { DolomiteMarginVersionWrapperLib } from "@dolomite-exchange/modules-base/contracts/lib/DolomiteMarginVersionWrapperLib.sol";
@@ -217,25 +216,22 @@ library GlvLibrary {
             "minOutputAmount too small"
         );
         IUpgradeableAsyncIsolationModeUnwrapperTrader unwrapper = registry.getUnwrapperByToken(factory);
-        GlvWithdrawalUtils.CreateGlvWithdrawalParams memory withdrawalParams = GlvWithdrawalUtils.CreateGlvWithdrawalParams(
-            /* receiver = */ address(unwrapper),
-            /* callbackContract = */ address(unwrapper),
-            /* uiFeeReceiver = */ address(0),
-            /* market = */ swapPath[0],
-            /* glv = */ factory.UNDERLYING_TOKEN(),
-            /* longTokenSwapPath = */ outputToken == longToken ? new address[](0) : swapPath,
-            /* shortTokenSwapPath = */ outputToken != longToken ? new address[](0) : swapPath,
-            /* minLongTokenAmount = */ longToken == outputToken ? _minOutputAmount : minOtherTokenAmount,
-            /* minShortTokenAmount = */ longToken != outputToken ? _minOutputAmount : minOtherTokenAmount,
-            /* shouldUnwrapNativeToken = */ false,
-            /* executionFee = */ _ethExecutionFee,
-            /* callbackGasLimit = */ registry.callbackGasLimit()
-        );
+        GlvWithdrawalUtils.CreateGlvWithdrawalParams memory withdrawalParams = 
+            GlvWithdrawalUtils.CreateGlvWithdrawalParams(
+                /* receiver = */ address(unwrapper),
+                /* callbackContract = */ address(unwrapper),
+                /* uiFeeReceiver = */ address(0),
+                /* market = */ swapPath[0],
+                /* glv = */ factory.UNDERLYING_TOKEN(),
+                /* longTokenSwapPath = */ outputToken == longToken ? new address[](0) : swapPath,
+                /* shortTokenSwapPath = */ outputToken != longToken ? new address[](0) : swapPath,
+                /* minLongTokenAmount = */ longToken == outputToken ? _minOutputAmount : minOtherTokenAmount,
+                /* minShortTokenAmount = */ longToken != outputToken ? _minOutputAmount : minOtherTokenAmount,
+                /* shouldUnwrapNativeToken = */ false,
+                /* executionFee = */ _ethExecutionFee,
+                /* callbackGasLimit = */ registry.callbackGasLimit()
+            );
 
-        if (longToken == factory.SHORT_TOKEN()) {
-            withdrawalParams.longTokenSwapPath = new address[](0);
-            withdrawalParams.shortTokenSwapPath = new address[](0);
-        }
         return glvRouter.createGlvWithdrawal(withdrawalParams);
     }
 
@@ -337,7 +333,9 @@ library GlvLibrary {
         bool isShortPnlTooLarge = shortPnlToPoolFactor > int256(maxPnlForWithdrawalsShort);
         bool isLongPnlTooLarge = longPnlToPoolFactor > int256(maxPnlForWithdrawalsLong);
 
-        return isShortPnlTooLarge || isLongPnlTooLarge || _registry.callbackGasLimit() > dataStore.getUint(_MAX_CALLBACK_GAS_LIMIT_KEY);
+        return isShortPnlTooLarge
+            || isLongPnlTooLarge
+            || _registry.callbackGasLimit() > dataStore.getUint(_MAX_CALLBACK_GAS_LIMIT_KEY);
     }
 
     function validateEventDataForWithdrawal(
@@ -394,19 +392,6 @@ library GlvLibrary {
     // ==================================================================
     // ======================== Private Functions ======================
     // ==================================================================
-
-    function _depositAndApproveWethForWrapping(IGlvIsolationModeTokenVaultV1 _vault) private {
-        Require.that(
-            msg.value > 0,
-            _FILE,
-            "Invalid execution fee"
-        );
-        _vault.WETH().deposit{value: msg.value}();
-        IERC20(address(_vault.WETH())).safeApprove(
-            address(_vault.registry().getWrapperByToken(IIsolationModeVaultFactory(_vault.VAULT_FACTORY()))),
-            msg.value
-        );
-    }
 
     function _getGmxMarketPrices(
         uint256 _indexTokenPrice,

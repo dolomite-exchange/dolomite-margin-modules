@@ -135,6 +135,20 @@ describe('GlvIsolationModeVaultFactory', () => {
       expect(await factory.DOLOMITE_MARGIN()).to.equal(core.dolomiteMargin.address);
     });
 
+    it('should construct if skipLongToken is true', async () => {
+      await createGlvIsolationModeVaultFactory(
+        core,
+        gmxV2Library,
+        glvRegistry,
+        allowableMarketIds,
+        allowableMarketIds,
+        core.glvEcosystem!.glvTokens.wethUsdc,
+        vaultImplementation,
+        GMX_V2_EXECUTION_FEE_FOR_TESTS,
+        true
+      );
+    });
+
     it('should construct if allowable market IDs is in either order', async () => {
       await createGlvIsolationModeVaultFactory(
         core,

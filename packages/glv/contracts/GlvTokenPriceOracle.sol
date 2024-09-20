@@ -25,6 +25,7 @@ import { IDolomitePriceOracle } from "@dolomite-exchange/modules-base/contracts/
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IGmxDataStore } from "@dolomite-exchange/modules-gmx-v2/contracts/interfaces/IGmxDataStore.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IGlvIsolationModeVaultFactory } from "./interfaces/IGlvIsolationModeVaultFactory.sol";
 import { IGlvReader } from "./interfaces/IGlvReader.sol";
 import { IGlvRegistry } from "./interfaces/IGlvRegistry.sol";
@@ -46,28 +47,25 @@ contract GlvTokenPriceOracle is IGlvTokenPriceOracle, OnlyDolomiteMargin {
     /// @dev All of the GM tokens listed have, at-worst, 25 bp for the price deviation
     uint256 public constant PRICE_DEVIATION_BP = 25;
     uint256 public constant BASIS_POINTS = 10_000;
-    uint256 public constant SUPPLY_CAP_USAGE_NUMERATOR = 5;
-    uint256 public constant SUPPLY_CAP_USAGE_DENOMINATOR = 100;
     uint256 public constant GMX_DECIMAL_ADJUSTMENT = 10 ** 6;
     uint256 public constant RETURN_DECIMAL_ADJUSTMENT = 10 ** 12;
     uint256 public constant FEE_FACTOR_DECIMAL_ADJUSTMENT = 10 ** 26;
 
-    bytes32 public constant MAX_PNL_FACTOR_FOR_DEPOSITS_KEY = keccak256(abi.encode("MAX_PNL_FACTOR_FOR_DEPOSITS")); // solhint-disable-line max-line-length
     bytes32 public constant SWAP_FEE_FACTOR_KEY = keccak256(abi.encode("SWAP_FEE_FACTOR"));
-    bytes32 public constant SWAP_FEE_RECEIVER_FACTOR_KEY = keccak256(abi.encode("SWAP_FEE_RECEIVER_FACTOR"));
 
     // ============================ Public State Variables ============================
 
+    IERC20 immutable public DGLV_TOKEN; // solhint-disable-line var-name-mixedcase
     IGlvRegistry public immutable REGISTRY; // solhint-disable-line var-name-mixedcase
-
-    mapping(address => bool) public marketTokens;
 
     // ============================ Constructor ============================
 
     constructor(
+        address _dglvToken,
         address _glvRegistry,
         address _dolomiteMargin
     ) OnlyDolomiteMargin(_dolomiteMargin) {
+        DGLV_TOKEN = IERC20(_dglvToken);
         REGISTRY = IGlvRegistry(_glvRegistry);
     }
 
@@ -78,9 +76,15 @@ contract GlvTokenPriceOracle is IGlvTokenPriceOracle, OnlyDolomiteMargin {
     view
     returns (IDolomiteStructs.MonetaryPrice memory) {
         Require.that(
+            _token == address(DGLV_TOKEN),
+            _FILE,
+            "Invalid token",
+            _token
+        );
+        Require.that(
             DOLOMITE_MARGIN().getMarketIsClosing(DOLOMITE_MARGIN().getMarketIdByTokenAddress(_token)),
             _FILE,
-            "gmToken cannot be borrowable"
+            "glvToken cannot be borrowable"
         );
 
         return IDolomiteStructs.MonetaryPrice({
@@ -157,12 +161,7 @@ contract GlvTokenPriceOracle is IGlvTokenPriceOracle, OnlyDolomiteMargin {
             glvToken,
             /* _maximize = */ false
         );
-
-        Require.that(
-            value > 0,
-            _FILE,
-            "Invalid oracle response"
-        );
+        assert(value > 0);
 
         // GMX returns the price in 30 decimals. We convert to (36 - GM token decimals == 18) for Dolomite's system
         return uint256(value) / RETURN_DECIMAL_ADJUSTMENT;

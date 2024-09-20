@@ -126,6 +126,7 @@ export async function getGlvIsolationModeWrapperTraderV2ConstructorParams(
 
 export function getGlvTokenPriceOracleConstructorParams(
   core: CoreProtocolArbitrumOne,
+  factory: IGlvIsolationModeVaultFactory | GlvIsolationModeVaultFactory,
   glvRegistry: IGlvRegistry | GlvRegistry,
 ): any[] {
   if (!core.glvEcosystem || !core.gmxEcosystem) {
@@ -133,6 +134,7 @@ export function getGlvTokenPriceOracleConstructorParams(
   }
 
   return [
+    factory.address,
     glvRegistry.address,
     core.dolomiteMargin.address,
   ];

@@ -10,7 +10,6 @@ import {
   depositIntoDolomiteMargin,
 } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import {
-  MAX_INT_192_BI,
   MAX_UINT_256_BI,
   Network,
   ONE_BI,
@@ -36,6 +35,7 @@ import { parseEther } from 'ethers/lib/utils';
 import hardhat, { ethers } from 'hardhat';
 import {
   disableInterestAccrual,
+  getDefaultProtocolConfigForGlv,
   setupCoreProtocol,
   setupGLVBalance,
   setupTestMarket,
@@ -44,14 +44,11 @@ import {
 } from 'packages/base/test/utils/setup';
 import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import {
-  GlvIsolationModeTokenVaultV1,
-  GlvIsolationModeTokenVaultV1__factory,
   GlvIsolationModeUnwrapperTraderV2,
   GlvIsolationModeVaultFactory,
   GlvIsolationModeWrapperTraderV2,
   GlvRegistry,
   IGlvToken,
-  IGlvToken__factory,
   IGmxRoleStore__factory,
   TestGlvIsolationModeTokenVaultV1,
   TestGlvIsolationModeTokenVaultV1__factory,
@@ -81,11 +78,6 @@ const minAmountOut = parseEther('800');
 const DUMMY_DEPOSIT_KEY = '0x6d1ff6ffcab884211992a9d6b8261b7fae5db4d2da3a5eb58647988da3869d6f';
 // noinspection SpellCheckingInspection
 const DUMMY_WITHDRAWAL_KEY = '0x6d1ff6ffcab884211992a9d6b8261b7fae5db4d2da3a5eb58647988da3869d6f';
-const CREATE_WITHDRAWALS_DISABLED_KEY = '0xe22e21c60f32cfb79020e8dbf3211f7a678325f5d7195c979268c4db4a4a6fa1';
-const EXECUTE_WITHDRAWALS_DISABLED_KEY = '0xa5d5ec2aef29f70d602db4f2b395018c1a19c7f69e551e9943277b57770f0dd0';
-const IS_MARKET_DISABLED_KEY = '0x5c27e8a9fa01145fb01eb80b81db2eab7e57bc33d109d6a64315239a65ce4d36';
-const INVALID_POOL_FACTOR = BigNumber.from('1000000000000000000000000000000'); // 10e29
-const VALID_POOL_FACTOR = BigNumber.from('700000000000000000000000000000'); // 7e29
 const DEFAULT_EXTRA_DATA = ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [parseEther('.5'), ONE_BI]);
 
 const executionFee =
@@ -112,8 +104,6 @@ describe('GlvIsolationModeTokenVaultV1', () => {
   let marketId: BigNumber;
   let impersonatedFactory: SignerWithAddressWithSafety;
   let impersonatedVault: SignerWithAddressWithSafety;
-  let testReader: TestGmxReader;
-  let testDataStore: TestGmxDataStore;
   let eventEmitter: EventEmitterRegistry;
   let controller: SignerWithAddressWithSafety;
 
@@ -123,10 +113,7 @@ describe('GlvIsolationModeTokenVaultV1', () => {
   let otherMarketId2: BigNumber;
 
   before(async () => {
-    core = await setupCoreProtocol({
-      blockNumber: 252_102_600,
-      network: Network.ArbitrumOne
-    });
+    core = await setupCoreProtocol(getDefaultProtocolConfigForGlv());
     underlyingToken = core.glvEcosystem.glvTokens.wethUsdc.glvToken;
     gmMarketToken = core.gmxV2Ecosystem.gmTokens.ethUsd.marketToken;
     const glvLibrary = await createGlvLibrary();
@@ -150,8 +137,7 @@ describe('GlvIsolationModeTokenVaultV1', () => {
     unwrapper = await createGlvIsolationModeUnwrapperTraderV2(core, factory, glvLibrary, gmxV2Library, glvRegistry);
     wrapper = await createGlvIsolationModeWrapperTraderV2(core, factory, glvLibrary, gmxV2Library, glvRegistry);
 
-    // @todo Use actual price oracle later
-    await core.testEcosystem!.testPriceOracle.setPrice(factory.address, '1000000000000000000');
+    await core.testEcosystem!.testPriceOracle.setPrice(factory.address, ONE_ETH_BI);
     marketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, factory, true);
     await disableInterestAccrual(core, core.marketIds.weth);
@@ -205,9 +191,6 @@ describe('GlvIsolationModeTokenVaultV1', () => {
       TestGlvIsolationModeTokenVaultV1__factory,
       core.hhUser2,
     );
-
-    testDataStore = await createContractWithAbi(TestGmxDataStore__factory.abi, TestGmxDataStore__factory.bytecode, []);
-    testReader = await createContractWithAbi(TestGmxReader__factory.abi, TestGmxReader__factory.bytecode, []);
 
     await setupWETHBalance(core, core.hhUser1, amountWei, core.dolomiteMargin);
     await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, amountWei);
@@ -298,6 +281,27 @@ describe('GlvIsolationModeTokenVaultV1', () => {
       expect(eventArgs.withdrawal.outputToken).to.eq(core.tokens.weth.address);
       expect(eventArgs.withdrawal.outputAmount).to.eq(ONE_BI.add(ONE_BI));
       expect(eventArgs.withdrawal.isRetryable).to.eq(false);
+    });
+
+    it('should fail if invalid extra data', async () => {
+      await setupGLVBalance(core, underlyingToken, core.hhUser1, amountWei, vault);
+      await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await vault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei, { value: executionFee });
+      await expectProtocolBalance(core, vault.address, defaultAccountNumber, marketId, ZERO_BI);
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
+
+      const extraData = ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256', 'bytes'], [parseEther('.5'), ONE_BI, '0x01']);
+      await expectThrow(
+        vault.initiateUnwrapping(
+          borrowAccountNumber,
+          amountWei,
+          core.tokens.weth.address,
+          TWO_BI,
+          extraData,
+          { value: executionFee },
+        ),
+        'GlvLibrary: Invalid extra data',
+      );
     });
 
     it('should fail if amount is too small', async () => {
@@ -511,6 +515,29 @@ describe('GlvIsolationModeTokenVaultV1', () => {
   });
 
   describe('#initiateUnwrappingForLiquidation', () => {
+    it('should work normally', async () => {
+      await setupGLVBalance(core, underlyingToken, core.hhUser1, amountWei, vault);
+      await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await vault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei, { value: executionFee });
+      await vault.transferFromPositionWithOtherToken(
+        borrowAccountNumber,
+        defaultAccountNumber,
+        core.marketIds.nativeUsdc,
+        BigNumber.from('500000'), // $.50
+        BalanceCheckFlag.None
+      );
+
+      await glvRegistry.connect(core.governance).ownerSetIsHandler(core.hhUser5.address, true);
+      await vault.connect(core.hhUser5).initiateUnwrappingForLiquidation(
+        borrowAccountNumber,
+        amountWei,
+        core.tokens.nativeUsdc.address,
+        parseEther('.0000000000001'),
+        DEFAULT_EXTRA_DATA,
+        { value: executionFee },
+      );
+    });
+
     it('should fail if sender is not a valid liquidator', async () => {
       await expectThrow(
         vault.initiateUnwrappingForLiquidation(
@@ -800,6 +827,66 @@ describe('GlvIsolationModeTokenVaultV1', () => {
         vault.executeWithdrawalFromVault(core.hhUser1.address, ONE_BI),
         `IsolationModeTokenVaultV1: Only factory can call <${core.hhUser1.address.toLowerCase()}>`,
       );
+    });
+  });
+
+  describe('#openMarginPosition', () => {
+    const borrowMarketId = 2;
+
+    it('should work normally', async () => {
+      await setupGLVBalance(core, underlyingToken, core.hhUser1, amountWei, vault);
+      await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await vault.openMarginPosition(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        borrowMarketId,
+        amountWei,
+        { value: executionFee }
+      );
+
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, marketId, ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, marketId, ZERO_BI);
+      await expectProtocolBalance(core, vault, defaultAccountNumber, marketId, ZERO_BI);
+      await expectProtocolBalance(core, vault, borrowAccountNumber, marketId, amountWei);
+      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(executionFee);
+    });
+
+    it('should fail if execution fee does not match', async () => {
+      await expectThrow(
+        vault.openMarginPosition(
+          defaultAccountNumber,
+          borrowAccountNumber,
+          borrowMarketId,
+          amountWei.div(2),
+          { value: executionFee.add(1) }
+        ),
+        'GmxV2Library: Invalid execution fee',
+      );
+      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(0);
+    });
+
+    it('should fail if execution fee already paid', async () => {
+      await setupGLVBalance(core, underlyingToken, core.hhUser1, amountWei, vault);
+      await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await vault.openMarginPosition(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        borrowMarketId,
+        amountWei,
+        { value: executionFee }
+      );
+      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(executionFee);
+
+      await expectThrow(vault.openMarginPosition(
+          defaultAccountNumber,
+          borrowAccountNumber,
+          borrowMarketId,
+          amountWei,
+          { value: executionFee }
+        ),
+        'GmxV2Library: Execution fee already paid',
+      );
+      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(executionFee);
     });
   });
 

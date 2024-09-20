@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.9;
 
 import { IGmxDataStore } from "@dolomite-exchange/modules-gmx-v2/contracts/interfaces/IGmxDataStore.sol";
 import { Glv } from "../lib/Glv.sol";
@@ -10,6 +10,11 @@ import { GlvShift } from "../lib/GlvShift.sol";
 import { GlvWithdrawal } from "../lib/GlvWithdrawal.sol";
 
 
+/**
+ * @title   IGlvReader
+ *
+ * @notice  IGlvReader library from GMX
+ */
 interface IGlvReader {
 
     struct GlvInfo {
@@ -45,7 +50,11 @@ interface IGlvReader {
 
     function getGlvs(IGmxDataStore dataStore, uint256 start, uint256 end) external view returns (Glv.Props[] memory);
 
-    function getGlvInfoList(IGmxDataStore dataStore, uint256 start, uint256 end) external view returns (GlvInfo[] memory);
+    function getGlvInfoList(
+        IGmxDataStore dataStore,
+        uint256 start,
+        uint256 end
+    ) external view returns (GlvInfo[] memory);
 
     function getGlvDeposit(IGmxDataStore dataStore, bytes32 key) external view returns (GlvDeposit.Props memory);
 

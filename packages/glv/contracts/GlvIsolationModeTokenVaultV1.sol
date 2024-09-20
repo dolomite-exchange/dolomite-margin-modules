@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 /*
 
-    Copyright 2023 Dolomite
+    Copyright 2024 Dolomite
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -184,7 +184,7 @@ contract GlvIsolationModeTokenVaultV1 is
         override
     {
         _tradersPath = GmxV2Library.vaultValidateExecutionFeeIfWrapToUnderlying(
-            /* _vault = */ IGmxV2IsolationModeTokenVaultV1(address(this)),
+            /* _vault = */ IGmxV2IsolationModeTokenVaultV1(address(this)), // @follow-up Is this ok to do?
             _borrowAccountNumber,
             _tradersPath
         );

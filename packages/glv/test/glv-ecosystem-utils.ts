@@ -310,12 +310,13 @@ export async function createGlvIsolationModeWrapperTraderV2(
 
 export async function createGlvTokenPriceOracle(
   core: CoreProtocolArbitrumOne,
+  factory: IGlvIsolationModeVaultFactory | GlvIsolationModeVaultFactory,
   glvRegistry: IGlvRegistry | GlvRegistry,
 ): Promise<GlvTokenPriceOracle> {
   return createContractWithAbi(
     GlvTokenPriceOracle__factory.abi,
     GlvTokenPriceOracle__factory.bytecode,
-    getGlvTokenPriceOracleConstructorParams(core, glvRegistry),
+    getGlvTokenPriceOracleConstructorParams(core, factory, glvRegistry),
   );
 }
 
@@ -667,4 +668,96 @@ export function getKey(key: string, types: string[], values: any[]): string {
       [stringBytes, ...values]
     )
   );
+}
+
+export async function setupNewOracleAggregatorTokens(core: CoreProtocolArbitrumOne) {
+  await core.chainlinkPriceOracleV3.ownerInsertOrUpdateOracleToken(
+    '0x7D7F1765aCbaF847b9A1f7137FE8Ed4931FbfEbA', // ATOM - good
+    '0xCDA67618e51762235eacA373894F0C79256768fa',
+    false
+  );
+  await core.oracleAggregatorV2.ownerInsertOrUpdateToken({
+    oracleInfos: [{
+      oracle: core.chainlinkPriceOracleV3.address,
+      tokenPair: ADDRESS_ZERO,
+      weight: 100
+    }],
+    token: '0x7D7F1765aCbaF847b9A1f7137FE8Ed4931FbfEbA',
+    decimals: 6
+  });
+
+  await core.chainlinkPriceOracleV3.ownerInsertOrUpdateOracleToken(
+    '0xC4da4c24fd591125c3F47b340b6f4f76111883d8', // DOGE - good
+    '0x9A7FB1b3950837a8D9b40517626E11D4127C098C',
+    false
+  );
+  await core.oracleAggregatorV2.ownerInsertOrUpdateToken({
+    oracleInfos: [{
+      oracle: core.chainlinkPriceOracleV3.address,
+      tokenPair: ADDRESS_ZERO,
+      weight: 100
+    }],
+    token: '0xC4da4c24fd591125c3F47b340b6f4f76111883d8',
+    decimals: 8
+  });
+
+  await core.chainlinkPriceOracleV3.ownerInsertOrUpdateOracleToken(
+    '0x1FF7F3EFBb9481Cbd7db4F932cBCD4467144237C', // NEAR - good
+    '0xBF5C3fB2633e924598A46B9D07a174a9DBcF57C0',
+    false
+  );
+  await core.oracleAggregatorV2.ownerInsertOrUpdateToken({
+    oracleInfos: [{
+      oracle: core.chainlinkPriceOracleV3.address,
+      tokenPair: ADDRESS_ZERO,
+      weight: 100
+    }],
+    token: '0x1FF7F3EFBb9481Cbd7db4F932cBCD4467144237C',
+    decimals: 24
+  });
+
+  await core.chainlinkPriceOracleV3.ownerInsertOrUpdateOracleToken(
+    '0xc14e065b0067dE91534e032868f5Ac6ecf2c6868', // XRP
+    '0xB4AD57B52aB9141de9926a3e0C8dc6264c2ef205',
+    false
+  );
+  await core.oracleAggregatorV2.ownerInsertOrUpdateToken({
+    oracleInfos: [{
+      oracle: core.chainlinkPriceOracleV3.address,
+      tokenPair: ADDRESS_ZERO,
+      weight: 100
+    }],
+    token: '0xc14e065b0067dE91534e032868f5Ac6ecf2c6868',
+    decimals: 6
+  });
+
+  await core.chainlinkPriceOracleV3.ownerInsertOrUpdateOracleToken(
+    '0xB46A094Bc4B0adBD801E14b9DB95e05E28962764', // LTC
+    '0x5698690a7B7B84F6aa985ef7690A8A7288FBc9c8',
+    false
+  );
+  await core.oracleAggregatorV2.ownerInsertOrUpdateToken({
+    oracleInfos: [{
+      oracle: core.chainlinkPriceOracleV3.address,
+      tokenPair: ADDRESS_ZERO,
+      weight: 100
+    }],
+    token: '0xB46A094Bc4B0adBD801E14b9DB95e05E28962764',
+    decimals: 8
+  });
+
+  // await core.chainlinkPriceOracleV3.ownerInsertOrUpdateOracleToken(
+  //   '0x3E57D02f9d196873e55727382974b02EdebE6bfd', // SHIB
+  //   '',
+  //   false
+  // );
+  // await core.oracleAggregatorV2.ownerInsertOrUpdateToken({
+  //   oracleInfos: [{
+  //     oracle: core.chainlinkPriceOracleV3.address,
+  //     tokenPair: ADDRESS_ZERO,
+  //     weight: 100
+  //   }],
+  //   token: '0x3E57D02f9d196873e55727382974b02EdebE6bfd',
+  //   decimals: 24
+  // });
 }

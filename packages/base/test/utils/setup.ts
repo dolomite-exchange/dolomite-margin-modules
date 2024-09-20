@@ -524,6 +524,15 @@ function getCoreProtocolConfig<T extends NetworkType>(network: T, blockNumber: n
   throw new Error(`Invalid network, found: ${network}`);
 }
 
+export function getDefaultProtocolConfigForGlv(): CoreProtocolConfig<Network.ArbitrumOne> {
+  return {
+    network: Network.ArbitrumOne,
+    networkNumber: parseInt(Network.ArbitrumOne, 10),
+    blockNumber: 252_102_600,
+    arbitrumOne: true,
+  };
+}
+
 export function getDefaultCoreProtocolConfigForGmxV2(): CoreProtocolConfig<Network.ArbitrumOne> {
   return {
     network: Network.ArbitrumOne,

@@ -23,6 +23,7 @@ pragma solidity ^0.8.9;
 import { IDolomitePriceOracle } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomitePriceOracle.sol"; // solhint-disable-line max-line-length
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol"; // solhint-disable-line max-line-length
 
+import "hardhat/console.sol";
 
 /**
  * @title   TestOracleProvider
@@ -34,6 +35,7 @@ contract TestOracleProvider {
 
     bytes32 private constant _FILE = "TestOracleProvider";
     IDolomitePriceOracle public immutable ORACLE_AGGREGATOR;
+    uint256 public constant GMX_DECIMAL_ADJUSTMENT = 10 ** 6;
 
     struct ValidatedPrice {
         address token;
@@ -49,7 +51,7 @@ contract TestOracleProvider {
 
     function getOraclePrice(address _token, bytes memory /* _data */) external view returns (ValidatedPrice memory) {
         try ORACLE_AGGREGATOR.getPrice(_token) returns (IDolomiteStructs.MonetaryPrice memory price) {
-            uint256 priceUint = price.value / 10 ** 6;
+            uint256 priceUint = price.value / GMX_DECIMAL_ADJUSTMENT;
 
             return ValidatedPrice({
                 token: _token,
@@ -59,10 +61,12 @@ contract TestOracleProvider {
                 provider: address(this)
             });
         } catch {
+            // Should only be here for SHIB
+            uint256 price = 13937067;
             return ValidatedPrice({
                 token: _token,
-                min: 1 ether,
-                max: 1 ether,
+                min: price,
+                max: price,
                 timestamp: block.timestamp,
                 provider: address(this)
             });
