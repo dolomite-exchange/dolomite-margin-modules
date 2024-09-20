@@ -60,7 +60,7 @@ async function main() {
     core,
     'dolomiteMargin',
     'ownerSetPriceOracle',
-    [core.marketIds.magicGlp!, Deployments.MagicGLPWithChainlinkAutomationPriceOracle[network].address],
+    [core.marketIds.magicGlp!, Deployments.MagicGLPWithChainlinkAutomationPriceOracleV1[network].address],
   );
   await prettyPrintEncodedDataWithTypeSafety(
     core,

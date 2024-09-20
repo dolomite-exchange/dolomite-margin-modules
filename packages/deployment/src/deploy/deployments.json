@@ -2873,10 +2873,17 @@
       "isVerified": true
     }
   },
-  "MagicGLPWithChainlinkAutomationPriceOracle": {
+  "MagicGLPWithChainlinkAutomationPriceOracleV1": {
     "42161": {
       "address": "0x9a4b632B11471C2afE92b0ecA4024cd4a20E41AA",
       "transaction": "0x9872aef696d2c94d1d9f1f5293b27373c3b155c757b6187d9da44c0bdbc6470c",
+      "isVerified": true
+    }
+  },
+  "MagicGLPWithChainlinkAutomationPriceOracleV2": {
+    "42161": {
+      "address": "0xC8ac8d2A7FbB0eb00E87B8ABc897488FE95C0C82",
+      "transaction": "0xa974b1c5ab25152e561325e0e82acb800760b85f1ae53ea09216bf19cfe0eb4d",
       "isVerified": true
     }
   },

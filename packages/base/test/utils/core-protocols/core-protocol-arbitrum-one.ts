@@ -64,6 +64,7 @@ interface CoreProtocolTokensArbitrumOne extends CoreProtocolTokens<Network.Arbit
   grail: IERC20;
   jones: IERC20;
   link: IERC20;
+  mGlp: IERC20;
   magic: IERC20;
   mim: IERC20;
   nativeUsdc: IERC20;

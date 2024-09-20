@@ -319,6 +319,13 @@ export const EZ_ETH_REVERSED_MAP: Record<Network.ArbitrumOne, TokenWithMarketId>
   },
 };
 
+export const FBTC_MAP: Record<Network.Mantle, TokenWithMarketId> = {
+  [Network.Mantle]: {
+    address: '0xC96dE26018A54D51c097160568752c4E3BD6C364',
+    marketId: 13,
+  },
+};
+
 export const FRAX_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F',
@@ -401,6 +408,13 @@ export const MIM_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0xFEa7a6a0B346362BF88A9e4A88416B77a57D6c2A',
     marketId: 13,
+  },
+};
+
+export const METH_MAP: Record<Network.Mantle, TokenWithMarketId> = {
+  [Network.Mantle]: {
+    address: '0xcDA86A272531e8640cD7F1a92c01839911B90bb0',
+    marketId: 5,
   },
 };
 
@@ -583,13 +597,6 @@ export const WBTC_MAP: Record<EverythingButBase, TokenWithMarketId> = {
   [Network.XLayer]: {
     address: '0xEA034fb02eB1808C2cc3adbC15f447B93CbE08e1',
     marketId: 3,
-  },
-};
-
-export const METH_MAP: Record<Network.Mantle, TokenWithMarketId> = {
-  [Network.Mantle]: {
-    address: '0xcDA86A272531e8640cD7F1a92c01839911B90bb0',
-    marketId: 5,
   },
 };
 
@@ -1480,6 +1487,10 @@ export const CHRONICLE_PRICE_SCRIBES_MAP: Record<
     },
   },
   [Network.Mantle]: {
+    [FBTC_MAP[Network.Mantle].address]: {
+      scribeAddress: '0x3bE46d64aAf6Bd88D5d445D83821805F7e393DDf',
+      tokenPairAddress: WBTC_MAP[Network.Mantle].address,
+    },
     [METH_MAP[Network.Mantle].address]: {
       scribeAddress: '0xBFE568Ea8f6bDFFe7c03F83dC8348517f8E7010A',
       tokenPairAddress: WETH_MAP[Network.Mantle].address,

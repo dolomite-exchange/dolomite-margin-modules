@@ -91,7 +91,7 @@ import {
   DYT_GLP_2024_MAP,
   E_ETH_MAP,
   EZ_ETH_MAP,
-  EZ_ETH_REVERSED_MAP,
+  EZ_ETH_REVERSED_MAP, FBTC_MAP,
   FRAX_MAP,
   GMX_BTC_PLACEHOLDER_MAP,
   GMX_MAP,
@@ -916,6 +916,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
         grail: IERC20__factory.connect(GRAIL_MAP[typedConfig.network].address, hhUser1),
         jones: IERC20__factory.connect(JONES_MAP[typedConfig.network].address, hhUser1),
         link: IERC20__factory.connect(LINK_MAP[typedConfig.network]!.address, hhUser1),
+        mGlp: IERC20__factory.connect(MAGIC_GLP_MAP[typedConfig.network].address, hhUser1),
         magic: IERC20__factory.connect(MAGIC_MAP[typedConfig.network].address, hhUser1),
         mim: IERC20__factory.connect(MIM_MAP[typedConfig.network].address, hhUser1),
         nativeUsdc: IERC20__factory.connect(NATIVE_USDC_MAP[typedConfig.network].address, hhUser1),
@@ -1012,6 +1013,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
       ),
       marketIds: {
         ...coreProtocolParams.marketIds,
+        fbtc: FBTC_MAP[typedConfig.network].marketId,
         meth: METH_MAP[typedConfig.network].marketId,
         usdt: USDT_MAP[typedConfig.network].marketId,
         usdy: USDY_MAP[typedConfig.network].marketId,
@@ -1033,6 +1035,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
       redstonePriceOracleV3: redstonePriceOracle,
       tokens: {
         ...coreProtocolParams.tokens,
+        fbtc: IERC20__factory.connect(FBTC_MAP[typedConfig.network].address, hhUser1),
         meth: IERC20__factory.connect(METH_MAP[typedConfig.network].address, hhUser1),
         usde: IERC20__factory.connect(USDE_MAP[typedConfig.network].address, hhUser1),
         usdt: IERC20__factory.connect(USDT_MAP[typedConfig.network].address, hhUser1),
