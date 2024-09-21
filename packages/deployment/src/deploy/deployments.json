@@ -4697,6 +4697,13 @@
       "isVerified": true
     }
   },
+  "VesterImplementationV4": {
+    "42161": {
+      "address": "0xdb3e6B1c71aA66BbcEA9D662cBC0138Be58172A5",
+      "transaction": "0x3597db3e3af3bb8eb292a22b3fcc02718e872221c94137f32dec87e91e5e6a82",
+      "isVerified": true
+    }
+  },
   "VesterProxy": {
     "42161": {
       "address": "0x531BC6E97b65adF8B3683240bd594932Cfb63797",
