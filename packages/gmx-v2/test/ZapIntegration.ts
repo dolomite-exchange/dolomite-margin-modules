@@ -108,7 +108,7 @@ if (process.env.COVERAGE !== 'true') {
       wrapper = core.gmxV2Ecosystem.live.gmEthUsd.wrapper;
 
       // Use actual price oracle later
-      marketId = BigNumber.from(core.marketIds.dGmEth);
+      marketId = BigNumber.from(core.marketIds.dGmEthUsd);
       await disableInterestAccrual(core, core.marketIds.weth);
       await disableInterestAccrual(core, core.marketIds.nativeUsdc!);
 
