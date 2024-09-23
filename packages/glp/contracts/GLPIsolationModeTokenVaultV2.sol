@@ -159,31 +159,42 @@ contract GLPIsolationModeTokenVaultV2 is
     function signalAccountTransfer(
         uint256 _glpBalance
     ) external onlyGmxVault(msg.sender) {
+        // TODO: try extracting this code into a GMXAccountTransferLib with a public function. The bytecode for
+        // TODO:    AccountTransferReceiver is being forced into this contract making it too large
         Require.that(
             !hasAccountTransferredOut(),
             _FILE,
             "Cannot transfer more than once"
         );
+        _setUint256(_HAS_ACCOUNT_TRANSFERRED_OUT_SLOT, 1);
+
         if (_glpBalance > 0) {
+            // Do a fake withdrawal to clear out the Dolomite Balance
             _setShouldSkipTransfer(true);
             _withdrawFromVaultForDolomiteMargin(_DEFAULT_ACCOUNT_NUMBER, _glpBalance);
             assert(!shouldSkipTransfer());
         }
 
-        // @follow-up Approvals, overkill or is this good?
         address receiver = getAccountTransferOutReceiverAddress();
         gmx().safeApprove(address(sGmx()), type(uint256).max);
         IERC20(sbfGmx()).safeApprove(receiver, type(uint256).max);
         gmxRewardsRouter().signalTransfer(receiver);
-        _setUint256(_HAS_ACCOUNT_TRANSFERRED_OUT_SLOT, 1);
 
-        bytes32 salt = keccak256(abi.encode(OWNER()));
-        new AccountTransferReceiver{ salt: salt }(
-            address(this),
-            OWNER(),
-            address(registry())
-        );
+        address owner = OWNER();
+        bytes32 salt = keccak256(abi.encode(owner));
+        {
+            // New scope for "stack too deep" errors
+            AccountTransferReceiver actualReceiver = new AccountTransferReceiver{ salt: salt }(
+                address(this),
+                owner,
+                address(registry())
+            );
+            assert(receiver == address(actualReceiver));
+            // TODO: make sure the account transfer went through
+            assert(gmxRewardsRouter().pendingReceivers(address(this)) == address(0));
+        }
 
+        // Reset the approvals
         gmx().safeApprove(address(sGmx()), 0);
         IERC20(sbfGmx()).safeApprove(receiver, 0);
     }
@@ -202,7 +213,7 @@ contract GLPIsolationModeTokenVaultV2 is
             "Invalid sender"
         );
         Require.that(
-            !hasAccountTransferredOut() 
+            !hasAccountTransferredOut()
             && !hasAcceptedFullAccountTransfer()
             && underlyingBalanceOf() == 0
             && gmxBalanceOf() == 0,
@@ -387,7 +398,8 @@ contract GLPIsolationModeTokenVaultV2 is
     }
 
     function getAccountTransferOutReceiverAddress() public view returns (address) {
-        bytes32 salt = keccak256(abi.encode(OWNER()));
+        address owner = OWNER();
+        bytes32 salt = keccak256(abi.encode(owner));
         bytes32 deploymentHash = keccak256(abi.encodePacked(
             bytes1(0xff),
             address(this),
@@ -396,7 +408,7 @@ contract GLPIsolationModeTokenVaultV2 is
                 type(AccountTransferReceiver).creationCode,
                 abi.encode(
                     address(this),
-                    OWNER(),
+                    owner,
                     address(registry())
                 )
             ))

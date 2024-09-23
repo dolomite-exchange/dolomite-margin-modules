@@ -153,9 +153,9 @@ export async function isIsolationMode(marketId: BigNumberish, core: CoreProtocol
 }
 
 export async function freezeAndGetOraclePrice(core: CoreProtocolType<any>, token: IERC20): Promise<BigNumber> {
-    const marketId = await core.dolomiteMargin.getMarketIdByTokenAddress(token.address);
-    const price = await core.dolomiteMargin.getMarketPrice(marketId);
-    await core.testEcosystem!.testPriceOracle.setPrice(token.address, price.value);
-    await core.dolomiteMargin.ownerSetPriceOracle(marketId, core.testEcosystem!.testPriceOracle.address);
-    return price.value;
+  const marketId = await core.dolomiteMargin.getMarketIdByTokenAddress(token.address);
+  const price = await core.dolomiteMargin.getMarketPrice(marketId);
+  await core.testEcosystem!.testPriceOracle.setPrice(token.address, price.value);
+  await core.dolomiteMargin.ownerSetPriceOracle(marketId, core.testEcosystem!.testPriceOracle.address);
+  return price.value;
 }

@@ -291,6 +291,7 @@ contract GMXIsolationModeTokenVaultV1 is
         }
 
         if (_gmxValue > 0) {
+            // Do a fake withdrawal to clear out the Dolomite Balance
             _setShouldSkipTransfer(true);
             _withdrawFromVaultForDolomiteMargin(_DEFAULT_ACCOUNT_NUMBER, _gmxValue);
             assert(!shouldSkipTransfer());

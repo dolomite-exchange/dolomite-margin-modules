@@ -41,9 +41,9 @@ contract AccountTransferReceiver is IAccountTransferReceiver {
 
     bytes32 private constant _FILE = "AccountTransferReceiver";
 
-    address public immutable vault;
-    address public immutable owner;
-    IGmxRegistryV1 public immutable registry;
+    address public immutable VAULT;
+    address public immutable OWNER;
+    IGmxRegistryV1 public immutable REGISTRY;
 
     // ==================================================================
     // =========================== Modifiers ============================
@@ -51,7 +51,7 @@ contract AccountTransferReceiver is IAccountTransferReceiver {
 
     modifier onlyOwner() {
         Require.that(
-            msg.sender == owner,
+            msg.sender == OWNER,
             _FILE,
             "Caller must be owner"
         );
@@ -67,11 +67,11 @@ contract AccountTransferReceiver is IAccountTransferReceiver {
         address _owner,
         address _registry
     ) {
-        vault = _vault;
-        owner = _owner;
-        registry = IGmxRegistryV1(_registry);
+        VAULT = _vault;
+        OWNER = _owner;
+        REGISTRY = IGmxRegistryV1(_registry);
 
-        registry.gmxRewardsRouter().acceptTransfer(_vault);
+        REGISTRY.gmxRewardsRouter().acceptTransfer(_vault);
     }
 
     // ==================================================================
@@ -80,15 +80,15 @@ contract AccountTransferReceiver is IAccountTransferReceiver {
 
     function signalAccountTransfer(address _receiver) external onlyOwner {
         Require.that(
-            _receiver != vault,
+            _receiver != VAULT,
             _FILE,
             "Receiver cannot be vault"
         );
 
-        ISignalAccountTransferImplementation impl = registry.signalAccountTransferImpl();
+        ISignalAccountTransferImplementation impl = REGISTRY.signalAccountTransferImpl();
         Address.functionDelegateCall(
             address(impl),
-            abi.encodeWithSelector(impl.signalAccountTransfer.selector, _receiver, registry),
+            abi.encodeWithSelector(impl.signalAccountTransfer.selector, _receiver),
             "AccountTransferReceiver: Signal account transfer failed"
         );
 

@@ -20,7 +20,6 @@
 
 pragma solidity ^0.8.9;
 
-import { IGmxRegistryV1 } from "./IGmxRegistryV1.sol";
 
 
 /**
@@ -32,5 +31,5 @@ import { IGmxRegistryV1 } from "./IGmxRegistryV1.sol";
 interface ISignalAccountTransferImplementation {
 
 
-    function signalAccountTransfer(address _receiver, IGmxRegistryV1 _registry) external;
+    function signalAccountTransfer(address _receiver) external;
 }

@@ -20,7 +20,10 @@
 
 pragma solidity ^0.8.9;
 
+import { ProxyContractHelpers } from "@dolomite-exchange/modules-base/contracts/helpers/ProxyContractHelpers.sol";
+import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IGmxRegistryV1 } from "./interfaces/IGmxRegistryV1.sol";
 import { ISignalAccountTransferImplementation } from "./interfaces/ISignalAccountTransferImplementation.sol";
 
@@ -31,22 +34,41 @@ import { ISignalAccountTransferImplementation } from "./interfaces/ISignalAccoun
  *
  * @notice  Implementation contract to signal account transfers on GMX
  */
-contract SignalAccountTransferImplementation is ISignalAccountTransferImplementation {
+contract SignalAccountTransferImplementation is ISignalAccountTransferImplementation, ProxyContractHelpers {
+    using SafeERC20 for IERC20;
 
     // ==================================================================
     // =========================== Constants ============================
     // ==================================================================
 
     bytes32 private constant _FILE = "SignalAccountTransferImpl";
+    bytes32 private constant _IS_IMPL_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isImpl")) - 1);
+
+    IGmxRegistryV1 public immutable REGISTRY;
 
     // ==================================================================
     // =========================== Public Functions =====================
     // ==================================================================
 
-    function signalAccountTransfer(address _receiver, IGmxRegistryV1 _registry) external {
-        // @follow-up Do we want to use safe approve? Normal approve seems fine in this case
-        _registry.gmx().approve(address(_registry.sGmx()), type(uint256).max);
-        IERC20(_registry.sbfGmx()).approve(_receiver, type(uint256).max);
-        _registry.gmxRewardsRouter().signalTransfer(_receiver);
+    constructor(IGmxRegistryV1 _registry) {
+        REGISTRY = _registry;
+        _setUint256(_IS_IMPL_SLOT, 1);
+    }
+
+    // ==================================================================
+    // =========================== Public Functions =====================
+    // ==================================================================
+
+    function signalAccountTransfer(address _receiver) external {
+        Require.that(
+            _getUint256(_IS_IMPL_SLOT) == 0,
+            _FILE,
+            "Only usable via delegate call"
+        );
+
+
+        REGISTRY.gmx().safeApprove(address(REGISTRY.sGmx()), type(uint256).max);
+        IERC20(REGISTRY.sbfGmx()).safeApprove(_receiver, type(uint256).max);
+        REGISTRY.gmxRewardsRouter().signalTransfer(_receiver);
     }
 }
