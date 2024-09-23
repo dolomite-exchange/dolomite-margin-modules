@@ -675,7 +675,7 @@ contract ExternalVesterImplementationV1 is
         uint256 _amount
     ) internal {
         if (_fromAccountNumber == _DEFAULT_ACCOUNT_NUMBER && _marketId == REWARD_MARKET_ID) {
-            _setPushedTokens(pushedTokens() - _amount);
+            _setPushedTokens(_amount == type(uint256).max ? 0 : pushedTokens() - _amount);
         }
 
         IDolomiteStructs.AssetAmount memory assetAmount;

@@ -64,6 +64,7 @@ import {
   VotingEscrow__factory,
 } from '../src/types';
 import { CustomTestToken } from 'packages/base/src/types';
+import { createSafeDelegateLibrary } from 'packages/base/test/utils/ecosystem-utils/general';
 
 export async function createTestVesterV1Proxy(
   core: CoreProtocolArbitrumOne,
@@ -76,7 +77,7 @@ export async function createTestVesterV1Proxy(
     getVesterImplementationConstructorParams(core, core.tokens.arb),
   );
 
-  const bytes = ethers.utils.defaultAbiCoder.encode(['address', 'string'], [oARB.address, baseUri]);
+  const bytes = ethers.utils.defaultAbiCoder.encode(['address', 'string', 'string', 'string'], [oARB.address, baseUri, "oARB", "OARB"]);
   const calldata = await implementation.populateTransaction.initialize(bytes);
 
   const vesterProxy = await createContractWithAbi<UpgradeableProxy>(
@@ -97,15 +98,16 @@ export async function createTestVesterV2Proxy(
     VesterImplementationLibForV2__factory.bytecode,
     [],
   );
+  const safeDelegateCallLib = await createSafeDelegateLibrary();
   const implementation = await createContractWithLibrary<TestVesterImplementationV2>(
     'TestVesterImplementationV2',
-    { VesterImplementationLibForV2: library.address },
+    { VesterImplementationLibForV2: library.address , SafeDelegateCallLib: safeDelegateCallLib.address },
     getVesterImplementationConstructorParams(core, core.tokens.arb),
   );
 
   const bytes = ethers.utils.defaultAbiCoder.encode(
-    ['address', 'address'],
-    [handler.address, core.liquidityMiningEcosystem.oARB.oArb.address],
+    ['address'],
+    [handler.address],
   );
   const calldata = await implementation.populateTransaction.initialize(bytes);
 

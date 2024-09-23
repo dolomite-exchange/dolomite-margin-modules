@@ -108,7 +108,7 @@ describe('VotingEscrow integration tests', () => {
       network: Network.ArbitrumOne,
       blockNumber: 219_404_000,
     });
-    testToken = await createTestToken(6);
+    testToken = await createTestToken();
 
     pairToken = testToken;
     paymentToken = core.tokens.weth;

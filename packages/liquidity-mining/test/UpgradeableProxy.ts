@@ -19,6 +19,8 @@ import {
   UpgradeableProxy,
   UpgradeableProxy__factory,
 } from '../src/types';
+import { createSafeDelegateLibrary } from 'packages/base/test/utils/ecosystem-utils/general';
+import { BaseContract } from 'ethers';
 
 describe('UpgradeableProxy', () => {
   let snapshotId: string;
@@ -27,12 +29,14 @@ describe('UpgradeableProxy', () => {
   let implementation: TestVesterImplementationV2;
   let oARB: OARB;
   let library: VesterImplementationLibForV2;
+  let safeDelegateCallLib: BaseContract;
 
   let proxy: UpgradeableProxy;
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     oARB = await createContractWithAbi<OARB>(OARB__factory.abi, OARB__factory.bytecode, [core.dolomiteMargin.address]);
+    safeDelegateCallLib = await createSafeDelegateLibrary();
 
     library = await createContractWithAbi<VesterImplementationLibForV2>(
       VesterImplementationLibForV2__factory.abi,
@@ -41,7 +45,7 @@ describe('UpgradeableProxy', () => {
     );
     implementation = await createContractWithLibrary<TestVesterImplementationV2>(
       'TestVesterImplementationV2',
-      { VesterImplementationLibForV2: library.address },
+      { VesterImplementationLibForV2: library.address , SafeDelegateCallLib: safeDelegateCallLib.address },
       [
         core.dolomiteMargin.address,
         core.dolomiteRegistry.address,
@@ -78,7 +82,7 @@ describe('UpgradeableProxy', () => {
     it('should work normally', async () => {
       const newImplementation = await createContractWithLibrary<TestVesterImplementationV2>(
         'TestVesterImplementationV2',
-        { VesterImplementationLibForV2: library.address },
+        { VesterImplementationLibForV2: library.address , SafeDelegateCallLib: safeDelegateCallLib.address },
         [
           core.dolomiteMargin.address,
           core.dolomiteRegistry.address,
@@ -114,7 +118,7 @@ describe('UpgradeableProxy', () => {
     it('should work normally', async () => {
       const newImplementation = await createContractWithLibrary<TestVesterImplementationV2>(
         'TestVesterImplementationV2',
-        { VesterImplementationLibForV2: library.address },
+        { VesterImplementationLibForV2: library.address , SafeDelegateCallLib: safeDelegateCallLib.address },
         [
           core.dolomiteMargin.address,
           core.dolomiteRegistry.address,
@@ -153,7 +157,7 @@ describe('UpgradeableProxy', () => {
     it('should fail when call to the new implementation fails', async () => {
       const newImplementation = await createContractWithLibrary<TestVesterImplementationV2>(
         'TestVesterImplementationV2',
-        { VesterImplementationLibForV2: library.address },
+        { VesterImplementationLibForV2: library.address , SafeDelegateCallLib: safeDelegateCallLib.address },
         [
           core.dolomiteMargin.address,
           core.dolomiteRegistry.address,

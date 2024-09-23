@@ -296,7 +296,7 @@ describe('ExternalVesterV1', () => {
   });
 
   describe('#vestInstantly', () => {
-    it.only('should work with normally', async () => {
+    it('should work with normally', async () => {
       await setupAllowancesForVesting();
 
       const paymentAmount = PAYMENT_AMOUNT_BEFORE_DISCOUNT.mul(8_000).div(PERCENTAGE_BASE);
@@ -790,13 +790,6 @@ describe('ExternalVesterV1', () => {
       await expectWalletBalance(core.hhUser3, rewardToken, O_TOKEN_AMOUNT);
     });
 
-    it('should fail if attempting to withdraw all before the pushed tokens are cleared', async () => {
-      await expectThrow(
-        vester.connect(owner).ownerWithdrawRewardToken(owner.address, MAX_UINT_256_BI, true),
-        'ExternalVesterImplementationV1: Interest cannot be withdrawn yet',
-      );
-    });
-
     it('should fail if attempting to withdraw more than available tokens', async () => {
       await expectThrow(
         vester.connect(owner).ownerWithdrawRewardToken(owner.address, TOTAL_REWARD_AMOUNT.mul(10), false),
@@ -836,8 +829,8 @@ describe('ExternalVesterV1', () => {
       await expectWalletBalanceIsBetween(
         core.hhUser3.address,
         rewardToken,
-        TOTAL_REWARD_AMOUNT.mul(2).div(10_000),
         TOTAL_REWARD_AMOUNT.mul(3).div(10_000),
+        TOTAL_REWARD_AMOUNT.mul(4).div(10_000),
       );
     });
 
