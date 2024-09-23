@@ -817,7 +817,7 @@ contract ExternalVesterImplementationV1 is
     }
 
     function _getRewardPriceAdj(uint256 _nftId, uint256 _duration) internal view returns (uint256) {
-        uint256 discount = discountCalculator().calculateDiscount(_nftId, _duration);
+        uint256 discount = discountCalculator().calculateDiscount(_nftId, _duration, bytes(""));
         Require.that(
             discount <= _BASE,
             _FILE,

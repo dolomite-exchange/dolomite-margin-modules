@@ -29,9 +29,25 @@ pragma solidity ^0.8.9;
  */
 interface IVeToken {
 
+    struct LockedBalance {
+        uint256 amount;
+        uint256 end;
+    }
+
     // ======================================================
     // ================== External Functions ================
     // ======================================================
+
+    function create_lock(
+        uint256 _value,
+        uint256 _lock_duration
+    ) external returns (uint256);
+
+    function create_lock_for(
+        uint256 _value,
+        uint256 _lock_duration,
+        address _for
+    ) external returns (uint256);
 
     /**
      * @notice  Adds underlying tokens to the corresponding ve-token
@@ -39,5 +55,7 @@ interface IVeToken {
      * @param  _id      The ID of the lock whose underlying amount will be added
      * @param  _amount  The amount of tokens to add to the lock
      */
-    function addToLock(uint256 _id, uint256 _amount) external;
+    function increase_amount(uint256 _id, uint256 _amount) external;
+
+    function locked(uint256 _veNftId) external view returns (LockedBalance memory);
 }

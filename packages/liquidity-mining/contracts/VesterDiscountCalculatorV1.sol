@@ -27,6 +27,7 @@ import { IVesterDiscountCalculator } from "./interfaces/IVesterDiscountCalculato
  * @title   VesterDiscountCalculatorV1
  * @author  Dolomite
  *
+ * Discount calculator for the vester contract
  */
 contract VesterDiscountCalculatorV1 is IVesterDiscountCalculator {
 
@@ -36,7 +37,11 @@ contract VesterDiscountCalculatorV1 is IVesterDiscountCalculator {
     uint256 public constant AMOUNT_PER_WEEK = 200;
     uint256 public constant ONE_WEEK_SECONDS = 1 weeks;
 
-    function calculateDiscount(uint256 /* _nftId */, uint256 _duration) external pure returns (uint256) {
+    function calculateDiscount(
+        uint256 /* _nftId */,
+        uint256 _duration,
+        bytes memory /* _extraBytes */
+    ) external pure returns (uint256) {
         return BASE + (AMOUNT_PER_WEEK * _duration / ONE_WEEK_SECONDS);
     }
 }

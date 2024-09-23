@@ -21,7 +21,6 @@
 pragma solidity ^0.8.9;
 
 import { SafeDelegateCallLib } from "@dolomite-exchange/modules-base/contracts/lib/SafeDelegateCallLib.sol";
-import { IWETH } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IWETH.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { VeExternalVesterImplementationV1 } from "../VeExternalVesterImplementationV1.sol";
 
@@ -42,8 +41,7 @@ contract TestVeExternalVesterImplementationV1 is VeExternalVesterImplementationV
         IERC20 _paymentToken,
         uint256 _paymentMarketId,
         IERC20 _rewardToken,
-        uint256 _rewardMarketId,
-        address _veToken
+        uint256 _rewardMarketId
     ) VeExternalVesterImplementationV1(
         _dolomiteMargin,
         _dolomiteRegistry,
@@ -52,8 +50,7 @@ contract TestVeExternalVesterImplementationV1 is VeExternalVesterImplementationV
         _paymentToken,
         _paymentMarketId,
         _rewardToken,
-        _rewardMarketId,
-        _veToken
+        _rewardMarketId
     ) {} // solhint-disable-line
 
     function callVestAndTriggerReentrancy(
@@ -75,6 +72,7 @@ contract TestVeExternalVesterImplementationV1 is VeExternalVesterImplementationV
     function callClosePositionAndBuyTokensAndTriggerReentrancy(
         uint256 _nftId,
         uint256 _veTokenId,
+        uint256 _lockDuration,
         uint256 _maxPaymentAmount
     ) external payable nonReentrant {
         SafeDelegateCallLib.safeDelegateCall(
@@ -83,6 +81,7 @@ contract TestVeExternalVesterImplementationV1 is VeExternalVesterImplementationV
                 this.closePositionAndBuyTokens.selector,
                 _nftId,
                 _veTokenId,
+                _lockDuration,
                 _maxPaymentAmount
             )
         );

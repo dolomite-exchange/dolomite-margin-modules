@@ -20,6 +20,7 @@
 
 pragma solidity ^0.8.9;
 
+import { IERC721EnumerableUpgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/IERC721EnumerableUpgradeable.sol"; // solhint-disable-line max-line-length
 import { IERC20Mintable } from "./IERC20Mintable.sol";
 
 
@@ -30,7 +31,7 @@ import { IERC20Mintable } from "./IERC20Mintable.sol";
  * Interface for a vesting contract that offers users a discount on ARB tokens
  * if they vest ARB and oARB for a length of time
  */
-interface IVesterV1 {
+interface IVesterV1 is IERC721EnumerableUpgradeable {
 
     // =================================================
     // ==================== Structs ====================
