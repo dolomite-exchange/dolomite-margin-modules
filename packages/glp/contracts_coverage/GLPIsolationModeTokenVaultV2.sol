@@ -32,14 +32,12 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { IGLPIsolationModeTokenVaultV2 } from "./interfaces/IGLPIsolationModeTokenVaultV2.sol";
 import { IGLPIsolationModeVaultFactory } from "./interfaces/IGLPIsolationModeVaultFactory.sol";
-import { IGMXIsolationModeTokenVaultV1 } from "./interfaces/IGMXIsolationModeTokenVaultV1.sol";
 import { IGmxRegistryV1 } from "./interfaces/IGmxRegistryV1.sol";
 import { IGmxRewardRouterV2 } from "./interfaces/IGmxRewardRouterV2.sol";
 import { IGmxRewardTracker } from "./interfaces/IGmxRewardTracker.sol";
 import { IGmxVester } from "./interfaces/IGmxVester.sol";
 import { ISGMX } from "./interfaces/ISGMX.sol";
-import { AccountTransferReceiver } from "./AccountTransferReceiver.sol";
-import { IAccountTransferReceiver } from "./interfaces/IAccountTransferReceiver.sol";
+import { GmxAccountTransferLib } from "./GmxAccountTransferLib.sol";
 // solhint-enable max-line-length
 
 
@@ -162,32 +160,39 @@ contract GLPIsolationModeTokenVaultV2 is
     function signalAccountTransfer(
         uint256 _glpBalance
     ) external onlyGmxVault(msg.sender) {
+        // TODO: try extracting this code into a GMXAccountTransferLib with a public function. The bytecode for
+        // TODO:    AccountTransferReceiver is being forced into this contract making it too large
         if (!hasAccountTransferredOut()) { /* FOR COVERAGE TESTING */ }
         Require.that(
             !hasAccountTransferredOut(),
             _FILE,
             "Cannot transfer more than once"
         );
+        _setUint256(_HAS_ACCOUNT_TRANSFERRED_OUT_SLOT, 1);
+
         if (_glpBalance > 0) {
+            // Do a fake withdrawal to clear out the Dolomite Balance
             _setShouldSkipTransfer(true);
             _withdrawFromVaultForDolomiteMargin(_DEFAULT_ACCOUNT_NUMBER, _glpBalance);
             /*assert(!shouldSkipTransfer());*/
         }
 
-        // @follow-up Approvals, overkill or is this good?
         address receiver = getAccountTransferOutReceiverAddress();
         gmx().safeApprove(address(sGmx()), type(uint256).max);
         IERC20(sbfGmx()).safeApprove(receiver, type(uint256).max);
         gmxRewardsRouter().signalTransfer(receiver);
-        _setUint256(_HAS_ACCOUNT_TRANSFERRED_OUT_SLOT, 1);
 
-        bytes32 salt = keccak256(abi.encode(OWNER()));
-        new AccountTransferReceiver{ salt: salt }(
+        address owner = OWNER();
+        address actualReceiver = GmxAccountTransferLib.createAccountTransferReceiver(
             address(this),
-            OWNER(),
+            owner,
             address(registry())
         );
+        /*assert(receiver == address(actualReceiver));*/
+        // TODO: make sure the account transfer went through
+        /*assert(gmxRewardsRouter().pendingReceivers(address(this)) == address(0));*/
 
+        // Reset the approvals
         gmx().safeApprove(address(sGmx()), 0);
         IERC20(sbfGmx()).safeApprove(receiver, 0);
     }
@@ -208,7 +213,10 @@ contract GLPIsolationModeTokenVaultV2 is
         );
         if (!hasAccountTransferredOut() && !hasAcceptedFullAccountTransfer() && underlyingBalanceOf() == 0 && gmxBalanceOf() == 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
-            !hasAccountTransferredOut() && !hasAcceptedFullAccountTransfer() && underlyingBalanceOf() == 0 && gmxBalanceOf() == 0,
+            !hasAccountTransferredOut()
+            && !hasAcceptedFullAccountTransfer()
+            && underlyingBalanceOf() == 0
+            && gmxBalanceOf() == 0,
             _FILE,
             "Cannot transfer more than once"
         );
@@ -310,11 +318,6 @@ contract GLPIsolationModeTokenVaultV2 is
     public
     override
     onlyVaultFactory(msg.sender) {
-        if (shouldSkipTransfer()) {
-            _setShouldSkipTransfer(false);
-            return;
-        }
-
         if (isAcceptingFullAccountTransfer()) {
             // The fsGLP is already in this vault, so don't materialize a transfer from the vault owner
             /*assert(_amount == underlyingBalanceOf());*/
@@ -396,21 +399,11 @@ contract GLPIsolationModeTokenVaultV2 is
     }
 
     function getAccountTransferOutReceiverAddress() public view returns (address) {
-        bytes32 salt = keccak256(abi.encode(OWNER()));
-        bytes32 deploymentHash = keccak256(abi.encodePacked(
-            bytes1(0xff),
+        return GmxAccountTransferLib.getAccountTransferOutReceiverAddress(
             address(this),
-            salt,
-            keccak256(abi.encodePacked(
-                type(AccountTransferReceiver).creationCode,
-                abi.encode(
-                    address(this),
-                    OWNER(),
-                    address(registry())
-                )
-            ))
-        ));
-        return address(uint160(uint256(deploymentHash)));
+            OWNER(),
+            address(registry())
+        );
     }
 
     function gmx() public view returns (IERC20) {

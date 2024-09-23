@@ -31,7 +31,6 @@ import { IGLPIsolationModeTokenVaultV2 } from "./interfaces/IGLPIsolationModeTok
 import { IGMXIsolationModeTokenVaultV1 } from "./interfaces/IGMXIsolationModeTokenVaultV1.sol";
 import { IGMXIsolationModeVaultFactory } from "./interfaces/IGMXIsolationModeVaultFactory.sol";
 import { IGmxRegistryV1 } from "./interfaces/IGmxRegistryV1.sol";
-import { IAccountTransferReceiver } from "./interfaces/IAccountTransferReceiver.sol";
 
 
 /**
@@ -286,7 +285,7 @@ contract GMXIsolationModeTokenVaultV1 is
             "Transfer not in progress"
         );
 
-        // Set the recipient to 0x0 here, so we can call `_stakeGmx`
+        // Set transfer requested slot to false so we can stake GMX if need be
         _setUint256(_TRANSFER_REQUESTED_SLOT, 0);
 
         uint256 balance = super.underlyingBalanceOf();
@@ -295,6 +294,7 @@ contract GMXIsolationModeTokenVaultV1 is
         }
 
         if (_gmxValue > 0) {
+            // Do a fake withdrawal to clear out the Dolomite Balance
             _setShouldSkipTransfer(true);
             _withdrawFromVaultForDolomiteMargin(_DEFAULT_ACCOUNT_NUMBER, _gmxValue);
             /*assert(!shouldSkipTransfer());*/

@@ -46,7 +46,6 @@ import { freezeAndGetOraclePrice } from 'packages/base/test/utils/dolomite';
 const gmxAmount = parseEther('10'); // 10 GMX
 const usdcAmount = BigNumber.from('2000000000'); // 2,000 USDC
 const amountWei = BigNumber.from('1250000000000000000000'); // 1,250 GLP tokens
-const esGmxAmount = parseEther('0.01'); // 0.01 esGMX tokens
 const accountNumber = ZERO_BI;
 
 describe('GMXIsolationModeTokenVaultV1_accountTransfers', () => {
@@ -57,6 +56,7 @@ describe('GMXIsolationModeTokenVaultV1_accountTransfers', () => {
   let glpFactory: IGLPIsolationModeVaultFactoryOld;
   let gmxVault: TestGMXIsolationModeTokenVaultV1;
   let glpVault: TestGLPIsolationModeTokenVaultV2;
+  let signalAccountTransferImpl: SignalAccountTransferImplementation;
   let underlyingMarketIdGlp: BigNumber;
   let underlyingMarketIdGmx: BigNumber;
   let otherImpersonator: SignerWithAddressWithSafety;
@@ -82,14 +82,14 @@ describe('GMXIsolationModeTokenVaultV1_accountTransfers', () => {
       GmxRegistryV1__factory.bytecode,
       []
     );
-    const signalAccountTransferImpl = await createContractWithAbi<SignalAccountTransferImplementation>(
+    signalAccountTransferImpl = await createContractWithAbi<SignalAccountTransferImplementation>(
       SignalAccountTransferImplementation__factory.abi,
       SignalAccountTransferImplementation__factory.bytecode,
-      []
+      [core.gmxEcosystem.live.gmxRegistryProxy.address]
     );
-    await core.gmxEcosystem!.live.gmxRegistryProxy.upgradeTo(gmxRegistryImplementation.address);
-    await core.gmxEcosystem.live.gmxRegistry.ownerSetIsHandler(core.hhUser5.address, true);
-    await core.gmxEcosystem.live.gmxRegistry.ownerSetSignalAccountTransferImpl(signalAccountTransferImpl.address);
+    await core.gmxEcosystem!.live.gmxRegistryProxy.connect(core.governance).upgradeTo(gmxRegistryImplementation.address);
+    await core.gmxEcosystem.live.gmxRegistry.connect(core.governance).ownerSetIsHandler(core.hhUser5.address, true);
+    await core.gmxEcosystem.live.gmxRegistry.connect(core.governance).ownerSetSignalAccountTransferImpl(signalAccountTransferImpl.address);
 
     await gmxFactory.createVault(core.hhUser1.address);
     gmxVault = setupUserVaultProxy<TestGMXIsolationModeTokenVaultV1>(
@@ -414,6 +414,13 @@ describe('GMXIsolationModeTokenVaultV1_accountTransfers', () => {
       await expectThrow(
         gmxVault.connect(core.hhUser1).signalAccountTransfer(gmxAmount, ZERO_BI),
         `GMXIsolationModeTokenVaultV1: Invalid handler <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if called directly on implementation', async () => {
+      await expectThrow(
+        signalAccountTransferImpl.connect(core.hhUser1).signalAccountTransfer(core.hhUser1.address),
+        'SignalAccountTransferImpl: Only usable via delegate call'
       );
     });
   });

@@ -21,7 +21,6 @@
 pragma solidity ^0.8.9;
 
 import { IGmxRegistryV1 } from "./IGmxRegistryV1.sol";
-import { IAccountTransferReceiver } from "./IAccountTransferReceiver.sol";
 
 
 /**

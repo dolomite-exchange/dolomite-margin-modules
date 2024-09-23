@@ -28,9 +28,9 @@ import { IGLPManager } from "./interfaces/IGLPManager.sol";
 import { IGLPRewardsRouterV2 } from "./interfaces/IGLPRewardsRouterV2.sol";
 import { IGMXIsolationModeVaultFactory } from "./interfaces/IGMXIsolationModeVaultFactory.sol";
 import { IGmxRegistryV1 } from "./interfaces/IGmxRegistryV1.sol";
-import { ISignalAccountTransferImplementation } from "./interfaces/ISignalAccountTransferImplementation.sol";
 import { IGmxRewardRouterV2 } from "./interfaces/IGmxRewardRouterV2.sol";
 import { IGmxVault } from "./interfaces/IGmxVault.sol";
+import { ISignalAccountTransferImplementation } from "./interfaces/ISignalAccountTransferImplementation.sol";
 
 
 /**
@@ -169,7 +169,9 @@ contract GmxRegistryV1 is IGmxRegistryV1, BaseRegistry {
         _ownerSetSbfGmx(_sbfGmx);
     }
 
-    function ownerSetSignalAccountTransferImpl(address _signalAccountTransferImpl) external override onlyDolomiteMarginOwner(msg.sender) {
+    function ownerSetSignalAccountTransferImpl(
+        address _signalAccountTransferImpl
+    ) external override onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetSignalAccountTransferImpl(_signalAccountTransferImpl);
     }
 

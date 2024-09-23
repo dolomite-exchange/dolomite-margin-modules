@@ -27,10 +27,10 @@ import { IGLPIsolationModeVaultFactory } from "./IGLPIsolationModeVaultFactory.s
 import { IGLPManager } from "./IGLPManager.sol";
 import { IGLPRewardsRouterV2 } from "./IGLPRewardsRouterV2.sol";
 import { IGMXIsolationModeVaultFactory } from "./IGMXIsolationModeVaultFactory.sol";
-import { ISignalAccountTransferImplementation } from "./ISignalAccountTransferImplementation.sol";
 import { IGmxRegistryV1 } from "./IGmxRegistryV1.sol";
 import { IGmxRewardRouterV2 } from "./IGmxRewardRouterV2.sol";
 import { IGmxVault } from "./IGmxVault.sol";
+import { ISignalAccountTransferImplementation } from "./ISignalAccountTransferImplementation.sol";
 
 
 /**

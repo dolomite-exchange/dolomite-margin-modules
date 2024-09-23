@@ -13,7 +13,6 @@ import {
   setupUserVaultProxy,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { expect } from 'chai';
-import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import {
@@ -70,11 +69,11 @@ describe('AccountTransferReceiver', () => {
     const signalAccountTransferImpl = await createContractWithAbi<SignalAccountTransferImplementation>(
       SignalAccountTransferImplementation__factory.abi,
       SignalAccountTransferImplementation__factory.bytecode,
-      []
+      [core.gmxEcosystem.live.gmxRegistryProxy.address]
     );
-    await core.gmxEcosystem!.live.gmxRegistryProxy.upgradeTo(gmxRegistryImplementation.address);
-    await core.gmxEcosystem.live.gmxRegistry.ownerSetIsHandler(core.hhUser5.address, true);
-    await core.gmxEcosystem.live.gmxRegistry.ownerSetSignalAccountTransferImpl(signalAccountTransferImpl.address);
+    await core.gmxEcosystem!.live.gmxRegistryProxy.connect(core.governance).upgradeTo(gmxRegistryImplementation.address);
+    await core.gmxEcosystem.live.gmxRegistry.connect(core.governance).ownerSetIsHandler(core.hhUser5.address, true);
+    await core.gmxEcosystem.live.gmxRegistry.connect(core.governance).ownerSetSignalAccountTransferImpl(signalAccountTransferImpl.address);
 
     await gmxFactory.createVault(core.hhUser1.address);
     gmxVault = setupUserVaultProxy<TestGMXIsolationModeTokenVaultV1>(
@@ -106,9 +105,9 @@ describe('AccountTransferReceiver', () => {
 
   describe('#constructor', () => {
     it('should work normally', async () => {
-      expect(await transferReceiver.vault()).to.eq(glpVault.address);
-      expect(await transferReceiver.owner()).to.eq(core.hhUser1.address);
-      expect(await transferReceiver.registry()).to.eq(core.gmxEcosystem.live.gmxRegistry.address);
+      expect(await transferReceiver.VAULT()).to.eq(glpVault.address);
+      expect(await transferReceiver.OWNER()).to.eq(core.hhUser1.address);
+      expect(await transferReceiver.REGISTRY()).to.eq(core.gmxEcosystem.live.gmxRegistry.address);
     });
   });
 

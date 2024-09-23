@@ -30,7 +30,6 @@ import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
-import { AccountTransferReceiver } from "./AccountTransferReceiver.sol";
 import { IGLPIsolationModeTokenVaultV2 } from "./interfaces/IGLPIsolationModeTokenVaultV2.sol";
 import { IGLPIsolationModeVaultFactory } from "./interfaces/IGLPIsolationModeVaultFactory.sol";
 import { IGmxRegistryV1 } from "./interfaces/IGmxRegistryV1.sol";
@@ -38,6 +37,7 @@ import { IGmxRewardRouterV2 } from "./interfaces/IGmxRewardRouterV2.sol";
 import { IGmxRewardTracker } from "./interfaces/IGmxRewardTracker.sol";
 import { IGmxVester } from "./interfaces/IGmxVester.sol";
 import { ISGMX } from "./interfaces/ISGMX.sol";
+import { GmxAccountTransferLib } from "./GmxAccountTransferLib.sol";
 // solhint-enable max-line-length
 
 
@@ -181,18 +181,14 @@ contract GLPIsolationModeTokenVaultV2 is
         gmxRewardsRouter().signalTransfer(receiver);
 
         address owner = OWNER();
-        bytes32 salt = keccak256(abi.encode(owner));
-        {
-            // New scope for "stack too deep" errors
-            AccountTransferReceiver actualReceiver = new AccountTransferReceiver{ salt: salt }(
-                address(this),
-                owner,
-                address(registry())
-            );
-            assert(receiver == address(actualReceiver));
-            // TODO: make sure the account transfer went through
-            assert(gmxRewardsRouter().pendingReceivers(address(this)) == address(0));
-        }
+        address actualReceiver = GmxAccountTransferLib.createAccountTransferReceiver(
+            address(this),
+            owner,
+            address(registry())
+        );
+        assert(receiver == address(actualReceiver));
+        // TODO: make sure the account transfer went through
+        assert(gmxRewardsRouter().pendingReceivers(address(this)) == address(0));
 
         // Reset the approvals
         gmx().safeApprove(address(sGmx()), 0);
@@ -398,22 +394,11 @@ contract GLPIsolationModeTokenVaultV2 is
     }
 
     function getAccountTransferOutReceiverAddress() public view returns (address) {
-        address owner = OWNER();
-        bytes32 salt = keccak256(abi.encode(owner));
-        bytes32 deploymentHash = keccak256(abi.encodePacked(
-            bytes1(0xff),
+        return GmxAccountTransferLib.getAccountTransferOutReceiverAddress(
             address(this),
-            salt,
-            keccak256(abi.encodePacked(
-                type(AccountTransferReceiver).creationCode,
-                abi.encode(
-                    address(this),
-                    owner,
-                    address(registry())
-                )
-            ))
-        ));
-        return address(uint160(uint256(deploymentHash)));
+            OWNER(),
+            address(registry())
+        );
     }
 
     function gmx() public view returns (IERC20) {

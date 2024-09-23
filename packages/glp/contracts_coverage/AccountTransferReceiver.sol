@@ -20,13 +20,11 @@
 
 pragma solidity ^0.8.9;
 
+import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { IAccountTransferReceiver } from "./interfaces/IAccountTransferReceiver.sol";
-import { ISignalAccountTransferImplementation } from "./interfaces/ISignalAccountTransferImplementation.sol";
 import { IGmxRegistryV1 } from "./interfaces/IGmxRegistryV1.sol";
-import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { ISignalAccountTransferImplementation } from "./interfaces/ISignalAccountTransferImplementation.sol";
 
 
 /**
@@ -43,18 +41,18 @@ contract AccountTransferReceiver is IAccountTransferReceiver {
 
     bytes32 private constant _FILE = "AccountTransferReceiver";
 
-    address public immutable vault;
-    address public immutable owner;
-    IGmxRegistryV1 public immutable registry;
+    address public immutable VAULT;
+    address public immutable OWNER;
+    IGmxRegistryV1 public immutable REGISTRY;
 
     // ==================================================================
     // =========================== Modifiers ============================
     // ==================================================================
 
     modifier onlyOwner() {
-        if (msg.sender == owner) { /* FOR COVERAGE TESTING */ }
+        if (msg.sender == OWNER) { /* FOR COVERAGE TESTING */ }
         Require.that(
-            msg.sender == owner,
+            msg.sender == OWNER,
             _FILE,
             "Caller must be owner"
         );
@@ -70,11 +68,11 @@ contract AccountTransferReceiver is IAccountTransferReceiver {
         address _owner,
         address _registry
     ) {
-        vault = _vault;
-        owner = _owner;
-        registry = IGmxRegistryV1(_registry);
+        VAULT = _vault;
+        OWNER = _owner;
+        REGISTRY = IGmxRegistryV1(_registry);
 
-        registry.gmxRewardsRouter().acceptTransfer(_vault);
+        REGISTRY.gmxRewardsRouter().acceptTransfer(_vault);
     }
 
     // ==================================================================
@@ -82,17 +80,17 @@ contract AccountTransferReceiver is IAccountTransferReceiver {
     // ==================================================================
 
     function signalAccountTransfer(address _receiver) external onlyOwner {
-        if (_receiver != vault) { /* FOR COVERAGE TESTING */ }
+        if (_receiver != VAULT) { /* FOR COVERAGE TESTING */ }
         Require.that(
-            _receiver != vault,
+            _receiver != VAULT,
             _FILE,
             "Receiver cannot be vault"
         );
 
-        ISignalAccountTransferImplementation impl = registry.signalAccountTransferImpl();
+        ISignalAccountTransferImplementation impl = REGISTRY.signalAccountTransferImpl();
         Address.functionDelegateCall(
             address(impl),
-            abi.encodeWithSelector(impl.signalAccountTransfer.selector, _receiver, registry),
+            abi.encodeWithSelector(impl.signalAccountTransfer.selector, _receiver),
             "AccountTransferReceiver: Signal account transfer failed"
         );
 
