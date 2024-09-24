@@ -38,14 +38,14 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       { liquidatorAssetRegistry: core.liquidatorAssetRegistry },
       'liquidatorAssetRegistry',
       'ownerAddLiquidatorToAssetWhitelist',
-      [core.marketIds.dGmEthSingleSided, core.liquidatorProxyV4.address],
+      [core.marketIds.dGmEth, core.liquidatorProxyV4.address],
     ),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       { liquidatorAssetRegistry: core.liquidatorAssetRegistry },
       'liquidatorAssetRegistry',
       'ownerAddLiquidatorToAssetWhitelist',
-      [core.marketIds.dGmEthSingleSided, core.freezableLiquidatorProxy.address],
+      [core.marketIds.dGmEth, core.freezableLiquidatorProxy.address],
     ),
   );
 
@@ -63,14 +63,14 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       expect(jUsdcLiquidators[0]).to.eq(core.liquidatorProxyV4.address);
 
       const gmBtcLiquidators = await core.liquidatorAssetRegistry.getLiquidatorsForAsset(
-        core.marketIds.dGmBtcSingleSided,
+        core.marketIds.dGmBtc,
       );
       expect(gmBtcLiquidators.length).to.eq(2);
       expect(gmBtcLiquidators[0]).to.eq(core.liquidatorProxyV4.address);
       expect(gmBtcLiquidators[1]).to.eq(core.freezableLiquidatorProxy.address);
 
       const gmEthLiquidators = await core.liquidatorAssetRegistry.getLiquidatorsForAsset(
-        core.marketIds.dGmEthSingleSided,
+        core.marketIds.dGmEth,
       );
       expect(gmEthLiquidators.length).to.eq(2);
       expect(gmEthLiquidators[0]).to.eq(core.liquidatorProxyV4.address);

@@ -66,10 +66,30 @@ const handlerAddress = '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe'; // Level In
 async function deployInterestSetters(): Promise<void> {
   await deployContractAndSave(
     'LinearStepFunctionInterestSetter',
+    getLinearStepFunctionInterestSetterConstructorParams(parseEther('0.06'), parseEther('0.94'), parseEther('0.70')),
+    'LinearStepFunction6L94U70OInterestSetter',
+  );
+  await deployContractAndSave(
+    'LinearStepFunctionInterestSetter',
+    getLinearStepFunctionInterestSetterConstructorParams(parseEther('0.06'), parseEther('0.94'), parseEther('0.80')),
+    'LinearStepFunction6L94U80OInterestSetter',
+  );
+  await deployContractAndSave(
+    'LinearStepFunctionInterestSetter',
     getLinearStepFunctionInterestSetterConstructorParams(parseEther('0.06'), parseEther('0.94'), parseEther('0.90')),
     'LinearStepFunction6L94U90OInterestSetter',
   );
 
+  await deployContractAndSave(
+    'LinearStepFunctionInterestSetter',
+    getLinearStepFunctionInterestSetterConstructorParams(parseEther('0.08'), parseEther('0.92'), parseEther('0.70')),
+    'LinearStepFunction8L92U70OInterestSetter',
+  );
+  await deployContractAndSave(
+    'LinearStepFunctionInterestSetter',
+    getLinearStepFunctionInterestSetterConstructorParams(parseEther('0.08'), parseEther('0.92'), parseEther('0.80')),
+    'LinearStepFunction8L92U80OInterestSetter',
+  );
   await deployContractAndSave(
     'LinearStepFunctionInterestSetter',
     getLinearStepFunctionInterestSetterConstructorParams(parseEther('0.08'), parseEther('0.92'), parseEther('0.90')),

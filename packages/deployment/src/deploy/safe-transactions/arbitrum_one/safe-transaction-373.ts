@@ -23,7 +23,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       { dolomiteMargin: core.dolomiteMargin },
       'dolomiteMargin',
       'ownerSetMaxWei',
-      [core.marketIds.dGmUni, parseEther(`${900_000}`)],
+      [core.marketIds.dGmUniUsd, parseEther(`${900_000}`)],
     ),
   );
 
@@ -37,7 +37,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     },
     invariants: async () => {
       assertHardhatInvariant(
-        (await core.dolomiteMargin.getMarketMaxWei(core.marketIds.dGmUni)).value.eq(parseEther(`${900_000}`)),
+        (await core.dolomiteMargin.getMarketMaxWei(core.marketIds.dGmUniUsd)).value.eq(parseEther(`${900_000}`)),
         'Invalid gmUNI-USD max wei',
       );
     },

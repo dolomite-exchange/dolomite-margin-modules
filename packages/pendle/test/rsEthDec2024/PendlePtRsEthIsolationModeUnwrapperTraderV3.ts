@@ -8,9 +8,9 @@ import {
 } from '@dolomite-exchange/modules-base/test/utils';
 import {
   setupCoreProtocol,
+  setupRsEthBalance,
   setupTestMarket,
   setupUserVaultProxy,
-  setupWeEthBalance,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
@@ -44,12 +44,12 @@ const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('20000000000000000000'); // 20
 const otherAmountWei = BigNumber.from('10000000'); // $10
 
-// May have to adjust chainId in hardhat config to match arbitrum on hardhat network. Signatures will fail otherwise
-describe('PendlePtEEthSep2024IsolationModeUnwrapperTraderV3', () => {
+describe('PendlePtRsEthDec2024IsolationModeUnwrapperTraderV3', () => {
   let snapshotId: string;
 
   let core: CoreProtocolArbitrumOne;
   let underlyingToken: IERC20;
+  let underlyingMarketId: BigNumber;
   let pendleRegistry: PendleRegistry;
   let unwrapper: PendlePtIsolationModeUnwrapperTraderV3;
   let wrapper: PendlePtIsolationModeWrapperTraderV3;
@@ -68,16 +68,17 @@ describe('PendlePtEEthSep2024IsolationModeUnwrapperTraderV3', () => {
       network: Network.ArbitrumOne,
     });
 
-    ptMarket = core.pendleEcosystem!.weEthSep2024.weEthMarket.connect(core.hhUser1);
-    ptToken = core.pendleEcosystem!.weEthSep2024.ptWeEthToken.connect(core.hhUser1);
-    underlyingToken = core.tokens.weEth!;
+    ptMarket = core.pendleEcosystem!.rsEthDec2024.rsEthMarket.connect(core.hhUser1);
+    ptToken = core.pendleEcosystem!.rsEthDec2024.ptRsEthToken.connect(core.hhUser1);
+    underlyingToken = core.tokens.rsEth!;
+    underlyingMarketId = BigNumber.from(core.marketIds.rsEth);
 
     const userVaultImplementation = await createPendlePtIsolationModeTokenVaultV1();
     pendleRegistry = await createPendleRegistry(
       core,
-      core.pendleEcosystem!.weEthSep2024.weEthMarket,
-      core.pendleEcosystem!.weEthSep2024.ptOracle,
-      core.pendleEcosystem!.syWeEthToken,
+      core.pendleEcosystem!.rsEthDec2024.rsEthMarket,
+      core.pendleEcosystem!.rsEthDec2024.ptOracle,
+      core.pendleEcosystem!.syREthToken,
     );
     factory = await createPendlePtIsolationModeVaultFactory(
       core,
@@ -102,8 +103,8 @@ describe('PendlePtEEthSep2024IsolationModeUnwrapperTraderV3', () => {
     marketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, factory, true, core.oracleAggregatorV2);
 
-    await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
+    await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
 
     await factory.createVault(core.hhUser1.address);
     const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);
@@ -114,7 +115,7 @@ describe('PendlePtEEthSep2024IsolationModeUnwrapperTraderV3', () => {
     );
     defaultAccount = { owner: vault.address, number: defaultAccountNumber };
 
-    await setupWeEthBalance(core, core.hhUser1, amountWei, core.pendleEcosystem!.pendleRouterV3);
+    await setupRsEthBalance(core, core.hhUser1, amountWei, core.pendleEcosystem!.pendleRouterV3);
     const { tokenInput, approxParams, limitOrderData } = await encodeSwapExactTokensForPtV3(
       Network.ArbitrumOne,
       core.hhUser1.address,
@@ -132,7 +133,7 @@ describe('PendlePtEEthSep2024IsolationModeUnwrapperTraderV3', () => {
       limitOrderData, // LimitOrderData
     );
 
-    ptBal = await core.pendleEcosystem.weEthSep2024.ptWeEthToken.balanceOf(core.hhUser1.address);
+    ptBal = await ptToken.balanceOf(core.hhUser1.address);
     await ptToken.connect(core.hhUser1).approve(vault.address, ptBal);
     await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, ptBal);
 
@@ -167,7 +168,7 @@ describe('PendlePtEEthSep2024IsolationModeUnwrapperTraderV3', () => {
         primaryAccountNumber: defaultAccountNumber,
         otherAccountOwner: vault.address,
         otherAccountNumber: defaultAccountNumber,
-        outputMarket: core.marketIds.weEth,
+        outputMarket: underlyingMarketId,
         inputMarket: marketId,
         inputAmount: ptBal,
         orderData: extraOrderData
@@ -183,7 +184,7 @@ describe('PendlePtEEthSep2024IsolationModeUnwrapperTraderV3', () => {
       expect(underlyingBalanceWei.value).to.eq(ZERO_BI);
       expect(await vault.underlyingBalanceOf()).to.eq(ZERO_BI);
 
-      const otherBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, core.marketIds.weEth);
+      const otherBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, underlyingMarketId);
       expect(otherBalanceWei.sign).to.eq(true);
       expect(otherBalanceWei.value).to.be.gt(minOutputAmount);
     });
