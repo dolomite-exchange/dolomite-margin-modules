@@ -30,6 +30,7 @@ import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
+import { GmxAccountTransferLib } from "./GmxAccountTransferLib.sol";
 import { IGLPIsolationModeTokenVaultV2 } from "./interfaces/IGLPIsolationModeTokenVaultV2.sol";
 import { IGLPIsolationModeVaultFactory } from "./interfaces/IGLPIsolationModeVaultFactory.sol";
 import { IGmxRegistryV1 } from "./interfaces/IGmxRegistryV1.sol";
@@ -37,7 +38,6 @@ import { IGmxRewardRouterV2 } from "./interfaces/IGmxRewardRouterV2.sol";
 import { IGmxRewardTracker } from "./interfaces/IGmxRewardTracker.sol";
 import { IGmxVester } from "./interfaces/IGmxVester.sol";
 import { ISGMX } from "./interfaces/ISGMX.sol";
-import { GmxAccountTransferLib } from "./GmxAccountTransferLib.sol";
 // solhint-enable max-line-length
 
 
@@ -159,8 +159,6 @@ contract GLPIsolationModeTokenVaultV2 is
     function signalAccountTransfer(
         uint256 _glpBalance
     ) external onlyGmxVault(msg.sender) {
-        // TODO: try extracting this code into a GMXAccountTransferLib with a public function. The bytecode for
-        // TODO:    AccountTransferReceiver is being forced into this contract making it too large
         Require.that(
             !hasAccountTransferredOut(),
             _FILE,
@@ -187,7 +185,6 @@ contract GLPIsolationModeTokenVaultV2 is
             address(registry())
         );
         assert(receiver == address(actualReceiver));
-        // TODO: make sure the account transfer went through
         assert(gmxRewardsRouter().pendingReceivers(address(this)) == address(0));
 
         // Reset the approvals

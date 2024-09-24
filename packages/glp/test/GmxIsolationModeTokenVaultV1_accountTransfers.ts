@@ -87,9 +87,13 @@ describe('GMXIsolationModeTokenVaultV1_accountTransfers', () => {
       SignalAccountTransferImplementation__factory.bytecode,
       [core.gmxEcosystem.live.gmxRegistryProxy.address]
     );
-    await core.gmxEcosystem!.live.gmxRegistryProxy.connect(core.governance).upgradeTo(gmxRegistryImplementation.address);
+    await core.gmxEcosystem!.live.gmxRegistryProxy.connect(core.governance).upgradeTo(
+      gmxRegistryImplementation.address
+    );
     await core.gmxEcosystem.live.gmxRegistry.connect(core.governance).ownerSetIsHandler(core.hhUser5.address, true);
-    await core.gmxEcosystem.live.gmxRegistry.connect(core.governance).ownerSetSignalAccountTransferImpl(signalAccountTransferImpl.address);
+    await core.gmxEcosystem.live.gmxRegistry.connect(core.governance).ownerSetSignalAccountTransferImpl(
+      signalAccountTransferImpl.address
+    );
 
     await gmxFactory.createVault(core.hhUser1.address);
     gmxVault = setupUserVaultProxy<TestGMXIsolationModeTokenVaultV1>(

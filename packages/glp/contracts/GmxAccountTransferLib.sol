@@ -62,11 +62,11 @@ library GmxAccountTransferLib {
         address _tokenVault,
         address _vaultOwner,
         address _gmxRegistry
-    ) public view returns (address) {
+    ) public pure returns (address) {
         bytes32 salt = keccak256(abi.encode(_vaultOwner));
         bytes32 deploymentHash = keccak256(abi.encodePacked(
             bytes1(0xff),
-            address(this),
+            _tokenVault, // @follow-up Could use address(this) instead, but they should be equal since delegatecall
             salt,
             keccak256(abi.encodePacked(
                 type(AccountTransferReceiver).creationCode,
