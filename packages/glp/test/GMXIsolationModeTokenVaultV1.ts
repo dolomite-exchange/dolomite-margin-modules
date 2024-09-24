@@ -3,7 +3,7 @@ import {
   SimpleIsolationModeWrapperTraderV2,
 } from '@dolomite-exchange/modules-base/src/types';
 import { GMX_GOV_MAP } from '@dolomite-exchange/modules-base/src/utils/constants';
-import { ADDRESS_ZERO, MAX_UINT_256_BI, Network, ONE_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { MAX_UINT_256_BI, Network, ONE_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '@dolomite-exchange/modules-base/src/utils/SignerWithAddressWithSafety';
 import {
   impersonate,
@@ -12,7 +12,6 @@ import {
   waitDays,
 } from '@dolomite-exchange/modules-base/test/utils';
 import {
-  expectEvent,
   expectProtocolBalance,
   expectProtocolBalanceIsGreaterThan,
   expectThrow,
@@ -48,6 +47,7 @@ import {
   createTestGMXIsolationModeTokenVaultV1,
 } from './glp-ecosystem-utils';
 import { DEFAULT_BLOCK_NUMBER_FOR_GLP_WITH_VESTING } from './glp-utils';
+import { createAndUpgradeDolomiteRegistry, createDolomiteAccountRegistryImplementation, createRegistryProxy } from 'packages/base/test/utils/dolomite';
 
 const gmxAmount = parseEther('10'); // 10 GMX
 const usdcAmount = BigNumber.from('2000000000'); // 2,000 USDC
@@ -77,7 +77,15 @@ describe('GMXIsolationModeTokenVaultV1', () => {
       network: Network.ArbitrumOne,
     });
 
+    await createAndUpgradeDolomiteRegistry(core);
     gmxRegistry = await createGmxRegistry(core);
+
+    const accountRegistryImplemenation = await createDolomiteAccountRegistryImplementation();
+    const calldata = await accountRegistryImplemenation.populateTransaction.initialize(
+      [core.tokens.dArb.address, core.tokens.dGmx.address]
+    );
+    const registryProxy = await createRegistryProxy(accountRegistryImplemenation.address, calldata.data!, core);
+    await core.dolomiteRegistry.connect(core.governance).ownerSetDolomiteAccountRegistry(registryProxy.address);
 
     const glpVaultImplementation = await createTestGLPIsolationModeTokenVaultV2();
     glpFactory = await createGLPIsolationModeVaultFactory(core, gmxRegistry, glpVaultImplementation);
@@ -161,351 +169,9 @@ describe('GMXIsolationModeTokenVaultV1', () => {
     );
   }
 
-  async function requestTransferAndSignal(gmxAmount: BigNumber, glpAmount: BigNumber) {
-    await gmxVault.requestAccountTransfer(OTHER_ADDRESS);
-    expect(await gmxVault.isVaultFrozen()).to.be.true;
-    expect(await glpVault.isVaultFrozen()).to.be.true;
-    expect(await gmxVault.recipient()).to.eq(OTHER_ADDRESS);
-
-    const result = await gmxVault.connect(core.hhUser5).signalAccountTransfer(gmxAmount, glpAmount);
-    await expectEvent(gmxVault, result, 'AccountTransferSignaled', {
-      recipient: OTHER_ADDRESS
-    });
-    expect(await gmxVault.recipient()).to.eq(ADDRESS_ZERO);
-    expect(await core.gmxEcosystem.gmxRewardsRouterV2.pendingReceivers(glpVault.address)).to.eq(OTHER_ADDRESS);
-    expect(await gmxVault.isVaultFrozen()).to.be.true;
-    expect(await glpVault.isVaultFrozen()).to.be.true;
-    await expectProtocolBalance(core, gmxVault.address, accountNumber, underlyingMarketIdGmx, ZERO_BI);
-    await expectProtocolBalance(core, glpVault.address, accountNumber, underlyingMarketIdGlp, ZERO_BI);
-  }
-
-  describe('#requestAccountTransfer', () => {
-    it('should work normally', async () => {
-      const result = await gmxVault.requestAccountTransfer(OTHER_ADDRESS);
-      await expectEvent(gmxVault, result, 'AccountTransferRequested', {
-        recipient: OTHER_ADDRESS,
-      });
-      expect(await gmxVault.recipient()).to.eq(OTHER_ADDRESS);
-      expect(await gmxVault.isVaultFrozen()).to.be.true;
-      expect(await glpVault.isVaultFrozen()).to.be.true;
-    });
-
-    it('should fail if not called by vault owner', async () => {
-      await expectThrow(
-        gmxVault.connect(core.hhUser2).requestAccountTransfer(OTHER_ADDRESS),
-        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
-      );
-    });
-
-    it('should fail if transfer is already in progress', async () => {
-      const result = await gmxVault.requestAccountTransfer(OTHER_ADDRESS);
-      await expectEvent(gmxVault, result, 'AccountTransferRequested', {
-        recipient: OTHER_ADDRESS,
-      });
-
-      await expectThrow(
-        gmxVault.requestAccountTransfer(OTHER_ADDRESS),
-        'GMXIsolationModeTokenVaultV1: Transfer already in progress',
-      );
-    });
-  });
-
-  describe('#signalAccountTransfer', () => {
-    it('should work normally with staked gmx balance', async () => {
-      await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
-      await gmxVault.depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
-      await requestTransferAndSignal(gmxAmount, ZERO_BI);
-
-      await core.gmxEcosystem.gmxRewardsRouterV2.connect(otherImpersonator).acceptTransfer(glpVault.address);
-      expect(await gmxVault.underlyingBalanceOf()).to.eq(ZERO_BI);
-      expect(await glpVault.gmxBalanceOf()).to.eq(ZERO_BI);
-      expect(await core.gmxEcosystem!.sbfGmx.balanceOf(glpVault.address)).to.eq(ZERO_BI);
-      expect(await core.gmxEcosystem!.sbfGmx.balanceOf(OTHER_ADDRESS)).to.gte(gmxAmount);
-
-      expect(await gmxVault.isVaultFrozen()).to.be.false;
-      expect(await glpVault.isVaultFrozen()).to.be.false;
-      await expectProtocolBalance(core, gmxVault.address, accountNumber, underlyingMarketIdGmx, ZERO_BI);
-      await expectProtocolBalance(core, glpVault.address, accountNumber, underlyingMarketIdGlp, ZERO_BI);
-    });
-
-    it('should work normally with glp balance', async () => {
-      await glpVault.depositIntoVaultForDolomiteMargin(accountNumber, amountWei);
-      await requestTransferAndSignal(ZERO_BI, amountWei);
-
-      await core.gmxEcosystem.gmxRewardsRouterV2.connect(otherImpersonator).acceptTransfer(glpVault.address);
-      expect(await gmxVault.underlyingBalanceOf()).to.eq(ZERO_BI);
-      expect(await glpVault.gmxBalanceOf()).to.eq(ZERO_BI);
-      expect(await core.gmxEcosystem!.sbfGmx.balanceOf(glpVault.address)).to.eq(ZERO_BI);
-      expect(await core.gmxEcosystem!.fsGlp.balanceOf(OTHER_ADDRESS)).to.eq(amountWei);
-
-      expect(await gmxVault.isVaultFrozen()).to.be.false;
-      expect(await glpVault.isVaultFrozen()).to.be.false;
-      await expectProtocolBalance(core, gmxVault.address, accountNumber, underlyingMarketIdGmx, ZERO_BI);
-      await expectProtocolBalance(core, glpVault.address, accountNumber, underlyingMarketIdGlp, ZERO_BI);
-    });
-
-    it('should work normally with glp and gmx balance', async () => {
-      await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
-      await gmxVault.depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
-      await glpVault.depositIntoVaultForDolomiteMargin(accountNumber, amountWei);
-      await requestTransferAndSignal(gmxAmount, amountWei);
-
-      await core.gmxEcosystem.gmxRewardsRouterV2.connect(otherImpersonator).acceptTransfer(glpVault.address);
-      expect(await gmxVault.underlyingBalanceOf()).to.eq(ZERO_BI);
-      expect(await glpVault.gmxBalanceOf()).to.eq(ZERO_BI);
-      expect(await core.gmxEcosystem!.sbfGmx.balanceOf(glpVault.address)).to.eq(ZERO_BI);
-      expect(await core.gmxEcosystem!.sbfGmx.balanceOf(OTHER_ADDRESS)).to.gte(gmxAmount);
-      expect(await core.gmxEcosystem!.fsGlp.balanceOf(OTHER_ADDRESS)).to.eq(amountWei);
-
-      expect(await gmxVault.isVaultFrozen()).to.be.false;
-      expect(await glpVault.isVaultFrozen()).to.be.false;
-      await expectProtocolBalance(core, gmxVault.address, accountNumber, underlyingMarketIdGmx, ZERO_BI);
-      await expectProtocolBalance(core, glpVault.address, accountNumber, underlyingMarketIdGlp, ZERO_BI);
-    });
-
-    it('should work normally when need to stake gmx', async () => {
-      await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
-      await gmxVault.depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
-      await gmxVault.unstakeGmx(gmxAmount);
-      await requestTransferAndSignal(gmxAmount, ZERO_BI);
-      expect(await core.gmxEcosystem.gmx.balanceOf(gmxVault.address)).to.eq(ZERO_BI);
-    });
-
-    it('should work normally if user has no gmx or glp balance but has esGMX', async () => {
-      await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
-      await gmxVault.depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
-
-      await waitDays(30);
-      await glpVault.handleRewards(
-        true,
-        false,
-        true,
-        false,
-        true,
-        true,
-        false,
-      );
-      await gmxVault.withdrawFromVaultForDolomiteMargin(accountNumber, gmxAmount);
-      await expectProtocolBalance(core, gmxVault.address, accountNumber, underlyingMarketIdGmx, ZERO_BI);
-      await expectProtocolBalance(core, glpVault.address, accountNumber, underlyingMarketIdGlp, ZERO_BI);
-      await requestTransferAndSignal(ZERO_BI, ZERO_BI);
-
-      const esGmxAmount = await core.gmxEcosystem.esGmx.balanceOf(glpVault.address);
-      await core.gmxEcosystem.gmxRewardsRouterV2.connect(otherImpersonator).acceptTransfer(glpVault.address);
-
-      expect(await core.gmxEcosystem.esGmx.balanceOf(OTHER_ADDRESS)).to.eq(esGmxAmount);
-      expect(await gmxVault.underlyingBalanceOf()).to.eq(ZERO_BI);
-      expect(await glpVault.gmxBalanceOf()).to.eq(ZERO_BI);
-      expect(await gmxVault.isVaultFrozen()).to.be.false;
-      expect(await glpVault.isVaultFrozen()).to.be.false;
-      await expectProtocolBalance(core, gmxVault.address, accountNumber, underlyingMarketIdGmx, ZERO_BI);
-      await expectProtocolBalance(core, glpVault.address, accountNumber, underlyingMarketIdGlp, ZERO_BI);
-    });
-
-    it('should work normally if user has no gmx or glp balance', async () => {
-      await requestTransferAndSignal(ZERO_BI, ZERO_BI);
-
-      await core.gmxEcosystem.gmxRewardsRouterV2.connect(otherImpersonator).acceptTransfer(glpVault.address);
-      expect(await gmxVault.underlyingBalanceOf()).to.eq(ZERO_BI);
-      expect(await glpVault.gmxBalanceOf()).to.eq(ZERO_BI);
-      expect(await core.gmxEcosystem!.sbfGmx.balanceOf(glpVault.address)).to.eq(ZERO_BI);
-      expect(await core.gmxEcosystem!.sbfGmx.balanceOf(OTHER_ADDRESS)).to.gte(ZERO_BI);
-      expect(await core.gmxEcosystem!.fsGlp.balanceOf(OTHER_ADDRESS)).to.eq(ZERO_BI);
-
-      expect(await gmxVault.isVaultFrozen()).to.be.false;
-      expect(await glpVault.isVaultFrozen()).to.be.false;
-      await expectProtocolBalance(core, gmxVault.address, accountNumber, underlyingMarketIdGmx, ZERO_BI);
-      await expectProtocolBalance(core, glpVault.address, accountNumber, underlyingMarketIdGlp, ZERO_BI);
-    });
-
-    it('should cancel transfer if gmx virtual balance is incorrect', async () => {
-      await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
-      await gmxVault.depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
-      await gmxVault.requestAccountTransfer(OTHER_ADDRESS);
-
-      const result = await gmxVault.connect(core.hhUser5).signalAccountTransfer(ONE_BI, ZERO_BI);
-      await expectEvent(gmxVault, result, 'AccountTransferCanceled', {});
-      expect(await gmxVault.isVaultFrozen()).to.be.false;
-      expect(await glpVault.isVaultFrozen()).to.be.false;
-      await expectProtocolBalance(core, gmxVault.address, accountNumber, underlyingMarketIdGmx, gmxAmount);
-      await expectThrow(
-        gmxVault.cancelAccountTransfer(),
-        'GMXIsolationModeTokenVaultV1: Transfer not in progress'
-      );
-    });
-
-    it('should cancel transfer if glp virtual balance is incorrect', async () => {
-      await gmxVault.requestAccountTransfer(OTHER_ADDRESS);
-
-      const result = await gmxVault.connect(core.hhUser5).signalAccountTransfer(ZERO_BI, ONE_BI);
-      await expectEvent(gmxVault, result, 'AccountTransferCanceled', {});
-      expect(await gmxVault.isVaultFrozen()).to.be.false;
-      expect(await glpVault.isVaultFrozen()).to.be.false;
-      await expectThrow(
-        gmxVault.cancelAccountTransfer(),
-        'GMXIsolationModeTokenVaultV1: Transfer not in progress'
-      );
-    });
-
-    it('transfer back and forth FAILS', async () => {
-      await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
-      await gmxVault.depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
-
-      await gmxVault.requestAccountTransfer(OTHER_ADDRESS);
-      await gmxVault.connect(core.hhUser5).signalAccountTransfer(gmxAmount, ZERO_BI);
-      await core.gmxEcosystem.gmxRewardsRouterV2.connect(otherImpersonator).acceptTransfer(glpVault.address);
-      await expectThrow(
-        core.gmxEcosystem.gmxRewardsRouterV2.connect(otherImpersonator).signalTransfer(glpVault.address),
-      );
-    });
-
-    it('should fail if no transfer is requested', async () => {
-      await expectThrow(
-        gmxVault.connect(core.hhUser5).signalAccountTransfer(gmxAmount, ZERO_BI),
-        'GMXIsolationModeTokenVaultV1: Transfer not in progress'
-      );
-    });
-
-    it('should fail if not called by valid handler', async () => {
-      await expectThrow(
-        gmxVault.connect(core.hhUser1).signalAccountTransfer(gmxAmount, ZERO_BI),
-        `GMXIsolationModeTokenVaultV1: Invalid handler <${core.hhUser1.address.toLowerCase()}>`,
-      );
-    });
-  });
-
-  describe('#cancelAccountTransfer', () => {
-    it('should work normally after user requests transfer', async () => {
-      await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
-      await gmxVault.depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
-      await gmxVault.requestAccountTransfer(OTHER_ADDRESS);
-
-      const result = await gmxVault.cancelAccountTransfer();
-      await expectEvent(gmxVault, result, 'AccountTransferCanceled', {});
-      expect(await core.gmxEcosystem.gmxRewardsRouterV2.pendingReceivers(glpVault.address)).to.eq(ADDRESS_ZERO);
-      expect(await gmxVault.isVaultFrozen()).to.be.false;
-      expect(await glpVault.isVaultFrozen()).to.be.false;
-      await expectProtocolBalance(core, gmxVault.address, accountNumber, underlyingMarketIdGmx, gmxAmount);
-      await expectProtocolBalance(core, glpVault.address, accountNumber, underlyingMarketIdGlp, ZERO_BI);
-
-      await expectThrow(
-        gmxVault.connect(core.hhUser5).signalAccountTransfer(gmxAmount, ZERO_BI),
-        'GMXIsolationModeTokenVaultV1: Transfer not in progress'
-      );
-    });
-
-    it('should work normally with gmx bal', async () => {
-      await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
-      await gmxVault.depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
-      await requestTransferAndSignal(gmxAmount, ZERO_BI);
-
-      const result = await gmxVault.cancelAccountTransfer();
-      await expectEvent(gmxVault, result, 'AccountTransferCanceled', {});
-      expect(await core.gmxEcosystem.gmxRewardsRouterV2.pendingReceivers(glpVault.address)).to.eq(ADDRESS_ZERO);
-      expect(await gmxVault.isVaultFrozen()).to.be.false;
-      expect(await glpVault.isVaultFrozen()).to.be.false;
-      await expectProtocolBalance(core, gmxVault.address, accountNumber, underlyingMarketIdGmx, gmxAmount);
-      await expectProtocolBalance(core, glpVault.address, accountNumber, underlyingMarketIdGlp, ZERO_BI);
-      await expectThrow(
-        gmxVault.connect(core.hhUser5).signalAccountTransfer(gmxAmount, ZERO_BI),
-        'GMXIsolationModeTokenVaultV1: Transfer not in progress'
-      );
-    });
-
-    it('should work normally with glp bal', async () => {
-      await glpVault.depositIntoVaultForDolomiteMargin(accountNumber, amountWei);
-      await requestTransferAndSignal(ZERO_BI, amountWei);
-
-      await gmxVault.cancelAccountTransfer();
-      expect(await core.gmxEcosystem.gmxRewardsRouterV2.pendingReceivers(glpVault.address)).to.eq(ADDRESS_ZERO);
-      expect(await gmxVault.isVaultFrozen()).to.be.false;
-      expect(await glpVault.isVaultFrozen()).to.be.false;
-      await expectProtocolBalance(core, gmxVault.address, accountNumber, underlyingMarketIdGmx, ZERO_BI);
-      await expectProtocolBalance(core, glpVault.address, accountNumber, underlyingMarketIdGlp, amountWei);
-      await expectThrow(
-        gmxVault.connect(core.hhUser5).signalAccountTransfer(gmxAmount, ZERO_BI),
-        'GMXIsolationModeTokenVaultV1: Transfer not in progress'
-      );
-    });
-
-    it('should work normally with gmx and glp bal', async () => {
-      await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
-      await gmxVault.depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
-      await glpVault.depositIntoVaultForDolomiteMargin(accountNumber, amountWei);
-      await requestTransferAndSignal(gmxAmount, amountWei);
-
-      await gmxVault.cancelAccountTransfer();
-      expect(await core.gmxEcosystem.gmxRewardsRouterV2.pendingReceivers(glpVault.address)).to.eq(ADDRESS_ZERO);
-      expect(await gmxVault.isVaultFrozen()).to.be.false;
-      expect(await glpVault.isVaultFrozen()).to.be.false;
-      await expectProtocolBalance(core, gmxVault.address, accountNumber, underlyingMarketIdGmx, gmxAmount);
-      await expectProtocolBalance(core, glpVault.address, accountNumber, underlyingMarketIdGlp, amountWei);
-      await expectThrow(
-        gmxVault.connect(core.hhUser5).signalAccountTransfer(gmxAmount, ZERO_BI),
-        'GMXIsolationModeTokenVaultV1: Transfer not in progress'
-      );
-    });
-
-    it('should fail if transfer was already cancelled by handler', async () => {
-      await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
-      await gmxVault.depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
-      await glpVault.depositIntoVaultForDolomiteMargin(accountNumber, amountWei);
-      await gmxVault.requestAccountTransfer(OTHER_ADDRESS);
-
-      await gmxVault.connect(core.hhUser5).signalAccountTransfer(gmxAmount, ZERO_BI);
-      await expectThrow(
-        gmxVault.cancelAccountTransfer(),
-        'GMXIsolationModeTokenVaultV1: Transfer not in progress'
-      );
-    });
-
-    it('should fail if underlying balance is less than temp balance on glp vault', async () => {
-      await glpVault.depositIntoVaultForDolomiteMargin(accountNumber, amountWei);
-      await requestTransferAndSignal(ZERO_BI, amountWei);
-
-      const glpVaultImpersonator = await impersonate(glpVault.address, true);
-      await core.gmxEcosystem.sGlp.connect(glpVaultImpersonator).transfer(core.hhUser1.address, amountWei);
-
-      await expectThrow(
-        gmxVault.cancelAccountTransfer(),
-        'GLPIsolationModeTokenVaultV2: Invalid underlying balance of'
-      );
-    });
-
-    it('should fail if underlying balance is less than temp balance on gmx vault', async () => {
-      await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
-      await gmxVault.depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
-      await glpVault.depositIntoVaultForDolomiteMargin(accountNumber, amountWei);
-      await requestTransferAndSignal(gmxAmount, amountWei);
-
-      const glpVaultImpersonator = await impersonate(glpVault.address, true);
-      await core.gmxEcosystem.gmxRewardsRouterV2.connect(glpVaultImpersonator).unstakeGmx(gmxAmount);
-      await core.tokens.gmx.connect(glpVaultImpersonator).transfer(core.hhUser1.address, gmxAmount);
-
-      await expectThrow(
-        gmxVault.cancelAccountTransfer(),
-        'GMXIsolationModeTokenVaultV1: Invalid underlying balance of'
-      );
-    });
-
-    it('should fail if there is no transfer in progress', async () => {
-      await expectThrow(
-        gmxVault.cancelAccountTransfer(),
-        'GMXIsolationModeTokenVaultV1: Transfer not in progress',
-      );
-    });
-
-    it('should fail if not called by vault owner', async () => {
-      await expectThrow(
-        gmxVault.connect(core.hhUser2).cancelAccountTransfer(),
-        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
-      );
-    });
-  });
-
   describe('#acceptFullAccountTransfer', () => {
     it('should fail if vault is frozen', async () => {
-      await gmxVault.requestAccountTransfer(OTHER_ADDRESS);
+      await gmxVault.requestAccountTransfer();
       await expectThrow(
         glpVault.connect(core.hhUser5).acceptFullAccountTransfer(glpVault.address),
         'IsolationModeVaultV1Freezable: Vault is frozen',

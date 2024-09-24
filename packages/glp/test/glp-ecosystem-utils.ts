@@ -44,6 +44,8 @@ import {
   GLPUnwrapperTraderV2__factory,
   GLPWrapperTraderV2,
   GLPWrapperTraderV2__factory,
+  GmxAccountTransferLib,
+  GmxAccountTransferLib__factory,
   GMXIsolationModeTokenVaultV1,
   GMXIsolationModeVaultFactory,
   GMXIsolationModeVaultFactory__factory,
@@ -58,6 +60,14 @@ import {
   TestGLPIsolationModeTokenVaultV2,
   TestGMXIsolationModeTokenVaultV1,
 } from '../src/types';
+
+export async function createGmxAccountTransferLib(): Promise<GmxAccountTransferLib> {
+  return createContractWithAbi<GmxAccountTransferLib>(
+    GmxAccountTransferLib__factory.abi,
+    GmxAccountTransferLib__factory.bytecode,
+    [],
+  );
+}
 
 export async function createGLPPriceOracleV1(
   dfsGlpOrFsGlp: IGLPIsolationModeVaultFactory | GLPIsolationModeVaultFactory | IERC20,
@@ -117,9 +127,10 @@ export async function createGLPIsolationModeTokenVaultV1(): Promise<GLPIsolation
 
 export async function createGLPIsolationModeTokenVaultV2(): Promise<GLPIsolationModeTokenVaultV2> {
   const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
+  const gmxAccountTransferLib = await createGmxAccountTransferLib();
   return createContractWithLibrary<GLPIsolationModeTokenVaultV2>(
     'GLPIsolationModeTokenVaultV2',
-    libraries,
+    { ...libraries, gmxAccountTransferLib: gmxAccountTransferLib.address },
     [],
   );
 }
@@ -135,9 +146,10 @@ export async function createTestGLPIsolationModeTokenVaultV1(): Promise<TestGLPI
 
 export async function createTestGLPIsolationModeTokenVaultV2(): Promise<TestGLPIsolationModeTokenVaultV2> {
   const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
+  const gmxAccountTransferLib = await createGmxAccountTransferLib();
   return createContractWithLibrary<TestGLPIsolationModeTokenVaultV2>(
     'TestGLPIsolationModeTokenVaultV2',
-    libraries,
+    { ...libraries, GmxAccountTransferLib: gmxAccountTransferLib.address },
     [],
   );
 }

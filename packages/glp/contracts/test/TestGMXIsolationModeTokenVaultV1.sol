@@ -39,13 +39,13 @@ contract TestGMXIsolationModeTokenVaultV1 is GMXIsolationModeTokenVaultV1 {
     // ==================================================================
 
     bytes32 private constant _FILE = "TestGMXIsolationModeTokenVaultV1";
-    bytes32 private constant _RECIPIENT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.recipient")) - 1);
+    bytes32 private constant _TRANSFER_REQUESTED_SLOT = bytes32(uint256(keccak256("eip1967.proxy.transferRequested")) - 1); // solhint-disable-line max-line-length
 
     // ==================================================================
     // =========================== Functions ============================
     // ==================================================================
 
-    function recipient() external view returns (address) {
-        return _getAddress(_RECIPIENT_SLOT);
+    function transferRequested() external view returns (bool) {
+        return _getUint256(_TRANSFER_REQUESTED_SLOT) == 1;
     }
 }

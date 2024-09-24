@@ -78,6 +78,7 @@ contract GMXIsolationModeVaultFactory is
         _gmx,
         _borrowPositionProxy,
         _userVaultImplementation,
+        address(IGmxRegistryV1(_gmxRegistry).dolomiteRegistry()),
         _dolomiteMargin
     ) {
         gmxRegistry = IGmxRegistryV1(_gmxRegistry);
@@ -143,11 +144,13 @@ contract GMXIsolationModeVaultFactory is
     function _createVault(address _account) internal override returns (address) {
         address vault = super._createVault(_account);
 
-        address glpVault = gmxRegistry.glpVaultFactory().getVaultByAccount(_account);
-        if (glpVault == address(0)) {
-            glpVault = gmxRegistry.glpVaultFactory().createVault(_account);
+        if (_account != _DEAD_VAULT) {
+            address glpVault = gmxRegistry.glpVaultFactory().getVaultByAccount(_account);
+            if (glpVault == address(0)) {
+                glpVault = gmxRegistry.glpVaultFactory().createVault(_account);
+            }
+            IGLPIsolationModeTokenVaultV2(glpVault).sync(vault);
         }
-        IGLPIsolationModeTokenVaultV2(glpVault).sync(vault);
 
         return vault;
     }

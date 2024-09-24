@@ -1,5 +1,5 @@
 import { address } from '@dolomite-margin/dist/src';
-import { BigNumberish } from 'ethers';
+import { BigNumber, BigNumberish } from 'ethers';
 import { Network, NetworkType } from 'packages/base/src/utils/no-deps-constants';
 import {
   DolomiteAccountRegistry,
@@ -11,6 +11,7 @@ import {
   EventEmitterRegistry__factory,
   IDolomiteMargin,
   IDolomiteMarginV2,
+  IERC20,
   IERC20Metadata__factory,
   IExpiry,
   IExpiryV2,
@@ -149,4 +150,12 @@ export async function isIsolationMode(marketId: BigNumberish, core: CoreProtocol
   ).name();
 
   return tokenName.startsWith('Dolomite Isolation:') || tokenName.startsWith('Dolomite:');
+}
+
+export async function freezeAndGetOraclePrice(core: CoreProtocolType<any>, token: IERC20): Promise<BigNumber> {
+  const marketId = await core.dolomiteMargin.getMarketIdByTokenAddress(token.address);
+  const price = await core.dolomiteMargin.getMarketPrice(marketId);
+  await core.testEcosystem!.testPriceOracle.setPrice(token.address, price.value);
+  await core.dolomiteMargin.ownerSetPriceOracle(marketId, core.testEcosystem!.testPriceOracle.address);
+  return price.value;
 }

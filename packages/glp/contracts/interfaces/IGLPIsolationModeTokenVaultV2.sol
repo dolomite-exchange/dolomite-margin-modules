@@ -110,17 +110,9 @@ interface IGLPIsolationModeTokenVaultV2 {
     /**
      * @notice  Signals a full account transfer to the recipient. This function must be called by the gmx vault
      *
-     * @param  _recipient   The address of the recipient who will receive this vault's entire account
      * @param  _glpBal      The account wei of the glp vault in the underlying glp market
      */
-    function signalAccountTransfer(address _recipient, uint256 _glpBal) external;
-
-    /**
-     * @notice  Cancels a full account transfer that has already been signaled. 
-     *          This function must be called by the gmx vault
-     *
-     */
-    function cancelAccountTransfer() external;
+    function signalAccountTransfer(uint256 _glpBal) external;
 
     /**
      * @notice  Accepts a full account transfer from the sender's GMX account. There must not be any tokens in vesting
@@ -196,4 +188,9 @@ interface IGLPIsolationModeTokenVaultV2 {
      * @return The amount of GMX tokens the user owns
      */
     function gmxBalanceOf() external view returns (uint256);
+
+    /**
+     * @return The address for the AccountTransferOutReceiver contract that will be deployed
+     */
+    function getAccountTransferOutReceiverAddress() external view returns (address);
 }

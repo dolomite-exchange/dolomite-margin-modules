@@ -52,6 +52,8 @@ interface IGmxRewardRouterV2 {
 
     function acceptTransfer(address _sender) external;
 
+    function setInStrictTransferMode(bool _inStrictTransferMode) external;
+
     /**
      * @notice              Checks if a pending transfer has been queued from `_sender` via a call to #signalTransfer
      *
@@ -59,4 +61,6 @@ interface IGmxRewardRouterV2 {
      * @return _receiver    The address to which the transfer will be sent if it's executed from the queue
      */
     function pendingReceivers(address _sender) external view returns (address _receiver);
+
+    function gov() external view returns (address);
 }
