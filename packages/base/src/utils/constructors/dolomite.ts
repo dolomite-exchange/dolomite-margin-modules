@@ -4,6 +4,7 @@ import { DolomiteMargin } from '../../../test/utils/dolomite';
 import { CoreProtocolConfig, CoreProtocolType } from '../../../test/utils/setup';
 import {
   DolomiteERC20,
+  DolomiteERC4626,
   EventEmitterRegistry,
   IDolomiteMargin,
   IDolomiteMarginV2,
@@ -230,6 +231,26 @@ export async function getDolomiteErc20ProxyConstructorParams<T extends NetworkTy
     `d${symbol}`,
     await token.decimals(),
     marketId,
+  );
+  return [implementation.address, core.dolomiteMargin.address, transaction.data!];
+}
+
+export async function getDolomiteErc4626ProxyConstructorParams<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  implementation: DolomiteERC4626,
+  marketId: BigNumberish,
+): Promise<any[]> {
+  const token = IERC20Metadata__factory.connect(
+    await core.dolomiteMargin.getMarketTokenAddress(marketId),
+    core.hhUser1,
+  );
+  const symbol = await token.symbol();
+  const transaction = await implementation.populateTransaction.initialize(
+    `Dolomite ERC4626: ${symbol}`,
+    `d${symbol}-ERC4626`,
+    await token.decimals(),
+    marketId,
+    core.dolomiteRegistry.address
   );
   return [implementation.address, core.dolomiteMargin.address, transaction.data!];
 }

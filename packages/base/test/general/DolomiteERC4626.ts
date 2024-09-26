@@ -1,10 +1,10 @@
-import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { AccountInfoStruct } from 'packages/base/src/utils';
 import {
-  DolomiteERC20,
-  DolomiteERC20__factory,
+  DolomiteERC4626,
+  DolomiteERC4626__factory,
+  IERC20,
   TestDolomiteERC20User,
   TestDolomiteERC20User__factory,
 } from '../../src/types';
@@ -13,7 +13,6 @@ import {
   ADDRESS_ZERO,
   MAX_UINT_256_BI,
   Network,
-  ONE_DAY_SECONDS,
   ONE_ETH_BI,
   ZERO_BI,
 } from '../../src/utils/no-deps-constants';
@@ -21,20 +20,20 @@ import { impersonate, revertToSnapshotAndCapture, snapshot } from '../utils';
 import { expectEvent, expectProtocolBalance, expectThrow } from '../utils/assertions';
 
 import { CoreProtocolArbitrumOne } from '../utils/core-protocols/core-protocol-arbitrum-one';
-import { createAndUpgradeDolomiteRegistry, createDolomiteErc20Proxy } from '../utils/dolomite';
+import { createAndUpgradeDolomiteRegistry, createDolomiteErc4626Proxy } from '../utils/dolomite';
 import {
-  disableInterestAccrual, enableInterestAccrual,
-  getMaxDeploymentVersionAddressByDeploymentKey,
+  disableInterestAccrual,
   setupCoreProtocol,
   setupUSDCBalance,
 } from '../utils/setup';
 
 const usdcAmount = BigNumber.from('100000000'); // 100 USDC
 
-describe('DolomiteERC20', () => {
+describe('DolomiteERC4626', () => {
   let snapshotId: string;
   let core: CoreProtocolArbitrumOne;
-  let token: DolomiteERC20;
+  let token: DolomiteERC4626;
+  let asset: IERC20;
   let accountInfo: AccountInfoStruct;
   let accountInfo2: AccountInfoStruct;
   let parValue: BigNumber;
@@ -44,27 +43,23 @@ describe('DolomiteERC20', () => {
       network: Network.ArbitrumOne,
       blockNumber: 220_664_500,
     });
-    const implementation = await createContractWithAbi<DolomiteERC20>(
-      DolomiteERC20__factory.abi,
-      DolomiteERC20__factory.bytecode,
+    const implementation = await createContractWithAbi<DolomiteERC4626>(
+      DolomiteERC4626__factory.abi,
+      DolomiteERC4626__factory.bytecode,
       [],
     );
-    const tokenProxy = await createDolomiteErc20Proxy(implementation, core.marketIds.usdc, core);
-    token = DolomiteERC20__factory.connect(tokenProxy.address, core.hhUser1);
-    await token.initializeVersion2();
-    await token.initializeVersion3(core.dolomiteRegistry.address);
+    const tokenProxy = await createDolomiteErc4626Proxy(implementation, core.marketIds.usdc, core);
+    token = DolomiteERC4626__factory.connect(tokenProxy.address, core.hhUser1);
+    asset = core.tokens.usdc;
 
     await createAndUpgradeDolomiteRegistry(core);
-    // await core.dolomiteRegistryProxy
-    //   .connect(core.governance)
-    //   .upgradeTo(getMaxDeploymentVersionAddressByDeploymentKey('DolomiteRegistryImplementation', core.network));
     await core.dolomiteRegistry
       .connect(core.governance)
       .ownerSetDolomiteAccountRegistry(core.dolomiteAccountRegistryProxy.address);
 
     await disableInterestAccrual(core, core.marketIds.usdc);
-    await setupUSDCBalance(core, core.hhUser1, usdcAmount.mul(10), core.dolomiteMargin);
-    await setupUSDCBalance(core, core.hhUser2, usdcAmount.mul(10), core.dolomiteMargin);
+    await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.dolomiteMargin);
+    await setupUSDCBalance(core, core.hhUser2, usdcAmount, token);
     await depositIntoDolomiteMargin(core, core.hhUser1, ZERO_BI, core.marketIds.usdc, usdcAmount);
     await core.dolomiteMargin.ownerSetGlobalOperator(token.address, true);
 
@@ -81,30 +76,38 @@ describe('DolomiteERC20', () => {
 
   describe('#initialize', () => {
     it('should work normally', async () => {
-      expect(await token.name()).to.eq('Dolomite: USDC');
-      expect(await token.symbol()).to.eq('dUSDC');
+      expect(await token.name()).to.eq('Dolomite ERC4626: USDC');
+      expect(await token.symbol()).to.eq('dUSDC-ERC4626');
       expect(await token.decimals()).to.eq(6);
       expect(await token.marketId()).to.eq(core.marketIds.usdc);
-      expect(await token.underlyingToken()).to.eq(core.tokens.usdc.address);
+      expect(await token.asset()).to.eq(core.tokens.usdc.address);
     });
 
     it('should not be callable again', async () => {
-      await expectThrow(token.initialize('', '', 18, 0));
+      await expectThrow(token.initialize('', '', 18, 0, ADDRESS_ZERO));
     });
   });
 
-  describe('#initialize', () => {
-    it('should not be callable again', async () => {
-      await expectThrow(token.initializeVersion2());
+  describe('#maxDeposit', () => {
+    it('should work normally', async () => {
+      expect(await token.maxDeposit(core.hhUser1.address)).to.eq(MAX_UINT_256_BI);
+
+      const assets = await token.totalAssets();
+      await core.dolomiteMargin.ownerSetMaxWei(core.marketIds.usdc, assets.add(usdcAmount));
+      expect(await token.maxDeposit(core.hhUser1.address)).to.eq(usdcAmount);
+
+      await core.dolomiteMargin.ownerSetMaxWei(core.marketIds.usdc, 1);
+      expect(await token.maxDeposit(core.hhUser1.address)).to.eq(0);
     });
   });
 
-  describe('#mint', () => {
+  describe('#deposit', () => {
     it('should work normally', async () => {
       expect(await token.balanceOf(core.hhUser2.address)).to.eq(ZERO_BI);
+      expect(await token.previewDeposit(usdcAmount)).to.eq(parValue);
 
-      expect(await token.connect(core.hhUser2).callStatic.mint(usdcAmount)).to.eq(parValue);
-      const result = await token.connect(core.hhUser2).mint(usdcAmount);
+      await asset.connect(core.hhUser2).approve(token.address, usdcAmount);
+      const result = await token.connect(core.hhUser2).deposit(usdcAmount, core.hhUser2.address);
       await expectEvent(token, result, 'Transfer', {
         from: ADDRESS_ZERO,
         to: core.hhUser2.address,
@@ -115,27 +118,212 @@ describe('DolomiteERC20', () => {
       await expectProtocolBalance(core, core.hhUser2, ZERO_BI, core.marketIds.usdc, usdcAmount);
     });
 
+    it('should work normally with different receipient', async () => {
+      expect(await token.balanceOf(core.hhUser2.address)).to.eq(ZERO_BI);
+
+      await asset.connect(core.hhUser2).approve(token.address, usdcAmount);
+      const result = await token.connect(core.hhUser2).deposit(usdcAmount, core.hhUser3.address);
+      await expectEvent(token, result, 'Transfer', {
+        from: ADDRESS_ZERO,
+        to: core.hhUser3.address,
+        value: parValue,
+      });
+
+      expect(await token.balanceOf(core.hhUser3.address)).to.eq(parValue);
+      await expectProtocolBalance(core, core.hhUser3, ZERO_BI, core.marketIds.usdc, usdcAmount);
+    });
+
     it('should fail if amount is 0', async () => {
-      await expectThrow(token.connect(core.hhUser1).mint(ZERO_BI), 'DolomiteERC20: Invalid amount');
+      await expectThrow(
+        token.connect(core.hhUser1).deposit(ZERO_BI, core.hhUser1.address),
+        'DolomiteERC4626: Invalid amount'
+      );
     });
   });
 
-  describe('#redeem', () => {
+  describe('#maxMint', () => {
     it('should work normally', async () => {
-      expect(await token.connect(core.hhUser1).callStatic.redeem(parValue)).to.eq(usdcAmount);
-      const result = await token.connect(core.hhUser1).redeem(parValue);
+      expect(await token.maxMint(core.hhUser1.address)).to.eq(MAX_UINT_256_BI);
+
+      const assets = await token.totalAssets();
+      await core.dolomiteMargin.ownerSetMaxWei(core.marketIds.usdc, assets.add(usdcAmount));
+      expect(await token.maxMint(core.hhUser1.address)).to.eq(parValue.sub(1)); // Adding usdcAmount to assets is some reason one less
+      await expectThrow(
+        token.connect(core.hhUser2).mint(parValue, core.hhUser2.address),
+        'OperationImpl: Total supply exceeds max supply <2>'
+      );
+      await token.connect(core.hhUser2).mint(parValue.sub(1), core.hhUser2.address);
+
+      await core.dolomiteMargin.ownerSetMaxWei(core.marketIds.usdc, 1);
+      expect(await token.maxMint(core.hhUser1.address)).to.eq(0);
+    });
+  });
+
+  describe('#mint', () => {
+    it('should work normally', async () => {
+      expect(await token.balanceOf(core.hhUser2.address)).to.eq(ZERO_BI);
+      expect(await token.previewMint(parValue)).to.eq(usdcAmount);
+
+      await asset.connect(core.hhUser2).approve(token.address, usdcAmount);
+      const result = await token.connect(core.hhUser2).mint(parValue, core.hhUser2.address);
+      await expectEvent(token, result, 'Transfer', {
+        from: ADDRESS_ZERO,
+        to: core.hhUser2.address,
+        value: parValue,
+      });
+
+      expect(await token.balanceOf(core.hhUser2.address)).to.eq(parValue);
+      await expectProtocolBalance(core, core.hhUser2, ZERO_BI, core.marketIds.usdc, usdcAmount);
+    });
+
+    it('should work normally with different receipient', async () => {
+      expect(await token.balanceOf(core.hhUser2.address)).to.eq(ZERO_BI);
+
+      await asset.connect(core.hhUser2).approve(token.address, usdcAmount);
+      const result = await token.connect(core.hhUser2).mint(parValue, core.hhUser3.address);
+      await expectEvent(token, result, 'Transfer', {
+        from: ADDRESS_ZERO,
+        to: core.hhUser3.address,
+        value: parValue,
+      });
+
+      expect(await token.balanceOf(core.hhUser3.address)).to.eq(parValue);
+      await expectProtocolBalance(core, core.hhUser3, ZERO_BI, core.marketIds.usdc, usdcAmount);
+    });
+
+    it('should fail if amount is 0', async () => {
+      await expectThrow(
+        token.connect(core.hhUser1).mint(ZERO_BI, ADDRESS_ZERO),
+        'DolomiteERC4626: Invalid amount'
+      );
+    });
+  });
+
+  describe('#maxWithdraw', () => {
+    it('should work normally', async () => {
+      expect(await token.maxWithdraw(core.hhUser1.address)).to.eq(usdcAmount);
+    });
+  });
+
+  describe('#withdraw', () => {
+    it('should work normally', async () => {
+      expect(await token.previewWithdraw(usdcAmount)).to.eq(parValue);
+      const result = await token.connect(core.hhUser1).withdraw(usdcAmount, core.hhUser1.address, core.hhUser1.address);
       await expectEvent(token, result, 'Transfer', {
         from: core.hhUser1.address,
         to: ADDRESS_ZERO,
         value: parValue,
       });
 
+      expect(await asset.balanceOf(core.hhUser1.address)).to.eq(usdcAmount);
       expect(await token.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
       await expectProtocolBalance(core, core.hhUser1, ZERO_BI, core.marketIds.usdc, ZERO_BI);
     });
 
+    it('should work with different receiver', async () => {
+      const result = await token.connect(core.hhUser1).withdraw(usdcAmount, core.hhUser2.address, core.hhUser1.address);
+      await expectEvent(token, result, 'Transfer', {
+        from: core.hhUser1.address,
+        to: ADDRESS_ZERO,
+        value: parValue,
+      });
+
+      expect(await asset.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
+      expect(await asset.balanceOf(core.hhUser2.address)).to.eq(usdcAmount.mul(2));
+      expect(await token.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1, ZERO_BI, core.marketIds.usdc, ZERO_BI);
+    });
+
+    it('should work for different owner', async () => {
+      await token.connect(core.hhUser1).approve(core.hhUser2.address, parValue);
+      const result = await token.connect(core.hhUser2).withdraw(usdcAmount, core.hhUser1.address, core.hhUser1.address);
+      await expectEvent(token, result, 'Transfer', {
+        from: core.hhUser1.address,
+        to: ADDRESS_ZERO,
+        value: parValue,
+      });
+
+      expect(await asset.balanceOf(core.hhUser1.address)).to.eq(usdcAmount);
+      expect(await token.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1, ZERO_BI, core.marketIds.usdc, ZERO_BI);
+    });
+
+    it('should fail if owner has not approved the sender', async () => {
+      await expectThrow(
+        token.connect(core.hhUser2).withdraw(usdcAmount, core.hhUser1.address, core.hhUser1.address),
+        'ERC20: Insufficient allowance',
+      );
+    });
+
     it('should fail if amount is 0', async () => {
-      await expectThrow(token.connect(core.hhUser1).redeem(ZERO_BI), 'DolomiteERC20: Invalid amount');
+      await expectThrow(
+        token.connect(core.hhUser1).withdraw(ZERO_BI, core.hhUser1.address, core.hhUser1.address),
+        'DolomiteERC4626: Invalid amount'
+      );
+    });
+  });
+
+  describe('#maxRedeem', () => {
+    it('should work normally', async () => {
+      expect(await token.maxRedeem(core.hhUser1.address)).to.eq(parValue);
+    });
+  });
+
+  describe('#redeem', () => {
+    it('should work normally', async () => {
+      expect(await token.previewRedeem(parValue)).to.eq(usdcAmount);
+      const result = await token.connect(core.hhUser1).redeem(parValue, core.hhUser1.address, core.hhUser1.address);
+      await expectEvent(token, result, 'Transfer', {
+        from: core.hhUser1.address,
+        to: ADDRESS_ZERO,
+        value: parValue,
+      });
+
+      expect(await asset.balanceOf(core.hhUser1.address)).to.eq(usdcAmount);
+      expect(await token.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1, ZERO_BI, core.marketIds.usdc, ZERO_BI);
+    });
+
+    it('should work with different receiver', async () => {
+      const result = await token.connect(core.hhUser1).redeem(parValue, core.hhUser2.address, core.hhUser1.address);
+      await expectEvent(token, result, 'Transfer', {
+        from: core.hhUser1.address,
+        to: ADDRESS_ZERO,
+        value: parValue,
+      });
+
+      expect(await asset.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
+      expect(await asset.balanceOf(core.hhUser2.address)).to.eq(usdcAmount.mul(2));
+      expect(await token.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1, ZERO_BI, core.marketIds.usdc, ZERO_BI);
+    });
+
+    it('should work for different owner', async () => {
+      await token.connect(core.hhUser1).approve(core.hhUser2.address, parValue);
+      const result = await token.connect(core.hhUser2).redeem(parValue, core.hhUser1.address, core.hhUser1.address);
+      await expectEvent(token, result, 'Transfer', {
+        from: core.hhUser1.address,
+        to: ADDRESS_ZERO,
+        value: parValue,
+      });
+
+      expect(await asset.balanceOf(core.hhUser1.address)).to.eq(usdcAmount);
+      expect(await token.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1, ZERO_BI, core.marketIds.usdc, ZERO_BI);
+    });
+
+    it('should fail if owner has not approved the sender', async () => {
+      await expectThrow(
+        token.connect(core.hhUser2).redeem(parValue, core.hhUser1.address, core.hhUser1.address),
+        'ERC20: Insufficient allowance',
+      );
+    });
+
+    it('should fail if amount is 0', async () => {
+      await expectThrow(
+        token.connect(core.hhUser1).redeem(ZERO_BI, core.hhUser1.address, core.hhUser1.address),
+        'DolomiteERC4626: Invalid amount'
+      );
     });
   });
 
@@ -287,16 +475,6 @@ describe('DolomiteERC20', () => {
     });
   });
 
-  describe('#unscaledBalanceOf', () => {
-    it('should work normally', async () => {
-      await enableInterestAccrual(core, core.marketIds.usdc);
-      const weiAmount = await core.dolomiteMargin.getAccountWei(accountInfo, core.marketIds.usdc);
-      expect(await token.unscaledBalanceOf(core.hhUser1.address)).to.eq(weiAmount.value);
-      await increase(ONE_DAY_SECONDS);
-      expect(await token.unscaledBalanceOf(core.hhUser1.address)).to.gt(weiAmount.value);
-    });
-  });
-
   describe('#totalSupply', () => {
     it('should work normally', async () => {
       const totalSupply = (await core.dolomiteMargin.getMarketTotalPar(core.marketIds.usdc)).supply;
@@ -306,13 +484,13 @@ describe('DolomiteERC20', () => {
 
   describe('#name', () => {
     it('should work normally', async () => {
-      expect(await token.name()).to.eq('Dolomite: USDC');
+      expect(await token.name()).to.eq('Dolomite ERC4626: USDC');
     });
   });
 
   describe('#symbol', () => {
     it('should work normally', async () => {
-      expect(await token.symbol()).to.eq('dUSDC');
+      expect(await token.symbol()).to.eq('dUSDC-ERC4626');
     });
   });
 
@@ -322,13 +500,13 @@ describe('DolomiteERC20', () => {
     });
   });
 
-  describe('#unscaledTotalSupply', () => {
+  describe('#totalAssets', () => {
     it('should work normally', async () => {
       const totalSupply = (await core.dolomiteMargin.getMarketTotalPar(core.marketIds.usdc)).supply;
       const index = await core.dolomiteMargin.getMarketCurrentIndex(core.marketIds.usdc);
 
       // Can be one wei off due to rounding
-      expect((await token.unscaledTotalSupply()).toNumber()).to.approximately(
+      expect((await token.totalAssets()).toNumber()).to.approximately(
         totalSupply.mul(index.supply).div(ONE_ETH_BI).toNumber(),
         1,
       );
