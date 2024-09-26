@@ -20,27 +20,24 @@
 
 pragma solidity ^0.8.9;
 
-import { IERC4626 } from "@openzeppelin/contracts/interfaces/IERC4626.sol";
-import { IDolomiteRegistry } from "./IDolomiteRegistry.sol";
+import { DolomiteERC4626 } from "../general/DolomiteERC4626.sol";
+import { InternalSafeDelegateCallLib } from "../lib/InternalSafeDelegateCallLib.sol";
 
 
 /**
- * @title   IDolomiteERC4626
+ * @title   TestDolomiteERC4626
  * @author  Dolomite
  *
- * @notice  Interface that defines an ERC4626 wrapper around a user's Dolomite balance.
+ * @notice  Test implementation for exposing areas for coverage testing
  */
-interface IDolomiteERC4626 is IERC4626 {
+contract TestDolomiteERC4626 is DolomiteERC4626 {
+    using InternalSafeDelegateCallLib for address;
 
-    struct MetadataStruct {
-        string name;
-        string symbol;
-        uint8 decimals;
+    // ============ Functions ============
+
+    function callFunctionAndTriggerReentrancy(
+        bytes calldata _callDataWithSelector
+    ) external payable nonReentrant {
+        address(this).safeDelegateCall(_callDataWithSelector);
     }
-
-    function isValidReceiver(address _receiver) external view returns (bool);
-
-    function marketId() external view returns (uint256);
-
-    function dolomiteRegistry() external view returns (IDolomiteRegistry);
 }

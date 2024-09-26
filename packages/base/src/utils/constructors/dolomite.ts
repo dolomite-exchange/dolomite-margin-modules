@@ -14,6 +14,7 @@ import {
   IIsolationModeVaultFactory,
   ILiquidatorAssetRegistry,
   RegistryProxy,
+  TestDolomiteERC4626,
 } from '../../types';
 import { IDolomiteInterestSetter, IDolomiteStructs } from '../../types/contracts/protocol/interfaces/IDolomiteMargin';
 import { Network, NetworkType, ZERO_BI } from '../no-deps-constants';
@@ -237,7 +238,7 @@ export async function getDolomiteErc20ProxyConstructorParams<T extends NetworkTy
 
 export async function getDolomiteErc4626ProxyConstructorParams<T extends NetworkType>(
   core: CoreProtocolType<T>,
-  implementation: DolomiteERC4626,
+  implementation: DolomiteERC4626 | TestDolomiteERC4626,
   marketId: BigNumberish,
 ): Promise<any[]> {
   const token = IERC20Metadata__factory.connect(

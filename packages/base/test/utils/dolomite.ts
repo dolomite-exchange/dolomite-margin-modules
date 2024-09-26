@@ -19,6 +19,7 @@ import {
   IsolationModeTraderProxy__factory,
   RegistryProxy,
   RegistryProxy__factory,
+  TestDolomiteERC4626,
 } from '../../src/types';
 import {
   getDolomiteErc20ProxyConstructorParams,
@@ -83,7 +84,7 @@ export async function createDolomiteErc20Proxy(
 }
 
 export async function createDolomiteErc4626Proxy(
-  implementation: DolomiteERC4626,
+  implementation: DolomiteERC4626 | TestDolomiteERC4626,
   marketId: BigNumberish,
   core: CoreProtocolType<NetworkType>,
 ): Promise<RegistryProxy> {

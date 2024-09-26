@@ -2,11 +2,11 @@ import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { AccountInfoStruct } from 'packages/base/src/utils';
 import {
-  DolomiteERC4626,
-  DolomiteERC4626__factory,
   IERC20,
   TestDolomiteERC20User,
   TestDolomiteERC20User__factory,
+  TestDolomiteERC4626,
+  TestDolomiteERC4626__factory,
 } from '../../src/types';
 import { createContractWithAbi, depositIntoDolomiteMargin } from '../../src/utils/dolomite-utils';
 import {
@@ -32,7 +32,7 @@ const usdcAmount = BigNumber.from('100000000'); // 100 USDC
 describe('DolomiteERC4626', () => {
   let snapshotId: string;
   let core: CoreProtocolArbitrumOne;
-  let token: DolomiteERC4626;
+  let token: TestDolomiteERC4626;
   let asset: IERC20;
   let accountInfo: AccountInfoStruct;
   let accountInfo2: AccountInfoStruct;
@@ -43,13 +43,13 @@ describe('DolomiteERC4626', () => {
       network: Network.ArbitrumOne,
       blockNumber: 220_664_500,
     });
-    const implementation = await createContractWithAbi<DolomiteERC4626>(
-      DolomiteERC4626__factory.abi,
-      DolomiteERC4626__factory.bytecode,
+    const implementation = await createContractWithAbi<TestDolomiteERC4626>(
+      TestDolomiteERC4626__factory.abi,
+      TestDolomiteERC4626__factory.bytecode,
       [],
     );
     const tokenProxy = await createDolomiteErc4626Proxy(implementation, core.marketIds.usdc, core);
-    token = DolomiteERC4626__factory.connect(tokenProxy.address, core.hhUser1);
+    token = TestDolomiteERC4626__factory.connect(tokenProxy.address, core.hhUser1);
     asset = core.tokens.usdc;
 
     await createAndUpgradeDolomiteRegistry(core);
@@ -113,6 +113,12 @@ describe('DolomiteERC4626', () => {
         to: core.hhUser2.address,
         value: parValue,
       });
+      await expectEvent(token, result, 'Deposit', {
+        sender: core.hhUser2.address,
+        owner: core.hhUser2.address,
+        assets: usdcAmount,
+        shares: parValue
+      });
 
       expect(await token.balanceOf(core.hhUser2.address)).to.eq(parValue);
       await expectProtocolBalance(core, core.hhUser2, ZERO_BI, core.marketIds.usdc, usdcAmount);
@@ -128,6 +134,12 @@ describe('DolomiteERC4626', () => {
         to: core.hhUser3.address,
         value: parValue,
       });
+      await expectEvent(token, result, 'Deposit', {
+        sender: core.hhUser2.address,
+        owner: core.hhUser3.address,
+        assets: usdcAmount,
+        shares: parValue
+      });
 
       expect(await token.balanceOf(core.hhUser3.address)).to.eq(parValue);
       await expectProtocolBalance(core, core.hhUser3, ZERO_BI, core.marketIds.usdc, usdcAmount);
@@ -139,6 +151,14 @@ describe('DolomiteERC4626', () => {
         'DolomiteERC4626: Invalid amount'
       );
     });
+
+    it('should fail if reentered', async () => {
+      const transaction = await token.populateTransaction.deposit(usdcAmount, core.hhUser1.address);
+      await expectThrow(
+        token.callFunctionAndTriggerReentrancy(transaction.data!),
+        'ReentrancyGuardUpgradeable: Reentrant call'
+      );
+    });
   });
 
   describe('#maxMint', () => {
@@ -147,7 +167,8 @@ describe('DolomiteERC4626', () => {
 
       const assets = await token.totalAssets();
       await core.dolomiteMargin.ownerSetMaxWei(core.marketIds.usdc, assets.add(usdcAmount));
-      expect(await token.maxMint(core.hhUser1.address)).to.eq(parValue.sub(1)); // Adding usdcAmount to assets is some reason one less
+      // Adding usdcAmount to assets is some reason one less
+      expect(await token.maxMint(core.hhUser1.address)).to.eq(parValue.sub(1));
       await expectThrow(
         token.connect(core.hhUser2).mint(parValue, core.hhUser2.address),
         'OperationImpl: Total supply exceeds max supply <2>'
@@ -171,6 +192,12 @@ describe('DolomiteERC4626', () => {
         to: core.hhUser2.address,
         value: parValue,
       });
+      await expectEvent(token, result, 'Deposit', {
+        sender: core.hhUser2.address,
+        owner: core.hhUser2.address,
+        assets: usdcAmount,
+        shares: parValue
+      });
 
       expect(await token.balanceOf(core.hhUser2.address)).to.eq(parValue);
       await expectProtocolBalance(core, core.hhUser2, ZERO_BI, core.marketIds.usdc, usdcAmount);
@@ -186,6 +213,12 @@ describe('DolomiteERC4626', () => {
         to: core.hhUser3.address,
         value: parValue,
       });
+      await expectEvent(token, result, 'Deposit', {
+        sender: core.hhUser2.address,
+        owner: core.hhUser3.address,
+        assets: usdcAmount,
+        shares: parValue
+      });
 
       expect(await token.balanceOf(core.hhUser3.address)).to.eq(parValue);
       await expectProtocolBalance(core, core.hhUser3, ZERO_BI, core.marketIds.usdc, usdcAmount);
@@ -195,6 +228,14 @@ describe('DolomiteERC4626', () => {
       await expectThrow(
         token.connect(core.hhUser1).mint(ZERO_BI, ADDRESS_ZERO),
         'DolomiteERC4626: Invalid amount'
+      );
+    });
+
+    it('should fail if reentered', async () => {
+      const transaction = await token.populateTransaction.mint(parValue, core.hhUser1.address);
+      await expectThrow(
+        token.callFunctionAndTriggerReentrancy(transaction.data!),
+        'ReentrancyGuardUpgradeable: Reentrant call'
       );
     });
   });
@@ -213,6 +254,13 @@ describe('DolomiteERC4626', () => {
         from: core.hhUser1.address,
         to: ADDRESS_ZERO,
         value: parValue,
+      });
+      await expectEvent(token, result, 'Withdraw', {
+        sender: core.hhUser1.address,
+        receiver: core.hhUser1.address,
+        owner: core.hhUser1.address,
+        assets: usdcAmount,
+        shares: parValue
       });
 
       expect(await asset.balanceOf(core.hhUser1.address)).to.eq(usdcAmount);
@@ -242,6 +290,13 @@ describe('DolomiteERC4626', () => {
         to: ADDRESS_ZERO,
         value: parValue,
       });
+      await expectEvent(token, result, 'Withdraw', {
+        sender: core.hhUser2.address,
+        receiver: core.hhUser1.address,
+        owner: core.hhUser1.address,
+        assets: usdcAmount,
+        shares: parValue
+      });
 
       expect(await asset.balanceOf(core.hhUser1.address)).to.eq(usdcAmount);
       expect(await token.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
@@ -261,6 +316,18 @@ describe('DolomiteERC4626', () => {
         'DolomiteERC4626: Invalid amount'
       );
     });
+
+    it('should fail if reentered', async () => {
+      const transaction = await token.populateTransaction.withdraw(
+        usdcAmount,
+        core.hhUser1.address,
+        core.hhUser1.address
+      );
+      await expectThrow(
+        token.callFunctionAndTriggerReentrancy(transaction.data!),
+        'ReentrancyGuardUpgradeable: Reentrant call'
+      );
+    });
   });
 
   describe('#maxRedeem', () => {
@@ -277,6 +344,13 @@ describe('DolomiteERC4626', () => {
         from: core.hhUser1.address,
         to: ADDRESS_ZERO,
         value: parValue,
+      });
+      await expectEvent(token, result, 'Withdraw', {
+        sender: core.hhUser1.address,
+        receiver: core.hhUser1.address,
+        owner: core.hhUser1.address,
+        assets: usdcAmount,
+        shares: parValue
       });
 
       expect(await asset.balanceOf(core.hhUser1.address)).to.eq(usdcAmount);
@@ -306,6 +380,13 @@ describe('DolomiteERC4626', () => {
         to: ADDRESS_ZERO,
         value: parValue,
       });
+      await expectEvent(token, result, 'Withdraw', {
+        sender: core.hhUser2.address,
+        receiver: core.hhUser1.address,
+        owner: core.hhUser1.address,
+        assets: usdcAmount,
+        shares: parValue
+      });
 
       expect(await asset.balanceOf(core.hhUser1.address)).to.eq(usdcAmount);
       expect(await token.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
@@ -323,6 +404,14 @@ describe('DolomiteERC4626', () => {
       await expectThrow(
         token.connect(core.hhUser1).redeem(ZERO_BI, core.hhUser1.address, core.hhUser1.address),
         'DolomiteERC4626: Invalid amount'
+      );
+    });
+
+    it('should fail if reentered', async () => {
+      const transaction = await token.populateTransaction.redeem(parValue, core.hhUser1.address, core.hhUser1.address);
+      await expectThrow(
+        token.callFunctionAndTriggerReentrancy(transaction.data!),
+        'ReentrancyGuardUpgradeable: Reentrant call'
       );
     });
   });

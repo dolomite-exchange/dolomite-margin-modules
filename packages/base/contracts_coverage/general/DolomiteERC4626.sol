@@ -4,6 +4,8 @@
 pragma solidity ^0.8.9;
 
 import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { OnlyDolomiteMarginForUpgradeable } from "../helpers/OnlyDolomiteMarginForUpgradeable.sol";
 import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
 import { ReentrancyGuardUpgradeable } from "../helpers/ReentrancyGuardUpgradeable.sol";
@@ -17,10 +19,7 @@ import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { DolomiteMarginMath } from "../protocol/lib/DolomiteMarginMath.sol";
 import { Require } from "../protocol/lib/Require.sol";
 import { TypesLib } from "../protocol/lib/TypesLib.sol";
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import "hardhat/console.sol";
 
 /**
  * @title   DolomiteERC4626
@@ -41,7 +40,10 @@ contract DolomiteERC4626 is
     using TypesLib for IDolomiteStructs.Par;
     using TypesLib for IDolomiteStructs.Wei;
     using SafeERC20 for IERC20;
-    // @todo Add ERC4626 events
+
+    // ==================================================================
+    // =========================== Constants ============================
+    // ==================================================================
 
     bytes32 private constant _FILE = "DolomiteERC4626";
 
@@ -53,6 +55,10 @@ contract DolomiteERC4626 is
     bytes32 private constant _ASSET_SLOT = bytes32(uint256(keccak256("eip1967.proxy.asset")) - 1);
 
     uint256 private constant _DEFAULT_ACCOUNT_NUMBER = 0;
+
+    // ==================================================================
+    // ========================== Initializer ===========================
+    // ==================================================================
 
     function initialize(
         string calldata _name,
@@ -75,38 +81,9 @@ contract DolomiteERC4626 is
         __ReentrancyGuardUpgradeable__init();
     }
 
-    function convertToShares(uint256 _assets) public view returns (uint256) {
-        IDolomiteStructs.Wei memory amountWei = IDolomiteStructs.Wei({
-            sign: true,
-            value: _assets
-        });
-        return DOLOMITE_MARGIN().weiToPar(marketId(), amountWei).value;
-    }
-
-    function convertToAssets(uint256 _shares) public view returns (uint256) {
-        IDolomiteStructs.Par memory amountPar = IDolomiteStructs.Par({
-            sign: true,
-            value: _shares.to128()
-        });
-        return DOLOMITE_MARGIN().parToWei(marketId(), amountPar).value;
-    }
-
-    function maxDeposit(address /* _receiver */) external view returns (uint256) {
-        uint256 maxWei = DOLOMITE_MARGIN().getMarketMaxWei(marketId()).value;
-        if (maxWei == 0) {
-            return type(uint256).max;
-        }
-
-        uint256 assets = totalAssets();
-        if (maxWei < assets) {
-            return 0;
-        }
-        return maxWei - assets;
-    }
-
-    function previewDeposit(uint256 _assets) external view returns (uint256) {
-        return convertToShares(_assets);
-    }
+    // ==================================================================
+    // ======================== Public Functions ========================
+    // ==================================================================
 
     function deposit(uint256 _assets, address _recipient) external nonReentrant returns (uint256) {
         if (_assets > 0) { /* FOR COVERAGE TESTING */ }
@@ -130,43 +107,16 @@ contract DolomiteERC4626 is
             ref: IDolomiteStructs.AssetReference.Delta,
             denomination: IDolomiteStructs.AssetDenomination.Wei
         });
-
-        IERC20 underlyingToken = IERC20(asset());
-        underlyingToken.safeTransferFrom(msg.sender, address(this), _assets);
-        underlyingToken.safeApprove(address(dolomiteMargin), _assets);
-        dolomiteMargin.deposit(
-            account.owner,
-            address(this),
-            account.number,
-            marketId(),
-            assetAmount
-        );
+        _depositIntoDolomite(account, assetAmount, _assets, dolomiteMargin);
 
         IDolomiteStructs.Par memory delta = dolomiteMargin.getAccountPar(account, marketId()).sub(balanceBefore);
         /*assert(delta.sign);*/
         /*assert(delta.value == shares);*/
 
         emit Transfer(address(0), _recipient, delta.value);
+        emit Deposit(msg.sender, _recipient, _assets, shares);
 
         return delta.value;
-    }
-
-    function maxMint(address /* _receiver */) external view returns (uint256) {
-        IDolomiteStructs.Wei memory maxWei = DOLOMITE_MARGIN().getMarketMaxWei(marketId());
-        if (maxWei.value == 0) {
-            return type(uint256).max;
-        }
-
-        uint256 maxPar = DOLOMITE_MARGIN().weiToPar(marketId(), maxWei).value;
-        uint256 supply = totalSupply();
-        if (maxPar < supply) {
-            return 0;
-        }
-        return maxPar - supply;
-    }
-
-    function previewMint(uint256 _shares) external view returns (uint256) {
-        return convertToAssets(_shares);
     }
 
     function mint(uint256 _shares, address _recipient) external nonReentrant returns (uint256) {
@@ -192,36 +142,16 @@ contract DolomiteERC4626 is
             denomination: IDolomiteStructs.AssetDenomination.Par
         });
 
-        IERC20 underlyingToken = IERC20(asset());
-        underlyingToken.safeTransferFrom(msg.sender, address(this), assets);
-        underlyingToken.safeApprove(address(dolomiteMargin), assets);
-        dolomiteMargin.deposit(
-            account.owner,
-            address(this),
-            account.number,
-            marketId(),
-            assetAmount
-        );
+        _depositIntoDolomite(account, assetAmount, assets, dolomiteMargin);
 
         IDolomiteStructs.Wei memory delta = dolomiteMargin.getAccountWei(account, marketId()).sub(balanceBefore);
         /*assert(delta.sign);*/
         /*assert(delta.value == assets);*/
 
         emit Transfer(address(0), _recipient, _shares);
+        emit Deposit(msg.sender, _recipient, assets, _shares);
 
         return delta.value;
-    }
-
-    function maxWithdraw(address _owner) external view returns (uint256) {
-        IDolomiteStructs.Par memory balancePar = IDolomiteStructs.Par({
-            sign: true,
-            value: balanceOf(_owner).to128()
-        });
-        return DOLOMITE_MARGIN().parToWei(marketId(), balancePar).value;
-    }
-
-    function previewWithdraw(uint256 _assets) external view returns (uint256) {
-        return convertToShares(_assets);
     }
 
     function withdraw(uint256 _assets, address _receiver, address _owner) external nonReentrant returns (uint256) {
@@ -263,16 +193,9 @@ contract DolomiteERC4626 is
         /*assert(shares == delta.value);*/
 
         emit Transfer(_owner, address(0), shares);
+        emit Withdraw(msg.sender, _receiver, _owner, _assets, shares);
 
         return delta.value;
-    }
-
-    function maxRedeem(address _owner) external view returns (uint256) {
-        return balanceOf(_owner);
-    }
-
-    function previewRedeem(uint256 _shares) external view returns (uint256) {
-        return convertToAssets(_shares);
     }
 
     function redeem(uint256 _shares, address _receiver, address _owner) external nonReentrant returns (uint256) {
@@ -312,8 +235,78 @@ contract DolomiteERC4626 is
         /*assert(delta.sign);*/
 
         emit Transfer(_owner, address(0), _shares);
+        emit Withdraw(msg.sender, _receiver, _owner, delta.value, _shares);
 
         return delta.value;
+    }
+
+    // ==================================================================
+    // ======================== Public Functions ========================
+    // ==================================================================
+
+    function previewDeposit(uint256 _assets) external view returns (uint256) {
+        return convertToShares(_assets);
+    }
+
+    function previewMint(uint256 _shares) external view returns (uint256) {
+        return convertToAssets(_shares);
+    }
+
+    function previewWithdraw(uint256 _assets) external view returns (uint256) {
+        return convertToShares(_assets);
+    }
+
+    function previewRedeem(uint256 _shares) external view returns (uint256) {
+        return convertToAssets(_shares);
+    }
+
+    function maxDeposit(address /* _receiver */) external view returns (uint256) {
+        uint256 maxWei = DOLOMITE_MARGIN().getMarketMaxWei(marketId()).value;
+        if (maxWei == 0) {
+            return type(uint256).max;
+        }
+
+        uint256 assets = totalAssets();
+        return maxWei < assets ? 0 : maxWei - assets;
+    }
+
+    function maxMint(address /* _receiver */) external view returns (uint256) {
+        IDolomiteStructs.Wei memory maxWei = DOLOMITE_MARGIN().getMarketMaxWei(marketId());
+        if (maxWei.value == 0) {
+            return type(uint256).max;
+        }
+
+        uint256 maxPar = DOLOMITE_MARGIN().weiToPar(marketId(), maxWei).value;
+        uint256 supply = totalSupply();
+        return maxPar < supply ? 0 : maxPar - supply;
+    }
+
+    function maxWithdraw(address _owner) external view returns (uint256) {
+        IDolomiteStructs.Par memory balancePar = IDolomiteStructs.Par({
+            sign: true,
+            value: balanceOf(_owner).to128()
+        });
+        return DOLOMITE_MARGIN().parToWei(marketId(), balancePar).value;
+    }
+
+    function maxRedeem(address _owner) external view returns (uint256) {
+        return balanceOf(_owner);
+    }
+
+    function convertToShares(uint256 _assets) public view returns (uint256) {
+        IDolomiteStructs.Wei memory amountWei = IDolomiteStructs.Wei({
+            sign: true,
+            value: _assets
+        });
+        return DOLOMITE_MARGIN().weiToPar(marketId(), amountWei).value;
+    }
+
+    function convertToAssets(uint256 _shares) public view returns (uint256) {
+        IDolomiteStructs.Par memory amountPar = IDolomiteStructs.Par({
+            sign: true,
+            value: _shares.to128()
+        });
+        return DOLOMITE_MARGIN().parToWei(marketId(), amountPar).value;
     }
 
     /**
@@ -564,6 +557,24 @@ contract DolomiteERC4626 is
                 _approve(_owner, _spender, currentAllowance - _amount);
             }
         }
+    }
+
+    function _depositIntoDolomite(
+        IDolomiteStructs.AccountInfo memory _account,
+        IDolomiteStructs.AssetAmount memory _assetAmount,
+        uint256 _assets,
+        IDolomiteMargin _dolomiteMargin
+    ) internal {
+        IERC20 underlyingToken = IERC20(asset());
+        underlyingToken.safeTransferFrom(msg.sender, address(this), _assets);
+        underlyingToken.safeApprove(address(_dolomiteMargin), _assets);
+        _dolomiteMargin.deposit(
+            _account.owner,
+            address(this),
+            _account.number,
+            marketId(),
+            _assetAmount
+        );
     }
 
     function _setMetadataStruct(MetadataStruct memory _metadata) internal {

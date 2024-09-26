@@ -20,16 +20,17 @@
 
 pragma solidity ^0.8.9;
 
-import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import { IERC4626 } from "@openzeppelin/contracts/interfaces/IERC4626.sol";
+import { IDolomiteRegistry } from "./IDolomiteRegistry.sol";
 
 
 /**
  * @title   IDolomiteERC4626
  * @author  Dolomite
  *
- * @notice  Interface that defines a tokenized wrapper around a user's Dolomite balance.
+ * @notice  Interface that defines an ERC4626 wrapper around a user's Dolomite balance.
  */
-interface IDolomiteERC4626 is IERC20Metadata {
+interface IDolomiteERC4626 is IERC4626 {
 
     struct MetadataStruct {
         string name;
@@ -37,4 +38,9 @@ interface IDolomiteERC4626 is IERC20Metadata {
         uint8 decimals;
     }
 
+    function isValidReceiver(address _receiver) external view returns (bool);
+
+    function marketId() external view returns (uint256);
+
+    function dolomiteRegistry() external view returns (IDolomiteRegistry);
 }
