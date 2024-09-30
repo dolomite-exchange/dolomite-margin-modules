@@ -474,5 +474,12 @@ describe('GMXIsolationModeTokenVaultV1_accountTransfers', () => {
         `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
+
+    it('should fail if called directly on implementation', async () => {
+      await expectThrow(
+        signalAccountTransferImpl.connect(core.hhUser1).cancelAccountTransfer(core.hhUser1.address),
+        'SignalAccountTransferImpl: Only usable via delegate call'
+      );
+    });
   });
 });

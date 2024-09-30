@@ -1,4 +1,4 @@
-import { Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { ADDRESS_ZERO, Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import {
   revertToSnapshotAndCapture,
   snapshot,
@@ -37,6 +37,7 @@ import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
 
 const gmxAmount = parseEther('10'); // 10 GMX
 const accountNumber = ZERO_BI;
+const DEAD_ADDRESS = '0x000000000000000000000000000000000000dEaD';
 
 describe('AccountTransferReceiver', () => {
   let snapshotId: string;
@@ -125,6 +126,21 @@ describe('AccountTransferReceiver', () => {
         .to.eq(core.hhUser3.address);
     });
 
+    it('should work if user signals to same address multiple times', async () => {
+      await transferReceiver.signalAccountTransfer(core.hhUser3.address);
+      expect(await core.gmxEcosystem.gmxRewardsRouterV3.pendingReceivers(transferReceiver.address))
+        .to.eq(core.hhUser3.address);
+      await transferReceiver.cancelAccountTransfer();
+      await expectThrow(
+        core.gmxEcosystem.gmxRewardsRouterV3.connect(core.hhUser3).acceptTransfer(transferReceiver.address),
+        'transfer not signalled'
+      );
+      await transferReceiver.signalAccountTransfer(core.hhUser3.address);
+      expect(await core.gmxEcosystem.gmxRewardsRouterV3.pendingReceivers(transferReceiver.address))
+        .to.eq(core.hhUser3.address);
+      await core.gmxEcosystem.gmxRewardsRouterV3.connect(core.hhUser3).acceptTransfer(transferReceiver.address);
+    });
+
     it('should fail if receiver is the vault', async () => {
       await expectThrow(
         transferReceiver.signalAccountTransfer(glpVault.address),
@@ -135,6 +151,27 @@ describe('AccountTransferReceiver', () => {
     it('should fail if not called by owner', async () => {
       await expectThrow(
         transferReceiver.connect(core.hhUser2).signalAccountTransfer(core.hhUser3.address),
+        'AccountTransferReceiver: Caller must be owner'
+      );
+    });
+  });
+
+  describe('#cancelAccountTransfer', () => {
+    it('should work normally', async () => {
+      await transferReceiver.signalAccountTransfer(core.hhUser3.address);
+      await transferReceiver.cancelAccountTransfer();
+      expect(await core.gmxEcosystem.gmxRewardsRouterV3.pendingReceivers(transferReceiver.address))
+        .to.eq(DEAD_ADDRESS);
+      await expectThrow(
+        core.gmxEcosystem.gmxRewardsRouterV3.connect(core.hhUser3).acceptTransfer(transferReceiver.address),
+        'transfer not signalled'
+      );
+      expect(await transferReceiver.receiver()).to.eq(DEAD_ADDRESS);
+    });
+
+    it('should fail if not called by owner', async () => {
+      await expectThrow(
+        transferReceiver.connect(core.hhUser2).cancelAccountTransfer(),
         'AccountTransferReceiver: Caller must be owner'
       );
     });

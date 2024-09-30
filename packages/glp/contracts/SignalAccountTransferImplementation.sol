@@ -43,6 +43,8 @@ contract SignalAccountTransferImplementation is ISignalAccountTransferImplementa
 
     bytes32 private constant _FILE = "SignalAccountTransferImpl";
     bytes32 private constant _IS_IMPL_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isImpl")) - 1);
+    bytes32 private constant _RECEIVER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.receiver")) - 1);
+    address private constant _DEAD_ADDRESS = 0x000000000000000000000000000000000000dEaD;
 
     IGmxRegistryV1 public immutable REGISTRY;
 
@@ -60,15 +62,29 @@ contract SignalAccountTransferImplementation is ISignalAccountTransferImplementa
     // ==================================================================
 
     function signalAccountTransfer(address _receiver) external {
+        _requireDelegateCalled();
+
+        REGISTRY.gmx().safeApprove(address(REGISTRY.sGmx()), type(uint256).max);
+        IERC20(REGISTRY.sbfGmx()).approve(_receiver, type(uint256).max);
+        REGISTRY.gmxRewardsRouter().signalTransfer(_receiver);
+    }
+
+    function cancelAccountTransfer(address _receiver) external {
+        _requireDelegateCalled();
+
+        REGISTRY.gmx().safeApprove(address(REGISTRY.sGmx()), 0);
+        IERC20(REGISTRY.sbfGmx()).safeApprove(_receiver, 0);
+
+        IERC20(REGISTRY.sbfGmx()).safeApprove(_DEAD_ADDRESS, type(uint256).max);
+        REGISTRY.gmxRewardsRouter().signalTransfer(_DEAD_ADDRESS);
+        IERC20(REGISTRY.sbfGmx()).safeApprove(_DEAD_ADDRESS, 0);
+    }
+
+    function _requireDelegateCalled() internal view {
         Require.that(
             _getUint256(_IS_IMPL_SLOT) == 0,
             _FILE,
             "Only usable via delegate call"
         );
-
-
-        REGISTRY.gmx().safeApprove(address(REGISTRY.sGmx()), type(uint256).max);
-        IERC20(REGISTRY.sbfGmx()).safeApprove(_receiver, type(uint256).max);
-        REGISTRY.gmxRewardsRouter().signalTransfer(_receiver);
-    }
+    }   
 }

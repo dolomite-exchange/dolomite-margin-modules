@@ -40,10 +40,12 @@ contract AccountTransferReceiver is IAccountTransferReceiver {
     // ==================================================================
 
     bytes32 private constant _FILE = "AccountTransferReceiver";
+    address private constant _DEAD_ADDRESS = 0x000000000000000000000000000000000000dEaD;
 
     address public immutable VAULT;
     address public immutable OWNER;
     IGmxRegistryV1 public immutable REGISTRY;
+    address public receiver = _DEAD_ADDRESS;
 
     // ==================================================================
     // =========================== Modifiers ============================
@@ -80,11 +82,12 @@ contract AccountTransferReceiver is IAccountTransferReceiver {
 
     function signalAccountTransfer(address _receiver) external onlyOwner {
         Require.that(
-            _receiver != VAULT,
+            _receiver != VAULT && receiver == _DEAD_ADDRESS,
             _FILE,
             "Receiver cannot be vault"
         );
 
+        receiver = _receiver;
         ISignalAccountTransferImplementation impl = REGISTRY.signalAccountTransferImpl();
         Address.functionDelegateCall(
             address(impl),
@@ -93,5 +96,17 @@ contract AccountTransferReceiver is IAccountTransferReceiver {
         );
 
         emit AccountTransferSignaled(_receiver);
+    }
+
+    function cancelAccountTransfer() external onlyOwner {
+        ISignalAccountTransferImplementation impl = REGISTRY.signalAccountTransferImpl();
+        Address.functionDelegateCall(
+            address(impl),
+            abi.encodeWithSelector(impl.cancelAccountTransfer.selector, receiver),
+            "AccountTransferReceiver: Cancel account transfer failed"
+        );
+        receiver = _DEAD_ADDRESS;
+
+        emit AccountTransferCanceled();
     }
 }

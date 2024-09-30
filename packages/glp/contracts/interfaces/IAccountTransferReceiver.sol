@@ -30,6 +30,8 @@ pragma solidity ^0.8.9;
 interface IAccountTransferReceiver {
 
     event AccountTransferSignaled(address receiver);
+    event AccountTransferCanceled();
 
     function signalAccountTransfer(address _receiver) external;
+    function cancelAccountTransfer() external;
 }

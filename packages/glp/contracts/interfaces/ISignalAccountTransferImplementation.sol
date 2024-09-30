@@ -32,4 +32,5 @@ interface ISignalAccountTransferImplementation {
 
 
     function signalAccountTransfer(address _receiver) external;
+    function cancelAccountTransfer(address _receiver) external;
 }
