@@ -37,4 +37,6 @@ interface IBeraRewardVault is IERC20 {
     function getReward(address account) external returns (uint256);
 
     function exit() external;
+
+    function earned(address account) external view returns (uint256);
 }

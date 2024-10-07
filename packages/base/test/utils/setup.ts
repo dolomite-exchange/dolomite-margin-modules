@@ -55,6 +55,7 @@ import {
 } from '../../src/types';
 import {
   ARB_MAP,
+  BGT_MAP,
   CHAINLINK_AUTOMATION_REGISTRY_MAP,
   CHAINLINK_PRICE_AGGREGATORS_MAP,
   CHAINLINK_PRICE_ORACLE_V1_MAP,
@@ -98,6 +99,7 @@ import {
   GRAI_MAP,
   GRAIL_MAP,
   HONEY_MAP,
+  IBGT_MAP,
   JONES_MAP,
   LINK_MAP,
   MAGIC_GLP_MAP,
@@ -176,6 +178,8 @@ import { createPremiaEcosystem } from './ecosystem-utils/premia';
 import { createTestEcosystem } from './ecosystem-utils/testers';
 import { createUmamiEcosystem } from './ecosystem-utils/umami';
 import { impersonate, impersonateOrFallback, resetForkIfPossible } from './index';
+import { IBGT__factory } from 'packages/berachain/src/types';
+import { createBerachainRewardsEcosystem } from './ecosystem-utils/berachain-rewards';
 
 /**
  * Config to for setting up tests in the `before` function
@@ -992,11 +996,14 @@ export async function setupCoreProtocol<T extends NetworkType>(
         ...coreProtocolParams.tokens,
         honey: IERC20__factory.connect(HONEY_MAP[typedConfig.network].address, hhUser1),
         wbera: IWETH__factory.connect(WBERA_MAP[typedConfig.network].address, hhUser1),
+        bgt: IBGT__factory.connect(BGT_MAP[typedConfig.network].address, hhUser1),
+        ibgt: IERC20__factory.connect(IBGT_MAP[typedConfig.network].address, hhUser1),
         stablecoins: [
           ...coreProtocolParams.tokens.stablecoins,
           IERC20__factory.connect(HONEY_MAP[typedConfig.network].address, hhUser1),
         ],
       },
+      berachainRewardsEcosystem: await createBerachainRewardsEcosystem(typedConfig.network, hhUser1),
       oogaBoogaEcosystem: await createOogaBoogaEcosystem(typedConfig.network, hhUser1),
     }) as any;
   }

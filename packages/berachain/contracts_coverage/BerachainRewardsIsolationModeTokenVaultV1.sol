@@ -100,7 +100,7 @@ contract BerachainRewardsIsolationModeTokenVaultV1 is
             );
         }
 
-        assert(_recipient != address(this));
+        /*assert(_recipient != address(this));*/
         IERC20(UNDERLYING_TOKEN()).safeTransfer(_recipient, _amount);
     }
 
@@ -144,7 +144,7 @@ contract BerachainRewardsIsolationModeTokenVaultV1 is
         metavault.exit(_asset, _type);
 
         uint256 bal = IERC20(_asset).balanceOf(address(metavault));
-        assert(bal > 0);
+        /*assert(bal > 0);*/
         IERC20(_asset).safeTransferFrom(address(metavault), address(this), bal);
     }
 }

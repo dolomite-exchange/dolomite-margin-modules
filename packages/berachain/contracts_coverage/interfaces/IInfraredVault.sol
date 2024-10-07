@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 /*
 
-    Copyright 2023 Dolomite
+    Copyright 2024 Dolomite
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -20,23 +20,23 @@
 
 pragma solidity ^0.8.9;
 
-import { IBerachainRewardsRegistry } from "./IBerachainRewardsRegistry.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 
 /**
- * @title   IBerachainRewardsIsolationModeTokenVaultV1
+ * @title   IInfraredVault
  * @author  Dolomite
  *
- * @notice  This interface defines the functions that are available on the BerachainRewardsIsolationModeTokenVaultV1
- *          implementation contract for each user's proxy vault.
  */
-interface IBerachainRewardsIsolationModeTokenVaultV1 {
+interface IInfraredVault is IERC20 {
 
-    function stake(IBerachainRewardsRegistry.RewardVaultType _type, uint256 _amount) external;
+    function stake(uint256 amount) external;
 
-    // function unstake(uint256 amount) external;
+    function withdraw(uint256 amount) external;
 
-    // function getReward() external returns (uint256);
+    function getReward() external;
 
-    // function exit() external;
+    function exit() external;
+
+    function earned(address account) external view returns (uint256);
 }

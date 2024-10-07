@@ -87,8 +87,8 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
         address _vault
     ) external override onlyDolomiteMarginGlobalOperator(msg.sender) returns (address) {
         IIsolationModeVaultFactory factory = IIsolationModeVaultFactory(msg.sender);
-        assert(factory.isIsolationAsset());
-        assert(factory.getAccountByVault(_vault) == _account);
+        /*assert(factory.isIsolationAsset());*/
+        /*assert(factory.getAccountByVault(_vault) == _account);*/
 
         address metavault = getAccountToMetavault(_account);
         if (metavault == address(0)) {
@@ -100,9 +100,9 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
     }
 
     /**
-     * 
+     *
      * @param  _type The default type to set
-     * 
+     *
      * @dev If called by a user, it sets the default type for msg.sender. If called by a metavault,
      * it sets the default type for the metavault's account.
      */
@@ -114,6 +114,7 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
         }
 
         address metavault = getAccountToMetavault(account);
+        if (IERC20(rewardVault(_asset, getAccountToAssetToDefaultType(account, _asset))).balanceOf(metavault) == 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             IERC20(rewardVault(_asset, getAccountToAssetToDefaultType(account, _asset))).balanceOf(metavault) == 0,
             _FILE,
@@ -217,7 +218,7 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
             keccak256(abi.encodePacked(_account)),
             type(MetavaultUpgradeableProxy).creationCode
         );
-        assert(metavault != address(0));
+        /*assert(metavault != address(0));*/
         emit MetavaultCreated(_account, metavault);
 
         _setAddressInMap(_META_VAULT_TO_ACCOUNT_SLOT, metavault, _account);
@@ -228,11 +229,12 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
     }
 
     function _initializeVault(address _metavault, address _account) internal {
-        assert(_metavault != address(0) && _account != address(0));
+        /*assert(_metavault != address(0) && _account != address(0));*/
         IMetavaultUpgradeableProxy(_metavault).initialize(_account);
     }
 
     function _ownerSetBgt(address _bgt) internal {
+        if (_bgt != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _bgt != address(0),
             _FILE,
@@ -243,6 +245,7 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
     }
 
     function _ownerSetIBgt(address _iBgt) internal {
+        if (_iBgt != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _iBgt != address(0),
             _FILE,
@@ -253,6 +256,7 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
     }
 
     function _ownerSetMetavaultImplementation(address _metavaultImplementation) internal {
+        if (_metavaultImplementation != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _metavaultImplementation != address(0),
             _FILE,
@@ -263,6 +267,7 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
     }
 
     function _ownerSetMetavaultOperator(address _metavaultOperator) internal {
+        if (_metavaultOperator != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _metavaultOperator != address(0),
             _FILE,
@@ -273,6 +278,7 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
     }
 
     function _ownerSetRewardVault(address _asset, RewardVaultType _type, address _rewardVault) internal {
+        if (_rewardVault != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _rewardVault != address(0),
             _FILE,

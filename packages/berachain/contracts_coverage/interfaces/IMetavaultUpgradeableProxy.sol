@@ -20,23 +20,26 @@
 
 pragma solidity ^0.8.9;
 
-import { IBerachainRewardsRegistry } from "./IBerachainRewardsRegistry.sol";
-
 
 /**
- * @title   IBerachainRewardsIsolationModeTokenVaultV1
+ * @title   IMetavaultUpgradeableProxy
  * @author  Dolomite
  *
- * @notice  This interface defines the functions that are available on the BerachainRewardsIsolationModeTokenVaultV1
- *          implementation contract for each user's proxy vault.
+ * @notice  The interface for the upgradeable proxy contract that holds each user's tokens that are staked in POL
  */
-interface IBerachainRewardsIsolationModeTokenVaultV1 {
+interface IMetavaultUpgradeableProxy {
 
-    function stake(IBerachainRewardsRegistry.RewardVaultType _type, uint256 _amount) external;
+    /**
+     *
+     * @param  _vaultOwner  The owner of this vault contract
+     */
+    function initialize(address _vaultOwner) external;
 
-    // function unstake(uint256 amount) external;
+    function isInitialized() external view returns (bool);
 
-    // function getReward() external returns (uint256);
+    function implementation() external view returns (address);
 
-    // function exit() external;
+    function registry() external view returns (address);
+
+    function owner() external view returns (address);
 }

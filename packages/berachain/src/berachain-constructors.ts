@@ -1,19 +1,26 @@
-import { CoreProtocolBerachain } from "packages/base/test/utils/core-protocols/core-protocol-berachain";
+import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
 import {
   BerachainRewardsRegistry,
   IBerachainRewardsRegistry,
   BerachainRewardsIsolationModeTokenVaultV1,
   IBerachainRewardsIsolationModeVaultFactory,
-  BerachainRewardsIsolationModeVaultFactory
-} from "./types";
+  BerachainRewardsIsolationModeVaultFactory,
+  IBerachainRewardsIsolationModeTokenVaultV1,
+  BerachainRewardsMetavault,
+  MetavaultOperator
+} from './types';
 
 export async function getBerachainRewardsRegistryConstructorParams(
   implementation: BerachainRewardsRegistry,
-  rewardVault: { address: string },
+  metavaultImplementation: BerachainRewardsMetavault,
+  metavaultOperator: MetavaultOperator,
   core: CoreProtocolBerachain
 ): Promise<any[]> {
   const calldata = await implementation.populateTransaction.initialize(
-    rewardVault.address,
+    core.tokens.bgt.address,
+    core.tokens.ibgt.address,
+    metavaultImplementation.address,
+    metavaultOperator.address,
     core.dolomiteRegistry.address
   );
   return [
