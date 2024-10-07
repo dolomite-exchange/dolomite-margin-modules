@@ -15,7 +15,7 @@ import {
   BerachainRewardsMetavault,
   BerachainRewardsMetavault__factory,
   BerachainRewardsRegistry,
-  IBeraRewardVault,
+  INativeRewardVault,
   MetavaultOperator,
   MetavaultOperator__factory
 } from '../src/types';
@@ -23,8 +23,6 @@ import {
   createBerachainRewardsIsolationModeTokenVaultV1,
   createBerachainRewardsIsolationModeVaultFactory,
   createBerachainRewardsRegistry,
-  createBerachainRewardsUnwrapperTraderV2,
-  createBerachainRewardsWrapperTraderV2
 } from './berachain-ecosystem-utils';
 import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
 
@@ -36,14 +34,12 @@ describe('BerachainRewardsIsolationModeVaultFactory', () => {
 
   let core: CoreProtocolBerachain;
   let beraRegistry: BerachainRewardsRegistry;
-  let unwrapper: SimpleIsolationModeUnwrapperTraderV2;
-  let wrapper: SimpleIsolationModeWrapperTraderV2;
   let beraFactory: BerachainRewardsIsolationModeVaultFactory;
   let otherFactory: BerachainRewardsIsolationModeVaultFactory;
   let vaultImplementation: BerachainRewardsIsolationModeTokenVaultV1;
   let underlyingToken: IERC20;
   let otherUnderlyingToken: IERC20;
-  let rewardVault: IBeraRewardVault;
+  let rewardVault: INativeRewardVault;
 
   before(async () => {
     core = await setupCoreProtocol({
@@ -82,16 +78,13 @@ describe('BerachainRewardsIsolationModeVaultFactory', () => {
       core
     );
 
-    unwrapper = await createBerachainRewardsUnwrapperTraderV2(beraFactory, core);
-    wrapper = await createBerachainRewardsWrapperTraderV2(beraFactory, core);
-
     await core.testEcosystem!.testPriceOracle.setPrice(beraFactory.address, ONE_ETH_BI);
     await core.testEcosystem!.testPriceOracle.setPrice(otherFactory.address, ONE_ETH_BI);
     await setupTestMarket(core, beraFactory, true);
     await setupTestMarket(core, otherFactory, true);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(beraFactory.address, true);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(otherFactory.address, true);
-    await beraFactory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
+    await beraFactory.connect(core.governance).ownerInitialize([]);
     await otherFactory.connect(core.governance).ownerInitialize([]);
 
     snapshotId = await snapshot();

@@ -6,21 +6,15 @@ import {
   BerachainRewardsMetavault,
   BerachainRewardsMetavault__factory,
   BerachainRewardsRegistry,
-  IBeraRewardVault,
-  IBeraRewardVault__factory,
-  IERC20__factory,
-  IInfraredVault,
-  IInfraredVault__factory,
+  INativeRewardVault,
+  IInfraredRewardVault,
   MetavaultOperator,
   MetavaultOperator__factory,
 } from '../src/types';
 import {
   IERC20,
-  SimpleIsolationModeUnwrapperTraderV2,
-  SimpleIsolationModeWrapperTraderV2,
 } from '@dolomite-exchange/modules-base/src/types';
 import {
-  ADDRESS_ZERO,
   Network,
   ONE_BI,
   ONE_DAY_SECONDS,
@@ -45,11 +39,8 @@ import {
   createBerachainRewardsIsolationModeTokenVaultV1,
   createBerachainRewardsIsolationModeVaultFactory,
   createBerachainRewardsRegistry,
-  createBerachainRewardsUnwrapperTraderV2,
-  createBerachainRewardsWrapperTraderV2,
   RewardVaultType,
 } from './berachain-ecosystem-utils';
-import { TokenInfo } from 'packages/oracles/src';
 import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
@@ -69,8 +60,8 @@ describe('BerachainRewardsIsolationModeTokenVaultV1', () => {
 
   let beraVault: BerachainRewardsIsolationModeTokenVaultV1;
   let metavault: BerachainRewardsMetavault;
-  let rewardVault: IBeraRewardVault;
-  let infraredVault: IInfraredVault;
+  let rewardVault: INativeRewardVault;
+  let infraredVault: IInfraredRewardVault;
   let marketId: BigNumber;
   let ibgtMarketId: BigNumber;
 

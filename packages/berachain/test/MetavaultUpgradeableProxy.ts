@@ -92,6 +92,20 @@ describe('MetavaultUpgradeableProxy', () => {
       expect(await vault2.owner()).to.eq(core.hhUser2.address);
     });
 
+    it('should fail if the account and metavault do not match' , async () => {
+      await registry.createMetavaultNoInitialize(core.hhUser2.address, vaultAddress);
+      const vault2Address = await registry.getAccountToMetavault(core.hhUser2.address);
+      const vault2 = setupUserVaultProxy<MetavaultUpgradeableProxy>(
+        vault2Address,
+        MetavaultUpgradeableProxy__factory,
+        core.hhUser2,
+      );
+      await expectThrow(
+        vault2.initialize(core.hhUser3.address),
+        `MetavaultUpgradeableProxy: Invalid account <${core.hhUser3.address.toLowerCase()}>`
+      );
+    });
+
     it('should fail if already initialized', async () => {
       await expectThrow(
         vaultProxy.initialize(core.hhUser1.address),
@@ -134,9 +148,9 @@ describe('MetavaultUpgradeableProxy', () => {
     });
   });
 
-  describe('#vaultFactory', () => {
+  describe('#REGISTRY', () => {
     it('should work normally', async () => {
-      expect(await vaultProxy.registry()).to.eq(registry.address);
+      expect(await vaultProxy.REGISTRY()).to.eq(registry.address);
     });
   });
 

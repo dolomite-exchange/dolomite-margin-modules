@@ -107,25 +107,3 @@ export async function createBerachainRewardsIsolationModeVaultFactory(
     ),
   );
 }
-
-export async function createBerachainRewardsUnwrapperTraderV2(
-  factory: IBerachainRewardsIsolationModeVaultFactory | BerachainRewardsIsolationModeVaultFactory,
-  core: CoreProtocolBerachain,
-): Promise<SimpleIsolationModeUnwrapperTraderV2> {
-  return createContractWithAbi<SimpleIsolationModeUnwrapperTraderV2>(
-    SimpleIsolationModeUnwrapperTraderV2__factory.abi,
-    SimpleIsolationModeUnwrapperTraderV2__factory.bytecode,
-    getBerachainRewardsUnwrapperTraderV2ConstructorParams(factory, core),
-  );
-}
-
-export async function createBerachainRewardsWrapperTraderV2(
-  factory: IBerachainRewardsIsolationModeVaultFactory | BerachainRewardsIsolationModeVaultFactory,
-  core: CoreProtocolBerachain,
-): Promise<SimpleIsolationModeWrapperTraderV2> {
-  return createContractWithAbi<SimpleIsolationModeWrapperTraderV2>(
-    SimpleIsolationModeWrapperTraderV2__factory.abi,
-    SimpleIsolationModeWrapperTraderV2__factory.bytecode,
-    getBerachainRewardsWrapperTraderV2ConstructorParams(factory, core),
-  );
-}

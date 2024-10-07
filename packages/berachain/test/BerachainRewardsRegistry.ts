@@ -6,9 +6,9 @@ import {
   BerachainRewardsMetavault,
   BerachainRewardsMetavault__factory,
   BerachainRewardsRegistry,
-  IBeraRewardVault,
+  INativeRewardVault,
   IERC20,
-  IInfraredVault,
+  IInfraredRewardVault,
   MetavaultOperator,
   MetavaultOperator__factory
 } from '../src/types';
@@ -48,8 +48,8 @@ describe('BerachainRewardsRegistry', () => {
   let otherFactory: BerachainRewardsIsolationModeVaultFactory;
   let metavaultImplementation: BerachainRewardsMetavault;
   let metavaultOperator: MetavaultOperator;
-  let nativeRewardVault: IBeraRewardVault;
-  let infraredRewardVault: IInfraredVault;
+  let nativeRewardVault: INativeRewardVault;
+  let infraredRewardVault: IInfraredRewardVault;
 
   let factoryImpersonator: SignerWithAddressWithSafety;
   let otherFactoryImperonator: SignerWithAddressWithSafety;

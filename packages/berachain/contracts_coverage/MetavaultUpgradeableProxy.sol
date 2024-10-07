@@ -110,12 +110,4 @@ contract MetavaultUpgradeableProxy is
     function owner() public override view returns (address) {
         return _getAddress(_OWNER_SLOT);
     }
-
-    function _safeDelegateCall(address _target, bytes memory _calldata) internal returns (bytes memory) {
-        // solhint-disable-next-line avoid-low-level-calls
-        (bool isSuccessful, bytes memory result) = _target.delegatecall(_calldata);
-        /*assert(isSuccessful);*/
-
-        return result;
-    }
 }

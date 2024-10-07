@@ -6,8 +6,8 @@ import {
   BerachainRewardsMetavault,
   BerachainRewardsMetavault__factory,
   BerachainRewardsRegistry,
-  IBeraRewardVault,
-  IInfraredVault,
+  INativeRewardVault,
+  IInfraredRewardVault,
   MetavaultOperator,
   MetavaultOperator__factory,
 } from '../src/types';
@@ -28,7 +28,6 @@ import {
   expectProtocolBalance,
   expectProtocolBalanceIsGreaterThan,
   expectThrow,
-  expectWalletBalance,
 } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
   setupCoreProtocol,
@@ -40,15 +39,11 @@ import {
   createBerachainRewardsIsolationModeTokenVaultV1,
   createBerachainRewardsIsolationModeVaultFactory,
   createBerachainRewardsRegistry,
-  createBerachainRewardsUnwrapperTraderV2,
-  createBerachainRewardsWrapperTraderV2,
 } from './berachain-ecosystem-utils';
-import { TokenInfo } from 'packages/oracles/src';
 import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
 import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
-import { ethers } from 'hardhat';
 
 const LP_TOKEN_WHALE_ADDRESS = '0x1293DA55eC372a94368Fa20E8DF69FaBc3320baE';
 const defaultAccountNumber = ZERO_BI;
@@ -65,14 +60,12 @@ describe('BerachainRewardsMetavault', () => {
   let core: CoreProtocolBerachain;
   let underlyingToken: IERC20;
   let beraRegistry: BerachainRewardsRegistry;
-  let unwrapper: SimpleIsolationModeUnwrapperTraderV2;
-  let wrapper: SimpleIsolationModeWrapperTraderV2;
   let beraFactory: BerachainRewardsIsolationModeVaultFactory;
   let beraVault: BerachainRewardsIsolationModeTokenVaultV1;
   let metavault: BerachainRewardsMetavault;
 
-  let nativeRewardVault: IBeraRewardVault;
-  let infraredRewardVault: IInfraredVault;
+  let nativeRewardVault: INativeRewardVault;
+  let infraredRewardVault: IInfraredRewardVault;
   let marketId: BigNumber;
   let ibgtMarketid: BigNumber;
 
@@ -120,15 +113,12 @@ describe('BerachainRewardsMetavault', () => {
       core,
     );
 
-    unwrapper = await createBerachainRewardsUnwrapperTraderV2(beraFactory, core);
-    wrapper = await createBerachainRewardsWrapperTraderV2(beraFactory, core);
-
     marketId = await core.dolomiteMargin.getNumMarkets();
     await core.testEcosystem!.testPriceOracle.setPrice(beraFactory.address, amountWei);
     await setupTestMarket(core, beraFactory, true);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(beraFactory.address, true);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(metavaultOperator.address, true);
-    await beraFactory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
+    await beraFactory.connect(core.governance).ownerInitialize([]);
 
     await beraFactory.createVault(core.hhUser1.address);
     beraVault = setupUserVaultProxy<BerachainRewardsIsolationModeTokenVaultV1>(
