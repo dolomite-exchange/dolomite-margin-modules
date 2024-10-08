@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 /*
 
-    Copyright 2023 Dolomite
+    Copyright 2024 Dolomite
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@
 pragma solidity ^0.8.9;
 
 import { IBerachainRewardsRegistry } from "./IBerachainRewardsRegistry.sol";
+import { IIsolationModeTokenVaultV1 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeTokenVaultV1.sol";
 
 
 /**
@@ -30,13 +31,11 @@ import { IBerachainRewardsRegistry } from "./IBerachainRewardsRegistry.sol";
  * @notice  This interface defines the functions that are available on the BerachainRewardsIsolationModeTokenVaultV1
  *          implementation contract for each user's proxy vault.
  */
-interface IBerachainRewardsIsolationModeTokenVaultV1 {
+interface IBerachainRewardsIsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
 
     function stake(IBerachainRewardsRegistry.RewardVaultType _type, uint256 _amount) external;
 
-    // function unstake(uint256 amount) external;
+    function unstake(IBerachainRewardsRegistry.RewardVaultType _type, uint256 _amount) external;
 
-    // function getReward() external returns (uint256);
-
-    // function exit() external;
+    function exit(IBerachainRewardsRegistry.RewardVaultType _type) external;
 }

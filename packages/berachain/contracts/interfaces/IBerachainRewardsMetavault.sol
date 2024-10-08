@@ -29,12 +29,14 @@ import { IBerachainRewardsRegistry } from "./IBerachainRewardsRegistry.sol";
  *
  */
 interface IBerachainRewardsMetavault {
+
+    event ValidatorSet(address validator);
     
     function stake(address _asset, IBerachainRewardsRegistry.RewardVaultType _type, uint256 amount) external;
 
     function unstake(address _asset, IBerachainRewardsRegistry.RewardVaultType _type, uint256 amount) external;
 
-    function getReward(address _asset, IBerachainRewardsRegistry.RewardVaultType _type) external;
+    function getReward(address _asset, IBerachainRewardsRegistry.RewardVaultType _type) external returns (uint256);
 
     function exit(address _asset, IBerachainRewardsRegistry.RewardVaultType _type) external;
 

@@ -34,5 +34,17 @@ interface IBGT is IERC20 {
 
     function delegate(address delegatee) external;
 
-    function delegates(address _account) external view returns (address);
+    function queueBoost(address validator, uint128 amount) external;
+
+    function cancelBoost(address validator, uint128 amount) external;
+
+    function activateBoost(address validator) external;
+
+    function dropBoost(address validator, uint128 amount) external;
+
+    function delegates(address account) external view returns (address);
+
+    function boosts(address account) external view returns (uint128);
+
+    function queuedBoost(address account) external view returns (uint128);
 }

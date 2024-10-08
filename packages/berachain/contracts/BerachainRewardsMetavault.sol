@@ -24,21 +24,23 @@ import { ProxyContractHelpers } from "@dolomite-exchange/modules-base/contracts/
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { INativeRewardVault } from "./interfaces/INativeRewardVault.sol";
+import { IBGT } from "./interfaces/IBGT.sol";
+import { IBerachainRewardsMetavault } from "./interfaces/IBerachainRewardsMetavault.sol";
 import { IBerachainRewardsRegistry } from "./interfaces/IBerachainRewardsRegistry.sol";
 import { IInfraredRewardVault } from "./interfaces/IInfraredRewardVault.sol";
+import { INativeRewardVault } from "./interfaces/INativeRewardVault.sol";
 
 
 /**
  * @title   BerachainRewardsMetavault
  * @author  Dolomite
  *
- * @notice  Implementation (for an upgradeable proxy) for a per-user vault that holds the underlying berachain rewards tokens
- *          that can be used to credit a user's Dolomite balance. GMX held in the vault is considered to be in isolation mode
- *           - that is it cannot be borrowed by other users, may only be seized via liquidation, and cannot be held in the same
- *          position as other "isolated" tokens.
+ * @notice  Implementation (for an upgradeable proxy) for a per-user vault that holds the underlying berachain rewards
+ *          tokens that can be used to credit a user's Dolomite balance. GMX held in the vault is considered to be in
+ *          isolation mode - that is it cannot be borrowed by other users, may only be seized via liquidation, and
+ *          cannot be held in the same position as other "isolated" tokens.
  */
-contract BerachainRewardsMetavault is ProxyContractHelpers {
+contract BerachainRewardsMetavault is ProxyContractHelpers, IBerachainRewardsMetavault {
     using SafeERC20 for IERC20;
 
     // ==================================================================
@@ -48,6 +50,7 @@ contract BerachainRewardsMetavault is ProxyContractHelpers {
     bytes32 private constant _FILE = "BerachainRewardsMetavault";
     bytes32 private constant _REGISTRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.registry")) - 1);
     bytes32 private constant _OWNER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.owner")) - 1);
+    bytes32 private constant _VALIDATOR_SLOT = bytes32(uint256(keccak256("eip1967.proxy.validator")) - 1);
 
     // ==================================================================
     // =========================== Modifiers ============================
@@ -69,6 +72,15 @@ contract BerachainRewardsMetavault is ProxyContractHelpers {
             _FILE,
             "Only owner can call",
             _sender
+        );
+        _;
+    }
+
+    modifier onlyActiveValidator(address _validator) {
+        Require.that(
+            validator() == _validator,
+            _FILE,
+            "Does not match active validator"
         );
         _;
     }
@@ -143,8 +155,6 @@ contract BerachainRewardsMetavault is ProxyContractHelpers {
     // ======================== BGT Functions ===========================
     // ==================================================================
 
-    // @todo add bgt & ibgt boost functionality
-
     function redeemBGT(uint256 _amount) external onlyMetavaultOwner(msg.sender) {
         registry().bgt().redeem(OWNER(), _amount);
     }
@@ -153,17 +163,63 @@ contract BerachainRewardsMetavault is ProxyContractHelpers {
         registry().bgt().delegate(_delgatee);
     }
 
+    function queueBGTBoost(
+        address _validator,
+        uint128 _amount
+    ) external onlyMetavaultOwner(msg.sender) {
+        address currentValidator = validator();
+        if (currentValidator == address(0)) {
+            _setAddress(_VALIDATOR_SLOT, _validator);
+            emit ValidatorSet(_validator);
+        } else {
+            Require.that(
+                currentValidator == _validator,
+                _FILE,
+                "Does not match active validator"
+            );
+        }
+        registry().bgt().queueBoost(_validator, _amount);
+    }
+
+    function activateBGTBoost(
+        address _validator
+    ) external onlyMetavaultOwner(msg.sender) onlyActiveValidator(_validator) {
+        registry().bgt().activateBoost(_validator);
+    }
+
+    function cancelBGTBoost(
+        address _validator,
+        uint128 _amount
+    ) external onlyMetavaultOwner(msg.sender) onlyActiveValidator(_validator) {
+        IBGT bgt = registry().bgt();
+        bgt.cancelBoost(_validator, _amount);
+        _resetValidatorIfEmptyBoosts(bgt);
+    }
+
+    function dropBGTBoost(
+        address _validator,
+        uint128 _amount
+    ) external onlyMetavaultOwner(msg.sender) onlyActiveValidator(_validator) {
+        IBGT bgt = registry().bgt();
+        bgt.dropBoost(_validator, _amount);
+        _resetValidatorIfEmptyBoosts(bgt);
+    }
+
     // ==================================================================
     // ======================== View Functions ==========================
     // ==================================================================
 
-    // @follow-up same function on proxy except lowercase
+    // @follow-up same function on proxy except lowercase. Is this an issue?
     function registry() public view returns (IBerachainRewardsRegistry) {
         return IBerachainRewardsRegistry(_getAddress(_REGISTRY_SLOT));
     }
 
     function OWNER() public view returns (address) {
         return _getAddress(_OWNER_SLOT);
+    }
+
+    function validator() public view returns (address) {
+        return _getAddress(_VALIDATOR_SLOT);
     }
 
     // ==================================================================
@@ -183,5 +239,14 @@ contract BerachainRewardsMetavault is ProxyContractHelpers {
                 bal
             );
         }
+    }
+
+    function _resetValidatorIfEmptyBoosts(IBGT _bgt) internal {
+        uint128 queuedBoost = _bgt.queuedBoost(address(this));
+        uint128 boosts = _bgt.boosts(address(this));
+        if (queuedBoost == 0 && boosts == 0) {
+            _setAddress(_VALIDATOR_SLOT, address(0));
+        }
+        emit ValidatorSet(address(0));
     }
 }

@@ -24,17 +24,17 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 
 /**
- * @title   IInfraredVault
+ * @title   INativeRewardVault
  * @author  Dolomite
  *
  */
-interface IInfraredVault is IERC20 {
+interface INativeRewardVault is IERC20 {
 
     function stake(uint256 amount) external;
 
     function withdraw(uint256 amount) external;
 
-    function getReward() external;
+    function getReward(address account) external returns (uint256);
 
     function exit() external;
 

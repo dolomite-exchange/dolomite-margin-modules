@@ -22,6 +22,7 @@ pragma solidity ^0.8.9;
 
 import { IDolomiteRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IDolomiteRegistry.sol";
 import { IsolationModeTokenVaultV1 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
+import { IIsolationModeTokenVaultV1 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IBerachainRewardsIsolationModeTokenVaultV1 } from "./interfaces/IBerachainRewardsIsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
@@ -44,6 +45,7 @@ contract BerachainRewardsIsolationModeTokenVaultV1 is
     IsolationModeTokenVaultV1
 {
     using SafeERC20 for IERC20;
+
     // ==================================================================
     // =========================== Constants ============================
     // ==================================================================
@@ -77,7 +79,7 @@ contract BerachainRewardsIsolationModeTokenVaultV1 is
         uint256 _amount
     )
     public
-    override
+    override(IIsolationModeTokenVaultV1, IsolationModeTokenVaultV1)
     onlyVaultFactory(msg.sender) {
         IERC20 token = IERC20(UNDERLYING_TOKEN());
         token.safeTransferFrom(_from, address(this), _amount);
@@ -89,7 +91,7 @@ contract BerachainRewardsIsolationModeTokenVaultV1 is
         uint256 _amount
     )
     public
-    override
+    override(IIsolationModeTokenVaultV1, IsolationModeTokenVaultV1)
     onlyVaultFactory(msg.sender) {
         uint256 unstakedBalance = super.underlyingBalanceOf();
         if (unstakedBalance < _amount) {
@@ -110,7 +112,7 @@ contract BerachainRewardsIsolationModeTokenVaultV1 is
 
     function dolomiteRegistry()
         public
-        override
+        override(IIsolationModeTokenVaultV1, IsolationModeTokenVaultV1)
         view
         returns (IDolomiteRegistry)
     {

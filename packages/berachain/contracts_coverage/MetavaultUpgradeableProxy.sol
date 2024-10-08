@@ -39,14 +39,18 @@ contract MetavaultUpgradeableProxy is
 {
     using Address for address;
 
-    // ============ Constants ============
+    // ==================================================================
+    // =========================== Constants ============================
+    // ==================================================================
 
     bytes32 private constant _FILE = "MetavaultUpgradeableProxy";
     bytes32 private constant _IS_INITIALIZED_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isInitialized")) - 1);
     bytes32 private constant _REGISTRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.registry")) - 1);
     bytes32 private constant _OWNER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.owner")) - 1);
 
-    // ======== Modifiers =========
+    // ==================================================================
+    // =========================== Modifiers ============================
+    // ==================================================================
 
     modifier requireIsInitialized() {
         if (isInitialized()) { /* FOR COVERAGE TESTING */ }
@@ -58,13 +62,17 @@ contract MetavaultUpgradeableProxy is
         _;
     }
 
-    // ============ Constructor ============
+    // ==================================================================
+    // =========================== Constructor ==========================
+    // ==================================================================
 
     constructor() {
         _setAddress(_REGISTRY_SLOT, msg.sender);
     }
 
-    // ============ Functions ============
+    // ==================================================================
+    // ======================== Public Functions ========================
+    // ==================================================================
 
     receive() external payable requireIsInitialized {
         _callImplementation(implementation());
@@ -84,9 +92,9 @@ contract MetavaultUpgradeableProxy is
             _FILE,
             "Already initialized"
         );
-        if (IBerachainRewardsRegistry(registry()).getAccountToMetavault(_vaultOwner) == address(this)) { /* FOR COVERAGE TESTING */ }
+        if (IBerachainRewardsRegistry(REGISTRY()).getAccountToMetavault(_vaultOwner) == address(this)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-            IBerachainRewardsRegistry(registry()).getAccountToMetavault(_vaultOwner) == address(this),
+            IBerachainRewardsRegistry(REGISTRY()).getAccountToMetavault(_vaultOwner) == address(this),
             _FILE,
             "Invalid account",
             _vaultOwner
@@ -96,14 +104,14 @@ contract MetavaultUpgradeableProxy is
     }
 
     function implementation() public override view returns (address) {
-        return IBerachainRewardsRegistry(registry()).metavaultImplementation();
+        return IBerachainRewardsRegistry(REGISTRY()).metavaultImplementation();
     }
 
     function isInitialized() public override view returns (bool) {
         return _getUint256(_IS_INITIALIZED_SLOT) == 1;
     }
 
-    function registry() public override view returns (address) {
+    function REGISTRY() public override view returns (address) {
         return _getAddress(_REGISTRY_SLOT);
     }
 
