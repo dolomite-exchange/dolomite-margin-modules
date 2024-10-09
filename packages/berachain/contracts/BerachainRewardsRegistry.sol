@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 /*
 
-    Copyright 2023 Dolomite
+    Copyright 2024 Dolomite
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { Create2 } from "@openzeppelin/contracts/utils/Create2.sol";
 import { MetavaultUpgradeableProxy } from "./MetavaultUpgradeableProxy.sol";
 import { IBGT } from "./interfaces/IBGT.sol";
+import { IBGTIsolationModeVaultFactory } from "./interfaces/IBGTIsolationModeVaultFactory.sol";
 import { IBerachainRewardsRegistry } from "./interfaces/IBerachainRewardsRegistry.sol";
 import { IMetavaultOperator } from "./interfaces/IMetavaultOperator.sol";
 import { IMetavaultUpgradeableProxy } from "./interfaces/IMetavaultUpgradeableProxy.sol";
@@ -50,6 +51,7 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
     bytes32 private constant _FILE = "BerachainRewardsRegistry";
 
     bytes32 private constant _BGT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.bgt")) - 1);
+    bytes32 private constant _BGT_ISOLATION_MODE_VAULT_FACTORY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.bgtIsolationModeVaultFactory")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _I_BGT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.iBgt")) - 1);
     bytes32 private constant _META_VAULT_IMPLEMENTATION_SLOT = bytes32(uint256(keccak256("eip1967.proxy.metavaultImplementation")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _METAVAULT_OPERATOR_SLOT = bytes32(uint256(keccak256("eip1967.proxy.metavaultOperator")) - 1); // solhint-disable-line max-line-length
@@ -93,6 +95,8 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
         address metavault = getAccountToMetavault(_account);
         if (metavault == address(0)) {
             metavault = _createMetavault(_account);
+            address bgtVault = bgtIsolationModeVaultFactory().createVault(_account);
+            _setAddressInMap(_VAULT_TO_META_VAULT_SLOT, bgtVault, metavault);
         }
         _setAddressInMap(_VAULT_TO_META_VAULT_SLOT, _vault, metavault);
 
@@ -132,6 +136,12 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
         _ownerSetBgt(_bgt);
     }
 
+    function ownerSetBgtIsolationModeVaultFactory(
+        address _bgtIsolationModeVaultFactory
+    ) external override onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetBgtIsolationModeVaultFactory(_bgtIsolationModeVaultFactory);
+    }
+
     function ownerSetIBgt(address _iBgt) external override onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetIBgt(_iBgt);
     }
@@ -163,6 +173,10 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
 
     function bgt() external view override returns (IBGT) {
         return IBGT(_getAddress(_BGT_SLOT));
+    }
+
+    function bgtIsolationModeVaultFactory() public view override returns (IBGTIsolationModeVaultFactory) {
+        return IBGTIsolationModeVaultFactory(_getAddress(_BGT_ISOLATION_MODE_VAULT_FACTORY_SLOT));
     }
 
     function iBgt() external view override returns (IERC20) {
@@ -240,6 +254,18 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
         );
         _setAddress(_BGT_SLOT, _bgt);
         emit BgtSet(_bgt);
+    }
+
+    function _ownerSetBgtIsolationModeVaultFactory(
+        address _bgtIsolationModeVaultFactory
+    ) internal {
+        Require.that(
+            _bgtIsolationModeVaultFactory != address(0),
+            _FILE,
+            "Invalid bgt factory address"
+        );
+        _setAddress(_BGT_ISOLATION_MODE_VAULT_FACTORY_SLOT, _bgtIsolationModeVaultFactory);
+        emit BgtIsolationModeVaultFactorySet(_bgtIsolationModeVaultFactory);
     }
 
     function _ownerSetIBgt(address _iBgt) internal {

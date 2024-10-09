@@ -126,7 +126,12 @@ contract BerachainRewardsMetavault is ProxyContractHelpers, IBerachainRewardsMet
     ) external onlyMetavaultOwner(msg.sender) returns (uint256) {
         if (_type == IBerachainRewardsRegistry.RewardVaultType.NATIVE) {
             INativeRewardVault rewardVault = INativeRewardVault(registry().rewardVault(_asset, _type));
-            return rewardVault.getReward(address(this));
+            uint256 bgtAmount = rewardVault.getReward(address(this));
+            registry().bgtIsolationModeVaultFactory().depositIntoDolomiteMarginFromMetavault(
+                OWNER(),
+                0,
+                bgtAmount
+            );
         } else {
             IInfraredRewardVault rewardVault = IInfraredRewardVault(registry().rewardVault(_asset, _type));
             rewardVault.getReward();
@@ -140,7 +145,18 @@ contract BerachainRewardsMetavault is ProxyContractHelpers, IBerachainRewardsMet
         IBerachainRewardsRegistry.RewardVaultType _type
     ) external onlyChildVault(msg.sender) {
         INativeRewardVault rewardVault = INativeRewardVault(registry().rewardVault(_asset, _type));
+        IBGT bgt = registry().bgt();
+
+        uint256 preBal = bgt.balanceOf(address(this));
         rewardVault.exit();
+        uint256 postBal = bgt.balanceOf(address(this));
+        if (postBal - preBal > 0) {
+            registry().bgtIsolationModeVaultFactory().depositIntoDolomiteMarginFromMetavault(
+                OWNER(),
+                0,
+                postBal - preBal
+            );
+        }
 
         uint256 bal = IERC20(_asset).balanceOf(address(this));
         assert(bal > 0);
@@ -203,6 +219,30 @@ contract BerachainRewardsMetavault is ProxyContractHelpers, IBerachainRewardsMet
         IBGT bgt = registry().bgt();
         bgt.dropBoost(_validator, _amount);
         _resetValidatorIfEmptyBoosts(bgt);
+    }
+
+    function withdrawBGTAndRedeem(
+        address _recipient,
+        uint256 _amount
+    ) external onlyChildVault(msg.sender) {
+        IBGT bgt = registry().bgt();
+        if (_amount >= bgt.unboostedBalanceOf(address(this))) {
+            bgt.redeem(_recipient, _amount);
+            return;
+        }
+        uint128 queuedBoost = bgt.queuedBoost(address(this));
+        if (queuedBoost > 0) {
+            bgt.cancelBoost(validator(), uint128(queuedBoost));
+        }
+
+        if (_amount >= bgt.unboostedBalanceOf(address(this))) {
+            bgt.redeem(_recipient, _amount);
+            return;
+        }
+
+        uint128 boosted = bgt.boosts(address(this));
+        bgt.dropBoost(validator(), uint128(boosted));
+        bgt.redeem(_recipient, _amount);
     }
 
     // ==================================================================

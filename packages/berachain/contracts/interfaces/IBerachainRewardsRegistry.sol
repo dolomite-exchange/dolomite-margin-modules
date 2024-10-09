@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 /*
 
-    Copyright 2023 Dolomite
+    Copyright 2024 Dolomite
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@ pragma solidity ^0.8.9;
 import { IBaseRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IBaseRegistry.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IBGT } from "./IBGT.sol";
+import { IBGTIsolationModeVaultFactory } from "./IBGTIsolationModeVaultFactory.sol";
 import { IMetavaultOperator } from "./IMetavaultOperator.sol";
 
 
@@ -44,6 +45,7 @@ interface IBerachainRewardsRegistry is IBaseRegistry {
     // ================================================
 
     event BgtSet(address bgt);
+    event BgtIsolationModeVaultFactorySet(address bgtIsolationModeVaultFactory);
     event IBgtSet(address iBgt);
     event MetavaultCreated(address indexed account, address metavault);
     event MetavaultImplementationSet(address metavaultImplementation);
@@ -56,6 +58,7 @@ interface IBerachainRewardsRegistry is IBaseRegistry {
     // ===================================================
 
     function ownerSetBgt(address _bgt) external;
+    function ownerSetBgtIsolationModeVaultFactory(address _bgtIsolationModeVaultFactory) external;
     function ownerSetIBgt(address _iBgt) external;
     function ownerSetMetavaultImplementation(address _metavaultImplementation) external;
     function ownerSetMetavaultOperator(address _metavaultOperator) external;
@@ -79,6 +82,7 @@ interface IBerachainRewardsRegistry is IBaseRegistry {
     function getVaultToMetavault(address _vault) external view returns (address);
 
     function bgt() external view returns (IBGT);
+    function bgtIsolationModeVaultFactory() external view returns (IBGTIsolationModeVaultFactory);
     function iBgt() external view returns (IERC20);
     function metavaultImplementation() external view returns (address);
     function metavaultOperator() external view returns (IMetavaultOperator);

@@ -44,6 +44,8 @@ interface IBerachainRewardsMetavault {
 
     function delegateBGT(address _delegatee) external;
 
+    function withdrawBGTAndRedeem(address _recipient, uint256 _amount) external;
+
     function registry() external view returns (IBerachainRewardsRegistry);
 
     function OWNER() external view returns (address);

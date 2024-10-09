@@ -7,7 +7,8 @@ import {
   BerachainRewardsIsolationModeVaultFactory,
   IBerachainRewardsIsolationModeTokenVaultV1,
   BerachainRewardsMetavault,
-  MetavaultOperator
+  MetavaultOperator,
+  BGTIsolationModeTokenVaultV1
 } from './types';
 
 export async function getBerachainRewardsRegistryConstructorParams(
@@ -64,5 +65,20 @@ export function getBerachainRewardsWrapperTraderV2ConstructorParams(
     factory.address,
     core.dolomiteMargin.address,
     core.dolomiteRegistry.address,
+  ];
+}
+
+export function getBGTIsolationModeVaultFactoryConstructorParams(
+  beraRegistry: IBerachainRewardsRegistry | BerachainRewardsRegistry,
+  underlyingToken: { address: string },
+  vaultImplementation: IBGTIsolationModeTokenVaultV1 | BGTIsolationModeTokenVaultV1,
+  core: CoreProtocolBerachain
+): any[] {
+  return [
+    beraRegistry.address,
+    underlyingToken.address,
+    core.borrowPositionProxyV2.address,
+    vaultImplementation.address,
+    core.dolomiteMargin.address,
   ];
 }

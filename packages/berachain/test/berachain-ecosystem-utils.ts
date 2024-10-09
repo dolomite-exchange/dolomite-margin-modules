@@ -12,7 +12,8 @@ import {
   getBerachainRewardsIsolationModeVaultFactoryConstructorParams,
   getBerachainRewardsRegistryConstructorParams,
   getBerachainRewardsUnwrapperTraderV2ConstructorParams,
-  getBerachainRewardsWrapperTraderV2ConstructorParams
+  getBerachainRewardsWrapperTraderV2ConstructorParams,
+  getBGTIsolationModeVaultFactoryConstructorParams
 } from '../src/berachain-constructors';
 import {
   BerachainRewardsIsolationModeTokenVaultV1,
@@ -21,6 +22,9 @@ import {
   BerachainRewardsMetavault,
   BerachainRewardsRegistry,
   BerachainRewardsRegistry__factory,
+  BGTIsolationModeTokenVaultV1,
+  BGTIsolationModeVaultFactory,
+  BGTIsolationModeVaultFactory__factory,
   IBerachainRewardsIsolationModeVaultFactory,
   IBerachainRewardsRegistry,
   MetavaultOperator,
@@ -100,6 +104,34 @@ export async function createBerachainRewardsIsolationModeVaultFactory(
     BerachainRewardsIsolationModeVaultFactory__factory.abi,
     BerachainRewardsIsolationModeVaultFactory__factory.bytecode,
     getBerachainRewardsIsolationModeVaultFactoryConstructorParams(
+      beraRegistry,
+      underlyingToken,
+      userVaultImplementation,
+      core
+    ),
+  );
+}
+
+export async function createBGTIsolationModeTokenVaultV1(
+): Promise<BGTIsolationModeTokenVaultV1> {
+  const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
+  return createContractWithLibrary<BGTIsolationModeTokenVaultV1>(
+    'BGTIsolationModeTokenVaultV1',
+    libraries,
+    [],
+  );
+}
+
+export async function createBGTIsolationModeVaultFactory(
+  beraRegistry: IBerachainRewardsRegistry | BerachainRewardsRegistry,
+  underlyingToken: { address: string },
+  userVaultImplementation: BGTIsolationModeTokenVaultV1,
+  core: CoreProtocolBerachain,
+): Promise<BGTIsolationModeVaultFactory> {
+  return createContractWithAbi<BGTIsolationModeVaultFactory>(
+    BGTIsolationModeVaultFactory__factory.abi,
+    BGTIsolationModeVaultFactory__factory.bytecode,
+    getBGTIsolationModeVaultFactoryConstructorParams(
       beraRegistry,
       underlyingToken,
       userVaultImplementation,

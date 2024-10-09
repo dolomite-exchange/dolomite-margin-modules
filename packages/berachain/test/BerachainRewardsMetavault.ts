@@ -10,11 +10,12 @@ import {
   IInfraredRewardVault,
   MetavaultOperator,
   MetavaultOperator__factory,
+  BGTIsolationModeVaultFactory,
+  BGTIsolationModeTokenVaultV1,
+  BGTIsolationModeTokenVaultV1__factory,
 } from '../src/types';
 import {
   IERC20,
-  SimpleIsolationModeUnwrapperTraderV2,
-  SimpleIsolationModeWrapperTraderV2,
 } from '@dolomite-exchange/modules-base/src/types';
 import {
   ADDRESS_ZERO,
@@ -41,6 +42,8 @@ import {
   createBerachainRewardsIsolationModeTokenVaultV1,
   createBerachainRewardsIsolationModeVaultFactory,
   createBerachainRewardsRegistry,
+  createBGTIsolationModeTokenVaultV1,
+  createBGTIsolationModeVaultFactory,
 } from './berachain-ecosystem-utils';
 import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
@@ -68,10 +71,13 @@ describe('BerachainRewardsMetavault', () => {
   let beraFactory: BerachainRewardsIsolationModeVaultFactory;
   let beraVault: BerachainRewardsIsolationModeTokenVaultV1;
   let metavault: BerachainRewardsMetavault;
+  let bgtFactory: BGTIsolationModeVaultFactory;
+  let bgtVault: BGTIsolationModeTokenVaultV1;
 
   let nativeRewardVault: INativeRewardVault;
   let infraredRewardVault: IInfraredRewardVault;
   let marketId: BigNumber;
+  let bgtMarketId: BigNumber;
   let ibgtMarketid: BigNumber;
 
   before(async () => {
@@ -117,13 +123,27 @@ describe('BerachainRewardsMetavault', () => {
       vaultImplementation,
       core,
     );
+    const bgtVaultImplementation = await createBGTIsolationModeTokenVaultV1();
+    bgtFactory = await createBGTIsolationModeVaultFactory(
+      beraRegistry,
+      underlyingToken,
+      bgtVaultImplementation,
+      core,
+    );
 
     marketId = await core.dolomiteMargin.getNumMarkets();
-    await core.testEcosystem!.testPriceOracle.setPrice(beraFactory.address, amountWei);
+    await core.testEcosystem!.testPriceOracle.setPrice(beraFactory.address, ONE_ETH_BI);
     await setupTestMarket(core, beraFactory, true);
+    bgtMarketId = await core.dolomiteMargin.getNumMarkets();
+    await core.testEcosystem!.testPriceOracle.setPrice(bgtFactory.address, ONE_ETH_BI);
+    await setupTestMarket(core, bgtFactory, true);
+
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(beraFactory.address, true);
+    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(bgtFactory.address, true);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(metavaultOperator.address, true);
     await beraFactory.connect(core.governance).ownerInitialize([]);
+    await bgtFactory.connect(core.governance).ownerInitialize([]);
+    await beraRegistry.connect(core.governance).ownerSetBgtIsolationModeVaultFactory(bgtFactory.address);
 
     await beraFactory.createVault(core.hhUser1.address);
     beraVault = setupUserVaultProxy<BerachainRewardsIsolationModeTokenVaultV1>(
@@ -133,6 +153,11 @@ describe('BerachainRewardsMetavault', () => {
     );
     metavault = BerachainRewardsMetavault__factory.connect(
       await beraRegistry.getAccountToMetavault(core.hhUser1.address),
+      core.hhUser1,
+    );
+    bgtVault = setupUserVaultProxy<BGTIsolationModeTokenVaultV1>(
+      await bgtFactory.getVaultByAccount(core.hhUser1.address),
+      BGTIsolationModeTokenVaultV1__factory,
       core.hhUser1,
     );
 
@@ -178,8 +203,10 @@ describe('BerachainRewardsMetavault', () => {
       await increase(10 * ONE_DAY_SECONDS);
       await metavault.getReward(underlyingToken.address, RewardVaultType.Native);
 
+      const bal = await core.tokens.bgt.balanceOf(metavault.address);
+      expect(bal).to.gt(ZERO_BI);
       expect(await beraVault.underlyingBalanceOf()).to.equal(ZERO_BI);
-      expect(await core.tokens.bgt.balanceOf(metavault.address)).to.gt(ZERO_BI);
+      await expectProtocolBalance(core, bgtVault, defaultAccountNumber, bgtMarketId, bal);
     });
 
     it('should work normally with infrared', async () => {

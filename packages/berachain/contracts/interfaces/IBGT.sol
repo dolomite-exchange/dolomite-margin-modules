@@ -47,4 +47,6 @@ interface IBGT is IERC20 {
     function boosts(address account) external view returns (uint128);
 
     function queuedBoost(address account) external view returns (uint128);
+
+    function unboostedBalanceOf(address account) external view returns (uint256);
 }
