@@ -49,6 +49,8 @@ contract BGTIsolationModeTokenVaultV1 is
 
     bytes32 private constant _FILE = "BGTIsolationModeTokenVaultV1";
 
+    // @audit @Corey, please check this over. Specifically, the connection between the metavault and the factory and this vault.
+    // Make sure user can't deposit an amount without sending a balance
     function executeDepositIntoVault(
         address _from,
         uint256 /* _amount */
@@ -56,6 +58,8 @@ contract BGTIsolationModeTokenVaultV1 is
     public
     override
     onlyVaultFactory(msg.sender) {
+        // @todo Add flag to confirm it is from metavault. Check GMX code and follow that standard
+        assert(_from == OWNER());
     }
 
     function executeWithdrawalFromVault(

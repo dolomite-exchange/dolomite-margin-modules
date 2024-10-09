@@ -198,7 +198,7 @@ describe('BerachainRewardsMetavault', () => {
   });
 
   describe('#getReward', () => {
-    it('should work normally with native', async () => {
+    it.only('should work normally with native', async () => {
       await beraVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await increase(10 * ONE_DAY_SECONDS);
       await metavault.getReward(underlyingToken.address, RewardVaultType.Native);

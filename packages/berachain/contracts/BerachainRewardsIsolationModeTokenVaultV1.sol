@@ -83,7 +83,7 @@ contract BerachainRewardsIsolationModeTokenVaultV1 is
     onlyVaultFactory(msg.sender) {
         IERC20 token = IERC20(UNDERLYING_TOKEN());
         token.safeTransferFrom(_from, address(this), _amount);
-        _stake(address(token), registry().getAccountToAssetToDefaultType(OWNER(), address(token)), _amount);
+        _stake(address(token), REGISTRY().getAccountToAssetToDefaultType(OWNER(), address(token)), _amount);
     }
 
     function executeWithdrawalFromVault(
@@ -97,7 +97,7 @@ contract BerachainRewardsIsolationModeTokenVaultV1 is
         if (unstakedBalance < _amount) {
             _unstake(
                 UNDERLYING_TOKEN(),
-                registry().getAccountToAssetToDefaultType(OWNER(), UNDERLYING_TOKEN()),
+                REGISTRY().getAccountToAssetToDefaultType(OWNER(), UNDERLYING_TOKEN()),
                 _amount - unstakedBalance
             );
         }
@@ -106,7 +106,7 @@ contract BerachainRewardsIsolationModeTokenVaultV1 is
         IERC20(UNDERLYING_TOKEN()).safeTransfer(_recipient, _amount);
     }
 
-    function registry() public view returns (IBerachainRewardsRegistry) {
+    function REGISTRY() public view returns (IBerachainRewardsRegistry) {
         return IBerachainRewardsIsolationModeVaultFactory(VAULT_FACTORY()).berachainRewardsRegistry();
     }
 
@@ -116,7 +116,7 @@ contract BerachainRewardsIsolationModeTokenVaultV1 is
         view
         returns (IDolomiteRegistry)
     {
-        return registry().dolomiteRegistry();
+        return REGISTRY().dolomiteRegistry();
     }
 
     // ==================================================================
@@ -125,7 +125,7 @@ contract BerachainRewardsIsolationModeTokenVaultV1 is
 
     function _stake(address _asset, IBerachainRewardsRegistry.RewardVaultType _type, uint256 _amount) internal {
         IBerachainRewardsMetavault metavault = IBerachainRewardsMetavault(
-            registry().getVaultToMetavault(address(this))
+            REGISTRY().getVaultToMetavault(address(this))
         );
         IERC20(_asset).safeApprove(address(metavault), _amount);
         metavault.stake(_asset, _type, _amount);
@@ -133,7 +133,7 @@ contract BerachainRewardsIsolationModeTokenVaultV1 is
 
     function _unstake(address _asset, IBerachainRewardsRegistry.RewardVaultType _type, uint256 _amount) internal {
         IBerachainRewardsMetavault metavault = IBerachainRewardsMetavault(
-            registry().getVaultToMetavault(address(this))
+            REGISTRY().getVaultToMetavault(address(this))
         );
         metavault.unstake(_asset, _type, _amount);
         IERC20(_asset).safeTransferFrom(address(metavault), address(this), _amount);
@@ -141,7 +141,7 @@ contract BerachainRewardsIsolationModeTokenVaultV1 is
 
     function _exit(address _asset, IBerachainRewardsRegistry.RewardVaultType _type) internal {
         IBerachainRewardsMetavault metavault = IBerachainRewardsMetavault(
-            registry().getVaultToMetavault(address(this))
+            REGISTRY().getVaultToMetavault(address(this))
         );
         metavault.exit(_asset, _type);
 

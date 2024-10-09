@@ -72,7 +72,7 @@ contract BGTIsolationModeVaultFactory is
 
     // ============ External Functions ============
 
-    // @audit check these permissions
+    // @audit @Corey please double check these permissions and confirm only the proper metavault can call
     function depositIntoDolomiteMarginFromMetavault(
         address _owner,
         uint256 _toAccountNumber,

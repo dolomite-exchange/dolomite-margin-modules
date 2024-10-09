@@ -39,7 +39,7 @@ interface IMetavaultUpgradeableProxy {
 
     function implementation() external view returns (address);
 
-    function REGISTRY() external view returns (address);
+    function registry() external view returns (address);
 
     function owner() external view returns (address);
 }

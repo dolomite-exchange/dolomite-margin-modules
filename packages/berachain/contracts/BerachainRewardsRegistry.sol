@@ -53,6 +53,7 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
     bytes32 private constant _BGT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.bgt")) - 1);
     bytes32 private constant _BGT_ISOLATION_MODE_VAULT_FACTORY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.bgtIsolationModeVaultFactory")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _I_BGT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.iBgt")) - 1);
+    bytes32 private constant _I_BGT_ISOLATION_MODE_VAULT_FACTORY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.ibgtIsolationModeVaultFactory")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _META_VAULT_IMPLEMENTATION_SLOT = bytes32(uint256(keccak256("eip1967.proxy.metavaultImplementation")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _METAVAULT_OPERATOR_SLOT = bytes32(uint256(keccak256("eip1967.proxy.metavaultOperator")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _REWARD_VAULT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.rewardVault")) - 1);
@@ -111,7 +112,7 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
      * it sets the default type for the metavault's account.
      */
     function setAccountToAssetToDefaultType(address _asset, RewardVaultType _type) external {
-        // @follow-up @Corey, please double check this logic
+        // @audit @Corey, please double check this logic
         address account = getMetavaultToAccount(msg.sender);
         if (account == address(0)){
             account = msg.sender;

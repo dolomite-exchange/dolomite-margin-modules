@@ -58,7 +58,7 @@ contract BerachainRewardsMetavault is ProxyContractHelpers, IBerachainRewardsMet
 
     modifier onlyChildVault(address _sender) {
         Require.that(
-            registry().getVaultToMetavault(_sender) == address(this),
+            REGISTRY().getVaultToMetavault(_sender) == address(this),
             _FILE,
             "Only child vault can call",
             _sender
@@ -94,7 +94,7 @@ contract BerachainRewardsMetavault is ProxyContractHelpers, IBerachainRewardsMet
         IBerachainRewardsRegistry.RewardVaultType _type,
         uint256 _amount
     ) external onlyChildVault(msg.sender) {
-        IBerachainRewardsRegistry rewardRegistry = registry();
+        IBerachainRewardsRegistry rewardRegistry = REGISTRY();
         INativeRewardVault rewardVault = INativeRewardVault(rewardRegistry.rewardVault(_asset, _type));
         IBerachainRewardsRegistry.RewardVaultType _defaultType = rewardRegistry.getAccountToAssetToDefaultType(
             OWNER(),
@@ -115,7 +115,7 @@ contract BerachainRewardsMetavault is ProxyContractHelpers, IBerachainRewardsMet
         IBerachainRewardsRegistry.RewardVaultType _type,
         uint256 _amount
     ) external onlyChildVault(msg.sender) {
-        INativeRewardVault rewardVault = INativeRewardVault(registry().rewardVault(_asset, _type));
+        INativeRewardVault rewardVault = INativeRewardVault(REGISTRY().rewardVault(_asset, _type));
         rewardVault.withdraw(_amount);
         IERC20(_asset).approve(msg.sender, _amount);
     }
@@ -125,17 +125,19 @@ contract BerachainRewardsMetavault is ProxyContractHelpers, IBerachainRewardsMet
         IBerachainRewardsRegistry.RewardVaultType _type
     ) external onlyMetavaultOwner(msg.sender) returns (uint256) {
         if (_type == IBerachainRewardsRegistry.RewardVaultType.NATIVE) {
-            INativeRewardVault rewardVault = INativeRewardVault(registry().rewardVault(_asset, _type));
+            INativeRewardVault rewardVault = INativeRewardVault(REGISTRY().rewardVault(_asset, _type));
             uint256 bgtAmount = rewardVault.getReward(address(this));
-            registry().bgtIsolationModeVaultFactory().depositIntoDolomiteMarginFromMetavault(
+            REGISTRY().bgtIsolationModeVaultFactory().depositIntoDolomiteMarginFromMetavault(
                 OWNER(),
                 0,
                 bgtAmount
             );
+            return bgtAmount;
         } else {
-            IInfraredRewardVault rewardVault = IInfraredRewardVault(registry().rewardVault(_asset, _type));
+            IInfraredRewardVault rewardVault = IInfraredRewardVault(REGISTRY().rewardVault(_asset, _type));
             rewardVault.getReward();
             // @follow-up Should we get balance to return it?
+            // @todo Yes, get bal before and then diff
             _depositIBGTIntoDolomite();
         }
     }
@@ -144,14 +146,14 @@ contract BerachainRewardsMetavault is ProxyContractHelpers, IBerachainRewardsMet
         address _asset,
         IBerachainRewardsRegistry.RewardVaultType _type
     ) external onlyChildVault(msg.sender) {
-        INativeRewardVault rewardVault = INativeRewardVault(registry().rewardVault(_asset, _type));
-        IBGT bgt = registry().bgt();
+        INativeRewardVault rewardVault = INativeRewardVault(REGISTRY().rewardVault(_asset, _type));
+        IBGT bgt = REGISTRY().bgt();
 
         uint256 preBal = bgt.balanceOf(address(this));
         rewardVault.exit();
         uint256 postBal = bgt.balanceOf(address(this));
         if (postBal - preBal > 0) {
-            registry().bgtIsolationModeVaultFactory().depositIntoDolomiteMarginFromMetavault(
+            REGISTRY().bgtIsolationModeVaultFactory().depositIntoDolomiteMarginFromMetavault(
                 OWNER(),
                 0,
                 postBal - preBal
@@ -172,7 +174,7 @@ contract BerachainRewardsMetavault is ProxyContractHelpers, IBerachainRewardsMet
     // ==================================================================
 
     function delegateBGT(address _delgatee) external onlyMetavaultOwner(msg.sender) {
-        registry().bgt().delegate(_delgatee);
+        REGISTRY().bgt().delegate(_delgatee);
     }
 
     function queueBGTBoost(
@@ -190,20 +192,22 @@ contract BerachainRewardsMetavault is ProxyContractHelpers, IBerachainRewardsMet
                 "Does not match active validator"
             );
         }
-        registry().bgt().queueBoost(_validator, _amount);
+        REGISTRY().bgt().queueBoost(_validator, _amount);
     }
 
     function activateBGTBoost(
         address _validator
     ) external onlyMetavaultOwner(msg.sender) onlyActiveValidator(_validator) {
-        registry().bgt().activateBoost(_validator);
+        // @todo add view to see how many blocks until can call activate
+        // @todo add tests to see about adding more queued balance
+        REGISTRY().bgt().activateBoost(_validator);
     }
 
     function cancelBGTBoost(
         address _validator,
         uint128 _amount
     ) external onlyMetavaultOwner(msg.sender) onlyActiveValidator(_validator) {
-        IBGT bgt = registry().bgt();
+        IBGT bgt = REGISTRY().bgt();
         bgt.cancelBoost(_validator, _amount);
         _resetValidatorIfEmptyBoosts(bgt);
     }
@@ -212,7 +216,7 @@ contract BerachainRewardsMetavault is ProxyContractHelpers, IBerachainRewardsMet
         address _validator,
         uint128 _amount
     ) external onlyMetavaultOwner(msg.sender) onlyActiveValidator(_validator) {
-        IBGT bgt = registry().bgt();
+        IBGT bgt = REGISTRY().bgt();
         bgt.dropBoost(_validator, _amount);
         _resetValidatorIfEmptyBoosts(bgt);
     }
@@ -222,24 +226,23 @@ contract BerachainRewardsMetavault is ProxyContractHelpers, IBerachainRewardsMet
         uint256 _amount
     ) external {
         Require.that(
-            registry().bgtIsolationModeVaultFactory().getVaultByAccount(OWNER()) == msg.sender,
+            REGISTRY().bgtIsolationModeVaultFactory().getVaultByAccount(OWNER()) == msg.sender,
             _FILE,
             "Not child BGT vault"
         );
 
-        IBGT bgt = registry().bgt();
+        // @audit check safecasting with uint128 and uint256
+        IBGT bgt = REGISTRY().bgt();
         uint256 unboostedBal = bgt.unboostedBalanceOf(address(this));
         if (_amount > unboostedBal) {
             uint128 queuedBoost = bgt.queuedBoost(address(this));
+            uint128 diff = uint128(_amount - unboostedBal);
 
-            // @follow-up How much do we want to do this exactly? Or just cancel all?
-            if (queuedBoost >= _amount - unboostedBal) {
-                // @audit should we safecast?
+            if (queuedBoost >= diff) {
                 bgt.cancelBoost(validator(), uint128(_amount - unboostedBal));
             } else {
                 bgt.cancelBoost(validator(), queuedBoost);
-                uint128 boosted = bgt.boosts(address(this));
-                bgt.dropBoost(validator(), uint128(boosted));
+                bgt.dropBoost(validator(), diff - queuedBoost);
             }
         }
         
@@ -251,8 +254,7 @@ contract BerachainRewardsMetavault is ProxyContractHelpers, IBerachainRewardsMet
     // ======================== View Functions ==========================
     // ==================================================================
 
-    // @follow-up same function on proxy except lowercase. Is this an issue?
-    function registry() public view returns (IBerachainRewardsRegistry) {
+    function REGISTRY() public view returns (IBerachainRewardsRegistry) {
         return IBerachainRewardsRegistry(_getAddress(_REGISTRY_SLOT));
     }
 
@@ -269,7 +271,7 @@ contract BerachainRewardsMetavault is ProxyContractHelpers, IBerachainRewardsMet
     // ==================================================================
 
     function _depositIBGTIntoDolomite() internal {
-        IBerachainRewardsRegistry beraRegistry = registry();
+        IBerachainRewardsRegistry beraRegistry = REGISTRY();
         IERC20 iBgt = beraRegistry.iBgt();
 
         uint256 bal = iBgt.balanceOf(address(this));
