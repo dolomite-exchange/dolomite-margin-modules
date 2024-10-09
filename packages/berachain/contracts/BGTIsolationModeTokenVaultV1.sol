@@ -66,9 +66,8 @@ contract BGTIsolationModeTokenVaultV1 is
     override
     onlyVaultFactory(msg.sender) {
         IBerachainRewardsMetavault metavault = IBerachainRewardsMetavault(registry().getAccountToMetavault(OWNER()));
-        metavault.withdrawBGTAndRedeem(_recipient, _amount);
         assert(_recipient != address(address(this)));
-        IERC20(UNDERLYING_TOKEN()).safeTransferFrom(address(metavault), _recipient, _amount);
+        metavault.withdrawBGTAndRedeem(_recipient, _amount);
     }
 
     function registry() public view returns (IBerachainRewardsRegistry) {

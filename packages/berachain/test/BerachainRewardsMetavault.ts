@@ -250,27 +250,27 @@ describe('BerachainRewardsMetavault', () => {
     });
   });
 
-  describe('#redeemBGT', () => {
-    it('should work normally', async () => {
-      await beraVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
-      await increase(10 * ONE_DAY_SECONDS);
-      await metavault.getReward(underlyingToken.address, RewardVaultType.Native);
-      const bal = await core.tokens.bgt.balanceOf(metavault.address);
+  // describe('#redeemBGT', () => {
+  //   it('should work normally', async () => {
+  //     await beraVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+  //     await increase(10 * ONE_DAY_SECONDS);
+  //     await metavault.getReward(underlyingToken.address, RewardVaultType.Native);
+  //     const bal = await core.tokens.bgt.balanceOf(metavault.address);
 
-      await expect(() => metavault.redeemBGT(bal)).to.changeEtherBalance(
-        core.hhUser1,
-        bal,
-      );
-      expect(await core.tokens.bgt.balanceOf(metavault.address)).to.eq(ZERO_BI);
-    });
+  //     await expect(() => metavault.redeemBGT(bal)).to.changeEtherBalance(
+  //       core.hhUser1,
+  //       bal,
+  //     );
+  //     expect(await core.tokens.bgt.balanceOf(metavault.address)).to.eq(ZERO_BI);
+  //   });
 
-    it('should fail if not called by owner', async () => {
-      await expectThrow(
-        metavault.connect(core.hhUser2).redeemBGT(ONE_BI),
-        `BerachainRewardsMetavault: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
-      );
-    });
-  });
+  //   it('should fail if not called by owner', async () => {
+  //     await expectThrow(
+  //       metavault.connect(core.hhUser2).redeemBGT(ONE_BI),
+  //       `BerachainRewardsMetavault: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
+  //     );
+  //   });
+  // });
 
   describe('#delegateBGT', () => {
     it('should work normally', async () => {

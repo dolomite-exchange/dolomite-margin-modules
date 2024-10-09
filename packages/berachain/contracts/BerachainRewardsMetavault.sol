@@ -171,10 +171,6 @@ contract BerachainRewardsMetavault is ProxyContractHelpers, IBerachainRewardsMet
     // ======================== BGT Functions ===========================
     // ==================================================================
 
-    function redeemBGT(uint256 _amount) external onlyMetavaultOwner(msg.sender) {
-        registry().bgt().redeem(OWNER(), _amount);
-    }
-
     function delegateBGT(address _delgatee) external onlyMetavaultOwner(msg.sender) {
         registry().bgt().delegate(_delgatee);
     }
@@ -224,24 +220,30 @@ contract BerachainRewardsMetavault is ProxyContractHelpers, IBerachainRewardsMet
     function withdrawBGTAndRedeem(
         address _recipient,
         uint256 _amount
-    ) external onlyChildVault(msg.sender) {
+    ) external {
+        Require.that(
+            registry().bgtIsolationModeVaultFactory().getVaultByAccount(OWNER()) == msg.sender,
+            _FILE,
+            "Not child BGT vault"
+        );
+
         IBGT bgt = registry().bgt();
-        if (_amount >= bgt.unboostedBalanceOf(address(this))) {
-            bgt.redeem(_recipient, _amount);
-            return;
-        }
-        uint128 queuedBoost = bgt.queuedBoost(address(this));
-        if (queuedBoost > 0) {
-            bgt.cancelBoost(validator(), uint128(queuedBoost));
-        }
+        uint256 unboostedBal = bgt.unboostedBalanceOf(address(this));
+        if (_amount > unboostedBal) {
+            uint128 queuedBoost = bgt.queuedBoost(address(this));
 
-        if (_amount >= bgt.unboostedBalanceOf(address(this))) {
-            bgt.redeem(_recipient, _amount);
-            return;
+            // @follow-up How much do we want to do this exactly? Or just cancel all?
+            if (queuedBoost >= _amount - unboostedBal) {
+                // @audit should we safecast?
+                bgt.cancelBoost(validator(), uint128(_amount - unboostedBal));
+            } else {
+                bgt.cancelBoost(validator(), queuedBoost);
+                uint128 boosted = bgt.boosts(address(this));
+                bgt.dropBoost(validator(), uint128(boosted));
+            }
         }
-
-        uint128 boosted = bgt.boosts(address(this));
-        bgt.dropBoost(validator(), uint128(boosted));
+        
+        _resetValidatorIfEmptyBoosts(bgt);
         bgt.redeem(_recipient, _amount);
     }
 
