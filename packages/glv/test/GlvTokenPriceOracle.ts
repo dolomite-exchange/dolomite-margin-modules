@@ -32,16 +32,16 @@ import {
   setupNewOracleAggregatorTokens
 } from './glv-ecosystem-utils';
 import { createGmxV2Library } from 'packages/gmx-v2/test/gmx-v2-ecosystem-utils';
-import { GMX_V2_EXECUTION_FEE_FOR_TESTS } from 'packages/gmx-v2/src/gmx-v2-constructors';
+import { GLV_EXECUTION_FEE_FOR_TESTS } from 'packages/gmx-v2/src/gmx-v2-constructors';
 
-const GLV_ETH_USD_PRICE = BigNumber.from('977453876271351641'); // $.977
+const GLV_ETH_USD_PRICE = BigNumber.from('1001018990500099849'); // $1.001
 const FEE_BASIS_POINTS = BigNumber.from('7');
-const NEXT_TIMESTAMP = 1_726_000_000;
+const NEXT_TIMESTAMP = 1_728_506_550;
 
 const executionFee =
-  process.env.COVERAGE !== 'true' ? GMX_V2_EXECUTION_FEE_FOR_TESTS : GMX_V2_EXECUTION_FEE_FOR_TESTS.mul(10);
+  process.env.COVERAGE !== 'true' ? GLV_EXECUTION_FEE_FOR_TESTS : GLV_EXECUTION_FEE_FOR_TESTS.mul(10);
 const callbackGasLimit =
-  process.env.COVERAGE !== 'true' ? BigNumber.from('3000000') : BigNumber.from('3000000').mul(10);
+  process.env.COVERAGE !== 'true' ? BigNumber.from('4000000') : BigNumber.from('4000000').mul(10);
 
 describe('GlvTokenPriceOracle', () => {
   let snapshotId: string;

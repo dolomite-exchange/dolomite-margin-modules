@@ -746,18 +746,18 @@ export async function setupNewOracleAggregatorTokens(core: CoreProtocolArbitrumO
     decimals: 8
   });
 
-  // await core.chainlinkPriceOracleV3.ownerInsertOrUpdateOracleToken(
-  //   '0x3E57D02f9d196873e55727382974b02EdebE6bfd', // SHIB
-  //   '',
-  //   false
-  // );
-  // await core.oracleAggregatorV2.ownerInsertOrUpdateToken({
-  //   oracleInfos: [{
-  //     oracle: core.chainlinkPriceOracleV3.address,
-  //     tokenPair: ADDRESS_ZERO,
-  //     weight: 100
-  //   }],
-  //   token: '0x3E57D02f9d196873e55727382974b02EdebE6bfd',
-  //   decimals: 24
-  // });
+  await core.chainlinkPriceOracleV3.ownerInsertOrUpdateOracleToken(
+    '0x3E57D02f9d196873e55727382974b02EdebE6bfd', // SHIB
+    '0x0E278D14B4bf6429dDB0a1B353e2Ae8A4e128C93',
+    false
+  );
+  await core.oracleAggregatorV2.ownerInsertOrUpdateToken({
+    oracleInfos: [{
+      oracle: core.chainlinkPriceOracleV3.address,
+      tokenPair: ADDRESS_ZERO,
+      weight: 100
+    }],
+    token: '0x3E57D02f9d196873e55727382974b02EdebE6bfd',
+    decimals: 18
+  });
 }

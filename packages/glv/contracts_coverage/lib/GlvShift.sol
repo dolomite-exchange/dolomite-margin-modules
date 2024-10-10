@@ -1,7 +1,11 @@
 // SPDX-License-Identifier: BUSL-1.1
+pragma solidity ^0.8.9;
 
-pragma solidity ^0.8.0;
-
+/**
+ * @title   GlvShift
+ *
+ * @notice  GlvShift library from GMX
+ */
 library GlvShift {
     struct Props {
         Addresses addresses;

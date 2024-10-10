@@ -4,6 +4,7 @@ import { parseEther } from 'ethers/lib/utils';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
 import { expectArrayEq, expectEvent, expectThrow } from 'packages/base/test/utils/assertions';
 import {
+  getDefaultProtocolConfigForGlv,
   setupCoreProtocol,
   setupTestMarket,
   setupUserVaultProxy,
@@ -26,8 +27,7 @@ import {
   createGlvLibrary,
   createGlvRegistry
 } from './glv-ecosystem-utils';
-import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE_FOR_TESTS } from 'packages/gmx-v2/src/gmx-v2-constructors';
-import { Network } from 'packages/base/src/utils/no-deps-constants';
+import { GLV_CALLBACK_GAS_LIMIT, GLV_EXECUTION_FEE_FOR_TESTS, GMX_V2_EXECUTION_FEE_FOR_TESTS } from 'packages/gmx-v2/src/gmx-v2-constructors';
 import { createGmxV2Library } from 'packages/gmx-v2/test/gmx-v2-ecosystem-utils';
 import { GmxV2Library } from 'packages/gmx-v2/src/types';
 
@@ -52,14 +52,11 @@ describe('GlvIsolationModeVaultFactory', () => {
   let marketId: BigNumber;
 
   before(async () => {
-    core = await setupCoreProtocol({
-      blockNumber: 252_102_600,
-      network: Network.ArbitrumOne
-    });
+    core = await setupCoreProtocol(getDefaultProtocolConfigForGlv());
     glvRegistry = await createGlvRegistry(
       core,
       core.gmxV2Ecosystem.gmTokens.ethUsd.marketToken,
-      GMX_V2_CALLBACK_GAS_LIMIT
+      GLV_CALLBACK_GAS_LIMIT
     );
     glvLibrary = await createGlvLibrary();
     gmxV2Library = await createGmxV2Library();
@@ -74,7 +71,7 @@ describe('GlvIsolationModeVaultFactory', () => {
       allowableMarketIds,
       core.glvEcosystem!.glvTokens.wethUsdc,
       vaultImplementation,
-      GMX_V2_EXECUTION_FEE_FOR_TESTS,
+      GLV_EXECUTION_FEE_FOR_TESTS,
     );
 
     unwrapper = await createGlvIsolationModeUnwrapperTraderV2(

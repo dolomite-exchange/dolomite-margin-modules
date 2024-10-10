@@ -27,7 +27,7 @@ import {
   setupWETHBalance,
 } from 'packages/base/test/utils/setup';
 import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
-import { GMX_V2_EXECUTION_FEE_FOR_TESTS } from 'packages/gmx-v2/src/gmx-v2-constructors';
+import { GLV_EXECUTION_FEE_FOR_TESTS } from 'packages/gmx-v2/src/gmx-v2-constructors';
 import {
   GlvIsolationModeTokenVaultV1,
   GlvIsolationModeTokenVaultV1__factory,
@@ -56,7 +56,6 @@ import {
 } from './glv-ecosystem-utils';
 import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
 import { createGmxV2Library, getOracleProviderEnabledKey } from 'packages/gmx-v2/test/gmx-v2-ecosystem-utils';
-import hre from 'hardhat';
 
 enum ReversionType {
   None = 0,
@@ -76,12 +75,11 @@ const DUMMY_DEPOSIT_KEY = '0x6d1ff6ffcab884211992a9d6b8261b7fae5db4d2da3a5eb5864
 const EXECUTE_GLV_DEPOSIT_FEATURE_DISABLED_KEY = '0xa12be4af33f071deeae3bc87dcf436f28d52382a339c740fda0a10712d3179fc';
 const minAmountOut = parseEther('100');
 
-process.env.COVERAGE = 'true';
 const executionFee =
-  process.env.COVERAGE !== 'true' ? GMX_V2_EXECUTION_FEE_FOR_TESTS : GMX_V2_EXECUTION_FEE_FOR_TESTS.mul(10);
+  process.env.COVERAGE !== 'true' ? GLV_EXECUTION_FEE_FOR_TESTS : GLV_EXECUTION_FEE_FOR_TESTS.mul(10);
 const gasLimit = process.env.COVERAGE !== 'true' ? 30_000_000 : 100_000_000; // @follow-up Check if this is ok
 const callbackGasLimit =
-  process.env.COVERAGE !== 'true' ? BigNumber.from('3000000') : BigNumber.from('3000000').mul(10);
+  process.env.COVERAGE !== 'true' ? BigNumber.from('4000000') : BigNumber.from('4000000').mul(10);
 
 describe('GlvIsolationModeWrapperTraderV2', () => {
   let snapshotId: string;
@@ -102,13 +100,6 @@ describe('GlvIsolationModeWrapperTraderV2', () => {
   let controller: SignerWithAddressWithSafety;
 
   before(async () => {
-    hre.tracer.gasCost = true;
-    const opcodeMap = new Map<string, boolean>();
-    opcodeMap.set('CALL', true);
-    opcodeMap.set('STATICCALL', false);
-    opcodeMap.set('DELEGATECALL', false);
-    hre.tracer.opcodes = opcodeMap;
-    hre.tracer.enabled = false;
     core = await setupCoreProtocol(getDefaultProtocolConfigForGlv());
     eventEmitter = core.eventEmitterRegistry;
     underlyingToken = core.glvEcosystem.glvTokens.wethUsdc.glvToken.connect(core.hhUser1);
@@ -404,7 +395,6 @@ describe('GlvIsolationModeWrapperTraderV2', () => {
     it('should work normally with long token', async () => {
       const minAmountOut = parseEther('1000');
       await setupBalances(core.marketIds.weth, ONE_ETH_BI, minAmountOut);
-      hre.tracer.enabled = true;
       const result = await core.glvEcosystem.glvHandler
         .connect(core.gmxV2Ecosystem.gmxExecutor)
         .executeGlvDeposit(
@@ -412,7 +402,6 @@ describe('GlvIsolationModeWrapperTraderV2', () => {
           await getGlvOracleParams(core, controller, core.glvEcosystem.glvTokens.wethUsdc, testOracleProvider),
           { gasLimit }
         );
-      hre.tracer.enabled = false;
       await expectEvent(eventEmitter, result, 'AsyncDepositExecuted', {
         key: depositKey,
         token: factory.address,
@@ -432,7 +421,7 @@ describe('GlvIsolationModeWrapperTraderV2', () => {
     });
 
     it('should work normally with short token', async () => {
-      const minAmountOut = parseEther('1000');
+      const minAmountOut = parseEther('990');
       await setupBalances(core.marketIds.nativeUsdc, usdcAmount, minAmountOut);
 
       const result = await core.glvEcosystem.glvHandler
@@ -460,7 +449,7 @@ describe('GlvIsolationModeWrapperTraderV2', () => {
     });
 
     it('should work normally when execute deposit fails on GMX side', async () => {
-      const minAmountOut = parseEther('1050');
+      const minAmountOut = parseEther('1000');
       await setupBalances(core.marketIds.nativeUsdc, usdcAmount, minAmountOut);
 
       const result = await core.glvEcosystem.glvHandler
@@ -470,13 +459,7 @@ describe('GlvIsolationModeWrapperTraderV2', () => {
           await getGlvOracleParams(core, controller, core.glvEcosystem.glvTokens.wethUsdc, testOracleProvider),
           { gasLimit }
         );
-      await expectEvent(eventEmitter, result, 'AsyncDepositCancelledFailed', {
-        key: depositKey,
-        token: factory.address,
-        reason: ""
-      });
-      const result2 = await wrapper.connect(core.hhUser5).executeDepositCancellationForRetry(depositKey, { gasLimit });
-      await expectEvent(eventEmitter, result2, 'AsyncDepositCancelled', {
+      await expectEvent(eventEmitter, result, 'AsyncDepositCancelled', {
         key: depositKey,
         token: factory.address,
       });
@@ -523,7 +506,6 @@ describe('GlvIsolationModeWrapperTraderV2', () => {
 
       const ethDiff = parseEther('50');
       await core.dolomiteMargin.ownerSetMaxWei(marketId, minAmountOut.add(ethDiff));
-      hre.tracer.enabled = true;
       const result = await core.glvEcosystem.glvHandler
         .connect(core.gmxV2Ecosystem.gmxExecutor)
         .executeGlvDeposit(
@@ -531,7 +513,6 @@ describe('GlvIsolationModeWrapperTraderV2', () => {
           await getGlvOracleParams(core, controller, core.glvEcosystem.glvTokens.wethUsdc, testOracleProvider),
           { gasLimit }
         );
-      hre.tracer.enabled = false;
       await expectEvent(eventEmitter, result, 'AsyncDepositFailed', {
         key: depositKey,
         token: factory.address,
@@ -589,12 +570,11 @@ describe('GlvIsolationModeWrapperTraderV2', () => {
       await expectStateIsCleared();
     });
 
-    xit('should work when deposit fails due to reversion', async () => {
+    it('should work when deposit fails due to reversion', async () => {
       const minAmountOut = parseEther('100');
       await setupBalances(core.marketIds.nativeUsdc, usdcAmount, minAmountOut);
 
       await factory.setReversionType(ReversionType.Assert);
-      hre.tracer.enabled = true;
       const result = await core.glvEcosystem.glvHandler
         .connect(core.gmxV2Ecosystem.gmxExecutor)
         .executeGlvDeposit(
@@ -602,9 +582,6 @@ describe('GlvIsolationModeWrapperTraderV2', () => {
           await getGlvOracleParams(core, controller, core.glvEcosystem.glvTokens.wethUsdc, testOracleProvider),
           { gasLimit }
         );
-      hre.tracer.enabled = false;
-      console.log(hre.tracer.lastTrace()!);
-      console.log(hre.tracer.lastTrace()!.parent!)
 
       await expectEvent(eventEmitter, result, 'AsyncDepositFailed', {
         key: depositKey,
@@ -774,16 +751,8 @@ describe('GlvIsolationModeWrapperTraderV2', () => {
 
       // Mine blocks so we can cancel deposit
       await mine(1200);
-      hre.tracer.enabled = true;
       const result = await vault.cancelDeposit(depositKey, { gasLimit });
-      hre.tracer.enabled = false;
-      await expectEvent(eventEmitter, result, 'AsyncDepositCancelledFailed', {
-        key: depositKey,
-        token: factory.address,
-        reason: ""
-      });
-      const result2 = await wrapper.connect(core.hhUser5).executeDepositCancellationForRetry(depositKey, { gasLimit });
-      await expectEvent(eventEmitter, result2, 'AsyncDepositCancelled', {
+      await expectEvent(eventEmitter, result, 'AsyncDepositCancelled', {
         key: depositKey,
         token: factory.address,
       });
@@ -846,13 +815,7 @@ describe('GlvIsolationModeWrapperTraderV2', () => {
       // Mine blocks so we can cancel deposit
       await mine(1200);
       const result = await vault.cancelDeposit(depositKey, { gasLimit });
-      await expectEvent(eventEmitter, result, 'AsyncDepositCancelledFailed', {
-        key: depositKey,
-        token: factory.address,
-        reason: ""
-      });
-      const result2 = await wrapper.connect(core.hhUser5).executeDepositCancellationForRetry(depositKey, { gasLimit });
-      await expectEvent(eventEmitter, result2, 'AsyncDepositCancelled', {
+      await expectEvent(eventEmitter, result, 'AsyncDepositCancelled', {
         key: depositKey,
         token: factory.address,
       });
@@ -909,13 +872,7 @@ describe('GlvIsolationModeWrapperTraderV2', () => {
       // Mine blocks so we can cancel deposit
       await mine(1200);
       const result = await vault.cancelDeposit(depositKey, { gasLimit });
-      await expectEvent(eventEmitter, result, 'AsyncDepositCancelledFailed', {
-        key: depositKey,
-        token: factory.address,
-        reason: ""
-      });
-      const result2 = await wrapper.connect(core.hhUser5).executeDepositCancellationForRetry(depositKey, { gasLimit });
-      await expectEvent(eventEmitter, result2, 'AsyncDepositCancelled', {
+      await expectEvent(eventEmitter, result, 'AsyncDepositCancelled', {
         key: depositKey,
         token: factory.address,
       });
@@ -992,7 +949,7 @@ describe('GlvIsolationModeWrapperTraderV2', () => {
         vault.address,
         borrowAccountNumber,
         core.marketIds.weth,
-        wethAmount.mul(-1).sub(1)
+        wethAmount.mul(-1)
       );
 
       const initiateWrappingParams = await getInitiateWrappingParams(
@@ -1037,12 +994,6 @@ describe('GlvIsolationModeWrapperTraderV2', () => {
       await expectEvent(eventEmitter, result, 'AsyncDepositCancelledFailed', {
         key: depositKey,
         token: factory.address,
-        reason: '',
-      });
-      const result2 = await wrapper.connect(core.hhUser5).executeDepositCancellationForRetry(depositKey, { gasLimit });
-      await expectEvent(eventEmitter, result2, 'AsyncDepositCancelledFailed', {
-        key: depositKey,
-        token: factory.address,
         reason: `OperationImpl: Undercollateralized account <${vault.address.toLowerCase()}, ${borrowAccountNumber}>`,
       });
     });
@@ -1085,13 +1036,7 @@ describe('GlvIsolationModeWrapperTraderV2', () => {
       // Mine blocks so we can cancel deposit
       await mine(1200);
       const result = await vault.cancelDeposit(depositKey, { gasLimit });
-      await expectEvent(eventEmitter, result, 'AsyncDepositCancelledFailed', {
-        key: depositKey,
-        token: factory.address,
-        reason: ""
-      });
-      const result2 = await wrapper.connect(core.hhUser5).executeDepositCancellationForRetry(depositKey, { gasLimit });
-      await expectEvent(eventEmitter, result2, 'AsyncDepositCancelled', {
+      await expectEvent(eventEmitter, result, 'AsyncDepositCancelled', {
         key: depositKey,
         token: factory.address,
       });
@@ -1099,7 +1044,6 @@ describe('GlvIsolationModeWrapperTraderV2', () => {
     });
 
     it('should work normally when called by valid handler', async () => {
-      const depositExecutor = await impersonate(core.glvEcosystem.glvHandler.address, true);
       await vault.transferIntoPositionWithOtherToken(
         defaultAccountNumber,
         borrowAccountNumber,
@@ -1134,14 +1078,8 @@ describe('GlvIsolationModeWrapperTraderV2', () => {
 
       // Mine blocks so we can cancel deposit
       await mine(1200);
-      const result = await vault.cancelDeposit(depositKey, { gasLimit });
-      await expectEvent(eventEmitter, result, 'AsyncDepositCancelledFailed', {
-        key: depositKey,
-        token: factory.address,
-        reason: ""
-      });
-      const result2 = await wrapper.connect(core.hhUser5).executeDepositCancellationForRetry(depositKey, { gasLimit });
-      await expectEvent(eventEmitter, result2, 'AsyncDepositCancelled', {
+      const result = await wrapper.connect(core.hhUser5).initiateCancelDeposit(depositKey, { gasLimit });
+      await expectEvent(eventEmitter, result, 'AsyncDepositCancelled', {
         key: depositKey,
         token: factory.address,
       });
@@ -1230,7 +1168,7 @@ describe('GlvIsolationModeWrapperTraderV2', () => {
         vault.address,
         borrowAccountNumber,
         core.marketIds.nativeUsdc,
-        ZERO_BI.sub(usdcAmount.div(5)),
+        ZERO_BI.sub(usdcAmount.div(5)).sub(1),
       );
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, minAmountOut);
 
@@ -1246,25 +1184,17 @@ describe('GlvIsolationModeWrapperTraderV2', () => {
 
       // Mine blocks so we can cancel deposit
       await mine(1200);
-      const result1 = await vault.cancelDeposit(depositKey, { gasLimit });
-      await expectEvent(eventEmitter, result1, 'AsyncDepositCancelledFailed', {
-        key: depositKey,
-        token: factory.address,
-        reason: '',
-      });
-      hre.tracer.enabled = true;
-      const result2 = await wrapper.connect(core.hhUser5).executeDepositCancellationForRetry(depositKey, { gasLimit });
-      await expectEvent(eventEmitter, result2, 'AsyncDepositCancelledFailed', {
+      const result = await vault.cancelDeposit(depositKey, { gasLimit });
+      await expectEvent(eventEmitter, result, 'AsyncDepositCancelledFailed', {
         key: depositKey,
         token: factory.address,
         reason: `OperationImpl: Undercollateralized account <${vault.address.toLowerCase()}, ${borrowAccountNumber.toString()}>`,
       });
-      hre.tracer.enabled = false;
 
       await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.weth, oldOracle);
 
-      const result3 = await wrapper.connect(core.hhUser1).executeDepositCancellationForRetry(depositKey, { gasLimit });
-      await expectEvent(eventEmitter, result3, 'AsyncDepositCancelled', {
+      const result2 = await wrapper.connect(core.hhUser1).executeDepositCancellationForRetry(depositKey, { gasLimit });
+      await expectEvent(eventEmitter, result2, 'AsyncDepositCancelled', {
         key: depositKey,
         token: factory.address,
       });
@@ -1283,7 +1213,7 @@ describe('GlvIsolationModeWrapperTraderV2', () => {
         vault.address,
         borrowAccountNumber,
         core.marketIds.nativeUsdc,
-        ZERO_BI.sub(usdcAmount.div(10)),
+        ZERO_BI.sub(usdcAmount.div(10)).sub(1),
       );
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, ZERO_BI);
     });

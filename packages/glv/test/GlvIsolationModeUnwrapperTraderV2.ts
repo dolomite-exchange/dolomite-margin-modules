@@ -1,11 +1,9 @@
 import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin';
 import { createContractWithAbi, depositIntoDolomiteMargin } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import {
-  ADDRESS_ZERO,
   BYTES_EMPTY,
   BYTES_ZERO,
   MAX_UINT_256_BI,
-  Network,
   ONE_BI,
   ONE_ETH_BI, TWO_BI,
   ZERO_BI,
@@ -55,7 +53,7 @@ import {
   TestGlvIsolationModeTokenVaultV1__factory,
   TestGlvIsolationModeUnwrapperTraderV2,
 } from '../src/types';
-import { GMX_V2_EXECUTION_FEE_FOR_TESTS } from 'packages/gmx-v2/src/gmx-v2-constructors';
+import { GLV_EXECUTION_FEE_FOR_TESTS } from 'packages/gmx-v2/src/gmx-v2-constructors';
 import {
   createGlvIsolationModeVaultFactory,
   createGlvIsolationModeWrapperTraderV2,
@@ -88,12 +86,12 @@ const amountWei = parseEther('1');
 const DEFAULT_EXTRA_DATA = ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [parseEther('.5'), ONE_BI]);
 
 const executionFee =
-  process.env.COVERAGE !== 'true' ? GMX_V2_EXECUTION_FEE_FOR_TESTS : GMX_V2_EXECUTION_FEE_FOR_TESTS.mul(10);
+  process.env.COVERAGE !== 'true' ? GLV_EXECUTION_FEE_FOR_TESTS : GLV_EXECUTION_FEE_FOR_TESTS.mul(10);
 const gasLimit = process.env.COVERAGE !== 'true' ? 30_000_000 : 100_000_000;
 const callbackGasLimit =
   process.env.COVERAGE !== 'true'
-    ? BigNumber.from('3000000')
-    : BigNumber.from('3000000').mul(10);
+    ? BigNumber.from('4000000')
+    : BigNumber.from('4000000').mul(10);
 
 const wethAmount = ONE_ETH_BI;
 
@@ -140,13 +138,6 @@ describe('GlvIsolationModeUnwrapperTraderV2', () => {
   let controller: SignerWithAddressWithSafety;
 
   before(async () => {
-    hre.tracer.gasCost = true;
-    const opcodeMap = new Map<string, boolean>();
-    opcodeMap.set('CALL', true);
-    opcodeMap.set('STATICCALL', false);
-    opcodeMap.set('DELEGATECALL', false);
-    hre.tracer.opcodes = opcodeMap;
-    hre.tracer.enabled = false;
     core = await setupCoreProtocol(getDefaultProtocolConfigForGlv());
     eventEmitter = core.eventEmitterRegistry;
     underlyingToken = core.glvEcosystem.glvTokens.wethUsdc.glvToken.connect(core.hhUser1);
@@ -500,7 +491,7 @@ describe('GlvIsolationModeUnwrapperTraderV2', () => {
   });
 
   describe('#afterWithdrawalCancellation', () => {
-    it.only('should work normally', async () => {
+    it('should work normally', async () => {
       await setupGLVBalance(core, underlyingToken, core.hhUser1, amountWei, vault);
       await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await expectProtocolBalance(core, vault.address, defaultAccountNumber, marketId, amountWei);
@@ -531,9 +522,7 @@ describe('GlvIsolationModeUnwrapperTraderV2', () => {
 
       // Mine blocks so we can cancel deposit
       await mine(1200);
-      hre.tracer.enabled = true;
       await vault.connect(core.hhUser1).cancelWithdrawal(withdrawalKey);
-      hre.tracer.enabled = false;
 
       await expectProtocolBalance(core, vault.address, defaultAccountNumber, marketId, amountWei);
       await expectProtocolBalance(core, vault.address, defaultAccountNumber, core.marketIds.weth, ZERO_BI);
@@ -1245,7 +1234,7 @@ describe('GlvIsolationModeUnwrapperTraderV2', () => {
     });
 
     // @todo Confirm that we can then withdraw the tokens
-    xit('should fail if more than one output token received', async () => {
+    it('should fail if more than one output token received', async () => {
       await setupBalances(core.tokens.weth);
       const withdrawalExecutor = await impersonate(core.glvEcosystem.glvHandler, true);
       const unwrapperImpersonate = await impersonate(unwrapper.address, true);
@@ -1258,8 +1247,8 @@ describe('GlvIsolationModeUnwrapperTraderV2', () => {
         ONE_BI,
         amountWei,
         parseEther('.01'),
-        core.tokens.nativeUsdc.address,
         core.tokens.weth.address,
+        core.tokens.nativeUsdc.address,
         BigNumber.from('100000000'),
         BigNumber.from('100000000'),
       );
@@ -1448,12 +1437,12 @@ describe('GlvIsolationModeUnwrapperTraderV2', () => {
       );
     });
 
-    xit('should fail if the withdrawal cannot be retried', async () => {
+    it('should fail if the withdrawal cannot be retried', async () => {
       await glvRegistry.connect(core.governance).ownerSetIsHandler(core.hhUser1.address, true);
       await setupGLVBalance(core, underlyingToken, core.hhUser1, amountWei, vault);
       await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await vault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei, { value: executionFee });
-      const usdcAmount = BigNumber.from('60000000');
+      const usdcAmount = BigNumber.from('600000');
       await vault.transferFromPositionWithOtherToken(
         borrowAccountNumber,
         defaultAccountNumber,
@@ -1738,7 +1727,7 @@ describe('GlvIsolationModeUnwrapperTraderV2', () => {
       );
     });
 
-    xit('should not work if the input amount is too large', async () => {
+    it('should not work if the input amount is 0', async () => {
       await expectThrow(
         unwrapper.createActionsForUnwrapping({
           primaryAccountId: ZERO_BI,
@@ -1750,7 +1739,7 @@ describe('GlvIsolationModeUnwrapperTraderV2', () => {
           outputMarket: core.marketIds.nativeUsdc,
           inputMarket: marketId,
           minOutputAmount: ONE_BI,
-          inputAmount: amountWei.mul(100),
+          inputAmount: ZERO_BI,
           orderData: encodeWithdrawalKey(UnwrapTradeType.ForWithdrawal, withdrawalKey),
         }),
         'AsyncIsolationModeUnwrapperImpl: Invalid input amount',

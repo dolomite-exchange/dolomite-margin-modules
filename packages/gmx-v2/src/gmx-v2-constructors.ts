@@ -39,6 +39,8 @@ export async function getGmxV2RegistryConstructorParams(
   ];
 }
 
+export const GLV_EXECUTION_FEE_FOR_TESTS = parseEther('0.05');
+export const GLV_CALLBACK_GAS_LIMIT = BigNumber.from('4000000');
 export const GMX_V2_EXECUTION_FEE = parseEther('0.001');
 export const GMX_V2_EXECUTION_FEE_FOR_TESTS = parseEther('0.015');
 export const GMX_V2_CALLBACK_GAS_LIMIT = BigNumber.from('3000000');

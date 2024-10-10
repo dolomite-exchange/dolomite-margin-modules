@@ -25,12 +25,12 @@ import { IDolomitePriceOracle } from "@dolomite-exchange/modules-base/contracts/
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IGmxDataStore } from "@dolomite-exchange/modules-gmx-v2/contracts/interfaces/IGmxDataStore.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IGlvIsolationModeVaultFactory } from "./interfaces/IGlvIsolationModeVaultFactory.sol";
 import { IGlvReader } from "./interfaces/IGlvReader.sol";
 import { IGlvRegistry } from "./interfaces/IGlvRegistry.sol";
 import { IGlvTokenPriceOracle } from "./interfaces/IGlvTokenPriceOracle.sol";
 import { GlvPrice } from "./lib/GlvPrice.sol";
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 
 /**
@@ -139,13 +139,7 @@ contract GlvTokenPriceOracle is IGlvTokenPriceOracle, OnlyDolomiteMargin {
         GlvPrice.Props[] memory indexTokenPriceProps = new GlvPrice.Props[](glvInfo.markets.length);
         for (uint256 i; i < glvInfo.markets.length; i++) {
             address indexToken = REGISTRY.gmxReader().getMarket(dataStore, glvInfo.markets[i]).indexToken;
-            uint256 indexTokenPrice;
-            // @todo Need shib price oracle from Chainlink
-            if (indexToken == 0x3E57D02f9d196873e55727382974b02EdebE6bfd) {
-                indexTokenPrice = 13937067 * GMX_DECIMAL_ADJUSTMENT;
-            } else {
-                indexTokenPrice = _aggregator.getPrice(indexToken).value;
-            }
+            uint256 indexTokenPrice = _aggregator.getPrice(indexToken).value;
             indexTokenPriceProps[i] = GlvPrice.Props({
                 // Dolomite returns price as 36 decimals - token decimals
                 // GMX expects 30 decimals - token decimals so we divide by 10 ** 6

@@ -21,8 +21,8 @@ import {
   TestGlvIsolationModeTokenVaultV1
 } from '../src/types';
 import {
-  GMX_V2_CALLBACK_GAS_LIMIT,
-  GMX_V2_EXECUTION_FEE_FOR_TESTS
+  GLV_CALLBACK_GAS_LIMIT,
+  GLV_EXECUTION_FEE_FOR_TESTS,
 } from 'packages/gmx-v2/src/gmx-v2-constructors';
 import {
   createGlvIsolationModeUnwrapperTraderV2,
@@ -58,7 +58,7 @@ describe('GlvRegistry', () => {
 
     underlyingToken = core.glvEcosystem.glvTokens.wethUsdc.glvToken;
     gmToken = core.gmxV2Ecosystem.gmTokens.ethUsd.marketToken;
-    glvRegistry = await createGlvRegistry(core, gmToken, GMX_V2_CALLBACK_GAS_LIMIT);
+    glvRegistry = await createGlvRegistry(core, gmToken, GLV_CALLBACK_GAS_LIMIT);
 
     glvLibrary = await createGlvLibrary();
     gmxV2Library = await createGmxV2Library();
@@ -73,7 +73,7 @@ describe('GlvRegistry', () => {
       allowableMarketIds,
       core.glvEcosystem!.glvTokens.wethUsdc,
       userVaultImplementation,
-      GMX_V2_EXECUTION_FEE_FOR_TESTS,
+      GLV_EXECUTION_FEE_FOR_TESTS,
     );
     unwrapper = await createGlvIsolationModeUnwrapperTraderV2(
       core,
@@ -114,7 +114,7 @@ describe('GlvRegistry', () => {
       expect(await glvRegistry.getUnwrapperByToken(core.tokens.weth.address)).to.eq(ZERO_ADDRESS);
       expect(await glvRegistry.getWrapperByToken(core.tokens.weth.address)).to.eq(ZERO_ADDRESS);
       expect(await glvRegistry.dolomiteRegistry()).to.eq(core.dolomiteRegistry.address);
-      expect(await glvRegistry.callbackGasLimit()).to.eq(GMX_V2_CALLBACK_GAS_LIMIT);
+      expect(await glvRegistry.callbackGasLimit()).to.eq(GLV_CALLBACK_GAS_LIMIT);
     });
 
     it('should not initialize twice', async () => {
@@ -128,7 +128,7 @@ describe('GlvRegistry', () => {
           core.glvEcosystem!.glvRouter.address,
           core.glvEcosystem!.glvVault.address,
           gmToken.address,
-          GMX_V2_CALLBACK_GAS_LIMIT,
+          GLV_CALLBACK_GAS_LIMIT,
           core.dolomiteRegistry.address,
         ),
         'Initializable: contract is already initialized',
@@ -165,7 +165,7 @@ describe('GlvRegistry', () => {
         allowableMarketIds,
         core.glvEcosystem!.glvTokens.wethUsdc,
         userVaultImplementation,
-        GMX_V2_EXECUTION_FEE_FOR_TESTS,
+        GLV_EXECUTION_FEE_FOR_TESTS,
       );
       await expectThrow(
         glvRegistry.connect(core.governance).ownerSetUnwrapperByToken(
@@ -216,7 +216,7 @@ describe('GlvRegistry', () => {
         allowableMarketIds,
         core.glvEcosystem!.glvTokens.wethUsdc,
         userVaultImplementation,
-        GMX_V2_EXECUTION_FEE_FOR_TESTS,
+        GLV_EXECUTION_FEE_FOR_TESTS,
       );
       await expectThrow(
         glvRegistry.connect(core.governance).ownerSetWrapperByToken(
@@ -455,8 +455,8 @@ describe('GlvRegistry', () => {
 
   describe('#ownerSetCallbackGasLimit', () => {
     it('should work normally', async () => {
-      await glvRegistry.connect(core.governance).ownerSetCallbackGasLimit(GMX_V2_CALLBACK_GAS_LIMIT.add(1));
-      expect(await glvRegistry.callbackGasLimit()).to.eq(GMX_V2_CALLBACK_GAS_LIMIT.add(1));
+      await glvRegistry.connect(core.governance).ownerSetCallbackGasLimit(GLV_CALLBACK_GAS_LIMIT.add(1));
+      expect(await glvRegistry.callbackGasLimit()).to.eq(GLV_CALLBACK_GAS_LIMIT.add(1));
     });
 
     it('should failed if not called by dolomite owner', async () => {

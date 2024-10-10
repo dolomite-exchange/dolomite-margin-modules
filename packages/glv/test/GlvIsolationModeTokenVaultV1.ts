@@ -5,13 +5,11 @@ import {
   EventEmitterRegistry__factory,
 } from '@dolomite-exchange/modules-base/src/types';
 import {
-  createContractWithAbi,
   createTestToken,
   depositIntoDolomiteMargin,
 } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import {
   MAX_UINT_256_BI,
-  Network,
   ONE_BI,
   ONE_ETH_BI,
   TWO_BI,
@@ -64,8 +62,8 @@ import {
   getInitiateWrappingParams,
   getKey
 } from './glv-ecosystem-utils';
-import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE_FOR_TESTS } from 'packages/gmx-v2/src/gmx-v2-constructors';
-import { IGmxMarketToken, TestGmxDataStore, TestGmxDataStore__factory, TestGmxReader, TestGmxReader__factory } from 'packages/gmx-v2/src/types';
+import { GLV_EXECUTION_FEE_FOR_TESTS, GMX_V2_CALLBACK_GAS_LIMIT } from 'packages/gmx-v2/src/gmx-v2-constructors';
+import { IGmxMarketToken } from 'packages/gmx-v2/src/types';
 import { createGmxV2Library } from 'packages/gmx-v2/test/gmx-v2-ecosystem-utils';
 
 const defaultAccountNumber = '0';
@@ -81,7 +79,7 @@ const DUMMY_WITHDRAWAL_KEY = '0x6d1ff6ffcab884211992a9d6b8261b7fae5db4d2da3a5eb5
 const DEFAULT_EXTRA_DATA = ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [parseEther('.5'), ONE_BI]);
 
 const executionFee =
-  process.env.COVERAGE !== 'true' ? GMX_V2_EXECUTION_FEE_FOR_TESTS : GMX_V2_EXECUTION_FEE_FOR_TESTS.mul(10);
+  process.env.COVERAGE !== 'true' ? GLV_EXECUTION_FEE_FOR_TESTS : GLV_EXECUTION_FEE_FOR_TESTS.mul(10);
 
 enum FreezeType {
   Deposit = 0,
