@@ -196,7 +196,7 @@ export async function getOracleAggregatorV2ConstructorParams(
     [Deployments.PlutusVaultGLPWithChainlinkAutomationPriceOracleV3[core.network].address]: true,
     [Deployments.GLPPriceOracleV1[core.network].address]: true,
     [Deployments.JonesUSDCV1WithChainlinkAutomationPriceOracleV1[core.network].address]: true,
-    [Deployments.MagicGLPWithChainlinkAutomationPriceOracle[core.network].address]: true,
+    [Deployments.MagicGLPWithChainlinkAutomationPriceOracleV1[core.network].address]: true,
     [Deployments.PendlePtGLPPriceOracle[core.network].address]: true,
     [Deployments.PendlePtWstEthJun2024PriceOracle[core.network].address]: true,
     [Deployments.PendlePtWstEthJun2025PriceOracle[core.network].address]: true,

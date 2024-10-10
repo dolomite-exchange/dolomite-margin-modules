@@ -102,7 +102,14 @@ export const D_GMX_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   },
 };
 
-export const D_GM_ARB_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+export const D_GM_AAVE_USD_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0x24C9121C75c099b38D40020872B8A0d2C27c614D',
+    marketId: 55,
+  },
+};
+
+export const D_GM_ARB_USD_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x2c799166c9f0DbF9EFC5004cbCe4c5A37fA39329',
     marketId: 31,
@@ -111,43 +118,71 @@ export const D_GM_ARB_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
 
 export const D_GM_BTC_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
-    address: '0x1E8e8B7a2F827b3bc12B00eE402145061b7050eF',
-    marketId: 32,
-  },
-};
-
-export const D_GM_BTC_SINGLE_SIDED_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
-  [Network.ArbitrumOne]: {
     address: '0xB15bbBfCff6c411410c66642306d1FfA7eCEc4D8',
     marketId: 44,
   },
 };
 
-export const D_GM_ETH_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+export const D_GM_BTC_USD_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
-    address: '0x505582242757f16D72F8C4462A616E388Ca1b074',
-    marketId: 33,
+    address: '0x1E8e8B7a2F827b3bc12B00eE402145061b7050eF',
+    marketId: 32,
   },
 };
 
-export const D_GM_ETH_SINGLE_SIDED_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+export const D_GM_DOGE_USD_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0x1BEEd3b7D1237B7773b5C4c249933E3Ca5e027c1',
+    marketId: 56,
+  },
+};
+
+export const D_GM_ETH_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x2D165A76dd3e552DF3860789331Ab73c5a3d7F92',
     marketId: 45,
   },
 };
 
-export const D_GM_LINK_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+export const D_GM_ETH_USD_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0x505582242757f16D72F8C4462A616E388Ca1b074',
+    marketId: 33,
+  },
+};
+
+export const D_GM_GMX_USD_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0x5c99f6cf6069698D234D50Bf69EBd2f53e45ED1c',
+    marketId: 57,
+  },
+};
+
+export const D_GM_LINK_USD_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x18cB14564FBb015BD3439220D177799355abC0E0',
     marketId: 34,
   },
 };
 
-export const D_GM_UNI_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+export const D_GM_SOL_USD_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0x1EBB1c7023aDdbb2B6e30e6F4C8D4A4440Bfd412',
+    marketId: 58,
+  },
+};
+
+export const D_GM_UNI_USD_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x20d51CB520C4622Dcc3d7E35003dBaB07d547E7E',
     marketId: 47,
+  },
+};
+
+export const D_GM_WST_ETH_USD_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0xc587646f67b38739006ED0200e2E0a26FDb01c9B',
+    marketId: 59,
   },
 };
 
@@ -284,6 +319,13 @@ export const EZ_ETH_REVERSED_MAP: Record<Network.ArbitrumOne, TokenWithMarketId>
   },
 };
 
+export const FBTC_MAP: Record<Network.Mantle, TokenWithMarketId> = {
+  [Network.Mantle]: {
+    address: '0xC96dE26018A54D51c097160568752c4E3BD6C364',
+    marketId: 13,
+  },
+};
+
 export const FRAX_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F',
@@ -366,6 +408,13 @@ export const MIM_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0xFEa7a6a0B346362BF88A9e4A88416B77a57D6c2A',
     marketId: 13,
+  },
+};
+
+export const METH_MAP: Record<Network.Mantle, TokenWithMarketId> = {
+  [Network.Mantle]: {
+    address: '0xcDA86A272531e8640cD7F1a92c01839911B90bb0',
+    marketId: 5,
   },
 };
 
@@ -548,13 +597,6 @@ export const WBTC_MAP: Record<EverythingButBase, TokenWithMarketId> = {
   [Network.XLayer]: {
     address: '0xEA034fb02eB1808C2cc3adbC15f447B93CbE08e1',
     marketId: 3,
-  },
-};
-
-export const METH_MAP: Record<Network.Mantle, TokenWithMarketId> = {
-  [Network.Mantle]: {
-    address: '0xcDA86A272531e8640cD7F1a92c01839911B90bb0',
-    marketId: 5,
   },
 };
 
@@ -946,6 +988,10 @@ export const PENDLE_MARKET_E_ETH_SEP_2024_MAP: Record<Network.ArbitrumOne, strin
   [Network.ArbitrumOne]: '0xf9F9779d8fF604732EBA9AD345E6A27EF5c2a9d6',
 };
 
+export const PENDLE_MARKET_E_ETH_DEC_2024_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x6b92feB89ED16AA971B096e247Fe234dB4Aaa262',
+};
+
 export const PENDLE_MARKET_EZ_ETH_SEP_2024_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x35f3dB08a6e9cB4391348b0B404F493E7ae264c0',
 };
@@ -968,6 +1014,10 @@ export const PENDLE_MARKET_RS_ETH_APR_2024_MAP: Record<Network.ArbitrumOne, stri
 
 export const PENDLE_MARKET_RS_ETH_SEP_2024_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0xED99fC8bdB8E9e7B8240f62f69609a125A0Fbf14',
+};
+
+export const PENDLE_MARKET_RS_ETH_DEC_2024_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0xcB471665BF23B2Ac6196D84D947490fd5571215f',
 };
 
 export const PENDLE_MARKET_USDE_DEC_2024_MAP: Record<Network.Mantle, string> = {
@@ -996,6 +1046,10 @@ export const PENDLE_PT_E_ETH_JUN_2024_TOKEN_MAP: Record<Network.ArbitrumOne, str
 
 export const PENDLE_PT_E_ETH_SEP_2024_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0xb8b0a120F6A68Dd06209619F62429fB1a8e92feC',
+};
+
+export const PENDLE_PT_E_ETH_DEC_2024_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0xE2B2D203577c7cb3D043E89cCf90b5E24d19b66f',
 };
 
 export const PENDLE_PT_EZ_ETH_JUN_2024_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
@@ -1032,6 +1086,10 @@ export const PENDLE_PT_RS_ETH_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
 
 export const PENDLE_PT_RS_ETH_SEP_2024_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x30c98c0139B62290E26aC2a2158AC341Dcaf1333',
+};
+
+export const PENDLE_PT_RS_ETH_DEC_2024_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x355ec27c9d4530dE01A103FA27F884a2F3dA65ef',
 };
 
 export const PENDLE_PT_USDE_DEC_2024_MAP: Record<Network.Mantle, string> = {
@@ -1449,6 +1507,10 @@ export const CHRONICLE_PRICE_SCRIBES_MAP: Record<
     },
   },
   [Network.Mantle]: {
+    [FBTC_MAP[Network.Mantle].address]: {
+      scribeAddress: '0x3bE46d64aAf6Bd88D5d445D83821805F7e393DDf',
+      tokenPairAddress: WBTC_MAP[Network.Mantle].address,
+    },
     [METH_MAP[Network.Mantle].address]: {
       scribeAddress: '0xBFE568Ea8f6bDFFe7c03F83dC8348517f8E7010A',
       tokenPairAddress: WETH_MAP[Network.Mantle].address,

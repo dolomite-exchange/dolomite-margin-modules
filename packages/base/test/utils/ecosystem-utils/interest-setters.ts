@@ -6,7 +6,11 @@ import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddres
 
 export interface InterestSetters {
   alwaysZeroInterestSetter: IDolomiteInterestSetter;
-  linearStepFunction6L94U90InterestSetter: IDolomiteInterestSetter;
+  linearStepFunction6L94U70OInterestSetter: IDolomiteInterestSetter;
+  linearStepFunction6L94U80OInterestSetter: IDolomiteInterestSetter;
+  linearStepFunction6L94U90OInterestSetter: IDolomiteInterestSetter;
+  linearStepFunction8L92U70OInterestSetter: IDolomiteInterestSetter;
+  linearStepFunction8L92U80OInterestSetter: IDolomiteInterestSetter;
   linearStepFunction8L92U90OInterestSetter: IDolomiteInterestSetter;
   linearStepFunction10L90U90OInterestSetter: IDolomiteInterestSetter;
   linearStepFunction10L90U95OInterestSetter: IDolomiteInterestSetter;
@@ -31,8 +35,24 @@ export async function createInterestSetters(
       coreDeployments.AlwaysZeroInterestSetter[network].address,
       signer,
     ),
-    linearStepFunction6L94U90InterestSetter: IDolomiteInterestSetter__factory.connect(
+    linearStepFunction6L94U70OInterestSetter: IDolomiteInterestSetter__factory.connect(
+      deployments.LinearStepFunction6L94U70OInterestSetter[network].address,
+      signer,
+    ),
+    linearStepFunction6L94U80OInterestSetter: IDolomiteInterestSetter__factory.connect(
+      deployments.LinearStepFunction6L94U80OInterestSetter[network].address,
+      signer,
+    ),
+    linearStepFunction6L94U90OInterestSetter: IDolomiteInterestSetter__factory.connect(
       deployments.LinearStepFunction6L94U90OInterestSetter[network].address,
+      signer,
+    ),
+    linearStepFunction8L92U70OInterestSetter: IDolomiteInterestSetter__factory.connect(
+      deployments.LinearStepFunction8L92U70OInterestSetter[network].address,
+      signer,
+    ),
+    linearStepFunction8L92U80OInterestSetter: IDolomiteInterestSetter__factory.connect(
+      deployments.LinearStepFunction8L92U80OInterestSetter[network].address,
       signer,
     ),
     linearStepFunction8L92U90OInterestSetter: IDolomiteInterestSetter__factory.connect(
