@@ -158,9 +158,11 @@ export async function verifyContract(
 
     await sleep(1000);
     const verificationStatus = await instance.getVerificationStatus(guid);
-    if (verificationStatus.isSuccess()) {
+    if (verificationStatus.isSuccess() || verificationStatus.isOk()) {
       const contractURL = instance.getContractUrl(address);
       console.log(`\tSuccessfully verified contract "${contractName}": ${contractURL}`);
+    } else if (verificationStatus.isFailure()) {
+      console.error(`\tCould not verify contract due to reason: ${verificationStatus.message}`);
     }
   } catch (e: any) {
     if (e?.message.toLowerCase().includes('already verified')) {
@@ -169,6 +171,7 @@ export async function verifyContract(
       await sleep(3_000);
       await verifyContract(address, constructorArguments, contractName, libraries, attempts + 1);
     } else {
+      console.error('Error with verifying:', e);
       return Promise.reject(e);
     }
   }
@@ -1035,14 +1038,14 @@ export async function prettyPrintEncodeInsertChainlinkOracleV3<T extends Network
 }
 
 export async function prettyPrintEncodeInsertChronicleOracleV3(
-  core: CoreProtocolWithChronicle<Network.ArbitrumOne | Network.Mantle>,
+  core: CoreProtocolWithChronicle<Network.ArbitrumOne | Network.Berachain| Network.Mantle>,
   token: IERC20,
   invertPrice: boolean = CHRONICLE_PRICE_SCRIBES_MAP[core.config.network][token.address].invertPrice ?? false,
   tokenPairAddress: string | undefined = CHRONICLE_PRICE_SCRIBES_MAP[core.config.network][token.address]
     .tokenPairAddress,
   scribeAddress: string = CHRONICLE_PRICE_SCRIBES_MAP[core.config.network][token.address].scribeAddress,
 ): Promise<EncodedTransaction[]> {
-  const invalidTokenSettings = INVALID_TOKEN_MAP[Network.Mantle][token.address];
+  const invalidTokenSettings = INVALID_TOKEN_MAP[core.network][token.address];
 
   let tokenDecimals: number;
   if (invalidTokenSettings) {

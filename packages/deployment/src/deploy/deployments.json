@@ -306,6 +306,11 @@
       "address": "0x8990A46Fd1F2E00b8eb85DAfd85735d2B5Ed4Eeb",
       "transaction": "0xf7128c5035702bd4000863c32b410479a2fcb504ae217a785d10f87d756436d5",
       "isVerified": true
+    },
+    "80084": {
+      "address": "0x7C228F0C1e92bD61e116C60778b546b6dA7d6c83",
+      "transaction": "0xff196d54cbd189e4246f4a8b5b8a107eadb5b9d616c50407556b99bee1083bed",
+      "isVerified": true
     }
   },
   "DolomiteAccountRegistryImplementationV1": {

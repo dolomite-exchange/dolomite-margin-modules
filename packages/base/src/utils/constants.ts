@@ -503,6 +503,13 @@ export const UNI_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   },
 };
 
+export const UNI_BTC_MAP: Record<Network.Berachain, TokenWithMarketId> = {
+  [Network.Berachain]: {
+    address: '0x16221CaD160b441db008eF6DA2d3d89a32A05859',
+    marketId: 6,
+  },
+};
+
 export const USDC_MAP: Record<Network, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8',
@@ -1477,12 +1484,18 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<Network, Record<string, Agg
 };
 
 export const CHRONICLE_PRICE_SCRIBES_MAP: Record<
-  Network.ArbitrumOne | Network.Mantle,
+  Network.ArbitrumOne | Network.Berachain | Network.Mantle,
   Record<string, ChronicleScribe>
 > = {
   [Network.ArbitrumOne]: {
     [W_USDM_MAP[Network.ArbitrumOne].address]: {
       scribeAddress: '0xdC6720c996Fad27256c7fd6E0a271e2A4687eF18',
+      tokenPairAddress: ADDRESS_ZERO,
+    },
+  },
+  [Network.Berachain]: {
+    [UNI_BTC_MAP[Network.Berachain].address]: {
+      scribeAddress: '0x02a2f7F3109A4c6706A91C7c880225b440e3c8d7',
       tokenPairAddress: ADDRESS_ZERO,
     },
   },
