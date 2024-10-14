@@ -946,6 +946,7 @@ export async function prettyPrintEncodeInsertChainlinkOracle<T extends NetworkTy
   token: IERC20,
   tokenPairAddress: string | undefined = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address]!.tokenPairAddress,
   aggregatorAddress: string = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address]!.aggregatorAddress,
+  options?: { ignoreDescription: boolean },
 ): Promise<EncodedTransaction> {
   const invalidTokens = ['stEth', 'eEth'];
   let tokenDecimals: number;
@@ -959,8 +960,10 @@ export async function prettyPrintEncodeInsertChainlinkOracle<T extends NetworkTy
 
   const description = (await aggregator.description()).toLowerCase();
   const symbol = (await IERC20Metadata__factory.connect(token.address, token.signer).symbol()).toLowerCase();
-  if (!description.includes(symbol) && !description.includes(symbol.substring(1))) {
-    return Promise.reject(new Error(`Invalid aggregator for symbol, found: ${description}, expected: ${symbol}`));
+  if (!options?.ignoreDescription) {
+    if (!description.includes(symbol) && !description.includes(symbol.substring(1))) {
+      return Promise.reject(new Error(`Invalid aggregator for symbol, found: ${description}, expected: ${symbol}`));
+    }
   }
 
   mostRecentTokenDecimals = tokenDecimals;
@@ -979,6 +982,7 @@ export async function prettyPrintEncodeInsertChainlinkOracleV3<T extends Network
   invertPrice: boolean = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address]!.invert ?? false,
   tokenPairAddress: string | undefined = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address]!.tokenPairAddress,
   aggregatorAddress: string = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address]!.aggregatorAddress,
+  options?: { ignoreDescription: boolean },
 ): Promise<EncodedTransaction[]> {
   const invalidTokenSettings = INVALID_TOKEN_MAP[core.network][token.address];
 
@@ -999,11 +1003,13 @@ export async function prettyPrintEncodeInsertChainlinkOracleV3<T extends Network
     symbol = await IERC20Metadata__factory.connect(token.address, token.signer).symbol();
   }
 
-  if (
-    !description.toUpperCase().includes(symbol.toUpperCase()) &&
-    !description.toUpperCase().includes(symbol.toUpperCase().substring(1))
-  ) {
-    return Promise.reject(new Error(`Invalid aggregator for symbol, found: ${description}, expected: ${symbol}`));
+  if (!options?.ignoreDescription) {
+    if (
+      !description.toUpperCase().includes(symbol.toUpperCase()) &&
+      !description.toUpperCase().includes(symbol.toUpperCase().substring(1))
+    ) {
+      return Promise.reject(new Error(`Invalid aggregator for symbol, found: ${description}, expected: ${symbol}`));
+    }
   }
 
   mostRecentTokenDecimals = tokenDecimals;
