@@ -7,21 +7,20 @@ import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { BigNumber } from 'ethers';
+import { parseEther } from 'ethers/lib/utils';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
-import { Network, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
+import { Network } from 'packages/base/src/utils/no-deps-constants';
 import {
   EncodedTransaction,
   prettyPrintEncodeAddMarket,
-  prettyPrintEncodeInsertChainlinkOracle,
+  prettyPrintEncodeInsertChainlinkOracleV3,
 } from '../../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../utils/dry-run-utils';
 import getScriptName from '../../../utils/get-script-name';
 
 /**
  * This script encodes the following transactions:
- * - Sets the interest setter on WETH
- * - Sets the price oracle on WETH
- * - Adds the USDC, DAI, LINK, and MATIC markets
+ * - Adds the POL market
  */
 async function main(): Promise<DryRunOutput<Network.PolygonZkEvm>> {
   const network = await getAndCheckSpecificNetwork(Network.PolygonZkEvm);
@@ -32,51 +31,48 @@ async function main(): Promise<DryRunOutput<Network.PolygonZkEvm>> {
 
   const transactions: EncodedTransaction[] = [];
   transactions.push(
-    await prettyPrintEncodeInsertChainlinkOracle(
+    ...await prettyPrintEncodeInsertChainlinkOracleV3(core, core.tokens.pol, undefined, undefined, undefined, {
+      ignoreDescription: true,
+    }),
+    ...(await prettyPrintEncodeAddMarket(
       core,
-      core.tokens.usdc,
-    ),
-    ...await prettyPrintEncodeAddMarket(
-      core,
-      core.tokens.usdc,
-      core.chainlinkPriceOracleV1,
-      core.interestSetters.linearStepFunction10L90U95OInterestSetter,
-      TargetCollateralization.Base,
-      TargetLiquidationPenalty.Base,
-      ZERO_BI,
-      ZERO_BI,
+      core.tokens.pol,
+      core.oracleAggregatorV2,
+      core.interestSetters.linearStepFunction8L92U90OInterestSetter,
+      TargetCollateralization._133,
+      TargetLiquidationPenalty._7,
+      parseEther(`${100_000_000}`),
+      parseEther(`${50_000_000}`),
       false,
-    ),
+    )),
   );
   return {
     core,
     upload: {
       transactions,
       chainId: core.network,
+      version: '1.0',
+      meta: {
+        txBuilderVersion: '1.16.5',
+        name: __filename,
+      },
     },
     scriptName: getScriptName(__filename),
     invariants: async () => {
+      const marketId = core.marketIds.pol;
+      assertHardhatInvariant((await core.dolomiteMargin.getNumMarkets()).eq(9), 'Invalid number of markets');
       assertHardhatInvariant(
-        (await core.dolomiteMargin.getNumMarkets()).eq(8),
-        'Invalid number of markets',
+        (await core.dolomiteMargin.getMarketTokenAddress(marketId)) === core.tokens.pol.address,
+        'Invalid collateral token for POL market ID',
       );
+      assertHardhatInvariant(BigNumber.from(marketId).eq(8), 'Invalid collateral token for POL market ID');
       assertHardhatInvariant(
-        (await core.dolomiteMargin.getMarketTokenAddress(core.marketIds.usdc)) === core.tokens.usdc.address,
-        'Invalid collateral token for USDC market ID',
+        (await core.chainlinkPriceOracleV3.getAggregatorByToken(core.tokens.pol.address)) ===
+          CHAINLINK_PRICE_AGGREGATORS_MAP[Network.PolygonZkEvm][core.tokens.pol.address]?.aggregatorAddress,
+        'Invalid Chainlink price aggregator for POL',
       );
-      assertHardhatInvariant(
-        BigNumber.from(core.marketIds.usdc).eq(7),
-        'Invalid collateral token for USDC market ID',
-      );
-      assertHardhatInvariant(
-        (await core.dolomiteMargin.getMarketPriceOracle(core.marketIds.usdc)) === core.chainlinkPriceOracleV1.address,
-        'Invalid Chainlink price aggregator for USDC',
-      );
-      assertHardhatInvariant(
-        (await core.chainlinkPriceOracleV1.getAggregatorByToken(core.tokens.usdc.address))
-        === CHAINLINK_PRICE_AGGREGATORS_MAP[Network.PolygonZkEvm][core.tokens.usdc.address]?.aggregatorAddress,
-        'Invalid Chainlink price aggregator for USDC',
-      );
+
+      console.log('\tPrice: ', (await core.dolomiteMargin.getMarketPrice(marketId)).value.toString());
     },
   };
 }

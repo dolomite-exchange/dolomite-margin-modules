@@ -109,7 +109,7 @@ import {
   METH_MAP,
   MIM_MAP,
   NATIVE_USDC_MAP,
-  PENDLE_MAP,
+  PENDLE_MAP, POL_MAP,
   PREMIA_MAP,
   R_ETH_MAP,
   RDNT_MAP,
@@ -119,7 +119,7 @@ import {
   SIZE_MAP,
   SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL,
   SOL_MAP,
-  ST_ETH_MAP,
+  ST_ETH_MAP, UNI_BTC_MAP,
   UNI_MAP,
   USDC_MAP,
   USDE_MAP,
@@ -981,6 +981,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
       hhUser1,
     );
     return new CoreProtocolBerachain(coreProtocolParams as CoreProtocolParams<Network.Berachain>, {
+      chroniclePriceOracleV3: chroniclePriceOracle,
       redstonePriceOracleV3: redstonePriceOracle,
       marketIds: {
         ...coreProtocolParams.marketIds,
@@ -995,6 +996,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
       tokens: {
         ...coreProtocolParams.tokens,
         honey: IERC20__factory.connect(HONEY_MAP[typedConfig.network].address, hhUser1),
+        uniBtc: IERC20__factory.connect(UNI_BTC_MAP[typedConfig.network].address, hhUser1),
         wbera: IWETH__factory.connect(WBERA_MAP[typedConfig.network].address, hhUser1),
         bgt: IBGT__factory.connect(BGT_MAP[typedConfig.network].address, hhUser1),
         ibgt: IERC20__factory.connect(IBGT_MAP[typedConfig.network].address, hhUser1),
@@ -1070,6 +1072,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
         dai: DAI_MAP[typedConfig.network]!.marketId,
         link: LINK_MAP[typedConfig.network]!.marketId,
         matic: MATIC_MAP[typedConfig.network].marketId,
+        pol: POL_MAP[typedConfig.network].marketId,
         usdt: USDT_MAP[typedConfig.network].marketId,
         wbtc: WBTC_MAP[typedConfig.network].marketId,
         stablecoins: [
@@ -1089,6 +1092,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
         dai: IERC20__factory.connect(DAI_MAP[typedConfig.network]!.address, hhUser1),
         link: IERC20__factory.connect(LINK_MAP[typedConfig.network]!.address, hhUser1),
         matic: IERC20__factory.connect(MATIC_MAP[typedConfig.network].address, hhUser1),
+        pol: IERC20__factory.connect(POL_MAP[typedConfig.network].address, hhUser1),
         usdt: IERC20__factory.connect(USDT_MAP[typedConfig.network].address, hhUser1),
         wbtc: IERC20__factory.connect(WBTC_MAP[typedConfig.network].address, hhUser1),
         weth: coreProtocolParams.tokens.weth as any,
