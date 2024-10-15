@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 /*
 
-    Copyright 2023 Dolomite
+    Copyright 2024 Dolomite
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -27,7 +27,9 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { Create2 } from "@openzeppelin/contracts/utils/Create2.sol";
 import { MetavaultUpgradeableProxy } from "./MetavaultUpgradeableProxy.sol";
 import { IBGT } from "./interfaces/IBGT.sol";
+import { IBerachainRewardTokenIsolationModeVaultFactory } from "./interfaces/IBerachainRewardTokenIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { IBerachainRewardsRegistry } from "./interfaces/IBerachainRewardsRegistry.sol";
+import { IInfraredBGTStakingPool } from "./interfaces/IInfraredBGTStakingPool.sol";
 import { IMetavaultOperator } from "./interfaces/IMetavaultOperator.sol";
 import { IMetavaultUpgradeableProxy } from "./interfaces/IMetavaultUpgradeableProxy.sol";
 
@@ -50,7 +52,10 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
     bytes32 private constant _FILE = "BerachainRewardsRegistry";
 
     bytes32 private constant _BGT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.bgt")) - 1);
+    bytes32 private constant _BGT_ISOLATION_MODE_VAULT_FACTORY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.bgtIsolationModeVaultFactory")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _I_BGT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.iBgt")) - 1);
+    bytes32 private constant _I_BGT_ISOLATION_MODE_VAULT_FACTORY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.ibgtIsolationModeVaultFactory")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _I_BGT_STAKING_POOL_SLOT = bytes32(uint256(keccak256("eip1967.proxy.ibgtStakingPool")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _META_VAULT_IMPLEMENTATION_SLOT = bytes32(uint256(keccak256("eip1967.proxy.metavaultImplementation")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _METAVAULT_OPERATOR_SLOT = bytes32(uint256(keccak256("eip1967.proxy.metavaultOperator")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _REWARD_VAULT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.rewardVault")) - 1);
@@ -67,12 +72,14 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
     function initialize(
         address _bgt,
         address _iBgt,
+        address _iBgtStakingPool,
         address _metavaultImplementation,
         address _metavaultOperator,
         address _dolomiteRegistry
     ) external initializer {
         _ownerSetBgt(_bgt);
         _ownerSetIBgt(_iBgt);
+        _ownerSetIBgtStakingPool(_iBgtStakingPool);
         _ownerSetMetavaultImplementation(_metavaultImplementation);
         _ownerSetMetavaultOperator(_metavaultOperator);
         _ownerSetDolomiteRegistry(_dolomiteRegistry);
@@ -93,6 +100,14 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
         address metavault = getAccountToMetavault(_account);
         if (metavault == address(0)) {
             metavault = _createMetavault(_account);
+            address bgtVault = bgtIsolationModeVaultFactory().createVault(_account);
+            _setAddressInMap(_VAULT_TO_META_VAULT_SLOT, bgtVault, metavault);
+
+            address ibgtVault = iBgtIsolationModeVaultFactory().getVaultByAccount(_account);
+            if (ibgtVault == address(0)) {
+                ibgtVault = iBgtIsolationModeVaultFactory().createVault(_account);
+            }
+            _setAddressInMap(_VAULT_TO_META_VAULT_SLOT, ibgtVault, metavault);
         }
         _setAddressInMap(_VAULT_TO_META_VAULT_SLOT, _vault, metavault);
 
@@ -107,7 +122,7 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
      * it sets the default type for the metavault's account.
      */
     function setAccountToAssetToDefaultType(address _asset, RewardVaultType _type) external {
-        // @follow-up @Corey, please double check this logic
+        // @audit @Corey, please double check this logic
         address account = getMetavaultToAccount(msg.sender);
         if (account == address(0)){
             account = msg.sender;
@@ -133,8 +148,26 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
         _ownerSetBgt(_bgt);
     }
 
+    function ownerSetBgtIsolationModeVaultFactory(
+        address _bgtIsolationModeVaultFactory
+    ) external override onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetBgtIsolationModeVaultFactory(_bgtIsolationModeVaultFactory);
+    }
+
     function ownerSetIBgt(address _iBgt) external override onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetIBgt(_iBgt);
+    }
+
+    function ownerSetIBgtIsolationModeVaultFactory(
+        address _iBgtIsolationModeVaultFactory
+    ) external override onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetIBgtIsolationModeVaultFactory(_iBgtIsolationModeVaultFactory);
+    }
+
+    function ownerSetIBgtStakingPool(
+        address _iBgtStakingPool
+    ) external override onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetIBgtStakingPool(_iBgtStakingPool);
     }
 
     function ownerSetMetavaultImplementation(
@@ -166,8 +199,22 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
         return IBGT(_getAddress(_BGT_SLOT));
     }
 
+    function bgtIsolationModeVaultFactory(
+    ) public view override returns (IBerachainRewardTokenIsolationModeVaultFactory) {
+        return IBerachainRewardTokenIsolationModeVaultFactory(_getAddress(_BGT_ISOLATION_MODE_VAULT_FACTORY_SLOT));
+    }
+
     function iBgt() external view override returns (IERC20) {
         return IERC20(_getAddress(_I_BGT_SLOT));
+    }
+
+    function iBgtIsolationModeVaultFactory(
+    ) public view override returns (IBerachainRewardTokenIsolationModeVaultFactory) {
+        return IBerachainRewardTokenIsolationModeVaultFactory(_getAddress(_I_BGT_ISOLATION_MODE_VAULT_FACTORY_SLOT));
+    }
+
+    function iBgtStakingPool() external view override returns (IInfraredBGTStakingPool) {
+        return IInfraredBGTStakingPool(_getAddress(_I_BGT_STAKING_POOL_SLOT));
     }
 
     function metavaultImplementation() external view override returns (address) {
@@ -244,6 +291,19 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
         emit BgtSet(_bgt);
     }
 
+    function _ownerSetBgtIsolationModeVaultFactory(
+        address _bgtIsolationModeVaultFactory
+    ) internal {
+        if (_bgtIsolationModeVaultFactory != address(0)) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            _bgtIsolationModeVaultFactory != address(0),
+            _FILE,
+            "Invalid bgt factory address"
+        );
+        _setAddress(_BGT_ISOLATION_MODE_VAULT_FACTORY_SLOT, _bgtIsolationModeVaultFactory);
+        emit BgtIsolationModeVaultFactorySet(_bgtIsolationModeVaultFactory);
+    }
+
     function _ownerSetIBgt(address _iBgt) internal {
         if (_iBgt != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
@@ -253,6 +313,30 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
         );
         _setAddress(_I_BGT_SLOT, _iBgt);
         emit IBgtSet(_iBgt);
+    }
+
+    function _ownerSetIBgtIsolationModeVaultFactory(
+        address _ibgtIsolationModeVaultFactory
+    ) internal {
+        if (_ibgtIsolationModeVaultFactory != address(0)) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            _ibgtIsolationModeVaultFactory != address(0),
+            _FILE,
+            "Invalid ibgt factory address"
+        );
+        _setAddress(_I_BGT_ISOLATION_MODE_VAULT_FACTORY_SLOT, _ibgtIsolationModeVaultFactory);
+        emit IBgtIsolationModeVaultFactorySet(_ibgtIsolationModeVaultFactory);
+    }
+
+    function _ownerSetIBgtStakingPool(address _iBgtStakingPool) internal {
+        if (_iBgtStakingPool != address(0)) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            _iBgtStakingPool != address(0),
+            _FILE,
+            "Invalid iBgtStakingPool address"
+        );
+        _setAddress(_I_BGT_STAKING_POOL_SLOT, _iBgtStakingPool);
+        emit IBgtStakingPoolSet(_iBgtStakingPool);
     }
 
     function _ownerSetMetavaultImplementation(address _metavaultImplementation) internal {

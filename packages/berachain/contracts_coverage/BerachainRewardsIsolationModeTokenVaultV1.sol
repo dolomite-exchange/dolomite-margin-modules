@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 /*
 
-    Copyright 2023 Dolomite
+    Copyright 2024 Dolomite
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -35,10 +35,10 @@ import { IBerachainRewardsRegistry } from "./interfaces/IBerachainRewardsRegistr
  * @title   BerachainRewardsIsolationModeTokenVaultV1
  * @author  Dolomite
  *
- * @notice  Implementation (for an upgradeable proxy) for a per-user vault that holds the GMX token that can be used to
- *          to credit a user's Dolomite balance. GMX held in the vault is considered to be in isolation mode - that is
- *          it cannot be borrowed by other users, may only be seized via liquidation, and cannot be held in the same
- *          position as other "isolated" tokens.
+ * @notice  Implementation (for an upgradeable proxy) for a per-user vault that holds a Berachain underlying reward
+ *          token that can be used to credit a user's Dolomite balance. The token held in the vault is considered
+ *          to be in isolation mode - that is it cannot be borrowed by other users, may only be seized via
+ *          liquidation, and cannot be held in the same position as other "isolated" tokens.
  */
 contract BerachainRewardsIsolationModeTokenVaultV1 is
     IBerachainRewardsIsolationModeTokenVaultV1,
@@ -105,6 +105,10 @@ contract BerachainRewardsIsolationModeTokenVaultV1 is
         /*assert(_recipient != address(this));*/
         IERC20(UNDERLYING_TOKEN()).safeTransfer(_recipient, _amount);
     }
+
+    // ==================================================================
+    // ======================== View Functions ==========================
+    // ==================================================================
 
     function registry() public view returns (IBerachainRewardsRegistry) {
         return IBerachainRewardsIsolationModeVaultFactory(VAULT_FACTORY()).berachainRewardsRegistry();

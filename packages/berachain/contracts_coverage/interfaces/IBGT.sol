@@ -30,6 +30,11 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
  */
 interface IBGT is IERC20 {
 
+    struct QueuedBoost {
+        uint32 blockNumberLast;
+        uint128 balance;
+    }
+
     function redeem(address receiver, uint256 amount) external;
 
     function delegate(address delegatee) external;
@@ -47,4 +52,8 @@ interface IBGT is IERC20 {
     function boosts(address account) external view returns (uint128);
 
     function queuedBoost(address account) external view returns (uint128);
+
+    function unboostedBalanceOf(address account) external view returns (uint256);
+
+    function boostedQueue(address account, address validator) external view returns (QueuedBoost memory);
 }

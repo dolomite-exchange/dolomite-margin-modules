@@ -8,7 +8,10 @@ import {
   IBerachainRewardsIsolationModeTokenVaultV1,
   BerachainRewardsMetavault,
   MetavaultOperator,
-  BGTIsolationModeTokenVaultV1
+  BGTIsolationModeTokenVaultV1,
+  IBGTIsolationModeTokenVaultV1,
+  IInfraredBGTIsolationModeTokenVaultV1,
+  InfraredBGTIsolationModeTokenVaultV1
 } from './types';
 
 export async function getBerachainRewardsRegistryConstructorParams(
@@ -20,6 +23,7 @@ export async function getBerachainRewardsRegistryConstructorParams(
   const calldata = await implementation.populateTransaction.initialize(
     core.tokens.bgt.address,
     core.tokens.ibgt.address,
+    core.berachainRewardsEcosystem.iBgtStakingPool.address,
     metavaultImplementation.address,
     metavaultOperator.address,
     core.dolomiteRegistry.address
@@ -72,6 +76,21 @@ export function getBGTIsolationModeVaultFactoryConstructorParams(
   beraRegistry: IBerachainRewardsRegistry | BerachainRewardsRegistry,
   underlyingToken: { address: string },
   vaultImplementation: IBGTIsolationModeTokenVaultV1 | BGTIsolationModeTokenVaultV1,
+  core: CoreProtocolBerachain
+): any[] {
+  return [
+    beraRegistry.address,
+    underlyingToken.address,
+    core.borrowPositionProxyV2.address,
+    vaultImplementation.address,
+    core.dolomiteMargin.address,
+  ];
+}
+
+export function getInfraredBGTIsolationModeVaultFactoryConstructorParams(
+  beraRegistry: IBerachainRewardsRegistry | BerachainRewardsRegistry,
+  underlyingToken: { address: string },
+  vaultImplementation: IInfraredBGTIsolationModeTokenVaultV1 | InfraredBGTIsolationModeTokenVaultV1,
   core: CoreProtocolBerachain
 ): any[] {
   return [

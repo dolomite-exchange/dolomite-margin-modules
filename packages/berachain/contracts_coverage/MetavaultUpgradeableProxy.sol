@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 /*
 
-    Copyright 2023 Dolomite
+    Copyright 2024 Dolomite
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -92,9 +92,9 @@ contract MetavaultUpgradeableProxy is
             _FILE,
             "Already initialized"
         );
-        if (IBerachainRewardsRegistry(REGISTRY()).getAccountToMetavault(_vaultOwner) == address(this)) { /* FOR COVERAGE TESTING */ }
+        if (IBerachainRewardsRegistry(registry()).getAccountToMetavault(_vaultOwner) == address(this)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-            IBerachainRewardsRegistry(REGISTRY()).getAccountToMetavault(_vaultOwner) == address(this),
+            IBerachainRewardsRegistry(registry()).getAccountToMetavault(_vaultOwner) == address(this),
             _FILE,
             "Invalid account",
             _vaultOwner
@@ -104,14 +104,14 @@ contract MetavaultUpgradeableProxy is
     }
 
     function implementation() public override view returns (address) {
-        return IBerachainRewardsRegistry(REGISTRY()).metavaultImplementation();
+        return IBerachainRewardsRegistry(registry()).metavaultImplementation();
     }
 
     function isInitialized() public override view returns (bool) {
         return _getUint256(_IS_INITIALIZED_SLOT) == 1;
     }
 
-    function REGISTRY() public override view returns (address) {
+    function registry() public override view returns (address) {
         return _getAddress(_REGISTRY_SLOT);
     }
 

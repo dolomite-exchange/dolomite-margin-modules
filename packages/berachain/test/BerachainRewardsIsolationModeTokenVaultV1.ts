@@ -10,6 +10,12 @@ import {
   IInfraredRewardVault,
   MetavaultOperator,
   MetavaultOperator__factory,
+  BGTIsolationModeVaultFactory,
+  InfraredBGTIsolationModeVaultFactory,
+  InfraredBGTIsolationModeTokenVaultV1,
+  BGTIsolationModeTokenVaultV1,
+  BGTIsolationModeTokenVaultV1__factory,
+  InfraredBGTIsolationModeTokenVaultV1__factory,
 } from '../src/types';
 import {
   IERC20,
@@ -39,6 +45,10 @@ import {
   createBerachainRewardsIsolationModeTokenVaultV1,
   createBerachainRewardsIsolationModeVaultFactory,
   createBerachainRewardsRegistry,
+  createBGTIsolationModeTokenVaultV1,
+  createBGTIsolationModeVaultFactory,
+  createInfraredBGTIsolationModeTokenVaultV1,
+  createInfraredBGTIsolationModeVaultFactory,
   RewardVaultType,
 } from './berachain-ecosystem-utils';
 import { BigNumber } from 'ethers';
@@ -54,15 +64,22 @@ describe('BerachainRewardsIsolationModeTokenVaultV1', () => {
   let snapshotId: string;
 
   let core: CoreProtocolBerachain;
-  let underlyingToken: IERC20;
   let registry: BerachainRewardsRegistry;
-  let factory: BerachainRewardsIsolationModeVaultFactory;
+  let beraFactory: BerachainRewardsIsolationModeVaultFactory;
+  let bgtFactory: BGTIsolationModeVaultFactory;
+  let ibgtFactory: InfraredBGTIsolationModeVaultFactory;
+
+  let underlyingToken: IERC20;
+  let nativeRewardVault: INativeRewardVault;
+  let infraredRewardVault: IInfraredRewardVault;
 
   let beraVault: BerachainRewardsIsolationModeTokenVaultV1;
   let metavault: BerachainRewardsMetavault;
-  let rewardVault: INativeRewardVault;
-  let infraredVault: IInfraredRewardVault;
+  let ibgtVault: InfraredBGTIsolationModeTokenVaultV1;
+  let bgtVault: BGTIsolationModeTokenVaultV1;
+
   let marketId: BigNumber;
+  let bgtMarketId: BigNumber;
   let ibgtMarketId: BigNumber;
 
   before(async () => {
@@ -70,13 +87,10 @@ describe('BerachainRewardsIsolationModeTokenVaultV1', () => {
       blockNumber: 4_853_900,
       network: Network.Berachain,
     });
-    ibgtMarketId = await core.dolomiteMargin.getNumMarkets();
-    await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.ibgt.address, ONE_ETH_BI);
-    await setupTestMarket(core, core.tokens.ibgt, false);
 
     underlyingToken = core.berachainRewardsEcosystem.listedRewardAssets.bexHoneyUsdc.asset;
-    rewardVault = core.berachainRewardsEcosystem.listedRewardAssets.bexHoneyUsdc.nativeRewardVault;
-    infraredVault = core.berachainRewardsEcosystem.listedRewardAssets.bexHoneyUsdc.infraredRewardVault;
+    nativeRewardVault = core.berachainRewardsEcosystem.listedRewardAssets.bexHoneyUsdc.nativeRewardVault;
+    infraredRewardVault = core.berachainRewardsEcosystem.listedRewardAssets.bexHoneyUsdc.infraredRewardVault;
 
     const metavaultImplementation = await createContractWithAbi<BerachainRewardsMetavault>(
       BerachainRewardsMetavault__factory.abi,
@@ -92,36 +106,76 @@ describe('BerachainRewardsIsolationModeTokenVaultV1', () => {
     await registry.connect(core.governance).ownerSetRewardVault(
       underlyingToken.address,
       RewardVaultType.Native,
-      rewardVault.address
+      nativeRewardVault.address
     );
     await registry.connect(core.governance).ownerSetRewardVault(
       underlyingToken.address,
       RewardVaultType.Infrared,
-      infraredVault.address
+      infraredRewardVault.address
     );
 
     const vaultImplementation = await createBerachainRewardsIsolationModeTokenVaultV1();
-    factory = await createBerachainRewardsIsolationModeVaultFactory(
+    beraFactory = await createBerachainRewardsIsolationModeVaultFactory(
       registry,
       underlyingToken,
       vaultImplementation,
       core,
     );
-    marketId = await core.dolomiteMargin.getNumMarkets();
-    await core.testEcosystem!.testPriceOracle.setPrice(factory.address, amountWei);
-    await setupTestMarket(core, factory, true);
-    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
-    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(metavaultOperator.address, true);
-    await factory.connect(core.governance).ownerInitialize([]);
+    const bgtVaultImplementation = await createBGTIsolationModeTokenVaultV1();
+    bgtFactory = await createBGTIsolationModeVaultFactory(
+      registry,
+      core.tokens.bgt,
+      bgtVaultImplementation,
+      core,
+    );
+    const ibgtVaultImplementation = await createInfraredBGTIsolationModeTokenVaultV1();
+    ibgtFactory = await createInfraredBGTIsolationModeVaultFactory(
+      registry,
+      core.tokens.ibgt,
+      ibgtVaultImplementation,
+      core,
+    );
 
-    await factory.createVault(core.hhUser1.address);
+    ibgtMarketId = await core.dolomiteMargin.getNumMarkets();
+    await core.testEcosystem!.testPriceOracle.setPrice(ibgtFactory.address, ONE_ETH_BI);
+    await setupTestMarket(core, ibgtFactory, true);
+
+    marketId = await core.dolomiteMargin.getNumMarkets();
+    await core.testEcosystem!.testPriceOracle.setPrice(beraFactory.address, ONE_ETH_BI);
+    await setupTestMarket(core, beraFactory, true);
+
+    bgtMarketId = await core.dolomiteMargin.getNumMarkets();
+    await core.testEcosystem!.testPriceOracle.setPrice(bgtFactory.address, ONE_ETH_BI);
+    await setupTestMarket(core, bgtFactory, true);
+
+    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(beraFactory.address, true);
+    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(bgtFactory.address, true);
+    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(ibgtFactory.address, true);
+    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(metavaultOperator.address, true);
+    await beraFactory.connect(core.governance).ownerInitialize([]);
+    await bgtFactory.connect(core.governance).ownerInitialize([]);
+    await ibgtFactory.connect(core.governance).ownerInitialize([]);
+    await registry.connect(core.governance).ownerSetBgtIsolationModeVaultFactory(bgtFactory.address);
+    await registry.connect(core.governance).ownerSetIBgtIsolationModeVaultFactory(ibgtFactory.address);
+
+    await beraFactory.createVault(core.hhUser1.address);
     beraVault = setupUserVaultProxy<BerachainRewardsIsolationModeTokenVaultV1>(
-      await factory.getVaultByAccount(core.hhUser1.address),
+      await beraFactory.getVaultByAccount(core.hhUser1.address),
       BerachainRewardsIsolationModeTokenVaultV1__factory,
       core.hhUser1,
     );
     metavault = BerachainRewardsMetavault__factory.connect(
       await registry.getAccountToMetavault(core.hhUser1.address),
+      core.hhUser1,
+    );
+    bgtVault = setupUserVaultProxy<BGTIsolationModeTokenVaultV1>(
+      await bgtFactory.getVaultByAccount(core.hhUser1.address),
+      BGTIsolationModeTokenVaultV1__factory,
+      core.hhUser1,
+    );
+    ibgtVault = setupUserVaultProxy<InfraredBGTIsolationModeTokenVaultV1>(
+      await ibgtFactory.getVaultByAccount(core.hhUser1.address),
+      InfraredBGTIsolationModeTokenVaultV1__factory,
       core.hhUser1,
     );
 
@@ -142,7 +196,7 @@ describe('BerachainRewardsIsolationModeTokenVaultV1', () => {
       const metavaultAddress = await registry.getAccountToMetavault(core.hhUser1.address);
 
       await expectProtocolBalance(core, beraVault, defaultAccountNumber, marketId, amountWei);
-      expect(await rewardVault.balanceOf(metavaultAddress)).to.equal(amountWei);
+      expect(await nativeRewardVault.balanceOf(metavaultAddress)).to.equal(amountWei);
     });
 
     it('should work normally on deposit with infrared set as default', async () => {
@@ -154,7 +208,7 @@ describe('BerachainRewardsIsolationModeTokenVaultV1', () => {
       const metavaultAddress = await registry.getAccountToMetavault(core.hhUser1.address);
 
       await expectProtocolBalance(core, beraVault, defaultAccountNumber, marketId, amountWei);
-      expect(await infraredVault.balanceOf(metavaultAddress)).to.equal(amountWei);
+      expect(await infraredRewardVault.balanceOf(metavaultAddress)).to.equal(amountWei);
     });
 
     it('should work normally not on deposit with native', async () => {
@@ -165,7 +219,7 @@ describe('BerachainRewardsIsolationModeTokenVaultV1', () => {
       await beraVault.stake(RewardVaultType.Native, amountWei);
       await expectProtocolBalance(core, beraVault, defaultAccountNumber, marketId, amountWei);
       await expectWalletBalance(beraVault, underlyingToken, ZERO_BI);
-      expect(await rewardVault.balanceOf(metavaultAddress)).to.equal(amountWei);
+      expect(await nativeRewardVault.balanceOf(metavaultAddress)).to.equal(amountWei);
     });
 
     it('should work normally not on deposit with infrared', async () => {
@@ -180,7 +234,7 @@ describe('BerachainRewardsIsolationModeTokenVaultV1', () => {
       await beraVault.stake(RewardVaultType.Infrared, amountWei);
       await expectProtocolBalance(core, beraVault, defaultAccountNumber, marketId, amountWei);
       await expectWalletBalance(beraVault, underlyingToken, ZERO_BI);
-      expect(await infraredVault.balanceOf(metavaultAddress)).to.equal(amountWei);
+      expect(await infraredRewardVault.balanceOf(metavaultAddress)).to.equal(amountWei);
     });
 
     it('should switch default type if current default type is empty', async () => {
@@ -201,7 +255,7 @@ describe('BerachainRewardsIsolationModeTokenVaultV1', () => {
 
       await expectProtocolBalance(core, beraVault, defaultAccountNumber, marketId, amountWei);
       await expectWalletBalance(beraVault, underlyingToken, ZERO_BI);
-      expect(await infraredVault.balanceOf(metavaultAddress)).to.equal(amountWei);
+      expect(await infraredRewardVault.balanceOf(metavaultAddress)).to.equal(amountWei);
     });
 
     it('should fail if type is not default and default has staked amount', async () => {
@@ -226,7 +280,7 @@ describe('BerachainRewardsIsolationModeTokenVaultV1', () => {
     it('should work normally for native vault', async () => {
       await beraVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await beraVault.unstake(RewardVaultType.Native, amountWei);
-      expect(await rewardVault.balanceOf(beraVault.address)).to.equal(ZERO_BI);
+      expect(await nativeRewardVault.balanceOf(beraVault.address)).to.equal(ZERO_BI);
       await expectWalletBalance(beraVault, underlyingToken, amountWei);
     });
 
@@ -237,7 +291,7 @@ describe('BerachainRewardsIsolationModeTokenVaultV1', () => {
       );
       await beraVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await beraVault.unstake(RewardVaultType.Infrared, amountWei);
-      expect(await rewardVault.balanceOf(beraVault.address)).to.equal(ZERO_BI);
+      expect(await nativeRewardVault.balanceOf(beraVault.address)).to.equal(ZERO_BI);
       await expectWalletBalance(beraVault, underlyingToken, amountWei);
     });
 
@@ -272,7 +326,7 @@ describe('BerachainRewardsIsolationModeTokenVaultV1', () => {
       expect(await underlyingToken.balanceOf(beraVault.address)).to.eq(amountWei);
       await expectProtocolBalanceIsGreaterThan(
         core,
-        { owner: core.hhUser1.address, number: defaultAccountNumber },
+        { owner: ibgtVault.address, number: defaultAccountNumber },
         ibgtMarketId,
         ONE_BI,
         ZERO_BI
@@ -290,7 +344,7 @@ describe('BerachainRewardsIsolationModeTokenVaultV1', () => {
   describe('#executeDepositIntoVault', () => {
     it('should work normally and stake into reward vault', async () => {
       await beraVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
-      expect(await rewardVault.balanceOf(metavault.address)).to.equal(amountWei);
+      expect(await nativeRewardVault.balanceOf(metavault.address)).to.equal(amountWei);
       expect(await beraVault.underlyingBalanceOf()).to.equal(ZERO_BI);
       await expectProtocolBalance(core, beraVault, defaultAccountNumber, marketId, amountWei);
     });
@@ -306,12 +360,12 @@ describe('BerachainRewardsIsolationModeTokenVaultV1', () => {
   describe('#executeWithdrawalFromVault', () => {
     it('should work normally if need to unstake full amount', async () => {
       await beraVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
-      expect(await rewardVault.balanceOf(metavault.address)).to.equal(amountWei);
+      expect(await nativeRewardVault.balanceOf(metavault.address)).to.equal(amountWei);
       expect(await beraVault.underlyingBalanceOf()).to.equal(ZERO_BI);
       await expectProtocolBalance(core, beraVault, defaultAccountNumber, marketId, amountWei);
 
       await beraVault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, amountWei);
-      expect(await rewardVault.balanceOf(metavault.address)).to.equal(ZERO_BI);
+      expect(await nativeRewardVault.balanceOf(metavault.address)).to.equal(ZERO_BI);
       expect(await beraVault.underlyingBalanceOf()).to.equal(ZERO_BI);
       await expectProtocolBalance(core, beraVault, defaultAccountNumber, marketId, ZERO_BI);
       await expectWalletBalance(core.hhUser1, underlyingToken, amountWei);
@@ -319,17 +373,17 @@ describe('BerachainRewardsIsolationModeTokenVaultV1', () => {
 
     it('should work normally if need to unstake partial amount', async () => {
       await beraVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
-      expect(await rewardVault.balanceOf(metavault.address)).to.equal(amountWei);
+      expect(await nativeRewardVault.balanceOf(metavault.address)).to.equal(amountWei);
       expect(await beraVault.underlyingBalanceOf()).to.equal(ZERO_BI);
       await expectProtocolBalance(core, beraVault, defaultAccountNumber, marketId, amountWei);
 
       await beraVault.unstake(RewardVaultType.Native, amountWei.div(2));
-      expect(await rewardVault.balanceOf(metavault.address)).to.equal(amountWei.div(2));
+      expect(await nativeRewardVault.balanceOf(metavault.address)).to.equal(amountWei.div(2));
       expect(await beraVault.underlyingBalanceOf()).to.equal(amountWei.div(2));
       await expectProtocolBalance(core, beraVault, defaultAccountNumber, marketId, amountWei);
 
       await beraVault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, amountWei);
-      expect(await rewardVault.balanceOf(metavault.address)).to.equal(ZERO_BI);
+      expect(await nativeRewardVault.balanceOf(metavault.address)).to.equal(ZERO_BI);
       expect(await beraVault.underlyingBalanceOf()).to.equal(ZERO_BI);
       await expectProtocolBalance(core, beraVault, defaultAccountNumber, marketId, ZERO_BI);
       await expectWalletBalance(core.hhUser1, underlyingToken, amountWei);
@@ -337,17 +391,17 @@ describe('BerachainRewardsIsolationModeTokenVaultV1', () => {
 
     it('should work normally if no unstaking has to occur', async () => {
       await beraVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
-      expect(await rewardVault.balanceOf(metavault.address)).to.equal(amountWei);
+      expect(await nativeRewardVault.balanceOf(metavault.address)).to.equal(amountWei);
       expect(await beraVault.underlyingBalanceOf()).to.equal(ZERO_BI);
       await expectProtocolBalance(core, beraVault, defaultAccountNumber, marketId, amountWei);
 
       await beraVault.unstake(RewardVaultType.Native, amountWei);
-      expect(await rewardVault.balanceOf(metavault.address)).to.equal(ZERO_BI);
+      expect(await nativeRewardVault.balanceOf(metavault.address)).to.equal(ZERO_BI);
       expect(await beraVault.underlyingBalanceOf()).to.equal(amountWei);
       await expectProtocolBalance(core, beraVault, defaultAccountNumber, marketId, amountWei);
 
       await beraVault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, amountWei);
-      expect(await rewardVault.balanceOf(metavault.address)).to.equal(ZERO_BI);
+      expect(await nativeRewardVault.balanceOf(metavault.address)).to.equal(ZERO_BI);
       expect(await beraVault.underlyingBalanceOf()).to.equal(ZERO_BI);
       await expectProtocolBalance(core, beraVault, defaultAccountNumber, marketId, ZERO_BI);
       await expectWalletBalance(core.hhUser1, underlyingToken, amountWei);

@@ -20,26 +20,20 @@
 
 pragma solidity ^0.8.9;
 
+import { IIsolationModeTokenVaultV1 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
+
 
 /**
- * @title   IMetavaultUpgradeableProxy
+ * @title   IBGTIsolationModeTokenVaultV1
  * @author  Dolomite
  *
- * @notice  The interface for the upgradeable proxy contract that holds each user's tokens that are staked in POL
+ * @notice  This interface defines the functions that are available on the BGTIsolationModeTokenVaultV1
+ *          implementation contract for each user's proxy vault.
  */
-interface IMetavaultUpgradeableProxy {
+interface IBGTIsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
+    event IsDepositSourceMetavaultSet(bool isDepositSourceMetavault);
+    
+    function setIsDepositSourceMetavault(bool _isDepositSourceMetavault) external;
 
-    /**
-     *
-     * @param  _vaultOwner  The owner of this vault contract
-     */
-    function initialize(address _vaultOwner) external;
-
-    function isInitialized() external view returns (bool);
-
-    function implementation() external view returns (address);
-
-    function registry() external view returns (address);
-
-    function owner() external view returns (address);
+    function isDepositSourceMetavault() external view returns (bool);
 }

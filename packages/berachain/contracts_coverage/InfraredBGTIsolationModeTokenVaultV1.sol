@@ -26,24 +26,24 @@ import { IIsolationModeTokenVaultV1 } from "@dolomite-exchange/modules-base/cont
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { IBGTIsolationModeTokenVaultV1 } from "./interfaces/IBGTIsolationModeTokenVaultV1.sol";
 import { IBerachainRewardsIsolationModeVaultFactory } from "./interfaces/IBerachainRewardsIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
-import { IBerachainRewardsMetavault } from "./interfaces/IBerachainRewardsMetavault.sol";
 import { IBerachainRewardsRegistry } from "./interfaces/IBerachainRewardsRegistry.sol";
+import { IInfraredBGTIsolationModeTokenVaultV1 } from "./interfaces/IInfraredBGTIsolationModeTokenVaultV1.sol";
+import { IInfraredBGTStakingPool } from "./interfaces/IInfraredBGTStakingPool.sol";
 
 
 /**
- * @title   BGTIsolationModeTokenVaultV1
+ * @title   InfraredBGTIsolationModeTokenVaultV1
  * @author  Dolomite
  *
- * @notice  Implementation (for an upgradeable proxy) for a per-user vault that holds the BGT token
+ * @notice  Implementation (for an upgradeable proxy) for a per-user vault that holds the iBGT token
  *          that can be used to credit a user's Dolomite balance. BGT held in the vault is considered to be in isolation
  *          mode - that is it cannot be borrowed by other users, may only be seized via liquidation, and cannot be held
  *          in the same position as other "isolated" tokens.
  */
-contract BGTIsolationModeTokenVaultV1 is
+contract InfraredBGTIsolationModeTokenVaultV1 is
     IsolationModeTokenVaultV1,
-    IBGTIsolationModeTokenVaultV1
+    IInfraredBGTIsolationModeTokenVaultV1
 {
     using SafeERC20 for IERC20;
 
@@ -51,12 +51,13 @@ contract BGTIsolationModeTokenVaultV1 is
     // =========================== Constants ============================
     // ==================================================================
 
-    bytes32 private constant _FILE = "BGTIsolationModeTokenVaultV1";
+    bytes32 private constant _FILE = "InfraredBGTUserVaultV1";
     bytes32 private constant _IS_DEPOSIT_SOURCE_METAVAULT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isDepositSourceMetavault")) - 1); // solhint-disable-line max-line-length
 
     function setIsDepositSourceMetavault(
         bool _isDepositSourceMetavault
     ) external {
+        if (msg.sender == registry().getVaultToMetavault(address(this))) { /* FOR COVERAGE TESTING */ }
         Require.that(
             msg.sender == registry().getVaultToMetavault(address(this)),
             _FILE,
@@ -65,22 +66,36 @@ contract BGTIsolationModeTokenVaultV1 is
         _setIsDepositSourceMetavault(_isDepositSourceMetavault);
     }
 
-    // @audit @Corey, please check this over. Specifically, the connection between the metavault and the factory and this vault.
-    // Make sure user can't deposit an amount without sending a balance
+    function stake(uint256 _amount) external onlyVaultOwner(msg.sender) {
+        _stake(_amount);
+    }
+
+    function unstake(uint256 _amount) external onlyVaultOwner(msg.sender) {
+        _unstake(_amount);
+    }
+
+    function getReward() external onlyVaultOwner(msg.sender) {
+        // @todo implement
+    }
+
     function executeDepositIntoVault(
         address _from,
-        uint256 /* _amount */
+        uint256 _amount
     )
     public
-    override(IIsolationModeTokenVaultV1, IsolationModeTokenVaultV1)
+    override(IsolationModeTokenVaultV1, IIsolationModeTokenVaultV1)
     onlyVaultFactory(msg.sender) {
-        assert(_from == OWNER());
-        Require.that(
-            isDepositSourceMetavault(),
-            _FILE,
-            "Only metavault can deposit"
-        );
-        _setIsDepositSourceMetavault(false);
+        if (isDepositSourceMetavault()) {
+            address metavault = registry().getVaultToMetavault(address(this));
+            /*assert(metavault != address(0));*/
+
+            _setIsDepositSourceMetavault(false);
+            IERC20(UNDERLYING_TOKEN()).safeTransferFrom(metavault, address(this), _amount);
+        } else {
+            IERC20(UNDERLYING_TOKEN()).safeTransferFrom(_from, address(this), _amount);
+        }
+
+        _stake(_amount);
     }
 
     function executeWithdrawalFromVault(
@@ -90,41 +105,47 @@ contract BGTIsolationModeTokenVaultV1 is
     public
     override(IIsolationModeTokenVaultV1, IsolationModeTokenVaultV1)
     onlyVaultFactory(msg.sender) {
-        IBerachainRewardsMetavault metavault = IBerachainRewardsMetavault(registry().getAccountToMetavault(OWNER()));
-        assert(_recipient != address(address(this)));
-        metavault.withdrawBGTAndRedeem(_recipient, _amount);
+        uint256 unstakedBalance = super.underlyingBalanceOf();
+        if (unstakedBalance < _amount) {
+            _unstake(_amount - unstakedBalance);
+        }
+
+        /*assert(_recipient != address(this));*/
+        IERC20(UNDERLYING_TOKEN()).safeTransfer(_recipient, _amount);
     }
 
     function isDepositSourceMetavault() public view returns (bool) {
         return _getUint256(_IS_DEPOSIT_SOURCE_METAVAULT_SLOT) == 1;
     }
 
+    // @audit @Corey, please check this over. Specifically, the connection between the metavault and the factory and this vault.
+    // Make sure user can't deposit an amount without sending a balance
     function registry() public view returns (IBerachainRewardsRegistry) {
         return IBerachainRewardsIsolationModeVaultFactory(VAULT_FACTORY()).berachainRewardsRegistry();
     }
 
     function dolomiteRegistry()
         public
-        override(IIsolationModeTokenVaultV1, IsolationModeTokenVaultV1)
+        override(IsolationModeTokenVaultV1, IIsolationModeTokenVaultV1)
         view
         returns (IDolomiteRegistry)
     {
         return registry().dolomiteRegistry();
     }
 
-    // ==================================================================
-    // ======================== Internal Functions ========================
-    // ==================================================================
-
     function _setIsDepositSourceMetavault(bool _isDepositSourceMetavault) internal {
         _setUint256(_IS_DEPOSIT_SOURCE_METAVAULT_SLOT, _isDepositSourceMetavault ? 1 : 0);
         emit IsDepositSourceMetavaultSet(_isDepositSourceMetavault);
     }
 
-    function _depositIntoVaultForDolomiteMargin(
-        uint256 /* _toAccountNumber */,
-        uint256 /* _amountWei */
-    ) internal override {
-        revert('not implemented');
+    function _stake(uint256 _amount) internal {
+        IInfraredBGTStakingPool pool = registry().iBgtStakingPool();
+        IERC20(UNDERLYING_TOKEN()).safeApprove(address(pool), _amount);
+        pool.stake(_amount);
+    }
+
+    function _unstake(uint256 _amount) internal {
+        IInfraredBGTStakingPool pool = registry().iBgtStakingPool();
+        pool.withdraw(_amount);
     }
 }

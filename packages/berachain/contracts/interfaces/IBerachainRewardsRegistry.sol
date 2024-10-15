@@ -23,7 +23,8 @@ pragma solidity ^0.8.9;
 import { IBaseRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IBaseRegistry.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IBGT } from "./IBGT.sol";
-import { IBGTIsolationModeVaultFactory } from "./IBGTIsolationModeVaultFactory.sol";
+import { IBerachainRewardTokenIsolationModeVaultFactory } from "./IBerachainRewardTokenIsolationModeVaultFactory.sol";
+import { IInfraredBGTStakingPool } from "./IInfraredBGTStakingPool.sol";
 import { IMetavaultOperator } from "./IMetavaultOperator.sol";
 
 
@@ -47,6 +48,8 @@ interface IBerachainRewardsRegistry is IBaseRegistry {
     event BgtSet(address bgt);
     event BgtIsolationModeVaultFactorySet(address bgtIsolationModeVaultFactory);
     event IBgtSet(address iBgt);
+    event IBgtIsolationModeVaultFactorySet(address ibgtIsolationModeVaultFactory);
+    event IBgtStakingPoolSet(address ibgtStakingPool);
     event MetavaultCreated(address indexed account, address metavault);
     event MetavaultImplementationSet(address metavaultImplementation);
     event MetavaultOperatorSet(address metavaultOperator);
@@ -60,6 +63,8 @@ interface IBerachainRewardsRegistry is IBaseRegistry {
     function ownerSetBgt(address _bgt) external;
     function ownerSetBgtIsolationModeVaultFactory(address _bgtIsolationModeVaultFactory) external;
     function ownerSetIBgt(address _iBgt) external;
+    function ownerSetIBgtIsolationModeVaultFactory(address _ibgtIsolationModeVaultFactory) external;
+    function ownerSetIBgtStakingPool(address _ibgtStakingPool) external;
     function ownerSetMetavaultImplementation(address _metavaultImplementation) external;
     function ownerSetMetavaultOperator(address _metavaultOperator) external;
     function ownerSetRewardVault(address _asset, RewardVaultType _type, address _rewardVault) external;
@@ -82,8 +87,10 @@ interface IBerachainRewardsRegistry is IBaseRegistry {
     function getVaultToMetavault(address _vault) external view returns (address);
 
     function bgt() external view returns (IBGT);
-    function bgtIsolationModeVaultFactory() external view returns (IBGTIsolationModeVaultFactory);
+    function bgtIsolationModeVaultFactory() external view returns (IBerachainRewardTokenIsolationModeVaultFactory);
     function iBgt() external view returns (IERC20);
+    function iBgtIsolationModeVaultFactory() external view returns (IBerachainRewardTokenIsolationModeVaultFactory);
+    function iBgtStakingPool() external view returns (IInfraredBGTStakingPool);
     function metavaultImplementation() external view returns (address);
     function metavaultOperator() external view returns (IMetavaultOperator);
     function rewardVault(address _asset, RewardVaultType _type) external view returns (address);

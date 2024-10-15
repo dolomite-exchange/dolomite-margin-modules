@@ -28,7 +28,7 @@ import { IBerachainRewardsRegistry } from "./IBerachainRewardsRegistry.sol";
  * @title   IBerachainRewardsIsolationModeVaultFactory
  * @author  Dolomite
  *
- * @notice  Interface for a subclass of IsolationModeVaultFactory that creates vaults for Berachain RewardVault tokens.
+ * @notice  Interface for a subclass of IsolationModeVaultFactory that creates vaults for BerachainRewards vault tokens.
  */
 interface IBerachainRewardsIsolationModeVaultFactory is IIsolationModeVaultFactory {
 

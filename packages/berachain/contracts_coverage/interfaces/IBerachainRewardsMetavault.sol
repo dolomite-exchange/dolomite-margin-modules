@@ -40,11 +40,11 @@ interface IBerachainRewardsMetavault {
 
     function exit(address _asset, IBerachainRewardsRegistry.RewardVaultType _type) external;
 
-    function redeemBGT(uint256 _amount) external;
-
     function delegateBGT(address _delegatee) external;
 
-    function registry() external view returns (IBerachainRewardsRegistry);
+    function withdrawBGTAndRedeem(address _recipient, uint256 _amount) external;
+
+    function REGISTRY() external view returns (IBerachainRewardsRegistry);
 
     function OWNER() external view returns (address);
 }

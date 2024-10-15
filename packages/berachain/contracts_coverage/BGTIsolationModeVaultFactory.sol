@@ -21,29 +21,31 @@
 pragma solidity ^0.8.9;
 
 import { IsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
+import { AccountActionLib } from "@dolomite-exchange/modules-base/contracts/lib/AccountActionLib.sol";
+import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
+import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { IBerachainRewardsIsolationModeVaultFactory } from "./interfaces/IBerachainRewardsIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
+import { IBGTIsolationModeVaultFactory } from "./interfaces/IBGTIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { IBerachainRewardsRegistry } from "./interfaces/IBerachainRewardsRegistry.sol";
 
 
 /**
- * @title   BerachainRewardsIsolationModeVaultFactory
+ * @title   BGTIsolationModeVaultFactory
  * @author  Dolomite
  *
- * @notice  The wrapper around a berachain rewards underlying token that is used to create
- *          user vaults and manage the entry points that a user can use to interact with
- *          DolomiteMargin from the vault.
+ * @notice  The wrapper around the BGT token that is used to create user vaults and manage the entry points that a
+ *          user can use to interact with DolomiteMargin from the vault.
  */
-contract BerachainRewardsIsolationModeVaultFactory is
-    IBerachainRewardsIsolationModeVaultFactory,
+contract BGTIsolationModeVaultFactory is
+    IBGTIsolationModeVaultFactory,
     IsolationModeVaultFactory
 {
     using SafeERC20 for IERC20;
 
     // ============ Constants ============
 
-    bytes32 private constant _FILE = "BerachainRewardsVaultFactory";
+    bytes32 private constant _FILE = "BGTIsolationModeVaultFactory";
 
     // ============ Field Variables ============
 
@@ -70,6 +72,42 @@ contract BerachainRewardsIsolationModeVaultFactory is
 
     // ============ External Functions ============
 
+    // @audit @Corey please double check these permissions and confirm only the proper metavault can call
+    function depositIntoDolomiteMarginFromMetavault(
+        address _owner,
+        uint256 _toAccountNumber,
+        uint256 _amountWei
+    ) external {
+        address vault = _userToVaultMap[_owner];
+        /*assert(vault != address(0));*/
+
+        if (berachainRewardsRegistry.getVaultToMetavault(vault) == msg.sender) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            berachainRewardsRegistry.getVaultToMetavault(vault) == msg.sender,
+            _FILE,
+            "Can only deposit from metavault"
+        );
+        _enqueueTransfer(
+            vault,
+            address(DOLOMITE_MARGIN()),
+            _amountWei,
+            vault
+        );
+        AccountActionLib.deposit(
+            DOLOMITE_MARGIN(),
+            /* _accountOwner = */ vault,
+            /* _fromAccount = */ vault,
+            _toAccountNumber,
+            marketId,
+            IDolomiteStructs.AssetAmount({
+                sign: true,
+                denomination: IDolomiteStructs.AssetDenomination.Wei,
+                ref: IDolomiteStructs.AssetReference.Delta,
+                value: _amountWei
+            })
+        );
+    }
+
     function ownerSetBerachainRewardsRegistry(
         address _berachainRewardsRegistry
     ) external override onlyDolomiteMarginOwner(msg.sender) {
@@ -88,11 +126,14 @@ contract BerachainRewardsIsolationModeVaultFactory is
     }
 
     function _createVault(address _account) internal virtual override returns (address) {
-        address vault = super._createVault(_account);
-
         if (_account != _DEAD_VAULT) {
-            berachainRewardsRegistry.createMetavault(_account, vault);
+            if (msg.sender == address(berachainRewardsRegistry)) { /* FOR COVERAGE TESTING */ }
+            Require.that(
+                msg.sender == address(berachainRewardsRegistry),
+                _FILE,
+                "Only registry can create vaults"
+            );
         }
-        return vault;
+        return super._createVault(_account);
     }
 }

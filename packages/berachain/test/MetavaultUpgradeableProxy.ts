@@ -1,8 +1,15 @@
 import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
 import {
+  BerachainRewardsIsolationModeTokenVaultV1,
+  BerachainRewardsIsolationModeTokenVaultV1__factory,
   BerachainRewardsIsolationModeVaultFactory,
   BerachainRewardsMetavault,
   BerachainRewardsMetavault__factory,
+  BGTIsolationModeVaultFactory,
+  IERC20,
+  IInfraredRewardVault,
+  INativeRewardVault,
+  InfraredBGTIsolationModeVaultFactory,
   MetavaultOperator,
   MetavaultOperator__factory,
   MetavaultUpgradeableProxy,
@@ -15,7 +22,12 @@ import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
 import {
   createBerachainRewardsIsolationModeTokenVaultV1,
   createBerachainRewardsIsolationModeVaultFactory,
-  createTestBerachainRewardsRegistry
+  createBGTIsolationModeTokenVaultV1,
+  createBGTIsolationModeVaultFactory,
+  createInfraredBGTIsolationModeTokenVaultV1,
+  createInfraredBGTIsolationModeVaultFactory,
+  createTestBerachainRewardsRegistry,
+  RewardVaultType
 } from './berachain-ecosystem-utils';
 import { revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
 import { expect } from 'chai';
@@ -26,18 +38,28 @@ describe('MetavaultUpgradeableProxy', () => {
 
   let core: CoreProtocolBerachain;
   let registry: TestBerachainRewardsRegistry;
-  let factory: BerachainRewardsIsolationModeVaultFactory;
-  let metavaultImplementation: BerachainRewardsMetavault;
+  let beraFactory: BerachainRewardsIsolationModeVaultFactory;
+  let bgtFactory: BGTIsolationModeVaultFactory;
+  let ibgtFactory: InfraredBGTIsolationModeVaultFactory;
 
+  let underlyingToken: IERC20;
+  let nativeRewardVault: INativeRewardVault;
+  let infraredRewardVault: IInfraredRewardVault;
+
+  let metavaultImplementation: BerachainRewardsMetavault;
+  let beraVault: BerachainRewardsIsolationModeTokenVaultV1;
   let vaultProxy: MetavaultUpgradeableProxy;
-  let vaultAddress: string;
 
   before(async () => {
     core = await setupCoreProtocol({
       blockNumber: 4_853_900,
       network: Network.Berachain,
     });
-    const underlyingToken = core.berachainRewardsEcosystem.listedRewardAssets.bexHoneyUsdc.asset;
+
+    underlyingToken = core.berachainRewardsEcosystem.listedRewardAssets.bexHoneyUsdc.asset;
+    nativeRewardVault = core.berachainRewardsEcosystem.listedRewardAssets.bexHoneyUsdc.nativeRewardVault;
+    infraredRewardVault = core.berachainRewardsEcosystem.listedRewardAssets.bexHoneyUsdc.infraredRewardVault;
+
     metavaultImplementation = await createContractWithAbi<BerachainRewardsMetavault>(
       BerachainRewardsMetavault__factory.abi,
       BerachainRewardsMetavault__factory.bytecode,
@@ -49,21 +71,64 @@ describe('MetavaultUpgradeableProxy', () => {
       [core.dolomiteMargin.address],
     );
     registry = await createTestBerachainRewardsRegistry(core, metavaultImplementation, metavaultOperator);
+    await registry.connect(core.governance).ownerSetRewardVault(
+      underlyingToken.address,
+      RewardVaultType.Native,
+      nativeRewardVault.address
+    );
+    await registry.connect(core.governance).ownerSetRewardVault(
+      underlyingToken.address,
+      RewardVaultType.Infrared,
+      infraredRewardVault.address
+    );
+
     const vaultImplementation = await createBerachainRewardsIsolationModeTokenVaultV1();
-    factory = await createBerachainRewardsIsolationModeVaultFactory(
+    beraFactory = await createBerachainRewardsIsolationModeVaultFactory(
       registry,
       underlyingToken,
       vaultImplementation,
-      core
+      core,
+    );
+    const bgtVaultImplementation = await createBGTIsolationModeTokenVaultV1();
+    bgtFactory = await createBGTIsolationModeVaultFactory(
+      registry,
+      core.tokens.bgt,
+      bgtVaultImplementation,
+      core,
+    );
+    const ibgtVaultImplementation = await createInfraredBGTIsolationModeTokenVaultV1();
+    ibgtFactory = await createInfraredBGTIsolationModeVaultFactory(
+      registry,
+      core.tokens.ibgt,
+      ibgtVaultImplementation,
+      core,
     );
 
-    await core.testEcosystem!.testPriceOracle.setPrice(factory.address, ONE_ETH_BI);
-    await setupTestMarket(core, factory, true);
-    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
-    await factory.connect(core.governance).ownerInitialize([]);
+    await core.testEcosystem!.testPriceOracle.setPrice(ibgtFactory.address, ONE_ETH_BI);
+    await setupTestMarket(core, ibgtFactory, true);
 
-    await factory.createVault(core.hhUser1.address);
-    vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);
+    await core.testEcosystem!.testPriceOracle.setPrice(beraFactory.address, ONE_ETH_BI);
+    await setupTestMarket(core, beraFactory, true);
+
+    await core.testEcosystem!.testPriceOracle.setPrice(bgtFactory.address, ONE_ETH_BI);
+    await setupTestMarket(core, bgtFactory, true);
+
+    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(beraFactory.address, true);
+    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(bgtFactory.address, true);
+    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(ibgtFactory.address, true);
+    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(metavaultOperator.address, true);
+    await beraFactory.connect(core.governance).ownerInitialize([]);
+    await bgtFactory.connect(core.governance).ownerInitialize([]);
+    await ibgtFactory.connect(core.governance).ownerInitialize([]);
+    await registry.connect(core.governance).ownerSetBgtIsolationModeVaultFactory(bgtFactory.address);
+    await registry.connect(core.governance).ownerSetIBgtIsolationModeVaultFactory(ibgtFactory.address);
+
+    await beraFactory.createVault(core.hhUser1.address);
+    beraVault = setupUserVaultProxy<BerachainRewardsIsolationModeTokenVaultV1>(
+      await beraFactory.getVaultByAccount(core.hhUser1.address),
+      BerachainRewardsIsolationModeTokenVaultV1__factory,
+      core.hhUser1,
+    );
     const metavaultAddress = await registry.getAccountToMetavault(core.hhUser1.address);
     vaultProxy = await setupUserVaultProxy<MetavaultUpgradeableProxy>(
       metavaultAddress,
@@ -80,7 +145,7 @@ describe('MetavaultUpgradeableProxy', () => {
 
   describe('#initialize', () => {
     it('should work under normal conditions', async () => {
-      await registry.createMetavaultNoInitialize(core.hhUser2.address, vaultAddress);
+      await registry.createMetavaultNoInitialize(core.hhUser2.address, beraVault.address);
       const vault2Address = await registry.getAccountToMetavault(core.hhUser2.address);
       const vault2 = setupUserVaultProxy<MetavaultUpgradeableProxy>(
         vault2Address,
@@ -93,7 +158,7 @@ describe('MetavaultUpgradeableProxy', () => {
     });
 
     it('should fail if the account and metavault do not match' , async () => {
-      await registry.createMetavaultNoInitialize(core.hhUser2.address, vaultAddress);
+      await registry.createMetavaultNoInitialize(core.hhUser2.address, beraVault.address);
       const vault2Address = await registry.getAccountToMetavault(core.hhUser2.address);
       const vault2 = setupUserVaultProxy<MetavaultUpgradeableProxy>(
         vault2Address,
@@ -114,6 +179,19 @@ describe('MetavaultUpgradeableProxy', () => {
     });
   });
 
+  describe('#receive', () => {
+    it('should fail because no receive on implementation', async () => {
+      await expectThrow(
+        core.hhUser1.sendTransaction({
+          to: vaultProxy.address,
+          value: ONE_ETH_BI,
+          data: '0x'
+        }),
+        'function selector was not recognized and there\'s no fallback nor receive function'
+      );
+    });
+  });
+
   describe('#fallback', () => {
     it('should work normally', async () => {
       const vaultImpl = setupUserVaultProxy<BerachainRewardsMetavault>(
@@ -125,7 +203,7 @@ describe('MetavaultUpgradeableProxy', () => {
     });
 
     it('should fail when not initialized', async () => {
-      await registry.createMetavaultNoInitialize(core.hhUser2.address, vaultAddress);
+      await registry.createMetavaultNoInitialize(core.hhUser2.address, beraVault.address);
       const metaAddress = await registry.getAccountToMetavault(core.hhUser2.address);
       const vaultImpl = setupUserVaultProxy<BerachainRewardsMetavault>(
         metaAddress,
@@ -150,7 +228,7 @@ describe('MetavaultUpgradeableProxy', () => {
 
   describe('#REGISTRY', () => {
     it('should work normally', async () => {
-      expect(await vaultProxy.REGISTRY()).to.eq(registry.address);
+      expect(await vaultProxy.registry()).to.eq(registry.address);
     });
   });
 

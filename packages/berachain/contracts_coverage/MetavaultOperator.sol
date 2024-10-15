@@ -50,6 +50,8 @@ contract MetavaultOperator is OnlyDolomiteMargin {
     // ======================== Public Functions ========================
     // ==================================================================
 
+    // @audit We don't really need this contract anymore, but would this be ok? Allows anybody to
+    // deposit into any user's account but that doesn't seem like a problem
     function depositIntoUserAccountFromMetavault(
         address _owner,
         address _token,

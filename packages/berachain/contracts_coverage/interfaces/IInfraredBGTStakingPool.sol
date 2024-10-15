@@ -20,26 +20,21 @@
 
 pragma solidity ^0.8.9;
 
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 
 /**
- * @title   IMetavaultUpgradeableProxy
+ * @title   IInfraredBGTStakingPool
  * @author  Dolomite
  *
- * @notice  The interface for the upgradeable proxy contract that holds each user's tokens that are staked in POL
  */
-interface IMetavaultUpgradeableProxy {
+interface IInfraredBGTStakingPool is IERC20 {
 
-    /**
-     *
-     * @param  _vaultOwner  The owner of this vault contract
-     */
-    function initialize(address _vaultOwner) external;
+    function stake(uint256 amount) external;
 
-    function isInitialized() external view returns (bool);
+    function withdraw(uint256 amount) external;
 
-    function implementation() external view returns (address);
+    function getReward() external;
 
-    function registry() external view returns (address);
-
-    function owner() external view returns (address);
+    function rewardTokens(uint256 index) external view returns (address);
 }

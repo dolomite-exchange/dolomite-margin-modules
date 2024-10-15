@@ -1,19 +1,14 @@
 import {
   RegistryProxy,
   RegistryProxy__factory,
-  SimpleIsolationModeUnwrapperTraderV2,
-  SimpleIsolationModeUnwrapperTraderV2__factory,
-  SimpleIsolationModeWrapperTraderV2,
-  SimpleIsolationModeWrapperTraderV2__factory
 } from 'packages/base/src/types';
 import { createContractWithAbi, createContractWithLibrary } from 'packages/base/src/utils/dolomite-utils';
 import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
 import {
   getBerachainRewardsIsolationModeVaultFactoryConstructorParams,
   getBerachainRewardsRegistryConstructorParams,
-  getBerachainRewardsUnwrapperTraderV2ConstructorParams,
-  getBerachainRewardsWrapperTraderV2ConstructorParams,
-  getBGTIsolationModeVaultFactoryConstructorParams
+  getBGTIsolationModeVaultFactoryConstructorParams,
+  getInfraredBGTIsolationModeVaultFactoryConstructorParams
 } from '../src/berachain-constructors';
 import {
   BerachainRewardsIsolationModeTokenVaultV1,
@@ -25,8 +20,10 @@ import {
   BGTIsolationModeTokenVaultV1,
   BGTIsolationModeVaultFactory,
   BGTIsolationModeVaultFactory__factory,
-  IBerachainRewardsIsolationModeVaultFactory,
   IBerachainRewardsRegistry,
+  InfraredBGTIsolationModeTokenVaultV1,
+  InfraredBGTIsolationModeVaultFactory,
+  InfraredBGTIsolationModeVaultFactory__factory,
   MetavaultOperator,
   TestBerachainRewardsRegistry,
   TestBerachainRewardsRegistry__factory
@@ -132,6 +129,34 @@ export async function createBGTIsolationModeVaultFactory(
     BGTIsolationModeVaultFactory__factory.abi,
     BGTIsolationModeVaultFactory__factory.bytecode,
     getBGTIsolationModeVaultFactoryConstructorParams(
+      beraRegistry,
+      underlyingToken,
+      userVaultImplementation,
+      core
+    ),
+  );
+}
+
+export async function createInfraredBGTIsolationModeTokenVaultV1(
+): Promise<InfraredBGTIsolationModeTokenVaultV1> {
+  const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
+  return createContractWithLibrary<InfraredBGTIsolationModeTokenVaultV1>(
+    'InfraredBGTIsolationModeTokenVaultV1',
+    libraries,
+    [],
+  );
+}
+
+export async function createInfraredBGTIsolationModeVaultFactory(
+  beraRegistry: IBerachainRewardsRegistry | BerachainRewardsRegistry,
+  underlyingToken: { address: string },
+  userVaultImplementation: InfraredBGTIsolationModeTokenVaultV1,
+  core: CoreProtocolBerachain,
+): Promise<InfraredBGTIsolationModeVaultFactory> {
+  return createContractWithAbi<InfraredBGTIsolationModeVaultFactory>(
+    InfraredBGTIsolationModeVaultFactory__factory.abi,
+    InfraredBGTIsolationModeVaultFactory__factory.bytecode,
+    getInfraredBGTIsolationModeVaultFactoryConstructorParams(
       beraRegistry,
       underlyingToken,
       userVaultImplementation,

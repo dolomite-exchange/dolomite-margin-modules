@@ -31,8 +31,9 @@ import { IBerachainRewardsRegistry } from "./interfaces/IBerachainRewardsRegistr
  * @title   BerachainRewardsIsolationModeVaultFactory
  * @author  Dolomite
  *
- * @notice  The wrapper around the GMX token that is used to create user vaults and manage the entry points that a
- *          user can use to interact with DolomiteMargin from the vault.
+ * @notice  The wrapper around a berachain rewards underlying token that is used to create
+ *          user vaults and manage the entry points that a user can use to interact with
+ *          DolomiteMargin from the vault.
  */
 contract BerachainRewardsIsolationModeVaultFactory is
     IBerachainRewardsIsolationModeVaultFactory,
@@ -85,6 +86,8 @@ contract BerachainRewardsIsolationModeVaultFactory is
         // allow all markets
         return new uint256[](0);
     }
+
+    // ============ Internal Functions ============
 
     function _createVault(address _account) internal virtual override returns (address) {
         address vault = super._createVault(_account);

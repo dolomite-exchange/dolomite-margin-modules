@@ -57,6 +57,7 @@ contract BGTIsolationModeTokenVaultV1 is
     function setIsDepositSourceMetavault(
         bool _isDepositSourceMetavault
     ) external {
+        if (msg.sender == registry().getVaultToMetavault(address(this))) { /* FOR COVERAGE TESTING */ }
         Require.that(
             msg.sender == registry().getVaultToMetavault(address(this)),
             _FILE,
@@ -74,7 +75,8 @@ contract BGTIsolationModeTokenVaultV1 is
     public
     override(IIsolationModeTokenVaultV1, IsolationModeTokenVaultV1)
     onlyVaultFactory(msg.sender) {
-        assert(_from == OWNER());
+        /*assert(_from == OWNER());*/
+        if (isDepositSourceMetavault()) { /* FOR COVERAGE TESTING */ }
         Require.that(
             isDepositSourceMetavault(),
             _FILE,
@@ -91,7 +93,7 @@ contract BGTIsolationModeTokenVaultV1 is
     override(IIsolationModeTokenVaultV1, IsolationModeTokenVaultV1)
     onlyVaultFactory(msg.sender) {
         IBerachainRewardsMetavault metavault = IBerachainRewardsMetavault(registry().getAccountToMetavault(OWNER()));
-        assert(_recipient != address(address(this)));
+        /*assert(_recipient != address(address(this)));*/
         metavault.withdrawBGTAndRedeem(_recipient, _amount);
     }
 

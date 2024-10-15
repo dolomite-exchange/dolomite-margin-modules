@@ -877,6 +877,10 @@ export const HONEY_WBERA_BEX_INFRARED_REWARD_VAULT_MAP: Record<Network.Berachain
   [Network.Berachain]: '0x5c5f9a838747fb83678ECe15D85005FD4F558237',
 };
 
+export const IBGT_STAKING_POOL_MAP: Record<Network.Berachain, string> = {
+  [Network.Berachain]: '0x31E6458C83C4184A23c761fDAffb61941665E012',
+};
+
 export const KYBER_AGGREGATOR_ROUTER_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumOne]: '0x6131B5fae19EA4f9D964eAc0408E4408b66337b5',
   [Network.Base]: '0x6131B5fae19EA4f9D964eAc0408E4408b66337b5',

@@ -5,13 +5,15 @@ import {
   HONEY_USDC_BEX_NATIVE_REWARD_VAULT_MAP,
   HONEY_WBERA_BEX_INFRARED_REWARD_VAULT_MAP,
   HONEY_WBERA_BEX_LP_TOKEN_MAP,
-  HONEY_WBERA_BEX_NATIVE_REWARD_VAULT_MAP
+  HONEY_WBERA_BEX_NATIVE_REWARD_VAULT_MAP,
+  IBGT_STAKING_POOL_MAP
 } from "packages/base/src/utils/constants";
 import { Network } from "packages/base/src/utils/no-deps-constants";
 import { SignerWithAddressWithSafety } from "packages/base/src/utils/SignerWithAddressWithSafety";
-import { INativeRewardVault, INativeRewardVault__factory, IInfraredRewardVault, IInfraredRewardVault__factory } from "packages/berachain/src/types";
+import { INativeRewardVault, INativeRewardVault__factory, IInfraredRewardVault, IInfraredRewardVault__factory, IInfraredBGTStakingPool, IInfraredBGTStakingPool__factory } from "packages/berachain/src/types";
 
 export interface BerachainRewardsEcosystem {
+  iBgtStakingPool: IInfraredBGTStakingPool;
   listedRewardAssets: {
     bexHoneyUsdc: ListedRewardAsset;
     bexHoneyWbera: ListedRewardAsset;
@@ -33,6 +35,7 @@ export async function createBerachainRewardsEcosystem(
   }
 
   return {
+    iBgtStakingPool: IInfraredBGTStakingPool__factory.connect(IBGT_STAKING_POOL_MAP[network]!, signer),
     listedRewardAssets: {
       bexHoneyUsdc: {
         asset: IERC20__factory.connect(HONEY_USDC_BEX_LP_TOKEN_MAP[network]!, signer),
