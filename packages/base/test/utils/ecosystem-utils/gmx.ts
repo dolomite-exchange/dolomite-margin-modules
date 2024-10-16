@@ -93,6 +93,7 @@ import {
   GMX_READER_MAP,
   GMX_REWARD_ROUTER_V2_MAP,
   GMX_REWARD_ROUTER_V3_MAP,
+  GMX_REWARD_ROUTER_V4_MAP,
   GMX_ROUTER_MAP,
   GMX_SOL_USD_MARKET_TOKEN_MAP,
   GMX_UNI_USD_MARKET_TOKEN_MAP,
@@ -131,6 +132,7 @@ export interface GmxEcosystem {
   gmx: IERC20;
   gmxRewardsRouterV2: IGmxRewardRouterV2;
   gmxRewardsRouterV3: IGmxRewardRouterV2;
+  gmxRewardsRouterV4: IGmxRewardRouterV2;
   gmxVault: IGmxVault;
   sGlp: IERC20;
   sGmx: ISGMX;
@@ -243,6 +245,7 @@ export async function createGmxEcosystem(network: Network, signer: SignerWithAdd
     gmx: getContract(GMX_MAP[network]!.address, IERC20__factory.connect, signer),
     gmxRewardsRouterV2: getContract(GMX_REWARD_ROUTER_V2_MAP[network], IGmxRewardRouterV2__factory.connect, signer),
     gmxRewardsRouterV3: getContract(GMX_REWARD_ROUTER_V3_MAP[network], IGmxRewardRouterV2__factory.connect, signer),
+    gmxRewardsRouterV4: getContract(GMX_REWARD_ROUTER_V4_MAP[network], IGmxRewardRouterV2__factory.connect, signer),
     gmxVault: getContract(GMX_VAULT_MAP[network], IGmxVault__factory.connect, signer),
     sGlp: getContract(S_GLP_MAP[network].address, IERC20__factory.connect, signer),
     sGmx: getContract(S_GMX_MAP[network], ISGMX__factory.connect, signer),
