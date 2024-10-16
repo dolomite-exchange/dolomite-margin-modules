@@ -39,7 +39,6 @@ import { IGmxRewardTracker } from "./interfaces/IGmxRewardTracker.sol";
 import { IGmxVester } from "./interfaces/IGmxVester.sol";
 import { ISGMX } from "./interfaces/ISGMX.sol";
 // solhint-enable max-line-length
-import "hardhat/console.sol";
 
 
 /**
@@ -486,7 +485,6 @@ contract GLPIsolationModeTokenVaultV2 is
         }
 
         uint256 stakedGmxBalanceBefore = gmxBalanceOf();
-        console.log('gmx bal before: ', gmx().balanceOf(address(this)));
         gmxRewardsRouter().handleRewards(
             _shouldClaimGmx,
             _shouldStakeGmx,
@@ -497,8 +495,6 @@ contract GLPIsolationModeTokenVaultV2 is
             /* _shouldConvertWethToEth = */ false
         );
         uint256 stakedGmxBalanceDelta = gmxBalanceOf() - stakedGmxBalanceBefore;
-        console.log('gmx bal after: ', gmx().balanceOf(address(this)));
-        console.log(stakedGmxBalanceDelta);
 
         IERC20 _gmx = gmx();
         if (_shouldStakeGmx) {
