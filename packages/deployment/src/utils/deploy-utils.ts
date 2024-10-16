@@ -158,9 +158,11 @@ export async function verifyContract(
 
     await sleep(1000);
     const verificationStatus = await instance.getVerificationStatus(guid);
-    if (verificationStatus.isSuccess()) {
+    if (verificationStatus.isSuccess() || verificationStatus.isOk()) {
       const contractURL = instance.getContractUrl(address);
       console.log(`\tSuccessfully verified contract "${contractName}": ${contractURL}`);
+    } else if (verificationStatus.isFailure()) {
+      console.error(`\tCould not verify contract due to reason: ${verificationStatus.message}`);
     }
   } catch (e: any) {
     if (e?.message.toLowerCase().includes('already verified')) {
@@ -169,6 +171,7 @@ export async function verifyContract(
       await sleep(3_000);
       await verifyContract(address, constructorArguments, contractName, libraries, attempts + 1);
     } else {
+      console.error('Error with verifying:', e);
       return Promise.reject(e);
     }
   }
@@ -943,6 +946,7 @@ export async function prettyPrintEncodeInsertChainlinkOracle<T extends NetworkTy
   token: IERC20,
   tokenPairAddress: string | undefined = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address]!.tokenPairAddress,
   aggregatorAddress: string = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address]!.aggregatorAddress,
+  options?: { ignoreDescription: boolean },
 ): Promise<EncodedTransaction> {
   const invalidTokens = ['stEth', 'eEth'];
   let tokenDecimals: number;
@@ -956,8 +960,10 @@ export async function prettyPrintEncodeInsertChainlinkOracle<T extends NetworkTy
 
   const description = (await aggregator.description()).toLowerCase();
   const symbol = (await IERC20Metadata__factory.connect(token.address, token.signer).symbol()).toLowerCase();
-  if (!description.includes(symbol) && !description.includes(symbol.substring(1))) {
-    return Promise.reject(new Error(`Invalid aggregator for symbol, found: ${description}, expected: ${symbol}`));
+  if (!options?.ignoreDescription) {
+    if (!description.includes(symbol) && !description.includes(symbol.substring(1))) {
+      return Promise.reject(new Error(`Invalid aggregator for symbol, found: ${description}, expected: ${symbol}`));
+    }
   }
 
   mostRecentTokenDecimals = tokenDecimals;
@@ -976,6 +982,7 @@ export async function prettyPrintEncodeInsertChainlinkOracleV3<T extends Network
   invertPrice: boolean = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address]!.invert ?? false,
   tokenPairAddress: string | undefined = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address]!.tokenPairAddress,
   aggregatorAddress: string = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address]!.aggregatorAddress,
+  options?: { ignoreDescription: boolean },
 ): Promise<EncodedTransaction[]> {
   const invalidTokenSettings = INVALID_TOKEN_MAP[core.network][token.address];
 
@@ -996,11 +1003,13 @@ export async function prettyPrintEncodeInsertChainlinkOracleV3<T extends Network
     symbol = await IERC20Metadata__factory.connect(token.address, token.signer).symbol();
   }
 
-  if (
-    !description.toUpperCase().includes(symbol.toUpperCase()) &&
-    !description.toUpperCase().includes(symbol.toUpperCase().substring(1))
-  ) {
-    return Promise.reject(new Error(`Invalid aggregator for symbol, found: ${description}, expected: ${symbol}`));
+  if (!options?.ignoreDescription) {
+    if (
+      !description.toUpperCase().includes(symbol.toUpperCase()) &&
+      !description.toUpperCase().includes(symbol.toUpperCase().substring(1))
+    ) {
+      return Promise.reject(new Error(`Invalid aggregator for symbol, found: ${description}, expected: ${symbol}`));
+    }
   }
 
   mostRecentTokenDecimals = tokenDecimals;
@@ -1035,14 +1044,14 @@ export async function prettyPrintEncodeInsertChainlinkOracleV3<T extends Network
 }
 
 export async function prettyPrintEncodeInsertChronicleOracleV3(
-  core: CoreProtocolWithChronicle<Network.ArbitrumOne | Network.Mantle>,
+  core: CoreProtocolWithChronicle<Network.ArbitrumOne | Network.Berachain| Network.Mantle>,
   token: IERC20,
   invertPrice: boolean = CHRONICLE_PRICE_SCRIBES_MAP[core.config.network][token.address].invertPrice ?? false,
   tokenPairAddress: string | undefined = CHRONICLE_PRICE_SCRIBES_MAP[core.config.network][token.address]
     .tokenPairAddress,
   scribeAddress: string = CHRONICLE_PRICE_SCRIBES_MAP[core.config.network][token.address].scribeAddress,
 ): Promise<EncodedTransaction[]> {
-  const invalidTokenSettings = INVALID_TOKEN_MAP[Network.Mantle][token.address];
+  const invalidTokenSettings = INVALID_TOKEN_MAP[core.network][token.address];
 
   let tokenDecimals: number;
   if (invalidTokenSettings) {

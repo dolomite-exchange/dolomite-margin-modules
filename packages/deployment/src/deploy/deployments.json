@@ -306,6 +306,11 @@
       "address": "0x8990A46Fd1F2E00b8eb85DAfd85735d2B5Ed4Eeb",
       "transaction": "0xf7128c5035702bd4000863c32b410479a2fcb504ae217a785d10f87d756436d5",
       "isVerified": true
+    },
+    "80084": {
+      "address": "0x7C228F0C1e92bD61e116C60778b546b6dA7d6c83",
+      "transaction": "0xff196d54cbd189e4246f4a8b5b8a107eadb5b9d616c50407556b99bee1083bed",
+      "isVerified": true
     }
   },
   "DolomiteAccountRegistryImplementationV1": {
@@ -3438,6 +3443,13 @@
       "isVerified": true
     }
   },
+  "PendlePtmETHDec2024IsolationModeTokenVaultV2": {
+    "5000": {
+      "address": "0x09b49051ff3F1087c583a8B4ea68fA5eF3Ac7FF7",
+      "transaction": "0x3e814347bdad4639857ef0aea0f608d548e2d8cbae59c7cb939afff6d067f94a",
+      "isVerified": true
+    }
+  },
   "PendlePtmETHDec2024IsolationModeUnwrapperTraderV3": {
     "5000": {
       "address": "0x63BD442334D457B58742a72B88abeaeFfef6D451",
@@ -3477,6 +3489,13 @@
     "5000": {
       "address": "0x93FBbdFafF42B6dD1A7A60b6D40A67407469A6ed",
       "transaction": "0x684eabb03e2a7e99d841133d32855d14022b164618641772ea17c050411becc1",
+      "isVerified": true
+    }
+  },
+  "PendlePtMntOct2024IsolationModeTokenVaultV2": {
+    "5000": {
+      "address": "0xc4d82e8e5240ac7C816aCA138eb41534c9aD76e1",
+      "transaction": "0x8937dff5f3c906cc89b56f6ea50020a2943161f17779430c097d9fd22a3d00bf",
       "isVerified": true
     }
   },
@@ -3725,6 +3744,13 @@
       "isVerified": true
     }
   },
+  "PendlePtUSDeDec2024IsolationModeTokenVaultV2": {
+    "5000": {
+      "address": "0x14B83b01091636709A468386877619d34D431C63",
+      "transaction": "0xc2882eec8aa14e8bb17a32056f405a25a79f9aced1479a06f25c114ac65037e3",
+      "isVerified": true
+    }
+  },
   "PendlePtUSDeDec2024IsolationModeUnwrapperTraderV3": {
     "5000": {
       "address": "0x1938392b71d20E846E9553fF95e91BdC9b15de86",
@@ -3764,6 +3790,13 @@
     "5000": {
       "address": "0xA5F4CEB032a1d7C711BB8AE687F9AB13a976e2E9",
       "transaction": "0x9f14c496d9f84d0424d657f95b354e702de65fda587375657a73a8914df2591f",
+      "isVerified": true
+    }
+  },
+  "PendlePtUSDeJul2024IsolationModeTokenVaultV2": {
+    "5000": {
+      "address": "0xa7dC4C2b6B08e967adb15EA24dCf2fE73A08a71F",
+      "transaction": "0x2cc294dfc5370601b8b8d8b4d7bfea9e5ea1bb749faf2a48e4643b6c59066078",
       "isVerified": true
     }
   },

@@ -13,6 +13,7 @@ interface CoreProtocolTokensPolygonZkEvm extends CoreProtocolTokens<Network.Poly
   dai: IERC20;
   link: IERC20;
   matic: IERC20;
+  pol: IERC20;
   usdt: IERC20;
   wbtc: IERC20;
 }
@@ -21,6 +22,7 @@ interface CoreProtocolMarketIdsPolygonZkEvm extends CoreProtocolMarketIds {
   dai: BigNumberish;
   link: BigNumberish;
   matic: BigNumberish;
+  pol: BigNumberish;
   usdt: BigNumberish;
   wbtc: BigNumberish;
 }
