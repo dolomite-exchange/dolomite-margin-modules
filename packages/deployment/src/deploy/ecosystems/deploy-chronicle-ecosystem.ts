@@ -16,10 +16,10 @@ import getScriptName from '../../utils/get-script-name';
 
 async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   const rawNetwork = (await getAnyNetwork()) as T;
-  if (rawNetwork !== Network.ArbitrumOne && rawNetwork !== Network.Mantle) {
+  if (rawNetwork !== Network.ArbitrumOne && rawNetwork !== Network.Berachain && rawNetwork !== Network.Mantle) {
     return Promise.reject(new Error(`Invalid network: ${rawNetwork}`));
   }
-  const network = rawNetwork as Network.ArbitrumOne | Network.Mantle;
+  const network = rawNetwork as Network.ArbitrumOne | Network.Berachain | Network.Mantle;
   const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
 
   const chronicleAddress = await deployContractAndSave(
