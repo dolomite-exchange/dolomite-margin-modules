@@ -55,7 +55,7 @@ contract GlvRegistry is IGlvRegistry, BaseRegistry, HandlerRegistry {
     bytes32 private constant _GMX_READER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxReader")) - 1);
     bytes32 private constant _GLV_ROUTER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.glvRouter")) - 1);
     bytes32 private constant _GLV_VAULT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.glvVault")) - 1);
-    bytes32 private constant _UNDERLYING_GM_MARKET_SLOT = bytes32(uint256(keccak256("eip1967.proxy.underlyingMarket")) - 1);
+    bytes32 private constant _GLV_TOKEN_TO_GM_MARKET_SLOT = bytes32(uint256(keccak256("eip1967.proxy.glvTokenToGmMarket")) - 1);
     // solhint-enable max-line-length
 
     // ==================== Initializer ====================
@@ -68,7 +68,6 @@ contract GlvRegistry is IGlvRegistry, BaseRegistry, HandlerRegistry {
         address _glvReader,
         address _glvRouter,
         address _glvVault,
-        address _underlyingGmMarket,
         uint256 _callbackGasLimit,
         address _dolomiteRegistry
     ) external initializer {
@@ -79,7 +78,6 @@ contract GlvRegistry is IGlvRegistry, BaseRegistry, HandlerRegistry {
         _ownerSetGlvReader(_glvReader);
         _ownerSetGlvRouter(_glvRouter);
         _ownerSetGlvVault(_glvVault);
-        _ownerSetUnderlyingGmMarket(_underlyingGmMarket);
         _ownerSetCallbackGasLimit(_callbackGasLimit);
 
         _ownerSetDolomiteRegistry(_dolomiteRegistry);
@@ -143,12 +141,13 @@ contract GlvRegistry is IGlvRegistry, BaseRegistry, HandlerRegistry {
         _ownerSetGlvVault(_glvVault);
     }
 
-    function ownerSetUnderlyingGmMarket(
-        address _underlyingGmMarket
+    function ownerSetGlvTokenToGmMarket(
+        address _glvToken,
+        address _gmMarket
     )
     external
     onlyDolomiteMarginOwner(msg.sender) {
-        _ownerSetUnderlyingGmMarket(_underlyingGmMarket);
+        _ownerSetGlvTokenToGmMarket(_glvToken, _gmMarket);
     }
 
     // ==================== Views ====================
@@ -177,8 +176,9 @@ contract GlvRegistry is IGlvRegistry, BaseRegistry, HandlerRegistry {
         return _getAddress(_GLV_VAULT_SLOT);
     }
 
-    function underlyingGmMarket() external view returns (address) {
-        return _getAddress(_UNDERLYING_GM_MARKET_SLOT);
+    function glvTokenToGmMarket(address _glvToken) external view returns (address) {
+        bytes32 slot = keccak256(abi.encode(_glvToken, _GLV_TOKEN_TO_GM_MARKET_SLOT));
+        return _getAddress(slot);
     }
 
     function isHandler(address _handler) public override(HandlerRegistry, IHandlerRegistry) view returns (bool) {
@@ -264,13 +264,14 @@ contract GlvRegistry is IGlvRegistry, BaseRegistry, HandlerRegistry {
         emit GlvVaultSet(_glvVault);
     }
 
-    function _ownerSetUnderlyingGmMarket(address _underlyingGmMarket) internal {
+    function _ownerSetGlvTokenToGmMarket(address _glvToken, address _gmMarket) internal {
         Require.that(
-            _underlyingGmMarket != address(0),
+            _glvToken != address(0) && _gmMarket != address(0),
             _FILE,
             "Invalid address"
         );
-        _setAddress(_UNDERLYING_GM_MARKET_SLOT, _underlyingGmMarket);
-        emit UnderlyingGmMarketSet(_underlyingGmMarket);
+        bytes32 slot = keccak256(abi.encode(_glvToken, _GLV_TOKEN_TO_GM_MARKET_SLOT));
+        _setAddress(slot, _gmMarket);
+        emit GlvTokenToGmMarketSet(_glvToken, _gmMarket);
     }
 }

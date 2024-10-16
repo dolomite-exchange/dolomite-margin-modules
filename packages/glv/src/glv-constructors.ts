@@ -15,7 +15,6 @@ import { IGmxMarketToken } from 'packages/gmx-v2/src/types';
 export async function getGlvRegistryConstructorParams(
   core: CoreProtocolArbitrumOne,
   implementation: GlvRegistry,
-  gmToken: IGmxMarketToken,
   callbackGasLimit: BigNumberish,
 ): Promise<any[]> {
   if (!core.gmxEcosystem || !core.glvEcosystem) {
@@ -30,7 +29,6 @@ export async function getGlvRegistryConstructorParams(
     core.glvEcosystem!.glvReader.address,
     core.glvEcosystem!.glvRouter.address,
     core.glvEcosystem!.glvVault.address,
-    gmToken.address,
     callbackGasLimit,
     core.dolomiteRegistry.address,
   );

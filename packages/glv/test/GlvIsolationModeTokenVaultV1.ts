@@ -118,7 +118,8 @@ describe('GlvIsolationModeTokenVaultV1', () => {
     const gmxV2Library = await createGmxV2Library();
     const userVaultImplementation = await createTestGlvIsolationModeTokenVaultV1(core);
 
-    glvRegistry = await createGlvRegistry(core, gmMarketToken, GMX_V2_CALLBACK_GAS_LIMIT);
+    glvRegistry = await createGlvRegistry(core, GMX_V2_CALLBACK_GAS_LIMIT);
+    await glvRegistry.connect(core.governance).ownerSetGlvTokenToGmMarket(underlyingToken.address, gmMarketToken.address);
 
     allowableMarketIds = [core.marketIds.nativeUsdc, core.marketIds.weth];
     factory = await createGlvIsolationModeVaultFactory(

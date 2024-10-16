@@ -50,7 +50,7 @@ interface IGlvRegistry is IBaseRegistry, IHandlerRegistry {
     event GlvReaderSet(address _glvReader);
     event GlvRouterSet(address _glvRouter);
     event GlvVaultSet(address _glvVault);
-    event UnderlyingGmMarketSet(address _underlyingGmMarket);
+    event GlvTokenToGmMarketSet(address _glvToken, address _gmMarket);
 
     // ===================================================
     // ==================== Functions ====================
@@ -70,7 +70,7 @@ interface IGlvRegistry is IBaseRegistry, IHandlerRegistry {
 
     function ownerSetGlvVault(address _glvVault) external;
 
-    function ownerSetUnderlyingGmMarket(address _underlyingGmMarket) external;
+    function ownerSetGlvTokenToGmMarket(address _glvToken, address _gmMarket) external;
 
     function gmxExchangeRouter() external view returns (IGmxExchangeRouter);
 
@@ -86,5 +86,5 @@ interface IGlvRegistry is IBaseRegistry, IHandlerRegistry {
 
     function glvVault() external view returns (address);
 
-    function underlyingGmMarket() external view returns (address);
+    function glvTokenToGmMarket(address _glvToken) external view returns (address);
 }

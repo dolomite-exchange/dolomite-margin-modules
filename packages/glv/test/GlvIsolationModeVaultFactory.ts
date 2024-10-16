@@ -55,7 +55,6 @@ describe('GlvIsolationModeVaultFactory', () => {
     core = await setupCoreProtocol(getDefaultProtocolConfigForGlv());
     glvRegistry = await createGlvRegistry(
       core,
-      core.gmxV2Ecosystem.gmTokens.ethUsd.marketToken,
       GLV_CALLBACK_GAS_LIMIT
     );
     glvLibrary = await createGlvLibrary();

@@ -129,14 +129,15 @@ library GlvLibrary {
             IERC20(_inputToken).safeApprove(glvRouter.router(), _inputAmount);
             glvRouter.sendTokens(_inputToken, vault, _inputAmount);
         }
+        IGlvIsolationModeVaultFactory factory = _factory;
         GlvDepositUtils.CreateGlvDepositParams memory depositParams = GlvDepositUtils.CreateGlvDepositParams(
             /* glv = */ _outputTokenUnderlying,
-            /* market = */ _registry.underlyingGmMarket(),
+            /* market = */ _registry.glvTokenToGmMarket(factory.UNDERLYING_TOKEN()),
             /* receiver = */ address(this),
             /* callbackContract = */ address(this),
             /* uiFeeReceiver = */ address(0),
-            /* initialLongToken = */ _factory.LONG_TOKEN(),
-            /* initialShortToken = */ _factory.SHORT_TOKEN(),
+            /* initialLongToken = */ factory.LONG_TOKEN(),
+            /* initialShortToken = */ factory.SHORT_TOKEN(),
             /* longTokenSwapPath = */ new address[](0),
             /* shortTokenSwapPath = */ new address[](0),
             /* minGlvTokens = */ _minOutputAmount,
@@ -187,7 +188,7 @@ library GlvLibrary {
         IGlvRouter glvRouter = registry.glvRouter();
 
         address[] memory swapPath = new address[](1);
-        swapPath[0] = registry.underlyingGmMarket();
+        swapPath[0] = registry.glvTokenToGmMarket(_factory.UNDERLYING_TOKEN());
 
         // Change scope for stack too deep
         {
@@ -264,7 +265,7 @@ library GlvLibrary {
     ) public view returns (bool) {
         address glvToken = _factory.UNDERLYING_TOKEN();
         IGmxDataStore dataStore = _registry.gmxDataStore();
-        address gmMarket = _registry.underlyingGmMarket();
+        address gmMarket = _registry.glvTokenToGmMarket(glvToken);
         {
             bool isGlvMarketDisabled = dataStore.getBool(_isGlvMarketDisableKey(glvToken));
             if (isGlvMarketDisabled) {

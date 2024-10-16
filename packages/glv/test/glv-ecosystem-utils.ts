@@ -181,7 +181,6 @@ export async function createTestGlvIsolationModeVaultFactory(
 
 export async function createGlvRegistry(
   core: CoreProtocolArbitrumOne,
-  gmToken: IGmxMarketToken,
   callbackGasLimit: BigNumberish,
 ): Promise<GlvRegistry> {
   const implementation = await createContractWithAbi<GlvRegistry>(
@@ -192,7 +191,7 @@ export async function createGlvRegistry(
   const proxy = await createContractWithAbi<RegistryProxy>(
     RegistryProxy__factory.abi,
     RegistryProxy__factory.bytecode,
-    await getGlvRegistryConstructorParams(core, implementation, gmToken, callbackGasLimit),
+    await getGlvRegistryConstructorParams(core, implementation, callbackGasLimit),
   );
   return GlvRegistry__factory.connect(proxy.address, core.hhUser1);
 }

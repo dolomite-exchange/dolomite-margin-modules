@@ -145,8 +145,10 @@ describe('GlvIsolationModeUnwrapperTraderV2', () => {
     const glvLibrary = await createGlvLibrary();
     const gmxV2Library = await createGmxV2Library();
     const safeDelegateCallLibrary = await createSafeDelegateLibrary();
+
     const userVaultImplementation = await createTestGlvIsolationModeTokenVaultV1(core);
-    glvRegistry = await createGlvRegistry(core, gmMarketToken, callbackGasLimit);
+    glvRegistry = await createGlvRegistry(core, callbackGasLimit);
+    await glvRegistry.connect(core.governance).ownerSetGlvTokenToGmMarket(underlyingToken.address, gmMarketToken.address);
     const newRegistry = await createDolomiteRegistryImplementation();
     await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(newRegistry.address);
 

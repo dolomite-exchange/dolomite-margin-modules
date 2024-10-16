@@ -58,7 +58,7 @@ describe('GlvRegistry', () => {
 
     underlyingToken = core.glvEcosystem.glvTokens.wethUsdc.glvToken;
     gmToken = core.gmxV2Ecosystem.gmTokens.ethUsd.marketToken;
-    glvRegistry = await createGlvRegistry(core, gmToken, GLV_CALLBACK_GAS_LIMIT);
+    glvRegistry = await createGlvRegistry(core, GLV_CALLBACK_GAS_LIMIT);
 
     glvLibrary = await createGlvLibrary();
     gmxV2Library = await createGmxV2Library();
@@ -110,7 +110,6 @@ describe('GlvRegistry', () => {
       expect(await glvRegistry.glvReader()).to.eq(core.glvEcosystem!.glvReader.address);
       expect(await glvRegistry.glvRouter()).to.eq(core.glvEcosystem!.glvRouter.address);
       expect(await glvRegistry.glvVault()).to.eq(core.glvEcosystem!.glvVault.address);
-      expect(await glvRegistry.underlyingGmMarket()).to.eq(gmToken.address);
       expect(await glvRegistry.getUnwrapperByToken(core.tokens.weth.address)).to.eq(ZERO_ADDRESS);
       expect(await glvRegistry.getWrapperByToken(core.tokens.weth.address)).to.eq(ZERO_ADDRESS);
       expect(await glvRegistry.dolomiteRegistry()).to.eq(core.dolomiteRegistry.address);
@@ -127,7 +126,6 @@ describe('GlvRegistry', () => {
           core.glvEcosystem!.glvReader.address,
           core.glvEcosystem!.glvRouter.address,
           core.glvEcosystem!.glvVault.address,
-          gmToken.address,
           GLV_CALLBACK_GAS_LIMIT,
           core.dolomiteRegistry.address,
         ),
@@ -406,25 +404,33 @@ describe('GlvRegistry', () => {
     });
   });
 
-  describe('#ownerSetUnderlyingGmMarket', () => {
+  describe('#ownerSetGlvTokenToGmMarket', () => {
     it('should work normally', async () => {
-      const result = await glvRegistry.connect(core.governance).ownerSetUnderlyingGmMarket(OTHER_ADDRESS_1);
-      await expectEvent(glvRegistry, result, 'UnderlyingGmMarketSet', {
-        underlyingGmMarket: OTHER_ADDRESS_1,
+      const result = await glvRegistry.connect(core.governance).ownerSetGlvTokenToGmMarket(
+        underlyingToken.address,
+        gmToken.address
+      );
+      await expectEvent(glvRegistry, result, 'GlvTokenToGmMarketSet', {
+        glvToken: underlyingToken.address,
+        gmMarket: gmToken.address,
       });
-      expect(await glvRegistry.underlyingGmMarket()).to.eq(OTHER_ADDRESS_1);
+      expect(await glvRegistry.glvTokenToGmMarket(underlyingToken.address)).to.eq(gmToken.address);
     });
 
     it('should fail when not called by owner', async () => {
       await expectThrow(
-        glvRegistry.connect(core.hhUser1).ownerSetUnderlyingGmMarket(OTHER_ADDRESS_1),
+        glvRegistry.connect(core.hhUser1).ownerSetGlvTokenToGmMarket(underlyingToken.address, OTHER_ADDRESS_1),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
     it('should fail if zero address is set', async () => {
       await expectThrow(
-        glvRegistry.connect(core.governance).ownerSetUnderlyingGmMarket(ZERO_ADDRESS),
+        glvRegistry.connect(core.governance).ownerSetGlvTokenToGmMarket(underlyingToken.address, ZERO_ADDRESS),
+        'GlvRegistry: Invalid address',
+      );
+      await expectThrow(
+        glvRegistry.connect(core.governance).ownerSetGlvTokenToGmMarket(ZERO_ADDRESS, gmToken.address),
         'GlvRegistry: Invalid address',
       );
     });

@@ -66,7 +66,8 @@ describe('GlvTokenPriceOracle', () => {
 
     const glvLibrary = await createGlvLibrary();
     const gmxV2Library = await createGmxV2Library();
-    glvRegistry = await createGlvRegistry(core, gmMarketToken, callbackGasLimit);
+    glvRegistry = await createGlvRegistry(core, callbackGasLimit);
+    await glvRegistry.connect(core.governance).ownerSetGlvTokenToGmMarket(underlyingToken.address, gmMarketToken.address);
     const newRegistry = await createDolomiteRegistryImplementation();
     await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(newRegistry.address);
 
