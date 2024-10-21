@@ -123,15 +123,16 @@ async function doStuffInternal<T extends NetworkType>(executionFn: () => Promise
 
         assertHardhatInvariant(transactionIds.length > 0, 'Transaction IDs length must be greater than 0');
 
-        result.upload.transactions.push(
-          await prettyPrintEncodedDataWithTypeSafety(
-            result.core,
-            { delayedMultisig: result.core.delayedMultiSig },
-            'delayedMultisig',
-            'executeMultipleTransactions',
-            [transactionIds],
-            { skipWrappingCalldataInSubmitTransaction: true },
-          ),
+        console.log('============================================================');
+        console.log('================ Real Transaction Execution ================');
+        console.log('============================================================');
+        await prettyPrintEncodedDataWithTypeSafety(
+          result.core,
+          { delayedMultisig: result.core.delayedMultiSig },
+          'delayedMultisig',
+          'executeMultipleTransactions',
+          [transactionIds],
+          { skipWrappingCalldataInSubmitTransaction: true },
         );
       }
 

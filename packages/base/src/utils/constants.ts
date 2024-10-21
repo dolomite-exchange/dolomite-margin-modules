@@ -1459,7 +1459,7 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<Network, Record<string, Agg
       aggregatorAddress: '0x7C85dD6eBc1d318E909F22d51e756Cf066643341',
     },
     [POL_MAP[Network.PolygonZkEvm].address]: {
-      aggregatorAddress: '0x7C85dD6eBc1d318E909F22d51e756Cf066643341',
+      aggregatorAddress: '0x44285b60Cc13557935CA4945d20475BD1f1058f4',
     },
     [USDC_MAP[Network.PolygonZkEvm].address]: {
       aggregatorAddress: '0x0167D934CB7240e65c35e347F00Ca5b12567523a',
