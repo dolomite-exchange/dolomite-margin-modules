@@ -64,6 +64,21 @@ abstract contract ProxyContractHelpers {
         }
     }
 
+    function _setAddressInMap(bytes32 slot, address key, address _value) internal {
+        // solhint-disable-next-line no-inline-assembly
+        bytes32 mappingSlot = keccak256(abi.encode(key, slot));
+        assembly {
+            sstore(mappingSlot, _value)
+        }
+    }
+
+    function _setAddressInNestedMap(bytes32 _slot, address _key1, uint256 _key2, address _value) internal {
+        bytes32 mappingSlot = keccak256(abi.encode(_key2, keccak256(abi.encode(_key1, _slot))));
+        assembly {
+            sstore(mappingSlot, _value)
+        }
+    }
+
     function _setUint256(bytes32 slot, uint256 _value) internal {
         // solhint-disable-next-line no-inline-assembly
         assembly {
@@ -90,6 +105,21 @@ abstract contract ProxyContractHelpers {
         // solhint-disable-next-line no-inline-assembly
         assembly {
             value := sload(slot)
+        }
+    }
+
+    function _getAddressFromMap(bytes32 slot, address key) internal view returns (address value) {
+        // solhint-disable-next-line no-inline-assembly
+        bytes32 mappingSlot = keccak256(abi.encode(key, slot));
+        assembly {
+            value := sload(mappingSlot)
+        }
+    }
+
+    function _getAddressInNestedMap(bytes32 _slot, address _key1, uint256 _key2) internal view returns (address value) {
+        bytes32 mappingSlot = keccak256(abi.encode(_key2, keccak256(abi.encode(_key1, _slot))));
+        assembly {
+            value := sload(mappingSlot)
         }
     }
 

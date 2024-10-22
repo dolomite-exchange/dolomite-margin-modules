@@ -53,7 +53,7 @@ abstract contract IsolationModeVaultFactory is
     // ===================================================
 
     bytes32 private constant _FILE = "IsolationModeVaultFactory";
-    address private constant _DEAD_VAULT = 0x000000000000000000000000000000000000dEaD;
+    address internal constant _DEAD_VAULT = 0x000000000000000000000000000000000000dEaD;
 
     // ==================================================
     // ================ Immutable Fields ================
