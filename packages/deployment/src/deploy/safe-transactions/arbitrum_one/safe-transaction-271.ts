@@ -47,7 +47,7 @@ const handlerAddress = '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe'; // Level In
 async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
   const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
-  const dJusdcOld = core.jonesEcosystem.live.jUSDCIsolationModeFactoryOld;
+  const dJusdcOld = core.jonesEcosystem.live.jUSDCV1IsolationModeFactory;
 
   const jUsdcRegistryImplementationAddress = await deployContractAndSave(
     'JonesUSDCRegistry',
@@ -81,7 +81,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     getJonesUSDCIsolationModeVaultFactoryConstructorParams(
       core,
       jUsdcRegistryProxy,
-      core.jonesEcosystem.jUsdc,
+      core.jonesEcosystem.jUSDCV2,
       jUsdcUserVaultImplementation,
     ),
     'JonesUSDCV2IsolationModeVaultFactory',
@@ -128,16 +128,16 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const isolationModeTokenVaultMigratorV1Address = await deployContractAndSave(
     'JonesIsolationModeTokenVaultMigrator',
     [
-      core.jonesEcosystem.live.jonesUSDCRegistry.address,
+      core.jonesEcosystem.live.jonesUSDCV1Registry.address,
       core.dolomiteRegistry.address,
-      core.jonesEcosystem!.jUsdcOld.address,
+      core.jonesEcosystem!.jUSDCV1.address,
     ],
     'JonesIsolationModeTokenVaultMigratorV1',
   );
 
   const transformerAddress = await deployContractAndSave(
     'JonesUSDCTransformer',
-    [core.jonesEcosystem.jUsdcOld.address, core.jonesEcosystem.jUsdc.address, core.jonesEcosystem.router.address],
+    [core.jonesEcosystem.jUSDCV1.address, core.jonesEcosystem.jUSDCV2.address, core.jonesEcosystem.router.address],
     'JonesUSDCTransformerV1',
   );
 
@@ -156,7 +156,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       { dolomite: core.dolomiteMargin },
       'dolomite',
       'ownerSetMaxWei',
-      [core.marketIds.djUsdcOld, ONE_BI],
+      [core.marketIds.djUsdcV1, ONE_BI],
     ),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
@@ -183,7 +183,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       core.oracleAggregatorV2,
       unwrapper,
       wrapper,
-      core.marketIds.djUsdc,
+      core.marketIds.djUsdcV2,
       TargetCollateralization.Base,
       TargetLiquidationPenalty.Base,
       parseEther('250000'),
@@ -198,8 +198,8 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       'migrator',
       'ownerSetTransformer',
       [
-        core.marketIds.djUsdcOld,
-        core.marketIds.djUsdc,
+        core.marketIds.djUsdcV1,
+        core.marketIds.djUsdcV2,
         transformerAddress,
         false,
       ],
@@ -240,8 +240,8 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       );
 
       const transformerStruct = await core.dolomiteMigrator.getTransformerByMarketIds(
-        core.marketIds.djUsdcOld,
-        core.marketIds.djUsdc,
+        core.marketIds.djUsdcV1,
+        core.marketIds.djUsdcV2,
       );
       assertHardhatInvariant(
         !transformerStruct.soloAllowable,
@@ -253,7 +253,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       );
 
       assertHardhatInvariant(
-        (await core.dolomiteMargin.getMarketMaxWei(core.marketIds.djUsdcOld)).value.eq(ONE_BI),
+        (await core.dolomiteMargin.getMarketMaxWei(core.marketIds.djUsdcV1)).value.eq(ONE_BI),
         'jUSDC (MAR 2024) supply cap must equal 1 unit',
       );
 
@@ -281,33 +281,33 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
 
       const jUsdcOldAmountWeiBefore = (await core.dolomiteMargin.getAccountWei(
         integrationAccounts[0],
-        core.marketIds.djUsdcOld,
+        core.marketIds.djUsdcV1,
       )).value;
       const jUsdcNewAmountWeiBefore = (await core.dolomiteMargin.getAccountWei(
         { owner: jUsdcVaultAddress, number: integrationAccounts[0].number },
-        core.marketIds.djUsdc,
+        core.marketIds.djUsdcV2,
       )).value;
       console.log('\tjUSDC (OLD) balance before:', jUsdcOldAmountWeiBefore.toString());
       console.log('\tjUSDC (NEW) balance before:', jUsdcNewAmountWeiBefore.toString());
 
       await initializeNewJUsdc(core);
 
-      console.log('\tjUSDC (NEW) decimals:', await core.jonesEcosystem.jUsdc.decimals());
+      console.log('\tjUSDC (NEW) decimals:', await core.jonesEcosystem.jUSDCV2.decimals());
 
       await core.dolomiteMigrator.connect(handler).migrate(
         integrationAccounts,
-        core.marketIds.djUsdcOld,
-        core.marketIds.djUsdc,
+        core.marketIds.djUsdcV1,
+        core.marketIds.djUsdcV2,
         BYTES_EMPTY,
       );
 
       const jUsdcOldAmountWeiAfter = (await core.dolomiteMargin.getAccountWei(
         integrationAccounts[0],
-        core.marketIds.djUsdcOld,
+        core.marketIds.djUsdcV1,
       )).value;
       const jUsdcNewAmountWeiAfter = (await core.dolomiteMargin.getAccountWei(
         { owner: jUsdcVaultAddress, number: integrationAccounts[0].number },
-        core.marketIds.djUsdc,
+        core.marketIds.djUsdcV2,
       )).value;
       console.log('\tjUSDC (OLD) balance after:', jUsdcOldAmountWeiAfter.toString());
       console.log('\tjUSDC (NEW) balance after:', jUsdcNewAmountWeiAfter.toString());
@@ -316,14 +316,14 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
         core,
         integrationAccounts[0].owner,
         integrationAccounts[0].number,
-        core.marketIds.djUsdcOld,
+        core.marketIds.djUsdcV1,
         ZERO_BI,
       );
       await expectProtocolBalance(
         core,
         jUsdcVaultAddress,
         integrationAccounts[0].number,
-        core.marketIds.djUsdc,
+        core.marketIds.djUsdcV2,
         jUsdcOldAmountWeiBefore.add(jUsdcNewAmountWeiBefore),
       );
     },

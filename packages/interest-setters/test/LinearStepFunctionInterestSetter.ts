@@ -2,7 +2,6 @@ import { createContractWithAbi } from '@dolomite-exchange/modules-base/src/utils
 import { ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { WeiPerEther } from '@ethersproject/constants/src.ts/bignumbers';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import { BigNumber, ethers } from 'ethers';
@@ -101,7 +100,7 @@ describe('LinearStepFunctionInterestSetter', () => {
       expect(rate.value).to.eq(BigNumber.from('33333333333333333').div(secondsPerYear)); // 3.3%
     });
 
-    it('Succeeds for 0-90% (javscript)', async () => {
+    it('Succeeds for 0-90% (javascript)', async () => {
       const rate1 = await interestSetter.getInterestRate(ZERO_ADDRESS, 0, 100);
       expect(rate1.value).to.eq(zero.div(secondsPerYear)); // 0%
 
@@ -112,7 +111,7 @@ describe('LinearStepFunctionInterestSetter', () => {
       expect(rate3.value).to.eq(BigNumber.from('60000000000000000').div(secondsPerYear)); // 6%
     });
 
-    it('Succeeds for 91-100% (javscript)', async () => {
+    it('Succeeds for 91-100% (javascript)', async () => {
       const rate1 = await interestSetter.getInterestRate(ZERO_ADDRESS, 91, 100);
       expect(rate1.value).to.eq(BigNumber.from('160000000000000000').div(secondsPerYear)); // 16%
 

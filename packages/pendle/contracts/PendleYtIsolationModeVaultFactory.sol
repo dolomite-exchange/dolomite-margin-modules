@@ -64,6 +64,7 @@ contract PendleYtIsolationModeVaultFactory is
         _ytToken,
         _borrowPositionProxyV2,
         _userVaultImplementation,
+        address(IPendleRegistry(_pendleRegistry).dolomiteRegistry()),
         _dolomiteMargin
     ) {
         pendleRegistry = IPendleRegistry(_pendleRegistry);

@@ -27,7 +27,6 @@ import {
   expectThrow,
   expectWalletBalance,
 } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import {
   disableInterestAccrual,
   enableInterestAccrual,
@@ -41,6 +40,7 @@ import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
+import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import {
   IERC20,
   OARB,
@@ -92,7 +92,7 @@ describe('VesterV2', () => {
     vester = await createTestVesterV2Proxy(core, handler);
     nextNftId = (await vester.nextNftId()).add(1);
 
-    oARB = await OARB__factory.connect(await vester.oToken(), core.hhUser1);
+    oARB = OARB__factory.connect(await vester.oToken(), core.hhUser1);
 
     await setupUSDCBalance(core, core.hhUser1, usdcAmount.mul(2), core.dolomiteMargin);
     await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.usdc, usdcAmount);

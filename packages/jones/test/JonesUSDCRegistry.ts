@@ -1,7 +1,6 @@
 import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectEvent, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
@@ -36,7 +35,7 @@ describe('JonesUSDCRegistry', () => {
     const factory = await createJonesUSDCIsolationModeVaultFactory(
       core,
       registry,
-      core.jonesEcosystem!.jUsdcOld,
+      core.jonesEcosystem.jUSDCV1,
       userVaultImplementation,
     );
     unwrapperForZap = await createJonesUSDCIsolationModeUnwrapperTraderV2ForZap(core, registry, factory);
@@ -59,11 +58,9 @@ describe('JonesUSDCRegistry', () => {
         unwrapperForLiquidation.address,
         unwrapperForZap.address,
       );
-      expect(await registry.glpAdapter()).to.equal(core.jonesEcosystem!.glpAdapter.address);
-      expect(await registry.glpVaultRouter()).to.equal(core.jonesEcosystem!.glpVaultRouter.address);
-      expect(await registry.whitelistController()).to.equal(core.jonesEcosystem!.whitelistControllerV1.address);
-      expect(await registry.usdcReceiptToken()).to.equal(core.jonesEcosystem!.usdcReceiptToken.address);
-      expect(await registry.jUSDC()).to.equal(core.jonesEcosystem!.jUsdcOld.address);
+      expect(await registry.jUSDCRouter()).to.equal(core.jonesEcosystem.jUSDCRouter.address);
+      expect(await registry.whitelistController()).to.equal(core.jonesEcosystem.whitelistControllerV2.address);
+      expect(await registry.jUSDC()).to.equal(core.jonesEcosystem.jUSDCV1.address);
       expect(await registry.dolomiteRegistry()).to.equal(core.dolomiteRegistry.address);
       expect(await registry.unwrapperTraderForLiquidation()).to.equal(unwrapperForLiquidation.address);
       expect(await registry.unwrapperTraderForZap()).to.equal(unwrapperForZap.address);
@@ -72,12 +69,10 @@ describe('JonesUSDCRegistry', () => {
     it('should fail if already initialized', async () => {
       await expectThrow(
         registry.initialize(
-          core.jonesEcosystem!.glpAdapter.address,
-          core.jonesEcosystem!.glpVaultRouter.address,
-          core.jonesEcosystem!.whitelistControllerV1.address,
-          core.jonesEcosystem!.usdcReceiptToken.address,
-          core.jonesEcosystem!.jUsdcOld.address,
-          core.jonesEcosystem!.jUSDCFarm.address,
+          core.jonesEcosystem.jUSDCRouter.address,
+          core.jonesEcosystem.whitelistControllerV2.address,
+          core.jonesEcosystem.jUSDCV2.address,
+          core.jonesEcosystem.jUSDCFarm.address,
           core.dolomiteRegistry.address,
         ),
         'Initializable: contract is already initialized',
@@ -117,50 +112,26 @@ describe('JonesUSDCRegistry', () => {
     });
   });
 
-  describe('#ownerSetGlpAdapter', () => {
+  describe('#ownerSetJUsdcRouter', () => {
     it('should work normally', async () => {
-      const result = await registry.connect(core.governance).ownerSetGlpAdapter(OTHER_ADDRESS_1);
-      await expectEvent(registry, result, 'GlpAdapterSet', {
-        glpAdapter: OTHER_ADDRESS_1,
-      });
-      expect(await registry.glpAdapter()).to.equal(OTHER_ADDRESS_1);
-    });
-
-    it('should fail when not called by owner', async () => {
-      await expectThrow(
-        registry.connect(core.hhUser1).ownerSetGlpAdapter(OTHER_ADDRESS_1),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
-      );
-    });
-
-    it('should fail if zero address is set', async () => {
-      await expectThrow(
-        registry.connect(core.governance).ownerSetGlpAdapter(ZERO_ADDRESS),
-        'JonesUSDCRegistry: Invalid glpAdapter address',
-      );
-    });
-  });
-
-  describe('#ownerSetGlpVaultRouter', () => {
-    it('should work normally', async () => {
-      const result = await registry.connect(core.governance).ownerSetGlpVaultRouter(OTHER_ADDRESS_1);
-      await expectEvent(registry, result, 'GlpVaultRouterSet', {
+      const result = await registry.connect(core.governance).ownerSetJUsdcRouter(OTHER_ADDRESS_1);
+      await expectEvent(registry, result, 'JUSDCRouterSet', {
         glpVaultRouter: OTHER_ADDRESS_1,
       });
-      expect(await registry.glpVaultRouter()).to.equal(OTHER_ADDRESS_1);
+      expect(await registry.jUSDCRouter()).to.equal(OTHER_ADDRESS_1);
     });
 
     it('should fail when not called by owner', async () => {
       await expectThrow(
-        registry.connect(core.hhUser1).ownerSetGlpVaultRouter(OTHER_ADDRESS_1),
+        registry.connect(core.hhUser1).ownerSetJUsdcRouter(OTHER_ADDRESS_1),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
     it('should fail if zero address is set', async () => {
       await expectThrow(
-        registry.connect(core.governance).ownerSetGlpVaultRouter(ZERO_ADDRESS),
-        'JonesUSDCRegistry: Invalid glpVaultRouter address',
+        registry.connect(core.governance).ownerSetJUsdcRouter(ZERO_ADDRESS),
+        'JonesUSDCRegistry: Invalid jUsdcRouter address',
       );
     });
   });
@@ -185,30 +156,6 @@ describe('JonesUSDCRegistry', () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetWhitelistController(ZERO_ADDRESS),
         'JonesUSDCRegistry: Invalid whitelist address',
-      );
-    });
-  });
-
-  describe('#ownerSetUsdcReceiptToken', () => {
-    it('should work normally', async () => {
-      const result = await registry.connect(core.governance).ownerSetUsdcReceiptToken(OTHER_ADDRESS_1);
-      await expectEvent(registry, result, 'UsdcReceiptTokenSet', {
-        usdcReceiptToken: OTHER_ADDRESS_1,
-      });
-      expect(await registry.usdcReceiptToken()).to.equal(OTHER_ADDRESS_1);
-    });
-
-    it('should fail when not called by owner', async () => {
-      await expectThrow(
-        registry.connect(core.hhUser1).ownerSetUsdcReceiptToken(OTHER_ADDRESS_1),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
-      );
-    });
-
-    it('should fail if zero address is set', async () => {
-      await expectThrow(
-        registry.connect(core.governance).ownerSetUsdcReceiptToken(ZERO_ADDRESS),
-        'JonesUSDCRegistry: Invalid usdcReceiptToken address',
       );
     });
   });

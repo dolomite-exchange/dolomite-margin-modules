@@ -38,7 +38,16 @@ export function getOdosAggregatorTraderConstructorParams<T extends Network>(
   core: CoreProtocolWithOdos<T>,
 ): any[] {
   return [
-    core.odosEcosystem!.odosRouter.address,
+    core.odosEcosystem.odosRouter.address,
+    core.dolomiteMargin.address,
+  ];
+}
+
+export function getOogaBoogaAggregatorTraderConstructorParams(
+  core: CoreProtocolType<Network.Berachain>,
+): any[] {
+  return [
+    core.oogaBoogaEcosystem.oogaBoogaRouter.address,
     core.dolomiteMargin.address,
   ];
 }

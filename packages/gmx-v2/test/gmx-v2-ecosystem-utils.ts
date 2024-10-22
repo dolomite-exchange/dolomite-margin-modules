@@ -9,7 +9,6 @@ import {
   createContractWithLibraryAndArtifact,
 } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { BYTES_EMPTY } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import {
   createAsyncIsolationModeUnwrapperTraderImpl,
   createAsyncIsolationModeWrapperTraderImpl,
@@ -25,6 +24,7 @@ import fs, { readFileSync } from 'fs';
 import { artifacts } from 'hardhat';
 import { Artifact } from 'hardhat/types';
 import path, { join } from 'path';
+import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import {
   getGmxV2IsolationModeTokenVaultConstructorParams,
   getGmxV2IsolationModeUnwrapperTraderV2ConstructorParams,
@@ -42,8 +42,6 @@ import {
   GmxV2IsolationModeWrapperTraderV2,
   GmxV2IsolationModeWrapperTraderV2__factory,
   GmxV2Library,
-  GmxV2LibrarySingleSided,
-  GmxV2LibrarySingleSided__factory,
   GmxV2Library__factory,
   GmxV2MarketTokenPriceOracle,
   GmxV2MarketTokenPriceOracle__factory,
@@ -112,14 +110,6 @@ export async function createGmxV2Library(): Promise<GmxV2Library> {
   );
 }
 
-export async function createGmxV2LibrarySingleSided(): Promise<GmxV2LibrarySingleSided> {
-  return createContractWithAbi<GmxV2LibrarySingleSided>(
-    GmxV2LibrarySingleSided__factory.abi,
-    GmxV2LibrarySingleSided__factory.bytecode,
-    [],
-  );
-}
-
 export async function createGmxV2IsolationModeTokenVaultV1(
   core: CoreProtocolArbitrumOne,
   library: GmxV2Library,
@@ -160,6 +150,7 @@ export async function createGmxV2IsolationModeVaultFactory(
   gmToken: GmToken,
   userVaultImplementation: GmxV2IsolationModeTokenVaultV1,
   executionFee: BigNumberish,
+  skipLongToken: boolean = false,
 ): Promise<GmxV2IsolationModeVaultFactory> {
   const artifact = await createArtifactFromWorkspaceIfNotExists('GmxV2IsolationModeVaultFactory');
   return createContractWithLibraryAndArtifact<GmxV2IsolationModeVaultFactory>(
@@ -173,6 +164,7 @@ export async function createGmxV2IsolationModeVaultFactory(
       gmToken,
       userVaultImplementation,
       executionFee,
+      skipLongToken
     ),
   );
 }
@@ -186,6 +178,7 @@ export async function createTestGmxV2IsolationModeVaultFactory(
   gmToken: GmToken,
   userVaultImplementation: GmxV2IsolationModeTokenVaultV1,
   executionFee: BigNumberish,
+  skipLongToken: boolean = false,
 ): Promise<TestGmxV2IsolationModeVaultFactory> {
   const artifact = await createArtifactFromWorkspaceIfNotExists('TestGmxV2IsolationModeVaultFactory');
   return createContractWithLibraryAndArtifact<TestGmxV2IsolationModeVaultFactory>(
@@ -199,6 +192,7 @@ export async function createTestGmxV2IsolationModeVaultFactory(
       gmToken,
       userVaultImplementation,
       executionFee,
+      skipLongToken
     ),
   );
 }
@@ -221,6 +215,7 @@ export async function createGmxV2IsolationModeUnwrapperTraderV2(
   dGM: IGmxV2IsolationModeVaultFactory | GmxV2IsolationModeVaultFactory,
   gmxV2Library: GmxV2Library,
   gmxV2Registry: IGmxV2Registry | GmxV2Registry,
+  skipLongToken: boolean = false,
 ): Promise<GmxV2IsolationModeUnwrapperTraderV2> {
   const implementation = await createGmxV2IsolationModeUnwrapperTraderV2Implementation(core, gmxV2Library);
   const proxy = await createContractWithAbi<IsolationModeTraderProxy>(
@@ -231,6 +226,7 @@ export async function createGmxV2IsolationModeUnwrapperTraderV2(
       implementation,
       dGM,
       gmxV2Registry,
+      skipLongToken
     ),
   );
 
@@ -243,6 +239,7 @@ export async function createTestGmxV2IsolationModeUnwrapperTraderV2(
   gmxV2Library: GmxV2Library,
   safeDelegateCallLibrary: BaseContract,
   gmxV2Registry: IGmxV2Registry | GmxV2Registry,
+  skipLongToken: boolean = false,
 ): Promise<TestGmxV2IsolationModeUnwrapperTraderV2> {
   const artifact = await createArtifactFromWorkspaceIfNotExists('TestGmxV2IsolationModeUnwrapperTraderV2');
   const libraries = await createAsyncIsolationModeUnwrapperTraderImpl();
@@ -260,6 +257,7 @@ export async function createTestGmxV2IsolationModeUnwrapperTraderV2(
       implementation,
       dGM,
       gmxV2Registry,
+      skipLongToken
     ),
   );
 
@@ -284,6 +282,7 @@ export async function createGmxV2IsolationModeWrapperTraderV2(
   dGM: IGmxV2IsolationModeVaultFactory | GmxV2IsolationModeVaultFactory,
   library: GmxV2Library,
   gmxV2Registry: IGmxV2Registry | GmxV2Registry,
+  skipLongToken: boolean = false,
 ): Promise<GmxV2IsolationModeWrapperTraderV2> {
   const implementation = await createGmxV2IsolationModeWrapperTraderV2Implementation(core, library);
   const proxy = await createContractWithAbi<IsolationModeTraderProxy>(
@@ -294,6 +293,7 @@ export async function createGmxV2IsolationModeWrapperTraderV2(
       implementation,
       dGM,
       gmxV2Registry,
+      skipLongToken,
     ),
   );
   return GmxV2IsolationModeWrapperTraderV2__factory.connect(proxy.address, core.hhUser1);
@@ -317,7 +317,6 @@ export function getInitiateWrappingParams(
   marketId2: BigNumberish,
   minAmountOut: BigNumberish,
   wrapper: GmxV2IsolationModeWrapperTraderV2,
-  executionFee: BigNumberish,
 ): any {
   return {
     accountNumber,
@@ -371,46 +370,11 @@ export function getInitiateUnwrappingParams(
   };
 }
 
-export function getSingleSidedOracleParams(token1: string) {
+export function getOracleParams(tokens: string[], providers: string[]) {
   return {
-    signerInfo: '1',
-    tokens: [],
-    compactedMinOracleBlockNumbers: [],
-    compactedMaxOracleBlockNumbers: [],
-    compactedOracleTimestamps: [],
-    compactedDecimals: [],
-    compactedMinPrices: [],
-    compactedMinPricesIndexes: [],
-    compactedMaxPrices: [],
-    compactedMaxPricesIndexes: [],
-    signatures: [],
-    priceFeedTokens: [
-      token1,
-    ],
-    realtimeFeedTokens: [],
-    realtimeFeedData: [],
-  };
-}
-
-export function getOracleParams(token1: string, token2: string) {
-  return {
-    signerInfo: '1',
-    tokens: [],
-    compactedMinOracleBlockNumbers: [],
-    compactedMaxOracleBlockNumbers: [],
-    compactedOracleTimestamps: [],
-    compactedDecimals: [],
-    compactedMinPrices: [],
-    compactedMinPricesIndexes: [],
-    compactedMaxPrices: [],
-    compactedMaxPricesIndexes: [],
-    signatures: [],
-    priceFeedTokens: [
-      token1,
-      token2,
-    ],
-    realtimeFeedTokens: [],
-    realtimeFeedData: [],
+    tokens: tokens,
+    providers: providers,
+    data: tokens.map(() => BYTES_EMPTY),
   };
 }
 
@@ -444,6 +408,7 @@ export function getWithdrawalObject(
       executionFee,
       callbackGasLimit,
       updatedAtBlock: 123123123,
+      updatedAtTime: 321321321,
     },
     flags: {
       shouldUnwrapNativeToken: false,
@@ -566,6 +531,7 @@ export function getDepositObject(
       initialLongTokenAmount: longAmount,
       initialShortTokenAmount: shortAmount,
       updatedAtBlock: 123123123,
+      updatedAtTime: 321321321,
     },
     flags: {
       shouldUnwrapNativeToken: false,
@@ -642,4 +608,26 @@ export function getDepositObject(
     };
   }
   return { deposit, eventData };
+}
+
+export function getOracleProviderForTokenKey(token: { address: string}) {
+  const oracleProviderString = ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['string'], ['ORACLE_PROVIDER_FOR_TOKEN']));
+  const key = ethers.utils.keccak256(
+    ethers.utils.defaultAbiCoder.encode(
+      ['bytes32', 'address'],
+      [oracleProviderString, token.address]
+    )
+  );
+  return key;
+}
+
+export function getOracleProviderEnabledKey(provider: { address: string}) {
+  const providerEnabled = ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['string'], ['IS_ORACLE_PROVIDER_ENABLED']));
+  const key = ethers.utils.keccak256(
+    ethers.utils.defaultAbiCoder.encode(
+      ['bytes32', 'address'],
+      [providerEnabled, provider.address]
+    )
+  );
+  return key;
 }

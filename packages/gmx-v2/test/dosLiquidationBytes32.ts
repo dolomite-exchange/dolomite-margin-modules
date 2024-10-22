@@ -5,7 +5,6 @@ import {
   IsolationModeFreezableLiquidatorProxy,
   IsolationModeFreezableLiquidatorProxy__factory,
 } from '@dolomite-exchange/modules-base/src/types';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 import { takeSnapshot } from '@nomicfoundation/hardhat-network-helpers';
 import { expect } from 'chai';
@@ -16,9 +15,10 @@ import {
 } from 'packages/base/src/utils/constructors/dolomite';
 import { AccountStruct } from '../../base/src/utils/constants';
 import { createContractWithAbi } from '../../base/src/utils/dolomite-utils';
-import { NO_EXPIRY, ONE_BI, ONE_ETH_BI, ZERO_BI } from '../../base/src/utils/no-deps-constants';
-import { revertToSnapshotAndCapture, snapshot } from '../../base/test/utils';
+import { NO_EXPIRY, ONE_BI, ONE_ETH_BI, TWO_BI, ZERO_BI } from '../../base/src/utils/no-deps-constants';
+import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../base/test/utils';
 import { expectEvent, expectProtocolBalance, expectWalletBalance } from '../../base/test/utils/assertions';
+import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { createDolomiteRegistryImplementation, createEventEmitter } from '../../base/test/utils/dolomite';
 import {
   disableInterestAccrual,
@@ -40,6 +40,9 @@ import {
   IGenericTraderProxyV1__factory,
   IGmxMarketToken,
   IGmxMarketToken__factory,
+  IGmxRoleStore__factory,
+  TestOracleProvider,
+  TestOracleProvider__factory,
 } from '../src/types';
 import {
   createGmxV2IsolationModeTokenVaultV1,
@@ -51,6 +54,8 @@ import {
   createGmxV2Registry,
   getInitiateWrappingParams,
   getOracleParams,
+  getOracleProviderEnabledKey,
+  getOracleProviderForTokenKey,
 } from './gmx-v2-ecosystem-utils';
 
 const defaultAccountNumber = ZERO_BI;
@@ -79,6 +84,7 @@ describe('POC: dosLiquidationBytes32', () => {
   let marketId: BigNumber;
   let liquidatorProxy: IsolationModeFreezableLiquidatorProxy;
   let eventEmitter: EventEmitterRegistry;
+  let testOracleProvider: TestOracleProvider;
 
   let liquidAccount: AccountStruct;
   let depositAmountIn: BigNumber;
@@ -98,7 +104,7 @@ describe('POC: dosLiquidationBytes32', () => {
     liquidatorProxy = await createContractWithAbi<IsolationModeFreezableLiquidatorProxy>(
       IsolationModeFreezableLiquidatorProxy__factory.abi,
       IsolationModeFreezableLiquidatorProxy__factory.bytecode,
-      await getIsolationModeFreezableLiquidatorProxyConstructorParams(core),
+      getIsolationModeFreezableLiquidatorProxyConstructorParams(core),
     );
 
     const gmxV2Library = await createGmxV2Library();
@@ -112,7 +118,7 @@ describe('POC: dosLiquidationBytes32', () => {
       gmxV2Registry,
       allowableMarketIds,
       allowableMarketIds,
-      core.gmxEcosystemV2!.gmTokens.ethUsd,
+      core.gmxV2Ecosystem!.gmTokens.ethUsd,
       userVaultImplementation,
       executionFee,
     );
@@ -122,6 +128,28 @@ describe('POC: dosLiquidationBytes32', () => {
     const priceOracle = await createGmxV2MarketTokenPriceOracle(core, gmxV2Registry);
     await priceOracle.connect(core.governance).ownerSetMarketToken(factory.address, true);
 
+    await gmxV2Registry
+      .connect(core.governance)
+      .ownerSetGmxMarketToIndexToken(underlyingToken.address, core.gmxV2Ecosystem.gmTokens.ethUsd.indexToken.address);
+
+    const dataStore = core.gmxV2Ecosystem.gmxDataStore;
+    const controllerKey = ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['string'], ['CONTROLLER']));
+    const roleStore = IGmxRoleStore__factory.connect(await dataStore.roleStore(), core.hhUser1);
+    const controllers = await roleStore.getRoleMembers(controllerKey, 0, 1);
+    const controller = await impersonate(controllers[0], true);
+
+    testOracleProvider = await createContractWithAbi<TestOracleProvider>(
+      TestOracleProvider__factory.abi,
+      TestOracleProvider__factory.bytecode,
+      [core.oracleAggregatorV2.address]
+    );
+    const oracleProviderEnabledKey = getOracleProviderEnabledKey(testOracleProvider);
+    const usdcProviderKey = getOracleProviderForTokenKey(core.tokens.nativeUsdc);
+    const wethProviderKey = getOracleProviderForTokenKey(core.tokens.weth);
+    await dataStore.connect(controller).setBool(oracleProviderEnabledKey, true);
+    await dataStore.connect(controller).setAddress(usdcProviderKey, testOracleProvider.address);
+    await dataStore.connect(controller).setAddress(wethProviderKey, testOracleProvider.address);
+
     // Use actual price oracle later
     marketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, factory, true, priceOracle);
@@ -130,9 +158,8 @@ describe('POC: dosLiquidationBytes32', () => {
 
     await factory.connect(core.governance).ownerSetAllowableCollateralMarketIds([...allowableMarketIds, marketId]);
 
-    await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
-    // await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
+    await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
 
     await gmxV2Registry.connect(core.governance).ownerSetUnwrapperByToken(factory.address, unwrapper.address);
     await gmxV2Registry.connect(core.governance).ownerSetWrapperByToken(factory.address, wrapper.address);
@@ -160,12 +187,12 @@ describe('POC: dosLiquidationBytes32', () => {
     await core.dolomiteMargin.ownerSetGlobalOperator(NEW_GENERIC_TRADER_PROXY, true);
     await core.dolomiteMargin.ownerSetGlobalOperator(core.liquidatorProxyV4.address, true);
     await core.dolomiteRegistry.ownerSetGenericTraderProxy(NEW_GENERIC_TRADER_PROXY);
-    const trader = await IGenericTraderProxyV1__factory.connect(NEW_GENERIC_TRADER_PROXY, core.governance);
+    const trader = IGenericTraderProxyV1__factory.connect(NEW_GENERIC_TRADER_PROXY, core.governance);
     await trader.ownerSetEventEmitterRegistry(eventEmitter.address);
 
     liquidAccount = { owner: vault.address, number: borrowAccountNumber };
 
-    await setupGMBalance(core, core.hhUser1, amountWei.mul(2), vault);
+    await setupGMBalance(core, core.gmxV2Ecosystem.gmxEthUsdMarketToken, core.hhUser1, amountWei.mul(2), vault);
     await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei.mul(2));
     await vault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei, { value: executionFee });
     await vault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber2, amountWei, { value: executionFee });
@@ -228,7 +255,6 @@ describe('POC: dosLiquidationBytes32', () => {
           marketId,
           depositMinAmountOut,
           wrapper,
-          executionFee,
         );
         await vault.swapExactInputForOutput(
           initiateWrappingParams.accountNumber,
@@ -269,13 +295,13 @@ describe('POC: dosLiquidationBytes32', () => {
       // take a snapshot of the current state of the blockchain
       const beforePrepareForLiquidationSnapshot = await takeSnapshot();
 
-      // do a normal liquidation with extraData as ONE_BI_ENCODED (1) to show that it works
+      // do a normal liquidation with extraData as TWO_BI (2) to show that it works
       const prepareForLiquidationResult = await liquidatorProxy.prepareForLiquidation({
         liquidAccount,
         freezableMarketId: marketId,
         inputTokenAmount: amountWei,
         outputMarketId: core.marketIds.nativeUsdc!,
-        minOutputAmount: ONE_BI,
+        minOutputAmount: TWO_BI,
         expirationTimestamp: NO_EXPIRY,
         extraData: DEFAULT_EXTRA_DATA,
       });
@@ -285,10 +311,15 @@ describe('POC: dosLiquidationBytes32', () => {
         .key;
 
       const result = await core
-        .gmxEcosystemV2!.gmxWithdrawalHandler.connect(core.gmxEcosystemV2!.gmxExecutor)
-        .executeWithdrawal(withdrawalKey, getOracleParams(core.tokens.weth.address, core.tokens.nativeUsdc!.address), {
-          gasLimit: 20_500_000,
-        });
+        .gmxV2Ecosystem!.gmxWithdrawalHandler.connect(core.gmxV2Ecosystem!.gmxExecutor)
+        .executeWithdrawal(
+          withdrawalKey,
+          getOracleParams(
+            [core.tokens.weth.address, core.tokens.nativeUsdc.address],
+            [testOracleProvider.address, testOracleProvider.address]
+          ),
+          { gasLimit: 20_500_000 }
+        );
 
       await expectEvent(eventEmitter, result, 'AsyncWithdrawalFailed', {
         key: withdrawalKey,
@@ -316,7 +347,7 @@ describe('POC: dosLiquidationBytes32', () => {
           freezableMarketId: marketId,
           inputTokenAmount: amountWei,
           outputMarketId: core.marketIds.nativeUsdc!,
-          minOutputAmount: ONE_BI,
+          minOutputAmount: TWO_BI,
           expirationTimestamp: NO_EXPIRY,
           extraData: _extraData,
         },
@@ -378,6 +409,7 @@ describe('POC: dosLiquidationBytes32', () => {
             ) external returns (bytes32);
 
             function cancelWithdrawal(bytes32 _key) external;
+        }
       */
     });
   });

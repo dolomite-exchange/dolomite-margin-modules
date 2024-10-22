@@ -1,7 +1,8 @@
 import { ApproxParamsStruct, BaseRouter, TokenInput, TokenOutput } from '@pendle/sdk-v2';
 import axios from 'axios';
-import { BigNumberish, ethers } from 'ethers';
-import { ADDRESS_ZERO, BYTES_EMPTY, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
+import axios from 'axios';
+import { BigNumber, BigNumberish, ethers } from 'ethers';
+import { ADDRESS_ZERO, BYTES_EMPTY, ZERO_BI, Network } from 'packages/base/src/utils/no-deps-constants';
 
 export const ONE_TENTH_OF_ONE_BIPS_NUMBER = 0.00001; // 0.001%
 export const PENDLE_SDK_BASE_URL = 'https://api-v2.pendle.finance/sdk/api/v1';
@@ -94,22 +95,35 @@ export async function encodeRedeemPyToToken(
 }
 
 export async function encodeSwapExactPtForTokensV3(
-  router: BaseRouter,
+  network: Network,
+  receiver: string,
   ptAmountIn: BigNumberish,
-  slippageTolerance: number,
   market: string,
   tokenOut: string,
+  slippageTolerance: string,
 ): Promise<{
   extraOrderData: string;
-  tokenOutput: TokenOutput
+  minOutputAmount: BigNumber;
+  tokenOutput: TokenOutput;
+  limitOrderData: any;
 }> {
-  const [, , , tokenOutput] = await router.swapExactPtForToken(
-    market as any,
-    ptAmountIn,
-    tokenOut as any,
-    slippageTolerance,
-    { method: 'extractParams' },
-  );
+  const data = await axios.get(`${PENDLE_SDK_BASE_URL}/swapExactPtForToken`, {
+    params: {
+      chainId: network,
+      receiverAddr: receiver,
+      marketAddr: market,
+      amountPtIn: ptAmountIn.toString(),
+      tokenOutAddr: tokenOut,
+      slippage: slippageTolerance,
+    },
+  })
+  .then(result => result.data)
+  .catch(e => {
+    console.log(e);
+    return Promise.reject(e);
+  });
+  const tokenOutput = data.contractCallParams['3'];
+  const limitOrderData = data.contractCallParams['4'];
 
   // Extra Order Data which is IPendleRouterV3.TokenOutput and IPendleRouterV3.LimitOrderData
   const EXTRA_ORDER_DATA_TYPE = [
@@ -161,32 +175,20 @@ export async function encodeSwapExactPtForTokensV3(
       ]
     }
   ];
-  const data = ethers.utils.defaultAbiCoder.encode(
+  const encodedData = ethers.utils.defaultAbiCoder.encode(
     EXTRA_ORDER_DATA_TYPE as any,
     [
-      [
-        tokenOutput.tokenOut,
-        tokenOutput.minTokenOut,
-        tokenOutput.tokenRedeemSy,
-        tokenOutput.pendleSwap,
-        [
-          tokenOutput.swapData.swapType,
-          tokenOutput.swapData.extRouter,
-          tokenOutput.swapData.extCalldata,
-          tokenOutput.swapData.needScale,
-        ],
-      ],
-      [
-        ADDRESS_ZERO,
-        ZERO_BI,
-        [],
-        [],
-        BYTES_EMPTY
-      ]
+      tokenOutput,
+      limitOrderData
     ],
   );
 
-  return { extraOrderData: data, tokenOutput: tokenOutput as any };
+  return {
+    tokenOutput,
+    limitOrderData,
+    extraOrderData: encodedData,
+    minOutputAmount: BigNumber.from(tokenOutput.minTokenOut)
+  };
 }
 
 export async function encodeSwapExactTokensForPt(
@@ -240,23 +242,36 @@ export async function encodeSwapExactTokensForPt(
 }
 
 export async function encodeSwapExactTokensForPtV3(
-  router: BaseRouter,
-  tokenAmountIn: BigNumberish,
-  slippageTolerance: number,
+  network: Network,
+  receiver: string,
   marketIn: string,
   tokenIn: string,
+  tokenAmountIn: BigNumberish,
+  slippageTolerance: string,
 ): Promise<{
   extraOrderData: string;
   tokenInput: TokenInput,
   approxParams: ApproxParamsStruct
+  limitOrderData: any
 }> {
-  const [, , , approxParams, tokenInput] = await router.swapExactTokenForPt(
-    marketIn as any,
-    tokenIn as any,
-    tokenAmountIn,
-    slippageTolerance,
-    { method: 'extractParams' },
-  );
+  const data = await axios.get(`${PENDLE_SDK_BASE_URL}/swapExactTokenForPt`, {
+    params: {
+      chainId: network,
+      receiverAddr: receiver,
+      marketAddr: marketIn,
+      tokenInAddr: tokenIn,
+      amountTokenIn: tokenAmountIn.toString(),
+      slippage: slippageTolerance,
+    },
+  })
+  .then(result => result.data)
+  .catch(e => {
+    console.log(e);
+    return Promise.reject(e);
+  });
+  const approxParams = data.contractCallParams['3'];
+  const tokenInput = data.contractCallParams['4'];
+  const limitOrderData = data.contractCallParams['5'];
 
   const approxParamsType = 'tuple(uint256,uint256,uint256,uint256,uint256)';
   const tokenInputType = 'tuple(address,uint256,address,address,tuple(uint8,address,bytes,bool))';
@@ -319,7 +334,7 @@ export async function encodeSwapExactTokensForPtV3(
     ],
   );
 
-  return { extraOrderData, tokenInput: tokenInput as any, approxParams: approxParams as any };
+  return { extraOrderData, approxParams, tokenInput, limitOrderData };
 }
 
 export async function encodeSwapExactYtForTokensV3(

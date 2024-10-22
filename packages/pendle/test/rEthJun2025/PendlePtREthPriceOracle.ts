@@ -7,7 +7,6 @@ import { createContractWithAbi } from '@dolomite-exchange/modules-base/src/utils
 import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { advanceToTimestamp, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import {
   getDefaultCoreProtocolConfig,
   setupCoreProtocol,
@@ -15,6 +14,7 @@ import {
 } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
+import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import {
   IERC20,
   PendlePtIsolationModeVaultFactory,
@@ -43,7 +43,7 @@ describe('PendlePtREthJun2025PriceOracle', () => {
   let underlyingToken: IERC20;
 
   before(async () => {
-    core = await setupCoreProtocol(await getDefaultCoreProtocolConfig(Network.ArbitrumOne));
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     await freezeAndGetOraclePrice(core.tokens.weth);
 
     const dolomiteRegistryImplementation = await createContractWithAbi<DolomiteRegistryImplementation>(
@@ -53,7 +53,7 @@ describe('PendlePtREthJun2025PriceOracle', () => {
     );
     await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(dolomiteRegistryImplementation.address);
     await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkPriceOracle(
-      core.chainlinkPriceOracleOld!.address,
+      core.chainlinkPriceOracleV1!.address,
     );
 
     underlyingToken = core.tokens.weth;

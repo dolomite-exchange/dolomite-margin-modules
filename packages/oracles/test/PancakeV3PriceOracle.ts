@@ -1,23 +1,26 @@
-import { CoreProtocolPolygonZkEvm } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import {
+  DolomiteRegistryImplementation,
+  DolomiteRegistryImplementation__factory,
+} from '@dolomite-exchange/modules-base/src/types';
+import { createContractWithAbi } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import { ADDRESS_ZERO, Network, ONE_DAY_SECONDS } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
+import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
+import { CoreProtocolPolygonZkEvm } from 'packages/base/test/utils/core-protocols/core-protocol-polygon-zkevm';
+import { TokenInfo } from '../src';
+import { getChainlinkPriceOracleV3ConstructorParamsFromChainlinkOracleV1ZkEvm } from '../src/oracles-constructors';
 import {
   ChainlinkPriceOracleV3,
   ChainlinkPriceOracleV3__factory,
   OracleAggregatorV2,
   OracleAggregatorV2__factory,
   PancakeV3PriceOracle,
-  PancakeV3PriceOracle__factory
+  PancakeV3PriceOracle__factory,
 } from '../src/types';
-import { DolomiteRegistryImplementation, DolomiteRegistryImplementation__factory } from '@dolomite-exchange/modules-base/src/types';
-import { getChainlinkPriceOracleV3ConstructorParamsFromChainlinkOracleV1ZkEvm } from '../src/oracles-constructors';
-import { createContractWithAbi } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { ADDRESS_ZERO, Network, ONE_DAY_SECONDS } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
-import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { TokenInfo } from '../src';
 
 const CAKE_PRICE_USDC_POOL = BigNumber.from('4051451897684840000');
 const MATIC_WETH_PRICE = BigNumber.from('293570325619366');
@@ -61,7 +64,7 @@ describe('PancakeV3PriceOracle', () => {
         CAKE_USDC_PAIR,
         core.dolomiteRegistry.address,
         core.dolomiteMargin.address,
-      ]
+      ],
     );
     maticOracle = await createContractWithAbi<PancakeV3PriceOracle>(
       PancakeV3PriceOracle__factory.abi,
@@ -70,7 +73,7 @@ describe('PancakeV3PriceOracle', () => {
         core.tokens.matic.address,
         WETH_MATIC_PAIR,
         core.dolomiteRegistry.address,
-        core.dolomiteMargin.address
+        core.dolomiteMargin.address,
       ],
     );
 
@@ -86,37 +89,37 @@ describe('PancakeV3PriceOracle', () => {
           { oracle: chainlinkOracle.address, tokenPair: ADDRESS_ZERO, weight: 100 },
         ],
         decimals: 6,
-        token: LEGACY_USDC
+        token: LEGACY_USDC,
       },
       {
         oracleInfos: [
           { oracle: chainlinkOracle.address, tokenPair: ADDRESS_ZERO, weight: 100 },
         ],
         decimals: 18,
-        token: core.tokens.weth.address
+        token: core.tokens.weth.address,
       },
       {
         oracleInfos: [
           { oracle: oracle.address, tokenPair: LEGACY_USDC, weight: 100 },
         ],
         decimals: 18,
-        token: CAKE_TOKEN
+        token: CAKE_TOKEN,
       },
       {
         oracleInfos: [
           { oracle: maticOracle.address, tokenPair: core.tokens.matic.address, weight: 100 },
         ],
         decimals: 18,
-        token: core.tokens.matic.address
-      }
+        token: core.tokens.matic.address,
+      },
     ];
     oracleAggregator = (await createContractWithAbi<OracleAggregatorV2>(
       OracleAggregatorV2__factory.abi,
       OracleAggregatorV2__factory.bytecode,
       [
         tokenInfos,
-        core.dolomiteMargin.address
-      ]
+        core.dolomiteMargin.address,
+      ],
     )).connect(core.governance);
     await core.dolomiteRegistry.connect(core.governance).ownerSetOracleAggregator(oracleAggregator.address);
 

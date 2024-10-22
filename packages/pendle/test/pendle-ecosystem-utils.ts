@@ -3,14 +3,13 @@ import {
   createContractWithAbi,
   createContractWithLibrary,
 } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { createIsolationModeTokenVaultV1ActionsImpl } from '@dolomite-exchange/modules-base/test/utils/dolomite';
 import { BigNumberish } from 'ethers';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
+import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import {
   CoreProtocolWithPendle,
   getPendleGLPRegistryConstructorParams,
-  getPendlePtEEthPriceOracleConstructorParams,
   getPendlePtGLPMar2024IsolationModeUnwrapperTraderV2ConstructorParams,
   getPendlePtGLPMar2024IsolationModeVaultFactoryConstructorParams,
   getPendlePtGLPMar2024IsolationModeWrapperTraderV2ConstructorParams,
@@ -22,7 +21,6 @@ import {
   getPendlePtIsolationModeWrapperTraderV3ConstructorParams,
   getPendlePtPriceOracleConstructorParams,
   getPendlePtPriceOracleV2ConstructorParams,
-  getPendlePtRsEthPriceOracleConstructorParams,
   getPendleRegistryConstructorParams,
   getPendleYtGLPMar2024IsolationModeUnwrapperTraderV2ConstructorParams,
   getPendleYtGLPMar2024IsolationModeVaultFactoryConstructorParams,
@@ -52,8 +50,6 @@ import {
   IPendleYtToken,
   PendleGLPRegistry,
   PendleGLPRegistry__factory,
-  PendlePtEEthPriceOracle,
-  PendlePtEEthPriceOracle__factory,
   PendlePtGLPMar2024IsolationModeTokenVaultV1,
   PendlePtGLPMar2024IsolationModeUnwrapperTraderV2,
   PendlePtGLPMar2024IsolationModeUnwrapperTraderV2__factory,
@@ -78,8 +74,6 @@ import {
   PendlePtPriceOracle__factory,
   PendlePtPriceOracleV2,
   PendlePtPriceOracleV2__factory,
-  PendlePtRsEthPriceOracle,
-  PendlePtRsEthPriceOracle__factory,
   PendleRegistry,
   PendleRegistry__factory,
   PendleYtGLPMar2024IsolationModeTokenVaultV1,
@@ -175,12 +169,7 @@ export function createPendlePtIsolationModeVaultFactory<T extends Network>(
   return createContractWithAbi(
     PendlePtIsolationModeVaultFactory__factory.abi,
     PendlePtIsolationModeVaultFactory__factory.bytecode,
-    getPendlePtIsolationModeVaultFactoryConstructorParams(
-      core,
-      registry,
-      ptToken,
-      userVaultImplementation,
-    ),
+    getPendlePtIsolationModeVaultFactoryConstructorParams(core, registry, ptToken, userVaultImplementation),
   );
 }
 
@@ -322,8 +311,8 @@ export function createPendlePtPriceOracleV2<T extends Network>(
   );
 }
 
-export async function createPendlePtGLPMar2024IsolationModeTokenVaultV1(
-): Promise<PendlePtGLPMar2024IsolationModeTokenVaultV1> {
+// tslint:disable-next-line:max-line-length
+export async function createPendlePtGLPMar2024IsolationModeTokenVaultV1(): Promise<PendlePtGLPMar2024IsolationModeTokenVaultV1> {
   const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
   return createContractWithLibrary<PendlePtGLPMar2024IsolationModeTokenVaultV1>(
     'PendlePtGLPMar2024IsolationModeTokenVaultV1',
@@ -386,24 +375,16 @@ export function createPendlePtGLPMar2024IsolationModeVaultFactory(
   );
 }
 
-export async function createPendleYtGLPMar2024IsolationModeTokenVaultV1(
-): Promise<PendleYtGLPMar2024IsolationModeTokenVaultV1> {
+// tslint:disable-next-line:max-line-length
+export async function createPendleYtGLPMar2024IsolationModeTokenVaultV1(): Promise<PendleYtGLPMar2024IsolationModeTokenVaultV1> {
   const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
-  return createContractWithLibrary(
-    'PendleYtGLPMar2024IsolationModeTokenVaultV1',
-    libraries,
-    [],
-  );
+  return createContractWithLibrary('PendleYtGLPMar2024IsolationModeTokenVaultV1', libraries, []);
 }
 
-export async function createTestPendleYtGLPMar2024IsolationModeTokenVaultV1(
-): Promise<TestPendleYtGLPMar2024IsolationModeTokenVaultV1> {
+// tslint:disable-next-line:max-line-length
+export async function createTestPendleYtGLPMar2024IsolationModeTokenVaultV1(): Promise<TestPendleYtGLPMar2024IsolationModeTokenVaultV1> {
   const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
-  return createContractWithLibrary(
-    'TestPendleYtGLPMar2024IsolationModeTokenVaultV1',
-    libraries,
-    [],
-  );
+  return createContractWithLibrary('TestPendleYtGLPMar2024IsolationModeTokenVaultV1', libraries, []);
 }
 
 export function createPendleYtGLPMar2024IsolationModeVaultFactory(
@@ -461,29 +442,5 @@ export function createPendleYtGLPPriceOracle(
     PendleYtGLPPriceOracle__factory.abi,
     PendleYtGLPPriceOracle__factory.bytecode,
     getPendleYtGLPPriceOracleConstructorParams(core, dytGlp, pendleRegistry),
-  );
-}
-
-export function createPendlePtRsEthPriceOracle(
-  core: CoreProtocolArbitrumOne,
-  dptToken: IPendlePtIsolationModeVaultFactory | PendlePtIsolationModeVaultFactory,
-  pendleRegistry: IPendleRegistry | PendleRegistry,
-): Promise<PendlePtRsEthPriceOracle> {
-  return createContractWithAbi(
-    PendlePtRsEthPriceOracle__factory.abi,
-    PendlePtRsEthPriceOracle__factory.bytecode,
-    getPendlePtRsEthPriceOracleConstructorParams(core, dptToken, pendleRegistry),
-  );
-}
-
-export function createPendlePtEEthPriceOracle(
-  core: CoreProtocolArbitrumOne,
-  dptToken: IPendlePtIsolationModeVaultFactory | PendlePtIsolationModeVaultFactory,
-  pendleRegistry: IPendleRegistry | PendleRegistry,
-): Promise<PendlePtEEthPriceOracle> {
-  return createContractWithAbi(
-    PendlePtEEthPriceOracle__factory.abi,
-    PendlePtEEthPriceOracle__factory.bytecode,
-    getPendlePtEEthPriceOracleConstructorParams(core, dptToken, pendleRegistry),
   );
 }

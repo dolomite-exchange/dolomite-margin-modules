@@ -56,7 +56,7 @@ async function main(): Promise<DenJsonUpload> {
       core,
       core.tokens.jones!,
       jonesTwap,
-      core.interestSetters.linearStepFunction14L86UInterestSetter,
+      core.interestSetters.linearStepFunction14L86U90OInterestSetter,
       TargetCollateralization._166,
       TargetLiquidationPenalty._15,
       parseEther('100000'), // 100k units
@@ -69,7 +69,7 @@ async function main(): Promise<DenJsonUpload> {
       core,
       core.tokens.premia!,
       premiaTwap,
-      core.interestSetters.linearStepFunction14L86UInterestSetter,
+      core.interestSetters.linearStepFunction14L86U90OInterestSetter,
       TargetCollateralization._166,
       TargetLiquidationPenalty._15,
       parseEther('500000'), // 500k units
@@ -81,8 +81,8 @@ async function main(): Promise<DenJsonUpload> {
     ...await prettyPrintEncodeAddMarket(
       core,
       core.tokens.radiant!,
-      core.chainlinkPriceOracleOld!,
-      core.interestSetters.linearStepFunction14L86UInterestSetter,
+      core.chainlinkPriceOracleV1!,
+      core.interestSetters.linearStepFunction14L86U90OInterestSetter,
       TargetCollateralization._125,
       TargetLiquidationPenalty._7,
       parseEther('5000000'), // 5M units

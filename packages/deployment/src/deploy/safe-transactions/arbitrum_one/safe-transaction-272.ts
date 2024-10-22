@@ -34,14 +34,14 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     'GmxV2IsolationModeTokenVaultV1',
     getGmxV2IsolationModeTokenVaultConstructorParams(core),
     'GmxV2IsolationModeTokenVaultV13',
-    { ...core.libraries.tokenVaultActionsImpl, ...core.gmxEcosystemV2.live.gmxV2LibraryMap },
+    { ...core.libraries.tokenVaultActionsImpl, ...core.gmxV2Ecosystem.live.gmxV2LibraryMap },
   );
 
   const factories = [
-    core.gmxEcosystemV2.live.gmArb.factory,
-    core.gmxEcosystemV2.live.gmBtc.factory,
-    core.gmxEcosystemV2.live.gmEth.factory,
-    core.gmxEcosystemV2.live.gmLink.factory,
+    core.gmxV2Ecosystem.live.gmArbUsd.factory,
+    core.gmxV2Ecosystem.live.gmBtcUsd.factory,
+    core.gmxV2Ecosystem.live.gmEthUsd.factory,
+    core.gmxV2Ecosystem.live.gmLinkUsd.factory,
   ];
 
   const transactions: EncodedTransaction[] = [];
@@ -75,7 +75,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
 
       const account = '0x52256ef863a713Ef349ae6E97A7E8f35785145dE';
       const vault = GmxV2IsolationModeTokenVaultV1__factory.connect(
-        await core.gmxEcosystemV2.live.gmBtc.factory.getVaultByAccount(account),
+        await core.gmxV2Ecosystem.live.gmBtcUsd.factory.getVaultByAccount(account),
         await impersonate(account),
       );
 

@@ -10,7 +10,6 @@ import {
   expectThrow,
   expectWalletBalance,
 } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import {
   disableInterestAccrual,
   getDefaultCoreProtocolConfig,
@@ -23,12 +22,13 @@ import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
+import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import {
   EmitterMultipleRewardTokens,
   EmitterMultipleRewardTokens__factory,
   OARB,
-  OARBStorageVault,
-  OARBStorageVault__factory,
+  MintableStorageVault,
+  MintableStorageVault__factory,
 } from '../src/types';
 import { createOARB } from './liquidity-mining-ecosystem-utils';
 
@@ -46,8 +46,8 @@ xdescribe('EmitterMultipleRewardTokens', () => {
   let emitter: EmitterMultipleRewardTokens;
   let oARB: OARB;
   let oARB2: OARB;
-  let oARBStorageVault: OARBStorageVault;
-  let oARBStorageVault2: OARBStorageVault;
+  let oARBStorageVault: MintableStorageVault;
+  let oARBStorageVault2: MintableStorageVault;
   let startTime: number;
 
   before(async () => {
@@ -57,14 +57,14 @@ xdescribe('EmitterMultipleRewardTokens', () => {
 
     oARB = await createOARB(core);
     oARB2 = await createOARB(core);
-    oARBStorageVault = await createContractWithAbi<OARBStorageVault>(
-      OARBStorageVault__factory.abi,
-      OARBStorageVault__factory.bytecode,
+    oARBStorageVault = await createContractWithAbi<MintableStorageVault>(
+      MintableStorageVault__factory.abi,
+      MintableStorageVault__factory.bytecode,
       [core.dolomiteMargin.address, oARB.address],
     );
-    oARBStorageVault2 = await createContractWithAbi<OARBStorageVault>(
-      OARBStorageVault__factory.abi,
-      OARBStorageVault__factory.bytecode,
+    oARBStorageVault2 = await createContractWithAbi<MintableStorageVault>(
+      MintableStorageVault__factory.abi,
+      MintableStorageVault__factory.bytecode,
       [core.dolomiteMargin.address, oARB2.address],
     );
     startTime = (await getBlockTimestamp(await ethers.provider.getBlockNumber())) + 200;

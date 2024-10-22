@@ -48,22 +48,22 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const gmxV2TokenVault = GmxV2IsolationModeTokenVaultV1__factory.connect(gmxV2TokenVaultAddress, core.hhUser1);
 
   const factories = [
-    core.gmxEcosystemV2.live.gmArb.factory,
-    core.gmxEcosystemV2.live.gmBtc.factory,
-    core.gmxEcosystemV2.live.gmEth.factory,
-    core.gmxEcosystemV2.live.gmLink.factory,
+    core.gmxV2Ecosystem.live.gmArbUsd.factory,
+    core.gmxV2Ecosystem.live.gmBtcUsd.factory,
+    core.gmxV2Ecosystem.live.gmEthUsd.factory,
+    core.gmxV2Ecosystem.live.gmLinkUsd.factory,
   ];
   const unwrappers = [
-    core.gmxEcosystemV2.live.gmArb.unwrapperProxy,
-    core.gmxEcosystemV2.live.gmBtc.unwrapperProxy,
-    core.gmxEcosystemV2.live.gmEth.unwrapperProxy,
-    core.gmxEcosystemV2.live.gmLink.unwrapperProxy,
+    core.gmxV2Ecosystem.live.gmArbUsd.unwrapperProxy,
+    core.gmxV2Ecosystem.live.gmBtcUsd.unwrapperProxy,
+    core.gmxV2Ecosystem.live.gmEthUsd.unwrapperProxy,
+    core.gmxV2Ecosystem.live.gmLinkUsd.unwrapperProxy,
   ];
   const wrappers = [
-    core.gmxEcosystemV2.live.gmArb.wrapperProxy,
-    core.gmxEcosystemV2.live.gmBtc.wrapperProxy,
-    core.gmxEcosystemV2.live.gmEth.wrapperProxy,
-    core.gmxEcosystemV2.live.gmLink.wrapperProxy,
+    core.gmxV2Ecosystem.live.gmArbUsd.wrapperProxy,
+    core.gmxV2Ecosystem.live.gmBtcUsd.wrapperProxy,
+    core.gmxV2Ecosystem.live.gmEthUsd.wrapperProxy,
+    core.gmxV2Ecosystem.live.gmLinkUsd.wrapperProxy,
   ];
 
   const transactions: EncodedTransaction[] = [];

@@ -1,17 +1,14 @@
 import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import {
   getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupTestMarket,
   setupUserVaultProxy,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { IPlutusVaultGLPFarm } from '@dolomite-exchange/modules-plutus/src/types';
 import { expect } from 'chai';
-import { BigNumber } from 'ethers';
+import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import {
-  IERC20,
   IPendlePtToken,
   IPendleSyToken__factory,
   PendleGLPRegistry,
@@ -42,15 +39,10 @@ describe('PendlePtGLPMar2024IsolationModeTokenVaultV1', () => {
   let priceOracle: PendlePtGLPPriceOracle;
   let factory: PendlePtGLPMar2024IsolationModeVaultFactory;
   let vault: PendlePtGLPMar2024IsolationModeTokenVaultV1;
-  let underlyingMarketId: BigNumber;
-  let rewardToken: IERC20;
-  let farm: IPlutusVaultGLPFarm;
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     underlyingToken = core.pendleEcosystem!.glpMar2024.ptGlpToken.connect(core.hhUser1);
-    rewardToken = core.plutusEcosystem!.plsToken.connect(core.hhUser1);
-    farm = core.plutusEcosystem!.plvGlpFarm.connect(core.hhUser1);
     const userVaultImplementation = await createPendlePtGLPMar2024IsolationModeTokenVaultV1();
     pendleRegistry = await createPendleGLPRegistry(core);
     factory = await createPendlePtGLPMar2024IsolationModeVaultFactory(
@@ -63,7 +55,6 @@ describe('PendlePtGLPMar2024IsolationModeTokenVaultV1', () => {
     wrapper = await createPendlePtGLPMar2024IsolationModeWrapperTraderV2(core, factory, pendleRegistry);
     priceOracle = await createPendlePtGLPPriceOracle(core, factory, pendleRegistry);
 
-    underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, factory, true, priceOracle);
 
     await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);

@@ -66,7 +66,8 @@ import {
   expectWalletAllowance,
   expectWalletBalance,
 } from '../utils/assertions';
-import { CoreProtocolArbitrumOne } from '../utils/core-protocol';
+
+import { CoreProtocolArbitrumOne } from '../utils/core-protocols/core-protocol-arbitrum-one';
 import { setExpiry } from '../utils/expiry-utils';
 import { toZapBigNumber } from '../utils/liquidation-utils';
 import {
@@ -131,15 +132,15 @@ if (process.env.COVERAGE !== 'true') {
         getIsolationModeFreezableLiquidatorProxyConstructorParams(core),
       );
 
-      gmxV2Registry = core.gmxEcosystemV2.live.registry;
+      gmxV2Registry = core.gmxV2Ecosystem.live.registry;
 
-      factory = core.gmxEcosystemV2.live.gmEth.factory;
+      factory = core.gmxV2Ecosystem.live.gmEthUsd.factory;
       underlyingToken = IGmxMarketToken__factory.connect(await factory.UNDERLYING_TOKEN(), core.hhUser1);
-      unwrapper = core.gmxEcosystemV2.live.gmEth.unwrapper;
-      wrapper = core.gmxEcosystemV2.live.gmEth.wrapper;
+      unwrapper = core.gmxV2Ecosystem.live.gmEthUsd.unwrapper;
+      wrapper = core.gmxV2Ecosystem.live.gmEthUsd.wrapper;
 
       // Use actual price oracle later
-      marketId = BigNumber.from(core.marketIds.dGmEth);
+      marketId = BigNumber.from(core.marketIds.dGmEthUsd);
       await disableInterestAccrual(core, core.marketIds.weth);
       await disableInterestAccrual(core, core.marketIds.nativeUsdc!);
 
@@ -147,17 +148,17 @@ if (process.env.COVERAGE !== 'true') {
 
       await gmxV2Registry.connect(core.governance).ownerSetUnwrapperByToken(factory.address, unwrapper.address);
       await gmxV2Registry.connect(core.governance).ownerSetWrapperByToken(factory.address, wrapper.address);
-      await gmxV2Registry.connect(core.governance).ownerSetGmxDepositVault(core.gmxEcosystemV2.gmxDepositVault.address);
+      await gmxV2Registry.connect(core.governance).ownerSetGmxDepositVault(core.gmxV2Ecosystem.gmxDepositVault.address);
       await gmxV2Registry.connect(core.governance).ownerSetGmxWithdrawalVault(
-        core.gmxEcosystemV2.gmxWithdrawalVault.address,
+        core.gmxV2Ecosystem.gmxWithdrawalVault.address,
       );
       const gmxV2Library = await createGmxV2Library();
 
       const unwrapperImplementation = await createGmxV2IsolationModeUnwrapperTraderV2Implementation(core, gmxV2Library);
       const wrapperImplementation = await createGmxV2IsolationModeWrapperTraderV2Implementation(core, gmxV2Library);
-      await core.gmxEcosystemV2.live.gmEth.unwrapperProxy.connect(core.governance)
+      await core.gmxV2Ecosystem.live.gmEthUsd.unwrapperProxy.connect(core.governance)
         .upgradeTo(unwrapperImplementation.address);
-      await core.gmxEcosystemV2.live.gmEth.wrapperProxy.connect(core.governance)
+      await core.gmxV2Ecosystem.live.gmEthUsd.wrapperProxy.connect(core.governance)
         .upgradeTo(wrapperImplementation.address);
 
       const userImplementation = await createGmxV2IsolationModeTokenVaultV1(core, gmxV2Library);
@@ -180,7 +181,7 @@ if (process.env.COVERAGE !== 'true') {
       liquidAccount = { owner: vault.address, number: borrowAccountNumber };
       liquidAccount2 = { owner: vault.address, number: borrowAccountNumber2 };
 
-      await setupGMBalance(core, core.hhUser1, amountWei.mul(2), vault);
+      await setupGMBalance(core, core.gmxV2Ecosystem.gmxEthUsdMarketToken, core.hhUser1, amountWei.mul(2), vault);
       await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei.mul(2));
       await vault.openBorrowPosition(
         defaultAccountNumber,
@@ -267,7 +268,6 @@ if (process.env.COVERAGE !== 'true') {
             marketId,
             depositMinAmountOut,
             wrapper,
-            executionFee,
           );
           await vault.swapExactInputForOutput(
             initiateWrappingParams.accountNumber,
@@ -355,7 +355,7 @@ if (process.env.COVERAGE !== 'true') {
           const filter = eventEmitter.filters.AsyncWithdrawalCreated();
           withdrawalKeys.push((await eventEmitter.queryFilter(filter))[0].args.key);
         }
-        return await core.gmxEcosystemV2!.gmxWithdrawalHandler.connect(core.gmxEcosystemV2!.gmxExecutor)
+        return await core.gmxV2Ecosystem!.gmxWithdrawalHandler.connect(core.gmxV2Ecosystem!.gmxExecutor)
           .executeWithdrawal(
             withdrawalKeys[withdrawalKeys.length - 1],
             getOracleParams(core.tokens.weth.address, core.tokens.nativeUsdc!.address),

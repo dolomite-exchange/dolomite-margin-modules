@@ -1,5 +1,4 @@
 import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import Deployments from '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
 import {
@@ -61,7 +60,7 @@ async function main() {
     core,
     'dolomiteMargin',
     'ownerSetPriceOracle',
-    [core.marketIds.magicGlp!, Deployments.MagicGLPWithChainlinkAutomationPriceOracle[network].address],
+    [core.marketIds.magicGlp!, Deployments.MagicGLPWithChainlinkAutomationPriceOracleV1[network].address],
   );
   await prettyPrintEncodedDataWithTypeSafety(
     core,
@@ -75,22 +74,22 @@ async function main() {
     core,
     'dolomiteMargin',
     'ownerSetPriceOracle',
-    [core.marketIds.djUsdcOld!, Deployments.JonesUSDCWithChainlinkAutomationPriceOracleV1[network].address],
+    [core.marketIds.djUsdcV1!, Deployments.JonesUSDCWithChainlinkAutomationPriceOracleV1[network].address],
   );
 
   await prettyPrintEncodedDataWithTypeSafety(
     core,
     core.jonesEcosystem!.live,
-    'jUSDCIsolationModeFactoryOld',
+    'jUSDCV1IsolationModeFactory',
     'ownerSetAllowableDebtMarketIds',
-    [await appendNativeUsdcToDebtMarketIdList(core, core.jonesEcosystem!.live.jUSDCIsolationModeFactoryOld)],
+    [await appendNativeUsdcToDebtMarketIdList(core, core.jonesEcosystem!.live.jUSDCV1IsolationModeFactory)],
   );
   await prettyPrintEncodedDataWithTypeSafety(
     core,
     core.jonesEcosystem!.live,
-    'jUSDCIsolationModeFactoryOld',
+    'jUSDCV1IsolationModeFactory',
     'ownerSetAllowableCollateralMarketIds',
-    [await appendNativeUsdcToCollateralMarketIdList(core, core.jonesEcosystem!.live.jUSDCIsolationModeFactoryOld)],
+    [await appendNativeUsdcToCollateralMarketIdList(core, core.jonesEcosystem!.live.jUSDCV1IsolationModeFactory)],
   );
 
   await prettyPrintEncodedDataWithTypeSafety(

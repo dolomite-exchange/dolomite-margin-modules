@@ -26,7 +26,7 @@ import { IsolationModeTokenVaultV1WithPausableAndOnlyEoa } from "@dolomite-excha
 import { IJonesUSDCIsolationModeTokenVaultV1 } from "./interfaces/IJonesUSDCIsolationModeTokenVaultV1.sol";
 import { IJonesUSDCIsolationModeVaultFactory } from "./interfaces/IJonesUSDCIsolationModeVaultFactory.sol";
 import { IJonesUSDCRegistry } from "./interfaces/IJonesUSDCRegistry.sol";
-import { IJonesWhitelistController } from "./interfaces/IJonesWhitelistController.sol";
+import { IJonesWhitelistControllerV2 } from "./interfaces/IJonesWhitelistControllerV2.sol";
 
 
 /**
@@ -38,7 +38,6 @@ import { IJonesWhitelistController } from "./interfaces/IJonesWhitelistControlle
  *          is it cannot be borrowed by other users, may only be seized via liquidation, and cannot be held in the same
  *          position as other "isolated" tokens.
  */
-// @todo fix overrides
 contract JonesUSDCIsolationModeTokenVaultV1 is
     IJonesUSDCIsolationModeTokenVaultV1,
     IsolationModeTokenVaultV1WithPausableAndOnlyEoa
@@ -67,15 +66,15 @@ contract JonesUSDCIsolationModeTokenVaultV1 is
     }
 
     function isExternalRedemptionPaused() public override view returns (bool) {
-        IJonesWhitelistController whitelistController = registry().whitelistController();
+        IJonesWhitelistControllerV2 whitelistController = registry().whitelistController();
         address unwrapperTrader = registry().unwrapperTraderForLiquidation();
         bytes32 unwrapperRole = whitelistController.getUserRole(unwrapperTrader);
-        IJonesWhitelistController.RoleInfo memory unwrapperRoleInfo = whitelistController.getRoleInfo(unwrapperRole);
+        IJonesWhitelistControllerV2.RoleInfo memory unwrapperRoleInfo = whitelistController.getRoleInfo(unwrapperRole);
 
         // if the ecosystem is emergency paused (cannot process redemptions) or if instant redemptions are disabled or
         // if the contract is not whitelisted
-        return !unwrapperRoleInfo.jUSDC_BYPASS_TIME
-            || registry().glpVaultRouter().emergencyPaused()
+        return !unwrapperRoleInfo.BYPASS_COOLDOWN
+            || registry().jUSDCRouter().isPaused()
             || !whitelistController.isWhitelistedContract(unwrapperTrader);
     }
 }

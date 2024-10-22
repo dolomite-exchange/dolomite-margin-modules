@@ -155,4 +155,9 @@ interface IPartiallyDelayedMultiSig {
      * @return  The owners of this multi sig
      */
     function getOwners() external view returns (address[] memory);
+
+    /**
+     * @return The total number of transactions that have been submitted
+     */
+    function transactionCount() external view returns (uint256);
 }

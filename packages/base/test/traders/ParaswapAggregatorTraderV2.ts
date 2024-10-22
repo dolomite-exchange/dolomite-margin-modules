@@ -18,7 +18,8 @@ import {
   expectThrow,
   expectThrowWithMatchingReason,
 } from '../utils/assertions';
-import { CoreProtocolArbitrumOne } from '../utils/core-protocol';
+
+import { CoreProtocolArbitrumOne } from '../utils/core-protocols/core-protocol-arbitrum-one';
 import { createParaswapAggregatorTraderV2 } from '../utils/ecosystem-utils/traders';
 import { disableInterestAccrual, setupCoreProtocol, setupWETHBalance } from '../utils/setup';
 import { getCalldataForParaswap, ParaswapSwapType, swapTypeToSelector } from '../utils/trader-utils';

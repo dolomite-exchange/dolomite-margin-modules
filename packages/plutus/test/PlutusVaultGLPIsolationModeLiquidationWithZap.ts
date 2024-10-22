@@ -12,7 +12,6 @@ import {
   expectProtocolBalanceIsGreaterThan,
   expectWalletBalanceOrDustyIfZero,
 } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { setExpiry } from '@dolomite-exchange/modules-base/test/utils/expiry-utils';
 import {
   getLastZapAmountToBigNumber,
@@ -38,6 +37,7 @@ import {
   PlutusVaultGLPIsolationModeUnwrapperTraderV2,
   PlutusVaultGLPIsolationModeUnwrapperTraderV2__factory,
 } from '../src/types';
+import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 
 const defaultAccountNumber = '0';
 const otherAccountNumber = '420';
@@ -72,7 +72,7 @@ describe('PlutusVaultGLPIsolationModeLiquidationWithZap', () => {
       network,
     });
     underlyingToken = core.plutusEcosystem!.plvGlp.connect(core.hhUser1);
-    factory = core.plutusEcosystem!.live.plvGlpIsolationModeFactory.connect(core.hhUser1);
+    factory = core.plutusEcosystem!.live.dPlvGlp.connect(core.hhUser1);
     unwrapper = PlutusVaultGLPIsolationModeUnwrapperTraderV2__factory.connect(
       deployments.PlutusVaultGLPIsolationModeUnwrapperTraderV4[network].address,
       core.hhUser1,
@@ -156,7 +156,7 @@ describe('PlutusVaultGLPIsolationModeLiquidationWithZap', () => {
         .lt(newAccountValues[1].value.mul(minCollateralizationNumerator).div(minCollateralizationDenominator));
 
       const plvGlpPrice = await core.dolomiteMargin.getMarketPrice(heldMarketId);
-      const heldUpdatedWithReward = await newAccountValues[1].value.mul(liquidationSpreadNumerator)
+      const heldUpdatedWithReward = newAccountValues[1].value.mul(liquidationSpreadNumerator)
         .div(liquidationSpreadDenominator)
         .div(plvGlpPrice.value);
 
@@ -248,7 +248,7 @@ describe('PlutusVaultGLPIsolationModeLiquidationWithZap', () => {
         .lt(newAccountValues[1].value.mul(minCollateralizationNumerator).div(minCollateralizationDenominator));
 
       const glpPrice = await core.dolomiteMargin.getMarketPrice(heldMarketId);
-      const heldUpdatedWithReward = await newAccountValues[1].value.mul(liquidationSpreadNumerator)
+      const heldUpdatedWithReward = newAccountValues[1].value.mul(liquidationSpreadNumerator)
         .div(liquidationSpreadDenominator)
         .div(glpPrice.value);
       const usdcLiquidatorBalanceBefore = await core.tokens.usdc.connect(core.hhUser1)

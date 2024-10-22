@@ -17,7 +17,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
   const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
 
-  const registry = core.gmxEcosystemV2.live.registry;
+  const registry = core.gmxV2Ecosystem.live.registry;
 
   const callbackGasLimitTransaction = await registry.populateTransaction.ownerSetCallbackGasLimit(callbackGasLimit);
 

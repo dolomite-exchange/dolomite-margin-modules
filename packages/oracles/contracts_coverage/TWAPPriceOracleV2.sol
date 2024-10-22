@@ -20,31 +20,28 @@
 pragma solidity ^0.8.9;
 
 import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
+import { IDolomiteRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IDolomiteRegistry.sol";
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import { IAlgebraV3Pool } from "./interfaces/IAlgebraV3Pool.sol";
+import { IOracleAggregatorV2 } from "./interfaces/IOracleAggregatorV2.sol";
 import { ITWAPPriceOracleV1 } from "./interfaces/ITWAPPriceOracleV1.sol";
 import { OracleLibrary } from "./utils/OracleLibrary.sol";
-import { IDolomiteRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IDolomiteRegistry.sol";
-import { IOracleAggregatorV2 } from "./interfaces/IOracleAggregatorV2.sol";
 
 
 /**
- * @title   TWAPPriceOracleV2.sol
+ * @title   TWAPPriceOracleV2
  * @author  Dolomite
  *
  * An implementation of the ITWAPPriceOracleV1.sol interface that makes gets the TWAP from a number of LP pools
  */
 contract TWAPPriceOracleV2 is ITWAPPriceOracleV1, OnlyDolomiteMargin {
-    using EnumerableSet for EnumerableSet.AddressSet;
 
     // ========================= Constants =========================
 
     bytes32 private constant _FILE = "TWAPPriceOracleV2";
     uint256 private constant _ONE_DOLLAR = 10 ** 36;
-    uint8 private constant _ORACLE_VALUE_DECIMALS = 36;
 
     // ========================= Storage =========================
 

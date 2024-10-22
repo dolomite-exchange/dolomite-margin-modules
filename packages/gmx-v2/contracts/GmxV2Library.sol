@@ -20,12 +20,16 @@
 pragma solidity ^0.8.9;
 
 // solhint-disable max-line-length
+import { IGenericTraderBase } from "@dolomite-exchange/modules-base/contracts/interfaces/IGenericTraderBase.sol";
+import { IAsyncFreezableIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IAsyncFreezableIsolationModeVaultFactory.sol";
 import { IAsyncIsolationModeTraderBase } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IAsyncIsolationModeTraderBase.sol";
 import { IIsolationModeUpgradeableProxy } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeUpgradeableProxy.sol";
 import { IIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
 import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IUpgradeableAsyncIsolationModeUnwrapperTrader.sol"; // solhint-disable-line max-line-length
+import { IUpgradeableAsyncIsolationModeWrapperTrader } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IUpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable-line max-line-length
 import { DolomiteMarginVersionWrapperLib } from "@dolomite-exchange/modules-base/contracts/lib/DolomiteMarginVersionWrapperLib.sol";
 import { IDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteMargin.sol";
+import { IDolomitePriceOracle } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomitePriceOracle.sol";
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { IWETH } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IWETH.sol";
 import { DecimalLib } from "@dolomite-exchange/modules-base/contracts/protocol/lib/DecimalLib.sol";
@@ -38,6 +42,7 @@ import { IGmxExchangeRouter } from "./interfaces/IGmxExchangeRouter.sol";
 import { IGmxV2IsolationModeTokenVaultV1 } from "./interfaces/IGmxV2IsolationModeTokenVaultV1.sol";
 import { IGmxV2IsolationModeUnwrapperTraderV2 } from "./interfaces/IGmxV2IsolationModeUnwrapperTraderV2.sol";
 import { IGmxV2IsolationModeVaultFactory } from "./interfaces/IGmxV2IsolationModeVaultFactory.sol";
+import { IGmxV2IsolationModeWrapperTraderV2 } from "./interfaces/IGmxV2IsolationModeWrapperTraderV2.sol";
 import { IGmxV2Registry } from "./interfaces/IGmxV2Registry.sol";
 import { GmxEventUtils } from "./lib/GmxEventUtils.sol";
 import { GmxMarket } from "./lib/GmxMarket.sol";
@@ -90,7 +95,7 @@ library GmxV2Library {
     // ======================== Public Functions ========================
     // ==================================================================
 
-    function createDeposit(
+    function wrapperCreateDeposit(
         IGmxV2IsolationModeVaultFactory _factory,
         IGmxV2Registry _registry,
         IWETH _weth,
@@ -144,7 +149,18 @@ library GmxV2Library {
         return exchangeRouter.createDeposit(depositParams);
     }
 
-    function initiateCancelWithdrawal(IGmxV2IsolationModeUnwrapperTraderV2 _unwrapper, bytes32 _key) public {
+    function initiateCancelDeposit(IGmxV2IsolationModeWrapperTraderV2 _wrapper, bytes32 _key) public {
+        IUpgradeableAsyncIsolationModeWrapperTrader.DepositInfo memory depositInfo = _wrapper.getDepositInfo(_key);
+        Require.that(
+            msg.sender == depositInfo.vault
+                || IAsyncIsolationModeTraderBase(address(_wrapper)).isHandler(msg.sender),
+            _FILE,
+            "Only vault or handler can cancel"
+        );
+        _wrapper.GMX_REGISTRY_V2().gmxExchangeRouter().cancelDeposit(_key);
+    }
+
+    function unwrapperInitiateCancelWithdrawal(IGmxV2IsolationModeUnwrapperTraderV2 _unwrapper, bytes32 _key) public {
         IUpgradeableAsyncIsolationModeUnwrapperTrader.WithdrawalInfo memory withdrawalInfo =
                             _unwrapper.getWithdrawalInfo(_key);
         Require.that(
@@ -156,7 +172,7 @@ library GmxV2Library {
         _unwrapper.GMX_REGISTRY_V2().gmxExchangeRouter().cancelWithdrawal(_key);
     }
 
-    function executeInitiateUnwrapping(
+    function unwrapperExecuteInitiateUnwrapping(
         IGmxV2IsolationModeVaultFactory _factory,
         address _vault,
         uint256 _inputAmount,
@@ -194,6 +210,11 @@ library GmxV2Library {
 
         (, uint256 minOtherTokenAmount) = abi.decode(_extraData, (IDolomiteStructs.Decimal, uint256));
         _minOutputAmount -= minOtherTokenAmount; // subtract from the total figure to get its value from the Zap SDK
+        Require.that(
+            _minOutputAmount > 0 && minOtherTokenAmount > 0,
+            _FILE,
+            "minOutputAmount too small"
+        );
         IUpgradeableAsyncIsolationModeUnwrapperTrader unwrapper = registry.getUnwrapperByToken(factory);
         IGmxExchangeRouter.CreateWithdrawalParams memory withdrawalParams = IGmxExchangeRouter.CreateWithdrawalParams(
             /* receiver = */ address(unwrapper),
@@ -216,23 +237,61 @@ library GmxV2Library {
         return exchangeRouter.createWithdrawal(withdrawalParams);
     }
 
-    function depositAndApproveWethForWrapping(IGmxV2IsolationModeTokenVaultV1 _vault) public {
+    function vaultValidateExecutionFeeIfWrapToUnderlying(
+        IGmxV2IsolationModeTokenVaultV1 _vault,
+        uint256 _tradeAccountNumber,
+        IGenericTraderBase.TraderParam[] memory _tradersPath
+    ) public returns (IGenericTraderBase.TraderParam[] memory) {
+        uint256 len = _tradersPath.length;
+        if (_tradersPath[len - 1].traderType == IGenericTraderBase.TraderType.IsolationModeWrapper) {
+            _depositAndApproveWethForWrapping(_vault);
+            Require.that(
+                msg.value <= IAsyncFreezableIsolationModeVaultFactory(_vault.VAULT_FACTORY()).maxExecutionFee(),
+                _FILE,
+                "Invalid execution fee"
+            );
+            _tradersPath[len - 1].tradeData = abi.encode(_tradeAccountNumber, abi.encode(msg.value));
+        } else {
+            Require.that(
+                msg.value == 0,
+                _FILE,
+                "Cannot send ETH for non-wrapper"
+            );
+        }
+        return _tradersPath;
+    }
+
+    function vaultCancelDeposit(IGmxV2IsolationModeTokenVaultV1 _vault, bytes32 _key) public {
+        IUpgradeableAsyncIsolationModeWrapperTrader wrapper = _vault.registry().getWrapperByToken(
+            IGmxV2IsolationModeVaultFactory(_vault.VAULT_FACTORY())
+        );
+        _validateVaultOwnerForStruct(wrapper.getDepositInfo(_key).vault);
+        wrapper.initiateCancelDeposit(_key);
+    }
+
+    function vaultCancelWithdrawal(IGmxV2IsolationModeTokenVaultV1 _vault, bytes32 _key) public {
+        IUpgradeableAsyncIsolationModeUnwrapperTrader unwrapper = _vault.registry().getUnwrapperByToken(
+            IGmxV2IsolationModeVaultFactory(_vault.VAULT_FACTORY())
+        );
+        IUpgradeableAsyncIsolationModeUnwrapperTrader.WithdrawalInfo memory withdrawalInfo
+            = unwrapper.getWithdrawalInfo(_key);
+        _validateVaultOwnerForStruct(withdrawalInfo.vault);
         Require.that(
-            msg.value > 0,
+            !withdrawalInfo.isLiquidation,
             _FILE,
-            "Invalid execution fee"
+            "Withdrawal from liquidation"
         );
-        _vault.WETH().deposit{value: msg.value}();
-        IERC20(address(_vault.WETH())).safeApprove(
-            address(_vault.registry().getWrapperByToken(IIsolationModeVaultFactory(_vault.VAULT_FACTORY()))),
-            msg.value
-        );
+        unwrapper.initiateCancelWithdrawal(_key);
     }
 
     function isValidInputOrOutputToken(
         IGmxV2IsolationModeVaultFactory _factory,
-        address _token
+        address _token,
+        bool _skipLongToken
     ) public view returns (bool) {
+        if (_skipLongToken) {
+            return _token == _factory.SHORT_TOKEN();
+        }
         return _token == _factory.LONG_TOKEN() || _token == _factory.SHORT_TOKEN();
     }
 
@@ -255,7 +314,6 @@ library GmxV2Library {
 
     function isExternalRedemptionPaused(
         IGmxV2Registry _registry,
-        IDolomiteMargin _dolomiteMargin,
         IGmxV2IsolationModeVaultFactory _factory
     ) public view returns (bool) {
         address underlyingToken = _factory.UNDERLYING_TOKEN();
@@ -295,12 +353,13 @@ library GmxV2Library {
             _maxPnlFactorKey(_MAX_PNL_FACTOR_FOR_WITHDRAWALS_KEY, underlyingToken, /* _isLong = */ true)
         );
 
+        IDolomitePriceOracle aggregator = _registry.dolomiteRegistry().oracleAggregator();
         GmxMarket.MarketPrices memory marketPrices = _getGmxMarketPrices(
-            _registry.dolomiteRegistry().oracleAggregator().getPrice(
+            aggregator.getPrice(
                 _registry.gmxMarketToIndexToken(underlyingToken)
             ).value,
-            _dolomiteMargin.getMarketPrice(_factory.LONG_TOKEN_MARKET_ID()).value,
-            _dolomiteMargin.getMarketPrice(_factory.SHORT_TOKEN_MARKET_ID()).value
+            aggregator.getPrice(_factory.LONG_TOKEN()).value,
+            aggregator.getPrice(_factory.SHORT_TOKEN()).value
         );
 
         int256 shortPnlToPoolFactor = _registry.gmxReader().getPnlToPoolFactor(
@@ -331,21 +390,35 @@ library GmxV2Library {
         uint256 _longMarketId,
         uint256 _shortMarketId
     ) public pure {
-        Require.that(
-            _marketIds.length >= 2,
-            _FILE,
-            "Invalid market IDs length"
-        );
-        Require.that(
-            (_marketIds[0] == _longMarketId && _marketIds[1] == _shortMarketId)
-            || (_marketIds[0] == _shortMarketId && _marketIds[1] == _longMarketId),
-            _FILE,
-            "Invalid market IDs"
-        );
+        if (_longMarketId == type(uint256).max) {
+            Require.that(
+                _marketIds.length >= 1,
+                _FILE,
+                "Invalid market IDs length"
+            );
+            Require.that(
+                _marketIds[0] == _shortMarketId,
+                _FILE,
+                "Invalid market IDs"
+            );
+        } else {
+            Require.that(
+                _marketIds.length >= 2,
+                _FILE,
+                "Invalid market IDs length"
+            );
+            Require.that(
+                (_marketIds[0] == _longMarketId && _marketIds[1] == _shortMarketId)
+                || (_marketIds[0] == _shortMarketId && _marketIds[1] == _longMarketId),
+                _FILE,
+                "Invalid market IDs"
+            );
+        }
     }
 
     function validateEventDataForWithdrawal(
         IGmxV2IsolationModeVaultFactory _factory,
+        uint256 _marketTokenAmount,
         GmxEventUtils.AddressKeyValue memory _outputTokenAddress,
         GmxEventUtils.UintKeyValue memory _outputTokenAmount,
         GmxEventUtils.AddressKeyValue memory _secondaryOutputTokenAddress,
@@ -353,29 +426,15 @@ library GmxV2Library {
         IGmxV2IsolationModeUnwrapperTraderV2.WithdrawalInfo memory _withdrawalInfo
     ) public view {
         Require.that(
-            keccak256(abi.encodePacked(_outputTokenAddress.key))
-                == keccak256(abi.encodePacked("outputToken")),
+            _marketTokenAmount >= _withdrawalInfo.inputAmount,
             _FILE,
-            "Unexpected outputToken"
+            "Invalid market token amount"
         );
-        Require.that(
-            keccak256(abi.encodePacked(_outputTokenAmount.key))
-                == keccak256(abi.encodePacked("outputAmount")),
-            _FILE,
-            "Unexpected outputAmount"
-        );
-        Require.that(
-            keccak256(abi.encodePacked(_secondaryOutputTokenAddress.key))
-                == keccak256(abi.encodePacked("secondaryOutputToken")),
-            _FILE,
-            "Unexpected secondaryOutputToken"
-        );
-        Require.that(
-            keccak256(abi.encodePacked(_secondaryOutputTokenAmount.key))
-                == keccak256(abi.encodePacked("secondaryOutputAmount")),
-            _FILE,
-            "Unexpected secondaryOutputAmount"
-        );
+
+        _validateEventData(_outputTokenAddress.key, "outputToken");
+        _validateEventData(_outputTokenAmount.key, "outputAmount");
+        _validateEventData(_secondaryOutputTokenAddress.key, "secondaryOutputToken");
+        _validateEventData(_secondaryOutputTokenAmount.key, "secondaryOutputAmount");
 
         if (_withdrawalInfo.outputToken == _factory.LONG_TOKEN()) {
             Require.that(
@@ -458,6 +517,19 @@ library GmxV2Library {
     // ======================== Private Functions ======================
     // ==================================================================
 
+    function _depositAndApproveWethForWrapping(IGmxV2IsolationModeTokenVaultV1 _vault) private {
+        Require.that(
+            msg.value > 0,
+            _FILE,
+            "Invalid execution fee"
+        );
+        _vault.WETH().deposit{value: msg.value}();
+        IERC20(address(_vault.WETH())).safeApprove(
+            address(_vault.registry().getWrapperByToken(IIsolationModeVaultFactory(_vault.VAULT_FACTORY()))),
+            msg.value
+        );
+    }
+
     function _getGmxMarketPrices(
         uint256 _indexTokenPrice,
         uint256 _longTokenPrice,
@@ -512,6 +584,15 @@ library GmxV2Library {
         );
     }
 
+    function _validateVaultOwnerForStruct(address _vault) private view {
+        Require.that(
+            _vault == address(this),
+            _FILE,
+            "Invalid vault owner",
+            _vault
+        );
+    }
+
     function _maxPnlFactorKey(
         bytes32 _pnlFactorType,
         address _market,
@@ -522,5 +603,13 @@ library GmxV2Library {
 
     function _isMarketDisableKey(address _market) private pure returns (bytes32) {
         return keccak256(abi.encode(_IS_MARKET_DISABLED, _market));
+    }
+
+    function _validateEventData(string memory _foundKey, string memory _expectedKey) private pure {
+        Require.that(
+            keccak256(abi.encodePacked(_foundKey)) == keccak256(abi.encodePacked(_expectedKey)),
+            _FILE,
+            bytes32(abi.encodePacked("Unexpected ", _expectedKey))
+        );
     }
 }

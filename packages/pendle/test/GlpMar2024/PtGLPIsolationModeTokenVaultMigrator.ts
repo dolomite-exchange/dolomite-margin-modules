@@ -11,12 +11,12 @@ import { createContractWithAbi } from '@dolomite-exchange/modules-base/src/utils
 import { BYTES_EMPTY, Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectProtocolBalance } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { createDolomiteRegistryImplementation } from '@dolomite-exchange/modules-base/test/utils/dolomite';
 import { disableInterestAccrual, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { AccountInfoStruct } from 'packages/base/src/utils';
+import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { IGLPIsolationModeVaultFactoryOld } from 'packages/glp/src/types';
 import {
   PendlePtGLPMar2024IsolationModeVaultFactory,
@@ -57,7 +57,7 @@ describe('PtGLPIsolationModeTokenVaultMigrator', () => {
     await disableInterestAccrual(core, core.marketIds.weth);
     await disableInterestAccrual(core, core.marketIds.wbtc);
 
-    ptGlpFactory = core.pendleEcosystem.glpMar2024.dPtGlp2024.connect(core.hhUser1);
+    ptGlpFactory = core.pendleEcosystem.glpMar2024.dPtGlpMar2024.connect(core.hhUser1);
     glpFactory = core.gmxEcosystem!.live.dGlp.connect(core.hhUser1);
 
     migrator = await createContractWithAbi<DolomiteMigrator>(

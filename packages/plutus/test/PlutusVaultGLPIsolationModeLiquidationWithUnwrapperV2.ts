@@ -18,7 +18,6 @@ import {
   expectProtocolBalanceIsGreaterThan,
   expectWalletBalanceOrDustyIfZero,
 } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { setExpiry } from '@dolomite-exchange/modules-base/test/utils/expiry-utils';
 import { liquidateV4WithIsolationMode } from '@dolomite-exchange/modules-base/test/utils/liquidation-utils';
 import {
@@ -34,6 +33,7 @@ import {
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
+import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import {
   IERC4626,
   IPlutusVaultGLPIsolationModeVaultFactory,
@@ -82,7 +82,7 @@ describe('PlutusVaultGLPLiquidationWithUnwrapperV2', () => {
     });
     underlyingToken = core.plutusEcosystem!.plvGlp.connect(core.hhUser1);
     plutusVaultRegistry = await createPlutusVaultRegistry(core);
-    factory = core.plutusEcosystem!.live.plvGlpIsolationModeFactory.connect(core.hhUser1);
+    factory = core.plutusEcosystem!.live.dPlvGlp.connect(core.hhUser1);
     unwrapper = await createPlutusVaultGLPIsolationModeUnwrapperTraderV2(core, plutusVaultRegistry, factory);
     wrapper = await createPlutusVaultGLPIsolationModeWrapperTraderV2(core, plutusVaultRegistry, factory);
 

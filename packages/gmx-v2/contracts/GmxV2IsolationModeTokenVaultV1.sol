@@ -28,7 +28,6 @@ import { IsolationModeTokenVaultV1WithAsyncFreezableAndPausable } from "@dolomit
 import { IAsyncFreezableIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IAsyncFreezableIsolationModeVaultFactory.sol";
 import { IIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
 import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IUpgradeableAsyncIsolationModeUnwrapperTrader.sol";
-import { IUpgradeableAsyncIsolationModeWrapperTrader } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IUpgradeableAsyncIsolationModeWrapperTrader.sol";
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { IWETH } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IWETH.sol";
 import { DecimalLib } from "@dolomite-exchange/modules-base/contracts/protocol/lib/DecimalLib.sol";
@@ -78,16 +77,15 @@ contract GmxV2IsolationModeTokenVaultV1 is
     // ======================== Public Functions ========================
     // ==================================================================
 
+    receive() external payable {} // solhint-disable-line no-empty-blocks
+
     /**
      *
      * @param  _key Deposit key
      * @dev    This calls the wrapper trader which will revert if given an invalid _key
      */
     function cancelDeposit(bytes32 _key) external onlyVaultOwner(msg.sender) {
-        IUpgradeableAsyncIsolationModeWrapperTrader wrapper =
-                                registry().getWrapperByToken(IGmxV2IsolationModeVaultFactory(VAULT_FACTORY()));
-        _validateVaultOwnerForStruct(wrapper.getDepositInfo(_key).vault);
-        wrapper.initiateCancelDeposit(_key);
+        GmxV2Library.vaultCancelDeposit(/* _vault = */ this, _key);
     }
 
     /**
@@ -95,17 +93,7 @@ contract GmxV2IsolationModeTokenVaultV1 is
      * @param  _key Withdrawal key
      */
     function cancelWithdrawal(bytes32 _key) external onlyVaultOwner(msg.sender) {
-        IUpgradeableAsyncIsolationModeUnwrapperTrader unwrapper =
-                                registry().getUnwrapperByToken(IGmxV2IsolationModeVaultFactory(VAULT_FACTORY()));
-        IUpgradeableAsyncIsolationModeUnwrapperTrader.WithdrawalInfo memory withdrawalInfo
-            = unwrapper.getWithdrawalInfo(_key);
-        _validateVaultOwnerForStruct(withdrawalInfo.vault);
-        Require.that(
-            !withdrawalInfo.isLiquidation,
-            _FILE,
-            "Withdrawal from liquidation"
-        );
-        unwrapper.initiateCancelWithdrawal(_key);
+        GmxV2Library.vaultCancelWithdrawal(/* _vault = */ this, _key);
     }
 
     function isExternalRedemptionPaused()
@@ -116,7 +104,6 @@ contract GmxV2IsolationModeTokenVaultV1 is
     {
         return GmxV2Library.isExternalRedemptionPaused(
             registry(),
-            DOLOMITE_MARGIN(),
             IGmxV2IsolationModeVaultFactory(VAULT_FACTORY())
         );
     }
@@ -147,6 +134,19 @@ contract GmxV2IsolationModeTokenVaultV1 is
     override {
         GmxV2Library.validateExecutionFee(/* _vault = */ this, _toAccountNumber);
         super._openBorrowPosition(_fromAccountNumber, _toAccountNumber, _amountWei);
+        _setExecutionFeeForAccountNumber(_toAccountNumber, msg.value);
+    }
+
+    function _openMarginPosition(
+        uint256 _fromAccountNumber,
+        uint256 _toAccountNumber,
+        uint256 _borrowMarketId,
+        uint256 _amountWei
+    )
+    internal
+    override {
+        GmxV2Library.validateExecutionFee(/* _vault = */ this, _toAccountNumber);
+        super._openMarginPosition(_fromAccountNumber, _toAccountNumber, _borrowMarketId, _amountWei);
         _setExecutionFeeForAccountNumber(_toAccountNumber, msg.value);
     }
 
@@ -182,7 +182,11 @@ contract GmxV2IsolationModeTokenVaultV1 is
         internal
         override
     {
-        _validateExecutionFeeIfWrapToUnderlying(_borrowAccountNumber, _tradersPath);
+        _tradersPath = GmxV2Library.vaultValidateExecutionFeeIfWrapToUnderlying(
+            /* _vault = */ this,
+            _borrowAccountNumber,
+            _tradersPath
+        );
         super._addCollateralAndSwapExactInputForOutput(
             _fromAccountNumber,
             _borrowAccountNumber,
@@ -208,7 +212,11 @@ contract GmxV2IsolationModeTokenVaultV1 is
         internal
         override
     {
-        _validateExecutionFeeIfWrapToUnderlying(_borrowAccountNumber, _tradersPath);
+        _tradersPath = GmxV2Library.vaultValidateExecutionFeeIfWrapToUnderlying(
+            /* _vault = */ this,
+            _borrowAccountNumber,
+            _tradersPath
+        );
         super._swapExactInputForOutputAndRemoveCollateral(
             _toAccountNumber,
             _borrowAccountNumber,
@@ -228,7 +236,11 @@ contract GmxV2IsolationModeTokenVaultV1 is
         virtual
         override
     {
-        _validateExecutionFeeIfWrapToUnderlying(_params.tradeAccountNumber, _params.tradersPath);
+        _params.tradersPath = GmxV2Library.vaultValidateExecutionFeeIfWrapToUnderlying(
+            /* _vault = */ this,
+            _params.tradeAccountNumber,
+            _params.tradersPath
+        );
         super._swapExactInputForOutput(_params);
     }
 
@@ -271,15 +283,6 @@ contract GmxV2IsolationModeTokenVaultV1 is
         );
     }
 
-    function _validateVaultOwnerForStruct(address _vault) internal view {
-        Require.that(
-            _vault == address(this),
-            _FILE,
-            "Invalid vault owner",
-            _vault
-        );
-    }
-
     function _checkMsgValue() internal override view {
         // solhint-disable-previous-line no-empty-blocks
         // Don't do any validation here. We check the msg.value conditionally in the `swapExactInputForOutput`
@@ -313,27 +316,5 @@ contract GmxV2IsolationModeTokenVaultV1 is
             _extraData,
             CHAIN_ID
         );
-    }
-
-    function _validateExecutionFeeIfWrapToUnderlying(
-        uint256 _tradeAccountNumber,
-        IGenericTraderBase.TraderParam[] memory _tradersPath
-    ) private {
-        uint256 len = _tradersPath.length;
-        if (_tradersPath[len - 1].traderType == IGenericTraderBase.TraderType.IsolationModeWrapper) {
-            GmxV2Library.depositAndApproveWethForWrapping(this);
-            Require.that(
-                msg.value <= IAsyncFreezableIsolationModeVaultFactory(VAULT_FACTORY()).maxExecutionFee(),
-                _FILE,
-                "Invalid execution fee"
-            );
-            _tradersPath[len - 1].tradeData = abi.encode(_tradeAccountNumber, abi.encode(msg.value));
-        } else {
-            Require.that(
-                msg.value == 0,
-                _FILE,
-                "Cannot send ETH for non-wrapper"
-            );
-        }
     }
 }

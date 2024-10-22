@@ -39,17 +39,17 @@ contract TestAsyncFreezableIsolationModeVaultFactory is
     constructor(
         uint256 _executionFee,
         address _handlerRegistry,
-        address _dolomiteRegistry,
         address _underlyingToken,
+        address _dolomiteRegistry,
         address _borrowPositionProxy,
         address _userVaultImplementation,
         address _dolomiteMargin
     )
     TestIsolationModeVaultFactory(
-        _dolomiteRegistry,
         _underlyingToken,
         _borrowPositionProxy,
         _userVaultImplementation,
+        _dolomiteRegistry,
         _dolomiteMargin
     )
     AsyncFreezableIsolationModeVaultFactory(

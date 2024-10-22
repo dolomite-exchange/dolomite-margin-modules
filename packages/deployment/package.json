@@ -1,6 +1,6 @@
 {
   "name": "@dolomite-exchange/modules-deployments",
-  "version": "0.0.12",
+  "version": "0.0.28",
   "scripts": {
     "build": "hardhat compile",
     "clean": "hardhat clean",
@@ -10,18 +10,26 @@
     "lint:ts": "tslint --project ../../ -t verbose 'src/**/*.ts'",
     "test": "hardhat --network hardhat test",
     "deploy:chainlink-price-oracle-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts chainlink-price-oracle",
+    "deploy:chronicle-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts chronicle",
     "deploy:dolomite-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts dolomite",
     "deploy:gravita-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts gravita",
+    "deploy:mineral-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts mineral",
     "deploy:odos-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts odos",
     "deploy:paraswap-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts paraswap",
+    "deploy:redstone-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts redstone",
+    "deploy:zap-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts zap",
     "execute:arbitrum": "NETWORK=arbitrum_one ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
     "execute:base": "NETWORK=base ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
+    "execute:berachain": "NETWORK=berachain ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
+    "execute:golem-analyzer": "NETWORK=mainnet hardhat run src/deploy/other/golem-multisig-analyzer.ts",
+    "execute:mantle": "NETWORK=mantle ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
     "execute:polygon_zkevm": "NETWORK=polygon_zkevm ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
+    "execute:x_layer": "NETWORK=x_layer ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
     "verify:arbitrum": "hardhat --network arbitrum_one run src/utils/verify-contract.ts",
     "verify:base": "hardhat --network base run src/utils/verify-contract.ts",
-    "verify:polygon_zkevm": "hardhat --network polygon_zkevm run src/utils/verify-contract.ts"
+    "verify:polygon_zkevm": "hardhat --network polygon_zkevm run src/utils/verify-contract.ts",
+    "verify:contract": "hardhat --network $NETWORK run src/utils/verify-contract.ts"
   },
-  "private": false,
   "files": [
     "src/deploy/deployments.json"
   ],

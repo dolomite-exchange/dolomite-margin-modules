@@ -3,7 +3,8 @@ import { DolomiteRegistryImplementation, RegistryProxy } from '../../src/types';
 import { Network } from '../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
 import { expectEvent, expectThrow } from '../utils/assertions';
-import { CoreProtocolArbitrumOne } from '../utils/core-protocol';
+
+import { CoreProtocolArbitrumOne } from '../utils/core-protocols/core-protocol-arbitrum-one';
 import { createDolomiteRegistryImplementation, createRegistryProxy } from '../utils/dolomite';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '../utils/setup';
 
@@ -23,7 +24,6 @@ describe('RegistryProxy', () => {
       core.constants.slippageToleranceForPauseSentinel,
       core.liquidatorAssetRegistry.address,
       core.eventEmitterRegistryProxy.address,
-      core.chainlinkPriceOracleOld.address,
     );
     registry = await createRegistryProxy(implementation.address, calldata.data!, core);
 

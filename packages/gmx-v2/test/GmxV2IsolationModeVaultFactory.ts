@@ -1,4 +1,3 @@
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish, Signer } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
@@ -10,6 +9,7 @@ import {
   setupTestMarket,
   setupUserVaultProxy,
 } from 'packages/base/test/utils/setup';
+import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE_FOR_TESTS } from '../src/gmx-v2-constructors';
 import {
   GmxV2IsolationModeTokenVaultV1,
@@ -61,7 +61,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
       gmxV2Registry,
       allowableMarketIds,
       allowableMarketIds,
-      core.gmxEcosystemV2!.gmTokens.ethUsd,
+      core.gmxV2Ecosystem!.gmTokens.ethUsd,
       vaultImplementation,
       GMX_V2_EXECUTION_FEE_FOR_TESTS,
     );
@@ -83,8 +83,8 @@ describe('GmxV2IsolationModeVaultFactory', () => {
     marketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, factory, true);
 
-    await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
+    await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
 
     await gmxV2Registry.connect(core.governance).ownerSetUnwrapperByToken(factory.address, unwrapper.address);
     await gmxV2Registry.connect(core.governance).ownerSetWrapperByToken(factory.address, wrapper.address);
@@ -117,7 +117,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
         await factory.allowableCollateralMarketIds(),
         [core.marketIds.nativeUsdc!, core.marketIds.weth, marketId],
       );
-      expect(await factory.UNDERLYING_TOKEN()).to.equal(core.gmxEcosystemV2!.gmTokens.ethUsd.marketToken.address);
+      expect(await factory.UNDERLYING_TOKEN()).to.equal(core.gmxV2Ecosystem!.gmTokens.ethUsd.marketToken.address);
       expect(await factory.BORROW_POSITION_PROXY()).to.equal(core.borrowPositionProxyV2.address);
       expect(await factory.userVaultImplementation()).to.equal(vaultImplementation.address);
       expect(await factory.DOLOMITE_MARGIN()).to.equal(core.dolomiteMargin.address);
@@ -130,7 +130,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
         gmxV2Registry,
         allowableMarketIds,
         allowableMarketIds,
-        core.gmxEcosystemV2!.gmTokens.ethUsd,
+        core.gmxV2Ecosystem!.gmTokens.ethUsd,
         vaultImplementation,
         GMX_V2_EXECUTION_FEE_FOR_TESTS,
       );
@@ -140,7 +140,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
         gmxV2Registry,
         [allowableMarketIds[1], allowableMarketIds[0]],
         [allowableMarketIds[1], allowableMarketIds[0]],
-        core.gmxEcosystemV2!.gmTokens.ethUsd,
+        core.gmxV2Ecosystem!.gmTokens.ethUsd,
         vaultImplementation,
         GMX_V2_EXECUTION_FEE_FOR_TESTS,
       );
@@ -155,7 +155,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
           gmxV2Registry,
           badAllowableDebtMarketIds,
           allowableMarketIds,
-          core.gmxEcosystemV2!.gmTokens.ethUsd,
+          core.gmxV2Ecosystem!.gmTokens.ethUsd,
           vaultImplementation,
           GMX_V2_EXECUTION_FEE_FOR_TESTS,
         ),
@@ -171,7 +171,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
           gmxV2Registry,
           [core.marketIds.nativeUsdc!, core.marketIds.dai!],
           allowableMarketIds,
-          core.gmxEcosystemV2!.gmTokens.ethUsd,
+          core.gmxV2Ecosystem!.gmTokens.ethUsd,
           vaultImplementation,
           GMX_V2_EXECUTION_FEE_FOR_TESTS,
         ),
@@ -184,7 +184,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
           gmxV2Registry,
           [core.marketIds.dai!, core.marketIds.nativeUsdc!],
           allowableMarketIds,
-          core.gmxEcosystemV2!.gmTokens.ethUsd,
+          core.gmxV2Ecosystem!.gmTokens.ethUsd,
           vaultImplementation,
           GMX_V2_EXECUTION_FEE_FOR_TESTS,
         ),
@@ -201,7 +201,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
           gmxV2Registry,
           allowableMarketIds,
           badAllowableCollateralMarketIds,
-          core.gmxEcosystemV2!.gmTokens.ethUsd,
+          core.gmxV2Ecosystem!.gmTokens.ethUsd,
           vaultImplementation,
           GMX_V2_EXECUTION_FEE_FOR_TESTS,
         ),
@@ -217,7 +217,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
           gmxV2Registry,
           allowableMarketIds,
           [core.marketIds.nativeUsdc!, core.marketIds.dai!],
-          core.gmxEcosystemV2!.gmTokens.ethUsd,
+          core.gmxV2Ecosystem!.gmTokens.ethUsd,
           vaultImplementation,
           GMX_V2_EXECUTION_FEE_FOR_TESTS,
         ),
@@ -230,7 +230,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
           gmxV2Registry,
           allowableMarketIds,
           [core.marketIds.dai!, core.marketIds.nativeUsdc!],
-          core.gmxEcosystemV2!.gmTokens.ethUsd,
+          core.gmxV2Ecosystem!.gmTokens.ethUsd,
           vaultImplementation,
           GMX_V2_EXECUTION_FEE_FOR_TESTS,
         ),

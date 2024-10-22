@@ -30,16 +30,16 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     [core.tokens.weth.address],
     'GmxV2IsolationModeWrapperTraderImplementationV5',
     {
-      ...core.gmxEcosystemV2.live.gmxV2LibraryMap,
+      ...core.gmxV2Ecosystem.live.gmxV2LibraryMap,
       AsyncIsolationModeWrapperTraderImpl: wrapperTraderLibAddress,
     },
   );
 
   const wrappers = [
-    core.gmxEcosystemV2.live.gmArb.wrapperProxy,
-    core.gmxEcosystemV2.live.gmBtc.wrapperProxy,
-    core.gmxEcosystemV2.live.gmEth.wrapperProxy,
-    core.gmxEcosystemV2.live.gmLink.wrapperProxy,
+    core.gmxV2Ecosystem.live.gmArbUsd.wrapperProxy,
+    core.gmxV2Ecosystem.live.gmBtcUsd.wrapperProxy,
+    core.gmxV2Ecosystem.live.gmEthUsd.wrapperProxy,
+    core.gmxV2Ecosystem.live.gmLinkUsd.wrapperProxy,
   ];
 
   const transactions: EncodedTransaction[] = [];

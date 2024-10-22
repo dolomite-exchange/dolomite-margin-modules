@@ -20,7 +20,6 @@ import {
   expectWalletBalance,
   expectWalletBalanceIsGreaterThan,
 } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { createDolomiteRegistryImplementation } from '@dolomite-exchange/modules-base/test/utils/dolomite';
 import {
   getDefaultCoreProtocolConfig,
@@ -36,26 +35,27 @@ import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
+import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import {
   IERC20,
   IPendleSyToken,
   IPendleSyToken__factory,
   IPendleYtToken,
   PendleGLPRegistry,
-  PendleYtGLP2024IsolationModeUnwrapperTraderV2,
-  PendleYtGLP2024IsolationModeVaultFactory,
-  PendleYtGLP2024IsolationModeWrapperTraderV2,
+  PendleYtGLPMar2024IsolationModeUnwrapperTraderV2,
+  PendleYtGLPMar2024IsolationModeVaultFactory,
+  PendleYtGLPMar2024IsolationModeWrapperTraderV2,
   PendleYtGLPPriceOracle,
-  TestPendleYtGLP2024IsolationModeTokenVaultV1,
-  TestPendleYtGLP2024IsolationModeTokenVaultV1__factory,
+  TestPendleYtGLPMar2024IsolationModeTokenVaultV1,
+  TestPendleYtGLPMar2024IsolationModeTokenVaultV1__factory,
 } from '../../src/types';
 import {
   createPendleGLPRegistry,
-  createPendleYtGLP2024IsolationModeUnwrapperTraderV2,
-  createPendleYtGLP2024IsolationModeVaultFactory,
-  createPendleYtGLP2024IsolationModeWrapperTraderV2,
+  createPendleYtGLPMar2024IsolationModeUnwrapperTraderV2,
+  createPendleYtGLPMar2024IsolationModeVaultFactory,
+  createPendleYtGLPMar2024IsolationModeWrapperTraderV2,
   createPendleYtGLPPriceOracle,
-  createTestPendleYtGLP2024IsolationModeTokenVaultV1,
+  createTestPendleYtGLPMar2024IsolationModeTokenVaultV1,
 } from '../pendle-ecosystem-utils';
 
 const ONE_WEEK_SECONDS = 7 * 86400;
@@ -66,18 +66,18 @@ const amountWei = BigNumber.from('2000000000000000000000'); // $2,000
 const otherAmountWei = BigNumber.from('10000000'); // $10
 const initialAllowableDebtMarketIds = [0, 1];
 
-describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
+describe('PendleYtGLPMar2024IsolationModeTokenVaultV1', () => {
   let snapshotId: string;
 
   let core: CoreProtocolArbitrumOne;
   let underlyingToken: IPendleYtToken;
   let syGlp: IPendleSyToken;
   let pendleRegistry: PendleGLPRegistry;
-  let unwrapper: PendleYtGLP2024IsolationModeUnwrapperTraderV2;
-  let wrapper: PendleYtGLP2024IsolationModeWrapperTraderV2;
+  let unwrapper: PendleYtGLPMar2024IsolationModeUnwrapperTraderV2;
+  let wrapper: PendleYtGLPMar2024IsolationModeWrapperTraderV2;
   let priceOracle: PendleYtGLPPriceOracle;
-  let factory: PendleYtGLP2024IsolationModeVaultFactory;
-  let vault: TestPendleYtGLP2024IsolationModeTokenVaultV1;
+  let factory: PendleYtGLPMar2024IsolationModeVaultFactory;
+  let vault: TestPendleYtGLPMar2024IsolationModeTokenVaultV1;
   let router: BaseRouter;
 
   let otherToken1: CustomTestToken;
@@ -89,9 +89,9 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     underlyingToken = core.pendleEcosystem!.glpMar2024.ytGlpToken.connect(core.hhUser1);
-    const userVaultImplementation = await createTestPendleYtGLP2024IsolationModeTokenVaultV1();
+    const userVaultImplementation = await createTestPendleYtGLPMar2024IsolationModeTokenVaultV1();
     pendleRegistry = await createPendleGLPRegistry(core);
-    factory = await createPendleYtGLP2024IsolationModeVaultFactory(
+    factory = await createPendleYtGLPMar2024IsolationModeVaultFactory(
       core,
       pendleRegistry,
       initialAllowableDebtMarketIds,
@@ -99,8 +99,8 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
       core.pendleEcosystem!.glpMar2024.ytGlpToken,
       userVaultImplementation,
     );
-    unwrapper = await createPendleYtGLP2024IsolationModeUnwrapperTraderV2(core, factory, pendleRegistry);
-    wrapper = await createPendleYtGLP2024IsolationModeWrapperTraderV2(core, factory, pendleRegistry);
+    unwrapper = await createPendleYtGLPMar2024IsolationModeUnwrapperTraderV2(core, factory, pendleRegistry);
+    wrapper = await createPendleYtGLPMar2024IsolationModeWrapperTraderV2(core, factory, pendleRegistry);
     priceOracle = await createPendleYtGLPPriceOracle(core, factory, pendleRegistry);
     router = Router.getRouter({
       chainId: CHAIN_ID_MAPPING.ARBITRUM,
@@ -124,9 +124,9 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
 
     await factory.createVault(core.hhUser1.address);
     const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);
-    vault = setupUserVaultProxy<TestPendleYtGLP2024IsolationModeTokenVaultV1>(
+    vault = setupUserVaultProxy<TestPendleYtGLPMar2024IsolationModeTokenVaultV1>(
       vaultAddress,
-      TestPendleYtGLP2024IsolationModeTokenVaultV1__factory,
+      TestPendleYtGLPMar2024IsolationModeTokenVaultV1__factory,
       core.hhUser1,
     );
 
@@ -238,7 +238,7 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
     it('should fail if _depositIntoDolomite length does not equal rewardTokens length', async () => {
       await expectThrow(
         vault.connect(core.hhUser1).redeemDueInterestAndRewards(true, true, [], false),
-        'PendleYtGLP2024UserVaultV1: Array length mismatch',
+        'PendleYtGLPMar2024UserVaultV1: Array length mismatch',
       );
     });
 
@@ -268,7 +268,7 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
 
       await expectThrow(
         vault.connect(core.hhUser1).openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei),
-        'PendleYtGLP2024UserVaultV1: Too close to expiry',
+        'PendleYtGLPMar2024UserVaultV1: Too close to expiry',
       );
     });
   });
@@ -524,7 +524,7 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
           zapParams.makerAccounts,
           zapParams.userConfig,
         ),
-        'PendleYtGLP2024UserVaultV1: Too close to expiry',
+        'PendleYtGLPMar2024UserVaultV1: Too close to expiry',
       );
     });
   });
@@ -748,7 +748,7 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
           otherAmountWei,
           BalanceCheckFlag.To,
         ),
-        'PendleYtGLP2024UserVaultV1: Too close to expiry',
+        'PendleYtGLPMar2024UserVaultV1: Too close to expiry',
       );
     });
 
@@ -779,7 +779,7 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
           ONE_BI,
           BalanceCheckFlag.To,
         ),
-        'PendleYtGLP2024UserVaultV1: Position is about to expire',
+        'PendleYtGLPMar2024UserVaultV1: Position is about to expire',
       );
     });
   });

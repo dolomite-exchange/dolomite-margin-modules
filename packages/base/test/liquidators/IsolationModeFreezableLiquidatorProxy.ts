@@ -50,7 +50,8 @@ import {
   expectWalletAllowance,
   expectWalletBalance,
 } from '../utils/assertions';
-import { CoreProtocolArbitrumOne } from '../utils/core-protocol';
+
+import { CoreProtocolArbitrumOne } from '../utils/core-protocols/core-protocol-arbitrum-one';
 import { createDolomiteRegistryImplementation, createEventEmitter } from '../utils/dolomite';
 import { setExpiry } from '../utils/expiry-utils';
 import { liquidateV4WithZapParam } from '../utils/liquidation-utils';
@@ -131,7 +132,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
       gmxV2Registry,
       allowableMarketIds,
       allowableMarketIds,
-      core.gmxEcosystemV2!.gmTokens.ethUsd,
+      core.gmxV2Ecosystem!.gmTokens.ethUsd,
       userVaultImplementation,
       executionFee,
     );
@@ -190,17 +191,14 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
     await core.dolomiteMargin.ownerSetGlobalOperator(NEW_GENERIC_TRADER_PROXY, true);
     await core.dolomiteMargin.ownerSetGlobalOperator(core.liquidatorProxyV4.address, true);
     await core.dolomiteRegistry.ownerSetGenericTraderProxy(NEW_GENERIC_TRADER_PROXY);
-    const trader = await IGenericTraderProxyV1__factory.connect(
-      NEW_GENERIC_TRADER_PROXY,
-      core.governance,
-    );
+    const trader = IGenericTraderProxyV1__factory.connect(NEW_GENERIC_TRADER_PROXY, core.governance);
     await trader.ownerSetEventEmitterRegistry(eventEmitter.address);
 
     solidAccount = { owner: core.hhUser5.address, number: defaultAccountNumber };
     liquidAccount = { owner: vault.address, number: borrowAccountNumber };
     liquidAccount2 = { owner: vault.address, number: borrowAccountNumber2 };
 
-    await setupGMBalance(core, core.hhUser1, amountWei.mul(2), vault);
+    await setupGMBalance(core, core.gmxV2Ecosystem.gmxEthUsdMarketToken, core.hhUser1, amountWei.mul(2), vault);
     await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei.mul(2));
     await vault.openBorrowPosition(
       defaultAccountNumber,
@@ -275,7 +273,6 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
           marketId,
           depositMinAmountOut,
           wrapper,
-          executionFee,
         );
         await vault.swapExactInputForOutput(
           initiateWrappingParams.accountNumber,
@@ -333,7 +330,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
         const filter = eventEmitter.filters.AsyncWithdrawalCreated();
         withdrawalKeys.push((await eventEmitter.queryFilter(filter))[0].args.key);
       }
-      return await core.gmxEcosystemV2!.gmxWithdrawalHandler.connect(core.gmxEcosystemV2!.gmxExecutor)
+      return await core.gmxV2Ecosystem!.gmxWithdrawalHandler.connect(core.gmxV2Ecosystem!.gmxExecutor)
         .executeWithdrawal(
           withdrawalKeys[withdrawalKeys.length - 1],
           getOracleParams(core.tokens.weth.address, core.tokens.nativeUsdc!.address),

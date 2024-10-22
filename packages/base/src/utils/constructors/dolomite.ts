@@ -1,7 +1,7 @@
-import { BigNumber, BigNumberish } from 'ethers';
+import { BaseContract, BigNumber, BigNumberish, PopulatedTransaction } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { DolomiteMargin } from '../../../test/utils/dolomite';
-import { CoreProtocolType } from '../../../test/utils/setup';
+import { CoreProtocolConfig, CoreProtocolType } from '../../../test/utils/setup';
 import {
   DolomiteERC20,
   EventEmitterRegistry,
@@ -11,6 +11,8 @@ import {
   IERC20,
   IERC20Metadata__factory,
   IIsolationModeVaultFactory,
+  ILiquidatorAssetRegistry,
+  RegistryProxy,
 } from '../../types';
 import { IDolomiteInterestSetter, IDolomiteStructs } from '../../types/contracts/protocol/interfaces/IDolomiteMargin';
 import { Network, NetworkType, ZERO_BI } from '../no-deps-constants';
@@ -21,6 +23,7 @@ export enum TargetCollateralization {
   Base = '1.00',
   _120 = '1.20',
   _125 = '1.25',
+  _133 = '1.33333333',
   _150 = '1.50',
   _166 = '1.66666666',
 }
@@ -30,6 +33,7 @@ export enum TargetLiquidationPenalty {
   _6 = '0.06',
   _7 = '0.07',
   _8 = '0.08',
+  _9 = '0.09',
   _10 = '0.10',
   _15 = '0.15',
 }
@@ -44,21 +48,37 @@ export function getRegistryProxyConstructorParams<T extends NetworkType>(
 
 export function getUpgradeableProxyConstructorParams<T extends NetworkType>(
   implementationAddress: string,
-  implementationCalldata: string,
+  implementationCalldata: PopulatedTransaction,
   dolomiteMargin: DolomiteMargin<T>,
 ): any[] {
-  return [implementationAddress, dolomiteMargin.address, implementationCalldata];
+  return [implementationAddress, dolomiteMargin.address, implementationCalldata.data!];
 }
 
-export function getIsolationModeFreezableLiquidatorProxyConstructorParams<T extends Network>(
+export function getIsolationModeFreezableLiquidatorProxyConstructorParams<T extends NetworkType>(
   core: CoreProtocolType<T>,
 ): any[] {
+  return getIsolationModeFreezableLiquidatorProxyConstructorParamsWithoutCore(
+    core.dolomiteRegistry,
+    core.liquidatorAssetRegistry,
+    core.dolomiteMargin,
+    core.expiry,
+    core.config,
+  );
+}
+
+export function getIsolationModeFreezableLiquidatorProxyConstructorParamsWithoutCore<T extends NetworkType>(
+  dolomiteRegistry: IDolomiteRegistry | RegistryProxy,
+  liquidatorAssetRegistry: ILiquidatorAssetRegistry,
+  dolomiteMargin: DolomiteMargin<T>,
+  expiry: BaseContract,
+  config: CoreProtocolConfig<T>,
+): any[] {
   return [
-    core.dolomiteRegistry.address,
-    core.liquidatorAssetRegistry.address,
-    core.dolomiteMargin.address,
-    core.expiry.address,
-    core.config.networkNumber,
+    dolomiteRegistry.address,
+    liquidatorAssetRegistry.address,
+    dolomiteMargin.address,
+    expiry.address,
+    config.networkNumber,
   ];
 }
 

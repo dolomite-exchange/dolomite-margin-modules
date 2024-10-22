@@ -1,4 +1,4 @@
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
@@ -33,6 +33,7 @@ import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertio
 import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { parseEther } from 'ethers/lib/utils';
 import { TokenInfo } from '../src';
+import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 
 const WETH_PRICE = BigNumber.from('2260038782330000000000');
 const BTC_PRICE = BigNumber.from('440493939086400000000000000000000');
@@ -48,7 +49,7 @@ describe('ChainlinkPriceOracleV3', () => {
   let oracleAggregator: OracleAggregatorV2;
 
   before(async () => {
-    core = await setupCoreProtocol(await getDefaultCoreProtocolConfig(Network.ArbitrumOne));
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
 
     const dolomiteRegistryImplementation = await createContractWithAbi<DolomiteRegistryImplementation>(
       DolomiteRegistryImplementation__factory.abi,
@@ -223,9 +224,10 @@ describe('ChainlinkPriceOracleV3', () => {
       );
       await testAggregator.setLatestAnswer(BigNumber.from('20000000000')); // $200
       await waitTime((60 * 60 * 36) + 1); // prices expire in 36 hours by default
+      const data = await testAggregator.latestRoundData();
       await expectThrow(
         oracle.getPrice(testToken.address),
-        `ChainlinkPriceOracleV3: Chainlink price expired <${testToken.address.toLowerCase()}>`,
+        `ChainlinkPriceOracleV3: Chainlink price expired <${testToken.address.toLowerCase()}, ${data.updatedAt}>`,
       );
     });
 

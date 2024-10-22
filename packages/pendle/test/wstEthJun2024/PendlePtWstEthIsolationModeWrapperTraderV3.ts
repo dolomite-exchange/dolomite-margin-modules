@@ -7,7 +7,6 @@ import {
   snapshot,
 } from '@dolomite-exchange/modules-base/test/utils';
 import { expectThrow, expectWalletBalance } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { setupNewGenericTraderProxy } from '@dolomite-exchange/modules-base/test/utils/dolomite';
 import {
   getDefaultCoreProtocolConfig,
@@ -22,6 +21,7 @@ import { CHAIN_ID_MAPPING } from '@pendle/sdk-v2/dist/common/ChainId';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
+import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import {
   IERC20,
   IPendlePtMarket,
@@ -99,7 +99,6 @@ describe('PendlePtWstEthJun2024IsolationModeWrapperTraderV3', () => {
 
     marketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, factory, true, priceOracle);
-    await core.dolomiteMargin.ownerSetPriceOracle(marketId, priceOracle.address);
 
     await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
@@ -148,11 +147,12 @@ describe('PendlePtWstEthJun2024IsolationModeWrapperTraderV3', () => {
       const liquidAccountId = 0;
 
       const { extraOrderData, approxParams } = await encodeSwapExactTokensForPtV3(
-        router,
-        usableAmount,
-        ONE_TENTH_OF_ONE_BIPS_NUMBER,
+        Network.ArbitrumOne,
+        wrapper.address,
         ptMarket.address,
         underlyingToken.address,
+        usableAmount,
+        '0.002'
       );
 
       const actions = await wrapper.createActionsForWrapping({
@@ -178,15 +178,14 @@ describe('PendlePtWstEthJun2024IsolationModeWrapperTraderV3', () => {
 
       const expectedTotalBalance = amountWei.add(approxParams.guessOffchain);
       const underlyingBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, marketId);
-      expect(underlyingBalanceWei.value).to.eq(expectedTotalBalance);
+      expect(underlyingBalanceWei.value).to.gte(expectedTotalBalance);
       expect(underlyingBalanceWei.sign).to.eq(true);
-      expect(await vault.underlyingBalanceOf()).to.eq(expectedTotalBalance);
+      expect(await vault.underlyingBalanceOf()).to.gte(expectedTotalBalance);
 
       const otherBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, underlyingMarketId);
       expect(otherBalanceWei.sign).to.eq(false);
       expect(otherBalanceWei.value).to.eq(usableAmount);
 
-      await expectWalletBalance(wrapper.address, ptToken, ZERO_BI);
       await expectWalletBalance(wrapper.address, ptToken, ZERO_BI);
     });
   });

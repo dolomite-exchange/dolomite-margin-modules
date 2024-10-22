@@ -81,12 +81,6 @@ library AsyncIsolationModeUnwrapperTraderImpl {
         UpgradeableAsyncIsolationModeUnwrapperTrader _unwrapper,
         IUpgradeableAsyncIsolationModeUnwrapperTrader.WithdrawalInfo memory _withdrawalInfo
     ) external {
-        _unwrapper.HANDLER_REGISTRY().dolomiteRegistry().eventEmitter().emitAsyncWithdrawalOutputAmountUpdated(
-            _withdrawalInfo.key,
-            address(_unwrapper.VAULT_FACTORY()),
-            _withdrawalInfo.outputAmount
-        );
-
         uint256[] memory marketIdsPath = new uint256[](2);
         marketIdsPath[0] = _unwrapper.VAULT_FACTORY().marketId();
         marketIdsPath[1] = _unwrapper.DOLOMITE_MARGIN().getMarketIdByTokenAddress(_withdrawalInfo.outputToken);
@@ -108,9 +102,9 @@ library AsyncIsolationModeUnwrapperTraderImpl {
             eventType: IGenericTraderProxyV1.EventEmissionType.None
         });
 
-        uint256 liquidationPenalty;
         if (_withdrawalInfo.isLiquidation) {
-            liquidationPenalty = _withdrawalInfo.outputAmount.mul(_unwrapper.DOLOMITE_MARGIN().getLiquidationSpread());
+            IDolomiteStructs.Decimal memory spread = IDolomiteStructs.Decimal({ value: 0.01 ether }); // 1% penalty
+            uint256 liquidationPenalty = _withdrawalInfo.outputAmount.mul(spread);
             IERC20(_withdrawalInfo.outputToken).safeTransfer(
                 address(_unwrapper.DOLOMITE_MARGIN()),
                 liquidationPenalty
@@ -297,7 +291,6 @@ library AsyncIsolationModeUnwrapperTraderImpl {
                 );
                 withdrawalInfo.inputAmount -= inputAmountToCollect;
                 withdrawalInfo.outputAmount -= outputAmountToCollect;
-                state.withdrawalInfo[key] = withdrawalInfo;
                 setWithdrawalInfo(state, key, withdrawalInfo);
                 _updateVaultPendingAmount(
                     state.vaultFactory,

@@ -19,7 +19,8 @@ import {
   expectThrowBalanceFlagError,
   expectWalletBalance,
 } from '../utils/assertions';
-import { CoreProtocolArbitrumOne } from '../utils/core-protocol';
+
+import { CoreProtocolArbitrumOne } from '../utils/core-protocols/core-protocol-arbitrum-one';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '../utils/setup';
 
 const amountWei = BigNumber.from('200000000');

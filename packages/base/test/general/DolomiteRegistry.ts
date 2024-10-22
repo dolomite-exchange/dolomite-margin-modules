@@ -4,7 +4,8 @@ import { DolomiteRegistryImplementation, DolomiteRegistryImplementation__factory
 import { Network } from '../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
 import { expectEvent, expectThrow } from '../utils/assertions';
-import { CoreProtocolArbitrumOne } from '../utils/core-protocol';
+
+import { CoreProtocolArbitrumOne } from '../utils/core-protocols/core-protocol-arbitrum-one';
 import { createDolomiteRegistryImplementation, createRegistryProxy } from '../utils/dolomite';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '../utils/setup';
 
@@ -26,6 +27,7 @@ describe('DolomiteRegistryImplementation', () => {
       core.constants.slippageToleranceForPauseSentinel,
       core.liquidatorAssetRegistry.address,
       core.eventEmitterRegistryProxy.address,
+      core.dolomiteAccountRegistry.address,
     );
     const registryProxy = await createRegistryProxy(implementation.address, calldata.data!, core);
     registry = DolomiteRegistryImplementation__factory.connect(registryProxy.address, core.governance);
@@ -56,6 +58,7 @@ describe('DolomiteRegistryImplementation', () => {
           core.constants.slippageToleranceForPauseSentinel,
           core.liquidatorAssetRegistry.address,
           core.eventEmitterRegistryProxy.address,
+          core.dolomiteAccountRegistry.address,
         ),
         'Initializable: contract is already initialized',
       );
@@ -312,5 +315,85 @@ describe('DolomiteRegistryImplementation', () => {
         'DolomiteRegistryImplementation: Invalid oracleAggregator',
       );
     });
+  });
+
+  describe('#ownerSetDolomiteAccountRegistry', () => {
+    it('should work normally', async () => {
+      const result = await registry.connect(core.governance).ownerSetDolomiteAccountRegistry(OTHER_ADDRESS);
+      await expectEvent(registry, result, 'DolomiteAccountRegistrySet', {
+        dolomiteAccountRegistry: OTHER_ADDRESS,
+      });
+      expect(await registry.dolomiteAccountRegistry()).to.equal(OTHER_ADDRESS);
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetDolomiteAccountRegistry(OTHER_ADDRESS),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetDolomiteAccountRegistry(ZERO_ADDRESS),
+        'DolomiteRegistryImplementation: Invalid dolomiteAccountRegistry',
+      );
+    });
+  });
+
+  describe('#ownerSetIsolationModeMulticallFunctions', () => {
+    it('should work normally', async () => {
+      const selectors = [
+        '0x12345678',
+        '0x12345679',
+      ];
+
+      const result = await registry.connect(core.governance).ownerSetIsolationModeMulticallFunctions(selectors);
+      await expectEvent(registry, result, 'IsolationModeMulticallFunctionsSet', {
+        selectors,
+      });
+      expect(await registry.isolationModeMulticallFunctions()).to.deep.equal(selectors);
+
+      await registry.connect(core.governance).ownerSetIsolationModeMulticallFunctions([]);
+      expect(await registry.isolationModeMulticallFunctions()).to.deep.equal([]);
+    });
+
+    it('should pass if zero selectors are provided', async () => {
+      const result = await registry.connect(core.governance).ownerSetIsolationModeMulticallFunctions([]);
+      await expectEvent(registry, result, 'IsolationModeMulticallFunctionsSet', {
+        selectors: [],
+      });
+      expect(await registry.isolationModeMulticallFunctions()).to.deep.equal([]);
+    });
+
+    it('should fail if duplicate selectors are provided', async () => {
+      const selectors = [
+        '0x12345678',
+        '0x12345678',
+      ];
+      await expectThrow(
+        registry.connect(core.governance).ownerSetIsolationModeMulticallFunctions(selectors),
+        'DolomiteRegistryImplementation: Selectors not sorted',
+      );
+    });
+
+    it('should fail if selectors are not sorted', async () => {
+      const selectors = [
+        '0x12345679',
+        '0x12345678',
+      ];
+      await expectThrow(
+        registry.connect(core.governance).ownerSetIsolationModeMulticallFunctions(selectors),
+        'DolomiteRegistryImplementation: Selectors not sorted',
+      );
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetIsolationModeMulticallFunctions([]),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
   });
 });

@@ -1,0 +1,46 @@
+import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
+import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
+import { Network } from 'packages/base/src/utils/no-deps-constants';
+import { prettyPrintEncodedDataWithTypeSafety } from '../../../utils/deploy-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../utils/dry-run-utils';
+import getScriptName from '../../../utils/get-script-name';
+
+/**
+ * This script encodes the following transactions:
+ * - Change the interest rate model for GRAI to put less peg pressure
+ */
+async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
+  const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
+  const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
+
+  const transactions = [];
+  transactions.push(
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { dolomiteMargin: core.dolomiteMargin },
+      'dolomiteMargin',
+      'ownerSetInterestSetter',
+      [core.marketIds.grai, core.interestSetters.linearStepFunction15L135U70OInterestSetter.address],
+    ),
+  );
+
+  return {
+    core,
+    scriptName: getScriptName(__filename),
+    upload: {
+      transactions,
+      chainId: network,
+    },
+    invariants: async () => {
+      assertHardhatInvariant(
+        (await core.dolomiteMargin.getMarketInterestSetter(core.marketIds.grai)) ===
+          core.interestSetters.linearStepFunction15L135U70OInterestSetter.address,
+        'Invalid interest setter',
+      );
+    },
+  };
+}
+
+doDryRunAndCheckDeployment(main);

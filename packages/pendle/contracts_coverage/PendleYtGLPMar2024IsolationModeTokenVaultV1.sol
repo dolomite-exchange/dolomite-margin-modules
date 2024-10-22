@@ -58,7 +58,7 @@ IPendleYtGLPMar2024IsolationModeTokenVaultV1,
     // =========================== Constants ============================
     // ==================================================================
 
-    bytes32 private constant _FILE = "PendleYtGLP2024UserVaultV1";
+    bytes32 private constant _FILE = "PendleYtGLPMar2024UserVaultV1";
     uint256 private constant _ONE_WEEK = 1 weeks;
     uint256 private constant _SAFETY_BUFFER_SECONDS = 5 minutes;
 

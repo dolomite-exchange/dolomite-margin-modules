@@ -27,6 +27,7 @@ import { IBorrowPositionProxyV2 } from "../../interfaces/IBorrowPositionProxyV2.
 import { IDolomiteRegistry } from "../../interfaces/IDolomiteRegistry.sol";
 import { IGenericTraderProxyV1 } from "../../interfaces/IGenericTraderProxyV1.sol";
 import { AccountBalanceLib } from "../../lib/AccountBalanceLib.sol";
+import { SafeDelegateCallLib } from "../../lib/SafeDelegateCallLib.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { IIsolationModeTokenVaultV1 } from "../interfaces/IIsolationModeTokenVaultV1.sol";
@@ -110,6 +111,14 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
 
     function initialize() external {
         _initialize();
+    }
+
+    function multicall(
+        bytes[] memory _calls
+    )
+    external
+    onlyVaultOwner(msg.sender) {
+        _multicall(_calls);
     }
 
     function depositIntoVaultForDolomiteMargin(
@@ -417,6 +426,25 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
         );
 
         _setUint256(_REENTRANCY_GUARD_SLOT, _NOT_ENTERED);
+    }
+
+    function _multicall(bytes[] memory _calls) internal {
+        bytes4[] memory allowedSelectors = dolomiteRegistry().isolationModeMulticallFunctions();
+        uint256 len = _calls.length;
+
+        for (uint256 i; i < len; ++i) {
+            if (IsolationModeTokenVaultV1ActionsImpl.selectorBinarySearch( allowedSelectors, abi.decode(_calls[i], (bytes4)) )) { /* FOR COVERAGE TESTING */ }
+            Require.that(
+                IsolationModeTokenVaultV1ActionsImpl.selectorBinarySearch(
+                    allowedSelectors,
+                    abi.decode(_calls[i], (bytes4))
+                ),
+                _FILE,
+                "Disallowed multicall function"
+            );
+
+            SafeDelegateCallLib.safeDelegateCall(address(this), _calls[i]);
+        }
     }
 
     function _depositIntoVaultForDolomiteMargin(

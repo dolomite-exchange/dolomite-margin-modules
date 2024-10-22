@@ -1,5 +1,6 @@
 import { address } from '@dolomite-exchange/dolomite-margin';
 import {
+  HandlerRegistry,
   IDolomiteInterestSetter,
   IDolomitePriceOracle,
   IERC20,
@@ -9,7 +10,12 @@ import {
   IIsolationModeVaultFactory,
   IIsolationModeWrapperTraderV2,
 } from '@dolomite-exchange/modules-base/src/types';
-import { CHAINLINK_PRICE_AGGREGATORS_MAP } from '@dolomite-exchange/modules-base/src/utils/constants';
+import {
+  CHAINLINK_PRICE_AGGREGATORS_MAP,
+  CHRONICLE_PRICE_SCRIBES_MAP,
+  INVALID_TOKEN_MAP,
+  REDSTONE_PRICE_AGGREGATORS_MAP,
+} from '@dolomite-exchange/modules-base/src/utils/constants';
 import {
   getLiquidationPremiumForTargetLiquidationPenalty,
   getMarginPremiumForTargetCollateralization,
@@ -29,12 +35,15 @@ import {
   TEN_BI,
   ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { impersonate } from '@dolomite-exchange/modules-base/test/utils';
 import { CoreProtocolType } from '@dolomite-exchange/modules-base/test/utils/setup';
 import {
   CoreProtocolWithChainlinkOld,
   CoreProtocolWithChainlinkV3,
+  CoreProtocolWithChronicle,
+  CoreProtocolWithRedstone,
 } from '@dolomite-exchange/modules-oracles/src/oracles-constructors';
-import { IChainlinkAggregator__factory } from '@dolomite-exchange/modules-oracles/src/types';
+import { IChainlinkAggregator__factory, IChronicleScribe__factory } from '@dolomite-exchange/modules-oracles/src/types';
 import {
   CoreProtocolWithPendle,
   getPendlePtIsolationModeUnwrapperTraderV2ConstructorParams,
@@ -68,7 +77,12 @@ import fs, { readFileSync } from 'fs';
 import fsExtra from 'fs-extra';
 import hardhat, { artifacts, ethers, network } from 'hardhat';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
+import { CoreProtocolXLayer } from 'packages/base/test/utils/core-protocols/core-protocol-x-layer';
 import path, { join } from 'path';
+import {
+  CoreProtocolArbitrumOne,
+} from '@dolomite-exchange/modules-base/test/utils/core-protocols/core-protocol-arbitrum-one';
+import { IGmxV2IsolationModeVaultFactory } from '@dolomite-exchange/modules-gmx-v2/src/types';
 
 type ChainId = string;
 
@@ -77,6 +91,7 @@ export const CORE_DEPLOYMENT_FILE_NAME = path.resolve(
   __dirname,
   '../../../../node_modules/@dolomite-exchange/dolomite-margin/dist/migrations/deployed.json',
 );
+export const TRANSACTION_BUILDER_VERSION = '1.16.5';
 
 export function readDeploymentFile(): Record<string, Record<ChainId, any>> {
   return JSON.parse(fs.readFileSync(DEPLOYMENT_FILE_NAME).toString());
@@ -98,7 +113,7 @@ export async function verifyContract(
   libraries: Libraries,
   attempts: number = 0,
 ): Promise<void> {
-  const customChain = hardhat.config.etherscan.customChains.filter(c => c.network === hardhat.network.name)[0];
+  const customChain = hardhat.config.etherscan.customChains.filter((c) => c.network === hardhat.network.name)[0];
   const instance = new Etherscan(
     (hardhat.config.etherscan.apiKey as Record<string, string>)[customChain.network],
     customChain.urls.apiURL,
@@ -115,6 +130,18 @@ export async function verifyContract(
     const factory = await ethers.getContractFactoryFromArtifact(artifact, { libraries });
 
     const buildInfo = artifacts.getBuildInfoSync(contractName);
+
+    // Retrieve and override only the needed sources
+    const output = buildInfo!.output.contracts[artifact.sourceName][artifact.contractName];
+    const allSources = JSON.parse((output as any).metadata).sources as Record<string, any>;
+    buildInfo!.input.sources = Object.keys(buildInfo!.input.sources).reduce((memo, sourceName) => {
+      if (allSources[sourceName]) {
+        memo[sourceName] = buildInfo!.input.sources[sourceName];
+      }
+      return memo;
+    }, {} as Record<string, { content: string }>);
+
+    // Inject any needed libraries
     buildInfo!.input.settings.libraries = Object.keys(libraries).reduce<any>((acc, library) => {
       const artifact = artifacts.readArtifactSync(library);
       acc[`${artifact.sourceName}`] = { [library]: libraries[library] };
@@ -131,16 +158,20 @@ export async function verifyContract(
 
     await sleep(1000);
     const verificationStatus = await instance.getVerificationStatus(guid);
-    if (verificationStatus.isSuccess()) {
+    if (verificationStatus.isSuccess() || verificationStatus.isOk()) {
       const contractURL = instance.getContractUrl(address);
       console.log(`\tSuccessfully verified contract "${contractName}": ${contractURL}`);
+    } else if (verificationStatus.isFailure()) {
+      console.error(`\tCould not verify contract due to reason: ${verificationStatus.message}`);
     }
   } catch (e: any) {
     if (e?.message.toLowerCase().includes('already verified')) {
       console.log('\tEtherscanVerification: Swallowing already verified error');
     } else if (attempts < 2) {
+      await sleep(3_000);
       await verifyContract(address, constructorArguments, contractName, libraries, attempts + 1);
     } else {
+      console.error('Error with verifying:', e);
       return Promise.reject(e);
     }
   }
@@ -160,7 +191,7 @@ function findArtifactPath(parentPath: string, artifactName: string): string | un
 
   const childDirectories = fs.readdirSync(parentPath, { withFileTypes: true });
   for (const childDirectory of childDirectories) {
-    const fullPath = path.join(parentPath, childDirectory.name);
+    const fullPath = join(parentPath, childDirectory.name);
     if (childDirectory.isDirectory() && !childDirectory.name.includes('.sol')) {
       const artifactPath = findArtifactPath(fullPath, artifactName);
       if (artifactPath) {
@@ -174,32 +205,95 @@ function findArtifactPath(parentPath: string, artifactName: string): string | un
 
 export async function initializeFreshArtifactFromWorkspace(artifactName: string): Promise<void> {
   const packagesPath = '../../../../packages';
-  const deploymentsArtifactsPath = path.join(__dirname, packagesPath, 'deployment', 'artifacts');
-  await fsExtra.remove(deploymentsArtifactsPath);
+  const deploymentsArtifactsPath = join(__dirname, packagesPath, 'deployment', 'artifacts');
+  fsExtra.removeSync(deploymentsArtifactsPath);
 
-  const workspaces = fs.readdirSync(join(__dirname, packagesPath), { withFileTypes: true })
-    .filter(d => d.isDirectory() && !d.name.includes('deployment'))
-    .map(d => path.join(packagesPath, d.name));
+  const workspaces = fs
+    .readdirSync(join(__dirname, packagesPath), { withFileTypes: true })
+    .filter((d) => d.isDirectory() && !d.name.includes('deployment'))
+    .map((d) => join(packagesPath, d.name));
 
   const contractsFolder = process.env.COVERAGE === 'true' ? 'contracts_coverage' : 'contracts';
   for (const workspace of workspaces) {
     const parentPath = join(__dirname, workspace, `artifacts/${contractsFolder}`);
     const artifactPath = findArtifactPath(parentPath, artifactName);
     if (artifactPath) {
-      await fsExtra.copy(
-        path.join(__dirname, workspace, 'artifacts'),
-        deploymentsArtifactsPath,
-        { overwrite: true },
-      );
+      await fsExtra.copy(join(__dirname, workspace, 'artifacts'), deploymentsArtifactsPath, { overwrite: true });
 
       const artifact = JSON.parse(readFileSync(artifactPath, 'utf8'));
-      await artifacts.saveArtifactAndDebugFile(artifact);
+      const pathToBuildInfo = getBuildInfoFromDebugFileSync(getDebugFilePath(artifactPath));
+      await artifacts.saveArtifactAndDebugFile(artifact, pathToBuildInfo);
       return;
     }
   }
 
   return Promise.reject(new Error(`Could not find ${artifactName}`));
 }
+
+function getDebugFilePath(artifactPath: string): string {
+  return artifactPath.replace(/\.json$/, '.dbg.json');
+}
+
+function getBuildInfoFromDebugFileSync(debugFilePath: string): string | undefined {
+  if (fsExtra.pathExistsSync(debugFilePath)) {
+    const { buildInfo } = fsExtra.readJsonSync(debugFilePath);
+    return path.resolve(path.dirname(debugFilePath), buildInfo);
+  }
+
+  return undefined;
+}
+
+/**
+ * @param nameWithoutVersionPostfix IE IsolationModeTokenVault
+ * @param defaultVersion The version that should be declared if no other version exists
+ */
+export function getMaxDeploymentVersionNameByDeploymentKey(nameWithoutVersionPostfix: string, defaultVersion: number) {
+  const lastChar = nameWithoutVersionPostfix.substring(nameWithoutVersionPostfix.length - 1);
+  if (!Number.isNaN(parseInt(lastChar, 10))) {
+    throw new Error('Name cannot include version declaration');
+  }
+
+  const maxVersion = Object.keys(readDeploymentFile()).reduce((max, curr) => {
+    if (curr.includes(nameWithoutVersionPostfix)) {
+      // Add 1 to the length for the `V`
+      const currentVersion = parseInt(curr.substring(nameWithoutVersionPostfix.length + 1), 10);
+      return currentVersion > max ? currentVersion : max;
+    }
+
+    return max;
+  }, defaultVersion);
+
+  return `${nameWithoutVersionPostfix}V${maxVersion}`;
+}
+
+export function getOldDeploymentVersionNamesByDeploymentKey(nameWithoutVersionPostfix: string, defaultVersion: number) {
+  const lastChar = nameWithoutVersionPostfix.substring(nameWithoutVersionPostfix.length - 1);
+  if (!Number.isNaN(parseInt(lastChar, 10))) {
+    throw new Error('Name cannot include version declaration');
+  }
+
+  const [versions, maxVersion] = Object.keys(readDeploymentFile()).reduce(
+    ([versions, max], curr) => {
+      if (curr.includes(nameWithoutVersionPostfix)) {
+        // Add 1 to the length for the `V`
+        const currentVersion = parseInt(curr.substring(nameWithoutVersionPostfix.length + 1), 10);
+        return [versions.concat(currentVersion), currentVersion > max ? currentVersion : max];
+      }
+
+      return [versions, max];
+    },
+    [[] as number[], defaultVersion],
+  );
+
+  return versions.reduce((acc, version) => {
+    if (version !== maxVersion) {
+      return acc.concat(`${nameWithoutVersionPostfix}V${version}`);
+    }
+    return acc;
+  }, [] as string[]);
+}
+
+let nonce: number | undefined = undefined;
 
 export async function deployContractAndSave(
   contractName: string,
@@ -231,11 +325,21 @@ export async function deployContractAndSave(
   const usedContractName = contractRename ?? contractName;
   if (file[usedContractName]?.[chainId.toString()]) {
     const contract = file[usedContractName][chainId.toString()];
-    console.log(`\tContract ${usedContractName} has already been deployed to chainId ${chainId} (${contract.address}). Skipping...`);
+    console.log(
+      `\tContract ${usedContractName} has already been deployed to chainId ${chainId} (${contract.address}). Skipping...`,
+    );
     if (!contract.isVerified) {
       await prettyPrintAndVerifyContract(file, chainId, contractName, usedContractName, args, libraries ?? {});
     }
     console.log('');
+
+    await verifyFactoryChildProxyContractIfNecessary(
+      file,
+      file[usedContractName]?.[chainId.toString()]?.transaction,
+      usedContractName,
+      chainId,
+    );
+
     return contract.address;
   }
 
@@ -243,11 +347,24 @@ export async function deployContractAndSave(
 
   let contract: BaseContract;
   try {
+    if (nonce === undefined) {
+      const signer = ethers.provider.getSigner(0);
+      nonce = await ethers.provider.getTransactionCount(await signer.getAddress(), 'pending');
+    }
     contract = libraries
-      ? await createContractWithLibrary(contractName, libraries, args)
-      : await createContractWithName(contractName, args);
+      ? await createContractWithLibrary(contractName, libraries, args, { nonce })
+      : await createContractWithName(contractName, args, { nonce });
+    nonce += 1;
   } catch (e) {
     console.error(`\tCould not deploy at attempt ${attempts + 1} due for ${contractName} to error:`, e);
+    console.log(); // print new line
+
+    const errorMessage = (e as any).message;
+    if (errorMessage.includes('nonce has already been used') || errorMessage.includes('replacement fee too low')) {
+      console.log('\tRe-fetching nonce...');
+      const signer = ethers.provider.getSigner(0);
+      nonce = await ethers.provider.getTransactionCount(await signer.getAddress(), 'pending');
+    }
     return deployContractAndSave(contractName, args, contractRename, libraries, attempts + 1);
   }
 
@@ -267,15 +384,57 @@ export async function deployContractAndSave(
   await prettyPrintAndVerifyContract(file, chainId, contractName, usedContractName, args, libraries ?? {});
   console.log('');
 
+  await verifyFactoryChildProxyContractIfNecessary(
+    file,
+    file[usedContractName]?.[chainId.toString()]?.transaction,
+    usedContractName,
+    chainId,
+  );
+
   return contract.address;
+}
+
+async function verifyFactoryChildProxyContractIfNecessary(
+  file: Record<string, Record<ChainId, any>>,
+  deploymentTransactionHash: string,
+  usedContractName: string,
+  chainId: number,
+) {
+  if (network.name !== 'hardhat') {
+    const receipt = await ethers.provider.getTransactionReceipt(deploymentTransactionHash);
+    const vaultCreatedTopic0 = '0x5d9c31ffa0fecffd7cf379989a3c7af252f0335e0d2a1320b55245912c781f53';
+    const event = receipt?.logs.find((l) => l.topics[0] === vaultCreatedTopic0);
+    if (event) {
+      const vaultAddress = ethers.utils.defaultAbiCoder.decode(['address'], event.data)[0];
+      const vaultRename = `${usedContractName}DeadProxy`;
+      if (!file[vaultRename]?.[chainId]?.isVerified) {
+        file[vaultRename] = {
+          ...file[vaultRename],
+          [chainId]: {
+            address: vaultAddress,
+            transaction: deploymentTransactionHash,
+            isVerified: false,
+          },
+        };
+        writeDeploymentFile(file);
+        await prettyPrintAndVerifyContract(file, chainId, 'IsolationModeUpgradeableProxy', vaultRename, [], {});
+      } else {
+        console.log(
+          `\tContract ${vaultRename} has already been verified on chainId ${chainId} (${vaultAddress}). Skipping...`,
+        );
+      }
+
+      console.log('');
+    }
+  }
 }
 
 export function getTokenVaultLibrary<T extends NetworkType>(core: CoreProtocolType<T>): Record<string, string> {
   const libraryName = 'IsolationModeTokenVaultV1ActionsImpl';
-  const deploymentName = 'IsolationModeTokenVaultV1ActionsImplV3';
+  const deploymentName = 'IsolationModeTokenVaultV1ActionsImplV7';
   const deployments = readAllDeploymentFiles();
   return {
-    [libraryName]: deployments[deploymentName][core.config.network as '42161'].address,
+    [libraryName]: deployments[deploymentName][core.config.network].address,
   };
 }
 
@@ -300,7 +459,11 @@ export async function deployPendlePtSystem<T extends NetworkType>(
   const syTokensIn = await syToken.getTokensIn();
   const ptNamePart = ptName.substring(0, ptName.length - 7);
   if (!officialPtName.toUpperCase().includes(ptNamePart.toUpperCase())) {
-    return Promise.reject(new Error(`ptName does not match official PT name on chain. official: [${officialPtName}], found: [${ptNamePart}]`));
+    return Promise.reject(
+      new Error(
+        `ptName does not match official PT name on chain. official: [${officialPtName}], found: [${ptNamePart}]`,
+      ),
+    );
   }
   if (syOfficial !== syToken.address) {
     return Promise.reject(new Error(`SY does not match official SY on chain: ${syOfficial} / ${syToken.address}`));
@@ -308,20 +471,21 @@ export async function deployPendlePtSystem<T extends NetworkType>(
   if (ptOfficial !== ptToken.address) {
     return Promise.reject(new Error(`PT does not match official PT on chain: ${ptOfficial} / ${ptToken.address}`));
   }
-  if (!syTokensIn.some(t => t === underlyingToken.address)) {
+  if (!syTokensIn.some((t) => t === underlyingToken.address)) {
     return Promise.reject(
-      new Error(`Underlying does not match official underlying on chain: underlying=[${underlyingToken.address}] official=[${syTokensIn.join(
-        ', ')}]`),
+      new Error(
+        `Underlying does not match official underlying on chain: underlying=[${
+          underlyingToken.address
+        }] official=[${syTokensIn.join(', ')}]`,
+      ),
     );
   }
-
-  console.log(`\tDoing deployment for ${officialPtName}`);
 
   const libraries = getTokenVaultLibrary(core);
   const userVaultImplementationAddress = await deployContractAndSave(
     'PendlePtIsolationModeTokenVaultV1',
     [],
-    `PendlePt${ptName}IsolationModeTokenVaultV1'`,
+    `PendlePt${ptName}IsolationModeTokenVaultV1`,
     libraries,
   );
   const userVaultImplementation = PendlePtIsolationModeTokenVaultV1__factory.connect(
@@ -389,9 +553,9 @@ export async function deployLinearInterestSetterAndSave(
   upperOptimal: BigNumber,
 ): Promise<address> {
   if (
-    lowerOptimal.lt(ONE_PERCENT)
-    || upperOptimal.lt(ONE_PERCENT)
-    || !lowerOptimal.add(upperOptimal).eq(ONE_PERCENT.mul(100))
+    lowerOptimal.lt(ONE_PERCENT) ||
+    upperOptimal.lt(ONE_PERCENT) ||
+    !lowerOptimal.add(upperOptimal).eq(ONE_PERCENT.mul(100))
   ) {
     return Promise.reject(new Error('Invalid lowerOptimal and upperOptimal'));
   }
@@ -406,7 +570,20 @@ export async function deployLinearInterestSetterAndSave(
 }
 
 export function sortFile(file: Record<string, Record<ChainId, any>>) {
-  const sortedFileKeys = Object.keys(file).sort();
+  const sortedFileKeys = Object.keys(file).sort((a, b) => {
+    const aSplitPoint = a.search(/V\d+$/);
+    const bSplitPoint = b.search(/V\d+$/);
+    if (aSplitPoint !== -1 && bSplitPoint !== -1) {
+      const aBase = a.substring(0, aSplitPoint);
+      const bBase = b.substring(0, bSplitPoint);
+      if (aBase === bBase) {
+        const aVersion = a.substring(aSplitPoint + 1);
+        const bVersion = b.substring(bSplitPoint + 1);
+        return parseInt(aVersion, 10) - parseInt(bVersion, 10);
+      }
+    }
+    return a.localeCompare(b);
+  });
   const sortedFile: Record<string, Record<ChainId, any>> = {};
   for (const key of sortedFileKeys) {
     sortedFile[key] = file[key];
@@ -433,8 +610,8 @@ async function prettyPrintAndVerifyContract(
   console.log(`\t${'='.repeat(52 + contractRename.length)}`);
 
   if (!(process.env.SKIP_VERIFICATION === 'true')) {
-    console.log('\tSleeping for 5s to wait for the transaction to be indexed by Etherscan...');
-    await sleep(3000);
+    console.log('\tSleeping for 5s to wait for the transaction to be indexed by the block explorer...');
+    await sleep(5000);
     const artifact = await artifacts.readArtifact(contractName);
     await verifyContract(contract.address, [...args], `${artifact.sourceName}:${contractName}`, libraries);
     file[contractRename][chainId].isVerified = true;
@@ -544,8 +721,10 @@ function isMarketIdParam(paramType: ParamType): boolean {
 }
 
 function isTokenParam(paramType: ParamType): boolean {
-  return (paramType.name.includes('token') || paramType.name.includes('Token'))
-    && !paramType.name.toLowerCase().includes('decimals');
+  return (
+    (paramType.name.includes('token') || paramType.name.includes('Token')) &&
+    !paramType.name.toLowerCase().includes('decimals')
+  );
 }
 
 function isChainlinkAggregatorParam(paramType: ParamType): boolean {
@@ -553,9 +732,11 @@ function isChainlinkAggregatorParam(paramType: ParamType): boolean {
 }
 
 function isMaxWeiParam(paramType: ParamType): boolean {
-  return paramType.name.includes('maxWei')
-    || paramType.name.includes('maxSupplyWei')
-    || paramType.name.includes('maxBorrowWei');
+  return (
+    paramType.name.includes('maxWei') ||
+    paramType.name.includes('maxSupplyWei') ||
+    paramType.name.includes('maxBorrowWei')
+  );
 }
 
 export interface EncodedTransaction {
@@ -565,23 +746,35 @@ export interface EncodedTransaction {
 }
 
 export interface DenJsonUpload {
+  addExecuteImmediatelyTransactions?: boolean;
   chainId: NetworkType;
   transactions: EncodedTransaction[];
 }
 
+export interface TransactionBuilderUpload extends DenJsonUpload {
+  version: '1.0';
+  meta: {
+    name: string;
+    txBuilderVersion: typeof TRANSACTION_BUILDER_VERSION;
+  };
+}
+
 function isOwnerFunction(methodName: string, isMultisig: boolean): boolean {
-  return methodName.startsWith('owner')
-    || methodName === 'upgradeTo'
-    || methodName === 'upgradeToAndCall'
-    || methodName === 'setUserVaultImplementation'
-    || methodName === 'setIsTokenConverterTrusted'
-    || methodName === 'setGmxRegistry'
-    || (isMultisig && methodName === 'addOwner')
-    || (isMultisig && methodName === 'changeRequirement')
-    || (isMultisig && methodName === 'changeTimelock')
-    || (isMultisig && methodName === 'removeOver')
-    || (isMultisig && methodName === 'replaceOwner')
-    || (isMultisig && methodName === 'setSelector');
+  return (
+    methodName.startsWith('owner') ||
+    methodName === 'initializeETHMarket' ||
+    methodName === 'setGmxRegistry' ||
+    methodName === 'setIsTokenConverterTrusted' ||
+    methodName === 'setUserVaultImplementation' ||
+    methodName === 'upgradeTo' ||
+    methodName === 'upgradeToAndCall' ||
+    (isMultisig && methodName === 'addOwner') ||
+    (isMultisig && methodName === 'changeRequirement') ||
+    (isMultisig && methodName === 'changeTimelock') ||
+    (isMultisig && methodName === 'removeOver') ||
+    (isMultisig && methodName === 'replaceOwner') ||
+    (isMultisig && methodName === 'setSelector')
+  );
 }
 
 export async function prettyPrintEncodedDataWithTypeSafety<
@@ -596,6 +789,7 @@ export async function prettyPrintEncodedDataWithTypeSafety<
   key: K,
   methodName: U,
   args: Parameters<T['populateTransaction'][U]>,
+  options: { skipWrappingCalldataInSubmitTransaction: boolean } = { skipWrappingCalldataInSubmitTransaction: false },
 ): Promise<EncodedTransaction> {
   const contract = liveMap[key];
   const transaction = await contract.populateTransaction[methodName.toString()](...(args as any));
@@ -609,8 +803,10 @@ export async function prettyPrintEncodedDataWithTypeSafety<
 
     const repeatLength = 76 + (counter - 1).toString().length + key.toString().length + methodName.toString().length;
     console.log(''); // add a new line
-    console.log(`=================================== ${counter++} - ${key}.${methodName} ===================================`);
-    console.log('Readable:\t', `${key}.${methodName}(\n\t\t\t${mappedArgs.join(' ,\n\t\t\t')}\n\t\t)`);
+    console.log(
+      `=================================== ${counter++} - ${String(key)}.${String(methodName)} ===================================`,
+    );
+    console.log('Readable:\t', `${String(key)}.${String(methodName)}(\n\t\t\t${mappedArgs.join(' ,\n\t\t\t')}\n\t\t)`);
     console.log(
       'To:\t\t',
       (await getReadableArg(core, ParamType.fromString('address to'), transaction.to)).substring(13),
@@ -620,12 +816,15 @@ export async function prettyPrintEncodedDataWithTypeSafety<
     console.log(''); // add a new line
   }
 
-  if (
-    typeof methodName === 'string'
-    && isOwnerFunction(methodName, transaction.to === core.delayedMultiSig.address)
-    && await core.dolomiteMargin.owner() === core.delayedMultiSig.address
-  ) {
-    // All owner ... functions must go to Dolomite governance first
+  if (options.skipWrappingCalldataInSubmitTransaction) {
+    return {
+      to: transaction.to!,
+      value: transaction.value?.toString() ?? '0',
+      data: transaction.data!,
+    };
+  }
+
+  if ((await core.dolomiteMargin.owner()) === core.delayedMultiSig.address) {
     const outerTransaction = await core.delayedMultiSig.populateTransaction.submitTransaction(
       transaction.to!,
       transaction.value ?? ZERO_BI,
@@ -638,11 +837,7 @@ export async function prettyPrintEncodedDataWithTypeSafety<
     };
   }
 
-  return {
-    to: transaction.to!,
-    value: transaction.value?.toString() ?? '0',
-    data: transaction.data!,
-  };
+  return Promise.reject(new Error('Unknown owner function needed!'));
 }
 
 let mostRecentTokenDecimals: number | undefined = undefined;
@@ -668,9 +863,11 @@ async function getReadableArg<T extends NetworkType>(
       ...inputParamType.arrayChildren,
       name: inputParamType.name,
     });
-    const formattedArgs = await Promise.all(arg.map(async (value, i) => {
-      return await getReadableArg(core, subParamType, value, decimals, i, nestedLevel + 1);
-    }));
+    const formattedArgs = await Promise.all(
+      arg.map(async (value, i) => {
+        return await getReadableArg(core, subParamType, value, decimals, i, nestedLevel + 1);
+      }),
+    );
     const tabs = '\t'.repeat(nestedLevel);
     return `${formattedInputParamName} = [\n${tabs}\t${formattedArgs.join(` ,\n${tabs}\t`)}\n${tabs}]`;
   }
@@ -697,13 +894,13 @@ async function getReadableArg<T extends NetworkType>(
   if (inputParamType.type === 'address') {
     const chainId = core.config.network;
     const allDeployments = readAllDeploymentFiles();
-    Object.keys(allDeployments).forEach(key => {
+    Object.keys(allDeployments).forEach((key) => {
       if ((allDeployments as any)[key][chainId]?.address.toLowerCase() === arg.toLowerCase()) {
         specialName = ` (${key})`;
       }
     });
     if (!specialName) {
-      Object.keys(allDeployments).forEach(key => {
+      Object.keys(allDeployments).forEach((key) => {
         if ((allDeployments as any)[key][chainId]?.address.toLowerCase() === arg.toLowerCase()) {
           specialName = ` (${key})`;
         }
@@ -728,14 +925,9 @@ async function getReadableArg<T extends NetworkType>(
     const keys = Object.keys(arg);
     for (let i = 0; i < keys.length; i++) {
       const componentPiece = inputParamType.components[i];
-      values.push(await getReadableArg(
-        core,
-        componentPiece,
-        arg[componentPiece.name],
-        decimals,
-        index,
-        nestedLevel + 1,
-      ));
+      values.push(
+        await getReadableArg(core, componentPiece, arg[componentPiece.name], decimals, index, nestedLevel + 1),
+      );
     }
     const tabs = '\t'.repeat(nestedLevel);
     return `${formattedInputParamName} = {\n${tabs}\t${values.join(` ,\n${tabs}\t`)}\n${tabs}}`;
@@ -752,12 +944,13 @@ async function getReadableArg<T extends NetworkType>(
 export async function prettyPrintEncodeInsertChainlinkOracle<T extends NetworkType>(
   core: CoreProtocolWithChainlinkOld<T>,
   token: IERC20,
-  tokenPairAddress: address | undefined = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address].tokenPairAddress,
-  aggregatorAddress: string = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address].aggregatorAddress,
+  tokenPairAddress: string | undefined = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address]!.tokenPairAddress,
+  aggregatorAddress: string = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address]!.aggregatorAddress,
+  options?: { ignoreDescription: boolean },
 ): Promise<EncodedTransaction> {
   const invalidTokens = ['stEth', 'eEth'];
   let tokenDecimals: number;
-  if (invalidTokens.some(t => t in core.tokens && token.address === (core.tokens as any)[t].address)) {
+  if (invalidTokens.some((t) => t in core.tokens && token.address === (core.tokens as any)[t].address)) {
     tokenDecimals = 18;
   } else {
     tokenDecimals = await IERC20Metadata__factory.connect(token.address, core.hhUser1).decimals();
@@ -765,51 +958,169 @@ export async function prettyPrintEncodeInsertChainlinkOracle<T extends NetworkTy
 
   const aggregator = IChainlinkAggregator__factory.connect(aggregatorAddress, core.governance);
 
-  const description = await aggregator.description();
-  const symbol = await IERC20Metadata__factory.connect(token.address, token.signer).symbol();
-  if (!description.includes(symbol) && !description.includes(symbol.substring(1))) {
-    return Promise.reject(new Error(`Invalid aggregator for symbol, found: ${description}, expected: ${symbol}`));
+  const description = (await aggregator.description()).toLowerCase();
+  const symbol = (await IERC20Metadata__factory.connect(token.address, token.signer).symbol()).toLowerCase();
+  if (!options?.ignoreDescription) {
+    if (!description.includes(symbol) && !description.includes(symbol.substring(1))) {
+      return Promise.reject(new Error(`Invalid aggregator for symbol, found: ${description}, expected: ${symbol}`));
+    }
   }
 
   mostRecentTokenDecimals = tokenDecimals;
   return await prettyPrintEncodedDataWithTypeSafety(
     core,
-    { chainlinkPriceOracle: core.chainlinkPriceOracleOld },
+    { chainlinkPriceOracle: core.chainlinkPriceOracleV1 },
     'chainlinkPriceOracle',
     'ownerInsertOrUpdateOracleToken',
-    [
-      token.address,
-      tokenDecimals,
-      aggregator.address,
-      tokenPairAddress ?? ADDRESS_ZERO,
-    ],
+    [token.address, tokenDecimals, aggregator.address, tokenPairAddress ?? ADDRESS_ZERO],
   );
 }
 
 export async function prettyPrintEncodeInsertChainlinkOracleV3<T extends NetworkType>(
   core: CoreProtocolWithChainlinkV3<T>,
   token: IERC20,
-  invertPrice: boolean,
-  tokenPairAddress: address | undefined = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address].tokenPairAddress,
-  aggregatorAddress: string = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address].aggregatorAddress,
+  invertPrice: boolean = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address]!.invert ?? false,
+  tokenPairAddress: string | undefined = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address]!.tokenPairAddress,
+  aggregatorAddress: string = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address]!.aggregatorAddress,
+  options?: { ignoreDescription: boolean },
 ): Promise<EncodedTransaction[]> {
-  const invalidTokenMap: Record<Network, Record<string, { symbol: string; decimals: number }>> = {
-    [Network.PolygonZkEvm]: {},
-    [Network.Base]: {},
-    [Network.ArbitrumOne]: {
-      [core.tokens.stEth.address]: {
-        symbol: 'stETH',
-        decimals: 18,
-      },
-      [core.tokens.eEth.address]: {
-        symbol: 'eETH',
-        decimals: 18,
-      },
-      [core.tokens.gmxBtc.address]: {
-        symbol: 'btc',
-        decimals: 8,
-      },
-    },
+  const invalidTokenSettings = INVALID_TOKEN_MAP[core.network][token.address];
+
+  let tokenDecimals: number;
+  if (invalidTokenSettings) {
+    tokenDecimals = invalidTokenSettings.decimals;
+  } else {
+    tokenDecimals = await IERC20Metadata__factory.connect(token.address, core.hhUser1).decimals();
+  }
+
+  const aggregator = IChainlinkAggregator__factory.connect(aggregatorAddress, core.governance);
+
+  const description = await aggregator.description();
+  let symbol: string;
+  if (invalidTokenSettings) {
+    symbol = invalidTokenSettings.symbol;
+  } else {
+    symbol = await IERC20Metadata__factory.connect(token.address, token.signer).symbol();
+  }
+
+  if (!options?.ignoreDescription) {
+    if (
+      !description.toUpperCase().includes(symbol.toUpperCase()) &&
+      !description.toUpperCase().includes(symbol.toUpperCase().substring(1))
+    ) {
+      return Promise.reject(new Error(`Invalid aggregator for symbol, found: ${description}, expected: ${symbol}`));
+    }
+  }
+
+  mostRecentTokenDecimals = tokenDecimals;
+  return [
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { chainlinkPriceOracle: core.chainlinkPriceOracleV3 },
+      'chainlinkPriceOracle',
+      'ownerInsertOrUpdateOracleToken',
+      [token.address, aggregator.address, invertPrice],
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { oracleAggregatorV2: core.oracleAggregatorV2 },
+      'oracleAggregatorV2',
+      'ownerInsertOrUpdateToken',
+      [
+        {
+          token: token.address,
+          decimals: tokenDecimals,
+          oracleInfos: [
+            {
+              oracle: core.chainlinkPriceOracleV3.address,
+              tokenPair: tokenPairAddress ?? ADDRESS_ZERO,
+              weight: 100,
+            },
+          ],
+        },
+      ],
+    ),
+  ];
+}
+
+export async function prettyPrintEncodeInsertChronicleOracleV3(
+  core: CoreProtocolWithChronicle<Network.ArbitrumOne | Network.Berachain| Network.Mantle>,
+  token: IERC20,
+  invertPrice: boolean = CHRONICLE_PRICE_SCRIBES_MAP[core.config.network][token.address].invertPrice ?? false,
+  tokenPairAddress: string | undefined = CHRONICLE_PRICE_SCRIBES_MAP[core.config.network][token.address]
+    .tokenPairAddress,
+  scribeAddress: string = CHRONICLE_PRICE_SCRIBES_MAP[core.config.network][token.address].scribeAddress,
+): Promise<EncodedTransaction[]> {
+  const invalidTokenSettings = INVALID_TOKEN_MAP[core.network][token.address];
+
+  let tokenDecimals: number;
+  if (invalidTokenSettings) {
+    tokenDecimals = invalidTokenSettings.decimals;
+  } else {
+    tokenDecimals = await IERC20Metadata__factory.connect(token.address, core.hhUser1).decimals();
+  }
+
+  const scribe = IChronicleScribe__factory.connect(scribeAddress, core.governance);
+
+  let symbol: string;
+  if (invalidTokenSettings) {
+    symbol = invalidTokenSettings.symbol;
+  } else {
+    symbol = await IERC20Metadata__factory.connect(token.address, token.signer).symbol();
+  }
+
+  const oracleAddress = core.chroniclePriceOracleV3.address;
+  if ((await scribe.bud(oracleAddress)).eq(ZERO_BI)) {
+    console.warn(`ChroniclePriceOracleV3 has not been kissed yet for scribe ${scribe.address}!`);
+  }
+
+  if (network.name === 'hardhat') {
+    const toller = await impersonate((await scribe.authed())[0], true);
+    const oracle = await impersonate(oracleAddress, true);
+    await scribe.connect(toller).kiss(oracle.address);
+    console.log(`\tChronicle price for ${symbol}:`, (await scribe.connect(oracle).latestRoundData()).answer.toString());
+  }
+
+  mostRecentTokenDecimals = tokenDecimals;
+  return [
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { chroniclePriceOracle: core.chroniclePriceOracleV3 },
+      'chroniclePriceOracle',
+      'ownerInsertOrUpdateOracleToken',
+      [token.address, scribe.address, invertPrice],
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { oracleAggregatorV2: core.oracleAggregatorV2 },
+      'oracleAggregatorV2',
+      'ownerInsertOrUpdateToken',
+      [
+        {
+          token: token.address,
+          decimals: tokenDecimals,
+          oracleInfos: [
+            {
+              oracle: core.chroniclePriceOracleV3.address,
+              tokenPair: tokenPairAddress ?? ADDRESS_ZERO,
+              weight: 100,
+            },
+          ],
+        },
+      ],
+    ),
+  ];
+}
+
+export async function prettyPrintEncodeInsertOkxOracleV3(
+  core: CoreProtocolXLayer,
+  token: IERC20,
+  invertPrice: boolean,
+  tokenPairAddress: string | undefined = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address]!.tokenPairAddress,
+  aggregatorAddress: string = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address]!.aggregatorAddress,
+): Promise<EncodedTransaction[]> {
+  const invalidTokenMap: Record<Network.XLayer, Record<string, { symbol: string; decimals: number }>> = {
+    [Network.XLayer]: {},
   };
   const invalidTokenSettings = invalidTokenMap[core.network][token.address];
 
@@ -841,14 +1152,10 @@ export async function prettyPrintEncodeInsertChainlinkOracleV3<T extends Network
   return [
     await prettyPrintEncodedDataWithTypeSafety(
       core,
-      { chainlinkPriceOracle: core.chainlinkPriceOracleV3 },
-      'chainlinkPriceOracle',
+      { okxPriceOracle: core.okxPriceOracleV3 },
+      'okxPriceOracle',
       'ownerInsertOrUpdateOracleToken',
-      [
-        token.address,
-        aggregator.address,
-        invertPrice,
-      ],
+      [token.address, aggregator.address, invertPrice],
     ),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
@@ -861,7 +1168,92 @@ export async function prettyPrintEncodeInsertChainlinkOracleV3<T extends Network
           decimals: tokenDecimals,
           oracleInfos: [
             {
-              oracle: core.chainlinkPriceOracleV3.address,
+              oracle: core.okxPriceOracleV3.address,
+              tokenPair: tokenPairAddress ?? ADDRESS_ZERO,
+              weight: 100,
+            },
+          ],
+        },
+      ],
+    ),
+  ];
+}
+
+export async function prettyPrintEncodeInsertPendlePtOracle<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  pendleSystem: PendlePtSystem,
+  token: IERC20,
+): Promise<EncodedTransaction> {
+  return prettyPrintEncodedDataWithTypeSafety(
+    core,
+    { oracleAggregatorV2: core.oracleAggregatorV2 },
+    'oracleAggregatorV2',
+    'ownerInsertOrUpdateToken',
+    [
+      {
+        token: pendleSystem.factory.address,
+        decimals: await pendleSystem.factory.decimals(),
+        oracleInfos: [
+          {
+            oracle: pendleSystem.oracle.address,
+            tokenPair: token.address,
+            weight: 100,
+          },
+        ],
+      },
+    ],
+  );
+}
+
+export async function prettyPrintEncodeInsertRedstoneOracleV3<T extends NetworkType>(
+  core: CoreProtocolWithRedstone<T>,
+  token: IERC20,
+  invertPrice: boolean = REDSTONE_PRICE_AGGREGATORS_MAP[core.config.network][token.address]!.invert ?? false,
+  tokenPairAddress: string | undefined = REDSTONE_PRICE_AGGREGATORS_MAP[core.config.network][token.address]!
+    .tokenPairAddress,
+  aggregatorAddress: string = REDSTONE_PRICE_AGGREGATORS_MAP[core.config.network][token.address]!.aggregatorAddress,
+): Promise<EncodedTransaction[]> {
+  const invalidTokenSettings = INVALID_TOKEN_MAP[Network.Mantle][token.address];
+
+  let tokenDecimals: number;
+  if (invalidTokenSettings) {
+    tokenDecimals = invalidTokenSettings.decimals;
+  } else {
+    tokenDecimals = await IERC20Metadata__factory.connect(token.address, core.hhUser1).decimals();
+  }
+
+  const aggregator = IChainlinkAggregator__factory.connect(aggregatorAddress, core.governance);
+
+  let symbol: string;
+  if (invalidTokenSettings) {
+    symbol = invalidTokenSettings.symbol;
+  } else {
+    symbol = await IERC20Metadata__factory.connect(token.address, token.signer).symbol();
+  }
+
+  console.log(`\tRedstone price for ${symbol}:`, (await aggregator.latestRoundData()).answer.toString());
+
+  mostRecentTokenDecimals = tokenDecimals;
+  return [
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { redstonePriceOracle: core.redstonePriceOracleV3 },
+      'redstonePriceOracle',
+      'ownerInsertOrUpdateOracleToken',
+      [token.address, aggregator.address, invertPrice],
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { oracleAggregatorV2: core.oracleAggregatorV2 },
+      'oracleAggregatorV2',
+      'ownerInsertOrUpdateToken',
+      [
+        {
+          token: token.address,
+          decimals: tokenDecimals,
+          oracleInfos: [
+            {
+              oracle: core.redstonePriceOracleV3.address,
               tokenPair: tokenPairAddress ?? ADDRESS_ZERO,
               weight: 100,
             },
@@ -875,7 +1267,6 @@ export async function prettyPrintEncodeInsertChainlinkOracleV3<T extends Network
 export interface AddMarketOptions {
   additionalConverters?: BaseContract[];
   skipAmountValidation?: boolean;
-  isAsyncAsset?: boolean;
   decimals?: number;
 }
 
@@ -908,18 +1299,14 @@ export async function prettyPrintEncodeAddIsolationModeMarket<T extends NetworkT
   transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(
       core,
-      { factory },
-      'factory',
-      'ownerInitialize',
-      [[unwrapper.address, wrapper.address, ...(options.additionalConverters ?? []).map(c => c.address)]],
-    ),
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
       { dolomiteMargin: core.dolomiteMargin },
       'dolomiteMargin',
       'ownerSetGlobalOperator',
       [factory.address, true],
     ),
+    await prettyPrintEncodedDataWithTypeSafety(core, { factory }, 'factory', 'ownerInitialize', [
+      [unwrapper.address, wrapper.address, ...(options.additionalConverters ?? []).map((c) => c.address)],
+    ]),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       { liquidatorAssetRegistry: core.liquidatorAssetRegistry },
@@ -929,19 +1316,140 @@ export async function prettyPrintEncodeAddIsolationModeMarket<T extends NetworkT
     ),
   );
 
-  if (options.isAsyncAsset) {
-    transactions.push(
-      await prettyPrintEncodedDataWithTypeSafety(
-        core,
-        { liquidatorAssetRegistry: core.liquidatorAssetRegistry },
-        'liquidatorAssetRegistry',
-        'ownerAddLiquidatorToAssetWhitelist',
-        [marketId, core.freezableLiquidatorProxy.address],
-      ),
-    );
-  }
+  return transactions;
+}
+
+export async function prettyPrintEncodeAddAsyncIsolationModeMarket<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  factory: IIsolationModeVaultFactory,
+  oracle: IDolomitePriceOracle,
+  unwrapper: IIsolationModeUnwrapperTraderV2,
+  wrapper: IIsolationModeWrapperTraderV2,
+  handlerRegistry: HandlerRegistry,
+  marketId: BigNumberish,
+  targetCollateralization: TargetCollateralization,
+  targetLiquidationPremium: TargetLiquidationPenalty,
+  maxSupplyWei: BigNumberish,
+  options: AddMarketOptions = {},
+): Promise<EncodedTransaction[]> {
+  const transactions: EncodedTransaction[] = await prettyPrintEncodeAddMarket(
+    core,
+    IERC20__factory.connect(factory.address, factory.signer),
+    oracle,
+    core.interestSetters.alwaysZeroInterestSetter,
+    targetCollateralization,
+    targetLiquidationPremium,
+    maxSupplyWei,
+    ZERO_BI,
+    true,
+    ZERO_BI,
+    options,
+  );
+
+  transactions.push(
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { dolomiteMargin: core.dolomiteMargin },
+      'dolomiteMargin',
+      'ownerSetGlobalOperator',
+      [factory.address, true],
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(core, { factory }, 'factory', 'ownerInitialize', [
+      [unwrapper.address, wrapper.address, ...(options.additionalConverters ?? []).map((c) => c.address)],
+    ]),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { liquidatorAssetRegistry: core.liquidatorAssetRegistry },
+      'liquidatorAssetRegistry',
+      'ownerAddLiquidatorToAssetWhitelist',
+      [marketId, core.liquidatorProxyV4.address],
+    ),
+  );
+
+  transactions.push(
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { liquidatorAssetRegistry: core.liquidatorAssetRegistry },
+      'liquidatorAssetRegistry',
+      'ownerAddLiquidatorToAssetWhitelist',
+      [marketId, core.freezableLiquidatorProxy.address],
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { handlerRegistry },
+      'handlerRegistry',
+      'ownerSetUnwrapperByToken',
+      [factory.address, unwrapper.address],
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(core, { handlerRegistry }, 'handlerRegistry', 'ownerSetWrapperByToken', [
+      factory.address,
+      wrapper.address,
+    ]),
+  );
 
   return transactions;
+}
+
+export async function prettyPrintEncodeAddGmxV2Market(
+  core: CoreProtocolArbitrumOne,
+  factory: IGmxV2IsolationModeVaultFactory,
+  unwrapper: IIsolationModeUnwrapperTraderV2,
+  wrapper: IIsolationModeWrapperTraderV2,
+  handlerRegistry: HandlerRegistry,
+  marketId: BigNumberish,
+  targetCollateralization: TargetCollateralization,
+  targetLiquidationPremium: TargetLiquidationPenalty,
+  maxSupplyWei: BigNumberish,
+  options: AddMarketOptions = {},
+): Promise<EncodedTransaction[]> {
+  return [
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { gmxV2PriceOracle: core.gmxV2Ecosystem.live.priceOracle },
+      'gmxV2PriceOracle',
+      'ownerSetMarketToken',
+      [factory.address, true],
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { oracleAggregatorV2: core.oracleAggregatorV2 },
+      'oracleAggregatorV2',
+      'ownerInsertOrUpdateToken',
+      [
+        {
+          decimals: await IERC20Metadata__factory.connect(factory.address, factory.signer).decimals(),
+          token: factory.address,
+          oracleInfos: [
+            {
+              oracle: core.gmxV2Ecosystem.live.priceOracle.address,
+              weight: 100,
+              tokenPair: ADDRESS_ZERO,
+            },
+          ],
+        },
+      ],
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { gmxV2Registry: core.gmxV2Ecosystem.live.registry },
+      'gmxV2Registry',
+      'ownerSetGmxMarketToIndexToken',
+      [await factory.UNDERLYING_TOKEN(), await factory.INDEX_TOKEN()],
+    ),
+    ...await prettyPrintEncodeAddAsyncIsolationModeMarket(
+      core,
+      factory,
+      core.oracleAggregatorV2,
+      unwrapper,
+      wrapper,
+      handlerRegistry,
+      marketId,
+      targetCollateralization,
+      targetLiquidationPremium,
+      maxSupplyWei,
+      options,
+    ),
+  ];
 }
 
 export async function prettyPrintEncodeAddMarket<T extends NetworkType>(
@@ -957,11 +1465,11 @@ export async function prettyPrintEncodeAddMarket<T extends NetworkType>(
   earningsRateOverride: BigNumberish = ZERO_BI,
   options: AddMarketOptions = {},
 ): Promise<EncodedTransaction[]> {
-  if (!options.skipAmountValidation && !await isValidAmount(token, maxSupplyWei)) {
+  if (!options.skipAmountValidation && !(await isValidAmount(token, maxSupplyWei))) {
     const name = await getFormattedTokenName(core, token.address);
     return Promise.reject(new Error(`Invalid max supply wei for ${name}, found: ${maxSupplyWei.toString()}`));
   }
-  if (!options.skipAmountValidation && !await isValidAmount(token, maxBorrowWei)) {
+  if (!options.skipAmountValidation && !(await isValidAmount(token, maxBorrowWei))) {
     const name = await getFormattedTokenName(core, token.address);
     return Promise.reject(new Error(`Invalid max borrow wei for ${name}, found: ${maxBorrowWei.toString()}`));
   }
@@ -990,13 +1498,8 @@ export async function prettyPrintEncodeAddMarket<T extends NetworkType>(
   return transactions;
 }
 
-export function writeDeploymentFile(
-  fileContent: Record<string, Record<ChainId, any>>,
-) {
-  writeFile(
-    DEPLOYMENT_FILE_NAME,
-    JSON.stringify(sortFile(fileContent), null, 2),
-  );
+export function writeDeploymentFile(fileContent: Record<string, Record<ChainId, any>>) {
+  writeFile(DEPLOYMENT_FILE_NAME, JSON.stringify(sortFile(fileContent), null, 2));
 }
 
 export function createFolder(dir: string) {
@@ -1005,15 +1508,8 @@ export function createFolder(dir: string) {
   }
 }
 
-export function writeFile(
-  fileName: string,
-  fileContent: string,
-) {
-  fs.writeFileSync(
-    fileName,
-    fileContent,
-    { encoding: 'utf8', flag: 'w' },
-  );
+export function writeFile(fileName: string, fileContent: string) {
+  fs.writeFileSync(fileName, fileContent, { encoding: 'utf8', flag: 'w' });
 }
 
 async function isValidAmount(token: IERC20, amount: BigNumberish) {

@@ -1,5 +1,4 @@
 import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import {
   getOARBConstructorParams,
@@ -14,6 +13,7 @@ import {
   VesterImplementationV1__factory,
 } from '@dolomite-exchange/modules-liquidity-mining/src/types';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
+import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import {
   createFolder,
   DenJsonUpload,
@@ -36,7 +36,7 @@ async function main(): Promise<DenJsonUpload> {
     getOARBConstructorParams(core),
   );
   const oARB = OARB__factory.connect(oARBAddress, core.hhUser1);
-  const vesterProxy = await createVesterProxy(core, network, oARB);
+  const vesterProxy = await createVesterProxy(core, oARB);
   const vesterExploderAddress = await deployContractAndSave(
     'VesterExploder',
     getVesterExploderConstructorParams(core, vesterProxy),
@@ -88,12 +88,11 @@ async function main(): Promise<DenJsonUpload> {
 
 async function createVesterProxy(
   core: CoreProtocolArbitrumOne,
-  network: Network,
   oARB: OARB,
 ): Promise<VesterImplementationV1> {
   const vesterImplementationAddress = await deployContractAndSave(
     'VesterImplementationV1',
-    getVesterImplementationConstructorParams(core),
+    getVesterImplementationConstructorParams(core, core.tokens.arb),
     'VesterImplementationV1V1',
   );
   const vesterImplementation = VesterImplementationV1__factory.connect(

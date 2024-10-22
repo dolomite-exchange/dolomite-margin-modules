@@ -20,7 +20,6 @@
 
 pragma solidity ^0.8.9;
 
-import { MinimalERC20 } from "@dolomite-exchange/modules-base/contracts/general/MinimalERC20.sol";
 import { SimpleIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/SimpleIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { IJonesUSDCIsolationModeVaultFactory } from "./interfaces/IJonesUSDCIsolationModeVaultFactory.sol";
 import { IJonesUSDCRegistry } from "./interfaces/IJonesUSDCRegistry.sol";
@@ -62,6 +61,7 @@ contract JonesUSDCV2IsolationModeVaultFactory is
         _jUSDC,
         _borrowPositionProxy,
         _userVaultImplementation,
+        address(IJonesUSDCRegistry(_jonesUSDCRegistry).dolomiteRegistry()),
         _dolomiteMargin
     ) {
         jonesUSDCRegistry = IJonesUSDCRegistry(_jonesUSDCRegistry);

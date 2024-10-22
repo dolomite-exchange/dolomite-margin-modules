@@ -42,15 +42,16 @@ contract TestIsolationModeVaultFactory is IsolationModeVaultFactory {
     IDolomiteRegistry public dolomiteRegistry;
 
     constructor(
-        address _dolomiteRegistry,
         address _underlyingToken,
         address _borrowPositionProxy,
         address _userVaultImplementation,
+        address _dolomiteRegistry,
         address _dolomiteMargin
     ) IsolationModeVaultFactory(
         _underlyingToken,
         _borrowPositionProxy,
         _userVaultImplementation,
+        _dolomiteRegistry,
         _dolomiteMargin
     ) {
         dolomiteRegistry = IDolomiteRegistry(_dolomiteRegistry);

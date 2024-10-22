@@ -1,8 +1,6 @@
-import { BYTES_ZERO, Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { BYTES_ZERO } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import {
-  getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupTestMarket,
   setupUserVaultProxy,
@@ -27,7 +25,12 @@ import {
   createJonesUSDCPriceOracle,
   createJonesUSDCRegistry,
 } from './jones-ecosystem-utils';
-import { createRoleAndWhitelistTrader, TRADER_ROLE } from './jones-utils';
+import {
+  createRoleAndWhitelistTraderV2,
+  JONES_CORE_PROTOCOL_CONFIG,
+  JONES_V2_WHITELIST_ADMIN,
+  TRADER_ROLE,
+} from './jones-utils';
 
 describe('JonesUSDCIsolationModeTokenVaultV1', () => {
   let snapshotId: string;
@@ -42,8 +45,8 @@ describe('JonesUSDCIsolationModeTokenVaultV1', () => {
   let vault: JonesUSDCIsolationModeTokenVaultV1;
 
   before(async () => {
-    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
-    underlyingToken = core.jonesEcosystem!.jUsdcOld.connect(core.hhUser1);
+    core = await setupCoreProtocol(JONES_CORE_PROTOCOL_CONFIG);
+    underlyingToken = core.jonesEcosystem!.jUSDCV1.connect(core.hhUser1);
     const userVaultImplementation = await createJonesUSDCIsolationModeTokenVaultV1();
     jonesUSDCRegistry = await createJonesUSDCRegistry(core);
     factory = await createJonesUSDCIsolationModeVaultFactory(
@@ -75,7 +78,7 @@ describe('JonesUSDCIsolationModeTokenVaultV1', () => {
       core.hhUser1,
     );
 
-    await createRoleAndWhitelistTrader(core, unwrapperForLiquidation, wrapper);
+    await createRoleAndWhitelistTraderV2(core, unwrapperForLiquidation, wrapper);
 
     snapshotId = await snapshot();
   });
@@ -104,49 +107,49 @@ describe('JonesUSDCIsolationModeTokenVaultV1', () => {
     it('should be paused when router is paused', async () => {
       expect(await vault.isExternalRedemptionPaused()).to.be.false;
 
-      await core.jonesEcosystem!.glpVaultRouter.connect(core.jonesEcosystem!.admin).toggleEmergencyPause();
+      await core.jonesEcosystem!.jUSDCRouter.connect(core.jonesEcosystem!.adminV2).pause();
 
       expect(await vault.isExternalRedemptionPaused()).to.be.true;
-      expect(await core.jonesEcosystem!.glpVaultRouter.emergencyPaused()).to.be.true;
-      expect(await core.jonesEcosystem!.whitelistControllerV1.getUserRole(unwrapperForLiquidation.address))
+      expect(await core.jonesEcosystem!.jUSDCRouter.isPaused()).to.be.true;
+      expect(await core.jonesEcosystem!.whitelistControllerV2.getUserRole(unwrapperForLiquidation.address))
         .to
         .eq(TRADER_ROLE);
       expect(
-        await core.jonesEcosystem!.whitelistControllerV1.isWhitelistedContract(unwrapperForLiquidation.address),
+        await core.jonesEcosystem!.whitelistControllerV2.isWhitelistedContract(unwrapperForLiquidation.address),
       ).to.be.true;
     });
 
     it('should be paused when redemption bypass time is not active', async () => {
       expect(await vault.isExternalRedemptionPaused()).to.be.false;
 
-      const whitelistOwner = await impersonate(await core.jonesEcosystem!.whitelistControllerV1.owner());
-      await core.jonesEcosystem!.whitelistControllerV1.connect(whitelistOwner)
+      const whitelistOwner = await impersonate(JONES_V2_WHITELIST_ADMIN);
+      await core.jonesEcosystem!.whitelistControllerV2.connect(whitelistOwner)
         .removeUserFromRole(unwrapperForLiquidation.address);
 
       expect(await vault.isExternalRedemptionPaused()).to.be.true;
-      expect(await core.jonesEcosystem!.glpVaultRouter.emergencyPaused()).to.be.false;
-      expect(await core.jonesEcosystem!.whitelistControllerV1.getUserRole(unwrapperForLiquidation.address))
+      expect(await core.jonesEcosystem!.jUSDCRouter.isPaused()).to.be.false;
+      expect(await core.jonesEcosystem!.whitelistControllerV2.getUserRole(unwrapperForLiquidation.address))
         .to
         .eq(BYTES_ZERO);
       expect(
-        await core.jonesEcosystem!.whitelistControllerV1.isWhitelistedContract(unwrapperForLiquidation.address),
+        await core.jonesEcosystem!.whitelistControllerV2.isWhitelistedContract(unwrapperForLiquidation.address),
       ).to.be.true;
     });
 
     it('should be paused when unwrapper is not whitelisted', async () => {
       expect(await vault.isExternalRedemptionPaused()).to.be.false;
 
-      const whitelistOwner = await impersonate(await core.jonesEcosystem!.whitelistControllerV1.owner());
-      await core.jonesEcosystem!.whitelistControllerV1.connect(whitelistOwner)
-        .removeFromWhitelistContract(unwrapperForLiquidation.address);
+      const whitelistOwner = await impersonate(JONES_V2_WHITELIST_ADMIN);
+      await core.jonesEcosystem!.whitelistControllerV2.connect(whitelistOwner)
+        .removeFromWhitelist(unwrapperForLiquidation.address);
 
       expect(await vault.isExternalRedemptionPaused()).to.be.true;
-      expect(await core.jonesEcosystem!.glpVaultRouter.emergencyPaused()).to.be.false;
-      expect(await core.jonesEcosystem!.whitelistControllerV1.getUserRole(unwrapperForLiquidation.address))
+      expect(await core.jonesEcosystem!.jUSDCRouter.isPaused()).to.be.false;
+      expect(await core.jonesEcosystem!.whitelistControllerV2.getUserRole(unwrapperForLiquidation.address))
         .to
         .eq(TRADER_ROLE);
       expect(
-        await core.jonesEcosystem!.whitelistControllerV1.isWhitelistedContract(unwrapperForLiquidation.address),
+        await core.jonesEcosystem!.whitelistControllerV2.isWhitelistedContract(unwrapperForLiquidation.address),
       ).to.be.false;
     });
 
@@ -155,20 +158,20 @@ describe('JonesUSDCIsolationModeTokenVaultV1', () => {
       async () => {
         expect(await vault.isExternalRedemptionPaused()).to.be.false;
 
-        const whitelistOwner = await impersonate(await core.jonesEcosystem!.whitelistControllerV1.owner());
-        await core.jonesEcosystem!.whitelistControllerV1.connect(whitelistOwner)
+        const whitelistOwner = await impersonate(JONES_V2_WHITELIST_ADMIN);
+        await core.jonesEcosystem!.whitelistControllerV2.connect(whitelistOwner)
           .removeUserFromRole(unwrapperForLiquidation.address);
-        await core.jonesEcosystem!.whitelistControllerV1.connect(whitelistOwner)
-          .removeFromWhitelistContract(unwrapperForLiquidation.address);
-        await core.jonesEcosystem!.glpVaultRouter.connect(core.jonesEcosystem!.admin).toggleEmergencyPause();
+        await core.jonesEcosystem!.whitelistControllerV2.connect(whitelistOwner)
+          .removeFromWhitelist(unwrapperForLiquidation.address);
+        await core.jonesEcosystem!.jUSDCRouter.connect(core.jonesEcosystem!.adminV2).pause();
 
         expect(await vault.isExternalRedemptionPaused()).to.be.true;
-        expect(await core.jonesEcosystem!.glpVaultRouter.emergencyPaused()).to.be.true;
-        expect(await core.jonesEcosystem!.whitelistControllerV1.getUserRole(unwrapperForLiquidation.address))
+        expect(await core.jonesEcosystem!.jUSDCRouter.isPaused()).to.be.true;
+        expect(await core.jonesEcosystem!.whitelistControllerV2.getUserRole(unwrapperForLiquidation.address))
           .to
           .eq(BYTES_ZERO);
         expect(
-          await core.jonesEcosystem!.whitelistControllerV1.isWhitelistedContract(unwrapperForLiquidation.address),
+          await core.jonesEcosystem!.whitelistControllerV2.isWhitelistedContract(unwrapperForLiquidation.address),
         ).to.be.false;
       },
     );

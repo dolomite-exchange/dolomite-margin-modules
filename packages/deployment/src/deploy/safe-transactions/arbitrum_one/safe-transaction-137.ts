@@ -35,7 +35,7 @@ async function main(): Promise<DenJsonUpload> {
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       core.jonesEcosystem!.live,
-      'jonesUSDCRegistryProxy',
+      'jonesUSDCV1RegistryProxy',
       'upgradeTo',
       [jonesUSDCRegistryAddress],
     ),
@@ -44,7 +44,7 @@ async function main(): Promise<DenJsonUpload> {
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       core.jonesEcosystem!.live,
-      'jonesUSDCRegistry',
+      'jonesUSDCV1Registry',
       'ownerSetJUSDCFarm',
       [core.jonesEcosystem!.jUSDCFarm.address],
     ),
@@ -53,7 +53,7 @@ async function main(): Promise<DenJsonUpload> {
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       core.jonesEcosystem!.live,
-      'jUSDCIsolationModeFactoryOld',
+      'jUSDCV1IsolationModeFactory',
       'ownerSetUserVaultImplementation',
       [jUSDCTokenVaultV2Address],
     ),

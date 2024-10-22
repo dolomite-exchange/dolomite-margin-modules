@@ -14,7 +14,6 @@ import {
   expectThrow,
   expectWalletBalance,
 } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import {
   setupCoreProtocol,
   setupUSDCBalance,
@@ -29,6 +28,7 @@ import {
   JonesUSDCIsolationModeVaultFactory,
 } from '../src/types';
 import { createJonesUSDCIsolationModeTokenVaultV2 } from './jones-ecosystem-utils';
+import { JONES_V2_WHITELIST_ADMIN } from './jones-utils';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
@@ -51,12 +51,12 @@ describe('JonesUSDCIsolationModeTokenVaultV2', () => {
       blockNumber: 155_091_000,
       network: Network.ArbitrumOne,
     });
-    underlyingToken = core.jonesEcosystem!.jUsdcOld.connect(core.hhUser1);
+    underlyingToken = core.jonesEcosystem!.jUSDCV2.connect(core.hhUser1);
     const userVaultImplementation = await createJonesUSDCIsolationModeTokenVaultV2();
-    jonesUSDCRegistry = core.jonesEcosystem!.live.jonesUSDCRegistry;
-    factory = core.jonesEcosystem!.live.jUSDCIsolationModeFactoryOld;
+    jonesUSDCRegistry = core.jonesEcosystem!.live.jonesUSDCV2Registry;
+    factory = core.jonesEcosystem!.live.jUSDCV2IsolationModeFactory;
     marketId = await core.dolomiteMargin.getMarketIdByTokenAddress(factory.address);
-    governor = await impersonate('0x4817cA4DF701d554D78Aa3d142b62C162C682ee1', true);
+    governor = await impersonate(JONES_V2_WHITELIST_ADMIN, true);
 
     const newRegistryImplementation = await createContractWithName('JonesUSDCRegistry', []);
     await RegistryProxy__factory.connect(jonesUSDCRegistry.address, core.governance).upgradeTo(
@@ -77,9 +77,9 @@ describe('JonesUSDCIsolationModeTokenVaultV2', () => {
       core.hhUser1,
     );
 
-    await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.jonesEcosystem!.glpAdapter);
-    await core.jonesEcosystem!.glpAdapter.connect(core.hhUser1).depositStable(usableUsdcAmount, true);
-    await core.jonesEcosystem!.jUsdcOld.connect(core.hhUser1).approve(vault.address, amountWei);
+    await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.jonesEcosystem!.jUSDCRouter);
+    await core.jonesEcosystem!.jUSDCRouter.connect(core.hhUser1).deposit(usableUsdcAmount, core.hhUser1.address);
+    await core.jonesEcosystem!.jUSDCV2.connect(core.hhUser1).approve(vault.address, amountWei);
     await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
 
     snapshotId = await snapshot();

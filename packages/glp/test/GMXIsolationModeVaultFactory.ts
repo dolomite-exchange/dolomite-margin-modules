@@ -6,7 +6,6 @@ import {
   expectThrow,
   expectWalletBalance,
 } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import {
   getDefaultCoreProtocolConfig,
   setupCoreProtocol,
@@ -19,6 +18,7 @@ import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import { BigNumber, ContractTransaction } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
+import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import {
   GLPIsolationModeTokenVaultV2__factory,
   GLPIsolationModeVaultFactory,
@@ -102,7 +102,7 @@ describe('GMXIsolationModeVaultFactory', () => {
       account: core.hhUser1.address,
       vault: vault.toString(),
     });
-    await expect(await core.borrowPositionProxyV2.isCallerAuthorized(vault)).to.eq(true);
+    expect(await core.borrowPositionProxyV2.isCallerAuthorized(vault)).to.eq(true);
 
     const vaultContract = setupUserVaultProxy<IsolationModeUpgradeableProxy>(
       vault,
@@ -143,8 +143,8 @@ describe('GMXIsolationModeVaultFactory', () => {
 
     it('should work properly with Glp vault with balance', async () => {
       // Reset glp vault to V1 and create vault
-      const glpV1VaultImplemenation = await createGLPIsolationModeTokenVaultV1();
-      await glpFactory.connect(core.governance).ownerSetUserVaultImplementation(glpV1VaultImplemenation.address);
+      const glpV1VaultImplementation = await createGLPIsolationModeTokenVaultV1();
+      await glpFactory.connect(core.governance).ownerSetUserVaultImplementation(glpV1VaultImplementation.address);
       const glpVaultAddress = await glpFactory.calculateVaultByAccount(core.hhUser1.address);
       await core.gmxEcosystem!.sGlp.connect(core.hhUser1).approve(glpVaultAddress, MAX_UINT_256_BI);
       await glpFactory.connect(core.hhUser1).createVaultAndDepositIntoDolomiteMargin(
@@ -163,8 +163,8 @@ describe('GMXIsolationModeVaultFactory', () => {
       expect(await core.gmxEcosystem!.sbfGmx.balanceOf(glpVault.address)).to.eq(gmxAmount);
 
       // Upgrade GLP vault factory to V2 and create GMX vault
-      const glpV2VaultImplemenation = await createGLPIsolationModeTokenVaultV2();
-      await glpFactory.connect(core.governance).ownerSetUserVaultImplementation(glpV2VaultImplemenation.address);
+      const glpV2VaultImplementation = await createGLPIsolationModeTokenVaultV2();
+      await glpFactory.connect(core.governance).ownerSetUserVaultImplementation(glpV2VaultImplementation.address);
       const result = await gmxFactory.connect(core.hhUser1).createVault(core.hhUser1.address);
       const gmxVaultAddress = await gmxFactory.calculateVaultByAccount(core.hhUser1.address);
       const gmxVault = GMXIsolationModeTokenVaultV1__factory.connect(

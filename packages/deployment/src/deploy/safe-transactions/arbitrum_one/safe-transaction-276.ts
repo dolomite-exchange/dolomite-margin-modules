@@ -51,17 +51,17 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     { ...core.libraries.tokenVaultActionsImpl, ...gmxV2Libraries },
   );
   const gmxV2TokenVault = GmxV2IsolationModeTokenVaultV1__factory.connect(gmxV2TokenVaultAddress, core.hhUser1);
-  const gmxV2RegistryProxy = RegistryProxy__factory.connect(core.gmxEcosystemV2.live.registry.address, core.hhUser1);
+  const gmxV2RegistryProxy = RegistryProxy__factory.connect(core.gmxV2Ecosystem.live.registry.address, core.hhUser1);
   const gmxV2RegistryImplementation = GmxV2Registry__factory.connect(
-    core.gmxEcosystemV2.live.registry.address,
+    core.gmxV2Ecosystem.live.registry.address,
     core.hhUser1,
   );
 
   const factories = [
-    core.gmxEcosystemV2.live.gmArb.factory,
-    core.gmxEcosystemV2.live.gmBtc.factory,
-    core.gmxEcosystemV2.live.gmEth.factory,
-    core.gmxEcosystemV2.live.gmLink.factory,
+    core.gmxV2Ecosystem.live.gmArbUsd.factory,
+    core.gmxV2Ecosystem.live.gmBtcUsd.factory,
+    core.gmxV2Ecosystem.live.gmEthUsd.factory,
+    core.gmxV2Ecosystem.live.gmLinkUsd.factory,
   ];
   const indexTokens = [
     core.tokens.arb.address,
@@ -88,7 +88,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     transactions.push(
       await prettyPrintEncodedDataWithTypeSafety(
         core,
-        core.gmxEcosystemV2.live,
+        core.gmxV2Ecosystem.live,
         'registry',
         'ownerSetGmxMarketToIndexToken',
         [marketToken, indexTokens[i]],

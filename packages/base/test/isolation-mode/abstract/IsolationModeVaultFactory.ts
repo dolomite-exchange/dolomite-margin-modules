@@ -7,7 +7,7 @@ import {
   IsolationModeTokenVaultV1__factory,
   IsolationModeUpgradeableProxy,
   IsolationModeUpgradeableProxy__factory,
-  TestIsolationModeFactory,
+  TestIsolationModeVaultFactory,
   TestIsolationModeTokenVaultV1,
   TestIsolationModeTokenVaultV1__factory,
   TestIsolationModeUnwrapperTraderV1,
@@ -18,9 +18,13 @@ import {
   TestIsolationModeWrapperTraderV1__factory,
   TestIsolationModeWrapperTraderV2,
   TestIsolationModeWrapperTraderV2__factory,
+  DolomiteRegistryImplementation,
+  DolomiteRegistryImplementation__factory,
+  DolomiteAccountRegistry,
+  DolomiteAccountRegistry__factory,
 } from '../../../src/types';
 import { createContractWithAbi, createContractWithLibrary, createTestToken } from '../../../src/utils/dolomite-utils';
-import { BYTES_EMPTY, Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
+import { ADDRESS_ZERO, BYTES_EMPTY, Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import {
@@ -31,11 +35,15 @@ import {
   expectWalletAllowance,
   expectWalletBalance,
 } from '../../utils/assertions';
-import { CoreProtocolArbitrumOne } from '../../utils/core-protocol';
-import { createIsolationModeTokenVaultV1ActionsImpl } from '../../utils/dolomite';
-import { createTestIsolationModeFactory } from '../../utils/ecosystem-utils/testers';
+
+import { CoreProtocolArbitrumOne } from '../../utils/core-protocols/core-protocol-arbitrum-one';
 import {
-  getDefaultCoreProtocolConfig,
+  createDolomiteAccountRegistryImplementation,
+  createIsolationModeTokenVaultV1ActionsImpl,
+  createRegistryProxy
+} from '../../utils/dolomite';
+import { createTestIsolationModeVaultFactory } from '../../utils/ecosystem-utils/testers';
+import {
   setupCoreProtocol,
   setupTestMarket,
   setupUserVaultProxy,
@@ -44,6 +52,7 @@ import {
 const toAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // 200 units
 const smallAmountWei = BigNumber.from('10000000000000000000'); // 10 units
+const DEAD_ACCOUNT = '0x000000000000000000000000000000000000dEaD';
 
 describe('IsolationModeVaultFactory', () => {
   let snapshotId: string;
@@ -59,14 +68,19 @@ describe('IsolationModeVaultFactory', () => {
   let tokenWrapperV1: TestIsolationModeWrapperTraderV1;
   let tokenUnwrapperV2: TestIsolationModeUnwrapperTraderV2;
   let tokenWrapperV2: TestIsolationModeWrapperTraderV2;
-  let factory: TestIsolationModeFactory;
+  let factory: TestIsolationModeVaultFactory;
   let userVaultImplementation: TestIsolationModeTokenVaultV1;
   let initializeResult: ContractTransaction;
+  let accountRegistry: DolomiteAccountRegistry;
+  let deadVault: IsolationModeUpgradeableProxy;
 
   let solidAccount: SignerWithAddressWithSafety;
 
   before(async () => {
-    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
+    core = await setupCoreProtocol({
+      network: Network.ArbitrumOne,
+      blockNumber: 221_269_900,
+    });
     underlyingToken = await createTestToken();
     otherToken = await createTestToken();
     const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
@@ -75,7 +89,7 @@ describe('IsolationModeVaultFactory', () => {
       libraries,
       [],
     );
-    factory = await createTestIsolationModeFactory(core, underlyingToken, userVaultImplementation);
+    factory = await createTestIsolationModeVaultFactory(core, underlyingToken, userVaultImplementation);
     await core.testEcosystem!.testPriceOracle.setPrice(
       factory.address,
       '1000000000000000000', // $1.00
@@ -84,6 +98,13 @@ describe('IsolationModeVaultFactory', () => {
       otherToken.address,
       '1000000000000000000', // $1.00
     );
+
+    deadVault = IsolationModeUpgradeableProxy__factory.connect(
+      await factory.getVaultByAccount(DEAD_ACCOUNT),
+      core.hhUser1,
+    );
+    expect(deadVault.address).to.not.eq(ADDRESS_ZERO);
+    expect(await deadVault.isInitialized()).to.be.not.true;
 
     underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, factory, true);
@@ -120,15 +141,32 @@ describe('IsolationModeVaultFactory', () => {
       [otherToken.address, factory.address, core.dolomiteMargin.address, core.dolomiteRegistry.address],
     );
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(tokenWrapperV1.address, true);
+    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
     initializeResult = await factory.connect(core.governance).ownerInitialize([
       tokenUnwrapperV1.address,
       tokenWrapperV1.address,
       tokenUnwrapperV2.address,
       tokenWrapperV2.address,
     ]);
-    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
+    expect(await deadVault.isInitialized()).to.be.true;
 
     solidAccount = core.hhUser5;
+
+    const dolomiteAccountRegistry = await createDolomiteAccountRegistryImplementation();
+    const calldata = await dolomiteAccountRegistry.populateTransaction.initialize(
+      [factory.address],
+    );
+    const accountRegistryProxy = await createRegistryProxy(dolomiteAccountRegistry.address, calldata.data!, core);
+    accountRegistry = DolomiteAccountRegistry__factory.connect(accountRegistryProxy.address, core.governance);
+
+    const dolomiteRegistryImplementation = await createContractWithAbi<DolomiteRegistryImplementation>(
+      DolomiteRegistryImplementation__factory.abi,
+      DolomiteRegistryImplementation__factory.bytecode,
+      [],
+    );
+
+    await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(dolomiteRegistryImplementation.address);
+    await core.dolomiteRegistry.connect(core.governance).ownerSetDolomiteAccountRegistry(accountRegistryProxy.address);
 
     snapshotId = await snapshot();
   });
@@ -138,7 +176,7 @@ describe('IsolationModeVaultFactory', () => {
   });
 
   async function createUninitializedFactory() {
-    return createTestIsolationModeFactory(core, underlyingToken, userVaultImplementation);
+    return createTestIsolationModeVaultFactory(core, underlyingToken, userVaultImplementation);
   }
 
   async function checkVaultCreationResults(result: ContractTransaction) {
@@ -149,7 +187,7 @@ describe('IsolationModeVaultFactory', () => {
       account: core.hhUser1.address,
       vault: vault.toString(),
     });
-    await expect(await core.borrowPositionProxyV2.isCallerAuthorized(vault)).to.eq(true);
+    expect(await core.borrowPositionProxyV2.isCallerAuthorized(vault)).to.eq(true);
 
     const vaultContract = setupUserVaultProxy<IsolationModeUpgradeableProxy>(
       vault,
@@ -158,6 +196,8 @@ describe('IsolationModeVaultFactory', () => {
     );
     expect(await vaultContract.isInitialized()).to.eq(true);
     expect(await vaultContract.owner()).to.eq(core.hhUser1.address);
+    expect(await accountRegistry.isIsolationModeVault(vault)).to.eq(true);
+    expect(await accountRegistry.getAccountByVault(vault)).to.eq(core.hhUser1.address);
   }
 
   describe('#initialize', () => {
@@ -183,7 +223,7 @@ describe('IsolationModeVaultFactory', () => {
     });
 
     it('should fail when not called by DolomiteMargin owner', async () => {
-      const badFactory = await createTestIsolationModeFactory(core, underlyingToken, userVaultImplementation);
+      const badFactory = await createTestIsolationModeVaultFactory(core, underlyingToken, userVaultImplementation);
       await core.testEcosystem!.testPriceOracle.setPrice(
         badFactory.address,
         '1000000000000000000', // $1.00
@@ -206,7 +246,7 @@ describe('IsolationModeVaultFactory', () => {
     });
 
     it('should fail when market allows borrowing', async () => {
-      const badFactory = await createTestIsolationModeFactory(core, underlyingToken, userVaultImplementation);
+      const badFactory = await createTestIsolationModeVaultFactory(core, underlyingToken, userVaultImplementation);
       await core.testEcosystem!.testPriceOracle.setPrice(
         badFactory.address,
         '1000000000000000000', // $1.00

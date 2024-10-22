@@ -29,8 +29,8 @@ import { TypesLib } from "@dolomite-exchange/modules-base/contracts/protocol/lib
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import { IERC20Mintable } from "./interfaces/IERC20Mintable.sol";
 import { IEmitterMultipleRewardTokens } from "./interfaces/IEmitterMultipleRewardTokens.sol";
-import { IOARB } from "./interfaces/IOARB.sol";
 import { IStorageVault } from "./interfaces/IStorageVault.sol";
 
 
@@ -43,7 +43,7 @@ import { IStorageVault } from "./interfaces/IStorageVault.sol";
  * WARNING: THIS CODE HAS NOT BEEN THOROUGHLY TESTED AND IS NOT PRODUCTION READY
  */
 contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewardTokens {
-    using SafeERC20 for IOARB;
+    using SafeERC20 for IERC20Mintable;
     using EnumerableSet for EnumerableSet.UintSet;
     using EnumerableSet for EnumerableSet.AddressSet;
     using TypesLib for IDolomiteStructs.Par;

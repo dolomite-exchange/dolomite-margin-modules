@@ -13,7 +13,6 @@ import {
   expectVaultBalanceToMatchAccountBalances,
   expectWalletBalance,
 } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { setExpiry } from '@dolomite-exchange/modules-base/test/utils/expiry-utils';
 import {
   getLastZapAmountToBigNumber,
@@ -35,6 +34,7 @@ import { CHAIN_ID_MAPPING } from '@pendle/sdk-v2/dist/common/ChainId';
 import { expect } from 'chai';
 import 'dotenv/config';
 import { BigNumber } from 'ethers';
+import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import {
   IPendlePtToken,
   PendlePtGLPMar2024IsolationModeTokenVaultV1,
@@ -190,7 +190,7 @@ describe('PendlePtGLPMar2024IsolationModeLiquidationWithZap', () => {
       const owedMarketPrice = await core.dolomiteMargin.getMarketPrice(core.marketIds.usdc);
       const ptGlpPrice = await core.dolomiteMargin.getMarketPrice(underlyingMarketId);
       const owedAmount = await core.dolomiteMargin.getAccountWei(liquidAccountStruct, core.marketIds.usdc);
-      const heldUpdatedWithReward = await owedAmount.value
+      const heldUpdatedWithReward = owedAmount.value
         .mul(owedMarketPrice.value.mul(liquidationSpreadNumerator).div(liquidationSpreadDenominator))
         .div(ptGlpPrice.value);
 
@@ -281,7 +281,7 @@ describe('PendlePtGLPMar2024IsolationModeLiquidationWithZap', () => {
         .lt(newAccountValues[1].value.mul(minCollateralizationNumerator).div(minCollateralizationDenominator));
 
       const glpPrice = await core.dolomiteMargin.getMarketPrice(underlyingMarketId);
-      const heldUpdatedWithReward = await newAccountValues[1].value.mul(liquidationSpreadNumerator)
+      const heldUpdatedWithReward = newAccountValues[1].value.mul(liquidationSpreadNumerator)
         .div(liquidationSpreadDenominator)
         .div(glpPrice.value);
 

@@ -1,12 +1,6 @@
-import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectEvent, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
-import {
-  getDefaultCoreProtocolConfig,
-  setupCoreProtocol,
-  setupTestMarket,
-} from '@dolomite-exchange/modules-base/test/utils/setup';
+import { setupCoreProtocol, setupTestMarket, } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import {
@@ -23,7 +17,7 @@ import {
   createJonesUSDCPriceOracle,
   createJonesUSDCRegistry,
 } from './jones-ecosystem-utils';
-import { createRoleAndWhitelistTrader } from './jones-utils';
+import { createRoleAndWhitelistTraderV2, JONES_CORE_PROTOCOL_CONFIG } from './jones-utils';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
@@ -37,13 +31,13 @@ describe('JonesUSDCIsolationModeVaultFactory', () => {
   let underlyingMarketId: BigNumber;
 
   before(async () => {
-    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
+    core = await setupCoreProtocol(JONES_CORE_PROTOCOL_CONFIG);
     jonesUSDCRegistry = await createJonesUSDCRegistry(core);
     vaultImplementation = await createJonesUSDCIsolationModeTokenVaultV1();
     factory = await createJonesUSDCIsolationModeVaultFactory(
       core,
       jonesUSDCRegistry,
-      core.jonesEcosystem!.jUsdcOld,
+      core.jonesEcosystem!.jUSDCV1,
       (vaultImplementation as any) as JonesUSDCIsolationModeTokenVaultV1,
     );
 
@@ -62,7 +56,7 @@ describe('JonesUSDCIsolationModeVaultFactory', () => {
       unwrapperTraderForZap.address,
     );
     const wrapper = await createJonesUSDCIsolationModeWrapperTraderV2(core, jonesUSDCRegistry, factory);
-    await createRoleAndWhitelistTrader(core, unwrapperTraderForLiquidation, wrapper);
+    await createRoleAndWhitelistTraderV2(core, unwrapperTraderForLiquidation, wrapper);
     const priceOracle = await createJonesUSDCPriceOracle(core, jonesUSDCRegistry, factory);
 
     underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
@@ -82,7 +76,7 @@ describe('JonesUSDCIsolationModeVaultFactory', () => {
   describe('#contructor', () => {
     it('should initialize variables properly', async () => {
       expect(await factory.jonesUSDCRegistry()).to.equal(jonesUSDCRegistry.address);
-      expect(await factory.UNDERLYING_TOKEN()).to.equal(core.jonesEcosystem!.jUsdcOld.address);
+      expect(await factory.UNDERLYING_TOKEN()).to.equal(core.jonesEcosystem!.jUSDCV1.address);
       expect(await factory.BORROW_POSITION_PROXY()).to.equal(core.borrowPositionProxyV2.address);
       expect(await factory.userVaultImplementation()).to.equal(vaultImplementation.address);
       expect(await factory.DOLOMITE_MARGIN()).to.equal(core.dolomiteMargin.address);

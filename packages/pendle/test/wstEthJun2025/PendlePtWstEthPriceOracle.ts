@@ -8,7 +8,6 @@ import { createContractWithAbi } from '@dolomite-exchange/modules-base/src/utils
 import { ADDRESS_ZERO, Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { advanceToTimestamp, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import {
   getDefaultCoreProtocolConfig,
   setupCoreProtocol,
@@ -16,6 +15,7 @@ import {
 } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
+import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import {
   IERC20,
   PendlePtIsolationModeVaultFactory,
@@ -44,7 +44,7 @@ describe('PendlePtWstEthJun2025PriceOracle', () => {
   let underlyingToken: IERC20;
 
   before(async () => {
-    core = await setupCoreProtocol(await getDefaultCoreProtocolConfig(Network.ArbitrumOne));
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
 
     const dolomiteRegistryImplementation = await createContractWithAbi<DolomiteRegistryImplementation>(
       DolomiteRegistryImplementation__factory.abi,
@@ -53,10 +53,10 @@ describe('PendlePtWstEthJun2025PriceOracle', () => {
     );
     await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(dolomiteRegistryImplementation.address);
     await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkPriceOracle(
-      core.chainlinkPriceOracleOld!.address,
+      core.chainlinkPriceOracleV1!.address,
     );
     underlyingToken = core.tokens.stEth!;
-    await core.chainlinkPriceOracleOld!.connect(core.governance).ownerInsertOrUpdateOracleToken(
+    await core.chainlinkPriceOracleV1!.connect(core.governance).ownerInsertOrUpdateOracleToken(
       core.tokens.stEth!.address,
       18,
       STETH_USD_CHAINLINK_FEED_MAP[core.config.network]!,
@@ -172,7 +172,7 @@ describe('PendlePtWstEthJun2025PriceOracle', () => {
   });
 
   async function freezeAndGetOraclePrice(token: IERC20): Promise<BigNumber> {
-    const price = await core.chainlinkPriceOracleOld!.getPrice(token.address);
+    const price = await core.chainlinkPriceOracleV1!.getPrice(token.address);
     await core.testEcosystem!.testPriceOracle.setPrice(token.address, price.value);
     return price.value;
   }

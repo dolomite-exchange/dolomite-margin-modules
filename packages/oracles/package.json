@@ -8,12 +8,11 @@
     "coverage": "yarn coverage:prepare && COVERAGE=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat coverage --testfiles \"test/*.ts\" --solcoverjs ../../.solcover.js --network hardhat",
     "coverage:prepare": "ts-node ../../scripts/fix-contracts-for-coverage.ts oracles",
     "coverage:specific": "yarn coverage:prepare && COVERAGE=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat coverage --testfiles \"test/OracleAggregatorV2.ts\" --solcoverjs ../../.solcover.js --network hardhat",
-    "test:specific": "TEST_SPECIFIC=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat --network hardhat test test/OracleAggregatorV2.ts",
+    "test:specific": "TEST_SPECIFIC=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat --network hardhat test test/TestBexPriceOracle.ts",
     "lint": "yarn lint:sol && yarn lint:ts",
-    "lint:sol": "hardhat check && python ../../scripts/lint-contracts.py fix oracles",
+    "lint:sol": "hardhat check && python3 ../../scripts/lint-contracts.py fix oracles",
     "lint:ts": "tslint --project ../../ -t verbose 'src/**/*.ts' 'test/**/*.ts'"
   },
-  "private": false,
   "files": [
     "contracts/**/*",
     "!contracts/test/*"

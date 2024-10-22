@@ -41,7 +41,7 @@ contract PendleYtGLPMar2024IsolationModeVaultFactory is
 {
     // ============ Constants ============
 
-    bytes32 private constant _FILE = "PendleYtGLP2024VaultFactory"; // needed to be shortened to fit into 32 bytes
+    bytes32 private constant _FILE = "PendleYtGLPMar2024VaultFactory";
 
     // ============ Field Variables ============
 
@@ -69,6 +69,7 @@ contract PendleYtGLPMar2024IsolationModeVaultFactory is
         _ytGlp,
         _borrowPositionProxyV2,
         _userVaultImplementation,
+        address(IPendleGLPRegistry(_pendleGLPRegistry).dolomiteRegistry()),
         _dolomiteMargin
     ) {
         WETH = _weth;

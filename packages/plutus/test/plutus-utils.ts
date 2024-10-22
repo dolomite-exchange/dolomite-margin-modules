@@ -1,4 +1,4 @@
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+
 import {
   IPlutusVaultGLPFarm,
   IPlutusVaultGLPIsolationModeVaultFactory,
@@ -12,6 +12,7 @@ import {
 import { impersonate } from '@dolomite-exchange/modules-base/test/utils';
 import { createDolomiteCompatibleWhitelistForPlutusDAO } from './plutus-ecosystem-utils';
 import { expect } from 'chai';
+import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 
 export async function createAndSetPlutusVaultWhitelist(
   core: CoreProtocolArbitrumOne,
