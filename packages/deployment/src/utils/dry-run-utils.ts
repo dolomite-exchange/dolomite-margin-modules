@@ -84,9 +84,7 @@ async function doStuffInternal<T extends NetworkType>(executionFn: () => Promise
       console.log('\tExecuting transactions...');
       for (const transactionId of transactionIds) {
         try {
-          hardhat.tracer.enabled = true;
           await delayedMultiSig.executeMultipleTransactions([transactionId], {});
-          hardhat.tracer.enabled = false;
         } catch (e: any) {
           const transactionIndex = transactionId.sub(transactionIds[0]).toNumber();
           throw new Error(
