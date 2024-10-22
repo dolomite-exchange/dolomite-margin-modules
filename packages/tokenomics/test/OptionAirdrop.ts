@@ -1,0 +1,156 @@
+import { CoreProtocolArbitrumOne } from "packages/base/test/utils/core-protocols/core-protocol-arbitrum-one";
+import { DOLO, OptionAirdrop } from "../src/types";
+import { getDefaultCoreProtocolConfig, setupCoreProtocol } from "packages/base/test/utils/setup";
+import { createDOLO, createOptionAirdrop } from "./tokenomics-ecosystem-utils";
+import { BYTES_ZERO, Network, ZERO_BI } from "packages/base/src/utils/no-deps-constants";
+import { expect } from "chai";
+import { defaultAbiCoder, keccak256, parseEther } from "ethers/lib/utils";
+import MerkleTree from "merkletreejs";
+import { revertToSnapshotAndCapture, snapshot } from "packages/base/test/utils";
+import { expectEvent, expectThrow } from "packages/base/test/utils/assertions";
+
+describe('OptionAirdrop', () => {
+  let core: CoreProtocolArbitrumOne;
+  let dolo: DOLO;
+  let optionAirdrop: OptionAirdrop;
+
+  let merkleRoot: string;
+  let validProof1: string[];
+  let validProof2: string[];
+  let invalidProof: string[];
+
+  let snapshotId: string;
+
+  before(async () => {
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
+    dolo = await createDOLO(core);
+
+    const rewards = [
+      { address: core.hhUser1.address, rewards: parseEther('5') },
+      { address: core.hhUser2.address, rewards: parseEther('10') },
+    ];
+    const leaves = rewards.map((account) =>
+      keccak256(defaultAbiCoder.encode(['address', 'uint256'], [account.address, account.rewards])),
+    );
+    const invalidLeaf = keccak256(defaultAbiCoder.encode(['address', 'uint256'], [core.hhUser3.address, parseEther('15')]));
+    const tree = new MerkleTree(leaves, keccak256, { sort: true });
+
+    merkleRoot = tree.getHexRoot();
+    validProof1 = tree.getHexProof(leaves[0]);
+    validProof2 = tree.getHexProof(leaves[1]);
+    invalidProof = tree.getHexProof(invalidLeaf);
+
+    optionAirdrop = await createOptionAirdrop(core, dolo);
+    await optionAirdrop.connect(core.governance).ownerSetMerkleRoot(merkleRoot);
+    await core.dolomiteMargin.ownerSetGlobalOperator(optionAirdrop.address, true);
+
+    await dolo.connect(core.governance).mint(parseEther('15'));
+    await dolo.connect(core.governance).transfer(optionAirdrop.address, parseEther('15'));
+
+    snapshotId = await snapshot();
+  });
+
+  beforeEach(async () => {
+    snapshotId = await revertToSnapshotAndCapture(snapshotId);
+  });
+
+  describe('#constructor', () => {
+    it('should work normally', async () => {
+      expect(await optionAirdrop.DOLO()).to.eq(dolo.address);
+      expect(await optionAirdrop.merkleRoot()).to.eq(merkleRoot);
+    });
+  });
+
+  describe('#ownerSetMerkleRoot', () => {
+    it('should work normally', async () => {
+      expect(await optionAirdrop.merkleRoot()).to.eq(merkleRoot);
+      const res = await optionAirdrop.connect(core.governance).ownerSetMerkleRoot(BYTES_ZERO);
+      await expectEvent(optionAirdrop, res, 'MerkleRootSet', {
+        merkleRoot: BYTES_ZERO
+      });
+      expect(await optionAirdrop.merkleRoot()).to.eq(BYTES_ZERO);
+    });
+
+    it('should fail if not called by owner', async () => {
+      await expectThrow(
+        optionAirdrop.connect(core.hhUser1).ownerSetMerkleRoot(BYTES_ZERO),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+      );
+    });
+  });
+
+  describe('#ownerWithdrawRewardToken', () => {
+    it('should work normally', async () => {
+      expect(await dolo.balanceOf(core.governance.address)).to.eq(ZERO_BI);
+      await optionAirdrop.connect(core.governance).ownerWithdrawRewardToken(dolo.address, core.governance.address);
+      expect(await dolo.balanceOf(core.governance.address)).to.eq(parseEther('15'));
+    });
+
+    it('should fail if not called by owner', async () => {
+      await expectThrow(
+        optionAirdrop.connect(core.hhUser1).ownerWithdrawRewardToken(dolo.address, core.hhUser1.address),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+      );
+    });
+  });
+
+  describe('#claim', () => {
+    it('should work normally', async () => {
+      const res = await optionAirdrop.connect(core.hhUser1).claim(
+        validProof1,
+        parseEther('5'),
+        parseEther('5')
+      );
+      await expectEvent(core.eventEmitterRegistry, res, 'RewardClaimed', {
+        distributor: optionAirdrop.address,
+        user: core.hhUser1.address,
+        epoch: ZERO_BI,
+        amount: parseEther('5')
+      });
+      expect(await dolo.balanceOf(core.hhUser1.address)).to.eq(parseEther('5'));
+      expect(await dolo.balanceOf(optionAirdrop.address)).to.eq(parseEther('10'));
+      expect(await optionAirdrop.getClaimedAmountByUser(core.hhUser1.address)).to.eq(parseEther('5'));
+    });
+
+    it('should work normally if user claims in two parts', async () => {
+      const res = await optionAirdrop.connect(core.hhUser1).claim(
+        validProof1,
+        parseEther('5'),
+        parseEther('2.5')
+      );
+      await expectEvent(core.eventEmitterRegistry, res, 'RewardClaimed', {
+        distributor: optionAirdrop.address,
+        user: core.hhUser1.address,
+        epoch: ZERO_BI,
+        amount: parseEther('2.5')
+      });
+      expect(await dolo.balanceOf(core.hhUser1.address)).to.eq(parseEther('2.5'));
+      expect(await dolo.balanceOf(optionAirdrop.address)).to.eq(parseEther('12.5'));
+      expect(await optionAirdrop.getClaimedAmountByUser(core.hhUser1.address)).to.eq(parseEther('2.5'));
+
+      await optionAirdrop.connect(core.hhUser1).claim(
+        validProof1,
+        parseEther('5'),
+        parseEther('2.5')
+      );
+      expect(await dolo.balanceOf(core.hhUser1.address)).to.eq(parseEther('5'));
+      expect(await dolo.balanceOf(optionAirdrop.address)).to.eq(parseEther('10'));
+      expect(await optionAirdrop.getClaimedAmountByUser(core.hhUser1.address)).to.eq(parseEther('5'));
+    });
+
+    it('should fail if invalid merkle proof', async () => {
+      await expectThrow(
+        optionAirdrop.connect(core.hhUser3).claim(invalidProof, parseEther('15'), parseEther('15')),
+        'OptionAirdrop: Invalid merkle proof'
+      );
+    });
+
+    it('should fail if user has already claimed', async () => {
+      await optionAirdrop.connect(core.hhUser1).claim(validProof1, parseEther('5'), parseEther('5'));
+      await expectThrow(
+        optionAirdrop.connect(core.hhUser1).claim(validProof1, parseEther('5'), 1),
+        'OptionAirdrop: Insufficient allocated amount'
+      );
+    });
+  });
+});
