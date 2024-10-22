@@ -1,19 +1,36 @@
+import { IERC20, TestPriceOracle__factory } from '@dolomite-exchange/modules-base/src/types';
 import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
+import { CoreProtocolBerachain } from '@dolomite-exchange/modules-base/test/utils/core-protocols/core-protocol-berachain';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { TargetCollateralization, TargetLiquidationPenalty } from 'packages/base/src/utils/constructors/dolomite';
-import { Network, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
-import {
-  EncodedTransaction,
-  prettyPrintEncodeAddMarket,
-  prettyPrintEncodeInsertChronicleOracleV3,
-} from '../../../utils/deploy-utils';
+import { BigNumberish } from 'ethers';
+import { Network } from 'packages/base/src/utils/no-deps-constants';
+import { EncodedTransaction, prettyPrintEncodedDataWithTypeSafety } from '../../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../utils/dry-run-utils';
 import getScriptName from '../../../utils/get-script-name';
+import ModuleDeployments from '../../deployments.json';
+
+async function encodeTestOracle(
+  token: IERC20,
+  price: BigNumberish,
+  core: CoreProtocolBerachain,
+): Promise<EncodedTransaction[]> {
+  const testPriceOracle = TestPriceOracle__factory.connect(
+    ModuleDeployments.TestPriceOracle['80084'].address,
+    core.hhUser1,
+  );
+
+  return [
+    await prettyPrintEncodedDataWithTypeSafety(core, { testPriceOracle }, 'testPriceOracle', 'setPrice', [
+      token.address,
+      price,
+    ]),
+  ];
+}
 
 /**
  * This script encodes the following transactions:
- * - Adds the uniBTC market
+ * - Adds the WETH, BERA, and HONEY markets
  */
 async function main(): Promise<DryRunOutput<Network.Berachain>> {
   const network = await getAndCheckSpecificNetwork(Network.Berachain);
@@ -22,19 +39,43 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     blockNumber: await getRealLatestBlockNumber(true, network),
   });
 
-  const transactions: EncodedTransaction[] = [
-    ...(await prettyPrintEncodeAddMarket(
+  const transactions: EncodedTransaction[] = [];
+
+  if (network === '80084') {
+    console.log('\tSetting test prices for Bera Bartio...');
+    transactions.push(...(await encodeTestOracle(core.tokens.weth, '1', core)));
+    transactions.push(...(await encodeTestOracle(core.tokens.usdc, '1', core)));
+  }
+  transactions.push(
+    await prettyPrintEncodedDataWithTypeSafety(
       core,
-      core.tokens.uniBtc,
-      core.oracleAggregatorV2,
-      core.interestSetters.linearStepFunction8L92U90OInterestSetter,
-      TargetCollateralization._120,
-      TargetLiquidationPenalty._6,
-      ZERO_BI,
-      ZERO_BI,
-      false,
-    )),
-  ];
+      { dolomite: core.dolomiteMargin },
+      'dolomite',
+      'ownerSetMaxSupplyWei',
+      [core.marketIds.weth, '1'],
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { dolomite: core.dolomiteMargin },
+      'dolomite',
+      'ownerSetMaxSupplyWei',
+      [core.marketIds.usdc, '1'],
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { dolomite: core.dolomiteMargin },
+      'dolomite',
+      'ownerSetMaxBorrowWei',
+      [core.marketIds.weth, '1'],
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { dolomite: core.dolomiteMargin },
+      'dolomite',
+      'ownerSetMaxBorrowWei',
+      [core.marketIds.usdc, '1'],
+    ),
+  );
 
   return {
     core,
