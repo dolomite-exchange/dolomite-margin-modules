@@ -196,7 +196,7 @@ export async function getOracleAggregatorV2ConstructorParams(
     [Deployments.PlutusVaultGLPWithChainlinkAutomationPriceOracleV3[core.network].address]: true,
     [Deployments.GLPPriceOracleV1[core.network].address]: true,
     [Deployments.JonesUSDCV1WithChainlinkAutomationPriceOracleV1[core.network].address]: true,
-    [Deployments.MagicGLPWithChainlinkAutomationPriceOracle[core.network].address]: true,
+    [Deployments.MagicGLPWithChainlinkAutomationPriceOracleV1[core.network].address]: true,
     [Deployments.PendlePtGLPPriceOracle[core.network].address]: true,
     [Deployments.PendlePtWstEthJun2024PriceOracle[core.network].address]: true,
     [Deployments.PendlePtWstEthJun2025PriceOracle[core.network].address]: true,
@@ -312,6 +312,19 @@ export function getChroniclePriceOracleV3ConstructorParams<T extends NetworkType
     tokens,
     scribes,
     invertPrices,
+    core.dolomiteRegistry.address,
+    core.dolomiteMargin.address,
+  ];
+}
+
+export function getRamsesCLPriceOracleV3ConstructorParams<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  token: IERC20,
+  pool: string,
+): any[] {
+  return [
+    token.address,
+    pool,
     core.dolomiteRegistry.address,
     core.dolomiteMargin.address,
   ];

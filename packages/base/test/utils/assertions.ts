@@ -1,6 +1,7 @@
 import { address, AmountDenomination, AmountReference } from '@dolomite-margin/dist/src';
 import { expect } from 'chai';
 import { BaseContract, BigNumber, BigNumberish, CallOverrides, ContractTransaction } from 'ethers';
+import { ethers } from 'hardhat';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { ERC20__factory } from '../../src/types';
 import { AccountInfoStruct } from '../../src/utils';
@@ -163,6 +164,19 @@ export async function expectProtocolBalanceDustyOrZero<T extends Network>(
   expect(balanceWei.mul(price.value)).to.be.lt(maxDustyValueUsd);
 }
 
+export async function expectEthBalance(
+  accountOwner: { address: address } | address,
+  amount: BigNumberish,
+) {
+  const owner = typeof accountOwner === 'object' ? accountOwner.address : accountOwner;
+  const balance = await ethers.provider.getBalance(owner);
+  expect(balance)
+    .eq(
+      amount,
+      `Expected ${balance.toString()} to equal ${amount.toString()} for ${accountOwner} ${owner}`,
+    );
+}
+
 export async function expectWalletBalance(
   accountOwner: { address: address } | address,
   token: { balanceOf(account: string, overrides?: CallOverrides): Promise<BigNumber>, address: address },
@@ -190,6 +204,30 @@ export async function expectWalletBalanceIsGreaterThan(
     .gt(
       amount,
       `Expected ${balance.toString()} to be gt ${amount.toString()} for ${accountOwner} ${owner} ${token.address}`,
+    );
+}
+
+export async function expectWalletBalanceIsBetween(
+  accountOwner: { address: address } | address,
+  token: { balanceOf(account: string, overrides?: CallOverrides): Promise<BigNumber>, address: address },
+  amountLowerEnd: BigNumberish,
+  amountUpperEnd: BigNumberish,
+) {
+  const owner = typeof accountOwner === 'object' ? accountOwner.address : accountOwner;
+  const balance = await token.balanceOf(owner);
+  expect(balance)
+    .to
+    .be
+    .gt(
+      amountLowerEnd,
+      `Expected ${balance.toString()} to be gt ${amountLowerEnd.toString()} for ${owner} ${token.address}`,
+    );
+  expect(balance)
+    .to
+    .be
+    .lt(
+      amountUpperEnd,
+      `Expected ${balance.toString()} to be lt ${amountUpperEnd.toString()} for ${owner} ${token.address}`,
     );
 }
 

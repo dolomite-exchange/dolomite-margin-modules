@@ -3,6 +3,7 @@ import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules
 import { expectEvent, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { expect } from 'chai';
+import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import {
   PendleGLPRegistry,
   PendlePtGLPMar2024IsolationModeTokenVaultV1,

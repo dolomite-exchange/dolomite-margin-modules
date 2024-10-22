@@ -4,6 +4,7 @@ import { IChainlinkPriceOracleV1, IChainlinkPriceOracleV3, OracleAggregatorV2 } 
 import {
   IBorrowPositionProxyV2,
   IDepositWithdrawalProxy,
+  IDolomiteAccountRegistry,
   IDolomiteRegistry,
   IERC20,
   IEventEmitterRegistry,
@@ -33,10 +34,11 @@ export interface LibraryMaps {
 export type WETHType<T extends NetworkType> = T extends Network.ArbitrumOne
   ? IWETH
   : T extends Network.Base ? IWETH
-    : T extends Network.Mantle ? IERC20
-      : T extends Network.PolygonZkEvm ? IWETH
-        : T extends Network.XLayer ? IERC20
-          : never;
+    : T extends Network.Berachain ? IERC20
+      : T extends Network.Mantle ? IERC20
+        : T extends Network.PolygonZkEvm ? IWETH
+          : T extends Network.XLayer ? IERC20
+            : never;
 
 export interface CoreProtocolTokens<T extends NetworkType> {
   usdc: IERC20;
@@ -48,6 +50,7 @@ export interface CoreProtocolMarketIds {
   usdc: BigNumberish;
   weth: BigNumberish;
   stablecoins: BigNumberish[];
+  stablecoinsWithUnifiedInterestRateModels: BigNumberish[];
 }
 
 export interface CoreProtocolParams<T extends NetworkType> {
@@ -67,6 +70,8 @@ export interface CoreProtocolParams<T extends NetworkType> {
   dolomiteMargin: DolomiteMargin<T>;
   dolomiteRegistry: IDolomiteRegistry;
   dolomiteRegistryProxy: RegistryProxy;
+  dolomiteAccountRegistry: IDolomiteAccountRegistry;
+  dolomiteAccountRegistryProxy: RegistryProxy;
   eventEmitterRegistry: IEventEmitterRegistry;
   eventEmitterRegistryProxy: RegistryProxy;
   expiry: Expiry<T>;
@@ -119,6 +124,8 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
   public readonly dolomiteMargin: DolomiteMargin<T>;
   public readonly dolomiteRegistry: IDolomiteRegistry;
   public readonly dolomiteRegistryProxy: RegistryProxy;
+  public readonly dolomiteAccountRegistry: IDolomiteAccountRegistry;
+  public readonly dolomiteAccountRegistryProxy: RegistryProxy;
   public readonly eventEmitterRegistry: IEventEmitterRegistry;
   public readonly eventEmitterRegistryProxy: RegistryProxy;
   public readonly expiry: Expiry<T>;
@@ -167,6 +174,8 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
     this.dolomiteMargin = params.dolomiteMargin;
     this.dolomiteRegistry = params.dolomiteRegistry;
     this.dolomiteRegistryProxy = params.dolomiteRegistryProxy;
+    this.dolomiteAccountRegistry = params.dolomiteAccountRegistry;
+    this.dolomiteAccountRegistryProxy = params.dolomiteAccountRegistryProxy;
     this.eventEmitterRegistry = params.eventEmitterRegistry;
     this.eventEmitterRegistryProxy = params.eventEmitterRegistryProxy;
     this.expiry = params.expiry;

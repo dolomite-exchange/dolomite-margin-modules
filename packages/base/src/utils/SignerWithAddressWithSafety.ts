@@ -17,6 +17,10 @@ export class SignerWithAddressWithSafety extends ethers.Signer {
     return this._address;
   }
 
+  public get addressLower(): string {
+    return this.address.toLowerCase();
+  }
+
   public static async create(signerAddress: string) {
     return new SignerWithAddressWithSafety(
       signerAddress,

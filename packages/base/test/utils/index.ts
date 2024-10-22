@@ -1,6 +1,6 @@
 import CoreDeployments from '@dolomite-exchange/dolomite-margin/dist/migrations/deployed.json';
 import ModuleDeployments from '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
-import { time } from '@nomicfoundation/hardhat-network-helpers';
+import { time, mine } from '@nomicfoundation/hardhat-network-helpers';
 import { BigNumber, BigNumberish, ContractTransaction } from 'ethers';
 import { config as hardhatConfig, ethers, network as hardhatNetwork, tracer } from 'hardhat';
 import { HttpNetworkConfig } from 'hardhat/src/types/config';
@@ -30,24 +30,30 @@ export async function advanceByTimeDelta(delta: number): Promise<void> {
  * Gets the most recent block number from the real network, NOT the forked network.
  * @param include32BlockBuffer Hardhat works better when there's > 31 block confirmations
  * @param network The network to get the latest block number from
+ * @param networkName The name of the network, as it appears in the hardhat config file
  */
 export async function getRealLatestBlockNumber(
   include32BlockBuffer: boolean,
   network: Network,
+  networkName: string = networkToNetworkNameMap[network],
 ): Promise<number> {
-  const networkConfig = hardhatConfig?.networks?.[networkToNetworkNameMap[network]] as HttpNetworkConfig;
+  const networkConfig = hardhatConfig?.networks?.[networkName] as HttpNetworkConfig;
   const provider = new ethers.providers.JsonRpcProvider(networkConfig.url);
   const blockNumber = await provider.send('eth_blockNumber', []);
   return Number.parseInt(blockNumber, 16) - (include32BlockBuffer ? 32 : 0);
 }
 
-export async function resetForkIfPossible(blockNumber: number, network: Network) {
+export async function resetForkIfPossible(
+  blockNumber: number,
+  network: Network,
+  networkName: string = networkToNetworkNameMap[network],
+) {
   if (hardhatNetwork.name !== 'hardhat') {
     console.log('\tSkipping forking...\n');
     return;
   }
 
-  const networkConfig = hardhatConfig.networks?.[networkToNetworkNameMap[network]] as HttpNetworkConfig;
+  const networkConfig = hardhatConfig.networks?.[networkName] as HttpNetworkConfig;
   await hardhatNetwork.provider.request({
     method: 'hardhat_reset',
     params: [
@@ -59,6 +65,8 @@ export async function resetForkIfPossible(blockNumber: number, network: Network)
       },
     ],
   });
+
+  await mine();
 
   Object.keys(CoreDeployments).forEach(contractName => {
     const contractAddress = (CoreDeployments as any)[contractName]?.[network]?.address;

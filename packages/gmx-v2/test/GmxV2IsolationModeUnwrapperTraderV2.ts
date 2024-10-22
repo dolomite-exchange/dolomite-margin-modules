@@ -1,12 +1,11 @@
 import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin';
-import { EventEmitterRegistry } from '@dolomite-exchange/modules-base/src/types';
-import { depositIntoDolomiteMargin } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import { createContractWithAbi, depositIntoDolomiteMargin } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import {
   BYTES_EMPTY,
   BYTES_ZERO,
   MAX_UINT_256_BI,
   ONE_BI,
-  ONE_ETH_BI,
+  ONE_ETH_BI, TWO_BI,
   ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import {
@@ -22,10 +21,7 @@ import {
   expectThrow,
   expectWalletBalance,
 } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import {
-  createDolomiteRegistryImplementation,
-  createEventEmitter,
-} from '@dolomite-exchange/modules-base/test/utils/dolomite';
+import { createDolomiteRegistryImplementation } from '@dolomite-exchange/modules-base/test/utils/dolomite';
 import { createSafeDelegateLibrary } from '@dolomite-exchange/modules-base/test/utils/ecosystem-utils/general';
 import { mine } from '@nomicfoundation/hardhat-network-helpers';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
@@ -50,12 +46,14 @@ import {
   GmxV2MarketTokenPriceOracle,
   GmxV2Registry,
   IERC20,
-  IGenericTraderProxyV1__factory,
+  IEventEmitterRegistry,
   IGmxMarketToken,
   IGmxRoleStore__factory,
   TestGmxV2IsolationModeTokenVaultV1,
   TestGmxV2IsolationModeTokenVaultV1__factory,
   TestGmxV2IsolationModeUnwrapperTraderV2,
+  TestOracleProvider,
+  TestOracleProvider__factory,
 } from '../src/types';
 import {
   createGmxV2IsolationModeVaultFactory,
@@ -66,6 +64,8 @@ import {
   createTestGmxV2IsolationModeTokenVaultV1,
   createTestGmxV2IsolationModeUnwrapperTraderV2,
   getOracleParams,
+  getOracleProviderEnabledKey,
+  getOracleProviderForTokenKey,
   getWithdrawalObject,
 } from './gmx-v2-ecosystem-utils';
 
@@ -82,15 +82,14 @@ const DUMMY_WITHDRAWAL_KEY = '0x6d1ff6ffcab884211992a9d6b8261b7fae5db4d2da3a5eb5
 const usdcAmount = BigNumber.from('1000000000'); // $1000
 const amountWei = parseEther('10');
 const DEFAULT_EXTRA_DATA = ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [parseEther('.5'), ONE_BI]);
-const NEW_GENERIC_TRADER_PROXY = '0x905F3adD52F01A9069218c8D1c11E240afF61D2B';
 
-const executionFee = process.env.COVERAGE !== 'true'
-  ? GMX_V2_EXECUTION_FEE_FOR_TESTS
-  : GMX_V2_EXECUTION_FEE_FOR_TESTS.mul(10);
+const executionFee =
+  process.env.COVERAGE !== 'true' ? GMX_V2_EXECUTION_FEE_FOR_TESTS : GMX_V2_EXECUTION_FEE_FOR_TESTS.mul(10);
 const gasLimit = process.env.COVERAGE !== 'true' ? 10_000_000 : 100_000_000;
-const callbackGasLimit = process.env.COVERAGE !== 'true'
-  ? BigNumber.from('2000000') // These tests use older block when it was still 2M instead of 3M
-  : BigNumber.from('2000000').mul(10);
+const callbackGasLimit =
+  process.env.COVERAGE !== 'true'
+    ? BigNumber.from('3000000')
+    : BigNumber.from('3000000').mul(10);
 
 const wethAmount = ONE_ETH_BI;
 
@@ -130,59 +129,63 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
   let vault: TestGmxV2IsolationModeTokenVaultV1;
   let vault2: TestGmxV2IsolationModeTokenVaultV1;
   let priceOracle: GmxV2MarketTokenPriceOracle;
-  let eventEmitter: EventEmitterRegistry;
+  let eventEmitter: IEventEmitterRegistry;
   let marketId: BigNumber;
+  let testOracleProvider: TestOracleProvider;
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfigForGmxV2());
-    underlyingToken = core.gmxEcosystemV2!.gmxEthUsdMarketToken.connect(core.hhUser1);
+    eventEmitter = core.eventEmitterRegistry;
+    underlyingToken = core.gmxV2Ecosystem.gmxEthUsdMarketToken.connect(core.hhUser1);
     const gmxV2Library = await createGmxV2Library();
     const safeDelegateCallLibrary = await createSafeDelegateLibrary();
-    const userVaultImplementation = await createTestGmxV2IsolationModeTokenVaultV1(
-      core,
-    );
+    const userVaultImplementation = await createTestGmxV2IsolationModeTokenVaultV1(core);
     gmxV2Registry = await createGmxV2Registry(core, callbackGasLimit);
     const newRegistry = await createDolomiteRegistryImplementation();
     await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(newRegistry.address);
-    await core.dolomiteRegistry.connect(core.governance).ownerSetOracleAggregator(core.chainlinkPriceOracleV1.address);
-    await gmxV2Registry.connect(core.governance).ownerSetGmxMarketToIndexToken(
-      underlyingToken.address,
-      core.gmxEcosystemV2!.gmTokens.ethUsd.indexToken.address
+    await gmxV2Registry
+      .connect(core.governance)
+      .ownerSetGmxMarketToIndexToken(underlyingToken.address, core.gmxV2Ecosystem.gmTokens.ethUsd.indexToken.address);
+
+    const dataStore = core.gmxV2Ecosystem.gmxDataStore;
+    const controllerKey = ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['string'], ['CONTROLLER']));
+    const roleStore = IGmxRoleStore__factory.connect(await dataStore.roleStore(), core.hhUser1);
+    const controllers = await roleStore.getRoleMembers(controllerKey, 0, 1);
+    const controller = await impersonate(controllers[0], true);
+
+    testOracleProvider = await createContractWithAbi<TestOracleProvider>(
+      TestOracleProvider__factory.abi,
+      TestOracleProvider__factory.bytecode,
+      [core.oracleAggregatorV2.address]
     );
+    const oracleProviderEnabledKey = getOracleProviderEnabledKey(testOracleProvider);
+    const usdcProviderKey = getOracleProviderForTokenKey(core.tokens.nativeUsdc);
+    const wethProviderKey = getOracleProviderForTokenKey(core.tokens.weth);
+    await dataStore.connect(controller).setBool(oracleProviderEnabledKey, true);
+    await dataStore.connect(controller).setAddress(usdcProviderKey, testOracleProvider.address);
+    await dataStore.connect(controller).setAddress(wethProviderKey, testOracleProvider.address);
 
     if (process.env.COVERAGE === 'true') {
       console.log('\tUsing coverage configuration...');
-      const dataStore = core.gmxEcosystemV2!.gmxDataStore;
-      const callbackKey = ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(
-        ['string'],
-        ['MAX_CALLBACK_GAS_LIMIT'],
-      ));
+      const callbackKey = ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(['string'], ['MAX_CALLBACK_GAS_LIMIT']),
+      );
       expect(await dataStore.getUint(callbackKey)).to.eq(callbackGasLimit.div(10));
-
-      const controllerKey = ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['string'], ['CONTROLLER']));
-      const roleStore = IGmxRoleStore__factory.connect(await dataStore.roleStore(), core.hhUser1);
-      const controllers = await roleStore.getRoleMembers(controllerKey, 0, 1);
-      const controller = await impersonate(controllers[0], true);
       await dataStore.connect(controller).setUint(callbackKey, callbackGasLimit);
     }
 
-    allowableMarketIds = [core.marketIds.nativeUsdc!, core.marketIds.weth];
+    allowableMarketIds = [core.marketIds.nativeUsdc, core.marketIds.weth];
     factory = await createGmxV2IsolationModeVaultFactory(
       core,
       gmxV2Library,
       gmxV2Registry,
       allowableMarketIds,
       allowableMarketIds,
-      core.gmxEcosystemV2!.gmTokens.ethUsd,
+      core.gmxV2Ecosystem.gmTokens.ethUsd,
       userVaultImplementation,
       executionFee,
     );
-    wrapper = await createGmxV2IsolationModeWrapperTraderV2(
-      core,
-      factory,
-      gmxV2Library,
-      gmxV2Registry,
-    );
+    wrapper = await createGmxV2IsolationModeWrapperTraderV2(core, factory, gmxV2Library, gmxV2Registry);
     unwrapper = await createTestGmxV2IsolationModeUnwrapperTraderV2(
       core,
       factory,
@@ -196,10 +199,10 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
     await setupTestMarket(core, factory, true, priceOracle);
 
     await disableInterestAccrual(core, core.marketIds.weth);
-    await disableInterestAccrual(core, core.marketIds.nativeUsdc!);
+    await disableInterestAccrual(core, core.marketIds.nativeUsdc);
 
-    await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
+    await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
 
     await factory.createVault(core.hhUser1.address);
     await factory.createVault(core.hhUser2.address);
@@ -220,18 +223,11 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
     await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, wethAmount);
 
     await setupNativeUSDCBalance(core, core.hhUser1, usdcAmount, core.dolomiteMargin);
-    await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.nativeUsdc!, usdcAmount);
-    await setEtherBalance(core.gmxEcosystemV2!.gmxExecutor.address, parseEther('100'));
+    await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.nativeUsdc, usdcAmount);
+    await setEtherBalance(core.gmxV2Ecosystem.gmxExecutor.address, parseEther('100'));
 
     await gmxV2Registry.connect(core.governance).ownerSetUnwrapperByToken(factory.address, unwrapper.address);
     await gmxV2Registry.connect(core.governance).ownerSetWrapperByToken(factory.address, wrapper.address);
-
-    eventEmitter = await createEventEmitter(core);
-    await core.dolomiteRegistry.connect(core.governance).ownerSetEventEmitter(eventEmitter.address);
-    await core.dolomiteRegistry.connect(core.governance).ownerSetGenericTraderProxy(NEW_GENERIC_TRADER_PROXY);
-    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(NEW_GENERIC_TRADER_PROXY, true);
-    const trader = IGenericTraderProxyV1__factory.connect(NEW_GENERIC_TRADER_PROXY, core.governance);
-    await trader.ownerSetEventEmitterRegistry(eventEmitter.address);
 
     snapshotId = await snapshot();
   });
@@ -247,11 +243,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
 
     it('should not initialize twice', async () => {
       await expectThrow(
-        unwrapper.initialize(
-          factory.address,
-          core.dolomiteMargin.address,
-          gmxV2Registry.address,
-        ),
+        unwrapper.initialize(factory.address, core.dolomiteMargin.address, gmxV2Registry.address, false),
         'Initializable: contract is already initialized',
       );
     });
@@ -263,17 +255,20 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await expectProtocolBalance(core, vault.address, defaultAccountNumber, marketId, amountWei);
 
-      await expect(() => vault.initiateUnwrapping(
-        defaultAccountNumber,
-        amountWei,
-        core.tokens.weth.address,
-        ONE_BI,
-        DEFAULT_EXTRA_DATA,
-        { value: executionFee },
-      )).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
+      await expect(() =>
+        vault.initiateUnwrapping(
+          defaultAccountNumber,
+          amountWei,
+          core.tokens.weth.address,
+          TWO_BI,
+          DEFAULT_EXTRA_DATA,
+          { value: executionFee },
+        ),
+      ).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
 
       const filter = eventEmitter.filters.AsyncWithdrawalCreated();
-      const withdrawalKey = (await eventEmitter.queryFilter(filter))[0].args.key;
+      const events = await eventEmitter.queryFilter(filter);
+      const withdrawalKey = events[events.length - 1].args.key;
 
       await expectProtocolBalance(core, vault.address, defaultAccountNumber, marketId, amountWei);
       await expectProtocolBalance(core, vault.address, defaultAccountNumber, core.marketIds.weth, 0);
@@ -299,17 +294,20 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await expectProtocolBalance(core, vault.address, defaultAccountNumber, marketId, amountWei);
 
-      await expect(() => vault.initiateUnwrapping(
-        defaultAccountNumber,
-        amountWei,
-        core.tokens.weth.address,
-        ONE_BI,
-        DEFAULT_EXTRA_DATA,
-        { value: executionFee },
-      )).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
+      await expect(() =>
+        vault.initiateUnwrapping(
+          defaultAccountNumber,
+          amountWei,
+          core.tokens.weth.address,
+          TWO_BI,
+          DEFAULT_EXTRA_DATA,
+          { value: executionFee },
+        ),
+      ).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
 
       const filter = eventEmitter.filters.AsyncWithdrawalCreated();
-      const withdrawalKey = (await eventEmitter.queryFilter(filter))[0].args.key;
+      const events = await eventEmitter.queryFilter(filter);
+      const withdrawalKey = events[events.length - 1].args.key;
 
       await expectProtocolBalance(core, vault.address, defaultAccountNumber, marketId, amountWei);
       await expectProtocolBalance(core, vault.address, defaultAccountNumber, core.marketIds.weth, 0);
@@ -341,18 +339,12 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
   });
 
   describe('#exchange', () => {
-
     let withdrawalKey: string;
 
     beforeEach(async () => {
       await setupGMBalance(core, underlyingToken, core.hhUser1, amountWei, vault);
       await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
-      await vault.openBorrowPosition(
-        defaultAccountNumber,
-        borrowAccountNumber,
-        amountWei,
-        { value: executionFee },
-      );
+      await vault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei, { value: executionFee });
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
       await expectWalletBalance(vault, underlyingToken, amountWei);
 
@@ -360,26 +352,29 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         borrowAccountNumber,
         amountWei,
         core.tokens.weth.address,
-        ONE_BI,
+        TWO_BI,
         DEFAULT_EXTRA_DATA,
         { value: executionFee },
       );
       await expectWalletBalance(vault, underlyingToken, ZERO_BI);
 
       const filter = eventEmitter.filters.AsyncWithdrawalCreated();
-      withdrawalKey = (await eventEmitter.queryFilter(filter))[0].args.key;
+      const events = await eventEmitter.queryFilter(filter);
+      withdrawalKey = events[events.length - 1].args.key;
     });
 
     it('should fail if not called by DolomiteMargin', async () => {
       await expectThrow(
-        unwrapper.connect(core.hhUser1).exchange(
-          core.hhUser1.address,
-          core.dolomiteMargin.address,
-          factory.address,
-          core.tokens.weth.address,
-          amountWei,
-          BYTES_EMPTY,
-        ),
+        unwrapper
+          .connect(core.hhUser1)
+          .exchange(
+            core.hhUser1.address,
+            core.dolomiteMargin.address,
+            factory.address,
+            core.tokens.weth.address,
+            amountWei,
+            BYTES_EMPTY,
+          ),
         `OnlyDolomiteMargin: Only Dolomite can call function <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
@@ -387,14 +382,16 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
     it('should fail if input token is incorrect', async () => {
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
       await expectThrow(
-        unwrapper.connect(dolomiteMarginImpersonator).exchange(
-          core.hhUser1.address,
-          core.dolomiteMargin.address,
-          factory.address,
-          core.tokens.weth.address,
-          amountWei,
-          BYTES_EMPTY,
-        ),
+        unwrapper
+          .connect(dolomiteMarginImpersonator)
+          .exchange(
+            core.hhUser1.address,
+            core.dolomiteMargin.address,
+            factory.address,
+            core.tokens.weth.address,
+            amountWei,
+            BYTES_EMPTY,
+          ),
         `UpgradeableUnwrapperTraderV2: Invalid input token <${core.tokens.weth.address.toLowerCase()}>`,
       );
     });
@@ -402,14 +399,16 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
     it('should fail if output token is invalid', async () => {
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
       await expectThrow(
-        unwrapper.connect(dolomiteMarginImpersonator).exchange(
-          core.hhUser1.address,
-          core.dolomiteMargin.address,
-          core.tokens.wbtc.address,
-          factory.address,
-          amountWei,
-          BYTES_EMPTY,
-        ),
+        unwrapper
+          .connect(dolomiteMarginImpersonator)
+          .exchange(
+            core.hhUser1.address,
+            core.dolomiteMargin.address,
+            core.tokens.wbtc.address,
+            factory.address,
+            amountWei,
+            BYTES_EMPTY,
+          ),
         `UpgradeableUnwrapperTraderV2: Invalid output token <${core.tokens.wbtc.address.toLowerCase()}>`,
       );
     });
@@ -417,17 +416,19 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
     it('should fail if output token does not match withdrawal struct', async () => {
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
       await expectThrow(
-        unwrapper.connect(dolomiteMarginImpersonator).exchange(
-          core.hhUser1.address,
-          core.dolomiteMargin.address,
-          core.tokens.nativeUsdc!.address,
-          factory.address,
-          amountWei,
-          ethers.utils.defaultAbiCoder.encode(
-            ['uint256', 'bytes'],
-            [ONE_BI, encodeWithdrawalKey(UnwrapTradeType.ForWithdrawal, withdrawalKey)],
+        unwrapper
+          .connect(dolomiteMarginImpersonator)
+          .exchange(
+            core.hhUser1.address,
+            core.dolomiteMargin.address,
+            core.tokens.nativeUsdc.address,
+            factory.address,
+            amountWei,
+            ethers.utils.defaultAbiCoder.encode(
+              ['uint256', 'bytes'],
+              [ONE_BI, encodeWithdrawalKey(UnwrapTradeType.ForWithdrawal, withdrawalKey)],
+            ),
           ),
-        ),
         'AsyncIsolationModeUnwrapperImpl: Output token mismatch',
       );
     });
@@ -435,14 +436,16 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
     it('should fail if input amount is insufficient', async () => {
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
       await expectThrow(
-        unwrapper.connect(dolomiteMarginImpersonator).exchange(
-          core.hhUser1.address,
-          core.dolomiteMargin.address,
-          core.tokens.weth.address,
-          factory.address,
-          ZERO_BI,
-          BYTES_EMPTY,
-        ),
+        unwrapper
+          .connect(dolomiteMarginImpersonator)
+          .exchange(
+            core.hhUser1.address,
+            core.dolomiteMargin.address,
+            core.tokens.weth.address,
+            factory.address,
+            ZERO_BI,
+            BYTES_EMPTY,
+          ),
         'UpgradeableUnwrapperTraderV2: Invalid input amount',
       );
     });
@@ -492,17 +495,17 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await expectProtocolBalance(core, vault.address, defaultAccountNumber, marketId, amountWei);
 
-      await expect(() => vault.connect(core.hhUser1).initiateUnwrapping(
-        defaultAccountNumber,
-        amountWei,
-        core.tokens.weth.address,
-        ONE_BI,
-        DEFAULT_EXTRA_DATA,
-        { value: executionFee },
-      )).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
+      await expect(() =>
+        vault
+          .connect(core.hhUser1)
+          .initiateUnwrapping(defaultAccountNumber, amountWei, core.tokens.weth.address, TWO_BI, DEFAULT_EXTRA_DATA, {
+            value: executionFee,
+          }),
+      ).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
 
       const filter = eventEmitter.filters.AsyncWithdrawalCreated();
-      const withdrawalKey = (await eventEmitter.queryFilter(filter))[0].args.key;
+      const events = await eventEmitter.queryFilter(filter);
+      const withdrawalKey = events[events.length - 1].args.key;
 
       await expectProtocolBalance(core, vault.address, defaultAccountNumber, marketId, amountWei);
       await expectProtocolBalance(core, vault.address, defaultAccountNumber, core.marketIds.weth, ZERO_BI);
@@ -526,25 +529,28 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
     it('should work normally when execution fails because minAmountOut is too large', async () => {
       await setupGMBalance(core, underlyingToken, core.hhUser1, amountWei, vault);
       await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
-      await vault.openBorrowPosition(
-        defaultAccountNumber,
-        borrowAccountNumber,
-        amountWei,
-        { value: executionFee },
-      );
+      await vault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei, { value: executionFee });
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
 
-      await expect(() => vault.connect(core.hhUser1).initiateUnwrapping(
-        borrowAccountNumber,
-        amountWei,
-        core.tokens.weth.address,
-        MAX_UINT_256_BI,
-        DEFAULT_EXTRA_DATA,
-        { value: executionFee },
-      )).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
+      const inputValue = amountWei.mul((await core.dolomiteMargin.getMarketPrice(marketId)).value);
+      const outputAmount = inputValue.div((await core.dolomiteMargin.getMarketPrice(marketId)).value);
+      const outputAmountTooLarge = outputAmount.mul(102).div(100);
+      await expect(() =>
+        vault
+          .connect(core.hhUser1)
+          .initiateUnwrapping(
+            borrowAccountNumber,
+            amountWei,
+            core.tokens.weth.address,
+            outputAmountTooLarge,
+            DEFAULT_EXTRA_DATA,
+            { value: executionFee },
+          ),
+      ).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
 
       const filter = eventEmitter.filters.AsyncWithdrawalCreated();
-      const withdrawalKey = (await eventEmitter.queryFilter(filter))[0].args.key;
+      const events = await eventEmitter.queryFilter(filter);
+      const withdrawalKey = events[events.length - 1].args.key;
 
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, 0);
@@ -553,11 +559,16 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       expect(await vault.isDepositSourceWrapper()).to.eq(false);
       expect(await underlyingToken.balanceOf(vault.address)).to.eq(ZERO_BI);
 
-      await core.gmxEcosystemV2!.gmxWithdrawalHandler.connect(core.gmxEcosystemV2!.gmxExecutor).executeWithdrawal(
-        withdrawalKey,
-        getOracleParams(core.tokens.weth.address, core.tokens.nativeUsdc!.address),
-        { gasLimit },
-      );
+      await core.gmxV2Ecosystem.gmxWithdrawalHandler
+        .connect(core.gmxV2Ecosystem.gmxExecutor)
+        .executeWithdrawal(
+          withdrawalKey,
+          getOracleParams(
+            [core.tokens.weth.address, core.tokens.nativeUsdc.address],
+            [testOracleProvider.address, testOracleProvider.address]
+          ),
+          { gasLimit }
+        );
 
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, 0);
@@ -570,25 +581,25 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
     it('should work normally when execution fails because minAmountOutShort is too large', async () => {
       await setupGMBalance(core, underlyingToken, core.hhUser1, amountWei, vault);
       await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
-      await vault.openBorrowPosition(
-        defaultAccountNumber,
-        borrowAccountNumber,
-        amountWei,
-        { value: executionFee },
-      );
+      await vault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei, { value: executionFee });
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
 
-      await expect(() => vault.connect(core.hhUser1).initiateUnwrapping(
-        borrowAccountNumber,
-        amountWei,
-        core.tokens.weth.address,
-        MAX_UINT_256_BI,
-        ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [parseEther('.5'), MAX_UINT_256_BI.sub(1)]),
-        { value: executionFee },
-      )).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
+      await expect(() =>
+        vault
+          .connect(core.hhUser1)
+          .initiateUnwrapping(
+            borrowAccountNumber,
+            amountWei,
+            core.tokens.weth.address,
+            MAX_UINT_256_BI,
+            ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [parseEther('.5'), MAX_UINT_256_BI.sub(1)]),
+            { value: executionFee },
+          ),
+      ).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
 
       const filter = eventEmitter.filters.AsyncWithdrawalCreated();
-      const withdrawalKey = (await eventEmitter.queryFilter(filter))[0].args.key;
+      const events = await eventEmitter.queryFilter(filter);
+      const withdrawalKey = events[events.length - 1].args.key;
 
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, 0);
@@ -597,11 +608,16 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       expect(await vault.isDepositSourceWrapper()).to.eq(false);
       expect(await underlyingToken.balanceOf(vault.address)).to.eq(ZERO_BI);
 
-      await core.gmxEcosystemV2!.gmxWithdrawalHandler.connect(core.gmxEcosystemV2!.gmxExecutor).executeWithdrawal(
-        withdrawalKey,
-        getOracleParams(core.tokens.weth.address, core.tokens.nativeUsdc!.address),
-        { gasLimit },
-      );
+      await core.gmxV2Ecosystem.gmxWithdrawalHandler
+        .connect(core.gmxV2Ecosystem.gmxExecutor)
+        .executeWithdrawal(
+          withdrawalKey,
+          getOracleParams(
+            [core.tokens.weth.address, core.tokens.nativeUsdc.address],
+            [testOracleProvider.address, testOracleProvider.address]
+          ),
+          { gasLimit }
+        );
 
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, 0);
@@ -619,21 +635,19 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         ONE_BI,
         amountWei,
         executionFee,
-        core.tokens.nativeUsdc!.address,
+        core.tokens.nativeUsdc.address,
         core.tokens.weth.address,
       );
       await expectThrow(
-        unwrapper.connect(core.hhUser1).afterWithdrawalCancellation(
-          DUMMY_WITHDRAWAL_KEY,
-          withdrawalInfo.withdrawal,
-          withdrawalInfo.eventData,
-        ),
+        unwrapper
+          .connect(core.hhUser1)
+          .afterWithdrawalCancellation(DUMMY_WITHDRAWAL_KEY, withdrawalInfo.withdrawal, withdrawalInfo.eventData),
         `AsyncIsolationModeTraderBase: Only handler can call <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
     it('should fail when withdrawal was not created through token vault', async () => {
-      const withdrawalExecutor = await impersonate(core.gmxEcosystemV2!.gmxWithdrawalHandler.address, true);
+      const withdrawalExecutor = await impersonate(core.gmxV2Ecosystem.gmxWithdrawalHandler.address, true);
       const withdrawalInfo = getWithdrawalObject(
         unwrapper.address,
         underlyingToken.address,
@@ -642,14 +656,12 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         amountWei,
         executionFee,
         core.tokens.weth.address,
-        core.tokens.nativeUsdc!.address,
+        core.tokens.nativeUsdc.address,
       );
       await expectThrow(
-        unwrapper.connect(withdrawalExecutor).afterWithdrawalCancellation(
-          DUMMY_WITHDRAWAL_KEY,
-          withdrawalInfo.withdrawal,
-          withdrawalInfo.eventData,
-        ),
+        unwrapper
+          .connect(withdrawalExecutor)
+          .afterWithdrawalCancellation(DUMMY_WITHDRAWAL_KEY, withdrawalInfo.withdrawal, withdrawalInfo.eventData),
         'UpgradeableUnwrapperTraderV2: Invalid withdrawal key',
       );
     });
@@ -662,7 +674,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         ONE_BI,
         amountWei,
         executionFee,
-        core.tokens.nativeUsdc!.address,
+        core.tokens.nativeUsdc.address,
         core.tokens.weth.address,
       );
       const transaction = await unwrapper.populateTransaction.afterWithdrawalCancellation(
@@ -683,18 +695,13 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
     async function setupBalances(outputToken: IERC20) {
       await setupGMBalance(core, underlyingToken, core.hhUser1, amountWei, vault);
       await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
-      await vault.openBorrowPosition(
-        defaultAccountNumber,
-        borrowAccountNumber,
-        amountWei,
-        { value: executionFee },
-      );
+      await vault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei, { value: executionFee });
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
       await expectWalletBalance(vault, underlyingToken, amountWei);
       expect(await vault.isVaultAccountFrozen(defaultAccountNumber)).to.eq(false);
       expect(await vault.isVaultAccountFrozen(borrowAccountNumber)).to.eq(false);
 
-      const minAmountOut = ONE_BI;
+      const minAmountOut = TWO_BI;
       await vault.initiateUnwrapping(
         borrowAccountNumber,
         amountWei,
@@ -706,7 +713,8 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       await expectWalletBalance(vault, underlyingToken, ZERO_BI);
 
       const filter = eventEmitter.filters.AsyncWithdrawalCreated();
-      withdrawalKey = (await eventEmitter.queryFilter(filter))[0].args.key;
+      const events = await eventEmitter.queryFilter(filter);
+      withdrawalKey = events[events.length - 1].args.key;
       const withdrawal = await unwrapper.getWithdrawalInfo(withdrawalKey);
       expect(withdrawal.key).to.eq(withdrawalKey);
       expect(withdrawal.vault).to.eq(vault.address);
@@ -734,7 +742,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       expect(await vault.isVaultAccountFrozen(defaultAccountNumber)).to.eq(false);
       expect(await vault.isVaultAccountFrozen(defaultAccountNumber)).to.eq(false);
 
-      const minAmountOut = ONE_BI;
+      const minAmountOut = TWO_BI;
       await vault.initiateUnwrapping(
         defaultAccountNumber,
         amountWei,
@@ -745,7 +753,8 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       );
 
       const filter = eventEmitter.filters.AsyncWithdrawalCreated();
-      withdrawalKey = (await eventEmitter.queryFilter(filter))[0].args.key;
+      const events = await eventEmitter.queryFilter(filter);
+      withdrawalKey = events[events.length - 1].args.key;
       const withdrawalBefore = await unwrapper.getWithdrawalInfo(withdrawalKey);
       expect(withdrawalBefore.key).to.eq(withdrawalKey);
       expect(withdrawalBefore.vault).to.eq(vault.address);
@@ -754,11 +763,15 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       expect(withdrawalBefore.outputToken).to.eq(core.tokens.weth.address);
       expect(withdrawalBefore.outputAmount).to.eq(minAmountOut);
 
-      const result = await core.gmxEcosystemV2!.gmxWithdrawalHandler.connect(core.gmxEcosystemV2!.gmxExecutor)
+      const result = await core.gmxV2Ecosystem.gmxWithdrawalHandler
+        .connect(core.gmxV2Ecosystem.gmxExecutor)
         .executeWithdrawal(
           withdrawalKey,
-          getOracleParams(core.tokens.weth.address, core.tokens.nativeUsdc!.address),
-          { gasLimit },
+          getOracleParams(
+            [core.tokens.weth.address, core.tokens.nativeUsdc.address],
+            [testOracleProvider.address, testOracleProvider.address]
+          ),
+          { gasLimit }
         );
       await expectEvent(eventEmitter, result, 'AsyncWithdrawalExecuted', {
         key: withdrawalKey,
@@ -782,7 +795,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         wethAmount.add(ONE_BI),
         '0',
       );
-      await expectProtocolBalance(core, vault.address, defaultAccountNumber, core.marketIds.nativeUsdc!, ZERO_BI);
+      await expectProtocolBalance(core, vault.address, defaultAccountNumber, core.marketIds.nativeUsdc, ZERO_BI);
       expect(await vault.isVaultFrozen()).to.eq(false);
       expect(await vault.shouldSkipTransfer()).to.eq(false);
       expect(await vault.isDepositSourceWrapper()).to.eq(false);
@@ -791,11 +804,15 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
 
     it('should work normally with actual oracle params and long token', async () => {
       await setupBalances(core.tokens.weth);
-      const result = await core.gmxEcosystemV2!.gmxWithdrawalHandler.connect(core.gmxEcosystemV2!.gmxExecutor)
+      const result = await core.gmxV2Ecosystem.gmxWithdrawalHandler
+        .connect(core.gmxV2Ecosystem.gmxExecutor)
         .executeWithdrawal(
           withdrawalKey,
-          getOracleParams(core.tokens.weth.address, core.tokens.nativeUsdc!.address),
-          { gasLimit },
+          getOracleParams(
+            [core.tokens.weth.address, core.tokens.nativeUsdc.address],
+            [testOracleProvider.address, testOracleProvider.address]
+          ),
+          { gasLimit }
         );
       await expectEvent(eventEmitter, result, 'AsyncWithdrawalExecuted', {
         key: withdrawalKey,
@@ -818,7 +835,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         ONE_BI,
         '100',
       );
-      await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.nativeUsdc!, ZERO_BI);
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.nativeUsdc, ZERO_BI);
       expect(await vault.isVaultFrozen()).to.eq(false);
       expect(await vault.shouldSkipTransfer()).to.eq(false);
       expect(await vault.isDepositSourceWrapper()).to.eq(false);
@@ -826,12 +843,16 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
     });
 
     it('should work normally with actual oracle params and short token', async () => {
-      await setupBalances(core.tokens.nativeUsdc!);
-      const result = await core.gmxEcosystemV2!.gmxWithdrawalHandler.connect(core.gmxEcosystemV2!.gmxExecutor)
+      await setupBalances(core.tokens.nativeUsdc);
+      const result = await core.gmxV2Ecosystem.gmxWithdrawalHandler
+        .connect(core.gmxV2Ecosystem.gmxExecutor)
         .executeWithdrawal(
           withdrawalKey,
-          getOracleParams(core.tokens.weth.address, core.tokens.nativeUsdc!.address),
-          { gasLimit },
+          getOracleParams(
+            [core.tokens.weth.address, core.tokens.nativeUsdc.address],
+            [testOracleProvider.address, testOracleProvider.address]
+          ),
+          { gasLimit }
         );
       await expectEvent(eventEmitter, result, 'AsyncWithdrawalExecuted', {
         key: withdrawalKey,
@@ -842,7 +863,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       await expectProtocolBalanceIsGreaterThan(
         core,
         { owner: vault.address, number: borrowAccountNumber },
-        core.marketIds.nativeUsdc!,
+        core.marketIds.nativeUsdc,
         '1000000', // $1.00
         100,
       );
@@ -858,11 +879,15 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       await vault.setReversionType(ReversionType.Assert);
       expect(await vault.reversionType()).to.eq(ReversionType.Assert);
 
-      const result = await core.gmxEcosystemV2!.gmxWithdrawalHandler.connect(core.gmxEcosystemV2!.gmxExecutor)
+      const result = await core.gmxV2Ecosystem.gmxWithdrawalHandler
+        .connect(core.gmxV2Ecosystem.gmxExecutor)
         .executeWithdrawal(
           withdrawalKey,
-          getOracleParams(core.tokens.weth.address, core.tokens.nativeUsdc!.address),
-          { gasLimit },
+          getOracleParams(
+            [core.tokens.weth.address, core.tokens.nativeUsdc.address],
+            [testOracleProvider.address, testOracleProvider.address]
+          ),
+          { gasLimit }
         );
       await expectEvent(eventEmitter, result, 'AsyncWithdrawalFailed', {
         key: withdrawalKey,
@@ -871,7 +896,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       });
 
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
-      await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.nativeUsdc!, ZERO_BI);
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.nativeUsdc, ZERO_BI);
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, ZERO_BI);
       expect(await vault.isVaultFrozen()).to.eq(true);
       expect(await vault.shouldSkipTransfer()).to.eq(false);
@@ -887,11 +912,15 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       await vault.setReversionType(ReversionType.Require);
       expect(await vault.reversionType()).to.eq(ReversionType.Require);
 
-      const result = await core.gmxEcosystemV2!.gmxWithdrawalHandler.connect(core.gmxEcosystemV2!.gmxExecutor)
+      const result = await core.gmxV2Ecosystem.gmxWithdrawalHandler
+        .connect(core.gmxV2Ecosystem.gmxExecutor)
         .executeWithdrawal(
           withdrawalKey,
-          getOracleParams(core.tokens.weth.address, core.tokens.nativeUsdc!.address),
-          { gasLimit },
+          getOracleParams(
+            [core.tokens.weth.address, core.tokens.nativeUsdc.address],
+            [testOracleProvider.address, testOracleProvider.address]
+          ),
+          { gasLimit }
         );
       await expectEvent(eventEmitter, result, 'AsyncWithdrawalFailed', {
         key: withdrawalKey,
@@ -900,7 +929,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       });
 
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
-      await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.nativeUsdc!, ZERO_BI);
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.nativeUsdc, ZERO_BI);
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, ZERO_BI);
       expect(await vault.isVaultFrozen()).to.eq(true);
       expect(await vault.shouldSkipTransfer()).to.eq(false);
@@ -912,13 +941,17 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
     });
 
     it('should work normally if user sends extra amount to withdrawal vault', async () => {
-      await setupGMBalance(core, underlyingToken, core.gmxEcosystemV2!.gmxWithdrawalVault, ONE_BI);
+      await setupGMBalance(core, underlyingToken, core.gmxV2Ecosystem.gmxWithdrawalVault, ONE_BI);
       await setupBalances(core.tokens.weth);
-      const result = await core.gmxEcosystemV2!.gmxWithdrawalHandler.connect(core.gmxEcosystemV2!.gmxExecutor)
+      const result = await core.gmxV2Ecosystem.gmxWithdrawalHandler
+        .connect(core.gmxV2Ecosystem.gmxExecutor)
         .executeWithdrawal(
           withdrawalKey,
-          getOracleParams(core.tokens.weth.address, core.tokens.nativeUsdc!.address),
-          { gasLimit },
+          getOracleParams(
+            [core.tokens.weth.address, core.tokens.nativeUsdc.address],
+            [testOracleProvider.address, testOracleProvider.address]
+          ),
+          { gasLimit }
         );
       await expectEvent(eventEmitter, result, 'AsyncWithdrawalExecuted', {
         key: withdrawalKey,
@@ -941,42 +974,33 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         ONE_BI,
         '100',
       );
-      await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.nativeUsdc!, ZERO_BI);
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.nativeUsdc, ZERO_BI);
       expect(await vault.isVaultFrozen()).to.eq(false);
       expect(await vault.shouldSkipTransfer()).to.eq(false);
       expect(await vault.isDepositSourceWrapper()).to.eq(false);
       expect(await underlyingToken.balanceOf(vault.address)).to.eq(ZERO_BI);
-
     });
 
     // This POC from Guardian now fails
     xit('Send 1 Wei to Withdrawal Vault to Revert On afterWithdrawalExecution Validation', async () => {
       // Send 1 wei of GM to withdrawal vault prior to initiating a withdrawal
-      await setupGMBalance(core, underlyingToken, core.gmxEcosystemV2?.gmxWithdrawalVault!, 1);
+      await setupGMBalance(core, underlyingToken, core.gmxV2Ecosystem.gmxWithdrawalVault, 1);
       // A withdrawal for amountWei + 1 is created
-      await setupBalances(core.tokens.nativeUsdc!);
+      await setupBalances(core.tokens.nativeUsdc);
       // The protocol has amountWei GM prior to withdrawal execution
-      await expectProtocolBalance(
-        core,
-        vault.address,
-        borrowAccountNumber,
-        marketId,
-        amountWei,
-      );
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
       // There is no USDC in the Unwrapper
-      expect(await core.tokens.nativeUsdc!.balanceOf(unwrapper.address)).to.eq(0);
+      expect(await core.tokens.nativeUsdc.balanceOf(unwrapper.address)).to.eq(0);
 
-      await core
-        .gmxEcosystemV2!.gmxWithdrawalHandler.connect(
-        core.gmxEcosystemV2!.gmxExecutor,
-      )
+      await core.gmxV2Ecosystem.gmxWithdrawalHandler
+        .connect(core.gmxV2Ecosystem.gmxExecutor)
         .executeWithdrawal(
           withdrawalKey,
           getOracleParams(
-            core.tokens.weth.address,
-            core.tokens.nativeUsdc!.address,
+            [core.tokens.weth.address, core.tokens.nativeUsdc.address],
+            [testOracleProvider.address, testOracleProvider.address]
           ),
-          { gasLimit: 10_000_000 },
+          { gasLimit }
         );
 
       // Withdrawal info object remains and is uncleared
@@ -985,31 +1009,13 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       expect(withdrawal.vault).to.eq(vault.address);
       expect(withdrawal.accountNumber).to.eq(borrowAccountNumber);
       expect(withdrawal.inputAmount).to.eq(amountWei);
-      expect(withdrawal.outputToken).to.eq(core.tokens.nativeUsdc!.address);
+      expect(withdrawal.outputToken).to.eq(core.tokens.nativeUsdc.address);
       expect(withdrawal.outputAmount).to.eq(ONE_BI);
 
       // The protocol STILL has amountWei GM after withdrawal execution
-      await expectProtocolBalance(
-        core,
-        vault.address,
-        borrowAccountNumber,
-        marketId,
-        amountWei,
-      );
-      await expectProtocolBalance(
-        core,
-        vault.address,
-        borrowAccountNumber,
-        core.marketIds.weth,
-        ZERO_BI,
-      );
-      await expectProtocolBalance(
-        core,
-        vault.address,
-        borrowAccountNumber,
-        core.marketIds.nativeUsdc!,
-        ZERO_BI,
-      );
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, ZERO_BI);
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.nativeUsdc, ZERO_BI);
 
       // Vault remains frozen, prohibiting user actions
       expect(await vault.isVaultFrozen()).to.eq(true);
@@ -1018,14 +1024,14 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       expect(await underlyingToken.balanceOf(vault.address)).to.eq(ZERO_BI);
 
       // Funds are stuck in the Unwrapper
-      expect(await core.tokens.nativeUsdc!.balanceOf(unwrapper.address)).to.be.gt(0);
+      expect(await core.tokens.nativeUsdc.balanceOf(unwrapper.address)).to.be.gt(0);
     });
 
     it('should work normally if secondaryOutputToken is a different address but has no amount', async () => {
       await setupBalances(core.tokens.weth);
-      const withdrawalExecutor = await impersonate(core.gmxEcosystemV2!.gmxWithdrawalHandler.address, true);
+      const withdrawalExecutor = await impersonate(core.gmxV2Ecosystem.gmxWithdrawalHandler.address, true);
       const unwrapperImpersonate = await impersonate(unwrapper.address, true);
-      await setupNativeUSDCBalance(core, unwrapperImpersonate, 100e6, core.gmxEcosystem!.esGmxDistributorForStakedGlp);
+      await setupNativeUSDCBalance(core, unwrapperImpersonate, 100e6, core.gmxEcosystem.esGmxDistributorForStakedGlp);
       const withdrawalInfo = getWithdrawalObject(
         unwrapper.address,
         underlyingToken.address,
@@ -1034,22 +1040,20 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         amountWei,
         executionFee,
         core.tokens.weth.address,
-        core.tokens.nativeUsdc!.address,
+        core.tokens.nativeUsdc.address,
         BigNumber.from('100000000'),
         ZERO_BI,
       );
-      await unwrapper.connect(withdrawalExecutor).afterWithdrawalExecution(
-        withdrawalKey,
-        withdrawalInfo.withdrawal,
-        withdrawalInfo.eventData,
-      );
+      await unwrapper
+        .connect(withdrawalExecutor)
+        .afterWithdrawalExecution(withdrawalKey, withdrawalInfo.withdrawal, withdrawalInfo.eventData);
     });
 
     it('should work normally if outputToken is a different address but has no amount', async () => {
-      await setupBalances(core.tokens.nativeUsdc!);
-      const withdrawalExecutor = await impersonate(core.gmxEcosystemV2!.gmxWithdrawalHandler.address, true);
+      await setupBalances(core.tokens.nativeUsdc);
+      const withdrawalExecutor = await impersonate(core.gmxV2Ecosystem.gmxWithdrawalHandler.address, true);
       const unwrapperImpersonate = await impersonate(unwrapper.address, true);
-      await setupNativeUSDCBalance(core, unwrapperImpersonate, 100e6, core.gmxEcosystem!.esGmxDistributorForStakedGlp);
+      await setupNativeUSDCBalance(core, unwrapperImpersonate, 100e6, core.gmxEcosystem.esGmxDistributorForStakedGlp);
       const withdrawalInfo = getWithdrawalObject(
         unwrapper.address,
         underlyingToken.address,
@@ -1058,22 +1062,20 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         amountWei,
         executionFee,
         core.tokens.weth.address,
-        core.tokens.nativeUsdc!.address,
+        core.tokens.nativeUsdc.address,
         ZERO_BI,
         BigNumber.from('100000000'),
       );
-      await unwrapper.connect(withdrawalExecutor).afterWithdrawalExecution(
-        withdrawalKey,
-        withdrawalInfo.withdrawal,
-        withdrawalInfo.eventData,
-      );
+      await unwrapper
+        .connect(withdrawalExecutor)
+        .afterWithdrawalExecution(withdrawalKey, withdrawalInfo.withdrawal, withdrawalInfo.eventData);
     });
 
     it('should fail if given invalid event data', async () => {
       await setupBalances(core.tokens.weth);
-      const withdrawalExecutor = await impersonate(core.gmxEcosystemV2!.gmxWithdrawalHandler.address, true);
+      const withdrawalExecutor = await impersonate(core.gmxV2Ecosystem.gmxWithdrawalHandler.address, true);
       const unwrapperImpersonate = await impersonate(unwrapper.address, true);
-      await setupNativeUSDCBalance(core, unwrapperImpersonate, 100e6, core.gmxEcosystem!.esGmxDistributorForStakedGlp);
+      await setupNativeUSDCBalance(core, unwrapperImpersonate, 100e6, core.gmxEcosystem.esGmxDistributorForStakedGlp);
       const withdrawalInfo = getWithdrawalObject(
         unwrapper.address,
         underlyingToken.address,
@@ -1081,71 +1083,61 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         ONE_BI,
         amountWei,
         parseEther('.01'),
-        core.tokens.nativeUsdc!.address,
+        core.tokens.nativeUsdc.address,
         core.tokens.weth.address,
         BigNumber.from('100000000'),
       );
 
       withdrawalInfo.eventData.addressItems.items[0].key = 'badOutputToken';
       await expectThrow(
-        unwrapper.connect(withdrawalExecutor).afterWithdrawalExecution(
-          withdrawalKey,
-          withdrawalInfo.withdrawal,
-          withdrawalInfo.eventData,
-        ),
+        unwrapper
+          .connect(withdrawalExecutor)
+          .afterWithdrawalExecution(withdrawalKey, withdrawalInfo.withdrawal, withdrawalInfo.eventData),
         'GmxV2Library: Unexpected outputToken',
       );
 
       withdrawalInfo.eventData.addressItems.items[0].key = 'outputToken';
       withdrawalInfo.eventData.addressItems.items[0].value = core.tokens.wbtc.address;
       await expectThrow(
-        unwrapper.connect(withdrawalExecutor).afterWithdrawalExecution(
-          withdrawalKey,
-          withdrawalInfo.withdrawal,
-          withdrawalInfo.eventData,
-        ),
+        unwrapper
+          .connect(withdrawalExecutor)
+          .afterWithdrawalExecution(withdrawalKey, withdrawalInfo.withdrawal, withdrawalInfo.eventData),
         'GmxV2Library: Output token is incorrect',
       );
 
       withdrawalInfo.eventData.addressItems.items[0].value = core.tokens.weth.address;
       withdrawalInfo.eventData.addressItems.items[1].key = 'badSecondaryOutputToken';
       await expectThrow(
-        unwrapper.connect(withdrawalExecutor).afterWithdrawalExecution(
-          withdrawalKey,
-          withdrawalInfo.withdrawal,
-          withdrawalInfo.eventData,
-        ),
+        unwrapper
+          .connect(withdrawalExecutor)
+          .afterWithdrawalExecution(withdrawalKey, withdrawalInfo.withdrawal, withdrawalInfo.eventData),
         'GmxV2Library: Unexpected secondaryOutputToken',
       );
 
       withdrawalInfo.eventData.addressItems.items[1].key = 'secondaryOutputToken';
       withdrawalInfo.eventData.uintItems.items[0].key = 'badOutputAmount';
       await expectThrow(
-        unwrapper.connect(withdrawalExecutor).afterWithdrawalExecution(
-          withdrawalKey,
-          withdrawalInfo.withdrawal,
-          withdrawalInfo.eventData,
-        ),
+        unwrapper
+          .connect(withdrawalExecutor)
+          .afterWithdrawalExecution(withdrawalKey, withdrawalInfo.withdrawal, withdrawalInfo.eventData),
         'GmxV2Library: Unexpected outputAmount',
       );
 
       withdrawalInfo.eventData.uintItems.items[0].key = 'outputAmount';
       withdrawalInfo.eventData.uintItems.items[1].key = 'badSecondaryOutputAmount';
       await expectThrow(
-        unwrapper.connect(withdrawalExecutor).afterWithdrawalExecution(
-          withdrawalKey,
-          withdrawalInfo.withdrawal,
-          withdrawalInfo.eventData,
-        ),
+        unwrapper
+          .connect(withdrawalExecutor)
+          .afterWithdrawalExecution(withdrawalKey, withdrawalInfo.withdrawal, withdrawalInfo.eventData),
         'GmxV2Library: Unexpected secondaryOutputAmount',
       );
     });
 
     it('should fail if output token is short token but outputToken does not equal secondaryOutputToken', async () => {
-      await setupBalances(core.tokens.nativeUsdc!);
-      const withdrawalExecutor = await impersonate(core.gmxEcosystemV2!.gmxWithdrawalHandler.address, true);
+      await setupBalances(core.tokens.nativeUsdc);
+      const withdrawalExecutor = await impersonate(core.gmxV2Ecosystem.gmxWithdrawalHandler.address, true);
       const unwrapperImpersonate = await impersonate(unwrapper.address, true);
-      await setupNativeUSDCBalance(core, unwrapperImpersonate, 100e6, core.gmxEcosystem!.esGmxDistributorForStakedGlp);
+      await setupNativeUSDCBalance(core, unwrapperImpersonate, 100e6, core.gmxEcosystem.esGmxDistributorForStakedGlp);
       const withdrawalInfo = getWithdrawalObject(
         unwrapper.address,
         underlyingToken.address,
@@ -1153,27 +1145,25 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         ONE_BI,
         amountWei,
         parseEther('.01'),
-        core.tokens.nativeUsdc!.address,
+        core.tokens.nativeUsdc.address,
         core.tokens.weth.address,
         BigNumber.from('100000000'),
       );
 
       withdrawalInfo.eventData.addressItems.items[1].value = core.tokens.wbtc.address;
       await expectThrow(
-        unwrapper.connect(withdrawalExecutor).afterWithdrawalExecution(
-          withdrawalKey,
-          withdrawalInfo.withdrawal,
-          withdrawalInfo.eventData,
-        ),
+        unwrapper
+          .connect(withdrawalExecutor)
+          .afterWithdrawalExecution(withdrawalKey, withdrawalInfo.withdrawal, withdrawalInfo.eventData),
         'GmxV2Library: Output token is incorrect',
       );
     });
 
     it('should fail if receive more than one token if outputToken is long token', async () => {
       await setupBalances(core.tokens.weth);
-      const withdrawalExecutor = await impersonate(core.gmxEcosystemV2!.gmxWithdrawalHandler.address, true);
+      const withdrawalExecutor = await impersonate(core.gmxV2Ecosystem.gmxWithdrawalHandler.address, true);
       const unwrapperImpersonate = await impersonate(unwrapper.address, true);
-      await setupNativeUSDCBalance(core, unwrapperImpersonate, 100e6, core.gmxEcosystem!.esGmxDistributorForStakedGlp);
+      await setupNativeUSDCBalance(core, unwrapperImpersonate, 100e6, core.gmxEcosystem.esGmxDistributorForStakedGlp);
       const withdrawalInfo = getWithdrawalObject(
         unwrapper.address,
         underlyingToken.address,
@@ -1182,25 +1172,23 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         amountWei,
         executionFee,
         core.tokens.weth.address,
-        core.tokens.nativeUsdc!.address,
+        core.tokens.nativeUsdc.address,
         BigNumber.from('100000000'),
         ONE_BI,
       );
       await expectThrow(
-        unwrapper.connect(withdrawalExecutor).afterWithdrawalExecution(
-          withdrawalKey,
-          withdrawalInfo.withdrawal,
-          withdrawalInfo.eventData,
-        ),
+        unwrapper
+          .connect(withdrawalExecutor)
+          .afterWithdrawalExecution(withdrawalKey, withdrawalInfo.withdrawal, withdrawalInfo.eventData),
         'GmxV2Library: Can only receive one token',
       );
     });
 
     it('should fail if receive more than one token if outputToken is short token', async () => {
-      await setupBalances(core.tokens.nativeUsdc!);
-      const withdrawalExecutor = await impersonate(core.gmxEcosystemV2!.gmxWithdrawalHandler.address, true);
+      await setupBalances(core.tokens.nativeUsdc);
+      const withdrawalExecutor = await impersonate(core.gmxV2Ecosystem.gmxWithdrawalHandler.address, true);
       const unwrapperImpersonate = await impersonate(unwrapper.address, true);
-      await setupNativeUSDCBalance(core, unwrapperImpersonate, 100e6, core.gmxEcosystem!.esGmxDistributorForStakedGlp);
+      await setupNativeUSDCBalance(core, unwrapperImpersonate, 100e6, core.gmxEcosystem.esGmxDistributorForStakedGlp);
       const withdrawalInfo = getWithdrawalObject(
         unwrapper.address,
         underlyingToken.address,
@@ -1209,25 +1197,23 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         amountWei,
         executionFee,
         core.tokens.weth.address,
-        core.tokens.nativeUsdc!.address,
+        core.tokens.nativeUsdc.address,
         BigNumber.from('100000000'),
         ONE_BI,
       );
       await expectThrow(
-        unwrapper.connect(withdrawalExecutor).afterWithdrawalExecution(
-          withdrawalKey,
-          withdrawalInfo.withdrawal,
-          withdrawalInfo.eventData,
-        ),
+        unwrapper
+          .connect(withdrawalExecutor)
+          .afterWithdrawalExecution(withdrawalKey, withdrawalInfo.withdrawal, withdrawalInfo.eventData),
         'GmxV2Library: Can only receive one token',
       );
     });
 
     it('should fail if marketTokenAmount is less than inputAmount', async () => {
       await setupBalances(core.tokens.weth);
-      const withdrawalExecutor = await impersonate(core.gmxEcosystemV2!.gmxWithdrawalHandler.address, true);
+      const withdrawalExecutor = await impersonate(core.gmxV2Ecosystem.gmxWithdrawalHandler.address, true);
       const unwrapperImpersonate = await impersonate(unwrapper.address, true);
-      await setupNativeUSDCBalance(core, unwrapperImpersonate, 100e6, core.gmxEcosystem!.esGmxDistributorForStakedGlp);
+      await setupNativeUSDCBalance(core, unwrapperImpersonate, 100e6, core.gmxEcosystem.esGmxDistributorForStakedGlp);
       const withdrawalInfo = getWithdrawalObject(
         unwrapper.address,
         underlyingToken.address,
@@ -1235,27 +1221,25 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         ONE_BI,
         ONE_BI,
         parseEther('.01'),
-        core.tokens.nativeUsdc!.address,
+        core.tokens.nativeUsdc.address,
         core.tokens.weth.address,
         BigNumber.from('100000000'),
         BigNumber.from('100000000'),
       );
       await expectThrow(
-        unwrapper.connect(withdrawalExecutor).afterWithdrawalExecution(
-          withdrawalKey,
-          withdrawalInfo.withdrawal,
-          withdrawalInfo.eventData,
-        ),
-        'GmxV2IsolationModeUnwrapperV2: Invalid market token amount',
+        unwrapper
+          .connect(withdrawalExecutor)
+          .afterWithdrawalExecution(withdrawalKey, withdrawalInfo.withdrawal, withdrawalInfo.eventData),
+        'GmxV2Library: Invalid market token amount',
       );
     });
 
     // @todo Confirm that we can then withdraw the tokens
     xit('should fail if more than one output token received', async () => {
       await setupBalances(core.tokens.weth);
-      const withdrawalExecutor = await impersonate(core.gmxEcosystemV2!.gmxWithdrawalHandler.address, true);
+      const withdrawalExecutor = await impersonate(core.gmxV2Ecosystem.gmxWithdrawalHandler.address, true);
       const unwrapperImpersonate = await impersonate(unwrapper.address, true);
-      await setupNativeUSDCBalance(core, unwrapperImpersonate, 100e6, core.gmxEcosystem!.esGmxDistributorForStakedGlp);
+      await setupNativeUSDCBalance(core, unwrapperImpersonate, 100e6, core.gmxEcosystem.esGmxDistributorForStakedGlp);
       const withdrawalInfo = getWithdrawalObject(
         unwrapper.address,
         underlyingToken.address,
@@ -1263,17 +1247,15 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         ONE_BI,
         amountWei,
         parseEther('.01'),
-        core.tokens.nativeUsdc!.address,
+        core.tokens.nativeUsdc.address,
         core.tokens.weth.address,
         BigNumber.from('100000000'),
         BigNumber.from('100000000'),
       );
       await expectThrow(
-        unwrapper.connect(withdrawalExecutor).afterWithdrawalExecution(
-          withdrawalKey,
-          withdrawalInfo.withdrawal,
-          withdrawalInfo.eventData,
-        ),
+        unwrapper
+          .connect(withdrawalExecutor)
+          .afterWithdrawalExecution(withdrawalKey, withdrawalInfo.withdrawal, withdrawalInfo.eventData),
         'GmxV2Library: Can only receive one token',
       );
     });
@@ -1287,22 +1269,20 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         ONE_BI,
         amountWei,
         parseEther('.01'),
-        core.tokens.nativeUsdc!.address,
+        core.tokens.nativeUsdc.address,
         core.tokens.weth.address,
       );
       await expectThrow(
-        unwrapper.connect(core.hhUser1).afterWithdrawalExecution(
-          DUMMY_WITHDRAWAL_KEY,
-          withdrawalInfo.withdrawal,
-          withdrawalInfo.eventData,
-        ),
+        unwrapper
+          .connect(core.hhUser1)
+          .afterWithdrawalExecution(DUMMY_WITHDRAWAL_KEY, withdrawalInfo.withdrawal, withdrawalInfo.eventData),
         `AsyncIsolationModeTraderBase: Only handler can call <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
     it('should fail when withdrawal was not created through token vault', async () => {
       await setupBalances(core.tokens.weth);
-      const withdrawalExecutor = await impersonate(core.gmxEcosystemV2!.gmxWithdrawalHandler.address, true);
+      const withdrawalExecutor = await impersonate(core.gmxV2Ecosystem.gmxWithdrawalHandler.address, true);
       const withdrawalInfo = getWithdrawalObject(
         unwrapper.address,
         underlyingToken.address,
@@ -1311,14 +1291,12 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         amountWei,
         parseEther('.01'),
         core.tokens.weth.address,
-        core.tokens.nativeUsdc!.address,
+        core.tokens.nativeUsdc.address,
       );
       await expectThrow(
-        unwrapper.connect(withdrawalExecutor).afterWithdrawalExecution(
-          DUMMY_WITHDRAWAL_KEY,
-          withdrawalInfo.withdrawal,
-          withdrawalInfo.eventData,
-        ),
+        unwrapper
+          .connect(withdrawalExecutor)
+          .afterWithdrawalExecution(DUMMY_WITHDRAWAL_KEY, withdrawalInfo.withdrawal, withdrawalInfo.eventData),
         'UpgradeableUnwrapperTraderV2: Invalid withdrawal key',
       );
     });
@@ -1326,7 +1304,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
     it('should not fail when withdrawal amount is more than expected', async () => {
       await setupBalances(core.tokens.weth);
 
-      const withdrawalExecutor = await impersonate(core.gmxEcosystemV2!.gmxWithdrawalHandler.address, true);
+      const withdrawalExecutor = await impersonate(core.gmxV2Ecosystem.gmxWithdrawalHandler.address, true);
       const withdrawalInfo = getWithdrawalObject(
         unwrapper.address,
         underlyingToken.address,
@@ -1339,11 +1317,9 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         ONE_BI,
         ONE_BI,
       );
-      await unwrapper.connect(withdrawalExecutor).afterWithdrawalExecution(
-        withdrawalKey,
-        withdrawalInfo.withdrawal,
-        withdrawalInfo.eventData,
-      );
+      await unwrapper
+        .connect(withdrawalExecutor)
+        .afterWithdrawalExecution(withdrawalKey, withdrawalInfo.withdrawal, withdrawalInfo.eventData);
     });
 
     it('should fail if reentered', async () => {
@@ -1354,7 +1330,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         ONE_BI,
         amountWei,
         parseEther('.01'),
-        core.tokens.nativeUsdc!.address,
+        core.tokens.nativeUsdc.address,
         core.tokens.weth.address,
       );
       const transaction = await unwrapper.populateTransaction.afterWithdrawalExecution(
@@ -1374,17 +1350,12 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       await gmxV2Registry.connect(core.governance).ownerSetIsHandler(core.hhUser1.address, true);
       await setupGMBalance(core, underlyingToken, core.hhUser1, amountWei, vault);
       await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
-      await vault.openBorrowPosition(
-        defaultAccountNumber,
-        borrowAccountNumber,
-        amountWei,
-        { value: executionFee },
-      );
-      const usdcAmount = BigNumber.from('8000000');
+      await vault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei, { value: executionFee });
+      const usdcAmount = BigNumber.from('9000000');
       await vault.transferFromPositionWithOtherToken(
         borrowAccountNumber,
         defaultAccountNumber,
-        core.marketIds.nativeUsdc!,
+        core.marketIds.nativeUsdc,
         usdcAmount,
         BalanceCheckFlag.None,
       );
@@ -1393,7 +1364,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         borrowAccountNumber,
         amountWei,
         core.tokens.weth.address,
-        ONE_BI,
+        TWO_BI,
         DEFAULT_EXTRA_DATA,
         { value: executionFee },
       );
@@ -1405,13 +1376,18 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.weth, core.testEcosystem!.testPriceOracle.address);
 
       const filter = eventEmitter.filters.AsyncWithdrawalCreated();
-      const withdrawalKey = (await eventEmitter.queryFilter(filter))[0].args.key;
+      const events = await eventEmitter.queryFilter(filter);
+      const withdrawalKey = events[events.length - 1].args.key;
 
-      const result = await core.gmxEcosystemV2!.gmxWithdrawalHandler.connect(core.gmxEcosystemV2!.gmxExecutor)
+      const result = await core.gmxV2Ecosystem.gmxWithdrawalHandler
+        .connect(core.gmxV2Ecosystem.gmxExecutor)
         .executeWithdrawal(
           withdrawalKey,
-          getOracleParams(core.tokens.weth.address, core.tokens.nativeUsdc!.address),
-          { gasLimit },
+          getOracleParams(
+            [core.tokens.weth.address, core.tokens.nativeUsdc.address],
+            [testOracleProvider.address, testOracleProvider.address]
+          ),
+          { gasLimit }
         );
       await expectEvent(eventEmitter, result, 'AsyncWithdrawalFailed', {
         key: withdrawalKey,
@@ -1421,10 +1397,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
 
       await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.weth, oldOracle);
 
-      const result2 = await unwrapper.connect(core.hhUser1).executeWithdrawalForRetry(
-        withdrawalKey,
-        { gasLimit },
-      );
+      const result2 = await unwrapper.connect(core.hhUser1).executeWithdrawalForRetry(withdrawalKey, { gasLimit });
       await expectEvent(eventEmitter, result2, 'AsyncWithdrawalExecuted', {
         key: withdrawalKey,
         token: factory.address,
@@ -1467,17 +1440,12 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       await gmxV2Registry.connect(core.governance).ownerSetIsHandler(core.hhUser1.address, true);
       await setupGMBalance(core, underlyingToken, core.hhUser1, amountWei, vault);
       await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
-      await vault.openBorrowPosition(
-        defaultAccountNumber,
-        borrowAccountNumber,
-        amountWei,
-        { value: executionFee },
-      );
+      await vault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei, { value: executionFee });
       const usdcAmount = BigNumber.from('5000000');
       await vault.transferFromPositionWithOtherToken(
         borrowAccountNumber,
         defaultAccountNumber,
-        core.marketIds.nativeUsdc!,
+        core.marketIds.nativeUsdc,
         usdcAmount,
         BalanceCheckFlag.None,
       );
@@ -1486,14 +1454,15 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         borrowAccountNumber,
         amountWei,
         core.tokens.weth.address,
-        ONE_BI,
+        TWO_BI,
         DEFAULT_EXTRA_DATA,
         { value: executionFee },
       );
       await expectWalletBalance(vault, underlyingToken, ZERO_BI);
 
       const filter = eventEmitter.filters.AsyncWithdrawalCreated();
-      const withdrawalKey = (await eventEmitter.queryFilter(filter))[0].args.key;
+      const events = await eventEmitter.queryFilter(filter);
+      const withdrawalKey = events[events.length - 1].args.key;
 
       await expectThrow(
         unwrapper.connect(core.hhUser1).executeWithdrawalForRetry(withdrawalKey),
@@ -1507,49 +1476,55 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       const dolomiteMarginCaller = await impersonate(core.dolomiteMargin.address, true);
       await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
       await expectThrow(
-        unwrapper.connect(dolomiteMarginCaller).callFunction(
-          core.hhUser5.address,
-          { owner: core.hhUser2.address, number: defaultAccountNumber },
-          encodeWithdrawalKeyForCallFunction(
-            0,
-            amountWei,
-            core.hhUser2.address,
-            defaultAccountNumber,
-            UnwrapTradeType.ForWithdrawal,
-            DUMMY_WITHDRAWAL_KEY,
+        unwrapper
+          .connect(dolomiteMarginCaller)
+          .callFunction(
+            core.hhUser5.address,
+            { owner: core.hhUser2.address, number: defaultAccountNumber },
+            encodeWithdrawalKeyForCallFunction(
+              0,
+              amountWei,
+              core.hhUser2.address,
+              defaultAccountNumber,
+              UnwrapTradeType.ForWithdrawal,
+              DUMMY_WITHDRAWAL_KEY,
+            ),
           ),
-        ),
         `AsyncIsolationModeUnwrapperImpl: Invalid vault <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
 
     it('should fail if account owner is not the owner of a deposit / withdrawal', async () => {
       const vaultCaller = await impersonate(vault.address, true);
-      await unwrapper.connect(vaultCaller).vaultCreateWithdrawalInfo(
-        DUMMY_WITHDRAWAL_KEY,
-        vault.address,
-        defaultAccountNumber,
-        amountWei,
-        core.tokens.weth.address,
-        ONE_BI,
-        false,
-        DEFAULT_EXTRA_DATA,
-      );
+      await unwrapper
+        .connect(vaultCaller)
+        .vaultCreateWithdrawalInfo(
+          DUMMY_WITHDRAWAL_KEY,
+          vault.address,
+          defaultAccountNumber,
+          amountWei,
+          core.tokens.weth.address,
+          ONE_BI,
+          false,
+          DEFAULT_EXTRA_DATA,
+        );
       const dolomiteMarginCaller = await impersonate(core.dolomiteMargin.address, true);
       await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
       await expectThrow(
-        unwrapper.connect(dolomiteMarginCaller).callFunction(
-          core.hhUser5.address,
-          { owner: vault2.address, number: defaultAccountNumber },
-          encodeWithdrawalKeyForCallFunction(
-            0,
-            amountWei,
-            vault2.address,
-            defaultAccountNumber,
-            UnwrapTradeType.ForWithdrawal,
-            DUMMY_WITHDRAWAL_KEY,
+        unwrapper
+          .connect(dolomiteMarginCaller)
+          .callFunction(
+            core.hhUser5.address,
+            { owner: vault2.address, number: defaultAccountNumber },
+            encodeWithdrawalKeyForCallFunction(
+              0,
+              amountWei,
+              vault2.address,
+              defaultAccountNumber,
+              UnwrapTradeType.ForWithdrawal,
+              DUMMY_WITHDRAWAL_KEY,
+            ),
           ),
-        ),
         `AsyncIsolationModeUnwrapperImpl: Invalid account owner <${vault2.address.toLowerCase()}>`,
       );
     });
@@ -1559,55 +1534,56 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       const vaultCaller = await impersonate(vault.address, true);
       await setupGMBalance(core, underlyingToken, core.hhUser1, amountWei, vault);
       await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
-      await vault.openBorrowPosition(
-        defaultAccountNumber,
-        borrowAccountNumber,
-        amountWei,
-        { value: executionFee },
-      );
+      await vault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei, { value: executionFee });
 
       const smallAmountWei = amountWei.div(2);
       await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
-      await unwrapper.connect(vaultCaller).vaultCreateWithdrawalInfo(
-        DUMMY_WITHDRAWAL_KEY,
-        vault.address,
-        borrowAccountNumber,
-        smallAmountWei,
-        core.tokens.nativeUsdc!.address,
-        ONE_BI,
-        false,
-        DEFAULT_EXTRA_DATA,
-      );
+      await unwrapper
+        .connect(vaultCaller)
+        .vaultCreateWithdrawalInfo(
+          DUMMY_WITHDRAWAL_KEY,
+          vault.address,
+          borrowAccountNumber,
+          smallAmountWei,
+          core.tokens.nativeUsdc.address,
+          ONE_BI,
+          false,
+          DEFAULT_EXTRA_DATA,
+        );
 
       await expectThrow(
-        unwrapper.connect(dolomiteMarginCaller).callFunction(
-          core.hhUser5.address,
-          { owner: vault.address, number: defaultAccountNumber },
-          encodeWithdrawalKeyForCallFunction(
-            0,
-            ZERO_BI,
-            vault.address,
-            defaultAccountNumber,
-            UnwrapTradeType.ForWithdrawal,
-            DUMMY_WITHDRAWAL_KEY,
+        unwrapper
+          .connect(dolomiteMarginCaller)
+          .callFunction(
+            core.hhUser5.address,
+            { owner: vault.address, number: defaultAccountNumber },
+            encodeWithdrawalKeyForCallFunction(
+              0,
+              ZERO_BI,
+              vault.address,
+              defaultAccountNumber,
+              UnwrapTradeType.ForWithdrawal,
+              DUMMY_WITHDRAWAL_KEY,
+            ),
           ),
-        ),
         'AsyncIsolationModeUnwrapperImpl: Invalid transfer amount',
       );
 
       await expectThrow(
-        unwrapper.connect(dolomiteMarginCaller).callFunction(
-          core.hhUser5.address,
-          { owner: vault.address, number: defaultAccountNumber },
-          encodeWithdrawalKeyForCallFunction(
-            0,
-            smallAmountWei.add(1),
-            vault.address,
-            defaultAccountNumber,
-            UnwrapTradeType.ForWithdrawal,
-            DUMMY_WITHDRAWAL_KEY,
+        unwrapper
+          .connect(dolomiteMarginCaller)
+          .callFunction(
+            core.hhUser5.address,
+            { owner: vault.address, number: defaultAccountNumber },
+            encodeWithdrawalKeyForCallFunction(
+              0,
+              smallAmountWei.add(1),
+              vault.address,
+              defaultAccountNumber,
+              UnwrapTradeType.ForWithdrawal,
+              DUMMY_WITHDRAWAL_KEY,
+            ),
           ),
-        ),
         'AsyncIsolationModeUnwrapperImpl: Invalid transfer amount',
       );
     });
@@ -1618,39 +1594,39 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
 
       await setupGMBalance(core, underlyingToken, core.hhUser1, amountWei, vault);
       await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
-      await vault.openBorrowPosition(
-        defaultAccountNumber,
-        borrowAccountNumber,
-        amountWei,
-        { value: executionFee },
-      );
+      await vault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei, { value: executionFee });
 
       await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
-      await unwrapper.connect(vaultCaller).vaultCreateWithdrawalInfo(
-        DUMMY_WITHDRAWAL_KEY,
-        vault.address,
-        borrowAccountNumber,
-        amountWei,
-        core.tokens.nativeUsdc!.address,
-        ONE_BI,
-        false,
-        DEFAULT_EXTRA_DATA,
-      );
+      await unwrapper
+        .connect(vaultCaller)
+        .vaultCreateWithdrawalInfo(
+          DUMMY_WITHDRAWAL_KEY,
+          vault.address,
+          borrowAccountNumber,
+          amountWei,
+          core.tokens.nativeUsdc.address,
+          ONE_BI,
+          false,
+          DEFAULT_EXTRA_DATA,
+        );
 
       await expectThrow(
-        unwrapper.connect(dolomiteMarginCaller).callFunction(
-          core.hhUser5.address,
-          { owner: vault.address, number: defaultAccountNumber },
-          encodeWithdrawalKeyForCallFunction(
-            0,
-            amountWei.add(1),
-            vault.address,
-            defaultAccountNumber,
-            UnwrapTradeType.ForWithdrawal,
-            DUMMY_WITHDRAWAL_KEY,
+        unwrapper
+          .connect(dolomiteMarginCaller)
+          .callFunction(
+            core.hhUser5.address,
+            { owner: vault.address, number: defaultAccountNumber },
+            encodeWithdrawalKeyForCallFunction(
+              0,
+              amountWei.add(1),
+              vault.address,
+              defaultAccountNumber,
+              UnwrapTradeType.ForWithdrawal,
+              DUMMY_WITHDRAWAL_KEY,
+            ),
           ),
-        ),
-        `AsyncIsolationModeUnwrapperImpl: Insufficient balance <${amountWei.toString()}, ${amountWei.add(1)
+        `AsyncIsolationModeUnwrapperImpl: Insufficient balance <${amountWei.toString()}, ${amountWei
+          .add(1)
           .toString()}>`,
       );
     });
@@ -1666,18 +1642,12 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
   });
 
   describe('#createActionsForUnwrapping', () => {
-
     let withdrawalKey: string;
 
     beforeEach(async () => {
       await setupGMBalance(core, underlyingToken, core.hhUser1, amountWei, vault);
       await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
-      await vault.openBorrowPosition(
-        defaultAccountNumber,
-        borrowAccountNumber,
-        amountWei,
-        { value: executionFee },
-      );
+      await vault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei, { value: executionFee });
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
       await expectWalletBalance(vault, underlyingToken, amountWei);
 
@@ -1685,7 +1655,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         borrowAccountNumber,
         amountWei,
         core.tokens.weth.address,
-        ONE_BI,
+        TWO_BI,
         DEFAULT_EXTRA_DATA,
         { value: executionFee },
       );
@@ -1704,7 +1674,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
           primaryAccountNumber: ZERO_BI,
           otherAccountOwner: ZERO_ADDRESS,
           otherAccountNumber: ZERO_BI,
-          outputMarket: core.marketIds.nativeUsdc!,
+          outputMarket: core.marketIds.nativeUsdc,
           inputMarket: core.marketIds.weth,
           minOutputAmount: ONE_BI,
           inputAmount: amountWei,
@@ -1723,13 +1693,13 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
           primaryAccountNumber: ZERO_BI,
           otherAccountOwner: ZERO_ADDRESS,
           otherAccountNumber: ZERO_BI,
-          outputMarket: core.marketIds.dfsGlp!,
+          outputMarket: core.marketIds.dfsGlp,
           inputMarket: marketId,
           minOutputAmount: ONE_BI,
           inputAmount: amountWei,
           orderData: BYTES_EMPTY,
         }),
-        `AsyncIsolationModeUnwrapperImpl: Invalid output market <${core.marketIds.dfsGlp!.toString()}>`,
+        `AsyncIsolationModeUnwrapperImpl: Invalid output market <${core.marketIds.dfsGlp.toString()}>`,
       );
     });
 
@@ -1747,7 +1717,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
           primaryAccountNumber: ZERO_BI,
           otherAccountOwner: ZERO_ADDRESS,
           otherAccountNumber: ZERO_BI,
-          outputMarket: core.marketIds.nativeUsdc!,
+          outputMarket: core.marketIds.nativeUsdc,
           inputMarket: marketId,
           minOutputAmount: ONE_BI,
           inputAmount: amountWei,
@@ -1765,10 +1735,10 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
           primaryAccountNumber: ZERO_BI,
           otherAccountOwner: ZERO_ADDRESS,
           otherAccountNumber: ZERO_BI,
-          outputMarket: core.marketIds.nativeUsdc!,
+          outputMarket: core.marketIds.nativeUsdc,
           inputMarket: marketId,
           minOutputAmount: ONE_BI,
-          inputAmount: amountWei.add(1),
+          inputAmount: amountWei.mul(100),
           orderData: encodeWithdrawalKey(UnwrapTradeType.ForWithdrawal, withdrawalKey),
         }),
         'AsyncIsolationModeUnwrapperImpl: Invalid input amount',

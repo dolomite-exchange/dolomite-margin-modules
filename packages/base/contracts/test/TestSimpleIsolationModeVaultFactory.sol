@@ -44,12 +44,12 @@ contract TestSimpleIsolationModeVaultFactory is SimpleIsolationModeVaultFactory 
     // ================================================
 
     constructor(
-        address _dolomiteRegistry,
         uint256[] memory _initialAllowableDebtMarketIds,
         uint256[] memory _initialAllowableCollateralMarketIds,
         address _underlyingToken,
         address _borrowPositionProxyV2,
         address _userVaultImplementation,
+        address _dolomiteRegistry,
         address _dolomiteMargin
     ) SimpleIsolationModeVaultFactory(
         _initialAllowableDebtMarketIds,
@@ -57,6 +57,7 @@ contract TestSimpleIsolationModeVaultFactory is SimpleIsolationModeVaultFactory 
         _underlyingToken,
         _borrowPositionProxyV2,
         _userVaultImplementation,
+        _dolomiteRegistry,
         _dolomiteMargin
     ) {
         dolomiteRegistry = IDolomiteRegistry(_dolomiteRegistry);

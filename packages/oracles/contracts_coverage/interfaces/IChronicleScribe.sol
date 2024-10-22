@@ -28,9 +28,17 @@ pragma solidity ^0.8.9;
  */
 interface IChronicleScribe {
 
-    function kiss(address who) external;
+    /**
+     * @param  _who The address that should be allowed to read data from this contract.
+     */
+    function kiss(address _who) external;
 
     function authed() external view returns (address[] memory);
+
+    /**
+     * @return 1 if `_who` has been kissed or 0 if it hasn't.
+     */
+    function bud(address _who) external view returns (uint256);
 
     function decimals() external view returns (uint8);
 

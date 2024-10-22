@@ -6,9 +6,11 @@ import {
 import { advanceByTimeDelta, impersonate } from '@dolomite-exchange/modules-base/test/utils';
 import { CoreProtocolType } from '@dolomite-exchange/modules-base/test/utils/setup';
 import hardhat from 'hardhat';
+import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import {
   createFolder,
   DenJsonUpload,
+  prettyPrintEncodedDataWithTypeSafety,
   readDeploymentFile,
   TransactionBuilderUpload,
   writeDeploymentFile,
@@ -28,7 +30,7 @@ export interface DryRunOutput<T extends NetworkType> {
 function cleanHardhatDeployment(): void {
   const file = readDeploymentFile();
   let dirty = false;
-  Object.keys(file).forEach(contractName => {
+  Object.keys(file).forEach((contractName) => {
     if (file[contractName][HARDHAT_CHAIN_ID]) {
       delete file[contractName][HARDHAT_CHAIN_ID];
       dirty = true;
@@ -40,9 +42,7 @@ function cleanHardhatDeployment(): void {
   }
 }
 
-async function doStuffInternal<T extends NetworkType>(
-  executionFn: () => Promise<DryRunOutput<T>>,
-) {
+async function doStuffInternal<T extends NetworkType>(executionFn: () => Promise<DryRunOutput<T>>) {
   if (hardhat.network.name === 'hardhat') {
     const result = await executionFn();
 
@@ -84,7 +84,9 @@ async function doStuffInternal<T extends NetworkType>(
       console.log('\tExecuting transactions...');
       for (const transactionId of transactionIds) {
         try {
-          await delayedMultiSig.executeMultipleTransactions([transactionId]);
+          hardhat.tracer.enabled = true;
+          await delayedMultiSig.executeMultipleTransactions([transactionId], {});
+          hardhat.tracer.enabled = false;
         } catch (e: any) {
           const transactionIndex = transactionId.sub(transactionIds[0]).toNumber();
           throw new Error(
@@ -104,9 +106,34 @@ async function doStuffInternal<T extends NetworkType>(
       console.log('\tNo invariants found, skipping...');
     }
   } else {
-    return executionFn().then(result => {
+    return executionFn().then(async (result) => {
       if (typeof result === 'undefined') {
         return;
+      }
+
+      if (result.upload.addExecuteImmediatelyTransactions && result.upload.transactions.length > 0) {
+        let transactionCount = (await result.core.delayedMultiSig.transactionCount()).toNumber();
+        const submitTransactionMethodId = '0xc6427474';
+        const transactionIds: number[] = [];
+        result.upload.transactions.forEach((t) => {
+          if (t.data.startsWith(submitTransactionMethodId)) {
+            transactionIds.push(transactionCount++);
+          }
+        });
+
+        assertHardhatInvariant(transactionIds.length > 0, 'Transaction IDs length must be greater than 0');
+
+        console.log('============================================================');
+        console.log('================ Real Transaction Execution ================');
+        console.log('============================================================');
+        await prettyPrintEncodedDataWithTypeSafety(
+          result.core,
+          { delayedMultisig: result.core.delayedMultiSig },
+          'delayedMultisig',
+          'executeMultipleTransactions',
+          [transactionIds],
+          { skipWrappingCalldataInSubmitTransaction: true },
+        );
       }
 
       const scriptName = result.scriptName;
@@ -126,7 +153,7 @@ export async function doDryRunAndCheckDeployment<T extends NetworkType>(
       cleanHardhatDeployment();
       process.exit(0);
     })
-    .catch(e => {
+    .catch((e) => {
       cleanHardhatDeployment();
       console.error(new Error(e.stack));
       process.exit(1);

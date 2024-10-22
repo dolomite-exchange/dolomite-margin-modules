@@ -4,6 +4,7 @@ import { expectEvent, expectThrow } from '@dolomite-exchange/modules-base/test/u
 import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
+import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { UmamiAssetVaultRegistry } from '../src/types';
 import { createUmamiAssetVaultRegistry } from './umami-ecosystem-utils';
 

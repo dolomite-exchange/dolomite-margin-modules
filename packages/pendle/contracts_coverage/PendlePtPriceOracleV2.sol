@@ -103,13 +103,11 @@ contract PendlePtPriceOracleV2 is IPendlePtPriceOracle, OnlyDolomiteMargin {
         });
     }
 
-    // @follow-up Do we want to have getDecimalsByToken? Will need if pt is ever the tokenPair
+    function getDecimalsByToken(address _token) external view returns (uint8) {
+        return IERC20Metadata(_token).decimals();
+    }
 
     // ============================ Internal Functions ============================
-
-    function _applyDeductionCoefficient(uint256 _price) internal view returns (uint256) {
-        return _price * (DEDUCTION_COEFFICIENT_BASE - deductionCoefficient) / DEDUCTION_COEFFICIENT_BASE;
-    }
 
     function _ownerSetDeductionCoefficient(uint256 _deductionCoefficient) internal {
         deductionCoefficient = _deductionCoefficient;
@@ -117,8 +115,11 @@ contract PendlePtPriceOracleV2 is IPendlePtPriceOracle, OnlyDolomiteMargin {
     }
 
     function _getCurrentPrice() internal view virtual returns (uint256) {
-        // @follow-up is it ok to apply the deduction coefficient to the excchange rate?
         uint256 ptExchangeRate = REGISTRY.ptOracle().getPtToAssetRate(address(REGISTRY.ptMarket()), TWAP_DURATION);
         return _applyDeductionCoefficient(ptExchangeRate);
+    }
+
+    function _applyDeductionCoefficient(uint256 _price) internal view returns (uint256) {
+        return _price - (_price * deductionCoefficient / DEDUCTION_COEFFICIENT_BASE);
     }
 }

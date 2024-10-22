@@ -106,7 +106,7 @@ contract TestUpgradeableAsyncIsolationModeUnwrapperTrader is
         bool _isLiquidation,
         bytes calldata _extraData
     ) external {
-         assert(_getWithdrawalSlot(_key).vault == address(0));
+         assert(getWithdrawalInfo(_key).vault == address(0));
 
         WithdrawalInfo memory withdrawalInfo = WithdrawalInfo({
             key: _key,
@@ -143,11 +143,6 @@ contract TestUpgradeableAsyncIsolationModeUnwrapperTrader is
     function setRevertFlag(uint256 _flag) external {
         revertFlag = _flag;
     }
-
-    function getWithdrawalInfo(bytes32 _key) public view returns (WithdrawalInfo memory) {
-        return _getWithdrawalSlot(_key);
-    }
-
 
     function isValidOutputToken(
         address _outputToken
@@ -197,7 +192,7 @@ contract TestUpgradeableAsyncIsolationModeUnwrapperTrader is
     // ===================== Callbacks =====================
 
     function afterWithdrawalExecution(bytes32 _key, ITestAsyncProtocol.Withdrawal memory _withdrawal) external {
-        WithdrawalInfo memory withdrawalInfo = _getWithdrawalSlot(_key);
+        WithdrawalInfo memory withdrawalInfo = getWithdrawalInfo(_key);
         _validateWithdrawalExists(withdrawalInfo);
 
         withdrawalInfo.outputAmount = _withdrawal.amountOut;
@@ -235,6 +230,27 @@ contract TestUpgradeableAsyncIsolationModeUnwrapperTrader is
         (bool isSuccessful, bytes memory result) = address(this).delegatecall(
             abi.encodeWithSelector(
                 this.executeWithdrawalForRetry.selector,
+                _key
+            )
+        );
+        if (!isSuccessful) {
+            if (result.length < 68) {
+                revert("No reversion message!");
+            } else {
+                // solhint-disable-next-line no-inline-assembly
+                assembly {
+                    result := add(result, 0x04) // Slice the sighash.
+                }
+            }
+            (string memory errorMessage) = abi.decode(result, (string));
+            revert(errorMessage);
+        }
+    }
+
+    function callExecuteWithdrawalCancellationReentrancy(bytes32 _key) external nonReentrant {
+        (bool isSuccessful, bytes memory result) = address(this).delegatecall(
+            abi.encodeWithSelector(
+                this.executeWithdrawalCancellation.selector,
                 _key
             )
         );

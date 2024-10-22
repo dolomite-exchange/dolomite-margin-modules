@@ -37,6 +37,7 @@ import {
   PlutusVaultGLPIsolationModeUnwrapperTraderV2,
   PlutusVaultGLPIsolationModeUnwrapperTraderV2__factory,
 } from '../src/types';
+import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 
 const defaultAccountNumber = '0';
 const otherAccountNumber = '420';
@@ -71,7 +72,7 @@ describe('PlutusVaultGLPIsolationModeLiquidationWithZap', () => {
       network,
     });
     underlyingToken = core.plutusEcosystem!.plvGlp.connect(core.hhUser1);
-    factory = core.plutusEcosystem!.live.plvGlpIsolationModeFactory.connect(core.hhUser1);
+    factory = core.plutusEcosystem!.live.dPlvGlp.connect(core.hhUser1);
     unwrapper = PlutusVaultGLPIsolationModeUnwrapperTraderV2__factory.connect(
       deployments.PlutusVaultGLPIsolationModeUnwrapperTraderV4[network].address,
       core.hhUser1,

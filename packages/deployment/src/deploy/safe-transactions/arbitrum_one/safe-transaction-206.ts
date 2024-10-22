@@ -2,16 +2,14 @@ import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/
 import { impersonate } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import {
-  getVesterImplementationConstructorParams
+  getVesterImplementationConstructorParams,
 } from '@dolomite-exchange/modules-liquidity-mining/src/liquidity-mining-constructors';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
 import {
-  createFolder,
   deployContractAndSave,
   EncodedTransaction,
   prettyPrintEncodedDataWithTypeSafety,
-  writeFile,
 } from '../../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../utils/dry-run-utils';
 import getScriptName from '../../../utils/get-script-name';
@@ -32,7 +30,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   );
   const vesterAddress = await deployContractAndSave(
     'VesterImplementationV2',
-    getVesterImplementationConstructorParams(core),
+    getVesterImplementationConstructorParams(core, core.tokens.arb),
     'VesterImplementationV3',
     { VesterImplementationLibForV2: VesterImplementationLibForV2Address },
   );
@@ -64,7 +62,8 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       );
 
       const signer = await impersonate('0x33a288bcf61807582bbee86011f696830fc2a599');
-      await core.oArbLiquidityMiningEcosystem.oArbVesterV2.connect(signer)
+      await core.oArbLiquidityMiningEcosystem.oArbVesterV2
+        .connect(signer)
         .extendDurationForPosition(nftId, NEW_DURATION);
 
       assertHardhatInvariant(

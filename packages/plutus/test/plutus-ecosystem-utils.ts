@@ -5,6 +5,7 @@ import {
   createContractWithLibrary,
 } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { getTokenVaultLibrary } from '@dolomite-exchange/modules-deployments/src/utils/deploy-utils';
+import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import {
   getDolomiteCompatibleWhitelistForPlutusDAOConstructorParams,
   getPlutusVaultGLPIsolationModeUnwrapperTraderV1ConstructorParams,

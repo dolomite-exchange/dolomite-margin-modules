@@ -20,7 +20,7 @@
 
 pragma solidity ^0.8.9;
 
-import { IOARB } from "./IOARB.sol";
+import { IERC20Mintable } from "./IERC20Mintable.sol";
 
 
 /**
@@ -125,7 +125,7 @@ interface IEmitter {
      * @param  _startTime   The startTime of the new campaign
      * @param  _oARB        The new oARB token
      */
-    function ownerCreateNewCampaign(uint256 _startTime, IOARB _oARB) external;
+    function ownerCreateNewCampaign(uint256 _startTime, IERC20Mintable _oARB) external;
 
     /**
      * @notice  Updates the oARBPerSecond

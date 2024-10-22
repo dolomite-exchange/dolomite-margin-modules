@@ -170,4 +170,18 @@ interface IPendleRouterV3 {
         uint256 netSyIn,
         uint256 minPyOut
     ) external returns (uint256 netPyOut);
+
+    function redeemPyToToken(
+        address receiver,
+        address YT,
+        uint256 netPyIn,
+        TokenOutput calldata output
+    ) external returns (uint256 netTokenOut);
+
+    function redeemSyToToken(
+        address receiver,
+        address SY,
+        uint256 netSyIn,
+        TokenOutput calldata output
+    ) external returns (uint256 netTokenOut);
 }

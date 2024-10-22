@@ -35,7 +35,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       core,
       core.tokens.xai,
       core.oracleAggregatorV2,
-      core.interestSetters.linearStepFunction14L86UInterestSetter,
+      core.interestSetters.linearStepFunction14L86U90OInterestSetter,
       TargetCollateralization._150,
       TargetLiquidationPenalty._15,
       parseEther('400000'),

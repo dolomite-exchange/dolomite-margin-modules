@@ -36,7 +36,7 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
       core,
       core.tokens.weth,
       core.oracleAggregatorV2,
-      core.interestSetters.linearStepFunction14L86UInterestSetter,
+      core.interestSetters.linearStepFunction14L86U90OInterestSetter,
       TargetCollateralization.Base,
       TargetLiquidationPenalty.Base,
       ZERO_BI,
@@ -47,8 +47,8 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
       core,
       core.tokens.wmnt,
       core.oracleAggregatorV2,
-      core.interestSetters.linearStepFunction14L86UInterestSetter,
-      TargetCollateralization._120,
+      core.interestSetters.linearStepFunction14L86U90OInterestSetter,
+      TargetCollateralization._125,
       TargetLiquidationPenalty.Base,
       parseEther(`${25_00_000}`),
       parseEther(`${20_00_000}`),
@@ -58,7 +58,7 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
       core,
       core.tokens.usdc,
       core.oracleAggregatorV2,
-      core.interestSetters.linearStepFunction16L84UInterestSetter,
+      core.interestSetters.linearStepFunction16L84U90OInterestSetter,
       TargetCollateralization.Base,
       TargetLiquidationPenalty.Base,
       ZERO_BI,
@@ -69,7 +69,7 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
       core,
       core.tokens.wbtc,
       core.oracleAggregatorV2,
-      core.interestSetters.linearStepFunction8L92UInterestSetter,
+      core.interestSetters.linearStepFunction8L92U90OInterestSetter,
       TargetCollateralization._125,
       TargetLiquidationPenalty._9,
       parseWbtc(`${100}`),
@@ -80,29 +80,30 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
       core,
       core.tokens.usdt,
       core.oracleAggregatorV2,
-      core.interestSetters.linearStepFunction16L84UInterestSetter,
+      core.interestSetters.linearStepFunction16L84U90OInterestSetter,
       TargetCollateralization.Base,
       TargetLiquidationPenalty.Base,
       ZERO_BI,
       ZERO_BI,
       false,
     ),
-    ...await prettyPrintEncodeAddMarket(
-      core,
-      core.tokens.usdy,
-      core.oracleAggregatorV2,
-      core.interestSetters.linearStepFunction16L84UInterestSetter,
-      TargetCollateralization.Base,
-      TargetLiquidationPenalty.Base,
-      parseEther(`${10_000_000}`),
-      parseEther(`${9_000_000}`),
-      false,
-    ),
+    // We don't have an oracle for this yet!
+    // ...await prettyPrintEncodeAddMarket(
+    //   core,
+    //   core.tokens.usdy,
+    //   core.oracleAggregatorV2,
+    //   core.interestSetters.linearStepFunction16L84UInterestSetter,
+    //   TargetCollateralization.Base,
+    //   TargetLiquidationPenalty.Base,
+    //   parseEther(`${10_000_000}`),
+    //   parseEther(`${9_000_000}`),
+    //   false,
+    // ),
     ...await prettyPrintEncodeAddMarket(
       core,
       core.tokens.meth,
       core.oracleAggregatorV2,
-      core.interestSetters.linearStepFunction14L86UInterestSetter,
+      core.interestSetters.linearStepFunction14L86U90OInterestSetter,
       TargetCollateralization.Base,
       TargetLiquidationPenalty.Base,
       ZERO_BI,
@@ -136,11 +137,11 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
       );
       assertHardhatInvariant(
         await core.dolomiteMargin.getMarketInterestSetter(core.marketIds.weth)
-        === core.interestSetters.linearStepFunction14L86UInterestSetter.address,
+        === core.interestSetters.linearStepFunction14L86U90OInterestSetter.address,
         'Invalid interest setter WETH',
       );
       assertHardhatInvariant(
-        (await core.dolomiteMargin.getNumMarkets()).eq(5),
+        (await core.dolomiteMargin.getNumMarkets()).eq(6),
         'Invalid number of markets',
       );
       assertHardhatInvariant(
@@ -163,6 +164,10 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
         (await core.dolomiteMargin.getMarketTokenAddress(core.marketIds.usdt)) === core.tokens.usdt.address,
         'Invalid usdt for market 4',
       );
+      assertHardhatInvariant(
+        (await core.dolomiteMargin.getMarketTokenAddress(core.marketIds.meth)) === core.tokens.meth.address,
+        'Invalid usdt for market 5',
+      );
 
       console.log(
         '\t Price for weth',
@@ -183,6 +188,10 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
       console.log(
         '\t Price for usdt',
         (await core.dolomiteMargin.getMarketPrice(core.marketIds.usdt)).value.toString(),
+      );
+      console.log(
+        '\t Price for meth',
+        (await core.dolomiteMargin.getMarketPrice(core.marketIds.meth)).value.toString(),
       );
     },
   };

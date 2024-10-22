@@ -77,7 +77,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       'ownerInsertOrUpdateOracleToken',
       [
         core.tokens.ezEth.address,
-        chainlinkAggregators[core.tokens.ezEth.address].aggregatorAddress,
+        chainlinkAggregators[core.tokens.ezEth.address]!.aggregatorAddress,
         false,
       ],
     ),
@@ -93,7 +93,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
           oracleInfos: [
             {
               oracle: core.chainlinkPriceOracleV3.address,
-              tokenPair: chainlinkAggregators[core.tokens.ezEth.address].tokenPairAddress,
+              tokenPair: chainlinkAggregators[core.tokens.ezEth.address]!.tokenPairAddress,
               weight: 100,
             },
           ],

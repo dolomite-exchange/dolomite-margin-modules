@@ -2,7 +2,7 @@ import { BigNumberish } from 'ethers';
 import { OkxPriceOracleV3 } from 'packages/oracles/src/types';
 import { IERC20, IWETH } from '../../../src/types';
 import { Network } from '../../../src/utils/no-deps-constants';
-import { MineralLiquidityMiningEcosystem } from '../ecosystem-utils/liquidity-mining';
+import { LiquidityMiningEcosystemXLayer, MineralLiquidityMiningEcosystem } from '../ecosystem-utils/liquidity-mining';
 import { OkxEcosystem } from '../ecosystem-utils/okx';
 import {
   CoreProtocolAbstract,
@@ -25,7 +25,7 @@ interface CoreProtocolMarketIdsXLayer extends CoreProtocolMarketIds {
 
 export interface CoreProtocolParamsXLayer {
   marketIds: CoreProtocolMarketIdsXLayer;
-  mineralLiquidityMiningEcosystem: MineralLiquidityMiningEcosystem;
+  liquidityMiningEcosystem: LiquidityMiningEcosystemXLayer;
   okxEcosystem: OkxEcosystem;
   okxPriceOracleV3: OkxPriceOracleV3;
   tokens: CoreProtocolTokensXLayer;
@@ -33,7 +33,7 @@ export interface CoreProtocolParamsXLayer {
 
 export class CoreProtocolXLayer extends CoreProtocolAbstract<Network.XLayer> {
 
-  public readonly mineralLiquidityMiningEcosystem: MineralLiquidityMiningEcosystem;
+  public readonly liquidityMiningEcosystem: LiquidityMiningEcosystemXLayer;
   public readonly okxEcosystem: OkxEcosystem;
   public readonly okxPriceOracleV3: OkxPriceOracleV3;
 
@@ -47,7 +47,7 @@ export class CoreProtocolXLayer extends CoreProtocolAbstract<Network.XLayer> {
   ) {
     super(params);
     this.marketIds = xLayerParams.marketIds;
-    this.mineralLiquidityMiningEcosystem = xLayerParams.mineralLiquidityMiningEcosystem;
+    this.liquidityMiningEcosystem = xLayerParams.liquidityMiningEcosystem;
     this.okxEcosystem = xLayerParams.okxEcosystem;
     this.okxPriceOracleV3 = xLayerParams.okxPriceOracleV3;
     this.tokens = xLayerParams.tokens;

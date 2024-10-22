@@ -69,6 +69,7 @@ library GmxDeposit {
         uint256 initialShortTokenAmount;
         uint256 minMarketTokens;
         uint256 updatedAtBlock;
+        uint256 updatedAtTime;
         uint256 executionFee;
         uint256 callbackGasLimit;
     }

@@ -39,6 +39,7 @@ import {
   setupUserVaultProxy,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { createAndSetPlutusVaultWhitelist } from '@dolomite-exchange/modules-plutus/test/plutus-utils';
+import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 
 const amountWei = BigNumber.from('1250000000000000000000'); // 1,250 plvGLP tokens
 const stakedAmountWei = amountWei.mul(2).div(3); // 833.3333 plvGLP tokens

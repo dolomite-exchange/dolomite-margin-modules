@@ -4,6 +4,8 @@ import {
   OdosAggregatorTrader__factory,
   OkxAggregatorTrader,
   OkxAggregatorTrader__factory,
+  OogaBoogaAggregatorTrader,
+  OogaBoogaAggregatorTrader__factory,
   ParaswapAggregatorTrader,
   ParaswapAggregatorTrader__factory,
   ParaswapAggregatorTraderV2,
@@ -16,11 +18,13 @@ import {
   CoreProtocolWithOkx,
   CoreProtocolWithParaswap,
   getOdosAggregatorTraderConstructorParams,
+  getOogaBoogaAggregatorTraderConstructorParams,
   getOkxAggregatorTraderConstructorParams,
   getParaswapAggregatorTraderConstructorParams,
   getParaswapAggregatorTraderV2ConstructorParams,
 } from '../../../src/utils/constructors/traders';
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
+import { CoreProtocolBerachain } from '../core-protocols/core-protocol-berachain';
 
 export async function createParaswapAggregatorTrader<T extends Network>(
   core: CoreProtocolWithParaswap<T>,
@@ -69,5 +73,15 @@ export async function createOkxAggregatorTrader<T extends Network>(
     OkxAggregatorTrader__factory.abi,
     OkxAggregatorTrader__factory.bytecode,
     getOkxAggregatorTraderConstructorParams(core),
+  );
+}
+
+export async function createOogaBoogaAggregatorTrader(
+  core: CoreProtocolBerachain
+): Promise<OogaBoogaAggregatorTrader> {
+  return await createContractWithAbi<OogaBoogaAggregatorTrader>(
+    OogaBoogaAggregatorTrader__factory.abi,
+    OogaBoogaAggregatorTrader__factory.bytecode,
+    getOogaBoogaAggregatorTraderConstructorParams(core),
   );
 }
