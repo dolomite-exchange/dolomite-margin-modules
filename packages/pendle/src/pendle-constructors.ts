@@ -17,6 +17,8 @@ import {
   IPendleSyToken,
   IPendleYtGLPMar2024IsolationModeTokenVaultV1,
   IPendleYtGLPMar2024IsolationModeVaultFactory,
+  IPendleYtIsolationModeTokenVaultV1,
+  IPendleYtIsolationModeVaultFactory,
   IPendleYtToken,
   PendleGLPRegistry,
   PendlePtGLPMar2024IsolationModeTokenVaultV1,
@@ -25,6 +27,8 @@ import {
   PendleRegistry,
   PendleYtGLPMar2024IsolationModeTokenVaultV1,
   PendleYtGLPMar2024IsolationModeVaultFactory,
+  PendleYtIsolationModeTokenVaultV1,
+  PendleYtIsolationModeVaultFactory,
 } from './types';
 
 export type CoreProtocolWithPendle<T extends Network> = Extract<
@@ -105,6 +109,47 @@ export function getPendlePtIsolationModeVaultFactoryConstructorParams<T extends 
   ];
 }
 
+export function getPendleYtIsolationModeVaultFactoryConstructorParams(
+  core: CoreProtocolArbitrumOne,
+  pendleRegistry: IPendleRegistry | PendleRegistry,
+  debtMarketIds: BigNumberish[],
+  collateralMarketIds: BigNumberish[],
+  ytToken: IPendleYtToken,
+  userVaultImplementation: IPendleYtIsolationModeTokenVaultV1 | PendleYtIsolationModeTokenVaultV1,
+): any[] {
+  if (!core.pendleEcosystem) {
+    throw new Error('Pendle ecosystem not initialized');
+  }
+
+  return [
+    pendleRegistry.address,
+    debtMarketIds,
+    collateralMarketIds,
+    ytToken.address,
+    core.borrowPositionProxyV2.address,
+    userVaultImplementation.address,
+    core.dolomiteMargin.address,
+  ];
+}
+
+export function getPendleYtPriceOracleConstructorParams(
+  core: CoreProtocolArbitrumOne,
+  dytToken: IPendleYtIsolationModeVaultFactory | PendleYtIsolationModeVaultFactory,
+  pendleRegistry: IPendleRegistry | PendleRegistry,
+  underlyingToken: IERC20,
+): any[] {
+  if (!core.pendleEcosystem) {
+    throw new Error('Pendle ecosystem not initialized');
+  }
+
+  return [
+    dytToken.address,
+    pendleRegistry.address,
+    underlyingToken.address,
+    core.dolomiteMargin.address,
+  ];
+}
+
 export function getPendlePtPriceOracleConstructorParams<T extends Network>(
   core: CoreProtocolWithPendle<T>,
   dptToken: IPendlePtIsolationModeVaultFactory | PendlePtIsolationModeVaultFactory,
@@ -167,6 +212,24 @@ export function getPendlePtIsolationModeWrapperTraderV2ConstructorParams<T exten
   return [pendleRegistry.address, underlyingToken.address, dptFactory.address, core.dolomiteMargin.address];
 }
 
+export function getPendleYtIsolationModeWrapperTraderV2ConstructorParams<T extends Network>(
+  core: CoreProtocolWithPendle<T>,
+  underlyingToken: IERC20,
+  pendleRegistry: IPendleRegistry | PendleRegistry,
+  dytFactory: IPendleYtIsolationModeVaultFactory | PendleYtIsolationModeVaultFactory,
+): any[] {
+  if (!core.pendleEcosystem) {
+    throw new Error('Pendle ecosystem not initialized');
+  }
+
+  return [
+    pendleRegistry.address,
+    underlyingToken.address,
+    dytFactory.address,
+    core.dolomiteMargin.address,
+  ];
+}
+
 export function getPendlePtIsolationModeWrapperTraderV3ConstructorParams<T extends Network>(
   core: CoreProtocolWithPendle<T>,
   pendleRegistry: IPendleRegistry | PendleRegistry | IPendleGLPRegistry,
@@ -191,6 +254,24 @@ export function getPendlePtIsolationModeUnwrapperTraderV2ConstructorParams<T ext
   }
 
   return [pendleRegistry.address, underlyingToken.address, dptToken.address, core.dolomiteMargin.address];
+}
+
+export function getPendleYtIsolationModeUnwrapperTraderV2ConstructorParams<T extends Network>(
+  core: CoreProtocolWithPendle<T>,
+  underlyingToken: IERC20,
+  pendleRegistry: IPendleRegistry | PendleRegistry,
+  dytToken: IPendleYtIsolationModeVaultFactory | PendleYtIsolationModeVaultFactory,
+): any[] {
+  if (!core.pendleEcosystem) {
+    throw new Error('Pendle ecosystem not initialized');
+  }
+
+  return [
+    pendleRegistry.address,
+    underlyingToken.address,
+    dytToken.address,
+    core.dolomiteMargin.address,
+  ];
 }
 
 export function getPendlePtIsolationModeUnwrapperTraderV3ConstructorParams<T extends Network>(
