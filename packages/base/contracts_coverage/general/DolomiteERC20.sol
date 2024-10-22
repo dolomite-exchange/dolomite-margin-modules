@@ -6,9 +6,7 @@ pragma solidity ^0.8.9;
 import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import { OnlyDolomiteMarginForUpgradeable } from "../helpers/OnlyDolomiteMarginForUpgradeable.sol";
 import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
-import { ReentrancyGuardUpgradeable } from "../helpers/ReentrancyGuardUpgradeable.sol";
 import { IDolomiteERC20 } from "../interfaces/IDolomiteERC20.sol";
-import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 import { InterestIndexLib } from "../lib/InterestIndexLib.sol";
@@ -16,7 +14,6 @@ import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { DolomiteMarginMath } from "../protocol/lib/DolomiteMarginMath.sol";
 import { Require } from "../protocol/lib/Require.sol";
-import { TypesLib } from "../protocol/lib/TypesLib.sol";
 
 
 /**
@@ -25,29 +22,17 @@ import { TypesLib } from "../protocol/lib/TypesLib.sol";
  *
  * @dev Implementation of the {IERC20} interface that wraps around a user's Dolomite Balance.
  */
-contract DolomiteERC20 is
-    IDolomiteERC20,
-    Initializable,
-    ProxyContractHelpers,
-    ReentrancyGuardUpgradeable,
-    OnlyDolomiteMarginForUpgradeable
-{
+contract DolomiteERC20 is IDolomiteERC20, Initializable, ProxyContractHelpers, OnlyDolomiteMarginForUpgradeable {
     using AccountActionLib for IDolomiteMargin;
     using DolomiteMarginMath for uint256;
     using InterestIndexLib for IDolomiteMargin;
-    using TypesLib for IDolomiteStructs.Par;
-    using TypesLib for IDolomiteStructs.Wei;
 
-    bytes32 private constant _FILE = "DolomiteERC20";
-
-    bytes32 private constant _ALLOWANCES_SLOT = bytes32(uint256(keccak256("eip1967.proxy.allowances")) - 1);
-    bytes32 private constant _DOLOMITE_REGISTRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.dolomiteRegistry")) - 1); // solhint-disable-line max-line-length
-    /// @dev mapping containing users that may receive token transfers
-    bytes32 private constant _MARKET_ID_SLOT = bytes32(uint256(keccak256("eip1967.proxy.marketId")) - 1);
     bytes32 private constant _METADATA_SLOT = bytes32(uint256(keccak256("eip1967.proxy.metadata")) - 1);
+    bytes32 private constant _ALLOWANCES_SLOT = bytes32(uint256(keccak256("eip1967.proxy.allowances")) - 1);
+    /// @dev mapping containing users that may receive token transfers
+    bytes32 private constant _VALID_RECEIVERS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.validReceivers")) - 1);
+    bytes32 private constant _MARKET_ID_SLOT = bytes32(uint256(keccak256("eip1967.proxy.marketId")) - 1);
     bytes32 private constant _UNDERLYING_TOKEN_SLOT = bytes32(uint256(keccak256("eip1967.proxy.underlyingToken")) - 1);
-
-    uint256 private constant _DEFAULT_ACCOUNT_NUMBER = 0;
 
     function initialize(
         string calldata _name,
@@ -66,87 +51,12 @@ contract DolomiteERC20 is
         _setAddress(_UNDERLYING_TOKEN_SLOT, DOLOMITE_MARGIN().getMarketTokenAddress(_marketId));
     }
 
-    function initializeVersion2() external reinitializer(2) {
-        __ReentrancyGuardUpgradeable__init();
+    function ownerSetIsReceiver(address _receiver, bool _isEnabled) external onlyDolomiteMarginOwner(msg.sender) {
+        _enableReceiver(_receiver, _isEnabled);
     }
 
-    function initializeVersion3(address _dolomiteRegistry) external reinitializer(3) {
-        _setAddress(_DOLOMITE_REGISTRY_SLOT, _dolomiteRegistry);
-    }
-
-    function mint(uint256 _amount) external nonReentrant returns (uint256) {
-        if (_amount > 0) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            _amount > 0,
-            _FILE,
-            "Invalid amount"
-        );
-
-        IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
-        IDolomiteStructs.AccountInfo memory account = IDolomiteStructs.AccountInfo({
-            owner: msg.sender,
-            number: _DEFAULT_ACCOUNT_NUMBER
-        });
-        IDolomiteStructs.Par memory balanceBefore = dolomiteMargin.getAccountPar(account, marketId());
-
-        IDolomiteStructs.AssetAmount memory assetAmount = IDolomiteStructs.AssetAmount({
-            sign: true,
-            value: _amount,
-            ref: IDolomiteStructs.AssetReference.Delta,
-            denomination: IDolomiteStructs.AssetDenomination.Wei
-        });
-        dolomiteMargin.deposit(
-            account.owner,
-            account.owner,
-            account.number,
-            marketId(),
-            assetAmount
-        );
-
-        IDolomiteStructs.Par memory delta = dolomiteMargin.getAccountPar(account, marketId()).sub(balanceBefore);
-        /*assert(delta.sign);*/
-
-        emit Transfer(address(0), msg.sender, delta.value);
-
-        return delta.value;
-    }
-
-    function redeem(uint256 _dAmount) external nonReentrant returns (uint256) {
-        if (_dAmount > 0) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            _dAmount > 0,
-            _FILE,
-            "Invalid amount"
-        );
-
-        IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
-        IDolomiteStructs.AccountInfo memory account = IDolomiteStructs.AccountInfo({
-            owner: msg.sender,
-            number: _DEFAULT_ACCOUNT_NUMBER
-        });
-        IDolomiteStructs.Wei memory balanceBefore = dolomiteMargin.getAccountWei(account, marketId());
-
-        IDolomiteStructs.AssetAmount memory assetAmount = IDolomiteStructs.AssetAmount({
-            sign: false,
-            denomination: IDolomiteStructs.AssetDenomination.Par,
-            ref: IDolomiteStructs.AssetReference.Delta,
-            value: _dAmount
-        });
-        dolomiteMargin.withdraw(
-            account.owner,
-            account.number,
-            account.owner,
-            marketId(),
-            assetAmount,
-            AccountBalanceLib.BalanceCheckFlag.Both
-        );
-
-        IDolomiteStructs.Wei memory delta = balanceBefore.sub(dolomiteMargin.getAccountWei(account, marketId()));
-        /*assert(delta.sign);*/
-
-        emit Transfer(msg.sender, address(0), _dAmount);
-
-        return delta.value;
+    function enableIsReceiver() external {
+        _enableReceiver(msg.sender, /* _isEnabled = */ true);
     }
 
     /**
@@ -159,6 +69,8 @@ contract DolomiteERC20 is
      */
     function transfer(address _to, uint256 _amount) public override returns (bool) {
         address owner = msg.sender;
+        _enableReceiver(msg.sender, /* _isEnabled = */ true);
+        _enableReceiver(tx.origin, /* _isEnabled = */ true);
         _transfer(owner, _to, _amount);
         return true;
     }
@@ -175,6 +87,8 @@ contract DolomiteERC20 is
      */
     function approve(address _spender, uint256 _amount) public override returns (bool) {
         address owner = msg.sender;
+        _enableReceiver(msg.sender, /* _isEnabled = */ true);
+        _enableReceiver(tx.origin, /* _isEnabled = */ true);
         _approve(owner, _spender, _amount);
         return true;
     }
@@ -201,6 +115,7 @@ contract DolomiteERC20 is
         uint256 _amount
     ) public override returns (bool) {
         address _spender = msg.sender;
+        _enableReceiver(msg.sender, /* _isEnabled = */ true);
         _spendAllowance(from, _spender, _amount);
         _transfer(from, to, _amount);
         return true;
@@ -239,7 +154,7 @@ contract DolomiteERC20 is
     }
 
     function isValidReceiver(address _receiver) public view returns (bool) {
-        return !dolomiteRegistry().dolomiteAccountRegistry().isAccountInRegistry(_receiver);
+        return _getUint256FromMap(_VALID_RECEIVERS_SLOT, _receiver) == 1;
     }
 
     function marketId() public view returns (uint256) {
@@ -248,10 +163,6 @@ contract DolomiteERC20 is
 
     function underlyingToken() public view returns (address) {
         return _getAddress(_UNDERLYING_TOKEN_SLOT);
-    }
-
-    function dolomiteRegistry() public view returns (IDolomiteRegistry) {
-        return IDolomiteRegistry(_getAddress(_DOLOMITE_REGISTRY_SLOT));
     }
 
     /**
@@ -304,6 +215,19 @@ contract DolomiteERC20 is
     }
 
     /**
+     * @dev Sets the following `_receiver` is enabled or not.
+     */
+    function _enableReceiver(address _receiver, bool _isEnabled) internal {
+        bool previousValue = _getUint256FromMap(_VALID_RECEIVERS_SLOT, _receiver) == 1;
+        if (previousValue == _isEnabled) {
+            // No need to redundantly set storage and emit an event
+            return;
+        }
+        _setUint256InMap(_VALID_RECEIVERS_SLOT, _receiver, _isEnabled ? 1 : 0);
+        emit LogSetReceiver(_receiver, _isEnabled);
+    }
+
+    /**
      * @dev Moves `_amount` of tokens from `_from` to `_to`.
      *
      * This internal function is equivalent to {transfer}, and can be used to
@@ -342,9 +266,9 @@ contract DolomiteERC20 is
 
         DOLOMITE_MARGIN().transfer(
             _from,
-            _DEFAULT_ACCOUNT_NUMBER,
+            /* _fromAccountNumber = */ 0,
             _to,
-            _DEFAULT_ACCOUNT_NUMBER,
+            /* _toAccountNumber = */ 0,
             marketId(),
             IDolomiteStructs.AssetDenomination.Par,
             _amount,

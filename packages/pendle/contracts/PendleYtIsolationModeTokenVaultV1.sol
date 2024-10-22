@@ -159,7 +159,6 @@ contract PendleYtIsolationModeTokenVaultV1 is
     ) internal {
         if (_depositIntoDolomite) {
             // @dev This will fail if outputToken is not a valid Dolomite market
-            // @follow-up Corey, this looks good to me but please double check for me. Ok to use yieldToken?
             IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
             address outputToken = registry().syToken().yieldToken();
             IPendleRouterV3 router = IPendleRouterV3(address(registry().pendleRouter()));
