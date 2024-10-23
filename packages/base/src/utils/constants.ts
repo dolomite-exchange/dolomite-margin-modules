@@ -25,12 +25,12 @@ type EverythingButBase = Network.ArbitrumOne | Network.Mantle | Network.PolygonZ
 type ArbitrumAndBerachainAndMantle = Network.ArbitrumOne | Network.Berachain | Network.Mantle;
 
 export const SUBGRAPH_URL_MAP: Record<Network, string> = {
-  [Network.ArbitrumOne]: 'https://subgraphapi.dolomite.io/api/public/1301d2d1-7a9d-4be4-9e9a-061cb8611549/subgraphs/dolomite-arbitrum/v0.1.2/gn',
-  [Network.Base]: 'https://subgraphapi.dolomite.io/api/public/1301d2d1-7a9d-4be4-9e9a-061cb8611549/subgraphs/dolomite-base/v0.1.2/gn',
-  [Network.Berachain]: 'https://subgraphapi.dolomite.io/api/public/1301d2d1-7a9d-4be4-9e9a-061cb8611549/subgraphs/dolomite-berachain/v0.1.2/gn',
-  [Network.Mantle]: 'https://subgraphapi.dolomite.io/api/public/1301d2d1-7a9d-4be4-9e9a-061cb8611549/subgraphs/dolomite-mantle/v0.1.2/gn',
-  [Network.PolygonZkEvm]: 'https://subgraphapi.dolomite.io/api/public/1301d2d1-7a9d-4be4-9e9a-061cb8611549/subgraphs/dolomite-polygon-zkevm/v0.1.2/gn',
-  [Network.XLayer]: 'https://subgraphapi.dolomite.io/api/public/1301d2d1-7a9d-4be4-9e9a-061cb8611549/subgraphs/dolomite-x-layer/v0.1.2/gn',
+  [Network.ArbitrumOne]: 'https://subgraphapi.dolomite.io/api/public/1301d2d1-7a9d-4be4-9e9a-061cb8611549/subgraphs/dolomite-arbitrum/v0.1.3/gn',
+  [Network.Base]: 'https://subgraphapi.dolomite.io/api/public/1301d2d1-7a9d-4be4-9e9a-061cb8611549/subgraphs/dolomite-base/v0.1.3/gn',
+  [Network.Berachain]: 'https://subgraphapi.dolomite.io/api/public/1301d2d1-7a9d-4be4-9e9a-061cb8611549/subgraphs/dolomite-berachain/v0.1.3/gn',
+  [Network.Mantle]: 'https://subgraphapi.dolomite.io/api/public/1301d2d1-7a9d-4be4-9e9a-061cb8611549/subgraphs/dolomite-mantle/v0.1.3/gn',
+  [Network.PolygonZkEvm]: 'https://subgraphapi.dolomite.io/api/public/1301d2d1-7a9d-4be4-9e9a-061cb8611549/subgraphs/dolomite-polygon-zkevm/v0.1.3/gn',
+  [Network.XLayer]: 'https://subgraphapi.dolomite.io/api/public/1301d2d1-7a9d-4be4-9e9a-061cb8611549/subgraphs/dolomite-x-layer/v0.1.3/gn',
 };
 
 // ************************* External Contract Addresses *************************
@@ -838,6 +838,10 @@ export const GMX_REWARD_ROUTER_V3_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x159854e14A862Df9E39E1D128b8e5F70B4A3cE9B',
 };
 
+export const GMX_REWARD_ROUTER_V4_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x5E4766F932ce00aA4a1A82d3Da85adf15C5694A1',
+};
+
 export const GMX_READER_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x5Ca84c34a381434786738735265b9f3FD814b824',
 };
@@ -1056,6 +1060,10 @@ export const PENDLE_PT_E_ETH_APR_2024_TOKEN_MAP: Record<Network.ArbitrumOne, str
 
 export const PENDLE_PT_E_ETH_JUN_2024_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x1c27Ad8a19Ba026ADaBD615F6Bc77158130cfBE4',
+};
+
+export const PENDLE_YT_E_ETH_JUN_2024_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0xDcdC1004d5C271ADc048982d7EB900cC4F472333',
 };
 
 export const PENDLE_PT_E_ETH_SEP_2024_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
@@ -1479,7 +1487,7 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<Network, Record<string, Agg
       aggregatorAddress: '0x7C85dD6eBc1d318E909F22d51e756Cf066643341',
     },
     [POL_MAP[Network.PolygonZkEvm].address]: {
-      aggregatorAddress: '0x7C85dD6eBc1d318E909F22d51e756Cf066643341',
+      aggregatorAddress: '0x44285b60Cc13557935CA4945d20475BD1f1058f4',
     },
     [USDC_MAP[Network.PolygonZkEvm].address]: {
       aggregatorAddress: '0x0167D934CB7240e65c35e347F00Ca5b12567523a',

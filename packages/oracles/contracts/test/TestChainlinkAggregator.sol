@@ -94,6 +94,10 @@ contract TestChainlinkAggregator is IChainlinkAggregator, IChainlinkAccessContro
         );
     }
 
+    function latestAnswer() external view returns (int256) {
+        return _latestAnswer;
+    }
+
     function decimals() external view returns (uint8) {
         return _decimals;
     }

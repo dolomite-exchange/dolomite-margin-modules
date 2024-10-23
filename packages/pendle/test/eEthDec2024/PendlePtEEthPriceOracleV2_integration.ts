@@ -18,12 +18,14 @@ import axios from 'axios';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
-import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
-import { TokenInfo } from 'packages/oracles/src';
+import {
+  CoreProtocolArbitrumOne,
+} from '@dolomite-exchange/modules-base/test/utils/core-protocols/core-protocol-arbitrum-one';
+import { TokenInfo } from '@dolomite-exchange/modules-oracles/src';
 import {
   getChainlinkPriceOracleV3ConstructorParamsFromChainlinkOracleV1,
   getRedstonePriceOracleV3ConstructorParams,
-} from 'packages/oracles/src/oracles-constructors';
+} from '@dolomite-exchange/modules-oracles/src/oracles-constructors';
 import {
   ChainlinkPriceOracleV3,
   ChainlinkPriceOracleV3__factory,
@@ -31,7 +33,7 @@ import {
   OracleAggregatorV2__factory,
   RedstonePriceOracleV3,
   RedstonePriceOracleV3__factory,
-} from 'packages/oracles/src/types';
+} from '@dolomite-exchange/modules-oracles/src/types';
 import { PendlePtIsolationModeVaultFactory, PendlePtPriceOracleV2, PendleRegistry } from '../../src/types';
 import {
   createPendlePtIsolationModeTokenVaultV1,
