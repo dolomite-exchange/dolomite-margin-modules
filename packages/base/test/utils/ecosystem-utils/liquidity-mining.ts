@@ -1,6 +1,7 @@
 import * as deployments from '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
 import {
-  ExternalOARB, ExternalOARB__factory,
+  ExternalOARB,
+  ExternalOARB__factory,
   ExternalVesterImplementationV1,
   ExternalVesterImplementationV1__factory,
   MineralToken,
@@ -18,6 +19,7 @@ import {
 } from '@dolomite-exchange/modules-liquidity-mining/src/types';
 import { Network } from '../../../src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';
+import { getMaxDeploymentVersionAddressByDeploymentKey } from '../setup';
 
 export interface MineralLiquidityMiningEcosystem {
   mineralDistributor: RewardsDistributor;
@@ -30,6 +32,7 @@ export interface OARBLiquidityMiningEcosystem {
   oArbVesterV2: VesterImplementationV2;
   oArbVesterProxy: UpgradeableProxy;
   oArb: OARB;
+  library: Record<string, string>;
 }
 
 export interface GoARBLiquidityMiningEcosystem {
@@ -85,5 +88,11 @@ export async function createOARBLiquidityMiningEcosystem(
     oArbVesterV2: VesterImplementationV2__factory.connect(deployments.VesterProxy[network].address, signer),
     oArbVesterProxy: UpgradeableProxy__factory.connect(deployments.VesterProxy[network].address, signer),
     oArb: OARB__factory.connect(deployments.OARB[network].address, signer),
+    library: {
+      VesterImplementationLibForV2: getMaxDeploymentVersionAddressByDeploymentKey(
+        'VesterImplementationLibFor',
+        network,
+      ),
+    },
   };
 }

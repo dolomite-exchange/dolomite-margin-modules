@@ -75,6 +75,7 @@ describe('GmxV2Registry', () => {
     );
     await core.testEcosystem!.testPriceOracle!.setPrice(factory.address, '1000000000000000000000000000000');
     await setupTestMarket(core, factory, true);
+    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
     await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
 
     snapshotId = await snapshot();

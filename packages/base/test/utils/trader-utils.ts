@@ -8,6 +8,18 @@ import { expectThrow } from './assertions';
 
 import { CoreProtocolArbitrumOne } from './core-protocols/core-protocol-arbitrum-one';
 import { CoreProtocolType } from './setup';
+import dotenv from 'dotenv';
+import path from 'path';
+import crypto from 'crypto';
+import querystring from 'querystring';
+
+dotenv.config({ path: path.resolve(process.cwd(), '../../../../.env') });
+
+const api_config = {
+  api_key: process.env.OKX_API_KEY,
+  secret_key: process.env.OKX_SECRET_KEY,
+  passphrase: process.env.OKX_PASSPHRASE,
+};
 
 const ODOS_API_URL = 'https://api.odos.xyz';
 const PARASWAP_API_URL = 'https://apiv5.paraswap.io';
@@ -100,6 +112,78 @@ export async function getCalldataForOdos<T extends Network>(
   return {
     calldata: `0x${result.transaction.data.slice(10)}`, // get rid of the method ID
     outputAmount: BigNumber.from(result.outputTokens?.[0]?.amount),
+  };
+}
+
+export async function getCalldataForOkx<T extends Network>(
+  chainId: string,
+  amount: BigNumber,
+  fromTokenAddress: string,
+  toTokenAddress: string,
+  slippage: string,
+  userWalletAddress: string,
+): Promise<TraderOutput> {
+  const priceImpactProtectionPercentage = '1.0';
+  const params = {
+    chainId,
+    fromTokenAddress,
+    toTokenAddress,
+    slippage,
+    userWalletAddress,
+    priceImpactProtectionPercentage,
+    amount: amount.toString(),
+  };
+  const request_path = '/api/v5/dex/aggregator/swap';
+  const { signature, timestamp } = createSignature('GET', request_path, params);
+
+  // Generate the request header
+  const headers = {
+    'OK-ACCESS-KEY': api_config['api_key'],
+    'OK-ACCESS-SIGN': signature,
+    'OK-ACCESS-TIMESTAMP': timestamp,
+    'OK-ACCESS-PASSPHRASE': api_config['passphrase'],
+  };
+  const swapResponse = await axios.get(`https://www.okx.com${request_path}`, {
+    params,
+    headers
+  })
+    .then(response => response.data)
+    .catch((error) => {
+      console.error('Found error in swap', error);
+      throw error;
+    });
+
+  return {
+    calldata: swapResponse.data[0].tx.data,
+    outputAmount: BigNumber.from(swapResponse.data[0].routerResult.toTokenAmount),
+  };
+}
+
+export async function getCalldataForOogaBooga(
+  inputToken: { address: address },
+  inputAmount: BigNumber,
+  outputToken: { address: address },
+  receiver: { address: address },
+): Promise<TraderOutput> {
+  const result = await axios.get('https://bartio.api.oogabooga.io/v1/swap', {
+      headers: { Authorization: `Bearer ${process.env.OOGA_BOOGA_SECRET_KEY}` },
+      params: {
+        tokenIn: inputToken.address,
+        tokenOut: outputToken.address,
+        amount: inputAmount.toString(),
+        to: receiver.address,
+        slippage: '0.02' // 2%
+      }
+  })
+    .then(response => response.data)
+    .catch((error) => {
+      console.error('Found error in prices', error);
+      throw error;
+    });
+
+  return {
+    calldata: `0x${result.tx.data.slice(10)}`, // get rid of the method ID
+    outputAmount: BigNumber.from(result.routerParams.swapTokenInfo.outputMin) // @follow-up Use min or quote here?
   };
 }
 
@@ -211,4 +295,33 @@ export function getParaswapTraderParamStruct(
     trader: core.paraswapEcosystem.live.paraswapTrader.address,
     tradeData: encodedTradeData,
   };
+}
+
+function preHash(timestamp: string, method: string, request_path: string, params: Object) {
+  // Create a pre-signature based on strings and parameters
+  let query_string;
+  if (method === 'GET' && params) {
+    // @follow-up Are you ok with using a deprecated method here? I copied this code from OKX
+    query_string = `?${querystring.stringify(params)}`;
+  }
+  if (method === 'POST' && params) {
+    query_string = JSON.stringify(params);
+  }
+  return `${timestamp}${method}${request_path}${query_string}`;
+}
+
+function sign(message: string, secret_key: string) {
+  // Use HMAC-SHA256 to sign the pre-signed string
+  const hmac = crypto.createHmac('sha256', secret_key);
+  hmac.update(message);
+  return hmac.digest('base64');
+}
+
+function createSignature(method: string, request_path: string, params: Object) {
+  // Get the timestamp in ISO 8601 format
+  const timestamp = `${new Date().toISOString().slice(0, -5)}Z`;
+  // Generate a signature
+  const message = preHash(timestamp, method, request_path, params);
+  const signature = sign(message, api_config['secret_key']!);
+  return { signature, timestamp };
 }

@@ -71,9 +71,7 @@ async function doStuffInternal<T extends NetworkType>(executionFn: () => Promise
       console.log('\tExecuting transactions...');
       for (const transactionId of transactionIds) {
         try {
-          hardhat.tracer.enabled = true;
           await result.core.ownerAdapter.executeTransactions([transactionId], {});
-          hardhat.tracer.enabled = false;
         } catch (e: any) {
           const transactionIndex = transactionId.sub(transactionIds[0]).toNumber();
           throw new Error(
@@ -110,15 +108,16 @@ async function doStuffInternal<T extends NetworkType>(executionFn: () => Promise
 
         assertHardhatInvariant(transactionIds.length > 0, 'Transaction IDs length must be greater than 0');
 
-        result.upload.transactions.push(
-          await prettyPrintEncodedDataWithTypeSafety(
-            result.core,
-            { ownerAdapter: result.core.ownerAdapter },
-            'ownerAdapter',
-            'executeTransactions',
-            [transactionIds],
-            { skipWrappingCalldataInSubmitTransaction: true },
-          ),
+        console.log('============================================================');
+        console.log('================ Real Transaction Execution ================');
+        console.log('============================================================');
+        await prettyPrintEncodedDataWithTypeSafety(
+          result.core,
+          { ownerAdapter: result.core.ownerAdapter },
+          'ownerAdapter',
+          'executeTransactions',
+          [transactionIds],
+          { skipWrappingCalldataInSubmitTransaction: true },
         );
       }
 
