@@ -60,15 +60,12 @@ library GmxDeposit {
     // @param  initialLongTokenAmount the amount of long tokens to deposit
     // @param  initialShortTokenAmount the amount of short tokens to deposit
     // @param  minMarketTokens the minimum acceptable number of liquidity tokens
-    // @param  updatedAtBlock the block that the deposit was last updated at
-    //         sending funds back to the user in case the deposit gets cancelled
     // @param  executionFee the execution fee for keepers
     // @param  callbackGasLimit the gas limit for the callbackContract
     struct Numbers {
         uint256 initialLongTokenAmount;
         uint256 initialShortTokenAmount;
         uint256 minMarketTokens;
-        uint256 updatedAtBlock;
         uint256 updatedAtTime;
         uint256 executionFee;
         uint256 callbackGasLimit;
