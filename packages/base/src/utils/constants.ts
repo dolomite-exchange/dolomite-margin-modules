@@ -732,15 +732,15 @@ export const GLP_REWARD_ROUTER_MAP: Record<Network.ArbitrumOne, string> = {
 };
 
 export const GLV_HANDLER_MAP: Record<Network.ArbitrumOne, string> = {
-  [Network.ArbitrumOne]: '0x26DdDaA629Bb35FC1853d051561f2200dD190588',
+  [Network.ArbitrumOne]: '0x3f6dF0c3A7221BA1375E87e7097885a601B41Afc',
 };
 
 export const GLV_READER_MAP: Record<Network.ArbitrumOne, string> = {
-  [Network.ArbitrumOne]: '0xd4f522c4339Ae0A90a156bd716715547e44Bed65',
+  [Network.ArbitrumOne]: '0x6a9505D0B44cFA863d9281EA5B0b34cB36243b45',
 };
 
 export const GLV_ROUTER_MAP: Record<Network.ArbitrumOne, string> = {
-  [Network.ArbitrumOne]: '0x75eAFD2B4e306Dad8dd6334456F8018218Bc9882',
+  [Network.ArbitrumOne]: '0xd59a808bCA24812C483C1B3bF0A0E8D7D5932E4c',
 };
 
 export const GLV_VAULT_MAP: Record<Network.ArbitrumOne, string> = {
