@@ -81,16 +81,19 @@ import {
   GMX_BTC_USD_MARKET_TOKEN_MAP,
   GMX_DATASTORE_MAP,
   GMX_DEPOSIT_HANDLER_MAP,
+  GMX_DEPOSIT_HANDLER_V2_MAP,
   GMX_DEPOSIT_VAULT_MAP,
   GMX_DOGE_USD_MARKET_TOKEN_MAP,
   GMX_ETH_SINGLE_SIDED_MARKET_TOKEN_MAP,
   GMX_ETH_USD_MARKET_TOKEN_MAP,
   GMX_EXCHANGE_ROUTER_MAP,
+  GMX_EXCHANGE_ROUTER_V2_MAP,
   GMX_EXECUTOR_MAP,
   GMX_GMX_USD_MARKET_TOKEN_MAP,
   GMX_LINK_USD_MARKET_TOKEN_MAP,
   GMX_MAP,
   GMX_READER_MAP,
+  GMX_READER_V2_MAP,
   GMX_REWARD_ROUTER_V2_MAP,
   GMX_REWARD_ROUTER_V3_MAP,
   GMX_REWARD_ROUTER_V4_MAP,
@@ -99,6 +102,7 @@ import {
   GMX_UNI_USD_MARKET_TOKEN_MAP,
   GMX_VAULT_MAP,
   GMX_WITHDRAWAL_HANDLER_MAP,
+  GMX_WITHDRAWAL_HANDLER_V2_MAP,
   GMX_WITHDRAWAL_VAULT_MAP,
   GMX_WST_ETH_USD_MARKET_TOKEN_MAP,
   LINK_MAP,
@@ -169,6 +173,7 @@ export interface LiveGmMarket {
 export interface GmxV2Ecosystem {
   gmxDataStore: IGmxDataStore;
   gmxDepositHandler: IGmxDepositHandler;
+  gmxDepositHandlerV2: IGmxDepositHandler;
   gmxDepositVault: { address: string };
   gmTokens: {
     aaveUsd: GmToken;
@@ -186,10 +191,13 @@ export interface GmxV2Ecosystem {
   };
   gmxEthUsdMarketToken: IGmxMarketToken;
   gmxExchangeRouter: IGmxExchangeRouter;
+  gmxExchangeRouterV2: IGmxExchangeRouter;
   gmxExecutor: SignerWithAddressWithSafety;
   gmxReader: IGmxReader;
+  gmxReaderV2: IGmxReader;
   gmxRouter: IGmxRouter;
   gmxWithdrawalHandler: IGmxWithdrawalHandler;
+  gmxWithdrawalHandlerV2: IGmxWithdrawalHandler;
   gmxWithdrawalVault: { address: string };
   live: {
     gmAaveUsd: LiveGmMarket;
@@ -308,6 +316,7 @@ export async function createGmxEcosystemV2(
 
   return {
     gmxDepositHandler: getContract(GMX_DEPOSIT_HANDLER_MAP[network], IGmxDepositHandler__factory.connect, signer),
+    gmxDepositHandlerV2: getContract(GMX_DEPOSIT_HANDLER_V2_MAP[network], IGmxDepositHandler__factory.connect, signer),
     gmxDepositVault: await impersonateOrFallback(GMX_DEPOSIT_VAULT_MAP[network], true, signer),
     gmTokens: {
       aaveUsd: {
@@ -418,11 +427,18 @@ export async function createGmxEcosystemV2(
     gmxEthUsdMarketToken: getContract(GMX_ETH_USD_MARKET_TOKEN_MAP[network], IGmxMarketToken__factory.connect, signer),
     gmxDataStore: getContract(GMX_DATASTORE_MAP[network], IGmxDataStore__factory.connect, signer),
     gmxExchangeRouter: getContract(GMX_EXCHANGE_ROUTER_MAP[network], IGmxExchangeRouter__factory.connect, signer),
+    gmxExchangeRouterV2: getContract(GMX_EXCHANGE_ROUTER_V2_MAP[network], IGmxExchangeRouter__factory.connect, signer),
     gmxExecutor: await impersonateOrFallback(GMX_EXECUTOR_MAP[network], true, signer),
     gmxReader: getContract(GMX_READER_MAP[network], IGmxReader__factory.connect, signer),
+    gmxReaderV2: getContract(GMX_READER_V2_MAP[network], IGmxReader__factory.connect, signer),
     gmxRouter: getContract(GMX_ROUTER_MAP[network], IGmxRouter__factory.connect, signer),
     gmxWithdrawalHandler: getContract(
       GMX_WITHDRAWAL_HANDLER_MAP[network],
+      IGmxWithdrawalHandler__factory.connect,
+      signer,
+    ),
+    gmxWithdrawalHandlerV2: getContract(
+      GMX_WITHDRAWAL_HANDLER_V2_MAP[network],
       IGmxWithdrawalHandler__factory.connect,
       signer,
     ),
