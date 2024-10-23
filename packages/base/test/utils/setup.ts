@@ -107,7 +107,7 @@ import {
   METH_MAP,
   MIM_MAP,
   NATIVE_USDC_MAP,
-  PENDLE_MAP,
+  PENDLE_MAP, POL_MAP,
   PREMIA_MAP,
   R_ETH_MAP,
   RDNT_MAP,
@@ -117,7 +117,7 @@ import {
   SIZE_MAP,
   SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL,
   SOL_MAP,
-  ST_ETH_MAP,
+  ST_ETH_MAP, UNI_BTC_MAP,
   UNI_MAP,
   USDC_MAP,
   USDE_MAP,
@@ -272,7 +272,10 @@ export async function setupWETHBalance<T extends NetworkType>(
   } else if (core.network === Network.Mantle) {
     // TODO:
   } else if (core.network === Network.XLayer) {
-    // TODO:
+    const whaleAddress = '0x2d22604d6bbf51839c404aef5c65443e424e0945';
+    const whaleSigner = await impersonate(whaleAddress, true);
+    await core.tokens.weth.connect(whaleSigner).transfer(signer.address, amount);
+    await core.tokens.weth.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
   }
 }
 
@@ -341,10 +344,17 @@ export async function setupUSDCBalance<T extends NetworkType>(
   amount: BigNumberish,
   spender: { address: string },
 ) {
-  const whaleAddress = '0x805ba50001779CeD4f59CfF63aea527D12B94829'; // Radiant USDC pool
-  const whaleSigner = await impersonate(whaleAddress, true);
-  await core.tokens.usdc.connect(whaleSigner).transfer(signer.address, amount);
-  await core.tokens.usdc.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
+  if (core.network === Network.XLayer) {
+    const whaleAddress = '0x2d22604d6bbf51839c404aef5c65443e424e0945';
+    const whaleSigner = await impersonate(whaleAddress, true);
+    await core.tokens.usdc.connect(whaleSigner).transfer(signer.address, amount);
+    await core.tokens.usdc.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
+  } else {
+    const whaleAddress = '0x805ba50001779CeD4f59CfF63aea527D12B94829'; // Radiant USDC pool
+    const whaleSigner = await impersonate(whaleAddress, true);
+    await core.tokens.usdc.connect(whaleSigner).transfer(signer.address, amount);
+    await core.tokens.usdc.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
+  }
 }
 
 export async function setupUSDMBalance(
@@ -972,6 +982,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
       hhUser1,
     );
     return new CoreProtocolBerachain(coreProtocolParams as CoreProtocolParams<Network.Berachain>, {
+      chroniclePriceOracleV3: chroniclePriceOracle,
       redstonePriceOracleV3: redstonePriceOracle,
       marketIds: {
         ...coreProtocolParams.marketIds,
@@ -986,6 +997,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
       tokens: {
         ...coreProtocolParams.tokens,
         honey: IERC20__factory.connect(HONEY_MAP[typedConfig.network].address, hhUser1),
+        uniBtc: IERC20__factory.connect(UNI_BTC_MAP[typedConfig.network].address, hhUser1),
         wbera: IWETH__factory.connect(WBERA_MAP[typedConfig.network].address, hhUser1),
         stablecoins: [
           ...coreProtocolParams.tokens.stablecoins,
@@ -1058,6 +1070,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
         dai: DAI_MAP[typedConfig.network]!.marketId,
         link: LINK_MAP[typedConfig.network]!.marketId,
         matic: MATIC_MAP[typedConfig.network].marketId,
+        pol: POL_MAP[typedConfig.network].marketId,
         usdt: USDT_MAP[typedConfig.network].marketId,
         wbtc: WBTC_MAP[typedConfig.network].marketId,
         stablecoins: [
@@ -1077,6 +1090,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
         dai: IERC20__factory.connect(DAI_MAP[typedConfig.network]!.address, hhUser1),
         link: IERC20__factory.connect(LINK_MAP[typedConfig.network]!.address, hhUser1),
         matic: IERC20__factory.connect(MATIC_MAP[typedConfig.network].address, hhUser1),
+        pol: IERC20__factory.connect(POL_MAP[typedConfig.network].address, hhUser1),
         usdt: IERC20__factory.connect(USDT_MAP[typedConfig.network].address, hhUser1),
         wbtc: IERC20__factory.connect(WBTC_MAP[typedConfig.network].address, hhUser1),
         weth: coreProtocolParams.tokens.weth as any,

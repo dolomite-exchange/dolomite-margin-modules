@@ -78,6 +78,7 @@ import {
   PENDLE_SY_WST_ETH_TOKEN_MAP,
   PENDLE_YT_GLP_MAR_2024_TOKEN_MAP,
   PENDLE_YT_GLP_SEP_2024_TOKEN_MAP,
+  PENDLE_YT_E_ETH_JUN_2024_TOKEN_MAP,
 } from '../../../src/utils/constants';
 import { Network } from '../../../src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';
@@ -90,24 +91,28 @@ export interface CorePendleEcosystem {
 
 export interface PendleEcosystemMantle extends CorePendleEcosystem {
   methDec2024: {
+    factory: PendlePtIsolationModeVaultFactory;
     ptOracle: IPendlePtOracle;
     methMarket: IPendlePtMarket;
     ptMethToken: IPendlePtToken;
     syMethToken: IPendleSyToken;
   };
   mntOct2024: {
+    factory: PendlePtIsolationModeVaultFactory;
     ptOracle: IPendlePtOracle;
     mntMarket: IPendlePtMarket;
     ptMntToken: IPendlePtToken;
-    syMntToken: IPendleSyToken
+    syMntToken: IPendleSyToken;
   };
   usdeJul2024: {
+    factory: PendlePtIsolationModeVaultFactory;
     ptOracle: IPendlePtOracle;
     usdeMarket: IPendlePtMarket;
     ptUSDeToken: IPendlePtToken;
     syUsdeToken: IPendleSyToken;
   };
   usdeDec2024: {
+    factory: PendlePtIsolationModeVaultFactory;
     ptOracle: IPendlePtOracle;
     usdeMarket: IPendlePtMarket;
     ptUSDeToken: IPendlePtToken;
@@ -196,7 +201,8 @@ export interface PendleEcosystemArbitrumOne extends CorePendleEcosystem {
     ptOracle: IPendlePtOracle;
     weEthMarket: IPendlePtMarket;
     ptWeEthToken: IPendlePtToken;
-  }
+    ytWeEthToken: IPendleYtToken;
+  };
   wstEthJun2024: {
     dPtWstEthJun2024: PendlePtIsolationModeVaultFactory;
     pendleRegistry: IPendleRegistry;
@@ -232,6 +238,11 @@ export async function createPendleEcosystemMantle(
     pendleRouter: getContract(PENDLE_ROUTER_MAP[network] as string, IPendleRouter__factory.connect, signer),
     pendleRouterV3: getContract(PENDLE_ROUTER_V3_MAP[network] as string, IPendleRouterV3__factory.connect, signer),
     methDec2024: {
+      factory: getContract(
+        Deployments.PendlePtmETHDec2024IsolationModeVaultFactory[network].address,
+        PendlePtIsolationModeVaultFactory__factory.connect,
+        signer,
+      ),
       ptOracle: getContract(PENDLE_PT_ORACLE_MAP[network] as string, IPendlePtOracle__factory.connect, signer),
       methMarket: getContract(
         PENDLE_MARKET_METH_DEC_2024_MAP[network] as string,
@@ -250,6 +261,11 @@ export async function createPendleEcosystemMantle(
       ),
     },
     mntOct2024: {
+      factory: getContract(
+        Deployments.PendlePtMntOct2024IsolationModeVaultFactory[network].address,
+        PendlePtIsolationModeVaultFactory__factory.connect,
+        signer,
+      ),
       ptOracle: getContract(PENDLE_PT_ORACLE_MAP[network] as string, IPendlePtOracle__factory.connect, signer),
       mntMarket: getContract(
         PENDLE_MARKET_MNT_OCT_2024_MAP[network] as string,
@@ -268,6 +284,11 @@ export async function createPendleEcosystemMantle(
       ),
     },
     usdeJul2024: {
+      factory: getContract(
+        Deployments.PendlePtUSDeJul2024IsolationModeVaultFactory[network].address,
+        PendlePtIsolationModeVaultFactory__factory.connect,
+        signer,
+      ),
       ptOracle: getContract(PENDLE_PT_ORACLE_MAP[network] as string, IPendlePtOracle__factory.connect, signer),
       usdeMarket: getContract(
         PENDLE_MARKET_USDE_JUL_2024_MAP[network] as string,
@@ -278,6 +299,11 @@ export async function createPendleEcosystemMantle(
       syUsdeToken: getContract(PENDLE_SY_USDE_JUL_2024_MAP[network] as string, IPendleSyToken__factory.connect, signer),
     },
     usdeDec2024: {
+      factory: getContract(
+        Deployments.PendlePtUSDeDec2024IsolationModeVaultFactory[network].address,
+        PendlePtIsolationModeVaultFactory__factory.connect,
+        signer,
+      ),
       ptOracle: getContract(PENDLE_PT_ORACLE_MAP[network] as string, IPendlePtOracle__factory.connect, signer),
       usdeMarket: getContract(
         PENDLE_MARKET_USDE_DEC_2024_MAP[network] as string,
@@ -520,6 +546,11 @@ export async function createPendleEcosystemArbitrumOne(
         PENDLE_PT_E_ETH_JUN_2024_TOKEN_MAP[network] as string,
         IPendlePtToken__factory.connect,
         signer,
+      ),
+      ytWeEthToken: getContract(
+        PENDLE_YT_E_ETH_JUN_2024_TOKEN_MAP[network] as string,
+        IPendleYtToken__factory.connect,
+        signer
       ),
     },
     weEthSep2024: {

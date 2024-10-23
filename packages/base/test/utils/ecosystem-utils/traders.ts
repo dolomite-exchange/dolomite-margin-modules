@@ -2,18 +2,24 @@ import { Network } from 'packages/base/src/utils/no-deps-constants';
 import {
   OdosAggregatorTrader,
   OdosAggregatorTrader__factory,
+  OkxAggregatorTrader,
+  OkxAggregatorTrader__factory,
   OogaBoogaAggregatorTrader,
   OogaBoogaAggregatorTrader__factory,
   ParaswapAggregatorTrader,
   ParaswapAggregatorTrader__factory,
   ParaswapAggregatorTraderV2,
   ParaswapAggregatorTraderV2__factory,
+  TestOkxAggregatorTrader,
+  TestOkxAggregatorTrader__factory,
 } from '../../../src/types';
 import {
   CoreProtocolWithOdos,
+  CoreProtocolWithOkx,
   CoreProtocolWithParaswap,
   getOdosAggregatorTraderConstructorParams,
   getOogaBoogaAggregatorTraderConstructorParams,
+  getOkxAggregatorTraderConstructorParams,
   getParaswapAggregatorTraderConstructorParams,
   getParaswapAggregatorTraderV2ConstructorParams,
 } from '../../../src/utils/constructors/traders';
@@ -47,6 +53,26 @@ export async function createOdosAggregatorTrader<T extends Network>(
     OdosAggregatorTrader__factory.abi,
     OdosAggregatorTrader__factory.bytecode,
     getOdosAggregatorTraderConstructorParams(core),
+  );
+}
+
+export async function createTestOkxAggregatorTrader<T extends Network>(
+  core: CoreProtocolWithOkx<T>,
+): Promise<TestOkxAggregatorTrader> {
+  return await createContractWithAbi<TestOkxAggregatorTrader>(
+    TestOkxAggregatorTrader__factory.abi,
+    TestOkxAggregatorTrader__factory.bytecode,
+    getOkxAggregatorTraderConstructorParams(core),
+  );
+}
+
+export async function createOkxAggregatorTrader<T extends Network>(
+  core: CoreProtocolWithOkx<T>,
+): Promise<OkxAggregatorTrader> {
+  return await createContractWithAbi<OkxAggregatorTrader>(
+    OkxAggregatorTrader__factory.abi,
+    OkxAggregatorTrader__factory.bytecode,
+    getOkxAggregatorTraderConstructorParams(core),
   );
 }
 

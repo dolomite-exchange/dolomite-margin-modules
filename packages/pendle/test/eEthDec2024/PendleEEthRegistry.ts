@@ -4,7 +4,9 @@ import { expectEvent, expectThrow } from '@dolomite-exchange/modules-base/test/u
 import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
-import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
+import {
+  CoreProtocolArbitrumOne,
+} from '@dolomite-exchange/modules-base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { IPendlePtMarket, IPendleSyToken, PendleRegistry } from '../../src/types';
 import { createPendleRegistry } from '../pendle-ecosystem-utils';
 
@@ -13,7 +15,7 @@ const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 describe('PendleEEthApr2024Registry', () => {
   let snapshotId: string;
 
-  let core: CoreProtocolArbitrumOne;
+  let core: CoreProtocolArbitrumOne;w
   let registry: PendleRegistry;
   let ptMarket: IPendlePtMarket;
   let syToken: IPendleSyToken;
