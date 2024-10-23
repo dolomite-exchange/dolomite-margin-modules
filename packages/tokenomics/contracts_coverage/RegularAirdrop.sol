@@ -26,9 +26,8 @@ import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { MerkleProof } from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
-import { IERC20Mintable } from "./interfaces/IERC20Mintable.sol";
-import { IVotingEscrow } from "./interfaces/IVotingEscrow.sol";
 import { IRegularAirdrop } from "./interfaces/IRegularAirdrop.sol";
+import { IVotingEscrow } from "./interfaces/IVotingEscrow.sol";
 
 
 /**
@@ -83,6 +82,10 @@ contract RegularAirdrop is OnlyDolomiteMargin, IRegularAirdrop {
         _ownerSetMerkleRoot(_merkleRoot);
     }
 
+    function ownerWithdrawRewardToken(address _token, address _receiver) external onlyDolomiteMarginOwner(msg.sender) {
+        _ownerWithdrawRewardToken(_token, _receiver);
+    }
+
     // ==============================================================
     // ======================= User Functions =======================
     // ==============================================================
@@ -130,6 +133,11 @@ contract RegularAirdrop is OnlyDolomiteMargin, IRegularAirdrop {
     function _ownerSetMerkleRoot(bytes32 _merkleRoot) internal {
         merkleRoot = _merkleRoot;
         emit MerkleRootSet(_merkleRoot);
+    }
+
+    function _ownerWithdrawRewardToken(address _token, address _receiver) internal {
+        uint256 bal = IERC20(_token).balanceOf(address(this));
+        IERC20(_token).safeTransfer(_receiver, bal);
     }
 
     function _verifyMerkleProof(bytes32[] calldata _proof, uint256 _amount) internal view returns (bool) {

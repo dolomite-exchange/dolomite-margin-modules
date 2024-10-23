@@ -35,13 +35,13 @@ interface IRegularAirdrop {
 
     event MerkleRootSet(bytes32 merkleRoot);
 
-    event RewardClaimed(address indexed user, uint256 amount);
-
     // ======================================================
     // ================== External Functions ================
     // ======================================================
 
     function ownerSetMerkleRoot(bytes32 _merkleRoot) external;
+
+    function ownerWithdrawRewardToken(address _token, address _receiver) external;
 
     function claim(bytes32[] memory _proof, uint256 _amount) external;
 

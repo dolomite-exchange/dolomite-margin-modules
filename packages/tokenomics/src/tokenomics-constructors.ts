@@ -1,8 +1,8 @@
-import { NetworkType } from "packages/base/src/utils/no-deps-constants";
-import { CoreProtocolType } from "packages/base/test/utils/setup";
-import { IERC20, IVesterDiscountCalculator, IVotingEscrow, MockVotingEscrow, VotingEscrow } from "./types";
-import { BigNumberish } from "ethers";
-import { ethers } from "hardhat";
+import { NetworkType } from 'packages/base/src/utils/no-deps-constants';
+import { CoreProtocolType } from 'packages/base/test/utils/setup';
+import { IERC20, IVesterDiscountCalculator, IVotingEscrow, MockVotingEscrow, VotingEscrow } from './types';
+import { BigNumberish } from 'ethers';
+import { ethers } from 'hardhat';
 
 export function getDOLOConstructorParams<T extends NetworkType>(
   core: CoreProtocolType<T>
@@ -31,8 +31,9 @@ export function getExternalVesterDiscountCalculatorConstructorParams(
 export function getOptionAirdropConstructorParams<T extends NetworkType>(
   core: CoreProtocolType<T>,
   dolo: IERC20,
+  treasury: string
 ): any[] {
-  return [dolo.address, core.dolomiteRegistry.address, core.dolomiteMargin.address];
+  return [dolo.address, treasury, core.dolomiteRegistry.address, core.dolomiteMargin.address];
 }
 
 export function getRegularAirdropConstructorParams<T extends NetworkType>(

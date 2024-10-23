@@ -34,6 +34,9 @@ interface IOptionAirdrop {
     // ======================================================
 
     event MerkleRootSet(bytes32 merkleRoot);
+    event TreasurySet(address treasury);
+    event AllowedMarketIdsSet(uint256[] marketIds);
+    event RewardTokenWithdrawn(address token, uint256 amount, address receiver);
 
     // ======================================================
     // ================== External Functions ================
@@ -41,7 +44,13 @@ interface IOptionAirdrop {
 
     function ownerSetMerkleRoot(bytes32 _merkleRoot) external;
 
-    function claim(bytes32[] memory _proof, uint256 _allocatedAmount, uint256 _claimAmount) external;
+    function ownerWithdrawRewardToken(address _token, address _receiver) external;
 
-    function getClaimedAmountByUser(address _user) external view returns (uint256);
+    function claim(
+        bytes32[] memory _proof,
+        uint256 _allocatedAmount,
+        uint256 _claimAmount,
+        uint256 _marketId,
+        uint256 _fromAccountNumber
+    ) external;
 }

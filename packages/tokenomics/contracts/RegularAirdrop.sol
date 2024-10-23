@@ -26,9 +26,8 @@ import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { MerkleProof } from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
-import { IERC20Mintable } from "./interfaces/IERC20Mintable.sol";
-import { IVotingEscrow } from "./interfaces/IVotingEscrow.sol";
 import { IRegularAirdrop } from "./interfaces/IRegularAirdrop.sol";
+import { IVotingEscrow } from "./interfaces/IVotingEscrow.sol";
 
 
 /**

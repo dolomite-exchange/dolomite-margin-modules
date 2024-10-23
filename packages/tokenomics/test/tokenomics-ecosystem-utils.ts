@@ -1,13 +1,43 @@
-import { createContractWithAbi, createContractWithLibrary, createContractWithName } from "packages/base/src/utils/dolomite-utils";
-import { DOLO, DOLO__factory, ExternalVesterDiscountCalculatorV1, IERC20, IVesterDiscountCalculator, MockVotingEscrow, ODOLO, ODOLO__factory, OptionAirdrop, OptionAirdrop__factory, RegularAirdrop, RegularAirdrop__factory, TestVeExternalVesterImplementationV1, TestVeExternalVesterImplementationV1__factory, UpgradeableProxy, UpgradeableProxy__factory, VeFeeCalculator, VeFeeCalculator__factory, VotingEscrow, VotingEscrow__factory } from "../src/types";
-import { ADDRESS_ZERO, NetworkType } from "packages/base/src/utils/no-deps-constants";
-import { CoreProtocolType } from "packages/base/test/utils/setup";
-import { getDOLOConstructorParams, getExternalVesterDiscountCalculatorConstructorParams, getODOLOConstructorParams, getOptionAirdropConstructorParams, getRegularAirdropConstructorParams, getVeExternalVesterImplementationConstructorParams, getVeExternalVesterInitializationCalldata, getVeFeeCalculatorConstructorParams } from "../src/tokenomics-constructors";
-import { SignerWithAddressWithSafety } from "packages/base/src/utils/SignerWithAddressWithSafety";
-import { BigNumberish } from "ethers";
-import { getUpgradeableProxyConstructorParams } from "packages/base/src/utils/constructors/dolomite";
-import { ExternalVesterDiscountCalculatorV1__factory } from "packages/liquidity-mining/src/types";
-import { get } from "http";
+import { createContractWithAbi, createContractWithLibrary, createContractWithName } from 'packages/base/src/utils/dolomite-utils';
+import {
+  DOLO,
+  DOLO__factory,
+  ExternalVesterDiscountCalculatorV1,
+  IERC20,
+  IVesterDiscountCalculator,
+  MockVotingEscrow,
+  ODOLO,
+  ODOLO__factory,
+  OptionAirdrop,
+  OptionAirdrop__factory,
+  RegularAirdrop,
+  RegularAirdrop__factory,
+  TestOptionAirdrop,
+  TestOptionAirdrop__factory,
+  TestVeExternalVesterImplementationV1,
+  TestVeExternalVesterImplementationV1__factory,
+  UpgradeableProxy,
+  UpgradeableProxy__factory,
+  VeFeeCalculator,
+  VeFeeCalculator__factory,
+  VotingEscrow,
+  VotingEscrow__factory
+} from '../src/types';
+import { ADDRESS_ZERO, NetworkType } from 'packages/base/src/utils/no-deps-constants';
+import { CoreProtocolType } from 'packages/base/test/utils/setup';
+import {
+  getDOLOConstructorParams,
+  getExternalVesterDiscountCalculatorConstructorParams,
+  getODOLOConstructorParams,
+  getOptionAirdropConstructorParams,
+  getRegularAirdropConstructorParams,
+  getVeExternalVesterImplementationConstructorParams,
+  getVeExternalVesterInitializationCalldata,
+  getVeFeeCalculatorConstructorParams
+} from '../src/tokenomics-constructors';
+import { BigNumberish } from 'ethers';
+import { getUpgradeableProxyConstructorParams } from 'packages/base/src/utils/constructors/dolomite';
+import { ExternalVesterDiscountCalculatorV1__factory } from 'packages/liquidity-mining/src/types';
 
 export async function createDOLO<T extends NetworkType>(
   core: CoreProtocolType<T>
@@ -119,14 +149,27 @@ export async function createTestVeExternalVesterV1Proxy<T extends NetworkType>(
   return TestVeExternalVesterImplementationV1__factory.connect(vesterProxy.address, core.hhUser1);
 }
 
+export async function createTestOptionAirdrop<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  dolo: DOLO,
+  treasury: string
+): Promise<TestOptionAirdrop> {
+  return createContractWithAbi<TestOptionAirdrop>(
+    TestOptionAirdrop__factory.abi,
+    TestOptionAirdrop__factory.bytecode,
+    getOptionAirdropConstructorParams(core, dolo, treasury),
+  );
+}
+
 export async function createOptionAirdrop<T extends NetworkType>(
   core: CoreProtocolType<T>,
   dolo: DOLO,
+  treasury: string
 ): Promise<OptionAirdrop> {
   return createContractWithAbi<OptionAirdrop>(
     OptionAirdrop__factory.abi,
     OptionAirdrop__factory.bytecode,
-    getOptionAirdropConstructorParams(core, dolo),
+    getOptionAirdropConstructorParams(core, dolo, treasury),
   );
 }
 

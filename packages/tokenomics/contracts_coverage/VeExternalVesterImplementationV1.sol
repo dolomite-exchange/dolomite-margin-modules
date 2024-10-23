@@ -38,7 +38,6 @@ import { IVeExternalVesterV1 } from "./interfaces/IVeExternalVesterV1.sol";
 import { IVeToken } from "./interfaces/IVeToken.sol";
 import { IVesterDiscountCalculator } from "./interfaces/IVesterDiscountCalculator.sol";
 
-import "hardhat/console.sol";
 
 /**
  * @title   VeExternalVesterImplementationV1

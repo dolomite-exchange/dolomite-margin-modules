@@ -1,14 +1,14 @@
-import { CoreProtocolArbitrumOne } from "packages/base/test/utils/core-protocols/core-protocol-arbitrum-one";
-import { DOLO, MockVotingEscrow, MockVotingEscrow__factory, RegularAirdrop } from "../src/types";
-import { getDefaultCoreProtocolConfig, setupCoreProtocol } from "packages/base/test/utils/setup";
-import { createDOLO, createRegularAirdrop } from "./tokenomics-ecosystem-utils";
-import { createContractWithAbi } from "packages/base/src/utils/dolomite-utils";
-import { BYTES_ZERO, Network, ZERO_BI } from "packages/base/src/utils/no-deps-constants";
-import { expect } from "chai";
-import { defaultAbiCoder, keccak256, parseEther } from "ethers/lib/utils";
-import MerkleTree from "merkletreejs";
-import { revertToSnapshotAndCapture, snapshot } from "packages/base/test/utils";
-import { expectEvent, expectThrow } from "packages/base/test/utils/assertions";
+import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
+import { DOLO, MockVotingEscrow, MockVotingEscrow__factory, RegularAirdrop } from '../src/types';
+import { getDefaultCoreProtocolConfig, setupCoreProtocol } from 'packages/base/test/utils/setup';
+import { createDOLO, createRegularAirdrop } from './tokenomics-ecosystem-utils';
+import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
+import { BYTES_ZERO, Network, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
+import { expect } from 'chai';
+import { defaultAbiCoder, keccak256, parseEther } from 'ethers/lib/utils';
+import MerkleTree from 'merkletreejs';
+import { revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
+import { expectEvent, expectThrow } from 'packages/base/test/utils/assertions';
 
 describe('RegularAirdrop', () => {
   let core: CoreProtocolArbitrumOne;
@@ -39,7 +39,10 @@ describe('RegularAirdrop', () => {
     const leaves = rewards.map((account) =>
       keccak256(defaultAbiCoder.encode(['address', 'uint256'], [account.address, account.rewards])),
     );
-    const invalidLeaf = keccak256(defaultAbiCoder.encode(['address', 'uint256'], [core.hhUser3.address, parseEther('15')]));
+    const invalidLeaf = keccak256(defaultAbiCoder.encode(
+      ['address', 'uint256'],
+      [core.hhUser3.address, parseEther('15')]
+    ));
     const tree = new MerkleTree(leaves, keccak256, { sort: true });
 
     merkleRoot = tree.getHexRoot();
