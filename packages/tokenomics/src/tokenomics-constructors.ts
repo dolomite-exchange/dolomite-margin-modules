@@ -4,6 +4,14 @@ import { IERC20, IVesterDiscountCalculator, IVotingEscrow, MockVotingEscrow, Vot
 import { BigNumberish } from 'ethers';
 import { ethers } from 'hardhat';
 
+export function getBuybackPoolConstructorParams<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  dolo: IERC20,
+  oDolo: IERC20
+): any[] {
+  return [dolo.address, oDolo.address, core.dolomiteMargin.address];
+}
+
 export function getDOLOConstructorParams<T extends NetworkType>(
   core: CoreProtocolType<T>
 ): any[] {

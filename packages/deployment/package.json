@@ -17,6 +17,7 @@
     "deploy:odos-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts odos",
     "deploy:paraswap-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts paraswap",
     "deploy:redstone-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts redstone",
+    "deploy:tokenomics": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts tokenomics",
     "deploy:zap-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts zap",
     "execute:arbitrum": "NETWORK=arbitrum_one ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
     "execute:base": "NETWORK=base ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",

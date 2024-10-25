@@ -1,7 +1,7 @@
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { getUpgradeableProxyConstructorParams } from 'packages/base/src/utils/constructors/dolomite';
 import { getAndCheckSpecificNetwork } from 'packages/base/src/utils/dolomite-utils';
-import { ADDRESS_ZERO, MAX_UINT_256_BI, Network } from 'packages/base/src/utils/no-deps-constants';
+import { ADDRESS_ZERO, MAX_UINT_256_BI, Network, NetworkType } from 'packages/base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from 'packages/base/test/utils';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
 import {
@@ -13,30 +13,30 @@ import { doDryRunAndCheckDeployment, DryRunOutput } from 'packages/deployment/sr
 import getScriptName from 'packages/deployment/src/utils/get-script-name';
 import {
   getBuybackPoolConstructorParams,
-  getExternalOARBConstructorParams,
+  getODOLOConstructorParams,
+  getVeFeeCalculatorConstructorParams,
   getExternalVesterDiscountCalculatorConstructorParams,
   getVeExternalVesterImplementationConstructorParams,
-  getVeExternalVesterInitializationCalldata,
-  getVeFeeCalculatorConstructorParams
-} from 'packages/liquidity-mining/src/liquidity-mining-constructors';
-import { ExternalOARB__factory, VeExternalVesterImplementationV1__factory, VotingEscrow__factory } from 'packages/liquidity-mining/src/types';
+  getVeExternalVesterInitializationCalldata
+} from 'packages/tokenomics/src/tokenomics-constructors';
+import { ODOLO__factory, VeExternalVesterImplementationV1__factory, VotingEscrow__factory } from 'packages/tokenomics/src/types';
+
+const NO_MARKET_ID = MAX_UINT_256_BI;
 
 /**
  * This script encodes the following transactions:
- * - Deploys a new Custom Token with External Vester Implementation V2
+ * - Deploys DOLO tokenomics
  */
-async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
-  const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
-  const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
+async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
+  const network = await getAndCheckSpecificNetwork(Network.Berachain);
+  const core = (await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) })) as any;
 
   // Deploy new custom token
-  const customTokenAddress = await deployContractAndSave(
-    'BurnableToken',
+  const doloAddress = await deployContractAndSave(
+    'DOLO',
     [core.dolomiteMargin.address],
-    'BurnableToken'
+    'DOLO'
   );
-  // @follow-up Will we be adding this token as a market to Dolomite?
-  const customTokenMarketId = MAX_UINT_256_BI;
 
   // Deploy always active voter, oToken, veFeeCalculator, buybackPool
   const alwayActiveVoter = await deployContractAndSave(
@@ -44,12 +44,12 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     [],
     'VoterAlwaysActive'
   );
-  const oTokenAddress = await deployContractAndSave(
-    'ExternalOARB',
-    getExternalOARBConstructorParams(core.governance.address, 'OToken', 'OT'),
-    'ExternalOARB'
+  const oDoloAddress = await deployContractAndSave(
+    'ODOLO',
+    getODOLOConstructorParams(core),
+    'oDOLO'
   );
-  const oToken = ExternalOARB__factory.connect(oTokenAddress, core.hhUser1);
+  const oDolo = ODOLO__factory.connect(oDoloAddress, core.hhUser1);
 
   const veFeeCalculator = await deployContractAndSave(
     'VeFeeCalculator',
@@ -60,8 +60,8 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     'BuybackPool',
     getBuybackPoolConstructorParams(
       core,
-      { address: customTokenAddress } as any,
-      { address: oTokenAddress } as any
+      { address: doloAddress } as any,
+      { address: oDoloAddress } as any
     ),
     'BuybackPool'
   );
@@ -70,15 +70,15 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const votingEscrowImplementationAddress = await deployContractAndSave(
     'VotingEscrow',
     [],
-    'VotingEscrowImplementation'
+    'VotingEscrowImplementationV1'
   );
   const votingEscrowImplementation = VotingEscrow__factory.connect(votingEscrowImplementationAddress, core.hhUser1);
   const initCalldata = await votingEscrowImplementation.populateTransaction.initialize(
-    customTokenAddress,
-    ADDRESS_ZERO,
+    doloAddress,
+    ADDRESS_ZERO, // art_proxy
     alwayActiveVoter,
     veFeeCalculator,
-    ADDRESS_ZERO,
+    ADDRESS_ZERO, // vester
     buybackPool,
     core.governance.address
   );
@@ -101,12 +101,12 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     'VeExternalVesterImplementationV1',
     getVeExternalVesterImplementationConstructorParams(
       core,
-      { address: customTokenAddress } as any, // pairToken
-      customTokenMarketId,
+      { address: doloAddress } as any, // pairToken
+      NO_MARKET_ID,
       core.tokens.weth, // paymentToken
       core.marketIds.weth,
-      { address: customTokenAddress } as any, // rewardToken
-      customTokenMarketId,
+      { address: doloAddress } as any, // rewardToken
+      NO_MARKET_ID,
     ),
     'VeExternalVesterImplementationV1'
   );
@@ -117,8 +117,8 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const vesterInitCalldata = await vesterImplementation.populateTransaction.initialize(
     getVeExternalVesterInitializationCalldata(
       { address: discountCalculator } as any,
-      { address: oTokenAddress } as any,
-      'baseUri',
+      { address: oDoloAddress } as any,
+      'baseUri', // @todo update these
       'name',
       'SYMBOL'
     )
@@ -156,19 +156,19 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     ),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
-      { oToken: oToken },
+      { oToken: oDolo },
       'oToken',
       'ownerSetHandler',
       [core.governance.address, true]
     ),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
-      { oToken: oToken },
+      { oToken: oDolo },
       'oToken',
       'ownerSetHandler',
       [vester.address, true]
     ),
-    // @follow-up Not sure if we want to mint, deposit reward tokens, etc.
+    // @follow-up Not sure if we want to mint, deposit reward tokens, deploy airdrop contracts, etc
   );
 
   return {
@@ -182,14 +182,14 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     invariants: async () => {
       assertHardhatInvariant(
         await vester.PAYMENT_TOKEN() === core.tokens.weth.address &&
-          await vester.REWARD_TOKEN() === customTokenAddress &&
-          await vester.PAIR_TOKEN() === customTokenAddress,
+          await vester.REWARD_TOKEN() === doloAddress &&
+          await vester.PAIR_TOKEN() === doloAddress,
         'Invalid vester token addresses'
       );
       assertHardhatInvariant(
         await vester.VE_TOKEN() === votingEscrowProxyAddress &&
           await vester.discountCalculator() === discountCalculator &&
-          await vester.oToken() === oTokenAddress,
+          await vester.oToken() === oDoloAddress,
         'Invalid vester init addresses'
       );
       assertHardhatInvariant(
