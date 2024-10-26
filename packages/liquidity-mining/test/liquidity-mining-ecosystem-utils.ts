@@ -33,7 +33,8 @@ import {
   ExternalVesterImplementationV1,
   ExternalVesterImplementationV1__factory,
   IERC20,
-  IVesterDiscountCalculator, IVeToken,
+  IVesterDiscountCalculator,
+  IVeToken,
   MineralToken,
   MineralToken__factory,
   OARB,
@@ -49,7 +50,9 @@ import {
   TestVesterImplementationV1,
   TestVesterImplementationV1__factory,
   TestVesterImplementationV2,
-  TestVesterImplementationV2__factory, TestVeToken, TestVeToken__factory,
+  TestVesterImplementationV2__factory,
+  TestVeToken,
+  TestVeToken__factory,
   UpgradeableProxy,
   UpgradeableProxy__factory,
   VeFeeCalculator,
@@ -77,7 +80,10 @@ export async function createTestVesterV1Proxy(
     getVesterImplementationConstructorParams(core, core.tokens.arb),
   );
 
-  const bytes = ethers.utils.defaultAbiCoder.encode(['address', 'string', 'string', 'string'], [oARB.address, baseUri, "oARB", "OARB"]);
+  const bytes = ethers.utils.defaultAbiCoder.encode(
+    ['address', 'string', 'string', 'string'],
+    [oARB.address, baseUri, 'oARB', 'OARB'],
+  );
   const calldata = await implementation.populateTransaction.initialize(bytes);
 
   const vesterProxy = await createContractWithAbi<UpgradeableProxy>(
@@ -101,7 +107,7 @@ export async function createTestVesterV2Proxy(
   const safeDelegateCallLib = await createSafeDelegateLibrary();
   const implementation = await createContractWithLibrary<TestVesterImplementationV2>(
     'TestVesterImplementationV2',
-    { VesterImplementationLibForV2: library.address , SafeDelegateCallLib: safeDelegateCallLib.address },
+    { VesterImplementationLibForV2: library.address, SafeDelegateCallLib: safeDelegateCallLib.address },
     getVesterImplementationConstructorParams(core, core.tokens.arb),
   );
 
@@ -329,7 +335,7 @@ export async function createVotingEscrow(
     feeCalculator.address,
     vester,
     buybackPool,
-    core.governance.address
+    core.governance.address,
   );
 
   const proxy = await createContractWithAbi<UpgradeableProxy>(
@@ -341,7 +347,7 @@ export async function createVotingEscrow(
 }
 
 export async function createVeFeeCalculator(
-  core: CoreProtocolArbitrumOne
+  core: CoreProtocolArbitrumOne,
 ): Promise<VeFeeCalculator> {
   return createContractWithAbi<VeFeeCalculator>(
     VeFeeCalculator__factory.abi,

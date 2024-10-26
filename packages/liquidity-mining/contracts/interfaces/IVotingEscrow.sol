@@ -1,7 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.9;
 
+/**
+ * @title   IVotingEscrow
+ * @author  Dolomite
+ *
+ * Interface for the Voting Escrow token system
+ */
 interface IVotingEscrow {
+
     struct Point {
         int128 bias;
         int128 slope; // # -dweight / dt

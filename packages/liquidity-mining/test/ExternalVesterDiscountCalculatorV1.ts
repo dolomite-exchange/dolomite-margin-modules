@@ -61,7 +61,7 @@ describe('ExternalVesterDiscountCalculatorV1', () => {
       await increaseTo(nextWeek);
       const bytes = ethers.utils.defaultAbiCoder.encode(
         ['uint256', 'uint256'],
-        [MAX_UINT_256_BI, convertToNearestWeek(nextWeek, ONE_WEEK)]
+        [MAX_UINT_256_BI, convertToNearestWeek(nextWeek, ONE_WEEK)],
       );
       expect(await calculator.calculateDiscount(NFT_ID, ZERO_BI, bytes)).to.eq(parseEther('.05'));
     });
@@ -74,7 +74,7 @@ describe('ExternalVesterDiscountCalculatorV1', () => {
     it('should work when veNft is created with 2 year lock', async () => {
       const bytes = ethers.utils.defaultAbiCoder.encode(
         ['uint256', 'uint256'],
-        [MAX_UINT_256_BI, convertToNearestWeek(timestamp, TWO_YEARS)]
+        [MAX_UINT_256_BI, convertToNearestWeek(timestamp, TWO_YEARS)],
       );
       expect(await calculator.calculateDiscount(NFT_ID, ZERO_BI, bytes)).to.eq(parseEther('.5'));
     });
@@ -105,7 +105,7 @@ describe('ExternalVesterDiscountCalculatorV1', () => {
       await increaseTo(TIMESTAMP);
       await expectThrow(
         calculator.calculateDiscount(NFT_ID, ZERO_BI, EXTRA_BYTES),
-        'ExternalVeDiscountCalculatorV1: Invalid veLockEndTime'
+        'ExternalVeDiscountCalculatorV1: Invalid ve lock end timestamp',
       );
     });
 
@@ -113,7 +113,15 @@ describe('ExternalVesterDiscountCalculatorV1', () => {
       await veToken.setAmountAndEnd(10_000, TIMESTAMP + 1);
       await expectThrow(
         calculator.calculateDiscount(NFT_ID, ZERO_BI, EXTRA_BYTES),
-        'ExternalVeDiscountCalculatorV1: Invalid veLockEndTime'
+        'ExternalVeDiscountCalculatorV1: Invalid ve lock end timestamp',
+      );
+    });
+
+    it('should fail if lock end time is too old', async () => {
+      await veToken.setAmountAndEnd(10_000, TIMESTAMP + (ONE_WEEK_SECONDS * 105));
+      await expectThrow(
+        calculator.calculateDiscount(NFT_ID, ZERO_BI, EXTRA_BYTES),
+        'ExternalVeDiscountCalculatorV1: ve lock end timestamp is too old',
       );
     });
   });

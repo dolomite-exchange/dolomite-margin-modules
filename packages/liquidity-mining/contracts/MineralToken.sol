@@ -30,7 +30,7 @@ import { IMineralToken } from "./interfaces/IMineralToken.sol";
  * @title   MineralToken
  * @author  Dolomite
  *
- * ERC20 contract for oARB tokens
+ * ERC20 contract for Mineral tokens
  */
 contract MineralToken is IMineralToken, ERC20Upgradeable, OnlyDolomiteMargin {
 
@@ -39,7 +39,7 @@ contract MineralToken is IMineralToken, ERC20Upgradeable, OnlyDolomiteMargin {
     // ==============================================================
 
     bytes32 private constant _FILE = "MineralToken";
-    bytes32 private constant _TRANSFER_AGENT_MAP_SLOT = bytes32(uint256(keccak256("eip1967.proxy.transferAgentMap")) - 1); // solhint-disable-line indentation
+    bytes32 private constant _TRANSFER_AGENT_MAP_SLOT = bytes32(uint256(keccak256("eip1967.proxy.transferAgentMap")) - 1); // solhint-disable-line max-line-length
 
     // ==============================================================
     // ========================= Constructor ========================

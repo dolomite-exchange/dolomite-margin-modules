@@ -40,9 +40,9 @@ contract VeFeeCalculator is IVeFeeCalculator, OnlyDolomiteMargin {
     uint256 private constant BASE = 1 ether;
     uint256 private constant TWO_YEARS = 104 weeks;
 
-    uint256 private constant _STARTING_RECOUP_FEE = .5 ether; // 50%
-    uint256 private constant _FORTY_PERCENT = .4 ether; // 40%
-    uint256 private constant _FIVE_PERCENT = .05 ether; // 5%
+    uint256 private constant _STARTING_RECOUP_FEE = 0.5 ether; // 50%
+    uint256 private constant _FORTY_PERCENT = 0.4 ether; // 40%
+    uint256 private constant _FIVE_PERCENT = 0.05 ether; // 5%
     uint256 private constant _DECAY_DURATION = 8 weeks;
 
     // =========================================================
@@ -59,7 +59,7 @@ contract VeFeeCalculator is IVeFeeCalculator, OnlyDolomiteMargin {
     constructor(address _dolomiteMargin) OnlyDolomiteMargin(
         _dolomiteMargin
     ) {
-        _ownerSetBurnFee(.05 ether);
+        _ownerSetBurnFee(0.05 ether);
     }
 
     // ==================================================================
