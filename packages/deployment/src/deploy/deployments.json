@@ -2940,6 +2940,13 @@
       "isVerified": true
     }
   },
+  "MineralTokenImplementationV2": {
+    "42161": {
+      "address": "0x01D96345E533269b53c282B8C93ED7507C4E2C5C",
+      "transaction": "0xa64c0a731e1d289fa667c6c2525512f5032cfd97b0c980baac75198820a9aa8e",
+      "isVerified": true
+    }
+  },
   "MineralTokenProxy": {
     "196": {
       "address": "0x2A2e69A1Cce76dF1F0Ca877B3f29C7ceDf47053A",
