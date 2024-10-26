@@ -23,7 +23,7 @@ pragma solidity ^0.8.9;
 import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { ERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
-import { IERC20Mintable } from "./interfaces/IERC20Mintable.sol";
+import { IMineralToken } from "./interfaces/IMineralToken.sol";
 
 
 /**
@@ -32,17 +32,18 @@ import { IERC20Mintable } from "./interfaces/IERC20Mintable.sol";
  *
  * ERC20 contract for oARB tokens
  */
-contract MineralToken is IERC20Mintable, ERC20Upgradeable, OnlyDolomiteMargin {
+contract MineralToken is IMineralToken, ERC20Upgradeable, OnlyDolomiteMargin {
 
-    // ===================================================
-    // ==================== Constants ====================
-    // ===================================================
+    // ==============================================================
+    // ========================= Constants ==========================
+    // ==============================================================
 
     bytes32 private constant _FILE = "MineralToken";
+    bytes32 private constant _TRANSFER_AGENT_MAP_SLOT = bytes32(uint256(keccak256("eip1967.proxy.transferAgentMap")) - 1); // solhint-disable-line indentation
 
-    // ==================================================================
-    // ======================= Constructor =======================
-    // ==================================================================
+    // ==============================================================
+    // ========================= Constructor ========================
+    // ==============================================================
 
     constructor(
         address _dolomiteMargin
@@ -52,9 +53,23 @@ contract MineralToken is IERC20Mintable, ERC20Upgradeable, OnlyDolomiteMargin {
         __ERC20_init("Mineral Token", "MIN");
     }
 
-    // ================================================================
-    // ======================= Public Functions =======================
-    // ================================================================
+    // ==============================================================
+    // ====================== Public Functions ======================
+    // ==============================================================
+
+    function ownerSetIsTransferAgent(
+        address _account,
+        bool _isTransferAgent
+    ) public onlyDolomiteMarginOwner(msg.sender) {
+        Require.that(
+            _account != address(0),
+            _FILE,
+            "Invalid transfer agent"
+        );
+
+        _setUint256InMap(_TRANSFER_AGENT_MAP_SLOT, _account, _isTransferAgent ? 1 : 0);
+        emit TransferAgentSet(_account, _isTransferAgent);
+    }
 
     function mint(uint256 _amount) public onlyDolomiteMarginGlobalOperator(msg.sender) {
         _mint(msg.sender, _amount);
@@ -64,9 +79,13 @@ contract MineralToken is IERC20Mintable, ERC20Upgradeable, OnlyDolomiteMargin {
         _burn(msg.sender, _amount);
     }
 
-    // ==================================================================
-    // ======================= Internal Functions =======================
-    // ==================================================================
+    function isTransferAgent(address _account) public view returns (bool) {
+        return _getUint256FromMap(_TRANSFER_AGENT_MAP_SLOT, _account) == 1;
+    }
+
+    // ================================================================
+    // ====================== Internal Functions ======================
+    // ================================================================
 
     function _beforeTokenTransfer(
         address _from,
@@ -75,9 +94,9 @@ contract MineralToken is IERC20Mintable, ERC20Upgradeable, OnlyDolomiteMargin {
     ) internal view override {
         // Caller must be a minter or global operator
         Require.that(
-            _from == address(0) || DOLOMITE_MARGIN().getIsGlobalOperator(_from),
+            _from == address(0) || DOLOMITE_MARGIN().getIsGlobalOperator(_from) || isTransferAgent(_from),
             _FILE,
-            "Caller is not a global operator",
+            "Transfer is not authorized",
             _from
         );
     }

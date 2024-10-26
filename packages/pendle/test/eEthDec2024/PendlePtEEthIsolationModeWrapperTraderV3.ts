@@ -1,5 +1,11 @@
 import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
-import { BYTES_EMPTY, Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import {
+  BYTES_EMPTY,
+  Network,
+  ONE_BI,
+  ONE_ETH_BI,
+  ZERO_BI,
+} from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import {
   encodeExternalSellActionDataWithNoData,
   getRealLatestBlockNumber,
@@ -7,7 +13,11 @@ import {
   revertToSnapshotAndCapture,
   snapshot,
 } from '@dolomite-exchange/modules-base/test/utils';
-import { expectProtocolBalance, expectThrow, expectWalletBalance } from '@dolomite-exchange/modules-base/test/utils/assertions';
+import {
+  expectProtocolBalance,
+  expectThrow,
+  expectWalletBalance,
+} from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { setupNewGenericTraderProxy } from '@dolomite-exchange/modules-base/test/utils/dolomite';
 import {
   disableInterestAccrual,
@@ -17,7 +27,7 @@ import {
   setupWeEthBalance,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { expect } from 'chai';
-import { BigNumber, BigNumberish } from 'ethers';
+import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import {
@@ -106,10 +116,10 @@ describe('PendlePtEEthDec2024IsolationModeWrapperTraderV3', () => {
 
     const tokenInfo: TokenInfo = {
       oracleInfos: [
-        { oracle: priceOracle.address, tokenPair: underlyingToken.address, weight: 100 }
+        { oracle: priceOracle.address, tokenPair: underlyingToken.address, weight: 100 },
       ],
       decimals: 18,
-      token: factory.address
+      token: factory.address,
     };
     await core.oracleAggregatorV2.ownerInsertOrUpdateToken(tokenInfo);
 
@@ -136,7 +146,7 @@ describe('PendlePtEEthDec2024IsolationModeWrapperTraderV3', () => {
       borrowAccountNumber,
       core.marketIds.weEth,
       amountWei,
-      BalanceCheckFlag.Both
+      BalanceCheckFlag.Both,
     );
     await expectProtocolBalance(core, vault, borrowAccountNumber, core.marketIds.weEth, amountWei);
 
@@ -157,13 +167,13 @@ describe('PendlePtEEthDec2024IsolationModeWrapperTraderV3', () => {
         ptMarket.address,
         underlyingToken.address,
         usableAmount,
-        '0.002'
+        '0.002',
       );
       const traderParam: GenericTraderParam = {
         trader: wrapper.address,
         traderType: GenericTraderType.IsolationModeWrapper,
         tradeData: extraOrderData,
-        makerAccountIndex: 0
+        makerAccountIndex: 0,
       };
       await vault.swapExactInputForOutput(
         borrowAccountNumber,
@@ -175,8 +185,8 @@ describe('PendlePtEEthDec2024IsolationModeWrapperTraderV3', () => {
         {
           deadline: '123123123123123',
           balanceCheckFlag: BalanceCheckFlag.None,
-          eventType: GenericEventEmissionType.None
-        }
+          eventType: GenericEventEmissionType.None,
+        },
       );
 
       const expectedTotalBalance = approxParams.guessOffchain;

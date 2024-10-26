@@ -32,7 +32,7 @@ import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 interface IDepositWithdrawalProxy {
     // ========================= Functions =========================
 
-    function initializePayableMarket(address payable _payableToken) external;
+    function initializeETHMarket(address payable _weth) external;
 
     /**
      *
@@ -47,6 +47,15 @@ interface IDepositWithdrawalProxy {
     ) external;
 
     /**
+     * Same as `depositWei` but converts the `msg.sender`'s sent ETH into WETH before depositing into `DolomiteMargin`.
+     *
+     * @param  _toAccountIndex  The index into which `msg.sender` will be depositing
+     */
+    function depositETH(
+        uint256 _toAccountIndex
+    ) external payable;
+
+    /**
      * @dev Same as `depositWei` but defaults to account index 0 to save additional call data
      *
      * @param  _marketId    The ID of the market being deposited
@@ -56,6 +65,12 @@ interface IDepositWithdrawalProxy {
         uint256 _marketId,
         uint256 _amountWei
     ) external;
+
+    /**
+     * Same as `depositWeiIntoDefaultAccount` but converts the `msg.sender`'s sent ETH into WETH before depositing into
+     * `DolomiteMargin`.
+     */
+    function depositETHIntoDefaultAccount() external payable;
 
     /**
      *
@@ -74,6 +89,21 @@ interface IDepositWithdrawalProxy {
     ) external;
 
     /**
+     * Same as `withdrawWei` but for withdrawing ETH. The user will receive unwrapped ETH from DolomiteMargin.
+     *
+     * @param  _fromAccountIndex    The index from which `msg.sender` will be withdrawing
+     * @param  _amountWei           The amount, in Wei, to withdraw. Use `uint(-1)` to withdraw `msg.sender`'s entire
+     *                              balance.
+     * @param  _balanceCheckFlag    Use `BalanceCheckFlag.Both` or `BalanceCheckFlag.From` to check that
+     *                              `_fromAccountIndex` balance is non-negative after the withdrawal settles.
+     */
+    function withdrawETH(
+        uint256 _fromAccountIndex,
+        uint256 _amountWei,
+        AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
+    ) external;
+
+    /**
      * @dev Same as `withdrawWei` but defaults to account index 0 to save additional call data
      *
      * @param  _marketId            The ID of the market being withdrawn
@@ -84,6 +114,20 @@ interface IDepositWithdrawalProxy {
      */
     function withdrawWeiFromDefaultAccount(
         uint256 _marketId,
+        uint256 _amountWei,
+        AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
+    ) external;
+
+    /**
+     * Same as `withdrawWeiFromDefaultAccount` but for withdrawing ETH. The user will receive unwrapped ETH from
+     * DolomiteMargin.
+     *
+     * @param  _amountWei           The amount, in Wei, to withdraw. Use `uint(-1)` to withdraw `msg.sender`'s entire
+     *                              balance
+     * @param  _balanceCheckFlag    Use `BalanceCheckFlag.Both` or `BalanceCheckFlag.From` to check that
+     *                              `_fromAccountIndex` balance is non-negative after the withdrawal settles.
+     */
+    function withdrawETHFromDefaultAccount(
         uint256 _amountWei,
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
     ) external;
@@ -141,8 +185,4 @@ interface IDepositWithdrawalProxy {
         uint256 _amountPar,
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
     ) external;
-
-    function WRAPPED_PAYABLE_TOKEN() external view returns (address);
-
-    function PAYABLE_MARKET_ID() external view returns (uint256);
 }
