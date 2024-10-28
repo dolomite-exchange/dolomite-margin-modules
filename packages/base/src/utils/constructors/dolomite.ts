@@ -247,8 +247,8 @@ export async function getDolomiteErc4626ProxyConstructorParams<T extends Network
   );
   const symbol = await token.symbol();
   const transaction = await implementation.populateTransaction.initialize(
-    `Dolomite ERC4626: ${symbol}`,
-    `d${symbol}-ERC4626`,
+    `Dolomite: ${symbol}`,
+    `d${symbol}`,
     await token.decimals(),
     marketId,
     core.dolomiteRegistry.address

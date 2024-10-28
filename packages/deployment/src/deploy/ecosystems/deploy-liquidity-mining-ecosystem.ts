@@ -182,14 +182,14 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     invariants: async () => {
       assertHardhatInvariant(
         await vester.PAYMENT_TOKEN() === core.tokens.weth.address &&
-          await vester.REWARD_TOKEN() === customTokenAddress &&
-          await vester.PAIR_TOKEN() === customTokenAddress,
+        await vester.REWARD_TOKEN() === customTokenAddress &&
+        await vester.PAIR_TOKEN() === customTokenAddress,
         'Invalid vester token addresses'
       );
       assertHardhatInvariant(
         await vester.VE_TOKEN() === votingEscrowProxyAddress &&
-          await vester.discountCalculator() === discountCalculator &&
-          await vester.oToken() === oTokenAddress,
+        await vester.discountCalculator() === discountCalculator &&
+        await vester.oToken() === oTokenAddress,
         'Invalid vester init addresses'
       );
       assertHardhatInvariant(

@@ -47,6 +47,7 @@ contract DolomiteERC4626 is
 
     bytes32 private constant _FILE = "DolomiteERC4626";
 
+    bytes32 private constant _ASSET_SLOT = bytes32(uint256(keccak256("eip1967.proxy.asset")) - 1);
     bytes32 private constant _ALLOWANCES_SLOT = bytes32(uint256(keccak256("eip1967.proxy.allowances")) - 1);
     bytes32 private constant _DOLOMITE_REGISTRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.dolomiteRegistry")) - 1); // solhint-disable-line max-line-length
     /// @dev mapping containing users that may receive token transfers
@@ -84,22 +85,22 @@ contract DolomiteERC4626 is
     // ======================== Public Functions ========================
     // ==================================================================
 
-    function deposit(uint256 _assets, address _recipient) external nonReentrant returns (uint256) {
+    function deposit(uint256 _assets, address _receiver) external nonReentrant returns (uint256) {
         Require.that(
             _assets > 0,
             _FILE,
             "Invalid amount"
         );
         Require.that(
-            isValidReceiver(_recipient),
+            isValidReceiver(_receiver),
             _FILE,
-            "Invalid recipient",
-            _recipient
+            "Invalid receiver",
+            _receiver
         );
 
         IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
         IDolomiteStructs.AccountInfo memory account = IDolomiteStructs.AccountInfo({
-            owner: _recipient,
+            owner: _receiver,
             number: _DEFAULT_ACCOUNT_NUMBER
         });
         IDolomiteStructs.Par memory balanceBeforePar = dolomiteMargin.getAccountPar(account, marketId());
@@ -121,30 +122,30 @@ contract DolomiteERC4626 is
         assert(deltaPar.sign);
         assert(deltaPar.value != 0);
 
-        emit Transfer(address(0), _recipient, deltaPar.value);
-        emit Deposit(msg.sender, _recipient, _assets, deltaPar.value);
+        emit Transfer(address(0), _receiver, deltaPar.value);
+        emit Deposit(msg.sender, _receiver, _assets, deltaPar.value);
 
         return deltaPar.value;
     }
 
-    function mint(uint256 _shares, address _recipient) external nonReentrant returns (uint256) {
+    function mint(uint256 _shares, address _receiver) external nonReentrant returns (uint256) {
         Require.that(
             _shares > 0,
             _FILE,
             "Invalid amount"
         );
         Require.that(
-            isValidReceiver(_recipient),
+            isValidReceiver(_receiver),
             _FILE,
-            "Invalid recipient",
-            _recipient
+            "Invalid receiver",
+            _receiver
         );
 
         uint256 assets = convertToAssets(_shares);
 
         IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
         IDolomiteStructs.AccountInfo memory account = IDolomiteStructs.AccountInfo({
-            owner: _recipient,
+            owner: _receiver,
             number: _DEFAULT_ACCOUNT_NUMBER
         });
         IDolomiteStructs.Wei memory balanceBeforeWei = dolomiteMargin.getAccountWei(account, marketId());
@@ -159,9 +160,10 @@ contract DolomiteERC4626 is
 
         IDolomiteStructs.Wei memory deltaWei = dolomiteMargin.getAccountWei(account, marketId()).sub(balanceBeforeWei);
         assert(deltaWei.sign);
+        assert(deltaWei.value != 0);
 
-        emit Transfer(address(0), _recipient, _shares);
-        emit Deposit(msg.sender, _recipient, assets, _shares);
+        emit Transfer(address(0), _receiver, _shares);
+        emit Deposit(msg.sender, _receiver, assets, _shares);
 
         return deltaWei.value;
     }
@@ -201,6 +203,7 @@ contract DolomiteERC4626 is
 
         IDolomiteStructs.Par memory deltaPar = balanceBeforePar.sub(dolomiteMargin.getAccountPar(account, marketId()));
         assert(deltaPar.sign);
+        assert(deltaPar.value != 0);
 
         emit Transfer(_owner, address(0), deltaPar.value);
         emit Withdraw(msg.sender, _receiver, _owner, _assets, deltaPar.value);
@@ -499,7 +502,7 @@ contract DolomiteERC4626 is
         Require.that(
             isValidReceiver(_to),
             _FILE,
-            "Invalid recipient",
+            "Invalid receiver",
             _to
         );
 

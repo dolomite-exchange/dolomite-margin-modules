@@ -4,7 +4,7 @@
 pragma solidity ^0.8.9;
 
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
-import { DolomiteERC20 } from "./DolomiteERC20.sol";
+import { DolomiteERC4626 } from "./DolomiteERC4626.sol";
 import { IDolomiteERC4626WithPayable } from "../interfaces/IDolomiteERC4626WithPayable.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
@@ -25,7 +25,7 @@ import { TypesLib } from "../protocol/lib/TypesLib.sol";
  */
 contract DolomiteERC4626WithPayable is
     IDolomiteERC4626WithPayable,
-    DolomiteERC20
+    DolomiteERC4626
 {
     using AccountActionLib for IDolomiteMargin;
     using Address for address payable;
@@ -44,11 +44,17 @@ contract DolomiteERC4626WithPayable is
         _WETH = IWETH(_weth);
     }
 
-    function mintFromPayable() external nonReentrant payable returns (uint256) {
+    function depositFromPayable(address _recipient) external nonReentrant payable returns (uint256) {
         Require.that(
             msg.value > 0,
             _FILE,
             "Invalid amount"
+        );
+        Require.that(
+            isValidReceiver(_recipient),
+            _FILE,
+            "Invalid recipient",
+            _recipient
         );
 
         _WETH.deposit{ value: msg.value }();
@@ -56,10 +62,10 @@ contract DolomiteERC4626WithPayable is
 
         IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
         IDolomiteStructs.AccountInfo memory account = IDolomiteStructs.AccountInfo({
-            owner: msg.sender,
+            owner: _recipient,
             number: _DEFAULT_ACCOUNT_NUMBER
         });
-        IDolomiteStructs.Par memory balanceBefore = dolomiteMargin.getAccountPar(account, marketId());
+        IDolomiteStructs.Par memory balanceBeforePar = dolomiteMargin.getAccountPar(account, marketId());
 
         IDolomiteStructs.AssetAmount memory assetAmount = IDolomiteStructs.AssetAmount({
             sign: true,
@@ -75,27 +81,98 @@ contract DolomiteERC4626WithPayable is
             assetAmount
         );
 
-        IDolomiteStructs.Par memory delta = dolomiteMargin.getAccountPar(account, marketId()).sub(balanceBefore);
-        assert(delta.sign);
+        IDolomiteStructs.Par memory deltaPar = dolomiteMargin.getAccountPar(account, marketId()).sub(balanceBeforePar);
+        assert(deltaPar.sign);
+        assert(deltaPar.value != 0);
 
-        emit Transfer(address(0), msg.sender, delta.value);
+        emit Transfer(address(0), _recipient, deltaPar.value);
+        emit Deposit(msg.sender, _recipient, msg.value, deltaPar.value);
 
-        return delta.value;
+        return deltaPar.value;
     }
 
-    function redeemToPayable(uint256 _dAmount) external nonReentrant returns (uint256) {
+    function withdrawToPayable(
+        uint256 _amount,
+        address _recipient,
+        address _owner
+    ) external nonReentrant returns (uint256) {
+        Require.that(
+            _amount > 0,
+            _FILE,
+            "Invalid amount"
+        );
+        Require.that(
+            isValidReceiver(_recipient),
+            _FILE,
+            "Invalid recipient",
+            _recipient
+        );
+
+        if (msg.sender != _owner) {
+            _spendAllowance(_owner, msg.sender, convertToShares(_amount));
+        }
+
+        IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
+        IDolomiteStructs.AccountInfo memory account = IDolomiteStructs.AccountInfo({
+            owner: _owner,
+            number: _DEFAULT_ACCOUNT_NUMBER
+        });
+        IDolomiteStructs.Par memory balanceBeforePar = dolomiteMargin.getAccountPar(account, marketId());
+
+        IDolomiteStructs.AssetAmount memory assetAmount = IDolomiteStructs.AssetAmount({
+            sign: false,
+            denomination: IDolomiteStructs.AssetDenomination.Wei,
+            ref: IDolomiteStructs.AssetReference.Delta,
+            value: _amount
+        });
+        dolomiteMargin.withdraw(
+            account.owner,
+            account.number,
+            /* _toAccount = */ address(this),
+            marketId(),
+            assetAmount,
+            AccountBalanceLib.BalanceCheckFlag.Both
+        );
+
+        IDolomiteStructs.Par memory deltaPar = balanceBeforePar.sub(dolomiteMargin.getAccountPar(account, marketId()));
+        assert(deltaPar.sign);
+
+        _WETH.withdraw(_amount);
+        payable(_recipient).sendValue(_amount);
+
+        emit Transfer(_owner, address(0), deltaPar.value);
+        emit Withdraw(msg.sender, _recipient, _owner, _amount, deltaPar.value);
+
+        return deltaPar.value;
+    }
+
+    function redeemToPayable(
+        uint256 _dAmount,
+        address _recipient,
+        address _owner
+    ) external nonReentrant returns (uint256) {
         Require.that(
             _dAmount > 0,
             _FILE,
             "Invalid amount"
         );
+        Require.that(
+            isValidReceiver(_recipient),
+            _FILE,
+            "Invalid recipient",
+            _recipient
+        );
+
+        if (msg.sender != _owner) {
+            _spendAllowance(_owner, msg.sender, _dAmount);
+        }
 
         IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
         IDolomiteStructs.AccountInfo memory account = IDolomiteStructs.AccountInfo({
-            owner: msg.sender,
+            owner: _owner,
             number: _DEFAULT_ACCOUNT_NUMBER
         });
-        IDolomiteStructs.Wei memory balanceBefore = dolomiteMargin.getAccountWei(account, marketId());
+        IDolomiteStructs.Wei memory balanceBeforeWei = dolomiteMargin.getAccountWei(account, marketId());
 
         IDolomiteStructs.AssetAmount memory assetAmount = IDolomiteStructs.AssetAmount({
             sign: false,
@@ -112,14 +189,15 @@ contract DolomiteERC4626WithPayable is
             AccountBalanceLib.BalanceCheckFlag.Both
         );
 
-        IDolomiteStructs.Wei memory delta = balanceBefore.sub(dolomiteMargin.getAccountWei(account, marketId()));
-        assert(delta.sign);
+        IDolomiteStructs.Wei memory deltaWei = balanceBeforeWei.sub(dolomiteMargin.getAccountWei(account, marketId()));
+        assert(deltaWei.sign);
 
-        _WETH.withdraw(delta.value);
-        payable(msg.sender).sendValue(delta.value);
+        _WETH.withdraw(deltaWei.value);
+        payable(_recipient).sendValue(deltaWei.value);
 
-        emit Transfer(msg.sender, address(0), _dAmount);
+        emit Transfer(_owner, address(0), _dAmount);
+        emit Withdraw(msg.sender, _recipient, _owner, deltaWei.value, _dAmount);
 
-        return delta.value;
+        return deltaWei.value;
     }
 }
