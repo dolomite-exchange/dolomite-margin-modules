@@ -226,7 +226,7 @@ describe('DolomiteERC4626WithPayable', () => {
     });
   });
 
-  describe.only('#withdrawToPayable', () => {
+  describe('#withdrawToPayable', () => {
     it('should work normally', async () => {
       expect(await token.previewWithdraw(wethAmount)).to.eq(parValue);
       const result = await token
@@ -245,9 +245,10 @@ describe('DolomiteERC4626WithPayable', () => {
         shares: parValue,
       });
 
-      expect(await asset.balanceOf(core.hhUser1.address)).to.eq(wethAmount);
+      await expect(result).to.changeEtherBalance(core.hhUser1, wethAmount);
+      expect(await asset.balanceOf(core.hhUser1.address)).to.eq(wethAmount.mul(9));
       expect(await token.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
-      await expectProtocolBalance(core, core.hhUser1, ZERO_BI, core.marketIds.usdc, ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1, ZERO_BI, core.marketIds.weth, ZERO_BI);
     });
 
     it('should work with different receiver', async () => {
@@ -260,10 +261,12 @@ describe('DolomiteERC4626WithPayable', () => {
         value: parValue,
       });
 
-      expect(await asset.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
-      expect(await asset.balanceOf(core.hhUser2.address)).to.eq(wethAmount.mul(2));
+      await expect(result).to.changeEtherBalance(core.hhUser1, ZERO_BI);
+      await expect(result).to.changeEtherBalance(core.hhUser2, wethAmount);
+      expect(await asset.balanceOf(core.hhUser1.address)).to.eq(wethAmount.mul(9));
+      expect(await asset.balanceOf(core.hhUser2.address)).to.eq(ZERO_BI);
       expect(await token.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
-      await expectProtocolBalance(core, core.hhUser1, ZERO_BI, core.marketIds.usdc, ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1, ZERO_BI, core.marketIds.weth, ZERO_BI);
     });
 
     it('should work for different owner', async () => {
@@ -284,9 +287,11 @@ describe('DolomiteERC4626WithPayable', () => {
         shares: parValue,
       });
 
-      expect(await asset.balanceOf(core.hhUser1.address)).to.eq(wethAmount);
+      await expect(result).to.changeEtherBalance(core.hhUser1, wethAmount);
+      await expect(result).to.changeEtherBalance(core.hhUser2, ZERO_BI);
+      expect(await asset.balanceOf(core.hhUser1.address)).to.eq(wethAmount.mul(9));
       expect(await token.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
-      await expectProtocolBalance(core, core.hhUser1, ZERO_BI, core.marketIds.usdc, ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1, ZERO_BI, core.marketIds.weth, ZERO_BI);
     });
 
     it('should work for different owner and receiver', async () => {
@@ -307,10 +312,18 @@ describe('DolomiteERC4626WithPayable', () => {
         shares: parValue,
       });
 
-      expect(await asset.balanceOf(core.hhUser3.address)).to.eq(wethAmount);
-      expect(await asset.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
+      await expect(result).to.changeEtherBalance(core.hhUser1, ZERO_BI);
+      await expect(result).to.changeEtherBalance(core.hhUser2, ZERO_BI);
+      await expect(result).to.changeEtherBalance(core.hhUser3, wethAmount);
+
+      expect(await asset.balanceOf(core.hhUser1.address)).to.eq(wethAmount.mul(9));
+      expect(await asset.balanceOf(core.hhUser2.address)).to.eq(ZERO_BI);
+      expect(await asset.balanceOf(core.hhUser3.address)).to.eq(ZERO_BI);
+
       expect(await token.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
-      await expectProtocolBalance(core, core.hhUser1, ZERO_BI, core.marketIds.usdc, ZERO_BI);
+      expect(await token.balanceOf(core.hhUser2.address)).to.eq(ZERO_BI);
+      expect(await token.balanceOf(core.hhUser3.address)).to.eq(ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1, ZERO_BI, core.marketIds.weth, ZERO_BI);
     });
 
     it('should fail if owner has not approved the sender', async () => {

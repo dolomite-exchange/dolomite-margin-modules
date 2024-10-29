@@ -1291,7 +1291,7 @@ export const INVALID_TOKEN_MAP: Record<Network, Record<string, { symbol: string;
   [Network.ArbitrumOne]: {
     [DOGE_MAP[Network.ArbitrumOne].address]: {
       symbol: 'DOGE',
-      decimals: 18,
+      decimals: 8,
     },
     [E_ETH_MAP[Network.ArbitrumOne].address]: {
       symbol: 'eETH',
