@@ -100,10 +100,10 @@ describe('DolomiteERC4626WithPayable', () => {
       );
     });
 
-    it('should fail if recipient is invalid', async () => {
+    it('should fail if receiver is invalid', async () => {
       await expectThrow(
         token.connect(core.hhUser1).depositFromPayable(isolationModeVault, { value: wethAmount }),
-        `DolomiteERC4626WithPayable: Invalid recipient <${isolationModeVault.toLowerCase()}>`,
+        `DolomiteERC4626WithPayable: Invalid receiver <${isolationModeVault.toLowerCase()}>`,
       );
     });
   });

@@ -44,17 +44,17 @@ contract DolomiteERC4626WithPayable is
         _WETH = IWETH(_weth);
     }
 
-    function depositFromPayable(address _recipient) external nonReentrant payable returns (uint256) {
+    function depositFromPayable(address _receiver) external nonReentrant payable returns (uint256) {
         Require.that(
             msg.value > 0,
             _FILE,
             "Invalid amount"
         );
         Require.that(
-            isValidReceiver(_recipient),
+            isValidReceiver(_receiver),
             _FILE,
-            "Invalid recipient",
-            _recipient
+            "Invalid receiver",
+            _receiver
         );
 
         _WETH.deposit{ value: msg.value }();
@@ -62,7 +62,7 @@ contract DolomiteERC4626WithPayable is
 
         IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
         IDolomiteStructs.AccountInfo memory account = IDolomiteStructs.AccountInfo({
-            owner: _recipient,
+            owner: _receiver,
             number: _DEFAULT_ACCOUNT_NUMBER
         });
         IDolomiteStructs.Par memory balanceBeforePar = dolomiteMargin.getAccountPar(account, marketId());
@@ -85,15 +85,15 @@ contract DolomiteERC4626WithPayable is
         assert(deltaPar.sign);
         assert(deltaPar.value != 0);
 
-        emit Transfer(address(0), _recipient, deltaPar.value);
-        emit Deposit(msg.sender, _recipient, msg.value, deltaPar.value);
+        emit Transfer(address(0), _receiver, deltaPar.value);
+        emit Deposit(msg.sender, _receiver, msg.value, deltaPar.value);
 
         return deltaPar.value;
     }
 
     function withdrawToPayable(
         uint256 _amount,
-        address _recipient,
+        address _receiver,
         address _owner
     ) external nonReentrant returns (uint256) {
         Require.that(
@@ -102,10 +102,10 @@ contract DolomiteERC4626WithPayable is
             "Invalid amount"
         );
         Require.that(
-            isValidReceiver(_recipient),
+            isValidReceiver(_receiver),
             _FILE,
-            "Invalid recipient",
-            _recipient
+            "Invalid receiver",
+            _receiver
         );
 
         if (msg.sender != _owner) {
@@ -138,17 +138,17 @@ contract DolomiteERC4626WithPayable is
         assert(deltaPar.sign);
 
         _WETH.withdraw(_amount);
-        payable(_recipient).sendValue(_amount);
+        payable(_receiver).sendValue(_amount);
 
         emit Transfer(_owner, address(0), deltaPar.value);
-        emit Withdraw(msg.sender, _recipient, _owner, _amount, deltaPar.value);
+        emit Withdraw(msg.sender, _receiver, _owner, _amount, deltaPar.value);
 
         return deltaPar.value;
     }
 
     function redeemToPayable(
         uint256 _dAmount,
-        address _recipient,
+        address _receiver,
         address _owner
     ) external nonReentrant returns (uint256) {
         Require.that(
@@ -157,10 +157,10 @@ contract DolomiteERC4626WithPayable is
             "Invalid amount"
         );
         Require.that(
-            isValidReceiver(_recipient),
+            isValidReceiver(_receiver),
             _FILE,
-            "Invalid recipient",
-            _recipient
+            "Invalid receiver",
+            _receiver
         );
 
         if (msg.sender != _owner) {
@@ -193,10 +193,10 @@ contract DolomiteERC4626WithPayable is
         assert(deltaWei.sign);
 
         _WETH.withdraw(deltaWei.value);
-        payable(_recipient).sendValue(deltaWei.value);
+        payable(_receiver).sendValue(deltaWei.value);
 
         emit Transfer(_owner, address(0), _dAmount);
-        emit Withdraw(msg.sender, _recipient, _owner, deltaWei.value, _dAmount);
+        emit Withdraw(msg.sender, _receiver, _owner, deltaWei.value, _dAmount);
 
         return deltaWei.value;
     }
