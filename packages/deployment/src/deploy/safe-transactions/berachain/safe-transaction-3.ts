@@ -10,7 +10,7 @@ import { ADDRESS_ZERO, Network, ZERO_BI } from 'packages/base/src/utils/no-deps-
 import {
   EncodedTransaction,
   prettyPrintEncodeAddMarket,
-  prettyPrintEncodedDataWithTypeSafety,
+  prettyPrintEncodedDataWithTypeSafety, prettyPrintEncodeInsertRedstoneOracleV3,
 } from '../../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../utils/dry-run-utils';
 import getScriptName from '../../../utils/get-script-name';
@@ -35,9 +35,24 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
   const transactions: EncodedTransaction[] = [];
 
   transactions.push(
+    ...await prettyPrintEncodeInsertRedstoneOracleV3(
+      core,
+
+    ),
     ...await prettyPrintEncodeAddMarket(
       core,
-      core.tokens.weth,
+      core.tokens.sbtc,
+      core.oracleAggregatorV2,
+      core.interestSetters.linearStepFunction8L92U90OInterestSetter,
+      TargetCollateralization.Base,
+      TargetLiquidationPenalty.Base,
+      ZERO_BI,
+      ZERO_BI,
+      false,
+    ),
+    ...await prettyPrintEncodeAddMarket(
+      core,
+      core.tokens.solvBtc,
       core.oracleAggregatorV2,
       core.interestSetters.linearStepFunction8L92U90OInterestSetter,
       TargetCollateralization.Base,
