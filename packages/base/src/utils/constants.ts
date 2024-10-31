@@ -480,7 +480,14 @@ export const RS_ETH_CAMELOT_POOL_MAP: Record<Network.ArbitrumOne, string> = {
 
 export const SBTC_MAP: Record<Network.Berachain, TokenWithMarketId> = {
   [Network.Berachain]: {
-    address: '',
+    address: '0xf5d89123e801E9D8B6B6a04c11b4268977c14130',
+    marketId: -1,
+  },
+};
+
+export const STONE_BTC_MAP: Record<Network.Berachain, TokenWithMarketId> = {
+  [Network.Berachain]: {
+    address: '0x7CC2c297E5D05CdCA6724b672cdc3c2E18565449',
     marketId: -1,
   },
 };
@@ -1531,6 +1538,10 @@ export const CHRONICLE_PRICE_SCRIBES_MAP: Record<
       tokenPairAddress: ADDRESS_ZERO,
     },
     [SOLV_BTC_MAP[Network.Berachain].address]: {
+      scribeAddress: '0x02a2f7F3109A4c6706A91C7c880225b440e3c8d7',
+      tokenPairAddress: ADDRESS_ZERO,
+    },
+    [STONE_BTC_MAP[Network.Berachain].address]: {
       scribeAddress: '0x02a2f7F3109A4c6706A91C7c880225b440e3c8d7',
       tokenPairAddress: ADDRESS_ZERO,
     },

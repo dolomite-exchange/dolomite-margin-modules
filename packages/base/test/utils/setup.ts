@@ -113,11 +113,11 @@ import {
   RDNT_MAP,
   RS_ETH_MAP,
   RS_ETH_REVERSED_MAP,
-  S_GLP_MAP,
+  S_GLP_MAP, SBTC_MAP,
   SIZE_MAP,
   SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL,
   SOL_MAP,
-  ST_ETH_MAP, UNI_BTC_MAP,
+  ST_ETH_MAP, STONE_BTC_MAP, UNI_BTC_MAP,
   UNI_MAP,
   USDC_MAP,
   USDE_MAP,
@@ -997,6 +997,8 @@ export async function setupCoreProtocol<T extends NetworkType>(
       tokens: {
         ...coreProtocolParams.tokens,
         honey: IERC20__factory.connect(HONEY_MAP[typedConfig.network].address, hhUser1),
+        sbtc: IERC20__factory.connect(SBTC_MAP[typedConfig.network].address, hhUser1),
+        stoneBtc: IERC20__factory.connect(STONE_BTC_MAP[typedConfig.network].address, hhUser1),
         uniBtc: IERC20__factory.connect(UNI_BTC_MAP[typedConfig.network].address, hhUser1),
         wbera: IWETH__factory.connect(WBERA_MAP[typedConfig.network].address, hhUser1),
         stablecoins: [

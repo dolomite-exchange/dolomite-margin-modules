@@ -10,7 +10,9 @@ import { ADDRESS_ZERO, Network, ZERO_BI } from 'packages/base/src/utils/no-deps-
 import {
   EncodedTransaction,
   prettyPrintEncodeAddMarket,
-  prettyPrintEncodedDataWithTypeSafety, prettyPrintEncodeInsertRedstoneOracleV3,
+  prettyPrintEncodedDataWithTypeSafety,
+  prettyPrintEncodeInsertChronicleOracleV3,
+  prettyPrintEncodeInsertRedstoneOracleV3,
 } from '../../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../utils/dry-run-utils';
 import getScriptName from '../../../utils/get-script-name';
@@ -23,7 +25,7 @@ import { BigNumberish } from 'ethers';
 
 /**
  * This script encodes the following transactions:
- * - Adds the WETH, BERA, and HONEY markets
+ * - Adds the SBTC and STONEBTC assets to Dolomite
  */
 async function main(): Promise<DryRunOutput<Network.Berachain>> {
   const network = await getAndCheckSpecificNetwork(Network.Berachain);
@@ -35,9 +37,13 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
   const transactions: EncodedTransaction[] = [];
 
   transactions.push(
-    ...await prettyPrintEncodeInsertRedstoneOracleV3(
+    ...await prettyPrintEncodeInsertChronicleOracleV3(
       core,
-
+      core.tokens.sbtc,
+    ),
+    ...await prettyPrintEncodeInsertChronicleOracleV3(
+      core,
+      core.tokens.stoneBtc,
     ),
     ...await prettyPrintEncodeAddMarket(
       core,
@@ -52,7 +58,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     ),
     ...await prettyPrintEncodeAddMarket(
       core,
-      core.tokens.solvBtc,
+      core.tokens.stoneBtc,
       core.oracleAggregatorV2,
       core.interestSetters.linearStepFunction8L92U90OInterestSetter,
       TargetCollateralization.Base,
@@ -75,30 +81,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
       },
     },
     scriptName: getScriptName(__filename),
-    invariants: async () => {
-      assertHardhatInvariant(
-        await core.dolomiteMargin.getMarketPriceOracle(core.marketIds.weth) === core.oracleAggregatorV2.address,
-        'Invalid oracle for WETH',
-      );
-      assertHardhatInvariant(
-        await core.dolomiteMargin.getMarketInterestSetter(core.marketIds.weth)
-        === core.interestSetters.linearStepFunction8L92U90OInterestSetter.address,
-        'Invalid interest setter WETH',
-      );
-      assertHardhatInvariant(
-        (await core.dolomiteMargin.getNumMarkets()).eq(4),
-        'Invalid number of markets',
-      );
-
-      console.log(
-        '\t Price for SBTC',
-        (await core.dolomiteMargin.getMarketPrice(core.marketIds.sbtc)).value.toString(),
-      );
-      console.log(
-        '\t Price for SolvBTC',
-        (await core.dolomiteMargin.getMarketPrice(core.marketIds.solvBtc)).value.toString(),
-      );
-    },
+    invariants: async () => {},
   };
 }
 
