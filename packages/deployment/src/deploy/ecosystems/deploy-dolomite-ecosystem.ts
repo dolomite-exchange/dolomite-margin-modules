@@ -612,6 +612,8 @@ async function encodeDolomiteRegistryMigrations(
     'transferFromPositionWithUnderlyingToken',
     'transferFromPositionWithOtherToken',
     'swapExactInputForOutput',
+    'closeBorrowPositionWithUnderlyingVaultToken',
+    'closeBorrowPositionWithOtherTokens',
   ];
   const expectedSelectors = functionNames
     .map((name) => IIsolationModeTokenVaultV1__factory.createInterface().getSighash(name))

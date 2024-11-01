@@ -276,7 +276,10 @@ export async function setupWETHBalance<T extends NetworkType>(
   } else if (core.network === Network.Mantle) {
     // TODO:
   } else if (core.network === Network.XLayer) {
-    // TODO:
+    const whaleAddress = '0x2d22604d6bbf51839c404aef5c65443e424e0945';
+    const whaleSigner = await impersonate(whaleAddress, true);
+    await core.tokens.weth.connect(whaleSigner).transfer(signer.address, amount);
+    await core.tokens.weth.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
   }
 }
 
@@ -348,6 +351,8 @@ export async function setupUSDCBalance<T extends NetworkType>(
   let whaleAddress: string;
   if (core.network === Network.Berachain) {
     whaleAddress = '0xBD8DFf36a635B951e008E414ED73021869324Fd7';
+  } else if (core.network === Network.XLayer){
+    whaleAddress = '0x2d22604d6bbf51839c404aef5c65443e424e0945';
   } else {
     whaleAddress = '0x805ba50001779CeD4f59CfF63aea527D12B94829'; // Radiant USDC pool
   }

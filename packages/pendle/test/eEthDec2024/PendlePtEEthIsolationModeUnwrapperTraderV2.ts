@@ -14,10 +14,12 @@ import {
 } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
-import { AccountInfoStruct } from 'packages/base/src/utils';
-import { expectThrow } from 'packages/base/test/utils/assertions';
-import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
-import { setupNewGenericTraderProxy } from 'packages/base/test/utils/dolomite';
+import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
+import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
+import {
+  CoreProtocolArbitrumOne,
+} from '@dolomite-exchange/modules-base/test/utils/core-protocols/core-protocol-arbitrum-one';
+import { setupNewGenericTraderProxy } from '@dolomite-exchange/modules-base/test/utils/dolomite';
 import {
   IERC20,
   IPendlePtMarket,
@@ -92,10 +94,10 @@ describe('PendlePtEEthDec2024IsolationModeUnwrapperTraderV3', () => {
 
     const tokenInfo = {
       oracleInfos: [
-        { oracle: priceOracle.address, tokenPair: underlyingToken.address, weight: 100 }
+        { oracle: priceOracle.address, tokenPair: underlyingToken.address, weight: 100 },
       ],
       decimals: 18,
-      token: factory.address
+      token: factory.address,
     };
     await core.oracleAggregatorV2.ownerInsertOrUpdateToken(tokenInfo);
 
@@ -156,7 +158,7 @@ describe('PendlePtEEthDec2024IsolationModeUnwrapperTraderV3', () => {
         ptBal,
         ptMarket.address,
         underlyingToken.address,
-        '0.002'
+        '0.002',
       );
 
       const actions = await unwrapper.createActionsForUnwrapping({
@@ -170,7 +172,7 @@ describe('PendlePtEEthDec2024IsolationModeUnwrapperTraderV3', () => {
         outputMarket: core.marketIds.weEth,
         inputMarket: marketId,
         inputAmount: ptBal,
-        orderData: extraOrderData
+        orderData: extraOrderData,
       });
 
       const genericTrader = await impersonate(core.genericTraderProxy!, true);
