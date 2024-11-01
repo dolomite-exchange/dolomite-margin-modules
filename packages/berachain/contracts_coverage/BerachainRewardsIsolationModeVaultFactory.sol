@@ -87,6 +87,8 @@ contract BerachainRewardsIsolationModeVaultFactory is
         return new uint256[](0);
     }
 
+    // ============ Internal Functions ============
+
     function _createVault(address _account) internal virtual override returns (address) {
         address vault = super._createVault(_account);
 

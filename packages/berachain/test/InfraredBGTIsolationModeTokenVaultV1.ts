@@ -18,6 +18,8 @@ import {
 } from '@dolomite-exchange/modules-base/src/types';
 import {
   Network,
+  ONE_BI,
+  ONE_DAY_SECONDS,
   ONE_ETH_BI,
   ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
@@ -25,6 +27,7 @@ import { impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exc
 import {
   expectEvent,
   expectProtocolBalance,
+  expectProtocolBalanceIsGreaterThan,
   expectThrow,
   expectWalletBalance,
 } from '@dolomite-exchange/modules-base/test/utils/assertions';
@@ -46,6 +49,7 @@ import {
 import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
+import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
 
 const IBGT_WHALE_ADDRESS = '0x4B95296B937AF613D65206Ba7C203CB9A1263003';
 const defaultAccountNumber = ZERO_BI;
@@ -288,7 +292,19 @@ describe('InfraredBGTIsolationModeTokenVaultV1', () => {
   });
 
   describe('#getReward', () => {
-    // @todo Implement
+    it('should work normally', async () => {
+      await ibgtVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await increase(30 * ONE_DAY_SECONDS);
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.honey, ZERO_BI);
+      await ibgtVault.getReward();
+      await expectProtocolBalanceIsGreaterThan(
+        core,
+        { owner: core.hhUser1.address, number: defaultAccountNumber },
+        core.marketIds.honey,
+        ONE_BI,
+        0
+      );
+    });
   });
 
   describe('#registry', () => {

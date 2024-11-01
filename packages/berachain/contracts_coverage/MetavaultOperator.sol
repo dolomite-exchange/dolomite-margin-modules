@@ -32,7 +32,7 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
  * @title   MetavaultOperator
  * @author  Dolomite
  *
- * @notice
+ * @notice  Simple operator that will allow the metavault to deposit into any user's account
  */
 contract MetavaultOperator is OnlyDolomiteMargin {
     using SafeERC20 for IERC20;
