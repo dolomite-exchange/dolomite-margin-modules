@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 /*
 
-    Copyright 2023 Dolomite
+    Copyright 2024 Dolomite
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -35,20 +35,20 @@ import { IsolationModeTokenVaultV1ActionsImpl } from "./impl/IsolationModeTokenV
 
 
 /**
- * @title   IsolationModeTokenVaultV1
+ * @title   IsolationModeTokenVaultV2
  * @author  Dolomite
  *
  * @notice  Abstract implementation (for an upgradeable proxy) for wrapping tokens via a per-user vault that can be used
- *          with DolomiteMargin
+ *          with DolomiteMargin. Calls are restricted to proxies instead of vault owner
  */
-abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, ProxyContractHelpers {
+abstract contract IsolationModeTokenVaultV2 is IIsolationModeTokenVaultV1, ProxyContractHelpers {
     using SafeERC20 for IERC20;
 
     // ===================================================
     // ==================== Constants ====================
     // ===================================================
 
-    bytes32 private constant _FILE = "IsolationModeTokenVaultV1";
+    bytes32 private constant _FILE = "IsolationModeTokenVaultV2";
     bytes32 private constant _IS_INITIALIZED_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isInitialized")) - 1);
     bytes32 private constant _OWNER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.owner")) - 1);
     bytes32 private constant _REENTRANCY_GUARD_SLOT = bytes32(uint256(keccak256("eip1967.proxy.reentrancyGuard")) - 1);
@@ -85,6 +85,16 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
 
     modifier onlyVaultOwnerOrVaultFactory(address _from) {
         _requireOnlyVaultOwnerOrVaultFactory(_from);
+        _;
+    }
+
+    modifier onlyGlobalOperator(address _from) {
+        _requireOnlyGlobalOperator(_from);
+        _;
+    }
+
+    modifier onlyVaultOwnerOrGlobalOperator(address _from) {
+        _requireOnlyVaultOwnerOrGlobalOperator(_from);
         _;
     }
 
@@ -707,6 +717,26 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
             IIsolationModeVaultFactory(VAULT_FACTORY()).isTokenConverterTrusted(_from),
             _FILE,
             "Only converter can call",
+            _from
+        );
+    }
+
+    function _requireOnlyGlobalOperator(address _from) internal virtual view {
+        if (DOLOMITE_MARGIN().getIsGlobalOperator(_from)) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            DOLOMITE_MARGIN().getIsGlobalOperator(_from),
+            _FILE,
+            "Only global operator can call",
+            _from
+        );
+    }
+
+    function _requireOnlyVaultOwnerOrGlobalOperator(address _from) internal virtual view {
+        if (_from == OWNER() || DOLOMITE_MARGIN().getIsGlobalOperator(_from)) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            _from == OWNER() || DOLOMITE_MARGIN().getIsGlobalOperator(_from),
+            _FILE,
+            "Only owner or operator can call",
             _from
         );
     }

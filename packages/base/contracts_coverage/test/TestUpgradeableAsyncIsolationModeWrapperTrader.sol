@@ -64,7 +64,7 @@ contract TestUpgradeableAsyncIsolationModeWrapperTrader is
     // ===================== Functions =====================
 
     function initiateCancelDeposit(bytes32 _key) external {
-        DepositInfo memory depositInfo = _getDepositSlot(_key);
+        DepositInfo memory depositInfo = getDepositInfo(_key);
         if (msg.sender == depositInfo.vault || isHandler(msg.sender)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             msg.sender == depositInfo.vault || isHandler(msg.sender),
@@ -122,7 +122,7 @@ contract TestUpgradeableAsyncIsolationModeWrapperTrader is
     )
     external
     onlyHandler(msg.sender) {
-        DepositInfo memory depositInfo = _getDepositSlot(_key);
+        DepositInfo memory depositInfo = getDepositInfo(_key);
         depositInfo.isRetryable = true;
         AsyncIsolationModeWrapperTraderImpl.setDepositInfo(_getStorageSlot(), _key, depositInfo);
 

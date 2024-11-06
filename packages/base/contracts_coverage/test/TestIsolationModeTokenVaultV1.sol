@@ -143,16 +143,17 @@ contract TestIsolationModeTokenVaultV1 is SimpleIsolationModeTokenVaultV1 {
         _requireOnlyConverter(msg.sender);
     }
 
-    function testGetFunctionSelectors() external view returns (bytes4[] memory) {
-        bytes4[] memory selectors = new bytes4[](8);
-        selectors[0] = IIsolationModeTokenVaultV1.depositIntoVaultForDolomiteMargin.selector;
-        selectors[1] = IIsolationModeTokenVaultV1.withdrawFromVaultForDolomiteMargin.selector;
-        selectors[2] = IIsolationModeTokenVaultV1.openBorrowPosition.selector;
-        selectors[3] = IIsolationModeTokenVaultV1.transferIntoPositionWithUnderlyingToken.selector;
-        selectors[4] = IIsolationModeTokenVaultV1.transferIntoPositionWithOtherToken.selector;
-        selectors[5] = IIsolationModeTokenVaultV1.transferFromPositionWithUnderlyingToken.selector;
-        selectors[6] = IIsolationModeTokenVaultV1.transferFromPositionWithOtherToken.selector;
-        selectors[7] = IIsolationModeTokenVaultV1.swapExactInputForOutput.selector;
+    function testGetFunctionSelectors() external pure returns (bytes4[] memory) {
+        bytes4[] memory selectors = new bytes4[](9);
+        selectors[0] = IIsolationModeTokenVaultV1.transferIntoPositionWithOtherToken.selector;
+        selectors[1] = IIsolationModeTokenVaultV1.transferIntoPositionWithUnderlyingToken.selector;
+        selectors[2] = IIsolationModeTokenVaultV1.transferFromPositionWithUnderlyingToken.selector;
+        selectors[3] = IIsolationModeTokenVaultV1.swapExactInputForOutput.selector;
+        selectors[4] = IIsolationModeTokenVaultV1.transferFromPositionWithOtherToken.selector;
+        selectors[5] = IIsolationModeTokenVaultV1.openMarginPosition.selector;
+        selectors[6] = IIsolationModeTokenVaultV1.openBorrowPosition.selector;
+        selectors[7] = IIsolationModeTokenVaultV1.withdrawFromVaultForDolomiteMargin.selector;
+        selectors[8] = IIsolationModeTokenVaultV1.depositIntoVaultForDolomiteMargin.selector;
         return selectors;
     }
 
