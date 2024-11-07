@@ -27,9 +27,8 @@ import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { OnlyDolomiteMarginForUpgradeable } from "../helpers/OnlyDolomiteMarginForUpgradeable.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IIsolationModeVaultFactory } from "../isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
-import { IRouterBase } from "./interfaces/IRouterBase.sol";
 import { Require } from "../protocol/lib/Require.sol";
-import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
+import { IRouterBase } from "./interfaces/IRouterBase.sol";
 
 
 /**
@@ -96,7 +95,10 @@ contract RouterBase is OnlyDolomiteMarginForUpgradeable, ReentrancyGuard, IRoute
         }
     }
 
-    function _validateIsoMarketAndGetVault(MarketInfo memory _marketInfo, address _account) internal view returns (address) {
+    function _validateIsoMarketAndGetVault(
+        MarketInfo memory _marketInfo,
+        address _account
+    ) internal view returns (address) {
         if (_marketInfo.isIsolationModeAsset) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _marketInfo.isIsolationModeAsset,

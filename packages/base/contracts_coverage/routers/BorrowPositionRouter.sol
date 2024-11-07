@@ -23,10 +23,9 @@ pragma solidity ^0.8.9;
 import { RouterBase } from './RouterBase.sol';
 import { AccountActionLib } from '../lib/AccountActionLib.sol';
 import { AccountBalanceLib } from '../lib/AccountBalanceLib.sol';
-import { IDolomiteStructs } from '../protocol/interfaces/IDolomiteStructs.sol';
-import { Require } from '../protocol/lib/Require.sol';
-import { IBorrowPositionRouter } from './interfaces/IBorrowPositionRouter.sol';
 import { IDolomiteMargin } from '../protocol/interfaces/IDolomiteMargin.sol';
+import { IDolomiteStructs } from '../protocol/interfaces/IDolomiteStructs.sol';
+import { IBorrowPositionRouter } from './interfaces/IBorrowPositionRouter.sol';
 
 
 /**

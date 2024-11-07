@@ -240,8 +240,8 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
     ) external nonReentrant {
         MarketInfo memory marketInfo = _getMarketInfo(_marketId);
-        address fromAccount = msg.sender;
 
+        address fromAccount = msg.sender;
         if (marketInfo.isIsolationModeAsset) {
             fromAccount = marketInfo.factory.getVaultByAccount(msg.sender);
             marketInfo.factory.enqueueTransferFromDolomiteMargin(fromAccount, _amountPar);
@@ -289,6 +289,7 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
             }
         }
 
+        // @audit Can you double check I handle par and wei correctly?
         _marketInfo.token.safeTransferFrom(msg.sender, address(this), transferAmount);
         IERC20(_marketInfo.marketToken).safeApprove(address(DOLOMITE_MARGIN()), transferAmount);
         AccountActionLib.deposit(
@@ -315,7 +316,6 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
         IDolomiteStructs.AssetDenomination _denomination,
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
     ) internal {
-        uint256 prebal = _token.balanceOf(address(this));
         AccountActionLib.withdraw(
             DOLOMITE_MARGIN(),
             _fromAccount,
@@ -332,9 +332,7 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
             }),
             _balanceCheckFlag
         );
-        uint256 postBal = _token.balanceOf(address(this));
-
-        _token.safeTransfer(msg.sender, postBal - prebal);
+        _token.safeTransfer(msg.sender, _token.balanceOf(address(this)));
     }
 
     function _transferUnderlyingTokenBetweenAccounts(
