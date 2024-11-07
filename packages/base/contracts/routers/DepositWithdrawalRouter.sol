@@ -20,13 +20,10 @@
 
 pragma solidity ^0.8.9;
 
-import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
-import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
-import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
-import { IIsolationModeVaultFactory } from "../isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
+import { RouterBase } from "./RouterBase.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 import { InterestIndexLib } from "../lib/InterestIndexLib.sol";
@@ -34,7 +31,6 @@ import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { IWETH } from "../protocol/interfaces/IWETH.sol";
 import { DolomiteMarginMath } from "../protocol/lib/DolomiteMarginMath.sol";
-import { ExcessivelySafeCall } from "../protocol/lib/ExcessivelySafeCall.sol";
 import { Require } from "../protocol/lib/Require.sol";
 import { TypesLib } from "../protocol/lib/TypesLib.sol";
 import { IDepositWithdrawalRouter } from "./interfaces/IDepositWithdrawalRouter.sol";
@@ -46,7 +42,7 @@ import { IDepositWithdrawalRouter } from "./interfaces/IDepositWithdrawalRouter.
  *
  * @notice  Contract for depositing or withdrawing to/from Dolomite easily
  */
-contract DepositWithdrawalRouter is OnlyDolomiteMargin, ReentrancyGuard, IDepositWithdrawalRouter {
+contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
     using SafeERC20 for IERC20;
     using TypesLib for IDolomiteStructs.Par;
     using DolomiteMarginMath for uint256;
@@ -63,8 +59,6 @@ contract DepositWithdrawalRouter is OnlyDolomiteMargin, ReentrancyGuard, IDeposi
     // ================= Storage Variables ====================
     // ========================================================
 
-    IDolomiteRegistry public immutable DOLOMITE_REGISTRY;
-
     IWETH public immutable WRAPPED_PAYABLE_TOKEN;
     uint256 public immutable PAYABLE_MARKET_ID;
 
@@ -76,12 +70,10 @@ contract DepositWithdrawalRouter is OnlyDolomiteMargin, ReentrancyGuard, IDeposi
         address _payableToken,
         address _dolomiteRegistry,
         address _dolomiteMargin
-    ) OnlyDolomiteMargin(_dolomiteMargin) {
+    ) RouterBase(_dolomiteRegistry, _dolomiteMargin) {
         WRAPPED_PAYABLE_TOKEN = IWETH(_payableToken);
         PAYABLE_MARKET_ID = DOLOMITE_MARGIN().getMarketIdByTokenAddress(_payableToken);
         WRAPPED_PAYABLE_TOKEN.approve(address(DOLOMITE_MARGIN()), type(uint256).max);
-
-        DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
     }
 
     // ========================================================
@@ -92,7 +84,7 @@ contract DepositWithdrawalRouter is OnlyDolomiteMargin, ReentrancyGuard, IDeposi
         Require.that(
             msg.sender == address(WRAPPED_PAYABLE_TOKEN),
             _FILE,
-            "invalid Payable sender"
+            "Invalid payable sender"
         );
     }
 
@@ -241,8 +233,8 @@ contract DepositWithdrawalRouter is OnlyDolomiteMargin, ReentrancyGuard, IDeposi
     }
 
     function withdrawPar(
-        uint256 _fromAccountNumber,
         uint256 _marketId,
+        uint256 _fromAccountNumber,
         uint256 _amountPar,
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
     ) external nonReentrant {
@@ -312,35 +304,6 @@ contract DepositWithdrawalRouter is OnlyDolomiteMargin, ReentrancyGuard, IDeposi
         );
     }
 
-    function _transferUnderlyingTokenBetweenAccounts(
-        address _vault,
-        uint256 _toAccountNumber,
-        uint256 _marketId,
-        uint256 _amount,
-        IDolomiteStructs.AssetDenomination _denomination,
-        EventFlag _eventFlag
-    ) internal {
-        if (_eventFlag == EventFlag.Borrow) {
-            Require.that(
-                _toAccountNumber >= 100,
-                _FILE,
-                "Invalid toAccountNumber"
-            );
-            DOLOMITE_REGISTRY.eventEmitter().emitBorrowPositionOpen(_vault, _toAccountNumber);
-        }
-        AccountActionLib.transfer(
-            DOLOMITE_MARGIN(),
-            _vault,
-            DEFAULT_ACCOUNT_NUMBER,
-            _vault,
-            _toAccountNumber,
-            _marketId,
-            _denomination,
-            _amount,
-            AccountBalanceLib.BalanceCheckFlag.Both
-        );
-    }
-
     function _withdrawFromDolomiteAndTransferToUser(
         IERC20 _token,
         address _fromAccount,
@@ -370,6 +333,35 @@ contract DepositWithdrawalRouter is OnlyDolomiteMargin, ReentrancyGuard, IDeposi
         uint256 postBal = _token.balanceOf(address(this));
 
         _token.safeTransfer(msg.sender, postBal - prebal);
+    }
+
+    function _transferUnderlyingTokenBetweenAccounts(
+        address _vault,
+        uint256 _toAccountNumber,
+        uint256 _marketId,
+        uint256 _amount,
+        IDolomiteStructs.AssetDenomination _denomination,
+        EventFlag _eventFlag
+    ) internal {
+        if (_eventFlag == EventFlag.Borrow) {
+            Require.that(
+                _toAccountNumber >= 100,
+                _FILE,
+                "Invalid toAccountNumber"
+            );
+            DOLOMITE_REGISTRY.eventEmitter().emitBorrowPositionOpen(_vault, _toAccountNumber);
+        }
+        AccountActionLib.transfer(
+            DOLOMITE_MARGIN(),
+            _vault,
+            DEFAULT_ACCOUNT_NUMBER,
+            _vault,
+            _toAccountNumber,
+            _marketId,
+            _denomination,
+            _amount,
+            AccountBalanceLib.BalanceCheckFlag.Both
+        );
     }
 
     function _wrap() internal {
@@ -410,34 +402,5 @@ contract DepositWithdrawalRouter is OnlyDolomiteMargin, ReentrancyGuard, IDeposi
 
     function _getSenderBalance(IERC20 _token) internal view returns (uint) {
         return _token.balanceOf(msg.sender);
-    }
-
-    function _getMarketInfo(
-        uint256 _marketId
-    ) internal view returns (MarketInfo memory) {
-        address marketToken = DOLOMITE_MARGIN().getMarketTokenAddress(_marketId);
-        (bool isSuccess, bytes memory returnData) = ExcessivelySafeCall.safeStaticCall(
-            marketToken,
-            IIsolationModeVaultFactory.isIsolationAsset.selector,
-            bytes("")
-        );
-
-        if (!isSuccess || !abi.decode(returnData, (bool))) {
-            return MarketInfo({
-                marketId: _marketId,
-                isIsolationModeAsset: false,
-                marketToken: marketToken,
-                token: IERC20(marketToken),
-                factory: IIsolationModeVaultFactory(address(0))
-            });
-        } else {
-            return MarketInfo({
-                marketId: _marketId,
-                isIsolationModeAsset: true,
-                marketToken: marketToken,
-                token: IERC20(IIsolationModeVaultFactory(marketToken).UNDERLYING_TOKEN()),
-                factory: IIsolationModeVaultFactory(marketToken)
-            });
-        }
     }
 }

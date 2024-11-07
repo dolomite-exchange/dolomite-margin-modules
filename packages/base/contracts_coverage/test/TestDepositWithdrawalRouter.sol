@@ -20,19 +20,27 @@
 
 pragma solidity ^0.8.9;
 
-import { IRouterBase } from "./IRouterBase.sol";
-
+import { InternalSafeDelegateCallLib } from "../lib/InternalSafeDelegateCallLib.sol";
+import { DepositWithdrawalRouter } from "../routers/DepositWithdrawalRouter.sol";
 
 /**
- * @title   IDepositWithdrawalRouter
+ * @title   TestDepositWithdrawalRouter
  * @author  Dolomite
  *
- * @notice  Interface for depositing or withdrawing to/from Dolomite easily
+ * @notice  Contract for testing the DepositWithdrawalRouter
  */
-interface IDepositWithdrawalRouter is IRouterBase {
+contract TestDepositWithdrawalRouter is DepositWithdrawalRouter {
+    using InternalSafeDelegateCallLib for address;
 
-    enum EventFlag {
-        None,
-        Borrow
+    constructor(
+        address _payableToken,
+        address _dolomiteRegistry,
+        address _dolomiteMargin
+    ) DepositWithdrawalRouter(_payableToken, _dolomiteRegistry, _dolomiteMargin) {}
+
+    function callFunctionAndTriggerReentrancy(
+        bytes calldata _callDataWithSelector
+    ) external payable nonReentrant {
+        address(this).safeDelegateCall(_callDataWithSelector);
     }
 }

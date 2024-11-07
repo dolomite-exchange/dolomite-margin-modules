@@ -20,19 +20,23 @@
 
 pragma solidity ^0.8.9;
 
-import { IRouterBase } from "./IRouterBase.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { IIsolationModeVaultFactory } from "../../isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
 
 
 /**
- * @title   IDepositWithdrawalRouter
+ * @title   IRouterBase
  * @author  Dolomite
  *
- * @notice  Interface for depositing or withdrawing to/from Dolomite easily
+ * @notice  Interface for the base router
  */
-interface IDepositWithdrawalRouter is IRouterBase {
+interface IRouterBase {
 
-    enum EventFlag {
-        None,
-        Borrow
+    struct MarketInfo {
+        uint256 marketId;
+        bool isIsolationModeAsset;
+        address marketToken;
+        IERC20 token;
+        IIsolationModeVaultFactory factory;
     }
 }

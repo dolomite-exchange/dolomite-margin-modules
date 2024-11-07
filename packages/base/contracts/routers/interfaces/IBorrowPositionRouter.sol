@@ -24,15 +24,15 @@ import { IRouterBase } from "./IRouterBase.sol";
 
 
 /**
- * @title   IDepositWithdrawalRouter
+ * @title   IBorrowPositionRouter
  * @author  Dolomite
  *
- * @notice  Interface for depositing or withdrawing to/from Dolomite easily
+ * @notice  Interface for opening borrow positions
  */
-interface IDepositWithdrawalRouter is IRouterBase {
+interface IBorrowPositionRouter is IRouterBase {
 
-    enum EventFlag {
-        None,
-        Borrow
+    enum Direction {
+        ToVault,
+        FromVault
     }
 }
