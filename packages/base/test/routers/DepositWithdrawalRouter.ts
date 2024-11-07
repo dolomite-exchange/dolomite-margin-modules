@@ -251,6 +251,17 @@ describe('DepositWithdrawalRouter', () => {
       await expectWalletBalance(core.hhUser1, underlyingToken, amountWei);
     });
 
+    it('should fail if withdrawing from borrow account number for isolation mode', async () => {
+      await underlyingToken.connect(core.hhUser1).addBalance(core.hhUser1.address, amountWei);
+      await underlyingToken.connect(core.hhUser1).approve(router.address, amountWei);
+      await router.depositWei(isolationModeMarketId, borrowAccountNumber, amountWei, EventFlag.None);
+
+      await expectThrow(
+        router.withdrawWei(isolationModeMarketId, borrowAccountNumber, amountWei, BalanceCheckFlag.Both),
+        'DepositWithdrawalRouter: Invalid fromAccountNumber'
+      );
+    });
+
     it('should fail if reentered', async () => {
       const transaction = await router.populateTransaction.withdrawWei(
         core.marketIds.dai,
@@ -363,6 +374,17 @@ describe('DepositWithdrawalRouter', () => {
         isolationModeMarketId
       );
       expect(parValue.value).to.eq(ZERO_BI);
+    });
+
+    it('should fail if withdrawing from borrow account number for isolation mode', async () => {
+      await underlyingToken.connect(core.hhUser1).addBalance(core.hhUser1.address, amountWei);
+      await underlyingToken.connect(core.hhUser1).approve(router.address, amountWei);
+      await router.depositPar(isolationModeMarketId, defaultAccountNumber, parAmount, EventFlag.None);
+
+      await expectThrow(
+        router.withdrawPar(isolationModeMarketId, borrowAccountNumber, parAmount, BalanceCheckFlag.Both),
+        'DepositWithdrawalRouter: Invalid fromAccountNumber'
+      );
     });
 
     it('should fail if reentered', async () => {

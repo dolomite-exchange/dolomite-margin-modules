@@ -155,6 +155,12 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
         address fromAccount = msg.sender;
 
         if (marketInfo.isIsolationModeAsset) {
+            if (_fromAccountNumber == 0) { /* FOR COVERAGE TESTING */ }
+            Require.that(
+                _fromAccountNumber == 0,
+                _FILE,
+                "Invalid fromAccountNumber"
+            );
             fromAccount = marketInfo.factory.getVaultByAccount(msg.sender);
 
             if (_amountWei == type(uint256).max) {
@@ -243,6 +249,12 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
 
         address fromAccount = msg.sender;
         if (marketInfo.isIsolationModeAsset) {
+            if (_fromAccountNumber == 0) { /* FOR COVERAGE TESTING */ }
+            Require.that(
+                _fromAccountNumber == 0,
+                _FILE,
+                "Invalid fromAccountNumber"
+            );
             fromAccount = marketInfo.factory.getVaultByAccount(msg.sender);
             marketInfo.factory.enqueueTransferFromDolomiteMargin(fromAccount, _amountPar);
         }

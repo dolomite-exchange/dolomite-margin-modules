@@ -26,12 +26,6 @@ import { expectEvent, expectProtocolBalance, expectThrow } from '../utils/assert
 import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin';
 import { parseEther } from 'ethers/lib/utils';
 
-enum EventFlag {
-  None = 0,
-  Borrow = 1,
-  Margin = 2,
-}
-
 enum Direction {
   ToVault = 0,
   FromVault = 1,
@@ -640,6 +634,42 @@ describe('BorrowPositionRouter', () => {
       await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, ZERO_BI);
     });
 
+    it('should work normally when balance check is both', async () => {
+      await setupWETHBalance(core, core.hhUser1, amountWei, core.dolomiteMargin);
+      await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, amountWei);
+      await router.openBorrowPosition(
+        MAX_UINT_256_BI,
+        defaultAccountNumber,
+        borrowAccountNumber,
+        core.marketIds.weth,
+        amountWei,
+        BalanceCheckFlag.Both
+      );
+      await router.transferBetweenAccounts(
+        MAX_UINT_256_BI,
+        borrowAccountNumber,
+        defaultAccountNumber,
+        core.marketIds.dai,
+        amountWei,
+        BalanceCheckFlag.To
+      );
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.weth, amountWei);
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.dai, amountWei.mul(2));
+      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, ZERO_BI.sub(amountWei));
+
+      await router.repayAllForBorrowPosition(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        core.marketIds.dai,
+        BalanceCheckFlag.Both
+      );
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.weth, amountWei);
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.dai, amountWei);
+      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, ZERO_BI);
+    });
+
     it('should fail if from balance check fails', async () => {
       await setupWETHBalance(core, core.hhUser1, amountWei.mul(2), core.dolomiteMargin);
       await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, amountWei.mul(2));
@@ -793,6 +823,44 @@ describe('BorrowPositionRouter', () => {
         borrowAccountNumber,
         core.marketIds.dai,
         BalanceCheckFlag.None
+      );
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.dai, ZERO_BI);
+      await expectProtocolBalance(core, userVault, defaultAccountNumber, core.marketIds.dai, amountWei);
+      await expectProtocolBalance(core, userVault, borrowAccountNumber, core.marketIds.dai, ZERO_BI);
+      await expectProtocolBalance(core, userVault, borrowAccountNumber, core.marketIds.weth, amountWei);
+    });
+
+    it('should work normally when balance check is both', async () => {
+      await setupWETHBalance(core, core.hhUser1, amountWei, core.dolomiteMargin);
+      await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, amountWei);
+      await router.openBorrowPositionForVault(
+        isolationModeMarketId,
+        defaultAccountNumber,
+        borrowAccountNumber,
+        core.marketIds.weth,
+        amountWei,
+        BalanceCheckFlag.Both
+      );
+      await router.transferBetweenAccounts(
+        isolationModeMarketId,
+        borrowAccountNumber,
+        defaultAccountNumber,
+        core.marketIds.dai,
+        amountWei,
+        BalanceCheckFlag.To
+      );
+      await expectProtocolBalance(core, userVault, defaultAccountNumber, core.marketIds.weth, ZERO_BI);
+      await expectProtocolBalance(core, userVault, borrowAccountNumber, core.marketIds.weth, amountWei);
+      await expectProtocolBalance(core, userVault, defaultAccountNumber, core.marketIds.dai, amountWei);
+      await expectProtocolBalance(core, userVault, borrowAccountNumber, core.marketIds.dai, ZERO_BI.sub(amountWei));
+
+      await router.repayAllForBorrowPositionForVault(
+        isolationModeMarketId,
+        defaultAccountNumber,
+        borrowAccountNumber,
+        core.marketIds.dai,
+        BalanceCheckFlag.Both
       );
       await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, ZERO_BI);
       await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.dai, ZERO_BI);

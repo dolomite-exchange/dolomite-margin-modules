@@ -37,7 +37,7 @@ import { IRouterBase } from "./interfaces/IRouterBase.sol";
  *
  * @notice  Base contract for all routers
  */
-contract RouterBase is OnlyDolomiteMarginForUpgradeable, ReentrancyGuard, IRouterBase {
+abstract contract RouterBase is OnlyDolomiteMarginForUpgradeable, ReentrancyGuard, IRouterBase {
 
     // ========================================================
     // ====================== Constants =======================

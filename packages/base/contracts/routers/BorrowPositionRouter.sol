@@ -35,6 +35,7 @@ import { IBorrowPositionRouter } from './interfaces/IBorrowPositionRouter.sol';
  * @notice  Router contract for opening borrow positions
  */
 contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
+
   // ========================================================
   // ====================== Constants =======================
   // ========================================================
