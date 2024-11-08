@@ -6,27 +6,35 @@ import {
   createContractWithLibrary,
   createContractWithName,
 } from '../../base/src/utils/dolomite-utils';
-import { NetworkType } from '../../base/src/utils/no-deps-constants';
+import { ADDRESS_ZERO, NetworkType } from '../../base/src/utils/no-deps-constants';
 import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { CoreProtocolType } from '../../base/test/utils/setup';
 import {
+  getBuybackPoolConstructorParams,
   getExternalOARBConstructorParams,
+  getExternalVesterDiscountCalculatorConstructorParams,
   getExternalVesterImplementationConstructorParams,
   getExternalVesterInitializationCalldata,
   getOARBConstructorParams,
   getRewardsDistributorConstructorParams,
   getVeExternalVesterImplementationConstructorParams,
   getVeExternalVesterInitializationCalldata,
+  getVeFeeCalculatorConstructorParams,
   getVesterExploderConstructorParams,
   getVesterImplementationConstructorParams,
 } from '../src/liquidity-mining-constructors';
 import {
+  BuybackPool,
+  BuybackPool__factory,
   ExternalOARB,
   ExternalOARB__factory,
+  ExternalVesterDiscountCalculatorV1,
+  ExternalVesterDiscountCalculatorV1__factory,
   ExternalVesterImplementationV1,
   ExternalVesterImplementationV1__factory,
   IERC20,
-  IVesterDiscountCalculator, IVeToken,
+  IVesterDiscountCalculator,
+  IVeToken,
   MineralToken,
   MineralToken__factory,
   OARB,
@@ -42,16 +50,24 @@ import {
   TestVesterImplementationV1,
   TestVesterImplementationV1__factory,
   TestVesterImplementationV2,
-  TestVesterImplementationV2__factory, TestVeToken, TestVeToken__factory,
+  TestVesterImplementationV2__factory,
+  TestVeToken,
+  TestVeToken__factory,
   UpgradeableProxy,
   UpgradeableProxy__factory,
+  VeFeeCalculator,
+  VeFeeCalculator__factory,
   VesterDiscountCalculatorV1,
   VesterDiscountCalculatorV1__factory,
   VesterExploder,
   VesterExploder__factory,
   VesterImplementationLibForV2,
   VesterImplementationLibForV2__factory,
+  VotingEscrow,
+  VotingEscrow__factory,
 } from '../src/types';
+import { CustomTestToken } from 'packages/base/src/types';
+import { createSafeDelegateLibrary } from 'packages/base/test/utils/ecosystem-utils/general';
 
 export async function createTestVesterV1Proxy(
   core: CoreProtocolArbitrumOne,
@@ -64,7 +80,10 @@ export async function createTestVesterV1Proxy(
     getVesterImplementationConstructorParams(core, core.tokens.arb),
   );
 
-  const bytes = ethers.utils.defaultAbiCoder.encode(['address', 'string'], [oARB.address, baseUri]);
+  const bytes = ethers.utils.defaultAbiCoder.encode(
+    ['address', 'string', 'string', 'string'],
+    [oARB.address, baseUri, 'oARB', 'OARB'],
+  );
   const calldata = await implementation.populateTransaction.initialize(bytes);
 
   const vesterProxy = await createContractWithAbi<UpgradeableProxy>(
@@ -85,19 +104,20 @@ export async function createTestVesterV2Proxy(
     VesterImplementationLibForV2__factory.bytecode,
     [],
   );
+  const safeDelegateCallLib = await createSafeDelegateLibrary();
   const implementation = await createContractWithLibrary<TestVesterImplementationV2>(
     'TestVesterImplementationV2',
-    { VesterImplementationLibForV2: library.address },
+    { VesterImplementationLibForV2: library.address, SafeDelegateCallLib: safeDelegateCallLib.address },
     getVesterImplementationConstructorParams(core, core.tokens.arb),
   );
 
   const bytes = ethers.utils.defaultAbiCoder.encode(
-    ['address', 'address'],
-    [handler.address, core.oArbLiquidityMiningEcosystem.oArb.address],
+    ['address'],
+    [handler.address],
   );
   const calldata = await implementation.populateTransaction.initialize(bytes);
 
-  const vesterProxy = core.oArbLiquidityMiningEcosystem!.oArbVesterProxy;
+  const vesterProxy = core.liquidityMiningEcosystem.oARB.oArbVesterProxy;
   await vesterProxy.connect(core.governance).upgradeToAndCall(implementation.address, calldata.data!);
 
   return TestVesterImplementationV2__factory.connect(vesterProxy.address, core.hhUser1);
@@ -134,6 +154,16 @@ export async function createVesterDiscountCalculatorV1(): Promise<VesterDiscount
     VesterDiscountCalculatorV1__factory.abi,
     VesterDiscountCalculatorV1__factory.bytecode,
     [],
+  );
+}
+
+export async function createExternalVesterDiscountCalculatorV1(
+  veToken: VotingEscrow | IVeToken,
+): Promise<ExternalVesterDiscountCalculatorV1> {
+  return createContractWithAbi<ExternalVesterDiscountCalculatorV1>(
+    ExternalVesterDiscountCalculatorV1__factory.abi,
+    ExternalVesterDiscountCalculatorV1__factory.bytecode,
+    getExternalVesterDiscountCalculatorConstructorParams(veToken),
   );
 }
 
@@ -202,7 +232,6 @@ export async function createTestVeExternalVesterV1Proxy<T extends NetworkType>(
   paymentMarketId: BigNumberish,
   rewardToken: IERC20,
   rewardMarketId: BigNumberish,
-  veToken: IVeToken,
   discountCalculator: IVesterDiscountCalculator,
   oToken: IERC20,
   baseUri: string,
@@ -221,7 +250,6 @@ export async function createTestVeExternalVesterV1Proxy<T extends NetworkType>(
       paymentMarketId,
       rewardToken,
       rewardMarketId,
-      veToken,
     ),
   );
   const implementationCalldata = await implementation.populateTransaction.initialize(
@@ -284,5 +312,58 @@ export async function createRewardsDistributor(
     RewardsDistributor__factory.abi,
     RewardsDistributor__factory.bytecode,
     getRewardsDistributorConstructorParams(core, oToken, initialHandlers),
+  );
+}
+
+export async function createVotingEscrow(
+  core: CoreProtocolArbitrumOne,
+  token: IERC20 | CustomTestToken,
+  voter: string,
+  feeCalculator: VeFeeCalculator,
+  vester: string,
+  buybackPool: string,
+): Promise<VotingEscrow> {
+  const implementation = await createContractWithAbi<VotingEscrow>(
+    VotingEscrow__factory.abi,
+    VotingEscrow__factory.bytecode,
+    [],
+  );
+  const initializeCalldata = await implementation.populateTransaction.initialize(
+    token.address,
+    ADDRESS_ZERO,
+    voter,
+    feeCalculator.address,
+    vester,
+    buybackPool,
+    core.governance.address,
+  );
+
+  const proxy = await createContractWithAbi<UpgradeableProxy>(
+    UpgradeableProxy__factory.abi,
+    UpgradeableProxy__factory.bytecode,
+    getUpgradeableProxyConstructorParams(implementation.address, initializeCalldata, core.dolomiteMargin),
+  );
+  return VotingEscrow__factory.connect(proxy.address, core.hhUser1);
+}
+
+export async function createVeFeeCalculator(
+  core: CoreProtocolArbitrumOne,
+): Promise<VeFeeCalculator> {
+  return createContractWithAbi<VeFeeCalculator>(
+    VeFeeCalculator__factory.abi,
+    VeFeeCalculator__factory.bytecode,
+    getVeFeeCalculatorConstructorParams(core),
+  );
+}
+
+export async function createBuybackPool(
+  core: CoreProtocolArbitrumOne,
+  rewardToken: CustomTestToken,
+  paymentToken: IERC20,
+): Promise<BuybackPool> {
+  return createContractWithAbi<BuybackPool>(
+    BuybackPool__factory.abi,
+    BuybackPool__factory.bytecode,
+    getBuybackPoolConstructorParams(core, rewardToken, paymentToken),
   );
 }

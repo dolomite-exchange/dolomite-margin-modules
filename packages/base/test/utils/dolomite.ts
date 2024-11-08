@@ -5,6 +5,7 @@ import {
   DolomiteAccountRegistry,
   DolomiteAccountRegistry__factory,
   DolomiteERC20,
+  DolomiteERC4626,
   DolomiteRegistryImplementation,
   DolomiteRegistryImplementation__factory,
   EventEmitterRegistry,
@@ -18,9 +19,11 @@ import {
   IsolationModeTraderProxy__factory,
   RegistryProxy,
   RegistryProxy__factory,
+  TestDolomiteERC4626,
 } from '../../src/types';
 import {
   getDolomiteErc20ProxyConstructorParams,
+  getDolomiteErc4626ProxyConstructorParams,
   getEventEmitterRegistryConstructorParams,
   getIsolationModeTraderProxyConstructorParams,
   getRegistryProxyConstructorParams,
@@ -77,6 +80,18 @@ export async function createDolomiteErc20Proxy(
     RegistryProxy__factory.abi,
     RegistryProxy__factory.bytecode,
     await getDolomiteErc20ProxyConstructorParams(core, implementation, marketId),
+  );
+}
+
+export async function createDolomiteErc4626Proxy(
+  implementation: DolomiteERC4626 | TestDolomiteERC4626,
+  marketId: BigNumberish,
+  core: CoreProtocolType<NetworkType>,
+): Promise<RegistryProxy> {
+  return createContractWithAbi(
+    RegistryProxy__factory.abi,
+    RegistryProxy__factory.bytecode,
+    await getDolomiteErc4626ProxyConstructorParams(core, implementation, marketId),
   );
 }
 
