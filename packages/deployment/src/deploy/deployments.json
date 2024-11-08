@@ -841,6 +841,13 @@
       "isVerified": true
     }
   },
+  "EsGmxReader": {
+    "42161": {
+      "address": "0x8B7D8e6a48b627ff77Bb734C42355f74821219Fc",
+      "transaction": "0xb182abe1a898954f43b3f5f11484f04d69957d4c03c23a08256894469713202d",
+      "isVerified": true
+    }
+  },
   "EventEmitterRegistryImplementationV1": {
     "42161": {
       "address": "0x3fCbC774cC83c27e1c5458475328938d82828122",
@@ -4829,6 +4836,13 @@
     "42161": {
       "address": "0xAd635C94F1855De31add582ac4ce0DaB699f9B1b",
       "transaction": "0xd914c9402438707e6f890636a6d297bb00e59d48e29ab8575b470c41162f8b99",
+      "isVerified": true
+    }
+  },
+  "StakedGmxReader": {
+    "42161": {
+      "address": "0x49C4e0322Cc04416d0929AE4E653286d155378bA",
+      "transaction": "0x7b5c83c4c158001445eabce48b19dc3a7e9fd63929c300506604f7e1c7ccc7e0",
       "isVerified": true
     }
   },
