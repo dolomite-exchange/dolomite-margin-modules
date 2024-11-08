@@ -10,6 +10,7 @@ import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import {
   createFolder,
   DenJsonUpload,
+  EncodedTransaction,
   prettyPrintEncodedDataWithTypeSafety,
   readDeploymentFile,
   TransactionBuilderUpload,
@@ -104,42 +105,49 @@ async function doStuffInternal<T extends NetworkType>(executionFn: () => Promise
       console.log('\tNo invariants found, skipping...');
     }
   } else {
-    return executionFn().then(async (result) => {
-      if (typeof result === 'undefined') {
-        return;
-      }
+    const result = await executionFn();
+    if (typeof result === 'undefined') {
+      return;
+    }
 
-      if (result.upload.addExecuteImmediatelyTransactions && result.upload.transactions.length > 0) {
-        let transactionCount = (await result.core.delayedMultiSig.transactionCount()).toNumber();
-        const submitTransactionMethodId = '0xc6427474';
-        const transactionIds: number[] = [];
-        result.upload.transactions.forEach((t) => {
-          if (t.data.startsWith(submitTransactionMethodId)) {
-            transactionIds.push(transactionCount++);
-          }
-        });
+    let encodedTransactionForExecution: EncodedTransaction | null = null;
+    if (result.upload.addExecuteImmediatelyTransactions && result.upload.transactions.length > 0) {
+      let transactionCount = (await result.core.delayedMultiSig.transactionCount()).toNumber();
+      const submitTransactionMethodId = '0xc6427474';
+      const transactionIds: number[] = [];
+      result.upload.transactions.forEach((t) => {
+        if (t.data.startsWith(submitTransactionMethodId)) {
+          transactionIds.push(transactionCount++);
+        }
+      });
 
-        assertHardhatInvariant(transactionIds.length > 0, 'Transaction IDs length must be greater than 0');
+      assertHardhatInvariant(transactionIds.length > 0, 'Transaction IDs length must be greater than 0');
 
-        console.log('============================================================');
-        console.log('================ Real Transaction Execution ================');
-        console.log('============================================================');
-        await prettyPrintEncodedDataWithTypeSafety(
-          result.core,
-          { delayedMultisig: result.core.delayedMultiSig },
-          'delayedMultisig',
-          'executeMultipleTransactions',
-          [transactionIds],
-          { skipWrappingCalldataInSubmitTransaction: true },
-        );
-      }
+      console.log('============================================================');
+      console.log('================ Real Transaction Execution ================');
+      console.log('============================================================');
+      encodedTransactionForExecution = await prettyPrintEncodedDataWithTypeSafety(
+        result.core,
+        { delayedMultisig: result.core.delayedMultiSig },
+        'delayedMultisig',
+        'executeMultipleTransactions',
+        [transactionIds],
+        { skipWrappingCalldataInSubmitTransaction: true },
+      );
+    }
 
-      const scriptName = result.scriptName;
-      const networkName = networkToNetworkNameMap[result.upload.chainId];
-      const dir = `${__dirname}/../deploy/safe-transactions/${networkName}/output`;
-      createFolder(dir);
-      writeFile(`${dir}/${scriptName}.json`, JSON.stringify(result.upload, null, 2));
-    });
+    const scriptName = result.scriptName;
+    const networkName = networkToNetworkNameMap[result.upload.chainId];
+    const dir = `${__dirname}/../deploy/safe-transactions/${networkName}/output`;
+    createFolder(dir);
+    writeFile(`${dir}/${scriptName}.json`, JSON.stringify(result.upload, null, 2));
+
+    if (encodedTransactionForExecution) {
+      writeFile(
+        `${dir}/${scriptName}-t.json`,
+        JSON.stringify({ ...result.upload, transactions: [encodedTransactionForExecution] }, null, 2),
+      );
+    }
   }
 }
 

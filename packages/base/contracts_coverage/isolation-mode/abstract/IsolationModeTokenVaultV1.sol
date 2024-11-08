@@ -27,7 +27,6 @@ import { IBorrowPositionProxyV2 } from "../../interfaces/IBorrowPositionProxyV2.
 import { IDolomiteRegistry } from "../../interfaces/IDolomiteRegistry.sol";
 import { IGenericTraderProxyV1 } from "../../interfaces/IGenericTraderProxyV1.sol";
 import { AccountBalanceLib } from "../../lib/AccountBalanceLib.sol";
-import { SafeDelegateCallLib } from "../../lib/SafeDelegateCallLib.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { IIsolationModeTokenVaultV1 } from "../interfaces/IIsolationModeTokenVaultV1.sol";
@@ -118,7 +117,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
     )
     external
     onlyVaultOwner(msg.sender) {
-        _multicall(_calls);
+        IsolationModeTokenVaultV1ActionsImpl.multicall(_calls, dolomiteRegistry());
     }
 
     function depositIntoVaultForDolomiteMargin(
@@ -152,6 +151,20 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
     onlyVaultOwner(msg.sender) {
         _checkMsgValue();
         _openBorrowPosition(_fromAccountNumber, _toAccountNumber, _amountWei);
+    }
+
+    function openMarginPosition(
+        uint256 _fromAccountNumber,
+        uint256 _toAccountNumber,
+        uint256 _borrowMarketId,
+        uint256 _amountWei
+    )
+    external
+    payable
+    nonReentrant
+    onlyVaultOwner(msg.sender) {
+        _checkMsgValue();
+        _openMarginPosition(_fromAccountNumber, _toAccountNumber, _borrowMarketId, _amountWei);
     }
 
     function closeBorrowPositionWithUnderlyingVaultToken(
@@ -249,35 +262,6 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
             _borrowAccountNumber,
             _marketId,
             _balanceCheckFlag
-        );
-    }
-
-    function openBorrowPositionAndSwapExactInputForOutput(
-        uint256 _fromAccountNumber,
-        uint256 _borrowAccountNumber,
-        uint256[] calldata _marketIdsPath,
-        uint256 _inputAmountWei,
-        uint256 _minOutputAmountWei,
-        IGenericTraderProxyV1.TraderParam[] calldata _tradersPath,
-        IDolomiteMargin.AccountInfo[] calldata _makerAccounts,
-        IGenericTraderProxyV1.UserConfig calldata _userConfig
-    )
-        external
-        payable
-        nonReentrant
-        onlyVaultOwnerOrConverter(msg.sender)
-    {
-        _checkMsgValue();
-        _openBorrowPosition(_fromAccountNumber, _borrowAccountNumber, /* _amountWei = */ 0);
-        _addCollateralAndSwapExactInputForOutput(
-            _fromAccountNumber,
-            _borrowAccountNumber,
-            _marketIdsPath,
-            _inputAmountWei,
-            _minOutputAmountWei,
-            _tradersPath,
-            _makerAccounts,
-            _userConfig
         );
     }
 
@@ -428,25 +412,6 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
         _setUint256(_REENTRANCY_GUARD_SLOT, _NOT_ENTERED);
     }
 
-    function _multicall(bytes[] memory _calls) internal {
-        bytes4[] memory allowedSelectors = dolomiteRegistry().isolationModeMulticallFunctions();
-        uint256 len = _calls.length;
-
-        for (uint256 i; i < len; ++i) {
-            if (IsolationModeTokenVaultV1ActionsImpl.selectorBinarySearch( allowedSelectors, abi.decode(_calls[i], (bytes4)) )) { /* FOR COVERAGE TESTING */ }
-            Require.that(
-                IsolationModeTokenVaultV1ActionsImpl.selectorBinarySearch(
-                    allowedSelectors,
-                    abi.decode(_calls[i], (bytes4))
-                ),
-                _FILE,
-                "Disallowed multicall function"
-            );
-
-            SafeDelegateCallLib.safeDelegateCall(address(this), _calls[i]);
-        }
-    }
-
     function _depositIntoVaultForDolomiteMargin(
         uint256 _toAccountNumber,
         uint256 _amountWei
@@ -481,6 +446,24 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
             /* _vault = */ this,
             _fromAccountNumber,
             _toAccountNumber,
+            _amountWei
+        );
+    }
+
+    function _openMarginPosition(
+        uint256 _fromAccountNumber,
+        uint256 _toAccountNumber,
+        uint256 _borrowMarketId,
+        uint256 _amountWei
+    )
+        internal
+        virtual
+    {
+        IsolationModeTokenVaultV1ActionsImpl.openMarginPosition(
+            /* _vault = */ this,
+            _fromAccountNumber,
+            _toAccountNumber,
+            _borrowMarketId,
             _amountWei
         );
     }

@@ -377,6 +377,20 @@
       "isVerified": true
     }
   },
+  "DolomiteBridgedUsdc4626Token": {
+    "42161": {
+      "address": "0x5138B4e470a759BBc1987136ED332fD3C37304AF",
+      "transaction": "0xbe87f454fba01a3ad9598563fef06ff45ad68199517faf82325ab7e017fea9d9",
+      "isVerified": true
+    }
+  },
+  "DolomiteDai4626Token": {
+    "42161": {
+      "address": "0x00173Df2Fe78ffcde820fac4de4a0B061f5EB6B8",
+      "transaction": "0xbce7db838b1b3c7e33b3253b84d34aa4f5c1819904f396cde5e07e41e60e0add",
+      "isVerified": true
+    }
+  },
   "DolomiteERC20ImplementationV1": {
     "42161": {
       "address": "0x709881D9039d8E2f5EDe3eEc64657ecBfe5cA585",
@@ -409,6 +423,77 @@
     "42161": {
       "address": "0xbe2B54256b671A1104FE2D9F5280Db1B4cdE8046",
       "transaction": "0x98c581c8f0f674379cc44aff80c627cabe4f8088b8ab7abde3bdfd76ba933d4a",
+      "isVerified": true
+    }
+  },
+  "DolomiteERC4626ImplementationV1": {
+    "196": {
+      "address": "0xf1aD8A1845b2D8a7c87c5915243D87f074921615",
+      "transaction": "0x033d7f681ca67e868135f3679afe8b154c7784a70a26c3376c2d40b274e9f21f",
+      "isVerified": true
+    },
+    "1101": {
+      "address": "0x105A2d437c2F7f2Af0a2EE365bFbb37e338B69E5",
+      "transaction": "0x624b2b56c960187bfcab1073f464d95e8b12984cf2d97819b275936a71c5a850",
+      "isVerified": true
+    },
+    "5000": {
+      "address": "0xcE29B273fdd21cef1cE4dfd104dD608941D781a0",
+      "transaction": "0x0d5875d42adfde2ebc9e195a114b52114587088c926fcfb0e3e78a3626de595c",
+      "isVerified": true
+    },
+    "8453": {
+      "address": "0x2e43cAc41780421D63a5067B667D3F72f0d71d6F",
+      "transaction": "0x7aeddaf1fdfd88da855d00a2ef71da025c8232396e76ac5b83900ec5867cbaba",
+      "isVerified": true
+    },
+    "42161": {
+      "address": "0x73C47e1c8BE85604d89eb66c920e78360498dd54",
+      "transaction": "0x1908544b8748d8977c9140795364dbd70cb445ef291eb629a56956919b4c70ce",
+      "isVerified": true
+    },
+    "80084": {
+      "address": "0x8E62704c2B4E6f56F3c15229Cb98a358c5598c19",
+      "transaction": "0x970e316d150e75b509821ed0334a62d20b4d31d5734c71088d40639744fcb3da",
+      "isVerified": true
+    }
+  },
+  "DolomiteERC4626WithPayableImplementationV1": {
+    "196": {
+      "address": "0x947f60427F2Fa837b052F17521AD6242969b9Aee",
+      "transaction": "0x0cf720b9a83620b44113d8d3ae75fed4c54df5468cbc8ff4a257f04514a6a13a",
+      "isVerified": true
+    },
+    "1101": {
+      "address": "0x2e43cAc41780421D63a5067B667D3F72f0d71d6F",
+      "transaction": "0x743380b5da2ce5abd6109e176f3df5b8aca292ab1cb0e892fadaa8606c964352",
+      "isVerified": true
+    },
+    "5000": {
+      "address": "0x0A21D2995F7Acac4b46fc4C2c5B93FcBD69083DB",
+      "transaction": "0xf4e756bff337c1a5741800e63427ee8aee6c54bfeb3574b2f8fe92ea031e9e84",
+      "isVerified": true
+    },
+    "8453": {
+      "address": "0x0Ec57d01c75BA26C75DF109e9D0d226FD9E7EB89",
+      "transaction": "0xe8c3f77d4ac49d8a4c0e616f0efa1080d12c422d9c0d9ab96a4d0462624818ea",
+      "isVerified": true
+    },
+    "42161": {
+      "address": "0xa8F462446f7eDD7c13ffAB71710726D29a1BDA20",
+      "transaction": "0x486be2341ba370c117564831c693f4c5e15ac1fb5d24a9365cee0f194b4f3c86",
+      "isVerified": true
+    },
+    "80084": {
+      "address": "0x07932299a91fe5A0C900D0987486115fBb30ACCD",
+      "transaction": "0xbe4bbe2227de6b7bfdea25ec90f3c8172224dcb220a38e1ccbe05d3f4403c398",
+      "isVerified": true
+    }
+  },
+  "DolomiteMeth4626Token": {
+    "5000": {
+      "address": "0x7656b1417886B89D6D72e8360923146D500c6c63",
+      "transaction": "0x4e6fd8fd111be6f366c86458a51546600db693fecc74d8b759b42974a78dfeca",
       "isVerified": true
     }
   },
@@ -640,6 +725,23 @@
       "isVerified": true
     }
   },
+  "DolomiteUsdc4626Token": {
+    "5000": {
+      "address": "0x3d05E4041d3a7388d566BCF4B2a5A3f0977eA9a3",
+      "transaction": "0x57837839d5f02adbce3d9238da6db973ec2442d0ff3ba45c0a0e47c4cef55507",
+      "isVerified": true
+    },
+    "42161": {
+      "address": "0x25e50469e598D3F87462d70b444aD1F8D3a1e434",
+      "transaction": "0xb80a06da4c6b8d7f3cbb93e57f3aed311339f0578cbb3f425d3a2e6e291fae0d",
+      "isVerified": true
+    },
+    "80084": {
+      "address": "0x093b0659a02D6472864E6e42AD18540393f6302f",
+      "transaction": "0x9483fc6e57f3053b1d85374f0ec62e6fd0f981335de2962ab7eeeb2e5318ab91",
+      "isVerified": true
+    }
+  },
   "DolomiteUsdcToken": {
     "42161": {
       "address": "0x6DBd962b4f62D18F756b5DE57425574c4B8228D6",
@@ -647,10 +749,53 @@
       "isVerified": true
     }
   },
+  "DolomiteUsdt4626Token": {
+    "5000": {
+      "address": "0x64f7a2A0F32654B09C66aa64405661F27039A249",
+      "transaction": "0x2a0c5200c7d6fae0b1a2d758d74d352c27e8b6240fcbf9cb2c6e5164babc0b04",
+      "isVerified": true
+    },
+    "42161": {
+      "address": "0x6A5C4862c845f29f1e60DD3777Fc34c87dAC72ea",
+      "transaction": "0xb4afa878af67703b645a112ecc9f918e8ce64e3a7680adf4264791ff0a79b5c9",
+      "isVerified": true
+    }
+  },
+  "DolomiteWbtc4626Token": {
+    "5000": {
+      "address": "0x4723da2196668D26c76885fe23d568e9688F812D",
+      "transaction": "0x0eb3886ba9c324194565380a70c5cecf0bffe87e401e2735af4d25ee8c54b41d",
+      "isVerified": true
+    },
+    "42161": {
+      "address": "0xE5f58660888a8ac026de26095b024122876F6E3f",
+      "transaction": "0x8a78ee7ef354a2a7e2b650000baa56c04bf243552a40c9a3ae1df2811b863a1b",
+      "isVerified": true
+    }
+  },
   "DolomiteWbtcToken": {
     "42161": {
       "address": "0x0a52BCb532F59F6a37A9d3B5bc9FfD47E461d995",
       "transaction": "0xbfa069948f6c6cfd57d684f92b15edf9dcace8b51872e3253b234ce79d5434c8",
+      "isVerified": true
+    }
+  },
+  "DolomiteWeth4626Token": {
+    "5000": {
+      "address": "0x02942CDe28029D13e070fc5FFd160e51E44522cc",
+      "transaction": "0xe5d4e4f094416dc2c4bb534d934c398e3c977e0d5956fa99fd34a7065580d431",
+      "isVerified": true
+    }
+  },
+  "DolomiteWeth4626WithPayableToken": {
+    "42161": {
+      "address": "0xe37B8eBAc74e1f7D0c991276c34EdA12fEF20667",
+      "transaction": "0x5590031892fda39f0ceb17f38e0309018b1016eac85931a5b5d30b4cfc794b10",
+      "isVerified": true
+    },
+    "80084": {
+      "address": "0x50cC5Ee639B3e3f0cAf4dE5905e9294Fc54C9cb8",
+      "transaction": "0x8e9dfae30f5c0d15b2713492d0fd5fb04e74f1dce123b6083a97eef19f3315e8",
       "isVerified": true
     }
   },
@@ -672,6 +817,13 @@
     "42161": {
       "address": "0x4F8B6EF682Ee0e3a66eb5507dfb0DaA647362C20",
       "transaction": "0x0f6d6b0d8bd1af245fab4a624d48506eca70236434eb320342fa436dfc87e9d7",
+      "isVerified": true
+    }
+  },
+  "DolomiteWmnt4626WithPayableToken": {
+    "5000": {
+      "address": "0x141b3dD69FdeF1782E8d5dFae62D10a297AC56e8",
+      "transaction": "0xe9bef2f93967bed8bd361af96185cbd7052f79dd279f23bef3f260e2a7de98b3",
       "isVerified": true
     }
   },

@@ -26,6 +26,8 @@ import { IVesterDiscountCalculator } from "../interfaces/IVesterDiscountCalculat
 /**
  * @title   TestVesterDiscountCalculator
  * @author  Dolomite
+ *
+ * Test implementation for IVesterDiscountCalculator
  */
 contract TestVesterDiscountCalculator is IVesterDiscountCalculator {
 
@@ -35,7 +37,11 @@ contract TestVesterDiscountCalculator is IVesterDiscountCalculator {
         discount = _discount;
     }
 
-    function calculateDiscount(uint256 /* _nftId */, uint256 /* _duration */) external view returns (uint256) {
+    function calculateDiscount(
+        uint256 /* _nftId */,
+        uint256 /* _duration */,
+        bytes memory /* _extraData */
+    ) external view returns (uint256) {
         return discount;
     }
 }

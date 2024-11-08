@@ -21,7 +21,7 @@ import { impersonate, revertToSnapshotAndCapture, snapshot } from '../utils';
 import { expectEvent, expectProtocolBalance, expectThrow } from '../utils/assertions';
 
 import { CoreProtocolArbitrumOne } from '../utils/core-protocols/core-protocol-arbitrum-one';
-import { createDolomiteErc20Proxy } from '../utils/dolomite';
+import { createAndUpgradeDolomiteRegistry, createDolomiteErc20Proxy } from '../utils/dolomite';
 import {
   disableInterestAccrual, enableInterestAccrual,
   getMaxDeploymentVersionAddressByDeploymentKey,
@@ -54,9 +54,10 @@ describe('DolomiteERC20', () => {
     await token.initializeVersion2();
     await token.initializeVersion3(core.dolomiteRegistry.address);
 
-    await core.dolomiteRegistryProxy
-      .connect(core.governance)
-      .upgradeTo(getMaxDeploymentVersionAddressByDeploymentKey('DolomiteRegistryImplementation', core.network));
+    await createAndUpgradeDolomiteRegistry(core);
+    // await core.dolomiteRegistryProxy
+    //   .connect(core.governance)
+    //   .upgradeTo(getMaxDeploymentVersionAddressByDeploymentKey('DolomiteRegistryImplementation', core.network));
     await core.dolomiteRegistry
       .connect(core.governance)
       .ownerSetDolomiteAccountRegistry(core.dolomiteAccountRegistryProxy.address);

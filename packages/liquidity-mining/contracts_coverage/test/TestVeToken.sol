@@ -27,16 +27,46 @@ import { IVeToken } from "../interfaces/IVeToken.sol";
 /**
  * @title   TestVeToken
  * @author  Dolomite
+ *
+ * Test implementation for IVeToken
  */
 contract TestVeToken is IVeToken {
 
     IERC20 public token;
+    uint256 public amount;
+    uint256 public end;
 
     constructor(address _token) {
         token = IERC20(_token);
     }
 
-    function addToLock(uint256 /* _id */, uint256 _amount) external {
+    function increase_amount(uint256 /* _id */, uint256 _amount) external {
         token.transferFrom(msg.sender, address(this), _amount);
+    }
+
+    function setAmountAndEnd(uint256 _amount, uint256 _end) external {
+        amount = _amount;
+        end = _end;
+    }
+
+    function locked(uint256 /* _veNftId */) external view override returns (LockedBalance memory) {
+        return LockedBalance({
+            amount: amount,
+            end: end
+        });
+    }
+
+    function create_lock(uint256 _value, uint256 /* _lock_duration */) external override returns (uint256) {
+        token.transferFrom(msg.sender, address(this), _value);
+        return 0;
+    }
+
+    function create_lock_for(
+        uint256 _value,
+        uint256 /* _lock_duration */,
+        address /* _for */
+    ) external override returns (uint256) {
+        token.transferFrom(msg.sender, address(this), _value);
+        return 0;
     }
 }
