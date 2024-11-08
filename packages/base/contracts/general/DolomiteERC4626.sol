@@ -141,14 +141,27 @@ contract DolomiteERC4626 is
             _receiver
         );
 
-        uint256 assets = convertToAssets(_shares);
-
         IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
         IDolomiteStructs.AccountInfo memory account = IDolomiteStructs.AccountInfo({
             owner: _receiver,
             number: _DEFAULT_ACCOUNT_NUMBER
         });
-        IDolomiteStructs.Wei memory balanceBeforeWei = dolomiteMargin.getAccountWei(account, marketId());
+        IDolomiteStructs.Wei memory balanceBeforeWei;
+        uint256 assets;
+        {
+            // For avoiding "stack too deep" errors
+            IDolomiteStructs.Par memory balanceBeforePar = dolomiteMargin.getAccountPar(account, marketId());
+            IDolomiteStructs.Par memory deltaPar = IDolomiteStructs.Par({
+                sign: true,
+                value: _shares.to128()
+            });
+            IDolomiteStructs.Par memory balanceAfterPar = balanceBeforePar.add(deltaPar);
+            balanceBeforeWei = dolomiteMargin.getAccountWei(account, marketId());
+
+            IDolomiteStructs.Wei memory balanceAfterWei = DOLOMITE_MARGIN().parToWei(marketId(), balanceAfterPar);
+            assert(balanceAfterWei.sub(balanceBeforeWei).sign);
+            assets = balanceAfterWei.sub(balanceBeforeWei).value;
+        }
 
         IDolomiteStructs.AssetAmount memory assetAmount = IDolomiteStructs.AssetAmount({
             sign: true,
@@ -174,17 +187,24 @@ contract DolomiteERC4626 is
             _FILE,
             "Invalid amount"
         );
-        uint256 shares = convertToShares(_assets);
-        if (_owner != msg.sender) {
-            _spendAllowance(_owner, msg.sender, shares);
-        }
 
         IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
         IDolomiteStructs.AccountInfo memory account = IDolomiteStructs.AccountInfo({
             owner: _owner,
             number: _DEFAULT_ACCOUNT_NUMBER
         });
+
         IDolomiteStructs.Par memory balanceBeforePar = dolomiteMargin.getAccountPar(account, marketId());
+
+        if (_owner != msg.sender) {
+            Require.that(
+                balanceBeforePar.sign,
+                _FILE,
+                "Balance cannot be negative"
+            );
+
+            _spendAllowance(_owner, msg.sender, convertToShares(_assets));
+        }
 
         IDolomiteStructs.AssetAmount memory assetAmount = IDolomiteStructs.AssetAmount({
             sign: false,

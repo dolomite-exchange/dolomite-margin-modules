@@ -49,7 +49,7 @@ import {
   ILiquidatorProxyV1__factory,
   ILiquidatorProxyV4WithGenericTrader__factory,
   IPartiallyDelayedMultiSig__factory,
-  IsolationModeFreezableLiquidatorProxy__factory,
+  IsolationModeFreezableLiquidatorProxy__factory, IWETH,
   IWETH__factory,
   RegistryProxy__factory,
 } from '../../src/types';
@@ -1246,6 +1246,24 @@ export function getMaxDeploymentVersionAddressByDeploymentKey(
   }
 
   return deploymentsMap[maxVersion][network].address;
+}
+
+export function getPayableToken(
+  network: Network,
+  signerOrProvider: Signer | Provider,
+): IWETH {
+  let address: string;
+  if (network === Network.Berachain) {
+    address = WBERA_MAP[network].address;
+  } else if (network === Network.Mantle) {
+    address = WMNT_MAP[network].address;
+  } else if (network === Network.XLayer) {
+    address = WOKB_MAP[network].address;
+  } else {
+    address = WETH_MAP[network].address;
+  }
+
+  return IWETH__factory.connect(address, signerOrProvider);
 }
 
 export function getContract<T>(

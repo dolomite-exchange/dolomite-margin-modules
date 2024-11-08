@@ -331,13 +331,20 @@ describe('DolomiteERC4626', () => {
         receiver: core.hhUser3.address,
         owner: core.hhUser1.address,
         assets: usdcAmount,
-        shares: parValue
+        shares: parValue,
       });
 
       expect(await asset.balanceOf(core.hhUser3.address)).to.eq(usdcAmount);
       expect(await asset.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
       expect(await token.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
       await expectProtocolBalance(core, core.hhUser1, ZERO_BI, core.marketIds.usdc, ZERO_BI);
+    });
+
+    it('should fail if owner has negative (or zero) balance', async () => {
+      await expectThrow(
+        token.connect(core.hhUser2).withdraw(usdcAmount, core.hhUser4.address, core.hhUser4.address),
+        'DolomiteERC4626: Balance cannot be negative',
+      );
     });
 
     it('should fail if owner has not approved the sender', async () => {

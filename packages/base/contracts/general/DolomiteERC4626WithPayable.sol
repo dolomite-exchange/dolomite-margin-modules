@@ -101,23 +101,24 @@ contract DolomiteERC4626WithPayable is
             _FILE,
             "Invalid amount"
         );
-        Require.that(
-            isValidReceiver(_receiver),
-            _FILE,
-            "Invalid receiver",
-            _receiver
-        );
-
-        if (msg.sender != _owner) {
-            _spendAllowance(_owner, msg.sender, convertToShares(_amount));
-        }
 
         IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
         IDolomiteStructs.AccountInfo memory account = IDolomiteStructs.AccountInfo({
             owner: _owner,
             number: _DEFAULT_ACCOUNT_NUMBER
         });
+
         IDolomiteStructs.Par memory balanceBeforePar = dolomiteMargin.getAccountPar(account, marketId());
+
+        if (msg.sender != _owner) {
+            Require.that(
+                balanceBeforePar.sign,
+                _FILE,
+                "Balance cannot be negative"
+            );
+
+            _spendAllowance(_owner, msg.sender, convertToShares(_amount));
+        }
 
         IDolomiteStructs.AssetAmount memory assetAmount = IDolomiteStructs.AssetAmount({
             sign: false,

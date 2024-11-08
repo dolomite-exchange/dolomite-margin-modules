@@ -326,6 +326,13 @@ describe('DolomiteERC4626WithPayable', () => {
       await expectProtocolBalance(core, core.hhUser1, ZERO_BI, core.marketIds.weth, ZERO_BI);
     });
 
+    it('should fail if owner has negative (or zero) balance', async () => {
+      await expectThrow(
+        token.connect(core.hhUser2).withdrawToPayable(wethAmount, core.hhUser4.address, core.hhUser4.address),
+        'DolomiteERC4626WithPayable: Balance cannot be negative',
+      );
+    });
+
     it('should fail if owner has not approved the sender', async () => {
       await expectThrow(
         token.connect(core.hhUser2).withdrawToPayable(wethAmount, core.hhUser1.address, core.hhUser1.address),
