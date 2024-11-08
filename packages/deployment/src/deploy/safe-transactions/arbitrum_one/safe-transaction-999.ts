@@ -6,7 +6,7 @@ import { Network } from 'packages/base/src/utils/no-deps-constants';
 import {
   deployContractAndSave,
   EncodedTransaction,
-  prettyPrintEncodedDataWithTypeSafety
+  prettyPrintEncodedDataWithTypeSafety,
 } from '../../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../utils/dry-run-utils';
 import getScriptName from '../../../utils/get-script-name';
@@ -15,14 +15,13 @@ import getScriptName from '../../../utils/get-script-name';
  * This script encodes the following transactions:
  * - Sets the GMXExchangeRouter on the gmxV2 registry to the new address
  * - Sets the GMXReader on the gmxV2 registry to the new address
- * 
  * - Updates the GMX V2 wrappers/unwrappers to adjust for the new deposit/withdraw callbacks
  */
 async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
   const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
 
-  core.gmxV2Ecosystem.live.registry
+  core.gmxV2Ecosystem.live.registry;
   const transactions: EncodedTransaction[] = [];
   transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(
@@ -31,7 +30,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       'registry',
       'ownerSetGmxExchangeRouter',
       [core.gmxV2Ecosystem.gmxExchangeRouterV2.address],
-    )
+    ),
   );
   transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(
@@ -40,7 +39,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       'registry',
       'ownerSetGmxReader',
       [core.gmxV2Ecosystem.gmxReaderV2.address],
-    )
+    ),
   );
 
   const unwrapperProxies = [
@@ -144,21 +143,22 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     },
     invariants: async () => {
       assertHardhatInvariant(
-        (await core.gmxV2Ecosystem.live.registry.gmxExchangeRouter()) === core.gmxV2Ecosystem.gmxExchangeRouterV2.address,
-        'Invalid gmx exchange router'
+        (await core.gmxV2Ecosystem.live.registry.gmxExchangeRouter()) ===
+          core.gmxV2Ecosystem.gmxExchangeRouterV2.address,
+        'Invalid gmx exchange router',
       );
       assertHardhatInvariant(
         (await core.gmxV2Ecosystem.live.registry.gmxReader()) === core.gmxV2Ecosystem.gmxReaderV2.address,
-        'Invalid gmx reader'
+        'Invalid gmx reader',
       );
       for (let i = 0; i < unwrappers.length; i++) {
         assertHardhatInvariant(
           (await unwrapperProxies[i].implementation()) === unwrapperImplementationAddress,
-          `Invalid unwrapper implementation for ${unwrappers[i].address}`
+          `Invalid unwrapper implementation for ${unwrappers[i].address}`,
         );
         assertHardhatInvariant(
           (await wrapperProxies[i].implementation()) === wrapperImplementationAddress,
-          `Invalid wrapper implementation for ${wrappers[i].address}`
+          `Invalid wrapper implementation for ${wrappers[i].address}`,
         );
       }
     },
