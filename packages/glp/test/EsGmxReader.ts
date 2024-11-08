@@ -1,23 +1,13 @@
 import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
 import { GMX_GOV_MAP } from '@dolomite-exchange/modules-base/src/utils/constants';
-import {
-  ADDRESS_ZERO,
-  MAX_UINT_256_BI,
-  Network,
-  ONE_BI,
-  ZERO_BI,
-} from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { MAX_UINT_256_BI, Network, ONE_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import {
   impersonate,
   revertToSnapshotAndCapture,
   snapshot,
   waitDays,
 } from '@dolomite-exchange/modules-base/test/utils';
-import {
-  expectProtocolBalance,
-  expectThrow,
-  expectWalletBalance,
-} from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { expectProtocolBalance } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
   setupCoreProtocol,
   setupGMXBalance,
@@ -25,17 +15,18 @@ import {
   setupUSDCBalance,
   setupUserVaultProxy,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
+import { DolomiteAccountRegistry__factory } from 'packages/base/src/types';
+import {
+  createAndUpgradeDolomiteRegistry,
+  createDolomiteAccountRegistryImplementation,
+  createRegistryProxy,
+} from 'packages/base/test/utils/dolomite';
 import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import {
   EsGmxReader,
-  GLPIsolationModeTokenVaultV1,
-  GLPIsolationModeTokenVaultV1__factory,
-  GLPIsolationModeTokenVaultV2,
-  GLPIsolationModeTokenVaultV2__factory,
   GMXIsolationModeTokenVaultV1,
   GMXIsolationModeTokenVaultV1__factory,
   GMXIsolationModeVaultFactory,
@@ -52,8 +43,6 @@ import {
   createTestGLPIsolationModeTokenVaultV2,
 } from './glp-ecosystem-utils';
 import { DEFAULT_BLOCK_NUMBER_FOR_GLP_WITH_VESTING } from './glp-utils';
-import { createAndUpgradeDolomiteRegistry, createDolomiteAccountRegistryImplementation, createRegistryProxy } from 'packages/base/test/utils/dolomite';
-import { DolomiteAccountRegistry__factory } from 'packages/base/src/types';
 
 const gmxAmount = BigNumber.from('10000000000000000000'); // 10 GMX
 const usdcAmount = BigNumber.from('2000000000'); // 2,000 USDC
@@ -73,7 +62,6 @@ describe('EsGmxReader', () => {
 
   let underlyingGlpMarketId: BigNumber;
   let underlyingGmxMarketId: BigNumber;
-  let glpAmount: BigNumber;
   let gmxRegistry: GmxRegistryV1;
   let account: AccountInfoStruct;
   let esGmxReader: EsGmxReader;
@@ -97,16 +85,18 @@ describe('EsGmxReader', () => {
     await gmxRegistry.connect(core.governance).ownerSetGmxVaultFactory(gmxFactory.address);
 
     const dolomiteAccountRegistry = await createDolomiteAccountRegistryImplementation();
-    const calldata = await dolomiteAccountRegistry.populateTransaction.initialize(
-      [gmxFactory.address, glpFactory.address],
-    );
+    const calldata = await dolomiteAccountRegistry.populateTransaction.initialize([
+      gmxFactory.address,
+      glpFactory.address,
+    ]);
     const accountRegistryProxy = await createRegistryProxy(dolomiteAccountRegistry.address, calldata.data!, core);
     const accountRegistry = DolomiteAccountRegistry__factory.connect(accountRegistryProxy.address, core.governance);
     await core.dolomiteRegistry.connect(core.governance).ownerSetDolomiteAccountRegistry(accountRegistry.address);
 
     underlyingGlpMarketId = BigNumber.from(core.marketIds.dfsGlp!);
     await core.testEcosystem!.testPriceOracle.setPrice(glpFactory.address, '1000000000000000000');
-    await core.dolomiteMargin.connect(core.governance)
+    await core.dolomiteMargin
+      .connect(core.governance)
       .ownerSetPriceOracle(underlyingGlpMarketId, core.testEcosystem!.testPriceOracle.address);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(glpFactory.address, true);
 
@@ -130,14 +120,10 @@ describe('EsGmxReader', () => {
     account = { owner: glpVault.address, number: accountNumber };
 
     await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.gmxEcosystem!.glpManager);
-    await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1).mintAndStakeGlp(
-      core.tokens.usdc.address,
-      usdcAmount,
-      ONE_BI,
-      ONE_BI,
-    );
+    await core
+      .gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
+      .mintAndStakeGlp(core.tokens.usdc.address, usdcAmount, ONE_BI, ONE_BI);
     // use sGLP for approvals/transfers and fsGLP for checking balances
-    glpAmount = await core.gmxEcosystem!.fsGlp.connect(core.hhUser1).balanceOf(core.hhUser1.address);
     await core.gmxEcosystem!.sGlp.connect(core.hhUser1).approve(glpVault.address, MAX_UINT_256_BI);
     await glpVault.depositIntoVaultForDolomiteMargin(accountNumber, amountWei);
     expect(await core.gmxEcosystem!.fsGlp.connect(core.hhUser1).balanceOf(glpVault.address)).to.eq(amountWei);
@@ -150,14 +136,12 @@ describe('EsGmxReader', () => {
     await core.gmxEcosystem!.esGmxDistributorForStakedGlp.setTokensPerInterval('10333994708994708');
     await core.gmxEcosystem!.esGmxDistributorForStakedGmx.setTokensPerInterval('10333994708994708');
     const gov = await impersonate(GMX_GOV_MAP[Network.ArbitrumOne]!, true);
-    await core.gmxEcosystem!.esGmx.connect(gov).mint(
-      core.gmxEcosystem!.esGmxDistributorForStakedGmx.address,
-      parseEther('100000000'),
-    );
-    await core.gmxEcosystem!.esGmx.connect(gov).mint(
-      core.gmxEcosystem!.esGmxDistributorForStakedGlp.address,
-      parseEther('100000000'),
-    );
+    await core
+      .gmxEcosystem!.esGmx.connect(gov)
+      .mint(core.gmxEcosystem!.esGmxDistributorForStakedGmx.address, parseEther('100000000'));
+    await core
+      .gmxEcosystem!.esGmx.connect(gov)
+      .mint(core.gmxEcosystem!.esGmxDistributorForStakedGlp.address, parseEther('100000000'));
 
     esGmxReader = await createEsGmxReader(glpFactory);
 
@@ -201,19 +185,12 @@ describe('EsGmxReader', () => {
       expect(await esGmxReader.balanceOf(glpVault.address)).to.eq(ZERO_BI);
 
       await waitDays(30);
-      await glpVault.handleRewards(
-        true,
-        false,
-        true,
-        false,
-        true,
-        true,
-        false,
-      );
+      await glpVault.handleRewards(true, false, true, false, true, true, false);
 
       expect((await core.gmxEcosystem!.esGmx.balanceOf(glpVault.address)).gt(esGmxAmount)).to.eq(true);
       expect(await core.gmxEcosystem!.esGmx.balanceOf(gmxVault.address)).to.eq(ZERO_BI);
-      expect((await esGmxReader.balanceOf(glpVault.address)).gt(esGmxAmount)).to.eq(true);
+      expect(await esGmxReader.balanceOf(glpVault.address)).to.eq(ZERO_BI);
+      expect((await esGmxReader.balanceOf(core.hhUser1.address)).gt(esGmxAmount)).to.eq(true);
     });
 
     it('should return 0 if the vault is not a glp vault', async () => {

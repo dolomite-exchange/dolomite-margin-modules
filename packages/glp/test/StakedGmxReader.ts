@@ -81,17 +81,18 @@ describe('StakedGmxReader', () => {
 
       await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
       await gmxVault.depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
-      expect(await stakedGmxReader.balanceOf(glpVault.address)).to.eq(gmxAmount);
-
-      await gmxVault.unstakeGmx(gmxAmount.div(2));
-      expect(await stakedGmxReader.balanceOf(glpVault.address)).to.eq(gmxAmount.div(2));
-
-      await gmxVault.unstakeGmx(gmxAmount.div(2));
       expect(await stakedGmxReader.balanceOf(glpVault.address)).to.eq(ZERO_BI);
+      expect(await stakedGmxReader.balanceOf(core.hhUser1.address)).to.eq(gmxAmount);
+
+      await gmxVault.unstakeGmx(gmxAmount.div(2));
+      expect(await stakedGmxReader.balanceOf(core.hhUser1.address)).to.eq(gmxAmount.div(2));
+
+      await gmxVault.unstakeGmx(gmxAmount.div(2));
+      expect(await stakedGmxReader.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
     });
 
-    it('should return 0 if address is not a glp vault', async () => {
-      expect(await stakedGmxReader.balanceOf(gmxVault.address)).to.eq(ZERO_BI);
+    it('should return 0 if address does not have a glp vault', async () => {
+      expect(await stakedGmxReader.balanceOf(core.hhUser2.address)).to.eq(ZERO_BI);
     });
   });
 });

@@ -48,10 +48,11 @@ contract StakedGmxReader {
     // ============ View Functions ============
 
     function balanceOf(address _user) external view returns (uint256) {
-        if (GLP_FACTORY.getAccountByVault(_user) == address(0)) {
+        address vault = GLP_FACTORY.getVaultByAccount(_user);
+        if (vault == address(0)) {
             return 0;
         }
 
-        return IGLPIsolationModeTokenVaultV2(_user).gmxBalanceOf();
+        return IGLPIsolationModeTokenVaultV2(vault).gmxBalanceOf();
     }
 }
