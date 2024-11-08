@@ -163,6 +163,7 @@ export interface GmToken {
 }
 
 export interface LiveGmMarket {
+  isLiveMarket: boolean;
   factory: GmxV2IsolationModeVaultFactory;
   unwrapper: GmxV2IsolationModeUnwrapperTraderV2;
   unwrapperProxy: IsolationModeTraderProxy;
@@ -200,6 +201,7 @@ export interface GmxV2Ecosystem {
   gmxWithdrawalHandlerV2: IGmxWithdrawalHandler;
   gmxWithdrawalVault: { address: string };
   live: {
+    allGmMarkets: LiveGmMarket[];
     gmAaveUsd: LiveGmMarket;
     gmArbUsd: LiveGmMarket;
     gmBtc: LiveGmMarket;
@@ -314,7 +316,7 @@ export async function createGmxEcosystemV2(
     network,
   );
 
-  return {
+  const gmxV2Ecosystem: GmxV2Ecosystem = {
     gmxDepositHandler: getContract(GMX_DEPOSIT_HANDLER_MAP[network], IGmxDepositHandler__factory.connect, signer),
     gmxDepositHandlerV2: getContract(GMX_DEPOSIT_HANDLER_V2_MAP[network], IGmxDepositHandler__factory.connect, signer),
     gmxDepositVault: await impersonateOrFallback(GMX_DEPOSIT_VAULT_MAP[network], true, signer),
@@ -444,7 +446,9 @@ export async function createGmxEcosystemV2(
     ),
     gmxWithdrawalVault: { address: GMX_WITHDRAWAL_VAULT_MAP[network] },
     live: {
+      allGmMarkets: [],
       gmAaveUsd: {
+        isLiveMarket: true,
         factory: GmxV2IsolationModeVaultFactory__factory.connect(
           Deployments.GmxV2AAVEIsolationModeVaultFactory['42161'].address,
           signer,
@@ -467,6 +471,7 @@ export async function createGmxEcosystemV2(
         ),
       },
       gmArbUsd: {
+        isLiveMarket: true,
         factory: GmxV2IsolationModeVaultFactory__factory.connect(
           Deployments.GmxV2ARBIsolationModeVaultFactory['42161'].address,
           signer,
@@ -489,6 +494,7 @@ export async function createGmxEcosystemV2(
         ),
       },
       gmBtc: {
+        isLiveMarket: true,
         factory: GmxV2IsolationModeVaultFactory__factory.connect(
           Deployments.GmxV2SingleSidedBTCIsolationModeVaultFactory['42161'].address,
           signer,
@@ -511,6 +517,7 @@ export async function createGmxEcosystemV2(
         ),
       },
       gmBtcUsd: {
+        isLiveMarket: true,
         factory: GmxV2IsolationModeVaultFactory__factory.connect(
           Deployments.GmxV2BTCIsolationModeVaultFactory['42161'].address,
           signer,
@@ -533,6 +540,7 @@ export async function createGmxEcosystemV2(
         ),
       },
       gmDogeUsd: {
+        isLiveMarket: true,
         factory: GmxV2IsolationModeVaultFactory__factory.connect(
           Deployments.GmxV2DOGEIsolationModeVaultFactory['42161'].address,
           signer,
@@ -555,6 +563,7 @@ export async function createGmxEcosystemV2(
         ),
       },
       gmEth: {
+        isLiveMarket: true,
         factory: GmxV2IsolationModeVaultFactory__factory.connect(
           Deployments.GmxV2SingleSidedETHIsolationModeVaultFactory['42161'].address,
           signer,
@@ -577,6 +586,7 @@ export async function createGmxEcosystemV2(
         ),
       },
       gmEthUsd: {
+        isLiveMarket: true,
         factory: GmxV2IsolationModeVaultFactory__factory.connect(
           Deployments.GmxV2ETHIsolationModeVaultFactory['42161'].address,
           signer,
@@ -599,6 +609,7 @@ export async function createGmxEcosystemV2(
         ),
       },
       gmGmxUsd: {
+        isLiveMarket: true,
         factory: GmxV2IsolationModeVaultFactory__factory.connect(
           Deployments.GmxV2GMXIsolationModeVaultFactory['42161'].address,
           signer,
@@ -621,6 +632,7 @@ export async function createGmxEcosystemV2(
         ),
       },
       gmLinkUsd: {
+        isLiveMarket: true,
         factory: GmxV2IsolationModeVaultFactory__factory.connect(
           Deployments.GmxV2LINKIsolationModeVaultFactory['42161'].address,
           signer,
@@ -643,6 +655,7 @@ export async function createGmxEcosystemV2(
         ),
       },
       gmSolUsd: {
+        isLiveMarket: true,
         factory: GmxV2IsolationModeVaultFactory__factory.connect(
           Deployments.GmxV2SOLIsolationModeVaultFactory['42161'].address,
           signer,
@@ -665,6 +678,7 @@ export async function createGmxEcosystemV2(
         ),
       },
       gmUniUsd: {
+        isLiveMarket: true,
         factory: GmxV2IsolationModeVaultFactory__factory.connect(
           Deployments.GmxV2UNIIsolationModeVaultFactory['42161'].address,
           signer,
@@ -687,6 +701,7 @@ export async function createGmxEcosystemV2(
         ),
       },
       gmWstEthUsd: {
+        isLiveMarket: true,
         factory: GmxV2IsolationModeVaultFactory__factory.connect(
           Deployments.GmxV2WstETHIsolationModeVaultFactory['42161'].address,
           signer,
@@ -719,4 +734,13 @@ export async function createGmxEcosystemV2(
       wrapperImplementation: GmxV2IsolationModeWrapperTraderV2__factory.connect(wrapperImplementationAddress, signer),
     },
   };
+
+  Object.keys(gmxV2Ecosystem.live).forEach(key => {
+    const liveAsAny = (gmxV2Ecosystem.live as any);
+    if (liveAsAny[key].isLiveMarket) {
+      gmxV2Ecosystem.live.allGmMarkets.push(liveAsAny[key] as LiveGmMarket);
+    }
+  });
+
+  return gmxV2Ecosystem;
 }
