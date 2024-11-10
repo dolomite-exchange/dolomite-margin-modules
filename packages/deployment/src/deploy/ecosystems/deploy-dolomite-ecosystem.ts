@@ -86,6 +86,12 @@ async function deployInterestSetters(): Promise<void> {
 
   await deployContractAndSave(
     'LinearStepFunctionInterestSetter',
+    getLinearStepFunctionInterestSetterConstructorParams(parseEther('0.07'), parseEther('0.93'), parseEther('0.90')),
+    'LinearStepFunction7L93U90OInterestSetter',
+  );
+
+  await deployContractAndSave(
+    'LinearStepFunctionInterestSetter',
     getLinearStepFunctionInterestSetterConstructorParams(parseEther('0.08'), parseEther('0.92'), parseEther('0.70')),
     'LinearStepFunction8L92U70OInterestSetter',
   );

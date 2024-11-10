@@ -49,7 +49,8 @@ import {
   ILiquidatorProxyV1__factory,
   ILiquidatorProxyV4WithGenericTrader__factory,
   IPartiallyDelayedMultiSig__factory,
-  IsolationModeFreezableLiquidatorProxy__factory, IWETH,
+  IsolationModeFreezableLiquidatorProxy__factory,
+  IWETH,
   IWETH__factory,
   RegistryProxy__factory,
 } from '../../src/types';
@@ -91,7 +92,8 @@ import {
   DYT_GLP_2024_MAP,
   E_ETH_MAP,
   EZ_ETH_MAP,
-  EZ_ETH_REVERSED_MAP, FBTC_MAP,
+  EZ_ETH_REVERSED_MAP,
+  FBTC_MAP,
   FRAX_MAP,
   GMX_BTC_PLACEHOLDER_MAP,
   GMX_MAP,
@@ -107,17 +109,21 @@ import {
   METH_MAP,
   MIM_MAP,
   NATIVE_USDC_MAP,
-  PENDLE_MAP, POL_MAP,
+  PENDLE_MAP,
+  POL_MAP,
   PREMIA_MAP,
   R_ETH_MAP,
   RDNT_MAP,
   RS_ETH_MAP,
   RS_ETH_REVERSED_MAP,
-  S_GLP_MAP, SBTC_MAP,
+  S_GLP_MAP,
+  SBTC_MAP,
   SIZE_MAP,
   SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL,
   SOL_MAP,
-  ST_ETH_MAP, STONE_BTC_MAP, UNI_BTC_MAP,
+  ST_ETH_MAP,
+  STONE_BTC_MAP,
+  UNI_BTC_MAP,
   UNI_MAP,
   USDC_MAP,
   USDE_MAP,
@@ -592,6 +598,12 @@ export async function setupCoreProtocol<T extends NetworkType>(
   const [hhUser1, hhUser2, hhUser3, hhUser4, hhUser5] = await Promise.all(
     (await ethers.getSigners()).map((s) => SignerWithAddressWithSafety.create(s.address)),
   );
+  if (!hhUser1) {
+    return Promise.reject(
+      new Error('No signer found for Hardhat User #1. Check your environment variables for DEPLOYER_PRIVATE_KEY!'),
+    );
+  }
+
   const governance: SignerWithAddressWithSafety = await impersonateOrFallback(
     await IDolomiteMargin__factory.connect(dolomiteMarginAddress, hhUser1).owner(),
     true,
@@ -1248,10 +1260,7 @@ export function getMaxDeploymentVersionAddressByDeploymentKey(
   return deploymentsMap[maxVersion][network].address;
 }
 
-export function getPayableToken(
-  network: Network,
-  signerOrProvider: Signer | Provider,
-): IWETH {
+export function getPayableToken(network: Network, signerOrProvider: Signer | Provider): IWETH {
   let address: string;
   if (network === Network.Berachain) {
     address = WBERA_MAP[network].address;

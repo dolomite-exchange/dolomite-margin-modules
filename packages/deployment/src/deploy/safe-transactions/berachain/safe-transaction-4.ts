@@ -21,12 +21,17 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
   const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
 
   const dUsdcToken = await deployDolomiteErc4626Token(core, 'Usdc', core.marketIds.usdc);
-  const dWethToken = await deployDolomiteErc4626WithPayableToken(core, 'Weth', core.marketIds.weth);
+  const dWBeraToken = await deployDolomiteErc4626WithPayableToken(core, 'WBera', core.marketIds.wbera);
+  const dWethToken = await deployDolomiteErc4626Token(core, 'Weth', core.marketIds.weth);
 
   const transactions: EncodedTransaction[] = [];
   transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(core, core, 'dolomiteMargin', 'ownerSetGlobalOperator', [
       dUsdcToken.address,
+      true,
+    ]),
+    await prettyPrintEncodedDataWithTypeSafety(core, core, 'dolomiteMargin', 'ownerSetGlobalOperator', [
+      dWBeraToken.address,
       true,
     ]),
     await prettyPrintEncodedDataWithTypeSafety(core, core, 'dolomiteMargin', 'ownerSetGlobalOperator', [
@@ -47,6 +52,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
       const isGlobalOperator = (o: string) => core.dolomiteMargin.getIsGlobalOperator(o);
 
       assertHardhatInvariant(await isGlobalOperator(dUsdcToken.address), 'dUsdcToken is not a global operator');
+      assertHardhatInvariant(await isGlobalOperator(dWBeraToken.address), 'dWBeraToken is not a global operator');
       assertHardhatInvariant(await isGlobalOperator(dWethToken.address), 'dWethToken is not a global operator');
     },
   };

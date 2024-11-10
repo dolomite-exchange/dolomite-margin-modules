@@ -1,7 +1,7 @@
 import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { BigNumberish } from 'ethers';
+import { BigNumber, BigNumberish } from 'ethers';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
 import { EncodedTransaction, prettyPrintEncodedDataWithTypeSafety } from '../../../utils/deploy-utils';
@@ -41,7 +41,32 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     ),
   );
 
-  const gmMarkets = core.gmxV2Ecosystem.gmTokens
+  for (const gmMarket of core.gmxV2Ecosystem.live.allGmMarkets) {
+    // Assign these to a new array, so it's not read-only
+    const collateralMarketIds = [...(await gmMarket.factory.allowableCollateralMarketIds())];
+    const debtMarketIds = [...(await gmMarket.factory.allowableDebtMarketIds())];
+
+    const collateralDirty = addMarketsToListIfNecessary(collateralMarketIds, [
+      core.marketIds.wbtc,
+      core.marketIds.weth,
+    ]);
+    if (collateralDirty) {
+      transactions.push(
+        await prettyPrintEncodedDataWithTypeSafety(core, gmMarket, 'factory', 'ownerSetAllowableCollateralMarketIds', [
+          collateralMarketIds,
+        ]),
+      );
+    }
+
+    const debtDirty = addMarketsToListIfNecessary(debtMarketIds, [core.marketIds.wbtc, core.marketIds.weth]);
+    if (debtDirty) {
+      transactions.push(
+        await prettyPrintEncodedDataWithTypeSafety(core, gmMarket, 'factory', 'ownerSetAllowableDebtMarketIds', [
+          debtMarketIds,
+        ]),
+      );
+    }
+  }
 
   return {
     core,
@@ -63,12 +88,47 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       }
 
       assertHardhatInvariant(
-        core.interestSetters.linearStepFunction10L90U90OInterestSetter.address ===
-        (await getInterestSetter(core.marketIds.wusdm)),
+        core.interestSetters.linearStepFunction6L94U90OInterestSetter.address ===
+          (await getInterestSetter(core.marketIds.wusdm)),
         `Invalid interest setter for ${core.marketIds.wusdm}`,
       );
+
+      for (const gmMarket of core.gmxV2Ecosystem.live.allGmMarkets) {
+        const collateralMarketIds = await gmMarket.factory.allowableCollateralMarketIds();
+        const debtMarketIds = await gmMarket.factory.allowableDebtMarketIds();
+
+        assertHardhatInvariant(
+          collateralMarketIds.some((m) => m.eq(core.marketIds.weth)),
+          `Missing WETH collateral for ${gmMarket.factory.address}`,
+        );
+        assertHardhatInvariant(
+          collateralMarketIds.some((m) => m.eq(core.marketIds.wbtc)),
+          `Missing WBTC collateral for ${gmMarket.factory.address}`,
+        );
+
+        assertHardhatInvariant(
+          debtMarketIds.some((m) => m.eq(core.marketIds.weth)),
+          `Missing WETH collateral for ${gmMarket.factory.address}`,
+        );
+        assertHardhatInvariant(
+          debtMarketIds.some((m) => m.eq(core.marketIds.wbtc)),
+          `Missing WBTC collateral for ${gmMarket.factory.address}`,
+        );
+      }
     },
   };
+}
+
+function addMarketsToListIfNecessary(list: BigNumber[], marketIds: BigNumberish[]): boolean {
+  let dirty = false;
+  marketIds.forEach((marketId) => {
+    if (!list.some((value) => value.eq(marketId))) {
+      list.push(BigNumber.from(marketId));
+      dirty = true;
+    }
+  });
+
+  return dirty;
 }
 
 doDryRunAndCheckDeployment(main);
