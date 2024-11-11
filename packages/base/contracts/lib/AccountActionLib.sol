@@ -395,6 +395,37 @@ library AccountActionLib {
         });
     }
 
+    function encodeInternalTradeActionWithCustomData(
+        uint256 _fromAccountId,
+        uint256 _toAccountId,
+        uint256 _primaryMarketId,
+        uint256 _secondaryMarketId,
+        address _traderAddress,
+        uint256 _amountInWei,
+        bytes memory _orderData
+    ) internal pure returns (IDolomiteStructs.ActionArgs memory) {
+        // internal trades calculate inputAmount based on `_toAccountId` (the maker account), so the sign should be
+        // positive to reflect this
+        return IDolomiteStructs.ActionArgs({
+            actionType: IDolomiteStructs.ActionType.Trade,
+            accountId: _fromAccountId,
+            amount: IDolomiteStructs.AssetAmount({
+                sign: false,
+                denomination: IDolomiteStructs.AssetDenomination.Wei,
+                ref: _amountInWei == _ALL ? IDolomiteStructs.AssetReference.Target : IDolomiteStructs.AssetReference.Delta,
+                value: _amountInWei == _ALL ? 0 : _amountInWei
+            }),
+            primaryMarketId: _primaryMarketId,
+            secondaryMarketId: _secondaryMarketId,
+            otherAddress: _traderAddress,
+            otherAccountId: _toAccountId,
+            data: abi.encode(
+                /* calculateAmountWithMakerAccount = */ false,
+                _orderData
+            )
+        });
+    }
+
     function encodeTransferAction(
         uint256 _fromAccountId,
         uint256 _toAccountId,
@@ -422,6 +453,29 @@ library AccountActionLib {
             actionType : IDolomiteStructs.ActionType.Transfer,
             accountId : _fromAccountId,
             amount : assetAmount,
+            primaryMarketId : _marketId,
+            secondaryMarketId : 0,
+            otherAddress : address(0),
+            otherAccountId : _toAccountId,
+            data : bytes("")
+        });
+    }
+
+    function encodeTransferToTargetAmountAction(
+        uint256 _fromAccountId,
+        uint256 _toAccountId,
+        uint256 _marketId,
+        IDolomiteStructs.Wei memory _targetAmountWei
+    ) internal pure returns (IDolomiteStructs.ActionArgs memory) {
+        return IDolomiteStructs.ActionArgs({
+            actionType : IDolomiteStructs.ActionType.Transfer,
+            accountId : _fromAccountId,
+            amount : IDolomiteStructs.AssetAmount({
+                sign: _targetAmountWei.sign,
+                denomination: IDolomiteStructs.AssetDenomination.Wei,
+                ref: IDolomiteStructs.AssetReference.Target,
+                value: _targetAmountWei.value
+            }),
             primaryMarketId : _marketId,
             secondaryMarketId : 0,
             otherAddress : address(0),

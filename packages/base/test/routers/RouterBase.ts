@@ -19,7 +19,7 @@ import { revertToSnapshotAndCapture, snapshot } from '../utils';
 import { createIsolationModeTokenVaultV1ActionsImpl } from '../utils/dolomite';
 import { createTestIsolationModeVaultFactory } from '../utils/ecosystem-utils/testers';
 import { BigNumber } from 'ethers';
-import { expectThrow } from '../utils/assertions';
+import { expectEvent, expectThrow } from '../utils/assertions';
 import { expect } from 'chai';
 
 describe('RouterBase', () => {
@@ -110,17 +110,19 @@ describe('RouterBase', () => {
       expect(vault).to.equal(userVault.address);
     });
 
+    it('should create a vault if it does not exist', async () => {
+      const vaultAddress = await factory.calculateVaultByAccount(core.hhUser2.address);
+      const res = await router.validateIsoMarketAndGetVault(isolationModeMarketId, core.hhUser2.address);
+      await expectEvent(factory, res, 'VaultCreated', {
+        accountOwner: core.hhUser2.address,
+        accountNumber: vaultAddress,
+      });
+    });
+
     it('should revert if invalid marketId', async () => {
       await expectThrow(
         router.validateIsoMarketAndGetVault(core.marketIds.dai, core.hhUser1.address),
         'RouterBase: Market is not isolation mode'
-      );
-    });
-
-    it('should revert if no vault for account', async () => {
-      await expectThrow(
-        router.callStatic.validateIsoMarketAndGetVault(isolationModeMarketId, core.hhUser2.address),
-        'RouterBase: No vault for account'
       );
     });
   });

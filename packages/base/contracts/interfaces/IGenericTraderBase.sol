@@ -21,7 +21,7 @@
 pragma solidity ^0.8.9;
 
 import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
-
+import { IEventEmitterRegistry } from "./IEventEmitterRegistry.sol";
 
 /**
  * @title   IGenericTraderBase
@@ -65,6 +65,7 @@ interface IGenericTraderBase {
 
     struct GenericTraderProxyCache {
         IDolomiteMargin dolomiteMargin;
+        IEventEmitterRegistry eventEmitterRegistry;
         /// @dev    True if the user is making a margin deposit, false if they are withdrawing. False if the variable is
         ///         unused too.
         bool isMarginDeposit;

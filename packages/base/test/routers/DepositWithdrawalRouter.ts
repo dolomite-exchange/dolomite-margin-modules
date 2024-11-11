@@ -14,6 +14,8 @@ import {
   TestDepositWithdrawalRouter__factory,
   TestIsolationModeTokenVaultV1,
   TestIsolationModeTokenVaultV1__factory,
+  TestIsolationModeTokenVaultV2,
+  TestIsolationModeTokenVaultV2__factory,
   TestIsolationModeVaultFactory
 } from 'packages/base/src/types';
 import { createContractWithAbi, createContractWithLibrary, createTestToken } from 'packages/base/src/utils/dolomite-utils';
@@ -44,7 +46,7 @@ describe('DepositWithdrawalRouter', () => {
 
   let underlyingToken: CustomTestToken;
   let factory: TestIsolationModeVaultFactory;
-  let userVault: TestIsolationModeTokenVaultV1;
+  let userVault: TestIsolationModeTokenVaultV2;
   let isolationModeMarketId: BigNumber;
 
   before(async () => {
@@ -62,7 +64,7 @@ describe('DepositWithdrawalRouter', () => {
     const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
 
     const userVaultImplementation = await createContractWithLibrary(
-      'TestIsolationModeTokenVaultV1',
+      'TestIsolationModeTokenVaultV2',
       { ...libraries },
       []
     );
@@ -80,9 +82,9 @@ describe('DepositWithdrawalRouter', () => {
 
     await factory.createVault(core.hhUser1.address);
     const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);
-    userVault = setupUserVaultProxy<TestIsolationModeTokenVaultV1>(
+    userVault = setupUserVaultProxy<TestIsolationModeTokenVaultV2>(
       vaultAddress,
-      TestIsolationModeTokenVaultV1__factory,
+      TestIsolationModeTokenVaultV2__factory,
       core.hhUser1,
     );
 
