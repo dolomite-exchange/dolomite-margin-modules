@@ -50,7 +50,7 @@ contract OptionAirdrop is OnlyDolomiteMargin, ReentrancyGuard, IOptionAirdrop {
 
     bytes32 private constant _FILE = "OptionAirdrop";
 
-    uint256 public constant DOLO_PRICE = .03e18; // Our code would expect the price in 18 decimals
+    uint256 public constant DOLO_PRICE = 0.03125 ether;
 
     // ===================================================
     // ==================== State Variables ==============
