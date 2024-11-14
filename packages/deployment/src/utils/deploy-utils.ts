@@ -1,7 +1,9 @@
 import { address } from '@dolomite-exchange/dolomite-margin';
 import {
   DolomiteERC4626,
-  DolomiteERC4626__factory, DolomiteERC4626WithPayable, DolomiteERC4626WithPayable__factory,
+  DolomiteERC4626__factory,
+  DolomiteERC4626WithPayable,
+  DolomiteERC4626WithPayable__factory,
   HandlerRegistry,
   IDolomiteInterestSetter,
   IDolomitePriceOracle,
@@ -35,6 +37,7 @@ import {
   Network,
   networkToNetworkNameMap,
   NetworkType,
+  ONE_BI,
   TEN_BI,
   ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
@@ -1559,5 +1562,5 @@ async function isValidAmount(token: IERC20, amount: BigNumberish) {
 
   const decimals = await IERC20Metadata__factory.connect(token.address, token.signer).decimals();
   const scale = TEN_BI.pow(decimals);
-  return realAmount.div(scale).gte(TEN_BI) && realAmount.div(scale).lte(100_000_000);
+  return realAmount.div(scale).gt(ONE_BI) && realAmount.div(scale).lte(100_000_000);
 }
