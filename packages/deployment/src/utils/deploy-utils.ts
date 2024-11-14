@@ -1,7 +1,9 @@
 import { address } from '@dolomite-exchange/dolomite-margin';
 import {
   DolomiteERC4626,
-  DolomiteERC4626__factory, DolomiteERC4626WithPayable, DolomiteERC4626WithPayable__factory,
+  DolomiteERC4626__factory,
+  DolomiteERC4626WithPayable,
+  DolomiteERC4626WithPayable__factory,
   HandlerRegistry,
   IDolomiteInterestSetter,
   IDolomitePriceOracle,
@@ -34,7 +36,8 @@ import {
   ADDRESS_ZERO,
   Network,
   networkToNetworkNameMap,
-  NetworkType, ONE_BI,
+  NetworkType,
+  ONE_BI,
   TEN_BI,
   ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
