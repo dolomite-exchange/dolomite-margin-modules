@@ -35,8 +35,8 @@ interface IDolomiteOwner {
 
     struct Transaction {
         address destination;
-        uint256 value;
         bytes data;
+        uint256 creationTimestamp;
         bool executed;
         bool cancelled;
     }
@@ -93,17 +93,13 @@ interface IDolomiteOwner {
     // =================== Transaction Functions ====================
     // ========================================================
 
-    function submitTransaction(address _destination, uint256 _value, bytes calldata _data) external returns (uint256);
+    function submitTransaction(address _destination, bytes calldata _data) external returns (uint256);
 
     function executeTransactions(uint256[] calldata _transactionIds) external returns (bytes[] memory);
 
     function executeTransaction(uint256 _transactionId) external returns (bytes memory);
 
-    function submitTransactionAndExecute(
-        address _destination,
-        uint256 _value,
-        bytes calldata _data
-    ) external returns (bytes memory);
+    function submitTransactionAndExecute(address _destination, bytes calldata _data) external returns (bytes memory);
 
     // ========================================================
     // =================== Getter Functions ===================
@@ -130,4 +126,6 @@ interface IDolomiteOwner {
         bool _pending,
         bool _executed
     ) external view returns (uint256[] memory);
+
+    function isTimelockComplete(uint256 _transactionId) external view returns (bool);
 }

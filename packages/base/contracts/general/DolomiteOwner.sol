@@ -47,7 +47,8 @@ contract DolomiteOwner is IDolomiteOwner, AccessControl {
     bytes32 public constant SECURITY_COUNCIL_ROLE = keccak256("SECURITY_COUNCIL_ROLE");
     bytes32 public constant LISTING_COMMITTEE_ROLE = keccak256("LISTING_COMMITTEE_ROLE");
     bytes32 public constant EXECUTOR_ROLE = keccak256("EXECUTOR_ROLE");
-    address constant ADDRESS_ZERO = address(0x0);
+    bytes32 public constant BYPASS_TIMELOCK_ROLE = keccak256("BYPASS_TIMELOCK_ROLE");
+    address private constant _ADDRESS_ZERO = address(0x0);
 
     // ================================================
     // =================== State Variables ============
@@ -59,6 +60,7 @@ contract DolomiteOwner is IDolomiteOwner, AccessControl {
     mapping(bytes32 => EnumerableSet.Bytes32Set) private _roleToFunctionSelectors;
     mapping(bytes32 => mapping(address => EnumerableSet.Bytes32Set)) private _roleToAddressToFunctionSelectors;
 
+    uint32 public secondsTimeLocked;
     mapping (uint256 => Transaction) public transactions;
     uint256 public transactionCount;
 
@@ -68,16 +70,16 @@ contract DolomiteOwner is IDolomiteOwner, AccessControl {
 
     modifier notNull(address _address) {
         Require.that(
-            _address != ADDRESS_ZERO,
+            _address != _ADDRESS_ZERO,
             _FILE,
             "Address is null"
         );
         _;
     }
 
-    modifier transactionExists(uint256 transactionId) {
+    modifier transactionExists(uint256 _transactionId) {
         Require.that(
-            transactions[transactionId].destination != ADDRESS_ZERO,
+            transactions[_transactionId].destination != _ADDRESS_ZERO,
             _FILE,
             "Transaction does not exist"
         );
@@ -98,6 +100,17 @@ contract DolomiteOwner is IDolomiteOwner, AccessControl {
             _roles.contains(_role),
             _FILE,
             "Invalid role"
+        );
+        _;
+    }
+
+    modifier pastTimeLock(
+        address _sender,
+        uint256 _transactionId
+    ) {
+        require(
+            isTimelockComplete(_transactionId) || hasRole(BYPASS_TIMELOCK_ROLE, _sender),
+            "Timelock incomplete"
         );
         _;
     }
@@ -125,6 +138,12 @@ contract DolomiteOwner is IDolomiteOwner, AccessControl {
     function ownerRemoveRole(
         bytes32 _role
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        Require.that(
+            _role != DEFAULT_ADMIN_ROLE,
+            _FILE,
+            "Invalid role"
+        );
+
         _roles.remove(_role);
         emit RoleRemoved(_role);
     }
@@ -211,10 +230,9 @@ contract DolomiteOwner is IDolomiteOwner, AccessControl {
 
     function submitTransactionAndExecute(
         address _destination,
-        uint256 _value,
         bytes memory _data
     ) external returns (bytes memory) {
-        uint256 transactionId = submitTransaction(_destination, _value, _data);
+        uint256 transactionId = submitTransaction(_destination, _data);
         return executeTransaction(transactionId);
     }
 
@@ -231,7 +249,6 @@ contract DolomiteOwner is IDolomiteOwner, AccessControl {
 
     function submitTransaction(
         address _destination,
-        uint256 _value,
         bytes memory _data
     ) public returns (uint256) {
         bytes4 selector;
@@ -263,7 +280,7 @@ contract DolomiteOwner is IDolomiteOwner, AccessControl {
                 bytes32 role = userRoles[i];
                 if (!_roles.contains(role) || role == EXECUTOR_ROLE) {
                     // If the role does not exist or is an executor, they don't have approval
-                    // No need to check inthe following if statement
+                    // No need to check in the following if statement
                     continue;
                 }
                 if (_checkApprovedTransaction(role, _destination, selector)) {
@@ -278,13 +295,13 @@ contract DolomiteOwner is IDolomiteOwner, AccessControl {
             _FILE,
             "Transaction not approved"
         );
-        return _addTransaction(_destination, _value, _data);
+        return _addTransaction(_destination, _data);
     }
 
     function executeTransaction(
-        uint256 transactionId
+        uint256 _transactionId
     ) public validExecutor(msg.sender) returns (bytes memory){
-        return _executeTransaction(transactionId);
+        return _executeTransaction(_transactionId);
     }
 
     // ================================================
@@ -338,21 +355,21 @@ contract DolomiteOwner is IDolomiteOwner, AccessControl {
 
     // @follow-up I adjusted this logic a bit from the original repo. Can you double check my logic?
     function getTransactionIds(
-        uint256 from,
-        uint256 to,
-        bool pending,
-        bool executed
+        uint256 _from,
+        uint256 _to,
+        bool _pending,
+        bool _executed
     ) external view returns (uint256[] memory) {
-        if (to > transactionCount) {
-            to = transactionCount;
+        if (_to > transactionCount) {
+            _to = transactionCount;
         }
-        uint256[] memory transactionIdsTemp = new uint256[](to - from);
+        uint256[] memory transactionIdsTemp = new uint256[](_to - _from);
         uint256 count = 0;
         uint256 i;
-        for (i = from; i < to; ++i) {
+        for (i = _from; i < _to; ++i) {
             if (
-                (pending && !transactions[i].executed && !transactions[i].cancelled)
-                || (executed && transactions[i].executed)
+                (_pending && !transactions[i].executed && !transactions[i].cancelled)
+                || (_executed && transactions[i].executed)
             ) {
                 transactionIdsTemp[count] = i;
                 count += 1;
@@ -365,14 +382,18 @@ contract DolomiteOwner is IDolomiteOwner, AccessControl {
         return _transactionIds;
     }
 
+    function isTimelockComplete(uint256 _transactionId) public view returns (bool) {
+        return block.timestamp >= transactions[_transactionId].creationTimestamp + secondsTimeLocked;
+    }
+
     // ================================================
     // ============= Internal Functions ===============
     // ================================================
 
     function _executeTransaction(
-        uint256 transactionId
-    ) internal transactionExists(transactionId) returns (bytes memory) {
-        Transaction storage txn = transactions[transactionId];
+        uint256 _transactionId
+    ) internal transactionExists(_transactionId) pastTimeLock(msg.sender, _transactionId) returns (bytes memory) {
+        Transaction storage txn = transactions[_transactionId];
         Require.that(
             !txn.executed && !txn.cancelled,
             _FILE,
@@ -380,24 +401,23 @@ contract DolomiteOwner is IDolomiteOwner, AccessControl {
         );
 
         txn.executed = true;
-        bytes memory returnData = txn.destination.functionCallWithValue(txn.data, txn.value);
+        bytes memory returnData = txn.destination.functionCallWithValue(txn.data, /* value = */ 0);
 
-        emit TransactionExecuted(transactionId);
+        emit TransactionExecuted(_transactionId);
         return returnData;
     }
 
     function _addTransaction(
         address destination,
-        uint256 value,
         bytes memory data
     ) internal notNull(destination) returns (uint256) {
         uint256 transactionId = transactionCount;
         transactions[transactionId] = Transaction({
             destination: destination,
-            value: value,
             data: data,
+            creationTimestamp: block.timestamp,
             executed: false,
-            cancelled: false
+            cancelled : false
         });
         transactionCount += 1;
         emit TransactionSubmitted(transactionId);
@@ -415,7 +435,7 @@ contract DolomiteOwner is IDolomiteOwner, AccessControl {
         _roleToAddressToFunctionSelectors - This contains specific function selectors for specific addresses
         _roleToAddresses - This contains addresses that can be called with any function
         _roleToFunctionSelectors - This contains function selectors that can be called on any address
-        
+
         The logic is as follows:
         1. If the role has specific function selectors for the destination address, check if the selector is approved
         2. If the role has 0 specific function selectors for the destination address,
