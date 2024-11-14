@@ -5,7 +5,7 @@ import {
   DolomiteAccountRegistry,
   DolomiteAccountRegistry__factory,
   DolomiteERC20,
-  DolomiteERC4626,
+  DolomiteERC4626, DolomiteOwner, DolomiteOwner__factory,
   DolomiteRegistryImplementation,
   DolomiteRegistryImplementation__factory,
   EventEmitterRegistry,
