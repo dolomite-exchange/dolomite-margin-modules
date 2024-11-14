@@ -34,7 +34,7 @@ import {
   ADDRESS_ZERO,
   Network,
   networkToNetworkNameMap,
-  NetworkType,
+  NetworkType, ONE_BI,
   TEN_BI,
   ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
@@ -1559,5 +1559,5 @@ async function isValidAmount(token: IERC20, amount: BigNumberish) {
 
   const decimals = await IERC20Metadata__factory.connect(token.address, token.signer).decimals();
   const scale = TEN_BI.pow(decimals);
-  return realAmount.div(scale).gte(TEN_BI) && realAmount.div(scale).lte(100_000_000);
+  return realAmount.div(scale).gt(ONE_BI) && realAmount.div(scale).lte(100_000_000);
 }

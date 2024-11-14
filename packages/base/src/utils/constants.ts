@@ -531,7 +531,11 @@ export const UNI_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   },
 };
 
-export const UNI_BTC_MAP: Record<Network.Berachain, TokenWithMarketId> = {
+export const UNI_BTC_MAP: Record<Network.ArbitrumOne | Network.Berachain, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0x6B2a01A5f79dEb4c2f3c0eDa7b01DF456FbD726a',
+    marketId: 62,
+  },
   [Network.Berachain]: {
     address: '0x16221CaD160b441db008eF6DA2d3d89a32A05859',
     marketId: 4,
@@ -1444,6 +1448,10 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<Network, Record<string, Agg
     },
     [UNI_MAP[Network.ArbitrumOne].address]: {
       aggregatorAddress: '0x9C917083fDb403ab5ADbEC26Ee294f6EcAda2720',
+    },
+    [UNI_BTC_MAP[Network.ArbitrumOne].address]: {
+      aggregatorAddress: '0xa677622735c38001fd1183c92dc5b889128EC234',
+      tokenPairAddress: GMX_BTC_PLACEHOLDER_MAP[Network.ArbitrumOne].address,
     },
     [USDC_MAP[Network.ArbitrumOne].address]: {
       aggregatorAddress: '0x50834F3163758fcC1Df9973b6e91f0F0F0434aD3',
