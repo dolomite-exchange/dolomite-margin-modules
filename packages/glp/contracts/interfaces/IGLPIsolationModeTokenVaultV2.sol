@@ -196,4 +196,9 @@ interface IGLPIsolationModeTokenVaultV2 {
      * @return The amount of GMX tokens the user owns
      */
     function gmxBalanceOf() external view returns (uint256);
+
+    /**
+     * @return The amount of esGMX tokens the user owns
+     */
+    function esGmxBalanceOf() external view returns (uint256);
 }

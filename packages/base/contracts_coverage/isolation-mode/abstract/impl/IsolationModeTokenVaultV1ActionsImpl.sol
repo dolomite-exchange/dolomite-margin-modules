@@ -21,11 +21,13 @@ pragma solidity ^0.8.9;
 
 import { BaseLiquidatorProxy } from "../../../general/BaseLiquidatorProxy.sol";
 import { IDolomiteRegistry } from "../../../interfaces/IDolomiteRegistry.sol";
+import { IEventEmitterRegistry } from "../../../interfaces/IEventEmitterRegistry.sol";
 import { IGenericTraderProxyV1 } from "../../../interfaces/IGenericTraderProxyV1.sol";
 import { AccountActionLib } from "../../../lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "../../../lib/AccountBalanceLib.sol";
 import { DolomiteMarginVersionWrapperLib } from "../../../lib/DolomiteMarginVersionWrapperLib.sol";
 import { InterestIndexLib } from "../../../lib/InterestIndexLib.sol";
+import { SafeDelegateCallLib } from "../../../lib/SafeDelegateCallLib.sol";
 import { IDolomiteMargin } from "../../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../../../protocol/interfaces/IDolomiteStructs.sol";
 import { BitsLib } from "../../../protocol/lib/BitsLib.sol";
@@ -57,6 +59,28 @@ library IsolationModeTokenVaultV1ActionsImpl {
     // ===================================================
     // ==================== Functions ====================
     // ===================================================
+
+    function multicall(
+        bytes[] memory _calls,
+        IDolomiteRegistry _dolomiteRegistry
+    ) public {
+        bytes4[] memory allowedSelectors = _dolomiteRegistry.isolationModeMulticallFunctions();
+        uint256 len = _calls.length;
+
+        for (uint256 i; i < len; ++i) {
+            if (selectorBinarySearch( allowedSelectors, abi.decode(_calls[i], (bytes4)) )) { /* FOR COVERAGE TESTING */ }
+            Require.that(
+                selectorBinarySearch(
+                    allowedSelectors,
+                    abi.decode(_calls[i], (bytes4))
+                ),
+                _FILE,
+                "Disallowed multicall function"
+            );
+
+            SafeDelegateCallLib.safeDelegateCall(address(this), _calls[i]);
+        }
+    }
 
     function depositIntoVaultForDolomiteMargin(
         IIsolationModeTokenVaultV1 _vault,
@@ -99,6 +123,45 @@ library IsolationModeTokenVaultV1ActionsImpl {
             _vault.marketId(),
             _amountWei,
             AccountBalanceLib.BalanceCheckFlag.Both
+        );
+    }
+
+    function openMarginPosition(
+        IIsolationModeTokenVaultV1 _vault,
+        uint256 _fromAccountNumber,
+        uint256 _toAccountNumber,
+        uint256 _borrowMarketId,
+        uint256 _amountWei
+    ) public {
+        transferIntoPositionWithUnderlyingToken(
+            _vault,
+            _fromAccountNumber,
+            _toAccountNumber,
+            _amountWei
+        );
+        IEventEmitterRegistry.BalanceUpdate memory zeroUpdate;
+        IEventEmitterRegistry.BalanceUpdate memory marginDepositUpdate = IEventEmitterRegistry.BalanceUpdate({
+            deltaWei: IDolomiteStructs.Wei({
+                sign: true,
+                value: _amountWei
+            }),
+            newPar: _vault.DOLOMITE_MARGIN().getAccountPar(
+                IDolomiteStructs.AccountInfo({
+                    owner: address(this),
+                    number: _toAccountNumber
+                }),
+                _vault.marketId()
+            )
+        });
+        _vault.dolomiteRegistry().eventEmitter().emitMarginPositionOpen(
+            address(_vault),
+            _toAccountNumber,
+            /* _inputToken */ _vault.DOLOMITE_MARGIN().getMarketTokenAddress(_borrowMarketId),
+            /* _outputToken */ _vault.VAULT_FACTORY(),
+            /* _depositToken */ _vault.VAULT_FACTORY(),
+            zeroUpdate,
+            marginDepositUpdate,
+            marginDepositUpdate
         );
     }
 

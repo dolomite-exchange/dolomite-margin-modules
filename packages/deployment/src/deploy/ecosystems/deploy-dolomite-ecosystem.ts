@@ -35,7 +35,11 @@ import {
   resetForkIfPossible,
 } from '@dolomite-exchange/modules-base/test/utils';
 import { DolomiteMargin } from '@dolomite-exchange/modules-base/test/utils/dolomite';
-import { getDolomiteMarginContract, getExpiryContract } from '@dolomite-exchange/modules-base/test/utils/setup';
+import {
+  getDolomiteMarginContract,
+  getExpiryContract,
+  getPayableToken,
+} from '@dolomite-exchange/modules-base/test/utils/setup';
 import { getLinearStepFunctionInterestSetterConstructorParams } from '@dolomite-exchange/modules-interest-setters/src/interest-setters-constructors';
 import { TokenInfo } from '@dolomite-exchange/modules-oracles/src';
 import { getChainlinkPriceOracleV3ConstructorParams as getChainlinkPriceOracleV3ConstructorParams } from '@dolomite-exchange/modules-oracles/src/oracles-constructors';
@@ -78,6 +82,12 @@ async function deployInterestSetters(): Promise<void> {
     'LinearStepFunctionInterestSetter',
     getLinearStepFunctionInterestSetterConstructorParams(parseEther('0.06'), parseEther('0.94'), parseEther('0.90')),
     'LinearStepFunction6L94U90OInterestSetter',
+  );
+
+  await deployContractAndSave(
+    'LinearStepFunctionInterestSetter',
+    getLinearStepFunctionInterestSetterConstructorParams(parseEther('0.07'), parseEther('0.93'), parseEther('0.90')),
+    'LinearStepFunction7L93U90OInterestSetter',
   );
 
   await deployContractAndSave(
@@ -279,6 +289,16 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     hhUser1,
   );
 
+  await deployContractAndSave(
+    'DolomiteERC4626',
+    [],
+    getMaxDeploymentVersionNameByDeploymentKey('DolomiteERC4626Implementation', 1),
+  );
+  await deployContractAndSave(
+    'DolomiteERC4626WithPayable',
+    [getPayableToken(network, hhUser1).address],
+    getMaxDeploymentVersionNameByDeploymentKey('DolomiteERC4626WithPayableImplementation', 1),
+  );
   const eventEmitterRegistryImplementationAddress = await deployContractAndSave(
     'EventEmitterRegistry',
     [],

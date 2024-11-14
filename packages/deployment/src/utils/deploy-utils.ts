@@ -1,5 +1,7 @@
 import { address } from '@dolomite-exchange/dolomite-margin';
 import {
+  DolomiteERC4626,
+  DolomiteERC4626__factory, DolomiteERC4626WithPayable, DolomiteERC4626WithPayable__factory,
   HandlerRegistry,
   IDolomiteInterestSetter,
   IDolomitePriceOracle,
@@ -17,6 +19,7 @@ import {
   REDSTONE_PRICE_AGGREGATORS_MAP,
 } from '@dolomite-exchange/modules-base/src/utils/constants';
 import {
+  getDolomiteErc4626ProxyConstructorParams,
   getLiquidationPremiumForTargetLiquidationPenalty,
   getMarginPremiumForTargetCollateralization,
   getOwnerAddMarketParameters,
@@ -36,7 +39,9 @@ import {
   ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { impersonate } from '@dolomite-exchange/modules-base/test/utils';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { CoreProtocolType } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { IGmxV2IsolationModeVaultFactory } from '@dolomite-exchange/modules-gmx-v2/src/types';
 import {
   CoreProtocolWithChainlinkOld,
   CoreProtocolWithChainlinkV3,
@@ -79,10 +84,7 @@ import hardhat, { artifacts, ethers, network } from 'hardhat';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { CoreProtocolXLayer } from 'packages/base/test/utils/core-protocols/core-protocol-x-layer';
 import path, { join } from 'path';
-import {
-  CoreProtocolArbitrumOne,
-} from '@dolomite-exchange/modules-base/test/utils/core-protocols/core-protocol-arbitrum-one';
-import { IGmxV2IsolationModeVaultFactory } from '@dolomite-exchange/modules-gmx-v2/src/types';
+import ModuleDeployments from '../deploy/deployments.json';
 
 type ChainId = string;
 
@@ -569,6 +571,42 @@ export async function deployLinearInterestSetterAndSave(
   );
 }
 
+export async function deployDolomiteErc4626Token(
+  core: CoreProtocolType<any>,
+  tokenName: string,
+  marketId: BigNumberish,
+): Promise<DolomiteERC4626> {
+  const contractName = getMaxDeploymentVersionNameByDeploymentKey('DolomiteERC4626Implementation', 1);
+  const implementation = DolomiteERC4626__factory.connect(
+    (ModuleDeployments as any)[contractName][core.network].address,
+    core.hhUser1,
+  );
+  const address = await deployContractAndSave(
+    'RegistryProxy',
+    await getDolomiteErc4626ProxyConstructorParams(core, implementation, marketId),
+    `Dolomite${tokenName}4626Token`,
+  );
+  return DolomiteERC4626__factory.connect(address, core.hhUser1);
+}
+
+export async function deployDolomiteErc4626WithPayableToken(
+  core: CoreProtocolType<any>,
+  tokenName: string,
+  marketId: BigNumberish,
+): Promise<DolomiteERC4626WithPayable> {
+  const contractName = getMaxDeploymentVersionNameByDeploymentKey('DolomiteERC4626WithPayableImplementation', 1);
+  const implementation = DolomiteERC4626__factory.connect(
+    (ModuleDeployments as any)[contractName][core.network].address,
+    core.hhUser1,
+  );
+  const address = await deployContractAndSave(
+    'RegistryProxy',
+    await getDolomiteErc4626ProxyConstructorParams(core, implementation, marketId),
+    `Dolomite${tokenName}4626WithPayableToken`,
+  );
+  return DolomiteERC4626WithPayable__factory.connect(address, core.hhUser1);
+}
+
 export function sortFile(file: Record<string, Record<ChainId, any>>) {
   const sortedFileKeys = Object.keys(file).sort((a, b) => {
     const aSplitPoint = a.search(/V\d+$/);
@@ -677,8 +715,7 @@ async function getFormattedTokenName<T extends NetworkType>(
   const token = IERC20Metadata__factory.connect(tokenAddress, core.hhUser1);
   try {
     mostRecentTokenDecimals = await token.decimals();
-  } catch (e) {
-  }
+  } catch (e) {}
 
   const cachedName = addressToNameCache[tokenAddress.toString().toLowerCase()];
   if (typeof cachedName !== 'undefined') {
@@ -804,7 +841,9 @@ export async function prettyPrintEncodedDataWithTypeSafety<
     const repeatLength = 76 + (counter - 1).toString().length + key.toString().length + methodName.toString().length;
     console.log(''); // add a new line
     console.log(
-      `=================================== ${counter++} - ${String(key)}.${String(methodName)} ===================================`,
+      `=================================== ${counter++} - ${String(key)}.${String(
+        methodName,
+      )} ===================================`,
     );
     console.log('Readable:\t', `${String(key)}.${String(methodName)}(\n\t\t\t${mappedArgs.join(' ,\n\t\t\t')}\n\t\t)`);
     console.log(
@@ -1044,7 +1083,7 @@ export async function prettyPrintEncodeInsertChainlinkOracleV3<T extends Network
 }
 
 export async function prettyPrintEncodeInsertChronicleOracleV3(
-  core: CoreProtocolWithChronicle<Network.ArbitrumOne | Network.Berachain| Network.Mantle>,
+  core: CoreProtocolWithChronicle<Network.ArbitrumOne | Network.Berachain | Network.Mantle>,
   token: IERC20,
   invertPrice: boolean = CHRONICLE_PRICE_SCRIBES_MAP[core.config.network][token.address].invertPrice ?? false,
   tokenPairAddress: string | undefined = CHRONICLE_PRICE_SCRIBES_MAP[core.config.network][token.address]
@@ -1436,7 +1475,7 @@ export async function prettyPrintEncodeAddGmxV2Market(
       'ownerSetGmxMarketToIndexToken',
       [await factory.UNDERLYING_TOKEN(), await factory.INDEX_TOKEN()],
     ),
-    ...await prettyPrintEncodeAddAsyncIsolationModeMarket(
+    ...(await prettyPrintEncodeAddAsyncIsolationModeMarket(
       core,
       factory,
       core.oracleAggregatorV2,
@@ -1448,7 +1487,7 @@ export async function prettyPrintEncodeAddGmxV2Market(
       targetLiquidationPremium,
       maxSupplyWei,
       options,
-    ),
+    )),
   ];
 }
 

@@ -17,15 +17,10 @@ import {
 import {
   expectEvent,
   expectProtocolBalance,
-  expectProtocolBalanceIsGreaterThan,
   expectThrow,
   expectWalletBalance,
-  expectWalletBalanceIsBetween,
 } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import {
-  setupCoreProtocol,
-  setupWETHBalance,
-} from '@dolomite-exchange/modules-base/test/utils/setup';
+import { setupCoreProtocol, setupWETHBalance } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
@@ -42,22 +37,22 @@ import {
   IERC20,
   IERC20Metadata__factory,
   IVesterDiscountCalculator,
-  IVeToken,
   TestVeExternalVesterImplementationV1,
+  TestVeToken,
 } from '../src/types';
 import {
   createExternalOARB,
+  createExternalVesterDiscountCalculatorV1,
   createTestDiscountCalculator,
   createTestVeExternalVesterV1Proxy,
   createTestVeToken,
-  createVesterDiscountCalculatorV1,
 } from './liquidity-mining-ecosystem-utils';
-import { expectEmptyExternalVesterPosition } from './liquidityMining-utils';
+import { convertToNearestWeek, expectEmptyExternalVesterPosition } from './liquidityMining-utils';
 
 const defaultAccountNumber = ZERO_BI;
 const ONE_WEEK = BigNumber.from('604800');
-const FOUR_WEEKS = ONE_WEEK.mul(4);
-const CLOSE_POSITION_WINDOW = FOUR_WEEKS;
+const TWO_YEARS = ONE_WEEK.mul(104);
+const CLOSE_POSITION_WINDOW = ONE_WEEK;
 const FORCE_CLOSE_POSITION_TAX = BigNumber.from('500');
 const EMERGENCY_WITHDRAW_TAX = BigNumber.from('0');
 const NAME = 'oARB Vesting';
@@ -95,15 +90,15 @@ describe('VeExternalVesterV1', () => {
   let paymentToken: IERC20;
   let rewardMarketId: BigNumberish;
   let rewardToken: IERC20;
-  let veToken: IVeToken;
+  let veToken: TestVeToken;
   let owner: SignerWithAddressWithSafety;
 
   before(async () => {
     core = await setupCoreProtocol({
       network: Network.ArbitrumOne,
-      blockNumber: 219_404_000,
+      blockNumber: 219_405_000,
     });
-    testToken = await createTestToken(6);
+    testToken = await createTestToken();
 
     pairToken = testToken;
     paymentToken = core.tokens.weth;
@@ -129,10 +124,10 @@ describe('VeExternalVesterV1', () => {
     await setPriceOracle(paymentToken, paymentMarketId, testPriceOracle);
     await setPriceOracle(rewardToken, rewardMarketId, testPriceOracle);
 
-    discountCalculator = await createVesterDiscountCalculatorV1();
     owner = core.governance;
     oToken = await createExternalOARB(owner, 'Test oARB', 'oARB');
     veToken = await createTestVeToken(rewardToken);
+    discountCalculator = await createExternalVesterDiscountCalculatorV1(veToken);
 
     vester = await createTestVeExternalVesterV1Proxy(
       core,
@@ -142,13 +137,13 @@ describe('VeExternalVesterV1', () => {
       paymentMarketId,
       rewardToken,
       rewardMarketId,
-      veToken,
       discountCalculator,
       oToken,
       BASE_URI,
       NAME,
       SYMBOL,
     );
+    await vester.lazyInitialize(veToken.address);
     await vester.connect(owner).ownerSetClosePositionWindow(CLOSE_POSITION_WINDOW);
 
     await core.dolomiteMargin.connect(owner).ownerSetGlobalOperator(vester.address, true);
@@ -234,13 +229,45 @@ describe('VeExternalVesterV1', () => {
     });
   });
 
+  describe('#lazyInitialize', () => {
+    it('should work normally', async () => {
+      const newVester = await createTestVeExternalVesterV1Proxy(
+        core,
+        pairToken,
+        pairMarketId,
+        paymentToken,
+        paymentMarketId,
+        rewardToken,
+        rewardMarketId,
+        discountCalculator,
+        oToken,
+        BASE_URI,
+        NAME,
+        SYMBOL,
+      );
+      expect(await newVester.VE_TOKEN()).to.eq(ADDRESS_ZERO);
+      const res = await newVester.lazyInitialize(veToken.address);
+      await expectEvent(newVester, res, 'VeTokenSet', {
+        veToken: veToken.address,
+      });
+      expect(await vester.VE_TOKEN()).to.eq(veToken.address);
+    });
+
+    it('should fail if already initialized', async () => {
+      await expectThrow(
+        vester.lazyInitialize(veToken.address),
+        'VeExternalVesterImplementationV1: veToken already initialized',
+      );
+    });
+  });
+
   describe('#vest', () => {
-    it('should work with 4 week duration', async () => {
+    it('should work with 1 week duration', async () => {
       await setupAllowancesForVesting();
-      const result = await vester.vest(FOUR_WEEKS, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT);
+      const result = await vester.vest(ONE_WEEK, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT);
       await expectEvent(vester, result, 'VestingStarted', {
         owner: core.hhUser1.address,
-        duration: FOUR_WEEKS,
+        duration: ONE_WEEK,
         oTokenAmount: O_TOKEN_AMOUNT,
         pairAmount: PAIR_AMOUNT,
         vestingId: NFT_ID,
@@ -260,14 +287,14 @@ describe('VeExternalVesterV1', () => {
       expect(position.creator).to.eq(core.hhUser1.address);
       expect(position.id).to.eq(NFT_ID);
       expect(position.startTime).to.eq(await getBlockTimestamp(await ethers.provider.getBlockNumber()));
-      expect(position.duration).to.eq(FOUR_WEEKS);
+      expect(position.duration).to.eq(ONE_WEEK);
       expect(position.oTokenAmount).to.eq(O_TOKEN_AMOUNT);
       expect(position.pairAmount).to.eq(PAIR_AMOUNT);
     });
 
     it('should fail if PAIR_TOKEN exceeds max', async () => {
       await expectThrow(
-        vester.connect(core.hhUser1).vest(FOUR_WEEKS, O_TOKEN_AMOUNT, ONE_BI),
+        vester.connect(core.hhUser1).vest(ONE_WEEK, O_TOKEN_AMOUNT, ONE_BI),
         'VeExternalVesterImplementationV1: Pair amount exceeds max',
       );
     });
@@ -275,33 +302,22 @@ describe('VeExternalVesterV1', () => {
     it('should fail if vester has insufficient REWARD_TOKEN', async () => {
       await vester.connect(owner).ownerWithdrawRewardToken(owner.address, TOTAL_REWARD_AMOUNT, false);
       await expectThrow(
-        vester.connect(core.hhUser1).vest(FOUR_WEEKS, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT),
+        vester.connect(core.hhUser1).vest(ONE_WEEK, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT),
         'VeExternalVesterImplementationV1: Not enough rewards available',
       );
     });
 
-    it('should fail if duration is different than 4 weeks', async () => {
+    it('should fail if duration is different than 1 weeks', async () => {
       await expectThrow(
         vester.vest(ZERO_BI, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT),
         'VeExternalVesterImplementationV1: Invalid duration',
       );
       await expectThrow(
-        vester.vest(FOUR_WEEKS.sub(1), O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT),
+        vester.vest(ONE_WEEK.sub(1), O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT),
         'VeExternalVesterImplementationV1: Invalid duration',
       );
       await expectThrow(
-        vester.vest(FOUR_WEEKS.add(1), O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT),
-        'VeExternalVesterImplementationV1: Invalid duration',
-      );
-      await expectThrow(
-        vester.vest(ONE_WEEK, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT),
-        'VeExternalVesterImplementationV1: Invalid duration',
-      );
-    });
-
-    it('should fail if duration not 1 week interval', async () => {
-      await expectThrow(
-        vester.vest(FOUR_WEEKS.mul(2).add(1), O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT),
+        vester.vest(ONE_WEEK.add(1), O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT),
         'VeExternalVesterImplementationV1: Invalid duration',
       );
     });
@@ -309,7 +325,7 @@ describe('VeExternalVesterV1', () => {
     it('should fail if vesting is not active', async () => {
       await vester.connect(owner).ownerSetIsVestingActive(false);
       await expectThrow(
-        vester.vest(FOUR_WEEKS.mul(2).add(1), O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT),
+        vester.vest(ONE_WEEK, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT),
         'VeExternalVesterImplementationV1: Vesting not active',
       );
     });
@@ -324,14 +340,59 @@ describe('VeExternalVesterV1', () => {
   });
 
   describe('#closePositionAndBuyTokens', () => {
-    it('should work normally', async () => {
+    it('should work normally for existing veNFTId', async () => {
       await setupAllowancesForVesting();
-      await vester.vest(FOUR_WEEKS, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT);
-      await increase(FOUR_WEEKS);
+      await vester.vest(ONE_WEEK, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT);
+      await increase(ONE_WEEK);
 
-      const paymentAmount = PAYMENT_AMOUNT_BEFORE_DISCOUNT.mul(7_200).div(10_000);
+      const timestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
+      await veToken.setAmountAndEnd(
+        O_TOKEN_AMOUNT,
+        convertToNearestWeek(BigNumber.from(timestamp), TWO_YEARS),
+      );
+      const paymentAmount = PAYMENT_AMOUNT_BEFORE_DISCOUNT.mul(5_000).div(10_000);
 
-      const result = await vester.closePositionAndBuyTokens(NFT_ID, VE_TOKEN_ID, MAX_PAYMENT_AMOUNT);
+      const result = await vester.closePositionAndBuyTokens(NFT_ID, VE_TOKEN_ID, ZERO_BI, MAX_PAYMENT_AMOUNT);
+
+      await expectEvent(vester, result, 'PositionClosed', {
+        owner: core.hhUser1.address,
+        vestingId: ONE_BI,
+        amountPaid: paymentAmount,
+      });
+      await expectWalletBalance(core.hhUser1.address, oToken, ZERO_BI);
+      await expectWalletBalance(vester.address, oToken, ZERO_BI);
+
+      await expectWalletBalance(core.hhUser1, pairToken, PAIR_AMOUNT.mul(2));
+      await expectWalletBalance(core.hhUser1, paymentToken, MAX_PAYMENT_AMOUNT.sub(paymentAmount));
+      await expectWalletBalance(veToken, rewardToken, REWARD_AMOUNT);
+
+      // Account for the pair amount being returned PLUS the REWARD_AMOUNT
+      await expectWalletBalance(vester, pairToken, TOTAL_REWARD_AMOUNT.sub(REWARD_AMOUNT));
+
+      await expectProtocolBalance(core, owner, defaultAccountNumber, paymentMarketId, paymentAmount);
+      await expectProtocolBalance(core, owner, ZERO_BI, paymentMarketId, paymentAmount);
+      expect(await vester.pushedTokens()).to.eq(TOTAL_REWARD_AMOUNT.sub(REWARD_AMOUNT));
+      expect(await vester.promisedTokens()).to.eq(ZERO_BI);
+      expect(await vester.availableTokens()).to.eq(TOTAL_REWARD_AMOUNT.sub(REWARD_AMOUNT));
+
+      expectEmptyExternalVesterPosition(await vester.vestingPositions(NFT_ID));
+      await expectThrow(vester.ownerOf(NFT_ID), 'ERC721: invalid token ID');
+    });
+
+    it('should work normally when creating new veNFTId', async () => {
+      await setupAllowancesForVesting();
+      await vester.vest(ONE_WEEK, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT);
+      await increase(ONE_WEEK);
+
+      const paymentAmount = PAYMENT_AMOUNT_BEFORE_DISCOUNT.mul(5_000).div(10_000);
+
+      const timestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
+      const result = await vester.closePositionAndBuyTokens(
+        NFT_ID,
+        MAX_UINT_256_BI,
+        convertToNearestWeek(BigNumber.from(timestamp), TWO_YEARS),
+        MAX_PAYMENT_AMOUNT,
+      );
 
       await expectEvent(vester, result, 'PositionClosed', {
         owner: core.hhUser1.address,
@@ -360,7 +421,7 @@ describe('VeExternalVesterV1', () => {
 
     it('should fail if the discount is invalid', async () => {
       await setupAllowancesForVesting();
-      const time = FOUR_WEEKS;
+      const time = ONE_WEEK;
       await vester.vest(time, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT);
       await increase(time);
 
@@ -368,50 +429,91 @@ describe('VeExternalVesterV1', () => {
 
       const tester = await createTestDiscountCalculator();
       await vester.connect(owner).ownerSetDiscountCalculator(tester.address);
-      const discount = 10_001;
+      const discount = ONE_ETH_BI.add(1);
       await tester.setDiscount(discount);
 
       await expectThrow(
-        vester.closePositionAndBuyTokens(NFT_ID, VE_TOKEN_ID, paymentAmount),
+        vester.closePositionAndBuyTokens(NFT_ID, VE_TOKEN_ID, ZERO_BI, paymentAmount),
         `VeExternalVesterImplementationV1: Invalid discount <${discount}>`,
       );
     });
 
     it('should fail if cost is too high for max payment', async () => {
       await setupAllowancesForVesting();
-      await vester.vest(FOUR_WEEKS, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT);
-      await increase(FOUR_WEEKS);
+      await vester.vest(ONE_WEEK, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT);
+      await increase(ONE_WEEK);
+      const timestamp = BigNumber.from(await getBlockTimestamp(await ethers.provider.getBlockNumber()));
       await expectThrow(
-        vester.closePositionAndBuyTokens(NFT_ID, VE_TOKEN_ID, ONE_BI),
+        vester.closePositionAndBuyTokens(NFT_ID, MAX_UINT_256_BI, convertToNearestWeek(timestamp, ONE_WEEK), ONE_BI),
         'VeExternalVesterImplementationV1: Cost exceeds max payment amount',
       );
     });
 
     it('should fail if not called by position owner', async () => {
       await setupAllowancesForVesting();
-      await vester.vest(FOUR_WEEKS, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT);
+      await vester.vest(ONE_WEEK, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT);
       await expectThrow(
-        vester.connect(core.hhUser2).closePositionAndBuyTokens(NFT_ID, VE_TOKEN_ID, MAX_PAYMENT_AMOUNT),
+        vester.connect(core.hhUser2).closePositionAndBuyTokens(NFT_ID, VE_TOKEN_ID, ZERO_BI, MAX_PAYMENT_AMOUNT),
         'VeExternalVesterImplementationV1: Invalid position owner',
       );
     });
 
     it('should fail if before vesting time', async () => {
       await setupAllowancesForVesting();
-      await vester.vest(FOUR_WEEKS, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT);
+      await vester.vest(ONE_WEEK, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT);
       await expectThrow(
-        vester.connect(core.hhUser1).closePositionAndBuyTokens(NFT_ID, VE_TOKEN_ID, MAX_PAYMENT_AMOUNT),
+        vester.connect(core.hhUser1).closePositionAndBuyTokens(NFT_ID, VE_TOKEN_ID, ZERO_BI, MAX_PAYMENT_AMOUNT),
         'VeExternalVesterImplementationV1: Position not vested',
+      );
+    });
+
+    it('should fail if ve lock time is invalid', async () => {
+      await setupAllowancesForVesting();
+      await vester.vest(ONE_WEEK, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT);
+      await increase(ONE_WEEK);
+      const timestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
+
+      const weekTimestamp = convertToNearestWeek(BigNumber.from(timestamp), ONE_WEEK);
+      await expectThrow(
+        vester.connect(core.hhUser1)
+          .closePositionAndBuyTokens(NFT_ID, MAX_UINT_256_BI, weekTimestamp.sub(ONE_WEEK), MAX_PAYMENT_AMOUNT),
+        'VeExternalVesterImplementationV1: Invalid ve lock end time',
+      );
+
+      const maxDuration = TWO_YEARS.add(ONE_WEEK);
+      await expectThrow(
+        vester.connect(core.hhUser1).closePositionAndBuyTokens(
+          NFT_ID,
+          MAX_UINT_256_BI,
+          convertToNearestWeek(BigNumber.from(timestamp), maxDuration).add(1),
+          MAX_PAYMENT_AMOUNT,
+        ),
+        'VeExternalVesterImplementationV1: Invalid ve lock end time',
+      );
+    });
+
+    it('should fail if the ve lock time is too old', async () => {
+      await setupAllowancesForVesting();
+      await vester.vest(ONE_WEEK, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT);
+      await increase(ONE_WEEK);
+
+      const timestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
+      const weekTimestamp = convertToNearestWeek(BigNumber.from(timestamp), TWO_YEARS.add(ONE_WEEK));
+
+      await expectThrow(
+        vester.connect(core.hhUser1)
+          .closePositionAndBuyTokens(NFT_ID, MAX_UINT_256_BI, weekTimestamp, MAX_PAYMENT_AMOUNT),
+        'VeExternalVesterImplementationV1: ve lock end time is too old',
       );
     });
 
     it('should fail if reentered', async () => {
       await setupAllowancesForVesting();
-      await vester.vest(FOUR_WEEKS, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT);
+      await vester.vest(ONE_WEEK, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT);
       await expectThrow(
         vester
           .connect(core.hhUser1)
-          .callClosePositionAndBuyTokensAndTriggerReentrancy(NFT_ID, VE_TOKEN_ID, MAX_UINT_256_BI),
+          .callClosePositionAndBuyTokensAndTriggerReentrancy(NFT_ID, VE_TOKEN_ID, ZERO_BI, MAX_UINT_256_BI),
         'ReentrancyGuardUpgradeable: Reentrant call',
       );
     });
@@ -420,9 +522,8 @@ describe('VeExternalVesterV1', () => {
   describe('#forceClosePosition', () => {
     it('should work normally', async () => {
       await setupAllowancesForVesting();
-      await vester.vest(FOUR_WEEKS, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT);
-      const vesterAccountNumber = getVesterAccountNumber(core.hhUser1, NFT_ID);
-      await increase(CLOSE_POSITION_WINDOW.add(FOUR_WEEKS).add(1));
+      await vester.vest(ONE_WEEK, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT);
+      await increase(CLOSE_POSITION_WINDOW.add(ONE_WEEK).add(1));
 
       const result = await vester.connect(core.hhUser5).forceClosePosition(NFT_ID);
       const taxAmount = PAIR_AMOUNT.mul(5).div(100);
@@ -453,9 +554,8 @@ describe('VeExternalVesterV1', () => {
     it('should work normally if tax is zero', async () => {
       await setupAllowancesForVesting();
       await vester.connect(owner).ownerSetForceClosePositionTax(ZERO_BI);
-      await vester.vest(FOUR_WEEKS, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT);
-      const vesterAccountNumber = getVesterAccountNumber(core.hhUser1, NFT_ID);
-      await increase(CLOSE_POSITION_WINDOW.add(FOUR_WEEKS).add(1));
+      await vester.vest(ONE_WEEK, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT);
+      await increase(CLOSE_POSITION_WINDOW.add(ONE_WEEK).add(1));
 
       const result = await vester.connect(core.hhUser5).forceClosePosition(NFT_ID);
       await expectEvent(vester, result, 'PositionForceClosed', {
@@ -481,7 +581,7 @@ describe('VeExternalVesterV1', () => {
     it('should fail if position is not expirable', async () => {
       await vester.connect(owner).ownerSetClosePositionWindow(ZERO_BI);
       await setupAllowancesForVesting();
-      await vester.vest(FOUR_WEEKS, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT);
+      await vester.vest(ONE_WEEK, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT);
       await expectThrow(
         vester.connect(core.hhUser5).forceClosePosition(NFT_ID),
         'VeExternalVesterImplementationV1: Positions are not expirable',
@@ -490,7 +590,7 @@ describe('VeExternalVesterV1', () => {
 
     it('should fail if position is not expired', async () => {
       await setupAllowancesForVesting();
-      await vester.vest(FOUR_WEEKS, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT);
+      await vester.vest(ONE_WEEK, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT);
       await increase(CLOSE_POSITION_WINDOW.sub(2)); // Not sure why this is off by a bit
       await expectThrow(
         vester.connect(core.hhUser5).forceClosePosition(NFT_ID),
@@ -502,8 +602,7 @@ describe('VeExternalVesterV1', () => {
   describe('#emergencyWithdraw', () => {
     it('should work normally', async () => {
       await setupAllowancesForVesting();
-      await vester.vest(FOUR_WEEKS, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT);
-      const vesterAccountNumber = getVesterAccountNumber(core.hhUser1, NFT_ID);
+      await vester.vest(ONE_WEEK, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT);
       await increase(ONE_DAY_SECONDS);
 
       const result = await vester.connect(core.hhUser1).emergencyWithdraw(NFT_ID);
@@ -534,8 +633,7 @@ describe('VeExternalVesterV1', () => {
     it('should work normally with tax', async () => {
       await vester.connect(owner).ownerSetEmergencyWithdrawTax(500); // 5%
       await setupAllowancesForVesting();
-      await vester.vest(FOUR_WEEKS, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT);
-      const vesterAccountNumber = getVesterAccountNumber(core.hhUser1, NFT_ID);
+      await vester.vest(ONE_WEEK, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT);
       await increase(ONE_DAY_SECONDS);
 
       const result = await vester.connect(core.hhUser1).emergencyWithdraw(NFT_ID);
@@ -564,7 +662,7 @@ describe('VeExternalVesterV1', () => {
       await expectThrow(vester.emergencyWithdraw(NFT_ID), 'ERC721: invalid token ID');
 
       await setupAllowancesForVesting();
-      await vester.connect(core.hhUser1).vest(FOUR_WEEKS, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT);
+      await vester.connect(core.hhUser1).vest(ONE_WEEK, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT);
       await expectThrow(
         vester.connect(core.hhUser2).emergencyWithdraw(NFT_ID),
         'VeExternalVesterImplementationV1: Invalid position owner',
@@ -629,7 +727,7 @@ describe('VeExternalVesterV1', () => {
       await expectWalletBalance(vester, rewardToken, TOTAL_REWARD_AMOUNT);
 
       await setupAllowancesForVesting();
-      await vester.connect(core.hhUser1).vest(FOUR_WEEKS, O_TOKEN_AMOUNT, PAIR_AMOUNT);
+      await vester.connect(core.hhUser1).vest(ONE_WEEK, O_TOKEN_AMOUNT, PAIR_AMOUNT);
       await vester.connect(owner).ownerWithdrawRewardToken(core.hhUser3.address, O_TOKEN_AMOUNT.mul(3), false);
       expect(await vester.pushedTokens()).to.eq(TOTAL_REWARD_AMOUNT.sub(O_TOKEN_AMOUNT.mul(3)));
       await expectWalletBalance(core.hhUser3, rewardToken, O_TOKEN_AMOUNT.mul(3));
@@ -642,7 +740,7 @@ describe('VeExternalVesterV1', () => {
       );
 
       await setupAllowancesForVesting();
-      await vester.connect(core.hhUser1).vest(FOUR_WEEKS, O_TOKEN_AMOUNT, PAIR_AMOUNT);
+      await vester.connect(core.hhUser1).vest(ONE_WEEK, O_TOKEN_AMOUNT, PAIR_AMOUNT);
       expect(await vester.availableTokens()).to.eq(TOTAL_REWARD_AMOUNT.sub(O_TOKEN_AMOUNT));
       expect(await vester.pushedTokens()).to.eq(TOTAL_REWARD_AMOUNT);
       await expectThrow(
@@ -826,7 +924,7 @@ describe('VeExternalVesterV1', () => {
       const baseURI = 'hello';
       await vester.connect(owner).ownerSetBaseURI(baseURI);
       await setupAllowancesForVesting();
-      await vester.vest(FOUR_WEEKS, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT);
+      await vester.vest(ONE_WEEK, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT);
       expect(await vester.tokenURI(1)).to.eq('hello');
     });
 
@@ -863,9 +961,5 @@ describe('VeExternalVesterV1', () => {
     if (!BigNumber.from(marketId).eq(NO_MARKET_ID)) {
       await core.dolomiteMargin.ownerSetPriceOracle(marketId, core.oracleAggregatorV2.address);
     }
-  }
-
-  function getVesterAccountNumber(user: SignerWithAddressWithSafety, nftId: BigNumberish): BigNumber {
-    return BigNumber.from(ethers.utils.solidityKeccak256(['address', 'uint256'], [user.address, nftId]));
   }
 });
