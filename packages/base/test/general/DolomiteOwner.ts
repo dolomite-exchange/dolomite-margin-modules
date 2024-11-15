@@ -1,9 +1,15 @@
 import { expect } from 'chai';
 import { BytesLike } from 'ethers';
-import { ADDRESS_ZERO, BYTES_EMPTY, BYTES_ZERO, Network } from 'packages/base/src/utils/no-deps-constants';
+import {
+  ADDRESS_ZERO,
+  BYTES_EMPTY,
+  BYTES_ZERO,
+  Network,
+  ONE_DAY_SECONDS,
+} from 'packages/base/src/utils/no-deps-constants';
 import { Ownable__factory } from 'packages/liquidity-mining/src/types';
 import { DolomiteOwner } from '../../src/types';
-import { revertToSnapshotAndCapture, snapshot } from '../utils';
+import { advanceByTimeDelta, revertToSnapshotAndCapture, snapshot } from '../utils';
 import { expectEvent, expectThrow } from '../utils/assertions';
 
 import { CoreProtocolArbitrumOne } from '../utils/core-protocols/core-protocol-arbitrum-one';
@@ -373,16 +379,41 @@ describe('DolomiteOwner', () => {
       );
     });
 
-    it('default admin should be able to sumbit a transaction with no data', async () => {
-      await dolomiteOwner.submitTransaction(core.hhUser1.address, BYTES_EMPTY);
+    it('should fail for default admin when submitting a transaction with data that is too small', async () => {
+      await expectThrow(
+        dolomiteOwner.submitTransaction(core.hhUser1.address, '0x'),
+        'DolomiteOwner: Invalid calldata length',
+      );
+      await expectThrow(
+        dolomiteOwner.submitTransaction(core.hhUser1.address, '0x12'),
+        'DolomiteOwner: Invalid calldata length',
+      );
+      await expectThrow(
+        dolomiteOwner.submitTransaction(core.hhUser1.address, '0x1234'),
+        'DolomiteOwner: Invalid calldata length',
+      );
+      await expectThrow(
+        dolomiteOwner.submitTransaction(core.hhUser1.address, '0x123456'),
+        'DolomiteOwner: Invalid calldata length',
+      );
     });
 
-    it('role should be able to submit a transaction with no data', async () => {
+    it('should fail for default admin when submitting a transaction with no data', async () => {
+      await expectThrow(
+        dolomiteOwner.submitTransaction(core.hhUser1.address, BYTES_EMPTY),
+        'DolomiteOwner: Invalid calldata length',
+      );
+    });
+
+    it('should fail for role when submitting a transaction with no data', async () => {
       await dolomiteOwner.ownerAddRole(securityCouncilRole);
       await dolomiteOwner.grantRole(securityCouncilRole, core.hhUser1.address);
       await dolomiteOwner.ownerAddRoleAddresses(securityCouncilRole, [core.hhUser5.address]);
 
-      await dolomiteOwner.connect(core.hhUser1).submitTransaction(core.hhUser5.address, BYTES_EMPTY);
+      await expectThrow(
+        dolomiteOwner.connect(core.hhUser1).submitTransaction(core.hhUser5.address, BYTES_EMPTY),
+        'DolomiteOwner: Invalid calldata length',
+      );
     });
 
     it('should fail if users role is no longer active', async () => {
@@ -390,11 +421,11 @@ describe('DolomiteOwner', () => {
       await dolomiteOwner.grantRole(securityCouncilRole, core.hhUser1.address);
       await dolomiteOwner.ownerAddRoleAddresses(securityCouncilRole, [core.hhUser5.address]);
 
-      await dolomiteOwner.connect(core.hhUser1).submitTransaction(core.hhUser5.address, BYTES_EMPTY);
+      await dolomiteOwner.connect(core.hhUser1).submitTransaction(core.hhUser5.address, BYTES4_OTHER_SELECTOR);
 
       await dolomiteOwner.ownerRemoveRole(securityCouncilRole);
       await expectThrow(
-        dolomiteOwner.connect(core.hhUser1).submitTransaction(core.hhUser5.address, BYTES_EMPTY),
+        dolomiteOwner.connect(core.hhUser1).submitTransaction(core.hhUser5.address, BYTES4_OTHER_SELECTOR),
         'DolomiteOwner: Transaction not approved',
       );
     });
@@ -406,7 +437,7 @@ describe('DolomiteOwner', () => {
       await dolomiteOwner.ownerAddRoleAddresses(executorRole, [core.dolomiteRegistry.address]);
 
       await expectThrow(
-        dolomiteOwner.connect(core.hhUser1).submitTransaction(core.dolomiteRegistry.address, BYTES_EMPTY),
+        dolomiteOwner.connect(core.hhUser1).submitTransaction(core.dolomiteRegistry.address, BYTES4_OTHER_SELECTOR),
         'DolomiteOwner: Transaction not approved',
       );
     });
@@ -420,6 +451,44 @@ describe('DolomiteOwner', () => {
     it('should work normally for default admin', async () => {
       const data = await core.dolomiteRegistry.populateTransaction.ownerSetChainlinkPriceOracle(OTHER_ADDRESS);
       await dolomiteOwner.submitTransaction(core.dolomiteRegistry.address, data.data!);
+
+      const res = await dolomiteOwner.executeTransaction(0);
+      await expectEvent(dolomiteOwner, res, 'TransactionExecuted', {
+        transactionId: 0,
+      });
+      expect((await dolomiteOwner.transactions(0)).executed).to.be.true;
+    });
+
+    it('should work normally when there is a time lock', async () => {
+      await dolomiteOwner.ownerSetSecondsTimeLocked(ONE_DAY_SECONDS);
+      expect(await dolomiteOwner.secondsTimeLocked()).to.eq(ONE_DAY_SECONDS);
+
+      const data = await core.dolomiteRegistry.populateTransaction.ownerSetChainlinkPriceOracle(OTHER_ADDRESS);
+      await dolomiteOwner.submitTransaction(core.dolomiteRegistry.address, data.data!);
+
+      await expectThrow(dolomiteOwner.executeTransaction(0), 'DolomiteOwner: Timelock incomplete');
+
+      await advanceByTimeDelta(ONE_DAY_SECONDS);
+
+      const res = await dolomiteOwner.executeTransaction(0);
+      await expectEvent(dolomiteOwner, res, 'TransactionExecuted', {
+        transactionId: 0,
+      });
+      expect((await dolomiteOwner.transactions(0)).executed).to.be.true;
+    });
+
+    it('should work normally when there is a time lock but role can bypass it', async () => {
+      await dolomiteOwner.ownerSetSecondsTimeLocked(ONE_DAY_SECONDS);
+      expect(await dolomiteOwner.secondsTimeLocked()).to.eq(ONE_DAY_SECONDS);
+
+      const data = await core.dolomiteRegistry.populateTransaction.ownerSetChainlinkPriceOracle(OTHER_ADDRESS);
+      await dolomiteOwner.submitTransaction(core.dolomiteRegistry.address, data.data!);
+
+      await expectThrow(dolomiteOwner.executeTransaction(0), 'DolomiteOwner: Timelock incomplete');
+
+      const bypassTimeLockRole = await dolomiteOwner.BYPASS_TIMELOCK_ROLE();
+      await dolomiteOwner.grantRole(bypassTimeLockRole, core.gnosisSafe.address);
+      expect(await dolomiteOwner.hasRole(bypassTimeLockRole, core.gnosisSafe.address)).to.be.true;
 
       const res = await dolomiteOwner.executeTransaction(0);
       await expectEvent(dolomiteOwner, res, 'TransactionExecuted', {

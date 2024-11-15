@@ -108,8 +108,9 @@ contract DolomiteOwner is IDolomiteOwner, AccessControl {
         address _sender,
         uint256 _transactionId
     ) {
-        require(
+        Require.that(
             isTimelockComplete(_transactionId) || hasRole(BYPASS_TIMELOCK_ROLE, _sender),
+            _FILE,
             "Timelock incomplete"
         );
         _;
@@ -261,17 +262,18 @@ contract DolomiteOwner is IDolomiteOwner, AccessControl {
         address _destination,
         bytes memory _data
     ) public returns (uint256) {
-        bytes4 selector;
-        if (_data.length == 0) {
-            selector = 0x00000000;
-        } else {
-            bytes32 rawData;
-            /* solium-disable-next-line security/no-inline-assembly */
-            assembly {
-                rawData := mload(add(_data, 32))
-            }
-            selector = bytes4(rawData);
+        Require.that(
+            _data.length >= 4,
+            _FILE,
+            "Invalid calldata length"
+        );
+
+        bytes32 rawData;
+        /* solium-disable-next-line security/no-inline-assembly */
+        assembly {
+            rawData := mload(add(_data, 32))
         }
+        bytes4 selector = bytes4(rawData);
 
         /*
         Logic to check if user has permission to submit the transaction
