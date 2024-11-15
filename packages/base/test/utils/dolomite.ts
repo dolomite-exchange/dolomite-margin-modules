@@ -23,7 +23,7 @@ import {
 } from '../../src/types';
 import {
   getDolomiteErc20ProxyConstructorParams,
-  getDolomiteErc4626ProxyConstructorParams,
+  getDolomiteErc4626ProxyConstructorParams, getDolomiteOwnerConstructorParams,
   getEventEmitterRegistryConstructorParams,
   getIsolationModeTraderProxyConstructorParams,
   getRegistryProxyConstructorParams,
@@ -109,11 +109,12 @@ export async function createDolomiteRegistryImplementation(): Promise<DolomiteRe
 
 export async function createDolomiteOwner(
   core: CoreProtocolType<NetworkType>,
+  secondsTimeLocked: BigNumberish,
 ): Promise<DolomiteOwner> {
   return createContractWithAbi(
     DolomiteOwner__factory.abi,
     DolomiteOwner__factory.bytecode,
-    [core.governance.address],
+    getDolomiteOwnerConstructorParams(core, secondsTimeLocked),
   );
 }
 

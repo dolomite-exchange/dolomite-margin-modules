@@ -45,6 +45,7 @@ interface IDolomiteOwner {
     // ======================== Events ========================
     // ========================================================
 
+    event SecondsTimeLockedChanged(uint32 _secondsTimeLocked);
     event RoleAdded(bytes32 indexed _role);
     event RoleRemoved(bytes32 indexed _role);
 
@@ -62,6 +63,8 @@ interface IDolomiteOwner {
     // ========================================================
     // =================== Admin Functions ====================
     // ========================================================
+
+    function ownerSetSecondsTimeLocked(uint32 _secondsTimeLocked) external;
 
     function ownerAddRole(bytes32 _role) external;
 

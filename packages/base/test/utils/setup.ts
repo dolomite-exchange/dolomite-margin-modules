@@ -97,7 +97,7 @@ import {
   FBTC_MAP,
   FRAX_MAP,
   GMX_BTC_PLACEHOLDER_MAP,
-  GMX_MAP,
+  GMX_MAP, GNOSIS_SAFE_MAP,
   GRAI_MAP,
   GRAIL_MAP,
   HONEY_MAP,
@@ -606,6 +606,12 @@ export async function setupCoreProtocol<T extends NetworkType>(
     );
   }
 
+  const gnosisSafe: SignerWithAddressWithSafety = await impersonateOrFallback(
+    GNOSIS_SAFE_MAP[config.network],
+    true,
+    hhUser1,
+  );
+
   const governance: SignerWithAddressWithSafety = await impersonateOrFallback(
     await IDolomiteMargin__factory.connect(dolomiteMarginAddress, hhUser1).owner(),
     true,
@@ -744,6 +750,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
     expiry,
     freezableLiquidatorProxy,
     genericTraderProxy,
+    gnosisSafe,
     governance,
     interestSetters,
     libraries,

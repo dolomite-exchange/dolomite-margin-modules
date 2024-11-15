@@ -890,6 +890,15 @@ export const GMX_WITHDRAWAL_VAULT_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x0628D46b5D145f183AdB6Ef1f2c97eD1C4701C55',
 };
 
+export const GNOSIS_SAFE_MAP: Record<Network, string> = {
+  [Network.ArbitrumOne]: '0xa75c21C5BE284122a87A37a76cc6C4DD3E55a1D4',
+  [Network.Base]: '0x145637A4Aa6B2001DC9ECBc89CEf75bB960F90B2',
+  [Network.Berachain]: '0x52d7BcB650c591f6E8da90f797A1d0Bfd8fD05F9',
+  [Network.Mantle]: '0x59F8CAD377e4C66473460Ce5Ee8976760A04F138',
+  [Network.PolygonZkEvm]: '0xa75c21C5BE284122a87A37a76cc6C4DD3E55a1D4',
+  [Network.XLayer]: '0x59F8CAD377e4C66473460Ce5Ee8976760A04F138',
+};
+
 export const GRAIL_USDC_V3_POOL_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x8cc8093218bCaC8B1896A1EED4D925F6F6aB289F',
 };

@@ -14,6 +14,7 @@ const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 const BYTES32_OTHER_SELECTOR = '0x1234567800000000000000000000000000000000000000000000000000000000';
 const BAD_ROLE = '0x1111111111111111111111111111111111111111111111111111111111111111';
 const BYTES4_OTHER_SELECTOR = '0x12345678';
+const SECONDS_TIME_LOCKED = 0;
 
 describe('DolomiteOwner', () => {
   let snapshotId: string;
@@ -25,16 +26,37 @@ describe('DolomiteOwner', () => {
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
 
-    dolomiteOwner = (await createDolomiteOwner(core)).connect(core.governance);
+    dolomiteOwner = (await createDolomiteOwner(core, SECONDS_TIME_LOCKED)).connect(core.gnosisSafe);
     securityCouncilRole = await dolomiteOwner.SECURITY_COUNCIL_ROLE();
     const ownable = Ownable__factory.connect(core.dolomiteMargin.address, core.governance);
     await ownable.transferOwnership(dolomiteOwner.address);
+
+    expect(await dolomiteOwner.secondsTimeLocked()).to.eq(SECONDS_TIME_LOCKED);
 
     snapshotId = await snapshot();
   });
 
   beforeEach(async () => {
     snapshotId = await revertToSnapshotAndCapture(snapshotId);
+  });
+
+  describe('#ownerSetSecondsTimeLocked', () => {
+    it('should work normally', async () => {
+      const newSecondsTimeLocked = 123;
+      expect(await dolomiteOwner.secondsTimeLocked()).to.equal(SECONDS_TIME_LOCKED);
+      const result = await dolomiteOwner.ownerSetSecondsTimeLocked(newSecondsTimeLocked);
+      await expectEvent(dolomiteOwner, result, 'SecondsTimeLockedChanged', {
+        secondsTimeLocked: newSecondsTimeLocked,
+      });
+      expect(await dolomiteOwner.secondsTimeLocked()).to.equal(newSecondsTimeLocked);
+    });
+
+    it('should fail if not called by DEFAULT_ADMIN', async () => {
+      await expectThrow(
+        dolomiteOwner.connect(core.hhUser1).ownerSetSecondsTimeLocked(123),
+        `AccessControl: account ${core.hhUser1.address.toLowerCase()} is missing role ${BYTES_ZERO}`,
+      );
+    });
   });
 
   describe('#ownerAddRole', () => {

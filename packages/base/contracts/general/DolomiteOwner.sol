@@ -119,14 +119,24 @@ contract DolomiteOwner is IDolomiteOwner, AccessControl {
     // =================== Constructor ================
     // ================================================
 
-    constructor(address _admin) {
+    constructor(
+        address _admin,
+        uint32 _secondsTimeLocked
+    ) {
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
         _roles.add(DEFAULT_ADMIN_ROLE);
+        _ownerSetSecondsTimeLocked(_secondsTimeLocked);
     }
 
     // ================================================
     // =================== Admin Functions ============
     // ================================================
+
+    function ownerSetSecondsTimeLocked(
+        uint32 _secondsTimeLocked
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        _ownerSetSecondsTimeLocked(_secondsTimeLocked);
+    }
 
     function ownerAddRole(
         bytes32 _role
@@ -389,6 +399,13 @@ contract DolomiteOwner is IDolomiteOwner, AccessControl {
     // ================================================
     // ============= Internal Functions ===============
     // ================================================
+
+    function _ownerSetSecondsTimeLocked(
+        uint32 _secondsTimeLocked
+    ) internal {
+        secondsTimeLocked = _secondsTimeLocked;
+        emit SecondsTimeLockedChanged(_secondsTimeLocked);
+    }
 
     function _executeTransaction(
         uint256 _transactionId
