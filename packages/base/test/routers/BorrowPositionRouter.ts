@@ -20,17 +20,21 @@ import {
 } from 'packages/base/src/types';
 import { createContractWithAbi, createContractWithLibrary, createTestToken, depositIntoDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
-import { createIsolationModeTokenVaultV1ActionsImpl } from '../utils/dolomite';
+import { createAndUpgradeDolomiteRegistry, createIsolationModeTokenVaultV1ActionsImpl } from '../utils/dolomite';
 import { createTestIsolationModeVaultFactory } from '../utils/ecosystem-utils/testers';
 import { BigNumber } from 'ethers';
 import { expectEvent, expectProtocolBalance, expectThrow } from '../utils/assertions';
 import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin';
 import { parseEther } from 'ethers/lib/utils';
+import { expect } from 'chai';
 
 enum Direction {
   ToVault = 0,
   FromVault = 1,
 }
+
+
+const OTHER_ADDRESS = '0x1234567890123456789012345678901234567890';
 
 const amountWei = ONE_ETH_BI;
 const parAmount = parseEther('.5');
@@ -53,6 +57,9 @@ describe('BorrowPositionRouter', () => {
     await disableInterestAccrual(core, core.marketIds.dai);
     await disableInterestAccrual(core, core.marketIds.weth);
 
+    await createAndUpgradeDolomiteRegistry(core);
+    await core.dolomiteRegistry.connect(core.governance).ownerSetBorrowPositionProxy(core.borrowPositionProxyV2.address);
+
     router = await createContractWithAbi<TestBorrowPositionRouter>(
       TestBorrowPositionRouter__factory.abi,
       TestBorrowPositionRouter__factory.bytecode,
@@ -70,14 +77,14 @@ describe('BorrowPositionRouter', () => {
     factory = await createTestIsolationModeVaultFactory(core, underlyingToken, userVaultImplementation as any);
     await core.testEcosystem!.testPriceOracle.setPrice(
       factory.address,
-      '1000000000000000000', // $1.00
+      '10000000000000000000', // $10.00
     );
     isolationModeMarketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, factory, true);
 
-    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(router.address, true);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
     await factory.connect(core.governance).ownerInitialize([router.address]);
+    await core.borrowPositionProxyV2.connect(core.governance).setIsCallerAuthorized(router.address, true);
 
     await factory.createVault(core.hhUser1.address);
     const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);
@@ -97,7 +104,7 @@ describe('BorrowPositionRouter', () => {
     snapshotId = await revertToSnapshotAndCapture(snapshotId);
   });
 
-  describe.only('#openBorrowPosition', () => {
+  describe('#openBorrowPosition', () => {
     it('should work normally for a user for a normal asset', async () => {
       const res = await router.openBorrowPosition(
         defaultAccountNumber,
@@ -106,7 +113,7 @@ describe('BorrowPositionRouter', () => {
         amountWei,
         BalanceCheckFlag.Both
       );
-      await expectEvent(core.eventEmitterRegistry, res, 'BorrowPositionOpen', {
+      await expectEvent(core.borrowPositionProxyV2, res, 'BorrowPositionOpen', {
         accountOwner: core.hhUser1.address,
         accountNumber: borrowAccountNumber,
       });
@@ -149,7 +156,7 @@ describe('BorrowPositionRouter', () => {
     });
   });
 
-  describe.only('#closeBorrowPosition', () => {
+  describe('#closeBorrowPosition', () => {
     it('should work normally for normal user and asset', async () => {
       const res = await router.openBorrowPosition(
         defaultAccountNumber,
@@ -158,7 +165,7 @@ describe('BorrowPositionRouter', () => {
         amountWei,
         BalanceCheckFlag.Both
       );
-      await expectEvent(core.eventEmitterRegistry, res, 'BorrowPositionOpen', {
+      await expectEvent(core.borrowPositionProxyV2, res, 'BorrowPositionOpen', {
         accountOwner: core.hhUser1.address,
         accountNumber: borrowAccountNumber,
       });
@@ -166,6 +173,7 @@ describe('BorrowPositionRouter', () => {
       await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, amountWei);
 
       await router.closeBorrowPosition(
+        MAX_UINT_256_BI,
         borrowAccountNumber,
         defaultAccountNumber,
         [core.marketIds.dai]
@@ -174,21 +182,7 @@ describe('BorrowPositionRouter', () => {
       await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, ZERO_BI);
     });
 
-    it('should fail if reentered', async () => {
-      const transaction = await router.populateTransaction.closeBorrowPosition(
-        borrowAccountNumber,
-        defaultAccountNumber,
-        [core.marketIds.dai]
-      );
-      await expectThrow(
-        router.callFunctionAndTriggerReentrancy(transaction.data!),
-        'ReentrancyGuard: reentrant call'
-      );
-    });
-  });
-
-  describe.only('#closeBorrowPositionWithUnderlyingVaultToken', () => {
-    it('should work normally', async () => {
+    it('should work normally for vault and underlying asset', async () => {
       await underlyingToken.connect(core.hhUser1).addBalance(core.hhUser1.address, amountWei);
       await underlyingToken.connect(core.hhUser1).approve(userVault.address, amountWei);
       await userVault.connect(core.hhUser1).depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
@@ -203,31 +197,56 @@ describe('BorrowPositionRouter', () => {
       await expectProtocolBalance(core, userVault, defaultAccountNumber, isolationModeMarketId, ZERO_BI);
       await expectProtocolBalance(core, userVault, borrowAccountNumber, isolationModeMarketId, amountWei);
 
-      await router.closeBorrowPositionWithUnderlyingVaultToken(
+      await router.closeBorrowPosition(
         isolationModeMarketId,
         borrowAccountNumber,
         defaultAccountNumber,
+        [],
       );
       await expectProtocolBalance(core, userVault, defaultAccountNumber, isolationModeMarketId, amountWei);
       await expectProtocolBalance(core, userVault, borrowAccountNumber, isolationModeMarketId, ZERO_BI);
     });
 
-    it('should fail if Market is not isolation mode', async () => {
+    it('should work normally for vault and other token', async () => {
+      await router.transferBetweenAccounts(
+        isolationModeMarketId,
+        defaultAccountNumber,
+        borrowAccountNumber,
+        core.marketIds.dai,
+        amountWei,
+        BalanceCheckFlag.Both
+      );
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.dai, ZERO_BI);
+      await expectProtocolBalance(core, userVault, borrowAccountNumber, core.marketIds.dai, amountWei);
+
+      await router.closeBorrowPosition(
+        isolationModeMarketId,
+        borrowAccountNumber,
+        defaultAccountNumber,
+        [core.marketIds.dai]
+      );
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.dai, amountWei);
+      await expectProtocolBalance(core, userVault, borrowAccountNumber, core.marketIds.dai, ZERO_BI);
+    });
+
+    it('should fail if market is not isolation mode', async () => {
       await expectThrow(
-        router.closeBorrowPositionWithUnderlyingVaultToken(
+        router.closeBorrowPosition(
           core.marketIds.usdc,
           borrowAccountNumber,
           defaultAccountNumber,
+          [],
         ),
         'RouterBase: Market is not isolation mode'
       );
     });
 
     it('should fail if reentered', async () => {
-      const transaction = await router.populateTransaction.closeBorrowPositionWithUnderlyingVaultToken(
-        isolationModeMarketId,
+      const transaction = await router.populateTransaction.closeBorrowPosition(
+        MAX_UINT_256_BI,
         borrowAccountNumber,
         defaultAccountNumber,
+        [core.marketIds.dai]
       );
       await expectThrow(
         router.callFunctionAndTriggerReentrancy(transaction.data!),
@@ -250,7 +269,7 @@ describe('BorrowPositionRouter', () => {
       await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, amountWei);
     });
 
-    it('should work normally for an isolation mode asset', async () => {
+    it('should transfer underlying isolation asset', async () => {
       await underlyingToken.connect(core.hhUser1).addBalance(core.hhUser1.address, amountWei);
       await underlyingToken.connect(core.hhUser1).approve(userVault.address, amountWei);
       await userVault.connect(core.hhUser1).depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
@@ -265,17 +284,27 @@ describe('BorrowPositionRouter', () => {
       );
       await expectProtocolBalance(core, userVault, defaultAccountNumber, isolationModeMarketId, ZERO_BI);
       await expectProtocolBalance(core, userVault, borrowAccountNumber, isolationModeMarketId, amountWei);
+
+      await router.transferBetweenAccounts(
+        isolationModeMarketId,
+        borrowAccountNumber,
+        defaultAccountNumber,
+        isolationModeMarketId,
+        amountWei,
+        BalanceCheckFlag.Both
+      );
+      await expectProtocolBalance(core, userVault, defaultAccountNumber, isolationModeMarketId, amountWei);
+      await expectProtocolBalance(core, userVault, borrowAccountNumber, isolationModeMarketId, ZERO_BI);
     });
 
-    it('should work for normal asset within isolation mode vault', async () => {
-      await router.transferBetweenAccountsWithVault(
+    it('should transfer other token between vault owner and vault', async () => {
+      await router.transferBetweenAccounts(
         isolationModeMarketId,
         defaultAccountNumber,
         borrowAccountNumber,
         core.marketIds.dai,
         amountWei,
-        BalanceCheckFlag.Both,
-        Direction.ToVault
+        BalanceCheckFlag.Both
       );
       await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.dai, ZERO_BI);
       await expectProtocolBalance(core, userVault, borrowAccountNumber, core.marketIds.dai, amountWei);
@@ -283,16 +312,16 @@ describe('BorrowPositionRouter', () => {
       await router.transferBetweenAccounts(
         isolationModeMarketId,
         borrowAccountNumber,
-        otherBorrowAccountNumber,
+        defaultAccountNumber,
         core.marketIds.dai,
         amountWei,
         BalanceCheckFlag.Both
       );
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.dai, amountWei);
       await expectProtocolBalance(core, userVault, borrowAccountNumber, core.marketIds.dai, ZERO_BI);
-      await expectProtocolBalance(core, userVault, otherBorrowAccountNumber, core.marketIds.dai, amountWei);
     });
 
-    it('should fail if Market is not isolation mode', async () => {
+    it('should fail if market is not isolation mode', async () => {
       await expectThrow(
         router.transferBetweenAccounts(
           core.marketIds.usdc,
@@ -303,20 +332,6 @@ describe('BorrowPositionRouter', () => {
           BalanceCheckFlag.Both
         ),
         'RouterBase: Market is not isolation mode'
-      );
-    });
-
-    it('should fail if user does not have a vault', async () => {
-      await expectThrow(
-        router.connect(core.hhUser2).transferBetweenAccounts(
-          isolationModeMarketId,
-          defaultAccountNumber,
-          borrowAccountNumber,
-          core.marketIds.dai,
-          amountWei,
-          BalanceCheckFlag.Both
-        ),
-        'RouterBase: No vault for account'
       );
     });
 
@@ -336,86 +351,11 @@ describe('BorrowPositionRouter', () => {
     });
   });
 
-  describe('#transferBetweenAccountsWithVault', () => {
-    it('should work normally', async () => {
-      await router.transferBetweenAccountsWithVault(
-        isolationModeMarketId,
-        defaultAccountNumber,
-        borrowAccountNumber,
-        core.marketIds.dai,
-        amountWei,
-        BalanceCheckFlag.Both,
-        Direction.ToVault
-      );
-      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.dai, ZERO_BI);
-      await expectProtocolBalance(core, userVault, borrowAccountNumber, core.marketIds.dai, amountWei);
-
-      await router.transferBetweenAccountsWithVault(
-        isolationModeMarketId,
-        borrowAccountNumber,
-        defaultAccountNumber,
-        core.marketIds.dai,
-        amountWei,
-        BalanceCheckFlag.Both,
-        Direction.FromVault
-      );
-      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.dai, amountWei);
-      await expectProtocolBalance(core, userVault, borrowAccountNumber, core.marketIds.dai, ZERO_BI);
-    });
-
-    it('should fail if Market is not isolation mode', async () => {
-      await expectThrow(
-        router.transferBetweenAccountsWithVault(
-          core.marketIds.usdc,
-          defaultAccountNumber,
-          borrowAccountNumber,
-          core.marketIds.dai,
-          amountWei,
-          BalanceCheckFlag.Both,
-          Direction.ToVault
-        ),
-        'RouterBase: Market is not isolation mode'
-      );
-    });
-
-    it('should fail if user does not have a vault', async () => {
-      await expectThrow(
-        router.connect(core.hhUser2).transferBetweenAccountsWithVault(
-          isolationModeMarketId,
-          defaultAccountNumber,
-          borrowAccountNumber,
-          core.marketIds.dai,
-          amountWei,
-          BalanceCheckFlag.Both,
-          Direction.ToVault
-        ),
-        'RouterBase: No vault for account'
-      );
-    });
-
-    it('should fail if reentered', async () => {
-      const transaction = await router.populateTransaction.transferBetweenAccountsWithVault(
-        MAX_UINT_256_BI,
-        defaultAccountNumber,
-        borrowAccountNumber,
-        isolationModeMarketId,
-        amountWei,
-        BalanceCheckFlag.Both,
-        Direction.ToVault
-      );
-      await expectThrow(
-        router.callFunctionAndTriggerReentrancy(transaction.data!),
-        'ReentrancyGuard: reentrant call'
-      );
-    });
-  });
-
   describe('#repayAllForBorrowPosition', () => {
     it('should work normally for a normal asset', async () => {
       await setupWETHBalance(core, core.hhUser1, amountWei, core.dolomiteMargin);
       await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, amountWei);
       await router.openBorrowPosition(
-        MAX_UINT_256_BI,
         defaultAccountNumber,
         borrowAccountNumber,
         core.marketIds.weth,
@@ -436,6 +376,7 @@ describe('BorrowPositionRouter', () => {
       await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, ZERO_BI.sub(amountWei));
 
       await router.repayAllForBorrowPosition(
+        MAX_UINT_256_BI,
         defaultAccountNumber,
         borrowAccountNumber,
         core.marketIds.dai,
@@ -447,11 +388,48 @@ describe('BorrowPositionRouter', () => {
       await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, ZERO_BI);
     });
 
+    it('should work normally for an isolation mode market', async () => {
+      await underlyingToken.connect(core.hhUser1).addBalance(core.hhUser1.address, amountWei);
+      await underlyingToken.connect(core.hhUser1).approve(userVault.address, amountWei);
+      await userVault.connect(core.hhUser1).depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+
+      await router.transferBetweenAccounts(
+        isolationModeMarketId,
+        defaultAccountNumber,
+        borrowAccountNumber,
+        isolationModeMarketId,
+        amountWei,
+        BalanceCheckFlag.Both
+      );
+      await expectProtocolBalance(core, userVault, defaultAccountNumber, isolationModeMarketId, ZERO_BI);
+      await expectProtocolBalance(core, userVault, borrowAccountNumber, isolationModeMarketId, amountWei);
+
+      await router.transferBetweenAccounts(
+        isolationModeMarketId,
+        borrowAccountNumber,
+        defaultAccountNumber,
+        core.marketIds.dai,
+        amountWei,
+        BalanceCheckFlag.To
+      );
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.dai, amountWei.mul(2));
+      await expectProtocolBalance(core, userVault, borrowAccountNumber, core.marketIds.dai, ZERO_BI.sub(amountWei));
+
+      await router.repayAllForBorrowPosition(
+        isolationModeMarketId,
+        defaultAccountNumber,
+        borrowAccountNumber,
+        core.marketIds.dai,
+        BalanceCheckFlag.None
+      );
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.dai, amountWei);
+      await expectProtocolBalance(core, userVault, borrowAccountNumber, core.marketIds.dai, ZERO_BI);
+    });
+
     it('should work normally when balance check is both', async () => {
       await setupWETHBalance(core, core.hhUser1, amountWei, core.dolomiteMargin);
       await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, amountWei);
       await router.openBorrowPosition(
-        MAX_UINT_256_BI,
         defaultAccountNumber,
         borrowAccountNumber,
         core.marketIds.weth,
@@ -472,6 +450,7 @@ describe('BorrowPositionRouter', () => {
       await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, ZERO_BI.sub(amountWei));
 
       await router.repayAllForBorrowPosition(
+        MAX_UINT_256_BI,
         defaultAccountNumber,
         borrowAccountNumber,
         core.marketIds.dai,
@@ -487,7 +466,6 @@ describe('BorrowPositionRouter', () => {
       await setupWETHBalance(core, core.hhUser1, amountWei.mul(2), core.dolomiteMargin);
       await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, amountWei.mul(2));
       await router.openBorrowPosition(
-        MAX_UINT_256_BI,
         defaultAccountNumber,
         borrowAccountNumber,
         core.marketIds.weth,
@@ -514,6 +492,7 @@ describe('BorrowPositionRouter', () => {
       );
       await expectThrow(
         router.repayAllForBorrowPosition(
+          MAX_UINT_256_BI,
           defaultAccountNumber,
           borrowAccountNumber,
           core.marketIds.dai,
@@ -527,7 +506,6 @@ describe('BorrowPositionRouter', () => {
       await setupWETHBalance(core, core.hhUser1, amountWei.mul(2), core.dolomiteMargin);
       await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, amountWei.mul(2));
       await router.openBorrowPosition(
-        MAX_UINT_256_BI,
         defaultAccountNumber,
         borrowAccountNumber,
         core.marketIds.weth,
@@ -544,6 +522,7 @@ describe('BorrowPositionRouter', () => {
       );
 
       await router.repayAllForBorrowPosition(
+        MAX_UINT_256_BI,
         defaultAccountNumber,
         borrowAccountNumber,
         core.marketIds.dai,
@@ -555,7 +534,6 @@ describe('BorrowPositionRouter', () => {
       await setupWETHBalance(core, core.hhUser1, amountWei.mul(2), core.dolomiteMargin);
       await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, amountWei.mul(2));
       await router.openBorrowPosition(
-        MAX_UINT_256_BI,
         defaultAccountNumber,
         borrowAccountNumber,
         core.marketIds.weth,
@@ -582,228 +560,32 @@ describe('BorrowPositionRouter', () => {
       );
       await expectThrow(
         router.repayAllForBorrowPosition(
+          MAX_UINT_256_BI,
           defaultAccountNumber,
           borrowAccountNumber,
           core.marketIds.dai,
           BalanceCheckFlag.Both
         ),
         `AccountBalanceLib: account cannot go negative <${core.hhUser1.address.toLocaleLowerCase()}, ${defaultAccountNumber.toString()}, ${core.marketIds.dai.toString()}>`
+      );
+    });
+
+    it('should fail if market is not isolation mode', async () => {
+      await expectThrow(
+        router.repayAllForBorrowPosition(
+          core.marketIds.usdc,
+          defaultAccountNumber,
+          borrowAccountNumber,
+          core.marketIds.dai,
+          BalanceCheckFlag.Both
+        ),
+        'RouterBase: Market is not isolation mode'
       );
     });
 
     it('should fail if reentered', async () => {
       const transaction = await router.populateTransaction.repayAllForBorrowPosition(
         MAX_UINT_256_BI,
-        borrowAccountNumber,
-        core.marketIds.dai,
-        BalanceCheckFlag.Both
-      );
-      await expectThrow(
-        router.callFunctionAndTriggerReentrancy(transaction.data!),
-        'ReentrancyGuard: reentrant call'
-      );
-    });
-  });
-
-  describe('#repayAllForBorrowPositionForVault', () => {
-    it('should work normally', async () => {
-      await setupWETHBalance(core, core.hhUser1, amountWei, core.dolomiteMargin);
-      await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, amountWei);
-      await router.openBorrowPositionForVault(
-        isolationModeMarketId,
-        defaultAccountNumber,
-        borrowAccountNumber,
-        core.marketIds.weth,
-        amountWei,
-        BalanceCheckFlag.Both
-      );
-      await router.transferBetweenAccounts(
-        isolationModeMarketId,
-        borrowAccountNumber,
-        defaultAccountNumber,
-        core.marketIds.dai,
-        amountWei,
-        BalanceCheckFlag.To
-      );
-      await expectProtocolBalance(core, userVault, defaultAccountNumber, core.marketIds.weth, ZERO_BI);
-      await expectProtocolBalance(core, userVault, borrowAccountNumber, core.marketIds.weth, amountWei);
-      await expectProtocolBalance(core, userVault, defaultAccountNumber, core.marketIds.dai, amountWei);
-      await expectProtocolBalance(core, userVault, borrowAccountNumber, core.marketIds.dai, ZERO_BI.sub(amountWei));
-
-      await router.repayAllForBorrowPositionForVault(
-        isolationModeMarketId,
-        defaultAccountNumber,
-        borrowAccountNumber,
-        core.marketIds.dai,
-        BalanceCheckFlag.None
-      );
-      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, ZERO_BI);
-      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.dai, ZERO_BI);
-      await expectProtocolBalance(core, userVault, defaultAccountNumber, core.marketIds.dai, amountWei);
-      await expectProtocolBalance(core, userVault, borrowAccountNumber, core.marketIds.dai, ZERO_BI);
-      await expectProtocolBalance(core, userVault, borrowAccountNumber, core.marketIds.weth, amountWei);
-    });
-
-    it('should work normally when balance check is both', async () => {
-      await setupWETHBalance(core, core.hhUser1, amountWei, core.dolomiteMargin);
-      await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, amountWei);
-      await router.openBorrowPositionForVault(
-        isolationModeMarketId,
-        defaultAccountNumber,
-        borrowAccountNumber,
-        core.marketIds.weth,
-        amountWei,
-        BalanceCheckFlag.Both
-      );
-      await router.transferBetweenAccounts(
-        isolationModeMarketId,
-        borrowAccountNumber,
-        defaultAccountNumber,
-        core.marketIds.dai,
-        amountWei,
-        BalanceCheckFlag.To
-      );
-      await expectProtocolBalance(core, userVault, defaultAccountNumber, core.marketIds.weth, ZERO_BI);
-      await expectProtocolBalance(core, userVault, borrowAccountNumber, core.marketIds.weth, amountWei);
-      await expectProtocolBalance(core, userVault, defaultAccountNumber, core.marketIds.dai, amountWei);
-      await expectProtocolBalance(core, userVault, borrowAccountNumber, core.marketIds.dai, ZERO_BI.sub(amountWei));
-
-      await router.repayAllForBorrowPositionForVault(
-        isolationModeMarketId,
-        defaultAccountNumber,
-        borrowAccountNumber,
-        core.marketIds.dai,
-        BalanceCheckFlag.Both
-      );
-      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, ZERO_BI);
-      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.dai, ZERO_BI);
-      await expectProtocolBalance(core, userVault, defaultAccountNumber, core.marketIds.dai, amountWei);
-      await expectProtocolBalance(core, userVault, borrowAccountNumber, core.marketIds.dai, ZERO_BI);
-      await expectProtocolBalance(core, userVault, borrowAccountNumber, core.marketIds.weth, amountWei);
-    });
-
-    it('should fail if from balance check fails', async () => {
-      await setupWETHBalance(core, core.hhUser1, amountWei.mul(2), core.dolomiteMargin);
-      await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, amountWei.mul(2));
-      await router.openBorrowPositionForVault(
-        isolationModeMarketId,
-        defaultAccountNumber,
-        borrowAccountNumber,
-        core.marketIds.weth,
-        amountWei,
-        BalanceCheckFlag.Both
-      );
-      await router.transferBetweenAccounts(
-        isolationModeMarketId,
-        borrowAccountNumber,
-        defaultAccountNumber,
-        core.marketIds.dai,
-        amountWei.add(1),
-        BalanceCheckFlag.To
-      );
-
-      await expectThrow(
-        router.repayAllForBorrowPositionForVault(
-          isolationModeMarketId,
-          defaultAccountNumber,
-          borrowAccountNumber,
-          core.marketIds.dai,
-          BalanceCheckFlag.From
-        ),
-        `AccountBalanceLib: account cannot go negative <${core.hhUser1.address.toLocaleLowerCase()}, ${defaultAccountNumber.toString()}, ${core.marketIds.dai.toString()}>`
-      );
-    });
-
-    it('should pass if to balance check passes', async () => {
-      await setupWETHBalance(core, core.hhUser1, amountWei, core.dolomiteMargin);
-      await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, amountWei);
-      await router.openBorrowPositionForVault(
-        isolationModeMarketId,
-        defaultAccountNumber,
-        borrowAccountNumber,
-        core.marketIds.weth,
-        amountWei,
-        BalanceCheckFlag.Both
-      );
-      await router.transferBetweenAccounts(
-        isolationModeMarketId,
-        borrowAccountNumber,
-        defaultAccountNumber,
-        core.marketIds.dai,
-        amountWei,
-        BalanceCheckFlag.To
-      );
-
-      await router.repayAllForBorrowPositionForVault(
-        isolationModeMarketId,
-        defaultAccountNumber,
-        borrowAccountNumber,
-        core.marketIds.dai,
-        BalanceCheckFlag.To
-      );
-    });
-
-    it('should fail if both balance check fails', async () => {
-      await setupWETHBalance(core, core.hhUser1, amountWei.mul(2), core.dolomiteMargin);
-      await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, amountWei.mul(2));
-      await router.openBorrowPositionForVault(
-        isolationModeMarketId,
-        defaultAccountNumber,
-        borrowAccountNumber,
-        core.marketIds.weth,
-        amountWei,
-        BalanceCheckFlag.Both
-      );
-      await router.transferBetweenAccounts(
-        isolationModeMarketId,
-        borrowAccountNumber,
-        defaultAccountNumber,
-        core.marketIds.dai,
-        amountWei.add(1),
-        BalanceCheckFlag.To
-      );
-
-      await expectThrow(
-        router.repayAllForBorrowPositionForVault(
-          isolationModeMarketId,
-          defaultAccountNumber,
-          borrowAccountNumber,
-          core.marketIds.dai,
-          BalanceCheckFlag.Both
-        ),
-        `AccountBalanceLib: account cannot go negative <${core.hhUser1.address.toLocaleLowerCase()}, ${defaultAccountNumber.toString()}, ${core.marketIds.dai.toString()}>`
-      );
-    });
-
-    it('should fail if Market is not isolation mode', async () => {
-      await expectThrow(
-        router.repayAllForBorrowPositionForVault(
-          core.marketIds.usdc,
-          defaultAccountNumber,
-          borrowAccountNumber,
-          core.marketIds.dai,
-          BalanceCheckFlag.Both
-        ),
-        'RouterBase: Market is not isolation mode'
-      );
-    });
-
-    it('should fail if user does not have a vault', async () => {
-      await expectThrow(
-        router.connect(core.hhUser2).repayAllForBorrowPositionForVault(
-          isolationModeMarketId,
-          defaultAccountNumber,
-          borrowAccountNumber,
-          core.marketIds.dai,
-          BalanceCheckFlag.Both
-        ),
-        'RouterBase: No vault for account'
-      );
-    });
-
-    it('should fail if reentered', async () => {
-      const transaction = await router.populateTransaction.repayAllForBorrowPositionForVault(
-        isolationModeMarketId,
         defaultAccountNumber,
         borrowAccountNumber,
         core.marketIds.dai,

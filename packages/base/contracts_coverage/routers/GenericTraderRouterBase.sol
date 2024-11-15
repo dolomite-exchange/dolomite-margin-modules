@@ -21,13 +21,13 @@
 pragma solidity ^0.8.9;
 
 import { RouterBase } from "./RouterBase.sol";
-import { Require } from "../protocol/lib/Require.sol";
 import { IGenericTraderBase } from "../interfaces/IGenericTraderBase.sol";
-import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
-import { IIsolationModeVaultFactory } from "../isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
 import { IIsolationModeUnwrapperTraderV2 } from "../isolation-mode/interfaces/IIsolationModeUnwrapperTraderV2.sol";
+import { IIsolationModeVaultFactory } from "../isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
 import { IIsolationModeWrapperTraderV2 } from "../isolation-mode/interfaces/IIsolationModeWrapperTraderV2.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
+import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
+import { Require } from "../protocol/lib/Require.sol";
 
 /**
  * @title   GenericTraderRouterBase
@@ -70,6 +70,7 @@ abstract contract GenericTraderRouterBase is RouterBase, IGenericTraderBase {
     function _validateMarketIdPath(
         uint256[] memory _marketIdsPath
     ) internal pure {
+        if (_marketIdsPath.length >= 2) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _marketIdsPath.length >= 2,
             _FILE,
@@ -81,11 +82,13 @@ abstract contract GenericTraderRouterBase is RouterBase, IGenericTraderBase {
         uint256 _inputAmountWei,
         uint256 _minOutputAmountWei
     ) internal pure {
+        if (_inputAmountWei != 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _inputAmountWei != 0,
             _FILE,
             "Invalid inputAmountWei"
         );
+        if (_minOutputAmountWei != 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _minOutputAmountWei != 0,
             _FILE,
@@ -102,6 +105,7 @@ abstract contract GenericTraderRouterBase is RouterBase, IGenericTraderBase {
         internal
         view
     {
+        if (_marketIdsPath.length == _traderParamsPath.length + 1) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _marketIdsPath.length == _traderParamsPath.length + 1,
             _FILE,
@@ -130,6 +134,7 @@ abstract contract GenericTraderRouterBase is RouterBase, IGenericTraderBase {
         internal
         view
     {
+        if (_traderParam.trader != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _traderParam.trader != address(0),
             _FILE,
@@ -167,6 +172,7 @@ abstract contract GenericTraderRouterBase is RouterBase, IGenericTraderBase {
     ) internal view {
         if (_isIsolationModeMarket(_marketId)) {
             // If the current market is in isolation mode, the trader type must be for isolation mode assets
+            if (_isUnwrapperTraderType(_traderParam.traderType)) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 _isUnwrapperTraderType(_traderParam.traderType),
                 _FILE,
@@ -178,6 +184,7 @@ abstract contract GenericTraderRouterBase is RouterBase, IGenericTraderBase {
             if (_isIsolationModeMarket(_nextMarketId)) {
                 // If the user is unwrapping into an isolation mode asset, the next market must trust this trader
                 address isolationModeToken = _cache.dolomiteMargin.getMarketTokenAddress(_nextMarketId);
+                if (IIsolationModeVaultFactory(isolationModeToken).isTokenConverterTrusted(_traderParam.trader)) { /* FOR COVERAGE TESTING */ }
                 Require.that(
                     IIsolationModeVaultFactory(isolationModeToken).isTokenConverterTrusted(_traderParam.trader),
                     _FILE,
@@ -188,6 +195,7 @@ abstract contract GenericTraderRouterBase is RouterBase, IGenericTraderBase {
             }
         } else if (_isIsolationModeMarket(_nextMarketId)) {
             // If the next market is in isolation mode, the trader must wrap the current asset into the isolation asset.
+            if (_isWrapperTraderType(_traderParam.traderType)) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 _isWrapperTraderType(_traderParam.traderType),
                 _FILE,
@@ -197,6 +205,7 @@ abstract contract GenericTraderRouterBase is RouterBase, IGenericTraderBase {
             );
         } else {
             // If neither asset is in isolation mode, the trader type must be for non-isolation mode assets
+            if (_traderParam.traderType == TraderType.ExternalLiquidity || _traderParam.traderType == TraderType.InternalLiquidity) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 _traderParam.traderType == TraderType.ExternalLiquidity
                     || _traderParam.traderType == TraderType.InternalLiquidity,
@@ -217,6 +226,7 @@ abstract contract GenericTraderRouterBase is RouterBase, IGenericTraderBase {
         if (_isUnwrapperTraderType(_traderParam.traderType)) {
             IIsolationModeUnwrapperTraderV2 unwrapperTrader = IIsolationModeUnwrapperTraderV2(_traderParam.trader);
             address isolationModeToken = _cache.dolomiteMargin.getMarketTokenAddress(_marketId);
+            if (unwrapperTrader.token() == isolationModeToken) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 unwrapperTrader.token() == isolationModeToken,
                 _FILE,
@@ -224,6 +234,7 @@ abstract contract GenericTraderRouterBase is RouterBase, IGenericTraderBase {
                 _index,
                 _marketId
             );
+            if (unwrapperTrader.isValidOutputToken(_cache.dolomiteMargin.getMarketTokenAddress(_nextMarketId))) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 unwrapperTrader.isValidOutputToken(_cache.dolomiteMargin.getMarketTokenAddress(_nextMarketId)),
                 _FILE,
@@ -231,6 +242,7 @@ abstract contract GenericTraderRouterBase is RouterBase, IGenericTraderBase {
                 _index + 1,
                 _nextMarketId
             );
+            if (IIsolationModeVaultFactory(isolationModeToken).isTokenConverterTrusted(_traderParam.trader)) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 IIsolationModeVaultFactory(isolationModeToken).isTokenConverterTrusted(_traderParam.trader),
                 _FILE,
@@ -241,6 +253,7 @@ abstract contract GenericTraderRouterBase is RouterBase, IGenericTraderBase {
         } else if (_isWrapperTraderType(_traderParam.traderType)) {
             IIsolationModeWrapperTraderV2 wrapperTrader = IIsolationModeWrapperTraderV2(_traderParam.trader);
             address isolationModeToken = _cache.dolomiteMargin.getMarketTokenAddress(_nextMarketId);
+            if (wrapperTrader.isValidInputToken(_cache.dolomiteMargin.getMarketTokenAddress(_marketId))) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 wrapperTrader.isValidInputToken(_cache.dolomiteMargin.getMarketTokenAddress(_marketId)),
                 _FILE,
@@ -248,6 +261,7 @@ abstract contract GenericTraderRouterBase is RouterBase, IGenericTraderBase {
                 _index,
                 _marketId
             );
+            if (wrapperTrader.token() == isolationModeToken) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 wrapperTrader.token() == isolationModeToken,
                 _FILE,
@@ -255,6 +269,7 @@ abstract contract GenericTraderRouterBase is RouterBase, IGenericTraderBase {
                 _index + 1,
                 _nextMarketId
             );
+            if (IIsolationModeVaultFactory(isolationModeToken).isTokenConverterTrusted(_traderParam.trader)) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 IIsolationModeVaultFactory(isolationModeToken).isTokenConverterTrusted(_traderParam.trader),
                 _FILE,
@@ -272,6 +287,7 @@ abstract contract GenericTraderRouterBase is RouterBase, IGenericTraderBase {
     ) internal pure {
         if (TraderType.InternalLiquidity == _traderParam.traderType) {
             // The makerAccountOwner should be set if the traderType is InternalLiquidity
+            if (_traderParam.makerAccountIndex < _makerAccounts.length && _makerAccounts[_traderParam.makerAccountIndex].owner != address(0)) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 _traderParam.makerAccountIndex < _makerAccounts.length
                 && _makerAccounts[_traderParam.makerAccountIndex].owner != address(0),
@@ -281,6 +297,7 @@ abstract contract GenericTraderRouterBase is RouterBase, IGenericTraderBase {
             );
         } else {
             // The makerAccountOwner and makerAccountNumber is not used if the traderType is not InternalLiquidity
+            if (_traderParam.makerAccountIndex == 0) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 _traderParam.makerAccountIndex == 0,
                 _FILE,
@@ -300,7 +317,7 @@ abstract contract GenericTraderRouterBase is RouterBase, IGenericTraderBase {
             // Panic if we're zapping to an account that has any value in it. Why? Because we don't want execute trades
             // where we sell ALL if there's already value in the account. That would mess up the user's holdings and
             // unintentionally sell assets the user does not want to sell.
-            assert(_cache.dolomiteMargin.getAccountPar(_account, _marketIdsPath[i]).value == 0);
+            /*assert(_cache.dolomiteMargin.getAccountPar(_account, _marketIdsPath[i]).value == 0);*/
         }
     }
 
@@ -338,7 +355,7 @@ abstract contract GenericTraderRouterBase is RouterBase, IGenericTraderBase {
         uint256 makerAccountsLength = _makerAccounts.length;
         for (uint256 i; i < makerAccountsLength; ++i) {
             IDolomiteStructs.AccountInfo memory account = _accounts[_cache.traderAccountStartIndex + i];
-            assert(account.owner == address(0) && account.number == 0);
+            /*assert(account.owner == address(0) && account.number == 0);*/
 
             _accounts[_cache.traderAccountStartIndex + i] = IDolomiteStructs.AccountInfo({
                 owner: _makerAccounts[i].owner,
@@ -422,6 +439,7 @@ abstract contract GenericTraderRouterBase is RouterBase, IGenericTraderBase {
                         customInputAmountWei,
                         tradeData
                     ) = abi.decode(tradeData, (uint256, bytes));
+                    if ((i == 0 && customInputAmountWei == _inputAmountWei) || i != 0) { /* FOR COVERAGE TESTING */ }
                     Require.that(
                         (i == 0 && customInputAmountWei == _inputAmountWei) || i != 0,
                         _FILE,
@@ -442,7 +460,7 @@ abstract contract GenericTraderRouterBase is RouterBase, IGenericTraderBase {
                 // the trader is an `IsolationModeWrapper` if the market ID at `i + 1` is in isolation mode. Meaning,
                 // an unwrapper can never appear at the non-zero index because there is an invariant that checks the
                 // `IsolationModeWrapper` is the last index
-                assert(i == 0);
+                /*assert(i == 0);*/
                 IDolomiteStructs.ActionArgs[] memory unwrapActions = IIsolationModeUnwrapperTraderV2(_tradersPath[i].trader)
                     .createActionsForUnwrapping(
                         IIsolationModeUnwrapperTraderV2.CreateActionsForUnwrappingParams({
@@ -470,7 +488,8 @@ abstract contract GenericTraderRouterBase is RouterBase, IGenericTraderBase {
                 }
             } else {
                 // Panic if the developer messed up the `else` statement here
-                assert(_isWrapperTraderType(_tradersPath[i].traderType));
+                /*assert(_isWrapperTraderType(_tradersPath[i].traderType));*/
+                if (i == tradersPathLength - 1) { /* FOR COVERAGE TESTING */ }
                 Require.that(
                     i == tradersPathLength - 1,
                     _FILE,

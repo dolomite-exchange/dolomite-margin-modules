@@ -21,12 +21,11 @@
 pragma solidity ^0.8.9;
 
 import { RouterBase } from './RouterBase.sol';
-import { AccountActionLib } from '../lib/AccountActionLib.sol';
+import { IBorrowPositionProxyV2 } from '../interfaces/IBorrowPositionProxyV2.sol';
+import { IIsolationModeTokenVaultV2 } from '../isolation-mode/interfaces/IIsolationModeTokenVaultV2.sol';
 import { AccountBalanceLib } from '../lib/AccountBalanceLib.sol';
-import { IDolomiteMargin } from '../protocol/interfaces/IDolomiteMargin.sol';
-import { IDolomiteStructs } from '../protocol/interfaces/IDolomiteStructs.sol';
 import { IBorrowPositionRouter } from './interfaces/IBorrowPositionRouter.sol';
-import { IIsolationModeTokenVaultV1 } from '../isolation-mode/abstract/IsolationModeTokenVaultV1.sol';
+
 
 /**
  * @title   BorrowPositionRouter
@@ -46,7 +45,10 @@ contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
   // ===================== Constructor ========================
   // ========================================================
 
-  constructor(address _dolomiteRegistry, address _dolomiteMargin) RouterBase(_dolomiteRegistry, _dolomiteMargin) {}
+  constructor(
+    address _dolomiteRegistry,
+    address _dolomiteMargin
+  ) RouterBase(_dolomiteRegistry, _dolomiteMargin) {}
 
   // ========================================================
   // ================== External Functions ==================
@@ -60,12 +62,8 @@ contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
     AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
   ) external nonReentrant {
     MarketInfo memory marketInfo = _getMarketInfo(_marketId);
-    if (marketInfo.isIsolationModeAsset) {
-      IIsolationModeTokenVaultV1 vault = _validateIsoMarketAndGetVault(marketInfo, msg.sender);
-      vault.openBorrowPosition(_fromAccountNumber, _toAccountNumber, _amount);
-    } else {
-      DOLOMITE_REGISTRY.eventEmitter().emitBorrowPositionOpen(msg.sender, _toAccountNumber);
-      _transferBetweenAccounts(
+    if (!marketInfo.isIsolationModeAsset) {
+      DOLOMITE_REGISTRY.borrowPositionProxy().openBorrowPositionWithDifferentAccounts(
         msg.sender,
         _fromAccountNumber,
         msg.sender,
@@ -74,55 +72,44 @@ contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
         _amount,
         _balanceCheckFlag
       );
+    } else {
+      IIsolationModeTokenVaultV2 vault = _validateIsoMarketAndGetVault(marketInfo, msg.sender);
+      vault.openBorrowPosition(_fromAccountNumber, _toAccountNumber, _amount);
     }
   }
+
+  // @todo multicall
+
+  // @todo add open margin position function
 
   function closeBorrowPosition(
+    uint256 _vaultMarketId,
     uint256 _borrowAccountNumber,
     uint256 _toAccountNumber,
     uint256[] calldata _collateralMarketIds
   ) external nonReentrant {
-    IDolomiteStructs.AccountInfo[] memory accounts = new IDolomiteStructs.AccountInfo[](2);
-    accounts[0] = IDolomiteStructs.AccountInfo({owner: msg.sender, number: _borrowAccountNumber});
-    accounts[1] = IDolomiteStructs.AccountInfo({owner: msg.sender, number: _toAccountNumber});
-
-    uint256 marketIdsLength = _collateralMarketIds.length;
-    IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](marketIdsLength);
-    for (uint256 i; i < marketIdsLength; ++i) {
-      actions[i] = AccountActionLib.encodeTransferAction(
-        /* _fromAccountId = */ 0, // solium-disable-line
-        /* _toAccountId = */ 1, // solium-disable-line
-        _collateralMarketIds[i],
-        IDolomiteStructs.AssetDenomination.Wei,
-        type(uint256).max
+    if (_vaultMarketId == type(uint256).max) {
+      DOLOMITE_REGISTRY.borrowPositionProxy().closeBorrowPositionWithDifferentAccounts(
+        msg.sender,
+        _borrowAccountNumber,
+        msg.sender,
+        _toAccountNumber,
+        _collateralMarketIds
       );
-    }
-
-    DOLOMITE_MARGIN().operate(accounts, actions);
-  }
-
-  function closeBorrowPositionWithUnderlyingVaultToken(
-    uint256 _vaultMarketId,
-    uint256 _borrowAccountNumber,
-    uint256 _toAccountNumber
-  ) external nonReentrant {
-    MarketInfo memory marketInfo = _getMarketInfo(_vaultMarketId);
-    IIsolationModeTokenVaultV1 vault = _validateIsoMarketAndGetVault(marketInfo, msg.sender);
-    vault.closeBorrowPositionWithUnderlyingVaultToken(_borrowAccountNumber, _toAccountNumber);
-  }
-
-  function closeBorrowPositionWithOtherTokens(
-    uint256 _vaultMarketId,
-    uint256 _borrowAccountNumber,
-    uint256 _toAccountNumber,
-    uint256[] calldata _collateralMarketIds
-  ) external nonReentrant {
+    } else {
       MarketInfo memory marketInfo = _getMarketInfo(_vaultMarketId);
-    IIsolationModeTokenVaultV1 vault = _validateIsoMarketAndGetVault(marketInfo, msg.sender);
-    vault.closeBorrowPositionWithOtherTokens(_borrowAccountNumber, _toAccountNumber, _collateralMarketIds);
+      IIsolationModeTokenVaultV2 vault = _validateIsoMarketAndGetVault(marketInfo, msg.sender);
+
+      if (_collateralMarketIds.length == 0) {
+        vault.closeBorrowPositionWithUnderlyingVaultToken(_borrowAccountNumber, _toAccountNumber);
+      } else {
+        vault.closeBorrowPositionWithOtherTokens(_borrowAccountNumber, _toAccountNumber, _collateralMarketIds);
+      }
+    }
   }
 
   function transferBetweenAccounts(
+    uint256 _vaultMarketId,
     uint256 _fromAccountNumber,
     uint256 _toAccountNumber,
     uint256 _marketId,
@@ -130,62 +117,13 @@ contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
     AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
   ) external nonReentrant {
     _transferBetweenAccounts(
-      msg.sender,
+      _vaultMarketId,
       _fromAccountNumber,
-      msg.sender,
       _toAccountNumber,
       _marketId,
       _amount,
       _balanceCheckFlag
     );
-  }
-
-  function transferIntoPositionWithUnderlyingToken(
-    uint256 _vaultMarketId,
-    uint256 _fromAccountNumber,
-    uint256 _borrowAccountNumber,
-    uint256 _amountWei
-  ) external nonReentrant {
-    MarketInfo memory marketInfo = _getMarketInfo(_vaultMarketId);
-    IIsolationModeTokenVaultV1 vault = _validateIsoMarketAndGetVault(marketInfo, msg.sender);
-    vault.transferIntoPositionWithUnderlyingToken(_fromAccountNumber, _borrowAccountNumber, _amountWei);
-  }
-
-  function transferIntoPositionWithOtherToken(
-    uint256 _vaultMarketId,
-    uint256 _fromAccountNumber,
-    uint256 _borrowAccountNumber,
-    uint256 _marketId,
-    uint256 _amountWei,
-    AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
-  ) external nonReentrant {
-    MarketInfo memory marketInfo = _getMarketInfo(_vaultMarketId);
-    IIsolationModeTokenVaultV1 vault = _validateIsoMarketAndGetVault(marketInfo, msg.sender);
-    vault.transferIntoPositionWithOtherToken(_fromAccountNumber, _borrowAccountNumber, _marketId, _amountWei, _balanceCheckFlag);
-  }
-
-  function transferFromPositionWithUnderlyingToken(
-    uint256 _vaultMarketId,
-    uint256 _fromAccountNumber,
-    uint256 _borrowAccountNumber,
-    uint256 _amountWei
-  ) external nonReentrant {
-    MarketInfo memory marketInfo = _getMarketInfo(_vaultMarketId);
-    IIsolationModeTokenVaultV1 vault = _validateIsoMarketAndGetVault(marketInfo, msg.sender);
-    vault.transferFromPositionWithUnderlyingToken(_fromAccountNumber, _borrowAccountNumber, _amountWei);
-  }
-
-  function transferFromPositionWithOtherToken(
-    uint256 _vaultMarketId,
-    uint256 _fromAccountNumber,
-    uint256 _borrowAccountNumber,
-    uint256 _marketId,
-    uint256 _amountWei,
-    AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
-  ) external nonReentrant {
-    MarketInfo memory marketInfo = _getMarketInfo(_vaultMarketId);
-    IIsolationModeTokenVaultV1 vault = _validateIsoMarketAndGetVault(marketInfo, msg.sender);
-    vault.transferFromPositionWithOtherToken(_fromAccountNumber, _borrowAccountNumber, _marketId, _amountWei, _balanceCheckFlag);
   }
 
   function repayAllForBorrowPosition(
@@ -195,49 +133,19 @@ contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
     uint256 _marketId,
     AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
   ) external nonReentrant {
-    if (_vaultMarketId != type(uint256).max) {
+    if (_vaultMarketId == type(uint256).max) {
+      DOLOMITE_REGISTRY.borrowPositionProxy().repayAllForBorrowPositionWithDifferentAccounts(
+        msg.sender,
+        _fromAccountNumber,
+        msg.sender,
+        _borrowAccountNumber,
+        _marketId,
+        _balanceCheckFlag
+      );
+    } else {
       MarketInfo memory marketInfo = _getMarketInfo(_vaultMarketId);
-      IIsolationModeTokenVaultV1 vault = _validateIsoMarketAndGetVault(marketInfo, msg.sender);
+      IIsolationModeTokenVaultV2 vault = _validateIsoMarketAndGetVault(marketInfo, msg.sender);
       vault.repayAllForBorrowPosition(_fromAccountNumber, _borrowAccountNumber, _marketId, _balanceCheckFlag);
-      return;
-    }
-    IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
-
-    IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](1);
-    actions[0] = AccountActionLib.encodeTransferAction(
-      0,
-      1,
-      _marketId,
-      IDolomiteStructs.AssetDenomination.Wei,
-      type(uint256).max
-    );
-    IDolomiteStructs.AccountInfo[] memory accounts = new IDolomiteStructs.AccountInfo[](2);
-    accounts[0] = IDolomiteStructs.AccountInfo({owner: msg.sender, number: _borrowAccountNumber});
-    accounts[1] = IDolomiteStructs.AccountInfo({owner: msg.sender, number: _fromAccountNumber});
-    dolomiteMargin.operate(accounts, actions);
-
-    if (
-        _balanceCheckFlag == AccountBalanceLib.BalanceCheckFlag.Both
-        || _balanceCheckFlag == AccountBalanceLib.BalanceCheckFlag.From
-    ) {
-        AccountBalanceLib.verifyBalanceIsNonNegative(
-            dolomiteMargin,
-            msg.sender,
-            _fromAccountNumber,
-            _marketId
-        );
-    }
-
-    if (
-        _balanceCheckFlag == AccountBalanceLib.BalanceCheckFlag.Both
-        || _balanceCheckFlag == AccountBalanceLib.BalanceCheckFlag.To
-    ) {
-        AccountBalanceLib.verifyBalanceIsNonNegative(
-            dolomiteMargin,
-            msg.sender,
-            _borrowAccountNumber,
-            _marketId
-        );
     }
   }
 
@@ -246,24 +154,52 @@ contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
   // ========================================================
 
   function _transferBetweenAccounts(
-    address _fromAccount,
+    uint256 _vaultMarketId,
     uint256 _fromAccountNumber,
-    address _toAccount,
     uint256 _toAccountNumber,
     uint256 _marketId,
     uint256 _amount,
     AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
   ) internal {
-    AccountActionLib.transfer(
-      DOLOMITE_MARGIN(),
-      _fromAccount,
-      _fromAccountNumber,
-      _toAccount,
-      _toAccountNumber,
-      _marketId,
-      IDolomiteStructs.AssetDenomination.Wei,
-      _amount,
-      _balanceCheckFlag
-    );
+    if (_vaultMarketId == type(uint256).max) {
+      DOLOMITE_REGISTRY.borrowPositionProxy().transferBetweenAccountsWithDifferentAccounts(
+        msg.sender,
+        _fromAccountNumber,
+        msg.sender,
+        _toAccountNumber,
+        _marketId,
+        _amount,
+        _balanceCheckFlag
+      );
+      return;
+    } 
+
+    MarketInfo memory marketInfo = _getMarketInfo(_vaultMarketId);
+    IIsolationModeTokenVaultV2 vault = _validateIsoMarketAndGetVault(marketInfo, msg.sender);
+    if (_vaultMarketId == _marketId) {
+      if (_fromAccountNumber < 100 && _toAccountNumber >= 100) {
+        vault.transferIntoPositionWithUnderlyingToken(_fromAccountNumber, _toAccountNumber, _amount);
+      } else {
+        vault.transferFromPositionWithUnderlyingToken(_fromAccountNumber, _toAccountNumber, _amount);
+      }
+    } else {
+      if (_fromAccountNumber < 100 && _toAccountNumber >= 100) {
+        vault.transferIntoPositionWithOtherToken(
+          _fromAccountNumber,
+          _toAccountNumber,
+          _marketId,
+          _amount,
+          _balanceCheckFlag
+        );
+      } else {
+        vault.transferFromPositionWithOtherToken(
+          _fromAccountNumber,
+          _toAccountNumber,
+          _marketId,
+          _amount,
+          _balanceCheckFlag
+        );
+      }
+    }
   }
 }

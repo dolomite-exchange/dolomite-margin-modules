@@ -30,6 +30,7 @@ import { IRouterBase } from "./IRouterBase.sol";
  * @notice  Interface for opening borrow positions
  */
 interface IBorrowPositionRouter is IRouterBase {
+    event BorrowPositionProxySet(address indexed borrowPositionProxy);
 
     enum Direction {
         ToVault,

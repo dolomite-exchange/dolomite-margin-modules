@@ -21,22 +21,22 @@
 pragma solidity ^0.8.9;
 
 import { InternalSafeDelegateCallLib } from "../lib/InternalSafeDelegateCallLib.sol";
-import { BorrowPositionRouter } from "../routers/BorrowPositionRouter.sol";
+import { GenericTraderRouter } from "../routers/GenericTraderRouter.sol";
+
 
 /**
- * @title   TestBorrowPositionRouter
+ * @title   TestGenericTraderRouter
  * @author  Dolomite
  *
- * @notice  Contract for testing the BorrowPositionRouter
+ * @notice  Contract for testing the GenericTraderRouter
  */
-contract TestBorrowPositionRouter is BorrowPositionRouter {
+contract TestGenericTraderRouter is GenericTraderRouter {
     using InternalSafeDelegateCallLib for address;
 
     constructor(
-        address _borrowPositionProxy,
         address _dolomiteRegistry,
         address _dolomiteMargin
-    ) BorrowPositionRouter(_borrowPositionProxy, _dolomiteRegistry, _dolomiteMargin) {}
+    ) GenericTraderRouter(_dolomiteRegistry, _dolomiteMargin) {}
 
     function callFunctionAndTriggerReentrancy(
         bytes calldata _callDataWithSelector

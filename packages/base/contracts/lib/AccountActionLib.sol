@@ -412,7 +412,9 @@ library AccountActionLib {
             amount: IDolomiteStructs.AssetAmount({
                 sign: false,
                 denomination: IDolomiteStructs.AssetDenomination.Wei,
-                ref: _amountInWei == _ALL ? IDolomiteStructs.AssetReference.Target : IDolomiteStructs.AssetReference.Delta,
+                ref: _amountInWei == _ALL
+                    ? IDolomiteStructs.AssetReference.Target
+                    : IDolomiteStructs.AssetReference.Delta,
                 value: _amountInWei == _ALL ? 0 : _amountInWei
             }),
             primaryMarketId: _primaryMarketId,

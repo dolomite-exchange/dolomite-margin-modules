@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 /*
 
-    Copyright 2023 Dolomite.
+    Copyright 2024 Dolomite.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -19,20 +19,21 @@
 
 pragma solidity ^0.8.9;
 
-import { IGenericTraderBase } from "./IGenericTraderBase.sol";
-import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
-import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
-import { IExpiry } from "./IExpiry.sol";
-import { IEventEmitterRegistry } from "./IEventEmitterRegistry.sol";
+import { IGenericTraderBase } from "../../interfaces/IGenericTraderBase.sol";
+import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
+import { AccountBalanceLib } from "../../lib/AccountBalanceLib.sol";
+import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
+import { IExpiry } from "../../interfaces/IExpiry.sol";
+import { IEventEmitterRegistry } from "../../interfaces/IEventEmitterRegistry.sol";
 
 
 /**
- * @title   IGenericTraderProxyV1
+ * @title   IGenericTraderProxyV2
  * @author  Dolomite
  *
- * Trader proxy interface for trading assets using any trader from msg.sender
+ * Trader router interface for trading assets using any trader from msg.sender
  */
-interface IGenericTraderProxyV1 is IGenericTraderBase {
+interface IGenericTraderProxyV2 is IGenericTraderBase {
 
     // ============ Structs ============
 
@@ -77,7 +78,17 @@ interface IGenericTraderProxyV1 is IGenericTraderBase {
         EventEmissionType eventType;
     }
 
-    // ============ Functions ============
+    struct SwapExactInputForOutputAndModifyPositionParams {
+        uint256 tradeAccountNumber;
+        uint256[] marketIdsPath;
+        uint256 inputAmountWei;
+        uint256 minOutputAmountWei;
+        TraderParam[] tradersPath;
+        IDolomiteStructs.AccountInfo[] makerAccounts;
+        TransferCollateralParam transferCollateralParams;
+        ExpiryParam expiryParams;
+        UserConfig userConfig;
+    }
 
     /**
      * @dev     Swaps an exact amount of input for a minimum amount of output.
@@ -107,6 +118,44 @@ interface IGenericTraderProxyV1 is IGenericTraderBase {
         UserConfig calldata _userConfig
     )
     external;
+
+    /**
+     * @dev     Swaps an exact amount of input for a minimum amount of output.
+     *
+     * @param  _tradeAccountOwner           The account owner for the trade
+     * @param  _tradeAccountNumber          The account number to use for msg.sender's trade
+     * @param  _marketIdsPath               The path of market IDs to use for each trade action. Length should be equal
+     *                                      to `_tradersPath.length + 1`.
+     * @param  _inputAmountWei              The input amount (in wei) to use for the initial trade action. Setting this
+     *                                      value to `uint(-1)` will use the user's full balance.
+     * @param  _minOutputAmountWei          The minimum output amount expected to be received by the user.
+     * @param  _tradersPath                 The path of traders to use for each trade action. Length should be equal to
+     *                                      `_marketIdsPath.length - 1`.
+     * @param  _makerAccounts               The accounts that will be used for the maker side of the trades involving
+     *                                      `TraderType.InternalLiquidity`.
+     * @param  _userConfig                  The user configuration for the trade. Setting the `balanceCheckFlag` to
+     *                                      `BalanceCheckFlag.From` will check that the user's `_tradeAccountNumber`
+     *                                      is non-negative after the trade. Setting the `balanceCheckFlag` to
+     *                                      `BalanceCheckFlag.To` has no effect.
+     */
+    function swapExactInputForOutputForDifferentAccount(
+        address _tradeAccountOwner,
+        uint256 _tradeAccountNumber,
+        uint256[] calldata _marketIdsPath,
+        uint256 _inputAmountWei,
+        uint256 _minOutputAmountWei,
+        IGenericTraderBase.TraderParam[] calldata _tradersPath,
+        IDolomiteMargin.AccountInfo[] calldata _makerAccounts,
+        UserConfig calldata _userConfig
+    )
+    external;
+
+
+    function swapExactInputForOutputAndModifyPositionForDifferentAccount(
+        address tradeAccountOwner,
+        SwapExactInputForOutputAndModifyPositionParams memory params
+    ) external;
+
 
     /**
      * @dev     The same function as `swapExactInputForOutput`, but allows the caller to transfer collateral and modify
@@ -146,12 +195,4 @@ interface IGenericTraderProxyV1 is IGenericTraderBase {
         UserConfig calldata _userConfig
     )
     external;
-
-    function ownerSetEventEmitterRegistry(
-        address _eventEmitterRegistry
-    ) external;
-
-    function EVENT_EMITTER_REGISTRY() external view returns (IEventEmitterRegistry);
-
-    function EXPIRY() external view returns (IExpiry);
 }

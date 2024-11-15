@@ -23,17 +23,17 @@ pragma solidity ^0.8.9;
 import { TypesLib } from "../protocol/lib/TypesLib.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { IGenericTraderBase } from "../interfaces/IGenericTraderBase.sol";
-import { IGenericTraderRouter } from "./interfaces/IGenericTraderRouter.sol";
+import { IGenericTraderProxyV2 } from "./interfaces/IGenericTraderProxyV2.sol";
 import { IEventEmitterRegistry } from "../interfaces/IEventEmitterRegistry.sol";
 
 
 /**
- * @title   GenericTraderRouterLib
+ * @title   GenericTraderProxyV2Lib
  * @author  Dolomite
  *
  * @notice  Library contract for reducing code size of the GenericTraderRouter contract
  */
-library GenericTraderRouterLib {
+library GenericTraderProxyV2Lib {
     using TypesLib for IDolomiteStructs.Wei;
 
     // ============ Internal Functions ============
@@ -41,9 +41,9 @@ library GenericTraderRouterLib {
     function logBeforeZapEvents(
         IGenericTraderBase.GenericTraderProxyCache memory _cache,
         IDolomiteStructs.AccountInfo memory _tradeAccount,
-        IGenericTraderRouter.EventEmissionType _eventType
+        IGenericTraderProxyV2.EventEmissionType _eventType
     ) public {
-        if (_eventType == IGenericTraderRouter.EventEmissionType.BorrowPosition) {
+        if (_eventType == IGenericTraderProxyV2.EventEmissionType.BorrowPosition) {
             _cache.eventEmitterRegistry.emitBorrowPositionOpen(
                 _tradeAccount.owner,
                 _tradeAccount.number
@@ -56,8 +56,8 @@ library GenericTraderRouterLib {
         IDolomiteStructs.AccountInfo memory _tradeAccount,
         uint256[] memory _marketIdsPath,
         IGenericTraderBase.TraderParam[] memory _tradersPath,
-        IGenericTraderRouter.TransferCollateralParam memory _transferParam,
-        IGenericTraderRouter.EventEmissionType _eventType
+        IGenericTraderProxyV2.TransferCollateralParam memory _transferParam,
+        IGenericTraderProxyV2.EventEmissionType _eventType
     ) public {
         _cache.eventEmitterRegistry.emitZapExecuted(
             _tradeAccount.owner,
@@ -66,7 +66,7 @@ library GenericTraderRouterLib {
             _tradersPath
         );
 
-        if (_eventType == IGenericTraderRouter.EventEmissionType.MarginPosition) {
+        if (_eventType == IGenericTraderProxyV2.EventEmissionType.MarginPosition) {
             _logMarginPositionEvent(
                 _cache,
                 _tradeAccount,
@@ -80,7 +80,7 @@ library GenericTraderRouterLib {
         IGenericTraderBase.GenericTraderProxyCache memory _cache,
         IDolomiteStructs.AccountInfo memory _tradeAccount,
         uint256[] memory _marketIdsPath,
-        IGenericTraderRouter.TransferCollateralParam memory _param
+        IGenericTraderProxyV2.TransferCollateralParam memory _param
     ) internal {
         IEventEmitterRegistry.BalanceUpdate memory inputBalanceUpdate;
         // solium-disable indentation

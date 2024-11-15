@@ -1,158 +1,154 @@
-// /*
+// SPDX-License-Identifier: GPL-3.0-or-later
+/*
 
-//     Copyright 2023 Dolomite.
+    Copyright 2024 Dolomite
 
-//     Licensed under the Apache License, Version 2.0 (the "License");
-//     you may not use this file except in compliance with the License.
-//     You may obtain a copy of the License at
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
 
-//     http://www.apache.org/licenses/LICENSE-2.0
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
-//     Unless required by applicable law or agreed to in writing, software
-//     distributed under the License is distributed on an "AS IS" BASIS,
-//     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//     See the License for the specific language governing permissions and
-//     limitations under the License.
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// */
+*/
 
-// pragma solidity ^0.8.9;
+pragma solidity ^0.8.9;
 
-// import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-
-// import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
-// import { TypesLib } from "../protocol/lib/TypesLib.sol";
-// import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
-
-// import { AccountActionLib } from "../lib/AccountActionLib.sol";
-// import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
-// import { IGenericTraderBase } from "../interfaces/IGenericTraderBase.sol";
-// import { IGenericTraderProxyV1 } from "../interfaces/IGenericTraderProxyV1.sol";
+import { IEventEmitterRegistry } from "../interfaces/IEventEmitterRegistry.sol";
+import { IGenericTraderBase } from "../interfaces/IGenericTraderBase.sol";
+import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
+import { TypesLib } from "../protocol/lib/TypesLib.sol";
+import { IGenericTraderRouter } from "./interfaces/IGenericTraderRouter.sol";
 
 
+/**
+ * @title   GenericTraderRouterLib
+ * @author  Dolomite
+ *
+ * @notice  Library contract for reducing code size of the GenericTraderRouter contract
+ */
+library GenericTraderRouterLib {
+    using TypesLib for IDolomiteStructs.Wei;
 
-// /**
-//  * @title   GenericTraderProxyV1Lib
-//  * @author  Dolomite
-//  *
-//  * @dev Library contract for reducing code size of the GenericTraderProxyV1 contract
-//  */
-// library GenericTraderProxyV1Lib {
-//     using TypesLib for IDolomiteStructs.Wei;
+    // ============ Internal Functions ============
 
-//     // ============ Internal Functions ============
+    function logBeforeZapEvents(
+        IGenericTraderBase.GenericTraderProxyCache memory _cache,
+        IDolomiteStructs.AccountInfo memory _tradeAccount,
+        IGenericTraderRouter.EventEmissionType _eventType
+    ) public {
+        if (_eventType == IGenericTraderRouter.EventEmissionType.BorrowPosition) {
+            _cache.eventEmitterRegistry.emitBorrowPositionOpen(
+                _tradeAccount.owner,
+                _tradeAccount.number
+            );
+        }
+    }
 
-//     function logBeforeZapEvents(
-//         IGenericTraderBase.GenericTraderProxyCache memory _cache,
-//         IDolomiteStructs.AccountInfo memory _tradeAccount,
-//         IGenericTraderProxyV1.EventEmissionType _eventType
-//     ) public {
-//         if (_eventType == IGenericTraderProxyV1.EventEmissionType.BorrowPosition) {
-//             _cache.eventEmitterRegistry.emitBorrowPositionOpen(
-//                 _tradeAccount.owner,
-//                 _tradeAccount.number
-//             );
-//         }
-//     }
+    function logAfterZapEvents(
+        IGenericTraderBase.GenericTraderProxyCache memory _cache,
+        IDolomiteStructs.AccountInfo memory _tradeAccount,
+        uint256[] memory _marketIdsPath,
+        IGenericTraderBase.TraderParam[] memory _tradersPath,
+        IGenericTraderRouter.TransferCollateralParam memory _transferParam,
+        IGenericTraderRouter.EventEmissionType _eventType
+    ) public {
+        _cache.eventEmitterRegistry.emitZapExecuted(
+            _tradeAccount.owner,
+            _tradeAccount.number,
+            _marketIdsPath,
+            _tradersPath
+        );
 
-//     function logAfterZapEvents(
-//         IGenericTraderBase.GenericTraderProxyCache memory _cache,
-//         IDolomiteStructs.AccountInfo memory _tradeAccount,
-//         uint256[] memory _marketIdsPath,
-//         IGenericTraderBase.TraderParam[] memory _tradersPath,
-//         IGenericTraderProxyV1.TransferCollateralParam memory _transferParam,
-//         IGenericTraderProxyV1.EventEmissionType _eventType
-//     ) public {
-//         _cache.eventEmitterRegistry.emitZapExecuted(
-//             _tradeAccount.owner,
-//             _tradeAccount.number,
-//             _marketIdsPath,
-//             _tradersPath
-//         );
+        if (_eventType == IGenericTraderRouter.EventEmissionType.MarginPosition) {
+            _logMarginPositionEvent(
+                _cache,
+                _tradeAccount,
+                _marketIdsPath,
+                _transferParam
+            );
+        }
+    }
 
-//         if (_eventType == IGenericTraderProxyV1.EventEmissionType.MarginPosition) {
-//             _logMarginPositionEvent(
-//                 _cache,
-//                 _tradeAccount,
-//                 _marketIdsPath,
-//                 _transferParam
-//             );
-//         }
-//     }
+    function _logMarginPositionEvent(
+        IGenericTraderBase.GenericTraderProxyCache memory _cache,
+        IDolomiteStructs.AccountInfo memory _tradeAccount,
+        uint256[] memory _marketIdsPath,
+        IGenericTraderRouter.TransferCollateralParam memory _param
+    ) internal {
+        IEventEmitterRegistry.BalanceUpdate memory inputBalanceUpdate;
+        // solium-disable indentation
+        {
+            IDolomiteStructs.Wei memory inputBalanceWeiAfter = _cache.dolomiteMargin.getAccountWei(
+                _tradeAccount,
+                /* _inputToken = */ _marketIdsPath[0]
+            );
+            inputBalanceUpdate = IEventEmitterRegistry.BalanceUpdate({
+                deltaWei: inputBalanceWeiAfter.sub(_cache.inputBalanceWeiBeforeOperate),
+                newPar: _cache.dolomiteMargin.getAccountPar(_tradeAccount, _marketIdsPath[0])
+            });
+        }
+        // solium-enable indentation
 
-//     function _logMarginPositionEvent(
-//         IGenericTraderBase.GenericTraderProxyCache memory _cache,
-//         IDolomiteStructs.AccountInfo memory _tradeAccount,
-//         uint256[] memory _marketIdsPath,
-//         IGenericTraderProxyV1.TransferCollateralParam memory _param
-//     ) internal {
-//         Events.BalanceUpdate memory inputBalanceUpdate;
-//         // solium-disable indentation
-//         {
-//             Types.Wei memory inputBalanceWeiAfter = _cache.dolomiteMargin.getAccountWei(
-//                 _tradeAccount,
-//                 /* _inputToken = */ _marketIdsPath[0]
-//             );
-//             inputBalanceUpdate = Events.BalanceUpdate({
-//                 deltaWei: inputBalanceWeiAfter.sub(_cache.inputBalanceWeiBeforeOperate),
-//                 newPar: _cache.dolomiteMargin.getAccountPar(_tradeAccount, _marketIdsPath[0])
-//             });
-//         }
-//         // solium-enable indentation
+        IEventEmitterRegistry.BalanceUpdate memory outputBalanceUpdate;
+        // solium-disable indentation
+        {
+            IDolomiteStructs.Wei memory outputBalanceWeiAfter = _cache.dolomiteMargin.getAccountWei(
+                _tradeAccount,
+                /* _outputToken = */ _marketIdsPath[_marketIdsPath.length - 1]
+            );
+            outputBalanceUpdate = IEventEmitterRegistry.BalanceUpdate({
+                deltaWei: outputBalanceWeiAfter.sub(_cache.outputBalanceWeiBeforeOperate),
+                newPar: _cache.dolomiteMargin.getAccountPar(_tradeAccount, _marketIdsPath[_marketIdsPath.length - 1])
+            });
+        }
+        // solium-enable indentation
 
-//         Events.BalanceUpdate memory outputBalanceUpdate;
-//         // solium-disable indentation
-//         {
-//             Types.Wei memory outputBalanceWeiAfter = _cache.dolomiteMargin.getAccountWei(
-//                 _tradeAccount,
-//                 /* _outputToken = */ _marketIdsPath[_marketIdsPath.length - 1]
-//             );
-//             outputBalanceUpdate = Events.BalanceUpdate({
-//                 deltaWei: outputBalanceWeiAfter.sub(_cache.outputBalanceWeiBeforeOperate),
-//                 newPar: _cache.dolomiteMargin.getAccountPar(_tradeAccount, _marketIdsPath[_marketIdsPath.length - 1])
-//             });
-//         }
-//         // solium-enable indentation
+        IEventEmitterRegistry.BalanceUpdate memory marginBalanceUpdate;
+        // solium-disable indentation
+        {
+            IDolomiteStructs.Wei memory marginBalanceWeiAfter = _cache.dolomiteMargin.getAccountWei(
+                _tradeAccount,
+                /* _transferToken = */_param.transferAmounts[0].marketId
+            );
+            marginBalanceUpdate = IEventEmitterRegistry.BalanceUpdate({
+                deltaWei: marginBalanceWeiAfter.sub(_cache.transferBalanceWeiBeforeOperate),
+                newPar: _cache.dolomiteMargin.getAccountPar(
+                    _tradeAccount,
+                    _param.transferAmounts[0].marketId
+                )
+            });
+        }
+        // solium-enable indentation
 
-//         Events.BalanceUpdate memory marginBalanceUpdate;
-//         // solium-disable indentation
-//         {
-//             Types.Wei memory marginBalanceWeiAfter = _cache.dolomiteMargin.getAccountWei(
-//                 _tradeAccount,
-//                 /* _transferToken = */_param.transferAmounts[0].marketId
-//             );
-//             marginBalanceUpdate = Events.BalanceUpdate({
-//                 deltaWei: marginBalanceWeiAfter.sub(_cache.transferBalanceWeiBeforeOperate),
-//                 newPar: _cache.dolomiteMargin.getAccountPar(
-//                     _tradeAccount,
-//                     _param.transferAmounts[0].marketId
-//                 )
-//             });
-//         }
-//         // solium-enable indentation
-
-//         if (_cache.isMarginDeposit) {
-//             _cache.eventEmitterRegistry.emitMarginPositionOpen(
-//                 _tradeAccount.owner,
-//                 _tradeAccount.number,
-//                 /* _inputToken = */ _cache.dolomiteMargin.getMarketTokenAddress(_marketIdsPath[0]),
-//                 /* _outputToken = */ _cache.dolomiteMargin.getMarketTokenAddress(_marketIdsPath[_marketIdsPath.length - 1]),
-//                 /* _depositToken = */ _cache.dolomiteMargin.getMarketTokenAddress(_param.transferAmounts[0].marketId),
-//                 inputBalanceUpdate,
-//                 outputBalanceUpdate,
-//                 marginBalanceUpdate
-//             );
-//         } else {
-//             _cache.eventEmitterRegistry.emitMarginPositionClose(
-//                 _tradeAccount.owner,
-//                 _tradeAccount.number,
-//                 /* _inputToken = */ _cache.dolomiteMargin.getMarketTokenAddress(_marketIdsPath[0]),
-//                 /* _outputToken = */ _cache.dolomiteMargin.getMarketTokenAddress(_marketIdsPath[_marketIdsPath.length - 1]),
-//                 /* _withdrawalToken = */ _cache.dolomiteMargin.getMarketTokenAddress(_param.transferAmounts[0].marketId),
-//                 inputBalanceUpdate,
-//                 outputBalanceUpdate,
-//                 marginBalanceUpdate
-//             );
-//         }
-//     }
-// }
+        if (_cache.isMarginDeposit) {
+            _cache.eventEmitterRegistry.emitMarginPositionOpen(
+                _tradeAccount.owner,
+                _tradeAccount.number,
+                /* _inputToken = */ _cache.dolomiteMargin.getMarketTokenAddress(_marketIdsPath[0]),
+                /* _outputToken = */ _cache.dolomiteMargin.getMarketTokenAddress(_marketIdsPath[_marketIdsPath.length - 1]),
+                /* _depositToken = */ _cache.dolomiteMargin.getMarketTokenAddress(_param.transferAmounts[0].marketId),
+                inputBalanceUpdate,
+                outputBalanceUpdate,
+                marginBalanceUpdate
+            );
+        } else {
+            _cache.eventEmitterRegistry.emitMarginPositionClose(
+                _tradeAccount.owner,
+                _tradeAccount.number,
+                /* _inputToken = */ _cache.dolomiteMargin.getMarketTokenAddress(_marketIdsPath[0]),
+                /* _outputToken = */ _cache.dolomiteMargin.getMarketTokenAddress(_marketIdsPath[_marketIdsPath.length - 1]),
+                /* _withdrawalToken = */ _cache.dolomiteMargin.getMarketTokenAddress(_param.transferAmounts[0].marketId),
+                inputBalanceUpdate,
+                outputBalanceUpdate,
+                marginBalanceUpdate
+            );
+        }
+    }
+}

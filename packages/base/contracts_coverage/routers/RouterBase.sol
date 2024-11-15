@@ -26,6 +26,7 @@ import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/I
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { OnlyDolomiteMarginForUpgradeable } from "../helpers/OnlyDolomiteMarginForUpgradeable.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
+import { IIsolationModeTokenVaultV1 } from "../isolation-mode/interfaces/IIsolationModeTokenVaultV1.sol";
 import { IIsolationModeVaultFactory } from "../isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
 import { Require } from "../protocol/lib/Require.sol";
 import { IRouterBase } from "./interfaces/IRouterBase.sol";
@@ -98,7 +99,7 @@ abstract contract RouterBase is OnlyDolomiteMarginForUpgradeable, ReentrancyGuar
     function _validateIsoMarketAndGetVault(
         MarketInfo memory _marketInfo,
         address _account
-    ) internal view returns (address) {
+    ) internal returns (IIsolationModeTokenVaultV1) {
         if (_marketInfo.isIsolationModeAsset) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _marketInfo.isIsolationModeAsset,
@@ -106,13 +107,15 @@ abstract contract RouterBase is OnlyDolomiteMarginForUpgradeable, ReentrancyGuar
             "Market is not isolation mode"
         );
         address vault = _marketInfo.factory.getVaultByAccount(_account);
-        if (vault != address(0)) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            vault != address(0),
-            _FILE,
-            "No vault for account"
-        );
-        return vault;
+        if (vault == address(0)) {
+            vault = _marketInfo.factory.createVault(_account);
+        }
+
+        return IIsolationModeTokenVaultV1(vault);
+    }
+
+    function _isIsolationModeMarket(uint256 _marketId) internal view returns (bool) {
+        return _isIsolationModeAsset(DOLOMITE_MARGIN().getMarketTokenAddress(_marketId));
     }
 
     function _isIsolationModeAsset(address _token) internal view returns (bool) {

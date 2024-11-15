@@ -6,7 +6,7 @@ import { revertToSnapshotAndCapture, snapshot } from '../utils';
 import { expectEvent, expectThrow } from '../utils/assertions';
 
 import { CoreProtocolArbitrumOne } from '../utils/core-protocols/core-protocol-arbitrum-one';
-import { createDolomiteRegistryImplementation, createRegistryProxy } from '../utils/dolomite';
+import { createDolomiteRegistryImplementation, createRegistryProxy, setupNewGenericTraderProxy } from '../utils/dolomite';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '../utils/setup';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
@@ -19,7 +19,10 @@ describe('DolomiteRegistryImplementation', () => {
   let registry: DolomiteRegistryImplementation;
 
   before(async () => {
-    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
+    core = await setupCoreProtocol({
+      blockNumber: 274_000_000,
+      network: Network.ArbitrumOne,
+    });
     implementation = await createDolomiteRegistryImplementation();
     const calldata = await implementation.populateTransaction.initialize(
       core.genericTraderProxy.address,
@@ -68,6 +71,24 @@ describe('DolomiteRegistryImplementation', () => {
   describe('#slippageToleranceForPauseSentinelBase', () => {
     it('should return 1e18', async () => {
       expect(await registry.slippageToleranceForPauseSentinelBase()).to.equal('1000000000000000000');
+    });
+  });
+
+  describe('#ownerSetBorrowPositionProxy', () => {
+    it('should work normally', async () => {
+      const borrowPositionProxy = core.borrowPositionProxyV2.address;
+      const result = await registry.connect(core.governance).ownerSetBorrowPositionProxy(borrowPositionProxy);
+      await expectEvent(registry, result, 'BorrowPositionProxySet', {
+        borrowPositionProxy,
+      });
+      expect(await registry.borrowPositionProxy()).to.equal(borrowPositionProxy);
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetBorrowPositionProxy(OTHER_ADDRESS),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
     });
   });
 

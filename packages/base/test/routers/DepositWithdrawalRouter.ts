@@ -12,8 +12,6 @@ import {
   CustomTestToken,
   TestDepositWithdrawalRouter,
   TestDepositWithdrawalRouter__factory,
-  TestIsolationModeTokenVaultV1,
-  TestIsolationModeTokenVaultV1__factory,
   TestIsolationModeTokenVaultV2,
   TestIsolationModeTokenVaultV2__factory,
   TestIsolationModeVaultFactory
