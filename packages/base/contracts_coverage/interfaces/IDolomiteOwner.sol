@@ -20,6 +20,8 @@
 
 pragma solidity ^0.8.9;
 
+import { IAccessControl } from "@openzeppelin/contracts/access/IAccessControl.sol";
+
 
 /**
  * @title   IDolomiteOwner
@@ -27,7 +29,7 @@ pragma solidity ^0.8.9;
  *
  * @notice  Interface for the DolomiteOwner contract
  */
-interface IDolomiteOwner {
+interface IDolomiteOwner is IAccessControl {
 
     // ========================================================
     // ======================== Structs =======================
@@ -35,8 +37,8 @@ interface IDolomiteOwner {
 
     struct Transaction {
         address destination;
-        uint256 value;
         bytes data;
+        uint256 creationTimestamp;
         bool executed;
         bool cancelled;
     }
@@ -45,6 +47,7 @@ interface IDolomiteOwner {
     // ======================== Events ========================
     // ========================================================
 
+    event SecondsTimeLockedChanged(uint32 _secondsTimeLocked);
     event RoleAdded(bytes32 indexed _role);
     event RoleRemoved(bytes32 indexed _role);
 
@@ -62,6 +65,8 @@ interface IDolomiteOwner {
     // ========================================================
     // =================== Admin Functions ====================
     // ========================================================
+
+    function ownerSetSecondsTimeLocked(uint32 _secondsTimeLocked) external;
 
     function ownerAddRole(bytes32 _role) external;
 
@@ -93,23 +98,21 @@ interface IDolomiteOwner {
     // =================== Transaction Functions ====================
     // ========================================================
 
-    function submitTransaction(address _destination, uint256 _value, bytes calldata _data) external returns (uint256);
+    function submitTransaction(address _destination, bytes calldata _data) external returns (uint256);
 
     function executeTransactions(uint256[] calldata _transactionIds) external returns (bytes[] memory);
 
     function executeTransaction(uint256 _transactionId) external returns (bytes memory);
 
-    function submitTransactionAndExecute(
-        address _destination,
-        uint256 _value,
-        bytes calldata _data
-    ) external returns (bytes memory);
+    function submitTransactionAndExecute(address _destination, bytes calldata _data) external returns (bytes memory);
 
     // ========================================================
     // =================== Getter Functions ===================
     // ========================================================
 
     function getRoles() external view returns (bytes32[] memory);
+
+    function isRole(bytes32 _role) external view returns (bool);
 
     function getRoleAddresses(bytes32 _role) external view returns (address[] memory);
 
@@ -130,4 +133,19 @@ interface IDolomiteOwner {
         bool _pending,
         bool _executed
     ) external view returns (uint256[] memory);
+
+    function isTimelockComplete(uint256 _transactionId) external view returns (bool);
+
+    /**
+     *  @notice Logic to check if user has permission to submit the transaction:
+     *          1. If user has DEFAULT_ADMIN_ROLE, they can submit the transaction
+     *          2. If user does not have DEFAULT_ADMIN, loop through the user's roles and for each role:
+     *              2a. If the role is no longer valid, transaction is not approved
+     *              2b. If the role is valid, check if the transaction is approved for that role
+     **/
+    function isUserApprovedToSubmitTransaction(
+        address _user,
+        address _destination,
+        bytes4 _selector
+    ) external view returns (bool);
 }

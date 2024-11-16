@@ -54,7 +54,7 @@ contract DolomiteOwner is IDolomiteOwner, AccessControl {
     // =================== State Variables ============
     // ================================================
 
-    EnumerableSet.Bytes32Set private _roles;
+    EnumerableSet.Bytes32Set private _allRoles;
     mapping(address => EnumerableSet.Bytes32Set) private _userToRoles;
     mapping(bytes32 => EnumerableSet.AddressSet) private _roleToAddresses;
     mapping(bytes32 => EnumerableSet.Bytes32Set) private _roleToFunctionSelectors;
@@ -97,9 +97,10 @@ contract DolomiteOwner is IDolomiteOwner, AccessControl {
 
     modifier activeRole(bytes32 _role) {
         Require.that(
-            _roles.contains(_role),
+            isRole(_role),
             _FILE,
-            "Invalid role"
+            "Invalid role",
+            _role
         );
         _;
     }
@@ -124,8 +125,11 @@ contract DolomiteOwner is IDolomiteOwner, AccessControl {
         address _admin,
         uint32 _secondsTimeLocked
     ) {
+        _allRoles.add(BYPASS_TIMELOCK_ROLE);
+        _allRoles.add(DEFAULT_ADMIN_ROLE);
+        _allRoles.add(EXECUTOR_ROLE);
+
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
-        _roles.add(DEFAULT_ADMIN_ROLE);
         _ownerSetSecondsTimeLocked(_secondsTimeLocked);
     }
 
@@ -142,7 +146,7 @@ contract DolomiteOwner is IDolomiteOwner, AccessControl {
     function ownerAddRole(
         bytes32 _role
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        _roles.add(_role);
+        _allRoles.add(_role);
         emit RoleAdded(_role);
     }
 
@@ -152,10 +156,10 @@ contract DolomiteOwner is IDolomiteOwner, AccessControl {
         Require.that(
             _role != DEFAULT_ADMIN_ROLE,
             _FILE,
-            "Invalid role"
+            "Cannot remove admin role"
         );
 
-        _roles.remove(_role);
+        _allRoles.remove(_role);
         emit RoleRemoved(_role);
     }
 
@@ -275,33 +279,7 @@ contract DolomiteOwner is IDolomiteOwner, AccessControl {
         }
         bytes4 selector = bytes4(rawData);
 
-        /*
-        Logic to check if user has permission to submit the transaction
-        1. If user has DEFAULT_ADMIN_ROLE, they can submit the transaction
-        2. If user does not have DEFAULT_ADMIN,
-            3. Loop through the user's roles and for each role
-                4. If the role is no longer valid, transaction is not approved
-                5. If the role is valid, check if the transaction is approved for that role
-        */
-        bool approved;
-        if (hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
-            approved = true;
-        } else {
-            bytes32[] memory userRoles = _userToRoles[msg.sender].values();
-            for (uint256 i; i < userRoles.length; ++i) {
-                bytes32 role = userRoles[i];
-                if (!_roles.contains(role) || role == EXECUTOR_ROLE) {
-                    // If the role does not exist or is an executor, they don't have approval
-                    // No need to check in the following if statement
-                    continue;
-                }
-                if (_checkApprovedTransaction(role, _destination, selector)) {
-                    approved = true;
-                    break;
-                }
-            }
-        }
-
+        bool approved = isUserApprovedToSubmitTransaction(msg.sender, _destination, selector);
         Require.that(
             approved,
             _FILE,
@@ -321,7 +299,7 @@ contract DolomiteOwner is IDolomiteOwner, AccessControl {
     // ================================================
 
     function getRoles() external view returns (bytes32[] memory) {
-        return _roles.values();
+        return _allRoles.values();
     }
 
     function getRoleAddresses(
@@ -394,6 +372,43 @@ contract DolomiteOwner is IDolomiteOwner, AccessControl {
         return _transactionIds;
     }
 
+    function isUserApprovedToSubmitTransaction(
+        address _user,
+        address _destination,
+        bytes4 _selector
+    ) public view returns (bool) {
+        /*
+            Logic to check if user has permission to submit the transaction
+            1. If user has DEFAULT_ADMIN_ROLE, they can submit the transaction
+            2. If user does not have DEFAULT_ADMIN, loop through the user's roles and for each role:
+                2a. If the role is no longer valid, transaction is not approved
+                2b. If the role is valid, check if the transaction is approved for that role
+        */
+
+        if (hasRole(DEFAULT_ADMIN_ROLE, _user)) {
+            return true;
+        }
+
+        bytes32[] memory userRoles = _userToRoles[_user].values();
+        for (uint256 i; i < userRoles.length; ++i) {
+            bytes32 role = userRoles[i];
+            if (!isRole(role) || role == EXECUTOR_ROLE || role == BYPASS_TIMELOCK_ROLE) {
+                // If the role does not exist, is an executor, or can bypass the timelock, they don't have approval
+                // No need to check in the following if statement
+                continue;
+            }
+            if (_isApprovedToSubmitTransaction(role, _destination, _selector)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    function isRole(bytes32 _role) public view returns (bool) {
+        return _allRoles.contains(_role);
+    }
+
     function isTimelockComplete(uint256 _transactionId) public view returns (bool) {
         return block.timestamp >= transactions[_transactionId].creationTimestamp + secondsTimeLocked;
     }
@@ -427,13 +442,13 @@ contract DolomiteOwner is IDolomiteOwner, AccessControl {
     }
 
     function _addTransaction(
-        address destination,
-        bytes memory data
-    ) internal notNull(destination) returns (uint256) {
+        address _destination,
+        bytes memory _data
+    ) internal notNull(_destination) returns (uint256) {
         uint256 transactionId = transactionCount;
         transactions[transactionId] = Transaction({
-            destination: destination,
-            data: data,
+            destination: _destination,
+            data: _data,
             creationTimestamp: block.timestamp,
             executed: false,
             cancelled : false
@@ -443,22 +458,22 @@ contract DolomiteOwner is IDolomiteOwner, AccessControl {
         return transactionId;
     }
 
-    function _checkApprovedTransaction(
+    function _isApprovedToSubmitTransaction(
         bytes32 _role,
         address _destination,
         bytes4 _selector
     ) internal view returns (bool) {
 
         /*
-        We have three mappings:
-        _roleToAddressToFunctionSelectors - This contains specific function selectors for specific addresses
-        _roleToAddresses - This contains addresses that can be called with any function
-        _roleToFunctionSelectors - This contains function selectors that can be called on any address
+            We have three mappings:
+            _roleToAddressToFunctionSelectors - This contains function selectors for specific addresses
+            _roleToAddresses - This contains addresses that can be called with any function
+            _roleToFunctionSelectors - This contains function selectors that can be called on any address
 
-        The logic is as follows:
-        1. If the role has specific function selectors for the destination address, check if the selector is approved
-        2. If the role has 0 specific function selectors for the destination address,
-            check if the destination address or selector is generally approved
+            The logic is as follows:
+            1. If the role has function selectors for the destination address, check if the selector is approved
+            2. If the role has 0 function selectors for the destination address,
+                check if the destination address or selector is generally approved
         */
         if (_roleToAddressToFunctionSelectors[_role][_destination].length() != 0) {
             return _roleToAddressToFunctionSelectors[_role][_destination].contains(bytes32(_selector));
@@ -468,13 +483,13 @@ contract DolomiteOwner is IDolomiteOwner, AccessControl {
         }
     }
 
-    function _grantRole(bytes32 role, address account) internal override {
-        _userToRoles[account].add(role);
-        return super._grantRole(role, account);
+    function _grantRole(bytes32 _role, address _account) internal activeRole(_role) override {
+        _userToRoles[_account].add(_role);
+        return super._grantRole(_role, _account);
     }
 
-    function _revokeRole(bytes32 role, address account) internal override {
-        _userToRoles[account].remove(role);
-        return super._revokeRole(role, account);
+    function _revokeRole(bytes32 _role, address _account) internal activeRole(_role) override {
+        _userToRoles[_account].remove(_role);
+        return super._revokeRole(_role, _account);
     }
 }

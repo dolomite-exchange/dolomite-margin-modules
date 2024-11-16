@@ -20,6 +20,8 @@
 
 pragma solidity ^0.8.9;
 
+import { IAccessControl } from "@openzeppelin/contracts/access/IAccessControl.sol";
+
 
 /**
  * @title   IDolomiteOwner
@@ -27,7 +29,7 @@ pragma solidity ^0.8.9;
  *
  * @notice  Interface for the DolomiteOwner contract
  */
-interface IDolomiteOwner {
+interface IDolomiteOwner is IAccessControl {
 
     // ========================================================
     // ======================== Structs =======================
@@ -110,6 +112,8 @@ interface IDolomiteOwner {
 
     function getRoles() external view returns (bytes32[] memory);
 
+    function isRole(bytes32 _role) external view returns (bool);
+
     function getRoleAddresses(bytes32 _role) external view returns (address[] memory);
 
     function getRoleFunctionSelectors(bytes32 _role) external view returns (bytes32[] memory);
@@ -131,4 +135,17 @@ interface IDolomiteOwner {
     ) external view returns (uint256[] memory);
 
     function isTimelockComplete(uint256 _transactionId) external view returns (bool);
+
+    /**
+     *  @notice Logic to check if user has permission to submit the transaction:
+     *          1. If user has DEFAULT_ADMIN_ROLE, they can submit the transaction
+     *          2. If user does not have DEFAULT_ADMIN, loop through the user's roles and for each role:
+     *              2a. If the role is no longer valid, transaction is not approved
+     *              2b. If the role is valid, check if the transaction is approved for that role
+     **/
+    function isUserApprovedToSubmitTransaction(
+        address _user,
+        address _destination,
+        bytes4 _selector
+    ) external view returns (bool);
 }

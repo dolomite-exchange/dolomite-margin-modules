@@ -47,12 +47,12 @@ contract DolomiteERC4626 is
 
     bytes32 private constant _FILE = "DolomiteERC4626";
 
+    bytes32 private constant _ASSET_SLOT = bytes32(uint256(keccak256("eip1967.proxy.asset")) - 1);
     bytes32 private constant _ALLOWANCES_SLOT = bytes32(uint256(keccak256("eip1967.proxy.allowances")) - 1);
     bytes32 private constant _DOLOMITE_REGISTRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.dolomiteRegistry")) - 1); // solhint-disable-line max-line-length
     /// @dev mapping containing users that may receive token transfers
     bytes32 private constant _MARKET_ID_SLOT = bytes32(uint256(keccak256("eip1967.proxy.marketId")) - 1);
     bytes32 private constant _METADATA_SLOT = bytes32(uint256(keccak256("eip1967.proxy.metadata")) - 1);
-    bytes32 private constant _ASSET_SLOT = bytes32(uint256(keccak256("eip1967.proxy.asset")) - 1);
 
     uint256 private constant _DEFAULT_ACCOUNT_NUMBER = 0;
 
@@ -85,21 +85,33 @@ contract DolomiteERC4626 is
     // ======================== Public Functions ========================
     // ==================================================================
 
-    function deposit(uint256 _assets, address _recipient) external nonReentrant returns (uint256) {
+    function deposit(uint256 _assets, address _receiver) external nonReentrant returns (uint256) {
         if (_assets > 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _assets > 0,
             _FILE,
             "Invalid amount"
         );
-        uint256 shares = convertToShares(_assets);
+        if (isValidReceiver(_receiver)) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            isValidReceiver(_receiver),
+            _FILE,
+            "Invalid receiver",
+            _receiver
+        );
 
         IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
         IDolomiteStructs.AccountInfo memory account = IDolomiteStructs.AccountInfo({
-            owner: _recipient,
+            owner: _receiver,
             number: _DEFAULT_ACCOUNT_NUMBER
         });
-        IDolomiteStructs.Par memory balanceBefore = dolomiteMargin.getAccountPar(account, marketId());
+        IDolomiteStructs.Par memory balanceBeforePar = dolomiteMargin.getAccountPar(account, marketId());
+        if (balanceBeforePar.value == 0 || balanceBeforePar.sign) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            balanceBeforePar.value == 0 || balanceBeforePar.sign,
+            _FILE,
+            "Balance cannot be negative"
+        );
 
         IDolomiteStructs.AssetAmount memory assetAmount = IDolomiteStructs.AssetAmount({
             sign: true,
@@ -109,31 +121,52 @@ contract DolomiteERC4626 is
         });
         _depositIntoDolomite(account, assetAmount, _assets, dolomiteMargin);
 
-        IDolomiteStructs.Par memory delta = dolomiteMargin.getAccountPar(account, marketId()).sub(balanceBefore);
-        /*assert(delta.sign);*/
-        /*assert(delta.value == shares);*/
+        IDolomiteStructs.Par memory deltaPar = dolomiteMargin.getAccountPar(account, marketId()).sub(balanceBeforePar);
+        /*assert(deltaPar.sign);*/
+        /*assert(deltaPar.value != 0);*/
 
-        emit Transfer(address(0), _recipient, delta.value);
-        emit Deposit(msg.sender, _recipient, _assets, shares);
+        emit Transfer(address(0), _receiver, deltaPar.value);
+        emit Deposit(msg.sender, _receiver, _assets, deltaPar.value);
 
-        return delta.value;
+        return deltaPar.value;
     }
 
-    function mint(uint256 _shares, address _recipient) external nonReentrant returns (uint256) {
+    function mint(uint256 _shares, address _receiver) external nonReentrant returns (uint256) {
         if (_shares > 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _shares > 0,
             _FILE,
             "Invalid amount"
         );
-        uint256 assets = convertToAssets(_shares);
+        if (isValidReceiver(_receiver)) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            isValidReceiver(_receiver),
+            _FILE,
+            "Invalid receiver",
+            _receiver
+        );
 
         IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
         IDolomiteStructs.AccountInfo memory account = IDolomiteStructs.AccountInfo({
-            owner: _recipient,
+            owner: _receiver,
             number: _DEFAULT_ACCOUNT_NUMBER
         });
-        IDolomiteStructs.Wei memory balanceBefore = dolomiteMargin.getAccountWei(account, marketId());
+        IDolomiteStructs.Wei memory balanceBeforeWei;
+        uint256 assets;
+        {
+            // For avoiding "stack too deep" errors
+            IDolomiteStructs.Par memory balanceBeforePar = dolomiteMargin.getAccountPar(account, marketId());
+            IDolomiteStructs.Par memory deltaPar = IDolomiteStructs.Par({
+                sign: true,
+                value: _shares.to128()
+            });
+            IDolomiteStructs.Par memory balanceAfterPar = balanceBeforePar.add(deltaPar);
+            balanceBeforeWei = dolomiteMargin.getAccountWei(account, marketId());
+
+            IDolomiteStructs.Wei memory balanceAfterWei = DOLOMITE_MARGIN().parToWei(marketId(), balanceAfterPar);
+            /*assert(balanceAfterWei.sub(balanceBeforeWei).sign);*/
+            assets = balanceAfterWei.sub(balanceBeforeWei).value;
+        }
 
         IDolomiteStructs.AssetAmount memory assetAmount = IDolomiteStructs.AssetAmount({
             sign: true,
@@ -141,17 +174,16 @@ contract DolomiteERC4626 is
             ref: IDolomiteStructs.AssetReference.Delta,
             denomination: IDolomiteStructs.AssetDenomination.Par
         });
-
         _depositIntoDolomite(account, assetAmount, assets, dolomiteMargin);
 
-        IDolomiteStructs.Wei memory delta = dolomiteMargin.getAccountWei(account, marketId()).sub(balanceBefore);
-        /*assert(delta.sign);*/
-        /*assert(delta.value == assets);*/
+        IDolomiteStructs.Wei memory deltaWei = dolomiteMargin.getAccountWei(account, marketId()).sub(balanceBeforeWei);
+        /*assert(deltaWei.sign);*/
+        /*assert(deltaWei.value != 0);*/
 
-        emit Transfer(address(0), _recipient, _shares);
-        emit Deposit(msg.sender, _recipient, assets, _shares);
+        emit Transfer(address(0), _receiver, _shares);
+        emit Deposit(msg.sender, _receiver, assets, _shares);
 
-        return delta.value;
+        return deltaWei.value;
     }
 
     function withdraw(uint256 _assets, address _receiver, address _owner) external nonReentrant returns (uint256) {
@@ -161,17 +193,25 @@ contract DolomiteERC4626 is
             _FILE,
             "Invalid amount"
         );
-        uint256 shares = convertToShares(_assets);
-        if (_owner != msg.sender) {
-            _spendAllowance(_owner, msg.sender, shares);
-        }
 
         IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
         IDolomiteStructs.AccountInfo memory account = IDolomiteStructs.AccountInfo({
             owner: _owner,
             number: _DEFAULT_ACCOUNT_NUMBER
         });
-        IDolomiteStructs.Par memory balanceBefore = dolomiteMargin.getAccountPar(account, marketId());
+
+        IDolomiteStructs.Par memory balanceBeforePar = dolomiteMargin.getAccountPar(account, marketId());
+
+        if (_owner != msg.sender) {
+            if (balanceBeforePar.sign) { /* FOR COVERAGE TESTING */ }
+            Require.that(
+                balanceBeforePar.sign,
+                _FILE,
+                "Balance cannot be negative"
+            );
+
+            _spendAllowance(_owner, msg.sender, convertToShares(_assets));
+        }
 
         IDolomiteStructs.AssetAmount memory assetAmount = IDolomiteStructs.AssetAmount({
             sign: false,
@@ -188,14 +228,14 @@ contract DolomiteERC4626 is
             AccountBalanceLib.BalanceCheckFlag.Both
         );
 
-        IDolomiteStructs.Par memory delta = balanceBefore.sub(dolomiteMargin.getAccountPar(account, marketId()));
-        /*assert(delta.sign);*/
-        /*assert(shares == delta.value);*/
+        IDolomiteStructs.Par memory deltaPar = balanceBeforePar.sub(dolomiteMargin.getAccountPar(account, marketId()));
+        /*assert(deltaPar.sign);*/
+        /*assert(deltaPar.value != 0);*/
 
-        emit Transfer(_owner, address(0), shares);
-        emit Withdraw(msg.sender, _receiver, _owner, _assets, shares);
+        emit Transfer(_owner, address(0), deltaPar.value);
+        emit Withdraw(msg.sender, _receiver, _owner, _assets, deltaPar.value);
 
-        return delta.value;
+        return deltaPar.value;
     }
 
     function redeem(uint256 _shares, address _receiver, address _owner) external nonReentrant returns (uint256) {
@@ -214,7 +254,7 @@ contract DolomiteERC4626 is
             owner: _owner,
             number: _DEFAULT_ACCOUNT_NUMBER
         });
-        IDolomiteStructs.Wei memory balanceBefore = dolomiteMargin.getAccountWei(account, marketId());
+        IDolomiteStructs.Wei memory balanceBeforeWei = dolomiteMargin.getAccountWei(account, marketId());
 
         IDolomiteStructs.AssetAmount memory assetAmount = IDolomiteStructs.AssetAmount({
             sign: false,
@@ -231,13 +271,13 @@ contract DolomiteERC4626 is
             AccountBalanceLib.BalanceCheckFlag.Both
         );
 
-        IDolomiteStructs.Wei memory delta = balanceBefore.sub(dolomiteMargin.getAccountWei(account, marketId()));
-        /*assert(delta.sign);*/
+        IDolomiteStructs.Wei memory deltaWei = balanceBeforeWei.sub(dolomiteMargin.getAccountWei(account, marketId()));
+        /*assert(deltaWei.sign);*/
 
         emit Transfer(_owner, address(0), _shares);
-        emit Withdraw(msg.sender, _receiver, _owner, delta.value, _shares);
+        emit Withdraw(msg.sender, _receiver, _owner, deltaWei.value, _shares);
 
-        return delta.value;
+        return deltaWei.value;
     }
 
     // ==================================================================
@@ -472,21 +512,30 @@ contract DolomiteERC4626 is
         address _to,
         uint256 _amount
     ) internal {
-        require(
+        if (_from != address(0)) { /* FOR COVERAGE TESTING */ }
+        Require.that(
             _from != address(0),
-            "ERC20: Transfer from the zero address"
+            _FILE,
+            "Transfer from the zero address"
         );
-        require(
+        if (_to != address(0)) { /* FOR COVERAGE TESTING */ }
+        Require.that(
             _to != address(0),
-            "ERC20: Transfer to the zero address"
+            _FILE,
+            "Transfer to the zero address"
         );
-        require(
+        if (balanceOf(_from) >= _amount) { /* FOR COVERAGE TESTING */ }
+        Require.that(
             balanceOf(_from) >= _amount,
-            "ERC20: Transfer amount exceeds balance"
+            _FILE,
+            "Transfer amount exceeds balance"
         );
-        require(
+        if (isValidReceiver(_to)) { /* FOR COVERAGE TESTING */ }
+        Require.that(
             isValidReceiver(_to),
-            "ERC20: Transfers can only be made to valid receivers"
+            _FILE,
+            "Invalid receiver",
+            _to
         );
 
         DOLOMITE_MARGIN().transfer(
@@ -497,7 +546,7 @@ contract DolomiteERC4626 is
             marketId(),
             IDolomiteStructs.AssetDenomination.Par,
             _amount,
-            AccountBalanceLib.BalanceCheckFlag.From
+            AccountBalanceLib.BalanceCheckFlag.Both
         );
 
         emit Transfer(_from, _to, _amount);
@@ -521,13 +570,17 @@ contract DolomiteERC4626 is
         address _spender,
         uint256 _amount
     ) internal {
-        require(
+        if (_owner != address(0)) { /* FOR COVERAGE TESTING */ }
+        Require.that(
             _owner != address(0),
-            "ERC20: Approve from the zero address"
+            _FILE,
+            "Approve from the zero address"
         );
-        require(
+        if (_spender != address(0)) { /* FOR COVERAGE TESTING */ }
+        Require.that(
             _spender != address(0),
-            "ERC20: Approve to the zero address"
+            _FILE,
+            "Approve to the zero address"
         );
 
         _setUint256InNestedMap(_ALLOWANCES_SLOT, _owner, _spender, _amount);
@@ -549,9 +602,11 @@ contract DolomiteERC4626 is
     ) internal {
         uint256 currentAllowance = allowance(_owner, _spender);
         if (currentAllowance != type(uint256).max) {
-            require(
+            if (currentAllowance >= _amount) { /* FOR COVERAGE TESTING */ }
+            Require.that(
                 currentAllowance >= _amount,
-                "ERC20: Insufficient allowance"
+                _FILE,
+                "Insufficient allowance"
             );
             unchecked {
                 _approve(_owner, _spender, currentAllowance - _amount);

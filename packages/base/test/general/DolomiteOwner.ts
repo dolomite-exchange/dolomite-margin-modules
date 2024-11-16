@@ -27,12 +27,16 @@ describe('DolomiteOwner', () => {
 
   let core: CoreProtocolArbitrumOne;
   let dolomiteOwner: DolomiteOwner;
+  let bypassTimelockRole: BytesLike;
+  let executorRole: BytesLike;
   let securityCouncilRole: BytesLike;
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
 
     dolomiteOwner = (await createDolomiteOwner(core, SECONDS_TIME_LOCKED)).connect(core.gnosisSafe);
+    bypassTimelockRole = await dolomiteOwner.BYPASS_TIMELOCK_ROLE();
+    executorRole = await dolomiteOwner.EXECUTOR_ROLE();
     securityCouncilRole = await dolomiteOwner.SECURITY_COUNCIL_ROLE();
     const ownable = Ownable__factory.connect(core.dolomiteMargin.address, core.governance);
     await ownable.transferOwnership(dolomiteOwner.address);
@@ -67,12 +71,17 @@ describe('DolomiteOwner', () => {
 
   describe('#ownerAddRole', () => {
     it('should work normally', async () => {
-      expect(await dolomiteOwner.getRoles()).to.deep.equal([BYTES_ZERO]);
+      expect(await dolomiteOwner.getRoles()).to.deep.equal([bypassTimelockRole, BYTES_ZERO, executorRole]);
       const res = await dolomiteOwner.ownerAddRole(securityCouncilRole);
       await expectEvent(dolomiteOwner, res, 'RoleAdded', {
         role: securityCouncilRole,
       });
-      expect(await dolomiteOwner.getRoles()).to.deep.equal([BYTES_ZERO, securityCouncilRole]);
+      expect(await dolomiteOwner.getRoles()).to.deep.equal([
+        bypassTimelockRole,
+        BYTES_ZERO,
+        executorRole,
+        securityCouncilRole,
+      ]);
     });
 
     it('should fail if not called by DEFAULT_ADMIN', async () => {
@@ -86,13 +95,22 @@ describe('DolomiteOwner', () => {
   describe('#ownerRemoveRole', () => {
     it('should work normally', async () => {
       await dolomiteOwner.ownerAddRole(securityCouncilRole);
-      expect(await dolomiteOwner.getRoles()).to.deep.equal([BYTES_ZERO, securityCouncilRole]);
+      expect(await dolomiteOwner.getRoles()).to.deep.equal([
+        bypassTimelockRole,
+        BYTES_ZERO,
+        executorRole,
+        securityCouncilRole,
+      ]);
 
       const res = await dolomiteOwner.ownerRemoveRole(securityCouncilRole);
       await expectEvent(dolomiteOwner, res, 'RoleRemoved', {
         role: securityCouncilRole,
       });
-      expect(await dolomiteOwner.getRoles()).to.deep.equal([BYTES_ZERO]);
+      expect(await dolomiteOwner.getRoles()).to.deep.equal([bypassTimelockRole, BYTES_ZERO, executorRole]);
+    });
+
+    it('should fail if attempting to remove DEFAULT_ADMIN', async () => {
+      await expectThrow(dolomiteOwner.ownerRemoveRole(BYTES_ZERO), 'DolomiteOwner: Cannot remove admin role');
     });
 
     it('should fail if not called by DEFAULT_ADMIN', async () => {
@@ -117,7 +135,10 @@ describe('DolomiteOwner', () => {
     });
 
     it('should fail if invalid role', async () => {
-      await expectThrow(dolomiteOwner.ownerAddRoleAddresses(BAD_ROLE, [OTHER_ADDRESS]), 'DolomiteOwner: Invalid role');
+      await expectThrow(
+        dolomiteOwner.ownerAddRoleAddresses(BAD_ROLE, [OTHER_ADDRESS]),
+        `DolomiteOwner: Invalid role <${BAD_ROLE}>`,
+      );
     });
 
     it('should fail if not called by DEFAULT_ADMIN', async () => {
@@ -165,7 +186,7 @@ describe('DolomiteOwner', () => {
     it('should fail if invalid role', async () => {
       await expectThrow(
         dolomiteOwner.ownerAddRoleFunctionSelectors(BAD_ROLE, [BYTES4_OTHER_SELECTOR]),
-        'DolomiteOwner: Invalid role',
+        `DolomiteOwner: Invalid role <${BAD_ROLE}>`,
       );
     });
 
@@ -225,7 +246,7 @@ describe('DolomiteOwner', () => {
     it('should fail if invalid role', async () => {
       await expectThrow(
         dolomiteOwner.ownerAddRoleToAddressFunctionSelectors(BAD_ROLE, OTHER_ADDRESS, ['0x12345678']),
-        'DolomiteOwner: Invalid role',
+        `DolomiteOwner: Invalid role <${BAD_ROLE}>`,
       );
     });
 
@@ -599,6 +620,13 @@ describe('DolomiteOwner', () => {
       expect(await dolomiteOwner.getUserToRoles(core.hhUser1.address)).to.deep.equal([securityCouncilRole]);
       expect(await dolomiteOwner.hasRole(securityCouncilRole, core.hhUser1.address)).to.be.true;
     });
+
+    it('should fail if role is not active', async () => {
+      await expectThrow(
+        dolomiteOwner.grantRole(BAD_ROLE, core.hhUser1.address),
+        `DolomiteOwner: Invalid role <${BAD_ROLE}>`,
+      );
+    });
   });
 
   describe('#revokeRole', () => {
@@ -610,6 +638,13 @@ describe('DolomiteOwner', () => {
       expect(await dolomiteOwner.getUserToRoles(core.hhUser1.address)).to.deep.equal([securityCouncilRole]);
       await dolomiteOwner.revokeRole(securityCouncilRole, core.hhUser1.address);
       expect(await dolomiteOwner.getUserToRoles(core.hhUser1.address)).to.deep.equal([]);
+    });
+
+    it('should fail if role is not active', async () => {
+      await expectThrow(
+        dolomiteOwner.revokeRole(BAD_ROLE, core.hhUser1.address),
+        `DolomiteOwner: Invalid role <${BAD_ROLE}>`,
+      );
     });
   });
 
@@ -680,6 +715,51 @@ describe('DolomiteOwner', () => {
       expect(ids[0]).to.eq(0);
       expect(ids[1]).to.eq(1);
       expect(ids[2]).to.eq(2);
+    });
+  });
+
+  describe('#isUserApprovedToSubmitTransaction', () => {
+    it('should fail when role does not exist', async () => {
+      await dolomiteOwner.ownerAddRole(BAD_ROLE);
+      await dolomiteOwner.grantRole(BAD_ROLE, core.hhUser4.address);
+      await dolomiteOwner.ownerRemoveRole(BAD_ROLE);
+
+      const data = await core.dolomiteRegistry.populateTransaction.ownerSetChainlinkPriceOracle(OTHER_ADDRESS);
+      expect(
+        await dolomiteOwner.isUserApprovedToSubmitTransaction(
+          core.hhUser4.address,
+          core.dolomiteRegistry.address,
+          data.data!.slice(0, 10),
+        ),
+      ).to.be.false;
+    });
+
+    it('should fail when only user role is EXECUTOR', async () => {
+      const executorRole = await dolomiteOwner.EXECUTOR_ROLE();
+      await dolomiteOwner.grantRole(executorRole, core.hhUser4.address);
+
+      const data = await core.dolomiteRegistry.populateTransaction.ownerSetChainlinkPriceOracle(OTHER_ADDRESS);
+      expect(
+        await dolomiteOwner.isUserApprovedToSubmitTransaction(
+          core.hhUser4.address,
+          core.dolomiteRegistry.address,
+          data.data!.slice(0, 10),
+        ),
+      ).to.be.false;
+    });
+
+    it('should fail when only user role is BYPASS_TIMELOCK', async () => {
+      const bypassTimelockRole = await dolomiteOwner.BYPASS_TIMELOCK_ROLE();
+      await dolomiteOwner.grantRole(bypassTimelockRole, core.hhUser4.address);
+
+      const data = await core.dolomiteRegistry.populateTransaction.ownerSetChainlinkPriceOracle(OTHER_ADDRESS);
+      expect(
+        await dolomiteOwner.isUserApprovedToSubmitTransaction(
+          core.hhUser4.address,
+          core.dolomiteRegistry.address,
+          data.data!.slice(0, 10),
+        ),
+      ).to.be.false;
     });
   });
 });
