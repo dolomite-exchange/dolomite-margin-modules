@@ -34,7 +34,7 @@ import { DolomiteMarginMath } from "../protocol/lib/DolomiteMarginMath.sol";
 import { Require } from "../protocol/lib/Require.sol";
 import { TypesLib } from "../protocol/lib/TypesLib.sol";
 import { IDepositWithdrawalRouter } from "./interfaces/IDepositWithdrawalRouter.sol";
-import { IIsolationModeTokenVaultV1 } from '../isolation-mode/abstract/IsolationModeTokenVaultV1.sol';
+import { IIsolationModeTokenVaultV2 } from '../isolation-mode/interfaces/IIsolationModeTokenVaultV2.sol';
 
 
 /**
@@ -113,7 +113,7 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
         );
 
         if (marketInfo.isIsolationModeAsset && _toAccountNumber != 0) {
-            IIsolationModeTokenVaultV1 vault = _validateIsoMarketAndGetVault(marketInfo, msg.sender);
+            IIsolationModeTokenVaultV2 vault = _validateIsoMarketAndGetVault(marketInfo, msg.sender);
             // @follow-up @Corey do you want to still have the event flag if we call transfer on vault?
             vault.transferIntoPositionWithUnderlyingToken(DEFAULT_ACCOUNT_NUMBER, _toAccountNumber, amount);
         }

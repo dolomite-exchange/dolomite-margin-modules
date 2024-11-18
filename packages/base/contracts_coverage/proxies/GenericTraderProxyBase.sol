@@ -20,30 +20,34 @@
 
 pragma solidity ^0.8.9;
 
-import { RouterBase } from "./RouterBase.sol";
+import { Require } from "../protocol/lib/Require.sol";
 import { IGenericTraderBase } from "../interfaces/IGenericTraderBase.sol";
-import { IIsolationModeUnwrapperTraderV2 } from "../isolation-mode/interfaces/IIsolationModeUnwrapperTraderV2.sol";
+import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { IIsolationModeVaultFactory } from "../isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
+import { IIsolationModeUnwrapperTraderV2 } from "../isolation-mode/interfaces/IIsolationModeUnwrapperTraderV2.sol";
 import { IIsolationModeWrapperTraderV2 } from "../isolation-mode/interfaces/IIsolationModeWrapperTraderV2.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
-import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
-import { Require } from "../protocol/lib/Require.sol";
+import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
+import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+
 
 /**
- * @title   GenericTraderRouterBase
+ * @title   GenericTraderProxyBase
  * @author  Dolomite
  *
  * @notice  Base contract with validation and utilities for trading any asset from an account
  */
-abstract contract GenericTraderRouterBase is RouterBase, IGenericTraderBase {
+abstract contract GenericTraderProxyBase is IGenericTraderBase {
 
     // ========================================================
     // ====================== Constants =======================
     // ========================================================
 
-    bytes32 private constant _FILE = "GenericTraderRouterBase";
+    bytes32 private constant _FILE = "GenericTraderProxyBase";
 
     uint256 internal constant ARBITRUM_ONE = 42161;
+    string internal constant DOLOMITE_ISOLATION_PREFIX = "Dolomite Isolation:";
+    string internal constant DOLOMITE_FS_GLP = "Dolomite: Fee + Staked GLP";
 
     /// @dev The index of the trade account in the accounts array (for executing an operation)
     uint256 internal constant TRADE_ACCOUNT_ID = 0;
@@ -56,11 +60,35 @@ abstract contract GenericTraderRouterBase is RouterBase, IGenericTraderBase {
     // ========================================================
 
     constructor (
-        uint256 _chainId,
-        address _dolomiteRegistry,
-        address _dolomiteMargin
-    ) RouterBase(_dolomiteRegistry, _dolomiteMargin) {
+        uint256 _chainId
+    ) {
         CHAIN_ID = _chainId;
+    }
+
+    function isIsolationModeMarket(IDolomiteMargin _dolomiteMargin, uint256 _marketId) public view returns (bool) {
+        return _isIsolationModeAsset(_dolomiteMargin.getMarketTokenAddress(_marketId));
+    }
+
+    function _isIsolationModeAsset(address _token) internal view returns (bool) {
+        string memory name = IERC20Metadata(_token).name();
+
+        if (keccak256(bytes(name)) == keccak256(bytes(DOLOMITE_FS_GLP))) {
+            return true;
+        }
+        return _startsWith(DOLOMITE_ISOLATION_PREFIX, name);
+    }
+
+    function _startsWith(string memory _start, string memory _str) internal pure returns (bool) {
+        if (bytes(_start).length > bytes(_str).length) {
+            return false;
+        }
+
+        bytes32 hash;
+        assembly {
+            let size := mload(_start)
+            hash := keccak256(add(_str, 32), size)
+        }
+        return hash == keccak256(bytes(_start));
     }
 
     // ========================================================
@@ -170,7 +198,7 @@ abstract contract GenericTraderRouterBase is RouterBase, IGenericTraderBase {
         uint256 _nextMarketId,
         TraderParam memory _traderParam
     ) internal view {
-        if (_isIsolationModeMarket(_marketId)) {
+        if (isIsolationModeMarket(_cache.dolomiteMargin, _marketId)) {
             // If the current market is in isolation mode, the trader type must be for isolation mode assets
             if (_isUnwrapperTraderType(_traderParam.traderType)) { /* FOR COVERAGE TESTING */ }
             Require.that(
@@ -181,7 +209,7 @@ abstract contract GenericTraderRouterBase is RouterBase, IGenericTraderBase {
                 uint256(uint8(_traderParam.traderType))
             );
 
-            if (_isIsolationModeMarket(_nextMarketId)) {
+            if (isIsolationModeMarket(_cache.dolomiteMargin, _nextMarketId)) {
                 // If the user is unwrapping into an isolation mode asset, the next market must trust this trader
                 address isolationModeToken = _cache.dolomiteMargin.getMarketTokenAddress(_nextMarketId);
                 if (IIsolationModeVaultFactory(isolationModeToken).isTokenConverterTrusted(_traderParam.trader)) { /* FOR COVERAGE TESTING */ }
@@ -193,7 +221,7 @@ abstract contract GenericTraderRouterBase is RouterBase, IGenericTraderBase {
                     _nextMarketId
                 );
             }
-        } else if (_isIsolationModeMarket(_nextMarketId)) {
+        } else if (isIsolationModeMarket(_cache.dolomiteMargin, _nextMarketId)) {
             // If the next market is in isolation mode, the trader must wrap the current asset into the isolation asset.
             if (_isWrapperTraderType(_traderParam.traderType)) { /* FOR COVERAGE TESTING */ }
             Require.that(

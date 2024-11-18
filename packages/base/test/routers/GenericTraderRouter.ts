@@ -7,15 +7,11 @@ import {
   setupDAIBalance,
   setupTestMarket,
   setupUserVaultProxy,
-  setupWETHBalance
 } from '../utils/setup';
 import {
   BorrowPositionRouter,
   CustomTestToken,
   GenericTraderProxyV2,
-  GenericTraderRouter,
-  GenericTraderRouter__factory,
-  TestBorrowPositionRouter,
   TestBorrowPositionRouter__factory,
   TestGenericTraderRouter,
   TestGenericTraderRouter__factory,
@@ -30,16 +26,13 @@ import {
 } from 'packages/base/src/types';
 import { createContractWithAbi, createContractWithLibrary, createContractWithName, createTestToken, depositIntoDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
-import { createAndUpgradeDolomiteRegistry, createIsolationModeTokenVaultV1ActionsImpl, setupNewGenericTraderProxy } from '../utils/dolomite';
+import { createAndUpgradeDolomiteRegistry, createIsolationModeTokenVaultV1ActionsImpl } from '../utils/dolomite';
 import { createTestIsolationModeVaultFactory } from '../utils/ecosystem-utils/testers';
 import { BigNumber } from 'ethers';
-import { expectEvent, expectProtocolBalance, expectThrow } from '../utils/assertions';
+import { expectProtocolBalance, expectThrow } from '../utils/assertions';
 import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin';
 import { parseEther } from 'ethers/lib/utils';
-import { expect } from 'chai';
 import { getSimpleZapParams, getUnwrapZapParams, getWrapZapParams } from '../utils/zap-utils';
-import { GenericEventEmissionType } from '@dolomite-exchange/dolomite-margin/dist/src/modules/GenericTraderProxyV1';
-import { get } from 'http';
 
 enum Direction {
   ToVault = 0,
@@ -409,6 +402,44 @@ describe('GenericTraderRouter', () => {
       await expectProtocolBalance(core, userVault, defaultAccountNumber, isolationModeMarketId, ZERO_BI);
       await expectProtocolBalance(core, userVault, borrowAccountNumber, isolationModeMarketId, ZERO_BI);
       await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId1, outputAmount);
+    });
+
+    it('should work normally with transfers prior to swap', async () => {
+
+    });
+
+    it('should work normally with transfers after swap', async () => {
+
+    });
+
+    it('should fail if reentered', async () => {
+      const outputAmount = amountWei.div(2);
+      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
+      const transaction = await traderRouter.populateTransaction.swapExactInputForOutputAndModifyPosition(
+        MAX_UINT_256_BI,
+        {
+          tradeAccountNumber: borrowAccountNumber,
+          marketIdsPath: zapParams.marketIdsPath,
+          inputAmountWei: zapParams.inputAmountWei,
+          minOutputAmountWei: zapParams.minOutputAmountWei,
+          tradersPath: zapParams.tradersPath,
+          makerAccounts: zapParams.makerAccounts,
+          transferCollateralParams: {
+            transferAmounts: [{ marketId: otherMarketId1, amountWei: MAX_UINT_256_BI }],
+            fromAccountNumber: borrowAccountNumber,
+            toAccountNumber: defaultAccountNumber,
+          },
+          expiryParams: {
+            expiryTimeDelta: 0,
+            marketId: 0,
+          },
+          userConfig: zapParams.userConfig,
+        }
+      );
+      await expectThrow(
+        traderRouter.callFunctionAndTriggerReentrancy(transaction.data!),
+        'ReentrancyGuard: reentrant call'
+      );
     });
   });
 });

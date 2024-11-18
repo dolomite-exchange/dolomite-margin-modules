@@ -27,7 +27,7 @@ import { IGenericTraderBase } from '../interfaces/IGenericTraderBase.sol';
 import { IDolomiteMargin } from '../protocol/interfaces/IDolomiteMargin.sol';
 import { IIsolationModeTokenVaultV2 } from '../isolation-mode/interfaces/IIsolationModeTokenVaultV2.sol';
 import { Require } from '../protocol/lib/Require.sol';
-import { console } from 'hardhat/console.sol';
+import { AccountBalanceLib } from '../lib/AccountBalanceLib.sol';
 
 /**
  * @title   GenericTraderRouter
@@ -42,6 +42,11 @@ contract GenericTraderRouter is RouterBase {
   // ========================================================
 
   bytes32 private constant _FILE = 'GenericTraderRouter';
+
+  enum TransferType {
+    IntoPosition,
+    OutOfPosition
+  }
 
   // ========================================================
   // ===================== Constructor ========================
@@ -161,6 +166,72 @@ contract GenericTraderRouter is RouterBase {
           _params.userConfig
         );
       } else {
+        if (_params.transferCollateralParams.fromAccountNumber < 100 && _params.transferCollateralParams.toAccountNumber >= 100) {
+          _doTransfers(_vaultMarketId, vault, _params.transferCollateralParams, TransferType.IntoPosition);
+          vault.swapExactInputForOutput(
+            _params.tradeAccountNumber,
+            _params.marketIdsPath,
+            _params.inputAmountWei,
+            _params.minOutputAmountWei,
+            _params.tradersPath,
+            _params.makerAccounts,
+            _params.userConfig
+          );
+        } else {
+          vault.swapExactInputForOutput(
+            _params.tradeAccountNumber,
+            _params.marketIdsPath,
+            _params.inputAmountWei,
+            _params.minOutputAmountWei,
+            _params.tradersPath,
+            _params.makerAccounts,
+            _params.userConfig
+          );
+          _doTransfers(_vaultMarketId, vault, _params.transferCollateralParams, TransferType.OutOfPosition);
+        }
+      }
+    }
+  }
+
+  function _doTransfers(
+    uint256 _vaultMarketId,
+    IIsolationModeTokenVaultV2 _vault,
+    IGenericTraderProxyV2.TransferCollateralParam memory _params,
+    TransferType _transferType
+  ) internal {
+    for (uint256 i; i < _params.transferAmounts.length; i++) {
+      if (_params.transferAmounts[i].marketId == _vaultMarketId) {
+        if (_transferType == TransferType.IntoPosition) {
+          _vault.transferIntoPositionWithUnderlyingToken(
+            _params.fromAccountNumber,
+            _params.toAccountNumber,
+            _params.transferAmounts[i].amountWei
+          );
+        } else {
+          _vault.transferFromPositionWithUnderlyingToken(
+            _params.fromAccountNumber,
+            _params.toAccountNumber,
+            _params.transferAmounts[i].amountWei
+          );
+        }
+      } else {
+        if (_transferType == TransferType.IntoPosition) {
+          _vault.transferIntoPositionWithOtherToken(
+            _params.fromAccountNumber,
+            _params.toAccountNumber,
+            _params.transferAmounts[i].marketId,
+            _params.transferAmounts[i].amountWei,
+            AccountBalanceLib.BalanceCheckFlag.From
+          );
+        } else {
+          _vault.transferFromPositionWithOtherToken(
+            _params.fromAccountNumber,
+            _params.toAccountNumber,
+            _params.transferAmounts[i].marketId,
+            _params.transferAmounts[i].amountWei,
+            AccountBalanceLib.BalanceCheckFlag.From
+          );
+        }
       }
     }
   }

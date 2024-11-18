@@ -21,13 +21,10 @@
 pragma solidity ^0.8.9;
 
 import { RouterBase } from './RouterBase.sol';
-import { IIsolationModeTokenVaultV1 } from '../isolation-mode/abstract/IsolationModeTokenVaultV1.sol';
-import { AccountActionLib } from '../lib/AccountActionLib.sol';
-import { AccountBalanceLib } from '../lib/AccountBalanceLib.sol';
-import { IDolomiteMargin } from '../protocol/interfaces/IDolomiteMargin.sol';
-import { IDolomiteStructs } from '../protocol/interfaces/IDolomiteStructs.sol';
-import { IBorrowPositionRouter } from './interfaces/IBorrowPositionRouter.sol';
 import { IBorrowPositionProxyV2 } from '../interfaces/IBorrowPositionProxyV2.sol';
+import { IIsolationModeTokenVaultV2 } from '../isolation-mode/interfaces/IIsolationModeTokenVaultV2.sol';
+import { AccountBalanceLib } from '../lib/AccountBalanceLib.sol';
+import { IBorrowPositionRouter } from './interfaces/IBorrowPositionRouter.sol';
 
 
 /**
@@ -44,19 +41,14 @@ contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
 
   bytes32 private constant _FILE = 'BorrowPositionRouter';
 
-  bytes32 private constant _BORROW_POSITION_PROXY_SLOT = bytes32(uint256(keccak256('eip1967.proxy.borrowPositionProxy')) - 1);
-
   // ========================================================
   // ===================== Constructor ========================
   // ========================================================
 
   constructor(
-    address _borrowPositionProxy,
     address _dolomiteRegistry,
     address _dolomiteMargin
-  ) RouterBase(_dolomiteRegistry, _dolomiteMargin) {
-    _ownerSetBorrowPositionProxy(_borrowPositionProxy);
-  }
+  ) RouterBase(_dolomiteRegistry, _dolomiteMargin) {}
 
   // ========================================================
   // ================== External Functions ==================
@@ -71,7 +63,7 @@ contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
   ) external nonReentrant {
     MarketInfo memory marketInfo = _getMarketInfo(_marketId);
     if (!marketInfo.isIsolationModeAsset) {
-      borrowPositionProxy().openBorrowPositionWithDifferentAccounts(
+      DOLOMITE_REGISTRY.borrowPositionProxy().openBorrowPositionWithDifferentAccounts(
         msg.sender,
         _fromAccountNumber,
         msg.sender,
@@ -81,10 +73,12 @@ contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
         _balanceCheckFlag
       );
     } else {
-      IIsolationModeTokenVaultV1 vault = _validateIsoMarketAndGetVault(marketInfo, msg.sender);
+      IIsolationModeTokenVaultV2 vault = _validateIsoMarketAndGetVault(marketInfo, msg.sender);
       vault.openBorrowPosition(_fromAccountNumber, _toAccountNumber, _amount);
     }
   }
+
+  // @todo multicall
 
   // @todo add open margin position function
 
@@ -95,7 +89,7 @@ contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
     uint256[] calldata _collateralMarketIds
   ) external nonReentrant {
     if (_vaultMarketId == type(uint256).max) {
-      borrowPositionProxy().closeBorrowPositionWithDifferentAccounts(
+      DOLOMITE_REGISTRY.borrowPositionProxy().closeBorrowPositionWithDifferentAccounts(
         msg.sender,
         _borrowAccountNumber,
         msg.sender,
@@ -104,7 +98,7 @@ contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
       );
     } else {
       MarketInfo memory marketInfo = _getMarketInfo(_vaultMarketId);
-      IIsolationModeTokenVaultV1 vault = _validateIsoMarketAndGetVault(marketInfo, msg.sender);
+      IIsolationModeTokenVaultV2 vault = _validateIsoMarketAndGetVault(marketInfo, msg.sender);
 
       if (_collateralMarketIds.length == 0) {
         vault.closeBorrowPositionWithUnderlyingVaultToken(_borrowAccountNumber, _toAccountNumber);
@@ -140,7 +134,7 @@ contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
     AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
   ) external nonReentrant {
     if (_vaultMarketId == type(uint256).max) {
-      borrowPositionProxy().repayAllForBorrowPositionWithDifferentAccounts(
+      DOLOMITE_REGISTRY.borrowPositionProxy().repayAllForBorrowPositionWithDifferentAccounts(
         msg.sender,
         _fromAccountNumber,
         msg.sender,
@@ -150,19 +144,9 @@ contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
       );
     } else {
       MarketInfo memory marketInfo = _getMarketInfo(_vaultMarketId);
-      IIsolationModeTokenVaultV1 vault = _validateIsoMarketAndGetVault(marketInfo, msg.sender);
+      IIsolationModeTokenVaultV2 vault = _validateIsoMarketAndGetVault(marketInfo, msg.sender);
       vault.repayAllForBorrowPosition(_fromAccountNumber, _borrowAccountNumber, _marketId, _balanceCheckFlag);
     }
-  }
-
-  function ownerSetBorrowPositionProxy(
-    address _borrowPositionProxy
-  ) external onlyDolomiteMarginOwner(msg.sender) {
-    _ownerSetBorrowPositionProxy(_borrowPositionProxy);
-  }
-
-  function borrowPositionProxy() public view returns (IBorrowPositionProxyV2) {
-    return IBorrowPositionProxyV2(_getAddress(_BORROW_POSITION_PROXY_SLOT));
   }
 
   // ========================================================
@@ -178,7 +162,7 @@ contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
     AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
   ) internal {
     if (_vaultMarketId == type(uint256).max) {
-      borrowPositionProxy().transferBetweenAccountsWithDifferentAccounts(
+      DOLOMITE_REGISTRY.borrowPositionProxy().transferBetweenAccountsWithDifferentAccounts(
         msg.sender,
         _fromAccountNumber,
         msg.sender,
@@ -191,7 +175,7 @@ contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
     }
 
     MarketInfo memory marketInfo = _getMarketInfo(_vaultMarketId);
-    IIsolationModeTokenVaultV1 vault = _validateIsoMarketAndGetVault(marketInfo, msg.sender);
+    IIsolationModeTokenVaultV2 vault = _validateIsoMarketAndGetVault(marketInfo, msg.sender);
     if (_vaultMarketId == _marketId) {
       if (_fromAccountNumber < 100 && _toAccountNumber >= 100) {
         vault.transferIntoPositionWithUnderlyingToken(_fromAccountNumber, _toAccountNumber, _amount);
@@ -217,10 +201,5 @@ contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
         );
       }
     }
-  }
-
-  function _ownerSetBorrowPositionProxy(address _borrowPositionProxy) internal {
-    _setAddress(_BORROW_POSITION_PROXY_SLOT, _borrowPositionProxy);
-    emit BorrowPositionProxySet(_borrowPositionProxy);
   }
 }
