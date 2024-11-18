@@ -21,6 +21,7 @@
 pragma solidity ^0.8.9;
 
 import { IRouterBase } from "./IRouterBase.sol";
+import { AccountBalanceLib } from "../../lib/AccountBalanceLib.sol";
 
 
 /**
@@ -30,10 +31,36 @@ import { IRouterBase } from "./IRouterBase.sol";
  * @notice  Interface for opening borrow positions
  */
 interface IBorrowPositionRouter is IRouterBase {
-    event BorrowPositionProxySet(address indexed borrowPositionProxy);
 
-    enum Direction {
-        ToVault,
-        FromVault
-    }
+    function openBorrowPosition(
+        uint256 _fromAccountNumber,
+        uint256 _toAccountNumber,
+        uint256 _marketId,
+        uint256 _amount,
+        AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
+    ) external;
+
+    function closeBorrowPosition(
+        uint256 _isolationModeMarketId,
+        uint256 _borrowAccountNumber,
+        uint256 _toAccountNumber,
+        uint256[] calldata _collateralMarketIds
+    ) external;
+
+    function transferBetweenAccounts(
+        uint256 _isolationModeMarketId,
+        uint256 _fromAccountNumber,
+        uint256 _toAccountNumber,
+        uint256 _marketId,
+        uint256 _amount,
+        AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
+    ) external;
+
+    function repayAllForBorrowPosition(
+        uint256 _isolationModeMarketId,
+        uint256 _fromAccountNumber,
+        uint256 _borrowAccountNumber,
+        uint256 _marketId,
+        AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
+    ) external;
 }

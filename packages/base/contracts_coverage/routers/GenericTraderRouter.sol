@@ -27,150 +27,214 @@ import { IGenericTraderBase } from '../interfaces/IGenericTraderBase.sol';
 import { IDolomiteMargin } from '../protocol/interfaces/IDolomiteMargin.sol';
 import { IIsolationModeTokenVaultV2 } from '../isolation-mode/interfaces/IIsolationModeTokenVaultV2.sol';
 import { Require } from '../protocol/lib/Require.sol';
+import { AccountBalanceLib } from '../lib/AccountBalanceLib.sol';
+import { IGenericTraderRouter } from './interfaces/IGenericTraderRouter.sol';
 
 
 /**
  * @title   GenericTraderRouter
  * @author  Dolomite
  *
- * @notice  Router contract for opening borrow positions
+ * @notice  Router contract for trading assets
  */
-contract GenericTraderRouter is RouterBase {
+contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
 
-  // ========================================================
-  // ====================== Constants =======================
-  // ========================================================
+    // ========================================================
+    // ====================== Constants =======================
+    // ========================================================
 
-  bytes32 private constant _FILE = 'GenericTraderRouter';
+    bytes32 private constant _FILE = 'GenericTraderRouter';
 
-  // ========================================================
-  // ===================== Constructor ========================
-  // ========================================================
+    uint256 public constant DEFAULT_ACCOUNT_NUMBER = 0;
 
-  constructor(
-    address _dolomiteRegistry,
-    address _dolomiteMargin
-  ) RouterBase(_dolomiteRegistry, _dolomiteMargin) {
-  }
+    // ========================================================
+    // ===================== Constructor ========================
+    // ========================================================
 
-  // ========================================================
-  // ================== External Functions ==================
-  // ========================================================
+    constructor(
+        address _dolomiteRegistry,
+        address _dolomiteMargin
+    ) RouterBase(_dolomiteRegistry, _dolomiteMargin) {
+    }
 
-  struct SwapExactInputForOutputParams {
-    uint256 vaultMarketId;
-    uint256 otherAccountNumber;
-    uint256 tradeAccountNumber;
-    uint256[] marketIdsPath;
-    uint256 inputAmountWei;
-    uint256 minOutputAmountWei;
-    IGenericTraderBase.TraderParam[] tradersPath;
-    IDolomiteMargin.AccountInfo[] makerAccounts;
-    IGenericTraderProxyV2.UserConfig userConfig;
-  }
+    // ========================================================
+    // ================== External Functions ==================
+    // ========================================================
 
-  function swapExactInputForOutput(
-    SwapExactInputForOutputParams memory _params
-  ) external nonReentrant {
-    if (_params.vaultMarketId == type(uint256).max && _params.otherAccountNumber == type(uint256).max) {
-      IGenericTraderProxyV2 proxy = IGenericTraderProxyV2(address(DOLOMITE_REGISTRY.genericTraderProxy()));
-      proxy.swapExactInputForOutputForDifferentAccount(
-        msg.sender,
-        _params.tradeAccountNumber,
-        _params.marketIdsPath,
-        _params.inputAmountWei,
-        _params.minOutputAmountWei,
-        _params.tradersPath,
-        _params.makerAccounts,
-        _params.userConfig
-      );
-    } else {
-      MarketInfo memory marketInfo = _getMarketInfo(_params.vaultMarketId);
-      IIsolationModeTokenVaultV2 vault = _validateIsoMarketAndGetVault(marketInfo, msg.sender);
+    function swapExactInputForOutput(
+        uint256 _isolationModeMarketId,
+        IGenericTraderProxyV2.SwapExactInputForOutputParams memory _params
+    ) external nonReentrant {
+        if (_isolationModeMarketId == type(uint256).max) {
+            IGenericTraderProxyV2 proxy = IGenericTraderProxyV2(address(DOLOMITE_REGISTRY.genericTraderProxy()));
+            proxy.swapExactInputForOutputForDifferentAccount(
+                msg.sender,
+                _params
+            );
+        } else {
+            MarketInfo memory marketInfo = _getMarketInfo(_isolationModeMarketId);
+            IIsolationModeTokenVaultV2 vault = _validateIsoMarketAndGetVault(marketInfo, msg.sender);
 
-      if (_params.marketIdsPath[_params.marketIdsPath.length - 1] == _params.vaultMarketId && _params.tradeAccountNumber == 0) {
-        vault.addCollateralAndSwapExactInputForOutput(
-          _params.otherAccountNumber,
-          _params.tradeAccountNumber,
-          _params.marketIdsPath,
-          _params.inputAmountWei,
-          _params.minOutputAmountWei,
-          _params.tradersPath,
-          _params.makerAccounts,
-          _params.userConfig
-        );
-      } else if (_params.marketIdsPath[0] == _params.vaultMarketId && _params.tradeAccountNumber == 0) {
-        vault.swapExactInputForOutputAndRemoveCollateral(
-          _params.otherAccountNumber,
-          _params.tradeAccountNumber,
-          _params.marketIdsPath,
-          _params.inputAmountWei,
-          _params.minOutputAmountWei,
-          _params.tradersPath,
-          _params.makerAccounts,
-          _params.userConfig
-        );
-      } else {
-        vault.swapExactInputForOutput(
-          _params.tradeAccountNumber,
-          _params.marketIdsPath,
-          _params.inputAmountWei,
-          _params.minOutputAmountWei,
-          _params.tradersPath,
-          _params.makerAccounts,
-          _params.userConfig
-        );
+            if (_params.marketIdsPath[_params.marketIdsPath.length - 1] == _isolationModeMarketId && _params.accountNumber < 100) {
+                vault.addCollateralAndSwapExactInputForOutput(
+                    _params.accountNumber,
+                    /* toAccountNumber */ DEFAULT_ACCOUNT_NUMBER,
+                    _params.marketIdsPath,
+                    _params.inputAmountWei,
+                    _params.minOutputAmountWei,
+                    _params.tradersPath,
+                    _params.makerAccounts,
+                    _params.userConfig
+                );
+            } else if (_params.marketIdsPath[0] == _isolationModeMarketId && _params.accountNumber < 100) {
+                vault.swapExactInputForOutputAndRemoveCollateral(
+                    _params.accountNumber,
+                    /* fromAccountNumber */ DEFAULT_ACCOUNT_NUMBER,
+                    _params.marketIdsPath,
+                    _params.inputAmountWei,
+                    _params.minOutputAmountWei,
+                    _params.tradersPath,
+                    _params.makerAccounts,
+                    _params.userConfig
+                );
+            } else {
+                vault.swapExactInputForOutput(
+                    _params.accountNumber,
+                    _params.marketIdsPath,
+                    _params.inputAmountWei,
+                    _params.minOutputAmountWei,
+                    _params.tradersPath,
+                    _params.makerAccounts,
+                    _params.userConfig
+                );
+            }
       }
     }
-  }
 
-  function swapExactInputForOutputAndModifyPosition(
-    uint256 _vaultMarketId,
-    IGenericTraderProxyV2.SwapExactInputForOutputAndModifyPositionParams memory _params
-  ) external nonReentrant {
-    if (_vaultMarketId == type(uint256).max) {
-      IGenericTraderProxyV2 proxy = IGenericTraderProxyV2(address(DOLOMITE_REGISTRY.genericTraderProxy()));
-      proxy.swapExactInputForOutputAndModifyPositionForDifferentAccount(
-        msg.sender,
-        _params
-      );
-    } else {
-      MarketInfo memory marketInfo = _getMarketInfo(_vaultMarketId);
-      IIsolationModeTokenVaultV2 vault = _validateIsoMarketAndGetVault(marketInfo, msg.sender);
+    function swapExactInputForOutputAndModifyPosition(
+        uint256 _isolationModeMarketId,
+        IGenericTraderProxyV2.SwapExactInputForOutputAndModifyPositionParams memory _params
+    ) external nonReentrant {
+        if (_isolationModeMarketId == type(uint256).max) {
+            IGenericTraderProxyV2 proxy = IGenericTraderProxyV2(address(DOLOMITE_REGISTRY.genericTraderProxy()));
+            proxy.swapExactInputForOutputAndModifyPositionForDifferentAccount(
+                msg.sender,
+                _params
+            );
+        } else {
+            MarketInfo memory marketInfo = _getMarketInfo(_isolationModeMarketId);
+            IIsolationModeTokenVaultV2 vault = _validateIsoMarketAndGetVault(marketInfo, msg.sender);
 
-      if (_checkAddCollateralAndSwap(_params)) {
-        vault.addCollateralAndSwapExactInputForOutput(
-          _params.transferCollateralParams.fromAccountNumber,
-          _params.transferCollateralParams.toAccountNumber,
-          _params.marketIdsPath,
-          _params.inputAmountWei,
-          _params.minOutputAmountWei,
-          _params.tradersPath,
-          _params.makerAccounts,
-          _params.userConfig
-        );
-      } else if (_checkSwapAndRemoveCollateral(_params)) {
-        vault.swapExactInputForOutputAndRemoveCollateral(
-          _params.transferCollateralParams.toAccountNumber,
-          _params.transferCollateralParams.fromAccountNumber,
-          _params.marketIdsPath,
-          _params.inputAmountWei,
-          _params.minOutputAmountWei,
-          _params.tradersPath,
-          _params.makerAccounts,
-          _params.userConfig
-        );
-      } else {
-        // @todo loop through transfers and then swap
+            if (_checkAddCollateralAndSwap(_params)) {
+                vault.addCollateralAndSwapExactInputForOutput(
+                    _params.transferCollateralParams.fromAccountNumber,
+                    _params.transferCollateralParams.toAccountNumber,
+                    _params.marketIdsPath,
+                    _params.inputAmountWei,
+                    _params.minOutputAmountWei,
+                    _params.tradersPath,
+                    _params.makerAccounts,
+                    _params.userConfig
+                );
+            } else if (_checkSwapAndRemoveCollateral(_params)) {
+                vault.swapExactInputForOutputAndRemoveCollateral(
+                    _params.transferCollateralParams.toAccountNumber,
+                    _params.transferCollateralParams.fromAccountNumber,
+                    _params.marketIdsPath,
+                    _params.inputAmountWei,
+                    _params.minOutputAmountWei,
+                    _params.tradersPath,
+                    _params.makerAccounts,
+                    _params.userConfig
+                );
+            } else if (_params.transferCollateralParams.fromAccountNumber < 100 && _params.transferCollateralParams.toAccountNumber >= 100) {
+                _doTransfers(_isolationModeMarketId, vault, _params.transferCollateralParams, TransferType.IntoPosition);
+                vault.swapExactInputForOutput(
+                    _params.accountNumber,
+                    _params.marketIdsPath,
+                    _params.inputAmountWei,
+                    _params.minOutputAmountWei,
+                    _params.tradersPath,
+                    _params.makerAccounts,
+                    _params.userConfig
+                );
+            } else {
+                vault.swapExactInputForOutput(
+                    _params.accountNumber,
+                    _params.marketIdsPath,
+                    _params.inputAmountWei,
+                    _params.minOutputAmountWei,
+                    _params.tradersPath,
+                    _params.makerAccounts,
+                    _params.userConfig
+                );
+                _doTransfers(_isolationModeMarketId, vault, _params.transferCollateralParams, TransferType.OutOfPosition);
+            }
       }
     }
-  }
 
-  function _checkAddCollateralAndSwap(IGenericTraderProxyV2.SwapExactInputForOutputAndModifyPositionParams memory _params) internal pure returns (bool) {
-    return (_params.transferCollateralParams.transferAmounts.length == 1 && _params.transferCollateralParams.fromAccountNumber < 100 && _params.transferCollateralParams.toAccountNumber >= 100);
-  }
+    function _doTransfers(
+        uint256 _isolationModeMarketId,
+        IIsolationModeTokenVaultV2 _vault,
+        IGenericTraderProxyV2.TransferCollateralParam memory _params,
+        TransferType _transferType
+    ) internal {
+        for (uint256 i; i < _params.transferAmounts.length; i++) {
+            if (_params.transferAmounts[i].marketId == _isolationModeMarketId) {
+                if (_transferType == TransferType.IntoPosition) {
+                    _vault.transferIntoPositionWithUnderlyingToken(
+                        _params.fromAccountNumber,
+                        _params.toAccountNumber,
+                        _params.transferAmounts[i].amountWei
+                    );
+                } else {
+                    _vault.transferFromPositionWithUnderlyingToken(
+                        _params.fromAccountNumber,
+                        _params.toAccountNumber,
+                        _params.transferAmounts[i].amountWei
+                    );
+                }
+            } else {
+                /*assert(_params.transferAmounts[i].marketId != _isolationModeMarketId);*/
 
-  function _checkSwapAndRemoveCollateral(IGenericTraderProxyV2.SwapExactInputForOutputAndModifyPositionParams memory _params) internal pure returns (bool) {
-    return (_params.transferCollateralParams.transferAmounts.length == 1 && _params.transferCollateralParams.fromAccountNumber >= 100 && _params.transferCollateralParams.toAccountNumber < 100);
-  }
+                if (_transferType == TransferType.IntoPosition) {
+                    _vault.transferIntoPositionWithOtherToken(
+                        _params.fromAccountNumber,
+                        _params.toAccountNumber,
+                        _params.transferAmounts[i].marketId,
+                        _params.transferAmounts[i].amountWei,
+                        AccountBalanceLib.BalanceCheckFlag.From
+                    );
+                } else {
+                    _vault.transferFromPositionWithOtherToken(
+                        _params.fromAccountNumber,
+                        _params.toAccountNumber,
+                        _params.transferAmounts[i].marketId,
+                        _params.transferAmounts[i].amountWei,
+                        AccountBalanceLib.BalanceCheckFlag.From
+                    );
+                }
+            }
+        }
+    }
+
+    function _checkAddCollateralAndSwap(
+        IGenericTraderProxyV2.SwapExactInputForOutputAndModifyPositionParams memory _params
+    ) internal pure returns (bool) {
+        return (
+            _params.transferCollateralParams.transferAmounts.length == 1
+                && _params.transferCollateralParams.fromAccountNumber < 100
+                && _params.transferCollateralParams.toAccountNumber >= 100
+        );
+    }
+
+    function _checkSwapAndRemoveCollateral(
+        IGenericTraderProxyV2.SwapExactInputForOutputAndModifyPositionParams memory _params
+    ) internal pure returns (bool) {
+        return (
+            _params.transferCollateralParams.transferAmounts.length == 1
+                && _params.transferCollateralParams.fromAccountNumber >= 100
+                && _params.transferCollateralParams.toAccountNumber < 100
+        );
+    }
 }

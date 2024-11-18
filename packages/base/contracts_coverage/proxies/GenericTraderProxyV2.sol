@@ -86,14 +86,8 @@ contract GenericTraderProxyV2 is GenericTraderProxyBase, ReentrancyGuard, Author
     // ========================================================
 
     function swapExactInputForOutput(
-        uint256 _tradeAccountNumber,
-        uint256[] memory _marketIdsPath,
-        uint256 _inputAmountWei,
-        uint256 _minOutputAmountWei,
-        TraderParam[] memory _tradersPath,
-        IDolomiteStructs.AccountInfo[] memory _makerAccounts,
-        UserConfig memory _userConfig
-    ) public nonReentrant notExpired(_userConfig.deadline) {
+        SwapExactInputForOutputParams memory _params
+    ) public nonReentrant notExpired(_params.userConfig.deadline) {
         GenericTraderProxyCache memory cache = GenericTraderProxyCache({
             dolomiteMargin: DOLOMITE_MARGIN(),
             eventEmitterRegistry: DOLOMITE_REGISTRY.eventEmitter(),
@@ -112,73 +106,67 @@ contract GenericTraderProxyV2 is GenericTraderProxyBase, ReentrancyGuard, Author
             transferBalanceWeiBeforeOperate: TypesLib.zeroWei()
         });
 
-        _validateMarketIdPath(_marketIdsPath);
-        _inputAmountWei = _getActualInputAmountWei(
+        _validateMarketIdPath(_params.marketIdsPath);
+        _params.inputAmountWei = _getActualInputAmountWei(
             cache,
-            _tradeAccountNumber,
-            _marketIdsPath[0],
-            _inputAmountWei
+            _params.accountNumber,
+            _params.marketIdsPath[0],
+            _params.inputAmountWei
         );
 
-        _validateAmountWeis(_inputAmountWei, _minOutputAmountWei);
+        _validateAmountWeis(_params.inputAmountWei, _params.minOutputAmountWei);
         _validateTraderParams(
             cache,
-            _marketIdsPath,
-            _makerAccounts,
-            _tradersPath
+            _params.marketIdsPath,
+            _params.makerAccounts,
+            _params.tradersPath
         );
 
         IDolomiteStructs.AccountInfo[] memory accounts = _getAccounts(
             cache,
-            _makerAccounts,
+            _params.makerAccounts,
             /* _tradeAccountOwner = */ msg.sender, // solium-disable-line indentation
-            _tradeAccountNumber
+            _params.accountNumber
         );
-        _validateZapAccount(cache, accounts[ZAP_ACCOUNT_ID], _marketIdsPath);
+        _validateZapAccount(cache, accounts[ZAP_ACCOUNT_ID], _params.marketIdsPath);
 
-        IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](_getActionsLengthForTraderParams(_tradersPath));
+        IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](_getActionsLengthForTraderParams(_params.tradersPath));
         _appendTraderActions(
             accounts,
             actions,
             cache,
-            _marketIdsPath,
-            _inputAmountWei,
-            _minOutputAmountWei,
-            _tradersPath
+            _params.marketIdsPath,
+            _params.inputAmountWei,
+            _params.minOutputAmountWei,
+            _params.tradersPath
         );
 
         cache.dolomiteMargin.operate(accounts, actions);
         cache.eventEmitterRegistry.emitZapExecuted(
             msg.sender,
-            _tradeAccountNumber,
-            _marketIdsPath,
-            _tradersPath
+            _params.accountNumber,
+            _params.marketIdsPath,
+            _params.tradersPath
         );
 
         if (
-            _userConfig.balanceCheckFlag == AccountBalanceLib.BalanceCheckFlag.Both
-            || _userConfig.balanceCheckFlag == AccountBalanceLib.BalanceCheckFlag.From
+            _params.userConfig.balanceCheckFlag == AccountBalanceLib.BalanceCheckFlag.Both
+            || _params.userConfig.balanceCheckFlag == AccountBalanceLib.BalanceCheckFlag.From
         ) {
             // Check that the trader's balance is not negative for the input market
             AccountBalanceLib.verifyBalanceIsNonNegative(
                 cache.dolomiteMargin,
                 accounts[TRADE_ACCOUNT_ID].owner,
                 accounts[TRADE_ACCOUNT_ID].number,
-                _marketIdsPath[0]
+                _params.marketIdsPath[0]
             );
         }
     }
 
     function swapExactInputForOutputForDifferentAccount(
-        address _tradeAccountOwner,
-        uint256 _tradeAccountNumber,
-        uint256[] memory _marketIdsPath,
-        uint256 _inputAmountWei,
-        uint256 _minOutputAmountWei,
-        TraderParam[] memory _tradersPath,
-        IDolomiteStructs.AccountInfo[] memory _makerAccounts,
-        UserConfig memory _userConfig
-    ) public nonReentrant notExpired(_userConfig.deadline) requireIsCallerAuthorized(msg.sender) {
+        address _accountOwner,
+        SwapExactInputForOutputParams memory _params
+    ) public nonReentrant notExpired(_params.userConfig.deadline) requireIsCallerAuthorized(msg.sender) {
         GenericTraderProxyCache memory cache = GenericTraderProxyCache({
             dolomiteMargin: DOLOMITE_MARGIN(),
             eventEmitterRegistry: DOLOMITE_REGISTRY.eventEmitter(),
@@ -197,85 +185,77 @@ contract GenericTraderProxyV2 is GenericTraderProxyBase, ReentrancyGuard, Author
             transferBalanceWeiBeforeOperate: TypesLib.zeroWei()
         });
 
-        _validateMarketIdPath(_marketIdsPath);
-        _inputAmountWei = _getActualInputAmountWei(
+        _validateMarketIdPath(_params.marketIdsPath);
+        _params.inputAmountWei = _getActualInputAmountWei(
             cache,
-            _tradeAccountNumber,
-            _marketIdsPath[0],
-            _inputAmountWei
+            _params.accountNumber,
+            _params.marketIdsPath[0],
+            _params.inputAmountWei
         );
 
-        _validateAmountWeis(_inputAmountWei, _minOutputAmountWei);
+        _validateAmountWeis(_params.inputAmountWei, _params.minOutputAmountWei);
         _validateTraderParams(
             cache,
-            _marketIdsPath,
-            _makerAccounts,
-            _tradersPath
+            _params.marketIdsPath,
+            _params.makerAccounts,
+            _params.tradersPath
         );
 
         IDolomiteStructs.AccountInfo[] memory accounts = _getAccounts(
             cache,
-            _makerAccounts,
-            _tradeAccountOwner, // solium-disable-line indentation
-            _tradeAccountNumber
+            _params.makerAccounts,
+            _accountOwner, // solium-disable-line indentation
+            _params.accountNumber
         );
-        _validateZapAccount(cache, accounts[ZAP_ACCOUNT_ID], _marketIdsPath);
+        _validateZapAccount(cache, accounts[ZAP_ACCOUNT_ID], _params.marketIdsPath);
 
-        IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](_getActionsLengthForTraderParams(_tradersPath));
+        IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](_getActionsLengthForTraderParams(_params.tradersPath));
         _appendTraderActions(
             accounts,
             actions,
             cache,
-            _marketIdsPath,
-            _inputAmountWei,
-            _minOutputAmountWei,
-            _tradersPath
+            _params.marketIdsPath,
+            _params.inputAmountWei,
+            _params.minOutputAmountWei,
+            _params.tradersPath
         );
 
         cache.dolomiteMargin.operate(accounts, actions);
         cache.eventEmitterRegistry.emitZapExecuted(
-            _tradeAccountOwner,
-            _tradeAccountNumber,
-            _marketIdsPath,
-            _tradersPath
+            _accountOwner,
+            _params.accountNumber,
+            _params.marketIdsPath,
+            _params.tradersPath
         );
 
         if (
-            _userConfig.balanceCheckFlag == AccountBalanceLib.BalanceCheckFlag.Both
-            || _userConfig.balanceCheckFlag == AccountBalanceLib.BalanceCheckFlag.From
+            _params.userConfig.balanceCheckFlag == AccountBalanceLib.BalanceCheckFlag.Both
+            || _params.userConfig.balanceCheckFlag == AccountBalanceLib.BalanceCheckFlag.From
         ) {
             // Check that the trader's balance is not negative for the input market
             AccountBalanceLib.verifyBalanceIsNonNegative(
                 cache.dolomiteMargin,
                 accounts[TRADE_ACCOUNT_ID].owner,
                 accounts[TRADE_ACCOUNT_ID].number,
-                _marketIdsPath[0]
+                _params.marketIdsPath[0]
             );
         }
     }
 
     function swapExactInputForOutputAndModifyPosition(
-        uint256 _tradeAccountNumber,
-        uint256[] memory _marketIdsPath,
-        uint256 _inputAmountWei,
-        uint256 _minOutputAmountWei,
-        TraderParam[] memory _tradersPath,
-        IDolomiteStructs.AccountInfo[] memory _makerAccounts,
-        TransferCollateralParam memory _transferCollateralParams,
-        ExpiryParam memory _expiryParams,
-        UserConfig memory _userConfig
+        SwapExactInputForOutputAndModifyPositionParams memory _params
     )
         public
         nonReentrant
-        notExpired(_userConfig.deadline)
+        notExpired(_params.userConfig.deadline)
     {
         GenericTraderProxyCache memory cache = GenericTraderProxyCache({
             dolomiteMargin: DOLOMITE_MARGIN(),
             eventEmitterRegistry: DOLOMITE_REGISTRY.eventEmitter(),
-            isMarginDeposit: _tradeAccountNumber == _transferCollateralParams.toAccountNumber,
-            otherAccountNumber: _tradeAccountNumber == _transferCollateralParams.toAccountNumber
-                ? _transferCollateralParams.fromAccountNumber
-                : _transferCollateralParams.toAccountNumber,
+            isMarginDeposit: _params.accountNumber == _params.transferCollateralParams.toAccountNumber,
+            otherAccountNumber: _params.accountNumber == _params.transferCollateralParams.toAccountNumber
+                ? _params.transferCollateralParams.fromAccountNumber
+                : _params.transferCollateralParams.toAccountNumber,
             // traders go right after the trade account, the zap account, and the transfer account ("other account")
             traderAccountStartIndex: TRANSFER_ACCOUNT_ID + 1,
             actionsCursor: 0,
@@ -284,43 +264,43 @@ contract GenericTraderProxyV2 is GenericTraderProxyBase, ReentrancyGuard, Author
             transferBalanceWeiBeforeOperate: TypesLib.zeroWei()
         });
 
-        _validateMarketIdPath(_marketIdsPath);
-        _validateTransferParams(cache, _transferCollateralParams, _tradeAccountNumber);
+        _validateMarketIdPath(_params.marketIdsPath);
+        _validateTransferParams(cache, _params.transferCollateralParams, _params.accountNumber);
 
         // If we're transferring into the trade account and the input market is the transfer amount, we check the input
         // amount using the amount being transferred in
         if (
-            _transferCollateralParams.toAccountNumber == _tradeAccountNumber
-                && _marketIdsPath[0] == _transferCollateralParams.transferAmounts[0].marketId
+            _params.transferCollateralParams.toAccountNumber == _params.accountNumber
+                && _params.marketIdsPath[0] == _params.transferCollateralParams.transferAmounts[0].marketId
         ) {
-            _inputAmountWei = _getActualInputAmountWei(
+            _params.inputAmountWei = _getActualInputAmountWei(
                 cache,
-                _transferCollateralParams.fromAccountNumber,
-                _marketIdsPath[0],
-                _transferCollateralParams.transferAmounts[0].amountWei
+                _params.transferCollateralParams.fromAccountNumber,
+                _params.marketIdsPath[0],
+                _params.transferCollateralParams.transferAmounts[0].amountWei
             );
         } else {
-            _inputAmountWei = _getActualInputAmountWei(
+            _params.inputAmountWei = _getActualInputAmountWei(
                 cache,
-                _tradeAccountNumber,
-                _marketIdsPath[0],
-                _inputAmountWei
+                _params.accountNumber,
+                _params.marketIdsPath[0],
+                _params.inputAmountWei
             );
         }
 
-        _validateAmountWeis(_inputAmountWei, _minOutputAmountWei);
+        _validateAmountWeis(_params.inputAmountWei, _params.minOutputAmountWei);
         _validateTraderParams(
             cache,
-            _marketIdsPath,
-            _makerAccounts,
-            _tradersPath
+            _params.marketIdsPath,
+            _params.makerAccounts,
+            _params.tradersPath
         );
 
         IDolomiteStructs.AccountInfo[] memory accounts = _getAccounts(
             cache,
-            _makerAccounts,
+            _params.makerAccounts,
             /* _tradeAccountOwner = */ msg.sender, // solium-disable-line indentation
-            _tradeAccountNumber
+            _params.accountNumber
         );
         // the call to `_getAccounts` leaves accounts[TRANSFER_ACCOUNT_ID] unset, because it only fills in the traders
         // starting at the `traderAccountCursor` index
@@ -328,22 +308,22 @@ contract GenericTraderProxyV2 is GenericTraderProxyBase, ReentrancyGuard, Author
             owner: msg.sender,
             number: cache.otherAccountNumber
         });
-        _validateZapAccount(cache, accounts[ZAP_ACCOUNT_ID], _marketIdsPath);
+        _validateZapAccount(cache, accounts[ZAP_ACCOUNT_ID], _params.marketIdsPath);
 
-        uint256 transferActionsLength = _getActionsLengthForTransferCollateralParam(_transferCollateralParams);
+        uint256 transferActionsLength = _getActionsLengthForTransferCollateralParam(_params.transferCollateralParams);
         IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](
-            _getActionsLengthForTraderParams(_tradersPath)
+            _getActionsLengthForTraderParams(_params.tradersPath)
                 + transferActionsLength
-                + _getActionsLengthForExpiryParam(_expiryParams)
+                + _getActionsLengthForExpiryParam(_params.expiryParams)
         );
 
         // solium-disable indentation
         {
             // To avoid the "stack too deep" error, we rearrange the stack
-            uint256[] memory marketIdsPathForStackTooDeep = _marketIdsPath;
-            uint256 inputAmountWeiForStackTooDeep = _inputAmountWei;
-            uint256 minOutputAmountWeiForStackTooDeep = _minOutputAmountWei;
-            TraderParam[] memory tradersPathForStackTooDeep = _tradersPath;
+            uint256[] memory marketIdsPathForStackTooDeep = _params.marketIdsPath;
+            uint256 inputAmountWeiForStackTooDeep = _params.inputAmountWei;
+            uint256 minOutputAmountWeiForStackTooDeep = _params.minOutputAmountWei;
+            TraderParam[] memory tradersPathForStackTooDeep = _params.tradersPath;
             _appendTraderActions(
                 accounts,
                 actions,
@@ -356,12 +336,12 @@ contract GenericTraderProxyV2 is GenericTraderProxyBase, ReentrancyGuard, Author
         }
         {
             // To avoid the "stack too deep" error, we rearrange the stack
-            uint256 lastMarketId = _marketIdsPath[_marketIdsPath.length - 1];
-            uint256 tradeAccountNumberForStackTooDeep = _tradeAccountNumber;
+            uint256 lastMarketId = _params.marketIdsPath[_params.marketIdsPath.length - 1];
+            uint256 tradeAccountNumberForStackTooDeep = _params.accountNumber;
             _appendTransferActions(
                 actions,
                 cache,
-                _transferCollateralParams,
+                _params.transferCollateralParams,
                 tradeAccountNumberForStackTooDeep,
                 transferActionsLength,
                 lastMarketId
@@ -371,7 +351,7 @@ contract GenericTraderProxyV2 is GenericTraderProxyBase, ReentrancyGuard, Author
         _appendExpiryActions(
             actions,
             cache,
-            _expiryParams,
+            _params.expiryParams,
             /* _tradeAccount = */ accounts[TRADE_ACCOUNT_ID] // solium-disable-line indentation
         );
 
@@ -379,38 +359,38 @@ contract GenericTraderProxyV2 is GenericTraderProxyBase, ReentrancyGuard, Author
         _snapshotBalancesInCache(
             cache,
             /* _tradeAccount = */ accounts[TRADE_ACCOUNT_ID], // solium-disable-line indentation
-            _marketIdsPath,
-            _transferCollateralParams
+            _params.marketIdsPath,
+            _params.transferCollateralParams
         );
 
         GenericTraderProxyV2Lib.logBeforeZapEvents(
             cache,
             accounts[TRADE_ACCOUNT_ID],
-            _userConfig.eventType
+            _params.userConfig.eventType
         );
 
         cache.dolomiteMargin.operate(accounts, actions);
 
         // solium-disable indentation
         {
-            uint256[] memory marketIdsPathForStackTooDeep = _marketIdsPath;
+            uint256[] memory marketIdsPathForStackTooDeep = _params.marketIdsPath;
             GenericTraderProxyV2Lib.logAfterZapEvents(
                 cache,
                 accounts[TRADE_ACCOUNT_ID],
                 marketIdsPathForStackTooDeep,
-                _tradersPath,
-                _transferCollateralParams,
-                _userConfig.eventType
+                _params.tradersPath,
+                _params.transferCollateralParams,
+                _params.userConfig.eventType
             );
         }
         // solium-enable indentation
 
         if (
-            _userConfig.balanceCheckFlag == AccountBalanceLib.BalanceCheckFlag.Both
-            || _userConfig.balanceCheckFlag == AccountBalanceLib.BalanceCheckFlag.From
+            _params.userConfig.balanceCheckFlag == AccountBalanceLib.BalanceCheckFlag.Both
+            || _params.userConfig.balanceCheckFlag == AccountBalanceLib.BalanceCheckFlag.From
         ) {
             // Check that the trader's balance is not negative for the input market
-            uint256 inputMarketId = _marketIdsPath[0];
+            uint256 inputMarketId = _params.marketIdsPath[0];
             AccountBalanceLib.verifyBalanceIsNonNegative(
                 cache.dolomiteMargin,
                 accounts[TRADE_ACCOUNT_ID].owner,
@@ -420,16 +400,16 @@ contract GenericTraderProxyV2 is GenericTraderProxyBase, ReentrancyGuard, Author
         }
 
         if (
-            _userConfig.balanceCheckFlag == AccountBalanceLib.BalanceCheckFlag.Both
-            || _userConfig.balanceCheckFlag == AccountBalanceLib.BalanceCheckFlag.To
+            _params.userConfig.balanceCheckFlag == AccountBalanceLib.BalanceCheckFlag.Both
+            || _params.userConfig.balanceCheckFlag == AccountBalanceLib.BalanceCheckFlag.To
         ) {
-            uint256 length = _transferCollateralParams.transferAmounts.length;
+            uint256 length = _params.transferCollateralParams.transferAmounts.length;
             for (uint256 i; i < length; ++i) {
                 AccountBalanceLib.verifyBalanceIsNonNegative(
                     cache.dolomiteMargin,
                     accounts[TRANSFER_ACCOUNT_ID].owner,
                     accounts[TRANSFER_ACCOUNT_ID].number,
-                    _transferCollateralParams.transferAmounts[i].marketId
+                    _params.transferCollateralParams.transferAmounts[i].marketId
                 );
             }
         }
@@ -447,8 +427,8 @@ contract GenericTraderProxyV2 is GenericTraderProxyBase, ReentrancyGuard, Author
         GenericTraderProxyCache memory cache = GenericTraderProxyCache({
             dolomiteMargin: DOLOMITE_MARGIN(),
             eventEmitterRegistry: DOLOMITE_REGISTRY.eventEmitter(),
-            isMarginDeposit: _params.tradeAccountNumber == _params.transferCollateralParams.toAccountNumber,
-            otherAccountNumber: _params.tradeAccountNumber == _params.transferCollateralParams.toAccountNumber
+            isMarginDeposit: _params.accountNumber == _params.transferCollateralParams.toAccountNumber,
+            otherAccountNumber: _params.accountNumber == _params.transferCollateralParams.toAccountNumber
                 ? _params.transferCollateralParams.fromAccountNumber
                 : _params.transferCollateralParams.toAccountNumber,
             // traders go right after the trade account, the zap account, and the transfer account ("other account")
@@ -460,12 +440,12 @@ contract GenericTraderProxyV2 is GenericTraderProxyBase, ReentrancyGuard, Author
         });
 
         _validateMarketIdPath(_params.marketIdsPath);
-        _validateTransferParams(cache, _params.transferCollateralParams, _params.tradeAccountNumber);
+        _validateTransferParams(cache, _params.transferCollateralParams, _params.accountNumber);
 
         // If we're transferring into the trade account and the input market is the transfer amount, we check the input
         // amount using the amount being transferred in
         if (
-            _params.transferCollateralParams.toAccountNumber == _params.tradeAccountNumber
+            _params.transferCollateralParams.toAccountNumber == _params.accountNumber
                 && _params.marketIdsPath[0] == _params.transferCollateralParams.transferAmounts[0].marketId
         ) {
             _params.inputAmountWei = _getActualInputAmountWei(
@@ -477,7 +457,7 @@ contract GenericTraderProxyV2 is GenericTraderProxyBase, ReentrancyGuard, Author
         } else {
             _params.inputAmountWei = _getActualInputAmountWei(
                 cache,
-                _params.tradeAccountNumber,
+                _params.accountNumber,
                 _params.marketIdsPath[0],
                 _params.inputAmountWei
             );
@@ -495,7 +475,7 @@ contract GenericTraderProxyV2 is GenericTraderProxyBase, ReentrancyGuard, Author
             cache,
             _params.makerAccounts,
             _tradeAccountOwner, // solium-disable-line indentation
-            _params.tradeAccountNumber
+            _params.accountNumber
         );
         // the call to `_getAccounts` leaves accounts[TRANSFER_ACCOUNT_ID] unset, because it only fills in the traders
         // starting at the `traderAccountCursor` index
@@ -528,7 +508,7 @@ contract GenericTraderProxyV2 is GenericTraderProxyBase, ReentrancyGuard, Author
             actions,
             cache,
             _params.transferCollateralParams,
-            _params.tradeAccountNumber,
+            _params.accountNumber,
             transferActionsLength,
             lastMarketId
         );

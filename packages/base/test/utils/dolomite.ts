@@ -46,6 +46,16 @@ export async function createIsolationModeTokenVaultV1ActionsImpl(): Promise<Reco
   return { IsolationModeTokenVaultV1ActionsImpl: contract.address };
 }
 
+export async function createIsolationModeTokenVaultV2ActionsImpl(): Promise<Record<LibraryName, address>> {
+  const safeDelegateCallLib = await createContractWithName('SafeDelegateCallLib', []);
+  const contract = await createContractWithLibrary(
+    'IsolationModeTokenVaultV2ActionsImpl',
+    { SafeDelegateCallLib: safeDelegateCallLib.address },
+    [],
+  );
+  return { IsolationModeTokenVaultV2ActionsImpl: contract.address };
+}
+
 export async function createAsyncIsolationModeUnwrapperTraderImpl(): Promise<Record<LibraryName, address>> {
   const contract = await createContractWithName('AsyncIsolationModeUnwrapperTraderImpl', []);
   return { AsyncIsolationModeUnwrapperTraderImpl: contract.address };

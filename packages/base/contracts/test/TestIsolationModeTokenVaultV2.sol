@@ -26,8 +26,8 @@ import { TestSimpleIsolationModeVaultFactory } from "./TestSimpleIsolationModeVa
 import { BaseLiquidatorProxy } from "../general/BaseLiquidatorProxy.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IsolationModeTokenVaultV2 } from "../isolation-mode/abstract/IsolationModeTokenVaultV2.sol";
-import { IsolationModeTokenVaultV1ActionsImpl } from "../isolation-mode/abstract/impl/IsolationModeTokenVaultV1ActionsImpl.sol"; // solhint-disable-line max-line-length
-import { IIsolationModeTokenVaultV1 } from "../isolation-mode/interfaces/IIsolationModeTokenVaultV1.sol";
+import { IsolationModeTokenVaultV2ActionsImpl } from "../isolation-mode/abstract/impl/IsolationModeTokenVaultV2ActionsImpl.sol"; // solhint-disable-line max-line-length
+import { IIsolationModeTokenVaultV2 } from "../isolation-mode/interfaces/IIsolationModeTokenVaultV2.sol";
 import { IIsolationModeVaultFactory } from "../isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
 import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
@@ -87,7 +87,7 @@ contract TestIsolationModeTokenVaultV2 is IsolationModeTokenVaultV2 {
         uint256[] memory _solidMarketIds,
         uint256[] memory _liquidMarketIds
     ) public view returns (BaseLiquidatorProxy.MarketInfo[] memory) {
-        return IsolationModeTokenVaultV1ActionsImpl._getMarketInfos(
+        return IsolationModeTokenVaultV2ActionsImpl._getMarketInfos(
             DOLOMITE_MARGIN(),
             _solidMarketIds,
             _liquidMarketIds
@@ -104,7 +104,7 @@ contract TestIsolationModeTokenVaultV2 is IsolationModeTokenVaultV2 {
             new uint256[](0),
             _markets
         );
-        return IsolationModeTokenVaultV1ActionsImpl._binarySearch(
+        return IsolationModeTokenVaultV2ActionsImpl._binarySearch(
             marketInfos,
             _beginInclusive,
             _endExclusive,
@@ -124,12 +124,12 @@ contract TestIsolationModeTokenVaultV2 is IsolationModeTokenVaultV2 {
             number: _accountNumber
         });
         uint256[] memory marketsWithBalances = dolomiteMargin.getAccountMarketsWithBalances(liquidAccount);
-        BaseLiquidatorProxy.MarketInfo[] memory marketInfos = IsolationModeTokenVaultV1ActionsImpl._getMarketInfos(
+        BaseLiquidatorProxy.MarketInfo[] memory marketInfos = IsolationModeTokenVaultV2ActionsImpl._getMarketInfos(
             dolomiteMargin,
             /* _solidMarketIds = */ new uint256[](0),
             marketsWithBalances
         );
-        return IsolationModeTokenVaultV1ActionsImpl._getAccountValues(
+        return IsolationModeTokenVaultV2ActionsImpl._getAccountValues(
             dolomiteMargin,
             marketInfos,
             liquidAccount,
@@ -144,15 +144,15 @@ contract TestIsolationModeTokenVaultV2 is IsolationModeTokenVaultV2 {
 
     function testGetFunctionSelectors() external pure returns (bytes4[] memory) {
         bytes4[] memory selectors = new bytes4[](9);
-        selectors[0] = IIsolationModeTokenVaultV1.transferIntoPositionWithOtherToken.selector;
-        selectors[1] = IIsolationModeTokenVaultV1.transferIntoPositionWithUnderlyingToken.selector;
-        selectors[2] = IIsolationModeTokenVaultV1.transferFromPositionWithUnderlyingToken.selector;
-        selectors[3] = IIsolationModeTokenVaultV1.swapExactInputForOutput.selector;
-        selectors[4] = IIsolationModeTokenVaultV1.transferFromPositionWithOtherToken.selector;
-        selectors[5] = IIsolationModeTokenVaultV1.openMarginPosition.selector;
-        selectors[6] = IIsolationModeTokenVaultV1.openBorrowPosition.selector;
-        selectors[7] = IIsolationModeTokenVaultV1.withdrawFromVaultForDolomiteMargin.selector;
-        selectors[8] = IIsolationModeTokenVaultV1.depositIntoVaultForDolomiteMargin.selector;
+        selectors[0] = IIsolationModeTokenVaultV2.transferIntoPositionWithOtherToken.selector;
+        selectors[1] = IIsolationModeTokenVaultV2.transferIntoPositionWithUnderlyingToken.selector;
+        selectors[2] = IIsolationModeTokenVaultV2.transferFromPositionWithUnderlyingToken.selector;
+        selectors[3] = IIsolationModeTokenVaultV2.swapExactInputForOutput.selector;
+        selectors[4] = IIsolationModeTokenVaultV2.transferFromPositionWithOtherToken.selector;
+        selectors[5] = IIsolationModeTokenVaultV2.openMarginPosition.selector;
+        selectors[6] = IIsolationModeTokenVaultV2.openBorrowPosition.selector;
+        selectors[7] = IIsolationModeTokenVaultV2.withdrawFromVaultForDolomiteMargin.selector;
+        selectors[8] = IIsolationModeTokenVaultV2.depositIntoVaultForDolomiteMargin.selector;
         return selectors;
     }
 
@@ -160,7 +160,7 @@ contract TestIsolationModeTokenVaultV2 is IsolationModeTokenVaultV2 {
         bytes4[] memory _selectors,
         bytes4 _selector
     ) external pure returns (bool) {
-        return IsolationModeTokenVaultV1ActionsImpl.selectorBinarySearch(_selectors, _selector);
+        return IsolationModeTokenVaultV2ActionsImpl.selectorBinarySearch(_selectors, _selector);
     }
 
     function dolomiteRegistry() public override(IsolationModeTokenVaultV2) view returns (IDolomiteRegistry) {

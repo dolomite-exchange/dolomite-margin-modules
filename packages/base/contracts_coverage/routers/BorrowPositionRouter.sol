@@ -80,15 +80,13 @@ contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
 
   // @todo multicall
 
-  // @todo add open margin position function
-
   function closeBorrowPosition(
-    uint256 _vaultMarketId,
+    uint256 _isolationModeMarketId,
     uint256 _borrowAccountNumber,
     uint256 _toAccountNumber,
     uint256[] calldata _collateralMarketIds
   ) external nonReentrant {
-    if (_vaultMarketId == type(uint256).max) {
+    if (_isolationModeMarketId == type(uint256).max) {
       DOLOMITE_REGISTRY.borrowPositionProxy().closeBorrowPositionWithDifferentAccounts(
         msg.sender,
         _borrowAccountNumber,
@@ -97,7 +95,7 @@ contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
         _collateralMarketIds
       );
     } else {
-      MarketInfo memory marketInfo = _getMarketInfo(_vaultMarketId);
+      MarketInfo memory marketInfo = _getMarketInfo(_isolationModeMarketId);
       IIsolationModeTokenVaultV2 vault = _validateIsoMarketAndGetVault(marketInfo, msg.sender);
 
       if (_collateralMarketIds.length == 0) {
@@ -109,7 +107,7 @@ contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
   }
 
   function transferBetweenAccounts(
-    uint256 _vaultMarketId,
+    uint256 _isolationModeMarketId,
     uint256 _fromAccountNumber,
     uint256 _toAccountNumber,
     uint256 _marketId,
@@ -117,7 +115,7 @@ contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
     AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
   ) external nonReentrant {
     _transferBetweenAccounts(
-      _vaultMarketId,
+      _isolationModeMarketId,
       _fromAccountNumber,
       _toAccountNumber,
       _marketId,
@@ -127,13 +125,13 @@ contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
   }
 
   function repayAllForBorrowPosition(
-    uint256 _vaultMarketId,
+    uint256 _isolationModeMarketId,
     uint256 _fromAccountNumber,
     uint256 _borrowAccountNumber,
     uint256 _marketId,
     AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
   ) external nonReentrant {
-    if (_vaultMarketId == type(uint256).max) {
+    if (_isolationModeMarketId == type(uint256).max) {
       DOLOMITE_REGISTRY.borrowPositionProxy().repayAllForBorrowPositionWithDifferentAccounts(
         msg.sender,
         _fromAccountNumber,
@@ -143,7 +141,7 @@ contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
         _balanceCheckFlag
       );
     } else {
-      MarketInfo memory marketInfo = _getMarketInfo(_vaultMarketId);
+      MarketInfo memory marketInfo = _getMarketInfo(_isolationModeMarketId);
       IIsolationModeTokenVaultV2 vault = _validateIsoMarketAndGetVault(marketInfo, msg.sender);
       vault.repayAllForBorrowPosition(_fromAccountNumber, _borrowAccountNumber, _marketId, _balanceCheckFlag);
     }
@@ -154,14 +152,14 @@ contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
   // ========================================================
 
   function _transferBetweenAccounts(
-    uint256 _vaultMarketId,
+    uint256 _isolationModeMarketId,
     uint256 _fromAccountNumber,
     uint256 _toAccountNumber,
     uint256 _marketId,
     uint256 _amount,
     AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
   ) internal {
-    if (_vaultMarketId == type(uint256).max) {
+    if (_isolationModeMarketId == type(uint256).max) {
       DOLOMITE_REGISTRY.borrowPositionProxy().transferBetweenAccountsWithDifferentAccounts(
         msg.sender,
         _fromAccountNumber,
@@ -174,9 +172,9 @@ contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
       return;
     }
 
-    MarketInfo memory marketInfo = _getMarketInfo(_vaultMarketId);
+    MarketInfo memory marketInfo = _getMarketInfo(_isolationModeMarketId);
     IIsolationModeTokenVaultV2 vault = _validateIsoMarketAndGetVault(marketInfo, msg.sender);
-    if (_vaultMarketId == _marketId) {
+    if (_isolationModeMarketId == _marketId) {
       if (_fromAccountNumber < 100 && _toAccountNumber >= 100) {
         vault.transferIntoPositionWithUnderlyingToken(_fromAccountNumber, _toAccountNumber, _amount);
       } else {

@@ -20,7 +20,7 @@ import {
 } from 'packages/base/src/types';
 import { createContractWithAbi, createContractWithLibrary, createTestToken, depositIntoDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
-import { createAndUpgradeDolomiteRegistry, createIsolationModeTokenVaultV1ActionsImpl } from '../utils/dolomite';
+import { createAndUpgradeDolomiteRegistry, createIsolationModeTokenVaultV1ActionsImpl, createIsolationModeTokenVaultV2ActionsImpl } from '../utils/dolomite';
 import { createTestIsolationModeVaultFactory } from '../utils/ecosystem-utils/testers';
 import { BigNumber } from 'ethers';
 import { expectEvent, expectProtocolBalance, expectThrow } from '../utils/assertions';
@@ -67,7 +67,7 @@ describe('BorrowPositionRouter', () => {
     );
 
     underlyingToken = await createTestToken();
-    const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
+    const libraries = await createIsolationModeTokenVaultV2ActionsImpl();
 
     const userVaultImplementation = await createContractWithLibrary(
       'TestIsolationModeTokenVaultV2',

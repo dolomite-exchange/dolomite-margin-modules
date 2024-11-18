@@ -69,7 +69,6 @@ contract TestRouterBase is RouterBase {
     }
 
     function isIsolationModeAssetByMarketId(uint256 _marketId) external view returns (bool) {
-        address marketToken = DOLOMITE_MARGIN().getMarketTokenAddress(_marketId);
-        return _isIsolationModeAsset(marketToken);
+        return _isIsolationModeMarket(_marketId);
     }
 }

@@ -18,7 +18,7 @@ import {
 } from 'packages/base/src/types';
 import { createContractWithAbi, createContractWithLibrary, createTestToken } from 'packages/base/src/utils/dolomite-utils';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
-import { createIsolationModeTokenVaultV1ActionsImpl } from '../utils/dolomite';
+import { createIsolationModeTokenVaultV2ActionsImpl } from '../utils/dolomite';
 import { createTestIsolationModeVaultFactory } from '../utils/ecosystem-utils/testers';
 import { BigNumber } from 'ethers';
 import { expectEvent, expectProtocolBalance, expectThrow, expectWalletBalance } from '../utils/assertions';
@@ -59,7 +59,7 @@ describe('DepositWithdrawalRouter', () => {
     );
 
     underlyingToken = await createTestToken();
-    const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
+    const libraries = await createIsolationModeTokenVaultV2ActionsImpl();
 
     const userVaultImplementation = await createContractWithLibrary(
       'TestIsolationModeTokenVaultV2',
@@ -96,7 +96,7 @@ describe('DepositWithdrawalRouter', () => {
   describe('#depositWei', () => {
     it('should work normally for non-isolation mode asset', async () => {
       await setupDAIBalance(core, core.hhUser1, amountWei, router);
-      await router.depositWei(core.marketIds.dai, defaultAccountNumber, amountWei, EventFlag.None);
+      await router.depositWei(defaultAccountNumber, core.marketIds.dai, amountWei, EventFlag.None);
 
       await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.dai, amountWei);
       await expectWalletBalance(router, core.tokens.dai, ZERO_BI);
@@ -106,7 +106,7 @@ describe('DepositWithdrawalRouter', () => {
     it('should work normally for isolation-mode asset and account number 0', async () => {
       await underlyingToken.connect(core.hhUser1).addBalance(core.hhUser1.address, amountWei);
       await underlyingToken.connect(core.hhUser1).approve(router.address, amountWei);
-      await router.depositWei(isolationModeMarketId, defaultAccountNumber, amountWei, EventFlag.None);
+      await router.depositWei(defaultAccountNumber, isolationModeMarketId, amountWei, EventFlag.None);
 
       await expectProtocolBalance(core, userVault, defaultAccountNumber, isolationModeMarketId, amountWei);
       await expectWalletBalance(userVault, underlyingToken, amountWei);
@@ -117,7 +117,7 @@ describe('DepositWithdrawalRouter', () => {
     it('should work normally for isolation-mode asset and non-zero account number', async () => {
       await underlyingToken.connect(core.hhUser1).addBalance(core.hhUser1.address, amountWei);
       await underlyingToken.connect(core.hhUser1).approve(router.address, amountWei);
-      await router.depositWei(isolationModeMarketId, borrowAccountNumber, amountWei, EventFlag.None);
+      await router.depositWei(borrowAccountNumber, isolationModeMarketId, amountWei, EventFlag.None);
 
       await expectProtocolBalance(core, userVault, borrowAccountNumber, isolationModeMarketId, amountWei);
       await expectWalletBalance(userVault, underlyingToken, amountWei);
@@ -127,7 +127,7 @@ describe('DepositWithdrawalRouter', () => {
 
     it('should work with sender balance for non-isolation mode asset', async () => {
       await setupDAIBalance(core, core.hhUser1, amountWei, router);
-      await router.depositWei(core.marketIds.dai, defaultAccountNumber, MAX_UINT_256_BI, EventFlag.None);
+      await router.depositWei(defaultAccountNumber, core.marketIds.dai, MAX_UINT_256_BI, EventFlag.None);
 
       await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.dai, amountWei);
       await expectWalletBalance(router, core.tokens.dai, ZERO_BI);
@@ -137,7 +137,7 @@ describe('DepositWithdrawalRouter', () => {
     it('should work with sender balance for isolation mode asset', async () => {
       await underlyingToken.connect(core.hhUser1).addBalance(core.hhUser1.address, amountWei);
       await underlyingToken.connect(core.hhUser1).approve(router.address, amountWei);
-      await router.depositWei(isolationModeMarketId, defaultAccountNumber, MAX_UINT_256_BI, EventFlag.None);
+      await router.depositWei(defaultAccountNumber, isolationModeMarketId, MAX_UINT_256_BI, EventFlag.None);
 
       await expectProtocolBalance(core, userVault, defaultAccountNumber, isolationModeMarketId, amountWei);
       await expectWalletBalance(userVault, underlyingToken, amountWei);
@@ -148,7 +148,7 @@ describe('DepositWithdrawalRouter', () => {
     it('should emit a borrow event with borrow flag', async () => {
       await underlyingToken.connect(core.hhUser1).addBalance(core.hhUser1.address, amountWei);
       await underlyingToken.connect(core.hhUser1).approve(router.address, amountWei);
-      const res = await router.depositWei(isolationModeMarketId, borrowAccountNumber, amountWei, EventFlag.Borrow);
+      const res = await router.depositWei(borrowAccountNumber, isolationModeMarketId, amountWei, EventFlag.Borrow);
       await expectEvent(core.eventEmitterRegistry, res, 'BorrowPositionOpen', {
         accountOwner: userVault.address,
         accountNumber: borrowAccountNumber,
@@ -157,32 +157,31 @@ describe('DepositWithdrawalRouter', () => {
 
     it('should fail if user does not have an isolation mode vault', async () => {
       await expectThrow(
-        router.connect(core.hhUser2).depositWei(isolationModeMarketId, defaultAccountNumber, amountWei, EventFlag.None),
-        'DepositWithdrawalRouter: No vault found for account'
+        router.connect(core.hhUser2).depositWei(defaultAccountNumber, isolationModeMarketId, amountWei, EventFlag.None), 'DepositWithdrawalRouter: No vault found for account'
       );
     });
 
-    it('should fail with borrow or margin flag if account number if < 100', async () => {
+    it('should fail with borrow flag if account number if < 100', async () => {
       await underlyingToken.connect(core.hhUser1).addBalance(core.hhUser1.address, amountWei);
       await underlyingToken.connect(core.hhUser1).approve(router.address, amountWei);
 
       await expectThrow(
-        router.depositWei(isolationModeMarketId, ONE_BI, amountWei, EventFlag.Borrow),
+        router.depositWei(ONE_BI, isolationModeMarketId, amountWei, EventFlag.Borrow),
         'DepositWithdrawalRouter: Invalid toAccountNumber'
       );
     });
 
     it('should fail if market id does not exist', async () => {
       await expectThrow(
-        router.depositWei(isolationModeMarketId.add(1), defaultAccountNumber, amountWei, EventFlag.None),
+        router.depositWei(defaultAccountNumber, isolationModeMarketId.add(1), amountWei, EventFlag.None),
         'Getters: Invalid market'
       );
     });
 
     it('should fail if reentered', async () => {
       const transaction = await router.populateTransaction.depositWei(
-        core.marketIds.dai,
         defaultAccountNumber,
+        core.marketIds.dai,
         amountWei,
         EventFlag.None
       );
@@ -211,9 +210,9 @@ describe('DepositWithdrawalRouter', () => {
   describe('#withdrawWei', () => {
     it('should work normally for non-isolation mode asset', async () => {
       await setupDAIBalance(core, core.hhUser1, amountWei, router);
-      await router.depositWei(core.marketIds.dai, defaultAccountNumber, amountWei, EventFlag.None);
+      await router.depositWei(defaultAccountNumber, core.marketIds.dai, amountWei, EventFlag.None);
 
-      await router.withdrawWei(core.marketIds.dai, defaultAccountNumber, amountWei, BalanceCheckFlag.Both);
+      await router.withdrawWei(defaultAccountNumber, core.marketIds.dai, amountWei, BalanceCheckFlag.Both);
       await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.dai, ZERO_BI);
       await expectWalletBalance(core.hhUser1, core.tokens.dai, amountWei);
     });
@@ -221,9 +220,9 @@ describe('DepositWithdrawalRouter', () => {
     it('should work normally for isolation-mode asset and account number 0', async () => {
       await underlyingToken.connect(core.hhUser1).addBalance(core.hhUser1.address, amountWei);
       await underlyingToken.connect(core.hhUser1).approve(router.address, amountWei);
-      await router.depositWei(isolationModeMarketId, defaultAccountNumber, amountWei, EventFlag.None);
+      await router.depositWei(defaultAccountNumber, isolationModeMarketId, amountWei, EventFlag.None);
 
-      await router.withdrawWei(isolationModeMarketId, defaultAccountNumber, amountWei, BalanceCheckFlag.Both);
+      await router.withdrawWei(defaultAccountNumber, isolationModeMarketId, amountWei, BalanceCheckFlag.Both);
       await expectProtocolBalance(core, userVault, defaultAccountNumber, isolationModeMarketId, ZERO_BI);
       await expectWalletBalance(userVault, underlyingToken, ZERO_BI);
       await expectWalletBalance(router, underlyingToken, ZERO_BI);
@@ -232,9 +231,9 @@ describe('DepositWithdrawalRouter', () => {
 
     it('should withdraw all for non-isolation mode asset', async () => {
       await setupDAIBalance(core, core.hhUser1, amountWei, router);
-      await router.depositWei(core.marketIds.dai, defaultAccountNumber, amountWei, EventFlag.None);
+      await router.depositWei(defaultAccountNumber, core.marketIds.dai, amountWei, EventFlag.None);
 
-      await router.withdrawWei(core.marketIds.dai, defaultAccountNumber, MAX_UINT_256_BI, BalanceCheckFlag.Both);
+      await router.withdrawWei(defaultAccountNumber, core.marketIds.dai, MAX_UINT_256_BI, BalanceCheckFlag.Both);
       await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.dai, ZERO_BI);
       await expectWalletBalance(core.hhUser1, core.tokens.dai, amountWei);
     });
@@ -242,9 +241,9 @@ describe('DepositWithdrawalRouter', () => {
     it('should withdraw all for isolation mode asset', async () => {
       await underlyingToken.connect(core.hhUser1).addBalance(core.hhUser1.address, amountWei);
       await underlyingToken.connect(core.hhUser1).approve(router.address, amountWei);
-      await router.depositWei(isolationModeMarketId, defaultAccountNumber, amountWei, EventFlag.None);
+      await router.depositWei(defaultAccountNumber, isolationModeMarketId, amountWei, EventFlag.None);
 
-      await router.withdrawWei(isolationModeMarketId, defaultAccountNumber, MAX_UINT_256_BI, BalanceCheckFlag.Both);
+      await router.withdrawWei(defaultAccountNumber, isolationModeMarketId, MAX_UINT_256_BI, BalanceCheckFlag.Both);
       await expectProtocolBalance(core, userVault, defaultAccountNumber, isolationModeMarketId, ZERO_BI);
       await expectWalletBalance(userVault, underlyingToken, ZERO_BI);
       await expectWalletBalance(router, underlyingToken, ZERO_BI);
@@ -254,18 +253,18 @@ describe('DepositWithdrawalRouter', () => {
     it('should fail if withdrawing from borrow account number for isolation mode', async () => {
       await underlyingToken.connect(core.hhUser1).addBalance(core.hhUser1.address, amountWei);
       await underlyingToken.connect(core.hhUser1).approve(router.address, amountWei);
-      await router.depositWei(isolationModeMarketId, borrowAccountNumber, amountWei, EventFlag.None);
+      await router.depositWei(borrowAccountNumber, isolationModeMarketId, amountWei, EventFlag.None);
 
       await expectThrow(
-        router.withdrawWei(isolationModeMarketId, borrowAccountNumber, amountWei, BalanceCheckFlag.Both),
+        router.withdrawWei(borrowAccountNumber, isolationModeMarketId, amountWei, BalanceCheckFlag.Both),
         'DepositWithdrawalRouter: Invalid fromAccountNumber'
       );
     });
 
     it('should fail if reentered', async () => {
       const transaction = await router.populateTransaction.withdrawWei(
-        core.marketIds.dai,
         defaultAccountNumber,
+        core.marketIds.dai,
         amountWei,
         BalanceCheckFlag.Both
       );
@@ -294,7 +293,7 @@ describe('DepositWithdrawalRouter', () => {
   describe('#depositPar', () => {
     it('should work normally with non-isolation mode asset', async () => {
       await setupDAIBalance(core, core.hhUser1, amountWei, router);
-      await router.depositPar(core.marketIds.dai, defaultAccountNumber, parAmount, EventFlag.None);
+      await router.depositPar(defaultAccountNumber, core.marketIds.dai, parAmount, EventFlag.None);
 
       const parValue = await core.dolomiteMargin.getAccountPar(
         { owner: core.hhUser1.address, number: defaultAccountNumber },
@@ -306,7 +305,7 @@ describe('DepositWithdrawalRouter', () => {
     it('should work normally for isolation-mode asset and account number 0', async () => {
       await underlyingToken.connect(core.hhUser1).addBalance(core.hhUser1.address, amountWei);
       await underlyingToken.connect(core.hhUser1).approve(router.address, amountWei);
-      await router.depositPar(isolationModeMarketId, defaultAccountNumber, parAmount, EventFlag.None);
+      await router.depositPar(defaultAccountNumber, isolationModeMarketId, parAmount, EventFlag.None);
 
       const parValue = await core.dolomiteMargin.getAccountPar(
         { owner: userVault.address, number: defaultAccountNumber },
@@ -318,7 +317,7 @@ describe('DepositWithdrawalRouter', () => {
 
     it('should work normally for non-isolation mode asset and non-zero account number', async () => {
       await setupDAIBalance(core, core.hhUser1, amountWei, router);
-      await router.depositPar(core.marketIds.dai, borrowAccountNumber, parAmount, EventFlag.None);
+      await router.depositPar(borrowAccountNumber, core.marketIds.dai, parAmount, EventFlag.None);
 
       const parValue = await core.dolomiteMargin.getAccountPar(
         { owner: core.hhUser1.address, number: borrowAccountNumber },
@@ -330,7 +329,7 @@ describe('DepositWithdrawalRouter', () => {
     it('should work normally for isolation-mode asset and non-zero account number', async () => {
       await underlyingToken.connect(core.hhUser1).addBalance(core.hhUser1.address, amountWei);
       await underlyingToken.connect(core.hhUser1).approve(router.address, amountWei);
-      await router.depositPar(isolationModeMarketId, borrowAccountNumber, parAmount, EventFlag.None);
+      await router.depositPar(borrowAccountNumber, isolationModeMarketId, parAmount, EventFlag.None);
 
       const parValue = await core.dolomiteMargin.getAccountPar(
         { owner: userVault.address, number: borrowAccountNumber },
@@ -341,8 +340,8 @@ describe('DepositWithdrawalRouter', () => {
 
     it('should fail if reentered', async () => {
       const transaction = await router.populateTransaction.depositPar(
-        core.marketIds.dai,
         defaultAccountNumber,
+        core.marketIds.dai,
         parAmount,
         EventFlag.None
       );
@@ -353,9 +352,9 @@ describe('DepositWithdrawalRouter', () => {
   describe('#withdrawPar', () => {
     it('should work normally with non-isolation mode asset', async () => {
       await setupDAIBalance(core, core.hhUser1, amountWei, router);
-      await router.depositPar(core.marketIds.dai, defaultAccountNumber, parAmount, EventFlag.None);
+      await router.depositPar(defaultAccountNumber, core.marketIds.dai, parAmount, EventFlag.None);
 
-      await router.withdrawPar(core.marketIds.dai, defaultAccountNumber, parAmount, BalanceCheckFlag.Both);
+      await router.withdrawPar(defaultAccountNumber, core.marketIds.dai, parAmount, BalanceCheckFlag.Both);
       const parValue = await core.dolomiteMargin.getAccountPar(
         { owner: core.hhUser1.address, number: defaultAccountNumber },
         core.marketIds.dai
@@ -366,9 +365,9 @@ describe('DepositWithdrawalRouter', () => {
     it('should work normally for isolation-mode asset and account number 0', async () => {
       await underlyingToken.connect(core.hhUser1).addBalance(core.hhUser1.address, amountWei);
       await underlyingToken.connect(core.hhUser1).approve(router.address, amountWei);
-      await router.depositPar(isolationModeMarketId, defaultAccountNumber, parAmount, EventFlag.None);
+      await router.depositPar(defaultAccountNumber, isolationModeMarketId, parAmount, EventFlag.None);
 
-      await router.withdrawPar(isolationModeMarketId, defaultAccountNumber, parAmount, BalanceCheckFlag.Both);
+      await router.withdrawPar(defaultAccountNumber, isolationModeMarketId, parAmount, BalanceCheckFlag.Both);
       const parValue = await core.dolomiteMargin.getAccountPar(
         { owner: userVault.address, number: defaultAccountNumber },
         isolationModeMarketId
@@ -379,18 +378,18 @@ describe('DepositWithdrawalRouter', () => {
     it('should fail if withdrawing from borrow account number for isolation mode', async () => {
       await underlyingToken.connect(core.hhUser1).addBalance(core.hhUser1.address, amountWei);
       await underlyingToken.connect(core.hhUser1).approve(router.address, amountWei);
-      await router.depositPar(isolationModeMarketId, defaultAccountNumber, parAmount, EventFlag.None);
+      await router.depositPar(defaultAccountNumber, isolationModeMarketId, parAmount, EventFlag.None);
 
       await expectThrow(
-        router.withdrawPar(isolationModeMarketId, borrowAccountNumber, parAmount, BalanceCheckFlag.Both),
+        router.withdrawPar(borrowAccountNumber, isolationModeMarketId, parAmount, BalanceCheckFlag.Both),
         'DepositWithdrawalRouter: Invalid fromAccountNumber'
       );
     });
 
     it('should fail if reentered', async () => {
       const transaction = await router.populateTransaction.withdrawPar(
-        core.marketIds.dai,
         defaultAccountNumber,
+        core.marketIds.dai,
         parAmount,
         BalanceCheckFlag.Both
       );

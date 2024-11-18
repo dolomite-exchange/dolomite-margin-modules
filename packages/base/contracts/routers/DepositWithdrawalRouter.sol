@@ -94,13 +94,11 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
     // ========================================================
 
     function depositWei(
-        uint256 _marketId,
         uint256 _toAccountNumber,
+        uint256 _marketId,
         uint256 _amountWei,
         EventFlag _eventFlag
-    )
-    public
-    nonReentrant {
+    ) public nonReentrant {
         MarketInfo memory marketInfo = _getMarketInfo(_marketId);
         uint256 amount = _amountWei == type(uint256).max ? _getSenderBalance(marketInfo.token) : _amountWei;
 
@@ -112,18 +110,13 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
         );
 
         if (marketInfo.isIsolationModeAsset && _toAccountNumber != 0) {
-            IIsolationModeTokenVaultV2 vault = _validateIsoMarketAndGetVault(marketInfo, msg.sender);
-            // @follow-up @Corey do you want to still have the event flag if we call transfer on vault?
-            vault.transferIntoPositionWithUnderlyingToken(DEFAULT_ACCOUNT_NUMBER, _toAccountNumber, amount);
+            _emitEventAndTransferToVault(marketInfo, msg.sender, _toAccountNumber, _amountWei, _eventFlag);
         }
     }
 
     function depositPayable(
         uint256 _toAccountNumber
-    )
-    external
-    payable
-    nonReentrant {
+    ) external payable nonReentrant {
         _wrap();
         AccountActionLib.deposit(
             DOLOMITE_MARGIN(),
@@ -141,8 +134,8 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
     }
 
     function withdrawWei(
-        uint256 _marketId,
         uint256 _fromAccountNumber,
+        uint256 _marketId,
         uint256 _amountWei,
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
     ) external nonReentrant {
@@ -205,13 +198,11 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
     // ========================================================
 
     function depositPar(
-        uint256 _marketId,
         uint256 _toAccountNumber,
+        uint256 _marketId,
         uint256 _amountPar,
         EventFlag _eventFlag
-    )
-    external
-    nonReentrant {
+    ) external nonReentrant {
         MarketInfo memory marketInfo = _getMarketInfo(_marketId);
 
         _depositIntoDolomiteMargin(
@@ -222,20 +213,13 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
         );
 
         if (marketInfo.isIsolationModeAsset && _toAccountNumber != 0) {
-            _transferUnderlyingTokenBetweenAccounts(
-                marketInfo.factory.getVaultByAccount(msg.sender),
-                _toAccountNumber,
-                _marketId,
-                _amountPar,
-                IDolomiteStructs.AssetDenomination.Par,
-                _eventFlag
-            );
+            _emitEventAndTransferToVault(marketInfo, msg.sender, _toAccountNumber, _amountPar, _eventFlag);
         }
     }
 
     function withdrawPar(
-        uint256 _marketId,
         uint256 _fromAccountNumber,
+        uint256 _marketId,
         uint256 _amountPar,
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
     ) external nonReentrant {
@@ -339,33 +323,24 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
         _token.safeTransfer(msg.sender, _token.balanceOf(address(this)));
     }
 
-    function _transferUnderlyingTokenBetweenAccounts(
-        address _vault,
+    function _emitEventAndTransferToVault(
+        MarketInfo memory _marketInfo,
+        address _fromAccount,
         uint256 _toAccountNumber,
-        uint256 _marketId,
         uint256 _amount,
-        IDolomiteStructs.AssetDenomination _denomination,
         EventFlag _eventFlag
     ) internal {
+        IIsolationModeTokenVaultV2 vault = _validateIsoMarketAndGetVault(_marketInfo, _fromAccount);
+
         if (_eventFlag == EventFlag.Borrow) {
             Require.that(
                 _toAccountNumber >= 100,
                 _FILE,
                 "Invalid toAccountNumber"
             );
-            DOLOMITE_REGISTRY.eventEmitter().emitBorrowPositionOpen(_vault, _toAccountNumber);
+            DOLOMITE_REGISTRY.eventEmitter().emitBorrowPositionOpen(address(vault), _toAccountNumber);
         }
-        AccountActionLib.transfer(
-            DOLOMITE_MARGIN(),
-            _vault,
-            DEFAULT_ACCOUNT_NUMBER,
-            _vault,
-            _toAccountNumber,
-            _marketId,
-            _denomination,
-            _amount,
-            AccountBalanceLib.BalanceCheckFlag.Both
-        );
+        vault.transferIntoPositionWithUnderlyingToken(DEFAULT_ACCOUNT_NUMBER, _toAccountNumber, _amount);
     }
 
     function _wrap() internal {
