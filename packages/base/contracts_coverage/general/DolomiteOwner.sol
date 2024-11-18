@@ -352,7 +352,6 @@ contract DolomiteOwner is IDolomiteOwner, AccessControl {
         return count;
     }
 
-    // @follow-up I adjusted this logic a bit from the original repo. Can you double check my logic?
     function getTransactionIds(
         uint256 _from,
         uint256 _to,

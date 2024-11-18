@@ -4,8 +4,10 @@ import {
   ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { CoreProtocolType } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { BaseContract } from 'ethers';
 import hardhat from 'hardhat';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
+import { IDolomiteOwner__factory } from 'packages/base/src/types';
 import {
   createFolder,
   DenJsonUpload,
@@ -48,31 +50,55 @@ async function doStuffInternal<T extends NetworkType>(executionFn: () => Promise
 
     if (result.core) {
       console.log('\tSimulating admin transactions...');
-      const filter = result.core.ownerAdapter.filters.TransactionSubmitted();
+      const governanceAddress = result.core.governance.address;
+      const invalidGovernanceError = `Invalid governance (not DolomiteOwner or DelayedMultisig), found: ${governanceAddress}`;
+
+      let filter;
+      if (governanceAddress === result.core.ownerAdapter.address) {
+        filter = result.core.ownerAdapter.filters.TransactionSubmitted();
+      } else if (governanceAddress === result.core.delayedMultiSig.address) {
+        filter = result.core.delayedMultiSig.filters.Submission();
+      } else {
+        throw new Error(invalidGovernanceError);
+      }
+
       const transactionIds = [];
 
       for (const transaction of result.upload.transactions) {
         let txResult;
-        if (transaction.to === result.core.ownerAdapter.address) {
+        if (transaction.to === result.core.governance.address) {
           txResult = await result.core.governance.sendTransaction({
             to: transaction.to,
             data: transaction.data,
             from: result.core.governance.address,
           });
         } else {
-          txResult = await result.core.ownerAdapter.submitTransaction(transaction.to, ZERO_BI, transaction.data);
+          if (governanceAddress === result.core.ownerAdapter.address) {
+            txResult = await result.core.ownerAdapter.submitTransaction(transaction.to, transaction.data);
+          } else if (governanceAddress === result.core.delayedMultiSig.address) {
+            txResult = await result.core.delayedMultiSig.submitTransaction(transaction.to, ZERO_BI, transaction.data);
+          } else {
+            throw new Error(invalidGovernanceError);
+          }
         }
 
-        const submissionEvent = (await result.core.ownerAdapter.queryFilter(filter, txResult.blockHash))[0];
+        const governanceContract = new BaseContract(governanceAddress, IDolomiteOwner__factory.createInterface());
+        const submissionEvent = (await governanceContract.queryFilter(filter, txResult.blockHash))[0];
         if (submissionEvent) {
-          transactionIds.push(submissionEvent.args.transactionId);
+          transactionIds.push((submissionEvent.args as any).transactionId);
         }
       }
 
       console.log('\tExecuting transactions...');
       for (const transactionId of transactionIds) {
         try {
-          await result.core.ownerAdapter.executeTransactions([transactionId], {});
+          if (governanceAddress === result.core.ownerAdapter.address) {
+            await result.core.ownerAdapter.executeTransactions([transactionId], {});
+          } else if (governanceAddress === result.core.delayedMultiSig.address) {
+            await result.core.delayedMultiSig.executeTransaction(transactionId, {});
+          } else {
+            return Promise.reject(new Error(invalidGovernanceError));
+          }
         } catch (e: any) {
           const transactionIndex = transactionId.sub(transactionIds[0]).toNumber();
           throw new Error(

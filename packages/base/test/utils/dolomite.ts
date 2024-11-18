@@ -114,7 +114,7 @@ export async function createDolomiteOwner(
   return createContractWithAbi(
     DolomiteOwner__factory.abi,
     DolomiteOwner__factory.bytecode,
-    getDolomiteOwnerConstructorParams(core, secondsTimeLocked),
+    getDolomiteOwnerConstructorParams(core.gnosisSafe.address, secondsTimeLocked),
   );
 }
 

@@ -41,10 +41,10 @@ export enum TargetLiquidationPenalty {
 }
 
 export function getDolomiteOwnerConstructorParams(
-  core: CoreProtocolType<NetworkType>,
+  gnosisSafeAddress: string,
   secondsTimeLocked: BigNumberish,
 ): any[] {
-  return [core.gnosisSafe.address, secondsTimeLocked];
+  return [gnosisSafeAddress, secondsTimeLocked];
 }
 
 export function getRegistryProxyConstructorParams<T extends NetworkType>(

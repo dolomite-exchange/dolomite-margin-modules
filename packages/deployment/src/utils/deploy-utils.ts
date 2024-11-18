@@ -866,20 +866,27 @@ export async function prettyPrintEncodedDataWithTypeSafety<
     };
   }
 
+  let outerTransaction: PopulatedTransaction;
   if ((await core.dolomiteMargin.owner()) === core.ownerAdapter.address) {
-    const outerTransaction = await core.ownerAdapter.populateTransaction.submitTransaction(
+    outerTransaction = await core.ownerAdapter.populateTransaction.submitTransaction(
+      transaction.to!,
+      transaction.data!,
+    );
+  } else if ((await core.dolomiteMargin.owner()) === core.delayedMultiSig.address) {
+    outerTransaction = await core.delayedMultiSig.populateTransaction.submitTransaction(
       transaction.to!,
       transaction.value ?? ZERO_BI,
       transaction.data!,
     );
-    return {
-      to: outerTransaction.to!,
-      value: outerTransaction.value?.toString() ?? '0',
-      data: outerTransaction.data!,
-    };
+  } else {
+    return Promise.reject(new Error('Unknown owner contract needed!'));
   }
 
-  return Promise.reject(new Error('Unknown owner function needed!'));
+  return {
+    to: outerTransaction.to!,
+    value: outerTransaction.value?.toString() ?? '0',
+    data: outerTransaction.data!,
+  };
 }
 
 let mostRecentTokenDecimals: number | undefined = undefined;
