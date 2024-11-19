@@ -20,15 +20,27 @@
 
 pragma solidity ^0.8.9;
 
+import { DolomiteERC4626WithPayable } from "../general/DolomiteERC4626WithPayable.sol";
+import { InternalSafeDelegateCallLib } from "../lib/InternalSafeDelegateCallLib.sol";
+
 
 /**
- * @title   IJonesGLPAdapter
+ * @title   TestDolomiteERC4626WithPayable
  * @author  Dolomite
  *
- * @notice  Interface for interacting with Jones DAO's GLP adapter (0x42EfE3E686808ccA051A49BCDE34C5CbA2EBEfc1). The
- *          adapter serves as the primary entry/exit point for users looking to mint/redeem jUSDC.
+ * @notice  Test implementation for exposing areas for coverage testing
  */
-interface IJonesGLPAdapter {
+contract TestDolomiteERC4626WithPayable is DolomiteERC4626WithPayable {
+    using InternalSafeDelegateCallLib for address;
 
-    function depositStable(uint256 _assets, bool _compound) external returns (uint256);
+    constructor(address _weth) DolomiteERC4626WithPayable(_weth) {
+    }
+
+    // ============ Functions ============
+
+    function callFunctionAndTriggerReentrancy(
+        bytes calldata _callDataWithSelector
+    ) external payable nonReentrant {
+        address(this).safeDelegateCall(_callDataWithSelector);
+    }
 }

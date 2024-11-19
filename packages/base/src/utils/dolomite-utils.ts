@@ -1,6 +1,6 @@
 import { address } from '@dolomite-exchange/dolomite-margin';
 import { ActionType, AmountDenomination, AmountReference } from '@dolomite-margin/dist/src';
-import { BaseContract, BigNumber, BigNumberish, BytesLike } from 'ethers';
+import { BaseContract, BigNumber, BigNumberish, BytesLike, Signer } from 'ethers';
 import hardhat, { ethers } from 'hardhat';
 import { CoreProtocolType } from '../../test/utils/setup';
 import {
@@ -10,7 +10,7 @@ import {
   CustomTestVaultToken__factory,
 } from '../types';
 import { ActionArgsStruct } from './index';
-import { MAX_UINT_256_BI, networkToNetworkNameMap, NetworkType } from './no-deps-constants';
+import { MAX_UINT_256_BI, NETWORK_TO_NETWORK_NAME_MAP, NetworkType } from './no-deps-constants';
 import { SignerWithAddressWithSafety } from './SignerWithAddressWithSafety';
 
 /**
@@ -20,8 +20,9 @@ export async function createContractWithName<T extends BaseContract>(
   contractName: string,
   args: any[],
   options?: {},
+  signer?: Signer,
 ): Promise<T> {
-  const ContractFactory = await ethers.getContractFactory(contractName);
+  const ContractFactory = await ethers.getContractFactory(contractName, signer);
   return await ContractFactory.deploy(...(options ? [...args, options] : [...args])) as T;
 }
 
@@ -42,8 +43,9 @@ export async function createContractWithLibrary<T extends BaseContract>(
   libraries: Record<LibraryName, address>,
   args: (number | string | BigNumberish | boolean | object)[],
   options?: {},
+  signer?: Signer,
 ): Promise<T> {
-  const ContractFactory = await ethers.getContractFactory(name, { libraries });
+  const ContractFactory = await ethers.getContractFactory(name, { libraries, signer });
   return await ContractFactory.deploy(...(options ? [...args, options] : [...args])) as T;
 }
 
@@ -208,7 +210,7 @@ export async function getAndCheckSpecificNetwork<T extends NetworkType>(networkI
   }
 
   if (foundNetwork !== networkInvariant) {
-    const expectedName = networkToNetworkNameMap[networkInvariant];
+    const expectedName = NETWORK_TO_NETWORK_NAME_MAP[networkInvariant];
     return Promise.reject(new Error(
       `This script can only be run on ${networkInvariant} (${expectedName}), but found: ${foundNetwork}`,
     ));

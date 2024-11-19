@@ -40,6 +40,13 @@ export enum TargetLiquidationPenalty {
   _15 = '0.15',
 }
 
+export function getDolomiteOwnerConstructorParams(
+  gnosisSafeAddress: string,
+  secondsTimeLocked: BigNumberish,
+): any[] {
+  return [gnosisSafeAddress, secondsTimeLocked];
+}
+
 export function getRegistryProxyConstructorParams<T extends NetworkType>(
   implementationAddress: string,
   implementationCalldata: string,

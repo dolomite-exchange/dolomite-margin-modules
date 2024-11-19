@@ -29,6 +29,8 @@ import { IChainlinkPriceOracleV1__factory } from 'packages/oracles/src/types';
 import {
   DolomiteERC20__factory,
   DolomiteERC20WithPayable__factory,
+  DolomiteOwner,
+  DolomiteOwner__factory,
   IBorrowPositionProxyV2__factory,
   IDepositWithdrawalProxy__factory,
   IDolomiteAccountRegistry__factory,
@@ -97,6 +99,7 @@ import {
   FRAX_MAP,
   GMX_BTC_PLACEHOLDER_MAP,
   GMX_MAP,
+  GNOSIS_SAFE_MAP,
   GRAI_MAP,
   GRAIL_MAP,
   HONEY_MAP,
@@ -604,6 +607,12 @@ export async function setupCoreProtocol<T extends NetworkType>(
     );
   }
 
+  const gnosisSafe: SignerWithAddressWithSafety = await impersonateOrFallback(
+    GNOSIS_SAFE_MAP[config.network],
+    true,
+    hhUser1,
+  );
+
   const governance: SignerWithAddressWithSafety = await impersonateOrFallback(
     await IDolomiteMargin__factory.connect(dolomiteMarginAddress, hhUser1).owner(),
     true,
@@ -707,6 +716,17 @@ export async function setupCoreProtocol<T extends NetworkType>(
     governance,
   );
 
+  let ownerAdapter: DolomiteOwner | undefined;
+  try {
+    ownerAdapter = getContract(
+      Deployments.DolomiteOwner[config.network].address,
+      DolomiteOwner__factory.connect,
+      governance,
+    );
+  } catch {
+    ownerAdapter = undefined;
+  }
+
   const testEcosystem = await createTestEcosystem(dolomiteMargin, governance);
 
   const libraries: LibraryMaps = {
@@ -731,6 +751,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
     expiry,
     freezableLiquidatorProxy,
     genericTraderProxy,
+    gnosisSafe,
     governance,
     interestSetters,
     libraries,
@@ -738,6 +759,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
     liquidatorProxyV1,
     liquidatorProxyV4,
     oracleAggregatorV2,
+    ownerAdapter,
     testEcosystem,
     hhUser1,
     hhUser2,
@@ -882,6 +904,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
         pendle: PENDLE_MAP[typedConfig.network].marketId,
         sGlp: S_GLP_MAP[typedConfig.network].marketId,
         uni: UNI_MAP[typedConfig.network].marketId,
+        uniBtc: UNI_BTC_MAP[typedConfig.network].marketId,
         usdt: USDT_MAP[typedConfig.network].marketId,
         wbtc: WBTC_MAP[typedConfig.network].marketId,
         weEth: WE_ETH_MAP[typedConfig.network].marketId,
@@ -953,6 +976,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
         sol: IERC20__factory.connect(SOL_MAP[typedConfig.network].address, hhUser1),
         stEth: IERC20__factory.connect(ST_ETH_MAP[typedConfig.network].address, hhUser1),
         uni: IERC20__factory.connect(UNI_MAP[typedConfig.network].address, hhUser1),
+        uniBtc: IERC20__factory.connect(UNI_BTC_MAP[typedConfig.network].address, hhUser1),
         usde: IERC20__factory.connect(USDE_MAP[typedConfig.network].address, hhUser1),
         usdm: IERC20__factory.connect(USDM_MAP[typedConfig.network].address, hhUser1),
         usdt: IERC20__factory.connect(USDT_MAP[typedConfig.network].address, hhUser1),
