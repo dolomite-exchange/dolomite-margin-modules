@@ -27,7 +27,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IBerachainRewardsIsolationModeTokenVaultV1 } from "./interfaces/IBerachainRewardsIsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
 import { IBerachainRewardsIsolationModeVaultFactory } from "./interfaces/IBerachainRewardsIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
-import { IBerachainRewardsMetavault } from "./interfaces/IBerachainRewardsMetavault.sol";
+import { IBerachainRewardsMetaVault } from "./interfaces/IBerachainRewardsMetaVault.sol";
 import { IBerachainRewardsRegistry } from "./interfaces/IBerachainRewardsRegistry.sol";
 
 
@@ -128,24 +128,24 @@ contract BerachainRewardsIsolationModeTokenVaultV1 is
     // ==================================================================
 
     function _stake(address _asset, IBerachainRewardsRegistry.RewardVaultType _type, uint256 _amount) internal {
-        IBerachainRewardsMetavault metavault = IBerachainRewardsMetavault(
-            registry().getVaultToMetavault(address(this))
+        IBerachainRewardsMetaVault metaVault = IBerachainRewardsMetaVault(
+            registry().getVaultToMetaVault(address(this))
         );
-        IERC20(_asset).safeApprove(address(metavault), _amount);
-        metavault.stake(_asset, _type, _amount);
+        IERC20(_asset).safeApprove(address(metaVault), _amount);
+        metaVault.stake(_asset, _type, _amount);
     }
 
     function _unstake(address _asset, IBerachainRewardsRegistry.RewardVaultType _type, uint256 _amount) internal {
-        IBerachainRewardsMetavault metavault = IBerachainRewardsMetavault(
-            registry().getVaultToMetavault(address(this))
+        IBerachainRewardsMetaVault metaVault = IBerachainRewardsMetaVault(
+            registry().getVaultToMetaVault(address(this))
         );
-        metavault.unstake(_asset, _type, _amount);
+        metaVault.unstake(_asset, _type, _amount);
     }
 
     function _exit(address _asset, IBerachainRewardsRegistry.RewardVaultType _type) internal {
-        IBerachainRewardsMetavault metavault = IBerachainRewardsMetavault(
-            registry().getVaultToMetavault(address(this))
+        IBerachainRewardsMetaVault metaVault = IBerachainRewardsMetaVault(
+            registry().getVaultToMetaVault(address(this))
         );
-        metavault.exit(_asset, _type);
+        metaVault.exit(_asset, _type);
     }
 }

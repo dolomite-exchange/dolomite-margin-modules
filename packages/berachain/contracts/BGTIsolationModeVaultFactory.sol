@@ -72,8 +72,8 @@ contract BGTIsolationModeVaultFactory is
 
     // ============ External Functions ============
 
-    // @audit @Corey please double check these permissions and confirm only the proper metavault can call
-    function depositIntoDolomiteMarginFromMetavault(
+    // @audit @Corey please double check these permissions and confirm only the proper metaVault can call
+    function depositIntoDolomiteMarginFromMetaVault(
         address _owner,
         uint256 _toAccountNumber,
         uint256 _amountWei
@@ -82,9 +82,9 @@ contract BGTIsolationModeVaultFactory is
         assert(vault != address(0));
 
         Require.that(
-            berachainRewardsRegistry.getVaultToMetavault(vault) == msg.sender,
+            berachainRewardsRegistry.getVaultToMetaVault(vault) == msg.sender,
             _FILE,
-            "Can only deposit from metavault"
+            "Can only deposit from metaVault"
         );
         _enqueueTransfer(
             vault,

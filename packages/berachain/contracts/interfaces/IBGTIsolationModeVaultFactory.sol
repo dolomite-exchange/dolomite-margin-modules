@@ -20,8 +20,8 @@
 
 pragma solidity ^0.8.9;
 
-import { IIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { IBerachainRewardsRegistry } from "./IBerachainRewardsRegistry.sol";
+import { IMetaVaultRewardReceiverFactory } from "./IMetaVaultRewardReceiverFactory.sol";
 
 
 /**
@@ -30,7 +30,7 @@ import { IBerachainRewardsRegistry } from "./IBerachainRewardsRegistry.sol";
  *
  * @notice  Interface for a subclass of IsolationModeVaultFactory that creates vaults for Berachain RewardVault tokens.
  */
-interface IBGTIsolationModeVaultFactory is IIsolationModeVaultFactory {
+interface IBGTIsolationModeVaultFactory is IMetaVaultRewardReceiverFactory {
 
     // ================================================
     // ==================== Events ====================
@@ -41,12 +41,6 @@ interface IBGTIsolationModeVaultFactory is IIsolationModeVaultFactory {
     // ===================================================
     // ==================== Functions ====================
     // ===================================================
-
-    function depositIntoDolomiteMarginFromMetavault(
-        address _vault,
-        uint256 _toAccountNumber,
-        uint256 _amountWei
-    ) external;
 
     function ownerSetBerachainRewardsRegistry(address _berachainRewardsRegistry) external;
 

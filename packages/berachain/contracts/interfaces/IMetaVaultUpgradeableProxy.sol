@@ -22,15 +22,24 @@ pragma solidity ^0.8.9;
 
 
 /**
- * @title   IMetavaultOperator
+ * @title   IMetaVaultUpgradeableProxy
  * @author  Dolomite
  *
+ * @notice  The interface for the upgradeable proxy contract that holds each user's tokens that are staked in POL
  */
-interface IMetavaultOperator {
-    
-    function depositIntoUserAccountFromMetavault(
-        address _owner,
-        address _token,
-        uint256 _amountWei
-    ) external;
+interface IMetaVaultUpgradeableProxy {
+
+    /**
+     *
+     * @param  _vaultOwner  The owner of this vault contract
+     */
+    function initialize(address _vaultOwner) external;
+
+    function isInitialized() external view returns (bool);
+
+    function implementation() external view returns (address);
+
+    function registry() external view returns (address);
+
+    function owner() external view returns (address);
 }

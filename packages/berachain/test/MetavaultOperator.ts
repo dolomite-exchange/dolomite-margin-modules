@@ -1,4 +1,4 @@
-import { MetavaultOperator, MetavaultOperator__factory } from '../src/types';
+import { MetaVaultOperator, MetaVaultOperator__factory } from '../src/types';
 import {
   getDefaultCoreProtocolConfig,
   setupCoreProtocol,
@@ -13,21 +13,21 @@ import { revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
 
 const usdcAmount = BigNumber.from('100000000');
 
-describe('MetavaultOperator', () => {
+describe('MetaVaultOperator', () => {
   let snapshotId: string;
 
   let core: CoreProtocolArbitrumOne;
-  let metavaultOperator: MetavaultOperator;
+  let metaVaultOperator: MetaVaultOperator;
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
 
-    metavaultOperator = await createContractWithAbi<MetavaultOperator>(
-      MetavaultOperator__factory.abi,
-      MetavaultOperator__factory.bytecode,
+    metaVaultOperator = await createContractWithAbi<MetaVaultOperator>(
+      MetaVaultOperator__factory.abi,
+      MetaVaultOperator__factory.bytecode,
       [core.dolomiteMargin.address],
     );
-    await core.dolomiteMargin.ownerSetGlobalOperator(metavaultOperator.address, true);
+    await core.dolomiteMargin.ownerSetGlobalOperator(metaVaultOperator.address, true);
 
     snapshotId = await snapshot();
   });
@@ -36,10 +36,10 @@ describe('MetavaultOperator', () => {
     snapshotId = await revertToSnapshotAndCapture(snapshotId);
   });
 
-  describe('depositIntoUserAccountFromMetavault', async () => {
+  describe('depositIntoUserAccountFromMetaVault', async () => {
     it('should work normally', async () => {
-      await setupNativeUSDCBalance(core, core.hhUser1, usdcAmount, metavaultOperator);
-      await metavaultOperator.depositIntoUserAccountFromMetavault(
+      await setupNativeUSDCBalance(core, core.hhUser1, usdcAmount, metaVaultOperator);
+      await metaVaultOperator.depositIntoUserAccountFromMetaVault(
         core.hhUser1.address,
         core.tokens.nativeUsdc.address,
         usdcAmount

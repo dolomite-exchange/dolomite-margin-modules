@@ -22,7 +22,7 @@ export async function getBerachainRewardsRegistryConstructorParams(
 ): Promise<any[]> {
   const calldata = await implementation.populateTransaction.initialize(
     core.tokens.bgt.address,
-    core.tokens.ibgt.address,
+    core.tokens.iBgt.address,
     core.berachainRewardsEcosystem.iBgtStakingPool.address,
     metavaultImplementation.address,
     metavaultOperator.address,

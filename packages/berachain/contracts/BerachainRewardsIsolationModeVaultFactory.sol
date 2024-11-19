@@ -93,7 +93,7 @@ contract BerachainRewardsIsolationModeVaultFactory is
         address vault = super._createVault(_account);
 
         if (_account != _DEAD_VAULT) {
-            berachainRewardsRegistry.createMetavault(_account, vault);
+            berachainRewardsRegistry.createMetaVault(_account, vault);
         }
         return vault;
     }

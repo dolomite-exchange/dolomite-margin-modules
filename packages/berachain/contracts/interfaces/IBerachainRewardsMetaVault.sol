@@ -24,14 +24,14 @@ import { IBerachainRewardsRegistry } from "./IBerachainRewardsRegistry.sol";
 
 
 /**
- * @title   IBerachainRewardsMetavault
+ * @title   IBerachainRewardsMetaVault
  * @author  Dolomite
  *
  */
-interface IBerachainRewardsMetavault {
+interface IBerachainRewardsMetaVault {
 
     event ValidatorSet(address validator);
-    
+
     function stake(address _asset, IBerachainRewardsRegistry.RewardVaultType _type, uint256 amount) external;
 
     function unstake(address _asset, IBerachainRewardsRegistry.RewardVaultType _type, uint256 amount) external;

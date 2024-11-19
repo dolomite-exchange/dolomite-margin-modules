@@ -359,7 +359,7 @@ export async function setupUSDCBalance<T extends NetworkType>(
   let whaleAddress: string;
   if (core.network === Network.Berachain) {
     whaleAddress = '0xBD8DFf36a635B951e008E414ED73021869324Fd7';
-  } else if (core.network === Network.XLayer){
+  } else if (core.network === Network.XLayer) {
     whaleAddress = '0x2d22604d6bbf51839c404aef5c65443e424e0945';
   } else {
     whaleAddress = '0x805ba50001779CeD4f59CfF63aea527D12B94829'; // Radiant USDC pool
@@ -1030,13 +1030,13 @@ export async function setupCoreProtocol<T extends NetworkType>(
       },
       tokens: {
         ...coreProtocolParams.tokens,
+        bgt: IBGT__factory.connect(BGT_MAP[typedConfig.network].address, hhUser1),
         honey: IERC20__factory.connect(HONEY_MAP[typedConfig.network].address, hhUser1),
+        iBgt: IERC20__factory.connect(IBGT_MAP[typedConfig.network].address, hhUser1),
         sbtc: IERC20__factory.connect(SBTC_MAP[typedConfig.network].address, hhUser1),
         stoneBtc: IERC20__factory.connect(STONE_BTC_MAP[typedConfig.network].address, hhUser1),
         uniBtc: IERC20__factory.connect(UNI_BTC_MAP[typedConfig.network].address, hhUser1),
         wbera: IWETH__factory.connect(WBERA_MAP[typedConfig.network].address, hhUser1),
-        bgt: IBGT__factory.connect(BGT_MAP[typedConfig.network].address, hhUser1),
-        ibgt: IERC20__factory.connect(IBGT_MAP[typedConfig.network].address, hhUser1),
         stablecoins: [
           ...coreProtocolParams.tokens.stablecoins,
           IERC20__factory.connect(HONEY_MAP[typedConfig.network].address, hhUser1),

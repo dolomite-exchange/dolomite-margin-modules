@@ -20,16 +20,20 @@
 
 pragma solidity ^0.8.9;
 
-import { IIsolationModeTokenVaultV1 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
-import { IMetaVaultRewardReceiver } from "./IMetaVaultRewardReceiver.sol";
+import { IIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 
 
 /**
- * @title   IInfraredBGTIsolationModeTokenVaultV1
+ * @title   IMetaVaultRewardReceiverFactory
  * @author  Dolomite
  *
- * @notice  This interface defines the functions that are available on the InfraredBGTIsolationModeTokenVaultV1
- *          implementation contract for each user's proxy vault.
+ * @notice  This interface defines the functions that are universally available
  */
-interface IInfraredBGTIsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, IMetaVaultRewardReceiver {
+interface IMetaVaultRewardReceiverFactory is IIsolationModeVaultFactory {
+
+    function depositIntoDolomiteMarginFromMetaVault(
+        address _vault,
+        uint256 _toAccountNumber,
+        uint256 _amountWei
+    ) external;
 }

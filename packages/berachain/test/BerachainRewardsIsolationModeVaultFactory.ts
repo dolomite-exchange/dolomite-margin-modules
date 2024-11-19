@@ -10,14 +10,14 @@ import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/c
 import {
   BerachainRewardsIsolationModeTokenVaultV1,
   BerachainRewardsIsolationModeVaultFactory,
-  BerachainRewardsMetavault,
-  BerachainRewardsMetavault__factory,
+  BerachainRewardsMetaVault,
+  BerachainRewardsMetaVault__factory,
   BerachainRewardsRegistry,
   BGTIsolationModeVaultFactory,
   INativeRewardVault,
   InfraredBGTIsolationModeVaultFactory,
-  MetavaultOperator,
-  MetavaultOperator__factory
+  MetaVaultOperator,
+  MetaVaultOperator__factory
 } from '../src/types';
 import {
   createBerachainRewardsIsolationModeTokenVaultV1,
@@ -41,7 +41,7 @@ describe('BerachainRewardsIsolationModeVaultFactory', () => {
   let beraFactory: BerachainRewardsIsolationModeVaultFactory;
   let otherFactory: BerachainRewardsIsolationModeVaultFactory;
   let bgtFactory: BGTIsolationModeVaultFactory;
-  let ibgtFactory: InfraredBGTIsolationModeVaultFactory;
+  let iBgtFactory: InfraredBGTIsolationModeVaultFactory;
 
   let underlyingToken: IERC20;
   let otherUnderlyingToken: IERC20;
@@ -59,17 +59,17 @@ describe('BerachainRewardsIsolationModeVaultFactory', () => {
     otherUnderlyingToken = core.berachainRewardsEcosystem.listedRewardAssets.bexHoneyWbera.asset;
     nativeRewardVault = core.berachainRewardsEcosystem.listedRewardAssets.bexHoneyUsdc.nativeRewardVault;
 
-    const metavaultImplementation = await createContractWithAbi<BerachainRewardsMetavault>(
-      BerachainRewardsMetavault__factory.abi,
-      BerachainRewardsMetavault__factory.bytecode,
+    const metaVaultImplementation = await createContractWithAbi<BerachainRewardsMetaVault>(
+      BerachainRewardsMetaVault__factory.abi,
+      BerachainRewardsMetaVault__factory.bytecode,
       [],
     );
-    const metavaultOperator = await createContractWithAbi<MetavaultOperator>(
-      MetavaultOperator__factory.abi,
-      MetavaultOperator__factory.bytecode,
+    const metaVaultOperator = await createContractWithAbi<MetaVaultOperator>(
+      MetaVaultOperator__factory.abi,
+      MetaVaultOperator__factory.bytecode,
       [core.dolomiteMargin.address],
     );
-    registry = await createBerachainRewardsRegistry(core, metavaultImplementation, metavaultOperator);
+    registry = await createBerachainRewardsRegistry(core, metaVaultImplementation, metaVaultOperator);
     await registry.connect(core.governance).ownerSetRewardVault(
       underlyingToken.address,
       RewardVaultType.Native,
@@ -96,16 +96,16 @@ describe('BerachainRewardsIsolationModeVaultFactory', () => {
       bgtVaultImplementation,
       core,
     );
-    const ibgtVaultImplementation = await createInfraredBGTIsolationModeTokenVaultV1();
-    ibgtFactory = await createInfraredBGTIsolationModeVaultFactory(
+    const iBgtVaultImplementation = await createInfraredBGTIsolationModeTokenVaultV1();
+    iBgtFactory = await createInfraredBGTIsolationModeVaultFactory(
       registry,
-      core.tokens.ibgt,
-      ibgtVaultImplementation,
+      core.tokens.iBgt,
+      iBgtVaultImplementation,
       core,
     );
 
-    await core.testEcosystem!.testPriceOracle.setPrice(ibgtFactory.address, ONE_ETH_BI);
-    await setupTestMarket(core, ibgtFactory, true);
+    await core.testEcosystem!.testPriceOracle.setPrice(iBgtFactory.address, ONE_ETH_BI);
+    await setupTestMarket(core, iBgtFactory, true);
 
     await core.testEcosystem!.testPriceOracle.setPrice(beraFactory.address, ONE_ETH_BI);
     await setupTestMarket(core, beraFactory, true);
@@ -119,14 +119,14 @@ describe('BerachainRewardsIsolationModeVaultFactory', () => {
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(beraFactory.address, true);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(otherFactory.address, true);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(bgtFactory.address, true);
-    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(ibgtFactory.address, true);
-    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(metavaultOperator.address, true);
+    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(iBgtFactory.address, true);
+    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(metaVaultOperator.address, true);
     await beraFactory.connect(core.governance).ownerInitialize([]);
     await otherFactory.connect(core.governance).ownerInitialize([]);
     await bgtFactory.connect(core.governance).ownerInitialize([]);
-    await ibgtFactory.connect(core.governance).ownerInitialize([]);
+    await iBgtFactory.connect(core.governance).ownerInitialize([]);
     await registry.connect(core.governance).ownerSetBgtIsolationModeVaultFactory(bgtFactory.address);
-    await registry.connect(core.governance).ownerSetIBgtIsolationModeVaultFactory(ibgtFactory.address);
+    await registry.connect(core.governance).ownerSetIBgtIsolationModeVaultFactory(iBgtFactory.address);
 
     snapshotId = await snapshot();
   });
@@ -146,18 +146,18 @@ describe('BerachainRewardsIsolationModeVaultFactory', () => {
   });
 
   describe('#createVault', () => {
-    it('should create metavault if it does not exist', async () => {
-      const metavaultAddress = await registry.calculateMetavaultByAccount(core.hhUser1.address);
+    it('should create metaVault if it does not exist', async () => {
+      const metaVaultAddress = await registry.calculateMetaVaultByAccount(core.hhUser1.address);
       const res = await beraFactory.createVault(core.hhUser1.address);
-      await expectEvent(registry, res, 'MetavaultCreated', {
+      await expectEvent(registry, res, 'MetaVaultCreated', {
         account: core.hhUser1.address,
-        metavault: metavaultAddress,
+        metaVault: metaVaultAddress,
       });
     });
 
-    it('should not create metavault if it already exists', async () => {
+    it('should not create metaVault if it already exists', async () => {
       await beraFactory.createVault(core.hhUser1.address);
-      await expect(otherFactory.createVault(core.hhUser1.address)).to.not.emit(registry, 'MetavaultCreated');
+      await expect(otherFactory.createVault(core.hhUser1.address)).to.not.emit(registry, 'MetaVaultCreated');
     });
   });
 

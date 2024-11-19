@@ -19,7 +19,7 @@ export interface CoreProtocolTokensBerachain extends CoreProtocolTokens<Network.
   uniBtc: IERC20;
   wbera: IWETH;
   bgt: IBGT;
-  ibgt: IERC20;
+  iBgt: IERC20;
 }
 
 interface CoreProtocolMarketIdsBerachain extends CoreProtocolMarketIds {

@@ -14,7 +14,7 @@ import {
   BerachainRewardsIsolationModeTokenVaultV1,
   BerachainRewardsIsolationModeVaultFactory,
   BerachainRewardsIsolationModeVaultFactory__factory,
-  BerachainRewardsMetavault,
+  BerachainRewardsMetaVault,
   BerachainRewardsRegistry,
   BerachainRewardsRegistry__factory,
   BGTIsolationModeTokenVaultV1,
@@ -24,7 +24,7 @@ import {
   InfraredBGTIsolationModeTokenVaultV1,
   InfraredBGTIsolationModeVaultFactory,
   InfraredBGTIsolationModeVaultFactory__factory,
-  MetavaultOperator,
+  MetaVaultOperator,
   TestBerachainRewardsRegistry,
   TestBerachainRewardsRegistry__factory
 } from '../src/types';
@@ -37,8 +37,8 @@ export enum RewardVaultType {
 
 export async function createBerachainRewardsRegistry(
   core: CoreProtocolBerachain,
-  metavaultImplementation: BerachainRewardsMetavault,
-  metavaultOperator: MetavaultOperator
+  metaVaultImplementation: BerachainRewardsMetaVault,
+  metaVaultOperator: MetaVaultOperator
 ): Promise<BerachainRewardsRegistry> {
   const implementation = await createContractWithAbi<BerachainRewardsRegistry>(
     BerachainRewardsRegistry__factory.abi,
@@ -50,8 +50,8 @@ export async function createBerachainRewardsRegistry(
     RegistryProxy__factory.bytecode,
     await getBerachainRewardsRegistryConstructorParams(
       implementation,
-      metavaultImplementation,
-      metavaultOperator,
+      metaVaultImplementation,
+      metaVaultOperator,
       core
     ),
   );
@@ -60,8 +60,8 @@ export async function createBerachainRewardsRegistry(
 
 export async function createTestBerachainRewardsRegistry(
   core: CoreProtocolBerachain,
-  metavaultImplementation: BerachainRewardsMetavault,
-  metavaultOperator: MetavaultOperator
+  metaVaultImplementation: BerachainRewardsMetaVault,
+  metaVaultOperator: MetaVaultOperator
 ): Promise<TestBerachainRewardsRegistry> {
   const implementation = await createContractWithAbi<TestBerachainRewardsRegistry>(
     TestBerachainRewardsRegistry__factory.abi,
@@ -73,8 +73,8 @@ export async function createTestBerachainRewardsRegistry(
     RegistryProxy__factory.bytecode,
     await getBerachainRewardsRegistryConstructorParams(
       implementation,
-      metavaultImplementation,
-      metavaultOperator,
+      metaVaultImplementation,
+      metaVaultOperator,
       core
     ),
   );

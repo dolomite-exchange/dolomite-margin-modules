@@ -28,7 +28,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IBGTIsolationModeTokenVaultV1 } from "./interfaces/IBGTIsolationModeTokenVaultV1.sol";
 import { IBerachainRewardsIsolationModeVaultFactory } from "./interfaces/IBerachainRewardsIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
-import { IBerachainRewardsMetavault } from "./interfaces/IBerachainRewardsMetavault.sol";
+import { IBerachainRewardsMetaVault } from "./interfaces/IBerachainRewardsMetaVault.sol";
 import { IBerachainRewardsRegistry } from "./interfaces/IBerachainRewardsRegistry.sol";
 
 
@@ -52,21 +52,19 @@ contract BGTIsolationModeTokenVaultV1 is
     // ==================================================================
 
     bytes32 private constant _FILE = "BGTIsolationModeTokenVaultV1";
-    bytes32 private constant _IS_DEPOSIT_SOURCE_METAVAULT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isDepositSourceMetavault")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _IS_DEPOSIT_SOURCE_METAVAULT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isDepositSourceMetaVault")) - 1); // solhint-disable-line max-line-length
 
-    function setIsDepositSourceMetavault(
-        bool _isDepositSourceMetavault
+    function setIsDepositSourceMetaVault(
+        bool _isDepositSourceMetaVault
     ) external {
         Require.that(
-            msg.sender == registry().getVaultToMetavault(address(this)),
+            msg.sender == registry().getVaultToMetaVault(address(this)),
             _FILE,
-            "Only metavault"
+            "Only metaVault"
         );
-        _setIsDepositSourceMetavault(_isDepositSourceMetavault);
+        _setIsDepositSourceMetaVault(_isDepositSourceMetaVault);
     }
 
-    // @audit @Corey, please check this over. Specifically, the connection between the metavault and the factory and this vault.
-    // Make sure user can't deposit an amount without sending a balance
     function executeDepositIntoVault(
         address _from,
         uint256 /* _amount */
@@ -76,11 +74,11 @@ contract BGTIsolationModeTokenVaultV1 is
     onlyVaultFactory(msg.sender) {
         assert(_from == OWNER());
         Require.that(
-            isDepositSourceMetavault(),
+            isDepositSourceMetaVault(),
             _FILE,
-            "Only metavault can deposit"
+            "Only metaVault can deposit"
         );
-        _setIsDepositSourceMetavault(false);
+        _setIsDepositSourceMetaVault(false);
     }
 
     function executeWithdrawalFromVault(
@@ -90,12 +88,12 @@ contract BGTIsolationModeTokenVaultV1 is
     public
     override(IIsolationModeTokenVaultV1, IsolationModeTokenVaultV1)
     onlyVaultFactory(msg.sender) {
-        IBerachainRewardsMetavault metavault = IBerachainRewardsMetavault(registry().getAccountToMetavault(OWNER()));
+        IBerachainRewardsMetaVault metaVault = IBerachainRewardsMetaVault(registry().getAccountToMetaVault(OWNER()));
         assert(_recipient != address(this));
-        metavault.withdrawBGTAndRedeem(_recipient, _amount);
+        metaVault.withdrawBGTAndRedeem(_recipient, _amount);
     }
 
-    function isDepositSourceMetavault() public view returns (bool) {
+    function isDepositSourceMetaVault() public view returns (bool) {
         return _getUint256(_IS_DEPOSIT_SOURCE_METAVAULT_SLOT) == 1;
     }
 
@@ -116,15 +114,15 @@ contract BGTIsolationModeTokenVaultV1 is
     // ======================== Internal Functions ========================
     // ==================================================================
 
-    function _setIsDepositSourceMetavault(bool _isDepositSourceMetavault) internal {
-        _setUint256(_IS_DEPOSIT_SOURCE_METAVAULT_SLOT, _isDepositSourceMetavault ? 1 : 0);
-        emit IsDepositSourceMetavaultSet(_isDepositSourceMetavault);
+    function _setIsDepositSourceMetaVault(bool _isDepositSourceMetaVault) internal {
+        _setUint256(_IS_DEPOSIT_SOURCE_METAVAULT_SLOT, _isDepositSourceMetaVault ? 1 : 0);
+        emit IsDepositSourceMetaVaultSet(_isDepositSourceMetaVault);
     }
 
     function _depositIntoVaultForDolomiteMargin(
         uint256 /* _toAccountNumber */,
         uint256 /* _amountWei */
-    ) internal override {
+    ) internal pure override {
         revert('not implemented');
     }
 }

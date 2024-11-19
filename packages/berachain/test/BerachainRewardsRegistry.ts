@@ -3,14 +3,14 @@ import {
   BerachainRewardsIsolationModeTokenVaultV1,
   BerachainRewardsIsolationModeTokenVaultV1__factory,
   BerachainRewardsIsolationModeVaultFactory,
-  BerachainRewardsMetavault,
-  BerachainRewardsMetavault__factory,
+  BerachainRewardsMetaVault,
+  BerachainRewardsMetaVault__factory,
   BerachainRewardsRegistry,
   INativeRewardVault,
   IERC20,
   IInfraredRewardVault,
-  MetavaultOperator,
-  MetavaultOperator__factory,
+  MetaVaultOperator,
+  MetaVaultOperator__factory,
   BGTIsolationModeVaultFactory,
   InfraredBGTIsolationModeVaultFactory,
 } from '../src/types';
@@ -50,7 +50,7 @@ describe('BerachainRewardsRegistry', () => {
   let beraFactory: BerachainRewardsIsolationModeVaultFactory;
   let otherFactory: BerachainRewardsIsolationModeVaultFactory;
   let bgtFactory: BGTIsolationModeVaultFactory;
-  let ibgtFactory: InfraredBGTIsolationModeVaultFactory;
+  let iBgtFactory: InfraredBGTIsolationModeVaultFactory;
 
   let underlyingToken: IERC20;
   let otherUnderlyingToken: IERC20;
@@ -58,8 +58,8 @@ describe('BerachainRewardsRegistry', () => {
   let infraredRewardVault: IInfraredRewardVault;
 
   let vaultImplementation: BerachainRewardsIsolationModeTokenVaultV1;
-  let metavaultImplementation: BerachainRewardsMetavault;
-  let metavaultOperator: MetavaultOperator;
+  let metaVaultImplementation: BerachainRewardsMetaVault;
+  let metaVaultOperator: MetaVaultOperator;
 
   before(async () => {
     core = await setupCoreProtocol({
@@ -72,17 +72,17 @@ describe('BerachainRewardsRegistry', () => {
     nativeRewardVault = core.berachainRewardsEcosystem.listedRewardAssets.bexHoneyUsdc.nativeRewardVault;
     infraredRewardVault = core.berachainRewardsEcosystem.listedRewardAssets.bexHoneyUsdc.infraredRewardVault;
 
-    metavaultImplementation = await createContractWithAbi<BerachainRewardsMetavault>(
-      BerachainRewardsMetavault__factory.abi,
-      BerachainRewardsMetavault__factory.bytecode,
+    metaVaultImplementation = await createContractWithAbi<BerachainRewardsMetaVault>(
+      BerachainRewardsMetaVault__factory.abi,
+      BerachainRewardsMetaVault__factory.bytecode,
       [],
     );
-    metavaultOperator = await createContractWithAbi<MetavaultOperator>(
-      MetavaultOperator__factory.abi,
-      MetavaultOperator__factory.bytecode,
+    metaVaultOperator = await createContractWithAbi<MetaVaultOperator>(
+      MetaVaultOperator__factory.abi,
+      MetaVaultOperator__factory.bytecode,
       [core.dolomiteMargin.address],
     );
-    registry = await createBerachainRewardsRegistry(core, metavaultImplementation, metavaultOperator);
+    registry = await createBerachainRewardsRegistry(core, metaVaultImplementation, metaVaultOperator);
     await registry.connect(core.governance).ownerSetRewardVault(
       underlyingToken.address,
       RewardVaultType.Native,
@@ -114,16 +114,16 @@ describe('BerachainRewardsRegistry', () => {
       bgtVaultImplementation,
       core,
     );
-    const ibgtVaultImplementation = await createInfraredBGTIsolationModeTokenVaultV1();
-    ibgtFactory = await createInfraredBGTIsolationModeVaultFactory(
+    const iBgtVaultImplementation = await createInfraredBGTIsolationModeTokenVaultV1();
+    iBgtFactory = await createInfraredBGTIsolationModeVaultFactory(
       registry,
-      core.tokens.ibgt,
-      ibgtVaultImplementation,
+      core.tokens.iBgt,
+      iBgtVaultImplementation,
       core,
     );
 
-    await core.testEcosystem!.testPriceOracle.setPrice(ibgtFactory.address, ONE_ETH_BI);
-    await setupTestMarket(core, ibgtFactory, true);
+    await core.testEcosystem!.testPriceOracle.setPrice(iBgtFactory.address, ONE_ETH_BI);
+    await setupTestMarket(core, iBgtFactory, true);
 
     await core.testEcosystem!.testPriceOracle.setPrice(beraFactory.address, ONE_ETH_BI);
     await setupTestMarket(core, beraFactory, true);
@@ -137,14 +137,14 @@ describe('BerachainRewardsRegistry', () => {
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(beraFactory.address, true);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(otherFactory.address, true);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(bgtFactory.address, true);
-    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(ibgtFactory.address, true);
-    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(metavaultOperator.address, true);
+    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(iBgtFactory.address, true);
+    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(metaVaultOperator.address, true);
     await beraFactory.connect(core.governance).ownerInitialize([]);
     await otherFactory.connect(core.governance).ownerInitialize([]);
     await bgtFactory.connect(core.governance).ownerInitialize([]);
-    await ibgtFactory.connect(core.governance).ownerInitialize([]);
+    await iBgtFactory.connect(core.governance).ownerInitialize([]);
     await registry.connect(core.governance).ownerSetBgtIsolationModeVaultFactory(bgtFactory.address);
-    await registry.connect(core.governance).ownerSetIBgtIsolationModeVaultFactory(ibgtFactory.address);
+    await registry.connect(core.governance).ownerSetIBgtIsolationModeVaultFactory(iBgtFactory.address);
 
     snapshotId = await snapshot();
   });
@@ -156,9 +156,9 @@ describe('BerachainRewardsRegistry', () => {
   describe('#initialize', () => {
     it('should initialize variables properly', async () => {
       expect(await registry.bgt()).to.equal(core.tokens.bgt.address);
-      expect(await registry.iBgt()).to.equal(core.tokens.ibgt.address);
-      expect(await registry.metavaultImplementation()).to.equal(metavaultImplementation.address);
-      expect(await registry.metavaultOperator()).to.equal(metavaultOperator.address);
+      expect(await registry.iBgt()).to.equal(core.tokens.iBgt.address);
+      expect(await registry.metaVaultImplementation()).to.equal(metaVaultImplementation.address);
+      expect(await registry.metaVaultOperator()).to.equal(metaVaultOperator.address);
       expect(await registry.dolomiteRegistry()).to.equal(core.dolomiteRegistry.address);
     });
 
@@ -166,10 +166,10 @@ describe('BerachainRewardsRegistry', () => {
       await expectThrow(
         registry.initialize(
           core.tokens.bgt.address,
-          core.tokens.ibgt.address,
+          core.tokens.iBgt.address,
           core.berachainRewardsEcosystem.iBgtStakingPool.address,
-          metavaultImplementation.address,
-          metavaultOperator.address,
+          metaVaultImplementation.address,
+          metaVaultOperator.address,
           core.dolomiteRegistry.address
         ),
         'Initializable: contract is already initialized',
@@ -177,22 +177,22 @@ describe('BerachainRewardsRegistry', () => {
     });
   });
 
-  describe('#createMetavault', () => {
-    it('should work normally if no metavault exists', async () => {
+  describe('#createMetaVault', () => {
+    it('should work normally if no metaVault exists', async () => {
       const vaultAddress = await beraFactory.calculateVaultByAccount(core.hhUser1.address);
       const bgtVaultAddress = await bgtFactory.calculateVaultByAccount(core.hhUser1.address);
-      const iBgtVaultAddress = await ibgtFactory.calculateVaultByAccount(core.hhUser1.address);
-      const metavaultAddress = await registry.calculateMetavaultByAccount(core.hhUser1.address);
+      const iBgtVaultAddress = await iBgtFactory.calculateVaultByAccount(core.hhUser1.address);
+      const metaVaultAddress = await registry.calculateMetaVaultByAccount(core.hhUser1.address);
       const result = await beraFactory.createVault(core.hhUser1.address);
-      await expectEvent(registry, result, 'MetavaultCreated', {
+      await expectEvent(registry, result, 'MetaVaultCreated', {
         account: core.hhUser1.address,
-        metavault: metavaultAddress,
+        metaVault: metaVaultAddress,
       });
       await expectEvent(bgtFactory, result, 'VaultCreated', {
         account: core.hhUser1.address,
         vault: bgtVaultAddress,
       });
-      await expectEvent(ibgtFactory, result, 'VaultCreated', {
+      await expectEvent(iBgtFactory, result, 'VaultCreated', {
         account: core.hhUser1.address,
         vault: iBgtVaultAddress,
       });
@@ -201,45 +201,45 @@ describe('BerachainRewardsRegistry', () => {
         core.hhUser1.address,
         underlyingToken.address
       )).to.equal(RewardVaultType.Native);
-      expect(await registry.getAccountToMetavault(core.hhUser1.address)).to.equal(metavaultAddress);
-      expect(await registry.getMetavaultToAccount(metavaultAddress)).to.equal(core.hhUser1.address);
-      expect(await registry.getVaultToMetavault(vaultAddress)).to.equal(metavaultAddress);
-      expect(await registry.getVaultToMetavault(bgtVaultAddress)).to.equal(metavaultAddress);
-      expect(await registry.getVaultToMetavault(iBgtVaultAddress)).to.equal(metavaultAddress);
+      expect(await registry.getAccountToMetaVault(core.hhUser1.address)).to.equal(metaVaultAddress);
+      expect(await registry.getMetaVaultToAccount(metaVaultAddress)).to.equal(core.hhUser1.address);
+      expect(await registry.getVaultToMetaVault(vaultAddress)).to.equal(metaVaultAddress);
+      expect(await registry.getVaultToMetaVault(bgtVaultAddress)).to.equal(metaVaultAddress);
+      expect(await registry.getVaultToMetaVault(iBgtVaultAddress)).to.equal(metaVaultAddress);
     });
 
     it('should work normally if iBgt vault is already created', async () => {
       const vaultAddress = await beraFactory.calculateVaultByAccount(core.hhUser1.address);
       const bgtVaultAddress = await bgtFactory.calculateVaultByAccount(core.hhUser1.address);
-      const iBgtVaultAddress = await ibgtFactory.calculateVaultByAccount(core.hhUser1.address);
-      const metavaultAddress = await registry.calculateMetavaultByAccount(core.hhUser1.address);
-      await ibgtFactory.createVault(core.hhUser1.address);
+      const iBgtVaultAddress = await iBgtFactory.calculateVaultByAccount(core.hhUser1.address);
+      const metaVaultAddress = await registry.calculateMetaVaultByAccount(core.hhUser1.address);
+      await iBgtFactory.createVault(core.hhUser1.address);
       const result = await beraFactory.createVault(core.hhUser1.address);
-      await expectEvent(registry, result, 'MetavaultCreated', {
+      await expectEvent(registry, result, 'MetaVaultCreated', {
         account: core.hhUser1.address,
-        metavault: metavaultAddress,
+        metaVault: metaVaultAddress,
       });
 
       expect(await registry.getAccountToAssetToDefaultType(
         core.hhUser1.address,
         underlyingToken.address
       )).to.equal(RewardVaultType.Native);
-      expect(await registry.getAccountToMetavault(core.hhUser1.address)).to.equal(metavaultAddress);
-      expect(await registry.getMetavaultToAccount(metavaultAddress)).to.equal(core.hhUser1.address);
-      expect(await registry.getVaultToMetavault(vaultAddress)).to.equal(metavaultAddress);
-      expect(await registry.getVaultToMetavault(bgtVaultAddress)).to.equal(metavaultAddress);
-      expect(await registry.getVaultToMetavault(iBgtVaultAddress)).to.equal(metavaultAddress);
+      expect(await registry.getAccountToMetaVault(core.hhUser1.address)).to.equal(metaVaultAddress);
+      expect(await registry.getMetaVaultToAccount(metaVaultAddress)).to.equal(core.hhUser1.address);
+      expect(await registry.getVaultToMetaVault(vaultAddress)).to.equal(metaVaultAddress);
+      expect(await registry.getVaultToMetaVault(bgtVaultAddress)).to.equal(metaVaultAddress);
+      expect(await registry.getVaultToMetaVault(iBgtVaultAddress)).to.equal(metaVaultAddress);
     });
 
-    it('should work normally if metavault already exists', async () => {
+    it('should work normally if metaVault already exists', async () => {
       const vaultAddress = await beraFactory.calculateVaultByAccount(core.hhUser1.address);
       const otherVaultAddress = await otherFactory.calculateVaultByAccount(core.hhUser1.address);
-      const metavaultAddress = await registry.calculateMetavaultByAccount(core.hhUser1.address);
+      const metaVaultAddress = await registry.calculateMetaVaultByAccount(core.hhUser1.address);
 
       const result = await beraFactory.createVault(core.hhUser1.address);
-      await expectEvent(registry, result, 'MetavaultCreated', {
+      await expectEvent(registry, result, 'MetaVaultCreated', {
         account: core.hhUser1.address,
-        metavault: metavaultAddress,
+        metaVault: metaVaultAddress,
       });
 
       await otherFactory.createVault(core.hhUser1.address);
@@ -247,23 +247,23 @@ describe('BerachainRewardsRegistry', () => {
         core.hhUser1.address,
         underlyingToken.address
       )).to.equal(RewardVaultType.Native);
-      expect(await registry.getAccountToMetavault(core.hhUser1.address)).to.equal(metavaultAddress);
-      expect(await registry.getMetavaultToAccount(metavaultAddress)).to.equal(core.hhUser1.address);
-      expect(await registry.getVaultToMetavault(vaultAddress)).to.equal(metavaultAddress);
-      expect(await registry.getVaultToMetavault(otherVaultAddress)).to.equal(metavaultAddress);
+      expect(await registry.getAccountToMetaVault(core.hhUser1.address)).to.equal(metaVaultAddress);
+      expect(await registry.getMetaVaultToAccount(metaVaultAddress)).to.equal(core.hhUser1.address);
+      expect(await registry.getVaultToMetaVault(vaultAddress)).to.equal(metaVaultAddress);
+      expect(await registry.getVaultToMetaVault(otherVaultAddress)).to.equal(metaVaultAddress);
     });
 
     // test fails during coverage because asserts are hidden
     xit('should fail if not called by a factory', async () => {
       await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(core.hhUser5.address, true);
       await expectThrow(
-        registry.connect(core.hhUser5).createMetavault(core.hhUser5.address, OTHER_ADDRESS),
+        registry.connect(core.hhUser5).createMetaVault(core.hhUser5.address, OTHER_ADDRESS),
       );
     });
 
     it('should fail if not called by global operator', async () => {
       await expectThrow(
-        registry.connect(core.hhUser5).createMetavault(core.hhUser5.address, OTHER_ADDRESS),
+        registry.connect(core.hhUser5).createMetaVault(core.hhUser5.address, OTHER_ADDRESS),
         `OnlyDolomiteMargin: Caller is not a global operator <${core.hhUser5.address.toLowerCase()}>`,
       );
     });
@@ -300,7 +300,7 @@ describe('BerachainRewardsRegistry', () => {
       )).to.equal(RewardVaultType.Infrared);
     });
 
-    it('should work normally if called by metavault', async () => {
+    it('should work normally if called by metaVault', async () => {
       await registry.connect(core.governance).ownerSetRewardVault(
         underlyingToken.address,
         RewardVaultType.Native,
@@ -315,11 +315,11 @@ describe('BerachainRewardsRegistry', () => {
         core.hhUser1.address,
         underlyingToken.address
       )).to.equal(RewardVaultType.Native);
-      const metavaultAddress = await registry.calculateMetavaultByAccount(core.hhUser1.address);
+      const metaVaultAddress = await registry.calculateMetaVaultByAccount(core.hhUser1.address);
       await beraFactory.createVault(core.hhUser1.address);
 
-      const metavaultImpersonator = await impersonate(metavaultAddress, true);
-      const res = await registry.connect(metavaultImpersonator).setAccountToAssetToDefaultType(
+      const metaVaultImpersonator = await impersonate(metaVaultAddress, true);
+      const res = await registry.connect(metaVaultImpersonator).setAccountToAssetToDefaultType(
         underlyingToken.address,
         RewardVaultType.Infrared
       );
@@ -392,7 +392,7 @@ describe('BerachainRewardsRegistry', () => {
     it('should work normally', async () => {
       const result = await registry.connect(core.governance).ownerSetIBgt(OTHER_ADDRESS);
       await expectEvent(registry, result, 'IBgtSet', {
-        ibgt: OTHER_ADDRESS,
+        iBgt: OTHER_ADDRESS,
       });
       expect(await registry.iBgt()).to.equal(OTHER_ADDRESS);
     });
@@ -416,7 +416,7 @@ describe('BerachainRewardsRegistry', () => {
     it('should work normally', async () => {
       const result = await registry.connect(core.governance).ownerSetIBgtStakingPool(OTHER_ADDRESS);
       await expectEvent(registry, result, 'IBgtStakingPoolSet', {
-        ibgtStakingPool: OTHER_ADDRESS,
+        iBgtStakingPool: OTHER_ADDRESS,
       });
       expect(await registry.iBgtStakingPool()).to.equal(OTHER_ADDRESS);
     });
@@ -436,49 +436,49 @@ describe('BerachainRewardsRegistry', () => {
     });
   });
 
-  describe('#ownerSetMetavaultImplementation', () => {
+  describe('#ownerSetMetaVaultImplementation', () => {
     it('should work normally', async () => {
-      const result = await registry.connect(core.governance).ownerSetMetavaultImplementation(OTHER_ADDRESS);
-      await expectEvent(registry, result, 'MetavaultImplementationSet', {
-        metavaultImplementation: OTHER_ADDRESS,
+      const result = await registry.connect(core.governance).ownerSetMetaVaultImplementation(OTHER_ADDRESS);
+      await expectEvent(registry, result, 'MetaVaultImplementationSet', {
+        metaVaultImplementation: OTHER_ADDRESS,
       });
-      expect(await registry.metavaultImplementation()).to.equal(OTHER_ADDRESS);
+      expect(await registry.metaVaultImplementation()).to.equal(OTHER_ADDRESS);
     });
 
     it('should fail when not called by owner', async () => {
       await expectThrow(
-        registry.connect(core.hhUser1).ownerSetMetavaultImplementation(OTHER_ADDRESS),
+        registry.connect(core.hhUser1).ownerSetMetaVaultImplementation(OTHER_ADDRESS),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
     it('should fail if zero address is set', async () => {
       await expectThrow(
-        registry.connect(core.governance).ownerSetMetavaultImplementation(ADDRESS_ZERO),
+        registry.connect(core.governance).ownerSetMetaVaultImplementation(ADDRESS_ZERO),
         'BerachainRewardsRegistry: Invalid implementation address',
       );
     });
   });
 
-  describe('#ownerSetMetavaultOperator', () => {
+  describe('#ownerSetMetaVaultOperator', () => {
     it('should work normally', async () => {
-      const result = await registry.connect(core.governance).ownerSetMetavaultOperator(OTHER_ADDRESS);
-      await expectEvent(registry, result, 'MetavaultOperatorSet', {
-        metavaultOperator: OTHER_ADDRESS,
+      const result = await registry.connect(core.governance).ownerSetMetaVaultOperator(OTHER_ADDRESS);
+      await expectEvent(registry, result, 'MetaVaultOperatorSet', {
+        metaVaultOperator: OTHER_ADDRESS,
       });
-      expect(await registry.metavaultOperator()).to.equal(OTHER_ADDRESS);
+      expect(await registry.metaVaultOperator()).to.equal(OTHER_ADDRESS);
     });
 
     it('should fail when not called by owner', async () => {
       await expectThrow(
-        registry.connect(core.hhUser1).ownerSetMetavaultOperator(OTHER_ADDRESS),
+        registry.connect(core.hhUser1).ownerSetMetaVaultOperator(OTHER_ADDRESS),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
     it('should fail if zero address is set', async () => {
       await expectThrow(
-        registry.connect(core.governance).ownerSetMetavaultOperator(ADDRESS_ZERO),
+        registry.connect(core.governance).ownerSetMetaVaultOperator(ADDRESS_ZERO),
         'BerachainRewardsRegistry: Invalid operator address',
       );
     });
@@ -527,7 +527,7 @@ describe('BerachainRewardsRegistry', () => {
     it('should fail if zero address is set', async () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetIBgtIsolationModeVaultFactory(ADDRESS_ZERO),
-        'BerachainRewardsRegistry: Invalid ibgt factory address',
+        'BerachainRewardsRegistry: Invalid iBgt factory address',
       );
     });
   });

@@ -53,20 +53,20 @@ contract InfraredBGTIsolationModeTokenVaultV1 is
     // ==================================================================
 
     bytes32 private constant _FILE = "InfraredBGTUserVaultV1";
-    bytes32 private constant _IS_DEPOSIT_SOURCE_METAVAULT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isDepositSourceMetavault")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _IS_DEPOSIT_SOURCE_METAVAULT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isDepositSourceMetaVault")) - 1); // solhint-disable-line max-line-length
 
     uint256 public constant DEFAULT_ACCOUNT_NUMBER = 0;
     uint256 public constant MAX_NUM_REWARD_TOKENS = 10;
 
-    function setIsDepositSourceMetavault(
-        bool _isDepositSourceMetavault
+    function setIsDepositSourceMetaVault(
+        bool _isDepositSourceMetaVault
     ) external {
         Require.that(
-            msg.sender == registry().getVaultToMetavault(address(this)),
+            msg.sender == registry().getVaultToMetaVault(address(this)),
             _FILE,
-            "Only metavault"
+            "Only metaVault"
         );
-        _setIsDepositSourceMetavault(_isDepositSourceMetavault);
+        _setIsDepositSourceMetaVault(_isDepositSourceMetaVault);
     }
 
     function stake(uint256 _amount) external onlyVaultOwner(msg.sender) {
@@ -88,12 +88,12 @@ contract InfraredBGTIsolationModeTokenVaultV1 is
     public
     override(IsolationModeTokenVaultV1, IIsolationModeTokenVaultV1)
     onlyVaultFactory(msg.sender) {
-        if (isDepositSourceMetavault()) {
-            address metavault = registry().getVaultToMetavault(address(this));
-            assert(metavault != address(0));
+        if (isDepositSourceMetaVault()) {
+            address metaVault = registry().getVaultToMetaVault(address(this));
+            assert(metaVault != address(0));
 
-            _setIsDepositSourceMetavault(false);
-            IERC20(UNDERLYING_TOKEN()).safeTransferFrom(metavault, address(this), _amount);
+            _setIsDepositSourceMetaVault(false);
+            IERC20(UNDERLYING_TOKEN()).safeTransferFrom(metaVault, address(this), _amount);
         } else {
             IERC20(UNDERLYING_TOKEN()).safeTransferFrom(_from, address(this), _amount);
         }
@@ -117,7 +117,7 @@ contract InfraredBGTIsolationModeTokenVaultV1 is
         IERC20(UNDERLYING_TOKEN()).safeTransfer(_recipient, _amount);
     }
 
-    function isDepositSourceMetavault() public view returns (bool) {
+    function isDepositSourceMetaVault() public view returns (bool) {
         return _getUint256(_IS_DEPOSIT_SOURCE_METAVAULT_SLOT) == 1;
     }
 
@@ -134,9 +134,9 @@ contract InfraredBGTIsolationModeTokenVaultV1 is
         return registry().dolomiteRegistry();
     }
 
-    function _setIsDepositSourceMetavault(bool _isDepositSourceMetavault) internal {
-        _setUint256(_IS_DEPOSIT_SOURCE_METAVAULT_SLOT, _isDepositSourceMetavault ? 1 : 0);
-        emit IsDepositSourceMetavaultSet(_isDepositSourceMetavault);
+    function _setIsDepositSourceMetaVault(bool _isDepositSourceMetaVault) internal {
+        _setUint256(_IS_DEPOSIT_SOURCE_METAVAULT_SLOT, _isDepositSourceMetaVault ? 1 : 0);
+        emit IsDepositSourceMetaVaultSet(_isDepositSourceMetaVault);
     }
 
     function _stake(uint256 _amount) internal {
