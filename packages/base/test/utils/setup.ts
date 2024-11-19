@@ -29,7 +29,6 @@ import { IChainlinkPriceOracleV1__factory } from 'packages/oracles/src/types';
 import {
   DolomiteERC20__factory,
   DolomiteERC20WithPayable__factory,
-  DolomiteOwner,
   DolomiteOwner__factory,
   IBorrowPositionProxyV2__factory,
   IDepositWithdrawalProxy__factory,
@@ -716,16 +715,11 @@ export async function setupCoreProtocol<T extends NetworkType>(
     governance,
   );
 
-  let ownerAdapter: DolomiteOwner | undefined;
-  try {
-    ownerAdapter = getContract(
-      Deployments.DolomiteOwner[config.network].address,
-      DolomiteOwner__factory.connect,
-      governance,
-    );
-  } catch {
-    ownerAdapter = undefined;
-  }
+  const ownerAdapter = getContract(
+    Deployments.DolomiteOwnerV1[config.network].address,
+    DolomiteOwner__factory.connect,
+    governance,
+  );
 
   const testEcosystem = await createTestEcosystem(dolomiteMargin, governance);
 
