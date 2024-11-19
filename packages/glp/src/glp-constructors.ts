@@ -186,3 +186,15 @@ export function getGMXUnwrapperTraderV2ConstructorParams(
     core.dolomiteRegistry.address,
   ];
 }
+
+export function getStakedGmxReaderConstructorParams(
+  glpFactory: { address: string },
+): any[] {
+  return [glpFactory.address];
+}
+
+export function getEsGmxReaderConstructorParams(
+  glpFactory: { address: string },
+): any[] {
+  return [glpFactory.address];
+}

@@ -29,7 +29,7 @@ export enum NetworkName {
   XLayer = 'x_layer',
 }
 
-export const networkToNetworkNameMap: Record<Network, NetworkName> = {
+export const NETWORK_TO_NETWORK_NAME_MAP: Record<Network, NetworkName> = {
   [Network.ArbitrumOne]: NetworkName.ArbitrumOne,
   [Network.Base]: NetworkName.Base,
   [Network.Berachain]: NetworkName.Berachain,

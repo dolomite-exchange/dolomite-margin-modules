@@ -14,6 +14,8 @@ import { BerachainRewardsEcosystem } from '../ecosystem-utils/berachain-rewards'
 
 export interface CoreProtocolTokensBerachain extends CoreProtocolTokens<Network.Berachain> {
   honey: IERC20;
+  sbtc: IERC20;
+  stoneBtc: IERC20;
   uniBtc: IERC20;
   wbera: IWETH;
   bgt: IBGT;

@@ -20,15 +20,27 @@
 
 pragma solidity ^0.8.9;
 
+import { IERC4626 } from "@openzeppelin/contracts/interfaces/IERC4626.sol";
+import { IDolomiteRegistry } from "./IDolomiteRegistry.sol";
+
 
 /**
- * @title   IJonesGLPAdapter
+ * @title   IDolomiteERC4626
  * @author  Dolomite
  *
- * @notice  Interface for interacting with Jones DAO's GLP adapter (0x42EfE3E686808ccA051A49BCDE34C5CbA2EBEfc1). The
- *          adapter serves as the primary entry/exit point for users looking to mint/redeem jUSDC.
+ * @notice  Interface that defines an ERC4626 wrapper around a user's Dolomite balance.
  */
-interface IJonesGLPAdapter {
+interface IDolomiteERC4626 is IERC4626 {
 
-    function depositStable(uint256 _assets, bool _compound) external returns (uint256);
+    struct MetadataStruct {
+        string name;
+        string symbol;
+        uint8 decimals;
+    }
+
+    function isValidReceiver(address _receiver) external view returns (bool);
+
+    function marketId() external view returns (uint256);
+
+    function dolomiteRegistry() external view returns (IDolomiteRegistry);
 }

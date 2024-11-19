@@ -3,7 +3,7 @@ import {
   TargetLiquidationPenalty,
 } from '@dolomite-exchange/modules-base/src/utils/constructors/dolomite';
 import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { parseUsdt, parseWbtc } from '@dolomite-exchange/modules-base/src/utils/math-utils';
+import { parseUsdt, parseBtc } from '@dolomite-exchange/modules-base/src/utils/math-utils';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { parseEther } from 'ethers/lib/utils';
@@ -106,8 +106,8 @@ async function main(): Promise<DryRunOutput<Network.PolygonZkEvm>> {
       core.interestSetters.linearStepFunction14L86U90OInterestSetter,
       TargetCollateralization.Base,
       TargetLiquidationPenalty.Base,
-      parseWbtc(`${5_000}`),
-      parseWbtc(`${4_000}`),
+      parseBtc(`${5_000}`),
+      parseBtc(`${4_000}`),
       false,
     ),
     ...await prettyPrintEncodeAddMarket(

@@ -1,15 +1,18 @@
 import {
-  networkToNetworkNameMap,
+  NETWORK_TO_NETWORK_NAME_MAP,
   NetworkType,
   ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { advanceByTimeDelta, impersonate } from '@dolomite-exchange/modules-base/test/utils';
 import { CoreProtocolType } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { BaseContract } from 'ethers';
 import hardhat from 'hardhat';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
+import { IDolomiteOwner__factory } from 'packages/base/src/types';
+import { advanceByTimeDelta } from 'packages/base/test/utils';
 import {
   createFolder,
   DenJsonUpload,
+  EncodedTransaction,
   prettyPrintEncodedDataWithTypeSafety,
   readDeploymentFile,
   TransactionBuilderUpload,
@@ -46,45 +49,78 @@ async function doStuffInternal<T extends NetworkType>(executionFn: () => Promise
   if (hardhat.network.name === 'hardhat') {
     const result = await executionFn();
 
-    if (result.core) {
+    if (result.core && result.upload.transactions.length > 0) {
       console.log('\tSimulating admin transactions...');
-      const signer = await impersonate((await result.core.delayedMultiSig.getOwners())[0], true);
-      const delayedMultiSig = result.core.delayedMultiSig.connect(signer);
-      const filter = delayedMultiSig.filters.Submission();
-      const transactionIds = [];
-      const timeDelay = result.skipTimeDelay ? 0 : await delayedMultiSig.secondsTimeLocked();
+      const ownerAddress = await result.core.dolomiteMargin.owner();
+      const invalidOwnerError = `Invalid governance (not DolomiteOwner or DelayedMultisig), found: ${ownerAddress}`;
 
-      if (result.skipTimeDelay) {
-        console.log('\tSkipping time delay...');
-        const impersonator = await impersonate(delayedMultiSig.address, true);
-        await delayedMultiSig.connect(impersonator).changeTimeLock(0);
+      let ownerContract: BaseContract;
+      let filter;
+      if (ownerAddress === result.core.ownerAdapter?.address) {
+        ownerContract = result.core.ownerAdapter;
+        filter = result.core.ownerAdapter.filters.TransactionSubmitted();
+      } else if (ownerAddress === result.core.delayedMultiSig.address) {
+        ownerContract = result.core.delayedMultiSig;
+        filter = result.core.delayedMultiSig.filters.Submission();
+      } else {
+        throw new Error(invalidOwnerError);
       }
 
+      const transactionIds = [];
+
       for (const transaction of result.upload.transactions) {
+        const signer = result.core.gnosisSafe;
         let txResult;
-        if (transaction.to === result.core.delayedMultiSig.address) {
+        if (transaction.to === result.core.governance.address) {
           txResult = await signer.sendTransaction({
             to: transaction.to,
             data: transaction.data,
             from: signer.address,
           });
         } else {
-          txResult = await delayedMultiSig.submitTransaction(transaction.to, ZERO_BI, transaction.data);
+          if (ownerAddress === result.core.ownerAdapter?.address) {
+            txResult = await result.core.ownerAdapter
+              .connect(signer)
+              .submitTransaction(transaction.to, transaction.data);
+          } else if (ownerAddress === result.core.delayedMultiSig.address) {
+            txResult = await result.core.delayedMultiSig
+              .connect(signer)
+              .submitTransaction(transaction.to, ZERO_BI, transaction.data);
+          } else {
+            throw new Error(invalidOwnerError);
+          }
         }
 
-        const submissionEvent = (await delayedMultiSig.queryFilter(filter, txResult.blockHash))[0];
+        const submissionEvent = (await ownerContract.queryFilter(filter, txResult.blockHash))[0];
         if (submissionEvent) {
-          transactionIds.push(submissionEvent.args.transactionId);
+          transactionIds.push((submissionEvent.args as any).transactionId);
         }
       }
 
-      console.log('\tSubmitted transactions. Advancing time forward...');
-      await advanceByTimeDelta(timeDelay + 1);
+      let secondsTimeLocked: number;
+      if (ownerAddress === result.core.ownerAdapter?.address) {
+        secondsTimeLocked = await result.core.ownerAdapter.secondsTimeLocked();
+      } else if (ownerAddress === result.core.delayedMultiSig.address) {
+        secondsTimeLocked = await result.core.delayedMultiSig.secondsTimeLocked();
+      } else {
+        throw new Error(invalidOwnerError);
+      }
+
+      if (secondsTimeLocked > 0) {
+        console.log(`\tAwaiting timelock duration: ${secondsTimeLocked}s`);
+        await advanceByTimeDelta(secondsTimeLocked);
+      }
 
       console.log('\tExecuting transactions...');
       for (const transactionId of transactionIds) {
         try {
-          await delayedMultiSig.executeMultipleTransactions([transactionId], {});
+          if (ownerAddress === result.core.ownerAdapter?.address) {
+            await result.core.ownerAdapter.executeTransactions([transactionId], {});
+          } else if (ownerAddress === result.core.delayedMultiSig.address) {
+            await result.core.delayedMultiSig.executeTransaction(transactionId, {});
+          } else {
+            return Promise.reject(new Error(invalidOwnerError));
+          }
         } catch (e: any) {
           const transactionIndex = transactionId.sub(transactionIds[0]).toNumber();
           throw new Error(
@@ -104,42 +140,74 @@ async function doStuffInternal<T extends NetworkType>(executionFn: () => Promise
       console.log('\tNo invariants found, skipping...');
     }
   } else {
-    return executionFn().then(async (result) => {
-      if (typeof result === 'undefined') {
-        return;
+    const result = await executionFn();
+    if (typeof result === 'undefined' || result.upload.transactions.length === 0) {
+      return;
+    }
+
+    const ownerAddress = await result.core.dolomiteMargin.owner();
+    const invalidOwnerAddress = `Invalid governance (not DolomiteOwner or DelayedMultisig), found: ${ownerAddress}`;
+
+    let encodedTransactionForExecution: EncodedTransaction | null = null;
+    if (result.upload.addExecuteImmediatelyTransactions && result.upload.transactions.length > 0) {
+      let transactionCount: number;
+      if (ownerAddress === result.core.ownerAdapter?.address) {
+        transactionCount = (await result.core.ownerAdapter.transactionCount()).toNumber();
+      } else if (ownerAddress === result.core.delayedMultiSig.address) {
+        transactionCount = (await result.core.delayedMultiSig.transactionCount()).toNumber();
+      } else {
+        return Promise.reject(new Error(invalidOwnerAddress));
       }
 
-      if (result.upload.addExecuteImmediatelyTransactions && result.upload.transactions.length > 0) {
-        let transactionCount = (await result.core.delayedMultiSig.transactionCount()).toNumber();
-        const submitTransactionMethodId = '0xc6427474';
-        const transactionIds: number[] = [];
-        result.upload.transactions.forEach((t) => {
-          if (t.data.startsWith(submitTransactionMethodId)) {
-            transactionIds.push(transactionCount++);
-          }
-        });
+      const submitTransactionMethodId = '0xc6427474';
+      const transactionIds: number[] = [];
+      result.upload.transactions.forEach((t) => {
+        if (t.data.startsWith(submitTransactionMethodId)) {
+          transactionIds.push(transactionCount++);
+        }
+      });
 
-        assertHardhatInvariant(transactionIds.length > 0, 'Transaction IDs length must be greater than 0');
+      assertHardhatInvariant(transactionIds.length > 0, 'Transaction IDs length must be greater than 0');
 
-        console.log('============================================================');
-        console.log('================ Real Transaction Execution ================');
-        console.log('============================================================');
-        await prettyPrintEncodedDataWithTypeSafety(
+      console.log('============================================================');
+      console.log('================ Real Transaction Execution ================');
+      console.log('============================================================');
+
+      if (ownerAddress === result.core.ownerAdapter?.address) {
+        encodedTransactionForExecution = await prettyPrintEncodedDataWithTypeSafety(
           result.core,
-          { delayedMultisig: result.core.delayedMultiSig },
-          'delayedMultisig',
+          { ownerAdapter: result.core.ownerAdapter },
+          'ownerAdapter',
+          'executeTransactions',
+          [transactionIds],
+          { skipWrappingCalldataInSubmitTransaction: true },
+        );
+      } else if (ownerAddress === result.core.delayedMultiSig.address) {
+        encodedTransactionForExecution = await prettyPrintEncodedDataWithTypeSafety(
+          result.core,
+          { delayedMultiSig: result.core.delayedMultiSig },
+          'delayedMultiSig',
           'executeMultipleTransactions',
           [transactionIds],
           { skipWrappingCalldataInSubmitTransaction: true },
         );
+      } else {
+        return Promise.reject(new Error(invalidOwnerAddress));
       }
+    }
 
-      const scriptName = result.scriptName;
-      const networkName = networkToNetworkNameMap[result.upload.chainId];
-      const dir = `${__dirname}/../deploy/safe-transactions/${networkName}/output`;
-      createFolder(dir);
-      writeFile(`${dir}/${scriptName}.json`, JSON.stringify(result.upload, null, 2));
-    });
+    const scriptName = result.scriptName;
+    const networkName = NETWORK_TO_NETWORK_NAME_MAP[result.upload.chainId];
+    const dir = `${__dirname}/../deploy/safe-transactions/${networkName}/output`;
+    createFolder(dir);
+    writeFile(`${dir}/${scriptName}.json`, JSON.stringify(result.upload, null, 2));
+
+    if (encodedTransactionForExecution) {
+      writeFile(
+        `${dir}/${scriptName}-t.json`,
+        JSON.stringify({ ...result.upload, transactions: [encodedTransactionForExecution] }, null, 2),
+      );
+    }
   }
 }
 

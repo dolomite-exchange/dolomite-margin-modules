@@ -1,5 +1,9 @@
 import { address } from '@dolomite-exchange/dolomite-margin';
 import {
+  DolomiteERC4626,
+  DolomiteERC4626__factory,
+  DolomiteERC4626WithPayable,
+  DolomiteERC4626WithPayable__factory,
   HandlerRegistry,
   IDolomiteInterestSetter,
   IDolomitePriceOracle,
@@ -17,6 +21,7 @@ import {
   REDSTONE_PRICE_AGGREGATORS_MAP,
 } from '@dolomite-exchange/modules-base/src/utils/constants';
 import {
+  getDolomiteErc4626ProxyConstructorParams,
   getLiquidationPremiumForTargetLiquidationPenalty,
   getMarginPremiumForTargetCollateralization,
   getOwnerAddMarketParameters,
@@ -24,19 +29,18 @@ import {
   TargetLiquidationPenalty,
 } from '@dolomite-exchange/modules-base/src/utils/constructors/dolomite';
 import {
-  createContractWithLibrary,
-  createContractWithName,
-} from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import {
   ADDRESS_ZERO,
   Network,
-  networkToNetworkNameMap,
+  NETWORK_TO_NETWORK_NAME_MAP,
   NetworkType,
+  ONE_BI,
   TEN_BI,
   ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { impersonate } from '@dolomite-exchange/modules-base/test/utils';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { CoreProtocolType } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { IGmxV2IsolationModeVaultFactory } from '@dolomite-exchange/modules-gmx-v2/src/types';
 import {
   CoreProtocolWithChainlinkOld,
   CoreProtocolWithChainlinkV3,
@@ -71,18 +75,17 @@ import {
 import { Etherscan } from '@nomicfoundation/hardhat-verify/etherscan';
 import { Libraries } from '@nomiclabs/hardhat-ethers/src/types';
 import { sleep } from '@openzeppelin/upgrades';
-import { BaseContract, BigNumber, BigNumberish, PopulatedTransaction } from 'ethers';
-import { commify, formatEther, FormatTypes, ParamType, parseEther } from 'ethers/lib/utils';
+import { BaseContract, BigNumber, BigNumberish, PopulatedTransaction, Signer } from 'ethers';
+import { commify, formatEther, FormatTypes, keccak256, ParamType, parseEther } from 'ethers/lib/utils';
 import fs, { readFileSync } from 'fs';
 import fsExtra from 'fs-extra';
 import hardhat, { artifacts, ethers, network } from 'hardhat';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
+import { createContractWithName } from 'packages/base/src/utils/dolomite-utils';
 import { CoreProtocolXLayer } from 'packages/base/test/utils/core-protocols/core-protocol-x-layer';
 import path, { join } from 'path';
-import {
-  CoreProtocolArbitrumOne,
-} from '@dolomite-exchange/modules-base/test/utils/core-protocols/core-protocol-arbitrum-one';
-import { IGmxV2IsolationModeVaultFactory } from '@dolomite-exchange/modules-gmx-v2/src/types';
+import ModuleDeployments from '../deploy/deployments.json';
+import { CREATE3Factory__factory } from '../saved-types';
 
 type ChainId = string;
 
@@ -234,7 +237,7 @@ function getDebugFilePath(artifactPath: string): string {
   return artifactPath.replace(/\.json$/, '.dbg.json');
 }
 
-function getBuildInfoFromDebugFileSync(debugFilePath: string): string | undefined {
+export function getBuildInfoFromDebugFileSync(debugFilePath: string): string | undefined {
   if (fsExtra.pathExistsSync(debugFilePath)) {
     const { buildInfo } = fsExtra.readJsonSync(debugFilePath);
     return path.resolve(path.dirname(debugFilePath), buildInfo);
@@ -293,6 +296,24 @@ export function getOldDeploymentVersionNamesByDeploymentKey(nameWithoutVersionPo
   }, [] as string[]);
 }
 
+export function isDeployed(contractName: string): boolean {
+  const fileBuffer = fs.readFileSync(DEPLOYMENT_FILE_NAME);
+  let file: Record<string, Record<ChainId, any>>;
+  try {
+    file = JSON.parse(fileBuffer.toString()) ?? {};
+  } catch (e) {
+    file = {};
+  }
+
+  const networkName = process.env.NETWORK ?? '';
+  const chainId = hardhat.userConfig.networks![networkName]!.chainId;
+  assertHardhatInvariant(
+    typeof chainId === 'number' && NETWORK_TO_NETWORK_NAME_MAP[chainId.toString() as Network] === networkName,
+    `Invalid chainId, found: ${chainId}`,
+  );
+  return file[contractName]?.[chainId.toString()];
+}
+
 let nonce: number | undefined = undefined;
 
 export async function deployContractAndSave(
@@ -300,6 +321,14 @@ export async function deployContractAndSave(
   args: ConstructorArgument[],
   contractRename?: string,
   libraries?: Record<string, string>,
+  options: {
+    nonce?: number;
+    gasLimit?: BigNumberish;
+    gasPrice?: BigNumberish;
+    type?: number;
+    skipArtifactInitialization?: boolean;
+    signer?: Signer;
+  } = {},
   attempts: number = 0,
 ): Promise<address> {
   if (attempts === 3) {
@@ -315,11 +344,13 @@ export async function deployContractAndSave(
     file = {};
   }
 
-  await initializeFreshArtifactFromWorkspace(contractName);
+  if (!options.skipArtifactInitialization) {
+    await initializeFreshArtifactFromWorkspace(contractName);
+  }
   const networkName = process.env.NETWORK ?? '';
   const chainId = hardhat.userConfig.networks![networkName]!.chainId;
   assertHardhatInvariant(
-    typeof chainId === 'number' && networkToNetworkNameMap[chainId.toString() as Network] === networkName,
+    typeof chainId === 'number' && NETWORK_TO_NETWORK_NAME_MAP[chainId.toString() as Network] === networkName,
     `Invalid chainId, found: ${chainId}`,
   );
   const usedContractName = contractRename ?? contractName;
@@ -345,15 +376,41 @@ export async function deployContractAndSave(
 
   console.log(`\tDeploying ${usedContractName} to network ${network.name}...`);
 
-  let contract: BaseContract;
+  let contract: { address: string; transactionHash: string };
   try {
+    const signer = options.signer ?? ethers.provider.getSigner(0);
     if (nonce === undefined) {
-      const signer = ethers.provider.getSigner(0);
       nonce = await ethers.provider.getTransactionCount(await signer.getAddress(), 'pending');
     }
-    contract = libraries
-      ? await createContractWithLibrary(contractName, libraries, args, { nonce })
-      : await createContractWithName(contractName, args, { nonce });
+    const opts = {
+      nonce: options.nonce === undefined ? nonce : options.nonce,
+      gasPrice: options.gasPrice,
+      gasLimit: options.gasLimit,
+      type: options.type,
+    };
+
+    if (contractName === 'CREATE3Factory') {
+      const result = await createContractWithName('CREATE3Factory', args, opts, signer);
+      contract = {
+        address: result.address,
+        transactionHash: result.deployTransaction.hash,
+      };
+    } else {
+      const factory = await ethers.getContractFactory(contractName, { libraries, signer: options.signer });
+      const transaction = factory.getDeployTransaction(...args);
+      const deployer = CREATE3Factory__factory.connect(
+        (ModuleDeployments.CREATE3Factory as any)[chainId].address,
+        signer,
+      );
+      const salt = keccak256(ethers.utils.defaultAbiCoder.encode(['string'], [usedContractName]));
+      const result = await deployer.deploy(salt, transaction.data!, opts);
+      await result.wait();
+      contract = {
+        address: await deployer.getDeployed(await signer.getAddress(), salt),
+        transactionHash: result.hash,
+      };
+    }
+
     nonce += 1;
   } catch (e) {
     console.error(`\tCould not deploy at attempt ${attempts + 1} due for ${contractName} to error:`, e);
@@ -365,14 +422,14 @@ export async function deployContractAndSave(
       const signer = ethers.provider.getSigner(0);
       nonce = await ethers.provider.getTransactionCount(await signer.getAddress(), 'pending');
     }
-    return deployContractAndSave(contractName, args, contractRename, libraries, attempts + 1);
+    return deployContractAndSave(contractName, args, contractRename, libraries, options, attempts + 1);
   }
 
   file[usedContractName] = {
     ...file[usedContractName],
     [chainId]: {
       address: contract.address,
-      transaction: contract.deployTransaction.hash,
+      transaction: contract.transactionHash,
       isVerified: false,
     },
   };
@@ -569,6 +626,42 @@ export async function deployLinearInterestSetterAndSave(
   );
 }
 
+export async function deployDolomiteErc4626Token(
+  core: CoreProtocolType<any>,
+  tokenName: string,
+  marketId: BigNumberish,
+): Promise<DolomiteERC4626> {
+  const contractName = getMaxDeploymentVersionNameByDeploymentKey('DolomiteERC4626Implementation', 1);
+  const implementation = DolomiteERC4626__factory.connect(
+    (ModuleDeployments as any)[contractName][core.network].address,
+    core.hhUser1,
+  );
+  const address = await deployContractAndSave(
+    'RegistryProxy',
+    await getDolomiteErc4626ProxyConstructorParams(core, implementation, marketId),
+    `Dolomite${tokenName}4626Token`,
+  );
+  return DolomiteERC4626__factory.connect(address, core.hhUser1);
+}
+
+export async function deployDolomiteErc4626WithPayableToken(
+  core: CoreProtocolType<any>,
+  tokenName: string,
+  marketId: BigNumberish,
+): Promise<DolomiteERC4626WithPayable> {
+  const contractName = getMaxDeploymentVersionNameByDeploymentKey('DolomiteERC4626WithPayableImplementation', 1);
+  const implementation = DolomiteERC4626__factory.connect(
+    (ModuleDeployments as any)[contractName][core.network].address,
+    core.hhUser1,
+  );
+  const address = await deployContractAndSave(
+    'RegistryProxy',
+    await getDolomiteErc4626ProxyConstructorParams(core, implementation, marketId),
+    `Dolomite${tokenName}4626WithPayableToken`,
+  );
+  return DolomiteERC4626WithPayable__factory.connect(address, core.hhUser1);
+}
+
 export function sortFile(file: Record<string, Record<ChainId, any>>) {
   const sortedFileKeys = Object.keys(file).sort((a, b) => {
     const aSplitPoint = a.search(/V\d+$/);
@@ -677,8 +770,7 @@ async function getFormattedTokenName<T extends NetworkType>(
   const token = IERC20Metadata__factory.connect(tokenAddress, core.hhUser1);
   try {
     mostRecentTokenDecimals = await token.decimals();
-  } catch (e) {
-  }
+  } catch (e) {}
 
   const cachedName = addressToNameCache[tokenAddress.toString().toLowerCase()];
   if (typeof cachedName !== 'undefined') {
@@ -804,7 +896,9 @@ export async function prettyPrintEncodedDataWithTypeSafety<
     const repeatLength = 76 + (counter - 1).toString().length + key.toString().length + methodName.toString().length;
     console.log(''); // add a new line
     console.log(
-      `=================================== ${counter++} - ${String(key)}.${String(methodName)} ===================================`,
+      `=================================== ${counter++} - ${String(key)}.${String(
+        methodName,
+      )} ===================================`,
     );
     console.log('Readable:\t', `${String(key)}.${String(methodName)}(\n\t\t\t${mappedArgs.join(' ,\n\t\t\t')}\n\t\t)`);
     console.log(
@@ -824,20 +918,27 @@ export async function prettyPrintEncodedDataWithTypeSafety<
     };
   }
 
-  if ((await core.dolomiteMargin.owner()) === core.delayedMultiSig.address) {
-    const outerTransaction = await core.delayedMultiSig.populateTransaction.submitTransaction(
+  let outerTransaction: PopulatedTransaction;
+  if ((await core.dolomiteMargin.owner()) === core.ownerAdapter?.address) {
+    outerTransaction = await core.ownerAdapter.populateTransaction.submitTransaction(
+      transaction.to!,
+      transaction.data!,
+    );
+  } else if ((await core.dolomiteMargin.owner()) === core.delayedMultiSig.address) {
+    outerTransaction = await core.delayedMultiSig.populateTransaction.submitTransaction(
       transaction.to!,
       transaction.value ?? ZERO_BI,
       transaction.data!,
     );
-    return {
-      to: outerTransaction.to!,
-      value: outerTransaction.value?.toString() ?? '0',
-      data: outerTransaction.data!,
-    };
+  } else {
+    return Promise.reject(new Error('Unknown owner contract needed!'));
   }
 
-  return Promise.reject(new Error('Unknown owner function needed!'));
+  return {
+    to: outerTransaction.to!,
+    value: outerTransaction.value?.toString() ?? '0',
+    data: outerTransaction.data!,
+  };
 }
 
 let mostRecentTokenDecimals: number | undefined = undefined;
@@ -1044,7 +1145,7 @@ export async function prettyPrintEncodeInsertChainlinkOracleV3<T extends Network
 }
 
 export async function prettyPrintEncodeInsertChronicleOracleV3(
-  core: CoreProtocolWithChronicle<Network.ArbitrumOne | Network.Berachain| Network.Mantle>,
+  core: CoreProtocolWithChronicle<Network.ArbitrumOne | Network.Berachain | Network.Mantle>,
   token: IERC20,
   invertPrice: boolean = CHRONICLE_PRICE_SCRIBES_MAP[core.config.network][token.address].invertPrice ?? false,
   tokenPairAddress: string | undefined = CHRONICLE_PRICE_SCRIBES_MAP[core.config.network][token.address]
@@ -1436,7 +1537,7 @@ export async function prettyPrintEncodeAddGmxV2Market(
       'ownerSetGmxMarketToIndexToken',
       [await factory.UNDERLYING_TOKEN(), await factory.INDEX_TOKEN()],
     ),
-    ...await prettyPrintEncodeAddAsyncIsolationModeMarket(
+    ...(await prettyPrintEncodeAddAsyncIsolationModeMarket(
       core,
       factory,
       core.oracleAggregatorV2,
@@ -1448,7 +1549,7 @@ export async function prettyPrintEncodeAddGmxV2Market(
       targetLiquidationPremium,
       maxSupplyWei,
       options,
-    ),
+    )),
   ];
 }
 
@@ -1520,5 +1621,5 @@ async function isValidAmount(token: IERC20, amount: BigNumberish) {
 
   const decimals = await IERC20Metadata__factory.connect(token.address, token.signer).decimals();
   const scale = TEN_BI.pow(decimals);
-  return realAmount.div(scale).gte(TEN_BI) && realAmount.div(scale).lte(100_000_000);
+  return realAmount.div(scale).gt(ONE_BI) && realAmount.div(scale).lte(100_000_000);
 }
