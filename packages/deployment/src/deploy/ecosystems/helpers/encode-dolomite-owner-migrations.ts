@@ -10,9 +10,13 @@ export async function encodeDolomiteOwnerMigrations(
   const ownable = Ownable__factory.connect(core.dolomiteMargin.address, core.hhUser1);
   if ((await ownable.owner()) !== dolomiteOwner.address) {
     transactions.push(
-      await prettyPrintEncodedDataWithTypeSafety(core, { ownable }, 'ownable', 'transferOwnership', [
-        dolomiteOwner.address,
-      ]),
+      await prettyPrintEncodedDataWithTypeSafety(
+        core,
+        { dolomiteMargin: ownable },
+        'dolomiteMargin',
+        'transferOwnership',
+        [dolomiteOwner.address],
+      ),
     );
   }
 }

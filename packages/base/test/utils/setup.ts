@@ -29,6 +29,7 @@ import { IChainlinkPriceOracleV1__factory } from 'packages/oracles/src/types';
 import {
   DolomiteERC20__factory,
   DolomiteERC20WithPayable__factory,
+  DolomiteOwner,
   DolomiteOwner__factory,
   IBorrowPositionProxyV2__factory,
   IDepositWithdrawalProxy__factory,
@@ -97,7 +98,8 @@ import {
   FBTC_MAP,
   FRAX_MAP,
   GMX_BTC_PLACEHOLDER_MAP,
-  GMX_MAP, GNOSIS_SAFE_MAP,
+  GMX_MAP,
+  GNOSIS_SAFE_MAP,
   GRAI_MAP,
   GRAIL_MAP,
   HONEY_MAP,
@@ -161,7 +163,7 @@ import { CoreProtocolBerachain } from './core-protocols/core-protocol-berachain'
 import { CoreProtocolMantle, CoreProtocolParamsMantle } from './core-protocols/core-protocol-mantle';
 import { CoreProtocolPolygonZkEvm } from './core-protocols/core-protocol-polygon-zkevm';
 import { CoreProtocolXLayer } from './core-protocols/core-protocol-x-layer';
-import { createDolomiteOwner, DolomiteMargin, Expiry } from './dolomite';
+import { DolomiteMargin, Expiry } from './dolomite';
 import { createAbraEcosystem } from './ecosystem-utils/abra';
 import { createArbEcosystem } from './ecosystem-utils/arb';
 import { createCamelotEcosystem } from './ecosystem-utils/camelot';
@@ -183,7 +185,6 @@ import { createPremiaEcosystem } from './ecosystem-utils/premia';
 import { createTestEcosystem } from './ecosystem-utils/testers';
 import { createUmamiEcosystem } from './ecosystem-utils/umami';
 import { impersonate, impersonateOrFallback, resetForkIfPossible } from './index';
-import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
 
 /**
  * Config to for setting up tests in the `before` function
@@ -715,7 +716,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
     governance,
   );
 
-  let ownerAdapter;
+  let ownerAdapter: DolomiteOwner | undefined;
   try {
     ownerAdapter = getContract(
       Deployments.DolomiteOwner[config.network].address,
@@ -723,7 +724,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
       governance,
     );
   } catch {
-    ownerAdapter = null;
+    ownerAdapter = undefined;
   }
 
   const testEcosystem = await createTestEcosystem(dolomiteMargin, governance);

@@ -2,7 +2,7 @@ import CoreDeployments from '@dolomite-exchange/dolomite-margin/dist/migrations/
 import {
   DolomiteRegistryImplementation__factory,
   EventEmitterRegistry__factory,
-  IDolomiteMargin, IDolomiteOwner__factory,
+  IDolomiteOwner__factory,
   IDolomiteRegistry__factory,
   IGenericTraderProxyV1,
   IGenericTraderProxyV1__factory,
@@ -39,9 +39,7 @@ import {
   deployContractAndSave,
   EncodedTransaction,
   getMaxDeploymentVersionNameByDeploymentKey,
-  getOldDeploymentVersionNamesByDeploymentKey,
   prettyPrintEncodedDataWithTypeSafety,
-  readDeploymentFile,
   TRANSACTION_BUILDER_VERSION,
 } from '../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../utils/dry-run-utils';
@@ -51,12 +49,18 @@ import { deployInterestSetters } from './helpers/deploy-interest-setters';
 import { deployOracleAggregator } from './helpers/deploy-oracle-aggregator';
 import { encodeDolomiteOwnerMigrations } from './helpers/encode-dolomite-owner-migrations';
 import { encodeDolomiteRegistryMigrations } from './helpers/encode-dolomite-registry-migrations';
+import { encodeIsolationModeFreezableLiquidatorMigrations } from './helpers/encode-isolation-mode-freezable-liquidator-migrations';
+import ModuleDeployments from 'packages/deployment/src/deploy/deployments.json';
 
 const THIRTY_MINUTES_SECONDS = 60 * 30;
 const HANDLER_ADDRESS = '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe'; // Level Initiator
 
 async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   const network = (await getAnyNetwork()) as T;
+  if (!(ModuleDeployments.CREATE3Factory as any)?.[network]) {
+    return Promise.reject(new Error('CREATE3 not found! Please deploy first!'));
+  }
+
   const config: any = {
     network,
     networkNumber: parseInt(network, 10),
@@ -65,6 +69,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   const [hhUser1] = await Promise.all(
     (await ethers.getSigners()).map((s) => SignerWithAddressWithSafety.create(s.address)),
   );
+  const gnosisSafeSigner = await impersonateOrFallback(GNOSIS_SAFE_MAP[network], true, hhUser1);
   const transactions: EncodedTransaction[] = [];
 
   const dolomiteMargin = getDolomiteMarginContract<T>(config, hhUser1);
@@ -90,7 +95,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     getDolomiteOwnerConstructorParams(GNOSIS_SAFE_MAP[network], THIRTY_MINUTES_SECONDS),
     'DolomiteOwnerV1',
   );
-  const dolomiteOwner = IDolomiteOwner__factory.connect(dolomiteOwnerAddress, hhUser1);
+  const dolomiteOwner = IDolomiteOwner__factory.connect(dolomiteOwnerAddress, gnosisSafeSigner);
   const eventEmitterRegistryImplementationAddress = await deployContractAndSave(
     'EventEmitterRegistry',
     [],
@@ -195,6 +200,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   }
 
   // We can't set up the core protocol here because there are too many missing contracts/context
+  const delayedMultiSigAddress = CoreDeployments.PartiallyDelayedMultiSig[network].address;
   const genericTraderAddress = CoreDeployments.GenericTraderProxyV1[network].address;
   const governanceAddress = await dolomiteMargin.connect(hhUser1).owner();
   const governance = await impersonateOrFallback(governanceAddress, true, hhUser1);
@@ -202,12 +208,13 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     config,
     dolomiteMargin,
     dolomiteRegistry,
+    governance,
     hhUser1,
-    delayedMultiSig: IPartiallyDelayedMultiSig__factory.connect(governanceAddress, governance),
+    delayedMultiSig: IPartiallyDelayedMultiSig__factory.connect(delayedMultiSigAddress, gnosisSafeSigner),
     genericTraderProxy: IGenericTraderProxyV1__factory.connect(genericTraderAddress, governance),
+    gnosisSafe: gnosisSafeSigner,
+    ownerAdapter: dolomiteOwner,
   } as any;
-
-  await encodeDolomiteOwnerMigrations(dolomiteOwner, transactions, core);
 
   await encodeDolomiteRegistryMigrations(
     dolomiteRegistry,
@@ -241,73 +248,18 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     );
   }
 
-  if (!(await core.dolomiteMargin.getIsGlobalOperator(isolationModeFreezableLiquidatorProxyAddress))) {
-    transactions.push(
-      await prettyPrintEncodedDataWithTypeSafety(
-        core,
-        { dolomite: dolomiteMargin as IDolomiteMargin },
-        'dolomite',
-        'ownerSetGlobalOperator',
-        [isolationModeFreezableLiquidatorProxyAddress, true],
-      ),
-    );
+  await encodeIsolationModeFreezableLiquidatorMigrations(
+    core,
+    isolationModeFreezableLiquidatorProxyAddress,
+    transactions,
+  );
 
-    const oldFreezableLiquidatorNames = getOldDeploymentVersionNamesByDeploymentKey(
-      'IsolationModeFreezableLiquidatorProxy',
-      1,
-    );
-    const oldFreezableLiquidatorAddresses: string[] = [];
-    for (let i = 0; i < oldFreezableLiquidatorNames.length; i++) {
-      const oldVersion = readDeploymentFile()[oldFreezableLiquidatorNames[i]][network]?.address;
-      if (oldVersion) {
-        oldFreezableLiquidatorAddresses.push(oldVersion);
-      }
-
-      if (oldVersion && (await core.dolomiteMargin.getIsGlobalOperator(oldVersion))) {
-        transactions.push(
-          await prettyPrintEncodedDataWithTypeSafety(
-            core,
-            { dolomite: dolomiteMargin as IDolomiteMargin },
-            'dolomite',
-            'ownerSetGlobalOperator',
-            [oldVersion, false],
-          ),
-        );
-      }
-    }
-
-    const numMarkets = await dolomiteMargin.getNumMarkets();
-    for (let i = 0; i < numMarkets.toNumber(); i++) {
-      const liquidators = await liquidatorAssetRegistry.getLiquidatorsForAsset(i);
-      for (let j = 0; j < oldFreezableLiquidatorAddresses.length; j++) {
-        if (liquidators.some((l) => l === oldFreezableLiquidatorAddresses[j])) {
-          transactions.push(
-            await prettyPrintEncodedDataWithTypeSafety(
-              core,
-              { registry: liquidatorAssetRegistry },
-              'registry',
-              'ownerRemoveLiquidatorFromAssetWhitelist',
-              [i, oldFreezableLiquidatorAddresses[j]],
-            ),
-            await prettyPrintEncodedDataWithTypeSafety(
-              core,
-              { registry: liquidatorAssetRegistry },
-              'registry',
-              'ownerAddLiquidatorToAssetWhitelist',
-              [i, isolationModeFreezableLiquidatorProxyAddress],
-            ),
-          );
-        }
-      }
-    }
-  }
+  // This must be the last encoded transaction
+  await encodeDolomiteOwnerMigrations(dolomiteOwner, transactions, core);
 
   return {
     core: {
-      delayedMultiSig: IPartiallyDelayedMultiSig__factory.connect(
-        CoreDeployments.PartiallyDelayedMultiSig[network].address,
-        hhUser1,
-      ),
+      ...core,
       config: {
         network,
       },

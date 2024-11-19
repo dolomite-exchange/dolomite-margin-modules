@@ -141,7 +141,7 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
   public readonly liquidatorProxyV1: ILiquidatorProxyV1;
   public readonly liquidatorProxyV4: ILiquidatorProxyV4WithGenericTrader;
   public readonly oracleAggregatorV2: OracleAggregatorV2;
-  public readonly ownerAdapter: DolomiteOwner;
+  public readonly ownerAdapter?: DolomiteOwner;
   public readonly testEcosystem: TestEcosystem | undefined;
   /// =========================
   /// Markets and Tokens
