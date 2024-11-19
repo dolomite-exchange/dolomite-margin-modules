@@ -123,7 +123,7 @@ contract BerachainRewardsMetavault is ProxyContractHelpers, IBerachainRewardsMet
     ) external onlyChildVault(msg.sender) {
         INativeRewardVault rewardVault = INativeRewardVault(REGISTRY().rewardVault(_asset, _type));
         rewardVault.withdraw(_amount);
-        IERC20(_asset).approve(msg.sender, _amount);
+        IERC20(_asset).safeTransfer(msg.sender, _amount);
     }
 
     function getReward(
@@ -179,7 +179,7 @@ contract BerachainRewardsMetavault is ProxyContractHelpers, IBerachainRewardsMet
 
         uint256 bal = IERC20(_asset).balanceOf(address(this));
         assert(bal > 0);
-        IERC20(_asset).safeApprove(msg.sender, bal);
+        IERC20(_asset).safeTransfer(msg.sender, bal);
 
         uint256 reward = token.balanceOf(address(this)) - preBal;
         if (reward > 0) {

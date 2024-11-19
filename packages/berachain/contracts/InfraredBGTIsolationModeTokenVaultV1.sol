@@ -121,8 +121,6 @@ contract InfraredBGTIsolationModeTokenVaultV1 is
         return _getUint256(_IS_DEPOSIT_SOURCE_METAVAULT_SLOT) == 1;
     }
 
-    // @audit @Corey, please check this over. Specifically, the connection between the metavault and the factory and this vault.
-    // Make sure user can't deposit an amount without sending a balance
     function registry() public view returns (IBerachainRewardsRegistry) {
         return IBerachainRewardsIsolationModeVaultFactory(VAULT_FACTORY()).berachainRewardsRegistry();
     }
