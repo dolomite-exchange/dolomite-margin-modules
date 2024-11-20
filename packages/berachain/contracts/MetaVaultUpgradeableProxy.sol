@@ -91,7 +91,7 @@ contract MetaVaultUpgradeableProxy is
             "Already initialized"
         );
         Require.that(
-            IBerachainRewardsRegistry(registry()).getAccountToMetaVault(_vaultOwner) == address(this),
+            IBerachainRewardsRegistry(registry()).getMetaVaultByAccount(_vaultOwner) == address(this),
             _FILE,
             "Invalid account",
             _vaultOwner

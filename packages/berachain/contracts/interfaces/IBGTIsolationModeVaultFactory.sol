@@ -20,8 +20,7 @@
 
 pragma solidity ^0.8.9;
 
-import { IBerachainRewardsRegistry } from "./IBerachainRewardsRegistry.sol";
-import { IMetaVaultRewardReceiverFactory } from "./IMetaVaultRewardReceiverFactory.sol";
+import { IMetaVaultRewardTokenFactory } from "./IMetaVaultRewardTokenFactory.sol";
 
 
 /**
@@ -30,19 +29,4 @@ import { IMetaVaultRewardReceiverFactory } from "./IMetaVaultRewardReceiverFacto
  *
  * @notice  Interface for a subclass of IsolationModeVaultFactory that creates vaults for Berachain RewardVault tokens.
  */
-interface IBGTIsolationModeVaultFactory is IMetaVaultRewardReceiverFactory {
-
-    // ================================================
-    // ==================== Events ====================
-    // ================================================
-
-    event BerachainRewardsRegistrySet(address _berachainRewardsRegistry);
-
-    // ===================================================
-    // ==================== Functions ====================
-    // ===================================================
-
-    function ownerSetBerachainRewardsRegistry(address _berachainRewardsRegistry) external;
-
-    function berachainRewardsRegistry() external view returns (IBerachainRewardsRegistry);
-}
+interface IBGTIsolationModeVaultFactory is IMetaVaultRewardTokenFactory {}

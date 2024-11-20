@@ -20,14 +20,8 @@
 
 pragma solidity ^0.8.9;
 
-import { IsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
-import { AccountActionLib } from "@dolomite-exchange/modules-base/contracts/lib/AccountActionLib.sol";
-import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
-import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { MetaVaultRewardTokenFactory } from "./MetaVaultRewardTokenFactory.sol";
 import { IBGTIsolationModeVaultFactory } from "./interfaces/IBGTIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
-import { IBerachainRewardsRegistry } from "./interfaces/IBerachainRewardsRegistry.sol";
 
 
 /**
@@ -39,17 +33,11 @@ import { IBerachainRewardsRegistry } from "./interfaces/IBerachainRewardsRegistr
  */
 contract BGTIsolationModeVaultFactory is
     IBGTIsolationModeVaultFactory,
-    IsolationModeVaultFactory
+    MetaVaultRewardTokenFactory
 {
-    using SafeERC20 for IERC20;
-
     // ============ Constants ============
 
     bytes32 private constant _FILE = "BGTIsolationModeVaultFactory";
-
-    // ============ Field Variables ============
-
-    IBerachainRewardsRegistry public override berachainRewardsRegistry;
 
     // ============ Constructor ============
 
@@ -60,60 +48,15 @@ contract BGTIsolationModeVaultFactory is
         address _userVaultImplementation,
         address _dolomiteMargin
     )
-    IsolationModeVaultFactory(
+    MetaVaultRewardTokenFactory(
+        _berachainRewardsRegistry,
         _underlyingToken,
         _borrowPositionProxy,
         _userVaultImplementation,
-        address(IBerachainRewardsRegistry(_berachainRewardsRegistry).dolomiteRegistry()),
         _dolomiteMargin
-    ) {
-        berachainRewardsRegistry = IBerachainRewardsRegistry(_berachainRewardsRegistry);
-    }
+    ) {}
 
     // ============ External Functions ============
-
-    // @audit @Corey please double check these permissions and confirm only the proper metavault can call
-    function depositIntoDolomiteMarginFromMetavault(
-        address _owner,
-        uint256 _toAccountNumber,
-        uint256 _amountWei
-    ) external {
-        address vault = _userToVaultMap[_owner];
-        /*assert(vault != address(0));*/
-
-        if (berachainRewardsRegistry.getVaultToMetavault(vault) == msg.sender) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            berachainRewardsRegistry.getVaultToMetavault(vault) == msg.sender,
-            _FILE,
-            "Can only deposit from metavault"
-        );
-        _enqueueTransfer(
-            vault,
-            address(DOLOMITE_MARGIN()),
-            _amountWei,
-            vault
-        );
-        AccountActionLib.deposit(
-            DOLOMITE_MARGIN(),
-            /* _accountOwner = */ vault,
-            /* _fromAccount = */ vault,
-            _toAccountNumber,
-            marketId,
-            IDolomiteStructs.AssetAmount({
-                sign: true,
-                denomination: IDolomiteStructs.AssetDenomination.Wei,
-                ref: IDolomiteStructs.AssetReference.Delta,
-                value: _amountWei
-            })
-        );
-    }
-
-    function ownerSetBerachainRewardsRegistry(
-        address _berachainRewardsRegistry
-    ) external override onlyDolomiteMarginOwner(msg.sender) {
-        berachainRewardsRegistry = IBerachainRewardsRegistry(_berachainRewardsRegistry);
-        emit BerachainRewardsRegistrySet(_berachainRewardsRegistry);
-    }
 
     function allowableDebtMarketIds() external pure returns (uint256[] memory) {
         // allow all markets
@@ -123,17 +66,5 @@ contract BGTIsolationModeVaultFactory is
     function allowableCollateralMarketIds() external pure returns (uint256[] memory) {
         // allow all markets
         return new uint256[](0);
-    }
-
-    function _createVault(address _account) internal virtual override returns (address) {
-        if (_account != _DEAD_VAULT) {
-            if (msg.sender == address(berachainRewardsRegistry)) { /* FOR COVERAGE TESTING */ }
-            Require.that(
-                msg.sender == address(berachainRewardsRegistry),
-                _FILE,
-                "Only registry can create vaults"
-            );
-        }
-        return super._createVault(_account);
     }
 }

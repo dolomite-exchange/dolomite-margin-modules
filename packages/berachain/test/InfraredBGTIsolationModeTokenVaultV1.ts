@@ -171,7 +171,7 @@ describe('InfraredBGTIsolationModeTokenVaultV1', () => {
   describe('#setIsDepositSourceMetaVault', () => {
     it('should work normally', async () => {
       await beraFactory.createVault(core.hhUser1.address);
-      const metaVaultImpersonator = await impersonate(await registry.getAccountToMetaVault(core.hhUser1.address), true);
+      const metaVaultImpersonator = await impersonate(await registry.getMetaVaultByAccount(core.hhUser1.address), true);
 
       const res = await iBgtVault.connect(metaVaultImpersonator).setIsDepositSourceMetaVault(true);
       await expectEvent(iBgtVault, res, 'IsDepositSourceMetaVaultSet', {
@@ -183,7 +183,7 @@ describe('InfraredBGTIsolationModeTokenVaultV1', () => {
     it('should fail if not called by metaVault', async () => {
       await expectThrow(
         iBgtVault.setIsDepositSourceMetaVault(true),
-        'InfraredBGTUserVaultV1: Only metaVault'
+        'MetaVaultRewardReceiver: Only metaVault'
       );
     });
   });
@@ -198,7 +198,7 @@ describe('InfraredBGTIsolationModeTokenVaultV1', () => {
 
     it('should work normally if deposit comes from metaVault', async () => {
       await beraFactory.createVault(core.hhUser1.address);
-      const metaVaultImpersonator = await impersonate(await registry.getAccountToMetaVault(core.hhUser1.address), true);
+      const metaVaultImpersonator = await impersonate(await registry.getMetaVaultByAccount(core.hhUser1.address), true);
       await core.tokens.iBgt.connect(core.hhUser1).transfer(metaVaultImpersonator.address, amountWei);
       await core.tokens.iBgt.connect(metaVaultImpersonator).approve(iBgtVault.address, amountWei);
 
@@ -303,6 +303,13 @@ describe('InfraredBGTIsolationModeTokenVaultV1', () => {
         core.marketIds.honey,
         ONE_BI,
         0
+      );
+    });
+
+    it('should fail if not called by vault owner', async () => {
+      await expectThrow(
+        iBgtVault.connect(core.hhUser2).getReward(),
+        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`
       );
     });
   });

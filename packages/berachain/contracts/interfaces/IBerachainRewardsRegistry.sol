@@ -25,7 +25,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IBGT } from "./IBGT.sol";
 import { IInfraredBGTStakingPool } from "./IInfraredBGTStakingPool.sol";
 import { IMetaVaultOperator } from "./IMetaVaultOperator.sol";
-import { IMetaVaultRewardReceiverFactory } from "./IMetaVaultRewardReceiverFactory.sol";
+import { IMetaVaultRewardTokenFactory } from "./IMetaVaultRewardTokenFactory.sol";
 
 
 /**
@@ -35,6 +35,10 @@ import { IMetaVaultRewardReceiverFactory } from "./IMetaVaultRewardReceiverFacto
  * @notice  A registry contract for storing all of the addresses that can interact with the Berachain rewards ecosystem
  */
 interface IBerachainRewardsRegistry is IBaseRegistry {
+
+    // ================================================
+    // ==================== Enums =====================
+    // ================================================
 
     enum RewardVaultType {
         NATIVE,
@@ -54,6 +58,7 @@ interface IBerachainRewardsRegistry is IBaseRegistry {
     event MetaVaultImplementationSet(address metaVaultImplementation);
     event MetaVaultOperatorSet(address metaVaultOperator);
     event RewardVaultSet(address asset, RewardVaultType rewardVaultType, address rewardVault);
+    event VaultToMetaVaultSet(address indexed vault, address metaVault);
     event AccountToAssetToDefaultTypeSet(address indexed _account, address _asset, RewardVaultType rewardVaultType);
 
     // ===================================================
@@ -74,6 +79,7 @@ interface IBerachainRewardsRegistry is IBaseRegistry {
     // ===================================================
 
     function createMetaVault(address _account, address _vault) external returns (address);
+    function registerVaultToMetaVault(address _vault, address _metaVault) external;
     function setAccountToAssetToDefaultType(address _asset, RewardVaultType _type) external;
 
     // ===================================================
@@ -82,14 +88,14 @@ interface IBerachainRewardsRegistry is IBaseRegistry {
 
     function calculateMetaVaultByAccount(address _account) external view returns (address);
     function getAccountToAssetToDefaultType(address _asset, address _account) external view returns (RewardVaultType);
-    function getAccountToMetaVault(address _account) external view returns (address);
-    function getMetaVaultToAccount(address _metaVault) external view returns (address);
-    function getVaultToMetaVault(address _vault) external view returns (address);
+    function getMetaVaultByAccount(address _account) external view returns (address);
+    function getAccountByMetaVault(address _metaVault) external view returns (address);
+    function getMetaVaultByVault(address _vault) external view returns (address);
 
     function bgt() external view returns (IBGT);
-    function bgtIsolationModeVaultFactory() external view returns (IMetaVaultRewardReceiverFactory);
+    function bgtIsolationModeVaultFactory() external view returns (IMetaVaultRewardTokenFactory);
     function iBgt() external view returns (IERC20);
-    function iBgtIsolationModeVaultFactory() external view returns (IMetaVaultRewardReceiverFactory);
+    function iBgtIsolationModeVaultFactory() external view returns (IMetaVaultRewardTokenFactory);
     function iBgtStakingPool() external view returns (IInfraredBGTStakingPool);
     function metaVaultImplementation() external view returns (address);
     function metaVaultOperator() external view returns (IMetaVaultOperator);

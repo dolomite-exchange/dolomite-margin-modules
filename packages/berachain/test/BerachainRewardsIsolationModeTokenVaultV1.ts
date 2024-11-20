@@ -165,7 +165,7 @@ describe('BerachainRewardsIsolationModeTokenVaultV1', () => {
       core.hhUser1,
     );
     metaVault = BerachainRewardsMetaVault__factory.connect(
-      await registry.getAccountToMetaVault(core.hhUser1.address),
+      await registry.getMetaVaultByAccount(core.hhUser1.address),
       core.hhUser1,
     );
     bgtVault = setupUserVaultProxy<BGTIsolationModeTokenVaultV1>(
@@ -193,7 +193,7 @@ describe('BerachainRewardsIsolationModeTokenVaultV1', () => {
   describe('#stake', () => {
     it('should work normally on deposit with native set as default', async () => {
       await beraVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
-      const metaVaultAddress = await registry.getAccountToMetaVault(core.hhUser1.address);
+      const metaVaultAddress = await registry.getMetaVaultByAccount(core.hhUser1.address);
 
       await expectProtocolBalance(core, beraVault, defaultAccountNumber, marketId, amountWei);
       expect(await nativeRewardVault.balanceOf(metaVaultAddress)).to.equal(amountWei);
@@ -205,7 +205,7 @@ describe('BerachainRewardsIsolationModeTokenVaultV1', () => {
         RewardVaultType.Infrared
       );
       await beraVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
-      const metaVaultAddress = await registry.getAccountToMetaVault(core.hhUser1.address);
+      const metaVaultAddress = await registry.getMetaVaultByAccount(core.hhUser1.address);
 
       await expectProtocolBalance(core, beraVault, defaultAccountNumber, marketId, amountWei);
       expect(await infraredRewardVault.balanceOf(metaVaultAddress)).to.equal(amountWei);
@@ -213,7 +213,7 @@ describe('BerachainRewardsIsolationModeTokenVaultV1', () => {
 
     it('should work normally not on deposit with native', async () => {
       await beraVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
-      const metaVaultAddress = await registry.getAccountToMetaVault(core.hhUser1.address);
+      const metaVaultAddress = await registry.getMetaVaultByAccount(core.hhUser1.address);
       await beraVault.unstake(RewardVaultType.Native, amountWei);
 
       await beraVault.stake(RewardVaultType.Native, amountWei);
@@ -224,7 +224,7 @@ describe('BerachainRewardsIsolationModeTokenVaultV1', () => {
 
     it('should work normally not on deposit with infrared', async () => {
       await beraVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
-      const metaVaultAddress = await registry.getAccountToMetaVault(core.hhUser1.address);
+      const metaVaultAddress = await registry.getMetaVaultByAccount(core.hhUser1.address);
       await beraVault.unstake(RewardVaultType.Native, amountWei);
 
       await registry.connect(core.hhUser1).setAccountToAssetToDefaultType(
@@ -239,7 +239,7 @@ describe('BerachainRewardsIsolationModeTokenVaultV1', () => {
 
     it('should switch default type if current default type is empty', async () => {
       await beraVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
-      const metaVaultAddress = await registry.getAccountToMetaVault(core.hhUser1.address);
+      const metaVaultAddress = await registry.getMetaVaultByAccount(core.hhUser1.address);
       await beraVault.unstake(RewardVaultType.Native, amountWei);
 
       const res = await beraVault.stake(RewardVaultType.Infrared, amountWei);
@@ -306,7 +306,7 @@ describe('BerachainRewardsIsolationModeTokenVaultV1', () => {
   describe('#exit', () => {
     it('should work normally for native', async () => {
       await beraVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
-      const metaVaultAddress = await registry.getAccountToMetaVault(core.hhUser1.address);
+      const metaVaultAddress = await registry.getMetaVaultByAccount(core.hhUser1.address);
       await increase(10 * ONE_DAY_SECONDS);
 
       await beraVault.exit(RewardVaultType.Native);

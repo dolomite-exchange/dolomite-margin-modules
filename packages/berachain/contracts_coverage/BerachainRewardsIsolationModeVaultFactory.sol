@@ -31,9 +31,8 @@ import { IBerachainRewardsRegistry } from "./interfaces/IBerachainRewardsRegistr
  * @title   BerachainRewardsIsolationModeVaultFactory
  * @author  Dolomite
  *
- * @notice  The wrapper around a berachain rewards underlying token that is used to create
- *          user vaults and manage the entry points that a user can use to interact with
- *          DolomiteMargin from the vault.
+ * @notice  The wrapper around a PoL-enabled token that empowers users to deposit the underlying collateral into PoL
+ *          from Dolomite while they borrow against their assets.
  */
 contract BerachainRewardsIsolationModeVaultFactory is
     IBerachainRewardsIsolationModeVaultFactory,
@@ -92,8 +91,9 @@ contract BerachainRewardsIsolationModeVaultFactory is
     function _createVault(address _account) internal virtual override returns (address) {
         address vault = super._createVault(_account);
 
+        // @follow-up can we remove this condition so we ALWAYS create the meta vault?
         if (_account != _DEAD_VAULT) {
-            berachainRewardsRegistry.createMetavault(_account, vault);
+            berachainRewardsRegistry.createMetaVault(_account, vault);
         }
         return vault;
     }

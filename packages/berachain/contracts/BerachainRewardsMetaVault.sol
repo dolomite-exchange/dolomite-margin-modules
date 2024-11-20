@@ -26,12 +26,11 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { IBGT } from "./interfaces/IBGT.sol";
-import { IBGTIsolationModeTokenVaultV1 } from "./interfaces/IBGTIsolationModeTokenVaultV1.sol";
 import { IBerachainRewardsMetaVault } from "./interfaces/IBerachainRewardsMetaVault.sol";
 import { IBerachainRewardsRegistry } from "./interfaces/IBerachainRewardsRegistry.sol";
 import { IInfraredRewardVault } from "./interfaces/IInfraredRewardVault.sol";
 import { IMetaVaultRewardReceiver } from "./interfaces/IMetaVaultRewardReceiver.sol";
-import { IMetaVaultRewardReceiverFactory } from "./interfaces/IMetaVaultRewardReceiverFactory.sol";
+import { IMetaVaultRewardTokenFactory } from "./interfaces/IMetaVaultRewardTokenFactory.sol";
 import { INativeRewardVault } from "./interfaces/INativeRewardVault.sol";
 
 
@@ -56,6 +55,7 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
     bytes32 private constant _OWNER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.owner")) - 1);
     bytes32 private constant _VALIDATOR_SLOT = bytes32(uint256(keccak256("eip1967.proxy.validator")) - 1);
 
+    /// @dev This variable is hardcoded here because it's private in the BGT contract
     uint256 public constant HISTORY_BUFFER_LENGTH = 8191;
     uint256 public constant DEFAULT_ACCOUNT_NUMBER = 0;
 
@@ -64,31 +64,17 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
     // ==================================================================
 
     modifier onlyChildVault(address _sender) {
-        Require.that(
-            REGISTRY().getVaultToMetaVault(_sender) == address(this),
-            _FILE,
-            "Only child vault can call",
-            _sender
-        );
+        _requireOnlyChildVault(_sender);
         _;
     }
 
     modifier onlyMetaVaultOwner(address _sender) {
-        Require.that(
-            OWNER() == _sender,
-            _FILE,
-            "Only owner can call",
-            _sender
-        );
+        _requireOnlyMetaVaultOwner(_sender);
         _;
     }
 
     modifier onlyActiveValidator(address _validator) {
-        Require.that(
-            validator() == _validator,
-            _FILE,
-            "Does not match active validator"
-        );
+        _requireActiveValidator(_validator);
         _;
     }
 
@@ -113,7 +99,7 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
         }
 
         IERC20(_asset).safeTransferFrom(msg.sender, address(this), _amount);
-        IERC20(_asset).approve(address(rewardVault), _amount);
+        IERC20(_asset).safeApprove(address(rewardVault), _amount);
         rewardVault.stake(_amount);
     }
 
@@ -132,14 +118,13 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
         IBerachainRewardsRegistry.RewardVaultType _type
     ) external onlyMetaVaultOwner(msg.sender) returns (uint256) {
         address rewardVault = REGISTRY().rewardVault(_asset, _type);
-        IMetaVaultRewardReceiverFactory factory;
+        IMetaVaultRewardTokenFactory factory;
         uint256 reward;
 
         if (_type == IBerachainRewardsRegistry.RewardVaultType.NATIVE) {
             reward = INativeRewardVault(rewardVault).getReward(address(this));
             factory = REGISTRY().bgtIsolationModeVaultFactory();
         } else {
-            // @oriole Added this in
             assert(_type == IBerachainRewardsRegistry.RewardVaultType.INFRARED);
             factory = REGISTRY().iBgtIsolationModeVaultFactory();
             IERC20 iBgt = REGISTRY().iBgt();
@@ -149,18 +134,10 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
             reward = iBgt.balanceOf(address(this)) - balanceBefore;
         }
 
-        address vault = factory.getVaultByAccount(OWNER());
-        if (_type == IBerachainRewardsRegistry.RewardVaultType.INFRARED) {
-            IERC20(REGISTRY().iBgt()).safeApprove(vault, reward);
+        if (reward > 0) {
+            _performDepositRewardByRewardType(factory, _type, reward);
         }
-        IMetaVaultRewardReceiver(vault).setIsDepositSourceMetaVault(true);
-        factory.depositIntoDolomiteMarginFromMetaVault(
-            OWNER(),
-            DEFAULT_ACCOUNT_NUMBER,
-            reward
-        );
-        // @oriole added this in:
-        assert(!IMetaVaultRewardReceiver(vault).isDepositSourceMetaVault());
+
         return reward;
     }
 
@@ -170,7 +147,7 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
     ) external onlyChildVault(msg.sender) {
         INativeRewardVault rewardVault = INativeRewardVault(REGISTRY().rewardVault(_asset, _type));
         IERC20 token;
-        IMetaVaultRewardReceiverFactory factory;
+        IMetaVaultRewardTokenFactory factory;
         if (_type == IBerachainRewardsRegistry.RewardVaultType.NATIVE) {
             token = REGISTRY().bgt();
             factory = REGISTRY().bgtIsolationModeVaultFactory();
@@ -179,26 +156,16 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
             factory = REGISTRY().iBgtIsolationModeVaultFactory();
         }
 
-        uint256 preBal = token.balanceOf(address(this));
+        uint256 balanceBefore = token.balanceOf(address(this));
         rewardVault.exit();
 
-        uint256 bal = IERC20(_asset).balanceOf(address(this));
-        assert(bal > 0);
-        IERC20(_asset).safeTransfer(msg.sender, bal);
+        uint256 balance = IERC20(_asset).balanceOf(address(this));
+        assert(balance > 0);
+        IERC20(_asset).safeTransfer(msg.sender, balance);
 
-        uint256 reward = token.balanceOf(address(this)) - preBal;
+        uint256 reward = token.balanceOf(address(this)) - balanceBefore;
         if (reward > 0) {
-            address vault = factory.getVaultByAccount(OWNER());
-            if (_type == IBerachainRewardsRegistry.RewardVaultType.INFRARED) {
-                token.safeApprove(vault, reward);
-            }
-
-            IBGTIsolationModeTokenVaultV1(vault).setIsDepositSourceMetaVault(true);
-            factory.depositIntoDolomiteMarginFromMetaVault(
-                OWNER(),
-                DEFAULT_ACCOUNT_NUMBER,
-                reward
-            );
+            _performDepositRewardByRewardType(factory, _type, reward);
         }
 
     }
@@ -233,6 +200,12 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
     function activateBGTBoost(
         address _validator
     ) external onlyMetaVaultOwner(msg.sender) onlyActiveValidator(_validator) {
+        Require.that(
+            REGISTRY().bgt().boostedQueue(address(this), validator()).blockNumberLast != 0,
+            _FILE,
+            "No queued boost to activate"
+        );
+
         REGISTRY().bgt().activateBoost(_validator);
     }
 
@@ -265,10 +238,10 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
         );
 
         IBGT bgt = REGISTRY().bgt();
-        uint256 unboostedBal = bgt.unboostedBalanceOf(address(this));
-        if (_amount > unboostedBal) {
+        uint256 unboostedBalance = bgt.unboostedBalanceOf(address(this));
+        if (_amount > unboostedBalance) {
             uint128 queuedBoost = bgt.queuedBoost(address(this));
-            uint128 diff = SafeCast.toUint128(_amount - unboostedBal);
+            uint128 diff = SafeCast.toUint128(_amount - unboostedBalance);
 
             if (queuedBoost >= diff) {
                 bgt.cancelBoost(validator(), diff);
@@ -287,7 +260,6 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
     // ==================================================================
 
     function blocksToActivateBoost() external view returns (uint256) {
-        // @follow-up Is this check ok or do you want address on validator() as well?
         uint256 blockNumberLast = REGISTRY().bgt().boostedQueue(address(this), validator()).blockNumberLast;
         if (blockNumberLast == 0) {
             return 0;
@@ -313,7 +285,7 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
     }
 
     // ==================================================================
-    // ======================== Internal Functions ========================
+    // ======================== Internal Functions ======================
     // ==================================================================
 
     function _resetValidatorIfEmptyBoosts(IBGT _bgt) internal {
@@ -323,5 +295,59 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
             _setAddress(_VALIDATOR_SLOT, address(0));
             emit ValidatorSet(address(0));
         }
+    }
+
+    function _performDepositRewardByRewardType(
+        IMetaVaultRewardTokenFactory _factory,
+        IBerachainRewardsRegistry.RewardVaultType _type,
+        uint256 _reward
+    ) internal {
+        address vault = _factory.getVaultByAccount(OWNER());
+        if (vault == address(0)) {
+            vault = _factory.createVault(OWNER());
+        }
+
+        if (_type == IBerachainRewardsRegistry.RewardVaultType.INFRARED) {
+            IERC20(REGISTRY().iBgt()).safeApprove(vault, _reward);
+        }
+
+        IMetaVaultRewardReceiver(vault).setIsDepositSourceMetaVault(true);
+        _factory.depositIntoDolomiteMarginFromMetaVault(
+            OWNER(),
+            DEFAULT_ACCOUNT_NUMBER,
+            _reward
+        );
+
+        assert(!IMetaVaultRewardReceiver(vault).isDepositSourceMetaVault());
+        if (_type == IBerachainRewardsRegistry.RewardVaultType.INFRARED) {
+            // Check the allowance was spent
+            assert(IERC20(REGISTRY().iBgt()).allowance(vault, address(this)) == 0);
+        }
+    }
+
+    function _requireOnlyChildVault(address _sender) internal view {
+        Require.that(
+            REGISTRY().getMetaVaultByVault(_sender) == address(this),
+            _FILE,
+            "Only child vault can call",
+            _sender
+        );
+    }
+
+    function _requireOnlyMetaVaultOwner(address _sender) internal view {
+        Require.that(
+            OWNER() == _sender,
+            _FILE,
+            "Only owner can call",
+            _sender
+        );
+    }
+
+    function _requireActiveValidator(address _validator) internal view {
+        Require.that(
+            validator() == _validator,
+            _FILE,
+            "Does not match active validator"
+        );
     }
 }

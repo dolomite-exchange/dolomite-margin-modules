@@ -29,19 +29,19 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 
 
 /**
- * @title   MetavaultOperator
+ * @title   MetaVaultOperator
  * @author  Dolomite
  *
- * @notice  Simple operator that will allow the metavault to deposit into any user's account
+ * @notice  Simple operator that will allow the MetaVault to deposit into any user's account
  */
-contract MetavaultOperator is OnlyDolomiteMargin {
+contract MetaVaultOperator is OnlyDolomiteMargin {
     using SafeERC20 for IERC20;
 
     // ==================================================================
     // =========================== Constants ============================
     // ==================================================================
 
-    bytes32 private constant _FILE = "MetavaultOperator";
+    bytes32 private constant _FILE = "MetaVaultOperator";
     uint256 private constant _DEFAULT_ACCOUNT_NUMBER = 0;
 
     constructor(address _dolomiteMargin) OnlyDolomiteMargin(_dolomiteMargin) {}
@@ -52,7 +52,7 @@ contract MetavaultOperator is OnlyDolomiteMargin {
 
     // @audit We don't really need this contract anymore, but would this be ok? Allows anybody to
     // deposit into any user's account but that doesn't seem like a problem
-    function depositIntoUserAccountFromMetavault(
+    function depositIntoUserAccountFromMetaVault(
         address _owner,
         address _token,
         uint256 _amountWei

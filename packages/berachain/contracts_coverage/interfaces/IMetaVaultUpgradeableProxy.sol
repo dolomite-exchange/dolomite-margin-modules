@@ -20,20 +20,26 @@
 
 pragma solidity ^0.8.9;
 
-import { IIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
-
 
 /**
- * @title   IMetaVaultRewardReceiverFactory
+ * @title   IMetaVaultUpgradeableProxy
  * @author  Dolomite
  *
- * @notice  This interface defines the functions that are universally available
+ * @notice  The interface for the upgradeable proxy contract that holds each user's tokens that are staked in POL
  */
-interface IMetaVaultRewardReceiverFactory is IIsolationModeVaultFactory {
+interface IMetaVaultUpgradeableProxy {
 
-    function depositIntoDolomiteMarginFromMetaVault(
-        address _vault,
-        uint256 _toAccountNumber,
-        uint256 _amountWei
-    ) external;
+    /**
+     *
+     * @param  _vaultOwner  The owner of this vault contract
+     */
+    function initialize(address _vaultOwner) external;
+
+    function isInitialized() external view returns (bool);
+
+    function implementation() external view returns (address);
+
+    function registry() external view returns (address);
+
+    function owner() external view returns (address);
 }

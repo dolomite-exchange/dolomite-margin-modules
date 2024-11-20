@@ -171,7 +171,7 @@ describe('BGTIsolationModeTokenVaultV1', () => {
       core.hhUser1,
     );
     metaVault = BerachainRewardsMetaVault__factory.connect(
-      await registry.getAccountToMetaVault(core.hhUser1.address),
+      await registry.getMetaVaultByAccount(core.hhUser1.address),
       core.hhUser1,
     );
     bgtVault = setupUserVaultProxy<BGTIsolationModeTokenVaultV1>(
@@ -212,7 +212,7 @@ describe('BGTIsolationModeTokenVaultV1', () => {
     it('should fail if not called by metaVault', async () => {
       await expectThrow(
         bgtVault.connect(core.hhUser1).setIsDepositSourceMetaVault(true),
-        'BGTIsolationModeTokenVaultV1: Only metaVault'
+        'MetaVaultRewardReceiver: Only metaVault'
       );
     });
   });
@@ -221,7 +221,7 @@ describe('BGTIsolationModeTokenVaultV1', () => {
     it('should always fail', async () => {
       await expectThrow(
         bgtVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei),
-        'not implemented'
+        'BGTIsolationModeTokenVaultV1: Not implemented'
       );
     });
   });

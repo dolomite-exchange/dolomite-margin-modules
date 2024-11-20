@@ -171,7 +171,7 @@ describe('BerachainRewardsMetaVault', () => {
       core.hhUser1,
     );
     metaVault = BerachainRewardsMetaVault__factory.connect(
-      await registry.getAccountToMetaVault(core.hhUser1.address),
+      await registry.getMetaVaultByAccount(core.hhUser1.address),
       core.hhUser1,
     );
     bgtVault = setupUserVaultProxy<BGTIsolationModeTokenVaultV1>(
@@ -254,6 +254,7 @@ describe('BerachainRewardsMetaVault', () => {
     it('should work if no rewards are available', async () => {
       await registry.setAccountToAssetToDefaultType(underlyingToken.address, RewardVaultType.Infrared);
       await beraVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, ONE_BI);
+      await metaVault.getReward(underlyingToken.address, RewardVaultType.Native);
       await metaVault.getReward(underlyingToken.address, RewardVaultType.Infrared);
       await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, iBgtMarketId, ZERO_BI);
     });
@@ -375,6 +376,28 @@ describe('BerachainRewardsMetaVault', () => {
       await expectThrow(
         metaVault.activateBGTBoost(core.hhUser1.address),
         'BerachainRewardsMetaVault: Does not match active validator',
+      );
+    });
+
+    it('should fail if no queued boost for validator', async () => {
+      await beraVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await increase(10 * ONE_DAY_SECONDS);
+      await metaVault.getReward(underlyingToken.address, RewardVaultType.Native);
+      const bal = await core.tokens.bgt.balanceOf(metaVault.address);
+
+      // There is no queued boost, therefore no active validator is set in the meta vault.
+      await expectThrow(
+        metaVault.activateBGTBoost(VALIDATOR_ADDRESS),
+        'BerachainRewardsMetaVault: Does not match active validator',
+      );
+
+      await metaVault.queueBGTBoost(VALIDATOR_ADDRESS, bal);
+      await mine(MIN_BLOCK_LEN);
+      await metaVault.activateBGTBoost(VALIDATOR_ADDRESS);
+
+      await expectThrow(
+        metaVault.activateBGTBoost(VALIDATOR_ADDRESS),
+        'BerachainRewardsMetaVault: No queued boost to activate',
       );
     });
 

@@ -24,17 +24,17 @@ import { ProxyContractHelpers } from "@dolomite-exchange/modules-base/contracts/
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { IBerachainRewardsRegistry } from "./interfaces/IBerachainRewardsRegistry.sol";
-import { IMetavaultUpgradeableProxy } from "./interfaces/IMetavaultUpgradeableProxy.sol";
+import { IMetaVaultUpgradeableProxy } from "./interfaces/IMetaVaultUpgradeableProxy.sol";
 
 
 /**
- * @title   MetavaultUpgradeableProxy
+ * @title   MetaVaultUpgradeableProxy
  * @author  Dolomite
  *
- * @notice  Abstract "implementation" (for an upgradeable proxy) contract for a berachain rewards metavault
+ * @notice  Abstract "implementation" (for an upgradeable proxy) contract for a berachain rewards metaVault
  */
-contract MetavaultUpgradeableProxy is
-    IMetavaultUpgradeableProxy,
+contract MetaVaultUpgradeableProxy is
+    IMetaVaultUpgradeableProxy,
     ProxyContractHelpers
 {
     using Address for address;
@@ -43,7 +43,7 @@ contract MetavaultUpgradeableProxy is
     // =========================== Constants ============================
     // ==================================================================
 
-    bytes32 private constant _FILE = "MetavaultUpgradeableProxy";
+    bytes32 private constant _FILE = "MetaVaultUpgradeableProxy";
     bytes32 private constant _IS_INITIALIZED_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isInitialized")) - 1);
     bytes32 private constant _REGISTRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.registry")) - 1);
     bytes32 private constant _OWNER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.owner")) - 1);
@@ -92,9 +92,9 @@ contract MetavaultUpgradeableProxy is
             _FILE,
             "Already initialized"
         );
-        if (IBerachainRewardsRegistry(registry()).getAccountToMetavault(_vaultOwner) == address(this)) { /* FOR COVERAGE TESTING */ }
+        if (IBerachainRewardsRegistry(registry()).getAccountToMetaVault(_vaultOwner) == address(this)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-            IBerachainRewardsRegistry(registry()).getAccountToMetavault(_vaultOwner) == address(this),
+            IBerachainRewardsRegistry(registry()).getAccountToMetaVault(_vaultOwner) == address(this),
             _FILE,
             "Invalid account",
             _vaultOwner
@@ -104,7 +104,7 @@ contract MetavaultUpgradeableProxy is
     }
 
     function implementation() public override view returns (address) {
-        return IBerachainRewardsRegistry(registry()).metavaultImplementation();
+        return IBerachainRewardsRegistry(registry()).metaVaultImplementation();
     }
 
     function isInitialized() public override view returns (bool) {

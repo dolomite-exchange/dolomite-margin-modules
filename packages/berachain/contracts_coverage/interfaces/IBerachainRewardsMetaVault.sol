@@ -24,13 +24,21 @@ import { IBerachainRewardsRegistry } from "./IBerachainRewardsRegistry.sol";
 
 
 /**
- * @title   IBerachainRewardsMetavault
+ * @title   IBerachainRewardsMetaVault
  * @author  Dolomite
  *
  */
-interface IBerachainRewardsMetavault {
+interface IBerachainRewardsMetaVault {
+
+    // ================================================
+    // ==================== Events ====================
+    // ================================================
 
     event ValidatorSet(address validator);
+
+    // ================================================
+    // ================== Functions ===================
+    // ================================================
 
     function stake(address _asset, IBerachainRewardsRegistry.RewardVaultType _type, uint256 amount) external;
 
@@ -42,9 +50,27 @@ interface IBerachainRewardsMetavault {
 
     function delegateBGT(address _delegatee) external;
 
+    function queueBGTBoost(address _validator, uint128 _amount) external;
+
+    function activateBGTBoost(address _validator) external;
+
+    function cancelBGTBoost(address _validator, uint128 _amount) external;
+
+    function dropBGTBoost(address _validator, uint128 _amount) external;
+
     function withdrawBGTAndRedeem(address _recipient, uint256 _amount) external;
 
+    function blocksToActivateBoost() external view returns (uint256);
+
+    /**
+     * @return  The address of the Berachain Rewards Registry, which contains the relevant addresses for the Dolomite
+     *          Meta Vault system (for depositing PoL-enabled assets into PoL) as well as tracking all supported PoL
+     *          providers.
+     */
     function REGISTRY() external view returns (IBerachainRewardsRegistry);
 
+    /**
+     * @return  The user that owns this Meta Vault.
+     */
     function OWNER() external view returns (address);
 }

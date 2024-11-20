@@ -169,7 +169,7 @@ describe('InfraredBGTIsolationModeVaultFactory', () => {
         InfraredBGTIsolationModeTokenVaultV1__factory,
         core.hhUser1,
       );
-      const metaVaultImpersonator = await impersonate(await registry.getAccountToMetaVault(core.hhUser1.address), true);
+      const metaVaultImpersonator = await impersonate(await registry.getMetaVaultByAccount(core.hhUser1.address), true);
       await core.tokens.iBgt.connect(core.hhUser1).transfer(metaVaultImpersonator.address, amountWei);
       await core.tokens.iBgt.connect(metaVaultImpersonator).approve(iBgtVault.address, amountWei);
 
@@ -192,7 +192,7 @@ describe('InfraredBGTIsolationModeVaultFactory', () => {
           ZERO_BI,
           ONE_ETH_BI
         ),
-        'InfraredBGTIsolationVaultFactory: Can only deposit from metaVault'
+        'MetaVaultRewardReceiverFactory: Can only deposit from metaVault'
       );
     });
   });

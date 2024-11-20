@@ -22,7 +22,7 @@ pragma solidity ^0.8.9;
 
 import { Create2 } from "@openzeppelin/contracts/utils/Create2.sol";
 import { BerachainRewardsRegistry } from "../BerachainRewardsRegistry.sol";
-import { MetavaultUpgradeableProxy } from "../MetavaultUpgradeableProxy.sol";
+import { MetaVaultUpgradeableProxy } from "../MetaVaultUpgradeableProxy.sol";
 
 
 /**
@@ -41,17 +41,17 @@ contract TestBerachainRewardsRegistry is BerachainRewardsRegistry {
     // ================================================
 
     bytes32 private constant _FILE = "TestBerachainRewardsRegistry";
-    bytes32 private constant _ACCOUNT_TO_META_VAULT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.accountToMetavault")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _ACCOUNT_TO_META_VAULT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.accountToMetaVault")) - 1); // solhint-disable-line max-line-length
 
-    function createMetavaultNoInitialize(
+    function createMetaVaultNoInitialize(
         address _account,
         address /* _vault */
     ) external {
-        address metavault = Create2.deploy(
+        address metaVault = Create2.deploy(
             /* amount = */ 0,
             keccak256(abi.encodePacked(_account)),
-            type(MetavaultUpgradeableProxy).creationCode
+            type(MetaVaultUpgradeableProxy).creationCode
         );
-        _setAddressInMap(_ACCOUNT_TO_META_VAULT_SLOT, _account, metavault);
+        _setAddressInMap(_ACCOUNT_TO_META_VAULT_SLOT, _account, metaVault);
     }
 }

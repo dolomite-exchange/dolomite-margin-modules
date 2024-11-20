@@ -21,6 +21,7 @@
 pragma solidity ^0.8.9;
 
 import { IIsolationModeTokenVaultV1 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
+import { IMetaVaultRewardReceiver } from "./IMetaVaultRewardReceiver.sol";
 
 
 /**
@@ -30,10 +31,5 @@ import { IIsolationModeTokenVaultV1 } from "@dolomite-exchange/modules-base/cont
  * @notice  This interface defines the functions that are available on the BGTIsolationModeTokenVaultV1
  *          implementation contract for each user's proxy vault.
  */
-interface IBGTIsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
-    event IsDepositSourceMetavaultSet(bool isDepositSourceMetavault);
-
-    function setIsDepositSourceMetavault(bool _isDepositSourceMetavault) external;
-
-    function isDepositSourceMetavault() external view returns (bool);
+interface IBGTIsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, IMetaVaultRewardReceiver {
 }

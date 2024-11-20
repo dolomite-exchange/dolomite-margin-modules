@@ -167,7 +167,7 @@ describe('BGTIsolationModeVaultFactory', () => {
         core.hhUser1,
       );
       const metaVault = BerachainRewardsMetaVault__factory.connect(
-        await registry.getAccountToMetaVault(core.hhUser1.address),
+        await registry.getMetaVaultByAccount(core.hhUser1.address),
         core.hhUser1,
       );
       const bgtVault = setupUserVaultProxy<BGTIsolationModeTokenVaultV1>(
@@ -194,7 +194,7 @@ describe('BGTIsolationModeVaultFactory', () => {
           ZERO_BI,
           ONE_ETH_BI
         ),
-        'BGTIsolationModeVaultFactory: Can only deposit from metaVault'
+        'MetaVaultRewardReceiverFactory: Can only deposit from metaVault'
       );
     });
   });
@@ -208,13 +208,6 @@ describe('BGTIsolationModeVaultFactory', () => {
         account: core.hhUser1.address,
         vault: vaultAddress
       });
-    });
-
-    it('should fail if not called by registry', async () => {
-      await expectThrow(
-        bgtFactory.connect(core.hhUser1).createVault(core.hhUser1.address),
-        'BGTIsolationModeVaultFactory: Only registry can create vaults'
-      );
     });
   });
 

@@ -129,7 +129,7 @@ describe('MetaVaultUpgradeableProxy', () => {
       BerachainRewardsIsolationModeTokenVaultV1__factory,
       core.hhUser1,
     );
-    const metaVaultAddress = await registry.getAccountToMetaVault(core.hhUser1.address);
+    const metaVaultAddress = await registry.getMetaVaultByAccount(core.hhUser1.address);
     vaultProxy = await setupUserVaultProxy<MetaVaultUpgradeableProxy>(
       metaVaultAddress,
       MetaVaultUpgradeableProxy__factory,
@@ -146,7 +146,7 @@ describe('MetaVaultUpgradeableProxy', () => {
   describe('#initialize', () => {
     it('should work under normal conditions', async () => {
       await registry.createMetaVaultNoInitialize(core.hhUser2.address, beraVault.address);
-      const vault2Address = await registry.getAccountToMetaVault(core.hhUser2.address);
+      const vault2Address = await registry.getMetaVaultByAccount(core.hhUser2.address);
       const vault2 = setupUserVaultProxy<MetaVaultUpgradeableProxy>(
         vault2Address,
         MetaVaultUpgradeableProxy__factory,
@@ -159,7 +159,7 @@ describe('MetaVaultUpgradeableProxy', () => {
 
     it('should fail if the account and metaVault do not match' , async () => {
       await registry.createMetaVaultNoInitialize(core.hhUser2.address, beraVault.address);
-      const vault2Address = await registry.getAccountToMetaVault(core.hhUser2.address);
+      const vault2Address = await registry.getMetaVaultByAccount(core.hhUser2.address);
       const vault2 = setupUserVaultProxy<MetaVaultUpgradeableProxy>(
         vault2Address,
         MetaVaultUpgradeableProxy__factory,
@@ -204,7 +204,7 @@ describe('MetaVaultUpgradeableProxy', () => {
 
     it('should fail when not initialized', async () => {
       await registry.createMetaVaultNoInitialize(core.hhUser2.address, beraVault.address);
-      const metaAddress = await registry.getAccountToMetaVault(core.hhUser2.address);
+      const metaAddress = await registry.getMetaVaultByAccount(core.hhUser2.address);
       const vaultImpl = setupUserVaultProxy<BerachainRewardsMetaVault>(
         metaAddress,
         BerachainRewardsMetaVault__factory,

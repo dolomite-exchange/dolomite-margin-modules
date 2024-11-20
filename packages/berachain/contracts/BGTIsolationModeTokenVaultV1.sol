@@ -26,10 +26,9 @@ import { IIsolationModeTokenVaultV1 } from "@dolomite-exchange/modules-base/cont
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { MetaVaultRewardReceiver } from "./MetaVaultRewardReceiver.sol";
 import { IBGTIsolationModeTokenVaultV1 } from "./interfaces/IBGTIsolationModeTokenVaultV1.sol";
-import { IBerachainRewardsIsolationModeVaultFactory } from "./interfaces/IBerachainRewardsIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { IBerachainRewardsMetaVault } from "./interfaces/IBerachainRewardsMetaVault.sol";
-import { IBerachainRewardsRegistry } from "./interfaces/IBerachainRewardsRegistry.sol";
 
 
 /**
@@ -42,7 +41,7 @@ import { IBerachainRewardsRegistry } from "./interfaces/IBerachainRewardsRegistr
  *          in the same position as other "isolated" tokens.
  */
 contract BGTIsolationModeTokenVaultV1 is
-    IsolationModeTokenVaultV1,
+    MetaVaultRewardReceiver,
     IBGTIsolationModeTokenVaultV1
 {
     using SafeERC20 for IERC20;
@@ -52,18 +51,10 @@ contract BGTIsolationModeTokenVaultV1 is
     // ==================================================================
 
     bytes32 private constant _FILE = "BGTIsolationModeTokenVaultV1";
-    bytes32 private constant _IS_DEPOSIT_SOURCE_METAVAULT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isDepositSourceMetaVault")) - 1); // solhint-disable-line max-line-length
 
-    function setIsDepositSourceMetaVault(
-        bool _isDepositSourceMetaVault
-    ) external {
-        Require.that(
-            msg.sender == registry().getVaultToMetaVault(address(this)),
-            _FILE,
-            "Only metaVault"
-        );
-        _setIsDepositSourceMetaVault(_isDepositSourceMetaVault);
-    }
+    // ==================================================================
+    // =========================== Functions ============================
+    // ==================================================================
 
     function executeDepositIntoVault(
         address _from,
@@ -88,17 +79,9 @@ contract BGTIsolationModeTokenVaultV1 is
     public
     override(IIsolationModeTokenVaultV1, IsolationModeTokenVaultV1)
     onlyVaultFactory(msg.sender) {
-        IBerachainRewardsMetaVault metaVault = IBerachainRewardsMetaVault(registry().getAccountToMetaVault(OWNER()));
+        IBerachainRewardsMetaVault metaVault = IBerachainRewardsMetaVault(registry().getMetaVaultByAccount(OWNER()));
         assert(_recipient != address(this));
         metaVault.withdrawBGTAndRedeem(_recipient, _amount);
-    }
-
-    function isDepositSourceMetaVault() public view returns (bool) {
-        return _getUint256(_IS_DEPOSIT_SOURCE_METAVAULT_SLOT) == 1;
-    }
-
-    function registry() public view returns (IBerachainRewardsRegistry) {
-        return IBerachainRewardsIsolationModeVaultFactory(VAULT_FACTORY()).berachainRewardsRegistry();
     }
 
     function dolomiteRegistry()
@@ -111,18 +94,13 @@ contract BGTIsolationModeTokenVaultV1 is
     }
 
     // ==================================================================
-    // ======================== Internal Functions ========================
+    // ======================== Internal Functions ======================
     // ==================================================================
-
-    function _setIsDepositSourceMetaVault(bool _isDepositSourceMetaVault) internal {
-        _setUint256(_IS_DEPOSIT_SOURCE_METAVAULT_SLOT, _isDepositSourceMetaVault ? 1 : 0);
-        emit IsDepositSourceMetaVaultSet(_isDepositSourceMetaVault);
-    }
 
     function _depositIntoVaultForDolomiteMargin(
         uint256 /* _toAccountNumber */,
         uint256 /* _amountWei */
     ) internal pure override {
-        revert('not implemented');
+        revert('BGTIsolationModeTokenVaultV1: Not implemented');
     }
 }

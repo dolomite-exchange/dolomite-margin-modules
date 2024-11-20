@@ -25,13 +25,12 @@ import { IBerachainRewardsRegistry } from "./IBerachainRewardsRegistry.sol";
 
 
 /**
- * @title   IBerachainRewardsIsolationModeVaultFactory
+ * @title   IMetaVaultRewardTokenFactory
  * @author  Dolomite
  *
- * @notice  Interface for a subclass of IsolationModeVaultFactory that creates vaults for Berachain rewards vault
- *          tokens, like BEX LP tokens.
+ * @notice  This interface defines the functions that are universally available
  */
-interface IBerachainRewardsIsolationModeVaultFactory is IIsolationModeVaultFactory {
+interface IMetaVaultRewardTokenFactory is IIsolationModeVaultFactory {
 
     // ================================================
     // ==================== Events ====================
@@ -44,6 +43,12 @@ interface IBerachainRewardsIsolationModeVaultFactory is IIsolationModeVaultFacto
     // ===================================================
 
     function ownerSetBerachainRewardsRegistry(address _berachainRewardsRegistry) external;
+
+    function depositIntoDolomiteMarginFromMetaVault(
+        address _owner,
+        uint256 _toAccountNumber,
+        uint256 _amountWei
+    ) external;
 
     function berachainRewardsRegistry() external view returns (IBerachainRewardsRegistry);
 }
