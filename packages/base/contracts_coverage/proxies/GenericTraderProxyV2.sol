@@ -48,7 +48,7 @@ contract GenericTraderProxyV2 is GenericTraderProxyBase, ReentrancyGuard, Author
     // ====================== Constants =======================
     // ========================================================
 
-    bytes32 private constant _FILE = "GenericTraderRouter";
+    bytes32 private constant _FILE = "GenericTraderProxyV2";
     uint256 private constant TRANSFER_ACCOUNT_ID = 2;
 
     IDolomiteRegistry public immutable DOLOMITE_REGISTRY;
@@ -109,6 +109,7 @@ contract GenericTraderProxyV2 is GenericTraderProxyBase, ReentrancyGuard, Author
         _validateMarketIdPath(_params.marketIdsPath);
         _params.inputAmountWei = _getActualInputAmountWei(
             cache,
+            msg.sender,
             _params.accountNumber,
             _params.marketIdsPath[0],
             _params.inputAmountWei
@@ -188,6 +189,7 @@ contract GenericTraderProxyV2 is GenericTraderProxyBase, ReentrancyGuard, Author
         _validateMarketIdPath(_params.marketIdsPath);
         _params.inputAmountWei = _getActualInputAmountWei(
             cache,
+            _accountOwner,
             _params.accountNumber,
             _params.marketIdsPath[0],
             _params.inputAmountWei
@@ -275,6 +277,7 @@ contract GenericTraderProxyV2 is GenericTraderProxyBase, ReentrancyGuard, Author
         ) {
             _params.inputAmountWei = _getActualInputAmountWei(
                 cache,
+                msg.sender,
                 _params.transferCollateralParams.fromAccountNumber,
                 _params.marketIdsPath[0],
                 _params.transferCollateralParams.transferAmounts[0].amountWei
@@ -282,6 +285,7 @@ contract GenericTraderProxyV2 is GenericTraderProxyBase, ReentrancyGuard, Author
         } else {
             _params.inputAmountWei = _getActualInputAmountWei(
                 cache,
+                msg.sender,
                 _params.accountNumber,
                 _params.marketIdsPath[0],
                 _params.inputAmountWei
@@ -317,37 +321,25 @@ contract GenericTraderProxyV2 is GenericTraderProxyBase, ReentrancyGuard, Author
                 + _getActionsLengthForExpiryParam(_params.expiryParams)
         );
 
-        // solium-disable indentation
-        {
-            // To avoid the "stack too deep" error, we rearrange the stack
-            uint256[] memory marketIdsPathForStackTooDeep = _params.marketIdsPath;
-            uint256 inputAmountWeiForStackTooDeep = _params.inputAmountWei;
-            uint256 minOutputAmountWeiForStackTooDeep = _params.minOutputAmountWei;
-            TraderParam[] memory tradersPathForStackTooDeep = _params.tradersPath;
-            _appendTraderActions(
-                accounts,
-                actions,
-                cache,
-                marketIdsPathForStackTooDeep,
-                inputAmountWeiForStackTooDeep,
-                minOutputAmountWeiForStackTooDeep,
-                tradersPathForStackTooDeep
-            );
-        }
-        {
-            // To avoid the "stack too deep" error, we rearrange the stack
-            uint256 lastMarketId = _params.marketIdsPath[_params.marketIdsPath.length - 1];
-            uint256 tradeAccountNumberForStackTooDeep = _params.accountNumber;
-            _appendTransferActions(
-                actions,
-                cache,
-                _params.transferCollateralParams,
-                tradeAccountNumberForStackTooDeep,
-                transferActionsLength,
-                lastMarketId
-            );
-        }
-        // solium-enable indentation
+        _appendTraderActions(
+            accounts,
+            actions,
+            cache,
+            _params.marketIdsPath,
+            _params.inputAmountWei,
+            _params.minOutputAmountWei,
+            _params.tradersPath
+        );
+        uint256 lastMarketId = _params.marketIdsPath[_params.marketIdsPath.length - 1];
+        _appendTransferActions(
+            actions,
+            cache,
+            _params.transferCollateralParams,
+            _params.accountNumber,
+            transferActionsLength,
+            lastMarketId
+        );
+
         _appendExpiryActions(
             actions,
             cache,
@@ -371,19 +363,14 @@ contract GenericTraderProxyV2 is GenericTraderProxyBase, ReentrancyGuard, Author
 
         cache.dolomiteMargin.operate(accounts, actions);
 
-        // solium-disable indentation
-        {
-            uint256[] memory marketIdsPathForStackTooDeep = _params.marketIdsPath;
-            GenericTraderProxyV2Lib.logAfterZapEvents(
-                cache,
-                accounts[TRADE_ACCOUNT_ID],
-                marketIdsPathForStackTooDeep,
-                _params.tradersPath,
-                _params.transferCollateralParams,
-                _params.userConfig.eventType
-            );
-        }
-        // solium-enable indentation
+        GenericTraderProxyV2Lib.logAfterZapEvents(
+            cache,
+            accounts[TRADE_ACCOUNT_ID],
+            _params.marketIdsPath,
+            _params.tradersPath,
+            _params.transferCollateralParams,
+            _params.userConfig.eventType
+        );
 
         if (
             _params.userConfig.balanceCheckFlag == AccountBalanceLib.BalanceCheckFlag.Both
@@ -416,7 +403,7 @@ contract GenericTraderProxyV2 is GenericTraderProxyBase, ReentrancyGuard, Author
     }
 
     function swapExactInputForOutputAndModifyPositionForDifferentAccount(
-        address _tradeAccountOwner,
+        address _accountOwner,
         SwapExactInputForOutputAndModifyPositionParams memory _params
     )
         public
@@ -450,6 +437,7 @@ contract GenericTraderProxyV2 is GenericTraderProxyBase, ReentrancyGuard, Author
         ) {
             _params.inputAmountWei = _getActualInputAmountWei(
                 cache,
+                _accountOwner,
                 _params.transferCollateralParams.fromAccountNumber,
                 _params.marketIdsPath[0],
                 _params.transferCollateralParams.transferAmounts[0].amountWei
@@ -457,6 +445,7 @@ contract GenericTraderProxyV2 is GenericTraderProxyBase, ReentrancyGuard, Author
         } else {
             _params.inputAmountWei = _getActualInputAmountWei(
                 cache,
+                _accountOwner,
                 _params.accountNumber,
                 _params.marketIdsPath[0],
                 _params.inputAmountWei
@@ -474,13 +463,13 @@ contract GenericTraderProxyV2 is GenericTraderProxyBase, ReentrancyGuard, Author
         IDolomiteStructs.AccountInfo[] memory accounts = _getAccounts(
             cache,
             _params.makerAccounts,
-            _tradeAccountOwner, // solium-disable-line indentation
+            _accountOwner, // solium-disable-line indentation
             _params.accountNumber
         );
         // the call to `_getAccounts` leaves accounts[TRANSFER_ACCOUNT_ID] unset, because it only fills in the traders
         // starting at the `traderAccountCursor` index
         accounts[TRANSFER_ACCOUNT_ID] = IDolomiteStructs.AccountInfo({
-            owner: _tradeAccountOwner,
+            owner: _accountOwner,
             number: cache.otherAccountNumber
         });
         _validateZapAccount(cache, accounts[ZAP_ACCOUNT_ID], _params.marketIdsPath);
@@ -621,6 +610,7 @@ contract GenericTraderProxyV2 is GenericTraderProxyBase, ReentrancyGuard, Author
 
     function _getActualInputAmountWei(
         GenericTraderProxyCache memory _cache,
+        address _accountOwner,
         uint256 _accountNumber,
         uint256 _marketId,
         uint256 _inputAmountWei
@@ -631,7 +621,7 @@ contract GenericTraderProxyV2 is GenericTraderProxyBase, ReentrancyGuard, Author
 
         IDolomiteStructs.Wei memory balanceWei = _cache.dolomiteMargin.getAccountWei(
             IDolomiteStructs.AccountInfo({
-                owner: msg.sender,
+                owner: _accountOwner,
                 number: _accountNumber
             }),
             _marketId
