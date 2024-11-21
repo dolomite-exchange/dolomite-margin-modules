@@ -81,10 +81,8 @@ describe('BerachainRewardsMetaVault', () => {
 
   let beraVault: BerachainRewardsIsolationModeTokenVaultV1;
   let metaVault: BerachainRewardsMetaVault;
-  let iBgtVault: InfraredBGTIsolationModeTokenVaultV1;
   let bgtVault: BGTIsolationModeTokenVaultV1;
 
-  let marketId: BigNumber;
   let bgtMarketId: BigNumber;
   let iBgtMarketId: BigNumber;
 
@@ -146,7 +144,6 @@ describe('BerachainRewardsMetaVault', () => {
     await core.testEcosystem!.testPriceOracle.setPrice(iBgtFactory.address, ONE_ETH_BI);
     await setupTestMarket(core, iBgtFactory, true);
 
-    marketId = await core.dolomiteMargin.getNumMarkets();
     await core.testEcosystem!.testPriceOracle.setPrice(beraFactory.address, ONE_ETH_BI);
     await setupTestMarket(core, beraFactory, true);
 
@@ -174,14 +171,11 @@ describe('BerachainRewardsMetaVault', () => {
       await registry.getMetaVaultByAccount(core.hhUser1.address),
       core.hhUser1,
     );
+
+    await bgtFactory.createVault(core.hhUser1.address);
     bgtVault = setupUserVaultProxy<BGTIsolationModeTokenVaultV1>(
       await bgtFactory.getVaultByAccount(core.hhUser1.address),
       BGTIsolationModeTokenVaultV1__factory,
-      core.hhUser1,
-    );
-    iBgtVault = setupUserVaultProxy<InfraredBGTIsolationModeTokenVaultV1>(
-      await iBgtFactory.getVaultByAccount(core.hhUser1.address),
-      InfraredBGTIsolationModeTokenVaultV1__factory,
       core.hhUser1,
     );
 
@@ -239,7 +233,13 @@ describe('BerachainRewardsMetaVault', () => {
       await increase(10 * ONE_DAY_SECONDS);
       await metaVault.getReward(underlyingToken.address, RewardVaultType.Infrared);
 
-      const bal = await core.berachainRewardsEcosystem.iBgtStakingPool.balanceOf(iBgtVault.address);
+      const iBgtVault = setupUserVaultProxy<InfraredBGTIsolationModeTokenVaultV1>(
+        await iBgtFactory.getVaultByAccount(core.hhUser1.address),
+        InfraredBGTIsolationModeTokenVaultV1__factory,
+        core.hhUser1,
+      );
+
+      const balance = await core.berachainRewardsEcosystem.iBgtStakingPool.balanceOf(iBgtVault.address);
       expect(await beraVault.underlyingBalanceOf()).to.equal(ZERO_BI);
       expect(await core.tokens.iBgt.balanceOf(metaVault.address)).to.eq(ZERO_BI);
       await expectProtocolBalance(
@@ -247,7 +247,7 @@ describe('BerachainRewardsMetaVault', () => {
         iBgtVault,
         defaultAccountNumber,
         iBgtMarketId,
-        bal
+        balance
       );
     });
 
@@ -499,7 +499,6 @@ describe('BerachainRewardsMetaVault', () => {
       await beraVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await increase(10 * ONE_DAY_SECONDS);
       await metaVault.getReward(underlyingToken.address, RewardVaultType.Native);
-      const bal = await core.tokens.bgt.balanceOf(metaVault.address);
       await metaVault.queueBGTBoost(VALIDATOR_ADDRESS, ONE_BI);
       await mine(MIN_BLOCK_LEN);
       await metaVault.activateBGTBoost(VALIDATOR_ADDRESS);

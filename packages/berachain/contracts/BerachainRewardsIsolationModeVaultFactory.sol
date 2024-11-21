@@ -91,9 +91,13 @@ contract BerachainRewardsIsolationModeVaultFactory is
     function _createVault(address _account) internal virtual override returns (address) {
         address vault = super._createVault(_account);
 
-        // @follow-up can we remove this condition so we ALWAYS create the meta vault?
         if (_account != _DEAD_VAULT) {
-            berachainRewardsRegistry.createMetaVault(_account, vault);
+            bool doesMetaVaultAlreadyExist = berachainRewardsRegistry.getMetaVaultByAccount(_account) != address(0);
+            address metaVault = berachainRewardsRegistry.createMetaVault(_account, vault);
+            if (!doesMetaVaultAlreadyExist) {
+                // This is emitted for the subgraph
+                emit VaultCreated(_account, metaVault);
+            }
         }
         return vault;
     }

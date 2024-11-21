@@ -49,6 +49,7 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
     // ================================================
 
     bytes32 private constant _FILE = "BerachainRewardsRegistry";
+    address private constant _DEAD_VAULT = 0x000000000000000000000000000000000000dEaD;
 
     bytes32 private constant _BGT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.bgt")) - 1);
     bytes32 private constant _BGT_ISOLATION_MODE_VAULT_FACTORY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.bgtIsolationModeVaultFactory")) - 1); // solhint-disable-line max-line-length
@@ -82,6 +83,8 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
         _ownerSetMetaVaultImplementation(_metaVaultImplementation);
         _ownerSetMetaVaultOperator(_metaVaultOperator);
         _ownerSetDolomiteRegistry(_dolomiteRegistry);
+
+        _createMetaVault(_DEAD_VAULT);
     }
 
     // ================================================
@@ -112,24 +115,12 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
         return metaVault;
     }
 
-    function registerVaultToMetaVault(
-        address _vault,
-        address _metaVault
-    ) external override onlyDolomiteMarginGlobalOperator(msg.sender) {
-        _setVaultToMetaVault(_vault, _metaVault);
-    }
-
-    function _setVaultToMetaVault(address _vault, address _metaVault) internal {
-        _setAddressInMap(_VAULT_TO_META_VAULT_SLOT, _vault, _metaVault);
-        emit VaultToMetaVaultSet(_vault, _metaVault);
-    }
-
     /**
      *
      * @param  _type The default type to set
      *
      * @dev If called by a user, it sets the default type for msg.sender. If called by a metaVault,
-     * it sets the default type for the metaVault's account.
+     *      it sets the default type for the metaVault's account.
      */
     function setAccountToAssetToDefaultType(address _asset, RewardVaultType _type) external {
         // @audit @Corey, please double check this logic
@@ -283,6 +274,11 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
         _initializeVault(metaVault, _account);
 
         return metaVault;
+    }
+
+    function _setVaultToMetaVault(address _vault, address _metaVault) internal {
+        _setAddressInMap(_VAULT_TO_META_VAULT_SLOT, _vault, _metaVault);
+        emit VaultToMetaVaultSet(_vault, _metaVault);
     }
 
     function _initializeVault(address _metaVault, address _account) internal {

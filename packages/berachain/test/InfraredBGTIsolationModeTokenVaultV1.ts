@@ -1,21 +1,4 @@
-import { expect } from 'chai';
-import {
-  BerachainRewardsIsolationModeVaultFactory,
-  BerachainRewardsMetaVault,
-  BerachainRewardsMetaVault__factory,
-  BerachainRewardsRegistry,
-  INativeRewardVault,
-  IInfraredRewardVault,
-  MetaVaultOperator,
-  MetaVaultOperator__factory,
-  BGTIsolationModeVaultFactory,
-  InfraredBGTIsolationModeVaultFactory,
-  InfraredBGTIsolationModeTokenVaultV1,
-  InfraredBGTIsolationModeTokenVaultV1__factory,
-} from '../src/types';
-import {
-  IERC20,
-} from '@dolomite-exchange/modules-base/src/types';
+import { IERC20 } from '@dolomite-exchange/modules-base/src/types';
 import {
   Network,
   ONE_BI,
@@ -36,7 +19,26 @@ import {
   setupTestMarket,
   setupUserVaultProxy,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
+import { expect } from 'chai';
+import { BigNumber } from 'ethers';
+import { parseEther } from 'ethers/lib/utils';
+import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
 import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
+import {
+  BerachainRewardsIsolationModeVaultFactory,
+  BerachainRewardsMetaVault,
+  BerachainRewardsMetaVault__factory,
+  BerachainRewardsRegistry,
+  BGTIsolationModeVaultFactory,
+  IInfraredRewardVault,
+  INativeRewardVault,
+  InfraredBGTIsolationModeTokenVaultV1,
+  InfraredBGTIsolationModeTokenVaultV1__factory,
+  InfraredBGTIsolationModeVaultFactory,
+  MetaVaultOperator,
+  MetaVaultOperator__factory,
+} from '../src/types';
 import {
   createBerachainRewardsIsolationModeTokenVaultV1,
   createBerachainRewardsIsolationModeVaultFactory,
@@ -46,10 +48,6 @@ import {
   createInfraredBGTIsolationModeTokenVaultV1,
   createInfraredBGTIsolationModeVaultFactory,
 } from './berachain-ecosystem-utils';
-import { BigNumber } from 'ethers';
-import { parseEther } from 'ethers/lib/utils';
-import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
-import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
 
 const IBGT_WHALE_ADDRESS = '0x4B95296B937AF613D65206Ba7C203CB9A1263003';
 const defaultAccountNumber = ZERO_BI;
@@ -97,16 +95,12 @@ describe('InfraredBGTIsolationModeTokenVaultV1', () => {
       [core.dolomiteMargin.address],
     );
     registry = await createBerachainRewardsRegistry(core, metaVaultImplementation, metaVaultOperator);
-    await registry.connect(core.governance).ownerSetRewardVault(
-      underlyingToken.address,
-      RewardVaultType.Native,
-      nativeRewardVault.address
-    );
-    await registry.connect(core.governance).ownerSetRewardVault(
-      underlyingToken.address,
-      RewardVaultType.Infrared,
-      infraredRewardVault.address
-    );
+    await registry
+      .connect(core.governance)
+      .ownerSetRewardVault(underlyingToken.address, RewardVaultType.Native, nativeRewardVault.address);
+    await registry
+      .connect(core.governance)
+      .ownerSetRewardVault(underlyingToken.address, RewardVaultType.Infrared, infraredRewardVault.address);
 
     const vaultImplementation = await createBerachainRewardsIsolationModeTokenVaultV1();
     beraFactory = await createBerachainRewardsIsolationModeVaultFactory(
@@ -116,12 +110,7 @@ describe('InfraredBGTIsolationModeTokenVaultV1', () => {
       core,
     );
     const bgtVaultImplementation = await createBGTIsolationModeTokenVaultV1();
-    bgtFactory = await createBGTIsolationModeVaultFactory(
-      registry,
-      core.tokens.bgt,
-      bgtVaultImplementation,
-      core,
-    );
+    bgtFactory = await createBGTIsolationModeVaultFactory(registry, core.tokens.bgt, bgtVaultImplementation, core);
     const iBgtVaultImplementation = await createInfraredBGTIsolationModeTokenVaultV1();
     iBgtFactory = await createInfraredBGTIsolationModeVaultFactory(
       registry,
@@ -181,10 +170,7 @@ describe('InfraredBGTIsolationModeTokenVaultV1', () => {
     });
 
     it('should fail if not called by metaVault', async () => {
-      await expectThrow(
-        iBgtVault.setIsDepositSourceMetaVault(true),
-        'MetaVaultRewardReceiver: Only metaVault'
-      );
+      await expectThrow(iBgtVault.setIsDepositSourceMetaVault(true), 'MetaVaultRewardReceiver: Only metaVault');
     });
   });
 
@@ -203,11 +189,9 @@ describe('InfraredBGTIsolationModeTokenVaultV1', () => {
       await core.tokens.iBgt.connect(metaVaultImpersonator).approve(iBgtVault.address, amountWei);
 
       await iBgtVault.connect(metaVaultImpersonator).setIsDepositSourceMetaVault(true);
-      await iBgtFactory.connect(metaVaultImpersonator).depositIntoDolomiteMarginFromMetaVault(
-        core.hhUser1.address,
-        defaultAccountNumber,
-        amountWei
-      );
+      await iBgtFactory
+        .connect(metaVaultImpersonator)
+        .depositIntoDolomiteMarginFromMetaVault(core.hhUser1.address, defaultAccountNumber, amountWei);
       await expectProtocolBalance(core, iBgtVault, defaultAccountNumber, iBgtMarketId, amountWei);
       expect(await iBgtVault.underlyingBalanceOf()).to.eq(ZERO_BI);
       expect(await core.berachainRewardsEcosystem.iBgtStakingPool.balanceOf(iBgtVault.address)).to.eq(amountWei);
@@ -216,7 +200,7 @@ describe('InfraredBGTIsolationModeTokenVaultV1', () => {
     it('should fail if not called by factory', async () => {
       await expectThrow(
         iBgtVault.connect(core.hhUser1).executeDepositIntoVault(core.hhUser1.address, amountWei),
-        `IsolationModeTokenVaultV1: Only factory can call <${core.hhUser1.address.toLowerCase()}>`
+        `IsolationModeTokenVaultV1: Only factory can call <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
@@ -251,7 +235,7 @@ describe('InfraredBGTIsolationModeTokenVaultV1', () => {
     it('should fail if not called by factory', async () => {
       await expectThrow(
         iBgtVault.connect(core.hhUser1).executeWithdrawalFromVault(core.hhUser1.address, amountWei),
-        `IsolationModeTokenVaultV1: Only factory can call <${core.hhUser1.address.toLowerCase()}>`
+        `IsolationModeTokenVaultV1: Only factory can call <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
@@ -270,7 +254,7 @@ describe('InfraredBGTIsolationModeTokenVaultV1', () => {
     it('should fail if not called by vault owner', async () => {
       await expectThrow(
         iBgtVault.connect(core.hhUser2).stake(amountWei),
-        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`
+        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
   });
@@ -286,7 +270,7 @@ describe('InfraredBGTIsolationModeTokenVaultV1', () => {
     it('should fail if not called by vault owner', async () => {
       await expectThrow(
         iBgtVault.connect(core.hhUser2).unstake(amountWei),
-        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`
+        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
   });
@@ -302,14 +286,14 @@ describe('InfraredBGTIsolationModeTokenVaultV1', () => {
         { owner: core.hhUser1.address, number: defaultAccountNumber },
         core.marketIds.honey,
         ONE_BI,
-        0
+        0,
       );
     });
 
     it('should fail if not called by vault owner', async () => {
       await expectThrow(
         iBgtVault.connect(core.hhUser2).getReward(),
-        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`
+        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
   });

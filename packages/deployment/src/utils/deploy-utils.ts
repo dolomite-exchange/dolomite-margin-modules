@@ -38,7 +38,9 @@ import {
   ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { impersonate } from '@dolomite-exchange/modules-base/test/utils';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocols/core-protocol-arbitrum-one';
+import {
+  CoreProtocolArbitrumOne,
+} from '@dolomite-exchange/modules-base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { CoreProtocolType } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { IGmxV2IsolationModeVaultFactory } from '@dolomite-exchange/modules-gmx-v2/src/types';
 import {
@@ -459,11 +461,14 @@ async function verifyFactoryChildProxyContractIfNecessary(
 ) {
   if (network.name !== 'hardhat') {
     const receipt = await ethers.provider.getTransactionReceipt(deploymentTransactionHash);
-    const vaultCreatedTopic0 = '0x5d9c31ffa0fecffd7cf379989a3c7af252f0335e0d2a1320b55245912c781f53';
-    const event = receipt?.logs.find((l) => l.topics[0] === vaultCreatedTopic0);
+    const VaultCreatedTopic0 = '0x5d9c31ffa0fecffd7cf379989a3c7af252f0335e0d2a1320b55245912c781f53';
+    const MetaVaultCreatedTopic0 = '0x6608a8f408f06b50497bd32b0bdfc3dead2b99c9e38f8fd2350e21c60969a7b2';
+    const vaultCreatedTopic0s = [VaultCreatedTopic0, MetaVaultCreatedTopic0];
+    const event = receipt?.logs.find((l) => vaultCreatedTopic0s.includes(l.topics[0]));
     if (event) {
       const vaultAddress = ethers.utils.defaultAbiCoder.decode(['address'], event.data)[0];
-      const vaultRename = `${usedContractName}DeadProxy`;
+      const vaultRename =
+        event.topics[0] === VaultCreatedTopic0 ? `${usedContractName}DeadProxy` : 'BerachainMetaVaultDeadProxy';
       if (!file[vaultRename]?.[chainId]?.isVerified) {
         file[vaultRename] = {
           ...file[vaultRename],
@@ -474,7 +479,11 @@ async function verifyFactoryChildProxyContractIfNecessary(
           },
         };
         writeDeploymentFile(file);
-        await prettyPrintAndVerifyContract(file, chainId, 'IsolationModeUpgradeableProxy', vaultRename, [], {});
+
+        const contractName = event.topics[0] === VaultCreatedTopic0
+          ? 'IsolationModeUpgradeableProxy'
+          : 'MetaVaultUpgradeableProxy';
+        await prettyPrintAndVerifyContract(file, chainId, contractName, vaultRename, [], {});
       } else {
         console.log(
           `\tContract ${vaultRename} has already been verified on chainId ${chainId} (${vaultAddress}). Skipping...`,
@@ -770,7 +779,8 @@ async function getFormattedTokenName<T extends NetworkType>(
   const token = IERC20Metadata__factory.connect(tokenAddress, core.hhUser1);
   try {
     mostRecentTokenDecimals = await token.decimals();
-  } catch (e) {}
+  } catch (e) {
+  }
 
   const cachedName = addressToNameCache[tokenAddress.toString().toLowerCase()];
   if (typeof cachedName !== 'undefined') {

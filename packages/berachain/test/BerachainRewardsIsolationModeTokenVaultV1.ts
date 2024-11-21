@@ -76,7 +76,6 @@ describe('BerachainRewardsIsolationModeTokenVaultV1', () => {
   let beraVault: BerachainRewardsIsolationModeTokenVaultV1;
   let metaVault: BerachainRewardsMetaVault;
   let iBgtVault: InfraredBGTIsolationModeTokenVaultV1;
-  let bgtVault: BGTIsolationModeTokenVaultV1;
 
   let marketId: BigNumber;
   let bgtMarketId: BigNumber;
@@ -166,16 +165,6 @@ describe('BerachainRewardsIsolationModeTokenVaultV1', () => {
     );
     metaVault = BerachainRewardsMetaVault__factory.connect(
       await registry.getMetaVaultByAccount(core.hhUser1.address),
-      core.hhUser1,
-    );
-    bgtVault = setupUserVaultProxy<BGTIsolationModeTokenVaultV1>(
-      await bgtFactory.getVaultByAccount(core.hhUser1.address),
-      BGTIsolationModeTokenVaultV1__factory,
-      core.hhUser1,
-    );
-    iBgtVault = setupUserVaultProxy<InfraredBGTIsolationModeTokenVaultV1>(
-      await iBgtFactory.getVaultByAccount(core.hhUser1.address),
-      InfraredBGTIsolationModeTokenVaultV1__factory,
       core.hhUser1,
     );
 
@@ -323,6 +312,14 @@ describe('BerachainRewardsIsolationModeTokenVaultV1', () => {
       await increase(10 * ONE_DAY_SECONDS);
 
       await beraVault.exit(RewardVaultType.Infrared);
+
+      // The iBGT vault is now created since we called Exit
+      iBgtVault = setupUserVaultProxy<InfraredBGTIsolationModeTokenVaultV1>(
+        await iBgtFactory.getVaultByAccount(core.hhUser1.address),
+        InfraredBGTIsolationModeTokenVaultV1__factory,
+        core.hhUser1,
+      );
+
       expect(await underlyingToken.balanceOf(beraVault.address)).to.eq(amountWei);
       await expectProtocolBalanceIsGreaterThan(
         core,

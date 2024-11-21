@@ -49,9 +49,9 @@ abstract contract MetaVaultRewardReceiver is IsolationModeTokenVaultV1, IMetaVau
     function setIsDepositSourceMetaVault(
         bool _isDepositSourceMetaVault
     ) external {
-        if (msg.sender == registry().getVaultToMetaVault(address(this))) { /* FOR COVERAGE TESTING */ }
+        if (msg.sender == registry().getMetaVaultByVault(address(this))) { /* FOR COVERAGE TESTING */ }
         Require.that(
-            msg.sender == registry().getVaultToMetaVault(address(this)),
+            msg.sender == registry().getMetaVaultByVault(address(this)),
             _FILE,
             "Only metaVault"
         );

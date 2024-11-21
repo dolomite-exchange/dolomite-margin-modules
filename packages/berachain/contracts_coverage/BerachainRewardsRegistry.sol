@@ -21,7 +21,6 @@
 pragma solidity ^0.8.9;
 
 import { BaseRegistry } from "@dolomite-exchange/modules-base/contracts/general/BaseRegistry.sol";
-import { IIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { Create2 } from "@openzeppelin/contracts/utils/Create2.sol";
@@ -93,27 +92,23 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
         address _account,
         address _vault
     ) external override onlyDolomiteMarginGlobalOperator(msg.sender) returns (address) {
-        IIsolationModeVaultFactory factory = IIsolationModeVaultFactory(msg.sender);
-        /*assert(factory.isIsolationAsset());*/
-        /*assert(factory.getAccountByVault(_vault) == _account);*/
+        (bool isTokenVault,) = address(DOLOMITE_MARGIN()).staticcall(
+            abi.encodeWithSelector(DOLOMITE_MARGIN().getMarketIdByTokenAddress.selector, msg.sender)
+        );
+        if (isTokenVault) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            isTokenVault,
+            _FILE,
+            "Caller is not a valid factory",
+            msg.sender
+        );
 
-        address metaVault = getAccountToMetaVault(_account);
+        address metaVault = getMetaVaultByAccount(_account);
         if (metaVault == address(0)) {
             metaVault = _createMetaVault(_account);
-
-            // @audit - We can't create these vaults here... if we add a new receivable asset like BGT.m, it won't be
-            //          created here for legacy accounts
-            address bgtVault = bgtIsolationModeVaultFactory().createVault(_account);
-            _setAddressInMap(_VAULT_TO_META_VAULT_SLOT, bgtVault, metaVault);
-
-            address iBgtVault = iBgtIsolationModeVaultFactory().getVaultByAccount(_account);
-            if (iBgtVault == address(0)) {
-                iBgtVault = iBgtIsolationModeVaultFactory().createVault(_account);
-            }
-            _setAddressInMap(_VAULT_TO_META_VAULT_SLOT, iBgtVault, metaVault);
         }
 
-        _setAddressInMap(_VAULT_TO_META_VAULT_SLOT, _vault, metaVault);
+        _setVaultToMetaVault(_vault, metaVault);
 
         return metaVault;
     }
@@ -122,7 +117,12 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
         address _vault,
         address _metaVault
     ) external override onlyDolomiteMarginGlobalOperator(msg.sender) {
+        _setVaultToMetaVault(_vault, _metaVault);
+    }
+
+    function _setVaultToMetaVault(address _vault, address _metaVault) internal {
         _setAddressInMap(_VAULT_TO_META_VAULT_SLOT, _vault, _metaVault);
+        emit VaultToMetaVaultSet(_vault, _metaVault);
     }
 
     /**
@@ -134,12 +134,12 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
      */
     function setAccountToAssetToDefaultType(address _asset, RewardVaultType _type) external {
         // @audit @Corey, please double check this logic
-        address account = getMetaVaultToAccount(msg.sender);
+        address account = getAccountByMetaVault(msg.sender);
         if (account == address(0)){
             account = msg.sender;
         }
 
-        address metaVault = getAccountToMetaVault(account);
+        address metaVault = getMetaVaultByAccount(account);
         if (IERC20(rewardVault(_asset, getAccountToAssetToDefaultType(account, _asset))).balanceOf(metaVault) == 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             IERC20(rewardVault(_asset, getAccountToAssetToDefaultType(account, _asset))).balanceOf(metaVault) == 0,
@@ -199,6 +199,7 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
         RewardVaultType _type,
         address _rewardVault
     ) external override onlyDolomiteMarginOwner(msg.sender) {
+        // TODO: can we retrieve this dynamically?
         _ownerSetRewardVault(_asset, _type, _rewardVault);
     }
 
@@ -254,15 +255,15 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
         return RewardVaultType(_getUint256InNestedMap(_ACCOUNT_TO_DEFAULT_TYPE_SLOT, _account, _asset));
     }
 
-    function getAccountToMetaVault(address _account) public view override returns (address) {
+    function getMetaVaultByAccount(address _account) public view override returns (address) {
         return _getAddressFromMap(_ACCOUNT_TO_META_VAULT_SLOT, _account);
     }
 
-    function getMetaVaultToAccount(address _metaVault) public view override returns (address) {
+    function getAccountByMetaVault(address _metaVault) public view override returns (address) {
         return _getAddressFromMap(_META_VAULT_TO_ACCOUNT_SLOT, _metaVault);
     }
 
-    function getVaultToMetaVault(address _vault) public view override returns (address) {
+    function getMetaVaultByVault(address _vault) public view override returns (address) {
         return _getAddressFromMap(_VAULT_TO_META_VAULT_SLOT, _vault);
     }
 

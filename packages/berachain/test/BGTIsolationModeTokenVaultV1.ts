@@ -174,11 +174,6 @@ describe('BGTIsolationModeTokenVaultV1', () => {
       await registry.getMetaVaultByAccount(core.hhUser1.address),
       core.hhUser1,
     );
-    bgtVault = setupUserVaultProxy<BGTIsolationModeTokenVaultV1>(
-      await bgtFactory.getVaultByAccount(core.hhUser1.address),
-      BGTIsolationModeTokenVaultV1__factory,
-      core.hhUser1,
-    );
 
     const lpWhale = await impersonate(LP_TOKEN_WHALE_ADDRESS);
     await underlyingToken.connect(lpWhale).transfer(core.hhUser1.address, amountWei);
@@ -187,6 +182,13 @@ describe('BGTIsolationModeTokenVaultV1', () => {
     await beraVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
     await increase(10 * ONE_DAY_SECONDS);
     await metaVault.getReward(underlyingToken.address, RewardVaultType.Native);
+
+    // Get the vault now that it has been created
+    bgtVault = setupUserVaultProxy<BGTIsolationModeTokenVaultV1>(
+      await bgtFactory.getVaultByAccount(core.hhUser1.address),
+      BGTIsolationModeTokenVaultV1__factory,
+      core.hhUser1,
+    );
 
     bgtBal = await core.tokens.bgt.balanceOf(metaVault.address);
     await expectProtocolBalance(core, bgtVault, defaultAccountNumber, bgtMarketId, bgtBal);

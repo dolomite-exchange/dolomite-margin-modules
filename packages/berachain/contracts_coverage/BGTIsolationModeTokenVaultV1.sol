@@ -80,7 +80,7 @@ contract BGTIsolationModeTokenVaultV1 is
     public
     override(IIsolationModeTokenVaultV1, IsolationModeTokenVaultV1)
     onlyVaultFactory(msg.sender) {
-        IBerachainRewardsMetaVault metaVault = IBerachainRewardsMetaVault(registry().getAccountToMetaVault(OWNER()));
+        IBerachainRewardsMetaVault metaVault = IBerachainRewardsMetaVault(registry().getMetaVaultByAccount(OWNER()));
         /*assert(_recipient != address(this));*/
         metaVault.withdrawBGTAndRedeem(_recipient, _amount);
     }

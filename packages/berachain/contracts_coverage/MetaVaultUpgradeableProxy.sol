@@ -92,9 +92,9 @@ contract MetaVaultUpgradeableProxy is
             _FILE,
             "Already initialized"
         );
-        if (IBerachainRewardsRegistry(registry()).getAccountToMetaVault(_vaultOwner) == address(this)) { /* FOR COVERAGE TESTING */ }
+        if (IBerachainRewardsRegistry(registry()).getMetaVaultByAccount(_vaultOwner) == address(this)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-            IBerachainRewardsRegistry(registry()).getAccountToMetaVault(_vaultOwner) == address(this),
+            IBerachainRewardsRegistry(registry()).getMetaVaultByAccount(_vaultOwner) == address(this),
             _FILE,
             "Invalid account",
             _vaultOwner

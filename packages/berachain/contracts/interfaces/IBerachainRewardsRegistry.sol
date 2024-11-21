@@ -79,7 +79,6 @@ interface IBerachainRewardsRegistry is IBaseRegistry {
     // ===================================================
 
     function createMetaVault(address _account, address _vault) external returns (address);
-    function registerVaultToMetaVault(address _vault, address _metaVault) external;
     function setAccountToAssetToDefaultType(address _asset, RewardVaultType _type) external;
 
     // ===================================================

@@ -1,4 +1,21 @@
+import {
+  ADDRESS_ZERO,
+  Network,
+  ONE_ETH_BI,
+  ZERO_BI,
+} from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
+import { expectEvent, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
+import {
+  setupCoreProtocol,
+  setupTestMarket,
+  setupUserVaultProxy,
+} from '@dolomite-exchange/modules-base/test/utils/setup';
 import { expect } from 'chai';
+import { parseEther } from 'ethers/lib/utils';
+import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
+import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
+import Web3 from 'web3';
 import {
   BerachainRewardsIsolationModeTokenVaultV1,
   BerachainRewardsIsolationModeTokenVaultV1__factory,
@@ -6,24 +23,14 @@ import {
   BerachainRewardsMetaVault,
   BerachainRewardsMetaVault__factory,
   BerachainRewardsRegistry,
-  INativeRewardVault,
+  BGTIsolationModeVaultFactory,
   IERC20,
   IInfraredRewardVault,
+  INativeRewardVault,
+  InfraredBGTIsolationModeVaultFactory,
   MetaVaultOperator,
   MetaVaultOperator__factory,
-  BGTIsolationModeVaultFactory,
-  InfraredBGTIsolationModeVaultFactory,
 } from '../src/types';
-import {
-  ADDRESS_ZERO,
-  Network,
-  ONE_ETH_BI,
-  ZERO_BI
-} from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
-import { expectEvent, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
 import {
   createBerachainRewardsIsolationModeTokenVaultV1,
   createBerachainRewardsIsolationModeVaultFactory,
@@ -32,10 +39,8 @@ import {
   createBGTIsolationModeVaultFactory,
   createInfraredBGTIsolationModeTokenVaultV1,
   createInfraredBGTIsolationModeVaultFactory,
-  RewardVaultType
+  RewardVaultType,
 } from './berachain-ecosystem-utils';
-import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
-import { parseEther } from 'ethers/lib/utils';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 const LP_TOKEN_WHALE_ADDRESS = '0x1293DA55eC372a94368Fa20E8DF69FaBc3320baE';
@@ -83,16 +88,12 @@ describe('BerachainRewardsRegistry', () => {
       [core.dolomiteMargin.address],
     );
     registry = await createBerachainRewardsRegistry(core, metaVaultImplementation, metaVaultOperator);
-    await registry.connect(core.governance).ownerSetRewardVault(
-      underlyingToken.address,
-      RewardVaultType.Native,
-      nativeRewardVault.address
-    );
-    await registry.connect(core.governance).ownerSetRewardVault(
-      underlyingToken.address,
-      RewardVaultType.Infrared,
-      infraredRewardVault.address
-    );
+    await registry
+      .connect(core.governance)
+      .ownerSetRewardVault(underlyingToken.address, RewardVaultType.Native, nativeRewardVault.address);
+    await registry
+      .connect(core.governance)
+      .ownerSetRewardVault(underlyingToken.address, RewardVaultType.Infrared, infraredRewardVault.address);
 
     vaultImplementation = await createBerachainRewardsIsolationModeTokenVaultV1();
     beraFactory = await createBerachainRewardsIsolationModeVaultFactory(
@@ -108,12 +109,7 @@ describe('BerachainRewardsRegistry', () => {
       core,
     );
     const bgtVaultImplementation = await createBGTIsolationModeTokenVaultV1();
-    bgtFactory = await createBGTIsolationModeVaultFactory(
-      registry,
-      core.tokens.bgt,
-      bgtVaultImplementation,
-      core,
-    );
+    bgtFactory = await createBGTIsolationModeVaultFactory(registry, core.tokens.bgt, bgtVaultImplementation, core);
     const iBgtVaultImplementation = await createInfraredBGTIsolationModeTokenVaultV1();
     iBgtFactory = await createInfraredBGTIsolationModeVaultFactory(
       registry,
@@ -170,7 +166,7 @@ describe('BerachainRewardsRegistry', () => {
           core.berachainRewardsEcosystem.iBgtStakingPool.address,
           metaVaultImplementation.address,
           metaVaultOperator.address,
-          core.dolomiteRegistry.address
+          core.dolomiteRegistry.address,
         ),
         'Initializable: contract is already initialized',
       );
@@ -187,10 +183,9 @@ describe('BerachainRewardsRegistry', () => {
         metaVault: metaVaultAddress,
       });
 
-      expect(await registry.getAccountToAssetToDefaultType(
-        core.hhUser1.address,
-        underlyingToken.address
-      )).to.equal(RewardVaultType.Native);
+      expect(await registry.getAccountToAssetToDefaultType(core.hhUser1.address, underlyingToken.address)).to.equal(
+        RewardVaultType.Native,
+      );
       expect(await registry.getMetaVaultByAccount(core.hhUser1.address)).to.equal(metaVaultAddress);
       expect(await registry.getAccountByMetaVault(metaVaultAddress)).to.equal(core.hhUser1.address);
       expect(await registry.getMetaVaultByVault(vaultAddress)).to.equal(metaVaultAddress);
@@ -208,10 +203,9 @@ describe('BerachainRewardsRegistry', () => {
       });
 
       await otherFactory.createVault(core.hhUser1.address);
-      expect(await registry.getAccountToAssetToDefaultType(
-        core.hhUser1.address,
-        underlyingToken.address
-      )).to.equal(RewardVaultType.Native);
+      expect(await registry.getAccountToAssetToDefaultType(core.hhUser1.address, underlyingToken.address)).to.equal(
+        RewardVaultType.Native,
+      );
       expect(await registry.getMetaVaultByAccount(core.hhUser1.address)).to.equal(metaVaultAddress);
       expect(await registry.getAccountByMetaVault(metaVaultAddress)).to.equal(core.hhUser1.address);
       expect(await registry.getMetaVaultByVault(vaultAddress)).to.equal(metaVaultAddress);
@@ -222,7 +216,7 @@ describe('BerachainRewardsRegistry', () => {
       await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(core.hhUser5.address, true);
       await expectThrow(
         registry.connect(core.hhUser5).createMetaVault(core.hhUser5.address, OTHER_ADDRESS),
-        `BerachainRewardsRegistry: Caller is not a valid factory <${core.hhUser5.addressLower}>`
+        `BerachainRewardsRegistry: Caller is not a valid factory <${core.hhUser5.addressLower}>`,
       );
     });
 
@@ -236,67 +230,53 @@ describe('BerachainRewardsRegistry', () => {
 
   describe('#setAccountToAssetToDefaultType', () => {
     it('should work normally if called by user', async () => {
-      await registry.connect(core.governance).ownerSetRewardVault(
-        underlyingToken.address,
+      await registry
+        .connect(core.governance)
+        .ownerSetRewardVault(underlyingToken.address, RewardVaultType.Native, nativeRewardVault.address);
+      await registry
+        .connect(core.governance)
+        .ownerSetRewardVault(underlyingToken.address, RewardVaultType.Infrared, infraredRewardVault.address);
+      expect(await registry.getAccountToAssetToDefaultType(core.hhUser1.address, underlyingToken.address)).to.equal(
         RewardVaultType.Native,
-        nativeRewardVault.address
       );
-      await registry.connect(core.governance).ownerSetRewardVault(
-        underlyingToken.address,
-        RewardVaultType.Infrared,
-        infraredRewardVault.address
-      );
-      expect(await registry.getAccountToAssetToDefaultType(
-        core.hhUser1.address,
-        underlyingToken.address
-      )).to.equal(RewardVaultType.Native);
-      const res = await registry.connect(core.hhUser1).setAccountToAssetToDefaultType(
-        underlyingToken.address,
-        RewardVaultType.Infrared
-      );
+      const res = await registry
+        .connect(core.hhUser1)
+        .setAccountToAssetToDefaultType(underlyingToken.address, RewardVaultType.Infrared);
       await expectEvent(registry, res, 'AccountToAssetToDefaultTypeSet', {
         account: core.hhUser1.address,
         asset: underlyingToken.address,
         type: RewardVaultType.Infrared,
       });
-      expect(await registry.getAccountToAssetToDefaultType(
-        core.hhUser1.address,
-        underlyingToken.address
-      )).to.equal(RewardVaultType.Infrared);
+      expect(await registry.getAccountToAssetToDefaultType(core.hhUser1.address, underlyingToken.address)).to.equal(
+        RewardVaultType.Infrared,
+      );
     });
 
     it('should work normally if called by metaVault', async () => {
-      await registry.connect(core.governance).ownerSetRewardVault(
-        underlyingToken.address,
+      await registry
+        .connect(core.governance)
+        .ownerSetRewardVault(underlyingToken.address, RewardVaultType.Native, nativeRewardVault.address);
+      await registry
+        .connect(core.governance)
+        .ownerSetRewardVault(underlyingToken.address, RewardVaultType.Infrared, infraredRewardVault.address);
+      expect(await registry.getAccountToAssetToDefaultType(core.hhUser1.address, underlyingToken.address)).to.equal(
         RewardVaultType.Native,
-        nativeRewardVault.address
       );
-      await registry.connect(core.governance).ownerSetRewardVault(
-        underlyingToken.address,
-        RewardVaultType.Infrared,
-        infraredRewardVault.address
-      );
-      expect(await registry.getAccountToAssetToDefaultType(
-        core.hhUser1.address,
-        underlyingToken.address
-      )).to.equal(RewardVaultType.Native);
       const metaVaultAddress = await registry.calculateMetaVaultByAccount(core.hhUser1.address);
       await beraFactory.createVault(core.hhUser1.address);
 
       const metaVaultImpersonator = await impersonate(metaVaultAddress, true);
-      const res = await registry.connect(metaVaultImpersonator).setAccountToAssetToDefaultType(
-        underlyingToken.address,
-        RewardVaultType.Infrared
-      );
+      const res = await registry
+        .connect(metaVaultImpersonator)
+        .setAccountToAssetToDefaultType(underlyingToken.address, RewardVaultType.Infrared);
       await expectEvent(registry, res, 'AccountToAssetToDefaultTypeSet', {
         account: core.hhUser1.address,
         asset: underlyingToken.address,
         type: RewardVaultType.Infrared,
       });
-      expect(await registry.getAccountToAssetToDefaultType(
-        core.hhUser1.address,
-        underlyingToken.address
-      )).to.equal(RewardVaultType.Infrared);
+      expect(await registry.getAccountToAssetToDefaultType(core.hhUser1.address, underlyingToken.address)).to.equal(
+        RewardVaultType.Infrared,
+      );
     });
 
     it('should fail if user has staked balance in default type', async () => {
@@ -306,16 +286,12 @@ describe('BerachainRewardsRegistry', () => {
         BerachainRewardsIsolationModeTokenVaultV1__factory,
         core.hhUser1,
       );
-      await registry.connect(core.governance).ownerSetRewardVault(
-        underlyingToken.address,
-        RewardVaultType.Native,
-        nativeRewardVault.address
-      );
-      await registry.connect(core.governance).ownerSetRewardVault(
-        underlyingToken.address,
-        RewardVaultType.Infrared,
-        infraredRewardVault.address
-      );
+      await registry
+        .connect(core.governance)
+        .ownerSetRewardVault(underlyingToken.address, RewardVaultType.Native, nativeRewardVault.address);
+      await registry
+        .connect(core.governance)
+        .ownerSetRewardVault(underlyingToken.address, RewardVaultType.Infrared, infraredRewardVault.address);
 
       const lpWhale = await impersonate(LP_TOKEN_WHALE_ADDRESS);
       await underlyingToken.connect(lpWhale).transfer(core.hhUser1.address, amountWei);
@@ -324,7 +300,7 @@ describe('BerachainRewardsRegistry', () => {
 
       await expectThrow(
         registry.setAccountToAssetToDefaultType(underlyingToken.address, RewardVaultType.Infrared),
-        'BerachainRewardsRegistry: Default type not empty'
+        'BerachainRewardsRegistry: Default type not empty',
       );
     });
   });
@@ -503,37 +479,37 @@ describe('BerachainRewardsRegistry', () => {
       const rewardVaultType = RewardVaultType.Native;
       const rewardVault = core.berachainRewardsEcosystem.listedRewardAssets.bexHoneyUsdc.nativeRewardVault.address;
 
-      const result = await registry.connect(core.governance).ownerSetRewardVault(
-        asset,
-        rewardVaultType,
-        rewardVault
-      );
+      const result = await registry.connect(core.governance).ownerSetRewardVault(asset, rewardVaultType, rewardVault);
       await expectEvent(registry, result, 'RewardVaultSet', {
         asset,
         rewardVaultType,
-        rewardVault
+        rewardVault,
       });
       expect(await registry.rewardVault(asset, rewardVaultType)).to.equal(rewardVault);
     });
 
     it('should fail if not called by owner', async () => {
       await expectThrow(
-        registry.connect(core.hhUser1).ownerSetRewardVault(
-          core.berachainRewardsEcosystem.listedRewardAssets.bexHoneyUsdc.asset.address,
-          RewardVaultType.Native,
-          core.berachainRewardsEcosystem.listedRewardAssets.bexHoneyUsdc.nativeRewardVault.address
-        ),
+        registry
+          .connect(core.hhUser1)
+          .ownerSetRewardVault(
+            core.berachainRewardsEcosystem.listedRewardAssets.bexHoneyUsdc.asset.address,
+            RewardVaultType.Native,
+            core.berachainRewardsEcosystem.listedRewardAssets.bexHoneyUsdc.nativeRewardVault.address,
+          ),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
     it('should fail if zero address is set', async () => {
       await expectThrow(
-        registry.connect(core.governance).ownerSetRewardVault(
-          core.berachainRewardsEcosystem.listedRewardAssets.bexHoneyUsdc.asset.address,
-          RewardVaultType.Native,
-          ADDRESS_ZERO
-        ),
+        registry
+          .connect(core.governance)
+          .ownerSetRewardVault(
+            core.berachainRewardsEcosystem.listedRewardAssets.bexHoneyUsdc.asset.address,
+            RewardVaultType.Native,
+            ADDRESS_ZERO,
+          ),
         'BerachainRewardsRegistry: Invalid rewardVault address',
       );
     });

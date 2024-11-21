@@ -21,6 +21,7 @@
 pragma solidity ^0.8.9;
 
 import { ProxyContractHelpers } from "@dolomite-exchange/modules-base/contracts/helpers/ProxyContractHelpers.sol";
+import { IERC4626 } from "@dolomite-exchange/modules-base/contracts/interfaces/IERC4626.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -78,29 +79,37 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
         _;
     }
 
+    modifier onlyValidDolomiteToken(address _asset) {
+        _requireValidDolomiteToken(_asset);
+        _;
+    }
+
     // ==================================================================
     // ======================== Public Functions ========================
     // ==================================================================
+
+    function stakeDolomiteToken(
+        address _asset,
+        IBerachainRewardsRegistry.RewardVaultType _type,
+        uint256 _amount
+    ) external onlyMetaVaultOwner(msg.sender) onlyValidDolomiteToken(_asset) {
+        _stake(_asset, _type, _amount);
+    }
+
+    function unstakeDolomiteToken(
+        address _asset,
+        IBerachainRewardsRegistry.RewardVaultType _type,
+        uint256 _amount
+    ) external onlyMetaVaultOwner(msg.sender) onlyValidDolomiteToken(_asset) {
+        _unstake(_asset, _type, _amount);
+    }
 
     function stake(
         address _asset,
         IBerachainRewardsRegistry.RewardVaultType _type,
         uint256 _amount
     ) external onlyChildVault(msg.sender) {
-        IBerachainRewardsRegistry rewardRegistry = REGISTRY();
-        INativeRewardVault rewardVault = INativeRewardVault(rewardRegistry.rewardVault(_asset, _type));
-        IBerachainRewardsRegistry.RewardVaultType _defaultType = rewardRegistry.getAccountToAssetToDefaultType(
-            OWNER(),
-            _asset
-        );
-
-        if (_defaultType != _type) {
-            rewardRegistry.setAccountToAssetToDefaultType(_asset, _type);
-        }
-
-        IERC20(_asset).safeTransferFrom(msg.sender, address(this), _amount);
-        IERC20(_asset).safeApprove(address(rewardVault), _amount);
-        rewardVault.stake(_amount);
+        _stake(_asset, _type, _amount);
     }
 
     function unstake(
@@ -108,9 +117,7 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
         IBerachainRewardsRegistry.RewardVaultType _type,
         uint256 _amount
     ) external onlyChildVault(msg.sender) {
-        INativeRewardVault rewardVault = INativeRewardVault(REGISTRY().rewardVault(_asset, _type));
-        rewardVault.withdraw(_amount);
-        IERC20(_asset).safeTransfer(msg.sender, _amount);
+        _unstake(_asset, _type, _amount);
     }
 
     function getReward(
@@ -297,6 +304,37 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
         }
     }
 
+    function _stake(
+        address _asset,
+        IBerachainRewardsRegistry.RewardVaultType _type,
+        uint256 _amount
+    ) internal {
+        IBerachainRewardsRegistry rewardRegistry = REGISTRY();
+        INativeRewardVault rewardVault = INativeRewardVault(rewardRegistry.rewardVault(_asset, _type));
+        IBerachainRewardsRegistry.RewardVaultType _defaultType = rewardRegistry.getAccountToAssetToDefaultType(
+            OWNER(),
+            _asset
+        );
+
+        if (_defaultType != _type) {
+            rewardRegistry.setAccountToAssetToDefaultType(_asset, _type);
+        }
+
+        IERC20(_asset).safeTransferFrom(msg.sender, address(this), _amount);
+        IERC20(_asset).safeApprove(address(rewardVault), _amount);
+        rewardVault.stake(_amount);
+    }
+
+    function _unstake(
+        address _asset,
+        IBerachainRewardsRegistry.RewardVaultType _type,
+        uint256 _amount
+    ) internal {
+        INativeRewardVault rewardVault = INativeRewardVault(REGISTRY().rewardVault(_asset, _type));
+        rewardVault.withdraw(_amount);
+        IERC20(_asset).safeTransfer(msg.sender, _amount);
+    }
+
     function _performDepositRewardByRewardType(
         IMetaVaultRewardTokenFactory _factory,
         IBerachainRewardsRegistry.RewardVaultType _type,
@@ -348,6 +386,20 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
             validator() == _validator,
             _FILE,
             "Does not match active validator"
+        );
+    }
+
+    function _requireValidDolomiteToken(address _asset) internal view {
+        (bool isValidDolomiteToken,) = address(REGISTRY().DOLOMITE_MARGIN()).staticcall(
+            abi.encodeWithSelector(
+                REGISTRY().DOLOMITE_MARGIN().getMarketIdByTokenAddress.selector,
+                IERC4626(_asset).asset()
+            )
+        );
+        Require.that(
+            isValidDolomiteToken,
+            _FILE,
+            "Invalid Dolomite token"
         );
     }
 }

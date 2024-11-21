@@ -55,6 +55,7 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
     bytes32 private constant _OWNER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.owner")) - 1);
     bytes32 private constant _VALIDATOR_SLOT = bytes32(uint256(keccak256("eip1967.proxy.validator")) - 1);
 
+    /// @dev This variable is hardcoded here because it's private in the BGT contract
     uint256 public constant HISTORY_BUFFER_LENGTH = 8191;
     uint256 public constant DEFAULT_ACCOUNT_NUMBER = 0;
 
@@ -63,34 +64,17 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
     // ==================================================================
 
     modifier onlyChildVault(address _sender) {
-        if (REGISTRY().getVaultToMetaVault(_sender) == address(this)) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            REGISTRY().getVaultToMetaVault(_sender) == address(this),
-            _FILE,
-            "Only child vault can call",
-            _sender
-        );
+        _requireOnlyChildVault(_sender);
         _;
     }
 
     modifier onlyMetaVaultOwner(address _sender) {
-        if (OWNER() == _sender) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            OWNER() == _sender,
-            _FILE,
-            "Only owner can call",
-            _sender
-        );
+        _requireOnlyMetaVaultOwner(_sender);
         _;
     }
 
     modifier onlyActiveValidator(address _validator) {
-        if (validator() == _validator) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            validator() == _validator,
-            _FILE,
-            "Does not match active validator"
-        );
+        _requireActiveValidator(_validator);
         _;
     }
 
@@ -322,6 +306,9 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
         uint256 _reward
     ) internal {
         address vault = _factory.getVaultByAccount(OWNER());
+        if (vault == address(0)) {
+            vault = _factory.createVault(OWNER());
+        }
 
         if (_type == IBerachainRewardsRegistry.RewardVaultType.INFRARED) {
             IERC20(REGISTRY().iBgt()).safeApprove(vault, _reward);
@@ -339,5 +326,34 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
             // Check the allowance was spent
             /*assert(IERC20(REGISTRY().iBgt()).allowance(vault, address(this)) == 0);*/
         }
+    }
+
+    function _requireOnlyChildVault(address _sender) internal view {
+        if (REGISTRY().getMetaVaultByVault(_sender) == address(this)) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            REGISTRY().getMetaVaultByVault(_sender) == address(this),
+            _FILE,
+            "Only child vault can call",
+            _sender
+        );
+    }
+
+    function _requireOnlyMetaVaultOwner(address _sender) internal view {
+        if (OWNER() == _sender) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            OWNER() == _sender,
+            _FILE,
+            "Only owner can call",
+            _sender
+        );
+    }
+
+    function _requireActiveValidator(address _validator) internal view {
+        if (validator() == _validator) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            validator() == _validator,
+            _FILE,
+            "Does not match active validator"
+        );
     }
 }

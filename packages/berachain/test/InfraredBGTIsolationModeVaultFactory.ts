@@ -163,7 +163,7 @@ describe('InfraredBGTIsolationModeVaultFactory', () => {
 
   describe('#depositIntoDolomiteMarginFromMetaVault', () => {
     it('should work normally', async () => {
-      await beraFactory.createVault(core.hhUser1.address);
+      await iBgtFactory.createVault(core.hhUser1.address);
       const iBgtVault = setupUserVaultProxy<InfraredBGTIsolationModeTokenVaultV1>(
         await iBgtFactory.getVaultByAccount(core.hhUser1.address),
         InfraredBGTIsolationModeTokenVaultV1__factory,

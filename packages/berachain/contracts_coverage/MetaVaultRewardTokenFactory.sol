@@ -78,10 +78,13 @@ abstract contract MetaVaultRewardTokenFactory is
         uint256 _amountWei
     ) external {
         address vault = _userToVaultMap[_owner];
-        /*assert(vault != address(0));*/
-        if (berachainRewardsRegistry.getVaultToMetaVault(vault) == msg.sender) { /* FOR COVERAGE TESTING */ }
+        if (vault == address(0)) {
+            vault = _createVault(_owner);
+        }
+
+        if (berachainRewardsRegistry.getMetaVaultByVault(vault) == msg.sender) { /* FOR COVERAGE TESTING */ }
         Require.that(
-            berachainRewardsRegistry.getVaultToMetaVault(vault) == msg.sender,
+            berachainRewardsRegistry.getMetaVaultByVault(vault) == msg.sender,
             _FILE,
             "Can only deposit from metaVault"
         );
@@ -120,5 +123,16 @@ abstract contract MetaVaultRewardTokenFactory is
     ) internal {
         berachainRewardsRegistry = IBerachainRewardsRegistry(_berachainRewardsRegistry);
         emit BerachainRewardsRegistrySet(_berachainRewardsRegistry);
+    }
+
+    function _createVault(address _account) internal override returns (address) {
+        address vault = super._createVault(_account);
+
+        if (_account != _DEAD_VAULT) {
+            // When initializing the _DEAD_ACCOUNT, the factory isn't set up yet as a global operator/listed market
+            berachainRewardsRegistry.createMetaVault(_account, vault);
+        }
+
+        return vault;
     }
 }

@@ -32,4 +32,16 @@ import { IMetaVaultRewardReceiver } from "./IMetaVaultRewardReceiver.sol";
  *          implementation contract for each user's proxy vault.
  */
 interface IInfraredBGTIsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, IMetaVaultRewardReceiver {
+
+    // ================================================
+    // ==================== Events ====================
+    // ================================================
+
+    event IsDepositSourceThisVaultSet(bool isDepositSourceThisVault);
+
+    // ===================================================
+    // ==================== Functions ====================
+    // ===================================================
+
+    function isDepositSourceThisVault() external view returns (bool);
 }

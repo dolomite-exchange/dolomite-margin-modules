@@ -170,20 +170,21 @@ describe('BGTIsolationModeVaultFactory', () => {
         await registry.getMetaVaultByAccount(core.hhUser1.address),
         core.hhUser1,
       );
-      const bgtVault = setupUserVaultProxy<BGTIsolationModeTokenVaultV1>(
-        await bgtFactory.getVaultByAccount(core.hhUser1.address),
-        BGTIsolationModeTokenVaultV1__factory,
-        core.hhUser1,
-      );
+
       const lpWhale = await impersonate(LP_TOKEN_WHALE_ADDRESS);
       await underlyingToken.connect(lpWhale).transfer(core.hhUser1.address, amountWei);
       await underlyingToken.connect(core.hhUser1).approve(beraVault.address, amountWei);
       await beraVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await increase(10 * ONE_DAY_SECONDS);
-      const bal = await metaVault.callStatic.getReward(underlyingToken.address, RewardVaultType.Native);
+      const balance = await metaVault.callStatic.getReward(underlyingToken.address, RewardVaultType.Native);
       await metaVault.getReward(underlyingToken.address, RewardVaultType.Native);
 
-      await expectProtocolBalance(core, bgtVault, defaultAccountNumber, bgtMarketId, bal);
+      const bgtVault = setupUserVaultProxy<BGTIsolationModeTokenVaultV1>(
+        await bgtFactory.getVaultByAccount(core.hhUser1.address),
+        BGTIsolationModeTokenVaultV1__factory,
+        core.hhUser1,
+      );
+      await expectProtocolBalance(core, bgtVault, defaultAccountNumber, bgtMarketId, balance);
     });
 
     it('should fail if not called by owners metaVault', async () => {

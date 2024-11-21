@@ -78,7 +78,10 @@ abstract contract MetaVaultRewardTokenFactory is
         uint256 _amountWei
     ) external {
         address vault = _userToVaultMap[_owner];
-        assert(vault != address(0));
+        if (vault == address(0)) {
+            vault = _createVault(_owner);
+        }
+
         Require.that(
             berachainRewardsRegistry.getMetaVaultByVault(vault) == msg.sender,
             _FILE,
