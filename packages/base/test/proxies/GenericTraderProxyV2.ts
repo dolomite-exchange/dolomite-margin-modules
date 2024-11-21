@@ -6,6 +6,7 @@ import {
   setupCoreProtocol,
   setupDAIBalance,
   setupTestMarket,
+  setupUSDCBalance,
   setupUserVaultProxy,
 } from '../utils/setup';
 import {
@@ -33,10 +34,11 @@ import { BigNumber } from 'ethers';
 import { ethers } from 'hardhat';
 import { expectProtocolBalance, expectThrow } from '../utils/assertions';
 import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin';
-import { parseEther } from 'ethers/lib/utils';
+import { formatEther, parseEther } from 'ethers/lib/utils';
 import { getSimpleZapParams, getUnwrapZapParams, getWrapZapParams, ZapParam } from '../utils/zap-utils';
 import { expect } from 'chai';
-import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
+import { GenericTraderType } from '@dolomite-exchange/dolomite-margin/dist/src/modules/GenericTraderProxyV1';
+import { CORE_DEPLOYMENT_FILE_NAME } from 'packages/deployment/src/utils/deploy-utils';
 
 const OTHER_ADDRESS = '0x1234567890123456789012345678901234567890';
 
@@ -70,9 +72,27 @@ describe('GenericTraderProxyV2', () => {
   let otherMarketId2: BigNumber;
 
   before(async () => {
-    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
+    // latest block: 276536428
+    // 7 hours ago: 276435428.
+    // 21 hours ago: 276235428. USDC - $1452 WETH - 19.87
+    // 365 days ago: 156564835
+    core = await setupCoreProtocol({
+      blockNumber: 156564835,
+      network: Network.ArbitrumOne,
+    });
     await disableInterestAccrual(core, core.marketIds.dai);
     await disableInterestAccrual(core, core.marketIds.weth);
+
+    const usdcBal = (await core.dolomiteMargin.getAccountWei(
+      { owner: '0xbd63e9b1a9ae262ae66a5979423f2d2b94e87813', number: defaultAccountNumber },
+      core.marketIds.usdc,
+    ));
+    const wethBal = (await core.dolomiteMargin.getAccountWei(
+      { owner: '0xbd63e9b1a9ae262ae66a5979423f2d2b94e87813', number: defaultAccountNumber },
+      core.marketIds.weth,
+    ));
+    console.log('usdc bal: ', usdcBal.value.toString());
+    console.log('weth bal: ', formatEther(wethBal.value.toString()));
 
     await createAndUpgradeDolomiteRegistry(core);
     await core.dolomiteRegistry.connect(core.governance).ownerSetBorrowPositionProxy(core.borrowPositionProxyV2.address);
@@ -201,6 +221,36 @@ describe('GenericTraderProxyV2', () => {
       });
       await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId1, ZERO_BI);
       await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId2, outputAmount);
+    });
+
+    it.only('should work normally with internal liquidity', async () => {
+      const usdcAmount = BigNumber.from('100000000')
+      await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.dolomiteMargin);
+      await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.usdc, usdcAmount);
+
+      const zapParams = await getSimpleZapParams(core.marketIds.usdc, usdcAmount, core.marketIds.weth, ONE_BI, core);
+      zapParams.tradersPath[0].traderType = GenericTraderType.InternalLiquidity;
+      zapParams.tradersPath[0].tradeData = ethers.utils.defaultAbiCoder.encode(
+        ['uint256', 'bytes'],
+        [usdcAmount, ethers.utils.defaultAbiCoder.encode(['uint256'], [BigNumber.from('4321')])],
+      );
+      zapParams.makerAccounts.push({
+        owner: core.hhUser1.address,
+        number: borrowAccountNumber,
+      });
+      await genericTraderProxy.swapExactInputForOutput({
+        accountNumber: defaultAccountNumber,
+        marketIdsPath: zapParams.marketIdsPath,
+        inputAmountWei: zapParams.inputAmountWei,
+        minOutputAmountWei: zapParams.minOutputAmountWei,
+        tradersPath: zapParams.tradersPath,
+        makerAccounts: zapParams.makerAccounts,
+        userConfig: zapParams.userConfig,
+      });
+    });
+
+    it('should work normally with isolation mode to isolation mode', async () => {
+
     });
 
     it('should work normally with balance check both', async () => {
