@@ -49,6 +49,7 @@ interface IBerachainRewardsRegistry is IBaseRegistry {
     // ==================== Events ====================
     // ================================================
 
+    event AccountToAssetToDefaultTypeSet(address indexed account, address indexed asset, RewardVaultType rewardType);
     event BgtSet(address bgt);
     event BgtIsolationModeVaultFactorySet(address bgtIsolationModeVaultFactory);
     event IBgtSet(address iBgt);
@@ -59,7 +60,6 @@ interface IBerachainRewardsRegistry is IBaseRegistry {
     event MetaVaultOperatorSet(address metaVaultOperator);
     event RewardVaultSet(address asset, RewardVaultType rewardVaultType, address rewardVault);
     event VaultToMetaVaultSet(address indexed vault, address metaVault);
-    event AccountToAssetToDefaultTypeSet(address indexed _account, address _asset, RewardVaultType rewardVaultType);
 
     // ===================================================
     // ================== Admin Functions ================
@@ -79,17 +79,24 @@ interface IBerachainRewardsRegistry is IBaseRegistry {
     // ===================================================
 
     function createMetaVault(address _account, address _vault) external returns (address);
-    function setAccountToAssetToDefaultType(address _asset, RewardVaultType _type) external;
+    function setDefaultRewardVaultTypeByAccountAndAsset(
+        address _account,
+        address _asset,
+        RewardVaultType _type
+    ) external;
 
     // ===================================================
     // ================== View Functions =================
     // ===================================================
 
     function calculateMetaVaultByAccount(address _account) external view returns (address);
-    function getAccountToAssetToDefaultType(address _asset, address _account) external view returns (RewardVaultType);
     function getMetaVaultByAccount(address _account) external view returns (address);
     function getAccountByMetaVault(address _metaVault) external view returns (address);
     function getMetaVaultByVault(address _vault) external view returns (address);
+    function getAccountToAssetToDefaultType(
+        address _account,
+        address _asset
+    ) external view returns (RewardVaultType);
 
     function bgt() external view returns (IBGT);
     function bgtIsolationModeVaultFactory() external view returns (IMetaVaultRewardTokenFactory);

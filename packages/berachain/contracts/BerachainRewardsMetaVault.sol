@@ -55,6 +55,7 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
     bytes32 private constant _REGISTRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.registry")) - 1);
     bytes32 private constant _OWNER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.owner")) - 1);
     bytes32 private constant _VALIDATOR_SLOT = bytes32(uint256(keccak256("eip1967.proxy.validator")) - 1);
+    bytes32 private constant _ASSET_TO_DEFAULT_TYPE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.assetToDefaultType")) - 1); // solhint-disable-line max-line-length
 
     /// @dev This variable is hardcoded here because it's private in the BGT contract
     uint256 public constant HISTORY_BUFFER_LENGTH = 8191;
@@ -102,6 +103,18 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
         uint256 _amount
     ) external onlyMetaVaultOwner(msg.sender) onlyValidDolomiteToken(_asset) {
         _unstake(_asset, _type, _amount);
+    }
+
+    function setDefaultRewardVaultTypeByAsset(
+        address _asset,
+        IBerachainRewardsRegistry.RewardVaultType _type
+    ) external onlyMetaVaultOwner(msg.sender) {
+        Require.that(
+            IERC20(REGISTRY().rewardVault(_asset, getDefaultRewardVaultTypeByAsset(_asset))).balanceOf(address(this)) == 0,
+            _FILE,
+            "Default type not empty"
+        );
+        REGISTRY().setDefaultRewardVaultTypeByAccountAndAsset(OWNER(), _asset, _type);
     }
 
     function stake(
@@ -291,6 +304,12 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
         return _getAddress(_VALIDATOR_SLOT);
     }
 
+    function getDefaultRewardVaultTypeByAsset(
+        address _asset
+    ) public view override returns (IBerachainRewardsRegistry.RewardVaultType) {
+        return IBerachainRewardsRegistry.RewardVaultType(_getUint256FromMap(_ASSET_TO_DEFAULT_TYPE_SLOT, _asset));
+    }
+
     // ==================================================================
     // ======================== Internal Functions ======================
     // ==================================================================
@@ -311,13 +330,10 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
     ) internal {
         IBerachainRewardsRegistry rewardRegistry = REGISTRY();
         INativeRewardVault rewardVault = INativeRewardVault(rewardRegistry.rewardVault(_asset, _type));
-        IBerachainRewardsRegistry.RewardVaultType _defaultType = rewardRegistry.getAccountToAssetToDefaultType(
-            OWNER(),
-            _asset
-        );
+        IBerachainRewardsRegistry.RewardVaultType _defaultType = getDefaultRewardVaultTypeByAsset(_asset);
 
         if (_defaultType != _type) {
-            rewardRegistry.setAccountToAssetToDefaultType(_asset, _type);
+            rewardRegistry.setDefaultRewardVaultTypeByAccountAndAsset(OWNER(), _asset, _type);
         }
 
         IERC20(_asset).safeTransferFrom(msg.sender, address(this), _amount);

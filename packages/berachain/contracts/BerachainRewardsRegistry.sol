@@ -61,9 +61,9 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
     bytes32 private constant _REWARD_VAULT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.rewardVault")) - 1);
 
     bytes32 private constant _ACCOUNT_TO_META_VAULT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.accountToMetaVault")) - 1); // solhint-disable-line max-line-length
-    bytes32 private constant _ACCOUNT_TO_DEFAULT_TYPE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.accountToDefaultType")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _META_VAULT_TO_ACCOUNT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.metaVaultToAccount")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _VAULT_TO_META_VAULT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.vaultToMetaVault")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _ACCOUNT_TO_ASSET_DEFAULT_TYPE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.accountToAssetToDefaultType")) - 1); // solhint-disable-line max-line-length
 
     // ================================================
     // ================== Initializer =================
@@ -115,28 +115,20 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
         return metaVault;
     }
 
-    /**
-     *
-     * @param  _type The default type to set
-     *
-     * @dev If called by a user, it sets the default type for msg.sender. If called by a metaVault,
-     *      it sets the default type for the metaVault's account.
-     */
-    function setAccountToAssetToDefaultType(address _asset, RewardVaultType _type) external {
-        // @audit @Corey, please double check this logic
-        address account = getAccountByMetaVault(msg.sender);
-        if (account == address(0)){
-            account = msg.sender;
-        }
-
-        address metaVault = getMetaVaultByAccount(account);
+    function setDefaultRewardVaultTypeByAccountAndAsset(
+        address _account,
+        address _asset,
+        RewardVaultType _type
+    ) external {
+        // TODO: oriole check this over
         Require.that(
-            IERC20(rewardVault(_asset, getAccountToAssetToDefaultType(account, _asset))).balanceOf(metaVault) == 0,
+            getMetaVaultByAccount(_account) == msg.sender,
             _FILE,
-            "Default type not empty"
+            "Unauthorized meta vault",
+            msg.sender
         );
-        _setUint256InNestedMap(_ACCOUNT_TO_DEFAULT_TYPE_SLOT, account, _asset, uint256(_type));
-        emit AccountToAssetToDefaultTypeSet(account, _asset, _type);
+        _setUint256InNestedMap(_ACCOUNT_TO_ASSET_DEFAULT_TYPE_SLOT, _account, _asset, uint256(_type));
+        emit AccountToAssetToDefaultTypeSet(_account, _asset, _type);
     }
 
 
@@ -188,7 +180,6 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
         RewardVaultType _type,
         address _rewardVault
     ) external override onlyDolomiteMarginOwner(msg.sender) {
-        // TODO: can we retrieve this dynamically?
         _ownerSetRewardVault(_asset, _type, _rewardVault);
     }
 
@@ -234,14 +225,24 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
     }
 
     function rewardVault(address _asset, RewardVaultType _type) public view override returns (address) {
-        return _getAddressInNestedMap(_REWARD_VAULT_SLOT, _asset, uint256(_type));
+        address overrideVault =  _getAddressInNestedMap(_REWARD_VAULT_SLOT, _asset, uint256(_type));
+        if (overrideVault != address(0)) {
+            return overrideVault;
+        }
+
+        if (_type == RewardVaultType.NATIVE) {
+            // TODO:
+        } else {
+            assert(_type == RewardVaultType.INFRARED);
+            // TODO:
+        }
     }
 
     function getAccountToAssetToDefaultType(
         address _account,
         address _asset
     ) public view override returns (RewardVaultType) {
-        return RewardVaultType(_getUint256InNestedMap(_ACCOUNT_TO_DEFAULT_TYPE_SLOT, _account, _asset));
+        return RewardVaultType(_getUint256InNestedMap(_ACCOUNT_TO_ASSET_DEFAULT_TYPE_SLOT, _account, _asset));
     }
 
     function getMetaVaultByAccount(address _account) public view override returns (address) {
