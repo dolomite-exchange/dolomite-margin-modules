@@ -71,7 +71,7 @@ library IsolationModeTokenVaultV1ActionsImpl {
             Require.that(
                 selectorBinarySearch(
                     allowedSelectors,
-                    abi.decode(_calls[i], (bytes4))
+                    getFunctionSelector(_calls[i])
                 ),
                 _FILE,
                 "Disallowed multicall function"
@@ -604,6 +604,20 @@ library IsolationModeTokenVaultV1ActionsImpl {
             _FILE,
             "minOutputAmount too large"
         );
+    }
+
+    function getFunctionSelector(bytes memory _call) public pure returns (bytes4 result) {
+        Require.that(
+            _call.length >= 4,
+            _FILE,
+            "Invalid calldata length"
+        );
+
+        // The bytes4 keyword casts a byte array (in memory) to a fixed-size byte array
+        assembly {
+            // load the 2nd word from original (1st word is length) and store it in the result
+            result := mload(add(original, 32))
+        }
     }
 
     function selectorBinarySearch(bytes4[] memory _allowedSelectors, bytes4 _selector) public pure returns (bool) {
