@@ -60,6 +60,7 @@ import {
   CHAINLINK_AUTOMATION_REGISTRY_MAP,
   CHAINLINK_PRICE_AGGREGATORS_MAP,
   CHAINLINK_PRICE_ORACLE_V1_MAP,
+  CM_ETH_MAP,
   D_ARB_MAP,
   D_GM_AAVE_USD_MAP,
   D_GM_ARB_USD_MAP,
@@ -637,8 +638,8 @@ export async function setupCoreProtocol<T extends NetworkType>(
   );
 
   const delayedMultiSig = IPartiallyDelayedMultiSig__factory.connect(
-    await dolomiteMargin.connect(hhUser1).owner(),
-    governance,
+    CoreDeployments.PartiallyDelayedMultiSig[config.network].address,
+    gnosisSafe,
   );
 
   const depositWithdrawalProxy = IDepositWithdrawalProxy__factory.connect(
@@ -718,7 +719,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
   const ownerAdapter = getContract(
     Deployments.DolomiteOwnerV1[config.network].address,
     DolomiteOwner__factory.connect,
-    governance,
+    gnosisSafe,
   );
 
   const testEcosystem = await createTestEcosystem(dolomiteMargin, governance);
@@ -1057,6 +1058,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
       ),
       marketIds: {
         ...coreProtocolParams.marketIds,
+        cmEth: CM_ETH_MAP[typedConfig.network].marketId,
         fbtc: FBTC_MAP[typedConfig.network].marketId,
         meth: METH_MAP[typedConfig.network].marketId,
         usdt: USDT_MAP[typedConfig.network].marketId,
@@ -1079,6 +1081,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
       redstonePriceOracleV3: redstonePriceOracle,
       tokens: {
         ...coreProtocolParams.tokens,
+        cmEth: IERC20__factory.connect(CM_ETH_MAP[typedConfig.network].address, hhUser1),
         fbtc: IERC20__factory.connect(FBTC_MAP[typedConfig.network].address, hhUser1),
         meth: IERC20__factory.connect(METH_MAP[typedConfig.network].address, hhUser1),
         usde: IERC20__factory.connect(USDE_MAP[typedConfig.network].address, hhUser1),

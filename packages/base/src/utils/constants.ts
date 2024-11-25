@@ -63,6 +63,13 @@ export const CHAINLINK_AUTOMATION_REGISTRY_MAP: Record<Network.ArbitrumOne | Net
   [Network.Base]: '0xE226D5aCae908252CcA3F6CEFa577527650a9e1e',
 };
 
+export const CM_ETH_MAP: Record<Network.Mantle, TokenWithMarketId> = {
+  [Network.Mantle]: {
+    address: '0xE6829d9a7eE3040e1276Fa75293Bde931859e8fA',
+    marketId: 14,
+  },
+};
+
 export const DAI_MAP: Record<Network, TokenWithMarketId | undefined> = {
   [Network.ArbitrumOne]: {
     address: '0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1',
@@ -1584,6 +1591,10 @@ export const CHRONICLE_PRICE_SCRIBES_MAP: Record<
     },
   },
   [Network.Mantle]: {
+    [CM_ETH_MAP[Network.Mantle].address]: {
+      scribeAddress: '0xB87c54d5a087c0a1F63Aa6D1C5483E2d9a5023dE',
+      tokenPairAddress: METH_MAP[Network.Mantle].address,
+    },
     [FBTC_MAP[Network.Mantle].address]: {
       scribeAddress: '0x3bE46d64aAf6Bd88D5d445D83821805F7e393DDf',
       tokenPairAddress: WBTC_MAP[Network.Mantle].address,

@@ -149,7 +149,7 @@ async function doStuffInternal<T extends NetworkType>(executionFn: () => Promise
     const invalidOwnerAddress = `Invalid governance (not DolomiteOwner or DelayedMultisig), found: ${ownerAddress}`;
 
     let encodedTransactionForExecution: EncodedTransaction | null = null;
-    if (result.upload.addExecuteImmediatelyTransactions && result.upload.transactions.length > 0) {
+    if (result.upload.transactions.length > 0) {
       let transactionCount: number;
       if (ownerAddress === result.core.ownerAdapter?.address) {
         transactionCount = (await result.core.ownerAdapter.transactionCount()).toNumber();

@@ -85,6 +85,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     upload: {
       transactions,
       chainId: network,
+      addExecuteImmediatelyTransactions: true,
     },
     invariants: async () => {
       assertHardhatInvariant(
