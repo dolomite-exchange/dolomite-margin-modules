@@ -40,7 +40,7 @@ import { getSimpleZapParams, getUnwrapZapParams, getWrapZapParams } from '../../
 
 const defaultAccountNumber = '0';
 const borrowAccountNumber = '123';
-const amountWei = BigNumber.from('200000000000000000000'); // $200
+const amountWei = BigNumber.from('300000000000000000000'); // $300
 const otherAmountWei = BigNumber.from('10000000'); // $10
 const bigOtherAmountWei = BigNumber.from('100000000000'); // $100,000
 const usdcAmount = BigNumber.from('100000000'); // $100
@@ -196,22 +196,33 @@ describe('IsolationModeTokenVaultV1', () => {
       await expectTotalSupply(factory, amountWei);
     });
 
-    it('should work normally with multiple deposits into vault', async () => {
+    it('should work normally with multiple functions involving a vault', async () => {
       await underlyingToken.connect(core.hhUser1).addBalance(core.hhUser1.address, amountWei);
       await underlyingToken.connect(core.hhUser1).approve(userVault.address, amountWei.mul(2));
-      const calldata = await userVault.populateTransaction.depositIntoVaultForDolomiteMargin(
+      const calldata1 = await userVault.populateTransaction.depositIntoVaultForDolomiteMargin(
         defaultAccountNumber,
         amountWei,
       );
-      await userVault.multicall([calldata.data!, calldata.data!]);
+      const calldata2 = await userVault.populateTransaction.transferIntoPositionWithUnderlyingToken(
+        defaultAccountNumber,
+        MAX_UINT_256_BI,
+        amountWei,
+      );
+      const calldata3 = await userVault.populateTransaction.transferFromPositionWithUnderlyingToken(
+        MAX_UINT_256_BI,
+        defaultAccountNumber,
+        amountWei.div(3),
+      );
+      await userVault.multicall([calldata1.data!, calldata2.data!, calldata3.data!]);
 
       await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, isolationModeMarketId, ZERO_BI);
-      await expectProtocolBalance(core, userVault, defaultAccountNumber, isolationModeMarketId, amountWei.mul(2));
+      await expectProtocolBalance(core, userVault, defaultAccountNumber, isolationModeMarketId, amountWei.div(3));
+      await expectProtocolBalance(core, userVault, MAX_UINT_256_BI, isolationModeMarketId, amountWei.mul(2).div(3));
 
-      await expectWalletBalance(core.dolomiteMargin, factory, amountWei.mul(2));
-      await expectWalletBalance(userVault, underlyingToken, amountWei.mul(2));
+      await expectWalletBalance(core.dolomiteMargin, factory, amountWei);
+      await expectWalletBalance(userVault, underlyingToken, amountWei);
 
-      await expectTotalSupply(factory, amountWei.mul(2));
+      await expectTotalSupply(factory, amountWei);
     });
 
     it('should fail if calldata contains a disallowed function', async () => {
@@ -229,7 +240,7 @@ describe('IsolationModeTokenVaultV1', () => {
       );
       await expectThrow(
         userVault.multicall([calldata.data!]),
-        'IsolationModeTokenVaultV1: Disallowed multicall function',
+        'IsolationModeVaultV1ActionsImpl: Disallowed multicall function',
       );
     });
 
