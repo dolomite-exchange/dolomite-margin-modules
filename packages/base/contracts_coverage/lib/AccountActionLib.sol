@@ -27,6 +27,7 @@ import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../protocol/lib/Require.sol";
 
+import "hardhat/console.sol";
 
 /**
  * @title   AccountActionLib
@@ -411,7 +412,7 @@ library AccountActionLib {
             actionType: IDolomiteStructs.ActionType.Trade,
             accountId: _fromAccountId,
             amount: IDolomiteStructs.AssetAmount({
-                sign: false,
+                sign: true, // @audit check
                 denomination: IDolomiteStructs.AssetDenomination.Wei,
                 ref: _amountInWei == _ALL
                     ? IDolomiteStructs.AssetReference.Target
@@ -422,10 +423,7 @@ library AccountActionLib {
             secondaryMarketId: _secondaryMarketId,
             otherAddress: _traderAddress,
             otherAccountId: _toAccountId,
-            data: abi.encode(
-                /* calculateAmountWithMakerAccount = */ false,
-                _orderData
-            )
+            data: _orderData // @audit check
         });
     }
 

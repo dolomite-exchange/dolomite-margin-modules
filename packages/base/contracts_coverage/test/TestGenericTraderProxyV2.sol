@@ -44,4 +44,9 @@ contract TestGenericTraderProxyV2 is GenericTraderProxyV2 {
     ) external payable nonReentrant {
         address(this).safeDelegateCall(_callDataWithSelector);
     }
+
+    function testIsIsolationModeAsset(uint256 _marketId) external view returns (bool) {
+        address token = DOLOMITE_MARGIN().getMarketTokenAddress(_marketId);
+        return _isIsolationModeAsset(token);
+    }
 }

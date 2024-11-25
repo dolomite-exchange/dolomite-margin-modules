@@ -611,21 +611,4 @@ abstract contract GenericTraderProxyBase is IGenericTraderBase {
     {
         return _index == _tradersPathLength - 1 ? _minOutputAmountWei : 1;
     }
-
-    function _hashSubstring(
-        string memory _value,
-        uint256 _startIndex,
-        uint256 _endIndex
-    )
-        private
-        pure
-        returns (bytes32)
-    {
-        bytes memory strBytes = bytes(_value);
-        bytes memory result = new bytes(_endIndex - _startIndex);
-        for (uint256 i = _startIndex; i < _endIndex; i++) {
-            result[i - _startIndex] = strBytes[i];
-        }
-        return keccak256(result);
-    }
 }
