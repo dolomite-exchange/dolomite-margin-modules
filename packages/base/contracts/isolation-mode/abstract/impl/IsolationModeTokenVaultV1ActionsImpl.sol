@@ -616,7 +616,7 @@ library IsolationModeTokenVaultV1ActionsImpl {
         // The bytes4 keyword casts a byte array (in memory) to a fixed-size byte array
         assembly {
             // load the 2nd word from original (1st word is length) and store it in the result
-            result := mload(add(original, 32))
+            result := mload(add(_call, 32))
         }
     }
 
