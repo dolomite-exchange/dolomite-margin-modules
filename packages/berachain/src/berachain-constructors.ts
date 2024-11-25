@@ -6,8 +6,7 @@ import {
   IBerachainRewardsIsolationModeVaultFactory,
   BerachainRewardsIsolationModeVaultFactory,
   IBerachainRewardsIsolationModeTokenVaultV1,
-  BerachainRewardsMetavault,
-  MetavaultOperator,
+  BerachainRewardsMetaVault,
   BGTIsolationModeTokenVaultV1,
   IBGTIsolationModeTokenVaultV1,
   IInfraredBGTIsolationModeTokenVaultV1,
@@ -16,16 +15,14 @@ import {
 
 export async function getBerachainRewardsRegistryConstructorParams(
   implementation: BerachainRewardsRegistry,
-  metavaultImplementation: BerachainRewardsMetavault,
-  metavaultOperator: MetavaultOperator,
+  metaVaultImplementation: BerachainRewardsMetaVault,
   core: CoreProtocolBerachain
 ): Promise<any[]> {
   const calldata = await implementation.populateTransaction.initialize(
     core.tokens.bgt.address,
     core.tokens.iBgt.address,
     core.berachainRewardsEcosystem.iBgtStakingPool.address,
-    metavaultImplementation.address,
-    metavaultOperator.address,
+    metaVaultImplementation.address,
     core.dolomiteRegistry.address
   );
   return [

@@ -1,22 +1,4 @@
-import { expect } from 'chai';
-import {
-  BerachainRewardsIsolationModeTokenVaultV1,
-  BerachainRewardsIsolationModeTokenVaultV1__factory,
-  BerachainRewardsIsolationModeVaultFactory,
-  BerachainRewardsMetaVault,
-  BerachainRewardsMetaVault__factory,
-  BerachainRewardsRegistry,
-  INativeRewardVault,
-  MetaVaultOperator,
-  MetaVaultOperator__factory,
-  BGTIsolationModeVaultFactory,
-  BGTIsolationModeTokenVaultV1,
-  BGTIsolationModeTokenVaultV1__factory,
-  InfraredBGTIsolationModeVaultFactory,
-} from '../src/types';
-import {
-  IERC20,
-} from '@dolomite-exchange/modules-base/src/types';
+import { IERC20 } from '@dolomite-exchange/modules-base/src/types';
 import {
   Network,
   ONE_DAY_SECONDS,
@@ -24,17 +6,31 @@ import {
   ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
-import {
-  expectEvent,
-  expectProtocolBalance,
-  expectThrow,
-} from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { expectEvent, expectProtocolBalance, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
   setupCoreProtocol,
   setupTestMarket,
   setupUserVaultProxy,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
+import { expect } from 'chai';
+import { BigNumber } from 'ethers';
+import { parseEther } from 'ethers/lib/utils';
+import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
 import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
+import {
+  BerachainRewardsIsolationModeTokenVaultV1,
+  BerachainRewardsIsolationModeTokenVaultV1__factory,
+  BerachainRewardsIsolationModeVaultFactory,
+  BerachainRewardsMetaVault,
+  BerachainRewardsMetaVault__factory,
+  BerachainRewardsRegistry,
+  BGTIsolationModeTokenVaultV1,
+  BGTIsolationModeTokenVaultV1__factory,
+  BGTIsolationModeVaultFactory,
+  INativeRewardVault,
+  InfraredBGTIsolationModeVaultFactory,
+} from '../src/types';
 import {
   createBerachainRewardsIsolationModeTokenVaultV1,
   createBerachainRewardsIsolationModeVaultFactory,
@@ -44,10 +40,6 @@ import {
   createInfraredBGTIsolationModeTokenVaultV1,
   createInfraredBGTIsolationModeVaultFactory,
 } from './berachain-ecosystem-utils';
-import { BigNumber } from 'ethers';
-import { parseEther } from 'ethers/lib/utils';
-import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
-import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
 
 const LP_TOKEN_WHALE_ADDRESS = '0x1293DA55eC372a94368Fa20E8DF69FaBc3320baE';
 const defaultAccountNumber = ZERO_BI;
@@ -94,22 +86,17 @@ describe('BGTIsolationModeTokenVaultV1', () => {
       BerachainRewardsMetaVault__factory.bytecode,
       [],
     );
-    const metaVaultOperator = await createContractWithAbi<MetaVaultOperator>(
-      MetaVaultOperator__factory.abi,
-      MetaVaultOperator__factory.bytecode,
-      [core.dolomiteMargin.address],
-    );
-    registry = await createBerachainRewardsRegistry(core, metaVaultImplementation, metaVaultOperator);
-    await registry.connect(core.governance).ownerSetRewardVault(
-      underlyingToken.address,
-      RewardVaultType.Native,
-      nativeRewardVault.address
-    );
-    await registry.connect(core.governance).ownerSetRewardVault(
-      underlyingToken.address,
-      RewardVaultType.Infrared,
-      core.berachainRewardsEcosystem.listedRewardAssets.bexHoneyUsdc.infraredRewardVault.address
-    );
+    registry = await createBerachainRewardsRegistry(core, metaVaultImplementation);
+    await registry
+      .connect(core.governance)
+      .ownerSetRewardVault(underlyingToken.address, RewardVaultType.Native, nativeRewardVault.address);
+    await registry
+      .connect(core.governance)
+      .ownerSetRewardVault(
+        underlyingToken.address,
+        RewardVaultType.Infrared,
+        core.berachainRewardsEcosystem.listedRewardAssets.bexHoneyUsdc.infraredRewardVault.address,
+      );
 
     const vaultImplementation = await createBerachainRewardsIsolationModeTokenVaultV1();
     beraFactory = await createBerachainRewardsIsolationModeVaultFactory(
@@ -125,12 +112,7 @@ describe('BGTIsolationModeTokenVaultV1', () => {
       core,
     );
     const bgtVaultImplementation = await createBGTIsolationModeTokenVaultV1();
-    bgtFactory = await createBGTIsolationModeVaultFactory(
-      registry,
-      core.tokens.bgt,
-      bgtVaultImplementation,
-      core,
-    );
+    bgtFactory = await createBGTIsolationModeVaultFactory(registry, core.tokens.bgt, bgtVaultImplementation, core);
     const iBgtVaultImplementation = await createInfraredBGTIsolationModeTokenVaultV1();
     iBgtFactory = await createInfraredBGTIsolationModeVaultFactory(
       registry,
@@ -156,7 +138,6 @@ describe('BGTIsolationModeTokenVaultV1', () => {
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(otherFactory.address, true);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(bgtFactory.address, true);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(iBgtFactory.address, true);
-    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(metaVaultOperator.address, true);
     await beraFactory.connect(core.governance).ownerInitialize([]);
     await otherFactory.connect(core.governance).ownerInitialize([]);
     await bgtFactory.connect(core.governance).ownerInitialize([]);
@@ -214,7 +195,7 @@ describe('BGTIsolationModeTokenVaultV1', () => {
     it('should fail if not called by metaVault', async () => {
       await expectThrow(
         bgtVault.connect(core.hhUser1).setIsDepositSourceMetaVault(true),
-        'MetaVaultRewardReceiver: Only metaVault'
+        'MetaVaultRewardReceiver: Only metaVault',
       );
     });
   });
@@ -223,7 +204,7 @@ describe('BGTIsolationModeTokenVaultV1', () => {
     it('should always fail', async () => {
       await expectThrow(
         bgtVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei),
-        'BGTIsolationModeTokenVaultV1: Not implemented'
+        'BGTIsolationModeTokenVaultV1: Not implemented',
       );
     });
   });
@@ -240,29 +221,30 @@ describe('BGTIsolationModeTokenVaultV1', () => {
       const bgtFactoryImpersonator = await impersonate(bgtFactory.address, true);
       await expectThrow(
         bgtVault.connect(bgtFactoryImpersonator).executeDepositIntoVault(core.hhUser1.address, amountWei),
-        'BGTIsolationModeTokenVaultV1: Only metaVault can deposit'
+        'BGTIsolationModeTokenVaultV1: Only metaVault can deposit',
       );
     });
 
     it('should fail if not called by factory', async () => {
       await expectThrow(
         bgtVault.connect(core.hhUser1).executeDepositIntoVault(core.hhUser1.address, amountWei),
-        `IsolationModeTokenVaultV1: Only factory can call <${core.hhUser1.address.toLowerCase()}>`
+        `IsolationModeTokenVaultV1: Only factory can call <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
 
   describe('#executeWithdrawalFromVault', () => {
     it('should work normally', async () => {
-      await expect(() => bgtVault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, bgtBal))
-        .to.changeEtherBalance(core.hhUser1, bgtBal);
+      await expect(() =>
+        bgtVault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, bgtBal),
+      ).to.changeEtherBalance(core.hhUser1, bgtBal);
       await expectProtocolBalance(core, bgtVault, defaultAccountNumber, bgtMarketId, ZERO_BI);
     });
 
     it('should fail if not called by factory', async () => {
       await expectThrow(
         bgtVault.connect(core.hhUser1).executeWithdrawalFromVault(core.hhUser1.address, amountWei),
-        `IsolationModeTokenVaultV1: Only factory can call <${core.hhUser1.address.toLowerCase()}>`
+        `IsolationModeTokenVaultV1: Only factory can call <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });

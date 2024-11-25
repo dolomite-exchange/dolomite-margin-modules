@@ -171,24 +171,25 @@ contract InfraredBGTIsolationModeTokenVaultV1 is
         for (uint256 i = 0; i < rewardTokens.length; ++i) {
             uint256 reward = IERC20(rewardTokens[i]).balanceOf(address(this)) - balancesBefore[i];
             if (reward > 0) {
-                try DOLOMITE_MARGIN().getMarketIdByTokenAddress(rewardTokens[i]) returns (uint256 marketId) {
-                    if (rewardTokens[i] == UNDERLYING_TOKEN()) {
-                        _setIsDepositSourceThisVault(true);
-                        IIsolationModeVaultFactory(VAULT_FACTORY()).depositIntoDolomiteMargin(
-                            DEFAULT_ACCOUNT_NUMBER,
-                            reward
-                        );
-                        /*assert(!isDepositSourceThisVault());*/
-                    } else {
+                if (rewardTokens[i] == UNDERLYING_TOKEN()) {
+                    // TODO: oriole test this path
+                    _setIsDepositSourceThisVault(true);
+                    IIsolationModeVaultFactory(VAULT_FACTORY()).depositIntoDolomiteMargin(
+                        DEFAULT_ACCOUNT_NUMBER,
+                        reward
+                    );
+                    /*assert(!isDepositSourceThisVault());*/
+                } else {
+                    try DOLOMITE_MARGIN().getMarketIdByTokenAddress(rewardTokens[i]) returns (uint256 marketId) {
                         IERC20(rewardTokens[i]).safeApprove(address(DOLOMITE_MARGIN()), reward);
                         IIsolationModeVaultFactory(VAULT_FACTORY()).depositOtherTokenIntoDolomiteMarginForVaultOwner(
                             DEFAULT_ACCOUNT_NUMBER,
                             marketId,
                             reward
                         );
+                    } catch {
+                        IERC20(rewardTokens[i]).safeTransfer(OWNER(), reward);
                     }
-                } catch {
-                    IERC20(rewardTokens[i]).safeTransfer(OWNER(), reward);
                 }
             }
         }

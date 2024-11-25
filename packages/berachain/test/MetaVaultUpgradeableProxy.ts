@@ -10,8 +10,6 @@ import {
   IInfraredRewardVault,
   INativeRewardVault,
   InfraredBGTIsolationModeVaultFactory,
-  MetaVaultOperator,
-  MetaVaultOperator__factory,
   MetaVaultUpgradeableProxy,
   MetaVaultUpgradeableProxy__factory,
   TestBerachainRewardsRegistry
@@ -65,12 +63,7 @@ describe('MetaVaultUpgradeableProxy', () => {
       BerachainRewardsMetaVault__factory.bytecode,
       [],
     );
-    const metaVaultOperator = await createContractWithAbi<MetaVaultOperator>(
-      MetaVaultOperator__factory.abi,
-      MetaVaultOperator__factory.bytecode,
-      [core.dolomiteMargin.address],
-    );
-    registry = await createTestBerachainRewardsRegistry(core, metaVaultImplementation, metaVaultOperator);
+    registry = await createTestBerachainRewardsRegistry(core, metaVaultImplementation);
     await registry.connect(core.governance).ownerSetRewardVault(
       underlyingToken.address,
       RewardVaultType.Native,
@@ -116,7 +109,6 @@ describe('MetaVaultUpgradeableProxy', () => {
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(beraFactory.address, true);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(bgtFactory.address, true);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(iBgtFactory.address, true);
-    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(metaVaultOperator.address, true);
     await beraFactory.connect(core.governance).ownerInitialize([]);
     await bgtFactory.connect(core.governance).ownerInitialize([]);
     await iBgtFactory.connect(core.governance).ownerInitialize([]);

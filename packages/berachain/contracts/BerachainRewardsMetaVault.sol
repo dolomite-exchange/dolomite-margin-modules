@@ -55,7 +55,6 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
     bytes32 private constant _REGISTRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.registry")) - 1);
     bytes32 private constant _OWNER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.owner")) - 1);
     bytes32 private constant _VALIDATOR_SLOT = bytes32(uint256(keccak256("eip1967.proxy.validator")) - 1);
-    bytes32 private constant _ASSET_TO_DEFAULT_TYPE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.assetToDefaultType")) - 1); // solhint-disable-line max-line-length
 
     /// @dev This variable is hardcoded here because it's private in the BGT contract
     uint256 public constant HISTORY_BUFFER_LENGTH = 8191;
@@ -109,12 +108,7 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
         address _asset,
         IBerachainRewardsRegistry.RewardVaultType _type
     ) external onlyMetaVaultOwner(msg.sender) {
-        Require.that(
-            IERC20(REGISTRY().rewardVault(_asset, getDefaultRewardVaultTypeByAsset(_asset))).balanceOf(address(this)) == 0,
-            _FILE,
-            "Default type not empty"
-        );
-        REGISTRY().setDefaultRewardVaultTypeByAccountAndAsset(OWNER(), _asset, _type);
+        _setDefaultRewardVaultTypeByAsset(_asset, _type);
     }
 
     function stake(
@@ -307,7 +301,7 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
     function getDefaultRewardVaultTypeByAsset(
         address _asset
     ) public view override returns (IBerachainRewardsRegistry.RewardVaultType) {
-        return IBerachainRewardsRegistry.RewardVaultType(_getUint256FromMap(_ASSET_TO_DEFAULT_TYPE_SLOT, _asset));
+        return REGISTRY().getAccountToAssetToDefaultType(OWNER(), _asset);
     }
 
     // ==================================================================
@@ -323,6 +317,18 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
         }
     }
 
+    function _setDefaultRewardVaultTypeByAsset(
+        address _asset,
+        IBerachainRewardsRegistry.RewardVaultType _type
+    ) internal {
+        if (_type == getDefaultRewardVaultTypeByAsset(_asset)) {
+            // No need to change it when the two already match
+            return;
+        }
+
+        REGISTRY().setDefaultRewardVaultTypeFromMetaVaultByAsset(_asset, _type);
+    }
+
     function _stake(
         address _asset,
         IBerachainRewardsRegistry.RewardVaultType _type,
@@ -330,11 +336,8 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
     ) internal {
         IBerachainRewardsRegistry rewardRegistry = REGISTRY();
         INativeRewardVault rewardVault = INativeRewardVault(rewardRegistry.rewardVault(_asset, _type));
-        IBerachainRewardsRegistry.RewardVaultType _defaultType = getDefaultRewardVaultTypeByAsset(_asset);
 
-        if (_defaultType != _type) {
-            rewardRegistry.setDefaultRewardVaultTypeByAccountAndAsset(OWNER(), _asset, _type);
-        }
+        _setDefaultRewardVaultTypeByAsset(_asset, _type);
 
         IERC20(_asset).safeTransferFrom(msg.sender, address(this), _amount);
         IERC20(_asset).safeApprove(address(rewardVault), _amount);
@@ -413,7 +416,7 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
             )
         );
         Require.that(
-            isValidDolomiteToken,
+            isValidDolomiteToken && REGISTRY().DOLOMITE_MARGIN().getIsGlobalOperator(_asset),
             _FILE,
             "Invalid Dolomite token"
         );

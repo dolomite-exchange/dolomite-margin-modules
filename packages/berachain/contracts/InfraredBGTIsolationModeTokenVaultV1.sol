@@ -172,6 +172,7 @@ contract InfraredBGTIsolationModeTokenVaultV1 is
             uint256 reward = IERC20(rewardTokens[i]).balanceOf(address(this)) - balancesBefore[i];
             if (reward > 0) {
                 if (rewardTokens[i] == UNDERLYING_TOKEN()) {
+                    // TODO: oriole test this path
                     _setIsDepositSourceThisVault(true);
                     IIsolationModeVaultFactory(VAULT_FACTORY()).depositIntoDolomiteMargin(
                         DEFAULT_ACCOUNT_NUMBER,

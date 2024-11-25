@@ -44,6 +44,7 @@ contract MetaVaultUpgradeableProxy is
     // ==================================================================
 
     bytes32 private constant _FILE = "MetaVaultUpgradeableProxy";
+    address private constant _DEAD_VAULT = 0x000000000000000000000000000000000000dEaD;
     bytes32 private constant _IS_INITIALIZED_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isInitialized")) - 1);
     bytes32 private constant _REGISTRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.registry")) - 1);
     bytes32 private constant _OWNER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.owner")) - 1);
@@ -92,13 +93,15 @@ contract MetaVaultUpgradeableProxy is
             _FILE,
             "Already initialized"
         );
-        if (IBerachainRewardsRegistry(registry()).getMetaVaultByAccount(_vaultOwner) == address(this)) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            IBerachainRewardsRegistry(registry()).getMetaVaultByAccount(_vaultOwner) == address(this),
-            _FILE,
-            "Invalid account",
-            _vaultOwner
-        );
+        if (_vaultOwner != _DEAD_VAULT) {
+            if (IBerachainRewardsRegistry(registry()).getMetaVaultByAccount(_vaultOwner) == address(this)) { /* FOR COVERAGE TESTING */ }
+            Require.that(
+                IBerachainRewardsRegistry(registry()).getMetaVaultByAccount(_vaultOwner) == address(this),
+                _FILE,
+                "Invalid account",
+                _vaultOwner
+            );
+        }
         _setAddress(_OWNER_SLOT, _vaultOwner);
         _setUint256(_IS_INITIALIZED_SLOT, 1);
     }

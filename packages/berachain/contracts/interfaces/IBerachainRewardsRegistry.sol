@@ -24,7 +24,6 @@ import { IBaseRegistry } from "@dolomite-exchange/modules-base/contracts/interfa
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IBGT } from "./IBGT.sol";
 import { IInfraredBGTStakingPool } from "./IInfraredBGTStakingPool.sol";
-import { IMetaVaultOperator } from "./IMetaVaultOperator.sol";
 import { IMetaVaultRewardTokenFactory } from "./IMetaVaultRewardTokenFactory.sol";
 
 
@@ -57,7 +56,6 @@ interface IBerachainRewardsRegistry is IBaseRegistry {
     event IBgtStakingPoolSet(address iBgtStakingPool);
     event MetaVaultCreated(address indexed account, address metaVault);
     event MetaVaultImplementationSet(address metaVaultImplementation);
-    event MetaVaultOperatorSet(address metaVaultOperator);
     event RewardVaultSet(address asset, RewardVaultType rewardVaultType, address rewardVault);
     event VaultToMetaVaultSet(address indexed vault, address metaVault);
 
@@ -71,7 +69,6 @@ interface IBerachainRewardsRegistry is IBaseRegistry {
     function ownerSetIBgtIsolationModeVaultFactory(address _iBgtIsolationModeVaultFactory) external;
     function ownerSetIBgtStakingPool(address _iBgtStakingPool) external;
     function ownerSetMetaVaultImplementation(address _metaVaultImplementation) external;
-    function ownerSetMetaVaultOperator(address _metaVaultOperator) external;
     function ownerSetRewardVault(address _asset, RewardVaultType _type, address _rewardVault) external;
 
     // ===================================================
@@ -79,11 +76,7 @@ interface IBerachainRewardsRegistry is IBaseRegistry {
     // ===================================================
 
     function createMetaVault(address _account, address _vault) external returns (address);
-    function setDefaultRewardVaultTypeByAccountAndAsset(
-        address _account,
-        address _asset,
-        RewardVaultType _type
-    ) external;
+    function setDefaultRewardVaultTypeFromMetaVaultByAsset(address _asset, RewardVaultType _type) external;
 
     // ===================================================
     // ================== View Functions =================
@@ -104,6 +97,5 @@ interface IBerachainRewardsRegistry is IBaseRegistry {
     function iBgtIsolationModeVaultFactory() external view returns (IMetaVaultRewardTokenFactory);
     function iBgtStakingPool() external view returns (IInfraredBGTStakingPool);
     function metaVaultImplementation() external view returns (address);
-    function metaVaultOperator() external view returns (IMetaVaultOperator);
     function rewardVault(address _asset, RewardVaultType _type) external view returns (address);
 }

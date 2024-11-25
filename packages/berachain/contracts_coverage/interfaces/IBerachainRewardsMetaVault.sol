@@ -40,6 +40,23 @@ interface IBerachainRewardsMetaVault {
     // ================== Functions ===================
     // ================================================
 
+    function setDefaultRewardVaultTypeByAsset(
+        address _asset,
+        IBerachainRewardsRegistry.RewardVaultType _type
+    ) external;
+
+    function stakeDolomiteToken(
+        address _asset,
+        IBerachainRewardsRegistry.RewardVaultType _type,
+        uint256 _amount
+    ) external;
+
+    function unstakeDolomiteToken(
+        address _asset,
+        IBerachainRewardsRegistry.RewardVaultType _type,
+        uint256 _amount
+    ) external;
+
     function stake(address _asset, IBerachainRewardsRegistry.RewardVaultType _type, uint256 amount) external;
 
     function unstake(address _asset, IBerachainRewardsRegistry.RewardVaultType _type, uint256 amount) external;
@@ -61,6 +78,10 @@ interface IBerachainRewardsMetaVault {
     function withdrawBGTAndRedeem(address _recipient, uint256 _amount) external;
 
     function blocksToActivateBoost() external view returns (uint256);
+
+    function getDefaultRewardVaultTypeByAsset(
+        address _asset
+    ) external view returns (IBerachainRewardsRegistry.RewardVaultType);
 
     /**
      * @return  The address of the Berachain Rewards Registry, which contains the relevant addresses for the Dolomite

@@ -1,20 +1,21 @@
-import {
-  RegistryProxy,
-  RegistryProxy__factory,
-} from 'packages/base/src/types';
+import { ADDRESS_ZERO } from '@dolomite-exchange/zap-sdk/dist/src/lib/Constants';
+import { RegistryProxy, RegistryProxy__factory } from 'packages/base/src/types';
 import { createContractWithAbi, createContractWithLibrary } from 'packages/base/src/utils/dolomite-utils';
+import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
+import { impersonate } from 'packages/base/test/utils';
 import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
+import { createIsolationModeTokenVaultV1ActionsImpl } from 'packages/base/test/utils/dolomite';
 import {
   getBerachainRewardsIsolationModeVaultFactoryConstructorParams,
   getBerachainRewardsRegistryConstructorParams,
   getBGTIsolationModeVaultFactoryConstructorParams,
-  getInfraredBGTIsolationModeVaultFactoryConstructorParams
+  getInfraredBGTIsolationModeVaultFactoryConstructorParams,
 } from '../src/berachain-constructors';
 import {
   BerachainRewardsIsolationModeTokenVaultV1,
   BerachainRewardsIsolationModeVaultFactory,
   BerachainRewardsIsolationModeVaultFactory__factory,
-  BerachainRewardsMetaVault,
+  BerachainRewardsMetaVault, BerachainRewardsMetaVault__factory,
   BerachainRewardsRegistry,
   BerachainRewardsRegistry__factory,
   BGTIsolationModeTokenVaultV1,
@@ -24,11 +25,9 @@ import {
   InfraredBGTIsolationModeTokenVaultV1,
   InfraredBGTIsolationModeVaultFactory,
   InfraredBGTIsolationModeVaultFactory__factory,
-  MetaVaultOperator,
   TestBerachainRewardsRegistry,
-  TestBerachainRewardsRegistry__factory
+  TestBerachainRewardsRegistry__factory,
 } from '../src/types';
-import { createIsolationModeTokenVaultV1ActionsImpl } from 'packages/base/test/utils/dolomite';
 
 export enum RewardVaultType {
   Native,
@@ -38,7 +37,6 @@ export enum RewardVaultType {
 export async function createBerachainRewardsRegistry(
   core: CoreProtocolBerachain,
   metaVaultImplementation: BerachainRewardsMetaVault,
-  metaVaultOperator: MetaVaultOperator
 ): Promise<BerachainRewardsRegistry> {
   const implementation = await createContractWithAbi<BerachainRewardsRegistry>(
     BerachainRewardsRegistry__factory.abi,
@@ -48,12 +46,7 @@ export async function createBerachainRewardsRegistry(
   const proxy = await createContractWithAbi<RegistryProxy>(
     RegistryProxy__factory.abi,
     RegistryProxy__factory.bytecode,
-    await getBerachainRewardsRegistryConstructorParams(
-      implementation,
-      metaVaultImplementation,
-      metaVaultOperator,
-      core
-    ),
+    await getBerachainRewardsRegistryConstructorParams(implementation, metaVaultImplementation, core),
   );
   return BerachainRewardsRegistry__factory.connect(proxy.address, core.hhUser1);
 }
@@ -61,7 +54,6 @@ export async function createBerachainRewardsRegistry(
 export async function createTestBerachainRewardsRegistry(
   core: CoreProtocolBerachain,
   metaVaultImplementation: BerachainRewardsMetaVault,
-  metaVaultOperator: MetaVaultOperator
 ): Promise<TestBerachainRewardsRegistry> {
   const implementation = await createContractWithAbi<TestBerachainRewardsRegistry>(
     TestBerachainRewardsRegistry__factory.abi,
@@ -71,18 +63,13 @@ export async function createTestBerachainRewardsRegistry(
   const proxy = await createContractWithAbi<RegistryProxy>(
     RegistryProxy__factory.abi,
     RegistryProxy__factory.bytecode,
-    await getBerachainRewardsRegistryConstructorParams(
-      implementation,
-      metaVaultImplementation,
-      metaVaultOperator,
-      core
-    ),
+    await getBerachainRewardsRegistryConstructorParams(implementation, metaVaultImplementation, core),
   );
   return TestBerachainRewardsRegistry__factory.connect(proxy.address, core.hhUser1);
 }
 
-export async function createBerachainRewardsIsolationModeTokenVaultV1(
-): Promise<BerachainRewardsIsolationModeTokenVaultV1> {
+// tslint:disable-next-line
+export async function createBerachainRewardsIsolationModeTokenVaultV1(): Promise<BerachainRewardsIsolationModeTokenVaultV1> {
   const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
   return createContractWithLibrary<BerachainRewardsIsolationModeTokenVaultV1>(
     'BerachainRewardsIsolationModeTokenVaultV1',
@@ -104,19 +91,14 @@ export async function createBerachainRewardsIsolationModeVaultFactory(
       beraRegistry,
       underlyingToken,
       userVaultImplementation,
-      core
+      core,
     ),
   );
 }
 
-export async function createBGTIsolationModeTokenVaultV1(
-): Promise<BGTIsolationModeTokenVaultV1> {
+export async function createBGTIsolationModeTokenVaultV1(): Promise<BGTIsolationModeTokenVaultV1> {
   const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
-  return createContractWithLibrary<BGTIsolationModeTokenVaultV1>(
-    'BGTIsolationModeTokenVaultV1',
-    libraries,
-    [],
-  );
+  return createContractWithLibrary<BGTIsolationModeTokenVaultV1>('BGTIsolationModeTokenVaultV1', libraries, []);
 }
 
 export async function createBGTIsolationModeVaultFactory(
@@ -128,17 +110,11 @@ export async function createBGTIsolationModeVaultFactory(
   return createContractWithAbi<BGTIsolationModeVaultFactory>(
     BGTIsolationModeVaultFactory__factory.abi,
     BGTIsolationModeVaultFactory__factory.bytecode,
-    getBGTIsolationModeVaultFactoryConstructorParams(
-      beraRegistry,
-      underlyingToken,
-      userVaultImplementation,
-      core
-    ),
+    getBGTIsolationModeVaultFactoryConstructorParams(beraRegistry, underlyingToken, userVaultImplementation, core),
   );
 }
 
-export async function createInfraredBGTIsolationModeTokenVaultV1(
-): Promise<InfraredBGTIsolationModeTokenVaultV1> {
+export async function createInfraredBGTIsolationModeTokenVaultV1(): Promise<InfraredBGTIsolationModeTokenVaultV1> {
   const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
   return createContractWithLibrary<InfraredBGTIsolationModeTokenVaultV1>(
     'InfraredBGTIsolationModeTokenVaultV1',
@@ -160,7 +136,26 @@ export async function createInfraredBGTIsolationModeVaultFactory(
       beraRegistry,
       underlyingToken,
       userVaultImplementation,
-      core
+      core,
     ),
   );
+}
+
+export async function setupUserMetaVault(
+  user: SignerWithAddressWithSafety,
+  registry: IBerachainRewardsRegistry | BerachainRewardsRegistry,
+): Promise<BerachainRewardsMetaVault> {
+  const metaVaultAddress = await registry.getMetaVaultByAccount(user.address);
+  if (metaVaultAddress === ADDRESS_ZERO) {
+    return Promise.reject(new Error('MetaVault not set up yet'));
+  }
+
+  return BerachainRewardsMetaVault__factory.connect(metaVaultAddress, user);
+}
+
+export async function impersonateUserMetaVault(
+  user: SignerWithAddressWithSafety,
+  registry: IBerachainRewardsRegistry | BerachainRewardsRegistry,
+): Promise<SignerWithAddressWithSafety> {
+  return impersonate(await setupUserMetaVault(user, registry));
 }
