@@ -22,6 +22,22 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
 
   core.gmxV2Ecosystem.live.registry;
+  const unwrapperProxies = core.gmxV2Ecosystem.live.allGmMarkets.map(m => m.unwrapperProxy);
+  const wrapperProxies = core.gmxV2Ecosystem.live.allGmMarkets.map(m => m.wrapperProxy);
+
+  const unwrapperImplementationAddress = await deployContractAndSave(
+    'GmxV2IsolationModeUnwrapperTraderV2',
+    [core.tokens.weth.address],
+    'GmxV2IsolationModeUnwrapperTraderImplementationV12',
+    { ...core.libraries.unwrapperTraderImpl, ...core.gmxV2Ecosystem.live.gmxV2LibraryMap },
+  );
+  const wrapperImplementationAddress = await deployContractAndSave(
+    'GmxV2IsolationModeWrapperTraderV2',
+    [core.tokens.weth.address],
+    'GmxV2IsolationModeWrapperTraderImplementationV11',
+    { ...core.libraries.wrapperTraderImpl, ...core.gmxV2Ecosystem.live.gmxV2LibraryMap },
+  );
+
   const transactions: EncodedTransaction[] = [];
   transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(
@@ -40,77 +56,6 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       'ownerSetGmxReader',
       [core.gmxV2Ecosystem.gmxReaderV2.address],
     ),
-  );
-
-  const unwrapperProxies = [
-    core.gmxV2Ecosystem.live.gmAaveUsd.unwrapperProxy,
-    core.gmxV2Ecosystem.live.gmArbUsd.unwrapperProxy,
-    core.gmxV2Ecosystem.live.gmBtc.unwrapperProxy,
-    core.gmxV2Ecosystem.live.gmBtcUsd.unwrapperProxy,
-    core.gmxV2Ecosystem.live.gmDogeUsd.unwrapperProxy,
-    core.gmxV2Ecosystem.live.gmEth.unwrapperProxy,
-    core.gmxV2Ecosystem.live.gmEthUsd.unwrapperProxy,
-    core.gmxV2Ecosystem.live.gmGmxUsd.unwrapperProxy,
-    core.gmxV2Ecosystem.live.gmLinkUsd.unwrapperProxy,
-    core.gmxV2Ecosystem.live.gmSolUsd.unwrapperProxy,
-    core.gmxV2Ecosystem.live.gmUniUsd.unwrapperProxy,
-    core.gmxV2Ecosystem.live.gmWstEthUsd.unwrapperProxy,
-  ];
-  const wrapperProxies = [
-    core.gmxV2Ecosystem.live.gmAaveUsd.wrapperProxy,
-    core.gmxV2Ecosystem.live.gmArbUsd.wrapperProxy,
-    core.gmxV2Ecosystem.live.gmBtc.wrapperProxy,
-    core.gmxV2Ecosystem.live.gmBtcUsd.wrapperProxy,
-    core.gmxV2Ecosystem.live.gmDogeUsd.wrapperProxy,
-    core.gmxV2Ecosystem.live.gmEth.wrapperProxy,
-    core.gmxV2Ecosystem.live.gmEthUsd.wrapperProxy,
-    core.gmxV2Ecosystem.live.gmGmxUsd.wrapperProxy,
-    core.gmxV2Ecosystem.live.gmLinkUsd.wrapperProxy,
-    core.gmxV2Ecosystem.live.gmSolUsd.wrapperProxy,
-    core.gmxV2Ecosystem.live.gmUniUsd.wrapperProxy,
-    core.gmxV2Ecosystem.live.gmWstEthUsd.wrapperProxy,
-  ];
-
-  const unwrappers = [
-    core.gmxV2Ecosystem.live.gmAaveUsd.unwrapper,
-    core.gmxV2Ecosystem.live.gmArbUsd.unwrapper,
-    core.gmxV2Ecosystem.live.gmBtc.unwrapper,
-    core.gmxV2Ecosystem.live.gmBtcUsd.unwrapper,
-    core.gmxV2Ecosystem.live.gmDogeUsd.unwrapper,
-    core.gmxV2Ecosystem.live.gmEth.unwrapper,
-    core.gmxV2Ecosystem.live.gmEthUsd.unwrapper,
-    core.gmxV2Ecosystem.live.gmGmxUsd.unwrapper,
-    core.gmxV2Ecosystem.live.gmLinkUsd.unwrapper,
-    core.gmxV2Ecosystem.live.gmSolUsd.unwrapper,
-    core.gmxV2Ecosystem.live.gmUniUsd.unwrapper,
-    core.gmxV2Ecosystem.live.gmWstEthUsd.unwrapper,
-  ];
-  const wrappers = [
-    core.gmxV2Ecosystem.live.gmAaveUsd.wrapper,
-    core.gmxV2Ecosystem.live.gmArbUsd.wrapper,
-    core.gmxV2Ecosystem.live.gmBtc.wrapper,
-    core.gmxV2Ecosystem.live.gmBtcUsd.wrapper,
-    core.gmxV2Ecosystem.live.gmDogeUsd.wrapper,
-    core.gmxV2Ecosystem.live.gmEth.wrapper,
-    core.gmxV2Ecosystem.live.gmEthUsd.wrapper,
-    core.gmxV2Ecosystem.live.gmGmxUsd.wrapper,
-    core.gmxV2Ecosystem.live.gmLinkUsd.wrapper,
-    core.gmxV2Ecosystem.live.gmSolUsd.wrapper,
-    core.gmxV2Ecosystem.live.gmUniUsd.wrapper,
-    core.gmxV2Ecosystem.live.gmWstEthUsd.wrapper,
-  ];
-
-  const unwrapperImplementationAddress = await deployContractAndSave(
-    'GmxV2IsolationModeUnwrapperTraderV2',
-    [core.tokens.weth.address],
-    'GmxV2IsolationModeUnwrapperTraderImplementationV12',
-    { ...core.libraries.unwrapperTraderImpl, ...core.gmxV2Ecosystem.live.gmxV2LibraryMap },
-  );
-  const wrapperImplementationAddress = await deployContractAndSave(
-    'GmxV2IsolationModeWrapperTraderV2',
-    [core.tokens.weth.address],
-    'GmxV2IsolationModeWrapperTraderImplementationV11',
-    { ...core.libraries.wrapperTraderImpl, ...core.gmxV2Ecosystem.live.gmxV2LibraryMap },
   );
 
   for (let i = 0; i < unwrapperProxies.length; i++) {
@@ -151,14 +96,14 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
         (await core.gmxV2Ecosystem.live.registry.gmxReader()) === core.gmxV2Ecosystem.gmxReaderV2.address,
         'Invalid gmx reader',
       );
-      for (let i = 0; i < unwrappers.length; i++) {
+      for (let i = 0; i < unwrapperProxies.length; i++) {
         assertHardhatInvariant(
           (await unwrapperProxies[i].implementation()) === unwrapperImplementationAddress,
-          `Invalid unwrapper implementation for ${unwrappers[i].address}`,
+          `Invalid unwrapper implementation for ${unwrapperProxies[i].address}`,
         );
         assertHardhatInvariant(
           (await wrapperProxies[i].implementation()) === wrapperImplementationAddress,
-          `Invalid wrapper implementation for ${wrappers[i].address}`,
+          `Invalid wrapper implementation for ${wrapperProxies[i].address}`,
         );
       }
     },
