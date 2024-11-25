@@ -244,7 +244,13 @@ describe('IsolationModeTokenVaultV1', () => {
       );
     });
 
-    it('should revert with correct message if one multicall fails', async () => {
+    it('should fail if calldata has an invalid length', async () => {
+      await expectThrow(userVault.multicall(['0x12']), 'IsolationModeVaultV1ActionsImpl: Invalid calldata length');
+      await expectThrow(userVault.multicall(['0x12345678']), 'IsolationModeVaultV1ActionsImpl: Disallowed multicall function');
+      await expectThrow(userVault.multicall(['0x1234567890']), 'IsolationModeVaultV1ActionsImpl: Disallowed multicall function');
+    });
+
+    it('should fail with correct message if one multicall fails', async () => {
       const calldata = await userVault.populateTransaction.depositIntoVaultForDolomiteMargin(
         defaultAccountNumber,
         amountWei,
