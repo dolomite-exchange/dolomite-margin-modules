@@ -21,7 +21,6 @@
 pragma solidity ^0.8.9;
 
 import { RouterBase } from './RouterBase.sol';
-import { IBorrowPositionProxyV2 } from '../interfaces/IBorrowPositionProxyV2.sol';
 import { IIsolationModeTokenVaultV2 } from '../isolation-mode/interfaces/IIsolationModeTokenVaultV2.sol';
 import { AccountBalanceLib } from '../lib/AccountBalanceLib.sol';
 import { IBorrowPositionRouter } from './interfaces/IBorrowPositionRouter.sol';

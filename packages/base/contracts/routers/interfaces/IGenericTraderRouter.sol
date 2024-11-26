@@ -22,8 +22,6 @@ pragma solidity ^0.8.9;
 
 import { IRouterBase } from "./IRouterBase.sol";
 import { IGenericTraderProxyV2 } from "../../proxies/interfaces/IGenericTraderProxyV2.sol";
-import { IGenericTraderBase } from "../../interfaces/IGenericTraderBase.sol";
-import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 
 
 /**

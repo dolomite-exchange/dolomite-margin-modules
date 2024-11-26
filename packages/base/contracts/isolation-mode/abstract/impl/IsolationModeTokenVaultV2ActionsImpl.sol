@@ -22,7 +22,6 @@ pragma solidity ^0.8.9;
 import { BaseLiquidatorProxy } from "../../../general/BaseLiquidatorProxy.sol";
 import { IDolomiteRegistry } from "../../../interfaces/IDolomiteRegistry.sol";
 import { IEventEmitterRegistry } from "../../../interfaces/IEventEmitterRegistry.sol";
-import { IGenericTraderProxyV2 } from "../../../proxies/interfaces/IGenericTraderProxyV2.sol";
 import { AccountActionLib } from "../../../lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "../../../lib/AccountBalanceLib.sol";
 import { DolomiteMarginVersionWrapperLib } from "../../../lib/DolomiteMarginVersionWrapperLib.sol";
@@ -34,6 +33,7 @@ import { BitsLib } from "../../../protocol/lib/BitsLib.sol";
 import { DecimalLib } from "../../../protocol/lib/DecimalLib.sol";
 import { Require } from "../../../protocol/lib/Require.sol";
 import { TypesLib } from "../../../protocol/lib/TypesLib.sol";
+import { IGenericTraderProxyV2 } from "../../../proxies/interfaces/IGenericTraderProxyV2.sol";
 import { IIsolationModeTokenVaultV2 } from "../../interfaces/IIsolationModeTokenVaultV2.sol";
 import { IIsolationModeVaultFactory } from "../../interfaces/IIsolationModeVaultFactory.sol";
 

@@ -23,6 +23,7 @@ pragma solidity ^0.8.9;
 import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import { OnlyDolomiteMarginForUpgradeable } from "../helpers/OnlyDolomiteMarginForUpgradeable.sol";
 import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
+import { IBorrowPositionProxyV2 } from "../interfaces/IBorrowPositionProxyV2.sol";
 import { IDolomiteAccountRegistry } from "../interfaces/IDolomiteAccountRegistry.sol";
 import { IDolomiteMigrator } from "../interfaces/IDolomiteMigrator.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
@@ -33,7 +34,6 @@ import { ILiquidatorAssetRegistry } from "../interfaces/ILiquidatorAssetRegistry
 import { ValidationLib } from "../lib/ValidationLib.sol";
 import { IDolomitePriceOracle } from "../protocol/interfaces/IDolomitePriceOracle.sol";
 import { Require } from "../protocol/lib/Require.sol";
-import { IBorrowPositionProxyV2 } from "../interfaces/IBorrowPositionProxyV2.sol";
 
 
 /**

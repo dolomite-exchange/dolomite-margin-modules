@@ -412,7 +412,7 @@ library AccountActionLib {
             actionType: IDolomiteStructs.ActionType.Trade,
             accountId: _fromAccountId,
             amount: IDolomiteStructs.AssetAmount({
-                sign: true, // @audit check
+                sign: _amountInWei == _ALL ? false : true, // @audit check
                 denomination: IDolomiteStructs.AssetDenomination.Wei,
                 ref: _amountInWei == _ALL
                     ? IDolomiteStructs.AssetReference.Target

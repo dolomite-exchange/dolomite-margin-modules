@@ -24,7 +24,13 @@ import {
   TestIsolationModeWrapperTraderV2,
   TestIsolationModeWrapperTraderV2__factory
 } from 'packages/base/src/types';
-import { createContractWithAbi, createContractWithLibrary, createContractWithName, createTestToken, depositIntoDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
+import {
+  createContractWithAbi,
+  createContractWithLibrary,
+  createContractWithName,
+  createTestToken,
+  depositIntoDolomiteMargin
+} from 'packages/base/src/utils/dolomite-utils';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
 import { createAndUpgradeDolomiteRegistry, createIsolationModeTokenVaultV2ActionsImpl } from '../utils/dolomite';
 import { createTestIsolationModeVaultFactory } from '../utils/ecosystem-utils/testers';
@@ -131,7 +137,9 @@ describe('GenericTraderRouter', () => {
     );
 
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
-    await factory.connect(core.governance).ownerInitialize([tokenUnwrapper.address, tokenWrapper.address, traderRouter.address, borrowRouter.address]);
+    await factory.connect(core.governance).ownerInitialize(
+      [tokenUnwrapper.address, tokenWrapper.address, traderRouter.address, borrowRouter.address]
+    );
 
     await core.borrowPositionProxyV2.connect(core.governance).setIsCallerAuthorized(borrowRouter.address, true);
     await genericTraderProxy.connect(core.governance).setIsCallerAuthorized(traderRouter.address, true);
@@ -221,7 +229,14 @@ describe('GenericTraderRouter', () => {
       await expectProtocolBalance(core, core.hhUser1, fromAccountNumber, otherMarketId1, amountWei);
 
       const outputAmount = amountWei.div(2);
-      const zapParams = await getWrapZapParams(otherMarketId1, amountWei, isolationModeMarketId, outputAmount, tokenWrapper, core);
+      const zapParams = await getWrapZapParams(
+        otherMarketId1,
+        amountWei,
+        isolationModeMarketId,
+        outputAmount,
+        tokenWrapper,
+        core
+      );
       await traderRouter.swapExactInputForOutput(
         isolationModeMarketId,
         {
@@ -229,8 +244,8 @@ describe('GenericTraderRouter', () => {
           marketIdsPath: zapParams.marketIdsPath,
           inputAmountWei: zapParams.inputAmountWei,
           minOutputAmountWei: zapParams.minOutputAmountWei,
-        tradersPath: zapParams.tradersPath,
-        makerAccounts: zapParams.makerAccounts,
+          tradersPath: zapParams.tradersPath,
+          makerAccounts: zapParams.makerAccounts,
           userConfig: zapParams.userConfig,
         }
       );
@@ -245,7 +260,14 @@ describe('GenericTraderRouter', () => {
       await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
 
       const outputAmount = amountWei.div(2);
-      const zapParams = await getUnwrapZapParams(isolationModeMarketId, amountWei, otherMarketId1, outputAmount, tokenUnwrapper, core);
+      const zapParams = await getUnwrapZapParams(
+        isolationModeMarketId,
+        amountWei,
+        otherMarketId1,
+        outputAmount,
+        tokenUnwrapper,
+        core
+      );
       await traderRouter.swapExactInputForOutput(
         isolationModeMarketId,
         {
@@ -378,7 +400,14 @@ describe('GenericTraderRouter', () => {
       await userVault.transferIntoPositionWithUnderlyingToken(defaultAccountNumber, borrowAccountNumber, amountWei);
 
       const outputAmount = amountWei.div(2);
-      const zapParams = await getUnwrapZapParams(isolationModeMarketId, amountWei, otherMarketId1, outputAmount, tokenUnwrapper, core);
+      const zapParams = await getUnwrapZapParams(
+        isolationModeMarketId,
+        amountWei,
+        otherMarketId1,
+        outputAmount,
+        tokenUnwrapper,
+        core
+      );
       await traderRouter.swapExactInputForOutputAndModifyPosition(
         isolationModeMarketId,
         {
@@ -414,7 +443,14 @@ describe('GenericTraderRouter', () => {
       await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
 
       const outputAmount = amountWei.div(2);
-      const zapParams = await getWrapZapParams(otherMarketId1, amountWei, isolationModeMarketId, outputAmount, tokenWrapper, core);
+      const zapParams = await getWrapZapParams(
+        otherMarketId1,
+        amountWei,
+        isolationModeMarketId,
+        outputAmount,
+        tokenWrapper,
+        core
+      );
       await traderRouter.swapExactInputForOutputAndModifyPosition(
         isolationModeMarketId,
         {
@@ -425,7 +461,10 @@ describe('GenericTraderRouter', () => {
           tradersPath: zapParams.tradersPath,
           makerAccounts: zapParams.makerAccounts,
           transferCollateralParams: {
-            transferAmounts: [{ marketId: otherMarketId1, amountWei: amountWei }, { marketId: isolationModeMarketId, amountWei: amountWei }],
+            transferAmounts: [
+              { marketId: otherMarketId1, amountWei: amountWei },
+              { marketId: isolationModeMarketId, amountWei: amountWei }
+            ],
             fromAccountNumber: defaultAccountNumber,
             toAccountNumber: borrowAccountNumber,
           },
@@ -438,7 +477,13 @@ describe('GenericTraderRouter', () => {
       );
       await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId1, ZERO_BI);
       await expectProtocolBalance(core, userVault, borrowAccountNumber, otherMarketId1, ZERO_BI);
-      await expectProtocolBalance(core, userVault, borrowAccountNumber, isolationModeMarketId, amountWei.add(outputAmount));
+      await expectProtocolBalance(
+        core,
+        userVault,
+        borrowAccountNumber,
+        isolationModeMarketId,
+        amountWei.add(outputAmount)
+      );
     });
 
     it('should work normally with transfers after swap', async () => {
@@ -449,7 +494,13 @@ describe('GenericTraderRouter', () => {
       await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, otherMarketId1, amountWei);
       await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await userVault.transferIntoPositionWithUnderlyingToken(defaultAccountNumber, borrowAccountNumber, amountWei);
-      await userVault.transferIntoPositionWithOtherToken(defaultAccountNumber, borrowAccountNumber, otherMarketId1, amountWei, BalanceCheckFlag.Both);
+      await userVault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        otherMarketId1,
+        amountWei,
+        BalanceCheckFlag.Both,
+      );
 
       const outputAmount = amountWei.div(2);
       const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
@@ -463,7 +514,10 @@ describe('GenericTraderRouter', () => {
           tradersPath: zapParams.tradersPath,
           makerAccounts: zapParams.makerAccounts,
           transferCollateralParams: {
-            transferAmounts: [{ marketId: otherMarketId2, amountWei: outputAmount }, { marketId: isolationModeMarketId, amountWei: amountWei }],
+            transferAmounts: [
+              { marketId: otherMarketId2, amountWei: outputAmount },
+              { marketId: isolationModeMarketId, amountWei: amountWei }
+            ],
             fromAccountNumber: borrowAccountNumber,
             toAccountNumber: defaultAccountNumber,
           },

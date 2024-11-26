@@ -12,6 +12,7 @@ import {
 import {
   BorrowPositionRouter,
   CustomTestToken,
+  GenericTraderProxyV2,
   TestBorrowPositionRouter__factory,
   TestGenericTraderProxyV2,
   TestGenericTraderRouter,
@@ -25,33 +26,33 @@ import {
   TestIsolationModeWrapperTraderV2,
   TestIsolationModeWrapperTraderV2__factory
 } from 'packages/base/src/types';
-import { createContractWithAbi, createContractWithLibrary, createContractWithName, createTestToken, depositIntoDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
-import { getBlockTimestamp, getLatestBlockNumber, revertToSnapshotAndCapture, snapshot } from '../utils';
+import {
+  createContractWithAbi,
+  createContractWithLibrary,
+  createContractWithName,
+  createTestToken,
+  depositIntoDolomiteMargin,
+} from 'packages/base/src/utils/dolomite-utils';
+import { revertToSnapshotAndCapture, snapshot } from '../utils';
 import { createAndUpgradeDolomiteRegistry, createIsolationModeTokenVaultV2ActionsImpl } from '../utils/dolomite';
 import { createTestIsolationModeVaultFactory } from '../utils/ecosystem-utils/testers';
 import { BigNumber } from 'ethers';
 import { ethers } from 'hardhat';
-import { expectProtocolBalance, expectThrow } from '../utils/assertions';
+import { expectEvent, expectProtocolBalance, expectThrow } from '../utils/assertions';
 import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin';
-import { formatEther, parseEther } from 'ethers/lib/utils';
-import { getSimpleZapParams, getUnwrapZapParams, getWrapZapParams, ZapParam } from '../utils/zap-utils';
+import { parseEther } from 'ethers/lib/utils';
+import { getSimpleZapParams, getUnwrapZapParams, getWrapZapParams } from '../utils/zap-utils';
 import { expect } from 'chai';
-import { CORE_DEPLOYMENT_FILE_NAME } from 'packages/deployment/src/utils/deploy-utils';
 import {
   GenericEventEmissionType,
   GenericTraderParam,
   GenericTraderType,
-  GenericUserConfig,
 } from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
-
-const OTHER_ADDRESS = '0x1234567890123456789012345678901234567890';
 
 const amountWei = ONE_ETH_BI;
 const outputAmount = parseEther('.5');
-const parAmount = parseEther('.5');
 const defaultAccountNumber = ZERO_BI;
 const borrowAccountNumber = BigNumber.from('123');
-const otherBorrowAccountNumber = BigNumber.from('456');
 
 describe('GenericTraderProxyV2', () => {
   let snapshotId: string;
@@ -81,7 +82,9 @@ describe('GenericTraderProxyV2', () => {
     await disableInterestAccrual(core, core.marketIds.weth);
 
     await createAndUpgradeDolomiteRegistry(core);
-    await core.dolomiteRegistry.connect(core.governance).ownerSetBorrowPositionProxy(core.borrowPositionProxyV2.address);
+    await core.dolomiteRegistry.connect(core.governance).ownerSetBorrowPositionProxy(
+      core.borrowPositionProxyV2.address
+    );
 
     otherToken1 = await createTestToken();
     await core.testEcosystem!.testPriceOracle.setPrice(
@@ -156,7 +159,9 @@ describe('GenericTraderProxyV2', () => {
     );
 
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
-    await factory.connect(core.governance).ownerInitialize([tokenUnwrapper.address, tokenWrapper.address, traderRouter.address, borrowRouter.address]);
+    await factory.connect(core.governance).ownerInitialize(
+      [tokenUnwrapper.address, tokenWrapper.address, traderRouter.address, borrowRouter.address],
+    );
 
     await core.borrowPositionProxyV2.connect(core.governance).setIsCallerAuthorized(borrowRouter.address, true);
     await genericTraderProxy.connect(core.governance).setIsCallerAuthorized(traderRouter.address, true);
@@ -172,7 +177,6 @@ describe('GenericTraderProxyV2', () => {
 
     await setupDAIBalance(core, core.hhUser1, amountWei, core.dolomiteMargin);
     await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.dai, amountWei);
-
 
     snapshotId = await snapshot();
   });
@@ -190,6 +194,25 @@ describe('GenericTraderProxyV2', () => {
   });
 
   describe('#swapExactInputForOutput', () => {
+    it('should work normally', async () => {
+      await otherToken1.addBalance(core.hhUser1.address, amountWei);
+      await otherToken1.connect(core.hhUser1).approve(core.dolomiteMargin.address, amountWei);
+      await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, otherMarketId1, amountWei);
+
+      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
+      await genericTraderProxy.swapExactInputForOutput({
+        accountNumber: defaultAccountNumber,
+        marketIdsPath: zapParams.marketIdsPath,
+        inputAmountWei: amountWei,
+        minOutputAmountWei: zapParams.minOutputAmountWei,
+        tradersPath: zapParams.tradersPath,
+        makerAccounts: zapParams.makerAccounts,
+        userConfig: zapParams.userConfig,
+      });
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId1, ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId2, outputAmount);
+    });
+
     it('should work normally to transfer users full balance', async () => {
       await otherToken1.addBalance(core.hhUser1.address, amountWei);
       await otherToken1.connect(core.hhUser1).approve(core.dolomiteMargin.address, amountWei);
@@ -209,29 +232,8 @@ describe('GenericTraderProxyV2', () => {
       await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId2, outputAmount);
     });
 
-    it('should fail with external liquidity if maker account index is not zero', async () => {
-      await otherToken1.addBalance(core.hhUser1.address, amountWei);
-      await otherToken1.connect(core.hhUser1).approve(core.dolomiteMargin.address, amountWei);
-      await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, otherMarketId1, amountWei);
-
-      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
-      zapParams.tradersPath[0].makerAccountIndex = 1;
-      await expectThrow(
-        genericTraderProxy.swapExactInputForOutput({
-          accountNumber: defaultAccountNumber,
-          marketIdsPath: zapParams.marketIdsPath,
-          inputAmountWei: MAX_UINT_256_BI,
-          minOutputAmountWei: zapParams.minOutputAmountWei,
-          tradersPath: zapParams.tradersPath,
-          makerAccounts: zapParams.makerAccounts,
-          userConfig: zapParams.userConfig,
-        }),
-        'GenericTraderProxyBase: Invalid maker account owner <0>'
-      );
-    });
-
     it('should work normally with internal liquidity', async () => {
-      const usdcAmount = BigNumber.from('100000000')
+      const usdcAmount = BigNumber.from('100000000');
       await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.dolomiteMargin);
       await disableInterestAccrual(core, core.marketIds.usdc);
       await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.usdc, usdcAmount);
@@ -258,105 +260,71 @@ describe('GenericTraderProxyV2', () => {
       });
 
       await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.usdc, ZERO_BI);
-      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, BigNumber.from('4321'));
+      await expectProtocolBalance(
+        core,
+        core.hhUser1,
+        defaultAccountNumber,
+        core.marketIds.weth,
+        BigNumber.from('4321'),
+      );
     });
 
-    it('should fail with internal liquidity if custom input amount is invalid', async () => {
-      const usdcAmount = BigNumber.from('100000000')
+    it('should work normally with multiple internal liquidity trades', async () => {
+      const usdcAmount = BigNumber.from('100000000');
+      const wethAmount = parseEther('.01');
+      const outputAmount = BigNumber.from('1000000'); // 1 USDC
       await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.dolomiteMargin);
       await disableInterestAccrual(core, core.marketIds.usdc);
       await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.usdc, usdcAmount);
 
-      const zapParams = await getSimpleZapParams(core.marketIds.usdc, usdcAmount, core.marketIds.weth, ONE_BI, core);
-      zapParams.tradersPath[0].trader = '0xb77a493a4950cad1b049e222d62bce14ff423c6f';
-      zapParams.tradersPath[0].traderType = GenericTraderType.InternalLiquidity;
-      zapParams.tradersPath[0].tradeData = ethers.utils.defaultAbiCoder.encode(
-        ['uint256', 'bytes'],
-        [usdcAmount.sub(1), ethers.utils.defaultAbiCoder.encode(['uint256'], [BigNumber.from('4321')])],
-      );
-      zapParams.makerAccounts.push({
-        owner: '0xb77a493a4950cad1b049e222d62bce14ff423c6f',
-        number: defaultAccountNumber,
+      const traderParams: GenericTraderParam[] = [
+        {
+          trader: '0xb77a493a4950cad1b049e222d62bce14ff423c6f',
+          traderType: GenericTraderType.InternalLiquidity,
+          makerAccountIndex: 0,
+          tradeData: ethers.utils.defaultAbiCoder.encode(
+            ['uint256', 'bytes'],
+            [usdcAmount, ethers.utils.defaultAbiCoder.encode(['uint256'], [wethAmount])],
+          )
+        },
+        {
+          trader: '0xb77a493a4950cad1b049e222d62bce14ff423c6f',
+          traderType: GenericTraderType.InternalLiquidity,
+          makerAccountIndex: 0,
+          tradeData: ethers.utils.defaultAbiCoder.encode(
+            ['uint256', 'bytes'],
+            [wethAmount, ethers.utils.defaultAbiCoder.encode(['uint256'], [outputAmount])],
+          )
+        }
+      ];
+      const zapParams = {
+        inputAmountWei: usdcAmount,
+        minOutputAmountWei: outputAmount,
+        marketIdsPath: [core.marketIds.usdc, core.marketIds.weth, core.marketIds.usdc],
+        tradersPath: traderParams,
+        makerAccounts: [{
+          owner: '0xb77a493a4950cad1b049e222d62bce14ff423c6f',
+          number: defaultAccountNumber,
+        }],
+        userConfig: {
+          deadline: '123123123123123',
+          balanceCheckFlag: BalanceCheckFlag.None,
+          eventType: GenericEventEmissionType.None,
+        },
+      };
+
+      await genericTraderProxy.swapExactInputForOutput({
+        accountNumber: defaultAccountNumber,
+        marketIdsPath: zapParams.marketIdsPath,
+        inputAmountWei: zapParams.inputAmountWei,
+        minOutputAmountWei: zapParams.minOutputAmountWei,
+        tradersPath: zapParams.tradersPath,
+        makerAccounts: zapParams.makerAccounts,
+        userConfig: zapParams.userConfig,
       });
-      await expectThrow(
-        genericTraderProxy.swapExactInputForOutput({
-          accountNumber: defaultAccountNumber,
-          marketIdsPath: zapParams.marketIdsPath,
-          inputAmountWei: zapParams.inputAmountWei,
-          minOutputAmountWei: zapParams.minOutputAmountWei,
-          tradersPath: zapParams.tradersPath,
-          makerAccounts: zapParams.makerAccounts,
-          userConfig: zapParams.userConfig,
-        }),
-        'GenericTraderProxyBase: Invalid custom input amount'
-      );
-    });
 
-    it('should fail with internal liquidity if maker account owner is address zero', async () => {
-      const usdcAmount = BigNumber.from('100000000')
-      await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.dolomiteMargin);
-      await disableInterestAccrual(core, core.marketIds.usdc);
-      await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.usdc, usdcAmount);
-
-      const zapParams = await getSimpleZapParams(core.marketIds.usdc, usdcAmount, core.marketIds.weth, ONE_BI, core);
-      zapParams.tradersPath[0].trader = '0xb77a493a4950cad1b049e222d62bce14ff423c6f';
-      zapParams.tradersPath[0].traderType = GenericTraderType.InternalLiquidity;
-      zapParams.tradersPath[0].tradeData = ethers.utils.defaultAbiCoder.encode(
-        ['uint256', 'bytes'],
-        [usdcAmount, ethers.utils.defaultAbiCoder.encode(['uint256'], [BigNumber.from('4321')])],
-      );
-      zapParams.makerAccounts.push({
-        owner: ADDRESS_ZERO,
-        number: defaultAccountNumber,
-      });
-      await expectThrow(
-        genericTraderProxy.swapExactInputForOutput({
-          accountNumber: defaultAccountNumber,
-          marketIdsPath: zapParams.marketIdsPath,
-          inputAmountWei: zapParams.inputAmountWei,
-          minOutputAmountWei: zapParams.minOutputAmountWei,
-          tradersPath: zapParams.tradersPath,
-          makerAccounts: zapParams.makerAccounts,
-          userConfig: zapParams.userConfig,
-        }),
-        'GenericTraderProxyBase: Invalid maker account owner <0>'
-      );
-    });
-
-    it('should fail with internal liquidity if maker account number is invalid', async () => {
-      const usdcAmount = BigNumber.from('100000000')
-      await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.dolomiteMargin);
-      await disableInterestAccrual(core, core.marketIds.usdc);
-      await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.usdc, usdcAmount);
-
-      const zapParams = await getSimpleZapParams(core.marketIds.usdc, usdcAmount, core.marketIds.weth, ONE_BI, core);
-      zapParams.tradersPath[0].trader = '0xb77a493a4950cad1b049e222d62bce14ff423c6f';
-      zapParams.tradersPath[0].traderType = GenericTraderType.InternalLiquidity;
-      zapParams.tradersPath[0].tradeData = ethers.utils.defaultAbiCoder.encode(
-        ['uint256', 'bytes'],
-        [usdcAmount, ethers.utils.defaultAbiCoder.encode(['uint256'], [BigNumber.from('4321')])],
-      );
-      zapParams.tradersPath[0].makerAccountIndex = 4;
-      zapParams.makerAccounts.push({
-        owner: '0xb77a493a4950cad1b049e222d62bce14ff423c6f',
-        number: defaultAccountNumber,
-      });
-      await expectThrow(
-        genericTraderProxy.swapExactInputForOutput({
-          accountNumber: defaultAccountNumber,
-          marketIdsPath: zapParams.marketIdsPath,
-          inputAmountWei: zapParams.inputAmountWei,
-          minOutputAmountWei: zapParams.minOutputAmountWei,
-          tradersPath: zapParams.tradersPath,
-          makerAccounts: zapParams.makerAccounts,
-          userConfig: zapParams.userConfig,
-        }),
-        'GenericTraderProxyBase: Invalid maker account owner <0>'
-      );
-    });
-
-    it('should work normally with isolation mode to isolation mode', async () => {
-
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.usdc, outputAmount);
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, ZERO_BI);
     });
 
     it('should work normally with balance check both', async () => {
@@ -399,21 +367,20 @@ describe('GenericTraderProxyV2', () => {
       await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId2, outputAmount);
     });
 
-    it('should work normally for internal liquidity', async () => {
-
-    });
-
-    it('should work normally for iso mode to iso mode', async () => {
-
-    });
-
     it('should work normally with unwrapping', async () => {
       await underlyingToken.addBalance(core.hhUser1.address, amountWei);
       await underlyingToken.connect(core.hhUser1).approve(userVault.address, amountWei);
       await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await userVault.transferIntoPositionWithUnderlyingToken(defaultAccountNumber, borrowAccountNumber, amountWei);
 
-      const zapParams = await getUnwrapZapParams(isolationModeMarketId, amountWei, otherMarketId1, outputAmount, tokenUnwrapper, core);
+      const zapParams = await getUnwrapZapParams(
+        isolationModeMarketId,
+        amountWei,
+        otherMarketId1,
+        outputAmount,
+        tokenUnwrapper,
+        core,
+      );
       await userVault.swapExactInputForOutputAndRemoveCollateral(
         defaultAccountNumber,
         borrowAccountNumber,
@@ -434,7 +401,14 @@ describe('GenericTraderProxyV2', () => {
       await otherToken1.connect(core.hhUser1).approve(core.dolomiteMargin.address, amountWei);
       await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, otherMarketId1, amountWei);
 
-      const zapParams = await getWrapZapParams(otherMarketId1, amountWei, isolationModeMarketId, outputAmount, tokenWrapper, core);
+      const zapParams = await getWrapZapParams(
+        otherMarketId1,
+        amountWei,
+        isolationModeMarketId,
+        outputAmount,
+        tokenWrapper,
+        core,
+      );
       await userVault.addCollateralAndSwapExactInputForOutput(
         defaultAccountNumber,
         borrowAccountNumber,
@@ -449,103 +423,93 @@ describe('GenericTraderProxyV2', () => {
       await expectProtocolBalance(core, userVault, borrowAccountNumber, isolationModeMarketId, outputAmount);
     });
 
-    it('should fail if marketIds path is less than 2', async () => {
-      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
-      await expectThrow(
-        genericTraderProxy.swapExactInputForOutput({
-          accountNumber: defaultAccountNumber,
-          marketIdsPath: zapParams.marketIdsPath.slice(0, 1),
-          inputAmountWei: zapParams.inputAmountWei,
-          minOutputAmountWei: zapParams.minOutputAmountWei,
-          tradersPath: zapParams.tradersPath,
-          makerAccounts: zapParams.makerAccounts,
-          userConfig: zapParams.userConfig,
-        }),
-        'GenericTraderProxyBase: Invalid market path length'
-      );
-    });
+    it('should work normally for multiple markets', async () => {
+      const outputAmount = ONE_BI;
+      const traderParams: GenericTraderParam[] = [
+        {
+          trader: core.testEcosystem!.testExchangeWrapper.address,
+          traderType: GenericTraderType.ExternalLiquidity,
+          makerAccountIndex: 0,
+          tradeData: ethers.utils.defaultAbiCoder.encode(
+            ['uint256', 'bytes'],
+            [outputAmount, ethers.utils.defaultAbiCoder.encode(['uint256'], [outputAmount])],
+          )
+        },
+        {
+          trader: tokenWrapper.address,
+          traderType: GenericTraderType.IsolationModeWrapper,
+          makerAccountIndex: 0,
+          tradeData: ethers.utils.defaultAbiCoder.encode(
+            ['uint256', 'bytes'],
+            [outputAmount, ethers.utils.defaultAbiCoder.encode(['uint256'], [outputAmount])],
+          )
+        }
+      ];
+      const zapParams = {
+        inputAmountWei: amountWei,
+        minOutputAmountWei: outputAmount,
+        marketIdsPath: [otherMarketId2, otherMarketId1, isolationModeMarketId],
+        tradersPath: traderParams,
+        makerAccounts: [],
+        userConfig: {
+          deadline: '123123123123123',
+          balanceCheckFlag: BalanceCheckFlag.None,
+          eventType: GenericEventEmissionType.None,
+        },
+      };
 
-    it('should fail if input amount is max uint256 and balance is negative', async () => {
-      await otherToken1.addBalance(core.hhUser1.address, amountWei);
-      await otherToken1.connect(core.hhUser1).approve(core.dolomiteMargin.address, amountWei);
-      await depositIntoDolomiteMargin(core, core.hhUser1, borrowAccountNumber, otherMarketId1, amountWei);
-      await borrowRouter.transferBetweenAccounts(
-        MAX_UINT_256_BI,
-        borrowAccountNumber,
+      await otherToken2.addBalance(core.hhUser1.address, amountWei);
+      await otherToken2.connect(core.hhUser1).approve(core.dolomiteMargin.address, amountWei);
+      await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, otherMarketId2, amountWei);
+      await userVault.transferIntoPositionWithOtherToken(
         defaultAccountNumber,
+        borrowAccountNumber,
         otherMarketId2,
-        ONE_BI,
-        BalanceCheckFlag.To,
+        amountWei,
+        BalanceCheckFlag.None,
       );
 
-      const zapParams = await getSimpleZapParams(otherMarketId2, amountWei, otherMarketId1, outputAmount, core);
-      await expectThrow(
-        genericTraderProxy.swapExactInputForOutput({
-          accountNumber: borrowAccountNumber,
-          marketIdsPath: zapParams.marketIdsPath,
-          inputAmountWei: MAX_UINT_256_BI,
-          minOutputAmountWei: zapParams.minOutputAmountWei,
-          tradersPath: zapParams.tradersPath,
-          makerAccounts: zapParams.makerAccounts,
-          userConfig: zapParams.userConfig,
-        }),
-        `GenericTraderProxyV2: Balance must be positive <${otherMarketId2.toString()}>`
+      await userVault.swapExactInputForOutput(
+        borrowAccountNumber,
+        zapParams.marketIdsPath,
+        zapParams.inputAmountWei,
+        zapParams.minOutputAmountWei,
+        zapParams.tradersPath,
+        zapParams.makerAccounts,
+        zapParams.userConfig,
       );
+      await expectProtocolBalance(core, userVault, borrowAccountNumber, otherMarketId2, ZERO_BI);
+      await expectProtocolBalance(core, userVault, borrowAccountNumber, otherMarketId1, ZERO_BI);
+      await expectProtocolBalance(core, userVault, borrowAccountNumber, isolationModeMarketId, outputAmount);
     });
 
-    it('should fail if input amount is 0', async () => {
-      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
-      await expectThrow(
-        genericTraderProxy.swapExactInputForOutput({
-          accountNumber: defaultAccountNumber,
-          marketIdsPath: zapParams.marketIdsPath,
-          inputAmountWei: ZERO_BI,
-          minOutputAmountWei: zapParams.minOutputAmountWei,
-          tradersPath: zapParams.tradersPath,
-          makerAccounts: zapParams.makerAccounts,
-          userConfig: zapParams.userConfig,
-        }),
-        'GenericTraderProxyBase: Invalid inputAmountWei'
+    it('should not accept custom input amount if not on arbitrum', async () => {
+      const genericTraderLib2 = await createContractWithName('GenericTraderProxyV2Lib', []);
+      const genericTraderProxy2 = await createContractWithLibrary<GenericTraderProxyV2>(
+        'TestGenericTraderProxyV2',
+        { GenericTraderProxyV2Lib: genericTraderLib2.address },
+        [Network.Mantle, core.dolomiteRegistry.address, core.dolomiteMargin.address]
       );
-    });
+      await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(genericTraderProxy2.address, true);
 
-    it('should fail if min output amount is 0', async () => {
-      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
-      await expectThrow(
-        genericTraderProxy.swapExactInputForOutput({
-          accountNumber: defaultAccountNumber,
-          marketIdsPath: zapParams.marketIdsPath,
-          inputAmountWei: zapParams.inputAmountWei,
-          minOutputAmountWei: ZERO_BI,
-          tradersPath: zapParams.tradersPath,
-          makerAccounts: zapParams.makerAccounts,
-          userConfig: zapParams.userConfig,
-        }),
-        'GenericTraderProxyBase: Invalid minOutputAmountWei'
+      const usdcAmount = BigNumber.from('100000000');
+      await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.dolomiteMargin);
+      await disableInterestAccrual(core, core.marketIds.usdc);
+      await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.usdc, usdcAmount);
+
+      const zapParams = await getSimpleZapParams(core.marketIds.usdc, usdcAmount, core.marketIds.weth, ONE_BI, core);
+      zapParams.tradersPath[0].trader = '0xb77a493a4950cad1b049e222d62bce14ff423c6f';
+      zapParams.tradersPath[0].traderType = GenericTraderType.InternalLiquidity;
+      zapParams.tradersPath[0].tradeData = ethers.utils.defaultAbiCoder.encode(
+        ['uint256'], [BigNumber.from('4321')]
       );
-    });
-
-    it('should fail if traders path is incorrect length', async () => {
-      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
+      zapParams.makerAccounts.push({
+        owner: '0xb77a493a4950cad1b049e222d62bce14ff423c6f',
+        number: defaultAccountNumber,
+      });
+      // This fails in the AMM because these tests are on Arbitrum but we can't use V2 core code
       await expectThrow(
-        genericTraderProxy.swapExactInputForOutput({
-          accountNumber: defaultAccountNumber,
-          marketIdsPath: [otherMarketId1, otherMarketId2, otherMarketId1],
-          inputAmountWei: zapParams.inputAmountWei,
-          minOutputAmountWei: zapParams.minOutputAmountWei,
-          tradersPath: zapParams.tradersPath,
-          makerAccounts: zapParams.makerAccounts,
-          userConfig: zapParams.userConfig,
-        }),
-        'GenericTraderProxyBase: Invalid traders params length'
-      );
-    });
-
-    it('should fail if trader is address zero', async () => {
-      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
-      zapParams.tradersPath[0].trader = ADDRESS_ZERO;
-      await expectThrow(
-        genericTraderProxy.swapExactInputForOutput({
+        genericTraderProxy2.swapExactInputForOutput({
           accountNumber: defaultAccountNumber,
           marketIdsPath: zapParams.marketIdsPath,
           inputAmountWei: zapParams.inputAmountWei,
@@ -554,12 +518,27 @@ describe('GenericTraderProxyV2', () => {
           makerAccounts: zapParams.makerAccounts,
           userConfig: zapParams.userConfig,
         }),
-        'GenericTraderProxyBase: Invalid trader at index <0>'
+        'DolomiteAmmPair: input wei must be positive'
       );
     });
 
-    it('should fail if unwrapping isolation mode with invalid unwrapper', async () => {
-      const zapParams = await getSimpleZapParams(isolationModeMarketId, amountWei, otherMarketId1, outputAmount, core);
+    it('should fail with internal liquidity if custom input amount is invalid', async () => {
+      const usdcAmount = BigNumber.from('100000000');
+      await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.dolomiteMargin);
+      await disableInterestAccrual(core, core.marketIds.usdc);
+      await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.usdc, usdcAmount);
+
+      const zapParams = await getSimpleZapParams(core.marketIds.usdc, usdcAmount, core.marketIds.weth, ONE_BI, core);
+      zapParams.tradersPath[0].trader = '0xb77a493a4950cad1b049e222d62bce14ff423c6f';
+      zapParams.tradersPath[0].traderType = GenericTraderType.InternalLiquidity;
+      zapParams.tradersPath[0].tradeData = ethers.utils.defaultAbiCoder.encode(
+        ['uint256', 'bytes'],
+        [usdcAmount.sub(1), ethers.utils.defaultAbiCoder.encode(['uint256'], [BigNumber.from('4321')])],
+      );
+      zapParams.makerAccounts.push({
+        owner: '0xb77a493a4950cad1b049e222d62bce14ff423c6f',
+        number: defaultAccountNumber,
+      });
       await expectThrow(
         genericTraderProxy.swapExactInputForOutput({
           accountNumber: defaultAccountNumber,
@@ -570,162 +549,40 @@ describe('GenericTraderProxyV2', () => {
           makerAccounts: zapParams.makerAccounts,
           userConfig: zapParams.userConfig,
         }),
-        'GenericTraderProxyBase: Invalid isolation mode unwrapper <52, 0>'
+        'GenericTraderProxyBase: Invalid custom input amount'
       );
     });
 
-    it('should fail if unwrapping iso mode to iso mode with invalid token converter', async () => {
-      const zapParams = await getUnwrapZapParams(isolationModeMarketId, amountWei, isolationModeMarketId2, outputAmount, tokenUnwrapper, core);
-      await expectThrow(
-        genericTraderProxy.swapExactInputForOutput({
-          accountNumber: defaultAccountNumber,
-          marketIdsPath: zapParams.marketIdsPath,
-          inputAmountWei: zapParams.inputAmountWei,
-          minOutputAmountWei: zapParams.minOutputAmountWei,
-          tradersPath: zapParams.tradersPath,
-          makerAccounts: zapParams.makerAccounts,
-          userConfig: zapParams.userConfig,
-        }),
-        'GenericTraderProxyBase: Invalid unwrap sequence <52, 53>'
+    it('should fail at unwrapper if token converter is trusted for isolation mode to isolation mode', async () => {
+      await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory2.address, true);
+      await factory2.connect(core.governance).ownerInitialize(
+        [tokenUnwrapper.address, tokenWrapper.address, traderRouter.address, borrowRouter.address]
       );
-    });
+      await tokenUnwrapper.addOutputToken(factory2.address);
 
-    it('should fail if wrapping iso mode to non-iso mode with invalid wrapper', async () => {
-      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, isolationModeMarketId, outputAmount, core);
-      await expectThrow(
-        genericTraderProxy.swapExactInputForOutput({
-          accountNumber: defaultAccountNumber,
-          marketIdsPath: zapParams.marketIdsPath,
-          inputAmountWei: zapParams.inputAmountWei,
-          minOutputAmountWei: zapParams.minOutputAmountWei,
-          tradersPath: zapParams.tradersPath,
-          makerAccounts: zapParams.makerAccounts,
-          userConfig: zapParams.userConfig,
-        }),
-        'GenericTraderProxyBase: Invalid isolation mode wrapper <52, 0>'
-      );
-    });
+      await underlyingToken.addBalance(core.hhUser1.address, amountWei);
+      await underlyingToken.connect(core.hhUser1).approve(userVault.address, amountWei);
+      await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await userVault.transferIntoPositionWithUnderlyingToken(defaultAccountNumber, borrowAccountNumber, amountWei);
 
-    it('should fail if using iso mode trader for non-iso mode market', async () => {
-      const zapParams = await getWrapZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, tokenWrapper, core);
+      const zapParams = await getUnwrapZapParams(
+        isolationModeMarketId,
+        amountWei,
+        isolationModeMarketId2,
+        outputAmount,
+        tokenUnwrapper,
+        core,
+      );
       await expectThrow(
-        genericTraderProxy.swapExactInputForOutput({
-          accountNumber: defaultAccountNumber,
-          marketIdsPath: zapParams.marketIdsPath,
-          inputAmountWei: zapParams.inputAmountWei,
-          minOutputAmountWei: zapParams.minOutputAmountWei,
-          tradersPath: zapParams.tradersPath,
-          makerAccounts: zapParams.makerAccounts,
-          userConfig: zapParams.userConfig,
-        }),
-        'GenericTraderProxyBase: Invalid trader type <3>'
-      );
-    });
-
-    it('should fail if invalid input for isolation mode unwrapper', async () => {
-      const zapParams = await getUnwrapZapParams(core.marketIds.dArb, amountWei, otherMarketId1, outputAmount, tokenUnwrapper, core);
-      await expectThrow(
-        genericTraderProxy.swapExactInputForOutput({
-          accountNumber: defaultAccountNumber,
-          marketIdsPath: zapParams.marketIdsPath,
-          inputAmountWei: zapParams.inputAmountWei,
-          minOutputAmountWei: zapParams.minOutputAmountWei,
-          tradersPath: zapParams.tradersPath,
-          makerAccounts: zapParams.makerAccounts,
-          userConfig: zapParams.userConfig,
-        }),
-        'GenericTraderProxyBase: Invalid input for unwrapper <0, 28>'
-      );
-    });
-
-    it('should fail if invalid output for isolation mode unwrapper', async () => {
-      const zapParams = await getUnwrapZapParams(isolationModeMarketId, amountWei, core.marketIds.weth, outputAmount, tokenUnwrapper, core);
-      await expectThrow(
-        genericTraderProxy.swapExactInputForOutput({
-          accountNumber: defaultAccountNumber,
-          marketIdsPath: zapParams.marketIdsPath,
-          inputAmountWei: zapParams.inputAmountWei,
-          minOutputAmountWei: zapParams.minOutputAmountWei,
-          tradersPath: zapParams.tradersPath,
-          makerAccounts: zapParams.makerAccounts,
-          userConfig: zapParams.userConfig,
-        }),
-        'GenericTraderProxyBase: Invalid output for unwrapper <1, 0>'
-      );
-    });
-
-    it('should fail if unwrapper is not trusted', async () => {
-      const badTokenUnwrapper = await createContractWithAbi<TestIsolationModeUnwrapperTraderV2>(
-        TestIsolationModeUnwrapperTraderV2__factory.abi,
-        TestIsolationModeUnwrapperTraderV2__factory.bytecode,
-        [otherToken1.address, factory.address, core.dolomiteMargin.address, core.dolomiteRegistry.address],
-      );
-      const zapParams = await getUnwrapZapParams(isolationModeMarketId, amountWei, otherMarketId1, outputAmount, badTokenUnwrapper, core);
-
-      await expectThrow(
-        genericTraderProxy.swapExactInputForOutput({
-          accountNumber: defaultAccountNumber,
-          marketIdsPath: zapParams.marketIdsPath,
-          inputAmountWei: zapParams.inputAmountWei,
-          minOutputAmountWei: zapParams.minOutputAmountWei,
-          tradersPath: zapParams.tradersPath,
-          makerAccounts: zapParams.makerAccounts,
-          userConfig: zapParams.userConfig,
-        }),
-        `GenericTraderProxyBase: Unwrapper trader not enabled <${badTokenUnwrapper.address.toLowerCase()}, 52>`
-      );
-    });
-
-    it('should fail if invalid input for isolation mode wrapper', async () => {
-      const zapParams = await getWrapZapParams(core.marketIds.weth, amountWei, isolationModeMarketId, outputAmount, tokenWrapper, core);
-      await expectThrow(
-        genericTraderProxy.swapExactInputForOutput({
-          accountNumber: defaultAccountNumber,
-          marketIdsPath: zapParams.marketIdsPath,
-          inputAmountWei: zapParams.inputAmountWei,
-          minOutputAmountWei: zapParams.minOutputAmountWei,
-          tradersPath: zapParams.tradersPath,
-          makerAccounts: zapParams.makerAccounts,
-          userConfig: zapParams.userConfig,
-        }),
-        'GenericTraderProxyBase: Invalid input for wrapper <0, 0>'
-      );
-    });
-
-    it('should fail if invalid output for isolation mode wrapper', async () => {
-      const zapParams = await getWrapZapParams(otherMarketId1, amountWei, core.marketIds.dArb, outputAmount, tokenWrapper, core);
-      await expectThrow(
-        genericTraderProxy.swapExactInputForOutput({
-          accountNumber: defaultAccountNumber,
-          marketIdsPath: zapParams.marketIdsPath,
-          inputAmountWei: zapParams.inputAmountWei,
-          minOutputAmountWei: zapParams.minOutputAmountWei,
-          tradersPath: zapParams.tradersPath,
-          makerAccounts: zapParams.makerAccounts,
-          userConfig: zapParams.userConfig,
-        }),
-        'GenericTraderProxyBase: Invalid output for wrapper <1, 28>'
-      );
-    });
-
-    it('should fail if wrapper is not trusted', async () => {
-      const badTokenWrapper = await createContractWithAbi<TestIsolationModeWrapperTraderV2>(
-        TestIsolationModeWrapperTraderV2__factory.abi,
-        TestIsolationModeWrapperTraderV2__factory.bytecode,
-        [otherToken1.address, factory.address, core.dolomiteMargin.address, core.dolomiteRegistry.address],
-      );
-      const zapParams = await getWrapZapParams(otherMarketId1, amountWei, isolationModeMarketId, outputAmount, badTokenWrapper, core);
-      await expectThrow(
-        genericTraderProxy.swapExactInputForOutput({
-          accountNumber: defaultAccountNumber,
-          marketIdsPath: zapParams.marketIdsPath,
-          inputAmountWei: zapParams.inputAmountWei,
-          minOutputAmountWei: zapParams.minOutputAmountWei,
-          tradersPath: zapParams.tradersPath,
-          makerAccounts: zapParams.makerAccounts,
-          userConfig: zapParams.userConfig,
-        }),
-        `GenericTraderProxyBase: Wrapper trader not enabled <${badTokenWrapper.address.toLowerCase()}, 52>`
+        userVault.swapExactInputForOutput(
+          borrowAccountNumber,
+          zapParams.marketIdsPath,
+          zapParams.inputAmountWei,
+          zapParams.minOutputAmountWei,
+          zapParams.tradersPath,
+          zapParams.makerAccounts,
+          zapParams.userConfig,
+        ),
       );
     });
 
@@ -878,217 +735,6 @@ describe('GenericTraderProxyV2', () => {
       );
       await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId1, ZERO_BI);
       await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId2, outputAmount);
-    });
-
-    it('should work normally for internal liquidity', async () => {
-
-    });
-
-    it('should work normally for iso mode to iso mode', async () => {
-
-    });
-
-    it('should fail if marketIds path is less than 2', async () => {
-      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
-      await expectThrow(
-        genericTraderProxy.connect(core.hhUser5).swapExactInputForOutputForDifferentAccount(
-          core.hhUser1.address,
-          {
-            accountNumber: defaultAccountNumber,
-            marketIdsPath: zapParams.marketIdsPath.slice(0, 1),
-            inputAmountWei: zapParams.inputAmountWei,
-            minOutputAmountWei: zapParams.minOutputAmountWei,
-            tradersPath: zapParams.tradersPath,
-            makerAccounts: zapParams.makerAccounts,
-            userConfig: zapParams.userConfig,
-          }
-        ),
-        'GenericTraderProxyBase: Invalid market path length'
-      );
-    });
-
-    it('should fail if input amount is max uint256 and balance is negative', async () => {
-      await otherToken1.addBalance(core.hhUser1.address, amountWei);
-      await otherToken1.connect(core.hhUser1).approve(core.dolomiteMargin.address, amountWei);
-      await depositIntoDolomiteMargin(core, core.hhUser1, borrowAccountNumber, otherMarketId1, amountWei);
-      await borrowRouter.transferBetweenAccounts(
-        MAX_UINT_256_BI,
-        borrowAccountNumber,
-        defaultAccountNumber,
-        otherMarketId2,
-        ONE_BI,
-        BalanceCheckFlag.To,
-      );
-
-      const zapParams = await getSimpleZapParams(otherMarketId2, amountWei, otherMarketId1, outputAmount, core);
-      await expectThrow(
-        genericTraderProxy.connect(core.hhUser5).swapExactInputForOutputForDifferentAccount(
-          core.hhUser1.address,
-          {
-            accountNumber: borrowAccountNumber,
-            marketIdsPath: zapParams.marketIdsPath,
-            inputAmountWei: MAX_UINT_256_BI,
-            minOutputAmountWei: zapParams.minOutputAmountWei,
-            tradersPath: zapParams.tradersPath,
-            makerAccounts: zapParams.makerAccounts,
-            userConfig: zapParams.userConfig,
-          }
-        ),
-        `GenericTraderProxyV2: Balance must be positive <${otherMarketId2.toString()}>`
-      );
-    });
-
-    it('should fail if input amount is 0', async () => {
-      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
-      await expectThrow(
-        genericTraderProxy.connect(core.hhUser5).swapExactInputForOutputForDifferentAccount(
-          core.hhUser1.address,
-          {
-            accountNumber: defaultAccountNumber,
-            marketIdsPath: zapParams.marketIdsPath,
-            inputAmountWei: ZERO_BI,
-            minOutputAmountWei: zapParams.minOutputAmountWei,
-            tradersPath: zapParams.tradersPath,
-            makerAccounts: zapParams.makerAccounts,
-            userConfig: zapParams.userConfig,
-          }
-        ),
-        'GenericTraderProxyBase: Invalid inputAmountWei'
-      );
-    });
-
-    it('should fail if min output amount is 0', async () => {
-      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
-      await expectThrow(
-        genericTraderProxy.connect(core.hhUser5).swapExactInputForOutputForDifferentAccount(
-          core.hhUser1.address,
-          {
-            accountNumber: defaultAccountNumber,
-            marketIdsPath: zapParams.marketIdsPath,
-            inputAmountWei: zapParams.inputAmountWei,
-            minOutputAmountWei: ZERO_BI,
-            tradersPath: zapParams.tradersPath,
-            makerAccounts: zapParams.makerAccounts,
-            userConfig: zapParams.userConfig,
-          }
-        ),
-        'GenericTraderProxyBase: Invalid minOutputAmountWei'
-      );
-    });
-
-    it('should fail if traders path is incorrect length', async () => {
-      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
-      await expectThrow(
-        genericTraderProxy.connect(core.hhUser5).swapExactInputForOutputForDifferentAccount(
-          core.hhUser1.address,
-          {
-            accountNumber: defaultAccountNumber,
-            marketIdsPath: [otherMarketId1, otherMarketId2, otherMarketId1],
-            inputAmountWei: zapParams.inputAmountWei,
-            minOutputAmountWei: zapParams.minOutputAmountWei,
-            tradersPath: zapParams.tradersPath,
-            makerAccounts: zapParams.makerAccounts,
-            userConfig: zapParams.userConfig,
-          }
-        ),
-        'GenericTraderProxyBase: Invalid traders params length'
-      );
-    });
-
-    it('should fail if trader is address zero', async () => {
-      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
-      zapParams.tradersPath[0].trader = ADDRESS_ZERO;
-      await expectThrow(
-        genericTraderProxy.connect(core.hhUser5).swapExactInputForOutputForDifferentAccount(
-          core.hhUser1.address,
-          {
-            accountNumber: defaultAccountNumber,
-            marketIdsPath: zapParams.marketIdsPath,
-            inputAmountWei: zapParams.inputAmountWei,
-            minOutputAmountWei: zapParams.minOutputAmountWei,
-            tradersPath: zapParams.tradersPath,
-            makerAccounts: zapParams.makerAccounts,
-            userConfig: zapParams.userConfig,
-          }
-        ),
-        'GenericTraderProxyBase: Invalid trader at index <0>'
-      );
-    });
-
-    it('should fail if unwrapping isolation mode with invalid unwrapper', async () => {
-      const zapParams = await getSimpleZapParams(isolationModeMarketId, amountWei, otherMarketId1, outputAmount, core);
-      await expectThrow(
-        genericTraderProxy.connect(core.hhUser5).swapExactInputForOutputForDifferentAccount(
-          core.hhUser1.address,
-          {
-            accountNumber: defaultAccountNumber,
-            marketIdsPath: zapParams.marketIdsPath,
-            inputAmountWei: zapParams.inputAmountWei,
-            minOutputAmountWei: zapParams.minOutputAmountWei,
-            tradersPath: zapParams.tradersPath,
-            makerAccounts: zapParams.makerAccounts,
-            userConfig: zapParams.userConfig,
-          }
-        ),
-        'GenericTraderProxyBase: Invalid isolation mode unwrapper <52, 0>'
-      );
-    });
-
-    it('should fail if unwrapping iso mode to iso mode with invalid token converter', async () => {
-      const zapParams = await getUnwrapZapParams(isolationModeMarketId, amountWei, isolationModeMarketId2, outputAmount, tokenUnwrapper, core);
-      await expectThrow(
-        genericTraderProxy.connect(core.hhUser5).swapExactInputForOutputForDifferentAccount(
-          core.hhUser1.address,
-          {
-            accountNumber: defaultAccountNumber,
-            marketIdsPath: zapParams.marketIdsPath,
-            inputAmountWei: zapParams.inputAmountWei,
-            minOutputAmountWei: zapParams.minOutputAmountWei,
-            tradersPath: zapParams.tradersPath,
-            makerAccounts: zapParams.makerAccounts,
-            userConfig: zapParams.userConfig,
-          }
-        ),
-        'GenericTraderProxyBase: Invalid unwrap sequence <52, 53>'
-      );
-    });
-
-    it('should fail if wrapping iso mode to non-iso mode with invalid wrapper', async () => {
-      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, isolationModeMarketId, outputAmount, core);
-      await expectThrow(
-        genericTraderProxy.connect(core.hhUser5).swapExactInputForOutputForDifferentAccount(
-          core.hhUser1.address,
-          {
-            accountNumber: defaultAccountNumber,
-            marketIdsPath: zapParams.marketIdsPath,
-            inputAmountWei: zapParams.inputAmountWei,
-            minOutputAmountWei: zapParams.minOutputAmountWei,
-            tradersPath: zapParams.tradersPath,
-            makerAccounts: zapParams.makerAccounts,
-            userConfig: zapParams.userConfig,
-          }
-        ),
-        'GenericTraderProxyBase: Invalid isolation mode wrapper <52, 0>'
-      );
-    });
-
-    it('should fail if using iso mode trader for non-iso mode market', async () => {
-      const zapParams = await getWrapZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, tokenWrapper, core);
-      await expectThrow(
-        genericTraderProxy.connect(core.hhUser5).swapExactInputForOutputForDifferentAccount(
-          core.hhUser1.address,
-          {
-            accountNumber: defaultAccountNumber,
-            marketIdsPath: zapParams.marketIdsPath,
-            inputAmountWei: zapParams.inputAmountWei,
-            minOutputAmountWei: zapParams.minOutputAmountWei,
-            tradersPath: zapParams.tradersPath,
-            makerAccounts: zapParams.makerAccounts,
-            userConfig: zapParams.userConfig,
-          }
-        ),
-        'GenericTraderProxyBase: Invalid trader type <3>'
-      );
     });
 
     it('should fail if expired', async () => {
@@ -1247,66 +893,109 @@ describe('GenericTraderProxyV2', () => {
       await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId2, outputAmount);
     });
 
-    it('should fail if swapping full position but market id is not last market id', async () => {
+    it('should work normally to emit BorrowPositionOpen event', async () => {
       await otherToken1.addBalance(core.hhUser1.address, amountWei);
       await otherToken1.connect(core.hhUser1).approve(core.dolomiteMargin.address, amountWei);
-      await depositIntoDolomiteMargin(core, core.hhUser1, borrowAccountNumber, otherMarketId1, amountWei);
+      await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, otherMarketId1, amountWei);
 
       const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
-      await expectThrow(
-        genericTraderProxy.swapExactInputForOutputAndModifyPosition({
-          accountNumber: borrowAccountNumber,
-          marketIdsPath: zapParams.marketIdsPath,
-          inputAmountWei: zapParams.inputAmountWei,
-          minOutputAmountWei: zapParams.minOutputAmountWei,
-          tradersPath: zapParams.tradersPath,
-          makerAccounts: zapParams.makerAccounts,
-          transferCollateralParams: {
-            fromAccountNumber: borrowAccountNumber,
-            toAccountNumber: defaultAccountNumber,
-            transferAmounts: [
-              { marketId: core.marketIds.dai, amountWei: MAX_UINT_256_BI.sub(ONE_BI) }
-            ],
-          },
-          expiryParams: {
-            marketId: 0,
-            expiryTimeDelta: 0,
-          },
-          userConfig: zapParams.userConfig,
-        }),
-        `GenericTraderProxyV2: Invalid transfer marketId <${core.marketIds.dai.toString()}>`
-      );
+      zapParams.userConfig.eventType = GenericEventEmissionType.BorrowPosition;
+      const res = await genericTraderProxy.swapExactInputForOutputAndModifyPosition({
+        accountNumber: borrowAccountNumber,
+        marketIdsPath: zapParams.marketIdsPath,
+        inputAmountWei: zapParams.inputAmountWei,
+        minOutputAmountWei: zapParams.minOutputAmountWei,
+        tradersPath: zapParams.tradersPath,
+        makerAccounts: zapParams.makerAccounts,
+        transferCollateralParams: {
+          fromAccountNumber: defaultAccountNumber,
+          toAccountNumber: borrowAccountNumber,
+          transferAmounts: [
+            { marketId: otherMarketId1, amountWei: amountWei }
+          ],
+        },
+        expiryParams: {
+          marketId: 0,
+          expiryTimeDelta: 0,
+        },
+        userConfig: zapParams.userConfig,
+      });
+      await expectEvent(core.eventEmitterRegistry, res, 'BorrowPositionOpen', {
+        accountOwner: core.hhUser1.address,
+        accountNumber: borrowAccountNumber,
+      });
+
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId1, ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId2, ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, otherMarketId2, outputAmount);
     });
 
-    it('should fail if swapping full position but from account is not trade account', async () => {
+    it('should work normally to emit MarginPositionOpen event', async () => {
+      await otherToken1.addBalance(core.hhUser1.address, amountWei);
+      await otherToken1.connect(core.hhUser1).approve(core.dolomiteMargin.address, amountWei);
+      await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, otherMarketId1, amountWei);
+
+      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
+      zapParams.userConfig.eventType = GenericEventEmissionType.MarginPosition;
+      const res = await genericTraderProxy.swapExactInputForOutputAndModifyPosition({
+        accountNumber: borrowAccountNumber,
+        marketIdsPath: zapParams.marketIdsPath,
+        inputAmountWei: zapParams.inputAmountWei,
+        minOutputAmountWei: zapParams.minOutputAmountWei,
+        tradersPath: zapParams.tradersPath,
+        makerAccounts: zapParams.makerAccounts,
+        transferCollateralParams: {
+          fromAccountNumber: defaultAccountNumber,
+          toAccountNumber: borrowAccountNumber,
+          transferAmounts: [
+            { marketId: otherMarketId1, amountWei: amountWei }
+          ],
+        },
+        expiryParams: {
+          marketId: 0,
+          expiryTimeDelta: 0,
+        },
+        userConfig: zapParams.userConfig,
+      });
+      await expectEvent(core.eventEmitterRegistry, res, 'MarginPositionOpen', {});
+
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId1, ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId2, ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, otherMarketId2, outputAmount);
+    });
+
+    it('should work normally to emit MarginPositionClose event', async () => {
       await otherToken1.addBalance(core.hhUser1.address, amountWei);
       await otherToken1.connect(core.hhUser1).approve(core.dolomiteMargin.address, amountWei);
       await depositIntoDolomiteMargin(core, core.hhUser1, borrowAccountNumber, otherMarketId1, amountWei);
 
       const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
-      await expectThrow(
-        genericTraderProxy.swapExactInputForOutputAndModifyPosition({
-          accountNumber: borrowAccountNumber,
-          marketIdsPath: zapParams.marketIdsPath,
-          inputAmountWei: zapParams.inputAmountWei,
-          minOutputAmountWei: zapParams.minOutputAmountWei,
-          tradersPath: zapParams.tradersPath,
-          makerAccounts: zapParams.makerAccounts,
-          transferCollateralParams: {
-            fromAccountNumber: defaultAccountNumber,
-            toAccountNumber: borrowAccountNumber,
-            transferAmounts: [
-              { marketId: otherMarketId2, amountWei: MAX_UINT_256_BI.sub(ONE_BI) }
-            ],
-          },
-          expiryParams: {
-            marketId: 0,
-            expiryTimeDelta: 0,
-          },
-          userConfig: zapParams.userConfig,
-        }),
-        'GenericTraderProxyV2: Invalid from account ID'
-      );
+      zapParams.userConfig.eventType = GenericEventEmissionType.MarginPosition;
+      const res = await genericTraderProxy.swapExactInputForOutputAndModifyPosition({
+        accountNumber: borrowAccountNumber,
+        marketIdsPath: zapParams.marketIdsPath,
+        inputAmountWei: zapParams.inputAmountWei,
+        minOutputAmountWei: zapParams.minOutputAmountWei,
+        tradersPath: zapParams.tradersPath,
+        makerAccounts: zapParams.makerAccounts,
+        transferCollateralParams: {
+          fromAccountNumber: borrowAccountNumber,
+          toAccountNumber: defaultAccountNumber,
+          transferAmounts: [
+            { marketId: otherMarketId2, amountWei: outputAmount }
+          ],
+        },
+        expiryParams: {
+          marketId: 0,
+          expiryTimeDelta: 0,
+        },
+        userConfig: zapParams.userConfig,
+      });
+      await expectEvent(core.eventEmitterRegistry, res, 'MarginPositionClose', {});
+
+      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, otherMarketId1, ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, otherMarketId2, ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId2, outputAmount);
     });
 
     it('should work normally with from balance check', async () => {
@@ -1436,380 +1125,65 @@ describe('GenericTraderProxyV2', () => {
       await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, otherMarketId2, outputAmount);
     });
 
-    it('should fail if market id path is less than 2', async () => {
+    it('should fail if swapping full position but market id is not last market id', async () => {
+      await otherToken1.addBalance(core.hhUser1.address, amountWei);
+      await otherToken1.connect(core.hhUser1).approve(core.dolomiteMargin.address, amountWei);
+      await depositIntoDolomiteMargin(core, core.hhUser1, borrowAccountNumber, otherMarketId1, amountWei);
+
       const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
       await expectThrow(
-        genericTraderProxy.swapExactInputForOutputAndModifyPosition(
-          {
-            accountNumber: defaultAccountNumber,
-            marketIdsPath: [],
-            inputAmountWei: zapParams.inputAmountWei,
-            minOutputAmountWei: zapParams.minOutputAmountWei,
-            tradersPath: zapParams.tradersPath,
-            makerAccounts: zapParams.makerAccounts,
-            transferCollateralParams: {
-              fromAccountNumber: defaultAccountNumber,
-              toAccountNumber: borrowAccountNumber,
-              transferAmounts: [
-                { marketId: otherMarketId1, amountWei: amountWei }
-              ],
-            },
-            expiryParams: {
-              marketId: 0,
-              expiryTimeDelta: 0,
-            },
-            userConfig: zapParams.userConfig,
-          }
-        ),
-        'GenericTraderProxyBase: Invalid market path length'
+        genericTraderProxy.swapExactInputForOutputAndModifyPosition({
+          accountNumber: borrowAccountNumber,
+          marketIdsPath: zapParams.marketIdsPath,
+          inputAmountWei: zapParams.inputAmountWei,
+          minOutputAmountWei: zapParams.minOutputAmountWei,
+          tradersPath: zapParams.tradersPath,
+          makerAccounts: zapParams.makerAccounts,
+          transferCollateralParams: {
+            fromAccountNumber: borrowAccountNumber,
+            toAccountNumber: defaultAccountNumber,
+            transferAmounts: [
+              { marketId: core.marketIds.dai, amountWei: MAX_UINT_256_BI.sub(ONE_BI) }
+            ],
+          },
+          expiryParams: {
+            marketId: 0,
+            expiryTimeDelta: 0,
+          },
+          userConfig: zapParams.userConfig,
+        }),
+        `GenericTraderProxyV2: Invalid transfer marketId <${core.marketIds.dai.toString()}>`
       );
     });
 
-    it('should fail if no transfer amounts', async () => {
+    it('should fail if swapping full position but from account is not trade account', async () => {
+      await otherToken1.addBalance(core.hhUser1.address, amountWei);
+      await otherToken1.connect(core.hhUser1).approve(core.dolomiteMargin.address, amountWei);
+      await depositIntoDolomiteMargin(core, core.hhUser1, borrowAccountNumber, otherMarketId1, amountWei);
+
       const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
       await expectThrow(
-        genericTraderProxy.swapExactInputForOutputAndModifyPosition(
-          {
-            accountNumber: defaultAccountNumber,
-            marketIdsPath: zapParams.marketIdsPath,
-            inputAmountWei: zapParams.inputAmountWei,
-            minOutputAmountWei: zapParams.minOutputAmountWei,
-            tradersPath: zapParams.tradersPath,
-            makerAccounts: zapParams.makerAccounts,
-            transferCollateralParams: {
-              fromAccountNumber: defaultAccountNumber,
-              toAccountNumber: borrowAccountNumber,
-              transferAmounts: [],
-            },
-            expiryParams: {
-              marketId: 0,
-              expiryTimeDelta: 0,
-            },
-            userConfig: zapParams.userConfig,
-          }
-        ),
-        'GenericTraderProxyV2: Invalid transfer amounts length'
-      );
-    });
-
-    it('should fail if from and to account numbers are the same', async () => {
-      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
-      await expectThrow(
-        genericTraderProxy.swapExactInputForOutputAndModifyPosition(
-          {
-            accountNumber: defaultAccountNumber,
-            marketIdsPath: zapParams.marketIdsPath,
-            inputAmountWei: zapParams.inputAmountWei,
-            minOutputAmountWei: zapParams.minOutputAmountWei,
-            tradersPath: zapParams.tradersPath,
-            makerAccounts: zapParams.makerAccounts,
-            transferCollateralParams: {
-              fromAccountNumber: defaultAccountNumber,
-              toAccountNumber: defaultAccountNumber,
-              transferAmounts: [
-                { marketId: otherMarketId1, amountWei: amountWei }
-              ],
-            },
-            expiryParams: {
-              marketId: 0,
-              expiryTimeDelta: 0,
-            },
-            userConfig: zapParams.userConfig,
-          }
-        ),
-        'GenericTraderProxyV2: Cannot transfer to same account'
-      );
-    });
-
-    it('should fail if trade account number is not from or to account number', async () => {
-      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
-      await expectThrow(
-        genericTraderProxy.swapExactInputForOutputAndModifyPosition(
-          {
-            accountNumber: ONE_BI,
-            marketIdsPath: zapParams.marketIdsPath,
-            inputAmountWei: zapParams.inputAmountWei,
-            minOutputAmountWei: zapParams.minOutputAmountWei,
-            tradersPath: zapParams.tradersPath,
-            makerAccounts: zapParams.makerAccounts,
-            transferCollateralParams: {
-              fromAccountNumber: defaultAccountNumber,
-              toAccountNumber: borrowAccountNumber,
-              transferAmounts: [
-                { marketId: otherMarketId1, amountWei: amountWei }
-              ],
-            },
-            expiryParams: {
-              marketId: 0,
-              expiryTimeDelta: 0,
-            },
-            userConfig: zapParams.userConfig,
-          }
-        ),
-        'GenericTraderProxyV2: Invalid trade account number'
-      );
-    });
-
-    it('should fail if transfer amount is 0', async () => {
-      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
-      await expectThrow(
-        genericTraderProxy.swapExactInputForOutputAndModifyPosition(
-          {
-            accountNumber: defaultAccountNumber,
-            marketIdsPath: zapParams.marketIdsPath,
-            inputAmountWei: zapParams.inputAmountWei,
-            minOutputAmountWei: zapParams.minOutputAmountWei,
-            tradersPath: zapParams.tradersPath,
-            makerAccounts: zapParams.makerAccounts,
-            transferCollateralParams: {
-              fromAccountNumber: defaultAccountNumber,
-              toAccountNumber: borrowAccountNumber,
-              transferAmounts: [
-                { marketId: otherMarketId1, amountWei: ZERO_BI }
-              ],
-            },
-            expiryParams: {
-              marketId: 0,
-              expiryTimeDelta: 0,
-            },
-            userConfig: zapParams.userConfig,
-          }
-        ),
-        'GenericTraderProxyV2: Invalid transfer amount at index <0>'
-      );
-    });
-
-    it('should fail if input amount is 0', async () => {
-      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
-      await expectThrow(
-        genericTraderProxy.swapExactInputForOutputAndModifyPosition(
-          {
-            accountNumber: defaultAccountNumber,
-            marketIdsPath: zapParams.marketIdsPath,
-            inputAmountWei: ZERO_BI,
-            minOutputAmountWei: zapParams.minOutputAmountWei,
-            tradersPath: zapParams.tradersPath,
-            makerAccounts: zapParams.makerAccounts,
-            transferCollateralParams: {
-              fromAccountNumber: defaultAccountNumber,
-              toAccountNumber: borrowAccountNumber,
-              transferAmounts: [
-                { marketId: otherMarketId1, amountWei: amountWei }
-              ],
-            },
-            expiryParams: {
-              marketId: 0,
-              expiryTimeDelta: 0,
-            },
-            userConfig: zapParams.userConfig,
-          }
-        ),
-        'GenericTraderProxyBase: Invalid inputAmountWei'
-      );
-    });
-
-    it('should fail if min output amount is 0', async () => {
-      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
-      await expectThrow(
-        genericTraderProxy.swapExactInputForOutputAndModifyPosition(
-          {
-            accountNumber: defaultAccountNumber,
-            marketIdsPath: zapParams.marketIdsPath,
-            inputAmountWei: zapParams.inputAmountWei,
-            minOutputAmountWei: ZERO_BI,
-            tradersPath: zapParams.tradersPath,
-            makerAccounts: zapParams.makerAccounts,
-            transferCollateralParams: {
-              fromAccountNumber: defaultAccountNumber,
-              toAccountNumber: borrowAccountNumber,
-              transferAmounts: [
-                { marketId: otherMarketId1, amountWei: amountWei }
-              ],
-            },
-            expiryParams: {
-              marketId: 0,
-              expiryTimeDelta: 0,
-            },
-            userConfig: zapParams.userConfig,
-          }
-        ),
-        'GenericTraderProxyBase: Invalid minOutputAmountWei'
-      );
-    });
-
-    it('should fail if traders path is incorrect length', async () => {
-      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
-      await expectThrow(
-        genericTraderProxy.swapExactInputForOutputAndModifyPosition(
-          {
-            accountNumber: defaultAccountNumber,
-            marketIdsPath: [otherMarketId1, otherMarketId2, otherMarketId1],
-            inputAmountWei: zapParams.inputAmountWei,
-            minOutputAmountWei: zapParams.minOutputAmountWei,
-            tradersPath: zapParams.tradersPath,
-            makerAccounts: zapParams.makerAccounts,
-            transferCollateralParams: {
-              fromAccountNumber: defaultAccountNumber,
-              toAccountNumber: borrowAccountNumber,
-              transferAmounts: [
-                { marketId: otherMarketId1, amountWei: amountWei }
-              ],
-            },
-            expiryParams: {
-              marketId: 0,
-              expiryTimeDelta: 0,
-            },
-            userConfig: zapParams.userConfig,
-          }
-        ),
-        'GenericTraderProxyBase: Invalid traders params length'
-      );
-    });
-
-    it('should fail if trader is address zero', async () => {
-      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
-      zapParams.tradersPath[0].trader = ADDRESS_ZERO;
-
-      await expectThrow(
-        genericTraderProxy.swapExactInputForOutputAndModifyPosition(
-          {
-            accountNumber: defaultAccountNumber,
-            marketIdsPath: zapParams.marketIdsPath,
-            inputAmountWei: zapParams.inputAmountWei,
-            minOutputAmountWei: zapParams.minOutputAmountWei,
-            tradersPath: zapParams.tradersPath,
-            makerAccounts: zapParams.makerAccounts,
-            transferCollateralParams: {
-              fromAccountNumber: defaultAccountNumber,
-              toAccountNumber: borrowAccountNumber,
-              transferAmounts: [
-                { marketId: otherMarketId1, amountWei: amountWei }
-              ],
-            },
-            expiryParams: {
-              marketId: 0,
-              expiryTimeDelta: 0,
-            },
-            userConfig: zapParams.userConfig,
-          }
-        ),
-        'GenericTraderProxyBase: Invalid trader at index <0>'
-      );
-    });
-
-    it('should fail if unwrapping isolation mode with invalid unwrapper', async () => {
-      const zapParams = await getSimpleZapParams(isolationModeMarketId, amountWei, otherMarketId1, outputAmount, core);
-      await expectThrow(
-        genericTraderProxy.swapExactInputForOutputAndModifyPosition(
-          {
-            accountNumber: defaultAccountNumber,
-            marketIdsPath: zapParams.marketIdsPath,
-            inputAmountWei: zapParams.inputAmountWei,
-            minOutputAmountWei: zapParams.minOutputAmountWei,
-            tradersPath: zapParams.tradersPath,
-            makerAccounts: zapParams.makerAccounts,
-            transferCollateralParams: {
-              fromAccountNumber: defaultAccountNumber,
-              toAccountNumber: borrowAccountNumber,
-              transferAmounts: [
-                { marketId: otherMarketId1, amountWei: amountWei }
-              ],
-            },
-            expiryParams: {
-              marketId: 0,
-              expiryTimeDelta: 0,
-            },
-            userConfig: zapParams.userConfig,
-          }
-        ),
-        'GenericTraderProxyBase: Invalid isolation mode unwrapper <52, 0>'
-      );
-    });
-
-    it('should fail if unwrapping iso mode to iso mode with invalid token converter', async () => {
-      const zapParams = await getUnwrapZapParams(isolationModeMarketId, amountWei, isolationModeMarketId2, outputAmount, tokenUnwrapper, core);
-      await expectThrow(
-        genericTraderProxy.swapExactInputForOutputAndModifyPosition(
-          {
-            accountNumber: defaultAccountNumber,
-            marketIdsPath: zapParams.marketIdsPath,
-            inputAmountWei: zapParams.inputAmountWei,
-            minOutputAmountWei: zapParams.minOutputAmountWei,
-            tradersPath: zapParams.tradersPath,
-            makerAccounts: zapParams.makerAccounts,
-            transferCollateralParams: {
-              fromAccountNumber: defaultAccountNumber,
-              toAccountNumber: borrowAccountNumber,
-              transferAmounts: [
-                { marketId: otherMarketId1, amountWei: amountWei }
-              ],
-            },
-            expiryParams: {
-              marketId: 0,
-              expiryTimeDelta: 0,
-            },
-            userConfig: zapParams.userConfig,
-          }
-        ),
-        'GenericTraderProxyBase: Invalid unwrap sequence <52, 53>'
-      );
-    });
-
-    it('should fail if wrapping iso mode to non-iso mode with invalid wrapper', async () => {
-      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, isolationModeMarketId, outputAmount, core);
-      await expectThrow(
-        genericTraderProxy.swapExactInputForOutputAndModifyPosition(
-          {
-            accountNumber: defaultAccountNumber,
-            marketIdsPath: zapParams.marketIdsPath,
-            inputAmountWei: zapParams.inputAmountWei,
-            minOutputAmountWei: zapParams.minOutputAmountWei,
-            tradersPath: zapParams.tradersPath,
-            makerAccounts: zapParams.makerAccounts,
-            transferCollateralParams: {
-              fromAccountNumber: defaultAccountNumber,
-              toAccountNumber: borrowAccountNumber,
-              transferAmounts: [
-                { marketId: otherMarketId1, amountWei: amountWei }
-              ],
-            },
-            expiryParams: {
-              marketId: 0,
-              expiryTimeDelta: 0,
-            },
-            userConfig: zapParams.userConfig,
-          }
-        ),
-        'GenericTraderProxyBase: Invalid isolation mode wrapper <52, 0>'
-      );
-    });
-
-    it('should fail if using iso mode trader for non-iso mode market', async () => {
-      const zapParams = await getWrapZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, tokenWrapper, core);
-      await expectThrow(
-        genericTraderProxy.swapExactInputForOutputAndModifyPosition(
-          {
-            accountNumber: defaultAccountNumber,
-            marketIdsPath: zapParams.marketIdsPath,
-            inputAmountWei: zapParams.inputAmountWei,
-            minOutputAmountWei: zapParams.minOutputAmountWei,
-            tradersPath: zapParams.tradersPath,
-            makerAccounts: zapParams.makerAccounts,
-            transferCollateralParams: {
-              fromAccountNumber: defaultAccountNumber,
-              toAccountNumber: borrowAccountNumber,
-              transferAmounts: [
-                { marketId: otherMarketId1, amountWei: amountWei }
-              ],
-            },
-            expiryParams: {
-              marketId: 0,
-              expiryTimeDelta: 0,
-            },
-            userConfig: zapParams.userConfig,
-          }
-        ),
-        'GenericTraderProxyBase: Invalid trader type <3>'
+        genericTraderProxy.swapExactInputForOutputAndModifyPosition({
+          accountNumber: borrowAccountNumber,
+          marketIdsPath: zapParams.marketIdsPath,
+          inputAmountWei: zapParams.inputAmountWei,
+          minOutputAmountWei: zapParams.minOutputAmountWei,
+          tradersPath: zapParams.tradersPath,
+          makerAccounts: zapParams.makerAccounts,
+          transferCollateralParams: {
+            fromAccountNumber: defaultAccountNumber,
+            toAccountNumber: borrowAccountNumber,
+            transferAmounts: [
+              { marketId: otherMarketId2, amountWei: MAX_UINT_256_BI.sub(ONE_BI) }
+            ],
+          },
+          expiryParams: {
+            marketId: 0,
+            expiryTimeDelta: 0,
+          },
+          userConfig: zapParams.userConfig,
+        }),
+        'GenericTraderProxyV2: Invalid from account ID'
       );
     });
 
@@ -2046,396 +1420,6 @@ describe('GenericTraderProxyV2', () => {
       await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, otherMarketId2, outputAmount);
     });
 
-    it('should fail if market id path is less than 2', async () => {
-      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
-      await expectThrow(
-        genericTraderProxy.connect(core.hhUser5).swapExactInputForOutputAndModifyPositionForDifferentAccount(
-          core.hhUser1.address,
-          {
-            accountNumber: defaultAccountNumber,
-            marketIdsPath: [],
-            inputAmountWei: zapParams.inputAmountWei,
-            minOutputAmountWei: zapParams.minOutputAmountWei,
-            tradersPath: zapParams.tradersPath,
-            makerAccounts: zapParams.makerAccounts,
-            transferCollateralParams: {
-              fromAccountNumber: defaultAccountNumber,
-              toAccountNumber: borrowAccountNumber,
-              transferAmounts: [
-                { marketId: otherMarketId1, amountWei: amountWei }
-              ],
-            },
-            expiryParams: {
-              marketId: 0,
-              expiryTimeDelta: 0,
-            },
-            userConfig: zapParams.userConfig,
-          }
-        ),
-        'GenericTraderProxyBase: Invalid market path length'
-      );
-    });
-
-    it('should fail if no transfer amounts', async () => {
-      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
-      await expectThrow(
-        genericTraderProxy.connect(core.hhUser5).swapExactInputForOutputAndModifyPositionForDifferentAccount(
-          core.hhUser1.address,
-          {
-            accountNumber: defaultAccountNumber,
-            marketIdsPath: zapParams.marketIdsPath,
-            inputAmountWei: zapParams.inputAmountWei,
-            minOutputAmountWei: zapParams.minOutputAmountWei,
-            tradersPath: zapParams.tradersPath,
-            makerAccounts: zapParams.makerAccounts,
-            transferCollateralParams: {
-              fromAccountNumber: defaultAccountNumber,
-              toAccountNumber: borrowAccountNumber,
-              transferAmounts: [],
-            },
-            expiryParams: {
-              marketId: 0,
-              expiryTimeDelta: 0,
-            },
-            userConfig: zapParams.userConfig,
-          }
-        ),
-        'GenericTraderProxyV2: Invalid transfer amounts length'
-      );
-    });
-
-    it('should fail if from and to account numbers are the same', async () => {
-      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
-      await expectThrow(
-        genericTraderProxy.connect(core.hhUser5).swapExactInputForOutputAndModifyPositionForDifferentAccount(
-          core.hhUser1.address,
-          {
-            accountNumber: defaultAccountNumber,
-            marketIdsPath: zapParams.marketIdsPath,
-            inputAmountWei: zapParams.inputAmountWei,
-            minOutputAmountWei: zapParams.minOutputAmountWei,
-            tradersPath: zapParams.tradersPath,
-            makerAccounts: zapParams.makerAccounts,
-            transferCollateralParams: {
-              fromAccountNumber: defaultAccountNumber,
-              toAccountNumber: defaultAccountNumber,
-              transferAmounts: [
-                { marketId: otherMarketId1, amountWei: amountWei }
-              ],
-            },
-            expiryParams: {
-              marketId: 0,
-              expiryTimeDelta: 0,
-            },
-            userConfig: zapParams.userConfig,
-          }
-        ),
-        'GenericTraderProxyV2: Cannot transfer to same account'
-      );
-    });
-
-    it('should fail if trade account number is not from or to account number', async () => {
-      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
-      await expectThrow(
-        genericTraderProxy.connect(core.hhUser5).swapExactInputForOutputAndModifyPositionForDifferentAccount(
-          core.hhUser1.address,
-          {
-            accountNumber: ONE_BI,
-            marketIdsPath: zapParams.marketIdsPath,
-            inputAmountWei: zapParams.inputAmountWei,
-            minOutputAmountWei: zapParams.minOutputAmountWei,
-            tradersPath: zapParams.tradersPath,
-            makerAccounts: zapParams.makerAccounts,
-            transferCollateralParams: {
-              fromAccountNumber: defaultAccountNumber,
-              toAccountNumber: borrowAccountNumber,
-              transferAmounts: [
-                { marketId: otherMarketId1, amountWei: amountWei }
-              ],
-            },
-            expiryParams: {
-              marketId: 0,
-              expiryTimeDelta: 0,
-            },
-            userConfig: zapParams.userConfig,
-          }
-        ),
-        'GenericTraderProxyV2: Invalid trade account number'
-      );
-    });
-
-    it('should fail if transfer amount is 0', async () => {
-      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
-      await expectThrow(
-        genericTraderProxy.connect(core.hhUser5).swapExactInputForOutputAndModifyPositionForDifferentAccount(
-          core.hhUser1.address,
-          {
-            accountNumber: defaultAccountNumber,
-            marketIdsPath: zapParams.marketIdsPath,
-            inputAmountWei: zapParams.inputAmountWei,
-            minOutputAmountWei: zapParams.minOutputAmountWei,
-            tradersPath: zapParams.tradersPath,
-            makerAccounts: zapParams.makerAccounts,
-            transferCollateralParams: {
-              fromAccountNumber: defaultAccountNumber,
-              toAccountNumber: borrowAccountNumber,
-              transferAmounts: [
-                { marketId: otherMarketId1, amountWei: ZERO_BI }
-              ],
-            },
-            expiryParams: {
-              marketId: 0,
-              expiryTimeDelta: 0,
-            },
-            userConfig: zapParams.userConfig,
-          }
-        ),
-        'GenericTraderProxyV2: Invalid transfer amount at index <0>'
-      );
-    });
-
-    it('should fail if input amount is 0', async () => {
-      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
-      await expectThrow(
-        genericTraderProxy.connect(core.hhUser5).swapExactInputForOutputAndModifyPositionForDifferentAccount(
-          core.hhUser1.address,
-          {
-            accountNumber: defaultAccountNumber,
-            marketIdsPath: zapParams.marketIdsPath,
-            inputAmountWei: ZERO_BI,
-            minOutputAmountWei: zapParams.minOutputAmountWei,
-            tradersPath: zapParams.tradersPath,
-            makerAccounts: zapParams.makerAccounts,
-            transferCollateralParams: {
-              fromAccountNumber: defaultAccountNumber,
-              toAccountNumber: borrowAccountNumber,
-              transferAmounts: [
-                { marketId: otherMarketId1, amountWei: amountWei }
-              ],
-            },
-            expiryParams: {
-              marketId: 0,
-              expiryTimeDelta: 0,
-            },
-            userConfig: zapParams.userConfig,
-          }
-        ),
-        'GenericTraderProxyBase: Invalid inputAmountWei'
-      );
-    });
-
-    it('should fail if min output amount is 0', async () => {
-      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
-      await expectThrow(
-        genericTraderProxy.connect(core.hhUser5).swapExactInputForOutputAndModifyPositionForDifferentAccount(
-          core.hhUser1.address,
-          {
-            accountNumber: defaultAccountNumber,
-            marketIdsPath: zapParams.marketIdsPath,
-            inputAmountWei: zapParams.inputAmountWei,
-            minOutputAmountWei: ZERO_BI,
-            tradersPath: zapParams.tradersPath,
-            makerAccounts: zapParams.makerAccounts,
-            transferCollateralParams: {
-              fromAccountNumber: defaultAccountNumber,
-              toAccountNumber: borrowAccountNumber,
-              transferAmounts: [
-                { marketId: otherMarketId1, amountWei: amountWei }
-              ],
-            },
-            expiryParams: {
-              marketId: 0,
-              expiryTimeDelta: 0,
-            },
-            userConfig: zapParams.userConfig,
-          }
-        ),
-        'GenericTraderProxyBase: Invalid minOutputAmountWei'
-      );
-    });
-
-    it('should fail if traders path is incorrect length', async () => {
-      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
-      await expectThrow(
-        genericTraderProxy.connect(core.hhUser5).swapExactInputForOutputAndModifyPositionForDifferentAccount(
-          core.hhUser1.address,
-          {
-            accountNumber: defaultAccountNumber,
-            marketIdsPath: [otherMarketId1, otherMarketId2, otherMarketId1],
-            inputAmountWei: zapParams.inputAmountWei,
-            minOutputAmountWei: zapParams.minOutputAmountWei,
-            tradersPath: zapParams.tradersPath,
-            makerAccounts: zapParams.makerAccounts,
-            transferCollateralParams: {
-              fromAccountNumber: defaultAccountNumber,
-              toAccountNumber: borrowAccountNumber,
-              transferAmounts: [
-                { marketId: otherMarketId1, amountWei: amountWei }
-              ],
-            },
-            expiryParams: {
-              marketId: 0,
-              expiryTimeDelta: 0,
-            },
-            userConfig: zapParams.userConfig,
-          }
-        ),
-        'GenericTraderProxyBase: Invalid traders params length'
-      );
-    });
-
-    it('should fail if trader is address zero', async () => {
-      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
-      zapParams.tradersPath[0].trader = ADDRESS_ZERO;
-
-      await expectThrow(
-        genericTraderProxy.connect(core.hhUser5).swapExactInputForOutputAndModifyPositionForDifferentAccount(
-          core.hhUser1.address,
-          {
-            accountNumber: defaultAccountNumber,
-            marketIdsPath: zapParams.marketIdsPath,
-            inputAmountWei: zapParams.inputAmountWei,
-            minOutputAmountWei: zapParams.minOutputAmountWei,
-            tradersPath: zapParams.tradersPath,
-            makerAccounts: zapParams.makerAccounts,
-            transferCollateralParams: {
-              fromAccountNumber: defaultAccountNumber,
-              toAccountNumber: borrowAccountNumber,
-              transferAmounts: [
-                { marketId: otherMarketId1, amountWei: amountWei }
-              ],
-            },
-            expiryParams: {
-              marketId: 0,
-              expiryTimeDelta: 0,
-            },
-            userConfig: zapParams.userConfig,
-          }
-        ),
-        'GenericTraderProxyBase: Invalid trader at index <0>'
-      );
-    });
-
-    it('should fail if unwrapping isolation mode with invalid unwrapper', async () => {
-      const zapParams = await getSimpleZapParams(isolationModeMarketId, amountWei, otherMarketId1, outputAmount, core);
-      await expectThrow(
-        genericTraderProxy.connect(core.hhUser5).swapExactInputForOutputAndModifyPositionForDifferentAccount(
-          core.hhUser1.address,
-          {
-            accountNumber: defaultAccountNumber,
-            marketIdsPath: zapParams.marketIdsPath,
-            inputAmountWei: zapParams.inputAmountWei,
-            minOutputAmountWei: zapParams.minOutputAmountWei,
-            tradersPath: zapParams.tradersPath,
-            makerAccounts: zapParams.makerAccounts,
-            transferCollateralParams: {
-              fromAccountNumber: defaultAccountNumber,
-              toAccountNumber: borrowAccountNumber,
-              transferAmounts: [
-                { marketId: otherMarketId1, amountWei: amountWei }
-              ],
-            },
-            expiryParams: {
-              marketId: 0,
-              expiryTimeDelta: 0,
-            },
-            userConfig: zapParams.userConfig,
-          }
-        ),
-        'GenericTraderProxyBase: Invalid isolation mode unwrapper <52, 0>'
-      );
-    });
-
-    it('should fail if unwrapping iso mode to iso mode with invalid token converter', async () => {
-      const zapParams = await getUnwrapZapParams(isolationModeMarketId, amountWei, isolationModeMarketId2, outputAmount, tokenUnwrapper, core);
-      await expectThrow(
-        genericTraderProxy.connect(core.hhUser5).swapExactInputForOutputAndModifyPositionForDifferentAccount(
-          core.hhUser1.address,
-          {
-            accountNumber: defaultAccountNumber,
-            marketIdsPath: zapParams.marketIdsPath,
-            inputAmountWei: zapParams.inputAmountWei,
-            minOutputAmountWei: zapParams.minOutputAmountWei,
-            tradersPath: zapParams.tradersPath,
-            makerAccounts: zapParams.makerAccounts,
-            transferCollateralParams: {
-              fromAccountNumber: defaultAccountNumber,
-              toAccountNumber: borrowAccountNumber,
-              transferAmounts: [
-                { marketId: otherMarketId1, amountWei: amountWei }
-              ],
-            },
-            expiryParams: {
-              marketId: 0,
-              expiryTimeDelta: 0,
-            },
-            userConfig: zapParams.userConfig,
-          }
-        ),
-        'GenericTraderProxyBase: Invalid unwrap sequence <52, 53>'
-      );
-    });
-
-    it('should fail if wrapping iso mode to non-iso mode with invalid wrapper', async () => {
-      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, isolationModeMarketId, outputAmount, core);
-      await expectThrow(
-        genericTraderProxy.connect(core.hhUser5).swapExactInputForOutputAndModifyPositionForDifferentAccount(
-          core.hhUser1.address,
-          {
-            accountNumber: defaultAccountNumber,
-            marketIdsPath: zapParams.marketIdsPath,
-            inputAmountWei: zapParams.inputAmountWei,
-            minOutputAmountWei: zapParams.minOutputAmountWei,
-            tradersPath: zapParams.tradersPath,
-            makerAccounts: zapParams.makerAccounts,
-            transferCollateralParams: {
-              fromAccountNumber: defaultAccountNumber,
-              toAccountNumber: borrowAccountNumber,
-              transferAmounts: [
-                { marketId: otherMarketId1, amountWei: amountWei }
-              ],
-            },
-            expiryParams: {
-              marketId: 0,
-              expiryTimeDelta: 0,
-            },
-            userConfig: zapParams.userConfig,
-          }
-        ),
-        'GenericTraderProxyBase: Invalid isolation mode wrapper <52, 0>'
-      );
-    });
-
-    it('should fail if using iso mode trader for non-iso mode market', async () => {
-      const zapParams = await getWrapZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, tokenWrapper, core);
-      await expectThrow(
-        genericTraderProxy.connect(core.hhUser5).swapExactInputForOutputAndModifyPositionForDifferentAccount(
-          core.hhUser1.address,
-          {
-            accountNumber: defaultAccountNumber,
-            marketIdsPath: zapParams.marketIdsPath,
-            inputAmountWei: zapParams.inputAmountWei,
-            minOutputAmountWei: zapParams.minOutputAmountWei,
-            tradersPath: zapParams.tradersPath,
-            makerAccounts: zapParams.makerAccounts,
-            transferCollateralParams: {
-              fromAccountNumber: defaultAccountNumber,
-              toAccountNumber: borrowAccountNumber,
-              transferAmounts: [
-                { marketId: otherMarketId1, amountWei: amountWei }
-              ],
-            },
-            expiryParams: {
-              marketId: 0,
-              expiryTimeDelta: 0,
-            },
-            userConfig: zapParams.userConfig,
-          }
-        ),
-        'GenericTraderProxyBase: Invalid trader type <3>'
-      );
-    });
-
     it('should fail if unauthorized', async () => {
       const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
       await expectThrow(
@@ -2464,7 +1448,7 @@ describe('GenericTraderProxyV2', () => {
         ),
         `AuthorizationBase: unauthorized <${core.hhUser2.address.toLowerCase()}>`
       );
-    })
+    });
 
     it('should fail if expired', async () => {
       const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
@@ -2499,7 +1483,8 @@ describe('GenericTraderProxyV2', () => {
 
     it('should fail if reentrancy is triggered', async () => {
       const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
-      const transaction = await genericTraderProxy.populateTransaction.swapExactInputForOutputAndModifyPositionForDifferentAccount(
+      const transaction = await genericTraderProxy.populateTransaction
+        .swapExactInputForOutputAndModifyPositionForDifferentAccount(
         core.hhUser1.address,
         {
           accountNumber: defaultAccountNumber,
@@ -2521,10 +1506,560 @@ describe('GenericTraderProxyV2', () => {
           },
           userConfig: zapParams.userConfig,
         }
-      );
+        );
       await expectThrow(
         genericTraderProxy.callFunctionAndTriggerReentrancy(transaction.data!),
         'ReentrancyGuard: reentrant call'
+      );
+    });
+  });
+
+  describe('#_validateMarketIdPath', () => {
+    it('should fail if marketIds path is less than 2', async () => {
+      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
+      await expectThrow(
+        genericTraderProxy.swapExactInputForOutput({
+          accountNumber: defaultAccountNumber,
+          marketIdsPath: zapParams.marketIdsPath.slice(0, 1),
+          inputAmountWei: zapParams.inputAmountWei,
+          minOutputAmountWei: zapParams.minOutputAmountWei,
+          tradersPath: zapParams.tradersPath,
+          makerAccounts: zapParams.makerAccounts,
+          userConfig: zapParams.userConfig,
+        }),
+        'GenericTraderProxyBase: Invalid market path length'
+      );
+    });
+  });
+
+  describe('#_getActualInputAmountWei', () => {
+    it('should fail if input amount is max uint256 and balance is negative', async () => {
+      await otherToken1.addBalance(core.hhUser1.address, amountWei);
+      await otherToken1.connect(core.hhUser1).approve(core.dolomiteMargin.address, amountWei);
+      await depositIntoDolomiteMargin(core, core.hhUser1, borrowAccountNumber, otherMarketId1, amountWei);
+      await borrowRouter.transferBetweenAccounts(
+        MAX_UINT_256_BI,
+        borrowAccountNumber,
+        defaultAccountNumber,
+        otherMarketId2,
+        ONE_BI,
+        BalanceCheckFlag.To,
+      );
+
+      const zapParams = await getSimpleZapParams(otherMarketId2, amountWei, otherMarketId1, outputAmount, core);
+      await expectThrow(
+        genericTraderProxy.swapExactInputForOutput({
+          accountNumber: borrowAccountNumber,
+          marketIdsPath: zapParams.marketIdsPath,
+          inputAmountWei: MAX_UINT_256_BI,
+          minOutputAmountWei: zapParams.minOutputAmountWei,
+          tradersPath: zapParams.tradersPath,
+          makerAccounts: zapParams.makerAccounts,
+          userConfig: zapParams.userConfig,
+        }),
+        `GenericTraderProxyV2: Balance must be positive <${otherMarketId2.toString()}>`
+      );
+    });
+  });
+
+  describe('#_validateAmountWeis', () => {
+    it('should fail if input amount is 0', async () => {
+      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
+      await expectThrow(
+        genericTraderProxy.swapExactInputForOutput({
+          accountNumber: defaultAccountNumber,
+          marketIdsPath: zapParams.marketIdsPath,
+          inputAmountWei: ZERO_BI,
+          minOutputAmountWei: zapParams.minOutputAmountWei,
+          tradersPath: zapParams.tradersPath,
+          makerAccounts: zapParams.makerAccounts,
+          userConfig: zapParams.userConfig,
+        }),
+        'GenericTraderProxyBase: Invalid inputAmountWei'
+      );
+    });
+
+    it('should fail if min output amount is 0', async () => {
+      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
+      await expectThrow(
+        genericTraderProxy.swapExactInputForOutput({
+          accountNumber: defaultAccountNumber,
+          marketIdsPath: zapParams.marketIdsPath,
+          inputAmountWei: zapParams.inputAmountWei,
+          minOutputAmountWei: ZERO_BI,
+          tradersPath: zapParams.tradersPath,
+          makerAccounts: zapParams.makerAccounts,
+          userConfig: zapParams.userConfig,
+        }),
+        'GenericTraderProxyBase: Invalid minOutputAmountWei'
+      );
+    });
+  });
+
+  describe('#_validateTraderParams', () => {
+    it('should fail if traders path is incorrect length', async () => {
+      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
+      await expectThrow(
+        genericTraderProxy.swapExactInputForOutput({
+          accountNumber: defaultAccountNumber,
+          marketIdsPath: [otherMarketId1, otherMarketId2, otherMarketId1],
+          inputAmountWei: zapParams.inputAmountWei,
+          minOutputAmountWei: zapParams.minOutputAmountWei,
+          tradersPath: zapParams.tradersPath,
+          makerAccounts: zapParams.makerAccounts,
+          userConfig: zapParams.userConfig,
+        }),
+        'GenericTraderProxyBase: Invalid traders params length'
+      );
+    });
+
+    it('should fail if trader is address zero', async () => {
+      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
+      zapParams.tradersPath[0].trader = ADDRESS_ZERO;
+      await expectThrow(
+        genericTraderProxy.swapExactInputForOutput({
+          accountNumber: defaultAccountNumber,
+          marketIdsPath: zapParams.marketIdsPath,
+          inputAmountWei: zapParams.inputAmountWei,
+          minOutputAmountWei: zapParams.minOutputAmountWei,
+          tradersPath: zapParams.tradersPath,
+          makerAccounts: zapParams.makerAccounts,
+          userConfig: zapParams.userConfig,
+        }),
+        'GenericTraderProxyBase: Invalid trader at index <0>'
+      );
+    });
+  });
+
+  describe('#_validateIsolationModeStatusForTraderParam', () => {
+    it('should fail if unwrapping isolation mode with invalid unwrapper', async () => {
+      const zapParams = await getSimpleZapParams(isolationModeMarketId, amountWei, otherMarketId1, outputAmount, core);
+      await expectThrow(
+        genericTraderProxy.swapExactInputForOutput({
+          accountNumber: defaultAccountNumber,
+          marketIdsPath: zapParams.marketIdsPath,
+          inputAmountWei: zapParams.inputAmountWei,
+          minOutputAmountWei: zapParams.minOutputAmountWei,
+          tradersPath: zapParams.tradersPath,
+          makerAccounts: zapParams.makerAccounts,
+          userConfig: zapParams.userConfig,
+        }),
+        'GenericTraderProxyBase: Invalid isolation mode unwrapper <52, 0>'
+      );
+    });
+
+    it('should fail if unwrapping iso mode to iso mode with invalid token converter', async () => {
+      const zapParams = await getUnwrapZapParams(
+        isolationModeMarketId,
+        amountWei,
+        isolationModeMarketId2,
+        outputAmount,
+        tokenUnwrapper,
+        core
+      );
+      await expectThrow(
+        genericTraderProxy.swapExactInputForOutput({
+          accountNumber: defaultAccountNumber,
+          marketIdsPath: zapParams.marketIdsPath,
+          inputAmountWei: zapParams.inputAmountWei,
+          minOutputAmountWei: zapParams.minOutputAmountWei,
+          tradersPath: zapParams.tradersPath,
+          makerAccounts: zapParams.makerAccounts,
+          userConfig: zapParams.userConfig,
+        }),
+        'GenericTraderProxyBase: Invalid unwrap sequence <52, 53>'
+      );
+    });
+
+    it('should fail if wrapping iso mode to non-iso mode with invalid wrapper', async () => {
+      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, isolationModeMarketId, outputAmount, core);
+      await expectThrow(
+        genericTraderProxy.swapExactInputForOutput({
+          accountNumber: defaultAccountNumber,
+          marketIdsPath: zapParams.marketIdsPath,
+          inputAmountWei: zapParams.inputAmountWei,
+          minOutputAmountWei: zapParams.minOutputAmountWei,
+          tradersPath: zapParams.tradersPath,
+          makerAccounts: zapParams.makerAccounts,
+          userConfig: zapParams.userConfig,
+        }),
+        'GenericTraderProxyBase: Invalid isolation mode wrapper <52, 0>'
+      );
+    });
+
+    it('should fail if using iso mode trader for non-iso mode market', async () => {
+      const zapParams = await getWrapZapParams(
+        otherMarketId1,
+        amountWei,
+        otherMarketId2,
+        outputAmount,
+        tokenWrapper,
+        core
+      );
+      await expectThrow(
+        genericTraderProxy.swapExactInputForOutput({
+          accountNumber: defaultAccountNumber,
+          marketIdsPath: zapParams.marketIdsPath,
+          inputAmountWei: zapParams.inputAmountWei,
+          minOutputAmountWei: zapParams.minOutputAmountWei,
+          tradersPath: zapParams.tradersPath,
+          makerAccounts: zapParams.makerAccounts,
+          userConfig: zapParams.userConfig,
+        }),
+        'GenericTraderProxyBase: Invalid trader type <3>'
+      );
+    });
+  });
+
+  describe('#_validateTraderTypeForTraderParam', () => {
+    it('should fail if invalid input for isolation mode unwrapper', async () => {
+      const zapParams = await getUnwrapZapParams(
+        core.marketIds.dArb,
+        amountWei,
+        otherMarketId1,
+        outputAmount,
+        tokenUnwrapper,
+        core
+      );
+      await expectThrow(
+        genericTraderProxy.swapExactInputForOutput({
+          accountNumber: defaultAccountNumber,
+          marketIdsPath: zapParams.marketIdsPath,
+          inputAmountWei: zapParams.inputAmountWei,
+          minOutputAmountWei: zapParams.minOutputAmountWei,
+          tradersPath: zapParams.tradersPath,
+          makerAccounts: zapParams.makerAccounts,
+          userConfig: zapParams.userConfig,
+        }),
+        'GenericTraderProxyBase: Invalid input for unwrapper <0, 28>'
+      );
+    });
+
+    it('should fail if invalid output for isolation mode unwrapper', async () => {
+      const zapParams = await getUnwrapZapParams(
+        isolationModeMarketId,
+        amountWei,
+        core.marketIds.weth,
+        outputAmount,
+        tokenUnwrapper,
+        core
+      );
+      await expectThrow(
+        genericTraderProxy.swapExactInputForOutput({
+          accountNumber: defaultAccountNumber,
+          marketIdsPath: zapParams.marketIdsPath,
+          inputAmountWei: zapParams.inputAmountWei,
+          minOutputAmountWei: zapParams.minOutputAmountWei,
+          tradersPath: zapParams.tradersPath,
+          makerAccounts: zapParams.makerAccounts,
+          userConfig: zapParams.userConfig,
+        }),
+        'GenericTraderProxyBase: Invalid output for unwrapper <1, 0>'
+      );
+    });
+
+    it('should fail if unwrapper is not trusted', async () => {
+      const badTokenUnwrapper = await createContractWithAbi<TestIsolationModeUnwrapperTraderV2>(
+        TestIsolationModeUnwrapperTraderV2__factory.abi,
+        TestIsolationModeUnwrapperTraderV2__factory.bytecode,
+        [otherToken1.address, factory.address, core.dolomiteMargin.address, core.dolomiteRegistry.address],
+      );
+      const zapParams = await getUnwrapZapParams(
+        isolationModeMarketId,
+        amountWei,
+        otherMarketId1,
+        outputAmount,
+        badTokenUnwrapper,
+        core
+      );
+
+      await expectThrow(
+        genericTraderProxy.swapExactInputForOutput({
+          accountNumber: defaultAccountNumber,
+          marketIdsPath: zapParams.marketIdsPath,
+          inputAmountWei: zapParams.inputAmountWei,
+          minOutputAmountWei: zapParams.minOutputAmountWei,
+          tradersPath: zapParams.tradersPath,
+          makerAccounts: zapParams.makerAccounts,
+          userConfig: zapParams.userConfig,
+        }),
+        `GenericTraderProxyBase: Unwrapper trader not enabled <${badTokenUnwrapper.address.toLowerCase()}, 52>`
+      );
+    });
+
+    it('should fail if invalid input for isolation mode wrapper', async () => {
+      const zapParams = await getWrapZapParams(
+        core.marketIds.weth,
+        amountWei,
+        isolationModeMarketId,
+        outputAmount,
+        tokenWrapper,
+        core
+      );
+      await expectThrow(
+        genericTraderProxy.swapExactInputForOutput({
+          accountNumber: defaultAccountNumber,
+          marketIdsPath: zapParams.marketIdsPath,
+          inputAmountWei: zapParams.inputAmountWei,
+          minOutputAmountWei: zapParams.minOutputAmountWei,
+          tradersPath: zapParams.tradersPath,
+          makerAccounts: zapParams.makerAccounts,
+          userConfig: zapParams.userConfig,
+        }),
+        'GenericTraderProxyBase: Invalid input for wrapper <0, 0>'
+      );
+    });
+
+    it('should fail if invalid output for isolation mode wrapper', async () => {
+      const zapParams = await getWrapZapParams(
+        otherMarketId1,
+        amountWei,
+        core.marketIds.dArb,
+        outputAmount,
+        tokenWrapper,
+        core
+      );
+      await expectThrow(
+        genericTraderProxy.swapExactInputForOutput({
+          accountNumber: defaultAccountNumber,
+          marketIdsPath: zapParams.marketIdsPath,
+          inputAmountWei: zapParams.inputAmountWei,
+          minOutputAmountWei: zapParams.minOutputAmountWei,
+          tradersPath: zapParams.tradersPath,
+          makerAccounts: zapParams.makerAccounts,
+          userConfig: zapParams.userConfig,
+        }),
+        'GenericTraderProxyBase: Invalid output for wrapper <1, 28>'
+      );
+    });
+
+    it('should fail if wrapper is not trusted', async () => {
+      const badTokenWrapper = await createContractWithAbi<TestIsolationModeWrapperTraderV2>(
+        TestIsolationModeWrapperTraderV2__factory.abi,
+        TestIsolationModeWrapperTraderV2__factory.bytecode,
+        [otherToken1.address, factory.address, core.dolomiteMargin.address, core.dolomiteRegistry.address],
+      );
+      const zapParams = await getWrapZapParams(
+        otherMarketId1,
+        amountWei,
+        isolationModeMarketId,
+        outputAmount,
+        badTokenWrapper,
+        core
+      );
+      await expectThrow(
+        genericTraderProxy.swapExactInputForOutput({
+          accountNumber: defaultAccountNumber,
+          marketIdsPath: zapParams.marketIdsPath,
+          inputAmountWei: zapParams.inputAmountWei,
+          minOutputAmountWei: zapParams.minOutputAmountWei,
+          tradersPath: zapParams.tradersPath,
+          makerAccounts: zapParams.makerAccounts,
+          userConfig: zapParams.userConfig,
+        }),
+        `GenericTraderProxyBase: Wrapper trader not enabled <${badTokenWrapper.address.toLowerCase()}, 52>`
+      );
+    });
+  });
+
+  describe('#_validateMakerAccountForTraderParam', () => {
+    it('should fail with external liquidity if maker account index is not zero', async () => {
+      await otherToken1.addBalance(core.hhUser1.address, amountWei);
+      await otherToken1.connect(core.hhUser1).approve(core.dolomiteMargin.address, amountWei);
+      await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, otherMarketId1, amountWei);
+
+      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
+      zapParams.tradersPath[0].makerAccountIndex = 1;
+      await expectThrow(
+        genericTraderProxy.swapExactInputForOutput({
+          accountNumber: defaultAccountNumber,
+          marketIdsPath: zapParams.marketIdsPath,
+          inputAmountWei: MAX_UINT_256_BI,
+          minOutputAmountWei: zapParams.minOutputAmountWei,
+          tradersPath: zapParams.tradersPath,
+          makerAccounts: zapParams.makerAccounts,
+          userConfig: zapParams.userConfig,
+        }),
+        'GenericTraderProxyBase: Invalid maker account owner <0>'
+      );
+    });
+
+    it('should fail with internal liquidity if maker account owner is address zero', async () => {
+      const usdcAmount = BigNumber.from('100000000');
+      await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.dolomiteMargin);
+      await disableInterestAccrual(core, core.marketIds.usdc);
+      await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.usdc, usdcAmount);
+
+      const zapParams = await getSimpleZapParams(core.marketIds.usdc, usdcAmount, core.marketIds.weth, ONE_BI, core);
+      zapParams.tradersPath[0].trader = '0xb77a493a4950cad1b049e222d62bce14ff423c6f';
+      zapParams.tradersPath[0].traderType = GenericTraderType.InternalLiquidity;
+      zapParams.tradersPath[0].tradeData = ethers.utils.defaultAbiCoder.encode(
+        ['uint256', 'bytes'],
+        [usdcAmount, ethers.utils.defaultAbiCoder.encode(['uint256'], [BigNumber.from('4321')])],
+      );
+      zapParams.makerAccounts.push({
+        owner: ADDRESS_ZERO,
+        number: defaultAccountNumber,
+      });
+      await expectThrow(
+        genericTraderProxy.swapExactInputForOutput({
+          accountNumber: defaultAccountNumber,
+          marketIdsPath: zapParams.marketIdsPath,
+          inputAmountWei: zapParams.inputAmountWei,
+          minOutputAmountWei: zapParams.minOutputAmountWei,
+          tradersPath: zapParams.tradersPath,
+          makerAccounts: zapParams.makerAccounts,
+          userConfig: zapParams.userConfig,
+        }),
+        'GenericTraderProxyBase: Invalid maker account owner <0>'
+      );
+    });
+
+    it('should fail with internal liquidity if maker account index is invalid', async () => {
+      const usdcAmount = BigNumber.from('100000000');
+      await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.dolomiteMargin);
+      await disableInterestAccrual(core, core.marketIds.usdc);
+      await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.usdc, usdcAmount);
+
+      const zapParams = await getSimpleZapParams(core.marketIds.usdc, usdcAmount, core.marketIds.weth, ONE_BI, core);
+      zapParams.tradersPath[0].trader = '0xb77a493a4950cad1b049e222d62bce14ff423c6f';
+      zapParams.tradersPath[0].traderType = GenericTraderType.InternalLiquidity;
+      zapParams.tradersPath[0].tradeData = ethers.utils.defaultAbiCoder.encode(
+        ['uint256', 'bytes'],
+        [usdcAmount, ethers.utils.defaultAbiCoder.encode(['uint256'], [BigNumber.from('4321')])],
+      );
+      zapParams.tradersPath[0].makerAccountIndex = 4;
+      zapParams.makerAccounts.push({
+        owner: '0xb77a493a4950cad1b049e222d62bce14ff423c6f',
+        number: defaultAccountNumber,
+      });
+      await expectThrow(
+        genericTraderProxy.swapExactInputForOutput({
+          accountNumber: defaultAccountNumber,
+          marketIdsPath: zapParams.marketIdsPath,
+          inputAmountWei: zapParams.inputAmountWei,
+          minOutputAmountWei: zapParams.minOutputAmountWei,
+          tradersPath: zapParams.tradersPath,
+          makerAccounts: zapParams.makerAccounts,
+          userConfig: zapParams.userConfig,
+        }),
+        'GenericTraderProxyBase: Invalid maker account owner <0>'
+      );
+    });
+  });
+
+  describe('#_validateTransferParams', () => {
+    it('should fail if no transfer amounts', async () => {
+      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
+      await expectThrow(
+        genericTraderProxy.swapExactInputForOutputAndModifyPosition(
+          {
+            accountNumber: defaultAccountNumber,
+            marketIdsPath: zapParams.marketIdsPath,
+            inputAmountWei: zapParams.inputAmountWei,
+            minOutputAmountWei: zapParams.minOutputAmountWei,
+            tradersPath: zapParams.tradersPath,
+            makerAccounts: zapParams.makerAccounts,
+            transferCollateralParams: {
+              fromAccountNumber: defaultAccountNumber,
+              toAccountNumber: borrowAccountNumber,
+              transferAmounts: [],
+            },
+            expiryParams: {
+              marketId: 0,
+              expiryTimeDelta: 0,
+            },
+            userConfig: zapParams.userConfig,
+          }
+        ),
+        'GenericTraderProxyV2: Invalid transfer amounts length'
+      );
+    });
+
+    it('should fail if from and to account numbers are the same', async () => {
+      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
+      await expectThrow(
+        genericTraderProxy.swapExactInputForOutputAndModifyPosition(
+          {
+            accountNumber: defaultAccountNumber,
+            marketIdsPath: zapParams.marketIdsPath,
+            inputAmountWei: zapParams.inputAmountWei,
+            minOutputAmountWei: zapParams.minOutputAmountWei,
+            tradersPath: zapParams.tradersPath,
+            makerAccounts: zapParams.makerAccounts,
+            transferCollateralParams: {
+              fromAccountNumber: defaultAccountNumber,
+              toAccountNumber: defaultAccountNumber,
+              transferAmounts: [
+                { marketId: otherMarketId1, amountWei: amountWei }
+              ],
+            },
+            expiryParams: {
+              marketId: 0,
+              expiryTimeDelta: 0,
+            },
+            userConfig: zapParams.userConfig,
+          }
+        ),
+        'GenericTraderProxyV2: Cannot transfer to same account'
+      );
+    });
+
+    it('should fail if trade account number is not from or to account number', async () => {
+      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
+      await expectThrow(
+        genericTraderProxy.swapExactInputForOutputAndModifyPosition(
+          {
+            accountNumber: ONE_BI,
+            marketIdsPath: zapParams.marketIdsPath,
+            inputAmountWei: zapParams.inputAmountWei,
+            minOutputAmountWei: zapParams.minOutputAmountWei,
+            tradersPath: zapParams.tradersPath,
+            makerAccounts: zapParams.makerAccounts,
+            transferCollateralParams: {
+              fromAccountNumber: defaultAccountNumber,
+              toAccountNumber: borrowAccountNumber,
+              transferAmounts: [
+                { marketId: otherMarketId1, amountWei: amountWei }
+              ],
+            },
+            expiryParams: {
+              marketId: 0,
+              expiryTimeDelta: 0,
+            },
+            userConfig: zapParams.userConfig,
+          }
+        ),
+        'GenericTraderProxyV2: Invalid trade account number'
+      );
+    });
+
+    it('should fail if transfer amount is 0', async () => {
+      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
+      await expectThrow(
+        genericTraderProxy.swapExactInputForOutputAndModifyPosition(
+          {
+            accountNumber: defaultAccountNumber,
+            marketIdsPath: zapParams.marketIdsPath,
+            inputAmountWei: zapParams.inputAmountWei,
+            minOutputAmountWei: zapParams.minOutputAmountWei,
+            tradersPath: zapParams.tradersPath,
+            makerAccounts: zapParams.makerAccounts,
+            transferCollateralParams: {
+              fromAccountNumber: defaultAccountNumber,
+              toAccountNumber: borrowAccountNumber,
+              transferAmounts: [
+                { marketId: otherMarketId1, amountWei: ZERO_BI }
+              ],
+            },
+            expiryParams: {
+              marketId: 0,
+              expiryTimeDelta: 0,
+            },
+            userConfig: zapParams.userConfig,
+          }
+        ),
+        'GenericTraderProxyV2: Invalid transfer amount at index <0>'
       );
     });
   });

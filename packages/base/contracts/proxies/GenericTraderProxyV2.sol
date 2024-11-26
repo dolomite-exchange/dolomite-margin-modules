@@ -19,20 +19,17 @@
 
 pragma solidity ^0.8.9;
 
-import { GenericTraderProxyBase } from "./GenericTraderProxyBase.sol";
-import { OnlyDolomiteMarginForUpgradeable } from "../helpers/OnlyDolomiteMarginForUpgradeable.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import { TypesLib } from "../protocol/lib/TypesLib.sol";
-import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
-import { IExpiry } from "../interfaces/IExpiry.sol";
-import { IEventEmitterRegistry } from "../interfaces/IEventEmitterRegistry.sol";
-import { Require } from "../protocol/lib/Require.sol";
-import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
+import { GenericTraderProxyBase } from "./GenericTraderProxyBase.sol";
 import { GenericTraderProxyV2Lib } from "./GenericTraderProxyV2Lib.sol";
-import { AccountActionLib } from "../lib/AccountActionLib.sol";
-import { IGenericTraderProxyV2 } from "./interfaces/IGenericTraderProxyV2.sol";
 import { AuthorizationBase } from "../helpers/AuthorizationBase.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
+import { AccountActionLib } from "../lib/AccountActionLib.sol";
+import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
+import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
+import { Require } from "../protocol/lib/Require.sol";
+import { TypesLib } from "../protocol/lib/TypesLib.sol";
+import { IGenericTraderProxyV2 } from "./interfaces/IGenericTraderProxyV2.sol";
 
 
 /**
@@ -130,7 +127,9 @@ contract GenericTraderProxyV2 is GenericTraderProxyBase, ReentrancyGuard, Author
         );
         _validateZapAccount(cache, accounts[ZAP_ACCOUNT_ID], _params.marketIdsPath);
 
-        IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](_getActionsLengthForTraderParams(_params.tradersPath));
+        IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](
+            _getActionsLengthForTraderParams(_params.tradersPath)
+        );
         _appendTraderActions(
             accounts,
             actions,
@@ -210,7 +209,9 @@ contract GenericTraderProxyV2 is GenericTraderProxyBase, ReentrancyGuard, Author
         );
         _validateZapAccount(cache, accounts[ZAP_ACCOUNT_ID], _params.marketIdsPath);
 
-        IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](_getActionsLengthForTraderParams(_params.tradersPath));
+        IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](
+            _getActionsLengthForTraderParams(_params.tradersPath)
+        );
         _appendTraderActions(
             accounts,
             actions,

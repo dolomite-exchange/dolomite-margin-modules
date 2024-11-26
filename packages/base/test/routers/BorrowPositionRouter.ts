@@ -20,7 +20,7 @@ import {
 } from 'packages/base/src/types';
 import { createContractWithAbi, createContractWithLibrary, createTestToken, depositIntoDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
-import { createAndUpgradeDolomiteRegistry, createIsolationModeTokenVaultV1ActionsImpl, createIsolationModeTokenVaultV2ActionsImpl } from '../utils/dolomite';
+import { createAndUpgradeDolomiteRegistry, createIsolationModeTokenVaultV2ActionsImpl } from '../utils/dolomite';
 import { createTestIsolationModeVaultFactory } from '../utils/ecosystem-utils/testers';
 import { BigNumber } from 'ethers';
 import { expectEvent, expectProtocolBalance, expectThrow } from '../utils/assertions';
@@ -33,11 +33,7 @@ enum Direction {
   FromVault = 1,
 }
 
-
-const OTHER_ADDRESS = '0x1234567890123456789012345678901234567890';
-
 const amountWei = ONE_ETH_BI;
-const parAmount = parseEther('.5');
 const defaultAccountNumber = ZERO_BI;
 const borrowAccountNumber = BigNumber.from('123');
 const otherBorrowAccountNumber = BigNumber.from('456');
@@ -58,7 +54,9 @@ describe('BorrowPositionRouter', () => {
     await disableInterestAccrual(core, core.marketIds.weth);
 
     await createAndUpgradeDolomiteRegistry(core);
-    await core.dolomiteRegistry.connect(core.governance).ownerSetBorrowPositionProxy(core.borrowPositionProxyV2.address);
+    await core.dolomiteRegistry.connect(core.governance).ownerSetBorrowPositionProxy(
+      core.borrowPositionProxyV2.address
+    );
 
     router = await createContractWithAbi<TestBorrowPositionRouter>(
       TestBorrowPositionRouter__factory.abi,

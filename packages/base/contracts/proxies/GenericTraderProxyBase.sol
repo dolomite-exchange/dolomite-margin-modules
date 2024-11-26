@@ -20,15 +20,15 @@
 
 pragma solidity ^0.8.9;
 
-import { Require } from "../protocol/lib/Require.sol";
+import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { IGenericTraderBase } from "../interfaces/IGenericTraderBase.sol";
-import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
-import { IIsolationModeVaultFactory } from "../isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
 import { IIsolationModeUnwrapperTraderV2 } from "../isolation-mode/interfaces/IIsolationModeUnwrapperTraderV2.sol";
+import { IIsolationModeVaultFactory } from "../isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
 import { IIsolationModeWrapperTraderV2 } from "../isolation-mode/interfaces/IIsolationModeWrapperTraderV2.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
-import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
+import { Require } from "../protocol/lib/Require.sol";
 
 
 /**
@@ -342,7 +342,9 @@ abstract contract GenericTraderProxyBase is IGenericTraderBase {
         view
         returns (IDolomiteStructs.AccountInfo[] memory)
     {
-        IDolomiteStructs.AccountInfo[] memory accounts = new IDolomiteStructs.AccountInfo[](_cache.traderAccountStartIndex + _makerAccounts.length);
+        IDolomiteStructs.AccountInfo[] memory accounts = new IDolomiteStructs.AccountInfo[](
+            _cache.traderAccountStartIndex + _makerAccounts.length
+        );
         accounts[TRADE_ACCOUNT_ID] = IDolomiteStructs.AccountInfo({
             owner: _tradeAccountOwner,
             number: _tradeAccountNumber
@@ -408,7 +410,8 @@ abstract contract GenericTraderProxyBase is IGenericTraderBase {
         internal
         view
     {
-        // Before the trades are started, transfer inputAmountWei of the inputMarket from the TRADE account to the ZAP account
+        // Before the trades are started, transfer inputAmountWei of the inputMarket
+        // from the TRADE account to the ZAP account
         if (_inputAmountWei == AccountActionLib.all()) {
             // Transfer such that we TARGET w/e the trader has right now, before the trades occur
             _actions[_cache.actionsCursor++] = AccountActionLib.encodeTransferToTargetAmountAction(
@@ -471,8 +474,8 @@ abstract contract GenericTraderProxyBase is IGenericTraderBase {
                 // an unwrapper can never appear at the non-zero index because there is an invariant that checks the
                 // `IsolationModeWrapper` is the last index
                 assert(i == 0);
-                IDolomiteStructs.ActionArgs[] memory unwrapActions = IIsolationModeUnwrapperTraderV2(_tradersPath[i].trader)
-                    .createActionsForUnwrapping(
+                IDolomiteStructs.ActionArgs[] memory unwrapActions =
+                    IIsolationModeUnwrapperTraderV2(_tradersPath[i].trader).createActionsForUnwrapping(
                         IIsolationModeUnwrapperTraderV2.CreateActionsForUnwrappingParams({
                             primaryAccountId: ZAP_ACCOUNT_ID,
                             otherAccountId: _otherAccountId(),
