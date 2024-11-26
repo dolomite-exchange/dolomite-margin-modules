@@ -607,11 +607,8 @@ export async function setupCoreProtocol<T extends NetworkType>(
     );
   }
 
-  const gnosisSafe: SignerWithAddressWithSafety = await impersonateOrFallback(
-    GNOSIS_SAFE_MAP[config.network],
-    true,
-    hhUser1,
-  );
+  const gnosisSafeAddress = GNOSIS_SAFE_MAP[config.network];
+  const gnosisSafe: SignerWithAddressWithSafety = await impersonateOrFallback(gnosisSafeAddress, true, hhUser1);
 
   const governance: SignerWithAddressWithSafety = await impersonateOrFallback(
     await IDolomiteMargin__factory.connect(dolomiteMarginAddress, hhUser1).owner(),
@@ -747,6 +744,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
     freezableLiquidatorProxy,
     genericTraderProxy,
     gnosisSafe,
+    gnosisSafeAddress,
     governance,
     interestSetters,
     libraries,

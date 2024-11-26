@@ -57,6 +57,7 @@ export interface CoreProtocolMarketIds {
 export interface CoreProtocolParams<T extends NetworkType> {
   config: CoreProtocolConfig<T>;
   gnosisSafe: SignerWithAddressWithSafety;
+  gnosisSafeAddress: string;
   governance: SignerWithAddressWithSafety;
   hhUser1: SignerWithAddressWithSafety;
   hhUser2: SignerWithAddressWithSafety;
@@ -110,6 +111,7 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
   public readonly config: CoreProtocolConfig<T>;
   public readonly zap: DolomiteZap;
   public readonly gnosisSafe: SignerWithAddressWithSafety;
+  public readonly gnosisSafeAddress: string;
   public readonly governance: SignerWithAddressWithSafety;
   public readonly hhUser1: SignerWithAddressWithSafety;
   public readonly hhUser2: SignerWithAddressWithSafety;
@@ -165,6 +167,7 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
       defaultBlockTag: params.config.blockNumber,
     });
     this.gnosisSafe = params.gnosisSafe;
+    this.gnosisSafeAddress = params.gnosisSafeAddress;
     this.governance = params.governance;
     this.hhUser1 = params.hhUser1;
     this.hhUser2 = params.hhUser2;
