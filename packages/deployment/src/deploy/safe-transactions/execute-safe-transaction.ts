@@ -20,7 +20,10 @@ const SKIP_DRY_RUN_KEY = '--skip-dry-run';
 const dryRunOnly = process.argv.some(arg => arg === DRY_RUN_ONLY_KEY) || process.env.DRY_RUN_ONLY === 'true';
 const skipDryRun = process.argv.some(arg => arg === SKIP_DRY_RUN_KEY) || process.env.SKIP_DRY_RUN === 'true';
 
-const filePath = path.resolve(__dirname, networkName, `safe-transaction-${scriptNumber}.ts`);
+const lowerBound = Math.floor(scriptNumber / 100) * 100;
+const directory = `${lowerBound}-${lowerBound + 99}`;
+const filePath = path.resolve(__dirname, networkName, directory, `safe-transaction-${scriptNumber}.ts`);
+
 if (!skipDryRun) {
   console.log('');
   console.log('===========================================================');

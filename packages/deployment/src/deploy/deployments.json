@@ -3390,6 +3390,13 @@
       "isVerified": true
     }
   },
+  "PendlecmETHFeb2025RegistryProxy": {
+    "5000": {
+      "address": "0xf1fc3079620A5D6d5E3Dc68e2D0854C3aa65c210",
+      "transaction": "0x9149be599833797e883621c5de8686d382818d2ea06ca3d1b6a91c16a270e5a1",
+      "isVerified": true
+    }
+  },
   "PendleEzETHJun2024RegistryProxy": {
     "42161": {
       "address": "0x5C451e6D4032184e5C35D717E9Ab62DD2279FC1d",
@@ -3443,6 +3450,48 @@
     "5000": {
       "address": "0xd6A797a4eD192013CF3A444920B45bBB9c4E9d3B",
       "transaction": "0x333cea2f18157cb6a521710f4aab60498400ac4cfd93bb9dd959c49eadf52553",
+      "isVerified": true
+    }
+  },
+  "PendlePtcmETHFeb2025IsolationModeTokenVaultV1": {
+    "5000": {
+      "address": "0x6Ce930ae8c534104b84e66B716Df70D845A0205C",
+      "transaction": "0x2ea4cd3a5bd6576548b97611161daaf96ae1f77d23c8bc20a79ab2b3a0090a04",
+      "isVerified": true
+    }
+  },
+  "PendlePtcmETHFeb2025IsolationModeUnwrapperTraderV3": {
+    "5000": {
+      "address": "0x0D8724Ee17AB67B42a07d5FeAC99218019b534Ec",
+      "transaction": "0xf00f1d92f82b2df5f03dad2d7b80e44de3ee7553d04fd07559cb3782670c30ef",
+      "isVerified": true
+    }
+  },
+  "PendlePtcmETHFeb2025IsolationModeVaultFactory": {
+    "5000": {
+      "address": "0x8eB2eF96a70A6eC4F3dDE550b96969a6AA25a563",
+      "transaction": "0x3548d4b940c1b1067657e55774d073457a8c5b570bd1abb888a090978d4cf5e7",
+      "isVerified": true
+    }
+  },
+  "PendlePtcmETHFeb2025IsolationModeVaultFactoryDeadProxy": {
+    "5000": {
+      "address": "0xf0c8798DD89a62848B440dADCC384BA83fC9bd43",
+      "transaction": "0x3548d4b940c1b1067657e55774d073457a8c5b570bd1abb888a090978d4cf5e7",
+      "isVerified": true
+    }
+  },
+  "PendlePtcmETHFeb2025IsolationModeWrapperTraderV3": {
+    "5000": {
+      "address": "0xB317a2e95aa9B441006f9153bA810005e6ACbE88",
+      "transaction": "0xfd48e828f9fb63513986329ff1d976a9401e88c876f0ac642e3880d6648f29dc",
+      "isVerified": true
+    }
+  },
+  "PendlePtcmETHFeb2025PriceOracleV2": {
+    "5000": {
+      "address": "0xb64fBbf55bDBECCc3fe8241A4402F0Dd18EDb4aE",
+      "transaction": "0x69a7bfab870a38747f079e95017117497fc662e9d2dfec16a64981296a114310",
       "isVerified": true
     }
   },

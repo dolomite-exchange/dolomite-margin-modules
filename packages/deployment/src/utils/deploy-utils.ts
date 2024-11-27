@@ -354,7 +354,8 @@ export async function deployContractAndSave(
     `Invalid chainId, found: ${chainId}`,
   );
   const usedContractName = contractRename ?? contractName;
-  if (file[usedContractName]?.[chainId.toString()]) {
+  const contractData = file[usedContractName]?.[chainId.toString()];
+  if (contractData && contractData.address !== ADDRESS_ZERO) {
     const contract = file[usedContractName][chainId.toString()];
     console.log(
       `\tContract ${usedContractName} has already been deployed to chainId ${chainId} (${contract.address}). Skipping...`,
