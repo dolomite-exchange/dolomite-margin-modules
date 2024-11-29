@@ -4,10 +4,7 @@ import {
   EventEmitterRegistry,
   EventEmitterRegistry__factory,
 } from '@dolomite-exchange/modules-base/src/types';
-import {
-  createTestToken,
-  depositIntoDolomiteMargin,
-} from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import { createTestToken, depositIntoDolomiteMargin } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import {
   MAX_UINT_256_BI,
   ONE_BI,
@@ -40,6 +37,9 @@ import {
   setupUserVaultProxy,
   setupWETHBalance,
 } from 'packages/base/test/utils/setup';
+import { GLV_EXECUTION_FEE_FOR_TESTS, GMX_V2_CALLBACK_GAS_LIMIT } from 'packages/gmx-v2/src/gmx-v2-constructors';
+import { IGmxMarketToken } from 'packages/gmx-v2/src/types';
+import { createGmxV2Library } from 'packages/gmx-v2/test/gmx-v2-ecosystem-utils';
 import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import {
   GlvIsolationModeUnwrapperTraderV2,
@@ -60,11 +60,8 @@ import {
   createTestGlvIsolationModeTokenVaultV1,
   getInitiateUnwrappingParams,
   getInitiateWrappingParams,
-  getKey
+  getKey,
 } from './glv-ecosystem-utils';
-import { GLV_EXECUTION_FEE_FOR_TESTS, GMX_V2_CALLBACK_GAS_LIMIT } from 'packages/gmx-v2/src/gmx-v2-constructors';
-import { IGmxMarketToken } from 'packages/gmx-v2/src/types';
-import { createGmxV2Library } from 'packages/gmx-v2/test/gmx-v2-ecosystem-utils';
 
 const defaultAccountNumber = '0';
 const borrowAccountNumber = '123';
@@ -119,7 +116,9 @@ describe('GlvIsolationModeTokenVaultV1', () => {
     const userVaultImplementation = await createTestGlvIsolationModeTokenVaultV1(core);
 
     glvRegistry = await createGlvRegistry(core, GMX_V2_CALLBACK_GAS_LIMIT);
-    await glvRegistry.connect(core.governance).ownerSetGlvTokenToGmMarket(underlyingToken.address, gmMarketToken.address);
+    await glvRegistry
+      .connect(core.governance)
+      .ownerSetGlvTokenToGmMarket(underlyingToken.address, gmMarketToken.address);
 
     allowableMarketIds = [core.marketIds.nativeUsdc, core.marketIds.weth];
     factory = await createGlvIsolationModeVaultFactory(
@@ -289,16 +288,14 @@ describe('GlvIsolationModeTokenVaultV1', () => {
       await expectProtocolBalance(core, vault.address, defaultAccountNumber, marketId, ZERO_BI);
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
 
-      const extraData = ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256', 'bytes'], [parseEther('.5'), ONE_BI, '0x01']);
+      const extraData = ethers.utils.defaultAbiCoder.encode(
+        ['uint256', 'uint256', 'bytes'],
+        [parseEther('.5'), ONE_BI, '0x01'],
+      );
       await expectThrow(
-        vault.initiateUnwrapping(
-          borrowAccountNumber,
-          amountWei,
-          core.tokens.weth.address,
-          TWO_BI,
-          extraData,
-          { value: executionFee },
-        ),
+        vault.initiateUnwrapping(borrowAccountNumber, amountWei, core.tokens.weth.address, TWO_BI, extraData, {
+          value: executionFee,
+        }),
         'GlvLibrary: Invalid extra data',
       );
     });
@@ -523,18 +520,20 @@ describe('GlvIsolationModeTokenVaultV1', () => {
         defaultAccountNumber,
         core.marketIds.nativeUsdc,
         BigNumber.from('500000'), // $.50
-        BalanceCheckFlag.None
+        BalanceCheckFlag.None,
       );
 
       await glvRegistry.connect(core.governance).ownerSetIsHandler(core.hhUser5.address, true);
-      await vault.connect(core.hhUser5).initiateUnwrappingForLiquidation(
-        borrowAccountNumber,
-        amountWei,
-        core.tokens.nativeUsdc.address,
-        parseEther('.0000000000001'),
-        DEFAULT_EXTRA_DATA,
-        { value: executionFee },
-      );
+      await vault
+        .connect(core.hhUser5)
+        .initiateUnwrappingForLiquidation(
+          borrowAccountNumber,
+          amountWei,
+          core.tokens.nativeUsdc.address,
+          parseEther('.0000000000001'),
+          DEFAULT_EXTRA_DATA,
+          { value: executionFee },
+        );
     });
 
     it('should fail if sender is not a valid liquidator', async () => {
@@ -720,10 +719,7 @@ describe('GlvIsolationModeTokenVaultV1', () => {
 
       // Mine blocks so we can cancel deposit
       await mine(1200);
-      await expectThrow(
-        vault.cancelWithdrawal(withdrawalKey),
-        'GlvLibrary: Withdrawal from liquidation',
-      );
+      await expectThrow(vault.cancelWithdrawal(withdrawalKey), 'GlvLibrary: Withdrawal from liquidation');
     });
 
     it('should fail if a user attempts to cancel another users withdrawal', async () => {
@@ -835,13 +831,9 @@ describe('GlvIsolationModeTokenVaultV1', () => {
     it('should work normally', async () => {
       await setupGLVBalance(core, underlyingToken, core.hhUser1, amountWei, vault);
       await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
-      await vault.openMarginPosition(
-        defaultAccountNumber,
-        borrowAccountNumber,
-        borrowMarketId,
-        amountWei,
-        { value: executionFee }
-      );
+      await vault.openMarginPosition(defaultAccountNumber, borrowAccountNumber, borrowMarketId, amountWei, {
+        value: executionFee,
+      });
 
       await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, marketId, ZERO_BI);
       await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, marketId, ZERO_BI);
@@ -852,13 +844,9 @@ describe('GlvIsolationModeTokenVaultV1', () => {
 
     it('should fail if execution fee does not match', async () => {
       await expectThrow(
-        vault.openMarginPosition(
-          defaultAccountNumber,
-          borrowAccountNumber,
-          borrowMarketId,
-          amountWei.div(2),
-          { value: executionFee.add(1) }
-        ),
+        vault.openMarginPosition(defaultAccountNumber, borrowAccountNumber, borrowMarketId, amountWei.div(2), {
+          value: executionFee.add(1),
+        }),
         'GmxV2Library: Invalid execution fee',
       );
       expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(0);
@@ -867,22 +855,15 @@ describe('GlvIsolationModeTokenVaultV1', () => {
     it('should fail if execution fee already paid', async () => {
       await setupGLVBalance(core, underlyingToken, core.hhUser1, amountWei, vault);
       await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
-      await vault.openMarginPosition(
-        defaultAccountNumber,
-        borrowAccountNumber,
-        borrowMarketId,
-        amountWei,
-        { value: executionFee }
-      );
+      await vault.openMarginPosition(defaultAccountNumber, borrowAccountNumber, borrowMarketId, amountWei, {
+        value: executionFee,
+      });
       expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(executionFee);
 
-      await expectThrow(vault.openMarginPosition(
-          defaultAccountNumber,
-          borrowAccountNumber,
-          borrowMarketId,
-          amountWei,
-          { value: executionFee }
-        ),
+      await expectThrow(
+        vault.openMarginPosition(defaultAccountNumber, borrowAccountNumber, borrowMarketId, amountWei, {
+          value: executionFee,
+        }),
         'GmxV2Library: Execution fee already paid',
       );
       expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(executionFee);
@@ -1245,7 +1226,7 @@ describe('GlvIsolationModeTokenVaultV1', () => {
       const key = getKey(
         'EXECUTE_GLV_WITHDRAWAL_FEATURE_DISABLED',
         ['address'],
-        [core.glvEcosystem.glvHandler.address]
+        [core.glvEcosystem.glvHandler.address],
       );
       await core.gmxV2Ecosystem.gmxDataStore.connect(controller).setBool(key, true);
       expect(await vault.isExternalRedemptionPaused()).to.be.true;
@@ -1580,7 +1561,7 @@ describe('GlvIsolationModeTokenVaultV1', () => {
       const key = getKey(
         'EXECUTE_GLV_WITHDRAWAL_FEATURE_DISABLED',
         ['address'],
-        [core.glvEcosystem.glvHandler.address]
+        [core.glvEcosystem.glvHandler.address],
       );
       await core.gmxV2Ecosystem.gmxDataStore.connect(controller).setBool(key, true);
       expect(await vault.isExternalRedemptionPaused()).to.be.true;
@@ -1588,20 +1569,17 @@ describe('GlvIsolationModeTokenVaultV1', () => {
 
     it('should return false if short and long are less than max pnl', async () => {
       const withdrawalsBytes32 = ethers.utils.keccak256(
-        ethers.utils.defaultAbiCoder.encode(
-          ['string'],
-          ['MAX_PNL_FACTOR_FOR_WITHDRAWALS']
-        )
+        ethers.utils.defaultAbiCoder.encode(['string'], ['MAX_PNL_FACTOR_FOR_WITHDRAWALS']),
       );
       const longKey = getKey(
         'MAX_PNL_FACTOR',
         ['bytes32', 'address', 'bool'],
-        [withdrawalsBytes32, gmMarketToken.address, true]
+        [withdrawalsBytes32, gmMarketToken.address, true],
       );
       const shortKey = getKey(
         'MAX_PNL_FACTOR',
         ['bytes32', 'address', 'bool'],
-        [withdrawalsBytes32, gmMarketToken.address, false]
+        [withdrawalsBytes32, gmMarketToken.address, false],
       );
       await core.gmxV2Ecosystem.gmxDataStore.connect(controller).setUint(longKey, MAX_UINT_256_BI.div(2));
       await core.gmxV2Ecosystem.gmxDataStore.connect(controller).setUint(shortKey, MAX_UINT_256_BI.div(2));
@@ -1609,38 +1587,44 @@ describe('GlvIsolationModeTokenVaultV1', () => {
     });
 
     it('should return true if short is greater than max pnl', async () => {
-      const withdrawalsBytes32 = ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['string'], ['MAX_PNL_FACTOR_FOR_WITHDRAWALS']));
+      const withdrawalsBytes32 = ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(['string'], ['MAX_PNL_FACTOR_FOR_WITHDRAWALS']),
+      );
       const key = getKey(
         'MAX_PNL_FACTOR',
         ['bytes32', 'address', 'bool'],
-        [withdrawalsBytes32, gmMarketToken.address, false]
+        [withdrawalsBytes32, gmMarketToken.address, false],
       );
       await core.gmxV2Ecosystem.gmxDataStore.connect(controller).setUint(key, 1);
       expect(await vault.isExternalRedemptionPaused()).to.be.true;
     });
 
     it('should return true if long is greater than max pnl', async () => {
-      const withdrawalsBytes32 = ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['string'], ['MAX_PNL_FACTOR_FOR_WITHDRAWALS']));
+      const withdrawalsBytes32 = ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(['string'], ['MAX_PNL_FACTOR_FOR_WITHDRAWALS']),
+      );
       const key = getKey(
         'MAX_PNL_FACTOR',
         ['bytes32', 'address', 'bool'],
-        [withdrawalsBytes32, gmMarketToken.address, true]
+        [withdrawalsBytes32, gmMarketToken.address, true],
       );
       await core.gmxV2Ecosystem.gmxDataStore.connect(controller).setUint(key, MAX_UINT_256_BI.div(2).add(1));
       expect(await vault.isExternalRedemptionPaused()).to.be.true;
     });
 
     it('should return true if both are greater than max pnl', async () => {
-      const withdrawalsBytes32 = ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['string'], ['MAX_PNL_FACTOR_FOR_WITHDRAWALS']));
+      const withdrawalsBytes32 = ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(['string'], ['MAX_PNL_FACTOR_FOR_WITHDRAWALS']),
+      );
       const longKey = getKey(
         'MAX_PNL_FACTOR',
         ['bytes32', 'address', 'bool'],
-        [withdrawalsBytes32, gmMarketToken.address, true]
+        [withdrawalsBytes32, gmMarketToken.address, true],
       );
       const shortKey = getKey(
         'MAX_PNL_FACTOR',
         ['bytes32', 'address', 'bool'],
-        [withdrawalsBytes32, gmMarketToken.address, false]
+        [withdrawalsBytes32, gmMarketToken.address, false],
       );
       await core.gmxV2Ecosystem.gmxDataStore.connect(controller).setUint(longKey, MAX_UINT_256_BI.div(2).add(1));
       await core.gmxV2Ecosystem.gmxDataStore.connect(controller).setUint(shortKey, MAX_UINT_256_BI.div(2).add(1));

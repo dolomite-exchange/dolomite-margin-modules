@@ -1,11 +1,16 @@
 import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin';
-import { createContractWithAbi, depositIntoDolomiteMargin } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import {
+  createContractWithAbi,
+  depositIntoDolomiteMargin,
+} from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import {
+  ADDRESS_ZERO,
   BYTES_EMPTY,
   BYTES_ZERO,
   MAX_UINT_256_BI,
   ONE_BI,
-  ONE_ETH_BI, TWO_BI,
+  ONE_ETH_BI,
+  TWO_BI,
   ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import {
@@ -28,6 +33,8 @@ import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish, ethers } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
+import hre from 'hardhat';
+import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
 import {
   disableInterestAccrual,
   getDefaultProtocolConfigForGlv,
@@ -39,12 +46,15 @@ import {
   setupUserVaultProxy,
   setupWETHBalance,
 } from 'packages/base/test/utils/setup';
+import { GLV_EXECUTION_FEE_FOR_TESTS } from 'packages/gmx-v2/src/gmx-v2-constructors';
+import { IGmxMarketToken, TestOracleProvider, TestOracleProvider__factory } from 'packages/gmx-v2/src/types';
+import { createGmxV2Library, getOracleProviderEnabledKey } from 'packages/gmx-v2/test/gmx-v2-ecosystem-utils';
+import { IChaosLabsPriceOracleV3 } from 'packages/oracles/src/types';
 import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import {
   GlvIsolationModeVaultFactory,
   GlvIsolationModeWrapperTraderV2,
   GlvRegistry,
-  GlvTokenPriceOracle,
   IERC20,
   IEventEmitterRegistry,
   IGlvToken,
@@ -53,7 +63,6 @@ import {
   TestGlvIsolationModeTokenVaultV1__factory,
   TestGlvIsolationModeUnwrapperTraderV2,
 } from '../src/types';
-import { GLV_EXECUTION_FEE_FOR_TESTS } from 'packages/gmx-v2/src/gmx-v2-constructors';
 import {
   createGlvIsolationModeVaultFactory,
   createGlvIsolationModeWrapperTraderV2,
@@ -64,12 +73,8 @@ import {
   createTestGlvIsolationModeUnwrapperTraderV2,
   getGlvOracleParams,
   getGlvWithdrawalObject,
-  setupNewOracleAggregatorTokens
+  setupNewOracleAggregatorTokens,
 } from './glv-ecosystem-utils';
-import { IGmxMarketToken, TestOracleProvider, TestOracleProvider__factory } from 'packages/gmx-v2/src/types';
-import { createGmxV2Library, getOracleProviderEnabledKey } from 'packages/gmx-v2/test/gmx-v2-ecosystem-utils';
-import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
-import hre from 'hardhat';
 
 enum ReversionType {
   None = 0,
@@ -89,9 +94,7 @@ const executionFee =
   process.env.COVERAGE !== 'true' ? GLV_EXECUTION_FEE_FOR_TESTS : GLV_EXECUTION_FEE_FOR_TESTS.mul(10);
 const gasLimit = process.env.COVERAGE !== 'true' ? 30_000_000 : 100_000_000;
 const callbackGasLimit =
-  process.env.COVERAGE !== 'true'
-    ? BigNumber.from('4000000')
-    : BigNumber.from('4000000').mul(10);
+  process.env.COVERAGE !== 'true' ? BigNumber.from('4000000') : BigNumber.from('4000000').mul(10);
 
 const wethAmount = ONE_ETH_BI;
 
@@ -131,7 +134,7 @@ describe('GlvIsolationModeUnwrapperTraderV2', () => {
   let factory: GlvIsolationModeVaultFactory;
   let vault: TestGlvIsolationModeTokenVaultV1;
   let vault2: TestGlvIsolationModeTokenVaultV1;
-  let priceOracle: GlvTokenPriceOracle;
+  let priceOracle: IChaosLabsPriceOracleV3;
   let eventEmitter: IEventEmitterRegistry;
   let marketId: BigNumber;
   let testOracleProvider: TestOracleProvider;
@@ -148,7 +151,9 @@ describe('GlvIsolationModeUnwrapperTraderV2', () => {
 
     const userVaultImplementation = await createTestGlvIsolationModeTokenVaultV1(core);
     glvRegistry = await createGlvRegistry(core, callbackGasLimit);
-    await glvRegistry.connect(core.governance).ownerSetGlvTokenToGmMarket(underlyingToken.address, gmMarketToken.address);
+    await glvRegistry
+      .connect(core.governance)
+      .ownerSetGlvTokenToGmMarket(underlyingToken.address, gmMarketToken.address);
     const newRegistry = await createDolomiteRegistryImplementation();
     await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(newRegistry.address);
 
@@ -163,7 +168,7 @@ describe('GlvIsolationModeUnwrapperTraderV2', () => {
     testOracleProvider = await createContractWithAbi<TestOracleProvider>(
       TestOracleProvider__factory.abi,
       TestOracleProvider__factory.bytecode,
-      [core.oracleAggregatorV2.address]
+      [core.oracleAggregatorV2.address],
     );
     const oracleProviderEnabledKey = getOracleProviderEnabledKey(testOracleProvider);
     await dataStore.connect(controller).setBool(oracleProviderEnabledKey, true);
@@ -197,9 +202,21 @@ describe('GlvIsolationModeUnwrapperTraderV2', () => {
       safeDelegateCallLibrary,
       glvRegistry,
     );
-    priceOracle = await createGlvTokenPriceOracle(core, factory, glvRegistry);
+    priceOracle = await createGlvTokenPriceOracle(core, [factory]);
+    await core.oracleAggregatorV2.connect(core.governance).ownerInsertOrUpdateToken({
+      token: factory.address,
+      decimals: await factory.decimals(),
+      oracleInfos: [
+        {
+          oracle: priceOracle.address,
+          weight: 100,
+          tokenPair: ADDRESS_ZERO,
+        },
+      ],
+    });
+
     marketId = await core.dolomiteMargin.getNumMarkets();
-    await setupTestMarket(core, factory, true, priceOracle);
+    await setupTestMarket(core, factory, true, core.oracleAggregatorV2);
 
     await disableInterestAccrual(core, core.marketIds.weth);
     await disableInterestAccrual(core, core.marketIds.nativeUsdc);
@@ -501,14 +518,9 @@ describe('GlvIsolationModeUnwrapperTraderV2', () => {
       await expect(() =>
         vault
           .connect(core.hhUser1)
-          .initiateUnwrapping(
-            defaultAccountNumber,
-            amountWei,
-            core.tokens.weth.address,
-            TWO_BI,
-            DEFAULT_EXTRA_DATA,
-            { value: executionFee }
-          ),
+          .initiateUnwrapping(defaultAccountNumber, amountWei, core.tokens.weth.address, TWO_BI, DEFAULT_EXTRA_DATA, {
+            value: executionFee,
+          }),
       ).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
 
       const filter = eventEmitter.filters.AsyncWithdrawalCreated();
@@ -572,7 +584,7 @@ describe('GlvIsolationModeUnwrapperTraderV2', () => {
         .executeGlvWithdrawal(
           withdrawalKey,
           await getGlvOracleParams(core, controller, core.glvEcosystem.glvTokens.wethUsdc, testOracleProvider),
-          { gasLimit }
+          { gasLimit },
         );
       await expectEvent(eventEmitter, result, 'AsyncWithdrawalCancelled', {
         key: withdrawalKey,
@@ -622,7 +634,7 @@ describe('GlvIsolationModeUnwrapperTraderV2', () => {
         .executeGlvWithdrawal(
           withdrawalKey,
           await getGlvOracleParams(core, controller, core.glvEcosystem.glvTokens.wethUsdc, testOracleProvider),
-          { gasLimit }
+          { gasLimit },
         );
       await expectEvent(eventEmitter, result, 'AsyncWithdrawalCancelled', {
         key: withdrawalKey,
@@ -782,7 +794,7 @@ describe('GlvIsolationModeUnwrapperTraderV2', () => {
         .executeGlvWithdrawal(
           withdrawalKey,
           await getGlvOracleParams(core, controller, core.glvEcosystem.glvTokens.wethUsdc, testOracleProvider),
-          { gasLimit }
+          { gasLimit },
         );
       hre.tracer.enabled = false;
       await expectEvent(eventEmitter, result, 'AsyncWithdrawalExecuted', {
@@ -821,7 +833,7 @@ describe('GlvIsolationModeUnwrapperTraderV2', () => {
         .executeGlvWithdrawal(
           withdrawalKey,
           await getGlvOracleParams(core, controller, core.glvEcosystem.glvTokens.wethUsdc, testOracleProvider),
-          { gasLimit }
+          { gasLimit },
         );
       await expectEvent(eventEmitter, result, 'AsyncWithdrawalExecuted', {
         key: withdrawalKey,
@@ -858,7 +870,7 @@ describe('GlvIsolationModeUnwrapperTraderV2', () => {
         .executeGlvWithdrawal(
           withdrawalKey,
           await getGlvOracleParams(core, controller, core.glvEcosystem.glvTokens.wethUsdc, testOracleProvider),
-          { gasLimit }
+          { gasLimit },
         );
       await expectEvent(eventEmitter, result, 'AsyncWithdrawalExecuted', {
         key: withdrawalKey,
@@ -890,7 +902,7 @@ describe('GlvIsolationModeUnwrapperTraderV2', () => {
         .executeGlvWithdrawal(
           withdrawalKey,
           await getGlvOracleParams(core, controller, core.glvEcosystem.glvTokens.wethUsdc, testOracleProvider),
-          { gasLimit }
+          { gasLimit },
         );
       await expectEvent(eventEmitter, result, 'AsyncWithdrawalFailed', {
         key: withdrawalKey,
@@ -920,7 +932,7 @@ describe('GlvIsolationModeUnwrapperTraderV2', () => {
         .executeGlvWithdrawal(
           withdrawalKey,
           await getGlvOracleParams(core, controller, core.glvEcosystem.glvTokens.wethUsdc, testOracleProvider),
-          { gasLimit }
+          { gasLimit },
         );
       await expectEvent(eventEmitter, result, 'AsyncWithdrawalFailed', {
         key: withdrawalKey,
@@ -948,7 +960,7 @@ describe('GlvIsolationModeUnwrapperTraderV2', () => {
         .executeGlvWithdrawal(
           withdrawalKey,
           await getGlvOracleParams(core, controller, core.glvEcosystem.glvTokens.wethUsdc, testOracleProvider),
-          { gasLimit }
+          { gasLimit },
         );
       await expectEvent(eventEmitter, result, 'AsyncWithdrawalExecuted', {
         key: withdrawalKey,
@@ -989,12 +1001,12 @@ describe('GlvIsolationModeUnwrapperTraderV2', () => {
       // There is no USDC in the Unwrapper
       expect(await core.tokens.nativeUsdc.balanceOf(unwrapper.address)).to.eq(0);
 
-      const result = await core.glvEcosystem.glvHandler
+      await core.glvEcosystem.glvHandler
         .connect(core.gmxV2Ecosystem.gmxExecutor)
         .executeGlvWithdrawal(
           withdrawalKey,
           await getGlvOracleParams(core, controller, core.glvEcosystem.glvTokens.wethUsdc, testOracleProvider),
-          { gasLimit }
+          { gasLimit },
         );
 
       // Withdrawal info object remains and is uncleared
@@ -1390,7 +1402,7 @@ describe('GlvIsolationModeUnwrapperTraderV2', () => {
         .executeGlvWithdrawal(
           withdrawalKey,
           await getGlvOracleParams(core, controller, core.glvEcosystem.glvTokens.wethUsdc, testOracleProvider),
-          { gasLimit }
+          { gasLimit },
         );
       await expectEvent(eventEmitter, result, 'AsyncWithdrawalFailed', {
         key: withdrawalKey,

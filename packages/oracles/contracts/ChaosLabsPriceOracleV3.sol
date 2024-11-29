@@ -24,28 +24,28 @@ import { IDolomiteRegistry } from "@dolomite-exchange/modules-base/contracts/int
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IChainlinkAccessControlAggregator } from "./interfaces/IChainlinkAccessControlAggregator.sol";
-import { IChronicleScribe } from "./interfaces/IChronicleScribe.sol";
-import { IChroniclePriceOracle } from "./interfaces/IChroniclePriceOracle.sol";
+import { IChainlinkAggregator } from "./interfaces/IChainlinkAggregator.sol";
+import { IChaosLabsPriceOracleV3 } from "./interfaces/IChaosLabsPriceOracleV3.sol";
 import { IOracleAggregatorV2 } from "./interfaces/IOracleAggregatorV2.sol";
 
 
 /**
- * @title   ChroniclePriceOracle
+ * @title   ChaosLabsPriceOracleV3
  * @author  Dolomite
  *
- * An implementation of the IDolomitePriceOracle interface that makes Chronicle prices compatible with the protocol.
- * This implementation is meant to be tied to an aggregator
+ * An implementation of the IDolomitePriceOracle interface that makes Chaos Labs prices compatible with the protocol.
+ * This implementation is meant to be tied to an
  */
-contract ChroniclePriceOracle is IChroniclePriceOracle, OnlyDolomiteMargin {
+contract ChaosLabsPriceOracleV3 is IChaosLabsPriceOracleV3, OnlyDolomiteMargin {
 
     // ========================= Constants =========================
 
-    bytes32 private constant _FILE = "ChroniclePriceOracle";
+    bytes32 private constant _FILE = "ChaosLabsPriceOracleV3";
     uint256 private constant _ONE_DOLLAR = 10 ** 36;
 
     // ========================= Storage =========================
 
-    mapping(address => IChronicleScribe) private _tokenToScribeMap;
+    mapping(address => IChainlinkAggregator) private _tokenToAggregatorMap;
 
     mapping(address => bool) private _tokenToInvertPriceMap;
 
@@ -59,38 +59,36 @@ contract ChroniclePriceOracle is IChroniclePriceOracle, OnlyDolomiteMargin {
      * Note, these arrays are set up such that each index corresponds with one-another.
      *
      * @param  _tokens                  The tokens that are supported by this adapter.
-     * @param  _chronicleScribes        The Chronicle scribes that have on-chain prices.
+     * @param  _chainlinkAggregators    The Chainlink aggregators that have on-chain prices.
      * @param  _invertPrice             True if should invert price received from Chainlink
      * @param  _dolomiteRegistry        The address of the DolomiteRegistry contract.
      * @param  _dolomiteMargin          The address of the DolomiteMargin contract.
      */
     constructor(
         address[] memory _tokens,
-        address[] memory _chronicleScribes,
+        address[] memory _chainlinkAggregators,
         bool[] memory _invertPrice,
         address _dolomiteRegistry,
         address _dolomiteMargin
     )
         OnlyDolomiteMargin(_dolomiteMargin)
     {
-        if (_tokens.length == _chronicleScribes.length) { /* FOR COVERAGE TESTING */ }
         Require.that(
-            _tokens.length == _chronicleScribes.length,
+            _tokens.length == _chainlinkAggregators.length,
             _FILE,
             "Invalid tokens length"
         );
-        if (_chronicleScribes.length == _invertPrice.length) { /* FOR COVERAGE TESTING */ }
         Require.that(
-            _chronicleScribes.length == _invertPrice.length,
+            _chainlinkAggregators.length == _invertPrice.length,
             _FILE,
-            "Invalid scribes length"
+            "Invalid aggregators length"
         );
 
         uint256 tokensLength = _tokens.length;
         for (uint256 i; i < tokensLength; ++i) {
             _ownerInsertOrUpdateOracleToken(
                 _tokens[i],
-                _chronicleScribes[i],
+                _chainlinkAggregators[i],
                 _invertPrice[i]
             );
         }
@@ -112,7 +110,7 @@ contract ChroniclePriceOracle is IChroniclePriceOracle, OnlyDolomiteMargin {
 
     function ownerInsertOrUpdateOracleToken(
         address _token,
-        address _chronicleScribe,
+        address _chainlinkAggregator,
         bool _invertPrice
     )
     external
@@ -120,7 +118,7 @@ contract ChroniclePriceOracle is IChroniclePriceOracle, OnlyDolomiteMargin {
     {
         _ownerInsertOrUpdateOracleToken(
             _token,
-            _chronicleScribe,
+            _chainlinkAggregator,
             _invertPrice
         );
     }
@@ -134,52 +132,49 @@ contract ChroniclePriceOracle is IChroniclePriceOracle, OnlyDolomiteMargin {
     view
     returns (IDolomiteStructs.MonetaryPrice memory)
     {
-        if (address(_tokenToScribeMap[_token]) != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-            address(_tokenToScribeMap[_token]) != address(0),
+            address(_tokenToAggregatorMap[_token]) != address(0),
             _FILE,
             "Invalid token",
             _token
         );
-        if (msg.sender != address(DOLOMITE_MARGIN())) { /* FOR COVERAGE TESTING */ }
         Require.that(
             msg.sender != address(DOLOMITE_MARGIN()),
             _FILE,
             "DolomiteMargin cannot call"
         );
 
-        IChronicleScribe scribe = _tokenToScribeMap[_token];
+        IChainlinkAggregator aggregatorProxy = _tokenToAggregatorMap[_token];
         (
             /* uint80 roundId */,
             int256 answer,
             /* uint256 startedAt */,
             uint256 updatedAt,
             /* uint80 answeredInRound */
-        ) = scribe.latestRoundData();
-        if (block.timestamp - updatedAt < stalenessThreshold) { /* FOR COVERAGE TESTING */ }
+        ) = aggregatorProxy.latestRoundData();
         Require.that(
             block.timestamp - updatedAt < stalenessThreshold,
             _FILE,
-            "Chronicle price expired",
+            "Chaos Labs price expired",
             _token,
             updatedAt
         );
 
-        uint256 chroniclePrice = uint256(answer);
-        uint8 valueDecimals = scribe.decimals();
+        uint256 chaosLabsPrice = uint256(answer);
+        uint8 valueDecimals = aggregatorProxy.decimals();
 
         if (_tokenToInvertPriceMap[_token]) {
             uint256 decimalFactor = 10 ** uint256(valueDecimals);
-            chroniclePrice = (decimalFactor ** 2) / chroniclePrice;
+            chaosLabsPrice = (decimalFactor ** 2) / chaosLabsPrice;
         }
 
-        // standardize the Chainlink price to be the proper number of decimals of (36 - tokenDecimals)
+        // standardize the price to be the proper number of decimals of (36 - tokenDecimals)
         IOracleAggregatorV2 aggregator = IOracleAggregatorV2(address(DOLOMITE_REGISTRY.oracleAggregator()));
         uint8 tokenDecimals = aggregator.getDecimalsByToken(_token);
-        /*assert(tokenDecimals > 0);*/
+        assert(tokenDecimals > 0);
         uint256 standardizedPrice = standardizeNumberOfDecimals(
             tokenDecimals,
-            chroniclePrice,
+            chaosLabsPrice,
             valueDecimals
         );
 
@@ -188,8 +183,8 @@ contract ChroniclePriceOracle is IChroniclePriceOracle, OnlyDolomiteMargin {
         });
     }
 
-    function getScribeByToken(address _token) public view returns (IChronicleScribe) {
-        return _tokenToScribeMap[_token];
+    function getAggregatorByToken(address _token) public view returns (IChainlinkAggregator) {
+        return _tokenToAggregatorMap[_token];
     }
 
     function getInvertPriceByToken(address _token) public view returns (bool _invertPrice) {
@@ -221,14 +216,12 @@ contract ChroniclePriceOracle is IChroniclePriceOracle, OnlyDolomiteMargin {
     )
     internal
     {
-        if (_stalenessThreshold >= 24 hours) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _stalenessThreshold >= 24 hours,
             _FILE,
             "Staleness threshold too low",
             _stalenessThreshold
         );
-        if (_stalenessThreshold <= 7 days) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _stalenessThreshold <= 7 days,
             _FILE,
@@ -242,11 +235,11 @@ contract ChroniclePriceOracle is IChroniclePriceOracle, OnlyDolomiteMargin {
 
     function _ownerInsertOrUpdateOracleToken(
         address _token,
-        address _chronicleScribe,
+        address _chainlinkAggregator,
         bool _invertPrice
     ) internal {
-        _tokenToScribeMap[_token] = IChronicleScribe(_chronicleScribe);
+        _tokenToAggregatorMap[_token] = IChainlinkAggregator(_chainlinkAggregator);
         _tokenToInvertPriceMap[_token] = _invertPrice;
-        emit TokenInsertedOrUpdated(_token, _chronicleScribe);
+        emit TokenInsertedOrUpdated(_token, _chainlinkAggregator);
     }
 }

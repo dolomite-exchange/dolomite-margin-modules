@@ -20,16 +20,16 @@
 pragma solidity ^0.8.9;
 
 import { IDolomitePriceOracle } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomitePriceOracle.sol"; // solhint-disable-line max-line-length
-import { IChronicleScribe } from "./IChronicleScribe.sol";
+import { IChainlinkAggregator } from "./IChainlinkAggregator.sol";
 
 
 /**
- * @title   IChroniclePriceOracle
+ * @title   IChaosLabsPriceOracleV3
  * @author  Dolomite
  *
- * An interface of IDolomitePriceOracle that makes Chronicle prices compatible with the protocol.
+ * An interface of IDolomitePriceOracle that makes Chainlink prices compatible with the protocol.
  */
-interface IChroniclePriceOracle is IDolomitePriceOracle {
+interface IChaosLabsPriceOracleV3 is IDolomitePriceOracle {
 
     // ============ Events ============
 
@@ -37,7 +37,7 @@ interface IChroniclePriceOracle is IDolomitePriceOracle {
 
     event TokenInsertedOrUpdated(
         address indexed token,
-        address indexed chronicleScribe
+        address indexed aggregator
     );
 
     // ============ Admin Functions ============
@@ -46,7 +46,7 @@ interface IChroniclePriceOracle is IDolomitePriceOracle {
      * @dev Sets the new `stalenessThreshold`. This function can only be called by the owner of DolomiteMargin.
      *
      * @param  _stalenessThreshold  The duration of time that must pass before a price is considered stale from a
-     *                              Chronicle Scribe
+     *                              Chainlink Aggregator
      */
     function ownerSetStalenessThreshold(
         uint256 _stalenessThreshold
@@ -56,13 +56,13 @@ interface IChroniclePriceOracle is IDolomitePriceOracle {
     /**
      * @dev Insert or update a token in the oracle. This function can only be called by the owner of DolomiteMargin.
      *
-     * @param  _token               The token whose Chronicle scribe should be inserted or updated
-     * @param  _chronicleScribe     The Chronicle scribe that corresponds with this token
-     * @param  _invertPrice         True if should invert the price received from Chronicle
+     * @param  _token               The token whose Chainlink aggregator should be inserted or updated
+     * @param  _chainlinkAggregator The Chainlink aggregator that corresponds with this token
+     * @param  _invertPrice         True if should invert the price received from Chainlink
      */
     function ownerInsertOrUpdateOracleToken(
         address _token,
-        address _chronicleScribe,
+        address _chainlinkAggregator,
         bool _invertPrice
     )
     external;
@@ -71,20 +71,20 @@ interface IChroniclePriceOracle is IDolomitePriceOracle {
 
     /**
      *
-     * @param  _token  The token whose Chronicle scribe should be retrieved
+     * @param  _token  The token whose Chainlink aggregator should be retrieved
      * @return         The aggregator that corresponds with this token
      */
-    function getScribeByToken(address _token) external view returns (IChronicleScribe);
+    function getAggregatorByToken(address _token) external view returns (IChainlinkAggregator);
 
     /**
      *
      * @param  _token           The token whose token pair should be retrieved
-     * @return _invertPrice     True if should invert the price received from Chronicle
+     * @return _invertPrice     True if should invert the price received from Chainlink
      */
     function getInvertPriceByToken(address _token) external view returns (bool _invertPrice);
 
     /**
-     * @return The duration of time that must pass before a price is considered stale from a Chronicle Scribe
+     * @return The duration of time that must pass before a price is considered stale from a Chainlink Aggregator
      */
     function stalenessThreshold() external view returns (uint256);
 }

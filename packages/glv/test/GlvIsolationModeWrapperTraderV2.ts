@@ -5,7 +5,15 @@ import { expect } from 'chai';
 import { BigNumber, BigNumberish, ethers } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { createContractWithAbi, depositIntoDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
-import { BYTES_EMPTY, BYTES_ZERO, ONE_BI, ONE_ETH_BI, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
+import {
+  ADDRESS_ZERO,
+  BYTES_EMPTY,
+  BYTES_ZERO,
+  ONE_BI,
+  ONE_ETH_BI,
+  ZERO_BI,
+} from 'packages/base/src/utils/no-deps-constants';
+import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
 import { impersonate, revertToSnapshotAndCapture, setEtherBalance, snapshot } from 'packages/base/test/utils';
 import {
   expectEvent,
@@ -26,21 +34,22 @@ import {
   setupUserVaultProxy,
   setupWETHBalance,
 } from 'packages/base/test/utils/setup';
-import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { GLV_EXECUTION_FEE_FOR_TESTS } from 'packages/gmx-v2/src/gmx-v2-constructors';
+import { IGmxMarketToken, TestOracleProvider, TestOracleProvider__factory } from 'packages/gmx-v2/src/types';
+import { createGmxV2Library, getOracleProviderEnabledKey } from 'packages/gmx-v2/test/gmx-v2-ecosystem-utils';
+import { IChaosLabsPriceOracleV3 } from 'packages/oracles/src/types';
+import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import {
   GlvIsolationModeTokenVaultV1,
   GlvIsolationModeTokenVaultV1__factory,
   GlvIsolationModeUnwrapperTraderV2,
   GlvIsolationModeWrapperTraderV2,
   GlvRegistry,
-  GlvTokenPriceOracle,
   IEventEmitterRegistry,
   IGlvToken,
   IGmxRoleStore__factory,
-  TestGlvIsolationModeVaultFactory
+  TestGlvIsolationModeVaultFactory,
 } from '../src/types';
-import { IGmxMarketToken, TestOracleProvider, TestOracleProvider__factory } from 'packages/gmx-v2/src/types';
 import {
   createGlvIsolationModeUnwrapperTraderV2,
   createGlvIsolationModeWrapperTraderV2,
@@ -52,10 +61,8 @@ import {
   getGlvDepositObject,
   getGlvOracleParams,
   getInitiateWrappingParams,
-  setupNewOracleAggregatorTokens
+  setupNewOracleAggregatorTokens,
 } from './glv-ecosystem-utils';
-import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
-import { createGmxV2Library, getOracleProviderEnabledKey } from 'packages/gmx-v2/test/gmx-v2-ecosystem-utils';
 
 enum ReversionType {
   None = 0,
@@ -93,7 +100,7 @@ describe('GlvIsolationModeWrapperTraderV2', () => {
   let wrapper: GlvIsolationModeWrapperTraderV2;
   let factory: TestGlvIsolationModeVaultFactory;
   let vault: GlvIsolationModeTokenVaultV1;
-  let priceOracle: GlvTokenPriceOracle;
+  let priceOracle: IChaosLabsPriceOracleV3;
   let eventEmitter: IEventEmitterRegistry;
   let marketId: BigNumber;
   let testOracleProvider: TestOracleProvider;
@@ -109,7 +116,9 @@ describe('GlvIsolationModeWrapperTraderV2', () => {
     const gmxV2Library = await createGmxV2Library();
     const userVaultImplementation = await createTestGlvIsolationModeTokenVaultV1(core);
     glvRegistry = await createGlvRegistry(core, callbackGasLimit);
-    await glvRegistry.connect(core.governance).ownerSetGlvTokenToGmMarket(underlyingToken.address, gmMarketToken.address);
+    await glvRegistry
+      .connect(core.governance)
+      .ownerSetGlvTokenToGmMarket(underlyingToken.address, gmMarketToken.address);
     const newRegistry = await createDolomiteRegistryImplementation();
     await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(newRegistry.address);
 
@@ -124,7 +133,7 @@ describe('GlvIsolationModeWrapperTraderV2', () => {
     testOracleProvider = await createContractWithAbi<TestOracleProvider>(
       TestOracleProvider__factory.abi,
       TestOracleProvider__factory.bytecode,
-      [core.oracleAggregatorV2.address]
+      [core.oracleAggregatorV2.address],
     );
     const oracleProviderEnabledKey = getOracleProviderEnabledKey(testOracleProvider);
     await dataStore.connect(controller).setBool(oracleProviderEnabledKey, true);
@@ -152,9 +161,21 @@ describe('GlvIsolationModeWrapperTraderV2', () => {
     unwrapper = await createGlvIsolationModeUnwrapperTraderV2(core, factory, glvLibrary, gmxV2Library, glvRegistry);
     wrapper = await createGlvIsolationModeWrapperTraderV2(core, factory, glvLibrary, gmxV2Library, glvRegistry);
 
-    priceOracle = await createGlvTokenPriceOracle(core, factory, glvRegistry);
+    priceOracle = await createGlvTokenPriceOracle(core, [factory]);
+    await core.oracleAggregatorV2.connect(core.governance).ownerInsertOrUpdateToken({
+      token: factory.address,
+      decimals: await factory.decimals(),
+      oracleInfos: [
+        {
+          oracle: priceOracle.address,
+          weight: 100,
+          tokenPair: ADDRESS_ZERO,
+        },
+      ],
+    });
+
     marketId = await core.dolomiteMargin.getNumMarkets();
-    await setupTestMarket(core, factory, true, priceOracle);
+    await setupTestMarket(core, factory, true, core.oracleAggregatorV2);
 
     await disableInterestAccrual(core, core.marketIds.weth);
     await disableInterestAccrual(core, core.marketIds.nativeUsdc);
@@ -275,10 +296,9 @@ describe('GlvIsolationModeWrapperTraderV2', () => {
     });
 
     it('should fail if execute deposit feature is disabled', async () => {
-      await core.gmxV2Ecosystem.gmxDataStore.connect(controller).setBool(
-        EXECUTE_GLV_DEPOSIT_FEATURE_DISABLED_KEY,
-        true
-      );
+      await core.gmxV2Ecosystem.gmxDataStore
+        .connect(controller)
+        .setBool(EXECUTE_GLV_DEPOSIT_FEATURE_DISABLED_KEY, true);
 
       await vault.transferIntoPositionWithOtherToken(
         defaultAccountNumber,
@@ -401,7 +421,7 @@ describe('GlvIsolationModeWrapperTraderV2', () => {
         .executeGlvDeposit(
           depositKey,
           await getGlvOracleParams(core, controller, core.glvEcosystem.glvTokens.wethUsdc, testOracleProvider),
-          { gasLimit }
+          { gasLimit },
         );
       await expectEvent(eventEmitter, result, 'AsyncDepositExecuted', {
         key: depositKey,
@@ -430,7 +450,7 @@ describe('GlvIsolationModeWrapperTraderV2', () => {
         .executeGlvDeposit(
           depositKey,
           await getGlvOracleParams(core, controller, core.glvEcosystem.glvTokens.wethUsdc, testOracleProvider),
-          { gasLimit }
+          { gasLimit },
         );
       await expectEvent(eventEmitter, result, 'AsyncDepositExecuted', {
         key: depositKey,
@@ -458,7 +478,7 @@ describe('GlvIsolationModeWrapperTraderV2', () => {
         .executeGlvDeposit(
           depositKey,
           await getGlvOracleParams(core, controller, core.glvEcosystem.glvTokens.wethUsdc, testOracleProvider),
-          { gasLimit }
+          { gasLimit },
         );
       await expectEvent(eventEmitter, result, 'AsyncDepositCancelled', {
         key: depositKey,
@@ -482,7 +502,7 @@ describe('GlvIsolationModeWrapperTraderV2', () => {
         .executeGlvDeposit(
           depositKey,
           await getGlvOracleParams(core, controller, core.glvEcosystem.glvTokens.wethUsdc, testOracleProvider),
-          { gasLimit }
+          { gasLimit },
         );
       await expectEvent(eventEmitter, result, 'AsyncDepositFailed', {
         key: depositKey,
@@ -512,7 +532,7 @@ describe('GlvIsolationModeWrapperTraderV2', () => {
         .executeGlvDeposit(
           depositKey,
           await getGlvOracleParams(core, controller, core.glvEcosystem.glvTokens.wethUsdc, testOracleProvider),
-          { gasLimit }
+          { gasLimit },
         );
       await expectEvent(eventEmitter, result, 'AsyncDepositFailed', {
         key: depositKey,
@@ -550,7 +570,7 @@ describe('GlvIsolationModeWrapperTraderV2', () => {
         .executeGlvDeposit(
           depositKey,
           await getGlvOracleParams(core, controller, core.glvEcosystem.glvTokens.wethUsdc, testOracleProvider),
-          { gasLimit }
+          { gasLimit },
         );
       await expectEvent(eventEmitter, result, 'AsyncDepositFailed', {
         key: depositKey,
@@ -581,7 +601,7 @@ describe('GlvIsolationModeWrapperTraderV2', () => {
         .executeGlvDeposit(
           depositKey,
           await getGlvOracleParams(core, controller, core.glvEcosystem.glvTokens.wethUsdc, testOracleProvider),
-          { gasLimit }
+          { gasLimit },
         );
 
       await expectEvent(eventEmitter, result, 'AsyncDepositFailed', {
@@ -655,11 +675,9 @@ describe('GlvIsolationModeWrapperTraderV2', () => {
       );
       depositInfo.eventData.uintItems.items[0].key = 'receivedBadTokens';
       await expectThrow(
-        wrapper.connect(depositExecutor).afterGlvDepositExecution(
-          depositKey,
-          depositInfo.deposit,
-          depositInfo.eventData
-        ),
+        wrapper
+          .connect(depositExecutor)
+          .afterGlvDepositExecution(depositKey, depositInfo.deposit, depositInfo.eventData),
         'GlvIsolationModeWrapperV2: Unexpected receivedGlvTokens',
       );
     });
@@ -945,13 +963,7 @@ describe('GlvIsolationModeWrapperTraderV2', () => {
         BalanceCheckFlag.None,
       );
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.nativeUsdc, usdcAmount);
-      await expectProtocolBalance(
-        core,
-        vault.address,
-        borrowAccountNumber,
-        core.marketIds.weth,
-        wethAmount.mul(-1)
-      );
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, wethAmount.mul(-1));
 
       const initiateWrappingParams = await getInitiateWrappingParams(
         borrowAccountNumber,

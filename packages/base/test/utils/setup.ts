@@ -546,7 +546,7 @@ export function getDefaultProtocolConfigForGlv(): CoreProtocolConfig<Network.Arb
   return {
     network: Network.ArbitrumOne,
     networkNumber: parseInt(Network.ArbitrumOne, 10),
-    blockNumber: 262_122_889,
+    blockNumber: 279_600_000,
     arbitrumOne: true,
   };
 }

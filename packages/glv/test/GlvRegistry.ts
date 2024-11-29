@@ -4,11 +4,10 @@ import { BigNumberish } from 'ethers';
 import { ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
 import { expectEvent, expectThrow } from 'packages/base/test/utils/assertions';
-import {
-  getDefaultProtocolConfigForGlv,
-  setupCoreProtocol,
-  setupTestMarket,
-} from 'packages/base/test/utils/setup';
+import { getDefaultProtocolConfigForGlv, setupCoreProtocol, setupTestMarket } from 'packages/base/test/utils/setup';
+import { GLV_CALLBACK_GAS_LIMIT, GLV_EXECUTION_FEE_FOR_TESTS } from 'packages/gmx-v2/src/gmx-v2-constructors';
+import { IGmxMarketToken } from 'packages/gmx-v2/src/types';
+import { createGmxV2Library } from 'packages/gmx-v2/test/gmx-v2-ecosystem-utils';
 import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import {
   GlvIsolationModeUnwrapperTraderV2,
@@ -18,22 +17,16 @@ import {
   GlvRegistry,
   GmxV2Library,
   IGlvToken,
-  TestGlvIsolationModeTokenVaultV1
+  TestGlvIsolationModeTokenVaultV1,
 } from '../src/types';
-import {
-  GLV_CALLBACK_GAS_LIMIT,
-  GLV_EXECUTION_FEE_FOR_TESTS,
-} from 'packages/gmx-v2/src/gmx-v2-constructors';
 import {
   createGlvIsolationModeUnwrapperTraderV2,
   createGlvIsolationModeVaultFactory,
   createGlvIsolationModeWrapperTraderV2,
   createGlvLibrary,
   createGlvRegistry,
-  createTestGlvIsolationModeTokenVaultV1
+  createTestGlvIsolationModeTokenVaultV1,
 } from './glv-ecosystem-utils';
-import { createGmxV2Library } from 'packages/gmx-v2/test/gmx-v2-ecosystem-utils';
-import { IGmxMarketToken } from 'packages/gmx-v2/src/types';
 
 const OTHER_ADDRESS_1 = '0x1234567812345678123456781234567812345671';
 
@@ -75,20 +68,8 @@ describe('GlvRegistry', () => {
       userVaultImplementation,
       GLV_EXECUTION_FEE_FOR_TESTS,
     );
-    unwrapper = await createGlvIsolationModeUnwrapperTraderV2(
-      core,
-      factory,
-      glvLibrary,
-      gmxV2Library,
-      glvRegistry,
-    );
-    wrapper = await createGlvIsolationModeWrapperTraderV2(
-      core,
-      factory,
-      glvLibrary,
-      gmxV2Library,
-      glvRegistry,
-    );
+    unwrapper = await createGlvIsolationModeUnwrapperTraderV2(core, factory, glvLibrary, gmxV2Library, glvRegistry);
+    wrapper = await createGlvIsolationModeWrapperTraderV2(core, factory, glvLibrary, gmxV2Library, glvRegistry);
     await core.testEcosystem!.testPriceOracle!.setPrice(factory.address, '1000000000000000000000000000000');
     await setupTestMarket(core, factory, true);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
@@ -136,10 +117,9 @@ describe('GlvRegistry', () => {
 
   describe('#ownerSetUnwrapperByToken', () => {
     it('should work normally', async () => {
-      const result = await glvRegistry.connect(core.governance).ownerSetUnwrapperByToken(
-        factory.address,
-        unwrapper.address,
-      );
+      const result = await glvRegistry
+        .connect(core.governance)
+        .ownerSetUnwrapperByToken(factory.address, unwrapper.address);
       await expectEvent(glvRegistry, result, 'UnwrapperTraderSet', {
         factory: factory.address,
         unwrapper: unwrapper.address,
@@ -166,20 +146,14 @@ describe('GlvRegistry', () => {
         GLV_EXECUTION_FEE_FOR_TESTS,
       );
       await expectThrow(
-        glvRegistry.connect(core.governance).ownerSetUnwrapperByToken(
-          factory.address,
-          unwrapper.address,
-        ),
+        glvRegistry.connect(core.governance).ownerSetUnwrapperByToken(factory.address, unwrapper.address),
         'HandlerRegistry: Invalid factory token',
       );
     });
 
     it('should fail if unwrapper is invalid', async () => {
       await expectThrow(
-        glvRegistry.connect(core.governance).ownerSetUnwrapperByToken(
-          core.tokens.dfsGlp!.address,
-          unwrapper.address,
-        ),
+        glvRegistry.connect(core.governance).ownerSetUnwrapperByToken(core.tokens.dfsGlp!.address, unwrapper.address),
         'HandlerRegistry: Invalid unwrapper trader',
       );
     });
@@ -187,10 +161,9 @@ describe('GlvRegistry', () => {
 
   describe('#ownerSetWrapperByToken', () => {
     it('should work normally', async () => {
-      const result = await glvRegistry.connect(core.governance).ownerSetWrapperByToken(
-        factory.address,
-        wrapper.address,
-      );
+      const result = await glvRegistry
+        .connect(core.governance)
+        .ownerSetWrapperByToken(factory.address, wrapper.address);
       await expectEvent(glvRegistry, result, 'WrapperTraderSet', {
         factory: factory.address,
         wrapper: wrapper.address,
@@ -217,20 +190,14 @@ describe('GlvRegistry', () => {
         GLV_EXECUTION_FEE_FOR_TESTS,
       );
       await expectThrow(
-        glvRegistry.connect(core.governance).ownerSetWrapperByToken(
-          factory.address,
-          wrapper.address,
-        ),
+        glvRegistry.connect(core.governance).ownerSetWrapperByToken(factory.address, wrapper.address),
         'HandlerRegistry: Invalid factory token',
       );
     });
 
     it('should fail if wrapper is invalid', async () => {
       await expectThrow(
-        glvRegistry.connect(core.governance).ownerSetWrapperByToken(
-          core.tokens.dfsGlp!.address,
-          wrapper.address,
-        ),
+        glvRegistry.connect(core.governance).ownerSetWrapperByToken(core.tokens.dfsGlp!.address, wrapper.address),
         'HandlerRegistry: Invalid wrapper trader',
       );
     });
@@ -406,10 +373,9 @@ describe('GlvRegistry', () => {
 
   describe('#ownerSetGlvTokenToGmMarket', () => {
     it('should work normally', async () => {
-      const result = await glvRegistry.connect(core.governance).ownerSetGlvTokenToGmMarket(
-        underlyingToken.address,
-        gmToken.address
-      );
+      const result = await glvRegistry
+        .connect(core.governance)
+        .ownerSetGlvTokenToGmMarket(underlyingToken.address, gmToken.address);
       await expectEvent(glvRegistry, result, 'GlvTokenToGmMarketSet', {
         glvToken: underlyingToken.address,
         gmMarket: gmToken.address,
@@ -439,10 +405,9 @@ describe('GlvRegistry', () => {
   describe('#ownerSetIsHandler', () => {
     it('should work normally', async () => {
       expect(await glvRegistry.isHandler(core.glvEcosystem.glvHandler.address)).to.eq(true);
-      const result = await glvRegistry.connect(core.governance).ownerSetIsHandler(
-        core.gmxV2Ecosystem!.gmxDepositHandler.address,
-        true,
-      );
+      const result = await glvRegistry
+        .connect(core.governance)
+        .ownerSetIsHandler(core.gmxV2Ecosystem!.gmxDepositHandler.address, true);
       await expectEvent(glvRegistry, result, 'HandlerSet', {
         handler: core.gmxV2Ecosystem!.gmxDepositHandler.address,
         isTrusted: true,

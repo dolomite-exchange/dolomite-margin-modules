@@ -1,4 +1,46 @@
+import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin';
+import { GenericEventEmissionType } from '@dolomite-exchange/dolomite-margin/dist/src/modules/GenericTraderProxyV1';
+import { GenericTraderType } from '@dolomite-exchange/zap-sdk';
+import { BaseContract, BigNumber, BigNumberish, ethers } from 'ethers';
+import fs, { readFileSync } from 'fs';
+import { artifacts } from 'hardhat';
+import { Artifact } from 'hardhat/types';
+import {
+  IsolationModeTraderProxy,
+  IsolationModeTraderProxy__factory,
+  RegistryProxy,
+  RegistryProxy__factory,
+} from 'packages/base/src/types';
+import { createContractWithAbi, createContractWithLibraryAndArtifact } from 'packages/base/src/utils/dolomite-utils';
+import { ADDRESS_ZERO, BYTES_EMPTY, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
+import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
 import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
+import {
+  createAsyncIsolationModeUnwrapperTraderImpl,
+  createAsyncIsolationModeWrapperTraderImpl,
+  createIsolationModeTokenVaultV1ActionsImpl,
+} from 'packages/base/test/utils/dolomite';
+import { createSafeDelegateLibrary } from 'packages/base/test/utils/ecosystem-utils/general';
+import { GlvToken } from 'packages/base/test/utils/ecosystem-utils/glv';
+import { GMX_V2_CALLBACK_GAS_LIMIT } from 'packages/gmx-v2/src/gmx-v2-constructors';
+import { TestOracleProvider } from 'packages/gmx-v2/src/types';
+import { createGmxV2Library, getOracleProviderForTokenKey } from 'packages/gmx-v2/test/gmx-v2-ecosystem-utils';
+import { getChaosLabsPriceOracleV3ConstructorParams } from 'packages/oracles/src/oracles-constructors';
+import {
+  ChaosLabsPriceOracleV3,
+  ChaosLabsPriceOracleV3__factory,
+  IChainlinkAggregator__factory,
+  IChaosLabsPriceOracleV3,
+} from 'packages/oracles/src/types';
+import path, { join } from 'path';
+import { CHAOS_LABS_PRICE_AGGREGATORS_MAP } from '../../base/src/utils/constants';
+import {
+  getGlvIsolationModeTokenVaultConstructorParams,
+  getGlvIsolationModeUnwrapperTraderV2ConstructorParams,
+  getGlvIsolationModeVaultFactoryConstructorParams,
+  getGlvIsolationModeWrapperTraderV2ConstructorParams,
+  getGlvRegistryConstructorParams,
+} from '../src/glv-constructors';
 import {
   GlvIsolationModeTokenVaultV1,
   GlvIsolationModeUnwrapperTraderV2,
@@ -10,46 +52,15 @@ import {
   GlvLibrary__factory,
   GlvRegistry,
   GlvRegistry__factory,
-  GlvTokenPriceOracle,
-  GlvTokenPriceOracle__factory,
   GmxV2Library,
+  IERC20__factory,
   IGlvIsolationModeVaultFactory,
   IGlvRegistry,
   TestGlvIsolationModeTokenVaultV1,
   TestGlvIsolationModeUnwrapperTraderV2,
   TestGlvIsolationModeUnwrapperTraderV2__factory,
-  TestGlvIsolationModeVaultFactory
+  TestGlvIsolationModeVaultFactory,
 } from '../src/types';
-import { BaseContract, BigNumber, BigNumberish, ethers } from 'ethers';
-import { createContractWithAbi, createContractWithLibraryAndArtifact } from 'packages/base/src/utils/dolomite-utils';
-import { IsolationModeTraderProxy, IsolationModeTraderProxy__factory, RegistryProxy, RegistryProxy__factory } from 'packages/base/src/types';
-import {
-  getGlvIsolationModeTokenVaultConstructorParams,
-  getGlvIsolationModeUnwrapperTraderV2ConstructorParams,
-  getGlvIsolationModeVaultFactoryConstructorParams,
-  getGlvIsolationModeWrapperTraderV2ConstructorParams,
-  getGlvRegistryConstructorParams,
-  getGlvTokenPriceOracleConstructorParams
-} from '../src/glv-constructors';
-import { artifacts } from 'hardhat';
-import fs, { readFileSync } from 'fs';
-import path, { join } from 'path';
-import { Artifact } from 'hardhat/types';
-import {
-  createAsyncIsolationModeUnwrapperTraderImpl,
-  createAsyncIsolationModeWrapperTraderImpl,
-  createIsolationModeTokenVaultV1ActionsImpl
-} from 'packages/base/test/utils/dolomite';
-import { GlvToken } from 'packages/base/test/utils/ecosystem-utils/glv';
-import { createSafeDelegateLibrary } from 'packages/base/test/utils/ecosystem-utils/general';
-import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin';
-import { GenericEventEmissionType } from '@dolomite-exchange/dolomite-margin/dist/src/modules/GenericTraderProxyV1';
-import { GenericTraderType } from '@dolomite-exchange/zap-sdk';
-import { ADDRESS_ZERO, BYTES_EMPTY, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
-import { IGmxMarketToken, TestOracleProvider } from 'packages/gmx-v2/src/types';
-import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
-import { createGmxV2Library, getOracleProviderForTokenKey } from 'packages/gmx-v2/test/gmx-v2-ecosystem-utils';
-import { GMX_V2_CALLBACK_GAS_LIMIT } from 'packages/gmx-v2/src/gmx-v2-constructors';
 
 async function createArtifactFromWorkspaceIfNotExists(artifactName: string): Promise<Artifact> {
   if (await artifacts.artifactExists(artifactName)) {
@@ -58,9 +69,10 @@ async function createArtifactFromWorkspaceIfNotExists(artifactName: string): Pro
   }
 
   const packagesPath = '../../../packages';
-  const children = fs.readdirSync(join(__dirname, packagesPath), { withFileTypes: true })
-    .filter(d => d.isDirectory())
-    .map(d => path.join(packagesPath, d.name));
+  const children = fs
+    .readdirSync(join(__dirname, packagesPath), { withFileTypes: true })
+    .filter((d) => d.isDirectory())
+    .map((d) => path.join(packagesPath, d.name));
 
   const contractsFolders = ['contracts_coverage', 'contracts'];
   for (const contractFolder of contractsFolders) {
@@ -96,11 +108,7 @@ export async function createGlvIsolationModeTokenVaultV1(
 }
 
 export async function createGlvLibrary(): Promise<GlvLibrary> {
-  return createContractWithAbi<GlvLibrary>(
-    GlvLibrary__factory.abi,
-    GlvLibrary__factory.bytecode,
-    [],
-  );
+  return createContractWithAbi<GlvLibrary>(GlvLibrary__factory.abi, GlvLibrary__factory.bytecode, []);
 }
 
 export async function createTestGlvIsolationModeTokenVaultV1(
@@ -146,7 +154,7 @@ export async function createGlvIsolationModeVaultFactory(
       glvToken,
       userVaultImplementation,
       executionFee,
-      skipLongToken
+      skipLongToken,
     ),
   );
 }
@@ -174,7 +182,7 @@ export async function createTestGlvIsolationModeVaultFactory(
       glvToken,
       userVaultImplementation,
       executionFee,
-      skipLongToken
+      skipLongToken,
     ),
   );
 }
@@ -222,13 +230,7 @@ export async function createGlvIsolationModeUnwrapperTraderV2(
   const proxy = await createContractWithAbi<IsolationModeTraderProxy>(
     IsolationModeTraderProxy__factory.abi,
     IsolationModeTraderProxy__factory.bytecode,
-    await getGlvIsolationModeUnwrapperTraderV2ConstructorParams(
-      core,
-      implementation,
-      dGlv,
-      glvRegistry,
-      skipLongToken
-    ),
+    await getGlvIsolationModeUnwrapperTraderV2ConstructorParams(core, implementation, dGlv, glvRegistry, skipLongToken),
   );
 
   return GlvIsolationModeUnwrapperTraderV2__factory.connect(proxy.address, core.hhUser1);
@@ -251,20 +253,14 @@ export async function createTestGlvIsolationModeUnwrapperTraderV2(
       GlvLibrary: glvLibrary.address,
       GmxV2Library: gmxV2Library.address,
       SafeDelegateCallLib: safeDelegateCallLibrary.address,
-      ...libraries
+      ...libraries,
     },
     [core.tokens.weth.address],
   );
   const proxy = await createContractWithAbi<IsolationModeTraderProxy>(
     IsolationModeTraderProxy__factory.abi,
     IsolationModeTraderProxy__factory.bytecode,
-    await getGlvIsolationModeUnwrapperTraderV2ConstructorParams(
-      core,
-      implementation,
-      dGlv,
-      glvRegistry,
-      skipLongToken
-    ),
+    await getGlvIsolationModeUnwrapperTraderV2ConstructorParams(core, implementation, dGlv, glvRegistry, skipLongToken),
   );
 
   return TestGlvIsolationModeUnwrapperTraderV2__factory.connect(proxy.address, core.hhUser1);
@@ -296,26 +292,31 @@ export async function createGlvIsolationModeWrapperTraderV2(
   const proxy = await createContractWithAbi<IsolationModeTraderProxy>(
     IsolationModeTraderProxy__factory.abi,
     IsolationModeTraderProxy__factory.bytecode,
-    await getGlvIsolationModeWrapperTraderV2ConstructorParams(
-      core,
-      implementation,
-      dGM,
-      glvRegistry,
-      skipLongToken,
-    ),
+    await getGlvIsolationModeWrapperTraderV2ConstructorParams(core, implementation, dGM, glvRegistry, skipLongToken),
   );
   return GlvIsolationModeWrapperTraderV2__factory.connect(proxy.address, core.hhUser1);
 }
 
 export async function createGlvTokenPriceOracle(
   core: CoreProtocolArbitrumOne,
-  factory: IGlvIsolationModeVaultFactory | GlvIsolationModeVaultFactory,
-  glvRegistry: IGlvRegistry | GlvRegistry,
-): Promise<GlvTokenPriceOracle> {
-  return createContractWithAbi(
-    GlvTokenPriceOracle__factory.abi,
-    GlvTokenPriceOracle__factory.bytecode,
-    getGlvTokenPriceOracleConstructorParams(core, factory, glvRegistry),
+  dGlvTokens: IGlvIsolationModeVaultFactory[],
+): Promise<IChaosLabsPriceOracleV3> {
+  const underlyingTokens = await Promise.all(dGlvTokens.map((t) => t.UNDERLYING_TOKEN()));
+  return createContractWithAbi<ChaosLabsPriceOracleV3>(
+    ChaosLabsPriceOracleV3__factory.abi,
+    ChaosLabsPriceOracleV3__factory.bytecode,
+    getChaosLabsPriceOracleV3ConstructorParams(
+      dGlvTokens.map((t) => IERC20__factory.connect(t.address, t.provider)),
+      underlyingTokens.map((t) =>
+        IChainlinkAggregator__factory.connect(
+          CHAOS_LABS_PRICE_AGGREGATORS_MAP[core.network][t]!.aggregatorAddress,
+          core.hhUser1,
+        ),
+      ),
+      dGlvTokens.map(() => false),
+      core.dolomiteRegistry,
+      core.dolomiteMargin,
+    ),
   );
 }
 
@@ -383,7 +384,7 @@ export async function getGlvOracleParams(
   core: CoreProtocolArbitrumOne,
   controller: SignerWithAddressWithSafety,
   glvToken: GlvToken,
-  provider: TestOracleProvider
+  provider: TestOracleProvider,
 ) {
   const tokens = [];
   const providers = [];
@@ -419,7 +420,7 @@ export async function getGlvOracleParams(
   return {
     tokens,
     providers,
-    data
+    data,
   };
 }
 
@@ -460,7 +461,7 @@ export function getGlvDepositObject(
     },
     flags: {
       shouldUnwrapNativeToken: false,
-      isMarketTokenDeposit: false
+      isMarketTokenDeposit: false,
     },
   };
 
@@ -661,102 +662,109 @@ export function getGlvWithdrawalObject(
 
 export function getKey(key: string, types: string[], values: any[]): string {
   const stringBytes = ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['string'], [key]));
-  return ethers.utils.keccak256(
-    ethers.utils.defaultAbiCoder.encode(
-      ['bytes32', ...types],
-      [stringBytes, ...values]
-    )
-  );
+  return ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['bytes32', ...types], [stringBytes, ...values]));
 }
 
 export async function setupNewOracleAggregatorTokens(core: CoreProtocolArbitrumOne) {
   await core.chainlinkPriceOracleV3.ownerInsertOrUpdateOracleToken(
     '0x7D7F1765aCbaF847b9A1f7137FE8Ed4931FbfEbA', // ATOM - good
     '0xCDA67618e51762235eacA373894F0C79256768fa',
-    false
+    false,
   );
   await core.oracleAggregatorV2.ownerInsertOrUpdateToken({
-    oracleInfos: [{
-      oracle: core.chainlinkPriceOracleV3.address,
-      tokenPair: ADDRESS_ZERO,
-      weight: 100
-    }],
+    oracleInfos: [
+      {
+        oracle: core.chainlinkPriceOracleV3.address,
+        tokenPair: ADDRESS_ZERO,
+        weight: 100,
+      },
+    ],
     token: '0x7D7F1765aCbaF847b9A1f7137FE8Ed4931FbfEbA',
-    decimals: 6
+    decimals: 6,
   });
 
   await core.chainlinkPriceOracleV3.ownerInsertOrUpdateOracleToken(
     '0xC4da4c24fd591125c3F47b340b6f4f76111883d8', // DOGE - good
     '0x9A7FB1b3950837a8D9b40517626E11D4127C098C',
-    false
+    false,
   );
   await core.oracleAggregatorV2.ownerInsertOrUpdateToken({
-    oracleInfos: [{
-      oracle: core.chainlinkPriceOracleV3.address,
-      tokenPair: ADDRESS_ZERO,
-      weight: 100
-    }],
+    oracleInfos: [
+      {
+        oracle: core.chainlinkPriceOracleV3.address,
+        tokenPair: ADDRESS_ZERO,
+        weight: 100,
+      },
+    ],
     token: '0xC4da4c24fd591125c3F47b340b6f4f76111883d8',
-    decimals: 8
+    decimals: 8,
   });
 
   await core.chainlinkPriceOracleV3.ownerInsertOrUpdateOracleToken(
     '0x1FF7F3EFBb9481Cbd7db4F932cBCD4467144237C', // NEAR - good
     '0xBF5C3fB2633e924598A46B9D07a174a9DBcF57C0',
-    false
+    false,
   );
   await core.oracleAggregatorV2.ownerInsertOrUpdateToken({
-    oracleInfos: [{
-      oracle: core.chainlinkPriceOracleV3.address,
-      tokenPair: ADDRESS_ZERO,
-      weight: 100
-    }],
+    oracleInfos: [
+      {
+        oracle: core.chainlinkPriceOracleV3.address,
+        tokenPair: ADDRESS_ZERO,
+        weight: 100,
+      },
+    ],
     token: '0x1FF7F3EFBb9481Cbd7db4F932cBCD4467144237C',
-    decimals: 24
+    decimals: 24,
   });
 
   await core.chainlinkPriceOracleV3.ownerInsertOrUpdateOracleToken(
     '0xc14e065b0067dE91534e032868f5Ac6ecf2c6868', // XRP
     '0xB4AD57B52aB9141de9926a3e0C8dc6264c2ef205',
-    false
+    false,
   );
   await core.oracleAggregatorV2.ownerInsertOrUpdateToken({
-    oracleInfos: [{
-      oracle: core.chainlinkPriceOracleV3.address,
-      tokenPair: ADDRESS_ZERO,
-      weight: 100
-    }],
+    oracleInfos: [
+      {
+        oracle: core.chainlinkPriceOracleV3.address,
+        tokenPair: ADDRESS_ZERO,
+        weight: 100,
+      },
+    ],
     token: '0xc14e065b0067dE91534e032868f5Ac6ecf2c6868',
-    decimals: 6
+    decimals: 6,
   });
 
   await core.chainlinkPriceOracleV3.ownerInsertOrUpdateOracleToken(
     '0xB46A094Bc4B0adBD801E14b9DB95e05E28962764', // LTC
     '0x5698690a7B7B84F6aa985ef7690A8A7288FBc9c8',
-    false
+    false,
   );
   await core.oracleAggregatorV2.ownerInsertOrUpdateToken({
-    oracleInfos: [{
-      oracle: core.chainlinkPriceOracleV3.address,
-      tokenPair: ADDRESS_ZERO,
-      weight: 100
-    }],
+    oracleInfos: [
+      {
+        oracle: core.chainlinkPriceOracleV3.address,
+        tokenPair: ADDRESS_ZERO,
+        weight: 100,
+      },
+    ],
     token: '0xB46A094Bc4B0adBD801E14b9DB95e05E28962764',
-    decimals: 8
+    decimals: 8,
   });
 
   await core.chainlinkPriceOracleV3.ownerInsertOrUpdateOracleToken(
     '0x3E57D02f9d196873e55727382974b02EdebE6bfd', // SHIB
     '0x0E278D14B4bf6429dDB0a1B353e2Ae8A4e128C93',
-    false
+    false,
   );
   await core.oracleAggregatorV2.ownerInsertOrUpdateToken({
-    oracleInfos: [{
-      oracle: core.chainlinkPriceOracleV3.address,
-      tokenPair: ADDRESS_ZERO,
-      weight: 100
-    }],
+    oracleInfos: [
+      {
+        oracle: core.chainlinkPriceOracleV3.address,
+        tokenPair: ADDRESS_ZERO,
+        weight: 100,
+      },
+    ],
     token: '0x3E57D02f9d196873e55727382974b02EdebE6bfd',
-    decimals: 18
+    decimals: 18,
   });
 }

@@ -9,6 +9,13 @@ import {
   setupTestMarket,
   setupUserVaultProxy,
 } from 'packages/base/test/utils/setup';
+import {
+  GLV_CALLBACK_GAS_LIMIT,
+  GLV_EXECUTION_FEE_FOR_TESTS,
+  GMX_V2_EXECUTION_FEE_FOR_TESTS,
+} from 'packages/gmx-v2/src/gmx-v2-constructors';
+import { GmxV2Library } from 'packages/gmx-v2/src/types';
+import { createGmxV2Library } from 'packages/gmx-v2/test/gmx-v2-ecosystem-utils';
 import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import {
   GlvIsolationModeTokenVaultV1,
@@ -17,7 +24,7 @@ import {
   GlvIsolationModeVaultFactory,
   GlvIsolationModeWrapperTraderV2,
   GlvLibrary,
-  GlvRegistry
+  GlvRegistry,
 } from '../src/types';
 import {
   createGlvIsolationModeTokenVaultV1,
@@ -25,11 +32,8 @@ import {
   createGlvIsolationModeVaultFactory,
   createGlvIsolationModeWrapperTraderV2,
   createGlvLibrary,
-  createGlvRegistry
+  createGlvRegistry,
 } from './glv-ecosystem-utils';
-import { GLV_CALLBACK_GAS_LIMIT, GLV_EXECUTION_FEE_FOR_TESTS, GMX_V2_EXECUTION_FEE_FOR_TESTS } from 'packages/gmx-v2/src/gmx-v2-constructors';
-import { createGmxV2Library } from 'packages/gmx-v2/test/gmx-v2-ecosystem-utils';
-import { GmxV2Library } from 'packages/gmx-v2/src/types';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 const amountWei = parseEther('1');
@@ -53,10 +57,7 @@ describe('GlvIsolationModeVaultFactory', () => {
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultProtocolConfigForGlv());
-    glvRegistry = await createGlvRegistry(
-      core,
-      GLV_CALLBACK_GAS_LIMIT
-    );
+    glvRegistry = await createGlvRegistry(core, GLV_CALLBACK_GAS_LIMIT);
     glvLibrary = await createGlvLibrary();
     gmxV2Library = await createGmxV2Library();
     vaultImplementation = await createGlvIsolationModeTokenVaultV1(core, glvLibrary, gmxV2Library);
@@ -73,20 +74,8 @@ describe('GlvIsolationModeVaultFactory', () => {
       GLV_EXECUTION_FEE_FOR_TESTS,
     );
 
-    unwrapper = await createGlvIsolationModeUnwrapperTraderV2(
-      core,
-      factory,
-      glvLibrary,
-      gmxV2Library,
-      glvRegistry,
-    );
-    wrapper = await createGlvIsolationModeWrapperTraderV2(
-      core,
-      factory,
-      glvLibrary,
-      gmxV2Library,
-      glvRegistry,
-    );
+    unwrapper = await createGlvIsolationModeUnwrapperTraderV2(core, factory, glvLibrary, gmxV2Library, glvRegistry);
+    wrapper = await createGlvIsolationModeWrapperTraderV2(core, factory, glvLibrary, gmxV2Library, glvRegistry);
 
     await core.testEcosystem!.testPriceOracle!.setPrice(factory.address, '1000000000000000000000000000000');
     marketId = await core.dolomiteMargin.getNumMarkets();
@@ -121,10 +110,11 @@ describe('GlvIsolationModeVaultFactory', () => {
       expect(await factory.SHORT_TOKEN()).to.equal(core.tokens.nativeUsdc!.address);
       expect(await factory.LONG_TOKEN()).to.equal(core.tokens.weth.address);
       expectArrayEq(await factory.allowableDebtMarketIds(), [core.marketIds.nativeUsdc!, core.marketIds.weth]);
-      expectArrayEq(
-        await factory.allowableCollateralMarketIds(),
-        [core.marketIds.nativeUsdc!, core.marketIds.weth, marketId],
-      );
+      expectArrayEq(await factory.allowableCollateralMarketIds(), [
+        core.marketIds.nativeUsdc!,
+        core.marketIds.weth,
+        marketId,
+      ]);
       expect(await factory.UNDERLYING_TOKEN()).to.equal(core.glvEcosystem.glvTokens.wethUsdc.glvToken.address);
       expect(await factory.BORROW_POSITION_PROXY()).to.equal(core.borrowPositionProxyV2.address);
       expect(await factory.userVaultImplementation()).to.equal(vaultImplementation.address);
@@ -141,7 +131,7 @@ describe('GlvIsolationModeVaultFactory', () => {
         core.glvEcosystem!.glvTokens.wethUsdc,
         vaultImplementation,
         GMX_V2_EXECUTION_FEE_FOR_TESTS,
-        true
+        true,
       );
     });
 
@@ -325,22 +315,18 @@ describe('GlvIsolationModeVaultFactory', () => {
   describe('#depositIntoDolomiteMarginFromTokenConverter', () => {
     it('should fail if not token converter', async () => {
       await expectThrow(
-        factory.connect(core.hhUser1).depositIntoDolomiteMarginFromTokenConverter(
-          vault.address,
-          defaultAccountNumber,
-          amountWei,
-        ),
+        factory
+          .connect(core.hhUser1)
+          .depositIntoDolomiteMarginFromTokenConverter(vault.address, defaultAccountNumber, amountWei),
         `IsolationModeVaultFactory: Caller is not a token converter <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
     it('should fail if invalid vault', async () => {
       await expectThrow(
-        factory.connect(impersonatedWrapper).depositIntoDolomiteMarginFromTokenConverter(
-          core.hhUser1.address,
-          defaultAccountNumber,
-          amountWei,
-        ),
+        factory
+          .connect(impersonatedWrapper)
+          .depositIntoDolomiteMarginFromTokenConverter(core.hhUser1.address, defaultAccountNumber, amountWei),
         `IsolationModeVaultFactory: Invalid vault <${core.hhUser1.address.toLowerCase()}>`,
       );
     });

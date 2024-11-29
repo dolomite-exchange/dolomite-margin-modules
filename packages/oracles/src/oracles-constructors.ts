@@ -302,6 +302,22 @@ export function getChainlinkPriceOracleV3ConstructorParams<T extends NetworkType
   ];
 }
 
+export function getChaosLabsPriceOracleV3ConstructorParams<T extends NetworkType>(
+  tokens: IERC20[],
+  aggregators: IChainlinkAggregator[],
+  invertPrices: boolean[],
+  dolomiteRegistry: IDolomiteRegistry,
+  dolomiteMargin: DolomiteMargin<T>,
+): [string[], string[], boolean[], string, string] {
+  return [
+    tokens.map(t => t.address),
+    aggregators.map(t => t.address),
+    invertPrices,
+    dolomiteRegistry.address,
+    dolomiteMargin.address,
+  ];
+}
+
 export function getChroniclePriceOracleV3ConstructorParams<T extends NetworkType>(
   core: CoreProtocolType<T>,
   tokens: string[],
