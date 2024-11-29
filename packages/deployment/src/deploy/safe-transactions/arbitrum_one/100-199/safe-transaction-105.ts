@@ -10,7 +10,7 @@ import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { BigNumber } from 'ethers';
 import { Network, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
-import { prettyPrintEncodeAddMarket, prettyPrintEncodedDataWithTypeSafety } from '../../../utils/deploy-utils';
+import { prettyPrintEncodeAddMarket, prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/deploy-utils';
 
 /**
  * This script encodes the following transactions:

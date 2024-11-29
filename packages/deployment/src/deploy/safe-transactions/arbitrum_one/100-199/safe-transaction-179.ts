@@ -11,7 +11,7 @@ import {
   getTokenVaultLibrary,
   prettyPrintEncodedDataWithTypeSafety,
   writeFile,
-} from '../../../utils/deploy-utils';
+} from '../../../../utils/deploy-utils';
 
 const genericTraderProxyV1OldAddress = '0xe50c3118349F09AbAfc1bb01AD5CB946B1De83f6';
 const liquidatorProxyV4OldAddress = '0xfD84446AbCB9016F823904F13d16Fb7f103Ab6D7';

@@ -11,7 +11,7 @@ import {
   getTokenVaultLibrary,
   prettyPrintEncodedDataWithTypeSafety,
   writeFile,
-} from '../../../utils/deploy-utils';
+} from '../../../../utils/deploy-utils';
 
 async function getGlpVaultTransactions(
   core: CoreProtocolArbitrumOne,

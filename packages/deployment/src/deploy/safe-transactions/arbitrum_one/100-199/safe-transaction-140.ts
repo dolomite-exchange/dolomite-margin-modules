@@ -12,7 +12,7 @@ import {
   EncodedTransaction,
   prettyPrintEncodedDataWithTypeSafety,
   writeFile,
-} from '../../../utils/deploy-utils';
+} from '../../../../utils/deploy-utils';
 
 const handler = '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe';
 

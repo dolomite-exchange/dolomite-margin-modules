@@ -7,9 +7,9 @@ import {
   deployContractAndSave,
   EncodedTransaction,
   prettyPrintEncodedDataWithTypeSafety,
-} from '../../../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
-import getScriptName from '../../../../utils/get-script-name';
+} from '../../../../../utils/deploy-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../../utils/dry-run-utils';
+import getScriptName from '../../../../../utils/get-script-name';
 
 const HARVEST_DAI = '0xA95E010aF63196747F459176A1B85d250E8211b4';
 const HARVEST_USDC = '0xD174dd89af9F58804B47A67435317bc31f971cee';

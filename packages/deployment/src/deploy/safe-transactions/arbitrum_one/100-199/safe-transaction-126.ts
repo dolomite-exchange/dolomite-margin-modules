@@ -13,7 +13,7 @@ import {
   EncodedTransaction,
   prettyPrintEncodeAddIsolationModeMarket,
   writeFile,
-} from '../../../utils/deploy-utils';
+} from '../../../../utils/deploy-utils';
 
 enum PtName {
   REthJun2025 = 'REthJun2025',

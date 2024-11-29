@@ -7,9 +7,9 @@ import {
   EncodedTransaction,
   prettyPrintEncodeAddMarket,
   prettyPrintEncodeInsertChainlinkOracleV3,
-} from '../../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../utils/dry-run-utils';
-import getScriptName from '../../../utils/get-script-name';
+} from '../../../../utils/deploy-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
+import getScriptName from '../../../../utils/get-script-name';
 import {
   TargetCollateralization,
   TargetLiquidationPenalty,

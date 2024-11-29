@@ -38,7 +38,7 @@ import {
   EncodedTransaction,
   prettyPrintEncodedDataWithTypeSafety,
   writeFile,
-} from '../../../utils/deploy-utils';
+} from '../../../../utils/deploy-utils';
 
 async function deployGlpUpdates(core: CoreProtocolArbitrumOne): Promise<EncodedTransaction[]> {
   const unwrapperV3 = await deployContractAndSave(

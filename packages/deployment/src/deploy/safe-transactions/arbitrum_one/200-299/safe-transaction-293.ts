@@ -14,9 +14,9 @@ import {
   prettyPrintEncodeAddMarket,
   prettyPrintEncodedDataWithTypeSafety,
   prettyPrintEncodeInsertChainlinkOracleV3,
-} from '../../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../utils/dry-run-utils';
-import getScriptName from '../../../utils/get-script-name';
+} from '../../../../utils/deploy-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
+import getScriptName from '../../../../utils/get-script-name';
 
 const GRAI_FRAX_POOL = '0x6E0Ced11922386900BE369cBBF3cdb971dc58487';
 

@@ -4,10 +4,10 @@ import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/se
 import { expect } from 'chai';
 import { parseEther } from 'ethers/lib/utils';
 import { ADDRESS_ZERO, Network } from 'packages/base/src/utils/no-deps-constants';
-import { EncodedTransaction, prettyPrintEncodedDataWithTypeSafety } from '../../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../utils/dry-run-utils';
-import getScriptName from '../../../utils/get-script-name';
-import ModuleDeployments from '../../deployments.json';
+import { EncodedTransaction, prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/deploy-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
+import getScriptName from '../../../../utils/get-script-name';
+import ModuleDeployments from '../../../deployments.json';
 
 /**
  * This script encodes the following transactions:

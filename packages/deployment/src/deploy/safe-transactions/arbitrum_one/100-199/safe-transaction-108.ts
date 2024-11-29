@@ -8,7 +8,7 @@ import { getPendleYtGLPPriceOracleConstructorParams } from '@dolomite-exchange/m
 import { IPendleYtGLPMar2024IsolationModeVaultFactory__factory } from '@dolomite-exchange/modules-pendle/src/types';
 import { BigNumber } from 'ethers';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
-import { deployContractAndSave, prettyPrintEncodedDataWithTypeSafety } from '../../../utils/deploy-utils';
+import { deployContractAndSave, prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/deploy-utils';
 
 /**
  * This script encodes the following transactions:

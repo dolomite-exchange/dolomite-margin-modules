@@ -6,9 +6,9 @@ import {
   GMXIsolationModeTokenVaultV1__factory,
 } from '@dolomite-exchange/modules-glp/src/types';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
-import { deployContractAndSave, prettyPrintEncodedDataWithTypeSafety } from '../../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../utils/dry-run-utils';
-import getScriptName from '../../../utils/get-script-name';
+import { deployContractAndSave, prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/deploy-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
+import getScriptName from '../../../../utils/get-script-name';
 
 async function checkState(core: CoreProtocolArbitrumOne, vaultV5: GMXIsolationModeTokenVaultV1) {
   const liveEcosystem = core.gmxEcosystem.live;

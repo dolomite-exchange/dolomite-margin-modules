@@ -42,10 +42,10 @@ import {
   deployContractAndSave,
   prettyPrintEncodeAddMarket,
   prettyPrintEncodedDataWithTypeSafety,
-} from '../../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../utils/dry-run-utils';
-import getScriptName from '../../../utils/get-script-name';
-import Deployments from '../../deployments.json';
+} from '../../../../utils/deploy-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
+import getScriptName from '../../../../utils/get-script-name';
+import Deployments from '../../../deployments.json';
 
 interface Factory {
   pendleRegistry: IPendleRegistry | IPendleGLPRegistry;

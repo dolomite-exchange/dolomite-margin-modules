@@ -8,10 +8,10 @@ import {
   deployContractAndSave,
   EncodedTransaction,
   prettyPrintEncodedDataWithTypeSafety,
-} from '../../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../utils/dry-run-utils';
-import getScriptName from '../../../utils/get-script-name';
-import ModuleDeployments from '../../deployments.json';
+} from '../../../../utils/deploy-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
+import getScriptName from '../../../../utils/get-script-name';
+import ModuleDeployments from '../../../deployments.json';
 
 const GRAI_USDC_POOL = '0x1a30f6c99fe9f9e1607fda54e1c76dc03000f9d8';
 

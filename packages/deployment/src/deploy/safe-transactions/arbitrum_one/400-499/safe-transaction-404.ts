@@ -5,9 +5,9 @@ import { setupCoreProtocol } from 'packages/base/test/utils/setup';
 import { parseEther } from 'ethers/lib/utils';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
-import { EncodedTransaction, prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
-import getScriptName from '../../../../utils/get-script-name';
+import { EncodedTransaction, prettyPrintEncodedDataWithTypeSafety } from '../../../../../utils/deploy-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../../utils/dry-run-utils';
+import getScriptName from '../../../../../utils/get-script-name';
 
 /**
  * This script encodes the following transactions:

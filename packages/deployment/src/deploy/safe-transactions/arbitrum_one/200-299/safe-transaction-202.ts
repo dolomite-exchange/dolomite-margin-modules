@@ -12,7 +12,7 @@ import {
   EncodedTransaction,
   prettyPrintEncodedDataWithTypeSafety,
   writeFile,
-} from '../../../utils/deploy-utils';
+} from '../../../../utils/deploy-utils';
 
 const old2024Unwrapper = '0x05C5A361431A5b141d9f09D761EA4323B651dfB8';
 const old2024Wrapper = '0x30173DbD3A5af41bE2b8462d1D27E18e536D6705';

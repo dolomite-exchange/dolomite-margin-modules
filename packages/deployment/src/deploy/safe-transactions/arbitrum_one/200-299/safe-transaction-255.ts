@@ -10,10 +10,10 @@ import {
   deployContractAndSave,
   EncodedTransaction,
   prettyPrintEncodedDataWithTypeSafety,
-} from '../../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../utils/dry-run-utils';
-import getScriptName from '../../../utils/get-script-name';
-import ModuleDeployments from '../../deployments.json';
+} from '../../../../utils/deploy-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
+import getScriptName from '../../../../utils/get-script-name';
+import ModuleDeployments from '../../../deployments.json';
 
 const handlerAddress = '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe'; // Level Initiator
 

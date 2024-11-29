@@ -4,9 +4,9 @@ import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/se
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
 import { BYTES_ZERO, Network } from 'packages/base/src/utils/no-deps-constants';
-import { deployContractAndSave, prettyPrintEncodedDataWithTypeSafety } from '../../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../utils/dry-run-utils';
-import getScriptName from '../../../utils/get-script-name';
+import { deployContractAndSave, prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/deploy-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
+import getScriptName from '../../../../utils/get-script-name';
 
 const ethRecipient = '0x1fF6B8E1192eB0369006Bbad76dA9068B68961B2';
 

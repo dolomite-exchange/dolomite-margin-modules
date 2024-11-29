@@ -4,9 +4,9 @@ import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/se
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
 import { USDMRouter__factory } from 'packages/mountain/src/types';
-import { deployContractAndSave, prettyPrintEncodedDataWithTypeSafety } from '../../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../utils/dry-run-utils';
-import getScriptName from '../../../utils/get-script-name';
+import { deployContractAndSave, prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/deploy-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
+import getScriptName from '../../../../utils/get-script-name';
 
 /**
  * This script encodes the following transactions:

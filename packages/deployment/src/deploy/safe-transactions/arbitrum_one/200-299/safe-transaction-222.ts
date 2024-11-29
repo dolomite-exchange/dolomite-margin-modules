@@ -15,10 +15,10 @@ import {
   deployContractAndSave,
   EncodedTransaction,
   prettyPrintEncodedDataWithTypeSafety,
-} from '../../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../utils/dry-run-utils';
-import getScriptName from '../../../utils/get-script-name';
-import Deployments from '../../deployments.json';
+} from '../../../../utils/deploy-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
+import getScriptName from '../../../../utils/get-script-name';
+import Deployments from '../../../deployments.json';
 
 const LIQUIDATOR_ADDRESS = '0x1fF6B8E1192eB0369006Bbad76dA9068B68961B2';
 

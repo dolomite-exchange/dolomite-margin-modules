@@ -13,7 +13,7 @@ import {
   prettyPrintEncodedDataWithTypeSafety,
 } from '../../../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
-import getScriptName from '../../../../utils/get-script-name';
+import getScriptName from '../../../../../utils/get-script-name';
 import { IERC20, IERC20Metadata__factory, TestPriceOracle__factory } from 'packages/base/src/types';
 import ModuleDeployments from '../../../deployments.json';
 import {

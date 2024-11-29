@@ -23,12 +23,12 @@ import {
 import { BigNumber, BigNumberish } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
-import { ADDRESS_ZERO, Network } from 'packages/base/src/utils/no-deps-constants';
+import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import {
   deployContractAndSave,
   EncodedTransaction,
-  prettyPrintEncodeAddAsyncIsolationModeMarket,
-  prettyPrintEncodedDataWithTypeSafety,
+  prettyPrintEncodeAddGmxV2Market,
+  prettyPrintEncodeInsertChainlinkOracleV3,
 } from '../../../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
 import getScriptName from '../../../../utils/get-script-name';
@@ -37,8 +37,7 @@ import ModuleDeployments from '../../../deployments.json';
 
 /**
  * This script encodes the following transactions:
- * - Deploys new gmUNI vault
- * - Increases the PT-ezETH supply cap to 3,000
+ * - Lists new GM assets (GMX, NEAR, PENDLE, PEPE, SHIB, WIF, XRP)
  */
 async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
@@ -49,35 +48,94 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     core.hhUser1,
   );
 
-  const gmTokens = [core.gmxV2Ecosystem.gmTokens.uniUsd];
-  const supplyCaps = [parseEther(`${600_000}`)];
-  const gmNames = ['UNI'];
+  const gmTokens = [
+    core.gmxV2Ecosystem.gmTokens.gmx,
+    core.gmxV2Ecosystem.gmTokens.nearUsd,
+    core.gmxV2Ecosystem.gmTokens.pendleUsd,
+    core.gmxV2Ecosystem.gmTokens.pepeUsd,
+    core.gmxV2Ecosystem.gmTokens.shibUsd,
+    core.gmxV2Ecosystem.gmTokens.wifUsd,
+    core.gmxV2Ecosystem.gmTokens.xrpUsd,
+  ];
+  const supplyCaps = [
+    parseEther(`${800_000}`),
+    parseEther(`${800_000}`),
+    parseEther(`${100_000}`),
+    parseEther(`${800_000}`),
+    parseEther(`${500_00}`),
+    parseEther(`${1_000_000}`),
+    parseEther(`${800_000}`),
+  ];
+  const gmNames = [
+    'SingleSidedGMX',
+    'NEAR',
+    'PENDLE',
+    'PEPE',
+    'SHIB',
+    'WIF',
+    'XRP',
+  ];
+  const collateralizations = [
+    TargetCollateralization._125,
+    TargetCollateralization._125,
+    TargetCollateralization._125,
+    TargetCollateralization._125,
+    TargetCollateralization._125,
+    TargetCollateralization._125,
+    TargetCollateralization._125,
+  ];
+  const penalties = [
+    TargetLiquidationPenalty.Base,
+    TargetLiquidationPenalty.Base,
+    TargetLiquidationPenalty.Base,
+    TargetLiquidationPenalty.Base,
+    TargetLiquidationPenalty.Base,
+    TargetLiquidationPenalty.Base,
+    TargetLiquidationPenalty.Base,
+  ];
 
   const unwrapperImplementation = core.gmxV2Ecosystem.live.unwrapperImplementation;
   const wrapperImplementation = core.gmxV2Ecosystem.live.wrapperImplementation;
-  const gmxV2PriceOracle = core.gmxV2Ecosystem.live.priceOracle;
 
   const factories: GmxV2IsolationModeVaultFactory[] = [];
   const unwrappers: IGmxV2IsolationModeUnwrapperTraderV2[] = [];
   const wrappers: IGmxV2IsolationModeWrapperTraderV2[] = [];
-  const stablecoins = core.marketIds.stablecoins;
-  const usdcIndex = stablecoins.findIndex((m) => BigNumber.from(m).eq(core.marketIds.nativeUsdc));
-  const firstValue = stablecoins[0];
-  stablecoins[0] = stablecoins[usdcIndex];
-  stablecoins[usdcIndex] = firstValue;
+
+  const wbtcMarketId = core.marketIds.wbtc;
+  const wethMarketId = core.marketIds.weth;
 
   for (let i = 0; i < gmTokens.length; i += 1) {
+    const stablecoins = core.marketIds.stablecoins;
+    const shortIndex = stablecoins.findIndex((m) => BigNumber.from(m).eq(gmTokens[i].shortMarketId));
+    const firstValue = stablecoins[0];
+    stablecoins[0] = stablecoins[shortIndex];
+    stablecoins[shortIndex] = firstValue;
+
+    const longMarketId = gmTokens[i].longMarketId;
+    const debtMarketIds = [...stablecoins];
+    const collateralMarketIds = [...stablecoins];
+    if (longMarketId !== -1) {
+      debtMarketIds.unshift(longMarketId);
+      collateralMarketIds.unshift(longMarketId);
+    }
+
+    addMarketIdIfNeeded(debtMarketIds, wbtcMarketId);
+    addMarketIdIfNeeded(collateralMarketIds, wbtcMarketId);
+
+    addMarketIdIfNeeded(debtMarketIds, wethMarketId);
+    addMarketIdIfNeeded(collateralMarketIds, wethMarketId);
+
     const factoryAddress = await deployContractAndSave(
       'GmxV2IsolationModeVaultFactory',
       getGmxV2IsolationModeVaultFactoryConstructorParams(
         core,
         core.gmxV2Ecosystem.live.registry,
-        [gmTokens[i].longMarketId, ...core.marketIds.stablecoins],
-        [gmTokens[i].longMarketId, ...core.marketIds.stablecoins],
+        debtMarketIds,
+        collateralMarketIds,
         gmTokens[i],
         gmxV2TokenVault,
         GMX_V2_EXECUTION_FEE,
-        false,
+        longMarketId === -1,
       ),
       `GmxV2${gmNames[i]}IsolationModeVaultFactory`,
       core.gmxV2Ecosystem.live.gmxV2LibraryMap,
@@ -119,75 +177,45 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     gmMarketIds.push(marketId.add(i));
   }
 
-  const transactions: EncodedTransaction[] = [];
+  const transactions: EncodedTransaction[] = [
+    ...await prettyPrintEncodeInsertChainlinkOracleV3(
+      core,
+      core.gmxV2Ecosystem.gmTokens.nearUsd.indexToken,
+    ),
+    ...await prettyPrintEncodeInsertChainlinkOracleV3(
+      core,
+      core.gmxV2Ecosystem.gmTokens.pepeUsd.indexToken,
+    ),
+    ...await prettyPrintEncodeInsertChainlinkOracleV3(
+      core,
+      core.gmxV2Ecosystem.gmTokens.shibUsd.indexToken,
+    ),
+    ...await prettyPrintEncodeInsertChainlinkOracleV3(
+      core,
+      core.gmxV2Ecosystem.gmTokens.wifUsd.indexToken,
+    ),
+    ...await prettyPrintEncodeInsertChainlinkOracleV3(
+      core,
+      core.gmxV2Ecosystem.gmTokens.xrpUsd.indexToken,
+    ),
+  ];
 
   for (let i = 0; i < factories.length; i++) {
     const factory = factories[i];
     transactions.push(
-      await prettyPrintEncodedDataWithTypeSafety(
-        core,
-        core.gmxV2Ecosystem.live,
-        'registry',
-        'ownerSetGmxMarketToIndexToken',
-        [gmTokens[i].marketToken.address, gmTokens[i].indexToken.address],
-      ),
-      await prettyPrintEncodedDataWithTypeSafety(
-        core,
-        core.gmxV2Ecosystem.live,
-        'registry',
-        'ownerSetGmxMarketToIndexToken',
-        [gmTokens[i].marketToken.address, gmTokens[i].indexToken.address],
-      ),
-      await prettyPrintEncodedDataWithTypeSafety(
-        core,
-        { gmxV2PriceOracle },
-        'gmxV2PriceOracle',
-        'ownerSetMarketToken',
-        [factory.address, true],
-      ),
-      await prettyPrintEncodedDataWithTypeSafety(
-        core,
-        { oracleAggregatorV2: core.oracleAggregatorV2 },
-        'oracleAggregatorV2',
-        'ownerInsertOrUpdateToken',
-        [
-          {
-            decimals: await factory.decimals(),
-            token: factory.address,
-            oracleInfos: [
-              {
-                oracle: gmxV2PriceOracle.address,
-                weight: 100,
-                tokenPair: ADDRESS_ZERO,
-              },
-            ],
-          },
-        ],
-      ),
-      ...(await prettyPrintEncodeAddAsyncIsolationModeMarket(
+      ...await prettyPrintEncodeAddGmxV2Market(
         core,
         factory,
-        core.oracleAggregatorV2,
         unwrappers[i],
         wrappers[i],
         core.gmxV2Ecosystem.live.registry,
         gmMarketIds[i],
-        TargetCollateralization._125,
-        TargetLiquidationPenalty.Base,
+        collateralizations[i],
+        penalties[i],
         supplyCaps[i],
-      )),
+      ),
     );
   }
-
-  transactions.push(
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { dolomiteMargin: core.dolomiteMargin },
-      'dolomiteMargin',
-      'ownerSetMaxWei',
-      [core.marketIds.dPtEzEthJun2024, parseEther(`${3_000}`)],
-    ),
-  );
 
   return {
     core,
@@ -195,9 +223,9 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     upload: {
       transactions,
       chainId: network,
+      addExecuteImmediatelyTransactions: true,
     },
     invariants: async () => {
-      assertHardhatInvariant(factories.length === 1, 'Invalid # of factories');
       for (let i = 0; i < factories.length; i += 1) {
         assertHardhatInvariant(
           (await core.dolomiteMargin.getMarketTokenAddress(gmMarketIds[i])) === factories[i].address,
@@ -210,7 +238,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
         );
         assertHardhatInvariant(
           (await factories[i].isTokenConverterTrusted(unwrappers[i].address)) &&
-            (await factories[i].isTokenConverterTrusted(wrappers[i].address)),
+          (await factories[i].isTokenConverterTrusted(wrappers[i].address)),
           'Invalid token converters',
         );
 
@@ -219,6 +247,12 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       }
     },
   };
+}
+
+function addMarketIdIfNeeded(list: BigNumberish[], findMarketId: BigNumberish) {
+  if (!list.some(m => BigNumber.from(m).eq(findMarketId))) {
+    list.unshift(findMarketId);
+  }
 }
 
 doDryRunAndCheckDeployment(main);

@@ -4,9 +4,9 @@ import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/se
 import { JonesUSDCIsolationModeTokenVaultV1__factory } from '@dolomite-exchange/modules-jones/src/types';
 import { expect } from 'chai';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
-import { EncodedTransaction, prettyPrintEncodedDataWithTypeSafety } from '../../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../utils/dry-run-utils';
-import getScriptName from '../../../utils/get-script-name';
+import { EncodedTransaction, prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/deploy-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
+import getScriptName from '../../../../utils/get-script-name';
 
 /**
  * This script encodes the following transactions:

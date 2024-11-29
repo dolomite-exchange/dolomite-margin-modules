@@ -41,7 +41,7 @@ import {
   prettyPrintEncodedDataWithTypeSafety,
   prettyPrintEncodeInsertChainlinkOracle,
   writeFile,
-} from '../../../utils/deploy-utils';
+} from '../../../../utils/deploy-utils';
 
 /**
  * This script encodes the following transactions:

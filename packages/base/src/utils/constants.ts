@@ -439,6 +439,13 @@ export const PENDLE_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   },
 };
 
+export const PEPE_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0x25d887Ce7a35172C62FeBFD67a1856F20FaEbB00',
+    marketId: -1,
+  },
+};
+
 export const POL_MAP: Record<Network.PolygonZkEvm, TokenWithMarketId> = {
   [Network.PolygonZkEvm]: {
     address: '0x22B21BedDef74FE62F031D2c5c8F7a9F8a4b304D',
@@ -715,6 +722,13 @@ export const WST_ETH_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   },
 };
 
+export const WIF_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0xA1b91fe9FD52141Ff8cac388Ce3F10BFDc1dE79d',
+    marketId: -1,
+  },
+};
+
 export const XAI_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x4Cb9a7AE498CEDcBb5EAe9f25736aE7d428C9D66',
@@ -826,12 +840,46 @@ export const GMX_ETH_SINGLE_SIDED_MARKET_TOKEN_MAP: Record<Network.ArbitrumOne, 
   [Network.ArbitrumOne]: '0x450bb6774Dd8a756274E0ab4107953259d2ac541',
 };
 
+export const GMX_GMX_SINGLE_SIDED_MARKET_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0xbD48149673724f9cAeE647bb4e9D9dDaF896Efeb',
+};
+
 export const GMX_GMX_USD_MARKET_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x55391D178Ce46e7AC8eaAEa50A72D1A5a8A622Da',
 };
 
 export const GMX_LINK_USD_MARKET_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x7f1fa204bb700853D36994DA19F830b6Ad18455C',
+};
+
+export const GMX_NEAR_PLACEHOLDER_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0x1FF7F3EFBb9481Cbd7db4F932cBCD4467144237C',
+    marketId: -1,
+  },
+};
+
+export const GMX_NEAR_USD_MARKET_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x63Dc80EE90F26363B3FCD609007CC9e14c8991BE',
+};
+
+export const GMX_PENDLE_USD_MARKET_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x784292E87715d93afD7cb8C941BacaFAAA9A5102',
+};
+
+export const GMX_PEPE_USD_MARKET_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x2b477989A149B17073D9C9C82eC9cB03591e20c6',
+};
+
+export const GMX_SHIB_PLACEHOLDER_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0x3E57D02f9d196873e55727382974b02EdebE6bfd',
+    marketId: -1,
+  },
+};
+
+export const GMX_SHIB_USD_MARKET_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0xB62369752D8Ad08392572db6d0cc872127888beD',
 };
 
 export const GMX_SOL_USD_MARKET_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
@@ -842,8 +890,16 @@ export const GMX_UNI_USD_MARKET_TOKEN_MAP: Record<Network.ArbitrumOne, string> =
   [Network.ArbitrumOne]: '0xc7Abb2C5f3BF3CEB389dF0Eecd6120D451170B50',
 };
 
+export const GMX_WIF_USD_MARKET_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x0418643F94Ef14917f1345cE5C460C37dE463ef7',
+};
+
 export const GMX_WST_ETH_USD_MARKET_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x0Cf1fb4d1FF67A3D8Ca92c9d6643F8F9be8e03E5',
+};
+
+export const GMX_XRP_USD_MARKET_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x0CCB4fAa6f1F1B30911619f1184082aB4E25813c',
 };
 
 export const GMX_GOV_MAP: Record<Network.ArbitrumOne, string> = {
@@ -895,6 +951,13 @@ export const GMX_WITHDRAWAL_HANDLER_V2_MAP: Record<Network.ArbitrumOne, string> 
 
 export const GMX_WITHDRAWAL_VAULT_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x0628D46b5D145f183AdB6Ef1f2c97eD1C4701C55',
+};
+
+export const GMX_XRP_PLACEHOLDER_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0xc14e065b0067dE91534e032868f5Ac6ecf2c6868',
+    marketId: -1,
+  },
 };
 
 export const GNOSIS_SAFE_MAP: Record<Network, string> = {
@@ -1401,9 +1464,6 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<Network, Record<string, Agg
     [DOGE_MAP[Network.ArbitrumOne].address]: {
       aggregatorAddress: '0x9A7FB1b3950837a8D9b40517626E11D4127C098C',
     },
-    [GMX_BTC_PLACEHOLDER_MAP[Network.ArbitrumOne].address]: {
-      aggregatorAddress: BTC_CHAINLINK_FEED_MAP[Network.ArbitrumOne],
-    },
     [D_ARB_MAP[Network.ArbitrumOne].address]: {
       aggregatorAddress: '0xb2A824043730FE05F3DA2efaFa1CBbe83fa548D6',
     },
@@ -1433,8 +1493,17 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<Network, Record<string, Agg
     [GMX_MAP[Network.ArbitrumOne].address]: {
       aggregatorAddress: '0xdb98056fecfff59d032ab628337a4887110df3db',
     },
-    [GMX_MAP[Network.ArbitrumOne].address]: {
-      aggregatorAddress: '0xdb98056fecfff59d032ab628337a4887110df3db',
+    [GMX_BTC_PLACEHOLDER_MAP[Network.ArbitrumOne].address]: {
+      aggregatorAddress: BTC_CHAINLINK_FEED_MAP[Network.ArbitrumOne],
+    },
+    [GMX_NEAR_PLACEHOLDER_MAP[Network.ArbitrumOne].address]: {
+      aggregatorAddress: '0xBF5C3fB2633e924598A46B9D07a174a9DBcF57C0',
+    },
+    [GMX_SHIB_PLACEHOLDER_MAP[Network.ArbitrumOne].address]: {
+      aggregatorAddress: '0x0E278D14B4bf6429dDB0a1B353e2Ae8A4e128C93',
+    },
+    [GMX_XRP_PLACEHOLDER_MAP[Network.ArbitrumOne].address]: {
+      aggregatorAddress: '0xB4AD57B52aB9141de9926a3e0C8dc6264c2ef205',
     },
     [LINK_MAP[Network.ArbitrumOne]!.address]: {
       aggregatorAddress: '0x86E53CF1B870786351Da77A57575e79CB55812CB',
@@ -1450,6 +1519,9 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<Network, Record<string, Agg
     },
     [PENDLE_MAP[Network.ArbitrumOne].address]: {
       aggregatorAddress: '0x66853e19d73c0f9301fe099c324a1e9726953433',
+    },
+    [PEPE_MAP[Network.ArbitrumOne].address]: {
+      aggregatorAddress: '0x02DEd5a7EDDA750E3Eb240b54437a54d57b74dBE',
     },
     [RDNT_MAP[Network.ArbitrumOne].address]: {
       aggregatorAddress: '0x20d0fcab0ecfd078b036b6caf1fac69a6453b352',
@@ -1500,6 +1572,9 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<Network, Record<string, Agg
       aggregatorAddress: '0x20bAe7e1De9c596f5F7615aeaa1342Ba99294e12',
       tokenPairAddress: WETH_MAP[Network.ArbitrumOne].address,
       invert: true,
+    },
+    [WIF_MAP[Network.ArbitrumOne].address]: {
+      aggregatorAddress: '0xF7Ee427318d2Bd0EEd3c63382D0d52Ad8A68f90D',
     },
     [WO_ETH_MAP[Network.ArbitrumOne].address]: {
       aggregatorAddress: '0x03a1f4b19aaeA6e68f0f104dc4346dA3E942cC45',

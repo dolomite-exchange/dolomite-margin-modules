@@ -10,10 +10,10 @@ import {
   deployContractAndSave,
   EncodedTransaction,
   prettyPrintEncodedDataWithTypeSafety,
-} from '../../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../utils/dry-run-utils';
-import getScriptName from '../../../utils/get-script-name';
-import ModuleDeployments from '../../deployments.json';
+} from '../../../../utils/deploy-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
+import getScriptName from '../../../../utils/get-script-name';
+import ModuleDeployments from '../../../deployments.json';
 
 /**
  * This script encodes the following transactions:
