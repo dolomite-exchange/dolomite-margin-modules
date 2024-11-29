@@ -5,12 +5,12 @@
     "build": "hardhat compile",
     "clean": "hardhat clean",
     "test": "hardhat --network hardhat test",
-    "coverage": "yarn coverage:prepare && COVERAGE=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat coverage --testfiles \"test/*.ts\" --solcoverjs ../../.solcover.js --network hardhat",
+    "coverage": "yarn coverage:prepare && COVERAGE=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat coverage --testfiles \"test/*.ts\" --solcoverjs ../../.solcover.js",
     "coverage:prepare": "ts-node ../../scripts/fix-contracts-for-coverage.ts liquidity-mining",
-    "coverage:specific": "yarn coverage:prepare && COVERAGE=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat coverage --testfiles \"test/VeExternalVesterV1.ts\" --solcoverjs ../../.solcover.js --network hardhat",
-    "test:specific": "TEST_SPECIFIC=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat --network hardhat test test/VeExternalVesterV1.ts",
+    "coverage:specific": "yarn coverage:prepare && COVERAGE=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat coverage --testfiles \"test/VotingEscrow_integration.ts\" --solcoverjs ../../.solcover.js",
+    "test:specific": "TEST_SPECIFIC=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat --network hardhat test test/ExternalVesterDiscountCalculatorV1.ts",
     "lint": "yarn lint:sol && yarn lint:ts",
-    "lint:sol": "hardhat check && python ../../scripts/lint-contracts.py fix liquidity-mining",
+    "lint:sol": "hardhat check && python3 ../../scripts/lint-contracts.py fix liquidity-mining",
     "lint:ts": "tslint --project ../../ -t verbose 'src/**/*.ts' 'test/**/*.ts'"
   },
   "files": [

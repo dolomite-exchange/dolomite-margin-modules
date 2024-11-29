@@ -53,6 +53,7 @@ contract JonesUSDCIsolationModeVaultFactory is
         address _jUSDC, // this serves as the underlying token
         address _borrowPositionProxy,
         address _userVaultImplementation,
+        address _dolomiteRegistry,
         address _dolomiteMargin
     )
     SimpleIsolationModeVaultFactory(
@@ -61,6 +62,7 @@ contract JonesUSDCIsolationModeVaultFactory is
         _jUSDC,
         _borrowPositionProxy,
         _userVaultImplementation,
+        _dolomiteRegistry,
         _dolomiteMargin
     ) {
         jonesUSDCRegistry = IJonesUSDCRegistry(_jonesUSDCRegistry);

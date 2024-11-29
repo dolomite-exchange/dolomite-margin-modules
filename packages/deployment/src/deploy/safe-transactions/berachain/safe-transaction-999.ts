@@ -5,10 +5,10 @@ import { CoreProtocolBerachain } from '@dolomite-exchange/modules-base/test/util
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { BigNumberish } from 'ethers';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
-import { EncodedTransaction, prettyPrintEncodedDataWithTypeSafety } from '../../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../utils/dry-run-utils';
-import getScriptName from '../../../utils/get-script-name';
-import ModuleDeployments from '../../deployments.json';
+import { EncodedTransaction, prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/deploy-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
+import getScriptName from '../../../../utils/get-script-name';
+import ModuleDeployments from '../../../deployments.json';
 
 async function encodeTestOracle(
   token: IERC20,

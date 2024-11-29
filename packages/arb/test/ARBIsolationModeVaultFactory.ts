@@ -16,6 +16,7 @@ import {
 } from './arb-ecosystem-utils';
 import { setupCoreProtocol, setupTestMarket } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { DEFAULT_BLOCK_NUMBER_FOR_ARB_TESTS } from './arb-utils';
+import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 

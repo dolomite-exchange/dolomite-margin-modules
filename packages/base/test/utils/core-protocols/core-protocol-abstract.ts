@@ -2,6 +2,7 @@ import { ApiToken, DolomiteZap } from '@dolomite-exchange/zap-sdk';
 import { BigNumberish } from 'ethers';
 import { IChainlinkPriceOracleV1, IChainlinkPriceOracleV3, OracleAggregatorV2 } from 'packages/oracles/src/types';
 import {
+  DolomiteOwner,
   IBorrowPositionProxyV2,
   IDepositWithdrawalProxy,
   IDolomiteAccountRegistry,
@@ -55,6 +56,8 @@ export interface CoreProtocolMarketIds {
 
 export interface CoreProtocolParams<T extends NetworkType> {
   config: CoreProtocolConfig<T>;
+  gnosisSafe: SignerWithAddressWithSafety;
+  gnosisSafeAddress: string;
   governance: SignerWithAddressWithSafety;
   hhUser1: SignerWithAddressWithSafety;
   hhUser2: SignerWithAddressWithSafety;
@@ -83,6 +86,7 @@ export interface CoreProtocolParams<T extends NetworkType> {
   liquidatorProxyV1: ILiquidatorProxyV1;
   liquidatorProxyV4: ILiquidatorProxyV4WithGenericTrader;
   oracleAggregatorV2: OracleAggregatorV2;
+  ownerAdapter: DolomiteOwner;
   testEcosystem: TestEcosystem | undefined;
   marketIds: CoreProtocolMarketIds;
   apiTokens: {
@@ -106,6 +110,8 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
    */
   public readonly config: CoreProtocolConfig<T>;
   public readonly zap: DolomiteZap;
+  public readonly gnosisSafe: SignerWithAddressWithSafety;
+  public readonly gnosisSafeAddress: string;
   public readonly governance: SignerWithAddressWithSafety;
   public readonly hhUser1: SignerWithAddressWithSafety;
   public readonly hhUser2: SignerWithAddressWithSafety;
@@ -137,6 +143,7 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
   public readonly liquidatorProxyV1: ILiquidatorProxyV1;
   public readonly liquidatorProxyV4: ILiquidatorProxyV4WithGenericTrader;
   public readonly oracleAggregatorV2: OracleAggregatorV2;
+  public readonly ownerAdapter?: DolomiteOwner;
   public readonly testEcosystem: TestEcosystem | undefined;
   /// =========================
   /// Markets and Tokens
@@ -159,6 +166,8 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
       web3Provider: params.hhUser1.provider!,
       defaultBlockTag: params.config.blockNumber,
     });
+    this.gnosisSafe = params.gnosisSafe;
+    this.gnosisSafeAddress = params.gnosisSafeAddress;
     this.governance = params.governance;
     this.hhUser1 = params.hhUser1;
     this.hhUser2 = params.hhUser2;
@@ -187,6 +196,7 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
     this.liquidatorProxyV1 = params.liquidatorProxyV1;
     this.liquidatorProxyV4 = params.liquidatorProxyV4;
     this.oracleAggregatorV2 = params.oracleAggregatorV2;
+    this.ownerAdapter = params.ownerAdapter;
     this.testEcosystem = params.testEcosystem;
     this.marketIds = params.marketIds;
     this.apiTokens = params.apiTokens;

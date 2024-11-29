@@ -12,6 +12,8 @@ import { OogaBoogaEcosystem } from '../ecosystem-utils/ooga-booga';
 
 export interface CoreProtocolTokensBerachain extends CoreProtocolTokens<Network.Berachain> {
   honey: IERC20;
+  sbtc: IERC20;
+  stoneBtc: IERC20;
   uniBtc: IERC20;
   wbera: IWETH;
 }

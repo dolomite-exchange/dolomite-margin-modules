@@ -4,6 +4,7 @@ import { DolomiteMargin } from '../../../test/utils/dolomite';
 import { CoreProtocolConfig, CoreProtocolType } from '../../../test/utils/setup';
 import {
   DolomiteERC20,
+  DolomiteERC4626,
   EventEmitterRegistry,
   IDolomiteMargin,
   IDolomiteMarginV2,
@@ -13,6 +14,7 @@ import {
   IIsolationModeVaultFactory,
   ILiquidatorAssetRegistry,
   RegistryProxy,
+  TestDolomiteERC4626,
 } from '../../types';
 import { IDolomiteInterestSetter, IDolomiteStructs } from '../../types/contracts/protocol/interfaces/IDolomiteMargin';
 import { Network, NetworkType, ZERO_BI } from '../no-deps-constants';
@@ -36,6 +38,13 @@ export enum TargetLiquidationPenalty {
   _9 = '0.09',
   _10 = '0.10',
   _15 = '0.15',
+}
+
+export function getDolomiteOwnerConstructorParams(
+  gnosisSafeAddress: string,
+  secondsTimeLocked: BigNumberish,
+): any[] {
+  return [gnosisSafeAddress, secondsTimeLocked];
 }
 
 export function getRegistryProxyConstructorParams<T extends NetworkType>(
@@ -230,6 +239,26 @@ export async function getDolomiteErc20ProxyConstructorParams<T extends NetworkTy
     `d${symbol}`,
     await token.decimals(),
     marketId,
+  );
+  return [implementation.address, core.dolomiteMargin.address, transaction.data!];
+}
+
+export async function getDolomiteErc4626ProxyConstructorParams<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  implementation: DolomiteERC4626 | TestDolomiteERC4626,
+  marketId: BigNumberish,
+): Promise<any[]> {
+  const token = IERC20Metadata__factory.connect(
+    await core.dolomiteMargin.getMarketTokenAddress(marketId),
+    core.hhUser1,
+  );
+  const symbol = await token.symbol();
+  const transaction = await implementation.populateTransaction.initialize(
+    `Dolomite: ${symbol}`,
+    `d${symbol}`,
+    await token.decimals(),
+    marketId,
+    core.dolomiteRegistry.address
   );
   return [implementation.address, core.dolomiteMargin.address, transaction.data!];
 }

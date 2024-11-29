@@ -93,11 +93,11 @@ contract JonesUSDCPriceOracle is IDolomitePriceOracle {
     // ============================ Internal Functions ============================
 
     function _getCurrentPrice() internal view returns (uint256) {
-        uint256 usdcPrice = DOLOMITE_MARGIN.getMarketPrice(USDC_MARKET_ID).value / _USDC_SCALE_DIFF;
+        uint256 usdcPrice = DOLOMITE_MARGIN.getMarketPrice(USDC_MARKET_ID).value;
         IERC4626 jUSDC = JONES_USDC_REGISTRY.jUSDC();
         uint256 totalSupply = jUSDC.totalSupply();
         uint256 price = totalSupply == 0
-                ? usdcPrice
+                ? usdcPrice / _USDC_SCALE_DIFF
                 : usdcPrice * jUSDC.totalAssets() / totalSupply;
         (uint256 retentionFee, uint256 retentionFeeBase) = JONES_USDC_REGISTRY.getRetentionFee(
             JONES_USDC_REGISTRY.unwrapperTraderForLiquidation()
