@@ -45,7 +45,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       { registry: core.gmxV2Ecosystem.live.registry },
       'registry',
       'ownerSetGmxExchangeRouter',
-      [core.gmxV2Ecosystem.gmxExchangeRouterV2.address],
+      [core.gmxV2Ecosystem.gmxExchangeRouter.address],
     ),
   );
   transactions.push(
@@ -54,7 +54,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       { registry: core.gmxV2Ecosystem.live.registry },
       'registry',
       'ownerSetGmxReader',
-      [core.gmxV2Ecosystem.gmxReaderV2.address],
+      [core.gmxV2Ecosystem.gmxReader.address],
     ),
   );
 
@@ -90,11 +90,11 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     invariants: async () => {
       assertHardhatInvariant(
         (await core.gmxV2Ecosystem.live.registry.gmxExchangeRouter()) ===
-          core.gmxV2Ecosystem.gmxExchangeRouterV2.address,
+          core.gmxV2Ecosystem.gmxExchangeRouter.address,
         'Invalid gmx exchange router',
       );
       assertHardhatInvariant(
-        (await core.gmxV2Ecosystem.live.registry.gmxReader()) === core.gmxV2Ecosystem.gmxReaderV2.address,
+        (await core.gmxV2Ecosystem.live.registry.gmxReader()) === core.gmxV2Ecosystem.gmxReader.address,
         'Invalid gmx reader',
       );
       for (let i = 0; i < unwrapperProxies.length; i++) {

@@ -801,10 +801,6 @@ export const GMX_DATASTORE_MAP: Record<Network.ArbitrumOne, string> = {
 };
 
 export const GMX_EXCHANGE_ROUTER_MAP: Record<Network.ArbitrumOne, string> = {
-  [Network.ArbitrumOne]: '0x69C527fC77291722b52649E45c838e41be8Bf5d5',
-};
-
-export const GMX_EXCHANGE_ROUTER_V2_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x674Ee2FFe588c4b1Fde6D5481c55Ef6133004cbA',
 };
 
@@ -852,34 +848,12 @@ export const GMX_LINK_USD_MARKET_TOKEN_MAP: Record<Network.ArbitrumOne, string> 
   [Network.ArbitrumOne]: '0x7f1fa204bb700853D36994DA19F830b6Ad18455C',
 };
 
-export const GMX_NEAR_PLACEHOLDER_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
-  [Network.ArbitrumOne]: {
-    address: '0x1FF7F3EFBb9481Cbd7db4F932cBCD4467144237C',
-    marketId: -1,
-  },
-};
-
-export const GMX_NEAR_USD_MARKET_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
-  [Network.ArbitrumOne]: '0x63Dc80EE90F26363B3FCD609007CC9e14c8991BE',
-};
-
 export const GMX_PENDLE_USD_MARKET_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x784292E87715d93afD7cb8C941BacaFAAA9A5102',
 };
 
 export const GMX_PEPE_USD_MARKET_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x2b477989A149B17073D9C9C82eC9cB03591e20c6',
-};
-
-export const GMX_SHIB_PLACEHOLDER_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
-  [Network.ArbitrumOne]: {
-    address: '0x3E57D02f9d196873e55727382974b02EdebE6bfd',
-    marketId: -1,
-  },
-};
-
-export const GMX_SHIB_USD_MARKET_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
-  [Network.ArbitrumOne]: '0xB62369752D8Ad08392572db6d0cc872127888beD',
 };
 
 export const GMX_SOL_USD_MARKET_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
@@ -896,10 +870,6 @@ export const GMX_WIF_USD_MARKET_TOKEN_MAP: Record<Network.ArbitrumOne, string> =
 
 export const GMX_WST_ETH_USD_MARKET_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x0Cf1fb4d1FF67A3D8Ca92c9d6643F8F9be8e03E5',
-};
-
-export const GMX_XRP_USD_MARKET_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
-  [Network.ArbitrumOne]: '0x0CCB4fAa6f1F1B30911619f1184082aB4E25813c',
 };
 
 export const GMX_GOV_MAP: Record<Network.ArbitrumOne, string> = {
@@ -919,10 +889,6 @@ export const GMX_REWARD_ROUTER_V4_MAP: Record<Network.ArbitrumOne, string> = {
 };
 
 export const GMX_READER_MAP: Record<Network.ArbitrumOne, string> = {
-  [Network.ArbitrumOne]: '0x5Ca84c34a381434786738735265b9f3FD814b824',
-};
-
-export const GMX_READER_V2_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x0537C767cDAC0726c76Bb89e92904fe28fd02fE1',
 };
 
@@ -951,13 +917,6 @@ export const GMX_WITHDRAWAL_HANDLER_V2_MAP: Record<Network.ArbitrumOne, string> 
 
 export const GMX_WITHDRAWAL_VAULT_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x0628D46b5D145f183AdB6Ef1f2c97eD1C4701C55',
-};
-
-export const GMX_XRP_PLACEHOLDER_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
-  [Network.ArbitrumOne]: {
-    address: '0xc14e065b0067dE91534e032868f5Ac6ecf2c6868',
-    marketId: -1,
-  },
 };
 
 export const GNOSIS_SAFE_MAP: Record<Network, string> = {
@@ -1495,15 +1454,6 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<Network, Record<string, Agg
     },
     [GMX_BTC_PLACEHOLDER_MAP[Network.ArbitrumOne].address]: {
       aggregatorAddress: BTC_CHAINLINK_FEED_MAP[Network.ArbitrumOne],
-    },
-    [GMX_NEAR_PLACEHOLDER_MAP[Network.ArbitrumOne].address]: {
-      aggregatorAddress: '0xBF5C3fB2633e924598A46B9D07a174a9DBcF57C0',
-    },
-    [GMX_SHIB_PLACEHOLDER_MAP[Network.ArbitrumOne].address]: {
-      aggregatorAddress: '0x0E278D14B4bf6429dDB0a1B353e2Ae8A4e128C93',
-    },
-    [GMX_XRP_PLACEHOLDER_MAP[Network.ArbitrumOne].address]: {
-      aggregatorAddress: '0xB4AD57B52aB9141de9926a3e0C8dc6264c2ef205',
     },
     [LINK_MAP[Network.ArbitrumOne]!.address]: {
       aggregatorAddress: '0x86E53CF1B870786351Da77A57575e79CB55812CB',

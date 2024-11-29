@@ -45,7 +45,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const userVaultImplementationAddress = await deployContractAndSave(
     'GmxV2IsolationModeTokenVaultV1',
     [core.tokens.weth.address, network],
-    'GmxV2IsolationModeTokenVaultV14',
+    'GmxV2IsolationModeTokenVaultImplementationV14',
     { GmxV2Library: gmxV2LibraryAddress, ...core.libraries.tokenVaultActionsImpl },
   );
   const unwrapperImplementationAddress = await deployContractAndSave(

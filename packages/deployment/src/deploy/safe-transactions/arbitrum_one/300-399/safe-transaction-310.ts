@@ -45,7 +45,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
 
   const gmxV2TokenVault = GmxV2IsolationModeTokenVaultV1__factory.connect(
-    ModuleDeployments.GmxV2IsolationModeTokenVaultV14[network].address,
+    ModuleDeployments.GmxV2IsolationModeTokenVaultImplementationV14[network].address,
     core.hhUser1,
   );
 

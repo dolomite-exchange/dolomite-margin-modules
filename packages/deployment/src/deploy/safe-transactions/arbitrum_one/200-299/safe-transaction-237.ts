@@ -27,7 +27,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const gmxV2TokenVaultAddress = await deployContractAndSave(
     'GmxV2IsolationModeTokenVaultV1',
     getGmxV2IsolationModeTokenVaultConstructorParams(core),
-    'GmxV2IsolationModeTokenVaultV10',
+    'GmxV2IsolationModeTokenVaultImplementationV10',
     { ...core.libraries.tokenVaultActionsImpl, ...core.gmxV2Ecosystem.live.gmxV2LibraryMap },
   );
   const gmxV2TokenVault = GmxV2IsolationModeTokenVaultV1__factory.connect(gmxV2TokenVaultAddress, core.hhUser1);

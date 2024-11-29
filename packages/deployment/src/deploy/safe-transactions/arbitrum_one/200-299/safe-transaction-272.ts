@@ -33,7 +33,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const tokenVaultAddress = await deployContractAndSave(
     'GmxV2IsolationModeTokenVaultV1',
     getGmxV2IsolationModeTokenVaultConstructorParams(core),
-    'GmxV2IsolationModeTokenVaultV13',
+    'GmxV2IsolationModeTokenVaultImplementationV13',
     { ...core.libraries.tokenVaultActionsImpl, ...core.gmxV2Ecosystem.live.gmxV2LibraryMap },
   );
 

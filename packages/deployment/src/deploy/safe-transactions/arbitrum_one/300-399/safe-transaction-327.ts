@@ -60,7 +60,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const vaultAddress = await deployContractAndSave(
     'GmxV2IsolationModeTokenVaultV1',
     [core.tokens.weth.address, core.config.networkNumber],
-    'GmxV2IsolationModeTokenVaultV15',
+    'GmxV2IsolationModeTokenVaultImplementationV15',
     { ...core.libraries.tokenVaultActionsImpl, GmxV2Library: libraryAddress }
   );
 

@@ -26,6 +26,7 @@ import {
   ISGMX__factory,
 } from '@dolomite-exchange/modules-glp/src/types';
 import {
+  GmxV2IsolationModeTokenVaultV1, GmxV2IsolationModeTokenVaultV1__factory,
   GmxV2IsolationModeUnwrapperTraderV2,
   GmxV2IsolationModeUnwrapperTraderV2__factory,
   GmxV2IsolationModeVaultFactory,
@@ -87,24 +88,18 @@ import {
   GMX_ETH_SINGLE_SIDED_MARKET_TOKEN_MAP,
   GMX_ETH_USD_MARKET_TOKEN_MAP,
   GMX_EXCHANGE_ROUTER_MAP,
-  GMX_EXCHANGE_ROUTER_V2_MAP,
   GMX_EXECUTOR_MAP,
   GMX_GMX_SINGLE_SIDED_MARKET_TOKEN_MAP,
   GMX_GMX_USD_MARKET_TOKEN_MAP,
   GMX_LINK_USD_MARKET_TOKEN_MAP,
   GMX_MAP,
-  GMX_NEAR_PLACEHOLDER_MAP,
-  GMX_NEAR_USD_MARKET_TOKEN_MAP,
   GMX_PENDLE_USD_MARKET_TOKEN_MAP,
   GMX_PEPE_USD_MARKET_TOKEN_MAP,
   GMX_READER_MAP,
-  GMX_READER_V2_MAP,
   GMX_REWARD_ROUTER_V2_MAP,
   GMX_REWARD_ROUTER_V3_MAP,
   GMX_REWARD_ROUTER_V4_MAP,
   GMX_ROUTER_MAP,
-  GMX_SHIB_PLACEHOLDER_MAP,
-  GMX_SHIB_USD_MARKET_TOKEN_MAP,
   GMX_SOL_USD_MARKET_TOKEN_MAP,
   GMX_UNI_USD_MARKET_TOKEN_MAP,
   GMX_VAULT_MAP,
@@ -113,8 +108,6 @@ import {
   GMX_WITHDRAWAL_HANDLER_V2_MAP,
   GMX_WITHDRAWAL_VAULT_MAP,
   GMX_WST_ETH_USD_MARKET_TOKEN_MAP,
-  GMX_XRP_PLACEHOLDER_MAP,
-  GMX_XRP_USD_MARKET_TOKEN_MAP,
   LINK_MAP,
   NATIVE_USDC_MAP,
   PENDLE_MAP, PEPE_MAP,
@@ -208,22 +201,17 @@ export interface GmxV2Ecosystem {
     gmx: GmToken;
     gmxUsd: GmToken;
     linkUsd: GmToken;
-    nearUsd: GmToken;
     pendleUsd: GmToken;
     pepeUsd: GmToken;
-    shibUsd: GmToken;
     solUsd: GmToken;
     uniUsd: GmToken;
     wifUsd: GmToken;
     wstEthUsd: GmToken;
-    xrpUsd: GmToken;
   };
   gmxEthUsdMarketToken: IGmxMarketToken;
   gmxExchangeRouter: IGmxExchangeRouter;
-  gmxExchangeRouterV2: IGmxExchangeRouter;
   gmxExecutor: SignerWithAddressWithSafety;
   gmxReader: IGmxReader;
-  gmxReaderV2: IGmxReader;
   gmxRouter: IGmxRouter;
   gmxWithdrawalHandler: IGmxWithdrawalHandler;
   gmxWithdrawalHandlerV2: IGmxWithdrawalHandler;
@@ -245,6 +233,7 @@ export interface GmxV2Ecosystem {
     gmxV2LibraryMap: { GmxV2Library: string };
     registry: GmxV2Registry;
     registryProxy: RegistryProxy;
+    tokenVaultImplementation: GmxV2IsolationModeTokenVaultV1;
     unwrapperImplementation: GmxV2IsolationModeUnwrapperTraderV2;
     wrapperImplementation: GmxV2IsolationModeWrapperTraderV2;
     priceOracle: GmxV2MarketTokenPriceOracle;
@@ -335,6 +324,10 @@ export async function createGmxEcosystemV2(
 
   const gmxV2LibraryAddress = getMaxDeploymentVersionAddressByDeploymentKey('GmxV2Library', network);
   const priceOracleAddress = getMaxDeploymentVersionAddressByDeploymentKey('GmxV2MarketTokenPriceOracle', network);
+  const tokenVaultImplementationAddress = getMaxDeploymentVersionAddressByDeploymentKey(
+    'GmxV2IsolationModeTokenVaultImplementation',
+    network,
+  );
   const unwrapperImplementationAddress = getMaxDeploymentVersionAddressByDeploymentKey(
     'GmxV2IsolationModeUnwrapperTraderImplementation',
     network,
@@ -441,14 +434,6 @@ export async function createGmxEcosystemV2(
         longMarketId: LINK_MAP[network]!.marketId,
         shortMarketId: NATIVE_USDC_MAP[network].marketId,
       },
-      nearUsd: {
-        marketToken: getContract(GMX_NEAR_USD_MARKET_TOKEN_MAP[network], IGmxMarketToken__factory.connect, signer),
-        indexToken: IERC20__factory.connect(GMX_NEAR_PLACEHOLDER_MAP[network]!.address, signer),
-        longToken: IERC20__factory.connect(WETH_MAP[network]!.address, signer),
-        shortToken: IERC20__factory.connect(NATIVE_USDC_MAP[network].address, signer),
-        longMarketId: WETH_MAP[network]!.marketId,
-        shortMarketId: NATIVE_USDC_MAP[network].marketId,
-      },
       pendleUsd: {
         marketToken: getContract(GMX_PENDLE_USD_MARKET_TOKEN_MAP[network], IGmxMarketToken__factory.connect, signer),
         indexToken: IERC20__factory.connect(PENDLE_MAP[network]!.address, signer),
@@ -463,14 +448,6 @@ export async function createGmxEcosystemV2(
         longToken: IERC20__factory.connect(PEPE_MAP[network]!.address, signer),
         shortToken: IERC20__factory.connect(NATIVE_USDC_MAP[network].address, signer),
         longMarketId: PEPE_MAP[network]!.marketId,
-        shortMarketId: NATIVE_USDC_MAP[network].marketId,
-      },
-      shibUsd: {
-        marketToken: getContract(GMX_SHIB_USD_MARKET_TOKEN_MAP[network], IGmxMarketToken__factory.connect, signer),
-        indexToken: IERC20__factory.connect(GMX_SHIB_PLACEHOLDER_MAP[network].address, signer),
-        longToken: IERC20__factory.connect(WETH_MAP[network].address, signer),
-        shortToken: IERC20__factory.connect(NATIVE_USDC_MAP[network].address, signer),
-        longMarketId: WETH_MAP[network].marketId,
         shortMarketId: NATIVE_USDC_MAP[network].marketId,
       },
       solUsd: {
@@ -505,22 +482,12 @@ export async function createGmxEcosystemV2(
         longMarketId: WST_ETH_MAP[network].marketId,
         shortMarketId: USDE_MAP[network].marketId,
       },
-      xrpUsd: {
-        marketToken: getContract(GMX_XRP_USD_MARKET_TOKEN_MAP[network], IGmxMarketToken__factory.connect, signer),
-        indexToken: IERC20__factory.connect(GMX_XRP_PLACEHOLDER_MAP[network].address, signer),
-        longToken: IERC20__factory.connect(WETH_MAP[network].address, signer),
-        shortToken: IERC20__factory.connect(NATIVE_USDC_MAP[network].address, signer),
-        longMarketId: WETH_MAP[network].marketId,
-        shortMarketId: NATIVE_USDC_MAP[network].marketId,
-      },
     },
     gmxEthUsdMarketToken: getContract(GMX_ETH_USD_MARKET_TOKEN_MAP[network], IGmxMarketToken__factory.connect, signer),
     gmxDataStore: getContract(GMX_DATASTORE_MAP[network], IGmxDataStore__factory.connect, signer),
     gmxExchangeRouter: getContract(GMX_EXCHANGE_ROUTER_MAP[network], IGmxExchangeRouter__factory.connect, signer),
-    gmxExchangeRouterV2: getContract(GMX_EXCHANGE_ROUTER_V2_MAP[network], IGmxExchangeRouter__factory.connect, signer),
     gmxExecutor: await impersonateOrFallback(GMX_EXECUTOR_MAP[network], true, signer),
     gmxReader: getContract(GMX_READER_MAP[network], IGmxReader__factory.connect, signer),
-    gmxReaderV2: getContract(GMX_READER_V2_MAP[network], IGmxReader__factory.connect, signer),
     gmxRouter: getContract(GMX_ROUTER_MAP[network], IGmxRouter__factory.connect, signer),
     gmxWithdrawalHandler: getContract(
       GMX_WITHDRAWAL_HANDLER_MAP[network],
@@ -803,6 +770,10 @@ export async function createGmxEcosystemV2(
       priceOracle: GmxV2MarketTokenPriceOracle__factory.connect(priceOracleAddress, signer),
       registry: GmxV2Registry__factory.connect(Deployments.GmxV2RegistryProxy['42161'].address, signer),
       registryProxy: RegistryProxy__factory.connect(Deployments.GmxV2RegistryProxy['42161'].address, signer),
+      tokenVaultImplementation: GmxV2IsolationModeTokenVaultV1__factory.connect(
+        tokenVaultImplementationAddress,
+        signer,
+      ),
       unwrapperImplementation: GmxV2IsolationModeUnwrapperTraderV2__factory.connect(
         unwrapperImplementationAddress,
         signer,

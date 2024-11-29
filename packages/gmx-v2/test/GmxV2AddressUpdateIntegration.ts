@@ -56,8 +56,8 @@ describe('GmxV2AddressUpdateIntegration', () => {
     unwrapper = core.gmxV2Ecosystem.live.gmEthUsd.unwrapper.connect(core.hhUser1);
 
     // Update ExchangeRouter and Reader address
-    await core.gmxV2Ecosystem.live.registry.connect(core.governance).ownerSetGmxExchangeRouter(core.gmxV2Ecosystem.gmxExchangeRouterV2.address);
-    await core.gmxV2Ecosystem.live.registry.connect(core.governance).ownerSetGmxReader(core.gmxV2Ecosystem.gmxReaderV2.address);
+    await core.gmxV2Ecosystem.live.registry.connect(core.governance).ownerSetGmxExchangeRouter(core.gmxV2Ecosystem.gmxExchangeRouter.address);
+    await core.gmxV2Ecosystem.live.registry.connect(core.governance).ownerSetGmxReader(core.gmxV2Ecosystem.gmxReader.address);
 
     const library = await createGmxV2Library();
     const wrapperImpl = await createGmxV2IsolationModeWrapperTraderV2Implementation(core, library);

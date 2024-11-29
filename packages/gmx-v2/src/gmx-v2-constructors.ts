@@ -32,11 +32,7 @@ export async function getGmxV2RegistryConstructorParams(
     core.dolomiteRegistry.address,
   );
 
-  return [
-    implementation.address,
-    core.dolomiteMargin.address,
-    calldata.data,
-  ];
+  return [implementation.address, core.dolomiteMargin.address, calldata.data];
 }
 
 export const GMX_V2_EXECUTION_FEE = parseEther('0.001');
@@ -51,27 +47,26 @@ export function getGmxV2IsolationModeVaultFactoryConstructorParams(
   gmToken: GmToken,
   userVaultImplementation: GmxV2IsolationModeTokenVaultV1,
   executionFee: BigNumberish,
-  skipLongToken: boolean
+  skipLongToken: boolean,
 ): any[] {
-  return [
-    {
-      gmxV2Registry: gmxRegistry.address,
-      executionFee: BigNumber.from(executionFee),
-      tokenAndMarketAddresses: {
-        marketToken: gmToken.marketToken.address,
-        indexToken: gmToken.indexToken.address,
-        shortToken: gmToken.shortToken.address,
-        longToken: gmToken.longToken.address,
-      },
-      skipLongToken: skipLongToken,
-      initialAllowableDebtMarketIds: debtMarketIds,
-      initialAllowableCollateralMarketIds: collateralMarketIds,
-      borrowPositionProxyV2: core.borrowPositionProxyV2.address,
-      userVaultImplementation: userVaultImplementation.address,
-      dolomiteRegistry: core.dolomiteRegistry.address,
-      dolomiteMargin: core.dolomiteMargin.address,
-    }
-  ];
+  const struct: GmxV2IsolationModeVaultFactory.ConstructorParamsStruct = {
+    gmxV2Registry: gmxRegistry.address,
+    executionFee: BigNumber.from(executionFee),
+    tokenAndMarketAddresses: {
+      marketToken: gmToken.marketToken.address,
+      indexToken: gmToken.indexToken.address,
+      shortToken: gmToken.shortToken.address,
+      longToken: gmToken.longToken.address,
+    },
+    skipLongToken: skipLongToken,
+    initialAllowableDebtMarketIds: debtMarketIds,
+    initialAllowableCollateralMarketIds: collateralMarketIds,
+    borrowPositionProxyV2: core.borrowPositionProxyV2.address,
+    userVaultImplementation: userVaultImplementation.address,
+    dolomiteRegistry: core.dolomiteRegistry.address,
+    dolomiteMargin: core.dolomiteMargin.address,
+  };
+  return [struct];
 }
 
 export async function getGmxV2IsolationModeUnwrapperTraderV2ConstructorParams(
@@ -79,20 +74,16 @@ export async function getGmxV2IsolationModeUnwrapperTraderV2ConstructorParams(
   implementation: GmxV2IsolationModeUnwrapperTraderV2,
   dGM: IGmxV2IsolationModeVaultFactory | GmxV2IsolationModeVaultFactory,
   gmxRegistryV2: IGmxV2Registry | GmxV2Registry,
-  skipLongToken: boolean
+  skipLongToken: boolean,
 ): Promise<any[]> {
   const calldata = await implementation.populateTransaction.initialize(
     dGM.address,
     core.dolomiteMargin.address,
     gmxRegistryV2.address,
-    skipLongToken
+    skipLongToken,
   );
 
-  return [
-    implementation.address,
-    core.dolomiteMargin.address,
-    calldata.data,
-  ];
+  return [implementation.address, core.dolomiteMargin.address, calldata.data];
 }
 
 export async function getGmxV2IsolationModeWrapperTraderV2ConstructorParams(
@@ -100,20 +91,16 @@ export async function getGmxV2IsolationModeWrapperTraderV2ConstructorParams(
   implementation: GmxV2IsolationModeWrapperTraderV2,
   dGM: IGmxV2IsolationModeVaultFactory | GmxV2IsolationModeVaultFactory,
   gmxRegistryV2: IGmxV2Registry | GmxV2Registry,
-  skipLongToken: boolean
+  skipLongToken: boolean,
 ): Promise<any[]> {
   const calldata = await implementation.populateTransaction.initialize(
     dGM.address,
     core.dolomiteMargin.address,
     gmxRegistryV2.address,
-    skipLongToken
+    skipLongToken,
   );
 
-  return [
-    implementation.address,
-    core.dolomiteMargin.address,
-    calldata.data,
-  ];
+  return [implementation.address, core.dolomiteMargin.address, calldata.data];
 }
 
 export function getGmxV2MarketTokenPriceOracleConstructorParams(
@@ -124,15 +111,10 @@ export function getGmxV2MarketTokenPriceOracleConstructorParams(
     throw new Error('Gmx ecosystem not initialized');
   }
 
-  return [
-    gmxRegistryV2.address,
-    core.dolomiteMargin.address,
-  ];
+  return [gmxRegistryV2.address, core.dolomiteMargin.address];
 }
 
-export function getGmxV2IsolationModeTokenVaultConstructorParams(
-  core: CoreProtocolArbitrumOne,
-): any[] {
+export function getGmxV2IsolationModeTokenVaultConstructorParams(core: CoreProtocolArbitrumOne): any[] {
   if (!core.gmxEcosystem) {
     throw new Error('Gmx ecosystem not initialized');
   }

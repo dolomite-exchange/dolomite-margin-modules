@@ -40,7 +40,14 @@ import {
 import { impersonate } from '@dolomite-exchange/modules-base/test/utils';
 import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { CoreProtocolType } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { IGmxV2IsolationModeVaultFactory } from '@dolomite-exchange/modules-gmx-v2/src/types';
+import {
+  GmxV2IsolationModeVaultFactory,
+  GmxV2IsolationModeVaultFactory__factory,
+  IGmxV2IsolationModeUnwrapperTraderV2,
+  IGmxV2IsolationModeUnwrapperTraderV2__factory,
+  IGmxV2IsolationModeVaultFactory, IGmxV2IsolationModeWrapperTraderV2,
+  IGmxV2IsolationModeWrapperTraderV2__factory,
+} from '@dolomite-exchange/modules-gmx-v2/src/types';
 import {
   CoreProtocolWithChainlinkOld,
   CoreProtocolWithChainlinkV3,
@@ -83,6 +90,12 @@ import hardhat, { artifacts, ethers, network } from 'hardhat';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { createContractWithName } from 'packages/base/src/utils/dolomite-utils';
 import { CoreProtocolXLayer } from 'packages/base/test/utils/core-protocols/core-protocol-x-layer';
+import { GmToken } from 'packages/base/test/utils/ecosystem-utils/gmx';
+import {
+  getGmxV2IsolationModeUnwrapperTraderV2ConstructorParams,
+  getGmxV2IsolationModeVaultFactoryConstructorParams, getGmxV2IsolationModeWrapperTraderV2ConstructorParams,
+  GMX_V2_EXECUTION_FEE,
+} from 'packages/gmx-v2/src/gmx-v2-constructors';
 import path, { join } from 'path';
 import ModuleDeployments from '../deploy/deployments.json';
 import { CREATE3Factory__factory } from '../saved-types';
@@ -493,6 +506,98 @@ export function getTokenVaultLibrary<T extends NetworkType>(core: CoreProtocolTy
   const deployments = readAllDeploymentFiles();
   return {
     [libraryName]: deployments[deploymentName][core.config.network].address,
+  };
+}
+
+export interface GmxV2System {
+  factory: GmxV2IsolationModeVaultFactory;
+  unwrapper: IGmxV2IsolationModeUnwrapperTraderV2;
+  wrapper: IGmxV2IsolationModeWrapperTraderV2;
+}
+
+export async function deployGmxV2System(
+  core: CoreProtocolArbitrumOne,
+  gmToken: GmToken,
+  gmName: string,
+): Promise<GmxV2System> {
+  const stablecoins = core.marketIds.stablecoins;
+  const shortIndex = stablecoins.findIndex((m) => BigNumber.from(m).eq(gmToken.shortMarketId));
+  if (shortIndex !== -1) {
+    const firstValue = stablecoins[0];
+    stablecoins[0] = stablecoins[shortIndex];
+    stablecoins[shortIndex] = firstValue;
+  }
+
+  const longMarketId = BigNumber.from(gmToken.longMarketId);
+  const debtMarketIds = [...stablecoins];
+  const collateralMarketIds = [...stablecoins];
+  if (!longMarketId.eq(-1)) {
+    debtMarketIds.unshift(longMarketId);
+    collateralMarketIds.unshift(longMarketId);
+  }
+  if (longMarketId.eq(gmToken.shortMarketId)) {
+    // Need to append the short marketId to the beginning too, even if they're the same asset
+    debtMarketIds.unshift(longMarketId);
+    collateralMarketIds.unshift(longMarketId);
+  }
+
+  function addMarketIdIfNeeded(list: BigNumberish[], findMarketId: BigNumberish) {
+    if (!list.some(m => BigNumber.from(m).eq(findMarketId))) {
+      list.push(findMarketId);
+    }
+  }
+
+  addMarketIdIfNeeded(debtMarketIds, core.marketIds.wbtc);
+  addMarketIdIfNeeded(collateralMarketIds, core.marketIds.wbtc);
+
+  addMarketIdIfNeeded(debtMarketIds, core.marketIds.weth);
+  addMarketIdIfNeeded(collateralMarketIds, core.marketIds.weth);
+
+  const factoryAddress = await deployContractAndSave(
+    'GmxV2IsolationModeVaultFactory',
+    getGmxV2IsolationModeVaultFactoryConstructorParams(
+      core,
+      core.gmxV2Ecosystem.live.registry,
+      debtMarketIds,
+      collateralMarketIds,
+      gmToken,
+      core.gmxV2Ecosystem.live.tokenVaultImplementation,
+      GMX_V2_EXECUTION_FEE,
+      longMarketId.eq(-1),
+    ),
+    `GmxV2${gmName}IsolationModeVaultFactory`,
+    core.gmxV2Ecosystem.live.gmxV2LibraryMap,
+  );
+  const factory = GmxV2IsolationModeVaultFactory__factory.connect(factoryAddress, core.hhUser1);
+
+  const unwrapperProxyAddress = await deployContractAndSave(
+    'IsolationModeTraderProxy',
+    await getGmxV2IsolationModeUnwrapperTraderV2ConstructorParams(
+      core,
+      core.gmxV2Ecosystem.live.unwrapperImplementation,
+      factory,
+      core.gmxV2Ecosystem.live.registry,
+      false,
+    ),
+    `GmxV2${gmName}AsyncIsolationModeUnwrapperTraderProxyV2`,
+  );
+
+  const wrapperProxyAddress = await deployContractAndSave(
+    'IsolationModeTraderProxy',
+    await getGmxV2IsolationModeWrapperTraderV2ConstructorParams(
+      core,
+      core.gmxV2Ecosystem.live.wrapperImplementation,
+      factory,
+      core.gmxV2Ecosystem.live.registry,
+      false,
+    ),
+    `GmxV2${gmName}AsyncIsolationModeWrapperTraderProxyV2`,
+  );
+
+  return {
+    factory,
+    unwrapper: IGmxV2IsolationModeUnwrapperTraderV2__factory.connect(unwrapperProxyAddress, core.hhUser1),
+    wrapper: IGmxV2IsolationModeWrapperTraderV2__factory.connect(wrapperProxyAddress, core.hhUser1),
   };
 }
 
