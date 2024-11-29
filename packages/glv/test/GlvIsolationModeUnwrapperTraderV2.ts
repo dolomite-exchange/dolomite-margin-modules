@@ -297,7 +297,7 @@ describe('GlvIsolationModeUnwrapperTraderV2', () => {
       expect(await vault.isDepositSourceWrapper()).to.eq(false);
       expect(await underlyingToken.balanceOf(vault.address)).to.eq(ZERO_BI);
 
-      // Mine blocks so we can cancel deposit
+      // Mine blocks so we can cancel withdrawal
       await mine(1200);
       await vault.cancelWithdrawal(withdrawalKey);
 
@@ -338,7 +338,7 @@ describe('GlvIsolationModeUnwrapperTraderV2', () => {
 
       await glvRegistry.connect(core.governance).ownerSetIsHandler(core.hhUser1.address, true);
 
-      // Mine blocks so we can cancel deposit
+      // Mine blocks so we can cancel withdrawal
       await mine(1200);
       await unwrapper.connect(core.hhUser1).initiateCancelWithdrawal(withdrawalKey);
 
@@ -534,7 +534,7 @@ describe('GlvIsolationModeUnwrapperTraderV2', () => {
       expect(await vault.isDepositSourceWrapper()).to.eq(false);
       expect(await underlyingToken.balanceOf(vault.address)).to.eq(ZERO_BI);
 
-      // Mine blocks so we can cancel deposit
+      // Mine blocks so we can cancel withdrawal
       await mine(1200);
       await vault.connect(core.hhUser1).cancelWithdrawal(withdrawalKey);
 
@@ -735,6 +735,11 @@ describe('GlvIsolationModeUnwrapperTraderV2', () => {
         DEFAULT_EXTRA_DATA,
         { value: executionFee },
       );
+      // 0xa35b150b
+      // 0000000000000000000000002d454740b2c4594fa690ff7fb8da457d96507a67
+      // 0000000000000000000000000000000000000000000000000000000000000040
+      // 000000000000000000000000000000000000000000000000000000000000000a
+      // 434f4e54524f4c4c455200000000000000000000000000000000000000000000
       await expectWalletBalance(vault, underlyingToken, ZERO_BI);
 
       const filter = eventEmitter.filters.AsyncWithdrawalCreated();
@@ -922,11 +927,12 @@ describe('GlvIsolationModeUnwrapperTraderV2', () => {
       await expectWalletBalance(unwrapper, core.tokens.weth, withdrawalInfo.outputAmount);
     });
 
-    it('should work normally with swap fails due to reversion with a message', async () => {
+    it.only('should work normally with swap fails due to reversion with a message', async () => {
       await setupBalances(core.tokens.weth);
       await vault.setReversionType(ReversionType.Require);
       expect(await vault.reversionType()).to.eq(ReversionType.Require);
 
+      console.log('BEFORE');
       const result = await core.glvEcosystem.glvHandler
         .connect(core.gmxV2Ecosystem.gmxExecutor)
         .executeGlvWithdrawal(
@@ -939,6 +945,7 @@ describe('GlvIsolationModeUnwrapperTraderV2', () => {
         token: factory.address,
         reason: 'Reverting',
       });
+      console.log('AFTER');
 
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.nativeUsdc, ZERO_BI);
