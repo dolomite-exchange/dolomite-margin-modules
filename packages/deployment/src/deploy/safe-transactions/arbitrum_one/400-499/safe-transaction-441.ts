@@ -99,7 +99,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
 
   for (let i = 0; i < systems.length; i++) {
     transactions.push(
-      ...(await prettyPrintEncodeAddGlvMarket(
+      ...await prettyPrintEncodeAddGlvMarket(
         core,
         systems[i].factory,
         underlyingGmTokens[i],
@@ -110,7 +110,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
         collateralizations[i],
         penalties[i],
         supplyCaps[i],
-      )),
+      ),
     );
   }
 
