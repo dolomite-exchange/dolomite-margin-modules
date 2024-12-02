@@ -184,7 +184,7 @@ contract GlvIsolationModeTokenVaultV1 is
         override
     {
         _tradersPath = GmxV2Library.vaultValidateExecutionFeeIfWrapToUnderlying(
-            /* _vault = */ IGmxV2IsolationModeTokenVaultV1(address(this)), // @follow-up Is this ok to do?
+            /* _vault = */ this,
             _borrowAccountNumber,
             _tradersPath
         );

@@ -321,7 +321,6 @@ library GlvLibrary {
             aggregator.getPrice(props.shortToken).value
         );
 
-        // @audit Confirm these checks are correct
         int256 shortPnlToPoolFactor = _registry.gmxReader().getPnlToPoolFactor(
             dataStore,
             gmMarket,

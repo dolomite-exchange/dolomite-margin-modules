@@ -793,7 +793,6 @@ describe('GlvIsolationModeUnwrapperTraderV2', () => {
       expect(withdrawalBefore.outputToken).to.eq(core.tokens.weth.address);
       expect(withdrawalBefore.outputAmount).to.eq(minAmountOut);
 
-      hre.tracer.enabled = true;
       const result = await core.glvEcosystem.glvHandler
         .connect(core.gmxV2Ecosystem.gmxExecutor)
         .executeGlvWithdrawal(
@@ -801,7 +800,6 @@ describe('GlvIsolationModeUnwrapperTraderV2', () => {
           await getGlvOracleParams(core, controller, core.glvEcosystem.glvTokens.wethUsdc, testOracleProvider),
           { gasLimit },
         );
-      hre.tracer.enabled = false;
       await expectEvent(eventEmitter, result, 'AsyncWithdrawalExecuted', {
         key: withdrawalKey,
         token: factory.address,
@@ -927,12 +925,11 @@ describe('GlvIsolationModeUnwrapperTraderV2', () => {
       await expectWalletBalance(unwrapper, core.tokens.weth, withdrawalInfo.outputAmount);
     });
 
-    it.only('should work normally with swap fails due to reversion with a message', async () => {
+    it('should work normally with swap fails due to reversion with a message', async () => {
       await setupBalances(core.tokens.weth);
       await vault.setReversionType(ReversionType.Require);
       expect(await vault.reversionType()).to.eq(ReversionType.Require);
 
-      console.log('BEFORE');
       const result = await core.glvEcosystem.glvHandler
         .connect(core.gmxV2Ecosystem.gmxExecutor)
         .executeGlvWithdrawal(
@@ -945,7 +942,6 @@ describe('GlvIsolationModeUnwrapperTraderV2', () => {
         token: factory.address,
         reason: 'Reverting',
       });
-      console.log('AFTER');
 
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.nativeUsdc, ZERO_BI);

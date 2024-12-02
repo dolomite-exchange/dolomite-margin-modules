@@ -1,5 +1,5 @@
 import { BigNumberish } from 'ethers';
-import { IERC20__factory } from 'packages/base/src/types';
+import { IERC20__factory, RegistryProxy, RegistryProxy__factory } from 'packages/base/src/types';
 import {
   GLV_HANDLER_MAP,
   GLV_READER_MAP,
@@ -13,7 +13,16 @@ import {
 } from 'packages/base/src/utils/constants';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
+import Deployments from 'packages/deployment/src/deploy/deployments.json';
 import {
+  GlvIsolationModeTokenVaultV1,
+  GlvIsolationModeTokenVaultV1__factory,
+  GlvIsolationModeUnwrapperTraderV2,
+  GlvIsolationModeUnwrapperTraderV2__factory,
+  GlvIsolationModeWrapperTraderV2,
+  GlvIsolationModeWrapperTraderV2__factory,
+  GlvRegistry,
+  GlvRegistry__factory,
   IERC20,
   IGlvHandler,
   IGlvHandler__factory,
@@ -24,7 +33,7 @@ import {
   IGlvToken,
   IGlvToken__factory,
 } from 'packages/glv/src/types';
-import { getContract } from '../setup';
+import { getContract, getMaxDeploymentVersionAddressByDeploymentKey } from '../setup';
 
 export interface GlvToken {
   glvToken: IGlvToken;
@@ -43,12 +52,34 @@ export interface GlvEcosystem {
     wethUsdc: GlvToken;
   };
   glvVault: { address: string };
+  live: {
+    glvLibraryMap: { GlvLibrary: string };
+    registry: GlvRegistry;
+    registryProxy: RegistryProxy;
+    tokenVaultImplementation: GlvIsolationModeTokenVaultV1;
+    unwrapperImplementation: GlvIsolationModeUnwrapperTraderV2;
+    wrapperImplementation: GlvIsolationModeWrapperTraderV2;
+  };
 }
 
 export async function createGlvEcosystem(network: Network, signer: SignerWithAddressWithSafety): Promise<GlvEcosystem> {
   if (network !== Network.ArbitrumOne) {
     return Promise.reject(`Invalid network, found ${network}`);
   }
+
+  const glvLibraryAddress = getMaxDeploymentVersionAddressByDeploymentKey('GlvLibrary', network);
+  const tokenVaultImplementationAddress = getMaxDeploymentVersionAddressByDeploymentKey(
+    'GlvIsolationModeTokenVaultImplementation',
+    network,
+  );
+  const unwrapperImplementationAddress = getMaxDeploymentVersionAddressByDeploymentKey(
+    'GlvIsolationModeUnwrapperTraderImplementation',
+    network,
+  );
+  const wrapperImplementationAddress = getMaxDeploymentVersionAddressByDeploymentKey(
+    'GlvIsolationModeWrapperTraderImplementation',
+    network,
+  );
 
   return {
     glvHandler: getContract(GLV_HANDLER_MAP[network], IGlvHandler__factory.connect, signer),
@@ -71,5 +102,16 @@ export async function createGlvEcosystem(network: Network, signer: SignerWithAdd
       },
     },
     glvVault: { address: GLV_VAULT_MAP[network] },
+    live: {
+      glvLibraryMap: { GlvLibrary: glvLibraryAddress },
+      registry: GlvRegistry__factory.connect(Deployments.GlvRegistryProxy['42161'].address, signer),
+      registryProxy: RegistryProxy__factory.connect(Deployments.GlvRegistryProxy['42161'].address, signer),
+      tokenVaultImplementation: GlvIsolationModeTokenVaultV1__factory.connect(tokenVaultImplementationAddress, signer),
+      unwrapperImplementation: GlvIsolationModeUnwrapperTraderV2__factory.connect(
+        unwrapperImplementationAddress,
+        signer,
+      ),
+      wrapperImplementation: GlvIsolationModeWrapperTraderV2__factory.connect(wrapperImplementationAddress, signer),
+    },
   };
 }

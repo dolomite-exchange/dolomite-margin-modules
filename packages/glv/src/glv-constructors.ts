@@ -22,13 +22,13 @@ export async function getGlvRegistryConstructorParams(
   }
 
   const calldata = await implementation.populateTransaction.initialize(
-    core.gmxV2Ecosystem!.gmxDataStore.address,
-    core.gmxV2Ecosystem!.gmxExchangeRouter.address,
-    core.gmxV2Ecosystem!.gmxReader.address,
-    core.glvEcosystem!.glvHandler.address,
-    core.glvEcosystem!.glvReader.address,
-    core.glvEcosystem!.glvRouter.address,
-    core.glvEcosystem!.glvVault.address,
+    core.gmxV2Ecosystem.gmxDataStore.address,
+    core.gmxV2Ecosystem.gmxExchangeRouter.address,
+    core.gmxV2Ecosystem.gmxReader.address,
+    core.glvEcosystem.glvHandler.address,
+    core.glvEcosystem.glvReader.address,
+    core.glvEcosystem.glvRouter.address,
+    core.glvEcosystem.glvVault.address,
     callbackGasLimit,
     core.dolomiteRegistry.address,
   );

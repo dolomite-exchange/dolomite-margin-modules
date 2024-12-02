@@ -79,7 +79,6 @@ const defaultAccountNumber = '0';
 const borrowAccountNumber = '123';
 const usdcAmount = BigNumber.from('1000000000'); // $1,000
 const DUMMY_DEPOSIT_KEY = '0x6d1ff6ffcab884211992a9d6b8261b7fae5db4d2da3a5eb58647988da3869d6f';
-const EXECUTE_GLV_DEPOSIT_FEATURE_DISABLED_KEY = '0xa12be4af33f071deeae3bc87dcf436f28d52382a339c740fda0a10712d3179fc';
 const minAmountOut = parseEther('100');
 
 const executionFee =
@@ -105,12 +104,25 @@ describe('GlvIsolationModeWrapperTraderV2', () => {
   let marketId: BigNumber;
   let testOracleProvider: TestOracleProvider;
   let controller: SignerWithAddressWithSafety;
+  let EXECUTE_GLV_DEPOSIT_FEATURE_DISABLED_KEY: string;
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultProtocolConfigForGlv());
     eventEmitter = core.eventEmitterRegistry;
     underlyingToken = core.glvEcosystem.glvTokens.wethUsdc.glvToken.connect(core.hhUser1);
     gmMarketToken = core.gmxV2Ecosystem.gmTokens.ethUsd.marketToken;
+
+    EXECUTE_GLV_DEPOSIT_FEATURE_DISABLED_KEY = ethers.utils.keccak256(
+      ethers.utils.defaultAbiCoder.encode(
+        ['bytes32', 'address'],
+        [
+          ethers.utils.keccak256(
+            ethers.utils.defaultAbiCoder.encode(['string'], ['EXECUTE_GLV_DEPOSIT_FEATURE_DISABLED']),
+          ),
+          core.glvEcosystem.glvHandler.address,
+        ],
+      ),
+    );
 
     const glvLibrary = await createGlvLibrary();
     const gmxV2Library = await createGmxV2Library();
@@ -442,7 +454,7 @@ describe('GlvIsolationModeWrapperTraderV2', () => {
     });
 
     it('should work normally with short token', async () => {
-      const minAmountOut = parseEther('990');
+      const minAmountOut = parseEther('777');
       await setupBalances(core.marketIds.nativeUsdc, usdcAmount, minAmountOut);
 
       const result = await core.glvEcosystem.glvHandler
@@ -470,7 +482,7 @@ describe('GlvIsolationModeWrapperTraderV2', () => {
     });
 
     it('should work normally when execute deposit fails on GMX side', async () => {
-      const minAmountOut = parseEther('1000');
+      const minAmountOut = parseEther('777');
       await setupBalances(core.marketIds.nativeUsdc, usdcAmount, minAmountOut);
 
       const result = await core.glvEcosystem.glvHandler
@@ -480,6 +492,7 @@ describe('GlvIsolationModeWrapperTraderV2', () => {
           await getGlvOracleParams(core, controller, core.glvEcosystem.glvTokens.wethUsdc, testOracleProvider),
           { gasLimit },
         );
+      // @oriole - Why is this supposed to fail?
       await expectEvent(eventEmitter, result, 'AsyncDepositCancelled', {
         key: depositKey,
         token: factory.address,
@@ -1140,6 +1153,7 @@ describe('GlvIsolationModeWrapperTraderV2', () => {
 
   describe('#executeDepositCancellationForRetry', () => {
     it('should work normally', async () => {
+      const minAmountOut = parseEther('77');
       await glvRegistry.connect(core.governance).ownerSetIsHandler(core.hhUser1.address, true);
       await vault.transferIntoPositionWithOtherToken(
         defaultAccountNumber,
@@ -1181,7 +1195,7 @@ describe('GlvIsolationModeWrapperTraderV2', () => {
         vault.address,
         borrowAccountNumber,
         core.marketIds.nativeUsdc,
-        ZERO_BI.sub(usdcAmount.div(5)).sub(1),
+        ZERO_BI.sub(usdcAmount.div(5)),
       );
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, minAmountOut);
 

@@ -1199,6 +1199,48 @@
       "isVerified": true
     }
   },
+  "GlvIsolationModeTokenVaultImplementationV1": {
+    "42161": {
+      "address": "0xd2288825bbfe9f680067C1622334139a507f722B",
+      "transaction": "0x446a6a413566b357a704d1bf61b15ccb0067ab5daa8c21158d54478d97f0e5a4",
+      "isVerified": true
+    }
+  },
+  "GlvIsolationModeUnwrapperTraderImplementationV2": {
+    "42161": {
+      "address": "0x997cF88Fea4309F3866cE97D9fB70c8086F079b3",
+      "transaction": "0x6357429d00572f7bac5566b31031c309b7000213635c95b75353757fee9a38fa",
+      "isVerified": true
+    }
+  },
+  "GlvIsolationModeWrapperTraderImplementationV2": {
+    "42161": {
+      "address": "0xc53fbBAbAee443Ae9c4c8e1c5557B5eAD078BE69",
+      "transaction": "0xace984513e8a4403f9c8d81ed444a22a72ce3d9143beb6b7a830df162d15361a",
+      "isVerified": true
+    }
+  },
+  "GlvLibraryV1": {
+    "42161": {
+      "address": "0x3b51530DbcbFd8666Cc3cD4cC461A7903c8bb175",
+      "transaction": "0x0fdbe90a3540b5dac86a0fa6435c9c667df0cc8e4f8e927d2393d2628e059d52",
+      "isVerified": true
+    }
+  },
+  "GlvRegistryImplementationV1": {
+    "42161": {
+      "address": "0xAe0EC76e337149346c81EDFA797250799543a889",
+      "transaction": "0x1e0102771592901ed9477504a7d4a3861a1474f7de4b9fe79116a198cc4c37d4",
+      "isVerified": true
+    }
+  },
+  "GlvRegistryProxy": {
+    "42161": {
+      "address": "0x14F7137BAD9339c0901Df6728FF4B798F0f4429C",
+      "transaction": "0xd396ea4067a320f046c9ce1dc60dcedc23d8b6b353ea2813bd0c552c491f88fc",
+      "isVerified": true
+    }
+  },
   "GMXIsolationModeTokenVaultV1": {
     "42161": {
       "address": "0x95F13CC09cD1F69469389e11dd6e89fA845A26fE",

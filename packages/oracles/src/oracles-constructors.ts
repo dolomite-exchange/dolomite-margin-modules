@@ -22,6 +22,7 @@ import {
   IChainlinkPriceOracleV1,
   IChainlinkPriceOracleV1__factory,
   IChainlinkPriceOracleV3,
+  IChaosLabsPriceOracleV3,
   IDolomiteRegistry,
   IERC20Metadata__factory,
   IRedstonePriceOracleV2__factory,
@@ -29,30 +30,51 @@ import {
   RedstonePriceOracleV3,
 } from './types';
 
-export type CoreProtocolWithChainlinkOld<T extends NetworkType> = Extract<CoreProtocolType<T>, {
-  dolomiteMargin: DolomiteMargin<T>;
-  chainlinkPriceOracleV1: IChainlinkPriceOracleV1;
-}>;
+export type CoreProtocolWithChainlinkOld<T extends NetworkType> = Extract<
+  CoreProtocolType<T>,
+  {
+    dolomiteMargin: DolomiteMargin<T>;
+    chainlinkPriceOracleV1: IChainlinkPriceOracleV1;
+  }
+>;
 
-export type CoreProtocolWithChainlinkV3<T extends NetworkType> = Extract<CoreProtocolType<T>, {
-  dolomiteMargin: DolomiteMargin<T>;
-  chainlinkPriceOracleV3: IChainlinkPriceOracleV3;
-  oracleAggregatorV2: OracleAggregatorV2;
-}>;
+export type CoreProtocolWithChainlinkV3<T extends NetworkType> = Extract<
+  CoreProtocolType<T>,
+  {
+    dolomiteMargin: DolomiteMargin<T>;
+    chainlinkPriceOracleV3: IChainlinkPriceOracleV3;
+    oracleAggregatorV2: OracleAggregatorV2;
+  }
+>;
 
-export type CoreProtocolWithChronicle<T extends NetworkType> = Extract<CoreProtocolType<T>, {
-  config: CoreProtocolConfig<T>
-  dolomiteMargin: DolomiteMargin<T>;
-  chroniclePriceOracleV3: ChroniclePriceOracleV3;
-  oracleAggregatorV2: OracleAggregatorV2;
-}>;
+export type CoreProtocolWithChaosLabsV3<T extends NetworkType> = Extract<
+  CoreProtocolType<T>,
+  {
+    dolomiteMargin: DolomiteMargin<T>;
+    chaosLabsPriceOracleV3: IChaosLabsPriceOracleV3;
+    oracleAggregatorV2: OracleAggregatorV2;
+  }
+>;
 
-export type CoreProtocolWithRedstone<T extends NetworkType> = Extract<CoreProtocolType<T>, {
-  config: CoreProtocolConfig<T>
-  dolomiteMargin: DolomiteMargin<T>;
-  redstonePriceOracleV3: RedstonePriceOracleV3;
-  oracleAggregatorV2: OracleAggregatorV2;
-}>;
+export type CoreProtocolWithChronicle<T extends NetworkType> = Extract<
+  CoreProtocolType<T>,
+  {
+    config: CoreProtocolConfig<T>;
+    dolomiteMargin: DolomiteMargin<T>;
+    chroniclePriceOracleV3: ChroniclePriceOracleV3;
+    oracleAggregatorV2: OracleAggregatorV2;
+  }
+>;
+
+export type CoreProtocolWithRedstone<T extends NetworkType> = Extract<
+  CoreProtocolType<T>,
+  {
+    config: CoreProtocolConfig<T>;
+    dolomiteMargin: DolomiteMargin<T>;
+    redstonePriceOracleV3: RedstonePriceOracleV3;
+    oracleAggregatorV2: OracleAggregatorV2;
+  }
+>;
 
 export async function getChainlinkPriceOracleV3ConstructorParamsFromChainlinkOracleV1ZkEvm(
   core: CoreProtocolPolygonZkEvm,
@@ -294,8 +316,8 @@ export function getChainlinkPriceOracleV3ConstructorParams<T extends NetworkType
   dolomiteMargin: DolomiteMargin<T>,
 ): [string[], string[], boolean[], string, string] {
   return [
-    tokens.map(t => t.address),
-    aggregators.map(t => t.address),
+    tokens.map((t) => t.address),
+    aggregators.map((t) => t.address),
     invertPrices,
     dolomiteRegistry.address,
     dolomiteMargin.address,
@@ -310,8 +332,8 @@ export function getChaosLabsPriceOracleV3ConstructorParams<T extends NetworkType
   dolomiteMargin: DolomiteMargin<T>,
 ): [string[], string[], boolean[], string, string] {
   return [
-    tokens.map(t => t.address),
-    aggregators.map(t => t.address),
+    tokens.map((t) => t.address),
+    aggregators.map((t) => t.address),
     invertPrices,
     dolomiteRegistry.address,
     dolomiteMargin.address,
@@ -324,13 +346,7 @@ export function getChroniclePriceOracleV3ConstructorParams<T extends NetworkType
   scribes: string[],
   invertPrices: boolean[],
 ): [string[], string[], boolean[], string, string] {
-  return [
-    tokens,
-    scribes,
-    invertPrices,
-    core.dolomiteRegistry.address,
-    core.dolomiteMargin.address,
-  ];
+  return [tokens, scribes, invertPrices, core.dolomiteRegistry.address, core.dolomiteMargin.address];
 }
 
 export function getRamsesCLPriceOracleV3ConstructorParams<T extends NetworkType>(
@@ -338,12 +354,7 @@ export function getRamsesCLPriceOracleV3ConstructorParams<T extends NetworkType>
   token: IERC20,
   pool: string,
 ): any[] {
-  return [
-    token.address,
-    pool,
-    core.dolomiteRegistry.address,
-    core.dolomiteMargin.address,
-  ];
+  return [token.address, pool, core.dolomiteRegistry.address, core.dolomiteMargin.address];
 }
 
 export async function getRedstonePriceOracleV2ConstructorParams<T extends NetworkType>(
@@ -354,9 +365,9 @@ export async function getRedstonePriceOracleV2ConstructorParams<T extends Networ
   core: CoreProtocolType<T>,
 ): Promise<[string[], string[], BigNumberish[], string[], boolean[], string]> {
   return [
-    tokens.map(t => t.address),
+    tokens.map((t) => t.address),
     aggregators,
-    await Promise.all(tokens.map(t => IERC20Metadata__factory.connect(t.address, t.signer).decimals())),
+    await Promise.all(tokens.map((t) => IERC20Metadata__factory.connect(t.address, t.signer).decimals())),
     tokenPairs,
     bypassUsdValue,
     core.dolomiteMargin.address,
@@ -369,13 +380,7 @@ export function getRedstonePriceOracleV3ConstructorParams<T extends NetworkType>
   redstoneAggregators: string[],
   invertPrices: boolean[],
 ): [string[], string[], boolean[], string, string] {
-  return [
-    tokens,
-    redstoneAggregators,
-    invertPrices,
-    core.dolomiteRegistry.address,
-    core.dolomiteMargin.address,
-  ];
+  return [tokens, redstoneAggregators, invertPrices, core.dolomiteRegistry.address, core.dolomiteMargin.address];
 }
 
 export function getTWAPPriceOracleV1ConstructorParams<T extends Network>(
@@ -383,7 +388,7 @@ export function getTWAPPriceOracleV1ConstructorParams<T extends Network>(
   token: IERC20,
   tokenPairs: IAlgebraV3Pool[],
 ): any[] {
-  return [token.address, tokenPairs.map(pair => pair.address), core.dolomiteMargin.address];
+  return [token.address, tokenPairs.map((pair) => pair.address), core.dolomiteMargin.address];
 }
 
 export function getTWAPPriceOracleV2ConstructorParams<T extends Network>(

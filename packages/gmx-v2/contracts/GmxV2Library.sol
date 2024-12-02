@@ -239,7 +239,7 @@ library GmxV2Library {
     }
 
     function vaultValidateExecutionFeeIfWrapToUnderlying(
-        IGmxV2IsolationModeTokenVaultV1 _vault,
+        IIsolationModeTokenVaultV1WithAsyncFreezable _vault,
         uint256 _tradeAccountNumber,
         IGenericTraderBase.TraderParam[] memory _tradersPath
     ) public returns (IGenericTraderBase.TraderParam[] memory) {
@@ -518,7 +518,7 @@ library GmxV2Library {
     // ======================== Private Functions ======================
     // ==================================================================
 
-    function _depositAndApproveWethForWrapping(IGmxV2IsolationModeTokenVaultV1 _vault) private {
+    function _depositAndApproveWethForWrapping(IIsolationModeTokenVaultV1WithAsyncFreezable _vault) private {
         Require.that(
             msg.value > 0,
             _FILE,
@@ -526,7 +526,7 @@ library GmxV2Library {
         );
         _vault.WETH().deposit{value: msg.value}();
         IERC20(address(_vault.WETH())).safeApprove(
-            address(_vault.registry().getWrapperByToken(IIsolationModeVaultFactory(_vault.VAULT_FACTORY()))),
+            address(_vault.handlerRegistry().getWrapperByToken(IIsolationModeVaultFactory(_vault.VAULT_FACTORY()))),
             msg.value
         );
     }

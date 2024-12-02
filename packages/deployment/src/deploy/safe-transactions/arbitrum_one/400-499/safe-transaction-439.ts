@@ -10,9 +10,9 @@ import { BigNumberish } from 'ethers';
 import { formatEther, parseEther } from 'ethers/lib/utils';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import {
-  deployGmxV2System,
+  deployGmxV2GmTokenSystem,
   EncodedTransaction,
-  GmxV2System,
+  GmxV2GmTokenSystem,
   prettyPrintEncodeAddGmxV2Market,
   prettyPrintEncodeInsertChainlinkOracleV3,
 } from '../../../../utils/deploy-utils';
@@ -54,9 +54,9 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     TargetLiquidationPenalty.Base,
   ];
 
-  const systems: GmxV2System[] = [];
+  const systems: GmxV2GmTokenSystem[] = [];
   for (let i = 0; i < gmTokens.length; i += 1) {
-    systems.push(await deployGmxV2System(core, gmTokens[i], gmNames[i]));
+    systems.push(await deployGmxV2GmTokenSystem(core, gmTokens[i], gmNames[i]));
   }
 
   const marketId = await core.dolomiteMargin.getNumMarkets();

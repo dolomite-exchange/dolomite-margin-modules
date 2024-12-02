@@ -217,7 +217,7 @@ library GlvLibrary {
             "minOutputAmount too small"
         );
         IUpgradeableAsyncIsolationModeUnwrapperTrader unwrapper = registry.getUnwrapperByToken(factory);
-        GlvWithdrawalUtils.CreateGlvWithdrawalParams memory withdrawalParams = 
+        GlvWithdrawalUtils.CreateGlvWithdrawalParams memory withdrawalParams =
             GlvWithdrawalUtils.CreateGlvWithdrawalParams(
                 /* receiver = */ address(unwrapper),
                 /* callbackContract = */ address(unwrapper),
@@ -315,7 +315,6 @@ library GlvLibrary {
             aggregator.getPrice(props.shortToken).value
         );
 
-        // @audit Confirm these checks are correct
         int256 shortPnlToPoolFactor = _registry.gmxReader().getPnlToPoolFactor(
             dataStore,
             gmMarket,

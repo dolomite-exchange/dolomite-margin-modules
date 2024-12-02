@@ -83,6 +83,7 @@ enum FreezeType {
   Withdrawal = 1,
 }
 
+// need to test: #addCollateralAndSwapExactInputForOutput and #swapExactInputForOutputAndRemoveCollateral
 describe('GlvIsolationModeTokenVaultV1', () => {
   let snapshotId: string;
 
@@ -931,6 +932,857 @@ describe('GlvIsolationModeTokenVaultV1', () => {
     });
   });
 
+  describe('#addCollateralAndSwapExactInputForOutput', () => {
+    it('should work normally for wrapping', async () => {
+      const initiateWrappingParams = await getInitiateWrappingParams(
+        borrowAccountNumber,
+        core.marketIds.weth,
+        amountWei,
+        marketId,
+        minAmountOut,
+        wrapper,
+      );
+      await vault.addCollateralAndSwapExactInputForOutput(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        initiateWrappingParams.marketPath,
+        initiateWrappingParams.amountIn,
+        initiateWrappingParams.minAmountOut,
+        initiateWrappingParams.traderParams,
+        initiateWrappingParams.makerAccounts,
+        initiateWrappingParams.userConfig,
+        { value: executionFee },
+      );
+
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, minAmountOut);
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, 0);
+      expect(await vault.isVaultFrozen()).to.eq(true);
+      expect(await vault.shouldSkipTransfer()).to.eq(false);
+      expect(await vault.isDepositSourceWrapper()).to.eq(false);
+    });
+
+    it('should work normally when not frozen', async () => {
+      const outputAmount = amountWei.div(2);
+      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
+      await vault.addCollateralAndSwapExactInputForOutput(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        zapParams.marketIdsPath,
+        zapParams.inputAmountWei,
+        zapParams.minOutputAmountWei,
+        zapParams.tradersPath,
+        zapParams.makerAccounts,
+        zapParams.userConfig,
+      );
+    });
+
+    it('should work if called by unwrapper', async () => {
+      const outputAmount = amountWei.div(2);
+      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
+      const unwrapperImpersonator = await impersonate(unwrapper.address, true);
+      await vault
+        .connect(unwrapperImpersonator)
+        .addCollateralAndSwapExactInputForOutput(
+          defaultAccountNumber,
+          borrowAccountNumber,
+          zapParams.marketIdsPath,
+          zapParams.inputAmountWei,
+          zapParams.minOutputAmountWei,
+          zapParams.tradersPath,
+          zapParams.makerAccounts,
+          zapParams.userConfig,
+        );
+    });
+
+    it('should fail if user is underwater and attempting to initiate wrapping', async () => {
+      await setupGLVBalance(core, underlyingToken, core.hhUser1, amountWei, vault);
+      await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await vault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei, { value: executionFee });
+
+      // Create debt for the position
+      let glvPrice = (await core.dolomiteMargin.getMarketPrice(marketId)).value;
+      const wethPrice = (await core.dolomiteMargin.getMarketPrice(core.marketIds.weth)).value;
+
+      const wethAmount = amountWei.mul(glvPrice).div(wethPrice).mul(100).div(121);
+      await vault.transferFromPositionWithOtherToken(
+        borrowAccountNumber,
+        defaultAccountNumber,
+        core.marketIds.weth,
+        wethAmount,
+        BalanceCheckFlag.To,
+      );
+      await expectProtocolBalance(core, vault.address, defaultAccountNumber, marketId, ZERO_BI);
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
+      await expectProtocolBalance(
+        core,
+        core.hhUser1.address,
+        defaultAccountNumber,
+        core.marketIds.weth,
+        amountWei.add(wethAmount),
+      );
+      await expectProtocolBalance(
+        core,
+        vault.address,
+        borrowAccountNumber,
+        core.marketIds.weth,
+        ZERO_BI.sub(wethAmount),
+      );
+
+      glvPrice = glvPrice.mul(70).div(100);
+      await core.testEcosystem!.testPriceOracle.setPrice(factory.address, glvPrice);
+      await core.dolomiteMargin.ownerSetPriceOracle(marketId, core.testEcosystem!.testPriceOracle.address);
+
+      const initiateWrappingParams = await getInitiateWrappingParams(
+        borrowAccountNumber,
+        core.marketIds.nativeUsdc,
+        usdcAmount,
+        marketId,
+        minAmountOut,
+        wrapper,
+      );
+      await expectThrow(
+        vault.addCollateralAndSwapExactInputForOutput(
+          defaultAccountNumber,
+          borrowAccountNumber,
+          initiateWrappingParams.marketPath,
+          initiateWrappingParams.amountIn,
+          initiateWrappingParams.minAmountOut,
+          initiateWrappingParams.traderParams,
+          initiateWrappingParams.makerAccounts,
+          initiateWrappingParams.userConfig,
+          { value: executionFee },
+        ),
+        'IsolationModeVaultV1ActionsImpl: Account liquidatable',
+      );
+    });
+
+    it('should fail if no ETH is sent with transaction for wrapping', async () => {
+      const initiateWrappingParams = await getInitiateWrappingParams(
+        borrowAccountNumber,
+        core.marketIds.weth,
+        amountWei,
+        marketId,
+        minAmountOut,
+        wrapper,
+      );
+      await expectThrow(
+        vault.addCollateralAndSwapExactInputForOutput(
+          defaultAccountNumber,
+          borrowAccountNumber,
+          initiateWrappingParams.marketPath,
+          initiateWrappingParams.amountIn,
+          initiateWrappingParams.minAmountOut,
+          initiateWrappingParams.traderParams,
+          initiateWrappingParams.makerAccounts,
+          initiateWrappingParams.userConfig,
+        ),
+        'GmxV2Library: Invalid execution fee',
+      );
+    });
+
+    it('should fail if ETH sent is greater than max execution fee', async () => {
+      const initiateWrappingParams = await getInitiateWrappingParams(
+        borrowAccountNumber,
+        core.marketIds.weth,
+        amountWei,
+        marketId,
+        minAmountOut,
+        wrapper,
+      );
+      await expectThrow(
+        vault.addCollateralAndSwapExactInputForOutput(
+          defaultAccountNumber,
+          borrowAccountNumber,
+          initiateWrappingParams.marketPath,
+          initiateWrappingParams.amountIn,
+          initiateWrappingParams.minAmountOut,
+          initiateWrappingParams.traderParams,
+          initiateWrappingParams.makerAccounts,
+          initiateWrappingParams.userConfig,
+          { value: ONE_ETH_BI.mul(2) },
+        ),
+        'GmxV2Library: Invalid execution fee',
+      );
+    });
+
+    it('should fail if ETH is sent for non-wrapper', async () => {
+      const outputAmount = amountWei.div(2);
+      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
+      await expectThrow(
+        vault.addCollateralAndSwapExactInputForOutput(
+          defaultAccountNumber,
+          borrowAccountNumber,
+          zapParams.marketIdsPath,
+          zapParams.inputAmountWei,
+          zapParams.minOutputAmountWei,
+          zapParams.tradersPath,
+          zapParams.makerAccounts,
+          zapParams.userConfig,
+          { value: ONE_BI },
+        ),
+        'GmxV2Library: Cannot send ETH for non-wrapper',
+      );
+    });
+
+    it('should fail when caller is not unwrapper for unwrapping is frozen', async () => {
+      await factory
+        .connect(impersonatedVault)
+        .setVaultAccountPendingAmountForFrozenStatus(
+          vault.address,
+          defaultAccountNumber,
+          FreezeType.Withdrawal,
+          toPositiveWeiStruct(ONE_BI),
+          core.tokens.weth.address,
+        );
+
+      const unwrappingParams = await getInitiateUnwrappingParams(
+        borrowAccountNumber,
+        marketId,
+        amountWei,
+        core.marketIds.usdc,
+        1000e6,
+        unwrapper,
+        executionFee,
+      );
+      await expectThrow(
+        vault.addCollateralAndSwapExactInputForOutput(
+          defaultAccountNumber,
+          borrowAccountNumber,
+          unwrappingParams.marketPath,
+          unwrappingParams.amountIn,
+          unwrappingParams.minAmountOut,
+          unwrappingParams.traderParams,
+          unwrappingParams.makerAccounts,
+          unwrappingParams.userConfig,
+        ),
+        `IsolationModeTokenVaultV1: Only converter can call <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail when minOutputAmount is much bigger than inputAmount', async () => {
+      const initiateWrappingParams = await getInitiateWrappingParams(
+        borrowAccountNumber,
+        core.marketIds.weth,
+        amountWei,
+        marketId,
+        minAmountOut.mul(100000),
+        wrapper,
+      );
+      await expectThrow(
+        vault.addCollateralAndSwapExactInputForOutput(
+          defaultAccountNumber,
+          borrowAccountNumber,
+          initiateWrappingParams.marketPath,
+          initiateWrappingParams.amountIn,
+          initiateWrappingParams.minAmountOut,
+          initiateWrappingParams.traderParams,
+          initiateWrappingParams.makerAccounts,
+          initiateWrappingParams.userConfig,
+          { value: amountWei },
+        ),
+        'IsolationModeVaultV1ActionsImpl: minOutputAmount too large',
+      );
+    });
+
+    it('should fail if not vault owner or unwrapper', async () => {
+      const initiateWrappingParams = await getInitiateWrappingParams(
+        borrowAccountNumber,
+        core.marketIds.usdc,
+        1000e6,
+        marketId,
+        minAmountOut,
+        wrapper,
+      );
+      await expectThrow(
+        vault
+          .connect(core.hhUser2)
+          .addCollateralAndSwapExactInputForOutput(
+            defaultAccountNumber,
+            borrowAccountNumber,
+            initiateWrappingParams.marketPath,
+            initiateWrappingParams.amountIn,
+            initiateWrappingParams.minAmountOut,
+            initiateWrappingParams.traderParams,
+            initiateWrappingParams.makerAccounts,
+            initiateWrappingParams.userConfig,
+            { value: amountWei },
+          ),
+        `IsolationModeTokenVaultV1: Only owner or converter can call <${core.hhUser2.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if vault is frozen and called by owner', async () => {
+      await factory
+        .connect(impersonatedVault)
+        .setVaultAccountPendingAmountForFrozenStatus(
+          vault.address,
+          defaultAccountNumber,
+          FreezeType.Withdrawal,
+          toPositiveWeiStruct(ONE_BI),
+          core.tokens.weth.address,
+        );
+      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, amountWei, core);
+      await expectThrow(
+        vault.addCollateralAndSwapExactInputForOutput(
+          defaultAccountNumber,
+          borrowAccountNumber,
+          zapParams.marketIdsPath,
+          zapParams.inputAmountWei,
+          zapParams.minOutputAmountWei,
+          zapParams.tradersPath,
+          zapParams.makerAccounts,
+          zapParams.userConfig,
+        ),
+        `IsolationModeTokenVaultV1: Only converter can call <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should not fail if vault is frozen and called by unwrapper', async () => {
+      const outputAmount = amountWei.div(2);
+      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
+      await factory
+        .connect(impersonatedVault)
+        .setVaultAccountPendingAmountForFrozenStatus(
+          vault.address,
+          defaultAccountNumber,
+          FreezeType.Withdrawal,
+          toPositiveWeiStruct(ONE_BI),
+          core.tokens.weth.address,
+        );
+      const unwrapperImpersonator = await impersonate(unwrapper.address, true);
+      await vault
+        .connect(unwrapperImpersonator)
+        .addCollateralAndSwapExactInputForOutput(
+          defaultAccountNumber,
+          borrowAccountNumber,
+          zapParams.marketIdsPath,
+          zapParams.inputAmountWei,
+          zapParams.minOutputAmountWei,
+          zapParams.tradersPath,
+          zapParams.makerAccounts,
+          zapParams.userConfig,
+        );
+    });
+  });
+
+  describe('#swapExactInputForOutputAndRemoveCollateral', () => {
+    it('should work normally for wrapping', async () => {
+      await vault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        core.marketIds.weth,
+        amountWei,
+        BalanceCheckFlag.Both,
+      );
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, amountWei);
+
+      const initiateWrappingParams = await getInitiateWrappingParams(
+        borrowAccountNumber,
+        core.marketIds.weth,
+        amountWei,
+        marketId,
+        minAmountOut,
+        wrapper,
+      );
+      await vault.swapExactInputForOutputAndRemoveCollateral(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        initiateWrappingParams.marketPath,
+        initiateWrappingParams.amountIn,
+        initiateWrappingParams.minAmountOut,
+        initiateWrappingParams.traderParams,
+        initiateWrappingParams.makerAccounts,
+        initiateWrappingParams.userConfig,
+        { value: executionFee },
+      );
+
+      await expectProtocolBalance(core, vault.address, defaultAccountNumber, marketId, minAmountOut);
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, 0);
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, 0);
+      expect(await vault.isVaultFrozen()).to.eq(true);
+      expect(await vault.shouldSkipTransfer()).to.eq(false);
+      expect(await vault.isDepositSourceWrapper()).to.eq(false);
+    });
+
+    it('should work normally when not frozen', async () => {
+      await vault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        otherMarketId1,
+        amountWei,
+        BalanceCheckFlag.Both,
+      );
+      await vault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        otherMarketId2,
+        amountWei,
+        BalanceCheckFlag.Both,
+      );
+
+      const outputAmount = amountWei.div(2);
+      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
+      await vault.swapExactInputForOutputAndRemoveCollateral(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        zapParams.marketIdsPath,
+        zapParams.inputAmountWei,
+        zapParams.minOutputAmountWei,
+        zapParams.tradersPath,
+        zapParams.makerAccounts,
+        zapParams.userConfig,
+      );
+    });
+
+    it('should work if called by unwrapper', async () => {
+      await vault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        otherMarketId1,
+        amountWei,
+        BalanceCheckFlag.Both,
+      );
+      await vault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        otherMarketId2,
+        amountWei,
+        BalanceCheckFlag.Both,
+      );
+
+      const outputAmount = amountWei.div(2);
+      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
+      const unwrapperImpersonator = await impersonate(unwrapper.address, true);
+      await vault
+        .connect(unwrapperImpersonator)
+        .swapExactInputForOutputAndRemoveCollateral(
+          defaultAccountNumber,
+          borrowAccountNumber,
+          zapParams.marketIdsPath,
+          zapParams.inputAmountWei,
+          zapParams.minOutputAmountWei,
+          zapParams.tradersPath,
+          zapParams.makerAccounts,
+          zapParams.userConfig,
+        );
+    });
+
+    it('should work when redemptions are paused but debt is 0', async () => {
+      const key = getKey(
+        'EXECUTE_GLV_WITHDRAWAL_FEATURE_DISABLED',
+        ['address'],
+        [core.glvEcosystem.glvHandler.address],
+      );
+      await core.gmxV2Ecosystem.gmxDataStore.connect(controller).setBool(key, true);
+      expect(await vault.isExternalRedemptionPaused()).to.be.true;
+
+      await vault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        core.marketIds.weth,
+        amountWei,
+        BalanceCheckFlag.Both,
+      );
+
+      const initiateWrappingParams = await getInitiateWrappingParams(
+        borrowAccountNumber,
+        core.marketIds.weth,
+        amountWei,
+        marketId,
+        minAmountOut,
+        wrapper,
+      );
+      await vault.swapExactInputForOutputAndRemoveCollateral(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        initiateWrappingParams.marketPath,
+        initiateWrappingParams.amountIn,
+        initiateWrappingParams.minAmountOut,
+        initiateWrappingParams.traderParams,
+        initiateWrappingParams.makerAccounts,
+        initiateWrappingParams.userConfig,
+        { value: amountWei },
+      );
+
+      await expectProtocolBalance(core, vault, borrowAccountNumber, core.marketIds.weth, ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, ZERO_BI);
+      await expectProtocolBalance(core, vault, borrowAccountNumber, marketId, ZERO_BI);
+      await expectProtocolBalance(core, vault, defaultAccountNumber, marketId, minAmountOut);
+    });
+
+    it('should fail if user is underwater and attempting to initiate wrapping', async () => {
+      await setupGLVBalance(core, underlyingToken, core.hhUser1, amountWei, vault);
+      await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await vault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei, { value: executionFee });
+
+      // Create debt for the position
+      let glvPrice = (await core.dolomiteMargin.getMarketPrice(marketId)).value;
+      const wethPrice = (await core.dolomiteMargin.getMarketPrice(core.marketIds.weth)).value;
+
+      const wethAmount = amountWei.mul(glvPrice).div(wethPrice).mul(100).div(121);
+      await vault.transferFromPositionWithOtherToken(
+        borrowAccountNumber,
+        defaultAccountNumber,
+        core.marketIds.weth,
+        wethAmount,
+        BalanceCheckFlag.To,
+      );
+      await expectProtocolBalance(core, vault.address, defaultAccountNumber, marketId, ZERO_BI);
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
+      await expectProtocolBalance(
+        core,
+        core.hhUser1.address,
+        defaultAccountNumber,
+        core.marketIds.weth,
+        amountWei.add(wethAmount),
+      );
+      await expectProtocolBalance(
+        core,
+        vault.address,
+        borrowAccountNumber,
+        core.marketIds.weth,
+        ZERO_BI.sub(wethAmount),
+      );
+
+      glvPrice = glvPrice.mul(70).div(100);
+      await core.testEcosystem!.testPriceOracle.setPrice(factory.address, glvPrice);
+      await core.dolomiteMargin.ownerSetPriceOracle(marketId, core.testEcosystem!.testPriceOracle.address);
+
+      const initiateWrappingParams = await getInitiateWrappingParams(
+        borrowAccountNumber,
+        core.marketIds.nativeUsdc,
+        usdcAmount,
+        marketId,
+        minAmountOut,
+        wrapper,
+      );
+      await expectThrow(
+        vault.swapExactInputForOutputAndRemoveCollateral(
+          defaultAccountNumber,
+          borrowAccountNumber,
+          initiateWrappingParams.marketPath,
+          initiateWrappingParams.amountIn,
+          initiateWrappingParams.minAmountOut,
+          initiateWrappingParams.traderParams,
+          initiateWrappingParams.makerAccounts,
+          initiateWrappingParams.userConfig,
+          { value: executionFee },
+        ),
+        'IsolationModeVaultV1ActionsImpl: Account liquidatable',
+      );
+    });
+
+    it('should fail if no ETH is sent with transaction for wrapping', async () => {
+      await vault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        core.marketIds.weth,
+        amountWei,
+        BalanceCheckFlag.Both,
+      );
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, amountWei);
+
+      const initiateWrappingParams = await getInitiateWrappingParams(
+        borrowAccountNumber,
+        core.marketIds.weth,
+        amountWei,
+        marketId,
+        minAmountOut,
+        wrapper,
+      );
+      await expectThrow(
+        vault.swapExactInputForOutputAndRemoveCollateral(
+          defaultAccountNumber,
+          borrowAccountNumber,
+          initiateWrappingParams.marketPath,
+          initiateWrappingParams.amountIn,
+          initiateWrappingParams.minAmountOut,
+          initiateWrappingParams.traderParams,
+          initiateWrappingParams.makerAccounts,
+          initiateWrappingParams.userConfig,
+        ),
+        'GmxV2Library: Invalid execution fee',
+      );
+    });
+
+    it('should fail if ETH sent is greater than max execution fee', async () => {
+      await vault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        core.marketIds.weth,
+        amountWei,
+        BalanceCheckFlag.Both,
+      );
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, amountWei);
+
+      const initiateWrappingParams = await getInitiateWrappingParams(
+        borrowAccountNumber,
+        core.marketIds.weth,
+        amountWei,
+        marketId,
+        minAmountOut,
+        wrapper,
+      );
+      await expectThrow(
+        vault.swapExactInputForOutputAndRemoveCollateral(
+          defaultAccountNumber,
+          borrowAccountNumber,
+          initiateWrappingParams.marketPath,
+          initiateWrappingParams.amountIn,
+          initiateWrappingParams.minAmountOut,
+          initiateWrappingParams.traderParams,
+          initiateWrappingParams.makerAccounts,
+          initiateWrappingParams.userConfig,
+          { value: ONE_ETH_BI.mul(2) },
+        ),
+        'GmxV2Library: Invalid execution fee',
+      );
+    });
+
+    it('should fail if ETH is sent for non-wrapper', async () => {
+      await vault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        otherMarketId1,
+        amountWei,
+        BalanceCheckFlag.Both,
+      );
+      await vault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        otherMarketId2,
+        amountWei,
+        BalanceCheckFlag.Both,
+      );
+
+      const outputAmount = amountWei.div(2);
+      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
+      await expectThrow(
+        vault.swapExactInputForOutputAndRemoveCollateral(
+          defaultAccountNumber,
+          borrowAccountNumber,
+          zapParams.marketIdsPath,
+          zapParams.inputAmountWei,
+          zapParams.minOutputAmountWei,
+          zapParams.tradersPath,
+          zapParams.makerAccounts,
+          zapParams.userConfig,
+          { value: ONE_BI },
+        ),
+        'GmxV2Library: Cannot send ETH for non-wrapper',
+      );
+    });
+
+    it('should fail when caller is not unwrapper for unwrapping is frozen', async () => {
+      await factory
+        .connect(impersonatedVault)
+        .setVaultAccountPendingAmountForFrozenStatus(
+          vault.address,
+          defaultAccountNumber,
+          FreezeType.Withdrawal,
+          toPositiveWeiStruct(ONE_BI),
+          core.tokens.weth.address,
+        );
+
+      const unwrappingParams = await getInitiateUnwrappingParams(
+        borrowAccountNumber,
+        marketId,
+        amountWei,
+        core.marketIds.usdc,
+        1000e6,
+        unwrapper,
+        executionFee,
+      );
+      await expectThrow(
+        vault.swapExactInputForOutputAndRemoveCollateral(
+          defaultAccountNumber,
+          borrowAccountNumber,
+          unwrappingParams.marketPath,
+          unwrappingParams.amountIn,
+          unwrappingParams.minAmountOut,
+          unwrappingParams.traderParams,
+          unwrappingParams.makerAccounts,
+          unwrappingParams.userConfig,
+        ),
+        `IsolationModeTokenVaultV1: Only converter can call <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail when redemptions are paused', async () => {
+      await vault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        otherMarketId1,
+        otherAmountWei,
+        BalanceCheckFlag.Both,
+      );
+      await vault.transferFromPositionWithOtherToken(
+        borrowAccountNumber,
+        defaultAccountNumber,
+        otherMarketId2,
+        otherAmountWei.div(10),
+        BalanceCheckFlag.To,
+      );
+
+      const key = getKey(
+        'EXECUTE_GLV_WITHDRAWAL_FEATURE_DISABLED',
+        ['address'],
+        [core.glvEcosystem.glvHandler.address],
+      );
+      await core.gmxV2Ecosystem.gmxDataStore.connect(controller).setBool(key, true);
+      expect(await vault.isExternalRedemptionPaused()).to.be.true;
+
+      const numberOfMarketsWithDebt = await core.dolomiteMargin.getAccountNumberOfMarketsWithDebt({
+        owner: vault.address,
+        number: borrowAccountNumber,
+      });
+      expect(numberOfMarketsWithDebt.eq(1)).to.be.true;
+
+      const initiateWrappingParams = await getInitiateWrappingParams(
+        borrowAccountNumber,
+        core.marketIds.usdc,
+        usdcAmount.mul(10),
+        marketId,
+        minAmountOut,
+        wrapper,
+      );
+      await expectThrow(
+        vault.swapExactInputForOutputAndRemoveCollateral(
+          defaultAccountNumber,
+          borrowAccountNumber,
+          initiateWrappingParams.marketPath,
+          initiateWrappingParams.amountIn,
+          initiateWrappingParams.minAmountOut,
+          initiateWrappingParams.traderParams,
+          initiateWrappingParams.makerAccounts,
+          initiateWrappingParams.userConfig,
+          { value: amountWei },
+        ),
+        'IsolationModeVaultV1Pausable: Cannot execute when paused',
+      );
+    });
+
+    it('should fail when minOutputAmount is much bigger than inputAmount', async () => {
+      const initiateWrappingParams = await getInitiateWrappingParams(
+        borrowAccountNumber,
+        core.marketIds.weth,
+        amountWei,
+        marketId,
+        minAmountOut.mul(100000),
+        wrapper,
+      );
+      await expectThrow(
+        vault.swapExactInputForOutputAndRemoveCollateral(
+          defaultAccountNumber,
+          borrowAccountNumber,
+          initiateWrappingParams.marketPath,
+          initiateWrappingParams.amountIn,
+          initiateWrappingParams.minAmountOut,
+          initiateWrappingParams.traderParams,
+          initiateWrappingParams.makerAccounts,
+          initiateWrappingParams.userConfig,
+          { value: amountWei },
+        ),
+        'IsolationModeVaultV1ActionsImpl: minOutputAmount too large',
+      );
+    });
+
+    it('should fail if not vault owner or unwrapper', async () => {
+      const initiateWrappingParams = await getInitiateWrappingParams(
+        borrowAccountNumber,
+        core.marketIds.usdc,
+        1000e6,
+        marketId,
+        minAmountOut,
+        wrapper,
+      );
+      await expectThrow(
+        vault
+          .connect(core.hhUser2)
+          .swapExactInputForOutputAndRemoveCollateral(
+            defaultAccountNumber,
+            borrowAccountNumber,
+            initiateWrappingParams.marketPath,
+            initiateWrappingParams.amountIn,
+            initiateWrappingParams.minAmountOut,
+            initiateWrappingParams.traderParams,
+            initiateWrappingParams.makerAccounts,
+            initiateWrappingParams.userConfig,
+            { value: amountWei },
+          ),
+        `IsolationModeTokenVaultV1: Only owner or converter can call <${core.hhUser2.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if vault is frozen and called by owner', async () => {
+      await factory
+        .connect(impersonatedVault)
+        .setVaultAccountPendingAmountForFrozenStatus(
+          vault.address,
+          defaultAccountNumber,
+          FreezeType.Withdrawal,
+          toPositiveWeiStruct(ONE_BI),
+          core.tokens.weth.address,
+        );
+      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, amountWei, core);
+      await expectThrow(
+        vault.swapExactInputForOutputAndRemoveCollateral(
+          defaultAccountNumber,
+          borrowAccountNumber,
+          zapParams.marketIdsPath,
+          zapParams.inputAmountWei,
+          zapParams.minOutputAmountWei,
+          zapParams.tradersPath,
+          zapParams.makerAccounts,
+          zapParams.userConfig,
+        ),
+        `IsolationModeTokenVaultV1: Only converter can call <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should not fail if vault is frozen and called by unwrapper', async () => {
+      await vault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        otherMarketId1,
+        amountWei,
+        BalanceCheckFlag.Both,
+      );
+      await vault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        otherMarketId2,
+        amountWei,
+        BalanceCheckFlag.Both,
+      );
+
+      const outputAmount = amountWei.div(2);
+      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
+      await factory
+        .connect(impersonatedVault)
+        .setVaultAccountPendingAmountForFrozenStatus(
+          vault.address,
+          defaultAccountNumber,
+          FreezeType.Withdrawal,
+          toPositiveWeiStruct(ONE_BI),
+          core.tokens.weth.address,
+        );
+      const unwrapperImpersonator = await impersonate(unwrapper.address, true);
+      await vault
+        .connect(unwrapperImpersonator)
+        .swapExactInputForOutputAndRemoveCollateral(
+          defaultAccountNumber,
+          borrowAccountNumber,
+          zapParams.marketIdsPath,
+          zapParams.inputAmountWei,
+          zapParams.minOutputAmountWei,
+          zapParams.tradersPath,
+          zapParams.makerAccounts,
+          zapParams.userConfig,
+        );
+    });
+  });
+
   describe('#swapExactInputForOutput', () => {
     it('should work normally for wrapping', async () => {
       await vault.transferIntoPositionWithOtherToken(
@@ -1595,7 +2447,9 @@ describe('GlvIsolationModeTokenVaultV1', () => {
         ['bytes32', 'address', 'bool'],
         [withdrawalsBytes32, gmMarketToken.address, false],
       );
-      await core.gmxV2Ecosystem.gmxDataStore.connect(controller).setUint(key, 1);
+      await core.gmxV2Ecosystem.gmxDataStore
+        .connect(controller)
+        .setUint(key, '0xF000000000000000000000000000000000000000000000000000000000000000');
       expect(await vault.isExternalRedemptionPaused()).to.be.true;
     });
 

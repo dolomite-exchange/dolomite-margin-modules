@@ -25,7 +25,6 @@ import { SimpleIsolationModeVaultFactory } from "@dolomite-exchange/modules-base
 import { AsyncFreezableIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/AsyncFreezableIsolationModeVaultFactory.sol";
 import { GmxV2Library } from "@dolomite-exchange/modules-gmx-v2/contracts/GmxV2Library.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import { GlvLibrary } from "./GlvLibrary.sol";
 import { IGlvIsolationModeVaultFactory } from "./interfaces/IGlvIsolationModeVaultFactory.sol";
 import { IGlvRegistry } from "./interfaces/IGlvRegistry.sol";
 // solhint-enable max-line-length
@@ -44,7 +43,6 @@ contract GlvIsolationModeVaultFactory is
     SimpleIsolationModeVaultFactory
 {
     using EnumerableSet for EnumerableSet.UintSet;
-    using GlvLibrary for GlvIsolationModeVaultFactory;
 
     // ============= Structs =============
 
