@@ -1,16 +1,12 @@
-import { getAndCheckSpecificNetwork } from 'packages/base/src/utils/dolomite-utils';
-import { getRealLatestBlockNumber } from 'packages/base/test/utils';
-import { setupCoreProtocol } from 'packages/base/test/utils/setup';
 import { ethers } from 'hardhat';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
+import { getAndCheckSpecificNetwork } from 'packages/base/src/utils/dolomite-utils';
 import { Network, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
-import {
-  deployContractAndSave,
-  EncodedTransaction,
-  prettyPrintEncodedDataWithTypeSafety,
-} from '../../../../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../../utils/dry-run-utils';
-import getScriptName from '../../../../../utils/get-script-name';
+import { getRealLatestBlockNumber } from 'packages/base/test/utils';
+import { setupCoreProtocol } from 'packages/base/test/utils/setup';
+import { EncodedTransaction, prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/deploy-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
+import getScriptName from '../../../../utils/get-script-name';
 
 /**
  * This script encodes the following transactions:
@@ -21,26 +17,18 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
 
   core.gmxV2Ecosystem.live.registry;
-  const unwrappers = core.gmxV2Ecosystem.live.allGmMarkets.map(m => m.unwrapper);
-  const wrappers = core.gmxV2Ecosystem.live.allGmMarkets.map(m => m.wrapper);
+  const unwrappers = core.gmxV2Ecosystem.live.allGmMarkets.map((m) => m.unwrapper);
+  const wrappers = core.gmxV2Ecosystem.live.allGmMarkets.map((m) => m.wrapper);
 
   const transactions: EncodedTransaction[] = [];
   for (let i = 0; i < unwrappers.length; i++) {
     transactions.push(
-      await prettyPrintEncodedDataWithTypeSafety(
-        core,
-        { unwrapper: unwrappers[i] },
-        'unwrapper',
-        'ownerWithdrawETH',
-        [core.gnosisSafeAddress],
-      ),
-      await prettyPrintEncodedDataWithTypeSafety(
-        core,
-        { wrapper: wrappers[i] },
-        'wrapper',
-        'ownerWithdrawETH',
-        [core.gnosisSafeAddress],
-      ),
+      await prettyPrintEncodedDataWithTypeSafety(core, { unwrapper: unwrappers[i] }, 'unwrapper', 'ownerWithdrawETH', [
+        core.gnosisSafeAddress,
+      ]),
+      await prettyPrintEncodedDataWithTypeSafety(core, { wrapper: wrappers[i] }, 'wrapper', 'ownerWithdrawETH', [
+        core.gnosisSafeAddress,
+      ]),
     );
   }
 

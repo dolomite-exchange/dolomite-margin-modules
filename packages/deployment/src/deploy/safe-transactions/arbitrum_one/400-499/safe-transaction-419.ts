@@ -1,16 +1,16 @@
+import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { getAndCheckSpecificNetwork } from 'packages/base/src/utils/dolomite-utils';
+import { Network } from 'packages/base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from 'packages/base/test/utils';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
-import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
-import { Network } from 'packages/base/src/utils/no-deps-constants';
 import {
   deployDolomiteErc4626Token,
   deployDolomiteErc4626WithPayableToken,
   EncodedTransaction,
   prettyPrintEncodedDataWithTypeSafety,
-} from '../../../../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../../utils/dry-run-utils';
-import getScriptName from '../../../../../utils/get-script-name';
+} from '../../../../utils/deploy-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
+import getScriptName from '../../../../utils/get-script-name';
 
 /**
  * This script encodes the following transactions:
@@ -66,7 +66,10 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     invariants: async () => {
       const isGlobalOperator = (o: string) => core.dolomiteMargin.getIsGlobalOperator(o);
 
-      assertHardhatInvariant(await isGlobalOperator(dBridgedUsdcToken.address), 'dBridgedUsdcToken is not a global operator');
+      assertHardhatInvariant(
+        await isGlobalOperator(dBridgedUsdcToken.address),
+        'dBridgedUsdcToken is not a global operator',
+      );
       assertHardhatInvariant(await isGlobalOperator(dDaiToken.address), 'dDaiToken is not a global operator');
       assertHardhatInvariant(await isGlobalOperator(dUsdcToken.address), 'dUsdcToken is not a global operator');
       assertHardhatInvariant(await isGlobalOperator(dUsdtToken.address), 'dUsdtToken is not a global operator');

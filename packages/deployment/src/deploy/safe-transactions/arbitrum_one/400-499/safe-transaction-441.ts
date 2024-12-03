@@ -104,15 +104,15 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const transactions: EncodedTransaction[] = [];
   for (let i = 0; i < systems.length; i++) {
     transactions.push(
-      ...await prettyPrintEncodeInsertChaosLabsOracleV3(
+      ...(await prettyPrintEncodeInsertChaosLabsOracleV3(
         core,
         IERC20__factory.connect(systems[i].factory.address, core.hhUser1),
         undefined,
         undefined,
         CHAOS_LABS_PRICE_AGGREGATORS_MAP[core.network][glvTokens[i].glvToken.address]!.aggregatorAddress,
         { ignoreDescription: true },
-      ),
-      ...await prettyPrintEncodeAddGlvMarket(
+      )),
+      ...(await prettyPrintEncodeAddGlvMarket(
         core,
         systems[i].factory,
         underlyingGmTokens[i],
@@ -123,7 +123,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
         collateralizations[i],
         penalties[i],
         supplyCaps[i],
-      ),
+      )),
     );
   }
 

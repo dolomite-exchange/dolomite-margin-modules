@@ -66,8 +66,8 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   }
 
   const transactions: EncodedTransaction[] = [
-    ...await prettyPrintEncodeInsertChainlinkOracleV3(core, core.gmxV2Ecosystem.gmTokens.pepeUsd.indexToken),
-    ...await prettyPrintEncodeInsertChainlinkOracleV3(core, core.gmxV2Ecosystem.gmTokens.wifUsd.indexToken),
+    ...(await prettyPrintEncodeInsertChainlinkOracleV3(core, core.gmxV2Ecosystem.gmTokens.pepeUsd.indexToken)),
+    ...(await prettyPrintEncodeInsertChainlinkOracleV3(core, core.gmxV2Ecosystem.gmTokens.wifUsd.indexToken)),
   ];
 
   for (let i = 0; i < systems.length; i++) {

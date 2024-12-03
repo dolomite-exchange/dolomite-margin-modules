@@ -1,3 +1,4 @@
+import { BigNumberish } from 'ethers';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { getAndCheckSpecificNetwork } from 'packages/base/src/utils/dolomite-utils';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
@@ -9,22 +10,33 @@ import getScriptName from '../../../../utils/get-script-name';
 
 /**
  * This script encodes the following transactions:
- * - Update the interest rate model for WBTC
+ * - Updates the interest rate kink to be 12% APR for stables and 8% for yield-bearing stables
  */
 async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
   const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
 
-  const interestSetter = core.interestSetters.linearStepFunction7L93U90OInterestSetter;
-
   const transactions: EncodedTransaction[] = [];
+  const stablecoinMarketIds = core.marketIds.stablecoinsWithUnifiedInterestRateModels;
+  for (const stablecoinMarketId of stablecoinMarketIds) {
+    transactions.push(
+      await prettyPrintEncodedDataWithTypeSafety(
+        core,
+        { dolomiteMargin: core.dolomiteMargin },
+        'dolomiteMargin',
+        'ownerSetInterestSetter',
+        [stablecoinMarketId, core.interestSetters.linearStepFunction12L88U90OInterestSetter.address],
+      ),
+    );
+  }
+
   transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       { dolomiteMargin: core.dolomiteMargin },
       'dolomiteMargin',
       'ownerSetInterestSetter',
-      [core.marketIds.wbtc, interestSetter.address],
+      [core.marketIds.wusdm, core.interestSetters.linearStepFunction8L92U90OInterestSetter.address],
     ),
   );
 
@@ -37,9 +49,20 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       addExecuteImmediatelyTransactions: true,
     },
     invariants: async () => {
+      const getInterestSetter = (o: BigNumberish) => core.dolomiteMargin.getMarketInterestSetter(o);
+
+      for (const stablecoinMarketId of stablecoinMarketIds) {
+        assertHardhatInvariant(
+          core.interestSetters.linearStepFunction12L88U90OInterestSetter.address ===
+            (await getInterestSetter(stablecoinMarketId)),
+          `Invalid interest setter for ${stablecoinMarketId}`,
+        );
+      }
+
       assertHardhatInvariant(
-        (await core.dolomiteMargin.getMarketInterestSetter(core.marketIds.wbtc)) === interestSetter.address,
-        'Invalid WBTC interest setter',
+        core.interestSetters.linearStepFunction8L92U90OInterestSetter.address ===
+          (await getInterestSetter(core.marketIds.wusdm)),
+        `Invalid interest setter for ${core.marketIds.wusdm}`,
       );
     },
   };

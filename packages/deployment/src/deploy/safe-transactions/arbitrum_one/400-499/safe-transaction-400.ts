@@ -1,21 +1,19 @@
-import { IsolationModeTraderProxy } from 'packages/base/src/types';
-import {
-  CoreProtocolArbitrumOne,
-} from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
-import { LiveGmMarket } from 'packages/base/test/utils/ecosystem-utils/gmx';
-import { GmxV2IsolationModeVaultFactory } from 'packages/gmx-v2/src/types';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
+import { IsolationModeTraderProxy } from 'packages/base/src/types';
 import { getAndCheckSpecificNetwork } from 'packages/base/src/utils/dolomite-utils';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from 'packages/base/test/utils';
+import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
+import { LiveGmMarket } from 'packages/base/test/utils/ecosystem-utils/gmx';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
+import { GmxV2IsolationModeVaultFactory } from 'packages/gmx-v2/src/types';
 import {
   deployContractAndSave,
   EncodedTransaction,
   prettyPrintEncodedDataWithTypeSafety,
-} from '../../../../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../../utils/dry-run-utils';
-import getScriptName from '../../../../../utils/get-script-name';
+} from '../../../../utils/deploy-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
+import getScriptName from '../../../../utils/get-script-name';
 
 /**
  * This script encodes the following transactions:

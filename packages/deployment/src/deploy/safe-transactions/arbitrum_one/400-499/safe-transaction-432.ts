@@ -1,15 +1,15 @@
+import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { getAndCheckSpecificNetwork } from 'packages/base/src/utils/dolomite-utils';
+import { Network } from 'packages/base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from 'packages/base/test/utils';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
-import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
-import { Network } from 'packages/base/src/utils/no-deps-constants';
 import {
   deployContractAndSave,
   EncodedTransaction,
   prettyPrintEncodedDataWithTypeSafety,
-} from '../../../../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../../utils/dry-run-utils';
-import getScriptName from '../../../../../utils/get-script-name';
+} from '../../../../utils/deploy-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
+import getScriptName from '../../../../utils/get-script-name';
 
 /**
  * This script encodes the following transactions:
@@ -22,8 +22,8 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
 
   core.gmxV2Ecosystem.live.registry;
-  const unwrapperProxies = core.gmxV2Ecosystem.live.allGmMarkets.map(m => m.unwrapperProxy);
-  const wrapperProxies = core.gmxV2Ecosystem.live.allGmMarkets.map(m => m.wrapperProxy);
+  const unwrapperProxies = core.gmxV2Ecosystem.live.allGmMarkets.map((m) => m.unwrapperProxy);
+  const wrapperProxies = core.gmxV2Ecosystem.live.allGmMarkets.map((m) => m.wrapperProxy);
 
   const unwrapperImplementationAddress = await deployContractAndSave(
     'GmxV2IsolationModeUnwrapperTraderV2',
@@ -89,8 +89,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     },
     invariants: async () => {
       assertHardhatInvariant(
-        (await core.gmxV2Ecosystem.live.registry.gmxExchangeRouter()) ===
-          core.gmxV2Ecosystem.gmxExchangeRouter.address,
+        (await core.gmxV2Ecosystem.live.registry.gmxExchangeRouter()) === core.gmxV2Ecosystem.gmxExchangeRouter.address,
         'Invalid gmx exchange router',
       );
       assertHardhatInvariant(
