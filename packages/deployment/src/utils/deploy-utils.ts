@@ -30,7 +30,8 @@ import {
   TargetLiquidationPenalty,
 } from '@dolomite-exchange/modules-base/src/utils/constructors/dolomite';
 import {
-  ADDRESS_ZERO,
+  ADDRESS_ZERO, BYTES_EMPTY,
+  BYTES_ZERO,
   Network,
   NETWORK_TO_NETWORK_NAME_MAP,
   NetworkType,
@@ -53,6 +54,7 @@ import {
 import {
   CoreProtocolWithChainlinkOld,
   CoreProtocolWithChainlinkV3,
+  CoreProtocolWithChaosLabsV3,
   CoreProtocolWithChronicle,
   CoreProtocolWithRedstone,
 } from '@dolomite-exchange/modules-oracles/src/oracles-constructors';
@@ -434,12 +436,22 @@ export async function deployContractAndSave(
         signer,
       );
       const salt = keccak256(ethers.utils.defaultAbiCoder.encode(['string'], [usedContractName]));
-      const result = await deployer.deploy(salt, transaction.data!, opts);
-      await result.wait();
-      contract = {
-        address: await deployer.getDeployed(await signer.getAddress(), salt),
-        transactionHash: result.hash,
-      };
+      const contractAddress = await deployer.getDeployed(await signer.getAddress(), salt);
+      const code = await ethers.provider.getCode(contractAddress);
+      if (code === BYTES_EMPTY) {
+        const result = await deployer.deploy(salt, transaction.data!, opts);
+        await result.wait();
+        contract = {
+          address: contractAddress,
+          transactionHash: result.hash,
+        };
+      } else {
+        console.warn(`\t${contractRename} was already deployed. Filling in 0x0 for hash...`);
+        contract = {
+          address: contractAddress,
+          transactionHash: BYTES_ZERO,
+        };
+      }
     }
 
     nonce += 1;
@@ -517,15 +529,6 @@ async function verifyFactoryChildProxyContractIfNecessary(
   }
 }
 
-export function getTokenVaultLibrary<T extends NetworkType>(core: CoreProtocolType<T>): Record<string, string> {
-  const libraryName = 'IsolationModeTokenVaultV1ActionsImpl';
-  const deploymentName = 'IsolationModeTokenVaultV1ActionsImplV7';
-  const deployments = readAllDeploymentFiles();
-  return {
-    [libraryName]: deployments[deploymentName][core.config.network].address,
-  };
-}
-
 export interface GmxV2GlvTokenSystem {
   factory: IGlvIsolationModeVaultFactory;
   unwrapper: IGlvIsolationModeUnwrapperTraderV2;
@@ -578,7 +581,7 @@ export async function deployGmxV2GlvTokenSystem(
       debtMarketIds,
       collateralMarketIds,
       glvToken,
-      core.gmxV2Ecosystem.live.tokenVaultImplementation,
+      core.glvEcosystem.live.tokenVaultImplementation,
       GMX_V2_EXECUTION_FEE,
       longMarketId.eq(-1),
     ),
@@ -753,12 +756,11 @@ export async function deployPendlePtSystem<T extends NetworkType>(
     );
   }
 
-  const libraries = getTokenVaultLibrary(core);
   const userVaultImplementationAddress = await deployContractAndSave(
     'PendlePtIsolationModeTokenVaultV1',
     [],
     `PendlePt${ptName}IsolationModeTokenVaultV1`,
-    libraries,
+    core.libraries.tokenVaultActionsImpl,
   );
   const userVaultImplementation = PendlePtIsolationModeTokenVaultV1__factory.connect(
     userVaultImplementationAddress,
@@ -1360,11 +1362,11 @@ export async function prettyPrintEncodeInsertChainlinkOracleV3<T extends Network
 }
 
 export async function prettyPrintEncodeInsertChaosLabsOracleV3<T extends NetworkType>(
-  core: CoreProtocolArbitrumOne,
+  core: CoreProtocolWithChaosLabsV3<T>,
   token: IERC20,
-  invertPrice: boolean = CHAOS_LABS_PRICE_AGGREGATORS_MAP[core.network][token.address]!.invert ?? false,
-  tokenPairAddress: string | undefined = CHAOS_LABS_PRICE_AGGREGATORS_MAP[core.network][token.address]!
-    .tokenPairAddress,
+  invertPrice: boolean = CHAOS_LABS_PRICE_AGGREGATORS_MAP[core.network][token.address]?.invert ?? false,
+  tokenPairAddress: string | undefined = CHAOS_LABS_PRICE_AGGREGATORS_MAP[core.network][token.address]
+    ?.tokenPairAddress,
   aggregatorAddress: string = CHAOS_LABS_PRICE_AGGREGATORS_MAP[core.network][token.address]!.aggregatorAddress,
   options?: { ignoreDescription: boolean },
 ): Promise<EncodedTransaction[]> {
@@ -1400,8 +1402,8 @@ export async function prettyPrintEncodeInsertChaosLabsOracleV3<T extends Network
   return [
     await prettyPrintEncodedDataWithTypeSafety(
       core,
-      { chainlinkPriceOracle: core.chainlinkPriceOracleV3 },
-      'chainlinkPriceOracle',
+      { chaosLabsPriceOracle: core.chaosLabsPriceOracleV3 },
+      'chaosLabsPriceOracle',
       'ownerInsertOrUpdateOracleToken',
       [token.address, aggregator.address, invertPrice],
     ),
@@ -1416,7 +1418,7 @@ export async function prettyPrintEncodeInsertChaosLabsOracleV3<T extends Network
           decimals: tokenDecimals,
           oracleInfos: [
             {
-              oracle: core.chainlinkPriceOracleV3.address,
+              oracle: core.chaosLabsPriceOracleV3.address,
               tokenPair: tokenPairAddress ?? ADDRESS_ZERO,
               weight: 100,
             },

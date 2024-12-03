@@ -35,7 +35,6 @@ import {
   DenJsonUpload,
   deployContractAndSave,
   EncodedTransaction,
-  getTokenVaultLibrary,
   prettyPrintEncodeAddIsolationModeMarket,
   prettyPrintEncodeAddMarket,
   prettyPrintEncodedDataWithTypeSafety,
@@ -68,7 +67,7 @@ async function main(): Promise<DenJsonUpload> {
     'ARBIsolationModeTokenVaultV1',
     [],
     'ARBIsolationModeTokenVaultV3',
-    getTokenVaultLibrary(core),
+    core.libraries.tokenVaultActionsImpl,
   );
   const arbVaultImplementation = ARBIsolationModeTokenVaultV1__factory.connect(
     arbVaultImplementationAddress,
@@ -104,7 +103,7 @@ async function main(): Promise<DenJsonUpload> {
     'GMXIsolationModeTokenVaultV1',
     [],
     undefined,
-    getTokenVaultLibrary(core),
+    core.libraries.tokenVaultActionsImpl,
   );
   const gmxVaultImplementation = GMXIsolationModeTokenVaultV1__factory.connect(
     gmxVaultImplementationAddress,

@@ -800,7 +800,7 @@ export const GLV_VAULT_MAP: Record<Network.ArbitrumOne, string> = {
 };
 
 export const GLV_TOKEN_WBTC_USDC_MAP: Record<Network.ArbitrumOne, string> = {
-  [Network.ArbitrumOne]: '0x64de4CfF5B4D37bD96390B881F1331488a87fAeB',
+  [Network.ArbitrumOne]: '0xdF03EEd325b82bC1d4Db8b49c30ecc9E05104b96',
 };
 
 export const GLV_TOKEN_WETH_USDC_MAP: Record<Network.ArbitrumOne, string> = {
@@ -1629,18 +1629,20 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<Network, Record<string, Agg
   },
 };
 
-export const CHAOS_LABS_PRICE_AGGREGATORS_MAP: Record<
-  Network.ArbitrumOne,
-  Record<string, AggregatorInfo | undefined>
-> = {
+export const CHAOS_LABS_PRICE_AGGREGATORS_MAP: Record<Network, Record<string, AggregatorInfo | undefined>> = {
   [Network.ArbitrumOne]: {
     [GLV_TOKEN_WBTC_USDC_MAP[Network.ArbitrumOne]]: {
-      aggregatorAddress: '0xC83Da5337f7ae4FEc6d99E35dd298C97A81E8527',
+      aggregatorAddress: '0x64de4CfF5B4D37bD96390B881F1331488a87fAeB',
     },
     [GLV_TOKEN_WETH_USDC_MAP[Network.ArbitrumOne]]: {
       aggregatorAddress: '0xC83Da5337f7ae4FEc6d99E35dd298C97A81E8527',
     },
   },
+  [Network.Base]: {},
+  [Network.Berachain]: {},
+  [Network.Mantle]: {},
+  [Network.PolygonZkEvm]: {},
+  [Network.XLayer]: {},
 };
 
 export const CHRONICLE_PRICE_SCRIBES_MAP: Record<

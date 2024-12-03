@@ -4,6 +4,7 @@ import {
   ChroniclePriceOracleV3__factory,
   IChainlinkAutomationRegistry__factory,
   IChainlinkPriceOracleV3__factory,
+  IChaosLabsPriceOracleV3__factory,
   OkxPriceOracleV3__factory,
   OracleAggregatorV2__factory,
   RedstonePriceOracleV3__factory,
@@ -23,6 +24,7 @@ import { Provider } from '@ethersproject/providers';
 import { BaseContract, BigNumber, BigNumberish, ContractInterface, Signer } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
+import { IGlvToken } from 'packages/glv/src/types';
 import { IGmxMarketToken } from 'packages/gmx-v2/src/types';
 import { IMantleRewardStation__factory } from 'packages/mantle/src/types';
 import { IChainlinkPriceOracleV1__factory } from 'packages/oracles/src/types';
@@ -167,6 +169,7 @@ import { DolomiteMargin, Expiry } from './dolomite';
 import { createAbraEcosystem } from './ecosystem-utils/abra';
 import { createArbEcosystem } from './ecosystem-utils/arb';
 import { createCamelotEcosystem } from './ecosystem-utils/camelot';
+import { createGlvEcosystem } from './ecosystem-utils/glv';
 import { createGmxEcosystem, createGmxEcosystemV2 } from './ecosystem-utils/gmx';
 import { createInterestSetters } from './ecosystem-utils/interest-setters';
 import { createJonesEcosystem } from './ecosystem-utils/jones';
@@ -185,8 +188,6 @@ import { createPremiaEcosystem } from './ecosystem-utils/premia';
 import { createTestEcosystem } from './ecosystem-utils/testers';
 import { createUmamiEcosystem } from './ecosystem-utils/umami';
 import { impersonate, impersonateOrFallback, resetForkIfPossible } from './index';
-import { createGlvEcosystem } from './ecosystem-utils/glv';
-import { IGlvToken } from 'packages/glv/src/types';
 
 /**
  * Config to for setting up tests in the `before` function
@@ -419,7 +420,6 @@ export async function setupGLVBalance(
     await glvToken.connect(signer).approve(spender.address, amount);
   }
 }
-
 
 export async function setupRsEthBalance(
   core: { tokens: { rsEth: IERC20 } },
@@ -830,6 +830,10 @@ export async function setupCoreProtocol<T extends NetworkType>(
       chainlinkAutomationRegistry: IChainlinkAutomationRegistry__factory.connect(
         CHAINLINK_AUTOMATION_REGISTRY_MAP[typedConfig.network],
         governance,
+      ),
+      chaosLabsPriceOracleV3: IChaosLabsPriceOracleV3__factory.connect(
+        Deployments.ChaosLabsPriceOracleV3[typedConfig.network].address,
+        hhUser1,
       ),
       chroniclePriceOracleV3: ChroniclePriceOracleV3__factory.connect(
         Deployments.ChroniclePriceOracleV3[typedConfig.network].address,

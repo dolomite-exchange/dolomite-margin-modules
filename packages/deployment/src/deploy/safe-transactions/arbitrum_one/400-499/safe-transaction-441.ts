@@ -9,12 +9,15 @@ import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/se
 import { BigNumberish } from 'ethers';
 import { formatEther, parseEther } from 'ethers/lib/utils';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
+import { IERC20__factory } from 'packages/base/src/types';
+import { CHAOS_LABS_PRICE_AGGREGATORS_MAP } from 'packages/base/src/utils/constants';
 import {
   getGlvIsolationModeTokenVaultConstructorParams,
   getGlvRegistryConstructorParams,
 } from 'packages/glv/src/glv-constructors';
 import { GlvRegistry__factory } from 'packages/glv/src/types';
 import { GLV_CALLBACK_GAS_LIMIT } from 'packages/gmx-v2/src/gmx-v2-constructors';
+import { getChaosLabsPriceOracleV3ConstructorParams } from 'packages/oracles/src/oracles-constructors';
 import {
   deployContractAndSave,
   deployGmxV2GlvTokenSystem,
@@ -34,7 +37,13 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
   const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
 
+  await deployContractAndSave(
+    'ChaosLabsPriceOracleV3',
+    getChaosLabsPriceOracleV3ConstructorParams([], [], [], core.dolomiteRegistry, core.dolomiteMargin),
+  );
+
   await deployContractAndSave('GlvLibrary', [], 'GlvLibraryV1');
+
   const registryImplementationAddress = await deployContractAndSave('GlvRegistry', [], 'GlvRegistryImplementationV1');
   const registryImplementation = GlvRegistry__factory.connect(registryImplementationAddress, core.hhUser1);
   await deployContractAndSave(
@@ -77,7 +86,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const glvTokens = [core.glvEcosystem.glvTokens.wbtcUsdc, core.glvEcosystem.glvTokens.wethUsdc];
   const underlyingGmTokens = [core.gmxV2Ecosystem.gmTokens.btcUsd, core.gmxV2Ecosystem.gmTokens.ethUsd];
   const supplyCaps = [parseEther(`${3_000_000}`), parseEther(`${12_000_000}`)];
-  const glvNames = ['BTC', 'ETH'];
+  const glvNames = ['BTCV2', 'ETH'];
   const collateralizations = [TargetCollateralization._120, TargetCollateralization._120];
   const penalties = [TargetLiquidationPenalty.Base, TargetLiquidationPenalty.Base];
 
@@ -92,13 +101,17 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     gmMarketIds.push(marketId.add(i));
   }
 
-  const transactions: EncodedTransaction[] = [
-    ...(await prettyPrintEncodeInsertChaosLabsOracleV3(core, core.glvEcosystem.glvTokens.wbtcUsdc.glvToken)),
-    ...(await prettyPrintEncodeInsertChaosLabsOracleV3(core, core.glvEcosystem.glvTokens.wethUsdc.glvToken)),
-  ];
-
+  const transactions: EncodedTransaction[] = [];
   for (let i = 0; i < systems.length; i++) {
     transactions.push(
+      ...await prettyPrintEncodeInsertChaosLabsOracleV3(
+        core,
+        IERC20__factory.connect(systems[i].factory.address, core.hhUser1),
+        undefined,
+        undefined,
+        CHAOS_LABS_PRICE_AGGREGATORS_MAP[core.network][glvTokens[i].glvToken.address]!.aggregatorAddress,
+        { ignoreDescription: true },
+      ),
       ...await prettyPrintEncodeAddGlvMarket(
         core,
         systems[i].factory,

@@ -3,7 +3,7 @@ import {
   ChroniclePriceOracleV3,
   IChainlinkAutomationRegistry,
   IChainlinkPriceOracleV1,
-  IChainlinkPriceOracleV3,
+  IChainlinkPriceOracleV3, IChaosLabsPriceOracleV3,
   RedstonePriceOracleV3,
 } from 'packages/oracles/src/types';
 import {
@@ -167,6 +167,7 @@ interface CoreProtocolParamsArbitrumOne {
   chainlinkAutomationRegistry: IChainlinkAutomationRegistry;
   chainlinkPriceOracleV1: IChainlinkPriceOracleV1;
   chainlinkPriceOracleV3: IChainlinkPriceOracleV3;
+  chaosLabsPriceOracleV3: IChaosLabsPriceOracleV3;
   chroniclePriceOracleV3: ChroniclePriceOracleV3;
   dolomiteAccountValuesReader: IDolomiteAccountValuesReader;
   dolomiteMigrator: IDolomiteMigrator;
@@ -192,6 +193,7 @@ export class CoreProtocolArbitrumOne extends CoreProtocolAbstract<Network.Arbitr
   public readonly arbEcosystem: ArbEcosystem;
   public readonly camelotEcosystem: CamelotEcosystem;
   public readonly chainlinkAutomationRegistry: IChainlinkAutomationRegistry;
+  public readonly chaosLabsPriceOracleV3: IChaosLabsPriceOracleV3;
   public readonly chroniclePriceOracleV3: ChroniclePriceOracleV3;
   public readonly dolomiteAccountValuesReader: IDolomiteAccountValuesReader;
   public readonly dolomiteMigrator: IDolomiteMigrator;
@@ -218,6 +220,7 @@ export class CoreProtocolArbitrumOne extends CoreProtocolAbstract<Network.Arbitr
     this.arbEcosystem = arbParams.arbEcosystem;
     this.camelotEcosystem = arbParams.camelotEcosystem;
     this.chainlinkAutomationRegistry = arbParams.chainlinkAutomationRegistry;
+    this.chaosLabsPriceOracleV3 = arbParams.chaosLabsPriceOracleV3;
     this.chroniclePriceOracleV3 = arbParams.chroniclePriceOracleV3;
     this.dolomiteAccountValuesReader = arbParams.dolomiteAccountValuesReader;
     this.dolomiteMigrator = arbParams.dolomiteMigrator;
