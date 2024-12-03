@@ -1,20 +1,17 @@
-import {
-  TargetCollateralization,
-  TargetLiquidationPenalty,
-} from 'packages/base/src/utils/constructors/dolomite';
-import { getAndCheckSpecificNetwork } from 'packages/base/src/utils/dolomite-utils';
-import { getRealLatestBlockNumber } from 'packages/base/test/utils';
-import { setupCoreProtocol } from 'packages/base/test/utils/setup';
 import { parseEther } from 'ethers/lib/utils';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
+import { TargetCollateralization, TargetLiquidationPenalty } from 'packages/base/src/utils/constructors/dolomite';
+import { getAndCheckSpecificNetwork } from 'packages/base/src/utils/dolomite-utils';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
+import { getRealLatestBlockNumber } from 'packages/base/test/utils';
+import { setupCoreProtocol } from 'packages/base/test/utils/setup';
 import {
   deployPendlePtSystem,
   prettyPrintEncodeAddIsolationModeMarket,
   prettyPrintEncodedDataWithTypeSafety,
-} from '../../../../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../../utils/dry-run-utils';
-import getScriptName from '../../../../../utils/get-script-name';
+} from '../../../../utils/deploy-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
+import getScriptName from '../../../../utils/get-script-name';
 
 /**
  * This script encodes the following transactions:
@@ -50,45 +47,33 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   );
 
   transactions.push(
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      core,
-      'oracleAggregatorV2',
-      'ownerInsertOrUpdateToken',
-      [
-        {
-          token: weEthPendleSystem.factory.address,
-          decimals: await weEthPendleSystem.factory.decimals(),
-          oracleInfos: [
-            {
-              oracle: weEthPendleSystem.oracle.address,
-              tokenPair: core.tokens.eEth.address,
-              weight: 100,
-            },
-          ],
-        },
-      ],
-    ),
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      core,
-      'oracleAggregatorV2',
-      'ownerInsertOrUpdateToken',
-      [
-        {
-          token: rsEthPendleSystem.factory.address,
-          decimals: await rsEthPendleSystem.factory.decimals(),
-          oracleInfos: [
-            {
-              oracle: rsEthPendleSystem.oracle.address,
-              tokenPair: core.tokens.weth.address,
-              weight: 100,
-            },
-          ],
-        },
-      ],
-    ),
-    ...await prettyPrintEncodeAddIsolationModeMarket(
+    await prettyPrintEncodedDataWithTypeSafety(core, core, 'oracleAggregatorV2', 'ownerInsertOrUpdateToken', [
+      {
+        token: weEthPendleSystem.factory.address,
+        decimals: await weEthPendleSystem.factory.decimals(),
+        oracleInfos: [
+          {
+            oracle: weEthPendleSystem.oracle.address,
+            tokenPair: core.tokens.eEth.address,
+            weight: 100,
+          },
+        ],
+      },
+    ]),
+    await prettyPrintEncodedDataWithTypeSafety(core, core, 'oracleAggregatorV2', 'ownerInsertOrUpdateToken', [
+      {
+        token: rsEthPendleSystem.factory.address,
+        decimals: await rsEthPendleSystem.factory.decimals(),
+        oracleInfos: [
+          {
+            oracle: rsEthPendleSystem.oracle.address,
+            tokenPair: core.tokens.weth.address,
+            weight: 100,
+          },
+        ],
+      },
+    ]),
+    ...(await prettyPrintEncodeAddIsolationModeMarket(
       core,
       weEthPendleSystem.factory,
       core.oracleAggregatorV2,
@@ -98,8 +83,8 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       TargetCollateralization._120,
       TargetLiquidationPenalty._6,
       parseEther(`${4_000}`),
-    ),
-    ...await prettyPrintEncodeAddIsolationModeMarket(
+    )),
+    ...(await prettyPrintEncodeAddIsolationModeMarket(
       core,
       rsEthPendleSystem.factory,
       core.oracleAggregatorV2,
@@ -109,7 +94,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       TargetCollateralization._120,
       TargetLiquidationPenalty._6,
       parseEther(`${2_000}`),
-    ),
+    )),
   );
 
   return {
@@ -122,7 +107,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     },
     invariants: async () => {
       assertHardhatInvariant(
-        await core.dolomiteMargin.getMarketTokenAddress(ptEEthMarketId) === weEthPendleSystem.factory.address,
+        (await core.dolomiteMargin.getMarketTokenAddress(ptEEthMarketId)) === weEthPendleSystem.factory.address,
         'Invalid PT-weETH market ID',
       );
       console.log(
@@ -131,7 +116,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       );
 
       assertHardhatInvariant(
-        await core.dolomiteMargin.getMarketTokenAddress(ptRsEthMarketId) === rsEthPendleSystem.factory.address,
+        (await core.dolomiteMargin.getMarketTokenAddress(ptRsEthMarketId)) === rsEthPendleSystem.factory.address,
         'Invalid PT-rsETH market ID',
       );
       console.log(

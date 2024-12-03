@@ -16,6 +16,7 @@ import {
 } from '@dolomite-exchange/modules-base/src/types';
 import {
   CHAINLINK_PRICE_AGGREGATORS_MAP,
+  CHAOS_LABS_PRICE_AGGREGATORS_MAP,
   CHRONICLE_PRICE_SCRIBES_MAP,
   INVALID_TOKEN_MAP,
   REDSTONE_PRICE_AGGREGATORS_MAP,
@@ -29,7 +30,8 @@ import {
   TargetLiquidationPenalty,
 } from '@dolomite-exchange/modules-base/src/utils/constructors/dolomite';
 import {
-  ADDRESS_ZERO,
+  ADDRESS_ZERO, BYTES_EMPTY,
+  BYTES_ZERO,
   Network,
   NETWORK_TO_NETWORK_NAME_MAP,
   NetworkType,
@@ -45,12 +47,14 @@ import {
   GmxV2IsolationModeVaultFactory__factory,
   IGmxV2IsolationModeUnwrapperTraderV2,
   IGmxV2IsolationModeUnwrapperTraderV2__factory,
-  IGmxV2IsolationModeVaultFactory, IGmxV2IsolationModeWrapperTraderV2,
+  IGmxV2IsolationModeVaultFactory,
+  IGmxV2IsolationModeWrapperTraderV2,
   IGmxV2IsolationModeWrapperTraderV2__factory,
 } from '@dolomite-exchange/modules-gmx-v2/src/types';
 import {
   CoreProtocolWithChainlinkOld,
   CoreProtocolWithChainlinkV3,
+  CoreProtocolWithChaosLabsV3,
   CoreProtocolWithChronicle,
   CoreProtocolWithRedstone,
 } from '@dolomite-exchange/modules-oracles/src/oracles-constructors';
@@ -90,10 +94,25 @@ import hardhat, { artifacts, ethers, network } from 'hardhat';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { createContractWithName } from 'packages/base/src/utils/dolomite-utils';
 import { CoreProtocolXLayer } from 'packages/base/test/utils/core-protocols/core-protocol-x-layer';
+import { GlvToken } from 'packages/base/test/utils/ecosystem-utils/glv';
 import { GmToken } from 'packages/base/test/utils/ecosystem-utils/gmx';
 import {
+  getGlvIsolationModeUnwrapperTraderV2ConstructorParams,
+  getGlvIsolationModeVaultFactoryConstructorParams,
+  getGlvIsolationModeWrapperTraderV2ConstructorParams,
+} from 'packages/glv/src/glv-constructors';
+import {
+  GlvIsolationModeVaultFactory__factory,
+  IGlvIsolationModeUnwrapperTraderV2,
+  IGlvIsolationModeUnwrapperTraderV2__factory,
+  IGlvIsolationModeVaultFactory,
+  IGlvIsolationModeWrapperTraderV2,
+  IGlvIsolationModeWrapperTraderV2__factory,
+} from 'packages/glv/src/types';
+import {
   getGmxV2IsolationModeUnwrapperTraderV2ConstructorParams,
-  getGmxV2IsolationModeVaultFactoryConstructorParams, getGmxV2IsolationModeWrapperTraderV2ConstructorParams,
+  getGmxV2IsolationModeVaultFactoryConstructorParams,
+  getGmxV2IsolationModeWrapperTraderV2ConstructorParams,
   GMX_V2_EXECUTION_FEE,
 } from 'packages/gmx-v2/src/gmx-v2-constructors';
 import path, { join } from 'path';
@@ -417,12 +436,22 @@ export async function deployContractAndSave(
         signer,
       );
       const salt = keccak256(ethers.utils.defaultAbiCoder.encode(['string'], [usedContractName]));
-      const result = await deployer.deploy(salt, transaction.data!, opts);
-      await result.wait();
-      contract = {
-        address: await deployer.getDeployed(await signer.getAddress(), salt),
-        transactionHash: result.hash,
-      };
+      const contractAddress = await deployer.getDeployed(await signer.getAddress(), salt);
+      const code = await ethers.provider.getCode(contractAddress);
+      if (code === BYTES_EMPTY) {
+        const result = await deployer.deploy(salt, transaction.data!, opts);
+        await result.wait();
+        contract = {
+          address: contractAddress,
+          transactionHash: result.hash,
+        };
+      } else {
+        console.warn(`\t${contractRename} was already deployed. Filling in 0x0 for hash...`);
+        contract = {
+          address: contractAddress,
+          transactionHash: BYTES_ZERO,
+        };
+      }
     }
 
     nonce += 1;
@@ -500,26 +529,109 @@ async function verifyFactoryChildProxyContractIfNecessary(
   }
 }
 
-export function getTokenVaultLibrary<T extends NetworkType>(core: CoreProtocolType<T>): Record<string, string> {
-  const libraryName = 'IsolationModeTokenVaultV1ActionsImpl';
-  const deploymentName = 'IsolationModeTokenVaultV1ActionsImplV7';
-  const deployments = readAllDeploymentFiles();
+export interface GmxV2GlvTokenSystem {
+  factory: IGlvIsolationModeVaultFactory;
+  unwrapper: IGlvIsolationModeUnwrapperTraderV2;
+  wrapper: IGlvIsolationModeWrapperTraderV2;
+}
+
+export async function deployGmxV2GlvTokenSystem(
+  core: CoreProtocolArbitrumOne,
+  glvToken: GlvToken,
+  glvName: string,
+): Promise<GmxV2GlvTokenSystem> {
+  const stablecoins = core.marketIds.stablecoins;
+  const shortIndex = stablecoins.findIndex((m) => BigNumber.from(m).eq(glvToken.shortMarketId));
+  if (shortIndex !== -1) {
+    const firstValue = stablecoins[0];
+    stablecoins[0] = stablecoins[shortIndex];
+    stablecoins[shortIndex] = firstValue;
+  }
+
+  const longMarketId = BigNumber.from(glvToken.longMarketId);
+  const debtMarketIds = [...stablecoins];
+  const collateralMarketIds = [...stablecoins];
+  if (!longMarketId.eq(-1)) {
+    debtMarketIds.unshift(longMarketId);
+    collateralMarketIds.unshift(longMarketId);
+  }
+  if (longMarketId.eq(glvToken.shortMarketId)) {
+    // Need to append the short marketId to the beginning too, even if they're the same asset
+    debtMarketIds.unshift(longMarketId);
+    collateralMarketIds.unshift(longMarketId);
+  }
+
+  function addMarketIdIfNeeded(list: BigNumberish[], findMarketId: BigNumberish) {
+    if (!list.some((m) => BigNumber.from(m).eq(findMarketId))) {
+      list.push(findMarketId);
+    }
+  }
+
+  addMarketIdIfNeeded(debtMarketIds, core.marketIds.wbtc);
+  addMarketIdIfNeeded(collateralMarketIds, core.marketIds.wbtc);
+
+  addMarketIdIfNeeded(debtMarketIds, core.marketIds.weth);
+  addMarketIdIfNeeded(collateralMarketIds, core.marketIds.weth);
+
+  const factoryAddress = await deployContractAndSave(
+    'GlvIsolationModeVaultFactory',
+    getGlvIsolationModeVaultFactoryConstructorParams(
+      core,
+      core.glvEcosystem.live.registry,
+      debtMarketIds,
+      collateralMarketIds,
+      glvToken,
+      core.glvEcosystem.live.tokenVaultImplementation,
+      GMX_V2_EXECUTION_FEE,
+      longMarketId.eq(-1),
+    ),
+    `Glv${glvName}IsolationModeVaultFactory`,
+    { ...core.gmxV2Ecosystem.live.gmxV2LibraryMap },
+  );
+  const factory = GlvIsolationModeVaultFactory__factory.connect(factoryAddress, core.hhUser1);
+
+  const unwrapperProxyAddress = await deployContractAndSave(
+    'IsolationModeTraderProxy',
+    await getGlvIsolationModeUnwrapperTraderV2ConstructorParams(
+      core,
+      core.glvEcosystem.live.unwrapperImplementation,
+      factory,
+      core.glvEcosystem.live.registry,
+      false,
+    ),
+    `Glv${glvName}AsyncIsolationModeUnwrapperTraderProxyV2`,
+  );
+
+  const wrapperProxyAddress = await deployContractAndSave(
+    'IsolationModeTraderProxy',
+    await getGlvIsolationModeWrapperTraderV2ConstructorParams(
+      core,
+      core.glvEcosystem.live.wrapperImplementation,
+      factory,
+      core.glvEcosystem.live.registry,
+      false,
+    ),
+    `Glv${glvName}AsyncIsolationModeWrapperTraderProxyV2`,
+  );
+
   return {
-    [libraryName]: deployments[deploymentName][core.config.network].address,
+    factory,
+    unwrapper: IGlvIsolationModeUnwrapperTraderV2__factory.connect(unwrapperProxyAddress, core.hhUser1),
+    wrapper: IGlvIsolationModeWrapperTraderV2__factory.connect(wrapperProxyAddress, core.hhUser1),
   };
 }
 
-export interface GmxV2System {
+export interface GmxV2GmTokenSystem {
   factory: GmxV2IsolationModeVaultFactory;
   unwrapper: IGmxV2IsolationModeUnwrapperTraderV2;
   wrapper: IGmxV2IsolationModeWrapperTraderV2;
 }
 
-export async function deployGmxV2System(
+export async function deployGmxV2GmTokenSystem(
   core: CoreProtocolArbitrumOne,
   gmToken: GmToken,
   gmName: string,
-): Promise<GmxV2System> {
+): Promise<GmxV2GmTokenSystem> {
   const stablecoins = core.marketIds.stablecoins;
   const shortIndex = stablecoins.findIndex((m) => BigNumber.from(m).eq(gmToken.shortMarketId));
   if (shortIndex !== -1) {
@@ -542,7 +654,7 @@ export async function deployGmxV2System(
   }
 
   function addMarketIdIfNeeded(list: BigNumberish[], findMarketId: BigNumberish) {
-    if (!list.some(m => BigNumber.from(m).eq(findMarketId))) {
+    if (!list.some((m) => BigNumber.from(m).eq(findMarketId))) {
       list.push(findMarketId);
     }
   }
@@ -644,12 +756,11 @@ export async function deployPendlePtSystem<T extends NetworkType>(
     );
   }
 
-  const libraries = getTokenVaultLibrary(core);
   const userVaultImplementationAddress = await deployContractAndSave(
     'PendlePtIsolationModeTokenVaultV1',
     [],
     `PendlePt${ptName}IsolationModeTokenVaultV1`,
-    libraries,
+    core.libraries.tokenVaultActionsImpl,
   );
   const userVaultImplementation = PendlePtIsolationModeTokenVaultV1__factory.connect(
     userVaultImplementationAddress,
@@ -1250,6 +1361,74 @@ export async function prettyPrintEncodeInsertChainlinkOracleV3<T extends Network
   ];
 }
 
+export async function prettyPrintEncodeInsertChaosLabsOracleV3<T extends NetworkType>(
+  core: CoreProtocolWithChaosLabsV3<T>,
+  token: IERC20,
+  invertPrice: boolean = CHAOS_LABS_PRICE_AGGREGATORS_MAP[core.network][token.address]?.invert ?? false,
+  tokenPairAddress: string | undefined = CHAOS_LABS_PRICE_AGGREGATORS_MAP[core.network][token.address]
+    ?.tokenPairAddress,
+  aggregatorAddress: string = CHAOS_LABS_PRICE_AGGREGATORS_MAP[core.network][token.address]!.aggregatorAddress,
+  options?: { ignoreDescription: boolean },
+): Promise<EncodedTransaction[]> {
+  const invalidTokenSettings = INVALID_TOKEN_MAP[core.network][token.address];
+
+  let tokenDecimals: number;
+  if (invalidTokenSettings) {
+    tokenDecimals = invalidTokenSettings.decimals;
+  } else {
+    tokenDecimals = await IERC20Metadata__factory.connect(token.address, core.hhUser1).decimals();
+  }
+
+  const aggregator = IChainlinkAggregator__factory.connect(aggregatorAddress, core.governance);
+
+  const description = await aggregator.description();
+  let symbol: string;
+  if (invalidTokenSettings) {
+    symbol = invalidTokenSettings.symbol;
+  } else {
+    symbol = await IERC20Metadata__factory.connect(token.address, token.signer).symbol();
+  }
+
+  if (!options?.ignoreDescription) {
+    if (
+      !description.toUpperCase().includes(symbol.toUpperCase()) &&
+      !description.toUpperCase().includes(symbol.toUpperCase().substring(1))
+    ) {
+      return Promise.reject(new Error(`Invalid aggregator for symbol, found: ${description}, expected: ${symbol}`));
+    }
+  }
+
+  mostRecentTokenDecimals = tokenDecimals;
+  return [
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { chaosLabsPriceOracle: core.chaosLabsPriceOracleV3 },
+      'chaosLabsPriceOracle',
+      'ownerInsertOrUpdateOracleToken',
+      [token.address, aggregator.address, invertPrice],
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { oracleAggregatorV2: core.oracleAggregatorV2 },
+      'oracleAggregatorV2',
+      'ownerInsertOrUpdateToken',
+      [
+        {
+          token: token.address,
+          decimals: tokenDecimals,
+          oracleInfos: [
+            {
+              oracle: core.chaosLabsPriceOracleV3.address,
+              tokenPair: tokenPairAddress ?? ADDRESS_ZERO,
+              weight: 100,
+            },
+          ],
+        },
+      ],
+    ),
+  ];
+}
+
 export async function prettyPrintEncodeInsertChronicleOracleV3(
   core: CoreProtocolWithChronicle<Network.ArbitrumOne | Network.Berachain | Network.Mantle>,
   token: IERC20,
@@ -1595,6 +1774,43 @@ export async function prettyPrintEncodeAddAsyncIsolationModeMarket<T extends Net
   );
 
   return transactions;
+}
+
+export async function prettyPrintEncodeAddGlvMarket(
+  core: CoreProtocolArbitrumOne,
+  factory: IGlvIsolationModeVaultFactory,
+  pairedGmToken: GmToken,
+  unwrapper: IIsolationModeUnwrapperTraderV2,
+  wrapper: IIsolationModeWrapperTraderV2,
+  handlerRegistry: HandlerRegistry,
+  marketId: BigNumberish,
+  targetCollateralization: TargetCollateralization,
+  targetLiquidationPremium: TargetLiquidationPenalty,
+  maxSupplyWei: BigNumberish,
+  options: AddMarketOptions = {},
+): Promise<EncodedTransaction[]> {
+  return [
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { glvRegistry: core.glvEcosystem.live.registry },
+      'glvRegistry',
+      'ownerSetGlvTokenToGmMarket',
+      [await factory.UNDERLYING_TOKEN(), pairedGmToken.marketToken.address],
+    ),
+    ...(await prettyPrintEncodeAddAsyncIsolationModeMarket(
+      core,
+      factory,
+      core.oracleAggregatorV2,
+      unwrapper,
+      wrapper,
+      handlerRegistry,
+      marketId,
+      targetCollateralization,
+      targetLiquidationPremium,
+      maxSupplyWei,
+      options,
+    )),
+  ];
 }
 
 export async function prettyPrintEncodeAddGmxV2Market(

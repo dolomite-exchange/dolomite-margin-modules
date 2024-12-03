@@ -1,15 +1,12 @@
-import { getAndCheckSpecificNetwork } from 'packages/base/src/utils/dolomite-utils';
-import { getRealLatestBlockNumber } from 'packages/base/test/utils';
-import { setupCoreProtocol } from 'packages/base/test/utils/setup';
 import { parseEther } from 'ethers/lib/utils';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
+import { getAndCheckSpecificNetwork } from 'packages/base/src/utils/dolomite-utils';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
-import {
-  EncodedTransaction,
-  prettyPrintEncodedDataWithTypeSafety
-} from '../../../../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../../utils/dry-run-utils';
-import getScriptName from '../../../../../utils/get-script-name';
+import { getRealLatestBlockNumber } from 'packages/base/test/utils';
+import { setupCoreProtocol } from 'packages/base/test/utils/setup';
+import { EncodedTransaction, prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/deploy-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
+import getScriptName from '../../../../utils/get-script-name';
 
 /**
  * This script encodes the following transactions:
@@ -48,12 +45,12 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     invariants: async () => {
       assertHardhatInvariant(
         (await core.dolomiteMargin.getMarketMaxWei(core.marketIds.dGmBtc)).value.eq(parseEther(`${35_000_000}`)),
-        'Invalid gmBTC cap'
+        'Invalid gmBTC cap',
       );
 
       assertHardhatInvariant(
         (await core.dolomiteMargin.getMarketMaxWei(core.marketIds.dGmEth)).value.eq(parseEther(`${25_000_000}`)),
-        'Invalid gmETH cap'
+        'Invalid gmETH cap',
       );
     },
   };

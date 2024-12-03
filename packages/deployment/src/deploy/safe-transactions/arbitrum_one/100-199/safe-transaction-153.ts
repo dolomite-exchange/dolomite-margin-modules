@@ -5,7 +5,6 @@ import {
   createFolder,
   DenJsonUpload,
   deployContractAndSave,
-  getTokenVaultLibrary,
   prettyPrintEncodedDataWithTypeSafety,
   writeFile,
 } from '../../../../utils/deploy-utils';
@@ -22,7 +21,7 @@ async function main(): Promise<DenJsonUpload> {
     'GLPIsolationModeTokenVaultV2',
     [],
     undefined,
-    getTokenVaultLibrary(core),
+    core.libraries.tokenVaultActionsImpl,
   );
   const transactions = [];
   transactions.push(

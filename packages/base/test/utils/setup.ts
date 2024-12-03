@@ -4,6 +4,7 @@ import {
   ChroniclePriceOracleV3__factory,
   IChainlinkAutomationRegistry__factory,
   IChainlinkPriceOracleV3__factory,
+  IChaosLabsPriceOracleV3__factory,
   OkxPriceOracleV3__factory,
   OracleAggregatorV2__factory,
   RedstonePriceOracleV3__factory,
@@ -23,6 +24,7 @@ import { Provider } from '@ethersproject/providers';
 import { BaseContract, BigNumber, BigNumberish, ContractInterface, Signer } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
+import { IGlvToken } from 'packages/glv/src/types';
 import { IGmxMarketToken } from 'packages/gmx-v2/src/types';
 import { IMantleRewardStation__factory } from 'packages/mantle/src/types';
 import { IChainlinkPriceOracleV1__factory } from 'packages/oracles/src/types';
@@ -167,6 +169,7 @@ import { DolomiteMargin, Expiry } from './dolomite';
 import { createAbraEcosystem } from './ecosystem-utils/abra';
 import { createArbEcosystem } from './ecosystem-utils/arb';
 import { createCamelotEcosystem } from './ecosystem-utils/camelot';
+import { createGlvEcosystem } from './ecosystem-utils/glv';
 import { createGmxEcosystem, createGmxEcosystemV2 } from './ecosystem-utils/gmx';
 import { createInterestSetters } from './ecosystem-utils/interest-setters';
 import { createJonesEcosystem } from './ecosystem-utils/jones';
@@ -404,6 +407,20 @@ export async function setupGMXBalance(
   await core.tokens.gmx!.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
+export async function setupGLVBalance(
+  core: CoreProtocolArbitrumOne,
+  glvToken: IGlvToken,
+  signer: { address: string },
+  amount: BigNumberish,
+  spender?: { address: string },
+) {
+  const controller = await impersonate(core.gmxV2Ecosystem!.gmxExchangeRouter.address, true);
+  await glvToken.connect(controller).mint(signer.address, amount);
+  if (signer instanceof SignerWithAddressWithSafety && spender) {
+    await glvToken.connect(signer).approve(spender.address, amount);
+  }
+}
+
 export async function setupRsEthBalance(
   core: { tokens: { rsEth: IERC20 } },
   signer: SignerWithAddressWithSafety,
@@ -532,6 +549,15 @@ function getCoreProtocolConfig<T extends NetworkType>(network: T, blockNumber: n
   }
 
   throw new Error(`Invalid network, found: ${network}`);
+}
+
+export function getDefaultProtocolConfigForGlv(): CoreProtocolConfig<Network.ArbitrumOne> {
+  return {
+    network: Network.ArbitrumOne,
+    networkNumber: parseInt(Network.ArbitrumOne, 10),
+    blockNumber: 279_600_000,
+    arbitrumOne: true,
+  };
 }
 
 export function getDefaultCoreProtocolConfigForGmxV2(): CoreProtocolConfig<Network.ArbitrumOne> {
@@ -805,6 +831,10 @@ export async function setupCoreProtocol<T extends NetworkType>(
         CHAINLINK_AUTOMATION_REGISTRY_MAP[typedConfig.network],
         governance,
       ),
+      chaosLabsPriceOracleV3: IChaosLabsPriceOracleV3__factory.connect(
+        Deployments.ChaosLabsPriceOracleV3[typedConfig.network].address,
+        hhUser1,
+      ),
       chroniclePriceOracleV3: ChroniclePriceOracleV3__factory.connect(
         Deployments.ChroniclePriceOracleV3[typedConfig.network].address,
         hhUser1,
@@ -828,6 +858,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
         wbtcProxy: RegistryProxy__factory.connect(Deployments.DolomiteWbtcToken[typedConfig.network].address, hhUser1),
         wethProxy: RegistryProxy__factory.connect(Deployments.DolomiteWethToken[typedConfig.network].address, hhUser1),
       },
+      glvEcosystem: await createGlvEcosystem(typedConfig.network, hhUser1),
       gmxEcosystem: await createGmxEcosystem(typedConfig.network, hhUser1),
       gmxEcosystemV2: await createGmxEcosystemV2(typedConfig.network, hhUser1),
       jonesEcosystem: await createJonesEcosystem(typedConfig.network, hhUser1),

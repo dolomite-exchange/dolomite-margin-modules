@@ -1,17 +1,17 @@
-import { getAndCheckSpecificNetwork } from 'packages/base/src/utils/dolomite-utils';
-import { getRealLatestBlockNumber } from 'packages/base/test/utils';
-import { setupCoreProtocol } from 'packages/base/test/utils/setup';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { TargetCollateralization, TargetLiquidationPenalty } from 'packages/base/src/utils/constructors/dolomite';
+import { getAndCheckSpecificNetwork } from 'packages/base/src/utils/dolomite-utils';
 import { parseBtc } from 'packages/base/src/utils/math-utils';
 import { Network, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
+import { getRealLatestBlockNumber } from 'packages/base/test/utils';
+import { setupCoreProtocol } from 'packages/base/test/utils/setup';
 import {
   EncodedTransaction,
   prettyPrintEncodeAddMarket,
   prettyPrintEncodeInsertChainlinkOracleV3,
-} from '../../../../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../../utils/dry-run-utils';
-import getScriptName from '../../../../../utils/get-script-name';
+} from '../../../../utils/deploy-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
+import getScriptName from '../../../../utils/get-script-name';
 
 /**
  * This script encodes the following transactions:

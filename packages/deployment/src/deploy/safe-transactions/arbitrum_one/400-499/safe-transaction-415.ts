@@ -1,15 +1,15 @@
+import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { getAndCheckSpecificNetwork } from 'packages/base/src/utils/dolomite-utils';
+import { Network } from 'packages/base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from 'packages/base/test/utils';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
-import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
-import { Network } from 'packages/base/src/utils/no-deps-constants';
 import {
   deployContractAndSave,
   EncodedTransaction,
   prettyPrintEncodedDataWithTypeSafety,
-} from '../../../../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../../utils/dry-run-utils';
-import getScriptName from '../../../../../utils/get-script-name';
+} from '../../../../utils/deploy-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
+import getScriptName from '../../../../utils/get-script-name';
 
 const HARVEST_DAI = '0xA95E010aF63196747F459176A1B85d250E8211b4';
 const HARVEST_USDC = '0xD174dd89af9F58804B47A67435317bc31f971cee';
@@ -102,10 +102,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     },
     invariants: async () => {
       const mineralToken = core.liquidityMiningEcosystem.minerals.mineralToken;
-      assertHardhatInvariant(
-        await mineralToken.isTransferAgent(HARVEST_DAI),
-        'Invalid transfer agent for HARVEST_DAI',
-      );
+      assertHardhatInvariant(await mineralToken.isTransferAgent(HARVEST_DAI), 'Invalid transfer agent for HARVEST_DAI');
       assertHardhatInvariant(
         await mineralToken.isTransferAgent(HARVEST_USDC),
         'Invalid transfer agent for HARVEST_USDC',
@@ -122,14 +119,8 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
         await mineralToken.isTransferAgent(HARVEST_USDC_e),
         'Invalid transfer agent for HARVEST_USDC_e',
       );
-      assertHardhatInvariant(
-        await mineralToken.isTransferAgent(HARVEST_GMX),
-        'Invalid transfer agent for HARVEST_GMX',
-      );
-      assertHardhatInvariant(
-        await mineralToken.isTransferAgent(HARVEST_ETH),
-        'Invalid transfer agent for HARVEST_ETH',
-      );
+      assertHardhatInvariant(await mineralToken.isTransferAgent(HARVEST_GMX), 'Invalid transfer agent for HARVEST_GMX');
+      assertHardhatInvariant(await mineralToken.isTransferAgent(HARVEST_ETH), 'Invalid transfer agent for HARVEST_ETH');
     },
   };
 }

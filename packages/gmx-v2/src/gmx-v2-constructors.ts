@@ -35,9 +35,11 @@ export async function getGmxV2RegistryConstructorParams(
   return [implementation.address, core.dolomiteMargin.address, calldata.data];
 }
 
+export const GLV_EXECUTION_FEE_FOR_TESTS = parseEther('0.05');
+export const GLV_CALLBACK_GAS_LIMIT = BigNumber.from(4_000_000);
 export const GMX_V2_EXECUTION_FEE = parseEther('0.001');
 export const GMX_V2_EXECUTION_FEE_FOR_TESTS = parseEther('0.015');
-export const GMX_V2_CALLBACK_GAS_LIMIT = BigNumber.from('3000000');
+export const GMX_V2_CALLBACK_GAS_LIMIT = BigNumber.from(3_000_000);
 
 export function getGmxV2IsolationModeVaultFactoryConstructorParams(
   core: CoreProtocolArbitrumOne,

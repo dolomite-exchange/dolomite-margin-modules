@@ -3,12 +3,12 @@ import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/
 import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { BigNumberish } from 'ethers';
+import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import {
   createFolder,
   DenJsonUpload,
   deployContractAndSave,
   EncodedTransaction,
-  getTokenVaultLibrary,
   prettyPrintEncodedDataWithTypeSafety,
   writeFile,
 } from '../../../../utils/deploy-utils';
@@ -113,7 +113,7 @@ async function main(): Promise<DenJsonUpload> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
   const core = await setupCoreProtocol({ network, blockNumber: 0 });
 
-  const libraries = getTokenVaultLibrary(core);
+  const libraries = core.libraries.tokenVaultActionsImpl;
   const newGlpUserVaultImplementationAddress = await deployContractAndSave(
     'GLPIsolationModeTokenVaultV2',
     [],
