@@ -20,8 +20,8 @@
 
 pragma solidity ^0.8.9;
 
-import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
 import { IEventEmitterRegistry } from "./IEventEmitterRegistry.sol";
+import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
 
 /**
  * @title   IGenericTraderBase

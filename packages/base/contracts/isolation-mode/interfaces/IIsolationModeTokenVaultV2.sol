@@ -303,6 +303,12 @@ interface IIsolationModeTokenVaultV2 {
     function underlyingBalanceOf() external view returns (uint256);
 
     /**
+     * @notice  Will revert if the deposit is not valid.
+     *
+     */
+    function validateDepositIntoVault(uint256 _accountNumber, uint256 _marketId) external view;
+
+    /**
      * @return The registry used to discover important addresses for Dolomite
      */
     function dolomiteRegistry() external view returns (IDolomiteRegistry);

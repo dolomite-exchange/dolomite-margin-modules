@@ -19,11 +19,11 @@
 
 pragma solidity ^0.8.9;
 
+import { IEventEmitterRegistry } from "./IEventEmitterRegistry.sol";
+import { IExpiry } from "./IExpiry.sol";
 import { IGenericTraderBase } from "./IGenericTraderBase.sol";
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
-import { IExpiry } from "./IExpiry.sol";
-import { IEventEmitterRegistry } from "./IEventEmitterRegistry.sol";
 
 
 /**

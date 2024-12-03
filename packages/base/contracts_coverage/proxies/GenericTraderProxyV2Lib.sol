@@ -20,11 +20,11 @@
 
 pragma solidity ^0.8.9;
 
-import { TypesLib } from "../protocol/lib/TypesLib.sol";
-import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
-import { IGenericTraderBase } from "../interfaces/IGenericTraderBase.sol";
-import { IGenericTraderProxyV2 } from "./interfaces/IGenericTraderProxyV2.sol";
 import { IEventEmitterRegistry } from "../interfaces/IEventEmitterRegistry.sol";
+import { IGenericTraderBase } from "../interfaces/IGenericTraderBase.sol";
+import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
+import { TypesLib } from "../protocol/lib/TypesLib.sol";
+import { IGenericTraderProxyV2 } from "./interfaces/IGenericTraderProxyV2.sol";
 
 
 /**

@@ -20,6 +20,7 @@
 
 pragma solidity ^0.8.9;
 
+import { IBorrowPositionProxyV2 } from "./IBorrowPositionProxyV2.sol";
 import { IDolomiteAccountRegistry } from "./IDolomiteAccountRegistry.sol";
 import { IDolomiteMigrator } from "./IDolomiteMigrator.sol";
 import { IEventEmitterRegistry } from "./IEventEmitterRegistry.sol";
@@ -27,7 +28,6 @@ import { IExpiry } from "./IExpiry.sol";
 import { IGenericTraderProxyV1 } from "./IGenericTraderProxyV1.sol";
 import { ILiquidatorAssetRegistry } from "./ILiquidatorAssetRegistry.sol";
 import { IDolomitePriceOracle } from "../protocol/interfaces/IDolomitePriceOracle.sol";
-import { IBorrowPositionProxyV2 } from "./IBorrowPositionProxyV2.sol";
 
 
 /**

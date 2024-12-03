@@ -21,13 +21,9 @@
 pragma solidity ^0.8.9;
 
 import { RouterBase } from './RouterBase.sol';
-import { IGenericTraderProxyV2 } from '../proxies/interfaces/IGenericTraderProxyV2.sol';
-import { IGenericTraderProxyV1 } from '../interfaces/IGenericTraderProxyV1.sol';
-import { IGenericTraderBase } from '../interfaces/IGenericTraderBase.sol';
-import { IDolomiteMargin } from '../protocol/interfaces/IDolomiteMargin.sol';
 import { IIsolationModeTokenVaultV2 } from '../isolation-mode/interfaces/IIsolationModeTokenVaultV2.sol';
-import { Require } from '../protocol/lib/Require.sol';
 import { AccountBalanceLib } from '../lib/AccountBalanceLib.sol';
+import { IGenericTraderProxyV2 } from '../proxies/interfaces/IGenericTraderProxyV2.sol';
 import { IGenericTraderRouter } from './interfaces/IGenericTraderRouter.sol';
 
 
@@ -65,7 +61,7 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
         uint256 _isolationModeMarketId,
         IGenericTraderProxyV2.SwapExactInputForOutputParams memory _params
     ) external nonReentrant {
-        if (_isolationModeMarketId == type(uint256).max) {
+        if (_isolationModeMarketId == 0) {
             IGenericTraderProxyV2 proxy = IGenericTraderProxyV2(address(DOLOMITE_REGISTRY.genericTraderProxy()));
             proxy.swapExactInputForOutputForDifferentAccount(
                 msg.sender,
@@ -75,7 +71,10 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
             MarketInfo memory marketInfo = _getMarketInfo(_isolationModeMarketId);
             IIsolationModeTokenVaultV2 vault = _validateIsoMarketAndGetVault(marketInfo, msg.sender);
 
-            if (_params.marketIdsPath[_params.marketIdsPath.length - 1] == _isolationModeMarketId && _params.accountNumber < 100) {
+            if (
+                _params.marketIdsPath[_params.marketIdsPath.length - 1] == _isolationModeMarketId
+                && _params.accountNumber < 100
+            ) {
                 vault.addCollateralAndSwapExactInputForOutput(
                     _params.accountNumber,
                     /* toAccountNumber */ DEFAULT_ACCOUNT_NUMBER,
@@ -115,7 +114,7 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
         uint256 _isolationModeMarketId,
         IGenericTraderProxyV2.SwapExactInputForOutputAndModifyPositionParams memory _params
     ) external nonReentrant {
-        if (_isolationModeMarketId == type(uint256).max) {
+        if (_isolationModeMarketId == 0) {
             IGenericTraderProxyV2 proxy = IGenericTraderProxyV2(address(DOLOMITE_REGISTRY.genericTraderProxy()));
             proxy.swapExactInputForOutputAndModifyPositionForDifferentAccount(
                 msg.sender,
@@ -147,8 +146,16 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
                     _params.makerAccounts,
                     _params.userConfig
                 );
-            } else if (_params.transferCollateralParams.fromAccountNumber < 100 && _params.transferCollateralParams.toAccountNumber >= 100) {
-                _doTransfers(_isolationModeMarketId, vault, _params.transferCollateralParams, TransferType.IntoPosition);
+            } else if (
+                _params.transferCollateralParams.fromAccountNumber < 100
+                && _params.transferCollateralParams.toAccountNumber >= 100
+            ) {
+                _doTransfers(
+                    _isolationModeMarketId,
+                    vault,
+                    _params.transferCollateralParams,
+                    TransferType.IntoPosition
+                );
                 vault.swapExactInputForOutput(
                     _params.accountNumber,
                     _params.marketIdsPath,
@@ -168,9 +175,14 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
                     _params.makerAccounts,
                     _params.userConfig
                 );
-                _doTransfers(_isolationModeMarketId, vault, _params.transferCollateralParams, TransferType.OutOfPosition);
+                _doTransfers(
+                    _isolationModeMarketId,
+                    vault,
+                    _params.transferCollateralParams,
+                    TransferType.OutOfPosition
+                );
             }
-      }
+        }
     }
 
     function _doTransfers(

@@ -20,7 +20,7 @@
 
 pragma solidity ^0.8.9;
 
-import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import { ReentrancyGuardUpgradeable } from "../helpers/ReentrancyGuardUpgradeable.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
@@ -38,7 +38,7 @@ import { IRouterBase } from "./interfaces/IRouterBase.sol";
  *
  * @notice  Base contract for all routers
  */
-abstract contract RouterBase is OnlyDolomiteMarginForUpgradeable, ReentrancyGuard, IRouterBase {
+abstract contract RouterBase is OnlyDolomiteMarginForUpgradeable, ReentrancyGuardUpgradeable, IRouterBase {
 
     // ========================================================
     // ====================== Constants =======================

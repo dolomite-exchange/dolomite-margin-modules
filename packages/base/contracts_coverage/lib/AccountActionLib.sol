@@ -27,7 +27,6 @@ import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../protocol/lib/Require.sol";
 
-import "hardhat/console.sol";
 
 /**
  * @title   AccountActionLib

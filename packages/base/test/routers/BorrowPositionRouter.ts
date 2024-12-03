@@ -1,4 +1,4 @@
-import { MAX_UINT_256_BI, Network, ONE_ETH_BI, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
+import { Network, ONE_ETH_BI, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
 import { CoreProtocolArbitrumOne } from '../utils/core-protocols/core-protocol-arbitrum-one';
 import {
   disableInterestAccrual,
@@ -13,9 +13,8 @@ import {
   CustomTestToken,
   TestBorrowPositionRouter,
   TestBorrowPositionRouter__factory,
-  TestIsolationModeTokenVaultV1,
-  TestIsolationModeTokenVaultV1__factory,
   TestIsolationModeTokenVaultV2,
+  TestIsolationModeTokenVaultV2__factory,
   TestIsolationModeVaultFactory
 } from 'packages/base/src/types';
 import { createContractWithAbi, createContractWithLibrary, createTestToken, depositIntoDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
@@ -25,13 +24,6 @@ import { createTestIsolationModeVaultFactory } from '../utils/ecosystem-utils/te
 import { BigNumber } from 'ethers';
 import { expectEvent, expectProtocolBalance, expectThrow } from '../utils/assertions';
 import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin';
-import { parseEther } from 'ethers/lib/utils';
-import { expect } from 'chai';
-
-enum Direction {
-  ToVault = 0,
-  FromVault = 1,
-}
 
 const amountWei = ONE_ETH_BI;
 const defaultAccountNumber = ZERO_BI;
@@ -86,9 +78,9 @@ describe('BorrowPositionRouter', () => {
 
     await factory.createVault(core.hhUser1.address);
     const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);
-    userVault = setupUserVaultProxy<TestIsolationModeTokenVaultV1>(
+    userVault = setupUserVaultProxy<TestIsolationModeTokenVaultV2>(
       vaultAddress,
-      TestIsolationModeTokenVaultV1__factory,
+      TestIsolationModeTokenVaultV2__factory,
       core.hhUser1,
     );
 
@@ -149,7 +141,7 @@ describe('BorrowPositionRouter', () => {
       );
       await expectThrow(
         router.callFunctionAndTriggerReentrancy(transaction.data!),
-        'ReentrancyGuard: reentrant call'
+        'ReentrancyGuardUpgradeable: Reentrant call'
       );
     });
   });
@@ -171,7 +163,7 @@ describe('BorrowPositionRouter', () => {
       await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, amountWei);
 
       await router.closeBorrowPosition(
-        MAX_UINT_256_BI,
+        ZERO_BI,
         borrowAccountNumber,
         defaultAccountNumber,
         [core.marketIds.dai]
@@ -241,14 +233,14 @@ describe('BorrowPositionRouter', () => {
 
     it('should fail if reentered', async () => {
       const transaction = await router.populateTransaction.closeBorrowPosition(
-        MAX_UINT_256_BI,
+        ZERO_BI,
         borrowAccountNumber,
         defaultAccountNumber,
         [core.marketIds.dai]
       );
       await expectThrow(
         router.callFunctionAndTriggerReentrancy(transaction.data!),
-        'ReentrancyGuard: reentrant call'
+        'ReentrancyGuardUpgradeable: Reentrant call'
       );
     });
   });
@@ -256,7 +248,7 @@ describe('BorrowPositionRouter', () => {
   describe('#transferBetweenAccounts', () => {
     it('should work normally for a normal asset', async () => {
       await router.transferBetweenAccounts(
-        MAX_UINT_256_BI,
+        ZERO_BI,
         defaultAccountNumber,
         borrowAccountNumber,
         core.marketIds.dai,
@@ -335,7 +327,7 @@ describe('BorrowPositionRouter', () => {
 
     it('should fail if reentered', async () => {
       const transaction = await router.populateTransaction.transferBetweenAccounts(
-        MAX_UINT_256_BI,
+        ZERO_BI,
         defaultAccountNumber,
         borrowAccountNumber,
         isolationModeMarketId,
@@ -344,7 +336,7 @@ describe('BorrowPositionRouter', () => {
       );
       await expectThrow(
         router.callFunctionAndTriggerReentrancy(transaction.data!),
-        'ReentrancyGuard: reentrant call'
+        'ReentrancyGuardUpgradeable: Reentrant call'
       );
     });
   });
@@ -361,7 +353,7 @@ describe('BorrowPositionRouter', () => {
         BalanceCheckFlag.Both
       );
       await router.transferBetweenAccounts(
-        MAX_UINT_256_BI,
+        ZERO_BI,
         borrowAccountNumber,
         defaultAccountNumber,
         core.marketIds.dai,
@@ -374,7 +366,7 @@ describe('BorrowPositionRouter', () => {
       await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, ZERO_BI.sub(amountWei));
 
       await router.repayAllForBorrowPosition(
-        MAX_UINT_256_BI,
+        ZERO_BI,
         defaultAccountNumber,
         borrowAccountNumber,
         core.marketIds.dai,
@@ -435,7 +427,7 @@ describe('BorrowPositionRouter', () => {
         BalanceCheckFlag.Both
       );
       await router.transferBetweenAccounts(
-        MAX_UINT_256_BI,
+        ZERO_BI,
         borrowAccountNumber,
         defaultAccountNumber,
         core.marketIds.dai,
@@ -448,7 +440,7 @@ describe('BorrowPositionRouter', () => {
       await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, ZERO_BI.sub(amountWei));
 
       await router.repayAllForBorrowPosition(
-        MAX_UINT_256_BI,
+        ZERO_BI,
         defaultAccountNumber,
         borrowAccountNumber,
         core.marketIds.dai,
@@ -471,7 +463,7 @@ describe('BorrowPositionRouter', () => {
         BalanceCheckFlag.Both
       );
       await router.transferBetweenAccounts(
-        MAX_UINT_256_BI,
+        ZERO_BI,
         borrowAccountNumber,
         defaultAccountNumber,
         core.marketIds.dai,
@@ -481,7 +473,7 @@ describe('BorrowPositionRouter', () => {
 
       // Remove 1 DAI + 1 wei from default account number so can't repay without going negative
       await router.transferBetweenAccounts(
-        MAX_UINT_256_BI,
+        ZERO_BI,
         defaultAccountNumber,
         otherBorrowAccountNumber,
         core.marketIds.dai,
@@ -490,7 +482,7 @@ describe('BorrowPositionRouter', () => {
       );
       await expectThrow(
         router.repayAllForBorrowPosition(
-          MAX_UINT_256_BI,
+          ZERO_BI,
           defaultAccountNumber,
           borrowAccountNumber,
           core.marketIds.dai,
@@ -511,7 +503,7 @@ describe('BorrowPositionRouter', () => {
         BalanceCheckFlag.Both
       );
       await router.transferBetweenAccounts(
-        MAX_UINT_256_BI,
+        ZERO_BI,
         borrowAccountNumber,
         defaultAccountNumber,
         core.marketIds.dai,
@@ -520,7 +512,7 @@ describe('BorrowPositionRouter', () => {
       );
 
       await router.repayAllForBorrowPosition(
-        MAX_UINT_256_BI,
+        ZERO_BI,
         defaultAccountNumber,
         borrowAccountNumber,
         core.marketIds.dai,
@@ -539,7 +531,7 @@ describe('BorrowPositionRouter', () => {
         BalanceCheckFlag.Both
       );
       await router.transferBetweenAccounts(
-        MAX_UINT_256_BI,
+        ZERO_BI,
         borrowAccountNumber,
         defaultAccountNumber,
         core.marketIds.dai,
@@ -549,7 +541,7 @@ describe('BorrowPositionRouter', () => {
 
       // Remove 1 DAI + 1 wei from default account number so can't repay without going negative
       await router.transferBetweenAccounts(
-        MAX_UINT_256_BI,
+        ZERO_BI,
         defaultAccountNumber,
         otherBorrowAccountNumber,
         core.marketIds.dai,
@@ -558,7 +550,7 @@ describe('BorrowPositionRouter', () => {
       );
       await expectThrow(
         router.repayAllForBorrowPosition(
-          MAX_UINT_256_BI,
+          ZERO_BI,
           defaultAccountNumber,
           borrowAccountNumber,
           core.marketIds.dai,
@@ -583,7 +575,7 @@ describe('BorrowPositionRouter', () => {
 
     it('should fail if reentered', async () => {
       const transaction = await router.populateTransaction.repayAllForBorrowPosition(
-        MAX_UINT_256_BI,
+        ZERO_BI,
         defaultAccountNumber,
         borrowAccountNumber,
         core.marketIds.dai,
@@ -591,7 +583,7 @@ describe('BorrowPositionRouter', () => {
       );
       await expectThrow(
         router.callFunctionAndTriggerReentrancy(transaction.data!),
-        'ReentrancyGuard: reentrant call'
+        'ReentrancyGuardUpgradeable: Reentrant call'
       );
     });
   });

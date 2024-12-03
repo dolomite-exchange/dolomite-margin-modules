@@ -369,6 +369,17 @@ abstract contract IsolationModeTokenVaultV2 is IIsolationModeTokenVaultV2, Proxy
         IERC20(UNDERLYING_TOKEN()).safeTransfer(_recipient, _amount);
     }
 
+    function validateDepositIntoVault(
+        uint256 _accountNumber,
+        uint256 _marketId
+    ) external view {
+        IsolationModeTokenVaultV2ActionsImpl.validateDepositIntoVault(
+            /* _vault = */ this,
+            _accountNumber,
+            _marketId
+        );
+    }
+
     function UNDERLYING_TOKEN() public view returns (address) {
         return IIsolationModeVaultFactory(VAULT_FACTORY()).UNDERLYING_TOKEN();
     }

@@ -25,10 +25,10 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { ProxyContractHelpers } from "../../helpers/ProxyContractHelpers.sol";
 import { IBorrowPositionProxyV2 } from "../../interfaces/IBorrowPositionProxyV2.sol";
 import { IDolomiteRegistry } from "../../interfaces/IDolomiteRegistry.sol";
-import { IGenericTraderProxyV2 } from "../../proxies/interfaces/IGenericTraderProxyV2.sol";
 import { AccountBalanceLib } from "../../lib/AccountBalanceLib.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { Require } from "../../protocol/lib/Require.sol";
+import { IGenericTraderProxyV2 } from "../../proxies/interfaces/IGenericTraderProxyV2.sol";
 import { IIsolationModeTokenVaultV2 } from "../interfaces/IIsolationModeTokenVaultV2.sol";
 import { IIsolationModeVaultFactory } from "../interfaces/IIsolationModeVaultFactory.sol";
 import { IsolationModeTokenVaultV2ActionsImpl } from "./impl/IsolationModeTokenVaultV2ActionsImpl.sol";
@@ -367,6 +367,17 @@ abstract contract IsolationModeTokenVaultV2 is IIsolationModeTokenVaultV2, Proxy
     onlyVaultFactory(msg.sender) {
         /*assert(_recipient != address(this));*/
         IERC20(UNDERLYING_TOKEN()).safeTransfer(_recipient, _amount);
+    }
+
+    function validateDepositIntoVault(
+        uint256 _accountNumber,
+        uint256 _marketId
+    ) external view {
+        IsolationModeTokenVaultV2ActionsImpl.validateDepositIntoVault(
+            /* _vault = */ this,
+            _accountNumber,
+            _marketId
+        );
     }
 
     function UNDERLYING_TOKEN() public view returns (address) {

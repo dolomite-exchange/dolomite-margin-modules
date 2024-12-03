@@ -15,9 +15,8 @@ import {
   TestBorrowPositionRouter__factory,
   TestGenericTraderRouter,
   TestGenericTraderRouter__factory,
-  TestIsolationModeTokenVaultV1,
-  TestIsolationModeTokenVaultV1__factory,
   TestIsolationModeTokenVaultV2,
+  TestIsolationModeTokenVaultV2__factory,
   TestIsolationModeUnwrapperTraderV2,
   TestIsolationModeUnwrapperTraderV2__factory,
   TestIsolationModeVaultFactory,
@@ -37,16 +36,11 @@ import { createTestIsolationModeVaultFactory } from '../utils/ecosystem-utils/te
 import { BigNumber } from 'ethers';
 import { expectProtocolBalance, expectThrow } from '../utils/assertions';
 import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin';
-import { parseEther } from 'ethers/lib/utils';
 import { getSimpleZapParams, getUnwrapZapParams, getWrapZapParams } from '../utils/zap-utils';
 
-const OTHER_ADDRESS = '0x1234567890123456789012345678901234567890';
-
 const amountWei = ONE_ETH_BI;
-const parAmount = parseEther('.5');
 const defaultAccountNumber = ZERO_BI;
 const borrowAccountNumber = BigNumber.from('123');
-const otherBorrowAccountNumber = BigNumber.from('456');
 
 describe('GenericTraderRouter', () => {
   let snapshotId: string;
@@ -146,9 +140,9 @@ describe('GenericTraderRouter', () => {
 
     await factory.createVault(core.hhUser1.address);
     const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);
-    userVault = setupUserVaultProxy<TestIsolationModeTokenVaultV1>(
+    userVault = setupUserVaultProxy<TestIsolationModeTokenVaultV2>(
       vaultAddress,
-      TestIsolationModeTokenVaultV1__factory,
+      TestIsolationModeTokenVaultV2__factory,
       core.hhUser1,
     );
 
@@ -171,7 +165,7 @@ describe('GenericTraderRouter', () => {
       const outputAmount = amountWei.div(2);
       const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
       await traderRouter.swapExactInputForOutput(
-        MAX_UINT_256_BI,
+        ZERO_BI,
         {
           accountNumber: defaultAccountNumber,
           marketIdsPath: zapParams.marketIdsPath,
@@ -291,7 +285,7 @@ describe('GenericTraderRouter', () => {
         traderRouter.swapExactInputForOutput(
           otherMarketId1,
           {
-            accountNumber: MAX_UINT_256_BI,
+            accountNumber: ZERO_BI,
             marketIdsPath: zapParams.marketIdsPath,
             inputAmountWei: zapParams.inputAmountWei,
             minOutputAmountWei: zapParams.minOutputAmountWei,
@@ -308,9 +302,9 @@ describe('GenericTraderRouter', () => {
       const outputAmount = amountWei.div(2);
       const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
       const transaction = await traderRouter.populateTransaction.swapExactInputForOutput(
-        MAX_UINT_256_BI,
+        ZERO_BI,
         {
-          accountNumber: MAX_UINT_256_BI,
+          accountNumber: ZERO_BI,
           marketIdsPath: zapParams.marketIdsPath,
           inputAmountWei: zapParams.inputAmountWei,
           minOutputAmountWei: zapParams.minOutputAmountWei,
@@ -321,7 +315,7 @@ describe('GenericTraderRouter', () => {
       );
       await expectThrow(
         traderRouter.callFunctionAndTriggerReentrancy(transaction.data!),
-        'ReentrancyGuard: reentrant call'
+        'ReentrancyGuardUpgradeable: Reentrant call'
       );
     });
   });
@@ -335,7 +329,7 @@ describe('GenericTraderRouter', () => {
       const outputAmount = amountWei.div(2);
       const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
       await traderRouter.swapExactInputForOutputAndModifyPosition(
-        MAX_UINT_256_BI,
+        ZERO_BI,
         {
           accountNumber: defaultAccountNumber,
           marketIdsPath: zapParams.marketIdsPath,
@@ -539,7 +533,7 @@ describe('GenericTraderRouter', () => {
       const outputAmount = amountWei.div(2);
       const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
       const transaction = await traderRouter.populateTransaction.swapExactInputForOutputAndModifyPosition(
-        MAX_UINT_256_BI,
+        ZERO_BI,
         {
           accountNumber: borrowAccountNumber,
           marketIdsPath: zapParams.marketIdsPath,
@@ -561,7 +555,7 @@ describe('GenericTraderRouter', () => {
       );
       await expectThrow(
         traderRouter.callFunctionAndTriggerReentrancy(transaction.data!),
-        'ReentrancyGuard: reentrant call'
+        'ReentrancyGuardUpgradeable: Reentrant call'
       );
     });
   });

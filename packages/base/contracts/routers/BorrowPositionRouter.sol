@@ -77,15 +77,13 @@ contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
     }
   }
 
-  // @todo multicall
-
   function closeBorrowPosition(
     uint256 _isolationModeMarketId,
     uint256 _borrowAccountNumber,
     uint256 _toAccountNumber,
     uint256[] calldata _collateralMarketIds
   ) external nonReentrant {
-    if (_isolationModeMarketId == type(uint256).max) {
+    if (_isolationModeMarketId == 0) {
       DOLOMITE_REGISTRY.borrowPositionProxy().closeBorrowPositionWithDifferentAccounts(
         msg.sender,
         _borrowAccountNumber,
@@ -130,7 +128,7 @@ contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
     uint256 _marketId,
     AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
   ) external nonReentrant {
-    if (_isolationModeMarketId == type(uint256).max) {
+    if (_isolationModeMarketId == 0) {
       DOLOMITE_REGISTRY.borrowPositionProxy().repayAllForBorrowPositionWithDifferentAccounts(
         msg.sender,
         _fromAccountNumber,
@@ -158,7 +156,7 @@ contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
     uint256 _amount,
     AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
   ) internal {
-    if (_isolationModeMarketId == type(uint256).max) {
+    if (_isolationModeMarketId == 0) {
       DOLOMITE_REGISTRY.borrowPositionProxy().transferBetweenAccountsWithDifferentAccounts(
         msg.sender,
         _fromAccountNumber,

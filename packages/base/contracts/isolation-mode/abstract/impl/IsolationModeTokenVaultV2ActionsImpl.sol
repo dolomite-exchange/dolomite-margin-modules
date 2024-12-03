@@ -54,7 +54,7 @@ library IsolationModeTokenVaultV2ActionsImpl {
     // ==================== Constants ====================
     // ===================================================
 
-    bytes32 private constant _FILE = "IsolationModeVaultV1ActionsImpl";
+    bytes32 private constant _FILE = "IsolationModeVaultV2ActionsImpl";
 
     // ===================================================
     // ==================== Functions ====================
@@ -510,6 +510,19 @@ library IsolationModeTokenVaultV2ActionsImpl {
         if (_checkOutputMarketIdFlag) {
             _checkAllowableCollateralMarket(_vault, tradeAccountOwner, _tradeAccountNumber, outputMarketId);
             _checkAllowableDebtMarket(_vault, tradeAccountOwner, _tradeAccountNumber, outputMarketId);
+        }
+    }
+
+    function validateDepositIntoVault(
+        IIsolationModeTokenVaultV2 _vault,
+        uint256 _accountNumber,
+        uint256 _marketId
+    ) public view {
+        if (_marketId == _vault.marketId()) {
+            _checkFromAccountNumberIsZero(_accountNumber);
+        } else {
+            _checkBorrowAccountNumberIsNotZero(_accountNumber, /* _bypassAccountNumberCheck = */ false);
+            _checkAllowableCollateralMarket(_vault, address(this), _accountNumber, _marketId);
         }
     }
 

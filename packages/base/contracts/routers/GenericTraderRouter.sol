@@ -61,7 +61,7 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
         uint256 _isolationModeMarketId,
         IGenericTraderProxyV2.SwapExactInputForOutputParams memory _params
     ) external nonReentrant {
-        if (_isolationModeMarketId == type(uint256).max) {
+        if (_isolationModeMarketId == 0) {
             IGenericTraderProxyV2 proxy = IGenericTraderProxyV2(address(DOLOMITE_REGISTRY.genericTraderProxy()));
             proxy.swapExactInputForOutputForDifferentAccount(
                 msg.sender,
@@ -114,7 +114,7 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
         uint256 _isolationModeMarketId,
         IGenericTraderProxyV2.SwapExactInputForOutputAndModifyPositionParams memory _params
     ) external nonReentrant {
-        if (_isolationModeMarketId == type(uint256).max) {
+        if (_isolationModeMarketId == 0) {
             IGenericTraderProxyV2 proxy = IGenericTraderProxyV2(address(DOLOMITE_REGISTRY.genericTraderProxy()));
             proxy.swapExactInputForOutputAndModifyPositionForDifferentAccount(
                 msg.sender,
@@ -182,7 +182,7 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
                     TransferType.OutOfPosition
                 );
             }
-      }
+        }
     }
 
     function _doTransfers(
