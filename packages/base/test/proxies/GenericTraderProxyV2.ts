@@ -17,9 +17,8 @@ import {
   TestGenericTraderProxyV2,
   TestGenericTraderRouter,
   TestGenericTraderRouter__factory,
-  TestIsolationModeTokenVaultV1,
-  TestIsolationModeTokenVaultV1__factory,
   TestIsolationModeTokenVaultV2,
+  TestIsolationModeTokenVaultV2__factory,
   TestIsolationModeUnwrapperTraderV2,
   TestIsolationModeUnwrapperTraderV2__factory,
   TestIsolationModeVaultFactory,
@@ -169,9 +168,9 @@ describe('GenericTraderProxyV2', () => {
 
     await factory.createVault(core.hhUser1.address);
     const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);
-    userVault = setupUserVaultProxy<TestIsolationModeTokenVaultV1>(
+    userVault = setupUserVaultProxy<TestIsolationModeTokenVaultV2>(
       vaultAddress,
-      TestIsolationModeTokenVaultV1__factory,
+      TestIsolationModeTokenVaultV2__factory,
       core.hhUser1,
     );
 
@@ -1538,7 +1537,7 @@ describe('GenericTraderProxyV2', () => {
       await otherToken1.connect(core.hhUser1).approve(core.dolomiteMargin.address, amountWei);
       await depositIntoDolomiteMargin(core, core.hhUser1, borrowAccountNumber, otherMarketId1, amountWei);
       await borrowRouter.transferBetweenAccounts(
-        MAX_UINT_256_BI,
+        ZERO_BI,
         borrowAccountNumber,
         defaultAccountNumber,
         otherMarketId2,
