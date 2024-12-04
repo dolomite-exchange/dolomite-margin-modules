@@ -1,26 +1,20 @@
 import {
-  Network,
-  ONE_ETH_BI,
+  BYTES_EMPTY,
   ONE_WEEK_SECONDS,
-  ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
-import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { expect } from 'chai';
-import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
-import { OARB, VesterDiscountCalculatorV1 } from '../src/types';
-import { createOARB, createVesterDiscountCalculatorV1 } from './liquidity-mining-ecosystem-utils';
+import { VesterDiscountCalculatorV1 } from '../src/types';
+import { createVesterDiscountCalculatorV1 } from './liquidity-mining-ecosystem-utils';
+
+const NFT_ID = 0;
 
 describe('VesterDiscountCalculatorV1', () => {
   let snapshotId: string;
-  let core: CoreProtocolArbitrumOne;
   let calculator: VesterDiscountCalculatorV1;
 
   before(async () => {
-    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     calculator = await createVesterDiscountCalculatorV1();
-
     snapshotId = await snapshot();
   });
 
@@ -30,19 +24,19 @@ describe('VesterDiscountCalculatorV1', () => {
 
   describe('#calculateDiscount', () => {
     it('should work when 0 is passed in', async () => {
-      expect(await calculator.calculateDiscount(0)).to.eq(2_000);
+      expect(await calculator.calculateDiscount(NFT_ID, 0, BYTES_EMPTY)).to.eq(2_000);
     });
 
     it('should work when 1 week is passed in', async () => {
-      expect(await calculator.calculateDiscount(ONE_WEEK_SECONDS)).to.eq(2_200);
+      expect(await calculator.calculateDiscount(NFT_ID, ONE_WEEK_SECONDS, BYTES_EMPTY)).to.eq(2_200);
     });
 
     it('should work when 3 weeks is passed in', async () => {
-      expect(await calculator.calculateDiscount(ONE_WEEK_SECONDS * 3)).to.eq(2_600);
+      expect(await calculator.calculateDiscount(NFT_ID, ONE_WEEK_SECONDS * 3, BYTES_EMPTY)).to.eq(2_600);
     });
 
     it('should work when 40 weeks is passed in', async () => {
-      expect(await calculator.calculateDiscount(ONE_WEEK_SECONDS * 40)).to.eq(10_000);
+      expect(await calculator.calculateDiscount(NFT_ID, ONE_WEEK_SECONDS * 40, BYTES_EMPTY)).to.eq(10_000);
     });
   });
 });

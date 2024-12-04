@@ -85,7 +85,6 @@ describe('VesterV1', () => {
     await core.dolomiteMargin.ownerSetPriceOracle(pairMarketId, core.testEcosystem!.testPriceOracle.address);
 
     oToken = await createOARB(core);
-
     vester = await createTestVesterV1Proxy(core, oToken, BASE_URI);
 
     await setupUSDCBalance(core, core.hhUser1, usdcAmount.mul(2), core.dolomiteMargin);

@@ -26,6 +26,7 @@ import {
 import { IPendleRouterV3, IPendleRouterV3__factory } from 'packages/pendle/src/types';
 import { RegistryProxy, RegistryProxy__factory } from '../../../src/types';
 import {
+  PENDLE_MARKET_CM_ETH_FEB_2025_MAP,
   PENDLE_MARKET_E_ETH_APR_2024_MAP,
   PENDLE_MARKET_E_ETH_DEC_2024_MAP,
   PENDLE_MARKET_E_ETH_JUN_2024_MAP,
@@ -43,7 +44,7 @@ import {
   PENDLE_MARKET_USDE_DEC_2024_MAP,
   PENDLE_MARKET_USDE_JUL_2024_MAP,
   PENDLE_MARKET_WST_ETH_2024_MAP,
-  PENDLE_MARKET_WST_ETH_2025_MAP,
+  PENDLE_MARKET_WST_ETH_2025_MAP, PENDLE_PT_CM_ETH_FEB_2025_TOKEN_MAP,
   PENDLE_PT_E_ETH_APR_2024_TOKEN_MAP,
   PENDLE_PT_E_ETH_DEC_2024_TOKEN_MAP,
   PENDLE_PT_E_ETH_JUN_2024_TOKEN_MAP,
@@ -64,7 +65,7 @@ import {
   PENDLE_PT_WST_ETH_2024_TOKEN_MAP,
   PENDLE_PT_WST_ETH_2025_TOKEN_MAP,
   PENDLE_ROUTER_MAP,
-  PENDLE_ROUTER_V3_MAP,
+  PENDLE_ROUTER_V3_MAP, PENDLE_SY_CM_ETH_FEB_2025_TOKEN_MAP,
   PENDLE_SY_EZ_ETH_TOKEN_MAP,
   PENDLE_SY_GLP_MAR_2024_TOKEN_MAP,
   PENDLE_SY_GLP_SEP_2024_TOKEN_MAP,
@@ -76,9 +77,9 @@ import {
   PENDLE_SY_USDE_JUL_2024_MAP,
   PENDLE_SY_WE_ETH_TOKEN_MAP,
   PENDLE_SY_WST_ETH_TOKEN_MAP,
+  PENDLE_YT_E_ETH_JUN_2024_TOKEN_MAP,
   PENDLE_YT_GLP_MAR_2024_TOKEN_MAP,
   PENDLE_YT_GLP_SEP_2024_TOKEN_MAP,
-  PENDLE_YT_E_ETH_JUN_2024_TOKEN_MAP,
 } from '../../../src/utils/constants';
 import { Network } from '../../../src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';
@@ -90,6 +91,13 @@ export interface CorePendleEcosystem {
 }
 
 export interface PendleEcosystemMantle extends CorePendleEcosystem {
+  cmEthFeb2025: {
+    factory: PendlePtIsolationModeVaultFactory;
+    ptOracle: IPendlePtOracle;
+    methMarket: IPendlePtMarket;
+    ptMethToken: IPendlePtToken;
+    syMethToken: IPendleSyToken;
+  };
   methDec2024: {
     factory: PendlePtIsolationModeVaultFactory;
     ptOracle: IPendlePtOracle;
@@ -189,6 +197,7 @@ export interface PendleEcosystemArbitrumOne extends CorePendleEcosystem {
     ptOracle: IPendlePtOracle;
     weEthMarket: IPendlePtMarket;
     ptWeEthToken: IPendlePtToken;
+    ytWeEthToken: IPendleYtToken;
   };
   weEthSep2024: {
     dPtWeEthSep2024: PendlePtIsolationModeVaultFactory;
@@ -201,7 +210,6 @@ export interface PendleEcosystemArbitrumOne extends CorePendleEcosystem {
     ptOracle: IPendlePtOracle;
     weEthMarket: IPendlePtMarket;
     ptWeEthToken: IPendlePtToken;
-    ytWeEthToken: IPendleYtToken;
   };
   wstEthJun2024: {
     dPtWstEthJun2024: PendlePtIsolationModeVaultFactory;
@@ -237,6 +245,29 @@ export async function createPendleEcosystemMantle(
   return {
     pendleRouter: getContract(PENDLE_ROUTER_MAP[network] as string, IPendleRouter__factory.connect, signer),
     pendleRouterV3: getContract(PENDLE_ROUTER_V3_MAP[network] as string, IPendleRouterV3__factory.connect, signer),
+    cmEthFeb2025: {
+      factory: getContract(
+        Deployments.PendlePtcmETHFeb2025IsolationModeVaultFactory[network]?.address,
+        PendlePtIsolationModeVaultFactory__factory.connect,
+        signer,
+      ),
+      ptOracle: getContract(PENDLE_PT_ORACLE_MAP[network] as string, IPendlePtOracle__factory.connect, signer),
+      methMarket: getContract(
+        PENDLE_MARKET_CM_ETH_FEB_2025_MAP[network] as string,
+        IPendlePtMarket__factory.connect,
+        signer,
+      ),
+      ptMethToken: getContract(
+        PENDLE_PT_CM_ETH_FEB_2025_TOKEN_MAP[network] as string,
+        IPendlePtToken__factory.connect,
+        signer,
+      ),
+      syMethToken: getContract(
+        PENDLE_SY_CM_ETH_FEB_2025_TOKEN_MAP[network] as string,
+        IPendleSyToken__factory.connect,
+        signer,
+      ),
+    },
     methDec2024: {
       factory: getContract(
         Deployments.PendlePtmETHDec2024IsolationModeVaultFactory[network].address,
@@ -550,7 +581,7 @@ export async function createPendleEcosystemArbitrumOne(
       ytWeEthToken: getContract(
         PENDLE_YT_E_ETH_JUN_2024_TOKEN_MAP[network] as string,
         IPendleYtToken__factory.connect,
-        signer
+        signer,
       ),
     },
     weEthSep2024: {

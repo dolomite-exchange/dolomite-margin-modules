@@ -24,8 +24,12 @@ import {
   getGMXUnwrapperTraderV2ConstructorParams,
   getGMXWrapperTraderV2ConstructorParams,
   GmxUserVaultImplementation, getGLPUnwrapperTraderV2ConstructorParams, getGLPWrapperTraderV2ConstructorParams,
+  getStakedGmxReaderConstructorParams,
+  getEsGmxReaderConstructorParams,
 } from '../src/glp-constructors';
 import {
+  EsGmxReader,
+  EsGmxReader__factory,
   GLPIsolationModeTokenVaultV1,
   GLPIsolationModeTokenVaultV2,
   GLPIsolationModeUnwrapperTraderV1,
@@ -54,6 +58,8 @@ import {
   IGLPIsolationModeVaultFactoryOld,
   IGMXIsolationModeVaultFactory,
   IGmxRegistryV1,
+  StakedGmxReader,
+  StakedGmxReader__factory,
   TestGLPIsolationModeTokenVaultV1,
   TestGLPIsolationModeTokenVaultV2,
   TestGMXIsolationModeTokenVaultV1,
@@ -253,5 +259,25 @@ export async function createGMXWrapperTraderV2(
     SimpleIsolationModeWrapperTraderV2__factory.abi,
     SimpleIsolationModeWrapperTraderV2__factory.bytecode,
     getGMXWrapperTraderV2ConstructorParams(factory, core),
+  );
+}
+
+export async function createStakedGmxReader(
+  glpFactory: { address: string },
+): Promise<StakedGmxReader> {
+  return createContractWithAbi<StakedGmxReader>(
+    StakedGmxReader__factory.abi,
+    StakedGmxReader__factory.bytecode,
+    getStakedGmxReaderConstructorParams(glpFactory),
+  );
+}
+
+export async function createEsGmxReader(
+  glpFactory: { address: string },
+): Promise<EsGmxReader> {
+  return createContractWithAbi<EsGmxReader>(
+    EsGmxReader__factory.abi,
+    EsGmxReader__factory.bytecode,
+    getEsGmxReaderConstructorParams(glpFactory),
   );
 }

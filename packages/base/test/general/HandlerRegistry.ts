@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { createContractWithLibrary, createTestToken } from 'packages/base/src/utils/dolomite-utils';
-import { Network } from 'packages/base/src/utils/no-deps-constants';
+import { ADDRESS_ZERO, Network } from 'packages/base/src/utils/no-deps-constants';
 import {
   CustomTestToken,
   TestHandlerRegistry,
@@ -92,6 +92,20 @@ describe('HandlerRegistry', () => {
       );
     });
 
+    it('should work normally if unwrapper is unset', async () => {
+      const result = await handlerRegistry.connect(core.governance).ownerSetUnwrapperByToken(
+        core.tokens.dfsGlp!.address,
+        ADDRESS_ZERO,
+      );
+      await expectEvent(handlerRegistry, result, 'UnwrapperTraderSet', {
+        token: core.tokens.dfsGlp!.address,
+        unwrapper: ADDRESS_ZERO,
+      });
+      expect(await handlerRegistry.getUnwrapperByToken(core.tokens.dfsGlp!.address)).to.eq(
+        ADDRESS_ZERO,
+      );
+    });
+
     it('should fail if invalid unwrapper', async () => {
       await expectThrow(
         handlerRegistry.connect(core.governance).ownerSetUnwrapperByToken(
@@ -135,6 +149,20 @@ describe('HandlerRegistry', () => {
       });
       expect(await handlerRegistry.getWrapperByToken(core.tokens.dfsGlp!.address)).to.eq(
         core.gmxEcosystem!.live.glpIsolationModeWrapperTraderV1.address,
+      );
+    });
+
+    it('should work normally if wrapper is unset', async () => {
+      const result = await handlerRegistry.connect(core.governance).ownerSetWrapperByToken(
+        core.tokens.dfsGlp!.address,
+        ADDRESS_ZERO,
+      );
+      await expectEvent(handlerRegistry, result, 'WrapperTraderSet', {
+        token: core.tokens.dfsGlp!.address,
+        wrapper: ADDRESS_ZERO,
+      });
+      expect(await handlerRegistry.getWrapperByToken(core.tokens.dfsGlp!.address)).to.eq(
+        ADDRESS_ZERO,
       );
     });
 

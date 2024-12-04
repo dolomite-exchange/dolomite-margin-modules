@@ -74,6 +74,7 @@ interface IVeExternalVesterV1 {
     event ForceClosePositionTaxSet(uint256 forceClosePositionTax);
     event PromisedTokensSet(uint256 promisedTokens);
     event PushedTokensSet(uint256 pushedTokens);
+    event VeTokenSet(address veToken);
     event VestingPositionCreated(VestingPosition vestingPosition);
     event VestingPositionCleared(uint256 id);
     event BaseURISet(string baseURI);
@@ -198,14 +199,17 @@ interface IVeExternalVesterV1 {
      * @notice  Burns the vested oToken tokens and sends vested and newly purchased ARB to user's dolomite balance
      *
      * @param  _nftId               The id of the position that is fully vested
-     * @param  _veTokenId           The id of the veToken that will receive the reward tokens
+     * @param  _veTokenId           The id of the veToken that will receive the reward tokens. Use `type(uint256).max`
+     *                              to create a new ve token.
+     * @param  _lockDuration        The duration to lock the veToken for (if creating a new one)
      * @param  _maxPaymentAmount    The maximum amount of ETH to pay for the position
      */
     function closePositionAndBuyTokens(
         uint256 _nftId,
         uint256 _veTokenId,
+        uint256 _lockDuration,
         uint256 _maxPaymentAmount
-    ) external;
+    ) external returns (uint256);
 
     /**
      * @notice  Burns the vested oToken tokens and sends vested ARB back to position owner's dolomite balance

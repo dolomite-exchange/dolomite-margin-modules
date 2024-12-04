@@ -1,6 +1,6 @@
 {
   "name": "@dolomite-exchange/modules-deployments",
-  "version": "0.0.28",
+  "version": "0.0.30",
   "scripts": {
     "build": "hardhat compile",
     "clean": "hardhat clean",
@@ -12,6 +12,8 @@
     "deploy:chainlink-price-oracle-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts chainlink-price-oracle",
     "deploy:chronicle-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts chronicle",
     "deploy:dolomite-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts dolomite",
+    "deploy:factory3-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts factory3",
+    "deploy:gmx-readers-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts gmx-readers",
     "deploy:gravita-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts gravita",
     "deploy:mineral-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts mineral",
     "deploy:odos-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts odos",
@@ -25,6 +27,7 @@
     "execute:mantle": "NETWORK=mantle ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
     "execute:polygon_zkevm": "NETWORK=polygon_zkevm ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
     "execute:x_layer": "NETWORK=x_layer ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
+    "execute:test": "NETWORK=arbitrum_one ts-node test/execute-test-safe-transaction.ts",
     "verify:arbitrum": "hardhat --network arbitrum_one run src/utils/verify-contract.ts",
     "verify:base": "hardhat --network base run src/utils/verify-contract.ts",
     "verify:polygon_zkevm": "hardhat --network polygon_zkevm run src/utils/verify-contract.ts",

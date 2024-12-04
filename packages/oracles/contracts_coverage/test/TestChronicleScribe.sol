@@ -74,11 +74,11 @@ contract TestChronicleScribe is IChronicleScribe {
         )
     {
         return (
-            /* roundId = */ 0,
+            0,
             _latestAnswer,
-            /* startedAt = */ 0,
+            0,
             _lastUpdatedAt,
-            /* answeredInRound = */ 0
+            0
         );
     }
 
@@ -86,11 +86,11 @@ contract TestChronicleScribe is IChronicleScribe {
         return _decimals;
     }
 
-    function authed() external view returns (address[] memory) {
+    function authed() external pure returns (address[] memory) {
         return new address[](0);
     }
 
-    function bud(address /* _who */) external view returns (uint256) {
+    function bud(address /* _who */) external pure returns (uint256) {
         return 1;
     }
 }

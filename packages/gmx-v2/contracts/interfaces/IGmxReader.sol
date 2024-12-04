@@ -402,6 +402,11 @@ interface IGmxReader {
         view
         returns (int256, GmxMarketPoolValueInfo.PoolValueInfoProps memory);
 
+    function getMarket(
+        IGmxDataStore _dataStore,
+        address key
+    ) external view returns (GmxMarket.MarketProps memory);
+
     function getDeposit(
         IGmxDataStore _dataStore,
         bytes32 _key

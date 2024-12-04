@@ -46,7 +46,7 @@ interface IChroniclePriceOracle is IDolomitePriceOracle {
      * @dev Sets the new `stalenessThreshold`. This function can only be called by the owner of DolomiteMargin.
      *
      * @param  _stalenessThreshold  The duration of time that must pass before a price is considered stale from a
-     *                              Chainlink Aggregator
+     *                              Chronicle Scribe
      */
     function ownerSetStalenessThreshold(
         uint256 _stalenessThreshold
@@ -56,9 +56,9 @@ interface IChroniclePriceOracle is IDolomitePriceOracle {
     /**
      * @dev Insert or update a token in the oracle. This function can only be called by the owner of DolomiteMargin.
      *
-     * @param  _token               The token whose Chainlink aggregator should be inserted or updated
-     * @param  _chronicleScribe     The Chainlink aggregator that corresponds with this token
-     * @param  _invertPrice         True if should invert the price received from Chainlink
+     * @param  _token               The token whose Chronicle scribe should be inserted or updated
+     * @param  _chronicleScribe     The Chronicle scribe that corresponds with this token
+     * @param  _invertPrice         True if should invert the price received from Chronicle
      */
     function ownerInsertOrUpdateOracleToken(
         address _token,
@@ -71,7 +71,7 @@ interface IChroniclePriceOracle is IDolomitePriceOracle {
 
     /**
      *
-     * @param  _token  The token whose Chainlink aggregator should be retrieved
+     * @param  _token  The token whose Chronicle scribe should be retrieved
      * @return         The aggregator that corresponds with this token
      */
     function getScribeByToken(address _token) external view returns (IChronicleScribe);
@@ -79,12 +79,12 @@ interface IChroniclePriceOracle is IDolomitePriceOracle {
     /**
      *
      * @param  _token           The token whose token pair should be retrieved
-     * @return _invertPrice     True if should invert the price received from Chainlink
+     * @return _invertPrice     True if should invert the price received from Chronicle
      */
     function getInvertPriceByToken(address _token) external view returns (bool _invertPrice);
 
     /**
-     * @return The duration of time that must pass before a price is considered stale from a Chainlink Aggregator
+     * @return The duration of time that must pass before a price is considered stale from a Chronicle Scribe
      */
     function stalenessThreshold() external view returns (uint256);
 }
