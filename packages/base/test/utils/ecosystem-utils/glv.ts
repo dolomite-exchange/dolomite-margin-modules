@@ -18,7 +18,7 @@ import {
   GlvIsolationModeTokenVaultV1,
   GlvIsolationModeTokenVaultV1__factory,
   GlvIsolationModeUnwrapperTraderV2,
-  GlvIsolationModeUnwrapperTraderV2__factory,
+  GlvIsolationModeUnwrapperTraderV2__factory, GlvIsolationModeVaultFactory, GlvIsolationModeVaultFactory__factory,
   GlvIsolationModeWrapperTraderV2,
   GlvIsolationModeWrapperTraderV2__factory,
   GlvRegistry,
@@ -53,6 +53,12 @@ export interface GlvEcosystem {
   };
   glvVault: { address: string };
   live: {
+    glvBtc: {
+      factory: GlvIsolationModeVaultFactory;
+    };
+    glvEth: {
+      factory: GlvIsolationModeVaultFactory;
+    };
     glvLibraryMap: { GlvLibrary: string };
     registry: GlvRegistry;
     registryProxy: RegistryProxy;
@@ -103,6 +109,18 @@ export async function createGlvEcosystem(network: Network, signer: SignerWithAdd
     },
     glvVault: { address: GLV_VAULT_MAP[network] },
     live: {
+      glvBtc: {
+        factory: GlvIsolationModeVaultFactory__factory.connect(
+          Deployments.GlvBTCV2IsolationModeVaultFactory[network].address,
+          signer,
+        ),
+      },
+      glvEth: {
+        factory: GlvIsolationModeVaultFactory__factory.connect(
+          Deployments.GlvETHIsolationModeVaultFactory[network].address,
+          signer,
+        ),
+      },
       glvLibraryMap: { GlvLibrary: glvLibraryAddress },
       registry: GlvRegistry__factory.connect(Deployments.GlvRegistryProxy['42161'].address, signer),
       registryProxy: RegistryProxy__factory.connect(Deployments.GlvRegistryProxy['42161'].address, signer),

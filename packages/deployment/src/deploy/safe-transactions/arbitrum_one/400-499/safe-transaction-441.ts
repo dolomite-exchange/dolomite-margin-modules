@@ -118,7 +118,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
         underlyingGmTokens[i],
         systems[i].unwrapper,
         systems[i].wrapper,
-        core.gmxV2Ecosystem.live.registry,
+        core.glvEcosystem.live.registry,
         gmMarketIds[i],
         collateralizations[i],
         penalties[i],

@@ -40,6 +40,8 @@ interface CoreProtocolTokensArbitrumOne extends CoreProtocolTokens<Network.Arbit
   dai: IERC20;
   dArb: IERC20;
   dfsGlp: IERC20;
+  dGlvBtc: IERC20;
+  dGlvEth: IERC20;
   dGmx: IERC20;
   dGmArb: IERC20;
   dGmBtc: IERC20;

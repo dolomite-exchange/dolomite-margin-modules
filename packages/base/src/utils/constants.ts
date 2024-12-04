@@ -108,6 +108,20 @@ export const DFS_GLP_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   },
 };
 
+export const D_GLV_BTC_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0x7E584529BB40220A2bD5d0c13E3d65aBd4A47F0E',
+    marketId: 67,
+  },
+};
+
+export const D_GLV_ETH_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0x11F4532c05fb8eA6320B1DC155BFdC2498A5d8B4',
+    marketId: 68,
+  },
+};
+
 export const D_GMX_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x790FF506ac24b03A21F3d0019227447AE2B55Ca5',
@@ -831,7 +845,7 @@ export const GMX_DATASTORE_MAP: Record<Network.ArbitrumOne, string> = {
 };
 
 export const GMX_EXCHANGE_ROUTER_MAP: Record<Network.ArbitrumOne, string> = {
-  [Network.ArbitrumOne]: '0x674Ee2FFe588c4b1Fde6D5481c55Ef6133004cbA',
+  [Network.ArbitrumOne]: '0x900173A66dbD345006C51fA35fA3aB760FcD843b',
 };
 
 export const GMX_EXECUTOR_MAP: Record<Network.ArbitrumOne, string> = {
