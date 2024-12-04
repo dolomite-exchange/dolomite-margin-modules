@@ -23,6 +23,7 @@ pragma solidity ^0.8.9;
 import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import { OnlyDolomiteMarginForUpgradeable } from "../helpers/OnlyDolomiteMarginForUpgradeable.sol";
 import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
+import { IBorrowPositionProxyV2 } from "../interfaces/IBorrowPositionProxyV2.sol";
 import { IDolomiteAccountRegistry } from "../interfaces/IDolomiteAccountRegistry.sol";
 import { IDolomiteMigrator } from "../interfaces/IDolomiteMigrator.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
@@ -51,6 +52,7 @@ contract DolomiteRegistryImplementation is
     // ===================== Constants =====================
 
     bytes32 private constant _FILE = "DolomiteRegistryImplementation";
+    bytes32 private constant _BORROW_POSITION_PROXY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.borrowPositionProxy")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _CHAINLINK_PRICE_ORACLE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.chainlinkPriceOracle")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _DOLOMITE_ACCOUNT_REGISTRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.dolomiteAccountRegistry")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _DOLOMITE_MIGRATOR_SLOT = bytes32(uint256(keccak256("eip1967.proxy.dolomiteMigrator")) - 1); // solhint-disable-line max-line-length
@@ -96,6 +98,14 @@ contract DolomiteRegistryImplementation is
     }
 
     // ===================== Functions =====================
+
+    function ownerSetBorrowPositionProxy(
+        address _borrowPositionProxy
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetBorrowPositionProxy(_borrowPositionProxy);
+    }
 
     function ownerSetGenericTraderProxy(
         address _genericTraderProxy
@@ -187,6 +197,10 @@ contract DolomiteRegistryImplementation is
 
     // ========================== View Functions =========================
 
+    function borrowPositionProxy() public view returns (IBorrowPositionProxyV2) {
+        return IBorrowPositionProxyV2(_getAddress(_BORROW_POSITION_PROXY_SLOT));
+    }
+
     function genericTraderProxy() public view returns (IGenericTraderProxyV1) {
         return IGenericTraderProxyV1(_getAddress(_GENERIC_TRADER_PROXY_SLOT));
     }
@@ -243,6 +257,13 @@ contract DolomiteRegistryImplementation is
 
     // ===================== Internal Functions =====================
 
+    function _ownerSetBorrowPositionProxy(
+        address _borrowPositionProxy
+    ) internal {
+        _setAddress(_BORROW_POSITION_PROXY_SLOT, _borrowPositionProxy);
+        emit BorrowPositionProxySet(_borrowPositionProxy);
+    }
+
     function _ownerSetGenericTraderProxy(
         address _genericTraderProxy
     ) internal {
@@ -251,12 +272,6 @@ contract DolomiteRegistryImplementation is
             _FILE,
             "Invalid genericTraderProxy"
         );
-         bytes memory returnData = ValidationLib.callAndCheckSuccess(
-             _genericTraderProxy,
-             IGenericTraderProxyV1(_genericTraderProxy).EXPIRY.selector,
-             bytes("")
-         );
-         abi.decode(returnData, (address));
 
         _setAddress(_GENERIC_TRADER_PROXY_SLOT, _genericTraderProxy);
         emit GenericTraderProxySet(_genericTraderProxy);
