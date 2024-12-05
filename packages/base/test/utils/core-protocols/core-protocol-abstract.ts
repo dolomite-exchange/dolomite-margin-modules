@@ -25,6 +25,7 @@ import { DolomiteMargin, Expiry } from '../dolomite';
 import { InterestSetters } from '../ecosystem-utils/interest-setters';
 import { TestEcosystem } from '../ecosystem-utils/testers';
 import { CoreProtocolConfig } from '../setup';
+import { TokenVaultDeployer } from '../ecosystem-utils/isolation-mode';
 
 export interface LibraryMaps {
   tokenVaultActionsImpl: Record<string, string>;
@@ -88,6 +89,7 @@ export interface CoreProtocolParams<T extends NetworkType> {
   oracleAggregatorV2: OracleAggregatorV2;
   ownerAdapter: DolomiteOwner;
   testEcosystem: TestEcosystem | undefined;
+  tokenVaultDeployers: TokenVaultDeployer[];
   marketIds: CoreProtocolMarketIds;
   apiTokens: {
     usdc: ApiToken;
@@ -145,6 +147,7 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
   public readonly oracleAggregatorV2: OracleAggregatorV2;
   public readonly ownerAdapter?: DolomiteOwner;
   public readonly testEcosystem: TestEcosystem | undefined;
+  public readonly tokenVaultDeployers: TokenVaultDeployer[];
   /// =========================
   /// Markets and Tokens
   /// =========================
@@ -198,6 +201,7 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
     this.oracleAggregatorV2 = params.oracleAggregatorV2;
     this.ownerAdapter = params.ownerAdapter;
     this.testEcosystem = params.testEcosystem;
+    this.tokenVaultDeployers = params.tokenVaultDeployers;
     this.marketIds = params.marketIds;
     this.apiTokens = params.apiTokens;
     this.tokens = params.tokens;
