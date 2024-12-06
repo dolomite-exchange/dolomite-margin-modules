@@ -25,7 +25,7 @@ import { DolomiteMargin, Expiry } from '../dolomite';
 import { InterestSetters } from '../ecosystem-utils/interest-setters';
 import { TestEcosystem } from '../ecosystem-utils/testers';
 import { CoreProtocolConfig } from '../setup';
-import { TokenVaultDeployer } from '../ecosystem-utils/isolation-mode';
+import { DeployedVault } from '../ecosystem-utils/deployed-vaults';
 
 export interface LibraryMaps {
   tokenVaultActionsImpl: Record<string, string>;
@@ -89,7 +89,8 @@ export interface CoreProtocolParams<T extends NetworkType> {
   oracleAggregatorV2: OracleAggregatorV2;
   ownerAdapter: DolomiteOwner;
   testEcosystem: TestEcosystem | undefined;
-  tokenVaultDeployers: TokenVaultDeployer[];
+  deployedVaults: DeployedVault[];
+  deployedVaultsMap: Record<number, DeployedVault>;
   marketIds: CoreProtocolMarketIds;
   apiTokens: {
     usdc: ApiToken;
@@ -129,6 +130,8 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
   public readonly constants: CoreProtocolConstants<T>;
   public readonly delayedMultiSig: IPartiallyDelayedMultiSig;
   public readonly depositWithdrawalProxy: IDepositWithdrawalProxy;
+  public readonly deployedVaults: DeployedVault[];
+  public readonly deployedVaultsMap: Record<number, DeployedVault>;
   public readonly dolomiteMargin: DolomiteMargin<T>;
   public readonly dolomiteRegistry: IDolomiteRegistry;
   public readonly dolomiteRegistryProxy: RegistryProxy;
@@ -147,7 +150,6 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
   public readonly oracleAggregatorV2: OracleAggregatorV2;
   public readonly ownerAdapter?: DolomiteOwner;
   public readonly testEcosystem: TestEcosystem | undefined;
-  public readonly tokenVaultDeployers: TokenVaultDeployer[];
   /// =========================
   /// Markets and Tokens
   /// =========================
@@ -183,6 +185,8 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
     this.constants = params.constants;
     this.delayedMultiSig = params.delayedMultiSig;
     this.depositWithdrawalProxy = params.depositWithdrawalProxy;
+    this.deployedVaults = params.deployedVaults;
+    this.deployedVaultsMap = params.deployedVaultsMap;
     this.dolomiteMargin = params.dolomiteMargin;
     this.dolomiteRegistry = params.dolomiteRegistry;
     this.dolomiteRegistryProxy = params.dolomiteRegistryProxy;
@@ -201,7 +205,6 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
     this.oracleAggregatorV2 = params.oracleAggregatorV2;
     this.ownerAdapter = params.ownerAdapter;
     this.testEcosystem = params.testEcosystem;
-    this.tokenVaultDeployers = params.tokenVaultDeployers;
     this.marketIds = params.marketIds;
     this.apiTokens = params.apiTokens;
     this.tokens = params.tokens;

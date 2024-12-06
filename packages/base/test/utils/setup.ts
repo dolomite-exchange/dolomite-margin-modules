@@ -188,7 +188,7 @@ import { createPremiaEcosystem } from './ecosystem-utils/premia';
 import { createTestEcosystem } from './ecosystem-utils/testers';
 import { createUmamiEcosystem } from './ecosystem-utils/umami';
 import { impersonate, impersonateOrFallback, resetForkIfPossible } from './index';
-import { getTokenVaultDeployers } from './ecosystem-utils/isolation-mode';
+import { DeployedVault, getDeployedVaults } from './ecosystem-utils/deployed-vaults';
 
 /**
  * Config to for setting up tests in the `before` function
@@ -748,8 +748,11 @@ export async function setupCoreProtocol<T extends NetworkType>(
 
   const testEcosystem = await createTestEcosystem(dolomiteMargin, governance);
 
-  const tokenVaultDeployers = await getTokenVaultDeployers(config, dolomiteMargin, governance);
-  // @todo add map to core object as well
+  const deployedVaults = await getDeployedVaults(config, dolomiteMargin, governance);
+  const deployedVaultsMap = deployedVaults.reduce((acc, vault) => {
+    acc[vault.marketId] = vault;
+    return acc;
+  }, {} as Record<number, DeployedVault>);
 
   const libraries: LibraryMaps = {
     tokenVaultActionsImpl: createTokenVaultActionsLibraries(config),
@@ -784,7 +787,8 @@ export async function setupCoreProtocol<T extends NetworkType>(
     oracleAggregatorV2,
     ownerAdapter,
     testEcosystem,
-    tokenVaultDeployers,
+    deployedVaults,
+    deployedVaultsMap,
     hhUser1,
     hhUser2,
     hhUser3,
