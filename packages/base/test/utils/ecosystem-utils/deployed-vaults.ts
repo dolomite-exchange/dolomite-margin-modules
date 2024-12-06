@@ -3,9 +3,14 @@ import { DolomiteMargin } from '../dolomite';
 import { CoreProtocolSetupConfig, CoreProtocolType, getMaxDeploymentVersionAddressByDeploymentKey } from '../setup';
 import { DeployedVaultInformation, IsolationModeVaultType, marketToIsolationModeVaultInfoArbitrumOne } from 'packages/deployment/src/deploy/isolation-mode/arbitrum';
 import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
-import { IIsolationModeVaultFactory__factory, IIsolationModeVaultFactoryOld__factory } from 'packages/base/src/types';
-import { CoreProtocolAbstract } from '../core-protocols/core-protocol-abstract';
-import { deployContractAndSave, EncodedTransaction, getCurrentVersionNumberByDeploymentKey, prettyPrintEncodedDataWithTypeSafety } from 'packages/deployment/src/utils/deploy-utils';
+import { IIsolationModeVaultFactory, IIsolationModeVaultFactory__factory, IIsolationModeVaultFactoryOld__factory } from 'packages/base/src/types';
+import {
+  deployContractAndSave,
+  EncodedTransaction,
+  getCurrentVersionNumberByDeploymentKey,
+  prettyPrintEncodedDataWithTypeSafety,
+} from 'packages/deployment/src/utils/deploy-utils';
+import { DFS_GLP_MAP } from 'packages/base/src/utils/constants';
 
 export class DeployedVault {
   public contractName: string;
@@ -15,9 +20,14 @@ export class DeployedVault {
   public libraries: Record<string, string>;
   public currentVersionNumber: number;
   public marketId: number;
+  public factory: IIsolationModeVaultFactory | IIsolationModeVaultFactoryOld__factory;
   public vaultType: IsolationModeVaultType;
 
-  constructor(marketId: number, info: DeployedVaultInformation) {
+  constructor(
+    marketId: number,
+    factory: IIsolationModeVaultFactory | IIsolationModeVaultFactoryOld__factory,
+    info: DeployedVaultInformation
+  ) {
     this.contractName = info.contractName;
     this.contractRenameWithoutVersion = info.contractRenameWithoutVersion;
     this.implementationAddress = info.implementationAddress;
@@ -25,6 +35,7 @@ export class DeployedVault {
     this.libraries = this.populateLibraryAddresses(info.libraries);
     this.currentVersionNumber = getCurrentVersionNumberByDeploymentKey(this.contractRenameWithoutVersion);
     this.marketId = marketId;
+    this.factory = factory;
     this.vaultType = info.vaultType;
   }
 
@@ -44,7 +55,7 @@ export class DeployedVault {
     return this.encodeSetUserVaultImplementation(core);
   }
 
-  public async deployNewVaultImplementation<T extends NetworkType>(
+  public async deployNewVaultImplementation(
     newLibraries: Record<string, string>,
   ): Promise<string> {
     Object.assign(this.libraries, newLibraries);
@@ -59,7 +70,9 @@ export class DeployedVault {
     return vaultAddress;
   }
 
-  public async encodeSetUserVaultImplementation<T extends NetworkType>(core: CoreProtocolType<T>): Promise<EncodedTransaction> {
+  public async encodeSetUserVaultImplementation<T extends NetworkType>(
+    core: CoreProtocolType<T>
+  ): Promise<EncodedTransaction> {
     if (this.contractName === 'GLPIsolationModeTokenVaultV2') {
       const factory = IIsolationModeVaultFactoryOld__factory.connect(
         await core.dolomiteMargin.getMarketTokenAddress(this.marketId),
@@ -72,19 +85,19 @@ export class DeployedVault {
         'setUserVaultImplementation',
         [this.implementationAddress],
       );
-    } else {
-      const factory = IIsolationModeVaultFactory__factory.connect(
-        await core.dolomiteMargin.getMarketTokenAddress(this.marketId),
-        core.governance
-      );
-      return prettyPrintEncodedDataWithTypeSafety(
-        core,
-        { factory },
-        'factory',
-        'ownerSetUserVaultImplementation',
-        [this.implementationAddress],
-      );
     }
+
+    const factory = IIsolationModeVaultFactory__factory.connect(
+      await core.dolomiteMargin.getMarketTokenAddress(this.marketId),
+      core.governance
+    );
+    return prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { factory },
+      'factory',
+      'ownerSetUserVaultImplementation',
+      [this.implementationAddress],
+    );
   }
 }
 
@@ -95,15 +108,31 @@ export async function getDeployedVaults<T extends NetworkType>(
 ): Promise<DeployedVault[]> {
   const deployedVaults: DeployedVault[] = [];
   if (config.network === Network.ArbitrumOne) {
-    Object.entries(marketToIsolationModeVaultInfoArbitrumOne).forEach(([marketId, params]) => {
-      deployedVaults.push(new DeployedVault(Number(marketId), params));
-    });
+    for (const [marketId, params] of Object.entries(marketToIsolationModeVaultInfoArbitrumOne)) {
+      let factory;
+      if (marketId === DFS_GLP_MAP[Network.ArbitrumOne].marketId.toString()) {
+        factory = IIsolationModeVaultFactoryOld__factory.connect(
+          await dolomiteMargin.getMarketTokenAddress(Number(marketId)),
+          governance
+        );
+      } else {
+        factory = IIsolationModeVaultFactory__factory.connect(
+          await dolomiteMargin.getMarketTokenAddress(Number(marketId)),
+          governance
+        );
+      }
+
+      deployedVaults.push(new DeployedVault(Number(marketId), factory, params));
+    }
   }
 
   // @todo Add validation code
   return deployedVaults;
 }
 
-export function filterVaultsByType(deployedVaultsMap: Record<number, DeployedVault>, vaultType: IsolationModeVaultType) {
+export function filterVaultsByType(
+  deployedVaultsMap: Record<number, DeployedVault>,
+  vaultType: IsolationModeVaultType
+) {
   return Object.values(deployedVaultsMap).filter((vault) => vault.vaultType === vaultType);
 }
