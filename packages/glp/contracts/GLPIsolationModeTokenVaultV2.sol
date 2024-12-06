@@ -479,9 +479,12 @@ contract GLPIsolationModeTokenVaultV2 is
             "Can only deposit ETH if claiming"
         );
 
+        IERC20 _gmx = gmx();
         if (_shouldStakeGmx) {
             // we don't know how much GMX will be staked, so we have to approve all
-            _approveGmxForStaking(gmx(), type(uint256).max);
+            _approveGmxForStaking(_gmx, type(uint256).max);
+        } else {
+            _gmx.safeApprove(address(DOLOMITE_MARGIN()), type(uint256).max);
         }
 
         uint256 stakedGmxBalanceBefore = gmxBalanceOf();
@@ -496,17 +499,17 @@ contract GLPIsolationModeTokenVaultV2 is
         );
         uint256 stakedGmxBalanceDelta = gmxBalanceOf() - stakedGmxBalanceBefore;
 
-        IERC20 _gmx = gmx();
         if (_shouldStakeGmx) {
             // we can reset the allowance back to 0 here
             _approveGmxForStaking(_gmx, /* _amount = */ 0);
+        } else {
+            _gmx.safeApprove(address(DOLOMITE_MARGIN()), /* _amount = */ 0);
         }
 
-        _depositIntoGMXVault(
-            gmxVault,
+        IGLPIsolationModeVaultFactory(VAULT_FACTORY()).depositOtherTokenIntoDolomiteMarginForVaultOwner(
             _DEFAULT_ACCOUNT_NUMBER,
-            gmx().balanceOf(address(this)),
-            /* shouldSkipTransfer = */ false
+            DOLOMITE_MARGIN().getMarketIdByTokenAddress(address(_gmx)),
+            _gmx.balanceOf(address(this))
         );
         _depositIntoGMXVault(
             gmxVault,
@@ -553,7 +556,11 @@ contract GLPIsolationModeTokenVaultV2 is
                 _depositIntoGMXVault(gmxVault, _DEFAULT_ACCOUNT_NUMBER, balance, /* shouldSkipTransfer = */ true);
                 _stakeGmx(_gmx, balance);
             } else {
-                _depositIntoGMXVault(gmxVault, _DEFAULT_ACCOUNT_NUMBER, balance, /* shouldSkipTransfer = */ false);
+                IGLPIsolationModeVaultFactory(VAULT_FACTORY()).depositOtherTokenIntoDolomiteMarginForVaultOwner(
+                    _DEFAULT_ACCOUNT_NUMBER,
+                    DOLOMITE_MARGIN().getMarketIdByTokenAddress(address(_gmx)),
+                    balance
+                );
             }
         }
     }
@@ -616,6 +623,7 @@ contract GLPIsolationModeTokenVaultV2 is
     ) internal override {
         super._withdrawFromVaultForDolomiteMargin(_fromAccountNumber, _amountWei);
 
+        // TODO: ask why we we deposit here, since any non-zero amount will revert due to reentrancy
         // Sweep any GMX tokens that are sent to this vault from unvesting GLP
         _depositIntoGMXVault(
             getGmxVaultOrCreate(),
