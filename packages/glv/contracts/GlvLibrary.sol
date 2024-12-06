@@ -35,6 +35,7 @@ import { IGmxDataStore } from "@dolomite-exchange/modules-gmx-v2/contracts/inter
 import { GmxEventUtils } from "@dolomite-exchange/modules-gmx-v2/contracts/lib/GmxEventUtils.sol";
 import { GmxMarket } from "@dolomite-exchange/modules-gmx-v2/contracts/lib/GmxMarket.sol";
 import { GmxPrice } from "@dolomite-exchange/modules-gmx-v2/contracts/lib/GmxPrice.sol";
+import { IOracleAggregatorV2 } from "@dolomite-exchange/modules-oracles/contracts/interfaces/IOracleAggregatorV2.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IGlvIsolationModeTokenVaultV1 } from "./interfaces/IGlvIsolationModeTokenVaultV1.sol";
@@ -45,7 +46,6 @@ import { IGlvRegistry } from "./interfaces/IGlvRegistry.sol";
 import { IGlvRouter } from "./interfaces/IGlvRouter.sol";
 import { GlvDepositUtils } from "./lib/GlvDepositUtils.sol";
 import { GlvWithdrawalUtils } from "./lib/GlvWithdrawalUtils.sol";
-import {IGlvRegistry} from "../contracts_coverage/interfaces/IGlvRegistry.sol";
 // solhint-enable max-line-length
 
 
@@ -268,7 +268,7 @@ library GlvLibrary {
     ) public view returns (bool) {
         address glvToken = _factory.UNDERLYING_TOKEN();
         IGmxDataStore dataStore = _registry.gmxDataStore();
-        address gmMarket = getLargestGmMarketByGlv(glvToken);
+        address gmMarket = getLargestGmMarketByGlv(_factory.glvRegistry(), glvToken);
         {
             bool isGlvMarketDisabled = dataStore.getBool(_isGlvMarketDisableKey(glvToken));
             if (isGlvMarketDisabled) {
@@ -400,10 +400,10 @@ library GlvLibrary {
         IGlvRegistry _registry,
         address _glvToken
     ) private view returns (address) {
-        // TODO: Oriole check this over; note this will add a lot of gas cost since we're now iterating over the list of markets...
-        address dataStore = _registry.gmxDataStore();
-        (,address[] memory markets) = _registry.glvReader().getGlvInfo(dataStore, _glvToken);
-        IOracleAggregatorV2 aggregator = _registry.oracleAggregator();
+        // TODO: Oriole check this over; note this adds a lot of gas cost since we're iterating over the list of markets
+        IGmxDataStore dataStore = _registry.gmxDataStore();
+        address[] memory markets = _registry.glvReader().getGlvInfo(dataStore, _glvToken).markets;
+        IOracleAggregatorV2 aggregator = IOracleAggregatorV2(address(_registry.dolomiteRegistry().oracleAggregator()));
 
         uint256 largestAmount = 0;
         address largestMarket;
