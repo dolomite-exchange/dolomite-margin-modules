@@ -81,7 +81,7 @@ describe('GLPIsolationModeTokenVaultV2_rewardRouterV4', () => {
     await gmxRegistry.connect(core.governance).ownerSetGmxVaultFactory(gmxFactory.address);
 
     underlyingGlpMarketId = BigNumber.from(core.marketIds.dfsGlp!);
-    underlyingGmxMarketId = BigNumber.from(core.marketIds.dGmx!)
+    underlyingGmxMarketId = BigNumber.from(core.marketIds.dGmx!);
 
     await glpFactory.createVault(core.hhUser1.address);
     glpVault = setupUserVaultProxy<TestGLPIsolationModeTokenVaultV2>(
