@@ -4,30 +4,33 @@ import { CoreProtocolSetupConfig } from "../setup";
 import { marketToIsolationModeVaultInfoArbitrumOne } from "packages/deployment/src/deploy/isolation-mode/arbitrum";
 import { createContractWithLibrary, createContractWithLibraryAndArtifact } from "packages/base/src/utils/dolomite-utils";
 import { SignerWithAddressWithSafety } from "packages/base/src/utils/SignerWithAddressWithSafety";
-import { IIsolationModeVaultFactory__factory, IIsolationModeVaultFactoryOld__factory } from "packages/base/src/types";
+import { IERC20Metadata__factory, IIsolationModeVaultFactory__factory, IIsolationModeVaultFactoryOld__factory } from "packages/base/src/types";
 import { CoreProtocolAbstract } from "../core-protocols/core-protocol-abstract";
 import { createArtifactFromWorkspaceIfNotExists } from "packages/gmx-v2/test/gmx-v2-ecosystem-utils";
 
+// @todo IsolationModeEnum type with GLV, GmxV2, Pt, Yt, BerachainRewardVault, etc.
+
 export interface TokenVaultDeployerParams {
   contractName: string;
+  contractRenameWithoutVersion: string;
   implementationAddress: string;
   constructorParams: any[];
-  libraries: Record<string, string>;
+  libraries: string[];
   currentVersionNumber: number;
-  marketId: number;
 }
 
 export class TokenVaultDeployer {
   public contractName: string;
+  public contractRenameWithoutVersion: string;
   public constructorParams: any[];
   public implementationAddress: string;
-  private contractRename: string | undefined;
   public libraries: Record<string, string>;
   public currentVersionNumber: number;
   public marketId: number;
 
   constructor(params: TokenVaultDeployerParams) {
     this.contractName = params.contractName;
+    this.contractRenameWithoutVersion = params.contractRenameWithoutVersion;
     this.implementationAddress = params.implementationAddress;
     this.constructorParams = params.constructorParams;
     this.libraries = params.libraries;
@@ -48,6 +51,7 @@ export class TokenVaultDeployer {
       }
     }
     const artifact = await createArtifactFromWorkspaceIfNotExists(this.contractName);
+    // @todo Switch to deployContractAndSave. Shouldn't need artifact then
     const vault = await createContractWithLibraryAndArtifact(
       artifact,
       this.libraries,
@@ -73,17 +77,24 @@ export class TokenVaultDeployer {
   }
 }
 
-export function getTokenVaultDeployers<T extends NetworkType>(
+export async function getTokenVaultDeployers<T extends NetworkType>(
   config: CoreProtocolSetupConfig<T>,
-  dolomiteMargin: DolomiteMargin<T>
-): TokenVaultDeployer[] {
+  dolomiteMargin: DolomiteMargin<T>,
+  governance: SignerWithAddressWithSafety,
+): Promise<TokenVaultDeployer[]> {
   const tokenVaultDeployers: TokenVaultDeployer[] = [];
   if (config.network === Network.ArbitrumOne) {
     for (const marketId in marketToIsolationModeVaultInfoArbitrumOne) {
       const params = marketToIsolationModeVaultInfoArbitrumOne[marketId];
       tokenVaultDeployers.push(new TokenVaultDeployer(params));
     }
+
+    Object.entries(marketToIsolationModeVaultInfoArbitrumOne).forEach(([marketId, params]) => {
+      tokenVaultDeployers.push(new TokenVaultDeployer(params));
+    });
   }
+
+  // @todo Add validation code
 
   return tokenVaultDeployers;
 }

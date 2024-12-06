@@ -12,6 +12,7 @@ import { expectProtocolBalance } from '../utils/assertions';
 
 const defaultAccountNumber = 0;
 
+// @todo move to deployment package
 describe('TokenVaultDeployer', () => {
   let snapshotId: string;
   let core: CoreProtocolArbitrumOne;
@@ -23,13 +24,13 @@ describe('TokenVaultDeployer', () => {
       blockNumber: await getRealLatestBlockNumber(true, Network.ArbitrumOne),
     });
 
-    // for (let i = 0; i < (await core.dolomiteMargin.getNumMarkets()).toNumber(); i++) {
-    //   console.log(await core.dolomiteMargin.getMarketTokenAddress(i));
-    //   console.log(i);
-    //   const tokenAddress = await core.dolomiteMargin.getMarketTokenAddress(i);
-    //   console.log(await IERC20Metadata__factory.connect(tokenAddress, core.hhUser1).name());
-    //   console.log();
-    // }
+    for (let i = 0; i < (await core.dolomiteMargin.getNumMarkets()).toNumber(); i++) {
+      console.log(await core.dolomiteMargin.getMarketTokenAddress(i));
+      console.log(i);
+      const tokenAddress = await core.dolomiteMargin.getMarketTokenAddress(i);
+      console.log(await IERC20Metadata__factory.connect(tokenAddress, core.hhUser1).name());
+      console.log();
+    }
 
     snapshotId = await snapshot();
   });

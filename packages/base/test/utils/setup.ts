@@ -748,7 +748,8 @@ export async function setupCoreProtocol<T extends NetworkType>(
 
   const testEcosystem = await createTestEcosystem(dolomiteMargin, governance);
 
-  const tokenVaultDeployers = getTokenVaultDeployers(config, dolomiteMargin);
+  const tokenVaultDeployers = await getTokenVaultDeployers(config, dolomiteMargin, governance);
+  // @todo add map to core object as well
 
   const libraries: LibraryMaps = {
     tokenVaultActionsImpl: createTokenVaultActionsLibraries(config),
