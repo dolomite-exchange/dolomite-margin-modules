@@ -130,7 +130,10 @@ describe('GlvIsolationModeWrapperTraderV2', () => {
     glvRegistry = await createGlvRegistry(core, callbackGasLimit);
     await glvRegistry
       .connect(core.governance)
-      .ownerSetGlvTokenToGmMarket(underlyingToken.address, gmMarketToken.address);
+      .ownerSetGlvTokenToGmMarketForDeposit(underlyingToken.address, gmMarketToken.address);
+    await glvRegistry
+      .connect(core.governance)
+      .ownerSetGlvTokenToGmMarketForWithdrawal(underlyingToken.address, gmMarketToken.address);
     const newRegistry = await createDolomiteRegistryImplementation();
     await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(newRegistry.address);
 

@@ -255,7 +255,6 @@ contract GMXIsolationModeTokenVaultV1 is
     ) internal override {
         super._withdrawFromVaultForDolomiteMargin(_fromAccountNumber, _amountWei);
 
-        // TODO: ask why we sweep here since any non-zero amount will revert due to reentrancy
         address glpVault = registry().glpVaultFactory().getVaultByAccount(OWNER());
         IGLPIsolationModeTokenVaultV2(glpVault).sweepGmxTokensIntoGmxVault();
     }

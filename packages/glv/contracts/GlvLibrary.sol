@@ -35,7 +35,6 @@ import { IGmxDataStore } from "@dolomite-exchange/modules-gmx-v2/contracts/inter
 import { GmxEventUtils } from "@dolomite-exchange/modules-gmx-v2/contracts/lib/GmxEventUtils.sol";
 import { GmxMarket } from "@dolomite-exchange/modules-gmx-v2/contracts/lib/GmxMarket.sol";
 import { GmxPrice } from "@dolomite-exchange/modules-gmx-v2/contracts/lib/GmxPrice.sol";
-import { IOracleAggregatorV2 } from "@dolomite-exchange/modules-oracles/contracts/interfaces/IOracleAggregatorV2.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IGlvIsolationModeTokenVaultV1 } from "./interfaces/IGlvIsolationModeTokenVaultV1.sol";
@@ -69,7 +68,6 @@ library GlvLibrary {
     bytes32 private constant _FILE = "GlvLibrary";
     bytes32 private constant _MAX_PNL_FACTOR_KEY = keccak256(abi.encode("MAX_PNL_FACTOR"));
     bytes32 private constant _MAX_PNL_FACTOR_FOR_ADL_KEY = keccak256(abi.encode("MAX_PNL_FACTOR_FOR_ADL"));
-    bytes32 private constant _MAX_PNL_FACTOR_FOR_DEPOSITS_KEY = keccak256(abi.encode("MAX_PNL_FACTOR_FOR_DEPOSITS")); // solhint-disable-line max-line-length
     bytes32 private constant _MAX_PNL_FACTOR_FOR_WITHDRAWALS_KEY = keccak256(abi.encode("MAX_PNL_FACTOR_FOR_WITHDRAWALS")); // solhint-disable-line max-line-length
     bytes32 private constant _MAX_CALLBACK_GAS_LIMIT_KEY = keccak256(abi.encode("MAX_CALLBACK_GAS_LIMIT"));
     bytes32 private constant _CREATE_GLV_WITHDRAWAL_FEATURE_DISABLED = keccak256(abi.encode("CREATE_GLV_WITHDRAWAL_FEATURE_DISABLED")); // solhint-disable-line max-line-length
@@ -134,7 +132,7 @@ library GlvLibrary {
         IGlvIsolationModeVaultFactory factory = _factory;
         GlvDepositUtils.CreateGlvDepositParams memory depositParams = GlvDepositUtils.CreateGlvDepositParams(
             /* glv = */ _outputTokenUnderlying,
-            /* market = */ _registry.glvTokenToGmMarket(factory.UNDERLYING_TOKEN()),
+            /* market = */ _registry.glvTokenToGmMarketForDeposit(factory.UNDERLYING_TOKEN()),
             /* receiver = */ address(this),
             /* callbackContract = */ address(this),
             /* uiFeeReceiver = */ address(0),
@@ -189,9 +187,8 @@ library GlvLibrary {
         IGlvRegistry registry = _factory.glvRegistry();
         IGlvRouter glvRouter = registry.glvRouter();
 
-        // By default, we swap through the most liquid GM token
         address[] memory swapPath = new address[](1);
-        swapPath[0] = getLargestGmMarketByGlv(registry, _factory.UNDERLYING_TOKEN());
+        swapPath[0] = registry.glvTokenToGmMarketForWithdrawal(_factory.UNDERLYING_TOKEN());
 
         // Change scope for stack too deep
         {
@@ -268,7 +265,7 @@ library GlvLibrary {
     ) public view returns (bool) {
         address glvToken = _factory.UNDERLYING_TOKEN();
         IGmxDataStore dataStore = _registry.gmxDataStore();
-        address gmMarket = getLargestGmMarketByGlv(_factory.glvRegistry(), glvToken);
+        address gmMarket = _factory.glvRegistry().glvTokenToGmMarketForWithdrawal(_factory.UNDERLYING_TOKEN());
         {
             bool isGlvMarketDisabled = dataStore.getBool(_isGlvMarketDisableKey(glvToken));
             if (isGlvMarketDisabled) {
@@ -395,55 +392,6 @@ library GlvLibrary {
     // ==================================================================
     // ======================== Private Functions ======================
     // ==================================================================
-
-    function getLargestGmMarketByGlv(
-        IGlvRegistry _registry,
-        address _glvToken
-    ) private view returns (address) {
-        // TODO: Oriole check this over; note this adds a lot of gas cost since we're iterating over the list of markets
-        IGmxDataStore dataStore = _registry.gmxDataStore();
-        address[] memory markets = _registry.glvReader().getGlvInfo(dataStore, _glvToken).markets;
-        IOracleAggregatorV2 aggregator = IOracleAggregatorV2(address(_registry.dolomiteRegistry().oracleAggregator()));
-
-        uint256 largestAmount = 0;
-        address largestMarket;
-        for (uint256 i = 0; i < markets.length; ++i) {
-            GmxMarket.MarketProps memory props = _registry.gmxReader().getMarket(dataStore, markets[0]);
-            if (aggregator.getOraclesByToken(props.indexToken).length == 0) {
-                // We don't have the oracle price for this index token. Ignore it
-                continue;
-            }
-
-            GmxMarket.MarketPrices memory marketPrices = _getGmxMarketPrices(
-                aggregator.getPrice(props.indexToken).value,
-                aggregator.getPrice(props.longToken).value,
-                aggregator.getPrice(props.shortToken).value
-            );
-            (int256 price, ) = _registry.gmxReader().getMarketTokenPrice(
-                dataStore,
-                props,
-                marketPrices.indexTokenPrice,
-                marketPrices.longTokenPrice,
-                marketPrices.shortTokenPrice,
-                _MAX_PNL_FACTOR_FOR_DEPOSITS_KEY,
-                /* _maximize = */ false
-            );
-
-            if (price <= 0) {
-                continue;
-            }
-
-            uint256 poolValue = uint256(price) * IERC20(markets[i]).totalSupply();
-            if (poolValue > largestAmount) {
-                largestAmount = poolValue;
-                largestMarket = markets[i];
-            }
-        }
-
-        assert(largestMarket != address(0));
-
-        return largestMarket;
-    }
 
     function _getGmxMarketPrices(
         uint256 _indexTokenPrice,

@@ -56,7 +56,7 @@ describe('GLPIsolationModeWrapperTraderV1', () => {
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
-    underlyingToken = core.gmxEcosystem!.fsGlp;
+    underlyingToken = core.gmxEcosystem.fsGlp;
     const userVaultImplementation = await createGLPIsolationModeTokenVaultV1();
     gmxRegistry = await createGmxRegistry(core);
     factory = await createGLPIsolationModeVaultFactory(core, gmxRegistry, userVaultImplementation);
@@ -79,10 +79,10 @@ describe('GLPIsolationModeWrapperTraderV1', () => {
     );
     defaultAccount = { owner: vault.address, number: defaultAccountNumber };
 
-    await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.gmxEcosystem!.glpManager);
-    await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
+    await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.gmxEcosystem.glpManager);
+    await core.gmxEcosystem.glpRewardsRouter.connect(core.hhUser1)
       .mintAndStakeGlp(core.tokens.usdc.address, usableUsdcAmount, 0, 0);
-    await core.gmxEcosystem!.sGlp.connect(core.hhUser1).approve(vault.address, amountWei);
+    await core.gmxEcosystem.sGlp.connect(core.hhUser1).approve(vault.address, amountWei);
     await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
 
     expect(await underlyingToken.connect(core.hhUser1).balanceOf(vault.address)).to.eq(amountWei);
@@ -212,7 +212,7 @@ describe('GLPIsolationModeWrapperTraderV1', () => {
   describe('#getExchangeCost', () => {
     it('should work normally', async () => {
       const inputAmount = usableUsdcAmount;
-      const expectedAmount = await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
+      const expectedAmount = await core.gmxEcosystem.glpRewardsRouter.connect(core.hhUser1)
         .callStatic
         .mintAndStakeGlp(
           core.tokens.usdc.address,
@@ -230,7 +230,7 @@ describe('GLPIsolationModeWrapperTraderV1', () => {
         // create a random number from 1 to 99 and divide by 101 (making the number, at-most, slightly smaller)
         const randomNumber = BigNumber.from(Math.floor(Math.random() * 99) + 1);
         const weirdAmount = usableUsdcAmount.mul(randomNumber).div(101);
-        const expectedAmount = await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
+        const expectedAmount = await core.gmxEcosystem.glpRewardsRouter.connect(core.hhUser1)
           .callStatic
           .mintAndStakeGlp(
             core.tokens.usdc.address,

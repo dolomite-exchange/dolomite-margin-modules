@@ -73,9 +73,9 @@ describe('GLPIsolationModeLiquidationWithZap', () => {
       blockNumber,
       network: Network.ArbitrumOne,
     });
-    underlyingToken = core.gmxEcosystem!.fsGlp;
-    gmxRegistry = core.gmxEcosystem!.live.gmxRegistry;
-    factory = core.gmxEcosystem!.live.dGlp.connect(core.hhUser1);
+    underlyingToken = core.gmxEcosystem.fsGlp;
+    gmxRegistry = core.gmxEcosystem.live.gmxRegistry;
+    factory = core.gmxEcosystem.live.dGlp.connect(core.hhUser1);
 
     heldMarketId = BigNumber.from(core.marketIds.dfsGlp!);
     glpApiToken = {
@@ -108,10 +108,10 @@ describe('GLPIsolationModeLiquidationWithZap', () => {
     solidAccountStruct = { owner: core.hhUser5.address, number: defaultAccountNumber };
 
     const usdcAmount = heldAmountWei.div(1e12).mul(4);
-    await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.gmxEcosystem!.glpManager);
-    await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
+    await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.gmxEcosystem.glpManager);
+    await core.gmxEcosystem.glpRewardsRouter.connect(core.hhUser1)
       .mintAndStakeGlp(core.tokens.usdc.address, usdcAmount, 0, 0);
-    await core.gmxEcosystem!.sGlp.connect(core.hhUser1).approve(vault.address, heldAmountWei);
+    await core.gmxEcosystem.sGlp.connect(core.hhUser1).approve(vault.address, heldAmountWei);
     await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, heldAmountWei);
 
     expect(await underlyingToken.connect(core.hhUser1).balanceOf(vault.address)).to.eq(heldAmountWei);
@@ -204,7 +204,7 @@ describe('GLPIsolationModeLiquidationWithZap', () => {
 
       await expectWalletBalanceOrDustyIfZero(core, core.liquidatorProxyV4!.address, factory.address, ZERO_BI);
       await expectWalletBalanceOrDustyIfZero(core, core.liquidatorProxyV4!.address, core.tokens.weth.address, ZERO_BI);
-      await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.gmxEcosystem!.sGlp.address, ZERO_BI);
+      await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.gmxEcosystem.sGlp.address, ZERO_BI);
       await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.tokens.usdc.address, ZERO_BI);
     });
 
@@ -314,7 +314,7 @@ describe('GLPIsolationModeLiquidationWithZap', () => {
         ZERO_BI,
         wethLiquidatorBalanceBefore,
       );
-      await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.gmxEcosystem!.sGlp.address, ZERO_BI);
+      await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.gmxEcosystem.sGlp.address, ZERO_BI);
       await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.tokens.usdc.address, ZERO_BI);
     });
   });
@@ -405,7 +405,7 @@ describe('GLPIsolationModeLiquidationWithZap', () => {
 
       await expectWalletBalanceOrDustyIfZero(core, core.liquidatorProxyV4!.address, factory.address, ZERO_BI);
       await expectWalletBalanceOrDustyIfZero(core, core.liquidatorProxyV4!.address, core.tokens.weth.address, ZERO_BI);
-      await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.gmxEcosystem!.sGlp.address, ZERO_BI);
+      await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.gmxEcosystem.sGlp.address, ZERO_BI);
       await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.tokens.usdc.address, ZERO_BI);
     });
 
@@ -520,7 +520,7 @@ describe('GLPIsolationModeLiquidationWithZap', () => {
         ZERO_BI,
         wethLiquidatorBalanceBefore,
       );
-      await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.gmxEcosystem!.sGlp.address, ZERO_BI);
+      await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.gmxEcosystem.sGlp.address, ZERO_BI);
       await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.tokens.usdc.address, ZERO_BI);
     });
   });

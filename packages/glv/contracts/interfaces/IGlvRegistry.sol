@@ -70,7 +70,13 @@ interface IGlvRegistry is IBaseRegistry, IHandlerRegistry {
 
     function ownerSetGlvVault(address _glvVault) external;
 
-    function ownerSetGlvTokenToGmMarket(address _glvToken, address _gmMarket) external;
+    function ownerSetGlvTokenToGmMarketForDeposit(address _glvToken, address _gmMarket) external;
+
+    function handlerSetGlvTokenToGmMarketForDeposit(address _glvToken, address _gmMarket) external;
+
+    function ownerSetGlvTokenToGmMarketForWithdrawal(address _glvToken, address _gmMarket) external;
+
+    function handlerSetGlvTokenToGmMarketForWithdrawal(address _glvToken, address _gmMarket) external;
 
     function gmxExchangeRouter() external view returns (IGmxExchangeRouter);
 
@@ -86,5 +92,7 @@ interface IGlvRegistry is IBaseRegistry, IHandlerRegistry {
 
     function glvVault() external view returns (address);
 
-    function glvTokenToGmMarket(address _glvToken) external view returns (address);
+    function glvTokenToGmMarketForDeposit(address _glvToken) external view returns (address);
+
+    function glvTokenToGmMarketForWithdrawal(address _glvToken) external view returns (address);
 }
