@@ -162,7 +162,7 @@ describe('BGTIsolationModeTokenVaultV1', () => {
 
     await beraVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
     await increase(10 * ONE_DAY_SECONDS);
-    await metaVault.getReward(underlyingToken.address, RewardVaultType.Native);
+    await metaVault.getReward(underlyingToken.address);
 
     // Get the vault now that it has been created
     bgtVault = setupUserVaultProxy<BGTIsolationModeTokenVaultV1>(

@@ -21,6 +21,8 @@ export async function getBerachainRewardsRegistryConstructorParams(
   const calldata = await implementation.populateTransaction.initialize(
     core.tokens.bgt.address,
     core.tokens.iBgt.address,
+    core.berachainRewardsEcosystem.berachainRewardsVaultFactory.address,
+    core.berachainRewardsEcosystem.infrared.address,
     core.berachainRewardsEcosystem.iBgtStakingPool.address,
     metaVaultImplementation.address,
     core.dolomiteRegistry.address

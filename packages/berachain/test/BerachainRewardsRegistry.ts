@@ -24,7 +24,7 @@ import {
   BerachainRewardsRegistry,
   BGTIsolationModeVaultFactory,
   IERC20,
-  IInfraredRewardVault,
+  IInfraredVault,
   INativeRewardVault,
   InfraredBGTIsolationModeVaultFactory,
 } from '../src/types';
@@ -58,7 +58,7 @@ describe('BerachainRewardsRegistry', () => {
   let underlyingToken: IERC20;
   let otherUnderlyingToken: IERC20;
   let nativeRewardVault: INativeRewardVault;
-  let infraredRewardVault: IInfraredRewardVault;
+  let infraredRewardVault: IInfraredVault;
 
   let vaultImplementation: BerachainRewardsIsolationModeTokenVaultV1;
   let metaVaultImplementation: BerachainRewardsMetaVault;
@@ -142,8 +142,13 @@ describe('BerachainRewardsRegistry', () => {
 
   describe('#initialize', () => {
     it('should initialize variables properly', async () => {
+      expect(await registry.berachainRewardsVaultFactory()).to.equal(
+        core.berachainRewardsEcosystem.berachainRewardsVaultFactory.address
+      );
+      expect(await registry.infrared()).to.equal(core.berachainRewardsEcosystem.infrared.address);
       expect(await registry.bgt()).to.equal(core.tokens.bgt.address);
       expect(await registry.iBgt()).to.equal(core.tokens.iBgt.address);
+      expect(await registry.iBgtVault()).to.equal(core.berachainRewardsEcosystem.iBgtStakingPool.address);
       expect(await registry.metaVaultImplementation()).to.equal(metaVaultImplementation.address);
       expect(await registry.dolomiteRegistry()).to.equal(core.dolomiteRegistry.address);
     });
@@ -153,6 +158,8 @@ describe('BerachainRewardsRegistry', () => {
         registry.initialize(
           core.tokens.bgt.address,
           core.tokens.iBgt.address,
+          core.berachainRewardsEcosystem.berachainRewardsVaultFactory.address,
+          core.berachainRewardsEcosystem.infrared.address,
           core.berachainRewardsEcosystem.iBgtStakingPool.address,
           metaVaultImplementation.address,
           core.dolomiteRegistry.address,
@@ -282,6 +289,54 @@ describe('BerachainRewardsRegistry', () => {
     });
   });
 
+  describe('#ownerSetBerachainRewardsVaultFactory', () => {
+    it('should work normally', async () => {
+      const result = await registry.connect(core.governance).ownerSetBerachainRewardsVaultFactory(OTHER_ADDRESS);
+      await expectEvent(registry, result, 'BerachainRewardsVaultFactorySet', {
+        berachainRewardsVaultFactory: OTHER_ADDRESS,
+      });
+      expect(await registry.berachainRewardsVaultFactory()).to.equal(OTHER_ADDRESS);
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetBerachainRewardsVaultFactory(ADDRESS_ZERO),
+        'BerachainRewardsRegistry: Invalid vault factory address',
+      );
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetBerachainRewardsVaultFactory(OTHER_ADDRESS),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+  });
+
+  describe('#ownerSetInfrared', () => {
+    it('should work normally', async () => {
+      const result = await registry.connect(core.governance).ownerSetInfrared(OTHER_ADDRESS);
+      await expectEvent(registry, result, 'InfraredSet', {
+        infrared: OTHER_ADDRESS,
+      });
+      expect(await registry.infrared()).to.equal(OTHER_ADDRESS);
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetInfrared(ADDRESS_ZERO),
+        'BerachainRewardsRegistry: Invalid infrared address',
+      );
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetInfrared(OTHER_ADDRESS),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+  });
+
   describe('#ownerSetBgt', () => {
     it('should work normally', async () => {
       const result = await registry.connect(core.governance).ownerSetBgt(OTHER_ADDRESS);
@@ -330,26 +385,26 @@ describe('BerachainRewardsRegistry', () => {
     });
   });
 
-  describe('#ownerSetIBgtStakingPool', () => {
+  describe('#ownerSetIBgtVault', () => {
     it('should work normally', async () => {
-      const result = await registry.connect(core.governance).ownerSetIBgtStakingPool(OTHER_ADDRESS);
-      await expectEvent(registry, result, 'IBgtStakingPoolSet', {
-        iBgtStakingPool: OTHER_ADDRESS,
+      const result = await registry.connect(core.governance).ownerSetIBgtVault(OTHER_ADDRESS);
+      await expectEvent(registry, result, 'IBgtVaultSet', {
+        iBgtVault: OTHER_ADDRESS,
       });
-      expect(await registry.iBgtStakingPool()).to.equal(OTHER_ADDRESS);
+      expect(await registry.iBgtVault()).to.equal(OTHER_ADDRESS);
     });
 
     it('should fail when not called by owner', async () => {
       await expectThrow(
-        registry.connect(core.hhUser1).ownerSetIBgtStakingPool(OTHER_ADDRESS),
+        registry.connect(core.hhUser1).ownerSetIBgtVault(OTHER_ADDRESS),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
     it('should fail if zero address is set', async () => {
       await expectThrow(
-        registry.connect(core.governance).ownerSetIBgtStakingPool(ADDRESS_ZERO),
-        'BerachainRewardsRegistry: Invalid iBgtStakingPool address',
+        registry.connect(core.governance).ownerSetIBgtVault(ADDRESS_ZERO),
+        'BerachainRewardsRegistry: Invalid iBgtVault address',
       );
     });
   });
@@ -465,6 +520,38 @@ describe('BerachainRewardsRegistry', () => {
           ),
         'BerachainRewardsRegistry: Invalid rewardVault address',
       );
+    });
+  });
+
+  describe('#rewardVault', () => {
+    it('should return the correct reward vault for native', async () => {
+      const asset = core.berachainRewardsEcosystem.listedRewardAssets.bexHoneyUsdc.asset.address;
+      const rewardVault = core.berachainRewardsEcosystem.listedRewardAssets.bexHoneyUsdc.nativeRewardVault.address;
+
+      expect(await registry.rewardVault(asset, RewardVaultType.Native)).to.equal(rewardVault);
+    });
+
+    it('should return the correct reward vault for infrared', async () => {
+      const asset = core.berachainRewardsEcosystem.listedRewardAssets.bexHoneyUsdc.asset.address;
+      const rewardVault = core.berachainRewardsEcosystem.listedRewardAssets.bexHoneyUsdc.infraredRewardVault.address;
+
+      expect(await registry.rewardVault(asset, RewardVaultType.Infrared)).to.equal(rewardVault);
+    });
+
+    it('should return the correct reward vault for bgtm', async () => {
+      const asset = core.berachainRewardsEcosystem.listedRewardAssets.bexHoneyUsdc.asset.address;
+      const rewardVault = core.berachainRewardsEcosystem.listedRewardAssets.bexHoneyUsdc.nativeRewardVault.address;
+
+      expect(await registry.rewardVault(asset, RewardVaultType.BGTM)).to.equal(rewardVault);
+    });
+
+    it('should return the correct reward vault if overridden', async () => {
+      const asset = core.berachainRewardsEcosystem.listedRewardAssets.bexHoneyUsdc.asset.address;
+      const rewardVault = core.berachainRewardsEcosystem.listedRewardAssets.bexHoneyUsdc.nativeRewardVault.address;
+      expect(await registry.rewardVault(asset, RewardVaultType.Native)).to.equal(rewardVault);
+
+      await registry.connect(core.governance).ownerSetRewardVault(asset, RewardVaultType.Native, OTHER_ADDRESS);
+      expect(await registry.rewardVault(asset, RewardVaultType.Native)).to.equal(OTHER_ADDRESS);
     });
   });
 });

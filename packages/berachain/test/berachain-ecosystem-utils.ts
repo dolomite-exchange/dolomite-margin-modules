@@ -32,6 +32,7 @@ import {
 export enum RewardVaultType {
   Native,
   Infrared,
+  BGTM,
 }
 
 export async function createBerachainRewardsRegistry(

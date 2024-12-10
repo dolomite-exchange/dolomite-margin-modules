@@ -1,18 +1,33 @@
 import { IERC20, IERC20__factory } from "packages/base/src/types";
 import {
+  BERACHAIN_REWARDS_VAULT_FACTORY_MAP,
   HONEY_USDC_BEX_INFRARED_REWARD_VAULT_MAP,
   HONEY_USDC_BEX_LP_TOKEN_MAP,
   HONEY_USDC_BEX_NATIVE_REWARD_VAULT_MAP,
   HONEY_WBERA_BEX_INFRARED_REWARD_VAULT_MAP,
   HONEY_WBERA_BEX_LP_TOKEN_MAP,
   HONEY_WBERA_BEX_NATIVE_REWARD_VAULT_MAP,
-  IBGT_STAKING_POOL_MAP
+  IBGT_STAKING_POOL_MAP,
+  INFRRED_MAP
 } from "packages/base/src/utils/constants";
 import { Network } from "packages/base/src/utils/no-deps-constants";
 import { SignerWithAddressWithSafety } from "packages/base/src/utils/SignerWithAddressWithSafety";
-import { INativeRewardVault, INativeRewardVault__factory, IInfraredRewardVault, IInfraredRewardVault__factory, IInfraredBGTStakingPool, IInfraredBGTStakingPool__factory } from "packages/berachain/src/types";
+import {
+  INativeRewardVault,
+  INativeRewardVault__factory,
+  IInfraredVault,
+  IInfraredVault__factory,
+  IInfraredBGTStakingPool,
+  IInfraredBGTStakingPool__factory,
+  IBerachainRewardsVaultFactory,
+  IInfrared,
+  IBerachainRewardsVaultFactory__factory,
+  IInfrared__factory,
+} from "packages/berachain/src/types";
 
 export interface BerachainRewardsEcosystem {
+  berachainRewardsVaultFactory: IBerachainRewardsVaultFactory;
+  infrared: IInfrared;
   iBgtStakingPool: IInfraredBGTStakingPool;
   listedRewardAssets: {
     bexHoneyUsdc: ListedRewardAsset;
@@ -23,7 +38,7 @@ export interface BerachainRewardsEcosystem {
 export interface ListedRewardAsset {
   asset: IERC20;
   nativeRewardVault: INativeRewardVault;
-  infraredRewardVault: IInfraredRewardVault;
+  infraredRewardVault: IInfraredVault;
 }
 
 export async function createBerachainRewardsEcosystem(
@@ -35,17 +50,19 @@ export async function createBerachainRewardsEcosystem(
   }
 
   return {
+    berachainRewardsVaultFactory: IBerachainRewardsVaultFactory__factory.connect(BERACHAIN_REWARDS_VAULT_FACTORY_MAP[network]!, signer),
+    infrared: IInfrared__factory.connect(INFRRED_MAP[network]!, signer),
     iBgtStakingPool: IInfraredBGTStakingPool__factory.connect(IBGT_STAKING_POOL_MAP[network]!, signer),
     listedRewardAssets: {
       bexHoneyUsdc: {
         asset: IERC20__factory.connect(HONEY_USDC_BEX_LP_TOKEN_MAP[network]!, signer),
         nativeRewardVault: INativeRewardVault__factory.connect(HONEY_USDC_BEX_NATIVE_REWARD_VAULT_MAP[network]!, signer),
-        infraredRewardVault: IInfraredRewardVault__factory.connect(HONEY_USDC_BEX_INFRARED_REWARD_VAULT_MAP[network]!, signer),
+        infraredRewardVault: IInfraredVault__factory.connect(HONEY_USDC_BEX_INFRARED_REWARD_VAULT_MAP[network]!, signer),
       },
       bexHoneyWbera: {
         asset: IERC20__factory.connect(HONEY_WBERA_BEX_LP_TOKEN_MAP[network]!, signer),
         nativeRewardVault: INativeRewardVault__factory.connect(HONEY_WBERA_BEX_NATIVE_REWARD_VAULT_MAP[network]!, signer),
-        infraredRewardVault: IInfraredRewardVault__factory.connect(HONEY_WBERA_BEX_INFRARED_REWARD_VAULT_MAP[network]!, signer),
+        infraredRewardVault: IInfraredVault__factory.connect(HONEY_WBERA_BEX_INFRARED_REWARD_VAULT_MAP[network]!, signer),
       },
     }
   };

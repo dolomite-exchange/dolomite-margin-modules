@@ -168,8 +168,8 @@ describe('BGTIsolationModeVaultFactory', () => {
       await underlyingToken.connect(core.hhUser1).approve(beraVault.address, amountWei);
       await beraVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await increase(10 * ONE_DAY_SECONDS);
-      const balance = await metaVault.callStatic.getReward(underlyingToken.address, RewardVaultType.Native);
-      await metaVault.getReward(underlyingToken.address, RewardVaultType.Native);
+      const balance = await metaVault.callStatic.getReward(underlyingToken.address);
+      await metaVault.getReward(underlyingToken.address);
 
       const bgtVault = setupUserVaultProxy<BGTIsolationModeTokenVaultV1>(
         await bgtFactory.getVaultByAccount(core.hhUser1.address),

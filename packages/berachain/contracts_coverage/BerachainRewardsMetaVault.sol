@@ -29,7 +29,7 @@ import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { IBGT } from "./interfaces/IBGT.sol";
 import { IBerachainRewardsMetaVault } from "./interfaces/IBerachainRewardsMetaVault.sol";
 import { IBerachainRewardsRegistry } from "./interfaces/IBerachainRewardsRegistry.sol";
-import { IInfraredRewardVault } from "./interfaces/IInfraredRewardVault.sol";
+import { IInfraredVault } from "./interfaces/IInfraredVault.sol";
 import { IMetaVaultRewardReceiver } from "./interfaces/IMetaVaultRewardReceiver.sol";
 import { IMetaVaultRewardTokenFactory } from "./interfaces/IMetaVaultRewardTokenFactory.sol";
 import { INativeRewardVault } from "./interfaces/INativeRewardVault.sol";
@@ -55,6 +55,7 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
     bytes32 private constant _REGISTRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.registry")) - 1);
     bytes32 private constant _OWNER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.owner")) - 1);
     bytes32 private constant _VALIDATOR_SLOT = bytes32(uint256(keccak256("eip1967.proxy.validator")) - 1);
+    bytes32 private constant _STAKED_BALANCES_SLOT = bytes32(uint256(keccak256("eip1967.proxy.stakedBalances")) - 1);
 
     /// @dev This variable is hardcoded here because it's private in the BGT contract
     uint256 public constant HISTORY_BUFFER_LENGTH = 8191;
@@ -128,41 +129,43 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
     }
 
     function getReward(
-        address _asset,
-        IBerachainRewardsRegistry.RewardVaultType _type
+        address _asset
     ) external onlyMetaVaultOwner(msg.sender) returns (uint256) {
-        address rewardVault = REGISTRY().rewardVault(_asset, _type);
+        IBerachainRewardsRegistry.RewardVaultType defaultType = getDefaultRewardVaultTypeByAsset(_asset);
+        address rewardVault = REGISTRY().rewardVault(_asset, defaultType);
         IMetaVaultRewardTokenFactory factory;
         uint256 reward;
 
-        if (_type == IBerachainRewardsRegistry.RewardVaultType.NATIVE) {
+        // @todo Add BGTM stuff
+        if (defaultType == IBerachainRewardsRegistry.RewardVaultType.NATIVE) {
             reward = INativeRewardVault(rewardVault).getReward(address(this));
             factory = REGISTRY().bgtIsolationModeVaultFactory();
         } else {
-            /*assert(_type == IBerachainRewardsRegistry.RewardVaultType.INFRARED);*/
+            /*assert(defaultType == IBerachainRewardsRegistry.RewardVaultType.INFRARED);*/
             factory = REGISTRY().iBgtIsolationModeVaultFactory();
             IERC20 iBgt = REGISTRY().iBgt();
 
+            // @todo may need to adjust to use the getAllRewardsForUser function
             uint256 balanceBefore = iBgt.balanceOf(address(this));
-            IInfraredRewardVault(rewardVault).getReward();
+            IInfraredVault(rewardVault).getReward();
             reward = iBgt.balanceOf(address(this)) - balanceBefore;
         }
 
         if (reward > 0) {
-            _performDepositRewardByRewardType(factory, _type, reward);
+            _performDepositRewardByRewardType(factory, defaultType, reward);
         }
 
         return reward;
     }
 
     function exit(
-        address _asset,
-        IBerachainRewardsRegistry.RewardVaultType _type
+        address _asset
     ) external onlyChildVault(msg.sender) {
-        INativeRewardVault rewardVault = INativeRewardVault(REGISTRY().rewardVault(_asset, _type));
+        IBerachainRewardsRegistry.RewardVaultType defaultType = getDefaultRewardVaultTypeByAsset(_asset);
+        INativeRewardVault rewardVault = INativeRewardVault(REGISTRY().rewardVault(_asset, defaultType));
         IERC20 token;
         IMetaVaultRewardTokenFactory factory;
-        if (_type == IBerachainRewardsRegistry.RewardVaultType.NATIVE) {
+        if (defaultType == IBerachainRewardsRegistry.RewardVaultType.NATIVE) {
             token = REGISTRY().bgt();
             factory = REGISTRY().bgtIsolationModeVaultFactory();
         } else {
@@ -179,7 +182,7 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
 
         uint256 reward = token.balanceOf(address(this)) - balanceBefore;
         if (reward > 0) {
-            _performDepositRewardByRewardType(factory, _type, reward);
+            _performDepositRewardByRewardType(factory, defaultType, reward);
         }
 
     }
@@ -307,6 +310,13 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
         return REGISTRY().getAccountToAssetToDefaultType(OWNER(), _asset);
     }
 
+    function getStakedBalanceByAssetAndType(
+        address _asset,
+        IBerachainRewardsRegistry.RewardVaultType _type
+    ) public view returns (uint256) {
+        return _getUint256InNestedMap(_STAKED_BALANCES_SLOT, _asset, uint256(_type));
+    }
+
     // ==================================================================
     // ======================== Internal Functions ======================
     // ==================================================================
@@ -341,6 +351,8 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
         INativeRewardVault rewardVault = INativeRewardVault(rewardRegistry.rewardVault(_asset, _type));
 
         _setDefaultRewardVaultTypeByAsset(_asset, _type);
+        uint256 stakedBalance = getStakedBalanceByAssetAndType(_asset, _type);
+        _setUint256InNestedMap(_STAKED_BALANCES_SLOT, _asset, uint256(_type), stakedBalance + _amount);
 
         IERC20(_asset).safeTransferFrom(msg.sender, address(this), _amount);
         IERC20(_asset).safeApprove(address(rewardVault), _amount);
@@ -353,6 +365,10 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
         uint256 _amount
     ) internal {
         INativeRewardVault rewardVault = INativeRewardVault(REGISTRY().rewardVault(_asset, _type));
+
+        uint256 stakedBalance = getStakedBalanceByAssetAndType(_asset, _type);
+        _setUint256InNestedMap(_STAKED_BALANCES_SLOT, _asset, uint256(_type), stakedBalance - _amount);
+
         rewardVault.withdraw(_amount);
         IERC20(_asset).safeTransfer(msg.sender, _amount);
     }

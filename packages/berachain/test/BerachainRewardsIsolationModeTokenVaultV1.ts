@@ -271,7 +271,7 @@ describe('BerachainRewardsIsolationModeTokenVaultV1', () => {
       const metaVaultAddress = await registry.getMetaVaultByAccount(core.hhUser1.address);
       await increase(10 * ONE_DAY_SECONDS);
 
-      await beraVault.exit(RewardVaultType.Native);
+      await beraVault.exit();
       expect(await core.tokens.bgt.balanceOf(metaVaultAddress)).to.be.gt(0);
       expect(await underlyingToken.balanceOf(beraVault.address)).to.eq(amountWei);
     });
@@ -282,7 +282,7 @@ describe('BerachainRewardsIsolationModeTokenVaultV1', () => {
       await beraVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await increase(10 * ONE_DAY_SECONDS);
 
-      await beraVault.exit(RewardVaultType.Infrared);
+      await beraVault.exit();
 
       // The iBGT vault is now created since we called Exit
       iBgtVault = setupUserVaultProxy<InfraredBGTIsolationModeTokenVaultV1>(
@@ -303,7 +303,7 @@ describe('BerachainRewardsIsolationModeTokenVaultV1', () => {
 
     it('should fail if not called by owner', async () => {
       await expectThrow(
-        beraVault.connect(core.hhUser2).exit(RewardVaultType.Native),
+        beraVault.connect(core.hhUser2).exit(),
         `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });

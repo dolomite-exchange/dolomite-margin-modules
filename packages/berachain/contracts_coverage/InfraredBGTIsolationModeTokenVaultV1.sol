@@ -28,7 +28,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { MetaVaultRewardReceiver } from "./MetaVaultRewardReceiver.sol";
 import { IInfraredBGTIsolationModeTokenVaultV1 } from "./interfaces/IInfraredBGTIsolationModeTokenVaultV1.sol";
-import { IInfraredBGTStakingPool } from "./interfaces/IInfraredBGTStakingPool.sol";
+import { IInfraredVault } from "./interfaces/IInfraredVault.sol";
 
 
 /**
@@ -111,28 +111,6 @@ contract InfraredBGTIsolationModeTokenVaultV1 is
         IERC20(UNDERLYING_TOKEN()).safeTransfer(_recipient, _amount);
     }
 
-    function getRewardTokens() public view returns (address[] memory) {
-        IInfraredBGTStakingPool pool = registry().iBgtStakingPool();
-        address[] memory maxTokens = new address[](MAX_NUMBER_OF_REWARD_TOKENS);
-
-        uint256 length;
-        for (uint256 i = 0; i < MAX_NUMBER_OF_REWARD_TOKENS; i++) {
-            try pool.rewardTokens(i) returns (address token) {
-                maxTokens[i] = token;
-            } catch {
-                break;
-            }
-            length++;
-        }
-
-        // make it pretty for return
-        address[] memory tokens = new address[](length);
-        for (uint256 j = 0; j < length; j++) {
-            tokens[j] = maxTokens[j];
-        }
-        return tokens;
-    }
-
     function isDepositSourceThisVault() public view returns (bool) {
         return _getUint256(_IS_DEPOSIT_SOURCE_THIS_VAULT_SLOT) == 1;
     }
@@ -147,32 +125,31 @@ contract InfraredBGTIsolationModeTokenVaultV1 is
     }
 
     function _stake(uint256 _amount) internal {
-        IInfraredBGTStakingPool pool = registry().iBgtStakingPool();
-        IERC20(UNDERLYING_TOKEN()).safeApprove(address(pool), _amount);
-        pool.stake(_amount);
+        IInfraredVault vault = registry().iBgtVault();
+        IERC20(UNDERLYING_TOKEN()).safeApprove(address(vault), _amount);
+        vault.stake(_amount);
     }
 
     function _unstake(uint256 _amount) internal {
-        IInfraredBGTStakingPool pool = registry().iBgtStakingPool();
-        pool.withdraw(_amount);
+        IInfraredVault vault = registry().iBgtVault();
+        vault.withdraw(_amount);
     }
 
     function _getReward() internal {
-        IInfraredBGTStakingPool pool = registry().iBgtStakingPool();
-        address[] memory rewardTokens = getRewardTokens();
+        IInfraredVault vault = registry().iBgtVault();
+        address[] memory rewardTokens = vault.getAllRewardTokens();
 
         uint256[] memory balancesBefore = new uint256[](rewardTokens.length);
         for (uint256 i = 0; i < balancesBefore.length; ++i) {
             balancesBefore[i] = IERC20(rewardTokens[i]).balanceOf(address(this));
         }
 
-        pool.getReward();
+        vault.getReward();
 
         for (uint256 i = 0; i < rewardTokens.length; ++i) {
             uint256 reward = IERC20(rewardTokens[i]).balanceOf(address(this)) - balancesBefore[i];
             if (reward > 0) {
                 if (rewardTokens[i] == UNDERLYING_TOKEN()) {
-                    // TODO: oriole test this path
                     _setIsDepositSourceThisVault(true);
                     IIsolationModeVaultFactory(VAULT_FACTORY()).depositIntoDolomiteMargin(
                         DEFAULT_ACCOUNT_NUMBER,

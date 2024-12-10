@@ -61,9 +61,9 @@ interface IBerachainRewardsMetaVault {
 
     function unstake(address _asset, IBerachainRewardsRegistry.RewardVaultType _type, uint256 amount) external;
 
-    function getReward(address _asset, IBerachainRewardsRegistry.RewardVaultType _type) external returns (uint256);
+    function getReward(address _asset) external returns (uint256);
 
-    function exit(address _asset, IBerachainRewardsRegistry.RewardVaultType _type) external;
+    function exit(address _asset) external;
 
     function delegateBGT(address _delegatee) external;
 
@@ -82,6 +82,11 @@ interface IBerachainRewardsMetaVault {
     function getDefaultRewardVaultTypeByAsset(
         address _asset
     ) external view returns (IBerachainRewardsRegistry.RewardVaultType);
+
+    function getStakedBalanceByAssetAndType(
+        address _asset,
+        IBerachainRewardsRegistry.RewardVaultType _type
+    ) external view returns (uint256);
 
     /**
      * @return  The address of the Berachain Rewards Registry, which contains the relevant addresses for the Dolomite
