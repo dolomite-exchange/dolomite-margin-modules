@@ -1217,6 +1217,13 @@
       "isVerified": true
     }
   },
+  "GLPIsolationModeTokenVaultV7": {
+    "42161": {
+      "address": "0xF203663FA26dEFc50199C4273fF496ca2f750c22",
+      "transaction": "0xb437547588983ca0fcb7ad6e232de905d6e48795ae939d8a0cc70290d4680a69",
+      "isVerified": true
+    }
+  },
   "GLPIsolationModeUnwrapperTraderV1": {
     "42161": {
       "address": "0xe2E26241E8572912d0fA3c213b935D10a4Fe2268",
@@ -1371,10 +1378,24 @@
       "isVerified": true
     }
   },
+  "GlvIsolationModeTokenVaultImplementationV3": {
+    "42161": {
+      "address": "0x42Da8783ED6fDcda09217640AF045c294324bFcB",
+      "transaction": "0xfeeb218b961e6c51aac2cddaa8ee6b72eb663e2fe828732e1639f982cfba9a9f",
+      "isVerified": true
+    }
+  },
   "GlvIsolationModeUnwrapperTraderImplementationV2": {
     "42161": {
       "address": "0x997cF88Fea4309F3866cE97D9fB70c8086F079b3",
       "transaction": "0x6357429d00572f7bac5566b31031c309b7000213635c95b75353757fee9a38fa",
+      "isVerified": true
+    }
+  },
+  "GlvIsolationModeUnwrapperTraderImplementationV3": {
+    "42161": {
+      "address": "0x4cBd71E73B14fd998B2a626E8fFe37b151cF83Fd",
+      "transaction": "0xe9d2a72654709451e954a27b7f9a896b5082e3ad05fc45dc462ff749c328cc8a",
       "isVerified": true
     }
   },
@@ -1385,6 +1406,13 @@
       "isVerified": true
     }
   },
+  "GlvIsolationModeWrapperTraderImplementationV3": {
+    "42161": {
+      "address": "0xE24b4b60173DfF2B9Ecc6c6ee204Bdc27b2E6727",
+      "transaction": "0xd60c2f799ed6bdaf0c6df49d03b37e24f7821d90f6fefac9cf5f84abb976430d",
+      "isVerified": true
+    }
+  },
   "GlvLibraryV1": {
     "42161": {
       "address": "0x3b51530DbcbFd8666Cc3cD4cC461A7903c8bb175",
@@ -1392,10 +1420,24 @@
       "isVerified": true
     }
   },
+  "GlvLibraryV2": {
+    "42161": {
+      "address": "0xd1a9754775D8d52b55D999BCB137F1F91eaFb5bc",
+      "transaction": "0xf888bd3267231772f4ca798ae40b6732ae47571fdfd7aafac2684d0feeb85416",
+      "isVerified": true
+    }
+  },
   "GlvRegistryImplementationV1": {
     "42161": {
       "address": "0xAe0EC76e337149346c81EDFA797250799543a889",
       "transaction": "0x1e0102771592901ed9477504a7d4a3861a1474f7de4b9fe79116a198cc4c37d4",
+      "isVerified": true
+    }
+  },
+  "GlvRegistryImplementationV2": {
+    "42161": {
+      "address": "0x6175D3B8472F683d23D0D58bCf3fcD6C974fA83d",
+      "transaction": "0x15619c2ab17b414a75f667d67d39cd45aca455649a47d36b77cd26e42ead7e78",
       "isVerified": true
     }
   },

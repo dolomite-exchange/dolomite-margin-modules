@@ -55,8 +55,21 @@ contract GlvRegistry is IGlvRegistry, BaseRegistry, HandlerRegistry {
     bytes32 private constant _GMX_READER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxReader")) - 1);
     bytes32 private constant _GLV_ROUTER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.glvRouter")) - 1);
     bytes32 private constant _GLV_VAULT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.glvVault")) - 1);
-    bytes32 private constant _GLV_TOKEN_TO_GM_MARKET_SLOT = bytes32(uint256(keccak256("eip1967.proxy.glvTokenToGmMarket")) - 1);
+    bytes32 private constant _GLV_TOKEN_TO_GM_MARKET_FOR_DEPOSIT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.glvTokenToGmMarketForDeposit")) - 1);
+    bytes32 private constant _GLV_TOKEN_TO_GM_MARKET_FOR_WITHDRAWAL_SLOT = bytes32(uint256(keccak256("eip1967.proxy.glvTokenToGmMarketForWithdrawal")) - 1);
     // solhint-enable max-line-length
+
+    // ===================== Modifiers =====================
+
+    modifier onlyHandler(address _caller) {
+        Require.that(
+            isHandler(_caller),
+            _FILE,
+            "Caller is not handler",
+            _caller
+        );
+        _;
+    }
 
     // ==================== Initializer ====================
 
@@ -141,13 +154,38 @@ contract GlvRegistry is IGlvRegistry, BaseRegistry, HandlerRegistry {
         _ownerSetGlvVault(_glvVault);
     }
 
-    function ownerSetGlvTokenToGmMarket(
+    function ownerSetGlvTokenToGmMarketForDeposit(
         address _glvToken,
         address _gmMarket
     )
     external
     onlyDolomiteMarginOwner(msg.sender) {
-        _ownerSetGlvTokenToGmMarket(_glvToken, _gmMarket);
+        _ownerSetGlvTokenToGmMarketForDeposit(_glvToken, _gmMarket);
+    }
+
+    function handlerSetGlvTokenToGmMarketForDeposit(
+        address _glvToken,
+        address _gmMarket
+    )
+    external onlyHandler(msg.sender) {
+        _ownerSetGlvTokenToGmMarketForDeposit(_glvToken, _gmMarket);
+    }
+
+    function ownerSetGlvTokenToGmMarketForWithdrawal(
+        address _glvToken,
+        address _gmMarket
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetGlvTokenToGmMarketForWithdrawal(_glvToken, _gmMarket);
+    }
+
+    function handlerSetGlvTokenToGmMarketForWithdrawal(
+        address _glvToken,
+        address _gmMarket
+    )
+    external onlyHandler(msg.sender) {
+        _ownerSetGlvTokenToGmMarketForWithdrawal(_glvToken, _gmMarket);
     }
 
     // ==================== Views ====================
@@ -176,8 +214,13 @@ contract GlvRegistry is IGlvRegistry, BaseRegistry, HandlerRegistry {
         return _getAddress(_GLV_VAULT_SLOT);
     }
 
-    function glvTokenToGmMarket(address _glvToken) external view returns (address) {
-        bytes32 slot = keccak256(abi.encode(_glvToken, _GLV_TOKEN_TO_GM_MARKET_SLOT));
+    function glvTokenToGmMarketForDeposit(address _glvToken) external view returns (address) {
+        bytes32 slot = keccak256(abi.encode(_glvToken, _GLV_TOKEN_TO_GM_MARKET_FOR_DEPOSIT_SLOT));
+        return _getAddress(slot);
+    }
+
+    function glvTokenToGmMarketForWithdrawal(address _glvToken) external view returns (address) {
+        bytes32 slot = keccak256(abi.encode(_glvToken, _GLV_TOKEN_TO_GM_MARKET_FOR_WITHDRAWAL_SLOT));
         return _getAddress(slot);
     }
 
@@ -264,13 +307,24 @@ contract GlvRegistry is IGlvRegistry, BaseRegistry, HandlerRegistry {
         emit GlvVaultSet(_glvVault);
     }
 
-    function _ownerSetGlvTokenToGmMarket(address _glvToken, address _gmMarket) internal {
+    function _ownerSetGlvTokenToGmMarketForDeposit(address _glvToken, address _gmMarket) internal {
         Require.that(
             _glvToken != address(0) && _gmMarket != address(0),
             _FILE,
             "Invalid address"
         );
-        bytes32 slot = keccak256(abi.encode(_glvToken, _GLV_TOKEN_TO_GM_MARKET_SLOT));
+        bytes32 slot = keccak256(abi.encode(_glvToken, _GLV_TOKEN_TO_GM_MARKET_FOR_DEPOSIT_SLOT));
+        _setAddress(slot, _gmMarket);
+        emit GlvTokenToGmMarketSet(_glvToken, _gmMarket);
+    }
+
+    function _ownerSetGlvTokenToGmMarketForWithdrawal(address _glvToken, address _gmMarket) internal {
+        Require.that(
+            _glvToken != address(0) && _gmMarket != address(0),
+            _FILE,
+            "Invalid address"
+        );
+        bytes32 slot = keccak256(abi.encode(_glvToken, _GLV_TOKEN_TO_GM_MARKET_FOR_WITHDRAWAL_SLOT));
         _setAddress(slot, _gmMarket);
         emit GlvTokenToGmMarketSet(_glvToken, _gmMarket);
     }
