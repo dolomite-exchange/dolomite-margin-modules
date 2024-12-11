@@ -17,6 +17,7 @@ export type NetworkType =
   Network.ArbitrumOne
   | Network.Base
   | Network.Berachain
+  | Network.BerachainCartio
   | Network.Mantle
   | Network.PolygonZkEvm
   | Network.XLayer;
