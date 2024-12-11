@@ -1,5 +1,10 @@
 import { BigNumberish } from 'ethers';
-import { IERC20__factory, RegistryProxy, RegistryProxy__factory } from 'packages/base/src/types';
+import {
+  IERC20__factory,
+  IsolationModeTraderProxy, IsolationModeTraderProxy__factory,
+  RegistryProxy,
+  RegistryProxy__factory,
+} from 'packages/base/src/types';
 import {
   GLV_HANDLER_MAP,
   GLV_READER_MAP,
@@ -55,9 +60,17 @@ export interface GlvEcosystem {
   live: {
     glvBtc: {
       factory: GlvIsolationModeVaultFactory;
+      unwrapper: GlvIsolationModeUnwrapperTraderV2;
+      unwrapperProxy: IsolationModeTraderProxy;
+      wrapper: GlvIsolationModeWrapperTraderV2;
+      wrapperProxy: IsolationModeTraderProxy;
     };
     glvEth: {
       factory: GlvIsolationModeVaultFactory;
+      unwrapper: GlvIsolationModeUnwrapperTraderV2;
+      unwrapperProxy: IsolationModeTraderProxy;
+      wrapper: GlvIsolationModeWrapperTraderV2;
+      wrapperProxy: IsolationModeTraderProxy;
     };
     glvLibraryMap: { GlvLibrary: string };
     registry: GlvRegistry;
@@ -114,10 +127,42 @@ export async function createGlvEcosystem(network: Network, signer: SignerWithAdd
           Deployments.GlvBTCV2IsolationModeVaultFactory[network].address,
           signer,
         ),
+        unwrapper: GlvIsolationModeUnwrapperTraderV2__factory.connect(
+          Deployments.GlvBTCV2AsyncIsolationModeUnwrapperTraderProxyV2[network].address,
+          signer,
+        ),
+        unwrapperProxy: IsolationModeTraderProxy__factory.connect(
+          Deployments.GlvBTCV2AsyncIsolationModeUnwrapperTraderProxyV2[network].address,
+          signer,
+        ),
+        wrapper: GlvIsolationModeWrapperTraderV2__factory.connect(
+          Deployments.GlvBTCV2AsyncIsolationModeWrapperTraderProxyV2[network].address,
+          signer,
+        ),
+        wrapperProxy: IsolationModeTraderProxy__factory.connect(
+          Deployments.GlvBTCV2AsyncIsolationModeWrapperTraderProxyV2[network].address,
+          signer,
+        ),
       },
       glvEth: {
         factory: GlvIsolationModeVaultFactory__factory.connect(
           Deployments.GlvETHIsolationModeVaultFactory[network].address,
+          signer,
+        ),
+        unwrapper: GlvIsolationModeUnwrapperTraderV2__factory.connect(
+          Deployments.GlvETHAsyncIsolationModeUnwrapperTraderProxyV2[network].address,
+          signer,
+        ),
+        unwrapperProxy: IsolationModeTraderProxy__factory.connect(
+          Deployments.GlvETHAsyncIsolationModeUnwrapperTraderProxyV2[network].address,
+          signer,
+        ),
+        wrapper: GlvIsolationModeWrapperTraderV2__factory.connect(
+          Deployments.GlvETHAsyncIsolationModeWrapperTraderProxyV2[network].address,
+          signer,
+        ),
+        wrapperProxy: IsolationModeTraderProxy__factory.connect(
+          Deployments.GlvETHAsyncIsolationModeWrapperTraderProxyV2[network].address,
           signer,
         ),
       },
