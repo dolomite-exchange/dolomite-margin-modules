@@ -28,7 +28,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     [GOVERNANCE_ADDRESS]
   )).connect(core.governance);
 
-  await core.dolomiteMargin.transferOwnership(core.ownerAdapter!.address);
+  await core.dolomiteMargin.transferOwnership(core.ownerAdapterV1!.address);
   const transactions = [];
   transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(
@@ -54,7 +54,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
         'Invalid GRAIL max wei',
       );
       assertHardhatInvariant(
-        (await core.dolomiteMargin.owner()) === core.ownerAdapter!.address,
+        (await core.dolomiteMargin.owner()) === core.ownerAdapterV1!.address,
         'Invalid owner address',
       );
     },

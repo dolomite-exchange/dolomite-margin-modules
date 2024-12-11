@@ -10,11 +10,19 @@ import {
   prettyPrintEncodedDataWithTypeSafety,
 } from '../../../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
-import getScriptName from '../../../../../utils/get-script-name';
+import getScriptName from '../../../../utils/get-script-name';
+
+const OLD_METH_ADDRESS = '0x7656b1417886B89D6D72e8360923146D500c6c63';
+const OLD_USDC_ADDRESS = '0x3d05E4041d3a7388d566BCF4B2a5A3f0977eA9a3';
+const OLD_USDT_ADDRESS = '0x64f7a2A0F32654B09C66aa64405661F27039A249';
+const OLD_WBTC_ADDRESS = '0x4723da2196668D26c76885fe23d568e9688F812D';
+const OLD_WETH_ADDRESS = '0x02942CDe28029D13e070fc5FFd160e51E44522cc';
+const OLD_WMNT_ADDRESS = '0x141b3dD69FdeF1782E8d5dFae62D10a297AC56e8';
 
 /**
  * This script encodes the following transactions:
  * - Deploys the 4626 dToken vaults for: DAI, USDC, USDT, WBTC, and WETH
+ * - Deprecates the old 4626 dToken vaults
  */
 async function main(): Promise<DryRunOutput<Network.Mantle>> {
   const network = await getAndCheckSpecificNetwork(Network.Mantle);
@@ -29,6 +37,30 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
 
   const transactions: EncodedTransaction[] = [];
   transactions.push(
+    await prettyPrintEncodedDataWithTypeSafety(core, core, 'dolomiteMargin', 'ownerSetGlobalOperator', [
+      OLD_METH_ADDRESS,
+      false,
+    ]),
+    await prettyPrintEncodedDataWithTypeSafety(core, core, 'dolomiteMargin', 'ownerSetGlobalOperator', [
+      OLD_USDC_ADDRESS,
+      false,
+    ]),
+    await prettyPrintEncodedDataWithTypeSafety(core, core, 'dolomiteMargin', 'ownerSetGlobalOperator', [
+      OLD_USDT_ADDRESS,
+      false,
+    ]),
+    await prettyPrintEncodedDataWithTypeSafety(core, core, 'dolomiteMargin', 'ownerSetGlobalOperator', [
+      OLD_WBTC_ADDRESS,
+      false,
+    ]),
+    await prettyPrintEncodedDataWithTypeSafety(core, core, 'dolomiteMargin', 'ownerSetGlobalOperator', [
+      OLD_WETH_ADDRESS,
+      false,
+    ]),
+    await prettyPrintEncodedDataWithTypeSafety(core, core, 'dolomiteMargin', 'ownerSetGlobalOperator', [
+      OLD_WMNT_ADDRESS,
+      false,
+    ]),
     await prettyPrintEncodedDataWithTypeSafety(core, core, 'dolomiteMargin', 'ownerSetGlobalOperator', [
       dMethToken.address,
       true,

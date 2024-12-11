@@ -31,6 +31,10 @@ const berachainWeb3Url = process.env.BERACHAIN_WEB3_PROVIDER_URL;
 if (!berachainWeb3Url) {
   throw new Error('No BERACHAIN_WEB3_PROVIDER_URL provided!');
 }
+const berachainCartioWeb3Url = process.env.BERACHAIN_CARTIO_WEB3_PROVIDER_URL;
+if (!berachainWeb3Url) {
+  throw new Error('No BERACHAIN_CARTIO_WEB3_PROVIDER_URL provided!');
+}
 const mantleWeb3Url = process.env.MANTLE_WEB3_PROVIDER_URL;
 if (!mantleWeb3Url) {
   throw new Error('No MANTLE_WEB3_PROVIDER_URL provided!');
@@ -78,7 +82,7 @@ export const base_config: HardhatUserConfig = {
       allowUnlimitedContractSize: true,
       gas: 50_000_000,
       blockGasLimit: 100000000429720,
-      chainId: 42161,
+      chainId: parseInt(Network.PolygonZkEvm, 10),
       chains: {
         [Network.PolygonZkEvm]: {
           hardforkHistory: {
@@ -108,6 +112,12 @@ export const base_config: HardhatUserConfig = {
     [NetworkName.Berachain]: {
       chainId: parseInt(Network.Berachain, 10),
       url: berachainWeb3Url,
+      gas: 20_000_000, // 20M gas
+      accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
+    },
+    [NetworkName.BerachainCartio]: {
+      chainId: parseInt(Network.BerachainCartio, 10),
+      url: berachainCartioWeb3Url,
       gas: 20_000_000, // 20M gas
       accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
     },
@@ -201,6 +211,14 @@ export const base_config: HardhatUserConfig = {
         },
       },
       {
+        network: NetworkName.BerachainCartio,
+        chainId: parseInt(Network.BerachainCartio, 10),
+        urls: {
+          apiURL: 'https://api.routescan.io/v2/network/testnet/evm/80000/etherscan/api',
+          browserURL: 'https://80000.testnet.routescan.io',
+        },
+      },
+      {
         network: NetworkName.Mantle,
         chainId: parseInt(Network.Mantle, 10),
         urls: {
@@ -226,4 +244,7 @@ export const base_config: HardhatUserConfig = {
       },
     ],
   },
+  tracer: {
+    tasks: ['run'],
+  }
 };
