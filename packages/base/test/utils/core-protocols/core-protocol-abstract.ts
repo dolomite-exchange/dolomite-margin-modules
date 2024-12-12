@@ -86,6 +86,7 @@ export interface CoreProtocolParams<T extends NetworkType> {
   chainlinkPriceOracleV1: IChainlinkPriceOracleV1;
   chainlinkPriceOracleV3: IChainlinkPriceOracleV3;
   delayedMultiSig: IPartiallyDelayedMultiSig;
+  deployedVaults: DeployedVault[];
   depositWithdrawalProxy: IDepositWithdrawalProxy;
   dolomiteMargin: DolomiteMargin<T>;
   dolomiteRegistry: IDolomiteRegistry;
@@ -103,13 +104,12 @@ export interface CoreProtocolParams<T extends NetworkType> {
   liquidatorAssetRegistry: ILiquidatorAssetRegistry;
   liquidatorProxyV1: ILiquidatorProxyV1;
   liquidatorProxyV4: ILiquidatorProxyV4WithGenericTrader;
+  marketIdToDeployedVaultMap: Record<number, DeployedVault>;
+  marketIds: CoreProtocolMarketIds;
   oracleAggregatorV2: OracleAggregatorV2;
   ownerAdapterV1: DolomiteOwnerV1;
   ownerAdapterV2: DolomiteOwnerV2;
   testEcosystem: TestEcosystem | undefined;
-  deployedVaults: DeployedVault[];
-  deployedVaultsMap: Record<number, DeployedVault>;
-  marketIds: CoreProtocolMarketIds;
   apiTokens: {
     usdc: ApiToken;
     weth: ApiToken;
@@ -206,7 +206,7 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
     this.delayedMultiSig = params.delayedMultiSig;
     this.depositWithdrawalProxy = params.depositWithdrawalProxy;
     this.deployedVaults = params.deployedVaults;
-    this.deployedVaultsMap = params.deployedVaultsMap;
+    this.deployedVaultsMap = params.marketIdToDeployedVaultMap;
     this.dolomiteMargin = params.dolomiteMargin;
     this.dolomiteRegistry = params.dolomiteRegistry;
     this.dolomiteRegistryProxy = params.dolomiteRegistryProxy;

@@ -279,7 +279,7 @@ export function getBuildInfoFromDebugFileSync(debugFilePath: string): string | u
   return undefined;
 }
 
-export function getCurrentVersionNumberByDeploymentKey(nameWithoutVersionPostfix: string): number {
+export function getMaxDeploymentVersionNumberByDeploymentKey(nameWithoutVersionPostfix: string): number {
   const lastChar = nameWithoutVersionPostfix.substring(nameWithoutVersionPostfix.length - 1);
   if (!Number.isNaN(parseInt(lastChar, 10))) {
     throw new Error('Name cannot include version declaration');
@@ -319,6 +319,15 @@ export function getMaxDeploymentVersionNameByDeploymentKey(nameWithoutVersionPos
   }, defaultVersion);
 
   return `${nameWithoutVersionPostfix}V${maxVersion}`;
+}
+
+/**
+ * @param nameWithoutVersionPostfix IE IsolationModeTokenVault
+ * @param network The chain ID of the address that's needed
+ */
+export function getMaxDeploymentVersionAddressByDeploymentKey(nameWithoutVersionPostfix: string, network: Network) {
+  const nameWithVersion = getMaxDeploymentVersionNameByDeploymentKey(nameWithoutVersionPostfix, 1);
+  return (ModuleDeployments as any)[nameWithVersion][network].address;
 }
 
 export function getOldDeploymentVersionNamesByDeploymentKey(nameWithoutVersionPostfix: string, defaultVersion: number) {
@@ -1810,7 +1819,14 @@ export async function prettyPrintEncodeAddGlvMarket(
       core,
       { glvRegistry: core.glvEcosystem.live.registry },
       'glvRegistry',
-      'ownerSetGlvTokenToGmMarket',
+      'ownerSetGlvTokenToGmMarketForDeposit',
+      [await factory.UNDERLYING_TOKEN(), pairedGmToken.marketToken.address],
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { glvRegistry: core.glvEcosystem.live.registry },
+      'glvRegistry',
+      'ownerSetGlvTokenToGmMarketForWithdrawal',
       [await factory.UNDERLYING_TOKEN(), pairedGmToken.marketToken.address],
     ),
     ...(await prettyPrintEncodeAddAsyncIsolationModeMarket(

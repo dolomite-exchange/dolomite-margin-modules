@@ -3,6 +3,7 @@ import { getAndCheckSpecificNetwork } from 'packages/base/src/utils/dolomite-uti
 import { Network } from 'packages/base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from 'packages/base/test/utils';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
+import { IsolationModeVaultType } from '../../src/deploy/isolation-mode/isolation-mode-helpers';
 import {
   deployContractAndSave,
   EncodedTransaction,
@@ -10,7 +11,6 @@ import {
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../src/utils/dry-run-utils';
 import getScriptName from '../../src/utils/get-script-name';
 import { filterVaultsByType } from 'packages/base/test/utils/ecosystem-utils/deployed-vaults';
-import { IsolationModeVaultType } from 'packages/deployment/src/deploy/isolation-mode/arbitrum';
 import { D_ARB_MAP } from 'packages/base/src/utils/constants';
 
 /**
@@ -27,7 +27,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const transactions: EncodedTransaction[] = [];
 
   for (const deployedVault of filterVaultsByType(core.deployedVaultsMap, IsolationModeVaultType.GmxV2)) {
-    await deployedVault.deployNewVaultImplementation({ 'GmxV2Library': gmxV2LibraryAddress });
+    await deployedVault.deployNewVaultImplementation({ GmxV2Library: gmxV2LibraryAddress });
     transactions.push(await deployedVault.encodeSetUserVaultImplementation(core));
   }
 
@@ -53,7 +53,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
 
       assertHardhatInvariant(
         (await core.arbEcosystem.live.dArb.userVaultImplementation()) === arbVaultAddress,
-        `Invalid user vault implementation for ARB map`,
+        'Invalid user vault implementation for ARB map',
       );
     },
   };

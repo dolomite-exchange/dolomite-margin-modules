@@ -778,7 +778,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
   const testEcosystem = await createTestEcosystem(dolomiteMargin, governance);
 
   const deployedVaults = await getDeployedVaults(config, dolomiteMargin, governance);
-  const deployedVaultsMap = deployedVaults.reduce((acc, vault) => {
+  const marketIdToDeployedVaultMap = deployedVaults.reduce((acc, vault) => {
     acc[vault.marketId] = vault;
     return acc;
   }, {} as Record<number, DeployedVault>);
@@ -794,6 +794,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
     chainlinkPriceOracleV1,
     chainlinkPriceOracleV3,
     delayedMultiSig,
+    deployedVaults,
     depositWithdrawalProxy,
     dolomiteMargin,
     dolomiteRegistry,
@@ -814,11 +815,10 @@ export async function setupCoreProtocol<T extends NetworkType>(
     liquidatorAssetRegistry,
     liquidatorProxyV1,
     liquidatorProxyV4,
+    marketIdToDeployedVaultMap,
     oracleAggregatorV2,
     ownerAdapterV1,
     testEcosystem,
-    deployedVaults,
-    deployedVaultsMap,
     hhUser1,
     hhUser2,
     hhUser3,

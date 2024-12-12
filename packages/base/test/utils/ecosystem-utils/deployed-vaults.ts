@@ -1,16 +1,25 @@
+import {
+  IIsolationModeVaultFactory,
+  IIsolationModeVaultFactory__factory,
+  IIsolationModeVaultFactoryOld,
+  IIsolationModeVaultFactoryOld__factory,
+} from 'packages/base/src/types';
+import { DFS_GLP_MAP } from 'packages/base/src/utils/constants';
 import { Network, NetworkType } from 'packages/base/src/utils/no-deps-constants';
-import { DolomiteMargin } from '../dolomite';
-import { CoreProtocolSetupConfig, CoreProtocolType, getMaxDeploymentVersionAddressByDeploymentKey } from '../setup';
-import { DeployedVaultInformation, IsolationModeVaultType, marketToIsolationModeVaultInfoArbitrumOne } from 'packages/deployment/src/deploy/isolation-mode/arbitrum';
 import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
-import { IIsolationModeVaultFactory, IIsolationModeVaultFactory__factory, IIsolationModeVaultFactoryOld__factory } from 'packages/base/src/types';
+import { marketToIsolationModeVaultInfoArbitrumOne } from 'packages/deployment/src/deploy/isolation-mode/arbitrum';
+import {
+  DeployedVaultInformation,
+  IsolationModeVaultType,
+} from 'packages/deployment/src/deploy/isolation-mode/isolation-mode-helpers';
 import {
   deployContractAndSave,
   EncodedTransaction,
-  getCurrentVersionNumberByDeploymentKey,
+  getMaxDeploymentVersionNumberByDeploymentKey,
   prettyPrintEncodedDataWithTypeSafety,
 } from 'packages/deployment/src/utils/deploy-utils';
-import { DFS_GLP_MAP } from 'packages/base/src/utils/constants';
+import { DolomiteMargin } from '../dolomite';
+import { CoreProtocolSetupConfig, CoreProtocolType, getMaxDeploymentVersionAddressByDeploymentKey } from '../setup';
 
 export class DeployedVault {
   public contractName: string;
@@ -20,31 +29,23 @@ export class DeployedVault {
   public libraries: Record<string, string>;
   public currentVersionNumber: number;
   public marketId: number;
-  public factory: IIsolationModeVaultFactory | IIsolationModeVaultFactoryOld__factory;
+  public factory: IIsolationModeVaultFactory | IIsolationModeVaultFactoryOld;
   public vaultType: IsolationModeVaultType;
 
   constructor(
     marketId: number,
-    factory: IIsolationModeVaultFactory | IIsolationModeVaultFactoryOld__factory,
-    info: DeployedVaultInformation
+    factory: IIsolationModeVaultFactory | IIsolationModeVaultFactoryOld,
+    info: DeployedVaultInformation,
   ) {
     this.contractName = info.contractName;
     this.contractRenameWithoutVersion = info.contractRenameWithoutVersion;
     this.implementationAddress = info.implementationAddress;
     this.constructorParams = info.constructorParams;
     this.libraries = this.populateLibraryAddresses(info.libraries);
-    this.currentVersionNumber = getCurrentVersionNumberByDeploymentKey(this.contractRenameWithoutVersion);
+    this.currentVersionNumber = getMaxDeploymentVersionNumberByDeploymentKey(this.contractRenameWithoutVersion);
     this.marketId = marketId;
     this.factory = factory;
     this.vaultType = info.vaultType;
-  }
-
-  private populateLibraryAddresses(libraries: string[]) {
-    const libraryAddresses: Record<string, string> = {};
-    for (const library of libraries) {
-      libraryAddresses[library] = getMaxDeploymentVersionAddressByDeploymentKey(library, Network.ArbitrumOne);
-    }
-    return libraryAddresses;
   }
 
   public async deployNewVaultAndEncodeUpgradeTransaction<T extends NetworkType>(
@@ -55,49 +56,51 @@ export class DeployedVault {
     return this.encodeSetUserVaultImplementation(core);
   }
 
-  public async deployNewVaultImplementation(
-    newLibraries: Record<string, string>,
-  ): Promise<string> {
-    Object.assign(this.libraries, newLibraries);
+  public async deployNewVaultImplementation(newLibraries: Record<string, string>): Promise<string> {
+    // TODO: check the ordering; I don't think we want to assign here, instead:
+    this.libraries = {
+      ...newLibraries,
+      ...this.libraries,
+    };
 
     const vaultAddress = await deployContractAndSave(
       this.contractName,
       this.constructorParams,
       `${this.contractRenameWithoutVersion}V${(this.currentVersionNumber + 1).toString()}`,
-      this.libraries
+      this.libraries,
     );
     this.implementationAddress = vaultAddress;
     return vaultAddress;
   }
 
   public async encodeSetUserVaultImplementation<T extends NetworkType>(
-    core: CoreProtocolType<T>
+    core: CoreProtocolType<T>,
   ): Promise<EncodedTransaction> {
     if (this.contractName === 'GLPIsolationModeTokenVaultV2') {
       const factory = IIsolationModeVaultFactoryOld__factory.connect(
         await core.dolomiteMargin.getMarketTokenAddress(this.marketId),
-        core.governance
+        core.governance,
       );
-      return prettyPrintEncodedDataWithTypeSafety(
-        core,
-        { factory },
-        'factory',
-        'setUserVaultImplementation',
-        [this.implementationAddress],
-      );
+      return prettyPrintEncodedDataWithTypeSafety(core, { factory }, 'factory', 'setUserVaultImplementation', [
+        this.implementationAddress,
+      ]);
     }
 
     const factory = IIsolationModeVaultFactory__factory.connect(
       await core.dolomiteMargin.getMarketTokenAddress(this.marketId),
-      core.governance
+      core.governance,
     );
-    return prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { factory },
-      'factory',
-      'ownerSetUserVaultImplementation',
-      [this.implementationAddress],
-    );
+    return prettyPrintEncodedDataWithTypeSafety(core, { factory }, 'factory', 'ownerSetUserVaultImplementation', [
+      this.implementationAddress,
+    ]);
+  }
+
+  private populateLibraryAddresses(libraries: string[]) {
+    const libraryAddresses: Record<string, string> = {};
+    for (const library of libraries) {
+      libraryAddresses[library] = getMaxDeploymentVersionAddressByDeploymentKey(library, Network.ArbitrumOne);
+    }
+    return libraryAddresses;
   }
 }
 
@@ -113,12 +116,12 @@ export async function getDeployedVaults<T extends NetworkType>(
       if (marketId === DFS_GLP_MAP[Network.ArbitrumOne].marketId.toString()) {
         factory = IIsolationModeVaultFactoryOld__factory.connect(
           await dolomiteMargin.getMarketTokenAddress(Number(marketId)),
-          governance
+          governance,
         );
       } else {
         factory = IIsolationModeVaultFactory__factory.connect(
           await dolomiteMargin.getMarketTokenAddress(Number(marketId)),
-          governance
+          governance,
         );
       }
 
@@ -132,7 +135,7 @@ export async function getDeployedVaults<T extends NetworkType>(
 
 export function filterVaultsByType(
   deployedVaultsMap: Record<number, DeployedVault>,
-  vaultType: IsolationModeVaultType
+  vaultType: IsolationModeVaultType,
 ) {
   return Object.values(deployedVaultsMap).filter((vault) => vault.vaultType === vaultType);
 }
