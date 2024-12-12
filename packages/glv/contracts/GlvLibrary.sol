@@ -132,7 +132,7 @@ library GlvLibrary {
         IGlvIsolationModeVaultFactory factory = _factory;
         GlvDepositUtils.CreateGlvDepositParams memory depositParams = GlvDepositUtils.CreateGlvDepositParams(
             /* glv = */ _outputTokenUnderlying,
-            /* market = */ _registry.glvTokenToGmMarket(factory.UNDERLYING_TOKEN()),
+            /* market = */ _registry.glvTokenToGmMarketForDeposit(factory.UNDERLYING_TOKEN()),
             /* receiver = */ address(this),
             /* callbackContract = */ address(this),
             /* uiFeeReceiver = */ address(0),
@@ -188,7 +188,7 @@ library GlvLibrary {
         IGlvRouter glvRouter = registry.glvRouter();
 
         address[] memory swapPath = new address[](1);
-        swapPath[0] = registry.glvTokenToGmMarket(_factory.UNDERLYING_TOKEN());
+        swapPath[0] = registry.glvTokenToGmMarketForWithdrawal(_factory.UNDERLYING_TOKEN());
 
         // Change scope for stack too deep
         {
@@ -265,7 +265,7 @@ library GlvLibrary {
     ) public view returns (bool) {
         address glvToken = _factory.UNDERLYING_TOKEN();
         IGmxDataStore dataStore = _registry.gmxDataStore();
-        address gmMarket = _registry.glvTokenToGmMarket(glvToken);
+        address gmMarket = _factory.glvRegistry().glvTokenToGmMarketForWithdrawal(_factory.UNDERLYING_TOKEN());
         {
             bool isGlvMarketDisabled = dataStore.getBool(_isGlvMarketDisableKey(glvToken));
             if (isGlvMarketDisabled) {

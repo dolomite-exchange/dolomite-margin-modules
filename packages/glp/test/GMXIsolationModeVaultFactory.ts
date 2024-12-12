@@ -77,15 +77,15 @@ describe('GMXIsolationModeVaultFactory', () => {
     await gmxRegistry.connect(core.governance).ownerSetGlpVaultFactory(glpFactory.address);
     await gmxRegistry.connect(core.governance).ownerSetGmxVaultFactory(gmxFactory.address);
 
-    await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.gmxEcosystem!.glpManager);
-    await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1).mintAndStakeGlp(
+    await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.gmxEcosystem.glpManager);
+    await core.gmxEcosystem.glpRewardsRouter.connect(core.hhUser1).mintAndStakeGlp(
       core.tokens.usdc.address,
       usdcAmount,
       ONE_BI,
       ONE_BI,
     );
     // use sGLP for approvals/transfers and fsGLP for checking balances
-    glpAmount = await core.gmxEcosystem!.fsGlp.connect(core.hhUser1).balanceOf(core.hhUser1.address);
+    glpAmount = await core.gmxEcosystem.fsGlp.connect(core.hhUser1).balanceOf(core.hhUser1.address);
 
     snapshotId = await snapshot();
   });
@@ -116,7 +116,7 @@ describe('GMXIsolationModeVaultFactory', () => {
   describe('#contructor', () => {
     it('should initialize variables properly', async () => {
       expect(await gmxFactory.gmxRegistry()).to.equal(gmxRegistry.address);
-      expect(await gmxFactory.UNDERLYING_TOKEN()).to.equal(core.gmxEcosystem!.gmx.address);
+      expect(await gmxFactory.UNDERLYING_TOKEN()).to.equal(core.gmxEcosystem.gmx.address);
       expect(await gmxFactory.BORROW_POSITION_PROXY()).to.equal(core.borrowPositionProxyV2.address);
       expect(await gmxFactory.userVaultImplementation()).to.equal(vaultImplementation.address);
       expect(await gmxFactory.DOLOMITE_MARGIN()).to.equal(core.dolomiteMargin.address);
@@ -146,7 +146,7 @@ describe('GMXIsolationModeVaultFactory', () => {
       const glpV1VaultImplementation = await createGLPIsolationModeTokenVaultV1();
       await glpFactory.connect(core.governance).ownerSetUserVaultImplementation(glpV1VaultImplementation.address);
       const glpVaultAddress = await glpFactory.calculateVaultByAccount(core.hhUser1.address);
-      await core.gmxEcosystem!.sGlp.connect(core.hhUser1).approve(glpVaultAddress, MAX_UINT_256_BI);
+      await core.gmxEcosystem.sGlp.connect(core.hhUser1).approve(glpVaultAddress, MAX_UINT_256_BI);
       await glpFactory.connect(core.hhUser1).createVaultAndDepositIntoDolomiteMargin(
         toAccountNumber,
         glpAmount,
@@ -160,7 +160,7 @@ describe('GMXIsolationModeVaultFactory', () => {
       await setupGMXBalance(core, core.hhUser1, gmxAmount, glpVault);
       await glpVault.stakeGmx(gmxAmount);
       expect(await glpVault.gmxBalanceOf()).to.eq(gmxAmount);
-      expect(await core.gmxEcosystem!.sbfGmx.balanceOf(glpVault.address)).to.eq(gmxAmount);
+      expect(await core.gmxEcosystem.sbfGmx.balanceOf(glpVault.address)).to.eq(gmxAmount);
 
       // Upgrade GLP vault factory to V2 and create GMX vault
       const glpV2VaultImplementation = await createGLPIsolationModeTokenVaultV2();
@@ -177,8 +177,8 @@ describe('GMXIsolationModeVaultFactory', () => {
       expect(await gmxVault.shouldSkipTransfer()).to.be.false;
       await expectProtocolBalance(core, gmxVault.address, 0, underlyingMarketIdGmx, gmxAmount);
       await expectProtocolBalance(core, glpVault.address, 0, underlyingMarketIdGmx, ZERO_BI);
-      await expectWalletBalance(gmxVault.address, core.gmxEcosystem!.gmx, ZERO_BI);
-      expect(await core.gmxEcosystem!.sbfGmx.balanceOf(glpVault.address)).to.eq(gmxAmount);
+      await expectWalletBalance(gmxVault.address, core.gmxEcosystem.gmx, ZERO_BI);
+      expect(await core.gmxEcosystem.sbfGmx.balanceOf(glpVault.address)).to.eq(gmxAmount);
     });
 
     it('should fail when account passed is the zero address', async () => {

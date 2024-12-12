@@ -30,7 +30,8 @@ import {
   TargetLiquidationPenalty,
 } from '@dolomite-exchange/modules-base/src/utils/constructors/dolomite';
 import {
-  ADDRESS_ZERO, BYTES_EMPTY,
+  ADDRESS_ZERO,
+  BYTES_EMPTY,
   BYTES_ZERO,
   Network,
   NETWORK_TO_NETWORK_NAME_MAP,
@@ -867,14 +868,9 @@ export async function deployDolomiteErc4626Token(
   tokenName: string,
   marketId: BigNumberish,
 ): Promise<DolomiteERC4626> {
-  const contractName = getMaxDeploymentVersionNameByDeploymentKey('DolomiteERC4626Implementation', 1);
-  const implementation = DolomiteERC4626__factory.connect(
-    (ModuleDeployments as any)[contractName][core.network].address,
-    core.hhUser1,
-  );
   const address = await deployContractAndSave(
     'RegistryProxy',
-    await getDolomiteErc4626ProxyConstructorParams(core, implementation, marketId),
+    await getDolomiteErc4626ProxyConstructorParams(core, marketId),
     `Dolomite${tokenName}4626Token`,
   );
   return DolomiteERC4626__factory.connect(address, core.hhUser1);
@@ -885,15 +881,10 @@ export async function deployDolomiteErc4626WithPayableToken(
   tokenName: string,
   marketId: BigNumberish,
 ): Promise<DolomiteERC4626WithPayable> {
-  const contractName = getMaxDeploymentVersionNameByDeploymentKey('DolomiteERC4626WithPayableImplementation', 1);
-  const implementation = DolomiteERC4626__factory.connect(
-    (ModuleDeployments as any)[contractName][core.network].address,
-    core.hhUser1,
-  );
   const address = await deployContractAndSave(
     'RegistryProxy',
-    await getDolomiteErc4626ProxyConstructorParams(core, implementation, marketId),
-    `Dolomite${tokenName}4626WithPayableToken`,
+    await getDolomiteErc4626ProxyConstructorParams(core, marketId),
+    `Dolomite${tokenName}4626Token`,
   );
   return DolomiteERC4626WithPayable__factory.connect(address, core.hhUser1);
 }
@@ -1146,7 +1137,11 @@ export async function prettyPrintEncodedDataWithTypeSafety<
     console.log(''); // add a new line
   }
 
-  if (options.skipWrappingCalldataInSubmitTransaction) {
+  const realtimeOwner = await core.dolomiteMargin.owner();
+  const skipWrappingCalldataInSubmitTransaction =
+    options.skipWrappingCalldataInSubmitTransaction ||
+    (realtimeOwner === core.ownerAdapterV1.address && realtimeOwner === transaction.to!);
+  if (skipWrappingCalldataInSubmitTransaction) {
     return {
       to: transaction.to!,
       value: transaction.value?.toString() ?? '0',
@@ -1155,19 +1150,21 @@ export async function prettyPrintEncodedDataWithTypeSafety<
   }
 
   let outerTransaction: PopulatedTransaction;
-  if ((await core.dolomiteMargin.owner()) === core.ownerAdapter?.address) {
-    outerTransaction = await core.ownerAdapter.populateTransaction.submitTransaction(
+  if (realtimeOwner === core.ownerAdapterV1?.address) {
+    outerTransaction = await core.ownerAdapterV1.populateTransaction.submitTransaction(
       transaction.to!,
       transaction.data!,
     );
-  } else if ((await core.dolomiteMargin.owner()) === core.delayedMultiSig.address) {
+  } else if (realtimeOwner === core.delayedMultiSig?.address) {
     outerTransaction = await core.delayedMultiSig.populateTransaction.submitTransaction(
       transaction.to!,
       transaction.value ?? ZERO_BI,
       transaction.data!,
     );
+  } else if (realtimeOwner === core.gnosisSafeAddress) {
+    outerTransaction = { ...transaction };
   } else {
-    return Promise.reject(new Error('Unknown owner contract needed!'));
+    return Promise.reject(new Error(`Unknown owner contract: ${realtimeOwner}`));
   }
 
   return {
@@ -1232,13 +1229,13 @@ async function getReadableArg<T extends NetworkType>(
     const chainId = core.config.network;
     const allDeployments = readAllDeploymentFiles();
     Object.keys(allDeployments).forEach((key) => {
-      if ((allDeployments as any)[key][chainId]?.address.toLowerCase() === arg.toLowerCase()) {
+      if ((allDeployments as any)[key][chainId]?.address?.toLowerCase() === arg.toLowerCase()) {
         specialName = ` (${key})`;
       }
     });
     if (!specialName) {
       Object.keys(allDeployments).forEach((key) => {
-        if ((allDeployments as any)[key][chainId]?.address.toLowerCase() === arg.toLowerCase()) {
+        if ((allDeployments as any)[key][chainId]?.address?.toLowerCase() === arg.toLowerCase()) {
           specialName = ` (${key})`;
         }
       });

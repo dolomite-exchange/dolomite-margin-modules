@@ -12,6 +12,13 @@ import {
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
 import getScriptName from '../../../../utils/get-script-name';
 
+const OLD_BRIDGED_USDC_ADDRESS = '0x5138B4e470a759BBc1987136ED332fD3C37304AF';
+const OLD_DAI_ADDRESS = '0x00173Df2Fe78ffcde820fac4de4a0B061f5EB6B8';
+const OLD_USDC_ADDRESS = '0x25e50469e598D3F87462d70b444aD1F8D3a1e434';
+const OLD_USDT_ADDRESS = '0x6A5C4862c845f29f1e60DD3777Fc34c87dAC72ea';
+const OLD_WBTC_ADDRESS = '0xE5f58660888a8ac026de26095b024122876F6E3f';
+const OLD_WETH_ADDRESS = '0xe37B8eBAc74e1f7D0c991276c34EdA12fEF20667';
+
 /**
  * This script encodes the following transactions:
  * - Deploys the 4626 dToken vaults for: DAI, USDC, USDT, WBTC, and WETH
@@ -29,6 +36,30 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
 
   const transactions: EncodedTransaction[] = [];
   transactions.push(
+    await prettyPrintEncodedDataWithTypeSafety(core, core, 'dolomiteMargin', 'ownerSetGlobalOperator', [
+      OLD_BRIDGED_USDC_ADDRESS,
+      false,
+    ]),
+    await prettyPrintEncodedDataWithTypeSafety(core, core, 'dolomiteMargin', 'ownerSetGlobalOperator', [
+      OLD_DAI_ADDRESS,
+      false,
+    ]),
+    await prettyPrintEncodedDataWithTypeSafety(core, core, 'dolomiteMargin', 'ownerSetGlobalOperator', [
+      OLD_USDC_ADDRESS,
+      false,
+    ]),
+    await prettyPrintEncodedDataWithTypeSafety(core, core, 'dolomiteMargin', 'ownerSetGlobalOperator', [
+      OLD_USDT_ADDRESS,
+      false,
+    ]),
+    await prettyPrintEncodedDataWithTypeSafety(core, core, 'dolomiteMargin', 'ownerSetGlobalOperator', [
+      OLD_WBTC_ADDRESS,
+      false,
+    ]),
+    await prettyPrintEncodedDataWithTypeSafety(core, core, 'dolomiteMargin', 'ownerSetGlobalOperator', [
+      OLD_WETH_ADDRESS,
+      false,
+    ]),
     await prettyPrintEncodedDataWithTypeSafety(core, core, 'dolomiteMargin', 'ownerSetGlobalOperator', [
       dBridgedUsdcToken.address,
       true,
