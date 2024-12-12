@@ -141,6 +141,7 @@ describe('BerachainRewardsRegistry', () => {
       );
       expect(await registry.infrared()).to.equal(core.berachainRewardsEcosystem.infrared.address);
       expect(await registry.bgt()).to.equal(core.tokens.bgt.address);
+      expect(await registry.bgtm()).to.equal(core.berachainRewardsEcosystem.bgtm.address);
       expect(await registry.iBgt()).to.equal(core.tokens.iBgt.address);
       expect(await registry.iBgtVault()).to.equal(core.berachainRewardsEcosystem.iBgtStakingPool.address);
       expect(await registry.metaVaultImplementation()).to.equal(metaVaultImplementation.address);
@@ -151,6 +152,7 @@ describe('BerachainRewardsRegistry', () => {
       await expectThrow(
         registry.initialize(
           core.tokens.bgt.address,
+          core.berachainRewardsEcosystem.bgtm.address,
           core.tokens.iBgt.address,
           core.berachainRewardsEcosystem.berachainRewardsVaultFactory.address,
           core.berachainRewardsEcosystem.infrared.address,
@@ -355,6 +357,30 @@ describe('BerachainRewardsRegistry', () => {
     });
   });
 
+  describe('#ownerSetBgtm', () => {
+    it('should work normally', async () => {
+      const result = await registry.connect(core.governance).ownerSetBgtm(OTHER_ADDRESS);
+      await expectEvent(registry, result, 'BgtmSet', {
+        bgtm: OTHER_ADDRESS,
+      });
+      expect(await registry.bgtm()).to.equal(OTHER_ADDRESS);
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetBgtm(ADDRESS_ZERO),
+        'BerachainRewardsRegistry: Invalid BGTM address',
+      );
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetBgtm(OTHER_ADDRESS),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+  });
+
   describe('#ownerSetIBgt', () => {
     it('should work normally', async () => {
       const result = await registry.connect(core.governance).ownerSetIBgt(OTHER_ADDRESS);
@@ -447,6 +473,30 @@ describe('BerachainRewardsRegistry', () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetBgtIsolationModeVaultFactory(ADDRESS_ZERO),
         'BerachainRewardsRegistry: Invalid bgt factory address',
+      );
+    });
+  });
+
+  describe('#ownerSetBgtmIsolationModeVaultFactory', () => {
+    it('should work normally', async () => {
+      const result = await registry.connect(core.governance).ownerSetBgtmIsolationModeVaultFactory(OTHER_ADDRESS);
+      await expectEvent(registry, result, 'BgtmIsolationModeVaultFactorySet', {
+        bgtmIsolationModeVaultFactory: OTHER_ADDRESS,
+      });
+      expect(await registry.bgtmIsolationModeVaultFactory()).to.equal(OTHER_ADDRESS);
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetBgtmIsolationModeVaultFactory(ADDRESS_ZERO),
+        'BerachainRewardsRegistry: Invalid bgtm factory address',
+      );
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetBgtmIsolationModeVaultFactory(OTHER_ADDRESS),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });

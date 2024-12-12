@@ -20,25 +20,23 @@
 
 pragma solidity ^0.8.9;
 
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
 
 /**
- * @title   INativeRewardVault
+ * @title   IBGTM
  * @author  Dolomite
  *
  */
-interface INativeRewardVault is IERC20 {
-    
-    function stake(uint256 amount) external;
+interface IBGTM {
 
-    function withdraw(uint256 amount) external;
+    function deposit(address vaultAddress) external;
 
-    function getReward(address account) external returns (uint256);
+    function redeem(uint256 amount) external;
 
-    function exit() external;
+    function delegate(address validator, uint256 amount) external;
 
-    function earned(address account) external view returns (uint256);
+    function cancel(address validator, uint256 amount) external;
 
-    function setOperator(address operator) external;
+    function unbond(address validator, uint256 amount) external;
+
+    function getBalance(address user) external view returns (uint256);
 }

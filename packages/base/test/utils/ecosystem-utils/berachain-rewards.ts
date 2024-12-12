@@ -1,6 +1,7 @@
 import { IERC20, IERC20__factory } from "packages/base/src/types";
 import {
   BERACHAIN_REWARDS_VAULT_FACTORY_MAP,
+  BGTM_MAP,
   HONEY_USDC_BEX_INFRARED_REWARD_VAULT_MAP,
   HONEY_USDC_BEX_LP_TOKEN_MAP,
   HONEY_USDC_BEX_NATIVE_REWARD_VAULT_MAP,
@@ -23,11 +24,14 @@ import {
   IInfrared,
   IBerachainRewardsVaultFactory__factory,
   IInfrared__factory,
+  IBGTM,
+  IBGTM__factory,
 } from "packages/berachain/src/types";
 
 export interface BerachainRewardsEcosystem {
   berachainRewardsVaultFactory: IBerachainRewardsVaultFactory;
   infrared: IInfrared;
+  bgtm: IBGTM;
   iBgtStakingPool: IInfraredBGTStakingPool;
   listedRewardAssets: {
     bexHoneyUsdc: ListedRewardAsset;
@@ -51,6 +55,7 @@ export async function createBerachainRewardsEcosystem(
 
   return {
     berachainRewardsVaultFactory: IBerachainRewardsVaultFactory__factory.connect(BERACHAIN_REWARDS_VAULT_FACTORY_MAP[network]!, signer),
+    bgtm: IBGTM__factory.connect(BGTM_MAP[network]!, signer),
     infrared: IInfrared__factory.connect(INFRRED_MAP[network]!, signer),
     iBgtStakingPool: IInfraredBGTStakingPool__factory.connect(IBGT_STAKING_POOL_MAP[network]!, signer),
     listedRewardAssets: {
