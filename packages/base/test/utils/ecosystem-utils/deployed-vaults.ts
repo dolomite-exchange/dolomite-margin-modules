@@ -57,10 +57,9 @@ export class DeployedVault {
   }
 
   public async deployNewVaultImplementation(newLibraries: Record<string, string>): Promise<string> {
-    // TODO: check the ordering; I don't think we want to assign here, instead:
     this.libraries = {
-      ...newLibraries,
       ...this.libraries,
+      ...newLibraries,
     };
 
     const vaultAddress = await deployContractAndSave(
