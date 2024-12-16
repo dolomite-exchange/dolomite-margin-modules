@@ -6,7 +6,7 @@ import {
   ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
-import { expectEvent, expectProtocolBalance, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { expectEvent, expectProtocolBalance, expectThrow, expectWalletBalance } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
   setupCoreProtocol,
   setupTestMarket,
@@ -87,16 +87,6 @@ describe('BGTIsolationModeTokenVaultV1', () => {
       [],
     );
     registry = await createBerachainRewardsRegistry(core, metaVaultImplementation);
-    await registry
-      .connect(core.governance)
-      .ownerSetRewardVault(underlyingToken.address, RewardVaultType.Native, nativeRewardVault.address);
-    await registry
-      .connect(core.governance)
-      .ownerSetRewardVault(
-        underlyingToken.address,
-        RewardVaultType.Infrared,
-        core.berachainRewardsEcosystem.listedRewardAssets.bexHoneyUsdc.infraredRewardVault.address,
-      );
 
     const vaultImplementation = await createBerachainRewardsIsolationModeTokenVaultV1();
     beraFactory = await createBerachainRewardsIsolationModeVaultFactory(
@@ -235,10 +225,9 @@ describe('BGTIsolationModeTokenVaultV1', () => {
 
   describe('#executeWithdrawalFromVault', () => {
     it('should work normally', async () => {
-      await expect(() =>
-        bgtVault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, bgtBal),
-      ).to.changeEtherBalance(core.hhUser1, bgtBal);
+      await bgtVault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, bgtBal);
       await expectProtocolBalance(core, bgtVault, defaultAccountNumber, bgtMarketId, ZERO_BI);
+      await expectWalletBalance(core.hhUser1, core.tokens.wbera, bgtBal);
     });
 
     it('should fail if not called by factory', async () => {

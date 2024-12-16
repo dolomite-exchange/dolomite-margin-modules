@@ -20,25 +20,16 @@
 
 pragma solidity ^0.8.9;
 
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { IIsolationModeTokenVaultV1 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
+import { IMetaVaultRewardReceiver } from "./IMetaVaultRewardReceiver.sol";
 
 
 /**
- * @title   INativeRewardVault
+ * @title   IBGTMIsolationModeTokenVaultV1
  * @author  Dolomite
  *
+ * @notice  This interface defines the functions that are available on the BGTMIsolationModeTokenVaultV1
+ *          implementation contract for each user's proxy vault.
  */
-interface INativeRewardVault is IERC20 {
-
-    function stake(uint256 amount) external;
-
-    function withdraw(uint256 amount) external;
-
-    function getReward(address account) external returns (uint256);
-
-    function exit() external;
-
-    function earned(address account) external view returns (uint256);
-
-    function setOperator(address operator) external;
+interface IBGTMIsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, IMetaVaultRewardReceiver {
 }

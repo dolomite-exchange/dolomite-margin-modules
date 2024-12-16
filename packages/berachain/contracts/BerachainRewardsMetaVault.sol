@@ -35,6 +35,7 @@ import { IInfraredVault } from "./interfaces/IInfraredVault.sol";
 import { IMetaVaultRewardReceiver } from "./interfaces/IMetaVaultRewardReceiver.sol";
 import { IMetaVaultRewardTokenFactory } from "./interfaces/IMetaVaultRewardTokenFactory.sol";
 import { INativeRewardVault } from "./interfaces/INativeRewardVault.sol";
+import { IDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteMargin.sol";
 
 
 /**
@@ -78,8 +79,13 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
         _;
     }
 
-    modifier onlyActiveValidator(address _validator) {
-        _requireActiveValidator(_validator);
+    modifier onlyActiveBgtValidator(address _validator) {
+        _requireActiveBgtValidator(_validator);
+        _;
+    }
+
+    modifier onlyActiveBgtmValidator(address _validator) {
+        _requireActiveBgtmValidator(_validator);
         _;
     }
 
@@ -152,7 +158,7 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
             factory = REGISTRY().iBgtIsolationModeVaultFactory();
             IERC20 iBgt = REGISTRY().iBgt();
 
-            // @todo may need to adjust to use the getAllRewardsForUser function
+            // @todo may need to adjust Infrared to use the getAllRewardsForUser function
             uint256 balanceBefore = iBgt.balanceOf(address(this));
             IInfraredVault(rewardVault).getReward();
             reward = iBgt.balanceOf(address(this)) - balanceBefore;
@@ -223,7 +229,7 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
 
     function activateBGTBoost(
         address _validator
-    ) external onlyMetaVaultOwner(msg.sender) onlyActiveValidator(_validator) {
+    ) external onlyMetaVaultOwner(msg.sender) onlyActiveBgtValidator(_validator) {
         Require.that(
             REGISTRY().bgt().boostedQueue(address(this), bgtValidator()).blockNumberLast != 0,
             _FILE,
@@ -236,7 +242,7 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
     function cancelBGTBoost(
         address _validator,
         uint128 _amount
-    ) external onlyMetaVaultOwner(msg.sender) onlyActiveValidator(_validator) {
+    ) external onlyMetaVaultOwner(msg.sender) onlyActiveBgtValidator(_validator) {
         IBGT bgt = REGISTRY().bgt();
         bgt.cancelBoost(_validator, _amount);
         _resetBgtValidatorIfEmptyBoosts(bgt);
@@ -245,7 +251,7 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
     function dropBGTBoost(
         address _validator,
         uint128 _amount
-    ) external onlyMetaVaultOwner(msg.sender) onlyActiveValidator(_validator) {
+    ) external onlyMetaVaultOwner(msg.sender) onlyActiveBgtValidator(_validator) {
         IBGT bgt = REGISTRY().bgt();
         bgt.dropBoost(_validator, _amount);
         _resetBgtValidatorIfEmptyBoosts(bgt);
@@ -254,7 +260,7 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
     function delegateBGTM(
         address _validator,
         uint256 _amount
-    ) external onlyMetaVaultOwner(msg.sender) onlyActiveValidator(_validator) {
+    ) external onlyMetaVaultOwner(msg.sender) {
         address currentValidator = bgtmValidator();
         if (currentValidator == address(0)) {
             _setAddress(_BGTM_VALIDATOR_SLOT, _validator);
@@ -269,6 +275,19 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
 
         REGISTRY().bgtm().delegate(_validator, _amount);
         // @note Adds to pending
+    }
+
+    function unbondBGTM(
+        address _validator,
+        uint256 _amount
+    ) external onlyMetaVaultOwner(msg.sender) onlyActiveBgtmValidator(_validator) {
+        REGISTRY().bgtm().unbond(_validator, _amount);
+    }
+
+    function activateBgtm(
+        address _validator
+    ) external onlyMetaVaultOwner(msg.sender) onlyActiveBgtmValidator(_validator) {
+        REGISTRY().bgtm().activate(_validator);
     }
 
     function withdrawBGTAndRedeem(
@@ -312,7 +331,12 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
             "Not child BGTM vault"
         );
 
-        // @todo need to add logic for undelegating BGTM if need be
+        IBGTM bgtm = REGISTRY().bgtm();
+        uint256 bal = bgtm.getBalance(address(this));
+        if (_amount > bal) {
+            // @audit User can block this because of the delay. Need to discuss
+            bgtm.unbond(bgtmValidator(), _amount - bal);
+        }
 
         REGISTRY().bgtm().redeem(_amount);
         IWETH wbera = REGISTRY().wbera();
@@ -380,7 +404,17 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
     }
 
     function _resetBgtmValidatorIfEmptyBoosts(IBGTM _bgtm) internal {
-        // @todo implement
+        if (bgtmValidator() == address(0)) {
+            return;
+        }
+
+        uint256 pending = _bgtm.pending(bgtmValidator(), address(this));
+        uint256 queued = _bgtm.queued(bgtmValidator(), address(this));
+        uint256 confirmed = _bgtm.confirmed(bgtmValidator(), address(this));
+        if (pending == 0 && queued == 0 && confirmed == 0) {
+            _setAddress(_BGTM_VALIDATOR_SLOT, address(0));
+            emit ValidatorSet(address(0));
+        }
     }
 
     function _setDefaultRewardVaultTypeByAsset(
@@ -481,14 +515,22 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
         Require.that(
             bgtValidator() == _validator,
             _FILE,
-            "Does not match active validator"
+            "Does not match bgt validator"
+        );
+    }
+
+    function _requireActiveBgtmValidator(address _validator) internal view {
+        Require.that(
+            bgtmValidator() == _validator,
+            _FILE,
+            "Does not match bgtm validator"
         );
     }
 
     function _requireValidDolomiteToken(address _asset) internal view {
         (bool isValidDolomiteToken,) = address(REGISTRY().DOLOMITE_MARGIN()).staticcall(
             abi.encodeWithSelector(
-                REGISTRY().DOLOMITE_MARGIN().getMarketIdByTokenAddress.selector,
+                IDolomiteMargin.getMarketIdByTokenAddress.selector,
                 IERC4626(_asset).asset()
             )
         );

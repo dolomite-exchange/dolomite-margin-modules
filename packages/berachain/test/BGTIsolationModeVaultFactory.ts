@@ -75,11 +75,6 @@ describe('BGTIsolationModeVaultFactory', () => {
       [],
     );
     registry = await createBerachainRewardsRegistry(core, metaVaultImplementation);
-    await registry.connect(core.governance).ownerSetRewardVault(
-      underlyingToken.address,
-      RewardVaultType.Native,
-      nativeRewardVault.address
-    );
 
     vaultImplementation = await createBerachainRewardsIsolationModeTokenVaultV1();
     beraFactory = await createBerachainRewardsIsolationModeVaultFactory(

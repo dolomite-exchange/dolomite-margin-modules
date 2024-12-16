@@ -159,6 +159,7 @@ describe('BerachainRewardsRegistry', () => {
           core.berachainRewardsEcosystem.iBgtStakingPool.address,
           metaVaultImplementation.address,
           core.dolomiteRegistry.address,
+          core.tokens.wbera.address,
         ),
         'Initializable: contract is already initialized',
       );
@@ -563,6 +564,30 @@ describe('BerachainRewardsRegistry', () => {
             ADDRESS_ZERO,
           ),
         'BerachainRewardsRegistry: Invalid rewardVault address',
+      );
+    });
+  });
+
+  describe('#ownerSetWbera', () => {
+    it('should work normally', async () => {
+      const result = await registry.connect(core.governance).ownerSetWbera(OTHER_ADDRESS);
+      await expectEvent(registry, result, 'WberaSet', {
+        wbera: OTHER_ADDRESS,
+      });
+      expect(await registry.wbera()).to.equal(OTHER_ADDRESS);
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetWbera(ADDRESS_ZERO),
+        'BerachainRewardsRegistry: Invalid wbera address',
+      );
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetWbera(OTHER_ADDRESS),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });

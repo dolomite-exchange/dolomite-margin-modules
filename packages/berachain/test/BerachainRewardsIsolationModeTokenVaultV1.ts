@@ -33,7 +33,7 @@ import {
   BerachainRewardsMetaVault__factory,
   BerachainRewardsRegistry,
   BGTIsolationModeVaultFactory,
-  IInfraredRewardVault,
+  IInfraredVault,
   INativeRewardVault,
   InfraredBGTIsolationModeTokenVaultV1,
   InfraredBGTIsolationModeTokenVaultV1__factory,
@@ -66,7 +66,7 @@ describe('BerachainRewardsIsolationModeTokenVaultV1', () => {
 
   let underlyingToken: IERC20;
   let nativeRewardVault: INativeRewardVault;
-  let infraredRewardVault: IInfraredRewardVault;
+  let infraredRewardVault: IInfraredVault;
 
   let beraVault: BerachainRewardsIsolationModeTokenVaultV1;
   let metaVault: BerachainRewardsMetaVault;

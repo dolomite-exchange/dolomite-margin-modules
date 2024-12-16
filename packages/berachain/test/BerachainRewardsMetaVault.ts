@@ -431,7 +431,7 @@ describe('BerachainRewardsMetaVault', () => {
       await expectEvent(metaVault, res, 'ValidatorSet', {
         validator: VALIDATOR_ADDRESS,
       });
-      expect(await metaVault.validator()).to.eq(VALIDATOR_ADDRESS);
+      expect(await metaVault.bgtValidator()).to.eq(VALIDATOR_ADDRESS);
       expect(await core.tokens.bgt.queuedBoost(metaVault.address)).to.eq(bal);
     });
 
@@ -442,7 +442,7 @@ describe('BerachainRewardsMetaVault', () => {
       const bal = await core.tokens.bgt.balanceOf(metaVault.address);
 
       await metaVault.queueBGTBoost(VALIDATOR_ADDRESS, bal.sub(1));
-      expect(await metaVault.validator()).to.eq(VALIDATOR_ADDRESS);
+      expect(await metaVault.bgtValidator()).to.eq(VALIDATOR_ADDRESS);
       expect(await core.tokens.bgt.queuedBoost(metaVault.address)).to.eq(bal.sub(1));
 
       await metaVault.queueBGTBoost(VALIDATOR_ADDRESS, 1);
@@ -494,7 +494,7 @@ describe('BerachainRewardsMetaVault', () => {
       await mine(MIN_BLOCK_LEN);
       await expectThrow(
         metaVault.activateBGTBoost(core.hhUser1.address),
-        'BerachainRewardsMetaVault: Does not match active validator',
+        'BerachainRewardsMetaVault: Does not match bgt validator',
       );
     });
 
@@ -507,7 +507,7 @@ describe('BerachainRewardsMetaVault', () => {
       // There is no queued boost, therefore no active validator is set in the meta vault.
       await expectThrow(
         metaVault.activateBGTBoost(VALIDATOR_ADDRESS),
-        'BerachainRewardsMetaVault: Does not match active validator',
+        'BerachainRewardsMetaVault: Does not match bgt validator',
       );
 
       await metaVault.queueBGTBoost(VALIDATOR_ADDRESS, bal);
@@ -538,7 +538,7 @@ describe('BerachainRewardsMetaVault', () => {
 
       await metaVault.queueBGTBoost(VALIDATOR_ADDRESS, ONE_ETH_BI);
       await metaVault.cancelBGTBoost(VALIDATOR_ADDRESS, parseEther('.5'));
-      expect(await metaVault.validator()).to.eq(VALIDATOR_ADDRESS);
+      expect(await metaVault.bgtValidator()).to.eq(VALIDATOR_ADDRESS);
       expect(await core.tokens.bgt.queuedBoost(metaVault.address)).to.eq(parseEther('.5'));
     });
 
@@ -553,7 +553,7 @@ describe('BerachainRewardsMetaVault', () => {
       await expectEvent(metaVault, res, 'ValidatorSet', {
         validator: ADDRESS_ZERO,
       });
-      expect(await metaVault.validator()).to.eq(ADDRESS_ZERO);
+      expect(await metaVault.bgtValidator()).to.eq(ADDRESS_ZERO);
       expect(await core.tokens.bgt.queuedBoost(metaVault.address)).to.eq(ZERO_BI);
     });
 
@@ -566,7 +566,7 @@ describe('BerachainRewardsMetaVault', () => {
 
       await expectThrow(
         metaVault.cancelBGTBoost(core.hhUser1.address, bal),
-        'BerachainRewardsMetaVault: Does not match active validator',
+        'BerachainRewardsMetaVault: Does not match bgt validator',
       );
     });
 
@@ -595,7 +595,7 @@ describe('BerachainRewardsMetaVault', () => {
       });
       expect(await core.tokens.bgt.boosts(metaVault.address)).to.eq(ZERO_BI);
       expect(await core.tokens.bgt.queuedBoost(metaVault.address)).to.eq(ZERO_BI);
-      expect(await metaVault.validator()).to.eq(ADDRESS_ZERO);
+      expect(await metaVault.bgtValidator()).to.eq(ADDRESS_ZERO);
     });
 
     it('should not reset validator if still boost amount', async () => {
@@ -611,7 +611,7 @@ describe('BerachainRewardsMetaVault', () => {
       await metaVault.dropBGTBoost(VALIDATOR_ADDRESS, ONE_BI);
       expect(await core.tokens.bgt.boosts(metaVault.address)).to.eq(bal.sub(ONE_BI));
       expect(await core.tokens.bgt.queuedBoost(metaVault.address)).to.eq(ZERO_BI);
-      expect(await metaVault.validator()).to.eq(VALIDATOR_ADDRESS);
+      expect(await metaVault.bgtValidator()).to.eq(VALIDATOR_ADDRESS);
     });
 
     it('should not reset validator if queued boost amount', async () => {
@@ -627,7 +627,7 @@ describe('BerachainRewardsMetaVault', () => {
       await metaVault.dropBGTBoost(VALIDATOR_ADDRESS, ONE_BI);
       expect(await core.tokens.bgt.boosts(metaVault.address)).to.eq(ZERO_BI);
       expect(await core.tokens.bgt.queuedBoost(metaVault.address)).to.eq(ONE_BI);
-      expect(await metaVault.validator()).to.eq(VALIDATOR_ADDRESS);
+      expect(await metaVault.bgtValidator()).to.eq(VALIDATOR_ADDRESS);
     });
 
     it('should fail if not active validator', async () => {
@@ -641,7 +641,7 @@ describe('BerachainRewardsMetaVault', () => {
 
       await expectThrow(
         metaVault.dropBGTBoost(core.hhUser1.address, bal),
-        'BerachainRewardsMetaVault: Does not match active validator',
+        'BerachainRewardsMetaVault: Does not match bgt validator',
       );
     });
 
@@ -653,7 +653,7 @@ describe('BerachainRewardsMetaVault', () => {
     });
   });
 
-  describe.only('#withdrawBGTAndRedeem', () => {
+  describe('#withdrawBGTAndRedeem', () => {
     it('should work normally with no boost', async () => {
       await beraVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await increase(10 * ONE_DAY_SECONDS);
@@ -745,15 +745,15 @@ describe('BerachainRewardsMetaVault', () => {
       const bal = await core.tokens.bgt.balanceOf(metaVault.address);
       await metaVault.queueBGTBoost(VALIDATOR_ADDRESS, bal);
 
-      expect(await metaVault.blocksToActivateBoost()).to.eq(MIN_BLOCK_LEN);
+      expect(await metaVault.blocksToActivateBgtBoost()).to.eq(MIN_BLOCK_LEN);
       await mine();
-      expect(await metaVault.blocksToActivateBoost()).to.eq(MIN_BLOCK_LEN - 1);
+      expect(await metaVault.blocksToActivateBgtBoost()).to.eq(MIN_BLOCK_LEN - 1);
       await mine(MIN_BLOCK_LEN - 1);
-      expect(await metaVault.blocksToActivateBoost()).to.eq(0);
+      expect(await metaVault.blocksToActivateBgtBoost()).to.eq(0);
     });
 
     it('should return 0 if there is no validator or no boost queued', async () => {
-      expect(await metaVault.blocksToActivateBoost()).to.eq(ZERO_BI);
+      expect(await metaVault.blocksToActivateBgtBoost()).to.eq(ZERO_BI);
     });
   });
 });

@@ -79,7 +79,7 @@ interface IBerachainRewardsMetaVault {
 
     function redeemBGTM(address _recipient, uint256 _amount) external;
 
-    function blocksToActivateBoost() external view returns (uint256);
+    function blocksToActivateBgtBoost() external view returns (uint256);
 
     function getDefaultRewardVaultTypeByAsset(
         address _asset
