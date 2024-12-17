@@ -137,7 +137,6 @@ export async function createBGTMIsolationModeVaultFactory(
   );
 }
 
-
 export async function createInfraredBGTIsolationModeTokenVaultV1(): Promise<InfraredBGTIsolationModeTokenVaultV1> {
   const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
   return createContractWithLibrary<InfraredBGTIsolationModeTokenVaultV1>(

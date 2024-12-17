@@ -22,20 +22,20 @@ pragma solidity ^0.8.9;
 
 import { ProxyContractHelpers } from "@dolomite-exchange/modules-base/contracts/helpers/ProxyContractHelpers.sol";
 import { IERC4626 } from "@dolomite-exchange/modules-base/contracts/interfaces/IERC4626.sol";
+import { IDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteMargin.sol";
+import { IWETH } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IWETH.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { IBGT } from "./interfaces/IBGT.sol";
 import { IBGTM } from "./interfaces/IBGTM.sol";
-import { IWETH } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IWETH.sol";
 import { IBerachainRewardsMetaVault } from "./interfaces/IBerachainRewardsMetaVault.sol";
 import { IBerachainRewardsRegistry } from "./interfaces/IBerachainRewardsRegistry.sol";
 import { IInfraredVault } from "./interfaces/IInfraredVault.sol";
 import { IMetaVaultRewardReceiver } from "./interfaces/IMetaVaultRewardReceiver.sol";
 import { IMetaVaultRewardTokenFactory } from "./interfaces/IMetaVaultRewardTokenFactory.sol";
 import { INativeRewardVault } from "./interfaces/INativeRewardVault.sol";
-import { IDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteMargin.sol";
 
 
 /**
@@ -60,10 +60,15 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
     bytes32 private constant _BGT_VALIDATOR_SLOT = bytes32(uint256(keccak256("eip1967.proxy.bgtValidator")) - 1);
     bytes32 private constant _BGTM_VALIDATOR_SLOT = bytes32(uint256(keccak256("eip1967.proxy.bgtmValidator")) - 1);
     bytes32 private constant _STAKED_BALANCES_SLOT = bytes32(uint256(keccak256("eip1967.proxy.stakedBalances")) - 1);
+    bytes32 private constant _QUEUE_BGTM_COOLDOWN_SLOT = bytes32(uint256(keccak256("eip1967.proxy.queueBgtmCooldown")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _UNBOND_BGTM_WAITING_PERIOD_SLOT = bytes32(uint256(keccak256("eip1967.proxy.unbondBgtmWaitingPeriod")) - 1); // solhint-disable-line max-line-length
+
 
     /// @dev This variable is hardcoded here because it's private in the BGT contract
     uint256 public constant HISTORY_BUFFER_LENGTH = 8191;
     uint256 public constant DEFAULT_ACCOUNT_NUMBER = 0;
+    uint256 public constant QUEUE_BGTM_COOLDOWN = 8400;
+    uint256 public constant UNBOND_BGTM_WAITING_PERIOD = 0;
 
     // ==================================================================
     // =========================== Modifiers ============================
@@ -146,6 +151,7 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
         IMetaVaultRewardTokenFactory factory;
         uint256 reward;
 
+            // @todo Confirm that these are the only reward tokens that we can receive
         if (defaultType == IBerachainRewardsRegistry.RewardVaultType.NATIVE) {
             reward = INativeRewardVault(rewardVault).getReward(address(this));
             factory = REGISTRY().bgtIsolationModeVaultFactory();
@@ -158,7 +164,6 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
             factory = REGISTRY().iBgtIsolationModeVaultFactory();
             IERC20 iBgt = REGISTRY().iBgt();
 
-            // @todo may need to adjust Infrared to use the getAllRewardsForUser function
             uint256 balanceBefore = iBgt.balanceOf(address(this));
             IInfraredVault(rewardVault).getReward();
             reward = iBgt.balanceOf(address(this)) - balanceBefore;
@@ -215,7 +220,7 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
         address currentValidator = bgtValidator();
         if (currentValidator == address(0)) {
             _setAddress(_BGT_VALIDATOR_SLOT, _validator);
-            emit ValidatorSet(_validator);
+            emit BgtValidatorSet(_validator);
         } else {
             Require.that(
                 currentValidator == _validator,
@@ -264,7 +269,7 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
         address currentValidator = bgtmValidator();
         if (currentValidator == address(0)) {
             _setAddress(_BGTM_VALIDATOR_SLOT, _validator);
-            emit ValidatorSet(_validator);
+            emit BgtmValidatorSet(_validator);
         } else {
             Require.that(
                 currentValidator == _validator,
@@ -273,21 +278,41 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
             );
         }
 
-        REGISTRY().bgtm().delegate(_validator, _amount);
-        // @note Adds to pending
+        Require.that(
+            block.number >= _getUint256(_QUEUE_BGTM_COOLDOWN_SLOT)
+                && block.number >= _getUint256(_UNBOND_BGTM_WAITING_PERIOD_SLOT),
+            _FILE,
+            "Queue boost cooldown not passed"
+        );
+        _setUint256(_QUEUE_BGTM_COOLDOWN_SLOT, block.number + QUEUE_BGTM_COOLDOWN);
+
+        REGISTRY().bgtm().delegate(_validator, SafeCast.toUint128(_amount));
+    }
+
+    function activateBGTM(
+        address _validator
+    ) external onlyMetaVaultOwner(msg.sender) onlyActiveBgtmValidator(_validator) {
+        REGISTRY().bgtm().activate(_validator);
+    }
+
+    function cancelBGTM(
+        address _validator,
+        uint256 _amount
+    ) external onlyMetaVaultOwner(msg.sender) onlyActiveBgtmValidator(_validator) {
+        IBGTM bgtm = REGISTRY().bgtm();
+        bgtm.cancel(_validator, SafeCast.toUint128(_amount));
+        _resetBgtmValidatorIfEmptyBoosts(bgtm);
     }
 
     function unbondBGTM(
         address _validator,
         uint256 _amount
     ) external onlyMetaVaultOwner(msg.sender) onlyActiveBgtmValidator(_validator) {
-        REGISTRY().bgtm().unbond(_validator, _amount);
-    }
+        _setUint256(_UNBOND_BGTM_WAITING_PERIOD_SLOT, block.number + UNBOND_BGTM_WAITING_PERIOD);
 
-    function activateBgtm(
-        address _validator
-    ) external onlyMetaVaultOwner(msg.sender) onlyActiveBgtmValidator(_validator) {
-        REGISTRY().bgtm().activate(_validator);
+        IBGTM bgtm = REGISTRY().bgtm();
+        bgtm.unbond(_validator, SafeCast.toUint128(_amount));
+        _resetBgtmValidatorIfEmptyBoosts(bgtm);
     }
 
     function withdrawBGTAndRedeem(
@@ -331,11 +356,29 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
             "Not child BGTM vault"
         );
 
+        // @audit User can block this because of the delay. Need to discuss
         IBGTM bgtm = REGISTRY().bgtm();
         uint256 bal = bgtm.getBalance(address(this));
         if (_amount > bal) {
-            // @audit User can block this because of the delay. Need to discuss
-            bgtm.unbond(bgtmValidator(), _amount - bal);
+            uint256 pending = bgtm.pending(bgtmValidator(), address(this));
+            uint256 diff = _amount - bal;
+
+            if (pending >= diff) {
+                bgtm.cancel(bgtmValidator(), SafeCast.toUint128(diff));
+            } else {
+                uint256 confirmed = bgtm.confirmed(bgtmValidator(), address(this));
+                Require.that(
+                    confirmed + pending >= diff,
+                    _FILE,
+                    "Not enough BGTM available"
+                );
+                if (pending > 0) {
+                    bgtm.cancel(bgtmValidator(), SafeCast.toUint128(pending));
+                }
+                bgtm.unbond(bgtmValidator(), SafeCast.toUint128(diff - pending));
+            }
+
+            _resetBgtmValidatorIfEmptyBoosts(bgtm);
         }
 
         REGISTRY().bgtm().redeem(_amount);
@@ -399,7 +442,7 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
         uint128 boosts = _bgt.boosts(address(this));
         if (queuedBoost == 0 && boosts == 0 && bgtValidator() != address(0)) {
             _setAddress(_BGT_VALIDATOR_SLOT, address(0));
-            emit ValidatorSet(address(0));
+            emit BgtValidatorSet(address(0));
         }
     }
 
@@ -413,7 +456,7 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
         uint256 confirmed = _bgtm.confirmed(bgtmValidator(), address(this));
         if (pending == 0 && queued == 0 && confirmed == 0) {
             _setAddress(_BGTM_VALIDATOR_SLOT, address(0));
-            emit ValidatorSet(address(0));
+            emit BgtmValidatorSet(address(0));
         }
     }
 

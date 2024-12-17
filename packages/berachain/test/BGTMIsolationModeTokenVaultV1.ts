@@ -196,7 +196,7 @@ describe('BGTMIsolationModeTokenVaultV1', () => {
 
   describe('#executeWithdrawalFromVault', () => {
     it('should work normally', async () => {
-      await bgtmVault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, bgtmBal)
+      await bgtmVault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, bgtmBal);
       await expectProtocolBalance(core, bgtmVault, defaultAccountNumber, bgtmMarketId, ZERO_BI);
       await expectWalletBalance(core.hhUser1, core.tokens.wbera, bgtmBal);
     });

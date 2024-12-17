@@ -34,7 +34,8 @@ interface IBerachainRewardsMetaVault {
     // ==================== Events ====================
     // ================================================
 
-    event ValidatorSet(address validator);
+    event BgtValidatorSet(address validator);
+    event BgtmValidatorSet(address validator);
 
     // ================================================
     // ================== Functions ===================

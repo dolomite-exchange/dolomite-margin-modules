@@ -24,7 +24,7 @@ import { MinimalERC20 } from "@dolomite-exchange/modules-base/contracts/general/
 import { IBGTM } from "./interfaces/IBGTM.sol";
 
 /**
- * @title   BGMERC20Wrapper
+ * @title   BGTMERC20Wrapper
  * @author  Dolomite
  *
  * @notice  Simple ERC20 wrapper for BGM. Most functionality is restricted

@@ -32,13 +32,13 @@ interface IBGTM {
 
     function redeem(uint256 amount) external;
 
-    function delegate(address validator, uint256 amount) external;
+    function delegate(address validator, uint128 amount) external;
 
     function activate(address validator) external;
 
-    function cancel(address validator, uint256 amount) external;
+    function cancel(address validator, uint128 amount) external;
 
-    function unbond(address validator, uint256 amount) external;
+    function unbond(address validator, uint128 amount) external;
 
     function getBalance(address user) external view returns (uint256);
 

@@ -36,9 +36,9 @@ import { IBerachainRewardsMetaVault } from "./interfaces/IBerachainRewardsMetaVa
  * @author  Dolomite
  *
  * @notice  Implementation (for an upgradeable proxy) for a per-user vault that holds the BGTM token
- *          that can be used to credit a user's Dolomite balance. BGTM held in the vault is considered to be in isolation
- *          mode - that is it cannot be borrowed by other users, may only be seized via liquidation, and cannot be held
- *          in the same position as other "isolated" tokens.
+ *          that can be used to credit a user's Dolomite balance. BGTM held in the vault is considered to be in
+ *          isolation mode - that is it cannot be borrowed by other users, may only be seized via liquidation,
+ *          and cannot be held in the same position as other "isolated" tokens.
  */
 contract BGTMIsolationModeTokenVaultV1 is
     MetaVaultRewardReceiver,
