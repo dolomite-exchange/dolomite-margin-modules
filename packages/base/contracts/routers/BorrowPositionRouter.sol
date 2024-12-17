@@ -174,8 +174,10 @@ contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
     if (_isolationModeMarketId == _marketId) {
       if (_fromAccountNumber < 100 && _toAccountNumber >= 100) {
         vault.transferIntoPositionWithUnderlyingToken(_fromAccountNumber, _toAccountNumber, _amount);
-      } else {
+      } else if (_fromAccountNumber >= 100 && _toAccountNumber < 100) {
         vault.transferFromPositionWithUnderlyingToken(_fromAccountNumber, _toAccountNumber, _amount);
+      } else {
+        revert('BorrowPositionRouter: Invalid transfer between accounts');
       }
     } else {
       if (_fromAccountNumber < 100 && _toAccountNumber >= 100) {
@@ -186,7 +188,7 @@ contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
           _amount,
           _balanceCheckFlag
         );
-      } else {
+      } else if (_fromAccountNumber >= 100 && _toAccountNumber < 100) {
         vault.transferFromPositionWithOtherToken(
           _fromAccountNumber,
           _toAccountNumber,
@@ -194,6 +196,8 @@ contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
           _amount,
           _balanceCheckFlag
         );
+      } else {
+        revert('BorrowPositionRouter: Invalid transfer between accounts');
       }
     }
   }
