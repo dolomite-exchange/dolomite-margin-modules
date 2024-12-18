@@ -125,7 +125,6 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
         } else if (!marketInfo.isIsolationModeAsset && _isolationModeMarketId != 0) {
             MarketInfo memory isoMarketInfo = _getMarketInfo(_isolationModeMarketId);
             IIsolationModeTokenVaultV2 vault = _validateIsoMarketAndGetVault(isoMarketInfo, msg.sender);
-            address glpFactory = 0x34DF4E8062A8C8Ae97E3382B452bd7BF60542698;
 
             AccountActionLib.deposit(
                 DOLOMITE_MARGIN(),
