@@ -56,8 +56,8 @@ describe('GMXIsolationModeTokenVaultV1_swapExactInputForOutput', () => {
       blockNumber: await getRealLatestBlockNumber(true, network),
     });
 
-    glpFactory = core.gmxEcosystem!.live.dGlp.connect(core.hhUser1);
-    gmxFactory = core.gmxEcosystem!.live.dGmx.connect(core.hhUser1);
+    glpFactory = core.gmxEcosystem.live.dGlp.connect(core.hhUser1);
+    gmxFactory = core.gmxEcosystem.live.dGmx.connect(core.hhUser1);
 
     await core.testEcosystem!.testPriceOracle.setPrice(glpFactory.address, '1000000000000000000');
     await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.dfsGlp!, core.testEcosystem!.testPriceOracle.address);
@@ -71,7 +71,7 @@ describe('GMXIsolationModeTokenVaultV1_swapExactInputForOutput', () => {
     await core.dolomiteMargin.ownerSetPriceOracle(underlyingMarketIdGmx, core.testEcosystem!.testPriceOracle.address);
 
     gmxMarketId = core.marketIds.gmx!;
-    await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.gmx!.address, '1000000000000000000');
+    await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.gmx.address, '1000000000000000000');
     await core.dolomiteMargin.ownerSetPriceOracle(gmxMarketId, core.testEcosystem!.testPriceOracle.address);
 
     const implementation = await createGMXIsolationModeTokenVaultV1();
@@ -90,10 +90,10 @@ describe('GMXIsolationModeTokenVaultV1_swapExactInputForOutput', () => {
     );
 
     // Make sure distributor has high tokens per interval and enough esGMX
-    await core.gmxEcosystem!.esGmxDistributorForStakedGmx.setTokensPerInterval('10333994708994708');
+    await core.gmxEcosystem.esGmxDistributorForStakedGmx.setTokensPerInterval('10333994708994708');
     const gov = await impersonate(GMX_GOV_MAP[Network.ArbitrumOne]!, true);
-    await core.gmxEcosystem!.esGmx.connect(gov).mint(
-      core.gmxEcosystem!.esGmxDistributorForStakedGmx.address,
+    await core.gmxEcosystem.esGmx.connect(gov).mint(
+      core.gmxEcosystem.esGmxDistributorForStakedGmx.address,
       parseEther('100000000'),
     );
 

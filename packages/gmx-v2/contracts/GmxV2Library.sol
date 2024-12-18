@@ -23,6 +23,7 @@ pragma solidity ^0.8.9;
 import { IGenericTraderBase } from "@dolomite-exchange/modules-base/contracts/interfaces/IGenericTraderBase.sol";
 import { IAsyncFreezableIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IAsyncFreezableIsolationModeVaultFactory.sol";
 import { IAsyncIsolationModeTraderBase } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IAsyncIsolationModeTraderBase.sol";
+import { IIsolationModeTokenVaultV1WithAsyncFreezable } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeTokenVaultV1WithAsyncFreezable.sol";
 import { IIsolationModeUpgradeableProxy } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeUpgradeableProxy.sol";
 import { IIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
 import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IUpgradeableAsyncIsolationModeUnwrapperTrader.sol"; // solhint-disable-line max-line-length
@@ -238,7 +239,7 @@ library GmxV2Library {
     }
 
     function vaultValidateExecutionFeeIfWrapToUnderlying(
-        IGmxV2IsolationModeTokenVaultV1 _vault,
+        IIsolationModeTokenVaultV1WithAsyncFreezable _vault,
         uint256 _tradeAccountNumber,
         IGenericTraderBase.TraderParam[] memory _tradersPath
     ) public returns (IGenericTraderBase.TraderParam[] memory) {
@@ -296,7 +297,7 @@ library GmxV2Library {
     }
 
     function validateExecutionFee(
-        IGmxV2IsolationModeTokenVaultV1 _vault,
+        IIsolationModeTokenVaultV1WithAsyncFreezable _vault,
         uint256 _toAccountNumber
     ) public view {
         address factory = IIsolationModeUpgradeableProxy(address(_vault)).vaultFactory();
@@ -517,7 +518,7 @@ library GmxV2Library {
     // ======================== Private Functions ======================
     // ==================================================================
 
-    function _depositAndApproveWethForWrapping(IGmxV2IsolationModeTokenVaultV1 _vault) private {
+    function _depositAndApproveWethForWrapping(IIsolationModeTokenVaultV1WithAsyncFreezable _vault) private {
         Require.that(
             msg.value > 0,
             _FILE,
@@ -525,7 +526,7 @@ library GmxV2Library {
         );
         _vault.WETH().deposit{value: msg.value}();
         IERC20(address(_vault.WETH())).safeApprove(
-            address(_vault.registry().getWrapperByToken(IIsolationModeVaultFactory(_vault.VAULT_FACTORY()))),
+            address(_vault.handlerRegistry().getWrapperByToken(IIsolationModeVaultFactory(_vault.VAULT_FACTORY()))),
             msg.value
         );
     }

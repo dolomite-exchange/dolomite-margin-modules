@@ -1,18 +1,49 @@
-import { BYTES_ZERO, Network, ONE_BI, ONE_ETH_BI, TWO_BI, ZERO_BI } from "packages/base/src/utils/no-deps-constants";
-import { getRealLatestBlockNumber, impersonate, revertToSnapshotAndCapture, snapshot } from "packages/base/test/utils";
-import { CoreProtocolArbitrumOne } from "packages/base/test/utils/core-protocols/core-protocol-arbitrum-one";
-import { disableInterestAccrual, setupCoreProtocol, setupGMBalance, setupUserVaultProxy, setupWETHBalance } from "packages/base/test/utils/setup";
-import { GmxV2IsolationModeTokenVaultV1, GmxV2IsolationModeTokenVaultV1__factory, GmxV2IsolationModeUnwrapperTraderV2, GmxV2IsolationModeVaultFactory, GmxV2IsolationModeWrapperTraderV2, GmxV2Registry, IEventEmitterRegistry, IGmxMarketToken, IGmxRoleStore__factory, TestOracleProvider, TestOracleProvider__factory } from "../src/types";
-import { createContractWithAbi, depositIntoDolomiteMargin } from "packages/base/src/utils/dolomite-utils";
-import { BalanceCheckFlag } from "@dolomite-exchange/dolomite-margin";
-import { expectEvent, expectProtocolBalance, expectProtocolBalanceIsGreaterThan, expectWalletBalance } from "packages/base/test/utils/assertions";
-import { createGmxV2IsolationModeUnwrapperTraderV2, createGmxV2IsolationModeUnwrapperTraderV2Implementation, createGmxV2IsolationModeWrapperTraderV2, createGmxV2IsolationModeWrapperTraderV2Implementation, createGmxV2Library, getInitiateWrappingParams, getOracleParams, getOracleProviderEnabledKey, getOracleProviderForTokenKey } from "./gmx-v2-ecosystem-utils";
-import { BigNumber } from "ethers";
-import { parseEther } from "ethers/lib/utils";
-import { GMX_V2_EXECUTION_FEE_FOR_TESTS } from "../src/gmx-v2-constructors";
-import { expect } from "chai";
-import { ethers } from "hardhat";
-import { ZERO_ADDRESS } from "@openzeppelin/upgrades/lib/utils/Addresses";
+import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin';
+import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
+import { expect } from 'chai';
+import { BigNumber } from 'ethers';
+import { parseEther } from 'ethers/lib/utils';
+import { ethers } from 'hardhat';
+import { createContractWithAbi, depositIntoDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
+import { BYTES_ZERO, Network, ONE_BI, ONE_ETH_BI, TWO_BI, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
+import { impersonate, revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
+import {
+  expectEvent,
+  expectProtocolBalance,
+  expectProtocolBalanceIsGreaterThan,
+  expectWalletBalance,
+} from 'packages/base/test/utils/assertions';
+import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
+import {
+  disableInterestAccrual,
+  setupCoreProtocol,
+  setupGMBalance,
+  setupUserVaultProxy,
+  setupWETHBalance,
+} from 'packages/base/test/utils/setup';
+import { GMX_V2_EXECUTION_FEE_FOR_TESTS } from '../src/gmx-v2-constructors';
+import {
+  GmxV2IsolationModeTokenVaultV1,
+  GmxV2IsolationModeTokenVaultV1__factory,
+  GmxV2IsolationModeUnwrapperTraderV2,
+  GmxV2IsolationModeVaultFactory,
+  GmxV2IsolationModeWrapperTraderV2,
+  GmxV2Registry,
+  IEventEmitterRegistry,
+  IGmxMarketToken,
+  IGmxRoleStore__factory,
+  TestOracleProvider,
+  TestOracleProvider__factory,
+} from '../src/types';
+import {
+  createGmxV2IsolationModeUnwrapperTraderV2Implementation,
+  createGmxV2IsolationModeWrapperTraderV2Implementation,
+  createGmxV2Library,
+  getInitiateWrappingParams,
+  getOracleParams,
+  getOracleProviderEnabledKey,
+  getOracleProviderForTokenKey,
+} from './gmx-v2-ecosystem-utils';
 
 const amountWei = parseEther('100');
 const wethAmount = ONE_ETH_BI;
@@ -43,7 +74,7 @@ describe('GmxV2AddressUpdateIntegration', () => {
   before(async () => {
     core = await setupCoreProtocol({
       network: Network.ArbitrumOne,
-      blockNumber: 266_927_400
+      blockNumber: 266_927_400,
     });
     await disableInterestAccrual(core, core.marketIds.weth);
     await disableInterestAccrual(core, core.marketIds.nativeUsdc);
@@ -56,8 +87,12 @@ describe('GmxV2AddressUpdateIntegration', () => {
     unwrapper = core.gmxV2Ecosystem.live.gmEthUsd.unwrapper.connect(core.hhUser1);
 
     // Update ExchangeRouter and Reader address
-    await core.gmxV2Ecosystem.live.registry.connect(core.governance).ownerSetGmxExchangeRouter(core.gmxV2Ecosystem.gmxExchangeRouterV2.address);
-    await core.gmxV2Ecosystem.live.registry.connect(core.governance).ownerSetGmxReader(core.gmxV2Ecosystem.gmxReaderV2.address);
+    await core.gmxV2Ecosystem.live.registry
+      .connect(core.governance)
+      .ownerSetGmxExchangeRouter(core.gmxV2Ecosystem.gmxExchangeRouter.address);
+    await core.gmxV2Ecosystem.live.registry
+      .connect(core.governance)
+      .ownerSetGmxReader(core.gmxV2Ecosystem.gmxReader.address);
 
     const library = await createGmxV2Library();
     const wrapperImpl = await createGmxV2IsolationModeWrapperTraderV2Implementation(core, library);
@@ -74,7 +109,7 @@ describe('GmxV2AddressUpdateIntegration', () => {
     testOracleProvider = await createContractWithAbi<TestOracleProvider>(
       TestOracleProvider__factory.abi,
       TestOracleProvider__factory.bytecode,
-      [core.oracleAggregatorV2.address]
+      [core.oracleAggregatorV2.address],
     );
     const oracleProviderEnabledKey = getOracleProviderEnabledKey(testOracleProvider);
     const usdcProviderKey = getOracleProviderForTokenKey(core.tokens.nativeUsdc);
@@ -142,14 +177,15 @@ describe('GmxV2AddressUpdateIntegration', () => {
     const eventArgs = (await eventEmitter.queryFilter(filter, res.blockHash))[0].args;
     const depositKey = eventArgs.key;
 
-    const res2 = await core
-      .gmxV2Ecosystem.gmxDepositHandlerV2.connect(core.gmxV2Ecosystem.gmxExecutor)
+    const res2 = await core.gmxV2Ecosystem.gmxDepositHandlerV2
+      .connect(core.gmxV2Ecosystem.gmxExecutor)
       .executeDeposit(
         depositKey,
         getOracleParams(
           [core.tokens.weth.address, core.tokens.nativeUsdc.address],
-          [testOracleProvider.address, testOracleProvider.address]
-        ));
+          [testOracleProvider.address, testOracleProvider.address],
+        ),
+      );
     await expectEvent(eventEmitter, res2, 'AsyncDepositExecuted', {
       key: depositKey,
       token: factory.address,
@@ -215,9 +251,9 @@ describe('GmxV2AddressUpdateIntegration', () => {
         withdrawalKey,
         getOracleParams(
           [core.tokens.weth.address, core.tokens.nativeUsdc.address],
-          [testOracleProvider.address, testOracleProvider.address]
+          [testOracleProvider.address, testOracleProvider.address],
         ),
-        { gasLimit }
+        { gasLimit },
       );
     await expectEvent(eventEmitter, result, 'AsyncWithdrawalExecuted', {
       key: withdrawalKey,
@@ -247,4 +283,4 @@ describe('GmxV2AddressUpdateIntegration', () => {
     expect(await vault.isDepositSourceWrapper()).to.eq(false);
     expect(await underlyingToken.balanceOf(vault.address)).to.eq(ZERO_BI);
   });
-})
+});

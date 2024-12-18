@@ -3,7 +3,7 @@ import {
   ChroniclePriceOracleV3,
   IChainlinkAutomationRegistry,
   IChainlinkPriceOracleV1,
-  IChainlinkPriceOracleV3,
+  IChainlinkPriceOracleV3, IChaosLabsPriceOracleV3,
   RedstonePriceOracleV3,
 } from 'packages/oracles/src/types';
 import {
@@ -33,12 +33,15 @@ import {
   CoreProtocolParams,
   CoreProtocolTokens,
 } from './core-protocol-abstract';
+import { GlvEcosystem } from '../ecosystem-utils/glv';
 
 interface CoreProtocolTokensArbitrumOne extends CoreProtocolTokens<Network.ArbitrumOne> {
   arb: IERC20;
   dai: IERC20;
   dArb: IERC20;
   dfsGlp: IERC20;
+  dGlvBtc: IERC20;
+  dGlvEth: IERC20;
   dGmx: IERC20;
   dGmArb: IERC20;
   dGmBtc: IERC20;
@@ -166,10 +169,12 @@ interface CoreProtocolParamsArbitrumOne {
   chainlinkAutomationRegistry: IChainlinkAutomationRegistry;
   chainlinkPriceOracleV1: IChainlinkPriceOracleV1;
   chainlinkPriceOracleV3: IChainlinkPriceOracleV3;
+  chaosLabsPriceOracleV3: IChaosLabsPriceOracleV3;
   chroniclePriceOracleV3: ChroniclePriceOracleV3;
   dolomiteAccountValuesReader: IDolomiteAccountValuesReader;
   dolomiteMigrator: IDolomiteMigrator;
   dTokens: CoreProtocolArbitrumOneDTokens;
+  glvEcosystem: GlvEcosystem;
   gmxEcosystem: GmxEcosystem;
   gmxEcosystemV2: GmxV2Ecosystem;
   jonesEcosystem: JonesEcosystem;
@@ -190,10 +195,12 @@ export class CoreProtocolArbitrumOne extends CoreProtocolAbstract<Network.Arbitr
   public readonly arbEcosystem: ArbEcosystem;
   public readonly camelotEcosystem: CamelotEcosystem;
   public readonly chainlinkAutomationRegistry: IChainlinkAutomationRegistry;
+  public readonly chaosLabsPriceOracleV3: IChaosLabsPriceOracleV3;
   public readonly chroniclePriceOracleV3: ChroniclePriceOracleV3;
   public readonly dolomiteAccountValuesReader: IDolomiteAccountValuesReader;
   public readonly dolomiteMigrator: IDolomiteMigrator;
   public readonly dTokens: CoreProtocolArbitrumOneDTokens;
+  public readonly glvEcosystem: GlvEcosystem;
   public readonly gmxEcosystem: GmxEcosystem;
   public readonly gmxV2Ecosystem: GmxV2Ecosystem;
   public readonly jonesEcosystem: JonesEcosystem;
@@ -215,10 +222,12 @@ export class CoreProtocolArbitrumOne extends CoreProtocolAbstract<Network.Arbitr
     this.arbEcosystem = arbParams.arbEcosystem;
     this.camelotEcosystem = arbParams.camelotEcosystem;
     this.chainlinkAutomationRegistry = arbParams.chainlinkAutomationRegistry;
+    this.chaosLabsPriceOracleV3 = arbParams.chaosLabsPriceOracleV3;
     this.chroniclePriceOracleV3 = arbParams.chroniclePriceOracleV3;
     this.dolomiteAccountValuesReader = arbParams.dolomiteAccountValuesReader;
     this.dolomiteMigrator = arbParams.dolomiteMigrator;
     this.dTokens = arbParams.dTokens;
+    this.glvEcosystem = arbParams.glvEcosystem;
     this.gmxEcosystem = arbParams.gmxEcosystem;
     this.gmxV2Ecosystem = arbParams.gmxEcosystemV2;
     this.jonesEcosystem = arbParams.jonesEcosystem;

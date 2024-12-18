@@ -56,7 +56,7 @@ describe('GLPIsolationModeUnwrapperTraderV1', () => {
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
-    underlyingToken = core.gmxEcosystem!.fsGlp;
+    underlyingToken = core.gmxEcosystem.fsGlp;
     const userVaultImplementation = await createGLPIsolationModeTokenVaultV1();
     gmxRegistry = await createGmxRegistry(core);
     factory = await createGLPIsolationModeVaultFactory(core, gmxRegistry, userVaultImplementation);
@@ -81,10 +81,10 @@ describe('GLPIsolationModeUnwrapperTraderV1', () => {
     defaultAccount = { owner: vault.address, number: defaultAccountNumber };
 
     const usdcAmount = amountWei.div(1e12).mul(4);
-    await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.gmxEcosystem!.glpManager);
-    await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
+    await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.gmxEcosystem.glpManager);
+    await core.gmxEcosystem.glpRewardsRouter.connect(core.hhUser1)
       .mintAndStakeGlp(core.tokens.usdc.address, usdcAmount, 0, 0);
-    await core.gmxEcosystem!.sGlp.connect(core.hhUser1).approve(vault.address, amountWei);
+    await core.gmxEcosystem.sGlp.connect(core.hhUser1).approve(vault.address, amountWei);
     await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
 
     expect(await underlyingToken.connect(core.hhUser1).balanceOf(vault.address)).to.eq(amountWei);
@@ -167,7 +167,7 @@ describe('GLPIsolationModeUnwrapperTraderV1', () => {
 
     it('should fail if output token is incorrect', async () => {
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
-      await core.gmxEcosystem!.sGlp.connect(core.hhUser1).transfer(unwrapper.address, amountWei);
+      await core.gmxEcosystem.sGlp.connect(core.hhUser1).transfer(unwrapper.address, amountWei);
       await expectThrow(
         unwrapper.connect(dolomiteMarginImpersonator).exchange(
           core.hhUser1.address,
@@ -183,7 +183,7 @@ describe('GLPIsolationModeUnwrapperTraderV1', () => {
 
     it('should fail if input amount is incorrect', async () => {
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
-      await core.gmxEcosystem!.sGlp.connect(core.hhUser1).transfer(unwrapper.address, amountWei);
+      await core.gmxEcosystem.sGlp.connect(core.hhUser1).transfer(unwrapper.address, amountWei);
       await expectThrow(
         unwrapper.connect(dolomiteMarginImpersonator).exchange(
           core.hhUser1.address,
@@ -241,7 +241,7 @@ describe('GLPIsolationModeUnwrapperTraderV1', () => {
     });
 
     it('should work normally', async () => {
-      const expectedAmount = await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
+      const expectedAmount = await core.gmxEcosystem.glpRewardsRouter.connect(core.hhUser1)
         .callStatic
         .unstakeAndRedeemGlp(
           core.tokens.usdc.address,
@@ -259,7 +259,7 @@ describe('GLPIsolationModeUnwrapperTraderV1', () => {
         // create a random number from 1 to 99 and divide by 101 (making the number, at-most, slightly smaller)
         const randomNumber = BigNumber.from(Math.floor(Math.random() * 99) + 1);
         const weirdAmount = amountWei.mul(randomNumber).div(101);
-        const expectedAmount = await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
+        const expectedAmount = await core.gmxEcosystem.glpRewardsRouter.connect(core.hhUser1)
           .callStatic
           .unstakeAndRedeemGlp(
             core.tokens.usdc.address,

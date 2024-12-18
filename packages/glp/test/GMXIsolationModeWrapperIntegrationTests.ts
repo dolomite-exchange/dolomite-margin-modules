@@ -68,8 +68,8 @@ describe('GMXIsolationModeWrapperIntegrationTests', () => {
       network,
       blockNumber: await getRealLatestBlockNumber(true, network),
     });
-    glpFactory = core.gmxEcosystem!.live.dGlp.connect(core.hhUser1);
-    gmxFactory = core.gmxEcosystem!.live.dGmx.connect(core.hhUser1);
+    glpFactory = core.gmxEcosystem.live.dGlp.connect(core.hhUser1);
+    gmxFactory = core.gmxEcosystem.live.dGmx.connect(core.hhUser1);
 
     await core.testEcosystem!.testPriceOracle.setPrice(glpFactory.address, '1000000000000000000');
     await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.dfsGlp!, core.testEcosystem!.testPriceOracle.address);
@@ -87,7 +87,7 @@ describe('GMXIsolationModeWrapperIntegrationTests', () => {
     await core.dolomiteMargin.ownerSetPriceOracle(underlyingMarketIdGmx, core.testEcosystem!.testPriceOracle.address);
 
     gmxMarketId = core.marketIds.gmx!;
-    await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.gmx!.address, '1000000000000000000');
+    await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.gmx.address, '1000000000000000000');
     await core.dolomiteMargin.ownerSetPriceOracle(gmxMarketId, core.testEcosystem!.testPriceOracle.address);
 
     otherToken1 = await createTestToken();
@@ -109,7 +109,7 @@ describe('GMXIsolationModeWrapperIntegrationTests', () => {
     await gmxVault.connect(core.hhUser1).depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
 
     await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
-    await core.gmxEcosystem!.gmx.connect(core.hhUser1).transfer(
+    await core.gmxEcosystem.gmx.connect(core.hhUser1).transfer(
       core.testEcosystem!.testExchangeWrapper.address,
       gmxAmount,
     );

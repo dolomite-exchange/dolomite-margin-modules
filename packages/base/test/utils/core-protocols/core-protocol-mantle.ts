@@ -13,6 +13,7 @@ import { PendleEcosystemMantle } from '../ecosystem-utils/pendle';
 import { IMantleRewardStation } from 'packages/mantle/src/types';
 
 export interface CoreProtocolTokensMantle extends CoreProtocolTokens<Network.Mantle> {
+  cmEth: IERC20;
   fbtc: IERC20;
   meth: IERC20;
   usde: IERC20;
@@ -23,6 +24,7 @@ export interface CoreProtocolTokensMantle extends CoreProtocolTokens<Network.Man
 }
 
 interface CoreProtocolMarketIdsMantle extends CoreProtocolMarketIds {
+  cmEth: BigNumberish;
   fbtc: BigNumberish;
   meth: BigNumberish;
   usde: BigNumberish;
