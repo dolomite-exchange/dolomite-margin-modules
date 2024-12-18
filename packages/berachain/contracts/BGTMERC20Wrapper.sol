@@ -23,6 +23,7 @@ pragma solidity ^0.8.9;
 import { MinimalERC20 } from "@dolomite-exchange/modules-base/contracts/general/MinimalERC20.sol";
 import { IBGTM } from "./interfaces/IBGTM.sol";
 
+
 /**
  * @title   BGTMERC20Wrapper
  * @author  Dolomite
@@ -53,11 +54,11 @@ contract BGTMERC20Wrapper is MinimalERC20 {
         revert("Not implemented");
     }
 
-    function balanceOf(address account) public view override returns (uint256) {
-        return bgtm.getBalance(account);
-    }
-
     function allowance(address /* owner */, address /* spender */) public view override returns (uint256) {
         revert("Not implemented");
+    }
+
+    function balanceOf(address account) public view override returns (uint256) {
+        return bgtm.getBalance(account);
     }
 }

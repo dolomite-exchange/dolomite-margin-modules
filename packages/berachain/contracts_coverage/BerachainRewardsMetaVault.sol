@@ -22,20 +22,20 @@ pragma solidity ^0.8.9;
 
 import { ProxyContractHelpers } from "@dolomite-exchange/modules-base/contracts/helpers/ProxyContractHelpers.sol";
 import { IERC4626 } from "@dolomite-exchange/modules-base/contracts/interfaces/IERC4626.sol";
+import { IDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteMargin.sol";
+import { IWETH } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IWETH.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { IBGT } from "./interfaces/IBGT.sol";
 import { IBGTM } from "./interfaces/IBGTM.sol";
-import { IWETH } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IWETH.sol";
 import { IBerachainRewardsMetaVault } from "./interfaces/IBerachainRewardsMetaVault.sol";
 import { IBerachainRewardsRegistry } from "./interfaces/IBerachainRewardsRegistry.sol";
 import { IInfraredVault } from "./interfaces/IInfraredVault.sol";
 import { IMetaVaultRewardReceiver } from "./interfaces/IMetaVaultRewardReceiver.sol";
 import { IMetaVaultRewardTokenFactory } from "./interfaces/IMetaVaultRewardTokenFactory.sol";
 import { INativeRewardVault } from "./interfaces/INativeRewardVault.sol";
-import { IDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteMargin.sol";
 
 
 /**
@@ -60,8 +60,8 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
     bytes32 private constant _BGT_VALIDATOR_SLOT = bytes32(uint256(keccak256("eip1967.proxy.bgtValidator")) - 1);
     bytes32 private constant _BGTM_VALIDATOR_SLOT = bytes32(uint256(keccak256("eip1967.proxy.bgtmValidator")) - 1);
     bytes32 private constant _STAKED_BALANCES_SLOT = bytes32(uint256(keccak256("eip1967.proxy.stakedBalances")) - 1);
-    bytes32 private constant _QUEUE_BGTM_COOLDOWN_SLOT = bytes32(uint256(keccak256("eip1967.proxy.queueBgtmCooldown")) - 1);
-    bytes32 private constant _UNBOND_BGTM_WAITING_PERIOD_SLOT = bytes32(uint256(keccak256("eip1967.proxy.unbondBgtmWaitingPeriod")) - 1);
+    bytes32 private constant _QUEUE_BGTM_COOLDOWN_SLOT = bytes32(uint256(keccak256("eip1967.proxy.queueBgtmCooldown")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _UNBOND_BGTM_WAITING_PERIOD_SLOT = bytes32(uint256(keccak256("eip1967.proxy.unbondBgtmWaitingPeriod")) - 1); // solhint-disable-line max-line-length
 
 
     /// @dev This variable is hardcoded here because it's private in the BGT contract
@@ -163,7 +163,6 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
             factory = REGISTRY().iBgtIsolationModeVaultFactory();
             IERC20 iBgt = REGISTRY().iBgt();
 
-            // @todo may need to adjust Infrared to use the getAllRewardsForUser function
             uint256 balanceBefore = iBgt.balanceOf(address(this));
             IInfraredVault(rewardVault).getReward();
             reward = iBgt.balanceOf(address(this)) - balanceBefore;

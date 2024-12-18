@@ -151,7 +151,6 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
         IMetaVaultRewardTokenFactory factory;
         uint256 reward;
 
-            // @todo Confirm that these are the only reward tokens that we can receive
         if (defaultType == IBerachainRewardsRegistry.RewardVaultType.NATIVE) {
             reward = INativeRewardVault(rewardVault).getReward(address(this));
             factory = REGISTRY().bgtIsolationModeVaultFactory();
