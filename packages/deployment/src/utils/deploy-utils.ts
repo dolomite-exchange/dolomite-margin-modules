@@ -1791,7 +1791,14 @@ export async function prettyPrintEncodeAddGlvMarket(
       core,
       { glvRegistry: core.glvEcosystem.live.registry },
       'glvRegistry',
-      'ownerSetGlvTokenToGmMarket',
+      'ownerSetGlvTokenToGmMarketForDeposit',
+      [await factory.UNDERLYING_TOKEN(), pairedGmToken.marketToken.address],
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { glvRegistry: core.glvEcosystem.live.registry },
+      'glvRegistry',
+      'ownerSetGlvTokenToGmMarketForWithdrawal',
       [await factory.UNDERLYING_TOKEN(), pairedGmToken.marketToken.address],
     ),
     ...(await prettyPrintEncodeAddAsyncIsolationModeMarket(
