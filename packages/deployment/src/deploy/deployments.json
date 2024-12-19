@@ -958,6 +958,20 @@
       "isVerified": true
     }
   },
+  "DolomiteSbtc4626Token": {
+    "80000": {
+      "address": "0xA8Cb3818Fa799018bc862ADE08F8a37e08BA1062",
+      "transaction": "0x44b8642a9d6460fed495591c74d9b2faf9dff3717a0b22d0e82e93d3b14d18fa",
+      "isVerified": true
+    }
+  },
+  "DolomiteUniBtc4626Token": {
+    "80000": {
+      "address": "0xd6eb8ae479EdF452d264493708c85AA798CCCdFd",
+      "transaction": "0x31ac46ac1baa07208aaf2451ea255ba0119d2ddc88de332233189c58decf5657",
+      "isVerified": true
+    }
+  },
   "DolomiteUsdc4626Token": {
     "5000": {
       "address": "0x444868B6e8079ac2c55eea115250f92C2b2c4D14",

@@ -339,10 +339,24 @@ export const DOGE_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   },
 };
 
+export const ETH_PLUS_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0x18C14C2D707b2212e17d1579789Fc06010cfca23',
+    marketId: 71,
+  },
+};
+
 export const E_ETH_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x35fA164735182de50811E8e2E824cFb9B6118ac2',
     marketId: -1, // does not exist; purely here for the Chainlink oracle pairing
+  },
+};
+
+export const E_USD_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0x12275DCB9048680c4Be40942eA4D92c74C63b844',
+    marketId: 70,
   },
 };
 
@@ -533,16 +547,35 @@ export const RS_ETH_CAMELOT_POOL_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0xb355cce5cbaf411bd56e3b092f5aa10a894083ae',
 };
 
-export const SBTC_MAP: Record<Network.Berachain, TokenWithMarketId> = {
+export const SBTC_MAP: Record<Network.Berachain | Network.BerachainCartio, TokenWithMarketId> = {
   [Network.Berachain]: {
     address: '0xf5d89123e801E9D8B6B6a04c11b4268977c14130',
     marketId: -1,
   },
+  [Network.BerachainCartio]: {
+    address: '0x5d417e7798208E9285b5157498bBF23A23E421E7',
+    marketId: 6,
+  },
 };
 
-export const STONE_BTC_MAP: Record<Network.Berachain, TokenWithMarketId> = {
+export const STONE_MAP: Record<Network.Berachain | Network.BerachainCartio, TokenWithMarketId> = {
   [Network.Berachain]: {
     address: '0x7CC2c297E5D05CdCA6724b672cdc3c2E18565449',
+    marketId: -1,
+  },
+  [Network.BerachainCartio]: {
+    address: '0x0000000000000000000000000000000000000000',
+    marketId: 8,
+  },
+};
+
+export const STONE_BTC_MAP: Record<Network.Berachain | Network.BerachainCartio, TokenWithMarketId> = {
+  [Network.Berachain]: {
+    address: '0x7CC2c297E5D05CdCA6724b672cdc3c2E18565449',
+    marketId: -1,
+  },
+  [Network.BerachainCartio]: {
+    address: '0x0000000000000000000000000000000000000000',
     marketId: -1,
   },
 };
@@ -579,6 +612,13 @@ export const ST_ETH_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   },
 };
 
+export const TBTC_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0x6c84a8f1c29108F47a79964b5Fe888D4f4D0dE40',
+    marketId: 69,
+  },
+};
+
 export const UNI_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0xFa7F8980b0f1E64A2062791cc3b0871572f1F7f0',
@@ -586,16 +626,21 @@ export const UNI_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   },
 };
 
-export const UNI_BTC_MAP: Record<Network.ArbitrumOne | Network.Berachain, TokenWithMarketId> = {
-  [Network.ArbitrumOne]: {
-    address: '0x6B2a01A5f79dEb4c2f3c0eDa7b01DF456FbD726a',
-    marketId: 62,
-  },
-  [Network.Berachain]: {
-    address: '0x16221CaD160b441db008eF6DA2d3d89a32A05859',
-    marketId: 4,
-  },
-};
+export const UNI_BTC_MAP: Record<Network.ArbitrumOne | Network.Berachain | Network.BerachainCartio, TokenWithMarketId> =
+  {
+    [Network.ArbitrumOne]: {
+      address: '0x6B2a01A5f79dEb4c2f3c0eDa7b01DF456FbD726a',
+      marketId: 62,
+    },
+    [Network.Berachain]: {
+      address: '0x16221CaD160b441db008eF6DA2d3d89a32A05859',
+      marketId: 4,
+    },
+    [Network.BerachainCartio]: {
+      address: '0x16c041FB492ea3D5C70EDae9987653E4bc00B608',
+      marketId: 7,
+    },
+  };
 
 export const USDC_MAP: Record<Network, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
@@ -647,6 +692,13 @@ export const USDE_MAP: Record<Network.ArbitrumOne | Network.Mantle, TokenWithMar
   },
 };
 
+export const USDL_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0x7F850b0aB1988Dd17B69aC564c1E2857949e4dEe',
+    marketId: -1,
+  },
+};
+
 export const USDM_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x59D9356E565Ab3A36dD77763Fc0d87fEaf85508C',
@@ -681,6 +733,13 @@ export const USDY_MAP: Record<Network.Mantle, TokenWithMarketId> = {
   [Network.Mantle]: {
     address: '0x5bE26527e817998A7206475496fDE1E68957c5A6',
     marketId: 8,
+  },
+};
+
+export const W_USDL_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0x7751E2F4b8ae93EF6B79d86419d42FE3295A4559',
+    marketId: -1,
   },
 };
 
@@ -1440,6 +1499,13 @@ export const PREMIA_WETH_V3_POOL_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0xc3e254E39c45c7886A12455cb8207c808486FAC3',
 };
 
+export const PUMP_BTC_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0xF469fBD2abcd6B9de8E169d128226C0Fc90a012e',
+    marketId: -1,
+  },
+};
+
 export const S_GLP_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x5402B5F40310bDED796c7D0F3FF6683f5C0cFfdf',
@@ -1639,6 +1705,9 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<Network, Record<string, Agg
       aggregatorAddress: '0xded2c52b75b24732e9107377b7ba93ec1ffa4baf',
       tokenPairAddress: WETH_MAP[Network.ArbitrumOne].address,
     },
+    [TBTC_MAP[Network.ArbitrumOne].address]: {
+      aggregatorAddress: '0xE808488e8627F6531bA79a13A9E0271B39abEb1C',
+    },
     [UNI_MAP[Network.ArbitrumOne].address]: {
       aggregatorAddress: '0x9C917083fDb403ab5ADbEC26Ee294f6EcAda2720',
     },
@@ -1651,6 +1720,9 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<Network, Record<string, Agg
     },
     [USDE_MAP[Network.ArbitrumOne].address]: {
       aggregatorAddress: '0x88AC7Bca36567525A866138F03a6F6844868E0Bc',
+    },
+    [USDL_MAP[Network.ArbitrumOne].address]: {
+      aggregatorAddress: '0x18DdDDEe3682853c746E5203e0495CAaC5054a75',
     },
     [USDT_MAP[Network.ArbitrumOne].address]: {
       aggregatorAddress: '0x3f3f5dF88dC9F13eac63DF89EC16ef6e7E25DdE7',
@@ -1841,6 +1913,13 @@ export const REDSTONE_PRICE_AGGREGATORS_MAP: Record<
   Record<string, AggregatorInfo | undefined>
 > = {
   [Network.ArbitrumOne]: {
+    [ETH_PLUS_MAP[Network.ArbitrumOne].address]: {
+      aggregatorAddress: '0xCfd39de761508A7aCb8C931b959127a1D9d0B3D4',
+      tokenPairAddress: WETH_MAP[Network.ArbitrumOne].address,
+    },
+    [E_USD_MAP[Network.ArbitrumOne].address]: {
+      aggregatorAddress: '0xa41107f9259bB835275eaCaAd8048307B80D7c00',
+    },
     [WE_ETH_MAP[Network.ArbitrumOne].address]: {
       aggregatorAddress: '0xA736eAe8805dDeFFba40cAB8c99bCB309dEaBd9B',
       tokenPairAddress: WETH_MAP[Network.ArbitrumOne].address,

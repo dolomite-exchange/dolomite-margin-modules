@@ -10,6 +10,10 @@ import {
 
 export interface CoreProtocolTokensBerachainCartio extends CoreProtocolTokens<Network.BerachainCartio> {
   honey: IERC20;
+  sbtc: IERC20;
+  stone: IERC20;
+  stoneBtc: IERC20;
+  uniBtc: IERC20;
   usdt: IERC20;
   wbera: IWETH;
   wbtc: IERC20;
@@ -17,6 +21,10 @@ export interface CoreProtocolTokensBerachainCartio extends CoreProtocolTokens<Ne
 
 interface CoreProtocolMarketIdsBerachainCartio extends CoreProtocolMarketIds {
   honey: BigNumberish;
+  sbtc: BigNumberish;
+  stone: BigNumberish;
+  stoneBtc: BigNumberish;
+  uniBtc: BigNumberish;
   usdt: BigNumberish;
   wbera: BigNumberish;
   wbtc: BigNumberish;
