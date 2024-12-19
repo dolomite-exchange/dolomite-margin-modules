@@ -31,6 +31,14 @@ const berachainWeb3Url = process.env.BERACHAIN_WEB3_PROVIDER_URL;
 if (!berachainWeb3Url) {
   throw new Error('No BERACHAIN_WEB3_PROVIDER_URL provided!');
 }
+const berachainCartioWeb3Url = process.env.BERACHAIN_CARTIO_WEB3_PROVIDER_URL;
+if (!berachainWeb3Url) {
+  throw new Error('No BERACHAIN_CARTIO_WEB3_PROVIDER_URL provided!');
+}
+const inkWeb3Url = process.env.INK_WEB3_PROVIDER_URL;
+if (!inkWeb3Url) {
+  throw new Error('No INK_WEB3_PROVIDER_URL provided!');
+}
 const mantleWeb3Url = process.env.MANTLE_WEB3_PROVIDER_URL;
 if (!mantleWeb3Url) {
   throw new Error('No MANTLE_WEB3_PROVIDER_URL provided!');
@@ -38,6 +46,10 @@ if (!mantleWeb3Url) {
 const polygonZkEvmWeb3Url = process.env.POLYGON_ZKEVM_WEB3_PROVIDER_URL;
 if (!polygonZkEvmWeb3Url) {
   throw new Error('No POLYGON_ZKEVM_WEB3_PROVIDER_URL provided!');
+}
+const superSeedWeb3Url = process.env.SUPER_SEED_WEB3_PROVIDER_URL;
+if (!superSeedWeb3Url) {
+  throw new Error('No SUPER_SEED_WEB3_PROVIDER_URL provided!');
 }
 const xLayerWeb3Url = process.env.X_LAYER_WEB3_PROVIDER_URL;
 if (!xLayerWeb3Url) {
@@ -57,12 +69,20 @@ const berascanApiKey = process.env.BERASCAN_API_KEY;
 if (!berascanApiKey) {
   throw new Error('No BERASCAN_API_KEY provided!');
 }
+const inkscanApiKey = process.env.INKSCAN_API_KEY;
+if (!inkscanApiKey) {
+  throw new Error('No INKSCAN_API_KEY provided!');
+}
 const mantlescanApiKey = process.env.MANTLESCAN_API_KEY;
 if (!mantlescanApiKey) {
   throw new Error('No MANTLESCAN_API_KEY provided!');
 }
 const polygonscanApiKey = process.env.POLYGONSCAN_API_KEY;
 if (!polygonscanApiKey) {
+  throw new Error('No POLYGONSCAN_API_KEY provided!');
+}
+const superscanApiKey = process.env.SUPERSCAN_API_KEY;
+if (!superscanApiKey) {
   throw new Error('No POLYGONSCAN_API_KEY provided!');
 }
 const xLayerApiKey = process.env.X_LAYER_API_KEY;
@@ -78,7 +98,7 @@ export const base_config: HardhatUserConfig = {
       allowUnlimitedContractSize: true,
       gas: 50_000_000,
       blockGasLimit: 100000000429720,
-      chainId: 42161,
+      chainId: parseInt(Network.PolygonZkEvm, 10),
       chains: {
         [Network.PolygonZkEvm]: {
           hardforkHistory: {
@@ -111,6 +131,18 @@ export const base_config: HardhatUserConfig = {
       gas: 20_000_000, // 20M gas
       accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
     },
+    [NetworkName.BerachainCartio]: {
+      chainId: parseInt(Network.BerachainCartio, 10),
+      url: berachainCartioWeb3Url,
+      gas: 20_000_000, // 20M gas
+      accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
+    },
+    [NetworkName.Ink]: {
+      chainId: parseInt(Network.Ink, 10),
+      url: inkWeb3Url,
+      gas: 30_000_000, // 30M gas
+      accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
+    },
     [NetworkName.Mantle]: {
       chainId: parseInt(Network.Mantle, 10),
       url: mantleWeb3Url,
@@ -121,7 +153,12 @@ export const base_config: HardhatUserConfig = {
       chainId: parseInt(Network.PolygonZkEvm, 10),
       url: polygonZkEvmWeb3Url,
       gas: 20_000_000, // 20M gas
-      gasPrice: 1_000_000_000, // 1 gwei
+      accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
+    },
+    [NetworkName.SuperSeed]: {
+      chainId: parseInt(Network.SuperSeed, 10),
+      url: superSeedWeb3Url,
+      gas: 30_000_000, // 30M gas
       accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
     },
     [NetworkName.XLayer]: {
@@ -171,8 +208,11 @@ export const base_config: HardhatUserConfig = {
       [NetworkName.ArbitrumOne]: arbiscanApiKey,
       [NetworkName.Base]: basescanApiKey,
       [NetworkName.Berachain]: berascanApiKey,
+      [NetworkName.BerachainCartio]: berascanApiKey,
+      [NetworkName.Ink]: inkscanApiKey,
       [NetworkName.Mantle]: mantlescanApiKey,
       [NetworkName.PolygonZkEvm]: polygonscanApiKey,
+      [NetworkName.SuperSeed]: superscanApiKey,
       [NetworkName.XLayer]: xLayerApiKey,
     },
     customChains: [
@@ -201,6 +241,22 @@ export const base_config: HardhatUserConfig = {
         },
       },
       {
+        network: NetworkName.BerachainCartio,
+        chainId: parseInt(Network.BerachainCartio, 10),
+        urls: {
+          apiURL: 'https://api.routescan.io/v2/network/testnet/evm/80000/etherscan/api',
+          browserURL: 'https://80000.testnet.routescan.io',
+        },
+      },
+      {
+        network: NetworkName.Ink,
+        chainId: parseInt(Network.Ink, 10),
+        urls: {
+          apiURL: 'https://explorer.inkonchain.com/api',
+          browserURL: 'https://explorer.inkonchain.com',
+        },
+      },
+      {
         network: NetworkName.Mantle,
         chainId: parseInt(Network.Mantle, 10),
         urls: {
@@ -217,6 +273,14 @@ export const base_config: HardhatUserConfig = {
         },
       },
       {
+        network: NetworkName.SuperSeed,
+        chainId: parseInt(Network.SuperSeed, 10),
+        urls: {
+          apiURL: 'https://explorer.superseed.xyz/api',
+          browserURL: 'https://explorer.superseed.xyz',
+        },
+      },
+      {
         network: NetworkName.XLayer,
         chainId: parseInt(Network.XLayer, 10),
         urls: {
@@ -226,4 +290,7 @@ export const base_config: HardhatUserConfig = {
       },
     ],
   },
+  tracer: {
+    tasks: ['run'],
+  }
 };

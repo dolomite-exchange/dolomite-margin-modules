@@ -1,5 +1,9 @@
 import { address } from '@dolomite-exchange/dolomite-margin';
 import {
+  DolomiteERC4626,
+  DolomiteERC4626__factory,
+  DolomiteERC4626WithPayable,
+  DolomiteERC4626WithPayable__factory,
   HandlerRegistry,
   IDolomiteInterestSetter,
   IDolomitePriceOracle,
@@ -12,11 +16,13 @@ import {
 } from '@dolomite-exchange/modules-base/src/types';
 import {
   CHAINLINK_PRICE_AGGREGATORS_MAP,
+  CHAOS_LABS_PRICE_AGGREGATORS_MAP,
   CHRONICLE_PRICE_SCRIBES_MAP,
   INVALID_TOKEN_MAP,
   REDSTONE_PRICE_AGGREGATORS_MAP,
 } from '@dolomite-exchange/modules-base/src/utils/constants';
 import {
+  getDolomiteErc4626ProxyConstructorParams,
   getLiquidationPremiumForTargetLiquidationPenalty,
   getMarginPremiumForTargetCollateralization,
   getOwnerAddMarketParameters,
@@ -24,22 +30,32 @@ import {
   TargetLiquidationPenalty,
 } from '@dolomite-exchange/modules-base/src/utils/constructors/dolomite';
 import {
-  createContractWithLibrary,
-  createContractWithName,
-} from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import {
   ADDRESS_ZERO,
+  BYTES_EMPTY,
+  BYTES_ZERO,
   Network,
-  networkToNetworkNameMap,
+  NETWORK_TO_NETWORK_NAME_MAP,
   NetworkType,
+  ONE_BI,
   TEN_BI,
   ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { impersonate } from '@dolomite-exchange/modules-base/test/utils';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { CoreProtocolType } from '@dolomite-exchange/modules-base/test/utils/setup';
+import {
+  GmxV2IsolationModeVaultFactory,
+  GmxV2IsolationModeVaultFactory__factory,
+  IGmxV2IsolationModeUnwrapperTraderV2,
+  IGmxV2IsolationModeUnwrapperTraderV2__factory,
+  IGmxV2IsolationModeVaultFactory,
+  IGmxV2IsolationModeWrapperTraderV2,
+  IGmxV2IsolationModeWrapperTraderV2__factory,
+} from '@dolomite-exchange/modules-gmx-v2/src/types';
 import {
   CoreProtocolWithChainlinkOld,
   CoreProtocolWithChainlinkV3,
+  CoreProtocolWithChaosLabsV3,
   CoreProtocolWithChronicle,
   CoreProtocolWithRedstone,
 } from '@dolomite-exchange/modules-oracles/src/oracles-constructors';
@@ -71,18 +87,38 @@ import {
 import { Etherscan } from '@nomicfoundation/hardhat-verify/etherscan';
 import { Libraries } from '@nomiclabs/hardhat-ethers/src/types';
 import { sleep } from '@openzeppelin/upgrades';
-import { BaseContract, BigNumber, BigNumberish, PopulatedTransaction } from 'ethers';
-import { commify, formatEther, FormatTypes, ParamType, parseEther } from 'ethers/lib/utils';
+import { BaseContract, BigNumber, BigNumberish, PopulatedTransaction, Signer } from 'ethers';
+import { commify, formatEther, FormatTypes, keccak256, ParamType, parseEther } from 'ethers/lib/utils';
 import fs, { readFileSync } from 'fs';
 import fsExtra from 'fs-extra';
 import hardhat, { artifacts, ethers, network } from 'hardhat';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
+import { createContractWithName } from 'packages/base/src/utils/dolomite-utils';
 import { CoreProtocolXLayer } from 'packages/base/test/utils/core-protocols/core-protocol-x-layer';
-import path, { join } from 'path';
+import { GlvToken } from 'packages/base/test/utils/ecosystem-utils/glv';
+import { GmToken } from 'packages/base/test/utils/ecosystem-utils/gmx';
 import {
-  CoreProtocolArbitrumOne,
-} from '@dolomite-exchange/modules-base/test/utils/core-protocols/core-protocol-arbitrum-one';
-import { IGmxV2IsolationModeVaultFactory } from '@dolomite-exchange/modules-gmx-v2/src/types';
+  getGlvIsolationModeUnwrapperTraderV2ConstructorParams,
+  getGlvIsolationModeVaultFactoryConstructorParams,
+  getGlvIsolationModeWrapperTraderV2ConstructorParams,
+} from 'packages/glv/src/glv-constructors';
+import {
+  GlvIsolationModeVaultFactory__factory,
+  IGlvIsolationModeUnwrapperTraderV2,
+  IGlvIsolationModeUnwrapperTraderV2__factory,
+  IGlvIsolationModeVaultFactory,
+  IGlvIsolationModeWrapperTraderV2,
+  IGlvIsolationModeWrapperTraderV2__factory,
+} from 'packages/glv/src/types';
+import {
+  getGmxV2IsolationModeUnwrapperTraderV2ConstructorParams,
+  getGmxV2IsolationModeVaultFactoryConstructorParams,
+  getGmxV2IsolationModeWrapperTraderV2ConstructorParams,
+  GMX_V2_EXECUTION_FEE,
+} from 'packages/gmx-v2/src/gmx-v2-constructors';
+import path, { join } from 'path';
+import ModuleDeployments from '../deploy/deployments.json';
+import { CREATE3Factory__factory } from '../saved-types';
 
 type ChainId = string;
 
@@ -234,7 +270,7 @@ function getDebugFilePath(artifactPath: string): string {
   return artifactPath.replace(/\.json$/, '.dbg.json');
 }
 
-function getBuildInfoFromDebugFileSync(debugFilePath: string): string | undefined {
+export function getBuildInfoFromDebugFileSync(debugFilePath: string): string | undefined {
   if (fsExtra.pathExistsSync(debugFilePath)) {
     const { buildInfo } = fsExtra.readJsonSync(debugFilePath);
     return path.resolve(path.dirname(debugFilePath), buildInfo);
@@ -293,6 +329,24 @@ export function getOldDeploymentVersionNamesByDeploymentKey(nameWithoutVersionPo
   }, [] as string[]);
 }
 
+export function isDeployed(contractName: string): boolean {
+  const fileBuffer = fs.readFileSync(DEPLOYMENT_FILE_NAME);
+  let file: Record<string, Record<ChainId, any>>;
+  try {
+    file = JSON.parse(fileBuffer.toString()) ?? {};
+  } catch (e) {
+    file = {};
+  }
+
+  const networkName = process.env.NETWORK ?? '';
+  const chainId = hardhat.userConfig.networks![networkName]!.chainId;
+  assertHardhatInvariant(
+    typeof chainId === 'number' && NETWORK_TO_NETWORK_NAME_MAP[chainId.toString() as Network] === networkName,
+    `Invalid chainId, found: ${chainId}`,
+  );
+  return file[contractName]?.[chainId.toString()];
+}
+
 let nonce: number | undefined = undefined;
 
 export async function deployContractAndSave(
@@ -300,6 +354,14 @@ export async function deployContractAndSave(
   args: ConstructorArgument[],
   contractRename?: string,
   libraries?: Record<string, string>,
+  options: {
+    nonce?: number;
+    gasLimit?: BigNumberish;
+    gasPrice?: BigNumberish;
+    type?: number;
+    skipArtifactInitialization?: boolean;
+    signer?: Signer;
+  } = {},
   attempts: number = 0,
 ): Promise<address> {
   if (attempts === 3) {
@@ -315,15 +377,18 @@ export async function deployContractAndSave(
     file = {};
   }
 
-  await initializeFreshArtifactFromWorkspace(contractName);
+  if (!options.skipArtifactInitialization) {
+    await initializeFreshArtifactFromWorkspace(contractName);
+  }
   const networkName = process.env.NETWORK ?? '';
   const chainId = hardhat.userConfig.networks![networkName]!.chainId;
   assertHardhatInvariant(
-    typeof chainId === 'number' && networkToNetworkNameMap[chainId.toString() as Network] === networkName,
+    typeof chainId === 'number' && NETWORK_TO_NETWORK_NAME_MAP[chainId.toString() as Network] === networkName,
     `Invalid chainId, found: ${chainId}`,
   );
   const usedContractName = contractRename ?? contractName;
-  if (file[usedContractName]?.[chainId.toString()]) {
+  const contractData = file[usedContractName]?.[chainId.toString()];
+  if (contractData && contractData.address !== ADDRESS_ZERO) {
     const contract = file[usedContractName][chainId.toString()];
     console.log(
       `\tContract ${usedContractName} has already been deployed to chainId ${chainId} (${contract.address}). Skipping...`,
@@ -345,15 +410,51 @@ export async function deployContractAndSave(
 
   console.log(`\tDeploying ${usedContractName} to network ${network.name}...`);
 
-  let contract: BaseContract;
+  let contract: { address: string; transactionHash: string };
   try {
+    const signer = options.signer ?? ethers.provider.getSigner(0);
     if (nonce === undefined) {
-      const signer = ethers.provider.getSigner(0);
       nonce = await ethers.provider.getTransactionCount(await signer.getAddress(), 'pending');
     }
-    contract = libraries
-      ? await createContractWithLibrary(contractName, libraries, args, { nonce })
-      : await createContractWithName(contractName, args, { nonce });
+    const opts = {
+      nonce: options.nonce === undefined ? nonce : options.nonce,
+      gasPrice: options.gasPrice,
+      gasLimit: options.gasLimit,
+      type: options.type,
+    };
+
+    if (contractName === 'CREATE3Factory') {
+      const result = await createContractWithName('CREATE3Factory', args, opts, signer);
+      contract = {
+        address: result.address,
+        transactionHash: result.deployTransaction.hash,
+      };
+    } else {
+      const factory = await ethers.getContractFactory(contractName, { libraries, signer: options.signer });
+      const transaction = factory.getDeployTransaction(...args);
+      const deployer = CREATE3Factory__factory.connect(
+        (ModuleDeployments.CREATE3Factory as any)[chainId].address,
+        signer,
+      );
+      const salt = keccak256(ethers.utils.defaultAbiCoder.encode(['string'], [usedContractName]));
+      const contractAddress = await deployer.getDeployed(await signer.getAddress(), salt);
+      const code = await ethers.provider.getCode(contractAddress);
+      if (code === BYTES_EMPTY) {
+        const result = await deployer.deploy(salt, transaction.data!, opts);
+        await result.wait();
+        contract = {
+          address: contractAddress,
+          transactionHash: result.hash,
+        };
+      } else {
+        console.warn(`\t${contractRename} was already deployed. Filling in 0x0 for hash...`);
+        contract = {
+          address: contractAddress,
+          transactionHash: BYTES_ZERO,
+        };
+      }
+    }
+
     nonce += 1;
   } catch (e) {
     console.error(`\tCould not deploy at attempt ${attempts + 1} due for ${contractName} to error:`, e);
@@ -365,14 +466,14 @@ export async function deployContractAndSave(
       const signer = ethers.provider.getSigner(0);
       nonce = await ethers.provider.getTransactionCount(await signer.getAddress(), 'pending');
     }
-    return deployContractAndSave(contractName, args, contractRename, libraries, attempts + 1);
+    return deployContractAndSave(contractName, args, contractRename, libraries, options, attempts + 1);
   }
 
   file[usedContractName] = {
     ...file[usedContractName],
     [chainId]: {
       address: contract.address,
-      transaction: contract.deployTransaction.hash,
+      transaction: contract.transactionHash,
       isVerified: false,
     },
   };
@@ -429,12 +530,187 @@ async function verifyFactoryChildProxyContractIfNecessary(
   }
 }
 
-export function getTokenVaultLibrary<T extends NetworkType>(core: CoreProtocolType<T>): Record<string, string> {
-  const libraryName = 'IsolationModeTokenVaultV1ActionsImpl';
-  const deploymentName = 'IsolationModeTokenVaultV1ActionsImplV7';
-  const deployments = readAllDeploymentFiles();
+export interface GmxV2GlvTokenSystem {
+  factory: IGlvIsolationModeVaultFactory;
+  unwrapper: IGlvIsolationModeUnwrapperTraderV2;
+  wrapper: IGlvIsolationModeWrapperTraderV2;
+}
+
+export async function deployGmxV2GlvTokenSystem(
+  core: CoreProtocolArbitrumOne,
+  glvToken: GlvToken,
+  glvName: string,
+): Promise<GmxV2GlvTokenSystem> {
+  const stablecoins = core.marketIds.stablecoins;
+  const shortIndex = stablecoins.findIndex((m) => BigNumber.from(m).eq(glvToken.shortMarketId));
+  if (shortIndex !== -1) {
+    const firstValue = stablecoins[0];
+    stablecoins[0] = stablecoins[shortIndex];
+    stablecoins[shortIndex] = firstValue;
+  }
+
+  const longMarketId = BigNumber.from(glvToken.longMarketId);
+  const debtMarketIds = [...stablecoins];
+  const collateralMarketIds = [...stablecoins];
+  if (!longMarketId.eq(-1)) {
+    debtMarketIds.unshift(longMarketId);
+    collateralMarketIds.unshift(longMarketId);
+  }
+  if (longMarketId.eq(glvToken.shortMarketId)) {
+    // Need to append the short marketId to the beginning too, even if they're the same asset
+    debtMarketIds.unshift(longMarketId);
+    collateralMarketIds.unshift(longMarketId);
+  }
+
+  function addMarketIdIfNeeded(list: BigNumberish[], findMarketId: BigNumberish) {
+    if (!list.some((m) => BigNumber.from(m).eq(findMarketId))) {
+      list.push(findMarketId);
+    }
+  }
+
+  addMarketIdIfNeeded(debtMarketIds, core.marketIds.wbtc);
+  addMarketIdIfNeeded(collateralMarketIds, core.marketIds.wbtc);
+
+  addMarketIdIfNeeded(debtMarketIds, core.marketIds.weth);
+  addMarketIdIfNeeded(collateralMarketIds, core.marketIds.weth);
+
+  const factoryAddress = await deployContractAndSave(
+    'GlvIsolationModeVaultFactory',
+    getGlvIsolationModeVaultFactoryConstructorParams(
+      core,
+      core.glvEcosystem.live.registry,
+      debtMarketIds,
+      collateralMarketIds,
+      glvToken,
+      core.glvEcosystem.live.tokenVaultImplementation,
+      GMX_V2_EXECUTION_FEE,
+      longMarketId.eq(-1),
+    ),
+    `Glv${glvName}IsolationModeVaultFactory`,
+    { ...core.gmxV2Ecosystem.live.gmxV2LibraryMap },
+  );
+  const factory = GlvIsolationModeVaultFactory__factory.connect(factoryAddress, core.hhUser1);
+
+  const unwrapperProxyAddress = await deployContractAndSave(
+    'IsolationModeTraderProxy',
+    await getGlvIsolationModeUnwrapperTraderV2ConstructorParams(
+      core,
+      core.glvEcosystem.live.unwrapperImplementation,
+      factory,
+      core.glvEcosystem.live.registry,
+      false,
+    ),
+    `Glv${glvName}AsyncIsolationModeUnwrapperTraderProxyV2`,
+  );
+
+  const wrapperProxyAddress = await deployContractAndSave(
+    'IsolationModeTraderProxy',
+    await getGlvIsolationModeWrapperTraderV2ConstructorParams(
+      core,
+      core.glvEcosystem.live.wrapperImplementation,
+      factory,
+      core.glvEcosystem.live.registry,
+      false,
+    ),
+    `Glv${glvName}AsyncIsolationModeWrapperTraderProxyV2`,
+  );
+
   return {
-    [libraryName]: deployments[deploymentName][core.config.network].address,
+    factory,
+    unwrapper: IGlvIsolationModeUnwrapperTraderV2__factory.connect(unwrapperProxyAddress, core.hhUser1),
+    wrapper: IGlvIsolationModeWrapperTraderV2__factory.connect(wrapperProxyAddress, core.hhUser1),
+  };
+}
+
+export interface GmxV2GmTokenSystem {
+  factory: GmxV2IsolationModeVaultFactory;
+  unwrapper: IGmxV2IsolationModeUnwrapperTraderV2;
+  wrapper: IGmxV2IsolationModeWrapperTraderV2;
+}
+
+export async function deployGmxV2GmTokenSystem(
+  core: CoreProtocolArbitrumOne,
+  gmToken: GmToken,
+  gmName: string,
+): Promise<GmxV2GmTokenSystem> {
+  const stablecoins = core.marketIds.stablecoins;
+  const shortIndex = stablecoins.findIndex((m) => BigNumber.from(m).eq(gmToken.shortMarketId));
+  if (shortIndex !== -1) {
+    const firstValue = stablecoins[0];
+    stablecoins[0] = stablecoins[shortIndex];
+    stablecoins[shortIndex] = firstValue;
+  }
+
+  const longMarketId = BigNumber.from(gmToken.longMarketId);
+  const debtMarketIds = [...stablecoins];
+  const collateralMarketIds = [...stablecoins];
+  if (!longMarketId.eq(-1)) {
+    debtMarketIds.unshift(longMarketId);
+    collateralMarketIds.unshift(longMarketId);
+  }
+  if (longMarketId.eq(gmToken.shortMarketId)) {
+    // Need to append the short marketId to the beginning too, even if they're the same asset
+    debtMarketIds.unshift(longMarketId);
+    collateralMarketIds.unshift(longMarketId);
+  }
+
+  function addMarketIdIfNeeded(list: BigNumberish[], findMarketId: BigNumberish) {
+    if (!list.some((m) => BigNumber.from(m).eq(findMarketId))) {
+      list.push(findMarketId);
+    }
+  }
+
+  addMarketIdIfNeeded(debtMarketIds, core.marketIds.wbtc);
+  addMarketIdIfNeeded(collateralMarketIds, core.marketIds.wbtc);
+
+  addMarketIdIfNeeded(debtMarketIds, core.marketIds.weth);
+  addMarketIdIfNeeded(collateralMarketIds, core.marketIds.weth);
+
+  const factoryAddress = await deployContractAndSave(
+    'GmxV2IsolationModeVaultFactory',
+    getGmxV2IsolationModeVaultFactoryConstructorParams(
+      core,
+      core.gmxV2Ecosystem.live.registry,
+      debtMarketIds,
+      collateralMarketIds,
+      gmToken,
+      core.gmxV2Ecosystem.live.tokenVaultImplementation,
+      GMX_V2_EXECUTION_FEE,
+      longMarketId.eq(-1),
+    ),
+    `GmxV2${gmName}IsolationModeVaultFactory`,
+    core.gmxV2Ecosystem.live.gmxV2LibraryMap,
+  );
+  const factory = GmxV2IsolationModeVaultFactory__factory.connect(factoryAddress, core.hhUser1);
+
+  const unwrapperProxyAddress = await deployContractAndSave(
+    'IsolationModeTraderProxy',
+    await getGmxV2IsolationModeUnwrapperTraderV2ConstructorParams(
+      core,
+      core.gmxV2Ecosystem.live.unwrapperImplementation,
+      factory,
+      core.gmxV2Ecosystem.live.registry,
+      false,
+    ),
+    `GmxV2${gmName}AsyncIsolationModeUnwrapperTraderProxyV2`,
+  );
+
+  const wrapperProxyAddress = await deployContractAndSave(
+    'IsolationModeTraderProxy',
+    await getGmxV2IsolationModeWrapperTraderV2ConstructorParams(
+      core,
+      core.gmxV2Ecosystem.live.wrapperImplementation,
+      factory,
+      core.gmxV2Ecosystem.live.registry,
+      false,
+    ),
+    `GmxV2${gmName}AsyncIsolationModeWrapperTraderProxyV2`,
+  );
+
+  return {
+    factory,
+    unwrapper: IGmxV2IsolationModeUnwrapperTraderV2__factory.connect(unwrapperProxyAddress, core.hhUser1),
+    wrapper: IGmxV2IsolationModeWrapperTraderV2__factory.connect(wrapperProxyAddress, core.hhUser1),
   };
 }
 
@@ -481,12 +757,11 @@ export async function deployPendlePtSystem<T extends NetworkType>(
     );
   }
 
-  const libraries = getTokenVaultLibrary(core);
   const userVaultImplementationAddress = await deployContractAndSave(
     'PendlePtIsolationModeTokenVaultV1',
     [],
     `PendlePt${ptName}IsolationModeTokenVaultV1`,
-    libraries,
+    core.libraries.tokenVaultActionsImpl,
   );
   const userVaultImplementation = PendlePtIsolationModeTokenVaultV1__factory.connect(
     userVaultImplementationAddress,
@@ -567,6 +842,32 @@ export async function deployLinearInterestSetterAndSave(
     [lowerOptimal, upperOptimal],
     `${interestSetterType}${lowerName}${upperName}LinearStepFunctionInterestSetter`,
   );
+}
+
+export async function deployDolomiteErc4626Token(
+  core: CoreProtocolType<any>,
+  tokenName: string,
+  marketId: BigNumberish,
+): Promise<DolomiteERC4626> {
+  const address = await deployContractAndSave(
+    'RegistryProxy',
+    await getDolomiteErc4626ProxyConstructorParams(core, marketId),
+    `Dolomite${tokenName}4626Token`,
+  );
+  return DolomiteERC4626__factory.connect(address, core.hhUser1);
+}
+
+export async function deployDolomiteErc4626WithPayableToken(
+  core: CoreProtocolType<any>,
+  tokenName: string,
+  marketId: BigNumberish,
+): Promise<DolomiteERC4626WithPayable> {
+  const address = await deployContractAndSave(
+    'RegistryProxy',
+    await getDolomiteErc4626ProxyConstructorParams(core, marketId),
+    `Dolomite${tokenName}4626Token`,
+  );
+  return DolomiteERC4626WithPayable__factory.connect(address, core.hhUser1);
 }
 
 export function sortFile(file: Record<string, Record<ChainId, any>>) {
@@ -677,8 +978,7 @@ async function getFormattedTokenName<T extends NetworkType>(
   const token = IERC20Metadata__factory.connect(tokenAddress, core.hhUser1);
   try {
     mostRecentTokenDecimals = await token.decimals();
-  } catch (e) {
-  }
+  } catch (e) {}
 
   const cachedName = addressToNameCache[tokenAddress.toString().toLowerCase()];
   if (typeof cachedName !== 'undefined') {
@@ -804,7 +1104,9 @@ export async function prettyPrintEncodedDataWithTypeSafety<
     const repeatLength = 76 + (counter - 1).toString().length + key.toString().length + methodName.toString().length;
     console.log(''); // add a new line
     console.log(
-      `=================================== ${counter++} - ${String(key)}.${String(methodName)} ===================================`,
+      `=================================== ${counter++} - ${String(key)}.${String(
+        methodName,
+      )} ===================================`,
     );
     console.log('Readable:\t', `${String(key)}.${String(methodName)}(\n\t\t\t${mappedArgs.join(' ,\n\t\t\t')}\n\t\t)`);
     console.log(
@@ -816,7 +1118,11 @@ export async function prettyPrintEncodedDataWithTypeSafety<
     console.log(''); // add a new line
   }
 
-  if (options.skipWrappingCalldataInSubmitTransaction) {
+  const realtimeOwner = await core.dolomiteMargin.owner();
+  const skipWrappingCalldataInSubmitTransaction =
+    options.skipWrappingCalldataInSubmitTransaction ||
+    (realtimeOwner === core.ownerAdapterV1.address && realtimeOwner === transaction.to!);
+  if (skipWrappingCalldataInSubmitTransaction) {
     return {
       to: transaction.to!,
       value: transaction.value?.toString() ?? '0',
@@ -824,20 +1130,29 @@ export async function prettyPrintEncodedDataWithTypeSafety<
     };
   }
 
-  if ((await core.dolomiteMargin.owner()) === core.delayedMultiSig.address) {
-    const outerTransaction = await core.delayedMultiSig.populateTransaction.submitTransaction(
+  let outerTransaction: PopulatedTransaction;
+  if (realtimeOwner === core.ownerAdapterV1?.address) {
+    outerTransaction = await core.ownerAdapterV1.populateTransaction.submitTransaction(
+      transaction.to!,
+      transaction.data!,
+    );
+  } else if (realtimeOwner === core.delayedMultiSig?.address) {
+    outerTransaction = await core.delayedMultiSig.populateTransaction.submitTransaction(
       transaction.to!,
       transaction.value ?? ZERO_BI,
       transaction.data!,
     );
-    return {
-      to: outerTransaction.to!,
-      value: outerTransaction.value?.toString() ?? '0',
-      data: outerTransaction.data!,
-    };
+  } else if (realtimeOwner === core.gnosisSafeAddress) {
+    outerTransaction = { ...transaction };
+  } else {
+    return Promise.reject(new Error(`Unknown owner contract: ${realtimeOwner}`));
   }
 
-  return Promise.reject(new Error('Unknown owner function needed!'));
+  return {
+    to: outerTransaction.to!,
+    value: outerTransaction.value?.toString() ?? '0',
+    data: outerTransaction.data!,
+  };
 }
 
 let mostRecentTokenDecimals: number | undefined = undefined;
@@ -895,13 +1210,13 @@ async function getReadableArg<T extends NetworkType>(
     const chainId = core.config.network;
     const allDeployments = readAllDeploymentFiles();
     Object.keys(allDeployments).forEach((key) => {
-      if ((allDeployments as any)[key][chainId]?.address.toLowerCase() === arg.toLowerCase()) {
+      if ((allDeployments as any)[key][chainId]?.address?.toLowerCase() === arg.toLowerCase()) {
         specialName = ` (${key})`;
       }
     });
     if (!specialName) {
       Object.keys(allDeployments).forEach((key) => {
-        if ((allDeployments as any)[key][chainId]?.address.toLowerCase() === arg.toLowerCase()) {
+        if ((allDeployments as any)[key][chainId]?.address?.toLowerCase() === arg.toLowerCase()) {
           specialName = ` (${key})`;
         }
       });
@@ -1043,8 +1358,76 @@ export async function prettyPrintEncodeInsertChainlinkOracleV3<T extends Network
   ];
 }
 
+export async function prettyPrintEncodeInsertChaosLabsOracleV3<T extends NetworkType>(
+  core: CoreProtocolWithChaosLabsV3<T>,
+  token: IERC20,
+  invertPrice: boolean = CHAOS_LABS_PRICE_AGGREGATORS_MAP[core.network][token.address]?.invert ?? false,
+  tokenPairAddress: string | undefined = CHAOS_LABS_PRICE_AGGREGATORS_MAP[core.network][token.address]
+    ?.tokenPairAddress,
+  aggregatorAddress: string = CHAOS_LABS_PRICE_AGGREGATORS_MAP[core.network][token.address]!.aggregatorAddress,
+  options?: { ignoreDescription: boolean },
+): Promise<EncodedTransaction[]> {
+  const invalidTokenSettings = INVALID_TOKEN_MAP[core.network][token.address];
+
+  let tokenDecimals: number;
+  if (invalidTokenSettings) {
+    tokenDecimals = invalidTokenSettings.decimals;
+  } else {
+    tokenDecimals = await IERC20Metadata__factory.connect(token.address, core.hhUser1).decimals();
+  }
+
+  const aggregator = IChainlinkAggregator__factory.connect(aggregatorAddress, core.governance);
+
+  const description = await aggregator.description();
+  let symbol: string;
+  if (invalidTokenSettings) {
+    symbol = invalidTokenSettings.symbol;
+  } else {
+    symbol = await IERC20Metadata__factory.connect(token.address, token.signer).symbol();
+  }
+
+  if (!options?.ignoreDescription) {
+    if (
+      !description.toUpperCase().includes(symbol.toUpperCase()) &&
+      !description.toUpperCase().includes(symbol.toUpperCase().substring(1))
+    ) {
+      return Promise.reject(new Error(`Invalid aggregator for symbol, found: ${description}, expected: ${symbol}`));
+    }
+  }
+
+  mostRecentTokenDecimals = tokenDecimals;
+  return [
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { chaosLabsPriceOracle: core.chaosLabsPriceOracleV3 },
+      'chaosLabsPriceOracle',
+      'ownerInsertOrUpdateOracleToken',
+      [token.address, aggregator.address, invertPrice],
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { oracleAggregatorV2: core.oracleAggregatorV2 },
+      'oracleAggregatorV2',
+      'ownerInsertOrUpdateToken',
+      [
+        {
+          token: token.address,
+          decimals: tokenDecimals,
+          oracleInfos: [
+            {
+              oracle: core.chaosLabsPriceOracleV3.address,
+              tokenPair: tokenPairAddress ?? ADDRESS_ZERO,
+              weight: 100,
+            },
+          ],
+        },
+      ],
+    ),
+  ];
+}
+
 export async function prettyPrintEncodeInsertChronicleOracleV3(
-  core: CoreProtocolWithChronicle<Network.ArbitrumOne | Network.Berachain| Network.Mantle>,
+  core: CoreProtocolWithChronicle<Network.ArbitrumOne | Network.Berachain | Network.Mantle>,
   token: IERC20,
   invertPrice: boolean = CHRONICLE_PRICE_SCRIBES_MAP[core.config.network][token.address].invertPrice ?? false,
   tokenPairAddress: string | undefined = CHRONICLE_PRICE_SCRIBES_MAP[core.config.network][token.address]
@@ -1390,6 +1773,50 @@ export async function prettyPrintEncodeAddAsyncIsolationModeMarket<T extends Net
   return transactions;
 }
 
+export async function prettyPrintEncodeAddGlvMarket(
+  core: CoreProtocolArbitrumOne,
+  factory: IGlvIsolationModeVaultFactory,
+  pairedGmToken: GmToken,
+  unwrapper: IIsolationModeUnwrapperTraderV2,
+  wrapper: IIsolationModeWrapperTraderV2,
+  handlerRegistry: HandlerRegistry,
+  marketId: BigNumberish,
+  targetCollateralization: TargetCollateralization,
+  targetLiquidationPremium: TargetLiquidationPenalty,
+  maxSupplyWei: BigNumberish,
+  options: AddMarketOptions = {},
+): Promise<EncodedTransaction[]> {
+  return [
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { glvRegistry: core.glvEcosystem.live.registry },
+      'glvRegistry',
+      'ownerSetGlvTokenToGmMarketForDeposit',
+      [await factory.UNDERLYING_TOKEN(), pairedGmToken.marketToken.address],
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { glvRegistry: core.glvEcosystem.live.registry },
+      'glvRegistry',
+      'ownerSetGlvTokenToGmMarketForWithdrawal',
+      [await factory.UNDERLYING_TOKEN(), pairedGmToken.marketToken.address],
+    ),
+    ...(await prettyPrintEncodeAddAsyncIsolationModeMarket(
+      core,
+      factory,
+      core.oracleAggregatorV2,
+      unwrapper,
+      wrapper,
+      handlerRegistry,
+      marketId,
+      targetCollateralization,
+      targetLiquidationPremium,
+      maxSupplyWei,
+      options,
+    )),
+  ];
+}
+
 export async function prettyPrintEncodeAddGmxV2Market(
   core: CoreProtocolArbitrumOne,
   factory: IGmxV2IsolationModeVaultFactory,
@@ -1436,7 +1863,7 @@ export async function prettyPrintEncodeAddGmxV2Market(
       'ownerSetGmxMarketToIndexToken',
       [await factory.UNDERLYING_TOKEN(), await factory.INDEX_TOKEN()],
     ),
-    ...await prettyPrintEncodeAddAsyncIsolationModeMarket(
+    ...(await prettyPrintEncodeAddAsyncIsolationModeMarket(
       core,
       factory,
       core.oracleAggregatorV2,
@@ -1448,7 +1875,7 @@ export async function prettyPrintEncodeAddGmxV2Market(
       targetLiquidationPremium,
       maxSupplyWei,
       options,
-    ),
+    )),
   ];
 }
 
@@ -1520,5 +1947,5 @@ async function isValidAmount(token: IERC20, amount: BigNumberish) {
 
   const decimals = await IERC20Metadata__factory.connect(token.address, token.signer).decimals();
   const scale = TEN_BI.pow(decimals);
-  return realAmount.div(scale).gte(TEN_BI) && realAmount.div(scale).lte(100_000_000);
+  return realAmount.div(scale).gt(ONE_BI) && realAmount.div(scale).lte(100_000_000);
 }

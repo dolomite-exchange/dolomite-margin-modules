@@ -10,6 +10,6 @@ export function parseUsdc(value: string): BigNumber {
 export function parseUsdt(value: string): BigNumber {
   return parseUsdc(value);
 }
-export function parseWbtc(value: string): BigNumber {
+export function parseBtc(value: string): BigNumber {
   return parseEther(value).div(_8_DECIMAL_DIFF);
 }

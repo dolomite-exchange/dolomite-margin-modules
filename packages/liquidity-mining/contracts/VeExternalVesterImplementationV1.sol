@@ -68,6 +68,7 @@ contract VeExternalVesterImplementationV1 is
     uint256 private constant _DEFAULT_ACCOUNT_NUMBER = 0;
     uint256 private constant _ONE_WEEK = 1 weeks;
     uint256 private constant _VEST_DURATION = _ONE_WEEK;
+    uint256 private constant _TWO_YEARS = 104 weeks;
 
     // solhint-disable max-line-length
     bytes32 private constant _BASE_URI_SLOT = bytes32(uint256(keccak256("eip1967.proxy.baseURI")) - 1);
@@ -237,7 +238,7 @@ contract VeExternalVesterImplementationV1 is
         uint256 _maxPaymentAmount
     )
     external
-    nonReentrant 
+    nonReentrant
     returns (uint256) {
         VestingPosition memory position = _getVestingPositionSlot(_nftId);
         uint256 accountNumber = calculateAccountNumber(position.creator, _nftId);
@@ -252,6 +253,18 @@ contract VeExternalVesterImplementationV1 is
             _FILE,
             "Position not vested"
         );
+        if (_veTokenId == type(uint256).max) {
+            Require.that(
+                _veLockEndTime > block.timestamp && _veLockEndTime % _ONE_WEEK == 0,
+                _FILE,
+                "Invalid ve lock end time"
+            );
+            Require.that(
+                _veLockEndTime - block.timestamp <= _TWO_YEARS,
+                _FILE,
+                "ve lock end time is too old"
+            );
+        }
 
         _closePosition(position);
 
@@ -295,7 +308,7 @@ contract VeExternalVesterImplementationV1 is
             _veTokenId = VE_TOKEN.create_lock_for(
                 position.oTokenAmount,
                 _veLockEndTime - block.timestamp,
-                msg.sender
+                /* _for = */ msg.sender
             );
         } else {
             VE_TOKEN.increase_amount(_veTokenId, position.oTokenAmount);

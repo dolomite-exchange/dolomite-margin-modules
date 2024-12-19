@@ -20,10 +20,7 @@ import {
   expectThrow,
   expectWalletBalance,
 } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import {
-  setupCoreProtocol,
-  setupWETHBalance,
-} from '@dolomite-exchange/modules-base/test/utils/setup';
+import { setupCoreProtocol, setupWETHBalance } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
@@ -99,7 +96,7 @@ describe('VeExternalVesterV1', () => {
   before(async () => {
     core = await setupCoreProtocol({
       network: Network.ArbitrumOne,
-      blockNumber: 219_404_000,
+      blockNumber: 219_405_000,
     });
     testToken = await createTestToken();
 
@@ -259,7 +256,7 @@ describe('VeExternalVesterV1', () => {
     it('should fail if already initialized', async () => {
       await expectThrow(
         vester.lazyInitialize(veToken.address),
-        'VeExternalVesterImplementationV1: veToken already initialized'
+        'VeExternalVesterImplementationV1: veToken already initialized',
       );
     });
   });
@@ -351,7 +348,7 @@ describe('VeExternalVesterV1', () => {
       const timestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
       await veToken.setAmountAndEnd(
         O_TOKEN_AMOUNT,
-        convertToNearestWeek(BigNumber.from(timestamp), TWO_YEARS)
+        convertToNearestWeek(BigNumber.from(timestamp), TWO_YEARS),
       );
       const paymentAmount = PAYMENT_AMOUNT_BEFORE_DISCOUNT.mul(5_000).div(10_000);
 
@@ -394,7 +391,7 @@ describe('VeExternalVesterV1', () => {
         NFT_ID,
         MAX_UINT_256_BI,
         convertToNearestWeek(BigNumber.from(timestamp), TWO_YEARS),
-        MAX_PAYMENT_AMOUNT
+        MAX_PAYMENT_AMOUNT,
       );
 
       await expectEvent(vester, result, 'PositionClosed', {
@@ -470,6 +467,46 @@ describe('VeExternalVesterV1', () => {
       );
     });
 
+    it('should fail if ve lock time is invalid', async () => {
+      await setupAllowancesForVesting();
+      await vester.vest(ONE_WEEK, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT);
+      await increase(ONE_WEEK);
+      const timestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
+
+      const weekTimestamp = convertToNearestWeek(BigNumber.from(timestamp), ONE_WEEK);
+      await expectThrow(
+        vester.connect(core.hhUser1)
+          .closePositionAndBuyTokens(NFT_ID, MAX_UINT_256_BI, weekTimestamp.sub(ONE_WEEK), MAX_PAYMENT_AMOUNT),
+        'VeExternalVesterImplementationV1: Invalid ve lock end time',
+      );
+
+      const maxDuration = TWO_YEARS.add(ONE_WEEK);
+      await expectThrow(
+        vester.connect(core.hhUser1).closePositionAndBuyTokens(
+          NFT_ID,
+          MAX_UINT_256_BI,
+          convertToNearestWeek(BigNumber.from(timestamp), maxDuration).add(1),
+          MAX_PAYMENT_AMOUNT,
+        ),
+        'VeExternalVesterImplementationV1: Invalid ve lock end time',
+      );
+    });
+
+    it('should fail if the ve lock time is too old', async () => {
+      await setupAllowancesForVesting();
+      await vester.vest(ONE_WEEK, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT);
+      await increase(ONE_WEEK);
+
+      const timestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
+      const weekTimestamp = convertToNearestWeek(BigNumber.from(timestamp), TWO_YEARS.add(ONE_WEEK));
+
+      await expectThrow(
+        vester.connect(core.hhUser1)
+          .closePositionAndBuyTokens(NFT_ID, MAX_UINT_256_BI, weekTimestamp, MAX_PAYMENT_AMOUNT),
+        'VeExternalVesterImplementationV1: ve lock end time is too old',
+      );
+    });
+
     it('should fail if reentered', async () => {
       await setupAllowancesForVesting();
       await vester.vest(ONE_WEEK, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT);
@@ -486,7 +523,6 @@ describe('VeExternalVesterV1', () => {
     it('should work normally', async () => {
       await setupAllowancesForVesting();
       await vester.vest(ONE_WEEK, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT);
-      const vesterAccountNumber = getVesterAccountNumber(core.hhUser1, NFT_ID);
       await increase(CLOSE_POSITION_WINDOW.add(ONE_WEEK).add(1));
 
       const result = await vester.connect(core.hhUser5).forceClosePosition(NFT_ID);
@@ -519,7 +555,6 @@ describe('VeExternalVesterV1', () => {
       await setupAllowancesForVesting();
       await vester.connect(owner).ownerSetForceClosePositionTax(ZERO_BI);
       await vester.vest(ONE_WEEK, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT);
-      const vesterAccountNumber = getVesterAccountNumber(core.hhUser1, NFT_ID);
       await increase(CLOSE_POSITION_WINDOW.add(ONE_WEEK).add(1));
 
       const result = await vester.connect(core.hhUser5).forceClosePosition(NFT_ID);
@@ -568,7 +603,6 @@ describe('VeExternalVesterV1', () => {
     it('should work normally', async () => {
       await setupAllowancesForVesting();
       await vester.vest(ONE_WEEK, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT);
-      const vesterAccountNumber = getVesterAccountNumber(core.hhUser1, NFT_ID);
       await increase(ONE_DAY_SECONDS);
 
       const result = await vester.connect(core.hhUser1).emergencyWithdraw(NFT_ID);
@@ -600,7 +634,6 @@ describe('VeExternalVesterV1', () => {
       await vester.connect(owner).ownerSetEmergencyWithdrawTax(500); // 5%
       await setupAllowancesForVesting();
       await vester.vest(ONE_WEEK, O_TOKEN_AMOUNT, MAX_PAIR_AMOUNT);
-      const vesterAccountNumber = getVesterAccountNumber(core.hhUser1, NFT_ID);
       await increase(ONE_DAY_SECONDS);
 
       const result = await vester.connect(core.hhUser1).emergencyWithdraw(NFT_ID);
@@ -928,9 +961,5 @@ describe('VeExternalVesterV1', () => {
     if (!BigNumber.from(marketId).eq(NO_MARKET_ID)) {
       await core.dolomiteMargin.ownerSetPriceOracle(marketId, core.oracleAggregatorV2.address);
     }
-  }
-
-  function getVesterAccountNumber(user: SignerWithAddressWithSafety, nftId: BigNumberish): BigNumber {
-    return BigNumber.from(ethers.utils.solidityKeccak256(['address', 'uint256'], [user.address, nftId]));
   }
 });

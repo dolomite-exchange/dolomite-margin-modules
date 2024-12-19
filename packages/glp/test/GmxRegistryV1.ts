@@ -29,40 +29,40 @@ describe('GmxRegistryV1', () => {
 
   describe('#initialize', () => {
     it('should initialize variables properly', async () => {
-      expect(await registry.bnGmx()).to.equal(core.gmxEcosystem!.bnGmx.address);
-      expect(await registry.esGmx()).to.equal(core.gmxEcosystem!.esGmx.address);
-      expect(await registry.fsGlp()).to.equal(core.gmxEcosystem!.fsGlp.address);
-      expect(await registry.glp()).to.equal(core.gmxEcosystem!.glp.address);
-      expect(await registry.glpManager()).to.equal(core.gmxEcosystem!.glpManager.address);
-      expect(await registry.glpRewardsRouter()).to.equal(core.gmxEcosystem!.glpRewardsRouter.address);
-      expect(await registry.gmx()).to.equal(core.gmxEcosystem!.gmx.address);
-      expect(await registry.gmxRewardsRouter()).to.equal(core.gmxEcosystem!.gmxRewardsRouterV2.address);
-      expect(await registry.gmxVault()).to.equal(core.gmxEcosystem!.gmxVault.address);
-      expect(await registry.sGlp()).to.equal(core.gmxEcosystem!.sGlp.address);
-      expect(await registry.sGmx()).to.equal(core.gmxEcosystem!.sGmx.address);
-      expect(await registry.sbfGmx()).to.equal(core.gmxEcosystem!.sbfGmx.address);
-      expect(await registry.vGlp()).to.equal(core.gmxEcosystem!.vGlp.address);
-      expect(await registry.vGmx()).to.equal(core.gmxEcosystem!.vGmx.address);
-      expect(await registry.vGmx()).to.equal(core.gmxEcosystem!.vGmx.address);
+      expect(await registry.bnGmx()).to.equal(core.gmxEcosystem.bnGmx.address);
+      expect(await registry.esGmx()).to.equal(core.gmxEcosystem.esGmx.address);
+      expect(await registry.fsGlp()).to.equal(core.gmxEcosystem.fsGlp.address);
+      expect(await registry.glp()).to.equal(core.gmxEcosystem.glp.address);
+      expect(await registry.glpManager()).to.equal(core.gmxEcosystem.glpManager.address);
+      expect(await registry.glpRewardsRouter()).to.equal(core.gmxEcosystem.glpRewardsRouter.address);
+      expect(await registry.gmx()).to.equal(core.gmxEcosystem.gmx.address);
+      expect(await registry.gmxRewardsRouter()).to.equal(core.gmxEcosystem.gmxRewardsRouterV2.address);
+      expect(await registry.gmxVault()).to.equal(core.gmxEcosystem.gmxVault.address);
+      expect(await registry.sGlp()).to.equal(core.gmxEcosystem.sGlp.address);
+      expect(await registry.sGmx()).to.equal(core.gmxEcosystem.sGmx.address);
+      expect(await registry.sbfGmx()).to.equal(core.gmxEcosystem.sbfGmx.address);
+      expect(await registry.vGlp()).to.equal(core.gmxEcosystem.vGlp.address);
+      expect(await registry.vGmx()).to.equal(core.gmxEcosystem.vGmx.address);
+      expect(await registry.vGmx()).to.equal(core.gmxEcosystem.vGmx.address);
       expect(await registry.dolomiteRegistry()).to.equal(core.dolomiteRegistry.address);
     });
 
     it('should fail if already initialized', async () => {
       const initializer = {
-        bnGmx: core.gmxEcosystem!.bnGmx.address,
-        esGmx: core.gmxEcosystem!.esGmx.address,
-        fsGlp: core.gmxEcosystem!.fsGlp.address,
-        glp: core.gmxEcosystem!.glp.address,
-        glpManager: core.gmxEcosystem!.glpManager.address,
-        glpRewardsRouter: core.gmxEcosystem!.glpRewardsRouter.address,
-        gmx: core.gmxEcosystem!.gmx.address,
-        gmxRewardsRouter: core.gmxEcosystem!.gmxRewardsRouterV2.address,
-        gmxVault: core.gmxEcosystem!.gmxVault.address,
-        sGlp: core.gmxEcosystem!.sGlp.address,
-        sGmx: core.gmxEcosystem!.sGmx.address,
-        sbfGmx: core.gmxEcosystem!.sbfGmx.address,
-        vGlp: core.gmxEcosystem!.vGlp.address,
-        vGmx: core.gmxEcosystem!.vGmx.address,
+        bnGmx: core.gmxEcosystem.bnGmx.address,
+        esGmx: core.gmxEcosystem.esGmx.address,
+        fsGlp: core.gmxEcosystem.fsGlp.address,
+        glp: core.gmxEcosystem.glp.address,
+        glpManager: core.gmxEcosystem.glpManager.address,
+        glpRewardsRouter: core.gmxEcosystem.glpRewardsRouter.address,
+        gmx: core.gmxEcosystem.gmx.address,
+        gmxRewardsRouter: core.gmxEcosystem.gmxRewardsRouterV2.address,
+        gmxVault: core.gmxEcosystem.gmxVault.address,
+        sGlp: core.gmxEcosystem.sGlp.address,
+        sGmx: core.gmxEcosystem.sGmx.address,
+        sbfGmx: core.gmxEcosystem.sbfGmx.address,
+        vGlp: core.gmxEcosystem.vGlp.address,
+        vGmx: core.gmxEcosystem.vGmx.address,
       };
 
       await expectThrow(
@@ -86,7 +86,7 @@ describe('GmxRegistryV1', () => {
         registry.connect(core.hhUser1).ownerSetBnGmx(OTHER_ADDRESS),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
-      expect(await registry.bnGmx()).to.equal(core.gmxEcosystem!.bnGmx.address);
+      expect(await registry.bnGmx()).to.equal(core.gmxEcosystem.bnGmx.address);
     });
 
     it('should fail if zero address is set', async () => {

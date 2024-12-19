@@ -37,6 +37,7 @@ contract ExternalVesterDiscountCalculatorV1 is IVesterDiscountCalculator {
 
     uint256 public constant BASE = 1 ether;
     uint256 public constant TWO_YEARS = 104 weeks;
+    uint256 public constant ONE_WEEK = 1 weeks;
 
     uint256 public constant FIFTY_PERCENT = .5 ether;
     uint256 public constant FIVE_PERCENT = .05 ether;
@@ -57,15 +58,20 @@ contract ExternalVesterDiscountCalculatorV1 is IVesterDiscountCalculator {
             veLockEndTime = veToken.locked(veNftId).end;
         }
         Require.that(
-            veLockEndTime > block.timestamp && veLockEndTime % 1 weeks == 0,
+            veLockEndTime > block.timestamp && veLockEndTime % ONE_WEEK == 0,
             _FILE,
-            "Invalid veLockEndTime"
+            "Invalid ve lock end timestamp"
+        );
+        Require.that(
+            veLockEndTime - block.timestamp <= TWO_YEARS,
+            _FILE,
+            "ve lock end timestamp is too old"
         );
 
         // @dev linearly decays from 50% to 5% from 104 weeks to 1 week, then linearly from 5% to 0% over the last week
         uint256 duration = veLockEndTime - block.timestamp;
-        if (duration > 1 weeks) {
-            return calculateLinearDiscount(duration - 1 weeks);
+        if (duration > ONE_WEEK) {
+            return calculateLinearDiscount(duration - ONE_WEEK);
         } else {
             return calculateLinearDiscountWithinOneWeek(duration);
         }
@@ -77,7 +83,7 @@ contract ExternalVesterDiscountCalculatorV1 is IVesterDiscountCalculator {
     ) public pure returns (uint256) {
         _lockDuration = _roundUpToNearestWholeWeek(_lockDuration);
 
-        uint256 changeY = _lockDuration * (FIFTY_PERCENT - FIVE_PERCENT) / (TWO_YEARS - 1 weeks);
+        uint256 changeY = _lockDuration * (FIFTY_PERCENT - FIVE_PERCENT) / (TWO_YEARS - ONE_WEEK);
         uint256 discount = FIVE_PERCENT + changeY;
 
         return discount > FIFTY_PERCENT ? FIFTY_PERCENT : discount;
@@ -87,17 +93,17 @@ contract ExternalVesterDiscountCalculatorV1 is IVesterDiscountCalculator {
     function calculateLinearDiscountWithinOneWeek(
         uint256 _lockDuration
     ) public pure returns (uint256) {
-        uint256 discount = FIVE_PERCENT * _lockDuration / 1 weeks;
+        uint256 discount = FIVE_PERCENT * _lockDuration / ONE_WEEK;
         return discount > FIVE_PERCENT ? FIVE_PERCENT : discount;
     }
 
     function _roundUpToNearestWholeWeek(
         uint256 _duration
     ) internal pure returns (uint256) {
-        if (_duration % 1 weeks == 0) {
+        if (_duration % ONE_WEEK == 0) {
             return _duration;
         } else {
-            return (_duration / 1 weeks * 1 weeks) + 1 weeks;
+            return (_duration / ONE_WEEK * ONE_WEEK) + ONE_WEEK;
         }
     }
 }

@@ -62,7 +62,7 @@ contract BuybackPool is IBuybackPool, OnlyDolomiteMargin {
     ) OnlyDolomiteMargin(_dolomiteMargin) {
         EXCHANGE_TOKEN = IERC20(_exchangeToken);
         PAYMENT_TOKEN = IERC20(_paymentToken);
-        _ownerSetExchangeRate(.05 ether); // 5%
+        _ownerSetExchangeRate(0.05 ether); // 5%
     }
 
     // ==================================================================

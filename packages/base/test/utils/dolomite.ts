@@ -1,11 +1,13 @@
 import { address } from '@dolomite-margin/dist/src';
-import { BigNumberish } from 'ethers';
+import { BigNumberish, PopulatedTransaction } from 'ethers';
 import { Network, NetworkType } from 'packages/base/src/utils/no-deps-constants';
 import {
   DolomiteAccountRegistry,
   DolomiteAccountRegistry__factory,
   DolomiteERC20,
   DolomiteERC4626,
+  DolomiteOwner,
+  DolomiteOwner__factory,
   DolomiteRegistryImplementation,
   DolomiteRegistryImplementation__factory,
   EventEmitterRegistry,
@@ -24,6 +26,7 @@ import {
 import {
   getDolomiteErc20ProxyConstructorParams,
   getDolomiteErc4626ProxyConstructorParams,
+  getDolomiteOwnerConstructorParams,
   getEventEmitterRegistryConstructorParams,
   getIsolationModeTraderProxyConstructorParams,
   getRegistryProxyConstructorParams,
@@ -61,13 +64,17 @@ export async function createAsyncIsolationModeWrapperTraderImpl(): Promise<Recor
 
 export async function createRegistryProxy(
   implementationAddress: string,
-  initializationCalldata: string,
+  initializationCalldata: string | PopulatedTransaction,
   core: CoreProtocolType<NetworkType>,
 ): Promise<RegistryProxy> {
+  const calldata =
+    typeof initializationCalldata === 'object' && 'data' in initializationCalldata
+      ? initializationCalldata.data!
+      : initializationCalldata as string;
   return createContractWithAbi(
     RegistryProxy__factory.abi,
     RegistryProxy__factory.bytecode,
-    getRegistryProxyConstructorParams(implementationAddress, initializationCalldata, core.dolomiteMargin),
+    getRegistryProxyConstructorParams(implementationAddress, calldata, core.dolomiteMargin),
   );
 }
 
@@ -104,6 +111,17 @@ export async function createDolomiteRegistryImplementation(): Promise<DolomiteRe
     DolomiteRegistryImplementation__factory.abi,
     DolomiteRegistryImplementation__factory.bytecode,
     [],
+  );
+}
+
+export async function createDolomiteOwner(
+  core: CoreProtocolType<NetworkType>,
+  secondsTimeLocked: BigNumberish,
+): Promise<DolomiteOwner> {
+  return createContractWithAbi(
+    DolomiteOwner__factory.abi,
+    DolomiteOwner__factory.bytecode,
+    getDolomiteOwnerConstructorParams(core.gnosisSafe.address, secondsTimeLocked),
   );
 }
 

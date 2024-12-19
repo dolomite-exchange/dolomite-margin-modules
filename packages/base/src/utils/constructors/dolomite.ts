@@ -4,7 +4,6 @@ import { DolomiteMargin } from '../../../test/utils/dolomite';
 import { CoreProtocolConfig, CoreProtocolType } from '../../../test/utils/setup';
 import {
   DolomiteERC20,
-  DolomiteERC4626,
   EventEmitterRegistry,
   IDolomiteMargin,
   IDolomiteMarginV2,
@@ -14,7 +13,6 @@ import {
   IIsolationModeVaultFactory,
   ILiquidatorAssetRegistry,
   RegistryProxy,
-  TestDolomiteERC4626,
 } from '../../types';
 import { IDolomiteInterestSetter, IDolomiteStructs } from '../../types/contracts/protocol/interfaces/IDolomiteMargin';
 import { Network, NetworkType, ZERO_BI } from '../no-deps-constants';
@@ -38,6 +36,10 @@ export enum TargetLiquidationPenalty {
   _9 = '0.09',
   _10 = '0.10',
   _15 = '0.15',
+}
+
+export function getDolomiteOwnerConstructorParams(gnosisSafeAddress: string, secondsTimeLocked: BigNumberish): any[] {
+  return [gnosisSafeAddress, secondsTimeLocked];
 }
 
 export function getRegistryProxyConstructorParams<T extends NetworkType>(
@@ -168,9 +170,7 @@ export function getMarginPremiumForTargetCollateralization(
   return parseEther(targetCollateralization).mul(one).div(baseCollateralization).sub(one);
 }
 
-export function getLiquidationPremiumForTargetLiquidationPenalty(
-  targetPenalty: TargetLiquidationPenalty,
-): BigNumber {
+export function getLiquidationPremiumForTargetLiquidationPenalty(targetPenalty: TargetLiquidationPenalty): BigNumber {
   if (targetPenalty === TargetLiquidationPenalty.Base) {
     return ZERO_BI;
   }
@@ -186,7 +186,7 @@ export function getOwnerAddMarketParametersForIsolationMode<T extends NetworkTyp
   priceOracle: { address: string; getPrice: (token: string) => Promise<MonetaryPriceStruct> },
   interestSetter: {
     address: string;
-    getInterestRate: (token: string, borrowWei: BigNumberish, supplyWei: BigNumberish) => Promise<InterestRateStruct>
+    getInterestRate: (token: string, borrowWei: BigNumberish, supplyWei: BigNumberish) => Promise<InterestRateStruct>;
   },
   marginPremium: BigNumberish,
   spreadPremium: BigNumberish,
@@ -238,7 +238,6 @@ export async function getDolomiteErc20ProxyConstructorParams<T extends NetworkTy
 
 export async function getDolomiteErc4626ProxyConstructorParams<T extends NetworkType>(
   core: CoreProtocolType<T>,
-  implementation: DolomiteERC4626 | TestDolomiteERC4626,
   marketId: BigNumberish,
 ): Promise<any[]> {
   const token = IERC20Metadata__factory.connect(
@@ -246,14 +245,43 @@ export async function getDolomiteErc4626ProxyConstructorParams<T extends Network
     core.hhUser1,
   );
   const symbol = await token.symbol();
-  const transaction = await implementation.populateTransaction.initialize(
-    `Dolomite ERC4626: ${symbol}`,
-    `d${symbol}-ERC4626`,
+  const implementationContract = core.implementationContracts.dolomiteERC4626Implementation;
+  const transaction = await implementationContract.populateTransaction.initialize(
+    `Dolomite: ${symbol}`,
+    `d${symbol}`,
     await token.decimals(),
     marketId,
-    core.dolomiteRegistry.address
+    core.dolomiteRegistry.address,
   );
-  return [implementation.address, core.dolomiteMargin.address, transaction.data!];
+  return [
+    implementationContract.address,
+    core.dolomiteMargin.address,
+    transaction.data!,
+  ];
+}
+
+export async function getDolomiteErc4626WithPayableProxyConstructorParams<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  marketId: BigNumberish,
+): Promise<any[]> {
+  const token = IERC20Metadata__factory.connect(
+    await core.dolomiteMargin.getMarketTokenAddress(marketId),
+    core.hhUser1,
+  );
+  const implementationContract = core.implementationContracts.dolomiteERC4626WithPayableImplementation;
+  const symbol = await token.symbol();
+  const transaction = await implementationContract.populateTransaction.initialize(
+    `Dolomite: ${symbol}`,
+    `d${symbol}`,
+    await token.decimals(),
+    marketId,
+    core.dolomiteRegistry.address,
+  );
+  return [
+    implementationContract.address,
+    core.dolomiteMargin.address,
+    transaction.data!,
+  ];
 }
 
 export function getIsolationModeTokenVaultMigratorConstructorParams<T extends NetworkType>(

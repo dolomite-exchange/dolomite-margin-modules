@@ -26,6 +26,7 @@ import {
   createContractWithLibrary
 } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { createIsolationModeTokenVaultV1ActionsImpl } from '@dolomite-exchange/modules-base/test/utils/dolomite';
+import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 
 export async function createARBRegistry(core: CoreProtocolArbitrumOne): Promise<ARBRegistry> {
   const implementation = await createContractWithAbi<ARBRegistry>(

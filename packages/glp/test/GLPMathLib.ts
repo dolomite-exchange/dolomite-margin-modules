@@ -40,8 +40,8 @@ describe('GLPMathLib', () => {
     );
 
     const usdcBigAmount = amountWei.div(1e12).mul(4);
-    await setupUSDCBalance(core, core.hhUser1, usdcBigAmount, core.gmxEcosystem!.glpManager);
-    await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
+    await setupUSDCBalance(core, core.hhUser1, usdcBigAmount, core.gmxEcosystem.glpManager);
+    await core.gmxEcosystem.glpRewardsRouter.connect(core.hhUser1)
       .mintAndStakeGlp(core.tokens.usdc.address, usdcAmount, 0, 0);
 
     snapshotId = await snapshot();
@@ -59,7 +59,7 @@ describe('GLPMathLib', () => {
         const weirdAmountUsdc = usdcAmount.mul(random).div(101);
         const usdgAmount = await lib.GLPMathLibGetUsdgAmountForBuy(core.tokens.usdc.address, weirdAmountUsdc);
 
-        const expectedAmount = await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
+        const expectedAmount = await core.gmxEcosystem.glpRewardsRouter.connect(core.hhUser1)
           .callStatic
           .mintAndStakeGlp(core.tokens.usdc.address, weirdAmountUsdc, 0, 0);
         expect(await lib.GLPMathLibGetGlpMintAmount(usdgAmount)).to.eq(expectedAmount);
@@ -111,7 +111,7 @@ describe('GLPMathLib', () => {
         const weirdAmountGlp = glpAmount.mul(random).div(101);
         const usdgAmount = await lib.GLPMathLibGetUsdgAmountForSell(weirdAmountGlp);
 
-        const expectedAmount = await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
+        const expectedAmount = await core.gmxEcosystem.glpRewardsRouter.connect(core.hhUser1)
           .callStatic
           .unstakeAndRedeemGlp(core.tokens.usdc.address, weirdAmountGlp, 0, core.hhUser1.address);
         expect(await lib.GLPMathLibGetGlpRedemptionAmount(core.tokens.usdc.address, usdgAmount)).to.eq(expectedAmount);

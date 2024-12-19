@@ -28,6 +28,7 @@ import {
 } from '../utils/setup';
 
 const usdcAmount = BigNumber.from('100000000'); // 100 USDC
+const isolationModeVault = '0xffa18b366fa3ebE5832a49535F42aa0c93c791eF';
 
 describe('DolomiteERC4626', () => {
   let snapshotId: string;
@@ -76,8 +77,8 @@ describe('DolomiteERC4626', () => {
 
   describe('#initialize', () => {
     it('should work normally', async () => {
-      expect(await token.name()).to.eq('Dolomite ERC4626: USDC');
-      expect(await token.symbol()).to.eq('dUSDC-ERC4626');
+      expect(await token.name()).to.eq('Dolomite: USDC');
+      expect(await token.symbol()).to.eq('dUSDC');
       expect(await token.decimals()).to.eq(6);
       expect(await token.marketId()).to.eq(core.marketIds.usdc);
       expect(await token.asset()).to.eq(core.tokens.usdc.address);
@@ -124,7 +125,7 @@ describe('DolomiteERC4626', () => {
       await expectProtocolBalance(core, core.hhUser2, ZERO_BI, core.marketIds.usdc, usdcAmount);
     });
 
-    it('should work normally with different receipient', async () => {
+    it('should work normally with different recipient', async () => {
       expect(await token.balanceOf(core.hhUser2.address)).to.eq(ZERO_BI);
 
       await asset.connect(core.hhUser2).approve(token.address, usdcAmount);
@@ -149,6 +150,13 @@ describe('DolomiteERC4626', () => {
       await expectThrow(
         token.connect(core.hhUser1).deposit(ZERO_BI, core.hhUser1.address),
         'DolomiteERC4626: Invalid amount'
+      );
+    });
+
+    it('should fail if receiver is invalid', async () => {
+      await expectThrow(
+        token.connect(core.hhUser1).deposit(usdcAmount, isolationModeVault),
+        `DolomiteERC4626: Invalid receiver <${isolationModeVault.toLowerCase()}>`,
       );
     });
 
@@ -203,7 +211,7 @@ describe('DolomiteERC4626', () => {
       await expectProtocolBalance(core, core.hhUser2, ZERO_BI, core.marketIds.usdc, usdcAmount);
     });
 
-    it('should work normally with different receipient', async () => {
+    it('should work normally with different recipient', async () => {
       expect(await token.balanceOf(core.hhUser2.address)).to.eq(ZERO_BI);
 
       await asset.connect(core.hhUser2).approve(token.address, usdcAmount);
@@ -228,6 +236,13 @@ describe('DolomiteERC4626', () => {
       await expectThrow(
         token.connect(core.hhUser1).mint(ZERO_BI, ADDRESS_ZERO),
         'DolomiteERC4626: Invalid amount'
+      );
+    });
+
+    it('should fail if receiver is invalid', async () => {
+      await expectThrow(
+        token.connect(core.hhUser1).mint(parValue, isolationModeVault),
+        `DolomiteERC4626: Invalid receiver <${isolationModeVault.toLowerCase()}>`,
       );
     });
 
@@ -303,10 +318,39 @@ describe('DolomiteERC4626', () => {
       await expectProtocolBalance(core, core.hhUser1, ZERO_BI, core.marketIds.usdc, ZERO_BI);
     });
 
+    it('should work for different owner and receiver', async () => {
+      await token.connect(core.hhUser1).approve(core.hhUser2.address, parValue);
+      const result = await token.connect(core.hhUser2).withdraw(usdcAmount, core.hhUser3.address, core.hhUser1.address);
+      await expectEvent(token, result, 'Transfer', {
+        from: core.hhUser1.address,
+        to: ADDRESS_ZERO,
+        value: parValue,
+      });
+      await expectEvent(token, result, 'Withdraw', {
+        sender: core.hhUser2.address,
+        receiver: core.hhUser3.address,
+        owner: core.hhUser1.address,
+        assets: usdcAmount,
+        shares: parValue,
+      });
+
+      expect(await asset.balanceOf(core.hhUser3.address)).to.eq(usdcAmount);
+      expect(await asset.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
+      expect(await token.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1, ZERO_BI, core.marketIds.usdc, ZERO_BI);
+    });
+
+    it('should fail if owner has negative (or zero) balance', async () => {
+      await expectThrow(
+        token.connect(core.hhUser2).withdraw(usdcAmount, core.hhUser4.address, core.hhUser4.address),
+        'DolomiteERC4626: Balance cannot be negative',
+      );
+    });
+
     it('should fail if owner has not approved the sender', async () => {
       await expectThrow(
         token.connect(core.hhUser2).withdraw(usdcAmount, core.hhUser1.address, core.hhUser1.address),
-        'ERC20: Insufficient allowance',
+        'DolomiteERC4626: Insufficient allowance',
       );
     });
 
@@ -393,10 +437,32 @@ describe('DolomiteERC4626', () => {
       await expectProtocolBalance(core, core.hhUser1, ZERO_BI, core.marketIds.usdc, ZERO_BI);
     });
 
+    it('should work for different owner and receiver', async () => {
+      await token.connect(core.hhUser1).approve(core.hhUser2.address, parValue);
+      const result = await token.connect(core.hhUser2).redeem(parValue, core.hhUser3.address, core.hhUser1.address);
+      await expectEvent(token, result, 'Transfer', {
+        from: core.hhUser1.address,
+        to: ADDRESS_ZERO,
+        value: parValue,
+      });
+      await expectEvent(token, result, 'Withdraw', {
+        sender: core.hhUser2.address,
+        receiver: core.hhUser3.address,
+        owner: core.hhUser1.address,
+        assets: usdcAmount,
+        shares: parValue
+      });
+
+      expect(await asset.balanceOf(core.hhUser3.address)).to.eq(usdcAmount);
+      expect(await asset.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
+      expect(await token.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1, ZERO_BI, core.marketIds.usdc, ZERO_BI);
+    });
+
     it('should fail if owner has not approved the sender', async () => {
       await expectThrow(
         token.connect(core.hhUser2).redeem(parValue, core.hhUser1.address, core.hhUser1.address),
-        'ERC20: Insufficient allowance',
+        'DolomiteERC4626: Insufficient allowance',
       );
     });
 
@@ -447,31 +513,30 @@ describe('DolomiteERC4626', () => {
       const zeroImpersonator = await impersonate(ADDRESS_ZERO, true);
       await expectThrow(
         token.connect(zeroImpersonator).transfer(core.hhUser2.address, 0),
-        'ERC20: Transfer from the zero address',
+        'DolomiteERC4626: Transfer from the zero address',
       );
     });
 
     it('should fail if to zero address', async () => {
-      await expectThrow(token.transfer(ADDRESS_ZERO, 100), 'ERC20: Transfer to the zero address');
+      await expectThrow(token.transfer(ADDRESS_ZERO, 100), 'DolomiteERC4626: Transfer to the zero address');
     });
 
     it('should fail if amount is greater than balance', async () => {
       await expectThrow(
         token.transfer(core.hhUser2.address, parValue.add(1)),
-        'ERC20: Transfer amount exceeds balance',
+        'DolomiteERC4626: Transfer amount exceeds balance',
       );
     });
 
     it('should fail if invalid receiver', async () => {
-      const isolationModeVault = '0xffa18b366fa3ebE5832a49535F42aa0c93c791eF';
       await core.dolomiteAccountRegistry.ownerSetRestrictedAccount(core.hhUser2.address, true);
       await expectThrow(
         token.transfer(core.hhUser2.address, parValue),
-        'ERC20: Transfers can only be made to valid receivers',
+        `DolomiteERC4626: Invalid receiver <${core.hhUser2.address.toLowerCase()}>`,
       );
       await expectThrow(
         token.transfer(isolationModeVault, parValue),
-        'ERC20: Transfers can only be made to valid receivers',
+        `DolomiteERC4626: Invalid receiver <${isolationModeVault.toLowerCase()}>`,
       );
     });
   });
@@ -498,12 +563,12 @@ describe('DolomiteERC4626', () => {
       const zeroImpersonator = await impersonate(ADDRESS_ZERO, true);
       await expectThrow(
         token.connect(zeroImpersonator).approve(core.hhUser2.address, 150),
-        'ERC20: Approve from the zero address',
+        'DolomiteERC4626: Approve from the zero address',
       );
     });
 
     it('should fail if to zero address', async () => {
-      await expectThrow(token.approve(ADDRESS_ZERO, 100), 'ERC20: Approve to the zero address');
+      await expectThrow(token.approve(ADDRESS_ZERO, 100), 'DolomiteERC4626: Approve to the zero address');
     });
   });
 
@@ -533,7 +598,7 @@ describe('DolomiteERC4626', () => {
     it('should fail if not approved', async () => {
       await expectThrow(
         token.connect(core.hhUser2).transferFrom(core.hhUser1.address, core.hhUser2.address, 50),
-        'ERC20: Insufficient allowance',
+        'DolomiteERC4626: Insufficient allowance',
       );
     });
 
@@ -541,7 +606,7 @@ describe('DolomiteERC4626', () => {
       await token.approve(core.hhUser2.address, parValue.add(1));
       await expectThrow(
         token.connect(core.hhUser2).transferFrom(core.hhUser1.address, core.hhUser2.address, parValue.add(1)),
-        'ERC20: Transfer amount exceeds balance',
+        'DolomiteERC4626: Transfer amount exceeds balance',
       );
     });
 
@@ -549,7 +614,7 @@ describe('DolomiteERC4626', () => {
       await token.approve(core.hhUser2.address, parValue);
       await expectThrow(
         token.connect(core.hhUser2).transferFrom(core.hhUser1.address, ADDRESS_ZERO, parValue),
-        'ERC20: Transfer to the zero address',
+        'DolomiteERC4626: Transfer to the zero address',
       );
     });
   });
@@ -573,13 +638,13 @@ describe('DolomiteERC4626', () => {
 
   describe('#name', () => {
     it('should work normally', async () => {
-      expect(await token.name()).to.eq('Dolomite ERC4626: USDC');
+      expect(await token.name()).to.eq('Dolomite: USDC');
     });
   });
 
   describe('#symbol', () => {
     it('should work normally', async () => {
-      expect(await token.symbol()).to.eq('dUSDC-ERC4626');
+      expect(await token.symbol()).to.eq('dUSDC');
     });
   });
 

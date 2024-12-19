@@ -4,7 +4,7 @@ import { time, mine } from '@nomicfoundation/hardhat-network-helpers';
 import { BigNumber, BigNumberish, ContractTransaction } from 'ethers';
 import { config as hardhatConfig, ethers, network as hardhatNetwork, tracer } from 'hardhat';
 import { HttpNetworkConfig } from 'hardhat/src/types/config';
-import { Network, networkToNetworkNameMap } from '../../src/utils/no-deps-constants';
+import { Network, NETWORK_TO_NETWORK_NAME_MAP } from '../../src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '../../src/utils/SignerWithAddressWithSafety';
 
 const gasLogger: Record<string, BigNumber> = {};
@@ -35,7 +35,7 @@ export async function advanceByTimeDelta(delta: number): Promise<void> {
 export async function getRealLatestBlockNumber(
   include32BlockBuffer: boolean,
   network: Network,
-  networkName: string = networkToNetworkNameMap[network],
+  networkName: string = NETWORK_TO_NETWORK_NAME_MAP[network],
 ): Promise<number> {
   const networkConfig = hardhatConfig?.networks?.[networkName] as HttpNetworkConfig;
   const provider = new ethers.providers.JsonRpcProvider(networkConfig.url);
@@ -46,7 +46,7 @@ export async function getRealLatestBlockNumber(
 export async function resetForkIfPossible(
   blockNumber: number,
   network: Network,
-  networkName: string = networkToNetworkNameMap[network],
+  networkName: string = NETWORK_TO_NETWORK_NAME_MAP[network],
 ) {
   if (hardhatNetwork.name !== 'hardhat') {
     console.log('\tSkipping forking...\n');
