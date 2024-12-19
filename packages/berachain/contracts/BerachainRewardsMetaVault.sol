@@ -355,7 +355,6 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
             "Not child BGTM vault"
         );
 
-        // @audit User can block this because of the delay. Need to discuss
         IBGTM bgtm = REGISTRY().bgtm();
         uint256 bal = bgtm.getBalance(address(this));
         if (_amount > bal) {
@@ -570,14 +569,15 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
     }
 
     function _requireValidDolomiteToken(address _asset) internal view {
-        (bool isValidDolomiteToken,) = address(REGISTRY().DOLOMITE_MARGIN()).staticcall(
+        IDolomiteMargin dolomiteMargin = REGISTRY().DOLOMITE_MARGIN();
+        (bool isValidDolomiteToken,) = address(dolomiteMargin).staticcall(
             abi.encodeWithSelector(
                 IDolomiteMargin.getMarketIdByTokenAddress.selector,
                 IERC4626(_asset).asset()
             )
         );
         Require.that(
-            isValidDolomiteToken && REGISTRY().DOLOMITE_MARGIN().getIsGlobalOperator(_asset),
+            isValidDolomiteToken && dolomiteMargin.getIsGlobalOperator(_asset),
             _FILE,
             "Invalid Dolomite token"
         );
