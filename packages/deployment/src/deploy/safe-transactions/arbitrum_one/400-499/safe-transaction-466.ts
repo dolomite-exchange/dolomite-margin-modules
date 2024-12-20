@@ -75,20 +75,20 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
         (await core.dolomiteMargin.getMarketIdByTokenAddress(core.tokens.tbtc.address)).eq(core.marketIds.tbtc),
         'Invalid tbtc market ID',
       );
-      console.log('tbtc price: ', (await core.dolomiteMargin.getMarketPrice(core.marketIds.tbtc)).value.toString());
+      console.log('\ttbtc price: ', (await core.dolomiteMargin.getMarketPrice(core.marketIds.tbtc)).value.toString());
 
       assertHardhatInvariant(
         (await core.dolomiteMargin.getMarketIdByTokenAddress(core.tokens.eUsd.address)).eq(core.marketIds.eUsd),
         'Invalid eUsd market ID',
       );
-      console.log('eUsd price: ', (await core.dolomiteMargin.getMarketPrice(core.marketIds.eUsd)).value.toString());
+      console.log('\teUsd price: ', (await core.dolomiteMargin.getMarketPrice(core.marketIds.eUsd)).value.toString());
 
       assertHardhatInvariant(
         (await core.dolomiteMargin.getMarketIdByTokenAddress(core.tokens.ethPlus.address)).eq(core.marketIds.ethPlus),
         'Invalid ethPlus market ID',
       );
       console.log(
-        'ethPlus price: ',
+        '\tethPlus price: ',
         (await core.dolomiteMargin.getMarketPrice(core.marketIds.ethPlus)).value.toString(),
       );
     },

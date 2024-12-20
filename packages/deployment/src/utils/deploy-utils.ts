@@ -1925,6 +1925,20 @@ export async function prettyPrintEncodeAddMarket<T extends NetworkType>(
   return transactions;
 }
 
+export async function prettyPrintSetGlobalOperator<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  operator: { address: string },
+  isOperator: boolean,
+): Promise<EncodedTransaction> {
+  return prettyPrintEncodedDataWithTypeSafety(
+    core,
+    { dolomiteMargin: core.dolomiteMargin },
+    'dolomiteMargin',
+    'ownerSetGlobalOperator',
+    [operator.address, isOperator],
+  );
+}
+
 export function writeDeploymentFile(fileContent: Record<string, Record<ChainId, any>>) {
   writeFile(DEPLOYMENT_FILE_NAME, JSON.stringify(sortFile(fileContent), null, 2));
 }
