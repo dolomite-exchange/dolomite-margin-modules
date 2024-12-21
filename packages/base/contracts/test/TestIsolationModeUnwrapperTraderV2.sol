@@ -36,6 +36,8 @@ contract TestIsolationModeUnwrapperTraderV2 is IsolationModeUnwrapperTraderV2 {
 
     address public immutable OUTPUT_TOKEN; // solhint-disable-line var-name-mixedcase
 
+    address[] public outputTokens;
+
     // ================ Constructor ================
 
     constructor(
@@ -52,6 +54,10 @@ contract TestIsolationModeUnwrapperTraderV2 is IsolationModeUnwrapperTraderV2 {
         OUTPUT_TOKEN = _outputToken;
     }
 
+    function addOutputToken(address _outputToken) public {
+        outputTokens.push(_outputToken);
+    }
+
     function isValidOutputToken(
         address _outputToken
     )
@@ -59,7 +65,16 @@ contract TestIsolationModeUnwrapperTraderV2 is IsolationModeUnwrapperTraderV2 {
     override
     view
     returns (bool) {
-        return _outputToken == OUTPUT_TOKEN;
+        if (_outputToken == OUTPUT_TOKEN) {
+            return true;
+        }
+
+        for (uint256 i = 0; i < outputTokens.length; i++) {
+            if (_outputToken == outputTokens[i]) {
+                return true;
+            }
+        }
+        return false;
     }
 
     // ================ Internal Functions ================

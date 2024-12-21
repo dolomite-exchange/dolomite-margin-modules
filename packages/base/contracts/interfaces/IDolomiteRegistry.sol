@@ -20,6 +20,7 @@
 
 pragma solidity ^0.8.9;
 
+import { IBorrowPositionProxyV2 } from "./IBorrowPositionProxyV2.sol";
 import { IDolomiteAccountRegistry } from "./IDolomiteAccountRegistry.sol";
 import { IDolomiteMigrator } from "./IDolomiteMigrator.sol";
 import { IEventEmitterRegistry } from "./IEventEmitterRegistry.sol";
@@ -45,6 +46,7 @@ interface IDolomiteRegistry {
     // ======================== Events ========================
     // ========================================================
 
+    event BorrowPositionProxySet(address indexed _borrowPositionProxy);
     event GenericTraderProxySet(address indexed _genericTraderProxy);
     event ExpirySet(address indexed _expiry);
     event SlippageToleranceForPauseSentinelSet(uint256 _slippageTolerance);
@@ -62,6 +64,12 @@ interface IDolomiteRegistry {
     // ========================================================
 
     function lazyInitialize(address _dolomiteMigrator, address _oracleAggregator) external;
+
+    /**
+     *
+     * @param  _borrowPositionProxy  The new address of the borrow position proxy
+     */
+    function ownerSetBorrowPositionProxy(address _borrowPositionProxy) external;
 
     /**
      *
@@ -132,6 +140,11 @@ interface IDolomiteRegistry {
     // ========================================================
     // =================== Getter Functions ===================
     // ========================================================
+
+    /**
+     * @return  The address of the borrow position proxy
+     */
+    function borrowPositionProxy() external view returns (IBorrowPositionProxyV2);
 
     /**
      * @return  The address of the generic trader proxy for making zaps
