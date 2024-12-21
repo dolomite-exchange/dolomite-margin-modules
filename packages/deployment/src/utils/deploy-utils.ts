@@ -279,34 +279,18 @@ export function getBuildInfoFromDebugFileSync(debugFilePath: string): string | u
   return undefined;
 }
 
-export function getMaxDeploymentVersionNumberByDeploymentKey(nameWithoutVersionPostfix: string): number {
+function validateNameWithoutVersionPostfix(nameWithoutVersionPostfix: string) {
   const lastChar = nameWithoutVersionPostfix.substring(nameWithoutVersionPostfix.length - 1);
   if (!Number.isNaN(parseInt(lastChar, 10))) {
     throw new Error('Name cannot include version declaration');
   }
-
-  const maxVersion = Object.keys(readDeploymentFile()).reduce((max, curr) => {
-    if (curr.includes(nameWithoutVersionPostfix)) {
-      // Add 1 to the length for the `V`
-      const currentVersion = parseInt(curr.substring(nameWithoutVersionPostfix.length + 1), 10);
-      return currentVersion > max ? currentVersion : max;
-    }
-
-    return max;
-  }, 0);
-
-  return Number(maxVersion);
 }
 
-/**
- * @param nameWithoutVersionPostfix IE IsolationModeTokenVault
- * @param defaultVersion The version that should be declared if no other version exists
- */
-export function getMaxDeploymentVersionNameByDeploymentKey(nameWithoutVersionPostfix: string, defaultVersion: number) {
-  const lastChar = nameWithoutVersionPostfix.substring(nameWithoutVersionPostfix.length - 1);
-  if (!Number.isNaN(parseInt(lastChar, 10))) {
-    throw new Error('Name cannot include version declaration');
-  }
+export function getMaxDeploymentVersionNumberByDeploymentKey(
+  nameWithoutVersionPostfix: string,
+  defaultVersion: number,
+): number {
+  validateNameWithoutVersionPostfix(nameWithoutVersionPostfix);
 
   const maxVersion = Object.keys(readDeploymentFile()).reduce((max, curr) => {
     if (curr.includes(nameWithoutVersionPostfix)) {
@@ -318,6 +302,15 @@ export function getMaxDeploymentVersionNameByDeploymentKey(nameWithoutVersionPos
     return max;
   }, defaultVersion);
 
+  return Number(maxVersion);
+}
+
+/**
+ * @param nameWithoutVersionPostfix IE IsolationModeTokenVault
+ * @param defaultVersion The version that should be declared if no other version exists
+ */
+export function getMaxDeploymentVersionNameByDeploymentKey(nameWithoutVersionPostfix: string, defaultVersion: number) {
+  const maxVersion = getMaxDeploymentVersionNumberByDeploymentKey(nameWithoutVersionPostfix, defaultVersion);
   return `${nameWithoutVersionPostfix}V${maxVersion}`;
 }
 
@@ -331,10 +324,7 @@ export function getMaxDeploymentVersionAddressByDeploymentKey(nameWithoutVersion
 }
 
 export function getOldDeploymentVersionNamesByDeploymentKey(nameWithoutVersionPostfix: string, defaultVersion: number) {
-  const lastChar = nameWithoutVersionPostfix.substring(nameWithoutVersionPostfix.length - 1);
-  if (!Number.isNaN(parseInt(lastChar, 10))) {
-    throw new Error('Name cannot include version declaration');
-  }
+  validateNameWithoutVersionPostfix(nameWithoutVersionPostfix);
 
   const [versions, maxVersion] = Object.keys(readDeploymentFile()).reduce(
     ([versions, max], curr) => {
@@ -1951,6 +1941,20 @@ export async function prettyPrintEncodeAddMarket<T extends NetworkType>(
     ),
   );
   return transactions;
+}
+
+export async function prettyPrintSetGlobalOperator<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  operator: { address: string },
+  isOperator: boolean,
+): Promise<EncodedTransaction> {
+  return prettyPrintEncodedDataWithTypeSafety(
+    core,
+    { dolomiteMargin: core.dolomiteMargin },
+    'dolomiteMargin',
+    'ownerSetGlobalOperator',
+    [operator.address, isOperator],
+  );
 }
 
 export function writeDeploymentFile(fileContent: Record<string, Record<ChainId, any>>) {
