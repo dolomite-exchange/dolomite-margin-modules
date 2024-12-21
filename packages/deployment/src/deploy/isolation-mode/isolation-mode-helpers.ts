@@ -7,6 +7,7 @@ export function getConstructorParametersForAsyncIsolationMode(network: Network):
 
 export enum IsolationModeVaultType {
   None = 'None',
+  Migrator = 'Migrator',
   Pt = 'Pt',
   Yt = 'Yt',
   GmxV2 = 'GmxV2',
