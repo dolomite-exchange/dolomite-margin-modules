@@ -415,6 +415,14 @@ interface IGmxReader {
         view
         returns (GmxDeposit.DepositProps memory);
 
+    function getOpenInterestWithPnl(
+        IGmxDataStore _dataStore,
+        GmxMarket.MarketProps memory _market,
+        GmxPrice.PriceProps memory _indexTokenPrice,
+        bool _isLong,
+        bool _maximize
+    ) external view returns (int256);
+
     function getWithdrawal(
         IGmxDataStore _dataStore,
         bytes32 _key

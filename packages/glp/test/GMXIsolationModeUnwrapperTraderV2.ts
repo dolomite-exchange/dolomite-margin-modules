@@ -67,8 +67,8 @@ describe('GmxIsolationModeUnwrapperTraderV2', () => {
     glpFactory = await createGLPIsolationModeVaultFactory(core, gmxRegistry, glpVaultImplementation);
 
     // Setup markets
-    gmxMarketId = await core.dolomiteMargin.getMarketIdByTokenAddress(core.tokens.gmx!.address);
-    await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.gmx!.address, '1000000000000000000');
+    gmxMarketId = await core.dolomiteMargin.getMarketIdByTokenAddress(core.tokens.gmx.address);
+    await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.gmx.address, '1000000000000000000');
 
     underlyingGmxMarketId = await core.dolomiteMargin.getNumMarkets();
     await core.testEcosystem!.testPriceOracle.setPrice(gmxFactory.address, '1000000000000000000');
@@ -174,7 +174,7 @@ describe('GmxIsolationModeUnwrapperTraderV2', () => {
     it('should fail if output token is incorrect', async () => {
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
       await setupGMXBalance(core, core.hhUser1, amountWei, unwrapper);
-      await core.tokens.gmx!.connect(core.hhUser1).transfer(unwrapper.address, amountWei);
+      await core.tokens.gmx.connect(core.hhUser1).transfer(unwrapper.address, amountWei);
       await expectThrow(
         unwrapper.connect(dolomiteMarginImpersonator).exchange(
           core.hhUser1.address,
@@ -191,12 +191,12 @@ describe('GmxIsolationModeUnwrapperTraderV2', () => {
     it('should fail if input amount is incorrect', async () => {
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
       await setupGMXBalance(core, core.hhUser1, amountWei, unwrapper);
-      await core.tokens.gmx!.connect(core.hhUser1).transfer(unwrapper.address, amountWei);
+      await core.tokens.gmx.connect(core.hhUser1).transfer(unwrapper.address, amountWei);
       await expectThrow(
         unwrapper.connect(dolomiteMarginImpersonator).exchange(
           core.hhUser1.address,
           core.dolomiteMargin.address,
-          core.tokens.gmx!.address,
+          core.tokens.gmx.address,
           gmxFactory.address,
           ZERO_BI,
           encodeExternalSellActionDataWithNoData(otherAmountWei),
@@ -220,7 +220,7 @@ describe('GmxIsolationModeUnwrapperTraderV2', () => {
 
   describe('#isValidOutputToken', () => {
     it('should work with GMX', async () => {
-      expect(await unwrapper.isValidOutputToken(core.tokens.gmx!.address)).to.eq(true);
+      expect(await unwrapper.isValidOutputToken(core.tokens.gmx.address)).to.eq(true);
     });
 
     it('should fail with any other token', async () => {
@@ -232,7 +232,7 @@ describe('GmxIsolationModeUnwrapperTraderV2', () => {
     it('should work normally', async () => {
       expect(await unwrapper.getExchangeCost(
         gmxFactory.address,
-        core.tokens.gmx!.address,
+        core.tokens.gmx.address,
         amountWei,
         BYTES_EMPTY,
       )).to.eq(amountWei);

@@ -8,7 +8,7 @@ import {
   prettyPrintEncodeInsertRedstoneOracleV3,
 } from '../../../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
-import getScriptName from '../../../../../utils/get-script-name';
+import getScriptName from '../../../../utils/get-script-name';
 
 /**
  * This script encodes the following transactions:

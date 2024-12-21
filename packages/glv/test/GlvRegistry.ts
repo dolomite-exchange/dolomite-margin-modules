@@ -371,32 +371,147 @@ describe('GlvRegistry', () => {
     });
   });
 
-  describe('#ownerSetGlvTokenToGmMarket', () => {
+  describe('#ownerSetGlvTokenToGmMarketForDeposit', () => {
     it('should work normally', async () => {
       const result = await glvRegistry
         .connect(core.governance)
-        .ownerSetGlvTokenToGmMarket(underlyingToken.address, gmToken.address);
+        .ownerSetGlvTokenToGmMarketForDeposit(underlyingToken.address, gmToken.address);
       await expectEvent(glvRegistry, result, 'GlvTokenToGmMarketSet', {
         glvToken: underlyingToken.address,
         gmMarket: gmToken.address,
       });
-      expect(await glvRegistry.glvTokenToGmMarket(underlyingToken.address)).to.eq(gmToken.address);
+      expect(await glvRegistry.glvTokenToGmMarketForDeposit(underlyingToken.address)).to.eq(gmToken.address);
     });
 
     it('should fail when not called by owner', async () => {
       await expectThrow(
-        glvRegistry.connect(core.hhUser1).ownerSetGlvTokenToGmMarket(underlyingToken.address, OTHER_ADDRESS_1),
+        glvRegistry
+          .connect(core.hhUser1)
+          .ownerSetGlvTokenToGmMarketForDeposit(underlyingToken.address, OTHER_ADDRESS_1),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
     it('should fail if zero address is set', async () => {
       await expectThrow(
-        glvRegistry.connect(core.governance).ownerSetGlvTokenToGmMarket(underlyingToken.address, ZERO_ADDRESS),
+        glvRegistry
+          .connect(core.governance)
+          .ownerSetGlvTokenToGmMarketForDeposit(underlyingToken.address, ZERO_ADDRESS),
         'GlvRegistry: Invalid address',
       );
       await expectThrow(
-        glvRegistry.connect(core.governance).ownerSetGlvTokenToGmMarket(ZERO_ADDRESS, gmToken.address),
+        glvRegistry.connect(core.governance).ownerSetGlvTokenToGmMarketForDeposit(ZERO_ADDRESS, gmToken.address),
+        'GlvRegistry: Invalid address',
+      );
+    });
+  });
+
+  describe('#ownerSetGlvTokenToGmMarketForWithdrawal', () => {
+    it('should work normally', async () => {
+      const result = await glvRegistry
+        .connect(core.governance)
+        .ownerSetGlvTokenToGmMarketForWithdrawal(underlyingToken.address, gmToken.address);
+      await expectEvent(glvRegistry, result, 'GlvTokenToGmMarketSet', {
+        glvToken: underlyingToken.address,
+        gmMarket: gmToken.address,
+      });
+      expect(await glvRegistry.glvTokenToGmMarketForWithdrawal(underlyingToken.address)).to.eq(gmToken.address);
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        glvRegistry
+          .connect(core.hhUser1)
+          .ownerSetGlvTokenToGmMarketForWithdrawal(underlyingToken.address, OTHER_ADDRESS_1),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        glvRegistry
+          .connect(core.governance)
+          .ownerSetGlvTokenToGmMarketForWithdrawal(underlyingToken.address, ZERO_ADDRESS),
+        'GlvRegistry: Invalid address',
+      );
+      await expectThrow(
+        glvRegistry.connect(core.governance).ownerSetGlvTokenToGmMarketForWithdrawal(ZERO_ADDRESS, gmToken.address),
+        'GlvRegistry: Invalid address',
+      );
+    });
+  });
+
+  describe('#handlerSetGlvTokenToGmMarketForDeposit', () => {
+    it('should work normally', async () => {
+      await glvRegistry.connect(core.governance).ownerSetIsHandler(core.hhUser5.address, true);
+
+      const result = await glvRegistry
+        .connect(core.hhUser5)
+        .handlerSetGlvTokenToGmMarketForDeposit(underlyingToken.address, gmToken.address);
+      await expectEvent(glvRegistry, result, 'GlvTokenToGmMarketSet', {
+        glvToken: underlyingToken.address,
+        gmMarket: gmToken.address,
+      });
+      expect(await glvRegistry.glvTokenToGmMarketForDeposit(underlyingToken.address)).to.eq(gmToken.address);
+    });
+
+    it('should fail when not called by handler', async () => {
+      await expectThrow(
+        glvRegistry
+          .connect(core.hhUser1)
+          .handlerSetGlvTokenToGmMarketForDeposit(underlyingToken.address, OTHER_ADDRESS_1),
+        `GlvRegistry: Caller is not handler <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if zero address is set', async () => {
+      await glvRegistry.connect(core.governance).ownerSetIsHandler(core.hhUser5.address, true);
+
+      await expectThrow(
+        glvRegistry.connect(core.hhUser5).handlerSetGlvTokenToGmMarketForDeposit(underlyingToken.address, ZERO_ADDRESS),
+        'GlvRegistry: Invalid address',
+      );
+      await expectThrow(
+        glvRegistry.connect(core.hhUser5).handlerSetGlvTokenToGmMarketForDeposit(ZERO_ADDRESS, gmToken.address),
+        'GlvRegistry: Invalid address',
+      );
+    });
+  });
+
+  describe('#handlerSetGlvTokenToGmMarketForWithdrawal', () => {
+    it('should work normally', async () => {
+      await glvRegistry.connect(core.governance).ownerSetIsHandler(core.hhUser5.address, true);
+
+      const result = await glvRegistry
+        .connect(core.hhUser5)
+        .handlerSetGlvTokenToGmMarketForWithdrawal(underlyingToken.address, gmToken.address);
+      await expectEvent(glvRegistry, result, 'GlvTokenToGmMarketSet', {
+        glvToken: underlyingToken.address,
+        gmMarket: gmToken.address,
+      });
+      expect(await glvRegistry.glvTokenToGmMarketForWithdrawal(underlyingToken.address)).to.eq(gmToken.address);
+    });
+
+    it('should fail when not called by handler', async () => {
+      await expectThrow(
+        glvRegistry
+          .connect(core.hhUser1)
+          .handlerSetGlvTokenToGmMarketForWithdrawal(underlyingToken.address, OTHER_ADDRESS_1),
+        `GlvRegistry: Caller is not handler <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if zero address is set', async () => {
+      await glvRegistry.connect(core.governance).ownerSetIsHandler(core.hhUser5.address, true);
+
+      await expectThrow(
+        glvRegistry
+          .connect(core.hhUser5)
+          .handlerSetGlvTokenToGmMarketForWithdrawal(underlyingToken.address, ZERO_ADDRESS),
+        'GlvRegistry: Invalid address',
+      );
+      await expectThrow(
+        glvRegistry.connect(core.hhUser5).handlerSetGlvTokenToGmMarketForWithdrawal(ZERO_ADDRESS, gmToken.address),
         'GlvRegistry: Invalid address',
       );
     });

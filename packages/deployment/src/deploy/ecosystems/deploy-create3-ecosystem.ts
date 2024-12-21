@@ -43,8 +43,10 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
 
   const bytecodeWithArgs = CREATE3FactoryArtifact.bytecode;
   const gasLimit = ethers.BigNumber.from(hardhat.config.networks[networkName].gas);
-  const gasPrice = (await ethers.provider.getGasPrice()).mul(2);
-  const gasCost = (await ethers.provider.estimateGas({ data: bytecodeWithArgs })).mul(15).div(10);
+  // const gasPrice = (await ethers.provider.getGasPrice()).mul(4);
+  const gasPrice = ethers.BigNumber.from(1_000_000_000);
+  const gasCost = (await ethers.provider.estimateGas({ data: bytecodeWithArgs })).mul(2);
+  console.log(`\tExpected gas price: ${gasPrice.toString()}`);
   console.log(`\tExpected gas cost: ${gasCost.toString()}`);
 
   const gasLimitPercentageAboveCost = gasLimit.mul(100).div(gasCost).sub(100);
@@ -65,19 +67,34 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     ethers.provider,
   );
 
-  if (!isDeployed(contractName) && gasPrice.mul(gasCost).gt(await deployerPrivateKey.getBalance())) {
+  const deployerBalance = await deployerPrivateKey.getBalance();
+  console.log('\tDeployer balance:', deployerBalance.toString(), `(${ethers.utils.formatEther(deployerBalance)} ETH)`);
+  console.log(
+    '\tTotal gas cost:',
+    gasPrice.mul(gasCost).toString(),
+    `(${ethers.utils.formatEther(gasPrice.mul(gasCost))} ETH)`,
+  );
+
+  if (!isDeployed(contractName) && gasPrice.mul(gasCost).gt(deployerBalance)) {
     // perform a transfer to the deployer wallet
-    console.log(`\tPerforming transfer to intermediate deployer: ${hhUser1.address} --> ${deployerPrivateKey.address}`);
+    const amount = gasPrice.mul(gasCost).sub(deployerBalance);
+    console.log(
+      `\tPerforming transfer to intermediate deployer: ${hhUser1.address} --> ${
+        deployerPrivateKey.address
+      } ${ethers.utils.formatEther(amount)} ETH`,
+    );
     const result = await hhUser1.sendTransaction({
       to: deployerPrivateKey.address,
-      value: gasPrice.mul(gasCost).sub(await deployerPrivateKey.getBalance()),
+      value: amount,
+      gasPrice: gasPrice.mul(2).div(3),
+      type: 0,
     });
     await result.wait();
-    await sleep(3_000); // wait 3 seconds for the transaction to settle
+    await sleep(5_000); // wait 5 seconds for the transaction to settle
   }
 
   const create3FactoryAddress = await deployContractAndSave(contractName, [], undefined, undefined, {
-    gasPrice: gasPrice.mul(9).div(10),
+    gasPrice: gasPrice.mul(2).div(3),
     gasLimit: gasCost,
     nonce: 0,
     type: 0,
@@ -86,6 +103,8 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   });
 
   if ((await deployerPrivateKey.getBalance()).gt(ZERO_BI)) {
+    await sleep(5_000); // wait 5 seconds for the deployment transaction to settle
+
     // perform a transfer to the deployer wallet
     const balance = await deployerPrivateKey.getBalance();
 

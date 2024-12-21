@@ -33,7 +33,6 @@ import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish, ethers } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
-import hre from 'hardhat';
 import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
 import {
   disableInterestAccrual,
@@ -153,7 +152,10 @@ describe('GlvIsolationModeUnwrapperTraderV2', () => {
     glvRegistry = await createGlvRegistry(core, callbackGasLimit);
     await glvRegistry
       .connect(core.governance)
-      .ownerSetGlvTokenToGmMarket(underlyingToken.address, gmMarketToken.address);
+      .ownerSetGlvTokenToGmMarketForDeposit(underlyingToken.address, gmMarketToken.address);
+    await glvRegistry
+      .connect(core.governance)
+      .ownerSetGlvTokenToGmMarketForWithdrawal(underlyingToken.address, gmMarketToken.address);
     const newRegistry = await createDolomiteRegistryImplementation();
     await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(newRegistry.address);
 
