@@ -107,6 +107,16 @@ contract TestGmxReader is IGmxReader {
         return props;
     }
 
+    function getOpenInterestWithPnl(
+        IGmxDataStore /* _dataStore */,
+        GmxMarket.MarketProps memory /* _market */,
+        GmxPrice.PriceProps memory /* _indexTokenPrice */,
+        bool /* _isLong */,
+        bool /* _maximize */
+    ) external view returns (int256) {
+        return 0;
+    }
+
     function getWithdrawal(
         IGmxDataStore /* _dataStore */,
         bytes32 /* _key */

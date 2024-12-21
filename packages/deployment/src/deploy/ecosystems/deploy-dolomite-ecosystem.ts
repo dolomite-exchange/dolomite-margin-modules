@@ -7,10 +7,12 @@ import {
   IGenericTraderProxyV1,
   IGenericTraderProxyV1__factory,
   ILiquidatorAssetRegistry__factory,
+  IPartiallyDelayedMultiSig__factory,
   RegistryProxy__factory,
 } from '@dolomite-exchange/modules-base/src/types';
 import {
-  GNOSIS_SAFE_MAP, PAYABLE_TOKEN_MAP,
+  GNOSIS_SAFE_MAP,
+  PAYABLE_TOKEN_MAP,
   SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL,
 } from '@dolomite-exchange/modules-base/src/utils/constants';
 import {
@@ -32,6 +34,7 @@ import {
   getDolomiteMarginContract,
   getExpiryContract,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
+import * as CoreDeployment from '@dolomite-margin/dist/migrations/deployed.json';
 import { ethers } from 'hardhat';
 import {
   CoreProtocolAbstract,
@@ -75,6 +78,10 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   const gnosisSafeSigner = await impersonateOrFallback(gnosisSafeAddress, true, hhUser1);
   const transactions: EncodedTransaction[] = [];
 
+  const delayedMultiSig = IPartiallyDelayedMultiSig__factory.connect(
+    CoreDeployment.PartiallyDelayedMultiSig[network].address,
+    gnosisSafeSigner,
+  );
   const dolomiteMargin = getDolomiteMarginContract<T>(config, hhUser1);
   const expiry = getExpiryContract<T>(config, hhUser1);
 
@@ -94,7 +101,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     getMaxDeploymentVersionNameByDeploymentKey('DolomiteERC4626WithPayableImplementation', 1),
   );
   const dolomiteOwnerAddress = await deployContractAndSave(
-    'DolomiteOwner',
+    'DolomiteOwnerV1',
     getDolomiteOwnerConstructorParams(GNOSIS_SAFE_MAP[network], THIRTY_MINUTES_SECONDS),
     'DolomiteOwnerV1',
   );
@@ -208,10 +215,12 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   const governance = await impersonateOrFallback(governanceAddress, true, hhUser1);
   const core = {
     config,
+    delayedMultiSig,
     dolomiteMargin,
     dolomiteRegistry,
     governance,
     hhUser1,
+    liquidatorAssetRegistry,
     genericTraderProxy: IGenericTraderProxyV1__factory.connect(genericTraderAddress, governance),
     gnosisSafe: gnosisSafeSigner,
     gnosisSafeAddress: gnosisSafeAddress,
@@ -262,7 +271,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
 
   return {
     core: {
-      ...((core as any) as CoreProtocolParams<T>),
+      ...(core as any as CoreProtocolParams<T>),
       config: {
         network,
       },
