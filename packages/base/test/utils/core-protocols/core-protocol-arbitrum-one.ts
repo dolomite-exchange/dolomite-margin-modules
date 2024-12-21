@@ -3,7 +3,7 @@ import {
   ChroniclePriceOracleV3,
   IChainlinkAutomationRegistry,
   IChainlinkPriceOracleV1,
-  IChainlinkPriceOracleV3,
+  IChainlinkPriceOracleV3, IChaosLabsPriceOracleV3,
   RedstonePriceOracleV3,
 } from 'packages/oracles/src/types';
 import {
@@ -33,12 +33,15 @@ import {
   CoreProtocolParams,
   CoreProtocolTokens,
 } from './core-protocol-abstract';
+import { GlvEcosystem } from '../ecosystem-utils/glv';
 
 interface CoreProtocolTokensArbitrumOne extends CoreProtocolTokens<Network.ArbitrumOne> {
   arb: IERC20;
   dai: IERC20;
   dArb: IERC20;
   dfsGlp: IERC20;
+  dGlvBtc: IERC20;
+  dGlvEth: IERC20;
   dGmx: IERC20;
   dGmArb: IERC20;
   dGmBtc: IERC20;
@@ -53,9 +56,11 @@ interface CoreProtocolTokensArbitrumOne extends CoreProtocolTokens<Network.Arbit
   dPtWstEthJun2025: IERC20;
   dpx: IERC20;
   dYtGlp: IERC20;
+  ethPlus: IERC20;
   eEth: IERC20;
   ezEth: IERC20;
   ezEthReversed: IERC20;
+  eUsd: IERC20;
   sGlp: IERC20;
   frax: IERC20;
   gmx: IERC20;
@@ -68,24 +73,28 @@ interface CoreProtocolTokensArbitrumOne extends CoreProtocolTokens<Network.Arbit
   magic: IERC20;
   mim: IERC20;
   nativeUsdc: IERC20;
+  pendle: IERC20;
   premia: IERC20;
+  pumpBtc: IERC20;
   rEth: IERC20;
   rsEth: IERC20;
   rsEthReversed: IERC20;
   radiant: IERC20;
-  pendle: IERC20;
   size: IERC20;
   sol: IERC20;
   stEth: IERC20;
+  tbtc: IERC20;
   uni: IERC20;
   uniBtc: IERC20;
   usde: IERC20;
+  usdl: IERC20;
   usdm: IERC20;
   usdt: IERC20;
   wbtc: IERC20;
   weEth: IERC20;
   woEth: IERC20;
   wstEth: IERC20;
+  wusdl: IERC20;
   wusdm: IERC20;
   xai: IERC20;
 }
@@ -132,6 +141,8 @@ interface CoreProtocolMarketIdsArbitrumOne extends CoreProtocolMarketIds {
   dai: BigNumberish;
   dpx: BigNumberish;
   dYtGlp: BigNumberish;
+  eUsd: BigNumberish;
+  ethPlus: BigNumberish;
   ezEth: BigNumberish;
   gmx: BigNumberish;
   grai: BigNumberish;
@@ -142,12 +153,14 @@ interface CoreProtocolMarketIdsArbitrumOne extends CoreProtocolMarketIds {
   magicGlp: BigNumberish;
   mim: BigNumberish;
   nativeUsdc: BigNumberish;
+  pendle: BigNumberish;
   premia: BigNumberish;
+  pumpBtc: BigNumberish;
   rEth: BigNumberish;
   rsEth: BigNumberish;
   radiant: BigNumberish;
-  pendle: BigNumberish;
   sGlp: BigNumberish;
+  tbtc: BigNumberish;
   uni: BigNumberish;
   uniBtc: BigNumberish;
   usdt: BigNumberish;
@@ -155,6 +168,7 @@ interface CoreProtocolMarketIdsArbitrumOne extends CoreProtocolMarketIds {
   weEth: BigNumberish;
   woEth: BigNumberish;
   wstEth: BigNumberish;
+  wusdl: BigNumberish;
   wusdm: BigNumberish;
   xai: BigNumberish;
 }
@@ -166,10 +180,12 @@ interface CoreProtocolParamsArbitrumOne {
   chainlinkAutomationRegistry: IChainlinkAutomationRegistry;
   chainlinkPriceOracleV1: IChainlinkPriceOracleV1;
   chainlinkPriceOracleV3: IChainlinkPriceOracleV3;
+  chaosLabsPriceOracleV3: IChaosLabsPriceOracleV3;
   chroniclePriceOracleV3: ChroniclePriceOracleV3;
   dolomiteAccountValuesReader: IDolomiteAccountValuesReader;
   dolomiteMigrator: IDolomiteMigrator;
   dTokens: CoreProtocolArbitrumOneDTokens;
+  glvEcosystem: GlvEcosystem;
   gmxEcosystem: GmxEcosystem;
   gmxEcosystemV2: GmxV2Ecosystem;
   jonesEcosystem: JonesEcosystem;
@@ -190,10 +206,12 @@ export class CoreProtocolArbitrumOne extends CoreProtocolAbstract<Network.Arbitr
   public readonly arbEcosystem: ArbEcosystem;
   public readonly camelotEcosystem: CamelotEcosystem;
   public readonly chainlinkAutomationRegistry: IChainlinkAutomationRegistry;
+  public readonly chaosLabsPriceOracleV3: IChaosLabsPriceOracleV3;
   public readonly chroniclePriceOracleV3: ChroniclePriceOracleV3;
   public readonly dolomiteAccountValuesReader: IDolomiteAccountValuesReader;
   public readonly dolomiteMigrator: IDolomiteMigrator;
   public readonly dTokens: CoreProtocolArbitrumOneDTokens;
+  public readonly glvEcosystem: GlvEcosystem;
   public readonly gmxEcosystem: GmxEcosystem;
   public readonly gmxV2Ecosystem: GmxV2Ecosystem;
   public readonly jonesEcosystem: JonesEcosystem;
@@ -215,10 +233,12 @@ export class CoreProtocolArbitrumOne extends CoreProtocolAbstract<Network.Arbitr
     this.arbEcosystem = arbParams.arbEcosystem;
     this.camelotEcosystem = arbParams.camelotEcosystem;
     this.chainlinkAutomationRegistry = arbParams.chainlinkAutomationRegistry;
+    this.chaosLabsPriceOracleV3 = arbParams.chaosLabsPriceOracleV3;
     this.chroniclePriceOracleV3 = arbParams.chroniclePriceOracleV3;
     this.dolomiteAccountValuesReader = arbParams.dolomiteAccountValuesReader;
     this.dolomiteMigrator = arbParams.dolomiteMigrator;
     this.dTokens = arbParams.dTokens;
+    this.glvEcosystem = arbParams.glvEcosystem;
     this.gmxEcosystem = arbParams.gmxEcosystem;
     this.gmxV2Ecosystem = arbParams.gmxEcosystemV2;
     this.jonesEcosystem = arbParams.jonesEcosystem;

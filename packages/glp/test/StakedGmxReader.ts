@@ -46,8 +46,8 @@ describe('StakedGmxReader', () => {
       network: Network.ArbitrumOne,
     });
 
-    glpFactory = core.gmxEcosystem!.live.dGlp;
-    gmxFactory = core.gmxEcosystem!.live.dGmx;
+    glpFactory = core.gmxEcosystem.live.dGlp;
+    gmxFactory = core.gmxEcosystem.live.dGmx;
 
     await gmxFactory.createVault(core.hhUser1.address);
     gmxVault = setupUserVaultProxy<GMXIsolationModeTokenVaultV1>(

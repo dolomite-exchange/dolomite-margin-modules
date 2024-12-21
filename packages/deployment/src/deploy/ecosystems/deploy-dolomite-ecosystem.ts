@@ -12,6 +12,7 @@ import {
 } from '@dolomite-exchange/modules-base/src/types';
 import {
   GNOSIS_SAFE_MAP,
+  PAYABLE_TOKEN_MAP,
   SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL,
 } from '@dolomite-exchange/modules-base/src/utils/constants';
 import {
@@ -21,7 +22,7 @@ import {
   getRegistryProxyConstructorParams,
 } from '@dolomite-exchange/modules-base/src/utils/constructors/dolomite';
 import { getAnyNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { NetworkType } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { Network, NetworkType } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '@dolomite-exchange/modules-base/src/utils/SignerWithAddressWithSafety';
 import {
   getRealLatestBlockNumber,
@@ -29,12 +30,17 @@ import {
   resetForkIfPossible,
 } from '@dolomite-exchange/modules-base/test/utils';
 import {
+  CoreProtocolType,
   getDolomiteMarginContract,
   getExpiryContract,
-  getPayableToken,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
+import * as CoreDeployment from '@dolomite-margin/dist/migrations/deployed.json';
 import { ethers } from 'hardhat';
-import { CoreProtocolAbstract } from 'packages/base/test/utils/core-protocols/core-protocol-abstract';
+import {
+  CoreProtocolAbstract,
+  CoreProtocolParams,
+} from 'packages/base/test/utils/core-protocols/core-protocol-abstract';
+import ModuleDeployments from 'packages/deployment/src/deploy/deployments.json';
 import {
   deployContractAndSave,
   EncodedTransaction,
@@ -50,7 +56,6 @@ import { deployOracleAggregator } from './helpers/deploy-oracle-aggregator';
 import { encodeDolomiteOwnerMigrations } from './helpers/encode-dolomite-owner-migrations';
 import { encodeDolomiteRegistryMigrations } from './helpers/encode-dolomite-registry-migrations';
 import { encodeIsolationModeFreezableLiquidatorMigrations } from './helpers/encode-isolation-mode-freezable-liquidator-migrations';
-import ModuleDeployments from 'packages/deployment/src/deploy/deployments.json';
 
 const THIRTY_MINUTES_SECONDS = 60 * 30;
 const HANDLER_ADDRESS = '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe'; // Level Initiator
@@ -69,9 +74,14 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   const [hhUser1] = await Promise.all(
     (await ethers.getSigners()).map((s) => SignerWithAddressWithSafety.create(s.address)),
   );
-  const gnosisSafeSigner = await impersonateOrFallback(GNOSIS_SAFE_MAP[network], true, hhUser1);
+  const gnosisSafeAddress = GNOSIS_SAFE_MAP[network];
+  const gnosisSafeSigner = await impersonateOrFallback(gnosisSafeAddress, true, hhUser1);
   const transactions: EncodedTransaction[] = [];
 
+  const delayedMultiSig = IPartiallyDelayedMultiSig__factory.connect(
+    CoreDeployment.PartiallyDelayedMultiSig[network].address,
+    gnosisSafeSigner,
+  );
   const dolomiteMargin = getDolomiteMarginContract<T>(config, hhUser1);
   const expiry = getExpiryContract<T>(config, hhUser1);
 
@@ -87,15 +97,15 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   );
   await deployContractAndSave(
     'DolomiteERC4626WithPayable',
-    [getPayableToken(network, hhUser1).address],
+    [PAYABLE_TOKEN_MAP[network].address],
     getMaxDeploymentVersionNameByDeploymentKey('DolomiteERC4626WithPayableImplementation', 1),
   );
   const dolomiteOwnerAddress = await deployContractAndSave(
-    'DolomiteOwner',
+    'DolomiteOwnerV1',
     getDolomiteOwnerConstructorParams(GNOSIS_SAFE_MAP[network], THIRTY_MINUTES_SECONDS),
     'DolomiteOwnerV1',
   );
-  const dolomiteOwner = IDolomiteOwner__factory.connect(dolomiteOwnerAddress, gnosisSafeSigner);
+  const dolomiteOwnerV1 = IDolomiteOwner__factory.connect(dolomiteOwnerAddress, gnosisSafeSigner);
   const eventEmitterRegistryImplementationAddress = await deployContractAndSave(
     'EventEmitterRegistry',
     [],
@@ -194,27 +204,29 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
 
   await deployInterestSetters();
 
-  if (network === '80084') {
+  if (network === Network.BerachainCartio) {
     // Berachain testnet
     await deployContractAndSave('TestPriceOracle', []);
   }
 
   // We can't set up the core protocol here because there are too many missing contracts/context
-  const delayedMultiSigAddress = CoreDeployments.PartiallyDelayedMultiSig[network].address;
   const genericTraderAddress = CoreDeployments.GenericTraderProxyV1[network].address;
   const governanceAddress = await dolomiteMargin.connect(hhUser1).owner();
   const governance = await impersonateOrFallback(governanceAddress, true, hhUser1);
   const core = {
     config,
+    delayedMultiSig,
     dolomiteMargin,
     dolomiteRegistry,
     governance,
     hhUser1,
-    delayedMultiSig: IPartiallyDelayedMultiSig__factory.connect(delayedMultiSigAddress, gnosisSafeSigner),
+    liquidatorAssetRegistry,
     genericTraderProxy: IGenericTraderProxyV1__factory.connect(genericTraderAddress, governance),
     gnosisSafe: gnosisSafeSigner,
-    ownerAdapter: dolomiteOwner,
-  } as any;
+    gnosisSafeAddress: gnosisSafeAddress,
+    ownerAdapterV1: dolomiteOwnerV1,
+    ownerAdapterV2: dolomiteOwnerV1, // TODO: fix after review + test
+  } as CoreProtocolType<T>;
 
   await encodeDolomiteRegistryMigrations(
     dolomiteRegistry,
@@ -255,11 +267,11 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   );
 
   // This must be the last encoded transaction
-  await encodeDolomiteOwnerMigrations(dolomiteOwner, transactions, core);
+  await encodeDolomiteOwnerMigrations(dolomiteOwnerV1, transactions, core);
 
   return {
     core: {
-      ...core,
+      ...(core as any as CoreProtocolParams<T>),
       config: {
         network,
       },

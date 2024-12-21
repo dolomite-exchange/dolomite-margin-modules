@@ -62,9 +62,10 @@ async function createArtifactFromWorkspaceIfNotExists(artifactName: string): Pro
   }
 
   const packagesPath = '../../../packages';
-  const children = fs.readdirSync(join(__dirname, packagesPath), { withFileTypes: true })
-    .filter(d => d.isDirectory())
-    .map(d => path.join(packagesPath, d.name));
+  const children = fs
+    .readdirSync(join(__dirname, packagesPath), { withFileTypes: true })
+    .filter((d) => d.isDirectory())
+    .map((d) => path.join(packagesPath, d.name));
 
   const contractsFolders = ['contracts_coverage', 'contracts'];
   for (const contractFolder of contractsFolders) {
@@ -612,22 +613,14 @@ export function getDepositObject(
 
 export function getOracleProviderForTokenKey(token: { address: string}) {
   const oracleProviderString = ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['string'], ['ORACLE_PROVIDER_FOR_TOKEN']));
-  const key = ethers.utils.keccak256(
-    ethers.utils.defaultAbiCoder.encode(
-      ['bytes32', 'address'],
-      [oracleProviderString, token.address]
-    )
+  return ethers.utils.keccak256(
+    ethers.utils.defaultAbiCoder.encode(['bytes32', 'address'], [oracleProviderString, token.address]),
   );
-  return key;
 }
 
 export function getOracleProviderEnabledKey(provider: { address: string}) {
   const providerEnabled = ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['string'], ['IS_ORACLE_PROVIDER_ENABLED']));
-  const key = ethers.utils.keccak256(
-    ethers.utils.defaultAbiCoder.encode(
-      ['bytes32', 'address'],
-      [providerEnabled, provider.address]
-    )
+  return ethers.utils.keccak256(
+    ethers.utils.defaultAbiCoder.encode(['bytes32', 'address'], [providerEnabled, provider.address]),
   );
-  return key;
 }
