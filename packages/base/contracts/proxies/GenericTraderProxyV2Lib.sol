@@ -127,6 +127,7 @@ library GenericTraderProxyV2Lib {
         }
         // solium-enable indentation
 
+        // solhint-disable max-line-length
         if (_cache.isMarginDeposit) {
             _cache.eventEmitterRegistry.emitMarginPositionOpen(
                 _tradeAccount.owner,
@@ -150,5 +151,6 @@ library GenericTraderProxyV2Lib {
                 marginBalanceUpdate
             );
         }
+        // solhint-enable max-line-length
     }
 }

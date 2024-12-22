@@ -10,6 +10,7 @@ import { EncodedTransaction, prettyPrintEncodedDataWithTypeSafety } from '../../
 export async function encodeDolomiteRegistryMigrations(
   dolomiteRegistry: IDolomiteRegistry,
   dolomiteRegistryProxy: RegistryProxy,
+  borrowPositionProxyAddress: string,
   dolomiteAccountRegistryAddress: string,
   dolomiteMigratorAddress: string,
   oracleAggregatorAddress: string,
@@ -43,6 +44,23 @@ export async function encodeDolomiteRegistryMigrations(
         'dolomiteRegistry',
         'ownerSetDolomiteAccountRegistry',
         [dolomiteAccountRegistryAddress],
+      ),
+    );
+  }
+
+  let needsRegistryBorrowPositionProxyEncoding = true;
+  try {
+    const foundBorrowPositionProxyAddress = await dolomiteRegistry.borrowPositionProxy();
+    needsRegistryBorrowPositionProxyEncoding = foundBorrowPositionProxyAddress !== borrowPositionProxyAddress;
+  } catch (e) {}
+  if (needsRegistryBorrowPositionProxyEncoding) {
+    transactions.push(
+      await prettyPrintEncodedDataWithTypeSafety(
+        core,
+        { dolomiteRegistry },
+        'dolomiteRegistry',
+        'ownerSetBorrowPositionProxy',
+        [borrowPositionProxyAddress],
       ),
     );
   }

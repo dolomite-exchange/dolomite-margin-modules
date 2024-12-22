@@ -20,11 +20,11 @@
 
 pragma solidity ^0.8.9;
 
-import { RouterBase } from './RouterBase.sol';
-import { IIsolationModeTokenVaultV2 } from '../isolation-mode/interfaces/IIsolationModeTokenVaultV2.sol';
-import { AccountBalanceLib } from '../lib/AccountBalanceLib.sol';
-import { IGenericTraderProxyV2 } from '../proxies/interfaces/IGenericTraderProxyV2.sol';
-import { IGenericTraderRouter } from './interfaces/IGenericTraderRouter.sol';
+import { RouterBase } from "./RouterBase.sol";
+import { IIsolationModeTokenVaultV2 } from "../isolation-mode/interfaces/IIsolationModeTokenVaultV2.sol";
+import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
+import { IGenericTraderProxyV2 } from "../proxies/interfaces/IGenericTraderProxyV2.sol";
+import { IGenericTraderRouter } from "./interfaces/IGenericTraderRouter.sol";
 
 
 /**
@@ -39,7 +39,7 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
     // ====================== Constants =======================
     // ========================================================
 
-    bytes32 private constant _FILE = 'GenericTraderRouter';
+    bytes32 private constant _FILE = "GenericTraderRouter";
 
     uint256 public constant DEFAULT_ACCOUNT_NUMBER = 0;
 
@@ -69,11 +69,11 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
             );
         } else {
             MarketInfo memory marketInfo = _getMarketInfo(_isolationModeMarketId);
-            IIsolationModeTokenVaultV2 vault = _validateIsoMarketAndGetVault(marketInfo, msg.sender);
+            IIsolationModeTokenVaultV2 vault = _validateIsolationModeMarketAndGetVault(marketInfo, msg.sender);
 
             if (
                 _params.marketIdsPath[_params.marketIdsPath.length - 1] == _isolationModeMarketId
-                && _params.accountNumber < 100
+                && isDolomiteBalance(_params.accountNumber)
             ) {
                 vault.addCollateralAndSwapExactInputForOutput(
                     _params.accountNumber,
@@ -85,7 +85,7 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
                     _params.makerAccounts,
                     _params.userConfig
                 );
-            } else if (_params.marketIdsPath[0] == _isolationModeMarketId && _params.accountNumber < 100) {
+            } else if (_params.marketIdsPath[0] == _isolationModeMarketId && isDolomiteBalance(_params.accountNumber)) {
                 vault.swapExactInputForOutputAndRemoveCollateral(
                     _params.accountNumber,
                     /* fromAccountNumber */ DEFAULT_ACCOUNT_NUMBER,
@@ -122,7 +122,7 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
             );
         } else {
             MarketInfo memory marketInfo = _getMarketInfo(_isolationModeMarketId);
-            IIsolationModeTokenVaultV2 vault = _validateIsoMarketAndGetVault(marketInfo, msg.sender);
+            IIsolationModeTokenVaultV2 vault = _validateIsolationModeMarketAndGetVault(marketInfo, msg.sender);
 
             if (_checkAddCollateralAndSwap(_params)) {
                 vault.addCollateralAndSwapExactInputForOutput(
@@ -147,8 +147,8 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
                     _params.userConfig
                 );
             } else if (
-                _params.transferCollateralParams.fromAccountNumber < 100 
-                && _params.transferCollateralParams.toAccountNumber >= 100
+                isDolomiteBalance(_params.transferCollateralParams.fromAccountNumber)
+                && !isDolomiteBalance(_params.transferCollateralParams.toAccountNumber)
             ) {
                 _doTransfers(
                     _isolationModeMarketId,
@@ -235,8 +235,8 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
     ) internal pure returns (bool) {
         return (
             _params.transferCollateralParams.transferAmounts.length == 1
-                && _params.transferCollateralParams.fromAccountNumber < 100
-                && _params.transferCollateralParams.toAccountNumber >= 100
+                && isDolomiteBalance(_params.transferCollateralParams.fromAccountNumber)
+                && !isDolomiteBalance(_params.transferCollateralParams.toAccountNumber)
         );
     }
 
@@ -245,8 +245,8 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
     ) internal pure returns (bool) {
         return (
             _params.transferCollateralParams.transferAmounts.length == 1
-                && _params.transferCollateralParams.fromAccountNumber >= 100
-                && _params.transferCollateralParams.toAccountNumber < 100
+                && !isDolomiteBalance(_params.transferCollateralParams.fromAccountNumber)
+                && isDolomiteBalance(_params.transferCollateralParams.toAccountNumber)
         );
     }
 }

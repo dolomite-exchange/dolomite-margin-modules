@@ -20,10 +20,10 @@
 
 pragma solidity ^0.8.9;
 
-import { RouterBase } from './RouterBase.sol';
-import { IIsolationModeTokenVaultV2 } from '../isolation-mode/interfaces/IIsolationModeTokenVaultV2.sol';
-import { AccountBalanceLib } from '../lib/AccountBalanceLib.sol';
-import { IBorrowPositionRouter } from './interfaces/IBorrowPositionRouter.sol';
+import { RouterBase } from "./RouterBase.sol";
+import { IIsolationModeTokenVaultV2 } from "../isolation-mode/interfaces/IIsolationModeTokenVaultV2.sol";
+import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
+import { IBorrowPositionRouter } from "./interfaces/IBorrowPositionRouter.sol";
 
 
 /**
@@ -38,7 +38,7 @@ contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
   // ====================== Constants =======================
   // ========================================================
 
-  bytes32 private constant _FILE = 'BorrowPositionRouter';
+  bytes32 private constant _FILE = "BorrowPositionRouter";
 
   // ========================================================
   // ===================== Constructor ========================
@@ -72,7 +72,7 @@ contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
         _balanceCheckFlag
       );
     } else {
-      IIsolationModeTokenVaultV2 vault = _validateIsoMarketAndGetVault(marketInfo, msg.sender);
+      IIsolationModeTokenVaultV2 vault = _validateIsolationModeMarketAndGetVault(marketInfo, msg.sender);
       vault.openBorrowPosition(_fromAccountNumber, _toAccountNumber, _amount);
     }
   }
@@ -93,7 +93,7 @@ contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
       );
     } else {
       MarketInfo memory marketInfo = _getMarketInfo(_isolationModeMarketId);
-      IIsolationModeTokenVaultV2 vault = _validateIsoMarketAndGetVault(marketInfo, msg.sender);
+      IIsolationModeTokenVaultV2 vault = _validateIsolationModeMarketAndGetVault(marketInfo, msg.sender);
 
       if (_collateralMarketIds.length == 0) {
         vault.closeBorrowPositionWithUnderlyingVaultToken(_borrowAccountNumber, _toAccountNumber);
@@ -139,7 +139,7 @@ contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
       );
     } else {
       MarketInfo memory marketInfo = _getMarketInfo(_isolationModeMarketId);
-      IIsolationModeTokenVaultV2 vault = _validateIsoMarketAndGetVault(marketInfo, msg.sender);
+      IIsolationModeTokenVaultV2 vault = _validateIsolationModeMarketAndGetVault(marketInfo, msg.sender);
       vault.repayAllForBorrowPosition(_fromAccountNumber, _borrowAccountNumber, _marketId, _balanceCheckFlag);
     }
   }
@@ -167,20 +167,20 @@ contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
         _balanceCheckFlag
       );
       return;
-    } 
+    }
 
     MarketInfo memory marketInfo = _getMarketInfo(_isolationModeMarketId);
-    IIsolationModeTokenVaultV2 vault = _validateIsoMarketAndGetVault(marketInfo, msg.sender);
+    IIsolationModeTokenVaultV2 vault = _validateIsolationModeMarketAndGetVault(marketInfo, msg.sender);
     if (_isolationModeMarketId == _marketId) {
-      if (_fromAccountNumber < 100 && _toAccountNumber >= 100) {
+      if (isDolomiteBalance(_fromAccountNumber) && !isDolomiteBalance(_toAccountNumber)) {
         vault.transferIntoPositionWithUnderlyingToken(_fromAccountNumber, _toAccountNumber, _amount);
-      } else if (_fromAccountNumber >= 100 && _toAccountNumber < 100) {
+      } else if (!isDolomiteBalance(_fromAccountNumber) && isDolomiteBalance(_toAccountNumber)) {
         vault.transferFromPositionWithUnderlyingToken(_fromAccountNumber, _toAccountNumber, _amount);
       } else {
-        revert('BorrowPositionRouter: Invalid transfer between accounts');
+        revert("BorrowPositionRouter: Invalid transfer between accounts");
       }
     } else {
-      if (_fromAccountNumber < 100 && _toAccountNumber >= 100) {
+      if (isDolomiteBalance(_fromAccountNumber) && !isDolomiteBalance(_toAccountNumber)) {
         vault.transferIntoPositionWithOtherToken(
           _fromAccountNumber,
           _toAccountNumber,
@@ -188,7 +188,7 @@ contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
           _amount,
           _balanceCheckFlag
         );
-      } else if (_fromAccountNumber >= 100 && _toAccountNumber < 100) {
+      } else if (!isDolomiteBalance(_fromAccountNumber) && isDolomiteBalance(_toAccountNumber)) {
         vault.transferFromPositionWithOtherToken(
           _fromAccountNumber,
           _toAccountNumber,
@@ -197,7 +197,7 @@ contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
           _balanceCheckFlag
         );
       } else {
-        revert('BorrowPositionRouter: Invalid transfer between accounts');
+        revert("BorrowPositionRouter: Invalid transfer between accounts");
       }
     }
   }

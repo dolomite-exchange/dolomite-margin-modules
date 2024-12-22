@@ -39,4 +39,6 @@ interface IRouterBase {
         IERC20 token;
         IIsolationModeVaultFactory factory;
     }
+
+    function isDolomiteBalance(uint256 _accountNumber) external view returns (bool);
 }
