@@ -150,6 +150,7 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
                 isDolomiteBalance(_params.transferCollateralParams.fromAccountNumber)
                 && !isDolomiteBalance(_params.transferCollateralParams.toAccountNumber)
             ) {
+                // Do the transfers into the position before the swap
                 _doTransfers(
                     _isolationModeMarketId,
                     vault,
@@ -166,6 +167,12 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
                     _params.userConfig
                 );
             } else {
+                assert(
+                    !isDolomiteBalance(_params.transferCollateralParams.fromAccountNumber)
+                    && isDolomiteBalance(_params.transferCollateralParams.toAccountNumber)
+                );
+
+                // Do the transfers into the position after the swap
                 vault.swapExactInputForOutput(
                     _params.accountNumber,
                     _params.marketIdsPath,
