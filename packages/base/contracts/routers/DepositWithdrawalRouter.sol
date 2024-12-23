@@ -55,7 +55,6 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
     // ========================================================
 
     bytes32 private constant _FILE = "DepositWithdrawalRouter";
-    uint256 public constant DEFAULT_ACCOUNT_NUMBER = 0;
 
     // ========================================================
     // ================= Storage Variables ====================

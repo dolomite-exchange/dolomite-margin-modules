@@ -46,6 +46,7 @@ abstract contract RouterBase is OnlyDolomiteMarginForUpgradeable, ReentrancyGuar
 
     bytes32 private constant _FILE = "RouterBase";
     uint256 private constant _DOLOMITE_BALANCE_ACCOUNT_NUMBER_CUTOFF = 100;
+    uint256 public constant DEFAULT_ACCOUNT_NUMBER = 0;
 
     string constant public DOLOMITE_ISOLATION_PREFIX = "Dolomite Isolation:";
     string constant public DOLOMITE_FS_GLP = "Dolomite: Fee + Staked GLP";

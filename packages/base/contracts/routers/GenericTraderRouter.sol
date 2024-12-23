@@ -41,8 +41,6 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
 
     bytes32 private constant _FILE = "GenericTraderRouter";
 
-    uint256 public constant DEFAULT_ACCOUNT_NUMBER = 0;
-
     // ========================================================
     // ===================== Constructor ========================
     // ========================================================
@@ -64,7 +62,7 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
         if (_isolationModeMarketId == 0) {
             IGenericTraderProxyV2 proxy = IGenericTraderProxyV2(address(DOLOMITE_REGISTRY.genericTraderProxy()));
             proxy.swapExactInputForOutputForDifferentAccount(
-                msg.sender,
+                /* _accountOwner = */ msg.sender,
                 _params
             );
         } else {
@@ -75,6 +73,7 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
                 _params.marketIdsPath[_params.marketIdsPath.length - 1] == _isolationModeMarketId
                 && isDolomiteBalance(_params.accountNumber)
             ) {
+                // We need to move funds from the user to the vault and perform the swap
                 vault.addCollateralAndSwapExactInputForOutput(
                     _params.accountNumber,
                     /* toAccountNumber */ DEFAULT_ACCOUNT_NUMBER,
@@ -86,6 +85,7 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
                     _params.userConfig
                 );
             } else if (_params.marketIdsPath[0] == _isolationModeMarketId && isDolomiteBalance(_params.accountNumber)) {
+                // We need to move funds from the vault to the user and perform the swap
                 vault.swapExactInputForOutputAndRemoveCollateral(
                     _params.accountNumber,
                     /* fromAccountNumber */ DEFAULT_ACCOUNT_NUMBER,
