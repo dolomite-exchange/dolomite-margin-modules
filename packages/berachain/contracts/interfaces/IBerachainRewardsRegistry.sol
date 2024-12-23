@@ -21,9 +21,13 @@
 pragma solidity ^0.8.9;
 
 import { IBaseRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IBaseRegistry.sol";
+import { IWETH } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IWETH.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IBGT } from "./IBGT.sol";
-import { IInfraredBGTStakingPool } from "./IInfraredBGTStakingPool.sol";
+import { IBGTM } from "./IBGTM.sol";
+import { IBerachainRewardsVaultFactory } from "./IBerachainRewardsVaultFactory.sol";
+import { IInfrared } from "./IInfrared.sol";
+import { IInfraredVault } from "./IInfraredVault.sol";
 import { IMetaVaultRewardTokenFactory } from "./IMetaVaultRewardTokenFactory.sol";
 
 
@@ -41,7 +45,8 @@ interface IBerachainRewardsRegistry is IBaseRegistry {
 
     enum RewardVaultType {
         NATIVE,
-        INFRARED
+        INFRARED,
+        BGTM
     }
 
     // ================================================
@@ -49,27 +54,37 @@ interface IBerachainRewardsRegistry is IBaseRegistry {
     // ================================================
 
     event AccountToAssetToDefaultTypeSet(address indexed account, address indexed asset, RewardVaultType rewardType);
+    event BerachainRewardsVaultFactorySet(address berachainRewardsVaultFactory);
     event BgtSet(address bgt);
+    event BgtmSet(address bgtm);
     event BgtIsolationModeVaultFactorySet(address bgtIsolationModeVaultFactory);
+    event BgtmIsolationModeVaultFactorySet(address bgtmIsolationModeVaultFactory);
     event IBgtSet(address iBgt);
     event IBgtIsolationModeVaultFactorySet(address iBgtIsolationModeVaultFactory);
-    event IBgtStakingPoolSet(address iBgtStakingPool);
+    event IBgtVaultSet(address iBgtVault);
+    event InfraredSet(address infrared);
     event MetaVaultCreated(address indexed account, address metaVault);
     event MetaVaultImplementationSet(address metaVaultImplementation);
     event RewardVaultSet(address asset, RewardVaultType rewardVaultType, address rewardVault);
     event VaultToMetaVaultSet(address indexed vault, address metaVault);
+    event WberaSet(address wbera);
 
     // ===================================================
     // ================== Admin Functions ================
     // ===================================================
 
+    function ownerSetBerachainRewardsVaultFactory(address _berachainRewardsVaultFactory) external;
     function ownerSetBgt(address _bgt) external;
+    function ownerSetBgtm(address _bgtm) external;
     function ownerSetBgtIsolationModeVaultFactory(address _bgtIsolationModeVaultFactory) external;
+    function ownerSetBgtmIsolationModeVaultFactory(address _bgtmIsolationModeVaultFactory) external;
     function ownerSetIBgt(address _iBgt) external;
     function ownerSetIBgtIsolationModeVaultFactory(address _iBgtIsolationModeVaultFactory) external;
-    function ownerSetIBgtStakingPool(address _iBgtStakingPool) external;
+    function ownerSetIBgtVault(address _iBgtVault) external;
+    function ownerSetInfrared(address _infrared) external;
     function ownerSetMetaVaultImplementation(address _metaVaultImplementation) external;
     function ownerSetRewardVault(address _asset, RewardVaultType _type, address _rewardVault) external;
+    function ownerSetWbera(address _wbera) external;
 
     // ===================================================
     // ================== Public Functions ===============
@@ -91,11 +106,16 @@ interface IBerachainRewardsRegistry is IBaseRegistry {
         address _asset
     ) external view returns (RewardVaultType);
 
+    function berachainRewardsVaultFactory() external view returns (IBerachainRewardsVaultFactory);
     function bgt() external view returns (IBGT);
+    function bgtm() external view returns (IBGTM);
     function bgtIsolationModeVaultFactory() external view returns (IMetaVaultRewardTokenFactory);
+    function bgtmIsolationModeVaultFactory() external view returns (IMetaVaultRewardTokenFactory);
     function iBgt() external view returns (IERC20);
     function iBgtIsolationModeVaultFactory() external view returns (IMetaVaultRewardTokenFactory);
-    function iBgtStakingPool() external view returns (IInfraredBGTStakingPool);
+    function iBgtVault() external view returns (IInfraredVault);
+    function infrared() external view returns (IInfrared);
     function metaVaultImplementation() external view returns (address);
     function rewardVault(address _asset, RewardVaultType _type) external view returns (address);
+    function wbera() external view returns (IWETH);
 }

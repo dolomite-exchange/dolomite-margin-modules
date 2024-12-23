@@ -70,8 +70,8 @@ contract BerachainRewardsIsolationModeTokenVaultV1 is
         _unstake(UNDERLYING_TOKEN(), _type, _amount);
     }
 
-    function exit(IBerachainRewardsRegistry.RewardVaultType _type) external onlyVaultOwner(msg.sender) {
-        _exit(UNDERLYING_TOKEN(), _type);
+    function exit() external onlyVaultOwner(msg.sender) {
+        _exit(UNDERLYING_TOKEN());
     }
 
     function executeDepositIntoVault(
@@ -142,10 +142,10 @@ contract BerachainRewardsIsolationModeTokenVaultV1 is
         metaVault.unstake(_asset, _type, _amount);
     }
 
-    function _exit(address _asset, IBerachainRewardsRegistry.RewardVaultType _type) internal {
+    function _exit(address _asset) internal {
         IBerachainRewardsMetaVault metaVault = IBerachainRewardsMetaVault(
             registry().getMetaVaultByVault(address(this))
         );
-        metaVault.exit(_asset, _type);
+        metaVault.exit(_asset);
     }
 }

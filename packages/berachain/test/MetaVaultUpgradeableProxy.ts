@@ -7,7 +7,7 @@ import {
   BerachainRewardsMetaVault__factory,
   BGTIsolationModeVaultFactory,
   IERC20,
-  IInfraredRewardVault,
+  IInfraredVault,
   INativeRewardVault,
   InfraredBGTIsolationModeVaultFactory,
   MetaVaultUpgradeableProxy,
@@ -42,7 +42,7 @@ describe('MetaVaultUpgradeableProxy', () => {
 
   let underlyingToken: IERC20;
   let nativeRewardVault: INativeRewardVault;
-  let infraredRewardVault: IInfraredRewardVault;
+  let infraredRewardVault: IInfraredVault;
 
   let metaVaultImplementation: BerachainRewardsMetaVault;
   let beraVault: BerachainRewardsIsolationModeTokenVaultV1;
@@ -172,14 +172,24 @@ describe('MetaVaultUpgradeableProxy', () => {
   });
 
   describe('#receive', () => {
-    it('should fail because no receive on implementation', async () => {
+    it('should work normally', async () => {
+      await core.hhUser1.sendTransaction({
+        to: vaultProxy.address,
+        value: ONE_ETH_BI,
+        data: '0x'
+      });
+    });
+
+    it('should fail if not initialized', async () => {
+      await registry.createMetaVaultNoInitialize(core.hhUser2.address, beraVault.address);
+      const metaAddress = await registry.getMetaVaultByAccount(core.hhUser2.address);
       await expectThrow(
         core.hhUser1.sendTransaction({
-          to: vaultProxy.address,
+          to: metaAddress,
           value: ONE_ETH_BI,
           data: '0x'
         }),
-        'function selector was not recognized and there\'s no fallback nor receive function'
+        'MetaVaultUpgradeableProxy: Not initialized'
       );
     });
   });

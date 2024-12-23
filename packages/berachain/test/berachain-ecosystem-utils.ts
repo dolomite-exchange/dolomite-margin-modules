@@ -9,6 +9,7 @@ import {
   getBerachainRewardsIsolationModeVaultFactoryConstructorParams,
   getBerachainRewardsRegistryConstructorParams,
   getBGTIsolationModeVaultFactoryConstructorParams,
+  getBGTMIsolationModeVaultFactoryConstructorParams,
   getInfraredBGTIsolationModeVaultFactoryConstructorParams,
 } from '../src/berachain-constructors';
 import {
@@ -21,6 +22,9 @@ import {
   BGTIsolationModeTokenVaultV1,
   BGTIsolationModeVaultFactory,
   BGTIsolationModeVaultFactory__factory,
+  BGTMIsolationModeTokenVaultV1,
+  BGTMIsolationModeVaultFactory,
+  BGTMIsolationModeVaultFactory__factory,
   IBerachainRewardsRegistry,
   InfraredBGTIsolationModeTokenVaultV1,
   InfraredBGTIsolationModeVaultFactory,
@@ -32,6 +36,7 @@ import {
 export enum RewardVaultType {
   Native,
   Infrared,
+  BGTM,
 }
 
 export async function createBerachainRewardsRegistry(
@@ -111,6 +116,24 @@ export async function createBGTIsolationModeVaultFactory(
     BGTIsolationModeVaultFactory__factory.abi,
     BGTIsolationModeVaultFactory__factory.bytecode,
     getBGTIsolationModeVaultFactoryConstructorParams(beraRegistry, underlyingToken, userVaultImplementation, core),
+  );
+}
+
+export async function createBGTMIsolationModeTokenVaultV1(): Promise<BGTMIsolationModeTokenVaultV1> {
+  const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
+  return createContractWithLibrary<BGTMIsolationModeTokenVaultV1>('BGTMIsolationModeTokenVaultV1', libraries, []);
+}
+
+export async function createBGTMIsolationModeVaultFactory(
+  beraRegistry: IBerachainRewardsRegistry | BerachainRewardsRegistry,
+  underlyingToken: { address: string },
+  userVaultImplementation: BGTMIsolationModeTokenVaultV1,
+  core: CoreProtocolBerachain,
+): Promise<BGTMIsolationModeVaultFactory> {
+  return createContractWithAbi<BGTMIsolationModeVaultFactory>(
+    BGTMIsolationModeVaultFactory__factory.abi,
+    BGTMIsolationModeVaultFactory__factory.bytecode,
+    getBGTMIsolationModeVaultFactoryConstructorParams(beraRegistry, underlyingToken, userVaultImplementation, core),
   );
 }
 

@@ -37,5 +37,5 @@ interface IBerachainRewardsIsolationModeTokenVaultV1 is IIsolationModeTokenVault
 
     function unstake(IBerachainRewardsRegistry.RewardVaultType _type, uint256 _amount) external;
 
-    function exit(IBerachainRewardsRegistry.RewardVaultType _type) external;
+    function exit() external;
 }

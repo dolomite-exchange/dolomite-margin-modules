@@ -20,22 +20,32 @@
 
 pragma solidity ^0.8.9;
 
-import { IIsolationModeTokenVaultV1 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
-import { IBerachainRewardsRegistry } from "./IBerachainRewardsRegistry.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 
 /**
- * @title   IBerachainRewardsIsolationModeTokenVaultV1
+ * @title   IInfraredVault
  * @author  Dolomite
  *
- * @notice  This interface defines the functions that are available on the BerachainRewardsIsolationModeTokenVaultV1
- *          implementation contract for each user's proxy vault.
  */
-interface IBerachainRewardsIsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
+interface IInfraredVault is IERC20 {
 
-    function stake(IBerachainRewardsRegistry.RewardVaultType _type, uint256 _amount) external;
+    struct UserReward {
+        address token;
+        uint256 amount;
+    }
 
-    function unstake(IBerachainRewardsRegistry.RewardVaultType _type, uint256 _amount) external;
+    function stake(uint256 amount) external;
+
+    function withdraw(uint256 amount) external;
+
+    function getReward() external;
 
     function exit() external;
+
+    function getAllRewardsForUser(address _user) external view returns (UserReward[] memory);
+
+    function earned(address account, address rewardToken) external view returns (uint256);
+
+    function getAllRewardTokens() external view returns (address[] memory);
 }

@@ -18,12 +18,13 @@ import {
   setupCoreProtocol,
   setupTestMarket,
   setupUserVaultProxy,
+  setupWBERABalance,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
-import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
+import { createContractWithAbi, createTestToken } from 'packages/base/src/utils/dolomite-utils';
 import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
 import {
   BerachainRewardsIsolationModeVaultFactory,
@@ -31,11 +32,13 @@ import {
   BerachainRewardsMetaVault__factory,
   BerachainRewardsRegistry,
   BGTIsolationModeVaultFactory,
-  IInfraredRewardVault,
+  IInfraredVault,
   INativeRewardVault,
   InfraredBGTIsolationModeTokenVaultV1,
   InfraredBGTIsolationModeTokenVaultV1__factory,
   InfraredBGTIsolationModeVaultFactory,
+  TestInfraredVault,
+  TestInfraredVault__factory,
 } from '../src/types';
 import {
   createBerachainRewardsIsolationModeTokenVaultV1,
@@ -46,10 +49,13 @@ import {
   createInfraredBGTIsolationModeTokenVaultV1,
   createInfraredBGTIsolationModeVaultFactory,
 } from './berachain-ecosystem-utils';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
 
 const IBGT_WHALE_ADDRESS = '0x4B95296B937AF613D65206Ba7C203CB9A1263003';
 const defaultAccountNumber = ZERO_BI;
 const amountWei = parseEther('.5');
+const rewardAmount = parseEther('.25');
 
 enum RewardVaultType {
   Native,
@@ -67,10 +73,12 @@ describe('InfraredBGTIsolationModeTokenVaultV1', () => {
 
   let underlyingToken: IERC20;
   let nativeRewardVault: INativeRewardVault;
-  let infraredRewardVault: IInfraredRewardVault;
+  let infraredRewardVault: IInfraredVault;
+  let testInfraredVault: TestInfraredVault;
 
   let iBgtVault: InfraredBGTIsolationModeTokenVaultV1;
   let iBgtMarketId: BigNumber;
+  let iBgtWhale: SignerWithAddressWithSafety;
 
   before(async () => {
     core = await setupCoreProtocol({
@@ -138,9 +146,15 @@ describe('InfraredBGTIsolationModeTokenVaultV1', () => {
       core.hhUser1,
     );
 
-    const iBgtWhale = await impersonate(IBGT_WHALE_ADDRESS, true);
+    iBgtWhale = await impersonate(IBGT_WHALE_ADDRESS, true);
     await core.tokens.iBgt.connect(iBgtWhale).transfer(core.hhUser1.address, amountWei);
     await core.tokens.iBgt.connect(core.hhUser1).approve(iBgtVault.address, amountWei);
+
+    testInfraredVault = await createContractWithAbi<TestInfraredVault>(
+      TestInfraredVault__factory.abi,
+      TestInfraredVault__factory.bytecode,
+      [core.tokens.iBgt.address],
+    );
 
     snapshotId = await snapshot();
   });
@@ -268,18 +282,57 @@ describe('InfraredBGTIsolationModeTokenVaultV1', () => {
   });
 
   describe('#getReward', () => {
-    it('should work normally', async () => {
+    it('should work normally for iBgt reward', async () => {
+      await testInfraredVault.setRewardTokens([core.tokens.iBgt.address]);
+      await core.tokens.iBgt.connect(iBgtWhale).approve(testInfraredVault.address, rewardAmount);
+      await testInfraredVault.connect(iBgtWhale).addReward(core.tokens.iBgt.address, rewardAmount);
+      await registry.connect(core.governance).ownerSetIBgtVault(testInfraredVault.address);
+
       await iBgtVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
-      await increase(30 * ONE_DAY_SECONDS);
-      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.honey, ZERO_BI);
+      await expectProtocolBalance(core, iBgtVault, defaultAccountNumber, iBgtMarketId, amountWei);
+
       await iBgtVault.getReward();
-      await expectProtocolBalanceIsGreaterThan(
-        core,
-        { owner: core.hhUser1.address, number: defaultAccountNumber },
-        core.marketIds.honey,
-        ONE_BI,
-        0,
-      );
+      await expectWalletBalance(iBgtVault, core.tokens.iBgt, ZERO_BI);
+      await expectProtocolBalance(core, iBgtVault, defaultAccountNumber, iBgtMarketId, amountWei.add(rewardAmount));
+    });
+
+    it('should work normally for reward listed on dolomite', async () => {
+      await testInfraredVault.setRewardTokens([core.tokens.wbera.address]);
+      await setupWBERABalance(core, core.hhUser1, rewardAmount, { address: testInfraredVault.address });
+      await testInfraredVault.connect(core.hhUser1).addReward(core.tokens.wbera.address, rewardAmount);
+      await registry.connect(core.governance).ownerSetIBgtVault(testInfraredVault.address);
+
+      await iBgtVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await expectProtocolBalance(core, iBgtVault, defaultAccountNumber, iBgtMarketId, amountWei);
+      await iBgtVault.getReward();
+      await expectProtocolBalance(core, iBgtVault, defaultAccountNumber, iBgtMarketId, amountWei);
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.wbera, rewardAmount);
+    });
+
+    it('should work normally for reward not listed on dolomite', async () => {
+      const testToken = await createTestToken();
+      await testInfraredVault.setRewardTokens([testToken.address]);
+      await testToken.addBalance(core.hhUser1.address, rewardAmount);
+      await testToken.connect(core.hhUser1).approve(testInfraredVault.address, rewardAmount);
+      await testInfraredVault.connect(core.hhUser1).addReward(testToken.address, rewardAmount);
+      await registry.connect(core.governance).ownerSetIBgtVault(testInfraredVault.address);
+
+      await iBgtVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await expectProtocolBalance(core, iBgtVault, defaultAccountNumber, iBgtMarketId, amountWei);
+      await iBgtVault.getReward();
+      await expectProtocolBalance(core, iBgtVault, defaultAccountNumber, iBgtMarketId, amountWei);
+      await expectWalletBalance(core.hhUser1, testToken, rewardAmount);
+    });
+
+    it('should work normally if 0 reward', async () => {
+      await testInfraredVault.setRewardTokens([core.tokens.iBgt.address]);
+      await registry.connect(core.governance).ownerSetIBgtVault(testInfraredVault.address);
+
+      await iBgtVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await expectProtocolBalance(core, iBgtVault, defaultAccountNumber, iBgtMarketId, amountWei);
+
+      await iBgtVault.getReward();
+      await expectProtocolBalance(core, iBgtVault, defaultAccountNumber, iBgtMarketId, amountWei);
     });
 
     it('should fail if not called by vault owner', async () => {

@@ -1194,6 +1194,18 @@ export const GRAIL_WETH_V3_POOL_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x60451B6aC55E3C5F0f3aeE31519670EcC62DC28f',
 };
 
+export const INFRRED_MAP: Record<Network.Berachain, string> = {
+  [Network.Berachain]: '0xe41779952f5485db5440452DFa43350556AA4673',
+};
+
+export const BERACHAIN_REWARDS_VAULT_FACTORY_MAP: Record<Network.Berachain, string> = {
+  [Network.Berachain]: '0x2B6e40f65D82A0cB98795bC7587a71bfa49fBB2B',
+};
+
+export const BGTM_MAP: Record<Network.Berachain, string> = {
+  [Network.Berachain]: '0x8894D7EE78251cD234A5DDC93a163B467505E3AD',
+};
+
 export const HONEY_USDC_BEX_LP_TOKEN_MAP: Record<Network.Berachain, string> = {
   [Network.Berachain]: '0xD69ADb6FB5fD6D06E6ceEc5405D95A37F96E3b96',
 };

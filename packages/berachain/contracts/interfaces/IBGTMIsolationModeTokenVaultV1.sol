@@ -21,21 +21,15 @@
 pragma solidity ^0.8.9;
 
 import { IIsolationModeTokenVaultV1 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
-import { IBerachainRewardsRegistry } from "./IBerachainRewardsRegistry.sol";
+import { IMetaVaultRewardReceiver } from "./IMetaVaultRewardReceiver.sol";
 
 
 /**
- * @title   IBerachainRewardsIsolationModeTokenVaultV1
+ * @title   IBGTMIsolationModeTokenVaultV1
  * @author  Dolomite
  *
- * @notice  This interface defines the functions that are available on the BerachainRewardsIsolationModeTokenVaultV1
+ * @notice  This interface defines the functions that are available on the BGTMIsolationModeTokenVaultV1
  *          implementation contract for each user's proxy vault.
  */
-interface IBerachainRewardsIsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
-
-    function stake(IBerachainRewardsRegistry.RewardVaultType _type, uint256 _amount) external;
-
-    function unstake(IBerachainRewardsRegistry.RewardVaultType _type, uint256 _amount) external;
-
-    function exit() external;
+interface IBGTMIsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, IMetaVaultRewardReceiver {
 }

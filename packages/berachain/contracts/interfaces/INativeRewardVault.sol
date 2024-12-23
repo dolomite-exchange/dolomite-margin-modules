@@ -39,4 +39,6 @@ interface INativeRewardVault is IERC20 {
     function exit() external;
 
     function earned(address account) external view returns (uint256);
+
+    function setOperator(address operator) external;
 }
