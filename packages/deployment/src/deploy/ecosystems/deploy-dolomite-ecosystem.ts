@@ -139,6 +139,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     hhUser1,
   );
   const registryImplementationCalldata = await registryImplementation.populateTransaction.initialize(
+    CoreDeployments.BorrowPositionProxyV2[network].address,
     CoreDeployments.GenericTraderProxyV1[network].address,
     CoreDeployments.Expiry[network].address,
     SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL,
@@ -231,6 +232,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   await encodeDolomiteRegistryMigrations(
     dolomiteRegistry,
     dolomiteRegistryProxy,
+    CoreDeployments.BorrowPositionProxyV2[network].address,
     dolomiteAccountRegistryProxy.address,
     dolomiteMigratorAddress,
     oracleAggregator.address,
