@@ -33,13 +33,15 @@ import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol
  */
 interface IGenericTraderProxyV2 is IGenericTraderBase {
 
-    // ============ Structs ============
+    // ============ Enums ============
 
     enum EventEmissionType {
         None,
         BorrowPosition,
         MarginPosition
     }
+
+    // ============ Structs ============
 
     struct TransferAmount {
         /// @dev The market ID to transfer
@@ -139,14 +141,15 @@ interface IGenericTraderProxyV2 is IGenericTraderBase {
         UserConfig userConfig;
     }
 
+    // ============ Functions ============
+
     /**
      * @dev     Swaps an exact amount of input for a minimum amount of output.
      *
      */
     function swapExactInputForOutput(
         SwapExactInputForOutputParams memory _params
-    )
-    external;
+    ) external;
 
     /**
      * @dev     Swaps an exact amount of input for a minimum amount of output.
@@ -155,8 +158,7 @@ interface IGenericTraderProxyV2 is IGenericTraderBase {
     function swapExactInputForOutputForDifferentAccount(
         address _accountOwner,
         SwapExactInputForOutputParams memory _params
-    )
-    external;
+    ) external;
 
 
     function swapExactInputForOutputAndModifyPositionForDifferentAccount(
@@ -167,6 +169,5 @@ interface IGenericTraderProxyV2 is IGenericTraderBase {
 
     function swapExactInputForOutputAndModifyPosition(
         SwapExactInputForOutputAndModifyPositionParams memory _params
-    )
-    external;
+    ) external;
 }
