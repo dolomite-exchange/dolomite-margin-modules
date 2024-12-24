@@ -29,3 +29,30 @@ export enum IsolationModeLibraryNames {
   GlvLibrary = 'GlvLibrary',
   GmxV2Library = 'GmxV2Library',
 }
+
+export function getIsolationModeLibrariesByType(vaultType: IsolationModeVaultType): IsolationModeLibraryNames[] {
+  if (vaultType === IsolationModeVaultType.None) {
+    return [IsolationModeLibraryNames.IsolationModeTokenVaultV1ActionsImpl];
+  }
+  if (vaultType === IsolationModeVaultType.Migrator) {
+    return [];
+  }
+  if (vaultType === IsolationModeVaultType.Pt) {
+    return [IsolationModeLibraryNames.IsolationModeTokenVaultV1ActionsImpl];
+  }
+  if (vaultType === IsolationModeVaultType.Yt) {
+    return [IsolationModeLibraryNames.IsolationModeTokenVaultV1ActionsImpl];
+  }
+  if (vaultType === IsolationModeVaultType.GmxV2) {
+    return [IsolationModeLibraryNames.IsolationModeTokenVaultV1ActionsImpl, IsolationModeLibraryNames.GmxV2Library];
+  }
+  if (vaultType === IsolationModeVaultType.GLV) {
+    return [
+      IsolationModeLibraryNames.IsolationModeTokenVaultV1ActionsImpl,
+      IsolationModeLibraryNames.GmxV2Library,
+      IsolationModeLibraryNames.GlvLibrary,
+    ];
+  }
+
+  throw new Error(`Unknown vault type, found ${vaultType}`);
+}

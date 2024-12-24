@@ -1,10 +1,48 @@
-import { D_ARB_MAP, D_GLV_BTC_MAP, D_GLV_ETH_MAP, D_GM_AAVE_USD_MAP, D_GM_ARB_USD_MAP, D_GM_BTC_MAP, D_GM_BTC_USD_MAP, D_GM_DOGE_USD_MAP, D_GM_ETH_MAP, D_GM_ETH_USD_MAP, D_GM_GMX_MAP, D_GM_GMX_USD_MAP, D_GM_LINK_USD_MAP, D_GM_PENDLE_USD_MAP, D_GM_PEPE_USD_MAP, D_GM_SOL_USD_MAP, D_GM_UNI_USD_MAP, D_GM_WIF_MAP, D_GM_WST_ETH_USD_MAP, D_GMX_MAP, DFS_GLP_MAP, DJ_USDC_V1, DJ_USDC_V2, DPLV_GLP_MAP, DPT_EZ_ETH_JUN_2024_MAP, DPT_EZ_ETH_SEP_2024_MAP, DPT_GLP_MAR_2024_MAP, DPT_GLP_SEP_2024_MAP, DPT_R_ETH_JUN_2025_MAP, DPT_RS_ETH_DEC_2024_MAP, DPT_RS_ETH_SEP_2024_MAP, DPT_WE_ETH_APR_2024_MAP, DPT_WE_ETH_DEC_2024_MAP, DPT_WE_ETH_JUN_2024_MAP, DPT_WE_ETH_SEP_2024_MAP, DPT_WST_ETH_JUN_2024_MAP, DPT_WST_ETH_JUN_2025_MAP, DYT_GLP_2024_MAP } from 'packages/base/src/utils/constants';
+import {
+  D_ARB_MAP,
+  D_GLV_BTC_MAP,
+  D_GLV_ETH_MAP,
+  D_GM_AAVE_USD_MAP,
+  D_GM_ARB_USD_MAP,
+  D_GM_BTC_MAP,
+  D_GM_BTC_USD_MAP,
+  D_GM_DOGE_USD_MAP,
+  D_GM_ETH_MAP,
+  D_GM_ETH_USD_MAP,
+  D_GM_GMX_MAP,
+  D_GM_GMX_USD_MAP,
+  D_GM_LINK_USD_MAP,
+  D_GM_PENDLE_USD_MAP,
+  D_GM_PEPE_USD_MAP,
+  D_GM_SOL_USD_MAP,
+  D_GM_UNI_USD_MAP,
+  D_GM_WIF_MAP,
+  D_GM_WST_ETH_USD_MAP,
+  D_GMX_MAP,
+  DFS_GLP_MAP,
+  DJ_USDC_V1,
+  DJ_USDC_V2,
+  DPLV_GLP_MAP,
+  DPT_EZ_ETH_JUN_2024_MAP,
+  DPT_EZ_ETH_SEP_2024_MAP,
+  DPT_GLP_MAR_2024_MAP,
+  DPT_GLP_SEP_2024_MAP,
+  DPT_R_ETH_JUN_2025_MAP,
+  DPT_RS_ETH_DEC_2024_MAP,
+  DPT_RS_ETH_SEP_2024_MAP,
+  DPT_WE_ETH_APR_2024_MAP,
+  DPT_WE_ETH_DEC_2024_MAP,
+  DPT_WE_ETH_JUN_2024_MAP,
+  DPT_WE_ETH_SEP_2024_MAP,
+  DPT_WST_ETH_JUN_2024_MAP,
+  DPT_WST_ETH_JUN_2025_MAP,
+  DYT_GLP_2024_MAP,
+} from 'packages/base/src/utils/constants';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
 import { getMaxDeploymentVersionAddressByDeploymentKey } from '../../utils/deploy-utils';
 import {
   DeployedVaultInformation,
-  getConstructorParametersForAsyncIsolationMode,
-  IsolationModeLibraryNames,
+  getConstructorParametersForAsyncIsolationMode, getIsolationModeLibrariesByType,
   IsolationModeVaultType,
 } from './isolation-mode-helpers';
 
@@ -14,12 +52,9 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
   [DFS_GLP_MAP[network].marketId]: {
     contractName: 'GLPIsolationModeTokenVaultV2',
     contractRenameWithoutVersion: 'GLPIsolationModeTokenVault',
-    implementationAddress: getMaxDeploymentVersionAddressByDeploymentKey(
-      'GLPIsolationModeTokenVault',
-      network,
-    ),
+    implementationAddress: getMaxDeploymentVersionAddressByDeploymentKey('GLPIsolationModeTokenVault', network),
     constructorParams: [],
-    libraries: [IsolationModeLibraryNames.IsolationModeTokenVaultV1ActionsImpl],
+    libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.None),
     vaultType: IsolationModeVaultType.None,
   },
   [DPLV_GLP_MAP[network].marketId]: {
@@ -30,10 +65,11 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
       network,
     ),
     constructorParams: [],
-    libraries: [IsolationModeLibraryNames.IsolationModeTokenVaultV1ActionsImpl],
+    libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.None),
     vaultType: IsolationModeVaultType.None,
   },
-  [DJ_USDC_V1[network].marketId]: { // @follow-up How to handle this one? I added Migrator so we could avoid it
+  [DJ_USDC_V1[network].marketId]: {
+    // @follow-up How to handle this one? I added Migrator so we could avoid it
     contractName: 'JonesIsolationModeTokenVaultMigrator',
     contractRenameWithoutVersion: 'JonesIsolationModeTokenVaultMigrator',
     implementationAddress: getMaxDeploymentVersionAddressByDeploymentKey(
@@ -41,7 +77,7 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
       network,
     ),
     constructorParams: [],
-    libraries: [],
+    libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.Migrator),
     vaultType: IsolationModeVaultType.Migrator,
   },
   [DPT_GLP_MAR_2024_MAP[network].marketId]: {
@@ -52,7 +88,7 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
       network,
     ),
     constructorParams: [],
-    libraries: [IsolationModeLibraryNames.IsolationModeTokenVaultV1ActionsImpl],
+    libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.Pt),
     vaultType: IsolationModeVaultType.Pt,
   },
   [DYT_GLP_2024_MAP[network].marketId]: {
@@ -63,7 +99,7 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
       network,
     ),
     constructorParams: [],
-    libraries: [IsolationModeLibraryNames.IsolationModeTokenVaultV1ActionsImpl], // @follow-up Not the latest address
+    libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.Yt),
     vaultType: IsolationModeVaultType.Yt,
   },
   [DPT_R_ETH_JUN_2025_MAP[network].marketId]: {
@@ -74,7 +110,7 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
       network,
     ),
     constructorParams: [],
-    libraries: [IsolationModeLibraryNames.IsolationModeTokenVaultV1ActionsImpl],
+    libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.Pt),
     vaultType: IsolationModeVaultType.Pt,
   },
   [DPT_WST_ETH_JUN_2024_MAP[network].marketId]: {
@@ -85,7 +121,7 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
       network,
     ),
     constructorParams: [],
-    libraries: [IsolationModeLibraryNames.IsolationModeTokenVaultV1ActionsImpl], // @follow-up Also not latest
+    libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.Pt), // @follow-up Also not latest
     vaultType: IsolationModeVaultType.Pt,
   },
   [DPT_WST_ETH_JUN_2025_MAP[network].marketId]: {
@@ -96,29 +132,23 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
       network,
     ),
     constructorParams: [],
-    libraries: [IsolationModeLibraryNames.IsolationModeTokenVaultV1ActionsImpl],
+    libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.Pt),
     vaultType: IsolationModeVaultType.Pt,
   },
   [D_ARB_MAP[network].marketId]: {
     contractName: 'ARBIsolationModeTokenVaultV1',
     contractRenameWithoutVersion: 'ARBIsolationModeTokenVault',
-    implementationAddress: getMaxDeploymentVersionAddressByDeploymentKey(
-      'ARBIsolationModeTokenVault',
-      network,
-    ),
+    implementationAddress: getMaxDeploymentVersionAddressByDeploymentKey('ARBIsolationModeTokenVault', network),
     constructorParams: [],
-    libraries: [IsolationModeLibraryNames.IsolationModeTokenVaultV1ActionsImpl],
+    libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.None),
     vaultType: IsolationModeVaultType.None,
   },
   [D_GMX_MAP[network].marketId]: {
     contractName: 'GMXIsolationModeTokenVaultV1',
     contractRenameWithoutVersion: 'GMXIsolationModeTokenVault',
-    implementationAddress: getMaxDeploymentVersionAddressByDeploymentKey(
-      'GMXIsolationModeTokenVault',
-      network,
-    ),
+    implementationAddress: getMaxDeploymentVersionAddressByDeploymentKey('GMXIsolationModeTokenVault', network),
     constructorParams: [],
-    libraries: [IsolationModeLibraryNames.IsolationModeTokenVaultV1ActionsImpl, IsolationModeLibraryNames.GmxV2Library],
+    libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.None),
     vaultType: IsolationModeVaultType.None,
   },
   [D_GM_ARB_USD_MAP[network].marketId]: {
@@ -129,7 +159,7 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
       network,
     ),
     constructorParams: getConstructorParametersForAsyncIsolationMode(network),
-    libraries: [IsolationModeLibraryNames.IsolationModeTokenVaultV1ActionsImpl, IsolationModeLibraryNames.GmxV2Library],
+    libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.GmxV2),
     vaultType: IsolationModeVaultType.GmxV2,
   },
   [D_GM_BTC_USD_MAP[network].marketId]: {
@@ -140,7 +170,7 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
       network,
     ),
     constructorParams: getConstructorParametersForAsyncIsolationMode(network),
-    libraries: [IsolationModeLibraryNames.IsolationModeTokenVaultV1ActionsImpl, IsolationModeLibraryNames.GmxV2Library],
+    libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.GmxV2),
     vaultType: IsolationModeVaultType.GmxV2,
   },
   [D_GM_ETH_USD_MAP[network].marketId]: {
@@ -151,7 +181,7 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
       network,
     ),
     constructorParams: getConstructorParametersForAsyncIsolationMode(network),
-    libraries: [IsolationModeLibraryNames.IsolationModeTokenVaultV1ActionsImpl, IsolationModeLibraryNames.GmxV2Library],
+    libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.GmxV2),
     vaultType: IsolationModeVaultType.GmxV2,
   },
   [D_GM_LINK_USD_MAP[network].marketId]: {
@@ -162,7 +192,7 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
       network,
     ),
     constructorParams: getConstructorParametersForAsyncIsolationMode(network),
-    libraries: [IsolationModeLibraryNames.IsolationModeTokenVaultV1ActionsImpl, IsolationModeLibraryNames.GmxV2Library],
+    libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.GmxV2),
     vaultType: IsolationModeVaultType.GmxV2,
   },
   [DPT_WE_ETH_APR_2024_MAP[network].marketId]: {
@@ -173,7 +203,7 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
       network,
     ),
     constructorParams: [],
-    libraries: [IsolationModeLibraryNames.IsolationModeTokenVaultV1ActionsImpl],
+    libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.Pt),
     vaultType: IsolationModeVaultType.Pt,
   },
   [DPT_EZ_ETH_JUN_2024_MAP[network].marketId]: {
@@ -184,7 +214,7 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
       network,
     ),
     constructorParams: [],
-    libraries: [IsolationModeLibraryNames.IsolationModeTokenVaultV1ActionsImpl],
+    libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.Pt),
     vaultType: IsolationModeVaultType.Pt,
   },
   [DPT_GLP_SEP_2024_MAP[network].marketId]: {
@@ -195,7 +225,7 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
       network,
     ),
     constructorParams: [],
-    libraries: [IsolationModeLibraryNames.IsolationModeTokenVaultV1ActionsImpl],
+    libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.Pt),
     vaultType: IsolationModeVaultType.Pt,
   },
   [DPT_WE_ETH_JUN_2024_MAP[network].marketId]: {
@@ -206,18 +236,15 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
       network,
     ),
     constructorParams: [],
-    libraries: [IsolationModeLibraryNames.IsolationModeTokenVaultV1ActionsImpl],
+    libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.Pt),
     vaultType: IsolationModeVaultType.Pt,
   },
   [DJ_USDC_V2[network].marketId]: {
     contractName: 'JonesUSDCIsolationModeTokenVaultV1',
     contractRenameWithoutVersion: 'JonesUSDCV2IsolationModeTokenVault',
-    implementationAddress: getMaxDeploymentVersionAddressByDeploymentKey(
-      'JonesUSDCV2IsolationModeTokenVault',
-      network,
-    ),
+    implementationAddress: getMaxDeploymentVersionAddressByDeploymentKey('JonesUSDCV2IsolationModeTokenVault', network),
     constructorParams: [],
-    libraries: [IsolationModeLibraryNames.IsolationModeTokenVaultV1ActionsImpl],
+    libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.None),
     vaultType: IsolationModeVaultType.None,
   },
   [D_GM_BTC_MAP[network].marketId]: {
@@ -228,7 +255,7 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
       network,
     ),
     constructorParams: getConstructorParametersForAsyncIsolationMode(network),
-    libraries: [IsolationModeLibraryNames.IsolationModeTokenVaultV1ActionsImpl, IsolationModeLibraryNames.GmxV2Library],
+    libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.GmxV2),
     vaultType: IsolationModeVaultType.GmxV2,
   },
   [D_GM_ETH_MAP[network].marketId]: {
@@ -239,7 +266,7 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
       network,
     ),
     constructorParams: getConstructorParametersForAsyncIsolationMode(network),
-    libraries: [IsolationModeLibraryNames.IsolationModeTokenVaultV1ActionsImpl, IsolationModeLibraryNames.GmxV2Library],
+    libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.GmxV2),
     vaultType: IsolationModeVaultType.GmxV2,
   },
   [D_GM_UNI_USD_MAP[network].marketId]: {
@@ -250,7 +277,7 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
       network,
     ),
     constructorParams: getConstructorParametersForAsyncIsolationMode(network),
-    libraries: [IsolationModeLibraryNames.IsolationModeTokenVaultV1ActionsImpl, IsolationModeLibraryNames.GmxV2Library],
+    libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.GmxV2),
     vaultType: IsolationModeVaultType.GmxV2,
   },
   [DPT_WE_ETH_SEP_2024_MAP[network].marketId]: {
@@ -261,7 +288,7 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
       network,
     ),
     constructorParams: [],
-    libraries: [IsolationModeLibraryNames.IsolationModeTokenVaultV1ActionsImpl],
+    libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.Pt),
     vaultType: IsolationModeVaultType.Pt,
   },
   [DPT_EZ_ETH_SEP_2024_MAP[network].marketId]: {
@@ -272,7 +299,7 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
       network,
     ),
     constructorParams: [],
-    libraries: [IsolationModeLibraryNames.IsolationModeTokenVaultV1ActionsImpl],
+    libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.Pt),
     vaultType: IsolationModeVaultType.Pt,
   },
   [DPT_RS_ETH_SEP_2024_MAP[network].marketId]: {
@@ -283,7 +310,7 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
       network,
     ),
     constructorParams: [],
-    libraries: [IsolationModeLibraryNames.IsolationModeTokenVaultV1ActionsImpl],
+    libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.Pt),
     vaultType: IsolationModeVaultType.Pt,
   },
   [D_GM_AAVE_USD_MAP[network].marketId]: {
@@ -294,7 +321,7 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
       network,
     ),
     constructorParams: getConstructorParametersForAsyncIsolationMode(network),
-    libraries: [IsolationModeLibraryNames.IsolationModeTokenVaultV1ActionsImpl, IsolationModeLibraryNames.GmxV2Library],
+    libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.GmxV2),
     vaultType: IsolationModeVaultType.GmxV2,
   },
   [D_GM_DOGE_USD_MAP[network].marketId]: {
@@ -305,7 +332,7 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
       network,
     ),
     constructorParams: getConstructorParametersForAsyncIsolationMode(network),
-    libraries: [IsolationModeLibraryNames.IsolationModeTokenVaultV1ActionsImpl, IsolationModeLibraryNames.GmxV2Library],
+    libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.GmxV2),
     vaultType: IsolationModeVaultType.GmxV2,
   },
   [D_GM_GMX_USD_MAP[network].marketId]: {
@@ -316,7 +343,7 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
       network,
     ),
     constructorParams: getConstructorParametersForAsyncIsolationMode(network),
-    libraries: [IsolationModeLibraryNames.IsolationModeTokenVaultV1ActionsImpl, IsolationModeLibraryNames.GmxV2Library],
+    libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.GmxV2),
     vaultType: IsolationModeVaultType.GmxV2,
   },
   [D_GM_SOL_USD_MAP[network].marketId]: {
@@ -327,7 +354,7 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
       network,
     ),
     constructorParams: getConstructorParametersForAsyncIsolationMode(network),
-    libraries: [IsolationModeLibraryNames.IsolationModeTokenVaultV1ActionsImpl, IsolationModeLibraryNames.GmxV2Library],
+    libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.GmxV2),
     vaultType: IsolationModeVaultType.GmxV2,
   },
   [D_GM_WST_ETH_USD_MAP[network].marketId]: {
@@ -338,7 +365,7 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
       network,
     ),
     constructorParams: getConstructorParametersForAsyncIsolationMode(network),
-    libraries: [IsolationModeLibraryNames.IsolationModeTokenVaultV1ActionsImpl, IsolationModeLibraryNames.GmxV2Library],
+    libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.GmxV2),
     vaultType: IsolationModeVaultType.GmxV2,
   },
   [DPT_WE_ETH_DEC_2024_MAP[network].marketId]: {
@@ -349,7 +376,7 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
       network,
     ),
     constructorParams: [],
-    libraries: [IsolationModeLibraryNames.IsolationModeTokenVaultV1ActionsImpl],
+    libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.Pt),
     vaultType: IsolationModeVaultType.Pt,
   },
   [DPT_RS_ETH_DEC_2024_MAP[network].marketId]: {
@@ -360,7 +387,7 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
       network,
     ),
     constructorParams: [],
-    libraries: [IsolationModeLibraryNames.IsolationModeTokenVaultV1ActionsImpl],
+    libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.Pt),
     vaultType: IsolationModeVaultType.Pt,
   },
   [D_GM_GMX_MAP[network].marketId]: {
@@ -371,7 +398,7 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
       network,
     ),
     constructorParams: getConstructorParametersForAsyncIsolationMode(network),
-    libraries: [IsolationModeLibraryNames.IsolationModeTokenVaultV1ActionsImpl, IsolationModeLibraryNames.GmxV2Library],
+    libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.GmxV2),
     vaultType: IsolationModeVaultType.GmxV2,
   },
   [D_GM_PENDLE_USD_MAP[network].marketId]: {
@@ -382,7 +409,7 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
       network,
     ),
     constructorParams: getConstructorParametersForAsyncIsolationMode(network),
-    libraries: [IsolationModeLibraryNames.IsolationModeTokenVaultV1ActionsImpl, IsolationModeLibraryNames.GmxV2Library],
+    libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.GmxV2),
     vaultType: IsolationModeVaultType.GmxV2,
   },
   [D_GM_PEPE_USD_MAP[network].marketId]: {
@@ -393,7 +420,7 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
       network,
     ),
     constructorParams: getConstructorParametersForAsyncIsolationMode(network),
-    libraries: [IsolationModeLibraryNames.IsolationModeTokenVaultV1ActionsImpl, IsolationModeLibraryNames.GmxV2Library],
+    libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.GmxV2),
     vaultType: IsolationModeVaultType.GmxV2,
   },
   [D_GM_WIF_MAP[network].marketId]: {
@@ -404,7 +431,7 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
       network,
     ),
     constructorParams: getConstructorParametersForAsyncIsolationMode(network),
-    libraries: [IsolationModeLibraryNames.IsolationModeTokenVaultV1ActionsImpl, IsolationModeLibraryNames.GmxV2Library],
+    libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.GmxV2),
     vaultType: IsolationModeVaultType.GmxV2,
   },
   [D_GLV_BTC_MAP[network].marketId]: {
@@ -415,7 +442,7 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
       network,
     ),
     constructorParams: getConstructorParametersForAsyncIsolationMode(network),
-    libraries: [IsolationModeLibraryNames.IsolationModeTokenVaultV1ActionsImpl, IsolationModeLibraryNames.GmxV2Library, IsolationModeLibraryNames.GlvLibrary],
+    libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.GLV),
     vaultType: IsolationModeVaultType.GLV,
   },
   [D_GLV_ETH_MAP[network].marketId]: {
@@ -426,7 +453,7 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
       network,
     ),
     constructorParams: getConstructorParametersForAsyncIsolationMode(network),
-    libraries: [IsolationModeLibraryNames.IsolationModeTokenVaultV1ActionsImpl, IsolationModeLibraryNames.GmxV2Library, IsolationModeLibraryNames.GlvLibrary],
+    libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.GLV),
     vaultType: IsolationModeVaultType.GLV,
   },
 };
