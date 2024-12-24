@@ -1,3 +1,4 @@
+import { BigNumber } from 'ethers';
 import {
   IIsolationModeVaultFactory,
   IIsolationModeVaultFactory__factory,
@@ -12,13 +13,14 @@ import {
   DeployedVaultInformation,
   IsolationModeVaultType,
 } from 'packages/deployment/src/deploy/isolation-mode/isolation-mode-helpers';
+import { marketToIsolationModeVaultInfoMantle } from 'packages/deployment/src/deploy/isolation-mode/mantle';
 import {
   deployContractAndSave,
   EncodedTransaction,
   getMaxDeploymentVersionNumberByDeploymentKey,
   prettyPrintEncodedDataWithTypeSafety,
 } from 'packages/deployment/src/utils/deploy-utils';
-import { DolomiteMargin } from '../dolomite';
+import { DolomiteMargin, isIsolationModeByTokenAddress } from '../dolomite';
 import { CoreProtocolSetupConfig, CoreProtocolType, getMaxDeploymentVersionAddressByDeploymentKey } from '../setup';
 
 export class DeployedVault {
@@ -42,7 +44,7 @@ export class DeployedVault {
     this.implementationAddress = info.implementationAddress;
     this.constructorParams = info.constructorParams;
     this.libraries = this.populateLibraryAddresses(info.libraries);
-    this.currentVersionNumber = getMaxDeploymentVersionNumberByDeploymentKey(this.contractRenameWithoutVersion);
+    this.currentVersionNumber = getMaxDeploymentVersionNumberByDeploymentKey(this.contractRenameWithoutVersion, 1);
     this.marketId = marketId;
     this.factory = factory;
     this.vaultType = info.vaultType;
@@ -126,9 +128,34 @@ export async function getDeployedVaults<T extends NetworkType>(
 
       deployedVaults.push(new DeployedVault(Number(marketId), factory, params));
     }
+  } else if (config.network === Network.Mantle) {
+    for (const [marketId, params] of Object.entries(marketToIsolationModeVaultInfoMantle)) {
+      const factory = IIsolationModeVaultFactory__factory.connect(
+        await dolomiteMargin.getMarketTokenAddress(Number(marketId)),
+        governance,
+      );
+
+      deployedVaults.push(new DeployedVault(Number(marketId), factory, params));
+    }
+  } else {
+    throw new Error(`Invalid network, found ${config.network}`);
   }
 
-  // @todo Add validation code
+  const marketsCount = await dolomiteMargin.getNumMarkets();
+  for (let i = 0; i < marketsCount.toNumber(); i++) {
+    const tokenAddress = await dolomiteMargin.getMarketTokenAddress(i);
+    if (await isIsolationModeByTokenAddress(tokenAddress, dolomiteMargin.provider)) {
+      const vault = deployedVaults.find((v) => BigNumber.from(v.marketId).eq(i));
+      if (!vault) {
+        throw new Error(`Missing isolation mode market ID ${i}: ${tokenAddress}`);
+      }
+
+      if (vault.implementationAddress !== (await vault.factory.userVaultImplementation())) {
+        throw new Error(`Invalid vault implementation for market ID ${i}: ${tokenAddress}`);
+      }
+    }
+  }
+
   return deployedVaults;
 }
 

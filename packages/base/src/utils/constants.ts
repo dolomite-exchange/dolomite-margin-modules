@@ -283,6 +283,13 @@ export const DPLV_GLP_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   },
 };
 
+export const DPT_CM_ETH_FEB_2025_MAP: Record<Network.Mantle, TokenWithMarketId> = {
+  [Network.Mantle]: {
+    address: '0x8eB2eF96a70A6eC4F3dDE550b96969a6AA25a563',
+    marketId: 15,
+  },
+};
+
 export const DPT_EZ_ETH_JUN_2024_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x12A3bb4FDBC5C932438e067338767eE4A9165f1b',
@@ -311,6 +318,20 @@ export const DPT_GLP_SEP_2024_MAP: Record<Network.ArbitrumOne, TokenWithMarketId
   },
 };
 
+export const DPT_METH_DEC_2024_MAP: Record<Network.Mantle, TokenWithMarketId> = {
+  [Network.Mantle]: {
+    address: '0x5b12E419A57e3102eC1d47BD11BA5EC87EF264fb',
+    marketId: 11,
+  },
+};
+
+export const DPT_MNT_OCT_2024_MAP: Record<Network.Mantle, TokenWithMarketId> = {
+  [Network.Mantle]: {
+    address: '0xe44CEFD2E6b0B846e2720e7b823e173d9FDf8601',
+    marketId: 12,
+  },
+};
+
 export const DPT_R_ETH_JUN_2025_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0xC9375EF7635fe556F613AB528C9a2ed946BD075d',
@@ -329,6 +350,20 @@ export const DPT_RS_ETH_DEC_2024_MAP: Record<Network.ArbitrumOne, TokenWithMarke
   [Network.ArbitrumOne]: {
     address: '0x26AbfE435447b236b8A014B296E1A8FA2b912AeC',
     marketId: 61,
+  },
+};
+
+export const DPT_USDE_DEC_2024_MAP: Record<Network.Mantle, TokenWithMarketId> = {
+  [Network.Mantle]: {
+    address: '0xeC0Ad37432b489C40ED6da003B2C2F033928599E',
+    marketId: 10,
+  },
+};
+
+export const DPT_USDE_JUL_2024_MAP: Record<Network.Mantle, TokenWithMarketId> = {
+  [Network.Mantle]: {
+    address: '0xB3fF983d7927540B7f92602657a2a26977664e77',
+    marketId: 7,
   },
 };
 
