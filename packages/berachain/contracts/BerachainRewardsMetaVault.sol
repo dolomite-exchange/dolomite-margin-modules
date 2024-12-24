@@ -67,8 +67,9 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
     /// @dev This variable is hardcoded here because it's private in the BGT contract
     uint256 public constant HISTORY_BUFFER_LENGTH = 8191;
     uint256 public constant DEFAULT_ACCOUNT_NUMBER = 0;
-    uint256 public constant QUEUE_BGTM_COOLDOWN = 8400;
-    uint256 public constant UNBOND_BGTM_WAITING_PERIOD = 0;
+    uint256 public constant QUEUE_BGTM_COOLDOWN_BLOCKS = 8400;
+    /// @dev We can change this later if we decide that un-bonding should require a waiting period
+    uint256 public constant UNBOND_BGTM_WAITING_PERIOD_BLOCKS = 0;
 
     // ==================================================================
     // =========================== Modifiers ============================
@@ -283,7 +284,7 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
             _FILE,
             "Queue boost cooldown not passed"
         );
-        _setUint256(_QUEUE_BGTM_COOLDOWN_SLOT, block.number + QUEUE_BGTM_COOLDOWN);
+        _setUint256(_QUEUE_BGTM_COOLDOWN_SLOT, block.number + QUEUE_BGTM_COOLDOWN_BLOCKS);
 
         REGISTRY().bgtm().delegate(_validator, SafeCast.toUint128(_amount));
     }
@@ -307,7 +308,7 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
         address _validator,
         uint256 _amount
     ) external onlyMetaVaultOwner(msg.sender) onlyActiveBgtmValidator(_validator) {
-        _setUint256(_UNBOND_BGTM_WAITING_PERIOD_SLOT, block.number + UNBOND_BGTM_WAITING_PERIOD);
+        _setUint256(_UNBOND_BGTM_WAITING_PERIOD_SLOT, block.number + UNBOND_BGTM_WAITING_PERIOD_BLOCKS);
 
         IBGTM bgtm = REGISTRY().bgtm();
         bgtm.unbond(_validator, SafeCast.toUint128(_amount));
