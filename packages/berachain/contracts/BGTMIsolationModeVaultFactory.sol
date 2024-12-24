@@ -21,7 +21,8 @@
 pragma solidity ^0.8.9;
 
 import { MetaVaultRewardTokenFactory } from "./MetaVaultRewardTokenFactory.sol";
-import { IBGTMIsolationModeVaultFactory } from "./interfaces/IBGTMIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
+import { IBGTMIsolationModeVaultFactory } from "./interfaces/IBGTMIsolationModeVaultFactory.sol";
+import { IBerachainRewardsRegistry } from "./interfaces/IBerachainRewardsRegistry.sol";
 
 
 /**
@@ -39,6 +40,8 @@ contract BGTMIsolationModeVaultFactory is
 
     bytes32 private constant _FILE = "BGTMIsolationModeVaultFactory";
 
+    uint256 public immutable BERA_MARKET_ID;
+
     // ============ Constructor ============
 
     constructor(
@@ -49,22 +52,21 @@ contract BGTMIsolationModeVaultFactory is
         address _dolomiteMargin
     )
     MetaVaultRewardTokenFactory(
+        /* _initialAllowableDebtMarketIds = */ new uint256[](0),
+        /* _initialAllowableCollateralMarketIds = */ new uint256[](0),
         _berachainRewardsRegistry,
         _underlyingToken,
         _borrowPositionProxy,
         _userVaultImplementation,
         _dolomiteMargin
-    ) {}
+    ) {
+        BERA_MARKET_ID = DOLOMITE_MARGIN().getMarketIdByTokenAddress(
+            address(IBerachainRewardsRegistry(_berachainRewardsRegistry).wbera())
+        );
+        uint256[] memory marketIds = new uint256[](1);
+        marketIds[0] = BERA_MARKET_ID;
 
-    // ============ External Functions ============
-
-    function allowableDebtMarketIds() external pure returns (uint256[] memory) {
-        // allow all markets
-        return new uint256[](0);
-    }
-
-    function allowableCollateralMarketIds() external pure returns (uint256[] memory) {
-        // allow all markets
-        return new uint256[](0);
+        _ownerSetAllowableDebtMarketIds(marketIds);
+        _ownerSetAllowableCollateralMarketIds(marketIds);
     }
 }

@@ -20,7 +20,7 @@
 
 pragma solidity ^0.8.9;
 
-import { IsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
+import { SimpleIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/SimpleIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { AccountActionLib } from "@dolomite-exchange/modules-base/contracts/lib/AccountActionLib.sol";
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
@@ -39,7 +39,7 @@ import { IMetaVaultRewardTokenFactory } from "./interfaces/IMetaVaultRewardToken
  */
 abstract contract MetaVaultRewardTokenFactory is
     IMetaVaultRewardTokenFactory,
-    IsolationModeVaultFactory
+    SimpleIsolationModeVaultFactory
 {
     using SafeERC20 for IERC20;
 
@@ -54,13 +54,17 @@ abstract contract MetaVaultRewardTokenFactory is
     // ============ Constructor ============
 
     constructor(
+        uint256[] memory _initialAllowableDebtMarketIds,
+        uint256[] memory _initialAllowableCollateralMarketIds,
         address _berachainRewardsRegistry,
         address _underlyingToken,
         address _borrowPositionProxy,
         address _userVaultImplementation,
         address _dolomiteMargin
     )
-    IsolationModeVaultFactory(
+    SimpleIsolationModeVaultFactory(
+        _initialAllowableDebtMarketIds,
+        _initialAllowableCollateralMarketIds,
         _underlyingToken,
         _borrowPositionProxy,
         _userVaultImplementation,

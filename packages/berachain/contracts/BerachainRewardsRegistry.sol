@@ -146,7 +146,9 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
             "Default type must be empty"
         );
 
-        // @follow-up @Corey, do you want to change permissions so we can call getReward on metavault to get any lingering rewards
+        // @follow-up   Do you want to change permissions so we can call getReward on metavault to get any lingering
+        //              rewards
+        // @oriole - YES let's get lingering rewards before changing the type
         _setUint256InNestedMap(_ACCOUNT_TO_ASSET_DEFAULT_TYPE_SLOT, account, _asset, uint256(_type));
         emit AccountToAssetToDefaultTypeSet(account, _asset, _type);
     }

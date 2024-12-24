@@ -49,6 +49,8 @@ contract BGTIsolationModeVaultFactory is
         address _dolomiteMargin
     )
     MetaVaultRewardTokenFactory(
+        /* _initialAllowableDebtMarketIds = */ new uint256[](0),
+        /* _initialAllowableCollateralMarketIds = */ new uint256[](0),
         _berachainRewardsRegistry,
         _underlyingToken,
         _borrowPositionProxy,

@@ -38,23 +38,27 @@ contract BGTMERC20Wrapper is MinimalERC20 {
         bgtm = IBGTM(_bgtm);
     }
 
-    function transfer(address /* to */, uint256 /* amount */) public override returns (bool) {
+    function transfer(address /* to */, uint256 /* amount */) public pure override returns (bool) {
         revert("Not implemented");
     }
 
-    function approve(address /* spender */, uint256 /* amount */) public override returns (bool) {
+    function approve(address /* spender */, uint256 /* amount */) public pure override returns (bool) {
         revert("Not implemented");
     }
 
-    function transferFrom(address /* from */, address /* to */, uint256 /* amount */) public override returns (bool) {
+    function transferFrom(
+        address /* from */,
+        address /* to */,
+        uint256 /* amount */
+    ) public pure override returns (bool) {
         revert("Not implemented");
     }
 
-    function totalSupply() public view override returns (uint256) {
+    function totalSupply() public pure override returns (uint256) {
         revert("Not implemented");
     }
 
-    function allowance(address /* owner */, address /* spender */) public view override returns (uint256) {
+    function allowance(address /* owner */, address /* spender */) public pure override returns (uint256) {
         revert("Not implemented");
     }
 
