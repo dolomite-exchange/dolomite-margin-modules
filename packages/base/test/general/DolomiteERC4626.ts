@@ -9,23 +9,13 @@ import {
   TestDolomiteERC4626__factory,
 } from '../../src/types';
 import { createContractWithAbi, depositIntoDolomiteMargin } from '../../src/utils/dolomite-utils';
-import {
-  ADDRESS_ZERO,
-  MAX_UINT_256_BI,
-  Network,
-  ONE_ETH_BI,
-  ZERO_BI,
-} from '../../src/utils/no-deps-constants';
+import { ADDRESS_ZERO, MAX_UINT_256_BI, Network, ONE_ETH_BI, ZERO_BI } from '../../src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../utils';
 import { expectEvent, expectProtocolBalance, expectThrow } from '../utils/assertions';
 
 import { CoreProtocolArbitrumOne } from '../utils/core-protocols/core-protocol-arbitrum-one';
 import { createAndUpgradeDolomiteRegistry, createDolomiteErc4626Proxy } from '../utils/dolomite';
-import {
-  disableInterestAccrual,
-  setupCoreProtocol,
-  setupUSDCBalance,
-} from '../utils/setup';
+import { disableInterestAccrual, setupCoreProtocol, setupUSDCBalance } from '../utils/setup';
 
 const usdcAmount = BigNumber.from('100000000'); // 100 USDC
 const isolationModeVault = '0xffa18b366fa3ebE5832a49535F42aa0c93c791eF';
@@ -44,12 +34,12 @@ describe('DolomiteERC4626', () => {
       network: Network.ArbitrumOne,
       blockNumber: 220_664_500,
     });
-    const implementation = await createContractWithAbi<TestDolomiteERC4626>(
+    core.implementationContracts.dolomiteERC4626Implementation = await createContractWithAbi<TestDolomiteERC4626>(
       TestDolomiteERC4626__factory.abi,
       TestDolomiteERC4626__factory.bytecode,
       [],
     );
-    const tokenProxy = await createDolomiteErc4626Proxy(implementation, core.marketIds.usdc, core);
+    const tokenProxy = await createDolomiteErc4626Proxy(core.marketIds.usdc, core);
     token = TestDolomiteERC4626__factory.connect(tokenProxy.address, core.hhUser1);
     asset = core.tokens.usdc;
 

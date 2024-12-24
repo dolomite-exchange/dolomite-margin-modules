@@ -48,7 +48,7 @@ import { IPendleYtToken } from "./interfaces/IPendleYtToken.sol";
  *          token that can be used to credit a user's Dolomite balance.
  */
 contract PendleYtGLPMar2024IsolationModeTokenVaultV1 is
-IPendleYtGLPMar2024IsolationModeTokenVaultV1,
+    IPendleYtGLPMar2024IsolationModeTokenVaultV1,
     IsolationModeTokenVaultV1WithPausable
 {
     using SafeERC20 for IERC20;

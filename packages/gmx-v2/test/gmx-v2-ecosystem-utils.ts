@@ -55,7 +55,7 @@ import {
   TestGmxV2IsolationModeVaultFactory,
 } from '../src/types';
 
-async function createArtifactFromWorkspaceIfNotExists(artifactName: string): Promise<Artifact> {
+export async function createArtifactFromWorkspaceIfNotExists(artifactName: string): Promise<Artifact> {
   if (await artifacts.artifactExists(artifactName)) {
     // GUARD STATEMENT!
     return artifacts.readArtifact(artifactName);
