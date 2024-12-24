@@ -63,6 +63,20 @@ export const ARB_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   },
 };
 
+export const BGT_MAP: Record<Network.Berachain, TokenWithMarketId> = {
+  [Network.Berachain]: {
+    address: '0xbDa130737BDd9618301681329bF2e46A016ff9Ad',
+    marketId: -1,
+  },
+};
+
+export const IBGT_MAP: Record<Network.Berachain, TokenWithMarketId> = {
+  [Network.Berachain]: {
+    address: '0x46eFC86F0D7455F135CC9df501673739d513E982',
+    marketId: -1,
+  },
+};
+
 export const CHAINLINK_PRICE_ORACLE_V1_MAP: Record<Network, string> = {
   [Network.ArbitrumOne]: CoreDeployments.ChainlinkPriceOracleV1[Network.ArbitrumOne].address,
   [Network.Base]: CoreDeployments.ChainlinkPriceOracleV1[Network.Base].address,
@@ -1178,6 +1192,46 @@ export const GRAIL_USDC_V3_POOL_MAP: Record<Network.ArbitrumOne, string> = {
 
 export const GRAIL_WETH_V3_POOL_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x60451B6aC55E3C5F0f3aeE31519670EcC62DC28f',
+};
+
+export const INFRRED_MAP: Record<Network.Berachain, string> = {
+  [Network.Berachain]: '0xe41779952f5485db5440452DFa43350556AA4673',
+};
+
+export const BERACHAIN_REWARDS_VAULT_FACTORY_MAP: Record<Network.Berachain, string> = {
+  [Network.Berachain]: '0x2B6e40f65D82A0cB98795bC7587a71bfa49fBB2B',
+};
+
+export const BGTM_MAP: Record<Network.Berachain, string> = {
+  [Network.Berachain]: '0x8894D7EE78251cD234A5DDC93a163B467505E3AD',
+};
+
+export const HONEY_USDC_BEX_LP_TOKEN_MAP: Record<Network.Berachain, string> = {
+  [Network.Berachain]: '0xD69ADb6FB5fD6D06E6ceEc5405D95A37F96E3b96',
+};
+
+export const HONEY_USDC_BEX_INFRARED_REWARD_VAULT_MAP: Record<Network.Berachain, string> = {
+  [Network.Berachain]: '0x675547750F4acdf64eD72e9426293f38d8138CA8',
+};
+
+export const HONEY_USDC_BEX_NATIVE_REWARD_VAULT_MAP: Record<Network.Berachain, string> = {
+  [Network.Berachain]: '0xe3b9B72ba027FD6c514C0e5BA075Ac9c77C23Afa',
+};
+
+export const HONEY_WBERA_BEX_LP_TOKEN_MAP: Record<Network.Berachain, string> = {
+  [Network.Berachain]: '0xd28d852cbcc68DCEC922f6d5C7a8185dBaa104B7',
+};
+
+export const HONEY_WBERA_BEX_NATIVE_REWARD_VAULT_MAP: Record<Network.Berachain, string> = {
+  [Network.Berachain]: '0xAD57d7d39a487C04a44D3522b910421888Fb9C6d',
+};
+
+export const HONEY_WBERA_BEX_INFRARED_REWARD_VAULT_MAP: Record<Network.Berachain, string> = {
+  [Network.Berachain]: '0x5c5f9a838747fb83678ECe15D85005FD4F558237',
+};
+
+export const IBGT_STAKING_POOL_MAP: Record<Network.Berachain, string> = {
+  [Network.Berachain]: '0x31E6458C83C4184A23c761fDAffb61941665E012',
 };
 
 export const KYBER_AGGREGATOR_ROUTER_MAP: Record<Network, string | undefined> = {

@@ -9,6 +9,8 @@ import { IERC20, IWETH } from '../../../src/types';
 import { BigNumberish } from 'ethers';
 import { ChroniclePriceOracleV3, RedstonePriceOracleV3 } from '@dolomite-exchange/modules-oracles/src/types';
 import { OogaBoogaEcosystem } from '../ecosystem-utils/ooga-booga';
+import { IBGT } from 'packages/berachain/src/types';
+import { BerachainRewardsEcosystem } from '../ecosystem-utils/berachain-rewards';
 
 export interface CoreProtocolTokensBerachain extends CoreProtocolTokens<Network.Berachain> {
   honey: IERC20;
@@ -16,6 +18,8 @@ export interface CoreProtocolTokensBerachain extends CoreProtocolTokens<Network.
   stoneBtc: IERC20;
   uniBtc: IERC20;
   wbera: IWETH;
+  bgt: IBGT;
+  iBgt: IERC20;
 }
 
 interface CoreProtocolMarketIdsBerachain extends CoreProtocolMarketIds {
@@ -29,6 +33,7 @@ export interface CoreProtocolParamsBerachain {
   redstonePriceOracleV3: RedstonePriceOracleV3;
   tokens: CoreProtocolTokensBerachain;
   oogaBoogaEcosystem: OogaBoogaEcosystem;
+  berachainRewardsEcosystem: BerachainRewardsEcosystem;
 }
 
 export class CoreProtocolBerachain extends CoreProtocolAbstract<Network.Berachain> {
@@ -39,6 +44,7 @@ export class CoreProtocolBerachain extends CoreProtocolAbstract<Network.Berachai
   public readonly redstonePriceOracleV3: RedstonePriceOracleV3;
   public readonly tokens: CoreProtocolTokensBerachain;
 
+  public readonly berachainRewardsEcosystem: BerachainRewardsEcosystem;
   public readonly oogaBoogaEcosystem: OogaBoogaEcosystem;
 
   constructor(
@@ -50,6 +56,7 @@ export class CoreProtocolBerachain extends CoreProtocolAbstract<Network.Berachai
     this.chroniclePriceOracleV3 = berachainParams.chroniclePriceOracleV3;
     this.redstonePriceOracleV3 = berachainParams.redstonePriceOracleV3;
     this.tokens = berachainParams.tokens;
+    this.berachainRewardsEcosystem = berachainParams.berachainRewardsEcosystem;
     this.oogaBoogaEcosystem = berachainParams.oogaBoogaEcosystem;
   }
 }
