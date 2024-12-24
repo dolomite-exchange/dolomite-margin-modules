@@ -1,11 +1,22 @@
-import { expect } from 'chai';
+import { IERC20 } from '@dolomite-exchange/modules-base/src/types';
 import {
-  IERC20,
-} from '@dolomite-exchange/modules-base/src/types';
-import { Network, ONE_DAY_SECONDS, ONE_ETH_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+  Network,
+  ONE_DAY_SECONDS,
+  ONE_ETH_BI,
+  ZERO_BI,
+} from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectProtocolBalance, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from '@dolomite-exchange/modules-base/test/utils/setup';
+import {
+  setupCoreProtocol,
+  setupTestMarket,
+  setupUserVaultProxy,
+} from '@dolomite-exchange/modules-base/test/utils/setup';
+import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
+import { expect } from 'chai';
+import { BigNumber } from 'ethers';
+import { parseEther } from 'ethers/lib/utils';
+import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
 import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
 import {
   BerachainRewardsIsolationModeTokenVaultV1,
@@ -19,7 +30,6 @@ import {
   BGTMIsolationModeTokenVaultV1,
   BGTMIsolationModeTokenVaultV1__factory,
   BGTMIsolationModeVaultFactory,
-  INativeRewardVault,
 } from '../src/types';
 import {
   createBerachainRewardsIsolationModeTokenVaultV1,
@@ -29,17 +39,12 @@ import {
   createBGTMIsolationModeVaultFactory,
   RewardVaultType,
 } from './berachain-ecosystem-utils';
-import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
-import { BigNumber } from 'ethers';
-import { parseEther } from 'ethers/lib/utils';
-import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
 
-const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 const LP_TOKEN_WHALE_ADDRESS = '0x1293DA55eC372a94368Fa20E8DF69FaBc3320baE';
 const amountWei = parseEther('.5');
 const defaultAccountNumber = ZERO_BI;
 
-describe('BGTIsolationModeVaultFactory', () => {
+describe('BGTMIsolationModeVaultFactory', () => {
   let snapshotId: string;
 
   let core: CoreProtocolBerachain;
@@ -49,7 +54,6 @@ describe('BGTIsolationModeVaultFactory', () => {
 
   let underlyingToken: IERC20;
   let bgtmWrapperToken: BGTMERC20Wrapper;
-  let nativeRewardVault: INativeRewardVault;
 
   let vaultImplementation: BerachainRewardsIsolationModeTokenVaultV1;
   let bgtmVaultImplementation: BGTMIsolationModeTokenVaultV1;
@@ -69,7 +73,6 @@ describe('BGTIsolationModeVaultFactory', () => {
     );
 
     underlyingToken = core.berachainRewardsEcosystem.listedRewardAssets.bexHoneyUsdc.asset;
-    nativeRewardVault = core.berachainRewardsEcosystem.listedRewardAssets.bexHoneyUsdc.nativeRewardVault;
 
     const metaVaultImplementation = await createContractWithAbi<BerachainRewardsMetaVault>(
       BerachainRewardsMetaVault__factory.abi,
@@ -86,12 +89,7 @@ describe('BGTIsolationModeVaultFactory', () => {
       core,
     );
     bgtmVaultImplementation = await createBGTMIsolationModeTokenVaultV1();
-    bgtmFactory = await createBGTMIsolationModeVaultFactory(
-      registry,
-      bgtmWrapperToken,
-      bgtmVaultImplementation,
-      core,
-    );
+    bgtmFactory = await createBGTMIsolationModeVaultFactory(registry, bgtmWrapperToken, bgtmVaultImplementation, core);
 
     await core.testEcosystem!.testPriceOracle.setPrice(beraFactory.address, ONE_ETH_BI);
     await setupTestMarket(core, beraFactory, true);
@@ -156,25 +154,26 @@ describe('BGTIsolationModeVaultFactory', () => {
     it('should fail if not called by owners metaVault', async () => {
       await beraFactory.createVault(core.hhUser1.address);
       await expectThrow(
-        bgtmFactory.connect(core.hhUser1).depositIntoDolomiteMarginFromMetaVault(
-          core.hhUser1.address,
-          ZERO_BI,
-          ONE_ETH_BI
-        ),
-        'MetaVaultRewardReceiverFactory: Can only deposit from metaVault'
+        bgtmFactory
+          .connect(core.hhUser1)
+          .depositIntoDolomiteMarginFromMetaVault(core.hhUser1.address, ZERO_BI, ONE_ETH_BI),
+        'MetaVaultRewardReceiverFactory: Can only deposit from metaVault',
       );
     });
   });
 
   describe('#allowableCollateralMarketIds', () => {
     it('should work normally', async () => {
-      expect(await bgtmFactory.allowableCollateralMarketIds()).to.deep.equal([]);
+      expect(await bgtmFactory.allowableCollateralMarketIds()).to.deep.equal([
+        BigNumber.from(core.marketIds.wbera),
+        bgtmMarketId,
+      ]);
     });
   });
 
   describe('#allowableDebtMarketIds', () => {
     it('should work normally', async () => {
-      expect(await bgtmFactory.allowableDebtMarketIds()).to.deep.equal([]);
+      expect(await bgtmFactory.allowableDebtMarketIds()).to.deep.equal([BigNumber.from(core.marketIds.wbera)]);
     });
   });
 });

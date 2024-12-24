@@ -137,7 +137,7 @@ describe('BerachainRewardsRegistry', () => {
   describe('#initialize', () => {
     it('should initialize variables properly', async () => {
       expect(await registry.berachainRewardsVaultFactory()).to.equal(
-        core.berachainRewardsEcosystem.berachainRewardsVaultFactory.address
+        core.berachainRewardsEcosystem.berachainRewardsVaultFactory.address,
       );
       expect(await registry.infrared()).to.equal(core.berachainRewardsEcosystem.infrared.address);
       expect(await registry.bgt()).to.equal(core.tokens.bgt.address);

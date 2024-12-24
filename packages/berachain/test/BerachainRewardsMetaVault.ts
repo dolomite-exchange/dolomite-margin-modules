@@ -14,7 +14,12 @@ import {
   ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
-import { expectEvent, expectProtocolBalance, expectThrow, expectWalletBalance } from '@dolomite-exchange/modules-base/test/utils/assertions';
+import {
+  expectEvent,
+  expectProtocolBalance,
+  expectThrow,
+  expectWalletBalance,
+} from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
   setupCoreProtocol,
   setupTestMarket,
@@ -155,12 +160,7 @@ describe('BerachainRewardsMetaVault', () => {
     bgtFactory = await createBGTIsolationModeVaultFactory(registry, core.tokens.bgt, bgtVaultImplementation, core);
 
     const bgtmVaultImplementation = await createBGTMIsolationModeTokenVaultV1();
-    bgtmFactory = await createBGTMIsolationModeVaultFactory(
-      registry,
-      bgtmWrapper,
-      bgtmVaultImplementation,
-      core,
-    );
+    bgtmFactory = await createBGTMIsolationModeVaultFactory(registry, bgtmWrapper, bgtmVaultImplementation, core);
 
     const iBgtVaultImplementation = await createInfraredBGTIsolationModeTokenVaultV1();
     iBgtFactory = await createInfraredBGTIsolationModeVaultFactory(
@@ -1008,9 +1008,9 @@ describe('BerachainRewardsMetaVault', () => {
       await metaVault.delegateBGTM(VALIDATOR_ADDRESS, bal.div(2));
       expect(await core.berachainRewardsEcosystem.bgtm.pending(VALIDATOR_ADDRESS, metaVault.address)).to.eq(bal.div(2));
       expect(await core.berachainRewardsEcosystem.bgtm.queued(VALIDATOR_ADDRESS, metaVault.address)).to.eq(ZERO_BI);
-      expect(
-        await core.berachainRewardsEcosystem.bgtm.confirmed(VALIDATOR_ADDRESS, metaVault.address)
-      ).to.eq(bal.div(2));
+      expect(await core.berachainRewardsEcosystem.bgtm.confirmed(VALIDATOR_ADDRESS, metaVault.address)).to.eq(
+        bal.div(2),
+      );
 
       await bgtmVault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, bal);
       await expectProtocolBalance(core, bgtmVault, defaultAccountNumber, bgtmMarketId, ZERO_BI);
@@ -1028,7 +1028,7 @@ describe('BerachainRewardsMetaVault', () => {
       expect(await core.berachainRewardsEcosystem.bgtm.queued(VALIDATOR_ADDRESS, metaVault.address)).to.eq(bal);
       await expectThrow(
         bgtmVault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, bal),
-        'Token: transfer failed'
+        'Token: transfer failed',
       );
     });
 

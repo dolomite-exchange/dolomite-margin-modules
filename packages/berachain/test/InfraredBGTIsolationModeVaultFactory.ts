@@ -1,11 +1,16 @@
-import { expect } from 'chai';
-import {
-  IERC20,
-} from '@dolomite-exchange/modules-base/src/types';
+import { IERC20 } from '@dolomite-exchange/modules-base/src/types';
 import { Network, ONE_ETH_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectEvent, expectProtocolBalance, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from '@dolomite-exchange/modules-base/test/utils/setup';
+import {
+  setupCoreProtocol,
+  setupTestMarket,
+  setupUserVaultProxy,
+} from '@dolomite-exchange/modules-base/test/utils/setup';
+import { expect } from 'chai';
+import { BigNumber } from 'ethers';
+import { parseEther } from 'ethers/lib/utils';
+import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
 import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
 import {
   BerachainRewardsIsolationModeTokenVaultV1,
@@ -30,9 +35,6 @@ import {
   createInfraredBGTIsolationModeVaultFactory,
   RewardVaultType,
 } from './berachain-ecosystem-utils';
-import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
-import { BigNumber } from 'ethers';
-import { parseEther } from 'ethers/lib/utils';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 const IBGT_WHALE_ADDRESS = '0x4B95296B937AF613D65206Ba7C203CB9A1263003';
@@ -75,11 +77,9 @@ describe('InfraredBGTIsolationModeVaultFactory', () => {
       [],
     );
     registry = await createBerachainRewardsRegistry(core, metaVaultImplementation);
-    await registry.connect(core.governance).ownerSetRewardVault(
-      underlyingToken.address,
-      RewardVaultType.Native,
-      nativeRewardVault.address
-    );
+    await registry
+      .connect(core.governance)
+      .ownerSetRewardVault(underlyingToken.address, RewardVaultType.Native, nativeRewardVault.address);
 
     vaultImplementation = await createBerachainRewardsIsolationModeTokenVaultV1();
     beraFactory = await createBerachainRewardsIsolationModeVaultFactory(
@@ -95,12 +95,7 @@ describe('InfraredBGTIsolationModeVaultFactory', () => {
       core,
     );
     bgtVaultImplementation = await createBGTIsolationModeTokenVaultV1();
-    bgtFactory = await createBGTIsolationModeVaultFactory(
-      registry,
-      core.tokens.bgt,
-      bgtVaultImplementation,
-      core,
-    );
+    bgtFactory = await createBGTIsolationModeVaultFactory(registry, core.tokens.bgt, bgtVaultImplementation, core);
     iBgtVaultImplementation = await createInfraredBGTIsolationModeTokenVaultV1();
     iBgtFactory = await createInfraredBGTIsolationModeVaultFactory(
       registry,
@@ -166,11 +161,9 @@ describe('InfraredBGTIsolationModeVaultFactory', () => {
       await core.tokens.iBgt.connect(metaVaultImpersonator).approve(iBgtVault.address, amountWei);
 
       await iBgtVault.connect(metaVaultImpersonator).setIsDepositSourceMetaVault(true);
-      await iBgtFactory.connect(metaVaultImpersonator).depositIntoDolomiteMarginFromMetaVault(
-        core.hhUser1.address,
-        defaultAccountNumber,
-        amountWei
-      );
+      await iBgtFactory
+        .connect(metaVaultImpersonator)
+        .depositIntoDolomiteMarginFromMetaVault(core.hhUser1.address, defaultAccountNumber, amountWei);
       await expectProtocolBalance(core, iBgtVault, defaultAccountNumber, iBgtMarketId, amountWei);
       expect(await iBgtVault.underlyingBalanceOf()).to.eq(ZERO_BI);
       expect(await core.berachainRewardsEcosystem.iBgtStakingPool.balanceOf(iBgtVault.address)).to.eq(amountWei);
@@ -179,12 +172,10 @@ describe('InfraredBGTIsolationModeVaultFactory', () => {
     it('should fail if not called by owners metaVault', async () => {
       await beraFactory.createVault(core.hhUser1.address);
       await expectThrow(
-        iBgtFactory.connect(core.hhUser1).depositIntoDolomiteMarginFromMetaVault(
-          core.hhUser1.address,
-          ZERO_BI,
-          ONE_ETH_BI
-        ),
-        'MetaVaultRewardReceiverFactory: Can only deposit from metaVault'
+        iBgtFactory
+          .connect(core.hhUser1)
+          .depositIntoDolomiteMarginFromMetaVault(core.hhUser1.address, ZERO_BI, ONE_ETH_BI),
+        'MetaVaultRewardReceiverFactory: Can only deposit from metaVault',
       );
     });
   });

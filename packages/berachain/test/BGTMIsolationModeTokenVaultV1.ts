@@ -6,7 +6,11 @@ import {
   ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
-import { expectEvent, expectProtocolBalance, expectThrow, expectWalletBalance } from '@dolomite-exchange/modules-base/test/utils/assertions';
+import {
+  expectProtocolBalance,
+  expectThrow,
+  expectWalletBalance,
+} from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
   setupCoreProtocol,
   setupTestMarket,
@@ -25,27 +29,18 @@ import {
   BerachainRewardsMetaVault,
   BerachainRewardsMetaVault__factory,
   BerachainRewardsRegistry,
-  BGTIsolationModeTokenVaultV1,
-  BGTIsolationModeTokenVaultV1__factory,
-  BGTIsolationModeVaultFactory,
   BGTMERC20Wrapper,
   BGTMERC20Wrapper__factory,
   BGTMIsolationModeTokenVaultV1,
   BGTMIsolationModeTokenVaultV1__factory,
   BGTMIsolationModeVaultFactory,
-  INativeRewardVault,
-  InfraredBGTIsolationModeVaultFactory,
 } from '../src/types';
 import {
   createBerachainRewardsIsolationModeTokenVaultV1,
   createBerachainRewardsIsolationModeVaultFactory,
   createBerachainRewardsRegistry,
-  createBGTIsolationModeTokenVaultV1,
-  createBGTIsolationModeVaultFactory,
   createBGTMIsolationModeTokenVaultV1,
   createBGTMIsolationModeVaultFactory,
-  createInfraredBGTIsolationModeTokenVaultV1,
-  createInfraredBGTIsolationModeVaultFactory,
 } from './berachain-ecosystem-utils';
 
 const LP_TOKEN_WHALE_ADDRESS = '0x1293DA55eC372a94368Fa20E8DF69FaBc3320baE';
@@ -55,7 +50,7 @@ const amountWei = parseEther('.5');
 enum RewardVaultType {
   Native,
   Infrared,
-  BGTM
+  BGTM,
 }
 
 describe('BGTMIsolationModeTokenVaultV1', () => {
@@ -68,7 +63,6 @@ describe('BGTMIsolationModeTokenVaultV1', () => {
 
   let underlyingToken: IERC20;
   let bgtmWrapperToken: BGTMERC20Wrapper;
-  let nativeRewardVault: INativeRewardVault;
 
   let beraVault: BerachainRewardsIsolationModeTokenVaultV1;
   let metaVault: BerachainRewardsMetaVault;
@@ -90,7 +84,6 @@ describe('BGTMIsolationModeTokenVaultV1', () => {
     );
 
     underlyingToken = core.berachainRewardsEcosystem.listedRewardAssets.bexHoneyUsdc.asset;
-    nativeRewardVault = core.berachainRewardsEcosystem.listedRewardAssets.bexHoneyUsdc.nativeRewardVault;
 
     const metaVaultImplementation = await createContractWithAbi<BerachainRewardsMetaVault>(
       BerachainRewardsMetaVault__factory.abi,
@@ -107,9 +100,7 @@ describe('BGTMIsolationModeTokenVaultV1', () => {
       core,
     );
     const bgtmVaultImplementation = await createBGTMIsolationModeTokenVaultV1();
-    bgtmFactory = await createBGTMIsolationModeVaultFactory(
-      registry, bgtmWrapperToken, bgtmVaultImplementation, core
-    );
+    bgtmFactory = await createBGTMIsolationModeVaultFactory(registry, bgtmWrapperToken, bgtmVaultImplementation, core);
 
     await core.testEcosystem!.testPriceOracle.setPrice(beraFactory.address, ONE_ETH_BI);
     await setupTestMarket(core, beraFactory, true);

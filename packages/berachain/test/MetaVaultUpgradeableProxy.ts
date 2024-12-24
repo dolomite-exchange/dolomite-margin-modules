@@ -1,4 +1,10 @@
+import { expect } from 'chai';
+import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
+import { Network, ONE_ETH_BI } from 'packages/base/src/utils/no-deps-constants';
+import { revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
+import { expectThrow } from 'packages/base/test/utils/assertions';
 import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
+import { setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from 'packages/base/test/utils/setup';
 import {
   BerachainRewardsIsolationModeTokenVaultV1,
   BerachainRewardsIsolationModeTokenVaultV1__factory,
@@ -12,11 +18,8 @@ import {
   InfraredBGTIsolationModeVaultFactory,
   MetaVaultUpgradeableProxy,
   MetaVaultUpgradeableProxy__factory,
-  TestBerachainRewardsRegistry
+  TestBerachainRewardsRegistry,
 } from '../src/types';
-import { setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from 'packages/base/test/utils/setup';
-import { Network, ONE_ETH_BI } from 'packages/base/src/utils/no-deps-constants';
-import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
 import {
   createBerachainRewardsIsolationModeTokenVaultV1,
   createBerachainRewardsIsolationModeVaultFactory,
@@ -25,11 +28,8 @@ import {
   createInfraredBGTIsolationModeTokenVaultV1,
   createInfraredBGTIsolationModeVaultFactory,
   createTestBerachainRewardsRegistry,
-  RewardVaultType
+  RewardVaultType,
 } from './berachain-ecosystem-utils';
-import { revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
-import { expect } from 'chai';
-import { expectThrow } from 'packages/base/test/utils/assertions';
 
 describe('MetaVaultUpgradeableProxy', () => {
   let snapshotId: string;
@@ -64,16 +64,12 @@ describe('MetaVaultUpgradeableProxy', () => {
       [],
     );
     registry = await createTestBerachainRewardsRegistry(core, metaVaultImplementation);
-    await registry.connect(core.governance).ownerSetRewardVault(
-      underlyingToken.address,
-      RewardVaultType.Native,
-      nativeRewardVault.address
-    );
-    await registry.connect(core.governance).ownerSetRewardVault(
-      underlyingToken.address,
-      RewardVaultType.Infrared,
-      infraredRewardVault.address
-    );
+    await registry
+      .connect(core.governance)
+      .ownerSetRewardVault(underlyingToken.address, RewardVaultType.Native, nativeRewardVault.address);
+    await registry
+      .connect(core.governance)
+      .ownerSetRewardVault(underlyingToken.address, RewardVaultType.Infrared, infraredRewardVault.address);
 
     const vaultImplementation = await createBerachainRewardsIsolationModeTokenVaultV1();
     beraFactory = await createBerachainRewardsIsolationModeVaultFactory(
@@ -83,12 +79,7 @@ describe('MetaVaultUpgradeableProxy', () => {
       core,
     );
     const bgtVaultImplementation = await createBGTIsolationModeTokenVaultV1();
-    bgtFactory = await createBGTIsolationModeVaultFactory(
-      registry,
-      core.tokens.bgt,
-      bgtVaultImplementation,
-      core,
-    );
+    bgtFactory = await createBGTIsolationModeVaultFactory(registry, core.tokens.bgt, bgtVaultImplementation, core);
     const iBgtVaultImplementation = await createInfraredBGTIsolationModeTokenVaultV1();
     iBgtFactory = await createInfraredBGTIsolationModeVaultFactory(
       registry,
@@ -149,7 +140,7 @@ describe('MetaVaultUpgradeableProxy', () => {
       expect(await vault2.owner()).to.eq(core.hhUser2.address);
     });
 
-    it('should fail if the account and metaVault do not match' , async () => {
+    it('should fail if the account and metaVault do not match', async () => {
       await registry.createMetaVaultNoInitialize(core.hhUser2.address, beraVault.address);
       const vault2Address = await registry.getMetaVaultByAccount(core.hhUser2.address);
       const vault2 = setupUserVaultProxy<MetaVaultUpgradeableProxy>(
@@ -159,15 +150,12 @@ describe('MetaVaultUpgradeableProxy', () => {
       );
       await expectThrow(
         vault2.initialize(core.hhUser3.address),
-        `MetaVaultUpgradeableProxy: Invalid account <${core.hhUser3.address.toLowerCase()}>`
+        `MetaVaultUpgradeableProxy: Invalid account <${core.hhUser3.address.toLowerCase()}>`,
       );
     });
 
     it('should fail if already initialized', async () => {
-      await expectThrow(
-        vaultProxy.initialize(core.hhUser1.address),
-        'MetaVaultUpgradeableProxy: Already initialized',
-      );
+      await expectThrow(vaultProxy.initialize(core.hhUser1.address), 'MetaVaultUpgradeableProxy: Already initialized');
     });
   });
 
@@ -176,7 +164,7 @@ describe('MetaVaultUpgradeableProxy', () => {
       await core.hhUser1.sendTransaction({
         to: vaultProxy.address,
         value: ONE_ETH_BI,
-        data: '0x'
+        data: '0x',
       });
     });
 
@@ -187,9 +175,9 @@ describe('MetaVaultUpgradeableProxy', () => {
         core.hhUser1.sendTransaction({
           to: metaAddress,
           value: ONE_ETH_BI,
-          data: '0x'
+          data: '0x',
         }),
-        'MetaVaultUpgradeableProxy: Not initialized'
+        'MetaVaultUpgradeableProxy: Not initialized',
       );
     });
   });

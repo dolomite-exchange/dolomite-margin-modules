@@ -1,16 +1,9 @@
 import { IERC20 } from '@dolomite-exchange/modules-base/src/types';
-import {
-  Network,
-  ONE_BI,
-  ONE_DAY_SECONDS,
-  ONE_ETH_BI,
-  ZERO_BI,
-} from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { Network, ONE_ETH_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import {
   expectEvent,
   expectProtocolBalance,
-  expectProtocolBalanceIsGreaterThan,
   expectThrow,
   expectWalletBalance,
 } from '@dolomite-exchange/modules-base/test/utils/assertions';
@@ -20,11 +13,11 @@ import {
   setupUserVaultProxy,
   setupWBERABalance,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { createContractWithAbi, createTestToken } from 'packages/base/src/utils/dolomite-utils';
+import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
 import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
 import {
   BerachainRewardsIsolationModeVaultFactory,
@@ -49,8 +42,6 @@ import {
   createInfraredBGTIsolationModeTokenVaultV1,
   createInfraredBGTIsolationModeVaultFactory,
 } from './berachain-ecosystem-utils';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
 
 const IBGT_WHALE_ADDRESS = '0x4B95296B937AF613D65206Ba7C203CB9A1263003';
 const defaultAccountNumber = ZERO_BI;

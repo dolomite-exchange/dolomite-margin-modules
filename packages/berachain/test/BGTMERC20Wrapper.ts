@@ -1,6 +1,4 @@
-import {
-  IERC20,
-} from '@dolomite-exchange/modules-base/src/types';
+import { IERC20 } from '@dolomite-exchange/modules-base/src/types';
 import {
   Network,
   ONE_DAY_SECONDS,
@@ -98,12 +96,7 @@ describe('BGTMERC20Wrapper', () => {
     bgtFactory = await createBGTIsolationModeVaultFactory(registry, core.tokens.bgt, bgtVaultImplementation, core);
 
     const bgtmVaultImplementation = await createBGTMIsolationModeTokenVaultV1();
-    bgtmFactory = await createBGTMIsolationModeVaultFactory(
-      registry,
-      bgtmWrapper,
-      bgtmVaultImplementation,
-      core,
-    );
+    bgtmFactory = await createBGTMIsolationModeVaultFactory(registry, bgtmWrapper, bgtmVaultImplementation, core);
 
     await core.testEcosystem!.testPriceOracle.setPrice(beraFactory.address, ONE_ETH_BI);
     await setupTestMarket(core, beraFactory, true);
@@ -183,7 +176,10 @@ describe('BGTMERC20Wrapper', () => {
 
   describe('#transferFrom', () => {
     it('should fail', async () => {
-      await expectThrow(bgtmWrapper.transferFrom(core.hhUser2.address, core.hhUser1.address, amountWei), 'Not implemented');
+      await expectThrow(
+        bgtmWrapper.transferFrom(core.hhUser2.address, core.hhUser1.address, amountWei),
+        'Not implemented',
+      );
     });
   });
 
