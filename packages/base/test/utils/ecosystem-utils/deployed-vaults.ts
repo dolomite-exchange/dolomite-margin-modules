@@ -33,6 +33,7 @@ export class DeployedVault {
   public marketId: number;
   public factory: IIsolationModeVaultFactory | IIsolationModeVaultFactoryOld;
   public vaultType: IsolationModeVaultType;
+  public isUpgradeable: boolean;
 
   constructor(
     marketId: number,
@@ -48,17 +49,26 @@ export class DeployedVault {
     this.marketId = marketId;
     this.factory = factory;
     this.vaultType = info.vaultType;
+    this.isUpgradeable = info.vaultType !== IsolationModeVaultType.Migrator;
   }
 
   public async deployNewVaultAndEncodeUpgradeTransaction<T extends NetworkType>(
     core: CoreProtocolType<T>,
     newLibraries: Record<string, string>,
   ): Promise<EncodedTransaction> {
+    if (!this.isUpgradeable) {
+      return Promise.reject(new Error(`Vault with ID ${this.marketId} is not upgradeable`));
+    }
+
     await this.deployNewVaultImplementation(newLibraries);
     return this.encodeSetUserVaultImplementation(core);
   }
 
   public async deployNewVaultImplementation(newLibraries: Record<string, string>): Promise<string> {
+    if (!this.isUpgradeable) {
+      return Promise.reject(new Error(`Vault with ID ${this.marketId} is not upgradeable`));
+    }
+
     this.libraries = {
       ...this.libraries,
       ...newLibraries,
@@ -67,7 +77,7 @@ export class DeployedVault {
     const vaultAddress = await deployContractAndSave(
       this.contractName,
       this.constructorParams,
-      `${this.contractRenameWithoutVersion}V${(this.currentVersionNumber + 1).toString()}`,
+      `${this.contractRenameWithoutVersion}V${this.currentVersionNumber + 1}`,
       this.libraries,
     );
     this.implementationAddress = vaultAddress;

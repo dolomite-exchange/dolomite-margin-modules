@@ -29,6 +29,7 @@ import { InterestSetters } from '../ecosystem-utils/interest-setters';
 import { TestEcosystem } from '../ecosystem-utils/testers';
 import { CoreProtocolConfig } from '../setup';
 import { DeployedVault } from '../ecosystem-utils/deployed-vaults';
+import { IsolationModeVaultType } from 'packages/deployment/src/deploy/isolation-mode/isolation-mode-helpers';
 
 export interface LibraryMaps {
   tokenVaultActionsImpl: Record<string, string>;
@@ -233,4 +234,15 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
   }
 
   public abstract get network(): T;
+
+  public getDeployedVaultsByType(vaultType: IsolationModeVaultType): DeployedVault[] {
+    return this.deployedVaults.filter(v => v.vaultType === vaultType);
+  }
+
+  public getDeployedVaultsMapByType(vaultType: IsolationModeVaultType): Record<number, DeployedVault> {
+    return this.getDeployedVaultsByType(vaultType).reduce((acc, v) => {
+      acc[v.marketId] = v;
+      return acc;
+    }, {} as Record<number, DeployedVault>);
+  }
 }
