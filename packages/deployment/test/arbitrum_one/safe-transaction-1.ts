@@ -6,14 +6,14 @@ import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../src/utils/dry-run-utils';
 import getScriptName from '../../src/utils/get-script-name';
-import { DolomiteOwner, DolomiteOwner__factory } from 'packages/base/src/types';
+import { DolomiteOwnerV1, DolomiteOwnerV1__factory } from 'packages/base/src/types';
 import { prettyPrintEncodedDataWithTypeSafety } from '../../src/utils/deploy-utils';
 
 const GOVERNANCE_ADDRESS = '0x52d7BcB650c591f6E8da90f797A1d0Bfd8fD05F9';
 
 /**
  * This script encodes the following transactions:
- * - Switch owner of Dolomite Margin to be the DolomiteOwner contract
+ * - Switch owner of Dolomite Margin to be the DolomiteOwnerV1 contract
  */
 async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
@@ -22,13 +22,13 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   }
 
   const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
-  (core as any).ownerAdapter = (await createContractWithAbi<DolomiteOwner>(
-    DolomiteOwner__factory.abi,
-    DolomiteOwner__factory.bytecode,
+  (core as any).ownerAdapterV1 = (await createContractWithAbi<DolomiteOwnerV1>(
+    DolomiteOwnerV1__factory.abi,
+    DolomiteOwnerV1__factory.bytecode,
     [GOVERNANCE_ADDRESS]
   )).connect(core.governance);
 
-  await core.dolomiteMargin.transferOwnership(core.ownerAdapterV1!.address);
+  await core.dolomiteMargin.transferOwnership(core.ownerAdapterV1.address);
   const transactions = [];
   transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(
@@ -54,7 +54,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
         'Invalid GRAIL max wei',
       );
       assertHardhatInvariant(
-        (await core.dolomiteMargin.owner()) === core.ownerAdapterV1!.address,
+        (await core.dolomiteMargin.owner()) === core.ownerAdapterV1.address,
         'Invalid owner address',
       );
     },

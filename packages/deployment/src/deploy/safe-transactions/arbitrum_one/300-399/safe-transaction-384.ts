@@ -2,7 +2,7 @@ import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { getAndCheckSpecificNetwork } from 'packages/base/src/utils/dolomite-utils';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from 'packages/base/test/utils';
-import { isIsolationMode } from 'packages/base/test/utils/dolomite';
+import { isIsolationModeByMarketId } from 'packages/base/test/utils/dolomite';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
 import { EncodedTransaction, prettyPrintEncodedDataWithTypeSafety } from 'packages/deployment/src/utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput } from 'packages/deployment/src/utils/dry-run-utils';
@@ -32,7 +32,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
 
   const numMarkets = await core.dolomiteMargin.getNumMarkets();
   for (let i = 0; numMarkets.gt(i); i++) {
-    if (await isIsolationMode(i, core)) {
+    if (await isIsolationModeByMarketId(i, core)) {
       transactions.push(
         await prettyPrintEncodedDataWithTypeSafety(
           core,
@@ -65,7 +65,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
 
       const numMarkets = await core.dolomiteMargin.getNumMarkets();
       for (let i = 0; numMarkets.gt(i); i++) {
-        if (await isIsolationMode(i, core)) {
+        if (await isIsolationModeByMarketId(i, core)) {
           assertHardhatInvariant(
             await core.liquidatorAssetRegistry.isAssetWhitelistedForLiquidation(i, core.liquidatorProxyV4.address),
             'Invalid liquidator proxy',
