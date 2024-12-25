@@ -4,7 +4,7 @@ import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/u
 import { CoreProtocolType, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { BigNumberish } from 'ethers';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
-import { isIsolationMode } from 'packages/base/test/utils/dolomite';
+import { isIsolationModeByMarketId } from 'packages/base/test/utils/dolomite';
 import { EncodedTransaction, prettyPrintEncodedDataWithTypeSafety } from '../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../utils/dry-run-utils';
 import getScriptName from '../../utils/get-script-name';
@@ -117,7 +117,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
 
   const numMarkets = await core.dolomiteMargin.getNumMarkets();
   for (let i = 0; numMarkets.gt(i); i++) {
-    if (await isIsolationMode(i, core)) {
+    if (await isIsolationModeByMarketId(i, core)) {
       if (!(await isAssetWhitelistedForLiquidation(core, i, core.liquidatorProxyV4.address))) {
         transactions.push(
           await prettyPrintEncodedDataWithTypeSafety(

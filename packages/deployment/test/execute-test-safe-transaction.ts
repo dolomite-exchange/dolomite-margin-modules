@@ -22,7 +22,7 @@ console.log('==================== Executing Dry Run ====================');
 console.log('===========================================================');
 console.log('');
 try {
-  execSync(`NETWORK=${networkName} hardhat --network hardhat run ${filePath} --trace`, { stdio: 'inherit' });
+  execSync(`NETWORK=${networkName} hardhat --network hardhat run ${filePath}`, { stdio: 'inherit' });
 } catch (e) {
   console.error(e);
   process.exit(1);
