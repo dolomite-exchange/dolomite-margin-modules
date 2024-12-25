@@ -28,6 +28,8 @@ import { DolomiteMargin, Expiry } from '../dolomite';
 import { InterestSetters } from '../ecosystem-utils/interest-setters';
 import { TestEcosystem } from '../ecosystem-utils/testers';
 import { CoreProtocolConfig } from '../setup';
+import { DeployedVault } from '../ecosystem-utils/deployed-vaults';
+import { IsolationModeVaultType } from 'packages/deployment/src/deploy/isolation-mode/isolation-mode-helpers';
 
 export interface LibraryMaps {
   tokenVaultActionsImpl: Record<string, string>;
@@ -85,6 +87,7 @@ export interface CoreProtocolParams<T extends NetworkType> {
   chainlinkPriceOracleV1: IChainlinkPriceOracleV1;
   chainlinkPriceOracleV3: IChainlinkPriceOracleV3;
   delayedMultiSig: IPartiallyDelayedMultiSig;
+  deployedVaults: DeployedVault[];
   depositWithdrawalProxy: IDepositWithdrawalProxy;
   dolomiteMargin: DolomiteMargin<T>;
   dolomiteRegistry: IDolomiteRegistry;
@@ -102,11 +105,12 @@ export interface CoreProtocolParams<T extends NetworkType> {
   liquidatorAssetRegistry: ILiquidatorAssetRegistry;
   liquidatorProxyV1: ILiquidatorProxyV1;
   liquidatorProxyV4: ILiquidatorProxyV4WithGenericTrader;
+  marketIdToDeployedVaultMap: Record<number, DeployedVault>;
+  marketIds: CoreProtocolMarketIds;
   oracleAggregatorV2: OracleAggregatorV2;
   ownerAdapterV1: DolomiteOwnerV1;
   ownerAdapterV2: DolomiteOwnerV2;
   testEcosystem: TestEcosystem | undefined;
-  marketIds: CoreProtocolMarketIds;
   apiTokens: {
     usdc: ApiToken;
     weth: ApiToken;
@@ -145,6 +149,8 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
   public readonly constants: CoreProtocolConstants<T>;
   public readonly delayedMultiSig: IPartiallyDelayedMultiSig;
   public readonly depositWithdrawalProxy: IDepositWithdrawalProxy;
+  public readonly deployedVaults: DeployedVault[];
+  public readonly deployedVaultsMap: Record<number, DeployedVault>;
   public readonly dolomiteMargin: DolomiteMargin<T>;
   public readonly dolomiteRegistry: IDolomiteRegistry;
   public readonly dolomiteRegistryProxy: RegistryProxy;
@@ -200,6 +206,8 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
     this.constants = params.constants;
     this.delayedMultiSig = params.delayedMultiSig;
     this.depositWithdrawalProxy = params.depositWithdrawalProxy;
+    this.deployedVaults = params.deployedVaults;
+    this.deployedVaultsMap = params.marketIdToDeployedVaultMap;
     this.dolomiteMargin = params.dolomiteMargin;
     this.dolomiteRegistry = params.dolomiteRegistry;
     this.dolomiteRegistryProxy = params.dolomiteRegistryProxy;
@@ -226,4 +234,15 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
   }
 
   public abstract get network(): T;
+
+  public getDeployedVaultsByType(vaultType: IsolationModeVaultType): DeployedVault[] {
+    return this.deployedVaults.filter(v => v.vaultType === vaultType);
+  }
+
+  public getDeployedVaultsMapByType(vaultType: IsolationModeVaultType): Record<number, DeployedVault> {
+    return this.getDeployedVaultsByType(vaultType).reduce((acc, v) => {
+      acc[v.marketId] = v;
+      return acc;
+    }, {} as Record<number, DeployedVault>);
+  }
 }
