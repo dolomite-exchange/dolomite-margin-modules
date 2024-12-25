@@ -45,7 +45,10 @@ export class DeployedVault {
     this.implementationAddress = info.implementationAddress;
     this.constructorParams = info.constructorParams;
     this.libraries = this.populateLibraryAddresses(info.libraries);
-    this.currentVersionNumber = getMaxDeploymentVersionNumberByDeploymentKey(this.contractRenameWithoutVersion, 1);
+    this.currentVersionNumber = getMaxDeploymentVersionNumberByDeploymentKey(
+      this.contractRenameWithoutVersion,
+      info.defaultVersion ?? 1,
+    );
     this.marketId = marketId;
     this.factory = factory;
     this.vaultType = info.vaultType;
