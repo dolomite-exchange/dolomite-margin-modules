@@ -147,33 +147,7 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
     function getReward(
         address _asset
     ) external onlyMetaVaultOwner(msg.sender) returns (uint256) {
-        IBerachainRewardsRegistry.RewardVaultType defaultType = getDefaultRewardVaultTypeByAsset(_asset);
-        address rewardVault = REGISTRY().rewardVault(_asset, defaultType);
-        IMetaVaultRewardTokenFactory factory;
-        uint256 reward;
-
-        if (defaultType == IBerachainRewardsRegistry.RewardVaultType.NATIVE) {
-            reward = INativeRewardVault(rewardVault).getReward(address(this));
-            factory = REGISTRY().bgtIsolationModeVaultFactory();
-        } else if (defaultType == IBerachainRewardsRegistry.RewardVaultType.BGTM) {
-            reward = INativeRewardVault(rewardVault).earned(address(this));
-            REGISTRY().bgtm().deposit(rewardVault);
-            factory = REGISTRY().bgtmIsolationModeVaultFactory();
-        } else {
-            assert(defaultType == IBerachainRewardsRegistry.RewardVaultType.INFRARED);
-            factory = REGISTRY().iBgtIsolationModeVaultFactory();
-            IERC20 iBgt = REGISTRY().iBgt();
-
-            uint256 balanceBefore = iBgt.balanceOf(address(this));
-            IInfraredVault(rewardVault).getReward();
-            reward = iBgt.balanceOf(address(this)) - balanceBefore;
-        }
-
-        if (reward > 0) {
-            _performDepositRewardByRewardType(factory, defaultType, reward);
-        }
-
-        return reward;
+        return _getReward(_asset);
     }
 
     function exit(
@@ -359,22 +333,21 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
         IBGTM bgtm = REGISTRY().bgtm();
         uint256 bal = bgtm.getBalance(address(this));
         if (_amount > bal) {
-            uint256 pending = bgtm.pending(bgtmValidator(), address(this));
+            IBGTM.Position memory position = bgtm.getDelegatedBalance(bgtmValidator(), address(this));
             uint256 diff = _amount - bal;
 
-            if (pending >= diff) {
+            if (position.pending >= diff) {
                 bgtm.cancel(bgtmValidator(), SafeCast.toUint128(diff));
             } else {
-                uint256 confirmed = bgtm.confirmed(bgtmValidator(), address(this));
                 Require.that(
-                    confirmed + pending >= diff,
+                    position.confirmed + position.pending >= diff,
                     _FILE,
                     "Not enough BGTM available"
                 );
-                if (pending > 0) {
-                    bgtm.cancel(bgtmValidator(), SafeCast.toUint128(pending));
+                if (position.pending > 0) {
+                    bgtm.cancel(bgtmValidator(), SafeCast.toUint128(position.pending));
                 }
-                bgtm.unbond(bgtmValidator(), SafeCast.toUint128(diff - pending));
+                bgtm.unbond(bgtmValidator(), SafeCast.toUint128(diff - position.pending));
             }
 
             _resetBgtmValidatorIfEmptyBoosts(bgtm);
@@ -450,10 +423,8 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
             return;
         }
 
-        uint256 pending = _bgtm.pending(bgtmValidator(), address(this));
-        uint256 queued = _bgtm.queued(bgtmValidator(), address(this));
-        uint256 confirmed = _bgtm.confirmed(bgtmValidator(), address(this));
-        if (pending == 0 && queued == 0 && confirmed == 0) {
+        IBGTM.Position memory position = _bgtm.getDelegatedBalance(bgtmValidator(), address(this));
+        if (position.pending == 0 && position.queued == 0 && position.confirmed == 0) {
             _setAddress(_BGTM_VALIDATOR_SLOT, address(0));
             emit BgtmValidatorSet(address(0));
         }
@@ -463,15 +434,24 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
         address _asset,
         IBerachainRewardsRegistry.RewardVaultType _type
     ) internal {
-        if (_type == getDefaultRewardVaultTypeByAsset(_asset)) {
+        IBerachainRewardsRegistry.RewardVaultType currentType = getDefaultRewardVaultTypeByAsset(_asset);
+        if (_type == currentType) {
             // No need to change it when the two already match
             return;
+        } else {
+            Require.that(
+                getStakedBalanceByAssetAndType(_asset, currentType) == 0,
+                _FILE,
+                "Default type must be empty"
+            );
         }
 
+        _getReward(_asset);
         REGISTRY().setDefaultRewardVaultTypeFromMetaVaultByAsset(_asset, _type);
 
         if (_type == IBerachainRewardsRegistry.RewardVaultType.BGTM) {
             INativeRewardVault rewardVault = INativeRewardVault(REGISTRY().rewardVault(_asset, _type));
+            // @follow-up Test if this will revert if done more than once
             rewardVault.setOperator(address(REGISTRY().bgtm()));
         }
     }
@@ -505,6 +485,40 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
 
         rewardVault.withdraw(_amount);
         IERC20(_asset).safeTransfer(msg.sender, _amount);
+    }
+
+    function _getReward(address _asset) internal returns (uint256) {
+        IBerachainRewardsRegistry.RewardVaultType defaultType = getDefaultRewardVaultTypeByAsset(_asset);
+        address rewardVault = REGISTRY().rewardVault(_asset, defaultType);
+        IMetaVaultRewardTokenFactory factory;
+        uint256 reward;
+
+        if (defaultType == IBerachainRewardsRegistry.RewardVaultType.NATIVE) {
+            reward = INativeRewardVault(rewardVault).getReward(address(this));
+            factory = REGISTRY().bgtIsolationModeVaultFactory();
+        } else if (defaultType == IBerachainRewardsRegistry.RewardVaultType.BGTM) {
+            reward = INativeRewardVault(rewardVault).earned(address(this));
+            address[] memory vaults = new address[](1);
+            vaults[0] = rewardVault;
+            if (reward > 0) {
+                REGISTRY().bgtm().deposit(vaults);
+            }
+            factory = REGISTRY().bgtmIsolationModeVaultFactory();
+        } else {
+            assert(defaultType == IBerachainRewardsRegistry.RewardVaultType.INFRARED);
+            factory = REGISTRY().iBgtIsolationModeVaultFactory();
+            IERC20 iBgt = REGISTRY().iBgt();
+
+            uint256 balanceBefore = iBgt.balanceOf(address(this));
+            IInfraredVault(rewardVault).getReward();
+            reward = iBgt.balanceOf(address(this)) - balanceBefore;
+        }
+
+        if (reward > 0) {
+            _performDepositRewardByRewardType(factory, defaultType, reward);
+        }
+
+        return reward;
     }
 
     function _performDepositRewardByRewardType(

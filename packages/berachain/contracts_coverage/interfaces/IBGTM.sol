@@ -28,7 +28,14 @@ pragma solidity ^0.8.9;
  */
 interface IBGTM {
 
-    function deposit(address vaultAddress) external;
+    struct Position {
+        uint256 confirmed;
+        uint256 queued;
+        uint256 pending;
+        uint256 consolidatedAt;
+    }
+
+    function deposit(address[] calldata addresses) external;
 
     function redeem(uint256 amount) external;
 
@@ -42,9 +49,5 @@ interface IBGTM {
 
     function getBalance(address user) external view returns (uint256);
 
-    function pending(address validator, address owner) external view returns (uint256);
-
-    function queued(address validator, address owner) external view returns (uint256);
-
-    function confirmed(address validator, address owner) external view returns (uint256);
+    function getDelegatedBalance(address validator, address owner) external view returns (Position memory);
 }

@@ -50,11 +50,6 @@ const LP_TOKEN_WHALE_ADDRESS = '0x1293DA55eC372a94368Fa20E8DF69FaBc3320baE';
 const defaultAccountNumber = ZERO_BI;
 const amountWei = parseEther('.5');
 
-enum RewardVaultType {
-  Native,
-  Infrared,
-}
-
 describe('BGTIsolationModeTokenVaultV1', () => {
   let snapshotId: string;
 

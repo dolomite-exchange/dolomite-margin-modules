@@ -5,11 +5,10 @@ import {
   ONE_ETH_BI,
   ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
+import { impersonate, revertToSnapshotAndCapture, setEtherBalance, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import {
   expectProtocolBalance,
   expectThrow,
-  expectWalletBalance,
 } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
   setupCoreProtocol,
@@ -43,7 +42,7 @@ import {
   createBGTMIsolationModeVaultFactory,
 } from './berachain-ecosystem-utils';
 
-const LP_TOKEN_WHALE_ADDRESS = '0x1293DA55eC372a94368Fa20E8DF69FaBc3320baE';
+const LP_TOKEN_WHALE_ADDRESS = '0xe3b9B72ba027FD6c514C0e5BA075Ac9c77C23Afa';
 const defaultAccountNumber = ZERO_BI;
 const amountWei = parseEther('.5');
 
@@ -73,7 +72,7 @@ describe('BGTMIsolationModeTokenVaultV1', () => {
 
   before(async () => {
     core = await setupCoreProtocol({
-      blockNumber: 4_853_900,
+      blockNumber: 8_627_800,
       network: Network.Berachain,
     });
 
@@ -102,6 +101,7 @@ describe('BGTMIsolationModeTokenVaultV1', () => {
     const bgtmVaultImplementation = await createBGTMIsolationModeTokenVaultV1();
     bgtmFactory = await createBGTMIsolationModeVaultFactory(registry, bgtmWrapperToken, bgtmVaultImplementation, core);
 
+    await setEtherBalance(core.governance.address, parseEther('100'));
     await core.testEcosystem!.testPriceOracle.setPrice(beraFactory.address, ONE_ETH_BI);
     await setupTestMarket(core, beraFactory, true);
 
@@ -126,7 +126,7 @@ describe('BGTMIsolationModeTokenVaultV1', () => {
       core.hhUser1,
     );
 
-    const lpWhale = await impersonate(LP_TOKEN_WHALE_ADDRESS);
+    const lpWhale = await impersonate(LP_TOKEN_WHALE_ADDRESS, true);
     await underlyingToken.connect(lpWhale).transfer(core.hhUser1.address, amountWei);
     await underlyingToken.connect(core.hhUser1).approve(beraVault.address, amountWei);
 
@@ -187,9 +187,9 @@ describe('BGTMIsolationModeTokenVaultV1', () => {
 
   describe('#executeWithdrawalFromVault', () => {
     it('should work normally', async () => {
-      await bgtmVault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, bgtmBal);
+      await expect(() => bgtmVault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, bgtmBal))
+        .to.changeTokenBalance(core.tokens.wbera, core.hhUser1.address, bgtmBal);
       await expectProtocolBalance(core, bgtmVault, defaultAccountNumber, bgtmMarketId, ZERO_BI);
-      await expectWalletBalance(core.hhUser1, core.tokens.wbera, bgtmBal);
     });
 
     it('should fail if not called by factory', async () => {

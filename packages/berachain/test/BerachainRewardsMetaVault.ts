@@ -13,12 +13,11 @@ import {
   TWO_BI,
   ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
+import { impersonate, revertToSnapshotAndCapture, setEtherBalance, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import {
   expectEvent,
   expectProtocolBalance,
   expectThrow,
-  expectWalletBalance,
 } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
   setupCoreProtocol,
@@ -64,21 +63,15 @@ import {
   createBGTMIsolationModeVaultFactory,
   createInfraredBGTIsolationModeTokenVaultV1,
   createInfraredBGTIsolationModeVaultFactory,
+  RewardVaultType,
   setupUserMetaVault,
 } from './berachain-ecosystem-utils';
 
-const BGTM_HOLDER = '0x4f5F9dB14E195484cf7790fD3946CF6e66A166B0';
-const LP_TOKEN_WHALE_ADDRESS = '0x1293DA55eC372a94368Fa20E8DF69FaBc3320baE';
-const VALIDATOR_ADDRESS = '0xB791098b00AD377B220f91d7878d19e441388eD8';
+const LP_TOKEN_WHALE_ADDRESS = '0xe3b9B72ba027FD6c514C0e5BA075Ac9c77C23Afa';
+const VALIDATOR_ADDRESS = '0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65';
 const MIN_BLOCK_LEN = 8191;
 const defaultAccountNumber = ZERO_BI;
 const amountWei = parseEther('.5');
-
-enum RewardVaultType {
-  Native,
-  Infrared,
-  BGTM,
-}
 
 describe('BerachainRewardsMetaVault', () => {
   let snapshotId: string;
@@ -110,7 +103,10 @@ describe('BerachainRewardsMetaVault', () => {
   before(async () => {
     core = await setupCoreProtocol({
       // blockNumber: 4_853_900,
-      blockNumber: 6_184_916,
+      // blockNumber: 6_184_916,
+      // blockNumber: 6_550_105,
+      // blockNumber: 8_471_038,
+      blockNumber: 8_627_800,
       network: Network.Berachain,
     });
 
@@ -142,12 +138,6 @@ describe('BerachainRewardsMetaVault', () => {
       [],
     );
     registry = await createBerachainRewardsRegistry(core, metaVaultImplementation);
-    await registry
-      .connect(core.governance)
-      .ownerSetRewardVault(underlyingToken.address, RewardVaultType.Native, nativeRewardVault.address);
-    await registry
-      .connect(core.governance)
-      .ownerSetRewardVault(underlyingToken.address, RewardVaultType.Infrared, infraredRewardVault.address);
 
     const vaultImplementation = await createBerachainRewardsIsolationModeTokenVaultV1();
     beraFactory = await createBerachainRewardsIsolationModeVaultFactory(
@@ -170,6 +160,7 @@ describe('BerachainRewardsMetaVault', () => {
       core,
     );
 
+    await setEtherBalance(core.governance.address, parseEther('100'));
     iBgtMarketId = await core.dolomiteMargin.getNumMarkets();
     await core.testEcosystem!.testPriceOracle.setPrice(iBgtFactory.address, ONE_ETH_BI);
     await setupTestMarket(core, iBgtFactory, true);
@@ -222,9 +213,17 @@ describe('BerachainRewardsMetaVault', () => {
       core.hhUser1,
     );
 
-    const lpWhale = await impersonate(LP_TOKEN_WHALE_ADDRESS);
+    const lpWhale = await impersonate(LP_TOKEN_WHALE_ADDRESS, true);
     await underlyingToken.connect(lpWhale).transfer(core.hhUser1.address, amountWei);
     await underlyingToken.connect(core.hhUser1).approve(beraVault.address, amountWei);
+
+    // Setup BGTM balance for core.hhUser2
+    await underlyingToken.connect(lpWhale).transfer(core.hhUser2.address, amountWei);
+    await underlyingToken.connect(core.hhUser2).approve(nativeRewardVault.address, amountWei);
+    await nativeRewardVault.connect(core.hhUser2).stake(amountWei);
+    await increase(ONE_DAY_SECONDS);
+    await nativeRewardVault.connect(core.hhUser2).setOperator(core.berachainRewardsEcosystem.bgtm.address);
+    await core.berachainRewardsEcosystem.bgtm.connect(core.hhUser2).deposit([nativeRewardVault.address]);
 
     snapshotId = await snapshot();
   });
@@ -317,6 +316,13 @@ describe('BerachainRewardsMetaVault', () => {
       expect(await metaVault.getDefaultRewardVaultTypeByAsset(underlyingToken.address)).to.eq(RewardVaultType.Native);
       await metaVault.setDefaultRewardVaultTypeByAsset(underlyingToken.address, RewardVaultType.Infrared);
       expect(await metaVault.getDefaultRewardVaultTypeByAsset(underlyingToken.address)).to.eq(RewardVaultType.Infrared);
+    });
+
+    it('should work if it sets operator on BGT multiple times', async () => {
+      await metaVault.setDefaultRewardVaultTypeByAsset(underlyingToken.address, RewardVaultType.BGTM);
+      await metaVault.setDefaultRewardVaultTypeByAsset(underlyingToken.address, RewardVaultType.Infrared);
+      await metaVault.setDefaultRewardVaultTypeByAsset(underlyingToken.address, RewardVaultType.BGTM);
+      expect(await metaVault.getDefaultRewardVaultTypeByAsset(underlyingToken.address)).to.eq(RewardVaultType.BGTM);
     });
 
     it('should fail if not called by owner', async () => {
@@ -668,16 +674,21 @@ describe('BerachainRewardsMetaVault', () => {
 
       await metaVault.delegateBGTM(VALIDATOR_ADDRESS, ONE_BI);
       expect(await core.berachainRewardsEcosystem.bgtm.getBalance(metaVault.address)).to.eq(bal.sub(ONE_BI));
-      expect(await core.berachainRewardsEcosystem.bgtm.pending(VALIDATOR_ADDRESS, metaVault.address)).to.eq(ZERO_BI);
-      expect(await core.berachainRewardsEcosystem.bgtm.queued(VALIDATOR_ADDRESS, metaVault.address)).to.eq(ONE_BI);
-      expect(await core.berachainRewardsEcosystem.bgtm.confirmed(VALIDATOR_ADDRESS, metaVault.address)).to.eq(ZERO_BI);
+      let position = await core.berachainRewardsEcosystem.bgtm.getDelegatedBalance(
+        VALIDATOR_ADDRESS,
+        metaVault.address
+      );
+      expect(position.pending).to.eq(ZERO_BI);
+      expect(position.queued).to.eq(ONE_BI);
+      expect(position.confirmed).to.eq(ZERO_BI);
 
       await mine(8200);
       await metaVault.activateBGTM(VALIDATOR_ADDRESS);
       expect(await core.berachainRewardsEcosystem.bgtm.getBalance(metaVault.address)).to.eq(bal.sub(ONE_BI));
-      expect(await core.berachainRewardsEcosystem.bgtm.pending(VALIDATOR_ADDRESS, metaVault.address)).to.eq(ZERO_BI);
-      expect(await core.berachainRewardsEcosystem.bgtm.queued(VALIDATOR_ADDRESS, metaVault.address)).to.eq(ZERO_BI);
-      expect(await core.berachainRewardsEcosystem.bgtm.confirmed(VALIDATOR_ADDRESS, metaVault.address)).to.eq(ONE_BI);
+      position = await core.berachainRewardsEcosystem.bgtm.getDelegatedBalance(VALIDATOR_ADDRESS, metaVault.address);
+      expect(position.pending).to.eq(ZERO_BI);
+      expect(position.queued).to.eq(ZERO_BI);
+      expect(position.confirmed).to.eq(ONE_BI);
     });
 
     it('should fail if there is a different active validator', async () => {
@@ -722,15 +733,20 @@ describe('BerachainRewardsMetaVault', () => {
       await metaVault.getReward(underlyingToken.address);
 
       await metaVault.delegateBGTM(VALIDATOR_ADDRESS, ONE_BI);
-      expect(await core.berachainRewardsEcosystem.bgtm.pending(VALIDATOR_ADDRESS, metaVault.address)).to.eq(ZERO_BI);
-      expect(await core.berachainRewardsEcosystem.bgtm.queued(VALIDATOR_ADDRESS, metaVault.address)).to.eq(ONE_BI);
-      expect(await core.berachainRewardsEcosystem.bgtm.confirmed(VALIDATOR_ADDRESS, metaVault.address)).to.eq(ZERO_BI);
+      let position = await core.berachainRewardsEcosystem.bgtm.getDelegatedBalance(
+        VALIDATOR_ADDRESS,
+        metaVault.address
+      );
+      expect(position.pending).to.eq(ZERO_BI);
+      expect(position.queued).to.eq(ONE_BI);
+      expect(position.confirmed).to.eq(ZERO_BI);
 
       await mine(8400);
       await metaVault.activateBGTM(VALIDATOR_ADDRESS);
-      expect(await core.berachainRewardsEcosystem.bgtm.pending(VALIDATOR_ADDRESS, metaVault.address)).to.eq(ZERO_BI);
-      expect(await core.berachainRewardsEcosystem.bgtm.queued(VALIDATOR_ADDRESS, metaVault.address)).to.eq(ZERO_BI);
-      expect(await core.berachainRewardsEcosystem.bgtm.confirmed(VALIDATOR_ADDRESS, metaVault.address)).to.eq(ONE_BI);
+      position = await core.berachainRewardsEcosystem.bgtm.getDelegatedBalance(VALIDATOR_ADDRESS, metaVault.address);
+      expect(position.pending).to.eq(ZERO_BI);
+      expect(position.queued).to.eq(ZERO_BI);
+      expect(position.confirmed).to.eq(ONE_BI);
     });
 
     it('should fail if the active validator is different', async () => {
@@ -763,20 +779,26 @@ describe('BerachainRewardsMetaVault', () => {
       const bal = await core.berachainRewardsEcosystem.bgtm.getBalance(metaVault.address);
 
       await metaVault.delegateBGTM(VALIDATOR_ADDRESS, ONE_BI);
-      expect(await core.berachainRewardsEcosystem.bgtm.pending(VALIDATOR_ADDRESS, metaVault.address)).to.eq(ZERO_BI);
-      expect(await core.berachainRewardsEcosystem.bgtm.queued(VALIDATOR_ADDRESS, metaVault.address)).to.eq(ONE_BI);
-      expect(await core.berachainRewardsEcosystem.bgtm.confirmed(VALIDATOR_ADDRESS, metaVault.address)).to.eq(ZERO_BI);
+      let position = await core.berachainRewardsEcosystem.bgtm.getDelegatedBalance(
+        VALIDATOR_ADDRESS,
+        metaVault.address
+      );
+      expect(position.pending).to.eq(ZERO_BI);
+      expect(position.queued).to.eq(ONE_BI);
+      expect(position.confirmed).to.eq(ZERO_BI);
 
       await mine(8400);
       await metaVault.activateBGTM(VALIDATOR_ADDRESS);
-      expect(await core.berachainRewardsEcosystem.bgtm.pending(VALIDATOR_ADDRESS, metaVault.address)).to.eq(ZERO_BI);
-      expect(await core.berachainRewardsEcosystem.bgtm.queued(VALIDATOR_ADDRESS, metaVault.address)).to.eq(ZERO_BI);
-      expect(await core.berachainRewardsEcosystem.bgtm.confirmed(VALIDATOR_ADDRESS, metaVault.address)).to.eq(ONE_BI);
+      position = await core.berachainRewardsEcosystem.bgtm.getDelegatedBalance(VALIDATOR_ADDRESS, metaVault.address);
+      expect(position.pending).to.eq(ZERO_BI);
+      expect(position.queued).to.eq(ZERO_BI);
+      expect(position.confirmed).to.eq(ONE_BI);
 
       await metaVault.unbondBGTM(VALIDATOR_ADDRESS, ONE_BI);
-      expect(await core.berachainRewardsEcosystem.bgtm.pending(VALIDATOR_ADDRESS, metaVault.address)).to.eq(ZERO_BI);
-      expect(await core.berachainRewardsEcosystem.bgtm.queued(VALIDATOR_ADDRESS, metaVault.address)).to.eq(ZERO_BI);
-      expect(await core.berachainRewardsEcosystem.bgtm.confirmed(VALIDATOR_ADDRESS, metaVault.address)).to.eq(ZERO_BI);
+      position = await core.berachainRewardsEcosystem.bgtm.getDelegatedBalance(VALIDATOR_ADDRESS, metaVault.address);
+      expect(position.pending).to.eq(ZERO_BI);
+      expect(position.queued).to.eq(ZERO_BI);
+      expect(position.confirmed).to.eq(ZERO_BI);
       expect(await core.berachainRewardsEcosystem.bgtm.getBalance(metaVault.address)).to.eq(bal);
     });
 
@@ -803,8 +825,8 @@ describe('BerachainRewardsMetaVault', () => {
 
   describe('#cancelBGTM', () => {
     it('should work normally', async () => {
-      const bgtmHolder = await impersonate(BGTM_HOLDER);
-      await core.berachainRewardsEcosystem.bgtm.connect(bgtmHolder).delegate(VALIDATOR_ADDRESS, ONE_BI);
+      // @todo need to update BGTM holder for new address
+      await core.berachainRewardsEcosystem.bgtm.connect(core.hhUser2).delegate(VALIDATOR_ADDRESS, ONE_BI);
 
       await metaVault.setDefaultRewardVaultTypeByAsset(underlyingToken.address, RewardVaultType.BGTM);
       await beraVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
@@ -812,31 +834,39 @@ describe('BerachainRewardsMetaVault', () => {
       await metaVault.getReward(underlyingToken.address);
 
       await metaVault.delegateBGTM(VALIDATOR_ADDRESS, ONE_BI);
-      expect(await core.berachainRewardsEcosystem.bgtm.pending(VALIDATOR_ADDRESS, metaVault.address)).to.eq(ONE_BI);
-      expect(await core.berachainRewardsEcosystem.bgtm.queued(VALIDATOR_ADDRESS, metaVault.address)).to.eq(ZERO_BI);
-      expect(await core.berachainRewardsEcosystem.bgtm.confirmed(VALIDATOR_ADDRESS, metaVault.address)).to.eq(ZERO_BI);
+      let position = await core.berachainRewardsEcosystem.bgtm.getDelegatedBalance(
+        VALIDATOR_ADDRESS,
+        metaVault.address
+      );
+      expect(position.pending).to.eq(ONE_BI);
+      expect(position.queued).to.eq(ZERO_BI);
+      expect(position.confirmed).to.eq(ZERO_BI);
 
       const res = await metaVault.cancelBGTM(VALIDATOR_ADDRESS, ONE_BI);
       await expectEvent(metaVault, res, 'BgtmValidatorSet', {
         validator: ADDRESS_ZERO,
       });
-      expect(await core.berachainRewardsEcosystem.bgtm.pending(VALIDATOR_ADDRESS, metaVault.address)).to.eq(ZERO_BI);
-      expect(await core.berachainRewardsEcosystem.bgtm.queued(VALIDATOR_ADDRESS, metaVault.address)).to.eq(ZERO_BI);
-      expect(await core.berachainRewardsEcosystem.bgtm.confirmed(VALIDATOR_ADDRESS, metaVault.address)).to.eq(ZERO_BI);
+      position = await core.berachainRewardsEcosystem.bgtm.getDelegatedBalance(VALIDATOR_ADDRESS, metaVault.address);
+      expect(position.pending).to.eq(ZERO_BI);
+      expect(position.queued).to.eq(ZERO_BI);
+      expect(position.confirmed).to.eq(ZERO_BI);
     });
 
     it('should not reset active validator if there is still boost amount', async () => {
-      const bgtmHolder = await impersonate(BGTM_HOLDER);
-      await core.berachainRewardsEcosystem.bgtm.connect(bgtmHolder).delegate(VALIDATOR_ADDRESS, ONE_BI);
+      await core.berachainRewardsEcosystem.bgtm.connect(core.hhUser2).delegate(VALIDATOR_ADDRESS, ONE_BI);
       await metaVault.setDefaultRewardVaultTypeByAsset(underlyingToken.address, RewardVaultType.BGTM);
       await beraVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await increase(10 * ONE_DAY_SECONDS);
       await metaVault.getReward(underlyingToken.address);
 
       await metaVault.delegateBGTM(VALIDATOR_ADDRESS, TWO_BI);
-      expect(await core.berachainRewardsEcosystem.bgtm.pending(VALIDATOR_ADDRESS, metaVault.address)).to.eq(TWO_BI);
-      expect(await core.berachainRewardsEcosystem.bgtm.queued(VALIDATOR_ADDRESS, metaVault.address)).to.eq(ZERO_BI);
-      expect(await core.berachainRewardsEcosystem.bgtm.confirmed(VALIDATOR_ADDRESS, metaVault.address)).to.eq(ZERO_BI);
+      const position = await core.berachainRewardsEcosystem.bgtm.getDelegatedBalance(
+        VALIDATOR_ADDRESS,
+        metaVault.address
+      );
+      expect(position.pending).to.eq(TWO_BI);
+      expect(position.queued).to.eq(ZERO_BI);
+      expect(position.confirmed).to.eq(ZERO_BI);
 
       await metaVault.cancelBGTM(VALIDATOR_ADDRESS, ONE_BI);
       expect(await metaVault.bgtmValidator()).to.eq(VALIDATOR_ADDRESS);
@@ -870,9 +900,9 @@ describe('BerachainRewardsMetaVault', () => {
       const bal = await core.tokens.bgt.balanceOf(metaVault.address);
       await expectProtocolBalance(core, bgtVault, defaultAccountNumber, bgtMarketId, bal);
 
-      await bgtVault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, bal);
+      await expect(() => bgtVault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, bal))
+        .to.changeTokenBalance(core.tokens.wbera, core.hhUser1.address, bal);
       await expectProtocolBalance(core, bgtVault, defaultAccountNumber, bgtMarketId, ZERO_BI);
-      await expectWalletBalance(core.hhUser1, core.tokens.wbera, bal);
     });
 
     it('should work normally with queued boost', async () => {
@@ -883,8 +913,8 @@ describe('BerachainRewardsMetaVault', () => {
       await expectProtocolBalance(core, bgtVault, defaultAccountNumber, bgtMarketId, bal);
 
       await metaVault.queueBGTBoost(VALIDATOR_ADDRESS, bal);
-      await bgtVault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, bal);
-      await expectWalletBalance(core.hhUser1, core.tokens.wbera, bal);
+      await expect(() => bgtVault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, bal))
+        .to.changeTokenBalance(core.tokens.wbera, core.hhUser1.address, bal);
       await expectProtocolBalance(core, bgtVault, defaultAccountNumber, bgtMarketId, ZERO_BI);
     });
 
@@ -898,8 +928,8 @@ describe('BerachainRewardsMetaVault', () => {
       await metaVault.queueBGTBoost(VALIDATOR_ADDRESS, bal);
       await mine(MIN_BLOCK_LEN);
       await metaVault.activateBGTBoost(VALIDATOR_ADDRESS);
-      await bgtVault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, bal);
-      await expectWalletBalance(core.hhUser1, core.tokens.wbera, bal);
+      await expect(() => bgtVault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, bal))
+        .to.changeTokenBalance(core.tokens.wbera, core.hhUser1.address, bal);
       await expectProtocolBalance(core, bgtVault, defaultAccountNumber, bgtMarketId, ZERO_BI);
     });
 
@@ -914,8 +944,8 @@ describe('BerachainRewardsMetaVault', () => {
       await mine(MIN_BLOCK_LEN);
       await metaVault.activateBGTBoost(VALIDATOR_ADDRESS);
       await metaVault.queueBGTBoost(VALIDATOR_ADDRESS, bal.div(2));
-      await bgtVault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, bal);
-      await expectWalletBalance(core.hhUser1, core.tokens.wbera, bal);
+      await expect(() => bgtVault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, bal))
+        .to.changeTokenBalance(core.tokens.wbera, core.hhUser1.address, bal);
       await expectProtocolBalance(core, bgtVault, defaultAccountNumber, bgtMarketId, ZERO_BI);
     });
 
@@ -932,8 +962,8 @@ describe('BerachainRewardsMetaVault', () => {
       await metaVault.activateBGTBoost(VALIDATOR_ADDRESS);
       await metaVault.queueBGTBoost(VALIDATOR_ADDRESS, parseEther('.5'));
       const amount = parseEther('.75');
-      await bgtVault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, amount);
-      await expectWalletBalance(core.hhUser1, core.tokens.wbera, bal.sub(ONE_ETH_BI).add(amount));
+      await expect(() => bgtVault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, amount))
+        .to.changeTokenBalance(core.tokens.wbera, core.hhUser1.address, amount);
       expect(await core.tokens.bgt.boosts(metaVault.address)).to.eq(parseEther('.25'));
       await expectProtocolBalance(core, bgtVault, defaultAccountNumber, bgtMarketId, parseEther('.25'));
     });
@@ -955,14 +985,13 @@ describe('BerachainRewardsMetaVault', () => {
       const bal = await core.berachainRewardsEcosystem.bgtm.getBalance(metaVault.address);
       await expectProtocolBalance(core, bgtmVault, defaultAccountNumber, bgtmMarketId, bal);
 
-      await bgtmVault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, bal);
+      await expect(() => bgtmVault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, bal))
+        .to.changeTokenBalance(core.tokens.wbera, core.hhUser1.address, bal);
       await expectProtocolBalance(core, bgtmVault, defaultAccountNumber, bgtmMarketId, ZERO_BI);
-      await expectWalletBalance(core.hhUser1, core.tokens.wbera, bal);
     });
 
     it('should work with pending boosts', async () => {
-      const bgtmHolder = await impersonate(BGTM_HOLDER);
-      await core.berachainRewardsEcosystem.bgtm.connect(bgtmHolder).delegate(VALIDATOR_ADDRESS, ONE_BI);
+      await core.berachainRewardsEcosystem.bgtm.connect(core.hhUser2).delegate(VALIDATOR_ADDRESS, ONE_BI);
       await metaVault.setDefaultRewardVaultTypeByAsset(underlyingToken.address, RewardVaultType.BGTM);
       await beraVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await increase(10 * ONE_DAY_SECONDS);
@@ -970,10 +999,14 @@ describe('BerachainRewardsMetaVault', () => {
       const bal = await core.berachainRewardsEcosystem.bgtm.getBalance(metaVault.address);
 
       await metaVault.delegateBGTM(VALIDATOR_ADDRESS, bal);
-      expect(await core.berachainRewardsEcosystem.bgtm.pending(VALIDATOR_ADDRESS, metaVault.address)).to.eq(bal);
-      await bgtmVault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, bal);
+      const position = await core.berachainRewardsEcosystem.bgtm.getDelegatedBalance(
+        VALIDATOR_ADDRESS,
+        metaVault.address
+      );
+      expect(position.pending).to.eq(bal);
+      await expect(() => bgtmVault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, bal))
+        .to.changeTokenBalance(core.tokens.wbera, core.hhUser1.address, bal);
       await expectProtocolBalance(core, bgtmVault, defaultAccountNumber, bgtmMarketId, ZERO_BI);
-      await expectWalletBalance(core.hhUser1, core.tokens.wbera, bal);
     });
 
     it('should work with confirmed boosts', async () => {
@@ -987,13 +1020,12 @@ describe('BerachainRewardsMetaVault', () => {
       await mine(8200);
       await metaVault.activateBGTM(VALIDATOR_ADDRESS);
 
-      await bgtmVault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, bal);
+      await expect(() => bgtmVault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, bal))
+        .to.changeTokenBalance(core.tokens.wbera, core.hhUser1.address, bal);
       await expectProtocolBalance(core, bgtmVault, defaultAccountNumber, bgtmMarketId, ZERO_BI);
-      await expectWalletBalance(core.hhUser1, core.tokens.wbera, bal);
     });
 
     it('should work with pending and confirmed boosts', async () => {
-      const bgtmHolder = await impersonate(BGTM_HOLDER);
       await metaVault.setDefaultRewardVaultTypeByAsset(underlyingToken.address, RewardVaultType.BGTM);
       await beraVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await increase(10 * ONE_DAY_SECONDS);
@@ -1004,17 +1036,19 @@ describe('BerachainRewardsMetaVault', () => {
       await mine(8400);
       await metaVault.activateBGTM(VALIDATOR_ADDRESS);
 
-      await core.berachainRewardsEcosystem.bgtm.connect(bgtmHolder).delegate(VALIDATOR_ADDRESS, ONE_BI);
+      await core.berachainRewardsEcosystem.bgtm.connect(core.hhUser2).delegate(VALIDATOR_ADDRESS, ONE_BI);
       await metaVault.delegateBGTM(VALIDATOR_ADDRESS, bal.div(2));
-      expect(await core.berachainRewardsEcosystem.bgtm.pending(VALIDATOR_ADDRESS, metaVault.address)).to.eq(bal.div(2));
-      expect(await core.berachainRewardsEcosystem.bgtm.queued(VALIDATOR_ADDRESS, metaVault.address)).to.eq(ZERO_BI);
-      expect(await core.berachainRewardsEcosystem.bgtm.confirmed(VALIDATOR_ADDRESS, metaVault.address)).to.eq(
-        bal.div(2),
+      const position = await core.berachainRewardsEcosystem.bgtm.getDelegatedBalance(
+        VALIDATOR_ADDRESS,
+        metaVault.address
       );
+      expect(position.pending).to.eq(bal.div(2));
+      expect(position.queued).to.eq(ZERO_BI);
+      expect(position.confirmed).to.eq(bal.div(2));
 
-      await bgtmVault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, bal);
+      await expect(() => bgtmVault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, bal))
+        .to.changeTokenBalance(core.tokens.wbera, core.hhUser1.address, bal);
       await expectProtocolBalance(core, bgtmVault, defaultAccountNumber, bgtmMarketId, ZERO_BI);
-      await expectWalletBalance(core.hhUser1, core.tokens.wbera, bal);
     });
 
     it('should fail if boosts are queued and not available', async () => {
@@ -1025,7 +1059,11 @@ describe('BerachainRewardsMetaVault', () => {
       const bal = await core.berachainRewardsEcosystem.bgtm.getBalance(metaVault.address);
 
       await metaVault.delegateBGTM(VALIDATOR_ADDRESS, bal);
-      expect(await core.berachainRewardsEcosystem.bgtm.queued(VALIDATOR_ADDRESS, metaVault.address)).to.eq(bal);
+      const position = await core.berachainRewardsEcosystem.bgtm.getDelegatedBalance(
+        VALIDATOR_ADDRESS,
+        metaVault.address
+      );
+      expect(position.queued).to.eq(bal);
       await expectThrow(
         bgtmVault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, bal),
         'Token: transfer failed',

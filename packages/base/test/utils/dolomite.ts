@@ -98,7 +98,7 @@ export async function createDolomiteErc4626Proxy(
   return createContractWithAbi(
     RegistryProxy__factory.abi,
     RegistryProxy__factory.bytecode,
-    await getDolomiteErc4626ProxyConstructorParams(core, implementation, marketId),
+    await getDolomiteErc4626ProxyConstructorParams(core, marketId),
   );
 }
 

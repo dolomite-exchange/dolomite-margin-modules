@@ -64,7 +64,7 @@ contract BGTMIsolationModeVaultFactory is
             address(IBerachainRewardsRegistry(_berachainRewardsRegistry).wbera())
         );
         uint256[] memory marketIds = new uint256[](1);
-        marketIds[0] = BERA_MARKET_ID;
+        marketIds[0] = BERA_MARKET_ID; // @todo confirm tests for this
 
         _ownerSetAllowableDebtMarketIds(marketIds);
         _ownerSetAllowableCollateralMarketIds(marketIds);

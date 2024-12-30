@@ -102,6 +102,6 @@ contract BGTMIsolationModeTokenVaultV1 is
         uint256 /* _toAccountNumber */,
         uint256 /* _amountWei */
     ) internal pure override {
-        revert('BGTMIsolationModeTokenVaultV1: Not implemented');
+        revert("BGTMIsolationModeTokenVaultV1: Not implemented");
     }
 }

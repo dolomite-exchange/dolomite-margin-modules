@@ -5,7 +5,7 @@ import {
   ONE_ETH_BI,
   ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
+import { impersonate, revertToSnapshotAndCapture, setEtherBalance, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
   setupCoreProtocol,
@@ -37,17 +37,12 @@ import {
   createBGTIsolationModeVaultFactory,
   createBGTMIsolationModeTokenVaultV1,
   createBGTMIsolationModeVaultFactory,
+  RewardVaultType,
 } from './berachain-ecosystem-utils';
 
-const LP_TOKEN_WHALE_ADDRESS = '0x1293DA55eC372a94368Fa20E8DF69FaBc3320baE';
+const LP_TOKEN_WHALE_ADDRESS = '0xe3b9B72ba027FD6c514C0e5BA075Ac9c77C23Afa';
 const defaultAccountNumber = ZERO_BI;
 const amountWei = parseEther('.5');
-
-enum RewardVaultType {
-  Native,
-  Infrared,
-  BGTM,
-}
 
 describe('BGTMERC20Wrapper', () => {
   let snapshotId: string;
@@ -66,7 +61,7 @@ describe('BGTMERC20Wrapper', () => {
 
   before(async () => {
     core = await setupCoreProtocol({
-      blockNumber: 6_184_916,
+      blockNumber: 8_627_800,
       network: Network.Berachain,
     });
 
@@ -98,6 +93,7 @@ describe('BGTMERC20Wrapper', () => {
     const bgtmVaultImplementation = await createBGTMIsolationModeTokenVaultV1();
     bgtmFactory = await createBGTMIsolationModeVaultFactory(registry, bgtmWrapper, bgtmVaultImplementation, core);
 
+    await setEtherBalance(core.governance.address, parseEther('100'));
     await core.testEcosystem!.testPriceOracle.setPrice(beraFactory.address, ONE_ETH_BI);
     await setupTestMarket(core, beraFactory, true);
 
@@ -127,7 +123,7 @@ describe('BGTMERC20Wrapper', () => {
       core.hhUser1,
     );
 
-    const lpWhale = await impersonate(LP_TOKEN_WHALE_ADDRESS);
+    const lpWhale = await impersonate(LP_TOKEN_WHALE_ADDRESS, true);
     await underlyingToken.connect(lpWhale).transfer(core.hhUser1.address, amountWei);
     await underlyingToken.connect(core.hhUser1).approve(beraVault.address, amountWei);
 

@@ -4,12 +4,11 @@ import {
   ONE_ETH_BI,
   ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
+import { impersonate, revertToSnapshotAndCapture, setEtherBalance, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectEvent, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
   setupCoreProtocol,
   setupTestMarket,
-  setupUserVaultProxy,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { expect } from 'chai';
 import { parseEther } from 'ethers/lib/utils';
@@ -17,7 +16,6 @@ import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
 import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
 import {
   BerachainRewardsIsolationModeTokenVaultV1,
-  BerachainRewardsIsolationModeTokenVaultV1__factory,
   BerachainRewardsIsolationModeVaultFactory,
   BerachainRewardsMetaVault,
   BerachainRewardsMetaVault__factory,
@@ -36,14 +34,10 @@ import {
   createBGTIsolationModeVaultFactory,
   createInfraredBGTIsolationModeTokenVaultV1,
   createInfraredBGTIsolationModeVaultFactory,
-  impersonateUserMetaVault,
   RewardVaultType,
 } from './berachain-ecosystem-utils';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
-const LP_TOKEN_WHALE_ADDRESS = '0x1293DA55eC372a94368Fa20E8DF69FaBc3320baE';
-const defaultAccountNumber = ZERO_BI;
-const amountWei = parseEther('.1');
 
 describe('BerachainRewardsRegistry', () => {
   let snapshotId: string;
@@ -65,7 +59,7 @@ describe('BerachainRewardsRegistry', () => {
 
   before(async () => {
     core = await setupCoreProtocol({
-      blockNumber: 4_853_900,
+      blockNumber: 8_627_800,
       network: Network.Berachain,
     });
 
@@ -104,6 +98,7 @@ describe('BerachainRewardsRegistry', () => {
       core,
     );
 
+    await setEtherBalance(core.governance.address, parseEther('100'));
     await core.testEcosystem!.testPriceOracle.setPrice(iBgtFactory.address, ONE_ETH_BI);
     await setupTestMarket(core, iBgtFactory, true);
 
@@ -254,34 +249,6 @@ describe('BerachainRewardsRegistry', () => {
       await expectThrow(
         registry.setDefaultRewardVaultTypeFromMetaVaultByAsset(underlyingToken.address, RewardVaultType.Infrared),
         `BerachainRewardsRegistry: Unauthorized meta vault <${core.hhUser1.addressLower}>`,
-      );
-    });
-
-    it('should fail if user has staked balance in default type', async () => {
-      await beraFactory.createVault(core.hhUser1.address);
-      const beraVault = setupUserVaultProxy<BerachainRewardsIsolationModeTokenVaultV1>(
-        await beraFactory.getVaultByAccount(core.hhUser1.address),
-        BerachainRewardsIsolationModeTokenVaultV1__factory,
-        core.hhUser1,
-      );
-      await registry
-        .connect(core.governance)
-        .ownerSetRewardVault(underlyingToken.address, RewardVaultType.Native, nativeRewardVault.address);
-      await registry
-        .connect(core.governance)
-        .ownerSetRewardVault(underlyingToken.address, RewardVaultType.Infrared, infraredRewardVault.address);
-
-      const lpWhale = await impersonate(LP_TOKEN_WHALE_ADDRESS);
-      await underlyingToken.connect(lpWhale).transfer(core.hhUser1.address, amountWei);
-      await underlyingToken.connect(core.hhUser1).approve(beraVault.address, amountWei);
-      await beraVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
-
-      const metaVault = await impersonateUserMetaVault(core.hhUser1, registry);
-      await expectThrow(
-        registry
-          .connect(metaVault)
-          .setDefaultRewardVaultTypeFromMetaVaultByAsset(underlyingToken.address, RewardVaultType.Infrared),
-        'BerachainRewardsRegistry: Default type must be empty',
       );
     });
   });

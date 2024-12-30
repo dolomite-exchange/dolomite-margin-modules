@@ -133,7 +133,6 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
         address _asset,
         RewardVaultType _type
     ) external {
-        IBerachainRewardsMetaVault metaVault = IBerachainRewardsMetaVault(msg.sender);
         address account = getAccountByMetaVault(msg.sender);
         if (account != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
@@ -142,18 +141,10 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
             "Unauthorized meta vault",
             msg.sender
         );
-        if (metaVault.getStakedBalanceByAssetAndType(_asset, getAccountToAssetToDefaultType(account, _asset)) == 0) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            metaVault.getStakedBalanceByAssetAndType(_asset, getAccountToAssetToDefaultType(account, _asset)) == 0,
-            _FILE,
-            "Default type must be empty"
-        );
 
-        // @follow-up @Corey, do you want to change permissions so we can call getReward on metavault to get any lingering rewards
         _setUint256InNestedMap(_ACCOUNT_TO_ASSET_DEFAULT_TYPE_SLOT, account, _asset, uint256(_type));
         emit AccountToAssetToDefaultTypeSet(account, _asset, _type);
     }
-
 
     // ================================================
     // ================ Admin Functions ===============

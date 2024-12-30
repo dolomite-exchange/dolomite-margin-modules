@@ -28,7 +28,6 @@ import { Create2 } from "@openzeppelin/contracts/utils/Create2.sol";
 import { MetaVaultUpgradeableProxy } from "./MetaVaultUpgradeableProxy.sol";
 import { IBGT } from "./interfaces/IBGT.sol";
 import { IBGTM } from "./interfaces/IBGTM.sol";
-import { IBerachainRewardsMetaVault } from "./interfaces/IBerachainRewardsMetaVault.sol";
 import { IBerachainRewardsRegistry } from "./interfaces/IBerachainRewardsRegistry.sol";
 import { IBerachainRewardsVaultFactory } from "./interfaces/IBerachainRewardsVaultFactory.sol";
 import { IInfrared } from "./interfaces/IInfrared.sol";
@@ -132,7 +131,6 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
         address _asset,
         RewardVaultType _type
     ) external {
-        IBerachainRewardsMetaVault metaVault = IBerachainRewardsMetaVault(msg.sender);
         address account = getAccountByMetaVault(msg.sender);
         Require.that(
             account != address(0),
@@ -140,19 +138,10 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
             "Unauthorized meta vault",
             msg.sender
         );
-        Require.that(
-            metaVault.getStakedBalanceByAssetAndType(_asset, getAccountToAssetToDefaultType(account, _asset)) == 0,
-            _FILE,
-            "Default type must be empty"
-        );
 
-        // @follow-up   Do you want to change permissions so we can call getReward on metavault to get any lingering
-        //              rewards
-        // @oriole - YES let's get lingering rewards before changing the type
         _setUint256InNestedMap(_ACCOUNT_TO_ASSET_DEFAULT_TYPE_SLOT, account, _asset, uint256(_type));
         emit AccountToAssetToDefaultTypeSet(account, _asset, _type);
     }
-
 
     // ================================================
     // ================ Admin Functions ===============

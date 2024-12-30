@@ -1203,7 +1203,7 @@ export const BERACHAIN_REWARDS_VAULT_FACTORY_MAP: Record<Network.Berachain, stri
 };
 
 export const BGTM_MAP: Record<Network.Berachain, string> = {
-  [Network.Berachain]: '0x8894D7EE78251cD234A5DDC93a163B467505E3AD',
+  [Network.Berachain]: '0x69dac87DEfB1c4700bB07F8375Ec01336742e919',
 };
 
 export const HONEY_USDC_BEX_LP_TOKEN_MAP: Record<Network.Berachain, string> = {

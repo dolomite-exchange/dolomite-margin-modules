@@ -201,6 +201,18 @@ describe('BerachainRewardsIsolationModeTokenVaultV1', () => {
       expect(await infraredRewardVault.balanceOf(metaVault.address)).to.equal(amountWei);
     });
 
+    it('should work normally not on deposit with bgtm', async () => {
+      await beraVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      const metaVaultAddress = await registry.getMetaVaultByAccount(core.hhUser1.address);
+      await beraVault.unstake(RewardVaultType.Native, amountWei);
+
+      await metaVault.setDefaultRewardVaultTypeByAsset(underlyingToken.address, RewardVaultType.BGTM);
+      await beraVault.stake(RewardVaultType.BGTM, amountWei);
+      await expectProtocolBalance(core, beraVault, defaultAccountNumber, marketId, amountWei);
+      await expectWalletBalance(beraVault, underlyingToken, ZERO_BI);
+      expect(await nativeRewardVault.balanceOf(metaVaultAddress)).to.equal(amountWei);
+    });
+
     it('should switch default type if current default type is empty', async () => {
       await beraVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       const metaVaultAddress = await registry.getMetaVaultByAccount(core.hhUser1.address);
@@ -228,7 +240,7 @@ describe('BerachainRewardsIsolationModeTokenVaultV1', () => {
 
       await expectThrow(
         beraVault.stake(RewardVaultType.Infrared, amountWei.div(2)),
-        'BerachainRewardsRegistry: Default type must be empty',
+        'BerachainRewardsMetaVault: Default type must be empty',
       );
     });
 
@@ -253,6 +265,15 @@ describe('BerachainRewardsIsolationModeTokenVaultV1', () => {
       await metaVault.setDefaultRewardVaultTypeByAsset(underlyingToken.address, RewardVaultType.Infrared);
       await beraVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await beraVault.unstake(RewardVaultType.Infrared, amountWei);
+      expect(await nativeRewardVault.balanceOf(beraVault.address)).to.equal(ZERO_BI);
+      await expectWalletBalance(beraVault, underlyingToken, amountWei);
+    });
+
+    it('should work normally for bgtm vault', async () => {
+      const metaVault = await setupUserMetaVault(core.hhUser1, registry);
+      await metaVault.setDefaultRewardVaultTypeByAsset(underlyingToken.address, RewardVaultType.BGTM);
+      await beraVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await beraVault.unstake(RewardVaultType.BGTM, amountWei);
       expect(await nativeRewardVault.balanceOf(beraVault.address)).to.equal(ZERO_BI);
       await expectWalletBalance(beraVault, underlyingToken, amountWei);
     });

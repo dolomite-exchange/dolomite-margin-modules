@@ -41,17 +41,13 @@ import {
   createBGTIsolationModeVaultFactory,
   createInfraredBGTIsolationModeTokenVaultV1,
   createInfraredBGTIsolationModeVaultFactory,
+  RewardVaultType,
 } from './berachain-ecosystem-utils';
 
 const IBGT_WHALE_ADDRESS = '0x4B95296B937AF613D65206Ba7C203CB9A1263003';
 const defaultAccountNumber = ZERO_BI;
 const amountWei = parseEther('.5');
 const rewardAmount = parseEther('.25');
-
-enum RewardVaultType {
-  Native,
-  Infrared,
-}
 
 describe('InfraredBGTIsolationModeTokenVaultV1', () => {
   let snapshotId: string;
