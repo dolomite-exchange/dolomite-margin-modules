@@ -45,6 +45,8 @@ abstract contract RouterBase is OnlyDolomiteMarginForUpgradeable, ReentrancyGuar
     // ========================================================
 
     bytes32 private constant _FILE = "RouterBase";
+    uint256 private constant _DOLOMITE_BALANCE_ACCOUNT_NUMBER_CUTOFF = 100;
+    uint256 public constant DEFAULT_ACCOUNT_NUMBER = 0;
 
     string constant public DOLOMITE_ISOLATION_PREFIX = "Dolomite Isolation:";
     string constant public DOLOMITE_FS_GLP = "Dolomite: Fee + Staked GLP";
@@ -68,16 +70,23 @@ abstract contract RouterBase is OnlyDolomiteMarginForUpgradeable, ReentrancyGuar
     }
 
     // ========================================================
-    // ================== External Functions ==================
+    // ================== Internal Functions ==================
+    // ========================================================
+
+    function isDolomiteBalance(uint256 _accountNumber) public pure returns (bool) {
+        return _accountNumber < _DOLOMITE_BALANCE_ACCOUNT_NUMBER_CUTOFF;
+    }
+
+    // ========================================================
+    // ================== Internal Functions ==================
     // ========================================================
 
     function _getMarketInfo(
         uint256 _marketId
     ) internal view returns (MarketInfo memory) {
         address marketToken = DOLOMITE_MARGIN().getMarketTokenAddress(_marketId);
-        bool isoModeAsset = _isIsolationModeAsset(marketToken);
 
-        if (isoModeAsset) {
+        if (_isIsolationModeAsset(marketToken)) {
             return MarketInfo({
                 marketId: _marketId,
                 isIsolationModeAsset: true,
@@ -96,7 +105,7 @@ abstract contract RouterBase is OnlyDolomiteMarginForUpgradeable, ReentrancyGuar
         }
     }
 
-    function _validateIsoMarketAndGetVault(
+    function _validateIsolationModeMarketAndGetVault(
         MarketInfo memory _marketInfo,
         address _account
     ) internal returns (IIsolationModeTokenVaultV2) {
@@ -127,7 +136,11 @@ abstract contract RouterBase is OnlyDolomiteMarginForUpgradeable, ReentrancyGuar
         return _startsWith(DOLOMITE_ISOLATION_PREFIX, name);
     }
 
-    function _startsWith(string memory _start, string memory _str) internal pure returns (bool) {
+    // ========================================================
+    // ================== Private Functions ===================
+    // ========================================================
+
+    function _startsWith(string memory _start, string memory _str) private pure returns (bool) {
         if (bytes(_start).length > bytes(_str).length) {
             return false;
         }

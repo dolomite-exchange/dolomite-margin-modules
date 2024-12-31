@@ -61,7 +61,7 @@ contract TestRouterBase is RouterBase {
         address _account
     ) external returns (IIsolationModeTokenVaultV2) {
         MarketInfo memory marketInfo = _getMarketInfo(_marketId);
-        return _validateIsoMarketAndGetVault(marketInfo, _account);
+        return _validateIsolationModeMarketAndGetVault(marketInfo, _account);
     }
 
     function isIsolationModeAsset(address _token) external view returns (bool) {

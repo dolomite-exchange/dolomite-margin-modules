@@ -68,6 +68,7 @@ contract DolomiteRegistryImplementation is
     // ==================== Constructor ====================
 
     function initialize(
+        address _borrowPositionProxy,
         address _genericTraderProxy,
         address _expiry,
         uint256 _slippageToleranceForPauseSentinel,
@@ -75,6 +76,7 @@ contract DolomiteRegistryImplementation is
         address _eventEmitter,
         address _dolomiteAccountRegistry
     ) external initializer {
+        _ownerSetBorrowPositionProxy(_borrowPositionProxy);
         _ownerSetGenericTraderProxy(_genericTraderProxy);
         _ownerSetExpiry(_expiry);
         _ownerSetSlippageToleranceForPauseSentinel(_slippageToleranceForPauseSentinel);
@@ -261,6 +263,13 @@ contract DolomiteRegistryImplementation is
     function _ownerSetBorrowPositionProxy(
         address _borrowPositionProxy
     ) internal {
+        if (_borrowPositionProxy != address(0)) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            _borrowPositionProxy != address(0),
+            _FILE,
+            "Invalid borrowPositionProxy"
+        );
+
         _setAddress(_BORROW_POSITION_PROXY_SLOT, _borrowPositionProxy);
         emit BorrowPositionProxySet(_borrowPositionProxy);
     }

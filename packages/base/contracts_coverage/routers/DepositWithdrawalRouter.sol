@@ -24,6 +24,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { RouterBase } from "./RouterBase.sol";
+import { IIsolationModeTokenVaultV2 } from "../isolation-mode/interfaces/IIsolationModeTokenVaultV2.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 import { InterestIndexLib } from "../lib/InterestIndexLib.sol";
@@ -34,7 +35,6 @@ import { DolomiteMarginMath } from "../protocol/lib/DolomiteMarginMath.sol";
 import { Require } from "../protocol/lib/Require.sol";
 import { TypesLib } from "../protocol/lib/TypesLib.sol";
 import { IDepositWithdrawalRouter } from "./interfaces/IDepositWithdrawalRouter.sol";
-import { IIsolationModeTokenVaultV2 } from '../isolation-mode/interfaces/IIsolationModeTokenVaultV2.sol';
 
 
 /**
@@ -46,6 +46,7 @@ import { IIsolationModeTokenVaultV2 } from '../isolation-mode/interfaces/IIsolat
 contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
     using SafeERC20 for IERC20;
     using TypesLib for IDolomiteStructs.Par;
+    using TypesLib for IDolomiteStructs.Wei;
     using DolomiteMarginMath for uint256;
     using InterestIndexLib for IDolomiteMargin;
 
@@ -54,7 +55,6 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
     // ========================================================
 
     bytes32 private constant _FILE = "DepositWithdrawalRouter";
-    uint256 public constant DEFAULT_ACCOUNT_NUMBER = 0;
 
     // ========================================================
     // ================= Storage Variables ====================
@@ -74,7 +74,6 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
     ) RouterBase(_dolomiteRegistry, _dolomiteMargin) {
         WRAPPED_PAYABLE_TOKEN = IWETH(_payableToken);
         PAYABLE_MARKET_ID = DOLOMITE_MARGIN().getMarketIdByTokenAddress(_payableToken);
-        WRAPPED_PAYABLE_TOKEN.approve(address(DOLOMITE_MARGIN()), type(uint256).max);
     }
 
     // ========================================================
@@ -102,92 +101,37 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
         EventFlag _eventFlag
     ) public nonReentrant {
         MarketInfo memory marketInfo = _getMarketInfo(_marketId);
-        uint256 amount = _amountWei == type(uint256).max ? _getSenderBalance(marketInfo.token) : _amountWei;
+        _amountWei = _amountWei == type(uint256).max ? _getSenderBalance(marketInfo.token) : _amountWei;
+        marketInfo.token.safeTransferFrom(msg.sender, address(this), _amountWei);
 
-        marketInfo.token.safeTransferFrom(msg.sender, address(this), amount);
-        if (address(marketInfo.marketToken) != address(WRAPPED_PAYABLE_TOKEN)) {
-            IERC20(marketInfo.marketToken).safeApprove(address(DOLOMITE_MARGIN()), amount);
-        }
-
-        if (!marketInfo.isIsolationModeAsset && _isolationModeMarketId == 0) {
-            AccountActionLib.deposit(
-                DOLOMITE_MARGIN(),
-                msg.sender,
-                address(this),
-                _toAccountNumber,
-                _marketId,
-                IDolomiteStructs.AssetAmount({
-                    sign: true,
-                    denomination: IDolomiteStructs.AssetDenomination.Wei,
-                    ref: IDolomiteStructs.AssetReference.Delta,
-                    value: amount
-                })
-            );
-        } else if (!marketInfo.isIsolationModeAsset && _isolationModeMarketId != 0) {
-            MarketInfo memory isoMarketInfo = _getMarketInfo(_isolationModeMarketId);
-            IIsolationModeTokenVaultV2 vault = _validateIsoMarketAndGetVault(isoMarketInfo, msg.sender);
-
-            AccountActionLib.deposit(
-                DOLOMITE_MARGIN(),
-                address(vault),
-                address(this),
-                _toAccountNumber,
-                _marketId,
-                IDolomiteStructs.AssetAmount({
-                    sign: true,
-                    denomination: IDolomiteStructs.AssetDenomination.Wei,
-                    ref: IDolomiteStructs.AssetReference.Delta,
-                    value: amount
-                })
-            );
-            // @follow-up @Corey, are you ok with this being called after the deposit or would you prefer adjusting the logic and calling before?
-            vault.validateDepositIntoVault(_toAccountNumber, _marketId);
-        } else {
-            /*assert(marketInfo.isIsolationModeAsset && _isolationModeMarketId == _marketId);*/
-            IIsolationModeTokenVaultV2 vault = _validateIsoMarketAndGetVault(marketInfo, msg.sender);
-
-            marketInfo.factory.enqueueTransferIntoDolomiteMargin(address(vault), amount);
-            marketInfo.token.safeApprove(address(vault), amount);
-            AccountActionLib.deposit(
-                DOLOMITE_MARGIN(),
-                address(vault),
-                address(this),
-                DEFAULT_ACCOUNT_NUMBER,
-                _marketId,
-                IDolomiteStructs.AssetAmount({
-                    sign: true,
-                    denomination: IDolomiteStructs.AssetDenomination.Wei,
-                    ref: IDolomiteStructs.AssetReference.Delta,
-                    value: amount
-                })
-            );
-            if (_toAccountNumber != 0) {
-                _emitEventAndTransferToVault(vault, _toAccountNumber, amount, _eventFlag);
-            }
-        }
-
+        _depositWei(
+            marketInfo,
+            _isolationModeMarketId,
+            _toAccountNumber,
+            _marketId,
+            _amountWei,
+            _eventFlag
+        );
     }
 
     function depositPayable(
-        uint256 _toAccountNumber
+        uint256 _isolationModeMarketId,
+        uint256 _toAccountNumber,
+        EventFlag _eventFlag
     ) external payable nonReentrant {
         _wrap();
-        AccountActionLib.deposit(
-            DOLOMITE_MARGIN(),
-            /* _accountOwner = */ msg.sender, // solium-disable-line indentation
-            /* _fromAccount = */ address(this), // solium-disable-line indentation
+        _depositWei(
+            _getMarketInfo(PAYABLE_MARKET_ID),
+            _isolationModeMarketId,
             _toAccountNumber,
             PAYABLE_MARKET_ID,
-            IDolomiteStructs.AssetAmount({
-                sign: true,
-                denomination: IDolomiteStructs.AssetDenomination.Wei,
-                ref: IDolomiteStructs.AssetReference.Delta,
-                value: msg.value
-            })
+            msg.value,
+            _eventFlag
         );
     }
 
     function withdrawWei(
+        uint256 _isolationModeMarketId,
         uint256 _fromAccountNumber,
         uint256 _marketId,
         uint256 _amountWei,
@@ -196,14 +140,9 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
         MarketInfo memory marketInfo = _getMarketInfo(_marketId);
         address fromAccount = msg.sender;
 
-        if (marketInfo.isIsolationModeAsset) {
-            if (_fromAccountNumber == 0) { /* FOR COVERAGE TESTING */ }
-            Require.that(
-                _fromAccountNumber == 0,
-                _FILE,
-                "Invalid fromAccountNumber"
-            );
-            fromAccount = marketInfo.factory.getVaultByAccount(msg.sender);
+        if (_isolationModeMarketId != 0) {
+            MarketInfo memory isolationMarketInfo = _getMarketInfo(_isolationModeMarketId);
+            fromAccount = address(_validateIsolationModeMarketAndGetVault(isolationMarketInfo, msg.sender));
 
             if (_amountWei == type(uint256).max) {
                 IDolomiteStructs.AccountInfo memory accountInfo = IDolomiteStructs.AccountInfo({
@@ -212,7 +151,23 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
                 });
                 _amountWei = DOLOMITE_MARGIN().getAccountWei(accountInfo, _marketId).value;
             }
-            marketInfo.factory.enqueueTransferFromDolomiteMargin(fromAccount, _amountWei);
+            // @follow-up Think about where to put these withdraw checks. Maybe call vault like deposit
+            if (_isolationModeMarketId == _marketId) {
+                marketInfo.factory.enqueueTransferFromDolomiteMargin(fromAccount, _amountWei);
+                if (_fromAccountNumber == 0) { /* FOR COVERAGE TESTING */ }
+                Require.that(
+                    _fromAccountNumber == 0,
+                    _FILE,
+                    "Invalid fromAccountNumber"
+                );
+            } else {
+                if (_fromAccountNumber >= 100) { /* FOR COVERAGE TESTING */ }
+                Require.that(
+                    _fromAccountNumber >= 100,
+                    _FILE,
+                    "Invalid fromAccountNumber"
+                );
+            }
         }
 
         _withdrawFromDolomiteAndTransferToUser(
@@ -227,13 +182,26 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
     }
 
     function withdrawPayable(
+        uint256 _isolationModeMarketId,
         uint256 _fromAccountNumber,
         uint256 _amountWei,
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
     ) external nonReentrant {
+        address fromAccount = msg.sender;
+        if (_isolationModeMarketId != 0) {
+            if (_fromAccountNumber != 0) { /* FOR COVERAGE TESTING */ }
+            Require.that(
+                _fromAccountNumber != 0,
+                _FILE,
+                "Invalid fromAccountNumber"
+            );
+            MarketInfo memory isolationMarketInfo = _getMarketInfo(_isolationModeMarketId);
+            fromAccount = address(_validateIsolationModeMarketAndGetVault(isolationMarketInfo, msg.sender));
+        }
+
         AccountActionLib.withdraw(
             DOLOMITE_MARGIN(),
-            msg.sender,
+            fromAccount,
             _fromAccountNumber,
             address(this),
             PAYABLE_MARKET_ID,
@@ -262,6 +230,7 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
         MarketInfo memory marketInfo = _getMarketInfo(_marketId);
 
         if (!marketInfo.isIsolationModeAsset && _isolationModeMarketId == 0) {
+            // Do an ordinary deposit for the asset
             uint256 weiAmount = _convertParToWei(msg.sender, _toAccountNumber, _marketId, _amountPar);
             marketInfo.token.safeTransferFrom(msg.sender, address(this), weiAmount);
             IERC20(marketInfo.marketToken).safeApprove(address(DOLOMITE_MARGIN()), weiAmount);
@@ -280,8 +249,9 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
                 })
             );
         } else if (!marketInfo.isIsolationModeAsset && _isolationModeMarketId != 0) {
+            // Do an ordinary deposit into an isolation mode vault
             MarketInfo memory isoMarketInfo = _getMarketInfo(_isolationModeMarketId);
-            IIsolationModeTokenVaultV2 vault = _validateIsoMarketAndGetVault(isoMarketInfo, msg.sender);
+            IIsolationModeTokenVaultV2 vault = _validateIsolationModeMarketAndGetVault(isoMarketInfo, msg.sender);
 
             uint256 weiAmount = _convertParToWei(address(vault), _toAccountNumber, _marketId, _amountPar);
             marketInfo.token.safeTransferFrom(msg.sender, address(this), weiAmount);
@@ -302,13 +272,15 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
             );
         } else {
             /*assert(marketInfo.isIsolationModeAsset && _isolationModeMarketId == _marketId);*/
-            IIsolationModeTokenVaultV2 vault = _validateIsoMarketAndGetVault(marketInfo, msg.sender);
+            IIsolationModeTokenVaultV2 vault = _validateIsolationModeMarketAndGetVault(marketInfo, msg.sender);
 
             marketInfo.token.safeTransferFrom(msg.sender, address(this), _amountPar);
             IERC20(marketInfo.marketToken).safeApprove(address(DOLOMITE_MARGIN()), _amountPar);
 
             marketInfo.factory.enqueueTransferIntoDolomiteMargin(address(vault), _amountPar);
             marketInfo.token.safeApprove(address(vault), _amountPar);
+
+            // Deposits for isolation mode vaults, must first go to the DEFAULT_ACCOUNT_NUMBER
             AccountActionLib.deposit(
                 DOLOMITE_MARGIN(),
                 address(vault),
@@ -322,30 +294,43 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
                     value: _amountPar
                 })
             );
-            if (_toAccountNumber != 0) {
+            if (_toAccountNumber != DEFAULT_ACCOUNT_NUMBER) {
                 _emitEventAndTransferToVault(vault, _toAccountNumber, _amountPar, _eventFlag);
             }
         }
     }
 
     function withdrawPar(
+        // TODO: need to add _isolationModeMarketId and appropriate functionality + tests
+        uint256 _isolationModeMarketId,
         uint256 _fromAccountNumber,
         uint256 _marketId,
         uint256 _amountPar,
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
     ) external nonReentrant {
         MarketInfo memory marketInfo = _getMarketInfo(_marketId);
-
         address fromAccount = msg.sender;
-        if (marketInfo.isIsolationModeAsset) {
-            if (_fromAccountNumber == 0) { /* FOR COVERAGE TESTING */ }
-            Require.that(
-                _fromAccountNumber == 0,
-                _FILE,
-                "Invalid fromAccountNumber"
-            );
-            fromAccount = marketInfo.factory.getVaultByAccount(msg.sender);
-            marketInfo.factory.enqueueTransferFromDolomiteMargin(fromAccount, _amountPar);
+
+        if (_isolationModeMarketId != 0) {
+            MarketInfo memory isolationMarketInfo = _getMarketInfo(_isolationModeMarketId);
+            fromAccount = address(_validateIsolationModeMarketAndGetVault(isolationMarketInfo, msg.sender));
+
+            if (_isolationModeMarketId == _marketId) {
+                isolationMarketInfo.factory.enqueueTransferFromDolomiteMargin(fromAccount, _amountPar);
+                if (_fromAccountNumber == 0) { /* FOR COVERAGE TESTING */ }
+                Require.that(
+                    _fromAccountNumber == 0,
+                    _FILE,
+                    "Invalid fromAccountNumber"
+                );
+            } else {
+                if (_fromAccountNumber >= 100) { /* FOR COVERAGE TESTING */ }
+                Require.that(
+                    _fromAccountNumber >= 100,
+                    _FILE,
+                    "Invalid fromAccountNumber"
+                );
+            }
         }
 
         _withdrawFromDolomiteAndTransferToUser(
@@ -362,6 +347,79 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
     // ========================================================
     // ================== Internal Functions ==================
     // ========================================================
+
+    function _depositWei(
+        MarketInfo memory _marketInfo,
+        uint256 _isolationModeMarketId,
+        uint256 _toAccountNumber,
+        uint256 _marketId,
+        uint256 _amountWei,
+        EventFlag _eventFlag
+    ) internal {
+        IERC20(_marketInfo.marketToken).safeApprove(address(DOLOMITE_MARGIN()), _amountWei);
+
+        if (!_marketInfo.isIsolationModeAsset && _isolationModeMarketId == 0) {
+            // Do an ordinary deposit for the asset
+            AccountActionLib.deposit(
+                DOLOMITE_MARGIN(),
+                msg.sender,
+                address(this),
+                _toAccountNumber,
+                _marketId,
+                IDolomiteStructs.AssetAmount({
+                    sign: true,
+                    denomination: IDolomiteStructs.AssetDenomination.Wei,
+                    ref: IDolomiteStructs.AssetReference.Delta,
+                    value: _amountWei
+                })
+            );
+        } else if (!_marketInfo.isIsolationModeAsset && _isolationModeMarketId != 0) {
+            // Do an ordinary deposit into an isolation mode vault
+            MarketInfo memory isolationMarketInfo = _getMarketInfo(_isolationModeMarketId);
+            IIsolationModeTokenVaultV2 vault = _validateIsolationModeMarketAndGetVault(isolationMarketInfo, msg.sender);
+
+            AccountActionLib.deposit(
+                DOLOMITE_MARGIN(),
+                address(vault),
+                address(this),
+                _toAccountNumber,
+                _marketId,
+                IDolomiteStructs.AssetAmount({
+                    sign: true,
+                    denomination: IDolomiteStructs.AssetDenomination.Wei,
+                    ref: IDolomiteStructs.AssetReference.Delta,
+                    value: _amountWei
+                })
+            );
+            // @audit @Corey - Are you ok with these checks after deposit? If not, we will have to rethink collateral check
+            // @follow-up Error message isn't great when depositing to account number 0
+            vault.validateDepositIntoVault(_toAccountNumber, _marketId);
+        } else {
+            /*assert(_marketInfo.isIsolationModeAsset && _isolationModeMarketId == _marketId);*/
+            IIsolationModeTokenVaultV2 vault = _validateIsolationModeMarketAndGetVault(_marketInfo, msg.sender);
+
+            _marketInfo.factory.enqueueTransferIntoDolomiteMargin(address(vault), _amountWei);
+            _marketInfo.token.safeApprove(address(vault), _amountWei);
+
+            // Deposits for isolation mode vaults, must first go to the DEFAULT_ACCOUNT_NUMBER
+            AccountActionLib.deposit(
+                DOLOMITE_MARGIN(),
+                address(vault),
+                address(this),
+                DEFAULT_ACCOUNT_NUMBER,
+                _marketId,
+                IDolomiteStructs.AssetAmount({
+                    sign: true,
+                    denomination: IDolomiteStructs.AssetDenomination.Wei,
+                    ref: IDolomiteStructs.AssetReference.Delta,
+                    value: _amountWei
+                })
+            );
+            if (_toAccountNumber != DEFAULT_ACCOUNT_NUMBER) {
+                _emitEventAndTransferToVault(vault, _toAccountNumber, _amountWei, _eventFlag);
+            }
+        }
+    }
 
     function _withdrawFromDolomiteAndTransferToUser(
         IERC20 _token,
@@ -414,9 +472,8 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
     }
 
     function _unwrapAndSend() internal {
-        IWETH wrappedPayableToken = WRAPPED_PAYABLE_TOKEN;
-        uint256 amount = wrappedPayableToken.balanceOf(address(this));
-        wrappedPayableToken.withdraw(amount);
+        uint256 amount = WRAPPED_PAYABLE_TOKEN.balanceOf(address(this));
+        WRAPPED_PAYABLE_TOKEN.withdraw(amount);
         Address.sendValue(payable(msg.sender), amount);
     }
 
@@ -434,16 +491,16 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
             owner: _accountOwner,
             number: _accountNumber
         });
-        IDolomiteStructs.Par memory parAmount = DOLOMITE_MARGIN().getAccountPar(accountInfo, _marketId);
+        IDolomiteStructs.Par memory parBalance = DOLOMITE_MARGIN().getAccountPar(accountInfo, _marketId);
         IDolomiteStructs.Par memory deltaPar = IDolomiteStructs.Par({
             sign: true,
             value: _amountPar.to128()
         });
-        parAmount = parAmount.add(deltaPar);
+        parBalance = parBalance.add(deltaPar);
 
-        IDolomiteStructs.Wei memory weiBal = DOLOMITE_MARGIN().getAccountWei(accountInfo, _marketId);
-        IDolomiteStructs.Wei memory weiBalAfter = DOLOMITE_MARGIN().parToWei(_marketId, parAmount);
-        return weiBalAfter.value - weiBal.value;
+        IDolomiteStructs.Wei memory weiBalanceBefore = DOLOMITE_MARGIN().getAccountWei(accountInfo, _marketId);
+        IDolomiteStructs.Wei memory weiBalanceAfter = DOLOMITE_MARGIN().parToWei(_marketId, parBalance);
+        return weiBalanceAfter.sub(weiBalanceBefore).value;
     }
 
     function _getSenderBalance(IERC20 _token) internal view returns (uint) {

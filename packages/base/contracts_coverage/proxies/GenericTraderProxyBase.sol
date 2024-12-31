@@ -28,6 +28,7 @@ import { IIsolationModeWrapperTraderV2 } from "../isolation-mode/interfaces/IIso
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
+import { ExcessivelySafeCall } from "../protocol/lib/ExcessivelySafeCall.sol";
 import { Require } from "../protocol/lib/Require.sol";
 
 
@@ -46,8 +47,8 @@ abstract contract GenericTraderProxyBase is IGenericTraderBase {
     bytes32 private constant _FILE = "GenericTraderProxyBase";
 
     uint256 internal constant ARBITRUM_ONE = 42161;
+    bytes32 internal constant DOLOMITE_FS_GLP_HASH = keccak256(bytes("Dolomite: Fee + Staked GLP"));
     string internal constant DOLOMITE_ISOLATION_PREFIX = "Dolomite Isolation:";
-    string internal constant DOLOMITE_FS_GLP = "Dolomite: Fee + Staked GLP";
 
     /// @dev The index of the trade account in the accounts array (for executing an operation)
     uint256 internal constant TRADE_ACCOUNT_ID = 0;
@@ -69,10 +70,22 @@ abstract contract GenericTraderProxyBase is IGenericTraderBase {
         return _isIsolationModeAsset(_dolomiteMargin.getMarketTokenAddress(_marketId));
     }
 
-    function _isIsolationModeAsset(address _token) internal view returns (bool) {
-        string memory name = IERC20Metadata(_token).name();
+    // ========================================================
+    // ================== Internal Functions ==================
+    // ========================================================
 
-        if (keccak256(bytes(name)) == keccak256(bytes(DOLOMITE_FS_GLP))) {
+    function _isIsolationModeAsset(address _token) internal view returns (bool) {
+        (bool isSuccess, bytes memory returnData) = ExcessivelySafeCall.safeStaticCall(
+            _token,
+            IERC20Metadata(address(0)).name.selector,
+            bytes("")
+        );
+        if (!isSuccess) {
+            return false;
+        }
+
+        string memory name = abi.decode(returnData, (string));
+        if (keccak256(bytes(name)) == DOLOMITE_FS_GLP_HASH) {
             return true;
         }
         return _startsWith(DOLOMITE_ISOLATION_PREFIX, name);
@@ -90,10 +103,6 @@ abstract contract GenericTraderProxyBase is IGenericTraderBase {
         }
         return hash == keccak256(bytes(_start));
     }
-
-    // ========================================================
-    // ================== Internal Functions ==================
-    // ========================================================
 
     function _validateMarketIdPath(
         uint256[] memory _marketIdsPath
@@ -409,6 +418,7 @@ abstract contract GenericTraderProxyBase is IGenericTraderBase {
             } else if (_isWrapperTraderType(_tradersPath[i].traderType)) {
                 actionsLength += IIsolationModeWrapperTraderV2(_tradersPath[i].trader).actionsLength();
             } else {
+                // If it's not a `wrap` or `unwrap`, trades only require 1 action
                 actionsLength += 1;
             }
         }
@@ -419,6 +429,7 @@ abstract contract GenericTraderProxyBase is IGenericTraderBase {
         IDolomiteStructs.AccountInfo[] memory _accounts,
         IDolomiteStructs.ActionArgs[] memory _actions,
         GenericTraderProxyCache memory _cache,
+        bool _isLiquidation,
         uint256[] memory _marketIdsPath,
         uint256 _inputAmountWei,
         uint256 _minOutputAmountWei,
@@ -430,15 +441,27 @@ abstract contract GenericTraderProxyBase is IGenericTraderBase {
         // Before the trades are started, transfer inputAmountWei of the inputMarket
         // from the TRADE account to the ZAP account
         if (_inputAmountWei == AccountActionLib.all()) {
-            // Transfer such that we TARGET w/e the trader has right now, before the trades occur
+
+            IDolomiteStructs.Wei memory targetAmountWei;
+            if (_isLiquidation) {
+                // For liquidations, we TARGET whatever the trader has right now, before the operation occurs
+                targetAmountWei = _cache.dolomiteMargin.getAccountWei(
+                    _accounts[TRADE_ACCOUNT_ID],
+                    _marketIdsPath[0]
+                );
+            } else {
+                // For non-liquidations, we want to run the balance down to zero
+                targetAmountWei = IDolomiteStructs.Wei({
+                    sign: false,
+                    value: 0
+                });
+            }
+
             _actions[_cache.actionsCursor++] = AccountActionLib.encodeTransferToTargetAmountAction(
                 TRADE_ACCOUNT_ID,
                 ZAP_ACCOUNT_ID,
                 _marketIdsPath[0],
-                /* _targetAmountWei = */ _cache.dolomiteMargin.getAccountWei(
-                    _accounts[TRADE_ACCOUNT_ID],
-                    _marketIdsPath[0]
-                )
+                targetAmountWei
             );
         } else {
             _actions[_cache.actionsCursor++] = AccountActionLib.encodeTransferAction(
@@ -592,6 +615,7 @@ abstract contract GenericTraderProxyBase is IGenericTraderBase {
 
     // ==================== Private Functions ====================
 
+    /// @dev Calculate a randomized sub-account for where the zap occurs (and any intermediate swaps)
     function _calculateZapAccountNumber(
         address _tradeAccountOwner,
         uint256 _tradeAccountNumber
