@@ -1,4 +1,4 @@
-import { Network, ONE_ETH_BI, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
+import { Network, ONE_ETH_BI, TWO_BI, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
 import { CoreProtocolArbitrumOne } from '../utils/core-protocols/core-protocol-arbitrum-one';
 import {
   disableInterestAccrual,
@@ -311,7 +311,7 @@ describe('BorrowPositionRouter', () => {
       await expectProtocolBalance(core, userVault, borrowAccountNumber, core.marketIds.dai, ZERO_BI);
     });
 
-    it('should fail if market is not isolation mode', async () => {
+    it('should fail if isolation mode market is not isolation mode', async () => {
       await expectThrow(
         router.transferBetweenAccounts(
           core.marketIds.usdc,
@@ -322,6 +322,48 @@ describe('BorrowPositionRouter', () => {
           BalanceCheckFlag.Both
         ),
         'RouterBase: Market is not isolation mode'
+      );
+    });
+
+    it('should fail if if isolation mode market is market id and transferring between dolomite accounts', async () => {
+      await expectThrow(
+        router.transferBetweenAccounts(
+          isolationModeMarketId,
+          defaultAccountNumber,
+          TWO_BI,
+          isolationModeMarketId,
+          amountWei,
+          BalanceCheckFlag.None
+        ),
+        'BorrowPositionRouter: Invalid transfer between accounts'
+      );
+    });
+
+    it('should fail if transferring a normal asset between two vault dolomite accounts', async () => {
+      await expectThrow(
+        router.transferBetweenAccounts(
+          isolationModeMarketId,
+          defaultAccountNumber,
+          TWO_BI,
+          core.marketIds.dai,
+          amountWei,
+          BalanceCheckFlag.None
+        ),
+        'BorrowPositionRouter: Invalid transfer between accounts'
+      );
+    });
+
+    it('should fail if transferring a normal asset between two vault non-dolomite accounts', async () => {
+      await expectThrow(
+        router.transferBetweenAccounts(
+          isolationModeMarketId,
+          borrowAccountNumber,
+          borrowAccountNumber.add(1),
+          core.marketIds.dai,
+          amountWei,
+          BalanceCheckFlag.None
+        ),
+        'BorrowPositionRouter: Invalid transfer between accounts'
       );
     });
 

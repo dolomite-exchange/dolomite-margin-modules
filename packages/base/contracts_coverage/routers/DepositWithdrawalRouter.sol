@@ -301,7 +301,6 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
     }
 
     function withdrawPar(
-        // TODO: need to add _isolationModeMarketId and appropriate functionality + tests
         uint256 _isolationModeMarketId,
         uint256 _fromAccountNumber,
         uint256 _marketId,
