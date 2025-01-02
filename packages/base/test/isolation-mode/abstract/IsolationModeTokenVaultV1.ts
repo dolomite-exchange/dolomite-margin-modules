@@ -14,6 +14,7 @@ import {
 import {
   createContractWithAbi,
   createContractWithLibrary,
+  createContractWithName,
   createTestToken,
   depositIntoDolomiteMargin,
   withdrawFromDolomiteMargin,
@@ -40,7 +41,7 @@ import { getSimpleZapParams, getUnwrapZapParams, getWrapZapParams } from '../../
 
 const defaultAccountNumber = '0';
 const borrowAccountNumber = '123';
-const amountWei = BigNumber.from('300000000000000000000'); // $300
+const amountWei = BigNumber.from('200000000000000000000'); // $200
 const otherAmountWei = BigNumber.from('10000000'); // $10
 const bigOtherAmountWei = BigNumber.from('100000000000'); // $100,000
 const usdcAmount = BigNumber.from('100000000'); // $100
@@ -65,6 +66,17 @@ describe('IsolationModeTokenVaultV1', () => {
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
+    await createAndUpgradeDolomiteRegistry(core);
+
+    const genericTraderLib = await createContractWithName('GenericTraderProxyV2Lib', []);
+    const genericTraderProxy = await createContractWithLibrary(
+      'GenericTraderProxyV2',
+      { GenericTraderProxyV2Lib: genericTraderLib.address },
+      [Network.ArbitrumOne, core.dolomiteRegistry.address, core.dolomiteMargin.address]
+    );
+    await core.dolomiteRegistry.ownerSetGenericTraderProxy(genericTraderProxy.address);
+    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(genericTraderProxy.address, true);
+
     underlyingToken = await createTestToken();
     const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
     userVaultImplementation = await createContractWithLibrary('TestIsolationModeTokenVaultV1', { ...libraries }, []);
@@ -196,33 +208,22 @@ describe('IsolationModeTokenVaultV1', () => {
       await expectTotalSupply(factory, amountWei);
     });
 
-    it('should work normally with multiple functions involving a vault', async () => {
+    it('should work normally with multiple deposits into vault', async () => {
       await underlyingToken.connect(core.hhUser1).addBalance(core.hhUser1.address, amountWei);
       await underlyingToken.connect(core.hhUser1).approve(userVault.address, amountWei.mul(2));
-      const calldata1 = await userVault.populateTransaction.depositIntoVaultForDolomiteMargin(
+      const calldata = await userVault.populateTransaction.depositIntoVaultForDolomiteMargin(
         defaultAccountNumber,
         amountWei,
       );
-      const calldata2 = await userVault.populateTransaction.transferIntoPositionWithUnderlyingToken(
-        defaultAccountNumber,
-        MAX_UINT_256_BI,
-        amountWei,
-      );
-      const calldata3 = await userVault.populateTransaction.transferFromPositionWithUnderlyingToken(
-        MAX_UINT_256_BI,
-        defaultAccountNumber,
-        amountWei.div(3),
-      );
-      await userVault.multicall([calldata1.data!, calldata2.data!, calldata3.data!]);
+      await userVault.multicall([calldata.data!, calldata.data!]);
 
       await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, isolationModeMarketId, ZERO_BI);
-      await expectProtocolBalance(core, userVault, defaultAccountNumber, isolationModeMarketId, amountWei.div(3));
-      await expectProtocolBalance(core, userVault, MAX_UINT_256_BI, isolationModeMarketId, amountWei.mul(2).div(3));
+      await expectProtocolBalance(core, userVault, defaultAccountNumber, isolationModeMarketId, amountWei.mul(2));
 
-      await expectWalletBalance(core.dolomiteMargin, factory, amountWei);
-      await expectWalletBalance(userVault, underlyingToken, amountWei);
+      await expectWalletBalance(core.dolomiteMargin, factory, amountWei.mul(2));
+      await expectWalletBalance(userVault, underlyingToken, amountWei.mul(2));
 
-      await expectTotalSupply(factory, amountWei);
+      await expectTotalSupply(factory, amountWei.mul(2));
     });
 
     it('should fail if calldata contains a disallowed function', async () => {
@@ -244,13 +245,7 @@ describe('IsolationModeTokenVaultV1', () => {
       );
     });
 
-    it('should fail if calldata has an invalid length', async () => {
-      await expectThrow(userVault.multicall(['0x12']), 'IsolationModeVaultV1ActionsImpl: Invalid calldata length');
-      await expectThrow(userVault.multicall(['0x12345678']), 'IsolationModeVaultV1ActionsImpl: Disallowed multicall function');
-      await expectThrow(userVault.multicall(['0x1234567890']), 'IsolationModeVaultV1ActionsImpl: Disallowed multicall function');
-    });
-
-    it('should fail with correct message if one multicall fails', async () => {
+    it('should revert with correct message if one multicall fails', async () => {
       const calldata = await userVault.populateTransaction.depositIntoVaultForDolomiteMargin(
         defaultAccountNumber,
         amountWei,
@@ -265,7 +260,7 @@ describe('IsolationModeTokenVaultV1', () => {
       );
       await expectThrow(
         userVault.connect(core.hhUser2).multicall([calldata.data!]),
-        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
+        `IsolationModeTokenVaultV1: Only owner or converter can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
   });
@@ -427,7 +422,7 @@ describe('IsolationModeTokenVaultV1', () => {
     it('should fail when not called by owner', async () => {
       await expectThrow(
         userVault.connect(core.hhUser2).openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei),
-        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
+        `IsolationModeTokenVaultV1: Only owner or converter can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
 
@@ -497,7 +492,7 @@ describe('IsolationModeTokenVaultV1', () => {
         userVault
           .connect(core.hhUser2)
           .openMarginPosition(defaultAccountNumber, borrowAccountNumber, borrowMarketId, amountWei),
-        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
+        `IsolationModeTokenVaultV1: Only owner or converter can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
 
@@ -550,7 +545,7 @@ describe('IsolationModeTokenVaultV1', () => {
         userVault
           .connect(core.hhUser2)
           .closeBorrowPositionWithUnderlyingVaultToken(borrowAccountNumber, defaultAccountNumber),
-        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
+        `IsolationModeTokenVaultV1: Only owner or converter can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
 
@@ -611,7 +606,7 @@ describe('IsolationModeTokenVaultV1', () => {
         userVault
           .connect(core.hhUser2)
           .closeBorrowPositionWithOtherTokens(borrowAccountNumber, defaultAccountNumber, [otherMarketId1]),
-        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
+        `IsolationModeTokenVaultV1: Only owner or converter can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
 
@@ -663,7 +658,7 @@ describe('IsolationModeTokenVaultV1', () => {
         userVault
           .connect(core.hhUser2)
           .transferIntoPositionWithUnderlyingToken(defaultAccountNumber, borrowAccountNumber, amountWei),
-        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
+        `IsolationModeTokenVaultV1: Only owner or converter can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
 
@@ -795,7 +790,7 @@ describe('IsolationModeTokenVaultV1', () => {
             otherAmountWei,
             BalanceCheckFlag.Both,
           ),
-        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
+        `IsolationModeTokenVaultV1: Only owner or converter can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
 
@@ -882,7 +877,7 @@ describe('IsolationModeTokenVaultV1', () => {
         userVault
           .connect(core.hhUser2)
           .transferFromPositionWithUnderlyingToken(borrowAccountNumber, defaultAccountNumber, amountWei),
-        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
+        `IsolationModeTokenVaultV1: Only owner or converter can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
 
@@ -997,7 +992,7 @@ describe('IsolationModeTokenVaultV1', () => {
             otherAmountWei,
             BalanceCheckFlag.Both,
           ),
-        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
+        `IsolationModeTokenVaultV1: Only owner or converter can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
 
@@ -1088,7 +1083,7 @@ describe('IsolationModeTokenVaultV1', () => {
         userVault
           .connect(core.hhUser2)
           .repayAllForBorrowPosition(defaultAccountNumber, borrowAccountNumber, otherMarketId1, BalanceCheckFlag.Both),
-        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
+        `IsolationModeTokenVaultV1: Only owner or converter can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
 

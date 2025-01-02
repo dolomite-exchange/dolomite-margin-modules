@@ -23,7 +23,7 @@ pragma solidity ^0.8.9;
 import { IBorrowPositionProxyV2 } from "../../interfaces/IBorrowPositionProxyV2.sol";
 import { IDolomiteRegistry } from "../../interfaces/IDolomiteRegistry.sol";
 import { IGenericTraderBase } from "../../interfaces/IGenericTraderBase.sol";
-import { IGenericTraderProxyV1 } from "../../interfaces/IGenericTraderProxyV1.sol";
+import { IGenericTraderProxyV2 } from "../../proxies/interfaces/IGenericTraderProxyV2.sol";
 import { AccountBalanceLib } from "../../lib/AccountBalanceLib.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
@@ -42,9 +42,9 @@ interface IIsolationModeTokenVaultV1 {
         uint256[] marketIdsPath;
         uint256 inputAmountWei;
         uint256 minOutputAmountWei;
-        IGenericTraderProxyV1.TraderParam[] tradersPath;
+        IGenericTraderProxyV2.TraderParam[] tradersPath;
         IDolomiteStructs.AccountInfo[] makerAccounts;
-        IGenericTraderProxyV1.UserConfig userConfig;
+        IGenericTraderProxyV2.UserConfig userConfig;
     }
 
     // ===========================================================
@@ -208,7 +208,7 @@ interface IIsolationModeTokenVaultV1 {
         uint256 _minOutputAmountWei,
         IGenericTraderBase.TraderParam[] calldata _tradersPath,
         IDolomiteStructs.AccountInfo[] calldata _makerAccounts,
-        IGenericTraderProxyV1.UserConfig calldata _userConfig
+        IGenericTraderProxyV2.UserConfig calldata _userConfig
     )
     external payable;
 
@@ -243,7 +243,7 @@ interface IIsolationModeTokenVaultV1 {
         uint256 _minOutputAmountWei,
         IGenericTraderBase.TraderParam[] calldata _tradersPath,
         IDolomiteStructs.AccountInfo[] calldata _makerAccounts,
-        IGenericTraderProxyV1.UserConfig calldata _userConfig
+        IGenericTraderProxyV2.UserConfig calldata _userConfig
     )
     external payable;
 
@@ -273,7 +273,7 @@ interface IIsolationModeTokenVaultV1 {
         uint256 _minOutputAmountWei,
         IGenericTraderBase.TraderParam[] calldata _tradersPath,
         IDolomiteStructs.AccountInfo[] calldata _makerAccounts,
-        IGenericTraderProxyV1.UserConfig calldata _userConfig
+        IGenericTraderProxyV2.UserConfig calldata _userConfig
     )
     external payable;
 

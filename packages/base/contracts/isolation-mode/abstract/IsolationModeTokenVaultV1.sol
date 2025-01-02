@@ -25,7 +25,7 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { ProxyContractHelpers } from "../../helpers/ProxyContractHelpers.sol";
 import { IBorrowPositionProxyV2 } from "../../interfaces/IBorrowPositionProxyV2.sol";
 import { IDolomiteRegistry } from "../../interfaces/IDolomiteRegistry.sol";
-import { IGenericTraderProxyV1 } from "../../interfaces/IGenericTraderProxyV1.sol";
+import { IGenericTraderProxyV2 } from "../../proxies/interfaces/IGenericTraderProxyV2.sol";
 import { AccountBalanceLib } from "../../lib/AccountBalanceLib.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { Require } from "../../protocol/lib/Require.sol";
@@ -116,7 +116,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
         bytes[] memory _calls
     )
     external
-    onlyVaultOwner(msg.sender) {
+    onlyVaultOwnerOrConverter(msg.sender) {
         IsolationModeTokenVaultV1ActionsImpl.multicall(_calls, dolomiteRegistry());
     }
 
@@ -148,7 +148,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
     external
     payable
     nonReentrant
-    onlyVaultOwner(msg.sender) {
+    onlyVaultOwnerOrConverter(msg.sender) {
         _checkMsgValue();
         _openBorrowPosition(_fromAccountNumber, _toAccountNumber, _amountWei);
     }
@@ -162,7 +162,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
     external
     payable
     nonReentrant
-    onlyVaultOwner(msg.sender) {
+    onlyVaultOwnerOrConverter(msg.sender) {
         _checkMsgValue();
         _openMarginPosition(_fromAccountNumber, _toAccountNumber, _borrowMarketId, _amountWei);
     }
@@ -173,7 +173,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
     )
     external
     nonReentrant
-    onlyVaultOwner(msg.sender) {
+    onlyVaultOwnerOrConverter(msg.sender) {
         _closeBorrowPositionWithUnderlyingVaultToken(_borrowAccountNumber, _toAccountNumber);
     }
 
@@ -184,7 +184,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
     )
     external
     nonReentrant
-    onlyVaultOwner(msg.sender) {
+    onlyVaultOwnerOrConverter(msg.sender) {
         _closeBorrowPositionWithOtherTokens(_borrowAccountNumber, _toAccountNumber, _collateralMarketIds);
     }
 
@@ -195,7 +195,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
     )
     external
     nonReentrant
-    onlyVaultOwner(msg.sender) {
+    onlyVaultOwnerOrConverter(msg.sender) {
         _transferIntoPositionWithUnderlyingToken(_fromAccountNumber, _borrowAccountNumber, _amountWei);
     }
 
@@ -208,7 +208,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
     )
     external
     nonReentrant
-    onlyVaultOwner(msg.sender) {
+    onlyVaultOwnerOrConverter(msg.sender) {
         _transferIntoPositionWithOtherToken(
             _fromAccountNumber,
             _borrowAccountNumber,
@@ -225,7 +225,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
     )
     external
     nonReentrant
-    onlyVaultOwner(msg.sender) {
+    onlyVaultOwnerOrConverter(msg.sender) {
         _transferFromPositionWithUnderlyingToken(_borrowAccountNumber, _toAccountNumber, _amountWei);
     }
 
@@ -238,7 +238,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
     )
     external
     nonReentrant
-    onlyVaultOwner(msg.sender) {
+    onlyVaultOwnerOrConverter(msg.sender) {
         _transferFromPositionWithOtherToken(
             _borrowAccountNumber,
             _toAccountNumber,
@@ -256,7 +256,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
     )
     external
     nonReentrant
-    onlyVaultOwner(msg.sender) {
+    onlyVaultOwnerOrConverter(msg.sender) {
         _repayAllForBorrowPosition(
             _fromAccountNumber,
             _borrowAccountNumber,
@@ -271,9 +271,9 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
         uint256[] calldata _marketIdsPath,
         uint256 _inputAmountWei,
         uint256 _minOutputAmountWei,
-        IGenericTraderProxyV1.TraderParam[] calldata _tradersPath,
+        IGenericTraderProxyV2.TraderParam[] calldata _tradersPath,
         IDolomiteMargin.AccountInfo[] calldata _makerAccounts,
-        IGenericTraderProxyV1.UserConfig calldata _userConfig
+        IGenericTraderProxyV2.UserConfig calldata _userConfig
     )
     external
     payable
@@ -298,9 +298,9 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
         uint256[] calldata _marketIdsPath,
         uint256 _inputAmountWei,
         uint256 _minOutputAmountWei,
-        IGenericTraderProxyV1.TraderParam[] calldata _tradersPath,
+        IGenericTraderProxyV2.TraderParam[] calldata _tradersPath,
         IDolomiteMargin.AccountInfo[] calldata _makerAccounts,
-        IGenericTraderProxyV1.UserConfig calldata _userConfig
+        IGenericTraderProxyV2.UserConfig calldata _userConfig
     )
     external
     payable
@@ -325,9 +325,9 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
         uint256[] calldata _marketIdsPath,
         uint256 _inputAmountWei,
         uint256 _minOutputAmountWei,
-        IGenericTraderProxyV1.TraderParam[] calldata _tradersPath,
+        IGenericTraderProxyV2.TraderParam[] calldata _tradersPath,
         IDolomiteMargin.AccountInfo[] calldata _makerAccounts,
-        IGenericTraderProxyV1.UserConfig calldata _userConfig
+        IGenericTraderProxyV2.UserConfig calldata _userConfig
     )
     external
     payable
@@ -367,6 +367,28 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
     onlyVaultFactory(msg.sender) {
         assert(_recipient != address(this));
         IERC20(UNDERLYING_TOKEN()).safeTransfer(_recipient, _amount);
+    }
+
+     function validateDepositIntoVault(
+        uint256 _accountNumber,
+        uint256 _marketId
+    ) external view {
+        IsolationModeTokenVaultV1ActionsImpl.validateDepositIntoVault(
+            /* _vault = */ this,
+            _accountNumber,
+            _marketId
+        );
+    }
+
+    function validateWithdrawalFromVault(
+        uint256 _accountNumber,
+        uint256 _marketId
+    ) external view {
+        IsolationModeTokenVaultV1ActionsImpl.validateWithdrawalFromVault(
+            /* _vault = */ this,
+            _accountNumber,
+            _marketId
+        );
     }
 
     function UNDERLYING_TOKEN() public view returns (address) {
@@ -596,9 +618,9 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
         uint256[] calldata _marketIdsPath,
         uint256 _inputAmountWei,
         uint256 _minOutputAmountWei,
-        IGenericTraderProxyV1.TraderParam[] memory _tradersPath,
+        IGenericTraderProxyV2.TraderParam[] memory _tradersPath,
         IDolomiteMargin.AccountInfo[] memory _makerAccounts,
-        IGenericTraderProxyV1.UserConfig memory _userConfig
+        IGenericTraderProxyV2.UserConfig memory _userConfig
     ) internal virtual {
         IsolationModeTokenVaultV1ActionsImpl.addCollateralAndSwapExactInputForOutput(
             /* _vault = */ this,
@@ -619,9 +641,9 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
         uint256[] calldata _marketIdsPath,
         uint256 _inputAmountWei,
         uint256 _minOutputAmountWei,
-        IGenericTraderProxyV1.TraderParam[] memory _tradersPath,
+        IGenericTraderProxyV2.TraderParam[] memory _tradersPath,
         IDolomiteMargin.AccountInfo[] memory _makerAccounts,
-        IGenericTraderProxyV1.UserConfig memory _userConfig
+        IGenericTraderProxyV2.UserConfig memory _userConfig
     )
         internal
         virtual
