@@ -12,14 +12,17 @@ import {
 import {
   CustomTestToken,
   TestBorrowPositionRouter,
-  TestBorrowPositionRouter__factory,
   TestIsolationModeTokenVaultV2,
   TestIsolationModeTokenVaultV2__factory,
   TestIsolationModeVaultFactory
 } from 'packages/base/src/types';
-import { createContractWithAbi, createContractWithLibrary, createTestToken, depositIntoDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
+import { createContractWithLibrary, createTestToken, depositIntoDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
-import { createAndUpgradeDolomiteRegistry, createIsolationModeTokenVaultV2ActionsImpl } from '../utils/dolomite';
+import {
+  createAndUpgradeDolomiteRegistry,
+  createIsolationModeTokenVaultV2ActionsImpl,
+  createTestBorrowPositionRouter,
+} from '../utils/dolomite';
 import { createTestIsolationModeVaultFactory } from '../utils/ecosystem-utils/testers';
 import { BigNumber } from 'ethers';
 import { expectEvent, expectProtocolBalance, expectThrow } from '../utils/assertions';
@@ -50,11 +53,7 @@ describe('BorrowPositionRouter', () => {
       core.borrowPositionProxyV2.address
     );
 
-    router = await createContractWithAbi<TestBorrowPositionRouter>(
-      TestBorrowPositionRouter__factory.abi,
-      TestBorrowPositionRouter__factory.bytecode,
-      [core.dolomiteRegistry.address, core.dolomiteMargin.address]
-    );
+    router = await createTestBorrowPositionRouter(core);
 
     underlyingToken = await createTestToken();
     const libraries = await createIsolationModeTokenVaultV2ActionsImpl();

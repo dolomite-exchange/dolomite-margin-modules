@@ -20,6 +20,7 @@
 
 pragma solidity ^0.8.9;
 
+import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
@@ -38,7 +39,12 @@ import { IRouterBase } from "./interfaces/IRouterBase.sol";
  *
  * @notice  Base contract for all routers
  */
-abstract contract RouterBase is OnlyDolomiteMarginForUpgradeable, ReentrancyGuardUpgradeable, IRouterBase {
+abstract contract RouterBase is
+    OnlyDolomiteMarginForUpgradeable,
+    ReentrancyGuardUpgradeable,
+    Initializable,
+    IRouterBase
+{
 
     // ========================================================
     // ====================== Constants =======================
@@ -67,6 +73,10 @@ abstract contract RouterBase is OnlyDolomiteMarginForUpgradeable, ReentrancyGuar
     ) {
         DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
         _setDolomiteMarginViaSlot(_dolomiteMargin);
+    }
+
+    function initialize() external initializer virtual {
+        // solhint-disable-previous-line no-empty-blocks
     }
 
     // ========================================================

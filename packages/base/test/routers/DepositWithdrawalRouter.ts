@@ -12,14 +12,13 @@ import {
 import {
   CustomTestToken,
   TestDepositWithdrawalRouter,
-  TestDepositWithdrawalRouter__factory,
   TestIsolationModeTokenVaultV2,
   TestIsolationModeTokenVaultV2__factory,
   TestIsolationModeVaultFactory
 } from 'packages/base/src/types';
-import { createContractWithAbi, createContractWithLibrary, createTestToken, withdrawFromDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
+import { createContractWithLibrary, createTestToken, withdrawFromDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
-import { createIsolationModeTokenVaultV2ActionsImpl } from '../utils/dolomite';
+import { createIsolationModeTokenVaultV2ActionsImpl, createTestDepositWithdrawalRouter } from '../utils/dolomite';
 import { createTestIsolationModeVaultFactory } from '../utils/ecosystem-utils/testers';
 import { BigNumber } from 'ethers';
 import { expectEvent, expectProtocolBalance, expectThrow, expectWalletBalance } from '../utils/assertions';
@@ -53,11 +52,7 @@ describe('DepositWithdrawalRouter', () => {
     await disableInterestAccrual(core, core.marketIds.dai);
     await disableInterestAccrual(core, core.marketIds.weth);
 
-    router = await createContractWithAbi<TestDepositWithdrawalRouter>(
-      TestDepositWithdrawalRouter__factory.abi,
-      TestDepositWithdrawalRouter__factory.bytecode,
-      [core.tokens.weth.address, core.dolomiteRegistry.address, core.dolomiteMargin.address]
-    );
+    router = await createTestDepositWithdrawalRouter(core, core.tokens.weth);
 
     underlyingToken = await createTestToken();
     const libraries = await createIsolationModeTokenVaultV2ActionsImpl();
