@@ -1,4 +1,5 @@
 import { address } from '@dolomite-margin/dist/src';
+import { Provider } from '@ethersproject/providers';
 import { BigNumberish, PopulatedTransaction } from 'ethers';
 import { Network, NetworkType } from 'packages/base/src/utils/no-deps-constants';
 import {
@@ -9,9 +10,8 @@ import {
   DolomiteAccountRegistry,
   DolomiteAccountRegistry__factory,
   DolomiteERC20,
-  DolomiteERC4626,
-  DolomiteOwner,
-  DolomiteOwner__factory,
+  DolomiteOwnerV1,
+  DolomiteOwnerV1__factory,
   DolomiteRegistryImplementation,
   DolomiteRegistryImplementation__factory,
   EventEmitterRegistry,
@@ -48,6 +48,7 @@ import {
   createContractWithName,
   LibraryName,
 } from '../../src/utils/dolomite-utils';
+import { SignerWithAddressWithSafety } from '../../src/utils/SignerWithAddressWithSafety';
 import { CoreProtocolType } from './setup';
 
 export type DolomiteMargin<T extends NetworkType> = T extends Network.ArbitrumOne ? IDolomiteMargin : IDolomiteMarginV2;
@@ -81,7 +82,7 @@ export async function createRegistryProxy(
   const calldata =
     typeof initializationCalldata === 'object' && 'data' in initializationCalldata
       ? initializationCalldata.data!
-      : initializationCalldata as string;
+      : (initializationCalldata as string);
   return createContractWithAbi(
     RegistryProxy__factory.abi,
     RegistryProxy__factory.bytecode,
@@ -118,14 +119,13 @@ export async function createDolomiteErc20Proxy(
 }
 
 export async function createDolomiteErc4626Proxy(
-  implementation: DolomiteERC4626 | TestDolomiteERC4626,
   marketId: BigNumberish,
   core: CoreProtocolType<NetworkType>,
 ): Promise<RegistryProxy> {
   return createContractWithAbi(
     RegistryProxy__factory.abi,
     RegistryProxy__factory.bytecode,
-    await getDolomiteErc4626ProxyConstructorParams(core, implementation, marketId),
+    await getDolomiteErc4626ProxyConstructorParams(core, marketId),
   );
 }
 
@@ -144,10 +144,10 @@ export async function createDolomiteRegistryImplementation(): Promise<DolomiteRe
 export async function createDolomiteOwner(
   core: CoreProtocolType<NetworkType>,
   secondsTimeLocked: BigNumberish,
-): Promise<DolomiteOwner> {
+): Promise<DolomiteOwnerV1> {
   return createContractWithAbi(
-    DolomiteOwner__factory.abi,
-    DolomiteOwner__factory.bytecode,
+    DolomiteOwnerV1__factory.abi,
+    DolomiteOwnerV1__factory.bytecode,
     getDolomiteOwnerConstructorParams(core.gnosisSafe.address, secondsTimeLocked),
   );
 }
@@ -276,11 +276,15 @@ export async function setupNewGenericTraderProxy<T extends NetworkType>(
   await core.dolomiteMargin.ownerSetGlobalOperator(core.liquidatorProxyV4.address, true);
 }
 
-export async function isIsolationMode(marketId: BigNumberish, core: CoreProtocolType<any>): Promise<boolean> {
-  const tokenName = await IERC20Metadata__factory.connect(
-    await core.dolomiteMargin.getMarketTokenAddress(marketId),
-    core.governance,
-  ).name();
+export async function isIsolationModeByMarketId(marketId: BigNumberish, core: CoreProtocolType<any>): Promise<boolean> {
+  return isIsolationModeByTokenAddress(await core.dolomiteMargin.getMarketTokenAddress(marketId), core.governance);
+}
 
-  return tokenName.startsWith('Dolomite Isolation:') || tokenName.startsWith('Dolomite:');
+export async function isIsolationModeByTokenAddress(
+  tokenAddress: string,
+  signerOrProvider: SignerWithAddressWithSafety | Provider,
+): Promise<boolean> {
+  const tokenName = await IERC20Metadata__factory.connect(tokenAddress, signerOrProvider).name();
+
+  return tokenName.startsWith('Dolomite Isolation:') || tokenName === 'Dolomite: Fee + Staked GLP';
 }

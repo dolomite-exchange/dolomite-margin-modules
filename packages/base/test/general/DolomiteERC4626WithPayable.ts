@@ -34,12 +34,13 @@ describe('DolomiteERC4626WithPayable', () => {
       network: Network.ArbitrumOne,
       blockNumber: 220_664_500,
     });
-    const implementation = await createContractWithAbi<TestDolomiteERC4626WithPayable>(
-      TestDolomiteERC4626WithPayable__factory.abi,
-      TestDolomiteERC4626WithPayable__factory.bytecode,
-      [core.tokens.weth.address],
-    );
-    const tokenProxy = await createDolomiteErc4626Proxy(implementation, core.marketIds.weth, core);
+    core.implementationContracts.dolomiteERC4626WithPayableImplementation =
+      await createContractWithAbi<TestDolomiteERC4626WithPayable>(
+        TestDolomiteERC4626WithPayable__factory.abi,
+        TestDolomiteERC4626WithPayable__factory.bytecode,
+        [core.tokens.weth.address],
+      );
+    const tokenProxy = await createDolomiteErc4626Proxy(core.marketIds.weth, core);
     token = TestDolomiteERC4626WithPayable__factory.connect(tokenProxy.address, core.hhUser1);
     asset = core.tokens.weth;
 
