@@ -205,6 +205,7 @@ import { createUmamiEcosystem } from './ecosystem-utils/umami';
 import { impersonate, impersonateOrFallback, resetForkIfPossible } from './index';
 import { IBGT__factory } from 'packages/berachain/src/types';
 import { createBerachainRewardsEcosystem } from './ecosystem-utils/berachain-rewards';
+import { DeployedVault, getDeployedVaults } from './ecosystem-utils/deployed-vaults';
 
 /**
  * Config to for setting up tests in the `before` function
@@ -788,6 +789,12 @@ export async function setupCoreProtocol<T extends NetworkType>(
 
   const testEcosystem = await createTestEcosystem(dolomiteMargin, governance);
 
+  const deployedVaults = await getDeployedVaults(config, dolomiteMargin, governance);
+  const marketIdToDeployedVaultMap = deployedVaults.reduce((acc, vault) => {
+    acc[vault.marketId] = vault;
+    return acc;
+  }, {} as Record<number, DeployedVault>);
+
   const libraries: LibraryMaps = {
     tokenVaultActionsImpl: createTokenVaultActionsLibraries(config),
     unwrapperTraderImpl: createAsyncUnwrapperImplLibraries(config),
@@ -799,6 +806,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
     chainlinkPriceOracleV1,
     chainlinkPriceOracleV3,
     delayedMultiSig,
+    deployedVaults,
     depositWithdrawalProxy,
     dolomiteMargin,
     dolomiteRegistry,
@@ -819,6 +827,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
     liquidatorAssetRegistry,
     liquidatorProxyV1,
     liquidatorProxyV4,
+    marketIdToDeployedVaultMap,
     oracleAggregatorV2,
     ownerAdapterV1,
     testEcosystem,

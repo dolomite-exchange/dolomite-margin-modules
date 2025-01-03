@@ -281,15 +281,18 @@ export function getBuildInfoFromDebugFileSync(debugFilePath: string): string | u
   return undefined;
 }
 
-/**
- * @param nameWithoutVersionPostfix IE IsolationModeTokenVault
- * @param defaultVersion The version that should be declared if no other version exists
- */
-export function getMaxDeploymentVersionNameByDeploymentKey(nameWithoutVersionPostfix: string, defaultVersion: number) {
+function validateNameWithoutVersionPostfix(nameWithoutVersionPostfix: string) {
   const lastChar = nameWithoutVersionPostfix.substring(nameWithoutVersionPostfix.length - 1);
   if (!Number.isNaN(parseInt(lastChar, 10))) {
     throw new Error('Name cannot include version declaration');
   }
+}
+
+export function getMaxDeploymentVersionNumberByDeploymentKey(
+  nameWithoutVersionPostfix: string,
+  defaultVersion: number,
+): number {
+  validateNameWithoutVersionPostfix(nameWithoutVersionPostfix);
 
   const maxVersion = Object.keys(readDeploymentFile()).reduce((max, curr) => {
     if (curr.includes(nameWithoutVersionPostfix)) {
@@ -301,14 +304,29 @@ export function getMaxDeploymentVersionNameByDeploymentKey(nameWithoutVersionPos
     return max;
   }, defaultVersion);
 
+  return Number(maxVersion);
+}
+
+/**
+ * @param nameWithoutVersionPostfix IE IsolationModeTokenVault
+ * @param defaultVersion The version that should be declared if no other version exists
+ */
+export function getMaxDeploymentVersionNameByDeploymentKey(nameWithoutVersionPostfix: string, defaultVersion: number) {
+  const maxVersion = getMaxDeploymentVersionNumberByDeploymentKey(nameWithoutVersionPostfix, defaultVersion);
   return `${nameWithoutVersionPostfix}V${maxVersion}`;
 }
 
+/**
+ * @param nameWithoutVersionPostfix IE IsolationModeTokenVault
+ * @param network The chain ID of the address that's needed
+ */
+export function getMaxDeploymentVersionAddressByDeploymentKey(nameWithoutVersionPostfix: string, network: Network) {
+  const nameWithVersion = getMaxDeploymentVersionNameByDeploymentKey(nameWithoutVersionPostfix, 1);
+  return (ModuleDeployments as any)[nameWithVersion][network].address;
+}
+
 export function getOldDeploymentVersionNamesByDeploymentKey(nameWithoutVersionPostfix: string, defaultVersion: number) {
-  const lastChar = nameWithoutVersionPostfix.substring(nameWithoutVersionPostfix.length - 1);
-  if (!Number.isNaN(parseInt(lastChar, 10))) {
-    throw new Error('Name cannot include version declaration');
-  }
+  validateNameWithoutVersionPostfix(nameWithoutVersionPostfix);
 
   const [versions, maxVersion] = Object.keys(readDeploymentFile()).reduce(
     ([versions, max], curr) => {
