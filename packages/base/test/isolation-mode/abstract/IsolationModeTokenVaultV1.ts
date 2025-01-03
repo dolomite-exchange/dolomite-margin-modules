@@ -226,6 +226,13 @@ describe('IsolationModeTokenVaultV1', () => {
       await expectTotalSupply(factory, amountWei.mul(2));
     });
 
+    it('should fail if calldata is less than 4 bytes', async () => {
+      await expectThrow(
+        userVault.multicall(['0x1234']),
+        'IsolationModeVaultV1ActionsImpl: Invalid calldata length'
+      );
+    });
+
     it('should fail if calldata contains a disallowed function', async () => {
       const outputAmount = otherAmountWei.div(2);
       const zapParams = await getSimpleZapParams(otherMarketId1, otherAmountWei, otherMarketId2, outputAmount, core);

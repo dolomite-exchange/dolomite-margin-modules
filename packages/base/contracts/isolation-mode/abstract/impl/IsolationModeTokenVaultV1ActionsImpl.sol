@@ -531,7 +531,12 @@ library IsolationModeTokenVaultV1ActionsImpl {
         uint256 _accountNumber,
         uint256 _marketId
     ) public view {
-        // @todo implement
+        if (_marketId == _vault.marketId()) {
+            _checkFromAccountNumberIsZero(_accountNumber);
+        } else {
+            _checkBorrowAccountNumberIsNotZero(_accountNumber, /* _bypassAccountNumberCheck = */ false);
+            _checkAllowableDebtMarket(_vault, address(this), _accountNumber, _marketId);
+        }
     }
 
     function validateIsNotLiquidatable(
