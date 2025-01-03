@@ -76,6 +76,24 @@ describe('RouterBase', () => {
     snapshotId = await revertToSnapshotAndCapture(snapshotId);
   });
 
+  describe('#constructor', () => {
+    it('should work normally', async () => {
+      expect(await router.DOLOMITE_REGISTRY()).to.equal(core.dolomiteRegistry.address);
+      expect(await router.DOLOMITE_MARGIN()).to.equal(core.dolomiteMargin.address);
+    });
+  });
+
+  describe('#initialize', () => {
+    it('should work normally', async () => {
+      await router.initialize();
+    });
+
+    it('should revert if already initialized', async () => {
+      await router.initialize();
+      await expectThrow(router.initialize(), 'Initializable: contract is already initialized');
+    });
+  });
+
   describe('#getMarketInfo', () => {
     it('should work normally for normal asset', async () => {
       const marketInfo = await router.getMarketInfo(core.marketIds.dai);

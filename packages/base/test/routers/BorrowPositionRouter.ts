@@ -1,4 +1,4 @@
-import { Network, ONE_ETH_BI, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
+import { Network, ONE_ETH_BI, TWO_BI, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
 import { CoreProtocolArbitrumOne } from '../utils/core-protocols/core-protocol-arbitrum-one';
 import {
   disableInterestAccrual,
@@ -12,14 +12,17 @@ import {
 import {
   CustomTestToken,
   TestBorrowPositionRouter,
-  TestBorrowPositionRouter__factory,
-  TestIsolationModeTokenVaultV2,
-  TestIsolationModeTokenVaultV2__factory,
+  TestIsolationModeTokenVaultV1,
+  TestIsolationModeTokenVaultV1__factory,
   TestIsolationModeVaultFactory
 } from 'packages/base/src/types';
-import { createContractWithAbi, createContractWithLibrary, createTestToken, depositIntoDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
+import { createContractWithLibrary, createTestToken, depositIntoDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
-import { createAndUpgradeDolomiteRegistry, createIsolationModeTokenVaultV2ActionsImpl } from '../utils/dolomite';
+import {
+  createAndUpgradeDolomiteRegistry,
+  createIsolationModeTokenVaultV1ActionsImpl,
+  createTestBorrowPositionRouter,
+} from '../utils/dolomite';
 import { createTestIsolationModeVaultFactory } from '../utils/ecosystem-utils/testers';
 import { BigNumber } from 'ethers';
 import { expectEvent, expectProtocolBalance, expectThrow } from '../utils/assertions';
@@ -37,7 +40,7 @@ describe('BorrowPositionRouter', () => {
 
   let underlyingToken: CustomTestToken;
   let factory: TestIsolationModeVaultFactory;
-  let userVault: TestIsolationModeTokenVaultV2;
+  let userVault: TestIsolationModeTokenVaultV1;
   let isolationModeMarketId: BigNumber;
 
   before(async () => {
@@ -50,17 +53,13 @@ describe('BorrowPositionRouter', () => {
       core.borrowPositionProxyV2.address
     );
 
-    router = await createContractWithAbi<TestBorrowPositionRouter>(
-      TestBorrowPositionRouter__factory.abi,
-      TestBorrowPositionRouter__factory.bytecode,
-      [core.dolomiteRegistry.address, core.dolomiteMargin.address]
-    );
+    router = await createTestBorrowPositionRouter(core);
 
     underlyingToken = await createTestToken();
-    const libraries = await createIsolationModeTokenVaultV2ActionsImpl();
+    const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
 
     const userVaultImplementation = await createContractWithLibrary(
-      'TestIsolationModeTokenVaultV2',
+      'TestIsolationModeTokenVaultV1',
       { ...libraries },
       []
     );
@@ -78,9 +77,9 @@ describe('BorrowPositionRouter', () => {
 
     await factory.createVault(core.hhUser1.address);
     const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);
-    userVault = setupUserVaultProxy<TestIsolationModeTokenVaultV2>(
+    userVault = setupUserVaultProxy<TestIsolationModeTokenVaultV1>(
       vaultAddress,
-      TestIsolationModeTokenVaultV2__factory,
+      TestIsolationModeTokenVaultV1__factory,
       core.hhUser1,
     );
 
@@ -311,7 +310,7 @@ describe('BorrowPositionRouter', () => {
       await expectProtocolBalance(core, userVault, borrowAccountNumber, core.marketIds.dai, ZERO_BI);
     });
 
-    it('should fail if market is not isolation mode', async () => {
+    it('should fail if isolation mode market is not isolation mode', async () => {
       await expectThrow(
         router.transferBetweenAccounts(
           core.marketIds.usdc,
@@ -322,6 +321,48 @@ describe('BorrowPositionRouter', () => {
           BalanceCheckFlag.Both
         ),
         'RouterBase: Market is not isolation mode'
+      );
+    });
+
+    it('should fail if if isolation mode market is market id and transferring between dolomite accounts', async () => {
+      await expectThrow(
+        router.transferBetweenAccounts(
+          isolationModeMarketId,
+          defaultAccountNumber,
+          TWO_BI,
+          isolationModeMarketId,
+          amountWei,
+          BalanceCheckFlag.None
+        ),
+        'BorrowPositionRouter: Invalid transfer between accounts'
+      );
+    });
+
+    it('should fail if transferring a normal asset between two vault dolomite accounts', async () => {
+      await expectThrow(
+        router.transferBetweenAccounts(
+          isolationModeMarketId,
+          defaultAccountNumber,
+          TWO_BI,
+          core.marketIds.dai,
+          amountWei,
+          BalanceCheckFlag.None
+        ),
+        'BorrowPositionRouter: Invalid transfer between accounts'
+      );
+    });
+
+    it('should fail if transferring a normal asset between two vault non-dolomite accounts', async () => {
+      await expectThrow(
+        router.transferBetweenAccounts(
+          isolationModeMarketId,
+          borrowAccountNumber,
+          borrowAccountNumber.add(1),
+          core.marketIds.dai,
+          amountWei,
+          BalanceCheckFlag.None
+        ),
+        'BorrowPositionRouter: Invalid transfer between accounts'
       );
     });
 

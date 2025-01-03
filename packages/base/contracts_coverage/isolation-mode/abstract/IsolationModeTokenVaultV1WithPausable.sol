@@ -21,12 +21,14 @@
 pragma solidity ^0.8.9;
 
 import { IsolationModeTokenVaultV1 } from "./IsolationModeTokenVaultV1.sol";
+import { IGenericTraderProxyV2 } from "../../proxies/interfaces/IGenericTraderProxyV2.sol";
 import { AccountBalanceLib } from "../../lib/AccountBalanceLib.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { TypesLib } from "../../protocol/lib/TypesLib.sol";
 import { IIsolationModeTokenVaultV1WithPausable } from "../interfaces/IIsolationModeTokenVaultV1WithPausable.sol";
+
 
 /**
  * @title   IsolationModeTokenVaultV1WithPausable
@@ -111,6 +113,31 @@ abstract contract IsolationModeTokenVaultV1WithPausable is
             // If there is no debt markets, the user can can withdraw without affecting collateralization (it's ∞)
             _requireNumberOfMarketsWithDebtIsZero(_borrowAccountNumber);
         }
+    }
+
+    modifier _addCollateralAndSwapExactInputForOutputPausableValidator(
+        uint256 _borrowAccountNumber,
+        uint256[] memory _marketIdsPath
+    ) {
+        if (_borrowAccountNumber != 0 && _marketIdsPath[_marketIdsPath.length - 1] == marketId()) {
+            _requireExternalRedemptionNotPaused();
+        }
+        _;
+    }
+
+    modifier _swapExactInputForOutputAndRemoveCollateralPausableValidator(
+        uint256 _borrowAccountNumber
+    ) {
+        if (_borrowAccountNumber != 0) {
+            IDolomiteStructs.AccountInfo memory account = IDolomiteStructs.AccountInfo({
+                owner: address(this),
+                number: _borrowAccountNumber
+            });
+            if (DOLOMITE_MARGIN().getAccountNumberOfMarketsWithDebt(account) != 0) {
+                _requireExternalRedemptionNotPaused();
+            }
+        }
+        _;
     }
 
     modifier _swapExactInputForOutputPausableValidator(
@@ -282,6 +309,65 @@ abstract contract IsolationModeTokenVaultV1WithPausable is
             _marketId,
             _amountWei,
             _balanceCheckFlag
+        );
+    }
+
+    function _addCollateralAndSwapExactInputForOutput(
+        uint256 _fromAccountNumber,
+        uint256 _borrowAccountNumber,
+        uint256[] calldata _marketIdsPath,
+        uint256 _inputAmountWei,
+        uint256 _minOutputAmountWei,
+        IGenericTraderProxyV2.TraderParam[] memory _tradersPath,
+        IDolomiteMargin.AccountInfo[] memory _makerAccounts,
+        IGenericTraderProxyV2.UserConfig memory _userConfig
+    )
+        internal
+        virtual
+        override
+        _addCollateralAndSwapExactInputForOutputPausableValidator(
+            _borrowAccountNumber,
+            _marketIdsPath
+        )
+    {
+        IsolationModeTokenVaultV1._addCollateralAndSwapExactInputForOutput(
+            _fromAccountNumber,
+            _borrowAccountNumber,
+            _marketIdsPath,
+            _inputAmountWei,
+            _minOutputAmountWei,
+            _tradersPath,
+            _makerAccounts,
+            _userConfig
+        );
+    }
+
+    function _swapExactInputForOutputAndRemoveCollateral(
+        uint256 _toAccountNumber,
+        uint256 _borrowAccountNumber,
+        uint256[] calldata _marketIdsPath,
+        uint256 _inputAmountWei,
+        uint256 _minOutputAmountWei,
+        IGenericTraderProxyV2.TraderParam[] memory _tradersPath,
+        IDolomiteMargin.AccountInfo[] memory _makerAccounts,
+        IGenericTraderProxyV2.UserConfig memory _userConfig
+    )
+        internal
+        virtual
+        override
+        _swapExactInputForOutputAndRemoveCollateralPausableValidator(
+            _borrowAccountNumber
+        )
+    {
+        IsolationModeTokenVaultV1._swapExactInputForOutputAndRemoveCollateral(
+            _toAccountNumber,
+            _borrowAccountNumber,
+            _marketIdsPath,
+            _inputAmountWei,
+            _minOutputAmountWei,
+            _tradersPath,
+            _makerAccounts,
+            _userConfig
         );
     }
 

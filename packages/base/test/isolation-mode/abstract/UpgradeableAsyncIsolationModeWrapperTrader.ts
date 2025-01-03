@@ -20,16 +20,18 @@ import {
 import {
   createContractWithAbi,
   createContractWithLibrary,
+  createContractWithName,
   createTestToken,
   depositIntoDolomiteMargin,
 } from '../../../src/utils/dolomite-utils';
-import { BYTES_EMPTY, Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
+import { BYTES_EMPTY, MAX_UINT_256_BI, Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectEvent, expectProtocolBalance, expectThrow, expectWalletBalance } from '../../utils/assertions';
 
 import { CoreProtocolArbitrumOne } from '../../utils/core-protocols/core-protocol-arbitrum-one';
 import {
+  createAndUpgradeDolomiteRegistry,
   createDolomiteRegistryImplementation,
   createEventEmitter,
   createIsolationModeTokenVaultV1ActionsImpl,
@@ -49,7 +51,7 @@ import {
 
 const defaultAccountNumber = '0';
 const borrowAccountNumber = '123';
-const DEFAULT_KEY = '0xf9279e2a8683e34971784a3e2a24c23022cc3d7f78437d025b0cf87ebc18bee1';
+const RANDOM_KEY = '0x1234567a8683e34971784a3e2a24c23022cc3d7f78437d025b0cf87ebc18bee1';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
 const otherAmountWei = BigNumber.from('10000000'); // $10
 const bigOtherAmountWei = BigNumber.from('100000000000'); // $100,000
@@ -93,6 +95,16 @@ describe('UpgradeableAsyncIsolationModeWrapperTrader', () => {
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
+    await createAndUpgradeDolomiteRegistry(core);
+    const genericTraderLib = await createContractWithName('GenericTraderProxyV2Lib', []);
+    const genericTraderProxy = await createContractWithLibrary(
+      'GenericTraderProxyV2',
+      { GenericTraderProxyV2Lib: genericTraderLib.address },
+      [Network.ArbitrumOne, core.dolomiteRegistry.address, core.dolomiteMargin.address]
+    );
+    await core.dolomiteRegistry.ownerSetGenericTraderProxy(genericTraderProxy.address);
+    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(genericTraderProxy.address, true);
+
     asyncProtocol = await createContractWithAbi<TestAsyncProtocol>(
       TestAsyncProtocol__factory.abi,
       TestAsyncProtocol__factory.bytecode,
@@ -102,7 +114,7 @@ describe('UpgradeableAsyncIsolationModeWrapperTrader', () => {
     userVaultImplementation = await createContractWithLibrary<TestAsyncProtocolIsolationModeTokenVault>(
       'TestAsyncProtocolIsolationModeTokenVault',
       libraries,
-      [asyncProtocol.address, core.tokens.weth.address],
+      [asyncProtocol.address, core.tokens.weth.address, core.config.networkNumber],
     );
     registry = await createTestHandlerRegistry(core);
     underlyingToken = asyncProtocol;
@@ -138,19 +150,16 @@ describe('UpgradeableAsyncIsolationModeWrapperTrader', () => {
       asyncProtocol,
     );
     tokenWrapper = await createTestUpgradeableAsyncIsolationModeWrapperTrader(core, registry, factory, asyncProtocol);
-    await factory.connect(core.governance).ownerInitialize([tokenUnwrapper.address, tokenWrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
+    await factory.connect(core.governance).ownerInitialize([tokenUnwrapper.address, tokenWrapper.address]);
     await registry.connect(core.governance).ownerSetIsHandler(asyncProtocol.address, true);
     await registry.connect(core.governance).ownerSetIsHandler(core.dolomiteMargin.address, true);
     await registry.connect(core.governance).ownerSetWrapperByToken(factory.address, tokenWrapper.address);
     await registry.connect(core.governance).ownerSetUnwrapperByToken(factory.address, tokenUnwrapper.address);
 
     eventEmitter = await createEventEmitter(core);
-    const newRegistry = await createDolomiteRegistryImplementation();
 
-    await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(newRegistry.address);
     await core.dolomiteRegistry.connect(core.governance).ownerSetEventEmitter(eventEmitter.address);
-    await core.genericTraderProxy.ownerSetEventEmitterRegistry(eventEmitter.address);
 
     await factory.createVault(core.hhUser1.address);
     const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);
@@ -352,7 +361,55 @@ describe('UpgradeableAsyncIsolationModeWrapperTrader', () => {
       expect(await userVault.isVaultFrozen()).to.eq(true);
       expect(await userVault.isVaultAccountFrozen(borrowAccountNumber)).to.eq(true);
 
-      await asyncProtocol.executeDeposit(DEFAULT_KEY, 0);
+      const key = (await asyncProtocol.queryFilter(asyncProtocol.filters.DepositCreated()))[0].args.key;
+      await asyncProtocol.executeDeposit(key, 0);
+      expect(await userVault.underlyingBalanceOf()).to.eq(amountWei);
+      await expectProtocolBalance(core, userVault.address, borrowAccountNumber, underlyingMarketId, amountWei);
+      expect(await userVault.shouldSkipTransfer()).to.eq(false);
+      expect(await userVault.isVaultFrozen()).to.eq(false);
+      expect(await userVault.isVaultAccountFrozen(borrowAccountNumber)).to.eq(false);
+    });
+
+    it('should work normally with max uint256', async () => {
+      await otherToken1.addBalance(core.hhUser1.address, amountWei);
+      await otherToken1.connect(core.hhUser1).approve(core.dolomiteMargin.address, amountWei);
+      await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, otherMarketId1, amountWei);
+      await userVault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        otherMarketId1,
+        amountWei,
+        BalanceCheckFlag.Both,
+      );
+
+      const initiateWrappingParams = await getInitiateWrappingParams(
+        borrowAccountNumber,
+        otherMarketId1,
+        MAX_UINT_256_BI,
+        underlyingMarketId,
+        amountWei,
+        tokenWrapper,
+        ZERO_BI,
+      );
+      const result = await userVault.swapExactInputForOutput(
+        borrowAccountNumber,
+        initiateWrappingParams.marketPath,
+        initiateWrappingParams.amountIn,
+        initiateWrappingParams.minAmountOut,
+        initiateWrappingParams.traderParams,
+        initiateWrappingParams.makerAccounts,
+        initiateWrappingParams.userConfig,
+      );
+      await expectEvent(eventEmitter, result, 'AsyncDepositCreated', {});
+      await expectProtocolBalance(core, userVault.address, borrowAccountNumber, underlyingMarketId, amountWei);
+      await expectProtocolBalance(core, userVault.address, borrowAccountNumber, otherMarketId1, ZERO_BI);
+      expect(await userVault.underlyingBalanceOf()).to.eq(ZERO_BI);
+      expect(await userVault.shouldSkipTransfer()).to.eq(false);
+      expect(await userVault.isVaultFrozen()).to.eq(true);
+      expect(await userVault.isVaultAccountFrozen(borrowAccountNumber)).to.eq(true);
+
+      const key = (await asyncProtocol.queryFilter(asyncProtocol.filters.DepositCreated()))[0].args.key;
+      await asyncProtocol.executeDeposit(key, 0);
       expect(await userVault.underlyingBalanceOf()).to.eq(amountWei);
       await expectProtocolBalance(core, userVault.address, borrowAccountNumber, underlyingMarketId, amountWei);
       expect(await userVault.shouldSkipTransfer()).to.eq(false);
@@ -392,7 +449,8 @@ describe('UpgradeableAsyncIsolationModeWrapperTrader', () => {
       );
       await expectEvent(eventEmitter, result, 'AsyncDepositCreated', {});
 
-      await asyncProtocol.executeDeposit(DEFAULT_KEY, amountWei.mul(2));
+      const key = (await asyncProtocol.queryFilter(asyncProtocol.filters.DepositCreated()))[0].args.key;
+      await asyncProtocol.executeDeposit(key, amountWei.mul(2));
       expect(await userVault.underlyingBalanceOf()).to.eq(amountWei.mul(2));
       await expectProtocolBalance(core, userVault.address, borrowAccountNumber, underlyingMarketId, amountWei.mul(2));
       expect(await userVault.shouldSkipTransfer()).to.eq(false);
@@ -433,7 +491,8 @@ describe('UpgradeableAsyncIsolationModeWrapperTrader', () => {
       await expectEvent(eventEmitter, result, 'AsyncDepositCreated', {});
 
       await core.dolomiteMargin.ownerSetMaxWei(underlyingMarketId, amountWei);
-      await asyncProtocol.executeDeposit(DEFAULT_KEY, amountWei.mul(2));
+      const key = (await asyncProtocol.queryFilter(asyncProtocol.filters.DepositCreated()))[0].args.key;
+      await asyncProtocol.executeDeposit(key, amountWei.mul(2));
       expect(await userVault.underlyingBalanceOf()).to.eq(amountWei);
       await expectProtocolBalance(core, userVault.address, borrowAccountNumber, underlyingMarketId, amountWei);
       await expectWalletBalance(core.hhUser1.address, asyncProtocol, amountWei);
@@ -475,7 +534,8 @@ describe('UpgradeableAsyncIsolationModeWrapperTrader', () => {
       await expectEvent(eventEmitter, result, 'AsyncDepositCreated', {});
 
       await core.dolomiteMargin.ownerSetMaxWei(underlyingMarketId, amountWei.add(amountWei.div(2)));
-      await asyncProtocol.executeDeposit(DEFAULT_KEY, amountWei.mul(2));
+      const key = (await asyncProtocol.queryFilter(asyncProtocol.filters.DepositCreated()))[0].args.key;
+      await asyncProtocol.executeDeposit(key, amountWei.mul(2));
       expect(await userVault.underlyingBalanceOf()).to.eq(amountWei.add(amountWei.div(2)));
       await expectProtocolBalance(core, userVault.address, borrowAccountNumber, underlyingMarketId, amountWei);
       await expectProtocolBalance(core, userVault.address, defaultAccountNumber, underlyingMarketId, amountWei.div(2));
@@ -518,7 +578,8 @@ describe('UpgradeableAsyncIsolationModeWrapperTrader', () => {
       await expectEvent(eventEmitter, result, 'AsyncDepositCreated', {});
 
       await factory.setReversionType(1);
-      await asyncProtocol.executeDeposit(DEFAULT_KEY, amountWei.mul(2));
+      const key = (await asyncProtocol.queryFilter(asyncProtocol.filters.DepositCreated()))[0].args.key;
+      await asyncProtocol.executeDeposit(key, amountWei.mul(2));
 
       expect(await userVault.underlyingBalanceOf()).to.eq(amountWei.mul(2));
       await expectProtocolBalance(core, userVault.address, borrowAccountNumber, underlyingMarketId, amountWei);
@@ -561,7 +622,8 @@ describe('UpgradeableAsyncIsolationModeWrapperTrader', () => {
       await expectEvent(eventEmitter, result, 'AsyncDepositCreated', {});
 
       await factory.setReversionType(2);
-      await asyncProtocol.executeDeposit(DEFAULT_KEY, amountWei.mul(2));
+      const key = (await asyncProtocol.queryFilter(asyncProtocol.filters.DepositCreated()))[0].args.key;
+      await asyncProtocol.executeDeposit(key, amountWei.mul(2));
 
       expect(await userVault.underlyingBalanceOf()).to.eq(amountWei.mul(2));
       await expectProtocolBalance(core, userVault.address, borrowAccountNumber, underlyingMarketId, amountWei);
@@ -576,7 +638,7 @@ describe('UpgradeableAsyncIsolationModeWrapperTrader', () => {
       await expectThrow(
         tokenWrapper
           .connect(handlerImpersonator)
-          .afterDepositExecution(DEFAULT_KEY, {
+          .afterDepositExecution(RANDOM_KEY, {
             token: otherToken1.address,
             to: userVault.address,
             minAmount: ZERO_BI,
@@ -620,13 +682,50 @@ describe('UpgradeableAsyncIsolationModeWrapperTrader', () => {
       );
       await expectEvent(eventEmitter, result, 'AsyncDepositCreated', {});
 
-      await asyncProtocol.cancelDeposit(DEFAULT_KEY);
+      const key = (await asyncProtocol.queryFilter(asyncProtocol.filters.DepositCreated()))[0].args.key;
+      await asyncProtocol.cancelDeposit(key);
       expect(await userVault.underlyingBalanceOf()).to.eq(ZERO_BI);
       await expectProtocolBalance(core, userVault.address, borrowAccountNumber, otherMarketId1, amountWei);
       await expectProtocolBalance(core, userVault.address, borrowAccountNumber, underlyingMarketId, ZERO_BI);
       expect(await userVault.shouldSkipTransfer()).to.eq(false);
       expect(await userVault.isVaultFrozen()).to.eq(false);
       expect(await userVault.isVaultAccountFrozen(borrowAccountNumber)).to.eq(false);
+    });
+
+    it('should work normally for account number 0', async () => {
+      await otherToken1.addBalance(core.hhUser1.address, amountWei);
+      await otherToken1.connect(core.hhUser1).approve(core.dolomiteMargin.address, amountWei);
+      await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, otherMarketId1, amountWei);
+
+      const initiateWrappingParams = await getInitiateWrappingParams(
+        defaultAccountNumber,
+        otherMarketId1,
+        amountWei,
+        underlyingMarketId,
+        amountWei,
+        tokenWrapper,
+        ZERO_BI,
+      );
+      const result = await userVault.addCollateralAndSwapExactInputForOutput(
+        defaultAccountNumber,
+        defaultAccountNumber,
+        initiateWrappingParams.marketPath,
+        initiateWrappingParams.amountIn,
+        initiateWrappingParams.minAmountOut,
+        initiateWrappingParams.traderParams,
+        initiateWrappingParams.makerAccounts,
+        initiateWrappingParams.userConfig,
+      );
+      await expectEvent(eventEmitter, result, 'AsyncDepositCreated', {});
+
+      const key = (await asyncProtocol.queryFilter(asyncProtocol.filters.DepositCreated()))[0].args.key;
+      await asyncProtocol.cancelDeposit(key);
+      expect(await userVault.underlyingBalanceOf()).to.eq(ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, otherMarketId1, amountWei.add(otherAmountWei));
+      await expectProtocolBalance(core, userVault.address, defaultAccountNumber, underlyingMarketId, ZERO_BI);
+      expect(await userVault.shouldSkipTransfer()).to.eq(false);
+      expect(await userVault.isVaultFrozen()).to.eq(false);
+      expect(await userVault.isVaultAccountFrozen(defaultAccountNumber)).to.eq(false);
     });
 
     it('should work normally when reverted with no message', async () => {
@@ -662,7 +761,8 @@ describe('UpgradeableAsyncIsolationModeWrapperTrader', () => {
       await expectEvent(eventEmitter, result, 'AsyncDepositCreated', {});
 
       await tokenUnwrapper.setRevertFlag(1);
-      await asyncProtocol.cancelDeposit(DEFAULT_KEY);
+      const key = (await asyncProtocol.queryFilter(asyncProtocol.filters.DepositCreated()))[0].args.key;
+      await asyncProtocol.cancelDeposit(key);
       expect(await userVault.underlyingBalanceOf()).to.eq(ZERO_BI);
       await expectProtocolBalance(core, userVault.address, borrowAccountNumber, otherMarketId1, ZERO_BI);
       await expectProtocolBalance(core, userVault.address, borrowAccountNumber, underlyingMarketId, amountWei);
@@ -671,7 +771,7 @@ describe('UpgradeableAsyncIsolationModeWrapperTrader', () => {
       expect(await userVault.isVaultAccountFrozen(borrowAccountNumber)).to.eq(true);
 
       await tokenUnwrapper.setRevertFlag(0);
-      await tokenWrapper.connect(doloMarginImpersonator).executeDepositCancellationForRetry(DEFAULT_KEY, { gasLimit });
+      await tokenWrapper.connect(doloMarginImpersonator).executeDepositCancellationForRetry(key, { gasLimit });
       await expectProtocolBalance(core, userVault.address, borrowAccountNumber, otherMarketId1, amountWei);
       await expectProtocolBalance(core, userVault.address, borrowAccountNumber, underlyingMarketId, ZERO_BI);
       expect(await userVault.shouldSkipTransfer()).to.eq(false);
@@ -712,7 +812,8 @@ describe('UpgradeableAsyncIsolationModeWrapperTrader', () => {
       await expectEvent(eventEmitter, result, 'AsyncDepositCreated', {});
 
       await tokenUnwrapper.setRevertFlag(2);
-      await asyncProtocol.cancelDeposit(DEFAULT_KEY);
+      const key = (await asyncProtocol.queryFilter(asyncProtocol.filters.DepositCreated()))[0].args.key;
+      await asyncProtocol.cancelDeposit(key);
       expect(await userVault.underlyingBalanceOf()).to.eq(ZERO_BI);
       await expectProtocolBalance(core, userVault.address, borrowAccountNumber, otherMarketId1, ZERO_BI);
       await expectProtocolBalance(core, userVault.address, borrowAccountNumber, underlyingMarketId, amountWei);
@@ -721,7 +822,7 @@ describe('UpgradeableAsyncIsolationModeWrapperTrader', () => {
       expect(await userVault.isVaultAccountFrozen(borrowAccountNumber)).to.eq(true);
 
       await tokenUnwrapper.setRevertFlag(0);
-      await tokenWrapper.connect(doloMarginImpersonator).executeDepositCancellationForRetry(DEFAULT_KEY, { gasLimit });
+      await tokenWrapper.connect(doloMarginImpersonator).executeDepositCancellationForRetry(key, { gasLimit });
       await expectProtocolBalance(core, userVault.address, borrowAccountNumber, otherMarketId1, amountWei);
       await expectProtocolBalance(core, userVault.address, borrowAccountNumber, underlyingMarketId, ZERO_BI);
       expect(await userVault.shouldSkipTransfer()).to.eq(false);
@@ -733,7 +834,7 @@ describe('UpgradeableAsyncIsolationModeWrapperTrader', () => {
   describe('#executeDepositCancellationForRetry', () => {
     it('should fail if not called by handler', async () => {
       await expectThrow(
-        tokenWrapper.executeDepositCancellationForRetry(DEFAULT_KEY, { gasLimit }),
+        tokenWrapper.executeDepositCancellationForRetry(RANDOM_KEY, { gasLimit }),
         `AsyncIsolationModeTraderBase: Only handler can call <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
@@ -742,8 +843,8 @@ describe('UpgradeableAsyncIsolationModeWrapperTrader', () => {
   describe('#setDepositInfoAndReducePendingAmountFromUnwrapper', () => {
     it('should fail if not called by unwrapper', async () => {
       await expectThrow(
-        tokenWrapper.connect(core.hhUser1).setDepositInfoAndReducePendingAmountFromUnwrapper(DEFAULT_KEY, ONE_BI, {
-          key: DEFAULT_KEY,
+        tokenWrapper.connect(core.hhUser1).setDepositInfoAndReducePendingAmountFromUnwrapper(RANDOM_KEY, ONE_BI, {
+          key: RANDOM_KEY,
           vault: userVault.address,
           accountNumber: defaultAccountNumber,
           inputToken: otherToken1.address,
@@ -833,6 +934,24 @@ describe('UpgradeableAsyncIsolationModeWrapperTrader', () => {
           orderData: BYTES_EMPTY,
         }),
         `AsyncIsolationModeWrapperImpl: Invalid output market <${core.marketIds.weth}>`,
+      );
+    });
+  });
+
+  describe('#emitDepositCancelled', () => {
+    it('should work normally', async () => {
+      await registry.connect(core.governance).ownerSetIsHandler(core.hhUser5.address, true);
+      const res = await tokenWrapper.connect(core.hhUser5).emitDepositCancelled(RANDOM_KEY);
+      await expectEvent(eventEmitter, res, 'AsyncDepositCancelled', {
+        key: RANDOM_KEY,
+        factory: factory.address,
+      });
+    });
+
+    it('should fail if not called by handler', async () => {
+      await expectThrow(
+        tokenWrapper.connect(core.hhUser1).emitDepositCancelled(RANDOM_KEY),
+        `AsyncIsolationModeTraderBase: Only handler can call <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });

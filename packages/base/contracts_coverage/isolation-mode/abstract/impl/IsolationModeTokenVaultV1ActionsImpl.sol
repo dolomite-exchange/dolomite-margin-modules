@@ -22,7 +22,7 @@ pragma solidity ^0.8.9;
 import { BaseLiquidatorProxy } from "../../../general/BaseLiquidatorProxy.sol";
 import { IDolomiteRegistry } from "../../../interfaces/IDolomiteRegistry.sol";
 import { IEventEmitterRegistry } from "../../../interfaces/IEventEmitterRegistry.sol";
-import { IGenericTraderProxyV1 } from "../../../interfaces/IGenericTraderProxyV1.sol";
+import { IGenericTraderProxyV2 } from "../../../proxies/interfaces/IGenericTraderProxyV2.sol";
 import { AccountActionLib } from "../../../lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "../../../lib/AccountBalanceLib.sol";
 import { DolomiteMarginVersionWrapperLib } from "../../../lib/DolomiteMarginVersionWrapperLib.sol";
@@ -68,11 +68,11 @@ library IsolationModeTokenVaultV1ActionsImpl {
         uint256 len = _calls.length;
 
         for (uint256 i; i < len; ++i) {
-            if (selectorBinarySearch( allowedSelectors, abi.decode(_calls[i], (bytes4)) )) { /* FOR COVERAGE TESTING */ }
+            if (selectorBinarySearch( allowedSelectors, getFunctionSelector(_calls[i]) )) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 selectorBinarySearch(
                     allowedSelectors,
-                    abi.decode(_calls[i], (bytes4))
+                    getFunctionSelector(_calls[i])
                 ),
                 _FILE,
                 "Disallowed multicall function"
@@ -332,9 +332,9 @@ library IsolationModeTokenVaultV1ActionsImpl {
         uint256[] calldata _marketIdsPath,
         uint256 _inputAmountWei,
         uint256 _minOutputAmountWei,
-        IGenericTraderProxyV1.TraderParam[] memory _tradersPath,
+        IGenericTraderProxyV2.TraderParam[] memory _tradersPath,
         IDolomiteMargin.AccountInfo[] memory _makerAccounts,
-        IGenericTraderProxyV1.UserConfig memory _userConfig
+        IGenericTraderProxyV2.UserConfig memory _userConfig
     ) public {
         if (_borrowAccountNumber == 0) {
             uint256 marketId = _vault.marketId();
@@ -397,9 +397,9 @@ library IsolationModeTokenVaultV1ActionsImpl {
         uint256[] calldata _marketIdsPath,
         uint256 _inputAmountWei,
         uint256 _minOutputAmountWei,
-        IGenericTraderProxyV1.TraderParam[] memory _tradersPath,
+        IGenericTraderProxyV2.TraderParam[] memory _tradersPath,
         IDolomiteMargin.AccountInfo[] memory _makerAccounts,
-        IGenericTraderProxyV1.UserConfig memory _userConfig
+        IGenericTraderProxyV2.UserConfig memory _userConfig
     ) public {
         uint256 outputMarketId = _marketIdsPath[_marketIdsPath.length - 1];
         if (_borrowAccountNumber == 0) {
@@ -471,9 +471,9 @@ library IsolationModeTokenVaultV1ActionsImpl {
         uint256[] calldata _marketIdsPath,
         uint256 _inputAmountWei,
         uint256 _minOutputAmountWei,
-        IGenericTraderProxyV1.TraderParam[] memory _tradersPath,
+        IGenericTraderProxyV2.TraderParam[] memory _tradersPath,
         IDolomiteMargin.AccountInfo[] memory _makerAccounts,
-        IGenericTraderProxyV1.UserConfig memory _userConfig,
+        IGenericTraderProxyV2.UserConfig memory _userConfig,
         bool _checkOutputMarketIdFlag,
         bool _bypassAccountNumberCheck
     ) public {
@@ -496,14 +496,16 @@ library IsolationModeTokenVaultV1ActionsImpl {
             );
         }
 
-        _vault.dolomiteRegistry().genericTraderProxy().swapExactInputForOutput(
-            _tradeAccountNumber,
-            _marketIdsPath,
-            _inputAmountWei,
-            _minOutputAmountWei,
-            _tradersPath,
-            _makerAccounts,
-            _userConfig
+        IGenericTraderProxyV2(address(_vault.dolomiteRegistry().genericTraderProxy())).swapExactInputForOutput(
+            IGenericTraderProxyV2.SwapExactInputForOutputParams({
+                accountNumber: _tradeAccountNumber,
+                marketIdsPath: _marketIdsPath,
+                inputAmountWei: _inputAmountWei,
+                minOutputAmountWei: _minOutputAmountWei,
+                tradersPath: _tradersPath,
+                makerAccounts: _makerAccounts,
+                userConfig: _userConfig
+            })
         );
 
         uint256 inputMarketId = _marketIdsPath[0];
@@ -514,6 +516,32 @@ library IsolationModeTokenVaultV1ActionsImpl {
         if (_checkOutputMarketIdFlag) {
             _checkAllowableCollateralMarket(_vault, tradeAccountOwner, _tradeAccountNumber, outputMarketId);
             _checkAllowableDebtMarket(_vault, tradeAccountOwner, _tradeAccountNumber, outputMarketId);
+        }
+    }
+
+    function validateDepositIntoVault(
+        IIsolationModeTokenVaultV1 _vault,
+        uint256 _accountNumber,
+        uint256 _marketId
+    ) public view {
+        if (_marketId == _vault.marketId()) {
+            _checkFromAccountNumberIsZero(_accountNumber);
+        } else {
+            _checkBorrowAccountNumberIsNotZero(_accountNumber, /* _bypassAccountNumberCheck = */ false);
+            _checkAllowableCollateralMarket(_vault, address(this), _accountNumber, _marketId);
+        }
+    }
+
+    function validateWithdrawalFromVault(
+        IIsolationModeTokenVaultV1 _vault,
+        uint256 _accountNumber,
+        uint256 _marketId
+    ) public view {
+        if (_marketId == _vault.marketId()) {
+            _checkFromAccountNumberIsZero(_accountNumber);
+        } else {
+            _checkBorrowAccountNumberIsNotZero(_accountNumber, /* _bypassAccountNumberCheck = */ false);
+            _checkAllowableDebtMarket(_vault, address(this), _accountNumber, _marketId);
         }
     }
 
@@ -613,6 +641,21 @@ library IsolationModeTokenVaultV1ActionsImpl {
             _FILE,
             "minOutputAmount too large"
         );
+    }
+
+    function getFunctionSelector(bytes memory _call) public pure returns (bytes4 result) {
+        if (_call.length >= 4) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            _call.length >= 4,
+            _FILE,
+            "Invalid calldata length"
+        );
+
+        // The bytes4 keyword casts a byte array (in memory) to a fixed-size byte array
+        assembly {
+            // load the 2nd word from original (1st word is length) and store it in the result
+            result := mload(add(_call, 32))
+        }
     }
 
     function selectorBinarySearch(bytes4[] memory _allowedSelectors, bytes4 _selector) public pure returns (bool) {

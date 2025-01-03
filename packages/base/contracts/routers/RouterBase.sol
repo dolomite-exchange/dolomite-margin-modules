@@ -20,13 +20,14 @@
 
 pragma solidity ^0.8.9;
 
+import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { OnlyDolomiteMarginForUpgradeable } from "../helpers/OnlyDolomiteMarginForUpgradeable.sol";
 import { ReentrancyGuardUpgradeable } from "../helpers/ReentrancyGuardUpgradeable.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
-import { IIsolationModeTokenVaultV2 } from "../isolation-mode/interfaces/IIsolationModeTokenVaultV2.sol";
+import { IIsolationModeTokenVaultV1 } from "../isolation-mode/interfaces/IIsolationModeTokenVaultV1.sol";
 import { IIsolationModeVaultFactory } from "../isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
 import { Require } from "../protocol/lib/Require.sol";
 import { IRouterBase } from "./interfaces/IRouterBase.sol";
@@ -38,7 +39,12 @@ import { IRouterBase } from "./interfaces/IRouterBase.sol";
  *
  * @notice  Base contract for all routers
  */
-abstract contract RouterBase is OnlyDolomiteMarginForUpgradeable, ReentrancyGuardUpgradeable, IRouterBase {
+abstract contract RouterBase is
+    OnlyDolomiteMarginForUpgradeable,
+    ReentrancyGuardUpgradeable,
+    Initializable,
+    IRouterBase
+{
 
     // ========================================================
     // ====================== Constants =======================
@@ -67,6 +73,10 @@ abstract contract RouterBase is OnlyDolomiteMarginForUpgradeable, ReentrancyGuar
     ) {
         DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
         _setDolomiteMarginViaSlot(_dolomiteMargin);
+    }
+
+    function initialize() external initializer virtual {
+        // solhint-disable-previous-line no-empty-blocks
     }
 
     // ========================================================
@@ -108,7 +118,7 @@ abstract contract RouterBase is OnlyDolomiteMarginForUpgradeable, ReentrancyGuar
     function _validateIsolationModeMarketAndGetVault(
         MarketInfo memory _marketInfo,
         address _account
-    ) internal returns (IIsolationModeTokenVaultV2) {
+    ) internal returns (IIsolationModeTokenVaultV1) {
         Require.that(
             _marketInfo.isIsolationModeAsset,
             _FILE,
@@ -119,7 +129,7 @@ abstract contract RouterBase is OnlyDolomiteMarginForUpgradeable, ReentrancyGuar
             vault = _marketInfo.factory.createVault(_account);
         }
 
-        return IIsolationModeTokenVaultV2(vault);
+        return IIsolationModeTokenVaultV1(vault);
     }
 
     function _isIsolationModeMarket(uint256 _marketId) internal view returns (bool) {
