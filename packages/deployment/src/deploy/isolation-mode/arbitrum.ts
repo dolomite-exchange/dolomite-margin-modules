@@ -152,7 +152,7 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
     vaultType: IsolationModeVaultType.None,
   },
   [D_GM_ARB_USD_MAP[network].marketId]: {
-    contractName: 'GMXIsolationModeTokenVaultV1',
+    contractName: 'GmxV2IsolationModeTokenVaultV1',
     contractRenameWithoutVersion: 'GmxV2IsolationModeTokenVaultImplementation',
     implementationAddress: getMaxDeploymentVersionAddressByDeploymentKey(
       'GmxV2IsolationModeTokenVaultImplementation',

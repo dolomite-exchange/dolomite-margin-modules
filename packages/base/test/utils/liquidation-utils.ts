@@ -9,6 +9,7 @@ import {
   Network,
   NO_EXPIRY,
   NO_PARASWAP_TRADER_PARAM,
+  ONE_BI,
 } from '../../src/utils/no-deps-constants';
 import { CoreProtocolType } from './setup';
 import { ZapParam } from './zap-utils';

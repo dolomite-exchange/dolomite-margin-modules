@@ -24,7 +24,7 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { UpgradeableAsyncIsolationModeUnwrapperTrader } from "../UpgradeableAsyncIsolationModeUnwrapperTrader.sol";
 import { UpgradeableAsyncIsolationModeWrapperTrader } from "../UpgradeableAsyncIsolationModeWrapperTrader.sol";
 import { IGenericTraderBase } from "../../../interfaces/IGenericTraderBase.sol";
-import { IGenericTraderProxyV1 } from "../../../interfaces/IGenericTraderProxyV1.sol";
+import { IGenericTraderProxyV2 } from "../../../proxies/interfaces/IGenericTraderProxyV2.sol";
 import { IHandlerRegistry } from "../../../interfaces/IHandlerRegistry.sol";
 import { AccountActionLib } from "../../../lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "../../../lib/AccountBalanceLib.sol";
@@ -96,10 +96,10 @@ library AsyncIsolationModeUnwrapperTraderImpl {
         keys[0] = _withdrawalInfo.key;
         traderParams[0].tradeData = abi.encode(tradeTypes, keys);
 
-        IGenericTraderProxyV1.UserConfig memory userConfig = IGenericTraderProxyV1.UserConfig({
+        IGenericTraderProxyV2.UserConfig memory userConfig = IGenericTraderProxyV2.UserConfig({
             deadline: block.timestamp,
             balanceCheckFlag: AccountBalanceLib.BalanceCheckFlag.None,
-            eventType: IGenericTraderProxyV1.EventEmissionType.None
+            eventType: IGenericTraderProxyV2.EventEmissionType.None
         });
 
         if (_withdrawalInfo.isLiquidation) {

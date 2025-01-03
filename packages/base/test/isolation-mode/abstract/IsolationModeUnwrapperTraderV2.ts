@@ -9,9 +9,10 @@ import {
   TestIsolationModeTokenVaultV1__factory,
   TestIsolationModeUnwrapperTraderV2,
   TestIsolationModeUnwrapperTraderV2__factory,
+  GenericTraderProxyV2,
 } from '../../../src/types';
 import { AccountInfoStruct } from '../../../src/utils';
-import { createContractWithAbi, createContractWithLibrary, createTestToken } from '../../../src/utils/dolomite-utils';
+import { createContractWithAbi, createContractWithLibrary, createContractWithName, createTestToken } from '../../../src/utils/dolomite-utils';
 import { BYTES_EMPTY, MAX_UINT_256_BI, Network, ONE_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';
 import {
@@ -23,7 +24,7 @@ import {
 import { expectThrow } from '../../utils/assertions';
 
 import { CoreProtocolArbitrumOne } from '../../utils/core-protocols/core-protocol-arbitrum-one';
-import { createIsolationModeTokenVaultV1ActionsImpl } from '../../utils/dolomite';
+import { createAndUpgradeDolomiteRegistry, createIsolationModeTokenVaultV1ActionsImpl } from '../../utils/dolomite';
 import { createTestIsolationModeVaultFactory } from '../../utils/ecosystem-utils/testers';
 import {
   getDefaultCoreProtocolConfig,
@@ -48,11 +49,22 @@ describe('IsolationModeUnwrapperTraderV2', () => {
   let factory: TestIsolationModeVaultFactory;
   let vault: TestIsolationModeTokenVaultV1;
   let defaultAccount: AccountInfoStruct;
+  let genericTraderProxy: GenericTraderProxyV2;
 
   let solidUser: SignerWithAddressWithSafety;
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
+    await createAndUpgradeDolomiteRegistry(core);
+    const genericTraderLib = await createContractWithName('GenericTraderProxyV2Lib', []);
+    genericTraderProxy = await createContractWithLibrary(
+      'GenericTraderProxyV2',
+      { GenericTraderProxyV2Lib: genericTraderLib.address },
+      [Network.ArbitrumOne, core.dolomiteRegistry.address, core.dolomiteMargin.address]
+    );
+    await core.dolomiteRegistry.ownerSetGenericTraderProxy(genericTraderProxy.address);
+    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(genericTraderProxy.address, true);
+
     underlyingToken = await createTestToken();
     otherToken = await createTestToken();
     const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
@@ -76,8 +88,8 @@ describe('IsolationModeUnwrapperTraderV2', () => {
       TestIsolationModeUnwrapperTraderV2__factory.bytecode,
       [otherToken.address, factory.address, core.dolomiteMargin.address, core.dolomiteRegistry.address],
     );
-    await factory.connect(core.governance).ownerInitialize([unwrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
+    await factory.connect(core.governance).ownerInitialize([unwrapper.address]);
 
     solidUser = core.hhUser5;
 
@@ -129,7 +141,7 @@ describe('IsolationModeUnwrapperTraderV2', () => {
         BYTES_EMPTY,
       );
 
-      const genericTrader = await impersonate(core.genericTraderProxy!.address, true);
+      const genericTrader = await impersonate(genericTraderProxy.address, true);
       await core.dolomiteMargin.connect(genericTrader).operate([defaultAccount], actions);
 
       const underlyingBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, underlyingMarketId);
@@ -146,7 +158,7 @@ describe('IsolationModeUnwrapperTraderV2', () => {
     it('should work if invoked properly', async () => {
       const dolomiteMarginCaller = await impersonate(core.dolomiteMargin.address, true);
       await unwrapper.connect(dolomiteMarginCaller).callFunction(
-        core.genericTraderProxy!.address,
+        genericTraderProxy.address,
         { owner: vault.address, number: defaultAccountNumber },
         defaultAbiCoder.encode(['uint256', 'address', 'uint256'], [amountWei, vault.address, ZERO_BI]),
       );
@@ -162,7 +174,7 @@ describe('IsolationModeUnwrapperTraderV2', () => {
     it('should work if invoked with max amount', async () => {
       const dolomiteMarginCaller = await impersonate(core.dolomiteMargin.address, true);
       await unwrapper.connect(dolomiteMarginCaller).callFunction(
-        core.genericTraderProxy!.address,
+        genericTraderProxy.address,
         { owner: vault.address, number: defaultAccountNumber },
         defaultAbiCoder.encode(['uint256', 'address', 'uint256'], [MAX_UINT_256_BI, vault.address, ZERO_BI]),
       );
@@ -202,7 +214,7 @@ describe('IsolationModeUnwrapperTraderV2', () => {
       const dolomiteMarginCaller = await impersonate(core.dolomiteMargin.address, true);
       await expectThrow(
         unwrapper.connect(dolomiteMarginCaller).callFunction(
-          core.genericTraderProxy!.address,
+          genericTraderProxy.address,
           { owner: vault.address, number: defaultAccountNumber },
           defaultAbiCoder.encode(['uint256', 'address', 'uint256'], [amountWei, core.hhUser1.address, ZERO_BI]),
         ),
@@ -214,7 +226,7 @@ describe('IsolationModeUnwrapperTraderV2', () => {
       const dolomiteMarginCaller = await impersonate(core.dolomiteMargin.address, true);
       await expectThrow(
         unwrapper.connect(dolomiteMarginCaller).callFunction(
-          core.genericTraderProxy!.address,
+          genericTraderProxy.address,
           { owner: vault.address, number: defaultAccountNumber },
           defaultAbiCoder.encode(['uint256', 'address', 'uint256'], [ZERO_BI, vault.address, ZERO_BI]),
         ),
@@ -226,7 +238,7 @@ describe('IsolationModeUnwrapperTraderV2', () => {
       const dolomiteMarginCaller = await impersonate(core.dolomiteMargin.address, true);
       await expectThrow(
         unwrapper.connect(dolomiteMarginCaller).callFunction(
-          core.genericTraderProxy!.address,
+          genericTraderProxy.address,
           { owner: vault.address, number: defaultAccountNumber },
           defaultAbiCoder.encode(['uint256', 'address', 'uint256'], [amountWei.mul(111), vault.address, ZERO_BI]),
         ),
