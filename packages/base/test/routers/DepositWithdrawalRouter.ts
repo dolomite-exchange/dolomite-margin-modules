@@ -12,13 +12,13 @@ import {
 import {
   CustomTestToken,
   TestDepositWithdrawalRouter,
-  TestIsolationModeTokenVaultV2,
-  TestIsolationModeTokenVaultV2__factory,
+  TestIsolationModeTokenVaultV1,
+  TestIsolationModeTokenVaultV1__factory,
   TestIsolationModeVaultFactory
 } from 'packages/base/src/types';
 import { createContractWithLibrary, createTestToken, withdrawFromDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
-import { createIsolationModeTokenVaultV2ActionsImpl, createTestDepositWithdrawalRouter } from '../utils/dolomite';
+import { createIsolationModeTokenVaultV1ActionsImpl, createTestDepositWithdrawalRouter } from '../utils/dolomite';
 import { createTestIsolationModeVaultFactory } from '../utils/ecosystem-utils/testers';
 import { BigNumber } from 'ethers';
 import { expectEvent, expectProtocolBalance, expectThrow, expectWalletBalance } from '../utils/assertions';
@@ -44,7 +44,7 @@ describe('DepositWithdrawalRouter', () => {
 
   let underlyingToken: CustomTestToken;
   let factory: TestIsolationModeVaultFactory;
-  let userVault: TestIsolationModeTokenVaultV2;
+  let userVault: TestIsolationModeTokenVaultV1;
   let isolationModeMarketId: BigNumber;
 
   before(async () => {
@@ -55,10 +55,10 @@ describe('DepositWithdrawalRouter', () => {
     router = await createTestDepositWithdrawalRouter(core, core.tokens.weth);
 
     underlyingToken = await createTestToken();
-    const libraries = await createIsolationModeTokenVaultV2ActionsImpl();
+    const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
 
     const userVaultImplementation = await createContractWithLibrary(
-      'TestIsolationModeTokenVaultV2',
+      'TestIsolationModeTokenVaultV1',
       { ...libraries },
       []
     );
@@ -77,9 +77,9 @@ describe('DepositWithdrawalRouter', () => {
 
     await factory.createVault(core.hhUser1.address);
     const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);
-    userVault = setupUserVaultProxy<TestIsolationModeTokenVaultV2>(
+    userVault = setupUserVaultProxy<TestIsolationModeTokenVaultV1>(
       vaultAddress,
-      TestIsolationModeTokenVaultV2__factory,
+      TestIsolationModeTokenVaultV1__factory,
       core.hhUser1,
     );
 
@@ -244,7 +244,7 @@ describe('DepositWithdrawalRouter', () => {
           amountWei,
           EventFlag.None
         ),
-        'IsolationModeVaultV2ActionsImpl: Invalid borrowAccountNumber <0>'
+        'IsolationModeVaultV1ActionsImpl: Invalid borrowAccountNumber <0>'
       );
     });
 
@@ -258,7 +258,7 @@ describe('DepositWithdrawalRouter', () => {
           amountWei,
           EventFlag.None
         ),
-        'IsolationModeVaultV2ActionsImpl: Market not allowed as collateral <0>'
+        'IsolationModeVaultV1ActionsImpl: Market not allowed as collateral <0>'
       );
     });
 
@@ -441,7 +441,7 @@ describe('DepositWithdrawalRouter', () => {
           amountWei,
           BalanceCheckFlag.Both
         ),
-        'DepositWithdrawalRouter: Invalid fromAccountNumber'
+        'IsolationModeVaultV1ActionsImpl: Invalid fromAccountNumber <123>'
       );
     });
 
@@ -454,7 +454,7 @@ describe('DepositWithdrawalRouter', () => {
           amountWei,
           BalanceCheckFlag.None
         ),
-        'DepositWithdrawalRouter: Invalid fromAccountNumber'
+        `OperationImpl: Undercollateralized account <${userVault.address.toLowerCase()}, 0>`
       );
     });
 

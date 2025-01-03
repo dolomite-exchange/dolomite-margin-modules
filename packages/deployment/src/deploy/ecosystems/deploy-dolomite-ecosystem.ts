@@ -56,6 +56,8 @@ import { deployOracleAggregator } from './helpers/deploy-oracle-aggregator';
 import { encodeDolomiteOwnerMigrations } from './helpers/encode-dolomite-owner-migrations';
 import { encodeDolomiteRegistryMigrations } from './helpers/encode-dolomite-registry-migrations';
 import { encodeIsolationModeFreezableLiquidatorMigrations } from './helpers/encode-isolation-mode-freezable-liquidator-migrations';
+import { encodeDolomiteRouterMigrations } from './helpers/encode-dolomite-router-migrations';
+import { getDeployedVaults } from 'packages/base/test/utils/ecosystem-utils/deployed-vaults';
 
 const THIRTY_MINUTES_SECONDS = 60 * 30;
 const HANDLER_ADDRESS = '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe'; // Level Initiator
@@ -178,6 +180,24 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     getMaxDeploymentVersionNameByDeploymentKey('IsolationModeFreezableLiquidatorProxy', 1),
   );
 
+  const depositWithdrawalRouterAddress = await deployContractAndSave(
+    'DepositWithdrawalRouter',
+    [PAYABLE_TOKEN_MAP[network].address, dolomiteRegistry.address, dolomiteMargin.address],
+    getMaxDeploymentVersionNameByDeploymentKey('DepositWithdrawalRouter', 1),
+  );
+
+  const borrowPositionRouterAddress = await deployContractAndSave(
+    'BorrowPositionRouter',
+    [dolomiteRegistry.address, dolomiteMargin.address],
+    getMaxDeploymentVersionNameByDeploymentKey('BorrowPositionRouter', 1),
+  );
+
+  const genericTraderRouterAddress = await deployContractAndSave(
+    'GenericTraderRouter',
+    [dolomiteRegistry.address, dolomiteMargin.address],
+    getMaxDeploymentVersionNameByDeploymentKey('GenericTraderRouter', 1),
+  );
+
   const safeDelegateCallLibAddress = await deployContractAndSave(
     'SafeDelegateCallLib',
     [],
@@ -265,6 +285,16 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   await encodeIsolationModeFreezableLiquidatorMigrations(
     core,
     isolationModeFreezableLiquidatorProxyAddress,
+    transactions,
+  );
+
+  const deployedVaults = await getDeployedVaults(config, dolomiteMargin, governance);
+  await encodeDolomiteRouterMigrations(
+    core,
+    depositWithdrawalRouterAddress,
+    borrowPositionRouterAddress,
+    genericTraderRouterAddress,
+    deployedVaults,
     transactions,
   );
 

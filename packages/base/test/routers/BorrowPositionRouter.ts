@@ -12,15 +12,15 @@ import {
 import {
   CustomTestToken,
   TestBorrowPositionRouter,
-  TestIsolationModeTokenVaultV2,
-  TestIsolationModeTokenVaultV2__factory,
+  TestIsolationModeTokenVaultV1,
+  TestIsolationModeTokenVaultV1__factory,
   TestIsolationModeVaultFactory
 } from 'packages/base/src/types';
 import { createContractWithLibrary, createTestToken, depositIntoDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
 import {
   createAndUpgradeDolomiteRegistry,
-  createIsolationModeTokenVaultV2ActionsImpl,
+  createIsolationModeTokenVaultV1ActionsImpl,
   createTestBorrowPositionRouter,
 } from '../utils/dolomite';
 import { createTestIsolationModeVaultFactory } from '../utils/ecosystem-utils/testers';
@@ -40,7 +40,7 @@ describe('BorrowPositionRouter', () => {
 
   let underlyingToken: CustomTestToken;
   let factory: TestIsolationModeVaultFactory;
-  let userVault: TestIsolationModeTokenVaultV2;
+  let userVault: TestIsolationModeTokenVaultV1;
   let isolationModeMarketId: BigNumber;
 
   before(async () => {
@@ -56,10 +56,10 @@ describe('BorrowPositionRouter', () => {
     router = await createTestBorrowPositionRouter(core);
 
     underlyingToken = await createTestToken();
-    const libraries = await createIsolationModeTokenVaultV2ActionsImpl();
+    const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
 
     const userVaultImplementation = await createContractWithLibrary(
-      'TestIsolationModeTokenVaultV2',
+      'TestIsolationModeTokenVaultV1',
       { ...libraries },
       []
     );
@@ -77,9 +77,9 @@ describe('BorrowPositionRouter', () => {
 
     await factory.createVault(core.hhUser1.address);
     const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);
-    userVault = setupUserVaultProxy<TestIsolationModeTokenVaultV2>(
+    userVault = setupUserVaultProxy<TestIsolationModeTokenVaultV1>(
       vaultAddress,
-      TestIsolationModeTokenVaultV2__factory,
+      TestIsolationModeTokenVaultV1__factory,
       core.hhUser1,
     );
 

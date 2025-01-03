@@ -88,22 +88,45 @@ export class DeployedVault {
     core: CoreProtocolType<T>,
   ): Promise<EncodedTransaction> {
     if (this.contractName === 'GLPIsolationModeTokenVaultV2') {
-      const factory = IIsolationModeVaultFactoryOld__factory.connect(
-        await core.dolomiteMargin.getMarketTokenAddress(this.marketId),
-        core.governance,
+      return prettyPrintEncodedDataWithTypeSafety(
+        core,
+        { factory: this.factory as IIsolationModeVaultFactoryOld },
+        'factory',
+        'setUserVaultImplementation',
+        [this.implementationAddress],
       );
-      return prettyPrintEncodedDataWithTypeSafety(core, { factory }, 'factory', 'setUserVaultImplementation', [
-        this.implementationAddress,
-      ]);
     }
 
-    const factory = IIsolationModeVaultFactory__factory.connect(
-      await core.dolomiteMargin.getMarketTokenAddress(this.marketId),
-      core.governance,
+    return prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { factory: this.factory as IIsolationModeVaultFactory },
+      'factory',
+      'ownerSetUserVaultImplementation',
+      [this.implementationAddress],
     );
-    return prettyPrintEncodedDataWithTypeSafety(core, { factory }, 'factory', 'ownerSetUserVaultImplementation', [
-      this.implementationAddress,
-    ]);
+  }
+
+  public async encodeAddTrustedTokenConverter<T extends NetworkType>(
+    core: CoreProtocolType<T>,
+    tokenConverterAddress: string,
+  ): Promise<EncodedTransaction> {
+    if (this.contractName === 'GLPIsolationModeTokenVaultV2') {
+      return prettyPrintEncodedDataWithTypeSafety(
+        core,
+        { factory: this.factory as IIsolationModeVaultFactoryOld },
+        'factory',
+        'setIsTokenConverterTrusted',
+        [tokenConverterAddress, true],
+      );
+    }
+
+    return prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { factory: this.factory as IIsolationModeVaultFactory },
+      'factory',
+      'ownerSetIsTokenConverterTrusted',
+      [tokenConverterAddress, true],
+    );
   }
 
   private populateLibraryAddresses(libraries: string[]) {
@@ -121,34 +144,56 @@ export async function getDeployedVaults<T extends NetworkType>(
   governance: SignerWithAddressWithSafety,
 ): Promise<DeployedVault[]> {
   const deployedVaults: DeployedVault[] = [];
+  let skippedMarkets = 0;
   if (config.network === Network.ArbitrumOne) {
     for (const [marketId, params] of Object.entries(marketToIsolationModeVaultInfoArbitrumOne)) {
       let factory;
       if (marketId === DFS_GLP_MAP[Network.ArbitrumOne].marketId.toString()) {
-        factory = IIsolationModeVaultFactoryOld__factory.connect(
-          await dolomiteMargin.getMarketTokenAddress(Number(marketId)),
-          governance,
-        );
+        try {
+          factory = IIsolationModeVaultFactoryOld__factory.connect(
+            await dolomiteMargin.getMarketTokenAddress(Number(marketId)),
+            governance,
+          );
+        } catch (e) {
+          skippedMarkets++;
+          continue;
+        }
       } else {
-        factory = IIsolationModeVaultFactory__factory.connect(
-          await dolomiteMargin.getMarketTokenAddress(Number(marketId)),
-          governance,
-        );
+        try {
+          factory = IIsolationModeVaultFactory__factory.connect(
+            await dolomiteMargin.getMarketTokenAddress(Number(marketId)),
+            governance,
+          );
+        } catch (e) {
+          skippedMarkets++;
+          continue;
+        }
       }
 
       deployedVaults.push(new DeployedVault(Number(marketId), factory, params));
     }
   } else if (config.network === Network.Mantle) {
     for (const [marketId, params] of Object.entries(marketToIsolationModeVaultInfoMantle)) {
-      const factory = IIsolationModeVaultFactory__factory.connect(
-        await dolomiteMargin.getMarketTokenAddress(Number(marketId)),
-        governance,
-      );
+      try {
+        const factory = IIsolationModeVaultFactory__factory.connect(
+          await dolomiteMargin.getMarketTokenAddress(Number(marketId)),
+          governance,
+        );
 
-      deployedVaults.push(new DeployedVault(Number(marketId), factory, params));
+        deployedVaults.push(new DeployedVault(Number(marketId), factory, params));
+      } catch (e) {
+        skippedMarkets++;
+        continue;
+      }
     }
   } else {
     throw new Error(`Invalid network, found ${config.network}`);
+  }
+
+  // @follow-up Check this with corey
+  if (skippedMarkets != 0) {
+    console.log('Forked block detected. Skipping market & vault implementation checks.');
+    return deployedVaults;
   }
 
   const marketsCount = await dolomiteMargin.getNumMarkets();

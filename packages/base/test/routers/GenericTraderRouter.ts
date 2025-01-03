@@ -15,8 +15,8 @@ import {
   TestBorrowPositionRouter__factory,
   TestGenericTraderRouter,
   TestGenericTraderRouter__factory,
-  TestIsolationModeTokenVaultV2,
-  TestIsolationModeTokenVaultV2__factory,
+  TestIsolationModeTokenVaultV1,
+  TestIsolationModeTokenVaultV1__factory,
   TestIsolationModeUnwrapperTraderV2,
   TestIsolationModeUnwrapperTraderV2__factory,
   TestIsolationModeVaultFactory,
@@ -31,7 +31,7 @@ import {
   depositIntoDolomiteMargin
 } from 'packages/base/src/utils/dolomite-utils';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
-import { createAndUpgradeDolomiteRegistry, createIsolationModeTokenVaultV2ActionsImpl } from '../utils/dolomite';
+import { createAndUpgradeDolomiteRegistry, createIsolationModeTokenVaultV1ActionsImpl } from '../utils/dolomite';
 import { createTestIsolationModeVaultFactory } from '../utils/ecosystem-utils/testers';
 import { BigNumber } from 'ethers';
 import { expectProtocolBalance, expectThrow } from '../utils/assertions';
@@ -51,7 +51,7 @@ describe('GenericTraderRouter', () => {
 
   let underlyingToken: CustomTestToken;
   let factory: TestIsolationModeVaultFactory;
-  let userVault: TestIsolationModeTokenVaultV2;
+  let userVault: TestIsolationModeTokenVaultV1;
   let isolationModeMarketId: BigNumber;
   let tokenUnwrapper: TestIsolationModeUnwrapperTraderV2;
   let tokenWrapper: TestIsolationModeWrapperTraderV2;
@@ -104,10 +104,10 @@ describe('GenericTraderRouter', () => {
     );
 
     underlyingToken = await createTestToken();
-    const libraries = await createIsolationModeTokenVaultV2ActionsImpl();
+    const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
 
     const userVaultImplementation = await createContractWithLibrary(
-      'TestIsolationModeTokenVaultV2',
+      'TestIsolationModeTokenVaultV1',
       { ...libraries },
       []
     );
@@ -140,9 +140,9 @@ describe('GenericTraderRouter', () => {
 
     await factory.createVault(core.hhUser1.address);
     const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);
-    userVault = setupUserVaultProxy<TestIsolationModeTokenVaultV2>(
+    userVault = setupUserVaultProxy<TestIsolationModeTokenVaultV1>(
       vaultAddress,
-      TestIsolationModeTokenVaultV2__factory,
+      TestIsolationModeTokenVaultV1__factory,
       core.hhUser1,
     );
 

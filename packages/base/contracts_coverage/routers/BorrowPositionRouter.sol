@@ -21,7 +21,7 @@
 pragma solidity ^0.8.9;
 
 import { RouterBase } from "./RouterBase.sol";
-import { IIsolationModeTokenVaultV2 } from "../isolation-mode/interfaces/IIsolationModeTokenVaultV2.sol";
+import { IIsolationModeTokenVaultV1 } from "../isolation-mode/interfaces/IIsolationModeTokenVaultV1.sol";
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 import { IBorrowPositionRouter } from "./interfaces/IBorrowPositionRouter.sol";
 
@@ -72,7 +72,7 @@ contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
         _balanceCheckFlag
       );
     } else {
-      IIsolationModeTokenVaultV2 vault = _validateIsolationModeMarketAndGetVault(marketInfo, msg.sender);
+      IIsolationModeTokenVaultV1 vault = _validateIsolationModeMarketAndGetVault(marketInfo, msg.sender);
       vault.openBorrowPosition(_fromAccountNumber, _toAccountNumber, _amount);
     }
   }
@@ -93,7 +93,7 @@ contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
       );
     } else {
       MarketInfo memory marketInfo = _getMarketInfo(_isolationModeMarketId);
-      IIsolationModeTokenVaultV2 vault = _validateIsolationModeMarketAndGetVault(marketInfo, msg.sender);
+      IIsolationModeTokenVaultV1 vault = _validateIsolationModeMarketAndGetVault(marketInfo, msg.sender);
 
       if (_collateralMarketIds.length == 0) {
         vault.closeBorrowPositionWithUnderlyingVaultToken(_borrowAccountNumber, _toAccountNumber);
@@ -139,7 +139,7 @@ contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
       );
     } else {
       MarketInfo memory marketInfo = _getMarketInfo(_isolationModeMarketId);
-      IIsolationModeTokenVaultV2 vault = _validateIsolationModeMarketAndGetVault(marketInfo, msg.sender);
+      IIsolationModeTokenVaultV1 vault = _validateIsolationModeMarketAndGetVault(marketInfo, msg.sender);
       vault.repayAllForBorrowPosition(_fromAccountNumber, _borrowAccountNumber, _marketId, _balanceCheckFlag);
     }
   }
@@ -170,7 +170,7 @@ contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
     }
 
     MarketInfo memory marketInfo = _getMarketInfo(_isolationModeMarketId);
-    IIsolationModeTokenVaultV2 vault = _validateIsolationModeMarketAndGetVault(marketInfo, msg.sender);
+    IIsolationModeTokenVaultV1 vault = _validateIsolationModeMarketAndGetVault(marketInfo, msg.sender);
     if (_isolationModeMarketId == _marketId) {
       if (isDolomiteBalance(_fromAccountNumber) && !isDolomiteBalance(_toAccountNumber)) {
         vault.transferIntoPositionWithUnderlyingToken(_fromAccountNumber, _toAccountNumber, _amount);

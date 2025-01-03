@@ -27,7 +27,7 @@ import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { OnlyDolomiteMarginForUpgradeable } from "../helpers/OnlyDolomiteMarginForUpgradeable.sol";
 import { ReentrancyGuardUpgradeable } from "../helpers/ReentrancyGuardUpgradeable.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
-import { IIsolationModeTokenVaultV2 } from "../isolation-mode/interfaces/IIsolationModeTokenVaultV2.sol";
+import { IIsolationModeTokenVaultV1 } from "../isolation-mode/interfaces/IIsolationModeTokenVaultV1.sol";
 import { IIsolationModeVaultFactory } from "../isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
 import { Require } from "../protocol/lib/Require.sol";
 import { IRouterBase } from "./interfaces/IRouterBase.sol";
@@ -118,7 +118,7 @@ abstract contract RouterBase is
     function _validateIsolationModeMarketAndGetVault(
         MarketInfo memory _marketInfo,
         address _account
-    ) internal returns (IIsolationModeTokenVaultV2) {
+    ) internal returns (IIsolationModeTokenVaultV1) {
         Require.that(
             _marketInfo.isIsolationModeAsset,
             _FILE,
@@ -129,7 +129,7 @@ abstract contract RouterBase is
             vault = _marketInfo.factory.createVault(_account);
         }
 
-        return IIsolationModeTokenVaultV2(vault);
+        return IIsolationModeTokenVaultV1(vault);
     }
 
     function _isIsolationModeMarket(uint256 _marketId) internal view returns (bool) {

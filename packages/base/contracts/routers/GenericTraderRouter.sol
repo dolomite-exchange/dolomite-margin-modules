@@ -21,7 +21,7 @@
 pragma solidity ^0.8.9;
 
 import { RouterBase } from "./RouterBase.sol";
-import { IIsolationModeTokenVaultV2 } from "../isolation-mode/interfaces/IIsolationModeTokenVaultV2.sol";
+import { IIsolationModeTokenVaultV1 } from "../isolation-mode/interfaces/IIsolationModeTokenVaultV1.sol";
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 import { IGenericTraderProxyV2 } from "../proxies/interfaces/IGenericTraderProxyV2.sol";
 import { IGenericTraderRouter } from "./interfaces/IGenericTraderRouter.sol";
@@ -67,7 +67,7 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
             );
         } else {
             MarketInfo memory marketInfo = _getMarketInfo(_isolationModeMarketId);
-            IIsolationModeTokenVaultV2 vault = _validateIsolationModeMarketAndGetVault(marketInfo, msg.sender);
+            IIsolationModeTokenVaultV1 vault = _validateIsolationModeMarketAndGetVault(marketInfo, msg.sender);
 
             if (
                 _params.marketIdsPath[_params.marketIdsPath.length - 1] == _isolationModeMarketId
@@ -122,7 +122,7 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
             );
         } else {
             MarketInfo memory marketInfo = _getMarketInfo(_isolationModeMarketId);
-            IIsolationModeTokenVaultV2 vault = _validateIsolationModeMarketAndGetVault(marketInfo, msg.sender);
+            IIsolationModeTokenVaultV1 vault = _validateIsolationModeMarketAndGetVault(marketInfo, msg.sender);
 
             if (_checkAddCollateralAndSwap(_params)) {
                 vault.addCollateralAndSwapExactInputForOutput(
@@ -194,7 +194,7 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
 
     function _doTransfers(
         uint256 _isolationModeMarketId,
-        IIsolationModeTokenVaultV2 _vault,
+        IIsolationModeTokenVaultV1 _vault,
         IGenericTraderProxyV2.TransferCollateralParam memory _params,
         TransferType _transferType
     ) internal {
