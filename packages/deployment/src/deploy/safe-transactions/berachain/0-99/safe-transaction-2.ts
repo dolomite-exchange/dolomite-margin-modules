@@ -1,11 +1,11 @@
+import { getOogaBoogaAggregatorTraderConstructorParams } from 'packages/base/src/utils/constructors/traders';
 import { getAndCheckSpecificNetwork } from 'packages/base/src/utils/dolomite-utils';
+import { Network } from 'packages/base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from 'packages/base/test/utils';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
-import { Network } from 'packages/base/src/utils/no-deps-constants';
 import { deployContractAndSave, EncodedTransaction } from '../../../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
-import getScriptName from '../../../../../utils/get-script-name';
-import { getOogaBoogaAggregatorTraderConstructorParams } from 'packages/base/src/utils/constructors/traders';
+import getScriptName from '../../../../utils/get-script-name';
 
 /**
  * This script encodes the following transactions:
@@ -20,10 +20,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
 
   const transactions: EncodedTransaction[] = [];
 
-  await deployContractAndSave(
-    'OogaBoogaAggregatorTrader',
-    getOogaBoogaAggregatorTraderConstructorParams(core)
-  );
+  await deployContractAndSave('OogaBoogaAggregatorTrader', getOogaBoogaAggregatorTraderConstructorParams(core));
 
   return {
     core,
@@ -38,8 +35,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
       },
     },
     scriptName: getScriptName(__filename),
-    invariants: async () => {
-    },
+    invariants: async () => {},
   };
 }
 
