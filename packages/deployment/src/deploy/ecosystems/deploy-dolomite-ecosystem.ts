@@ -62,6 +62,7 @@ import { getDeployedVaults } from 'packages/base/test/utils/ecosystem-utils/depl
 const THIRTY_MINUTES_SECONDS = 60 * 30;
 const HANDLER_ADDRESS = '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe'; // Level Initiator
 
+// @todo Similar to dolomite registry implementation, do the same for dolomite account registry
 async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   const network = (await getAnyNetwork()) as T;
   if (!(ModuleDeployments.CREATE3Factory as any)?.[network]) {
