@@ -303,7 +303,7 @@ interface IIsolationModeTokenVaultV1 {
      * @param  _toAccountNumber The account number receiving the deposit.
      * @param  _marketId        The marketId of the deposit.
      */
-    function validateDepositIntoVault(uint256 _toAccountNumber, uint256 _marketId) external;
+    function validateDepositIntoVaultAfterTransfer(uint256 _toAccountNumber, uint256 _marketId) external;
 
     /**
      * @notice  Validates a withdrawal from the vault.
@@ -311,7 +311,7 @@ interface IIsolationModeTokenVaultV1 {
      * @param  _fromAccountNumber   The account number withdrawing the funds.
      * @param  _marketId            The marketId of the withdrawal.
      */
-    function validateWithdrawalFromVault(uint256 _fromAccountNumber, uint256 _marketId) external;
+    function validateWithdrawalFromVaultAfterTransfer(uint256 _fromAccountNumber, uint256 _marketId) external;
 
     /**
      * @return The amount of `UNDERLYING_TOKEN` that are currently in this vault.

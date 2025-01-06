@@ -519,7 +519,7 @@ library IsolationModeTokenVaultV1ActionsImpl {
         }
     }
 
-    function validateDepositIntoVault(
+    function validateDepositIntoVaultAfterTransfer(
         IIsolationModeTokenVaultV1 _vault,
         uint256 _accountNumber,
         uint256 _marketId
@@ -532,7 +532,7 @@ library IsolationModeTokenVaultV1ActionsImpl {
         }
     }
 
-    function validateWithdrawalFromVault(
+    function validateWithdrawalFromVaultAfterTransfer(
         IIsolationModeTokenVaultV1 _vault,
         uint256 _accountNumber,
         uint256 _marketId

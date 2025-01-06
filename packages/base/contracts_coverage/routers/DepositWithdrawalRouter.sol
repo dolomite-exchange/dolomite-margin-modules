@@ -160,7 +160,7 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
         }
 
         _withdrawFromDolomiteAndTransferToUser(
-            marketInfo.token,
+            marketInfo.transferToken,
             fromAccount,
             _fromAccountNumber,
             _marketId,
@@ -169,8 +169,7 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
             _balanceCheckFlag
         );
         if (_isolationModeMarketId != 0) {
-            // @audit @Corey - are you ok with this check?
-            vault.validateWithdrawalFromVault(_fromAccountNumber, _marketId);
+            vault.validateWithdrawalFromVaultAfterTransfer(_fromAccountNumber, _marketId);
         }
     }
 
@@ -326,7 +325,7 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
         }
 
         _withdrawFromDolomiteAndTransferToUser(
-            marketInfo.token,
+            marketInfo.transferToken,
             fromAccount,
             _fromAccountNumber,
             _marketId,
@@ -383,9 +382,8 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
                     value: _amountWei
                 })
             );
-            // @audit @Corey - Are you ok with these checks after deposit? If not, we will have to rethink collateral check
             // @follow-up Error message isn't great when depositing to account number 0
-            vault.validateDepositIntoVault(_toAccountNumber, _marketId);
+            vault.validateDepositIntoVaultAfterTransfer(_toAccountNumber, _marketId);
         } else {
             /*assert(_marketInfo.isIsolationModeAsset && _isolationModeMarketId == _marketId);*/
             IIsolationModeTokenVaultV1 vault = _validateIsolationModeMarketAndGetVault(_marketInfo, msg.sender);

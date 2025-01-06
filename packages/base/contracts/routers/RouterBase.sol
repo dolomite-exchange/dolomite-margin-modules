@@ -80,7 +80,7 @@ abstract contract RouterBase is
     }
 
     // ========================================================
-    // ================== Internal Functions ==================
+    // ================== Public Functions ==================
     // ========================================================
 
     function isDolomiteBalance(uint256 _accountNumber) public pure returns (bool) {
@@ -97,19 +97,24 @@ abstract contract RouterBase is
         address marketToken = DOLOMITE_MARGIN().getMarketTokenAddress(_marketId);
 
         if (_isIsolationModeAsset(marketToken)) {
+            address token = IIsolationModeVaultFactory(marketToken).UNDERLYING_TOKEN();
+            address transferToken = DOLOMITE_REGISTRY.dolomiteAccountRegistry().getTransferTokenOverride(token);
             return MarketInfo({
                 marketId: _marketId,
                 isIsolationModeAsset: true,
                 marketToken: marketToken,
-                token: IERC20(IIsolationModeVaultFactory(marketToken).UNDERLYING_TOKEN()),
+                token: IERC20(token),
+                transferToken: transferToken == address(0) ? IERC20(token) : IERC20(transferToken),
                 factory: IIsolationModeVaultFactory(marketToken)
             });
         } else {
+            address transferToken = DOLOMITE_REGISTRY.dolomiteAccountRegistry().getTransferTokenOverride(marketToken);
             return MarketInfo({
                 marketId: _marketId,
                 isIsolationModeAsset: false,
                 marketToken: marketToken,
                 token: IERC20(marketToken),
+                transferToken: transferToken == address(0) ? IERC20(marketToken) : IERC20(transferToken),
                 factory: IIsolationModeVaultFactory(address(0))
             });
         }
