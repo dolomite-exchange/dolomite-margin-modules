@@ -111,7 +111,13 @@ abstract contract IsolationModeUnwrapperTraderV2 is
         (uint256 minOutputAmount, bytes memory extraOrderData) = abi.decode(_orderData, (uint256, bytes));
 
         {
-            uint256 balance = IERC20(VAULT_FACTORY.UNDERLYING_TOKEN()).balanceOf(address(this));
+            address tokenOverride = DOLOMITE_REGISTRY.dolomiteAccountRegistry().getTransferTokenOverride(_inputToken);
+            uint256 balance;
+            if (tokenOverride == address(0)) {
+                balance = IERC20(VAULT_FACTORY.UNDERLYING_TOKEN()).balanceOf(address(this));
+            } else {
+                balance = IERC20(tokenOverride).balanceOf(address(this));
+            }
             Require.that(
                 balance >= _inputAmount,
                 _FILE,

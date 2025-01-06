@@ -84,6 +84,11 @@ contract BGTIsolationModeTokenVaultV1 is
         metaVault.withdrawBGTAndRedeem(_recipient, _amount);
     }
 
+    function underlyingBalanceOf() public view override(IIsolationModeTokenVaultV1, IsolationModeTokenVaultV1) returns (uint256) {
+        IBerachainRewardsMetaVault metaVault = IBerachainRewardsMetaVault(registry().getMetaVaultByAccount(OWNER()));
+        return metaVault.bgtBalanceOf();
+    }
+
     function dolomiteRegistry()
         public
         override(IIsolationModeTokenVaultV1, IsolationModeTokenVaultV1)

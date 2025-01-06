@@ -148,6 +148,7 @@ export async function getDeployedVaults<T extends NetworkType>(
       deployedVaults.push(new DeployedVault(Number(marketId), factory, params));
     }
   } else {
+    return deployedVaults;
     throw new Error(`Invalid network, found ${config.network}`);
   }
 

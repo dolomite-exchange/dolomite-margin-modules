@@ -376,6 +376,16 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
         }
     }
 
+    function bgtBalanceOf() public view returns (uint256) {
+        return REGISTRY().bgt().balanceOf(address(this));
+    }
+
+    function bgtmBalanceOf() public view returns (uint256) {
+        IBGTM bgtm = REGISTRY().bgtm();
+        IBGTM.Position memory position = bgtm.getDelegatedBalance(bgtmValidator(), address(this));
+        return bgtm.getBalance(address(this)) + position.pending + position.queued + position.confirmed;
+    }
+
     function REGISTRY() public view returns (IBerachainRewardsRegistry) {
         return IBerachainRewardsRegistry(_getAddress(_REGISTRY_SLOT));
     }
