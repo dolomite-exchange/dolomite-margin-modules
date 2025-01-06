@@ -129,6 +129,29 @@ export class DeployedVault {
     );
   }
 
+  public async encodeRemoveTrustedTokenConverter<T extends NetworkType>(
+    core: CoreProtocolType<T>,
+    tokenConverterAddress: string,
+  ): Promise<EncodedTransaction> {
+    if (this.contractName === 'GLPIsolationModeTokenVaultV2') {
+      return prettyPrintEncodedDataWithTypeSafety(
+        core,
+        { factory: this.factory as IIsolationModeVaultFactoryOld },
+        'factory',
+        'setIsTokenConverterTrusted',
+        [tokenConverterAddress, false],
+      );
+    }
+
+    return prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { factory: this.factory as IIsolationModeVaultFactory },
+      'factory',
+      'ownerSetIsTokenConverterTrusted',
+      [tokenConverterAddress, false],
+    );
+  }
+
   private populateLibraryAddresses(libraries: string[]) {
     const libraryAddresses: Record<string, string> = {};
     for (const library of libraries) {

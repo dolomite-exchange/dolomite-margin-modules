@@ -2,10 +2,9 @@ import CoreDeployments from '@dolomite-exchange/dolomite-margin/dist/migrations/
 import {
   DolomiteRegistryImplementation__factory,
   EventEmitterRegistry__factory,
+  GenericTraderProxyV2__factory,
   IDolomiteOwner__factory,
   IDolomiteRegistry__factory,
-  IGenericTraderProxyV1,
-  IGenericTraderProxyV1__factory,
   ILiquidatorAssetRegistry__factory,
   IPartiallyDelayedMultiSig__factory,
   RegistryProxy__factory,
@@ -62,7 +61,6 @@ import { getDeployedVaults } from 'packages/base/test/utils/ecosystem-utils/depl
 const THIRTY_MINUTES_SECONDS = 60 * 30;
 const HANDLER_ADDRESS = '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe'; // Level Initiator
 
-// @todo Similar to dolomite registry implementation, do the same for dolomite account registry
 async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   const network = (await getAnyNetwork()) as T;
   if (!(ModuleDeployments.CREATE3Factory as any)?.[network]) {
@@ -130,7 +128,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   );
   const eventEmitterProxy = RegistryProxy__factory.connect(eventEmitterProxyAddress, hhUser1);
 
-  const dolomiteAccountRegistryProxy = await deployDolomiteAccountRegistry(dolomiteMargin, hhUser1, network);
+  const [ dolomiteAccountRegistryImplementationAddress, dolomiteAccountRegistryProxy ] = await deployDolomiteAccountRegistry(dolomiteMargin, hhUser1, network);
 
   const registryImplementationAddress = await deployContractAndSave(
     'DolomiteRegistryImplementation',
@@ -161,6 +159,19 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   );
   const dolomiteRegistry = IDolomiteRegistry__factory.connect(dolomiteRegistryAddress, hhUser1);
   const dolomiteRegistryProxy = RegistryProxy__factory.connect(dolomiteRegistryAddress, hhUser1);
+
+  const genericTraderProxyV2LibAddress = await deployContractAndSave(
+    'GenericTraderProxyV2Lib',
+    [],
+    getMaxDeploymentVersionNameByDeploymentKey('GenericTraderProxyV2Lib', 1),
+  );
+  const genericTraderProxyV2Address = await deployContractAndSave(
+    'GenericTraderProxyV2',
+    [network, dolomiteRegistry.address, dolomiteMargin.address],
+    getMaxDeploymentVersionNameByDeploymentKey('GenericTraderProxyV2', 1),
+    { GenericTraderProxyV2Lib: genericTraderProxyV2LibAddress },
+  );
+  const genericTraderProxy = GenericTraderProxyV2__factory.connect(genericTraderProxyV2Address, hhUser1) as any;
 
   const dolomiteMigratorAddress = await deployContractAndSave(
     'DolomiteMigrator',
@@ -243,7 +254,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     governance,
     hhUser1,
     liquidatorAssetRegistry,
-    genericTraderProxy: IGenericTraderProxyV1__factory.connect(genericTraderAddress, governance),
+    genericTraderProxy, // @follow-up Corey how do we want to handle this since it is V2? Please check how I did genericTraderProxy
     gnosisSafe: gnosisSafeSigner,
     gnosisSafeAddress: gnosisSafeAddress,
     ownerAdapterV1: dolomiteOwnerV1,
@@ -254,10 +265,12 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     dolomiteRegistry,
     dolomiteRegistryProxy,
     CoreDeployments.BorrowPositionProxyV2[network].address,
-    dolomiteAccountRegistryProxy.address,
+    dolomiteAccountRegistryProxy,
     dolomiteMigratorAddress,
+    genericTraderProxy,
     oracleAggregator.address,
     registryImplementationAddress,
+    dolomiteAccountRegistryImplementationAddress,
     transactions,
     core,
   );
@@ -270,19 +283,6 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     );
   }
 
-  const genericTraderProxy = core.genericTraderProxy as IGenericTraderProxyV1;
-  if ((await genericTraderProxy.EVENT_EMITTER_REGISTRY()) !== eventEmitterProxy.address) {
-    transactions.push(
-      await prettyPrintEncodedDataWithTypeSafety(
-        core,
-        { genericTraderProxy },
-        'genericTraderProxy',
-        'ownerSetEventEmitterRegistry',
-        [eventEmitterProxy.address],
-      ),
-    );
-  }
-
   await encodeIsolationModeFreezableLiquidatorMigrations(
     core,
     isolationModeFreezableLiquidatorProxyAddress,
@@ -292,9 +292,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   const deployedVaults = await getDeployedVaults(config, dolomiteMargin, governance);
   await encodeDolomiteRouterMigrations(
     core,
-    depositWithdrawalRouterAddress,
-    borrowPositionRouterAddress,
-    genericTraderRouterAddress,
+    [depositWithdrawalRouterAddress, borrowPositionRouterAddress, genericTraderRouterAddress],
     deployedVaults,
     transactions,
   );
