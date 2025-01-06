@@ -11,7 +11,7 @@ import {
   IERC20__factory,
   IERC20Metadata__factory,
   IIsolationModeUnwrapperTraderV2,
-  IIsolationModeVaultFactory,
+  IIsolationModeVaultFactory, IIsolationModeVaultFactory__factory,
   IIsolationModeWrapperTraderV2,
 } from '@dolomite-exchange/modules-base/src/types';
 import {
@@ -1732,38 +1732,17 @@ export async function prettyPrintEncodeAddAsyncIsolationModeMarket<T extends Net
   maxSupplyWei: BigNumberish,
   options: AddMarketOptions = {},
 ): Promise<EncodedTransaction[]> {
-  const transactions: EncodedTransaction[] = await prettyPrintEncodeAddMarket(
+  const transactions: EncodedTransaction[] = await prettyPrintEncodeAddIsolationModeMarket(
     core,
-    IERC20__factory.connect(factory.address, factory.signer),
+    IIsolationModeVaultFactory__factory.connect(factory.address, factory.signer),
     oracle,
-    core.interestSetters.alwaysZeroInterestSetter,
+    unwrapper,
+    wrapper,
+    marketId,
     targetCollateralization,
     targetLiquidationPremium,
     maxSupplyWei,
-    ZERO_BI,
-    true,
-    ZERO_BI,
     options,
-  );
-
-  transactions.push(
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { dolomiteMargin: core.dolomiteMargin },
-      'dolomiteMargin',
-      'ownerSetGlobalOperator',
-      [factory.address, true],
-    ),
-    await prettyPrintEncodedDataWithTypeSafety(core, { factory }, 'factory', 'ownerInitialize', [
-      [unwrapper.address, wrapper.address, ...(options.additionalConverters ?? []).map((c) => c.address)],
-    ]),
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { liquidatorAssetRegistry: core.liquidatorAssetRegistry },
-      'liquidatorAssetRegistry',
-      'ownerAddLiquidatorToAssetWhitelist',
-      [marketId, core.liquidatorProxyV4.address],
-    ),
   );
 
   transactions.push(
