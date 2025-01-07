@@ -1,12 +1,30 @@
 import { getAnyNetwork } from 'packages/base/src/utils/dolomite-utils';
 import { Network, ONE_BI, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
-import { getRealLatestBlockNumber } from 'packages/base/test/utils';
+import { getRealLatestBlockNumber, setEtherBalance } from 'packages/base/test/utils';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
 import { deployContractAndSave, EncodedTransaction, prettyPrintEncodeAddIsolationModeMarket, prettyPrintEncodeAddMarket } from '../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../utils/dry-run-utils';
 import getScriptName from '../../utils/get-script-name';
-import { getBerachainRewardsRegistryConstructorParams, getBGTIsolationModeUnwrapperTraderV2ConstructorParams, getBGTIsolationModeVaultFactoryConstructorParams, getBGTMIsolationModeUnwrapperTraderV2ConstructorParams, getBGTMIsolationModeVaultFactoryConstructorParams, getInfraredBGTIsolationModeVaultFactoryConstructorParams } from 'packages/berachain/src/berachain-constructors';
-import { BerachainRewardsRegistry__factory, BGTIsolationModeTokenVaultV1__factory, BGTIsolationModeUnwrapperTraderV2__factory, BGTIsolationModeVaultFactory__factory, BGTMERC20Wrapper__factory, BGTMIsolationModeTokenVaultV1__factory, BGTMIsolationModeUnwrapperTraderV2__factory, BGTMIsolationModeVaultFactory__factory, InfraredBGTIsolationModeTokenVaultV1__factory, InfraredBGTIsolationModeVaultFactory__factory } from 'packages/berachain/src/types';
+import {
+  getBerachainRewardsRegistryConstructorParams,
+  getBGTIsolationModeUnwrapperTraderV2ConstructorParams,
+  getBGTIsolationModeVaultFactoryConstructorParams,
+  getBGTMIsolationModeUnwrapperTraderV2ConstructorParams,
+  getBGTMIsolationModeVaultFactoryConstructorParams,
+  getInfraredBGTIsolationModeVaultFactoryConstructorParams
+} from 'packages/berachain/src/berachain-constructors';
+import {
+  BerachainRewardsRegistry__factory,
+  BGTIsolationModeTokenVaultV1__factory,
+  BGTIsolationModeUnwrapperTraderV2__factory,
+  BGTIsolationModeVaultFactory__factory,
+  BGTMERC20Wrapper__factory,
+  BGTMIsolationModeTokenVaultV1__factory,
+  BGTMIsolationModeUnwrapperTraderV2__factory,
+  BGTMIsolationModeVaultFactory__factory,
+  InfraredBGTIsolationModeTokenVaultV1__factory,
+  InfraredBGTIsolationModeVaultFactory__factory
+} from 'packages/berachain/src/types';
 import { TargetCollateralization, TargetLiquidationPenalty } from 'packages/base/src/utils/constructors/dolomite';
 import { parseEther } from 'ethers/lib/utils';
 import { SimpleIsolationModeUnwrapperTraderV2__factory, SimpleIsolationModeWrapperTraderV2__factory } from 'packages/base/src/types';
@@ -26,6 +44,7 @@ async function main(): Promise<DryRunOutput<AcceptableNetworks>> {
   }
   const network = rawNetwork as AcceptableNetworks;
   const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
+  await setEtherBalance(core.gnosisSafe.address, parseEther('1000'));
 
   /*
    * Deploy metavault implementation and berachain rewards registry
@@ -93,9 +112,9 @@ async function main(): Promise<DryRunOutput<AcceptableNetworks>> {
   );
   const bgtUnwrapper = BGTIsolationModeUnwrapperTraderV2__factory.connect(bgtUnwrapperAddress, core.hhUser1);
 
-  // throw new Error(
-  //   'Update with proper oracles, appropriate collat, liquidation penalty, max supply, and what to do with wrapper parameter'
-  // );
+  throw new Error(
+    'Update with proper oracles, appropriate collat, liquidation penalty, max supply, and what to do with wrapper parameter'
+  );
   transactions.push(
     ...await prettyPrintEncodeAddIsolationModeMarket(
       core,

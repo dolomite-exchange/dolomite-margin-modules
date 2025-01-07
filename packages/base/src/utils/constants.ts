@@ -1261,7 +1261,7 @@ export const GMX_WITHDRAWAL_VAULT_MAP: Record<Network.ArbitrumOne, string> = {
 export const GNOSIS_SAFE_MAP: Record<Network, string> = {
   [Network.ArbitrumOne]: '0xa75c21C5BE284122a87A37a76cc6C4DD3E55a1D4',
   [Network.Base]: '0x145637A4Aa6B2001DC9ECBc89CEf75bB960F90B2',
-  [Network.Berachain]: '0x52d7BcB650c591f6E8da90f797A1d0Bfd8fD05F9',
+  [Network.Berachain]: '0x52256ef863a713Ef349ae6E97A7E8f35785145dE',
   [Network.BerachainCartio]: '0xd5b100ABA8B193079d75A0bF560CF94fD9c94Cbe',
   [Network.Ink]: '0x145637A4Aa6B2001DC9ECBc89CEf75bB960F90B2',
   [Network.Mantle]: '0x59F8CAD377e4C66473460Ce5Ee8976760A04F138',
