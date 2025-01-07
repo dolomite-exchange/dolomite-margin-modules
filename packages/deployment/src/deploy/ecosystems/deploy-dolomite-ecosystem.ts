@@ -57,6 +57,7 @@ import { encodeDolomiteRegistryMigrations } from './helpers/encode-dolomite-regi
 import { encodeIsolationModeFreezableLiquidatorMigrations } from './helpers/encode-isolation-mode-freezable-liquidator-migrations';
 import { encodeDolomiteRouterMigrations } from './helpers/encode-dolomite-router-migrations';
 import { getDeployedVaults } from 'packages/base/test/utils/ecosystem-utils/deployed-vaults';
+import { encodeDolomiteAccountRegistryMigrations } from './helpers/encode-dolomite-account-registry-migrations';
 
 const THIRTY_MINUTES_SECONDS = 60 * 30;
 const HANDLER_ADDRESS = '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe'; // Level Initiator
@@ -168,7 +169,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   const genericTraderProxyV2Address = await deployContractAndSave(
     'GenericTraderProxyV2',
     [network, dolomiteRegistry.address, dolomiteMargin.address],
-    getMaxDeploymentVersionNameByDeploymentKey('GenericTraderProxyV2', 1),
+    getMaxDeploymentVersionNameByDeploymentKey('GenericTraderProxy', 2),
     { GenericTraderProxyV2Lib: genericTraderProxyV2LibAddress },
   );
   const genericTraderProxy = GenericTraderProxyV2__factory.connect(genericTraderProxyV2Address, hhUser1) as any;
@@ -243,7 +244,6 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   }
 
   // We can't set up the core protocol here because there are too many missing contracts/context
-  const genericTraderAddress = CoreDeployments.GenericTraderProxyV1[network].address;
   const governanceAddress = await dolomiteMargin.connect(hhUser1).owner();
   const governance = await impersonateOrFallback(governanceAddress, true, hhUser1);
   const core = {
@@ -254,12 +254,19 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     governance,
     hhUser1,
     liquidatorAssetRegistry,
-    genericTraderProxy, // @follow-up Corey how do we want to handle this since it is V2? Please check how I did genericTraderProxy
+    genericTraderProxy, // @follow-up Corey can you double check how I deploy the new generic trader proxy?
     gnosisSafe: gnosisSafeSigner,
     gnosisSafeAddress: gnosisSafeAddress,
     ownerAdapterV1: dolomiteOwnerV1,
     ownerAdapterV2: dolomiteOwnerV1, // TODO: fix after review + test
   } as CoreProtocolType<T>;
+
+  await encodeDolomiteAccountRegistryMigrations(
+    dolomiteAccountRegistryProxy,
+    dolomiteAccountRegistryImplementationAddress,
+    transactions,
+    core,
+  );
 
   await encodeDolomiteRegistryMigrations(
     dolomiteRegistry,
@@ -270,11 +277,9 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     genericTraderProxy,
     oracleAggregator.address,
     registryImplementationAddress,
-    dolomiteAccountRegistryImplementationAddress,
     transactions,
     core,
   );
-
   if ((await eventEmitterProxy.implementation()) !== eventEmitterRegistryImplementation.address) {
     transactions.push(
       await prettyPrintEncodedDataWithTypeSafety(core, { eventEmitterProxy }, 'eventEmitterProxy', 'upgradeTo', [

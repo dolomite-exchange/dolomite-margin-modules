@@ -1696,6 +1696,7 @@ export async function prettyPrintEncodeAddIsolationModeMarket<T extends NetworkT
     options,
   );
 
+  throw new Error('add routers to core object and ownerInitialize');
   transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(
       core,

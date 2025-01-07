@@ -1,6 +1,7 @@
 import { ADDRESS_ZERO } from '@dolomite-exchange/zap-sdk/dist/src/lib/Constants';
 import {
   DolomiteAccountRegistry,
+  GenericTraderProxyV2,
   IDolomiteRegistry,
   IIsolationModeTokenVaultV1__factory,
   RegistryProxy,
@@ -15,10 +16,9 @@ export async function encodeDolomiteRegistryMigrations(
   borrowPositionProxyAddress: string,
   dolomiteAccountRegistryProxy: RegistryProxy,
   dolomiteMigratorAddress: string,
-  genericTraderProxyV2Address: string,
+  genericTraderProxyV2: GenericTraderProxyV2,
   oracleAggregatorAddress: string,
   registryImplementationAddress: string,
-  dolomiteAccountRegistryImplementationAddress: string,
   transactions: EncodedTransaction[],
   core: any,
 ) {
@@ -30,18 +30,6 @@ export async function encodeDolomiteRegistryMigrations(
         'dolomiteRegistryProxy',
         'upgradeTo',
         [registryImplementationAddress],
-      ),
-    );
-  }
-
-  if ((await dolomiteAccountRegistryProxy.implementation()) !== dolomiteAccountRegistryImplementationAddress) {
-    transactions.push(
-      await prettyPrintEncodedDataWithTypeSafety(
-        core,
-        { dolomiteAccountRegistryProxy },
-        'dolomiteAccountRegistryProxy',
-        'upgradeTo',
-        [dolomiteAccountRegistryImplementationAddress],
       ),
     );
   }
@@ -84,7 +72,7 @@ export async function encodeDolomiteRegistryMigrations(
   let needsRegistryGenericTraderProxyV2Encoding = true;
   try {
     const foundGenericTraderProxyV2Address = await dolomiteRegistry.genericTraderProxy();
-    needsRegistryGenericTraderProxyV2Encoding = foundGenericTraderProxyV2Address !== genericTraderProxyV2Address;
+    needsRegistryGenericTraderProxyV2Encoding = foundGenericTraderProxyV2Address !== genericTraderProxyV2.address;
   } catch (e) {}
   if (needsRegistryGenericTraderProxyV2Encoding) {
     transactions.push(
@@ -93,7 +81,7 @@ export async function encodeDolomiteRegistryMigrations(
         { dolomiteRegistry },
         'dolomiteRegistry',
         'ownerSetGenericTraderProxy',
-        [genericTraderProxyV2Address],
+        [genericTraderProxyV2.address],
       ),
     );
     transactions.push( // @follow-up Corey do we want this here?
@@ -102,7 +90,7 @@ export async function encodeDolomiteRegistryMigrations(
         core,
         'dolomiteMargin',
         'ownerSetGlobalOperator',
-        [genericTraderProxyV2Address, true],
+        [genericTraderProxyV2.address, true],
       ),
     );
   }
