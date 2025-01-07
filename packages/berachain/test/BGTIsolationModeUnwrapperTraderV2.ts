@@ -50,6 +50,7 @@ import {
 import { createDolomiteAccountRegistryImplementation, setupNewGenericTraderProxy } from 'packages/base/test/utils/dolomite';
 import { BYTES_EMPTY } from '@dolomite-exchange/zap-sdk/dist/src/lib/Constants';
 import { AccountInfoStruct } from 'packages/base/src/utils';
+import { getBGTIsolationModeUnwrapperTraderV2ConstructorParams } from '../src/berachain-constructors';
 
 const LP_TOKEN_WHALE_ADDRESS = '0x1293DA55eC372a94368Fa20E8DF69FaBc3320baE';
 const defaultAccountNumber = ZERO_BI;
@@ -119,7 +120,7 @@ describe('BGTIsolationModeUnwrapperTraderV2', () => {
     bgtUnwrapper = await createContractWithAbi<BGTIsolationModeUnwrapperTraderV2>(
       BGTIsolationModeUnwrapperTraderV2__factory.abi,
       BGTIsolationModeUnwrapperTraderV2__factory.bytecode,
-      [registry.address, bgtFactory.address, core.dolomiteMargin.address],
+      getBGTIsolationModeUnwrapperTraderV2ConstructorParams(registry, bgtFactory, core),
     );
     await core.dolomiteAccountRegistry.connect(core.governance).ownerSetTransferTokenOverride(
       bgtFactory.address,

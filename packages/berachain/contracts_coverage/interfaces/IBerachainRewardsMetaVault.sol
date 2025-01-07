@@ -82,6 +82,10 @@ interface IBerachainRewardsMetaVault {
 
     function blocksToActivateBgtBoost() external view returns (uint256);
 
+    function bgtBalanceOf() external view returns (uint256);
+
+    function bgtmBalanceOf() external view returns (uint256);
+
     function getDefaultRewardVaultTypeByAsset(
         address _asset
     ) external view returns (IBerachainRewardsRegistry.RewardVaultType);

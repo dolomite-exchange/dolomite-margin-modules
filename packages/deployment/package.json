@@ -9,6 +9,7 @@
     "lint": "npm run lint:ts",
     "lint:ts": "tslint --project ../../ -t verbose 'src/**/*.ts'",
     "test": "hardhat --network hardhat test",
+    "deploy:berachain-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts berachain",
     "deploy:chainlink-price-oracle-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts chainlink-price-oracle",
     "deploy:chronicle-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts chronicle",
     "deploy:create3-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts create3",

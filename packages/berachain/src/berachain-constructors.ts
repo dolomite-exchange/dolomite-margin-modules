@@ -12,7 +12,10 @@ import {
   IInfraredBGTIsolationModeTokenVaultV1,
   InfraredBGTIsolationModeTokenVaultV1,
   IBGTMIsolationModeTokenVaultV1,
-  BGTMIsolationModeTokenVaultV1
+  BGTMIsolationModeTokenVaultV1,
+  BGTMIsolationModeUnwrapperTraderV2,
+  IBGTMIsolationModeVaultFactory,
+  BGTMIsolationModeVaultFactory
 } from './types';
 
 export async function getBerachainRewardsRegistryConstructorParams(
@@ -90,6 +93,18 @@ export function getBGTIsolationModeVaultFactoryConstructorParams(
   ];
 }
 
+export function getBGTIsolationModeUnwrapperTraderV2ConstructorParams(
+  beraRegistry: IBerachainRewardsRegistry | BerachainRewardsRegistry,
+  factory: IBerachainRewardsIsolationModeVaultFactory | BerachainRewardsIsolationModeVaultFactory,
+  core: CoreProtocolBerachain
+): any[] {
+  return [
+    beraRegistry.address,
+    factory.address,
+    core.dolomiteMargin.address,
+  ];
+}
+
 export function getBGTMIsolationModeVaultFactoryConstructorParams(
   beraRegistry: IBerachainRewardsRegistry | BerachainRewardsRegistry,
   underlyingToken: { address: string },
@@ -101,6 +116,18 @@ export function getBGTMIsolationModeVaultFactoryConstructorParams(
     underlyingToken.address,
     core.borrowPositionProxyV2.address,
     vaultImplementation.address,
+    core.dolomiteMargin.address,
+  ];
+}
+
+export function getBGTMIsolationModeUnwrapperTraderV2ConstructorParams(
+  beraRegistry: IBerachainRewardsRegistry | BerachainRewardsRegistry,
+  factory: IBGTMIsolationModeVaultFactory | BGTMIsolationModeVaultFactory,
+  core: CoreProtocolBerachain
+): any[] {
+  return [
+    beraRegistry.address,
+    factory.address,
     core.dolomiteMargin.address,
   ];
 }

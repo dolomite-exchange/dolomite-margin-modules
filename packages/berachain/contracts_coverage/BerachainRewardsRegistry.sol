@@ -28,7 +28,6 @@ import { Create2 } from "@openzeppelin/contracts/utils/Create2.sol";
 import { MetaVaultUpgradeableProxy } from "./MetaVaultUpgradeableProxy.sol";
 import { IBGT } from "./interfaces/IBGT.sol";
 import { IBGTM } from "./interfaces/IBGTM.sol";
-import { IBerachainRewardsMetaVault } from "./interfaces/IBerachainRewardsMetaVault.sol";
 import { IBerachainRewardsRegistry } from "./interfaces/IBerachainRewardsRegistry.sol";
 import { IBerachainRewardsVaultFactory } from "./interfaces/IBerachainRewardsVaultFactory.sol";
 import { IInfrared } from "./interfaces/IInfrared.sol";
