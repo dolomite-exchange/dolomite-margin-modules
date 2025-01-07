@@ -109,8 +109,8 @@ contract VotingEscrow is IERC721, IERC721Metadata, IVotes, Initializable {
     uint8 internal constant _entered = 2;
     uint8 internal _entered_state;
 
-    string public constant name = "veToken";
-    string public constant symbol = "veToken";
+    string public constant name = "veDOLO";
+    string public constant symbol = "veDOLO";
     string public constant version = "1.0.0";
     uint8 public constant decimals = 18;
 
