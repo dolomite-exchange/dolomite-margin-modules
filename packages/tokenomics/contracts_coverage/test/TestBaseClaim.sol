@@ -20,47 +20,36 @@
 
 pragma solidity ^0.8.9;
 
-import { InternalSafeDelegateCallLib } from "@dolomite-exchange/modules-base/contracts/lib/InternalSafeDelegateCallLib.sol"; // solhint-disable-line max-line-length
-import { OptionAirdrop } from "../OptionAirdrop.sol";
+import { BaseClaim } from "../BaseClaim.sol";
+import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 
 
 /**
- * @title   TestOptionAirdrop
+ * @title   TestBaseClaim
  * @author  Dolomite
  *
  * @notice  Test implementation for exposing areas for coverage testing
  */
-contract TestOptionAirdrop is OptionAirdrop {
+contract TestBaseClaim is BaseClaim {
+
+    bytes32 private constant _FILE = "TestBaseClaim";
 
     constructor(
-        address _dolo,
-        address _treasury,
         address _dolomiteRegistry,
         address _dolomiteMargin
-    ) OptionAirdrop(
-        _dolo,
-        _treasury,
+    ) BaseClaim(
         _dolomiteRegistry,
         _dolomiteMargin
     ) {} // solhint-disable-line
 
-    function callClaimAndTriggerReentrancy(
-        bytes32[] calldata _proof,
-        uint256 _allocatedAmount,
-        uint256 _claimAmount,
-        uint256 _marketId,
-        uint256 _fromAccountNumber
-    ) external nonReentrant {
-        InternalSafeDelegateCallLib.safeDelegateCall(
-            address(this),
-            abi.encodeWithSelector(
-                this.claim.selector,
-                _proof,
-                _allocatedAmount,
-                _claimAmount,
-                _marketId,
-                _fromAccountNumber
-            )
+    function verifyMerkleProof(bytes32[] calldata _proof, uint256 _amount) external view returns (bool){
+        address user = addressRemapping[msg.sender] == address(0) ? msg.sender : addressRemapping[msg.sender];
+        if (_verifyMerkleProof(user, _proof, _amount)) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            _verifyMerkleProof(user, _proof, _amount),
+            _FILE,
+            "Invalid merkle proof"
         );
+        return true;
     }
 }

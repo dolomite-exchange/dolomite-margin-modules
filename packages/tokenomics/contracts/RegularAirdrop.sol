@@ -21,11 +21,11 @@
 pragma solidity ^0.8.9;
 
 import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
-import { IDolomiteRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IDolomiteRegistry.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { MerkleProof } from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
+import { BaseClaim } from "./BaseClaim.sol";
 import { IRegularAirdrop } from "./interfaces/IRegularAirdrop.sol";
 import { IVotingEscrow } from "./interfaces/IVotingEscrow.sol";
 
@@ -36,7 +36,7 @@ import { IVotingEscrow } from "./interfaces/IVotingEscrow.sol";
  *
  * Regular airdrop contract for DOLO tokens. 50% is given to the user and 50% is locked in veDolo
  */
-contract RegularAirdrop is OnlyDolomiteMargin, IRegularAirdrop {
+contract RegularAirdrop is OnlyDolomiteMargin, BaseClaim, IRegularAirdrop {
     using SafeERC20 for IERC20;
 
     // ===================================================
@@ -52,12 +52,11 @@ contract RegularAirdrop is OnlyDolomiteMargin, IRegularAirdrop {
     // ==================== State Variables ==============
     // ===================================================
 
-    IDolomiteRegistry public immutable DOLOMITE_REGISTRY; // solhint -disable-line mixed-case
     IERC20 public immutable DOLO; // solhint -disable-line mixed-case
     IVotingEscrow public immutable VE_DOLO; // solhint -disable-line mixed-case
 
-    bytes32 public merkleRoot;
     mapping(address => bool) public userToClaimStatus;
+    mapping(address => bool) public userToFullDolo;
 
     // ===========================================================
     // ======================= Constructor =======================
@@ -68,22 +67,20 @@ contract RegularAirdrop is OnlyDolomiteMargin, IRegularAirdrop {
         address _veDolo,
         address _dolomiteRegistry,
         address _dolomiteMargin
-    ) OnlyDolomiteMargin(_dolomiteMargin) {
+    ) BaseClaim(_dolomiteRegistry, _dolomiteMargin) {
         DOLO = IERC20(_dolo);
         VE_DOLO = IVotingEscrow(_veDolo);
-        DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
     }
 
     // ======================================================
     // ================== Admin Functions ===================
     // ======================================================
 
-    function ownerSetMerkleRoot(bytes32 _merkleRoot) external onlyDolomiteMarginOwner(msg.sender) {
-        _ownerSetMerkleRoot(_merkleRoot);
-    }
-
-    function ownerWithdrawRewardToken(address _token, address _receiver) external onlyDolomiteMarginOwner(msg.sender) {
-        _ownerWithdrawRewardToken(_token, _receiver);
+    function ownerSetUserToFullDolo(
+        address[] memory _users,
+        bool[] memory _fullDolo
+    ) external onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetUserToFullDolo(_users, _fullDolo);
     }
 
     // ==============================================================
@@ -91,8 +88,10 @@ contract RegularAirdrop is OnlyDolomiteMargin, IRegularAirdrop {
     // ==============================================================
 
     function claim(bytes32[] calldata _proof, uint256 _amount) external {
+        address user = addressRemapping[msg.sender] == address(0) ? msg.sender : addressRemapping[msg.sender];
+
         Require.that(
-            _verifyMerkleProof(_proof, _amount),
+            _verifyMerkleProof(user, _proof, _amount),
             _FILE,
             "Invalid merkle proof"
         );
@@ -101,13 +100,26 @@ contract RegularAirdrop is OnlyDolomiteMargin, IRegularAirdrop {
             _FILE,
             "User already claimed"
         );
-
         userToClaimStatus[msg.sender] = true;
 
-        uint256 veDoloAmount = _amount / 2;
-        DOLO.safeApprove(address(VE_DOLO), veDoloAmount);
-        VE_DOLO.create_lock_for(veDoloAmount, MAX_LOCK, msg.sender);
-        DOLO.safeTransfer(msg.sender, _amount - veDoloAmount);
+        // @audit @Corey, I'm worried about a situation where the user actually can access the old address and the remapped address
+        if (user != msg.sender) {
+            Require.that(
+                !userToClaimStatus[user],
+                _FILE,
+                "User already claimed"
+            );
+            userToClaimStatus[user] = true;
+        }
+
+        if (userToFullDolo[msg.sender]) {
+            DOLO.safeTransfer(msg.sender, _amount);
+        } else {
+            uint256 veDoloAmount = _amount / 2;
+            DOLO.safeApprove(address(VE_DOLO), veDoloAmount);
+            VE_DOLO.create_lock_for(veDoloAmount, MAX_LOCK, msg.sender);
+            DOLO.safeTransfer(msg.sender, _amount - veDoloAmount);
+        }
 
         DOLOMITE_REGISTRY.eventEmitter().emitRewardClaimed(
             msg.sender,
@@ -124,22 +136,24 @@ contract RegularAirdrop is OnlyDolomiteMargin, IRegularAirdrop {
         return userToClaimStatus[_user];
     }
 
+    function getUserToFullDolo(address _user) external view returns (bool) {
+        return userToFullDolo[_user];
+    }
+
     // ==================================================================
     // ======================= Internal Functions =======================
     // ==================================================================
 
-    function _ownerSetMerkleRoot(bytes32 _merkleRoot) internal {
-        merkleRoot = _merkleRoot;
-        emit MerkleRootSet(_merkleRoot);
-    }
+    function _ownerSetUserToFullDolo(address[] memory _users, bool[] memory _fullDolo) internal {
+        Require.that(
+            _users.length == _fullDolo.length,
+            _FILE,
+            "Array length mismatch"
+        );
 
-    function _ownerWithdrawRewardToken(address _token, address _receiver) internal {
-        uint256 bal = IERC20(_token).balanceOf(address(this));
-        IERC20(_token).safeTransfer(_receiver, bal);
-    }
-
-    function _verifyMerkleProof(bytes32[] calldata _proof, uint256 _amount) internal view returns (bool) {
-        bytes32 leaf = keccak256(abi.encode(msg.sender, _amount));
-        return MerkleProof.verifyCalldata(_proof, merkleRoot, leaf);
+        for (uint256 i = 0; i < _users.length; i++) {
+            userToFullDolo[_users[i]] = _fullDolo[i];
+        }
+        emit UserToFullDoloSet(_users, _fullDolo);
     }
 }

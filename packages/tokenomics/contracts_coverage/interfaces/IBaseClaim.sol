@@ -22,28 +22,29 @@ pragma solidity ^0.8.9;
 
 
 /**
- * @title   IRegularAirdrop
+ * @title   IBaseClaim
  * @author  Dolomite
  *
- * @notice  Interface for DOLO regular airdrop contract
+ * @notice  Interface for base claim contract
  */
-interface IRegularAirdrop {
+interface IBaseClaim {
 
     // ======================================================
     // ======================== Events ======================
     // ======================================================
 
-    event UserToFullDoloSet(address[] users, bool[] fullDolo);
+    event AddressRemappingSet(address[] users, address[] remappedAddresses);
+    event MerkleRootSet(bytes32 merkleRoot);
 
     // ======================================================
     // ================== External Functions ================
     // ======================================================
 
-    function ownerSetUserToFullDolo(address[] memory _users, bool[] memory _fullDolo) external;
+    function ownerSetAddressRemapping(address[] memory _users, address[] memory _remappedAddresses) external;
 
-    function claim(bytes32[] memory _proof, uint256 _amount) external;
+    function ownerSetMerkleRoot(bytes32 _merkleRoot) external;
 
-    function getClaimStatusByUser(address _user) external view returns (bool);
+    function ownerWithdrawRewardToken(address _token, address _receiver) external;
 
-    function getUserToFullDolo(address _user) external view returns (bool);
+    function getAddressRemapping(address _user) external view returns (address);
 }

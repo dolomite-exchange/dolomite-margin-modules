@@ -32,6 +32,7 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { MerkleProof } from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import { IOptionAirdrop } from "./interfaces/IOptionAirdrop.sol";
+import { BaseClaim } from "./BaseClaim.sol";
 
 
 /**
@@ -40,7 +41,7 @@ import { IOptionAirdrop } from "./interfaces/IOptionAirdrop.sol";
  *
  * Option airdrop contract for DOLO tokens
  */
-contract OptionAirdrop is OnlyDolomiteMargin, ReentrancyGuard, IOptionAirdrop {
+contract OptionAirdrop is OnlyDolomiteMargin, ReentrancyGuard, BaseClaim, IOptionAirdrop {
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.UintSet;
 
@@ -50,16 +51,14 @@ contract OptionAirdrop is OnlyDolomiteMargin, ReentrancyGuard, IOptionAirdrop {
 
     bytes32 private constant _FILE = "OptionAirdrop";
 
-    uint256 public constant DOLO_PRICE = .03e18; // Our code would expect the price in 18 decimals
+    uint256 public constant DOLO_PRICE = 0.03125 ether;
 
     // ===================================================
     // ==================== State Variables ==============
     // ===================================================
 
-    IDolomiteRegistry public immutable DOLOMITE_REGISTRY; // solhint-disable-line mixed-case
     IERC20 public immutable DOLO; // solhint-disable-line mixed-case
 
-    bytes32 public merkleRoot;
     address public treasury;
     mapping(address => uint256) public userToClaimedAmount;
     mapping(address => uint256) public userToPurchases;
@@ -75,9 +74,8 @@ contract OptionAirdrop is OnlyDolomiteMargin, ReentrancyGuard, IOptionAirdrop {
         address _treasury,
         address _dolomiteRegistry,
         address _dolomiteMargin
-    ) OnlyDolomiteMargin(_dolomiteMargin) {
+    ) BaseClaim(_dolomiteRegistry, _dolomiteMargin) {
         DOLO = IERC20(_dolo);
-        DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
 
         _ownerSetTreasury(_treasury);
     }
@@ -92,16 +90,8 @@ contract OptionAirdrop is OnlyDolomiteMargin, ReentrancyGuard, IOptionAirdrop {
         _ownerSetAllowedMarketIds(_marketIds);
     }
 
-    function ownerSetMerkleRoot(bytes32 _merkleRoot) external onlyDolomiteMarginOwner(msg.sender) {
-        _ownerSetMerkleRoot(_merkleRoot);
-    }
-
     function ownerSetTreasury(address _treasury) external onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetTreasury(_treasury);
-    }
-
-    function ownerWithdrawRewardToken(address _token, address _receiver) external onlyDolomiteMarginOwner(msg.sender) {
-        _ownerWithdrawRewardToken(_token, _receiver);
     }
 
     // ==============================================================
@@ -115,17 +105,13 @@ contract OptionAirdrop is OnlyDolomiteMargin, ReentrancyGuard, IOptionAirdrop {
         uint256 _marketId,
         uint256 _fromAccountNumber
     ) external nonReentrant {
-        if (_verifyMerkleProof(_proof, _allocatedAmount)) { /* FOR COVERAGE TESTING */ }
+        address user = addressRemapping[msg.sender] == address(0) ? msg.sender : addressRemapping[msg.sender];
+
+        if (_verifyMerkleProof(user, _proof, _allocatedAmount)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-            _verifyMerkleProof(_proof, _allocatedAmount),
+            _verifyMerkleProof(user, _proof, _allocatedAmount),
             _FILE,
             "Invalid merkle proof"
-        );
-        if (userToClaimedAmount[msg.sender] + _claimAmount <= _allocatedAmount) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            userToClaimedAmount[msg.sender] + _claimAmount <= _allocatedAmount,
-            _FILE,
-            "Insufficient allocated amount"
         );
         if (_allowedMarketIds.contains(_marketId)) { /* FOR COVERAGE TESTING */ }
         Require.that(
@@ -134,7 +120,23 @@ contract OptionAirdrop is OnlyDolomiteMargin, ReentrancyGuard, IOptionAirdrop {
             "Payment asset not allowed"
         );
 
+        if (userToClaimedAmount[msg.sender] + _claimAmount <= _allocatedAmount) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            userToClaimedAmount[msg.sender] + _claimAmount <= _allocatedAmount,
+            _FILE,
+            "Insufficient allocated amount"
+        );
         userToClaimedAmount[msg.sender] += _claimAmount;
+
+        if (user != msg.sender) {
+            if (userToClaimedAmount[user] + _claimAmount <= _allocatedAmount) { /* FOR COVERAGE TESTING */ }
+            Require.that(
+                userToClaimedAmount[user] + _claimAmount <= _allocatedAmount,
+                _FILE,
+                "Insufficient allocated amount"
+            );
+            userToClaimedAmount[user] += _claimAmount;
+        }
 
         uint256 doloValue = DOLO_PRICE * _claimAmount;
         uint256 paymentAmount = doloValue / DOLOMITE_MARGIN().getMarketPrice(_marketId).value;
@@ -191,24 +193,8 @@ contract OptionAirdrop is OnlyDolomiteMargin, ReentrancyGuard, IOptionAirdrop {
         emit AllowedMarketIdsSet(_marketIds);
     }
 
-    function _ownerSetMerkleRoot(bytes32 _merkleRoot) internal {
-        merkleRoot = _merkleRoot;
-        emit MerkleRootSet(_merkleRoot);
-    }
-
     function _ownerSetTreasury(address _treasury) internal {
         treasury = _treasury;
         emit TreasurySet(_treasury);
-    }
-
-    function _ownerWithdrawRewardToken(address _token, address _receiver) internal {
-        uint256 bal = IERC20(_token).balanceOf(address(this));
-        IERC20(_token).safeTransfer(_receiver, bal);
-        emit RewardTokenWithdrawn(_token, bal, _receiver);
-    }
-
-    function _verifyMerkleProof(bytes32[] calldata _proof, uint256 _allocatedAmount) internal view returns (bool) {
-        bytes32 leaf = keccak256(abi.encode(msg.sender, _allocatedAmount));
-        return MerkleProof.verifyCalldata(_proof, merkleRoot, leaf);
     }
 }

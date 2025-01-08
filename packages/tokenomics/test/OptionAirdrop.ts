@@ -13,7 +13,7 @@ import { depositIntoDolomiteMargin } from 'packages/base/src/utils/dolomite-util
 
 const usdcAmount = BigNumber.from('100000000');
 const defaultAccountNumber = ZERO_BI;
-const usdcPaymentAmount = BigNumber.from('150000'); // 5 tokens * $.03 = $0.15
+const usdcPaymentAmount = BigNumber.from('156250'); // 5 tokens * $.03125 = $0.156250
 const USDC_PRICE = BigNumber.from('1000000000000000000000000000000');
 
 describe('OptionAirdrop', () => {
@@ -125,24 +125,6 @@ describe('OptionAirdrop', () => {
     });
   });
 
-  describe('#ownerSetMerkleRoot', () => {
-    it('should work normally', async () => {
-      expect(await optionAirdrop.merkleRoot()).to.eq(merkleRoot);
-      const res = await optionAirdrop.connect(core.governance).ownerSetMerkleRoot(BYTES_ZERO);
-      await expectEvent(optionAirdrop, res, 'MerkleRootSet', {
-        merkleRoot: BYTES_ZERO
-      });
-      expect(await optionAirdrop.merkleRoot()).to.eq(BYTES_ZERO);
-    });
-
-    it('should fail if not called by owner', async () => {
-      await expectThrow(
-        optionAirdrop.connect(core.hhUser1).ownerSetMerkleRoot(BYTES_ZERO),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
-      );
-    });
-  });
-
   describe('#ownerSetTreasury', () => {
     it('should work normally', async () => {
       expect(await optionAirdrop.treasury()).to.eq(core.hhUser5.address);
@@ -157,29 +139,6 @@ describe('OptionAirdrop', () => {
     it('should fail if not called by owner', async () => {
       await expectThrow(
         optionAirdrop.connect(core.hhUser1).ownerSetTreasury(core.hhUser1.address),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
-      );
-    });
-  });
-
-  describe('#ownerWithdrawRewardToken', () => {
-    it('should work normally', async () => {
-      expect(await dolo.balanceOf(core.governance.address)).to.eq(ZERO_BI);
-      const res = await optionAirdrop.connect(core.governance).ownerWithdrawRewardToken(
-        dolo.address,
-        core.governance.address
-      );
-      await expectEvent(optionAirdrop, res, 'RewardTokenWithdrawn', {
-        token: dolo.address,
-        amount: parseEther('15'),
-        receiver: core.governance.address
-      });
-      expect(await dolo.balanceOf(core.governance.address)).to.eq(parseEther('15'));
-    });
-
-    it('should fail if not called by owner', async () => {
-      await expectThrow(
-        optionAirdrop.connect(core.hhUser1).ownerWithdrawRewardToken(dolo.address, core.hhUser1.address),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
       );
     });
@@ -228,7 +187,7 @@ describe('OptionAirdrop', () => {
         epoch: ZERO_BI,
         amount: parseEther('3')
       });
-      const payment1 = BigNumber.from('90000'); // $.09
+      const payment1 = BigNumber.from('93750'); // $.093750. usdcPaymentAmount * 3 / 5
       expect(await core.tokens.nativeUsdc.balanceOf(core.hhUser5.address)).to.eq(payment1);
       await expectProtocolBalance(
         core,
@@ -267,6 +226,96 @@ describe('OptionAirdrop', () => {
       expect(await dolo.balanceOf(optionAirdrop.address)).to.eq(parseEther('10'));
       expect(await optionAirdrop.userToClaimedAmount(core.hhUser1.address)).to.eq(parseEther('5'));
       expect(await optionAirdrop.userToPurchases(core.hhUser1.address)).to.eq(2);
+    });
+
+    it('should work normally if user has remapped address', async () => {
+      await setupNativeUSDCBalance(core, core.hhUser4, usdcAmount, core.dolomiteMargin);
+      await depositIntoDolomiteMargin(core, core.hhUser4, defaultAccountNumber, core.marketIds.nativeUsdc, usdcAmount);
+      await optionAirdrop.connect(core.governance).ownerSetAddressRemapping(
+        [core.hhUser4.address],
+        [core.hhUser1.address]
+      );
+      expect(await core.tokens.nativeUsdc.balanceOf(core.hhUser5.address)).to.eq(ZERO_BI);
+
+      const res = await optionAirdrop.connect(core.hhUser4).claim(
+        validProof1,
+        parseEther('5'),
+        parseEther('5'),
+        core.marketIds.nativeUsdc,
+        defaultAccountNumber
+      );
+      await expectEvent(core.eventEmitterRegistry, res, 'RewardClaimed', {
+        distributor: optionAirdrop.address,
+        user: core.hhUser4.address,
+        epoch: ZERO_BI,
+        amount: parseEther('5')
+      });
+      expect(await core.tokens.nativeUsdc.balanceOf(core.hhUser5.address)).to.eq(usdcPaymentAmount);
+      await expectProtocolBalance(
+        core,
+        core.hhUser4,
+        defaultAccountNumber,
+        core.marketIds.nativeUsdc,
+        usdcAmount.sub(usdcPaymentAmount)
+      );
+      expect(await dolo.balanceOf(core.hhUser4.address)).to.eq(parseEther('5'));
+      expect(await dolo.balanceOf(optionAirdrop.address)).to.eq(parseEther('10'));
+      expect(await optionAirdrop.userToClaimedAmount(core.hhUser1.address)).to.eq(parseEther('5'));
+      expect(await optionAirdrop.userToClaimedAmount(core.hhUser4.address)).to.eq(parseEther('5'));
+    });
+
+    it('should fail if remapped user claims again with original address', async () => {
+      await setupNativeUSDCBalance(core, core.hhUser4, usdcAmount, core.dolomiteMargin);
+      await depositIntoDolomiteMargin(core, core.hhUser4, defaultAccountNumber, core.marketIds.nativeUsdc, usdcAmount);
+      await optionAirdrop.connect(core.governance).ownerSetAddressRemapping(
+        [core.hhUser4.address],
+        [core.hhUser1.address]
+      );
+      expect(await core.tokens.nativeUsdc.balanceOf(core.hhUser5.address)).to.eq(ZERO_BI);
+
+      await optionAirdrop.connect(core.hhUser4).claim(
+        validProof1,
+        parseEther('5'),
+        parseEther('5'),
+        core.marketIds.nativeUsdc,
+        defaultAccountNumber
+      );
+      await expectThrow(
+        optionAirdrop.connect(core.hhUser1).claim(
+          validProof1,
+          parseEther('5'),
+          parseEther('5'),
+          core.marketIds.nativeUsdc,
+          defaultAccountNumber
+        ),
+        'OptionAirdrop: Insufficient allocated amount'
+      );
+    });
+
+    it('should fail if remapped user claims again with remapped address', async () => {
+      await optionAirdrop.connect(core.governance).ownerSetAddressRemapping(
+        [core.hhUser4.address],
+        [core.hhUser1.address]
+      );
+      expect(await core.tokens.nativeUsdc.balanceOf(core.hhUser5.address)).to.eq(ZERO_BI);
+
+      await optionAirdrop.connect(core.hhUser1).claim(
+        validProof1,
+        parseEther('5'),
+        parseEther('5'),
+        core.marketIds.nativeUsdc,
+        defaultAccountNumber
+      );
+      await expectThrow(
+        optionAirdrop.connect(core.hhUser4).claim(
+          validProof1,
+          parseEther('5'),
+          parseEther('5'),
+          core.marketIds.nativeUsdc,
+          defaultAccountNumber
+        ),
+        'OptionAirdrop: Insufficient allocated amount'
+      );
     });
 
     it('should fail if invalid merkle proof', async () => {

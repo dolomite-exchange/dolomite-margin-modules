@@ -33,17 +33,17 @@ interface IRegularAirdrop {
     // ======================== Events ======================
     // ======================================================
 
-    event MerkleRootSet(bytes32 merkleRoot);
+    event UserToFullDoloSet(address[] users, bool[] fullDolo);
 
     // ======================================================
     // ================== External Functions ================
     // ======================================================
 
-    function ownerSetMerkleRoot(bytes32 _merkleRoot) external;
-
-    function ownerWithdrawRewardToken(address _token, address _receiver) external;
+    function ownerSetUserToFullDolo(address[] memory _users, bool[] memory _fullDolo) external;
 
     function claim(bytes32[] memory _proof, uint256 _amount) external;
 
     function getClaimStatusByUser(address _user) external view returns (bool);
+
+    function getUserToFullDolo(address _user) external view returns (bool);
 }
