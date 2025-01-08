@@ -20,8 +20,8 @@
 
 pragma solidity ^0.8.9;
 
-import { BaseClaim } from "../BaseClaim.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
+import { BaseClaim } from "../BaseClaim.sol";
 
 
 /**

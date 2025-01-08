@@ -121,7 +121,7 @@ abstract contract BaseClaim is OnlyDolomiteMargin, IBaseClaim {
         address _user,
         bytes32[] calldata _proof,
         uint256 _amount
-    ) internal view returns (bool) {
+    ) internal view virtual returns (bool) {
         bytes32 leaf = keccak256(abi.encode(_user, _amount));
         return MerkleProof.verifyCalldata(_proof, merkleRoot, leaf);
     }
