@@ -198,6 +198,14 @@ export async function getDeployedVaults<T extends NetworkType>(
 
       deployedVaults.push(new DeployedVault(Number(marketId), factory, params));
     }
+  } else if (config.network === Network.Base) {
+    // Do nothing
+  } else if (config.network === Network.Berachain) {
+    // Do nothing
+  } else if (config.network === Network.BerachainCartio) {
+    // Do nothing
+  } else if (config.network === Network.Ink) {
+    // Do nothing
   } else if (config.network === Network.Mantle) {
     for (const [marketId, params] of Object.entries(marketToIsolationModeVaultInfoMantle)) {
       try {
@@ -212,6 +220,12 @@ export async function getDeployedVaults<T extends NetworkType>(
         continue;
       }
     }
+  } else if (config.network === Network.PolygonZkEvm) {
+    // Do nothing
+  } else if (config.network === Network.SuperSeed) {
+    // Do nothing
+  } else if (config.network === Network.XLayer) {
+    // Do nothing
   } else {
     throw new Error(`Invalid network, found ${config.network}`);
   }
