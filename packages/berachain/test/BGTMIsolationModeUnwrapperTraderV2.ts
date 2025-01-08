@@ -7,10 +7,8 @@ import {
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, setEtherBalance, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import {
-  expectEvent,
   expectProtocolBalance,
   expectThrow,
-  expectWalletBalance,
 } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
   disableInterestAccrual,
@@ -31,10 +29,6 @@ import {
   BerachainRewardsMetaVault,
   BerachainRewardsMetaVault__factory,
   BerachainRewardsRegistry,
-  BGTIsolationModeTokenVaultV1,
-  BGTIsolationModeTokenVaultV1__factory,
-  BGTIsolationModeUnwrapperTraderV2,
-  BGTIsolationModeUnwrapperTraderV2__factory,
   BGTIsolationModeVaultFactory,
   BGTMERC20Wrapper,
   BGTMERC20Wrapper__factory,
@@ -87,11 +81,8 @@ describe('BGTMIsolationModeUnwrapperTraderV2', () => {
 
   let beraVault: BerachainRewardsIsolationModeTokenVaultV1;
   let metaVault: BerachainRewardsMetaVault;
-  let bgtVault: BGTIsolationModeTokenVaultV1;
   let bgtmVault: BGTMIsolationModeTokenVaultV1;
 
-  let bgtMarketId: BigNumber;
-  let bgtBal: BigNumber;
   let bgtmMarketId: BigNumber;
   let bgtmBal: BigNumber;
   let defaultAccount: AccountInfoStruct;
@@ -171,7 +162,6 @@ describe('BGTMIsolationModeUnwrapperTraderV2', () => {
     await core.testEcosystem!.testPriceOracle.setPrice(beraFactory.address, ONE_ETH_BI);
     await setupTestMarket(core, beraFactory, true);
 
-    bgtMarketId = await core.dolomiteMargin.getNumMarkets();
     await core.testEcosystem!.testPriceOracle.setPrice(bgtFactory.address, ONE_ETH_BI);
     await setupTestMarket(core, bgtFactory, true);
 
@@ -274,7 +264,6 @@ describe('BGTMIsolationModeUnwrapperTraderV2', () => {
 
       const otherBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, core.marketIds.wbera);
       expect(otherBalanceWei.sign).to.eq(true);
-      console.log(otherBalanceWei.value.toString());
       expect(otherBalanceWei.value).to.eq(amountOut);
     });
 
@@ -356,7 +345,7 @@ describe('BGTMIsolationModeUnwrapperTraderV2', () => {
           ZERO_BI,
           BYTES_EMPTY,
         ),
-        `IsolationModeUnwrapperTraderV2: Invalid input amount`,
+        'IsolationModeUnwrapperTraderV2: Invalid input amount',
       );
     });
   });

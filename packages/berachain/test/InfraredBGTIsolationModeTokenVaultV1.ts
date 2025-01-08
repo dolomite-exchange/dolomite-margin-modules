@@ -171,7 +171,7 @@ describe('InfraredBGTIsolationModeTokenVaultV1', () => {
     it('should work normally if user deposits', async () => {
       await iBgtVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await expectProtocolBalance(core, iBgtVault, defaultAccountNumber, iBgtMarketId, amountWei);
-      expect(await iBgtVault.underlyingBalanceOf()).to.eq(ZERO_BI);
+      expect(await iBgtVault.underlyingBalanceOf()).to.eq(amountWei);
       expect(await core.berachainRewardsEcosystem.iBgtStakingPool.balanceOf(iBgtVault.address)).to.eq(amountWei);
     });
 
@@ -186,7 +186,7 @@ describe('InfraredBGTIsolationModeTokenVaultV1', () => {
         .connect(metaVaultImpersonator)
         .depositIntoDolomiteMarginFromMetaVault(core.hhUser1.address, defaultAccountNumber, amountWei);
       await expectProtocolBalance(core, iBgtVault, defaultAccountNumber, iBgtMarketId, amountWei);
-      expect(await iBgtVault.underlyingBalanceOf()).to.eq(ZERO_BI);
+      expect(await iBgtVault.underlyingBalanceOf()).to.eq(amountWei);
       expect(await core.berachainRewardsEcosystem.iBgtStakingPool.balanceOf(iBgtVault.address)).to.eq(amountWei);
     });
 
@@ -240,7 +240,7 @@ describe('InfraredBGTIsolationModeTokenVaultV1', () => {
       expect(await iBgtVault.underlyingBalanceOf()).to.eq(amountWei);
 
       await iBgtVault.stake(amountWei);
-      expect(await iBgtVault.underlyingBalanceOf()).to.eq(ZERO_BI);
+      expect(await iBgtVault.underlyingBalanceOf()).to.eq(amountWei);
       expect(await core.berachainRewardsEcosystem.iBgtStakingPool.balanceOf(iBgtVault.address)).to.eq(amountWei);
     });
 
@@ -255,7 +255,7 @@ describe('InfraredBGTIsolationModeTokenVaultV1', () => {
   describe('#unstake', () => {
     it('should work normally', async () => {
       await iBgtVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
-      expect(await iBgtVault.underlyingBalanceOf()).to.eq(ZERO_BI);
+      expect(await iBgtVault.underlyingBalanceOf()).to.eq(amountWei);
       await iBgtVault.unstake(amountWei);
       expect(await iBgtVault.underlyingBalanceOf()).to.eq(amountWei);
     });

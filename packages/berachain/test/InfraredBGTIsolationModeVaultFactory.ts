@@ -165,7 +165,7 @@ describe('InfraredBGTIsolationModeVaultFactory', () => {
         .connect(metaVaultImpersonator)
         .depositIntoDolomiteMarginFromMetaVault(core.hhUser1.address, defaultAccountNumber, amountWei);
       await expectProtocolBalance(core, iBgtVault, defaultAccountNumber, iBgtMarketId, amountWei);
-      expect(await iBgtVault.underlyingBalanceOf()).to.eq(ZERO_BI);
+      expect(await iBgtVault.underlyingBalanceOf()).to.eq(amountWei);
       expect(await core.berachainRewardsEcosystem.iBgtStakingPool.balanceOf(iBgtVault.address)).to.eq(amountWei);
     });
 

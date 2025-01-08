@@ -2,7 +2,13 @@ import { getAnyNetwork } from 'packages/base/src/utils/dolomite-utils';
 import { Network, ONE_BI, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber, setEtherBalance } from 'packages/base/test/utils';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
-import { deployContractAndSave, EncodedTransaction, prettyPrintEncodeAddIsolationModeMarket, prettyPrintEncodeAddMarket } from '../../utils/deploy-utils';
+import {
+  deployContractAndSave,
+  EncodedTransaction,
+  prettyPrintEncodeAddIsolationModeMarket,
+  prettyPrintEncodeAddMarket,
+  prettyPrintEncodedDataWithTypeSafety,
+} from '../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../utils/dry-run-utils';
 import getScriptName from '../../utils/get-script-name';
 import {
@@ -28,6 +34,7 @@ import {
 import { TargetCollateralization, TargetLiquidationPenalty } from 'packages/base/src/utils/constructors/dolomite';
 import { parseEther } from 'ethers/lib/utils';
 import { SimpleIsolationModeUnwrapperTraderV2__factory, SimpleIsolationModeWrapperTraderV2__factory } from 'packages/base/src/types';
+import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 
 type AcceptableNetworks = Network.Berachain;
 
@@ -72,14 +79,17 @@ async function main(): Promise<DryRunOutput<AcceptableNetworks>> {
     ),
     'BerachainRewardsRegistryProxy',
   );
-  const berachainRewardsRegistry = BerachainRewardsRegistry__factory.connect(berachainRegistryProxyAddress, core.hhUser1);
+  const berachainRewardsRegistry = BerachainRewardsRegistry__factory.connect(
+    berachainRegistryProxyAddress,
+    core.hhUser1
+  );
 
-  const bgtmWrapperAddress = await deployContractAndSave(
+  const bgtmTokenWrapperAddress = await deployContractAndSave(
     'BGTMERC20Wrapper',
     [core.berachainRewardsEcosystem.bgtm.address],
     'BGTMERC20WrapperV1',
   );
-  const bgtmWrapper = BGTMERC20Wrapper__factory.connect(bgtmWrapperAddress, core.hhUser1);
+  const bgtmTokenWrapper = BGTMERC20Wrapper__factory.connect(bgtmTokenWrapperAddress, core.hhUser1);
 
   const transactions: EncodedTransaction[] = [];
   const bgtMarketId = await core.dolomiteMargin.getNumMarkets();
@@ -94,13 +104,21 @@ async function main(): Promise<DryRunOutput<AcceptableNetworks>> {
     'BGTIsolationModeTokenVaultV1',
     [],
     'BGTIsolationModeTokenVaultV1',
-    { ...core.libraries.tokenVaultActionsImpl}
+    { ...core.libraries.tokenVaultActionsImpl }
   );
-  const bgtVaultImplementation = BGTIsolationModeTokenVaultV1__factory.connect(bgtVaultImplementationAddress, core.hhUser1);
+  const bgtVaultImplementation = BGTIsolationModeTokenVaultV1__factory.connect(
+    bgtVaultImplementationAddress,
+    core.hhUser1
+  );
 
   const bgtFactoryAddress = await deployContractAndSave(
     'BGTIsolationModeVaultFactory',
-    getBGTIsolationModeVaultFactoryConstructorParams(berachainRewardsRegistry, core.tokens.bgt, bgtVaultImplementation, core),
+    getBGTIsolationModeVaultFactoryConstructorParams(
+      berachainRewardsRegistry,
+      core.tokens.bgt,
+      bgtVaultImplementation,
+      core
+    ),
     'BGTIsolationModeVaultFactory',
   );
   const bgtFactory = BGTIsolationModeVaultFactory__factory.connect(bgtFactoryAddress, core.hhUser1);
@@ -112,20 +130,31 @@ async function main(): Promise<DryRunOutput<AcceptableNetworks>> {
   );
   const bgtUnwrapper = BGTIsolationModeUnwrapperTraderV2__factory.connect(bgtUnwrapperAddress, core.hhUser1);
 
-  throw new Error(
-    'Update with proper oracles, appropriate collat, liquidation penalty, max supply, and what to do with wrapper parameter'
-  );
+  // throw new Error(
+  //   'Update with proper oracles, appropriate collat, liquidation penalty, max supply, and what to do with wrapper parameter'
+  // );
+  const testOracleInfo = { address: '0x5231c38d2D0716439A48B67590564d87d48da12D' } as any;
   transactions.push(
     ...await prettyPrintEncodeAddIsolationModeMarket(
       core,
       bgtFactory,
-      core.oracleAggregatorV2,
+      testOracleInfo,
       bgtUnwrapper,
       bgtUnwrapper as any,
       bgtMarketId,
       TargetCollateralization._125,
       TargetLiquidationPenalty._6,
       parseEther(`${15_000_000}`),
+    )
+  );
+
+  transactions.push(
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      core,
+      'dolomiteAccountRegistry',
+      'ownerSetTransferTokenOverride',
+      [bgtFactory.address, core.tokens.wbera.address]
     )
   );
 
@@ -136,13 +165,21 @@ async function main(): Promise<DryRunOutput<AcceptableNetworks>> {
     'BGTMIsolationModeTokenVaultV1',
     [],
     'BGTMsolationModeTokenVaultV1',
-    { ...core.libraries.tokenVaultActionsImpl}
+    { ...core.libraries.tokenVaultActionsImpl }
   );
-  const bgtmVaultImplementation = BGTMIsolationModeTokenVaultV1__factory.connect(bgtmVaultImplementationAddress, core.hhUser1);
+  const bgtmVaultImplementation = BGTMIsolationModeTokenVaultV1__factory.connect(
+    bgtmVaultImplementationAddress,
+    core.hhUser1
+  );
 
   const bgtmFactoryAddress = await deployContractAndSave(
     'BGTMIsolationModeVaultFactory',
-    getBGTMIsolationModeVaultFactoryConstructorParams(berachainRewardsRegistry, bgtmWrapper, bgtmVaultImplementation, core),
+    getBGTMIsolationModeVaultFactoryConstructorParams(
+      berachainRewardsRegistry,
+      bgtmTokenWrapper,
+      bgtmVaultImplementation,
+      core
+    ),
     'BGTMIsolationModeVaultFactory',
   );
   const bgtmFactory = BGTMIsolationModeVaultFactory__factory.connect(bgtmFactoryAddress, core.hhUser1);
@@ -158,13 +195,22 @@ async function main(): Promise<DryRunOutput<AcceptableNetworks>> {
     ...await prettyPrintEncodeAddIsolationModeMarket(
       core,
       bgtmFactory,
-      core.oracleAggregatorV2,
+      testOracleInfo,
       bgtmUnwrapper,
       bgtmUnwrapper as any,
       bgtmMarketId,
       TargetCollateralization._125,
       TargetLiquidationPenalty._6,
       parseEther(`${15_000_000}`),
+    )
+  );
+  transactions.push(
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      core,
+      'dolomiteAccountRegistry',
+      'ownerSetTransferTokenOverride',
+      [bgtmFactory.address, core.tokens.wbera.address]
     )
   );
 
@@ -175,13 +221,21 @@ async function main(): Promise<DryRunOutput<AcceptableNetworks>> {
     'InfraredBGTIsolationModeTokenVaultV1',
     [],
     'InfraredBGTIsolationModeTokenVaultV1',
-    { ...core.libraries.tokenVaultActionsImpl}
+    { ...core.libraries.tokenVaultActionsImpl }
   );
-  const ibgtVaultImplementation = InfraredBGTIsolationModeTokenVaultV1__factory.connect(ibgtVaultImplementationAddress, core.hhUser1);
+  const ibgtVaultImplementation = InfraredBGTIsolationModeTokenVaultV1__factory.connect(
+    ibgtVaultImplementationAddress,
+    core.hhUser1
+  );
 
   const ibgtFactoryAddress = await deployContractAndSave(
     'InfraredBGTIsolationModeVaultFactory',
-    getInfraredBGTIsolationModeVaultFactoryConstructorParams(berachainRewardsRegistry, core.tokens.iBgt, ibgtVaultImplementation, core),
+    getInfraredBGTIsolationModeVaultFactoryConstructorParams(
+      berachainRewardsRegistry,
+      core.tokens.iBgt,
+      ibgtVaultImplementation,
+      core
+    ),
     'InfraredBGTIsolationModeVaultFactory',
   );
   const ibgtFactory = InfraredBGTIsolationModeVaultFactory__factory.connect(ibgtFactoryAddress, core.hhUser1);
@@ -204,7 +258,7 @@ async function main(): Promise<DryRunOutput<AcceptableNetworks>> {
     ...await prettyPrintEncodeAddMarket(
       core,
       core.tokens.iBgt,
-      core.oracleAggregatorV2,
+      testOracleInfo,
       core.interestSetters.alwaysZeroInterestSetter,
       TargetCollateralization._120,
       TargetLiquidationPenalty._15,
@@ -217,7 +271,7 @@ async function main(): Promise<DryRunOutput<AcceptableNetworks>> {
     ...await prettyPrintEncodeAddIsolationModeMarket(
       core,
       ibgtFactory,
-      core.oracleAggregatorV2,
+      testOracleInfo,
       ibgtUnwrapper,
       ibgtWrapper,
       ibgtMarketId,
@@ -227,7 +281,6 @@ async function main(): Promise<DryRunOutput<AcceptableNetworks>> {
     )
   );
 
-
   return {
     core,
     scriptName: getScriptName(__filename),
@@ -236,7 +289,63 @@ async function main(): Promise<DryRunOutput<AcceptableNetworks>> {
       chainId: network,
       addExecuteImmediatelyTransactions: true,
     },
-    invariants: async () => {},
+    invariants: async () => {
+      assertHardhatInvariant(
+        await core.dolomiteMargin.getMarketIdByTokenAddress(bgtFactory.address) === bgtMarketId,
+        'BGT market id is incorrect'
+      );
+      assertHardhatInvariant(
+        await core.dolomiteMargin.getMarketIdByTokenAddress(bgtmFactory.address) === bgtmMarketId,
+        'BGTM market id is incorrect'
+      );
+      assertHardhatInvariant(
+        await core.dolomiteMargin.getMarketIdByTokenAddress(ibgtFactory.address) === ibgtMarketId,
+        'iBGT market id is incorrect'
+      );
+
+      assertHardhatInvariant(
+        await bgtFactory.UNDERLYING_TOKEN() === core.tokens.bgt.address,
+        'BGT factory underlying token is incorrect'
+      );
+      assertHardhatInvariant(
+        await bgtmFactory.UNDERLYING_TOKEN() === bgtmTokenWrapper.address,
+        'BGTM factory underlying token is incorrect'
+      );
+      assertHardhatInvariant(
+        await ibgtFactory.UNDERLYING_TOKEN() === core.tokens.iBgt.address,
+        'iBGT factory underlying token is incorrect'
+      );
+
+      assertHardhatInvariant(
+        await bgtFactory.isTokenConverterTrusted(bgtUnwrapper.address),
+        'BGT unwrapper is not trusted'
+      );
+      assertHardhatInvariant(
+        await bgtmFactory.isTokenConverterTrusted(bgtmUnwrapper.address),
+        'BGTM unwrapper is not trusted'
+      );
+      assertHardhatInvariant(
+        await ibgtFactory.isTokenConverterTrusted(ibgtUnwrapper.address),
+        'iBGT unwrapper is not trusted'
+      );
+      assertHardhatInvariant(
+        await ibgtFactory.isTokenConverterTrusted(ibgtWrapper.address),
+        'iBGT wrapper is not trusted'
+      );
+
+      assertHardhatInvariant(
+        await core.dolomiteAccountRegistry.getTransferTokenOverride(bgtFactory.address) === core.tokens.wbera.address,
+        'BGT transfer token override is incorrect'
+      );
+      assertHardhatInvariant(
+        await core.dolomiteAccountRegistry.getTransferTokenOverride(bgtmFactory.address) === core.tokens.wbera.address,
+        'BGTM transfer token override is incorrect'
+      );
+
+      console.log('\tPrice for BGT', (await core.dolomiteMargin.getMarketPrice(bgtMarketId)).value.toString());
+      console.log('\tPrice for BGTM', (await core.dolomiteMargin.getMarketPrice(bgtmMarketId)).value.toString());
+      console.log('\tPrice for iBGT', (await core.dolomiteMargin.getMarketPrice(ibgtMarketId)).value.toString());
+    },
   };
 }
 

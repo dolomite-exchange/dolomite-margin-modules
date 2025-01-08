@@ -5,7 +5,7 @@ import {
   ONE_ETH_BI,
   ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
+import { impersonate, revertToSnapshotAndCapture, setEtherBalance, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import {
   expectEvent,
   expectProtocolBalance,
@@ -13,6 +13,7 @@ import {
   expectWalletBalance,
 } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
+  disableInterestAccrual,
   setupCoreProtocol,
   setupTestMarket,
   setupUserVaultProxy,
@@ -52,7 +53,7 @@ import { BYTES_EMPTY } from '@dolomite-exchange/zap-sdk/dist/src/lib/Constants';
 import { AccountInfoStruct } from 'packages/base/src/utils';
 import { getBGTIsolationModeUnwrapperTraderV2ConstructorParams } from '../src/berachain-constructors';
 
-const LP_TOKEN_WHALE_ADDRESS = '0x1293DA55eC372a94368Fa20E8DF69FaBc3320baE';
+const LP_TOKEN_WHALE_ADDRESS = '0xe3b9B72ba027FD6c514C0e5BA075Ac9c77C23Afa';
 const defaultAccountNumber = ZERO_BI;
 const amountWei = parseEther('.5');
 
@@ -83,9 +84,11 @@ describe('BGTIsolationModeUnwrapperTraderV2', () => {
 
   before(async () => {
     core = await setupCoreProtocol({
-      blockNumber: 4_853_900,
+      blockNumber: 8_629_900,
       network: Network.Berachain,
     });
+    await setEtherBalance(core.governance.address, parseEther('100'));
+    await disableInterestAccrual(core, core.marketIds.wbera);
 
     const dolomiteAccountRegistry = await createDolomiteAccountRegistryImplementation();
     await core.dolomiteAccountRegistryProxy.connect(core.governance).upgradeTo(dolomiteAccountRegistry.address);
@@ -170,7 +173,7 @@ describe('BGTIsolationModeUnwrapperTraderV2', () => {
       core.hhUser1,
     );
 
-    const lpWhale = await impersonate(LP_TOKEN_WHALE_ADDRESS);
+    const lpWhale = await impersonate(LP_TOKEN_WHALE_ADDRESS, true);
     await underlyingToken.connect(lpWhale).transfer(core.hhUser1.address, amountWei);
     await underlyingToken.connect(core.hhUser1).approve(beraVault.address, amountWei);
 

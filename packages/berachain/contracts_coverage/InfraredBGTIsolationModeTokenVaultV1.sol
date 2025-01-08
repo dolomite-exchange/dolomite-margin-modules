@@ -29,6 +29,7 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { MetaVaultRewardReceiver } from "./MetaVaultRewardReceiver.sol";
 import { IInfraredBGTIsolationModeTokenVaultV1 } from "./interfaces/IInfraredBGTIsolationModeTokenVaultV1.sol";
 import { IInfraredVault } from "./interfaces/IInfraredVault.sol";
+import { IBerachainRewardsMetaVault } from "./interfaces/IBerachainRewardsMetaVault.sol";
 
 
 /**
@@ -109,6 +110,13 @@ contract InfraredBGTIsolationModeTokenVaultV1 is
 
         /*assert(_recipient != address(this));*/
         IERC20(UNDERLYING_TOKEN()).safeTransfer(_recipient, _amount);
+    }
+
+    function underlyingBalanceOf() public view override(IIsolationModeTokenVaultV1, IsolationModeTokenVaultV1) returns (uint256) {
+        IBerachainRewardsMetaVault metaVault = IBerachainRewardsMetaVault(
+            registry().getMetaVaultByVault(address(this))
+        );
+        return super.underlyingBalanceOf() + registry().iBgtVault().balanceOf(address(this));
     }
 
     function isDepositSourceThisVault() public view returns (bool) {

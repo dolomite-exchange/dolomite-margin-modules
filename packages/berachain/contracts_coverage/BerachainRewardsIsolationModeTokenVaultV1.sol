@@ -110,6 +110,14 @@ contract BerachainRewardsIsolationModeTokenVaultV1 is
     // ======================== View Functions ==========================
     // ==================================================================
 
+    function underlyingBalanceOf() public view override(IIsolationModeTokenVaultV1, IsolationModeTokenVaultV1) returns (uint256) {
+        IBerachainRewardsMetaVault metaVault = IBerachainRewardsMetaVault(
+            registry().getMetaVaultByVault(address(this))
+        );
+        IBerachainRewardsRegistry.RewardVaultType defaultType = metaVault.getDefaultRewardVaultTypeByAsset(UNDERLYING_TOKEN());
+        return super.underlyingBalanceOf() + metaVault.getStakedBalanceByAssetAndType(UNDERLYING_TOKEN(), defaultType);
+    }
+
     function registry() public view returns (IBerachainRewardsRegistry) {
         return IBerachainRewardsIsolationModeVaultFactory(VAULT_FACTORY()).berachainRewardsRegistry();
     }

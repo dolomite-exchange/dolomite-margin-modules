@@ -334,7 +334,7 @@ describe('BerachainRewardsIsolationModeTokenVaultV1', () => {
     it('should work normally and stake into reward vault', async () => {
       await beraVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       expect(await nativeRewardVault.balanceOf(metaVault.address)).to.equal(amountWei);
-      expect(await beraVault.underlyingBalanceOf()).to.equal(ZERO_BI);
+      expect(await beraVault.underlyingBalanceOf()).to.equal(amountWei);
       await expectProtocolBalance(core, beraVault, defaultAccountNumber, marketId, amountWei);
     });
 
@@ -350,7 +350,7 @@ describe('BerachainRewardsIsolationModeTokenVaultV1', () => {
     it('should work normally if need to unstake full amount', async () => {
       await beraVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       expect(await nativeRewardVault.balanceOf(metaVault.address)).to.equal(amountWei);
-      expect(await beraVault.underlyingBalanceOf()).to.equal(ZERO_BI);
+      expect(await beraVault.underlyingBalanceOf()).to.equal(amountWei);
       await expectProtocolBalance(core, beraVault, defaultAccountNumber, marketId, amountWei);
 
       await beraVault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, amountWei);
@@ -363,12 +363,12 @@ describe('BerachainRewardsIsolationModeTokenVaultV1', () => {
     it('should work normally if need to unstake partial amount', async () => {
       await beraVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       expect(await nativeRewardVault.balanceOf(metaVault.address)).to.equal(amountWei);
-      expect(await beraVault.underlyingBalanceOf()).to.equal(ZERO_BI);
+      expect(await beraVault.underlyingBalanceOf()).to.equal(amountWei);
       await expectProtocolBalance(core, beraVault, defaultAccountNumber, marketId, amountWei);
 
       await beraVault.unstake(RewardVaultType.Native, amountWei.div(2));
       expect(await nativeRewardVault.balanceOf(metaVault.address)).to.equal(amountWei.div(2));
-      expect(await beraVault.underlyingBalanceOf()).to.equal(amountWei.div(2));
+      expect(await beraVault.underlyingBalanceOf()).to.equal(amountWei);
       await expectProtocolBalance(core, beraVault, defaultAccountNumber, marketId, amountWei);
 
       await beraVault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, amountWei);
@@ -381,7 +381,7 @@ describe('BerachainRewardsIsolationModeTokenVaultV1', () => {
     it('should work normally if no unstaking has to occur', async () => {
       await beraVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       expect(await nativeRewardVault.balanceOf(metaVault.address)).to.equal(amountWei);
-      expect(await beraVault.underlyingBalanceOf()).to.equal(ZERO_BI);
+      expect(await beraVault.underlyingBalanceOf()).to.equal(amountWei);
       await expectProtocolBalance(core, beraVault, defaultAccountNumber, marketId, amountWei);
 
       await beraVault.unstake(RewardVaultType.Native, amountWei);

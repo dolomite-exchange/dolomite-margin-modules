@@ -122,7 +122,6 @@ describe('BerachainRewardsMetaVault', () => {
       [],
     );
     const dolomiteTokenProxy = await createDolomiteErc4626Proxy(
-      dolomiteTokenImplementation,
       core.marketIds.honey,
       core,
     );
@@ -343,7 +342,9 @@ describe('BerachainRewardsMetaVault', () => {
 
       const bal = await core.tokens.bgt.balanceOf(metaVault.address);
       expect(bal).to.gt(ZERO_BI);
-      expect(await beraVault.underlyingBalanceOf()).to.equal(ZERO_BI);
+      expect(await beraVault.underlyingBalanceOf()).to.equal(amountWei);
+      expect(await metaVault.bgtBalanceOf()).to.equal(bal);
+      expect(await bgtVault.underlyingBalanceOf()).to.equal(bal);
       await expectProtocolBalance(core, bgtVault, defaultAccountNumber, bgtMarketId, bal);
     });
 
@@ -355,7 +356,9 @@ describe('BerachainRewardsMetaVault', () => {
 
       const bal = await bgtmWrapper.balanceOf(metaVault.address);
       expect(bal).to.gt(ZERO_BI);
-      expect(await bgtmVault.underlyingBalanceOf()).to.equal(ZERO_BI);
+      expect(await beraVault.underlyingBalanceOf()).to.equal(amountWei);
+      expect(await metaVault.bgtmBalanceOf()).to.equal(bal);
+      expect(await bgtmVault.underlyingBalanceOf()).to.equal(bal);
       await expectProtocolBalance(core, bgtmVault, defaultAccountNumber, bgtmMarketId, bal);
     });
 
@@ -373,7 +376,8 @@ describe('BerachainRewardsMetaVault', () => {
       );
 
       const balance = await core.berachainRewardsEcosystem.iBgtStakingPool.balanceOf(iBgtVault.address);
-      expect(await beraVault.underlyingBalanceOf()).to.equal(ZERO_BI);
+      expect(await beraVault.underlyingBalanceOf()).to.equal(amountWei.div(4));
+      expect(await iBgtVault.underlyingBalanceOf()).to.equal(balance);
       expect(await core.tokens.iBgt.balanceOf(metaVault.address)).to.eq(ZERO_BI);
       await expectProtocolBalance(core, iBgtVault, defaultAccountNumber, iBgtMarketId, balance);
     });
