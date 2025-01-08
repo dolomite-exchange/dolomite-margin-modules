@@ -1,25 +1,20 @@
-import {
-  TargetCollateralization,
-  TargetLiquidationPenalty,
-} from 'packages/base/src/utils/constructors/dolomite';
-import { getAndCheckSpecificNetwork } from 'packages/base/src/utils/dolomite-utils';
-import { getRealLatestBlockNumber } from 'packages/base/test/utils';
-import { setupCoreProtocol } from 'packages/base/test/utils/setup';
+import { BigNumberish } from 'ethers';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
+import { IERC20, IERC20Metadata__factory, TestPriceOracle__factory } from 'packages/base/src/types';
+import { TargetCollateralization, TargetLiquidationPenalty } from 'packages/base/src/utils/constructors/dolomite';
+import { getAndCheckSpecificNetwork } from 'packages/base/src/utils/dolomite-utils';
 import { ADDRESS_ZERO, Network, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
+import { getRealLatestBlockNumber } from 'packages/base/test/utils';
+import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
+import { setupCoreProtocol } from 'packages/base/test/utils/setup';
 import {
   EncodedTransaction,
   prettyPrintEncodeAddMarket,
   prettyPrintEncodedDataWithTypeSafety,
 } from '../../../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
-import getScriptName from '../../../../../utils/get-script-name';
-import { IERC20, IERC20Metadata__factory, TestPriceOracle__factory } from 'packages/base/src/types';
+import getScriptName from '../../../../utils/get-script-name';
 import ModuleDeployments from '../../../deployments.json';
-import {
-  CoreProtocolBerachain,
-} from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
-import { BigNumberish } from 'ethers';
 
 async function encodeTestOracle(
   token: IERC20,
@@ -32,13 +27,10 @@ async function encodeTestOracle(
   );
 
   return [
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { testPriceOracle },
-      'testPriceOracle',
-      'setPrice',
-      [token.address, price],
-    ),
+    await prettyPrintEncodedDataWithTypeSafety(core, { testPriceOracle }, 'testPriceOracle', 'setPrice', [
+      token.address,
+      price,
+    ]),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       { oracleAggregatorV2: core.oracleAggregatorV2 },
@@ -77,26 +69,14 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
   if (network === '80084') {
     console.log('\tSetting test prices for Bera Bartio...');
     transactions.push(
-      ...await encodeTestOracle(
-        core.tokens.wbera,
-        '6810000000000000000',
-        core,
-      ),
-      ...await encodeTestOracle(
-        core.tokens.usdc,
-        '1000000000000000000000000000000',
-        core,
-      ),
-      ...await encodeTestOracle(
-        core.tokens.honey,
-        '1000000000000000000',
-        core,
-      ),
+      ...(await encodeTestOracle(core.tokens.wbera, '6810000000000000000', core)),
+      ...(await encodeTestOracle(core.tokens.usdc, '1000000000000000000000000000000', core)),
+      ...(await encodeTestOracle(core.tokens.honey, '1000000000000000000', core)),
     );
   }
 
   transactions.push(
-    ...await prettyPrintEncodeAddMarket(
+    ...(await prettyPrintEncodeAddMarket(
       core,
       core.tokens.weth,
       core.oracleAggregatorV2,
@@ -106,8 +86,8 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
       ZERO_BI,
       ZERO_BI,
       false,
-    ),
-    ...await prettyPrintEncodeAddMarket(
+    )),
+    ...(await prettyPrintEncodeAddMarket(
       core,
       core.tokens.wbera,
       core.oracleAggregatorV2,
@@ -117,8 +97,8 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
       ZERO_BI,
       ZERO_BI,
       false,
-    ),
-    ...await prettyPrintEncodeAddMarket(
+    )),
+    ...(await prettyPrintEncodeAddMarket(
       core,
       core.tokens.usdc,
       core.oracleAggregatorV2,
@@ -128,8 +108,8 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
       ZERO_BI,
       ZERO_BI,
       false,
-    ),
-    ...await prettyPrintEncodeAddMarket(
+    )),
+    ...(await prettyPrintEncodeAddMarket(
       core,
       core.tokens.honey,
       core.oracleAggregatorV2,
@@ -139,7 +119,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
       ZERO_BI,
       ZERO_BI,
       false,
-    ),
+    )),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       { dolomiteMargin: core.dolomiteMargin },
@@ -170,18 +150,15 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     scriptName: getScriptName(__filename),
     invariants: async () => {
       assertHardhatInvariant(
-        await core.dolomiteMargin.getMarketPriceOracle(core.marketIds.weth) === core.oracleAggregatorV2.address,
+        (await core.dolomiteMargin.getMarketPriceOracle(core.marketIds.weth)) === core.oracleAggregatorV2.address,
         'Invalid oracle for WETH',
       );
       assertHardhatInvariant(
-        await core.dolomiteMargin.getMarketInterestSetter(core.marketIds.weth)
-        === core.interestSetters.linearStepFunction8L92U90OInterestSetter.address,
+        (await core.dolomiteMargin.getMarketInterestSetter(core.marketIds.weth)) ===
+          core.interestSetters.linearStepFunction8L92U90OInterestSetter.address,
         'Invalid interest setter WETH',
       );
-      assertHardhatInvariant(
-        (await core.dolomiteMargin.getNumMarkets()).eq(4),
-        'Invalid number of markets',
-      );
+      assertHardhatInvariant((await core.dolomiteMargin.getNumMarkets()).eq(4), 'Invalid number of markets');
       assertHardhatInvariant(
         (await core.dolomiteMargin.getMarketTokenAddress(core.marketIds.weth)) === core.tokens.weth.address,
         'Invalid weth for market 0',

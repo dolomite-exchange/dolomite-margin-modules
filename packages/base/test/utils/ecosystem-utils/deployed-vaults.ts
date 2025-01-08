@@ -45,7 +45,10 @@ export class DeployedVault {
     this.implementationAddress = info.implementationAddress;
     this.constructorParams = info.constructorParams;
     this.libraries = this.populateLibraryAddresses(info.libraries);
-    this.currentVersionNumber = getMaxDeploymentVersionNumberByDeploymentKey(this.contractRenameWithoutVersion, 1);
+    this.currentVersionNumber = getMaxDeploymentVersionNumberByDeploymentKey(
+      this.contractRenameWithoutVersion,
+      info.defaultVersion ?? 1,
+    );
     this.marketId = marketId;
     this.factory = factory;
     this.vaultType = info.vaultType;
@@ -138,6 +141,14 @@ export async function getDeployedVaults<T extends NetworkType>(
 
       deployedVaults.push(new DeployedVault(Number(marketId), factory, params));
     }
+  } else if (config.network === Network.Base) {
+    // Do nothing
+  } else if (config.network === Network.Berachain) {
+    // Do nothing
+  } else if (config.network === Network.BerachainCartio) {
+    // Do nothing
+  } else if (config.network === Network.Ink) {
+    // Do nothing
   } else if (config.network === Network.Mantle) {
     for (const [marketId, params] of Object.entries(marketToIsolationModeVaultInfoMantle)) {
       const factory = IIsolationModeVaultFactory__factory.connect(
@@ -147,6 +158,12 @@ export async function getDeployedVaults<T extends NetworkType>(
 
       deployedVaults.push(new DeployedVault(Number(marketId), factory, params));
     }
+  } else if (config.network === Network.PolygonZkEvm) {
+    // Do nothing
+  } else if (config.network === Network.SuperSeed) {
+    // Do nothing
+  } else if (config.network === Network.XLayer) {
+    // Do nothing
   } else {
     return deployedVaults;
     throw new Error(`Invalid network, found ${config.network}`);
