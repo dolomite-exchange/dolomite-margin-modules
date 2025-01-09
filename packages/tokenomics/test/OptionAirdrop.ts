@@ -66,6 +66,7 @@ describe('OptionAirdrop', () => {
     await setupNativeUSDCBalance(core, core.hhUser1, usdcAmount, core.dolomiteMargin);
     await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.nativeUsdc, usdcAmount);
     await optionAirdrop.connect(core.governance).ownerSetAllowedMarketIds([core.marketIds.nativeUsdc]);
+    await optionAirdrop.connect(core.governance).ownerSetHandler(core.hhUser5.address);
 
     snapshotId = await snapshot();
   });
@@ -231,7 +232,7 @@ describe('OptionAirdrop', () => {
     it('should work normally if user has remapped address', async () => {
       await setupNativeUSDCBalance(core, core.hhUser4, usdcAmount, core.dolomiteMargin);
       await depositIntoDolomiteMargin(core, core.hhUser4, defaultAccountNumber, core.marketIds.nativeUsdc, usdcAmount);
-      await optionAirdrop.connect(core.governance).ownerSetAddressRemapping(
+      await optionAirdrop.connect(core.hhUser5).ownerSetAddressRemapping(
         [core.hhUser4.address],
         [core.hhUser1.address]
       );
@@ -246,7 +247,7 @@ describe('OptionAirdrop', () => {
       );
       await expectEvent(core.eventEmitterRegistry, res, 'RewardClaimed', {
         distributor: optionAirdrop.address,
-        user: core.hhUser4.address,
+        user: core.hhUser1.address,
         epoch: ZERO_BI,
         amount: parseEther('5')
       });
@@ -261,13 +262,12 @@ describe('OptionAirdrop', () => {
       expect(await dolo.balanceOf(core.hhUser4.address)).to.eq(parseEther('5'));
       expect(await dolo.balanceOf(optionAirdrop.address)).to.eq(parseEther('10'));
       expect(await optionAirdrop.userToClaimedAmount(core.hhUser1.address)).to.eq(parseEther('5'));
-      expect(await optionAirdrop.userToClaimedAmount(core.hhUser4.address)).to.eq(parseEther('5'));
     });
 
     it('should fail if remapped user claims again with original address', async () => {
       await setupNativeUSDCBalance(core, core.hhUser4, usdcAmount, core.dolomiteMargin);
       await depositIntoDolomiteMargin(core, core.hhUser4, defaultAccountNumber, core.marketIds.nativeUsdc, usdcAmount);
-      await optionAirdrop.connect(core.governance).ownerSetAddressRemapping(
+      await optionAirdrop.connect(core.hhUser5).ownerSetAddressRemapping(
         [core.hhUser4.address],
         [core.hhUser1.address]
       );
@@ -293,7 +293,7 @@ describe('OptionAirdrop', () => {
     });
 
     it('should fail if remapped user claims again with remapped address', async () => {
-      await optionAirdrop.connect(core.governance).ownerSetAddressRemapping(
+      await optionAirdrop.connect(core.hhUser5).ownerSetAddressRemapping(
         [core.hhUser4.address],
         [core.hhUser1.address]
       );

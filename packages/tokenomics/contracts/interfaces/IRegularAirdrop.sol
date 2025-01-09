@@ -29,6 +29,11 @@ pragma solidity ^0.8.9;
  */
 interface IRegularAirdrop {
 
+    struct RegularAirdropStorage {
+        mapping(address => bool) userToClaimStatus;
+        mapping(address => bool) userToFullDolo;
+    }
+
     // ======================================================
     // ======================== Events ======================
     // ======================================================
@@ -43,7 +48,7 @@ interface IRegularAirdrop {
 
     function claim(bytes32[] memory _proof, uint256 _amount) external;
 
-    function getClaimStatusByUser(address _user) external view returns (bool);
+    function userToClaimStatus(address _user) external view returns (bool);
 
-    function getUserToFullDolo(address _user) external view returns (bool);
+    function userToFullDolo(address _user) external view returns (bool);
 }

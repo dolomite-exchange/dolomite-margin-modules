@@ -43,7 +43,7 @@ contract TestBaseClaim is BaseClaim {
     ) {} // solhint-disable-line
 
     function verifyMerkleProof(bytes32[] calldata _proof, uint256 _amount) external view returns (bool){
-        address user = addressRemapping[msg.sender] == address(0) ? msg.sender : addressRemapping[msg.sender];
+        address user = addressRemapping(msg.sender) == address(0) ? msg.sender : addressRemapping(msg.sender);
         Require.that(
             _verifyMerkleProof(user, _proof, _amount),
             _FILE,

@@ -20,42 +20,22 @@
 
 pragma solidity ^0.8.9;
 
-import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-
 
 /**
- * @title   IOptionAirdrop
+ * @title   IVestingClaims
  * @author  Dolomite
  *
- * @notice  Interface for DOLO option airdrop contract
+ * @notice  Interface for DOLO vesting claims contract
  */
-interface IOptionAirdrop {
+interface IVestingClaims {
 
-    struct OptionAirdropStorage {
-        address treasury;
-        mapping(address => uint256) userToClaimedAmount;
-        mapping(address => uint256) userToPurchases;
-
-        EnumerableSet.UintSet allowedMarketIds;
+    struct VestingClaimsStorage {
+        mapping(address => uint256) released;
     }
-
-    // ======================================================
-    // ======================== Events ======================
-    // ======================================================
-
-    event TreasurySet(address treasury);
-    event AllowedMarketIdsSet(uint256[] marketIds);
-    event RewardTokenWithdrawn(address token, uint256 amount, address receiver);
 
     // ======================================================
     // ================== External Functions ================
     // ======================================================
 
-    function claim(
-        bytes32[] memory _proof,
-        uint256 _allocatedAmount,
-        uint256 _claimAmount,
-        uint256 _marketId,
-        uint256 _fromAccountNumber
-    ) external;
+    function claim(bytes32[] memory _proof, uint256 _allocatedAmount) external;
 }

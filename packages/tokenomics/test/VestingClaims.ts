@@ -67,6 +67,7 @@ describe('VestingClaims', () => {
       [dolo.address, TEST_TGE_TIMESTAMP, DURATION, core.dolomiteRegistry.address, core.dolomiteMargin.address]
     );
     await claims.connect(core.governance).ownerSetMerkleRoot(merkleRoot);
+    await claims.connect(core.governance).ownerSetHandler(core.hhUser5.address);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(claims.address, true);
 
     await dolo.connect(core.governance).mint(totalAmount);
@@ -87,30 +88,21 @@ describe('VestingClaims', () => {
   });
 
   describe('#claim', () => {
-    it('should claim zero if before start time', async () => {
-      const res = await claims.connect(core.hhUser1).claim(validProof1, user1Amount);
-      await expectEvent(core.eventEmitterRegistry, res, 'RewardClaimed', {
-        distributor: claims.address,
-        user: core.hhUser1.address,
-        epoch: ZERO_BI,
-        amount: ZERO_BI
-      });
-      expect(await dolo.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
-      expect(await claims.released(core.hhUser1.address)).to.eq(ZERO_BI);
-      expect(await dolo.balanceOf(claims.address)).to.eq(totalAmount);
+    it('should revert if before start time', async () => {
+      await expectThrow(
+        claims.connect(core.hhUser1).claim(validProof1, user1Amount),
+        'VestingClaims: No amount to claim'
+      );
     });
 
-    it('should claim zero before year one and then 1/3 at year one', async () => {
+    it('should revert before year one and then 1/3 at year one', async () => {
       await setNextBlockTimestamp(TEST_TGE_TIMESTAMP + ONE_YEAR_SECONDS - 1);
+      await expectThrow(
+        claims.connect(core.hhUser1).claim(validProof1, user1Amount),
+        'VestingClaims: No amount to claim'
+      );
       const res = await claims.connect(core.hhUser1).claim(validProof1, user1Amount);
       await expectEvent(core.eventEmitterRegistry, res, 'RewardClaimed', {
-        distributor: claims.address,
-        user: core.hhUser1.address,
-        epoch: ZERO_BI,
-        amount: ZERO_BI
-      });
-      const res2 = await claims.connect(core.hhUser1).claim(validProof1, user1Amount);
-      await expectEvent(core.eventEmitterRegistry, res2, 'RewardClaimed', {
         distributor: claims.address,
         user: core.hhUser1.address,
         epoch: ZERO_BI,
@@ -185,7 +177,7 @@ describe('VestingClaims', () => {
     });
 
     it('should work normally if user has address remapping', async () => {
-      await claims.connect(core.governance).ownerSetAddressRemapping(
+      await claims.connect(core.hhUser5).ownerSetAddressRemapping(
         [core.hhUser5.address],
         [core.hhUser1.address]
       );
@@ -193,44 +185,18 @@ describe('VestingClaims', () => {
       const res = await claims.connect(core.hhUser5).claim(validProof1, user1Amount);
       await expectEvent(core.eventEmitterRegistry, res, 'RewardClaimed', {
         distributor: claims.address,
-        user: core.hhUser5.address,
+        user: core.hhUser1.address,
         epoch: ZERO_BI,
         amount: user1Amount.div(2)
       });
       expect(await dolo.balanceOf(core.hhUser5.address)).to.eq(user1Amount.div(2));
-      expect(await claims.released(core.hhUser5.address)).to.eq(user1Amount.div(2));
+      expect(await claims.released(core.hhUser5.address)).to.eq(ZERO_BI);
       expect(await claims.released(core.hhUser1.address)).to.eq(user1Amount.div(2));
       expect(await dolo.balanceOf(claims.address)).to.eq(user2Amount.add(user1Amount.div(2)));
     });
 
-    it('should fail if remapped user trys to claim again from original address', async () => {
-      await claims.connect(core.governance).ownerSetAddressRemapping(
-        [core.hhUser5.address],
-        [core.hhUser1.address]
-      );
-      await setNextBlockTimestamp(HALFWAY);
-      const res = await claims.connect(core.hhUser5).claim(validProof1, user1Amount);
-      await expectEvent(core.eventEmitterRegistry, res, 'RewardClaimed', {
-        distributor: claims.address,
-        user: core.hhUser5.address,
-        epoch: ZERO_BI,
-        amount: user1Amount.div(2)
-      });
-      expect(await dolo.balanceOf(core.hhUser5.address)).to.eq(user1Amount.div(2));
-      expect(await claims.released(core.hhUser5.address)).to.eq(user1Amount.div(2));
-      expect(await claims.released(core.hhUser1.address)).to.eq(user1Amount.div(2));
-      expect(await dolo.balanceOf(claims.address)).to.eq(user2Amount.add(user1Amount.div(2)));
-
-      // This call will throw off releasable amount for core.hhUser5 and prevent further claims from core.hhUser5
-      await claims.connect(core.hhUser1).claim(validProof1, user1Amount);
-      await expectThrow(
-        claims.connect(core.hhUser5).claim(validProof1, user1Amount),
-        'VestingClaims: Remapped user already claimed'
-      );
-    });
-
-    it('should fail if original user trys to claim again from remapped address', async () => {
-      await claims.connect(core.governance).ownerSetAddressRemapping(
+    it('should work if remapped user claims after original address', async () => {
+      await claims.connect(core.hhUser5).ownerSetAddressRemapping(
         [core.hhUser5.address],
         [core.hhUser1.address]
       );
@@ -243,13 +209,23 @@ describe('VestingClaims', () => {
         amount: user1Amount.div(2)
       });
       expect(await dolo.balanceOf(core.hhUser1.address)).to.eq(user1Amount.div(2));
+      expect(await claims.released(core.hhUser5.address)).to.eq(ZERO_BI);
       expect(await claims.released(core.hhUser1.address)).to.eq(user1Amount.div(2));
       expect(await dolo.balanceOf(claims.address)).to.eq(user2Amount.add(user1Amount.div(2)));
 
-      await expectThrow(
-        claims.connect(core.hhUser5).claim(validProof1, user1Amount),
-        'VestingClaims: Remapped user already claimed'
-      );
+      await setNextBlockTimestamp(FULL);
+      await claims.connect(core.hhUser5).claim(validProof1, user1Amount);
+      await expectEvent(core.eventEmitterRegistry, res, 'RewardClaimed', {
+        distributor: claims.address,
+        user: core.hhUser1.address,
+        epoch: ZERO_BI,
+        amount: user1Amount.div(2)
+      });
+      expect(await dolo.balanceOf(core.hhUser1.address)).to.eq(user1Amount.div(2));
+      expect(await dolo.balanceOf(core.hhUser5.address)).to.eq(user1Amount.div(2));
+      expect(await claims.released(core.hhUser5.address)).to.eq(ZERO_BI);
+      expect(await claims.released(core.hhUser1.address)).to.eq(user1Amount);
+      expect(await dolo.balanceOf(claims.address)).to.eq(user2Amount);
     });
 
     it('should fail if invalid merkle proof', async () => {

@@ -2,7 +2,7 @@ import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols
 import { TestBaseClaim, TestBaseClaim__factory } from '../src/types';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol, setupDAIBalance } from 'packages/base/test/utils/setup';
 import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
-import { BYTES_ZERO, Network, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
+import { ADDRESS_ZERO, BYTES_ZERO, Network, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
 import { expect } from 'chai';
 import { defaultAbiCoder, keccak256, parseEther } from 'ethers/lib/utils';
 import MerkleTree from 'merkletreejs';
@@ -82,7 +82,8 @@ describe('BaseClaim', () => {
 
   describe('#ownerSetAddressRemapping', () => {
     it('should work normally', async () => {
-      const res = await baseClaim.connect(core.governance).ownerSetAddressRemapping(
+      await baseClaim.connect(core.governance).ownerSetHandler(core.hhUser5.address);
+      const res = await baseClaim.connect(core.hhUser5).ownerSetAddressRemapping(
         [core.hhUser1.address],
         [core.hhUser2.address]
       );
@@ -90,12 +91,16 @@ describe('BaseClaim', () => {
         users: [core.hhUser1.address],
         remappedAddresses: [core.hhUser2.address]
       });
-      expect(await baseClaim.getAddressRemapping(core.hhUser1.address)).to.eq(core.hhUser2.address);
+      expect(await baseClaim.addressRemapping(core.hhUser1.address)).to.eq(core.hhUser2.address);
+      expect(await baseClaim.addressRemapping(core.hhUser2.address)).to.eq(ADDRESS_ZERO);
+      expect(await baseClaim.getUserOrRemappedAddress(core.hhUser1.address)).to.eq(core.hhUser2.address);
+      expect(await baseClaim.getUserOrRemappedAddress(core.hhUser2.address)).to.eq(core.hhUser2.address);
     });
 
     it('should fail if array length mismatch', async () => {
+      await baseClaim.connect(core.governance).ownerSetHandler(core.hhUser5.address);
       await expectThrow(
-        baseClaim.connect(core.governance).ownerSetAddressRemapping(
+        baseClaim.connect(core.hhUser5).ownerSetAddressRemapping(
           [core.hhUser1.address],
           [core.hhUser2.address, core.hhUser3.address]
         ),
@@ -103,10 +108,10 @@ describe('BaseClaim', () => {
       );
     });
 
-    it('should fail if not called by owner', async () => {
+    it('should fail if not called by handler', async () => {
       await expectThrow(
-        baseClaim.connect(core.hhUser1).ownerSetAddressRemapping([core.hhUser1.address], [core.hhUser2.address]),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+        baseClaim.connect(core.hhUser2).ownerSetAddressRemapping([core.hhUser1.address], [core.hhUser2.address]),
+        'BaseClaim: Only handler can call'
       );
     });
   });
@@ -138,11 +143,12 @@ describe('BaseClaim', () => {
     });
 
     it('should work normally if user has address remapping', async () => {
-      await baseClaim.connect(core.governance).ownerSetAddressRemapping(
-        [core.hhUser5.address],
+      await baseClaim.connect(core.governance).ownerSetHandler(core.hhUser5.address);
+      await baseClaim.connect(core.hhUser5).ownerSetAddressRemapping(
+        [core.hhUser4.address],
         [core.hhUser1.address]
       );
-      expect(await baseClaim.connect(core.hhUser5).verifyMerkleProof(validProof1, parseEther('5'))).to.be.true;
+      expect(await baseClaim.connect(core.hhUser4).verifyMerkleProof(validProof1, parseEther('5'))).to.be.true;
     });
 
     it('should fail if invalid merkle proof', async () => {

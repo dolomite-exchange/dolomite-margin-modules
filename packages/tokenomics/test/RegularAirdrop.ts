@@ -52,6 +52,7 @@ describe('RegularAirdrop', () => {
 
     regularAirdrop = await createRegularAirdrop(core, dolo, mockVeToken);
     await regularAirdrop.connect(core.governance).ownerSetMerkleRoot(merkleRoot);
+    await regularAirdrop.connect(core.governance).ownerSetHandler(core.hhUser5.address);
     await core.dolomiteMargin.ownerSetGlobalOperator(regularAirdrop.address, true);
 
     await dolo.connect(core.governance).mint(parseEther('15'));
@@ -74,25 +75,25 @@ describe('RegularAirdrop', () => {
 
   describe('#ownerSetUserToFullDolo', () => {
     it('should work normally', async () => {
-      const res = await regularAirdrop.connect(core.governance).ownerSetUserToFullDolo([core.hhUser1.address], [true]);
+      const res = await regularAirdrop.connect(core.hhUser5).ownerSetUserToFullDolo([core.hhUser1.address], [true]);
       await expectEvent(regularAirdrop, res, 'UserToFullDoloSet', {
         users: [core.hhUser1.address],
         fullDolo: [true]
       });
-      expect(await regularAirdrop.getUserToFullDolo(core.hhUser1.address)).to.be.true;
+      expect(await regularAirdrop.userToFullDolo(core.hhUser1.address)).to.be.true;
     });
 
     it('should fail if array length mismatch', async () => {
       await expectThrow(
-        regularAirdrop.connect(core.governance).ownerSetUserToFullDolo([core.hhUser1.address], [true, false]),
+        regularAirdrop.connect(core.hhUser5).ownerSetUserToFullDolo([core.hhUser1.address], [true, false]),
         'RegularAirdrop: Array length mismatch'
       );
     });
 
-    it('should fail if not called by owner', async () => {
+    it('should fail if not called by handler', async () => {
       await expectThrow(
         regularAirdrop.connect(core.hhUser1).ownerSetUserToFullDolo([core.hhUser1.address], [true]),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+        'BaseClaim: Only handler can call'
       );
     });
   });
@@ -109,7 +110,7 @@ describe('RegularAirdrop', () => {
       expect(await dolo.balanceOf(core.hhUser1.address)).to.eq(parseEther('2.5'));
       expect(await dolo.balanceOf(mockVeToken.address)).to.eq(parseEther('2.5'));
       expect(await dolo.balanceOf(regularAirdrop.address)).to.eq(parseEther('10'));
-      expect(await regularAirdrop.getClaimStatusByUser(core.hhUser1.address)).to.be.true;
+      expect(await regularAirdrop.userToClaimStatus(core.hhUser1.address)).to.be.true;
 
       const res2 = await regularAirdrop.connect(core.hhUser2).claim(validProof2, parseEther('10'));
       await expectEvent(core.eventEmitterRegistry, res2, 'RewardClaimed', {
@@ -121,30 +122,30 @@ describe('RegularAirdrop', () => {
       expect(await dolo.balanceOf(core.hhUser2.address)).to.eq(parseEther('5'));
       expect(await dolo.balanceOf(mockVeToken.address)).to.eq(parseEther('7.5'));
       expect(await dolo.balanceOf(regularAirdrop.address)).to.eq(parseEther('0'));
-      expect(await regularAirdrop.getClaimStatusByUser(core.hhUser2.address)).to.be.true;
+      expect(await regularAirdrop.userToClaimStatus(core.hhUser2.address)).to.be.true;
     });
 
     it('should work normally if user has address remapping', async () => {
-      await regularAirdrop.connect(core.governance).ownerSetAddressRemapping(
-        [core.hhUser5.address],
+      await regularAirdrop.connect(core.hhUser5).ownerSetAddressRemapping(
+        [core.hhUser4.address],
         [core.hhUser1.address]
       );
-      const res = await regularAirdrop.connect(core.hhUser5).claim(validProof1, parseEther('5'));
+      const res = await regularAirdrop.connect(core.hhUser4).claim(validProof1, parseEther('5'));
       await expectEvent(core.eventEmitterRegistry, res, 'RewardClaimed', {
         distributor: regularAirdrop.address,
-        user: core.hhUser5.address,
+        user: core.hhUser1.address,
         epoch: ZERO_BI,
         amount: parseEther('5')
       });
-      expect(await dolo.balanceOf(core.hhUser5.address)).to.eq(parseEther('2.5'));
+      expect(await dolo.balanceOf(core.hhUser4.address)).to.eq(parseEther('2.5'));
       expect(await dolo.balanceOf(mockVeToken.address)).to.eq(parseEther('2.5'));
       expect(await dolo.balanceOf(regularAirdrop.address)).to.eq(parseEther('10'));
-      expect(await regularAirdrop.getClaimStatusByUser(core.hhUser5.address)).to.be.true;
-      expect(await regularAirdrop.getClaimStatusByUser(core.hhUser1.address)).to.be.true;
+      expect(await regularAirdrop.userToClaimStatus(core.hhUser1.address)).to.be.true;
+      expect(await regularAirdrop.userToClaimStatus(core.hhUser4.address)).to.be.false;
     });
 
     it('should work normally if user has full dolo', async () => {
-      await regularAirdrop.connect(core.governance).ownerSetUserToFullDolo([core.hhUser1.address], [true]);
+      await regularAirdrop.connect(core.hhUser5).ownerSetUserToFullDolo([core.hhUser1.address], [true]);
       const res = await regularAirdrop.connect(core.hhUser1).claim(validProof1, parseEther('5'));
       await expectEvent(core.eventEmitterRegistry, res, 'RewardClaimed', {
         distributor: regularAirdrop.address,
@@ -153,18 +154,18 @@ describe('RegularAirdrop', () => {
         amount: parseEther('5')
       });
       expect(await dolo.balanceOf(core.hhUser1.address)).to.eq(parseEther('5'));
-      expect(await regularAirdrop.getClaimStatusByUser(core.hhUser1.address)).to.be.true;
+      expect(await regularAirdrop.userToClaimStatus(core.hhUser1.address)).to.be.true;
     });
 
     it('should fail if remapped user trys to claim again from original address', async () => {
-      await regularAirdrop.connect(core.governance).ownerSetAddressRemapping(
-        [core.hhUser5.address],
+      await regularAirdrop.connect(core.hhUser5).ownerSetAddressRemapping(
+        [core.hhUser4.address],
         [core.hhUser1.address]
       );
-      const res = await regularAirdrop.connect(core.hhUser5).claim(validProof1, parseEther('5'));
+      const res = await regularAirdrop.connect(core.hhUser4).claim(validProof1, parseEther('5'));
       await expectEvent(core.eventEmitterRegistry, res, 'RewardClaimed', {
         distributor: regularAirdrop.address,
-        user: core.hhUser5.address,
+        user: core.hhUser1.address,
         epoch: ZERO_BI,
         amount: parseEther('5')
       });
@@ -175,8 +176,8 @@ describe('RegularAirdrop', () => {
     });
 
     it('should fail if original user trys to claim again from remapped address', async () => {
-      await regularAirdrop.connect(core.governance).ownerSetAddressRemapping(
-        [core.hhUser5.address],
+      await regularAirdrop.connect(core.hhUser5).ownerSetAddressRemapping(
+        [core.hhUser4.address],
         [core.hhUser1.address]
       );
       const res = await regularAirdrop.connect(core.hhUser1).claim(validProof1, parseEther('5'));
@@ -187,7 +188,7 @@ describe('RegularAirdrop', () => {
         amount: parseEther('5')
       });
       await expectThrow(
-        regularAirdrop.connect(core.hhUser5).claim(validProof1, parseEther('5')),
+        regularAirdrop.connect(core.hhUser4).claim(validProof1, parseEther('5')),
         'RegularAirdrop: User already claimed'
       );
     });

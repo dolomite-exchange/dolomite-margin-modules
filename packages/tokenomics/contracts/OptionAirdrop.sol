@@ -49,6 +49,7 @@ contract OptionAirdrop is OnlyDolomiteMargin, ReentrancyGuard, BaseClaim, IOptio
     // ===================================================
 
     bytes32 private constant _FILE = "OptionAirdrop";
+    bytes32 private constant _OPTION_AIRDROP_STORAGE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.optionAirdropStorage")) - 1);
 
     uint256 public constant DOLO_PRICE = 0.03125 ether;
 
@@ -57,12 +58,6 @@ contract OptionAirdrop is OnlyDolomiteMargin, ReentrancyGuard, BaseClaim, IOptio
     // ===================================================
 
     IERC20 public immutable DOLO; // solhint-disable-line mixed-case
-
-    address public treasury;
-    mapping(address => uint256) public userToClaimedAmount;
-    mapping(address => uint256) public userToPurchases;
-
-    EnumerableSet.UintSet private _allowedMarketIds;
 
     // ===========================================================
     // ======================= Constructor =======================
@@ -104,34 +99,27 @@ contract OptionAirdrop is OnlyDolomiteMargin, ReentrancyGuard, BaseClaim, IOptio
         uint256 _marketId,
         uint256 _fromAccountNumber
     ) external nonReentrant {
-        address user = addressRemapping[msg.sender] == address(0) ? msg.sender : addressRemapping[msg.sender];
+        OptionAirdropStorage storage s = _getOptionAirdropStorage();
+        address user = addressRemapping(msg.sender) == address(0) ? msg.sender : addressRemapping(msg.sender);
 
+        // @audit @Corey, double check all uses of user vs msg.sender
         Require.that(
             _verifyMerkleProof(user, _proof, _allocatedAmount),
             _FILE,
             "Invalid merkle proof"
         );
         Require.that(
-            _allowedMarketIds.contains(_marketId),
+            s.allowedMarketIds.contains(_marketId),
             _FILE,
             "Payment asset not allowed"
         );
-
         Require.that(
-            userToClaimedAmount[msg.sender] + _claimAmount <= _allocatedAmount,
+            s.userToClaimedAmount[user] + _claimAmount <= _allocatedAmount,
             _FILE,
             "Insufficient allocated amount"
         );
-        userToClaimedAmount[msg.sender] += _claimAmount;
+        s.userToClaimedAmount[user] += _claimAmount;
 
-        if (user != msg.sender) {
-            Require.that(
-                userToClaimedAmount[user] + _claimAmount <= _allocatedAmount,
-                _FILE,
-                "Insufficient allocated amount"
-            );
-            userToClaimedAmount[user] += _claimAmount;
-        }
 
         uint256 doloValue = DOLO_PRICE * _claimAmount;
         uint256 paymentAmount = doloValue / DOLOMITE_MARGIN().getMarketPrice(_marketId).value;
@@ -139,7 +127,7 @@ contract OptionAirdrop is OnlyDolomiteMargin, ReentrancyGuard, BaseClaim, IOptio
             DOLOMITE_MARGIN(),
             msg.sender,
             _fromAccountNumber,
-            treasury,
+            s.treasury,
             _marketId,
             IDolomiteStructs.AssetAmount({
                 sign: false,
@@ -152,8 +140,8 @@ contract OptionAirdrop is OnlyDolomiteMargin, ReentrancyGuard, BaseClaim, IOptio
 
         DOLO.safeTransfer(msg.sender, _claimAmount);
         DOLOMITE_REGISTRY.eventEmitter().emitRewardClaimed(
-            msg.sender,
-            userToPurchases[msg.sender]++,
+            user,
+            s.userToPurchases[user]++,
             _claimAmount
         );
     }
@@ -163,11 +151,28 @@ contract OptionAirdrop is OnlyDolomiteMargin, ReentrancyGuard, BaseClaim, IOptio
     // ==============================================================
 
     function isAllowedMarketId(uint256 _marketId) external view returns (bool) {
-        return _allowedMarketIds.contains(_marketId);
+        OptionAirdropStorage storage s = _getOptionAirdropStorage();
+        return s.allowedMarketIds.contains(_marketId);
     }
 
     function getAllowedMarketIds() external view returns (uint256[] memory) {
-        return _allowedMarketIds.values();
+        OptionAirdropStorage storage s = _getOptionAirdropStorage();
+        return s.allowedMarketIds.values();
+    }
+
+    function treasury() external view returns (address) {
+        OptionAirdropStorage storage s = _getOptionAirdropStorage();
+        return s.treasury;
+    }
+
+    function userToClaimedAmount(address _user) external view returns (uint256) {
+        OptionAirdropStorage storage s = _getOptionAirdropStorage();
+        return s.userToClaimedAmount[_user];
+    }
+
+    function userToPurchases(address _user) external view returns (uint256) {
+        OptionAirdropStorage storage s = _getOptionAirdropStorage();
+        return s.userToPurchases[_user];
     }
 
     // ==================================================================
@@ -175,21 +180,32 @@ contract OptionAirdrop is OnlyDolomiteMargin, ReentrancyGuard, BaseClaim, IOptio
     // ==================================================================
 
     function _ownerSetAllowedMarketIds(uint256[] memory _marketIds) internal {
+        OptionAirdropStorage storage s = _getOptionAirdropStorage();
+
         // Clear out current set
-        uint256 len = _allowedMarketIds.length();
+        uint256 len = s.allowedMarketIds.length();
         for (uint256 i; i < len; i++) {
-            _allowedMarketIds.remove(_allowedMarketIds.at(0));
+            s.allowedMarketIds.remove(s.allowedMarketIds.at(0));
         }
 
         len = _marketIds.length;
         for (uint256 i; i < len; i++) {
-            _allowedMarketIds.add(_marketIds[i]);
+            s.allowedMarketIds.add(_marketIds[i]);
         }
         emit AllowedMarketIdsSet(_marketIds);
     }
 
     function _ownerSetTreasury(address _treasury) internal {
-        treasury = _treasury;
+        OptionAirdropStorage storage s = _getOptionAirdropStorage();
+        s.treasury = _treasury;
         emit TreasurySet(_treasury);
+    }
+
+    function _getOptionAirdropStorage() internal pure returns (OptionAirdropStorage storage optionAirdropStorage) {
+        bytes32 slot = _OPTION_AIRDROP_STORAGE_SLOT;
+        // solhint-disable-next-line no-inline-assembly
+        assembly {
+            optionAirdropStorage.slot := slot
+        }
     }
 }

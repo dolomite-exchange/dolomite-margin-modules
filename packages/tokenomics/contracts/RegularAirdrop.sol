@@ -44,6 +44,7 @@ contract RegularAirdrop is OnlyDolomiteMargin, BaseClaim, IRegularAirdrop {
     // ===================================================
 
     bytes32 private constant _FILE = "RegularAirdrop";
+    bytes32 private constant _REGULAR_AIRDROP_STORAGE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.regularAirdropStorage")) - 1);
 
     uint256 public constant MAX_LOCK = 2 * 365 * 86400;
     uint256 public constant EPOCH_NUMBER = 0;
@@ -54,9 +55,6 @@ contract RegularAirdrop is OnlyDolomiteMargin, BaseClaim, IRegularAirdrop {
 
     IERC20 public immutable DOLO; // solhint -disable-line mixed-case
     IVotingEscrow public immutable VE_DOLO; // solhint -disable-line mixed-case
-
-    mapping(address => bool) public userToClaimStatus;
-    mapping(address => bool) public userToFullDolo;
 
     // ===========================================================
     // ======================= Constructor =======================
@@ -79,7 +77,7 @@ contract RegularAirdrop is OnlyDolomiteMargin, BaseClaim, IRegularAirdrop {
     function ownerSetUserToFullDolo(
         address[] memory _users,
         bool[] memory _fullDolo
-    ) external onlyDolomiteMarginOwner(msg.sender) {
+    ) external onlyHandler(msg.sender) {
         _ownerSetUserToFullDolo(_users, _fullDolo);
     }
 
@@ -88,7 +86,8 @@ contract RegularAirdrop is OnlyDolomiteMargin, BaseClaim, IRegularAirdrop {
     // ==============================================================
 
     function claim(bytes32[] calldata _proof, uint256 _amount) external {
-        address user = addressRemapping[msg.sender] == address(0) ? msg.sender : addressRemapping[msg.sender];
+        RegularAirdropStorage storage s = _getRegularAirdropStorage();
+        address user = getUserOrRemappedAddress(msg.sender);
 
         Require.that(
             _verifyMerkleProof(user, _proof, _amount),
@@ -96,23 +95,13 @@ contract RegularAirdrop is OnlyDolomiteMargin, BaseClaim, IRegularAirdrop {
             "Invalid merkle proof"
         );
         Require.that(
-            !userToClaimStatus[msg.sender],
+            !s.userToClaimStatus[user],
             _FILE,
             "User already claimed"
         );
-        userToClaimStatus[msg.sender] = true;
+        s.userToClaimStatus[user] = true;
 
-        // @audit @Corey, I'm worried about a situation where the user actually can access the old address and the remapped address
-        if (user != msg.sender) {
-            Require.that(
-                !userToClaimStatus[user],
-                _FILE,
-                "User already claimed"
-            );
-            userToClaimStatus[user] = true;
-        }
-
-        if (userToFullDolo[msg.sender]) {
+        if (s.userToFullDolo[user]) {
             DOLO.safeTransfer(msg.sender, _amount);
         } else {
             uint256 veDoloAmount = _amount / 2;
@@ -122,7 +111,7 @@ contract RegularAirdrop is OnlyDolomiteMargin, BaseClaim, IRegularAirdrop {
         }
 
         DOLOMITE_REGISTRY.eventEmitter().emitRewardClaimed(
-            msg.sender,
+            user,
             EPOCH_NUMBER,
             _amount
         );
@@ -132,12 +121,14 @@ contract RegularAirdrop is OnlyDolomiteMargin, BaseClaim, IRegularAirdrop {
     // ======================= View Functions =======================
     // ==============================================================
 
-    function getClaimStatusByUser(address _user) external view returns (bool) {
-        return userToClaimStatus[_user];
+    function userToClaimStatus(address _user) external view returns (bool) {
+        RegularAirdropStorage storage s = _getRegularAirdropStorage();
+        return s.userToClaimStatus[_user];
     }
 
-    function getUserToFullDolo(address _user) external view returns (bool) {
-        return userToFullDolo[_user];
+    function userToFullDolo(address _user) external view returns (bool) {
+        RegularAirdropStorage storage s = _getRegularAirdropStorage();
+        return s.userToFullDolo[_user];
     }
 
     // ==================================================================
@@ -145,6 +136,8 @@ contract RegularAirdrop is OnlyDolomiteMargin, BaseClaim, IRegularAirdrop {
     // ==================================================================
 
     function _ownerSetUserToFullDolo(address[] memory _users, bool[] memory _fullDolo) internal {
+        RegularAirdropStorage storage s = _getRegularAirdropStorage();
+
         Require.that(
             _users.length == _fullDolo.length,
             _FILE,
@@ -152,8 +145,15 @@ contract RegularAirdrop is OnlyDolomiteMargin, BaseClaim, IRegularAirdrop {
         );
 
         for (uint256 i = 0; i < _users.length; i++) {
-            userToFullDolo[_users[i]] = _fullDolo[i];
+            s.userToFullDolo[_users[i]] = _fullDolo[i];
         }
         emit UserToFullDoloSet(_users, _fullDolo);
+    }
+
+    function _getRegularAirdropStorage() internal pure returns (RegularAirdropStorage storage regularAirdropStorage) {
+        bytes32 slot = _REGULAR_AIRDROP_STORAGE_SLOT;
+        assembly {
+            regularAirdropStorage.slot := slot
+        }
     }
 }
