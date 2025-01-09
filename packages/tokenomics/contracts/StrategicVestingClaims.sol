@@ -39,7 +39,6 @@ contract StrategicVestingClaims is VestingClaims {
     // ===================================================
 
     bytes32 private constant _FILE = "StrategicVestingClaims";
-    uint256 public constant ONE_MONTH = 30 days;
 
     // ===========================================================
     // ======================= Constructor =======================
@@ -55,16 +54,18 @@ contract StrategicVestingClaims is VestingClaims {
     }
 
     function _vestingSchedule(
-        uint256 totalAllocation,
-        uint64 timestamp
-    ) internal view override returns (uint256) {
-        uint256 startTimestamp = TGE_TIMESTAMP - ONE_MONTH;
-        if (timestamp < TGE_TIMESTAMP) {
+        uint256 _totalAllocation,
+        uint64 _timestamp
+    ) internal override view returns (uint256) {
+        if (_timestamp < TGE_TIMESTAMP) {
             return 0;
-        } else if (timestamp >= startTimestamp + DURATION) {
-            return totalAllocation;
+        } else if (_timestamp >= TGE_TIMESTAMP + DURATION) {
+            return _totalAllocation;
         } else {
-            return (totalAllocation * (timestamp - startTimestamp)) / DURATION;
+            uint256 amountUpfront = _totalAllocation / 10; // 10% up front
+            uint256 amountRemaining = _totalAllocation - amountUpfront; // 90% vested over duration
+            uint256 vestedAmount = amountRemaining * (_timestamp - TGE_TIMESTAMP) / DURATION;
+            return amountUpfront + vestedAmount;
         }
     }
 }
