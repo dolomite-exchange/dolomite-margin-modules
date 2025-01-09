@@ -49,7 +49,7 @@ contract OptionAirdrop is OnlyDolomiteMargin, ReentrancyGuard, BaseClaim, IOptio
     // ===================================================
 
     bytes32 private constant _FILE = "OptionAirdrop";
-    bytes32 private constant _OPTION_AIRDROP_STORAGE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.optionAirdropStorage")) - 1);
+    bytes32 private constant _OPTION_AIRDROP_STORAGE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.optionAirdropStorage")) - 1); // solhint-disable-line max-line-length
 
     uint256 public constant DOLO_PRICE = 0.03125 ether;
 

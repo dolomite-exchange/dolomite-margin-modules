@@ -43,7 +43,7 @@ contract VestingClaims is OnlyDolomiteMargin, BaseClaim, IVestingClaims {
     // ===================================================
 
     bytes32 private constant _FILE = "VestingClaims";
-    bytes32 private constant _VESTING_CLAIMS_STORAGE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.vestingClaimsStorage")) - 1);
+    bytes32 private constant _VESTING_CLAIMS_STORAGE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.vestingClaimsStorage")) - 1); // solhint-disable-line max-line-length
 
     uint256 public constant EPOCH_NUMBER = 0;
     uint256 public constant ONE_YEAR = 365 days;

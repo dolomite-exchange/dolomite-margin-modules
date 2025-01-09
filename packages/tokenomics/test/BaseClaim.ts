@@ -80,6 +80,31 @@ describe('BaseClaim', () => {
     });
   });
 
+  describe('#ownerSetHandler', () => {
+    it('should work normally', async () => {
+      expect(await baseClaim.handler()).to.eq(ADDRESS_ZERO);
+      const res = await baseClaim.connect(core.governance).ownerSetHandler(core.hhUser5.address);
+      await expectEvent(baseClaim, res, 'HandlerSet', {
+        handler: core.hhUser5.address
+      });
+      expect(await baseClaim.handler()).to.eq(core.hhUser5.address);
+    });
+
+    it('should fail if handler is zero address', async () => {
+      await expectThrow(
+        baseClaim.connect(core.governance).ownerSetHandler(ADDRESS_ZERO),
+        'BaseClaim: Invalid handler address'
+      );
+    });
+
+    it('should fail if not called by owner', async () => {
+      await expectThrow(
+        baseClaim.connect(core.hhUser1).ownerSetHandler(core.hhUser5.address),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+      );
+    });
+  });
+
   describe('#ownerSetAddressRemapping', () => {
     it('should work normally', async () => {
       await baseClaim.connect(core.governance).ownerSetHandler(core.hhUser5.address);

@@ -44,7 +44,7 @@ contract RegularAirdrop is OnlyDolomiteMargin, BaseClaim, IRegularAirdrop {
     // ===================================================
 
     bytes32 private constant _FILE = "RegularAirdrop";
-    bytes32 private constant _REGULAR_AIRDROP_STORAGE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.regularAirdropStorage")) - 1);
+    bytes32 private constant _REGULAR_AIRDROP_STORAGE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.regularAirdropStorage")) - 1); // solhint-disable-line max-line-length
 
     uint256 public constant MAX_LOCK = 2 * 365 * 86400;
     uint256 public constant EPOCH_NUMBER = 0;

@@ -20,14 +20,9 @@
 
 pragma solidity ^0.8.9;
 
-import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
-import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { MerkleProof } from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import { VestingClaims } from "./VestingClaims.sol";
-import { IRegularAirdrop } from "./interfaces/IRegularAirdrop.sol";
-import { IVotingEscrow } from "./interfaces/IVotingEscrow.sol";
 
 
 /**
@@ -45,12 +40,6 @@ contract StrategicVestingClaims is VestingClaims {
 
     bytes32 private constant _FILE = "StrategicVestingClaims";
 
-    // ===================================================
-    // ==================== State Variables ==============
-    // ===================================================
-
-    uint256 public constant ONE_MONTH = 30 days;
-
     // ===========================================================
     // ======================= Constructor =======================
     // ===========================================================
@@ -64,14 +53,19 @@ contract StrategicVestingClaims is VestingClaims {
     ) VestingClaims(_dolo, _tgeTimestamp, _duration, _dolomiteRegistry, _dolomiteMargin) {
     }
 
-    function _vestingSchedule(uint256 totalAllocation, uint64 timestamp) internal view override returns (uint256) {
-        uint256 startTimestamp = TGE_TIMESTAMP - ONE_MONTH;
-        if (timestamp < TGE_TIMESTAMP) {
+    function _vestingSchedule(
+        uint256 _totalAllocation,
+        uint64 _timestamp
+    ) internal override view returns (uint256) {
+        if (_timestamp < TGE_TIMESTAMP) {
             return 0;
-        } else if (timestamp >= startTimestamp + DURATION) {
-            return totalAllocation;
+        } else if (_timestamp >= TGE_TIMESTAMP + DURATION) {
+            return _totalAllocation;
         } else {
-            return (totalAllocation * (timestamp - startTimestamp)) / DURATION;
+            uint256 amountUpfront = _totalAllocation / 10; // 10% up front
+            uint256 amountRemaining = _totalAllocation - amountUpfront; // 90% vested over duration
+            uint256 vestedAmount = amountRemaining * (_timestamp - TGE_TIMESTAMP) / DURATION;
+            return amountUpfront + vestedAmount;
         }
     }
 }

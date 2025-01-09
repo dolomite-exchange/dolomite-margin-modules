@@ -43,6 +43,7 @@ abstract contract BaseClaim is OnlyDolomiteMargin, IBaseClaim {
     // ===================================================
 
     bytes32 private constant _FILE = "BaseClaim";
+    bytes32 private constant _BASE_CLAIM_STORAGE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.baseClaimStorage")) - 1);
 
     // ===================================================
     // ==================== State Variables ==============
@@ -50,8 +51,19 @@ abstract contract BaseClaim is OnlyDolomiteMargin, IBaseClaim {
 
     IDolomiteRegistry public immutable DOLOMITE_REGISTRY; // solhint -disable-line mixed-case
 
-    bytes32 public merkleRoot;
-    mapping(address => address) public addressRemapping;
+    // ===========================================================
+    // ======================= Modifiers =======================
+    // ===========================================================
+
+    modifier onlyHandler(address _sender) {
+        if (_sender == handler()) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            _sender == handler(),
+            _FILE,
+            "Only handler can call"
+        );
+        _;
+    }
 
     // ===========================================================
     // ======================= Constructor =======================
@@ -68,14 +80,18 @@ abstract contract BaseClaim is OnlyDolomiteMargin, IBaseClaim {
     // ================== Admin Functions ===================
     // ======================================================
 
-    function ownerSetMerkleRoot(bytes32 _merkleRoot) external onlyDolomiteMarginOwner(msg.sender) {
-        _ownerSetMerkleRoot(_merkleRoot);
-    }
-
     function ownerSetAddressRemapping(
         address[] memory _users, address[] memory _remappedAddresses
-    ) external onlyDolomiteMarginOwner(msg.sender) {
+    ) external onlyHandler(msg.sender) {
         _ownerSetAddressRemapping(_users, _remappedAddresses);
+    }
+
+    function ownerSetHandler(address _handler) external onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetHandler(_handler);
+    }
+
+    function ownerSetMerkleRoot(bytes32 _merkleRoot) external onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetMerkleRoot(_merkleRoot);
     }
 
     function ownerWithdrawRewardToken(address _token, address _receiver) external onlyDolomiteMarginOwner(msg.sender) {
@@ -86,8 +102,24 @@ abstract contract BaseClaim is OnlyDolomiteMargin, IBaseClaim {
     // ======================= View Functions =======================
     // ==============================================================
 
-    function getAddressRemapping(address _user) external view returns (address) {
-        return addressRemapping[_user];
+    function addressRemapping(address _user) public view returns (address) {
+        BaseClaimStorage storage s = _getBaseClaimStorage();
+        return s.addressRemapping[_user];
+    }
+
+    function getUserOrRemappedAddress(address _user) public view returns (address) {
+        address remappedAddress = addressRemapping(_user);
+        return remappedAddress == address(0) ? _user : remappedAddress;
+    }
+
+    function merkleRoot() public view returns (bytes32) {
+        BaseClaimStorage storage s = _getBaseClaimStorage();
+        return s.merkleRoot;
+    }
+
+    function handler() public view returns (address) {
+        BaseClaimStorage storage s = _getBaseClaimStorage();
+        return s.handler;
     }
 
     // ==================================================================
@@ -95,20 +127,37 @@ abstract contract BaseClaim is OnlyDolomiteMargin, IBaseClaim {
     // ==================================================================
 
     function _ownerSetAddressRemapping(address[] memory _users, address[] memory _remappedAddresses) internal {
+        BaseClaimStorage storage s = _getBaseClaimStorage();
+
         if (_users.length == _remappedAddresses.length) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _users.length == _remappedAddresses.length,
             _FILE,
             "Array length mismatch"
         );
+
         for (uint256 i = 0; i < _users.length; i++) {
-            addressRemapping[_users[i]] = _remappedAddresses[i];
+            s.addressRemapping[_users[i]] = _remappedAddresses[i];
         }
         emit AddressRemappingSet(_users, _remappedAddresses);
     }
 
+    function _ownerSetHandler(address _handler) internal {
+        BaseClaimStorage storage s = _getBaseClaimStorage();
+        if (_handler != address(0)) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            _handler != address(0),
+            _FILE,
+            "Invalid handler address"
+        );
+
+        s.handler = _handler;
+        emit HandlerSet(_handler);
+    }
+
     function _ownerSetMerkleRoot(bytes32 _merkleRoot) internal {
-        merkleRoot = _merkleRoot;
+        BaseClaimStorage storage s = _getBaseClaimStorage();
+        s.merkleRoot = _merkleRoot;
         emit MerkleRootSet(_merkleRoot);
     }
 
@@ -121,8 +170,16 @@ abstract contract BaseClaim is OnlyDolomiteMargin, IBaseClaim {
         address _user,
         bytes32[] calldata _proof,
         uint256 _amount
-    ) internal view virtual returns (bool) {
+    ) internal view returns (bool) {
         bytes32 leaf = keccak256(abi.encode(_user, _amount));
-        return MerkleProof.verifyCalldata(_proof, merkleRoot, leaf);
+        return MerkleProof.verifyCalldata(_proof, merkleRoot(), leaf);
+    }
+
+    function _getBaseClaimStorage() internal pure returns (BaseClaimStorage storage baseClaimStorage) {
+        bytes32 slot = _BASE_CLAIM_STORAGE_SLOT;
+        // solhint-disable-next-line no-inline-assembly
+        assembly {
+            baseClaimStorage.slot := slot
+        }
     }
 }

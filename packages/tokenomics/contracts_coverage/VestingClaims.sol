@@ -26,8 +26,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { MerkleProof } from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import { BaseClaim } from "./BaseClaim.sol";
-import { IRegularAirdrop } from "./interfaces/IRegularAirdrop.sol";
-import { IVotingEscrow } from "./interfaces/IVotingEscrow.sol";
+import { IVestingClaims } from "./interfaces/IVestingClaims.sol";
 
 
 /**
@@ -36,7 +35,7 @@ import { IVotingEscrow } from "./interfaces/IVotingEscrow.sol";
  *
  * Vesting claims contract for DOLO tokens
  */
-contract VestingClaims is OnlyDolomiteMargin, BaseClaim {
+contract VestingClaims is OnlyDolomiteMargin, BaseClaim, IVestingClaims {
     using SafeERC20 for IERC20;
 
     // ===================================================
@@ -44,6 +43,8 @@ contract VestingClaims is OnlyDolomiteMargin, BaseClaim {
     // ===================================================
 
     bytes32 private constant _FILE = "VestingClaims";
+    bytes32 private constant _VESTING_CLAIMS_STORAGE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.vestingClaimsStorage")) - 1);
+
     uint256 public constant EPOCH_NUMBER = 0;
     uint256 public constant ONE_YEAR = 365 days;
 
@@ -51,12 +52,9 @@ contract VestingClaims is OnlyDolomiteMargin, BaseClaim {
     // ==================== State Variables ==============
     // ===================================================
 
-
     IERC20 public immutable DOLO;
     uint256 public immutable TGE_TIMESTAMP;
     uint256 public immutable DURATION;
-
-    mapping(address => uint256) public released;
 
     // ===========================================================
     // ======================= Constructor =======================
@@ -79,7 +77,9 @@ contract VestingClaims is OnlyDolomiteMargin, BaseClaim {
     // ==============================================================
 
     function claim(bytes32[] calldata _proof, uint256 _allocatedAmount) external {
-        address user = addressRemapping[msg.sender] == address(0) ? msg.sender : addressRemapping[msg.sender];
+        VestingClaimsStorage storage s = _getVestingClaimsStorage();
+        address user = getUserOrRemappedAddress(msg.sender);
+
         if (_verifyMerkleProof(user, _proof, _allocatedAmount)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _verifyMerkleProof(user, _proof, _allocatedAmount),
@@ -87,24 +87,18 @@ contract VestingClaims is OnlyDolomiteMargin, BaseClaim {
             "Invalid merkle proof"
         );
 
-        uint256 amount = releasable(_allocatedAmount, msg.sender);
-        released[msg.sender] += amount;
-
-        // @audit @Corey, Please double check this logic. If the user claims from the original address,
-        // they can no longer claim from the remapped address.
-        if (user != msg.sender) {
-            if (releasable(_allocatedAmount, user) == amount) { /* FOR COVERAGE TESTING */ }
-            Require.that(
-                releasable(_allocatedAmount, user) == amount,
-                _FILE,
-                "Remapped user already claimed"
-            );
-            released[user] += amount;
-        }
+        uint256 amount = releasable(_allocatedAmount, user);
+        if (amount > 0) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            amount > 0,
+            _FILE,
+            "No amount to claim"
+        );
+        s.released[user] += amount;
 
         DOLO.safeTransfer(msg.sender, amount);
         DOLOMITE_REGISTRY.eventEmitter().emitRewardClaimed(
-            msg.sender,
+            user,
             EPOCH_NUMBER,
             amount
         );
@@ -114,17 +108,35 @@ contract VestingClaims is OnlyDolomiteMargin, BaseClaim {
     // ======================= View Functions =======================
     // ==============================================================
 
-    function releasable(uint256 _totalAllocation, address _user) public view virtual returns (uint256) {
-        return _vestingSchedule(_totalAllocation, uint64(block.timestamp)) - released[_user];
+    function released(address _user) external view returns (uint256) {
+        VestingClaimsStorage storage s = _getVestingClaimsStorage();
+        return s.released[_user];
     }
 
-    function _vestingSchedule(uint256 totalAllocation, uint64 timestamp) internal view virtual returns (uint256) {
-        if (timestamp < TGE_TIMESTAMP + ONE_YEAR) {
+    function releasable(uint256 _totalAllocation, address _user) public view virtual returns (uint256) {
+        VestingClaimsStorage storage s = _getVestingClaimsStorage();
+
+        return _vestingSchedule(_totalAllocation, uint64(block.timestamp)) - s.released[_user];
+    }
+
+    function _vestingSchedule(
+        uint256 _totalAllocation,
+        uint64 _timestamp
+    ) internal virtual view returns (uint256) {
+        if (_timestamp < TGE_TIMESTAMP + ONE_YEAR) {
             return 0;
-        } else if (timestamp >= TGE_TIMESTAMP + DURATION) {
-            return totalAllocation;
+        } else if (_timestamp >= TGE_TIMESTAMP + DURATION) {
+            return _totalAllocation;
         } else {
-            return (totalAllocation * (timestamp - TGE_TIMESTAMP)) / DURATION;
+            return (_totalAllocation * (_timestamp - TGE_TIMESTAMP)) / DURATION;
+        }
+    }
+
+    function _getVestingClaimsStorage() internal pure returns (VestingClaimsStorage storage vestingClaimsStorage) {
+        bytes32 slot = _VESTING_CLAIMS_STORAGE_SLOT;
+        // solhint-disable-next-line no-inline-assembly
+        assembly {
+            vestingClaimsStorage.slot := slot
         }
     }
 }

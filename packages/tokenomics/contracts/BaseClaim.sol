@@ -43,7 +43,7 @@ abstract contract BaseClaim is OnlyDolomiteMargin, IBaseClaim {
     // ===================================================
 
     bytes32 private constant _FILE = "BaseClaim";
-    bytes32 private constant _BASE_CLAIM_STORAGE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.baseClaimStorage")) - 1);
+    bytes32 private constant _BASE_CLAIM_STORAGE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.baseClaimStorage")) - 1); // solhint-disable-line max-line-length
 
     // ===================================================
     // ==================== State Variables ==============

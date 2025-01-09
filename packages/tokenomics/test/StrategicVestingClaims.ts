@@ -8,15 +8,14 @@ import { expect } from 'chai';
 import { defaultAbiCoder, keccak256, parseEther } from 'ethers/lib/utils';
 import MerkleTree from 'merkletreejs';
 import { revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
-import { expectEvent } from 'packages/base/test/utils/assertions';
+import { expectEvent, expectThrow } from 'packages/base/test/utils/assertions';
 import { setNextBlockTimestamp } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
 import { BigNumber } from 'ethers';
 
 const TEST_TGE_TIMESTAMP = 1730000000;
-const ONE_MONTH_SECONDS = 30 * ONE_DAY_SECONDS;
-const DURATION = ONE_MONTH_SECONDS * 13;
-const HALFWAY = (TEST_TGE_TIMESTAMP - ONE_MONTH_SECONDS) + (DURATION / 2);
-const FULL = (TEST_TGE_TIMESTAMP - ONE_MONTH_SECONDS) + DURATION;
+const DURATION = ONE_DAY_SECONDS * 365;
+const HALFWAY = TEST_TGE_TIMESTAMP + (DURATION / 2);
+const FULL = TEST_TGE_TIMESTAMP + DURATION;
 
 describe('StrategicVestingClaims', () => {
   let core: CoreProtocolArbitrumOne;
@@ -36,8 +35,8 @@ describe('StrategicVestingClaims', () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     dolo = await createDOLO(core);
 
-    user1Amount = parseEther('13');
-    user2Amount = parseEther('13');
+    user1Amount = parseEther('10');
+    user2Amount = parseEther('10');
     const rewards = [
       { address: core.hhUser1.address, rewards: user1Amount },
       { address: core.hhUser2.address, rewards: user2Amount },
@@ -75,18 +74,15 @@ describe('StrategicVestingClaims', () => {
   });
 
   describe('#claim', () => {
-    it('should claim zero if before TGE and 1/13 at TGE', async () => {
+    it('should revert if before TGE and 10% at TGE', async () => {
       await setNextBlockTimestamp(TEST_TGE_TIMESTAMP - 1);
+      await expectThrow(
+        claims.connect(core.hhUser1).claim(validProof1, user1Amount),
+        'VestingClaims: No amount to claim'
+      );
+      await setNextBlockTimestamp(TEST_TGE_TIMESTAMP);
       const res = await claims.connect(core.hhUser1).claim(validProof1, user1Amount);
       await expectEvent(core.eventEmitterRegistry, res, 'RewardClaimed', {
-        distributor: claims.address,
-        user: core.hhUser1.address,
-        epoch: ZERO_BI,
-        amount: ZERO_BI
-      });
-      await setNextBlockTimestamp(TEST_TGE_TIMESTAMP);
-      const res2 = await claims.connect(core.hhUser1).claim(validProof1, user1Amount);
-      await expectEvent(core.eventEmitterRegistry, res2, 'RewardClaimed', {
         distributor: claims.address,
         user: core.hhUser1.address,
         epoch: ZERO_BI,
@@ -112,14 +108,15 @@ describe('StrategicVestingClaims', () => {
     it('should claim half amount if halfway through and then rest at end time', async () => {
       await setNextBlockTimestamp(HALFWAY);
       const res = await claims.connect(core.hhUser1).claim(validProof1, user1Amount);
+      const amount = parseEther('5.5');
       await expectEvent(core.eventEmitterRegistry, res, 'RewardClaimed', {
         distributor: claims.address,
         user: core.hhUser1.address,
         epoch: ZERO_BI,
-        amount: user1Amount.div(2)
+        amount: amount
       });
-      expect(await dolo.balanceOf(core.hhUser1.address)).to.eq(user1Amount.div(2));
-      expect(await claims.released(core.hhUser1.address)).to.eq(user1Amount.div(2));
+      expect(await dolo.balanceOf(core.hhUser1.address)).to.eq(amount);
+      expect(await claims.released(core.hhUser1.address)).to.eq(amount);
 
       await setNextBlockTimestamp(FULL);
       const res2 = await claims.connect(core.hhUser1).claim(validProof1, user1Amount);
@@ -127,7 +124,7 @@ describe('StrategicVestingClaims', () => {
         distributor: claims.address,
         user: core.hhUser1.address,
         epoch: ZERO_BI,
-        amount: user1Amount.div(2)
+        amount: parseEther('4.5')
       });
       expect(await dolo.balanceOf(core.hhUser1.address)).to.eq(user1Amount);
       expect(await claims.released(core.hhUser1.address)).to.eq(user1Amount);
