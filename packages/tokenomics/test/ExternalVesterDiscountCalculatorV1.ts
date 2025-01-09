@@ -68,6 +68,11 @@ describe('ExternalVesterDiscountCalculatorV1', () => {
       expect(discount).to.eq('277184466019417475'); // 27.7%
     });
 
+    it('21 months duration', async () => {
+      const discount = await calculator.calculateLinearDiscount(ONE_DAY_SECONDS * 7 * 91);
+      expect(discount).to.eq('447572815533980582'); // 44.7%
+    });
+
     it('2 year duration', async () => {
       const discount = await calculator.calculateLinearDiscount(ONE_DAY_SECONDS * 7 * 104);
       expect(discount).to.eq('500000000000000000'); // 50.0%
