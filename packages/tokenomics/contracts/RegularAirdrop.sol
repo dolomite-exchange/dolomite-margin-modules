@@ -56,6 +56,7 @@ contract RegularAirdrop is OnlyDolomiteMargin, BaseClaim, IRegularAirdrop {
     IVotingEscrow public immutable VE_DOLO; // solhint -disable-line mixed-case
 
     mapping(address => bool) public userToClaimStatus;
+    /// @dev Users who receive their whole claim as DOLO (instead of DOLO + veDOLO)
     mapping(address => bool) public userToFullDolo;
 
     // ===========================================================

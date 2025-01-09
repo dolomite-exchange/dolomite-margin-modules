@@ -51,7 +51,7 @@ contract VestingClaims is OnlyDolomiteMargin, BaseClaim {
     // ==================== State Variables ==============
     // ===================================================
 
-    IERC20 public immutable DOLO; 
+    IERC20 public immutable DOLO;
     uint256 public immutable TGE_TIMESTAMP;
     uint256 public immutable DURATION;
 
@@ -116,15 +116,15 @@ contract VestingClaims is OnlyDolomiteMargin, BaseClaim {
     }
 
     function _vestingSchedule(
-        uint256 totalAllocation,
-        uint64 timestamp
-    ) internal view virtual returns (uint256) {
-        if (timestamp < TGE_TIMESTAMP + ONE_YEAR) {
+        uint256 _totalAllocation,
+        uint64 _timestamp
+    ) internal virtual view returns (uint256) {
+        if (_timestamp < TGE_TIMESTAMP + ONE_YEAR) {
             return 0;
-        } else if (timestamp >= TGE_TIMESTAMP + DURATION) {
-            return totalAllocation;
+        } else if (_timestamp >= TGE_TIMESTAMP + DURATION) {
+            return _totalAllocation;
         } else {
-            return (totalAllocation * (timestamp - TGE_TIMESTAMP)) / DURATION;
+            return (_totalAllocation * (_timestamp - TGE_TIMESTAMP)) / DURATION;
         }
     }
 }
