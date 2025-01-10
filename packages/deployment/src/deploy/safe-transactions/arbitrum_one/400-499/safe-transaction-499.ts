@@ -1,6 +1,6 @@
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { getAndCheckSpecificNetwork } from 'packages/base/src/utils/dolomite-utils';
-import { Network } from 'packages/base/src/utils/no-deps-constants';
+import { ADDRESS_ZERO, Network } from 'packages/base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from 'packages/base/test/utils';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
 import {
@@ -158,6 +158,11 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
           'Invalid GMX v2 wrapper implementation',
         );
       }
+
+      assertHardhatInvariant(
+        (await core.dolomiteAccountRegistry.getTransferTokenOverride(core.tokens.arb.address)) === ADDRESS_ZERO,
+        'Dolomite account registry not upgraded',
+      );
     },
   };
 }
