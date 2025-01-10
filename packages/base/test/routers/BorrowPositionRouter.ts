@@ -20,6 +20,7 @@ import { createContractWithLibrary, createTestToken, depositIntoDolomiteMargin }
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
 import {
   createAndUpgradeDolomiteRegistry,
+  createDolomiteAccountRegistryImplementation,
   createIsolationModeTokenVaultV1ActionsImpl,
   createTestBorrowPositionRouter,
 } from '../utils/dolomite';
@@ -52,6 +53,8 @@ describe('BorrowPositionRouter', () => {
     await core.dolomiteRegistry.connect(core.governance).ownerSetBorrowPositionProxy(
       core.borrowPositionProxyV2.address
     );
+    const accountRegistry = await createDolomiteAccountRegistryImplementation();
+    await core.dolomiteAccountRegistryProxy.connect(core.governance).upgradeTo(accountRegistry.address);
 
     router = await createTestBorrowPositionRouter(core);
 

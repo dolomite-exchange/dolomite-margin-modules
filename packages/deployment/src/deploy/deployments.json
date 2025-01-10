@@ -449,6 +449,8 @@
       "isVerified": true
     }
   },
+  "DolomiteAccountRegistryImplementationV2": {
+  },
   "DolomiteAccountRegistryProxy": {
     "196": {
       "address": "0x14B83b01091636709A468386877619d34D431C63",
