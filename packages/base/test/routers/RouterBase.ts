@@ -119,7 +119,10 @@ describe('RouterBase', () => {
     });
 
     it('should work normally for isolation mode asset with transfer token', async () => {
-      await core.dolomiteAccountRegistry.connect(core.governance).ownerSetTransferTokenOverride(factory.address, core.tokens.weth.address);
+      await core.dolomiteAccountRegistry.connect(core.governance).ownerSetTransferTokenOverride(
+        factory.address,
+        core.tokens.weth.address
+      );
       const marketInfo = await router.getMarketInfo(isolationModeMarketId);
       expect(marketInfo.marketId).to.equal(isolationModeMarketId);
       expect(marketInfo.isIsolationModeAsset).to.be.true;

@@ -95,10 +95,10 @@ abstract contract RouterBase is
         uint256 _marketId
     ) internal view returns (MarketInfo memory) {
         address marketToken = DOLOMITE_MARGIN().getMarketTokenAddress(_marketId);
+        address transferToken = DOLOMITE_REGISTRY.dolomiteAccountRegistry().getTransferTokenOverride(marketToken);
 
         if (_isIsolationModeAsset(marketToken)) {
             address token = IIsolationModeVaultFactory(marketToken).UNDERLYING_TOKEN();
-            address transferToken = DOLOMITE_REGISTRY.dolomiteAccountRegistry().getTransferTokenOverride(token);
             return MarketInfo({
                 marketId: _marketId,
                 isIsolationModeAsset: true,
@@ -108,7 +108,6 @@ abstract contract RouterBase is
                 factory: IIsolationModeVaultFactory(marketToken)
             });
         } else {
-            address transferToken = DOLOMITE_REGISTRY.dolomiteAccountRegistry().getTransferTokenOverride(marketToken);
             return MarketInfo({
                 marketId: _marketId,
                 isIsolationModeAsset: false,

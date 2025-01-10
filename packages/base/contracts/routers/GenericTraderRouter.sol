@@ -25,6 +25,7 @@ import { IIsolationModeTokenVaultV1 } from "../isolation-mode/interfaces/IIsolat
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 import { IGenericTraderProxyV2 } from "../proxies/interfaces/IGenericTraderProxyV2.sol";
 import { IGenericTraderRouter } from "./interfaces/IGenericTraderRouter.sol";
+import { Require } from "../protocol/lib/Require.sol";
 
 
 /**
@@ -60,7 +61,11 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
         IGenericTraderProxyV2.SwapExactInputForOutputParams memory _params
     ) external payable nonReentrant {
         if (_isolationModeMarketId == 0) {
-            assert(msg.value == 0);
+            Require.that(
+                msg.value == 0,
+                _FILE,
+                'msg.value must be 0'
+            );
             IGenericTraderProxyV2 proxy = IGenericTraderProxyV2(address(DOLOMITE_REGISTRY.genericTraderProxy()));
             proxy.swapExactInputForOutputForDifferentAccount(
                 /* _accountOwner = */ msg.sender,
@@ -116,7 +121,11 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
         IGenericTraderProxyV2.SwapExactInputForOutputAndModifyPositionParams memory _params
     ) external payable nonReentrant {
         if (_isolationModeMarketId == 0) {
-            assert(msg.value == 0);
+            Require.that(
+                msg.value == 0,
+                _FILE,
+                'msg.value must be 0'
+            );
             IGenericTraderProxyV2 proxy = IGenericTraderProxyV2(address(DOLOMITE_REGISTRY.genericTraderProxy()));
             proxy.swapExactInputForOutputAndModifyPositionForDifferentAccount(
                 msg.sender,

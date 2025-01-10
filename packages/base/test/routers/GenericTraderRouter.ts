@@ -26,12 +26,16 @@ import {
 import {
   createContractWithAbi,
   createContractWithLibrary,
-  createContractWithName,
   createTestToken,
   depositIntoDolomiteMargin
 } from 'packages/base/src/utils/dolomite-utils';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
-import { createAndUpgradeDolomiteRegistry, createDolomiteAccountRegistryImplementation, createGenericTraderProxyV2, createIsolationModeTokenVaultV1ActionsImpl } from '../utils/dolomite';
+import {
+  createAndUpgradeDolomiteRegistry,
+  createDolomiteAccountRegistryImplementation,
+  createGenericTraderProxyV2,
+  createIsolationModeTokenVaultV1ActionsImpl
+} from '../utils/dolomite';
 import { createTestIsolationModeVaultFactory } from '../utils/ecosystem-utils/testers';
 import { BigNumber } from 'ethers';
 import { expectProtocolBalance, expectThrow } from '../utils/assertions';
@@ -274,6 +278,31 @@ describe('GenericTraderRouter', () => {
       );
       await expectProtocolBalance(core, userVault, defaultAccountNumber, isolationModeMarketId, ZERO_BI);
       await expectProtocolBalance(core, core.hhUser1, toAccountNumber, otherMarketId1, outputAmount);
+    });
+
+    it('should fail if msg.value is not 0 for non-isolation mode market', async () => {
+      await otherToken1.addBalance(core.hhUser1.address, amountWei);
+      await otherToken1.connect(core.hhUser1).approve(core.dolomiteMargin.address, amountWei);
+      await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, otherMarketId1, amountWei);
+
+      const outputAmount = amountWei.div(2);
+      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
+      await expectThrow(
+        traderRouter.swapExactInputForOutput(
+          ZERO_BI,
+          {
+            accountNumber: defaultAccountNumber,
+            marketIdsPath: zapParams.marketIdsPath,
+            inputAmountWei: zapParams.inputAmountWei,
+            minOutputAmountWei: zapParams.minOutputAmountWei,
+            tradersPath: zapParams.tradersPath,
+            makerAccounts: zapParams.makerAccounts,
+            userConfig: zapParams.userConfig,
+          },
+          { value: ONE_ETH_BI }
+        ),
+        'GenericTraderRouter: msg.value must be 0'
+      );
     });
 
     it('should fail if vault market id is not isolation mode', async () => {
@@ -525,6 +554,40 @@ describe('GenericTraderRouter', () => {
       await expectProtocolBalance(core, userVault, borrowAccountNumber, isolationModeMarketId, ZERO_BI);
       await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId2, outputAmount);
       await expectProtocolBalance(core, userVault, defaultAccountNumber, isolationModeMarketId, amountWei);
+    });
+
+    it('should fail if msg.value is not 0 for non-isolation mode market', async () => {
+      await otherToken1.addBalance(core.hhUser1.address, amountWei);
+      await otherToken1.connect(core.hhUser1).approve(core.dolomiteMargin.address, amountWei);
+      await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, otherMarketId1, amountWei);
+
+      const outputAmount = amountWei.div(2);
+      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
+      await expectThrow(
+        traderRouter.swapExactInputForOutputAndModifyPosition(
+          ZERO_BI,
+          {
+            accountNumber: defaultAccountNumber,
+            marketIdsPath: zapParams.marketIdsPath,
+            inputAmountWei: zapParams.inputAmountWei,
+            minOutputAmountWei: zapParams.minOutputAmountWei,
+            tradersPath: zapParams.tradersPath,
+            makerAccounts: zapParams.makerAccounts,
+            transferCollateralParams: {
+              transferAmounts: [{ marketId: otherMarketId2, amountWei: MAX_UINT_256_BI }],
+              fromAccountNumber: defaultAccountNumber,
+              toAccountNumber: borrowAccountNumber,
+            },
+            expiryParams: {
+              expiryTimeDelta: 0,
+              marketId: 0,
+            },
+            userConfig: zapParams.userConfig,
+          },
+          { value: ONE_ETH_BI }
+        ),
+        'GenericTraderRouter: msg.value must be 0'
+      );
     });
 
     it('should fail if reentered', async () => {

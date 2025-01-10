@@ -11,7 +11,6 @@ import {
 } from '../utils/setup';
 import {
   CustomTestToken,
-  DolomiteAccountRegistry,
   TestDepositWithdrawalRouter,
   TestIsolationModeTokenVaultV1,
   TestIsolationModeTokenVaultV1__factory,
@@ -19,7 +18,11 @@ import {
 } from 'packages/base/src/types';
 import { createContractWithLibrary, createTestToken, withdrawFromDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
-import { createDolomiteAccountRegistryImplementation, createIsolationModeTokenVaultV1ActionsImpl, createTestDepositWithdrawalRouter } from '../utils/dolomite';
+import {
+  createDolomiteAccountRegistryImplementation,
+  createIsolationModeTokenVaultV1ActionsImpl,
+  createTestDepositWithdrawalRouter
+} from '../utils/dolomite';
 import { createTestIsolationModeVaultFactory } from '../utils/ecosystem-utils/testers';
 import { BigNumber } from 'ethers';
 import { expectEvent, expectProtocolBalance, expectThrow, expectWalletBalance } from '../utils/assertions';

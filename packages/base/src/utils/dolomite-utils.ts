@@ -1,7 +1,7 @@
 import { address } from '@dolomite-exchange/dolomite-margin';
 import { ActionType, AmountDenomination, AmountReference } from '@dolomite-margin/dist/src';
 import { BaseContract, BigNumber, BigNumberish, BytesLike, Signer } from 'ethers';
-import hardhat, { ethers } from 'hardhat';
+import hardhat, { ethers, artifacts } from 'hardhat';
 import { CoreProtocolType } from '../../test/utils/setup';
 import {
   CustomTestToken,
@@ -13,11 +13,13 @@ import { ActionArgsStruct } from './index';
 import { MAX_UINT_256_BI, NETWORK_TO_NETWORK_NAME_MAP, NetworkType } from './no-deps-constants';
 import { SignerWithAddressWithSafety } from './SignerWithAddressWithSafety';
 import fs, { readFileSync } from 'fs';
-import { artifacts } from 'hardhat';
 import { Artifact } from 'hardhat/types';
 import path, { join } from 'path';
 
-export async function createArtifactFromBaseWorkspaceIfNotExists(artifactName: string, subFolder: string): Promise<Artifact> {
+export async function createArtifactFromBaseWorkspaceIfNotExists(
+  artifactName: string,
+  subFolder: string
+): Promise<Artifact> {
   if (await artifacts.artifactExists(artifactName)) {
     // GUARD STATEMENT!
     return artifacts.readArtifact(artifactName);
