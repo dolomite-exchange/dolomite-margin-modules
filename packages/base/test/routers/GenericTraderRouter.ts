@@ -31,7 +31,7 @@ import {
   depositIntoDolomiteMargin
 } from 'packages/base/src/utils/dolomite-utils';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
-import { createAndUpgradeDolomiteRegistry, createIsolationModeTokenVaultV1ActionsImpl } from '../utils/dolomite';
+import { createAndUpgradeDolomiteRegistry, createDolomiteAccountRegistryImplementation, createGenericTraderProxyV2, createIsolationModeTokenVaultV1ActionsImpl } from '../utils/dolomite';
 import { createTestIsolationModeVaultFactory } from '../utils/ecosystem-utils/testers';
 import { BigNumber } from 'ethers';
 import { expectProtocolBalance, expectThrow } from '../utils/assertions';
@@ -67,6 +67,9 @@ describe('GenericTraderRouter', () => {
     await disableInterestAccrual(core, core.marketIds.weth);
     await createAndUpgradeDolomiteRegistry(core);
 
+    const accountRegistry = await createDolomiteAccountRegistryImplementation();
+    await core.dolomiteAccountRegistryProxy.connect(core.governance).upgradeTo(accountRegistry.address);
+
     otherToken1 = await createTestToken();
     await core.testEcosystem!.testPriceOracle.setPrice(
       otherToken1.address,
@@ -83,12 +86,7 @@ describe('GenericTraderRouter', () => {
     otherMarketId2 = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, otherToken2, false);
 
-    const genericTraderLib = await createContractWithName('GenericTraderProxyV2Lib', []);
-    genericTraderProxy = await createContractWithLibrary(
-      'GenericTraderProxyV2',
-      { GenericTraderProxyV2Lib: genericTraderLib.address },
-      [Network.ArbitrumOne, core.dolomiteRegistry.address, core.dolomiteMargin.address]
-    );
+    genericTraderProxy = await createGenericTraderProxyV2(core);
     await core.dolomiteRegistry.ownerSetGenericTraderProxy(genericTraderProxy.address);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(genericTraderProxy.address, true);
 

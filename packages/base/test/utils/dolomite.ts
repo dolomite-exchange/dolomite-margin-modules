@@ -16,6 +16,9 @@ import {
   DolomiteRegistryImplementation__factory,
   EventEmitterRegistry,
   EventEmitterRegistry__factory,
+  GenericTraderProxyV2,
+  GenericTraderRouter,
+  GenericTraderRouter__factory,
   IDolomiteMargin,
   IDolomiteMarginV2,
   IERC20Metadata__factory,
@@ -31,7 +34,6 @@ import {
   TestBorrowPositionRouter__factory,
   TestDepositWithdrawalRouter,
   TestDepositWithdrawalRouter__factory,
-  TestDolomiteERC4626,
 } from '../../src/types';
 import {
   getDolomiteErc20ProxyConstructorParams,
@@ -43,8 +45,10 @@ import {
   getRouterProxyConstructorParams,
 } from '../../src/utils/constructors/dolomite';
 import {
+  createArtifactFromBaseWorkspaceIfNotExists,
   createContractWithAbi,
   createContractWithLibrary,
+  createContractWithLibraryAndArtifact,
   createContractWithName,
   LibraryName,
 } from '../../src/utils/dolomite-utils';
@@ -187,6 +191,25 @@ export async function createEventEmitter<T extends NetworkType>(
   return EventEmitterRegistry__factory.connect(proxy.address, core.hhUser1) as EventEmitterRegistry;
 }
 
+export async function createDepositWithdrawalRouter(
+  core: CoreProtocolType<any>,
+  payableToken: { address: string }
+): Promise<DepositWithdrawalRouter> {
+  const implementation = await createContractWithAbi<DepositWithdrawalRouter>(
+    DepositWithdrawalRouter__factory.abi,
+    DepositWithdrawalRouter__factory.bytecode,
+    [payableToken.address, core.dolomiteRegistry.address, core.dolomiteMargin.address],
+  );
+  const initCalldata = await implementation.populateTransaction.initialize();
+
+  const proxy = await createContractWithAbi(
+    RouterProxy__factory.abi,
+    RouterProxy__factory.bytecode,
+    [implementation.address, core.dolomiteMargin.address, initCalldata.data!],
+  );
+  return DepositWithdrawalRouter__factory.connect(proxy.address, core.hhUser1) as DepositWithdrawalRouter;
+}
+
 export async function createBorrowPositionRouter(
   core: CoreProtocolType<any>,
 ): Promise<BorrowPositionRouter> {
@@ -205,14 +228,13 @@ export async function createBorrowPositionRouter(
   return BorrowPositionRouter__factory.connect(proxy.address, core.hhUser1) as BorrowPositionRouter;
 }
 
-export async function createDepositWithdrawalRouter(
+export async function createGenericTraderRouter(
   core: CoreProtocolType<any>,
-  payableToken: { address: string }
-): Promise<DepositWithdrawalRouter> {
-  const implementation = await createContractWithAbi<DepositWithdrawalRouter>(
-    DepositWithdrawalRouter__factory.abi,
-    DepositWithdrawalRouter__factory.bytecode,
-    [payableToken.address, core.dolomiteRegistry.address, core.dolomiteMargin.address],
+): Promise<GenericTraderRouter> {
+  const implementation = await createContractWithAbi<GenericTraderRouter>(
+    GenericTraderRouter__factory.abi,
+    GenericTraderRouter__factory.bytecode,
+    [core.dolomiteRegistry.address, core.dolomiteMargin.address],
   );
   const initCalldata = await implementation.populateTransaction.initialize();
 
@@ -221,7 +243,27 @@ export async function createDepositWithdrawalRouter(
     RouterProxy__factory.bytecode,
     [implementation.address, core.dolomiteMargin.address, initCalldata.data!],
   );
-  return DepositWithdrawalRouter__factory.connect(proxy.address, core.hhUser1) as DepositWithdrawalRouter;
+  return GenericTraderRouter__factory.connect(proxy.address, core.hhUser1) as GenericTraderRouter;
+}
+
+export async function createGenericTraderProxyV2Lib(): Promise<Record<LibraryName, address>> {
+  const artifact = await createArtifactFromBaseWorkspaceIfNotExists('GenericTraderProxyV2Lib', 'proxies');
+  const contract = await createContractWithLibraryAndArtifact(
+    artifact,
+    {},
+    []
+  );
+  return { GenericTraderProxyV2Lib: contract.address };
+}
+
+export async function createGenericTraderProxyV2(core: CoreProtocolType<any>): Promise<GenericTraderProxyV2> {
+  const libraries = await createGenericTraderProxyV2Lib();
+  const artifact = await createArtifactFromBaseWorkspaceIfNotExists('GenericTraderProxyV2', 'proxies');
+  return await createContractWithLibraryAndArtifact(
+    artifact,
+    libraries,
+    [Network.ArbitrumOne, core.dolomiteRegistry.address, core.dolomiteMargin.address],
+  );
 }
 
 export async function createTestBorrowPositionRouter(

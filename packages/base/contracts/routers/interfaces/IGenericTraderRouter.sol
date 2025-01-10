@@ -40,10 +40,10 @@ interface IGenericTraderRouter is IRouterBase {
     function swapExactInputForOutput(
         uint256 _isolationModeMarketId,
         IGenericTraderProxyV2.SwapExactInputForOutputParams memory _params
-    ) external;
+    ) external payable;
 
     function swapExactInputForOutputAndModifyPosition(
         uint256 _isolationModeMarketId,
         IGenericTraderProxyV2.SwapExactInputForOutputAndModifyPositionParams memory _params
-    ) external;
+    ) external payable;
 }
