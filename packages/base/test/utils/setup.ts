@@ -930,6 +930,8 @@ export async function setupCoreProtocol<T extends NetworkType>(
         arb: ARB_MAP[typedConfig.network].marketId,
         dArb: D_ARB_MAP[typedConfig.network].marketId,
         dfsGlp: DFS_GLP_MAP[typedConfig.network].marketId,
+        dGlvBtc: D_GLV_BTC_MAP[typedConfig.network].marketId,
+        dGlvEth: D_GLV_ETH_MAP[typedConfig.network].marketId,
         dGmx: D_GMX_MAP[typedConfig.network].marketId,
         dGmAaveUsd: D_GM_AAVE_USD_MAP[typedConfig.network].marketId,
         dGmArbUsd: D_GM_ARB_USD_MAP[typedConfig.network].marketId,
