@@ -31,20 +31,20 @@ type ArbitrumAndBerachainAndMantle = Network.ArbitrumOne | Network.Berachain | N
 
 export const SUBGRAPH_URL_MAP: Record<Network, string> = {
   [Network.ArbitrumOne]:
-    'https://subgraph.api.dolomite.io/api/public/1301d2d1-7a9d-4be4-9e9a-061cb8611549/subgraphs/dolomite-arbitrum/v0.1.3/gn',
+    'https://subgraph.api.dolomite.io/api/public/1301d2d1-7a9d-4be4-9e9a-061cb8611549/subgraphs/dolomite-arbitrum/v0.1.4/gn',
   [Network.Base]:
-    'https://subgraph.api.dolomite.io/api/public/1301d2d1-7a9d-4be4-9e9a-061cb8611549/subgraphs/dolomite-base/v0.1.3/gn',
+    'https://subgraph.api.dolomite.io/api/public/1301d2d1-7a9d-4be4-9e9a-061cb8611549/subgraphs/dolomite-base/v0.1.4/gn',
   [Network.Berachain]:
-    'https://subgraph.api.dolomite.io/api/public/1301d2d1-7a9d-4be4-9e9a-061cb8611549/subgraphs/dolomite-berachain/v0.1.3/gn',
+    'https://subgraph.api.dolomite.io/api/public/1301d2d1-7a9d-4be4-9e9a-061cb8611549/subgraphs/dolomite-berachain/v0.1.4/gn',
   [Network.BerachainCartio]: '',
   [Network.Ink]: '',
   [Network.Mantle]:
-    'https://subgraph.api.dolomite.io/api/public/1301d2d1-7a9d-4be4-9e9a-061cb8611549/subgraphs/dolomite-mantle/v0.1.3/gn',
+    'https://subgraph.api.dolomite.io/api/public/1301d2d1-7a9d-4be4-9e9a-061cb8611549/subgraphs/dolomite-mantle/v0.1.4/gn',
   [Network.PolygonZkEvm]:
-    'https://subgraph.api.dolomite.io/api/public/1301d2d1-7a9d-4be4-9e9a-061cb8611549/subgraphs/dolomite-polygon-zkevm/v0.1.3/gn',
+    'https://subgraph.api.dolomite.io/api/public/1301d2d1-7a9d-4be4-9e9a-061cb8611549/subgraphs/dolomite-polygon-zkevm/v0.1.4/gn',
   [Network.SuperSeed]: '',
   [Network.XLayer]:
-    'https://subgraph.api.dolomite.io/api/public/1301d2d1-7a9d-4be4-9e9a-061cb8611549/subgraphs/dolomite-x-layer/v0.1.3/gn',
+    'https://subgraph.api.dolomite.io/api/public/1301d2d1-7a9d-4be4-9e9a-061cb8611549/subgraphs/dolomite-x-layer/v0.1.4/gn',
 };
 
 // ************************* External Contract Addresses *************************
@@ -627,10 +627,14 @@ export const R_ETH_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   },
 };
 
-export const RS_ETH_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+export const RS_ETH_MAP: Record<Network.ArbitrumOne | Network.BerachainCartio, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x4186BFC76E2E237523CBC30FD220FE055156b41F',
     marketId: 49,
+  },
+  [Network.BerachainCartio]: {
+    address: '0x9eCaf80c1303CCA8791aFBc0AD405c8a35e8d9f1',
+    marketId: 24,
   },
 };
 
@@ -1833,6 +1837,12 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<Network, Record<string, Agg
     },
     [FRAX_MAP[Network.ArbitrumOne].address]: {
       aggregatorAddress: '0x0809E3d38d1B4214958faf06D8b1B1a2b73f2ab8',
+    },
+    [D_GLV_BTC_MAP[Network.ArbitrumOne].address]: {
+      aggregatorAddress: '0xc6984fF1047Ddd0AB52D2dFa78381CC677921A85',
+    },
+    [D_GLV_ETH_MAP[Network.ArbitrumOne].address]: {
+      aggregatorAddress: '0xD0E31451f58d3991045D68C479ea80D37e418851',
     },
     [GMX_MAP[Network.ArbitrumOne].address]: {
       aggregatorAddress: '0xdb98056fecfff59d032ab628337a4887110df3db',
