@@ -23,11 +23,11 @@ async function main(): Promise<DryRunOutput<Network.BerachainCartio>> {
     blockNumber: await getRealLatestBlockNumber(true, network),
   });
 
-  const stone = await deployDolomiteErc4626Token(core, 'StoneV3', core.marketIds.stone);
+  const rsEth = await deployDolomiteErc4626Token(core, 'RsEth', core.marketIds.rsEth);
 
   const transactions: EncodedTransaction[] = [];
   transactions.push(
-    await prettyPrintSetGlobalOperator(core, stone, true),
+    await prettyPrintSetGlobalOperator(core, rsEth, true),
   );
   return {
     core,
@@ -44,11 +44,11 @@ async function main(): Promise<DryRunOutput<Network.BerachainCartio>> {
     scriptName: getScriptName(__filename),
     invariants: async () => {
       assertHardhatInvariant(
-        await core.dolomiteMargin.getIsGlobalOperator(stone.address),
-        'stone is not a global operator',
+        await core.dolomiteMargin.getIsGlobalOperator(rsEth.address),
+        'rsEth is not a global operator',
       );
       assertHardhatInvariant(
-        await stone.asset() === core.tokens.stone.address,
+        await rsEth.asset() === core.tokens.rsEth.address,
         'Invalid market ID',
       );
     },

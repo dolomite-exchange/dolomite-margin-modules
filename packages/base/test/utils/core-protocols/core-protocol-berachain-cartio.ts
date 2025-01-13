@@ -13,6 +13,7 @@ export interface CoreProtocolTokensBerachainCartio extends CoreProtocolTokens<Ne
   honey: IERC20;
   nect: IERC20;
   pumpBtc: IERC20;
+  rsEth: IERC20;
   sbtc: IERC20;
   solvBtc: IERC20;
   solvBtcBbn: IERC20;
@@ -38,6 +39,7 @@ interface CoreProtocolMarketIdsBerachainCartio extends CoreProtocolMarketIds {
   honey: BigNumberish;
   nect: BigNumberish;
   pumpBtc: BigNumberish;
+  rsEth: BigNumberish;
   sbtc: BigNumberish;
   solvBtc: BigNumberish;
   solvBtcBbn: BigNumberish;

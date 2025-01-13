@@ -866,13 +866,27 @@ export async function deployDolomiteErc4626Token(
   core: CoreProtocolType<any>,
   tokenName: string,
   marketId: BigNumberish,
+  options: { skipDeploymentAddressCheck: boolean } = { skipDeploymentAddressCheck: false },
 ): Promise<DolomiteERC4626> {
+  const contractRename = `Dolomite${tokenName}4626Token`;
   const address = await deployContractAndSave(
     'RegistryProxy',
     await getDolomiteErc4626ProxyConstructorParams(core, marketId),
-    `Dolomite${tokenName}4626Token`,
+    contractRename,
   );
-  return DolomiteERC4626__factory.connect(address, core.hhUser1);
+  const previousDeployments = (ModuleDeployments as any)[contractRename];
+  if (previousDeployments && Object.values(previousDeployments).length > 0) {
+    const firstDeployment = (Object.values(previousDeployments) as any[])[0].address;
+    if (firstDeployment !== address && !options.skipDeploymentAddressCheck) {
+      return Promise.reject(`Addresses does not match expected name for ${tokenName}!`);
+    }
+  }
+
+  const vaultToken = DolomiteERC4626__factory.connect(address, core.hhUser1);
+  const symbol = await vaultToken.symbol();
+  console.log(`\tCheck the supplied symbol vs the real symbol of the market: ${tokenName} // ${symbol}`);
+
+  return vaultToken;
 }
 
 export async function deployDolomiteErc4626WithPayableToken(

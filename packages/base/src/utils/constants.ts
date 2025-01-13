@@ -627,10 +627,14 @@ export const R_ETH_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   },
 };
 
-export const RS_ETH_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+export const RS_ETH_MAP: Record<Network.ArbitrumOne | Network.BerachainCartio, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x4186BFC76E2E237523CBC30FD220FE055156b41F',
     marketId: 49,
+  },
+  [Network.BerachainCartio]: {
+    address: '0x9eCaf80c1303CCA8791aFBc0AD405c8a35e8d9f1',
+    marketId: 24,
   },
 };
 
