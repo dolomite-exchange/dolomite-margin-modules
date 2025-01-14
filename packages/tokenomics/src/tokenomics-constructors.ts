@@ -109,11 +109,3 @@ export function getVeExternalVesterInitializationCalldata(
     ],
   );
 }
-
-export function getUpgradeableProxyConstructorParams<T extends NetworkType>(
-  core: CoreProtocolType<T>,
-  implementation: { address: string },
-  calldata: string,
-): any[] {
-  return [implementation.address, core.dolomiteMargin.address, calldata];
-}

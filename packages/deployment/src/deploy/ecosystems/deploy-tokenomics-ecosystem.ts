@@ -1,7 +1,7 @@
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { getUpgradeableProxyConstructorParams } from 'packages/base/src/utils/constructors/dolomite';
 import { getAndCheckSpecificNetwork } from 'packages/base/src/utils/dolomite-utils';
-import { ADDRESS_ZERO, MAX_UINT_256_BI, Network, NetworkType } from 'packages/base/src/utils/no-deps-constants';
+import { ADDRESS_ZERO, BYTES_EMPTY, MAX_UINT_256_BI, Network, NetworkType, ONE_DAY_SECONDS } from 'packages/base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from 'packages/base/test/utils';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
 import {
@@ -16,18 +16,28 @@ import {
   getExternalVesterDiscountCalculatorConstructorParams,
   getODOLOConstructorParams,
   getOptionAirdropConstructorParams,
+  getRegularAirdropConstructorParams,
+  getStrategicVestingClaimsConstructorParams,
   getVeExternalVesterImplementationConstructorParams,
   getVeExternalVesterInitializationCalldata,
   getVeFeeCalculatorConstructorParams,
+  getVestingClaimsConstructorParams,
 } from 'packages/tokenomics/src/tokenomics-constructors';
 import {
   DOLO__factory,
   ODOLO__factory,
+  OptionAirdrop__factory,
+  RegularAirdrop__factory,
+  StrategicVestingClaims__factory,
   VeExternalVesterImplementationV1__factory,
+  VestingClaims__factory,
   VotingEscrow__factory,
 } from 'packages/tokenomics/src/types';
 
 const NO_MARKET_ID = MAX_UINT_256_BI;
+const TGE_TIMESTAMP = 2222222222;
+const ONE_YEAR_SECONDS = 365 * ONE_DAY_SECONDS;
+const THREE_YEARS_SECONDS = ONE_YEAR_SECONDS * 3;
 
 /**
  * This script encodes the following transactions:
@@ -129,12 +139,57 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   );
   const vester = VeExternalVesterImplementationV1__factory.connect(vesterProxyAddress, core.hhUser1);
 
-  // TODO: create option airdrop, regular airdrop, vesting, and strategic vesting contracts, etc.
-  // TODO: encode transactions for setting up the newly-added contracts. Add Gnosis Safe as a handler for all respective contracts
-  // @follow-up Add a separate safe tx file for transferring DOLO to the respective contracts and initializing the merkle roots
-  // @follow-up Create a safe tx for adding remappings (keep addresses blank for now); this will let us run them easily later
-  // @follow-up create a safe tx for enabling claims on all of the claimable contracts (airdrops + vesting)
-  // @todo Add boolean to base claim which enables claiming
+  const optionAirdropAddress = await deployContractAndSave(
+    'OptionAirdrop',
+    getOptionAirdropConstructorParams(core, dolo),
+    'OptionAirdropImplementationV1'
+  );
+  const optionAirdropImplementation = OptionAirdrop__factory.connect(optionAirdropAddress, core.hhUser1);
+  const optionAirdropInitCalldata = await optionAirdropImplementation.populateTransaction.initialize(
+    core.gnosisSafeAddress // @follow-up Confirm that this is the correct treasury address
+  );
+  const optionAirdropProxyAddress = await deployContractAndSave(
+    'UpgradeableProxy',
+    getUpgradeableProxyConstructorParams(optionAirdropAddress, optionAirdropInitCalldata, core.dolomiteMargin),
+    'OptionAirdrop',
+  );
+  const optionAirdrop = OptionAirdrop__factory.connect(optionAirdropProxyAddress, core.hhUser1);
+
+  const regularAirdropAddress = await deployContractAndSave(
+    'RegularAirdrop',
+    getRegularAirdropConstructorParams(core, dolo, votingEscrow),
+    'RegularAirdropImplementationV1'
+  );
+  const regularAirdropProxyAddress = await deployContractAndSave(
+    'UpgradeableProxy',
+    getUpgradeableProxyConstructorParams(regularAirdropAddress, null, core.dolomiteMargin),
+    'RegularAirdrop',
+  );
+  const regularAirdrop = RegularAirdrop__factory.connect(regularAirdropProxyAddress, core.hhUser1);
+
+  const vestingClaimsAddress = await deployContractAndSave(
+    'VestingClaims',
+    getVestingClaimsConstructorParams(core, dolo, TGE_TIMESTAMP, THREE_YEARS_SECONDS),
+    'VestingClaimsImplementationV1'
+  );
+  const vestingClaimsProxyAddress = await deployContractAndSave(
+    'UpgradeableProxy',
+    getUpgradeableProxyConstructorParams(vestingClaimsAddress, null, core.dolomiteMargin),
+    'VestingClaims',
+  );
+  const vestingClaims = VestingClaims__factory.connect(vestingClaimsProxyAddress, core.hhUser1);
+
+  const strategicVestingAddress = await deployContractAndSave(
+    'StrategicVesting',
+    getStrategicVestingClaimsConstructorParams(core, dolo, TGE_TIMESTAMP, ONE_YEAR_SECONDS),
+    'StrategicVestingImplementationV1'
+  );
+  const strategicVestingProxyAddress = await deployContractAndSave(
+    'UpgradeableProxy',
+    getUpgradeableProxyConstructorParams(strategicVestingAddress, null, core.dolomiteMargin),
+    'StrategicVesting',
+  );
+  const strategicVesting = StrategicVestingClaims__factory.connect(strategicVestingProxyAddress, core.hhUser1);
 
   // Push admin transactions
   const transactions: EncodedTransaction[] = [];
@@ -162,12 +217,19 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
       true,
     ]),
     await prettyPrintEncodedDataWithTypeSafety(core, { optionAirdrop }, 'optionAirdrop', 'ownerSetHandler', [
-      core.gnosisSafeAddress,
-      true,
+      core.gnosisSafeAddress
     ]),
     await prettyPrintEncodedDataWithTypeSafety(core, { regularAirdrop }, 'regularAirdrop', 'ownerSetHandler', [
-      core.gnosisSafeAddress,
-      true,
+      core.gnosisSafeAddress
+    ]),
+    await prettyPrintEncodedDataWithTypeSafety(core, { vestingClaims }, 'vestingClaims', 'ownerSetHandler', [
+      core.gnosisSafeAddress
+    ]),
+    await prettyPrintEncodedDataWithTypeSafety(core, { strategicVesting }, 'strategicVesting', 'ownerSetHandler', [
+      core.gnosisSafeAddress
+    ]),
+    await prettyPrintEncodedDataWithTypeSafety(core, { optionAirdrop }, 'optionAirdrop', 'ownerSetAllowedMarketIds', [
+      [core.marketIds.nativeUsdc, core.marketIds.weth], // @follow-up Check this list of market ids and invariants below
     ]),
   );
 
@@ -193,6 +255,17 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
         'Invalid vester init addresses',
       );
       assertHardhatInvariant((await votingEscrow.vester()) === vesterProxyAddress, 'Invalid vester on votingEscrow');
+
+      assertHardhatInvariant((await core.dolomiteMargin.getIsGlobalOperator(vester.address)) === true, 'Vester is not a global operator');
+      assertHardhatInvariant((await core.dolomiteMargin.getIsGlobalOperator(optionAirdrop.address)) === true, 'OptionAirdrop is not a global operator');
+
+      assertHardhatInvariant(await optionAirdrop.handler() === core.gnosisSafeAddress, 'Invalid handler on optionAirdrop');
+      assertHardhatInvariant(await regularAirdrop.handler() === core.gnosisSafeAddress, 'Invalid handler on regularAirdrop');
+      assertHardhatInvariant(await vestingClaims.handler() === core.gnosisSafeAddress, 'Invalid handler on vestingClaims');
+      assertHardhatInvariant(await strategicVesting.handler() === core.gnosisSafeAddress, 'Invalid handler on strategicVesting');
+
+      assertHardhatInvariant(await optionAirdrop.isAllowedMarketId(core.marketIds.nativeUsdc), 'Native USDC not allowed');
+      assertHardhatInvariant(await optionAirdrop.isAllowedMarketId(core.marketIds.weth), 'WETH not allowed');
     },
   };
 }
