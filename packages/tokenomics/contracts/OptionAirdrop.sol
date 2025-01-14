@@ -50,6 +50,7 @@ contract OptionAirdrop is OnlyDolomiteMargin, ReentrancyGuard, BaseClaim, IOptio
 
     bytes32 private constant _FILE = "OptionAirdrop";
     bytes32 private constant _OPTION_AIRDROP_STORAGE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.optionAirdropStorage")) - 1); // solhint-disable-line max-line-length
+    uint256 private constant _DEFAULT_ACCOUNT_NUMBER = 0;
 
     uint256 public constant DOLO_PRICE = 0.03125 ether;
 
@@ -123,18 +124,15 @@ contract OptionAirdrop is OnlyDolomiteMargin, ReentrancyGuard, BaseClaim, IOptio
 
         uint256 doloValue = DOLO_PRICE * _claimAmount;
         uint256 paymentAmount = doloValue / DOLOMITE_MARGIN().getMarketPrice(_marketId).value;
-        AccountActionLib.withdraw(
+        AccountActionLib.transfer(
             DOLOMITE_MARGIN(),
             msg.sender,
             _fromAccountNumber,
             s.treasury,
+            _DEFAULT_ACCOUNT_NUMBER,
             _marketId,
-            IDolomiteStructs.AssetAmount({
-                sign: false,
-                denomination: IDolomiteStructs.AssetDenomination.Wei,
-                ref: IDolomiteStructs.AssetReference.Delta,
-                value: paymentAmount
-            }),
+            IDolomiteStructs.AssetDenomination.Wei,
+            paymentAmount,
             AccountBalanceLib.BalanceCheckFlag.From
         );
 
