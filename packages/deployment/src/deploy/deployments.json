@@ -979,6 +979,13 @@
       "isVerified": true
     }
   },
+  "DolomiteRsEth4626Token": {
+    "80000": {
+      "address": "0xE6dE202a0d14af12b298b6c07CB8653d1c2E12dD",
+      "transaction": "0x5c861d5a3c10ddb03a9e0191c0a6c2653187239104d14579a02d0777915e1589",
+      "isVerified": true
+    }
+  },
   "DolomiteSbtc4626Token": {
     "80000": {
       "address": "0xA8Cb3818Fa799018bc862ADE08F8a37e08BA1062",
@@ -1009,8 +1016,8 @@
   },
   "DolomiteStone4626Token": {
     "80000": {
-      "address": "0x236101a6AC687764bb41d5C1CE47dDCAF718aC27",
-      "transaction": "0xd7f07e90b7ee240bf687293028b666a085e76e856a07d76b49ef21e9e66df537",
+      "address": "0x57155756C749ABe84A7B989A2A23aeA040F5DacA",
+      "transaction": "0xf28e3d211b4f100494faab4c9cac9b10adae803edf4941dce8725df5088efcc9",
       "isVerified": true
     }
   },
