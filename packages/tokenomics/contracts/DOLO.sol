@@ -44,13 +44,17 @@ contract DOLO is ERC20Burnable, OnlyDolomiteMargin {
     // ==================================================================
 
     constructor(
-        address _dolomiteMargin
-    ) ERC20("Dolomite", "DOLO") OnlyDolomiteMargin(_dolomiteMargin) {} // solhint-disable-line no-empty-blocks
+        address _dolomiteMargin,
+        uint256 _treasury
+    ) ERC20("Dolomite", "DOLO") OnlyDolomiteMargin(_dolomiteMargin) {
+        _mint(_treasury, 1_000_000_000 ether);
+    }
 
     // ==================================================================
     // ======================= External Functions =======================
     // ==================================================================
 
+    // TODO: change to be compatible with Chainlink
     function mint(uint256 _amount) external onlyDolomiteMarginOwner(msg.sender) {
         _mint(msg.sender, _amount);
     }
