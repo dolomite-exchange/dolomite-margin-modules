@@ -100,7 +100,7 @@ contract OptionAirdrop is BaseClaim, ReentrancyGuardUpgradeable, IOptionAirdrop 
         uint256 _claimAmount,
         uint256 _marketId,
         uint256 _fromAccountNumber
-    ) external nonReentrant {
+    ) external nonReentrant onlyClaimEnabled {
         OptionAirdropStorage storage s = _getOptionAirdropStorage();
         address user = addressRemapping(msg.sender) == address(0) ? msg.sender : addressRemapping(msg.sender);
 

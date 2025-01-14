@@ -15,11 +15,13 @@ import {
   getBuybackPoolConstructorParams,
   getExternalVesterDiscountCalculatorConstructorParams,
   getODOLOConstructorParams,
+  getOptionAirdropConstructorParams,
   getVeExternalVesterImplementationConstructorParams,
   getVeExternalVesterInitializationCalldata,
   getVeFeeCalculatorConstructorParams,
 } from 'packages/tokenomics/src/tokenomics-constructors';
 import {
+  DOLO__factory,
   ODOLO__factory,
   VeExternalVesterImplementationV1__factory,
   VotingEscrow__factory,
@@ -45,6 +47,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     [core.dolomiteMargin.address, core.gnosisSafeAddress],
     'DOLO',
   );
+  const dolo = DOLO__factory.connect(doloAddress, core.hhUser1);
 
   // Deploy always active voter, oToken, veFeeCalculator, buybackPool
   const alwaysActiveVoter = await deployContractAndSave('VoterAlwaysActive', [], 'VoterAlwaysActive');
@@ -128,9 +131,10 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
 
   // TODO: create option airdrop, regular airdrop, vesting, and strategic vesting contracts, etc.
   // TODO: encode transactions for setting up the newly-added contracts. Add Gnosis Safe as a handler for all respective contracts
-  // @follow-up: Add a separate safe tx file for transferring DOLO to the respective contracts and initializing the merkle roots
-  // @follow-up: Create a safe tx for adding remappings (keep addresses blank for now); this will let us run them easily later
-  // @follow-up: create a safe tx for enabling claims on all of the claimable contracts (airdrops + vesting)
+  // @follow-up Add a separate safe tx file for transferring DOLO to the respective contracts and initializing the merkle roots
+  // @follow-up Create a safe tx for adding remappings (keep addresses blank for now); this will let us run them easily later
+  // @follow-up create a safe tx for enabling claims on all of the claimable contracts (airdrops + vesting)
+  // @todo Add boolean to base claim which enables claiming
 
   // Push admin transactions
   const transactions: EncodedTransaction[] = [];

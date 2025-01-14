@@ -45,7 +45,7 @@ contract DOLO is ERC20Burnable, OnlyDolomiteMargin {
 
     constructor(
         address _dolomiteMargin,
-        uint256 _treasury
+        address _treasury
     ) ERC20("Dolomite", "DOLO") OnlyDolomiteMargin(_dolomiteMargin) {
         _mint(_treasury, 1_000_000_000 ether);
     }

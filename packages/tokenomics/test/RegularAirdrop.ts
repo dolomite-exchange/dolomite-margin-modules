@@ -30,7 +30,7 @@ describe('RegularAirdrop', () => {
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
-    dolo = await createDOLO(core);
+    dolo = await createDOLO(core, core.hhUser5.address);
     mockVeToken = await createContractWithAbi<MockVotingEscrow>(
       MockVotingEscrow__factory.abi,
       MockVotingEscrow__factory.bytecode,
@@ -63,6 +63,7 @@ describe('RegularAirdrop', () => {
 
     await dolo.connect(core.governance).mint(parseEther('15'));
     await dolo.connect(core.governance).transfer(regularAirdrop.address, parseEther('15'));
+    await regularAirdrop.connect(core.hhUser5).ownerSetClaimEnabled(true);
 
     snapshotId = await snapshot();
   });
@@ -163,6 +164,14 @@ describe('RegularAirdrop', () => {
       });
       expect(await dolo.balanceOf(core.hhUser1.address)).to.eq(parseEther('5'));
       expect(await regularAirdrop.userToClaimStatus(core.hhUser1.address)).to.be.true;
+    });
+
+    it('should fail if claim is not enabled', async () => {
+      await regularAirdrop.connect(core.hhUser5).ownerSetClaimEnabled(false);
+      await expectThrow(
+        regularAirdrop.connect(core.hhUser1).claim(validProof1, parseEther('5')),
+        'BaseClaim: Claim is not enabled',
+      );
     });
 
     it('should fail if remapped user trys to claim again from original address', async () => {

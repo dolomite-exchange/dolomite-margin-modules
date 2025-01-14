@@ -21,7 +21,6 @@
 pragma solidity ^0.8.9;
 
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
-import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { MerkleProof } from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
@@ -36,7 +35,7 @@ import { IVotingEscrow } from "./interfaces/IVotingEscrow.sol";
  *
  * Regular airdrop contract for DOLO tokens. 50% is given to the user and 50% is locked in veDolo
  */
-contract RegularAirdrop is BaseClaim, Initializable, IRegularAirdrop {
+contract RegularAirdrop is BaseClaim, IRegularAirdrop {
     using SafeERC20 for IERC20;
 
     // ===================================================
@@ -84,7 +83,7 @@ contract RegularAirdrop is BaseClaim, Initializable, IRegularAirdrop {
     // ======================= User Functions =======================
     // ==============================================================
 
-    function claim(bytes32[] calldata _proof, uint256 _amount) external {
+    function claim(bytes32[] calldata _proof, uint256 _amount) external onlyClaimEnabled {
         RegularAirdropStorage storage s = _getRegularAirdropStorage();
         address user = getUserOrRemappedAddress(msg.sender);
 

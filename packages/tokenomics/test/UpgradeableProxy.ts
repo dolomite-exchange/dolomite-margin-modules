@@ -26,7 +26,7 @@ describe('UpgradeableProxy', () => {
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
-    dolo = await createDOLO(core);
+    dolo = await createDOLO(core, core.hhUser5.address);
 
     const optionAirdropImplementation = await createTestOptionAirdropImplementation(core, dolo);
     const calldata = await optionAirdropImplementation.populateTransaction.initialize(

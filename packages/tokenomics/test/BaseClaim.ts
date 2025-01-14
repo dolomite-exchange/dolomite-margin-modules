@@ -146,6 +146,26 @@ describe('BaseClaim', () => {
     });
   });
 
+  describe('#ownerSetClaimEnabled', () => {
+    it('should work normally', async () => {
+      expect(await baseClaim.claimEnabled()).to.be.false;
+      await baseClaim.connect(core.governance).ownerSetHandler(core.hhUser5.address);
+
+      const res = await baseClaim.connect(core.hhUser5).ownerSetClaimEnabled(true);
+      await expectEvent(baseClaim, res, 'ClaimEnabledSet', {
+        claimEnabled: true
+      });
+      expect(await baseClaim.claimEnabled()).to.be.true;
+    });
+
+    it('should fail if not called by handler', async () => {
+      await expectThrow(
+        baseClaim.connect(core.hhUser1).ownerSetClaimEnabled(true),
+        'BaseClaim: Only handler can call'
+      );
+    });
+  });
+
   describe('#ownerWithdrawRewardToken', () => {
     it('should work normally', async () => {
       await setupDAIBalance(core, core.hhUser1, parseEther('15'), core.governance);

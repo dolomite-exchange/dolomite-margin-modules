@@ -35,7 +35,7 @@ describe('StrategicVestingClaims', () => {
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
-    dolo = await createDOLO(core);
+    dolo = await createDOLO(core, core.hhUser5.address);
 
     user1Amount = parseEther('10');
     user2Amount = parseEther('10');
@@ -60,10 +60,12 @@ describe('StrategicVestingClaims', () => {
     claims = await createStrategicVestingClaims(core, dolo, TEST_TGE_TIMESTAMP, DURATION);
 
     await claims.connect(core.governance).ownerSetMerkleRoot(merkleRoot);
+    await claims.connect(core.governance).ownerSetHandler(core.hhUser5.address);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(claims.address, true);
 
     await dolo.connect(core.governance).mint(parseEther('100'));
     await dolo.connect(core.governance).transfer(claims.address, parseEther('100'));
+    await claims.connect(core.hhUser5).ownerSetClaimEnabled(true);
 
     snapshotId = await snapshot();
   });
@@ -89,6 +91,14 @@ describe('StrategicVestingClaims', () => {
       });
       expect(await dolo.balanceOf(core.hhUser1.address)).to.eq(ONE_ETH_BI);
       expect(await claims.released(core.hhUser1.address)).to.eq(ONE_ETH_BI);
+    });
+
+    it('should fail if claim is not enabled', async () => {
+      await claims.connect(core.hhUser5).ownerSetClaimEnabled(false);
+      await expectThrow(
+        claims.connect(core.hhUser1).claim(validProof1, user1Amount),
+        'BaseClaim: Claim is not enabled',
+      );
     });
 
     it('should claim full amount if after end time', async () => {

@@ -37,7 +37,7 @@ describe('VestingClaims', () => {
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
-    dolo = await createDOLO(core);
+    dolo = await createDOLO(core, core.governance.address);
 
     user1Amount = parseEther('6');
     user2Amount = parseEther('10');
@@ -66,8 +66,8 @@ describe('VestingClaims', () => {
     await claims.connect(core.governance).ownerSetHandler(core.hhUser5.address);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(claims.address, true);
 
-    await dolo.connect(core.governance).mint(totalAmount);
     await dolo.connect(core.governance).transfer(claims.address, totalAmount);
+    await claims.connect(core.hhUser5).ownerSetClaimEnabled(true);
 
     snapshotId = await snapshot();
   });
@@ -227,6 +227,14 @@ describe('VestingClaims', () => {
       expect(await claims.released(core.hhUser5.address)).to.eq(ZERO_BI);
       expect(await claims.released(core.hhUser1.address)).to.eq(user1Amount);
       expect(await dolo.balanceOf(claims.address)).to.eq(user2Amount);
+    });
+
+    it('should fail if claim is not enabled', async () => {
+      await claims.connect(core.hhUser5).ownerSetClaimEnabled(false);
+      await expectThrow(
+        claims.connect(core.hhUser1).claim(validProof1, user1Amount),
+        'BaseClaim: Claim is not enabled',
+      );
     });
 
     it('should fail if invalid merkle proof', async () => {

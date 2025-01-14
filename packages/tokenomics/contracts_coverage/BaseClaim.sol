@@ -65,6 +65,16 @@ abstract contract BaseClaim is OnlyDolomiteMarginForUpgradeable, IBaseClaim {
         _;
     }
 
+    modifier onlyClaimEnabled() {
+        if (claimEnabled()) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            claimEnabled(),
+            _FILE,
+            "Claim is not enabled"
+        );
+        _;
+    }
+
     // ===========================================================
     // ======================= Constructor =======================
     // ===========================================================
@@ -81,6 +91,10 @@ abstract contract BaseClaim is OnlyDolomiteMarginForUpgradeable, IBaseClaim {
         address[] memory _users, address[] memory _remappedAddresses
     ) external onlyHandler(msg.sender) {
         _ownerSetAddressRemapping(_users, _remappedAddresses);
+    }
+
+    function ownerSetClaimEnabled(bool _enabled) external onlyHandler(msg.sender) {
+        _ownerSetClaimEnabled(_enabled);
     }
 
     function ownerSetHandler(address _handler) external onlyDolomiteMarginOwner(msg.sender) {
@@ -119,6 +133,11 @@ abstract contract BaseClaim is OnlyDolomiteMarginForUpgradeable, IBaseClaim {
         return s.handler;
     }
 
+    function claimEnabled() public view returns (bool) {
+        BaseClaimStorage storage s = _getBaseClaimStorage();
+        return s.claimEnabled;
+    }
+
     // ==================================================================
     // ======================= Internal Functions =======================
     // ==================================================================
@@ -137,6 +156,12 @@ abstract contract BaseClaim is OnlyDolomiteMarginForUpgradeable, IBaseClaim {
             s.addressRemapping[_users[i]] = _remappedAddresses[i];
         }
         emit AddressRemappingSet(_users, _remappedAddresses);
+    }
+
+    function _ownerSetClaimEnabled(bool _enabled) internal {
+        BaseClaimStorage storage s = _getBaseClaimStorage();
+        s.claimEnabled = _enabled;
+        emit ClaimEnabledSet(_enabled);
     }
 
     function _ownerSetHandler(address _handler) internal {

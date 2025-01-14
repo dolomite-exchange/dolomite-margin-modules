@@ -83,7 +83,7 @@ contract RegularAirdrop is BaseClaim, IRegularAirdrop {
     // ======================= User Functions =======================
     // ==============================================================
 
-    function claim(bytes32[] calldata _proof, uint256 _amount) external {
+    function claim(bytes32[] calldata _proof, uint256 _amount) external onlyClaimEnabled {
         RegularAirdropStorage storage s = _getRegularAirdropStorage();
         address user = getUserOrRemappedAddress(msg.sender);
 

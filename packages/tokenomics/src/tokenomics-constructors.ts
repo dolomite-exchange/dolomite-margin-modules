@@ -13,9 +13,10 @@ export function getBuybackPoolConstructorParams<T extends NetworkType>(
 }
 
 export function getDOLOConstructorParams<T extends NetworkType>(
-  core: CoreProtocolType<T>
+  core: CoreProtocolType<T>,
+  treasury: string
 ): any[] {
-  return [core.dolomiteMargin.address];
+  return [core.dolomiteMargin.address, treasury];
 }
 
 export function getODOLOConstructorParams<T extends NetworkType>(

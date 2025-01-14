@@ -34,7 +34,7 @@ describe('OptionAirdrop', () => {
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
-    dolo = await createDOLO(core);
+    dolo = await createDOLO(core, core.hhUser5.address);
     await disableInterestAccrual(core, core.marketIds.nativeUsdc);
     await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.nativeUsdc.address, USDC_PRICE);
     await core.dolomiteMargin.ownerSetPriceOracle(
@@ -70,6 +70,7 @@ describe('OptionAirdrop', () => {
     await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.nativeUsdc, usdcAmount);
     await optionAirdrop.connect(core.governance).ownerSetAllowedMarketIds([core.marketIds.nativeUsdc]);
     await optionAirdrop.connect(core.governance).ownerSetHandler(core.hhUser5.address);
+    await optionAirdrop.connect(core.hhUser5).ownerSetClaimEnabled(true);
 
     snapshotId = await snapshot();
   });
@@ -270,6 +271,20 @@ describe('OptionAirdrop', () => {
       expect(await dolo.balanceOf(core.hhUser4.address)).to.eq(parseEther('5'));
       expect(await dolo.balanceOf(optionAirdrop.address)).to.eq(parseEther('10'));
       expect(await optionAirdrop.userToClaimedAmount(core.hhUser1.address)).to.eq(parseEther('5'));
+    });
+
+    it('should fail if claim is not enabled', async () => {
+      await optionAirdrop.connect(core.hhUser5).ownerSetClaimEnabled(false);
+      await expectThrow(
+        optionAirdrop.connect(core.hhUser1).claim(
+          validProof1,
+          parseEther('5'),
+          parseEther('5'),
+          core.marketIds.nativeUsdc,
+          defaultAccountNumber,
+        ),
+        'BaseClaim: Claim is not enabled',
+      );
     });
 
     it('should fail if remapped user claims again with original address', async () => {

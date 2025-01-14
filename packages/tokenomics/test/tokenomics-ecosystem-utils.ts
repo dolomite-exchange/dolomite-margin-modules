@@ -46,12 +46,13 @@ import { BigNumberish } from 'ethers';
 import { ExternalVesterDiscountCalculatorV1__factory } from 'packages/liquidity-mining/src/types';
 
 export async function createDOLO<T extends NetworkType>(
-  core: CoreProtocolType<T>
+  core: CoreProtocolType<T>,
+  treasury: string
 ): Promise<DOLO> {
   return createContractWithAbi<DOLO>(
     DOLO__factory.abi,
     DOLO__factory.bytecode,
-    getDOLOConstructorParams(core)
+    getDOLOConstructorParams(core, treasury)
   );
 }
 
