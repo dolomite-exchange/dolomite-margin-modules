@@ -22,6 +22,7 @@ pragma solidity ^0.8.9;
 
 import { InternalSafeDelegateCallLib } from "../lib/InternalSafeDelegateCallLib.sol";
 import { GenericTraderProxyV2 } from "../proxies/GenericTraderProxyV2.sol";
+import { GenericTraderProxyV2Lib } from "../proxies/GenericTraderProxyV2Lib.sol";
 
 
 /**
@@ -47,6 +48,10 @@ contract TestGenericTraderProxyV2 is GenericTraderProxyV2 {
 
     function testIsIsolationModeAsset(uint256 _marketId) external view returns (bool) {
         address token = DOLOMITE_MARGIN().getMarketTokenAddress(_marketId);
-        return _isIsolationModeAsset(token);
+        return GenericTraderProxyV2Lib.isIsolationModeAsset(token);
+    }
+
+    function testIsIsolationModeAssetWithAddress(address _token) external view returns (bool) {
+        return GenericTraderProxyV2Lib.isIsolationModeAsset(_token);
     }
 }

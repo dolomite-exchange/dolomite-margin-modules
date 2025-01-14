@@ -403,6 +403,8 @@ library AccountActionLib {
         uint256 _secondaryMarketId,
         address _traderAddress,
         uint256 _amountInWei,
+        uint256 _chainId,
+        bool _calculateAmountWithMakerAccount,
         bytes memory _orderData
     ) internal pure returns (IDolomiteStructs.ActionArgs memory) {
         // internal trades calculate inputAmount based on `_toAccountId` (the maker account), so the sign should be
@@ -411,7 +413,7 @@ library AccountActionLib {
             actionType: IDolomiteStructs.ActionType.Trade,
             accountId: _fromAccountId,
             amount: IDolomiteStructs.AssetAmount({
-                sign: _amountInWei == _ALL ? false : true, // @audit check
+                sign: false, // @audit check
                 denomination: IDolomiteStructs.AssetDenomination.Wei,
                 ref: _amountInWei == _ALL
                     ? IDolomiteStructs.AssetReference.Target
@@ -422,7 +424,9 @@ library AccountActionLib {
             secondaryMarketId: _secondaryMarketId,
             otherAddress: _traderAddress,
             otherAccountId: _toAccountId,
-            data: _orderData // @audit check
+            data: ChainHelperLib.isArbitrum(_chainId) // @audit check
+                ? _orderData
+                : abi.encode(_calculateAmountWithMakerAccount, _orderData)
         });
     }
 

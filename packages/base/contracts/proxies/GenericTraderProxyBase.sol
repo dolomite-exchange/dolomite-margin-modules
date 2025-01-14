@@ -20,15 +20,12 @@
 
 pragma solidity ^0.8.9;
 
-import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IGenericTraderBase } from "../interfaces/IGenericTraderBase.sol";
 import { IIsolationModeUnwrapperTraderV2 } from "../isolation-mode/interfaces/IIsolationModeUnwrapperTraderV2.sol";
-import { IIsolationModeVaultFactory } from "../isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
 import { IIsolationModeWrapperTraderV2 } from "../isolation-mode/interfaces/IIsolationModeWrapperTraderV2.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
-import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
-import { ExcessivelySafeCall } from "../protocol/lib/ExcessivelySafeCall.sol";
 import { Require } from "../protocol/lib/Require.sol";
 
 
@@ -55,53 +52,18 @@ abstract contract GenericTraderProxyBase is IGenericTraderBase {
     uint256 internal constant ZAP_ACCOUNT_ID = 1;
 
     uint256 public immutable CHAIN_ID;
+    IDolomiteRegistry public immutable DOLOMITE_REGISTRY;
 
     // ========================================================
     // ===================== Constructor ========================
     // ========================================================
 
     constructor (
-        uint256 _chainId
+        uint256 _chainId,
+        address _dolomiteRegistry
     ) {
         CHAIN_ID = _chainId;
-    }
-
-    function isIsolationModeMarket(IDolomiteMargin _dolomiteMargin, uint256 _marketId) public view returns (bool) {
-        return _isIsolationModeAsset(_dolomiteMargin.getMarketTokenAddress(_marketId));
-    }
-
-    // ========================================================
-    // ================== Internal Functions ==================
-    // ========================================================
-
-    function _isIsolationModeAsset(address _token) internal view returns (bool) {
-        (bool isSuccess, bytes memory returnData) = ExcessivelySafeCall.safeStaticCall(
-            _token,
-            IERC20Metadata(address(0)).name.selector,
-            bytes("")
-        );
-        if (!isSuccess) {
-            return false;
-        }
-
-        string memory name = abi.decode(returnData, (string));
-        if (keccak256(bytes(name)) == DOLOMITE_FS_GLP_HASH) {
-            return true;
-        }
-        return _startsWith(DOLOMITE_ISOLATION_PREFIX, name);
-    }
-
-    function _startsWith(string memory _start, string memory _str) internal pure returns (bool) {
-        if (bytes(_start).length > bytes(_str).length) {
-            return false;
-        }
-
-        bytes32 hash;
-        assembly {
-            let size := mload(_start)
-            hash := keccak256(add(_str, 32), size)
-        }
-        return hash == keccak256(bytes(_start));
+        DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
     }
 
     function _validateMarketIdPath(
@@ -128,203 +90,6 @@ abstract contract GenericTraderProxyBase is IGenericTraderBase {
             _FILE,
             "Invalid minOutputAmountWei"
         );
-    }
-
-    function _validateTraderParams(
-        GenericTraderProxyCache memory _cache,
-        uint256[] memory _marketIdsPath,
-        IDolomiteStructs.AccountInfo[] memory _makerAccounts,
-        TraderParam[] memory _traderParamsPath
-    )
-        internal
-        view
-    {
-        Require.that(
-            _marketIdsPath.length == _traderParamsPath.length + 1,
-            _FILE,
-            "Invalid traders params length"
-        );
-
-        uint256 traderParamsPathLength = _traderParamsPath.length;
-        for (uint256 i; i < traderParamsPathLength; ++i) {
-            _validateTraderParam(
-                _cache,
-                _marketIdsPath,
-                _makerAccounts,
-                _traderParamsPath[i],
-                /* _index = */ i // solium-disable-line indentation
-            );
-        }
-    }
-
-    function _validateTraderParam(
-        GenericTraderProxyCache memory _cache,
-        uint256[] memory _marketIdsPath,
-        IDolomiteStructs.AccountInfo[] memory _makerAccounts,
-        TraderParam memory _traderParam,
-        uint256 _index
-    )
-        internal
-        view
-    {
-        Require.that(
-            _traderParam.trader != address(0),
-            _FILE,
-            "Invalid trader at index",
-            _index
-        );
-
-        uint256 marketId = _marketIdsPath[_index];
-        uint256 nextMarketId = _marketIdsPath[_index + 1];
-        _validateIsolationModeStatusForTraderParam(
-            _cache,
-            marketId,
-            nextMarketId,
-            _traderParam
-        );
-        _validateTraderTypeForTraderParam(
-            _cache,
-            marketId,
-            nextMarketId,
-            _traderParam,
-            _index
-        );
-        _validateMakerAccountForTraderParam(
-            _makerAccounts,
-            _traderParam,
-            _index
-        );
-    }
-
-    function _validateIsolationModeStatusForTraderParam(
-        GenericTraderProxyCache memory _cache,
-        uint256 _marketId,
-        uint256 _nextMarketId,
-        TraderParam memory _traderParam
-    ) internal view {
-        if (isIsolationModeMarket(_cache.dolomiteMargin, _marketId)) {
-            // If the current market is in isolation mode, the trader type must be for isolation mode assets
-            Require.that(
-                _isUnwrapperTraderType(_traderParam.traderType),
-                _FILE,
-                "Invalid isolation mode unwrapper",
-                _marketId,
-                uint256(uint8(_traderParam.traderType))
-            );
-
-            if (isIsolationModeMarket(_cache.dolomiteMargin, _nextMarketId)) {
-                // If the user is unwrapping into an isolation mode asset, the next market must trust this trader
-                address isolationModeToken = _cache.dolomiteMargin.getMarketTokenAddress(_nextMarketId);
-                Require.that(
-                    IIsolationModeVaultFactory(isolationModeToken).isTokenConverterTrusted(_traderParam.trader),
-                    _FILE,
-                    "Invalid unwrap sequence",
-                    _marketId,
-                    _nextMarketId
-                );
-            }
-        } else if (isIsolationModeMarket(_cache.dolomiteMargin, _nextMarketId)) {
-            // If the next market is in isolation mode, the trader must wrap the current asset into the isolation asset.
-            Require.that(
-                _isWrapperTraderType(_traderParam.traderType),
-                _FILE,
-                "Invalid isolation mode wrapper",
-                _nextMarketId,
-                uint256(uint8(_traderParam.traderType))
-            );
-        } else {
-            // If neither asset is in isolation mode, the trader type must be for non-isolation mode assets
-            Require.that(
-                _traderParam.traderType == TraderType.ExternalLiquidity
-                    || _traderParam.traderType == TraderType.InternalLiquidity,
-                _FILE,
-                "Invalid trader type",
-                uint256(uint8(_traderParam.traderType))
-            );
-        }
-    }
-
-    function _validateTraderTypeForTraderParam(
-        GenericTraderProxyCache memory _cache,
-        uint256 _marketId,
-        uint256 _nextMarketId,
-        TraderParam memory _traderParam,
-        uint256 _index
-    ) internal view {
-        if (_isUnwrapperTraderType(_traderParam.traderType)) {
-            IIsolationModeUnwrapperTraderV2 unwrapperTrader = IIsolationModeUnwrapperTraderV2(_traderParam.trader);
-            address isolationModeToken = _cache.dolomiteMargin.getMarketTokenAddress(_marketId);
-            Require.that(
-                unwrapperTrader.token() == isolationModeToken,
-                _FILE,
-                "Invalid input for unwrapper",
-                _index,
-                _marketId
-            );
-            Require.that(
-                unwrapperTrader.isValidOutputToken(_cache.dolomiteMargin.getMarketTokenAddress(_nextMarketId)),
-                _FILE,
-                "Invalid output for unwrapper",
-                _index + 1,
-                _nextMarketId
-            );
-            Require.that(
-                IIsolationModeVaultFactory(isolationModeToken).isTokenConverterTrusted(_traderParam.trader),
-                _FILE,
-                "Unwrapper trader not enabled",
-                _traderParam.trader,
-                _marketId
-            );
-        } else if (_isWrapperTraderType(_traderParam.traderType)) {
-            IIsolationModeWrapperTraderV2 wrapperTrader = IIsolationModeWrapperTraderV2(_traderParam.trader);
-            address isolationModeToken = _cache.dolomiteMargin.getMarketTokenAddress(_nextMarketId);
-            Require.that(
-                wrapperTrader.isValidInputToken(_cache.dolomiteMargin.getMarketTokenAddress(_marketId)),
-                _FILE,
-                "Invalid input for wrapper",
-                _index,
-                _marketId
-            );
-            Require.that(
-                wrapperTrader.token() == isolationModeToken,
-                _FILE,
-                "Invalid output for wrapper",
-                _index + 1,
-                _nextMarketId
-            );
-            Require.that(
-                IIsolationModeVaultFactory(isolationModeToken).isTokenConverterTrusted(_traderParam.trader),
-                _FILE,
-                "Wrapper trader not enabled",
-                _traderParam.trader,
-                _nextMarketId
-            );
-        }
-    }
-
-    function _validateMakerAccountForTraderParam(
-        IDolomiteStructs.AccountInfo[] memory _makerAccounts,
-        TraderParam memory _traderParam,
-        uint256 _index
-    ) internal pure {
-        if (TraderType.InternalLiquidity == _traderParam.traderType) {
-            // The makerAccountOwner should be set if the traderType is InternalLiquidity
-            Require.that(
-                _traderParam.makerAccountIndex < _makerAccounts.length
-                && _makerAccounts[_traderParam.makerAccountIndex].owner != address(0),
-                _FILE,
-                "Invalid maker account owner",
-                _index
-            );
-        } else {
-            // The makerAccountOwner and makerAccountNumber is not used if the traderType is not InternalLiquidity
-            Require.that(
-                _traderParam.makerAccountIndex == 0,
-                _FILE,
-                "Invalid maker account owner",
-                _index
-            );
-        }
     }
 
     function _validateZapAccount(
@@ -471,24 +236,20 @@ abstract contract GenericTraderProxyBase is IGenericTraderBase {
             } else if (_tradersPath[i].traderType == TraderType.InternalLiquidity) {
                 uint256 customInputAmountWei = AccountActionLib.all();
                 bytes memory tradeData = _tradersPath[i].tradeData;
-                if (CHAIN_ID == ARBITRUM_ONE) {
-                    (
-                        customInputAmountWei,
-                        tradeData
-                    ) = abi.decode(tradeData, (uint256, bytes));
-                    Require.that(
-                        (i == 0 && customInputAmountWei == _inputAmountWei) || i != 0,
-                        _FILE,
-                        "Invalid custom input amount"
-                    );
-                }
+                Require.that(
+                    DOLOMITE_REGISTRY.isTrustedInternalTrader(_tradersPath[i].trader),
+                    _FILE,
+                    "Internal trader not whitelisted"
+                );
                 _actions[_cache.actionsCursor++] = AccountActionLib.encodeInternalTradeActionWithCustomData(
-                    ZAP_ACCOUNT_ID,
-                    /* _makerAccountId = */ _tradersPath[i].makerAccountIndex + _cache.traderAccountStartIndex,
+                    /* takerAccountId = */ _tradersPath[i].makerAccountIndex + _cache.traderAccountStartIndex,
+                    /* makerAccountId = */ ZAP_ACCOUNT_ID,
                     _marketIdsPath[i],
                     _marketIdsPath[i + 1],
                     _tradersPath[i].trader,
                     customInputAmountWei,
+                    CHAIN_ID,
+                    false,
                     tradeData
                 );
             } else if (_isUnwrapperTraderType(_tradersPath[i].traderType)) {
