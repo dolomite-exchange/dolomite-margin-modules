@@ -40,7 +40,11 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   })) as any;
 
   // Deploy new custom token
-  const doloAddress = await deployContractAndSave('DOLO', [core.dolomiteMargin.address], 'DOLO');
+  const doloAddress = await deployContractAndSave(
+    'DOLO',
+    [core.dolomiteMargin.address, core.gnosisSafeAddress],
+    'DOLO',
+  );
 
   // Deploy always active voter, oToken, veFeeCalculator, buybackPool
   const alwaysActiveVoter = await deployContractAndSave('VoterAlwaysActive', [], 'VoterAlwaysActive');
@@ -122,6 +126,12 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   );
   const vester = VeExternalVesterImplementationV1__factory.connect(vesterProxyAddress, core.hhUser1);
 
+  // TODO: create option airdrop, regular airdrop, vesting, and strategic vesting contracts, etc.
+  // TODO: encode transactions for setting up the newly-added contracts. Add Gnosis Safe as a handler for all respective contracts
+  // @follow-up: Add a separate safe tx file for transferring DOLO to the respective contracts and initializing the merkle roots
+  // @follow-up: Create a safe tx for adding remappings (keep addresses blank for now); this will let us run them easily later
+  // @follow-up: create a safe tx for enabling claims on all of the claimable contracts (airdrops + vesting)
+
   // Push admin transactions
   const transactions: EncodedTransaction[] = [];
   transactions.push(
@@ -155,7 +165,6 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
       core.gnosisSafeAddress,
       true,
     ]),
-    // @follow-up Not sure if we want to mint, deposit reward tokens, deploy airdrop contracts, etc
   );
 
   return {
