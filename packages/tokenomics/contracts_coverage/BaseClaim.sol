@@ -20,7 +20,7 @@
 
 pragma solidity ^0.8.9;
 
-import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
+import { OnlyDolomiteMarginForUpgradeable } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMarginForUpgradeable.sol"; // solhint-disable-line max-line-length
 import { IDolomiteRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IDolomiteRegistry.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -35,7 +35,7 @@ import { IBaseClaim } from "./interfaces/IBaseClaim.sol";
  *
  * Base contract for merkle root claims
  */
-abstract contract BaseClaim is OnlyDolomiteMargin, IBaseClaim {
+abstract contract BaseClaim is OnlyDolomiteMarginForUpgradeable, IBaseClaim {
     using SafeERC20 for IERC20;
 
     // ===================================================
@@ -43,7 +43,7 @@ abstract contract BaseClaim is OnlyDolomiteMargin, IBaseClaim {
     // ===================================================
 
     bytes32 private constant _FILE = "BaseClaim";
-    bytes32 private constant _BASE_CLAIM_STORAGE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.baseClaimStorage")) - 1);
+    bytes32 private constant _BASE_CLAIM_STORAGE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.baseClaimStorage")) - 1); // solhint-disable-line max-line-length
 
     // ===================================================
     // ==================== State Variables ==============
@@ -69,10 +69,7 @@ abstract contract BaseClaim is OnlyDolomiteMargin, IBaseClaim {
     // ======================= Constructor =======================
     // ===========================================================
 
-    constructor(
-        address _dolomiteRegistry,
-        address _dolomiteMargin
-    ) OnlyDolomiteMargin(_dolomiteMargin) {
+    constructor(address _dolomiteRegistry) {
         DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
     }
 

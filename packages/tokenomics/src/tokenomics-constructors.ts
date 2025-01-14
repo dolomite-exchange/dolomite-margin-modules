@@ -39,9 +39,8 @@ export function getExternalVesterDiscountCalculatorConstructorParams(
 export function getOptionAirdropConstructorParams<T extends NetworkType>(
   core: CoreProtocolType<T>,
   dolo: IERC20,
-  treasury: string
 ): any[] {
-  return [dolo.address, treasury, core.dolomiteRegistry.address, core.dolomiteMargin.address];
+  return [dolo.address, core.dolomiteRegistry.address];
 }
 
 export function getRegularAirdropConstructorParams<T extends NetworkType>(
@@ -49,7 +48,25 @@ export function getRegularAirdropConstructorParams<T extends NetworkType>(
   dolo: IERC20,
   veToken: VotingEscrow | MockVotingEscrow,
 ): any[] {
-  return [dolo.address, veToken.address, core.dolomiteRegistry.address, core.dolomiteMargin.address];
+  return [dolo.address, veToken.address, core.dolomiteRegistry.address];
+}
+
+export function getVestingClaimsConstructorParams<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  dolo: IERC20,
+  tgeTimestamp: BigNumberish,
+  duration: BigNumberish,
+): any[] {
+  return [dolo.address, tgeTimestamp, duration, core.dolomiteRegistry.address];
+}
+
+export function getStrategicVestingClaimsConstructorParams<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  dolo: IERC20,
+  tgeTimestamp: BigNumberish,
+  duration: BigNumberish,
+): any[] {
+  return [dolo.address, tgeTimestamp, duration, core.dolomiteRegistry.address];
 }
 
 export function getVeExternalVesterImplementationConstructorParams<T extends NetworkType>(
@@ -90,4 +107,12 @@ export function getVeExternalVesterInitializationCalldata(
       symbol,
     ],
   );
+}
+
+export function getUpgradeableProxyConstructorParams<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  implementation: { address: string },
+  calldata: string,
+): any[] {
+  return [implementation.address, core.dolomiteMargin.address, calldata];
 }

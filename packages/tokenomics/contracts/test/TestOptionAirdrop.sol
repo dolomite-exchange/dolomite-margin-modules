@@ -34,14 +34,10 @@ contract TestOptionAirdrop is OptionAirdrop {
 
     constructor(
         address _dolo,
-        address _treasury,
-        address _dolomiteRegistry,
-        address _dolomiteMargin
+        address _dolomiteRegistry
     ) OptionAirdrop(
         _dolo,
-        _treasury,
-        _dolomiteRegistry,
-        _dolomiteMargin
+        _dolomiteRegistry
     ) {} // solhint-disable-line
 
     function callClaimAndTriggerReentrancy(

@@ -3,7 +3,7 @@ import { BigNumber } from 'ethers';
 import { defaultAbiCoder, keccak256, parseEther } from 'ethers/lib/utils';
 import MerkleTree from 'merkletreejs';
 import { depositIntoDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
-import { Network, ONE_BI, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
+import { ADDRESS_ZERO, Network, ONE_BI, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
 import { expectEvent, expectProtocolBalance, expectThrow } from 'packages/base/test/utils/assertions';
 import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
@@ -59,6 +59,7 @@ describe('OptionAirdrop', () => {
     invalidProof = tree.getHexProof(invalidLeaf);
 
     optionAirdrop = await createTestOptionAirdrop(core, dolo, core.hhUser5.address);
+
     await optionAirdrop.connect(core.governance).ownerSetMerkleRoot(merkleRoot);
     await core.dolomiteMargin.ownerSetGlobalOperator(optionAirdrop.address, true);
 
@@ -79,8 +80,20 @@ describe('OptionAirdrop', () => {
 
   describe('#constructor', () => {
     it('should work normally', async () => {
+      expect(await optionAirdrop.DOLOMITE_MARGIN()).to.eq(core.dolomiteMargin.address);
+      expect(await optionAirdrop.DOLOMITE_REGISTRY()).to.eq(core.dolomiteRegistry.address);
       expect(await optionAirdrop.DOLO()).to.eq(dolo.address);
       expect(await optionAirdrop.merkleRoot()).to.eq(merkleRoot);
+      expect(await optionAirdrop.treasury()).to.eq(core.hhUser5.address);
+    });
+  });
+
+  describe('#initializer', () => {
+    it('should fail if called again', async () => {
+      await expectThrow(
+        optionAirdrop.connect(core.hhUser2).initialize(core.hhUser5.address),
+        'Initializable: contract is already initialized',
+      );
     });
   });
 
@@ -140,6 +153,13 @@ describe('OptionAirdrop', () => {
         treasury: newTreasury,
       });
       expect(await optionAirdrop.treasury()).to.eq(newTreasury);
+    });
+
+    it('should fail if treasury is zero address', async () => {
+      await expectThrow(
+        optionAirdrop.connect(core.governance).ownerSetTreasury(ADDRESS_ZERO),
+        'OptionAirdrop: Invalid treasury address',
+      );
     });
 
     it('should fail if not called by owner', async () => {

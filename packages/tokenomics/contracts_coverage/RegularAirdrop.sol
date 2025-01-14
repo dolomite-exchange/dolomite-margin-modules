@@ -20,8 +20,8 @@
 
 pragma solidity ^0.8.9;
 
-import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
+import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { MerkleProof } from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
@@ -36,7 +36,7 @@ import { IVotingEscrow } from "./interfaces/IVotingEscrow.sol";
  *
  * Regular airdrop contract for DOLO tokens. 50% is given to the user and 50% is locked in veDolo
  */
-contract RegularAirdrop is OnlyDolomiteMargin, BaseClaim, IRegularAirdrop {
+contract RegularAirdrop is BaseClaim, Initializable, IRegularAirdrop {
     using SafeERC20 for IERC20;
 
     // ===================================================
@@ -44,7 +44,7 @@ contract RegularAirdrop is OnlyDolomiteMargin, BaseClaim, IRegularAirdrop {
     // ===================================================
 
     bytes32 private constant _FILE = "RegularAirdrop";
-    bytes32 private constant _REGULAR_AIRDROP_STORAGE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.regularAirdropStorage")) - 1);
+    bytes32 private constant _REGULAR_AIRDROP_STORAGE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.regularAirdropStorage")) - 1); // solhint-disable-line max-line-length
 
     uint256 public constant MAX_LOCK = 2 * 365 * 86400;
     uint256 public constant EPOCH_NUMBER = 0;
@@ -63,9 +63,8 @@ contract RegularAirdrop is OnlyDolomiteMargin, BaseClaim, IRegularAirdrop {
     constructor(
         address _dolo,
         address _veDolo,
-        address _dolomiteRegistry,
-        address _dolomiteMargin
-    ) BaseClaim(_dolomiteRegistry, _dolomiteMargin) {
+        address _dolomiteRegistry
+    ) BaseClaim(_dolomiteRegistry) {
         DOLO = IERC20(_dolo);
         VE_DOLO = IVotingEscrow(_veDolo);
     }

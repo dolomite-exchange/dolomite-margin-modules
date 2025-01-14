@@ -12,6 +12,8 @@ import {
   OptionAirdrop__factory,
   RegularAirdrop,
   RegularAirdrop__factory,
+  StrategicVestingClaims,
+  StrategicVestingClaims__factory,
   TestOptionAirdrop,
   TestOptionAirdrop__factory,
   TestVeExternalVesterImplementationV1,
@@ -20,10 +22,12 @@ import {
   UpgradeableProxy__factory,
   VeFeeCalculator,
   VeFeeCalculator__factory,
+  VestingClaims,
+  VestingClaims__factory,
   VotingEscrow,
   VotingEscrow__factory
 } from '../src/types';
-import { ADDRESS_ZERO, NetworkType } from 'packages/base/src/utils/no-deps-constants';
+import { ADDRESS_ZERO, BYTES_EMPTY, NetworkType } from 'packages/base/src/utils/no-deps-constants';
 import { CoreProtocolType } from 'packages/base/test/utils/setup';
 import {
   getDOLOConstructorParams,
@@ -31,12 +35,14 @@ import {
   getODOLOConstructorParams,
   getOptionAirdropConstructorParams,
   getRegularAirdropConstructorParams,
+  getStrategicVestingClaimsConstructorParams,
+  getUpgradeableProxyConstructorParams,
   getVeExternalVesterImplementationConstructorParams,
   getVeExternalVesterInitializationCalldata,
-  getVeFeeCalculatorConstructorParams
+  getVeFeeCalculatorConstructorParams,
+  getVestingClaimsConstructorParams
 } from '../src/tokenomics-constructors';
 import { BigNumberish } from 'ethers';
-import { getUpgradeableProxyConstructorParams } from 'packages/base/src/utils/constructors/dolomite';
 import { ExternalVesterDiscountCalculatorV1__factory } from 'packages/liquidity-mining/src/types';
 
 export async function createDOLO<T extends NetworkType>(
@@ -95,7 +101,7 @@ export async function createVotingEscrow<T extends NetworkType>(
   const proxy = await createContractWithAbi<UpgradeableProxy>(
     UpgradeableProxy__factory.abi,
     UpgradeableProxy__factory.bytecode,
-    getUpgradeableProxyConstructorParams(implementation.address, initializeCalldata, core.dolomiteMargin),
+    getUpgradeableProxyConstructorParams(core, implementation, initializeCalldata.data!),
   );
   return VotingEscrow__factory.connect(proxy.address, core.hhUser1);
 }
@@ -144,36 +150,56 @@ export async function createTestVeExternalVesterV1Proxy<T extends NetworkType>(
   const vesterProxy = await createContractWithAbi<UpgradeableProxy>(
     UpgradeableProxy__factory.abi,
     UpgradeableProxy__factory.bytecode,
-    getUpgradeableProxyConstructorParams(implementation.address, implementationCalldata, core.dolomiteMargin),
+    getUpgradeableProxyConstructorParams(core, implementation, implementationCalldata.data!),
   );
   return TestVeExternalVesterImplementationV1__factory.connect(vesterProxy.address, core.hhUser1);
+}
+
+export async function createTestOptionAirdropImplementation<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  dolo: DOLO,
+): Promise<TestOptionAirdrop> {
+  return createContractWithAbi<TestOptionAirdrop>(
+    TestOptionAirdrop__factory.abi,
+    TestOptionAirdrop__factory.bytecode,
+    getOptionAirdropConstructorParams(core, dolo),
+  );
 }
 
 export async function createTestOptionAirdrop<T extends NetworkType>(
   core: CoreProtocolType<T>,
   dolo: DOLO,
-  treasury: string
+  treasury: string,
 ): Promise<TestOptionAirdrop> {
-  return createContractWithAbi<TestOptionAirdrop>(
-    TestOptionAirdrop__factory.abi,
-    TestOptionAirdrop__factory.bytecode,
-    getOptionAirdropConstructorParams(core, dolo, treasury),
+  const implementation = await createTestOptionAirdropImplementation(core, dolo);
+  const calldata = await implementation.populateTransaction.initialize(treasury);
+  const proxy = await createUpgradeableProxy(core, implementation, calldata.data!);
+  return TestOptionAirdrop__factory.connect(proxy.address, core.hhUser1);
+}
+
+export async function createOptionAirdropImplementation<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  dolo: DOLO,
+): Promise<OptionAirdrop> {
+  return createContractWithAbi<OptionAirdrop>(
+    OptionAirdrop__factory.abi,
+    OptionAirdrop__factory.bytecode,
+    getOptionAirdropConstructorParams(core, dolo),
   );
 }
 
 export async function createOptionAirdrop<T extends NetworkType>(
   core: CoreProtocolType<T>,
   dolo: DOLO,
-  treasury: string
+  treasury: string,
 ): Promise<OptionAirdrop> {
-  return createContractWithAbi<OptionAirdrop>(
-    OptionAirdrop__factory.abi,
-    OptionAirdrop__factory.bytecode,
-    getOptionAirdropConstructorParams(core, dolo, treasury),
-  );
+  const implementation = await createOptionAirdropImplementation(core, dolo);
+  const calldata = await implementation.populateTransaction.initialize(treasury);
+  const proxy = await createUpgradeableProxy(core, implementation, calldata.data!);
+  return OptionAirdrop__factory.connect(proxy.address, core.hhUser1);
 }
 
-export async function createRegularAirdrop<T extends NetworkType>(
+export async function createRegularAirdropImplementation<T extends NetworkType>(
   core: CoreProtocolType<T>,
   dolo: DOLO,
   veToken: VotingEscrow | MockVotingEscrow,
@@ -182,5 +208,75 @@ export async function createRegularAirdrop<T extends NetworkType>(
     RegularAirdrop__factory.abi,
     RegularAirdrop__factory.bytecode,
     getRegularAirdropConstructorParams(core, dolo, veToken),
+  );
+}
+
+export async function createRegularAirdrop<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  dolo: DOLO,
+  veToken: VotingEscrow | MockVotingEscrow,
+): Promise<RegularAirdrop> {
+  const implementation = await createRegularAirdropImplementation(core, dolo, veToken);
+  const proxy = await createUpgradeableProxy(core, implementation, BYTES_EMPTY);
+  return RegularAirdrop__factory.connect(proxy.address, core.hhUser1);
+}
+
+export async function createVestingClaimsImplementation<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  dolo: DOLO,
+  tgeTimestamp: BigNumberish,
+  duration: BigNumberish,
+): Promise<VestingClaims> {
+  return createContractWithAbi<VestingClaims>(
+    VestingClaims__factory.abi,
+    VestingClaims__factory.bytecode,
+    getVestingClaimsConstructorParams(core, dolo, tgeTimestamp, duration),
+  );
+}
+
+export async function createVestingClaims<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  dolo: DOLO,
+  tgeTimestamp: BigNumberish,
+  duration: BigNumberish,
+): Promise<VestingClaims> {
+  const implementation = await createVestingClaimsImplementation(core, dolo, tgeTimestamp, duration);
+  const proxy = await createUpgradeableProxy(core, implementation, BYTES_EMPTY);
+  return VestingClaims__factory.connect(proxy.address, core.hhUser1);
+}
+
+export async function createStrategicVestingClaimsImplementation<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  dolo: DOLO,
+  tgeTimestamp: BigNumberish,
+  duration: BigNumberish,
+): Promise<StrategicVestingClaims> {
+  return createContractWithAbi<StrategicVestingClaims>(
+    StrategicVestingClaims__factory.abi,
+    StrategicVestingClaims__factory.bytecode,
+    getStrategicVestingClaimsConstructorParams(core, dolo, tgeTimestamp, duration),
+  );
+}
+
+export async function createStrategicVestingClaims<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  dolo: DOLO,
+  tgeTimestamp: BigNumberish,
+  duration: BigNumberish,
+): Promise<StrategicVestingClaims> {
+  const implementation = await createStrategicVestingClaimsImplementation(core, dolo, tgeTimestamp, duration);
+  const proxy = await createUpgradeableProxy(core, implementation, BYTES_EMPTY);
+  return StrategicVestingClaims__factory.connect(proxy.address, core.hhUser1);
+}
+
+export async function createUpgradeableProxy<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  implementation: { address: string },
+  calldata: string,
+): Promise<UpgradeableProxy> {
+  return createContractWithAbi<UpgradeableProxy>(
+    UpgradeableProxy__factory.abi,
+    UpgradeableProxy__factory.bytecode,
+    getUpgradeableProxyConstructorParams(core, implementation, calldata),
   );
 }

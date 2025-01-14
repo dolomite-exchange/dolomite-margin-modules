@@ -48,9 +48,8 @@ contract StrategicVestingClaims is VestingClaims {
         address _dolo,
         uint256 _tgeTimestamp,
         uint256 _duration,
-        address _dolomiteRegistry,
-        address _dolomiteMargin
-    ) VestingClaims(_dolo, _tgeTimestamp, _duration, _dolomiteRegistry, _dolomiteMargin) {
+        address _dolomiteRegistry
+    ) VestingClaims(_dolo, _tgeTimestamp, _duration, _dolomiteRegistry) {
     }
 
     function _vestingSchedule(

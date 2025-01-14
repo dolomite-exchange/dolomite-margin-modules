@@ -1,5 +1,10 @@
 import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
-import { DOLO, MockVotingEscrow, MockVotingEscrow__factory, RegularAirdrop } from '../src/types';
+import {
+  DOLO,
+  MockVotingEscrow,
+  MockVotingEscrow__factory,
+  RegularAirdrop,
+} from '../src/types';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol } from 'packages/base/test/utils/setup';
 import { createDOLO, createRegularAirdrop } from './tokenomics-ecosystem-utils';
 import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
@@ -51,6 +56,7 @@ describe('RegularAirdrop', () => {
     invalidProof = tree.getHexProof(invalidLeaf);
 
     regularAirdrop = await createRegularAirdrop(core, dolo, mockVeToken);
+
     await regularAirdrop.connect(core.governance).ownerSetMerkleRoot(merkleRoot);
     await regularAirdrop.connect(core.governance).ownerSetHandler(core.hhUser5.address);
     await core.dolomiteMargin.ownerSetGlobalOperator(regularAirdrop.address, true);
@@ -67,6 +73,8 @@ describe('RegularAirdrop', () => {
 
   describe('#constructor', () => {
     it('should work normally', async () => {
+      expect(await regularAirdrop.DOLOMITE_MARGIN()).to.eq(core.dolomiteMargin.address);
+      expect(await regularAirdrop.DOLOMITE_REGISTRY()).to.eq(core.dolomiteRegistry.address);
       expect(await regularAirdrop.DOLO()).to.eq(dolo.address);
       expect(await regularAirdrop.VE_DOLO()).to.eq(mockVeToken.address);
       expect(await regularAirdrop.merkleRoot()).to.eq(merkleRoot);

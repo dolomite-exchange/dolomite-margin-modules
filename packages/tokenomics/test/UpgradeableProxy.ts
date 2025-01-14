@@ -1,68 +1,43 @@
 import {
-  createContractWithAbi,
-  createContractWithLibrary,
+  createContractWithAbi
 } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { ADDRESS_ZERO, Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectEvent, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { expect } from 'chai';
-import { defaultAbiCoder, parseEther } from 'ethers/lib/utils';
 import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import {
-  OARB,
-  OARB__factory,
-  TestVesterImplementationV2,
-  TestVesterImplementationV2__factory,
-  VesterImplementationLibForV2,
-  VesterImplementationLibForV2__factory,
+  DOLO,
+  TestOptionAirdrop,
+  TestOptionAirdrop__factory,
   UpgradeableProxy,
   UpgradeableProxy__factory,
 } from '../src/types';
-import { createSafeDelegateLibrary } from 'packages/base/test/utils/ecosystem-utils/general';
-import { BaseContract } from 'ethers';
+import { createDOLO, createTestOptionAirdropImplementation } from './tokenomics-ecosystem-utils';
 
 describe('UpgradeableProxy', () => {
   let snapshotId: string;
 
   let core: CoreProtocolArbitrumOne;
-  let implementation: TestVesterImplementationV2;
-  let oARB: OARB;
-  let library: VesterImplementationLibForV2;
-  let safeDelegateCallLib: BaseContract;
-
+  let dolo: DOLO;
+  let optionAirdrop: TestOptionAirdrop;
   let proxy: UpgradeableProxy;
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
-    oARB = await createContractWithAbi<OARB>(OARB__factory.abi, OARB__factory.bytecode, [core.dolomiteMargin.address]);
-    safeDelegateCallLib = await createSafeDelegateLibrary();
+    dolo = await createDOLO(core);
 
-    library = await createContractWithAbi<VesterImplementationLibForV2>(
-      VesterImplementationLibForV2__factory.abi,
-      VesterImplementationLibForV2__factory.bytecode,
-      [],
+    const optionAirdropImplementation = await createTestOptionAirdropImplementation(core, dolo);
+    const calldata = await optionAirdropImplementation.populateTransaction.initialize(
+      core.hhUser5.address,
     );
-    implementation = await createContractWithLibrary<TestVesterImplementationV2>(
-      'TestVesterImplementationV2',
-      { VesterImplementationLibForV2: library.address , SafeDelegateCallLib: safeDelegateCallLib.address },
-      [
-        core.dolomiteMargin.address,
-        core.dolomiteRegistry.address,
-        core.tokens.weth.address,
-        core.tokens.arb!.address,
-      ],
-    );
-
-    const calldata = await implementation.populateTransaction.initialize(
-      defaultAbiCoder.encode(['address'], [oARB.address]),
-    );
-
     proxy = await createContractWithAbi<UpgradeableProxy>(
       UpgradeableProxy__factory.abi,
       UpgradeableProxy__factory.bytecode,
-      [implementation.address, core.dolomiteMargin.address, calldata.data!],
+      [optionAirdropImplementation.address, core.dolomiteMargin.address, calldata.data!],
     );
+    optionAirdrop = TestOptionAirdrop__factory.connect(proxy.address, core.hhUser1);
 
     snapshotId = await snapshot();
   });
@@ -73,23 +48,13 @@ describe('UpgradeableProxy', () => {
 
   describe('#fallback', () => {
     it('should work normally', async () => {
-      const vester = TestVesterImplementationV2__factory.connect(proxy.address, core.hhUser1);
-      expect(await vester.levelRequestFee()).to.eq(parseEther('0.0003'));
+      expect(await optionAirdrop.treasury()).to.eq(core.hhUser5.address);
     });
   });
 
   describe('#upgradeTo', () => {
     it('should work normally', async () => {
-      const newImplementation = await createContractWithLibrary<TestVesterImplementationV2>(
-        'TestVesterImplementationV2',
-        { VesterImplementationLibForV2: library.address , SafeDelegateCallLib: safeDelegateCallLib.address },
-        [
-          core.dolomiteMargin.address,
-          core.dolomiteRegistry.address,
-          core.tokens.weth.address,
-          core.tokens.arb!.address,
-        ],
-      );
+      const newImplementation = await createTestOptionAirdropImplementation(core, dolo);
       await expectEvent(
         proxy,
         await proxy.connect(core.governance).upgradeTo(newImplementation.address),
@@ -101,7 +66,7 @@ describe('UpgradeableProxy', () => {
 
     it('should fail when not called by owner', async () => {
       await expectThrow(
-        proxy.connect(core.hhUser1).upgradeTo(implementation.address),
+        proxy.connect(core.hhUser1).upgradeTo(optionAirdrop.address),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
@@ -116,18 +81,9 @@ describe('UpgradeableProxy', () => {
 
   describe('#upgradeToAndCall', () => {
     it('should work normally', async () => {
-      const newImplementation = await createContractWithLibrary<TestVesterImplementationV2>(
-        'TestVesterImplementationV2',
-        { VesterImplementationLibForV2: library.address , SafeDelegateCallLib: safeDelegateCallLib.address },
-        [
-          core.dolomiteMargin.address,
-          core.dolomiteRegistry.address,
-          core.tokens.weth.address,
-          core.tokens.arb!.address,
-        ],
-      );
-      const calldata = await newImplementation.populateTransaction.ownerSetForceClosePositionTax(
-        100,
+      const newImplementation = await createTestOptionAirdropImplementation(core, dolo);
+      const calldata = await newImplementation.populateTransaction.ownerSetTreasury(
+        core.hhUser3.address
       );
       await expectEvent(
         proxy,
@@ -136,18 +92,19 @@ describe('UpgradeableProxy', () => {
         { newImplementation: newImplementation.address },
       );
       expect(await proxy.implementation()).to.equal(newImplementation.address);
+      expect(await optionAirdrop.treasury()).to.equal(core.hhUser3.address);
     });
 
     it('should fail when not called by owner', async () => {
-      const calldata = await implementation.populateTransaction.forceClosePositionTax();
+      const calldata = await optionAirdrop.populateTransaction.ownerSetTreasury(core.hhUser1.address);
       await expectThrow(
-        proxy.connect(core.hhUser1).upgradeToAndCall(implementation.address, calldata.data!),
+        proxy.connect(core.hhUser1).upgradeToAndCall(optionAirdrop.address, calldata.data!),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
     it('should fail when new implementation is not a contract', async () => {
-      const calldata = await implementation.populateTransaction.forceClosePositionTax();
+      const calldata = await optionAirdrop.populateTransaction.ownerSetTreasury(core.hhUser1.address);
       await expectThrow(
         proxy.connect(core.governance).upgradeToAndCall(core.hhUser1.address, calldata.data!),
         'UpgradeableProxy: Implementation is not a contract',
@@ -155,22 +112,13 @@ describe('UpgradeableProxy', () => {
     });
 
     it('should fail when call to the new implementation fails', async () => {
-      const newImplementation = await createContractWithLibrary<TestVesterImplementationV2>(
-        'TestVesterImplementationV2',
-        { VesterImplementationLibForV2: library.address , SafeDelegateCallLib: safeDelegateCallLib.address },
-        [
-          core.dolomiteMargin.address,
-          core.dolomiteRegistry.address,
-          core.tokens.weth.address,
-          core.tokens.arb!.address,
-        ],
-      );
-      const calldata = await implementation.populateTransaction.ownerSetForceClosePositionTax(
-        10000000,
+      const newImplementation = await createTestOptionAirdropImplementation(core, dolo);
+      const calldata = await newImplementation.populateTransaction.ownerSetTreasury(
+        ADDRESS_ZERO
       );
       await expectThrow(
         proxy.connect(core.governance).upgradeToAndCall(newImplementation.address, calldata.data!),
-        'VesterImplementationV2: Invalid force close position tax',
+        'OptionAirdrop: Invalid treasury address',
       );
     });
   });

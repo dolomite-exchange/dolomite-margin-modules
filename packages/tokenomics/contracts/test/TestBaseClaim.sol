@@ -21,6 +21,7 @@
 pragma solidity ^0.8.9;
 
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
+import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import { BaseClaim } from "../BaseClaim.sol";
 
 
@@ -30,17 +31,17 @@ import { BaseClaim } from "../BaseClaim.sol";
  *
  * @notice  Test implementation for exposing areas for coverage testing
  */
-contract TestBaseClaim is BaseClaim {
+contract TestBaseClaim is BaseClaim, Initializable {
 
     bytes32 private constant _FILE = "TestBaseClaim";
 
     constructor(
-        address _dolomiteRegistry,
-        address _dolomiteMargin
+        address _dolomiteRegistry
     ) BaseClaim(
-        _dolomiteRegistry,
-        _dolomiteMargin
+        _dolomiteRegistry
     ) {} // solhint-disable-line
+
+    function initialize() external initializer {}
 
     function verifyMerkleProof(bytes32[] calldata _proof, uint256 _amount) external view returns (bool){
         address user = addressRemapping(msg.sender) == address(0) ? msg.sender : addressRemapping(msg.sender);

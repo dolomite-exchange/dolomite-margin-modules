@@ -1,8 +1,7 @@
 import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
-import { DOLO, VestingClaims, VestingClaims__factory } from '../src/types';
+import { DOLO, VestingClaims } from '../src/types';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol } from 'packages/base/test/utils/setup';
-import { createDOLO } from './tokenomics-ecosystem-utils';
-import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
+import { createDOLO, createVestingClaims } from './tokenomics-ecosystem-utils';
 import { Network, ONE_DAY_SECONDS, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
 import { expect } from 'chai';
 import { defaultAbiCoder, keccak256, parseEther } from 'ethers/lib/utils';
@@ -61,11 +60,8 @@ describe('VestingClaims', () => {
     validProof2 = tree.getHexProof(leaves[1]);
     invalidProof = tree.getHexProof(invalidLeaf);
 
-    claims = await createContractWithAbi<VestingClaims>(
-      VestingClaims__factory.abi,
-      VestingClaims__factory.bytecode,
-      [dolo.address, TEST_TGE_TIMESTAMP, DURATION, core.dolomiteRegistry.address, core.dolomiteMargin.address]
-    );
+    claims = await createVestingClaims(core, dolo, TEST_TGE_TIMESTAMP, DURATION);
+
     await claims.connect(core.governance).ownerSetMerkleRoot(merkleRoot);
     await claims.connect(core.governance).ownerSetHandler(core.hhUser5.address);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(claims.address, true);
@@ -82,7 +78,11 @@ describe('VestingClaims', () => {
 
   describe('#constructor', () => {
     it('should work normally', async () => {
+      expect(await claims.DOLOMITE_MARGIN()).to.eq(core.dolomiteMargin.address);
+      expect(await claims.DOLOMITE_REGISTRY()).to.eq(core.dolomiteRegistry.address);
       expect(await claims.DOLO()).to.eq(dolo.address);
+      expect(await claims.TGE_TIMESTAMP()).to.eq(TEST_TGE_TIMESTAMP);
+      expect(await claims.DURATION()).to.eq(DURATION);
       expect(await claims.merkleRoot()).to.eq(merkleRoot);
     });
   });
@@ -101,6 +101,7 @@ describe('VestingClaims', () => {
         claims.connect(core.hhUser1).claim(validProof1, user1Amount),
         'VestingClaims: No amount to claim'
       );
+      await setNextBlockTimestamp(TEST_TGE_TIMESTAMP + ONE_YEAR_SECONDS);
       const res = await claims.connect(core.hhUser1).claim(validProof1, user1Amount);
       await expectEvent(core.eventEmitterRegistry, res, 'RewardClaimed', {
         distributor: claims.address,
