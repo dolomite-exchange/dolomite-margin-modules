@@ -171,6 +171,18 @@ export const base_config: HardhatUserConfig = {
   solidity: {
     compilers: [
       {
+        version: '0.8.24',
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200,
+            details: {
+              yul: false, // To fix some extraneous "stack too deep" errors that don't make sense, set this to false.
+            },
+          },
+        },
+      },
+      {
         version: '0.8.9',
         settings: {
           optimizer: {
