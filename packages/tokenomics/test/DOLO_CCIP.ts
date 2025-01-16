@@ -27,6 +27,7 @@ import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
 import { BigNumber, ContractTransaction } from 'ethers';
 import { CoreProtocolBase } from 'packages/base/test/utils/core-protocols/core-protocol-base';
 import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
+import { ethers } from 'hardhat';
 
 const EMPTY_RATE_LIMITER_CONFIG = {
   isEnabled: false,
@@ -195,6 +196,15 @@ async function getFeeAndSendTokens(
   token: IERC20,
   amount: BigNumber
 ): Promise<ContractTransaction> {
+  const functionSelector = ethers.utils.keccak256(ethers.utils.toUtf8Bytes('CCIP EVMExtraArgsV2')).slice(0, 10);
+  const gasLimit = 0; // Set gas limit to 0 as we are only transferring tokens and not calling a contract on the destination chain
+  const allowOutOfOrderExecution = true; // Allow out of order execution - the message can be executed in any order relative to other messages from the same sender
+  const extraArgs = defaultAbiCoder.encode(
+    ["uint256", "bool"],
+    [gasLimit, allowOutOfOrderExecution]
+  );
+  const encodedExtraArgs = functionSelector + extraArgs.slice(2);
+
   const fee = await ccipRouter.connect(sender).getFee(
     destinationChainSelector,
     {
@@ -213,7 +223,7 @@ async function getFeeAndSendTokens(
       data: '0x',
       tokenAmounts: [{ amount, token: token.address }],
       feeToken: ADDRESS_ZERO,
-      extraArgs: '0x'
+      extraArgs: encodedExtraArgs
     },
     { value: fee }
   );
