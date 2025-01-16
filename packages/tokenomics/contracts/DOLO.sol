@@ -154,6 +154,4 @@ contract DOLO is ERC20Burnable, OnlyDolomiteMargin, IDOLO {
         minters[_minter] = _isMinter;
         emit MinterSet(_minter, _isMinter);
     }
-
-
 }

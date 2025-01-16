@@ -12,9 +12,6 @@ describe('DOLO', () => {
   let core: CoreProtocolArbitrumOne;
   let dolo: DOLO;
 
-  let minterRole: string;
-  let burnerRole: string;
-
   let snapshotId: string;
 
   before(async () => {
