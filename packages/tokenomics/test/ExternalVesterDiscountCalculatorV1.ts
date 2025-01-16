@@ -23,7 +23,7 @@ describe('ExternalVesterDiscountCalculatorV1', () => {
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
 
-    const dolo = await createDOLO(core);
+    const dolo = await createDOLO(core, core.hhUser5.address);
     const voter = await createContractWithAbi<VoterAlwaysActive>(
       VoterAlwaysActive__factory.abi,
       VoterAlwaysActive__factory.bytecode,

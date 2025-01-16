@@ -121,12 +121,14 @@ describe('DOLO', () => {
 
   describe('#ownerSetMinter', () => {
     it('should work normally', async () => {
+      expect(await dolo.isMinter(core.hhUser5.address)).to.be.false;
       const res = await dolo.connect(core.governance).ownerSetMinter(core.hhUser5.address, true);
       await expectEvent(dolo, res, 'MinterSet', {
         minter: core.hhUser5.address,
         isMinter: true
       });
       expect(await dolo.minters(core.hhUser5.address)).to.be.true;
+      expect(await dolo.isMinter(core.hhUser5.address)).to.be.true;
     });
 
     it('should fail if address zero', async () => {

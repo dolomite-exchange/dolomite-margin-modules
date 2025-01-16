@@ -1,5 +1,5 @@
 import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
-import { TestBaseClaim, TestBaseClaim__factory, UpgradeableProxy, UpgradeableProxy__factory } from '../src/types';
+import { TestBaseClaim, TestBaseClaim__factory } from '../src/types';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol, setupDAIBalance } from 'packages/base/test/utils/setup';
 import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
 import { ADDRESS_ZERO, BYTES_ZERO, Network, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
@@ -48,7 +48,7 @@ describe('BaseClaim', () => {
       [core.dolomiteRegistry.address]
     );
     const calldata = await baseClaimImplementation.populateTransaction.initialize();
-    const baseClaimProxy = await createUpgradeableProxy(core, baseClaimImplementation, calldata.data!);
+    const baseClaimProxy = await createUpgradeableProxy(core, baseClaimImplementation, calldata);
     baseClaim = TestBaseClaim__factory.connect(baseClaimProxy.address, core.hhUser1);
 
     await baseClaim.connect(core.governance).ownerSetMerkleRoot(merkleRoot);

@@ -77,7 +77,7 @@ describe('Tokenomics', () => {
       network: Network.ArbitrumOne,
       blockNumber: 219_404_000,
     });
-    dolo = await createDOLO(core);
+    dolo = await createDOLO(core, core.gnosisSafe.address);
     owner = core.governance;
     await core.testEcosystem!.testPriceOracle.setPrice(dolo.address, parseEther('0.25'));
     await core.oracleAggregatorV2.ownerInsertOrUpdateToken({
@@ -153,16 +153,14 @@ describe('Tokenomics', () => {
     await expectWalletBalance(core.hhUser2.address, oDolo, O_DOLO_AMOUNT);
 
     // Pair token
-    await dolo.connect(owner).mint(PAIR_AMOUNT.mul(2));
-    await dolo.connect(owner).transfer(core.hhUser1.address, PAIR_AMOUNT);
-    await dolo.connect(owner).transfer(core.hhUser1.address, PAIR_AMOUNT);
+    await dolo.connect(core.gnosisSafe).transfer(core.hhUser1.address, PAIR_AMOUNT.mul(2));
 
     // Payment token
     await setupWETHBalance(core, core.hhUser1, MAX_PAYMENT_AMOUNT, vester);
     await setupWETHBalance(core, core.hhUser2, MAX_PAYMENT_AMOUNT, vester);
 
     // Reward token
-    await dolo.connect(owner).mint(TOTAL_REWARD_AMOUNT);
+    await dolo.connect(core.gnosisSafe).transfer(owner.address, TOTAL_REWARD_AMOUNT);
     await dolo.connect(owner).approve(vester.address, TOTAL_REWARD_AMOUNT);
     await vester.connect(owner).ownerDepositRewardToken(TOTAL_REWARD_AMOUNT);
 
@@ -300,8 +298,7 @@ describe('Tokenomics', () => {
       await vester.vest(ONE_WEEK, O_DOLO_AMOUNT, O_DOLO_AMOUNT);
       await increase(ONE_WEEK);
 
-      await dolo.connect(core.governance).mint(1);
-      await dolo.connect(core.governance).transfer(core.hhUser1.address, 1);
+      await dolo.connect(core.gnosisSafe).transfer(core.hhUser1.address, 1);
       await dolo.connect(core.hhUser1).approve(veDolo.address, 1);
       await veDolo.create_lock(1, TWO_YEARS);
       await veDolo.approve(vester.address, 1);
@@ -387,8 +384,7 @@ describe('Tokenomics', () => {
     });
 
     it('should fail if veNft is already unlocked', async () => {
-      await dolo.connect(core.governance).mint(1);
-      await dolo.connect(core.governance).transfer(core.hhUser1.address, 1);
+      await dolo.connect(core.gnosisSafe).transfer(core.hhUser1.address, 1);
       await dolo.connect(core.hhUser1).approve(veDolo.address, 1);
       await veDolo.create_lock(1, ONE_WEEK);
 
@@ -426,8 +422,7 @@ describe('Tokenomics', () => {
     });
 
     it('should fail if cost is too high for max payment', async () => {
-      await dolo.connect(core.governance).mint(1);
-      await dolo.connect(core.governance).transfer(core.hhUser1.address, 1);
+      await dolo.connect(core.gnosisSafe).transfer(core.hhUser1.address, 1);
       await dolo.connect(core.hhUser1).approve(veDolo.address, 1);
       await veDolo.create_lock(1, 365 * ONE_DAY_SECONDS);
       await setupAllowancesForVesting();
@@ -643,7 +638,7 @@ describe('Tokenomics', () => {
 
   describe('#ownerDepositRewardToken', () => {
     it('should work normally', async () => {
-      await dolo.connect(owner).mint(REWARD_AMOUNT);
+      await dolo.connect(core.gnosisSafe).transfer(owner.address, REWARD_AMOUNT);
       await dolo.connect(owner).approve(vester.address, REWARD_AMOUNT);
       expect(await vester.pushedTokens()).to.eq(TOTAL_REWARD_AMOUNT);
 

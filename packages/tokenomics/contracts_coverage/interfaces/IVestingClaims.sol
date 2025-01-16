@@ -20,6 +20,8 @@
 
 pragma solidity ^0.8.9;
 
+import { IBaseClaim } from "./IBaseClaim.sol";
+
 
 /**
  * @title   IVestingClaims
@@ -27,7 +29,7 @@ pragma solidity ^0.8.9;
  *
  * @notice  Interface for DOLO vesting claims contract
  */
-interface IVestingClaims {
+interface IVestingClaims is IBaseClaim {
 
     struct VestingClaimsStorage {
         mapping(address => uint256) released;

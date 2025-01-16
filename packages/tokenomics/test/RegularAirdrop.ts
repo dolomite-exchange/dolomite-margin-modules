@@ -61,8 +61,7 @@ describe('RegularAirdrop', () => {
     await regularAirdrop.connect(core.governance).ownerSetHandler(core.hhUser5.address);
     await core.dolomiteMargin.ownerSetGlobalOperator(regularAirdrop.address, true);
 
-    await dolo.connect(core.governance).mint(parseEther('15'));
-    await dolo.connect(core.governance).transfer(regularAirdrop.address, parseEther('15'));
+    await dolo.connect(core.hhUser5).transfer(regularAirdrop.address, parseEther('15'));
     await regularAirdrop.connect(core.hhUser5).ownerSetClaimEnabled(true);
 
     snapshotId = await snapshot();

@@ -41,9 +41,6 @@ contract DOLO is ERC20Burnable, OnlyDolomiteMargin, IDOLO {
 
     bytes32 private constant _FILE = "DOLO";
 
-    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
-    bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
-
     // ===================================================
     // ================== State Variables ================
     // ===================================================
@@ -111,6 +108,10 @@ contract DOLO is ERC20Burnable, OnlyDolomiteMargin, IDOLO {
         return ccipAdmin;
     }
 
+    function isMinter(address _minter) external view returns (bool) {
+        return minters[_minter];
+    }
+
     function owner() external view returns (address) {
         return DOLOMITE_MARGIN_OWNER();
     }
@@ -160,6 +161,4 @@ contract DOLO is ERC20Burnable, OnlyDolomiteMargin, IDOLO {
         minters[_minter] = _isMinter;
         emit MinterSet(_minter, _isMinter);
     }
-
-
 }

@@ -21,6 +21,7 @@
 pragma solidity ^0.8.9;
 
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import { IBaseClaim } from "./IBaseClaim.sol";
 
 
 /**
@@ -29,7 +30,7 @@ import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableS
  *
  * @notice  Interface for DOLO option airdrop contract
  */
-interface IOptionAirdrop {
+interface IOptionAirdrop is IBaseClaim {
 
     struct OptionAirdropStorage {
         address treasury;

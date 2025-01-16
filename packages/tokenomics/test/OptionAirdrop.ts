@@ -63,8 +63,7 @@ describe('OptionAirdrop', () => {
     await optionAirdrop.connect(core.governance).ownerSetMerkleRoot(merkleRoot);
     await core.dolomiteMargin.ownerSetGlobalOperator(optionAirdrop.address, true);
 
-    await dolo.connect(core.governance).mint(parseEther('15'));
-    await dolo.connect(core.governance).transfer(optionAirdrop.address, parseEther('15'));
+    await dolo.connect(core.hhUser5).transfer(optionAirdrop.address, parseEther('15'));
 
     await setupNativeUSDCBalance(core, core.hhUser1, usdcAmount, core.dolomiteMargin);
     await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.nativeUsdc, usdcAmount);

@@ -38,5 +38,7 @@ interface IDOLO {
 
     function getCCIPAdmin() external view returns (address);
 
+    function isMinter(address _minter) external view returns (bool);
+
     function owner() external view returns (address);
 }

@@ -3,6 +3,7 @@ import {
   DOLO,
   DOLO__factory,
   ExternalVesterDiscountCalculatorV1,
+  ExternalVesterDiscountCalculatorV1__factory,
   IERC20,
   IVesterDiscountCalculator,
   MockVotingEscrow,
@@ -42,7 +43,6 @@ import {
   getVestingClaimsConstructorParams
 } from '../src/tokenomics-constructors';
 import { BigNumberish, PopulatedTransaction } from 'ethers';
-import { ExternalVesterDiscountCalculatorV1__factory } from 'packages/liquidity-mining/src/types';
 import { getUpgradeableProxyConstructorParams } from 'packages/base/src/utils/constructors/dolomite';
 
 export async function createDOLO<T extends NetworkType>(

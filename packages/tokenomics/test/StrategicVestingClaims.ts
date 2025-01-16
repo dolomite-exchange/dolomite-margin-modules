@@ -63,8 +63,7 @@ describe('StrategicVestingClaims', () => {
     await claims.connect(core.governance).ownerSetHandler(core.hhUser5.address);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(claims.address, true);
 
-    await dolo.connect(core.governance).mint(parseEther('100'));
-    await dolo.connect(core.governance).transfer(claims.address, parseEther('100'));
+    await dolo.connect(core.hhUser5).transfer(claims.address, parseEther('100'));
     await claims.connect(core.hhUser5).ownerSetClaimEnabled(true);
 
     snapshotId = await snapshot();

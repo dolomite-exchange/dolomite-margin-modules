@@ -20,6 +20,8 @@
 
 pragma solidity ^0.8.9;
 
+import { IBaseClaim } from "./IBaseClaim.sol";
+
 
 /**
  * @title   IRegularAirdrop
@@ -27,7 +29,7 @@ pragma solidity ^0.8.9;
  *
  * @notice  Interface for DOLO regular airdrop contract
  */
-interface IRegularAirdrop {
+interface IRegularAirdrop is IBaseClaim {
 
     struct RegularAirdropStorage {
         mapping(address => bool) userToClaimStatus;

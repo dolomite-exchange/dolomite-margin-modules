@@ -171,7 +171,7 @@ export const base_config: HardhatUserConfig = {
   solidity: {
     compilers: [
       {
-        version: '0.8.24',
+        version: '0.8.9',
         settings: {
           optimizer: {
             enabled: true,
@@ -183,7 +183,7 @@ export const base_config: HardhatUserConfig = {
         },
       },
       {
-        version: '0.8.9',
+        version: '0.8.24',
         settings: {
           optimizer: {
             enabled: true,

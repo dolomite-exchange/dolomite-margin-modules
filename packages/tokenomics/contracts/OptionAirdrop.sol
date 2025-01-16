@@ -102,7 +102,7 @@ contract OptionAirdrop is BaseClaim, ReentrancyGuardUpgradeable, IOptionAirdrop 
         uint256 _fromAccountNumber
     ) external nonReentrant onlyClaimEnabled {
         OptionAirdropStorage storage s = _getOptionAirdropStorage();
-        address user = addressRemapping(msg.sender) == address(0) ? msg.sender : addressRemapping(msg.sender);
+        address user = getUserOrRemappedAddress(msg.sender);
 
         // @audit @Corey, double check all uses of user vs msg.sender
         Require.that(

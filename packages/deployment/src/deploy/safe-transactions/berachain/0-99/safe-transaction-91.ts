@@ -8,6 +8,7 @@ import getScriptName from '../../../../utils/get-script-name';
 import { parseEther } from 'ethers/lib/utils';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 
+// @todo Update these values
 const REGULAR_AIRDROP_AMOUNT = parseEther('1000');
 const REGULAR_AIRDROP_MERKLE_ROOT = '0x0000000000000000000000000000000000000000000000000000000000000000';
 
