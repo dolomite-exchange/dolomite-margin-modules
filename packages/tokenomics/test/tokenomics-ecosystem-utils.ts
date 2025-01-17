@@ -2,6 +2,8 @@ import { createContractWithAbi, createContractWithLibrary, createContractWithNam
 import {
   DOLO,
   DOLO__factory,
+  DOLOBuybackPool,
+  DOLOBuybackPool__factory,
   ExternalVesterDiscountCalculatorV1,
   ExternalVesterDiscountCalculatorV1__factory,
   IERC20,
@@ -19,6 +21,8 @@ import {
   TestOptionAirdrop__factory,
   TestVeExternalVesterImplementationV1,
   TestVeExternalVesterImplementationV1__factory,
+  TestVeToken,
+  TestVeToken__factory,
   UpgradeableProxy,
   UpgradeableProxy__factory,
   VeFeeCalculator,
@@ -31,6 +35,7 @@ import {
 import { ADDRESS_ZERO, NetworkType } from 'packages/base/src/utils/no-deps-constants';
 import { CoreProtocolType } from 'packages/base/test/utils/setup';
 import {
+  getDOLOBuybackPoolConstructorParams,
   getDOLOConstructorParams,
   getExternalVesterDiscountCalculatorConstructorParams,
   getODOLOConstructorParams,
@@ -63,6 +68,18 @@ export async function createODOLO<T extends NetworkType>(
     ODOLO__factory.abi,
     ODOLO__factory.bytecode,
     getODOLOConstructorParams(core)
+  );
+}
+
+export async function createDOLOBuybackPool<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  dolo: IERC20,
+  oDolo: IERC20
+): Promise<DOLOBuybackPool> {
+  return createContractWithAbi<DOLOBuybackPool>(
+    DOLOBuybackPool__factory.abi,
+    DOLOBuybackPool__factory.bytecode,
+    getDOLOBuybackPoolConstructorParams(core, dolo, oDolo)
   );
 }
 
@@ -105,6 +122,16 @@ export async function createVotingEscrow<T extends NetworkType>(
     getUpgradeableProxyConstructorParams(implementation.address, initializeCalldata, core.dolomiteMargin),
   );
   return VotingEscrow__factory.connect(proxy.address, core.hhUser1);
+}
+
+export async function createTestVeToken(
+  underlyingToken: IERC20,
+): Promise<TestVeToken> {
+  return createContractWithAbi<TestVeToken>(
+    TestVeToken__factory.abi,
+    TestVeToken__factory.bytecode,
+    [underlyingToken.address],
+  );
 }
 
 export async function createExternalVesterDiscountCalculatorV1(

@@ -25,6 +25,14 @@ export function getODOLOConstructorParams<T extends NetworkType>(
   return [core.governance.address, 'oDOLO Token', 'oDOLO'];
 }
 
+export function getDOLOBuybackPoolConstructorParams<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  dolo: IERC20,
+  oDolo: IERC20
+): any[] {
+  return [dolo.address, oDolo.address, core.dolomiteMargin.address];
+}
+
 export function getVeFeeCalculatorConstructorParams<T extends NetworkType>(
   core: CoreProtocolType<T>
 ): any[] {
