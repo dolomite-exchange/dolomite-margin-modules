@@ -45,17 +45,17 @@ contract DOLO is ERC20Burnable, OnlyDolomiteMargin, IDOLO {
     // ================== State Variables ================
     // ===================================================
 
-    address public ccipAdmin;
-    mapping(address => bool) public minters;
+    address private _ccipAdmin;
+    mapping(address => bool) private _mintersMap;
 
     // ==================================================================
     // ======================= Modifiers ===============================
     // ==================================================================
 
     modifier onlyMinter(address _minter) {
-        if (minters[_minter]) { /* FOR COVERAGE TESTING */ }
+        if (_mintersMap[_minter]) { /* FOR COVERAGE TESTING */ }
         Require.that(
-            minters[_minter],
+            _mintersMap[_minter],
             _FILE,
             "Not a minter"
         );
@@ -92,8 +92,8 @@ contract DOLO is ERC20Burnable, OnlyDolomiteMargin, IDOLO {
     // ======================== Admin Functions =========================
     // ==================================================================
 
-    function ownerSetCCIPAdmin(address _ccipAdmin) external onlyDolomiteMarginOwner(msg.sender) {
-        _ownerSetCCIPAdmin(_ccipAdmin);
+    function ownerSetCCIPAdmin(address _newAdmin) external onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetCCIPAdmin(_newAdmin);
     }
 
     function ownerSetMinter(address _minter, bool _isMinter) external onlyDolomiteMarginOwner(msg.sender) {
@@ -105,11 +105,11 @@ contract DOLO is ERC20Burnable, OnlyDolomiteMargin, IDOLO {
     // ==================================================================
 
     function getCCIPAdmin() external view returns (address) {
-        return ccipAdmin;
+        return _ccipAdmin;
     }
 
     function isMinter(address _minter) external view returns (bool) {
-        return minters[_minter];
+        return _mintersMap[_minter];
     }
 
     function owner() external view returns (address) {
@@ -140,15 +140,15 @@ contract DOLO is ERC20Burnable, OnlyDolomiteMargin, IDOLO {
         super._approve(_owner, _spender, _amount);
     }
 
-    function _ownerSetCCIPAdmin(address _ccipAdmin) internal {
-        if (_ccipAdmin != address(0)) { /* FOR COVERAGE TESTING */ }
+    function _ownerSetCCIPAdmin(address _newAdmin) internal {
+        if (_newAdmin != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-            _ccipAdmin != address(0),
+            _newAdmin != address(0),
             _FILE,
             "Invalid CCIP admin"
         );
-        ccipAdmin = _ccipAdmin;
-        emit CCIPAdminSet(_ccipAdmin);
+        _ccipAdmin = _newAdmin;
+        emit CCIPAdminSet(_newAdmin);
     }
 
     function _ownerSetMinter(address _minter, bool _isMinter) internal {
@@ -158,7 +158,7 @@ contract DOLO is ERC20Burnable, OnlyDolomiteMargin, IDOLO {
             _FILE,
             "Invalid minter"
         );
-        minters[_minter] = _isMinter;
+        _mintersMap[_minter] = _isMinter;
         emit MinterSet(_minter, _isMinter);
     }
 }

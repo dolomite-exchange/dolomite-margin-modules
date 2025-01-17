@@ -32,7 +32,7 @@ import { expect } from 'chai';
 import { ethers } from 'hardhat';
 import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
 import { createTestDiscountCalculator } from 'packages/liquidity-mining/test/liquidity-mining-ecosystem-utils';
-import { convertToNearestWeek, expectEmptyExternalVesterPosition } from 'packages/liquidity-mining/test/liquidityMining-utils';
+import { convertToNearestWeek, expectEmptyExternalVesterPosition } from './tokenomics-utils';
 
 const defaultAccountNumber = ZERO_BI;
 const ONE_WEEK = BigNumber.from('604800');

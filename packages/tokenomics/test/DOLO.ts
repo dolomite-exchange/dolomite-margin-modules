@@ -99,7 +99,7 @@ describe('DOLO', () => {
     it('should work normally', async () => {
       const res = await dolo.connect(core.governance).ownerSetCCIPAdmin(core.hhUser5.address);
       await expectEvent(dolo, res, 'CCIPAdminSet', {
-        ccipAdmin: core.hhUser5.address
+        newAdmin: core.hhUser5.address
       });
       expect(await dolo.getCCIPAdmin()).to.eq(core.hhUser5.address);
     });
@@ -127,7 +127,6 @@ describe('DOLO', () => {
         minter: core.hhUser5.address,
         isMinter: true
       });
-      expect(await dolo.minters(core.hhUser5.address)).to.be.true;
       expect(await dolo.isMinter(core.hhUser5.address)).to.be.true;
     });
 

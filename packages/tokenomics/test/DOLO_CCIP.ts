@@ -197,10 +197,12 @@ async function getFeeAndSendTokens(
   amount: BigNumber
 ): Promise<ContractTransaction> {
   const functionSelector = ethers.utils.keccak256(ethers.utils.toUtf8Bytes('CCIP EVMExtraArgsV2')).slice(0, 10);
-  const gasLimit = 0; // Set gas limit to 0 as we are only transferring tokens and not calling a contract on the destination chain
-  const allowOutOfOrderExecution = true; // Allow out of order execution - the message can be executed in any order relative to other messages from the same sender
+  // Set gas limit to 0 as we are only transferring tokens and not calling a contract on the destination chain
+  const gasLimit = 0;
+  // Allow out of order execution - message can be executed in any order relative to other messages from same sender
+  const allowOutOfOrderExecution = true;
   const extraArgs = defaultAbiCoder.encode(
-    ["uint256", "bool"],
+    ['uint256', 'bool'],
     [gasLimit, allowOutOfOrderExecution]
   );
   const encodedExtraArgs = functionSelector + extraArgs.slice(2);

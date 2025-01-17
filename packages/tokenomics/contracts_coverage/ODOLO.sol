@@ -43,7 +43,7 @@ contract ODOLO is ERC20, Ownable {
     // ===================================================
 
     modifier onlyHandler() {
-        require(_handlersMap[msg.sender], "oARB: Invalid handler");
+        require(_handlersMap[msg.sender], "oDOLO: Invalid handler");
         _;
     }
 

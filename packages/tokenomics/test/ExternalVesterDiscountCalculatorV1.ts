@@ -33,16 +33,11 @@ describe('ExternalVesterDiscountCalculatorV1', () => {
   let veDolo: TestVeToken;
   let calculator: ExternalVesterDiscountCalculatorV1;
   let timestamp: BigNumber;
+
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
 
     const dolo = await createDOLO(core, core.hhUser5.address);
-    const voter = await createContractWithAbi<VoterAlwaysActive>(
-      VoterAlwaysActive__factory.abi,
-      VoterAlwaysActive__factory.bytecode,
-      [],
-    );
-    const feeCalculator = await createVeFeeCalculator(core);
     veDolo = await createTestVeToken(dolo);
     calculator = await createExternalVesterDiscountCalculatorV1(veDolo as any);
 
