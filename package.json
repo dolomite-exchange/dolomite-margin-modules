@@ -30,6 +30,7 @@
     "@babel/core": "^7.20.5",
     "@babel/eslint-parser": "^7.19.1",
     "@chainlink/contracts": "^0.6.1",
+    "@chainlink/local": "^0.2.3",
     "@dolomite-exchange/dolomite-margin": "^0.13.1",
     "@dolomite-exchange/zap-sdk": "^0.2.47-a",
     "@nomicfoundation/hardhat-network-helpers": "^1.0.10",

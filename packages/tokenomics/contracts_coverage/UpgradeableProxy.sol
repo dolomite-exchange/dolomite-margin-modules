@@ -51,11 +51,13 @@ contract UpgradeableProxy is OnlyDolomiteMarginForUpgradeable {
     ) {
         _setImplementation(_implementation);
         _setDolomiteMarginViaSlot(_dolomiteMargin);
-        Address.functionDelegateCall(
-            implementation(),
-            _initializationCalldata,
-            "UpgradeableProxy: Initialization failed"
-        );
+        if (_initializationCalldata.length > 0) {
+            Address.functionDelegateCall(
+                implementation(),
+                _initializationCalldata,
+                "UpgradeableProxy: Initialization failed"
+            );
+        }
     }
 
     // ===================== Functions =====================

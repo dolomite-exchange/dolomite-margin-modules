@@ -48,7 +48,6 @@ contract VeFeeCalculator is IVeFeeCalculator, OnlyDolomiteMargin {
     // =========================================================
 
     uint256 public burnFee;
-    uint256 public decayTimestamp;
 
     // ===========================================================
     // ======================= Constructor =======================
@@ -76,7 +75,6 @@ contract VeFeeCalculator is IVeFeeCalculator, OnlyDolomiteMargin {
             return (0, 0);
         }
 
-        assert(decayTimestamp != 0);
         uint256 burnFeeAmount = burnFee * _amount / BASE;
         uint256 recoupFeeAmount = _calculateRecoupFee(_lockEndTime - block.timestamp) * _amount / BASE;
 

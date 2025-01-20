@@ -7,25 +7,25 @@ import { expectEvent, expectThrow, expectWalletBalance } from 'packages/base/tes
 import { CustomTestToken } from 'packages/base/src/types';
 import { createTestToken } from 'packages/base/src/utils/dolomite-utils';
 import { parseEther } from 'ethers/lib/utils';
-import { BuybackPool } from '../src/types';
-import { createBuybackPool } from './liquidity-mining-ecosystem-utils';
+import { DOLOBuybackPool } from '../src/types';
+import { createDOLOBuybackPool } from './tokenomics-ecosystem-utils';
 
 const tokenAmount = parseEther('1');
 
-describe('BuybackPool', () => {
+describe('DOLOBuybackPool', () => {
   let snapshotId: string;
 
   let core: CoreProtocolArbitrumOne;
-  let buybackPool: BuybackPool;
-  let rewardToken: CustomTestToken;
-  let paymentToken: CustomTestToken;
+  let buybackPool: DOLOBuybackPool;
+  let dolo: CustomTestToken;
+  let odolo: CustomTestToken;
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
-    rewardToken = await createTestToken();
-    paymentToken = await createTestToken();
+    dolo = await createTestToken();
+    odolo = await createTestToken();
 
-    buybackPool = await createBuybackPool(core, rewardToken, paymentToken);
+    buybackPool = await createDOLOBuybackPool(core, dolo, odolo);
 
     snapshotId = await snapshot();
   });
@@ -37,22 +37,22 @@ describe('BuybackPool', () => {
   describe('#exchange', () => {
     it('should work normally', async () => {
       const rewardAmount = tokenAmount.div(20);
-      await paymentToken.addBalance(core.hhUser1.address, tokenAmount);
-      await rewardToken.addBalance(buybackPool.address, rewardAmount);
+      await odolo.addBalance(core.hhUser1.address, tokenAmount);
+      await dolo.addBalance(buybackPool.address, rewardAmount);
 
-      await paymentToken.connect(core.hhUser1).approve(buybackPool.address, tokenAmount);
+      await odolo.connect(core.hhUser1).approve(buybackPool.address, tokenAmount);
       await buybackPool.connect(core.hhUser1).exchange(tokenAmount);
 
-      await expectWalletBalance(core.hhUser1, paymentToken, 0);
-      await expectWalletBalance(buybackPool, paymentToken, tokenAmount);
-      await expectWalletBalance(core.hhUser1, rewardToken, rewardAmount);
-      await expectWalletBalance(buybackPool, rewardToken, 0);
+      await expectWalletBalance(core.hhUser1, odolo, 0);
+      await expectWalletBalance(buybackPool, odolo, tokenAmount);
+      await expectWalletBalance(core.hhUser1, dolo, rewardAmount);
+      await expectWalletBalance(buybackPool, dolo, 0);
     });
 
     it('should fail if pool does not have enough reward token', async () => {
-      await paymentToken.addBalance(core.hhUser1.address, tokenAmount);
+      await odolo.addBalance(core.hhUser1.address, tokenAmount);
 
-      await paymentToken.connect(core.hhUser1).approve(buybackPool.address, tokenAmount);
+      await odolo.connect(core.hhUser1).approve(buybackPool.address, tokenAmount);
       await expectThrow(
         buybackPool.connect(core.hhUser1).exchange(tokenAmount),
         'ERC20: transfer amount exceeds balance'
@@ -62,15 +62,15 @@ describe('BuybackPool', () => {
 
   describe('#ownerWithdrawpaymentToken', () => {
     it('should work normally', async () => {
-      await paymentToken.addBalance(buybackPool.address, tokenAmount);
-      await buybackPool.connect(core.governance).ownerWithdrawPaymentToken(core.governance.address);
-      expect(await paymentToken.balanceOf(buybackPool.address)).to.eq(0);
-      expect(await paymentToken.balanceOf(core.governance.address)).to.eq(tokenAmount);
+      await odolo.addBalance(buybackPool.address, tokenAmount);
+      await buybackPool.connect(core.governance).ownerWithdrawODolo(core.governance.address);
+      expect(await odolo.balanceOf(buybackPool.address)).to.eq(0);
+      expect(await odolo.balanceOf(core.governance.address)).to.eq(tokenAmount);
     });
 
     it('should fail if not called by owner', async () => {
       await expectThrow(
-        buybackPool.connect(core.hhUser1).ownerWithdrawPaymentToken(core.governance.address),
+        buybackPool.connect(core.hhUser1).ownerWithdrawODolo(core.governance.address),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
