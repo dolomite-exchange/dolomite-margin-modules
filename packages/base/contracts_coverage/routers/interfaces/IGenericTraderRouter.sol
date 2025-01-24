@@ -37,6 +37,12 @@ interface IGenericTraderRouter is IRouterBase {
         OutOfPosition
     }
 
+    struct SmartAssetSwapParams {
+        address user;
+        uint256 accountNumber;
+        uint256 amount;
+    }
+
     function swapExactInputForOutput(
         uint256 _isolationModeMarketId,
         IGenericTraderProxyV2.SwapExactInputForOutputParams memory _params

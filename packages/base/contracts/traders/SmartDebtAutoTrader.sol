@@ -66,7 +66,7 @@ contract SmartDebtAutoTrader is OnlyDolomiteMarginForUpgradeable, Initializable,
         IDolomiteStructs.Par memory /* oldInputPar */,
         IDolomiteStructs.Par memory /* newInputPar */,
         IDolomiteStructs.Wei memory _inputDeltaWei,
-        bytes memory _data
+        bytes memory /* data */
     ) external returns (IDolomiteStructs.AssetAmount memory) {
         PairPosition memory pairPosition = userToPair(_takerAccount.owner, _takerAccount.number);
         (bytes32 pairBytes, ,) = _getPairBytesAndSortMarketIds(_inputMarketId, _outputMarketId);
@@ -90,6 +90,11 @@ contract SmartDebtAutoTrader is OnlyDolomiteMarginForUpgradeable, Initializable,
                 outputMarketId
             );
             Require.that(
+                isSmartCollateralPair(inputMarketId, outputMarketId),
+                _FILE,
+                "Collateral pair is not active"
+            );
+            Require.that(
                 takerAccountWei.sign && takerAccountWei.value >= outputTokenAmount,
                 _FILE,
                 "Insufficient collateral"
@@ -99,6 +104,11 @@ contract SmartDebtAutoTrader is OnlyDolomiteMarginForUpgradeable, Initializable,
             IDolomiteStructs.Wei memory takerAccountWei = DOLOMITE_MARGIN().getAccountWei(
                 _takerAccount,
                 inputMarketId
+            );
+            Require.that(
+                isSmartDebtPair(inputMarketId, outputMarketId),
+                _FILE,
+                "Debt pair is not active"
             );
             Require.that(
                 !takerAccountWei.sign && takerAccountWei.value >= _inputDeltaWei.value,
@@ -187,13 +197,13 @@ contract SmartDebtAutoTrader is OnlyDolomiteMarginForUpgradeable, Initializable,
     // ==================== View Functions ====================
     // ========================================================
 
-    function isSmartDebtPair(uint256 _marketId1, uint256 _marketId2) external view returns (bool) {
+    function isSmartDebtPair(uint256 _marketId1, uint256 _marketId2) public view returns (bool) {
         SmartPairsStorage storage smartPairsStorage = _getSmartPairsStorage();
         (bytes32 pairBytes, ,) = _getPairBytesAndSortMarketIds(_marketId1, _marketId2);
         return smartPairsStorage.smartDebtPairs.contains(pairBytes);
     }
 
-    function isSmartCollateralPair(uint256 _marketId1, uint256 _marketId2) external view returns (bool) {
+    function isSmartCollateralPair(uint256 _marketId1, uint256 _marketId2) public view returns (bool) {
         SmartPairsStorage storage smartPairsStorage = _getSmartPairsStorage();
         (bytes32 pairBytes, ,) = _getPairBytesAndSortMarketIds(_marketId1, _marketId2);
         return smartPairsStorage.smartCollateralPairs.contains(pairBytes);

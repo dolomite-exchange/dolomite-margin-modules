@@ -30,10 +30,14 @@ import {
   RegistryProxy__factory,
   RouterProxy,
   RouterProxy__factory,
+  SmartDebtAutoTrader,
+  SmartDebtAutoTrader__factory,
   TestBorrowPositionRouter,
   TestBorrowPositionRouter__factory,
   TestDepositWithdrawalRouter,
   TestDepositWithdrawalRouter__factory,
+  TestGenericTraderRouter,
+  TestGenericTraderRouter__factory,
 } from '../../src/types';
 import {
   getDolomiteErc20ProxyConstructorParams,
@@ -54,6 +58,7 @@ import {
 } from '../../src/utils/dolomite-utils';
 import { SignerWithAddressWithSafety } from '../../src/utils/SignerWithAddressWithSafety';
 import { CoreProtocolType } from './setup';
+import { UpgradeableProxy__factory } from 'packages/liquidity-mining/src/types';
 
 export type DolomiteMargin<T extends NetworkType> = T extends Network.ArbitrumOne ? IDolomiteMargin : IDolomiteMarginV2;
 export type Expiry<T extends NetworkType> = T extends Network.ArbitrumOne ? IExpiry : IExpiryV2;
@@ -216,7 +221,7 @@ export async function createBorrowPositionRouter(
   const implementation = await createContractWithAbi<BorrowPositionRouter>(
     BorrowPositionRouter__factory.abi,
     BorrowPositionRouter__factory.bytecode,
-    [core.dolomiteRegistry.address, core.dolomiteMargin.address],
+    [core.dolomiteRegistry.address],
   );
   const initCalldata = await implementation.populateTransaction.initialize();
 
@@ -256,13 +261,16 @@ export async function createGenericTraderProxyV2Lib(): Promise<Record<LibraryNam
   return { GenericTraderProxyV2Lib: contract.address };
 }
 
-export async function createGenericTraderProxyV2(core: CoreProtocolType<any>): Promise<GenericTraderProxyV2> {
+export async function createGenericTraderProxyV2(
+  core: CoreProtocolType<any>,
+  network: NetworkType,
+): Promise<GenericTraderProxyV2> {
   const libraries = await createGenericTraderProxyV2Lib();
   const artifact = await createArtifactFromBaseWorkspaceIfNotExists('GenericTraderProxyV2', 'proxies');
   return await createContractWithLibraryAndArtifact(
     artifact,
     libraries,
-    [Network.ArbitrumOne, core.dolomiteRegistry.address, core.dolomiteMargin.address],
+    [network, core.dolomiteRegistry.address, core.dolomiteMargin.address],
   );
 }
 
@@ -272,7 +280,7 @@ export async function createTestBorrowPositionRouter(
   const implementation = await createContractWithAbi<TestBorrowPositionRouter>(
     TestBorrowPositionRouter__factory.abi,
     TestBorrowPositionRouter__factory.bytecode,
-    [core.dolomiteRegistry.address, core.dolomiteMargin.address],
+    [core.dolomiteRegistry.address],
   );
   const initCalldata = await implementation.populateTransaction.initialize();
 
@@ -291,7 +299,7 @@ export async function createTestDepositWithdrawalRouter(
   const implementation = await createContractWithAbi<TestDepositWithdrawalRouter>(
     TestDepositWithdrawalRouter__factory.abi,
     TestDepositWithdrawalRouter__factory.bytecode,
-    [payableToken.address, core.dolomiteRegistry.address, core.dolomiteMargin.address],
+    [payableToken.address, core.dolomiteRegistry.address],
   );
   const initCalldata = await implementation.populateTransaction.initialize();
 
@@ -302,6 +310,44 @@ export async function createTestDepositWithdrawalRouter(
   );
   return TestDepositWithdrawalRouter__factory.connect(proxy.address, core.hhUser1) as TestDepositWithdrawalRouter;
 }
+
+export async function createTestGenericTraderRouter(
+  core: CoreProtocolType<any>,
+  chainId: BigNumberish,
+): Promise<TestGenericTraderRouter> {
+  const implementation = await createContractWithAbi<TestGenericTraderRouter>(
+    TestGenericTraderRouter__factory.abi,
+    TestGenericTraderRouter__factory.bytecode,
+    [chainId, core.dolomiteRegistry.address],
+  );
+  const initCalldata = await implementation.populateTransaction.initialize();
+
+  const proxy = await createContractWithAbi(
+    RouterProxy__factory.abi,
+    RouterProxy__factory.bytecode,
+    [implementation.address, core.dolomiteMargin.address, initCalldata.data!],
+  );
+  return TestGenericTraderRouter__factory.connect(proxy.address, core.hhUser1) as TestGenericTraderRouter;
+}
+
+export async function createSmartDebtAutoTrader(
+  core: CoreProtocolType<any>,
+): Promise<SmartDebtAutoTrader> {
+  const implementation = await createContractWithAbi<SmartDebtAutoTrader>(
+    SmartDebtAutoTrader__factory.abi,
+    SmartDebtAutoTrader__factory.bytecode,
+    [],
+  );
+  const initCalldata = await implementation.populateTransaction.initialize(core.dolomiteMargin.address);
+
+  const proxy = await createContractWithAbi(
+    UpgradeableProxy__factory.abi,
+    UpgradeableProxy__factory.bytecode,
+    [implementation.address, core.dolomiteMargin.address, initCalldata.data!],
+  );
+  return SmartDebtAutoTrader__factory.connect(proxy.address, core.hhUser1) as SmartDebtAutoTrader;
+}
+
 
 export async function setupNewGenericTraderProxy<T extends NetworkType>(
   core: CoreProtocolType<T>,

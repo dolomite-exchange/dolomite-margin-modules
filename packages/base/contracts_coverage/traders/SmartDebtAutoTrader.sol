@@ -19,14 +19,13 @@
 
 pragma solidity ^0.8.9;
 
-import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
-import { OnlyDolomiteMarginForUpgradeable } from "../helpers/OnlyDolomiteMargin.sol";
 import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import { Require } from "../protocol/lib/Require.sol";
+import { OnlyDolomiteMarginForUpgradeable } from "../helpers/OnlyDolomiteMargin.sol";
 import { ISmartDebtAutoTrader } from "../interfaces/ISmartDebtAutoTrader.sol";
+import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
+import { Require } from "../protocol/lib/Require.sol";
 
-import "hardhat/console.sol";
 
 /**
  * @title   SmartDebtAutoTrader
@@ -42,7 +41,7 @@ contract SmartDebtAutoTrader is OnlyDolomiteMarginForUpgradeable, Initializable,
     // ========================================================
 
     bytes32 private constant _FILE = "SmartDebtAutoTrader";
-    bytes32 private constant _SMART_PAIRS_STORAGE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.smartPairsStorage")) - 1);
+    bytes32 private constant _SMART_PAIRS_STORAGE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.smartPairsStorage")) - 1); // solhint-disable-line max-line-length
 
     // ========================================================
     // ===================== Constructor ========================
@@ -91,6 +90,12 @@ contract SmartDebtAutoTrader is OnlyDolomiteMarginForUpgradeable, Initializable,
                 _takerAccount,
                 outputMarketId
             );
+            if (isSmartCollateralPair(inputMarketId, outputMarketId)) { /* FOR COVERAGE TESTING */ }
+            Require.that(
+                isSmartCollateralPair(inputMarketId, outputMarketId),
+                _FILE,
+                "Collateral pair is not active"
+            );
             if (takerAccountWei.sign && takerAccountWei.value >= outputTokenAmount) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 takerAccountWei.sign && takerAccountWei.value >= outputTokenAmount,
@@ -102,6 +107,12 @@ contract SmartDebtAutoTrader is OnlyDolomiteMarginForUpgradeable, Initializable,
             IDolomiteStructs.Wei memory takerAccountWei = DOLOMITE_MARGIN().getAccountWei(
                 _takerAccount,
                 inputMarketId
+            );
+            if (isSmartDebtPair(inputMarketId, outputMarketId)) { /* FOR COVERAGE TESTING */ }
+            Require.that(
+                isSmartDebtPair(inputMarketId, outputMarketId),
+                _FILE,
+                "Debt pair is not active"
             );
             if (!takerAccountWei.sign && takerAccountWei.value >= _inputDeltaWei.value) { /* FOR COVERAGE TESTING */ }
             Require.that(
@@ -193,13 +204,13 @@ contract SmartDebtAutoTrader is OnlyDolomiteMarginForUpgradeable, Initializable,
     // ==================== View Functions ====================
     // ========================================================
 
-    function isSmartDebtPair(uint256 _marketId1, uint256 _marketId2) external view returns (bool) {
+    function isSmartDebtPair(uint256 _marketId1, uint256 _marketId2) public view returns (bool) {
         SmartPairsStorage storage smartPairsStorage = _getSmartPairsStorage();
         (bytes32 pairBytes, ,) = _getPairBytesAndSortMarketIds(_marketId1, _marketId2);
         return smartPairsStorage.smartDebtPairs.contains(pairBytes);
     }
 
-    function isSmartCollateralPair(uint256 _marketId1, uint256 _marketId2) external view returns (bool) {
+    function isSmartCollateralPair(uint256 _marketId1, uint256 _marketId2) public view returns (bool) {
         SmartPairsStorage storage smartPairsStorage = _getSmartPairsStorage();
         (bytes32 pairBytes, ,) = _getPairBytesAndSortMarketIds(_marketId1, _marketId2);
         return smartPairsStorage.smartCollateralPairs.contains(pairBytes);
@@ -215,7 +226,12 @@ contract SmartDebtAutoTrader is OnlyDolomiteMarginForUpgradeable, Initializable,
 
     function _ownerAddSmartDebtPair(uint256 _marketId1, uint256 _marketId2) internal {
         SmartPairsStorage storage smartPairsStorage = _getSmartPairsStorage();
-        (bytes32 pairBytes, uint256 sortedMarketId1, uint256 sortedMarketId2) = _getPairBytesAndSortMarketIds(_marketId1, _marketId2);
+        (
+            bytes32 pairBytes,
+            uint256 sortedMarketId1,
+            uint256 sortedMarketId2
+        ) = _getPairBytesAndSortMarketIds(_marketId1, _marketId2);
+
         bool res = smartPairsStorage.smartDebtPairs.add(pairBytes);
         if (res) { /* FOR COVERAGE TESTING */ }
         Require.that(
@@ -228,7 +244,12 @@ contract SmartDebtAutoTrader is OnlyDolomiteMarginForUpgradeable, Initializable,
 
     function _ownerAddSmartCollateralPair(uint256 _marketId1, uint256 _marketId2) internal {
         SmartPairsStorage storage smartPairsStorage = _getSmartPairsStorage();
-        (bytes32 pairBytes, uint256 sortedMarketId1, uint256 sortedMarketId2) = _getPairBytesAndSortMarketIds(_marketId1, _marketId2);
+        (
+            bytes32 pairBytes,
+            uint256 sortedMarketId1,
+            uint256 sortedMarketId2
+        ) = _getPairBytesAndSortMarketIds(_marketId1, _marketId2);
+
         bool res = smartPairsStorage.smartCollateralPairs.add(pairBytes);
         if (res) { /* FOR COVERAGE TESTING */ }
         Require.that(
@@ -241,8 +262,12 @@ contract SmartDebtAutoTrader is OnlyDolomiteMarginForUpgradeable, Initializable,
 
     function _ownerRemoveSmartDebtPair(uint256 _marketId1, uint256 _marketId2) internal {
         SmartPairsStorage storage smartPairsStorage = _getSmartPairsStorage();
+        (
+            bytes32 pairBytes,
+            uint256 sortedMarketId1,
+            uint256 sortedMarketId2
+        ) = _getPairBytesAndSortMarketIds(_marketId1, _marketId2);
 
-        (bytes32 pairBytes, uint256 sortedMarketId1, uint256 sortedMarketId2) = _getPairBytesAndSortMarketIds(_marketId1, _marketId2);
         // @follow-up This is messy but if I put it in require statement then coverage fails
         bool res = smartPairsStorage.smartDebtPairs.remove(pairBytes);
         if (res) { /* FOR COVERAGE TESTING */ }
@@ -256,7 +281,12 @@ contract SmartDebtAutoTrader is OnlyDolomiteMarginForUpgradeable, Initializable,
 
     function _ownerRemoveSmartCollateralPair(uint256 _marketId1, uint256 _marketId2) internal {
         SmartPairsStorage storage smartPairsStorage = _getSmartPairsStorage();
-        (bytes32 pairBytes, uint256 sortedMarketId1, uint256 sortedMarketId2) = _getPairBytesAndSortMarketIds(_marketId1, _marketId2);
+        (
+            bytes32 pairBytes,
+            uint256 sortedMarketId1,
+            uint256 sortedMarketId2
+        ) = _getPairBytesAndSortMarketIds(_marketId1, _marketId2);
+
         bool res = smartPairsStorage.smartCollateralPairs.remove(pairBytes);
         if (res) { /* FOR COVERAGE TESTING */ }
         Require.that(

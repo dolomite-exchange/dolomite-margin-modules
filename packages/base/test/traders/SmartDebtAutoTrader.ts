@@ -1,14 +1,13 @@
 import { expect } from 'chai';
-import { SmartDebtAutoTrader, SmartDebtAutoTrader__factory, TestGenericTraderProxyV2 } from '../../src/types';
-import { createContractWithAbi, createContractWithLibrary, createContractWithName, depositIntoDolomiteMargin } from '../../src/utils/dolomite-utils';
+import { GenericTraderProxyV2, SmartDebtAutoTrader } from '../../src/types';
+import { depositIntoDolomiteMargin } from '../../src/utils/dolomite-utils';
 import { BYTES_ZERO, MAX_UINT_256_BI, Network, ONE_ETH_BI, ZERO_BI } from '../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
 import { expectEvent, expectProtocolBalance, expectProtocolBalanceIsGreaterThan, expectThrow } from '../utils/assertions';
 
 import { CoreProtocolArbitrumOne } from '../utils/core-protocols/core-protocol-arbitrum-one';
 import { disableInterestAccrual, setupCoreProtocol, setupUSDCBalance, setupUSDTBalance, setupWETHBalance } from '../utils/setup';
-import { UpgradeableProxy, UpgradeableProxy__factory } from 'packages/tokenomics/src/types';
-import { createAndUpgradeDolomiteRegistry } from '../utils/dolomite';
+import { createAndUpgradeDolomiteRegistry, createGenericTraderProxyV2, createSmartDebtAutoTrader } from '../utils/dolomite';
 import { BigNumber } from 'ethers';
 import { getSmartDebtZapParams } from '../utils/zap-utils';
 import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin';
@@ -19,7 +18,7 @@ const usdtAmount = BigNumber.from('200000000');
 const defaultAccountNumber = 0;
 const borrowAccountNumber = BigNumber.from('123');
 
-enum PairType {
+export enum PairType {
   NONE,
   SMART_DEBT,
   SMART_COLLATERAL
@@ -30,41 +29,23 @@ describe('SmartDebtAutoTrader', () => {
 
   let core: CoreProtocolArbitrumOne;
   let trader: SmartDebtAutoTrader;
-  let genericTraderProxy: TestGenericTraderProxyV2;
+  let genericTraderProxy: GenericTraderProxyV2;
 
   before(async () => {
     core = await setupCoreProtocol({
       network: Network.ArbitrumOne,
       blockNumber: 221_470_000,
     });
-
     await createAndUpgradeDolomiteRegistry(core);
     await core.dolomiteRegistry.connect(core.governance).ownerSetBorrowPositionProxy(
       core.borrowPositionProxyV2.address
     );
 
-    const genericTraderLib = await createContractWithName('GenericTraderProxyV2Lib', []);
-    genericTraderProxy = await createContractWithLibrary(
-      'TestGenericTraderProxyV2',
-      { GenericTraderProxyV2Lib: genericTraderLib.address },
-      [Network.ArbitrumOne, core.dolomiteRegistry.address, core.dolomiteMargin.address]
-    );
+    genericTraderProxy = await createGenericTraderProxyV2(core, Network.ArbitrumOne);
     await core.dolomiteRegistry.ownerSetGenericTraderProxy(genericTraderProxy.address);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(genericTraderProxy.address, true);
 
-    const traderImplementation = await createContractWithAbi<SmartDebtAutoTrader>(
-      SmartDebtAutoTrader__factory.abi,
-      SmartDebtAutoTrader__factory.bytecode,
-      [],
-    );
-    const data = await traderImplementation.populateTransaction.initialize(core.dolomiteMargin.address);
-    const traderProxy = await createContractWithAbi<UpgradeableProxy>(
-      UpgradeableProxy__factory.abi,
-      UpgradeableProxy__factory.bytecode,
-      [traderImplementation.address, core.dolomiteMargin.address, data.data!],
-    );
-
-    trader = SmartDebtAutoTrader__factory.connect(traderProxy.address, core.hhUser1);
+    trader = await createSmartDebtAutoTrader(core);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(trader.address, true);
     await core.dolomiteRegistry.connect(core.governance).ownerSetTrustedInternalTraders(
       [trader.address],
@@ -329,6 +310,76 @@ describe('SmartDebtAutoTrader', () => {
           userConfig: zapParams.userConfig,
         }),
         'SmartDebtAutoTrader: User does not have the pair set'
+      );
+    });
+
+    it('should fail if collateral pair is not active', async () => {
+      await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.dolomiteMargin);
+      await depositIntoDolomiteMargin(core, core.hhUser1, 0, core.marketIds.usdc, usdcAmount);
+      await trader.connect(core.governance).ownerAddSmartCollateralPair(core.marketIds.usdc, core.marketIds.usdt);
+      await trader.connect(core.hhUser2).userSetPair(
+        defaultAccountNumber,
+        PairType.SMART_COLLATERAL,
+        core.marketIds.usdc,
+        core.marketIds.usdt
+      );
+      await trader.connect(core.governance).ownerRemoveSmartCollateralPair(core.marketIds.usdc, core.marketIds.usdt);
+
+      const zapParams = await getSmartDebtZapParams(
+        core.marketIds.usdc,
+        MAX_UINT_256_BI,
+        core.marketIds.usdt,
+        usdcAmount,
+        trader,
+        { owner: core.hhUser2.address, number: defaultAccountNumber },
+        core,
+      );
+      await expectThrow(
+        genericTraderProxy.swapExactInputForOutput({
+          accountNumber: defaultAccountNumber,
+          marketIdsPath: zapParams.marketIdsPath,
+          inputAmountWei: zapParams.inputAmountWei,
+          minOutputAmountWei: zapParams.minOutputAmountWei,
+          tradersPath: zapParams.tradersPath,
+          makerAccounts: zapParams.makerAccounts,
+          userConfig: zapParams.userConfig,
+        }),
+        'SmartDebtAutoTrader: Collateral pair is not active'
+      );
+    });
+
+    it('should fail if debt pair is not active', async () => {
+      await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.dolomiteMargin);
+      await depositIntoDolomiteMargin(core, core.hhUser1, 0, core.marketIds.usdc, usdcAmount);
+      await trader.connect(core.governance).ownerAddSmartDebtPair(core.marketIds.usdc, core.marketIds.usdt);
+      await trader.connect(core.hhUser2).userSetPair(
+        defaultAccountNumber,
+        PairType.SMART_DEBT,
+        core.marketIds.usdc,
+        core.marketIds.usdt
+      );
+      await trader.connect(core.governance).ownerRemoveSmartDebtPair(core.marketIds.usdc, core.marketIds.usdt);
+
+      const zapParams = await getSmartDebtZapParams(
+        core.marketIds.usdc,
+        MAX_UINT_256_BI,
+        core.marketIds.usdt,
+        usdcAmount,
+        trader,
+        { owner: core.hhUser2.address, number: defaultAccountNumber },
+        core,
+      );
+      await expectThrow(
+        genericTraderProxy.swapExactInputForOutput({
+          accountNumber: defaultAccountNumber,
+          marketIdsPath: zapParams.marketIdsPath,
+          inputAmountWei: zapParams.inputAmountWei,
+          minOutputAmountWei: zapParams.minOutputAmountWei,
+          tradersPath: zapParams.tradersPath,
+          makerAccounts: zapParams.makerAccounts,
+          userConfig: zapParams.userConfig,
+        }),
+        'SmartDebtAutoTrader: Debt pair is not active'
       );
     });
   });

@@ -34,6 +34,7 @@ import { ILiquidatorAssetRegistry } from "../interfaces/ILiquidatorAssetRegistry
 import { ValidationLib } from "../lib/ValidationLib.sol";
 import { IDolomitePriceOracle } from "../protocol/interfaces/IDolomitePriceOracle.sol";
 import { Require } from "../protocol/lib/Require.sol";
+import { ISmartDebtAutoTrader } from "../interfaces/ISmartDebtAutoTrader.sol";
 
 
 /**
@@ -65,6 +66,7 @@ contract DolomiteRegistryImplementation is
     bytes32 private constant _SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL_SLOT = bytes32(uint256(keccak256("eip1967.proxy.slippageToleranceForPauseSentinel")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _TRUSTED_INTERNAL_TRADERS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.trustedInternalTraders")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _ISOLATION_MODE_STORAGE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isolationModeStorage")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _SMART_DEBT_TRADER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.smartDebtTrader")) - 1); // solhint-disable-line max-line-length
 
     // ==================== Constructor ====================
 
@@ -190,6 +192,14 @@ contract DolomiteRegistryImplementation is
         _ownerSetDolomiteAccountRegistry(_dolomiteAccountRegistry);
     }
 
+    function ownerSetSmartDebtTrader(
+        address _smartDebtTrader
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetSmartDebtTrader(_smartDebtTrader);
+    }
+
     function ownerSetTrustedInternalTraders(
         address[] memory _trustedInternalTraders,
         bool[] memory _isTrusted
@@ -251,6 +261,10 @@ contract DolomiteRegistryImplementation is
 
     function dolomiteAccountRegistry() public view returns (IDolomiteAccountRegistry) {
         return IDolomiteAccountRegistry(_getAddress(_DOLOMITE_ACCOUNT_REGISTRY_SLOT));
+    }
+
+    function smartDebtTrader() public view returns (ISmartDebtAutoTrader) {
+        return ISmartDebtAutoTrader(_getAddress(_SMART_DEBT_TRADER_SLOT));
     }
 
     function isTrustedInternalTrader(address _trader) public view returns (bool) {
@@ -426,6 +440,19 @@ contract DolomiteRegistryImplementation is
 
         _setAddress(_DOLOMITE_ACCOUNT_REGISTRY_SLOT, _dolomiteAccountRegistry);
         emit DolomiteAccountRegistrySet(_dolomiteAccountRegistry);
+    }
+
+    function _ownerSetSmartDebtTrader(
+        address _smartDebtTrader
+    ) internal {
+        Require.that(
+            _smartDebtTrader != address(0),
+            _FILE,
+            "Invalid smartDebtTrader"
+        );
+
+        _setAddress(_SMART_DEBT_TRADER_SLOT, _smartDebtTrader);
+        emit SmartDebtTraderSet(_smartDebtTrader);
     }
 
     function _ownerSetTrustedInternalTraders(

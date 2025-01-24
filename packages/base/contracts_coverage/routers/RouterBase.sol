@@ -68,15 +68,14 @@ abstract contract RouterBase is
     // ========================================================
 
     constructor (
-        address _dolomiteRegistry,
-        address _dolomiteMargin
+        address _dolomiteRegistry
     ) {
         DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
-        _setDolomiteMarginViaSlot(_dolomiteMargin);
     }
 
-    function initialize() external initializer virtual {
+    function initialize() public initializer virtual {
         // solhint-disable-previous-line no-empty-blocks
+        __ReentrancyGuardUpgradeable__init();
     }
 
     // ========================================================

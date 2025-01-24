@@ -33,9 +33,8 @@ contract TestBorrowPositionRouter is BorrowPositionRouter {
     using InternalSafeDelegateCallLib for address;
 
     constructor(
-        address _dolomiteRegistry,
-        address _dolomiteMargin
-    ) BorrowPositionRouter(_dolomiteRegistry, _dolomiteMargin) {}
+        address _dolomiteRegistry
+    ) BorrowPositionRouter(_dolomiteRegistry) {}
 
     function callFunctionAndTriggerReentrancy(
         bytes calldata _callDataWithSelector

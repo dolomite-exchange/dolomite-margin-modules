@@ -19,8 +19,8 @@
 
 pragma solidity ^0.8.9;
 
-import { IDolomiteAutoTrader } from "../protocol/interfaces/IDolomiteAutoTrader.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import { IDolomiteAutoTrader } from "../protocol/interfaces/IDolomiteAutoTrader.sol";
 
 
 /**
@@ -30,6 +30,10 @@ import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableS
  * Interface for performing internal trades using smart debt
  */
 interface ISmartDebtAutoTrader is IDolomiteAutoTrader {
+
+    // ========================================================
+    // ================== Structs Functions ==================
+    // ========================================================
 
     enum PairType {
         NONE,
@@ -48,10 +52,33 @@ interface ISmartDebtAutoTrader is IDolomiteAutoTrader {
         mapping(address => mapping(uint256 => PairPosition)) userToPair;
     }
 
+    // ========================================================
+    // ================== Events Functions ==================
+    // ========================================================
+
     event SmartDebtPairAdded(uint256 indexed marketId1, uint256 indexed marketId2);
     event SmartDebtPairRemoved(uint256 indexed marketId1, uint256 indexed marketId2);
     event SmartCollateralPairAdded(uint256 indexed marketId1, uint256 indexed marketId2);
     event SmartCollateralPairRemoved(uint256 indexed marketId1, uint256 indexed marketId2);
-
     event UserToPairSet(address indexed user, uint256 indexed accountNumber, PairType pairType, bytes32 pairBytes);
+
+    // ========================================================
+    // ================== External Functions ==================
+    // ========================================================
+
+    function userSetPair(uint256 _accountNumber, PairType _pairType, uint256 _marketId1, uint256 _marketId2) external;
+
+    function ownerAddSmartDebtPair(uint256 _marketId1, uint256 _marketId2) external;
+    function ownerRemoveSmartDebtPair(uint256 _marketId1, uint256 _marketId2) external;
+    function ownerAddSmartCollateralPair(uint256 _marketId1, uint256 _marketId2) external;
+    function ownerRemoveSmartCollateralPair(uint256 _marketId1, uint256 _marketId2) external;
+
+    // ========================================================
+    // ==================== View Functions ====================
+    // ========================================================
+
+    function isSmartDebtPair(uint256 _marketId1, uint256 _marketId2) external view returns (bool);
+    function isSmartCollateralPair(uint256 _marketId1, uint256 _marketId2) external view returns (bool);
+
+    function userToPair(address _user, uint256 _accountNumber) external view returns (PairPosition memory);
 }

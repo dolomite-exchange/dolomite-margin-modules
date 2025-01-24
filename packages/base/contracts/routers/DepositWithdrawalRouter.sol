@@ -69,9 +69,8 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
 
     constructor (
         address _payableToken,
-        address _dolomiteRegistry,
-        address _dolomiteMargin
-    ) RouterBase(_dolomiteRegistry, _dolomiteMargin) {
+        address _dolomiteRegistry
+    ) RouterBase(_dolomiteRegistry) {
         WRAPPED_PAYABLE_TOKEN = IWETH(_payableToken);
         PAYABLE_MARKET_ID = DOLOMITE_MARGIN().getMarketIdByTokenAddress(_payableToken);
     }

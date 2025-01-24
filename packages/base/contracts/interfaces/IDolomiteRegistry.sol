@@ -28,6 +28,7 @@ import { IExpiry } from "./IExpiry.sol";
 import { IGenericTraderProxyV1 } from "./IGenericTraderProxyV1.sol";
 import { ILiquidatorAssetRegistry } from "./ILiquidatorAssetRegistry.sol";
 import { IDolomitePriceOracle } from "../protocol/interfaces/IDolomitePriceOracle.sol";
+import { ISmartDebtAutoTrader } from "./ISmartDebtAutoTrader.sol";
 
 
 /**
@@ -59,6 +60,7 @@ interface IDolomiteRegistry {
     event DolomiteAccountRegistrySet(address indexed _dolomiteAccountRegistry);
     event TrustedInternalTradersSet(address[] _trustedInternalTraders, bool[] _isTrusted);
     event IsolationModeMulticallFunctionsSet(bytes4[] _selectors);
+    event SmartDebtTraderSet(address indexed _smartDebtTrader);
 
     // ========================================================
     // =================== Write Functions ====================
@@ -134,6 +136,12 @@ interface IDolomiteRegistry {
 
     /**
      *
+     * @param  _smartDebtTrader    The new address of the smart debt trader
+     */
+    function ownerSetSmartDebtTrader(address _smartDebtTrader) external;
+
+    /**
+     *
      * @param  _trustedInternalTraders    The addresses of the trusted internal traders
      * @param  _isTrusted                 The boolean values for whether the traders are trusted
      */
@@ -206,6 +214,11 @@ interface IDolomiteRegistry {
      * @return The address of the Dolomite address registry
      */
     function dolomiteAccountRegistry() external view returns (IDolomiteAccountRegistry);
+
+    /**
+     * @return The address of the smart debt trader
+     */
+    function smartDebtTrader() external view returns (ISmartDebtAutoTrader);
 
     /**
      * @return The array of allowed function selectors for isolation mode multicall

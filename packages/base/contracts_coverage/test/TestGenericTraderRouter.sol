@@ -34,9 +34,9 @@ contract TestGenericTraderRouter is GenericTraderRouter {
     using InternalSafeDelegateCallLib for address;
 
     constructor(
-        address _dolomiteRegistry,
-        address _dolomiteMargin
-    ) GenericTraderRouter(_dolomiteRegistry, _dolomiteMargin) {}
+        uint256 _chainId,
+        address _dolomiteRegistry
+    ) GenericTraderRouter(_chainId, _dolomiteRegistry) {}
 
     function callFunctionAndTriggerReentrancy(
         bytes calldata _callDataWithSelector

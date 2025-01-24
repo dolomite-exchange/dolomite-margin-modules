@@ -1,20 +1,20 @@
-import { MAX_UINT_256_BI, Network, ONE_ETH_BI, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
+import { MAX_UINT_256_BI, Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
 import { CoreProtocolArbitrumOne } from '../utils/core-protocols/core-protocol-arbitrum-one';
 import {
   disableInterestAccrual,
-  getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupDAIBalance,
   setupTestMarket,
+  setupUSDCBalance,
+  setupUSDTBalance,
   setupUserVaultProxy,
 } from '../utils/setup';
 import {
   BorrowPositionRouter,
   CustomTestToken,
   GenericTraderProxyV2,
-  TestBorrowPositionRouter__factory,
+  SmartDebtAutoTrader,
   TestGenericTraderRouter,
-  TestGenericTraderRouter__factory,
   TestIsolationModeTokenVaultV1,
   TestIsolationModeTokenVaultV1__factory,
   TestIsolationModeUnwrapperTraderV2,
@@ -32,15 +32,20 @@ import {
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
 import {
   createAndUpgradeDolomiteRegistry,
+  createBorrowPositionRouter,
   createDolomiteAccountRegistryImplementation,
   createGenericTraderProxyV2,
-  createIsolationModeTokenVaultV1ActionsImpl
+  createIsolationModeTokenVaultV1ActionsImpl,
+  createSmartDebtAutoTrader,
+  createTestGenericTraderRouter
 } from '../utils/dolomite';
 import { createTestIsolationModeVaultFactory } from '../utils/ecosystem-utils/testers';
 import { BigNumber } from 'ethers';
-import { expectProtocolBalance, expectThrow } from '../utils/assertions';
+import { expectProtocolBalance, expectThrow, expectWalletBalance, expectWalletBalanceIsGreaterThan } from '../utils/assertions';
 import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin';
 import { getSimpleZapParams, getUnwrapZapParams, getWrapZapParams } from '../utils/zap-utils';
+import { expect } from 'chai';
+import { PairType } from '../traders/SmartDebtAutoTrader';
 
 const amountWei = ONE_ETH_BI;
 const defaultAccountNumber = ZERO_BI;
@@ -60,16 +65,35 @@ describe('GenericTraderRouter', () => {
   let tokenUnwrapper: TestIsolationModeUnwrapperTraderV2;
   let tokenWrapper: TestIsolationModeWrapperTraderV2;
 
+  let smartDebtAutoTrader: SmartDebtAutoTrader;
+
   let otherToken1: CustomTestToken;
   let otherMarketId1: BigNumber;
   let otherToken2: CustomTestToken;
   let otherMarketId2: BigNumber;
 
   before(async () => {
-    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
+    core = await setupCoreProtocol({
+      network: Network.ArbitrumOne,
+      blockNumber: 221_470_000,
+    });
+
+    await createAndUpgradeDolomiteRegistry(core);
+    await core.dolomiteRegistry.connect(core.governance).ownerSetBorrowPositionProxy(
+      core.borrowPositionProxyV2.address
+    );
+
     await disableInterestAccrual(core, core.marketIds.dai);
     await disableInterestAccrual(core, core.marketIds.weth);
     await createAndUpgradeDolomiteRegistry(core);
+
+    smartDebtAutoTrader = await createSmartDebtAutoTrader(core);
+    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(smartDebtAutoTrader.address, true);
+    await core.dolomiteRegistry.connect(core.governance).ownerSetTrustedInternalTraders(
+      [smartDebtAutoTrader.address],
+      [true]
+    );
+    await core.dolomiteRegistry.connect(core.governance).ownerSetSmartDebtTrader(smartDebtAutoTrader.address);
 
     const accountRegistry = await createDolomiteAccountRegistryImplementation();
     await core.dolomiteAccountRegistryProxy.connect(core.governance).upgradeTo(accountRegistry.address);
@@ -90,20 +114,12 @@ describe('GenericTraderRouter', () => {
     otherMarketId2 = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, otherToken2, false);
 
-    genericTraderProxy = await createGenericTraderProxyV2(core);
+    genericTraderProxy = await createGenericTraderProxyV2(core, Network.ArbitrumOne);
     await core.dolomiteRegistry.ownerSetGenericTraderProxy(genericTraderProxy.address);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(genericTraderProxy.address, true);
 
-    traderRouter = await createContractWithAbi<TestGenericTraderRouter>(
-      TestGenericTraderRouter__factory.abi,
-      TestGenericTraderRouter__factory.bytecode,
-      [core.dolomiteRegistry.address, core.dolomiteMargin.address]
-    );
-    borrowRouter = await createContractWithAbi<BorrowPositionRouter>(
-      TestBorrowPositionRouter__factory.abi,
-      TestBorrowPositionRouter__factory.bytecode,
-      [core.dolomiteRegistry.address, core.dolomiteMargin.address]
-    );
+    traderRouter = await createTestGenericTraderRouter(core, Network.ArbitrumOne);
+    borrowRouter = await createBorrowPositionRouter(core);
 
     underlyingToken = await createTestToken();
     const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
@@ -139,6 +155,7 @@ describe('GenericTraderRouter', () => {
 
     await core.borrowPositionProxyV2.connect(core.governance).setIsCallerAuthorized(borrowRouter.address, true);
     await genericTraderProxy.connect(core.governance).setIsCallerAuthorized(traderRouter.address, true);
+    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(traderRouter.address, true);
 
     await factory.createVault(core.hhUser1.address);
     const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);
@@ -156,6 +173,13 @@ describe('GenericTraderRouter', () => {
 
   beforeEach(async () => {
     snapshotId = await revertToSnapshotAndCapture(snapshotId);
+  });
+
+  describe('#initialize', () => {
+    it('should work normally', async () => {
+      expect(await traderRouter.DOLOMITE_MARGIN()).to.equal(core.dolomiteMargin.address);
+      expect(await traderRouter.DOLOMITE_REGISTRY()).to.equal(core.dolomiteRegistry.address);
+    });
   });
 
   describe('#swapExactInputForOutput', () => {
@@ -617,6 +641,121 @@ describe('GenericTraderRouter', () => {
       await expectThrow(
         traderRouter.callFunctionAndTriggerReentrancy(transaction.data!),
         'ReentrancyGuardUpgradeable: Reentrant call'
+      );
+    });
+  });
+
+  describe.only('#swapExactInputForOutputViaSmartAccount', () => {
+    it('should work normally with one swap', async () => {
+      await disableInterestAccrual(core, core.marketIds.usdc);
+      await disableInterestAccrual(core, core.marketIds.usdt);
+
+      const usdcAmount = BigNumber.from('100000000');
+      await setupUSDCBalance(core, core.hhUser1, usdcAmount, traderRouter);
+
+      const usdtAmount = BigNumber.from('200000000');
+      await setupUSDTBalance(core, core.hhUser2, usdtAmount, core.dolomiteMargin);
+      await depositIntoDolomiteMargin(core, core.hhUser2, 0, core.marketIds.usdt, usdtAmount);
+
+      await smartDebtAutoTrader.connect(core.governance).ownerAddSmartCollateralPair(core.marketIds.usdc, core.marketIds.usdt);
+      await smartDebtAutoTrader.connect(core.hhUser2).userSetPair(
+        defaultAccountNumber,
+        PairType.SMART_COLLATERAL,
+        core.marketIds.usdc,
+        core.marketIds.usdt
+      );
+
+      await traderRouter.swapExactInputForOutputViaSmartAccount(
+        core.tokens.usdc.address,
+        core.tokens.usdt.address,
+        usdcAmount,
+        ONE_BI,
+        [{
+          user: core.hhUser2.address,
+          accountNumber: defaultAccountNumber,
+          amount: usdcAmount,
+        }]
+      );
+
+      const usdtBal = await core.tokens.usdt.balanceOf(core.hhUser1.address);
+      await expectWalletBalance(core.hhUser1, core.tokens.usdc, ZERO_BI);
+      await expectWalletBalanceIsGreaterThan(core.hhUser1, core.tokens.usdt, usdcAmount);
+
+      await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.usdc, usdcAmount);
+      await expectProtocolBalance(
+        core,
+        core.hhUser2,
+        defaultAccountNumber,
+        core.marketIds.usdt,
+        usdtAmount.sub(usdtBal)
+      );
+    });
+
+    it('should work normally with two swaps', async () => {
+      await disableInterestAccrual(core, core.marketIds.usdc);
+      await disableInterestAccrual(core, core.marketIds.usdt);
+
+      const usdcAmount = BigNumber.from('100000000');
+      await setupUSDCBalance(core, core.hhUser1, usdcAmount, traderRouter);
+
+      const usdtAmount = BigNumber.from('200000000');
+      await setupUSDTBalance(core, core.hhUser2, usdtAmount, core.dolomiteMargin);
+      await depositIntoDolomiteMargin(core, core.hhUser2, 0, core.marketIds.usdt, usdtAmount);
+      await setupUSDTBalance(core, core.hhUser3, usdtAmount, core.dolomiteMargin);
+      await depositIntoDolomiteMargin(core, core.hhUser3, 0, core.marketIds.usdt, usdtAmount);
+
+      await smartDebtAutoTrader.connect(core.governance).ownerAddSmartCollateralPair(core.marketIds.usdc, core.marketIds.usdt);
+      await smartDebtAutoTrader.connect(core.hhUser2).userSetPair(
+        defaultAccountNumber,
+        PairType.SMART_COLLATERAL,
+        core.marketIds.usdc,
+        core.marketIds.usdt
+      );
+      await smartDebtAutoTrader.connect(core.hhUser3).userSetPair(
+        defaultAccountNumber,
+        PairType.SMART_COLLATERAL,
+        core.marketIds.usdc,
+        core.marketIds.usdt
+      );
+
+      await traderRouter.swapExactInputForOutputViaSmartAccount(
+        core.tokens.usdc.address,
+        core.tokens.usdt.address,
+        usdcAmount,
+        ONE_BI,
+        [
+          {
+            user: core.hhUser2.address,
+            accountNumber: defaultAccountNumber,
+            amount: usdcAmount.div(2),
+          },
+          {
+            user: core.hhUser3.address,
+            accountNumber: defaultAccountNumber,
+            amount: usdcAmount.div(2),
+          },
+        ]
+      );
+
+      const usdtBal = await core.tokens.usdt.balanceOf(core.hhUser1.address);
+      await expectWalletBalance(core.hhUser1, core.tokens.usdc, ZERO_BI);
+      await expectWalletBalanceIsGreaterThan(core.hhUser1, core.tokens.usdt, usdcAmount);
+
+      await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.usdc, usdcAmount.div(2));
+      await expectProtocolBalance(
+        core,
+        core.hhUser2,
+        defaultAccountNumber,
+        core.marketIds.usdt,
+        usdtAmount.sub(usdtBal.div(2))
+      );
+      await expectProtocolBalance(core, core.hhUser3, defaultAccountNumber, core.marketIds.usdc, usdcAmount.div(2));
+      await expectProtocolBalance(
+        core,
+        core.hhUser3,
+        defaultAccountNumber,
+        core.marketIds.usdt,
+        usdtAmount.sub(usdtBal.div(2))
       );
     });
   });
