@@ -23,6 +23,7 @@ import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuar
 import { GenericTraderProxyBase } from "./GenericTraderProxyBase.sol";
 import { GenericTraderProxyV2Lib } from "./GenericTraderProxyV2Lib.sol";
 import { AuthorizationBase } from "../helpers/AuthorizationBase.sol";
+import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";

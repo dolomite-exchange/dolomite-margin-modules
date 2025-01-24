@@ -22,8 +22,8 @@ import { IDolomiteStructs } from "./IDolomiteStructs.sol";
 
 
 /**
- * @title   IDolomiteAutoTrader
- * @author  Dolomite
+ * @title IDolomiteAutoTrader
+ * @author Dolomite
  *
  * Interface for Dolomite Auto-Traders
  */

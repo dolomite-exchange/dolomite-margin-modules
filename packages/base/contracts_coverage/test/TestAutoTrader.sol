@@ -25,7 +25,7 @@ import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 
 
 /**
- * @title   TestAutoTrader
+ * @title   TestDolomiteAutoTrader
  * @author  Dolomite
  *
  * @notice  A test implementation of IDolomiteAutoTrader

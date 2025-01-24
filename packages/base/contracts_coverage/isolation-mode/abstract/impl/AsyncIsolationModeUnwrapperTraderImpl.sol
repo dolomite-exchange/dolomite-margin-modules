@@ -24,6 +24,7 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { UpgradeableAsyncIsolationModeUnwrapperTrader } from "../UpgradeableAsyncIsolationModeUnwrapperTrader.sol";
 import { UpgradeableAsyncIsolationModeWrapperTrader } from "../UpgradeableAsyncIsolationModeWrapperTrader.sol";
 import { IGenericTraderBase } from "../../../interfaces/IGenericTraderBase.sol";
+import { IGenericTraderProxyV2 } from "../../../proxies/interfaces/IGenericTraderProxyV2.sol";
 import { IHandlerRegistry } from "../../../interfaces/IHandlerRegistry.sol";
 import { AccountActionLib } from "../../../lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "../../../lib/AccountBalanceLib.sol";
@@ -31,7 +32,6 @@ import { IDolomiteMargin } from "../../../protocol/interfaces/IDolomiteMargin.so
 import { IDolomiteStructs } from "../../../protocol/interfaces/IDolomiteStructs.sol";
 import { DecimalLib } from "../../../protocol/lib/DecimalLib.sol";
 import { Require } from "../../../protocol/lib/Require.sol";
-import { IGenericTraderProxyV2 } from "../../../proxies/interfaces/IGenericTraderProxyV2.sol";
 import { IAsyncFreezableIsolationModeVaultFactory } from "../../interfaces/IAsyncFreezableIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { IIsolationModeTokenVaultV1 } from "../../interfaces/IIsolationModeTokenVaultV1.sol";
 import { IIsolationModeTokenVaultV1WithAsyncFreezable } from "../../interfaces/IIsolationModeTokenVaultV1WithAsyncFreezable.sol"; // solhint-disable-line max-line-length

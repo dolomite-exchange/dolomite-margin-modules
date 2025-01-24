@@ -23,10 +23,10 @@ pragma solidity ^0.8.9;
 import { IBorrowPositionProxyV2 } from "../../interfaces/IBorrowPositionProxyV2.sol";
 import { IDolomiteRegistry } from "../../interfaces/IDolomiteRegistry.sol";
 import { IGenericTraderBase } from "../../interfaces/IGenericTraderBase.sol";
+import { IGenericTraderProxyV2 } from "../../proxies/interfaces/IGenericTraderProxyV2.sol";
 import { AccountBalanceLib } from "../../lib/AccountBalanceLib.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
-import { IGenericTraderProxyV2 } from "../../proxies/interfaces/IGenericTraderProxyV2.sol";
 
 
 /**

@@ -23,9 +23,9 @@ pragma solidity ^0.8.9;
 import { RouterBase } from "./RouterBase.sol";
 import { IIsolationModeTokenVaultV1 } from "../isolation-mode/interfaces/IIsolationModeTokenVaultV1.sol";
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
-import { Require } from "../protocol/lib/Require.sol";
 import { IGenericTraderProxyV2 } from "../proxies/interfaces/IGenericTraderProxyV2.sol";
 import { IGenericTraderRouter } from "./interfaces/IGenericTraderRouter.sol";
+import { Require } from "../protocol/lib/Require.sol";
 
 
 /**

@@ -12,7 +12,6 @@ import {
   IIsolationModeUnwrapperTraderV2,
   IIsolationModeWrapperTrader,
   SimpleIsolationModeWrapperTraderV2,
-  SmartDebtAutoTrader,
   TestDolomiteMarginInternalTrader,
   TestIsolationModeUnwrapperTraderV2,
   TestIsolationModeWrapperTraderV2,
@@ -55,38 +54,6 @@ export async function getSimpleZapParams<T extends Network>(
     marketIdsPath: [inputMarket, outputMarket],
     tradersPath: [traderParam],
     makerAccounts: [],
-    userConfig: {
-      deadline: '123123123123123',
-      balanceCheckFlag: BalanceCheckFlag.None,
-      eventType: GenericEventEmissionType.None,
-    },
-  };
-}
-
-export async function getSmartDebtZapParams<T extends Network>(
-  inputMarket: BigNumberish,
-  inputAmountWei: BigNumber,
-  outputMarket: BigNumberish,
-  minOutputAmountWei: BigNumber,
-  trader: SmartDebtAutoTrader,
-  makerAccount: AccountInfoStruct,
-  core: CoreProtocolType<T>,
-): Promise<ZapParam> {
-  const traderParam: GenericTraderParam = {
-    trader: trader.address,
-    traderType: GenericTraderType.InternalLiquidity,
-    tradeData: ethers.utils.defaultAbiCoder.encode(
-      ['uint256', 'bytes'],
-      [minOutputAmountWei, ethers.utils.defaultAbiCoder.encode(['uint256'], [minOutputAmountWei])],
-    ),
-    makerAccountIndex: 0,
-  };
-  return {
-    inputAmountWei,
-    minOutputAmountWei,
-    marketIdsPath: [inputMarket, outputMarket],
-    tradersPath: [traderParam],
-    makerAccounts: [makerAccount],
     userConfig: {
       deadline: '123123123123123',
       balanceCheckFlag: BalanceCheckFlag.None,
