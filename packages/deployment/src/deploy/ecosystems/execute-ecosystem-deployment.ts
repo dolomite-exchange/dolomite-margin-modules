@@ -1,9 +1,15 @@
-import { NetworkName } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { Network, NetworkName } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { execSync } from 'child_process';
 import path from 'path';
 import * as process from 'process';
 
-const ALL_NETWORKS = Object.values(NetworkName);
+// const ALL_NETWORKS = Object.values(NetworkName);
+const ALL_NETWORKS = [
+  NetworkName.Mantle,
+  NetworkName.PolygonZkEvm,
+  NetworkName.SuperSeed,
+  NetworkName.XLayer,
+];
 
 const ecosystemName = process.argv[2];
 if (!ecosystemName) {

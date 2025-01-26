@@ -22,7 +22,7 @@ import {
   getRegistryProxyConstructorParams,
 } from '@dolomite-exchange/modules-base/src/utils/constructors/dolomite';
 import { getAnyNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { Network, NetworkType } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { NetworkType } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '@dolomite-exchange/modules-base/src/utils/SignerWithAddressWithSafety';
 import {
   getRealLatestBlockNumber,
@@ -37,7 +37,6 @@ import {
 import * as CoreDeployment from '@dolomite-margin/dist/migrations/deployed.json';
 import { ethers } from 'hardhat';
 import {
-  CoreProtocolAbstract,
   CoreProtocolParams,
 } from 'packages/base/test/utils/core-protocols/core-protocol-abstract';
 import ModuleDeployments from 'packages/deployment/src/deploy/deployments.json';
@@ -204,11 +203,6 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
 
   await deployInterestSetters();
 
-  if (network === Network.BerachainCartio) {
-    // Berachain testnet
-    await deployContractAndSave('TestPriceOracle', []);
-  }
-
   // We can't set up the core protocol here because there are too many missing contracts/context
   const genericTraderAddress = CoreDeployments.GenericTraderProxyV1[network].address;
   const governanceAddress = await dolomiteMargin.connect(hhUser1).owner();
@@ -275,7 +269,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
       config: {
         network,
       },
-    } as CoreProtocolAbstract<T> as any,
+    } as any,
     invariants: async () => {},
     scriptName: getScriptName(__filename),
     upload: {

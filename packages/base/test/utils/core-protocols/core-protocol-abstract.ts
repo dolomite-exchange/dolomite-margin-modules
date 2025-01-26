@@ -1,5 +1,6 @@
 import { ApiToken, DolomiteZap } from '@dolomite-exchange/zap-sdk';
 import { BigNumberish } from 'ethers';
+import { IsolationModeVaultType } from 'packages/deployment/src/deploy/isolation-mode/isolation-mode-helpers';
 import { IChainlinkPriceOracleV1, IChainlinkPriceOracleV3, OracleAggregatorV2 } from 'packages/oracles/src/types';
 import {
   DolomiteERC4626,
@@ -25,11 +26,10 @@ import { CHAINLINK_PRICE_AGGREGATORS_MAP, SUBGRAPH_URL_MAP } from '../../../src/
 import { Network, NetworkType } from '../../../src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';
 import { DolomiteMargin, Expiry } from '../dolomite';
+import { DeployedVault } from '../ecosystem-utils/deployed-vaults';
 import { InterestSetters } from '../ecosystem-utils/interest-setters';
 import { TestEcosystem } from '../ecosystem-utils/testers';
 import { CoreProtocolConfig } from '../setup';
-import { DeployedVault } from '../ecosystem-utils/deployed-vaults';
-import { IsolationModeVaultType } from 'packages/deployment/src/deploy/isolation-mode/isolation-mode-helpers';
 
 export interface LibraryMaps {
   tokenVaultActionsImpl: Record<string, string>;
@@ -48,11 +48,17 @@ export type WETHType<T extends NetworkType> = T extends Network.ArbitrumOne
   ? IWETH
   : T extends Network.Berachain
   ? IERC20
+  : T extends Network.BerachainBartio
+  ? IERC20
   : T extends Network.BerachainCartio
   ? IERC20
+  : T extends Network.Ink
+  ? IWETH
   : T extends Network.Mantle
   ? IERC20
   : T extends Network.PolygonZkEvm
+  ? IWETH
+  : T extends Network.SuperSeed
   ? IWETH
   : T extends Network.XLayer
   ? IERC20
@@ -236,7 +242,7 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
   public abstract get network(): T;
 
   public getDeployedVaultsByType(vaultType: IsolationModeVaultType): DeployedVault[] {
-    return this.deployedVaults.filter(v => v.vaultType === vaultType);
+    return this.deployedVaults.filter((v) => v.vaultType === vaultType);
   }
 
   public getDeployedVaultsMapByType(vaultType: IsolationModeVaultType): Record<number, DeployedVault> {

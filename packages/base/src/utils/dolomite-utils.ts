@@ -184,7 +184,7 @@ export function heldWeiToOwedWei(
   return getPartialRoundUp(heldWei, heldPrice, owedPrice);
 }
 
-export async function getAnyNetwork(): Promise<NetworkType> {
+export async function getAnyNetwork<T extends NetworkType>(): Promise<T> {
   let foundNetwork;
   if (hardhat.network.name === 'hardhat') {
     if (!process.env.NETWORK) {
@@ -195,7 +195,7 @@ export async function getAnyNetwork(): Promise<NetworkType> {
     foundNetwork = (await ethers.provider.getNetwork()).chainId.toString();
   }
 
-  return foundNetwork as NetworkType;
+  return foundNetwork as T;
 }
 
 export async function getAndCheckSpecificNetwork<T extends NetworkType>(networkInvariant: T): Promise<T> {
