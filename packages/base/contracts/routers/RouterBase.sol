@@ -75,7 +75,7 @@ abstract contract RouterBase is
     }
 
     function initialize() external initializer virtual {
-        // solhint-disable-previous-line no-empty-blocks
+        __ReentrancyGuardUpgradeable__init();
     }
 
     // ========================================================
