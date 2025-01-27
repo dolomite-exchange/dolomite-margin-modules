@@ -6254,7 +6254,7 @@
     "57073": {
       "address": "0xe09f85B284C177c8325c5cCAeaE30a14494CDD45",
       "transaction": "0x28f570c5ba31ebce13bace96aec9f884a991712c48dd64c5617bf89fd386bbef",
-      "isVerified": false
+      "isVerified": true
     },
     "80084": {
       "address": "0xc28A4EC9f09E4071E3707eAACa5c3754fA4f5Faa",

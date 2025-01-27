@@ -185,6 +185,7 @@ import { SignerWithAddressWithSafety } from '../../src/utils/SignerWithAddressWi
 import {
   CoreProtocolAbstract,
   CoreProtocolParams,
+  DolomiteWETHType,
   ImplementationContracts,
   LibraryMaps,
   WETHType,
@@ -659,11 +660,47 @@ export function getWethContract<T extends NetworkType>(
   config: CoreProtocolSetupConfig<T>,
   signer: SignerWithAddressWithSafety,
 ): WETHType<T> {
-  return (
-    config.network === Network.ArbitrumOne || config.network === Network.Base || config.network === Network.PolygonZkEvm
-      ? IWETH__factory.connect(WETH_MAP[config.network].address, signer)
-      : IERC20__factory.connect(WETH_MAP[config.network].address, signer)
-  ) as WETHType<T>;
+  switch (config.network) {
+    case Network.ArbitrumOne:
+    case Network.Base:
+    case Network.Ink:
+    case Network.PolygonZkEvm:
+    case Network.SuperSeed:
+      return IWETH__factory.connect(WETH_MAP[config.network].address, signer) as WETHType<T>;
+    case Network.Berachain:
+    case Network.BerachainBartio:
+    case Network.BerachainCartio:
+    case Network.Mantle:
+    case Network.XLayer:
+      return IERC20__factory.connect(WETH_MAP[config.network].address, signer) as WETHType<T>;
+    default:
+      // This would be an error as we have a network type that isn't accounted for
+      throw new Error(`Unsupported network type: ${config.network}`);
+  }
+}
+
+export function getDolomiteWethTokenContract<T extends NetworkType>(
+  config: CoreProtocolSetupConfig<T>,
+  signer: SignerWithAddressWithSafety,
+): DolomiteWETHType<T> | undefined {
+  const address = (Deployments.DolomiteWeth4626Token as any)[config.network as any]?.address;
+  switch (config.network) {
+    case Network.ArbitrumOne:
+    case Network.Base:
+    case Network.Ink:
+    case Network.PolygonZkEvm:
+    case Network.SuperSeed:
+      return getContractOpt(address, DolomiteERC4626WithPayable__factory.connect, signer) as DolomiteWETHType<T>;
+    case Network.Berachain:
+    case Network.BerachainBartio:
+    case Network.BerachainCartio:
+    case Network.Mantle:
+    case Network.XLayer:
+      return getContractOpt(address, DolomiteERC4626__factory.connect, signer) as DolomiteWETHType<T>;
+    default:
+      // This would be an error as we have a network type that isn't accounted for
+      throw new Error(`Unsupported network type: ${config.network}`);
+  }
 }
 
 export async function setupCoreProtocol<T extends NetworkType>(
@@ -874,6 +911,14 @@ export async function setupCoreProtocol<T extends NetworkType>(
     constants: {
       slippageToleranceForPauseSentinel: SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL,
       chainlinkAggregators: CHAINLINK_PRICE_AGGREGATORS_MAP[config.network],
+    },
+    dolomiteTokens: {
+      usdc: getContractOpt(
+        (Deployments.DolomiteUsdc4626Token as any)[config.network]?.address,
+        DolomiteERC4626__factory.connect,
+        hhUser1,
+      ),
+      weth: getDolomiteWethTokenContract(config, hhUser1),
     },
     marketIds: {
       usdc: USDC_MAP[config.network].marketId,
@@ -1129,6 +1174,70 @@ export async function setupCoreProtocol<T extends NetworkType>(
     return new CoreProtocolBerachain(coreProtocolParams as CoreProtocolParams<Network.Berachain>, {
       chroniclePriceOracleV3: chroniclePriceOracle,
       redstonePriceOracleV3: redstonePriceOracle,
+      dolomiteTokens: {
+        ...coreProtocolParams.dolomiteTokens,
+        beraEth: DolomiteERC4626__factory.connect(
+          Deployments.DolomiteBeraEth4626Token[Network.Berachain].address,
+          hhUser1,
+        ),
+        // eBtc: DolomiteERC4626__factory.connect(Deployments.DolomiteEBtc4626Token[Network.Berachain].address, hhUser1), // TODO FIX
+        honey: DolomiteERC4626__factory.connect(Deployments.DolomiteHoney4626Token[Network.Berachain].address, hhUser1),
+        lbtc: DolomiteERC4626__factory.connect(Deployments.DolomiteLbtc4626Token[Network.Berachain].address, hhUser1),
+        nect: DolomiteERC4626__factory.connect(Deployments.DolomiteNect4626Token[Network.Berachain].address, hhUser1),
+        pumpBtc: DolomiteERC4626__factory.connect(
+          Deployments.DolomitePumpBtc4626Token[Network.Berachain].address,
+          hhUser1,
+        ),
+        rsEth: DolomiteERC4626__factory.connect(Deployments.DolomiteRsEth4626Token[Network.Berachain].address, hhUser1),
+        rswEth: DolomiteERC4626__factory.connect(
+          Deployments.DolomiteRswEth4626Token[Network.Berachain].address,
+          hhUser1,
+        ),
+        rUsd: DolomiteERC4626__factory.connect(Deployments.DolomiteRUsd4626Token[Network.Berachain].address, hhUser1),
+        sbtc: DolomiteERC4626__factory.connect(Deployments.DolomiteSbtc4626Token[Network.Berachain].address, hhUser1),
+        sUsda: DolomiteERC4626__factory.connect(Deployments.DolomiteSUsda4626Token[Network.Berachain].address, hhUser1),
+        sUsde: DolomiteERC4626__factory.connect(Deployments.DolomiteSUsde4626Token[Network.Berachain].address, hhUser1),
+        stBtc: DolomiteERC4626__factory.connect(Deployments.DolomiteStBtc4626Token[Network.Berachain].address, hhUser1),
+        solvBtc: DolomiteERC4626__factory.connect(
+          Deployments.DolomiteSolvBtc4626Token[Network.Berachain].address,
+          hhUser1,
+        ),
+        solvBtcBbn: DolomiteERC4626__factory.connect(
+          Deployments.DolomiteSolvBtcBbn4626Token[Network.Berachain].address,
+          hhUser1,
+        ),
+        stone: DolomiteERC4626__factory.connect(Deployments.DolomiteStone4626Token[Network.Berachain].address, hhUser1),
+        uniBtc: DolomiteERC4626__factory.connect(
+          Deployments.DolomiteUniBtc4626Token[Network.Berachain].address,
+          hhUser1,
+        ),
+        usd0: DolomiteERC4626__factory.connect(Deployments.DolomiteUsd04626Token[Network.Berachain].address, hhUser1),
+        usd0pp: DolomiteERC4626__factory.connect(
+          Deployments.DolomiteUsd0pp4626Token[Network.Berachain].address,
+          hhUser1,
+        ),
+        usda: DolomiteERC4626__factory.connect(Deployments.DolomiteUsda4626Token[Network.Berachain].address, hhUser1),
+        usde: DolomiteERC4626__factory.connect(Deployments.DolomiteUsde4626Token[Network.Berachain].address, hhUser1),
+        usdt: DolomiteERC4626__factory.connect(Deployments.DolomiteUsdt4626Token[Network.Berachain].address, hhUser1),
+        wbera: DolomiteERC4626WithPayable__factory.connect(
+          Deployments.DolomiteWBera4626Token[Network.Berachain].address,
+          hhUser1,
+        ),
+        wbtc: DolomiteERC4626__factory.connect(Deployments.DolomiteWbtc4626Token[Network.Berachain].address, hhUser1),
+        // weEth: DolomiteERC4626__factory.connect(Deployments.DoloWeEth4626Token[Network.Berachain].address, hhUser1), // TODO FIX
+        ylBtcLst: DolomiteERC4626__factory.connect(
+          Deployments.DolomiteYlBtcLst4626Token[Network.Berachain].address,
+          hhUser1,
+        ),
+        ylPumpBtc: DolomiteERC4626__factory.connect(
+          Deployments.DolomiteYlPumpBtc4626Token[Network.Berachain].address,
+          hhUser1,
+        ),
+        ylStEth: DolomiteERC4626__factory.connect(
+          Deployments.DolomiteYlStEth4626Token[Network.Berachain].address,
+          hhUser1,
+        ),
+      },
       marketIds: {
         ...coreProtocolParams.marketIds,
         beraEth: BERA_ETH_MAP[typedConfig.network].marketId,

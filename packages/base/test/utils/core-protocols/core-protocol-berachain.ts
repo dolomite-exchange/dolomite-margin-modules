@@ -1,9 +1,9 @@
 import { ChroniclePriceOracleV3, RedstonePriceOracleV3 } from '@dolomite-exchange/modules-oracles/src/types';
 import { BigNumberish } from 'ethers';
-import { IERC20, IWETH } from '../../../src/types';
+import { DolomiteERC4626, DolomiteERC4626WithPayable, IERC20, IWETH } from '../../../src/types';
 import { Network } from '../../../src/utils/no-deps-constants';
 import {
-  CoreProtocolAbstract,
+  CoreProtocolAbstract, CoreProtocolDolomiteTokens,
   CoreProtocolMarketIds,
   CoreProtocolParams,
   CoreProtocolTokens,
@@ -40,6 +40,37 @@ export interface CoreProtocolTokensBerachain extends CoreProtocolTokens<Network.
   ylStEth: IERC20;
 }
 
+export interface CoreProtocolDolomiteTokensBerachain extends CoreProtocolDolomiteTokens<Network.Berachain> {
+  beraEth: DolomiteERC4626;
+  eBtc: DolomiteERC4626;
+  honey: DolomiteERC4626;
+  lbtc: DolomiteERC4626;
+  nect: DolomiteERC4626;
+  pumpBtc: DolomiteERC4626;
+  rsEth: DolomiteERC4626;
+  rswEth: DolomiteERC4626;
+  rUsd: DolomiteERC4626;
+  sbtc: DolomiteERC4626;
+  sUsda: DolomiteERC4626;
+  sUsde: DolomiteERC4626;
+  stBtc: DolomiteERC4626;
+  solvBtc: DolomiteERC4626;
+  solvBtcBbn: DolomiteERC4626;
+  stone: DolomiteERC4626;
+  uniBtc: DolomiteERC4626;
+  usd0: DolomiteERC4626;
+  usd0pp: DolomiteERC4626;
+  usda: DolomiteERC4626;
+  usde: DolomiteERC4626;
+  usdt: DolomiteERC4626;
+  wbera: DolomiteERC4626WithPayable;
+  wbtc: DolomiteERC4626;
+  weEth: DolomiteERC4626;
+  ylBtcLst: DolomiteERC4626;
+  ylPumpBtc: DolomiteERC4626;
+  ylStEth: DolomiteERC4626;
+}
+
 interface CoreProtocolMarketIdsBerachain extends CoreProtocolMarketIds {
   beraEth: BigNumberish;
   eBtc: BigNumberish;
@@ -72,6 +103,7 @@ interface CoreProtocolMarketIdsBerachain extends CoreProtocolMarketIds {
 }
 
 export interface CoreProtocolParamsBerachain {
+  dolomiteTokens: CoreProtocolDolomiteTokensBerachain;
   marketIds: CoreProtocolMarketIdsBerachain;
   chroniclePriceOracleV3: ChroniclePriceOracleV3;
   redstonePriceOracleV3: RedstonePriceOracleV3;
@@ -79,6 +111,7 @@ export interface CoreProtocolParamsBerachain {
 }
 
 export class CoreProtocolBerachain extends CoreProtocolAbstract<Network.Berachain> {
+  public readonly dolomiteTokens: CoreProtocolDolomiteTokensBerachain;
   public readonly network: Network.Berachain = Network.Berachain;
   public readonly marketIds: CoreProtocolMarketIdsBerachain;
   public readonly chroniclePriceOracleV3: ChroniclePriceOracleV3;
@@ -89,8 +122,9 @@ export class CoreProtocolBerachain extends CoreProtocolAbstract<Network.Berachai
 
   constructor(params: CoreProtocolParams<Network.Berachain>, berachainParams: CoreProtocolParamsBerachain) {
     super(params);
-    this.marketIds = berachainParams.marketIds;
     this.chroniclePriceOracleV3 = berachainParams.chroniclePriceOracleV3;
+    this.dolomiteTokens = berachainParams.dolomiteTokens;
+    this.marketIds = berachainParams.marketIds;
     this.redstonePriceOracleV3 = berachainParams.redstonePriceOracleV3;
     this.tokens = berachainParams.tokens;
   }

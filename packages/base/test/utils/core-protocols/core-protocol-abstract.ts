@@ -64,11 +64,38 @@ export type WETHType<T extends NetworkType> = T extends Network.ArbitrumOne
   ? IERC20
   : never;
 
+export type DolomiteWETHType<T extends NetworkType> = T extends Network.ArbitrumOne
+  ? DolomiteERC4626WithPayable
+  : T extends Network.Base
+  ? DolomiteERC4626WithPayable
+  : T extends Network.Berachain
+  ? DolomiteERC4626
+  : T extends Network.BerachainBartio
+  ? DolomiteERC4626
+  : T extends Network.BerachainCartio
+  ? DolomiteERC4626
+  : T extends Network.Ink
+  ? DolomiteERC4626WithPayable
+  : T extends Network.Mantle
+  ? DolomiteERC4626
+  : T extends Network.PolygonZkEvm
+  ? DolomiteERC4626WithPayable
+  : T extends Network.SuperSeed
+  ? DolomiteERC4626WithPayable
+  : T extends Network.XLayer
+  ? DolomiteERC4626
+  : never;
+
 export interface CoreProtocolTokens<T extends NetworkType> {
   payableToken: IWETH;
   usdc: IERC20;
   weth: WETHType<T>;
   stablecoins: IERC20[];
+}
+
+export interface CoreProtocolDolomiteTokens<T extends NetworkType> {
+  usdc: DolomiteERC4626 | undefined;
+  weth: DolomiteWETHType<T> | undefined;
 }
 
 export interface CoreProtocolMarketIds {
@@ -102,6 +129,7 @@ export interface CoreProtocolParams<T extends NetworkType> {
   dolomiteAccountRegistryProxy: RegistryProxy;
   eventEmitterRegistry: IEventEmitterRegistry;
   eventEmitterRegistryProxy: RegistryProxy;
+  dolomiteTokens: CoreProtocolDolomiteTokens<T>;
   expiry: Expiry<T>;
   freezableLiquidatorProxy: IsolationModeFreezableLiquidatorProxy;
   genericTraderProxy: IGenericTraderProxyV1;
