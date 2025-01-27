@@ -21,10 +21,13 @@ pragma solidity ^0.8.9;
 
 import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import { OnlyDolomiteMarginForUpgradeable } from "../helpers/OnlyDolomiteMargin.sol";
+import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 import { ISmartDebtAutoTrader } from "../interfaces/ISmartDebtAutoTrader.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../protocol/lib/Require.sol";
+import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
+import { AccountActionLib } from "../lib/AccountActionLib.sol";
+import { IGenericTraderRouter } from "../routers/interfaces/IGenericTraderRouter.sol";
 
 
 /**
@@ -33,30 +36,47 @@ import { Require } from "../protocol/lib/Require.sol";
  *
  * Contract for performing internal trades using smart debt
  */
-contract SmartDebtAutoTrader is OnlyDolomiteMarginForUpgradeable, Initializable, ISmartDebtAutoTrader {
+contract SmartDebtAutoTrader is OnlyDolomiteMargin, Initializable, ISmartDebtAutoTrader {
     using EnumerableSet for EnumerableSet.Bytes32Set;
 
     // ========================================================
     // ====================== Constants =======================
     // ========================================================
 
+    uint256 private constant _ONE = 1 ether;
+    uint256 private constant _TRADE_ACCOUNT_ID = 0;
+    uint256 private constant _ZAP_ACCOUNT_ID = 1;
+
+
     bytes32 private constant _FILE = "SmartDebtAutoTrader";
     bytes32 private constant _SMART_PAIRS_STORAGE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.smartPairsStorage")) - 1); // solhint-disable-line max-line-length
 
+    IDolomiteRegistry public immutable DOLOMITE_REGISTRY;
+    uint256 public immutable CHAIN_ID;
     // ========================================================
     // ===================== Constructor ========================
     // ========================================================
 
-    constructor() OnlyDolomiteMarginForUpgradeable() {
+    constructor(uint256 _chainId, address _dolomiteRegistry, address _dolomiteMargin) OnlyDolomiteMargin(_dolomiteMargin) {
+        CHAIN_ID = _chainId;
+        DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
     }
 
-    function initialize(address _dolomiteMargin) external initializer {
-        _setDolomiteMarginViaSlot(_dolomiteMargin);
+    function initialize() external initializer {
     }
 
     // ========================================================
     // ================== External Functions ==================
     // ========================================================
+
+    function callFunction(
+        address _sender,
+        IDolomiteStructs.AccountInfo calldata _accountInfo,
+        bytes calldata _data
+    ) external onlyDolomiteMargin(msg.sender) {
+        // @todo add generic trader router to dolomite registry
+        _setTradeEnabled(true);
+    }
 
     function getTradeCost(
         uint256 _inputMarketId,
@@ -68,6 +88,13 @@ contract SmartDebtAutoTrader is OnlyDolomiteMarginForUpgradeable, Initializable,
         IDolomiteStructs.Wei memory _inputDeltaWei,
         bytes memory /* data */
     ) external returns (IDolomiteStructs.AssetAmount memory) {
+        Require.that(
+            tradeEnabled(),
+            _FILE,
+            "Trade is not enabled"
+        );
+        _setTradeEnabled(false);
+
         PairPosition memory pairPosition = userToPair(_takerAccount.owner, _takerAccount.number);
         (bytes32 pairBytes, ,) = _getPairBytesAndSortMarketIds(_inputMarketId, _outputMarketId);
 
@@ -77,7 +104,8 @@ contract SmartDebtAutoTrader is OnlyDolomiteMarginForUpgradeable, Initializable,
             "User does not have the pair set"
         );
 
-        // use price oracles to get the amounts
+        // @todo add fee calculations
+        // @todo switch to chainlink data streams
         uint256 inputMarketId = _inputMarketId;
         uint256 outputMarketId = _outputMarketId;
         uint256 inputValue = _inputDeltaWei.value * DOLOMITE_MARGIN().getMarketPrice(inputMarketId).value;
@@ -193,9 +221,75 @@ contract SmartDebtAutoTrader is OnlyDolomiteMarginForUpgradeable, Initializable,
         _ownerRemoveSmartCollateralPair(_marketId1, _marketId2);
     }
 
+    function ownerSetGlobalFee(uint256 _globalFee) external onlyDolomiteMarginOwner(msg.sender) {
+        _getSmartPairsStorage().globalFee = _globalFee;
+        emit GlobalFeeSet(_globalFee);
+    }
+
+    function ownerSetAdminFee(uint256 _adminFee) external onlyDolomiteMarginOwner(msg.sender) {
+        _getSmartPairsStorage().adminFee = _adminFee;
+        emit AdminFeeSet(_adminFee);
+    }
+
+    function ownerSetPairFee(uint256 _marketId1, uint256 _marketId2, uint256 _fee) external onlyDolomiteMarginOwner(msg.sender) {
+        (bytes32 pairBytes, ,) = _getPairBytesAndSortMarketIds(_marketId1, _marketId2);
+        _getSmartPairsStorage().pairToFee[pairBytes] = _fee;
+        emit PairFeeSet(pairBytes, _fee);
+    }
+
     // ========================================================
     // ==================== View Functions ====================
     // ========================================================
+
+    function getActionsForSmartTrade(
+        uint256 _inputMarketId,
+        uint256 _outputMarketId,
+        uint256 _inputAmountWei,
+        uint256 _feeAccountId,
+        uint256 _makerAccountStartId,
+        IGenericTraderRouter.SmartAssetSwapParams[] memory _swaps
+    ) external view returns (IDolomiteStructs.ActionArgs[] memory) {
+        SmartPairsStorage storage smartPairsStorage = _getSmartPairsStorage();
+        (bytes32 pairBytes, ,) = _getPairBytesAndSortMarketIds(_inputMarketId, _outputMarketId);
+        IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](_swaps.length + 2);
+        uint256 actionCursor;
+
+        actions[actionCursor++] = AccountActionLib.encodeCallAction(
+            0,
+            address(this),
+            bytes("")
+        );
+
+        // @todo Encode transfer to fee agent
+        uint256 feePercentage = smartPairsStorage.pairToFee[pairBytes] == 0 ? smartPairsStorage.globalFee : smartPairsStorage.pairToFee[pairBytes];
+        uint256 adminFeePercentage = smartPairsStorage.adminFee * feePercentage;
+        uint256 adminFeeAmount = _inputAmountWei * adminFeePercentage / _ONE;
+
+        // @audit check rounding errors
+        actions[actionCursor++] = AccountActionLib.encodeTransferAction(
+            _ZAP_ACCOUNT_ID,
+            _feeAccountId,
+            _inputMarketId,
+            IDolomiteStructs.AssetDenomination.Wei,
+            adminFeeAmount
+        );
+
+        uint256 tradeTotal;
+        for (uint256 i; i < _swaps.length; i++) {
+            tradeTotal += _swaps[i].amount;
+            actions[actionCursor++] = AccountActionLib.encodeInternalTradeActionWithCustomData(
+                /* fromAccountId = */ _makerAccountStartId++,
+                /* toAccountId = */ _ZAP_ACCOUNT_ID,
+                /* primaryMarketId = */ _inputMarketId,
+                /* secondaryMarketId = */ _outputMarketId,
+                /* traderAddress = */ address(this),
+                /* amountInWei = */ _swaps[i].amount,
+                /* chainId = */ CHAIN_ID,
+                /* calculateAmountWithMakerAccount = */ false,
+                /* orderData = */ bytes("")
+            );
+        }
+    }
 
     function isSmartDebtPair(uint256 _marketId1, uint256 _marketId2) public view returns (bool) {
         SmartPairsStorage storage smartPairsStorage = _getSmartPairsStorage();
@@ -211,6 +305,10 @@ contract SmartDebtAutoTrader is OnlyDolomiteMarginForUpgradeable, Initializable,
 
     function userToPair(address _user, uint256 _accountNumber) public view returns (PairPosition memory) {
         return _getSmartPairsStorage().userToPair[_user][_accountNumber];
+    }
+
+    function tradeEnabled() public view returns (bool) {
+        return _getSmartPairsStorage().tradeEnabled;
     }
 
     // ========================================================
@@ -284,6 +382,10 @@ contract SmartDebtAutoTrader is OnlyDolomiteMarginForUpgradeable, Initializable,
             "Pair does not exist"
         );
         emit SmartCollateralPairRemoved(sortedMarketId1, sortedMarketId2);
+    }
+
+    function _setTradeEnabled(bool _tradeEnabled) internal {
+        _getSmartPairsStorage().tradeEnabled = _tradeEnabled;
     }
 
     function _getPairBytesAndSortMarketIds(

@@ -47,6 +47,11 @@ interface ISmartDebtAutoTrader is IDolomiteAutoTrader {
     }
 
     struct SmartPairsStorage {
+        bool tradeEnabled;
+        uint256 globalFee;
+        uint256 adminFee;
+
+        mapping(bytes32 => uint256) pairToFee;
         EnumerableSet.Bytes32Set smartDebtPairs;
         EnumerableSet.Bytes32Set smartCollateralPairs;
         mapping(address => mapping(uint256 => PairPosition)) userToPair;
@@ -62,6 +67,10 @@ interface ISmartDebtAutoTrader is IDolomiteAutoTrader {
     event SmartCollateralPairRemoved(uint256 indexed marketId1, uint256 indexed marketId2);
     event UserToPairSet(address indexed user, uint256 indexed accountNumber, PairType pairType, bytes32 pairBytes);
 
+    event GlobalFeeSet(uint256 indexed globalFee);
+    event AdminFeeSet(uint256 indexed adminFee);
+    event PairFeeSet(bytes32 indexed pairBytes, uint256 indexed fee);
+
     // ========================================================
     // ================== External Functions ==================
     // ========================================================
@@ -72,6 +81,10 @@ interface ISmartDebtAutoTrader is IDolomiteAutoTrader {
     function ownerRemoveSmartDebtPair(uint256 _marketId1, uint256 _marketId2) external;
     function ownerAddSmartCollateralPair(uint256 _marketId1, uint256 _marketId2) external;
     function ownerRemoveSmartCollateralPair(uint256 _marketId1, uint256 _marketId2) external;
+
+    function ownerSetGlobalFee(uint256 _globalFee) external;
+    function ownerSetAdminFee(uint256 _adminFee) external;
+    function ownerSetPairFee(uint256 _marketId1, uint256 _marketId2, uint256 _fee) external;
 
     // ========================================================
     // ==================== View Functions ====================

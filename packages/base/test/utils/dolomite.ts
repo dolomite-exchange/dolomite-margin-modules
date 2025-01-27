@@ -336,9 +336,9 @@ export async function createSmartDebtAutoTrader(
   const implementation = await createContractWithAbi<SmartDebtAutoTrader>(
     SmartDebtAutoTrader__factory.abi,
     SmartDebtAutoTrader__factory.bytecode,
-    [],
+    [core.dolomiteRegistry.address, core.dolomiteMargin.address],
   );
-  const initCalldata = await implementation.populateTransaction.initialize(core.dolomiteMargin.address);
+  const initCalldata = await implementation.populateTransaction.initialize();
 
   const proxy = await createContractWithAbi(
     UpgradeableProxy__factory.abi,

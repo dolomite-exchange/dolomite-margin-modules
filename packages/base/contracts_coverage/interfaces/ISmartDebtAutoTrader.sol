@@ -47,6 +47,7 @@ interface ISmartDebtAutoTrader is IDolomiteAutoTrader {
     }
 
     struct SmartPairsStorage {
+        bool tradeEnabled;
         EnumerableSet.Bytes32Set smartDebtPairs;
         EnumerableSet.Bytes32Set smartCollateralPairs;
         mapping(address => mapping(uint256 => PairPosition)) userToPair;

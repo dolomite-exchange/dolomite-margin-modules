@@ -1,8 +1,8 @@
 import { expect } from 'chai';
 import { GenericTraderProxyV2, SmartDebtAutoTrader } from '../../src/types';
 import { depositIntoDolomiteMargin } from '../../src/utils/dolomite-utils';
-import { BYTES_ZERO, MAX_UINT_256_BI, Network, ONE_ETH_BI, ZERO_BI } from '../../src/utils/no-deps-constants';
-import { revertToSnapshotAndCapture, snapshot } from '../utils';
+import { BYTES_EMPTY, BYTES_ZERO, MAX_UINT_256_BI, Network, ONE_ETH_BI, ZERO_BI } from '../../src/utils/no-deps-constants';
+import { impersonate, revertToSnapshotAndCapture, snapshot } from '../utils';
 import { expectEvent, expectProtocolBalance, expectProtocolBalanceIsGreaterThan, expectThrow } from '../utils/assertions';
 
 import { CoreProtocolArbitrumOne } from '../utils/core-protocols/core-protocol-arbitrum-one';
@@ -62,12 +62,38 @@ describe('SmartDebtAutoTrader', () => {
   describe('#initialize', () => {
     it('should work normally', async () => {
       expect(await trader.DOLOMITE_MARGIN()).to.equal(core.dolomiteMargin.address);
+      expect(await trader.DOLOMITE_REGISTRY()).to.equal(core.dolomiteRegistry.address);
     });
 
     it('should fail if already initialized', async () => {
       await expectThrow(
-        trader.initialize(core.dolomiteMargin.address),
+        trader.initialize(),
         'Initializable: contract is already initialized'
+      );
+    });
+  });
+
+  describe('#callFunction', () => {
+    it('should work normally', async () => {
+      expect(await trader.tradeEnabled()).to.equal(false);
+
+      const dolomiteImpersonator = await impersonate(core.dolomiteMargin.address, true);
+      await trader.connect(dolomiteImpersonator).callFunction(
+        core.hhUser1.address,
+        { owner: core.hhUser1.address, number: defaultAccountNumber },
+        BYTES_EMPTY
+      );
+      expect(await trader.tradeEnabled()).to.equal(true);
+    });
+
+    it('should fail if not called by dolomite margin', async () => {
+      await expectThrow(
+        trader.connect(core.hhUser1).callFunction(
+          core.hhUser1.address,
+          { owner: core.hhUser1.address, number: defaultAccountNumber },
+          BYTES_EMPTY
+        ),
+        `OnlyDolomiteMargin: Only Dolomite can call function <${core.hhUser1.address.toLowerCase()}>`
       );
     });
   });

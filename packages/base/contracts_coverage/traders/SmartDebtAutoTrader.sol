@@ -42,6 +42,7 @@ contract SmartDebtAutoTrader is OnlyDolomiteMarginForUpgradeable, Initializable,
 
     bytes32 private constant _FILE = "SmartDebtAutoTrader";
     bytes32 private constant _SMART_PAIRS_STORAGE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.smartPairsStorage")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _TRADE_ENABLED_SLOT = bytes32(uint256(keccak256("eip1967.proxy.tradeEnabled")) - 1); // solhint-disable-line max-line-length
 
     // ========================================================
     // ===================== Constructor ========================
@@ -58,6 +59,15 @@ contract SmartDebtAutoTrader is OnlyDolomiteMarginForUpgradeable, Initializable,
     // ================== External Functions ==================
     // ========================================================
 
+    function callFunction(
+        address _sender,
+        IDolomiteStructs.AccountInfo calldata _accountInfo,
+        bytes calldata _data
+    ) external onlyDolomiteMargin(msg.sender) {
+        // @todo add generic trader router to dolomite registry
+        _setTradeEnabled(true);
+    }
+
     function getTradeCost(
         uint256 _inputMarketId,
         uint256 _outputMarketId,
@@ -66,8 +76,16 @@ contract SmartDebtAutoTrader is OnlyDolomiteMarginForUpgradeable, Initializable,
         IDolomiteStructs.Par memory /* oldInputPar */,
         IDolomiteStructs.Par memory /* newInputPar */,
         IDolomiteStructs.Wei memory _inputDeltaWei,
-        bytes memory _data
+        bytes memory /* data */
     ) external returns (IDolomiteStructs.AssetAmount memory) {
+        if (tradeEnabled()) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            tradeEnabled(),
+            _FILE,
+            "Trade is not enabled"
+        );
+        _setTradeEnabled(false);
+
         PairPosition memory pairPosition = userToPair(_takerAccount.owner, _takerAccount.number);
         (bytes32 pairBytes, ,) = _getPairBytesAndSortMarketIds(_inputMarketId, _outputMarketId);
 
@@ -204,6 +222,19 @@ contract SmartDebtAutoTrader is OnlyDolomiteMarginForUpgradeable, Initializable,
     // ==================== View Functions ====================
     // ========================================================
 
+    function getActionsForSmartTrade(
+        uint256 _inputMarketId,
+        uint256 _outputMarketId,
+        IDolomiteStructs.AccountInfo memory /* _makerAccount */,
+        IDolomiteStructs.AccountInfo memory _takerAccount,
+        IDolomiteStructs.Wei memory _inputDeltaWei,
+        bytes memory /* data */
+    ) external view returns (IDolomiteStructs.ActionArgs[] memory) {
+        // @todo Add fee agent dolomite registry
+        // @todo Encode call action
+        // @todo Encode transfer to fee agent
+    }
+
     function isSmartDebtPair(uint256 _marketId1, uint256 _marketId2) public view returns (bool) {
         SmartPairsStorage storage smartPairsStorage = _getSmartPairsStorage();
         (bytes32 pairBytes, ,) = _getPairBytesAndSortMarketIds(_marketId1, _marketId2);
@@ -218,6 +249,10 @@ contract SmartDebtAutoTrader is OnlyDolomiteMarginForUpgradeable, Initializable,
 
     function userToPair(address _user, uint256 _accountNumber) public view returns (PairPosition memory) {
         return _getSmartPairsStorage().userToPair[_user][_accountNumber];
+    }
+
+    function tradeEnabled() public view returns (bool) {
+        return _getSmartPairsStorage().tradeEnabled;
     }
 
     // ========================================================
@@ -295,6 +330,10 @@ contract SmartDebtAutoTrader is OnlyDolomiteMarginForUpgradeable, Initializable,
             "Pair does not exist"
         );
         emit SmartCollateralPairRemoved(sortedMarketId1, sortedMarketId2);
+    }
+
+    function _setTradeEnabled(bool _tradeEnabled) internal {
+        _getSmartPairsStorage().tradeEnabled = _tradeEnabled;
     }
 
     function _getPairBytesAndSortMarketIds(

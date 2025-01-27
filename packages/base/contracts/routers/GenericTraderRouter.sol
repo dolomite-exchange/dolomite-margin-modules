@@ -32,7 +32,6 @@ import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import "hardhat/console.sol";
 
 /**
  * @title   GenericTraderRouter
@@ -51,6 +50,8 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
 
     uint256 internal constant _TRADE_ACCOUNT_ID = 0;
     uint256 internal constant _ZAP_ACCOUNT_ID = 1;
+    uint256 internal constant _FEE_ACCOUNT_ID = 2;
+
     uint256 internal constant _DEFAULT_ACCOUNT_NUMBER = 0;
 
     uint256 public immutable CHAIN_ID;
@@ -220,58 +221,6 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
             }
         }
     }
-
-    // function swapExactInputForOutputViaSmartAccount(
-    //     uint256 _accountNumber,
-    //     uint256 _inputMarketId,
-    //     uint256 _outputMarketId,
-    //     uint256 _inputAmountWei,
-    //     uint256 _minOutputAmountWei,
-    //     SmartAssetSwapParams[] memory _swaps
-    // ) external nonReentrant returns (uint256) {
-    //     IDolomiteStructs.AccountInfo[] memory accounts = _getAccounts(
-    //         msg.sender,
-    //         _calculateZapAccountNumber(msg.sender),
-    //         _swaps
-    //     );
-    //     _validateZapAccount(accounts[TRADE_ACCOUNT_ID], _inputMarketId, _outputMarketId);
-
-    //     uint256 actionsLen = _swaps.length + 2;
-    //     IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](actionsLen);
-    //     _appendInternalTradeActions(actions, _inputMarketId, _outputMarketId, _inputAmountWei, _swaps);
-
-    //     actions[actionsLen - 2] = AccountActionLib.encodeDepositAction(
-    //         TRADE_ACCOUNT_ID,
-    //         inputMarketId,
-    //         IDolomiteStructs.AssetAmount({
-    //             sign: true,
-    //             denomination: IDolomiteStructs.AssetDenomination.Wei,
-    //             ref: IDolomiteStructs.AssetReference.Delta,
-    //             value: _inputAmountWei
-    //         }),
-    //         address(this)
-    //     );
-    //     actions[actionsLen - 1] = AccountActionLib.encodeWithdrawalAction(
-    //         TRADE_ACCOUNT_ID,
-    //         outputMarketId,
-    //         IDolomiteStructs.AssetAmount({
-    //             sign: false,
-    //             denomination: IDolomiteStructs.AssetDenomination.Wei,
-    //             ref: IDolomiteStructs.AssetReference.Target,
-    //             value: 0
-    //         }),
-    //         address(this)
-    //     );
-
-    //     DOLOMITE_MARGIN().operate(accounts, actions);
-
-    //     Require.that(
-    //         outputAmount >= _minOutputAmountWei,
-    //         _FILE,
-    //         'Insufficient output amount'
-    //     );
-    //     return outputAmount;
-    // }
 
     function swapExactInputForOutputViaSmartAccount(
         address _inputToken,
@@ -497,6 +446,10 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
         accounts[_ZAP_ACCOUNT_ID] = IDolomiteStructs.AccountInfo({
             owner: _tradeAccountOwner,
             number: _calculateZapAccountNumber(_tradeAccountOwner, _tradeAccountNumber)
+        });
+        accounts[_FEE_ACCOUNT_ID] = IDolomiteStructs.AccountInfo({
+            owner: DOLOMITE_REGISTRY.feeAccount(),
+            number: DEFAULT_ACCOUNT_NUMBER
         });
 
         for (uint256 i; i < _swaps.length; i++) {

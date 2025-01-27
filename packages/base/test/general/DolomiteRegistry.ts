@@ -157,6 +157,31 @@ describe('DolomiteRegistryImplementation', () => {
     });
   });
 
+  describe('#ownerSetFeeAgent', () => {
+    it('should work normally', async () => {
+      expect(await registry.feeAgent()).to.equal(ZERO_ADDRESS);
+      const result = await registry.connect(core.governance).ownerSetFeeAgent(OTHER_ADDRESS);
+      await expectEvent(registry, result, 'FeeAgentSet', {
+        feeAgent: OTHER_ADDRESS,
+      });
+      expect(await registry.feeAgent()).to.equal(OTHER_ADDRESS);
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetFeeAgent(ZERO_ADDRESS),
+        'DolomiteRegistryImplementation: Invalid feeAgent',
+      );
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetFeeAgent(OTHER_ADDRESS),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+  });
+
   describe('#ownerSetSlippageToleranceForPauseSentinel', () => {
     it('should work normally', async () => {
       const slippageTolerance = '123';
@@ -403,6 +428,31 @@ describe('DolomiteRegistryImplementation', () => {
           [core.hhUser1.address],
           [true]
         ),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+  });
+
+  describe('#ownerSetSmartDebtTrader', () => {
+    it('should work normally', async () => {
+      expect(await registry.smartDebtTrader()).to.equal(ZERO_ADDRESS);
+      const result = await registry.connect(core.governance).ownerSetSmartDebtTrader(OTHER_ADDRESS);
+      await expectEvent(registry, result, 'SmartDebtTraderSet', {
+        smartDebtTrader: OTHER_ADDRESS,
+      });
+      expect(await registry.smartDebtTrader()).to.equal(OTHER_ADDRESS);
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetSmartDebtTrader(ZERO_ADDRESS),
+        'DolomiteRegistryImplementation: Invalid smartDebtTrader',
+      );
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetSmartDebtTrader(OTHER_ADDRESS),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
