@@ -24,7 +24,7 @@ import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
-import { OnlyDolomiteMarginForUpgradeable } from "../helpers/OnlyDolomiteMarginForUpgradeable.sol";
+import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 import { ReentrancyGuardUpgradeable } from "../helpers/ReentrancyGuardUpgradeable.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IIsolationModeTokenVaultV1 } from "../isolation-mode/interfaces/IIsolationModeTokenVaultV1.sol";
@@ -40,7 +40,7 @@ import { IRouterBase } from "./interfaces/IRouterBase.sol";
  * @notice  Base contract for all routers
  */
 abstract contract RouterBase is
-    OnlyDolomiteMarginForUpgradeable,
+    OnlyDolomiteMargin,
     ReentrancyGuardUpgradeable,
     Initializable,
     IRouterBase
@@ -70,9 +70,8 @@ abstract contract RouterBase is
     constructor (
         address _dolomiteRegistry,
         address _dolomiteMargin
-    ) {
+    ) OnlyDolomiteMargin(_dolomiteMargin) {
         DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
-        _setDolomiteMarginViaSlot(_dolomiteMargin);
     }
 
     function initialize() external initializer virtual {

@@ -5,7 +5,7 @@ import { revertToSnapshotAndCapture, snapshot } from '../utils';
 import { expectEvent, expectThrow } from '../utils/assertions';
 
 import { CoreProtocolArbitrumOne } from '../utils/core-protocols/core-protocol-arbitrum-one';
-import { createRouterProxy } from '../utils/dolomite';
+import { createDolomiteAccountRegistryImplementation, createRouterProxy } from '../utils/dolomite';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '../utils/setup';
 import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
 
@@ -18,6 +18,10 @@ describe('RouterProxy', () => {
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
+
+    const dolomiteAccountRegistry = await createDolomiteAccountRegistryImplementation();
+    await core.dolomiteAccountRegistryProxy.connect(core.governance).upgradeTo(dolomiteAccountRegistry.address);
+
     implementation = await createContractWithAbi<DepositWithdrawalRouter>(
       DepositWithdrawalRouter__factory.abi,
       DepositWithdrawalRouter__factory.bytecode,

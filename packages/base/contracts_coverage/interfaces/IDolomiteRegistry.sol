@@ -218,6 +218,7 @@ interface IDolomiteRegistry {
     function slippageToleranceForPauseSentinelBase() external pure returns (uint256);
 
     /**
+     *
      * @param  _trader  The address of the trader
      * @return  Whether the trader is trusted
      */
