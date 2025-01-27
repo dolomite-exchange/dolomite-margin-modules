@@ -52,14 +52,10 @@ export function getRegistryProxyConstructorParams<T extends NetworkType>(
 
 export function getUpgradeableProxyConstructorParams<T extends NetworkType>(
   implementationAddress: string,
-  implementationCalldata: PopulatedTransaction | null,
+  implementationCalldata: PopulatedTransaction,
   dolomiteMargin: DolomiteMargin<T>,
 ): any[] {
-  if (implementationCalldata) {
-    return [implementationAddress, dolomiteMargin.address, implementationCalldata.data];
-  }
-
-  return [implementationAddress, dolomiteMargin.address, BYTES_EMPTY];
+  return [implementationAddress, dolomiteMargin.address, implementationCalldata.data!];
 }
 
 export function getIsolationModeFreezableLiquidatorProxyConstructorParams<T extends NetworkType>(

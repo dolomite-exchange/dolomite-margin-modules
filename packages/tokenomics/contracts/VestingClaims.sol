@@ -63,8 +63,9 @@ contract VestingClaims is BaseClaim, IVestingClaims {
         address _dolo,
         uint256 _tgeTimestamp,
         uint256 _duration,
-        address _dolomiteRegistry
-    ) BaseClaim(_dolomiteRegistry) {
+        address _dolomiteRegistry,
+        address _dolomiteMargin
+    ) BaseClaim(_dolomiteRegistry, _dolomiteMargin) {
         DOLO = IERC20(_dolo);
         TGE_TIMESTAMP = _tgeTimestamp;
         DURATION = _duration;

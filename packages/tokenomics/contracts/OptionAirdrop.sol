@@ -24,7 +24,6 @@ import { AccountActionLib } from "@dolomite-exchange/modules-base/contracts/lib/
 import { AccountBalanceLib } from "@dolomite-exchange/modules-base/contracts/lib/AccountBalanceLib.sol";
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
-import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol"; // solhint-disable-line max-line-length
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { MerkleProof } from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
@@ -39,7 +38,7 @@ import { IOptionAirdrop } from "./interfaces/IOptionAirdrop.sol";
  *
  * Option airdrop contract for DOLO tokens
  */
-contract OptionAirdrop is BaseClaim, ReentrancyGuardUpgradeable, IOptionAirdrop {
+contract OptionAirdrop is BaseClaim, IOptionAirdrop {
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.UintSet;
 
@@ -65,15 +64,17 @@ contract OptionAirdrop is BaseClaim, ReentrancyGuardUpgradeable, IOptionAirdrop 
 
     constructor(
         address _dolo,
-        address _dolomiteRegistry
-    ) BaseClaim(_dolomiteRegistry) {
+        address _dolomiteRegistry,
+        address _dolomiteMargin
+    ) BaseClaim(_dolomiteRegistry, _dolomiteMargin) {
         DOLO = IERC20(_dolo);
     }
 
     function initialize(
         address _treasury
-    ) external initializer {
+    ) public initializer {
         _ownerSetTreasury(_treasury);
+        super.initialize();
     }
 
     // ======================================================

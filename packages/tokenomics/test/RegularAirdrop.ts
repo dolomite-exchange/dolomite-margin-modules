@@ -3,10 +3,10 @@ import {
   DOLO,
   MockVotingEscrow,
   MockVotingEscrow__factory,
-  RegularAirdrop,
+  TestRegularAirdrop,
 } from '../src/types';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol } from 'packages/base/test/utils/setup';
-import { createDOLO, createRegularAirdrop } from './tokenomics-ecosystem-utils';
+import { createDOLO, createTestRegularAirdrop } from './tokenomics-ecosystem-utils';
 import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
 import { Network, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
 import { expect } from 'chai';
@@ -19,7 +19,7 @@ describe('RegularAirdrop', () => {
   let core: CoreProtocolArbitrumOne;
   let dolo: DOLO;
   let mockVeToken: MockVotingEscrow;
-  let regularAirdrop: RegularAirdrop;
+  let regularAirdrop: TestRegularAirdrop;
 
   let merkleRoot: string;
   let validProof1: string[];
@@ -55,7 +55,7 @@ describe('RegularAirdrop', () => {
     validProof2 = tree.getHexProof(leaves[1]);
     invalidProof = tree.getHexProof(invalidLeaf);
 
-    regularAirdrop = await createRegularAirdrop(core, dolo, mockVeToken);
+    regularAirdrop = await createTestRegularAirdrop(core, dolo, mockVeToken);
 
     await regularAirdrop.connect(core.governance).ownerSetMerkleRoot(merkleRoot);
     await regularAirdrop.connect(core.governance).ownerSetHandler(core.hhUser5.address);
@@ -221,6 +221,13 @@ describe('RegularAirdrop', () => {
       await expectThrow(
         regularAirdrop.connect(core.hhUser1).claim(validProof1, parseEther('5')),
         'RegularAirdrop: User already claimed'
+      );
+    });
+
+    it('should fail if reentered', async () => {
+      await expectThrow(
+        regularAirdrop.callClaimAndTriggerReentrancy(validProof1, parseEther('5')),
+        'ReentrancyGuardUpgradeable: Reentrant call',
       );
     });
   });

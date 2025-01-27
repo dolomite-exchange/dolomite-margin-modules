@@ -20,41 +20,41 @@
 
 pragma solidity ^0.8.9;
 
-import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
-import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
-import { BaseClaim } from "../BaseClaim.sol";
+import { InternalSafeDelegateCallLib } from "@dolomite-exchange/modules-base/contracts/lib/InternalSafeDelegateCallLib.sol"; // solhint-disable-line max-line-length
+import { RegularAirdrop } from "../RegularAirdrop.sol";
 
 
 /**
- * @title   TestBaseClaim
+ * @title   TestRegularAirdrop
  * @author  Dolomite
  *
  * @notice  Test implementation for exposing areas for coverage testing
  */
-contract TestBaseClaim is BaseClaim {
-
-    bytes32 private constant _FILE = "TestBaseClaim";
+contract TestRegularAirdrop is RegularAirdrop {
 
     constructor(
+        address _dolo,
+        address _veDolo,
         address _dolomiteRegistry,
         address _dolomiteMargin
-    ) BaseClaim(
+    ) RegularAirdrop(
+        _dolo,
+        _veDolo,
         _dolomiteRegistry,
         _dolomiteMargin
     ) {} // solhint-disable-line
 
-    function verifyMerkleProof(bytes32[] calldata _proof, uint256 _amount) external view returns (bool){
-        address user = addressRemapping(msg.sender) == address(0) ? msg.sender : addressRemapping(msg.sender);
-        if (_verifyMerkleProof(user, _proof, _amount)) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            _verifyMerkleProof(user, _proof, _amount),
-            _FILE,
-            "Invalid merkle proof"
+    function callClaimAndTriggerReentrancy(
+        bytes32[] calldata _proof,
+        uint256 _amount
+    ) external nonReentrant {
+        InternalSafeDelegateCallLib.safeDelegateCall(
+            address(this),
+            abi.encodeWithSelector(
+                this.claim.selector,
+                _proof,
+                _amount
+            )
         );
-        return true;
-    }
-
-    function testOnlyClaimEnabled() external view onlyClaimEnabled returns (bool) {
-        return true;
     }
 }

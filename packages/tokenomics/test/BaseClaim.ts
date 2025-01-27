@@ -8,7 +8,7 @@ import { defaultAbiCoder, keccak256, parseEther } from 'ethers/lib/utils';
 import MerkleTree from 'merkletreejs';
 import { revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
 import { expectEvent, expectThrow } from 'packages/base/test/utils/assertions';
-import { createUpgradeableProxy } from './tokenomics-ecosystem-utils';
+import { UpgradeableProxy, UpgradeableProxy__factory } from 'packages/liquidity-mining/src/types';
 
 describe('BaseClaim', () => {
   let core: CoreProtocolArbitrumOne;
@@ -45,11 +45,15 @@ describe('BaseClaim', () => {
     const baseClaimImplementation = await createContractWithAbi<TestBaseClaim>(
       TestBaseClaim__factory.abi,
       TestBaseClaim__factory.bytecode,
-      [core.dolomiteRegistry.address]
+      [core.dolomiteRegistry.address, core.dolomiteMargin.address]
     );
     const calldata = await baseClaimImplementation.populateTransaction.initialize();
-    const baseClaimProxy = await createUpgradeableProxy(core, baseClaimImplementation, calldata);
-    baseClaim = TestBaseClaim__factory.connect(baseClaimProxy.address, core.hhUser1);
+    const proxy = await createContractWithAbi<UpgradeableProxy>(
+      UpgradeableProxy__factory.abi,
+      UpgradeableProxy__factory.bytecode,
+      [baseClaimImplementation.address, core.dolomiteMargin.address, calldata.data]
+    );
+    baseClaim = TestBaseClaim__factory.connect(proxy.address, core.hhUser1);
 
     await baseClaim.connect(core.governance).ownerSetMerkleRoot(merkleRoot);
 
@@ -64,6 +68,15 @@ describe('BaseClaim', () => {
     it('should work normally', async () => {
       expect(await baseClaim.DOLOMITE_MARGIN()).to.eq(core.dolomiteMargin.address);
       expect(await baseClaim.DOLOMITE_REGISTRY()).to.eq(core.dolomiteRegistry.address);
+    });
+  });
+
+  describe('#initialize', () => {
+    it('should fail if called again', async () => {
+      await expectThrow(
+        baseClaim.connect(core.governance).initialize(),
+        'Initializable: contract is already initialized'
+      );
     });
   });
 
@@ -206,6 +219,18 @@ describe('BaseClaim', () => {
         baseClaim.connect(core.hhUser3).verifyMerkleProof(invalidProof, parseEther('15')),
         'TestBaseClaim: Invalid merkle proof'
       );
+    });
+  });
+
+  describe('#onlyClaimEnabled', () => {
+    it('should work normally', async () => {
+      await expectThrow(
+        baseClaim.connect(core.hhUser1).testOnlyClaimEnabled(),
+        'BaseClaim: Claim is not enabled'
+      );
+      await baseClaim.connect(core.governance).ownerSetHandler(core.hhUser5.address);
+      await baseClaim.connect(core.hhUser5).ownerSetClaimEnabled(true);
+      expect(await baseClaim.connect(core.hhUser1).testOnlyClaimEnabled()).to.be.true;
     });
   });
 });

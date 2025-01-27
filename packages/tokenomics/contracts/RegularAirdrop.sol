@@ -62,8 +62,9 @@ contract RegularAirdrop is BaseClaim, IRegularAirdrop {
     constructor(
         address _dolo,
         address _veDolo,
-        address _dolomiteRegistry
-    ) BaseClaim(_dolomiteRegistry) {
+        address _dolomiteRegistry,
+        address _dolomiteMargin
+    ) BaseClaim(_dolomiteRegistry, _dolomiteMargin) {
         DOLO = IERC20(_dolo);
         VE_DOLO = IVotingEscrow(_veDolo);
     }
@@ -83,7 +84,7 @@ contract RegularAirdrop is BaseClaim, IRegularAirdrop {
     // ======================= User Functions =======================
     // ==============================================================
 
-    function claim(bytes32[] calldata _proof, uint256 _amount) external onlyClaimEnabled {
+    function claim(bytes32[] calldata _proof, uint256 _amount) external onlyClaimEnabled nonReentrant {
         RegularAirdropStorage storage s = _getRegularAirdropStorage();
         address user = getUserOrRemappedAddress(msg.sender);
 

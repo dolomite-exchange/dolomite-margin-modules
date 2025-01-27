@@ -91,7 +91,7 @@ describe('OptionAirdrop', () => {
   describe('#initializer', () => {
     it('should fail if called again', async () => {
       await expectThrow(
-        optionAirdrop.connect(core.hhUser2).initialize(core.hhUser5.address),
+        optionAirdrop.connect(core.hhUser2)['initialize(address)'](core.hhUser5.address),
         'Initializable: contract is already initialized',
       );
     });
@@ -361,7 +361,7 @@ describe('OptionAirdrop', () => {
           core.marketIds.nativeUsdc,
           defaultAccountNumber,
         ),
-        'ReentrancyGuard: reentrant call',
+        'ReentrancyGuardUpgradeable: Reentrant call',
       );
     });
   });

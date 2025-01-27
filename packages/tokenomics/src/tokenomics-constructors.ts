@@ -49,7 +49,7 @@ export function getOptionAirdropConstructorParams<T extends NetworkType>(
   core: CoreProtocolType<T>,
   dolo: IERC20,
 ): any[] {
-  return [dolo.address, core.dolomiteRegistry.address];
+  return [dolo.address, core.dolomiteRegistry.address, core.dolomiteMargin.address];
 }
 
 export function getRegularAirdropConstructorParams<T extends NetworkType>(
@@ -57,7 +57,7 @@ export function getRegularAirdropConstructorParams<T extends NetworkType>(
   dolo: IERC20,
   veToken: VotingEscrow | MockVotingEscrow,
 ): any[] {
-  return [dolo.address, veToken.address, core.dolomiteRegistry.address];
+  return [dolo.address, veToken.address, core.dolomiteRegistry.address, core.dolomiteMargin.address];
 }
 
 export function getVestingClaimsConstructorParams<T extends NetworkType>(
@@ -66,7 +66,7 @@ export function getVestingClaimsConstructorParams<T extends NetworkType>(
   tgeTimestamp: BigNumberish,
   duration: BigNumberish,
 ): any[] {
-  return [dolo.address, tgeTimestamp, duration, core.dolomiteRegistry.address];
+  return [dolo.address, tgeTimestamp, duration, core.dolomiteRegistry.address, core.dolomiteMargin.address];
 }
 
 export function getStrategicVestingClaimsConstructorParams<T extends NetworkType>(
@@ -75,7 +75,7 @@ export function getStrategicVestingClaimsConstructorParams<T extends NetworkType
   tgeTimestamp: BigNumberish,
   duration: BigNumberish,
 ): any[] {
-  return [dolo.address, tgeTimestamp, duration, core.dolomiteRegistry.address];
+  return [dolo.address, tgeTimestamp, duration, core.dolomiteRegistry.address, core.dolomiteMargin.address];
 }
 
 export function getVeExternalVesterImplementationConstructorParams<T extends NetworkType>(
