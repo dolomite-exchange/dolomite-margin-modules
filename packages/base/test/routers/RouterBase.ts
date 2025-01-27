@@ -8,6 +8,7 @@ import {
 } from '../utils/setup';
 import {
   CustomTestToken,
+  RouterProxy__factory,
   TestIsolationModeTokenVaultV1,
   TestIsolationModeTokenVaultV1__factory,
   TestIsolationModeVaultFactory,
@@ -38,11 +39,18 @@ describe('RouterBase', () => {
     const dolomiteAccountRegistry = await createDolomiteAccountRegistryImplementation();
     await core.dolomiteAccountRegistryProxy.connect(core.governance).upgradeTo(dolomiteAccountRegistry.address);
 
-    router = await createContractWithAbi<TestRouterBase>(
+    const implementation = await createContractWithAbi<TestRouterBase>(
       TestRouterBase__factory.abi,
       TestRouterBase__factory.bytecode,
       [core.dolomiteRegistry.address, core.dolomiteMargin.address]
     );
+    const initCalldata = await implementation.populateTransaction.initialize();
+    const proxy = await createContractWithAbi(
+      RouterProxy__factory.abi,
+      RouterProxy__factory.bytecode,
+      [implementation.address, core.dolomiteMargin.address, initCalldata.data!],
+    );
+    router = TestRouterBase__factory.connect(proxy.address, core.hhUser1);
 
     underlyingToken = await createTestToken();
     const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
@@ -87,12 +95,7 @@ describe('RouterBase', () => {
   });
 
   describe('#initialize', () => {
-    it('should work normally', async () => {
-      await router.initialize();
-    });
-
     it('should revert if already initialized', async () => {
-      await router.initialize();
       await expectThrow(router.initialize(), 'Initializable: contract is already initialized');
     });
   });

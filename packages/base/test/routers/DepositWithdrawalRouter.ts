@@ -97,6 +97,15 @@ describe('DepositWithdrawalRouter', () => {
     snapshotId = await revertToSnapshotAndCapture(snapshotId);
   });
 
+  describe('#constructor', () => {
+    it('should work normally', async () => {
+      expect(await router.WRAPPED_PAYABLE_TOKEN()).to.equal(core.tokens.weth.address);
+      expect(await router.PAYABLE_MARKET_ID()).to.equal(core.marketIds.weth);
+      expect(await router.DOLOMITE_REGISTRY()).to.equal(core.dolomiteRegistry.address);
+      expect(await router.DOLOMITE_MARGIN()).to.equal(core.dolomiteMargin.address);
+    });
+  });
+
   describe('#depositWei', () => {
     it('should work normally for non-isolation mode asset', async () => {
       await setupDAIBalance(core, core.hhUser1, amountWei, router);
