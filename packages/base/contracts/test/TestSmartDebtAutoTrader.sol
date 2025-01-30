@@ -20,55 +20,43 @@
 
 pragma solidity ^0.8.9;
 
-import { IIsolationModeTokenVaultV1 } from "../isolation-mode/interfaces/IIsolationModeTokenVaultV1.sol";
-import { RouterBase } from "../routers/RouterBase.sol";
+import { SmartDebtAutoTrader } from "../traders/SmartDebtAutoTrader.sol";
 
 
 /**
- * @title   TestRouterBase
+ * @title   TestSmartDebtAutoTrader
  * @author  Dolomite
  *
- * @notice  Test contract for RouterBase
+ * @notice  Test contract for SmartDebtAutoTrader
  */
-contract TestRouterBase is RouterBase {
+contract TestSmartDebtAutoTrader is SmartDebtAutoTrader {
 
     // ========================================================
     // ====================== Constants =======================
     // ========================================================
 
-    bytes32 private constant _FILE = "TestRouterBase";
+    bytes32 private constant _FILE = "TestSmartDebtAutoTrader";
 
     // ========================================================
     // ===================== Constructor ========================
     // ========================================================
 
     constructor (
+        uint256 _chainId,
         address _dolomiteRegistry,
         address _dolomiteMargin
-    ) RouterBase(_dolomiteRegistry, _dolomiteMargin) {
+    ) SmartDebtAutoTrader(_chainId, _dolomiteRegistry, _dolomiteMargin) {
     }
 
     // ========================================================
     // ================== External Functions ==================
     // ========================================================
 
-    function getMarketInfo(uint256 _marketId) external view returns (MarketInfo memory) {
-        return _getMarketInfo(_marketId);
+    function testGetFeesByMarketIds(uint256 _marketId1, uint256 _marketId2) external view returns (uint256, uint256) {
+        return _getFees(_marketId1, _marketId2);
     }
 
-    function validateIsoMarketAndGetVault(
-        uint256 _marketId,
-        address _account
-    ) external returns (IIsolationModeTokenVaultV1) {
-        MarketInfo memory marketInfo = _getMarketInfo(_marketId);
-        return _validateIsolationModeMarketAndGetVault(marketInfo, _account);
-    }
-
-    function isIsolationModeAsset(address _token) external view returns (bool) {
-        return _isIsolationModeAsset(_token);
-    }
-
-    function isIsolationModeAssetByMarketId(uint256 _marketId) external view returns (bool) {
-        return _isIsolationModeMarket(_marketId);
+    function testGetFeesByPairBytes(bytes32 _pairBytes) external view returns (uint256, uint256) {
+        return _getFees(_pairBytes);
     }
 }

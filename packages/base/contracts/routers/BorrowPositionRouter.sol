@@ -45,8 +45,9 @@ contract BorrowPositionRouter is RouterBase, IBorrowPositionRouter {
   // ========================================================
 
   constructor(
-    address _dolomiteRegistry
-  ) RouterBase(_dolomiteRegistry) {}
+    address _dolomiteRegistry,
+    address _dolomiteMargin
+  ) RouterBase(_dolomiteRegistry, _dolomiteMargin) {}
 
   // ========================================================
   // ================== External Functions ==================

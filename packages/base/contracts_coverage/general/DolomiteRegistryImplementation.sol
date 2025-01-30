@@ -31,10 +31,10 @@ import { IEventEmitterRegistry } from "../interfaces/IEventEmitterRegistry.sol";
 import { IExpiry } from "../interfaces/IExpiry.sol";
 import { IGenericTraderProxyV1 } from "../interfaces/IGenericTraderProxyV1.sol";
 import { ILiquidatorAssetRegistry } from "../interfaces/ILiquidatorAssetRegistry.sol";
+import { ISmartDebtAutoTrader } from "../interfaces/traders/ISmartDebtAutoTrader.sol";
 import { ValidationLib } from "../lib/ValidationLib.sol";
 import { IDolomitePriceOracle } from "../protocol/interfaces/IDolomitePriceOracle.sol";
 import { Require } from "../protocol/lib/Require.sol";
-import { ISmartDebtAutoTrader } from "../interfaces/ISmartDebtAutoTrader.sol";
 
 
 /**
@@ -68,6 +68,9 @@ contract DolomiteRegistryImplementation is
     bytes32 private constant _SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL_SLOT = bytes32(uint256(keccak256("eip1967.proxy.slippageToleranceForPauseSentinel")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _SMART_DEBT_TRADER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.smartDebtTrader")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _TRUSTED_INTERNAL_TRADERS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.trustedInternalTraders")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _TRUSTED_INTERNAL_TRADE_CALLERS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.trustedInternalTradeCallers")) - 1); // solhint-disable-line max-line-length
+    // @todo add comment that it implements getActionsForTrade, is used by generic trader proxy, and flips maker and taker
+    // @todo add trusted internal trade callers
 
     // ==================== Constructor ====================
 
@@ -219,6 +222,15 @@ contract DolomiteRegistryImplementation is
         _ownerSetTrustedInternalTraders(_trustedInternalTraders, _isTrusted);
     }
 
+    function ownerSetTrustedInternalTradeCallers(
+        address[] memory _trustedInternalTradeCallers,
+        bool[] memory _isTrusted
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetTrustedInternalTradeCallers(_trustedInternalTradeCallers, _isTrusted);
+    }
+
     function ownerSetIsolationModeMulticallFunctions(
         bytes4[] memory _selectors
     )
@@ -283,6 +295,10 @@ contract DolomiteRegistryImplementation is
 
     function isTrustedInternalTrader(address _trader) public view returns (bool) {
         return _getUint256FromMap(_TRUSTED_INTERNAL_TRADERS_SLOT, _trader) == 1;
+    }
+
+    function isTrustedInternalTradeCaller(address _tradeCaller) public view returns (bool) {
+        return _getUint256FromMap(_TRUSTED_INTERNAL_TRADE_CALLERS_SLOT, _tradeCaller) == 1;
     }
 
     function isolationModeMulticallFunctions() public view returns (bytes4[] memory) {
@@ -515,6 +531,29 @@ contract DolomiteRegistryImplementation is
             _setUint256InMap(_TRUSTED_INTERNAL_TRADERS_SLOT, _trustedInternalTraders[i], _isTrusted[i] ? 1 : 0);
         }
         emit TrustedInternalTradersSet(_trustedInternalTraders, _isTrusted);
+    }
+
+    function _ownerSetTrustedInternalTradeCallers(
+        address[] memory _trustedInternalTradeCallers,
+        bool[] memory _isTrusted
+    ) internal {
+        if (_trustedInternalTradeCallers.length == _isTrusted.length) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            _trustedInternalTradeCallers.length == _isTrusted.length,
+            _FILE,
+            "Array length mismatch"
+        );
+
+        for (uint256 i; i < _trustedInternalTradeCallers.length; ++i) {
+            if (_trustedInternalTradeCallers[i] != address(0)) { /* FOR COVERAGE TESTING */ }
+            Require.that(
+                _trustedInternalTradeCallers[i] != address(0),
+                _FILE,
+                "Invalid tradeCaller"
+            );
+            _setUint256InMap(_TRUSTED_INTERNAL_TRADE_CALLERS_SLOT, _trustedInternalTradeCallers[i], _isTrusted[i] ? 1 : 0);
+        }
+        emit TrustedInternalTradeCallersSet(_trustedInternalTradeCallers, _isTrusted);
     }
 
     function _ownerSetIsolationModeMulticallFunctions(

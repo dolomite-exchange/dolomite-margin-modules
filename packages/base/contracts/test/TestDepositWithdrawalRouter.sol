@@ -34,8 +34,9 @@ contract TestDepositWithdrawalRouter is DepositWithdrawalRouter {
 
     constructor(
         address _payableToken,
-        address _dolomiteRegistry
-    ) DepositWithdrawalRouter(_payableToken, _dolomiteRegistry) {}
+        address _dolomiteRegistry,
+        address _dolomiteMargin
+    ) DepositWithdrawalRouter(_payableToken, _dolomiteRegistry, _dolomiteMargin) {}
 
     function callFunctionAndTriggerReentrancy(
         bytes calldata _callDataWithSelector

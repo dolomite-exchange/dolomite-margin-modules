@@ -20,8 +20,8 @@
 pragma solidity ^0.8.9;
 
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import { IDolomiteAutoTrader } from "../protocol/interfaces/IDolomiteAutoTrader.sol";
-
+import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
+import { IInternalAutoTraderBase } from "./IInternalAutoTraderBase.sol";
 
 /**
  * @title   ISmartDebtAutoTrader
@@ -29,7 +29,7 @@ import { IDolomiteAutoTrader } from "../protocol/interfaces/IDolomiteAutoTrader.
  *
  * Interface for performing internal trades using smart debt
  */
-interface ISmartDebtAutoTrader is IDolomiteAutoTrader {
+interface ISmartDebtAutoTrader is IInternalAutoTraderBase {
 
     // ========================================================
     // ================== Structs Functions ==================
@@ -47,7 +47,7 @@ interface ISmartDebtAutoTrader is IDolomiteAutoTrader {
     }
 
     struct SmartPairsStorage {
-        bool tradeEnabled;
+        mapping(bytes32 => uint256) pairToFee;
         EnumerableSet.Bytes32Set smartDebtPairs;
         EnumerableSet.Bytes32Set smartCollateralPairs;
         mapping(address => mapping(uint256 => PairPosition)) userToPair;

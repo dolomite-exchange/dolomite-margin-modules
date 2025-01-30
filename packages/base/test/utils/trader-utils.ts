@@ -29,6 +29,12 @@ export interface TraderOutput {
   outputAmount: BigNumber;
 }
 
+export enum PairType {
+  NONE,
+  SMART_DEBT,
+  SMART_COLLATERAL
+}
+
 export enum ParaswapSwapType {
   Mega = 'megaSwap',
   Multi = 'multiSwap',

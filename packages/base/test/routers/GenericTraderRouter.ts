@@ -41,11 +41,12 @@ import {
 } from '../utils/dolomite';
 import { createTestIsolationModeVaultFactory } from '../utils/ecosystem-utils/testers';
 import { BigNumber } from 'ethers';
-import { expectProtocolBalance, expectThrow, expectWalletBalance, expectWalletBalanceIsGreaterThan } from '../utils/assertions';
+import { expectProtocolBalance, expectThrow, expectWalletBalance } from '../utils/assertions';
 import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin';
 import { getSimpleZapParams, getUnwrapZapParams, getWrapZapParams } from '../utils/zap-utils';
 import { expect } from 'chai';
-import { PairType } from '../traders/SmartDebtAutoTrader';
+import { parseEther } from 'ethers/lib/utils';
+import { PairType } from '../utils/trader-utils';
 
 const amountWei = ONE_ETH_BI;
 const defaultAccountNumber = ZERO_BI;
@@ -87,7 +88,7 @@ describe('GenericTraderRouter', () => {
     await disableInterestAccrual(core, core.marketIds.weth);
     await createAndUpgradeDolomiteRegistry(core);
 
-    smartDebtAutoTrader = await createSmartDebtAutoTrader(core);
+    smartDebtAutoTrader = await createSmartDebtAutoTrader(core, Network.ArbitrumOne);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(smartDebtAutoTrader.address, true);
     await core.dolomiteRegistry.connect(core.governance).ownerSetTrustedInternalTraders(
       [smartDebtAutoTrader.address],
@@ -645,18 +646,35 @@ describe('GenericTraderRouter', () => {
     });
   });
 
-  describe.only('#swapExactInputForOutputViaSmartAccount', () => {
+  describe('#swapExactInputForOutputViaSmartAccount', () => {
     it('should work normally with one swap', async () => {
       await disableInterestAccrual(core, core.marketIds.usdc);
       await disableInterestAccrual(core, core.marketIds.usdt);
 
+      const price = BigNumber.from('1000000000000000000000000000000');
+      await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.usdc.address, price);
+      await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.usdt.address, price);
+      await core.dolomiteMargin.connect(core.governance).ownerSetPriceOracle(core.marketIds.usdc, core.testEcosystem!.testPriceOracle.address);
+      await core.dolomiteMargin.connect(core.governance).ownerSetPriceOracle(core.marketIds.usdt, core.testEcosystem!.testPriceOracle.address);
+
+      await core.dolomiteRegistry.connect(core.governance).ownerSetFeeAgent(core.hhUser5.address);
+      await smartDebtAutoTrader.connect(core.governance).ownerSetGlobalFee(parseEther('.1'));
+      await smartDebtAutoTrader.connect(core.governance).ownerSetAdminFee(parseEther('.5'));
+
       const usdcAmount = BigNumber.from('100000000');
-      await setupUSDCBalance(core, core.hhUser1, usdcAmount, traderRouter);
+      await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.dolomiteMargin);
+      await depositIntoDolomiteMargin(core, core.hhUser1, 0, core.marketIds.usdc, usdcAmount);
 
       const usdtAmount = BigNumber.from('200000000');
       await setupUSDTBalance(core, core.hhUser2, usdtAmount, core.dolomiteMargin);
       await depositIntoDolomiteMargin(core, core.hhUser2, 0, core.marketIds.usdt, usdtAmount);
+      const outputAmount = BigNumber.from('90000000'); // 90 USDT
+      const adminFeeAmount = BigNumber.from('5000000'); // 5 USDC
 
+      await core.dolomiteRegistry.connect(core.governance).ownerSetTrustedInternalTradeCallers(
+        [traderRouter.address],
+        [true],
+      );
       await smartDebtAutoTrader.connect(core.governance).ownerAddSmartCollateralPair(core.marketIds.usdc, core.marketIds.usdt);
       await smartDebtAutoTrader.connect(core.hhUser2).userSetPair(
         defaultAccountNumber,
@@ -666,29 +684,100 @@ describe('GenericTraderRouter', () => {
       );
 
       await traderRouter.swapExactInputForOutputViaSmartAccount(
-        core.tokens.usdc.address,
-        core.tokens.usdt.address,
+        defaultAccountNumber,
+        core.marketIds.usdc,
+        core.marketIds.usdt,
         usdcAmount,
         ONE_BI,
         [{
-          user: core.hhUser2.address,
-          accountNumber: defaultAccountNumber,
+          makerAccount: {
+            owner: core.hhUser2.address,
+            number: defaultAccountNumber,
+          },
+          makerAccountId: 0,
           amount: usdcAmount,
+          minOutputAmount: ONE_BI,
         }]
       );
 
-      const usdtBal = await core.tokens.usdt.balanceOf(core.hhUser1.address);
-      await expectWalletBalance(core.hhUser1, core.tokens.usdc, ZERO_BI);
-      await expectWalletBalanceIsGreaterThan(core.hhUser1, core.tokens.usdt, usdcAmount);
-
-      await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.usdc, usdcAmount);
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.usdc, ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.usdt, outputAmount);
+      await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.usdc, usdcAmount.sub(adminFeeAmount));
       await expectProtocolBalance(
         core,
         core.hhUser2,
         defaultAccountNumber,
         core.marketIds.usdt,
-        usdtAmount.sub(usdtBal)
+        usdtAmount.sub(outputAmount)
       );
+      await expectProtocolBalance(core, core.hhUser5, defaultAccountNumber, core.marketIds.usdc, adminFeeAmount);
+    });
+  });
+
+  describe('#performExternalSwapViaSmartAccount', () => {
+    it('should work normally with one swap', async () => {
+      await disableInterestAccrual(core, core.marketIds.usdc);
+      await disableInterestAccrual(core, core.marketIds.usdt);
+
+      const price = BigNumber.from('1000000000000000000000000000000');
+      await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.usdc.address, price);
+      await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.usdt.address, price);
+      await core.dolomiteMargin.connect(core.governance).ownerSetPriceOracle(core.marketIds.usdc, core.testEcosystem!.testPriceOracle.address);
+      await core.dolomiteMargin.connect(core.governance).ownerSetPriceOracle(core.marketIds.usdt, core.testEcosystem!.testPriceOracle.address);
+
+      await core.dolomiteRegistry.connect(core.governance).ownerSetFeeAgent(core.hhUser5.address);
+      await smartDebtAutoTrader.connect(core.governance).ownerSetGlobalFee(parseEther('.1'));
+      await smartDebtAutoTrader.connect(core.governance).ownerSetAdminFee(parseEther('.5'));
+
+      const usdcAmount = BigNumber.from('100000000');
+      await setupUSDCBalance(core, core.hhUser1, usdcAmount, traderRouter);
+
+      const usdtAmount = BigNumber.from('200000000');
+      await setupUSDTBalance(core, core.hhUser2, usdtAmount, core.dolomiteMargin);
+      await depositIntoDolomiteMargin(core, core.hhUser2, 0, core.marketIds.usdt, usdtAmount);
+      const outputAmount = BigNumber.from('90000000'); // 90 USDT
+      const adminFeeAmount = BigNumber.from('5000000'); // 5 USDC
+
+      await core.dolomiteRegistry.connect(core.governance).ownerSetTrustedInternalTradeCallers(
+        [traderRouter.address],
+        [true],
+      );
+      await smartDebtAutoTrader.connect(core.governance).ownerAddSmartCollateralPair(core.marketIds.usdc, core.marketIds.usdt);
+      await smartDebtAutoTrader.connect(core.hhUser2).userSetPair(
+        defaultAccountNumber,
+        PairType.SMART_COLLATERAL,
+        core.marketIds.usdc,
+        core.marketIds.usdt
+      );
+
+      await traderRouter.performExternalSwapViaSmartAccount(
+        core.tokens.usdc.address,
+        core.tokens.usdt.address,
+        usdcAmount,
+        ONE_BI,
+        [{
+          makerAccount: {
+            owner: core.hhUser2.address,
+            number: defaultAccountNumber,
+          },
+          makerAccountId: 0,
+          amount: usdcAmount,
+          minOutputAmount: ONE_BI,
+        }]
+      );
+
+      await expectWalletBalance(core.hhUser1, core.tokens.usdt, outputAmount);
+      await expectWalletBalance(core.hhUser1, core.tokens.usdc, ZERO_BI);
+
+      await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.usdc, usdcAmount.sub(adminFeeAmount));
+      await expectProtocolBalance(
+        core,
+        core.hhUser2,
+        defaultAccountNumber,
+        core.marketIds.usdt,
+        usdtAmount.sub(outputAmount)
+      );
+      await expectProtocolBalance(core, core.hhUser5, defaultAccountNumber, core.marketIds.usdc, adminFeeAmount);
     });
 
     it('should work normally with two swaps', async () => {
@@ -704,6 +793,22 @@ describe('GenericTraderRouter', () => {
       await setupUSDTBalance(core, core.hhUser3, usdtAmount, core.dolomiteMargin);
       await depositIntoDolomiteMargin(core, core.hhUser3, 0, core.marketIds.usdt, usdtAmount);
 
+      const price = BigNumber.from('1000000000000000000000000000000');
+      await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.usdc.address, price);
+      await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.usdt.address, price);
+      await core.dolomiteMargin.connect(core.governance).ownerSetPriceOracle(core.marketIds.usdc, core.testEcosystem!.testPriceOracle.address);
+      await core.dolomiteMargin.connect(core.governance).ownerSetPriceOracle(core.marketIds.usdt, core.testEcosystem!.testPriceOracle.address);
+
+      await core.dolomiteRegistry.connect(core.governance).ownerSetFeeAgent(core.hhUser5.address);
+      await smartDebtAutoTrader.connect(core.governance).ownerSetGlobalFee(parseEther('.1'));
+      await smartDebtAutoTrader.connect(core.governance).ownerSetAdminFee(parseEther('.5'));
+      const outputAmount = BigNumber.from('90000000'); // 90 USDT
+      const adminFeeAmount = BigNumber.from('5000000'); // 5 USDC
+
+      await core.dolomiteRegistry.connect(core.governance).ownerSetTrustedInternalTradeCallers(
+        [traderRouter.address],
+        [true],
+      );
       await smartDebtAutoTrader.connect(core.governance).ownerAddSmartCollateralPair(core.marketIds.usdc, core.marketIds.usdt);
       await smartDebtAutoTrader.connect(core.hhUser2).userSetPair(
         defaultAccountNumber,
@@ -718,44 +823,103 @@ describe('GenericTraderRouter', () => {
         core.marketIds.usdt
       );
 
-      await traderRouter.swapExactInputForOutputViaSmartAccount(
+      await traderRouter.performExternalSwapViaSmartAccount(
         core.tokens.usdc.address,
         core.tokens.usdt.address,
         usdcAmount,
         ONE_BI,
         [
           {
-            user: core.hhUser2.address,
-            accountNumber: defaultAccountNumber,
+            makerAccount: {
+              owner: core.hhUser2.address,
+              number: defaultAccountNumber,
+            },
+            makerAccountId: 0,
             amount: usdcAmount.div(2),
+            minOutputAmount: ONE_BI,
           },
           {
-            user: core.hhUser3.address,
-            accountNumber: defaultAccountNumber,
+            makerAccount: {
+              owner: core.hhUser3.address,
+              number: defaultAccountNumber,
+            },
+            makerAccountId: 0,
             amount: usdcAmount.div(2),
+            minOutputAmount: ONE_BI,
           },
         ]
       );
 
-      const usdtBal = await core.tokens.usdt.balanceOf(core.hhUser1.address);
       await expectWalletBalance(core.hhUser1, core.tokens.usdc, ZERO_BI);
-      await expectWalletBalanceIsGreaterThan(core.hhUser1, core.tokens.usdt, usdcAmount);
+      await expectWalletBalance(core.hhUser1, core.tokens.usdt, outputAmount);
 
-      await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.usdc, usdcAmount.div(2));
+      await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.usdc, usdcAmount.sub(adminFeeAmount).div(2));
       await expectProtocolBalance(
         core,
         core.hhUser2,
         defaultAccountNumber,
         core.marketIds.usdt,
-        usdtAmount.sub(usdtBal.div(2))
+        usdtAmount.sub(outputAmount.div(2))
       );
-      await expectProtocolBalance(core, core.hhUser3, defaultAccountNumber, core.marketIds.usdc, usdcAmount.div(2));
+      await expectProtocolBalance(core, core.hhUser3, defaultAccountNumber, core.marketIds.usdc, usdcAmount.sub(adminFeeAmount).div(2));
       await expectProtocolBalance(
         core,
         core.hhUser3,
         defaultAccountNumber,
         core.marketIds.usdt,
-        usdtAmount.sub(usdtBal.div(2))
+        usdtAmount.sub(outputAmount.div(2))
+      );
+    });
+
+    it('should fail if output amount is insufficient', async () => {
+      const price = BigNumber.from('1000000000000000000000000000000');
+      await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.usdc.address, price);
+      await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.usdt.address, price);
+      await core.dolomiteMargin.connect(core.governance).ownerSetPriceOracle(core.marketIds.usdc, core.testEcosystem!.testPriceOracle.address);
+      await core.dolomiteMargin.connect(core.governance).ownerSetPriceOracle(core.marketIds.usdt, core.testEcosystem!.testPriceOracle.address);
+
+      await core.dolomiteRegistry.connect(core.governance).ownerSetFeeAgent(core.hhUser5.address);
+      await smartDebtAutoTrader.connect(core.governance).ownerSetGlobalFee(parseEther('.1'));
+      await smartDebtAutoTrader.connect(core.governance).ownerSetAdminFee(parseEther('.5'));
+
+      const usdcAmount = BigNumber.from('100000000');
+      await setupUSDCBalance(core, core.hhUser1, usdcAmount, traderRouter);
+
+      const usdtAmount = BigNumber.from('200000000');
+      await setupUSDTBalance(core, core.hhUser2, usdtAmount, core.dolomiteMargin);
+      await depositIntoDolomiteMargin(core, core.hhUser2, 0, core.marketIds.usdt, usdtAmount);
+      const outputAmount = BigNumber.from('90000000'); // 90 USDT
+      const adminFeeAmount = BigNumber.from('5000000'); // 5 USDC
+
+      await core.dolomiteRegistry.connect(core.governance).ownerSetTrustedInternalTradeCallers(
+        [traderRouter.address],
+        [true],
+      );
+      await smartDebtAutoTrader.connect(core.governance).ownerAddSmartCollateralPair(core.marketIds.usdc, core.marketIds.usdt);
+      await smartDebtAutoTrader.connect(core.hhUser2).userSetPair(
+        defaultAccountNumber,
+        PairType.SMART_COLLATERAL,
+        core.marketIds.usdc,
+        core.marketIds.usdt
+      );
+
+      await expectThrow(
+        traderRouter.performExternalSwapViaSmartAccount(
+          core.tokens.usdc.address,
+          core.tokens.usdt.address,
+          usdcAmount,
+          outputAmount.mul(2),
+          [{
+            makerAccount: {
+              owner: core.hhUser2.address,
+              number: defaultAccountNumber,
+            },
+            makerAccountId: 0,
+            amount: usdcAmount,
+            minOutputAmount: ONE_BI,
+          }]
+        ),
+        'GenericTraderRouter: Insufficient output amount'
       );
     });
   });

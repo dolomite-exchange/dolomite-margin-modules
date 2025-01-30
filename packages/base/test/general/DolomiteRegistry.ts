@@ -433,6 +433,51 @@ describe('DolomiteRegistryImplementation', () => {
     });
   });
 
+  describe('#ownerSetTrustedInternalTradeCallers', () => {
+    it('should work normally', async () => {
+      expect(await registry.isTrustedInternalTradeCaller(core.hhUser1.address)).to.equal(false);
+      const res = await registry.connect(core.governance).ownerSetTrustedInternalTradeCallers(
+        [core.hhUser1.address],
+        [true]
+      );
+      await expectEvent(registry, res, 'TrustedInternalTradeCallersSet', {
+        trustedInternalTradeCallers: [core.hhUser1.address],
+        isTrusted: [true],
+      });
+      expect(await registry.isTrustedInternalTradeCaller(core.hhUser1.address)).to.equal(true);
+    });
+
+    it('should fail if the length of the arrays do not match', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetTrustedInternalTradeCallers(
+          [core.hhUser1.address],
+          []
+        ),
+        'DolomiteRegistryImplementation: Array length mismatch'
+      );
+    });
+
+    it('should fail if a zero address is provided', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetTrustedInternalTradeCallers(
+          [ZERO_ADDRESS],
+          [true]
+        ),
+        'DolomiteRegistryImplementation: Invalid tradeCaller'
+      );
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetTrustedInternalTradeCallers(
+          [core.hhUser1.address],
+          [true]
+        ),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+  });
+
   describe('#ownerSetSmartDebtTrader', () => {
     it('should work normally', async () => {
       expect(await registry.smartDebtTrader()).to.equal(ZERO_ADDRESS);

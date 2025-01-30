@@ -22,13 +22,14 @@ pragma solidity ^0.8.9;
 import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
-import { ISmartDebtAutoTrader } from "../interfaces/ISmartDebtAutoTrader.sol";
+import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
+import { ISmartDebtAutoTrader } from "../interfaces/traders/ISmartDebtAutoTrader.sol";
+import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../protocol/lib/Require.sol";
-import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
-import { AccountActionLib } from "../lib/AccountActionLib.sol";
-import { IGenericTraderRouter } from "../routers/interfaces/IGenericTraderRouter.sol";
-
+import { InternalAutoTraderBase } from "./InternalAutoTraderBase.sol";
+import { IDolomiteAutoTrader } from "../protocol/interfaces/IDolomiteAutoTrader.sol";
+import { IInternalAutoTraderBase } from "../interfaces/traders/IInternalAutoTraderBase.sol";
 
 /**
  * @title   SmartDebtAutoTrader
@@ -36,7 +37,7 @@ import { IGenericTraderRouter } from "../routers/interfaces/IGenericTraderRouter
  *
  * Contract for performing internal trades using smart debt
  */
-contract SmartDebtAutoTrader is OnlyDolomiteMargin, Initializable, ISmartDebtAutoTrader {
+contract SmartDebtAutoTrader is InternalAutoTraderBase, ISmartDebtAutoTrader {
     using EnumerableSet for EnumerableSet.Bytes32Set;
 
     // ========================================================
@@ -44,71 +45,75 @@ contract SmartDebtAutoTrader is OnlyDolomiteMargin, Initializable, ISmartDebtAut
     // ========================================================
 
     uint256 private constant _ONE = 1 ether;
-    uint256 private constant _TRADE_ACCOUNT_ID = 0;
-    uint256 private constant _ZAP_ACCOUNT_ID = 1;
-
 
     bytes32 private constant _FILE = "SmartDebtAutoTrader";
     bytes32 private constant _SMART_PAIRS_STORAGE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.smartPairsStorage")) - 1); // solhint-disable-line max-line-length
 
-    IDolomiteRegistry public immutable DOLOMITE_REGISTRY;
-    uint256 public immutable CHAIN_ID;
     // ========================================================
     // ===================== Constructor ========================
     // ========================================================
 
-    constructor(uint256 _chainId, address _dolomiteRegistry, address _dolomiteMargin) OnlyDolomiteMargin(_dolomiteMargin) {
-        CHAIN_ID = _chainId;
-        DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
-    }
-
-    function initialize() external initializer {
+    constructor(
+        uint256 _chainId,
+        address _dolomiteRegistry,
+        address _dolomiteMargin
+    ) InternalAutoTraderBase(_chainId, _dolomiteRegistry, _dolomiteMargin) {
     }
 
     // ========================================================
     // ================== External Functions ==================
     // ========================================================
 
+    // @todo mapping blockNumber => marketId => price. Do it here in callFunction once we have data streams
     function callFunction(
         address _sender,
         IDolomiteStructs.AccountInfo calldata _accountInfo,
         bytes calldata _data
-    ) external onlyDolomiteMargin(msg.sender) {
-        // @todo add generic trader router to dolomite registry
-        _setTradeEnabled(true);
+    ) public override onlyDolomiteMargin(msg.sender) {
+        // @follow-up Does this do a new call? I don't think so but check
+        super.callFunction(_sender, _accountInfo, _data);
     }
 
+    // maker account is the zap account of the person making the trade
+    // taker account is the user who has smart debt enabled
     function getTradeCost(
         uint256 _inputMarketId,
         uint256 _outputMarketId,
-        IDolomiteStructs.AccountInfo memory /* _makerAccount */, // zap account of person making the trade
-        IDolomiteStructs.AccountInfo memory _takerAccount, // user who has smart debt enabled
+        IDolomiteStructs.AccountInfo memory /* _makerAccount */,
+        IDolomiteStructs.AccountInfo memory _takerAccount,
         IDolomiteStructs.Par memory /* oldInputPar */,
         IDolomiteStructs.Par memory /* newInputPar */,
         IDolomiteStructs.Wei memory _inputDeltaWei,
-        bytes memory /* data */
-    ) external returns (IDolomiteStructs.AssetAmount memory) {
+        bytes memory _data
+    ) external override(IDolomiteAutoTrader, InternalAutoTraderBase) returns (IDolomiteStructs.AssetAmount memory) {
         Require.that(
             tradeEnabled(),
             _FILE,
             "Trade is not enabled"
         );
-        _setTradeEnabled(false);
 
         PairPosition memory pairPosition = userToPair(_takerAccount.owner, _takerAccount.number);
         (bytes32 pairBytes, ,) = _getPairBytesAndSortMarketIds(_inputMarketId, _outputMarketId);
-
         Require.that(
             pairPosition.pairType != PairType.NONE && pairPosition.pairBytes == pairBytes,
             _FILE,
             "User does not have the pair set"
         );
 
-        // @todo add fee calculations
+        // @audit Do we need to check the sign of inputDeltaWei?
         // @todo switch to chainlink data streams
+        uint256 adjInputAmount;
+        {
+            // @dev the adminFeeAmount was already subtracted from the inputDeltaWei but since it is a percentage
+            // of the full fee amount, we need to add it back in and then calculate adjInputAmount
+            (, uint256 feePercentage) = _getFees(pairBytes);
+            (, uint256 adminFeeAmount) = abi.decode(_data, (uint256, uint256));
+            adjInputAmount = (_inputDeltaWei.value + adminFeeAmount) * (_ONE - feePercentage) / _ONE;
+        }
+
         uint256 inputMarketId = _inputMarketId;
         uint256 outputMarketId = _outputMarketId;
-        uint256 inputValue = _inputDeltaWei.value * DOLOMITE_MARGIN().getMarketPrice(inputMarketId).value;
+        uint256 inputValue = adjInputAmount * DOLOMITE_MARGIN().getMarketPrice(inputMarketId).value;
         uint256 outputTokenAmount = inputValue / DOLOMITE_MARGIN().getMarketPrice(outputMarketId).value;
 
         if (pairPosition.pairType == PairType.SMART_COLLATERAL) {
@@ -139,11 +144,18 @@ contract SmartDebtAutoTrader is OnlyDolomiteMargin, Initializable, ISmartDebtAut
                 "Debt pair is not active"
             );
             Require.that(
-                !takerAccountWei.sign && takerAccountWei.value >= _inputDeltaWei.value,
+                !takerAccountWei.sign && takerAccountWei.value >= adjInputAmount,
                 _FILE,
                 "Insufficient debt"
             );
         }
+
+        (uint256 minOutputAmount, ) = abi.decode(_data, (uint256, uint256));
+        Require.that(
+            outputTokenAmount >= minOutputAmount,
+            _FILE,
+            "Insufficient output token amount"
+        );
 
         return IDolomiteStructs.AssetAmount({
             sign: true,
@@ -221,74 +233,75 @@ contract SmartDebtAutoTrader is OnlyDolomiteMargin, Initializable, ISmartDebtAut
         _ownerRemoveSmartCollateralPair(_marketId1, _marketId2);
     }
 
-    function ownerSetGlobalFee(uint256 _globalFee) external onlyDolomiteMarginOwner(msg.sender) {
-        _getSmartPairsStorage().globalFee = _globalFee;
-        emit GlobalFeeSet(_globalFee);
-    }
-
-    function ownerSetAdminFee(uint256 _adminFee) external onlyDolomiteMarginOwner(msg.sender) {
-        _getSmartPairsStorage().adminFee = _adminFee;
-        emit AdminFeeSet(_adminFee);
-    }
-
-    function ownerSetPairFee(uint256 _marketId1, uint256 _marketId2, uint256 _fee) external onlyDolomiteMarginOwner(msg.sender) {
-        (bytes32 pairBytes, ,) = _getPairBytesAndSortMarketIds(_marketId1, _marketId2);
-        _getSmartPairsStorage().pairToFee[pairBytes] = _fee;
-        emit PairFeeSet(pairBytes, _fee);
+    function ownerSetPairFee(
+        uint256 _marketId1,
+        uint256 _marketId2,
+        uint256 _fee
+    ) external onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetPairFee(_marketId1, _marketId2, _fee);
     }
 
     // ========================================================
     // ==================== View Functions ====================
     // ========================================================
 
-    function getActionsForSmartTrade(
-        uint256 _inputMarketId,
-        uint256 _outputMarketId,
-        uint256 _inputAmountWei,
-        uint256 _feeAccountId,
-        uint256 _makerAccountStartId,
-        IGenericTraderRouter.SmartAssetSwapParams[] memory _swaps
-    ) external view returns (IDolomiteStructs.ActionArgs[] memory) {
-        SmartPairsStorage storage smartPairsStorage = _getSmartPairsStorage();
-        (bytes32 pairBytes, ,) = _getPairBytesAndSortMarketIds(_inputMarketId, _outputMarketId);
-        IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](_swaps.length + 2);
+    function createActionsForInternalTrade(
+        CreateActionsForInternalTradeParams memory _params
+    ) external view override(IInternalAutoTraderBase, InternalAutoTraderBase) returns (IDolomiteStructs.ActionArgs[] memory) {
+        IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](
+            actionsLength(_params.trades.length)
+        );
+        // @todo Make fee percentages decimal type and use the lib
+        (uint256 adminFeePercentage, uint256 feePercentage) = _getFees(_params.inputMarketId, _params.outputMarketId);
         uint256 actionCursor;
+
+        actions[actionCursor++] = AccountActionLib.encodeCallAction(
+            /* accountId = */ 0,
+            address(this),
+            abi.encode(true)
+        );
+        actions[actionCursor++] = AccountActionLib.encodeTransferAction(
+            _params.takerAccountId,
+            _params.feeAccountId,
+            _params.inputMarketId,
+            IDolomiteStructs.AssetDenomination.Wei,
+            _params.inputAmountWei * adminFeePercentage / _ONE * feePercentage / _ONE
+        );
+        // @audit check rounding errors
+
+        uint256 tradeTotal;
+        for (uint256 i; i < _params.trades.length; i++) {
+            uint256 originalAmountInWei = _params.trades[i].amount;
+            uint256 minOutputAmount = _params.trades[i].minOutputAmount;
+            tradeTotal += originalAmountInWei;
+
+            uint256 adminFeeAmount = originalAmountInWei * adminFeePercentage * feePercentage / _ONE / _ONE;
+            actions[actionCursor++] = AccountActionLib.encodeInternalTradeActionWithWhitelistedTrader(
+                /* takerAccountId = */ _params.takerAccountId,
+                /* makerAccountId = */ _params.trades[i].makerAccountId,
+                /* primaryMarketId = */ _params.inputMarketId,
+                /* secondaryMarketId = */ _params.outputMarketId,
+                /* traderAddress = */ address(this),
+                /* amountInWei = */ originalAmountInWei - adminFeeAmount,
+                /* chainId = */ CHAIN_ID,
+                /* calculateAmountWithMakerAccount = */ true, // @todo Add tests on non-arbitrum chain
+                /* orderData = */ abi.encode(minOutputAmount, adminFeeAmount)
+            );
+        }
 
         actions[actionCursor++] = AccountActionLib.encodeCallAction(
             0,
             address(this),
-            bytes("")
+            abi.encode(false)
         );
 
-        // @todo Encode transfer to fee agent
-        uint256 feePercentage = smartPairsStorage.pairToFee[pairBytes] == 0 ? smartPairsStorage.globalFee : smartPairsStorage.pairToFee[pairBytes];
-        uint256 adminFeePercentage = smartPairsStorage.adminFee * feePercentage;
-        uint256 adminFeeAmount = _inputAmountWei * adminFeePercentage / _ONE;
-
-        // @audit check rounding errors
-        actions[actionCursor++] = AccountActionLib.encodeTransferAction(
-            _ZAP_ACCOUNT_ID,
-            _feeAccountId,
-            _inputMarketId,
-            IDolomiteStructs.AssetDenomination.Wei,
-            adminFeeAmount
+        Require.that(
+            tradeTotal == _params.inputAmountWei,
+            _FILE,
+            "Invalid swap amounts sum"
         );
 
-        uint256 tradeTotal;
-        for (uint256 i; i < _swaps.length; i++) {
-            tradeTotal += _swaps[i].amount;
-            actions[actionCursor++] = AccountActionLib.encodeInternalTradeActionWithCustomData(
-                /* fromAccountId = */ _makerAccountStartId++,
-                /* toAccountId = */ _ZAP_ACCOUNT_ID,
-                /* primaryMarketId = */ _inputMarketId,
-                /* secondaryMarketId = */ _outputMarketId,
-                /* traderAddress = */ address(this),
-                /* amountInWei = */ _swaps[i].amount,
-                /* chainId = */ CHAIN_ID,
-                /* calculateAmountWithMakerAccount = */ false,
-                /* orderData = */ bytes("")
-            );
-        }
+        return actions;
     }
 
     function isSmartDebtPair(uint256 _marketId1, uint256 _marketId2) public view returns (bool) {
@@ -307,8 +320,13 @@ contract SmartDebtAutoTrader is OnlyDolomiteMargin, Initializable, ISmartDebtAut
         return _getSmartPairsStorage().userToPair[_user][_accountNumber];
     }
 
-    function tradeEnabled() public view returns (bool) {
-        return _getSmartPairsStorage().tradeEnabled;
+    function pairFee(uint256 _marketId1, uint256 _marketId2) public view returns (uint256) {
+        (bytes32 pairBytes, ,) = _getPairBytesAndSortMarketIds(_marketId1, _marketId2);
+        return _getSmartPairsStorage().pairToFee[pairBytes];
+    }
+
+    function actionsLength(uint256 _swaps) public pure override(IInternalAutoTraderBase, InternalAutoTraderBase) returns (uint256) {
+        return _swaps + 3;
     }
 
     // ========================================================
@@ -340,9 +358,9 @@ contract SmartDebtAutoTrader is OnlyDolomiteMargin, Initializable, ISmartDebtAut
             uint256 sortedMarketId2
         ) = _getPairBytesAndSortMarketIds(_marketId1, _marketId2);
 
-        bool res = smartPairsStorage.smartCollateralPairs.add(pairBytes);
+        bool wasAdded = smartPairsStorage.smartCollateralPairs.add(pairBytes);
         Require.that(
-            res,
+            wasAdded,
             _FILE,
             "Pair already exists"
         );
@@ -357,10 +375,9 @@ contract SmartDebtAutoTrader is OnlyDolomiteMargin, Initializable, ISmartDebtAut
             uint256 sortedMarketId2
         ) = _getPairBytesAndSortMarketIds(_marketId1, _marketId2);
 
-        // @follow-up This is messy but if I put it in require statement then coverage fails
-        bool res = smartPairsStorage.smartDebtPairs.remove(pairBytes);
+        bool wasRemoved = smartPairsStorage.smartDebtPairs.remove(pairBytes);
         Require.that(
-            res,
+            wasRemoved,
             _FILE,
             "Pair does not exist"
         );
@@ -384,8 +401,26 @@ contract SmartDebtAutoTrader is OnlyDolomiteMargin, Initializable, ISmartDebtAut
         emit SmartCollateralPairRemoved(sortedMarketId1, sortedMarketId2);
     }
 
-    function _setTradeEnabled(bool _tradeEnabled) internal {
-        _getSmartPairsStorage().tradeEnabled = _tradeEnabled;
+    function _ownerSetPairFee(uint256 _marketId1, uint256 _marketId2, uint256 _fee) internal {
+        (bytes32 pairBytes, ,) = _getPairBytesAndSortMarketIds(_marketId1, _marketId2);
+        _getSmartPairsStorage().pairToFee[pairBytes] = _fee;
+        emit PairFeeSet(pairBytes, _fee);
+    }
+
+    function _getFees(uint256 _inputMarketId, uint256 _outputMarketId) internal view returns (uint256, uint256) {
+        (uint256 adminFee, uint256 globalFee) = super._getFees();
+        uint256 pairFeeOverride = pairFee(_inputMarketId, _outputMarketId);
+
+        return (adminFee, pairFeeOverride == 0 ? globalFee : pairFeeOverride);
+    }
+
+    function _getFees(bytes32 _pairBytes) internal view returns (uint256, uint256) {
+        SmartPairsStorage storage smartPairsStorage = _getSmartPairsStorage();
+
+        (uint256 adminFee, uint256 globalFee) = super._getFees();
+        uint256 pairFeeOverride = smartPairsStorage.pairToFee[_pairBytes];
+
+        return (adminFee, pairFeeOverride == 0 ? globalFee : pairFeeOverride);
     }
 
     function _getPairBytesAndSortMarketIds(

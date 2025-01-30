@@ -395,9 +395,9 @@ library AccountActionLib {
         });
     }
 
-    function encodeInternalTradeActionWithCustomData(
-        uint256 _fromAccountId,
-        uint256 _toAccountId,
+    function encodeInternalTradeActionWithWhitelistedTrader(
+        uint256 _takerAccountId,
+        uint256 _makerAccountId,
         uint256 _primaryMarketId,
         uint256 _secondaryMarketId,
         address _traderAddress,
@@ -406,11 +406,10 @@ library AccountActionLib {
         bool _calculateAmountWithMakerAccount,
         bytes memory _orderData
     ) internal pure returns (IDolomiteStructs.ActionArgs memory) {
-        // internal trades calculate inputAmount based on `_toAccountId` (the maker account), so the sign should be
-        // positive to reflect this
+        // @dev We swap the maker and taker here so that the input amount gets applied to the taker
         return IDolomiteStructs.ActionArgs({
             actionType: IDolomiteStructs.ActionType.Trade,
-            accountId: _fromAccountId,
+            accountId: _makerAccountId,
             amount: IDolomiteStructs.AssetAmount({
                 sign: false, // @audit check
                 denomination: IDolomiteStructs.AssetDenomination.Wei,
@@ -422,7 +421,7 @@ library AccountActionLib {
             primaryMarketId: _primaryMarketId,
             secondaryMarketId: _secondaryMarketId,
             otherAddress: _traderAddress,
-            otherAccountId: _toAccountId,
+            otherAccountId: _takerAccountId,
             data: ChainHelperLib.isArbitrum(_chainId) // @audit check
                 ? _orderData
                 : abi.encode(_calculateAmountWithMakerAccount, _orderData)

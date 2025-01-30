@@ -43,8 +43,9 @@ contract TestRouterBase is RouterBase {
     // ========================================================
 
     constructor (
-        address _dolomiteRegistry
-    ) RouterBase(_dolomiteRegistry) {
+        address _dolomiteRegistry,
+        address _dolomiteMargin
+    ) RouterBase(_dolomiteRegistry, _dolomiteMargin) {
     }
 
     // ========================================================

@@ -20,7 +20,8 @@
 pragma solidity ^0.8.9;
 
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import { IDolomiteAutoTrader } from "../protocol/interfaces/IDolomiteAutoTrader.sol";
+import { IDolomiteAutoTrader } from "../../protocol/interfaces/IDolomiteAutoTrader.sol";
+import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 
 
 /**
@@ -46,6 +47,13 @@ interface ISmartDebtAutoTrader is IDolomiteAutoTrader {
         bytes32 pairBytes;
     }
 
+    struct SmartAssetSwapParams {
+        address user;
+        uint256 accountNumber;
+        uint256 amount;
+        uint256 minOutputAmount;
+    }
+
     struct SmartPairsStorage {
         bool tradeEnabled;
         uint256 globalFee;
@@ -55,6 +63,15 @@ interface ISmartDebtAutoTrader is IDolomiteAutoTrader {
         EnumerableSet.Bytes32Set smartDebtPairs;
         EnumerableSet.Bytes32Set smartCollateralPairs;
         mapping(address => mapping(uint256 => PairPosition)) userToPair;
+    }
+
+    struct CreateActionsForInternalTradeParams {
+        uint256 inputMarketId;
+        uint256 outputMarketId;
+        uint256 inputAmountWei;
+        uint256 feeAccountId;
+        uint256 makerAccountStartId;
+        SmartAssetSwapParams[] swaps;
     }
 
     // ========================================================
@@ -89,6 +106,12 @@ interface ISmartDebtAutoTrader is IDolomiteAutoTrader {
     // ========================================================
     // ==================== View Functions ====================
     // ========================================================
+
+    function createActionsForInternalTrade(
+        CreateActionsForInternalTradeParams memory _params
+    ) external view returns (IDolomiteStructs.ActionArgs[] memory);
+
+    function actionsLength(uint256 _swaps) external view returns (uint256);
 
     function isSmartDebtPair(uint256 _marketId1, uint256 _marketId2) external view returns (bool);
     function isSmartCollateralPair(uint256 _marketId1, uint256 _marketId2) external view returns (bool);

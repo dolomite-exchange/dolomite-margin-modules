@@ -28,7 +28,7 @@ import { IExpiry } from "./IExpiry.sol";
 import { IGenericTraderProxyV1 } from "./IGenericTraderProxyV1.sol";
 import { ILiquidatorAssetRegistry } from "./ILiquidatorAssetRegistry.sol";
 import { IDolomitePriceOracle } from "../protocol/interfaces/IDolomitePriceOracle.sol";
-import { ISmartDebtAutoTrader } from "./ISmartDebtAutoTrader.sol";
+import { ISmartDebtAutoTrader } from "./traders/ISmartDebtAutoTrader.sol";
 
 
 /**
@@ -60,6 +60,7 @@ interface IDolomiteRegistry {
     event OracleAggregatorSet(address indexed _oracleAggregator);
     event DolomiteAccountRegistrySet(address indexed _dolomiteAccountRegistry);
     event TrustedInternalTradersSet(address[] _trustedInternalTraders, bool[] _isTrusted);
+    event TrustedInternalTradeCallersSet(address[] _trustedInternalTradeCallers, bool[] _isTrusted);
     event IsolationModeMulticallFunctionsSet(bytes4[] _selectors);
     event SmartDebtTraderSet(address indexed _smartDebtTrader);
 
@@ -119,6 +120,10 @@ interface IDolomiteRegistry {
      */
     function ownerSetChainlinkPriceOracle(address _chainlinkPriceOracle) external;
 
+    /**
+     *
+     * @param  _dolomiteMigrator    The new address of the Dolomite migrator
+     */
     function ownerSetDolomiteMigrator(address _dolomiteMigrator) external;
 
     /**
@@ -154,6 +159,16 @@ interface IDolomiteRegistry {
      */
     function ownerSetTrustedInternalTraders(
         address[] memory _trustedInternalTraders,
+        bool[] memory _isTrusted
+    ) external;
+
+    /**
+     *
+     * @param  _trustedInternalTradeCallers    The addresses of the trusted internal trade callers
+     * @param  _isTrusted                      The boolean values for whether the trade callers are trusted
+     */
+    function ownerSetTrustedInternalTradeCallers(
+        address[] memory _trustedInternalTradeCallers,
         bool[] memory _isTrusted
     ) external;
 
@@ -248,4 +263,11 @@ interface IDolomiteRegistry {
      * @return  Whether the trader is trusted
      */
     function isTrustedInternalTrader(address _trader) external view returns (bool);
+
+    /**
+     * 
+     * @param  _tradeCaller  The address of the trade caller
+     * @return  Whether the trade caller is trusted
+     */
+    function isTrustedInternalTradeCaller(address _tradeCaller) external view returns (bool);
 }

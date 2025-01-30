@@ -20,17 +20,19 @@
 
 pragma solidity ^0.8.9;
 
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { RouterBase } from "./RouterBase.sol";
+import { ISmartDebtAutoTrader } from "../interfaces/traders/ISmartDebtAutoTrader.sol";
 import { IIsolationModeTokenVaultV1 } from "../isolation-mode/interfaces/IIsolationModeTokenVaultV1.sol";
+import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
+import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
+import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../protocol/lib/Require.sol";
 import { IGenericTraderProxyV2 } from "../proxies/interfaces/IGenericTraderProxyV2.sol";
 import { IGenericTraderRouter } from "./interfaces/IGenericTraderRouter.sol";
-import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
-import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
-import { AccountActionLib } from "../lib/AccountActionLib.sol";
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { TypesLib } from "../protocol/lib/TypesLib.sol";
 
 
 /**
@@ -41,6 +43,7 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
  */
 contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
     using SafeERC20 for IERC20;
+    using TypesLib for IDolomiteStructs.Wei;
 
     // ========================================================
     // ====================== Constants =======================
@@ -50,6 +53,8 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
 
     uint256 internal constant _TRADE_ACCOUNT_ID = 0;
     uint256 internal constant _ZAP_ACCOUNT_ID = 1;
+    uint256 internal constant _FEE_ACCOUNT_ID = 2;
+
     uint256 internal constant _DEFAULT_ACCOUNT_NUMBER = 0;
 
     uint256 public immutable CHAIN_ID;
@@ -60,13 +65,10 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
 
     constructor(
         uint256 _chainId,
-        address _dolomiteRegistry
-    ) RouterBase(_dolomiteRegistry) {
+        address _dolomiteRegistry,
+        address _dolomiteMargin
+    ) RouterBase(_dolomiteRegistry, _dolomiteMargin) {
         CHAIN_ID = _chainId;
-    }
-
-    function initialize() public initializer override {
-        RouterBase.initialize();
     }
 
     // ========================================================
@@ -223,58 +225,81 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
     }
 
     function swapExactInputForOutputViaSmartAccount(
+        uint256 _accountNumber,
+        uint256 _inputMarketId,
+        uint256 _outputMarketId,
+        uint256 _inputAmountWei,
+        uint256 _minOutputAmountWei,
+        ISmartDebtAutoTrader.SmartAssetSwapParams[] memory _swaps
+    ) external nonReentrant returns (uint256) {
+        IDolomiteStructs.Wei memory balanceBefore = DOLOMITE_MARGIN().getAccountWei(
+            IDolomiteStructs.AccountInfo({
+                owner: msg.sender,
+                number: _accountNumber
+            }),
+            _outputMarketId
+        );
+
+        IDolomiteStructs.AccountInfo[] memory accounts = _getAccounts(
+            msg.sender,
+            _accountNumber,
+            _swaps
+        );
+        _validateZapAccount(accounts[_ZAP_ACCOUNT_ID], _inputMarketId, _outputMarketId);
+
+        IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](
+            _getActionsLengthForInternalTrade(_swaps, false)
+        );
+        _appendActions(actions, _inputMarketId, _outputMarketId, _inputAmountWei, _swaps, false);
+        DOLOMITE_MARGIN().operate(accounts, actions);
+
+        IDolomiteStructs.Wei memory balanceAfter = DOLOMITE_MARGIN().getAccountWei(
+            IDolomiteStructs.AccountInfo({
+                owner: msg.sender,
+                number: _accountNumber
+            }),
+            _outputMarketId
+        );
+
+        uint256 outputAmount = balanceAfter.sub(balanceBefore).value;
+        if (outputAmount >= _minOutputAmountWei) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            outputAmount >= _minOutputAmountWei,
+            _FILE,
+            "Insufficient output amount"
+        );
+        return outputAmount;
+    }
+
+    function performExternalSwapViaSmartAccount(
         address _inputToken,
         address _outputToken,
         uint256 _inputAmountWei,
         uint256 _minOutputAmountWei,
-        SmartAssetSwapParams[] memory _swaps
+        ISmartDebtAutoTrader.SmartAssetSwapParams[] memory _swaps
     ) external nonReentrant returns (uint256) {
         uint256 inputMarketId = DOLOMITE_MARGIN().getMarketIdByTokenAddress(_inputToken);
         uint256 outputMarketId = DOLOMITE_MARGIN().getMarketIdByTokenAddress(_outputToken);
-        IERC20(_inputToken).safeTransferFrom(msg.sender, address(this), _inputAmountWei);
 
+        // @audit Maybe use address(this) and confirm the account is empty
         IDolomiteStructs.AccountInfo[] memory accounts = _getAccounts(
             msg.sender,
-            0,
+            _calculateTradeAccountNumber(msg.sender, DEFAULT_ACCOUNT_NUMBER),
             _swaps
         );
         _validateZapAccount(accounts[_ZAP_ACCOUNT_ID], inputMarketId, outputMarketId);
 
-        uint256 actionsLen = _swaps.length + 4;
-        IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](actionsLen);
-
-        uint256 actionsCursor;
-        actions[actionsCursor++] = AccountActionLib.encodeDepositAction(
-            _TRADE_ACCOUNT_ID,
-            inputMarketId,
-            IDolomiteStructs.AssetAmount({
-                sign: true,
-                denomination: IDolomiteStructs.AssetDenomination.Wei,
-                ref: IDolomiteStructs.AssetReference.Delta,
-                value: _inputAmountWei
-            }),
-            address(this)
+        IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](
+            _getActionsLengthForInternalTrade(_swaps, true)
         );
-        actionsCursor = _appendInternalTradeActions(actions, actionsCursor, inputMarketId, outputMarketId, _inputAmountWei, _swaps);
-
-        actions[actionsCursor++] = AccountActionLib.encodeWithdrawalAction(
-            _TRADE_ACCOUNT_ID,
-            outputMarketId,
-            IDolomiteStructs.AssetAmount({
-                sign: false,
-                denomination: IDolomiteStructs.AssetDenomination.Wei,
-                ref: IDolomiteStructs.AssetReference.Target,
-                value: 0
-            }),
-            address(this)
-        );
-        /*assert(actionsCursor == actionsLen);*/
+        _appendActions(actions, inputMarketId, outputMarketId, _inputAmountWei, _swaps, true);
 
         uint256 preBal = IERC20(_outputToken).balanceOf(address(this));
+        IERC20(_inputToken).safeTransferFrom(msg.sender, address(this), _inputAmountWei);
         IERC20(_inputToken).safeApprove(address(DOLOMITE_MARGIN()), _inputAmountWei);
         DOLOMITE_MARGIN().operate(accounts, actions);
-        uint256 outputAmount = IERC20(_outputToken).balanceOf(address(this)) - preBal;
 
+        uint256 outputAmount = IERC20(_outputToken).balanceOf(address(this)) - preBal;
         if (outputAmount >= _minOutputAmountWei) { /* FOR COVERAGE TESTING */ }
         Require.that(
             outputAmount >= _minOutputAmountWei,
@@ -330,59 +355,60 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
         }
     }
 
-    function _appendInternalTradeActions(
+    function _getActionsLengthForInternalTrade(
+        ISmartDebtAutoTrader.SmartAssetSwapParams[] memory _swaps,
+        bool _isExternalTrade
+    ) internal view returns (uint256) {
+        uint256 actionsLen = DOLOMITE_REGISTRY.smartDebtTrader().actionsLength(_swaps.length);
+        return _isExternalTrade ? actionsLen + 4 : actionsLen + 2;
+    }
+
+    function _appendActions(
         IDolomiteStructs.ActionArgs[] memory _actions,
-        uint256 _actionsCursor,
         uint256 _inputMarketId,
         uint256 _outputMarketId,
         uint256 _inputAmountWei,
-        SmartAssetSwapParams[] memory _swaps
-    ) internal view returns (uint256) {
-        address smartDebtTrader = address(DOLOMITE_REGISTRY.smartDebtTrader());
-        uint256 tradeTotal;
+        ISmartDebtAutoTrader.SmartAssetSwapParams[] memory _swaps,
+        bool _isExternalTrade
+    ) internal view {
+        uint256 actionsCursor;
 
-        if (_inputAmountWei == type(uint256).max) {
-            _actions[_actionsCursor++] = AccountActionLib.encodeTransferToTargetAmountAction(
+        if (_isExternalTrade) {
+            _actions[actionsCursor++] = AccountActionLib.encodeDepositAction(
                 _TRADE_ACCOUNT_ID,
-                _ZAP_ACCOUNT_ID,
                 _inputMarketId,
-                IDolomiteStructs.Wei({
-                    sign: false,
-                    value: 0
-                })
-            );
-        } else {
-            _actions[_actionsCursor++] = AccountActionLib.encodeTransferAction(
-                _TRADE_ACCOUNT_ID,
-                _ZAP_ACCOUNT_ID,
-                _inputMarketId,
-                IDolomiteStructs.AssetDenomination.Wei,
-                _inputAmountWei
+                IDolomiteStructs.AssetAmount({
+                    sign: true,
+                    denomination: IDolomiteStructs.AssetDenomination.Wei,
+                    ref: IDolomiteStructs.AssetReference.Delta,
+                    value: _inputAmountWei
+                }),
+                address(this)
             );
         }
-
-        for (uint256 i; i < _swaps.length; i++) {
-            tradeTotal += _swaps[i].amount;
-            _actions[_actionsCursor++] = AccountActionLib.encodeInternalTradeActionWithCustomData(
-                /* fromAccountId = */ i + 2,
-                /* toAccountId = */ _ZAP_ACCOUNT_ID,
-                /* primaryMarketId = */ _inputMarketId,
-                /* secondaryMarketId = */ _outputMarketId,
-                /* traderAddress = */ smartDebtTrader,
-                /* amountInWei = */ _swaps[i].amount,
-                /* chainId = */ CHAIN_ID,
-                /* calculateAmountWithMakerAccount = */ false,
-                /* orderData = */ bytes("")
-            );
-        }
-        if (tradeTotal == _inputAmountWei) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            tradeTotal == _inputAmountWei,
-            _FILE,
-            'tradeTotal != _inputAmountWei'
+        _actions[actionsCursor++] = AccountActionLib.encodeTransferAction(
+            _TRADE_ACCOUNT_ID,
+            _ZAP_ACCOUNT_ID,
+            _inputMarketId,
+            IDolomiteStructs.AssetDenomination.Wei,
+            _inputAmountWei
         );
 
-        _actions[_actionsCursor++] = AccountActionLib.encodeTransferToTargetAmountAction(
+        IDolomiteStructs.ActionArgs[] memory tradeActions = DOLOMITE_REGISTRY.smartDebtTrader().createActionsForInternalTrade(
+            ISmartDebtAutoTrader.CreateActionsForInternalTradeParams({
+                inputMarketId: _inputMarketId,
+                outputMarketId: _outputMarketId,
+                inputAmountWei: _inputAmountWei,
+                feeAccountId: _FEE_ACCOUNT_ID,
+                makerAccountStartId: _FEE_ACCOUNT_ID + 1,
+                swaps: _swaps
+            })
+        );
+        for (uint256 i; i < tradeActions.length; i++) {
+            _actions[actionsCursor++] = tradeActions[i];
+        }
+
+        _actions[actionsCursor++] = AccountActionLib.encodeTransferToTargetAmountAction(
             _ZAP_ACCOUNT_ID,
             _TRADE_ACCOUNT_ID,
             _outputMarketId,
@@ -392,7 +418,24 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
             })
         );
 
-        return _actionsCursor;
+        if (_isExternalTrade) {
+            _actions[actionsCursor++] = AccountActionLib.encodeWithdrawalAction(
+                _TRADE_ACCOUNT_ID,
+                _outputMarketId,
+                IDolomiteStructs.AssetAmount({
+                    sign: false,
+                    denomination: IDolomiteStructs.AssetDenomination.Wei,
+                    ref: IDolomiteStructs.AssetReference.Target,
+                    value: 0
+                }),
+                address(this)
+            );
+        }
+        /*assert(actionsCursor == _actions.length);*/
+    }
+
+    function _calculateTradeAccountNumber(address _user, uint256 _accountNumber) internal view returns (uint256) {
+        return uint256(keccak256(abi.encodePacked(_user, _accountNumber, block.timestamp)));
     }
 
     function _calculateZapAccountNumber(address _user, uint256 _accountNumber) internal view returns (uint256) {
@@ -432,14 +475,14 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
     function _getAccounts(
         address _tradeAccountOwner,
         uint256 _tradeAccountNumber,
-        SmartAssetSwapParams[] memory _swaps
+        ISmartDebtAutoTrader.SmartAssetSwapParams[] memory _swaps
     )
         internal
         view
         returns (IDolomiteStructs.AccountInfo[] memory)
     {
         IDolomiteStructs.AccountInfo[] memory accounts = new IDolomiteStructs.AccountInfo[](
-            _swaps.length + 2
+            _swaps.length + 3
         );
         accounts[_TRADE_ACCOUNT_ID] = IDolomiteStructs.AccountInfo({
             owner: _tradeAccountOwner,
@@ -449,9 +492,20 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
             owner: _tradeAccountOwner,
             number: _calculateZapAccountNumber(_tradeAccountOwner, _tradeAccountNumber)
         });
+        address feeAgent = DOLOMITE_REGISTRY.feeAgent();
+        if (feeAgent != address(0)) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            feeAgent != address(0),
+            _FILE,
+            'Fee agent is not set'
+        );
+        accounts[_FEE_ACCOUNT_ID] = IDolomiteStructs.AccountInfo({
+            owner: feeAgent,
+            number: DEFAULT_ACCOUNT_NUMBER
+        });
 
         for (uint256 i; i < _swaps.length; i++) {
-            accounts[i + 2] = IDolomiteStructs.AccountInfo({
+            accounts[i + 3] = IDolomiteStructs.AccountInfo({
                 owner: _swaps[i].user,
                 number: _swaps[i].accountNumber
             });
