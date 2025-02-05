@@ -4595,6 +4595,11 @@
       "address": "0xC50b93e55c80a5e2c76917038A15d9D4Ad63a0d1",
       "transaction": "0xd4c06f3e8f56e468ae5744a05714c474843e7f6df53d7d3b52c9636a0ccd2c8f",
       "isVerified": true
+    },
+    "80094": {
+      "address": "0x18b619935591958499D37140FA1670F33460bfbf",
+      "transaction": "0x540acf51896348783ae8dfced459bd18ed643f93c8f41257ba708f07b770d713",
+      "isVerified": true
     }
   },
   "OracleAggregatorV2": {

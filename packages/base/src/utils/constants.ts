@@ -1519,11 +1519,7 @@ export const OKX_DEX_TRANSFER_PROXY_MAP: Record<Network.XLayer, string> = {
 };
 
 export const OOGA_BOOGA_ROUTER_MAP: Record<Network.Berachain, string> = {
-  [Network.Berachain]: '',
-};
-
-export const OOGA_BOOGA_EXECUTOR_MAP: Record<Network.Berachain, string> = {
-  [Network.Berachain]: '',
+  [Network.Berachain]: '0xFd88aD4849BA0F729D6fF4bC27Ff948Ab1Ac3dE7',
 };
 
 export const PARASWAP_AUGUSTUS_ROUTER_MAP: Record<Network, string | undefined> = {

@@ -2,6 +2,7 @@ import { ChroniclePriceOracleV3, RedstonePriceOracleV3 } from '@dolomite-exchang
 import { BigNumberish } from 'ethers';
 import { DolomiteERC4626, DolomiteERC4626WithPayable, IERC20, IWETH } from '../../../src/types';
 import { Network } from '../../../src/utils/no-deps-constants';
+import { OogaBoogaEcosystem } from '../ecosystem-utils/ooga-booga';
 import {
   CoreProtocolAbstract, CoreProtocolDolomiteTokens,
   CoreProtocolMarketIds,
@@ -106,6 +107,7 @@ export interface CoreProtocolParamsBerachain {
   dolomiteTokens: CoreProtocolDolomiteTokensBerachain;
   marketIds: CoreProtocolMarketIdsBerachain;
   chroniclePriceOracleV3: ChroniclePriceOracleV3;
+  oogaBoogaEcosystem: OogaBoogaEcosystem;
   redstonePriceOracleV3: RedstonePriceOracleV3;
   tokens: CoreProtocolTokensBerachain;
 }
@@ -115,16 +117,16 @@ export class CoreProtocolBerachain extends CoreProtocolAbstract<Network.Berachai
   public readonly network: Network.Berachain = Network.Berachain;
   public readonly marketIds: CoreProtocolMarketIdsBerachain;
   public readonly chroniclePriceOracleV3: ChroniclePriceOracleV3;
+  public readonly oogaBoogaEcosystem: OogaBoogaEcosystem;
   public readonly redstonePriceOracleV3: RedstonePriceOracleV3;
   public readonly tokens: CoreProtocolTokensBerachain;
-
-  // public readonly oogaBoogaEcosystem: OogaBoogaEcosystem; // TODO
 
   constructor(params: CoreProtocolParams<Network.Berachain>, berachainParams: CoreProtocolParamsBerachain) {
     super(params);
     this.chroniclePriceOracleV3 = berachainParams.chroniclePriceOracleV3;
     this.dolomiteTokens = berachainParams.dolomiteTokens;
     this.marketIds = berachainParams.marketIds;
+    this.oogaBoogaEcosystem = berachainParams.oogaBoogaEcosystem;
     this.redstonePriceOracleV3 = berachainParams.redstonePriceOracleV3;
     this.tokens = berachainParams.tokens;
   }
