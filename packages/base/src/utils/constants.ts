@@ -436,7 +436,7 @@ export const DOGE_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
 
 export const E_BTC_MAP: Record<Network.Berachain, TokenWithMarketId> = {
   [Network.Berachain]: {
-    address: '',
+    address: '0x657e8C867D8B37dCC18fA4Caead9C45EB088C642',
     marketId: 28,
   },
 };

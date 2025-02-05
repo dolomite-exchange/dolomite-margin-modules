@@ -42,8 +42,8 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     },
     scriptName: getScriptName(__filename),
     invariants: async () => {
-      await checkMarket(core, core.marketIds.usd0, core.tokens.eBtc);
-      await checkMarket(core, core.marketIds.usd0pp, core.tokens.weEth);
+      await checkMarket(core, core.marketIds.eBtc, core.tokens.eBtc);
+      await checkMarket(core, core.marketIds.weEth, core.tokens.weEth);
     },
   };
 }

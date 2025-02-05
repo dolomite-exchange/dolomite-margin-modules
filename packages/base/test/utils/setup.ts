@@ -97,7 +97,7 @@ import {
   DPT_WST_ETH_JUN_2024_MAP,
   DPT_WST_ETH_JUN_2025_MAP,
   DPX_MAP,
-  DYT_GLP_2024_MAP,
+  DYT_GLP_2024_MAP, E_BTC_MAP,
   E_ETH_MAP,
   E_USD_MAP,
   ETH_PLUS_MAP,
@@ -1180,7 +1180,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
           Deployments.DolomiteBeraEth4626Token[Network.Berachain].address,
           hhUser1,
         ),
-        // eBtc: DolomiteERC4626__factory.connect(Deployments.DolomiteEBtc4626Token[Network.Berachain].address, hhUser1), // TODO FIX
+        eBtc: DolomiteERC4626__factory.connect(Deployments.DolomiteEBtc4626Token[Network.Berachain].address, hhUser1),
         honey: DolomiteERC4626__factory.connect(Deployments.DolomiteHoney4626Token[Network.Berachain].address, hhUser1),
         lbtc: DolomiteERC4626__factory.connect(Deployments.DolomiteLbtc4626Token[Network.Berachain].address, hhUser1),
         nect: DolomiteERC4626__factory.connect(Deployments.DolomiteNect4626Token[Network.Berachain].address, hhUser1),
@@ -1224,7 +1224,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
           hhUser1,
         ),
         wbtc: DolomiteERC4626__factory.connect(Deployments.DolomiteWbtc4626Token[Network.Berachain].address, hhUser1),
-        // weEth: DolomiteERC4626__factory.connect(Deployments.DoloWeEth4626Token[Network.Berachain].address, hhUser1), // TODO FIX
+        weEth: DolomiteERC4626__factory.connect(Deployments.DolomiteWeEth4626Token[Network.Berachain].address, hhUser1),
         ylBtcLst: DolomiteERC4626__factory.connect(
           Deployments.DolomiteYlBtcLst4626Token[Network.Berachain].address,
           hhUser1,
@@ -1241,7 +1241,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
       marketIds: {
         ...coreProtocolParams.marketIds,
         beraEth: BERA_ETH_MAP[typedConfig.network].marketId,
-        // eBtc: E_BTC_MAP[typedConfig.network].marketId, // TODO FIX
+        eBtc: E_BTC_MAP[typedConfig.network].marketId,
         honey: HONEY_MAP[typedConfig.network].marketId,
         lbtc: LBTC_MAP[typedConfig.network].marketId,
         nect: NECT_MAP[typedConfig.network].marketId,
@@ -1281,7 +1281,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
       tokens: {
         ...coreProtocolParams.tokens,
         beraEth: IERC20__factory.connect(BERA_ETH_MAP[typedConfig.network].address, hhUser1),
-        // eBtc: IERC20__factory.connect(E_BTC_MAP[typedConfig.network].address, hhUser1), // TODO FIX
+        eBtc: IERC20__factory.connect(E_BTC_MAP[typedConfig.network].address, hhUser1),
         honey: IERC20__factory.connect(HONEY_MAP[typedConfig.network].address, hhUser1),
         lbtc: IERC20__factory.connect(LBTC_MAP[typedConfig.network].address, hhUser1),
         nect: IERC20__factory.connect(NECT_MAP[typedConfig.network].address, hhUser1),
