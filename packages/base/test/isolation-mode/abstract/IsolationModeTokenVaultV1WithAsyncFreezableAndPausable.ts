@@ -1625,7 +1625,13 @@ describe('IsolationModeTokenVaultV1WithAsyncFreezableAndPausable', () => {
     it('should fail if external redemption is paused and user has debt', async () => {
       await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await userVault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei);
-      await userVault.transferFromPositionWithOtherToken(borrowAccountNumber, defaultAccountNumber, otherMarketId2, otherAmountWei, BalanceCheckFlag.To);
+      await userVault.transferFromPositionWithOtherToken(
+        borrowAccountNumber,
+        defaultAccountNumber,
+        otherMarketId2,
+        otherAmountWei,
+        BalanceCheckFlag.To,
+      );
       await userVault.setIsExternalRedemptionPaused(true);
 
       const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, amountWei, core);

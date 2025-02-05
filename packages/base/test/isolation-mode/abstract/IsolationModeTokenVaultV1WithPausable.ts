@@ -985,7 +985,14 @@ describe('IsolationModeTokenVaultV1WithPausable', () => {
   describe('#addCollateralAndSwapExactInputForOutput', () => {
     it('should fail if external redemption is paused and user is adding collateral to borrow position', async () => {
       await userVault.setIsExternalRedemptionPaused(true);
-      const zapParams = await getWrapZapParams(otherMarketId1, amountWei, underlyingMarketId, amountWei, tokenWrapper, core);
+      const zapParams = await getWrapZapParams(
+        otherMarketId1,
+        amountWei,
+        underlyingMarketId,
+        amountWei,
+        tokenWrapper,
+        core
+      );
       await expectThrow(
         userVault.addCollateralAndSwapExactInputForOutput(
           defaultAccountNumber,
@@ -1006,7 +1013,14 @@ describe('IsolationModeTokenVaultV1WithPausable', () => {
     it('should pass pausable check if user has no debt', async () => {
       await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await userVault.setIsExternalRedemptionPaused(true);
-      const zapParams = await getUnwrapZapParams(underlyingMarketId, amountWei, otherMarketId1, amountWei, tokenUnwrapper, core);
+      const zapParams = await getUnwrapZapParams(
+        underlyingMarketId,
+        amountWei,
+        otherMarketId1,
+        amountWei,
+        tokenUnwrapper,
+        core,
+      );
       await expectThrow(
         userVault.swapExactInputForOutputAndRemoveCollateral(
           defaultAccountNumber,
@@ -1022,10 +1036,16 @@ describe('IsolationModeTokenVaultV1WithPausable', () => {
       );
     });
 
-    it('should fail if external redemption is paused and user is removing collateral from borrow position', async () => {
+    it('should fail if external redemption is paused and user removes collateral from borrow position', async () => {
       await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await userVault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei);
-      await userVault.transferFromPositionWithOtherToken(borrowAccountNumber, defaultAccountNumber, otherMarketId2, otherAmountWei, BalanceCheckFlag.To);
+      await userVault.transferFromPositionWithOtherToken(
+        borrowAccountNumber,
+        defaultAccountNumber,
+        otherMarketId2,
+        otherAmountWei,
+        BalanceCheckFlag.To,
+      );
       await userVault.setIsExternalRedemptionPaused(true);
 
       const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, amountWei, core);

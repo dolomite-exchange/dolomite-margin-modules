@@ -23,16 +23,16 @@ pragma solidity ^0.8.9;
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { RouterBase } from "./RouterBase.sol";
-import { ISmartDebtAutoTrader } from "../interfaces/traders/ISmartDebtAutoTrader.sol";
+import { IInternalAutoTraderBase } from "../interfaces/traders/IInternalAutoTraderBase.sol";
 import { IIsolationModeTokenVaultV1 } from "../isolation-mode/interfaces/IIsolationModeTokenVaultV1.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../protocol/lib/Require.sol";
+import { TypesLib } from "../protocol/lib/TypesLib.sol";
 import { IGenericTraderProxyV2 } from "../proxies/interfaces/IGenericTraderProxyV2.sol";
 import { IGenericTraderRouter } from "./interfaces/IGenericTraderRouter.sol";
-import { TypesLib } from "../protocol/lib/TypesLib.sol";
 
 
 /**
@@ -52,8 +52,9 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
     bytes32 private constant _FILE = "GenericTraderRouter";
 
     uint256 internal constant _TRADE_ACCOUNT_ID = 0;
-    uint256 internal constant _ZAP_ACCOUNT_ID = 1;
-    uint256 internal constant _FEE_ACCOUNT_ID = 2;
+    uint256 internal constant _FEE_ACCOUNT_ID = 1;
+    uint256 internal constant _STATIC_NUMBER_OF_ACCOUNTS = 2;
+    uint256 internal constant _EXTERNAL_TRADE_ACTIONS_NUM = 2;
 
     uint256 internal constant _DEFAULT_ACCOUNT_NUMBER = 0;
 
@@ -230,7 +231,8 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
         uint256 _outputMarketId,
         uint256 _inputAmountWei,
         uint256 _minOutputAmountWei,
-        ISmartDebtAutoTrader.SmartAssetSwapParams[] memory _swaps
+        IInternalAutoTraderBase.InternalTradeParams[] memory _trades,
+        bytes memory _extraData
     ) external nonReentrant returns (uint256) {
         IDolomiteStructs.Wei memory balanceBefore = DOLOMITE_MARGIN().getAccountWei(
             IDolomiteStructs.AccountInfo({
@@ -243,14 +245,13 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
         IDolomiteStructs.AccountInfo[] memory accounts = _getAccounts(
             msg.sender,
             _accountNumber,
-            _swaps
+            _trades
         );
-        _validateZapAccount(accounts[_ZAP_ACCOUNT_ID], _inputMarketId, _outputMarketId);
 
         IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](
-            _getActionsLengthForInternalTrade(_swaps, false)
+            _getActionsLengthForInternalTrade(_trades, false)
         );
-        _appendActions(actions, _inputMarketId, _outputMarketId, _inputAmountWei, _swaps, false);
+        _appendActions(actions, accounts, _inputMarketId, _outputMarketId, _inputAmountWei, _trades, false, _extraData);
         DOLOMITE_MARGIN().operate(accounts, actions);
 
         IDolomiteStructs.Wei memory balanceAfter = DOLOMITE_MARGIN().getAccountWei(
@@ -276,23 +277,23 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
         address _outputToken,
         uint256 _inputAmountWei,
         uint256 _minOutputAmountWei,
-        ISmartDebtAutoTrader.SmartAssetSwapParams[] memory _swaps
+        IInternalAutoTraderBase.InternalTradeParams[] memory _trades,
+        bytes memory _extraData
     ) external nonReentrant returns (uint256) {
         uint256 inputMarketId = DOLOMITE_MARGIN().getMarketIdByTokenAddress(_inputToken);
         uint256 outputMarketId = DOLOMITE_MARGIN().getMarketIdByTokenAddress(_outputToken);
 
-        // @audit Maybe use address(this) and confirm the account is empty
         IDolomiteStructs.AccountInfo[] memory accounts = _getAccounts(
             msg.sender,
             _calculateTradeAccountNumber(msg.sender, DEFAULT_ACCOUNT_NUMBER),
-            _swaps
+            _trades
         );
-        _validateZapAccount(accounts[_ZAP_ACCOUNT_ID], inputMarketId, outputMarketId);
+        _validateEmptyAccount(accounts[_TRADE_ACCOUNT_ID], inputMarketId, outputMarketId);
 
         IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](
-            _getActionsLengthForInternalTrade(_swaps, true)
+            _getActionsLengthForInternalTrade(_trades, true)
         );
-        _appendActions(actions, inputMarketId, outputMarketId, _inputAmountWei, _swaps, true);
+        _appendActions(actions, accounts, inputMarketId, outputMarketId, _inputAmountWei, _trades, true, _extraData);
 
         uint256 preBal = IERC20(_outputToken).balanceOf(address(this));
         IERC20(_inputToken).safeTransferFrom(msg.sender, address(this), _inputAmountWei);
@@ -356,20 +357,22 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
     }
 
     function _getActionsLengthForInternalTrade(
-        ISmartDebtAutoTrader.SmartAssetSwapParams[] memory _swaps,
+        IInternalAutoTraderBase.InternalTradeParams[] memory _trades,
         bool _isExternalTrade
     ) internal view returns (uint256) {
-        uint256 actionsLen = DOLOMITE_REGISTRY.smartDebtTrader().actionsLength(_swaps.length);
-        return _isExternalTrade ? actionsLen + 4 : actionsLen + 2;
+        uint256 actionsLen = DOLOMITE_REGISTRY.smartDebtTrader().actionsLength(_trades.length);
+        return _isExternalTrade ? actionsLen + _EXTERNAL_TRADE_ACTIONS_NUM : actionsLen;
     }
 
     function _appendActions(
         IDolomiteStructs.ActionArgs[] memory _actions,
+        IDolomiteStructs.AccountInfo[] memory _accounts,
         uint256 _inputMarketId,
         uint256 _outputMarketId,
         uint256 _inputAmountWei,
-        ISmartDebtAutoTrader.SmartAssetSwapParams[] memory _swaps,
-        bool _isExternalTrade
+        IInternalAutoTraderBase.InternalTradeParams[] memory _trades,
+        bool _isExternalTrade,
+        bytes memory _extraData
     ) internal view {
         uint256 actionsCursor;
 
@@ -386,37 +389,23 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
                 address(this)
             );
         }
-        _actions[actionsCursor++] = AccountActionLib.encodeTransferAction(
-            _TRADE_ACCOUNT_ID,
-            _ZAP_ACCOUNT_ID,
-            _inputMarketId,
-            IDolomiteStructs.AssetDenomination.Wei,
-            _inputAmountWei
-        );
 
         IDolomiteStructs.ActionArgs[] memory tradeActions = DOLOMITE_REGISTRY.smartDebtTrader().createActionsForInternalTrade(
-            ISmartDebtAutoTrader.CreateActionsForInternalTradeParams({
+            IInternalAutoTraderBase.CreateActionsForInternalTradeParams({
+                takerAccountId: _TRADE_ACCOUNT_ID,
+                takerAccount: _accounts[_TRADE_ACCOUNT_ID],
+                feeAccountId: _FEE_ACCOUNT_ID,
+                feeAccount: _accounts[_FEE_ACCOUNT_ID],
                 inputMarketId: _inputMarketId,
                 outputMarketId: _outputMarketId,
                 inputAmountWei: _inputAmountWei,
-                feeAccountId: _FEE_ACCOUNT_ID,
-                makerAccountStartId: _FEE_ACCOUNT_ID + 1,
-                swaps: _swaps
+                trades: _trades,
+                extraData: _extraData
             })
         );
         for (uint256 i; i < tradeActions.length; i++) {
             _actions[actionsCursor++] = tradeActions[i];
         }
-
-        _actions[actionsCursor++] = AccountActionLib.encodeTransferToTargetAmountAction(
-            _ZAP_ACCOUNT_ID,
-            _TRADE_ACCOUNT_ID,
-            _outputMarketId,
-            IDolomiteStructs.Wei({
-                sign: false,
-                value: 0
-            })
-        );
 
         if (_isExternalTrade) {
             _actions[actionsCursor++] = AccountActionLib.encodeWithdrawalAction(
@@ -438,11 +427,7 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
         return uint256(keccak256(abi.encodePacked(_user, _accountNumber, block.timestamp)));
     }
 
-    function _calculateZapAccountNumber(address _user, uint256 _accountNumber) internal view returns (uint256) {
-        return uint256(keccak256(abi.encodePacked(_user, _accountNumber, block.timestamp)));
-    }
-
-    function _validateZapAccount(
+    function _validateEmptyAccount(
         IDolomiteStructs.AccountInfo memory _account,
         uint256 _inputMarketId,
         uint256 _outputMarketId
@@ -475,40 +460,29 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
     function _getAccounts(
         address _tradeAccountOwner,
         uint256 _tradeAccountNumber,
-        ISmartDebtAutoTrader.SmartAssetSwapParams[] memory _swaps
+        IInternalAutoTraderBase.InternalTradeParams[] memory _trades
     )
         internal
         view
         returns (IDolomiteStructs.AccountInfo[] memory)
     {
         IDolomiteStructs.AccountInfo[] memory accounts = new IDolomiteStructs.AccountInfo[](
-            _swaps.length + 3
+            _trades.length + _STATIC_NUMBER_OF_ACCOUNTS
         );
         accounts[_TRADE_ACCOUNT_ID] = IDolomiteStructs.AccountInfo({
             owner: _tradeAccountOwner,
             number: _tradeAccountNumber
         });
-        accounts[_ZAP_ACCOUNT_ID] = IDolomiteStructs.AccountInfo({
-            owner: _tradeAccountOwner,
-            number: _calculateZapAccountNumber(_tradeAccountOwner, _tradeAccountNumber)
-        });
         address feeAgent = DOLOMITE_REGISTRY.feeAgent();
-        if (feeAgent != address(0)) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            feeAgent != address(0),
-            _FILE,
-            'Fee agent is not set'
-        );
+        /*assert(feeAgent != address(0));*/
         accounts[_FEE_ACCOUNT_ID] = IDolomiteStructs.AccountInfo({
             owner: feeAgent,
             number: DEFAULT_ACCOUNT_NUMBER
         });
 
-        for (uint256 i; i < _swaps.length; i++) {
-            accounts[i + 3] = IDolomiteStructs.AccountInfo({
-                owner: _swaps[i].user,
-                number: _swaps[i].accountNumber
-            });
+        for (uint256 i; i < _trades.length; i++) {
+            _trades[i].makerAccountId = i + _STATIC_NUMBER_OF_ACCOUNTS;
+            accounts[i + _STATIC_NUMBER_OF_ACCOUNTS] = _trades[i].makerAccount;
         }
 
         return accounts;

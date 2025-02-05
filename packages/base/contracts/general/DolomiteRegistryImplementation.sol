@@ -55,6 +55,7 @@ contract DolomiteRegistryImplementation is
     bytes32 private constant _FILE = "DolomiteRegistryImplementation";
     bytes32 private constant _BORROW_POSITION_PROXY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.borrowPositionProxy")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _CHAINLINK_PRICE_ORACLE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.chainlinkPriceOracle")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _CHAINLINK_DATA_STREAMS_PRICE_ORACLE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.chainlinkDataStreamsPriceOracle")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _DOLOMITE_ACCOUNT_REGISTRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.dolomiteAccountRegistry")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _DOLOMITE_MIGRATOR_SLOT = bytes32(uint256(keccak256("eip1967.proxy.dolomiteMigrator")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _EVENT_EMITTER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.eventEmitter")) - 1);
@@ -69,7 +70,6 @@ contract DolomiteRegistryImplementation is
     bytes32 private constant _SMART_DEBT_TRADER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.smartDebtTrader")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _TRUSTED_INTERNAL_TRADERS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.trustedInternalTraders")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _TRUSTED_INTERNAL_TRADE_CALLERS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.trustedInternalTradeCallers")) - 1); // solhint-disable-line max-line-length
-    // @todo add comment that it implements getActionsForTrade, is used by generic trader proxy, and flips maker and taker
 
     // ==================== Constructor ====================
 
@@ -171,6 +171,14 @@ contract DolomiteRegistryImplementation is
         _ownerSetChainlinkPriceOracle(_chainlinkPriceOracle);
     }
 
+    function ownerSetChainlinkDataStreamsPriceOracle(
+        address _chainlinkDataStreamsPriceOracle
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetChainlinkDataStreamsPriceOracle(_chainlinkDataStreamsPriceOracle);
+    }
+
     function ownerSetDolomiteMigrator(
         address _dolomiteMigrator
     )
@@ -220,6 +228,8 @@ contract DolomiteRegistryImplementation is
         _ownerSetTrustedInternalTraders(_trustedInternalTraders, _isTrusted);
     }
 
+    // @dev In order to be a trusted internal trade caller, it must implement 'createActionsForInternalTrade',
+    // flip maker and taker, and can be used by the generic trader proxy
     function ownerSetTrustedInternalTradeCallers(
         address[] memory _trustedInternalTradeCallers,
         bool[] memory _isTrusted
@@ -269,6 +279,10 @@ contract DolomiteRegistryImplementation is
 
     function chainlinkPriceOracle() public view returns (IDolomitePriceOracle) {
         return IDolomitePriceOracle(_getAddress(_CHAINLINK_PRICE_ORACLE_SLOT));
+    }
+
+    function chainlinkDataStreamsPriceOracle() public view returns (IDolomitePriceOracle) {
+        return IDolomitePriceOracle(_getAddress(_CHAINLINK_DATA_STREAMS_PRICE_ORACLE_SLOT));
     }
 
     function dolomiteMigrator() public view returns (IDolomiteMigrator) {
@@ -429,6 +443,19 @@ contract DolomiteRegistryImplementation is
 
         _setAddress(_CHAINLINK_PRICE_ORACLE_SLOT, _chainlinkPriceOracle);
         emit ChainlinkPriceOracleSet(_chainlinkPriceOracle);
+    }
+
+    function _ownerSetChainlinkDataStreamsPriceOracle(
+        address _chainlinkDataStreamsPriceOracle
+    ) internal {
+        Require.that(
+            _chainlinkDataStreamsPriceOracle != address(0),
+            _FILE,
+            "Invalid dataStreamsPriceOracle"
+        );
+
+        _setAddress(_CHAINLINK_DATA_STREAMS_PRICE_ORACLE_SLOT, _chainlinkDataStreamsPriceOracle);
+        emit ChainlinkDataStreamsPriceOracleSet(_chainlinkDataStreamsPriceOracle);
     }
 
     function _ownerSetDolomiteMigrator(

@@ -20,6 +20,7 @@
 
 pragma solidity ^0.8.9;
 
+import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { SmartDebtAutoTrader } from "../traders/SmartDebtAutoTrader.sol";
 
 
@@ -52,11 +53,16 @@ contract TestSmartDebtAutoTrader is SmartDebtAutoTrader {
     // ================== External Functions ==================
     // ========================================================
 
-    function testGetFeesByMarketIds(uint256 _marketId1, uint256 _marketId2) external view returns (uint256, uint256) {
+    function testGetFeesByMarketIds(
+        uint256 _marketId1,
+        uint256 _marketId2
+    ) external view returns (IDolomiteStructs.Decimal memory, IDolomiteStructs.Decimal memory) {
         return _getFees(_marketId1, _marketId2);
     }
 
-    function testGetFeesByPairBytes(bytes32 _pairBytes) external view returns (uint256, uint256) {
+    function testGetFeesByPairBytes(
+        bytes32 _pairBytes
+    ) external view returns (IDolomiteStructs.Decimal memory, IDolomiteStructs.Decimal memory) {
         return _getFees(_pairBytes);
     }
 }

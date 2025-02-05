@@ -19,17 +19,23 @@
 
 pragma solidity ^0.8.9;
 
-import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
-import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
+import { InternalAutoTraderBase } from "./InternalAutoTraderBase.sol";
+import { IInternalAutoTraderBase } from "../interfaces/traders/IInternalAutoTraderBase.sol";
 import { ISmartDebtAutoTrader } from "../interfaces/traders/ISmartDebtAutoTrader.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
-import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
-import { Require } from "../protocol/lib/Require.sol";
-import { InternalAutoTraderBase } from "./InternalAutoTraderBase.sol";
 import { IDolomiteAutoTrader } from "../protocol/interfaces/IDolomiteAutoTrader.sol";
-import { IInternalAutoTraderBase } from "../interfaces/traders/IInternalAutoTraderBase.sol";
+import { IDolomitePriceOracle } from "../protocol/interfaces/IDolomitePriceOracle.sol";
+import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
+import { DecimalLib } from "../protocol/lib/DecimalLib.sol";
+import { Require } from "../protocol/lib/Require.sol";
+
+
+// @follow-up Can't import this because of weird package stuff
+interface ChainlinkDataStreamsPriceOracle {
+    function postPrices(bytes[] memory _reports) external;
+}
 
 /**
  * @title   SmartDebtAutoTrader
@@ -39,12 +45,12 @@ import { IInternalAutoTraderBase } from "../interfaces/traders/IInternalAutoTrad
  */
 contract SmartDebtAutoTrader is InternalAutoTraderBase, ISmartDebtAutoTrader {
     using EnumerableSet for EnumerableSet.Bytes32Set;
+    using SafeCast for int256;
+    using DecimalLib for uint256;
 
     // ========================================================
     // ====================== Constants =======================
     // ========================================================
-
-    uint256 private constant _ONE = 1 ether;
 
     bytes32 private constant _FILE = "SmartDebtAutoTrader";
     bytes32 private constant _SMART_PAIRS_STORAGE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.smartPairsStorage")) - 1); // solhint-disable-line max-line-length
@@ -64,14 +70,22 @@ contract SmartDebtAutoTrader is InternalAutoTraderBase, ISmartDebtAutoTrader {
     // ================== External Functions ==================
     // ========================================================
 
-    // @todo mapping blockNumber => marketId => price. Do it here in callFunction once we have data streams
     function callFunction(
         address _sender,
         IDolomiteStructs.AccountInfo calldata _accountInfo,
         bytes calldata _data
     ) public override onlyDolomiteMargin(msg.sender) {
-        // @follow-up Does this do a new call? I don't think so but check
-        super.callFunction(_sender, _accountInfo, _data);
+        // @follow-up Super meant I had to change to public
+        (bytes[] memory reports, bool tradeEnabled) = abi.decode(_data, (bytes[], bool));
+        super.callFunction(_sender, _accountInfo, abi.encode(tradeEnabled));
+
+        // @follow-up Not sure about this check
+        if (tradeEnabled && reports.length > 0) {
+            ChainlinkDataStreamsPriceOracle(
+                address(DOLOMITE_REGISTRY.chainlinkDataStreamsPriceOracle())
+            ).postPrices(reports);
+            return;
+        }
     }
 
     // maker account is the zap account of the person making the trade
@@ -100,22 +114,16 @@ contract SmartDebtAutoTrader is InternalAutoTraderBase, ISmartDebtAutoTrader {
             "User does not have the pair set"
         );
 
-        // @audit Do we need to check the sign of inputDeltaWei?
-        // @todo switch to chainlink data streams
-        uint256 adjInputAmount;
-        {
-            // @dev the adminFeeAmount was already subtracted from the inputDeltaWei but since it is a percentage
-            // of the full fee amount, we need to add it back in and then calculate adjInputAmount
-            (, uint256 feePercentage) = _getFees(pairBytes);
-            (, uint256 adminFeeAmount) = abi.decode(_data, (uint256, uint256));
-            adjInputAmount = (_inputDeltaWei.value + adminFeeAmount) * (_ONE - feePercentage) / _ONE;
-        }
+        (uint256 adjInputAmount, uint256 outputTokenAmount) = _calculateInputAndOutputTokenAmount(
+            _inputMarketId,
+            _outputMarketId,
+            pairBytes,
+            _inputDeltaWei.value,
+            _data
+        );
 
         uint256 inputMarketId = _inputMarketId;
         uint256 outputMarketId = _outputMarketId;
-        uint256 inputValue = adjInputAmount * DOLOMITE_MARGIN().getMarketPrice(inputMarketId).value;
-        uint256 outputTokenAmount = inputValue / DOLOMITE_MARGIN().getMarketPrice(outputMarketId).value;
-
         if (pairPosition.pairType == PairType.SMART_COLLATERAL) {
             // if smart collateral, confirm taker has more collateral than output token amount
             IDolomiteStructs.Wei memory takerAccountWei = DOLOMITE_MARGIN().getAccountWei(
@@ -149,13 +157,6 @@ contract SmartDebtAutoTrader is InternalAutoTraderBase, ISmartDebtAutoTrader {
                 "Insufficient debt"
             );
         }
-
-        (uint256 minOutputAmount, ) = abi.decode(_data, (uint256, uint256));
-        Require.that(
-            outputTokenAmount >= minOutputAmount,
-            _FILE,
-            "Insufficient output token amount"
-        );
 
         return IDolomiteStructs.AssetAmount({
             sign: true,
@@ -247,25 +248,32 @@ contract SmartDebtAutoTrader is InternalAutoTraderBase, ISmartDebtAutoTrader {
 
     function createActionsForInternalTrade(
         CreateActionsForInternalTradeParams memory _params
-    ) external view override(IInternalAutoTraderBase, InternalAutoTraderBase) returns (IDolomiteStructs.ActionArgs[] memory) {
+    ) 
+    external
+    view
+    override(IInternalAutoTraderBase, InternalAutoTraderBase) returns (IDolomiteStructs.ActionArgs[] memory) {
         IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](
             actionsLength(_params.trades.length)
         );
-        // @todo Make fee percentages decimal type and use the lib
-        (uint256 adminFeePercentage, uint256 feePercentage) = _getFees(_params.inputMarketId, _params.outputMarketId);
         uint256 actionCursor;
+
+        (
+            IDolomiteStructs.Decimal memory adminFeePercentage,
+            IDolomiteStructs.Decimal memory feePercentage
+        ) = _getFees(_params.inputMarketId, _params.outputMarketId);
 
         actions[actionCursor++] = AccountActionLib.encodeCallAction(
             /* accountId = */ 0,
             address(this),
-            abi.encode(true)
+            // @follow-up Check how I'm doing this. Maybe just do abi.encode(_params.extraData, true)
+            abi.encode(abi.decode(_params.extraData, (bytes[])), true)
         );
         actions[actionCursor++] = AccountActionLib.encodeTransferAction(
             _params.takerAccountId,
             _params.feeAccountId,
             _params.inputMarketId,
             IDolomiteStructs.AssetDenomination.Wei,
-            _params.inputAmountWei * adminFeePercentage / _ONE * feePercentage / _ONE
+            _params.inputAmountWei.mul(adminFeePercentage).mul(feePercentage)
         );
         // @audit check rounding errors
 
@@ -275,7 +283,8 @@ contract SmartDebtAutoTrader is InternalAutoTraderBase, ISmartDebtAutoTrader {
             uint256 minOutputAmount = _params.trades[i].minOutputAmount;
             tradeTotal += originalAmountInWei;
 
-            uint256 adminFeeAmount = originalAmountInWei * adminFeePercentage * feePercentage / _ONE / _ONE;
+            uint256 adminFeeAmount = originalAmountInWei.mul(adminFeePercentage).mul(feePercentage);
+            // @dev This account action lib function will flip the taker and maker accounts
             actions[actionCursor++] = AccountActionLib.encodeInternalTradeActionWithWhitelistedTrader(
                 /* takerAccountId = */ _params.takerAccountId,
                 /* makerAccountId = */ _params.trades[i].makerAccountId,
@@ -289,12 +298,14 @@ contract SmartDebtAutoTrader is InternalAutoTraderBase, ISmartDebtAutoTrader {
             );
         }
 
+        bytes[] memory emptyReports = new bytes[](0);
         actions[actionCursor++] = AccountActionLib.encodeCallAction(
             0,
             address(this),
-            abi.encode(false)
+            abi.encode(emptyReports, false)
         );
 
+        // @audit Make sure this isn't thrown off with rounding
         Require.that(
             tradeTotal == _params.inputAmountWei,
             _FILE,
@@ -325,8 +336,10 @@ contract SmartDebtAutoTrader is InternalAutoTraderBase, ISmartDebtAutoTrader {
         return _getSmartPairsStorage().pairToFee[pairBytes];
     }
 
-    function actionsLength(uint256 _swaps) public pure override(IInternalAutoTraderBase, InternalAutoTraderBase) returns (uint256) {
-        return _swaps + 3;
+    function actionsLength(
+        uint256 _trades
+    ) public pure override(IInternalAutoTraderBase, InternalAutoTraderBase) returns (uint256) {
+        return _trades + 3;
     }
 
     // ========================================================
@@ -407,20 +420,56 @@ contract SmartDebtAutoTrader is InternalAutoTraderBase, ISmartDebtAutoTrader {
         emit PairFeeSet(pairBytes, _fee);
     }
 
-    function _getFees(uint256 _inputMarketId, uint256 _outputMarketId) internal view returns (uint256, uint256) {
+    function _calculateInputAndOutputTokenAmount(
+        uint256 _inputMarketId,
+        uint256 _outputMarketId,
+        bytes32 _pairBytes,
+        uint256 _inputAmountWei,
+        bytes memory _data
+    ) internal view returns (uint256, uint256) {
+        (uint256 minOutputAmount, uint256 adminFeeAmount) = abi.decode(_data, (uint256, uint256));
+        (, IDolomiteStructs.Decimal memory feePercentage) = _getFees(_pairBytes);
+        uint256 adjInputAmount = (_inputAmountWei + adminFeeAmount).mul(DecimalLib.oneSub(feePercentage));
+
+        IDolomitePriceOracle chainlinkDataStreamsPriceOracle = DOLOMITE_REGISTRY.chainlinkDataStreamsPriceOracle();
+        address inputToken = DOLOMITE_MARGIN().getMarketTokenAddress(_inputMarketId);
+        address outputToken = DOLOMITE_MARGIN().getMarketTokenAddress(_outputMarketId);
+
+        uint256 inputPrice = chainlinkDataStreamsPriceOracle.getPrice(inputToken).value;
+        uint256 outputPrice = chainlinkDataStreamsPriceOracle.getPrice(outputToken).value;
+        assert(inputPrice != 0 && outputPrice != 0);
+
+        uint256 inputValue = adjInputAmount * inputPrice;
+        uint256 outputAmount = inputValue / outputPrice;
+
+        Require.that(
+            outputAmount >= minOutputAmount,
+            _FILE,
+            "Insufficient output token amount"
+        );
+
+        return (adjInputAmount, outputAmount);
+    }
+
+    function _getFees(
+        uint256 _inputMarketId,
+        uint256 _outputMarketId
+    ) internal view returns (IDolomiteStructs.Decimal memory, IDolomiteStructs.Decimal memory) {
         (uint256 adminFee, uint256 globalFee) = super._getFees();
         uint256 pairFeeOverride = pairFee(_inputMarketId, _outputMarketId);
 
-        return (adminFee, pairFeeOverride == 0 ? globalFee : pairFeeOverride);
+        return (adminFee.toDecimal(), pairFeeOverride == 0 ? globalFee.toDecimal() : pairFeeOverride.toDecimal());
     }
 
-    function _getFees(bytes32 _pairBytes) internal view returns (uint256, uint256) {
+    function _getFees(
+        bytes32 _pairBytes
+    ) internal view returns (IDolomiteStructs.Decimal memory, IDolomiteStructs.Decimal memory) {
         SmartPairsStorage storage smartPairsStorage = _getSmartPairsStorage();
 
         (uint256 adminFee, uint256 globalFee) = super._getFees();
         uint256 pairFeeOverride = smartPairsStorage.pairToFee[_pairBytes];
 
-        return (adminFee, pairFeeOverride == 0 ? globalFee : pairFeeOverride);
+        return (adminFee.toDecimal(), pairFeeOverride == 0 ? globalFee.toDecimal() : pairFeeOverride.toDecimal());
     }
 
     function _getPairBytesAndSortMarketIds(

@@ -19,6 +19,9 @@ import {
 } from '../../src/types';
 import { AccountInfoStruct } from '../../src/utils';
 import { CoreProtocolType } from './setup';
+import { getLatestChainlinkDataStreamReport } from 'packages/oracles/src/chainlink-data-streams';
+import { CHAINLINK_DATA_STREAM_FEEDS_MAP } from 'packages/base/src/utils/constants';
+import { defaultAbiCoder } from 'ethers/lib/utils';
 
 export interface ZapParam {
   marketIdsPath: BigNumberish[];
@@ -65,19 +68,26 @@ export async function getSimpleZapParams<T extends Network>(
 
 export async function getSmartDebtZapParams<T extends Network>(
   inputMarket: BigNumberish,
+  inputTokenFeedSymbol: string,
   inputAmountWei: BigNumber,
   outputMarket: BigNumberish,
+  outputTokenFeedSymbol: string,
   minOutputAmountWei: BigNumber,
   trader: SmartDebtAutoTrader,
-  makerAccount: AccountInfoStruct,
-  core: CoreProtocolType<T>,
+  makerAccount: AccountInfoStruct
 ): Promise<ZapParam> {
+  const inputReport = await getLatestChainlinkDataStreamReport(CHAINLINK_DATA_STREAM_FEEDS_MAP[inputTokenFeedSymbol]);
+  const outputReport = await getLatestChainlinkDataStreamReport(CHAINLINK_DATA_STREAM_FEEDS_MAP[outputTokenFeedSymbol]);
+  const reports = defaultAbiCoder.encode(
+    ['bytes[]'],
+    [[inputReport.report.fullReport, outputReport.report.fullReport]]
+  );
   const traderParam: GenericTraderParam = {
     trader: trader.address,
     traderType: GenericTraderType.InternalLiquidity,
     tradeData: ethers.utils.defaultAbiCoder.encode(
       ['uint256', 'bytes'],
-      [minOutputAmountWei, ethers.utils.defaultAbiCoder.encode(['uint256'], [minOutputAmountWei])],
+      [minOutputAmountWei, reports]
     ),
     makerAccountIndex: 0,
   };

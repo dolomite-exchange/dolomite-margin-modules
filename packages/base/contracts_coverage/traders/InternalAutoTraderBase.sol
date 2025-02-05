@@ -75,6 +75,7 @@ abstract contract InternalAutoTraderBase is OnlyDolomiteMargin, Initializable, I
         bytes memory _data
     ) public virtual onlyDolomiteMargin(msg.sender) {
         // @follow-up Had to make it public
+        if (DOLOMITE_REGISTRY.isTrustedInternalTradeCaller(_sender)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             DOLOMITE_REGISTRY.isTrustedInternalTradeCaller(_sender),
             _FILE,
@@ -152,8 +153,7 @@ abstract contract InternalAutoTraderBase is OnlyDolomiteMargin, Initializable, I
         return (internalTraderStorage.adminFee, internalTraderStorage.globalFee);
     }
 
-    function _getInternalTraderStorage(
-    ) internal pure returns (InternalTraderBaseStorage storage internalTraderStorage) {
+    function _getInternalTraderStorage() internal pure returns (InternalTraderBaseStorage storage internalTraderStorage) {
         bytes32 slot = _INTERNAL_AUTO_TRADER_STORAGE_SLOT;
         // solhint-disable-next-line no-inline-assembly
         assembly {

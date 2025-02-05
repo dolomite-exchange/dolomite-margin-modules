@@ -37,6 +37,16 @@ library DecimalLib {
 
     // ============ Functions ============
 
+    function toDecimal(
+        uint256 value
+    )
+        internal
+        pure
+        returns (IDolomiteStructs.Decimal memory)
+    {
+        return IDolomiteStructs.Decimal({ value: value });
+    }
+
     function one()
         internal
         pure

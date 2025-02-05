@@ -944,7 +944,13 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
       );
       const key = (await asyncProtocol.queryFilter(asyncProtocol.filters.WithdrawalCreated()))[0].args.key;
       await asyncProtocol.executeWithdrawal(key, amountWei);
-      await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, otherMarketId1, amountWei.mul(2)); // User started with amountWei
+      await expectProtocolBalance(
+        core,
+        core.hhUser1.address,
+        defaultAccountNumber,
+        otherMarketId1,
+        amountWei.mul(2)
+      ); // User started with amountWei
       await expectProtocolBalance(core, userVault.address, defaultAccountNumber, underlyingMarketId, ZERO_BI);
     });
 

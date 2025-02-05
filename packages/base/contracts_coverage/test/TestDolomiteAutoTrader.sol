@@ -22,6 +22,8 @@ pragma solidity ^0.8.9;
 
 import { IDolomiteAutoTrader } from "../protocol/interfaces/IDolomiteAutoTrader.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
+import { InternalAutoTraderBase } from "../traders/InternalAutoTraderBase.sol";
+import { AccountActionLib } from "../lib/AccountActionLib.sol";
 
 
 /**
@@ -30,7 +32,14 @@ import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
  *
  * @notice  A test implementation of IDolomiteAutoTrader
  */
-contract TestDolomiteAutoTrader is IDolomiteAutoTrader {
+contract TestDolomiteAutoTrader is InternalAutoTraderBase {
+
+    constructor(
+        uint256 _chainId,
+        address _dolomiteRegistry,
+        address _dolomiteMargin
+    ) InternalAutoTraderBase(_chainId, _dolomiteRegistry, _dolomiteMargin) {
+    }
 
     function getTradeCost(
         uint256 inputMarketId,
@@ -41,13 +50,31 @@ contract TestDolomiteAutoTrader is IDolomiteAutoTrader {
         IDolomiteStructs.Par memory newInputPar,
         IDolomiteStructs.Wei memory inputDeltaWei,
         bytes memory data
-    ) external pure returns (IDolomiteStructs.AssetAmount memory) {
+    ) external override returns (IDolomiteStructs.AssetAmount memory) {
         return IDolomiteStructs.AssetAmount({
             sign: true,
             denomination: IDolomiteStructs.AssetDenomination.Wei,
             ref: IDolomiteStructs.AssetReference.Delta,
             value: inputDeltaWei.value
         });
+    }
+
+    function createActionsForInternalTrade(
+        CreateActionsForInternalTradeParams memory _params
+    ) external view override returns (IDolomiteStructs.ActionArgs[] memory) {
+        IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](
+            actionsLength(_params.trades.length)
+        );
+        actions[0] = AccountActionLib.encodeCallAction(
+            /* accountId = */ 0,
+            address(this),
+            abi.encode(abi.decode(_params.extraData, (bytes[])), true)
+        );
+        return actions;
+    }
+
+    function actionsLength(uint256 _trades) public pure override returns (uint256) {
+        return _trades;
     }
 }
 

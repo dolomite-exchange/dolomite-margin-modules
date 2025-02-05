@@ -355,6 +355,18 @@ export async function setupDAIBalance(
   await core.tokens.dai.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
+export async function setupLINKBalance(
+  core: CoreProtocolArbitrumOne,
+  signer: SignerWithAddressWithSafety,
+  amount: BigNumberish,
+  spender: { address: string },
+) {
+  const whaleAddress = '0x191c10Aa4AF7C30e871E70C95dB0E4eb77237530'; // Aave aLink
+  const whaleSigner = await impersonate(whaleAddress, true);
+  await core.tokens.link.connect(whaleSigner).transfer(signer.address, amount);
+  await core.tokens.link.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
+}
+
 export async function setupNativeUSDCBalance(
   core: CoreProtocolArbitrumOne,
   signer: SignerWithAddressWithSafety,

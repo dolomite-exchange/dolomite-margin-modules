@@ -22,7 +22,7 @@ pragma solidity ^0.8.9;
 
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IGenericTraderBase } from "../interfaces/IGenericTraderBase.sol";
-import { ISmartDebtAutoTrader } from "../interfaces/traders/ISmartDebtAutoTrader.sol";
+import { IInternalAutoTraderBase } from "../interfaces/traders/IInternalAutoTraderBase.sol";
 import { IIsolationModeUnwrapperTraderV2 } from "../isolation-mode/interfaces/IIsolationModeUnwrapperTraderV2.sol";
 import { IIsolationModeWrapperTraderV2 } from "../isolation-mode/interfaces/IIsolationModeWrapperTraderV2.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
@@ -132,7 +132,9 @@ abstract contract GenericTraderProxyBase is IGenericTraderBase {
             }
         }
 
-        IDolomiteStructs.AccountInfo[] memory accounts = new IDolomiteStructs.AccountInfo[](_cache.traderAccountStartIndex + _makerAccounts.length);
+        IDolomiteStructs.AccountInfo[] memory accounts = new IDolomiteStructs.AccountInfo[](
+            _cache.traderAccountStartIndex + _makerAccounts.length
+        );
         accounts[TRADE_ACCOUNT_ID] = IDolomiteStructs.AccountInfo({
             owner: _tradeAccountOwner,
             number: _tradeAccountNumber
@@ -188,7 +190,7 @@ abstract contract GenericTraderProxyBase is IGenericTraderBase {
             } else if (_isWrapperTraderType(_tradersPath[i].traderType)) {
                 actionsLength += IIsolationModeWrapperTraderV2(_tradersPath[i].trader).actionsLength();
             } else if (_tradersPath[i].traderType == TraderType.InternalLiquidity) {
-                actionsLength += ISmartDebtAutoTrader(_tradersPath[i].trader).actionsLength(1);
+                actionsLength += IInternalAutoTraderBase(_tradersPath[i].trader).actionsLength(1); // @follow-up Length here?
             } else {
                 // If it's not a `wrap` or `unwrap`, trades only require 1 action
                 actionsLength += 1;
@@ -264,22 +266,28 @@ abstract contract GenericTraderProxyBase is IGenericTraderBase {
                     _FILE,
                     "Internal trader not whitelisted"
                 );
-                IDolomiteStructs.AccountInfo memory makerAccount = _accounts[_tradersPath[i].makerAccountIndex + _cache.traderAccountStartIndex];
-                ISmartDebtAutoTrader.SmartAssetSwapParams[] memory swaps = new ISmartDebtAutoTrader.SmartAssetSwapParams[](1);
-                swaps[0].user = makerAccount.owner;
-                swaps[0].accountNumber = makerAccount.number;
-                swaps[0].amount = _inputAmountWei;
-                swaps[0].minOutputAmount = abi.decode(_tradersPath[i].tradeData, (uint256));
+                (uint256 tradeMinOutputAmount, bytes memory extraData) = abi.decode(_tradersPath[i].tradeData, (uint256, bytes));
 
-                IDolomiteStructs.ActionArgs[] memory newActions = ISmartDebtAutoTrader(_tradersPath[i].trader).createActionsForInternalTrade(
-                    ISmartDebtAutoTrader.CreateActionsForInternalTradeParams({
-                        inputMarketId: _marketIdsPath[i],
-                        outputMarketId: _marketIdsPath[i + 1],
-                        inputAmountWei: _inputAmountWei,
-                        feeAccountId: _cache.feeTransferAccountIndex,
-                        makerAccountStartId: _tradersPath[i].makerAccountIndex + _cache.traderAccountStartIndex,
-                        swaps: swaps
-                    })
+                IInternalAutoTraderBase.InternalTradeParams[] memory trades = new IInternalAutoTraderBase.InternalTradeParams[](1);
+                trades[0].makerAccount = _accounts[_tradersPath[i].makerAccountIndex + _cache.traderAccountStartIndex];
+                trades[0].makerAccountId = _tradersPath[i].makerAccountIndex + _cache.traderAccountStartIndex;
+                trades[0].amount = _inputAmountWei;
+                trades[0].minOutputAmount = tradeMinOutputAmount;
+
+                IInternalAutoTraderBase.CreateActionsForInternalTradeParams memory params = IInternalAutoTraderBase.CreateActionsForInternalTradeParams({
+                    takerAccountId: ZAP_ACCOUNT_ID,
+                    takerAccount: _accounts[ZAP_ACCOUNT_ID],
+                    feeAccountId: _cache.feeTransferAccountIndex,
+                    feeAccount: _accounts[_cache.feeTransferAccountIndex],
+                    inputMarketId: _marketIdsPath[i],
+                    outputMarketId: _marketIdsPath[i + 1],
+                    inputAmountWei: _inputAmountWei,
+                    trades: trades,
+                    extraData: extraData
+                });
+
+                IDolomiteStructs.ActionArgs[] memory newActions = IInternalAutoTraderBase(_tradersPath[i].trader).createActionsForInternalTrade(
+                    params
                 );
                 for (uint256 j; j < newActions.length; ++j) {
                     _actions[_cache.actionsCursor++] = newActions[j];

@@ -20,8 +20,7 @@
 pragma solidity ^0.8.9;
 
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import { IDolomiteAutoTrader } from "../../protocol/interfaces/IDolomiteAutoTrader.sol";
-import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
+import { IInternalAutoTraderBase } from "./IInternalAutoTraderBase.sol";
 
 
 /**
@@ -30,11 +29,7 @@ import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol
  *
  * Interface for performing internal trades using smart debt
  */
-interface ISmartDebtAutoTrader is IDolomiteAutoTrader {
-
-    // ========================================================
-    // ================== Structs Functions ==================
-    // ========================================================
+interface ISmartDebtAutoTrader is IInternalAutoTraderBase {
 
     enum PairType {
         NONE,
@@ -47,31 +42,11 @@ interface ISmartDebtAutoTrader is IDolomiteAutoTrader {
         bytes32 pairBytes;
     }
 
-    struct SmartAssetSwapParams {
-        address user;
-        uint256 accountNumber;
-        uint256 amount;
-        uint256 minOutputAmount;
-    }
-
     struct SmartPairsStorage {
-        bool tradeEnabled;
-        uint256 globalFee;
-        uint256 adminFee;
-
         mapping(bytes32 => uint256) pairToFee;
         EnumerableSet.Bytes32Set smartDebtPairs;
         EnumerableSet.Bytes32Set smartCollateralPairs;
         mapping(address => mapping(uint256 => PairPosition)) userToPair;
-    }
-
-    struct CreateActionsForInternalTradeParams {
-        uint256 inputMarketId;
-        uint256 outputMarketId;
-        uint256 inputAmountWei;
-        uint256 feeAccountId;
-        uint256 makerAccountStartId;
-        SmartAssetSwapParams[] swaps;
     }
 
     // ========================================================
@@ -84,10 +59,6 @@ interface ISmartDebtAutoTrader is IDolomiteAutoTrader {
     event SmartCollateralPairRemoved(uint256 indexed marketId1, uint256 indexed marketId2);
     event UserToPairSet(address indexed user, uint256 indexed accountNumber, PairType pairType, bytes32 pairBytes);
 
-    event GlobalFeeSet(uint256 indexed globalFee);
-    event AdminFeeSet(uint256 indexed adminFee);
-    event PairFeeSet(bytes32 indexed pairBytes, uint256 indexed fee);
-
     // ========================================================
     // ================== External Functions ==================
     // ========================================================
@@ -99,19 +70,9 @@ interface ISmartDebtAutoTrader is IDolomiteAutoTrader {
     function ownerAddSmartCollateralPair(uint256 _marketId1, uint256 _marketId2) external;
     function ownerRemoveSmartCollateralPair(uint256 _marketId1, uint256 _marketId2) external;
 
-    function ownerSetGlobalFee(uint256 _globalFee) external;
-    function ownerSetAdminFee(uint256 _adminFee) external;
-    function ownerSetPairFee(uint256 _marketId1, uint256 _marketId2, uint256 _fee) external;
-
     // ========================================================
     // ==================== View Functions ====================
     // ========================================================
-
-    function createActionsForInternalTrade(
-        CreateActionsForInternalTradeParams memory _params
-    ) external view returns (IDolomiteStructs.ActionArgs[] memory);
-
-    function actionsLength(uint256 _swaps) external view returns (uint256);
 
     function isSmartDebtPair(uint256 _marketId1, uint256 _marketId2) external view returns (bool);
     function isSmartCollateralPair(uint256 _marketId1, uint256 _marketId2) external view returns (bool);

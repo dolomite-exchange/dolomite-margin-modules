@@ -4,6 +4,7 @@ import {
   disableInterestAccrual,
   setupCoreProtocol,
   setupDAIBalance,
+  setupLINKBalance,
   setupTestMarket,
   setupUSDCBalance,
   setupUSDTBalance,
@@ -34,20 +35,30 @@ import {
   depositIntoDolomiteMargin,
 } from 'packages/base/src/utils/dolomite-utils';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
-import { createAndUpgradeDolomiteRegistry, createIsolationModeTokenVaultV1ActionsImpl } from '../utils/dolomite';
+import {
+  createAndUpgradeDolomiteRegistry,
+  createIsolationModeTokenVaultV1ActionsImpl,
+  createSmartDebtAutoTrader,
+  createTestBorrowPositionRouter,
+  createTestGenericTraderRouter
+} from '../utils/dolomite';
 import { createTestIsolationModeVaultFactory } from '../utils/ecosystem-utils/testers';
 import { BigNumber } from 'ethers';
 import { ethers } from 'hardhat';
-import { expectEvent, expectProtocolBalance, expectThrow } from '../utils/assertions';
+import { expectEvent, expectProtocolBalance, expectProtocolBalanceIsGreaterThan, expectThrow } from '../utils/assertions';
 import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin';
 import { parseEther } from 'ethers/lib/utils';
-import { getSimpleZapParams, getUnwrapZapParams, getWrapZapParams } from '../utils/zap-utils';
+import { getSimpleZapParams, getSmartDebtZapParams, getUnwrapZapParams, getWrapZapParams } from '../utils/zap-utils';
 import { expect } from 'chai';
 import {
   GenericEventEmissionType,
   GenericTraderParam,
   GenericTraderType,
 } from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
+import { CHAINLINK_DATA_STREAM_FEEDS_MAP, CHAINLINK_VERIFIER_PROXY_MAP } from 'packages/base/src/utils/constants';
+import { ChainlinkDataStreamsPriceOracle, ChainlinkDataStreamsPriceOracle__factory, IVerifierProxy__factory } from 'packages/oracles/src/types';
+import { getChainlinkDataStreamsPriceOracleConstructorParams } from 'packages/oracles/src/oracles-constructors';
+import { PairType } from '../utils/trader-utils';
 
 const amountWei = ONE_ETH_BI;
 const outputAmount = parseEther('.5');
@@ -116,16 +127,8 @@ describe('GenericTraderProxyV2', () => {
     await core.dolomiteRegistry.ownerSetGenericTraderProxy(genericTraderProxy.address);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(genericTraderProxy.address, true);
 
-    traderRouter = await createContractWithAbi<TestGenericTraderRouter>(
-      TestGenericTraderRouter__factory.abi,
-      TestGenericTraderRouter__factory.bytecode,
-      [core.dolomiteRegistry.address, core.dolomiteMargin.address]
-    );
-    borrowRouter = await createContractWithAbi<BorrowPositionRouter>(
-      TestBorrowPositionRouter__factory.abi,
-      TestBorrowPositionRouter__factory.bytecode,
-      [core.dolomiteRegistry.address, core.dolomiteMargin.address]
-    );
+    traderRouter = await createTestGenericTraderRouter(core, Network.ArbitrumOne);
+    borrowRouter = await createTestBorrowPositionRouter(core);
 
     const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
     const userVaultImplementation = await createContractWithLibrary(
@@ -238,15 +241,46 @@ describe('GenericTraderProxyV2', () => {
     });
 
     it('should work with internal liquidity', async () => {
-      const dolomiteAutoTrader = await createContractWithAbi<TestDolomiteAutoTrader>(
-        TestDolomiteAutoTrader__factory.abi,
-        TestDolomiteAutoTrader__factory.bytecode,
-        [],
+      const verifierProxy = IVerifierProxy__factory.connect(
+        CHAINLINK_VERIFIER_PROXY_MAP[Network.ArbitrumOne],
+        core.hhUser1
       );
-      await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(dolomiteAutoTrader.address, true);
+      const oracle = await createContractWithAbi<ChainlinkDataStreamsPriceOracle>(
+        ChainlinkDataStreamsPriceOracle__factory.abi,
+        ChainlinkDataStreamsPriceOracle__factory.bytecode,
+        getChainlinkDataStreamsPriceOracleConstructorParams(
+          core,
+          verifierProxy,
+          [core.tokens.usdc, core.tokens.usdt],
+          [CHAINLINK_DATA_STREAM_FEEDS_MAP['USDC'], CHAINLINK_DATA_STREAM_FEEDS_MAP['USDT']]
+        )
+      );
+      await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkDataStreamsPriceOracle(oracle.address);
+      const smartDebtAutoTrader = await createSmartDebtAutoTrader(core, Network.ArbitrumOne);
+      await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(smartDebtAutoTrader.address, true);
       await core.dolomiteRegistry.connect(core.governance).ownerSetTrustedInternalTraders(
-        [dolomiteAutoTrader.address],
+        [smartDebtAutoTrader.address],
         [true]
+      );
+      await core.dolomiteRegistry.connect(core.governance).ownerSetFeeAgent(core.hhUser5.address);
+      await smartDebtAutoTrader.connect(core.governance).ownerSetGlobalFee(parseEther('.1'));
+      await smartDebtAutoTrader.connect(core.governance).ownerSetAdminFee(parseEther('.5'));
+      await setupLINKBalance(core, core.governance, parseEther('100'), smartDebtAutoTrader);
+      await core.tokens.link.connect(core.governance).transfer(oracle.address, parseEther('100'));
+
+      await core.dolomiteRegistry.connect(core.governance).ownerSetTrustedInternalTradeCallers(
+        [genericTraderProxy.address],
+        [true],
+      );
+      await smartDebtAutoTrader.connect(core.governance).ownerAddSmartCollateralPair(
+        core.marketIds.usdc,
+        core.marketIds.usdt
+      );
+      await smartDebtAutoTrader.connect(core.hhUser2).userSetPair(
+        defaultAccountNumber,
+        PairType.SMART_COLLATERAL,
+        core.marketIds.usdc,
+        core.marketIds.usdt
       );
 
       const usdcAmount = BigNumber.from('100000000');
@@ -258,23 +292,20 @@ describe('GenericTraderProxyV2', () => {
       await disableInterestAccrual(core, core.marketIds.usdc);
       await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.usdc, usdcAmount);
 
-      const zapParams = await getSimpleZapParams(
+      const minOutputAmountWei = BigNumber.from('80000000');
+      const zapParams = await getSmartDebtZapParams(
         core.marketIds.usdc,
-        MAX_UINT_256_BI,
+        'USDC',
+        usdcAmount,
         core.marketIds.usdt,
-        ONE_BI,
-        core,
+        'USDT',
+        minOutputAmountWei,
+        smartDebtAutoTrader,
+        {
+          owner: core.hhUser2.address,
+          number: defaultAccountNumber,
+        }
       );
-      zapParams.tradersPath[0].trader = dolomiteAutoTrader.address;
-      zapParams.tradersPath[0].traderType = GenericTraderType.InternalLiquidity;
-      zapParams.tradersPath[0].tradeData = ethers.utils.defaultAbiCoder.encode(
-        ['uint256', 'bytes'],
-        [usdcAmount, ethers.utils.defaultAbiCoder.encode(['uint256'], [BigNumber.from('4321')])],
-      );
-      zapParams.makerAccounts.push({
-        owner: core.hhUser2.address,
-        number: defaultAccountNumber,
-      });
       await genericTraderProxy.swapExactInputForOutput({
         accountNumber: defaultAccountNumber,
         marketIdsPath: zapParams.marketIdsPath,
@@ -286,9 +317,21 @@ describe('GenericTraderProxyV2', () => {
       });
 
       await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.usdc, ZERO_BI);
-      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.usdt, usdcAmount);
-      await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.usdc, usdcAmount);
-      await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.usdt, ZERO_BI);
+      await expectProtocolBalanceIsGreaterThan(
+        core,
+        { owner: core.hhUser1.address, number: defaultAccountNumber },
+        core.marketIds.usdt,
+        minOutputAmountWei,
+        0
+      );
+      await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.usdc, BigNumber.from('95000000'));
+      await expectProtocolBalanceIsGreaterThan(
+        core,
+        { owner: core.hhUser2.address, number: defaultAccountNumber },
+        core.marketIds.usdt,
+        BigNumber.from('9000000'), // after fees, 90 USDC is swapped for USDT. Users bal is 100 USDT minus output amount
+        0
+      );
     });
 
     it('should work normally with balance check both', async () => {
@@ -451,7 +494,7 @@ describe('GenericTraderProxyV2', () => {
       const dolomiteAutoTrader = await createContractWithAbi<TestDolomiteAutoTrader>(
         TestDolomiteAutoTrader__factory.abi,
         TestDolomiteAutoTrader__factory.bytecode,
-        [],
+        [Network.ArbitrumOne, core.dolomiteRegistry.address, core.dolomiteMargin.address],
       );
       await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(dolomiteAutoTrader.address, true);
 

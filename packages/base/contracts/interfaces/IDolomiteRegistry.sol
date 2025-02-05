@@ -55,6 +55,7 @@ interface IDolomiteRegistry {
     event LiquidatorAssetRegistrySet(address indexed _liquidatorAssetRegistry);
     event EventEmitterSet(address indexed _eventEmitter);
     event ChainlinkPriceOracleSet(address indexed _chainlinkPriceOracle);
+    event ChainlinkDataStreamsPriceOracleSet(address indexed _chainlinkDataStreamsPriceOracle);
     event DolomiteMigratorSet(address indexed _dolomiteMigrator);
     event RedstonePriceOracleSet(address indexed _redstonePriceOracle);
     event OracleAggregatorSet(address indexed _oracleAggregator);
@@ -119,6 +120,13 @@ interface IDolomiteRegistry {
      *                                  DolomiteMargin.
      */
     function ownerSetChainlinkPriceOracle(address _chainlinkPriceOracle) external;
+
+    /**
+     *
+     * @param  _chainlinkDataStreamsPriceOracle    The new address of the Chainlink data streams price oracle that's
+     *                                            compatible with DolomiteMargin.
+     */
+    function ownerSetChainlinkDataStreamsPriceOracle(address _chainlinkDataStreamsPriceOracle) external;
 
     /**
      *
@@ -221,6 +229,11 @@ interface IDolomiteRegistry {
      * @return The address of the Chainlink price oracle that's compatible with DolomiteMargin
      */
     function chainlinkPriceOracle() external view returns (IDolomitePriceOracle);
+
+    /**
+     * @return The address of the Chainlink data streams price oracle that's compatible with DolomiteMargin
+     */
+    function chainlinkDataStreamsPriceOracle() external view returns (IDolomitePriceOracle);
 
     /**
      * @return The address of the migrator contract

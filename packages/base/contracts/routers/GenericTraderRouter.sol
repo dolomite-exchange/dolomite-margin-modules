@@ -229,7 +229,8 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
         uint256 _outputMarketId,
         uint256 _inputAmountWei,
         uint256 _minOutputAmountWei,
-        IInternalAutoTraderBase.InternalTradeParams[] memory _trades
+        IInternalAutoTraderBase.InternalTradeParams[] memory _trades,
+        bytes memory _extraData
     ) external nonReentrant returns (uint256) {
         IDolomiteStructs.Wei memory balanceBefore = DOLOMITE_MARGIN().getAccountWei(
             IDolomiteStructs.AccountInfo({
@@ -248,7 +249,7 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
         IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](
             _getActionsLengthForInternalTrade(_trades, false)
         );
-        _appendActions(actions, accounts, _inputMarketId, _outputMarketId, _inputAmountWei, _trades, false);
+        _appendActions(actions, accounts, _inputMarketId, _outputMarketId, _inputAmountWei, _trades, false, _extraData);
         DOLOMITE_MARGIN().operate(accounts, actions);
 
         IDolomiteStructs.Wei memory balanceAfter = DOLOMITE_MARGIN().getAccountWei(
@@ -273,7 +274,8 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
         address _outputToken,
         uint256 _inputAmountWei,
         uint256 _minOutputAmountWei,
-        IInternalAutoTraderBase.InternalTradeParams[] memory _trades
+        IInternalAutoTraderBase.InternalTradeParams[] memory _trades,
+        bytes memory _extraData
     ) external nonReentrant returns (uint256) {
         uint256 inputMarketId = DOLOMITE_MARGIN().getMarketIdByTokenAddress(_inputToken);
         uint256 outputMarketId = DOLOMITE_MARGIN().getMarketIdByTokenAddress(_outputToken);
@@ -288,7 +290,7 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
         IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](
             _getActionsLengthForInternalTrade(_trades, true)
         );
-        _appendActions(actions, accounts, inputMarketId, outputMarketId, _inputAmountWei, _trades, true);
+        _appendActions(actions, accounts, inputMarketId, outputMarketId, _inputAmountWei, _trades, true, _extraData);
 
         uint256 preBal = IERC20(_outputToken).balanceOf(address(this));
         IERC20(_inputToken).safeTransferFrom(msg.sender, address(this), _inputAmountWei);
@@ -365,7 +367,8 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
         uint256 _outputMarketId,
         uint256 _inputAmountWei,
         IInternalAutoTraderBase.InternalTradeParams[] memory _trades,
-        bool _isExternalTrade
+        bool _isExternalTrade,
+        bytes memory _extraData
     ) internal view {
         uint256 actionsCursor;
 
@@ -383,19 +386,20 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
             );
         }
 
-        IDolomiteStructs.ActionArgs[] memory tradeActions = DOLOMITE_REGISTRY.smartDebtTrader().createActionsForInternalTrade(
-            IInternalAutoTraderBase.CreateActionsForInternalTradeParams({
-                takerAccountId: _TRADE_ACCOUNT_ID,
-                takerAccount: _accounts[_TRADE_ACCOUNT_ID],
-                feeAccountId: _FEE_ACCOUNT_ID,
-                feeAccount: _accounts[_FEE_ACCOUNT_ID],
-                inputMarketId: _inputMarketId,
-                outputMarketId: _outputMarketId,
-                inputAmountWei: _inputAmountWei,
-                trades: _trades,
-                extraData: bytes('')
-            })
-        );
+        IDolomiteStructs.ActionArgs[] memory tradeActions =
+            DOLOMITE_REGISTRY.smartDebtTrader().createActionsForInternalTrade(
+                IInternalAutoTraderBase.CreateActionsForInternalTradeParams({
+                    takerAccountId: _TRADE_ACCOUNT_ID,
+                    takerAccount: _accounts[_TRADE_ACCOUNT_ID],
+                    feeAccountId: _FEE_ACCOUNT_ID,
+                    feeAccount: _accounts[_FEE_ACCOUNT_ID],
+                    inputMarketId: _inputMarketId,
+                    outputMarketId: _outputMarketId,
+                    inputAmountWei: _inputAmountWei,
+                    trades: _trades,
+                    extraData: _extraData
+                })
+            );
         for (uint256 i; i < tradeActions.length; i++) {
             _actions[actionsCursor++] = tradeActions[i];
         }
@@ -467,11 +471,7 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
             number: _tradeAccountNumber
         });
         address feeAgent = DOLOMITE_REGISTRY.feeAgent();
-        Require.that(
-            feeAgent != address(0),
-            _FILE,
-            'Fee agent is not set'
-        );
+        assert(feeAgent != address(0));
         accounts[_FEE_ACCOUNT_ID] = IDolomiteStructs.AccountInfo({
             owner: feeAgent,
             number: DEFAULT_ACCOUNT_NUMBER

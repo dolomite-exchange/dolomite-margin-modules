@@ -29,6 +29,7 @@ import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../protocol/lib/Require.sol";
 
+
 /**
  * @title   GenericTraderProxyBase
  * @author  Dolomite
@@ -187,7 +188,8 @@ abstract contract GenericTraderProxyBase is IGenericTraderBase {
             } else if (_isWrapperTraderType(_tradersPath[i].traderType)) {
                 actionsLength += IIsolationModeWrapperTraderV2(_tradersPath[i].trader).actionsLength();
             } else if (_tradersPath[i].traderType == TraderType.InternalLiquidity) {
-                actionsLength += IInternalAutoTraderBase(_tradersPath[i].trader).actionsLength(1); // @follow-up Length here?
+                // @follow-up Ok hardcoding 1 and passing it through here?
+                actionsLength += IInternalAutoTraderBase(_tradersPath[i].trader).actionsLength(1);
             } else {
                 // If it's not a `wrap` or `unwrap`, trades only require 1 action
                 actionsLength += 1;
@@ -263,30 +265,34 @@ abstract contract GenericTraderProxyBase is IGenericTraderBase {
                     "Internal trader not whitelisted"
                 );
 
-                IDolomiteStructs.AccountInfo memory makerAccount = _accounts[_tradersPath[i].makerAccountIndex + _cache.traderAccountStartIndex];
-                IInternalAutoTraderBase.InternalTradeParams[] memory trades = new IInternalAutoTraderBase.InternalTradeParams[](1);
-                trades[0].makerAccount = makerAccount;
+                (
+                    uint256 tradeMinOutputAmount,
+                    bytes memory extraData
+                ) = abi.decode(_tradersPath[i].tradeData, (uint256, bytes));
+                IInternalAutoTraderBase.InternalTradeParams[] memory trades =
+                    new IInternalAutoTraderBase.InternalTradeParams[](1);
+                trades[0].makerAccount = _accounts[_tradersPath[i].makerAccountIndex + _cache.traderAccountStartIndex];
                 trades[0].makerAccountId = _tradersPath[i].makerAccountIndex + _cache.traderAccountStartIndex;
                 trades[0].amount = _inputAmountWei;
-                trades[0].minOutputAmount = abi.decode(_tradersPath[i].tradeData, (uint256));
+                trades[0].minOutputAmount = tradeMinOutputAmount;
 
-                IInternalAutoTraderBase.CreateActionsForInternalTradeParams memory params = IInternalAutoTraderBase.CreateActionsForInternalTradeParams({
-                    takerAccountId: ZAP_ACCOUNT_ID,
-                    takerAccount: _accounts[ZAP_ACCOUNT_ID],
-                    feeAccountId: _cache.feeTransferAccountIndex,
-                    feeAccount: _accounts[_cache.feeTransferAccountIndex],
-                    inputMarketId: _marketIdsPath[i],
-                    outputMarketId: _marketIdsPath[i + 1],
-                    inputAmountWei: _inputAmountWei,
-                    trades: trades,
-                    extraData: _tradersPath[i].tradeData
-                });
+                IDolomiteStructs.ActionArgs[] memory tradeActions = IInternalAutoTraderBase(_tradersPath[i].trader)
+                    .createActionsForInternalTrade(
+                        IInternalAutoTraderBase.CreateActionsForInternalTradeParams({
+                            takerAccountId: ZAP_ACCOUNT_ID,
+                            takerAccount: _accounts[ZAP_ACCOUNT_ID],
+                            feeAccountId: _cache.feeTransferAccountIndex,
+                            feeAccount: _accounts[_cache.feeTransferAccountIndex],
+                            inputMarketId: _marketIdsPath[i],
+                            outputMarketId: _marketIdsPath[i + 1],
+                            inputAmountWei: _inputAmountWei,
+                            trades: trades,
+                            extraData: extraData
+                        })
+                    );
 
-                IDolomiteStructs.ActionArgs[] memory newActions = IInternalAutoTraderBase(_tradersPath[i].trader).createActionsForInternalTrade(
-                    params
-                );
-                for (uint256 j; j < newActions.length; ++j) {
-                    _actions[_cache.actionsCursor++] = newActions[j];
+                for (uint256 j; j < tradeActions.length; ++j) {
+                    _actions[_cache.actionsCursor++] = tradeActions[j];
                 }
             } else if (_isUnwrapperTraderType(_tradersPath[i].traderType)) {
                 // We can't use a Require for the following assert, because there's already an invariant that enforces

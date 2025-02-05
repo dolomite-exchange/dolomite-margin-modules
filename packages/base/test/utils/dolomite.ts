@@ -282,7 +282,7 @@ export async function createTestBorrowPositionRouter(
   const implementation = await createContractWithAbi<TestBorrowPositionRouter>(
     TestBorrowPositionRouter__factory.abi,
     TestBorrowPositionRouter__factory.bytecode,
-    [core.dolomiteRegistry.address],
+    [core.dolomiteRegistry.address, core.dolomiteMargin.address],
   );
   const initCalldata = await implementation.populateTransaction.initialize();
 

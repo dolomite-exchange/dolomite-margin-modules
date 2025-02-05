@@ -721,7 +721,13 @@ describe('UpgradeableAsyncIsolationModeWrapperTrader', () => {
       const key = (await asyncProtocol.queryFilter(asyncProtocol.filters.DepositCreated()))[0].args.key;
       await asyncProtocol.cancelDeposit(key);
       expect(await userVault.underlyingBalanceOf()).to.eq(ZERO_BI);
-      await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, otherMarketId1, amountWei.add(otherAmountWei));
+      await expectProtocolBalance(
+        core,
+        core.hhUser1.address,
+        defaultAccountNumber,
+        otherMarketId1,
+        amountWei.add(otherAmountWei)
+      );
       await expectProtocolBalance(core, userVault.address, defaultAccountNumber, underlyingMarketId, ZERO_BI);
       expect(await userVault.shouldSkipTransfer()).to.eq(false);
       expect(await userVault.isVaultFrozen()).to.eq(false);

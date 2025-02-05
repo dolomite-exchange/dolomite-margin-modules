@@ -1,24 +1,43 @@
 import { expect } from 'chai';
-import { GenericTraderProxyV2, SmartDebtAutoTrader, TestSmartDebtAutoTrader } from '../../src/types';
-import { depositIntoDolomiteMargin } from '../../src/utils/dolomite-utils';
-import { BYTES_EMPTY, BYTES_ZERO, Network, ONE_BI, ZERO_BI } from '../../src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, snapshot } from '../utils';
+import {
+  GenericTraderProxyV2,
+  SmartDebtAutoTrader,
+  TestSmartDebtAutoTrader,
+} from '../../src/types';
+import { createContractWithAbi, depositIntoDolomiteMargin } from '../../src/utils/dolomite-utils';
+import { BYTES_ZERO, Network, ONE_BI, ONE_DAY_SECONDS, ONE_ETH_BI, TEN_BI, ZERO_BI } from '../../src/utils/no-deps-constants';
+import { getBlockTimestamp, getLatestBlockNumber, impersonate, revertToSnapshotAndCapture, snapshot } from '../utils';
 import { expectEvent, expectThrow } from '../utils/assertions';
 
 import { CoreProtocolArbitrumOne } from '../utils/core-protocols/core-protocol-arbitrum-one';
-import { disableInterestAccrual, setupCoreProtocol, setupUSDTBalance, setupWETHBalance } from '../utils/setup';
+import { disableInterestAccrual, setupCoreProtocol, setupLINKBalance, setupUSDTBalance, setupWETHBalance } from '../utils/setup';
 import { createAndUpgradeDolomiteRegistry, createGenericTraderProxyV2, createTestSmartDebtAutoTrader } from '../utils/dolomite';
 import { BigNumber } from 'ethers';
 import { ActionType, BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin';
 import { defaultAbiCoder, parseEther } from 'ethers/lib/utils';
 import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
 import { PairType } from '../utils/trader-utils';
+import { getLatestChainlinkDataStreamReport, getPriceFromReport, getTestPayloads, getTimestampFromReport } from '@dolomite-exchange/modules-oracles/src/chainlink-data-streams';
+import {
+  ChainlinkDataStreamsPriceOracle,
+  ChainlinkDataStreamsPriceOracle__factory,
+  IVerifierProxy,
+  IVerifierProxy__factory,
+  TestVerifierProxy,
+  TestVerifierProxy__factory
+} from 'packages/oracles/src/types';
+import { CHAINLINK_DATA_STREAM_FEEDS_MAP, CHAINLINK_VERIFIER_PROXY_MAP } from 'packages/base/src/utils/constants';
+import { setNextBlockTimestamp } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
+import { getChainlinkDataStreamsPriceOracleConstructorParams } from 'packages/oracles/src/oracles-constructors';
 
 const USDC_USDT_PAIR_BYTES = '0x89832631fb3c3307a103ba2c84ab569c64d6182a18893dcd163f0f1c2090733a';
+
 const usdcAmount = BigNumber.from('100000000'); // $100
 const usdtAmount = BigNumber.from('200000000');
 const defaultAccountNumber = 0;
 const borrowAccountNumber = BigNumber.from('123');
+
+const price = ONE_ETH_BI;
 
 describe('SmartDebtAutoTrader', () => {
   let snapshotId: string;
@@ -27,6 +46,12 @@ describe('SmartDebtAutoTrader', () => {
   let trader: TestSmartDebtAutoTrader;
   let genericTraderProxy: GenericTraderProxyV2;
   let dolomiteImpersonator: SignerWithAddressWithSafety;
+
+  let oracle: ChainlinkDataStreamsPriceOracle;
+  let testOracle: ChainlinkDataStreamsPriceOracle;
+
+  let verifierProxy: IVerifierProxy;
+  let testVerifierProxy: TestVerifierProxy;
 
   before(async () => {
     core = await setupCoreProtocol({
@@ -37,6 +62,33 @@ describe('SmartDebtAutoTrader', () => {
     await core.dolomiteRegistry.connect(core.governance).ownerSetBorrowPositionProxy(
       core.borrowPositionProxyV2.address
     );
+    verifierProxy = IVerifierProxy__factory.connect(CHAINLINK_VERIFIER_PROXY_MAP[Network.ArbitrumOne], core.hhUser1);
+    testVerifierProxy = await createContractWithAbi<TestVerifierProxy>(
+      TestVerifierProxy__factory.abi,
+      TestVerifierProxy__factory.bytecode,
+      []
+    );
+    oracle = await createContractWithAbi<ChainlinkDataStreamsPriceOracle>(
+      ChainlinkDataStreamsPriceOracle__factory.abi,
+      ChainlinkDataStreamsPriceOracle__factory.bytecode,
+      getChainlinkDataStreamsPriceOracleConstructorParams(
+        core,
+        verifierProxy,
+        [core.tokens.usdc, core.tokens.usdt],
+        [CHAINLINK_DATA_STREAM_FEEDS_MAP['USDC'], CHAINLINK_DATA_STREAM_FEEDS_MAP['USDT']]
+      )
+    );
+    testOracle = await createContractWithAbi<ChainlinkDataStreamsPriceOracle>(
+      ChainlinkDataStreamsPriceOracle__factory.abi,
+      ChainlinkDataStreamsPriceOracle__factory.bytecode,
+      getChainlinkDataStreamsPriceOracleConstructorParams(
+        core,
+        testVerifierProxy,
+        [core.tokens.usdc, core.tokens.usdt],
+        [CHAINLINK_DATA_STREAM_FEEDS_MAP['USDC'], CHAINLINK_DATA_STREAM_FEEDS_MAP['USDT']]
+      )
+    );
+    await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkDataStreamsPriceOracle(oracle.address);
 
     dolomiteImpersonator = await impersonate(core.dolomiteMargin.address, true);
     genericTraderProxy = await createGenericTraderProxyV2(core, Network.ArbitrumOne);
@@ -57,23 +109,17 @@ describe('SmartDebtAutoTrader', () => {
     await disableInterestAccrual(core, core.marketIds.usdc);
     await disableInterestAccrual(core, core.marketIds.usdt);
 
-    const price = BigNumber.from('1000000000000000000000000000000'); // $1 for tokens with 6 decimals
-    await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.usdc.address, price);
-    await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.usdt.address, price);
-    await core.dolomiteMargin.connect(core.governance).ownerSetPriceOracle(
-      core.marketIds.usdc,
-      core.testEcosystem!.testPriceOracle.address
-    );
-    await core.dolomiteMargin.connect(core.governance).ownerSetPriceOracle(
-      core.marketIds.usdt,
-      core.testEcosystem!.testPriceOracle.address
-    );
-
     await trader.connect(core.governance).ownerSetGlobalFee(parseEther('.1'));
     await trader.connect(core.governance).ownerSetAdminFee(parseEther('.5'));
 
+    await setupLINKBalance(core, core.governance, parseEther('100'), trader);
+    await core.tokens.link.connect(core.governance).transfer(oracle.address, parseEther('100'));
+
     await setupWETHBalance(core, core.hhUser2, parseEther('100'), core.dolomiteMargin);
     await depositIntoDolomiteMargin(core, core.hhUser2, borrowAccountNumber, core.marketIds.weth, parseEther('100'));
+
+    await trader.connect(core.governance).ownerAddSmartCollateralPair(core.marketIds.usdc, core.marketIds.usdt);
+    await trader.connect(core.governance).ownerAddSmartDebtPair(core.marketIds.usdc, core.marketIds.usdt);
 
     snapshotId = await snapshot();
   });
@@ -86,6 +132,7 @@ describe('SmartDebtAutoTrader', () => {
     it('should work normally', async () => {
       expect(await trader.DOLOMITE_MARGIN()).to.equal(core.dolomiteMargin.address);
       expect(await trader.DOLOMITE_REGISTRY()).to.equal(core.dolomiteRegistry.address);
+      expect(await trader.CHAIN_ID()).to.equal(Network.ArbitrumOne);
     });
 
     it('should fail if already initialized', async () => {
@@ -97,32 +144,98 @@ describe('SmartDebtAutoTrader', () => {
   });
 
   describe('#callFunction', () => {
-    it('should work normally', async () => {
-      expect(await trader.tradeEnabled()).to.equal(false);
+    it('should work normally with one report', async () => {
+      const result = await getLatestChainlinkDataStreamReport(CHAINLINK_DATA_STREAM_FEEDS_MAP['USDC']);
+      const extraBytes = defaultAbiCoder.encode(['bytes[]', 'bool'], [[result.report.fullReport], true]);
 
       await trader.connect(dolomiteImpersonator).callFunction(
         genericTraderProxy.address,
         { owner: core.hhUser1.address, number: defaultAccountNumber },
-        defaultAbiCoder.encode(['bool'], [true])
+        extraBytes
+      );
+      const time = await getBlockTimestamp(await getLatestBlockNumber());
+      expect((await oracle.getPrice(core.tokens.usdc.address)).value).to.equal(
+        getPriceFromReport(result).mul(TEN_BI.pow(12))
       );
       expect(await trader.tradeEnabled()).to.equal(true);
+    });
+
+    it('should work normally with two reports', async () => {
+      const usdcResult = await getLatestChainlinkDataStreamReport(CHAINLINK_DATA_STREAM_FEEDS_MAP['USDC']);
+      const usdtResult = await getLatestChainlinkDataStreamReport(CHAINLINK_DATA_STREAM_FEEDS_MAP['USDT']);
+      const extraBytes = defaultAbiCoder.encode(
+        ['bytes[]', 'bool'],
+        [[usdcResult.report.fullReport, usdtResult.report.fullReport], true]
+      );
 
       await trader.connect(dolomiteImpersonator).callFunction(
         genericTraderProxy.address,
         { owner: core.hhUser1.address, number: defaultAccountNumber },
-        defaultAbiCoder.encode(['bool'], [false])
+        extraBytes
       );
-      expect(await trader.tradeEnabled()).to.equal(false);
+      expect((await oracle.getPrice(core.tokens.usdc.address)).value).to.equal(
+        getPriceFromReport(usdcResult).mul(TEN_BI.pow(12))
+      );
+      expect((await oracle.getPrice(core.tokens.usdt.address)).value).to.equal(
+        getPriceFromReport(usdtResult).mul(TEN_BI.pow(12))
+      );
+      expect(await trader.tradeEnabled()).to.equal(true);
     });
 
-    it('should fail if sender is not trusted internal trade caller', async () => {
+    it('should work normally with 0 reports', async () => {
+      expect(await trader.tradeEnabled()).to.equal(false);
+      const extraBytes = defaultAbiCoder.encode(['bytes[]', 'bool'], [[], true]);
+
+      await trader.connect(dolomiteImpersonator).callFunction(
+        genericTraderProxy.address,
+        { owner: core.hhUser1.address, number: defaultAccountNumber },
+        extraBytes
+      );
+      expect(await trader.tradeEnabled()).to.equal(true);
+    });
+
+    it('should not update prices if trade is disabled', async () => {
+      const result = await getLatestChainlinkDataStreamReport(CHAINLINK_DATA_STREAM_FEEDS_MAP['USDC']);
+      const extraBytes = defaultAbiCoder.encode(['bytes[]', 'bool'], [[result.report.fullReport], false]);
+
+      await trader.connect(dolomiteImpersonator).callFunction(
+        genericTraderProxy.address,
+        { owner: core.hhUser1.address, number: defaultAccountNumber },
+        extraBytes
+      );
+      await expectThrow(
+        oracle.getPrice(core.tokens.usdc.address),
+        `ChainlinkDataStreamsPriceOracle: Price not found <${core.tokens.usdc.address.toLowerCase()}>`
+      );
+    });
+
+    it('should fail if feed id is invalid', async () => {
+      const result = await getLatestChainlinkDataStreamReport(CHAINLINK_DATA_STREAM_FEEDS_MAP['DAI']);
+      const extraBytes = defaultAbiCoder.encode(['bytes[]', 'bool'], [[result.report.fullReport], true]);
+
       await expectThrow(
         trader.connect(dolomiteImpersonator).callFunction(
-          core.hhUser1.address,
+          genericTraderProxy.address,
           { owner: core.hhUser1.address, number: defaultAccountNumber },
-          defaultAbiCoder.encode(['bool'], [true])
+          extraBytes
         ),
-        'InternalAutoTraderBase: Invalid sender'
+        'ChainlinkDataStreamsPriceOracle: Invalid feed ID'
+      );
+    });
+
+    it('should fail if report is too old', async () => {
+      const result = await getLatestChainlinkDataStreamReport(CHAINLINK_DATA_STREAM_FEEDS_MAP['USDC']);
+      const extraBytes = defaultAbiCoder.encode(['bytes[]', 'bool'], [[result.report.fullReport], true]);
+
+      const time = getTimestampFromReport(result);
+      await setNextBlockTimestamp(time + ONE_DAY_SECONDS * 2);
+      await expectThrow(
+        trader.connect(dolomiteImpersonator).callFunction(
+          genericTraderProxy.address,
+          { owner: core.hhUser1.address, number: defaultAccountNumber },
+          extraBytes
+        ),
+        'ChainlinkDataStreamsPriceOracle: Report is too old'
       );
     });
 
@@ -131,7 +244,7 @@ describe('SmartDebtAutoTrader', () => {
         trader.connect(core.hhUser1).callFunction(
           core.hhUser1.address,
           { owner: core.hhUser1.address, number: defaultAccountNumber },
-          defaultAbiCoder.encode(['bool'], [true])
+          defaultAbiCoder.encode(['bytes[]', 'bool'], [[], true])
         ),
         `OnlyDolomiteMargin: Only Dolomite can call function <${core.hhUser1.address.toLowerCase()}>`
       );
@@ -143,6 +256,8 @@ describe('SmartDebtAutoTrader', () => {
       await trader.connect(core.governance).ownerSetGlobalFee(ZERO_BI);
       await trader.connect(core.governance).ownerSetAdminFee(ZERO_BI);
 
+      const result = await getLatestChainlinkDataStreamReport(CHAINLINK_DATA_STREAM_FEEDS_MAP['USDC']);
+      const extraBytes = defaultAbiCoder.encode(['bytes[]'], [[result.report.fullReport]]);
       const actions = await trader.createActionsForInternalTrade({
         takerAccountId: 0,
         takerAccount: {
@@ -168,7 +283,7 @@ describe('SmartDebtAutoTrader', () => {
             minOutputAmount: ONE_BI,
           }
         ],
-        extraData: BYTES_EMPTY
+        extraData: extraBytes
       });
       expect(actions.length).to.equal(4);
       expect(actions[0].actionType).to.equal(ActionType.Call);
@@ -186,6 +301,8 @@ describe('SmartDebtAutoTrader', () => {
       await trader.connect(core.governance).ownerSetGlobalFee(parseEther('.05')); // 5%
       await trader.connect(core.governance).ownerSetAdminFee(parseEther('.5')); // 50%
 
+      const result = await getLatestChainlinkDataStreamReport(CHAINLINK_DATA_STREAM_FEEDS_MAP['USDC']);
+      const extraBytes = defaultAbiCoder.encode(['bytes[]'], [[result.report.fullReport]]);
       const actions = await trader.createActionsForInternalTrade({
         takerAccountId: 0,
         takerAccount: {
@@ -211,7 +328,7 @@ describe('SmartDebtAutoTrader', () => {
             minOutputAmount: ONE_BI,
           }
         ],
-        extraData: BYTES_EMPTY
+        extraData: extraBytes
       });
       expect(actions.length).to.equal(4);
       expect(actions[0].actionType).to.equal(ActionType.Call);
@@ -230,6 +347,8 @@ describe('SmartDebtAutoTrader', () => {
       await trader.connect(core.governance).ownerSetGlobalFee(parseEther('.05')); // 5%
       await trader.connect(core.governance).ownerSetAdminFee(parseEther('.5')); // 50%
 
+      const result = await getLatestChainlinkDataStreamReport(CHAINLINK_DATA_STREAM_FEEDS_MAP['USDC']);
+      const extraBytes = defaultAbiCoder.encode(['bytes[]'], [[result.report.fullReport]]);
       const actions = await trader.createActionsForInternalTrade({
         takerAccountId: 0,
         takerAccount: {
@@ -264,7 +383,7 @@ describe('SmartDebtAutoTrader', () => {
             minOutputAmount: ONE_BI,
           }
         ],
-        extraData: BYTES_EMPTY
+        extraData: extraBytes
       });
       expect(actions.length).to.equal(5);
       expect(actions[0].actionType).to.equal(ActionType.Call);
@@ -283,6 +402,8 @@ describe('SmartDebtAutoTrader', () => {
     });
 
     it('should fail if trade total does not match input amount', async () => {
+      const result = await getLatestChainlinkDataStreamReport(CHAINLINK_DATA_STREAM_FEEDS_MAP['USDC']);
+      const extraBytes = defaultAbiCoder.encode(['bytes[]'], [[result.report.fullReport]]);
       await expectThrow(
         trader.createActionsForInternalTrade({
           takerAccountId: 0,
@@ -316,7 +437,7 @@ describe('SmartDebtAutoTrader', () => {
             amount: usdcAmount.div(2),
             minOutputAmount: ONE_BI,
           }],
-          extraData: BYTES_EMPTY
+          extraData: extraBytes
         }),
         'SmartDebtAutoTrader: Invalid swap amounts sum'
       );
@@ -327,8 +448,8 @@ describe('SmartDebtAutoTrader', () => {
     it('should work normally with smart collateral when prices are equal', async () => {
       await setupUSDTBalance(core, core.hhUser2, usdtAmount, core.dolomiteMargin);
       await depositIntoDolomiteMargin(core, core.hhUser2, 0, core.marketIds.usdt, usdtAmount);
+      await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkDataStreamsPriceOracle(testOracle.address);
 
-      await trader.connect(core.governance).ownerAddSmartCollateralPair(core.marketIds.usdc, core.marketIds.usdt);
       await trader.connect(core.hhUser2).userSetPair(
         defaultAccountNumber,
         PairType.SMART_COLLATERAL,
@@ -337,10 +458,20 @@ describe('SmartDebtAutoTrader', () => {
       );
 
       const adminFeeAmount = usdcAmount.div(10).div(2);
+      const timestamp = BigNumber.from(await getBlockTimestamp(await getLatestBlockNumber()));
+      const payloads = getTestPayloads(
+        [CHAINLINK_DATA_STREAM_FEEDS_MAP['USDT'], CHAINLINK_DATA_STREAM_FEEDS_MAP['USDC']],
+        [price, price],
+        timestamp
+      );
       await trader.connect(dolomiteImpersonator).callFunction(
         genericTraderProxy.address,
         { owner: core.hhUser1.address, number: defaultAccountNumber },
-        defaultAbiCoder.encode(['bool'], [true])
+        defaultAbiCoder.encode(
+          ['bytes[]', 'bool'],
+          [payloads, true]
+        ),
+        { gasPrice: BigNumber.from('1000000000000') }
       );
       const outputAmount = await trader.callStatic.getTradeCost(
         core.marketIds.usdc,
@@ -359,11 +490,8 @@ describe('SmartDebtAutoTrader', () => {
     it('should work normally with smart collateral when prices are not equal', async () => {
       await setupUSDTBalance(core, core.hhUser2, usdtAmount, core.dolomiteMargin);
       await depositIntoDolomiteMargin(core, core.hhUser2, 0, core.marketIds.usdt, usdtAmount);
+      await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkDataStreamsPriceOracle(testOracle.address);
 
-      const price = BigNumber.from('1000000000000000000000000000000');
-      await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.usdt.address, price.mul(2));
-
-      await trader.connect(core.governance).ownerAddSmartCollateralPair(core.marketIds.usdc, core.marketIds.usdt);
       await trader.connect(core.hhUser2).userSetPair(
         defaultAccountNumber,
         PairType.SMART_COLLATERAL,
@@ -372,10 +500,16 @@ describe('SmartDebtAutoTrader', () => {
       );
 
       const adminFeeAmount = usdcAmount.div(10).div(2);
+      const timestamp = BigNumber.from(await getBlockTimestamp(await getLatestBlockNumber()));
+      const payloads = getTestPayloads(
+        [CHAINLINK_DATA_STREAM_FEEDS_MAP['USDT'], CHAINLINK_DATA_STREAM_FEEDS_MAP['USDC']],
+        [price.mul(2), price],
+        timestamp
+      );
       await trader.connect(dolomiteImpersonator).callFunction(
         genericTraderProxy.address,
         { owner: core.hhUser1.address, number: defaultAccountNumber },
-        defaultAbiCoder.encode(['bool'], [true])
+        defaultAbiCoder.encode(['bytes[]', 'bool'], [payloads, true])
       );
       const outputAmount = await trader.callStatic.getTradeCost(
         core.marketIds.usdc,
@@ -394,8 +528,8 @@ describe('SmartDebtAutoTrader', () => {
     it('should fail if smart collateral pair is not active', async () => {
       await setupUSDTBalance(core, core.hhUser2, usdtAmount, core.dolomiteMargin);
       await depositIntoDolomiteMargin(core, core.hhUser2, 0, core.marketIds.usdt, usdtAmount);
+      await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkDataStreamsPriceOracle(testOracle.address);
 
-      await trader.connect(core.governance).ownerAddSmartCollateralPair(core.marketIds.usdc, core.marketIds.usdt);
       await trader.connect(core.hhUser2).userSetPair(
         defaultAccountNumber,
         PairType.SMART_COLLATERAL,
@@ -405,10 +539,16 @@ describe('SmartDebtAutoTrader', () => {
       await trader.connect(core.governance).ownerRemoveSmartCollateralPair(core.marketIds.usdc, core.marketIds.usdt);
 
       const adminFeeAmount = usdcAmount.div(10).div(2);
+      const timestamp = BigNumber.from(await getBlockTimestamp(await getLatestBlockNumber()));
+      const payloads = getTestPayloads(
+        [CHAINLINK_DATA_STREAM_FEEDS_MAP['USDT'], CHAINLINK_DATA_STREAM_FEEDS_MAP['USDC']],
+        [price, price],
+        timestamp
+      );
       await trader.connect(dolomiteImpersonator).callFunction(
         genericTraderProxy.address,
         { owner: core.hhUser1.address, number: defaultAccountNumber },
-        defaultAbiCoder.encode(['bool'], [true])
+        defaultAbiCoder.encode(['bytes[]', 'bool'], [payloads, true])
       );
       await expectThrow(
         trader.callStatic.getTradeCost(
@@ -426,19 +566,25 @@ describe('SmartDebtAutoTrader', () => {
     });
 
     it('should fail if the user does not have enough collateral', async () => {
-      await trader.connect(core.governance).ownerAddSmartCollateralPair(core.marketIds.usdc, core.marketIds.usdt);
       await trader.connect(core.hhUser2).userSetPair(
         defaultAccountNumber,
         PairType.SMART_COLLATERAL,
         core.marketIds.usdc,
         core.marketIds.usdt
       );
+      await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkDataStreamsPriceOracle(testOracle.address);
 
       const adminFeeAmount = usdcAmount.div(10).div(2);
+      const timestamp = BigNumber.from(await getBlockTimestamp(await getLatestBlockNumber()));
+      const payloads = getTestPayloads(
+        [CHAINLINK_DATA_STREAM_FEEDS_MAP['USDT'], CHAINLINK_DATA_STREAM_FEEDS_MAP['USDC']],
+        [price, price],
+        timestamp
+      );
       await trader.connect(dolomiteImpersonator).callFunction(
         genericTraderProxy.address,
         { owner: core.hhUser1.address, number: defaultAccountNumber },
-        defaultAbiCoder.encode(['bool'], [true])
+        defaultAbiCoder.encode(['bytes[]', 'bool'], [payloads, true])
       );
       await expectThrow(
         trader.callStatic.getTradeCost(
@@ -463,7 +609,7 @@ describe('SmartDebtAutoTrader', () => {
         usdcAmount,
         BalanceCheckFlag.To
       );
-      await trader.connect(core.governance).ownerAddSmartDebtPair(core.marketIds.usdc, core.marketIds.usdt);
+      await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkDataStreamsPriceOracle(testOracle.address);
       await trader.connect(core.hhUser2).userSetPair(
         borrowAccountNumber,
         PairType.SMART_DEBT,
@@ -472,10 +618,16 @@ describe('SmartDebtAutoTrader', () => {
       );
 
       const adminFeeAmount = usdcAmount.div(10).div(2);
+      const timestamp = BigNumber.from(await getBlockTimestamp(await getLatestBlockNumber()));
+      const payloads = getTestPayloads(
+        [CHAINLINK_DATA_STREAM_FEEDS_MAP['USDT'], CHAINLINK_DATA_STREAM_FEEDS_MAP['USDC']],
+        [price, price],
+        timestamp
+      );
       await trader.connect(dolomiteImpersonator).callFunction(
         genericTraderProxy.address,
         { owner: core.hhUser1.address, number: defaultAccountNumber },
-        defaultAbiCoder.encode(['bool'], [true])
+        defaultAbiCoder.encode(['bytes[]', 'bool'], [payloads, true])
       );
       const outputAmount = await trader.callStatic.getTradeCost(
         core.marketIds.usdc,
@@ -492,6 +644,7 @@ describe('SmartDebtAutoTrader', () => {
     });
 
     it('should work normally with smart debt when prices are not equal', async () => {
+      await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkDataStreamsPriceOracle(testOracle.address);
       await core.borrowPositionProxyV2.connect(core.hhUser2).transferBetweenAccounts(
         borrowAccountNumber,
         defaultAccountNumber,
@@ -499,21 +652,24 @@ describe('SmartDebtAutoTrader', () => {
         usdcAmount,
         BalanceCheckFlag.To
       );
-      await trader.connect(core.governance).ownerAddSmartDebtPair(core.marketIds.usdc, core.marketIds.usdt);
       await trader.connect(core.hhUser2).userSetPair(
         borrowAccountNumber,
         PairType.SMART_DEBT,
         core.marketIds.usdc,
         core.marketIds.usdt
       );
-      const price = BigNumber.from('1000000000000000000000000000000');
-      await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.usdt.address, price.mul(2));
 
       const adminFeeAmount = usdcAmount.div(10).div(2);
+      const timestamp = BigNumber.from(await getBlockTimestamp(await getLatestBlockNumber()));
+      const payloads = getTestPayloads(
+        [CHAINLINK_DATA_STREAM_FEEDS_MAP['USDT'], CHAINLINK_DATA_STREAM_FEEDS_MAP['USDC']],
+        [price.mul(2), price],
+        timestamp
+      );
       await trader.connect(dolomiteImpersonator).callFunction(
         genericTraderProxy.address,
         { owner: core.hhUser1.address, number: defaultAccountNumber },
-        defaultAbiCoder.encode(['bool'], [true])
+        defaultAbiCoder.encode(['bytes[]', 'bool'], [payloads, true])
       );
       const outputAmount = await trader.callStatic.getTradeCost(
         core.marketIds.usdc,
@@ -530,6 +686,7 @@ describe('SmartDebtAutoTrader', () => {
     });
 
     it('should fail if smart debt pair is not active', async () => {
+      await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkDataStreamsPriceOracle(testOracle.address);
       await core.borrowPositionProxyV2.connect(core.hhUser2).transferBetweenAccounts(
         borrowAccountNumber,
         defaultAccountNumber,
@@ -537,7 +694,6 @@ describe('SmartDebtAutoTrader', () => {
         usdcAmount,
         BalanceCheckFlag.To
       );
-      await trader.connect(core.governance).ownerAddSmartDebtPair(core.marketIds.usdc, core.marketIds.usdt);
       await trader.connect(core.hhUser2).userSetPair(
         borrowAccountNumber,
         PairType.SMART_DEBT,
@@ -547,10 +703,16 @@ describe('SmartDebtAutoTrader', () => {
       await trader.connect(core.governance).ownerRemoveSmartDebtPair(core.marketIds.usdc, core.marketIds.usdt);
 
       const adminFeeAmount = usdcAmount.div(10).div(2);
+      const timestamp = BigNumber.from(await getBlockTimestamp(await getLatestBlockNumber()));
+      const payloads = getTestPayloads(
+        [CHAINLINK_DATA_STREAM_FEEDS_MAP['USDT'], CHAINLINK_DATA_STREAM_FEEDS_MAP['USDC']],
+        [price, price],
+        timestamp
+      );
       await trader.connect(dolomiteImpersonator).callFunction(
         genericTraderProxy.address,
         { owner: core.hhUser1.address, number: defaultAccountNumber },
-        defaultAbiCoder.encode(['bool'], [true])
+        defaultAbiCoder.encode(['bytes[]', 'bool'], [payloads, true])
       );
       await expectThrow(
         trader.callStatic.getTradeCost(
@@ -568,7 +730,7 @@ describe('SmartDebtAutoTrader', () => {
     });
 
     it('should fail if the user does not have enough debt', async () => {
-      await trader.connect(core.governance).ownerAddSmartDebtPair(core.marketIds.usdc, core.marketIds.usdt);
+      await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkDataStreamsPriceOracle(testOracle.address);
       await trader.connect(core.hhUser2).userSetPair(
         borrowAccountNumber,
         PairType.SMART_DEBT,
@@ -577,10 +739,16 @@ describe('SmartDebtAutoTrader', () => {
       );
 
       const adminFeeAmount = usdcAmount.div(10).div(2);
+      const timestamp = BigNumber.from(await getBlockTimestamp(await getLatestBlockNumber()));
+      const payloads = getTestPayloads(
+        [CHAINLINK_DATA_STREAM_FEEDS_MAP['USDT'], CHAINLINK_DATA_STREAM_FEEDS_MAP['USDC']],
+        [price, price],
+        timestamp
+      );
       await trader.connect(dolomiteImpersonator).callFunction(
         genericTraderProxy.address,
         { owner: core.hhUser1.address, number: defaultAccountNumber },
-        defaultAbiCoder.encode(['bool'], [true])
+        defaultAbiCoder.encode(['bytes[]', 'bool'], [payloads, true])
       );
       await expectThrow(
         trader.callStatic.getTradeCost(
@@ -615,13 +783,19 @@ describe('SmartDebtAutoTrader', () => {
     });
 
     it('should fail if user does not have the pair set', async () => {
-      await trader.connect(core.governance).ownerAddSmartCollateralPair(core.marketIds.usdc, core.marketIds.usdt);
+      await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkDataStreamsPriceOracle(testOracle.address);
 
       const adminFeeAmount = usdcAmount.div(10).div(2);
+      const timestamp = BigNumber.from(await getBlockTimestamp(await getLatestBlockNumber()));
+      const payloads = getTestPayloads(
+        [CHAINLINK_DATA_STREAM_FEEDS_MAP['USDT'], CHAINLINK_DATA_STREAM_FEEDS_MAP['USDC']],
+        [price, price],
+        timestamp
+      );
       await trader.connect(dolomiteImpersonator).callFunction(
         genericTraderProxy.address,
         { owner: core.hhUser1.address, number: defaultAccountNumber },
-        defaultAbiCoder.encode(['bool'], [true])
+        defaultAbiCoder.encode(['bytes[]', 'bool'], [payloads, true])
       );
       await expectThrow(
         trader.callStatic.getTradeCost(
@@ -641,8 +815,8 @@ describe('SmartDebtAutoTrader', () => {
     it('should fail if output amount is insufficient', async () => {
       await setupUSDTBalance(core, core.hhUser2, usdtAmount, core.dolomiteMargin);
       await depositIntoDolomiteMargin(core, core.hhUser2, 0, core.marketIds.usdt, usdtAmount);
+      await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkDataStreamsPriceOracle(testOracle.address);
 
-      await trader.connect(core.governance).ownerAddSmartCollateralPair(core.marketIds.usdc, core.marketIds.usdt);
       await trader.connect(core.hhUser2).userSetPair(
         defaultAccountNumber,
         PairType.SMART_COLLATERAL,
@@ -651,10 +825,16 @@ describe('SmartDebtAutoTrader', () => {
       );
 
       const adminFeeAmount = usdcAmount.div(10).div(2);
+      const timestamp = BigNumber.from(await getBlockTimestamp(await getLatestBlockNumber()));
+      const payloads = getTestPayloads(
+        [CHAINLINK_DATA_STREAM_FEEDS_MAP['USDT'], CHAINLINK_DATA_STREAM_FEEDS_MAP['USDC']],
+        [price, price],
+        timestamp
+      );
       await trader.connect(dolomiteImpersonator).callFunction(
         genericTraderProxy.address,
         { owner: core.hhUser1.address, number: defaultAccountNumber },
-        defaultAbiCoder.encode(['bool'], [true])
+        defaultAbiCoder.encode(['bytes[]', 'bool'], [payloads, true])
       );
       await expectThrow(
         trader.callStatic.getTradeCost(
@@ -672,319 +852,8 @@ describe('SmartDebtAutoTrader', () => {
     });
   });
 
-  // describe('#getTradeCost_integration', () => {
-  //   it('should work normally with smart collateral', async () => {
-
-  //     await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.dolomiteMargin);
-  //     await depositIntoDolomiteMargin(core, core.hhUser1, 0, core.marketIds.usdc, usdcAmount);
-  //     await setupUSDTBalance(core, core.hhUser2, usdtAmount, core.dolomiteMargin);
-  //     await depositIntoDolomiteMargin(core, core.hhUser2, 0, core.marketIds.usdt, usdtAmount);
-
-  //     await trader.connect(core.governance).ownerAddSmartCollateralPair(core.marketIds.usdc, core.marketIds.usdt);
-  //     await trader.connect(core.hhUser2).userSetPair(
-  //       defaultAccountNumber,
-  //       PairType.SMART_COLLATERAL,
-  //       core.marketIds.usdc,
-  //       core.marketIds.usdt
-  //     );
-
-  //     const zapParams = await getSmartDebtZapParams(
-  //       core.marketIds.usdc,
-  //       MAX_UINT_256_BI,
-  //       core.marketIds.usdt,
-  //       usdcAmount,
-  //       trader,
-  //       { owner: core.hhUser2.address, number: defaultAccountNumber },
-  //       core,
-  //     );
-  //     await genericTraderProxy.swapExactInputForOutput({
-  //       accountNumber: defaultAccountNumber,
-  //       marketIdsPath: zapParams.marketIdsPath,
-  //       inputAmountWei: zapParams.inputAmountWei,
-  //       minOutputAmountWei: zapParams.minOutputAmountWei,
-  //       tradersPath: zapParams.tradersPath,
-  //       makerAccounts: zapParams.makerAccounts,
-  //       userConfig: zapParams.userConfig,
-  //     });
-  //     const usdtBal = (await core.dolomiteMargin.getAccountWei(
-  //       { owner: core.hhUser1.address, number: defaultAccountNumber },
-  //       core.marketIds.usdt)
-  //     ).value;
-  //     await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.usdc, ZERO_BI);
-  //     await expectProtocolBalanceIsGreaterThan(
-  //       core,
-  //       { owner: core.hhUser1.address, number: defaultAccountNumber },
-  //       core.marketIds.usdt,
-  //       usdcAmount,
-  //       ZERO_BI
-  //     );
-  //     await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.usdc, usdcAmount);
-  //     await expectProtocolBalance(
-  //       core,
-  //       core.hhUser2,
-  //       defaultAccountNumber,
-  //       core.marketIds.usdt,
-  //       usdtAmount.sub(usdtBal)
-  //     );
-  //   });
-
-  //   it('should work normally with smart debt', async () => {
-  //     await disableInterestAccrual(core, core.marketIds.usdc);
-  //     await disableInterestAccrual(core, core.marketIds.usdt);
-
-  //     await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.dolomiteMargin);
-  //     await depositIntoDolomiteMargin(core, core.hhUser1, 0, core.marketIds.usdc, usdcAmount);
-
-  //     await setupWETHBalance(core, core.hhUser2, ONE_ETH_BI, core.dolomiteMargin);
-  //     await depositIntoDolomiteMargin(core, core.hhUser2, borrowAccountNumber, core.marketIds.weth, ONE_ETH_BI);
-  //     await core.borrowPositionProxyV2.connect(core.hhUser2).transferBetweenAccounts(
-  //       borrowAccountNumber,
-  //       defaultAccountNumber,
-  //       core.marketIds.usdc,
-  //       usdcAmount,
-  //       BalanceCheckFlag.To,
-  //     );
-  //     await expectProtocolBalance(
-  //       core,
-  //       core.hhUser2,
-  //       borrowAccountNumber,
-  //       core.marketIds.usdc,
-  //       ZERO_BI.sub(usdcAmount)
-  //     );
-
-  //     await trader.connect(core.governance).ownerAddSmartDebtPair(core.marketIds.usdc, core.marketIds.usdt);
-  //     await trader.connect(core.hhUser2).userSetPair(
-  //       borrowAccountNumber,
-  //       PairType.SMART_DEBT,
-  //       core.marketIds.usdc,
-  //       core.marketIds.usdt
-  //     );
-
-  //     const zapParams = await getSmartDebtZapParams(
-  //       core.marketIds.usdc,
-  //       MAX_UINT_256_BI,
-  //       core.marketIds.usdt,
-  //       usdcAmount,
-  //       trader,
-  //       { owner: core.hhUser2.address, number: borrowAccountNumber },
-  //       core,
-  //     );
-  //     await genericTraderProxy.swapExactInputForOutput({
-  //       accountNumber: defaultAccountNumber,
-  //       marketIdsPath: zapParams.marketIdsPath,
-  //       inputAmountWei: zapParams.inputAmountWei,
-  //       minOutputAmountWei: zapParams.minOutputAmountWei,
-  //       tradersPath: zapParams.tradersPath,
-  //       makerAccounts: zapParams.makerAccounts,
-  //       userConfig: zapParams.userConfig,
-  //     });
-  //     const usdtBal = (await core.dolomiteMargin.getAccountWei(
-  //       { owner: core.hhUser1.address, number: defaultAccountNumber },
-  //       core.marketIds.usdt)
-  //     ).value;
-  //     await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.usdc, ZERO_BI);
-  //     await expectProtocolBalanceIsGreaterThan(
-  //       core,
-  //       { owner: core.hhUser1.address, number: defaultAccountNumber },
-  //       core.marketIds.usdt,
-  //       usdcAmount,
-  //       ZERO_BI
-  //     );
-  //     await expectProtocolBalance(core, core.hhUser2, borrowAccountNumber, core.marketIds.usdc, ZERO_BI);
-  //     await expectProtocolBalance(core, core.hhUser2, borrowAccountNumber, core.marketIds.usdt, ZERO_BI.sub(usdtBal));
-  //   });
-
-  //   it('should fail if smart collateral user has insufficient collateral', async () => {
-  //     await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.dolomiteMargin);
-  //     await depositIntoDolomiteMargin(core, core.hhUser1, 0, core.marketIds.usdc, usdcAmount);
-
-  //     await trader.connect(core.governance).ownerAddSmartCollateralPair(core.marketIds.usdc, core.marketIds.usdt);
-  //     await trader.connect(core.hhUser2).userSetPair(
-  //       defaultAccountNumber,
-  //       PairType.SMART_COLLATERAL,
-  //       core.marketIds.usdc,
-  //       core.marketIds.usdt
-  //     );
-
-  //     const zapParams = await getSmartDebtZapParams(
-  //       core.marketIds.usdc,
-  //       MAX_UINT_256_BI,
-  //       core.marketIds.usdt,
-  //       usdcAmount,
-  //       trader,
-  //       { owner: core.hhUser2.address, number: defaultAccountNumber },
-  //       core,
-  //     );
-  //     await expectThrow(
-  //       genericTraderProxy.swapExactInputForOutput({
-  //         accountNumber: defaultAccountNumber,
-  //         marketIdsPath: zapParams.marketIdsPath,
-  //         inputAmountWei: zapParams.inputAmountWei,
-  //         minOutputAmountWei: zapParams.minOutputAmountWei,
-  //         tradersPath: zapParams.tradersPath,
-  //         makerAccounts: zapParams.makerAccounts,
-  //         userConfig: zapParams.userConfig,
-  //       }),
-  //       'SmartDebtAutoTrader: Insufficient collateral'
-  //     );
-  //   });
-
-  //   it('should fail if smart debt user has insufficient debt', async () => {
-  //     await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.dolomiteMargin);
-  //     await depositIntoDolomiteMargin(core, core.hhUser1, 0, core.marketIds.usdc, usdcAmount);
-
-  //     await trader.connect(core.governance).ownerAddSmartDebtPair(core.marketIds.usdc, core.marketIds.usdt);
-  //     await trader.connect(core.hhUser2).userSetPair(
-  //       defaultAccountNumber,
-  //       PairType.SMART_DEBT,
-  //       core.marketIds.usdc,
-  //       core.marketIds.usdt
-  //     );
-
-  //     const zapParams = await getSmartDebtZapParams(
-  //       core.marketIds.usdc,
-  //       MAX_UINT_256_BI,
-  //       core.marketIds.usdt,
-  //       usdcAmount,
-  //       trader,
-  //       { owner: core.hhUser2.address, number: defaultAccountNumber },
-  //       core,
-  //     );
-  //     await expectThrow(
-  //       genericTraderProxy.swapExactInputForOutput({
-  //         accountNumber: defaultAccountNumber,
-  //         marketIdsPath: zapParams.marketIdsPath,
-  //         inputAmountWei: zapParams.inputAmountWei,
-  //         minOutputAmountWei: zapParams.minOutputAmountWei,
-  //         tradersPath: zapParams.tradersPath,
-  //         makerAccounts: zapParams.makerAccounts,
-  //         userConfig: zapParams.userConfig,
-  //       }),
-  //       'SmartDebtAutoTrader: Insufficient debt'
-  //     );
-  //   });
-
-  //   it('should fail if user does not have a pair set or has a different pair set', async () => {
-  //     await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.dolomiteMargin);
-  //     await depositIntoDolomiteMargin(core, core.hhUser1, 0, core.marketIds.usdc, usdcAmount);
-
-  //     const zapParams = await getSmartDebtZapParams(
-  //       core.marketIds.usdc,
-  //       MAX_UINT_256_BI,
-  //       core.marketIds.usdt,
-  //       usdcAmount,
-  //       trader,
-  //       { owner: core.hhUser2.address, number: defaultAccountNumber },
-  //       core,
-  //     );
-  //     await expectThrow(
-  //       genericTraderProxy.swapExactInputForOutput({
-  //         accountNumber: defaultAccountNumber,
-  //         marketIdsPath: zapParams.marketIdsPath,
-  //         inputAmountWei: zapParams.inputAmountWei,
-  //         minOutputAmountWei: zapParams.minOutputAmountWei,
-  //         tradersPath: zapParams.tradersPath,
-  //         makerAccounts: zapParams.makerAccounts,
-  //         userConfig: zapParams.userConfig,
-  //       }),
-  //       'SmartDebtAutoTrader: User does not have the pair set'
-  //     );
-
-  //     await trader.connect(core.governance).ownerAddSmartDebtPair(core.marketIds.usdc, core.marketIds.dai);
-  //     await trader.connect(core.hhUser2).userSetPair(
-  //       defaultAccountNumber,
-  //       PairType.SMART_DEBT,
-  //       core.marketIds.usdc,
-  //       core.marketIds.dai
-  //     );
-  //     await expectThrow(
-  //       genericTraderProxy.swapExactInputForOutput({
-  //         accountNumber: defaultAccountNumber,
-  //         marketIdsPath: zapParams.marketIdsPath,
-  //         inputAmountWei: zapParams.inputAmountWei,
-  //         minOutputAmountWei: zapParams.minOutputAmountWei,
-  //         tradersPath: zapParams.tradersPath,
-  //         makerAccounts: zapParams.makerAccounts,
-  //         userConfig: zapParams.userConfig,
-  //       }),
-  //       'SmartDebtAutoTrader: User does not have the pair set'
-  //     );
-  //   });
-
-  //   it('should fail if collateral pair is not active', async () => {
-  //     await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.dolomiteMargin);
-  //     await depositIntoDolomiteMargin(core, core.hhUser1, 0, core.marketIds.usdc, usdcAmount);
-  //     await trader.connect(core.governance).ownerAddSmartCollateralPair(core.marketIds.usdc, core.marketIds.usdt);
-  //     await trader.connect(core.hhUser2).userSetPair(
-  //       defaultAccountNumber,
-  //       PairType.SMART_COLLATERAL,
-  //       core.marketIds.usdc,
-  //       core.marketIds.usdt
-  //     );
-  //     await trader.connect(core.governance).ownerRemoveSmartCollateralPair(core.marketIds.usdc, core.marketIds.usdt);
-
-  //     const zapParams = await getSmartDebtZapParams(
-  //       core.marketIds.usdc,
-  //       MAX_UINT_256_BI,
-  //       core.marketIds.usdt,
-  //       usdcAmount,
-  //       trader,
-  //       { owner: core.hhUser2.address, number: defaultAccountNumber },
-  //       core,
-  //     );
-  //     await expectThrow(
-  //       genericTraderProxy.swapExactInputForOutput({
-  //         accountNumber: defaultAccountNumber,
-  //         marketIdsPath: zapParams.marketIdsPath,
-  //         inputAmountWei: zapParams.inputAmountWei,
-  //         minOutputAmountWei: zapParams.minOutputAmountWei,
-  //         tradersPath: zapParams.tradersPath,
-  //         makerAccounts: zapParams.makerAccounts,
-  //         userConfig: zapParams.userConfig,
-  //       }),
-  //       'SmartDebtAutoTrader: Collateral pair is not active'
-  //     );
-  //   });
-
-  //   it('should fail if debt pair is not active', async () => {
-  //     await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.dolomiteMargin);
-  //     await depositIntoDolomiteMargin(core, core.hhUser1, 0, core.marketIds.usdc, usdcAmount);
-  //     await trader.connect(core.governance).ownerAddSmartDebtPair(core.marketIds.usdc, core.marketIds.usdt);
-  //     await trader.connect(core.hhUser2).userSetPair(
-  //       defaultAccountNumber,
-  //       PairType.SMART_DEBT,
-  //       core.marketIds.usdc,
-  //       core.marketIds.usdt
-  //     );
-  //     await trader.connect(core.governance).ownerRemoveSmartDebtPair(core.marketIds.usdc, core.marketIds.usdt);
-
-  //     const zapParams = await getSmartDebtZapParams(
-  //       core.marketIds.usdc,
-  //       MAX_UINT_256_BI,
-  //       core.marketIds.usdt,
-  //       usdcAmount,
-  //       trader,
-  //       { owner: core.hhUser2.address, number: defaultAccountNumber },
-  //       core,
-  //     );
-  //     await expectThrow(
-  //       genericTraderProxy.swapExactInputForOutput({
-  //         accountNumber: defaultAccountNumber,
-  //         marketIdsPath: zapParams.marketIdsPath,
-  //         inputAmountWei: zapParams.inputAmountWei,
-  //         minOutputAmountWei: zapParams.minOutputAmountWei,
-  //         tradersPath: zapParams.tradersPath,
-  //         makerAccounts: zapParams.makerAccounts,
-  //         userConfig: zapParams.userConfig,
-  //       }),
-  //       'SmartDebtAutoTrader: Debt pair is not active'
-  //     );
-  //   });
-  // });
-
   describe('#userSetPair', () => {
     it('should work normally for smart debt', async () => {
-      await trader.connect(core.governance).ownerAddSmartDebtPair(core.marketIds.usdc, core.marketIds.usdt);
       await expectEmptyPair(trader, core.hhUser1.address, defaultAccountNumber);
 
       const res = await trader.connect(core.hhUser1).userSetPair(
@@ -1003,7 +872,6 @@ describe('SmartDebtAutoTrader', () => {
     });
 
     it('should work normally for smart collateral', async () => {
-      await trader.connect(core.governance).ownerAddSmartCollateralPair(core.marketIds.usdc, core.marketIds.usdt);
       await expectEmptyPair(trader, core.hhUser1.address, defaultAccountNumber);
 
       const res = await trader.connect(core.hhUser1).userSetPair(
@@ -1021,7 +889,6 @@ describe('SmartDebtAutoTrader', () => {
     });
 
     it('should work normally to reset to empty', async () => {
-      await trader.connect(core.governance).ownerAddSmartDebtPair(core.marketIds.usdc, core.marketIds.usdt);
       await trader.connect(core.hhUser1).userSetPair(
         defaultAccountNumber,
         PairType.SMART_DEBT,
@@ -1039,6 +906,8 @@ describe('SmartDebtAutoTrader', () => {
     });
 
     it('should fail if pair does not exist', async () => {
+      await trader.connect(core.governance).ownerRemoveSmartDebtPair(core.marketIds.usdc, core.marketIds.usdt);
+      await trader.connect(core.governance).ownerRemoveSmartCollateralPair(core.marketIds.usdc, core.marketIds.usdt);
       await expectThrow(
         trader.connect(core.hhUser1).userSetPair(
           defaultAccountNumber,
@@ -1074,6 +943,7 @@ describe('SmartDebtAutoTrader', () => {
 
   describe('#ownerAddSmartDebtPair', () => {
     it('should work normally if already sorted', async () => {
+      await trader.connect(core.governance).ownerRemoveSmartDebtPair(core.marketIds.usdc, core.marketIds.usdt);
       expect(await trader.isSmartDebtPair(core.marketIds.usdc, core.marketIds.usdt)).to.be.false;
       expect(await trader.isSmartDebtPair(core.marketIds.usdt, core.marketIds.usdc)).to.be.false;
 
@@ -1087,6 +957,7 @@ describe('SmartDebtAutoTrader', () => {
     });
 
     it('should work normally if not sorted', async () => {
+      await trader.connect(core.governance).ownerRemoveSmartDebtPair(core.marketIds.usdc, core.marketIds.usdt);
       expect(await trader.isSmartDebtPair(core.marketIds.usdc, core.marketIds.usdt)).to.be.false;
       expect(await trader.isSmartDebtPair(core.marketIds.usdt, core.marketIds.usdc)).to.be.false;
 
@@ -1107,7 +978,6 @@ describe('SmartDebtAutoTrader', () => {
     });
 
     it('should fail if already a pair', async () => {
-      await trader.connect(core.governance).ownerAddSmartDebtPair(core.marketIds.usdc, core.marketIds.usdt);
       await expectThrow(
         trader.connect(core.governance).ownerAddSmartDebtPair(core.marketIds.usdc, core.marketIds.usdt),
         'SmartDebtAutoTrader: Pair already exists'
@@ -1128,8 +998,6 @@ describe('SmartDebtAutoTrader', () => {
 
   describe('#ownerRemoveSmartDebtPair', () => {
     it('should work normally if already sorted', async () => {
-      await trader.connect(core.governance).ownerAddSmartDebtPair(core.marketIds.usdc, core.marketIds.usdt);
-
       const res = await trader.connect(core.governance).ownerRemoveSmartDebtPair(
         core.marketIds.usdc,
         core.marketIds.usdt
@@ -1143,8 +1011,6 @@ describe('SmartDebtAutoTrader', () => {
     });
 
     it('should work normally if not sorted', async () => {
-      await trader.connect(core.governance).ownerAddSmartDebtPair(core.marketIds.usdc, core.marketIds.usdt);
-
       const res = await trader.connect(core.governance).ownerRemoveSmartDebtPair(
         core.marketIds.usdt,
         core.marketIds.usdc
@@ -1158,6 +1024,7 @@ describe('SmartDebtAutoTrader', () => {
     });
 
     it('should fail if pair does not exist', async () => {
+      await trader.connect(core.governance).ownerRemoveSmartDebtPair(core.marketIds.usdc, core.marketIds.usdt);
       await expectThrow(
         trader.connect(core.governance).ownerRemoveSmartDebtPair(core.marketIds.usdc, core.marketIds.usdt),
         'SmartDebtAutoTrader: Pair does not exist'
@@ -1174,6 +1041,7 @@ describe('SmartDebtAutoTrader', () => {
 
   describe('#ownerAddSmartCollateralPair', () => {
     it('should work normally if already sorted', async () => {
+      await trader.connect(core.governance).ownerRemoveSmartCollateralPair(core.marketIds.usdc, core.marketIds.usdt);
       expect(await trader.isSmartCollateralPair(core.marketIds.usdc, core.marketIds.usdt)).to.be.false;
       expect(await trader.isSmartCollateralPair(core.marketIds.usdt, core.marketIds.usdc)).to.be.false;
 
@@ -1190,6 +1058,7 @@ describe('SmartDebtAutoTrader', () => {
     });
 
     it('should work normally if not sorted', async () => {
+      await trader.connect(core.governance).ownerRemoveSmartCollateralPair(core.marketIds.usdc, core.marketIds.usdt);
       expect(await trader.isSmartCollateralPair(core.marketIds.usdc, core.marketIds.usdt)).to.be.false;
       expect(await trader.isSmartCollateralPair(core.marketIds.usdt, core.marketIds.usdc)).to.be.false;
 
@@ -1213,7 +1082,6 @@ describe('SmartDebtAutoTrader', () => {
     });
 
     it('should fail if pair already exists', async () => {
-      await trader.connect(core.governance).ownerAddSmartCollateralPair(core.marketIds.usdc, core.marketIds.usdt);
       await expectThrow(
         trader.connect(core.governance).ownerAddSmartCollateralPair(core.marketIds.usdc, core.marketIds.usdt),
         'SmartDebtAutoTrader: Pair already exists'
@@ -1234,8 +1102,6 @@ describe('SmartDebtAutoTrader', () => {
 
   describe('#ownerRemoveSmartCollateralPair', () => {
     it('should work normally if already sorted', async () => {
-      await trader.connect(core.governance).ownerAddSmartCollateralPair(core.marketIds.usdc, core.marketIds.usdt);
-
       const res = await trader.connect(core.governance).ownerRemoveSmartCollateralPair(
         core.marketIds.usdc,
         core.marketIds.usdt
@@ -1249,8 +1115,6 @@ describe('SmartDebtAutoTrader', () => {
     });
 
     it('should work normally if not sorted', async () => {
-      await trader.connect(core.governance).ownerAddSmartCollateralPair(core.marketIds.usdc, core.marketIds.usdt);
-
       const res = await trader.connect(core.governance).ownerRemoveSmartCollateralPair(
         core.marketIds.usdt,
         core.marketIds.usdc
@@ -1264,6 +1128,7 @@ describe('SmartDebtAutoTrader', () => {
     });
 
     it('should fail if pair does not exist', async () => {
+      await trader.connect(core.governance).ownerRemoveSmartCollateralPair(core.marketIds.usdc, core.marketIds.usdt);
       await expectThrow(
         trader.connect(core.governance).ownerRemoveSmartCollateralPair(core.marketIds.usdc, core.marketIds.usdt),
         'SmartDebtAutoTrader: Pair does not exist'
@@ -1340,30 +1205,30 @@ describe('SmartDebtAutoTrader', () => {
   describe('#testGetFeesByMarketIds', () => {
     it('should work normally', async () => {
       const res = await trader.testGetFeesByMarketIds(core.marketIds.usdc, core.marketIds.usdt);
-      expect(res[0]).to.equal(parseEther('.5'));
-      expect(res[1]).to.equal(parseEther('.1'));
+      expect(res[0].value).to.equal(parseEther('.5'));
+      expect(res[1].value).to.equal(parseEther('.1'));
     });
 
     it('should work normally if pair has override fee', async () => {
       await trader.connect(core.governance).ownerSetPairFee(core.marketIds.usdc, core.marketIds.usdt, parseEther('.9'));
       const res = await trader.testGetFeesByMarketIds(core.marketIds.usdc, core.marketIds.usdt);
-      expect(res[0]).to.equal(parseEther('.5'));
-      expect(res[1]).to.equal(parseEther('.9'));
+      expect(res[0].value).to.equal(parseEther('.5'));
+      expect(res[1].value).to.equal(parseEther('.9'));
     });
   });
 
   describe('#testGetFeesByPairBytes', () => {
     it('should work normally', async () => {
       const res = await trader.testGetFeesByPairBytes(USDC_USDT_PAIR_BYTES);
-      expect(res[0]).to.equal(parseEther('.5'));
-      expect(res[1]).to.equal(parseEther('.1'));
+      expect(res[0].value).to.equal(parseEther('.5'));
+      expect(res[1].value).to.equal(parseEther('.1'));
     });
 
     it('should work normally if pair has override fee', async () => {
       await trader.connect(core.governance).ownerSetPairFee(core.marketIds.usdc, core.marketIds.usdt, parseEther('.9'));
       const res = await trader.testGetFeesByPairBytes(USDC_USDT_PAIR_BYTES);
-      expect(res[0]).to.equal(parseEther('.5'));
-      expect(res[1]).to.equal(parseEther('.9'));
+      expect(res[0].value).to.equal(parseEther('.5'));
+      expect(res[1].value).to.equal(parseEther('.9'));
     });
   });
 });

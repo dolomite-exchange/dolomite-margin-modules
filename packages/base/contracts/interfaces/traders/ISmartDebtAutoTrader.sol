@@ -20,8 +20,8 @@
 pragma solidity ^0.8.9;
 
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 import { IInternalAutoTraderBase } from "./IInternalAutoTraderBase.sol";
+
 
 /**
  * @title   ISmartDebtAutoTrader
@@ -30,10 +30,6 @@ import { IInternalAutoTraderBase } from "./IInternalAutoTraderBase.sol";
  * Interface for performing internal trades using smart debt
  */
 interface ISmartDebtAutoTrader is IInternalAutoTraderBase {
-
-    // ========================================================
-    // ================== Structs Functions ==================
-    // ========================================================
 
     enum PairType {
         NONE,
