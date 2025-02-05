@@ -18,6 +18,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   });
 
   await deployContractAndSave('TestPriceOracle', []);
+  await deployContractAndSave('TestPriceOracleForAdmin', [core.dolomiteMargin.address]);
 
   const transactions: EncodedTransaction[] = [];
 

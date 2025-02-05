@@ -1639,7 +1639,7 @@ export async function prettyPrintEncodeInsertRedstoneOracleV3<T extends NetworkT
     .tokenPairAddress,
   aggregatorAddress: string = REDSTONE_PRICE_AGGREGATORS_MAP[core.config.network][token.address]!.aggregatorAddress,
 ): Promise<EncodedTransaction[]> {
-  const invalidTokenSettings = INVALID_TOKEN_MAP[Network.Mantle][token.address];
+  const invalidTokenSettings = INVALID_TOKEN_MAP[core.network][token.address];
 
   let tokenDecimals: number;
   if (invalidTokenSettings) {

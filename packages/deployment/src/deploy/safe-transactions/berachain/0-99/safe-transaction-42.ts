@@ -1,18 +1,15 @@
-import { parseEther } from 'ethers/lib/utils';
 import { getAndCheckSpecificNetwork } from 'packages/base/src/utils/dolomite-utils';
-import { Network } from 'packages/base/src/utils/no-deps-constants';
+import { Network, ONE_BI } from 'packages/base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from 'packages/base/test/utils';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
 import { EncodedTransaction } from '../../../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
 import getScriptName from '../../../../utils/get-script-name';
-import { checkMarket, encodeSimpleBoycoListing } from '../utils';
-
-const STABLE_COIN_PRICE_18D = parseEther(`${1}`);
+import { checkSupplyCap, encodeSetSupplyCap } from '../utils';
 
 /**
  * This script encodes the following transactions:
- * - Lists third batch of Boyco markets
+ * - Lowers the supply cap of BERA, USD0, and USD0++ to 1 unit
  */
 async function main(): Promise<DryRunOutput<Network.Berachain>> {
   const network = await getAndCheckSpecificNetwork(Network.Berachain);
@@ -22,11 +19,9 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
   });
 
   const transactions: EncodedTransaction[] = [];
-
-  transactions.push(
-    ...(await encodeSimpleBoycoListing(core, core.tokens.usd0, STABLE_COIN_PRICE_18D)),
-    ...(await encodeSimpleBoycoListing(core, core.tokens.usd0pp, STABLE_COIN_PRICE_18D)),
-  );
+  transactions.push(await encodeSetSupplyCap(core, core.marketIds.wbera, ONE_BI));
+  transactions.push(await encodeSetSupplyCap(core, core.marketIds.usd0, ONE_BI));
+  transactions.push(await encodeSetSupplyCap(core, core.marketIds.usd0pp, ONE_BI));
   return {
     core,
     upload: {
@@ -41,8 +36,9 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     },
     scriptName: getScriptName(__filename),
     invariants: async () => {
-      await checkMarket(core, core.marketIds.usd0, core.tokens.usd0);
-      await checkMarket(core, core.marketIds.usd0pp, core.tokens.usd0pp);
+      await checkSupplyCap(core, core.marketIds.wbera, ONE_BI);
+      await checkSupplyCap(core, core.marketIds.usd0, ONE_BI);
+      await checkSupplyCap(core, core.marketIds.usd0pp, ONE_BI);
     },
   };
 }

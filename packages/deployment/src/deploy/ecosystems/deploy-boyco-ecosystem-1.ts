@@ -56,7 +56,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
       '0x42a09eccabf1080c40a24522e9e8adbee5a0ad907188c9b6e50ba26ba332eac3',
       UNLOCK_TIMESTAMP_3M,
       dTokens.sbtc,
-      tokens.sbtc,
+      tokens.stonebtc,
     ],
     [
       '0xd10bdc88272e0958baa62a4ae2bfce1d8feed639a93e03c0aa5cec7adfbdf2c3',

@@ -70,6 +70,45 @@ export async function encodeSetGlobalOperator<T extends NetworkType>(
   );
 }
 
+export async function encodeSetSupplyCap<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  marketId: BigNumberish,
+  amount: BigNumberish,
+): Promise<EncodedTransaction> {
+  if ('ownerSetMaxWei' in core.dolomiteMargin) {
+    return prettyPrintEncodedDataWithTypeSafety(core, { dolomite: core.dolomiteMargin }, 'dolomite', 'ownerSetMaxWei', [
+      marketId,
+      amount,
+    ]);
+  }
+
+  return prettyPrintEncodedDataWithTypeSafety(
+    core,
+    { dolomite: core.dolomiteMargin },
+    'dolomite',
+    'ownerSetMaxSupplyWei',
+    [marketId, amount],
+  );
+}
+
+export async function encodeSetBorrowCap<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  marketId: BigNumberish,
+  amount: BigNumberish,
+): Promise<EncodedTransaction> {
+  if ('ownerSetMaxWei' in core.dolomiteMargin) {
+    return Promise.reject(new Error('Invalid Dolomite version!'));
+  }
+
+  return prettyPrintEncodedDataWithTypeSafety(
+    core,
+    { dolomite: core.dolomiteMargin },
+    'dolomite',
+    'ownerSetMaxBorrowWei',
+    [marketId, amount],
+  );
+}
+
 export async function encodeSimpleBoycoListing(
   core: CoreProtocolBerachain,
   token: IERC20,
@@ -118,5 +157,45 @@ export async function checkIsGlobalOperator<T extends NetworkType>(
   assertHardhatInvariant(
     await core.dolomiteMargin.getIsGlobalOperator(value),
     `Expected ${value} to be global operator`,
+  );
+}
+
+export async function checkSupplyCap<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  marketId: BigNumberish,
+  expectedAmount: BigNumberish,
+) {
+  const errorMessage = `Expected market [${marketId}] to have a supply cap of ${expectedAmount.toString()}`;
+  if ('ownerSetMaxWei' in core.dolomiteMargin) {
+    assertHardhatInvariant(
+      (await core.dolomiteMargin.getMarketMaxWei(marketId)).value.eq(expectedAmount),
+      errorMessage,
+    );
+    return;
+  }
+
+  assertHardhatInvariant(
+    (await core.dolomiteMargin.getMarketMaxSupplyWei(marketId)).value.eq(expectedAmount),
+    errorMessage,
+  );
+}
+
+export async function checkBorrowCap<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  marketId: BigNumberish,
+  expectedAmount: BigNumberish,
+) {
+  const errorMessage = `Expected market [${marketId}] to have a borrow cap of ${expectedAmount.toString()}`;
+  if ('ownerSetMaxWei' in core.dolomiteMargin) {
+    assertHardhatInvariant(
+      (await core.dolomiteMargin.getMarketMaxWei(marketId)).value.eq(expectedAmount),
+      errorMessage,
+    );
+    return;
+  }
+
+  assertHardhatInvariant(
+    (await core.dolomiteMargin.getMarketMaxBorrowWei(marketId)).value.eq(expectedAmount),
+    errorMessage,
   );
 }

@@ -12,6 +12,7 @@ import {
 
 export interface CoreProtocolTokensBerachain extends CoreProtocolTokens<Network.Berachain> {
   beraEth: IERC20;
+  btcPlaceholder: IERC20;
   eBtc: IERC20;
   honey: IERC20;
   lbtc: IERC20;
@@ -20,7 +21,7 @@ export interface CoreProtocolTokensBerachain extends CoreProtocolTokens<Network.
   rsEth: IERC20;
   rswEth: IERC20;
   rUsd: IERC20;
-  sbtc: IERC20;
+  stonebtc: IERC20;
   sUsda: IERC20;
   sUsde: IERC20;
   stBtc: IERC20;

@@ -6370,6 +6370,13 @@
       "isVerified": false
     }
   },
+  "TestPriceOracleForAdmin": {
+    "80094": {
+      "address": "0x105Fb08Dc6946bDb8D1b4Bd8567E3b8055294959",
+      "transaction": "0xd0a1dd6b44bbab93d29a4a1b5cccdc11866eef0b01e0949164e3f4ddcf3e9025",
+      "isVerified": true
+    }
+  },
   "USDMRouter": {
     "42161": {
       "address": "0xa9B377B97395C4031750cE8E9397c00c577F6C6D",

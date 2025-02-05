@@ -37,7 +37,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     ...(await encodeSimpleBoycoListing(core, core.tokens.lbtc, BTC_PRICE_8D)),
     ...(await encodeSimpleBoycoListing(core, core.tokens.rswEth, ETH_PRICE)),
     ...(await encodeSimpleBoycoListing(core, core.tokens.rUsd, STABLE_COIN_PRICE_18D)),
-    ...(await encodeSimpleBoycoListing(core, core.tokens.sbtc, BTC_PRICE_18D)),
+    ...(await encodeSimpleBoycoListing(core, core.tokens.stonebtc, BTC_PRICE_18D)),
     ...(await encodeSimpleBoycoListing(core, core.tokens.sUsde, STABLE_COIN_PRICE_18D)),
     ...(await encodeSimpleBoycoListing(core, core.tokens.stBtc, BTC_PRICE_18D)),
     ...(await encodeSimpleBoycoListing(core, core.tokens.stone, ETH_PRICE)),
@@ -70,7 +70,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
       await checkMarket(core, core.marketIds.lbtc, core.tokens.lbtc);
       await checkMarket(core, core.marketIds.rswEth, core.tokens.rswEth);
       await checkMarket(core, core.marketIds.rUsd, core.tokens.rUsd);
-      await checkMarket(core, core.marketIds.sbtc, core.tokens.sbtc);
+      await checkMarket(core, core.marketIds.sbtc, core.tokens.stonebtc);
       await checkMarket(core, core.marketIds.sUsde, core.tokens.sUsde);
       await checkMarket(core, core.marketIds.stBtc, core.tokens.stBtc);
       await checkMarket(core, core.marketIds.stone, core.tokens.stone);

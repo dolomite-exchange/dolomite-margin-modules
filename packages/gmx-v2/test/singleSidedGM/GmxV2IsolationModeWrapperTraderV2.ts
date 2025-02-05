@@ -55,7 +55,7 @@ import {
   getOracleProviderEnabledKey,
   getOracleProviderForTokenKey,
 } from '../gmx-v2-ecosystem-utils';
-import { BTC_CHAINLINK_FEED_MAP, GMX_BTC_PLACEHOLDER_MAP } from 'packages/base/src/utils/constants';
+import { BTC_CHAINLINK_FEED_MAP, BTC_PLACEHOLDER_MAP } from 'packages/base/src/utils/constants';
 import { TokenInfo } from 'packages/oracles/src';
 
 enum ReversionType {
@@ -78,7 +78,7 @@ const EXECUTE_DEPOSIT_FEATURE_DISABLED_KEY = '0x9eb5d247641893b91a62e7fe288ad4ea
 const minAmountOut = parseEther('1600');
 const NEW_GENERIC_TRADER_PROXY = '0x905F3adD52F01A9069218c8D1c11E240afF61D2B';
 const wbtcAmount = BigNumber.from('10000000'); // .1 WBTC
-const WBTC_PLACEHOLDER = GMX_BTC_PLACEHOLDER_MAP[Network.ArbitrumOne];
+const WBTC_PLACEHOLDER = BTC_PLACEHOLDER_MAP[Network.ArbitrumOne];
 
 const executionFee = process.env.COVERAGE !== 'true'
   ? GMX_V2_EXECUTION_FEE_FOR_TESTS
@@ -116,7 +116,7 @@ describe('GmxV2IsolationModeWrapperTraderV2_singleSided', () => {
     );
 
     await core.chainlinkPriceOracleV3.ownerInsertOrUpdateOracleToken(
-      GMX_BTC_PLACEHOLDER_MAP[Network.ArbitrumOne].address,
+      BTC_PLACEHOLDER_MAP[Network.ArbitrumOne].address,
       BTC_CHAINLINK_FEED_MAP[Network.ArbitrumOne],
       false
     );
@@ -126,7 +126,7 @@ describe('GmxV2IsolationModeWrapperTraderV2_singleSided', () => {
         { oracle: core.chainlinkPriceOracleV3.address, tokenPair: ZERO_ADDRESS, weight: 100 }
       ],
       decimals: 8,
-      token: GMX_BTC_PLACEHOLDER_MAP[Network.ArbitrumOne].address
+      token: BTC_PLACEHOLDER_MAP[Network.ArbitrumOne].address
     };
     await core.oracleAggregatorV2.ownerInsertOrUpdateToken(tokenInfo);
 
