@@ -26,6 +26,7 @@ import {
   IDolomiteRegistry,
   IERC20Metadata__factory,
   IRedstonePriceOracleV2__factory,
+  IVerifierProxy,
   OracleAggregatorV2,
   RedstonePriceOracleV3,
 } from './types';
@@ -197,6 +198,22 @@ export async function getChainlinkPriceOracleV1ConstructorParamsFromOldPriceOrac
     }
   }
   return [tokens, aggregators, tokenDecimals, tokenPairs, core.dolomiteMargin.address];
+}
+
+export function getChainlinkDataStreamsPriceOracleConstructorParams(
+  core: CoreProtocolArbitrumOne,
+  verifierProxy: IVerifierProxy,
+  tokens: IERC20[],
+  feeds: string[],
+): any {
+  return [
+    core.tokens.link.address,
+    verifierProxy.address,
+    tokens.map((t) => t.address),
+    feeds,
+    core.dolomiteRegistry.address,
+    core.dolomiteMargin.address,
+  ];
 }
 
 export async function getOracleAggregatorV2ConstructorParams(
