@@ -112,6 +112,8 @@ interface CoreProtocolMarketIdsArbitrumOne extends CoreProtocolMarketIds {
   arb: BigNumberish;
   dArb: BigNumberish;
   dfsGlp: BigNumberish;
+  dGlvBtc: BigNumberish;
+  dGlvEth: BigNumberish;
   dGmx: BigNumberish;
   dGmAaveUsd: BigNumberish;
   dGmArbUsd: BigNumberish;

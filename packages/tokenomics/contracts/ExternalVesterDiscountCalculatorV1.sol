@@ -38,8 +38,8 @@ contract ExternalVesterDiscountCalculatorV1 is IVesterDiscountCalculator {
     uint256 public constant BASE = 1 ether;
     uint256 public constant TWO_YEARS = 104 weeks;
 
-    uint256 public constant FIFTY_PERCENT = .5 ether;
-    uint256 public constant FIVE_PERCENT = .05 ether;
+    uint256 public constant FIFTY_PERCENT = 0.5 ether;
+    uint256 public constant FIVE_PERCENT = 0.05 ether;
 
     IVeToken public immutable veToken;
 

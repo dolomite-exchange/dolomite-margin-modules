@@ -25,11 +25,11 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
   const transactions: EncodedTransaction[] = [];
 
   transactions.push(
-    ...(await prettyPrintEncodeInsertChronicleOracleV3(core, core.tokens.sbtc)),
+    ...(await prettyPrintEncodeInsertChronicleOracleV3(core, core.tokens.stonebtc)),
     ...(await prettyPrintEncodeInsertChronicleOracleV3(core, core.tokens.stoneBtc)),
     ...(await prettyPrintEncodeAddMarket(
       core,
-      core.tokens.sbtc,
+      core.tokens.stonebtc,
       core.oracleAggregatorV2,
       core.interestSetters.linearStepFunction8L92U90OInterestSetter,
       TargetCollateralization.Base,

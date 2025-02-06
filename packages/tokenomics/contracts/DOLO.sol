@@ -45,7 +45,7 @@ contract DOLO is ERC20Burnable, OnlyDolomiteMargin {
 
     constructor(
         address _dolomiteMargin
-    ) ERC20("DOLO", "DOLO") OnlyDolomiteMargin(_dolomiteMargin) {} // solhint-disable-line no-empty-blocks
+    ) ERC20("Dolomite", "DOLO") OnlyDolomiteMargin(_dolomiteMargin) {} // solhint-disable-line no-empty-blocks
 
     // ==================================================================
     // ======================= External Functions =======================

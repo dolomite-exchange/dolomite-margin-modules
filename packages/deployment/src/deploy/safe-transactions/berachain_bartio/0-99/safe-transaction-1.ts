@@ -5,7 +5,7 @@ import { TargetCollateralization, TargetLiquidationPenalty } from 'packages/base
 import { getAndCheckSpecificNetwork } from 'packages/base/src/utils/dolomite-utils';
 import { ADDRESS_ZERO, Network, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from 'packages/base/test/utils';
-import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
+import { CoreProtocolBerachainBartio } from '../../../../../../base/test/utils/core-protocols/core-protocol-berachain-bartio';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
 import {
   EncodedTransaction,
@@ -19,7 +19,7 @@ import ModuleDeployments from '../../../deployments.json';
 async function encodeTestOracle(
   token: IERC20,
   price: BigNumberish,
-  core: CoreProtocolBerachain,
+  core: CoreProtocolBerachainBartio,
 ): Promise<EncodedTransaction[]> {
   const testPriceOracle = TestPriceOracle__factory.connect(
     ModuleDeployments.TestPriceOracle['80084'].address,

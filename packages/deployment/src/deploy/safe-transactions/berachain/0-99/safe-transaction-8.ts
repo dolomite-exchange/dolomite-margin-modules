@@ -1,33 +1,31 @@
-import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
+import { parseEther } from 'ethers/lib/utils';
 import { getAndCheckSpecificNetwork } from 'packages/base/src/utils/dolomite-utils';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from 'packages/base/test/utils';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
-import {
-  deployDolomiteErc4626Token,
-  EncodedTransaction,
-  prettyPrintSetGlobalOperator,
-} from '../../../../utils/deploy-utils';
+import { EncodedTransaction } from '../../../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
 import getScriptName from '../../../../utils/get-script-name';
+import { checkMarket, encodeSimpleBoycoListing } from '../utils';
+
+const STABLE_COIN_PRICE_18D = parseEther(`${1}`);
 
 /**
  * This script encodes the following transactions:
- * - Creates dTokens for each listed market
- * - Sets each dToken as a global operator
+ * - Lists third batch of Boyco markets
  */
-async function main(): Promise<DryRunOutput<Network.BerachainCartio>> {
-  const network = await getAndCheckSpecificNetwork(Network.BerachainCartio);
+async function main(): Promise<DryRunOutput<Network.Berachain>> {
+  const network = await getAndCheckSpecificNetwork(Network.Berachain);
   const core = await setupCoreProtocol({
     network,
     blockNumber: await getRealLatestBlockNumber(true, network),
   });
 
-  const stone = await deployDolomiteErc4626Token(core, 'StoneV3', core.marketIds.stone);
-
   const transactions: EncodedTransaction[] = [];
+
   transactions.push(
-    await prettyPrintSetGlobalOperator(core, stone, true),
+    ...(await encodeSimpleBoycoListing(core, core.tokens.usd0, STABLE_COIN_PRICE_18D)),
+    ...(await encodeSimpleBoycoListing(core, core.tokens.usd0pp, STABLE_COIN_PRICE_18D)),
   );
   return {
     core,
@@ -43,14 +41,8 @@ async function main(): Promise<DryRunOutput<Network.BerachainCartio>> {
     },
     scriptName: getScriptName(__filename),
     invariants: async () => {
-      assertHardhatInvariant(
-        await core.dolomiteMargin.getIsGlobalOperator(stone.address),
-        'stone is not a global operator',
-      );
-      assertHardhatInvariant(
-        await stone.asset() === core.tokens.stone.address,
-        'Invalid market ID',
-      );
+      await checkMarket(core, core.marketIds.usd0, core.tokens.usd0);
+      await checkMarket(core, core.marketIds.usd0pp, core.tokens.usd0pp);
     },
   };
 }

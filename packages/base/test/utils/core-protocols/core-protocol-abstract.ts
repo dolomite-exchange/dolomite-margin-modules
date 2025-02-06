@@ -1,5 +1,6 @@
 import { ApiToken, DolomiteZap } from '@dolomite-exchange/zap-sdk';
 import { BigNumberish } from 'ethers';
+import { IsolationModeVaultType } from 'packages/deployment/src/deploy/isolation-mode/isolation-mode-helpers';
 import { IChainlinkPriceOracleV1, IChainlinkPriceOracleV3, OracleAggregatorV2 } from 'packages/oracles/src/types';
 import {
   DolomiteERC4626,
@@ -25,11 +26,10 @@ import { CHAINLINK_PRICE_AGGREGATORS_MAP, SUBGRAPH_URL_MAP } from '../../../src/
 import { Network, NetworkType } from '../../../src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';
 import { DolomiteMargin, Expiry } from '../dolomite';
+import { DeployedVault } from '../ecosystem-utils/deployed-vaults';
 import { InterestSetters } from '../ecosystem-utils/interest-setters';
 import { TestEcosystem } from '../ecosystem-utils/testers';
 import { CoreProtocolConfig } from '../setup';
-import { DeployedVault } from '../ecosystem-utils/deployed-vaults';
-import { IsolationModeVaultType } from 'packages/deployment/src/deploy/isolation-mode/isolation-mode-helpers';
 
 export interface LibraryMaps {
   tokenVaultActionsImpl: Record<string, string>;
@@ -48,14 +48,42 @@ export type WETHType<T extends NetworkType> = T extends Network.ArbitrumOne
   ? IWETH
   : T extends Network.Berachain
   ? IERC20
+  : T extends Network.BerachainBartio
+  ? IERC20
   : T extends Network.BerachainCartio
   ? IERC20
+  : T extends Network.Ink
+  ? IWETH
   : T extends Network.Mantle
   ? IERC20
   : T extends Network.PolygonZkEvm
   ? IWETH
+  : T extends Network.SuperSeed
+  ? IWETH
   : T extends Network.XLayer
   ? IERC20
+  : never;
+
+export type DolomiteWETHType<T extends NetworkType> = T extends Network.ArbitrumOne
+  ? DolomiteERC4626WithPayable
+  : T extends Network.Base
+  ? DolomiteERC4626WithPayable
+  : T extends Network.Berachain
+  ? DolomiteERC4626
+  : T extends Network.BerachainBartio
+  ? DolomiteERC4626
+  : T extends Network.BerachainCartio
+  ? DolomiteERC4626
+  : T extends Network.Ink
+  ? DolomiteERC4626WithPayable
+  : T extends Network.Mantle
+  ? DolomiteERC4626
+  : T extends Network.PolygonZkEvm
+  ? DolomiteERC4626WithPayable
+  : T extends Network.SuperSeed
+  ? DolomiteERC4626WithPayable
+  : T extends Network.XLayer
+  ? DolomiteERC4626
   : never;
 
 export interface CoreProtocolTokens<T extends NetworkType> {
@@ -63,6 +91,11 @@ export interface CoreProtocolTokens<T extends NetworkType> {
   usdc: IERC20;
   weth: WETHType<T>;
   stablecoins: IERC20[];
+}
+
+export interface CoreProtocolDolomiteTokens<T extends NetworkType> {
+  usdc: DolomiteERC4626 | undefined;
+  weth: DolomiteWETHType<T> | undefined;
 }
 
 export interface CoreProtocolMarketIds {
@@ -96,6 +129,7 @@ export interface CoreProtocolParams<T extends NetworkType> {
   dolomiteAccountRegistryProxy: RegistryProxy;
   eventEmitterRegistry: IEventEmitterRegistry;
   eventEmitterRegistryProxy: RegistryProxy;
+  dolomiteTokens: CoreProtocolDolomiteTokens<T>;
   expiry: Expiry<T>;
   freezableLiquidatorProxy: IsolationModeFreezableLiquidatorProxy;
   genericTraderProxy: IGenericTraderProxyV1;
@@ -236,7 +270,7 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
   public abstract get network(): T;
 
   public getDeployedVaultsByType(vaultType: IsolationModeVaultType): DeployedVault[] {
-    return this.deployedVaults.filter(v => v.vaultType === vaultType);
+    return this.deployedVaults.filter((v) => v.vaultType === vaultType);
   }
 
   public getDeployedVaultsMapByType(vaultType: IsolationModeVaultType): Record<number, DeployedVault> {

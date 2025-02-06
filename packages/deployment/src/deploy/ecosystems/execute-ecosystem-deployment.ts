@@ -1,4 +1,4 @@
-import { NetworkName } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { Network, NetworkName } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { execSync } from 'child_process';
 import path from 'path';
 import * as process from 'process';

@@ -23,6 +23,7 @@ import {
 } from '@dolomite-exchange/modules-base/src/utils/constants';
 import {
   getDolomiteErc4626ProxyConstructorParams,
+  getDolomiteErc4626WithPayableProxyConstructorParams,
   getLiquidationPremiumForTargetLiquidationPenalty,
   getMarginPremiumForTargetCollateralization,
   getOwnerAddMarketParameters,
@@ -432,7 +433,10 @@ export async function deployContractAndSave(
 
   let contract: { address: string; transactionHash: string };
   try {
-    const signer = options.signer ?? ethers.provider.getSigner(0);
+    const deployer = process.env.DEPLOYER_PRIVATE_KEY
+      ? new ethers.Wallet(process.env.DEPLOYER_PRIVATE_KEY, ethers.provider)
+      : undefined;
+    const signer = options.signer ?? deployer ?? ethers.provider.getSigner(0);
     if (nonce === undefined) {
       nonce = await ethers.provider.getTransactionCount(await signer.getAddress(), 'pending');
     }
@@ -450,7 +454,7 @@ export async function deployContractAndSave(
         transactionHash: result.deployTransaction.hash,
       };
     } else {
-      const factory = await ethers.getContractFactory(contractName, { libraries, signer: options.signer });
+      const factory = await ethers.getContractFactory(contractName, { libraries, signer });
       const transaction = factory.getDeployTransaction(...args);
       const deployer = CREATE3Factory__factory.connect(
         (ModuleDeployments.CREATE3Factory as any)[chainId].address,
@@ -503,7 +507,7 @@ export async function deployContractAndSave(
   }
 
   await prettyPrintAndVerifyContract(file, chainId, contractName, usedContractName, args, libraries ?? {});
-  console.log('');
+  console.log();
 
   await verifyFactoryChildProxyContractIfNecessary(
     file,
@@ -875,13 +879,31 @@ export async function deployDolomiteErc4626Token(
   core: CoreProtocolType<any>,
   tokenName: string,
   marketId: BigNumberish,
+  options: { skipDeploymentAddressCheck: boolean } = { skipDeploymentAddressCheck: false },
 ): Promise<DolomiteERC4626> {
+  const contractRename = `Dolomite${tokenName}4626Token`;
   const address = await deployContractAndSave(
     'RegistryProxy',
     await getDolomiteErc4626ProxyConstructorParams(core, marketId),
-    `Dolomite${tokenName}4626Token`,
+    contractRename,
   );
-  return DolomiteERC4626__factory.connect(address, core.hhUser1);
+  const previousDeployments = (ModuleDeployments as any)[contractRename];
+  if (previousDeployments && Object.values(previousDeployments).length > 0) {
+    const firstDeployment = (Object.values(previousDeployments) as any[])[0].address;
+    if (firstDeployment !== address && !options.skipDeploymentAddressCheck) {
+      return Promise.reject(
+        new Error(
+          `Addresses does not match expected name for ${tokenName}. Expected: ${firstDeployment} Actual: ${address}`,
+        ),
+      );
+    }
+  }
+
+  const vaultToken = DolomiteERC4626__factory.connect(address, core.hhUser1);
+  const symbol = await vaultToken.symbol();
+  console.log(`\tCheck the supplied symbol vs the real symbol of the market: ${tokenName} // ${symbol}`);
+
+  return vaultToken;
 }
 
 export async function deployDolomiteErc4626WithPayableToken(
@@ -891,7 +913,7 @@ export async function deployDolomiteErc4626WithPayableToken(
 ): Promise<DolomiteERC4626WithPayable> {
   const address = await deployContractAndSave(
     'RegistryProxy',
-    await getDolomiteErc4626ProxyConstructorParams(core, marketId),
+    await getDolomiteErc4626WithPayableProxyConstructorParams(core, marketId),
     `Dolomite${tokenName}4626Token`,
   );
   return DolomiteERC4626WithPayable__factory.connect(address, core.hhUser1);
@@ -938,8 +960,11 @@ async function prettyPrintAndVerifyContract(
   console.log(`\t${'='.repeat(52 + contractRename.length)}`);
 
   if (!(process.env.SKIP_VERIFICATION === 'true')) {
-    console.log('\tSleeping for 5s to wait for the transaction to be indexed by the block explorer...');
-    await sleep(5000);
+    const sleepTimeSeconds = 5;
+    console.log(
+      `\tSleeping for ${sleepTimeSeconds}s to wait for the transaction to be indexed by the block explorer...`,
+    );
+    await sleep(sleepTimeSeconds * 1_000);
     const artifact = await artifacts.readArtifact(contractName);
     await verifyContract(contract.address, [...args], `${artifact.sourceName}:${contractName}`, libraries);
     file[contractRename][chainId].isVerified = true;
@@ -1624,7 +1649,7 @@ export async function prettyPrintEncodeInsertRedstoneOracleV3<T extends NetworkT
     .tokenPairAddress,
   aggregatorAddress: string = REDSTONE_PRICE_AGGREGATORS_MAP[core.config.network][token.address]!.aggregatorAddress,
 ): Promise<EncodedTransaction[]> {
-  const invalidTokenSettings = INVALID_TOKEN_MAP[Network.Mantle][token.address];
+  const invalidTokenSettings = INVALID_TOKEN_MAP[core.network][token.address];
 
   let tokenDecimals: number;
   if (invalidTokenSettings) {
