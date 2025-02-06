@@ -47,7 +47,7 @@ describe('BerachainRewardsIsolationModeVaultFactory', () => {
 
   before(async () => {
     core = await setupCoreProtocol({
-      blockNumber: 4_853_900,
+      blockNumber: 785_000,
       network: Network.Berachain,
     });
 
@@ -61,9 +61,6 @@ describe('BerachainRewardsIsolationModeVaultFactory', () => {
       [],
     );
     registry = await createBerachainRewardsRegistry(core, metaVaultImplementation);
-    await registry
-      .connect(core.governance)
-      .ownerSetRewardVault(underlyingToken.address, RewardVaultType.Native, nativeRewardVault.address);
 
     vaultImplementation = await createBerachainRewardsIsolationModeTokenVaultV1();
     beraFactory = await createBerachainRewardsIsolationModeVaultFactory(

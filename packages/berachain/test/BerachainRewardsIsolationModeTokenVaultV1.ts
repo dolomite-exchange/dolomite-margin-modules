@@ -51,7 +51,7 @@ import {
   setupUserMetaVault,
 } from './berachain-ecosystem-utils';
 
-const LP_TOKEN_WHALE_ADDRESS = '0x1293DA55eC372a94368Fa20E8DF69FaBc3320baE';
+const LP_TOKEN_WHALE_ADDRESS = '0x4Be03f781C497A489E3cB0287833452cA9B9E80B';
 const defaultAccountNumber = ZERO_BI;
 const amountWei = parseEther('.1');
 
@@ -78,7 +78,7 @@ describe('BerachainRewardsIsolationModeTokenVaultV1', () => {
 
   before(async () => {
     core = await setupCoreProtocol({
-      blockNumber: 4_853_900,
+      blockNumber: 785_000,
       network: Network.Berachain,
     });
 
@@ -92,12 +92,6 @@ describe('BerachainRewardsIsolationModeTokenVaultV1', () => {
       [],
     );
     registry = await createBerachainRewardsRegistry(core, metaVaultImplementation);
-    await registry
-      .connect(core.governance)
-      .ownerSetRewardVault(underlyingToken.address, RewardVaultType.Native, nativeRewardVault.address);
-    await registry
-      .connect(core.governance)
-      .ownerSetRewardVault(underlyingToken.address, RewardVaultType.Infrared, infraredRewardVault.address);
 
     const vaultImplementation = await createBerachainRewardsIsolationModeTokenVaultV1();
     beraFactory = await createBerachainRewardsIsolationModeVaultFactory(
@@ -148,7 +142,7 @@ describe('BerachainRewardsIsolationModeTokenVaultV1', () => {
       core.hhUser1,
     );
 
-    const lpWhale = await impersonate(LP_TOKEN_WHALE_ADDRESS);
+    const lpWhale = await impersonate(LP_TOKEN_WHALE_ADDRESS, true);
     await underlyingToken.connect(lpWhale).transfer(core.hhUser1.address, amountWei);
     await underlyingToken.connect(core.hhUser1).approve(beraVault.address, amountWei);
 

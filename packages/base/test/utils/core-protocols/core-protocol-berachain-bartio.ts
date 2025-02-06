@@ -9,6 +9,7 @@ import { IERC20, IWETH } from '../../../src/types';
 import { BigNumberish } from 'ethers';
 import { ChroniclePriceOracleV3, RedstonePriceOracleV3 } from '@dolomite-exchange/modules-oracles/src/types';
 import { OogaBoogaEcosystem } from '../ecosystem-utils/ooga-booga';
+import { IBGT } from 'packages/berachain/src/types';
 
 export interface CoreProtocolTokensBerachainBartio extends CoreProtocolTokens<Network.BerachainBartio> {
   honey: IERC20;

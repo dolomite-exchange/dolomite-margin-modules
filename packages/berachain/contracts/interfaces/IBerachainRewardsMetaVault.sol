@@ -30,11 +30,15 @@ import { IBerachainRewardsRegistry } from "./IBerachainRewardsRegistry.sol";
  */
 interface IBerachainRewardsMetaVault {
 
+    struct BgtValidatorStorageStruct {
+        bytes pubkey;
+    }
+
     // ================================================
     // ==================== Events ====================
     // ================================================
 
-    event BgtValidatorSet(address validator);
+    event BgtValidatorSet(bytes validator);
     event BgtmValidatorSet(address validator);
 
     // ================================================
@@ -68,13 +72,17 @@ interface IBerachainRewardsMetaVault {
 
     function delegateBGT(address _delegatee) external;
 
-    function queueBGTBoost(address _validator, uint128 _amount) external;
+    function queueBGTBoost(bytes memory _validator, uint128 _amount) external;
 
-    function activateBGTBoost(address _validator) external;
+    function activateBGTBoost(bytes memory _validator) external;
 
-    function cancelBGTBoost(address _validator, uint128 _amount) external;
+    function cancelBGTBoost(bytes memory _validator, uint128 _amount) external;
 
-    function dropBGTBoost(address _validator, uint128 _amount) external;
+    function queueDropBGTBoost(bytes memory _validator, uint128 _amount) external;
+
+    function cancelDropBGTBoost(bytes memory _validator, uint128 _amount) external;
+
+    function dropBGTBoost(bytes memory _validator) external;
 
     function withdrawBGTAndRedeem(address _recipient, uint256 _amount) external;
 

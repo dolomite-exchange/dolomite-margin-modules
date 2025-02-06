@@ -1176,7 +1176,9 @@ export async function setupCoreProtocol<T extends NetworkType>(
       getMaxDeploymentVersionAddressByDeploymentKey('RedstonePriceOracle', Network.Berachain, ADDRESS_ZERO),
       hhUser1,
     );
+    const berachainRewardsEcosystem = await createBerachainRewardsEcosystem(typedConfig.network, hhUser1);
     return new CoreProtocolBerachain(coreProtocolParams as CoreProtocolParams<Network.Berachain>, {
+      berachainRewardsEcosystem,
       oogaBoogaEcosystem,
       chroniclePriceOracleV3: chroniclePriceOracle,
       redstonePriceOracleV3: redstonePriceOracle,
@@ -1286,6 +1288,8 @@ export async function setupCoreProtocol<T extends NetworkType>(
       },
       tokens: {
         ...coreProtocolParams.tokens,
+        bgt: IBGT__factory.connect(BGT_MAP[typedConfig.network].address, hhUser1),
+        iBgt: IERC20__factory.connect(IBGT_MAP[typedConfig.network].address, hhUser1),
         btcPlaceholder: IERC20__factory.connect(BTC_PLACEHOLDER_MAP[typedConfig.network].address, hhUser1),
         beraEth: IERC20__factory.connect(BERA_ETH_MAP[typedConfig.network].address, hhUser1),
         eBtc: IERC20__factory.connect(E_BTC_MAP[typedConfig.network].address, hhUser1),
@@ -1347,9 +1351,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
       },
       tokens: {
         ...coreProtocolParams.tokens,
-        bgt: IBGT__factory.connect(BGT_MAP[typedConfig.network].address, hhUser1),
         honey: IERC20__factory.connect(HONEY_MAP[typedConfig.network].address, hhUser1),
-        iBgt: IERC20__factory.connect(IBGT_MAP[typedConfig.network].address, hhUser1),
         sbtc: IERC20__factory.connect(STONE_BTC_MAP[typedConfig.network].address, hhUser1),
         stoneBtc: IERC20__factory.connect(STONE_BTC_MAP[typedConfig.network].address, hhUser1),
         uniBtc: IERC20__factory.connect(UNI_BTC_MAP[typedConfig.network].address, hhUser1),
@@ -1359,7 +1361,6 @@ export async function setupCoreProtocol<T extends NetworkType>(
           IERC20__factory.connect(HONEY_MAP[typedConfig.network].address, hhUser1),
         ],
       },
-      berachainRewardsEcosystem: await createBerachainRewardsEcosystem(typedConfig.network, hhUser1),
       oogaBoogaEcosystem: await createOogaBoogaEcosystem(typedConfig.network, hhUser1),
     }) as any;
   }

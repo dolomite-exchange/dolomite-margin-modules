@@ -118,9 +118,6 @@ contract InfraredBGTIsolationModeTokenVaultV1 is
         override(IIsolationModeTokenVaultV1, IsolationModeTokenVaultV1)
         returns (uint256)
     {
-        IBerachainRewardsMetaVault metaVault = IBerachainRewardsMetaVault(
-            registry().getMetaVaultByVault(address(this))
-        );
         return super.underlyingBalanceOf() + registry().iBgtVault().balanceOf(address(this));
     }
 

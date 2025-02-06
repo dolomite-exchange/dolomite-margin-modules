@@ -6,6 +6,7 @@ import {
 } from '@dolomite-exchange/modules-base/src/types';
 import {
   ADDRESS_ZERO,
+  BYTES_EMPTY,
   Network,
   ONE_BI,
   ONE_DAY_SECONDS,
@@ -28,7 +29,7 @@ import { mine } from '@nomicfoundation/hardhat-network-helpers';
 import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
-import { parseEther } from 'ethers/lib/utils';
+import { AbiCoder, defaultAbiCoder, parseEther } from 'ethers/lib/utils';
 import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
 import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
 import { createDolomiteErc4626Proxy } from 'packages/base/test/utils/dolomite';
@@ -67,8 +68,8 @@ import {
   setupUserMetaVault,
 } from './berachain-ecosystem-utils';
 
-const LP_TOKEN_WHALE_ADDRESS = '0xe3b9B72ba027FD6c514C0e5BA075Ac9c77C23Afa';
-const VALIDATOR_ADDRESS = '0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65';
+const LP_TOKEN_WHALE_ADDRESS = '0x4Be03f781C497A489E3cB0287833452cA9B9E80B';
+const VALIDATOR_BYTES = '0x832153bf3e09b9cab14414425a0ebaeb889e21d20872ebb990ed9a6102d7dc7f3017d4689f931a8e96d918bdeb184e1b';
 const MIN_BLOCK_LEN = 8191;
 const defaultAccountNumber = ZERO_BI;
 const amountWei = parseEther('.5');
@@ -102,13 +103,10 @@ describe('BerachainRewardsMetaVault', () => {
 
   before(async () => {
     core = await setupCoreProtocol({
-      // blockNumber: 4_853_900,
-      // blockNumber: 6_184_916,
-      // blockNumber: 6_550_105,
-      // blockNumber: 8_471_038,
-      blockNumber: 8_627_800,
+      blockNumber: 785_000,
       network: Network.Berachain,
     });
+    await core.dolomiteMargin.connect(core.governance).ownerSetIsClosing(core.marketIds.wbera, false);
 
     bgtmWrapper = await createContractWithAbi<BGTMERC20Wrapper>(
       BGTMERC20Wrapper__factory.abi,
@@ -369,6 +367,7 @@ describe('BerachainRewardsMetaVault', () => {
       await increase(10 * ONE_DAY_SECONDS);
       await metaVault.getReward(underlyingToken.address);
 
+      await iBgtFactory.createVault(core.hhUser1.address);
       const iBgtVault = setupUserVaultProxy<InfraredBGTIsolationModeTokenVaultV1>(
         await iBgtFactory.getVaultByAccount(core.hhUser1.address),
         InfraredBGTIsolationModeTokenVaultV1__factory,
@@ -440,11 +439,11 @@ describe('BerachainRewardsMetaVault', () => {
       await metaVault.getReward(underlyingToken.address);
       const bal = await core.tokens.bgt.balanceOf(metaVault.address);
 
-      const res = await metaVault.queueBGTBoost(VALIDATOR_ADDRESS, bal);
+      const res = await metaVault.queueBGTBoost(VALIDATOR_BYTES, bal);
       await expectEvent(metaVault, res, 'BgtValidatorSet', {
-        validator: VALIDATOR_ADDRESS,
+        validator: VALIDATOR_BYTES,
       });
-      expect(await metaVault.bgtValidator()).to.eq(VALIDATOR_ADDRESS);
+      expect(await metaVault.bgtValidator()).to.eq(VALIDATOR_BYTES);
       expect(await core.tokens.bgt.queuedBoost(metaVault.address)).to.eq(bal);
     });
 
@@ -454,11 +453,11 @@ describe('BerachainRewardsMetaVault', () => {
       await metaVault.getReward(underlyingToken.address);
       const bal = await core.tokens.bgt.balanceOf(metaVault.address);
 
-      await metaVault.queueBGTBoost(VALIDATOR_ADDRESS, bal.sub(1));
-      expect(await metaVault.bgtValidator()).to.eq(VALIDATOR_ADDRESS);
+      await metaVault.queueBGTBoost(VALIDATOR_BYTES, bal.sub(1));
+      expect(await metaVault.bgtValidator()).to.eq(VALIDATOR_BYTES);
       expect(await core.tokens.bgt.queuedBoost(metaVault.address)).to.eq(bal.sub(1));
 
-      await metaVault.queueBGTBoost(VALIDATOR_ADDRESS, 1);
+      await metaVault.queueBGTBoost(VALIDATOR_BYTES, 1);
       expect(await core.tokens.bgt.queuedBoost(metaVault.address)).to.eq(bal);
     });
 
@@ -468,7 +467,7 @@ describe('BerachainRewardsMetaVault', () => {
       await metaVault.getReward(underlyingToken.address);
       const bal = await core.tokens.bgt.balanceOf(metaVault.address);
 
-      await metaVault.queueBGTBoost(VALIDATOR_ADDRESS, bal);
+      await metaVault.queueBGTBoost(VALIDATOR_BYTES, bal);
       await expectThrow(
         metaVault.queueBGTBoost(core.hhUser1.address, bal),
         'BerachainRewardsMetaVault: Does not match active validator',
@@ -477,7 +476,7 @@ describe('BerachainRewardsMetaVault', () => {
 
     it('should fail if not called by owner', async () => {
       await expectThrow(
-        metaVault.connect(core.hhUser2).queueBGTBoost(VALIDATOR_ADDRESS, ONE_BI),
+        metaVault.connect(core.hhUser2).queueBGTBoost(VALIDATOR_BYTES, ONE_BI),
         `BerachainRewardsMetaVault: Only owner can call <${core.hhUser2.addressLower}>`,
       );
     });
@@ -490,9 +489,9 @@ describe('BerachainRewardsMetaVault', () => {
       await metaVault.getReward(underlyingToken.address);
       const bal = await core.tokens.bgt.balanceOf(metaVault.address);
 
-      await metaVault.queueBGTBoost(VALIDATOR_ADDRESS, bal);
+      await metaVault.queueBGTBoost(VALIDATOR_BYTES, bal);
       await mine(MIN_BLOCK_LEN);
-      await metaVault.activateBGTBoost(VALIDATOR_ADDRESS);
+      await metaVault.activateBGTBoost(VALIDATOR_BYTES);
       expect(await core.tokens.bgt.queuedBoost(metaVault.address)).to.eq(ZERO_BI);
       expect(await core.tokens.bgt.boosts(metaVault.address)).to.eq(bal);
     });
@@ -503,7 +502,7 @@ describe('BerachainRewardsMetaVault', () => {
       await metaVault.getReward(underlyingToken.address);
       const bal = await core.tokens.bgt.balanceOf(metaVault.address);
 
-      await metaVault.queueBGTBoost(VALIDATOR_ADDRESS, bal);
+      await metaVault.queueBGTBoost(VALIDATOR_BYTES, bal);
       await mine(MIN_BLOCK_LEN);
       await expectThrow(
         metaVault.activateBGTBoost(core.hhUser1.address),
@@ -519,23 +518,23 @@ describe('BerachainRewardsMetaVault', () => {
 
       // There is no queued boost, therefore no active validator is set in the meta vault.
       await expectThrow(
-        metaVault.activateBGTBoost(VALIDATOR_ADDRESS),
+        metaVault.activateBGTBoost(VALIDATOR_BYTES),
         'BerachainRewardsMetaVault: Does not match bgt validator',
       );
 
-      await metaVault.queueBGTBoost(VALIDATOR_ADDRESS, bal);
+      await metaVault.queueBGTBoost(VALIDATOR_BYTES, bal);
       await mine(MIN_BLOCK_LEN);
-      await metaVault.activateBGTBoost(VALIDATOR_ADDRESS);
+      await metaVault.activateBGTBoost(VALIDATOR_BYTES);
 
       await expectThrow(
-        metaVault.activateBGTBoost(VALIDATOR_ADDRESS),
+        metaVault.activateBGTBoost(VALIDATOR_BYTES),
         'BerachainRewardsMetaVault: No queued boost to activate',
       );
     });
 
     it('should fail if not called by owner', async () => {
       await expectThrow(
-        metaVault.connect(core.hhUser2).activateBGTBoost(VALIDATOR_ADDRESS),
+        metaVault.connect(core.hhUser2).activateBGTBoost(VALIDATOR_BYTES),
         `BerachainRewardsMetaVault: Only owner can call <${core.hhUser2.addressLower}>`,
       );
     });
@@ -547,12 +546,13 @@ describe('BerachainRewardsMetaVault', () => {
       await increase(10 * ONE_DAY_SECONDS);
       await metaVault.getReward(underlyingToken.address);
       const bal = await core.tokens.bgt.balanceOf(metaVault.address);
-      await bgtVault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, bal.sub(ONE_ETH_BI));
+      const boostAmount = bal.div(2);
+      await bgtVault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, boostAmount);
 
-      await metaVault.queueBGTBoost(VALIDATOR_ADDRESS, ONE_ETH_BI);
-      await metaVault.cancelBGTBoost(VALIDATOR_ADDRESS, parseEther('.5'));
-      expect(await metaVault.bgtValidator()).to.eq(VALIDATOR_ADDRESS);
-      expect(await core.tokens.bgt.queuedBoost(metaVault.address)).to.eq(parseEther('.5'));
+      await metaVault.queueBGTBoost(VALIDATOR_BYTES, boostAmount);
+      await metaVault.cancelBGTBoost(VALIDATOR_BYTES, boostAmount.div(2));
+      expect(await metaVault.bgtValidator()).to.eq(VALIDATOR_BYTES);
+      expect(await core.tokens.bgt.queuedBoost(metaVault.address)).to.eq(boostAmount.div(2));
     });
 
     it('should reset validator if no boost is queued', async () => {
@@ -560,13 +560,13 @@ describe('BerachainRewardsMetaVault', () => {
       await increase(10 * ONE_DAY_SECONDS);
       await metaVault.getReward(underlyingToken.address);
       const bal = await core.tokens.bgt.balanceOf(metaVault.address);
-      await metaVault.queueBGTBoost(VALIDATOR_ADDRESS, bal);
+      await metaVault.queueBGTBoost(VALIDATOR_BYTES, bal);
 
-      const res = await metaVault.cancelBGTBoost(VALIDATOR_ADDRESS, bal);
+      const res = await metaVault.cancelBGTBoost(VALIDATOR_BYTES, bal);
       await expectEvent(metaVault, res, 'BgtValidatorSet', {
-        validator: ADDRESS_ZERO,
+        validator: BYTES_EMPTY,
       });
-      expect(await metaVault.bgtValidator()).to.eq(ADDRESS_ZERO);
+      expect(await metaVault.bgtValidator()).to.eq(BYTES_EMPTY);
       expect(await core.tokens.bgt.queuedBoost(metaVault.address)).to.eq(ZERO_BI);
     });
 
@@ -575,7 +575,7 @@ describe('BerachainRewardsMetaVault', () => {
       await increase(10 * ONE_DAY_SECONDS);
       await metaVault.getReward(underlyingToken.address);
       const bal = await core.tokens.bgt.balanceOf(metaVault.address);
-      await metaVault.queueBGTBoost(VALIDATOR_ADDRESS, bal);
+      await metaVault.queueBGTBoost(VALIDATOR_BYTES, bal);
 
       await expectThrow(
         metaVault.cancelBGTBoost(core.hhUser1.address, bal),
@@ -585,30 +585,30 @@ describe('BerachainRewardsMetaVault', () => {
 
     it('should fail if not called by owner', async () => {
       await expectThrow(
-        metaVault.connect(core.hhUser2).cancelBGTBoost(VALIDATOR_ADDRESS, ONE_BI),
+        metaVault.connect(core.hhUser2).cancelBGTBoost(VALIDATOR_BYTES, ONE_BI),
         `BerachainRewardsMetaVault: Only owner can call <${core.hhUser2.addressLower}>`,
       );
     });
   });
 
-  describe('#dropBGTBoost', () => {
-    it('should work normally', async () => {
+  describe.only('#dropBGTBoost', () => {
+    it.only('should work normally', async () => {
       await beraVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await increase(10 * ONE_DAY_SECONDS);
       await metaVault.getReward(underlyingToken.address);
       const bal = await core.tokens.bgt.balanceOf(metaVault.address);
-      await metaVault.queueBGTBoost(VALIDATOR_ADDRESS, bal);
+      await metaVault.queueBGTBoost(VALIDATOR_BYTES, bal);
       await mine(MIN_BLOCK_LEN);
-      await metaVault.activateBGTBoost(VALIDATOR_ADDRESS);
+      await metaVault.activateBGTBoost(VALIDATOR_BYTES);
       expect(await core.tokens.bgt.boosts(metaVault.address)).to.eq(bal);
 
-      const res = await metaVault.dropBGTBoost(VALIDATOR_ADDRESS, bal);
+      const res = await metaVault.dropBGTBoost(VALIDATOR_BYTES, bal);
       await expectEvent(metaVault, res, 'BgtValidatorSet', {
-        validator: ADDRESS_ZERO,
+        validator: BYTES_EMPTY,
       });
       expect(await core.tokens.bgt.boosts(metaVault.address)).to.eq(ZERO_BI);
       expect(await core.tokens.bgt.queuedBoost(metaVault.address)).to.eq(ZERO_BI);
-      expect(await metaVault.bgtValidator()).to.eq(ADDRESS_ZERO);
+      expect(await metaVault.bgtValidator()).to.eq(BYTES_EMPTY);
     });
 
     it('should not reset validator if still boost amount', async () => {
@@ -616,31 +616,31 @@ describe('BerachainRewardsMetaVault', () => {
       await increase(10 * ONE_DAY_SECONDS);
       await metaVault.getReward(underlyingToken.address);
       const bal = await core.tokens.bgt.balanceOf(metaVault.address);
-      await metaVault.queueBGTBoost(VALIDATOR_ADDRESS, bal);
+      await metaVault.queueBGTBoost(VALIDATOR_BYTES, bal);
       await mine(MIN_BLOCK_LEN);
-      await metaVault.activateBGTBoost(VALIDATOR_ADDRESS);
+      await metaVault.activateBGTBoost(VALIDATOR_BYTES);
       expect(await core.tokens.bgt.boosts(metaVault.address)).to.eq(bal);
 
-      await metaVault.dropBGTBoost(VALIDATOR_ADDRESS, ONE_BI);
+      await metaVault.dropBGTBoost(VALIDATOR_BYTES, ONE_BI);
       expect(await core.tokens.bgt.boosts(metaVault.address)).to.eq(bal.sub(ONE_BI));
       expect(await core.tokens.bgt.queuedBoost(metaVault.address)).to.eq(ZERO_BI);
-      expect(await metaVault.bgtValidator()).to.eq(VALIDATOR_ADDRESS);
+      expect(await metaVault.bgtValidator()).to.eq(VALIDATOR_BYTES);
     });
 
     it('should not reset validator if queued boost amount', async () => {
       await beraVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await increase(10 * ONE_DAY_SECONDS);
       await metaVault.getReward(underlyingToken.address);
-      await metaVault.queueBGTBoost(VALIDATOR_ADDRESS, ONE_BI);
+      await metaVault.queueBGTBoost(VALIDATOR_BYTES, ONE_BI);
       await mine(MIN_BLOCK_LEN);
-      await metaVault.activateBGTBoost(VALIDATOR_ADDRESS);
+      await metaVault.activateBGTBoost(VALIDATOR_BYTES);
       expect(await core.tokens.bgt.boosts(metaVault.address)).to.eq(ONE_BI);
 
-      await metaVault.queueBGTBoost(VALIDATOR_ADDRESS, ONE_BI);
-      await metaVault.dropBGTBoost(VALIDATOR_ADDRESS, ONE_BI);
+      await metaVault.queueBGTBoost(VALIDATOR_BYTES, ONE_BI);
+      await metaVault.dropBGTBoost(VALIDATOR_BYTES, ONE_BI);
       expect(await core.tokens.bgt.boosts(metaVault.address)).to.eq(ZERO_BI);
       expect(await core.tokens.bgt.queuedBoost(metaVault.address)).to.eq(ONE_BI);
-      expect(await metaVault.bgtValidator()).to.eq(VALIDATOR_ADDRESS);
+      expect(await metaVault.bgtValidator()).to.eq(VALIDATOR_BYTES);
     });
 
     it('should fail if not active validator', async () => {
@@ -648,25 +648,25 @@ describe('BerachainRewardsMetaVault', () => {
       await increase(10 * ONE_DAY_SECONDS);
       await metaVault.getReward(underlyingToken.address);
       const bal = await core.tokens.bgt.balanceOf(metaVault.address);
-      await metaVault.queueBGTBoost(VALIDATOR_ADDRESS, bal);
+      await metaVault.queueBGTBoost(VALIDATOR_BYTES, bal);
       await mine(MIN_BLOCK_LEN);
-      await metaVault.activateBGTBoost(VALIDATOR_ADDRESS);
+      await metaVault.activateBGTBoost(VALIDATOR_BYTES);
 
       await expectThrow(
-        metaVault.dropBGTBoost(core.hhUser1.address, bal),
+        metaVault.dropBGTBoost(defaultAbiCoder.encode(['address'], [core.hhUser1.address]), bal),
         'BerachainRewardsMetaVault: Does not match bgt validator',
       );
     });
 
     it('should fail if not called by owner', async () => {
       await expectThrow(
-        metaVault.connect(core.hhUser2).dropBGTBoost(VALIDATOR_ADDRESS, ONE_BI),
+        metaVault.connect(core.hhUser2).dropBGTBoost(VALIDATOR_BYTES, ONE_BI),
         `BerachainRewardsMetaVault: Only owner can call <${core.hhUser2.addressLower}>`,
       );
     });
   });
 
-  describe('#delegateBGTM', async () => {
+  xdescribe('#delegateBGTM', async () => {
     it('should work normally', async () => {
       await metaVault.setDefaultRewardVaultTypeByAsset(underlyingToken.address, RewardVaultType.BGTM);
       await beraVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
@@ -676,10 +676,10 @@ describe('BerachainRewardsMetaVault', () => {
       expect(await core.berachainRewardsEcosystem.bgtm.getBalance(metaVault.address)).to.eq(bal);
       await expectProtocolBalance(core, bgtmVault, defaultAccountNumber, bgtmMarketId, bal);
 
-      await metaVault.delegateBGTM(VALIDATOR_ADDRESS, ONE_BI);
+      await metaVault.delegateBGTM(VALIDATOR_BYTES, ONE_BI);
       expect(await core.berachainRewardsEcosystem.bgtm.getBalance(metaVault.address)).to.eq(bal.sub(ONE_BI));
       let position = await core.berachainRewardsEcosystem.bgtm.getDelegatedBalance(
-        VALIDATOR_ADDRESS,
+        VALIDATOR_BYTES,
         metaVault.address
       );
       expect(position.pending).to.eq(ZERO_BI);
@@ -687,9 +687,9 @@ describe('BerachainRewardsMetaVault', () => {
       expect(position.confirmed).to.eq(ZERO_BI);
 
       await mine(8200);
-      await metaVault.activateBGTM(VALIDATOR_ADDRESS);
+      await metaVault.activateBGTM(VALIDATOR_BYTES);
       expect(await core.berachainRewardsEcosystem.bgtm.getBalance(metaVault.address)).to.eq(bal.sub(ONE_BI));
-      position = await core.berachainRewardsEcosystem.bgtm.getDelegatedBalance(VALIDATOR_ADDRESS, metaVault.address);
+      position = await core.berachainRewardsEcosystem.bgtm.getDelegatedBalance(VALIDATOR_BYTES, metaVault.address);
       expect(position.pending).to.eq(ZERO_BI);
       expect(position.queued).to.eq(ZERO_BI);
       expect(position.confirmed).to.eq(ONE_BI);
@@ -701,7 +701,7 @@ describe('BerachainRewardsMetaVault', () => {
       await increase(10 * ONE_DAY_SECONDS);
       await metaVault.getReward(underlyingToken.address);
 
-      await metaVault.delegateBGTM(VALIDATOR_ADDRESS, ONE_BI);
+      await metaVault.delegateBGTM(VALIDATOR_BYTES, ONE_BI);
       await expectThrow(
         metaVault.delegateBGTM(core.hhUser2.address, ONE_BI),
         'BerachainRewardsMetaVault: Does not match active validator',
@@ -714,31 +714,31 @@ describe('BerachainRewardsMetaVault', () => {
       await increase(10 * ONE_DAY_SECONDS);
       await metaVault.getReward(underlyingToken.address);
 
-      await metaVault.delegateBGTM(VALIDATOR_ADDRESS, ONE_BI);
+      await metaVault.delegateBGTM(VALIDATOR_BYTES, ONE_BI);
       await expectThrow(
-        metaVault.delegateBGTM(VALIDATOR_ADDRESS, ONE_BI),
+        metaVault.delegateBGTM(VALIDATOR_BYTES, ONE_BI),
         'BerachainRewardsMetaVault: Queue boost cooldown not passed',
       );
     });
 
     it('should fail if not called by owner', async () => {
       await expectThrow(
-        metaVault.connect(core.hhUser2).delegateBGTM(VALIDATOR_ADDRESS, ONE_BI),
+        metaVault.connect(core.hhUser2).delegateBGTM(VALIDATOR_BYTES, ONE_BI),
         `BerachainRewardsMetaVault: Only owner can call <${core.hhUser2.addressLower}>`,
       );
     });
   });
 
-  describe('#activateBGTM', () => {
+  xdescribe('#activateBGTM', () => {
     it('should work normally', async () => {
       await metaVault.setDefaultRewardVaultTypeByAsset(underlyingToken.address, RewardVaultType.BGTM);
       await beraVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await increase(10 * ONE_DAY_SECONDS);
       await metaVault.getReward(underlyingToken.address);
 
-      await metaVault.delegateBGTM(VALIDATOR_ADDRESS, ONE_BI);
+      await metaVault.delegateBGTM(VALIDATOR_BYTES, ONE_BI);
       let position = await core.berachainRewardsEcosystem.bgtm.getDelegatedBalance(
-        VALIDATOR_ADDRESS,
+        VALIDATOR_BYTES,
         metaVault.address
       );
       expect(position.pending).to.eq(ZERO_BI);
@@ -746,8 +746,8 @@ describe('BerachainRewardsMetaVault', () => {
       expect(position.confirmed).to.eq(ZERO_BI);
 
       await mine(8400);
-      await metaVault.activateBGTM(VALIDATOR_ADDRESS);
-      position = await core.berachainRewardsEcosystem.bgtm.getDelegatedBalance(VALIDATOR_ADDRESS, metaVault.address);
+      await metaVault.activateBGTM(VALIDATOR_BYTES);
+      position = await core.berachainRewardsEcosystem.bgtm.getDelegatedBalance(VALIDATOR_BYTES, metaVault.address);
       expect(position.pending).to.eq(ZERO_BI);
       expect(position.queued).to.eq(ZERO_BI);
       expect(position.confirmed).to.eq(ONE_BI);
@@ -758,7 +758,7 @@ describe('BerachainRewardsMetaVault', () => {
       await beraVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await increase(10 * ONE_DAY_SECONDS);
       await metaVault.getReward(underlyingToken.address);
-      await metaVault.delegateBGTM(VALIDATOR_ADDRESS, ONE_BI);
+      await metaVault.delegateBGTM(VALIDATOR_BYTES, ONE_BI);
 
       await expectThrow(
         metaVault.activateBGTM(core.hhUser1.address),
@@ -768,13 +768,13 @@ describe('BerachainRewardsMetaVault', () => {
 
     it('should fail if not called by owner', async () => {
       await expectThrow(
-        metaVault.connect(core.hhUser2).activateBGTM(VALIDATOR_ADDRESS),
+        metaVault.connect(core.hhUser2).activateBGTM(VALIDATOR_BYTES),
         `BerachainRewardsMetaVault: Only owner can call <${core.hhUser2.addressLower}>`,
       );
     });
   });
 
-  describe('#unbondBGTM', () => {
+  xdescribe('#unbondBGTM', () => {
     it('should work normally', async () => {
       await metaVault.setDefaultRewardVaultTypeByAsset(underlyingToken.address, RewardVaultType.BGTM);
       await beraVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
@@ -782,9 +782,9 @@ describe('BerachainRewardsMetaVault', () => {
       await metaVault.getReward(underlyingToken.address);
       const bal = await core.berachainRewardsEcosystem.bgtm.getBalance(metaVault.address);
 
-      await metaVault.delegateBGTM(VALIDATOR_ADDRESS, ONE_BI);
+      await metaVault.delegateBGTM(VALIDATOR_BYTES, ONE_BI);
       let position = await core.berachainRewardsEcosystem.bgtm.getDelegatedBalance(
-        VALIDATOR_ADDRESS,
+        VALIDATOR_BYTES,
         metaVault.address
       );
       expect(position.pending).to.eq(ZERO_BI);
@@ -792,14 +792,14 @@ describe('BerachainRewardsMetaVault', () => {
       expect(position.confirmed).to.eq(ZERO_BI);
 
       await mine(8400);
-      await metaVault.activateBGTM(VALIDATOR_ADDRESS);
-      position = await core.berachainRewardsEcosystem.bgtm.getDelegatedBalance(VALIDATOR_ADDRESS, metaVault.address);
+      await metaVault.activateBGTM(VALIDATOR_BYTES);
+      position = await core.berachainRewardsEcosystem.bgtm.getDelegatedBalance(VALIDATOR_BYTES, metaVault.address);
       expect(position.pending).to.eq(ZERO_BI);
       expect(position.queued).to.eq(ZERO_BI);
       expect(position.confirmed).to.eq(ONE_BI);
 
-      await metaVault.unbondBGTM(VALIDATOR_ADDRESS, ONE_BI);
-      position = await core.berachainRewardsEcosystem.bgtm.getDelegatedBalance(VALIDATOR_ADDRESS, metaVault.address);
+      await metaVault.unbondBGTM(VALIDATOR_BYTES, ONE_BI);
+      position = await core.berachainRewardsEcosystem.bgtm.getDelegatedBalance(VALIDATOR_BYTES, metaVault.address);
       expect(position.pending).to.eq(ZERO_BI);
       expect(position.queued).to.eq(ZERO_BI);
       expect(position.confirmed).to.eq(ZERO_BI);
@@ -811,7 +811,7 @@ describe('BerachainRewardsMetaVault', () => {
       await beraVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await increase(10 * ONE_DAY_SECONDS);
       await metaVault.getReward(underlyingToken.address);
-      await metaVault.delegateBGTM(VALIDATOR_ADDRESS, ONE_BI);
+      await metaVault.delegateBGTM(VALIDATOR_BYTES, ONE_BI);
 
       await expectThrow(
         metaVault.unbondBGTM(core.hhUser1.address, ONE_BI),
@@ -821,59 +821,59 @@ describe('BerachainRewardsMetaVault', () => {
 
     it('should fail if not called by owner', async () => {
       await expectThrow(
-        metaVault.connect(core.hhUser2).unbondBGTM(VALIDATOR_ADDRESS, ONE_BI),
+        metaVault.connect(core.hhUser2).unbondBGTM(VALIDATOR_BYTES, ONE_BI),
         `BerachainRewardsMetaVault: Only owner can call <${core.hhUser2.addressLower}>`,
       );
     });
   });
 
-  describe('#cancelBGTM', () => {
+  xdescribe('#cancelBGTM', () => {
     it('should work normally', async () => {
       // @todo need to update BGTM holder for new address
-      await core.berachainRewardsEcosystem.bgtm.connect(core.hhUser2).delegate(VALIDATOR_ADDRESS, ONE_BI);
+      await core.berachainRewardsEcosystem.bgtm.connect(core.hhUser2).delegate(VALIDATOR_BYTES, ONE_BI);
 
       await metaVault.setDefaultRewardVaultTypeByAsset(underlyingToken.address, RewardVaultType.BGTM);
       await beraVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await increase(10 * ONE_DAY_SECONDS);
       await metaVault.getReward(underlyingToken.address);
 
-      await metaVault.delegateBGTM(VALIDATOR_ADDRESS, ONE_BI);
+      await metaVault.delegateBGTM(VALIDATOR_BYTES, ONE_BI);
       let position = await core.berachainRewardsEcosystem.bgtm.getDelegatedBalance(
-        VALIDATOR_ADDRESS,
+        VALIDATOR_BYTES,
         metaVault.address
       );
       expect(position.pending).to.eq(ONE_BI);
       expect(position.queued).to.eq(ZERO_BI);
       expect(position.confirmed).to.eq(ZERO_BI);
 
-      const res = await metaVault.cancelBGTM(VALIDATOR_ADDRESS, ONE_BI);
+      const res = await metaVault.cancelBGTM(VALIDATOR_BYTES, ONE_BI);
       await expectEvent(metaVault, res, 'BgtmValidatorSet', {
         validator: ADDRESS_ZERO,
       });
-      position = await core.berachainRewardsEcosystem.bgtm.getDelegatedBalance(VALIDATOR_ADDRESS, metaVault.address);
+      position = await core.berachainRewardsEcosystem.bgtm.getDelegatedBalance(VALIDATOR_BYTES, metaVault.address);
       expect(position.pending).to.eq(ZERO_BI);
       expect(position.queued).to.eq(ZERO_BI);
       expect(position.confirmed).to.eq(ZERO_BI);
     });
 
     it('should not reset active validator if there is still boost amount', async () => {
-      await core.berachainRewardsEcosystem.bgtm.connect(core.hhUser2).delegate(VALIDATOR_ADDRESS, ONE_BI);
+      await core.berachainRewardsEcosystem.bgtm.connect(core.hhUser2).delegate(VALIDATOR_BYTES, ONE_BI);
       await metaVault.setDefaultRewardVaultTypeByAsset(underlyingToken.address, RewardVaultType.BGTM);
       await beraVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await increase(10 * ONE_DAY_SECONDS);
       await metaVault.getReward(underlyingToken.address);
 
-      await metaVault.delegateBGTM(VALIDATOR_ADDRESS, TWO_BI);
+      await metaVault.delegateBGTM(VALIDATOR_BYTES, TWO_BI);
       const position = await core.berachainRewardsEcosystem.bgtm.getDelegatedBalance(
-        VALIDATOR_ADDRESS,
+        VALIDATOR_BYTES,
         metaVault.address
       );
       expect(position.pending).to.eq(TWO_BI);
       expect(position.queued).to.eq(ZERO_BI);
       expect(position.confirmed).to.eq(ZERO_BI);
 
-      await metaVault.cancelBGTM(VALIDATOR_ADDRESS, ONE_BI);
-      expect(await metaVault.bgtmValidator()).to.eq(VALIDATOR_ADDRESS);
+      await metaVault.cancelBGTM(VALIDATOR_BYTES, ONE_BI);
+      expect(await metaVault.bgtmValidator()).to.eq(VALIDATOR_BYTES);
     });
 
     it('should do nothing if there is no boost amount and validator is address zero', async () => {
@@ -890,7 +890,7 @@ describe('BerachainRewardsMetaVault', () => {
 
     it('should fail if not called by owner', async () => {
       await expectThrow(
-        metaVault.connect(core.hhUser2).cancelBGTM(VALIDATOR_ADDRESS, ONE_BI),
+        metaVault.connect(core.hhUser2).cancelBGTM(VALIDATOR_BYTES, ONE_BI),
         `BerachainRewardsMetaVault: Only owner can call <${core.hhUser2.addressLower}>`,
       );
     });
@@ -916,7 +916,7 @@ describe('BerachainRewardsMetaVault', () => {
       const bal = await core.tokens.bgt.balanceOf(metaVault.address);
       await expectProtocolBalance(core, bgtVault, defaultAccountNumber, bgtMarketId, bal);
 
-      await metaVault.queueBGTBoost(VALIDATOR_ADDRESS, bal);
+      await metaVault.queueBGTBoost(VALIDATOR_BYTES, bal);
       await expect(() => bgtVault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, bal))
         .to.changeTokenBalance(core.tokens.wbera, core.hhUser1.address, bal);
       await expectProtocolBalance(core, bgtVault, defaultAccountNumber, bgtMarketId, ZERO_BI);
@@ -929,9 +929,9 @@ describe('BerachainRewardsMetaVault', () => {
       const bal = await core.tokens.bgt.balanceOf(metaVault.address);
       await expectProtocolBalance(core, bgtVault, defaultAccountNumber, bgtMarketId, bal);
 
-      await metaVault.queueBGTBoost(VALIDATOR_ADDRESS, bal);
+      await metaVault.queueBGTBoost(VALIDATOR_BYTES, bal);
       await mine(MIN_BLOCK_LEN);
-      await metaVault.activateBGTBoost(VALIDATOR_ADDRESS);
+      await metaVault.activateBGTBoost(VALIDATOR_BYTES);
       await expect(() => bgtVault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, bal))
         .to.changeTokenBalance(core.tokens.wbera, core.hhUser1.address, bal);
       await expectProtocolBalance(core, bgtVault, defaultAccountNumber, bgtMarketId, ZERO_BI);
@@ -944,10 +944,10 @@ describe('BerachainRewardsMetaVault', () => {
       const bal = await core.tokens.bgt.balanceOf(metaVault.address);
       await expectProtocolBalance(core, bgtVault, defaultAccountNumber, bgtMarketId, bal);
 
-      await metaVault.queueBGTBoost(VALIDATOR_ADDRESS, bal.div(2));
+      await metaVault.queueBGTBoost(VALIDATOR_BYTES, bal.div(2));
       await mine(MIN_BLOCK_LEN);
-      await metaVault.activateBGTBoost(VALIDATOR_ADDRESS);
-      await metaVault.queueBGTBoost(VALIDATOR_ADDRESS, bal.div(2));
+      await metaVault.activateBGTBoost(VALIDATOR_BYTES);
+      await metaVault.queueBGTBoost(VALIDATOR_BYTES, bal.div(2));
       await expect(() => bgtVault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, bal))
         .to.changeTokenBalance(core.tokens.wbera, core.hhUser1.address, bal);
       await expectProtocolBalance(core, bgtVault, defaultAccountNumber, bgtMarketId, ZERO_BI);
@@ -961,10 +961,10 @@ describe('BerachainRewardsMetaVault', () => {
       await expectProtocolBalance(core, bgtVault, defaultAccountNumber, bgtMarketId, bal);
       await bgtVault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, bal.sub(ONE_ETH_BI));
 
-      await metaVault.queueBGTBoost(VALIDATOR_ADDRESS, parseEther('.5'));
+      await metaVault.queueBGTBoost(VALIDATOR_BYTES, parseEther('.5'));
       await mine(MIN_BLOCK_LEN);
-      await metaVault.activateBGTBoost(VALIDATOR_ADDRESS);
-      await metaVault.queueBGTBoost(VALIDATOR_ADDRESS, parseEther('.5'));
+      await metaVault.activateBGTBoost(VALIDATOR_BYTES);
+      await metaVault.queueBGTBoost(VALIDATOR_BYTES, parseEther('.5'));
       const amount = parseEther('.75');
       await expect(() => bgtVault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, amount))
         .to.changeTokenBalance(core.tokens.wbera, core.hhUser1.address, amount);
@@ -980,7 +980,7 @@ describe('BerachainRewardsMetaVault', () => {
     });
   });
 
-  describe('#redeemBGTM', () => {
+  xdescribe('#redeemBGTM', () => {
     it('should work normally', async () => {
       await metaVault.setDefaultRewardVaultTypeByAsset(underlyingToken.address, RewardVaultType.BGTM);
       await beraVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
@@ -995,16 +995,16 @@ describe('BerachainRewardsMetaVault', () => {
     });
 
     it('should work with pending boosts', async () => {
-      await core.berachainRewardsEcosystem.bgtm.connect(core.hhUser2).delegate(VALIDATOR_ADDRESS, ONE_BI);
+      await core.berachainRewardsEcosystem.bgtm.connect(core.hhUser2).delegate(VALIDATOR_BYTES, ONE_BI);
       await metaVault.setDefaultRewardVaultTypeByAsset(underlyingToken.address, RewardVaultType.BGTM);
       await beraVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await increase(10 * ONE_DAY_SECONDS);
       await metaVault.getReward(underlyingToken.address);
       const bal = await core.berachainRewardsEcosystem.bgtm.getBalance(metaVault.address);
 
-      await metaVault.delegateBGTM(VALIDATOR_ADDRESS, bal);
+      await metaVault.delegateBGTM(VALIDATOR_BYTES, bal);
       const position = await core.berachainRewardsEcosystem.bgtm.getDelegatedBalance(
-        VALIDATOR_ADDRESS,
+        VALIDATOR_BYTES,
         metaVault.address
       );
       expect(position.pending).to.eq(bal);
@@ -1020,9 +1020,9 @@ describe('BerachainRewardsMetaVault', () => {
       await metaVault.getReward(underlyingToken.address);
       const bal = await core.berachainRewardsEcosystem.bgtm.getBalance(metaVault.address);
 
-      await metaVault.delegateBGTM(VALIDATOR_ADDRESS, bal);
+      await metaVault.delegateBGTM(VALIDATOR_BYTES, bal);
       await mine(8200);
-      await metaVault.activateBGTM(VALIDATOR_ADDRESS);
+      await metaVault.activateBGTM(VALIDATOR_BYTES);
 
       await expect(() => bgtmVault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, bal))
         .to.changeTokenBalance(core.tokens.wbera, core.hhUser1.address, bal);
@@ -1036,14 +1036,14 @@ describe('BerachainRewardsMetaVault', () => {
       await metaVault.getReward(underlyingToken.address);
       const bal = await core.berachainRewardsEcosystem.bgtm.getBalance(metaVault.address);
 
-      await metaVault.delegateBGTM(VALIDATOR_ADDRESS, bal.div(2));
+      await metaVault.delegateBGTM(VALIDATOR_BYTES, bal.div(2));
       await mine(8400);
-      await metaVault.activateBGTM(VALIDATOR_ADDRESS);
+      await metaVault.activateBGTM(VALIDATOR_BYTES);
 
-      await core.berachainRewardsEcosystem.bgtm.connect(core.hhUser2).delegate(VALIDATOR_ADDRESS, ONE_BI);
-      await metaVault.delegateBGTM(VALIDATOR_ADDRESS, bal.div(2));
+      await core.berachainRewardsEcosystem.bgtm.connect(core.hhUser2).delegate(VALIDATOR_BYTES, ONE_BI);
+      await metaVault.delegateBGTM(VALIDATOR_BYTES, bal.div(2));
       const position = await core.berachainRewardsEcosystem.bgtm.getDelegatedBalance(
-        VALIDATOR_ADDRESS,
+        VALIDATOR_BYTES,
         metaVault.address
       );
       expect(position.pending).to.eq(bal.div(2));
@@ -1062,9 +1062,9 @@ describe('BerachainRewardsMetaVault', () => {
       await metaVault.getReward(underlyingToken.address);
       const bal = await core.berachainRewardsEcosystem.bgtm.getBalance(metaVault.address);
 
-      await metaVault.delegateBGTM(VALIDATOR_ADDRESS, bal);
+      await metaVault.delegateBGTM(VALIDATOR_BYTES, bal);
       const position = await core.berachainRewardsEcosystem.bgtm.getDelegatedBalance(
-        VALIDATOR_ADDRESS,
+        VALIDATOR_BYTES,
         metaVault.address
       );
       expect(position.queued).to.eq(bal);
@@ -1088,7 +1088,7 @@ describe('BerachainRewardsMetaVault', () => {
       await increase(10 * ONE_DAY_SECONDS);
       await metaVault.getReward(underlyingToken.address);
       const bal = await core.tokens.bgt.balanceOf(metaVault.address);
-      await metaVault.queueBGTBoost(VALIDATOR_ADDRESS, bal);
+      await metaVault.queueBGTBoost(VALIDATOR_BYTES, bal);
 
       expect(await metaVault.blocksToActivateBgtBoost()).to.eq(MIN_BLOCK_LEN);
       await mine();

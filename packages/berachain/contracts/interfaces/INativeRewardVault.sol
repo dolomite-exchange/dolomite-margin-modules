@@ -34,9 +34,9 @@ interface INativeRewardVault is IERC20 {
 
     function withdraw(uint256 amount) external;
 
-    function getReward(address account) external returns (uint256);
+    function getReward(address account, address recipient) external returns (uint256);
 
-    function exit() external;
+    function exit(address recipient) external;
 
     function earned(address account) external view returns (uint256);
 
