@@ -1,4 +1,5 @@
 import { BaseContract, BigNumberish } from 'ethers';
+import { parseEther } from 'ethers/lib/utils';
 import { IGlvIsolationModeVaultFactory, IGmxV2IsolationModeVaultFactory } from 'packages/glv/src/types';
 import {
   HandlerRegistry,
@@ -18,7 +19,7 @@ import {
   TargetCollateralization,
   TargetLiquidationPenalty,
 } from '../../../../base/src/utils/constructors/dolomite';
-import { ADDRESS_ZERO, NetworkType, ZERO_BI } from '../../../../base/src/utils/no-deps-constants';
+import { ADDRESS_ZERO, NetworkType, ONE_ETH_BI, ZERO_BI } from '../../../../base/src/utils/no-deps-constants';
 import { CoreProtocolArbitrumOne } from '../../../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { GmToken } from '../../../../base/test/utils/ecosystem-utils/gmx';
 import { CoreProtocolType } from '../../../../base/test/utils/setup';
@@ -31,7 +32,7 @@ export interface AddMarketOptions {
   decimals?: number;
 }
 
-export async function prettyPrintEncodeAddIsolationModeMarket<T extends NetworkType>(
+export async function encodeAddIsolationModeMarket<T extends NetworkType>(
   core: CoreProtocolType<T>,
   factory: IIsolationModeVaultFactory,
   oracle: IDolomitePriceOracle,
@@ -43,7 +44,7 @@ export async function prettyPrintEncodeAddIsolationModeMarket<T extends NetworkT
   maxSupplyWei: BigNumberish,
   options: AddMarketOptions = {},
 ): Promise<EncodedTransaction[]> {
-  const transactions: EncodedTransaction[] = await prettyPrintEncodeAddMarket(
+  const transactions: EncodedTransaction[] = await encodeAddMarket(
     core,
     IERC20__factory.connect(factory.address, factory.signer),
     oracle,
@@ -80,7 +81,7 @@ export async function prettyPrintEncodeAddIsolationModeMarket<T extends NetworkT
   return transactions;
 }
 
-export async function prettyPrintEncodeAddAsyncIsolationModeMarket<T extends NetworkType>(
+export async function encodeAddAsyncIsolationModeMarket<T extends NetworkType>(
   core: CoreProtocolType<T>,
   factory: IIsolationModeVaultFactory,
   oracle: IDolomitePriceOracle,
@@ -93,7 +94,7 @@ export async function prettyPrintEncodeAddAsyncIsolationModeMarket<T extends Net
   maxSupplyWei: BigNumberish,
   options: AddMarketOptions = {},
 ): Promise<EncodedTransaction[]> {
-  const transactions: EncodedTransaction[] = await prettyPrintEncodeAddMarket(
+  const transactions: EncodedTransaction[] = await encodeAddMarket(
     core,
     IERC20__factory.connect(factory.address, factory.signer),
     oracle,
@@ -151,7 +152,7 @@ export async function prettyPrintEncodeAddAsyncIsolationModeMarket<T extends Net
   return transactions;
 }
 
-export async function prettyPrintEncodeAddGlvMarket(
+export async function encodeAddGlvMarket(
   core: CoreProtocolArbitrumOne,
   factory: IGlvIsolationModeVaultFactory,
   pairedGmToken: GmToken,
@@ -179,7 +180,7 @@ export async function prettyPrintEncodeAddGlvMarket(
       'ownerSetGlvTokenToGmMarketForWithdrawal',
       [await factory.UNDERLYING_TOKEN(), pairedGmToken.marketToken.address],
     ),
-    ...(await prettyPrintEncodeAddAsyncIsolationModeMarket(
+    ...(await encodeAddAsyncIsolationModeMarket(
       core,
       factory,
       core.oracleAggregatorV2,
@@ -195,7 +196,7 @@ export async function prettyPrintEncodeAddGlvMarket(
   ];
 }
 
-export async function prettyPrintEncodeAddGmxV2Market(
+export async function encodeAddGmxV2Market(
   core: CoreProtocolArbitrumOne,
   factory: IGmxV2IsolationModeVaultFactory,
   unwrapper: IIsolationModeUnwrapperTraderV2,
@@ -241,7 +242,7 @@ export async function prettyPrintEncodeAddGmxV2Market(
       'ownerSetGmxMarketToIndexToken',
       [await factory.UNDERLYING_TOKEN(), await factory.INDEX_TOKEN()],
     ),
-    ...(await prettyPrintEncodeAddAsyncIsolationModeMarket(
+    ...(await encodeAddAsyncIsolationModeMarket(
       core,
       factory,
       core.oracleAggregatorV2,
@@ -257,7 +258,7 @@ export async function prettyPrintEncodeAddGmxV2Market(
   ];
 }
 
-export async function prettyPrintEncodeAddMarket<T extends NetworkType>(
+export async function encodeAddMarket<T extends NetworkType>(
   core: CoreProtocolType<T>,
   token: IERC20,
   oracle: IDolomitePriceOracle,
@@ -279,6 +280,9 @@ export async function prettyPrintEncodeAddMarket<T extends NetworkType>(
     return Promise.reject(new Error(`Invalid max borrow wei for ${name}, found: ${maxBorrowWei.toString()}`));
   }
 
+  const baseCollateralization = (await core.dolomiteMargin.getMarginRatio()).value.add(ONE_ETH_BI);
+  const baseLiquidationPenalty = (await core.dolomiteMargin.getLiquidationSpread()).value;
+
   const transactions = [];
   transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(
@@ -291,8 +295,8 @@ export async function prettyPrintEncodeAddMarket<T extends NetworkType>(
         token,
         oracle,
         interestSetter,
-        getMarginPremiumForTargetCollateralization(targetCollateralization),
-        getLiquidationPremiumForTargetLiquidationPenalty(targetLiquidationPremium),
+        getMarginPremiumForTargetCollateralization(baseCollateralization, targetCollateralization),
+        getLiquidationPremiumForTargetLiquidationPenalty(baseLiquidationPenalty, targetLiquidationPremium),
         maxSupplyWei,
         maxBorrowWei,
         isCollateralOnly,

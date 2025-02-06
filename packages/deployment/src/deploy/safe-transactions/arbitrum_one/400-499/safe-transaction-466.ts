@@ -6,10 +6,10 @@ import { Network } from 'packages/base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from 'packages/base/test/utils';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
-import { prettyPrintEncodeAddMarket } from '../../../../utils/encoding/add-market-encoder-utils';
+import { encodeAddMarket } from '../../../../utils/encoding/add-market-encoder-utils';
 import {
-  prettyPrintEncodeInsertChainlinkOracleV3,
-  prettyPrintEncodeInsertRedstoneOracleV3,
+  encodeInsertChainlinkOracleV3,
+  encodeInsertRedstoneOracleV3,
 } from '../../../../utils/encoding/oracle-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 
@@ -23,10 +23,10 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
 
   const transactions: EncodedTransaction[] = [];
   transactions.push(
-    ...(await prettyPrintEncodeInsertChainlinkOracleV3(core, core.tokens.tbtc)),
-    ...(await prettyPrintEncodeInsertRedstoneOracleV3(core, core.tokens.ethPlus)),
-    ...(await prettyPrintEncodeInsertRedstoneOracleV3(core, core.tokens.eUsd)),
-    ...(await prettyPrintEncodeAddMarket(
+    ...(await encodeInsertChainlinkOracleV3(core, core.tokens.tbtc)),
+    ...(await encodeInsertRedstoneOracleV3(core, core.tokens.ethPlus)),
+    ...(await encodeInsertRedstoneOracleV3(core, core.tokens.eUsd)),
+    ...(await encodeAddMarket(
       core,
       core.tokens.tbtc,
       core.oracleAggregatorV2,
@@ -37,7 +37,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       parseEther(`${80}`),
       false,
     )),
-    ...(await prettyPrintEncodeAddMarket(
+    ...(await encodeAddMarket(
       core,
       core.tokens.eUsd,
       core.oracleAggregatorV2,
@@ -48,7 +48,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       parseEther(`${800_000}`),
       true,
     )),
-    ...(await prettyPrintEncodeAddMarket(
+    ...(await encodeAddMarket(
       core,
       core.tokens.ethPlus,
       core.oracleAggregatorV2,

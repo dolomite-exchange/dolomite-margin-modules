@@ -8,7 +8,7 @@ import {
 
 } from '../../../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
-import { prettyPrintEncodeAddIsolationModeMarket } from '../../../../utils/encoding/add-market-encoder-utils';
+import { encodeAddIsolationModeMarket } from '../../../../utils/encoding/add-market-encoder-utils';
 import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 import {
@@ -116,7 +116,7 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
         false,
       ],
     ),
-    ...await prettyPrintEncodeAddIsolationModeMarket(
+    ...await encodeAddIsolationModeMarket(
       core,
       factory,
       core.oracleAggregatorV2,

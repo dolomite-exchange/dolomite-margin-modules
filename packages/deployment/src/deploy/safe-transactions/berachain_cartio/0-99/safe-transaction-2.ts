@@ -8,7 +8,7 @@ import { getRealLatestBlockNumber } from 'packages/base/test/utils';
 import { CoreProtocolBerachainCartio } from 'packages/base/test/utils/core-protocols/core-protocol-berachain-cartio';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
-import { prettyPrintEncodeAddMarket } from '../../../../utils/encoding/add-market-encoder-utils';
+import { encodeAddMarket } from '../../../../utils/encoding/add-market-encoder-utils';
 import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 import ModuleDeployments from '../../../deployments.json';
@@ -70,7 +70,7 @@ async function main(): Promise<DryRunOutput<Network.BerachainCartio>> {
     ...(await encodeTestOracle(core.tokens.honey, '1000000000000000000', core)),
     ...(await encodeTestOracle(core.tokens.wbtc, '999990000000000000000000000000000', core)),
     ...(await encodeTestOracle(core.tokens.usdt, '1000000000000000000000000000000', core)),
-    ...(await prettyPrintEncodeAddMarket(
+    ...(await encodeAddMarket(
       core,
       core.tokens.weth,
       core.oracleAggregatorV2,
@@ -81,7 +81,7 @@ async function main(): Promise<DryRunOutput<Network.BerachainCartio>> {
       ZERO_BI,
       false,
     )),
-    ...(await prettyPrintEncodeAddMarket(
+    ...(await encodeAddMarket(
       core,
       core.tokens.wbera,
       core.oracleAggregatorV2,
@@ -92,7 +92,7 @@ async function main(): Promise<DryRunOutput<Network.BerachainCartio>> {
       ZERO_BI,
       false,
     )),
-    ...(await prettyPrintEncodeAddMarket(
+    ...(await encodeAddMarket(
       core,
       core.tokens.usdc,
       core.oracleAggregatorV2,
@@ -103,7 +103,7 @@ async function main(): Promise<DryRunOutput<Network.BerachainCartio>> {
       ZERO_BI,
       false,
     )),
-    ...(await prettyPrintEncodeAddMarket(
+    ...(await encodeAddMarket(
       core,
       core.tokens.honey,
       core.oracleAggregatorV2,
@@ -114,7 +114,7 @@ async function main(): Promise<DryRunOutput<Network.BerachainCartio>> {
       ZERO_BI,
       false,
     )),
-    ...(await prettyPrintEncodeAddMarket(
+    ...(await encodeAddMarket(
       core,
       core.tokens.wbtc,
       core.oracleAggregatorV2,
@@ -125,7 +125,7 @@ async function main(): Promise<DryRunOutput<Network.BerachainCartio>> {
       ZERO_BI,
       false,
     )),
-    ...(await prettyPrintEncodeAddMarket(
+    ...(await encodeAddMarket(
       core,
       core.tokens.usdt,
       core.oracleAggregatorV2,

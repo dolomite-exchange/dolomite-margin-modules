@@ -3,7 +3,7 @@ import { getRealLatestBlockNumber } from 'packages/base/test/utils';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
-import { prettyPrintEncodeInsertChronicleOracleV3 } from '../../../../utils/encoding/oracle-encoder-utils';
+import { encodeInsertChronicleOracleV3 } from '../../../../utils/encoding/oracle-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 
 /**
@@ -19,7 +19,7 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
 
   const transactions: EncodedTransaction[] = [];
   transactions.push(
-    ...await prettyPrintEncodeInsertChronicleOracleV3(core, core.tokens.weth),
+    ...await encodeInsertChronicleOracleV3(core, core.tokens.weth),
   );
   return {
     core,

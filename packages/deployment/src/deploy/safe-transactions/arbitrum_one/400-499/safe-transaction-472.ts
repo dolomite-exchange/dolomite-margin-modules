@@ -5,7 +5,7 @@ import { getRealLatestBlockNumber } from 'packages/base/test/utils';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
 import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
-import { prettyPrintEncodeInsertChainlinkOracleV3 } from '../../../../utils/encoding/oracle-encoder-utils';
+import { encodeInsertChainlinkOracleV3 } from '../../../../utils/encoding/oracle-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 
 const HARVEST_MULTISIG = '0xF066789028fE31D4f53B69B81b328B8218Cc0641';
@@ -21,7 +21,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
 
   const transactions: EncodedTransaction[] = [];
   transactions.push(
-    ...(await prettyPrintEncodeInsertChainlinkOracleV3(
+    ...(await encodeInsertChainlinkOracleV3(
       core,
       core.glvEcosystem.live.glvBtc.factory,
       undefined,
@@ -29,7 +29,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       undefined,
       { ignoreDescription: true },
     )),
-    ...(await prettyPrintEncodeInsertChainlinkOracleV3(
+    ...(await encodeInsertChainlinkOracleV3(
       core,
       core.glvEcosystem.live.glvEth.factory,
       undefined,

@@ -16,8 +16,8 @@ import {
   InterestSetterType,
   writeFile,
 } from '../../../../utils/deploy-utils';
-import { prettyPrintEncodeAddMarket } from '../../../../utils/encoding/add-market-encoder-utils';
-import { prettyPrintEncodeInsertChainlinkOracle } from '../../../../utils/encoding/oracle-encoder-utils';
+import { encodeAddMarket } from '../../../../utils/encoding/add-market-encoder-utils';
+import { encodeInsertChainlinkOracle } from '../../../../utils/encoding/oracle-encoder-utils';
 
 /**
  * This script encodes the following transactions:
@@ -47,13 +47,13 @@ async function main() {
     core.hhUser1,
   );
 
-  await prettyPrintEncodeInsertChainlinkOracle(
+  await encodeInsertChainlinkOracle(
     core as any,
     core.tokens.dpx!,
     ADDRESS_ZERO,
   );
   const dpxMaxWei = parseEther('2000');
-  await prettyPrintEncodeAddMarket(
+  await encodeAddMarket(
     core,
     core.tokens.dpx!,
     core.chainlinkPriceOracleV1!,
@@ -66,7 +66,7 @@ async function main() {
   );
 
   const grailMaxWei = parseEther('500');
-  await prettyPrintEncodeAddMarket(
+  await encodeAddMarket(
     core,
     core.tokens.grail!,
     grailTwapPriceOracle,
@@ -78,13 +78,13 @@ async function main() {
     false,
   );
 
-  await prettyPrintEncodeInsertChainlinkOracle(
+  await encodeInsertChainlinkOracle(
     core as any,
     core.tokens.magic!,
     ADDRESS_ZERO,
   );
   const magicMaxWei = parseEther('1250000'); // 1.25M
-  await prettyPrintEncodeAddMarket(
+  await encodeAddMarket(
     core,
     core.tokens.magic!,
     core.chainlinkPriceOracleV1!,
@@ -96,13 +96,13 @@ async function main() {
     false,
   );
 
-  await prettyPrintEncodeInsertChainlinkOracle(
+  await encodeInsertChainlinkOracle(
     core as any,
     core.tokens.pendle!,
     ADDRESS_ZERO,
   );
   const pendleMaxWei = parseEther('1250000'); // 1.25M
-  await prettyPrintEncodeAddMarket(
+  await encodeAddMarket(
     core,
     core.tokens.pendle!,
     core.chainlinkPriceOracleV1!,

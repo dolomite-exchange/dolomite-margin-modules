@@ -2219,7 +2219,7 @@ export const CHRONICLE_PRICE_SCRIBES_MAP: Record<
   },
   [Network.Berachain]: {
     [FBTC_MAP[Network.Berachain].address]: {
-      scribeAddress: '0xa3105dee5ec73a7003482b1a8968dc88666f3589', // TODO: fix this
+      scribeAddress: '0x7364747BA4E3C7077A204Fe9830CE8E359e1c1c7', // TODO: run this
     },
     [HONEY_MAP[Network.Berachain].address]: {
       scribeAddress: '0xd800ca44ffabecd159c7889c3bf64a217361aec8',

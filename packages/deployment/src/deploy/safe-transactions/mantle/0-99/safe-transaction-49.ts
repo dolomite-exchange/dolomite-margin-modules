@@ -5,8 +5,8 @@ import { getAndCheckSpecificNetwork } from 'packages/base/src/utils/dolomite-uti
 import { Network } from 'packages/base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from 'packages/base/test/utils';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
-import { prettyPrintEncodeAddIsolationModeMarket } from '../../../../utils/encoding/add-market-encoder-utils';
-import { prettyPrintEncodeInsertPendlePtOracle } from '../../../../utils/encoding/oracle-encoder-utils';
+import { encodeAddIsolationModeMarket } from '../../../../utils/encoding/add-market-encoder-utils';
+import { encodeInsertPendlePtOracle } from '../../../../utils/encoding/oracle-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 import {
   deployPendlePtSystem,
@@ -41,8 +41,8 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
   );
 
   transactions.push(
-    await prettyPrintEncodeInsertPendlePtOracle(core, cmEthSystem, core.tokens.weth),
-    ...(await prettyPrintEncodeAddIsolationModeMarket(
+    await encodeInsertPendlePtOracle(core, cmEthSystem, core.tokens.weth),
+    ...(await encodeAddIsolationModeMarket(
       core,
       cmEthSystem.factory,
       core.oracleAggregatorV2,

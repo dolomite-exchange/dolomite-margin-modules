@@ -11,8 +11,8 @@ import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '..
 import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 import { encodeSetSupplyCap } from '../../../../utils/encoding/dolomite-margin-core-encoder-utils';
 import {
-  prettyPrintEncodeInsertChronicleOracleV3,
-  prettyPrintEncodeInsertRedstoneOracleV3,
+  encodeInsertChronicleOracleV3,
+  encodeInsertRedstoneOracleV3,
 } from '../../../../utils/encoding/oracle-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 import { printPriceForVisualCheck } from '../../../../utils/invariant-utils';
@@ -36,26 +36,26 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
 
   const transactions: EncodedTransaction[] = [];
   transactions.push(
-    ...(await prettyPrintEncodeInsertChronicleOracleV3(core, core.tokens.honey)),
-    ...(await prettyPrintEncodeInsertChronicleOracleV3(core, core.tokens.usdc)),
-    ...(await prettyPrintEncodeInsertChronicleOracleV3(core, core.tokens.usdt)),
-    ...(await prettyPrintEncodeInsertRedstoneOracleV3(core, core.tokens.usde)),
-    ...(await prettyPrintEncodeInsertRedstoneOracleV3(core, core.tokens.sUsde)),
-    ...(await prettyPrintEncodeInsertChronicleOracleV3(core, core.tokens.weth)),
-    ...(await prettyPrintEncodeInsertChronicleOracleV3(core, core.tokens.wbtc)),
-    ...(await prettyPrintEncodeInsertRedstoneOracleV3(core, core.tokens.btcPlaceholder)),
-    ...(await prettyPrintEncodeInsertRedstoneOracleV3(core, core.tokens.solvBtc)),
-    ...(await prettyPrintEncodeInsertRedstoneOracleV3(core, core.tokens.solvBtcBbn)),
-    ...(await prettyPrintEncodeInsertChronicleOracleV3(core, core.tokens.pumpBtc)),
-    ...(await prettyPrintEncodeInsertRedstoneOracleV3(core, core.tokens.eBtc)),
-    ...(await prettyPrintEncodeInsertRedstoneOracleV3(core, core.tokens.weEth)),
-    ...(await prettyPrintEncodeInsertChronicleOracleV3(core, core.tokens.stone)),
-    ...(await prettyPrintEncodeInsertChronicleOracleV3(core, core.tokens.ylPumpBtc)),
-    ...(await prettyPrintEncodeInsertChronicleOracleV3(core, core.tokens.usda)),
-    ...(await prettyPrintEncodeInsertChronicleOracleV3(core, core.tokens.sUsda)),
-    ...(await prettyPrintEncodeInsertRedstoneOracleV3(core, core.tokens.rswEth)),
-    ...(await prettyPrintEncodeInsertChronicleOracleV3(core, core.tokens.rsEth)),
-    ...(await prettyPrintEncodeInsertRedstoneOracleV3(core, core.tokens.lbtc)),
+    ...(await encodeInsertChronicleOracleV3(core, core.tokens.honey)),
+    ...(await encodeInsertChronicleOracleV3(core, core.tokens.usdc)),
+    ...(await encodeInsertChronicleOracleV3(core, core.tokens.usdt)),
+    ...(await encodeInsertRedstoneOracleV3(core, core.tokens.usde)),
+    ...(await encodeInsertRedstoneOracleV3(core, core.tokens.sUsde)),
+    ...(await encodeInsertChronicleOracleV3(core, core.tokens.weth)),
+    ...(await encodeInsertChronicleOracleV3(core, core.tokens.wbtc)),
+    ...(await encodeInsertRedstoneOracleV3(core, core.tokens.btcPlaceholder)),
+    ...(await encodeInsertRedstoneOracleV3(core, core.tokens.solvBtc)),
+    ...(await encodeInsertRedstoneOracleV3(core, core.tokens.solvBtcBbn)),
+    ...(await encodeInsertChronicleOracleV3(core, core.tokens.pumpBtc)),
+    ...(await encodeInsertRedstoneOracleV3(core, core.tokens.eBtc)),
+    ...(await encodeInsertRedstoneOracleV3(core, core.tokens.weEth)),
+    ...(await encodeInsertChronicleOracleV3(core, core.tokens.stone)),
+    ...(await encodeInsertChronicleOracleV3(core, core.tokens.ylPumpBtc)),
+    ...(await encodeInsertChronicleOracleV3(core, core.tokens.usda)),
+    ...(await encodeInsertChronicleOracleV3(core, core.tokens.sUsda)),
+    ...(await encodeInsertRedstoneOracleV3(core, core.tokens.rswEth)),
+    ...(await encodeInsertChronicleOracleV3(core, core.tokens.rsEth)),
+    ...(await encodeInsertRedstoneOracleV3(core, core.tokens.lbtc)),
     // Test oracles
     ...(await encodeTestOracleAndDisableSupply(core, core.tokens.nect, STABLE_COIN_PRICE_18D)),
     ...(await encodeTestOracleAndDisableSupply(core, core.tokens.stonebtc, BTC_PRICE_18D)),

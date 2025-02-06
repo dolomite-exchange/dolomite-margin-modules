@@ -29,7 +29,7 @@ import {
 
 } from '../../../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
-import { prettyPrintEncodeAddAsyncIsolationModeMarket } from '../../../../utils/encoding/add-market-encoder-utils';
+import { encodeAddAsyncIsolationModeMarket } from '../../../../utils/encoding/add-market-encoder-utils';
 import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 
@@ -164,7 +164,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
           },
         ],
       ),
-      ...(await prettyPrintEncodeAddAsyncIsolationModeMarket(
+      ...(await encodeAddAsyncIsolationModeMarket(
         core,
         factory,
         core.oracleAggregatorV2,

@@ -17,8 +17,8 @@ import {
 } from '../../../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
 import {
-  prettyPrintEncodeAddIsolationModeMarket,
-  prettyPrintEncodeAddMarket,
+  encodeAddIsolationModeMarket,
+  encodeAddMarket,
 } from '../../../../utils/encoding/add-market-encoder-utils';
 import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
@@ -121,7 +121,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
         } as TokenInfo,
       ],
     ),
-    ...await prettyPrintEncodeAddMarket(
+    ...await encodeAddMarket(
       core,
       core.tokens.ezEth,
       core.oracleAggregatorV2,
@@ -132,7 +132,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       '1',
       true,
     ),
-    ...await prettyPrintEncodeAddIsolationModeMarket(
+    ...await encodeAddIsolationModeMarket(
       core,
       ezEthPendleSystem.factory,
       core.oracleAggregatorV2,

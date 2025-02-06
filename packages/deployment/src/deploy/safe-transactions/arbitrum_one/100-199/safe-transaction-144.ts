@@ -6,7 +6,7 @@ import {
   writeFile,
 } from '../../../../utils/deploy-utils';
 import { DenJsonUpload } from '../../../../utils/dry-run-utils';
-import { prettyPrintEncodeInsertChainlinkOracle } from '../../../../utils/encoding/oracle-encoder-utils';
+import { encodeInsertChainlinkOracle } from '../../../../utils/encoding/oracle-encoder-utils';
 
 /**
  * This script encodes the following transactions:
@@ -18,14 +18,14 @@ async function main(): Promise<DenJsonUpload> {
 
   const transactions = [];
   transactions.push(
-    await prettyPrintEncodeInsertChainlinkOracle(
+    await encodeInsertChainlinkOracle(
       core,
       core.tokens.wstEth!,
       core.tokens.stEth!.address,
     ),
   );
   transactions.push(
-    await prettyPrintEncodeInsertChainlinkOracle(
+    await encodeInsertChainlinkOracle(
       core,
       core.tokens.stEth!,
       core.tokens.weth.address,

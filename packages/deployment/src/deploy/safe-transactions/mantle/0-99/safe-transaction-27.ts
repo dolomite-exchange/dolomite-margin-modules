@@ -14,9 +14,9 @@ import {
 
 } from '../../../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
-import { prettyPrintEncodeAddIsolationModeMarket } from '../../../../utils/encoding/add-market-encoder-utils';
+import { encodeAddIsolationModeMarket } from '../../../../utils/encoding/add-market-encoder-utils';
 import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
-import { prettyPrintEncodeInsertPendlePtOracle } from '../../../../utils/encoding/oracle-encoder-utils';
+import { encodeInsertPendlePtOracle } from '../../../../utils/encoding/oracle-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 
 /**
@@ -46,8 +46,8 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
   );
 
   transactions.push(
-    await prettyPrintEncodeInsertPendlePtOracle(core, methSystem, core.tokens.weth),
-    ...(await prettyPrintEncodeAddIsolationModeMarket(
+    await encodeInsertPendlePtOracle(core, methSystem, core.tokens.weth),
+    ...(await encodeAddIsolationModeMarket(
       core,
       methSystem.factory,
       core.oracleAggregatorV2,

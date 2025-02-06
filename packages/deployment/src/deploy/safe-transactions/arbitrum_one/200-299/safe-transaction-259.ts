@@ -43,7 +43,7 @@ import {
 
 } from '../../../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
-import { prettyPrintEncodeAddMarket } from '../../../../utils/encoding/add-market-encoder-utils';
+import { encodeAddMarket } from '../../../../utils/encoding/add-market-encoder-utils';
 import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 import Deployments from '../../../deployments.json';
@@ -220,7 +220,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
         },
       ],
     ),
-    ...await prettyPrintEncodeAddMarket(
+    ...await encodeAddMarket(
       core,
       core.tokens.sGlp,
       core.oracleAggregatorV2,

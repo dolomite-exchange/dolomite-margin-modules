@@ -4,8 +4,8 @@ import { getRealLatestBlockNumber } from 'packages/base/test/utils';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
 import {
-  prettyPrintEncodeInsertChronicleOracleV3,
-  prettyPrintEncodeInsertRedstoneOracleV3,
+  encodeInsertChronicleOracleV3,
+  encodeInsertRedstoneOracleV3,
 } from '../../../../utils/encoding/oracle-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 import { printPriceForVisualCheck } from '../../../../utils/invariant-utils';
@@ -23,14 +23,14 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
 
   const transactions: EncodedTransaction[] = [];
   transactions.push(
-    ...(await prettyPrintEncodeInsertChronicleOracleV3(core, core.tokens.nect)),
-    ...(await prettyPrintEncodeInsertChronicleOracleV3(core, core.tokens.stonebtc)),
-    ...(await prettyPrintEncodeInsertChronicleOracleV3(core, core.tokens.uniBtc)),
-    ...(await prettyPrintEncodeInsertRedstoneOracleV3(core, core.tokens.beraEth)),
-    ...(await prettyPrintEncodeInsertChronicleOracleV3(core, core.tokens.ylStEth)),
-    ...(await prettyPrintEncodeInsertChronicleOracleV3(core, core.tokens.fbtc)),
-    ...(await prettyPrintEncodeInsertChronicleOracleV3(core, core.tokens.ylBtcLst)),
-    ...(await prettyPrintEncodeInsertRedstoneOracleV3(core, core.tokens.stBtc)),
+    ...(await encodeInsertChronicleOracleV3(core, core.tokens.nect)),
+    ...(await encodeInsertChronicleOracleV3(core, core.tokens.stonebtc)),
+    ...(await encodeInsertChronicleOracleV3(core, core.tokens.uniBtc)),
+    ...(await encodeInsertRedstoneOracleV3(core, core.tokens.beraEth)),
+    ...(await encodeInsertChronicleOracleV3(core, core.tokens.ylStEth)),
+    ...(await encodeInsertChronicleOracleV3(core, core.tokens.fbtc)),
+    ...(await encodeInsertChronicleOracleV3(core, core.tokens.ylBtcLst)),
+    ...(await encodeInsertRedstoneOracleV3(core, core.tokens.stBtc)),
   );
   return {
     core,

@@ -42,7 +42,7 @@ import {
 
 } from '../../../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
-import { prettyPrintEncodeAddIsolationModeMarket } from '../../../../utils/encoding/add-market-encoder-utils';
+import { encodeAddIsolationModeMarket } from '../../../../utils/encoding/add-market-encoder-utils';
 import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 
@@ -247,7 +247,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     ),
     ...(
       await Promise.all(
-        factories.map((factory, i) => prettyPrintEncodeAddIsolationModeMarket(
+        factories.map((factory, i) => encodeAddIsolationModeMarket(
           core,
           factory,
           gmxV2PriceOracle,

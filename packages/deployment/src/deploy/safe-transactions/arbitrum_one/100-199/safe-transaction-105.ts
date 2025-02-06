@@ -10,7 +10,7 @@ import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { BigNumber } from 'ethers';
 import { Network, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
-import { prettyPrintEncodeAddMarket } from '../../../../utils/encoding/add-market-encoder-utils';
+import { encodeAddMarket } from '../../../../utils/encoding/add-market-encoder-utils';
 import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 
 /**
@@ -30,7 +30,7 @@ async function main() {
     core.hhUser1,
   );
 
-  await prettyPrintEncodeAddMarket(
+  await encodeAddMarket(
     core,
     core.tokens.nativeUsdc!,
     usdcPriceOracle,

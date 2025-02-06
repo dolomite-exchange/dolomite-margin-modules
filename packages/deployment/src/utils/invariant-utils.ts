@@ -1,11 +1,13 @@
-import { BigNumberish, ethers } from 'ethers';
+import { BigNumber, BigNumberish, ethers } from 'ethers';
 import { formatUnits } from 'ethers/lib/utils';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { IERC20, IERC20Metadata__factory } from '../../../base/src/types';
+import { IDolomiteStructs } from '../../../base/src/types/contracts/protocol/interfaces/IDolomiteMargin';
 import { INVALID_TOKEN_MAP } from '../../../base/src/utils/constants';
-import { NetworkType } from '../../../base/src/utils/no-deps-constants';
+import { NetworkType, ONE_ETH_BI } from '../../../base/src/utils/no-deps-constants';
 import { CoreProtocolBerachain } from '../../../base/test/utils/core-protocols/core-protocol-berachain';
 import { CoreProtocolType } from '../../../base/test/utils/setup';
+import { readDeploymentFile } from './deploy-utils';
 
 export async function printPriceForVisualCheck(core: CoreProtocolBerachain, token: IERC20) {
   const meta = IERC20Metadata__factory.connect(token.address, token.provider);
@@ -14,6 +16,69 @@ export async function printPriceForVisualCheck(core: CoreProtocolBerachain, toke
   const decimals = invalidToken ? invalidToken.decimals : await meta.decimals();
   const price = await core.oracleAggregatorV2.getPrice(token.address);
   console.log(`\tPrice for ${symbol}:`, formatUnits(price.value, 36 - decimals));
+}
+
+export async function printRiskDataVisualCheck<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  marketId: BigNumberish,
+) {
+  const marginRatio = (await core.dolomiteMargin.getMarginRatio()).value.add(ONE_ETH_BI);
+  const liquidationRatio = (await core.dolomiteMargin.getLiquidationSpread()).value;
+  const market = await core.dolomiteMargin.getMarket(marketId);
+  const meta = IERC20Metadata__factory.connect(market.token, core.hhUser1);
+  const symbol = await meta.symbol();
+  const decimals = await meta.decimals();
+
+  const totalRepeater = 80;
+  const repeater = Math.floor((totalRepeater - symbol.length - 2) / 2);
+  console.log('='.repeat(totalRepeater));
+  console.log(`${'='.repeat(repeater)} ${symbol} ${'='.repeat(repeater)}`);
+  console.log('='.repeat(totalRepeater));
+  if ('maxBorrowWei' in market) {
+    const disabledText = market.isClosing ? ' (disabled)' : '';
+    console.log({
+      minCollateralization: convertPremiumToDisplayNumber(marginRatio, market.marginPremium),
+      liquidationPenalty: convertPremiumToDisplayNumber(liquidationRatio, market.liquidationSpreadPremium),
+      supplyCap: convertWeiToDisplayNumber(market.maxSupplyWei.value, decimals, symbol),
+      borrowCap: convertWeiToDisplayNumber(market.maxBorrowWei.value, decimals, symbol).concat(disabledText),
+      interestSetter: convertInterestSetterToDisplayName(core, market.interestSetter),
+      isBorrowingEnabled: !market.isClosing,
+    });
+  } else {
+    console.log({
+      minCollateralization: convertPremiumToDisplayNumber(marginRatio, market.marginPremium),
+      liquidationPenalty: convertPremiumToDisplayNumber(liquidationRatio, market.spreadPremium),
+      supplyCap: convertWeiToDisplayNumber(market.maxWei.value, decimals, symbol),
+      interestSetter: convertInterestSetterToDisplayName(core, market.interestSetter),
+      isBorrowingEnabled: !market.isClosing,
+    });
+  }
+  console.log('='.repeat(totalRepeater));
+  console.log();
+}
+
+function convertPremiumToDisplayNumber(base: BigNumber, premium: IDolomiteStructs.DecimalStruct) {
+  const appliedPremium = base.mul(ONE_ETH_BI.add(premium.value)).div(ONE_ETH_BI);
+  return `${ethers.utils.formatEther(appliedPremium.mul(100))}%`;
+}
+
+function convertWeiToDisplayNumber(value: BigNumberish, decimals: number, symbol: string) {
+  return `${Number(ethers.utils.formatUnits(value, decimals)).toLocaleString()} ${symbol}`;
+}
+
+function convertInterestSetterToDisplayName<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  interestSetter: string,
+): string {
+  const deployments = readDeploymentFile();
+  for (const displayName in deployments) {
+    const value = deployments[displayName][core.network];
+    if (value && value.address && value.address.toLowerCase() === interestSetter.toLowerCase()) {
+      return displayName;
+    }
+  }
+
+  throw new Error(`Could not find display name for interest setter: ${interestSetter}`);
 }
 
 export async function checkMarket(core: CoreProtocolBerachain, marketId: BigNumberish, token: IERC20) {

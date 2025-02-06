@@ -6,8 +6,8 @@ import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { TargetCollateralization, TargetLiquidationPenalty } from 'packages/base/src/utils/constructors/dolomite';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
-import { prettyPrintEncodeAddMarket } from '../../../../utils/encoding/add-market-encoder-utils';
-import { prettyPrintEncodeInsertChainlinkOracleV3 } from '../../../../utils/encoding/oracle-encoder-utils';
+import { encodeAddMarket } from '../../../../utils/encoding/add-market-encoder-utils';
+import { encodeInsertChainlinkOracleV3 } from '../../../../utils/encoding/oracle-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 
 /**
@@ -20,8 +20,8 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
 
   const transactions = [];
   transactions.push(
-    ...(await prettyPrintEncodeInsertChainlinkOracleV3(core, core.tokens.woEth)),
-    ...(await prettyPrintEncodeAddMarket(
+    ...(await encodeInsertChainlinkOracleV3(core, core.tokens.woEth)),
+    ...(await encodeAddMarket(
       core,
       core.tokens.woEth,
       core.oracleAggregatorV2,

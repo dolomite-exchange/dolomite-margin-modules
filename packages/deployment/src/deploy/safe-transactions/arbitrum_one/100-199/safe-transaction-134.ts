@@ -14,8 +14,8 @@ import {
   writeFile,
 } from '../../../../utils/deploy-utils';
 import { DenJsonUpload, EncodedTransaction } from '../../../../utils/dry-run-utils';
-import { prettyPrintEncodeAddMarket } from '../../../../utils/encoding/add-market-encoder-utils';
-import { prettyPrintEncodeInsertChainlinkOracle } from '../../../../utils/encoding/oracle-encoder-utils';
+import { encodeAddMarket } from '../../../../utils/encoding/add-market-encoder-utils';
+import { encodeInsertChainlinkOracle } from '../../../../utils/encoding/oracle-encoder-utils';
 
 /**
  * This script encodes the following transactions:
@@ -44,14 +44,14 @@ async function main(): Promise<DenJsonUpload> {
 
   const transactions: EncodedTransaction[] = [];
   transactions.push(
-    await prettyPrintEncodeInsertChainlinkOracle(
+    await encodeInsertChainlinkOracle(
       core as any,
       core.tokens.radiant!,
       ADDRESS_ZERO,
     ),
   );
   transactions.push(
-    ...await prettyPrintEncodeAddMarket(
+    ...await encodeAddMarket(
       core,
       core.tokens.jones!,
       jonesTwap,
@@ -64,7 +64,7 @@ async function main(): Promise<DenJsonUpload> {
     ),
   );
   transactions.push(
-    ...await prettyPrintEncodeAddMarket(
+    ...await encodeAddMarket(
       core,
       core.tokens.premia!,
       premiaTwap,
@@ -77,7 +77,7 @@ async function main(): Promise<DenJsonUpload> {
     ),
   );
   transactions.push(
-    ...await prettyPrintEncodeAddMarket(
+    ...await encodeAddMarket(
       core,
       core.tokens.radiant!,
       core.chainlinkPriceOracleV1!,

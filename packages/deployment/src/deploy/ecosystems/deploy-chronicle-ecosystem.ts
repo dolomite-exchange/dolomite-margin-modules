@@ -10,7 +10,7 @@ import {
   TRANSACTION_BUILDER_VERSION,
 } from '../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../utils/dry-run-utils';
-import { prettyPrintEncodeInsertChronicleOracleV3 } from '../../utils/encoding/oracle-encoder-utils';
+import { encodeInsertChronicleOracleV3 } from '../../utils/encoding/oracle-encoder-utils';
 import getScriptName from '../../utils/get-script-name';
 
 async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
@@ -32,7 +32,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   const transactions: EncodedTransaction[] = [];
   for (let i = 0; i < tokens.length; i++) {
     if (CHRONICLE_PRICE_SCRIBES_MAP[network][tokens[i].address]) {
-      transactions.push(...(await prettyPrintEncodeInsertChronicleOracleV3(core, tokens[i])));
+      transactions.push(...(await encodeInsertChronicleOracleV3(core, tokens[i])));
     }
   }
 

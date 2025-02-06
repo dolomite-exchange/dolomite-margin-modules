@@ -23,50 +23,62 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
   const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
 
-  const transactions = [];
+  const baseCollateralization = parseEther('1.15');
+  const baseLiquidationPenalty = parseEther('0.05');
 
+  const transactions = [];
   transactions.push(
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { dolomite: core.dolomiteMargin },
-      'dolomite',
-      'ownerSetMaxWei',
-      [core.marketIds.ezEth, parseEther('500')],
-    ),
+    await prettyPrintEncodedDataWithTypeSafety(core, { dolomite: core.dolomiteMargin }, 'dolomite', 'ownerSetMaxWei', [
+      core.marketIds.ezEth,
+      parseEther('500'),
+    ]),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       { dolomite: core.dolomiteMargin },
       'dolomite',
       'ownerSetMarginPremium',
-      [core.marketIds.ezEth, { value: getMarginPremiumForTargetCollateralization(TargetCollateralization._120) }],
+      [
+        core.marketIds.ezEth,
+        { value: getMarginPremiumForTargetCollateralization(baseCollateralization, TargetCollateralization._120) },
+      ],
     ),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       { dolomite: core.dolomiteMargin },
       'dolomite',
       'ownerSetSpreadPremium',
-      [core.marketIds.ezEth, { value: getLiquidationPremiumForTargetLiquidationPenalty(TargetLiquidationPenalty._6) }],
+      [
+        core.marketIds.ezEth,
+        {
+          value: getLiquidationPremiumForTargetLiquidationPenalty(baseLiquidationPenalty, TargetLiquidationPenalty._6),
+        },
+      ],
     ),
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { dolomite: core.dolomiteMargin },
-      'dolomite',
-      'ownerSetMaxWei',
-      [core.marketIds.weEth, parseEther('750')],
-    ),
+    await prettyPrintEncodedDataWithTypeSafety(core, { dolomite: core.dolomiteMargin }, 'dolomite', 'ownerSetMaxWei', [
+      core.marketIds.weEth,
+      parseEther('750'),
+    ]),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       { dolomite: core.dolomiteMargin },
       'dolomite',
       'ownerSetMarginPremium',
-      [core.marketIds.weEth, { value: getMarginPremiumForTargetCollateralization(TargetCollateralization._120) }],
+      [
+        core.marketIds.weEth,
+        { value: getMarginPremiumForTargetCollateralization(baseCollateralization, TargetCollateralization._120) },
+      ],
     ),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       { dolomite: core.dolomiteMargin },
       'dolomite',
       'ownerSetSpreadPremium',
-      [core.marketIds.weEth, { value: getLiquidationPremiumForTargetLiquidationPenalty(TargetLiquidationPenalty._6) }],
+      [
+        core.marketIds.weEth,
+        {
+          value: getLiquidationPremiumForTargetLiquidationPenalty(baseLiquidationPenalty, TargetLiquidationPenalty._6),
+        },
+      ],
     ),
   );
 

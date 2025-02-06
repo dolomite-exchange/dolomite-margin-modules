@@ -21,7 +21,7 @@ import {
 } from '../../../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
 import getScriptName from '../../../../../utils/get-script-name';
-import { prettyPrintEncodeAddMarket } from '../../../../utils/encoding/add-market-encoder-utils';
+import { encodeAddMarket } from '../../../../utils/encoding/add-market-encoder-utils';
 import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 
 /**
@@ -153,7 +153,7 @@ async function main(): Promise<DryRunOutput<Network.XLayer>> {
         },
       ],
     ),
-    ...await prettyPrintEncodeAddMarket(
+    ...await encodeAddMarket(
       core,
       core.tokens.weth,
       core.oracleAggregatorV2,
@@ -164,7 +164,7 @@ async function main(): Promise<DryRunOutput<Network.XLayer>> {
       ZERO_BI,
       false,
     ),
-    ...await prettyPrintEncodeAddMarket(
+    ...await encodeAddMarket(
       core,
       core.tokens.wokb,
       core.oracleAggregatorV2,
@@ -175,7 +175,7 @@ async function main(): Promise<DryRunOutput<Network.XLayer>> {
       parseEther(`${500_000}`),
       false,
     ),
-    ...await prettyPrintEncodeAddMarket(
+    ...await encodeAddMarket(
       core,
       core.tokens.usdc,
       core.oracleAggregatorV2,
@@ -186,7 +186,7 @@ async function main(): Promise<DryRunOutput<Network.XLayer>> {
       ZERO_BI,
       false,
     ),
-    ...await prettyPrintEncodeAddMarket(
+    ...await encodeAddMarket(
       core,
       core.tokens.wbtc,
       core.oracleAggregatorV2,
@@ -197,7 +197,7 @@ async function main(): Promise<DryRunOutput<Network.XLayer>> {
       parseBtc(`${90}`),
       false,
     ),
-    ...await prettyPrintEncodeAddMarket(
+    ...await encodeAddMarket(
       core,
       core.tokens.usdt,
       core.oracleAggregatorV2,

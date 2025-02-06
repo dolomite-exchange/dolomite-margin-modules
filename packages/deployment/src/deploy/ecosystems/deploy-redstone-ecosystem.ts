@@ -10,7 +10,7 @@ import {
   TRANSACTION_BUILDER_VERSION,
 } from '../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../utils/dry-run-utils';
-import { prettyPrintEncodeInsertRedstoneOracleV3 } from '../../utils/encoding/oracle-encoder-utils';
+import { encodeInsertRedstoneOracleV3 } from '../../utils/encoding/oracle-encoder-utils';
 import getScriptName from '../../utils/get-script-name';
 
 async function main(): Promise<DryRunOutput<Network.Berachain>> {
@@ -29,7 +29,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
   const transactions: EncodedTransaction[] = [];
   for (let i = 0; i < tokens.length; i++) {
     if (REDSTONE_PRICE_AGGREGATORS_MAP[network][tokens[i].address]) {
-      transactions.push(...await prettyPrintEncodeInsertRedstoneOracleV3(core, tokens[i]));
+      transactions.push(...await encodeInsertRedstoneOracleV3(core, tokens[i]));
     }
   }
 

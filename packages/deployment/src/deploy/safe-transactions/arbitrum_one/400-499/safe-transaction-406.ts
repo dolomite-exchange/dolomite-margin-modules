@@ -10,7 +10,7 @@ import {
 
 } from '../../../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
-import { prettyPrintEncodeAddIsolationModeMarket } from '../../../../utils/encoding/add-market-encoder-utils';
+import { encodeAddIsolationModeMarket } from '../../../../utils/encoding/add-market-encoder-utils';
 import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 
@@ -74,7 +74,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
         ],
       },
     ]),
-    ...(await prettyPrintEncodeAddIsolationModeMarket(
+    ...(await encodeAddIsolationModeMarket(
       core,
       weEthPendleSystem.factory,
       core.oracleAggregatorV2,
@@ -85,7 +85,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       TargetLiquidationPenalty._6,
       parseEther(`${4_000}`),
     )),
-    ...(await prettyPrintEncodeAddIsolationModeMarket(
+    ...(await encodeAddIsolationModeMarket(
       core,
       rsEthPendleSystem.factory,
       core.oracleAggregatorV2,

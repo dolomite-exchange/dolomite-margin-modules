@@ -10,8 +10,8 @@ import { BigNumber } from 'ethers';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { Network, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
-import { prettyPrintEncodeAddMarket } from '../../../../utils/encoding/add-market-encoder-utils';
-import { prettyPrintEncodeInsertChainlinkOracle } from '../../../../utils/encoding/oracle-encoder-utils';
+import { encodeAddMarket } from '../../../../utils/encoding/add-market-encoder-utils';
+import { encodeInsertChainlinkOracle } from '../../../../utils/encoding/oracle-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 
 /**
@@ -29,11 +29,11 @@ async function main(): Promise<DryRunOutput<Network.PolygonZkEvm>> {
 
   const transactions: EncodedTransaction[] = [];
   transactions.push(
-    await prettyPrintEncodeInsertChainlinkOracle(
+    await encodeInsertChainlinkOracle(
       core,
       core.tokens.usdc,
     ),
-    ...await prettyPrintEncodeAddMarket(
+    ...await encodeAddMarket(
       core,
       core.tokens.usdc,
       core.chainlinkPriceOracleV1,

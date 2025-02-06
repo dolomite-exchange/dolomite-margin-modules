@@ -4,7 +4,7 @@ import { TargetCollateralization, TargetLiquidationPenalty } from '../../../../.
 import { ADDRESS_ZERO, ZERO_BI } from '../../../../../base/src/utils/no-deps-constants';
 import { CoreProtocolBerachain } from '../../../../../base/test/utils/core-protocols/core-protocol-berachain';
 import { EncodedTransaction } from '../../../utils/dry-run-utils';
-import { prettyPrintEncodeAddMarket } from '../../../utils/encoding/add-market-encoder-utils';
+import { encodeAddMarket } from '../../../utils/encoding/add-market-encoder-utils';
 import { prettyPrintEncodedDataWithTypeSafety } from '../../../utils/encoding/base-encoder-utils';
 import ModuleDeployments from '../../deployments.json';
 
@@ -59,7 +59,7 @@ export async function encodeSimpleBoycoListing(
 ): Promise<EncodedTransaction[]> {
   return [
     ...(await encodeTestOracle(token, price, core)),
-    ...(await prettyPrintEncodeAddMarket(
+    ...(await encodeAddMarket(
       core,
       token,
       core.oracleAggregatorV2,

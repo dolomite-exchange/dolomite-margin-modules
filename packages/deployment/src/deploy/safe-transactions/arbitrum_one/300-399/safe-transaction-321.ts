@@ -8,8 +8,8 @@ import { TargetCollateralization, TargetLiquidationPenalty } from 'packages/base
 import { Network } from 'packages/base/src/utils/no-deps-constants';
 import { IChronicleScribe__factory } from 'packages/oracles/src/types';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
-import { prettyPrintEncodeAddMarket } from '../../../../utils/encoding/add-market-encoder-utils';
-import { prettyPrintEncodeInsertChainlinkOracleV3 } from '../../../../utils/encoding/oracle-encoder-utils';
+import { encodeAddMarket } from '../../../../utils/encoding/add-market-encoder-utils';
+import { encodeInsertChainlinkOracleV3 } from '../../../../utils/encoding/oracle-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 
 /**
@@ -41,7 +41,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
 
   const transactions: EncodedTransaction[] = [];
   transactions.push(
-    ...(await prettyPrintEncodeAddMarket(
+    ...(await encodeAddMarket(
       core,
       core.tokens.wusdm,
       core.oracleAggregatorV2,
@@ -52,8 +52,8 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       parseEther(`${800_000}`),
       false,
     )),
-    ...(await prettyPrintEncodeInsertChainlinkOracleV3(core, core.tokens.rsEth, false)),
-    ...(await prettyPrintEncodeAddMarket(
+    ...(await encodeInsertChainlinkOracleV3(core, core.tokens.rsEth, false)),
+    ...(await encodeAddMarket(
       core,
       core.tokens.rsEth,
       core.oracleAggregatorV2,

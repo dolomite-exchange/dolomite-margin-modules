@@ -21,7 +21,7 @@ import { PendlePtSystem } from '../deploy-utils';
 import { EncodedTransaction } from '../dry-run-utils';
 import { prettyPrintEncodedDataWithTypeSafety, setMostRecentTokenDecimals } from './base-encoder-utils';
 
-export async function prettyPrintEncodeInsertChainlinkOracle<T extends NetworkType>(
+export async function encodeInsertChainlinkOracle<T extends NetworkType>(
   core: CoreProtocolWithChainlinkOld<T>,
   token: IERC20,
   tokenPairAddress: string | undefined = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address]!.tokenPairAddress,
@@ -56,7 +56,7 @@ export async function prettyPrintEncodeInsertChainlinkOracle<T extends NetworkTy
   );
 }
 
-export async function prettyPrintEncodeInsertChainlinkOracleV3<T extends NetworkType>(
+export async function encodeInsertChainlinkOracleV3<T extends NetworkType>(
   core: CoreProtocolWithChainlinkV3<T>,
   token: IERC20,
   invertPrice: boolean = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address]!.invert ?? false,
@@ -123,7 +123,7 @@ export async function prettyPrintEncodeInsertChainlinkOracleV3<T extends Network
   ];
 }
 
-export async function prettyPrintEncodeInsertChaosLabsOracleV3<T extends NetworkType>(
+export async function encodeInsertChaosLabsOracleV3<T extends NetworkType>(
   core: CoreProtocolWithChaosLabsV3<T>,
   token: IERC20,
   invertPrice: boolean = CHAOS_LABS_PRICE_AGGREGATORS_MAP[core.network][token.address]?.invert ?? false,
@@ -191,7 +191,7 @@ export async function prettyPrintEncodeInsertChaosLabsOracleV3<T extends Network
   ];
 }
 
-export async function prettyPrintEncodeInsertChronicleOracleV3(
+export async function encodeInsertChronicleOracleV3(
   core: CoreProtocolWithChronicle<Network.ArbitrumOne | Network.Berachain | Network.Mantle>,
   token: IERC20,
   invertPrice: boolean = CHRONICLE_PRICE_SCRIBES_MAP[core.config.network][token.address].invertPrice ?? false,
@@ -260,7 +260,7 @@ export async function prettyPrintEncodeInsertChronicleOracleV3(
   ];
 }
 
-export async function prettyPrintEncodeInsertOkxOracleV3(
+export async function encodeInsertOkxOracleV3(
   core: CoreProtocolXLayer,
   token: IERC20,
   invertPrice: boolean,
@@ -327,7 +327,7 @@ export async function prettyPrintEncodeInsertOkxOracleV3(
   ];
 }
 
-export async function prettyPrintEncodeInsertPendlePtOracle<T extends NetworkType>(
+export async function encodeInsertPendlePtOracle<T extends NetworkType>(
   core: CoreProtocolType<T>,
   pendleSystem: PendlePtSystem,
   token: IERC20,
@@ -353,7 +353,7 @@ export async function prettyPrintEncodeInsertPendlePtOracle<T extends NetworkTyp
   );
 }
 
-export async function prettyPrintEncodeInsertRedstoneOracleV3<T extends NetworkType>(
+export async function encodeInsertRedstoneOracleV3<T extends NetworkType>(
   core: CoreProtocolWithRedstone<T>,
   token: IERC20,
   invertPrice: boolean = REDSTONE_PRICE_AGGREGATORS_MAP[core.config.network][token.address]!.invert ?? false,
