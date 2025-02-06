@@ -20,6 +20,7 @@
 
 pragma solidity ^0.8.9;
 
+import { IBorrowPositionProxyV2 } from "./IBorrowPositionProxyV2.sol";
 import { IDolomiteAccountRegistry } from "./IDolomiteAccountRegistry.sol";
 import { IDolomiteMigrator } from "./IDolomiteMigrator.sol";
 import { IEventEmitterRegistry } from "./IEventEmitterRegistry.sol";
@@ -45,6 +46,7 @@ interface IDolomiteRegistry {
     // ======================== Events ========================
     // ========================================================
 
+    event BorrowPositionProxySet(address indexed _borrowPositionProxy);
     event GenericTraderProxySet(address indexed _genericTraderProxy);
     event ExpirySet(address indexed _expiry);
     event SlippageToleranceForPauseSentinelSet(uint256 _slippageTolerance);
@@ -55,6 +57,7 @@ interface IDolomiteRegistry {
     event RedstonePriceOracleSet(address indexed _redstonePriceOracle);
     event OracleAggregatorSet(address indexed _oracleAggregator);
     event DolomiteAccountRegistrySet(address indexed _dolomiteAccountRegistry);
+    event TrustedInternalTradersSet(address[] _trustedInternalTraders, bool[] _isTrusted);
     event IsolationModeMulticallFunctionsSet(bytes4[] _selectors);
 
     // ========================================================
@@ -62,6 +65,12 @@ interface IDolomiteRegistry {
     // ========================================================
 
     function lazyInitialize(address _dolomiteMigrator, address _oracleAggregator) external;
+
+    /**
+     *
+     * @param  _borrowPositionProxy  The new address of the borrow position proxy
+     */
+    function ownerSetBorrowPositionProxy(address _borrowPositionProxy) external;
 
     /**
      *
@@ -125,6 +134,16 @@ interface IDolomiteRegistry {
 
     /**
      *
+     * @param  _trustedInternalTraders    The addresses of the trusted internal traders
+     * @param  _isTrusted                 The boolean values for whether the traders are trusted
+     */
+    function ownerSetTrustedInternalTraders(
+        address[] memory _trustedInternalTraders,
+        bool[] memory _isTrusted
+    ) external;
+
+    /**
+     *
      * @param  _selectors    Allowed function selectors for isolation mode multicall
      */
     function ownerSetIsolationModeMulticallFunctions(bytes4[] memory _selectors) external;
@@ -132,6 +151,11 @@ interface IDolomiteRegistry {
     // ========================================================
     // =================== Getter Functions ===================
     // ========================================================
+
+    /**
+     * @return  The address of the borrow position proxy
+     */
+    function borrowPositionProxy() external view returns (IBorrowPositionProxyV2);
 
     /**
      * @return  The address of the generic trader proxy for making zaps
@@ -192,4 +216,11 @@ interface IDolomiteRegistry {
      * @return The base (denominator) for the slippage tolerance variable. Always 1e18.
      */
     function slippageToleranceForPauseSentinelBase() external pure returns (uint256);
+
+    /**
+     * 
+     * @param  _trader  The address of the trader
+     * @return  Whether the trader is trusted
+     */
+    function isTrustedInternalTrader(address _trader) external view returns (bool);
 }

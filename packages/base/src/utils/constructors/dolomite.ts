@@ -50,6 +50,14 @@ export function getRegistryProxyConstructorParams<T extends NetworkType>(
   return [implementationAddress, dolomiteMargin.address, implementationCalldata];
 }
 
+export function getRouterProxyConstructorParams<T extends NetworkType>(
+  implementationAddress: string,
+  implementationCalldata: string,
+  dolomiteMargin: DolomiteMargin<T>,
+): any[] {
+  return [implementationAddress, dolomiteMargin.address, implementationCalldata];
+}
+
 export function getUpgradeableProxyConstructorParams<T extends NetworkType>(
   implementationAddress: string,
   implementationCalldata: PopulatedTransaction,

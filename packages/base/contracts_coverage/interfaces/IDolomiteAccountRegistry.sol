@@ -43,6 +43,7 @@ interface IDolomiteAccountRegistry {
     // ================================================
 
     event RestrictedAccountSet(address _account, bool _isRestricted);
+    event TransferTokenOverrideSet(address indexed _token, address _override);
     event VaultAddedToAccount(address _account, address _vault);
 
     // ===================================================
@@ -57,6 +58,11 @@ interface IDolomiteAccountRegistry {
     function ownerSetRestrictedAccount(
         address _account,
         bool _isRestricted
+    ) external;
+
+    function ownerSetTransferTokenOverride(
+        address _token,
+        address _override
     ) external;
 
     function isIsolationModeVault(address _vault) external view returns (bool);
@@ -74,6 +80,8 @@ interface IDolomiteAccountRegistry {
     function isAccountInRegistry(address _account) external view returns (bool);
 
     function getAccountByVault(address _vault) external view returns (address);
+
+    function getTransferTokenOverride(address _token) external view returns (address);
 
     function getVaultsByAccount(address _account) external view returns (address[] memory);
 
