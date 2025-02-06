@@ -42,12 +42,11 @@ import {
 import ModuleDeployments from 'packages/deployment/src/deploy/deployments.json';
 import {
   deployContractAndSave,
-  EncodedTransaction,
   getMaxDeploymentVersionNameByDeploymentKey,
-  prettyPrintEncodedDataWithTypeSafety,
   TRANSACTION_BUILDER_VERSION,
 } from '../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../utils/dry-run-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../utils/dry-run-utils';
+import { prettyPrintEncodedDataWithTypeSafety } from '../../utils/encoding/base-encoder-utils';
 import getScriptName from '../../utils/get-script-name';
 import { deployDolomiteAccountRegistry } from './helpers/deploy-dolomite-account-registry';
 import { deployInterestSetters } from './helpers/deploy-interest-setters';

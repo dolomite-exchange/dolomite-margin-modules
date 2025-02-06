@@ -7,11 +7,10 @@ import { getRedstonePriceOracleV3ConstructorParams } from 'packages/oracles/src/
 import { IERC20__factory, RedstonePriceOracleV3__factory } from 'packages/oracles/src/types';
 import {
   deployContractAndSave,
-  EncodedTransaction,
-  prettyPrintEncodeInsertRedstoneOracleV3,
   TRANSACTION_BUILDER_VERSION,
 } from '../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../utils/dry-run-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../utils/dry-run-utils';
+import { prettyPrintEncodeInsertRedstoneOracleV3 } from '../../utils/encoding/oracle-encoder-utils';
 import getScriptName from '../../utils/get-script-name';
 
 async function main(): Promise<DryRunOutput<Network.Berachain>> {

@@ -6,10 +6,13 @@ import { getRealLatestBlockNumber } from 'packages/base/test/utils';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
 import {
   deployContractAndSave,
-  EncodedTransaction,
-  prettyPrintEncodedDataWithTypeSafety,
+
 } from 'packages/deployment/src/utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from 'packages/deployment/src/utils/dry-run-utils';
+import {
+  doDryRunAndCheckDeployment,
+  DryRunOutput,
+  EncodedTransaction,
+} from 'packages/deployment/src/utils/dry-run-utils';
 import getScriptName from 'packages/deployment/src/utils/get-script-name';
 import {
   getBuybackPoolConstructorParams,
@@ -20,6 +23,7 @@ import {
   getVeFeeCalculatorConstructorParams
 } from 'packages/liquidity-mining/src/liquidity-mining-constructors';
 import { ExternalOARB__factory, VeExternalVesterImplementationV1__factory, VotingEscrow__factory } from 'packages/liquidity-mining/src/types';
+import { prettyPrintEncodedDataWithTypeSafety } from '../../utils/encoding/base-encoder-utils';
 
 /**
  * This script encodes the following transactions:

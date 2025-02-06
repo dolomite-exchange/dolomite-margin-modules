@@ -14,10 +14,10 @@ import {
   deployContractAndSave,
   deployLinearInterestSetterAndSave,
   InterestSetterType,
-  prettyPrintEncodeAddMarket,
-  prettyPrintEncodeInsertChainlinkOracle,
   writeFile,
 } from '../../../../utils/deploy-utils';
+import { prettyPrintEncodeAddMarket } from '../../../../utils/encoding/add-market-encoder-utils';
+import { prettyPrintEncodeInsertChainlinkOracle } from '../../../../utils/encoding/oracle-encoder-utils';
 
 /**
  * This script encodes the following transactions:

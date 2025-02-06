@@ -21,12 +21,12 @@ import { getChaosLabsPriceOracleV3ConstructorParams } from 'packages/oracles/src
 import {
   deployContractAndSave,
   deployGmxV2GlvTokenSystem,
-  EncodedTransaction,
   GmxV2GlvTokenSystem,
-  prettyPrintEncodeAddGlvMarket,
-  prettyPrintEncodeInsertChaosLabsOracleV3,
+
 } from '../../../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
+import { prettyPrintEncodeAddGlvMarket } from '../../../../utils/encoding/add-market-encoder-utils';
+import { prettyPrintEncodeInsertChaosLabsOracleV3 } from '../../../../utils/encoding/oracle-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 
 /**

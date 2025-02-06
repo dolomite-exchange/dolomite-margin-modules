@@ -3,10 +3,10 @@ import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-const
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import {
   createFolder,
-  DenJsonUpload,
-  prettyPrintEncodeInsertChainlinkOracle,
   writeFile,
 } from '../../../../utils/deploy-utils';
+import { DenJsonUpload } from '../../../../utils/dry-run-utils';
+import { prettyPrintEncodeInsertChainlinkOracle } from '../../../../utils/encoding/oracle-encoder-utils';
 
 /**
  * This script encodes the following transactions:

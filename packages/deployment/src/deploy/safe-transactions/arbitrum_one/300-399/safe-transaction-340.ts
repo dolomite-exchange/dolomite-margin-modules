@@ -7,8 +7,9 @@ import {
   getPendlePtIsolationModeUnwrapperTraderV2ConstructorParams,
   getPendlePtIsolationModeWrapperTraderV2ConstructorParams,
 } from 'packages/pendle/src/pendle-constructors';
-import { deployContractAndSave, prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/deploy-utils';
+import { deployContractAndSave } from '../../../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
+import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 
 const OLD_PT_WE_ETH_SEP_2024_UNWRAPPER = '0x19F44150f7c6de1879518673d00ab7839700B909';

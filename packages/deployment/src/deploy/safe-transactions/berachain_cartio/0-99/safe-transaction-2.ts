@@ -7,12 +7,9 @@ import { ADDRESS_ZERO, Network, ZERO_BI } from 'packages/base/src/utils/no-deps-
 import { getRealLatestBlockNumber } from 'packages/base/test/utils';
 import { CoreProtocolBerachainCartio } from 'packages/base/test/utils/core-protocols/core-protocol-berachain-cartio';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
-import {
-  EncodedTransaction,
-  prettyPrintEncodeAddMarket,
-  prettyPrintEncodedDataWithTypeSafety,
-} from '../../../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
+import { prettyPrintEncodeAddMarket } from '../../../../utils/encoding/add-market-encoder-utils';
+import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 import ModuleDeployments from '../../../deployments.json';
 

@@ -7,11 +7,10 @@ import { getChroniclePriceOracleV3ConstructorParams } from 'packages/oracles/src
 import { ChroniclePriceOracleV3__factory, IERC20__factory } from 'packages/oracles/src/types';
 import {
   deployContractAndSave,
-  EncodedTransaction,
-  prettyPrintEncodeInsertChronicleOracleV3,
   TRANSACTION_BUILDER_VERSION,
 } from '../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../utils/dry-run-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../utils/dry-run-utils';
+import { prettyPrintEncodeInsertChronicleOracleV3 } from '../../utils/encoding/oracle-encoder-utils';
 import getScriptName from '../../utils/get-script-name';
 
 async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {

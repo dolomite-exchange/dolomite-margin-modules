@@ -11,16 +11,34 @@ import hardhat from 'hardhat';
 import { advanceByTimeDelta } from 'packages/base/test/utils';
 import {
   createFolder,
-  DenJsonUpload,
-  EncodedTransaction,
-  prettyPrintEncodedDataWithTypeSafety,
   readDeploymentFile,
-  TransactionBuilderUpload,
+  TRANSACTION_BUILDER_VERSION,
   writeDeploymentFile,
   writeFile,
 } from './deploy-utils';
+import { prettyPrintEncodedDataWithTypeSafety } from './encoding/base-encoder-utils';
 
 const HARDHAT_CHAIN_ID = '31337';
+
+export interface EncodedTransaction {
+  to: string;
+  value: string;
+  data: string;
+}
+
+export interface DenJsonUpload {
+  addExecuteImmediatelyTransactions?: boolean;
+  chainId: NetworkType;
+  transactions: EncodedTransaction[];
+}
+
+export interface TransactionBuilderUpload extends DenJsonUpload {
+  version: '1.0';
+  meta: {
+    name: string;
+    txBuilderVersion: typeof TRANSACTION_BUILDER_VERSION;
+  };
+}
 
 export interface DryRunOutput<T extends NetworkType> {
   readonly upload: DenJsonUpload | TransactionBuilderUpload;

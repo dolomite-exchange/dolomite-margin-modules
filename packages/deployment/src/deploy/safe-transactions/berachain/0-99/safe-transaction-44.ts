@@ -7,16 +7,16 @@ import { setupCoreProtocol } from 'packages/base/test/utils/setup';
 import { IERC20, IERC20Metadata__factory, TestPriceOracle__factory } from '../../../../../../base/src/types';
 import { BTC_PLACEHOLDER_MAP } from '../../../../../../base/src/utils/constants';
 import { CoreProtocolBerachain } from '../../../../../../base/test/utils/core-protocols/core-protocol-berachain';
+import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
+import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
+import { encodeSetSupplyCap } from '../../../../utils/encoding/dolomite-margin-core-encoder-utils';
 import {
-  EncodedTransaction,
-  prettyPrintEncodedDataWithTypeSafety,
   prettyPrintEncodeInsertChronicleOracleV3,
   prettyPrintEncodeInsertRedstoneOracleV3,
-} from '../../../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
+} from '../../../../utils/encoding/oracle-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
+import { printPriceForVisualCheck } from '../../../../utils/invariant-utils';
 import ModuleDeployments from '../../../deployments.json';
-import { encodeSetSupplyCap } from '../utils';
 
 const BTC_PRICE_8D = '1050000000000000000000000000000000'; // $105k
 const BTC_PRICE_18D = parseEther(`${98_000}`); // $105k
@@ -25,7 +25,7 @@ const STABLE_COIN_PRICE_18D = parseEther(`${1}`);
 
 /**
  * This script encodes the following transactions:
- * - Lowers the supply cap of BERA, USD0, and USD0++ to 1 unit
+ * - Encodes the proper prices for each asset and lowers supply cap if necessary
  */
 async function main(): Promise<DryRunOutput<Network.Berachain>> {
   const network = await getAndCheckSpecificNetwork(Network.Berachain);
@@ -79,33 +79,33 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     },
     scriptName: getScriptName(__filename),
     invariants: async () => {
-      await printPrice(core, core.tokens.honey);
-      await printPrice(core, core.tokens.usdc);
-      await printPrice(core, core.tokens.usdt);
-      await printPrice(core, core.tokens.usde);
-      await printPrice(core, core.tokens.sUsde);
-      await printPrice(core, core.tokens.weth);
-      await printPrice(core, core.tokens.wbtc);
-      await printPrice(core, core.tokens.btcPlaceholder);
-      await printPrice(core, core.tokens.solvBtc);
-      await printPrice(core, core.tokens.solvBtcBbn);
-      await printPrice(core, core.tokens.pumpBtc);
-      await printPrice(core, core.tokens.eBtc);
-      await printPrice(core, core.tokens.weEth);
-      await printPrice(core, core.tokens.stone);
-      await printPrice(core, core.tokens.ylPumpBtc);
-      await printPrice(core, core.tokens.usda);
-      await printPrice(core, core.tokens.sUsda);
-      await printPrice(core, core.tokens.rswEth);
-      await printPrice(core, core.tokens.rsEth);
-      await printPrice(core, core.tokens.lbtc);
-      await printPrice(core, core.tokens.nect);
-      await printPrice(core, core.tokens.stonebtc);
-      await printPrice(core, core.tokens.uniBtc);
-      await printPrice(core, core.tokens.beraEth);
-      await printPrice(core, core.tokens.ylStEth);
-      await printPrice(core, core.tokens.ylBtcLst);
-      await printPrice(core, core.tokens.stBtc);
+      await printPriceForVisualCheck(core, core.tokens.honey);
+      await printPriceForVisualCheck(core, core.tokens.usdc);
+      await printPriceForVisualCheck(core, core.tokens.usdt);
+      await printPriceForVisualCheck(core, core.tokens.usde);
+      await printPriceForVisualCheck(core, core.tokens.sUsde);
+      await printPriceForVisualCheck(core, core.tokens.weth);
+      await printPriceForVisualCheck(core, core.tokens.wbtc);
+      await printPriceForVisualCheck(core, core.tokens.btcPlaceholder);
+      await printPriceForVisualCheck(core, core.tokens.solvBtc);
+      await printPriceForVisualCheck(core, core.tokens.solvBtcBbn);
+      await printPriceForVisualCheck(core, core.tokens.pumpBtc);
+      await printPriceForVisualCheck(core, core.tokens.eBtc);
+      await printPriceForVisualCheck(core, core.tokens.weEth);
+      await printPriceForVisualCheck(core, core.tokens.stone);
+      await printPriceForVisualCheck(core, core.tokens.ylPumpBtc);
+      await printPriceForVisualCheck(core, core.tokens.usda);
+      await printPriceForVisualCheck(core, core.tokens.sUsda);
+      await printPriceForVisualCheck(core, core.tokens.rswEth);
+      await printPriceForVisualCheck(core, core.tokens.rsEth);
+      await printPriceForVisualCheck(core, core.tokens.lbtc);
+      await printPriceForVisualCheck(core, core.tokens.nect);
+      await printPriceForVisualCheck(core, core.tokens.stonebtc);
+      await printPriceForVisualCheck(core, core.tokens.uniBtc);
+      await printPriceForVisualCheck(core, core.tokens.beraEth);
+      await printPriceForVisualCheck(core, core.tokens.ylStEth);
+      await printPriceForVisualCheck(core, core.tokens.ylBtcLst);
+      await printPriceForVisualCheck(core, core.tokens.stBtc);
     },
   };
 }
@@ -147,14 +147,6 @@ async function encodeTestOracleAndDisableSupply(
       ],
     ),
   ];
-}
-
-async function printPrice(core: CoreProtocolBerachain, token: IERC20) {
-  const meta = IERC20Metadata__factory.connect(token.address, token.provider);
-  const symbol = token.address === BTC_PLACEHOLDER_MAP[core.network].address ? 'BTC' : await meta.symbol();
-  const decimals = token.address === BTC_PLACEHOLDER_MAP[core.network].address ? 8 : await meta.decimals();
-  const price = await core.oracleAggregatorV2.getPrice(token.address);
-  console.log(`\tPrice for ${symbol}:`, formatUnits(price.value, 36 - decimals));
 }
 
 doDryRunAndCheckDeployment(main);

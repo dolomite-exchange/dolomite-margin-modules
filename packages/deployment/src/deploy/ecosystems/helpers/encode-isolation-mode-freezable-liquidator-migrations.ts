@@ -1,11 +1,11 @@
 import { IDolomiteMargin } from 'packages/base/src/types';
 import { CoreProtocolType } from 'packages/base/test/utils/setup';
 import {
-  EncodedTransaction,
   getOldDeploymentVersionNamesByDeploymentKey,
-  prettyPrintEncodedDataWithTypeSafety,
   readDeploymentFile,
 } from '../../../utils/deploy-utils';
+import { EncodedTransaction } from '../../../utils/dry-run-utils';
+import { prettyPrintEncodedDataWithTypeSafety } from '../../../utils/encoding/base-encoder-utils';
 
 export async function encodeIsolationModeFreezableLiquidatorMigrations(
   core: CoreProtocolType<any>,

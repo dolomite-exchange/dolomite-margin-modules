@@ -11,12 +11,9 @@ import {
   TargetLiquidationPenalty,
 } from '../../../../../../base/src/utils/constructors/dolomite';
 import { CoreProtocolBerachainCartio } from '../../../../../../base/test/utils/core-protocols/core-protocol-berachain-cartio';
-import {
-  EncodedTransaction,
-  prettyPrintEncodeAddMarket,
-  prettyPrintEncodedDataWithTypeSafety,
-} from '../../../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
+import { prettyPrintEncodeAddMarket } from '../../../../utils/encoding/add-market-encoder-utils';
+import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 import ModuleDeployments from '../../../deployments.json';
 
