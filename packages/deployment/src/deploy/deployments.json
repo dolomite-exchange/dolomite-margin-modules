@@ -723,7 +723,7 @@
       "isVerified": true
     },
     "80094": {
-      "address": "0x6106ec078D794aF952016e0a3c2a9Adb2c2CF478",
+      "address": "0x2D9f1BAa3E1802003178DDC819a1DBBe0cC4F70A",
       "transaction": "0xb00e7937eeff059055be1ab688cca5c0be058e01d2c55b6b8794c04360cbb5bf",
       "isVerified": true
     }
@@ -6352,7 +6352,6 @@
       "isVerified": true
     }
   },
-  "TestAdminPriceOracleV1": {},
   "TestPriceOracle": {
     "80000": {
       "address": "0xFb954643D6a1668Ec85646775a4582e7B7b45cE9",
@@ -6363,11 +6362,6 @@
       "address": "0xd55AFc5eE5fFdAd3d44829b22E2C2B10a484D33e",
       "transaction": "0x2b484aec42b9771078c0de35ba8c44c51d9e2f5076f951ae2bcd60e04ef73653",
       "isVerified": true
-    },
-    "80094": {
-      "address": "0xFb954643D6a1668Ec85646775a4582e7B7b45cE9",
-      "transaction": "0x10c62e9e0c03a62116f960d0ab0f50eaea42cd3c2237dcac2c8fa2681e50f8e1",
-      "isVerified": false
     }
   },
   "TestPriceOracleForAdmin": {

@@ -150,3 +150,20 @@ export async function checkBorrowCap<T extends NetworkType>(
     errorMessage,
   );
 }
+
+export async function checkIsCollateralOnly<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  marketId: BigNumberish,
+  expectedCollateralOnly: boolean,
+) {
+  let errorMessage: string;
+  if (expectedCollateralOnly) {
+    errorMessage = `Expected market [${marketId}] to be collateral only`;
+  } else {
+    errorMessage = `Expected market [${marketId}] to be borrowable`;
+  }
+  assertHardhatInvariant(
+    (await core.dolomiteMargin.getMarketIsClosing(marketId)) === expectedCollateralOnly,
+    errorMessage,
+  );
+}

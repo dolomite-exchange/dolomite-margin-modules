@@ -12,7 +12,7 @@ import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding
 import { encodeSetSupplyCap } from '../../../../utils/encoding/dolomite-margin-core-encoder-utils';
 import {
   encodeInsertChronicleOracleV3,
-  encodeInsertRedstoneOracleV3,
+  encodeInsertRedstoneOracleV3, encodeTestOracleAndDisableSupply,
 } from '../../../../utils/encoding/oracle-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 import { printPriceForVisualCheck } from '../../../../utils/invariant-utils';
@@ -108,45 +108,6 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
       await printPriceForVisualCheck(core, core.tokens.stBtc);
     },
   };
-}
-
-async function encodeTestOracleAndDisableSupply(
-  core: CoreProtocolBerachain,
-  token: IERC20,
-  price: BigNumberish,
-): Promise<EncodedTransaction[]> {
-  const testPriceOracle = TestPriceOracle__factory.connect(
-    ModuleDeployments.TestPriceOracleForAdmin[core.network].address,
-    core.hhUser1,
-  );
-  const marketId = await core.dolomiteMargin.getMarketIdByTokenAddress(token.address);
-
-  return [
-    await encodeSetSupplyCap(core, marketId, ONE_BI),
-    await prettyPrintEncodedDataWithTypeSafety(core, { testPriceOracle }, 'testPriceOracle', 'setPrice', [
-      token.address,
-      price,
-    ]),
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { oracleAggregatorV2: core.oracleAggregatorV2 },
-      'oracleAggregatorV2',
-      'ownerInsertOrUpdateToken',
-      [
-        {
-          token: token.address,
-          decimals: await IERC20Metadata__factory.connect(token.address, core.hhUser1).decimals(),
-          oracleInfos: [
-            {
-              oracle: testPriceOracle.address,
-              tokenPair: ADDRESS_ZERO,
-              weight: 100,
-            },
-          ],
-        },
-      ],
-    ),
-  ];
 }
 
 doDryRunAndCheckDeployment(main);

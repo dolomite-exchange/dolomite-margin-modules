@@ -95,7 +95,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   );
   await deployContractAndSave(
     'DolomiteERC4626WithPayable',
-    [PAYABLE_TOKEN_MAP[network].address],
+    [],
     getMaxDeploymentVersionNameByDeploymentKey('DolomiteERC4626WithPayableImplementation', 1),
   );
   const dolomiteOwnerAddress = await deployContractAndSave(

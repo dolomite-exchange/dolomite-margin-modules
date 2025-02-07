@@ -711,6 +711,8 @@ export async function setupCoreProtocol<T extends NetworkType>(
   }
 
   const dolomiteMarginAddress = DolomiteMarginJson.networks[config.network].address;
+  let counter = 0;
+  console.log('Before operation...', counter++, Date.now());
   const [hhUser1, hhUser2, hhUser3, hhUser4, hhUser5] = await Promise.all(
     (await ethers.getSigners()).map((s) => SignerWithAddressWithSafety.create(s.address)),
   );

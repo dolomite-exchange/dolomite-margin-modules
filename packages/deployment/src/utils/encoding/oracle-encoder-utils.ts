@@ -1,11 +1,14 @@
+import { BigNumberish } from 'ethers';
 import { network } from 'hardhat';
 import {
   CoreProtocolWithChainlinkOld,
-  CoreProtocolWithChainlinkV3, CoreProtocolWithChaosLabsV3, CoreProtocolWithChronicle,
+  CoreProtocolWithChainlinkV3,
+  CoreProtocolWithChaosLabsV3,
+  CoreProtocolWithChronicle,
   CoreProtocolWithRedstone,
 } from 'packages/oracles/src/oracles-constructors';
 import { IChainlinkAggregator__factory, IChronicleScribe__factory } from 'packages/oracles/src/types';
-import { IERC20, IERC20Metadata__factory } from '../../../../base/src/types';
+import { IERC20, IERC20Metadata__factory, TestPriceOracleForAdmin__factory } from '../../../../base/src/types';
 import {
   CHAINLINK_PRICE_AGGREGATORS_MAP,
   CHAOS_LABS_PRICE_AGGREGATORS_MAP,
@@ -13,13 +16,56 @@ import {
   INVALID_TOKEN_MAP,
   REDSTONE_PRICE_AGGREGATORS_MAP,
 } from '../../../../base/src/utils/constants';
-import { ADDRESS_ZERO, Network, NetworkType, ZERO_BI } from '../../../../base/src/utils/no-deps-constants';
+import { ADDRESS_ZERO, Network, NetworkType, ONE_BI, ZERO_BI } from '../../../../base/src/utils/no-deps-constants';
 import { impersonate } from '../../../../base/test/utils';
+import { CoreProtocolBerachain } from '../../../../base/test/utils/core-protocols/core-protocol-berachain';
 import { CoreProtocolXLayer } from '../../../../base/test/utils/core-protocols/core-protocol-x-layer';
 import { CoreProtocolType } from '../../../../base/test/utils/setup';
+import ModuleDeployments from '../../deploy/deployments.json';
 import { PendlePtSystem } from '../deploy-utils';
 import { EncodedTransaction } from '../dry-run-utils';
 import { prettyPrintEncodedDataWithTypeSafety, setMostRecentTokenDecimals } from './base-encoder-utils';
+import { encodeSetIsCollateralOnly, encodeSetSupplyCap } from './dolomite-margin-core-encoder-utils';
+
+export async function encodeTestOracleAndDisableSupply(
+  core: CoreProtocolBerachain,
+  token: IERC20,
+  price: BigNumberish,
+): Promise<EncodedTransaction[]> {
+  const testPriceOracle = TestPriceOracleForAdmin__factory.connect(
+    ModuleDeployments.TestPriceOracleForAdmin[core.network].address,
+    core.hhUser1,
+  );
+  const marketId = await core.dolomiteMargin.getMarketIdByTokenAddress(token.address);
+
+  return [
+    await encodeSetSupplyCap(core, marketId, ONE_BI),
+    await encodeSetIsCollateralOnly(core, marketId, true),
+    await prettyPrintEncodedDataWithTypeSafety(core, { testPriceOracle }, 'testPriceOracle', 'setPrice', [
+      token.address,
+      price,
+    ]),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { oracleAggregatorV2: core.oracleAggregatorV2 },
+      'oracleAggregatorV2',
+      'ownerInsertOrUpdateToken',
+      [
+        {
+          token: token.address,
+          decimals: await IERC20Metadata__factory.connect(token.address, core.hhUser1).decimals(),
+          oracleInfos: [
+            {
+              oracle: testPriceOracle.address,
+              tokenPair: ADDRESS_ZERO,
+              weight: 100,
+            },
+          ],
+        },
+      ],
+    ),
+  ];
+}
 
 export async function encodeInsertChainlinkOracle<T extends NetworkType>(
   core: CoreProtocolWithChainlinkOld<T>,
