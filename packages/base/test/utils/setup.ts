@@ -304,6 +304,18 @@ export async function enableInterestAccrual<T extends NetworkType>(
   );
 }
 
+export async function setupHONEYBalance(
+  core: CoreProtocolBerachain | CoreProtocolBerachainBartio,
+  signer: SignerWithAddressWithSafety,
+  amount: BigNumberish,
+  spender: { address: string },
+) {
+  const whaleAddress = '0x13410d942673826b49Ccf78f80303152485F9370';
+  const whaleSigner = await impersonate(whaleAddress, true);
+  await core.tokens.honey.connect(whaleSigner).transfer(signer.address, amount);
+  await core.tokens.honey.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
+}
+
 export async function setupWBERABalance(
   core: CoreProtocolBerachainBartio,
   signer: SignerWithAddressWithSafety,
