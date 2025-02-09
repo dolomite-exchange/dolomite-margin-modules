@@ -2224,10 +2224,10 @@ export const CHRONICLE_PRICE_SCRIBES_MAP: Record<
     [HONEY_MAP[Network.Berachain].address]: {
       scribeAddress: '0xd800ca44ffabecd159c7889c3bf64a217361aec8',
     },
-    [NECT_MAP[Network.Berachain].address]: {
-      scribeAddress: '0xd800ca44ffabecd159c7889c3bf64a217361aec8', // TODO: fix this
-      tokenPairAddress: HONEY_MAP[Network.Berachain].address,
-    },
+    // [NECT_MAP[Network.Berachain].address]: {
+    //   scribeAddress: '0xd800ca44ffabecd159c7889c3bf64a217361aec8', // TODO: fix this
+    //   tokenPairAddress: HONEY_MAP[Network.Berachain].address,
+    // },
     [PUMP_BTC_MAP[Network.Berachain].address]: {
       scribeAddress: '0xc991e18e3f167f7457e06b780e92ea94a6b3c1bb',
     },

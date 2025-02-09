@@ -20,7 +20,7 @@
 pragma solidity ^0.8.9;
 
 import { IDolomiteStructs } from "./IDolomiteStructs.sol";
-
+import {IDolomiteMargin} from "./IDolomiteMargin.sol";
 
 /**
  * @title   IDolomiteAccountRiskOverrideSetter
@@ -30,21 +30,78 @@ import { IDolomiteStructs } from "./IDolomiteStructs.sol";
  */
 interface IDolomiteAccountRiskOverrideSetter {
 
+    // ===================== Events =====================
+
+    event CategorySet(uint256 indexed marketId, Category category);
+    event RiskFeatureSet(uint256 indexed marketId, RiskFeature riskFeature, bytes extraData);
+
+    // ===================== Enums =====================
+
+    enum Category {
+        NONE,
+        BERA,
+        BTC,
+        ETH,
+        STABLE
+    }
+
+    enum RiskFeature {
+        NONE,
+        /// @dev The asset cannot be used as collateral in a position and can only be borrowed
+        BORROW_ONLY,
+        /// @dev The asset cannot have other collateral assets held in the position and can only borrow specific debt
+        SINGLE_COLLATERAL_WITH_STRICT_DEBT
+    }
+
+    // ===================== Structs =====================
+
+    struct RiskFeatureParam {
+        RiskFeature riskFeature;
+        bytes extraData;
+    }
+
+    struct SingleCollateralWithStrictDebtRiskParam {
+        uint256[] debtMarketIds;
+        IDolomiteStructs.Decimal marginRatioOverride;
+        IDolomiteStructs.Decimal liquidationSpreadOverride;
+    }
+
+    // ===================== Functions =====================
+
+    function ownerSetCategoryByMarketId(
+        uint256 _marketId,
+        Category _category
+    ) external;
+
+    function ownerSetRiskFeatureByMarketId(
+        uint256 _marketId,
+        RiskFeature _riskFeature,
+        bytes calldata _extraData
+    ) external;
+
     /**
-     * @notice  Gets the risk overrides for a given account owner.
+     * @notice  Gets the risk overrides for a given account owner. In the context of an operation, this function is
+     *          called within `_verifyFinalState`, after all of the operation's actions have occurred. Thus, it is safe
+     *          to read the account's state from Dolomite Margin's storage.
      *
-     * @param  _accountOwner               The owner of the account whose risk override should be retrieved.
-     * @return  marginRatioOverride         The margin ratio override for this account.
-     * @return  liquidationSpreadOverride   The liquidation spread override for this account.
+     * @param  _account                    The account whose risk override should be retrieved.
+     * @return _marginRatioOverride         The margin ratio override for this account.
+     * @return _liquidationSpreadOverride   The liquidation spread override for this account.
      */
     function getAccountRiskOverride(
-        address _accountOwner
+        IDolomiteStructs.AccountInfo calldata _account
     )
     external
     view
     returns
     (
-        IDolomiteStructs.Decimal memory marginRatioOverride,
-        IDolomiteStructs.Decimal memory liquidationSpreadOverride
+        IDolomiteStructs.Decimal memory _marginRatioOverride,
+        IDolomiteStructs.Decimal memory _liquidationSpreadOverride
     );
+
+    function getCategoryMaskByMarketIds(uint256[] memory _marketIds) external view returns (uint256);
+
+    function getCategoryByMarketId(uint256 _marketId) external view returns (Category);
+
+    function getRiskFeatureByMarketId(uint256 _marketId) external view returns (RiskFeature);
 }
