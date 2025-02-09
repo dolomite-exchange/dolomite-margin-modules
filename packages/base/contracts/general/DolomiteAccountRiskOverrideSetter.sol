@@ -205,7 +205,9 @@ contract DolomiteAccountRiskOverrideSetter is
         return param.riskFeature;
     }
 
-    function getRiskFeatureForSingleCollateral(uint256 _marketId) public view returns (SingleCollateralWithStrictDebtRiskParam[] memory params) {
+    function getRiskFeatureForSingleCollateral(
+        uint256 _marketId
+    ) public view returns (SingleCollateralWithStrictDebtRiskParam[] memory params) {
         RiskFeatureParam storage riskParam = _getRiskFeatureParamByMarketId(_marketId);
         Require.that(
             riskParam.riskFeature == RiskFeature.SINGLE_COLLATERAL_WITH_STRICT_DEBT,
