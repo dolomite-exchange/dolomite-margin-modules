@@ -20,7 +20,6 @@
 pragma solidity ^0.8.9;
 
 import { IDolomiteStructs } from "./IDolomiteStructs.sol";
-import {IDolomiteMargin} from "./IDolomiteMargin.sol";
 
 /**
  * @title   IDolomiteAccountRiskOverrideSetter
@@ -33,6 +32,11 @@ interface IDolomiteAccountRiskOverrideSetter {
     // ===================== Events =====================
 
     event CategorySet(uint256 indexed marketId, Category category);
+    event CategoryParamSet(
+        Category category,
+        IDolomiteStructs.Decimal marginRatioOverride,
+        IDolomiteStructs.Decimal liquidationRewardOverride
+    );
     event RiskFeatureSet(uint256 indexed marketId, RiskFeature riskFeature, bytes extraData);
 
     // ===================== Enums =====================
@@ -55,6 +59,12 @@ interface IDolomiteAccountRiskOverrideSetter {
 
     // ===================== Structs =====================
 
+    struct CategoryParam {
+        Category category;
+        IDolomiteStructs.Decimal marginRatioOverride;
+        IDolomiteStructs.Decimal liquidationRewardOverride;
+    }
+
     struct RiskFeatureParam {
         RiskFeature riskFeature;
         bytes extraData;
@@ -63,7 +73,7 @@ interface IDolomiteAccountRiskOverrideSetter {
     struct SingleCollateralWithStrictDebtRiskParam {
         uint256[] debtMarketIds;
         IDolomiteStructs.Decimal marginRatioOverride;
-        IDolomiteStructs.Decimal liquidationSpreadOverride;
+        IDolomiteStructs.Decimal liquidationRewardOverride;
     }
 
     // ===================== Functions =====================
@@ -71,6 +81,12 @@ interface IDolomiteAccountRiskOverrideSetter {
     function ownerSetCategoryByMarketId(
         uint256 _marketId,
         Category _category
+    ) external;
+
+    function ownerSetCategoryParam(
+        Category _category,
+        IDolomiteStructs.Decimal calldata _marginRatioOverride,
+        IDolomiteStructs.Decimal calldata _liquidationRewardOverride
     ) external;
 
     function ownerSetRiskFeatureByMarketId(
@@ -86,7 +102,7 @@ interface IDolomiteAccountRiskOverrideSetter {
      *
      * @param  _account                    The account whose risk override should be retrieved.
      * @return _marginRatioOverride         The margin ratio override for this account.
-     * @return _liquidationSpreadOverride   The liquidation spread override for this account.
+     * @return _liquidationRewardOverride   The liquidation spread override for this account.
      */
     function getAccountRiskOverride(
         IDolomiteStructs.AccountInfo calldata _account
@@ -96,12 +112,18 @@ interface IDolomiteAccountRiskOverrideSetter {
     returns
     (
         IDolomiteStructs.Decimal memory _marginRatioOverride,
-        IDolomiteStructs.Decimal memory _liquidationSpreadOverride
+        IDolomiteStructs.Decimal memory _liquidationRewardOverride
     );
 
     function getCategoryMaskByMarketIds(uint256[] memory _marketIds) external view returns (uint256);
 
     function getCategoryByMarketId(uint256 _marketId) external view returns (Category);
 
+    function getCategoryParamByCategory(Category _category) external view returns (CategoryParam memory);
+
     function getRiskFeatureByMarketId(uint256 _marketId) external view returns (RiskFeature);
+
+    function getRiskFeatureForSingleCollateralByMarketId(
+        uint256 _marketId
+    ) external view returns (SingleCollateralWithStrictDebtRiskParam[] memory params);
 }

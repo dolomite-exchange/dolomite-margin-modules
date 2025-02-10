@@ -25,6 +25,7 @@ import { OnlyDolomiteMarginForUpgradeable } from "../helpers/OnlyDolomiteMarginF
 import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
 import { IDolomiteAccountRiskOverrideSetter } from "../protocol/interfaces/IDolomiteAccountRiskOverrideSetter.sol";
 import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
+import { IDolomiteMarginV2 } from "../protocol/interfaces/IDolomiteMarginV2.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../protocol/lib/Require.sol";
 
@@ -46,6 +47,7 @@ contract DolomiteAccountRiskOverrideSetter is
 
     bytes32 private constant _FILE = "AccountRiskOverrideSetter";
     bytes32 private constant _MARKET_TO_CATEGORY_MAP_SLOT = bytes32(uint256(keccak256("eip1967.proxy.marketToCategoryMap")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _CATEGORY_TO_CATEGORY_PARAM_MAP_SLOT = bytes32(uint256(keccak256("eip1967.proxy.categoryToCategoryParamMap")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _MARKET_TO_RISK_FEATURE_MAP_SLOT = bytes32(uint256(keccak256("eip1967.proxy.marketToRiskFeatureMap")) - 1); // solhint-disable-line max-line-length
     uint256 private constant _DOLOMITE_BALANCE_CUTOFF_ACCOUNT_NUMBER = 100;
 
@@ -64,6 +66,19 @@ contract DolomiteAccountRiskOverrideSetter is
         emit CategorySet(_marketId, _category);
     }
 
+    function ownerSetCategoryParam(
+        Category _category,
+        IDolomiteStructs.Decimal calldata _marginRatioOverride,
+        IDolomiteStructs.Decimal calldata _liquidationRewardOverride
+    ) external onlyDolomiteMarginOwner(msg.sender) {
+        CategoryParam storage categoryParam = _getCategoryParamByCategory(_category);
+        categoryParam.category = _category;
+        categoryParam.marginRatioOverride = _marginRatioOverride;
+        categoryParam.liquidationRewardOverride = _liquidationRewardOverride;
+
+        emit CategoryParamSet(_category, _marginRatioOverride, _liquidationRewardOverride);
+    }
+
     function ownerSetRiskFeatureByMarketId(
         uint256 _marketId,
         RiskFeature _riskFeature,
@@ -78,23 +93,37 @@ contract DolomiteAccountRiskOverrideSetter is
                 "Invalid risk params"
             );
             for (uint256 i; i < params.length; ++i) {
-                SingleCollateralWithStrictDebtRiskParam memory param = params[i];
+                SingleCollateralWithStrictDebtRiskParam memory singleCollateralRiskParam = params[i];
                 Require.that(
-                    param.debtMarketIds.length != 0,
+                    singleCollateralRiskParam.debtMarketIds.length != 0,
                     _FILE,
                     "Invalid debt market IDs"
                 );
                 Require.that(
-                    param.marginRatioOverride.value != 0,
+                    singleCollateralRiskParam.marginRatioOverride.value != 0,
                     _FILE,
                     "Invalid margin ratio"
                 );
                 Require.that(
-                    param.liquidationSpreadOverride.value != 0,
+                    singleCollateralRiskParam.liquidationRewardOverride.value != 0,
                     _FILE,
-                    "Invalid liquidation reward ratio"
+                    "Invalid liquidation reward"
+                );
+
+                IDolomiteMarginV2 dolomiteMarginV2 = IDolomiteMarginV2(address(DOLOMITE_MARGIN()));
+                IDolomiteStructs.RiskLimitsV2 memory riskLimits = dolomiteMarginV2.getRiskLimits();
+                Require.that(
+                    singleCollateralRiskParam.marginRatioOverride.value <= riskLimits.marginRatioMax,
+                    _FILE,
+                    "Margin ratio too high"
+                );
+                Require.that(
+                    singleCollateralRiskParam.liquidationRewardOverride.value <= riskLimits.liquidationSpreadMax,
+                    _FILE,
+                    "Liquidation reward too high"
                 );
             }
+            _validateNoDebtMarketIdOverlap(params);
         } else {
             assert(_riskFeature == RiskFeature.NONE || _riskFeature == RiskFeature.BORROW_ONLY);
             Require.that(
@@ -154,27 +183,14 @@ contract DolomiteAccountRiskOverrideSetter is
         if (exclusiveCategoryMask == 0) {
             return _getDefaultValuesForOverride();
         } else if (exclusiveCategoryMask == _MASK_CATEGORY_BERA) {
-            return _getValuesForOverride(
-                /* _marginRatio */ 0.1 ether,
-                /* _liquidationReward */ 0.03 ether
-            );
+            return _getValuesForOverride(Category.BERA);
         } else if (exclusiveCategoryMask == _MASK_CATEGORY_BTC) {
-            return _getValuesForOverride(
-                /* _marginRatio */ 0.1 ether,
-                /* _liquidationReward */ 0.03 ether
-            );
+            return _getValuesForOverride(Category.BTC);
         } else if (exclusiveCategoryMask == _MASK_CATEGORY_ETH) {
-            return _getValuesForOverride(
-                /* _marginRatio */ 0.1 ether,
-                /* _liquidationReward */ 0.03 ether
-            );
+            return _getValuesForOverride(Category.ETH);
         } else {
             assert(exclusiveCategoryMask == _MASK_CATEGORY_STABLE);
-
-            return _getValuesForOverride(
-                /* _marginRatio */ 0.1 ether,
-                /* _liquidationReward */ 0.03 ether
-            );
+            return _getValuesForOverride(Category.STABLE);
         }
     }
 
@@ -205,7 +221,7 @@ contract DolomiteAccountRiskOverrideSetter is
         return param.riskFeature;
     }
 
-    function getRiskFeatureForSingleCollateral(
+    function getRiskFeatureForSingleCollateralByMarketId(
         uint256 _marketId
     ) public view returns (SingleCollateralWithStrictDebtRiskParam[] memory params) {
         RiskFeatureParam storage riskParam = _getRiskFeatureParamByMarketId(_marketId);
@@ -219,6 +235,16 @@ contract DolomiteAccountRiskOverrideSetter is
         (params) = abi.decode(riskParam.extraData, (SingleCollateralWithStrictDebtRiskParam[]));
     }
 
+    function getCategoryParamByCategory(Category _category) public pure returns (CategoryParam memory) {
+        CategoryParam storage categoryParam;
+        bytes32 slot = keccak256(abi.encode(_CATEGORY_TO_CATEGORY_PARAM_MAP_SLOT, _category));
+        assembly {
+            categoryParam.slot := slot
+        }
+
+        return categoryParam;
+    }
+
     // ===================== Internal Functions =====================
 
     function _validateRiskFeatures(
@@ -230,24 +256,22 @@ contract DolomiteAccountRiskOverrideSetter is
         for (uint256 i; i < _marketIdsLength; ++i) {
             uint256 marketId = _marketIds[i];
 
-            RiskFeatureParam storage param = _getRiskFeatureParamByMarketId(marketId);
-            RiskFeature riskFeature = param.riskFeature;
+            RiskFeatureParam storage riskParam = _getRiskFeatureParamByMarketId(marketId);
+            RiskFeature riskFeature = riskParam.riskFeature;
             if (riskFeature == RiskFeature.BORROW_ONLY) {
                 // Ensure the user is not using it as collateral
                 _validateBorrowOnly(_dolomiteMargin, _account, marketId);
             } else if (riskFeature == RiskFeature.SINGLE_COLLATERAL_WITH_STRICT_DEBT) {
                 (SingleCollateralWithStrictDebtRiskParam[] memory singleCollateralParams) =
-                                    abi.decode(param.extraData, (SingleCollateralWithStrictDebtRiskParam[]));
-                _validateSingleCollateralWithStrictDebt(
-                    _dolomiteMargin,
-                    _account,
-                    singleCollateralParams,
-                    marketId, _marketIds,
-                    _marketIdsLength
-                );
+                                    abi.decode(riskParam.extraData, (SingleCollateralWithStrictDebtRiskParam[]));
+
                 // We can break here because we guaranteed there is only one collateral asset. Thus, no other
                 // `BORROW_ONLY` market could be a collateral asset at this point
-                break;
+                return _getRiskOverridesForSingleCollateralRiskParamsByMarketId(
+                    singleCollateralParams,
+                    _marketIds,
+                    _marketIdsLength
+                );
             } else {
                 assert(riskFeature == RiskFeature.NONE);
             }
@@ -267,17 +291,6 @@ contract DolomiteAccountRiskOverrideSetter is
             "Market is borrow only",
             _marketId
         );
-    }
-
-    function _validateSingleCollateralWithStrictDebt(
-        IDolomiteMargin _dolomiteMargin,
-        IDolomiteStructs.AccountInfo memory _account,
-        SingleCollateralWithStrictDebtRiskParam[] memory _params,
-        uint256 _singleCollateralMarketId,
-        uint256[] memory _marketIds,
-        uint256 _marketIdsLength
-    ) internal view returns (IDolomiteStructs.Decimal memory, IDolomiteStructs.Decimal memory) {
-        // TODO
     }
 
     function _getCategoryMaskByMarketIds(
@@ -310,6 +323,33 @@ contract DolomiteAccountRiskOverrideSetter is
         return exclusiveCategory;
     }
 
+    function _getRiskOverridesForSingleCollateralRiskParamsByMarketId(
+        SingleCollateralWithStrictDebtRiskParam[] memory _params,
+        uint256[] memory _marketIds,
+        uint256 _marketIdsLength
+    ) internal pure returns (IDolomiteStructs.Decimal memory, IDolomiteStructs.Decimal memory) {
+        for (uint256 i; i < _params.length; ++i) {
+            SingleCollateralWithStrictDebtRiskParam memory riskParam = _params[i];
+            for (uint256 j; j < _marketIdsLength; ++j) {
+                if (_binarySearch(_marketIds[j], riskParam.debtMarketIds) != type(uint256).max) {
+                    // We got a match for this risk param
+                    return (riskParam.marginRatioOverride, riskParam.liquidationRewardOverride);
+                }
+            }
+        }
+
+        revert("AccountRiskOverrideSetter: Could not find risk param");
+    }
+
+    function _getCategoryParamByCategory(Category _category) internal pure returns (CategoryParam storage) {
+        bytes32 slot = keccak256(abi.encode(_MARKET_TO_CATEGORY_MAP_SLOT, _category));
+        CategoryParam storage categoryParam;
+        assembly {
+            categoryParam.slot := slot
+        }
+        return categoryParam;
+    }
+
     function _getRiskFeatureParamByMarketId(uint256 _marketId) internal pure returns (RiskFeatureParam storage) {
         RiskFeatureParam storage param;
         bytes32 slot = _getMarketToRiskFeatureSlot(_marketId);
@@ -323,6 +363,57 @@ contract DolomiteAccountRiskOverrideSetter is
         return keccak256(abi.encode(_MARKET_TO_RISK_FEATURE_MAP_SLOT, _marketId));
     }
 
+    function _validateNoDebtMarketIdOverlap(SingleCollateralWithStrictDebtRiskParam[] memory _params) internal pure {
+        for (uint256 i; i < _params.length; ++i) {
+            SingleCollateralWithStrictDebtRiskParam memory riskParam = _params[i];
+            for (uint256 j = 1; j < riskParam.debtMarketIds.length; ++j) {
+                Require.that(
+                    riskParam.debtMarketIds[j - 1] < riskParam.debtMarketIds[j],
+                    _FILE,
+                    "Markets must be in asc order"
+                );
+            }
+        }
+
+        for (uint256 i; i < _params.length; ++i) {
+            SingleCollateralWithStrictDebtRiskParam memory param1 = _params[i];
+            for (uint256 j = i + 1; j < _params.length; ++j) {
+                SingleCollateralWithStrictDebtRiskParam memory param2 = _params[j];
+
+                for (uint256 k; k < param1.debtMarketIds.length; ++k) {
+                    uint256 marketId = param1.debtMarketIds[k];
+                    Require.that(
+                        _binarySearch(marketId, param2.debtMarketIds) == type(uint256).max,
+                        _FILE,
+                        "Found duplicate debt market ID"
+                    );
+                }
+            }
+        }
+    }
+
+    function _binarySearch(uint256 _find, uint256[] memory _marketIds) internal pure returns (uint256) {
+        uint256 left = 0;
+        uint256 right = _marketIds.length - 1;
+
+        while (left <= right) {
+            uint256 mid = left + (right - left) / 2;
+
+            if (_marketIds[mid] == _find) {
+                return mid;
+            }
+
+            if (_marketIds[mid] < _find) {
+                left = mid + 1;
+            } else {
+                right = mid - 1;
+            }
+        }
+
+        // Target is not present in the array
+        return type(uint256).max;
+    }
+
     function _getDefaultValuesForOverride() internal pure returns (
         IDolomiteStructs.Decimal memory,
         IDolomiteStructs.Decimal memory
@@ -330,13 +421,11 @@ contract DolomiteAccountRiskOverrideSetter is
         return (IDolomiteStructs.Decimal({ value: 0 }), IDolomiteStructs.Decimal({ value: 0 }));
     }
 
-    function _getValuesForOverride(uint256 _marginRatio, uint256 _liquidationReward) internal pure returns (
+    function _getValuesForOverride(Category _category) internal view returns (
         IDolomiteStructs.Decimal memory,
         IDolomiteStructs.Decimal memory
     ) {
-        return (
-            IDolomiteStructs.Decimal({ value: _marginRatio }),
-            IDolomiteStructs.Decimal({ value: _liquidationReward })
-        );
+        CategoryParam storage categoryParam = _getCategoryParamByCategory(_category);
+        return (categoryParam.marginRatioOverride, categoryParam.liquidationRewardOverride);
     }
 }
