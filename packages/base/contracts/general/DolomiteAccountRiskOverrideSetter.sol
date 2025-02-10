@@ -262,10 +262,12 @@ contract DolomiteAccountRiskOverrideSetter is
                 // Ensure the user is not using it as collateral
                 _validateBorrowOnly(_dolomiteMargin, _account, marketId);
             } else if (riskFeature == RiskFeature.SINGLE_COLLATERAL_WITH_STRICT_DEBT) {
+                _validateCollateralOnly(_dolomiteMargin, _account, marketId);
+
                 (SingleCollateralWithStrictDebtRiskParam[] memory singleCollateralParams) =
                                     abi.decode(riskParam.extraData, (SingleCollateralWithStrictDebtRiskParam[]));
 
-                // We can break here because we guaranteed there is only one collateral asset. Thus, no other
+                // We can return here because we guaranteed there is only one collateral asset. Thus, no other
                 // `BORROW_ONLY` market could be a collateral asset at this point
                 return _getRiskOverridesForSingleCollateralRiskParamsByMarketId(
                     singleCollateralParams,
@@ -289,6 +291,19 @@ contract DolomiteAccountRiskOverrideSetter is
             !_dolomiteMargin.getAccountPar(_account, _marketId).sign,
             _FILE,
             "Market is borrow only",
+            _marketId
+        );
+    }
+
+    function _validateCollateralOnly(
+        IDolomiteMargin _dolomiteMargin,
+        IDolomiteStructs.AccountInfo memory _account,
+        uint256 _marketId
+    ) internal view {
+        Require.that(
+            _dolomiteMargin.getAccountPar(_account, _marketId).sign,
+            _FILE,
+            "Market is collateral only",
             _marketId
         );
     }
