@@ -265,7 +265,7 @@ export async function encodeInsertChronicleOracleV3(
 
   const oracleAddress = core.chroniclePriceOracleV3.address;
   if ((await scribe.bud(oracleAddress)).eq(ZERO_BI)) {
-    console.warn(`ChroniclePriceOracleV3 has not been kissed yet for scribe ${scribe.address}!`);
+    console.warn(`\tChroniclePriceOracleV3 has not been kissed yet for token ${symbol} with scribe ${scribe.address}!`);
   }
 
   if (network.name === 'hardhat') {
