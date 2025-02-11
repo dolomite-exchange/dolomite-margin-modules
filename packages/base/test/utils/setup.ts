@@ -380,6 +380,18 @@ export async function setupDAIBalance(
   await core.tokens.dai.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
+export async function setupHONEYBalance(
+  core: CoreProtocolBerachain | CoreProtocolBerachainBartio,
+  signer: SignerWithAddressWithSafety,
+  amount: BigNumberish,
+  spender: { address: string },
+) {
+  const whaleAddress = '0x9EB897D400f245E151daFD4c81176397D7798C9c';
+  const whaleSigner = await impersonate(whaleAddress, true);
+  await core.tokens.honey.connect(whaleSigner).transfer(signer.address, amount);
+  await core.tokens.honey.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
+}
+
 export async function setupNativeUSDCBalance(
   core: CoreProtocolArbitrumOne,
   signer: SignerWithAddressWithSafety,

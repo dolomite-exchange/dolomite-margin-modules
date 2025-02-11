@@ -1,0 +1,494 @@
+import { DolomiteERC4626, DolomiteERC4626__factory } from '@dolomite-exchange/modules-base/src/types';
+import {
+  BYTES_EMPTY,
+  MAX_UINT_256_BI,
+  Network,
+  ONE_BI,
+  ZERO_BI,
+} from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
+import {
+  expectProtocolBalance,
+  expectThrow,
+} from '@dolomite-exchange/modules-base/test/utils/assertions';
+import {
+  disableInterestAccrual,
+  setupCoreProtocol,
+  setupHONEYBalance,
+  setupTestMarket,
+  setupUserVaultProxy,
+} from '@dolomite-exchange/modules-base/test/utils/setup';
+import { expect } from 'chai';
+import { BigNumber } from 'ethers';
+import { defaultAbiCoder, parseEther } from 'ethers/lib/utils';
+import { createContractWithAbi, createContractWithLibrary, depositIntoDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
+import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
+import {
+  BerachainRewardsMetaVault,
+  BerachainRewardsMetaVault__factory,
+  BerachainRewardsRegistry,
+  DolomiteTokenIsolationModeTokenVaultV1,
+  DolomiteTokenIsolationModeTokenVaultV1__factory,
+  DolomiteTokenIsolationModeUnwrapperTraderV2,
+  DolomiteTokenIsolationModeUnwrapperTraderV2__factory,
+  DolomiteTokenIsolationModeVaultFactory,
+  DolomiteTokenIsolationModeVaultFactory__factory,
+  DolomiteTokenIsolationModeWrapperTraderV2,
+  DolomiteTokenIsolationModeWrapperTraderV2__factory,
+} from '../src/types';
+import {
+  createBerachainRewardsRegistry,
+} from './berachain-ecosystem-utils';
+import { createDolomiteErc4626Proxy, createIsolationModeTokenVaultV1ActionsImpl, setupNewGenericTraderProxy } from 'packages/base/test/utils/dolomite';
+import { ActionType, AmountReference, BalanceCheckFlag } from '@dolomite-margin/dist/src/types';
+import { GenericEventEmissionType, GenericTraderParam, GenericTraderType } from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
+
+
+const defaultAccountNumber = ZERO_BI;
+const amountWei = parseEther('.1');
+const sampleTradeData = defaultAbiCoder.encode(['uint256'], [2]);
+
+const ZERO_PAR = {
+  sign: false,
+  value: ZERO_BI,
+};
+
+describe('DolomiteTokenIsolationModeWrapperTraderV2', () => {
+  let snapshotId: string;
+
+  let core: CoreProtocolBerachain;
+  let registry: BerachainRewardsRegistry;
+  let factory: DolomiteTokenIsolationModeVaultFactory;
+
+  let dToken: DolomiteERC4626;
+  let vault: DolomiteTokenIsolationModeTokenVaultV1;
+  let wrapper: DolomiteTokenIsolationModeWrapperTraderV2;
+  let unwrapper: DolomiteTokenIsolationModeUnwrapperTraderV2;
+
+  let metaVault: BerachainRewardsMetaVault;
+  let parAmount: BigNumber;
+
+  let marketId: BigNumber;
+
+  before(async () => {
+    core = await setupCoreProtocol({
+      blockNumber: 837_000,
+      network: Network.Berachain,
+    });
+    await disableInterestAccrual(core, core.marketIds.honey);
+
+    const dTokenProxy = await createDolomiteErc4626Proxy(core.marketIds.honey, core);
+    dToken = DolomiteERC4626__factory.connect(dTokenProxy.address, core.hhUser1);
+
+    const metaVaultImplementation = await createContractWithAbi<BerachainRewardsMetaVault>(
+      BerachainRewardsMetaVault__factory.abi,
+      BerachainRewardsMetaVault__factory.bytecode,
+      [],
+    );
+    registry = await createBerachainRewardsRegistry(core, metaVaultImplementation);
+
+    const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
+    const vaultImplementation = await createContractWithLibrary<DolomiteTokenIsolationModeTokenVaultV1>(
+      'DolomiteTokenIsolationModeTokenVaultV1',
+      libraries,
+      [],
+    );
+    factory = await createContractWithAbi<DolomiteTokenIsolationModeVaultFactory>(
+      DolomiteTokenIsolationModeVaultFactory__factory.abi,
+      DolomiteTokenIsolationModeVaultFactory__factory.bytecode,
+      [registry.address, dToken.address, core.borrowPositionProxyV2.address, vaultImplementation.address, core.dolomiteMargin.address],
+    );
+
+    marketId = await core.dolomiteMargin.getNumMarkets();
+    await core.testEcosystem!.testPriceOracle.setPrice(factory.address, ONE_BI);
+    await setupTestMarket(core, factory, true);
+
+    wrapper = await createContractWithAbi<DolomiteTokenIsolationModeWrapperTraderV2>(
+      DolomiteTokenIsolationModeWrapperTraderV2__factory.abi,
+      DolomiteTokenIsolationModeWrapperTraderV2__factory.bytecode,
+      [registry.address, factory.address, core.dolomiteMargin.address, core.dolomiteRegistry.address],
+    );
+    unwrapper = await createContractWithAbi<DolomiteTokenIsolationModeUnwrapperTraderV2>(
+      DolomiteTokenIsolationModeUnwrapperTraderV2__factory.abi,
+      DolomiteTokenIsolationModeUnwrapperTraderV2__factory.bytecode,
+      [registry.address, factory.address, core.dolomiteMargin.address, core.dolomiteRegistry.address],
+    );
+
+    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
+    await factory.connect(core.governance).ownerInitialize([wrapper.address, unwrapper.address]);
+
+    await factory.createVault(core.hhUser1.address);
+    vault = setupUserVaultProxy<DolomiteTokenIsolationModeTokenVaultV1>(
+      await factory.getVaultByAccount(core.hhUser1.address),
+      DolomiteTokenIsolationModeTokenVaultV1__factory,
+      core.hhUser1,
+    );
+    metaVault = BerachainRewardsMetaVault__factory.connect(
+      await registry.getMetaVaultByAccount(core.hhUser1.address),
+      core.hhUser1,
+    );
+
+    await setupHONEYBalance(core, core.hhUser1, amountWei, core.dolomiteMargin);
+    await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.honey, amountWei);
+    await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.honey, amountWei);
+    parAmount = await dToken.balanceOf(core.hhUser1.address);
+
+    // @follow-up Will need to set as global operator or have the metavault set as local operators
+    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(wrapper.address, true);
+    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(unwrapper.address, true);
+    await setupNewGenericTraderProxy(core, marketId);
+
+    snapshotId = await snapshot();
+  });
+
+  beforeEach(async () => {
+    snapshotId = await revertToSnapshotAndCapture(snapshotId);
+  });
+
+  describe('#Call and Exchange for non-liquidation sale', () => {
+    it('should work when called with the normal conditions', async () => {
+      const wrapperParam: GenericTraderParam = {
+        trader: wrapper.address,
+        traderType: GenericTraderType.IsolationModeWrapper,
+        tradeData: defaultAbiCoder.encode(['uint256'], [2]),
+        makerAccountIndex: 0,
+      };
+      await vault.addCollateralAndSwapExactInputForOutput(
+        defaultAccountNumber,
+        defaultAccountNumber,
+        [core.marketIds.honey, marketId],
+        MAX_UINT_256_BI,
+        ONE_BI,
+        [wrapperParam],
+        [{
+          owner: metaVault.address,
+          number: defaultAccountNumber,
+        }],
+        {
+          deadline: '123123123123123',
+          balanceCheckFlag: BalanceCheckFlag.None,
+          eventType: GenericEventEmissionType.None,
+        },
+      );
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.honey, ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, marketId, ZERO_BI);
+      await expectProtocolBalance(core, vault, defaultAccountNumber, core.marketIds.honey, ZERO_BI);
+      await expectProtocolBalance(core, vault, defaultAccountNumber, marketId, parAmount);
+      await expectProtocolBalance(core, metaVault, defaultAccountNumber, core.marketIds.honey, amountWei);
+      await expectProtocolBalance(core, metaVault, defaultAccountNumber, marketId, ZERO_BI);
+    });
+
+    it('should fail if output amount is insufficient', async () => {
+      const wrapperParam: GenericTraderParam = {
+        trader: wrapper.address,
+        traderType: GenericTraderType.IsolationModeWrapper,
+        tradeData: defaultAbiCoder.encode(['uint256'], [2]),
+        makerAccountIndex: 0,
+      };
+      await expectThrow(
+        vault.addCollateralAndSwapExactInputForOutput(
+          defaultAccountNumber,
+          defaultAccountNumber,
+          [core.marketIds.honey, marketId],
+          MAX_UINT_256_BI,
+          amountWei,
+          [wrapperParam],
+          [{
+            owner: metaVault.address,
+            number: defaultAccountNumber,
+          }],
+          {
+            deadline: '123123123123123',
+            balanceCheckFlag: BalanceCheckFlag.None,
+            eventType: GenericEventEmissionType.None,
+          },
+        ),
+        `DTokenIsolationModeWrapperV2: Insufficient output amount <${parAmount.toString()}, ${amountWei.toString()}>`,
+      );
+    });
+  });
+
+  describe('#exchange', () => {
+    it('should fail if not called by DolomiteMargin', async () => {
+      await expectThrow(
+        wrapper.connect(core.hhUser1).exchange(
+          vault.address,
+          core.dolomiteMargin.address,
+          factory.address,
+          core.tokens.honey.address,
+          ZERO_BI,
+          defaultAbiCoder.encode(['uint256', 'bytes'], [ONE_BI, sampleTradeData]),
+        ),
+        `OnlyDolomiteMargin: Only Dolomite can call function <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if trade originator is not a vault', async () => {
+      const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
+      await expectThrow(
+        wrapper.connect(dolomiteMarginImpersonator).exchange(
+          core.hhUser1.address,
+          core.dolomiteMargin.address,
+          factory.address,
+          core.tokens.honey.address,
+          ZERO_BI,
+          defaultAbiCoder.encode(['uint256', 'bytes'], [ONE_BI, sampleTradeData]),
+        ),
+        `DTokenIsolationModeWrapperV2: Invalid trade originator <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if input token is not valid', async () => {
+      const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
+      await expectThrow(
+        wrapper.connect(dolomiteMarginImpersonator).exchange(
+          vault.address,
+          core.dolomiteMargin.address,
+          factory.address,
+          core.tokens.wbera.address,
+          ZERO_BI,
+          defaultAbiCoder.encode(['uint256', 'bytes'], [ONE_BI, sampleTradeData]),
+        ),
+        `DTokenIsolationModeWrapperV2: Invalid input token <${core.tokens.wbera.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if output token is not valid', async () => {
+      const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
+      await expectThrow(
+        wrapper.connect(dolomiteMarginImpersonator).exchange(
+          vault.address,
+          core.dolomiteMargin.address,
+          core.tokens.wbera.address,
+          core.tokens.honey.address,
+          ZERO_BI,
+          defaultAbiCoder.encode(['uint256', 'bytes'], [ONE_BI, sampleTradeData]),
+        ),
+        `DTokenIsolationModeWrapperV2: Invalid output token <${core.tokens.wbera.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if input amount is not zero', async () => {
+      const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
+      await expectThrow(
+        wrapper.connect(dolomiteMarginImpersonator).exchange(
+          vault.address,
+          core.dolomiteMargin.address,
+          factory.address,
+          core.tokens.honey.address,
+          amountWei,
+          defaultAbiCoder.encode(['uint256', 'bytes'], [ONE_BI, sampleTradeData]),
+        ),
+        `DTokenIsolationModeWrapperV2: Invalid input amount`,
+      );
+    });
+  });
+
+  describe('#getTradeCost', () => {
+    it('should work normally', async () => {
+      const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
+      const tradeCost = await wrapper.connect(dolomiteMarginImpersonator).callStatic.getTradeCost(
+        core.marketIds.honey,
+        marketId,
+        {
+          owner: metaVault.address,
+          number: defaultAccountNumber,
+        },
+        {
+          owner: vault.address,
+          number: defaultAccountNumber,
+        },
+        {
+          sign: true,
+          value: ZERO_BI,
+        },
+        {
+          sign: true,
+          value: amountWei,
+        },
+        ZERO_PAR,
+        BYTES_EMPTY,
+      );
+      expect(tradeCost.value).to.equal(ZERO_BI);
+    });
+
+    it('should fail if taker account is not a vault', async () => {
+      const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
+      await expectThrow(
+        wrapper.connect(dolomiteMarginImpersonator).getTradeCost(
+          core.marketIds.honey,
+          marketId,
+          {
+            owner: metaVault.address,
+            number: defaultAccountNumber,
+          },
+          {
+            owner: core.hhUser1.address,
+            number: defaultAccountNumber,
+          },
+          ZERO_PAR,
+          ZERO_PAR,
+          ZERO_PAR,
+          BYTES_EMPTY,
+        ),
+        'DTokenIsolationModeWrapperV2: Invalid taker account',
+      );
+    });
+
+    it('should fail if maker account is not metavault', async () => {
+      const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
+      await expectThrow(
+        wrapper.connect(dolomiteMarginImpersonator).getTradeCost(
+          core.marketIds.honey,
+          marketId,
+          {
+            owner: core.hhUser1.address,
+            number: defaultAccountNumber,
+          },
+          {
+            owner: vault.address,
+            number: defaultAccountNumber,
+          },
+          ZERO_PAR,
+          ZERO_PAR,
+          ZERO_PAR,
+          BYTES_EMPTY,
+        ),
+        'DTokenIsolationModeWrapperV2: Invalid maker account',
+      );
+    });
+
+    it('should fail if delta par is not positive', async () => {
+      const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
+      await expectThrow(
+        wrapper.connect(dolomiteMarginImpersonator).getTradeCost(
+          core.marketIds.honey,
+          marketId,
+          {
+            owner: metaVault.address,
+            number: defaultAccountNumber,
+          },
+          {
+            owner: vault.address,
+            number: defaultAccountNumber,
+          },
+          ZERO_PAR,
+          ZERO_PAR,
+          ZERO_PAR,
+          BYTES_EMPTY,
+        ),
+        'DTokenIsolationModeWrapperV2: Invalid delta par',
+      );
+      await expectThrow(
+        wrapper.connect(dolomiteMarginImpersonator).getTradeCost(
+          core.marketIds.honey,
+          marketId,
+          {
+            owner: metaVault.address,
+            number: defaultAccountNumber,
+          },
+          {
+            owner: vault.address,
+            number: defaultAccountNumber,
+          },
+          ZERO_PAR,
+          {
+            sign: false,
+            value: ONE_BI,
+          },
+          ZERO_PAR,
+          BYTES_EMPTY,
+        ),
+        'DTokenIsolationModeWrapperV2: Invalid delta par',
+      );
+    });
+
+    it('should fail if not called by DolomiteMargin', async () => {
+      await expectThrow(
+        wrapper.connect(core.hhUser1).getTradeCost(
+          core.marketIds.honey,
+          marketId,
+          {
+            owner: metaVault.address,
+            number: defaultAccountNumber,
+          },
+          {
+            owner: vault.address,
+            number: defaultAccountNumber,
+          },
+          ZERO_PAR,
+          ZERO_PAR,
+          ZERO_PAR,
+          BYTES_EMPTY,
+        ),
+        `OnlyDolomiteMargin: Only Dolomite can call function <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+  });
+
+  describe('#createActionsForWrapping', async () => {
+    it('should work normally', async () => {
+      const actions = await wrapper.createActionsForWrapping(
+        {
+          primaryAccountId: 0,
+          otherAccountId: 1,
+          primaryAccountOwner: vault.address,
+          primaryAccountNumber: defaultAccountNumber,
+          otherAccountOwner: metaVault.address,
+          otherAccountNumber: defaultAccountNumber,
+          outputMarket: marketId,
+          inputMarket: core.marketIds.honey,
+          minOutputAmount: ONE_BI,
+          inputAmount: ONE_BI,
+          orderData: defaultAbiCoder.encode(['uint256'], [2]),
+        },
+      );
+      expect(actions.length).to.equal(2);
+      expect(actions[0].actionType).to.equal(ActionType.Trade);
+      expect(actions[0].amount.value).to.equal(ZERO_BI);
+      expect(actions[0].amount.ref).to.equal(AmountReference.Target)
+
+      expect(actions[1].actionType).to.equal(ActionType.Sell);
+      expect(actions[1].amount.value).to.equal(ZERO_BI);
+      expect(actions[1].amount.ref).to.equal(AmountReference.Delta);
+    });
+
+    it('should fail if input market is not valid', async () => {
+      await expectThrow(
+        wrapper.createActionsForWrapping({
+          inputMarket: core.marketIds.wbera,
+          outputMarket: marketId,
+          primaryAccountId: 0,
+          otherAccountId: 1,
+          primaryAccountOwner: vault.address,
+          primaryAccountNumber: defaultAccountNumber,
+          otherAccountOwner: metaVault.address,
+          otherAccountNumber: defaultAccountNumber,
+          minOutputAmount: ONE_BI,
+          inputAmount: ONE_BI,
+          orderData: defaultAbiCoder.encode(['uint256'], [2]),
+        }),
+        'DTokenIsolationModeWrapperV2: Invalid input market <1>',
+      );
+    });
+
+    it('should fail if output market is not valid', async () => {
+      await expectThrow(
+        wrapper.createActionsForWrapping({
+          inputMarket: core.marketIds.honey,
+          outputMarket: core.marketIds.wbera,
+          primaryAccountId: 0,
+          otherAccountId: 1,
+          primaryAccountOwner: vault.address,
+          primaryAccountNumber: defaultAccountNumber,
+          otherAccountOwner: metaVault.address,
+          otherAccountNumber: defaultAccountNumber,
+          minOutputAmount: ONE_BI,
+          inputAmount: ONE_BI,
+          orderData: defaultAbiCoder.encode(['uint256'], [2]),
+        }),
+        'DTokenIsolationModeWrapperV2: Invalid output market <1>',
+      );
+    });
+  });
+});
