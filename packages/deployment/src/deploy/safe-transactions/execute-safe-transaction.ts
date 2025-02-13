@@ -33,10 +33,13 @@ if (!skipDryRun) {
   console.log('===========================================================');
   console.log('');
   try {
+    const startTimestamp = Date.now();
     execSync(
       `NETWORK=${networkName} ${HARDHAT_RUN} --network hardhat run ${filePath}`,
       { stdio: 'inherit' },
     );
+    const duration = Math.floor((Date.now() - startTimestamp) / 1000);
+    console.log(`\tFinished dry run in ${duration}s`);
   } catch (e) {
     console.error(e);
     process.exit(1);
@@ -50,10 +53,13 @@ if (!dryRunOnly) {
   console.log('===========================================================');
   console.log('');
   try {
+    const startTimestamp = Date.now();
     execSync(
       `${HARDHAT_RUN} --network ${networkName} run ${filePath}`,
       { stdio: 'inherit' },
     );
+    const duration = Math.floor((Date.now() - startTimestamp) / 1000);
+    console.log(`\tFinished real run in ${duration}s`);
   } catch (e) {
     console.error(e);
     process.exit(1);
