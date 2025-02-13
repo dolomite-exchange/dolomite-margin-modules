@@ -1,0 +1,107 @@
+import { expect } from 'chai';
+import {
+  BerachainRewardsMetaVault,
+  BerachainRewardsMetaVault__factory,
+  BerachainRewardsRegistry,
+  POLIsolationModeTokenVaultV1,
+  POLIsolationModeUnwrapperTraderV2,
+  POLIsolationModeUnwrapperTraderV2__factory,
+  POLIsolationModeUnwrapperUpgradeableProxy,
+  POLIsolationModeUnwrapperUpgradeableProxy__factory,
+  POLIsolationModeVaultFactory,
+  POLIsolationModeVaultFactory__factory,
+  POLIsolationModeWrapperUpgradeableProxy,
+} from '../src/types';
+import { DolomiteERC4626, DolomiteERC4626__factory } from 'packages/base/src/types';
+import { createDolomiteErc4626Proxy, createIsolationModeTokenVaultV1ActionsImpl } from 'packages/base/test/utils/dolomite';
+import { createBerachainRewardsRegistry } from './berachain-ecosystem-utils';
+import { createContractWithAbi, createContractWithLibrary } from 'packages/base/src/utils/dolomite-utils';
+import { setupCoreProtocol, setupTestMarket } from 'packages/base/test/utils/setup';
+import { Network, ONE_BI } from 'packages/base/src/utils/no-deps-constants';
+import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
+import { revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
+
+describe('POLIsolationModeWrapperUpgradeableProxy', () => {
+  let snapshotId: string;
+
+  let core: CoreProtocolBerachain;
+  let factory: POLIsolationModeVaultFactory;
+  let dToken: DolomiteERC4626;
+  let registry: BerachainRewardsRegistry;
+
+  let proxy: POLIsolationModeWrapperUpgradeableProxy;
+  let unwrapper: POLIsolationModeUnwrapperTraderV2;
+  let unwrapperImpl: POLIsolationModeUnwrapperTraderV2;
+
+  before(async () => {
+    core = await setupCoreProtocol({
+      blockNumber: 837_000,
+      network: Network.Berachain,
+    });
+    const dTokenProxy = await createDolomiteErc4626Proxy(core.marketIds.honey, core);
+    dToken = DolomiteERC4626__factory.connect(dTokenProxy.address, core.hhUser1);
+
+    const metaVaultImplementation = await createContractWithAbi<BerachainRewardsMetaVault>(
+      BerachainRewardsMetaVault__factory.abi,
+      BerachainRewardsMetaVault__factory.bytecode,
+      [],
+    );
+    registry = await createBerachainRewardsRegistry(core, metaVaultImplementation);
+
+    const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
+    const vaultImplementation = await createContractWithLibrary<POLIsolationModeTokenVaultV1>(
+      'POLIsolationModeTokenVaultV1',
+      libraries,
+      [],
+    );
+    factory = await createContractWithAbi<POLIsolationModeVaultFactory>(
+      POLIsolationModeVaultFactory__factory.abi,
+      POLIsolationModeVaultFactory__factory.bytecode,
+      [
+        registry.address,
+        dToken.address,
+        core.borrowPositionProxyV2.address,
+        vaultImplementation.address,
+        core.dolomiteMargin.address
+      ],
+    );
+
+    await core.testEcosystem!.testPriceOracle.setPrice(factory.address, ONE_BI);
+    await setupTestMarket(core, factory, true);
+
+    unwrapperImpl = await createContractWithAbi<POLIsolationModeUnwrapperTraderV2>(
+      POLIsolationModeUnwrapperTraderV2__factory.abi,
+      POLIsolationModeUnwrapperTraderV2__factory.bytecode,
+      [registry.address, core.dolomiteMargin.address],
+    );
+    await registry.connect(core.governance).ownerSetPolUnwrapperTrader(unwrapperImpl.address);
+
+    const calldata = await unwrapperImpl.populateTransaction.initialize(
+      factory.address,
+    );
+    proxy = await createContractWithAbi<POLIsolationModeUnwrapperUpgradeableProxy>(
+      POLIsolationModeUnwrapperUpgradeableProxy__factory.abi,
+      POLIsolationModeUnwrapperUpgradeableProxy__factory.bytecode,
+      [registry.address, calldata.data!],
+    );
+    unwrapper = POLIsolationModeUnwrapperTraderV2__factory.connect(proxy.address, core.hhUser1);
+
+    snapshotId = await snapshot();
+  });
+
+  beforeEach(async () => {
+    snapshotId = await revertToSnapshotAndCapture(snapshotId);
+  });
+
+  describe('#fallback', () => {
+    it('should work normally', async () => {
+      expect(await unwrapper.token()).to.eq(factory.address);
+    });
+  });
+
+  describe('#implementation', () => {
+    it('should work normally', async () => {
+      expect(await proxy.implementation()).to.eq(unwrapperImpl.address);
+    });
+  });
+});

@@ -27,14 +27,14 @@ import {
   BerachainRewardsMetaVault,
   BerachainRewardsMetaVault__factory,
   BerachainRewardsRegistry,
-  DolomiteTokenIsolationModeTokenVaultV1,
-  DolomiteTokenIsolationModeTokenVaultV1__factory,
-  DolomiteTokenIsolationModeUnwrapperTraderV2,
-  DolomiteTokenIsolationModeUnwrapperTraderV2__factory,
-  DolomiteTokenIsolationModeVaultFactory,
-  DolomiteTokenIsolationModeVaultFactory__factory,
-  DolomiteTokenIsolationModeWrapperTraderV2,
-  DolomiteTokenIsolationModeWrapperTraderV2__factory,
+  POLIsolationModeTokenVaultV1,
+  POLIsolationModeTokenVaultV1__factory,
+  POLIsolationModeVaultFactory,
+  POLIsolationModeVaultFactory__factory,
+  POLIsolationModeWrapperTraderV2,
+  POLIsolationModeWrapperTraderV2__factory,
+  POLIsolationModeWrapperUpgradeableProxy,
+  POLIsolationModeWrapperUpgradeableProxy__factory,
 } from '../src/types';
 import {
   createBerachainRewardsRegistry,
@@ -53,17 +53,17 @@ const ZERO_PAR = {
   value: ZERO_BI,
 };
 
-describe('DolomiteTokenIsolationModeWrapperTraderV2', () => {
+// @todo For tests, up the interest rate a lot so par and wei have a bigger difference
+describe('POLIsolationModeWrapperTraderV2', () => {
   let snapshotId: string;
 
   let core: CoreProtocolBerachain;
   let registry: BerachainRewardsRegistry;
-  let factory: DolomiteTokenIsolationModeVaultFactory;
+  let factory: POLIsolationModeVaultFactory;
 
   let dToken: DolomiteERC4626;
-  let vault: DolomiteTokenIsolationModeTokenVaultV1;
-  let wrapper: DolomiteTokenIsolationModeWrapperTraderV2;
-  let unwrapper: DolomiteTokenIsolationModeUnwrapperTraderV2;
+  let vault: POLIsolationModeTokenVaultV1;
+  let wrapper: POLIsolationModeWrapperTraderV2;
 
   let metaVault: BerachainRewardsMetaVault;
   let parAmount: BigNumber;
@@ -88,14 +88,14 @@ describe('DolomiteTokenIsolationModeWrapperTraderV2', () => {
     registry = await createBerachainRewardsRegistry(core, metaVaultImplementation);
 
     const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
-    const vaultImplementation = await createContractWithLibrary<DolomiteTokenIsolationModeTokenVaultV1>(
-      'DolomiteTokenIsolationModeTokenVaultV1',
+    const vaultImplementation = await createContractWithLibrary<POLIsolationModeTokenVaultV1>(
+      'POLIsolationModeTokenVaultV1',
       libraries,
       [],
     );
-    factory = await createContractWithAbi<DolomiteTokenIsolationModeVaultFactory>(
-      DolomiteTokenIsolationModeVaultFactory__factory.abi,
-      DolomiteTokenIsolationModeVaultFactory__factory.bytecode,
+    factory = await createContractWithAbi<POLIsolationModeVaultFactory>(
+      POLIsolationModeVaultFactory__factory.abi,
+      POLIsolationModeVaultFactory__factory.bytecode,
       [registry.address, dToken.address, core.borrowPositionProxyV2.address, vaultImplementation.address, core.dolomiteMargin.address],
     );
 
@@ -103,24 +103,29 @@ describe('DolomiteTokenIsolationModeWrapperTraderV2', () => {
     await core.testEcosystem!.testPriceOracle.setPrice(factory.address, ONE_BI);
     await setupTestMarket(core, factory, true);
 
-    wrapper = await createContractWithAbi<DolomiteTokenIsolationModeWrapperTraderV2>(
-      DolomiteTokenIsolationModeWrapperTraderV2__factory.abi,
-      DolomiteTokenIsolationModeWrapperTraderV2__factory.bytecode,
-      [registry.address, factory.address, core.dolomiteMargin.address, core.dolomiteRegistry.address],
+    const wrapperImpl = await createContractWithAbi<POLIsolationModeWrapperTraderV2>(
+      POLIsolationModeWrapperTraderV2__factory.abi,
+      POLIsolationModeWrapperTraderV2__factory.bytecode,
+      [registry.address, core.dolomiteMargin.address],
     );
-    unwrapper = await createContractWithAbi<DolomiteTokenIsolationModeUnwrapperTraderV2>(
-      DolomiteTokenIsolationModeUnwrapperTraderV2__factory.abi,
-      DolomiteTokenIsolationModeUnwrapperTraderV2__factory.bytecode,
-      [registry.address, factory.address, core.dolomiteMargin.address, core.dolomiteRegistry.address],
+    await registry.connect(core.governance).ownerSetPolWrapperTrader(wrapperImpl.address);
+    const calldata = await wrapperImpl.populateTransaction.initialize(
+      factory.address,
     );
+    const proxy = await createContractWithAbi<POLIsolationModeWrapperUpgradeableProxy>(
+      POLIsolationModeWrapperUpgradeableProxy__factory.abi,
+      POLIsolationModeWrapperUpgradeableProxy__factory.bytecode,
+      [registry.address, calldata.data!],
+    );
+    wrapper = POLIsolationModeWrapperTraderV2__factory.connect(proxy.address, core.hhUser1);
 
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
-    await factory.connect(core.governance).ownerInitialize([wrapper.address, unwrapper.address]);
+    await factory.connect(core.governance).ownerInitialize([wrapper.address]);
 
     await factory.createVault(core.hhUser1.address);
-    vault = setupUserVaultProxy<DolomiteTokenIsolationModeTokenVaultV1>(
+    vault = setupUserVaultProxy<POLIsolationModeTokenVaultV1>(
       await factory.getVaultByAccount(core.hhUser1.address),
-      DolomiteTokenIsolationModeTokenVaultV1__factory,
+      POLIsolationModeTokenVaultV1__factory,
       core.hhUser1,
     );
     metaVault = BerachainRewardsMetaVault__factory.connect(
@@ -135,7 +140,6 @@ describe('DolomiteTokenIsolationModeWrapperTraderV2', () => {
 
     // @follow-up Will need to set as global operator or have the metavault set as local operators
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(wrapper.address, true);
-    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(unwrapper.address, true);
     await setupNewGenericTraderProxy(core, marketId);
 
     snapshotId = await snapshot();
@@ -203,7 +207,7 @@ describe('DolomiteTokenIsolationModeWrapperTraderV2', () => {
             eventType: GenericEventEmissionType.None,
           },
         ),
-        `DTokenIsolationModeWrapperV2: Insufficient output amount <${parAmount.toString()}, ${amountWei.toString()}>`,
+        `POLIsolationModeWrapperV2: Insufficient output amount <${parAmount.toString()}, ${amountWei.toString()}>`,
       );
     });
   });
@@ -234,7 +238,7 @@ describe('DolomiteTokenIsolationModeWrapperTraderV2', () => {
           ZERO_BI,
           defaultAbiCoder.encode(['uint256', 'bytes'], [ONE_BI, sampleTradeData]),
         ),
-        `DTokenIsolationModeWrapperV2: Invalid trade originator <${core.hhUser1.address.toLowerCase()}>`,
+        `POLIsolationModeWrapperV2: Invalid trade originator <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
@@ -249,7 +253,7 @@ describe('DolomiteTokenIsolationModeWrapperTraderV2', () => {
           ZERO_BI,
           defaultAbiCoder.encode(['uint256', 'bytes'], [ONE_BI, sampleTradeData]),
         ),
-        `DTokenIsolationModeWrapperV2: Invalid input token <${core.tokens.wbera.address.toLowerCase()}>`,
+        `POLIsolationModeWrapperV2: Invalid input token <${core.tokens.wbera.address.toLowerCase()}>`,
       );
     });
 
@@ -264,7 +268,7 @@ describe('DolomiteTokenIsolationModeWrapperTraderV2', () => {
           ZERO_BI,
           defaultAbiCoder.encode(['uint256', 'bytes'], [ONE_BI, sampleTradeData]),
         ),
-        `DTokenIsolationModeWrapperV2: Invalid output token <${core.tokens.wbera.address.toLowerCase()}>`,
+        `POLIsolationModeWrapperV2: Invalid output token <${core.tokens.wbera.address.toLowerCase()}>`,
       );
     });
 
@@ -279,7 +283,7 @@ describe('DolomiteTokenIsolationModeWrapperTraderV2', () => {
           amountWei,
           defaultAbiCoder.encode(['uint256', 'bytes'], [ONE_BI, sampleTradeData]),
         ),
-        `DTokenIsolationModeWrapperV2: Invalid input amount`,
+        `POLIsolationModeWrapperV2: Invalid input amount`,
       );
     });
   });
@@ -331,7 +335,7 @@ describe('DolomiteTokenIsolationModeWrapperTraderV2', () => {
           ZERO_PAR,
           BYTES_EMPTY,
         ),
-        'DTokenIsolationModeWrapperV2: Invalid taker account',
+        'POLIsolationModeWrapperV2: Invalid taker account',
       );
     });
 
@@ -354,7 +358,7 @@ describe('DolomiteTokenIsolationModeWrapperTraderV2', () => {
           ZERO_PAR,
           BYTES_EMPTY,
         ),
-        'DTokenIsolationModeWrapperV2: Invalid maker account',
+        'POLIsolationModeWrapperV2: Invalid maker account',
       );
     });
 
@@ -377,7 +381,7 @@ describe('DolomiteTokenIsolationModeWrapperTraderV2', () => {
           ZERO_PAR,
           BYTES_EMPTY,
         ),
-        'DTokenIsolationModeWrapperV2: Invalid delta par',
+        'POLIsolationModeWrapperV2: Invalid delta par',
       );
       await expectThrow(
         wrapper.connect(dolomiteMarginImpersonator).getTradeCost(
@@ -399,7 +403,7 @@ describe('DolomiteTokenIsolationModeWrapperTraderV2', () => {
           ZERO_PAR,
           BYTES_EMPTY,
         ),
-        'DTokenIsolationModeWrapperV2: Invalid delta par',
+        'POLIsolationModeWrapperV2: Invalid delta par',
       );
     });
 
@@ -468,7 +472,7 @@ describe('DolomiteTokenIsolationModeWrapperTraderV2', () => {
           inputAmount: ONE_BI,
           orderData: defaultAbiCoder.encode(['uint256'], [2]),
         }),
-        'DTokenIsolationModeWrapperV2: Invalid input market <1>',
+        `POLIsolationModeWrapperV2: Invalid input token <${core.tokens.wbera.address.toLowerCase()}>`,
       );
     });
 
@@ -487,8 +491,55 @@ describe('DolomiteTokenIsolationModeWrapperTraderV2', () => {
           inputAmount: ONE_BI,
           orderData: defaultAbiCoder.encode(['uint256'], [2]),
         }),
-        'DTokenIsolationModeWrapperV2: Invalid output market <1>',
+        `POLIsolationModeWrapperV2: Invalid output token <${core.tokens.wbera.address.toLowerCase()}>`,
       );
+    });
+
+    describe('#getExchangeCost', () => {
+      it('should work normally', async () => {
+        expect(await wrapper.getExchangeCost(
+          core.tokens.honey.address,
+          factory.address,
+          parAmount,
+          BYTES_EMPTY
+        )).to.equal(parAmount);
+      });
+
+      it('should fail if input token is not valid', async () => {
+        await expectThrow(
+          wrapper.getExchangeCost(
+            core.tokens.wbera.address,
+            factory.address,
+            parAmount,
+            BYTES_EMPTY
+          ),
+          `POLIsolationModeWrapperV2: Invalid input token <${core.tokens.wbera.address.toLowerCase()}>`,
+        );
+      });
+
+      it('should fail if output token is not valid', async () => {
+        await expectThrow(
+          wrapper.getExchangeCost(
+            core.tokens.honey.address,
+            core.tokens.wbera.address,
+            parAmount,
+            BYTES_EMPTY
+          ),
+          `POLIsolationModeWrapperV2: Invalid output token <${core.tokens.wbera.address.toLowerCase()}>`,
+        );
+      });
+      
+      it('should fail if desired input amount is 0', async () => {
+        await expectThrow(
+          wrapper.getExchangeCost(
+            core.tokens.honey.address,
+            factory.address,
+            0,
+            BYTES_EMPTY
+          ),
+          `POLIsolationModeWrapperV2: Invalid desired input amount`,
+        );
+      });
     });
   });
 });

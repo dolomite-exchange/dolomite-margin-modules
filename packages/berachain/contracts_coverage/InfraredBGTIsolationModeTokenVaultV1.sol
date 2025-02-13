@@ -27,7 +27,6 @@ import { IIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/cont
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { MetaVaultRewardReceiver } from "./MetaVaultRewardReceiver.sol";
-import { IBerachainRewardsMetaVault } from "./interfaces/IBerachainRewardsMetaVault.sol";
 import { IInfraredBGTIsolationModeTokenVaultV1 } from "./interfaces/IInfraredBGTIsolationModeTokenVaultV1.sol";
 import { IInfraredVault } from "./interfaces/IInfraredVault.sol";
 

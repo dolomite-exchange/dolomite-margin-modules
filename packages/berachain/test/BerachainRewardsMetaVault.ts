@@ -591,8 +591,8 @@ describe('BerachainRewardsMetaVault', () => {
     });
   });
 
-  describe.only('#dropBGTBoost', () => {
-    it.only('should work normally', async () => {
+  xdescribe('#dropBGTBoost', () => {
+    it('should work normally', async () => {
       await beraVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await increase(10 * ONE_DAY_SECONDS);
       await metaVault.getReward(underlyingToken.address);

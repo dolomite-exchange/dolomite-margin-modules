@@ -25,13 +25,13 @@ import { IBerachainRewardsRegistry } from "./IBerachainRewardsRegistry.sol";
 
 
 /**
- * @title   IDolomiteTokenIsolationModeTokenVaultV1
+ * @title   IPOLIsolationModeTokenVaultV1
  * @author  Dolomite
  *
- * @notice  This interface defines the functions that are available on the DolomiteTokenIsolationModeTokenVaultV1
+ * @notice  This interface defines the functions that are available on the POLIsolationModeTokenVaultV1
  *          implementation contract for each user's proxy vault.
  */
-interface IDolomiteTokenIsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
+interface IPOLIsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
 
     // function stake(IBerachainRewardsRegistry.RewardVaultType _type, uint256 _amount) external;
 

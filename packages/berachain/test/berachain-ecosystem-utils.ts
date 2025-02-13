@@ -30,6 +30,12 @@ import {
   InfraredBGTIsolationModeTokenVaultV1,
   InfraredBGTIsolationModeVaultFactory,
   InfraredBGTIsolationModeVaultFactory__factory,
+  IPOLIsolationModeVaultFactory,
+  POLIsolationModeVaultFactory,
+  POLIsolationModeWrapperTraderV2,
+  POLIsolationModeWrapperTraderV2__factory,
+  POLIsolationModeWrapperUpgradeableProxy,
+  POLIsolationModeWrapperUpgradeableProxy__factory,
   TestBerachainRewardsRegistry,
   TestBerachainRewardsRegistry__factory,
 } from '../src/types';

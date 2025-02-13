@@ -67,6 +67,9 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
     bytes32 private constant _REWARD_VAULT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.rewardVault")) - 1);
     bytes32 private constant _WBERA_SLOT = bytes32(uint256(keccak256("eip1967.proxy.wbera")) - 1);
 
+    bytes32 private constant _POL_UNWRAPPER_TRADER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.polUnwrapperTrader")) - 1);
+    bytes32 private constant _POL_WRAPPER_TRADER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.polWrapperTrader")) - 1);
+
     bytes32 private constant _ACCOUNT_TO_META_VAULT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.accountToMetaVault")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _META_VAULT_TO_ACCOUNT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.metaVaultToAccount")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _VAULT_TO_META_VAULT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.vaultToMetaVault")) - 1); // solhint-disable-line max-line-length
@@ -215,6 +218,18 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
         _ownerSetWbera(_wbera);
     }
 
+    function ownerSetPolUnwrapperTrader(
+        address _polUnwrapperTrader
+    ) external override onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetPolUnwrapperTrader(_polUnwrapperTrader);
+    }
+
+    function ownerSetPolWrapperTrader(
+        address _polWrapperTrader
+    ) external override onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetPolWrapperTrader(_polWrapperTrader);
+    }
+
     // ===================================================
     // ================== View Functions =================
     // ===================================================
@@ -271,6 +286,14 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
 
     function infrared() public view override returns (IInfrared) {
         return IInfrared(_getAddress(_INFRARED_SLOT));
+    }
+
+    function polUnwrapperTrader() public view override returns (address) {
+        return _getAddress(_POL_UNWRAPPER_TRADER_SLOT);
+    }
+
+    function polWrapperTrader() public view override returns (address) {
+        return _getAddress(_POL_WRAPPER_TRADER_SLOT);
     }
 
     function rewardVault(address _asset, RewardVaultType _type) public view override returns (address) {
@@ -461,4 +484,25 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
         _setAddress(_WBERA_SLOT, _wbera);
         emit WberaSet(_wbera);
     }
+
+    function _ownerSetPolUnwrapperTrader(address _polUnwrapperTrader) internal {
+        Require.that(
+            _polUnwrapperTrader != address(0),
+            _FILE,
+            "Invalid unwrapperTrader address"
+        );
+        _setAddress(_POL_UNWRAPPER_TRADER_SLOT, _polUnwrapperTrader);
+        emit PolUnwrapperTraderSet(_polUnwrapperTrader);
+    }
+
+    function _ownerSetPolWrapperTrader(address _polWrapperTrader) internal {
+        Require.that(
+            _polWrapperTrader != address(0),
+            _FILE,
+            "Invalid polWrapperTrader address"
+        );
+        _setAddress(_POL_WRAPPER_TRADER_SLOT, _polWrapperTrader);
+        emit PolWrapperTraderSet(_polWrapperTrader);
+    }
+    
 }

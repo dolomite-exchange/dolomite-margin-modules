@@ -25,13 +25,13 @@ import { IBerachainRewardsRegistry } from "./IBerachainRewardsRegistry.sol";
 
 
 /**
- * @title   IBerachainRewardsIsolationModeVaultFactory
+ * @title   IPOLIsolationModeVaultFactory
  * @author  Dolomite
  *
- * @notice  Interface for a subclass of IsolationModeVaultFactory that creates vaults for Berachain rewards vault
+ * @notice  Interface for a subclass of IsolationModeVaultFactory that creates vaults for POL
  *          dTokens
  */
-interface IDolomiteTokenIsolationModeVaultFactory is IIsolationModeVaultFactory {
+interface IPOLIsolationModeVaultFactory is IIsolationModeVaultFactory {
 
     // ================================================
     // ==================== Events ====================

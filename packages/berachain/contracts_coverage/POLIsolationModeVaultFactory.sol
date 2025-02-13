@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 /*
 
-    Copyright 2024 Dolomite
+    Copyright 2025 Dolomite
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -21,29 +21,28 @@
 pragma solidity ^0.8.9;
 
 import { IsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
-import { IIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { IDolomiteTokenIsolationModeVaultFactory } from "./interfaces/IDolomiteTokenIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { IBerachainRewardsRegistry } from "./interfaces/IBerachainRewardsRegistry.sol";
+import { IPOLIsolationModeVaultFactory } from "./interfaces/IPOLIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 
 
 /**
- * @title   DolomiteTokenIsolationModeVaultFactory
+ * @title   POLIsolationModeVaultFactory
  * @author  Dolomite
  *
  * @notice  The wrapper around a PoL-enabled dolomite token that empowers users to deposit the underlying
  *          collateral into PoL from Dolomite while they borrow against their assets.
  */
-contract DolomiteTokenIsolationModeVaultFactory is
-    IDolomiteTokenIsolationModeVaultFactory,
+contract POLIsolationModeVaultFactory is
+    IPOLIsolationModeVaultFactory,
     IsolationModeVaultFactory
 {
     using SafeERC20 for IERC20;
 
     // ============ Constants ============
 
-    bytes32 private constant _FILE = "DolomiteTokenVaultFactory";
+    bytes32 private constant _FILE = "POLIsolationModeVaultFactory";
 
     // ============ Field Variables ============
 

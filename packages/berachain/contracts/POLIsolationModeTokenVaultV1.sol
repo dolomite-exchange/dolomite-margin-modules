@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 /*
 
-    Copyright 2024 Dolomite
+    Copyright 2025 Dolomite
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -25,14 +25,14 @@ import { IsolationModeTokenVaultV1 } from "@dolomite-exchange/modules-base/contr
 import { IIsolationModeTokenVaultV1 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { IDolomiteTokenIsolationModeTokenVaultV1 } from "./interfaces/IDolomiteTokenIsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
 import { IBerachainRewardsIsolationModeVaultFactory } from "./interfaces/IBerachainRewardsIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { IBerachainRewardsMetaVault } from "./interfaces/IBerachainRewardsMetaVault.sol";
 import { IBerachainRewardsRegistry } from "./interfaces/IBerachainRewardsRegistry.sol";
+import { IPOLIsolationModeTokenVaultV1 } from "./interfaces/IPOLIsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
 
 
 /**
- * @title   DolomiteTokenIsolationModeTokenVaultV1
+ * @title   POLIsolationModeTokenVaultV1
  * @author  Dolomite
  *
  * @notice  Implementation (for an upgradeable proxy) for a per-user vault that holds a Berachain underlying reward
@@ -40,8 +40,8 @@ import { IBerachainRewardsRegistry } from "./interfaces/IBerachainRewardsRegistr
  *          to be in isolation mode - that is it cannot be borrowed by other users, may only be seized via
  *          liquidation, and cannot be held in the same position as other "isolated" tokens.
  */
-contract DolomiteTokenIsolationModeTokenVaultV1 is
-    IDolomiteTokenIsolationModeTokenVaultV1,
+contract POLIsolationModeTokenVaultV1 is
+    IPOLIsolationModeTokenVaultV1,
     IsolationModeTokenVaultV1
 {
     using SafeERC20 for IERC20;
@@ -50,7 +50,7 @@ contract DolomiteTokenIsolationModeTokenVaultV1 is
     // =========================== Constants ============================
     // ==================================================================
 
-    bytes32 private constant _FILE = "DolomiteTokenUserVaultV1";
+    bytes32 private constant _FILE = "POLIsolationModeTokenVaultV1";
 
     // ==================================================================
     // ======================== Public Functions ========================
@@ -110,7 +110,7 @@ contract DolomiteTokenIsolationModeTokenVaultV1 is
         IBerachainRewardsRegistry.RewardVaultType defaultType = metaVault.getDefaultRewardVaultTypeByAsset(
             UNDERLYING_TOKEN()
         );
-        return super.underlyingBalanceOf() + metaVault.getStakedBalanceByAssetAndType(UNDERLYING_TOKEN(), defaultType);
+        return IERC20(UNDERLYING_TOKEN()).balanceOf(address(metaVault)) + metaVault.getStakedBalanceByAssetAndType(UNDERLYING_TOKEN(), defaultType);
     }
 
     function registry() public view returns (IBerachainRewardsRegistry) {
@@ -152,5 +152,19 @@ contract DolomiteTokenIsolationModeTokenVaultV1 is
             registry().getMetaVaultByVault(address(this))
         );
         metaVault.exit(_asset);
+    }
+
+    function _depositIntoVaultForDolomiteMargin(
+        uint256 _toAccountNumber,
+        uint256 _amountWei
+    ) internal override {
+        revert("Not implemented");
+    }
+
+    function _withdrawFromVaultForDolomiteMargin(
+        uint256 _fromAccountNumber,
+        uint256 _amountWei
+    ) internal override {
+        revert("Not implemented");
     }
 }

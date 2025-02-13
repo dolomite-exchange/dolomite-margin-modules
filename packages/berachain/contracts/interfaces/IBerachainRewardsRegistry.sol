@@ -68,6 +68,8 @@ interface IBerachainRewardsRegistry is IBaseRegistry {
     event RewardVaultSet(address asset, RewardVaultType rewardVaultType, address rewardVault);
     event VaultToMetaVaultSet(address indexed vault, address metaVault);
     event WberaSet(address wbera);
+    event PolUnwrapperTraderSet(address polUnwrapperTrader);
+    event PolWrapperTraderSet(address polWrapperTrader);
 
     // ===================================================
     // ================== Admin Functions ================
@@ -85,6 +87,8 @@ interface IBerachainRewardsRegistry is IBaseRegistry {
     function ownerSetMetaVaultImplementation(address _metaVaultImplementation) external;
     function ownerSetRewardVault(address _asset, RewardVaultType _type, address _rewardVault) external;
     function ownerSetWbera(address _wbera) external;
+    function ownerSetPolUnwrapperTrader(address _polUnwrapperTrader) external;
+    function ownerSetPolWrapperTrader(address _polWrapperTrader) external;
 
     // ===================================================
     // ================== Public Functions ===============
@@ -118,4 +122,6 @@ interface IBerachainRewardsRegistry is IBaseRegistry {
     function metaVaultImplementation() external view returns (address);
     function rewardVault(address _asset, RewardVaultType _type) external view returns (address);
     function wbera() external view returns (IWETH);
+    function polUnwrapperTrader() external view returns (address);
+    function polWrapperTrader() external view returns (address);
 }
