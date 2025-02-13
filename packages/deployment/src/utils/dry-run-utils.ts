@@ -6,7 +6,7 @@ import {
 import { CoreProtocolType } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { TransactionResponse } from '@ethersproject/abstract-provider';
 import { Overrides } from '@ethersproject/contracts/src.ts';
-import { BaseContract } from 'ethers';
+import { BaseContract, BigNumber, BigNumberish } from 'ethers';
 import hardhat from 'hardhat';
 import { advanceByTimeDelta } from 'packages/base/test/utils';
 import {
@@ -17,6 +17,7 @@ import {
   writeFile,
 } from './deploy-utils';
 import { prettyPrintEncodedDataWithTypeSafety } from './encoding/base-encoder-utils';
+import { checkPerformance } from './performance-utils';
 
 const HARDHAT_CHAIN_ID = '31337';
 
@@ -90,8 +91,7 @@ async function doStuffInternal<T extends NetworkType>(executionFn: () => Promise
         throw new Error(invalidOwnerError);
       }
 
-      const transactionIds = [];
-
+      const transactionIds: BigNumberish[] = [];
       for (const transaction of result.upload.transactions) {
         const signer = result.core.gnosisSafe;
         const gasLimit = 50_000_000;
@@ -155,25 +155,29 @@ async function doStuffInternal<T extends NetworkType>(executionFn: () => Promise
       }
 
       console.log('\tExecuting transactions...');
-      for (const transactionId of transactionIds) {
-        try {
-          if (ownerAddress === result.core.ownerAdapterV1.address) {
-            await result.core.ownerAdapterV1.executeTransactions([transactionId], {});
-          } else if (ownerAddress === result.core.ownerAdapterV2.address) {
-            await result.core.ownerAdapterV2.executeTransactions([transactionId], {});
-          } else if (ownerAddress === result.core.delayedMultiSig.address) {
-            await result.core.delayedMultiSig.executeTransaction(transactionId, {});
-          } else if (ownerAddress === result.core.gnosisSafe.address) {
-            console.log('\tSkipping execution for Gnosis Safe owner');
-          } else {
-            return Promise.reject(new Error(invalidOwnerError));
-          }
-        } catch (e: any) {
-          const transactionIndex = transactionId.sub(transactionIds[0]).toNumber();
-          throw new Error(
-            `Execution of transaction with ID ${transactionId.toString()} failed due to error: ${e.message}\n
+      await executeAdminFunctions(transactionIds);
+
+      async function executeAdminFunctions(transactionIds: BigNumberish[]) {
+        for (const transactionId of transactionIds) {
+          try {
+            if (ownerAddress === result.core.ownerAdapterV1.address) {
+              await result.core.ownerAdapterV1.executeTransactions([transactionId], {});
+            } else if (ownerAddress === result.core.ownerAdapterV2.address) {
+              await result.core.ownerAdapterV2.executeTransactions([transactionId], {});
+            } else if (ownerAddress === result.core.delayedMultiSig.address) {
+              await result.core.delayedMultiSig.executeTransaction(transactionId, {});
+            } else if (ownerAddress === result.core.gnosisSafe.address) {
+              console.log('\tSkipping execution for Gnosis Safe owner');
+            } else {
+              return Promise.reject(new Error(invalidOwnerError));
+            }
+          } catch (e: any) {
+            const transactionIndex = BigNumber.from(transactionId).sub(transactionIds[0]).toNumber();
+            throw new Error(
+              `Execution of transaction with ID ${transactionId.toString()} failed due to error: ${e.message}\n
             transaction: ${JSON.stringify(result.upload.transactions[transactionIndex], undefined, 2)}`,
-          );
+            );
+          }
         }
       }
       console.log('\tAdmin transactions succeeded!');
@@ -181,7 +185,7 @@ async function doStuffInternal<T extends NetworkType>(executionFn: () => Promise
 
     if (result.invariants) {
       console.log('\tChecking invariants...');
-      await result.invariants();
+      await checkPerformance('invariants', result.invariants);
       console.log('\tInvariants passed!');
     } else {
       console.log('\tNo invariants found, skipping...');

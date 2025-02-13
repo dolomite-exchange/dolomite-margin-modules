@@ -9,6 +9,7 @@ import {
 import { NetworkType, ONE_ETH_BI } from '../../../../base/src/utils/no-deps-constants';
 import { CoreProtocolType } from '../../../../base/test/utils/setup';
 import { EncodedTransaction } from '../dry-run-utils';
+import { checkPerformance } from '../performance-utils';
 import { prettyPrintEncodedDataWithTypeSafety } from './base-encoder-utils';
 
 export async function encodeSetGlobalOperator<T extends NetworkType>(
@@ -64,13 +65,10 @@ export async function encodeSetSupplyCapWithMagic<T extends NetworkType>(
     ]);
   }
 
-  return prettyPrintEncodedDataWithTypeSafety(
-    core,
-    { dolomite: core.dolomiteMargin },
-    'dolomite',
-    'ownerSetMaxSupplyWei',
-    [marketId, actualAmount],
-  );
+  return prettyPrintEncodedDataWithTypeSafety(core, { dolomite: core.dolomiteMargin }, 'dolomite', 'ownerSetMaxSupplyWei', [
+    marketId,
+    actualAmount,
+  ]);
 }
 
 export async function encodeSetBorrowCap<T extends NetworkType>(
@@ -117,6 +115,7 @@ export async function encodeSetBorrowCapWithMagic<T extends NetworkType>(
 }
 
 let baseCollateralization: BigNumber | undefined;
+
 export async function encodeSetMinCollateralization<T extends NetworkType>(
   core: CoreProtocolType<T>,
   marketId: BigNumberish,
@@ -136,6 +135,7 @@ export async function encodeSetMinCollateralization<T extends NetworkType>(
 }
 
 let baseLiquidationPenalty: BigNumber | undefined;
+
 export async function encodeSetLiquidationPenalty<T extends NetworkType>(
   core: CoreProtocolType<T>,
   marketId: BigNumberish,

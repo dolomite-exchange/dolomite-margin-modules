@@ -21,11 +21,35 @@ import MonetaryPriceStruct = IDolomiteStructs.MonetaryPriceStruct;
 
 export enum TargetCollateralization {
   Base = '1.00',
+
+  /**
+   * 120% collateralization || 83.33% LTV
+   */
   _120 = '1.20',
+
+  /**
+   * 125% collateralization || 80.00% LTV
+   */
   _125 = '1.25',
+
+  /**
+   * 133% collateralization || 75.00% LTV
+   */
   _133 = '1.333333333333',
+
+  /**
+   * 150% collateralization || 66.66% LTV
+   */
   _150 = '1.50',
+
+  /**
+   * 166.66% collateralization || 60.00% LTV
+   */
   _166 = '1.666666666666',
+
+  /**
+   * 200% collateralization || 50.00% LTV
+   */
   _200 = '2.00',
 }
 

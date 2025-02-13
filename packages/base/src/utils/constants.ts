@@ -2219,13 +2219,13 @@ export const CHRONICLE_PRICE_SCRIBES_MAP: Record<
   },
   [Network.Berachain]: {
     [FBTC_MAP[Network.Berachain].address]: {
-      scribeAddress: '0x7364747BA4E3C7077A204Fe9830CE8E359e1c1c7', // TODO: run this
+      scribeAddress: '0x7364747BA4E3C7077A204Fe9830CE8E359e1c1c7',
     },
     [HONEY_MAP[Network.Berachain].address]: {
       scribeAddress: '0xd800ca44ffabecd159c7889c3bf64a217361aec8',
     },
     // [NECT_MAP[Network.Berachain].address]: {
-    //   scribeAddress: '0xd800ca44ffabecd159c7889c3bf64a217361aec8', // TODO: fix this
+    //   scribeAddress: '0xC73637228BF74d10Cf2D5DFeAB0964162488D5e1',
     //   tokenPairAddress: HONEY_MAP[Network.Berachain].address,
     // },
     [PUMP_BTC_MAP[Network.Berachain].address]: {
@@ -2247,9 +2247,8 @@ export const CHRONICLE_PRICE_SCRIBES_MAP: Record<
       scribeAddress: '0xa3105dee5ec73a7003482b1a8968dc88666f3589', // TODO Fix
     },
     [UNI_BTC_MAP[Network.Berachain].address]: {
-      // scribeAddress: '0x50b19f34595bff59977e3058ac0ff7f729fdc67a',
-      scribeAddress: '0xa3105dee5ec73a7003482b1a8968dc88666f3589', // TODO: Fix
-      // tokenPairAddress: WBTC_MAP[Network.Berachain].address,
+      scribeAddress: '0xbc1Ff886Dec21dfB75b6654aee438c6B71b6ffE3',
+      tokenPairAddress: WBTC_MAP[Network.Berachain].address,
     },
     [USDA_MAP[Network.Berachain].address]: {
       scribeAddress: '0x04965db43eee722f4a3cf9848213c649d487e608',
@@ -2259,6 +2258,9 @@ export const CHRONICLE_PRICE_SCRIBES_MAP: Record<
     },
     [USDT_MAP[Network.Berachain].address]: {
       scribeAddress: '0xc32753217dcc7bb2f449bd6f1bc384d1ac72a7b6',
+    },
+    [WBERA_MAP[Network.Berachain].address]: {
+      scribeAddress: '0x5a631155dF276F0c02d19953BC8B67fbbCb35e01',
     },
     [WBTC_MAP[Network.Berachain].address]: {
       scribeAddress: '0xa3105dee5ec73a7003482b1a8968dc88666f3589',
@@ -2275,8 +2277,8 @@ export const CHRONICLE_PRICE_SCRIBES_MAP: Record<
       tokenPairAddress: PUMP_BTC_MAP[Network.Berachain].address,
     },
     [YL_ST_ETH_MAP[Network.Berachain].address]: {
-      scribeAddress: '0x3d97ad50ce86a1fc3425b46ac799074b0fa35570', // TODO fix
-      // tokenPairAddress: WETH_MAP[Network.Berachain].address,
+      scribeAddress: '0xb4B9Ec4A1621b5b0f203C912BB1E34E1E5205984',
+      tokenPairAddress: WETH_MAP[Network.Berachain].address,
     },
   },
   [Network.BerachainBartio]: {
@@ -2357,10 +2359,6 @@ export const REDSTONE_PRICE_AGGREGATORS_MAP: Record<
   [Network.Berachain]: {
     [BTC_PLACEHOLDER_MAP[Network.Berachain].address]: {
       aggregatorAddress: '0xa8a94Da411425634e3Ed6C331a32ab4fd774aa43',
-    },
-    [BERA_ETH_MAP[Network.Berachain].address]: {
-      aggregatorAddress: '0x3587a73AA02519335A8a6053a97657BECe0bC2Cc', // TODO: fix this
-      // tokenPairAddress: WETH_MAP[Network.Berachain].address,
     },
     [E_BTC_MAP[Network.Berachain].address]: {
       aggregatorAddress: '0x09639692CE6ff12A06CA3AE9A24b3Aae4CD80DC8',
