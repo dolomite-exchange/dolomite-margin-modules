@@ -59,18 +59,18 @@ interface IDolomiteAccountRiskOverrideSetter {
 
     // ===================== Structs =====================
 
-    struct CategoryParam {
+    struct CategoryStruct {
         Category category;
         IDolomiteStructs.Decimal marginRatioOverride;
         IDolomiteStructs.Decimal liquidationRewardOverride;
     }
 
-    struct RiskFeatureParam {
+    struct RiskFeatureStruct {
         RiskFeature riskFeature;
         bytes extraData;
     }
 
-    struct SingleCollateralWithStrictDebtRiskParam {
+    struct SingleCollateralRiskStruct {
         uint256[] debtMarketIds;
         IDolomiteStructs.Decimal marginRatioOverride;
         IDolomiteStructs.Decimal liquidationRewardOverride;
@@ -119,11 +119,11 @@ interface IDolomiteAccountRiskOverrideSetter {
 
     function getCategoryByMarketId(uint256 _marketId) external view returns (Category);
 
-    function getCategoryParamByCategory(Category _category) external view returns (CategoryParam memory);
+    function getCategoryParamByCategory(Category _category) external view returns (CategoryStruct memory);
 
     function getRiskFeatureByMarketId(uint256 _marketId) external view returns (RiskFeature);
 
     function getRiskFeatureForSingleCollateralByMarketId(
         uint256 _marketId
-    ) external view returns (SingleCollateralWithStrictDebtRiskParam[] memory params);
+    ) external view returns (SingleCollateralRiskStruct[] memory params);
 }
