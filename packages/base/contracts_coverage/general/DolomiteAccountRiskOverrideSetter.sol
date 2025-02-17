@@ -90,6 +90,7 @@ contract DolomiteAccountRiskOverrideSetter is
         if (_riskFeature == RiskFeature.SINGLE_COLLATERAL_WITH_STRICT_DEBT) {
             (SingleCollateralRiskStruct[] memory singleCollateralRiskStructs) =
                                 abi.decode(_extraData, (SingleCollateralRiskStruct[]));
+            if (singleCollateralRiskStructs.length != 0) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 singleCollateralRiskStructs.length != 0,
                 _FILE,
@@ -97,16 +98,19 @@ contract DolomiteAccountRiskOverrideSetter is
             );
             for (uint256 i; i < singleCollateralRiskStructs.length; ++i) {
                 SingleCollateralRiskStruct memory singleCollateralRiskStruct = singleCollateralRiskStructs[i];
+                if (singleCollateralRiskStruct.debtMarketIds.length != 0) { /* FOR COVERAGE TESTING */ }
                 Require.that(
                     singleCollateralRiskStruct.debtMarketIds.length != 0,
                     _FILE,
                     "Invalid debt market IDs"
                 );
+                if (singleCollateralRiskStruct.marginRatioOverride.value != 0) { /* FOR COVERAGE TESTING */ }
                 Require.that(
                     singleCollateralRiskStruct.marginRatioOverride.value != 0,
                     _FILE,
                     "Invalid margin ratio"
                 );
+                if (singleCollateralRiskStruct.liquidationRewardOverride.value != 0) { /* FOR COVERAGE TESTING */ }
                 Require.that(
                     singleCollateralRiskStruct.liquidationRewardOverride.value != 0,
                     _FILE,
@@ -115,11 +119,13 @@ contract DolomiteAccountRiskOverrideSetter is
 
                 IDolomiteMarginV2 dolomiteMarginV2 = IDolomiteMarginV2(address(DOLOMITE_MARGIN()));
                 IDolomiteStructs.RiskLimitsV2 memory riskLimits = dolomiteMarginV2.getRiskLimits();
+                if (singleCollateralRiskStruct.marginRatioOverride.value <= riskLimits.marginRatioMax) { /* FOR COVERAGE TESTING */ }
                 Require.that(
                     singleCollateralRiskStruct.marginRatioOverride.value <= riskLimits.marginRatioMax,
                     _FILE,
                     "Margin ratio too high"
                 );
+                if (singleCollateralRiskStruct.liquidationRewardOverride.value <= riskLimits.liquidationSpreadMax) { /* FOR COVERAGE TESTING */ }
                 Require.that(
                     singleCollateralRiskStruct.liquidationRewardOverride.value <= riskLimits.liquidationSpreadMax,
                     _FILE,
@@ -128,7 +134,8 @@ contract DolomiteAccountRiskOverrideSetter is
             }
             _validateNoDebtMarketIdOverlap(singleCollateralRiskStructs);
         } else {
-            assert(_riskFeature == RiskFeature.NONE || _riskFeature == RiskFeature.BORROW_ONLY);
+            /*assert(_riskFeature == RiskFeature.NONE || _riskFeature == RiskFeature.BORROW_ONLY);*/
+            if (_extraData.length == 0) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 _extraData.length == 0,
                 _FILE,
@@ -149,6 +156,7 @@ contract DolomiteAccountRiskOverrideSetter is
     }
 
     function ownerActivateDefaultAccountCheck() external onlyDolomiteMarginOwner(msg.sender) {
+        if (_getUint256(_CHECK_DEFAULT_ACCOUNT_SLOT) == 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _getUint256(_CHECK_DEFAULT_ACCOUNT_SLOT) == 0,
             _FILE,
@@ -172,9 +180,10 @@ contract DolomiteAccountRiskOverrideSetter is
         // Since this function is always called at the end of an operate call when a user has debt, these two invariants
         // will always hold.
         if (isDefaultAccountCheckActivated()) {
-            assert(marketIdsLength != 0);
-            assert(dolomiteMargin.getAccountNumberOfMarketsWithDebt(_account) != 0);
+            /*assert(marketIdsLength != 0);*/
+            /*assert(dolomiteMargin.getAccountNumberOfMarketsWithDebt(_account) != 0);*/
 
+            if (_account.number >= _DOLOMITE_BALANCE_CUTOFF_ACCOUNT_NUMBER) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 _account.number >= _DOLOMITE_BALANCE_CUTOFF_ACCOUNT_NUMBER,
                 _FILE,
@@ -202,7 +211,7 @@ contract DolomiteAccountRiskOverrideSetter is
         } else if (exclusiveCategoryMask == _MASK_CATEGORY_ETH) {
             return _getValuesForOverride(Category.ETH);
         } else {
-            assert(exclusiveCategoryMask == _MASK_CATEGORY_STABLE);
+            /*assert(exclusiveCategoryMask == _MASK_CATEGORY_STABLE);*/
             return _getValuesForOverride(Category.STABLE);
         }
     }
@@ -212,6 +221,7 @@ contract DolomiteAccountRiskOverrideSetter is
     function getCategoryMaskByMarketIds(
         uint256[] memory _marketIds
     ) public view returns (uint256) {
+        if (_marketIds.length != 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _marketIds.length != 0,
             _FILE,
@@ -238,6 +248,7 @@ contract DolomiteAccountRiskOverrideSetter is
         uint256 _marketId
     ) public view returns (SingleCollateralRiskStruct[] memory singleCollateralRiskStructs) {
         RiskFeatureStruct storage riskStruct = _getRiskFeatureParamByMarketId(_marketId);
+        if (riskStruct.riskFeature == RiskFeature.SINGLE_COLLATERAL_WITH_STRICT_DEBT) { /* FOR COVERAGE TESTING */ }
         Require.that(
             riskStruct.riskFeature == RiskFeature.SINGLE_COLLATERAL_WITH_STRICT_DEBT,
             _FILE,
@@ -294,7 +305,7 @@ contract DolomiteAccountRiskOverrideSetter is
                     _marketIdsLength
                 );
             } else {
-                assert(riskFeature == RiskFeature.NONE);
+                /*assert(riskFeature == RiskFeature.NONE);*/
             }
         }
 
@@ -306,6 +317,7 @@ contract DolomiteAccountRiskOverrideSetter is
         IDolomiteStructs.AccountInfo memory _account,
         uint256 _marketId
     ) internal view {
+        if (!_dolomiteMargin.getAccountPar(_account, _marketId).sign) { /* FOR COVERAGE TESTING */ }
         Require.that(
             !_dolomiteMargin.getAccountPar(_account, _marketId).sign,
             _FILE,
@@ -319,6 +331,7 @@ contract DolomiteAccountRiskOverrideSetter is
         IDolomiteStructs.AccountInfo memory _account,
         uint256 _marketId
     ) internal view {
+        if (_dolomiteMargin.getAccountPar(_account, _marketId).sign) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _dolomiteMargin.getAccountPar(_account, _marketId).sign,
             _FILE,
@@ -353,7 +366,7 @@ contract DolomiteAccountRiskOverrideSetter is
             } else if (category == Category.ETH) {
                 exclusiveCategory &= _MASK_CATEGORY_ETH;
             } else {
-                assert(category == Category.STABLE);
+                /*assert(category == Category.STABLE);*/
                 exclusiveCategory &= _MASK_CATEGORY_STABLE;
             }
         }
@@ -422,6 +435,7 @@ contract DolomiteAccountRiskOverrideSetter is
         for (uint256 i; i < _singleCollateralRiskStructs.length; ++i) {
             SingleCollateralRiskStruct memory singleCollateralRiskStruct = _singleCollateralRiskStructs[i];
             for (uint256 j = 1; j < singleCollateralRiskStruct.debtMarketIds.length; ++j) {
+                if (singleCollateralRiskStruct.debtMarketIds[j - 1] < singleCollateralRiskStruct.debtMarketIds[j]) { /* FOR COVERAGE TESTING */ }
                 Require.that(
                     singleCollateralRiskStruct.debtMarketIds[j - 1] < singleCollateralRiskStruct.debtMarketIds[j],
                     _FILE,
@@ -437,6 +451,7 @@ contract DolomiteAccountRiskOverrideSetter is
 
                 for (uint256 k; k < param1.debtMarketIds.length; ++k) {
                     uint256 marketId = param1.debtMarketIds[k];
+                    if (_binarySearch(marketId, param2.debtMarketIds) == type(uint256).max) { /* FOR COVERAGE TESTING */ }
                     Require.that(
                         _binarySearch(marketId, param2.debtMarketIds) == type(uint256).max,
                         _FILE,
@@ -461,7 +476,6 @@ contract DolomiteAccountRiskOverrideSetter is
             if (_marketIds[mid] < _find) {
                 left = mid + 1;
             } else {
-                // @follow-up Ok with doing it this way?
                 if (mid == 0) {
                     return type(uint256).max;
                 }

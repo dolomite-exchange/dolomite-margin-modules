@@ -38,6 +38,7 @@ interface IDolomiteAccountRiskOverrideSetter {
         IDolomiteStructs.Decimal liquidationRewardOverride
     );
     event RiskFeatureSet(uint256 indexed marketId, RiskFeature riskFeature, bytes extraData);
+    event DefaultAccountCheckActivated();
 
     // ===================== Enums =====================
 
