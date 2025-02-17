@@ -5,10 +5,10 @@ import { getRealLatestBlockNumber } from 'packages/base/test/utils';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
 import {
   deployDolomiteErc4626WithPayableToken,
-  EncodedTransaction,
-  prettyPrintEncodedDataWithTypeSafety,
+
 } from '../../../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
+import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 
 const OLD_WMNT_ADDRESS = '0x9A567714091773a18B02a1EFB616FA70b6e01D1C';

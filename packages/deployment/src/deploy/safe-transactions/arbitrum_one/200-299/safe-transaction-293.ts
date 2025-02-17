@@ -10,12 +10,13 @@ import { parseEther } from 'ethers/lib/utils';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
 import {
   deployContractAndSave,
-  EncodedTransaction,
-  prettyPrintEncodeAddMarket,
-  prettyPrintEncodedDataWithTypeSafety,
-  prettyPrintEncodeInsertChainlinkOracleV3,
+
+
 } from '../../../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
+import { encodeAddMarket } from '../../../../utils/encoding/add-market-encoder-utils';
+import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
+import { encodeInsertChainlinkOracleV3 } from '../../../../utils/encoding/oracle-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 
 const GRAI_FRAX_POOL = '0x6E0Ced11922386900BE369cBBF3cdb971dc58487';
@@ -57,12 +58,12 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
         },
       ],
     ),
-    ...await prettyPrintEncodeInsertChainlinkOracleV3(
+    ...await encodeInsertChainlinkOracleV3(
       core,
       core.tokens.frax,
       false,
     ),
-    ...await prettyPrintEncodeAddMarket(
+    ...await encodeAddMarket(
       core,
       core.tokens.grai,
       core.oracleAggregatorV2,

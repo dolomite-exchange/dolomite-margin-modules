@@ -5,12 +5,11 @@ import { getTWAPPriceOracleV1ConstructorParams } from '@dolomite-exchange/module
 import { parseEther } from 'ethers/lib/utils';
 import {
   createFolder,
-  DenJsonUpload,
   deployContractAndSave,
-  EncodedTransaction,
-  prettyPrintEncodedDataWithTypeSafety,
   writeFile,
 } from '../../../../utils/deploy-utils';
+import { DenJsonUpload, EncodedTransaction } from '../../../../utils/dry-run-utils';
+import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 
 /**
  * This script encodes the following transactions:

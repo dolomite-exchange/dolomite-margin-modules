@@ -3,11 +3,11 @@ import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/se
 import { Network } from 'packages/base/src/utils/no-deps-constants';
 import {
   createFolder,
-  DenJsonUpload,
   deployContractAndSave,
-  prettyPrintEncodedDataWithTypeSafety,
   writeFile,
 } from '../../../../utils/deploy-utils';
+import { DenJsonUpload } from '../../../../utils/dry-run-utils';
+import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 
 /**
  * This script encodes the following transactions:

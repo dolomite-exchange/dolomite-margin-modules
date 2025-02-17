@@ -5,11 +5,12 @@ import { setupCoreProtocol } from 'packages/base/test/utils/setup';
 import {
   deployDolomiteErc4626Token,
   deployDolomiteErc4626WithPayableToken,
-  EncodedTransaction,
+
 } from '../../../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
+import { encodeSetGlobalOperator } from '../../../../utils/encoding/dolomite-margin-core-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
-import { checkIsGlobalOperator, encodeSetGlobalOperator } from '../utils';
+import { checkIsGlobalOperator } from '../../../../utils/invariant-utils';
 
 const IS_GLOBAL_OPERATOR = true;
 

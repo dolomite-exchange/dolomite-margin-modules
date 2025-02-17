@@ -3,12 +3,9 @@ import { getAndCheckSpecificNetwork } from 'packages/base/src/utils/dolomite-uti
 import { Network, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from 'packages/base/test/utils';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
-import {
-  EncodedTransaction,
-  prettyPrintEncodeAddMarket,
-  prettyPrintEncodeInsertChronicleOracleV3,
-} from '../../../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
+import { encodeAddMarket } from '../../../../utils/encoding/add-market-encoder-utils';
+import { encodeInsertChronicleOracleV3 } from '../../../../utils/encoding/oracle-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 
 /**
@@ -25,9 +22,9 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
   const transactions: EncodedTransaction[] = [];
 
   transactions.push(
-    ...(await prettyPrintEncodeInsertChronicleOracleV3(core, core.tokens.stonebtc)),
-    ...(await prettyPrintEncodeInsertChronicleOracleV3(core, core.tokens.stoneBtc)),
-    ...(await prettyPrintEncodeAddMarket(
+    ...(await encodeInsertChronicleOracleV3(core, core.tokens.stonebtc)),
+    ...(await encodeInsertChronicleOracleV3(core, core.tokens.stoneBtc)),
+    ...(await encodeAddMarket(
       core,
       core.tokens.stonebtc,
       core.oracleAggregatorV2,
@@ -38,7 +35,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
       ZERO_BI,
       false,
     )),
-    ...(await prettyPrintEncodeAddMarket(
+    ...(await encodeAddMarket(
       core,
       core.tokens.stoneBtc,
       core.oracleAggregatorV2,

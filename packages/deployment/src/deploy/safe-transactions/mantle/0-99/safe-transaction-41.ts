@@ -6,10 +6,10 @@ import { Network } from 'packages/base/src/utils/no-deps-constants';
 import {
   deployDolomiteErc4626Token,
   deployDolomiteErc4626WithPayableToken,
-  EncodedTransaction,
-  prettyPrintEncodedDataWithTypeSafety,
+
 } from '../../../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
+import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 
 const OLD_METH_ADDRESS = '0x7656b1417886B89D6D72e8360923146D500c6c63';

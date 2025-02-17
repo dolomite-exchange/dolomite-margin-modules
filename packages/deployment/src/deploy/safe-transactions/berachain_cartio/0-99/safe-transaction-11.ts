@@ -3,12 +3,9 @@ import { getAndCheckSpecificNetwork } from 'packages/base/src/utils/dolomite-uti
 import { Network } from 'packages/base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from 'packages/base/test/utils';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
-import {
-  deployDolomiteErc4626Token,
-  EncodedTransaction,
-  prettyPrintSetGlobalOperator,
-} from '../../../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
+import { deployDolomiteErc4626Token } from '../../../../utils/deploy-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
+import { encodeSetGlobalOperator } from '../../../../utils/encoding/dolomite-margin-core-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 
 /**
@@ -27,10 +24,7 @@ async function main(): Promise<DryRunOutput<Network.BerachainCartio>> {
   const susda = await deployDolomiteErc4626Token(core, 'Susda', core.marketIds.susda);
 
   const transactions: EncodedTransaction[] = [];
-  transactions.push(
-    await prettyPrintSetGlobalOperator(core, usda, true),
-    await prettyPrintSetGlobalOperator(core, susda, true),
-  );
+  transactions.push(await encodeSetGlobalOperator(core, usda, true), await encodeSetGlobalOperator(core, susda, true));
   return {
     core,
     upload: {

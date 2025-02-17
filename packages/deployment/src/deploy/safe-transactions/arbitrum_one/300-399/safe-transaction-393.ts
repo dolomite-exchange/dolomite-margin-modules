@@ -5,10 +5,13 @@ import { getRealLatestBlockNumber } from 'packages/base/test/utils';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
 import {
   deployContractAndSave,
-  EncodedTransaction,
-  prettyPrintEncodedDataWithTypeSafety,
+
 } from 'packages/deployment/src/utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from 'packages/deployment/src/utils/dry-run-utils';
+import {
+  doDryRunAndCheckDeployment,
+  DryRunOutput,
+  EncodedTransaction,
+} from 'packages/deployment/src/utils/dry-run-utils';
 import getScriptName from 'packages/deployment/src/utils/get-script-name';
 import {
   getGmxV2MarketTokenPriceOracleConstructorParams,
@@ -24,6 +27,7 @@ import {
 import { IERC20, IsolationModeTraderProxy } from '@dolomite-exchange/modules-base/src/types';
 import { formatUnits } from 'ethers/lib/utils';
 import { LiveGmMarket } from '@dolomite-exchange/modules-base/test/utils/ecosystem-utils/gmx';
+import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 
 /**
  * This script encodes the following transactions:

@@ -8,12 +8,11 @@ import { parseEther } from 'ethers/lib/utils';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
 import {
   createFolder,
-  DenJsonUpload,
   deployPendlePtSystem,
-  EncodedTransaction,
-  prettyPrintEncodeAddIsolationModeMarket,
   writeFile,
 } from '../../../../utils/deploy-utils';
+import { DenJsonUpload, EncodedTransaction } from '../../../../utils/dry-run-utils';
+import { encodeAddIsolationModeMarket } from '../../../../utils/encoding/add-market-encoder-utils';
 
 enum PtName {
   REthJun2025 = 'REthJun2025',
@@ -62,7 +61,7 @@ async function main(): Promise<DenJsonUpload> {
   const rEthMarketId = await core.dolomiteMargin.getNumMarkets();
   const rEthMaxSupplyWei = parseEther('1000');
   transactions = transactions.concat(
-    await prettyPrintEncodeAddIsolationModeMarket(
+    await encodeAddIsolationModeMarket(
       core,
       rEthSystem.factory,
       rEthSystem.oracle,
@@ -78,7 +77,7 @@ async function main(): Promise<DenJsonUpload> {
   const wstEthJun2024MarketId = rEthMarketId.add(1);
   const wstEthJun2024MaxSupplyWei = parseEther('1000');
   transactions = transactions.concat(
-    await prettyPrintEncodeAddIsolationModeMarket(
+    await encodeAddIsolationModeMarket(
       core,
       wstEthJun2024System.factory,
       wstEthJun2024System.oracle,
@@ -94,7 +93,7 @@ async function main(): Promise<DenJsonUpload> {
   const wstEthJun2025MarketId = wstEthJun2024MarketId.add(1);
   const wstEthJun2025MaxSupplyWei = parseEther('750');
   transactions = transactions.concat(
-    await prettyPrintEncodeAddIsolationModeMarket(
+    await encodeAddIsolationModeMarket(
       core,
       wstEthJun2025System.factory,
       wstEthJun2025System.oracle,

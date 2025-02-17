@@ -80,6 +80,7 @@ export async function resetForkIfPossible(
       tracer.nameTags[contractAddress] = contractName;
     }
   });
+
 }
 
 /**

@@ -6,11 +6,11 @@ import { parseEther } from 'ethers/lib/utils';
 import { ADDRESS_ZERO, Network } from 'packages/base/src/utils/no-deps-constants';
 import {
   createFolder,
-  DenJsonUpload,
   deployContractAndSave,
-  prettyPrintEncodedDataWithTypeSafety,
   writeFile,
 } from '../../../../utils/deploy-utils';
+import { DenJsonUpload } from '../../../../utils/dry-run-utils';
+import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 
 /**
  * This script encodes the following transactions:
