@@ -355,6 +355,26 @@ describe('DolomiteAccountRiskOverrideSetter', () => {
       );
     });
 
+    it('should fail if duplicate debt market IDs are provided', async () => {
+      const riskStruct = {
+        debtMarketIds: [core.marketIds.usdc, core.marketIds.usdc],
+        marginRatioOverride: { value: parseEther('.5') },
+        liquidationRewardOverride: { value: parseEther('.1') },
+      };
+      const extraData = defaultAbiCoder.encode(
+        [singleCollateralRiskStruct],
+        [[riskStruct]],
+      );
+      await expectThrow(
+        riskOverrideSetter.connect(core.governance).ownerSetRiskFeatureByMarketId(
+          core.marketIds.wbera,
+          RiskFeature.SINGLE_COLLATERAL_WITH_STRICT_DEBT,
+          extraData,
+        ),
+        'AccountRiskOverrideSetter: Markets must be in asc order'
+      );
+    });
+
     it('should fail if debt market IDs overlap between risk structs', async () => {
       const riskStruct1 = {
         debtMarketIds: [core.marketIds.usdc, core.marketIds.honey],
