@@ -20,7 +20,6 @@
 
 pragma solidity ^0.8.9;
 
-import { IBerachainRewardsRegistry } from "./IBerachainRewardsRegistry.sol";
 import { IBaseMetaVault } from "./IBaseMetaVault.sol";
 
 

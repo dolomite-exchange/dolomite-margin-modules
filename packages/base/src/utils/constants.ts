@@ -1508,7 +1508,7 @@ export const HONEY_WBERA_BEX_INFRARED_REWARD_VAULT_MAP: Record<Network.Berachain
 };
 
 export const IBGT_STAKING_POOL_MAP: Record<Network.Berachain | Network.BerachainBartio, string> = {
-  [Network.Berachain]: '0x4EF0c533D065118907f68e6017467Eb05DBb2c8C',
+  [Network.Berachain]: '0x75F3Be06b02E235f6d0E7EF2D462b29739168301',
   [Network.BerachainBartio]: '0x31E6458C83C4184A23c761fDAffb61941665E012',
 };
 
