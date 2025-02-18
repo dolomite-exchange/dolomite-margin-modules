@@ -484,12 +484,19 @@ export async function setupGLVBalance(
 }
 
 export async function setupRsEthBalance(
-  core: { tokens: { rsEth: IERC20 } },
+  core: CoreProtocolBerachain | CoreProtocolArbitrumOne,
   signer: SignerWithAddressWithSafety,
   amount: BigNumberish,
   spender: { address: string },
 ) {
-  const whaleAddress = '0xf176fb51f4eb826136a54fdc71c50fcd2202e272'; // Balancer Vault
+  let whaleAddress;
+  if (core.network === Network.ArbitrumOne) {
+    whaleAddress = '0xf176fb51f4eb826136a54fdc71c50fcd2202e272'; // Balancer Vault
+  } else if (core.network === Network.Berachain) {
+    whaleAddress = '0x003Ca23Fd5F0ca87D01F6eC6CD14A8AE60c2b97D';
+  } else {
+    throw new Error('Invalid network for weETH');
+  }
   const whaleSigner = await impersonate(whaleAddress, true);
   await core.tokens.rsEth!.connect(whaleSigner).transfer(signer.address, amount);
   await core.tokens.rsEth!.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
@@ -505,6 +512,18 @@ export async function setupRETHBalance(
   const whaleSigner = await impersonate(whaleAddress, true);
   await core.tokens.rEth!.connect(whaleSigner).transfer(signer.address, amount);
   await core.tokens.rEth!.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
+}
+
+export async function setupSolvBtcBalance(
+  core: CoreProtocolBerachain,
+  signer: SignerWithAddressWithSafety,
+  amount: BigNumberish,
+  spender: { address: string },
+) {
+  const whaleAddress = '0x26666a82cfE70E1aD048939708cA3ACc4982cF9F';
+  const whaleSigner = await impersonate(whaleAddress, true);
+  await core.tokens.solvBtc!.connect(whaleSigner).transfer(signer.address, amount);
+  await core.tokens.solvBtc!.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
 export async function setupUSDEBalance<T extends NetworkType>(
@@ -527,12 +546,19 @@ export async function setupUSDEBalance<T extends NetworkType>(
 }
 
 export async function setupWeEthBalance(
-  core: { tokens: { weEth: IERC20 } },
+  core: CoreProtocolArbitrumOne | CoreProtocolBerachain,
   signer: SignerWithAddressWithSafety,
   amount: BigNumberish,
   spender: { address: string },
 ) {
-  const whaleAddress = '0xa6c895eb332e91c5b3d00b7baeeaae478cc502da'; // Balancer Vault
+  let whaleAddress;
+  if (core.network === Network.ArbitrumOne) {
+    whaleAddress = '0xa6c895eb332e91c5b3d00b7baeeaae478cc502da'; // Balancer Vault
+  } else if (core.network === Network.Berachain) {
+    whaleAddress = '0x003Ca23Fd5F0ca87D01F6eC6CD14A8AE60c2b97D';
+  } else {
+    throw new Error('Invalid network for weEth');
+  }
   const whaleSigner = await impersonate(whaleAddress, true);
   await core.tokens.weEth!.connect(whaleSigner).transfer(signer.address, amount);
   await core.tokens.weEth!.connect(signer).approve(spender.address, ethers.constants.MaxUint256);

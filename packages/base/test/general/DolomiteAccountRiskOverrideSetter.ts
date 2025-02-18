@@ -77,6 +77,50 @@ describe('DolomiteAccountRiskOverrideSetter', () => {
     });
   });
 
+  describe('#ownerSetCategoriesByMarketIds', () => {
+    it('should work normally', async () => {
+      const marketIds = [core.marketIds.wbera, core.marketIds.wbtc, core.marketIds.weth];
+      const categories = [Category.BERA, Category.BTC, Category.ETH];
+
+      const res = await riskOverrideSetter.connect(core.governance).ownerSetCategoriesByMarketIds(
+        marketIds,
+        categories
+      );
+
+      for (let i = 0; i < marketIds.length; i++) {
+        await expectEvent(riskOverrideSetter, res, 'CategorySet', {
+          marketId: marketIds[i],
+          category: categories[i]
+        });
+        expect(await riskOverrideSetter.getCategoryByMarketId(marketIds[i])).to.eq(categories[i]);
+      }
+    });
+
+    it('should fail if arrays have different lengths', async () => {
+      const marketIds = [core.marketIds.wbera, core.marketIds.wbtc];
+      const categories = [Category.BERA];
+
+      await expectThrow(
+        riskOverrideSetter.connect(core.governance).ownerSetCategoriesByMarketIds(marketIds, categories),
+        'AccountRiskOverrideSetter: Invalid market IDs length'
+      );
+      await expectThrow(
+        riskOverrideSetter.connect(core.governance).ownerSetCategoriesByMarketIds([], []),
+        'AccountRiskOverrideSetter: Invalid market IDs length'
+      );
+    });
+
+    it('should fail if not called by owner', async () => {
+      const marketIds = [core.marketIds.wbera];
+      const categories = [Category.BERA];
+
+      await expectThrow(
+        riskOverrideSetter.connect(core.hhUser1).ownerSetCategoriesByMarketIds(marketIds, categories),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+      );
+    });
+  });
+
   describe('#ownerSetCategoryByMarketId', () => {
     it('should work normally', async () => {
       const res = await riskOverrideSetter.connect(core.governance).ownerSetCategoryByMarketId(

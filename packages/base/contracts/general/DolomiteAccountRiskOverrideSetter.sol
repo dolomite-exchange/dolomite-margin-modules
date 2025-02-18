@@ -61,6 +61,22 @@ contract DolomiteAccountRiskOverrideSetter is
 
     // ===================== External Functions =====================
 
+    function ownerSetCategoriesByMarketIds(
+        uint256[] memory _marketIds,
+        Category[] memory _categories
+    ) external onlyDolomiteMarginOwner(msg.sender) {
+        Require.that(
+            _marketIds.length != 0 && _marketIds.length == _categories.length,
+            _FILE,
+            "Invalid market IDs length"
+        );
+
+        for (uint256 i; i < _marketIds.length; ++i) {
+            _setUint256InMap(_MARKET_TO_CATEGORY_MAP_SLOT, address(uint160(_marketIds[i])), uint256(_categories[i]));
+            emit CategorySet(_marketIds[i], _categories[i]);
+        }
+    }
+
     function ownerSetCategoryByMarketId(
         uint256 _marketId,
         Category _category
