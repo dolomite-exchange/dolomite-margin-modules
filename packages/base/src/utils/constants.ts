@@ -1483,7 +1483,7 @@ export const HONEY_USDC_BEX_LP_TOKEN_MAP: Record<Network.Berachain | Network.Ber
 };
 
 export const HONEY_USDC_BEX_INFRARED_REWARD_VAULT_MAP: Record<Network.Berachain | Network.BerachainBartio, string> = {
-  [Network.Berachain]: '0x59945C5bE54FF1d8dEb0E8bC7F132F950DA910a2',
+  [Network.Berachain]: '0x1419515d3703d8F2cc72Fa6A341685E4f8e7e8e1',
   [Network.BerachainBartio]: '0x675547750F4acdf64eD72e9426293f38d8138CA8',
 };
 

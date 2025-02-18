@@ -21,6 +21,7 @@
 pragma solidity ^0.8.9;
 
 import { IBerachainRewardsRegistry } from "./IBerachainRewardsRegistry.sol";
+import { IBaseMetaVault } from "./IBaseMetaVault.sol";
 
 
 /**
@@ -28,7 +29,7 @@ import { IBerachainRewardsRegistry } from "./IBerachainRewardsRegistry.sol";
  * @author  Dolomite
  *
  */
-interface IBerachainRewardsMetaVault {
+interface IBerachainRewardsMetaVault is IBaseMetaVault {
 
     struct BgtValidatorStorageStruct {
         bytes pubkey;
@@ -44,31 +45,6 @@ interface IBerachainRewardsMetaVault {
     // ================================================
     // ================== Functions ===================
     // ================================================
-
-    function setDefaultRewardVaultTypeByAsset(
-        address _asset,
-        IBerachainRewardsRegistry.RewardVaultType _type
-    ) external;
-
-    function stakeDolomiteToken(
-        address _asset,
-        IBerachainRewardsRegistry.RewardVaultType _type,
-        uint256 _amount
-    ) external;
-
-    function unstakeDolomiteToken(
-        address _asset,
-        IBerachainRewardsRegistry.RewardVaultType _type,
-        uint256 _amount
-    ) external;
-
-    function stake(address _asset, IBerachainRewardsRegistry.RewardVaultType _type, uint256 amount) external;
-
-    function unstake(address _asset, IBerachainRewardsRegistry.RewardVaultType _type, uint256 amount) external;
-
-    function getReward(address _asset) external returns (uint256);
-
-    function exit(address _asset) external;
 
     function delegateBGT(address _delegatee) external;
 
@@ -93,25 +69,4 @@ interface IBerachainRewardsMetaVault {
     function bgtBalanceOf() external view returns (uint256);
 
     function bgtmBalanceOf() external view returns (uint256);
-
-    function getDefaultRewardVaultTypeByAsset(
-        address _asset
-    ) external view returns (IBerachainRewardsRegistry.RewardVaultType);
-
-    function getStakedBalanceByAssetAndType(
-        address _asset,
-        IBerachainRewardsRegistry.RewardVaultType _type
-    ) external view returns (uint256);
-
-    /**
-     * @return  The address of the Berachain Rewards Registry, which contains the relevant addresses for the Dolomite
-     *          Meta Vault system (for depositing PoL-enabled assets into PoL) as well as tracking all supported PoL
-     *          providers.
-     */
-    function REGISTRY() external view returns (IBerachainRewardsRegistry);
-
-    /**
-     * @return  The user that owns this Meta Vault.
-     */
-    function OWNER() external view returns (address);
 }

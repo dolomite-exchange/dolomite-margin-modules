@@ -30,7 +30,7 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { IBGT } from "./interfaces/IBGT.sol";
 import { IBGTM } from "./interfaces/IBGTM.sol";
-import { IIBgtMetaVault } from "./interfaces/IIBgtMetaVault.sol";
+import { IBaseMetaVault } from "./interfaces/IBaseMetaVault.sol";
 import { IBerachainRewardsRegistry } from "./interfaces/IBerachainRewardsRegistry.sol";
 import { IInfraredVault } from "./interfaces/IInfraredVault.sol";
 import { IMetaVaultRewardReceiver } from "./interfaces/IMetaVaultRewardReceiver.sol";
@@ -47,7 +47,7 @@ import { INativeRewardVault } from "./interfaces/INativeRewardVault.sol";
  *          to be in isolation mode - that is it cannot be borrowed by other users, may only be seized via
  *          liquidation, and cannot be held in the same position as other "isolated" tokens.
  */
-contract IBgtMetaVault is ProxyContractHelpers, IIBgtMetaVault {
+contract IBgtMetaVault is ProxyContractHelpers, IBaseMetaVault {
     using SafeERC20 for IERC20;
 
     // ==================================================================
@@ -87,6 +87,7 @@ contract IBgtMetaVault is ProxyContractHelpers, IIBgtMetaVault {
 
     function stakeDolomiteToken(
         address _asset,
+        IBerachainRewardsRegistry.RewardVaultType _type,
         uint256 _amount
     ) external onlyMetaVaultOwner(msg.sender) onlyValidDolomiteToken(_asset) {
         _stake(_asset, _amount);
@@ -94,13 +95,22 @@ contract IBgtMetaVault is ProxyContractHelpers, IIBgtMetaVault {
 
     function unstakeDolomiteToken(
         address _asset,
+        IBerachainRewardsRegistry.RewardVaultType _type,
         uint256 _amount
     ) external onlyMetaVaultOwner(msg.sender) onlyValidDolomiteToken(_asset) {
         _unstake(_asset, _amount);
     }
 
+    function setDefaultRewardVaultTypeByAsset(
+        address _asset,
+        IBerachainRewardsRegistry.RewardVaultType _type
+    ) external onlyMetaVaultOwner(msg.sender) {
+        _setDefaultRewardVaultTypeByAsset(_asset, _type);
+    }
+
     function stake(
         address _asset,
+        IBerachainRewardsRegistry.RewardVaultType _type,
         uint256 _amount
     ) external onlyChildVault(msg.sender) {
         _stake(_asset, _amount);
@@ -108,6 +118,7 @@ contract IBgtMetaVault is ProxyContractHelpers, IIBgtMetaVault {
 
     function unstake(
         address _asset,
+        IBerachainRewardsRegistry.RewardVaultType _type,
         uint256 _amount
     ) external onlyChildVault(msg.sender) {
         _unstake(_asset, _amount);
@@ -173,6 +184,11 @@ contract IBgtMetaVault is ProxyContractHelpers, IIBgtMetaVault {
         address _asset,
         IBerachainRewardsRegistry.RewardVaultType _type
     ) internal {
+        Require.that(
+            _type == IBerachainRewardsRegistry.RewardVaultType.INFRARED,
+            _FILE,
+            "Only infrared is supported"
+        );
         IBerachainRewardsRegistry.RewardVaultType currentType = getDefaultRewardVaultTypeByAsset(_asset);
         if (_type == currentType) {
             // No need to change it when the two already match
@@ -187,12 +203,6 @@ contract IBgtMetaVault is ProxyContractHelpers, IIBgtMetaVault {
 
         _getReward(_asset);
         REGISTRY().setDefaultRewardVaultTypeFromMetaVaultByAsset(_asset, _type);
-
-        if (_type == IBerachainRewardsRegistry.RewardVaultType.BGTM) {
-            INativeRewardVault rewardVault = INativeRewardVault(REGISTRY().rewardVault(_asset, _type));
-            // @follow-up Test if this will revert if done more than once
-            rewardVault.setOperator(address(REGISTRY().bgtm()));
-        }
     }
 
     function _stake(

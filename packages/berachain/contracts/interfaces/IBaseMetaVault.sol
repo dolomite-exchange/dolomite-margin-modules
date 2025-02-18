@@ -24,29 +24,36 @@ import { IBerachainRewardsRegistry } from "./IBerachainRewardsRegistry.sol";
 
 
 /**
- * @title   IIBgtMetaVault
+ * @title   IBaseMetaVault
  * @author  Dolomite
  *
  */
-interface IIBgtMetaVault {
+interface IBaseMetaVault {
 
     // ================================================
     // ================== Functions ===================
     // ================================================
 
+    function setDefaultRewardVaultTypeByAsset(
+        address _asset,
+        IBerachainRewardsRegistry.RewardVaultType _type
+    ) external;
+
     function stakeDolomiteToken(
         address _asset,
+        IBerachainRewardsRegistry.RewardVaultType _type,
         uint256 _amount
     ) external;
 
     function unstakeDolomiteToken(
         address _asset,
+        IBerachainRewardsRegistry.RewardVaultType _type,
         uint256 _amount
     ) external;
 
-    function stake(address _asset, uint256 amount) external;
+    function stake(address _asset, IBerachainRewardsRegistry.RewardVaultType _type, uint256 amount) external;
 
-    function unstake(address _asset, uint256 amount) external;
+    function unstake(address _asset, IBerachainRewardsRegistry.RewardVaultType _type, uint256 amount) external;
 
     function getReward(address _asset) external returns (uint256);
 
