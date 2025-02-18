@@ -152,7 +152,7 @@ contract RedstonePriceOracleV3 is IRedstonePriceOracleV3, OnlyDolomiteMargin {
         Require.that(
             block.timestamp - updatedAt < stalenessThreshold,
             _FILE,
-            "Chainlink price expired",
+            "Price expired",
             _token
         );
 

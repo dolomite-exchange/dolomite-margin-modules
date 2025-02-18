@@ -34,7 +34,7 @@ if (!berachainWeb3Url) {
 }
 const berachainBartioWeb3Url = process.env.BERACHAIN_BARTIO_WEB3_PROVIDER_URL;
 if (!berachainWeb3Url) {
-  throw new Error('No BERACHAIN_CARTIO_WEB3_PROVIDER_URL provided!');
+  throw new Error('No BERACHAIN_BARTIO_WEB3_PROVIDER_URL provided!');
 }
 const berachainCartioWeb3Url = process.env.BERACHAIN_CARTIO_WEB3_PROVIDER_URL;
 if (!berachainWeb3Url) {
@@ -88,7 +88,7 @@ if (!polygonscanApiKey) {
 }
 const superscanApiKey = process.env.SUPERSCAN_API_KEY;
 if (!superscanApiKey) {
-  throw new Error('No POLYGONSCAN_API_KEY provided!');
+  throw new Error('No SUPERSCAN_API_KEY provided!');
 }
 const xLayerApiKey = process.env.X_LAYER_API_KEY;
 if (!xLayerApiKey) {

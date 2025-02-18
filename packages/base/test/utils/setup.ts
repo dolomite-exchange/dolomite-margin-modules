@@ -301,7 +301,7 @@ export async function enableInterestAccrual<T extends NetworkType>(
 }
 
 export async function setupWBERABalance(
-  core: CoreProtocolBerachainBartio,
+  core: CoreProtocolBerachain | CoreProtocolBerachainBartio,
   signer: SignerWithAddressWithSafety,
   amount: BigNumberish,
   spender: { address: string },
@@ -324,6 +324,11 @@ export async function setupWETHBalance<T extends NetworkType>(
     const whaleSigner = await impersonate(whaleAddress, true);
     await core.tokens.weth.connect(whaleSigner).transfer(signer.address, amount);
     await core.tokens.weth.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
+  } else if (core.network === Network.Berachain) {
+    const whaleAddress = '0x8382FBcEbef31dA752c72885A61d4416F342c6C8';
+    const whaleSigner = await impersonate(whaleAddress, true);
+    await core.tokens.weth.connect(whaleSigner).transfer(signer.address, amount);
+    await core.tokens.weth.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
   } else {
     return Promise.reject(new Error(`Cannot setup WETH balance on ${core.network}`));
   }
@@ -341,12 +346,19 @@ export async function setupWMNTBalance(
 }
 
 export async function setupWBTCBalance<T extends NetworkType>(
-  core: CoreProtocolArbitrumOne,
+  core: CoreProtocolArbitrumOne | CoreProtocolBerachain,
   signer: SignerWithAddressWithSafety,
   amount: BigNumberish,
   spender: { address: string },
 ) {
-  const whaleAddress = '0x078f358208685046a11c85e8ad32895ded33a249'; // Aave Token
+  let whaleAddress;
+  if (core.network === Network.ArbitrumOne) {
+    whaleAddress = '0x078f358208685046a11c85e8ad32895ded33a249'; // Aave Token
+  } else if (core.network === Network.Berachain) {
+    whaleAddress = '0x46fcd35431f5B371224ACC2e2E91732867B1A77e';
+  } else {
+    throw new Error('Invalid network for WBTC');
+  }
   const whaleSigner = await impersonate(whaleAddress, true);
   await core.tokens.wbtc.connect(whaleSigner).transfer(signer.address, amount);
   await core.tokens.wbtc.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
@@ -374,6 +386,18 @@ export async function setupDAIBalance(
   const whaleSigner = await impersonate(whaleAddress, true);
   await core.tokens.dai.connect(whaleSigner).transfer(signer.address, amount);
   await core.tokens.dai.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
+}
+
+export async function setupHONEYBalance(
+  core: CoreProtocolBerachain | CoreProtocolBerachainBartio,
+  signer: SignerWithAddressWithSafety,
+  amount: BigNumberish,
+  spender: { address: string },
+) {
+  const whaleAddress = '0x9EB897D400f245E151daFD4c81176397D7798C9c';
+  const whaleSigner = await impersonate(whaleAddress, true);
+  await core.tokens.honey.connect(whaleSigner).transfer(signer.address, amount);
+  await core.tokens.honey.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
 export async function setupNativeUSDCBalance(
@@ -460,12 +484,19 @@ export async function setupGLVBalance(
 }
 
 export async function setupRsEthBalance(
-  core: { tokens: { rsEth: IERC20 } },
+  core: CoreProtocolBerachain | CoreProtocolArbitrumOne,
   signer: SignerWithAddressWithSafety,
   amount: BigNumberish,
   spender: { address: string },
 ) {
-  const whaleAddress = '0xf176fb51f4eb826136a54fdc71c50fcd2202e272'; // Balancer Vault
+  let whaleAddress;
+  if (core.network === Network.ArbitrumOne) {
+    whaleAddress = '0xf176fb51f4eb826136a54fdc71c50fcd2202e272'; // Balancer Vault
+  } else if (core.network === Network.Berachain) {
+    whaleAddress = '0x003Ca23Fd5F0ca87D01F6eC6CD14A8AE60c2b97D';
+  } else {
+    throw new Error('Invalid network for weETH');
+  }
   const whaleSigner = await impersonate(whaleAddress, true);
   await core.tokens.rsEth!.connect(whaleSigner).transfer(signer.address, amount);
   await core.tokens.rsEth!.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
@@ -483,25 +514,51 @@ export async function setupRETHBalance(
   await core.tokens.rEth!.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
-export async function setupUSDEBalance(
-  core: { tokens: { usde: IERC20 } },
+export async function setupSolvBtcBalance(
+  core: CoreProtocolBerachain,
   signer: SignerWithAddressWithSafety,
   amount: BigNumberish,
   spender: { address: string },
 ) {
-  const whaleAddress = '0x5B9e411c9E50164133DE07FE1cAC05A094000105'; // Pendle SY Token
+  const whaleAddress = '0x26666a82cfE70E1aD048939708cA3ACc4982cF9F';
+  const whaleSigner = await impersonate(whaleAddress, true);
+  await core.tokens.solvBtc!.connect(whaleSigner).transfer(signer.address, amount);
+  await core.tokens.solvBtc!.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
+}
+
+export async function setupUSDEBalance<T extends NetworkType>(
+  core: CoreProtocolBerachain | CoreProtocolArbitrumOne,
+  signer: SignerWithAddressWithSafety,
+  amount: BigNumberish,
+  spender: { address: string },
+) {
+  let whaleAddress;
+  if (core.network === Network.ArbitrumOne) {
+    whaleAddress = '0x5B9e411c9E50164133DE07FE1cAC05A094000105'; // Pendle SY Token
+  } else if (core.network === Network.Berachain) {
+    whaleAddress = '0x9E4C460645B39628C631003eB9911651d5441DD8'; // Uniswap pool
+  } else {
+    throw new Error('Invalid network for USDe');
+  }
   const whaleSigner = await impersonate(whaleAddress, true);
   await core.tokens.usde!.connect(whaleSigner).transfer(signer.address, amount);
   await core.tokens.usde!.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
 export async function setupWeEthBalance(
-  core: { tokens: { weEth: IERC20 } },
+  core: CoreProtocolArbitrumOne | CoreProtocolBerachain,
   signer: SignerWithAddressWithSafety,
   amount: BigNumberish,
   spender: { address: string },
 ) {
-  const whaleAddress = '0xa6c895eb332e91c5b3d00b7baeeaae478cc502da'; // Balancer Vault
+  let whaleAddress;
+  if (core.network === Network.ArbitrumOne) {
+    whaleAddress = '0xa6c895eb332e91c5b3d00b7baeeaae478cc502da'; // Balancer Vault
+  } else if (core.network === Network.Berachain) {
+    whaleAddress = '0x003Ca23Fd5F0ca87D01F6eC6CD14A8AE60c2b97D';
+  } else {
+    throw new Error('Invalid network for weEth');
+  }
   const whaleSigner = await impersonate(whaleAddress, true);
   await core.tokens.weEth!.connect(whaleSigner).transfer(signer.address, amount);
   await core.tokens.weEth!.connect(signer).approve(spender.address, ethers.constants.MaxUint256);

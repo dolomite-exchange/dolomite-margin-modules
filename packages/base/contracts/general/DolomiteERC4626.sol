@@ -586,6 +586,7 @@ contract DolomiteERC4626 is
         address _spender,
         uint256 _amount
     ) internal {
+        assert(_amount > 0);
         uint256 currentAllowance = allowance(_owner, _spender);
         if (currentAllowance != type(uint256).max) {
             Require.that(
