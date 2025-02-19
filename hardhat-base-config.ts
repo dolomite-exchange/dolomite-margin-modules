@@ -1,3 +1,4 @@
+/* tslint:disable:ter-indent */
 /* eslint-disable import/no-extraneous-dependencies */
 import '@nomiclabs/hardhat-etherscan';
 import '@typechain/hardhat';
@@ -30,6 +31,10 @@ if (!baseWeb3Url) {
 const berachainWeb3Url = process.env.BERACHAIN_WEB3_PROVIDER_URL;
 if (!berachainWeb3Url) {
   throw new Error('No BERACHAIN_WEB3_PROVIDER_URL provided!');
+}
+const berachainBartioWeb3Url = process.env.BERACHAIN_BARTIO_WEB3_PROVIDER_URL;
+if (!berachainWeb3Url) {
+  throw new Error('No BERACHAIN_CARTIO_WEB3_PROVIDER_URL provided!');
 }
 const berachainCartioWeb3Url = process.env.BERACHAIN_CARTIO_WEB3_PROVIDER_URL;
 if (!berachainWeb3Url) {
@@ -128,6 +133,12 @@ export const base_config: HardhatUserConfig = {
     [NetworkName.Berachain]: {
       chainId: parseInt(Network.Berachain, 10),
       url: berachainWeb3Url,
+      gas: 20_000_000, // 20M gas
+      accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
+    },
+    [NetworkName.BerachainBartio]: {
+      chainId: parseInt(Network.Berachain, 10),
+      url: berachainBartioWeb3Url,
       gas: 20_000_000, // 20M gas
       accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
     },
@@ -236,6 +247,14 @@ export const base_config: HardhatUserConfig = {
         network: NetworkName.Berachain,
         chainId: parseInt(Network.Berachain, 10),
         urls: {
+          apiURL: 'https://api.berascan.com/api',
+          browserURL: 'https://berscan.com/address',
+        },
+      },
+      {
+        network: NetworkName.BerachainBartio,
+        chainId: parseInt(Network.BerachainBartio, 10),
+        urls: {
           apiURL: 'https://api.routescan.io/v2/network/testnet/evm/80084/etherscan/api',
           browserURL: 'https://bartio.beratrail.io/address',
         },
@@ -292,5 +311,5 @@ export const base_config: HardhatUserConfig = {
   },
   tracer: {
     tasks: ['run'],
-  }
+  },
 };

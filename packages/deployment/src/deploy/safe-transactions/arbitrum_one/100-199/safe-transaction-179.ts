@@ -6,12 +6,11 @@ import { BigNumberish } from 'ethers';
 import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import {
   createFolder,
-  DenJsonUpload,
   deployContractAndSave,
-  EncodedTransaction,
-  prettyPrintEncodedDataWithTypeSafety,
   writeFile,
 } from '../../../../utils/deploy-utils';
+import { DenJsonUpload, EncodedTransaction } from '../../../../utils/dry-run-utils';
+import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 
 const genericTraderProxyV1OldAddress = '0xe50c3118349F09AbAfc1bb01AD5CB946B1De83f6';
 const liquidatorProxyV4OldAddress = '0xfD84446AbCB9016F823904F13d16Fb7f103Ab6D7';

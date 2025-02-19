@@ -3,10 +3,10 @@ import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-const
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import {
   createFolder,
-  DenJsonUpload,
-  prettyPrintEncodeInsertChainlinkOracle,
   writeFile,
 } from '../../../../utils/deploy-utils';
+import { DenJsonUpload } from '../../../../utils/dry-run-utils';
+import { encodeInsertChainlinkOracle } from '../../../../utils/encoding/oracle-encoder-utils';
 
 /**
  * This script encodes the following transactions:
@@ -18,14 +18,14 @@ async function main(): Promise<DenJsonUpload> {
 
   const transactions = [];
   transactions.push(
-    await prettyPrintEncodeInsertChainlinkOracle(
+    await encodeInsertChainlinkOracle(
       core,
       core.tokens.wstEth!,
       core.tokens.stEth!.address,
     ),
   );
   transactions.push(
-    await prettyPrintEncodeInsertChainlinkOracle(
+    await encodeInsertChainlinkOracle(
       core,
       core.tokens.stEth!,
       core.tokens.weth.address,

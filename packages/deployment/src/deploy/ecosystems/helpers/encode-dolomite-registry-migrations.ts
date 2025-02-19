@@ -7,7 +7,8 @@ import {
   RegistryProxy,
 } from 'packages/base/src/types';
 import { isArraysEqual } from 'packages/base/src/utils';
-import { EncodedTransaction, prettyPrintEncodedDataWithTypeSafety } from '../../../utils/deploy-utils';
+import { EncodedTransaction } from '../../../utils/dry-run-utils';
+import { prettyPrintEncodedDataWithTypeSafety } from '../../../utils/encoding/base-encoder-utils';
 import { DolomiteMargin } from '@dolomite-exchange/dolomite-margin';
 
 export async function encodeDolomiteRegistryMigrations(

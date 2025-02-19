@@ -1,15 +1,15 @@
-import { getOogaBoogaAggregatorTraderConstructorParams } from 'packages/base/src/utils/constructors/traders';
 import { getAndCheckSpecificNetwork } from 'packages/base/src/utils/dolomite-utils';
-import { Network } from 'packages/base/src/utils/no-deps-constants';
+import { Network, ONE_BI } from 'packages/base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from 'packages/base/test/utils';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
-import { deployContractAndSave, EncodedTransaction } from '../../../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
+import { encodeSetSupplyCap } from '../../../../utils/encoding/dolomite-margin-core-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
+import { checkSupplyCap } from '../../../../utils/invariant-utils';
 
 /**
  * This script encodes the following transactions:
- * - Deploys the OogaBoogaAggregatorTrader
+ * - Lowers the supply cap of BERA, USD0, and USD0++ to 1 unit
  */
 async function main(): Promise<DryRunOutput<Network.Berachain>> {
   const network = await getAndCheckSpecificNetwork(Network.Berachain);
@@ -19,9 +19,9 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
   });
 
   const transactions: EncodedTransaction[] = [];
-
-  await deployContractAndSave('OogaBoogaAggregatorTrader', getOogaBoogaAggregatorTraderConstructorParams(core));
-
+  transactions.push(await encodeSetSupplyCap(core, core.marketIds.wbera, ONE_BI));
+  transactions.push(await encodeSetSupplyCap(core, core.marketIds.usd0, ONE_BI));
+  transactions.push(await encodeSetSupplyCap(core, core.marketIds.usd0pp, ONE_BI));
   return {
     core,
     upload: {
@@ -35,7 +35,11 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
       },
     },
     scriptName: getScriptName(__filename),
-    invariants: async () => {},
+    invariants: async () => {
+      await checkSupplyCap(core, core.marketIds.wbera, ONE_BI);
+      await checkSupplyCap(core, core.marketIds.usd0, ONE_BI);
+      await checkSupplyCap(core, core.marketIds.usd0pp, ONE_BI);
+    },
   };
 }
 

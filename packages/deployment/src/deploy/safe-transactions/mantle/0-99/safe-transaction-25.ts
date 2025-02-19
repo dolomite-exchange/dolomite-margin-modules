@@ -10,11 +10,11 @@ import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
 import {
   deployPendlePtSystem,
-  EncodedTransaction,
-  prettyPrintEncodeAddIsolationModeMarket,
-  prettyPrintEncodeInsertPendlePtOracle,
+
 } from '../../../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
+import { encodeAddIsolationModeMarket } from '../../../../utils/encoding/add-market-encoder-utils';
+import { encodeInsertPendlePtOracle } from '../../../../utils/encoding/oracle-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 
 /**
@@ -45,8 +45,8 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
   );
 
   transactions.push(
-    await prettyPrintEncodeInsertPendlePtOracle(core, usdeSystem, core.tokens.usde),
-    ...(await prettyPrintEncodeAddIsolationModeMarket(
+    await encodeInsertPendlePtOracle(core, usdeSystem, core.tokens.usde),
+    ...(await encodeAddIsolationModeMarket(
       core,
       usdeSystem.factory,
       core.oracleAggregatorV2,

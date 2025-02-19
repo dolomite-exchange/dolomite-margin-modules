@@ -1,7 +1,7 @@
 import { IERC20, TestPriceOracle__factory } from '@dolomite-exchange/modules-base/src/types';
 import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
-import { CoreProtocolBerachain } from '@dolomite-exchange/modules-base/test/utils/core-protocols/core-protocol-berachain';
+import { CoreProtocolBerachainBartio } from '../../../../../base/test/utils/core-protocols/core-protocol-berachain-bartio';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { BigNumberish } from 'ethers';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
@@ -13,7 +13,7 @@ import ModuleDeployments from '../../../deployments.json';
 async function encodeTestOracle(
   token: IERC20,
   price: BigNumberish,
-  core: CoreProtocolBerachain,
+  core: CoreProtocolBerachainBartio,
 ): Promise<EncodedTransaction[]> {
   const testPriceOracle = TestPriceOracle__factory.connect(
     ModuleDeployments.TestPriceOracle['80084'].address,

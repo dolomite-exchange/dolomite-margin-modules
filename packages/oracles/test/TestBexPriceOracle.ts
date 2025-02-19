@@ -18,7 +18,7 @@ import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules
 import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { TokenInfo } from '../src';
-import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
+import { CoreProtocolBerachainBartio } from 'packages/base/test/utils/core-protocols/core-protocol-berachain-bartio';
 import { TestBexPriceOracle } from '../src/types/contracts/test/TestBexPriceOracle';
 import { TestBexPriceOracle__factory } from '../src/types/factories/contracts/test/TestBexPriceOracle__factory';
 
@@ -32,7 +32,7 @@ const FIFTEEN_MINUTES = BigNumber.from('900');
 describe('TWAPPriceOracleV2', () => {
   let snapshotId: string;
 
-  let core: CoreProtocolBerachain;
+  let core: CoreProtocolBerachainBartio;
   let testBexPriceOracle: TestBexPriceOracle;
 
   before(async () => {

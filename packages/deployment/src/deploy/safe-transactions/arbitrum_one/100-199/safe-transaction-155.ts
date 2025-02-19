@@ -3,11 +3,10 @@ import { Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-d
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import {
   createFolder,
-  DenJsonUpload,
-  EncodedTransaction,
-  prettyPrintEncodedDataWithTypeSafety,
   writeFile,
 } from '../../../../utils/deploy-utils';
+import { DenJsonUpload, EncodedTransaction } from '../../../../utils/dry-run-utils';
+import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 
 /**
  * This script encodes the following transactions:

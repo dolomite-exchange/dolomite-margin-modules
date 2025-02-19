@@ -17,7 +17,7 @@ import {
 
 import { createOogaBoogaAggregatorTrader } from '../utils/ecosystem-utils/traders';
 import { disableInterestAccrual, setupCoreProtocol, setupWBERABalance } from '../utils/setup';
-import { CoreProtocolBerachain } from '../utils/core-protocols/core-protocol-berachain';
+import { CoreProtocolBerachainBartio } from '../utils/core-protocols/core-protocol-berachain-bartio';
 import { getCalldataForOogaBooga } from '../utils/trader-utils';
 import { ethers } from 'hardhat';
 import { ActionType, AmountDenomination, AmountReference } from '@dolomite-exchange/dolomite-margin';
@@ -28,7 +28,7 @@ const amountIn = BigNumber.from('1000000000000000000');
 describe('OogaBoogaAggregatorTrader', () => {
   let snapshotId: string;
 
-  let core: CoreProtocolBerachain;
+  let core: CoreProtocolBerachainBartio;
   let trader: OogaBoogaAggregatorTrader;
   let defaultAccount: AccountStruct;
 

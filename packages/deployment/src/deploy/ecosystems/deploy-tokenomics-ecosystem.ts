@@ -6,10 +6,13 @@ import { getRealLatestBlockNumber } from 'packages/base/test/utils';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
 import {
   deployContractAndSave,
-  EncodedTransaction,
-  prettyPrintEncodedDataWithTypeSafety,
+
 } from 'packages/deployment/src/utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from 'packages/deployment/src/utils/dry-run-utils';
+import {
+  doDryRunAndCheckDeployment,
+  DryRunOutput,
+  EncodedTransaction,
+} from 'packages/deployment/src/utils/dry-run-utils';
 import getScriptName from 'packages/deployment/src/utils/get-script-name';
 import {
   getBuybackPoolConstructorParams,
@@ -20,6 +23,7 @@ import {
   getVeExternalVesterInitializationCalldata
 } from 'packages/tokenomics/src/tokenomics-constructors';
 import { ODOLO__factory, VeExternalVesterImplementationV1__factory, VotingEscrow__factory } from 'packages/tokenomics/src/types';
+import { prettyPrintEncodedDataWithTypeSafety } from '../../utils/encoding/base-encoder-utils';
 
 const NO_MARKET_ID = MAX_UINT_256_BI;
 

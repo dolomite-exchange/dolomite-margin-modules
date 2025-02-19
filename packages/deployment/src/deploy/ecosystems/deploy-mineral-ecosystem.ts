@@ -12,11 +12,11 @@ import { MineralToken__factory } from '@dolomite-exchange/modules-liquidity-mini
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import {
   deployContractAndSave,
-  EncodedTransaction,
   getMaxDeploymentVersionNameByDeploymentKey,
-  prettyPrintEncodedDataWithTypeSafety,
+
 } from '../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../utils/dry-run-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../utils/dry-run-utils';
+import { prettyPrintEncodedDataWithTypeSafety } from '../../utils/encoding/base-encoder-utils';
 import getScriptName from '../../utils/get-script-name';
 
 async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {

@@ -32,15 +32,16 @@ import {
 import { parseEther } from 'ethers/lib/utils';
 import {
   createFolder,
-  DenJsonUpload,
   deployContractAndSave,
-  EncodedTransaction,
-  prettyPrintEncodeAddIsolationModeMarket,
-  prettyPrintEncodeAddMarket,
-  prettyPrintEncodedDataWithTypeSafety,
-  prettyPrintEncodeInsertChainlinkOracle,
   writeFile,
 } from '../../../../utils/deploy-utils';
+import { DenJsonUpload, EncodedTransaction } from '../../../../utils/dry-run-utils';
+import {
+  encodeAddIsolationModeMarket,
+  encodeAddMarket,
+} from '../../../../utils/encoding/add-market-encoder-utils';
+import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
+import { encodeInsertChainlinkOracle } from '../../../../utils/encoding/oracle-encoder-utils';
 
 /**
  * This script encodes the following transactions:
@@ -170,7 +171,7 @@ async function main(): Promise<DenJsonUpload> {
     ),
   );
   transactions.push(
-    await prettyPrintEncodeInsertChainlinkOracle(
+    await encodeInsertChainlinkOracle(
       core,
       arbFactory,
       ADDRESS_ZERO,
@@ -178,21 +179,21 @@ async function main(): Promise<DenJsonUpload> {
     ),
   );
   transactions.push(
-    await prettyPrintEncodeInsertChainlinkOracle(
+    await encodeInsertChainlinkOracle(
       core,
       core.tokens.gmx!,
       ADDRESS_ZERO,
     ),
   );
   transactions.push(
-    await prettyPrintEncodeInsertChainlinkOracle(
+    await encodeInsertChainlinkOracle(
       core,
       gmxFactory,
       ADDRESS_ZERO,
     ),
   );
   transactions.push(
-    ...await prettyPrintEncodeAddIsolationModeMarket(
+    ...await encodeAddIsolationModeMarket(
       core,
       arbFactory,
       core.chainlinkPriceOracleV1!,
@@ -205,7 +206,7 @@ async function main(): Promise<DenJsonUpload> {
     ),
   );
   transactions.push(
-    ...await prettyPrintEncodeAddMarket(
+    ...await encodeAddMarket(
       core,
       core.tokens.gmx!,
       core.chainlinkPriceOracleV1!,
@@ -218,7 +219,7 @@ async function main(): Promise<DenJsonUpload> {
     ),
   );
   transactions.push(
-    ...await prettyPrintEncodeAddIsolationModeMarket(
+    ...await encodeAddIsolationModeMarket(
       core,
       gmxFactory,
       core.chainlinkPriceOracleV1!,

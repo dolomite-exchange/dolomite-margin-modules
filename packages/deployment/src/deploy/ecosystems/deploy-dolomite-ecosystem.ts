@@ -21,7 +21,7 @@ import {
   getRegistryProxyConstructorParams,
 } from '@dolomite-exchange/modules-base/src/utils/constructors/dolomite';
 import { getAnyNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { Network, NetworkType } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { NetworkType } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '@dolomite-exchange/modules-base/src/utils/SignerWithAddressWithSafety';
 import {
   getRealLatestBlockNumber,
@@ -36,18 +36,16 @@ import {
 import * as CoreDeployment from '@dolomite-margin/dist/migrations/deployed.json';
 import { ethers } from 'hardhat';
 import {
-  CoreProtocolAbstract,
   CoreProtocolParams,
 } from 'packages/base/test/utils/core-protocols/core-protocol-abstract';
 import ModuleDeployments from 'packages/deployment/src/deploy/deployments.json';
 import {
   deployContractAndSave,
-  EncodedTransaction,
   getMaxDeploymentVersionNameByDeploymentKey,
-  prettyPrintEncodedDataWithTypeSafety,
   TRANSACTION_BUILDER_VERSION,
 } from '../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../utils/dry-run-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../utils/dry-run-utils';
+import { prettyPrintEncodedDataWithTypeSafety } from '../../utils/encoding/base-encoder-utils';
 import getScriptName from '../../utils/get-script-name';
 import { deployDolomiteAccountRegistry } from './helpers/deploy-dolomite-account-registry';
 import { deployInterestSetters } from './helpers/deploy-interest-setters';
@@ -99,7 +97,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   );
   await deployContractAndSave(
     'DolomiteERC4626WithPayable',
-    [PAYABLE_TOKEN_MAP[network].address],
+    [],
     getMaxDeploymentVersionNameByDeploymentKey('DolomiteERC4626WithPayableImplementation', 1),
   );
   const dolomiteOwnerAddress = await deployContractAndSave(
@@ -238,11 +236,6 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
 
   await deployInterestSetters();
 
-  if (network === Network.BerachainCartio) {
-    // Berachain testnet
-    await deployContractAndSave('TestPriceOracle', []);
-  }
-
   // We can't set up the core protocol here because there are too many missing contracts/context
   const governanceAddress = await dolomiteMargin.connect(hhUser1).owner();
   const governance = await impersonateOrFallback(governanceAddress, true, hhUser1);
@@ -311,7 +304,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
       config: {
         network,
       },
-    } as CoreProtocolAbstract<T> as any,
+    } as any,
     invariants: async () => {},
     scriptName: getScriptName(__filename),
     upload: {

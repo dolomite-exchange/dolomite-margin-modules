@@ -17,9 +17,8 @@ import {
 import { marketToIsolationModeVaultInfoMantle } from 'packages/deployment/src/deploy/isolation-mode/mantle';
 import {
   deployContractAndSave,
-  EncodedTransaction,
   getMaxDeploymentVersionNumberByDeploymentKey,
-  prettyPrintEncodedDataWithTypeSafety,
+
 } from 'packages/deployment/src/utils/deploy-utils';
 import { DolomiteMargin, isIsolationModeByTokenAddress } from '../dolomite';
 import { getRealLatestBlockNumber } from '../index';

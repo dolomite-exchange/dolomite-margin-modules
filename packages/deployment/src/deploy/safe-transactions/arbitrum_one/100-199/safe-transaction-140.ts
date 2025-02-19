@@ -7,12 +7,11 @@ import {
 import { ethers } from 'ethers';
 import {
   createFolder,
-  DenJsonUpload,
   deployContractAndSave,
-  EncodedTransaction,
-  prettyPrintEncodedDataWithTypeSafety,
   writeFile,
 } from '../../../../utils/deploy-utils';
+import { DenJsonUpload, EncodedTransaction } from '../../../../utils/dry-run-utils';
+import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 
 const handler = '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe';
 
