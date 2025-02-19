@@ -2,23 +2,24 @@ import { ADDRESS_ZERO, MAX_UINT_256_BI, Network, ONE_BI, ONE_ETH_BI, ZERO_BI } f
 import { CoreProtocolArbitrumOne } from '../utils/core-protocols/core-protocol-arbitrum-one';
 import {
   disableInterestAccrual,
-  getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupDAIBalance,
   setupTestMarket,
   setupUSDCBalance,
+  setupUSDTBalance,
   setupUserVaultProxy,
 } from '../utils/setup';
 import {
   BorrowPositionRouter,
   CustomTestToken,
-  GenericTraderProxyV2,
   TestBorrowPositionRouter__factory,
+  TestDolomiteAutoTrader,
+  TestDolomiteAutoTrader__factory,
   TestGenericTraderProxyV2,
   TestGenericTraderRouter,
   TestGenericTraderRouter__factory,
-  TestIsolationModeTokenVaultV2,
-  TestIsolationModeTokenVaultV2__factory,
+  TestIsolationModeTokenVaultV1,
+  TestIsolationModeTokenVaultV1__factory,
   TestIsolationModeUnwrapperTraderV2,
   TestIsolationModeUnwrapperTraderV2__factory,
   TestIsolationModeVaultFactory,
@@ -33,7 +34,7 @@ import {
   depositIntoDolomiteMargin,
 } from 'packages/base/src/utils/dolomite-utils';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
-import { createAndUpgradeDolomiteRegistry, createIsolationModeTokenVaultV2ActionsImpl } from '../utils/dolomite';
+import { createAndUpgradeDolomiteRegistry, createIsolationModeTokenVaultV1ActionsImpl } from '../utils/dolomite';
 import { createTestIsolationModeVaultFactory } from '../utils/ecosystem-utils/testers';
 import { BigNumber } from 'ethers';
 import { ethers } from 'hardhat';
@@ -64,7 +65,7 @@ describe('GenericTraderProxyV2', () => {
   let underlyingToken2: CustomTestToken;
   let factory: TestIsolationModeVaultFactory;
   let factory2: TestIsolationModeVaultFactory;
-  let userVault: TestIsolationModeTokenVaultV2;
+  let userVault: TestIsolationModeTokenVaultV1;
   let isolationModeMarketId: BigNumber;
   let isolationModeMarketId2: BigNumber;
   let tokenUnwrapper: TestIsolationModeUnwrapperTraderV2;
@@ -76,9 +77,14 @@ describe('GenericTraderProxyV2', () => {
   let otherMarketId2: BigNumber;
 
   before(async () => {
-    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
+    core = await setupCoreProtocol({
+      network: Network.ArbitrumOne,
+      blockNumber: 221_476_000,
+    });
     await disableInterestAccrual(core, core.marketIds.dai);
     await disableInterestAccrual(core, core.marketIds.weth);
+    await disableInterestAccrual(core, core.marketIds.usdc);
+    await disableInterestAccrual(core, core.marketIds.usdt);
 
     await createAndUpgradeDolomiteRegistry(core);
     await core.dolomiteRegistry.connect(core.governance).ownerSetBorrowPositionProxy(
@@ -121,9 +127,9 @@ describe('GenericTraderProxyV2', () => {
       [core.dolomiteRegistry.address, core.dolomiteMargin.address]
     );
 
-    const libraries = await createIsolationModeTokenVaultV2ActionsImpl();
+    const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
     const userVaultImplementation = await createContractWithLibrary(
-      'TestIsolationModeTokenVaultV2',
+      'TestIsolationModeTokenVaultV1',
       { ...libraries },
       []
     );
@@ -168,9 +174,9 @@ describe('GenericTraderProxyV2', () => {
 
     await factory.createVault(core.hhUser1.address);
     const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);
-    userVault = setupUserVaultProxy<TestIsolationModeTokenVaultV2>(
+    userVault = setupUserVaultProxy<TestIsolationModeTokenVaultV1>(
       vaultAddress,
-      TestIsolationModeTokenVaultV2__factory,
+      TestIsolationModeTokenVaultV1__factory,
       core.hhUser1,
     );
 
@@ -231,21 +237,42 @@ describe('GenericTraderProxyV2', () => {
       await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId2, outputAmount);
     });
 
-    it('should work normally with internal liquidity', async () => {
+    it('should work with internal liquidity', async () => {
+      const dolomiteAutoTrader = await createContractWithAbi<TestDolomiteAutoTrader>(
+        TestDolomiteAutoTrader__factory.abi,
+        TestDolomiteAutoTrader__factory.bytecode,
+        [],
+      );
+      await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(dolomiteAutoTrader.address, true);
+      await core.dolomiteRegistry.connect(core.governance).ownerSetTrustedInternalTraders(
+        [dolomiteAutoTrader.address],
+        [true]
+      );
+
       const usdcAmount = BigNumber.from('100000000');
+      await setupUSDTBalance(core, core.hhUser2, usdcAmount, core.dolomiteMargin);
+      await depositIntoDolomiteMargin(core, core.hhUser2, defaultAccountNumber, core.marketIds.usdt, usdcAmount);
+      await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.usdt, usdcAmount);
+
       await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.dolomiteMargin);
       await disableInterestAccrual(core, core.marketIds.usdc);
       await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.usdc, usdcAmount);
 
-      const zapParams = await getSimpleZapParams(core.marketIds.usdc, usdcAmount, core.marketIds.weth, ONE_BI, core);
-      zapParams.tradersPath[0].trader = '0xb77a493a4950cad1b049e222d62bce14ff423c6f';
+      const zapParams = await getSimpleZapParams(
+        core.marketIds.usdc,
+        MAX_UINT_256_BI,
+        core.marketIds.usdt,
+        ONE_BI,
+        core,
+      );
+      zapParams.tradersPath[0].trader = dolomiteAutoTrader.address;
       zapParams.tradersPath[0].traderType = GenericTraderType.InternalLiquidity;
       zapParams.tradersPath[0].tradeData = ethers.utils.defaultAbiCoder.encode(
         ['uint256', 'bytes'],
         [usdcAmount, ethers.utils.defaultAbiCoder.encode(['uint256'], [BigNumber.from('4321')])],
       );
       zapParams.makerAccounts.push({
-        owner: '0xb77a493a4950cad1b049e222d62bce14ff423c6f',
+        owner: core.hhUser2.address,
         number: defaultAccountNumber,
       });
       await genericTraderProxy.swapExactInputForOutput({
@@ -259,71 +286,9 @@ describe('GenericTraderProxyV2', () => {
       });
 
       await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.usdc, ZERO_BI);
-      await expectProtocolBalance(
-        core,
-        core.hhUser1,
-        defaultAccountNumber,
-        core.marketIds.weth,
-        BigNumber.from('4321'),
-      );
-    });
-
-    it('should work normally with multiple internal liquidity trades', async () => {
-      const usdcAmount = BigNumber.from('100000000');
-      const wethAmount = parseEther('.01');
-      const outputAmount = BigNumber.from('1000000'); // 1 USDC
-      await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.dolomiteMargin);
-      await disableInterestAccrual(core, core.marketIds.usdc);
-      await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.usdc, usdcAmount);
-
-      const traderParams: GenericTraderParam[] = [
-        {
-          trader: '0xb77a493a4950cad1b049e222d62bce14ff423c6f',
-          traderType: GenericTraderType.InternalLiquidity,
-          makerAccountIndex: 0,
-          tradeData: ethers.utils.defaultAbiCoder.encode(
-            ['uint256', 'bytes'],
-            [usdcAmount, ethers.utils.defaultAbiCoder.encode(['uint256'], [wethAmount])],
-          )
-        },
-        {
-          trader: '0xb77a493a4950cad1b049e222d62bce14ff423c6f',
-          traderType: GenericTraderType.InternalLiquidity,
-          makerAccountIndex: 0,
-          tradeData: ethers.utils.defaultAbiCoder.encode(
-            ['uint256', 'bytes'],
-            [wethAmount, ethers.utils.defaultAbiCoder.encode(['uint256'], [outputAmount])],
-          )
-        }
-      ];
-      const zapParams = {
-        inputAmountWei: usdcAmount,
-        minOutputAmountWei: outputAmount,
-        marketIdsPath: [core.marketIds.usdc, core.marketIds.weth, core.marketIds.usdc],
-        tradersPath: traderParams,
-        makerAccounts: [{
-          owner: '0xb77a493a4950cad1b049e222d62bce14ff423c6f',
-          number: defaultAccountNumber,
-        }],
-        userConfig: {
-          deadline: '123123123123123',
-          balanceCheckFlag: BalanceCheckFlag.None,
-          eventType: GenericEventEmissionType.None,
-        },
-      };
-
-      await genericTraderProxy.swapExactInputForOutput({
-        accountNumber: defaultAccountNumber,
-        marketIdsPath: zapParams.marketIdsPath,
-        inputAmountWei: zapParams.inputAmountWei,
-        minOutputAmountWei: zapParams.minOutputAmountWei,
-        tradersPath: zapParams.tradersPath,
-        makerAccounts: zapParams.makerAccounts,
-        userConfig: zapParams.userConfig,
-      });
-
-      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.usdc, outputAmount);
-      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.usdt, usdcAmount);
+      await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.usdc, usdcAmount);
+      await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.usdt, ZERO_BI);
     });
 
     it('should work normally with balance check both', async () => {
@@ -482,60 +447,38 @@ describe('GenericTraderProxyV2', () => {
       await expectProtocolBalance(core, userVault, borrowAccountNumber, isolationModeMarketId, outputAmount);
     });
 
-    it('should not accept custom input amount if not on arbitrum', async () => {
-      const genericTraderLib2 = await createContractWithName('GenericTraderProxyV2Lib', []);
-      const genericTraderProxy2 = await createContractWithLibrary<GenericTraderProxyV2>(
-        'TestGenericTraderProxyV2',
-        { GenericTraderProxyV2Lib: genericTraderLib2.address },
-        [Network.Mantle, core.dolomiteRegistry.address, core.dolomiteMargin.address]
+    it('should fail with internal liquidity if trader is not trusted', async () => {
+      const dolomiteAutoTrader = await createContractWithAbi<TestDolomiteAutoTrader>(
+        TestDolomiteAutoTrader__factory.abi,
+        TestDolomiteAutoTrader__factory.bytecode,
+        [],
       );
-      await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(genericTraderProxy2.address, true);
+      await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(dolomiteAutoTrader.address, true);
 
       const usdcAmount = BigNumber.from('100000000');
+      await setupUSDTBalance(core, core.hhUser2, usdcAmount, core.dolomiteMargin);
+      await depositIntoDolomiteMargin(core, core.hhUser2, defaultAccountNumber, core.marketIds.usdt, usdcAmount);
+      await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.usdt, usdcAmount);
+
       await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.dolomiteMargin);
       await disableInterestAccrual(core, core.marketIds.usdc);
       await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.usdc, usdcAmount);
 
-      const zapParams = await getSimpleZapParams(core.marketIds.usdc, usdcAmount, core.marketIds.weth, ONE_BI, core);
-      zapParams.tradersPath[0].trader = '0xb77a493a4950cad1b049e222d62bce14ff423c6f';
-      zapParams.tradersPath[0].traderType = GenericTraderType.InternalLiquidity;
-      zapParams.tradersPath[0].tradeData = ethers.utils.defaultAbiCoder.encode(
-        ['uint256'], [BigNumber.from('4321')]
+      const zapParams = await getSimpleZapParams(
+        core.marketIds.usdc,
+        MAX_UINT_256_BI,
+        core.marketIds.usdt,
+        ONE_BI,
+        core,
       );
-      zapParams.makerAccounts.push({
-        owner: '0xb77a493a4950cad1b049e222d62bce14ff423c6f',
-        number: defaultAccountNumber,
-      });
-      // This fails in the AMM because these tests are on Arbitrum but we can't use V2 core code
-      await expectThrow(
-        genericTraderProxy2.swapExactInputForOutput({
-          accountNumber: defaultAccountNumber,
-          marketIdsPath: zapParams.marketIdsPath,
-          inputAmountWei: zapParams.inputAmountWei,
-          minOutputAmountWei: zapParams.minOutputAmountWei,
-          tradersPath: zapParams.tradersPath,
-          makerAccounts: zapParams.makerAccounts,
-          userConfig: zapParams.userConfig,
-        }),
-        'DolomiteAmmPair: input wei must be positive'
-      );
-    });
-
-    it('should fail with internal liquidity if custom input amount is invalid', async () => {
-      const usdcAmount = BigNumber.from('100000000');
-      await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.dolomiteMargin);
-      await disableInterestAccrual(core, core.marketIds.usdc);
-      await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.usdc, usdcAmount);
-
-      const zapParams = await getSimpleZapParams(core.marketIds.usdc, usdcAmount, core.marketIds.weth, ONE_BI, core);
-      zapParams.tradersPath[0].trader = '0xb77a493a4950cad1b049e222d62bce14ff423c6f';
+      zapParams.tradersPath[0].trader = dolomiteAutoTrader.address;
       zapParams.tradersPath[0].traderType = GenericTraderType.InternalLiquidity;
       zapParams.tradersPath[0].tradeData = ethers.utils.defaultAbiCoder.encode(
         ['uint256', 'bytes'],
-        [usdcAmount.sub(1), ethers.utils.defaultAbiCoder.encode(['uint256'], [BigNumber.from('4321')])],
+        [usdcAmount, ethers.utils.defaultAbiCoder.encode(['uint256'], [BigNumber.from('4321')])],
       );
       zapParams.makerAccounts.push({
-        owner: '0xb77a493a4950cad1b049e222d62bce14ff423c6f',
+        owner: core.hhUser2.address,
         number: defaultAccountNumber,
       });
       await expectThrow(
@@ -548,7 +491,7 @@ describe('GenericTraderProxyV2', () => {
           makerAccounts: zapParams.makerAccounts,
           userConfig: zapParams.userConfig,
         }),
-        'GenericTraderProxyBase: Invalid custom input amount'
+        'GenericTraderProxyBase: Internal trader not whitelisted'
       );
     });
 
@@ -1608,7 +1551,7 @@ describe('GenericTraderProxyV2', () => {
           makerAccounts: zapParams.makerAccounts,
           userConfig: zapParams.userConfig,
         }),
-        'GenericTraderProxyBase: Invalid traders params length'
+        'GenericTraderProxyV2Lib: Invalid traders params length'
       );
     });
 
@@ -1625,7 +1568,7 @@ describe('GenericTraderProxyV2', () => {
           makerAccounts: zapParams.makerAccounts,
           userConfig: zapParams.userConfig,
         }),
-        'GenericTraderProxyBase: Invalid trader at index <0>'
+        'GenericTraderProxyV2Lib: Invalid trader at index <0>'
       );
     });
   });
@@ -1643,7 +1586,7 @@ describe('GenericTraderProxyV2', () => {
           makerAccounts: zapParams.makerAccounts,
           userConfig: zapParams.userConfig,
         }),
-        'GenericTraderProxyBase: Invalid isolation mode unwrapper <52, 0>'
+        'GenericTraderProxyV2Lib: Invalid isolation mode unwrapper <52, 0>'
       );
     });
 
@@ -1666,7 +1609,7 @@ describe('GenericTraderProxyV2', () => {
           makerAccounts: zapParams.makerAccounts,
           userConfig: zapParams.userConfig,
         }),
-        'GenericTraderProxyBase: Invalid unwrap sequence <52, 53>'
+        'GenericTraderProxyV2Lib: Invalid unwrap sequence <52, 53>'
       );
     });
 
@@ -1682,7 +1625,7 @@ describe('GenericTraderProxyV2', () => {
           makerAccounts: zapParams.makerAccounts,
           userConfig: zapParams.userConfig,
         }),
-        'GenericTraderProxyBase: Invalid isolation mode wrapper <52, 0>'
+        'GenericTraderProxyV2Lib: Invalid isolation mode wrapper <52, 0>'
       );
     });
 
@@ -1705,7 +1648,7 @@ describe('GenericTraderProxyV2', () => {
           makerAccounts: zapParams.makerAccounts,
           userConfig: zapParams.userConfig,
         }),
-        'GenericTraderProxyBase: Invalid trader type <3>'
+        'GenericTraderProxyV2Lib: Invalid trader type <3>'
       );
     });
   });
@@ -1730,7 +1673,7 @@ describe('GenericTraderProxyV2', () => {
           makerAccounts: zapParams.makerAccounts,
           userConfig: zapParams.userConfig,
         }),
-        'GenericTraderProxyBase: Invalid input for unwrapper <0, 28>'
+        'GenericTraderProxyV2Lib: Invalid input for unwrapper <0, 28>'
       );
     });
 
@@ -1753,7 +1696,7 @@ describe('GenericTraderProxyV2', () => {
           makerAccounts: zapParams.makerAccounts,
           userConfig: zapParams.userConfig,
         }),
-        'GenericTraderProxyBase: Invalid output for unwrapper <1, 0>'
+        'GenericTraderProxyV2Lib: Invalid output for unwrapper <1, 0>'
       );
     });
 
@@ -1782,7 +1725,7 @@ describe('GenericTraderProxyV2', () => {
           makerAccounts: zapParams.makerAccounts,
           userConfig: zapParams.userConfig,
         }),
-        `GenericTraderProxyBase: Unwrapper trader not enabled <${badTokenUnwrapper.address.toLowerCase()}, 52>`
+        `GenericTraderProxyV2Lib: Unwrapper trader not enabled <${badTokenUnwrapper.address.toLowerCase()}, 52>`
       );
     });
 
@@ -1805,7 +1748,7 @@ describe('GenericTraderProxyV2', () => {
           makerAccounts: zapParams.makerAccounts,
           userConfig: zapParams.userConfig,
         }),
-        'GenericTraderProxyBase: Invalid input for wrapper <0, 0>'
+        'GenericTraderProxyV2Lib: Invalid input for wrapper <0, 0>'
       );
     });
 
@@ -1828,7 +1771,7 @@ describe('GenericTraderProxyV2', () => {
           makerAccounts: zapParams.makerAccounts,
           userConfig: zapParams.userConfig,
         }),
-        'GenericTraderProxyBase: Invalid output for wrapper <1, 28>'
+        'GenericTraderProxyV2Lib: Invalid output for wrapper <1, 28>'
       );
     });
 
@@ -1856,7 +1799,7 @@ describe('GenericTraderProxyV2', () => {
           makerAccounts: zapParams.makerAccounts,
           userConfig: zapParams.userConfig,
         }),
-        `GenericTraderProxyBase: Wrapper trader not enabled <${badTokenWrapper.address.toLowerCase()}, 52>`
+        `GenericTraderProxyV2Lib: Wrapper trader not enabled <${badTokenWrapper.address.toLowerCase()}, 52>`
       );
     });
   });
@@ -1879,7 +1822,7 @@ describe('GenericTraderProxyV2', () => {
           makerAccounts: zapParams.makerAccounts,
           userConfig: zapParams.userConfig,
         }),
-        'GenericTraderProxyBase: Invalid maker account owner <0>'
+        'GenericTraderProxyV2Lib: Invalid maker account owner <0>'
       );
     });
 
@@ -1910,7 +1853,7 @@ describe('GenericTraderProxyV2', () => {
           makerAccounts: zapParams.makerAccounts,
           userConfig: zapParams.userConfig,
         }),
-        'GenericTraderProxyBase: Invalid maker account owner <0>'
+        'GenericTraderProxyV2Lib: Invalid maker account owner <0>'
       );
     });
 
@@ -1942,7 +1885,7 @@ describe('GenericTraderProxyV2', () => {
           makerAccounts: zapParams.makerAccounts,
           userConfig: zapParams.userConfig,
         }),
-        'GenericTraderProxyBase: Invalid maker account owner <0>'
+        'GenericTraderProxyV2Lib: Invalid maker account owner <0>'
       );
     });
   });
@@ -1971,7 +1914,7 @@ describe('GenericTraderProxyV2', () => {
             userConfig: zapParams.userConfig,
           }
         ),
-        'GenericTraderProxyV2: Invalid transfer amounts length'
+        'GenericTraderProxyV2Lib: Invalid transfer amounts length'
       );
     });
 
@@ -2000,7 +1943,7 @@ describe('GenericTraderProxyV2', () => {
             userConfig: zapParams.userConfig,
           }
         ),
-        'GenericTraderProxyV2: Cannot transfer to same account'
+        'GenericTraderProxyV2Lib: Cannot transfer to same account'
       );
     });
 
@@ -2029,7 +1972,7 @@ describe('GenericTraderProxyV2', () => {
             userConfig: zapParams.userConfig,
           }
         ),
-        'GenericTraderProxyV2: Invalid trade account number'
+        'GenericTraderProxyV2Lib: Invalid trade account number'
       );
     });
 
@@ -2058,7 +2001,7 @@ describe('GenericTraderProxyV2', () => {
             userConfig: zapParams.userConfig,
           }
         ),
-        'GenericTraderProxyV2: Invalid transfer amount at index <0>'
+        'GenericTraderProxyV2Lib: Invalid transfer amount at index <0>'
       );
     });
   });
@@ -2072,6 +2015,10 @@ describe('GenericTraderProxyV2', () => {
     it('should return false if market is not isolation mode', async () => {
       expect(await genericTraderProxy.testIsIsolationModeAsset(otherMarketId1)).to.be.false;
       expect(await genericTraderProxy.testIsIsolationModeAsset(core.marketIds.weth)).to.be.false;
+    });
+
+    it('should return false if token reverts on name call', async () => {
+      expect(await genericTraderProxy.testIsIsolationModeAssetWithAddress(core.dolomiteRegistry.address)).to.be.false;
     });
   });
 });

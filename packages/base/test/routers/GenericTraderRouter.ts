@@ -15,8 +15,8 @@ import {
   TestBorrowPositionRouter__factory,
   TestGenericTraderRouter,
   TestGenericTraderRouter__factory,
-  TestIsolationModeTokenVaultV2,
-  TestIsolationModeTokenVaultV2__factory,
+  TestIsolationModeTokenVaultV1,
+  TestIsolationModeTokenVaultV1__factory,
   TestIsolationModeUnwrapperTraderV2,
   TestIsolationModeUnwrapperTraderV2__factory,
   TestIsolationModeVaultFactory,
@@ -26,12 +26,16 @@ import {
 import {
   createContractWithAbi,
   createContractWithLibrary,
-  createContractWithName,
   createTestToken,
   depositIntoDolomiteMargin
 } from 'packages/base/src/utils/dolomite-utils';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
-import { createAndUpgradeDolomiteRegistry, createIsolationModeTokenVaultV2ActionsImpl } from '../utils/dolomite';
+import {
+  createAndUpgradeDolomiteRegistry,
+  createDolomiteAccountRegistryImplementation,
+  createGenericTraderProxyV2,
+  createIsolationModeTokenVaultV1ActionsImpl
+} from '../utils/dolomite';
 import { createTestIsolationModeVaultFactory } from '../utils/ecosystem-utils/testers';
 import { BigNumber } from 'ethers';
 import { expectProtocolBalance, expectThrow } from '../utils/assertions';
@@ -51,7 +55,7 @@ describe('GenericTraderRouter', () => {
 
   let underlyingToken: CustomTestToken;
   let factory: TestIsolationModeVaultFactory;
-  let userVault: TestIsolationModeTokenVaultV2;
+  let userVault: TestIsolationModeTokenVaultV1;
   let isolationModeMarketId: BigNumber;
   let tokenUnwrapper: TestIsolationModeUnwrapperTraderV2;
   let tokenWrapper: TestIsolationModeWrapperTraderV2;
@@ -66,6 +70,9 @@ describe('GenericTraderRouter', () => {
     await disableInterestAccrual(core, core.marketIds.dai);
     await disableInterestAccrual(core, core.marketIds.weth);
     await createAndUpgradeDolomiteRegistry(core);
+
+    const accountRegistry = await createDolomiteAccountRegistryImplementation();
+    await core.dolomiteAccountRegistryProxy.connect(core.governance).upgradeTo(accountRegistry.address);
 
     otherToken1 = await createTestToken();
     await core.testEcosystem!.testPriceOracle.setPrice(
@@ -83,12 +90,7 @@ describe('GenericTraderRouter', () => {
     otherMarketId2 = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, otherToken2, false);
 
-    const genericTraderLib = await createContractWithName('GenericTraderProxyV2Lib', []);
-    genericTraderProxy = await createContractWithLibrary(
-      'GenericTraderProxyV2',
-      { GenericTraderProxyV2Lib: genericTraderLib.address },
-      [Network.ArbitrumOne, core.dolomiteRegistry.address, core.dolomiteMargin.address]
-    );
+    genericTraderProxy = await createGenericTraderProxyV2(core);
     await core.dolomiteRegistry.ownerSetGenericTraderProxy(genericTraderProxy.address);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(genericTraderProxy.address, true);
 
@@ -104,10 +106,10 @@ describe('GenericTraderRouter', () => {
     );
 
     underlyingToken = await createTestToken();
-    const libraries = await createIsolationModeTokenVaultV2ActionsImpl();
+    const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
 
     const userVaultImplementation = await createContractWithLibrary(
-      'TestIsolationModeTokenVaultV2',
+      'TestIsolationModeTokenVaultV1',
       { ...libraries },
       []
     );
@@ -140,9 +142,9 @@ describe('GenericTraderRouter', () => {
 
     await factory.createVault(core.hhUser1.address);
     const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);
-    userVault = setupUserVaultProxy<TestIsolationModeTokenVaultV2>(
+    userVault = setupUserVaultProxy<TestIsolationModeTokenVaultV1>(
       vaultAddress,
-      TestIsolationModeTokenVaultV2__factory,
+      TestIsolationModeTokenVaultV1__factory,
       core.hhUser1,
     );
 
@@ -276,6 +278,31 @@ describe('GenericTraderRouter', () => {
       );
       await expectProtocolBalance(core, userVault, defaultAccountNumber, isolationModeMarketId, ZERO_BI);
       await expectProtocolBalance(core, core.hhUser1, toAccountNumber, otherMarketId1, outputAmount);
+    });
+
+    it('should fail if msg.value is not 0 for non-isolation mode market', async () => {
+      await otherToken1.addBalance(core.hhUser1.address, amountWei);
+      await otherToken1.connect(core.hhUser1).approve(core.dolomiteMargin.address, amountWei);
+      await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, otherMarketId1, amountWei);
+
+      const outputAmount = amountWei.div(2);
+      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
+      await expectThrow(
+        traderRouter.swapExactInputForOutput(
+          ZERO_BI,
+          {
+            accountNumber: defaultAccountNumber,
+            marketIdsPath: zapParams.marketIdsPath,
+            inputAmountWei: zapParams.inputAmountWei,
+            minOutputAmountWei: zapParams.minOutputAmountWei,
+            tradersPath: zapParams.tradersPath,
+            makerAccounts: zapParams.makerAccounts,
+            userConfig: zapParams.userConfig,
+          },
+          { value: ONE_ETH_BI }
+        ),
+        'GenericTraderRouter: msg.value must be 0'
+      );
     });
 
     it('should fail if vault market id is not isolation mode', async () => {
@@ -527,6 +554,40 @@ describe('GenericTraderRouter', () => {
       await expectProtocolBalance(core, userVault, borrowAccountNumber, isolationModeMarketId, ZERO_BI);
       await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId2, outputAmount);
       await expectProtocolBalance(core, userVault, defaultAccountNumber, isolationModeMarketId, amountWei);
+    });
+
+    it('should fail if msg.value is not 0 for non-isolation mode market', async () => {
+      await otherToken1.addBalance(core.hhUser1.address, amountWei);
+      await otherToken1.connect(core.hhUser1).approve(core.dolomiteMargin.address, amountWei);
+      await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, otherMarketId1, amountWei);
+
+      const outputAmount = amountWei.div(2);
+      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
+      await expectThrow(
+        traderRouter.swapExactInputForOutputAndModifyPosition(
+          ZERO_BI,
+          {
+            accountNumber: defaultAccountNumber,
+            marketIdsPath: zapParams.marketIdsPath,
+            inputAmountWei: zapParams.inputAmountWei,
+            minOutputAmountWei: zapParams.minOutputAmountWei,
+            tradersPath: zapParams.tradersPath,
+            makerAccounts: zapParams.makerAccounts,
+            transferCollateralParams: {
+              transferAmounts: [{ marketId: otherMarketId2, amountWei: MAX_UINT_256_BI }],
+              fromAccountNumber: defaultAccountNumber,
+              toAccountNumber: borrowAccountNumber,
+            },
+            expiryParams: {
+              expiryTimeDelta: 0,
+              marketId: 0,
+            },
+            userConfig: zapParams.userConfig,
+          },
+          { value: ONE_ETH_BI }
+        ),
+        'GenericTraderRouter: msg.value must be 0'
+      );
     });
 
     it('should fail if reentered', async () => {

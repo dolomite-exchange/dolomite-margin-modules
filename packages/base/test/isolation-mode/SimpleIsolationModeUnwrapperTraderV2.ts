@@ -12,14 +12,14 @@ import {
   TestSimpleIsolationModeVaultFactory,
   TestSimpleIsolationModeVaultFactory__factory,
 } from '../../src/types';
-import { createContractWithAbi, createContractWithLibrary, createTestToken } from '../../src/utils/dolomite-utils';
+import { createContractWithAbi, createContractWithLibrary, createContractWithName, createTestToken } from '../../src/utils/dolomite-utils';
 import { BYTES_EMPTY, Network, ONE_ETH_BI, ZERO_BI } from '../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
 import { expectProtocolBalance } from '../utils/assertions';
-import { createIsolationModeTokenVaultV1ActionsImpl } from '../utils/dolomite';
+import { createAndUpgradeDolomiteRegistry, createIsolationModeTokenVaultV1ActionsImpl } from '../utils/dolomite';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket, setupUserVaultProxy, } from '../utils/setup';
 import { getUnwrapZapParams } from '../utils/zap-utils';
-import { CoreProtocolArbitrumOne } from '../utils/core-protocol';
+import { CoreProtocolArbitrumOne } from '../utils/core-protocols/core-protocol-arbitrum-one';
 
 const defaultAccountNumber = 0;
 const otherAccountNumber = 123;
@@ -39,6 +39,16 @@ describe('SimpleIsolationModeUnwrapperTraderV2', () => {
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
+    await createAndUpgradeDolomiteRegistry(core);
+    const genericTraderLib = await createContractWithName('GenericTraderProxyV2Lib', []);
+    const genericTraderProxy = await createContractWithLibrary(
+      'GenericTraderProxyV2',
+      { GenericTraderProxyV2Lib: genericTraderLib.address },
+      [Network.ArbitrumOne, core.dolomiteRegistry.address, core.dolomiteMargin.address]
+    );
+    await core.dolomiteRegistry.ownerSetGenericTraderProxy(genericTraderProxy.address);
+    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(genericTraderProxy.address, true);
+
     underlyingToken = await createTestToken();
     const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
     userVaultImplementation = await createContractWithLibrary<TestIsolationModeTokenVaultV1>(
@@ -52,12 +62,12 @@ describe('SimpleIsolationModeUnwrapperTraderV2', () => {
       TestSimpleIsolationModeVaultFactory__factory.abi,
       TestSimpleIsolationModeVaultFactory__factory.bytecode,
       [
-        core.dolomiteRegistry.address,
         initialAllowableDebtMarketIds,
         initialAllowableCollateralMarketIds,
         underlyingToken.address,
         core.borrowPositionProxyV2.address,
         userVaultImplementation.address,
+        core.dolomiteRegistry.address,
         core.dolomiteMargin.address,
       ],
     );

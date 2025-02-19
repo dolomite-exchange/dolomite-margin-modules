@@ -11,7 +11,7 @@ import {
   IERC20__factory,
   IERC20Metadata__factory,
   IIsolationModeUnwrapperTraderV2,
-  IIsolationModeVaultFactory,
+  IIsolationModeVaultFactory, IIsolationModeVaultFactory__factory,
   IIsolationModeWrapperTraderV2,
 } from '@dolomite-exchange/modules-base/src/types';
 import {
@@ -464,6 +464,7 @@ export async function deployContractAndSave(
           address: contractAddress,
           transactionHash: result.hash,
         };
+        nonce += 1;
       } else {
         console.warn(`\t${contractRename} was already deployed. Filling in 0x0 for hash...`);
         contract = {
@@ -472,8 +473,6 @@ export async function deployContractAndSave(
         };
       }
     }
-
-    nonce += 1;
   } catch (e) {
     console.error(`\tCould not deploy at attempt ${attempts + 1} due for ${contractName} to error:`, e);
     console.log(); // print new line
@@ -866,13 +865,27 @@ export async function deployDolomiteErc4626Token(
   core: CoreProtocolType<any>,
   tokenName: string,
   marketId: BigNumberish,
+  options: { skipDeploymentAddressCheck: boolean } = { skipDeploymentAddressCheck: false },
 ): Promise<DolomiteERC4626> {
+  const contractRename = `Dolomite${tokenName}4626Token`;
   const address = await deployContractAndSave(
     'RegistryProxy',
     await getDolomiteErc4626ProxyConstructorParams(core, marketId),
-    `Dolomite${tokenName}4626Token`,
+    contractRename,
   );
-  return DolomiteERC4626__factory.connect(address, core.hhUser1);
+  const previousDeployments = (ModuleDeployments as any)[contractRename];
+  if (previousDeployments && Object.values(previousDeployments).length > 0) {
+    const firstDeployment = (Object.values(previousDeployments) as any[])[0].address;
+    if (firstDeployment !== address && !options.skipDeploymentAddressCheck) {
+      return Promise.reject(`Addresses does not match expected name for ${tokenName}!`);
+    }
+  }
+
+  const vaultToken = DolomiteERC4626__factory.connect(address, core.hhUser1);
+  const symbol = await vaultToken.symbol();
+  console.log(`\tCheck the supplied symbol vs the real symbol of the market: ${tokenName} // ${symbol}`);
+
+  return vaultToken;
 }
 
 export async function deployDolomiteErc4626WithPayableToken(
@@ -1697,6 +1710,7 @@ export async function prettyPrintEncodeAddIsolationModeMarket<T extends NetworkT
     options,
   );
 
+  throw new Error('add routers to core object and ownerInitialize');
   transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(
       core,
@@ -1733,38 +1747,17 @@ export async function prettyPrintEncodeAddAsyncIsolationModeMarket<T extends Net
   maxSupplyWei: BigNumberish,
   options: AddMarketOptions = {},
 ): Promise<EncodedTransaction[]> {
-  const transactions: EncodedTransaction[] = await prettyPrintEncodeAddMarket(
+  const transactions: EncodedTransaction[] = await prettyPrintEncodeAddIsolationModeMarket(
     core,
-    IERC20__factory.connect(factory.address, factory.signer),
+    IIsolationModeVaultFactory__factory.connect(factory.address, factory.signer),
     oracle,
-    core.interestSetters.alwaysZeroInterestSetter,
+    unwrapper,
+    wrapper,
+    marketId,
     targetCollateralization,
     targetLiquidationPremium,
     maxSupplyWei,
-    ZERO_BI,
-    true,
-    ZERO_BI,
     options,
-  );
-
-  transactions.push(
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { dolomiteMargin: core.dolomiteMargin },
-      'dolomiteMargin',
-      'ownerSetGlobalOperator',
-      [factory.address, true],
-    ),
-    await prettyPrintEncodedDataWithTypeSafety(core, { factory }, 'factory', 'ownerInitialize', [
-      [unwrapper.address, wrapper.address, ...(options.additionalConverters ?? []).map((c) => c.address)],
-    ]),
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { liquidatorAssetRegistry: core.liquidatorAssetRegistry },
-      'liquidatorAssetRegistry',
-      'ownerAddLiquidatorToAssetWhitelist',
-      [marketId, core.liquidatorProxyV4.address],
-    ),
   );
 
   transactions.push(

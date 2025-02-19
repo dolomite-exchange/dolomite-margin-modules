@@ -63,11 +63,13 @@ contract DolomiteRegistryImplementation is
     bytes32 private constant _ORACLE_AGGREGATOR_SLOT = bytes32(uint256(keccak256("eip1967.proxy.oracleAggregator")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _REDSTONE_PRICE_ORACLE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.redstonePriceOracle")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL_SLOT = bytes32(uint256(keccak256("eip1967.proxy.slippageToleranceForPauseSentinel")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _TRUSTED_INTERNAL_TRADERS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.trustedInternalTraders")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _ISOLATION_MODE_STORAGE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isolationModeStorage")) - 1); // solhint-disable-line max-line-length
 
     // ==================== Constructor ====================
 
     function initialize(
+        address _borrowPositionProxy,
         address _genericTraderProxy,
         address _expiry,
         uint256 _slippageToleranceForPauseSentinel,
@@ -75,6 +77,7 @@ contract DolomiteRegistryImplementation is
         address _eventEmitter,
         address _dolomiteAccountRegistry
     ) external initializer {
+        _ownerSetBorrowPositionProxy(_borrowPositionProxy);
         _ownerSetGenericTraderProxy(_genericTraderProxy);
         _ownerSetExpiry(_expiry);
         _ownerSetSlippageToleranceForPauseSentinel(_slippageToleranceForPauseSentinel);
@@ -188,6 +191,15 @@ contract DolomiteRegistryImplementation is
         _ownerSetDolomiteAccountRegistry(_dolomiteAccountRegistry);
     }
 
+    function ownerSetTrustedInternalTraders(
+        address[] memory _trustedInternalTraders,
+        bool[] memory _isTrusted
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetTrustedInternalTraders(_trustedInternalTraders, _isTrusted);
+    }
+
     function ownerSetIsolationModeMulticallFunctions(
         bytes4[] memory _selectors
     )
@@ -242,6 +254,10 @@ contract DolomiteRegistryImplementation is
         return IDolomiteAccountRegistry(_getAddress(_DOLOMITE_ACCOUNT_REGISTRY_SLOT));
     }
 
+    function isTrustedInternalTrader(address _trader) public view returns (bool) {
+        return _getUint256FromMap(_TRUSTED_INTERNAL_TRADERS_SLOT, _trader) == 1;
+    }
+
     function isolationModeMulticallFunctions() public view returns (bytes4[] memory) {
         IsolationModeStorage storage ims;
         bytes32 slot = _ISOLATION_MODE_STORAGE_SLOT;
@@ -261,6 +277,13 @@ contract DolomiteRegistryImplementation is
     function _ownerSetBorrowPositionProxy(
         address _borrowPositionProxy
     ) internal {
+        if (_borrowPositionProxy != address(0)) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            _borrowPositionProxy != address(0),
+            _FILE,
+            "Invalid borrowPositionProxy"
+        );
+
         _setAddress(_BORROW_POSITION_PROXY_SLOT, _borrowPositionProxy);
         emit BorrowPositionProxySet(_borrowPositionProxy);
     }
@@ -415,6 +438,28 @@ contract DolomiteRegistryImplementation is
 
         _setAddress(_DOLOMITE_ACCOUNT_REGISTRY_SLOT, _dolomiteAccountRegistry);
         emit DolomiteAccountRegistrySet(_dolomiteAccountRegistry);
+    }
+
+    function _ownerSetTrustedInternalTraders(
+        address[] memory _trustedInternalTraders,
+        bool[] memory _isTrusted
+    ) internal {
+        if (_trustedInternalTraders.length == _isTrusted.length) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            _trustedInternalTraders.length == _isTrusted.length,
+            _FILE,
+            "Array length mismatch"
+        );
+        for (uint256 i; i < _trustedInternalTraders.length; ++i) {
+            if (_trustedInternalTraders[i] != address(0)) { /* FOR COVERAGE TESTING */ }
+            Require.that(
+                _trustedInternalTraders[i] != address(0),
+                _FILE,
+                "Invalid trustedInternalTrader"
+            );
+            _setUint256InMap(_TRUSTED_INTERNAL_TRADERS_SLOT, _trustedInternalTraders[i], _isTrusted[i] ? 1 : 0);
+        }
+        emit TrustedInternalTradersSet(_trustedInternalTraders, _isTrusted);
     }
 
     function _ownerSetIsolationModeMulticallFunctions(

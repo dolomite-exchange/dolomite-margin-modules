@@ -23,7 +23,6 @@ import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuar
 import { GenericTraderProxyBase } from "./GenericTraderProxyBase.sol";
 import { GenericTraderProxyV2Lib } from "./GenericTraderProxyV2Lib.sol";
 import { AuthorizationBase } from "../helpers/AuthorizationBase.sol";
-import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
@@ -47,8 +46,6 @@ contract GenericTraderProxyV2 is GenericTraderProxyBase, ReentrancyGuard, Author
 
     bytes32 private constant _FILE = "GenericTraderProxyV2";
     uint256 private constant TRANSFER_ACCOUNT_ID = 2;
-
-    IDolomiteRegistry public immutable DOLOMITE_REGISTRY;
 
     // ========================================================
     // ====================== Modifiers =======================
@@ -74,8 +71,7 @@ contract GenericTraderProxyV2 is GenericTraderProxyBase, ReentrancyGuard, Author
         uint256 _chainId,
         address _dolomiteRegistry,
         address _dolomiteMargin
-    ) GenericTraderProxyBase(_chainId) AuthorizationBase(_dolomiteMargin) {
-        DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
+    ) GenericTraderProxyBase(_chainId, _dolomiteRegistry) AuthorizationBase(_dolomiteMargin) {
     }
 
     // ========================================================
@@ -113,7 +109,7 @@ contract GenericTraderProxyV2 is GenericTraderProxyBase, ReentrancyGuard, Author
         );
 
         _validateAmountWeis(_params.inputAmountWei, _params.minOutputAmountWei);
-        _validateTraderParams(
+        GenericTraderProxyV2Lib.validateTraderParams(
             cache,
             _params.marketIdsPath,
             _params.makerAccounts,
@@ -135,6 +131,7 @@ contract GenericTraderProxyV2 is GenericTraderProxyBase, ReentrancyGuard, Author
             accounts,
             actions,
             cache,
+            /* _isLiquidation = */ false,
             _params.marketIdsPath,
             _params.inputAmountWei,
             _params.minOutputAmountWei,
@@ -195,7 +192,7 @@ contract GenericTraderProxyV2 is GenericTraderProxyBase, ReentrancyGuard, Author
         );
 
         _validateAmountWeis(_params.inputAmountWei, _params.minOutputAmountWei);
-        _validateTraderParams(
+        GenericTraderProxyV2Lib.validateTraderParams(
             cache,
             _params.marketIdsPath,
             _params.makerAccounts,
@@ -217,6 +214,7 @@ contract GenericTraderProxyV2 is GenericTraderProxyBase, ReentrancyGuard, Author
             accounts,
             actions,
             cache,
+            /* _isLiquidation = */ false,
             _params.marketIdsPath,
             _params.inputAmountWei,
             _params.minOutputAmountWei,
@@ -268,7 +266,7 @@ contract GenericTraderProxyV2 is GenericTraderProxyBase, ReentrancyGuard, Author
         });
 
         _validateMarketIdPath(_params.marketIdsPath);
-        _validateTransferParams(cache, _params.transferCollateralParams, _params.accountNumber);
+        GenericTraderProxyV2Lib.validateTransferParams(cache, _params.transferCollateralParams, _params.accountNumber);
 
         // If we're transferring into the trade account and the input market is the transfer amount, we check the input
         // amount using the amount being transferred in
@@ -294,7 +292,7 @@ contract GenericTraderProxyV2 is GenericTraderProxyBase, ReentrancyGuard, Author
         }
 
         _validateAmountWeis(_params.inputAmountWei, _params.minOutputAmountWei);
-        _validateTraderParams(
+        GenericTraderProxyV2Lib.validateTraderParams(
             cache,
             _params.marketIdsPath,
             _params.makerAccounts,
@@ -326,6 +324,7 @@ contract GenericTraderProxyV2 is GenericTraderProxyBase, ReentrancyGuard, Author
             accounts,
             actions,
             cache,
+            /* _isLiquidation = */ false,
             _params.marketIdsPath,
             _params.inputAmountWei,
             _params.minOutputAmountWei,
@@ -428,7 +427,7 @@ contract GenericTraderProxyV2 is GenericTraderProxyBase, ReentrancyGuard, Author
         });
 
         _validateMarketIdPath(_params.marketIdsPath);
-        _validateTransferParams(cache, _params.transferCollateralParams, _params.accountNumber);
+        GenericTraderProxyV2Lib.validateTransferParams(cache, _params.transferCollateralParams, _params.accountNumber);
 
         // If we're transferring into the trade account and the input market is the transfer amount, we check the input
         // amount using the amount being transferred in
@@ -454,7 +453,7 @@ contract GenericTraderProxyV2 is GenericTraderProxyBase, ReentrancyGuard, Author
         }
 
         _validateAmountWeis(_params.inputAmountWei, _params.minOutputAmountWei);
-        _validateTraderParams(
+        GenericTraderProxyV2Lib.validateTraderParams(
             cache,
             _params.marketIdsPath,
             _params.makerAccounts,
@@ -486,6 +485,7 @@ contract GenericTraderProxyV2 is GenericTraderProxyBase, ReentrancyGuard, Author
             accounts,
             actions,
             cache,
+            /* _isLiquidation = */ false,
             _params.marketIdsPath,
             _params.inputAmountWei,
             _params.minOutputAmountWei,
@@ -569,6 +569,64 @@ contract GenericTraderProxyV2 is GenericTraderProxyBase, ReentrancyGuard, Author
     // ================== Internal Functions ==================
     // ========================================================
 
+    function _appendTransferActions(
+        IDolomiteStructs.ActionArgs[] memory _actions,
+        GenericTraderProxyCache memory _cache,
+        TransferCollateralParam memory _transferCollateralParam,
+        uint256 _traderAccountNumber,
+        uint256 _transferActionsLength,
+        uint256 _lastMarketId
+    ) internal view {
+        // the `_traderAccountNumber` is always `accountId=0`
+        uint256 fromAccountId = _transferCollateralParam.fromAccountNumber == _traderAccountNumber
+            ? TRADE_ACCOUNT_ID
+            : TRANSFER_ACCOUNT_ID;
+
+        uint256 toAccountId = _transferCollateralParam.fromAccountNumber == _traderAccountNumber
+            ? TRANSFER_ACCOUNT_ID
+            : TRADE_ACCOUNT_ID;
+
+        for (uint256 i; i < _transferActionsLength; i++) {
+            if (_transferCollateralParam.transferAmounts[i].amountWei == type(uint256).max - 1) {
+                if (_transferCollateralParam.transferAmounts[i].marketId == _lastMarketId) { /* FOR COVERAGE TESTING */ }
+                Require.that(
+                    _transferCollateralParam.transferAmounts[i].marketId == _lastMarketId,
+                    _FILE,
+                    "Invalid transfer marketId",
+                    _transferCollateralParam.transferAmounts[i].marketId
+                );
+                if (fromAccountId == TRADE_ACCOUNT_ID) { /* FOR COVERAGE TESTING */ }
+                Require.that(
+                    fromAccountId == TRADE_ACCOUNT_ID,
+                    _FILE,
+                    "Invalid from account ID"
+                );
+
+                // We transfer to the amount we had before the swap finished
+                _actions[_cache.actionsCursor++] = AccountActionLib.encodeTransferToTargetAmountAction(
+                    fromAccountId,
+                    toAccountId,
+                    _transferCollateralParam.transferAmounts[i].marketId,
+                    _cache.dolomiteMargin.getAccountWei(
+                        IDolomiteStructs.AccountInfo({
+                            owner: msg.sender,
+                            number: _transferCollateralParam.fromAccountNumber
+                        }),
+                        _transferCollateralParam.transferAmounts[i].marketId
+                    )
+                );
+            } else {
+                _actions[_cache.actionsCursor++] = AccountActionLib.encodeTransferAction(
+                    fromAccountId,
+                    toAccountId,
+                    _transferCollateralParam.transferAmounts[i].marketId,
+                    IDolomiteStructs.AssetDenomination.Wei,
+                    _transferCollateralParam.transferAmounts[i].amountWei
+                );
+            }
+        }
+    }
+
     function _appendExpiryActions(
         IDolomiteStructs.ActionArgs[] memory _actions,
         GenericTraderProxyCache memory _cache,
@@ -635,103 +693,6 @@ contract GenericTraderProxyV2 is GenericTraderProxyBase, ReentrancyGuard, Author
             _marketId
         );
         return balanceWei.value;
-    }
-
-    function _appendTransferActions(
-        IDolomiteStructs.ActionArgs[] memory _actions,
-        GenericTraderProxyCache memory _cache,
-        TransferCollateralParam memory _transferCollateralParam,
-        uint256 _traderAccountNumber,
-        uint256 _transferActionsLength,
-        uint256 _lastMarketId
-    ) internal view {
-        // the `_traderAccountNumber` is always `accountId=0`
-        uint256 fromAccountId = _transferCollateralParam.fromAccountNumber == _traderAccountNumber
-            ? TRADE_ACCOUNT_ID
-            : TRANSFER_ACCOUNT_ID;
-
-        uint256 toAccountId = _transferCollateralParam.fromAccountNumber == _traderAccountNumber
-            ? TRANSFER_ACCOUNT_ID
-            : TRADE_ACCOUNT_ID;
-
-        for (uint256 i; i < _transferActionsLength; i++) {
-            if (_transferCollateralParam.transferAmounts[i].amountWei == type(uint256).max - 1) {
-                if (_transferCollateralParam.transferAmounts[i].marketId == _lastMarketId) { /* FOR COVERAGE TESTING */ }
-                Require.that(
-                    _transferCollateralParam.transferAmounts[i].marketId == _lastMarketId,
-                    _FILE,
-                    "Invalid transfer marketId",
-                    _transferCollateralParam.transferAmounts[i].marketId
-                );
-                if (fromAccountId == TRADE_ACCOUNT_ID) { /* FOR COVERAGE TESTING */ }
-                Require.that(
-                    fromAccountId == TRADE_ACCOUNT_ID,
-                    _FILE,
-                    "Invalid from account ID"
-                );
-
-                // We transfer to the amount we had before the swap finished
-                _actions[_cache.actionsCursor++] = AccountActionLib.encodeTransferToTargetAmountAction(
-                    fromAccountId,
-                    toAccountId,
-                    _transferCollateralParam.transferAmounts[i].marketId,
-                    _cache.dolomiteMargin.getAccountWei(
-                        IDolomiteStructs.AccountInfo({
-                            owner: msg.sender,
-                            number: _transferCollateralParam.fromAccountNumber
-                        }),
-                        _transferCollateralParam.transferAmounts[i].marketId
-                    )
-                );
-            } else {
-                _actions[_cache.actionsCursor++] = AccountActionLib.encodeTransferAction(
-                    fromAccountId,
-                    toAccountId,
-                    _transferCollateralParam.transferAmounts[i].marketId,
-                    IDolomiteStructs.AssetDenomination.Wei,
-                    _transferCollateralParam.transferAmounts[i].amountWei
-                );
-            }
-        }
-    }
-
-    function _validateTransferParams(
-        GenericTraderProxyCache memory _cache,
-        TransferCollateralParam memory _param,
-        uint256 _tradeAccountNumber
-    ) internal pure {
-        if (_param.transferAmounts.length != 0) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            _param.transferAmounts.length != 0,
-            _FILE,
-            "Invalid transfer amounts length"
-        );
-        if (_param.fromAccountNumber != _param.toAccountNumber) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            _param.fromAccountNumber != _param.toAccountNumber,
-            _FILE,
-            "Cannot transfer to same account"
-        );
-        if (_tradeAccountNumber == _param.fromAccountNumber ||  _tradeAccountNumber == _param.toAccountNumber) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            _tradeAccountNumber == _param.fromAccountNumber ||  _tradeAccountNumber == _param.toAccountNumber,
-            _FILE,
-            "Invalid trade account number"
-        );
-        _cache.otherAccountNumber = _tradeAccountNumber == _param.toAccountNumber
-            ? _param.fromAccountNumber
-            : _param.toAccountNumber;
-
-        uint256 length = _param.transferAmounts.length;
-        for (uint256 i; i < length; ++i) {
-            if (_param.transferAmounts[i].amountWei != 0) { /* FOR COVERAGE TESTING */ }
-            Require.that(
-                _param.transferAmounts[i].amountWei != 0,
-                _FILE,
-                "Invalid transfer amount at index",
-                i
-            );
-        }
     }
 
     function _getActionsLengthForTransferCollateralParam(

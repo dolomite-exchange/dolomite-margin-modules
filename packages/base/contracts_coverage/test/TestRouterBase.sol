@@ -20,7 +20,7 @@
 
 pragma solidity ^0.8.9;
 
-import { IIsolationModeTokenVaultV2 } from "../isolation-mode/interfaces/IIsolationModeTokenVaultV2.sol";
+import { IIsolationModeTokenVaultV1 } from "../isolation-mode/interfaces/IIsolationModeTokenVaultV1.sol";
 import { RouterBase } from "../routers/RouterBase.sol";
 
 
@@ -59,9 +59,9 @@ contract TestRouterBase is RouterBase {
     function validateIsoMarketAndGetVault(
         uint256 _marketId,
         address _account
-    ) external returns (IIsolationModeTokenVaultV2) {
+    ) external returns (IIsolationModeTokenVaultV1) {
         MarketInfo memory marketInfo = _getMarketInfo(_marketId);
-        return _validateIsoMarketAndGetVault(marketInfo, _account);
+        return _validateIsolationModeMarketAndGetVault(marketInfo, _account);
     }
 
     function isIsolationModeAsset(address _token) external view returns (bool) {

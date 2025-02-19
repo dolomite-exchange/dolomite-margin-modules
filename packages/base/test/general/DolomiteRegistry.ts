@@ -364,6 +364,50 @@ describe('DolomiteRegistryImplementation', () => {
     });
   });
 
+  describe('#ownerSetTrustedInternalTraders', () => {
+    it('should work normally', async () => {
+      const res = await registry.connect(core.governance).ownerSetTrustedInternalTraders(
+        [core.hhUser1.address],
+        [true]
+      );
+      await expectEvent(registry, res, 'TrustedInternalTradersSet', {
+        trustedInternalTraders: [core.hhUser1.address],
+        isTrusted: [true],
+      });
+      expect(await registry.isTrustedInternalTrader(core.hhUser1.address)).to.equal(true);
+    });
+
+    it('should fail if the length of the arrays do not match', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetTrustedInternalTraders(
+          [core.hhUser1.address],
+          []
+        ),
+        'DolomiteRegistryImplementation: Array length mismatch'
+      );
+    });
+
+    it('should fail if a zero address is provided', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetTrustedInternalTraders(
+          [ZERO_ADDRESS],
+          [true]
+        ),
+        'DolomiteRegistryImplementation: Invalid trustedInternalTrader'
+      );
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetTrustedInternalTraders(
+          [core.hhUser1.address],
+          [true]
+        ),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+  });
+
   describe('#ownerSetIsolationModeMulticallFunctions', () => {
     it('should work normally', async () => {
       const selectors = ['0x12345678', '0x12345679'];

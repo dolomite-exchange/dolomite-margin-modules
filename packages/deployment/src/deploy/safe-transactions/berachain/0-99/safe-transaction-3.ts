@@ -1,18 +1,15 @@
-import {
-  TargetCollateralization,
-  TargetLiquidationPenalty,
-} from 'packages/base/src/utils/constructors/dolomite';
+import { TargetCollateralization, TargetLiquidationPenalty } from 'packages/base/src/utils/constructors/dolomite';
 import { getAndCheckSpecificNetwork } from 'packages/base/src/utils/dolomite-utils';
+import { Network, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from 'packages/base/test/utils';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
-import { Network, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
 import {
   EncodedTransaction,
   prettyPrintEncodeAddMarket,
   prettyPrintEncodeInsertChronicleOracleV3,
 } from '../../../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
-import getScriptName from '../../../../../utils/get-script-name';
+import getScriptName from '../../../../utils/get-script-name';
 
 /**
  * This script encodes the following transactions:

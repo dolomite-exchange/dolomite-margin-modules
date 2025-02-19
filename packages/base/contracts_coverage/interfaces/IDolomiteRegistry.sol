@@ -57,6 +57,7 @@ interface IDolomiteRegistry {
     event RedstonePriceOracleSet(address indexed _redstonePriceOracle);
     event OracleAggregatorSet(address indexed _oracleAggregator);
     event DolomiteAccountRegistrySet(address indexed _dolomiteAccountRegistry);
+    event TrustedInternalTradersSet(address[] _trustedInternalTraders, bool[] _isTrusted);
     event IsolationModeMulticallFunctionsSet(bytes4[] _selectors);
 
     // ========================================================
@@ -133,6 +134,16 @@ interface IDolomiteRegistry {
 
     /**
      *
+     * @param  _trustedInternalTraders    The addresses of the trusted internal traders
+     * @param  _isTrusted                 The boolean values for whether the traders are trusted
+     */
+    function ownerSetTrustedInternalTraders(
+        address[] memory _trustedInternalTraders,
+        bool[] memory _isTrusted
+    ) external;
+
+    /**
+     *
      * @param  _selectors    Allowed function selectors for isolation mode multicall
      */
     function ownerSetIsolationModeMulticallFunctions(bytes4[] memory _selectors) external;
@@ -205,4 +216,11 @@ interface IDolomiteRegistry {
      * @return The base (denominator) for the slippage tolerance variable. Always 1e18.
      */
     function slippageToleranceForPauseSentinelBase() external pure returns (uint256);
+
+    /**
+     *
+     * @param  _trader  The address of the trader
+     * @return  Whether the trader is trusted
+     */
+    function isTrustedInternalTrader(address _trader) external view returns (bool);
 }

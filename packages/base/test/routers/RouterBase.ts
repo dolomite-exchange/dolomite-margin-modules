@@ -8,6 +8,7 @@ import {
 } from '../utils/setup';
 import {
   CustomTestToken,
+  RouterProxy__factory,
   TestIsolationModeTokenVaultV1,
   TestIsolationModeTokenVaultV1__factory,
   TestIsolationModeVaultFactory,
@@ -16,7 +17,7 @@ import {
 } from 'packages/base/src/types';
 import { createContractWithAbi, createContractWithLibrary, createTestToken } from 'packages/base/src/utils/dolomite-utils';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
-import { createIsolationModeTokenVaultV1ActionsImpl } from '../utils/dolomite';
+import { createDolomiteAccountRegistryImplementation, createIsolationModeTokenVaultV1ActionsImpl } from '../utils/dolomite';
 import { createTestIsolationModeVaultFactory } from '../utils/ecosystem-utils/testers';
 import { BigNumber } from 'ethers';
 import { expectEvent, expectThrow } from '../utils/assertions';
@@ -35,11 +36,21 @@ describe('RouterBase', () => {
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
 
-    router = await createContractWithAbi<TestRouterBase>(
+    const dolomiteAccountRegistry = await createDolomiteAccountRegistryImplementation();
+    await core.dolomiteAccountRegistryProxy.connect(core.governance).upgradeTo(dolomiteAccountRegistry.address);
+
+    const implementation = await createContractWithAbi<TestRouterBase>(
       TestRouterBase__factory.abi,
       TestRouterBase__factory.bytecode,
       [core.dolomiteRegistry.address, core.dolomiteMargin.address]
     );
+    const initCalldata = await implementation.populateTransaction.initialize();
+    const proxy = await createContractWithAbi(
+      RouterProxy__factory.abi,
+      RouterProxy__factory.bytecode,
+      [implementation.address, core.dolomiteMargin.address, initCalldata.data!],
+    );
+    router = TestRouterBase__factory.connect(proxy.address, core.hhUser1);
 
     underlyingToken = await createTestToken();
     const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
@@ -76,6 +87,19 @@ describe('RouterBase', () => {
     snapshotId = await revertToSnapshotAndCapture(snapshotId);
   });
 
+  describe('#constructor', () => {
+    it('should work normally', async () => {
+      expect(await router.DOLOMITE_REGISTRY()).to.equal(core.dolomiteRegistry.address);
+      expect(await router.DOLOMITE_MARGIN()).to.equal(core.dolomiteMargin.address);
+    });
+  });
+
+  describe('#initialize', () => {
+    it('should revert if already initialized', async () => {
+      await expectThrow(router.initialize(), 'Initializable: contract is already initialized');
+    });
+  });
+
   describe('#getMarketInfo', () => {
     it('should work normally for normal asset', async () => {
       const marketInfo = await router.getMarketInfo(core.marketIds.dai);
@@ -83,6 +107,7 @@ describe('RouterBase', () => {
       expect(marketInfo.isIsolationModeAsset).to.be.false;
       expect(marketInfo.marketToken).to.equal(core.tokens.dai.address);
       expect(marketInfo.token).to.equal(core.tokens.dai.address);
+      expect(marketInfo.transferToken).to.equal(core.tokens.dai.address);
       expect(marketInfo.factory).to.equal(ADDRESS_ZERO);
     });
 
@@ -92,6 +117,21 @@ describe('RouterBase', () => {
       expect(marketInfo.isIsolationModeAsset).to.be.true;
       expect(marketInfo.marketToken).to.equal(factory.address);
       expect(marketInfo.token).to.equal(underlyingToken.address);
+      expect(marketInfo.transferToken).to.equal(underlyingToken.address);
+      expect(marketInfo.factory).to.equal(factory.address);
+    });
+
+    it('should work normally for isolation mode asset with transfer token', async () => {
+      await core.dolomiteAccountRegistry.connect(core.governance).ownerSetTransferTokenOverride(
+        factory.address,
+        core.tokens.weth.address
+      );
+      const marketInfo = await router.getMarketInfo(isolationModeMarketId);
+      expect(marketInfo.marketId).to.equal(isolationModeMarketId);
+      expect(marketInfo.isIsolationModeAsset).to.be.true;
+      expect(marketInfo.marketToken).to.equal(factory.address);
+      expect(marketInfo.token).to.equal(underlyingToken.address);
+      expect(marketInfo.transferToken).to.equal(core.tokens.weth.address);
       expect(marketInfo.factory).to.equal(factory.address);
     });
 
@@ -147,4 +187,12 @@ describe('RouterBase', () => {
     });
   });
 
+  describe('#isDolomiteBalance', () => {
+    it('should work normally', async () => {
+      expect(await router.isDolomiteBalance(0)).to.be.true;
+      expect(await router.isDolomiteBalance(99)).to.be.true;
+      expect(await router.isDolomiteBalance(100)).to.be.false;
+      expect(await router.isDolomiteBalance(300)).to.be.false;
+    });
+  });
 });

@@ -50,6 +50,14 @@ export function getRegistryProxyConstructorParams<T extends NetworkType>(
   return [implementationAddress, dolomiteMargin.address, implementationCalldata];
 }
 
+export function getRouterProxyConstructorParams<T extends NetworkType>(
+  implementationAddress: string,
+  implementationCalldata: string,
+  dolomiteMargin: DolomiteMargin<T>,
+): any[] {
+  return [implementationAddress, dolomiteMargin.address, implementationCalldata];
+}
+
 export function getUpgradeableProxyConstructorParams<T extends NetworkType>(
   implementationAddress: string,
   implementationCalldata: PopulatedTransaction,
@@ -244,6 +252,10 @@ export async function getDolomiteErc4626ProxyConstructorParams<T extends Network
     await core.dolomiteMargin.getMarketTokenAddress(marketId),
     core.hhUser1,
   );
+  if (core.tokens.payableToken.address === token.address) {
+    return Promise.reject(new Error(`Invalid token, found payable: ${token.address}`));
+  }
+
   const symbol = await token.symbol();
   const implementationContract = core.implementationContracts.dolomiteERC4626Implementation;
   const transaction = await implementationContract.populateTransaction.initialize(
@@ -268,6 +280,10 @@ export async function getDolomiteErc4626WithPayableProxyConstructorParams<T exte
     await core.dolomiteMargin.getMarketTokenAddress(marketId),
     core.hhUser1,
   );
+  if (core.tokens.payableToken.address !== token.address) {
+    return Promise.reject(new Error(`Invalid payable token, found: ${token.address}`));
+  }
+
   const implementationContract = core.implementationContracts.dolomiteERC4626WithPayableImplementation;
   const symbol = await token.symbol();
   const transaction = await implementationContract.populateTransaction.initialize(

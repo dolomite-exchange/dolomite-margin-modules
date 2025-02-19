@@ -22,6 +22,7 @@ export interface DeployedVaultInformation {
   constructorParams: any[];
   libraries: IsolationModeLibraryNames[];
   vaultType: IsolationModeVaultType;
+  defaultVersion?: number;
 }
 
 export enum IsolationModeLibraryNames {

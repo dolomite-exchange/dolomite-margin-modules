@@ -20,11 +20,12 @@
 
 pragma solidity ^0.8.9;
 
-import { RouterBase } from './RouterBase.sol';
-import { IIsolationModeTokenVaultV2 } from '../isolation-mode/interfaces/IIsolationModeTokenVaultV2.sol';
-import { AccountBalanceLib } from '../lib/AccountBalanceLib.sol';
-import { IGenericTraderProxyV2 } from '../proxies/interfaces/IGenericTraderProxyV2.sol';
-import { IGenericTraderRouter } from './interfaces/IGenericTraderRouter.sol';
+import { RouterBase } from "./RouterBase.sol";
+import { IIsolationModeTokenVaultV1 } from "../isolation-mode/interfaces/IIsolationModeTokenVaultV1.sol";
+import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
+import { Require } from "../protocol/lib/Require.sol";
+import { IGenericTraderProxyV2 } from "../proxies/interfaces/IGenericTraderProxyV2.sol";
+import { IGenericTraderRouter } from "./interfaces/IGenericTraderRouter.sol";
 
 
 /**
@@ -39,9 +40,7 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
     // ====================== Constants =======================
     // ========================================================
 
-    bytes32 private constant _FILE = 'GenericTraderRouter';
-
-    uint256 public constant DEFAULT_ACCOUNT_NUMBER = 0;
+    bytes32 private constant _FILE = "GenericTraderRouter";
 
     // ========================================================
     // ===================== Constructor ========================
@@ -60,22 +59,29 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
     function swapExactInputForOutput(
         uint256 _isolationModeMarketId,
         IGenericTraderProxyV2.SwapExactInputForOutputParams memory _params
-    ) external nonReentrant {
+    ) external payable nonReentrant {
         if (_isolationModeMarketId == 0) {
+            if (msg.value == 0) { /* FOR COVERAGE TESTING */ }
+            Require.that(
+                msg.value == 0,
+                _FILE,
+                'msg.value must be 0'
+            );
             IGenericTraderProxyV2 proxy = IGenericTraderProxyV2(address(DOLOMITE_REGISTRY.genericTraderProxy()));
             proxy.swapExactInputForOutputForDifferentAccount(
-                msg.sender,
+                /* _accountOwner = */ msg.sender,
                 _params
             );
         } else {
             MarketInfo memory marketInfo = _getMarketInfo(_isolationModeMarketId);
-            IIsolationModeTokenVaultV2 vault = _validateIsoMarketAndGetVault(marketInfo, msg.sender);
+            IIsolationModeTokenVaultV1 vault = _validateIsolationModeMarketAndGetVault(marketInfo, msg.sender);
 
             if (
                 _params.marketIdsPath[_params.marketIdsPath.length - 1] == _isolationModeMarketId
-                && _params.accountNumber < 100
+                && isDolomiteBalance(_params.accountNumber)
             ) {
-                vault.addCollateralAndSwapExactInputForOutput(
+                // We need to move funds from the user to the vault and perform the swap
+                vault.addCollateralAndSwapExactInputForOutput{ value: msg.value }(
                     _params.accountNumber,
                     /* toAccountNumber */ DEFAULT_ACCOUNT_NUMBER,
                     _params.marketIdsPath,
@@ -85,8 +91,9 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
                     _params.makerAccounts,
                     _params.userConfig
                 );
-            } else if (_params.marketIdsPath[0] == _isolationModeMarketId && _params.accountNumber < 100) {
-                vault.swapExactInputForOutputAndRemoveCollateral(
+            } else if (_params.marketIdsPath[0] == _isolationModeMarketId && isDolomiteBalance(_params.accountNumber)) {
+                // We need to move funds from the vault to the user and perform the swap
+                vault.swapExactInputForOutputAndRemoveCollateral{ value: msg.value }(
                     _params.accountNumber,
                     /* fromAccountNumber */ DEFAULT_ACCOUNT_NUMBER,
                     _params.marketIdsPath,
@@ -97,7 +104,7 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
                     _params.userConfig
                 );
             } else {
-                vault.swapExactInputForOutput(
+                vault.swapExactInputForOutput{ value: msg.value }(
                     _params.accountNumber,
                     _params.marketIdsPath,
                     _params.inputAmountWei,
@@ -113,8 +120,14 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
     function swapExactInputForOutputAndModifyPosition(
         uint256 _isolationModeMarketId,
         IGenericTraderProxyV2.SwapExactInputForOutputAndModifyPositionParams memory _params
-    ) external nonReentrant {
+    ) external payable nonReentrant {
         if (_isolationModeMarketId == 0) {
+            if (msg.value == 0) { /* FOR COVERAGE TESTING */ }
+            Require.that(
+                msg.value == 0,
+                _FILE,
+                'msg.value must be 0'
+            );
             IGenericTraderProxyV2 proxy = IGenericTraderProxyV2(address(DOLOMITE_REGISTRY.genericTraderProxy()));
             proxy.swapExactInputForOutputAndModifyPositionForDifferentAccount(
                 msg.sender,
@@ -122,10 +135,10 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
             );
         } else {
             MarketInfo memory marketInfo = _getMarketInfo(_isolationModeMarketId);
-            IIsolationModeTokenVaultV2 vault = _validateIsoMarketAndGetVault(marketInfo, msg.sender);
+            IIsolationModeTokenVaultV1 vault = _validateIsolationModeMarketAndGetVault(marketInfo, msg.sender);
 
             if (_checkAddCollateralAndSwap(_params)) {
-                vault.addCollateralAndSwapExactInputForOutput(
+                vault.addCollateralAndSwapExactInputForOutput{ value: msg.value }(
                     _params.transferCollateralParams.fromAccountNumber,
                     _params.transferCollateralParams.toAccountNumber,
                     _params.marketIdsPath,
@@ -136,7 +149,7 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
                     _params.userConfig
                 );
             } else if (_checkSwapAndRemoveCollateral(_params)) {
-                vault.swapExactInputForOutputAndRemoveCollateral(
+                vault.swapExactInputForOutputAndRemoveCollateral{ value: msg.value }(
                     _params.transferCollateralParams.toAccountNumber,
                     _params.transferCollateralParams.fromAccountNumber,
                     _params.marketIdsPath,
@@ -147,16 +160,17 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
                     _params.userConfig
                 );
             } else if (
-                _params.transferCollateralParams.fromAccountNumber < 100
-                && _params.transferCollateralParams.toAccountNumber >= 100
+                isDolomiteBalance(_params.transferCollateralParams.fromAccountNumber)
+                && !isDolomiteBalance(_params.transferCollateralParams.toAccountNumber)
             ) {
+                // Do the transfers into the position before the swap
                 _doTransfers(
                     _isolationModeMarketId,
                     vault,
                     _params.transferCollateralParams,
                     TransferType.IntoPosition
                 );
-                vault.swapExactInputForOutput(
+                vault.swapExactInputForOutput{ value: msg.value }(
                     _params.accountNumber,
                     _params.marketIdsPath,
                     _params.inputAmountWei,
@@ -166,7 +180,13 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
                     _params.userConfig
                 );
             } else {
-                vault.swapExactInputForOutput(
+                /*assert(
+                    !isDolomiteBalance(_params.transferCollateralParams.fromAccountNumber)
+                    && isDolomiteBalance(_params.transferCollateralParams.toAccountNumber)
+                );*/
+
+                // Do the transfers into the position after the swap
+                vault.swapExactInputForOutput{ value: msg.value }(
                     _params.accountNumber,
                     _params.marketIdsPath,
                     _params.inputAmountWei,
@@ -187,7 +207,7 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
 
     function _doTransfers(
         uint256 _isolationModeMarketId,
-        IIsolationModeTokenVaultV2 _vault,
+        IIsolationModeTokenVaultV1 _vault,
         IGenericTraderProxyV2.TransferCollateralParam memory _params,
         TransferType _transferType
     ) internal {
@@ -235,8 +255,8 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
     ) internal pure returns (bool) {
         return (
             _params.transferCollateralParams.transferAmounts.length == 1
-                && _params.transferCollateralParams.fromAccountNumber < 100
-                && _params.transferCollateralParams.toAccountNumber >= 100
+                && isDolomiteBalance(_params.transferCollateralParams.fromAccountNumber)
+                && !isDolomiteBalance(_params.transferCollateralParams.toAccountNumber)
         );
     }
 
@@ -245,8 +265,8 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
     ) internal pure returns (bool) {
         return (
             _params.transferCollateralParams.transferAmounts.length == 1
-                && _params.transferCollateralParams.fromAccountNumber >= 100
-                && _params.transferCollateralParams.toAccountNumber < 100
+                && !isDolomiteBalance(_params.transferCollateralParams.fromAccountNumber)
+                && isDolomiteBalance(_params.transferCollateralParams.toAccountNumber)
         );
     }
 }

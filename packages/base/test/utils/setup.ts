@@ -398,6 +398,18 @@ export async function setupUSDMBalance(
   await core.tokens.usdm.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
+export async function setupUSDTBalance(
+  core: CoreProtocolArbitrumOne,
+  signer: SignerWithAddressWithSafety,
+  amount: BigNumberish,
+  spender: { address: string },
+) {
+  const whaleAddress = '0x6ab707Aca953eDAeFBc4fD23bA73294241490620'; // Aave token
+  const whaleSigner = await impersonate(whaleAddress, true);
+  await core.tokens.usdt.connect(whaleSigner).transfer(signer.address, amount);
+  await core.tokens.usdt.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
+}
+
 export async function setupGMBalance(
   core: CoreProtocolArbitrumOne,
   gmToken: IGmxMarketToken,
@@ -930,6 +942,8 @@ export async function setupCoreProtocol<T extends NetworkType>(
         arb: ARB_MAP[typedConfig.network].marketId,
         dArb: D_ARB_MAP[typedConfig.network].marketId,
         dfsGlp: DFS_GLP_MAP[typedConfig.network].marketId,
+        dGlvBtc: D_GLV_BTC_MAP[typedConfig.network].marketId,
+        dGlvEth: D_GLV_ETH_MAP[typedConfig.network].marketId,
         dGmx: D_GMX_MAP[typedConfig.network].marketId,
         dGmAaveUsd: D_GM_AAVE_USD_MAP[typedConfig.network].marketId,
         dGmArbUsd: D_GM_ARB_USD_MAP[typedConfig.network].marketId,
@@ -1139,6 +1153,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
         honey: HONEY_MAP[typedConfig.network].marketId,
         nect: NECT_MAP[typedConfig.network].marketId,
         pumpBtc: PUMP_BTC_MAP[typedConfig.network].marketId,
+        rsEth: RS_ETH_MAP[typedConfig.network].marketId,
         sbtc: SBTC_MAP[typedConfig.network].marketId,
         solvBtc: SOLV_BTC_MAP[typedConfig.network].marketId,
         solvBtcBbn: SOLV_BTC_BBN_MAP[typedConfig.network].marketId,
@@ -1169,6 +1184,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
         honey: IERC20__factory.connect(HONEY_MAP[typedConfig.network].address, hhUser1),
         nect: IERC20__factory.connect(NECT_MAP[typedConfig.network].address, hhUser1),
         pumpBtc: IERC20__factory.connect(PUMP_BTC_MAP[typedConfig.network].address, hhUser1),
+        rsEth: IERC20__factory.connect(RS_ETH_MAP[typedConfig.network].address, hhUser1),
         sbtc: IERC20__factory.connect(SBTC_MAP[typedConfig.network].address, hhUser1),
         solvBtc: IERC20__factory.connect(SOLV_BTC_MAP[typedConfig.network].address, hhUser1),
         solvBtcBbn: IERC20__factory.connect(SOLV_BTC_BBN_MAP[typedConfig.network].address, hhUser1),

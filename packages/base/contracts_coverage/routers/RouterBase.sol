@@ -20,13 +20,14 @@
 
 pragma solidity ^0.8.9;
 
+import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
-import { OnlyDolomiteMarginForUpgradeable } from "../helpers/OnlyDolomiteMarginForUpgradeable.sol";
+import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 import { ReentrancyGuardUpgradeable } from "../helpers/ReentrancyGuardUpgradeable.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
-import { IIsolationModeTokenVaultV2 } from "../isolation-mode/interfaces/IIsolationModeTokenVaultV2.sol";
+import { IIsolationModeTokenVaultV1 } from "../isolation-mode/interfaces/IIsolationModeTokenVaultV1.sol";
 import { IIsolationModeVaultFactory } from "../isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
 import { Require } from "../protocol/lib/Require.sol";
 import { IRouterBase } from "./interfaces/IRouterBase.sol";
@@ -38,13 +39,20 @@ import { IRouterBase } from "./interfaces/IRouterBase.sol";
  *
  * @notice  Base contract for all routers
  */
-abstract contract RouterBase is OnlyDolomiteMarginForUpgradeable, ReentrancyGuardUpgradeable, IRouterBase {
+abstract contract RouterBase is
+    OnlyDolomiteMargin,
+    ReentrancyGuardUpgradeable,
+    Initializable,
+    IRouterBase
+{
 
     // ========================================================
     // ====================== Constants =======================
     // ========================================================
 
     bytes32 private constant _FILE = "RouterBase";
+    uint256 private constant _DOLOMITE_BALANCE_ACCOUNT_NUMBER_CUTOFF = 100;
+    uint256 public constant DEFAULT_ACCOUNT_NUMBER = 0;
 
     string constant public DOLOMITE_ISOLATION_PREFIX = "Dolomite Isolation:";
     string constant public DOLOMITE_FS_GLP = "Dolomite: Fee + Staked GLP";
@@ -62,27 +70,40 @@ abstract contract RouterBase is OnlyDolomiteMarginForUpgradeable, ReentrancyGuar
     constructor (
         address _dolomiteRegistry,
         address _dolomiteMargin
-    ) {
+    ) OnlyDolomiteMargin(_dolomiteMargin) {
         DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
-        _setDolomiteMarginViaSlot(_dolomiteMargin);
+    }
+
+    function initialize() external initializer virtual {
+        __ReentrancyGuardUpgradeable__init();
     }
 
     // ========================================================
-    // ================== External Functions ==================
+    // ================== Public Functions ==================
+    // ========================================================
+
+    function isDolomiteBalance(uint256 _accountNumber) public pure returns (bool) {
+        return _accountNumber < _DOLOMITE_BALANCE_ACCOUNT_NUMBER_CUTOFF;
+    }
+
+    // ========================================================
+    // ================== Internal Functions ==================
     // ========================================================
 
     function _getMarketInfo(
         uint256 _marketId
     ) internal view returns (MarketInfo memory) {
         address marketToken = DOLOMITE_MARGIN().getMarketTokenAddress(_marketId);
-        bool isoModeAsset = _isIsolationModeAsset(marketToken);
+        address transferToken = DOLOMITE_REGISTRY.dolomiteAccountRegistry().getTransferTokenOverride(marketToken);
 
-        if (isoModeAsset) {
+        if (_isIsolationModeAsset(marketToken)) {
+            address token = IIsolationModeVaultFactory(marketToken).UNDERLYING_TOKEN();
             return MarketInfo({
                 marketId: _marketId,
                 isIsolationModeAsset: true,
                 marketToken: marketToken,
-                token: IERC20(IIsolationModeVaultFactory(marketToken).UNDERLYING_TOKEN()),
+                token: IERC20(token),
+                transferToken: transferToken == address(0) ? IERC20(token) : IERC20(transferToken),
                 factory: IIsolationModeVaultFactory(marketToken)
             });
         } else {
@@ -91,15 +112,16 @@ abstract contract RouterBase is OnlyDolomiteMarginForUpgradeable, ReentrancyGuar
                 isIsolationModeAsset: false,
                 marketToken: marketToken,
                 token: IERC20(marketToken),
+                transferToken: transferToken == address(0) ? IERC20(marketToken) : IERC20(transferToken),
                 factory: IIsolationModeVaultFactory(address(0))
             });
         }
     }
 
-    function _validateIsoMarketAndGetVault(
+    function _validateIsolationModeMarketAndGetVault(
         MarketInfo memory _marketInfo,
         address _account
-    ) internal returns (IIsolationModeTokenVaultV2) {
+    ) internal returns (IIsolationModeTokenVaultV1) {
         if (_marketInfo.isIsolationModeAsset) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _marketInfo.isIsolationModeAsset,
@@ -111,7 +133,7 @@ abstract contract RouterBase is OnlyDolomiteMarginForUpgradeable, ReentrancyGuar
             vault = _marketInfo.factory.createVault(_account);
         }
 
-        return IIsolationModeTokenVaultV2(vault);
+        return IIsolationModeTokenVaultV1(vault);
     }
 
     function _isIsolationModeMarket(uint256 _marketId) internal view returns (bool) {
@@ -127,7 +149,11 @@ abstract contract RouterBase is OnlyDolomiteMarginForUpgradeable, ReentrancyGuar
         return _startsWith(DOLOMITE_ISOLATION_PREFIX, name);
     }
 
-    function _startsWith(string memory _start, string memory _str) internal pure returns (bool) {
+    // ========================================================
+    // ================== Private Functions ===================
+    // ========================================================
+
+    function _startsWith(string memory _start, string memory _str) private pure returns (bool) {
         if (bytes(_start).length > bytes(_str).length) {
             return false;
         }

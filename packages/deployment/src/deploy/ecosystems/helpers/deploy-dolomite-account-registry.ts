@@ -1,4 +1,5 @@
 import {
+  DolomiteAccountRegistry,
   DolomiteAccountRegistry__factory,
   IERC20Metadata__factory,
   RegistryProxy,
@@ -15,7 +16,7 @@ export async function deployDolomiteAccountRegistry<T extends NetworkType>(
   dolomiteMargin: DolomiteMargin<T>,
   signer: SignerWithAddressWithSafety,
   network: T,
-): Promise<RegistryProxy> {
+): Promise<[string, RegistryProxy]> {
   const dolomiteAccountRegistryImplementationAddress = await deployContractAndSave(
     'DolomiteAccountRegistry',
     [],
@@ -45,5 +46,8 @@ export async function deployDolomiteAccountRegistry<T extends NetworkType>(
     getRegistryProxyConstructorParams(dolomiteAccountRegistryImplementation.address, calldata.data!, dolomiteMargin),
     'DolomiteAccountRegistryProxy',
   );
-  return RegistryProxy__factory.connect(registryProxyAddress, signer);
+  return [
+    dolomiteAccountRegistryImplementationAddress,
+    RegistryProxy__factory.connect(registryProxyAddress, signer)
+  ];
 }

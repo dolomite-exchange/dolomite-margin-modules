@@ -37,6 +37,9 @@ interface IRouterBase {
         bool isIsolationModeAsset;
         address marketToken;
         IERC20 token;
+        IERC20 transferToken;
         IIsolationModeVaultFactory factory;
     }
+
+    function isDolomiteBalance(uint256 _accountNumber) external view returns (bool);
 }

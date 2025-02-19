@@ -47,6 +47,15 @@ interface IDepositWithdrawalProxy {
     ) external;
 
     /**
+     * Same as `depositWei` but converts the `msg.sender`'s sent ETH into WETH before depositing into `DolomiteMargin`.
+     *
+     * @param  _toAccountNumber The account number into which `msg.sender` will be depositing
+     */
+    function depositETH(
+        uint256 _toAccountNumber
+    ) external payable;
+
+    /**
      * @dev Same as `depositWei` but defaults to account index 0 to save additional call data
      *
      * @param  _marketId    The ID of the market being deposited

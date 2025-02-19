@@ -14,6 +14,7 @@ import {
 import {
   createContractWithAbi,
   createContractWithLibrary,
+  createContractWithName,
   createTestToken,
   depositIntoDolomiteMargin,
 } from '../../../src/utils/dolomite-utils';
@@ -23,7 +24,7 @@ import { revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectProtocolBalance, expectThrow } from '../../utils/assertions';
 
 import { CoreProtocolArbitrumOne } from '../../utils/core-protocols/core-protocol-arbitrum-one';
-import { createIsolationModeTokenVaultV1ActionsImpl } from '../../utils/dolomite';
+import { createAndUpgradeDolomiteRegistry, createIsolationModeTokenVaultV1ActionsImpl } from '../../utils/dolomite';
 import { createTestIsolationModeVaultFactory } from '../../utils/ecosystem-utils/testers';
 import {
   getDefaultCoreProtocolConfig,
@@ -31,7 +32,7 @@ import {
   setupTestMarket,
   setupUserVaultProxy,
 } from '../../utils/setup';
-import { getSimpleZapParams, getWrapZapParams } from '../../utils/zap-utils';
+import { getSimpleZapParams, getUnwrapZapParams, getWrapZapParams } from '../../utils/zap-utils';
 
 const defaultAccountNumber = '0';
 const borrowAccountNumber = '123';
@@ -59,6 +60,16 @@ describe('IsolationModeTokenVaultV1WithPausable', () => {
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
+    await createAndUpgradeDolomiteRegistry(core);
+    const genericTraderLib = await createContractWithName('GenericTraderProxyV2Lib', []);
+    const genericTraderProxy = await createContractWithLibrary(
+      'GenericTraderProxyV2',
+      { GenericTraderProxyV2Lib: genericTraderLib.address },
+      [Network.ArbitrumOne, core.dolomiteRegistry.address, core.dolomiteMargin.address]
+    );
+    await core.dolomiteRegistry.ownerSetGenericTraderProxy(genericTraderProxy.address);
+    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(genericTraderProxy.address, true);
+
     underlyingToken = await createTestToken();
     const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
     userVaultImplementation = await createContractWithLibrary<TestIsolationModeTokenVaultV1WithPausable>(
@@ -101,8 +112,8 @@ describe('IsolationModeTokenVaultV1WithPausable', () => {
       TestIsolationModeWrapperTraderV2__factory.bytecode,
       [otherToken1.address, factory.address, core.dolomiteMargin.address, core.dolomiteRegistry.address],
     );
-    await factory.connect(core.governance).ownerInitialize([tokenUnwrapper.address, tokenWrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
+    await factory.connect(core.governance).ownerInitialize([tokenUnwrapper.address, tokenWrapper.address]);
 
     solidUser = core.hhUser5;
 
@@ -161,10 +172,10 @@ describe('IsolationModeTokenVaultV1WithPausable', () => {
       );
     });
 
-    it('should fail when not called by owner', async () => {
+    it('should fail when not called by owner or converter', async () => {
       await expectThrow(
         userVault.connect(core.hhUser2).openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei),
-        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
+        `IsolationModeTokenVaultV1: Only owner or converter can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
 
@@ -261,14 +272,14 @@ describe('IsolationModeTokenVaultV1WithPausable', () => {
       );
     });
 
-    it('should fail when not called by owner', async () => {
+    it('should fail when not called by owner or converter', async () => {
       await expectThrow(
         userVault.connect(core.hhUser2).closeBorrowPositionWithOtherTokens(
           borrowAccountNumber,
           defaultAccountNumber,
           [otherMarketId1],
         ),
-        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
+        `IsolationModeTokenVaultV1: Only owner or converter can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
   });
@@ -294,11 +305,11 @@ describe('IsolationModeTokenVaultV1WithPausable', () => {
       );
     });
 
-    it('should fail when not called by owner', async () => {
+    it('should fail when not called by owner or converter', async () => {
       await expectThrow(
         userVault.connect(core.hhUser2)
           .transferIntoPositionWithUnderlyingToken(defaultAccountNumber, borrowAccountNumber, amountWei),
-        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
+        `IsolationModeTokenVaultV1: Only owner or converter can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
 
@@ -547,7 +558,7 @@ describe('IsolationModeTokenVaultV1WithPausable', () => {
       );
     });
 
-    it('should fail when not called by owner', async () => {
+    it('should fail when not called by owner or converter', async () => {
       await expectThrow(
         userVault.connect(core.hhUser2).transferFromPositionWithOtherToken(
           borrowAccountNumber,
@@ -556,7 +567,7 @@ describe('IsolationModeTokenVaultV1WithPausable', () => {
           otherAmountWei,
           BalanceCheckFlag.Both,
         ),
-        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
+        `IsolationModeTokenVaultV1: Only owner or converter can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
 
@@ -967,6 +978,69 @@ describe('IsolationModeTokenVaultV1WithPausable', () => {
           zapParams.userConfig,
         ),
         'IsolationModeVaultV1Pausable: Unacceptable trade when paused',
+      );
+    });
+  });
+
+  describe('#addCollateralAndSwapExactInputForOutput', () => {
+    it('should fail if external redemption is paused and user is adding collateral to borrow position', async () => {
+      await userVault.setIsExternalRedemptionPaused(true);
+      const zapParams = await getWrapZapParams(otherMarketId1, amountWei, underlyingMarketId, amountWei, tokenWrapper, core);
+      await expectThrow(
+        userVault.addCollateralAndSwapExactInputForOutput(
+          defaultAccountNumber,
+          borrowAccountNumber,
+          zapParams.marketIdsPath,
+          zapParams.inputAmountWei,
+          zapParams.minOutputAmountWei,
+          zapParams.tradersPath,
+          zapParams.makerAccounts,
+          zapParams.userConfig,
+        ),
+        'IsolationModeVaultV1Pausable: Cannot execute when paused',
+      );
+    });
+  });
+
+  describe('#swapExactInputForOutputAndRemoveCollateral', () => {
+    it('should pass pausable check if user has no debt', async () => {
+      await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await userVault.setIsExternalRedemptionPaused(true);
+      const zapParams = await getUnwrapZapParams(underlyingMarketId, amountWei, otherMarketId1, amountWei, tokenUnwrapper, core);
+      await expectThrow(
+        userVault.swapExactInputForOutputAndRemoveCollateral(
+          defaultAccountNumber,
+          borrowAccountNumber,
+          zapParams.marketIdsPath,
+          zapParams.inputAmountWei,
+          zapParams.minOutputAmountWei,
+          zapParams.tradersPath,
+          zapParams.makerAccounts,
+          zapParams.userConfig,
+        ),
+        'OperationImpl: Market is closing <50>'
+      );
+    });
+
+    it('should fail if external redemption is paused and user is removing collateral from borrow position', async () => {
+      await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await userVault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei);
+      await userVault.transferFromPositionWithOtherToken(borrowAccountNumber, defaultAccountNumber, otherMarketId2, otherAmountWei, BalanceCheckFlag.To);
+      await userVault.setIsExternalRedemptionPaused(true);
+
+      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, amountWei, core);
+      await expectThrow(
+        userVault.swapExactInputForOutputAndRemoveCollateral(
+          defaultAccountNumber,
+          borrowAccountNumber,
+          zapParams.marketIdsPath,
+          zapParams.inputAmountWei,
+          zapParams.minOutputAmountWei,
+          zapParams.tradersPath,
+          zapParams.makerAccounts,
+          zapParams.userConfig,
+        ),
+        'IsolationModeVaultV1Pausable: Cannot execute when paused',
       );
     });
   });
