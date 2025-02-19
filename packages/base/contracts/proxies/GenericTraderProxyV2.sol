@@ -87,6 +87,7 @@ contract GenericTraderProxyV2 is GenericTraderProxyBase, ReentrancyGuard, Author
             isMarginDeposit: false,
             // unused for this function
             otherAccountNumber: 0,
+            feeTransferAccountIndex: 0,
             // traders go right after the trade account and zap account
             traderAccountStartIndex: ZAP_ACCOUNT_ID + 1,
             actionsCursor: 0,
@@ -119,7 +120,8 @@ contract GenericTraderProxyV2 is GenericTraderProxyBase, ReentrancyGuard, Author
             cache,
             _params.makerAccounts,
             /* _tradeAccountOwner = */ msg.sender, // solium-disable-line indentation
-            _params.accountNumber
+            _params.accountNumber,
+            _params.tradersPath
         );
         _validateZapAccount(cache, accounts[ZAP_ACCOUNT_ID], _params.marketIdsPath);
 
@@ -170,6 +172,7 @@ contract GenericTraderProxyV2 is GenericTraderProxyBase, ReentrancyGuard, Author
             isMarginDeposit: false,
             // unused for this function
             otherAccountNumber: 0,
+            feeTransferAccountIndex: 0,
             // traders go right after the trade account and zap account
             traderAccountStartIndex: ZAP_ACCOUNT_ID + 1,
             actionsCursor: 0,
@@ -202,7 +205,8 @@ contract GenericTraderProxyV2 is GenericTraderProxyBase, ReentrancyGuard, Author
             cache,
             _params.makerAccounts,
             _accountOwner, // solium-disable-line indentation
-            _params.accountNumber
+            _params.accountNumber,
+            _params.tradersPath
         );
         _validateZapAccount(cache, accounts[ZAP_ACCOUNT_ID], _params.marketIdsPath);
 
@@ -256,6 +260,7 @@ contract GenericTraderProxyV2 is GenericTraderProxyBase, ReentrancyGuard, Author
             otherAccountNumber: _params.accountNumber == _params.transferCollateralParams.toAccountNumber
                 ? _params.transferCollateralParams.fromAccountNumber
                 : _params.transferCollateralParams.toAccountNumber,
+            feeTransferAccountIndex: 0,
             // traders go right after the trade account, the zap account, and the transfer account ("other account")
             traderAccountStartIndex: TRANSFER_ACCOUNT_ID + 1,
             actionsCursor: 0,
@@ -302,7 +307,8 @@ contract GenericTraderProxyV2 is GenericTraderProxyBase, ReentrancyGuard, Author
             cache,
             _params.makerAccounts,
             /* _tradeAccountOwner = */ msg.sender, // solium-disable-line indentation
-            _params.accountNumber
+            _params.accountNumber,
+            _params.tradersPath
         );
         // the call to `_getAccounts` leaves accounts[TRANSFER_ACCOUNT_ID] unset, because it only fills in the traders
         // starting at the `traderAccountCursor` index
@@ -417,6 +423,7 @@ contract GenericTraderProxyV2 is GenericTraderProxyBase, ReentrancyGuard, Author
             otherAccountNumber: _params.accountNumber == _params.transferCollateralParams.toAccountNumber
                 ? _params.transferCollateralParams.fromAccountNumber
                 : _params.transferCollateralParams.toAccountNumber,
+            feeTransferAccountIndex: 0,
             // traders go right after the trade account, the zap account, and the transfer account ("other account")
             traderAccountStartIndex: TRANSFER_ACCOUNT_ID + 1,
             actionsCursor: 0,
@@ -463,7 +470,8 @@ contract GenericTraderProxyV2 is GenericTraderProxyBase, ReentrancyGuard, Author
             cache,
             _params.makerAccounts,
             _accountOwner, // solium-disable-line indentation
-            _params.accountNumber
+            _params.accountNumber,
+            _params.tradersPath
         );
         // the call to `_getAccounts` leaves accounts[TRANSFER_ACCOUNT_ID] unset, because it only fills in the traders
         // starting at the `traderAccountCursor` index

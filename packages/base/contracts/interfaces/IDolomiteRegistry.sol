@@ -183,6 +183,11 @@ interface IDolomiteRegistry {
     function eventEmitter() external view returns (IEventEmitterRegistry);
 
     /**
+     * @return The address of the fee agent
+     */
+    function feeAgent() external view returns (address);
+
+    /**
      * @return The address of the Chainlink price oracle that's compatible with DolomiteMargin
      */
     function chainlinkPriceOracle() external view returns (IDolomitePriceOracle);

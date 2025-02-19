@@ -58,6 +58,7 @@ contract DolomiteRegistryImplementation is
     bytes32 private constant _DOLOMITE_MIGRATOR_SLOT = bytes32(uint256(keccak256("eip1967.proxy.dolomiteMigrator")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _EVENT_EMITTER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.eventEmitter")) - 1);
     bytes32 private constant _EXPIRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.expiry")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _FEE_AGENT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.feeAgent")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _GENERIC_TRADER_PROXY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.genericTraderProxy")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _LIQUIDATOR_ASSET_REGISTRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.liquidatorAssetRegistry")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _ORACLE_AGGREGATOR_SLOT = bytes32(uint256(keccak256("eip1967.proxy.oracleAggregator")) - 1); // solhint-disable-line max-line-length
@@ -231,6 +232,10 @@ contract DolomiteRegistryImplementation is
 
     function eventEmitter() public view returns (IEventEmitterRegistry) {
         return IEventEmitterRegistry(_getAddress(_EVENT_EMITTER_SLOT));
+    }
+
+    function feeAgent() public view returns (address) {
+        return _getAddress(_FEE_AGENT_SLOT);
     }
 
     function chainlinkPriceOracle() public view returns (IDolomitePriceOracle) {
