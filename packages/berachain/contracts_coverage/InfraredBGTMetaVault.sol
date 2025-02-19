@@ -31,12 +31,10 @@ import { IBerachainRewardsRegistry } from "./interfaces/IBerachainRewardsRegistr
 import { IInfraredVault } from "./interfaces/IInfraredVault.sol";
 import { IMetaVaultRewardReceiver } from "./interfaces/IMetaVaultRewardReceiver.sol";
 import { IMetaVaultRewardTokenFactory } from "./interfaces/IMetaVaultRewardTokenFactory.sol";
-import { INativeRewardVault } from "./interfaces/INativeRewardVault.sol";
 
-import "hardhat/console.sol";
 
 /**
- * @title   IBgtMetaVault
+ * @title   InfraredBGTMetaVault
  * @author  Dolomite
  *
  * @notice  Implementation (for an upgradeable proxy) for a per-user vault that holds the underlying berachain rewards
@@ -44,14 +42,14 @@ import "hardhat/console.sol";
  *          to be in isolation mode - that is it cannot be borrowed by other users, may only be seized via
  *          liquidation, and cannot be held in the same position as other "isolated" tokens.
  */
-contract IBgtMetaVault is ProxyContractHelpers, IBaseMetaVault {
+contract InfraredBGTMetaVault is ProxyContractHelpers, IBaseMetaVault {
     using SafeERC20 for IERC20;
 
     // ==================================================================
     // =========================== Constants ============================
     // ==================================================================
 
-    bytes32 private constant _FILE = "IBgtMetaVault";
+    bytes32 private constant _FILE = "InfraredBGTMetaVault";
     bytes32 private constant _REGISTRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.registry")) - 1);
     bytes32 private constant _OWNER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.owner")) - 1);
     bytes32 private constant _STAKED_BALANCES_SLOT = bytes32(uint256(keccak256("eip1967.proxy.stakedBalances")) - 1);
@@ -152,12 +150,13 @@ contract IBgtMetaVault is ProxyContractHelpers, IBaseMetaVault {
         ));
         infraredVault.exit();
 
+        // @follow-up How to handle this? Can't do balance == stakedBalance because user could brick it
         uint256 stakedBalance = getStakedBalanceByAssetAndType(_asset, defaultType);
         _setUint256InNestedMap(_STAKED_BALANCES_SLOT, _asset, uint256(defaultType), 0);
 
         uint256 balance = IERC20(_asset).balanceOf(address(this));
-        /*assert(balance == stakedBalance);*/
-        IERC20(_asset).safeTransfer(msg.sender, balance);
+        /*assert(balance > stakedBalance);*/
+        IERC20(_asset).safeTransfer(msg.sender, stakedBalance);
 
         uint256 reward = token.balanceOf(address(this)) - balanceBefore;
         if (reward > 0) {
@@ -216,7 +215,7 @@ contract IBgtMetaVault is ProxyContractHelpers, IBaseMetaVault {
         IBerachainRewardsRegistry.RewardVaultType _type,
         uint256 _amount
     ) internal onlyInfrared(_type) {
-        INativeRewardVault rewardVault = INativeRewardVault(REGISTRY().rewardVault(_asset, _type));
+        IInfraredVault rewardVault = IInfraredVault(REGISTRY().rewardVault(_asset, _type));
 
         _setDefaultRewardVaultTypeByAsset(_asset, _type);
         uint256 stakedBalance = getStakedBalanceByAssetAndType(_asset, _type);
@@ -232,7 +231,7 @@ contract IBgtMetaVault is ProxyContractHelpers, IBaseMetaVault {
         IBerachainRewardsRegistry.RewardVaultType _type,
         uint256 _amount
     ) internal onlyInfrared(_type) {
-        INativeRewardVault rewardVault = INativeRewardVault(REGISTRY().rewardVault(_asset, _type));
+        IInfraredVault rewardVault = IInfraredVault(REGISTRY().rewardVault(_asset, _type));
 
         uint256 stakedBalance = getStakedBalanceByAssetAndType(_asset, _type);
         _setUint256InNestedMap(_STAKED_BALANCES_SLOT, _asset, uint256(_type), stakedBalance - _amount);
@@ -242,7 +241,6 @@ contract IBgtMetaVault is ProxyContractHelpers, IBaseMetaVault {
     }
 
     function _getReward(address _asset) internal returns (uint256) {
-        IBerachainRewardsRegistry.RewardVaultType defaultType = getDefaultRewardVaultTypeByAsset(_asset);
         address rewardVault = REGISTRY().rewardVault(_asset, IBerachainRewardsRegistry.RewardVaultType.INFRARED);
 
         IMetaVaultRewardTokenFactory factory = REGISTRY().iBgtIsolationModeVaultFactory();
@@ -253,7 +251,7 @@ contract IBgtMetaVault is ProxyContractHelpers, IBaseMetaVault {
         uint256 reward = iBgt.balanceOf(address(this)) - balanceBefore;
 
         if (reward > 0) {
-            _performDepositRewardByRewardType(factory, defaultType, reward);
+            _performDepositRewardByRewardType(factory, IBerachainRewardsRegistry.RewardVaultType.INFRARED, reward);
         }
 
         return reward;

@@ -31,7 +31,6 @@ import { IBerachainRewardsRegistry } from "./interfaces/IBerachainRewardsRegistr
 import { IInfraredVault } from "./interfaces/IInfraredVault.sol";
 import { IMetaVaultRewardReceiver } from "./interfaces/IMetaVaultRewardReceiver.sol";
 import { IMetaVaultRewardTokenFactory } from "./interfaces/IMetaVaultRewardTokenFactory.sol";
-import { IInfraredVault } from "./interfaces/IInfraredVault.sol";
 
 
 /**
@@ -150,12 +149,13 @@ contract InfraredBGTMetaVault is ProxyContractHelpers, IBaseMetaVault {
         ));
         infraredVault.exit();
 
+        // @follow-up How to handle this? Can't do balance == stakedBalance because user could brick it
         uint256 stakedBalance = getStakedBalanceByAssetAndType(_asset, defaultType);
         _setUint256InNestedMap(_STAKED_BALANCES_SLOT, _asset, uint256(defaultType), 0);
 
         uint256 balance = IERC20(_asset).balanceOf(address(this));
-        assert(balance == stakedBalance);
-        IERC20(_asset).safeTransfer(msg.sender, balance);
+        assert(balance > stakedBalance);
+        IERC20(_asset).safeTransfer(msg.sender, stakedBalance);
 
         uint256 reward = token.balanceOf(address(this)) - balanceBefore;
         if (reward > 0) {

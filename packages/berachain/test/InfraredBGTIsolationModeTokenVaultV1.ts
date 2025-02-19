@@ -1,5 +1,4 @@
-import { IERC20 } from '@dolomite-exchange/modules-base/src/types';
-import { Network, ONE_ETH_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { Network, ONE_DAY_SECONDS, ONE_ETH_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import {
   expectEvent,
@@ -20,13 +19,9 @@ import { createContractWithAbi, createTestToken } from 'packages/base/src/utils/
 import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
 import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
 import {
-  BerachainRewardsIsolationModeVaultFactory,
   BerachainRewardsMetaVault,
   BerachainRewardsMetaVault__factory,
   BerachainRewardsRegistry,
-  BGTIsolationModeVaultFactory,
-  IInfraredVault,
-  INativeRewardVault,
   InfraredBGTIsolationModeTokenVaultV1,
   InfraredBGTIsolationModeTokenVaultV1__factory,
   InfraredBGTIsolationModeVaultFactory,
@@ -34,17 +29,13 @@ import {
   TestInfraredVault__factory,
 } from '../src/types';
 import {
-  createBerachainRewardsIsolationModeTokenVaultV1,
-  createBerachainRewardsIsolationModeVaultFactory,
   createBerachainRewardsRegistry,
-  createBGTIsolationModeTokenVaultV1,
-  createBGTIsolationModeVaultFactory,
   createInfraredBGTIsolationModeTokenVaultV1,
   createInfraredBGTIsolationModeVaultFactory,
-  RewardVaultType,
 } from './berachain-ecosystem-utils';
+import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
 
-const IBGT_WHALE_ADDRESS = '0x4B95296B937AF613D65206Ba7C203CB9A1263003';
+const IBGT_WHALE_ADDRESS = '0x9b45388Fc442343dE9959D710eB47Da8c09eE2d9';
 const defaultAccountNumber = ZERO_BI;
 const amountWei = parseEther('.5');
 const rewardAmount = parseEther('.25');
@@ -54,13 +45,7 @@ describe('InfraredBGTIsolationModeTokenVaultV1', () => {
 
   let core: CoreProtocolBerachain;
   let registry: BerachainRewardsRegistry;
-  let beraFactory: BerachainRewardsIsolationModeVaultFactory;
-  let bgtFactory: BGTIsolationModeVaultFactory;
   let iBgtFactory: InfraredBGTIsolationModeVaultFactory;
-
-  let underlyingToken: IERC20;
-  let nativeRewardVault: INativeRewardVault;
-  let infraredRewardVault: IInfraredVault;
   let testInfraredVault: TestInfraredVault;
 
   let iBgtVault: InfraredBGTIsolationModeTokenVaultV1;
@@ -69,13 +54,9 @@ describe('InfraredBGTIsolationModeTokenVaultV1', () => {
 
   before(async () => {
     core = await setupCoreProtocol({
-      blockNumber: 4_853_900,
+      blockNumber: 1_342_200,
       network: Network.Berachain,
     });
-
-    underlyingToken = core.berachainRewardsEcosystem.listedRewardAssets.bexHoneyUsdc.asset;
-    nativeRewardVault = core.berachainRewardsEcosystem.listedRewardAssets.bexHoneyUsdc.nativeRewardVault;
-    infraredRewardVault = core.berachainRewardsEcosystem.listedRewardAssets.bexHoneyUsdc.infraredRewardVault;
 
     const metaVaultImplementation = await createContractWithAbi<BerachainRewardsMetaVault>(
       BerachainRewardsMetaVault__factory.abi,
@@ -83,22 +64,7 @@ describe('InfraredBGTIsolationModeTokenVaultV1', () => {
       [],
     );
     registry = await createBerachainRewardsRegistry(core, metaVaultImplementation);
-    await registry
-      .connect(core.governance)
-      .ownerSetRewardVault(underlyingToken.address, RewardVaultType.Native, nativeRewardVault.address);
-    await registry
-      .connect(core.governance)
-      .ownerSetRewardVault(underlyingToken.address, RewardVaultType.Infrared, infraredRewardVault.address);
 
-    const vaultImplementation = await createBerachainRewardsIsolationModeTokenVaultV1();
-    beraFactory = await createBerachainRewardsIsolationModeVaultFactory(
-      registry,
-      underlyingToken,
-      vaultImplementation,
-      core,
-    );
-    const bgtVaultImplementation = await createBGTIsolationModeTokenVaultV1();
-    bgtFactory = await createBGTIsolationModeVaultFactory(registry, core.tokens.bgt, bgtVaultImplementation, core);
     const iBgtVaultImplementation = await createInfraredBGTIsolationModeTokenVaultV1();
     iBgtFactory = await createInfraredBGTIsolationModeVaultFactory(
       registry,
@@ -111,19 +77,8 @@ describe('InfraredBGTIsolationModeTokenVaultV1', () => {
     await core.testEcosystem!.testPriceOracle.setPrice(iBgtFactory.address, ONE_ETH_BI);
     await setupTestMarket(core, iBgtFactory, true);
 
-    await core.testEcosystem!.testPriceOracle.setPrice(beraFactory.address, ONE_ETH_BI);
-    await setupTestMarket(core, beraFactory, true);
-
-    await core.testEcosystem!.testPriceOracle.setPrice(bgtFactory.address, ONE_ETH_BI);
-    await setupTestMarket(core, bgtFactory, true);
-
-    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(beraFactory.address, true);
-    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(bgtFactory.address, true);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(iBgtFactory.address, true);
-    await beraFactory.connect(core.governance).ownerInitialize([]);
-    await bgtFactory.connect(core.governance).ownerInitialize([]);
     await iBgtFactory.connect(core.governance).ownerInitialize([]);
-    await registry.connect(core.governance).ownerSetBgtIsolationModeVaultFactory(bgtFactory.address);
     await registry.connect(core.governance).ownerSetIBgtIsolationModeVaultFactory(iBgtFactory.address);
 
     await iBgtFactory.createVault(core.hhUser1.address);
@@ -152,9 +107,7 @@ describe('InfraredBGTIsolationModeTokenVaultV1', () => {
 
   describe('#setIsDepositSourceMetaVault', () => {
     it('should work normally', async () => {
-      await beraFactory.createVault(core.hhUser1.address);
       const metaVaultImpersonator = await impersonate(await registry.getMetaVaultByAccount(core.hhUser1.address), true);
-
       const res = await iBgtVault.connect(metaVaultImpersonator).setIsDepositSourceMetaVault(true);
       await expectEvent(iBgtVault, res, 'IsDepositSourceMetaVaultSet', {
         isDepositSourceMetaVault: true,
@@ -176,7 +129,6 @@ describe('InfraredBGTIsolationModeTokenVaultV1', () => {
     });
 
     it('should work normally if deposit comes from metaVault', async () => {
-      await beraFactory.createVault(core.hhUser1.address);
       const metaVaultImpersonator = await impersonate(await registry.getMetaVaultByAccount(core.hhUser1.address), true);
       await core.tokens.iBgt.connect(core.hhUser1).transfer(metaVaultImpersonator.address, amountWei);
       await core.tokens.iBgt.connect(metaVaultImpersonator).approve(iBgtVault.address, amountWei);
@@ -269,6 +221,23 @@ describe('InfraredBGTIsolationModeTokenVaultV1', () => {
   });
 
   describe('#getReward', () => {
+    it('should work normally (honey)', async () => {
+      await iBgtVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await expectProtocolBalance(core, iBgtVault, defaultAccountNumber, iBgtMarketId, amountWei);
+      await increase(ONE_DAY_SECONDS * 30);
+      await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.honey.address, ONE_ETH_BI);
+      await core.dolomiteMargin.connect(core.governance).ownerSetPriceOracle(
+        core.marketIds.honey,
+        core.testEcosystem!.testPriceOracle.address
+      );
+
+      const reward = await core.berachainRewardsEcosystem.iBgtStakingPool.getAllRewardsForUser(iBgtVault.address);
+      await iBgtVault.getReward();
+      await expectWalletBalance(iBgtVault, core.tokens.iBgt, ZERO_BI);
+      await expectProtocolBalance(core, iBgtVault, defaultAccountNumber, iBgtMarketId, amountWei);
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.honey, reward[0].amount);
+    });
+
     it('should work normally for iBgt reward', async () => {
       await testInfraredVault.setRewardTokens([core.tokens.iBgt.address]);
       await core.tokens.iBgt.connect(iBgtWhale).approve(testInfraredVault.address, rewardAmount);
@@ -283,7 +252,8 @@ describe('InfraredBGTIsolationModeTokenVaultV1', () => {
       await expectProtocolBalance(core, iBgtVault, defaultAccountNumber, iBgtMarketId, amountWei.add(rewardAmount));
     });
 
-    it('should work normally for reward listed on dolomite', async () => {
+    it('should work normally for reward that has reached max supply wei', async () => {
+      await core.dolomiteMargin.connect(core.governance).ownerSetMaxSupplyWei(core.marketIds.wbera, 1);
       await testInfraredVault.setRewardTokens([core.tokens.wbera.address]);
       await setupWBERABalance(core, core.hhUser1, rewardAmount, { address: testInfraredVault.address });
       await testInfraredVault.connect(core.hhUser1).addReward(core.tokens.wbera.address, rewardAmount);
@@ -293,7 +263,8 @@ describe('InfraredBGTIsolationModeTokenVaultV1', () => {
       await expectProtocolBalance(core, iBgtVault, defaultAccountNumber, iBgtMarketId, amountWei);
       await iBgtVault.getReward();
       await expectProtocolBalance(core, iBgtVault, defaultAccountNumber, iBgtMarketId, amountWei);
-      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.wbera, rewardAmount);
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.wbera, ZERO_BI);
+      await expectWalletBalance(core.hhUser1, core.tokens.wbera, rewardAmount);
     });
 
     it('should work normally for reward not listed on dolomite', async () => {
