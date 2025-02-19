@@ -193,12 +193,12 @@ export async function createEventEmitter<T extends NetworkType>(
 
 export async function createDepositWithdrawalRouter(
   core: CoreProtocolType<any>,
-  payableToken: { address: string }
+  payableToken: { address: string },
 ): Promise<DepositWithdrawalRouter> {
   const implementation = await createContractWithAbi<DepositWithdrawalRouter>(
     DepositWithdrawalRouter__factory.abi,
     DepositWithdrawalRouter__factory.bytecode,
-    [payableToken.address, core.dolomiteRegistry.address, core.dolomiteMargin.address],
+    [core.dolomiteRegistry.address, core.dolomiteMargin.address],
   );
   const initCalldata = await implementation.populateTransaction.initialize();
 
@@ -207,6 +207,7 @@ export async function createDepositWithdrawalRouter(
     RouterProxy__factory.bytecode,
     [implementation.address, core.dolomiteMargin.address, initCalldata.data!],
   );
+  await proxy.connect(core.governance).ownerLazyInitialize(payableToken.address);
   return DepositWithdrawalRouter__factory.connect(proxy.address, core.hhUser1) as DepositWithdrawalRouter;
 }
 
@@ -251,7 +252,7 @@ export async function createGenericTraderProxyV2Lib(): Promise<Record<LibraryNam
   const contract = await createContractWithLibraryAndArtifact(
     artifact,
     {},
-    []
+    [],
   );
   return { GenericTraderProxyV2Lib: contract.address };
 }
@@ -286,12 +287,12 @@ export async function createTestBorrowPositionRouter(
 
 export async function createTestDepositWithdrawalRouter(
   core: CoreProtocolType<any>,
-  payableToken: { address: string }
+  payableToken: { address: string },
 ): Promise<TestDepositWithdrawalRouter> {
   const implementation = await createContractWithAbi<TestDepositWithdrawalRouter>(
     TestDepositWithdrawalRouter__factory.abi,
     TestDepositWithdrawalRouter__factory.bytecode,
-    [payableToken.address, core.dolomiteRegistry.address, core.dolomiteMargin.address],
+    [core.dolomiteRegistry.address, core.dolomiteMargin.address],
   );
   const initCalldata = await implementation.populateTransaction.initialize();
 
@@ -300,6 +301,10 @@ export async function createTestDepositWithdrawalRouter(
     RouterProxy__factory.bytecode,
     [implementation.address, core.dolomiteMargin.address, initCalldata.data!],
   );
+
+  await TestDepositWithdrawalRouter__factory.connect(proxy.address, core.governance)
+    .ownerLazyInitialize(payableToken.address);
+
   return TestDepositWithdrawalRouter__factory.connect(proxy.address, core.hhUser1) as TestDepositWithdrawalRouter;
 }
 

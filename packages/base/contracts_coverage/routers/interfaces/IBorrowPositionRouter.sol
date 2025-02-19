@@ -40,6 +40,12 @@ interface IBorrowPositionRouter is IRouterBase {
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
     ) external;
 
+    /**
+     *
+     * @param  _collateralMarketIds The market IDs to move from the borrow position back to your Dolomite Balance.
+     *                              When `_isolationModeMarketId` is not zero, Leaving this array empty will withdraw
+     *                              the isolation mode market ID to your Dolomite Balance.
+     */
     function closeBorrowPosition(
         uint256 _isolationModeMarketId,
         uint256 _borrowAccountNumber,

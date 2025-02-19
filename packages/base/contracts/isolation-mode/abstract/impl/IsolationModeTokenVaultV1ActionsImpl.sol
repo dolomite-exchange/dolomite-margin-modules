@@ -490,7 +490,7 @@ library IsolationModeTokenVaultV1ActionsImpl {
             );
         }
 
-        IGenericTraderProxyV2(address(_vault.dolomiteRegistry().genericTraderProxy())).swapExactInputForOutput(
+        _vault.dolomiteRegistry().genericTraderProxy().swapExactInputForOutput(
             IGenericTraderProxyV2.SwapExactInputForOutputParams({
                 accountNumber: _tradeAccountNumber,
                 marketIdsPath: _marketIdsPath,

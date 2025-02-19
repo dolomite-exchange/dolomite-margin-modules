@@ -1,6 +1,5 @@
 import { ADDRESS_ZERO } from '@dolomite-exchange/zap-sdk/dist/src/lib/Constants';
 import {
-  DolomiteAccountRegistry,
   GenericTraderProxyV2,
   IDolomiteRegistry,
   IIsolationModeTokenVaultV1__factory,
@@ -9,7 +8,6 @@ import {
 import { isArraysEqual } from 'packages/base/src/utils';
 import { EncodedTransaction } from '../../../utils/dry-run-utils';
 import { prettyPrintEncodedDataWithTypeSafety } from '../../../utils/encoding/base-encoder-utils';
-import { DolomiteMargin } from '@dolomite-exchange/dolomite-margin';
 
 export async function encodeDolomiteRegistryMigrations(
   dolomiteRegistry: IDolomiteRegistry,

@@ -3,15 +3,11 @@ import { getAndCheckSpecificNetwork } from 'packages/base/src/utils/dolomite-uti
 import { ADDRESS_ZERO, Network } from 'packages/base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from 'packages/base/test/utils';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
-import {
-  deployContractAndSave,
-  EncodedTransaction,
-  getMaxDeploymentVersionNameByDeploymentKey,
-  prettyPrintEncodedDataWithTypeSafety,
-} from '../../../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
+import { deployContractAndSave, getMaxDeploymentVersionNameByDeploymentKey } from '../../../../utils/deploy-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
 import getScriptName from '../../../../utils/get-script-name';
 import { IsolationModeVaultType } from '../../../isolation-mode/isolation-mode-helpers';
+import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 
 /**
  * This script encodes the following transactions:
@@ -38,7 +34,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       transactions.push(
         await deployedVault.deployNewVaultAndEncodeUpgradeTransaction(
           core,
-          { IsolationModeTokenVaultV1ActionsImpl: actionsImplAddress }
+          { IsolationModeTokenVaultV1ActionsImpl: actionsImplAddress },
         ),
       );
     }
@@ -68,13 +64,13 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     'GlvIsolationModeUnwrapperTraderV2',
     [core.tokens.weth.address],
     'GlvIsolationModeUnwrapperTraderImplementationV4',
-    { ...glvLibraryMap, ...core.gmxV2Ecosystem.live.gmxV2LibraryMap, ...asyncUnwrapperMap }
+    { ...glvLibraryMap, ...core.gmxV2Ecosystem.live.gmxV2LibraryMap, ...asyncUnwrapperMap },
   );
   const glvWrapperAddress = await deployContractAndSave(
     'GlvIsolationModeWrapperTraderV2',
     [core.tokens.weth.address],
     'GlvIsolationModeWrapperTraderImplementationV4',
-    { ...glvLibraryMap, ...core.gmxV2Ecosystem.live.gmxV2LibraryMap, ...asyncWrapperMap }
+    { ...glvLibraryMap, ...core.gmxV2Ecosystem.live.gmxV2LibraryMap, ...asyncWrapperMap },
   );
 
   transactions.push(
@@ -112,8 +108,20 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
 
   for (const gmMarket of core.gmxV2Ecosystem.live.allGmMarkets) {
     transactions.push(
-      await prettyPrintEncodedDataWithTypeSafety(core, gmMarket, 'unwrapperProxy', 'upgradeTo', [gmxV2UnwrapperImplementationAddress]),
-      await prettyPrintEncodedDataWithTypeSafety(core, gmMarket, 'wrapperProxy', 'upgradeTo', [gmxV2WrapperImplementationAddress]),
+      await prettyPrintEncodedDataWithTypeSafety(
+        core,
+        gmMarket,
+        'unwrapperProxy',
+        'upgradeTo',
+        [gmxV2UnwrapperImplementationAddress],
+      ),
+      await prettyPrintEncodedDataWithTypeSafety(
+        core,
+        gmMarket,
+        'wrapperProxy',
+        'upgradeTo',
+        [gmxV2WrapperImplementationAddress],
+      ),
     );
   }
 

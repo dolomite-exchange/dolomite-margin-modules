@@ -55,34 +55,45 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
     // ========================================================
 
     bytes32 private constant _FILE = "DepositWithdrawalRouter";
+    bytes32 private constant _WRAPPED_PAYABLE_TOKEN_SLOT = bytes32(uint256(keccak256("eip1967.proxy.wrappedPayableToken")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _PAYABLE_MARKET_ID_SLOT = bytes32(uint256(keccak256("eip1967.proxy.payableMarketId")) - 1);
+    bytes32 private constant _IS_INITIALIZED_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isInitialized")) - 1);
 
     // ========================================================
-    // ================= Storage Variables ====================
+    // ===================== Modifiers ========================
     // ========================================================
 
-    IWETH public immutable WRAPPED_PAYABLE_TOKEN;
-    uint256 public immutable PAYABLE_MARKET_ID;
+    modifier requireInitialized() {
+        Require.that(
+            isInitialized(),
+            _FILE,
+            "Not initialized"
+        );
+        _;
+    }
 
     // ========================================================
     // ===================== Constructor ========================
     // ========================================================
 
     constructor (
-        address _payableToken,
         address _dolomiteRegistry,
         address _dolomiteMargin
-    ) RouterBase(_dolomiteRegistry, _dolomiteMargin) {
-        WRAPPED_PAYABLE_TOKEN = IWETH(_payableToken);
-        PAYABLE_MARKET_ID = DOLOMITE_MARGIN().getMarketIdByTokenAddress(_payableToken);
-    }
+    ) RouterBase(_dolomiteRegistry, _dolomiteMargin) {}
 
     // ========================================================
     // ================== External Functions ==================
     // ========================================================
 
+    function ownerLazyInitialize(address _payableToken) external onlyDolomiteMarginOwner(msg.sender) {
+        _setAddress(_WRAPPED_PAYABLE_TOKEN_SLOT, _payableToken);
+        _setUint256(_PAYABLE_MARKET_ID_SLOT, DOLOMITE_MARGIN().getMarketIdByTokenAddress(_payableToken));
+        _setUint256(_IS_INITIALIZED_SLOT, 1);
+    }
+
     receive() external payable {
         Require.that(
-            msg.sender == address(WRAPPED_PAYABLE_TOKEN),
+            msg.sender == address(wrappedPayableToken()),
             _FILE,
             "Invalid payable sender"
         );
@@ -98,7 +109,7 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
         uint256 _marketId,
         uint256 _amountWei,
         EventFlag _eventFlag
-    ) public nonReentrant {
+    ) public nonReentrant requireInitialized {
         MarketInfo memory marketInfo = _getMarketInfo(_marketId);
         _amountWei = _amountWei == type(uint256).max ? _getSenderBalance(marketInfo.token) : _amountWei;
         marketInfo.token.safeTransferFrom(msg.sender, address(this), _amountWei);
@@ -117,14 +128,14 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
         uint256 _isolationModeMarketId,
         uint256 _toAccountNumber,
         EventFlag _eventFlag
-    ) external payable nonReentrant {
+    ) external payable nonReentrant requireInitialized {
         _wrap();
         _depositWei(
-            _getMarketInfo(PAYABLE_MARKET_ID),
+            _getMarketInfo(payableMarketId()),
             _isolationModeMarketId,
             _toAccountNumber,
-            PAYABLE_MARKET_ID,
-            msg.value,
+            payableMarketId(),
+            /* _amountWei = */ msg.value,
             _eventFlag
         );
     }
@@ -135,14 +146,14 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
         uint256 _marketId,
         uint256 _amountWei,
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
-    ) external nonReentrant {
+    ) external nonReentrant requireInitialized {
         MarketInfo memory marketInfo = _getMarketInfo(_marketId);
         address fromAccount = msg.sender;
         IIsolationModeTokenVaultV1 vault;
 
         if (_isolationModeMarketId != 0) {
             MarketInfo memory isolationMarketInfo = _getMarketInfo(_isolationModeMarketId);
-            vault = _validateIsolationModeMarketAndGetVault(isolationMarketInfo, msg.sender);
+            vault = _validateIsolationModeMarketAndGetVault(isolationMarketInfo, fromAccount);
             fromAccount = address(vault);
 
             if (_amountWei == type(uint256).max) {
@@ -177,8 +188,9 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
         uint256 _fromAccountNumber,
         uint256 _amountWei,
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
-    ) external nonReentrant {
+    ) external nonReentrant requireInitialized {
         address fromAccount = msg.sender;
+        IIsolationModeTokenVaultV1 vault;
         if (_isolationModeMarketId != 0) {
             Require.that(
                 _fromAccountNumber != 0,
@@ -186,7 +198,8 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
                 "Invalid fromAccountNumber"
             );
             MarketInfo memory isolationMarketInfo = _getMarketInfo(_isolationModeMarketId);
-            fromAccount = address(_validateIsolationModeMarketAndGetVault(isolationMarketInfo, msg.sender));
+            fromAccount = address(_validateIsolationModeMarketAndGetVault(isolationMarketInfo, fromAccount));
+            vault = IIsolationModeTokenVaultV1(fromAccount);
         }
 
         AccountActionLib.withdraw(
@@ -194,7 +207,7 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
             fromAccount,
             _fromAccountNumber,
             address(this),
-            PAYABLE_MARKET_ID,
+            payableMarketId(),
             IDolomiteStructs.AssetAmount({
                 sign: false,
                 denomination: IDolomiteStructs.AssetDenomination.Wei,
@@ -204,6 +217,10 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
             _balanceCheckFlag
         );
         _unwrapAndSend();
+
+        if (_isolationModeMarketId != 0) {
+            vault.validateWithdrawalFromVaultAfterTransfer(_fromAccountNumber, payableMarketId());
+        }
     }
 
     // ========================================================
@@ -216,7 +233,7 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
         uint256 _marketId,
         uint256 _amountPar,
         EventFlag _eventFlag
-    ) external nonReentrant {
+    ) external nonReentrant requireInitialized {
         MarketInfo memory marketInfo = _getMarketInfo(_marketId);
 
         if (!marketInfo.isIsolationModeAsset && _isolationModeMarketId == 0) {
@@ -264,6 +281,7 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
             assert(marketInfo.isIsolationModeAsset && _isolationModeMarketId == _marketId);
             IIsolationModeTokenVaultV1 vault = _validateIsolationModeMarketAndGetVault(marketInfo, msg.sender);
 
+            // Par == Wei for isolation mode tokens
             marketInfo.token.safeTransferFrom(msg.sender, address(this), _amountPar);
             IERC20(marketInfo.marketToken).safeApprove(address(DOLOMITE_MARGIN()), _amountPar);
 
@@ -296,13 +314,15 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
         uint256 _marketId,
         uint256 _amountPar,
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
-    ) external nonReentrant {
+    ) external nonReentrant requireInitialized {
         MarketInfo memory marketInfo = _getMarketInfo(_marketId);
+        IIsolationModeTokenVaultV1 vault;
         address fromAccount = msg.sender;
 
         if (_isolationModeMarketId != 0) {
             MarketInfo memory isolationMarketInfo = _getMarketInfo(_isolationModeMarketId);
-            fromAccount = address(_validateIsolationModeMarketAndGetVault(isolationMarketInfo, msg.sender));
+            fromAccount = address(_validateIsolationModeMarketAndGetVault(isolationMarketInfo, fromAccount));
+            vault = IIsolationModeTokenVaultV1(fromAccount);
 
             if (_isolationModeMarketId == _marketId) {
                 isolationMarketInfo.factory.enqueueTransferFromDolomiteMargin(fromAccount, _amountPar);
@@ -329,6 +349,22 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
             IDolomiteStructs.AssetDenomination.Par,
             _balanceCheckFlag
         );
+
+        if (_isolationModeMarketId != 0) {
+            vault.validateWithdrawalFromVaultAfterTransfer(_fromAccountNumber, _marketId);
+        }
+    }
+
+    function wrappedPayableToken() public view returns (IWETH) {
+        return IWETH(_getAddress(_WRAPPED_PAYABLE_TOKEN_SLOT));
+    }
+
+    function payableMarketId() public view returns (uint256) {
+        return _getUint256(_PAYABLE_MARKET_ID_SLOT);
+    }
+
+    function isInitialized() public view returns (bool) {
+        return _getUint256(_IS_INITIALIZED_SLOT) == 1;
     }
 
     // ========================================================
@@ -378,7 +414,7 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
                     value: _amountWei
                 })
             );
-            // @follow-up Error message isn't great when depositing to account number 0
+
             vault.validateDepositIntoVaultAfterTransfer(_toAccountNumber, _marketId);
         } else {
             assert(_marketInfo.isIsolationModeAsset && _isolationModeMarketId == _marketId);
@@ -453,12 +489,12 @@ contract DepositWithdrawalRouter is RouterBase, IDepositWithdrawalRouter {
     }
 
     function _wrap() internal {
-        WRAPPED_PAYABLE_TOKEN.deposit{ value: msg.value }();
+        wrappedPayableToken().deposit{ value: msg.value }();
     }
 
     function _unwrapAndSend() internal {
-        uint256 amount = WRAPPED_PAYABLE_TOKEN.balanceOf(address(this));
-        WRAPPED_PAYABLE_TOKEN.withdraw(amount);
+        uint256 amount = wrappedPayableToken().balanceOf(address(this));
+        wrappedPayableToken().withdraw(amount);
         Address.sendValue(payable(msg.sender), amount);
     }
 

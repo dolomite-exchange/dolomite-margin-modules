@@ -1,17 +1,19 @@
 import CoreDeployments from '@dolomite-exchange/dolomite-margin/dist/migrations/deployed.json';
 import {
+  BorrowPositionRouter__factory,
+  DepositWithdrawalRouter__factory,
   DolomiteRegistryImplementation__factory,
   EventEmitterRegistry__factory,
-  GenericTraderProxyV2__factory,
+  IDepositWithdrawalProxy__factory,
   IDolomiteOwner__factory,
   IDolomiteRegistry__factory,
+  IGenericTraderProxyV1__factory,
   ILiquidatorAssetRegistry__factory,
   IPartiallyDelayedMultiSig__factory,
   RegistryProxy__factory,
 } from '@dolomite-exchange/modules-base/src/types';
 import {
   GNOSIS_SAFE_MAP,
-  PAYABLE_TOKEN_MAP,
   SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL,
 } from '@dolomite-exchange/modules-base/src/utils/constants';
 import {
@@ -35,9 +37,7 @@ import {
 } from '@dolomite-exchange/modules-base/test/utils/setup';
 import * as CoreDeployment from '@dolomite-margin/dist/migrations/deployed.json';
 import { ethers } from 'hardhat';
-import {
-  CoreProtocolParams,
-} from 'packages/base/test/utils/core-protocols/core-protocol-abstract';
+import { CoreProtocolParams } from 'packages/base/test/utils/core-protocols/core-protocol-abstract';
 import ModuleDeployments from 'packages/deployment/src/deploy/deployments.json';
 import {
   deployContractAndSave,
@@ -50,9 +50,10 @@ import getScriptName from '../../utils/get-script-name';
 import { deployDolomiteAccountRegistry } from './helpers/deploy-dolomite-account-registry';
 import { deployInterestSetters } from './helpers/deploy-interest-setters';
 import { deployOracleAggregator } from './helpers/deploy-oracle-aggregator';
-import { encodeDolomiteOwnerMigrations } from './helpers/encode-dolomite-owner-migrations';
 import { encodeDolomiteRegistryMigrations } from './helpers/encode-dolomite-registry-migrations';
-import { encodeIsolationModeFreezableLiquidatorMigrations } from './helpers/encode-isolation-mode-freezable-liquidator-migrations';
+import {
+  encodeIsolationModeFreezableLiquidatorMigrations,
+} from './helpers/encode-isolation-mode-freezable-liquidator-migrations';
 import { encodeDolomiteRouterMigrations } from './helpers/encode-dolomite-router-migrations';
 import { getDeployedVaults } from 'packages/base/test/utils/ecosystem-utils/deployed-vaults';
 import { encodeDolomiteAccountRegistryMigrations } from './helpers/encode-dolomite-account-registry-migrations';
@@ -81,6 +82,10 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   const delayedMultiSig = IPartiallyDelayedMultiSig__factory.connect(
     CoreDeployment.PartiallyDelayedMultiSig[network].address,
     gnosisSafeSigner,
+  );
+  const depositWithdrawalProxy = IDepositWithdrawalProxy__factory.connect(
+    CoreDeployment.DepositWithdrawalProxy[network].address,
+    hhUser1,
   );
   const dolomiteMargin = getDolomiteMarginContract<T>(config, hhUser1);
   const expiry = getExpiryContract<T>(config, hhUser1);
@@ -127,7 +132,10 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   );
   const eventEmitterProxy = RegistryProxy__factory.connect(eventEmitterProxyAddress, hhUser1);
 
-  const [ dolomiteAccountRegistryImplementationAddress, dolomiteAccountRegistryProxy ] = await deployDolomiteAccountRegistry(dolomiteMargin, hhUser1, network);
+  const [
+    dolomiteAccountRegistryImplementationAddress,
+    dolomiteAccountRegistryProxy,
+  ] = await deployDolomiteAccountRegistry(dolomiteMargin, hhUser1, network);
 
   const registryImplementationAddress = await deployContractAndSave(
     'DolomiteRegistryImplementation',
@@ -159,18 +167,23 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   const dolomiteRegistry = IDolomiteRegistry__factory.connect(dolomiteRegistryAddress, hhUser1);
   const dolomiteRegistryProxy = RegistryProxy__factory.connect(dolomiteRegistryAddress, hhUser1);
 
-  const genericTraderProxyV2LibAddress = await deployContractAndSave(
-    'GenericTraderProxyV2Lib',
-    [],
-    getMaxDeploymentVersionNameByDeploymentKey('GenericTraderProxyV2Lib', 1),
-  );
-  const genericTraderProxyV2Address = await deployContractAndSave(
-    'GenericTraderProxyV2',
-    [network, dolomiteRegistry.address, dolomiteMargin.address],
-    getMaxDeploymentVersionNameByDeploymentKey('GenericTraderProxy', 2),
-    { GenericTraderProxyV2Lib: genericTraderProxyV2LibAddress },
-  );
-  const genericTraderProxy = GenericTraderProxyV2__factory.connect(genericTraderProxyV2Address, hhUser1) as any;
+  // TODO: uncomment
+  // const genericTraderProxyV2LibAddress = await deployContractAndSave(
+  //   'GenericTraderProxyV2Lib',
+  //   [],
+  //   getMaxDeploymentVersionNameByDeploymentKey('GenericTraderProxyV2Lib', 1),
+  // );
+  // const genericTraderProxyV2Address = await deployContractAndSave(
+  //   'GenericTraderProxyV2',
+  //   [network, dolomiteRegistry.address, dolomiteMargin.address],
+  //   getMaxDeploymentVersionNameByDeploymentKey('GenericTraderProxy', 2),
+  //   { GenericTraderProxyV2Lib: genericTraderProxyV2LibAddress },
+  // );
+  // const genericTraderProxy = GenericTraderProxyV2__factory.connect(genericTraderProxyV2Address, hhUser1) as any;
+  const genericTraderProxy = IGenericTraderProxyV1__factory.connect(
+    CoreDeployment.GenericTraderProxyV1[network].address,
+    hhUser1,
+  ) as any;
 
   const dolomiteMigratorAddress = await deployContractAndSave(
     'DolomiteMigrator',
@@ -191,23 +204,51 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     getMaxDeploymentVersionNameByDeploymentKey('IsolationModeFreezableLiquidatorProxy', 1),
   );
 
-  const depositWithdrawalRouterAddress = await deployContractAndSave(
+  const depositWithdrawalRouterImplementationAddress = await deployContractAndSave(
     'DepositWithdrawalRouter',
-    [PAYABLE_TOKEN_MAP[network].address, dolomiteRegistry.address, dolomiteMargin.address],
-    getMaxDeploymentVersionNameByDeploymentKey('DepositWithdrawalRouter', 1),
+    [dolomiteRegistry.address, dolomiteMargin.address],
+    getMaxDeploymentVersionNameByDeploymentKey('DepositWithdrawalRouterImplementation', 1),
+  );
+  const depositWithdrawalRouterCalldata = await DepositWithdrawalRouter__factory.connect(
+    depositWithdrawalRouterImplementationAddress,
+    hhUser1,
+  ).populateTransaction.initialize();
+  const depositWithdrawalRouterProxyAddress = await deployContractAndSave(
+    'RouterProxy',
+    [depositWithdrawalRouterImplementationAddress, dolomiteMargin.address, depositWithdrawalRouterCalldata.data!],
+    'DepositWithdrawalRouterProxy',
   );
 
-  const borrowPositionRouterAddress = await deployContractAndSave(
+  const borrowPositionRouterImplementationAddress = await deployContractAndSave(
     'BorrowPositionRouter',
     [dolomiteRegistry.address, dolomiteMargin.address],
-    getMaxDeploymentVersionNameByDeploymentKey('BorrowPositionRouter', 1),
+    getMaxDeploymentVersionNameByDeploymentKey('BorrowPositionRouterImplementation', 1),
+  );
+  const borrowPositionRouterCalldata = await BorrowPositionRouter__factory.connect(
+    borrowPositionRouterImplementationAddress,
+    hhUser1,
+  ).populateTransaction.initialize();
+  const borrowPositionRouterProxyAddress = await deployContractAndSave(
+    'RouterProxy',
+    [borrowPositionRouterImplementationAddress, dolomiteMargin.address, borrowPositionRouterCalldata.data!],
+    'BorrowPositionRouterProxy',
   );
 
-  const genericTraderRouterAddress = await deployContractAndSave(
-    'GenericTraderRouter',
-    [dolomiteRegistry.address, dolomiteMargin.address],
-    getMaxDeploymentVersionNameByDeploymentKey('GenericTraderRouter', 1),
-  );
+  // TODO: uncomment
+  // const genericTraderRouterImplementationAddress = await deployContractAndSave(
+  //   'GenericTraderRouter',
+  //   [dolomiteRegistry.address, dolomiteMargin.address],
+  //   getMaxDeploymentVersionNameByDeploymentKey('GenericTraderRouterImplementation', 1),
+  // );
+  // const genericTraderRouterCalldata = await GenericTraderRouter__factory.connect(
+  //   genericTraderRouterImplementationAddress,
+  //   hhUser1,
+  // ).populateTransaction.initialize();
+  // const genericTraderRouterProxyAddress = await deployContractAndSave(
+  //   'RouterProxy',
+  //   [genericTraderRouterImplementationAddress, dolomiteMargin.address, genericTraderRouterCalldata.data!],
+  //   'GenericTraderRouterProxy',
+  // );
 
   const safeDelegateCallLibAddress = await deployContractAndSave(
     'SafeDelegateCallLib',
@@ -242,14 +283,16 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   const core = {
     config,
     delayedMultiSig,
+    depositWithdrawalProxy,
     dolomiteMargin,
     dolomiteRegistry,
     governance,
     hhUser1,
     liquidatorAssetRegistry,
-    genericTraderProxy, // @follow-up Corey can you double check how I deploy the new generic trader proxy?
+    genericTraderProxy,
     gnosisSafe: gnosisSafeSigner,
     gnosisSafeAddress: gnosisSafeAddress,
+    network: config.network,
     ownerAdapterV1: dolomiteOwnerV1,
     ownerAdapterV2: dolomiteOwnerV1, // TODO: fix after review + test
   } as CoreProtocolType<T>;
@@ -290,13 +333,17 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   const deployedVaults = await getDeployedVaults(config, dolomiteMargin, governance);
   await encodeDolomiteRouterMigrations(
     core,
-    [depositWithdrawalRouterAddress, borrowPositionRouterAddress, genericTraderRouterAddress],
+    DepositWithdrawalRouter__factory.connect(depositWithdrawalRouterProxyAddress, hhUser1),
+    // TODO: uncomment
+    // [depositWithdrawalRouterProxyAddress, borrowPositionRouterProxyAddress, genericTraderRouterProxyAddress],
+    [depositWithdrawalRouterProxyAddress, borrowPositionRouterProxyAddress],
     deployedVaults,
     transactions,
   );
 
   // This must be the last encoded transaction
-  await encodeDolomiteOwnerMigrations(dolomiteOwnerV1, transactions, core);
+  // TODO: uncomment
+  // await encodeDolomiteOwnerMigrations(dolomiteOwnerV1, transactions, core);
 
   return {
     core: {
@@ -305,7 +352,8 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
         network,
       },
     } as any,
-    invariants: async () => {},
+    invariants: async () => {
+    },
     scriptName: getScriptName(__filename),
     upload: {
       transactions,

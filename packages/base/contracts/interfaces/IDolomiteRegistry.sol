@@ -25,9 +25,9 @@ import { IDolomiteAccountRegistry } from "./IDolomiteAccountRegistry.sol";
 import { IDolomiteMigrator } from "./IDolomiteMigrator.sol";
 import { IEventEmitterRegistry } from "./IEventEmitterRegistry.sol";
 import { IExpiry } from "./IExpiry.sol";
-import { IGenericTraderProxyV1 } from "./IGenericTraderProxyV1.sol";
 import { ILiquidatorAssetRegistry } from "./ILiquidatorAssetRegistry.sol";
 import { IDolomitePriceOracle } from "../protocol/interfaces/IDolomitePriceOracle.sol";
+import { IGenericTraderProxyV2 } from "../proxies/interfaces/IGenericTraderProxyV2.sol";
 
 
 /**
@@ -160,7 +160,7 @@ interface IDolomiteRegistry {
     /**
      * @return  The address of the generic trader proxy for making zaps
      */
-    function genericTraderProxy() external view returns (IGenericTraderProxyV1);
+    function genericTraderProxy() external view returns (IGenericTraderProxyV2);
 
     /**
      * @return  The address of the expiry contract
@@ -218,7 +218,7 @@ interface IDolomiteRegistry {
     function slippageToleranceForPauseSentinelBase() external pure returns (uint256);
 
     /**
-     * 
+     *
      * @param  _trader  The address of the trader
      * @return  Whether the trader is trusted
      */

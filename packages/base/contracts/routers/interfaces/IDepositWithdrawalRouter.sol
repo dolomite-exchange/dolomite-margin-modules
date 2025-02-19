@@ -38,8 +38,15 @@ interface IDepositWithdrawalRouter is IRouterBase {
     }
 
     /**
-     * 
-     * @param  _isolationModeMarketId  The market ID of the isolation mode token vault 
+     * Initializes the this contract using the payable token
+     *
+     * @param  _payableToken    The address of the wrapped payable token for this network
+     */
+    function ownerLazyInitialize(address _payableToken) external;
+
+    /**
+     *
+     * @param  _isolationModeMarketId  The market ID of the isolation mode token vault
      *                                 (0 if not using isolation mode)
      * @param  _toAccountNumber        The account number to deposit into
      * @param  _marketId               The ID of the market being deposited
@@ -50,7 +57,7 @@ interface IDepositWithdrawalRouter is IRouterBase {
      */
     function depositWei(
         uint256 _isolationModeMarketId,
-        uint256 _toAccountNumber, 
+        uint256 _toAccountNumber,
         uint256 _marketId,
         uint256 _amountWei,
         EventFlag _eventFlag
@@ -58,7 +65,7 @@ interface IDepositWithdrawalRouter is IRouterBase {
 
     /**
      * @notice Deposits native ETH by wrapping it to WETH first
-     * 
+     *
      * @param  _isolationModeMarketId     The market ID of the isolation mode token vault
      *                                    (0 if not using isolation mode)
      * @param  _toAccountNumber           The account number to deposit the wrapped ETH into
@@ -73,9 +80,9 @@ interface IDepositWithdrawalRouter is IRouterBase {
 
 
     /**
-     * 
+     *
      * @param  _isolationModeMarketId   The market ID of the isolation mode token vault
-     *                                  (0 if not using isolation mode)  
+     *                                  (0 if not using isolation mode)
      * @param  _toAccountNumber         The account number to deposit into
      * @param  _marketId                The ID of the market being deposited
      * @param  _amountPar               The amount in Par units to deposit
@@ -85,13 +92,13 @@ interface IDepositWithdrawalRouter is IRouterBase {
     function depositPar(
         uint256 _isolationModeMarketId,
         uint256 _toAccountNumber,
-        uint256 _marketId, 
+        uint256 _marketId,
         uint256 _amountPar,
         EventFlag _eventFlag
     ) external;
 
     /**
-     * 
+     *
      * @param  _isolationModeMarketId   The market ID of the isolation mode token vault
      *                                  (0 if not using isolation mode)
      * @param  _fromAccountNumber       The account number to withdraw from
@@ -111,7 +118,7 @@ interface IDepositWithdrawalRouter is IRouterBase {
 
     /**
      * @notice Withdraws WETH and unwraps it to native ETH
-     * 
+     *
      * @param  _isolationModeMarketId   The market ID of the isolation mode token vault
      *                                  (0 if not using isolation mode)
      * @param  _fromAccountNumber       The account number to withdraw from
@@ -127,7 +134,7 @@ interface IDepositWithdrawalRouter is IRouterBase {
     ) external;
 
     /**
-     * 
+     *
      * @param  _isolationModeMarketId   The market ID of the isolation mode token vault
      *                                  (0 if not using isolation mode)
      * @param  _fromAccountNumber       The account number to withdraw from
