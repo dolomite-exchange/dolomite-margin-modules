@@ -301,7 +301,7 @@ export async function enableInterestAccrual<T extends NetworkType>(
 }
 
 export async function setupWBERABalance(
-  core: CoreProtocolBerachainBartio,
+  core: CoreProtocolBerachain | CoreProtocolBerachainBartio,
   signer: SignerWithAddressWithSafety,
   amount: BigNumberish,
   spender: { address: string },
