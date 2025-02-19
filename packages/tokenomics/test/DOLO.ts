@@ -69,6 +69,7 @@ describe('DOLO', () => {
   describe('#burnFrom', () => {
     it('should work normally', async () => {
       const amount = parseEther('100');
+      await dolo.connect(core.governance).ownerStart();
       await dolo.connect(core.hhUser5).transfer(core.hhUser1.address, amount);
 
       await dolo.connect(core.hhUser1).approve(core.hhUser5.address, amount);
@@ -87,7 +88,21 @@ describe('DOLO', () => {
   });
 
   describe('#transfer', () => {
+    it('should work normally', async () => {
+      await dolo.connect(core.governance).ownerStart();
+      await dolo.connect(core.hhUser5).transfer(core.hhUser1.address, ONE_BI);
+      expect(await dolo.balanceOf(core.hhUser1.address)).to.eq(ONE_BI);
+    });
+
+    it('should fail if not started', async () => {
+      await expectThrow(
+        dolo.connect(core.hhUser1).transfer(core.hhUser5.address, ONE_BI),
+        'DOLO: Not started'
+      );
+    });
+
     it('should fail if transferring to the dolo address', async () => {
+      await dolo.connect(core.governance).ownerStart();
       await expectThrow(
         dolo.connect(core.hhUser1).transfer(dolo.address, ONE_BI),
         'DOLO: Invalid recipient'
@@ -140,6 +155,30 @@ describe('DOLO', () => {
     it('should fail if not called by owner', async () => {
       await expectThrow(
         dolo.connect(core.hhUser1).ownerSetMinter(core.hhUser5.address, true),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+      );
+    });
+  });
+
+  describe('#ownerStart', () => {
+    it('should work normally', async () => {
+      expect(await dolo.hasStarted()).to.be.false;
+      const res = await dolo.connect(core.governance).ownerStart();
+      await expectEvent(dolo, res, 'Started', {});
+      expect(await dolo.hasStarted()).to.be.true;
+    });
+
+    it('should fail if already started', async () => {
+      await dolo.connect(core.governance).ownerStart();
+      await expectThrow(
+        dolo.connect(core.governance).ownerStart(),
+        'DOLO: Already started'
+      );
+    });
+
+    it('should fail if not called by owner', async () => {
+      await expectThrow(
+        dolo.connect(core.hhUser1).ownerStart(),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
       );
     });

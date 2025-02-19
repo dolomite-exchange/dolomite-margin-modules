@@ -31,14 +31,19 @@ interface IDOLO {
 
     event CCIPAdminSet(address ccipAdmin);
     event MinterSet(address minter, bool isMinter);
+    event Started();
 
     function ownerSetCCIPAdmin(address _ccipAdmin) external;
 
     function ownerSetMinter(address _minter, bool _isMinter) external;
+
+    function ownerStart() external;
 
     function getCCIPAdmin() external view returns (address);
 
     function isMinter(address _minter) external view returns (bool);
 
     function owner() external view returns (address);
+
+    function hasStarted() external view returns (bool);
 }

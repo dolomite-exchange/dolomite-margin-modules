@@ -21,7 +21,6 @@
 pragma solidity ^0.8.9;
 
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
-import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import { BaseClaim } from "../BaseClaim.sol";
 
 

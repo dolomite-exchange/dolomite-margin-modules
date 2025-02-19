@@ -47,6 +47,7 @@ contract DOLO is ERC20Burnable, OnlyDolomiteMargin, IDOLO {
 
     address private _ccipAdmin;
     mapping(address => bool) private _mintersMap;
+    bool private _started;
 
     // ==================================================================
     // ======================= Modifiers ===============================
@@ -98,6 +99,16 @@ contract DOLO is ERC20Burnable, OnlyDolomiteMargin, IDOLO {
         _ownerSetMinter(_minter, _isMinter);
     }
 
+    function ownerStart() external onlyDolomiteMarginOwner(msg.sender) {
+        Require.that(
+            !_started,
+            _FILE,
+            "Already started"
+        );
+        _started = true;
+        emit Started();
+    }
+
     // ==================================================================
     // ======================== View Functions ==========================
     // ==================================================================
@@ -114,11 +125,20 @@ contract DOLO is ERC20Burnable, OnlyDolomiteMargin, IDOLO {
         return DOLOMITE_MARGIN_OWNER();
     }
 
+    function hasStarted() external view returns (bool) {
+        return _started;
+    }
+
     // ==================================================================
     // ======================= Internal Functions =======================
     // ==================================================================
 
     function _transfer(address _from, address _to, uint256 _amount) internal override {
+        Require.that(
+            _started,
+            _FILE,
+            "Not started"
+        );
         Require.that(
             _to != address(this),
             _FILE,
