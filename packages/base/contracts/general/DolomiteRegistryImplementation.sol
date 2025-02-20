@@ -127,6 +127,14 @@ contract DolomiteRegistryImplementation is
         _ownerSetExpiry(_expiry);
     }
 
+    function ownerSetFeeAgent(
+        address _feeAgent
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetFeeAgent(_feeAgent);
+    }
+
     function ownerSetSlippageToleranceForPauseSentinel(
         uint256 _slippageToleranceForPauseSentinel
     )
@@ -321,6 +329,19 @@ contract DolomiteRegistryImplementation is
 
         _setAddress(_EXPIRY_SLOT, _expiry);
         emit ExpirySet(_expiry);
+    }
+
+     function _ownerSetFeeAgent(
+        address _feeAgent
+    ) internal {
+        Require.that(
+            _feeAgent != address(0),
+            _FILE,
+            "Invalid feeAgent"
+        );
+
+        _setAddress(_FEE_AGENT_SLOT, _feeAgent);
+        emit FeeAgentSet(_feeAgent);
     }
 
     function _ownerSetSlippageToleranceForPauseSentinel(
