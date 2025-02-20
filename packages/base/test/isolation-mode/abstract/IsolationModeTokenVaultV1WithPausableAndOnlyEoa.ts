@@ -13,6 +13,7 @@ import {
 import {
   createContractWithAbi,
   createContractWithLibrary,
+  createContractWithName,
   createTestToken,
   depositIntoDolomiteMargin,
 } from '../../../src/utils/dolomite-utils';
@@ -22,7 +23,7 @@ import { revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectProtocolBalance, expectThrow, expectWalletBalance } from '../../utils/assertions';
 
 import { CoreProtocolArbitrumOne } from '../../utils/core-protocols/core-protocol-arbitrum-one';
-import { createIsolationModeTokenVaultV1ActionsImpl } from '../../utils/dolomite';
+import { createAndUpgradeDolomiteRegistry, createIsolationModeTokenVaultV1ActionsImpl } from '../../utils/dolomite';
 import { createTestIsolationModeVaultFactory } from '../../utils/ecosystem-utils/testers';
 import {
   getDefaultCoreProtocolConfig,
@@ -59,6 +60,16 @@ describe('IsolationModeTokenVaultV1WithPausableAndOnlyEoa', () => {
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
+    await createAndUpgradeDolomiteRegistry(core);
+    const genericTraderLib = await createContractWithName('GenericTraderProxyV2Lib', []);
+    const genericTraderProxy = await createContractWithLibrary(
+      'GenericTraderProxyV2',
+      { GenericTraderProxyV2Lib: genericTraderLib.address },
+      [Network.ArbitrumOne, core.dolomiteRegistry.address, core.dolomiteMargin.address]
+    );
+    await core.dolomiteRegistry.ownerSetGenericTraderProxy(genericTraderProxy.address);
+    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(genericTraderProxy.address, true);
+
     underlyingToken = await createTestToken();
     const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
     userVaultImplementation = await createContractWithLibrary<TestIsolationModeTokenVaultV1WithPausableAndOnlyEoa>(
@@ -80,8 +91,8 @@ describe('IsolationModeTokenVaultV1WithPausableAndOnlyEoa', () => {
       TestIsolationModeUnwrapperTraderV2__factory.bytecode,
       [core.tokens.usdc.address, factory.address, core.dolomiteMargin.address, core.dolomiteRegistry.address],
     );
-    await factory.connect(core.governance).ownerInitialize([tokenUnwrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
+    await factory.connect(core.governance).ownerInitialize([tokenUnwrapper.address]);
 
     solidUser = core.hhUser5;
 
@@ -242,7 +253,7 @@ describe('IsolationModeTokenVaultV1WithPausableAndOnlyEoa', () => {
       );
       await expectThrow(
         doAnything.callAnything(transaction.to!, transaction.data!),
-        `IsolationModeVaultV1Pausable&Eoa: Only EOA can call <${doAnything.address.toLowerCase()}>`,
+        `IsolationModeVaultV1Pausable&Eoa: Only EOA or converter can call <${doAnything.address.toLowerCase()}>`,
       );
     });
   });
@@ -264,7 +275,7 @@ describe('IsolationModeTokenVaultV1WithPausableAndOnlyEoa', () => {
       );
       await expectThrow(
         doAnything.callAnything(transaction.to!, transaction.data!),
-        `IsolationModeVaultV1Pausable&Eoa: Only EOA can call <${doAnything.address.toLowerCase()}>`,
+        `IsolationModeVaultV1Pausable&Eoa: Only EOA or converter can call <${doAnything.address.toLowerCase()}>`,
       );
     });
   });
@@ -294,7 +305,7 @@ describe('IsolationModeTokenVaultV1WithPausableAndOnlyEoa', () => {
       );
       await expectThrow(
         doAnything.callAnything(transaction.to!, transaction.data!),
-        `IsolationModeVaultV1Pausable&Eoa: Only EOA can call <${doAnything.address.toLowerCase()}>`,
+        `IsolationModeVaultV1Pausable&Eoa: Only EOA or converter can call <${doAnything.address.toLowerCase()}>`,
       );
     });
   });
@@ -318,7 +329,7 @@ describe('IsolationModeTokenVaultV1WithPausableAndOnlyEoa', () => {
       );
       await expectThrow(
         doAnything.callAnything(transaction.to!, transaction.data!),
-        `IsolationModeVaultV1Pausable&Eoa: Only EOA can call <${doAnything.address.toLowerCase()}>`,
+        `IsolationModeVaultV1Pausable&Eoa: Only EOA or converter can call <${doAnything.address.toLowerCase()}>`,
       );
     });
   });
@@ -350,7 +361,7 @@ describe('IsolationModeTokenVaultV1WithPausableAndOnlyEoa', () => {
       );
       await expectThrow(
         doAnything.callAnything(transaction.to!, transaction.data!),
-        `IsolationModeVaultV1Pausable&Eoa: Only EOA can call <${doAnything.address.toLowerCase()}>`,
+        `IsolationModeVaultV1Pausable&Eoa: Only EOA or converter can call <${doAnything.address.toLowerCase()}>`,
       );
     });
   });
@@ -375,7 +386,7 @@ describe('IsolationModeTokenVaultV1WithPausableAndOnlyEoa', () => {
       );
       await expectThrow(
         doAnything.callAnything(transaction.to!, transaction.data!),
-        `IsolationModeVaultV1Pausable&Eoa: Only EOA can call <${doAnything.address.toLowerCase()}>`,
+        `IsolationModeVaultV1Pausable&Eoa: Only EOA or converter can call <${doAnything.address.toLowerCase()}>`,
       );
     });
   });
@@ -419,7 +430,7 @@ describe('IsolationModeTokenVaultV1WithPausableAndOnlyEoa', () => {
       );
       await expectThrow(
         doAnything.callAnything(transaction.to!, transaction.data!),
-        `IsolationModeVaultV1Pausable&Eoa: Only EOA can call <${doAnything.address.toLowerCase()}>`,
+        `IsolationModeVaultV1Pausable&Eoa: Only EOA or converter can call <${doAnything.address.toLowerCase()}>`,
       );
     });
   });
@@ -462,7 +473,7 @@ describe('IsolationModeTokenVaultV1WithPausableAndOnlyEoa', () => {
       );
       await expectThrow(
         doAnything.callAnything(transaction.to!, transaction.data!),
-        `IsolationModeVaultV1Pausable&Eoa: Only EOA can call <${doAnything.address.toLowerCase()}>`,
+        `IsolationModeVaultV1Pausable&Eoa: Only EOA or converter can call <${doAnything.address.toLowerCase()}>`,
       );
     });
   });
