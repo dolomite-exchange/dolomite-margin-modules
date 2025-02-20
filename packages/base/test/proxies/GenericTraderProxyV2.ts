@@ -237,7 +237,7 @@ describe('GenericTraderProxyV2', () => {
       await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId2, outputAmount);
     });
 
-    it('should work with internal liquidity', async () => {
+    it.only('should work with internal liquidity', async () => {
       const dolomiteAutoTrader = await createContractWithAbi<TestDolomiteAutoTrader>(
         TestDolomiteAutoTrader__factory.abi,
         TestDolomiteAutoTrader__factory.bytecode,

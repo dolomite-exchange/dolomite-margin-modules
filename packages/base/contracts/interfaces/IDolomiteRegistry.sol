@@ -49,6 +49,7 @@ interface IDolomiteRegistry {
     event BorrowPositionProxySet(address indexed _borrowPositionProxy);
     event GenericTraderProxySet(address indexed _genericTraderProxy);
     event ExpirySet(address indexed _expiry);
+    event FeeAgentSet(address indexed _feeAgent);
     event SlippageToleranceForPauseSentinelSet(uint256 _slippageTolerance);
     event LiquidatorAssetRegistrySet(address indexed _liquidatorAssetRegistry);
     event EventEmitterSet(address indexed _eventEmitter);
@@ -83,6 +84,12 @@ interface IDolomiteRegistry {
      * @param  _expiry  The new address of the expiry contract
      */
     function ownerSetExpiry(address _expiry) external;
+
+    /**
+     *
+     * @param  _feeAgent  The new address of the fee agent
+     */
+    function ownerSetFeeAgent(address _feeAgent) external;
 
     /**
      *
@@ -181,6 +188,11 @@ interface IDolomiteRegistry {
      * @return The address of the emitter contract that can emit certain events for indexing
      */
     function eventEmitter() external view returns (IEventEmitterRegistry);
+
+    /**
+     * @return The address of the fee agent
+     */
+    function feeAgent() external view returns (address);
 
     /**
      * @return The address of the Chainlink price oracle that's compatible with DolomiteMargin
