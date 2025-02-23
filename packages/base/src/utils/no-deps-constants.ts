@@ -54,6 +54,35 @@ export const NETWORK_TO_NETWORK_NAME_MAP: Record<Network, NetworkName> = {
   [Network.XLayer]: NetworkName.XLayer,
 };
 
+/**
+ * Generated via `safe_hashes --list-networks`
+ */
+export const NETWORK_TO_SAFE_HASH_NAME_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: 'arbitrum',
+  [Network.Base]: 'base',
+  [Network.Berachain]: 'berachain',
+  [Network.BerachainBartio]: undefined,
+  [Network.BerachainCartio]: undefined,
+  [Network.Ink]: undefined,
+  [Network.Mantle]: 'mantle',
+  [Network.PolygonZkEvm]: 'polygon-zkevm',
+  [Network.SuperSeed]: undefined,
+  [Network.XLayer]: 'xlayer',
+};
+
+export const NETWORK_TO_MULTI_SEND_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0xA1dabEF33b3B82c7814B6D82A79e50F4AC44102B',
+  [Network.Base]: '0xA1dabEF33b3B82c7814B6D82A79e50F4AC44102B',
+  [Network.Berachain]: '0xA1dabEF33b3B82c7814B6D82A79e50F4AC44102B',
+  [Network.BerachainBartio]: '0xA1dabEF33b3B82c7814B6D82A79e50F4AC44102B',
+  [Network.BerachainCartio]: '0xA1dabEF33b3B82c7814B6D82A79e50F4AC44102B',
+  [Network.Ink]: '0xA1dabEF33b3B82c7814B6D82A79e50F4AC44102B',
+  [Network.Mantle]: '0xA1dabEF33b3B82c7814B6D82A79e50F4AC44102B',
+  [Network.PolygonZkEvm]: '0xA1dabEF33b3B82c7814B6D82A79e50F4AC44102B',
+  [Network.SuperSeed]: '0xA1dabEF33b3B82c7814B6D82A79e50F4AC44102B',
+  [Network.XLayer]: '0xA1dabEF33b3B82c7814B6D82A79e50F4AC44102B',
+}
+
 const typedNetworkIdString = process.env.NETWORK_ID || Network.ArbitrumOne;
 export const NETWORK_ID: Network = Network[typedNetworkIdString as keyof typeof Network] || Network.ArbitrumOne;
 
