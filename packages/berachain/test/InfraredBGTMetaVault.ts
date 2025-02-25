@@ -204,7 +204,7 @@ describe('InfraredBGTMetaVault', () => {
     });
   });
 
-  describe('#stake', () => {
+  describe.only('#stake', () => {
     it('should work normally (infrared is default)', async () => {
       await metaVault.setDefaultRewardVaultTypeByAsset(underlyingToken.address, RewardVaultType.Infrared);
       await beraVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
@@ -212,6 +212,9 @@ describe('InfraredBGTMetaVault', () => {
 
       await expectProtocolBalance(core, beraVault, defaultAccountNumber, marketId, amountWei);
       expect(await infraredRewardVault.balanceOf(metaVaultAddress)).to.equal(amountWei);
+      expect(
+        await metaVault.getStakedBalanceByAssetAndType(underlyingToken.address, RewardVaultType.Infrared)
+      ).to.eq(amountWei);
     });
 
     it('should work normally not on deposit with infrared', async () => {
@@ -219,11 +222,17 @@ describe('InfraredBGTMetaVault', () => {
       await beraVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
 
       await beraVault.unstake(RewardVaultType.Infrared, amountWei);
+      expect(
+        await metaVault.getStakedBalanceByAssetAndType(underlyingToken.address, RewardVaultType.Infrared)
+      ).to.eq(ZERO_BI);
 
       await beraVault.stake(RewardVaultType.Infrared, amountWei);
       await expectProtocolBalance(core, beraVault, defaultAccountNumber, marketId, amountWei);
       await expectWalletBalance(beraVault, underlyingToken, ZERO_BI);
       expect(await infraredRewardVault.balanceOf(metaVault.address)).to.equal(amountWei);
+      expect(
+        await metaVault.getStakedBalanceByAssetAndType(underlyingToken.address, RewardVaultType.Infrared)
+      ).to.eq(amountWei);
     });
 
     it('should fail if not infrared', async () => {
@@ -245,8 +254,14 @@ describe('InfraredBGTMetaVault', () => {
     it('should work normally with infrared', async () => {
       await metaVault.setDefaultRewardVaultTypeByAsset(underlyingToken.address, RewardVaultType.Infrared);
       await beraVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      expect(
+        await metaVault.getStakedBalanceByAssetAndType(underlyingToken.address, RewardVaultType.Infrared)
+      ).to.eq(amountWei);
 
       await beraVault.unstake(RewardVaultType.Infrared, amountWei);
+      expect(
+        await metaVault.getStakedBalanceByAssetAndType(underlyingToken.address, RewardVaultType.Infrared)
+      ).to.eq(ZERO_BI);
       await expectProtocolBalance(core, beraVault, defaultAccountNumber, marketId, amountWei);
       await expectWalletBalance(beraVault, underlyingToken, amountWei);
       expect(await infraredRewardVault.balanceOf(metaVault.address)).to.equal(ZERO_BI);
@@ -354,6 +369,7 @@ describe('InfraredBGTMetaVault', () => {
     it('should work if rewards are available', async () => {
       await metaVault.setDefaultRewardVaultTypeByAsset(underlyingToken.address, RewardVaultType.Infrared);
       await beraVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      expect(await metaVault.getStakedBalanceByAssetAndType(underlyingToken.address, RewardVaultType.Infrared)).to.equal(amountWei);
 
       await increase(10 * ONE_DAY_SECONDS);
       await beraVault.exit();
@@ -370,6 +386,9 @@ describe('InfraredBGTMetaVault', () => {
       expect(await iBgtVault.underlyingBalanceOf()).to.equal(balance);
       expect(await core.tokens.iBgt.balanceOf(metaVault.address)).to.eq(ZERO_BI);
       await expectProtocolBalance(core, iBgtVault, defaultAccountNumber, iBgtMarketId, balance);
+      expect(
+        await metaVault.getStakedBalanceByAssetAndType(underlyingToken.address, RewardVaultType.Infrared)
+      ).to.equal(ZERO_BI);
     });
 
     it('should work if no rewards are available', async () => {

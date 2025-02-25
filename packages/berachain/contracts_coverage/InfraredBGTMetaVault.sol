@@ -155,7 +155,7 @@ contract InfraredBGTMetaVault is ProxyContractHelpers, IBaseMetaVault {
         _setUint256InNestedMap(_STAKED_BALANCES_SLOT, _asset, uint256(defaultType), 0);
 
         uint256 balance = IERC20(_asset).balanceOf(address(this));
-        /*assert(balance > stakedBalance);*/
+        /*assert(balance >= stakedBalance);*/
         IERC20(_asset).safeTransfer(msg.sender, stakedBalance);
 
         uint256 reward = token.balanceOf(address(this)) - balanceBefore;
