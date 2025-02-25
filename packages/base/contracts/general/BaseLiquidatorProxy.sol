@@ -31,6 +31,7 @@ import { DolomiteMarginMath } from "../protocol/lib/DolomiteMarginMath.sol";
 import { Require } from "../protocol/lib/Require.sol";
 import { TypesLib } from "../protocol/lib/TypesLib.sol";
 
+
 /**
  * @title   BaseLiquidatorProxy
  * @author  Dolomite

@@ -20,24 +20,24 @@
 
 pragma solidity ^0.8.9;
 
-import { DolomiteERC4626WithPayable } from "../general/DolomiteERC4626WithPayable.sol";
-import { InternalSafeDelegateCallLib } from "../lib/InternalSafeDelegateCallLib.sol";
+import { DolomiteMarginMath } from "./DolomiteMarginMath.sol";
 
 
 /**
- * @title   TestDolomiteERC4626WithPayable
+ * @title   Time
  * @author  Dolomite
  *
- * @notice  Test implementation for exposing areas for coverage testing
+ * Library for dealing with time, assuming timestamps fit within 32 bits (valid until year 2106)
  */
-contract TestDolomiteERC4626WithPayable is DolomiteERC4626WithPayable {
-    using InternalSafeDelegateCallLib for address;
+library Time {
 
-    // ============ Functions ============
+    // ============ Library Functions ============
 
-    function callFunctionAndTriggerReentrancy(
-        bytes calldata _callDataWithSelector
-    ) external payable nonReentrant {
-        address(this).safeDelegateCall(_callDataWithSelector);
+    function currentTime()
+        internal
+        view
+        returns (uint32)
+    {
+        return DolomiteMarginMath.to32(block.timestamp);
     }
 }

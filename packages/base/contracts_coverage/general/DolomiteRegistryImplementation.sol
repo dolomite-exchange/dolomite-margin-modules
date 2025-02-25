@@ -29,11 +29,11 @@ import { IDolomiteMigrator } from "../interfaces/IDolomiteMigrator.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IEventEmitterRegistry } from "../interfaces/IEventEmitterRegistry.sol";
 import { IExpiry } from "../interfaces/IExpiry.sol";
-import { IGenericTraderProxyV1 } from "../interfaces/IGenericTraderProxyV1.sol";
 import { ILiquidatorAssetRegistry } from "../interfaces/ILiquidatorAssetRegistry.sol";
 import { ValidationLib } from "../lib/ValidationLib.sol";
 import { IDolomitePriceOracle } from "../protocol/interfaces/IDolomitePriceOracle.sol";
 import { Require } from "../protocol/lib/Require.sol";
+import { IGenericTraderProxyV2 } from "../proxies/interfaces/IGenericTraderProxyV2.sol";
 
 
 /**
@@ -58,6 +58,7 @@ contract DolomiteRegistryImplementation is
     bytes32 private constant _DOLOMITE_MIGRATOR_SLOT = bytes32(uint256(keccak256("eip1967.proxy.dolomiteMigrator")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _EVENT_EMITTER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.eventEmitter")) - 1);
     bytes32 private constant _EXPIRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.expiry")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _FEE_AGENT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.feeAgent")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _GENERIC_TRADER_PROXY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.genericTraderProxy")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _LIQUIDATOR_ASSET_REGISTRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.liquidatorAssetRegistry")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _ORACLE_AGGREGATOR_SLOT = bytes32(uint256(keccak256("eip1967.proxy.oracleAggregator")) - 1); // solhint-disable-line max-line-length
@@ -125,6 +126,14 @@ contract DolomiteRegistryImplementation is
     external
     onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetExpiry(_expiry);
+    }
+
+    function ownerSetFeeAgent(
+        address _feeAgent
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetFeeAgent(_feeAgent);
     }
 
     function ownerSetSlippageToleranceForPauseSentinel(
@@ -214,8 +223,8 @@ contract DolomiteRegistryImplementation is
         return IBorrowPositionProxyV2(_getAddress(_BORROW_POSITION_PROXY_SLOT));
     }
 
-    function genericTraderProxy() public view returns (IGenericTraderProxyV1) {
-        return IGenericTraderProxyV1(_getAddress(_GENERIC_TRADER_PROXY_SLOT));
+    function genericTraderProxy() public view returns (IGenericTraderProxyV2) {
+        return IGenericTraderProxyV2(_getAddress(_GENERIC_TRADER_PROXY_SLOT));
     }
 
     function expiry() public view returns (IExpiry) {
@@ -232,6 +241,10 @@ contract DolomiteRegistryImplementation is
 
     function eventEmitter() public view returns (IEventEmitterRegistry) {
         return IEventEmitterRegistry(_getAddress(_EVENT_EMITTER_SLOT));
+    }
+
+    function feeAgent() public view returns (address) {
+        return _getAddress(_FEE_AGENT_SLOT);
     }
 
     function chainlinkPriceOracle() public view returns (IDolomitePriceOracle) {
@@ -320,6 +333,20 @@ contract DolomiteRegistryImplementation is
 
         _setAddress(_EXPIRY_SLOT, _expiry);
         emit ExpirySet(_expiry);
+    }
+
+     function _ownerSetFeeAgent(
+        address _feeAgent
+    ) internal {
+        if (_feeAgent != address(0)) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            _feeAgent != address(0),
+            _FILE,
+            "Invalid feeAgent"
+        );
+
+        _setAddress(_FEE_AGENT_SLOT, _feeAgent);
+        emit FeeAgentSet(_feeAgent);
     }
 
     function _ownerSetSlippageToleranceForPauseSentinel(
