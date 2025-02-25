@@ -95,7 +95,7 @@ abstract contract LiquidatorProxyBase is HasLiquidatorRegistry {
 
     // ============ Fields ============
 
-    uint256 public chainId;
+    uint256 public immutable chainId;
 
     // ============ Internal Functions ============
 

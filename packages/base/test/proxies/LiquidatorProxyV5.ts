@@ -9,8 +9,10 @@ import {
 } from '../utils/setup';
 import {
   TestLiquidatorProxyV5,
+  TestLiquidatorProxyV5__factory,
 } from 'packages/base/src/types';
 import {
+  createContractWithAbi,
   createContractWithLibrary,
   createContractWithName,
   depositIntoDolomiteMargin,
@@ -26,6 +28,7 @@ import { getLiquidateIsolationModeZapPath, getSimpleZapParams, getUnwrapZapParam
 import { expect } from 'chai';
 import { setNextBlockTimestamp } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
 import { ARBIsolationModeTokenVaultV1__factory } from 'packages/arb/src/types';
+import { UpgradeableProxy__factory } from 'packages/tokenomics/src/types';
 
 const amountWei = parseEther('1000');
 const outputAmount = parseEther('.5');
@@ -49,7 +52,7 @@ describe('LiquidatorProxyV5', () => {
     await disableInterestAccrual(core, core.marketIds.arb);
 
     const genericTraderLib = await createContractWithName('GenericTraderProxyV2Lib', []);
-    liquidatorProxy = await createContractWithLibrary(
+    const liquidatorProxyImplementation = await createContractWithLibrary(
       'TestLiquidatorProxyV5',
       { GenericTraderProxyV2Lib: genericTraderLib.address },
       [
@@ -59,6 +62,16 @@ describe('LiquidatorProxyV5', () => {
         core.dolomiteRegistry.address,
         core.liquidatorAssetRegistry.address,
       ]
+    );
+    const data = await liquidatorProxyImplementation.populateTransaction.initialize();
+    const proxy = await createContractWithAbi(
+      UpgradeableProxy__factory.abi,
+      UpgradeableProxy__factory.bytecode,
+      [liquidatorProxyImplementation.address, core.dolomiteMargin.address, data.data!]
+    );
+    liquidatorProxy = TestLiquidatorProxyV5__factory.connect(
+      proxy.address,
+      core.hhUser1
     );
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(liquidatorProxy.address, true);
 

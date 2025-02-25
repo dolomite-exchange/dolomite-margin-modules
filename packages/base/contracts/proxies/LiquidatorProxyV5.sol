@@ -1,6 +1,7 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /*
 
-    Copyright 2022 Dolomite.
+    Copyright 2025 Dolomite.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -18,6 +19,7 @@
 
 pragma solidity ^0.8.9;
 
+import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import { GenericTraderProxyBase } from "./GenericTraderProxyBase.sol";
 import { GenericTraderProxyV2Lib } from "./GenericTraderProxyV2Lib.sol";
@@ -30,6 +32,7 @@ import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../protocol/lib/Require.sol";
 import { TypesLib } from "../protocol/lib/TypesLib.sol";
+import { ILiquidatorProxyV5 } from "./interfaces/ILiquidatorProxyV5.sol";
 
 
 /**
@@ -45,20 +48,10 @@ contract LiquidatorProxyV5 is
     HasLiquidatorRegistry,
     LiquidatorProxyBase,
     GenericTraderProxyBase,
-    ReentrancyGuard
+    ReentrancyGuard,
+    Initializable,
+    ILiquidatorProxyV5
 {
-
-    struct LiquidateParams {
-        IDolomiteStructs.AccountInfo solidAccount;
-        IDolomiteStructs.AccountInfo liquidAccount;
-        uint256[] marketIdsPath;
-        uint256 inputAmountWei;
-        uint256 minOutputAmountWei;
-        TraderParam[] tradersPath;
-        IDolomiteStructs.AccountInfo[] makerAccounts;
-        uint256 expiry;
-        bool withdrawAllReward;
-    }
 
     // ============ Constants ============
 
@@ -67,8 +60,8 @@ contract LiquidatorProxyV5 is
 
     // ============ Storage ============
 
-    IExpiry public EXPIRY;
-    IDolomiteMargin public DOLOMITE_MARGIN;
+    IExpiry public immutable EXPIRY;
+    IDolomiteMargin public immutable DOLOMITE_MARGIN;
 
     // ============ Constructor ============
 
@@ -93,6 +86,8 @@ contract LiquidatorProxyV5 is
     }
 
     // ============ External Functions ============
+
+    function initialize() external initializer {}
 
     // solium-disable-next-line security/no-assign-params
     function liquidate(
