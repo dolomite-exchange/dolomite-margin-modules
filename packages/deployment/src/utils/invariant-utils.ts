@@ -4,6 +4,11 @@ import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { IDolomiteInterestSetter, IERC20, IERC20Metadata__factory } from '../../../base/src/types';
 import { IDolomiteStructs } from '../../../base/src/types/contracts/protocol/interfaces/IDolomiteMargin';
 import { INVALID_TOKEN_MAP } from '../../../base/src/utils/constants';
+import {
+  getLiquidationPremiumForTargetLiquidationPenalty,
+  getMarginPremiumForTargetCollateralization,
+  TargetCollateralization, TargetLiquidationPenalty,
+} from '../../../base/src/utils/constructors/dolomite';
 import { NetworkType, ONE_ETH_BI } from '../../../base/src/utils/no-deps-constants';
 import { CoreProtocolBerachain } from '../../../base/test/utils/core-protocols/core-protocol-berachain';
 import { CoreProtocolType } from '../../../base/test/utils/setup';
@@ -148,6 +153,40 @@ export async function checkBorrowCap<T extends NetworkType>(
   assertHardhatInvariant(
     (await core.dolomiteMargin.getMarketMaxBorrowWei(marketId)).value.eq(expectedAmount),
     errorMessage,
+  );
+}
+
+let baseCollateralization: BigNumber | undefined;
+export async function checkMinCollateralization<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  marketId: BigNumberish,
+  collateralization: TargetCollateralization,
+) {
+  if (!baseCollateralization) {
+    baseCollateralization = (await core.dolomiteMargin.getMarginRatio()).value.add(ONE_ETH_BI);
+  }
+
+  const marginPremium = (await core.dolomiteMargin.getMarketMarginPremium(marketId)).value;
+  assertHardhatInvariant(
+    getMarginPremiumForTargetCollateralization(baseCollateralization, collateralization).eq(marginPremium),
+    `Expected market [${marketId}] to have a target collateralization of ${collateralization}`,
+  );
+}
+
+let baseLiquidationPenalty: BigNumber | undefined;
+export async function checkLiquidationPenalty<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  marketId: BigNumberish,
+  liquidationPenalty: TargetLiquidationPenalty,
+) {
+  if (!baseLiquidationPenalty) {
+    baseLiquidationPenalty = (await core.dolomiteMargin.getLiquidationSpread()).value;
+  }
+
+  const liquidationPremium = (await core.dolomiteMargin.getMarketSpreadPremium(marketId)).value;
+  assertHardhatInvariant(
+    getLiquidationPremiumForTargetLiquidationPenalty(baseLiquidationPenalty, liquidationPenalty).eq(liquidationPremium),
+    `Expected market [${marketId}] to have a target liquidation penalty of ${liquidationPenalty}`,
   );
 }
 
