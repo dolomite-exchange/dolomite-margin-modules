@@ -1,7 +1,7 @@
 import { BigNumber, BigNumberish, ethers } from 'ethers';
 import { formatUnits } from 'ethers/lib/utils';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
-import { IERC20, IERC20Metadata__factory } from '../../../base/src/types';
+import { IDolomiteInterestSetter, IERC20, IERC20Metadata__factory } from '../../../base/src/types';
 import { IDolomiteStructs } from '../../../base/src/types/contracts/protocol/interfaces/IDolomiteMargin';
 import { INVALID_TOKEN_MAP } from '../../../base/src/utils/constants';
 import { NetworkType, ONE_ETH_BI } from '../../../base/src/utils/no-deps-constants';
@@ -165,5 +165,16 @@ export async function checkIsCollateralOnly<T extends NetworkType>(
   assertHardhatInvariant(
     (await core.dolomiteMargin.getMarketIsClosing(marketId)) === expectedCollateralOnly,
     errorMessage,
+  );
+}
+
+export async function checkInterestSetter<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  marketId: BigNumberish,
+  expectedInterestSetter: IDolomiteInterestSetter,
+) {
+  assertHardhatInvariant(
+    (await core.dolomiteMargin.getMarketInterestSetter(marketId)) === expectedInterestSetter.address,
+    `Expected market [${marketId}] to have interest setter ${expectedInterestSetter.address}`,
   );
 }
