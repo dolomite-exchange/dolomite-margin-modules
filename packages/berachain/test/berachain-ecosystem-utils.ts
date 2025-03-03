@@ -11,6 +11,7 @@ import {
   getBGTIsolationModeVaultFactoryConstructorParams,
   getBGTMIsolationModeVaultFactoryConstructorParams,
   getInfraredBGTIsolationModeVaultFactoryConstructorParams,
+  getPOLIsolationModeVaultFactoryConstructorParams,
 } from '../src/berachain-constructors';
 import {
   BerachainRewardsIsolationModeTokenVaultV1,
@@ -31,7 +32,13 @@ import {
   InfraredBGTIsolationModeVaultFactory,
   InfraredBGTIsolationModeVaultFactory__factory,
   IPOLIsolationModeVaultFactory,
+  POLIsolationModeTokenVaultV1,
+  POLIsolationModeUnwrapperTraderV2,
+  POLIsolationModeUnwrapperTraderV2__factory,
+  POLIsolationModeUnwrapperUpgradeableProxy,
+  POLIsolationModeUnwrapperUpgradeableProxy__factory,
   POLIsolationModeVaultFactory,
+  POLIsolationModeVaultFactory__factory,
   POLIsolationModeWrapperTraderV2,
   POLIsolationModeWrapperTraderV2__factory,
   POLIsolationModeWrapperUpgradeableProxy,
@@ -169,6 +176,72 @@ export async function createInfraredBGTIsolationModeVaultFactory(
       core,
     ),
   );
+}
+
+export async function createPOLIsolationModeTokenVaultV1(): Promise<POLIsolationModeTokenVaultV1> {
+  const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
+  return createContractWithLibrary<POLIsolationModeTokenVaultV1>(
+    'POLIsolationModeTokenVaultV1',
+    libraries,
+    [],
+  );
+}
+
+export async function createPOLIsolationModeVaultFactory(
+  core: CoreProtocolBerachain,
+  beraRegistry: IBerachainRewardsRegistry | BerachainRewardsRegistry,
+  dToken: { address: string },
+  userVaultImplementation: POLIsolationModeTokenVaultV1,
+): Promise<POLIsolationModeVaultFactory> {
+  return createContractWithAbi<POLIsolationModeVaultFactory>(
+    POLIsolationModeVaultFactory__factory.abi,
+    POLIsolationModeVaultFactory__factory.bytecode,
+    getPOLIsolationModeVaultFactoryConstructorParams(core, beraRegistry, dToken, userVaultImplementation),
+  );
+}
+
+export async function createPOLIsolationModeWrapperTraderV2(
+  core: CoreProtocolBerachain,
+  beraRegistry: IBerachainRewardsRegistry | BerachainRewardsRegistry,
+  factory: POLIsolationModeVaultFactory,
+): Promise<POLIsolationModeWrapperTraderV2> {
+  const wrapperImpl = await createContractWithAbi<POLIsolationModeWrapperTraderV2>(
+    POLIsolationModeWrapperTraderV2__factory.abi,
+    POLIsolationModeWrapperTraderV2__factory.bytecode,
+    [beraRegistry.address, core.dolomiteMargin.address],
+  );
+  await beraRegistry.connect(core.governance).ownerSetPolWrapperTrader(wrapperImpl.address);
+  const calldata = await wrapperImpl.populateTransaction.initialize(
+    factory.address,
+  );
+  const proxy = await createContractWithAbi<POLIsolationModeWrapperUpgradeableProxy>(
+    POLIsolationModeWrapperUpgradeableProxy__factory.abi,
+    POLIsolationModeWrapperUpgradeableProxy__factory.bytecode,
+    [beraRegistry.address, calldata.data!],
+  );
+  return POLIsolationModeWrapperTraderV2__factory.connect(proxy.address, core.hhUser1);
+}
+
+export async function createPOLIsolationModeUnwrapperTraderV2(
+  core: CoreProtocolBerachain,
+  beraRegistry: IBerachainRewardsRegistry | BerachainRewardsRegistry,
+  factory: POLIsolationModeVaultFactory,
+): Promise<POLIsolationModeUnwrapperTraderV2> {
+  const unwrapperImpl = await createContractWithAbi<POLIsolationModeUnwrapperTraderV2>(
+    POLIsolationModeUnwrapperTraderV2__factory.abi,
+    POLIsolationModeUnwrapperTraderV2__factory.bytecode,
+    [beraRegistry.address, core.dolomiteMargin.address],
+  );
+  await beraRegistry.connect(core.governance).ownerSetPolUnwrapperTrader(unwrapperImpl.address);
+  const calldata = await unwrapperImpl.populateTransaction.initialize(
+    factory.address,
+  );
+  const proxy = await createContractWithAbi<POLIsolationModeUnwrapperUpgradeableProxy>(
+    POLIsolationModeUnwrapperUpgradeableProxy__factory.abi,
+    POLIsolationModeUnwrapperUpgradeableProxy__factory.bytecode,
+    [beraRegistry.address, calldata.data!],
+  );
+  return POLIsolationModeUnwrapperTraderV2__factory.connect(proxy.address, core.hhUser1);
 }
 
 export async function setupUserMetaVault(

@@ -15,7 +15,8 @@ import {
   BGTMIsolationModeTokenVaultV1,
   BGTMIsolationModeUnwrapperTraderV2,
   IBGTMIsolationModeVaultFactory,
-  BGTMIsolationModeVaultFactory
+  BGTMIsolationModeVaultFactory,
+  POLIsolationModeTokenVaultV1
 } from './types';
 
 export async function getBerachainRewardsRegistryConstructorParams(
@@ -143,6 +144,21 @@ export function getInfraredBGTIsolationModeVaultFactoryConstructorParams(
     underlyingToken.address,
     core.borrowPositionProxyV2.address,
     vaultImplementation.address,
+    core.dolomiteMargin.address,
+  ];
+}
+
+export function getPOLIsolationModeVaultFactoryConstructorParams(
+  core: CoreProtocolBerachain,
+  beraRegistry: IBerachainRewardsRegistry | BerachainRewardsRegistry,
+  dToken: { address: string },
+  userVaultImplementation: POLIsolationModeTokenVaultV1
+): any[] {
+  return [
+    beraRegistry.address,
+    dToken.address,
+    core.borrowPositionProxyV2.address,
+    userVaultImplementation.address,
     core.dolomiteMargin.address,
   ];
 }

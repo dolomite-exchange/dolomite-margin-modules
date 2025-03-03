@@ -43,9 +43,25 @@ interface IInfraredVault is IERC20 {
 
     function exit() external;
 
+    function notifyRewardAmount(address rewardToken, uint256 reward) external;
+
     function getAllRewardsForUser(address _user) external view returns (UserReward[] memory);
 
     function earned(address account, address rewardToken) external view returns (uint256);
 
     function getAllRewardTokens() external view returns (address[] memory);
+
+    function rewardPerToken(address _rewardsToken) external view returns (uint256);
+
+    function rewardData(address _rewardsToken) external view returns (
+        address rewardsDistributor,
+        uint256 rewardsDuration,
+        uint256 periodFinish,
+        uint256 rewardRate,
+        uint256 lastUpdateTime,
+        uint256 rewardPerTokenStored,
+        uint256 rewardResidual
+    );
+
+    function lastTimeRewardApplicable(address _rewardsToken) external view returns (uint256);
 }

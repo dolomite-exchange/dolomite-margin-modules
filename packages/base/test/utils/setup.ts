@@ -328,6 +328,11 @@ export async function setupWETHBalance<T extends NetworkType>(
     const whaleSigner = await impersonate(whaleAddress, true);
     await core.tokens.weth.connect(whaleSigner).transfer(signer.address, amount);
     await core.tokens.weth.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
+  } else if (core.network === Network.Berachain) {
+    const whaleAddress = '0x8382FBcEbef31dA752c72885A61d4416F342c6C8';
+    const whaleSigner = await impersonate(whaleAddress, true);
+    await core.tokens.weth.connect(whaleSigner).transfer(signer.address, amount);
+    await core.tokens.weth.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
   } else {
     return Promise.reject(new Error(`Cannot setup WETH balance on ${core.network}`));
   }
