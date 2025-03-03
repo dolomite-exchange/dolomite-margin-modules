@@ -33,12 +33,11 @@ import { PlutusVaultGLPIsolationModeUnwrapperTraderV2__factory } from '@dolomite
 import Deployments from  '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
 import {
   createFolder,
-  DenJsonUpload,
   deployContractAndSave,
-  EncodedTransaction,
-  prettyPrintEncodedDataWithTypeSafety,
   writeFile,
 } from '../../../../utils/deploy-utils';
+import { DenJsonUpload, EncodedTransaction } from '../../../../utils/dry-run-utils';
+import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 
 async function deployGlpUpdates(core: CoreProtocolArbitrumOne): Promise<EncodedTransaction[]> {
   const unwrapperV4 = await deployContractAndSave(

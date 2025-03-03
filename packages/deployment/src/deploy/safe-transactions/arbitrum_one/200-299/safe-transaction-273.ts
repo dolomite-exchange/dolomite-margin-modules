@@ -14,10 +14,10 @@ import { parseEther } from 'ethers/lib/utils';
 import { ADDRESS_ZERO, BYTES_EMPTY, Network } from 'packages/base/src/utils/no-deps-constants';
 import {
   deployContractAndSave,
-  EncodedTransaction,
-  prettyPrintEncodedDataWithTypeSafety,
+
 } from '../../../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
+import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 
 /**

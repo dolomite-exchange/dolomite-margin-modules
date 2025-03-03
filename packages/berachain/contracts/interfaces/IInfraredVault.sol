@@ -64,4 +64,5 @@ interface IInfraredVault is IERC20 {
     );
 
     function lastTimeRewardApplicable(address _rewardsToken) external view returns (uint256);
+    function rewardTokens(uint256 index) external view returns (address);
 }

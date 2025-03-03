@@ -247,8 +247,8 @@ export const base_config: HardhatUserConfig = {
         network: NetworkName.Berachain,
         chainId: parseInt(Network.Berachain, 10),
         urls: {
-          apiURL: 'https://api.routescan.io/v2/network/mainnet/evm/80094/etherscan/api',
-          browserURL: 'https://80094.routescan.io/address',
+          apiURL: 'https://api.berascan.com/api',
+          browserURL: 'https://berscan.com/address',
         },
       },
       {

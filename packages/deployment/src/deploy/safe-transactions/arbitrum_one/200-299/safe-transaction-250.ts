@@ -8,12 +8,9 @@ import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/se
 import { parseEther } from 'ethers/lib/utils';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { Network, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
-import {
-  EncodedTransaction,
-  prettyPrintEncodeAddMarket,
-  prettyPrintEncodeInsertChainlinkOracleV3,
-} from '../../../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
+import { encodeAddMarket } from '../../../../utils/encoding/add-market-encoder-utils';
+import { encodeInsertChainlinkOracleV3 } from '../../../../utils/encoding/oracle-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 
 /**
@@ -26,12 +23,12 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
 
   const transactions: EncodedTransaction[] = [
-    ...await prettyPrintEncodeInsertChainlinkOracleV3(
+    ...await encodeInsertChainlinkOracleV3(
       core,
       core.tokens.xai,
       false,
     ),
-    ...await prettyPrintEncodeAddMarket(
+    ...await encodeAddMarket(
       core,
       core.tokens.xai,
       core.oracleAggregatorV2,

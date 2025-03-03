@@ -3,12 +3,9 @@ import { getAndCheckSpecificNetwork } from 'packages/base/src/utils/dolomite-uti
 import { Network } from 'packages/base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from 'packages/base/test/utils';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
-import {
-  deployDolomiteErc4626Token,
-  EncodedTransaction,
-  prettyPrintSetGlobalOperator,
-} from '../../../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
+import { deployDolomiteErc4626Token } from '../../../../utils/deploy-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
+import { encodeSetGlobalOperator } from '../../../../utils/encoding/dolomite-margin-core-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 
 /**
@@ -36,16 +33,16 @@ async function main(): Promise<DryRunOutput<Network.BerachainCartio>> {
 
   const transactions: EncodedTransaction[] = [];
   transactions.push(
-    await prettyPrintSetGlobalOperator(core, beraETH, true),
-    await prettyPrintSetGlobalOperator(core, nect, true),
-    await prettyPrintSetGlobalOperator(core, pumpBtc, true),
-    await prettyPrintSetGlobalOperator(core, stBtc, true),
-    await prettyPrintSetGlobalOperator(core, stone, true),
-    await prettyPrintSetGlobalOperator(core, ylBtcLst, true),
-    await prettyPrintSetGlobalOperator(core, ylFbtc, true),
-    await prettyPrintSetGlobalOperator(core, ylPumpBtc, true),
-    await prettyPrintSetGlobalOperator(core, ylStEth, true),
-    await prettyPrintSetGlobalOperator(core, ylUniBtc, true),
+    await encodeSetGlobalOperator(core, beraETH, true),
+    await encodeSetGlobalOperator(core, nect, true),
+    await encodeSetGlobalOperator(core, pumpBtc, true),
+    await encodeSetGlobalOperator(core, stBtc, true),
+    await encodeSetGlobalOperator(core, stone, true),
+    await encodeSetGlobalOperator(core, ylBtcLst, true),
+    await encodeSetGlobalOperator(core, ylFbtc, true),
+    await encodeSetGlobalOperator(core, ylPumpBtc, true),
+    await encodeSetGlobalOperator(core, ylStEth, true),
+    await encodeSetGlobalOperator(core, ylUniBtc, true),
   );
   return {
     core,

@@ -1,4 +1,3 @@
-import { IERC20 } from '@dolomite-exchange/modules-base/src/types';
 import { Network, ONE_ETH_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectEvent, expectProtocolBalance, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
@@ -13,31 +12,21 @@ import { parseEther } from 'ethers/lib/utils';
 import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
 import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
 import {
-  BerachainRewardsIsolationModeTokenVaultV1,
-  BerachainRewardsIsolationModeVaultFactory,
   BerachainRewardsMetaVault,
   BerachainRewardsMetaVault__factory,
   BerachainRewardsRegistry,
-  BGTIsolationModeTokenVaultV1,
-  BGTIsolationModeVaultFactory,
-  INativeRewardVault,
   InfraredBGTIsolationModeTokenVaultV1,
   InfraredBGTIsolationModeTokenVaultV1__factory,
   InfraredBGTIsolationModeVaultFactory,
 } from '../src/types';
 import {
-  createBerachainRewardsIsolationModeTokenVaultV1,
-  createBerachainRewardsIsolationModeVaultFactory,
   createBerachainRewardsRegistry,
-  createBGTIsolationModeTokenVaultV1,
-  createBGTIsolationModeVaultFactory,
   createInfraredBGTIsolationModeTokenVaultV1,
   createInfraredBGTIsolationModeVaultFactory,
-  RewardVaultType,
 } from './berachain-ecosystem-utils';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
-const IBGT_WHALE_ADDRESS = '0x4B95296B937AF613D65206Ba7C203CB9A1263003';
+const IBGT_WHALE_ADDRESS = '0x9b45388Fc442343dE9959D710eB47Da8c09eE2d9';
 const amountWei = parseEther('.5');
 const defaultAccountNumber = ZERO_BI;
 
@@ -46,30 +35,16 @@ describe('InfraredBGTIsolationModeVaultFactory', () => {
 
   let core: CoreProtocolBerachain;
   let registry: BerachainRewardsRegistry;
-  let beraFactory: BerachainRewardsIsolationModeVaultFactory;
-  let otherFactory: BerachainRewardsIsolationModeVaultFactory;
-  let bgtFactory: BGTIsolationModeVaultFactory;
   let iBgtFactory: InfraredBGTIsolationModeVaultFactory;
-
-  let underlyingToken: IERC20;
-  let otherUnderlyingToken: IERC20;
-  let nativeRewardVault: INativeRewardVault;
-
-  let vaultImplementation: BerachainRewardsIsolationModeTokenVaultV1;
-  let bgtVaultImplementation: BGTIsolationModeTokenVaultV1;
   let iBgtVaultImplementation: InfraredBGTIsolationModeTokenVaultV1;
 
   let iBgtMarketId: BigNumber;
 
   before(async () => {
     core = await setupCoreProtocol({
-      blockNumber: 4_853_900,
+      blockNumber: 1_342_200,
       network: Network.Berachain,
     });
-
-    underlyingToken = core.berachainRewardsEcosystem.listedRewardAssets.bexHoneyUsdc.asset;
-    otherUnderlyingToken = core.berachainRewardsEcosystem.listedRewardAssets.bexHoneyWbera.asset;
-    nativeRewardVault = core.berachainRewardsEcosystem.listedRewardAssets.bexHoneyUsdc.nativeRewardVault;
 
     const metaVaultImplementation = await createContractWithAbi<BerachainRewardsMetaVault>(
       BerachainRewardsMetaVault__factory.abi,
@@ -77,25 +52,7 @@ describe('InfraredBGTIsolationModeVaultFactory', () => {
       [],
     );
     registry = await createBerachainRewardsRegistry(core, metaVaultImplementation);
-    await registry
-      .connect(core.governance)
-      .ownerSetRewardVault(underlyingToken.address, RewardVaultType.Native, nativeRewardVault.address);
 
-    vaultImplementation = await createBerachainRewardsIsolationModeTokenVaultV1();
-    beraFactory = await createBerachainRewardsIsolationModeVaultFactory(
-      registry,
-      underlyingToken,
-      vaultImplementation,
-      core,
-    );
-    otherFactory = await createBerachainRewardsIsolationModeVaultFactory(
-      registry,
-      otherUnderlyingToken,
-      vaultImplementation,
-      core,
-    );
-    bgtVaultImplementation = await createBGTIsolationModeTokenVaultV1();
-    bgtFactory = await createBGTIsolationModeVaultFactory(registry, core.tokens.bgt, bgtVaultImplementation, core);
     iBgtVaultImplementation = await createInfraredBGTIsolationModeTokenVaultV1();
     iBgtFactory = await createInfraredBGTIsolationModeVaultFactory(
       registry,
@@ -108,24 +65,8 @@ describe('InfraredBGTIsolationModeVaultFactory', () => {
     await core.testEcosystem!.testPriceOracle.setPrice(iBgtFactory.address, ONE_ETH_BI);
     await setupTestMarket(core, iBgtFactory, true);
 
-    await core.testEcosystem!.testPriceOracle.setPrice(beraFactory.address, ONE_ETH_BI);
-    await setupTestMarket(core, beraFactory, true);
-
-    await core.testEcosystem!.testPriceOracle.setPrice(bgtFactory.address, ONE_ETH_BI);
-    await setupTestMarket(core, bgtFactory, true);
-
-    await core.testEcosystem!.testPriceOracle.setPrice(otherFactory.address, ONE_ETH_BI);
-    await setupTestMarket(core, otherFactory, true);
-
-    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(beraFactory.address, true);
-    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(otherFactory.address, true);
-    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(bgtFactory.address, true);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(iBgtFactory.address, true);
-    await beraFactory.connect(core.governance).ownerInitialize([]);
-    await otherFactory.connect(core.governance).ownerInitialize([]);
-    await bgtFactory.connect(core.governance).ownerInitialize([]);
     await iBgtFactory.connect(core.governance).ownerInitialize([]);
-    await registry.connect(core.governance).ownerSetBgtIsolationModeVaultFactory(bgtFactory.address);
     await registry.connect(core.governance).ownerSetIBgtIsolationModeVaultFactory(iBgtFactory.address);
 
     const iBgtWhale = await impersonate(IBGT_WHALE_ADDRESS, true);
@@ -170,7 +111,6 @@ describe('InfraredBGTIsolationModeVaultFactory', () => {
     });
 
     it('should fail if not called by owners metaVault', async () => {
-      await beraFactory.createVault(core.hhUser1.address);
       await expectThrow(
         iBgtFactory
           .connect(core.hhUser1)

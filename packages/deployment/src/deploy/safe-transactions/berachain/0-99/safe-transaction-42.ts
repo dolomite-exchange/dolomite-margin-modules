@@ -2,10 +2,10 @@ import { getAndCheckSpecificNetwork } from 'packages/base/src/utils/dolomite-uti
 import { Network, ONE_BI } from 'packages/base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from 'packages/base/test/utils';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
-import { EncodedTransaction } from '../../../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
+import { encodeSetSupplyCap } from '../../../../utils/encoding/dolomite-margin-core-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
-import { checkSupplyCap, encodeSetSupplyCap } from '../utils';
+import { checkSupplyCap } from '../../../../utils/invariant-utils';
 
 /**
  * This script encodes the following transactions:

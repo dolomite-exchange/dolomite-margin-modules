@@ -16,6 +16,7 @@ export interface CoreProtocolTokensBerachain extends CoreProtocolTokens<Network.
   beraEth: IERC20;
   btcPlaceholder: IERC20;
   eBtc: IERC20;
+  fbtc: IERC20;
   honey: IERC20;
   lbtc: IERC20;
   nect: IERC20;

@@ -21,11 +21,36 @@ import MonetaryPriceStruct = IDolomiteStructs.MonetaryPriceStruct;
 
 export enum TargetCollateralization {
   Base = '1.00',
+
+  /**
+   * 120% collateralization || 83.33% LTV
+   */
   _120 = '1.20',
+
+  /**
+   * 125% collateralization || 80.00% LTV
+   */
   _125 = '1.25',
-  _133 = '1.33333333',
+
+  /**
+   * 133% collateralization || 75.00% LTV
+   */
+  _133 = '1.333333333333',
+
+  /**
+   * 150% collateralization || 66.66% LTV
+   */
   _150 = '1.50',
-  _166 = '1.66666666',
+
+  /**
+   * 166.66% collateralization || 60.00% LTV
+   */
+  _166 = '1.666666666666',
+
+  /**
+   * 200% collateralization || 50.00% LTV
+   */
+  _200 = '2.00',
 }
 
 export enum TargetLiquidationPenalty {
@@ -159,25 +184,35 @@ export function getOwnerAddMarketParameters<T extends NetworkType>(
 }
 
 export function getMarginPremiumForTargetCollateralization(
+  baseCollateralization: BigNumber,
   targetCollateralization: TargetCollateralization,
 ): BigNumber {
+  const one = parseEther('1');
+  if (baseCollateralization.lte(one)) {
+    throw new Error('Base collateralization must be greater than 100% (1.00)');
+  }
+
   if (targetCollateralization === TargetCollateralization.Base) {
     return ZERO_BI;
   }
 
-  const one = parseEther('1');
-  const baseCollateralization = parseEther('1.15');
   return parseEther(targetCollateralization).mul(one).div(baseCollateralization).sub(one);
 }
 
-export function getLiquidationPremiumForTargetLiquidationPenalty(targetPenalty: TargetLiquidationPenalty): BigNumber {
+export function getLiquidationPremiumForTargetLiquidationPenalty(
+  baseLiquidationPenalty: BigNumber,
+  targetPenalty: TargetLiquidationPenalty,
+): BigNumber {
+  if (baseLiquidationPenalty.gte(parseEther('1.00'))) {
+    throw new Error('Base collateralization must be less than 100% (1.00)');
+  }
+
   if (targetPenalty === TargetLiquidationPenalty.Base) {
     return ZERO_BI;
   }
 
   const one = parseEther('1');
-  const baseAmount = parseEther('0.05');
-  return parseEther(targetPenalty).mul(one).div(baseAmount).sub(one);
+  return parseEther(targetPenalty).mul(one).div(baseLiquidationPenalty).sub(one);
 }
 
 export function getOwnerAddMarketParametersForIsolationMode<T extends NetworkType>(
@@ -257,11 +292,7 @@ export async function getDolomiteErc4626ProxyConstructorParams<T extends Network
     marketId,
     core.dolomiteRegistry.address,
   );
-  return [
-    implementationContract.address,
-    core.dolomiteMargin.address,
-    transaction.data!,
-  ];
+  return [implementationContract.address, core.dolomiteMargin.address, transaction.data!];
 }
 
 export async function getDolomiteErc4626WithPayableProxyConstructorParams<T extends NetworkType>(
@@ -285,11 +316,7 @@ export async function getDolomiteErc4626WithPayableProxyConstructorParams<T exte
     marketId,
     core.dolomiteRegistry.address,
   );
-  return [
-    implementationContract.address,
-    core.dolomiteMargin.address,
-    transaction.data!,
-  ];
+  return [implementationContract.address, core.dolomiteMargin.address, transaction.data!];
 }
 
 export function getIsolationModeTokenVaultMigratorConstructorParams<T extends NetworkType>(

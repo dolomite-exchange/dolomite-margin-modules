@@ -4,11 +4,10 @@ import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/se
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
 import {
-  deployContractAndSave,
-  EncodedTransaction,
-  prettyPrintEncodedDataWithTypeSafety
+  deployContractAndSave
 } from '../../../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
+import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 import ModuleDeployments from '../../../deployments.json';
 import {

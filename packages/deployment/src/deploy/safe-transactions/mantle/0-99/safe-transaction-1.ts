@@ -9,12 +9,9 @@ import { setupCoreProtocol } from 'packages/base/test/utils/setup';
 import { parseEther } from 'ethers/lib/utils';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { Network, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
-import {
-  EncodedTransaction,
-  prettyPrintEncodeAddMarket,
-  prettyPrintEncodedDataWithTypeSafety,
-} from '../../../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
+import { encodeAddMarket } from '../../../../utils/encoding/add-market-encoder-utils';
+import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 
 /**
@@ -32,7 +29,7 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
 
   const transactions: EncodedTransaction[] = [];
   transactions.push(
-    ...await prettyPrintEncodeAddMarket(
+    ...await encodeAddMarket(
       core,
       core.tokens.weth,
       core.oracleAggregatorV2,
@@ -43,7 +40,7 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
       ZERO_BI,
       false,
     ),
-    ...await prettyPrintEncodeAddMarket(
+    ...await encodeAddMarket(
       core,
       core.tokens.wmnt,
       core.oracleAggregatorV2,
@@ -54,7 +51,7 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
       parseEther(`${20_00_000}`),
       false,
     ),
-    ...await prettyPrintEncodeAddMarket(
+    ...await encodeAddMarket(
       core,
       core.tokens.usdc,
       core.oracleAggregatorV2,
@@ -65,7 +62,7 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
       ZERO_BI,
       false,
     ),
-    ...await prettyPrintEncodeAddMarket(
+    ...await encodeAddMarket(
       core,
       core.tokens.wbtc,
       core.oracleAggregatorV2,
@@ -76,7 +73,7 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
       parseBtc(`${90}`),
       false,
     ),
-    ...await prettyPrintEncodeAddMarket(
+    ...await encodeAddMarket(
       core,
       core.tokens.usdt,
       core.oracleAggregatorV2,
@@ -99,7 +96,7 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
     //   parseEther(`${9_000_000}`),
     //   false,
     // ),
-    ...await prettyPrintEncodeAddMarket(
+    ...await encodeAddMarket(
       core,
       core.tokens.meth,
       core.oracleAggregatorV2,

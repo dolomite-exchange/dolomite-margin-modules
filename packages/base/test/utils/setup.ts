@@ -305,7 +305,7 @@ export async function enableInterestAccrual<T extends NetworkType>(
 }
 
 export async function setupWBERABalance(
-  core: CoreProtocolBerachainBartio,
+  core: CoreProtocolBerachainBartio | CoreProtocolBerachain,
   signer: SignerWithAddressWithSafety,
   amount: BigNumberish,
   spender: { address: string },
@@ -1310,6 +1310,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
         btcPlaceholder: IERC20__factory.connect(BTC_PLACEHOLDER_MAP[typedConfig.network].address, hhUser1),
         beraEth: IERC20__factory.connect(BERA_ETH_MAP[typedConfig.network].address, hhUser1),
         eBtc: IERC20__factory.connect(E_BTC_MAP[typedConfig.network].address, hhUser1),
+        fbtc: IERC20__factory.connect(FBTC_MAP[typedConfig.network].address, hhUser1),
         honey: IERC20__factory.connect(HONEY_MAP[typedConfig.network].address, hhUser1),
         lbtc: IERC20__factory.connect(LBTC_MAP[typedConfig.network].address, hhUser1),
         nect: IERC20__factory.connect(NECT_MAP[typedConfig.network].address, hhUser1),

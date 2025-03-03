@@ -13,12 +13,14 @@ import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { Network, ONE_BI } from 'packages/base/src/utils/no-deps-constants';
 import {
   deployPendlePtSystem,
-  EncodedTransaction,
-  prettyPrintEncodeAddIsolationModeMarket,
-  prettyPrintEncodeAddMarket,
-  prettyPrintEncodedDataWithTypeSafety,
+
 } from '../../../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
+import {
+  encodeAddIsolationModeMarket,
+  encodeAddMarket,
+} from '../../../../utils/encoding/add-market-encoder-utils';
+import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 
 /**
@@ -119,7 +121,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
         } as TokenInfo,
       ],
     ),
-    ...await prettyPrintEncodeAddMarket(
+    ...await encodeAddMarket(
       core,
       core.tokens.ezEth,
       core.oracleAggregatorV2,
@@ -130,7 +132,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       '1',
       true,
     ),
-    ...await prettyPrintEncodeAddIsolationModeMarket(
+    ...await encodeAddIsolationModeMarket(
       core,
       ezEthPendleSystem.factory,
       core.oracleAggregatorV2,

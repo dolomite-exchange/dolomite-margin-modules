@@ -21,7 +21,7 @@ import {
 
 export async function getBerachainRewardsRegistryConstructorParams(
   implementation: BerachainRewardsRegistry,
-  metaVaultImplementation: BerachainRewardsMetaVault,
+  metaVaultImplementation: { address: string },
   core: CoreProtocolBerachain
 ): Promise<any[]> {
   const calldata = await implementation.populateTransaction.initialize(

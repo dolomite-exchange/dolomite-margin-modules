@@ -8,12 +8,9 @@ import { setupCoreProtocol } from 'packages/base/test/utils/setup';
 import { BigNumber } from 'ethers';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
-import {
-  EncodedTransaction,
-  prettyPrintEncodeAddMarket,
-  prettyPrintEncodeInsertChronicleOracleV3,
-} from '../../../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
+import { encodeAddMarket } from '../../../../utils/encoding/add-market-encoder-utils';
+import { encodeInsertChronicleOracleV3 } from '../../../../utils/encoding/oracle-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 
 /**
@@ -33,11 +30,11 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
   const fbtcMarketId = numMarkets.add(incrementor++);
 
   transactions.push(
-    ...await prettyPrintEncodeInsertChronicleOracleV3(
+    ...await encodeInsertChronicleOracleV3(
       core,
       core.tokens.fbtc,
     ),
-    ...await prettyPrintEncodeAddMarket(
+    ...await encodeAddMarket(
       core,
       core.tokens.fbtc,
       core.oracleAggregatorV2,

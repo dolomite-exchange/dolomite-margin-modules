@@ -63,7 +63,6 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
     bytes32 private constant _QUEUE_BGTM_COOLDOWN_SLOT = bytes32(uint256(keccak256("eip1967.proxy.queueBgtmCooldown")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _UNBOND_BGTM_WAITING_PERIOD_SLOT = bytes32(uint256(keccak256("eip1967.proxy.unbondBgtmWaitingPeriod")) - 1); // solhint-disable-line max-line-length
 
-
     /// @dev This variable is hardcoded here because it's private in the BGT contract
     uint256 public constant HISTORY_BUFFER_LENGTH = 8191;
     uint256 public constant DEFAULT_ACCOUNT_NUMBER = 0;

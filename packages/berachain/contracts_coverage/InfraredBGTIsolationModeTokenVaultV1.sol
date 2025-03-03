@@ -146,35 +146,31 @@ contract InfraredBGTIsolationModeTokenVaultV1 is
 
     function _getReward() internal {
         IInfraredVault vault = registry().iBgtVault();
-        address[] memory rewardTokens = vault.getAllRewardTokens();
-
-        uint256[] memory balancesBefore = new uint256[](rewardTokens.length);
-        for (uint256 i = 0; i < balancesBefore.length; ++i) {
-            balancesBefore[i] = IERC20(rewardTokens[i]).balanceOf(address(this));
-        }
-
+        IInfraredVault.UserReward[] memory rewards = vault.getAllRewardsForUser(address(this));
+        IIsolationModeVaultFactory factory = IIsolationModeVaultFactory(VAULT_FACTORY());
         vault.getReward();
 
-        for (uint256 i = 0; i < rewardTokens.length; ++i) {
-            uint256 reward = IERC20(rewardTokens[i]).balanceOf(address(this)) - balancesBefore[i];
-            if (reward > 0) {
-                if (rewardTokens[i] == UNDERLYING_TOKEN()) {
+        for (uint256 i = 0; i < rewards.length; ++i) {
+            if (rewards[i].amount > 0) {
+                if (rewards[i].token == UNDERLYING_TOKEN()) {
                     _setIsDepositSourceThisVault(true);
-                    IIsolationModeVaultFactory(VAULT_FACTORY()).depositIntoDolomiteMargin(
+                    factory.depositIntoDolomiteMargin(
                         DEFAULT_ACCOUNT_NUMBER,
-                        reward
+                        rewards[i].amount
                     );
                     /*assert(!isDepositSourceThisVault());*/
                 } else {
-                    try DOLOMITE_MARGIN().getMarketIdByTokenAddress(rewardTokens[i]) returns (uint256 marketId) {
-                        IERC20(rewardTokens[i]).safeApprove(address(DOLOMITE_MARGIN()), reward);
-                        IIsolationModeVaultFactory(VAULT_FACTORY()).depositOtherTokenIntoDolomiteMarginForVaultOwner(
+                    try DOLOMITE_MARGIN().getMarketIdByTokenAddress(rewards[i].token) returns (uint256 marketId) {
+                        IERC20(rewards[i].token).safeApprove(address(DOLOMITE_MARGIN()), rewards[i].amount);
+                        try factory.depositOtherTokenIntoDolomiteMarginForVaultOwner(
                             DEFAULT_ACCOUNT_NUMBER,
                             marketId,
-                            reward
-                        );
+                            rewards[i].amount
+                        ) {} catch {
+                            IERC20(rewards[i].token).safeTransfer(OWNER(), rewards[i].amount);
+                        }
                     } catch {
-                        IERC20(rewardTokens[i]).safeTransfer(OWNER(), reward);
+                        IERC20(rewards[i].token).safeTransfer(OWNER(), rewards[i].amount);
                     }
                 }
             }
