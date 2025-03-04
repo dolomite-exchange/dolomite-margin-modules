@@ -90,4 +90,13 @@ contract TestLiquidatorProxyV5 is LiquidatorProxyV5 {
             );
         }
     }
+
+    function binarySearch(
+        uint256[] memory _markets,
+        uint256 _beginInclusive,
+        uint256 _endExclusive,
+        uint256 _marketId
+    ) external view returns (MarketInfo memory) {
+        return _binarySearch(_getMarketInfos(_markets, _markets), _beginInclusive, _endExclusive, _marketId);
+    }
 }

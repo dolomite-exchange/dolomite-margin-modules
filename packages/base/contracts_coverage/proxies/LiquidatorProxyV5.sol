@@ -1,6 +1,7 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /*
 
-    Copyright 2022 Dolomite.
+    Copyright 2025 Dolomite.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -18,19 +19,20 @@
 
 pragma solidity ^0.8.9;
 
+import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import { BaseLiquidatorProxy } from "./BaseLiquidatorProxy.sol";
 import { GenericTraderProxyBase } from "./GenericTraderProxyBase.sol";
 import { GenericTraderProxyV2Lib } from "./GenericTraderProxyV2Lib.sol";
-import { LiquidatorProxyBase } from "./LiquidatorProxyBase.sol";
 import { HasLiquidatorRegistry } from "../general/HasLiquidatorRegistry.sol";
 import { IEventEmitterRegistry } from "../interfaces/IEventEmitterRegistry.sol";
-import { IExpiry } from "../interfaces/IExpiry.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
-import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../protocol/lib/Require.sol";
 import { TypesLib } from "../protocol/lib/TypesLib.sol";
+import { ILiquidatorProxyV5 } from "./interfaces/ILiquidatorProxyV5.sol";
 
+import "hardhat/console.sol";
 
 /**
  * @title   LiquidatorProxyV5
@@ -43,58 +45,43 @@ import { TypesLib } from "../protocol/lib/TypesLib.sol";
  */
 contract LiquidatorProxyV5 is
     HasLiquidatorRegistry,
-    LiquidatorProxyBase,
+    BaseLiquidatorProxy,
     GenericTraderProxyBase,
-    ReentrancyGuard
+    ReentrancyGuard,
+    Initializable,
+    ILiquidatorProxyV5
 {
-
-    struct LiquidateParams {
-        IDolomiteStructs.AccountInfo solidAccount;
-        IDolomiteStructs.AccountInfo liquidAccount;
-        uint256[] marketIdsPath;
-        uint256 inputAmountWei;
-        uint256 minOutputAmountWei;
-        TraderParam[] tradersPath;
-        IDolomiteStructs.AccountInfo[] makerAccounts;
-        uint256 expiry;
-        bool withdrawAllReward;
-    }
 
     // ============ Constants ============
 
     bytes32 private constant _FILE = "LiquidatorProxyV5";
     uint256 private constant LIQUID_ACCOUNT_ID = 2;
 
-    // ============ Storage ============
-
-    IExpiry public EXPIRY;
-    IDolomiteMargin public DOLOMITE_MARGIN;
-
     // ============ Constructor ============
 
     constructor (
         uint256 _chainId,
-        address _expiryProxy,
+        address _expiry,
         address _dolomiteMargin,
         address _dolomiteRegistry,
         address _liquidatorAssetRegistry
     )
-    LiquidatorProxyBase(
-        _chainId,
-        _liquidatorAssetRegistry
+    BaseLiquidatorProxy(
+        _liquidatorAssetRegistry,
+        _dolomiteMargin,
+        _expiry,
+        _chainId
     )
     GenericTraderProxyBase(
-        _chainId,
         _dolomiteRegistry
     )
     {
-        EXPIRY = IExpiry(_expiryProxy);
-        DOLOMITE_MARGIN = IDolomiteMargin(_dolomiteMargin);
     }
 
     // ============ External Functions ============
 
-    // solium-disable-next-line security/no-assign-params
+    function initialize() external initializer {}
+
     function liquidate(
         LiquidateParams memory _liquidateParams
     )
@@ -102,7 +89,7 @@ contract LiquidatorProxyV5 is
         nonReentrant
     {
         GenericTraderProxyCache memory genericCache = GenericTraderProxyCache({
-            dolomiteMargin: DOLOMITE_MARGIN,
+            dolomiteMargin: DOLOMITE_MARGIN(),
             eventEmitterRegistry: IEventEmitterRegistry(address(0)),
             // unused for this function
             isMarginDeposit: false,
@@ -134,24 +121,21 @@ contract LiquidatorProxyV5 is
 
         // put all values that will not change into a single struct
         LiquidatorProxyConstants memory constants;
-        constants.dolomiteMargin = genericCache.dolomiteMargin;
         constants.solidAccount = _liquidateParams.solidAccount;
         constants.liquidAccount = _liquidateParams.liquidAccount;
+        constants.expirationTimestamp = _liquidateParams.expirationTimestamp;
         constants.heldMarket = _liquidateParams.marketIdsPath[0];
         constants.owedMarket = _liquidateParams.marketIdsPath[_liquidateParams.marketIdsPath.length - 1];
 
-        _checkConstants(constants, _liquidateParams.expiry);
+        _checkConstants(constants);
         _validateAssetForLiquidation(constants.heldMarket);
         _validateAssetForLiquidation(constants.owedMarket);
 
-        constants.liquidMarkets = constants.dolomiteMargin.getAccountMarketsWithBalances(constants.liquidAccount);
+        constants.liquidMarkets = DOLOMITE_MARGIN().getAccountMarketsWithBalances(constants.liquidAccount);
         constants.markets = _getMarketInfos(
-            constants.dolomiteMargin,
-            constants.dolomiteMargin.getAccountMarketsWithBalances(_liquidateParams.solidAccount),
+            DOLOMITE_MARGIN().getAccountMarketsWithBalances(_liquidateParams.solidAccount),
             constants.liquidMarkets
         );
-        constants.expiryProxy = _liquidateParams.expiry != 0 ? EXPIRY: IExpiry(address(0)); // don't read EXPIRY; it's not needed
-        constants.expiry = uint32(_liquidateParams.expiry);
 
         LiquidatorProxyCache memory liquidatorCache = _initializeCache(constants);
 
@@ -161,7 +145,8 @@ contract LiquidatorProxyV5 is
         // get the max liquidation amount
         _calculateAndSetMaxLiquidationAmount(liquidatorCache);
 
-        _liquidateParams.minOutputAmountWei = _calculateAndSetActualLiquidationAmount(
+        (_liquidateParams.inputAmountWei, _liquidateParams.minOutputAmountWei) = _calculateAndSetActualLiquidationAmount(
+            _liquidateParams.inputAmountWei,
             _liquidateParams.minOutputAmountWei,
             liquidatorCache
         );
@@ -178,9 +163,14 @@ contract LiquidatorProxyV5 is
         accounts[LIQUID_ACCOUNT_ID] = _liquidateParams.liquidAccount;
         _validateZapAccount(genericCache, accounts[ZAP_ACCOUNT_ID], _liquidateParams.marketIdsPath);
 
-        uint256 liquidationActionsLength = _getLiquidationActionsLength(_liquidateParams.withdrawAllReward);
         IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](
-            liquidationActionsLength + _getActionsLengthForTraderParams(_liquidateParams.tradersPath)
+            _getLiquidationActionsLength(_liquidateParams.withdrawAllReward) +
+            _getActionsLengthForTraderParams(
+                genericCache,
+                _liquidateParams.tradersPath,
+                accounts,
+                _liquidateParams.minOutputAmountWei
+            )
         );
         _appendLiquidationAction(
             actions,
@@ -219,7 +209,7 @@ contract LiquidatorProxyV5 is
         internal
         view
     {
-        IDolomiteStructs.Wei memory targetAmountWei = _constants.dolomiteMargin.getAccountWei(
+        IDolomiteStructs.Wei memory targetAmountWei = DOLOMITE_MARGIN().getAccountWei(
             _constants.solidAccount,
             _constants.owedMarket
         );
@@ -259,17 +249,17 @@ contract LiquidatorProxyV5 is
         GenericTraderProxyCache memory _genericCache
     )
         internal
-        pure
+        view
     {
         // solidAccountId is always at index 0, liquidAccountId is always at index 1
-        if (_constants.expiry != 0) {
+        if (_constants.expirationTimestamp != 0) {
             _actions[_genericCache.actionsCursor++] = AccountActionLib.encodeExpiryLiquidateAction(
                 TRADE_ACCOUNT_ID,
                 LIQUID_ACCOUNT_ID,
                 _constants.owedMarket,
                 _constants.heldMarket,
-                address(_constants.expiryProxy),
-                _constants.expiry, // @follow-up Adjusted two things here
+                address(EXPIRY),
+                uint32(_constants.expirationTimestamp), // @follow-up Adjusted two things here
                 _liquidatorCache.flipMarketsForExpiration
             );
         } else {

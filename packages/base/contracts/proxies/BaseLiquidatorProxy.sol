@@ -494,7 +494,7 @@ abstract contract BaseLiquidatorProxy is ChainIdHelper, HasLiquidatorRegistry, O
         uint256 _beginInclusive,
         uint256 _endExclusive,
         uint256 _marketId
-    ) private pure returns (MarketInfo memory) {
+    ) internal pure returns (MarketInfo memory) {
         uint256 len = _endExclusive - _beginInclusive;
         if (len == 0 || (len == 1 && _markets[_beginInclusive].marketId != _marketId)) {
             revert("BaseLiquidatorProxy: Market not found"); // solhint-disable-line reason-string

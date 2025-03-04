@@ -21,8 +21,8 @@
 pragma solidity ^0.8.9;
 
 import { InternalSafeDelegateCallLib } from "../lib/InternalSafeDelegateCallLib.sol";
-import { LiquidatorProxyV5 } from "../proxies/LiquidatorProxyV5.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
+import { LiquidatorProxyV5 } from "../proxies/LiquidatorProxyV5.sol";
 
 
 /**
@@ -76,20 +76,27 @@ contract TestLiquidatorProxyV5 is LiquidatorProxyV5 {
     ) external view returns (IDolomiteStructs.MonetaryValue memory, IDolomiteStructs.MonetaryValue memory) {
         if (_adjustForMarginPremiums) {
             return _getAdjustedAccountValues(
-                DOLOMITE_MARGIN,
-                _getMarketInfos(DOLOMITE_MARGIN, _solidMarkets, _liquidMarkets),
+                _getMarketInfos(_solidMarkets, _liquidMarkets),
                 _account,
                 _marketIds,
                 _marginRatioOverride
             );
         } else {
             return _getAccountValues(
-                DOLOMITE_MARGIN,
-                _getMarketInfos(DOLOMITE_MARGIN, _solidMarkets, _liquidMarkets),
+                _getMarketInfos(_solidMarkets, _liquidMarkets),
                 _account,
                 _marketIds,
                 _marginRatioOverride
             );
         }
+    }
+
+    function binarySearch(
+        uint256[] memory _markets,
+        uint256 _beginInclusive,
+        uint256 _endExclusive,
+        uint256 _marketId
+    ) external view returns (MarketInfo memory) {
+        return _binarySearch(_getMarketInfos(_markets, _markets), _beginInclusive, _endExclusive, _marketId);
     }
 }
