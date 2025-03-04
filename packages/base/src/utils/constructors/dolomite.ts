@@ -54,13 +54,39 @@ export enum TargetCollateralization {
 }
 
 export enum TargetLiquidationPenalty {
-  Base = '0',
-  _6 = '0.06',
-  _7 = '0.07',
-  _8 = '0.08',
-  _9 = '0.09',
-  _10 = '0.10',
-  _15 = '0.15',
+  Base = '0.000',
+  /**
+   * 6%
+   */
+  _6 = '0.060',
+  /**
+   * 7%
+   */
+  _7 = '0.070',
+  /**
+   * 8%
+   */
+  _8 = '0.080',
+  /**
+   * 8.5%
+   */
+  _8_5 = '0.085',
+  /**
+   * 9%
+   */
+  _9 = '0.090',
+  /**
+   * 10%
+   */
+  _10 = '0.100',
+  /**
+   * 12%
+   */
+  _12 = '0.120',
+  /**
+   * 15%
+   */
+  _15 = '0.150',
 }
 
 export function getDolomiteOwnerConstructorParams(gnosisSafeAddress: string, secondsTimeLocked: BigNumberish): any[] {

@@ -1,29 +1,31 @@
-import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
+import { parseEther } from 'ethers/lib/utils';
 import { getAndCheckSpecificNetwork } from 'packages/base/src/utils/dolomite-utils';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from 'packages/base/test/utils';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
-import { deployDolomiteErc4626Token } from '../../../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
-import { encodeSetGlobalOperator } from '../../../../utils/encoding/dolomite-margin-core-encoder-utils';
+import {
+  encodeSetBorrowCapWithMagic,
+  encodeSetSupplyCapWithMagic,
+} from '../../../../utils/encoding/dolomite-margin-core-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
+import { checkBorrowCap, checkSupplyCap } from '../../../../utils/invariant-utils';
 
 /**
  * This script encodes the following transactions:
- * - Creates dTokens for each listed market
- * - Sets each dToken as a global operator
+ * - Increase the supply & borrow cap for BERA
  */
-async function main(): Promise<DryRunOutput<Network.BerachainCartio>> {
-  const network = await getAndCheckSpecificNetwork(Network.BerachainCartio);
+async function main(): Promise<DryRunOutput<Network.Berachain>> {
+  const network = await getAndCheckSpecificNetwork(Network.Berachain);
   const core = await setupCoreProtocol({
     network,
     blockNumber: await getRealLatestBlockNumber(true, network),
   });
 
-  const rsEth = await deployDolomiteErc4626Token(core, 'RsEth', core.marketIds.rsEth);
-
-  const transactions: EncodedTransaction[] = [];
-  transactions.push(await encodeSetGlobalOperator(core, rsEth, true));
+  const transactions: EncodedTransaction[] = [
+    await encodeSetSupplyCapWithMagic(core, core.marketIds.wbera, 5_000_000),
+    await encodeSetBorrowCapWithMagic(core, core.marketIds.wbera, 3_500_000),
+  ];
   return {
     core,
     upload: {
@@ -38,11 +40,8 @@ async function main(): Promise<DryRunOutput<Network.BerachainCartio>> {
     },
     scriptName: getScriptName(__filename),
     invariants: async () => {
-      assertHardhatInvariant(
-        await core.dolomiteMargin.getIsGlobalOperator(rsEth.address),
-        'rsEth is not a global operator',
-      );
-      assertHardhatInvariant((await rsEth.asset()) === core.tokens.rsEth.address, 'Invalid market ID');
+      await checkSupplyCap(core, core.marketIds.wbera, parseEther(`${5_000_000}`));
+      await checkBorrowCap(core, core.marketIds.wbera, parseEther(`${3_500_000}`));
     },
   };
 }

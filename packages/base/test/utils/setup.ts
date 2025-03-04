@@ -170,10 +170,8 @@ import {
   WST_ETH_MAP,
   XAI_MAP,
   YL_BTC_LST_MAP,
-  YL_FBTC_MAP,
   YL_PUMP_BTC_MAP,
   YL_ST_ETH_MAP,
-  YL_UNI_BTC_MAP,
 } from '../../src/utils/constants';
 import {
   ADDRESS_ZERO,
@@ -193,8 +191,6 @@ import {
 import { CoreProtocolArbitrumOne } from './core-protocols/core-protocol-arbitrum-one';
 import { CoreProtocolBase } from './core-protocols/core-protocol-base';
 import { CoreProtocolBerachain } from './core-protocols/core-protocol-berachain';
-import { CoreProtocolBerachainBartio } from './core-protocols/core-protocol-berachain-bartio';
-import { CoreProtocolBerachainCartio } from './core-protocols/core-protocol-berachain-cartio';
 import { CoreProtocolMantle, CoreProtocolParamsMantle } from './core-protocols/core-protocol-mantle';
 import { CoreProtocolPolygonZkEvm } from './core-protocols/core-protocol-polygon-zkevm';
 import { CoreProtocolXLayer } from './core-protocols/core-protocol-x-layer';
@@ -253,10 +249,6 @@ interface CoreProtocolConfigBerachain extends CoreProtocolConfigParent<Network.B
   readonly berachain: boolean;
 }
 
-interface CoreProtocolConfigBerachainCartio extends CoreProtocolConfigParent<Network.BerachainCartio> {
-  readonly berachainCartio: boolean;
-}
-
 interface CoreProtocolConfigMantle extends CoreProtocolConfigParent<Network.Mantle> {
   readonly mantle: boolean;
 }
@@ -272,16 +264,16 @@ interface CoreProtocolConfigXLayer extends CoreProtocolConfigParent<Network.XLay
 export type CoreProtocolConfig<T extends NetworkType> = T extends Network.ArbitrumOne
   ? CoreProtocolConfigArbitrumOne
   : T extends Network.Base
-  ? CoreProtocolConfigBase
-  : T extends Network.Berachain
-  ? CoreProtocolConfigBerachain
-  : T extends Network.Mantle
-  ? CoreProtocolConfigMantle
-  : T extends Network.PolygonZkEvm
-  ? CoreProtocolConfigPolygonZkEvm
-  : T extends Network.XLayer
-  ? CoreProtocolConfigXLayer
-  : never;
+    ? CoreProtocolConfigBase
+    : T extends Network.Berachain
+      ? CoreProtocolConfigBerachain
+      : T extends Network.Mantle
+        ? CoreProtocolConfigMantle
+        : T extends Network.PolygonZkEvm
+          ? CoreProtocolConfigPolygonZkEvm
+          : T extends Network.XLayer
+            ? CoreProtocolConfigXLayer
+            : never;
 
 export async function disableInterestAccrual<T extends NetworkType>(
   core: CoreProtocolAbstract<T>,
@@ -301,7 +293,7 @@ export async function enableInterestAccrual<T extends NetworkType>(
 }
 
 export async function setupWBERABalance(
-  core: CoreProtocolBerachainBartio,
+  core: CoreProtocolBerachain,
   signer: SignerWithAddressWithSafety,
   amount: BigNumberish,
   spender: { address: string },
@@ -571,15 +563,6 @@ function getCoreProtocolConfig<T extends NetworkType>(network: T, blockNumber: n
     } as CoreProtocolConfigBerachain as any;
   }
 
-  if (network === Network.BerachainCartio) {
-    return {
-      network,
-      blockNumber,
-      networkNumber: parseInt(network, 10),
-      berachainCartio: true,
-    } as CoreProtocolConfigBerachainCartio as any;
-  }
-
   if (network === Network.Mantle) {
     return {
       network,
@@ -631,20 +614,16 @@ export function getDefaultCoreProtocolConfigForGmxV2(): CoreProtocolConfig<Netwo
 export type CoreProtocolType<T extends NetworkType> = T extends Network.ArbitrumOne
   ? CoreProtocolArbitrumOne
   : T extends Network.Base
-  ? CoreProtocolBase
-  : T extends Network.BerachainBartio
-  ? CoreProtocolBerachainBartio
-  : T extends Network.Berachain
-  ? CoreProtocolBerachain
-  : T extends Network.BerachainCartio
-  ? CoreProtocolBerachainCartio
-  : T extends Network.Mantle
-  ? CoreProtocolMantle
-  : T extends Network.PolygonZkEvm
-  ? CoreProtocolPolygonZkEvm
-  : T extends Network.XLayer
-  ? CoreProtocolXLayer
-  : never;
+    ? CoreProtocolBase
+    : T extends Network.Berachain
+      ? CoreProtocolBerachain
+      : T extends Network.Mantle
+        ? CoreProtocolMantle
+        : T extends Network.PolygonZkEvm
+          ? CoreProtocolPolygonZkEvm
+          : T extends Network.XLayer
+            ? CoreProtocolXLayer
+            : never;
 
 export function getDolomiteMarginContract<T extends NetworkType>(
   config: CoreProtocolSetupConfig<T>,
@@ -680,8 +659,6 @@ export function getWethContract<T extends NetworkType>(
     case Network.SuperSeed:
       return IWETH__factory.connect(WETH_MAP[config.network].address, signer) as WETHType<T>;
     case Network.Berachain:
-    case Network.BerachainBartio:
-    case Network.BerachainCartio:
     case Network.Mantle:
     case Network.XLayer:
       return IERC20__factory.connect(WETH_MAP[config.network].address, signer) as WETHType<T>;
@@ -704,8 +681,6 @@ export function getDolomiteWethTokenContract<T extends NetworkType>(
     case Network.SuperSeed:
       return getContractOpt(address, DolomiteERC4626WithPayable__factory.connect, signer) as DolomiteWETHType<T>;
     case Network.Berachain:
-    case Network.BerachainBartio:
-    case Network.BerachainCartio:
     case Network.Mantle:
     case Network.XLayer:
       return getContractOpt(address, DolomiteERC4626__factory.connect, signer) as DolomiteWETHType<T>;
@@ -1324,110 +1299,6 @@ export async function setupCoreProtocol<T extends NetworkType>(
         ylBtcLst: IERC20__factory.connect(YL_BTC_LST_MAP[typedConfig.network].address, hhUser1),
         ylPumpBtc: IERC20__factory.connect(YL_PUMP_BTC_MAP[typedConfig.network].address, hhUser1),
         ylStEth: IERC20__factory.connect(YL_ST_ETH_MAP[typedConfig.network].address, hhUser1),
-        stablecoins: [
-          ...coreProtocolParams.tokens.stablecoins,
-          IERC20__factory.connect(HONEY_MAP[typedConfig.network].address, hhUser1),
-        ],
-      },
-    }) as any;
-  }
-  if (config.network === Network.BerachainBartio) {
-    const typedConfig = config as CoreProtocolSetupConfig<Network.BerachainBartio>;
-    const chroniclePriceOracle = ChroniclePriceOracleV3__factory.connect(
-      getMaxDeploymentVersionAddressByDeploymentKey('ChroniclePriceOracle', Network.BerachainBartio, ADDRESS_ZERO),
-      hhUser1,
-    );
-    const redstonePriceOracle = RedstonePriceOracleV3__factory.connect(
-      getMaxDeploymentVersionAddressByDeploymentKey('RedstonePriceOracle', Network.BerachainBartio, ADDRESS_ZERO),
-      hhUser1,
-    );
-    return new CoreProtocolBerachainBartio(coreProtocolParams as CoreProtocolParams<Network.BerachainBartio>, {
-      chroniclePriceOracleV3: chroniclePriceOracle,
-      redstonePriceOracleV3: redstonePriceOracle,
-      marketIds: {
-        ...coreProtocolParams.marketIds,
-        honey: HONEY_MAP[typedConfig.network].marketId,
-        wbera: WBERA_MAP[typedConfig.network].marketId,
-        stablecoins: [...coreProtocolParams.marketIds.stablecoins, HONEY_MAP[typedConfig.network].marketId],
-        stablecoinsWithUnifiedInterestRateModels: [
-          ...coreProtocolParams.marketIds.stablecoins,
-          HONEY_MAP[typedConfig.network].marketId,
-        ],
-      },
-      tokens: {
-        ...coreProtocolParams.tokens,
-        honey: IERC20__factory.connect(HONEY_MAP[typedConfig.network].address, hhUser1),
-        sbtc: IERC20__factory.connect(STONE_BTC_MAP[typedConfig.network].address, hhUser1),
-        stoneBtc: IERC20__factory.connect(STONE_BTC_MAP[typedConfig.network].address, hhUser1),
-        uniBtc: IERC20__factory.connect(UNI_BTC_MAP[typedConfig.network].address, hhUser1),
-        wbera: IWETH__factory.connect(WBERA_MAP[typedConfig.network].address, hhUser1),
-        stablecoins: [
-          ...coreProtocolParams.tokens.stablecoins,
-          IERC20__factory.connect(HONEY_MAP[typedConfig.network].address, hhUser1),
-        ],
-      },
-      oogaBoogaEcosystem: await createOogaBoogaEcosystem(typedConfig.network, hhUser1),
-    }) as any;
-  }
-  if (config.network === Network.BerachainCartio) {
-    const typedConfig = config as CoreProtocolSetupConfig<Network.BerachainCartio>;
-    return new CoreProtocolBerachainCartio(coreProtocolParams as CoreProtocolParams<Network.BerachainCartio>, {
-      marketIds: {
-        ...coreProtocolParams.marketIds,
-        beraETH: BERA_ETH_MAP[typedConfig.network].marketId,
-        honey: HONEY_MAP[typedConfig.network].marketId,
-        nect: NECT_MAP[typedConfig.network].marketId,
-        pumpBtc: PUMP_BTC_MAP[typedConfig.network].marketId,
-        rsEth: RS_ETH_MAP[typedConfig.network].marketId,
-        sbtc: STONE_BTC_MAP[typedConfig.network].marketId,
-        solvBtc: SOLV_BTC_MAP[typedConfig.network].marketId,
-        solvBtcBbn: SOLV_BTC_BBN_MAP[typedConfig.network].marketId,
-        stBtc: ST_BTC_MAP[typedConfig.network].marketId,
-        stone: STONE_MAP[typedConfig.network].marketId,
-        stoneBtc: STONE_BTC_MAP[typedConfig.network].marketId,
-        susda: S_USDA_MAP[typedConfig.network].marketId,
-        uniBtc: UNI_BTC_MAP[typedConfig.network].marketId,
-        usda: USDA_MAP[typedConfig.network].marketId,
-        usde: USDE_MAP[typedConfig.network].marketId,
-        usdt: USDT_MAP[typedConfig.network].marketId,
-        wbera: WBERA_MAP[typedConfig.network].marketId,
-        wbtc: WBTC_MAP[typedConfig.network].marketId,
-        ylBtcLst: YL_BTC_LST_MAP[typedConfig.network].marketId,
-        ylFbtc: YL_FBTC_MAP[typedConfig.network].marketId,
-        ylPumpBtc: YL_PUMP_BTC_MAP[typedConfig.network].marketId,
-        ylStEth: YL_ST_ETH_MAP[typedConfig.network].marketId,
-        ylUniBtc: YL_UNI_BTC_MAP[typedConfig.network].marketId,
-        stablecoins: [...coreProtocolParams.marketIds.stablecoins, HONEY_MAP[typedConfig.network].marketId],
-        stablecoinsWithUnifiedInterestRateModels: [
-          ...coreProtocolParams.marketIds.stablecoins,
-          HONEY_MAP[typedConfig.network].marketId,
-        ],
-      },
-      tokens: {
-        ...coreProtocolParams.tokens,
-        beraETH: IERC20__factory.connect(BERA_ETH_MAP[typedConfig.network].address, hhUser1),
-        honey: IERC20__factory.connect(HONEY_MAP[typedConfig.network].address, hhUser1),
-        nect: IERC20__factory.connect(NECT_MAP[typedConfig.network].address, hhUser1),
-        pumpBtc: IERC20__factory.connect(PUMP_BTC_MAP[typedConfig.network].address, hhUser1),
-        rsEth: IERC20__factory.connect(RS_ETH_MAP[typedConfig.network].address, hhUser1),
-        sbtc: IERC20__factory.connect(STONE_BTC_MAP[typedConfig.network].address, hhUser1),
-        solvBtc: IERC20__factory.connect(SOLV_BTC_MAP[typedConfig.network].address, hhUser1),
-        solvBtcBbn: IERC20__factory.connect(SOLV_BTC_BBN_MAP[typedConfig.network].address, hhUser1),
-        stone: IERC20__factory.connect(STONE_MAP[typedConfig.network].address, hhUser1),
-        stBtc: IERC20__factory.connect(ST_BTC_MAP[typedConfig.network].address, hhUser1),
-        stoneBtc: IERC20__factory.connect(STONE_BTC_MAP[typedConfig.network].address, hhUser1),
-        susda: IERC20__factory.connect(S_USDA_MAP[typedConfig.network].address, hhUser1),
-        uniBtc: IERC20__factory.connect(UNI_BTC_MAP[typedConfig.network].address, hhUser1),
-        usda: IERC20__factory.connect(USDA_MAP[typedConfig.network].address, hhUser1),
-        usde: IERC20__factory.connect(USDE_MAP[typedConfig.network].address, hhUser1),
-        usdt: IERC20__factory.connect(USDT_MAP[typedConfig.network].address, hhUser1),
-        wbera: IWETH__factory.connect(WBERA_MAP[typedConfig.network].address, hhUser1),
-        wbtc: IERC20__factory.connect(WBTC_MAP[typedConfig.network].address, hhUser1),
-        ylBtcLst: IERC20__factory.connect(YL_BTC_LST_MAP[typedConfig.network].address, hhUser1),
-        ylFbtc: IERC20__factory.connect(YL_FBTC_MAP[typedConfig.network].address, hhUser1),
-        ylPumpBtc: IERC20__factory.connect(YL_PUMP_BTC_MAP[typedConfig.network].address, hhUser1),
-        ylStEth: IERC20__factory.connect(YL_ST_ETH_MAP[typedConfig.network].address, hhUser1),
-        ylUniBtc: IERC20__factory.connect(YL_UNI_BTC_MAP[typedConfig.network].address, hhUser1),
         stablecoins: [
           ...coreProtocolParams.tokens.stablecoins,
           IERC20__factory.connect(HONEY_MAP[typedConfig.network].address, hhUser1),
