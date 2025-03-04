@@ -3893,6 +3893,23 @@
       "isVerified": true
     }
   },
+  "LinearStepFunction15L135U60OInterestSetter": {
+    "8453": {
+      "address": "0x8Fa50b998AF366DD477f759b3DB2F1db7EE25FF8",
+      "transaction": "0x00ae7c169c35e7e787942a7862a31f1c5e4a8c1cd8921b5f7d1c5542633f642e",
+      "isVerified": true
+    },
+    "42161": {
+      "address": "0x8Fa50b998AF366DD477f759b3DB2F1db7EE25FF8",
+      "transaction": "0x3946bf71ab915ddc96629759b51908e279873b6ece03fcbd57a685bea3496840",
+      "isVerified": true
+    },
+    "80094": {
+      "address": "0x8Fa50b998AF366DD477f759b3DB2F1db7EE25FF8",
+      "transaction": "0x8f43885e33d50d792a84b5d3c2eed65df704f226028d1893d0225b76a8c835ab",
+      "isVerified": true
+    }
+  },
   "LinearStepFunction15L135U70OInterestSetter": {
     "196": {
       "address": "0x0A21D2995F7Acac4b46fc4C2c5B93FcBD69083DB",
@@ -4150,6 +4167,23 @@
     "80094": {
       "address": "0x1fB43667AaCb4095a78b90a5e0a7759269B2b773",
       "transaction": "0xdd1f969aec40de9fec6bc94d23e4188d840ad50a3f13b890014198e17e4dd7fd",
+      "isVerified": true
+    }
+  },
+  "LinearStepFunction16L84U60OInterestSetter": {
+    "8453": {
+      "address": "0x5a46388BaDe197c332A7065dF982595F920D1ef0",
+      "transaction": "0x8dc6bc9dec9803e7ca1a474aa295be3e624fd463d54da168b65e644b9bd6c190",
+      "isVerified": true
+    },
+    "42161": {
+      "address": "0x5a46388BaDe197c332A7065dF982595F920D1ef0",
+      "transaction": "0x43f7b376b6171f4a16dca22409cfbdd6b095dfc864c21c6965a370972d1ccdcd",
+      "isVerified": true
+    },
+    "80094": {
+      "address": "0x5a46388BaDe197c332A7065dF982595F920D1ef0",
+      "transaction": "0x1a1eaf45a42196380f7f5f9b9fe230640162951fd40f606c61f61bae0dfdaab2",
       "isVerified": true
     }
   },
