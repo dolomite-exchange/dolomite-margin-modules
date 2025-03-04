@@ -33,7 +33,7 @@ import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../protocol/lib/Require.sol";
 import { TypesLib } from "../protocol/lib/TypesLib.sol";
 import { ILiquidatorProxyV5 } from "./interfaces/ILiquidatorProxyV5.sol";
-
+import { ChainIdHelper } from "../helpers/ChainIdHelper.sol";
 
 /**
  * @title   LiquidatorProxyV5
@@ -77,7 +77,6 @@ contract LiquidatorProxyV5 is
         _liquidatorAssetRegistry
     )
     GenericTraderProxyBase(
-        _chainId,
         _dolomiteRegistry
     )
     {

@@ -49,7 +49,6 @@ abstract contract GenericTraderProxyBase is IGenericTraderBase {
     uint256 internal constant TRADE_ACCOUNT_ID = 0;
     uint256 internal constant ZAP_ACCOUNT_ID = 1;
 
-    uint256 public immutable CHAIN_ID;
     IDolomiteRegistry public immutable DOLOMITE_REGISTRY;
 
     // ========================================================
@@ -57,10 +56,8 @@ abstract contract GenericTraderProxyBase is IGenericTraderBase {
     // ========================================================
 
     constructor (
-        uint256 _chainId,
         address _dolomiteRegistry
     ) {
-        CHAIN_ID = _chainId;
         DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
     }
 

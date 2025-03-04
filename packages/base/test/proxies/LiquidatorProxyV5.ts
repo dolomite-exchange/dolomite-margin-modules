@@ -113,7 +113,6 @@ describe('LiquidatorProxyV5', () => {
     it('should work normally', async () => {
       expect(await liquidatorProxy.EXPIRY()).to.equal(core.expiry.address);
       expect(await liquidatorProxy.DOLOMITE_MARGIN()).to.equal(core.dolomiteMargin.address);
-      expect(await liquidatorProxy.CHAIN_ID()).to.equal(Network.ArbitrumOne);
       expect(await liquidatorProxy.DOLOMITE_REGISTRY()).to.equal(core.dolomiteRegistry.address);
       expect(await liquidatorProxy.LIQUIDATOR_ASSET_REGISTRY()).to.equal(core.liquidatorAssetRegistry.address);
     });

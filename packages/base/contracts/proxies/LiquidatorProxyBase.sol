@@ -32,6 +32,7 @@ import { DolomiteMarginMath } from "../protocol/lib/DolomiteMarginMath.sol";
 import { Require } from "../protocol/lib/Require.sol";
 import { Time } from "../protocol/lib/Time.sol";
 import { TypesLib } from "../protocol/lib/TypesLib.sol";
+import { ChainIdHelper } from "../helpers/ChainIdHelper.sol";
 
 
 /**
@@ -40,7 +41,7 @@ import { TypesLib } from "../protocol/lib/TypesLib.sol";
  *
  * Inheritable contract that allows sharing code across different liquidator proxy contracts
  */
-abstract contract LiquidatorProxyBase is HasLiquidatorRegistry {
+abstract contract LiquidatorProxyBase is HasLiquidatorRegistry, ChainIdHelper {
     using DolomiteVersionLib for *;
     using SafeMath for uint;
     using TypesLib for IDolomiteStructs.Par;
@@ -93,17 +94,12 @@ abstract contract LiquidatorProxyBase is HasLiquidatorRegistry {
         uint256 owedPriceAdj;
     }
 
-    // ============ Fields ============
-
-    uint256 private immutable _CHAIN_ID; // solhint-disable-line var-name-mixedcase
-
     // ============ Internal Functions ============
 
     constructor(
         uint256 _chainId,
         address _liquidatorAssetRegistry
-    ) HasLiquidatorRegistry(_liquidatorAssetRegistry) {
-        _CHAIN_ID = _chainId;
+    ) HasLiquidatorRegistry(_liquidatorAssetRegistry) ChainIdHelper(_chainId) {
     }
 
     /**

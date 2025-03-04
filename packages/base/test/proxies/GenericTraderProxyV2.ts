@@ -192,7 +192,6 @@ describe('GenericTraderProxyV2', () => {
 
   describe('#constructor', () => {
     it('should work normally', async () => {
-      expect(await genericTraderProxy.CHAIN_ID()).to.equal(Network.ArbitrumOne);
       expect(await genericTraderProxy.DOLOMITE_REGISTRY()).to.equal(core.dolomiteRegistry.address);
       expect(await genericTraderProxy.DOLOMITE_MARGIN()).to.equal(core.dolomiteMargin.address);
     });

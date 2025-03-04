@@ -67,10 +67,9 @@ contract GenericTraderProxyV2 is GenericTraderProxyBase, ReentrancyGuard, Author
     // ========================================================
 
     constructor(
-        uint256 _chainId,
         address _dolomiteRegistry,
         address _dolomiteMargin
-    ) GenericTraderProxyBase(_chainId, _dolomiteRegistry) AuthorizationBase(_dolomiteMargin) {
+    ) GenericTraderProxyBase(_dolomiteRegistry) AuthorizationBase(_dolomiteMargin) {
     }
 
     // ========================================================
