@@ -89,7 +89,6 @@ contract LiquidatorProxyV5 is
 
     function initialize() external initializer {}
 
-    // solium-disable-next-line security/no-assign-params
     function liquidate(
         LiquidateParams memory _liquidateParams
     )
@@ -145,7 +144,8 @@ contract LiquidatorProxyV5 is
             constants.dolomiteMargin.getAccountMarketsWithBalances(_liquidateParams.solidAccount),
             constants.liquidMarkets
         );
-        constants.expiryProxy = _liquidateParams.expiry != 0 ? EXPIRY: IExpiry(address(0)); // don't read EXPIRY; it's not needed
+        // If there's no expiry set, don't read EXPIRY (it's not needed)
+        constants.expiryProxy = _liquidateParams.expiry != 0 ? EXPIRY: IExpiry(address(0));
         constants.expiry = uint32(_liquidateParams.expiry);
 
         LiquidatorProxyCache memory liquidatorCache = _initializeCache(constants);
@@ -173,9 +173,9 @@ contract LiquidatorProxyV5 is
         accounts[LIQUID_ACCOUNT_ID] = _liquidateParams.liquidAccount;
         _validateZapAccount(genericCache, accounts[ZAP_ACCOUNT_ID], _liquidateParams.marketIdsPath);
 
-        uint256 liquidationActionsLength = _getLiquidationActionsLength(_liquidateParams.withdrawAllReward);
         IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](
-            liquidationActionsLength + _getActionsLengthForTraderParams(_liquidateParams.tradersPath)
+            _getLiquidationActionsLength(_liquidateParams.withdrawAllReward) +
+            _getActionsLengthForTraderParams(_liquidateParams.tradersPath)
         );
         _appendLiquidationAction(
             actions,

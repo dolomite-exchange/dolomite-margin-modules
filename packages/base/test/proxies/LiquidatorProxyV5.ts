@@ -31,7 +31,6 @@ import { ARBIsolationModeTokenVaultV1__factory } from 'packages/arb/src/types';
 import { UpgradeableProxy__factory } from 'packages/tokenomics/src/types';
 
 const amountWei = parseEther('1000');
-const outputAmount = parseEther('.5');
 const defaultAccountNumber = ZERO_BI;
 const borrowAccountNumber = BigNumber.from('123');
 
@@ -114,7 +113,6 @@ describe('LiquidatorProxyV5', () => {
     it('should work normally', async () => {
       expect(await liquidatorProxy.EXPIRY()).to.equal(core.expiry.address);
       expect(await liquidatorProxy.DOLOMITE_MARGIN()).to.equal(core.dolomiteMargin.address);
-      expect(await liquidatorProxy.chainId()).to.equal(Network.ArbitrumOne);
       expect(await liquidatorProxy.CHAIN_ID()).to.equal(Network.ArbitrumOne);
       expect(await liquidatorProxy.DOLOMITE_REGISTRY()).to.equal(core.dolomiteRegistry.address);
       expect(await liquidatorProxy.LIQUIDATOR_ASSET_REGISTRY()).to.equal(core.liquidatorAssetRegistry.address);

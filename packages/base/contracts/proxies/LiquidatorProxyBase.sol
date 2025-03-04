@@ -95,7 +95,7 @@ abstract contract LiquidatorProxyBase is HasLiquidatorRegistry {
 
     // ============ Fields ============
 
-    uint256 public immutable chainId;
+    uint256 private immutable _CHAIN_ID; // solhint-disable-line var-name-mixedcase
 
     // ============ Internal Functions ============
 
@@ -103,7 +103,7 @@ abstract contract LiquidatorProxyBase is HasLiquidatorRegistry {
         uint256 _chainId,
         address _liquidatorAssetRegistry
     ) HasLiquidatorRegistry(_liquidatorAssetRegistry) {
-        chainId = _chainId;
+        _CHAIN_ID = _chainId;
     }
 
     /**
@@ -125,7 +125,7 @@ abstract contract LiquidatorProxyBase is HasLiquidatorRegistry {
                 ,
                 IDolomiteStructs.MonetaryPrice memory owedPricePrice
             ) = _constants.expiryProxy.getExpirySpreadAdjustedPricesForChain(
-                chainId,
+                _CHAIN_ID,
                 _constants.liquidAccount,
                 _constants.heldMarket,
                 _constants.owedMarket,
@@ -134,7 +134,7 @@ abstract contract LiquidatorProxyBase is HasLiquidatorRegistry {
             owedPriceAdj = owedPricePrice.value;
         } else {
             IDolomiteStructs.Decimal memory spread = _constants.dolomiteMargin.getLiquidationSpreadForChainAndPair(
-                chainId,
+                _CHAIN_ID,
                 _constants.liquidAccount,
                 _constants.heldMarket,
                 _constants.owedMarket
