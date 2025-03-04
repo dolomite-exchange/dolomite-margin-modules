@@ -292,6 +292,16 @@ export async function enableInterestAccrual<T extends NetworkType>(
   );
 }
 
+export async function setupWBERABalance(
+  core: CoreProtocolBerachain,
+  signer: SignerWithAddressWithSafety,
+  amount: BigNumberish,
+  spender: { address: string },
+) {
+  await core.tokens.wbera.connect(signer).deposit({ value: amount });
+  await core.tokens.wbera.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
+}
+
 export async function setupWETHBalance<T extends NetworkType>(
   core: CoreProtocolAbstract<T>,
   signer: SignerWithAddressWithSafety,
