@@ -55,7 +55,7 @@ import { encodeDolomiteOwnerMigrations } from './helpers/encode-dolomite-owner-m
 import { encodeDolomiteRegistryMigrations } from './helpers/encode-dolomite-registry-migrations';
 import { encodeIsolationModeFreezableLiquidatorMigrations } from './helpers/encode-isolation-mode-freezable-liquidator-migrations';
 
-const THIRTY_MINUTES_SECONDS = 60 * 30;
+const FIVE_MINUTES_SECONDS = 60 * 5;
 const HANDLER_ADDRESS = '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe'; // Level Initiator
 
 async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
@@ -100,7 +100,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   );
   const dolomiteOwnerAddress = await deployContractAndSave(
     'DolomiteOwnerV1',
-    getDolomiteOwnerConstructorParams(GNOSIS_SAFE_MAP[network], THIRTY_MINUTES_SECONDS),
+    getDolomiteOwnerConstructorParams(GNOSIS_SAFE_MAP[network], FIVE_MINUTES_SECONDS),
     'DolomiteOwnerV1',
   );
   const dolomiteOwnerV1 = IDolomiteOwner__factory.connect(dolomiteOwnerAddress, gnosisSafeSigner);
