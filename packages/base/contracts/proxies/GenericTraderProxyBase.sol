@@ -169,7 +169,10 @@ abstract contract GenericTraderProxyBase is IGenericTraderBase {
     }
 
     function _getActionsLengthForTraderParams(
-        TraderParam[] memory _tradersPath
+        GenericTraderProxyCache memory _cache,
+        TraderParam[] memory _tradersPath,
+        IDolomiteStructs.AccountInfo[] memory _accounts,
+        uint256 _minOutputAmountWei
     )
         internal
         view
@@ -183,7 +186,15 @@ abstract contract GenericTraderProxyBase is IGenericTraderBase {
             } else if (_isWrapperTraderType(_tradersPath[i].traderType)) {
                 actionsLength += IIsolationModeWrapperTraderV2(_tradersPath[i].trader).actionsLength();
             } else if (_tradersPath[i].traderType == TraderType.InternalLiquidity) {
-                actionsLength += IInternalAutoTraderBase(_tradersPath[i].trader).actionsLength(/* _swaps = */ 1);
+                actionsLength += IInternalAutoTraderBase(_tradersPath[i].trader).actionsLength(
+                    _createSwapDataFromTradeParams(
+                        _cache,
+                        _tradersPath,
+                        _accounts,
+                        _minOutputAmountWei,
+                        i
+                    )
+                );
             } else {
                 // If it's not a `wrap` or `unwrap`, trades only require 1 action
                 actionsLength += 1;
@@ -262,11 +273,13 @@ abstract contract GenericTraderProxyBase is IGenericTraderBase {
                 // TODO: check these changes over
                 // TODO: should we move `extraData` to be in each `trades[i]` struct?
                 IInternalAutoTraderBase.InternalTradeParams[] memory trades =
-                    new IInternalAutoTraderBase.InternalTradeParams[](1);
-                trades[0].makerAccount = _accounts[_tradersPath[i].makerAccountIndex + _cache.traderAccountStartIndex];
-                trades[0].makerAccountId = _tradersPath[i].makerAccountIndex + _cache.traderAccountStartIndex;
-                trades[0].amount = AccountActionLib.all();
-                trades[0].minOutputAmount = _getMinOutputAmountWeiForIndex(_minOutputAmountWei, i, tradersPathLength);
+                    _createSwapDataFromTradeParams(
+                        _cache,
+                        _tradersPath,
+                        _accounts,
+                        _minOutputAmountWei,
+                        i
+                    );
                 // trades[0].extraData = _tradersPath[i].tradeData; // TODO: Thoughts on this?
 
                 IDolomiteStructs.ActionArgs[] memory tradeActions;
@@ -283,8 +296,8 @@ abstract contract GenericTraderProxyBase is IGenericTraderBase {
                                 inputMarketId: _marketIdsPath[i],
                                 outputMarketId: _marketIdsPath[i + 1],
                                 inputAmountWei: AccountActionLib.all(),
-                                trades: trades
-                                // extraData: _tradersPath[i].tradeData
+                                trades: trades,
+                                extraData: _tradersPath[i].tradeData
                             })
                         );
                 }
@@ -393,6 +406,21 @@ abstract contract GenericTraderProxyBase is IGenericTraderBase {
         returns (bool)
     {
         return TraderType.IsolationModeUnwrapper == _traderType;
+    }
+
+    function _createSwapDataFromTradeParams(
+        GenericTraderProxyCache memory _cache,
+        TraderParam[] memory _traderParams,
+        IDolomiteStructs.AccountInfo[] memory _accounts,
+        uint256 _minOutputAmountWei,
+        uint256 _index
+    ) internal pure returns (IInternalAutoTraderBase.InternalTradeParams[] memory) {
+        IInternalAutoTraderBase.InternalTradeParams[] memory trades = new IInternalAutoTraderBase.InternalTradeParams[](1);
+        trades[0].makerAccount = _accounts[_traderParams[_index].makerAccountIndex + _cache.traderAccountStartIndex];
+        trades[0].makerAccountId = _traderParams[_index].makerAccountIndex + _cache.traderAccountStartIndex;
+        trades[0].amount = AccountActionLib.all();
+        trades[0].minOutputAmount = _getMinOutputAmountWeiForIndex(_minOutputAmountWei, _index, _traderParams.length);
+        return trades;
     }
 
     // ==================== Private Functions ====================

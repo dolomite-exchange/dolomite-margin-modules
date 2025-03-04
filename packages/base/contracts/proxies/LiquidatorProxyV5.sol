@@ -175,7 +175,12 @@ contract LiquidatorProxyV5 is
 
         IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](
             _getLiquidationActionsLength(_liquidateParams.withdrawAllReward) +
-            _getActionsLengthForTraderParams(_liquidateParams.tradersPath)
+            _getActionsLengthForTraderParams(
+                genericCache,
+                _liquidateParams.tradersPath,
+                accounts,
+                _liquidateParams.minOutputAmountWei
+            )
         );
         _appendLiquidationAction(
             actions,
