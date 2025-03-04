@@ -18,13 +18,13 @@
 
 pragma solidity ^0.8.9;
 
-import { IDolomiteStructs } from "../interfaces/IDolomiteStructs.sol";
 import { IDolomiteInterestSetter } from "../interfaces/IDolomiteInterestSetter.sol";
+import { IDolomiteStructs } from "../interfaces/IDolomiteStructs.sol";
 
 
 /**
- * @title Events
- * @author dYdX
+ * @title   Events
+ * @author  dYdX
  *
  * Library to parse and emit logs from which the state of all accounts and indexes can be followed
  */

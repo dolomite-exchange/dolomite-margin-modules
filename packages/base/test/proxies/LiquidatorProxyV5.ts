@@ -199,8 +199,20 @@ describe('LiquidatorProxyV5', () => {
       );
 
       await core.testEcosystem?.testPriceOracle.setPrice(core.tokens.weth.address, parseEther('900'));
-      const zap1 = await getSimpleZapParams(core.marketIds.usdc, MAX_UINT_256_BI, core.marketIds.dai, parseEther('1000'), core);
-      const zap2 = await getSimpleZapParams(core.marketIds.dai, MAX_UINT_256_BI, core.marketIds.weth, parseEther('1.1'), core);
+      const zap1 = await getSimpleZapParams(
+        core.marketIds.usdc,
+        MAX_UINT_256_BI,
+        core.marketIds.dai,
+        parseEther('1000'),
+        core
+      );
+      const zap2 = await getSimpleZapParams(
+        core.marketIds.dai,
+        MAX_UINT_256_BI,
+        core.marketIds.weth,
+        parseEther('1.1'),
+        core
+      );
       const zapParams = {
         marketIdsPath: [core.marketIds.usdc, core.marketIds.dai, core.marketIds.weth],
         inputAmountWei: MAX_UINT_256_BI,
@@ -369,28 +381,11 @@ describe('LiquidatorProxyV5', () => {
         withdrawAllReward: false,
       });
 
-      /*
-      * held = 1000 DAI
-      * owed = 1 WETH
-      * heldPrice = $1
-      * owedPrice = $900
-      * owedPriceAdj = 900 + .05(900) = $945
-      *
-      * After liquidation action:
-      *     liquid account dai = 1000 - 945 = 55
-      *     liquid account weth = 1 - 1 = 0
-      *     solid account dai = 945
-      *     solid account weth = -1
-      *
-      * After trade action where solid account swaps 945 dai for 1.1 weth:
-      *     solid account dai = 0
-      *     solid account weth = .1
-      */
       await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.weth, ZERO_BI.sub(parseEther('0.5')));
       await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, core.marketIds.dai, parseEther('527.5'));
       await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.weth, parseEther('.6'));
-      await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.dai, -1); // rounding issue causes -1
-      console.log(await core.dolomiteMargin.getAccountPar({ owner: core.hhUser2.address, number: defaultAccountNumber }, core.marketIds.dai));
+      // @follow-up @Corey, this is -1 I think because of rounding issues
+      await expectProtocolBalance(core, core.hhUser2, defaultAccountNumber, core.marketIds.dai, -1);
     });
 
     it('should work normally if supply cap is reached for owed token / reward token', async () => {

@@ -412,7 +412,8 @@ abstract contract GenericTraderProxyBase is IGenericTraderBase {
         uint256 _minOutputAmountWei,
         uint256 _index
     ) internal pure returns (IInternalAutoTraderBase.InternalTradeParams[] memory) {
-        IInternalAutoTraderBase.InternalTradeParams[] memory trades = new IInternalAutoTraderBase.InternalTradeParams[](1);
+        IInternalAutoTraderBase.InternalTradeParams[] memory trades =
+            new IInternalAutoTraderBase.InternalTradeParams[](1);
         trades[0].makerAccount = _accounts[_traderParams[_index].makerAccountIndex + _cache.traderAccountStartIndex];
         trades[0].makerAccountId = _traderParams[_index].makerAccountIndex + _cache.traderAccountStartIndex;
         trades[0].amount = AccountActionLib.all();

@@ -144,11 +144,12 @@ contract LiquidatorProxyV5 is
         // get the max liquidation amount
         _calculateAndSetMaxLiquidationAmount(liquidatorCache);
 
-        (_liquidateParams.inputAmountWei, _liquidateParams.minOutputAmountWei) = _calculateAndSetActualLiquidationAmount(
-            _liquidateParams.inputAmountWei,
-            _liquidateParams.minOutputAmountWei,
-            liquidatorCache
-        );
+        (_liquidateParams.inputAmountWei, _liquidateParams.minOutputAmountWei) =
+            _calculateAndSetActualLiquidationAmount(
+                _liquidateParams.inputAmountWei,
+                _liquidateParams.minOutputAmountWei,
+                liquidatorCache
+            );
 
         IDolomiteStructs.AccountInfo[] memory accounts = _getAccounts(
             genericCache,
