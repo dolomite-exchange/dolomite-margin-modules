@@ -19,10 +19,11 @@
 
 pragma solidity ^0.8.9;
 
+import { IEventEmitterRegistry } from "./IEventEmitterRegistry.sol";
+import { IExpiry } from "./IExpiry.sol";
 import { IGenericTraderBase } from "./IGenericTraderBase.sol";
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
-
 
 
 /**
@@ -150,7 +151,7 @@ interface IGenericTraderProxyV1 is IGenericTraderBase {
         address _eventEmitterRegistry
     ) external;
 
-    function EVENT_EMITTER_REGISTRY() external view returns (address);
+    function EVENT_EMITTER_REGISTRY() external view returns (IEventEmitterRegistry);
 
-    function EXPIRY() external view returns (address);
+    function EXPIRY() external view returns (IExpiry);
 }

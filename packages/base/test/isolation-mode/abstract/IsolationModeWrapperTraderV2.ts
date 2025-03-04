@@ -77,8 +77,8 @@ describe('IsolationModeWrapperTraderV2', () => {
       TestIsolationModeWrapperTraderV2__factory.bytecode,
       [otherToken.address, factory.address, core.dolomiteMargin.address, core.dolomiteRegistry.address],
     );
-    await factory.connect(core.governance).ownerInitialize([wrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
+    await factory.connect(core.governance).ownerInitialize([wrapper.address]);
 
     solidUser = core.hhUser5;
 

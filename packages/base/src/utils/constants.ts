@@ -994,6 +994,13 @@ export const WMNT_MAP: Record<Network.Mantle, TokenWithMarketId> = {
   },
 };
 
+export const D_MNT_MAP: Record<Network.Mantle, TokenWithMarketId> = {
+  [Network.Mantle]: {
+    address: '0x6B68bDCCb22931937d7D11e556d95a07E02fE3CE',
+    marketId: 9,
+  },
+};
+
 export const WOKB_MAP: Record<Network.XLayer, TokenWithMarketId> = {
   [Network.XLayer]: {
     address: '0xe538905cf8410324e03A5A23C1c177a474D59b2b',
