@@ -47,11 +47,12 @@ interface IDepositWithdrawalProxy {
     ) external;
 
     /**
-     * Same as `depositWei` but converts the `msg.sender`'s sent ETH into WETH before depositing into `DolomiteMargin`.
+     * Same as `depositWei` but converts the `msg.sender`'s sent payable into wrapped payable before depositing into
+     * `DolomiteMargin`.
      *
      * @param  _toAccountNumber The account number into which `msg.sender` will be depositing
      */
-    function depositETH(
+    function depositPayable(
         uint256 _toAccountNumber
     ) external payable;
 
@@ -154,4 +155,6 @@ interface IDepositWithdrawalProxy {
     function WRAPPED_PAYABLE_TOKEN() external view returns (address);
 
     function PAYABLE_MARKET_ID() external view returns (uint256);
+
+    function g_initialized() external view returns (bool);
 }

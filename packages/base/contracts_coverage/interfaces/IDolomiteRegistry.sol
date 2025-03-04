@@ -25,9 +25,9 @@ import { IDolomiteAccountRegistry } from "./IDolomiteAccountRegistry.sol";
 import { IDolomiteMigrator } from "./IDolomiteMigrator.sol";
 import { IEventEmitterRegistry } from "./IEventEmitterRegistry.sol";
 import { IExpiry } from "./IExpiry.sol";
-import { IGenericTraderProxyV1 } from "./IGenericTraderProxyV1.sol";
 import { ILiquidatorAssetRegistry } from "./ILiquidatorAssetRegistry.sol";
 import { IDolomitePriceOracle } from "../protocol/interfaces/IDolomitePriceOracle.sol";
+import { IGenericTraderProxyV2 } from "../proxies/interfaces/IGenericTraderProxyV2.sol";
 
 
 /**
@@ -49,6 +49,7 @@ interface IDolomiteRegistry {
     event BorrowPositionProxySet(address indexed _borrowPositionProxy);
     event GenericTraderProxySet(address indexed _genericTraderProxy);
     event ExpirySet(address indexed _expiry);
+    event FeeAgentSet(address indexed _feeAgent);
     event SlippageToleranceForPauseSentinelSet(uint256 _slippageTolerance);
     event LiquidatorAssetRegistrySet(address indexed _liquidatorAssetRegistry);
     event EventEmitterSet(address indexed _eventEmitter);
@@ -83,6 +84,12 @@ interface IDolomiteRegistry {
      * @param  _expiry  The new address of the expiry contract
      */
     function ownerSetExpiry(address _expiry) external;
+
+    /**
+     *
+     * @param  _feeAgent  The new address of the fee agent
+     */
+    function ownerSetFeeAgent(address _feeAgent) external;
 
     /**
      *
@@ -160,7 +167,7 @@ interface IDolomiteRegistry {
     /**
      * @return  The address of the generic trader proxy for making zaps
      */
-    function genericTraderProxy() external view returns (IGenericTraderProxyV1);
+    function genericTraderProxy() external view returns (IGenericTraderProxyV2);
 
     /**
      * @return  The address of the expiry contract
@@ -181,6 +188,11 @@ interface IDolomiteRegistry {
      * @return The address of the emitter contract that can emit certain events for indexing
      */
     function eventEmitter() external view returns (IEventEmitterRegistry);
+
+    /**
+     * @return The address of the fee agent
+     */
+    function feeAgent() external view returns (address);
 
     /**
      * @return The address of the Chainlink price oracle that's compatible with DolomiteMargin

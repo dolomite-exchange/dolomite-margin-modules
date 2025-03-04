@@ -33,20 +33,20 @@ import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 contract TestDolomiteAutoTrader is IDolomiteAutoTrader {
 
     function getTradeCost(
-        uint256 inputMarketId,
-        uint256 outputMarketId,
-        IDolomiteStructs.AccountInfo memory makerAccount,
-        IDolomiteStructs.AccountInfo memory takerAccount,
-        IDolomiteStructs.Par memory oldInputPar,
-        IDolomiteStructs.Par memory newInputPar,
-        IDolomiteStructs.Wei memory inputDeltaWei,
-        bytes memory data
+        uint256 /* _inputMarketId */,
+        uint256 /* _outputMarketId */,
+        IDolomiteStructs.AccountInfo calldata /* _makerAccount */,
+        IDolomiteStructs.AccountInfo calldata /* _takerAccount */,
+        IDolomiteStructs.Par calldata /* _oldInputPar */,
+        IDolomiteStructs.Par calldata /* _newInputPar */,
+        IDolomiteStructs.Wei calldata _inputDeltaWei,
+        bytes calldata /* _data */
     ) external pure returns (IDolomiteStructs.AssetAmount memory) {
         return IDolomiteStructs.AssetAmount({
             sign: true,
             denomination: IDolomiteStructs.AssetDenomination.Wei,
             ref: IDolomiteStructs.AssetReference.Delta,
-            value: inputDeltaWei.value
+            value: _inputDeltaWei.value
         });
     }
 }

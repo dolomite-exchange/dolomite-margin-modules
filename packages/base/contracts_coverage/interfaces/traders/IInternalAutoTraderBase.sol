@@ -37,7 +37,7 @@ interface IInternalAutoTraderBase is IDolomiteAutoTrader {
 
     struct InternalTradeParams {
         IDolomiteStructs.AccountInfo makerAccount;
-        uint256 makerAccountId;
+        uint256 makerAccountId; // @follow-up Doesn't fully make sense because the caller won't know this information
         uint256 amount;
         uint256 minOutputAmount;
     }
@@ -83,5 +83,6 @@ interface IInternalAutoTraderBase is IDolomiteAutoTrader {
         CreateActionsForInternalTradeParams memory _params
     ) external view returns (IDolomiteStructs.ActionArgs[] memory);
 
-    function actionsLength(InternalTradeParams[] calldata _trades) external view returns (uint256);
+    // @follow-up Want to pass through full swaps array or just length?
+    function actionsLength(uint256 _swaps) external view returns (uint256);
 }

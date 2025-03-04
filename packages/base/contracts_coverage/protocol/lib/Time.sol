@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 /*
 
-    Copyright 2024 Dolomite
+    Copyright 2023 Dolomite
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -20,16 +20,24 @@
 
 pragma solidity ^0.8.9;
 
+import { DolomiteMarginMath } from "./DolomiteMarginMath.sol";
+
 
 /**
- * @title   VoterAlwaysActive
+ * @title   Time
  * @author  Dolomite
  *
- * Voter implementation to be used by VotingEscrow which always returns false for stale
+ * Library for dealing with time, assuming timestamps fit within 32 bits (valid until year 2106)
  */
-contract VoterAlwaysActive {
+library Time {
 
-    function stale(uint256 /* _tokenId */) external pure returns (bool) {
-        return false;
+    // ============ Library Functions ============
+
+    function currentTime()
+        internal
+        view
+        returns (uint32)
+    {
+        return DolomiteMarginMath.to32(block.timestamp);
     }
 }

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /*
 
     Copyright 2019 dYdX Trading Inc.
@@ -36,25 +37,25 @@ interface IDolomiteAutoTrader {
      * the takerAccount and the passive account (for which this contract approves trades
      * on-behalf-of) is the makerAccount.
      *
-     * @param  inputMarketId   The market for which the trader specified the original amount
-     * @param  outputMarketId  The market for which the trader wants the resulting amount specified
-     * @param  makerAccount    The account for which this contract is making trades
-     * @param  takerAccount    The account requesting the trade
-     * @param  oldInputPar     The old principal amount for the makerAccount for the inputMarketId
-     * @param  newInputPar     The new principal amount for the makerAccount for the inputMarketId
-     * @param  inputDeltaWei   The change in token amount for the makerAccount for the inputMarketId
-     * @param  data            Arbitrary data passed in by the trader
-     * @return                 The AssetAmount for the makerAccount for the outputMarketId
+     * @param  _inputMarketId   The market for which the trader specified the original amount
+     * @param  _outputMarketId  The market for which the trader wants the resulting amount specified
+     * @param  _makerAccount    The account for which this contract is making trades
+     * @param  _takerAccount    The account requesting the trade
+     * @param  _oldInputPar     The old principal amount for the makerAccount for the inputMarketId
+     * @param  _newInputPar     The new principal amount for the makerAccount for the inputMarketId
+     * @param  _inputDeltaWei   The change in token amount for the makerAccount for the inputMarketId
+     * @param  _data            Arbitrary data passed in by the trader
+     * @return                  The AssetAmount for the makerAccount for the outputMarketId
      */
     function getTradeCost(
-        uint256 inputMarketId,
-        uint256 outputMarketId,
-        IDolomiteStructs.AccountInfo memory makerAccount,
-        IDolomiteStructs.AccountInfo memory takerAccount,
-        IDolomiteStructs.Par memory oldInputPar,
-        IDolomiteStructs.Par memory newInputPar,
-        IDolomiteStructs.Wei memory inputDeltaWei,
-        bytes memory data
+        uint256 _inputMarketId,
+        uint256 _outputMarketId,
+        IDolomiteStructs.AccountInfo calldata _makerAccount,
+        IDolomiteStructs.AccountInfo calldata _takerAccount,
+        IDolomiteStructs.Par calldata _oldInputPar,
+        IDolomiteStructs.Par calldata _newInputPar,
+        IDolomiteStructs.Wei calldata _inputDeltaWei,
+        bytes calldata _data
     )
         external
         returns (IDolomiteStructs.AssetAmount memory);

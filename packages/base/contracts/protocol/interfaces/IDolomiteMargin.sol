@@ -485,6 +485,12 @@ interface IDolomiteMargin is IDolomiteMarginAdmin {
         uint256 owedMarketId
     ) external view returns (Decimal memory);
 
+    function getLiquidationSpreadForAccountAndPair(
+        AccountInfo calldata account,
+        uint256 heldMarketId,
+        uint256 owedMarketId
+    ) external view returns (Decimal memory);
+
     /**
      * Get the global earnings-rate variable that determines what percentage of the interest paid
      * by borrowers gets passed-on to suppliers.

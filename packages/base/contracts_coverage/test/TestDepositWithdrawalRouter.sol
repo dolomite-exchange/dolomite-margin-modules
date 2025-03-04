@@ -32,11 +32,16 @@ import { DepositWithdrawalRouter } from "../routers/DepositWithdrawalRouter.sol"
 contract TestDepositWithdrawalRouter is DepositWithdrawalRouter {
     using InternalSafeDelegateCallLib for address;
 
+    bytes32 private constant _IS_INITIALIZED_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isInitialized")) - 1);
+
     constructor(
-        address _payableToken,
         address _dolomiteRegistry,
         address _dolomiteMargin
-    ) DepositWithdrawalRouter(_payableToken, _dolomiteRegistry, _dolomiteMargin) {}
+    ) DepositWithdrawalRouter(_dolomiteRegistry, _dolomiteMargin) {}
+
+    function setInitialized(bool _isInitialized) external {
+        _setUint256(_IS_INITIALIZED_SLOT, _isInitialized ? 1 : 0);
+    }
 
     function callFunctionAndTriggerReentrancy(
         bytes calldata _callDataWithSelector

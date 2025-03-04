@@ -81,6 +81,13 @@ interface IDolomiteAccountRegistry {
 
     function getAccountByVault(address _vault) external view returns (address);
 
+    /**
+     *
+     * @param  _token   The token to check if there is an override. Must be listed by Dolomite Margin.
+     * @return          The token that is used for conducting transfers for this token. For example, BGT is not
+     *                  transferable and must be redeemed to BERA. Thus, inputting BGT should return a token override of
+     *                  BERA.
+     */
     function getTransferTokenOverride(address _token) external view returns (address);
 
     function getVaultsByAccount(address _account) external view returns (address[] memory);
