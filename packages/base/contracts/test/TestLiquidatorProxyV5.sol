@@ -76,16 +76,14 @@ contract TestLiquidatorProxyV5 is LiquidatorProxyV5 {
     ) external view returns (IDolomiteStructs.MonetaryValue memory, IDolomiteStructs.MonetaryValue memory) {
         if (_adjustForMarginPremiums) {
             return _getAdjustedAccountValues(
-                DOLOMITE_MARGIN,
-                _getMarketInfos(DOLOMITE_MARGIN, _solidMarkets, _liquidMarkets),
+                _getMarketInfos(_solidMarkets, _liquidMarkets),
                 _account,
                 _marketIds,
                 _marginRatioOverride
             );
         } else {
             return _getAccountValues(
-                DOLOMITE_MARGIN,
-                _getMarketInfos(DOLOMITE_MARGIN, _solidMarkets, _liquidMarkets),
+                _getMarketInfos(_solidMarkets, _liquidMarkets),
                 _account,
                 _marketIds,
                 _marginRatioOverride

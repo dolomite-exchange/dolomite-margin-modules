@@ -21,7 +21,7 @@
 pragma solidity ^0.8.9;
 
 import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import { BaseLiquidatorProxy } from "../general/BaseLiquidatorProxy.sol";
+import { BaseLiquidatorProxy } from "./BaseLiquidatorProxy.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IIsolationModeFreezableLiquidatorProxy } from "../isolation-mode/interfaces/IIsolationModeFreezableLiquidatorProxy.sol"; // solhint-disable-line max-line-length
 import { IIsolationModeTokenVaultV1WithAsyncFreezable } from "../isolation-mode/interfaces/IIsolationModeTokenVaultV1WithAsyncFreezable.sol"; // solhint-disable-line max-line-length
@@ -144,7 +144,8 @@ contract IsolationModeFreezableLiquidatorProxy is
             ) = _getAdjustedAccountValues(
                 _marketInfos,
                 _liquidAccount,
-                DOLOMITE_MARGIN().getAccountMarketsWithBalances(_liquidAccount)
+                DOLOMITE_MARGIN().getAccountMarketsWithBalances(_liquidAccount),
+                IDolomiteStructs.Decimal({ value: 0 })
             );
 
             // Panic if there's no supply value
