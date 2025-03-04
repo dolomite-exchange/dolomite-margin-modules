@@ -267,8 +267,6 @@ contract POLIsolationModeWrapperTraderV2 is
         IIsolationModeVaultFactory factory = vaultFactory();
         factory.enqueueTransferIntoDolomiteMargin(_vault, _amount);
 
-        address underlyingToken = factory.UNDERLYING_TOKEN();
-        IERC20(underlyingToken).safeApprove(_vault, _amount);
         IERC20(address(factory)).safeApprove(_receiver, _amount);
     }
 

@@ -50,7 +50,6 @@ import { createDolomiteErc4626Proxy, createIsolationModeTokenVaultV1ActionsImpl,
 import { ActionType, AmountReference, BalanceCheckFlag } from '@dolomite-margin/dist/src/types';
 import { GenericEventEmissionType, GenericTraderParam, GenericTraderType } from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
 
-
 const defaultAccountNumber = ZERO_BI;
 const amountWei = parseEther('10');
 const sampleTradeData = defaultAbiCoder.encode(['uint256'], [2]);
@@ -138,7 +137,7 @@ describe('POLIsolationModeWrapperTraderV2', () => {
   });
 
   describe('#Call and Exchange for non-liquidation sale', () => {
-    it.only('should work when called with the normal conditions', async () => {
+    it('should work when called with the normal conditions', async () => {
       await metaVault.setDefaultRewardVaultTypeByAsset(dToken.address, RewardVaultType.Infrared);
       const wrapperParam: GenericTraderParam = {
         trader: wrapper.address,
@@ -183,7 +182,7 @@ describe('POLIsolationModeWrapperTraderV2', () => {
         vault.addCollateralAndSwapExactInputForOutput(
           defaultAccountNumber,
           defaultAccountNumber,
-          [core.marketIds.honey, marketId],
+          [core.marketIds.weth, marketId],
           MAX_UINT_256_BI,
           amountWei,
           [wrapperParam],
@@ -224,7 +223,7 @@ describe('POLIsolationModeWrapperTraderV2', () => {
           core.hhUser1.address,
           core.dolomiteMargin.address,
           factory.address,
-          core.tokens.honey.address,
+          core.tokens.weth.address,
           ZERO_BI,
           defaultAbiCoder.encode(['uint256', 'bytes'], [ONE_BI, sampleTradeData]),
         ),
@@ -254,7 +253,7 @@ describe('POLIsolationModeWrapperTraderV2', () => {
           vault.address,
           core.dolomiteMargin.address,
           core.tokens.wbera.address,
-          core.tokens.honey.address,
+          core.tokens.weth.address,
           ZERO_BI,
           defaultAbiCoder.encode(['uint256', 'bytes'], [ONE_BI, sampleTradeData]),
         ),
@@ -269,11 +268,11 @@ describe('POLIsolationModeWrapperTraderV2', () => {
           vault.address,
           core.dolomiteMargin.address,
           factory.address,
-          core.tokens.honey.address,
+          core.tokens.weth.address,
           amountWei,
           defaultAbiCoder.encode(['uint256', 'bytes'], [ONE_BI, sampleTradeData]),
         ),
-        `POLIsolationModeWrapperV2: Invalid input amount`,
+        'POLIsolationModeWrapperV2: Invalid input amount',
       );
     });
   });
@@ -282,7 +281,7 @@ describe('POLIsolationModeWrapperTraderV2', () => {
     it('should work normally', async () => {
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
       const tradeCost = await wrapper.connect(dolomiteMarginImpersonator).callStatic.getTradeCost(
-        core.marketIds.honey,
+        core.marketIds.weth,
         marketId,
         {
           owner: metaVault.address,
@@ -310,7 +309,7 @@ describe('POLIsolationModeWrapperTraderV2', () => {
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
       await expectThrow(
         wrapper.connect(dolomiteMarginImpersonator).getTradeCost(
-          core.marketIds.honey,
+          core.marketIds.weth,
           marketId,
           {
             owner: metaVault.address,
@@ -333,7 +332,7 @@ describe('POLIsolationModeWrapperTraderV2', () => {
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
       await expectThrow(
         wrapper.connect(dolomiteMarginImpersonator).getTradeCost(
-          core.marketIds.honey,
+          core.marketIds.weth,
           marketId,
           {
             owner: core.hhUser1.address,
@@ -356,7 +355,7 @@ describe('POLIsolationModeWrapperTraderV2', () => {
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
       await expectThrow(
         wrapper.connect(dolomiteMarginImpersonator).getTradeCost(
-          core.marketIds.honey,
+          core.marketIds.weth,
           marketId,
           {
             owner: metaVault.address,
@@ -375,7 +374,7 @@ describe('POLIsolationModeWrapperTraderV2', () => {
       );
       await expectThrow(
         wrapper.connect(dolomiteMarginImpersonator).getTradeCost(
-          core.marketIds.honey,
+          core.marketIds.weth,
           marketId,
           {
             owner: metaVault.address,
@@ -400,7 +399,7 @@ describe('POLIsolationModeWrapperTraderV2', () => {
     it('should fail if not called by DolomiteMargin', async () => {
       await expectThrow(
         wrapper.connect(core.hhUser1).getTradeCost(
-          core.marketIds.honey,
+          core.marketIds.weth,
           marketId,
           {
             owner: metaVault.address,
@@ -431,7 +430,7 @@ describe('POLIsolationModeWrapperTraderV2', () => {
           otherAccountOwner: metaVault.address,
           otherAccountNumber: defaultAccountNumber,
           outputMarket: marketId,
-          inputMarket: core.marketIds.honey,
+          inputMarket: core.marketIds.weth,
           minOutputAmount: ONE_BI,
           inputAmount: ONE_BI,
           orderData: defaultAbiCoder.encode(['uint256'], [2]),
@@ -440,7 +439,7 @@ describe('POLIsolationModeWrapperTraderV2', () => {
       expect(actions.length).to.equal(2);
       expect(actions[0].actionType).to.equal(ActionType.Trade);
       expect(actions[0].amount.value).to.equal(ZERO_BI);
-      expect(actions[0].amount.ref).to.equal(AmountReference.Target)
+      expect(actions[0].amount.ref).to.equal(AmountReference.Target);
 
       expect(actions[1].actionType).to.equal(ActionType.Sell);
       expect(actions[1].amount.value).to.equal(ZERO_BI);
@@ -469,7 +468,7 @@ describe('POLIsolationModeWrapperTraderV2', () => {
     it('should fail if output market is not valid', async () => {
       await expectThrow(
         wrapper.createActionsForWrapping({
-          inputMarket: core.marketIds.honey,
+          inputMarket: core.marketIds.weth,
           outputMarket: core.marketIds.wbera,
           primaryAccountId: 0,
           otherAccountId: 1,
@@ -488,7 +487,7 @@ describe('POLIsolationModeWrapperTraderV2', () => {
     describe('#getExchangeCost', () => {
       it('should work normally', async () => {
         expect(await wrapper.getExchangeCost(
-          core.tokens.honey.address,
+          core.tokens.weth.address,
           factory.address,
           parAmount,
           BYTES_EMPTY
@@ -510,7 +509,7 @@ describe('POLIsolationModeWrapperTraderV2', () => {
       it('should fail if output token is not valid', async () => {
         await expectThrow(
           wrapper.getExchangeCost(
-            core.tokens.honey.address,
+            core.tokens.weth.address,
             core.tokens.wbera.address,
             parAmount,
             BYTES_EMPTY
@@ -518,16 +517,16 @@ describe('POLIsolationModeWrapperTraderV2', () => {
           `POLIsolationModeWrapperV2: Invalid output token <${core.tokens.wbera.address.toLowerCase()}>`,
         );
       });
-      
+
       it('should fail if desired input amount is 0', async () => {
         await expectThrow(
           wrapper.getExchangeCost(
-            core.tokens.honey.address,
+            core.tokens.weth.address,
             factory.address,
             0,
             BYTES_EMPTY
           ),
-          `POLIsolationModeWrapperV2: Invalid desired input amount`,
+          'POLIsolationModeWrapperV2: Invalid desired input amount',
         );
       });
     });

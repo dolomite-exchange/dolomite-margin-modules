@@ -145,12 +145,13 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
 
     function getReward(
         address _asset
-    ) external onlyChildVault(msg.sender) returns (uint256) {
-        return _getReward(_asset);
+    ) external onlyChildVault(msg.sender) {
+        _getReward(_asset);
     }
 
     function exit(
-        address _asset
+        address _asset,
+        bool _isDToken
     ) external onlyChildVault(msg.sender) {
         IBerachainRewardsRegistry.RewardVaultType defaultType = getDefaultRewardVaultTypeByAsset(_asset);
         IERC20 token;

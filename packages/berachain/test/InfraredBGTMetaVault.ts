@@ -62,9 +62,6 @@ describe('InfraredBGTMetaVault', () => {
   let beraFactory: BerachainRewardsIsolationModeVaultFactory;
   let iBgtFactory: InfraredBGTIsolationModeVaultFactory;
 
-  let dolomiteTokenImplementation: DolomiteERC4626;
-  let dolomiteToken: DolomiteERC4626;
-
   let underlyingToken: IERC20;
   let infraredRewardVault: IInfraredVault;
 
@@ -369,7 +366,9 @@ describe('InfraredBGTMetaVault', () => {
     it('should work if rewards are available', async () => {
       await metaVault.setDefaultRewardVaultTypeByAsset(underlyingToken.address, RewardVaultType.Infrared);
       await beraVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
-      expect(await metaVault.getStakedBalanceByAssetAndType(underlyingToken.address, RewardVaultType.Infrared)).to.equal(amountWei);
+      expect(
+        await metaVault.getStakedBalanceByAssetAndType(underlyingToken.address, RewardVaultType.Infrared)
+      ).to.equal(amountWei);
 
       await increase(10 * ONE_DAY_SECONDS);
       await beraVault.exit();

@@ -31,7 +31,7 @@ import { IInfraredVault } from "../interfaces/IInfraredVault.sol";
  *
  * @notice  Test infrared vault
  */
-contract TestInfraredVault is IInfraredVault, ERC20 {
+contract TestInfraredVault is ERC20 {
 
     address public immutable asset;
     address[] public rewardTokens;
@@ -69,13 +69,18 @@ contract TestInfraredVault is IInfraredVault, ERC20 {
         withdraw(balanceOf(msg.sender));
     }
 
+    function notifyRewardAmount(address rewardToken, uint256 reward) external {
+        rewardAmounts[rewardToken] += reward;
+        IERC20(rewardToken).transferFrom(msg.sender, address(this), reward);
+    }
+
     function addReward(address token, uint256 amount) external {
         rewardAmounts[token] += amount;
         IERC20(token).transferFrom(msg.sender, address(this), amount);
     }
 
-    function getAllRewardsForUser(address /* account */) external view returns (UserReward[] memory userRewards) {
-        userRewards = new UserReward[](rewardTokens.length);
+    function getAllRewardsForUser(address /* account */) external view returns (IInfraredVault.UserReward[] memory userRewards) {
+        userRewards = new IInfraredVault.UserReward[](rewardTokens.length);
         for (uint256 i = 0; i < rewardTokens.length; i++) {
             IERC20 token = IERC20(rewardTokens[i]);
             uint256 reward = rewardAmounts[address(token)];
@@ -91,5 +96,27 @@ contract TestInfraredVault is IInfraredVault, ERC20 {
 
     function getAllRewardTokens() external view returns (address[] memory) {
         return rewardTokens;
+    }
+
+    function rewardData(address _rewardsToken) external view returns (
+        address rewardsDistributor,
+        uint256 rewardsDuration,
+        uint256 periodFinish,
+        uint256 rewardRate,
+        uint256 lastUpdateTime,
+        uint256 rewardPerTokenStored,
+        uint256 rewardResidual
+    ) {
+        rewardsDistributor = address(0);
+        rewardsDuration = 0;
+        periodFinish = 0;
+        rewardRate = 0;
+        lastUpdateTime = 0;
+        rewardPerTokenStored = 0;
+        rewardResidual = 0;
+    }
+
+    function lastTimeRewardApplicable(address _rewardsToken) external view returns (uint256) {
+        return block.timestamp;
     }
 }

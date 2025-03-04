@@ -55,9 +55,9 @@ interface IBaseMetaVault {
 
     function unstake(address _asset, IBerachainRewardsRegistry.RewardVaultType _type, uint256 amount) external;
 
-    function getReward(address _asset) external returns (uint256);
+    function getReward(address _asset) external;
 
-    function exit(address _asset) external;
+    function exit(address _asset, bool _isDToken) external;
 
     function getDefaultRewardVaultTypeByAsset(
         address _asset

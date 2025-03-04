@@ -1,4 +1,4 @@
-import { DolomiteERC4626, DolomiteERC4626__factory, IERC20 } from '@dolomite-exchange/modules-base/src/types';
+import { DolomiteERC4626, DolomiteERC4626__factory } from '@dolomite-exchange/modules-base/src/types';
 import {
   MAX_UINT_256_BI,
   Network,
@@ -9,18 +9,13 @@ import {
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import {
-  expectEvent,
   expectProtocolBalance,
-  expectProtocolBalanceIsGreaterThan,
   expectThrow,
-  expectWalletBalance,
 } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
   disableInterestAccrual,
   setupCoreProtocol,
-  setupHONEYBalance,
   setupTestMarket,
-  setupUSDCBalance,
   setupUserVaultProxy,
   setupWETHBalance,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
@@ -28,34 +23,26 @@ import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/help
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { defaultAbiCoder, parseEther } from 'ethers/lib/utils';
-import { createContractWithAbi, createContractWithLibrary, depositIntoDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
+import { createContractWithAbi, depositIntoDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
 import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
 import {
-  BerachainRewardsIsolationModeTokenVaultV1,
-  BerachainRewardsIsolationModeVaultFactory,
   BerachainRewardsMetaVault,
   BerachainRewardsMetaVault__factory,
   BerachainRewardsRegistry,
-  BGTIsolationModeVaultFactory,
   IInfraredVault,
   IInfraredVault__factory,
-  INativeRewardVault,
-  InfraredBGTIsolationModeTokenVaultV1,
   InfraredBGTIsolationModeTokenVaultV1__factory,
   InfraredBGTIsolationModeVaultFactory,
+  InfraredBGTMetaVault,
+  InfraredBGTMetaVault__factory,
   POLIsolationModeTokenVaultV1,
   POLIsolationModeTokenVaultV1__factory,
   POLIsolationModeUnwrapperTraderV2,
   POLIsolationModeVaultFactory,
-  POLIsolationModeVaultFactory__factory,
   POLIsolationModeWrapperTraderV2,
 } from '../src/types';
 import {
-  createBerachainRewardsIsolationModeTokenVaultV1,
-  createBerachainRewardsIsolationModeVaultFactory,
   createBerachainRewardsRegistry,
-  createBGTIsolationModeTokenVaultV1,
-  createBGTIsolationModeVaultFactory,
   createInfraredBGTIsolationModeTokenVaultV1,
   createInfraredBGTIsolationModeVaultFactory,
   createPOLIsolationModeTokenVaultV1,
@@ -63,15 +50,14 @@ import {
   createPOLIsolationModeVaultFactory,
   createPOLIsolationModeWrapperTraderV2,
   RewardVaultType,
-  setupUserMetaVault,
 } from './berachain-ecosystem-utils';
-import { createIsolationModeTokenVaultV1ActionsImpl, setupNewGenericTraderProxy } from 'packages/base/test/utils/dolomite';
+import { setupNewGenericTraderProxy } from 'packages/base/test/utils/dolomite';
 import { GenericEventEmissionType, GenericTraderParam, GenericTraderType } from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 
 const defaultAccountNumber = ZERO_BI;
+const borrowAccountNumber = BigNumber.from('123');
 const amountWei = parseEther('100');
-const sampleTradeData = defaultAbiCoder.encode(['uint256'], [2]);
 
 const ZERO_PAR = {
   sign: false,
@@ -106,9 +92,9 @@ describe('POLIsolationModeTokenVaultV1', () => {
 
     dToken = DolomiteERC4626__factory.connect(core.dolomiteTokens.weth!.address, core.hhUser1);
 
-    const metaVaultImplementation = await createContractWithAbi<BerachainRewardsMetaVault>(
-      BerachainRewardsMetaVault__factory.abi,
-      BerachainRewardsMetaVault__factory.bytecode,
+    const metaVaultImplementation = await createContractWithAbi<InfraredBGTMetaVault>(
+      InfraredBGTMetaVault__factory.abi,
+      InfraredBGTMetaVault__factory.bytecode,
       [],
     );
     registry = await createBerachainRewardsRegistry(core, metaVaultImplementation);
@@ -130,7 +116,7 @@ describe('POLIsolationModeTokenVaultV1', () => {
     );
 
     marketId = await core.dolomiteMargin.getNumMarkets();
-    await core.testEcosystem!.testPriceOracle.setPrice(factory.address, ONE_ETH_BI);
+    await core.testEcosystem!.testPriceOracle.setPrice(factory.address, parseEther('2000')); // same price as WETH
     await setupTestMarket(core, factory, true);
 
     iBgtMarketId = await core.dolomiteMargin.getNumMarkets();
@@ -190,6 +176,49 @@ describe('POLIsolationModeTokenVaultV1', () => {
         vault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, parAmount),
         'Not implemented',
       );
+    });
+  });
+
+  describe('#swapExactInputForOutput', () => {
+    it('should work normally to leverage', async () => {
+      // same price as polWETH
+      await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.weth.address, parseEther('2000'));
+      await core.dolomiteMargin.connect(core.governance).ownerSetPriceOracle(
+        core.marketIds.weth,
+        core.testEcosystem!.testPriceOracle.address,
+      );
+
+      await wrapFullBalanceIntoVaultDefaultAccount(core, vault, metaVault, wrapper, marketId);
+      await vault.transferIntoPositionWithUnderlyingToken(defaultAccountNumber, borrowAccountNumber, parAmount);
+      await expectProtocolBalance(core, vault, defaultAccountNumber, marketId, ZERO_BI);
+      await expectProtocolBalance(core, vault, borrowAccountNumber, marketId, parAmount);
+
+      const wrapperParam: GenericTraderParam = {
+        trader: wrapper.address,
+        traderType: GenericTraderType.IsolationModeWrapper,
+        tradeData: defaultAbiCoder.encode(['uint256'], [2]),
+        makerAccountIndex: 0,
+      };
+      await vault.swapExactInputForOutput(
+        borrowAccountNumber,
+        [core.marketIds.weth, marketId],
+        amountWei,
+        parAmount,
+        [wrapperParam],
+        [{
+          owner: metaVault.address,
+          number: defaultAccountNumber,
+        }],
+        {
+          deadline: '123123123123123',
+          balanceCheckFlag: BalanceCheckFlag.None,
+          eventType: GenericEventEmissionType.None,
+        },
+      );
+      await expectProtocolBalance(core, vault, borrowAccountNumber, core.marketIds.weth, ZERO_BI.sub(amountWei));
+      await expectProtocolBalance(core, vault, borrowAccountNumber, marketId, parAmount.mul(2));
+      expect(await infraredVault.balanceOf(metaVault.address)).to.equal(parAmount.mul(2));
+      expect(await vault.underlyingBalanceOf()).to.equal(parAmount.mul(2));
     });
   });
 
@@ -304,6 +333,13 @@ describe('POLIsolationModeTokenVaultV1', () => {
       expect(await infraredVault.balanceOf(metaVault.address)).to.equal(parAmount);
       expect(await vault.underlyingBalanceOf()).to.equal(parAmount);
     });
+
+    it('should fail if not called by owner', async () => {
+      await expectThrow(
+        vault.connect(core.hhUser2).stake(RewardVaultType.Infrared, parAmount),
+        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`
+      );
+    });
   });
 
   describe('#unstake', () => {
@@ -317,10 +353,17 @@ describe('POLIsolationModeTokenVaultV1', () => {
       expect(await infraredVault.balanceOf(metaVault.address)).to.equal(ZERO_BI);
       expect(await vault.underlyingBalanceOf()).to.equal(parAmount);
     });
+
+    it('should fail if not called by owner', async () => {
+      await expectThrow(
+        vault.connect(core.hhUser2).unstake(RewardVaultType.Infrared, parAmount),
+        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`
+      );
+    });
   });
 
   describe('#getReward', () => {
-    it.only('should work normally', async () => {
+    it.only('should work normally with iBgt rewards', async () => {
       const infraredImpersonator = await impersonate(core.berachainRewardsEcosystem.infrared.address, true);
       await core.tokens.iBgt.connect(infraredImpersonator).approve(infraredVault.address, parseEther('100'));
 
@@ -333,49 +376,75 @@ describe('POLIsolationModeTokenVaultV1', () => {
       await increase(10 * ONE_DAY_SECONDS);
       const rewards = await infraredVault.getAllRewardsForUser(metaVault.address);
       await vault.getReward();
-    });
-  });
-
-  xdescribe('#exit', () => {
-    it('should work normally for native', async () => {
-      await beraVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
-      const metaVaultAddress = await registry.getMetaVaultByAccount(core.hhUser1.address);
-      await increase(10 * ONE_DAY_SECONDS);
-
-      await beraVault.exit();
-      expect(await core.tokens.bgt.balanceOf(metaVaultAddress)).to.be.gt(0);
-      expect(await underlyingToken.balanceOf(beraVault.address)).to.eq(amountWei);
-    });
-
-    it('should work normally for infrared', async () => {
-      const metaVault = await setupUserMetaVault(core.hhUser1, registry);
-      await metaVault.setDefaultRewardVaultTypeByAsset(underlyingToken.address, RewardVaultType.Infrared);
-      await beraVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
-      await increase(10 * ONE_DAY_SECONDS);
-
-      await beraVault.exit();
-
-      // The iBGT vault is now created since we called Exit
-      iBgtVault = setupUserVaultProxy<InfraredBGTIsolationModeTokenVaultV1>(
+      const iBgtVault = InfraredBGTIsolationModeTokenVaultV1__factory.connect(
         await iBgtFactory.getVaultByAccount(core.hhUser1.address),
-        InfraredBGTIsolationModeTokenVaultV1__factory,
         core.hhUser1,
       );
-
-      expect(await underlyingToken.balanceOf(beraVault.address)).to.eq(amountWei);
-      await expectProtocolBalanceIsGreaterThan(
-        core,
-        { owner: iBgtVault.address, number: defaultAccountNumber },
-        iBgtMarketId,
-        ONE_BI,
-        ZERO_BI,
-      );
+      await expectProtocolBalance(core, iBgtVault, defaultAccountNumber, iBgtMarketId, rewards[0].amount);
+      await expectProtocolBalance(core, vault, defaultAccountNumber, marketId, parAmount);
     });
 
     it('should fail if not called by owner', async () => {
       await expectThrow(
-        beraVault.connect(core.hhUser2).exit(),
-        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
+        vault.connect(core.hhUser2).getReward(),
+        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`
+      );
+    });
+  });
+
+  describe('#exit', () => {
+    it('should work normally for infrared', async () => {
+      const infraredImpersonator = await impersonate(core.berachainRewardsEcosystem.infrared.address, true);
+      await core.tokens.iBgt.connect(infraredImpersonator).approve(infraredVault.address, parseEther('100'));
+
+      await wrapFullBalanceIntoVaultDefaultAccount(core, vault, metaVault, wrapper, marketId);
+      await expectProtocolBalance(core, vault, defaultAccountNumber, marketId, parAmount);
+      expect(await vault.underlyingBalanceOf()).to.equal(parAmount);
+      expect(await infraredVault.balanceOf(metaVault.address)).to.equal(parAmount);
+
+      await infraredVault.connect(infraredImpersonator).notifyRewardAmount(core.tokens.iBgt.address, parseEther('100'));
+      await increase(10 * ONE_DAY_SECONDS);
+      const rewards = await infraredVault.getAllRewardsForUser(metaVault.address);
+
+      await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.weth.address, parseEther('2000'));
+      await core.dolomiteMargin.connect(core.governance).ownerSetPriceOracle(
+        core.marketIds.weth,
+        core.testEcosystem!.testPriceOracle.address
+      );
+      await vault.exit();
+      const iBgtVault = InfraredBGTIsolationModeTokenVaultV1__factory.connect(
+        await iBgtFactory.getVaultByAccount(core.hhUser1.address),
+        core.hhUser1,
+      );
+      await expectProtocolBalance(core, iBgtVault, defaultAccountNumber, iBgtMarketId, rewards[0].amount);
+      await expectProtocolBalance(core, vault, defaultAccountNumber, marketId, parAmount);
+      await expectProtocolBalance(core, metaVault, defaultAccountNumber, core.marketIds.weth, amountWei);
+      expect(await infraredVault.balanceOf(metaVault.address)).to.equal(ZERO_BI);
+      expect(await vault.underlyingBalanceOf()).to.equal(parAmount);
+    });
+
+    it('should fail if not called by owner', async () => {
+      await expectThrow(
+        vault.connect(core.hhUser2).exit(),
+        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`
+      );
+    });
+  });
+
+  describe('#executeDepositIntoVault', () => {
+    it('should fail if not called by factory', async () => {
+      await expectThrow(
+        vault.connect(core.hhUser2).executeDepositIntoVault(core.hhUser1.address, parAmount),
+        `IsolationModeTokenVaultV1: Only factory can call <${core.hhUser2.address.toLowerCase()}>`
+      );
+    });
+  });
+
+  describe('#executeWithdrawalFromVault', () => {
+    it('should fail if not called by factory', async () => {
+      await expectThrow(
+        vault.connect(core.hhUser2).executeWithdrawalFromVault(core.hhUser1.address, parAmount),
+        `IsolationModeTokenVaultV1: Only factory can call <${core.hhUser2.address.toLowerCase()}>`
       );
     });
   });
@@ -411,27 +480,27 @@ async function wrapFullBalanceIntoVaultDefaultAccount(
   wrapper: POLIsolationModeWrapperTraderV2,
   marketId: BigNumber,
 ) {
-    const wrapperParam: GenericTraderParam = {
-      trader: wrapper.address,
-      traderType: GenericTraderType.IsolationModeWrapper,
-      tradeData: defaultAbiCoder.encode(['uint256'], [2]),
-      makerAccountIndex: 0,
-    };
-    await vault.addCollateralAndSwapExactInputForOutput(
-      defaultAccountNumber,
-      defaultAccountNumber,
-      [core.marketIds.weth, marketId],
-      MAX_UINT_256_BI,
-      ONE_BI,
-      [wrapperParam],
-      [{
-        owner: metaVault.address,
-        number: defaultAccountNumber,
-      }],
-      {
-        deadline: '123123123123123',
-        balanceCheckFlag: BalanceCheckFlag.None,
-        eventType: GenericEventEmissionType.None,
-      },
-    );
+  const wrapperParam: GenericTraderParam = {
+    trader: wrapper.address,
+    traderType: GenericTraderType.IsolationModeWrapper,
+    tradeData: defaultAbiCoder.encode(['uint256'], [2]),
+    makerAccountIndex: 0,
+  };
+  await vault.addCollateralAndSwapExactInputForOutput(
+    defaultAccountNumber,
+    defaultAccountNumber,
+    [core.marketIds.weth, marketId],
+    MAX_UINT_256_BI,
+    ONE_BI,
+    [wrapperParam],
+    [{
+      owner: metaVault.address,
+      number: defaultAccountNumber,
+    }],
+    {
+      deadline: '123123123123123',
+      balanceCheckFlag: BalanceCheckFlag.None,
+      eventType: GenericEventEmissionType.None,
+    },
+  );
 }

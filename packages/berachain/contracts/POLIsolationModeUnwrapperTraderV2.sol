@@ -33,7 +33,7 @@ import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/
 import { TypesLib } from "@dolomite-exchange/modules-base/contracts/protocol/lib/TypesLib.sol";
 import { POLIsolationModeTraderBaseV2 } from "./POLIsolationModeTraderBaseV2.sol";
 import { IBerachainRewardsRegistry } from "./interfaces/IBerachainRewardsRegistry.sol";
-import { IIsolationModeTokenVaultV1 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeTokenVaultV1.sol";
+
 
 /**
  * @title   POLIsolationModeUnwrapperTraderV2
@@ -65,6 +65,7 @@ contract POLIsolationModeUnwrapperTraderV2 is
     // ========================== Constructor ===========================
     // ==================================================================
 
+    // @todo may want to still check underlying balance somewhere
     // @todo Add fee on unwrapping
     constructor(
         address _berachainRewardsRegistry,
@@ -148,7 +149,6 @@ contract POLIsolationModeUnwrapperTraderV2 is
             inputMarketId,
             outputMarketId
         );
-        // @follow-up Does this have to be account number 0?
         Require.that(
             factory.getAccountByVault(vault) != address(0),
             _FILE,

@@ -161,6 +161,6 @@ contract BerachainRewardsIsolationModeTokenVaultV1 is
         IBerachainRewardsMetaVault metaVault = IBerachainRewardsMetaVault(
             registry().getMetaVaultByVault(address(this))
         );
-        metaVault.exit(_asset);
+        metaVault.exit(_asset, false);
     }
 }

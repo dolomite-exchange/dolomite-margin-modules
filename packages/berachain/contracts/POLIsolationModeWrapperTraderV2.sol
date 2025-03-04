@@ -159,6 +159,7 @@ contract POLIsolationModeWrapperTraderV2 is
             "Invalid delta par"
         );
         // @audit Have to make sure a user can't maliciously set this
+        // @todo add check where we retrieve the input amount par and assert it is 0
         _setUint256InMap(_INPUT_AMOUNT_PAR_SLOT, takerAccount.owner, deltaPar.value);
 
         return IDolomiteStructs.AssetAmount({
@@ -260,8 +261,6 @@ contract POLIsolationModeWrapperTraderV2 is
         IIsolationModeVaultFactory factory = vaultFactory();
         factory.enqueueTransferIntoDolomiteMargin(_vault, _amount);
 
-        address underlyingToken = factory.UNDERLYING_TOKEN();
-        IERC20(underlyingToken).safeApprove(_vault, _amount);
         IERC20(address(factory)).safeApprove(_receiver, _amount);
     }
 

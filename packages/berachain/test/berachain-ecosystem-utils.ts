@@ -28,10 +28,10 @@ import {
   BGTMIsolationModeVaultFactory,
   BGTMIsolationModeVaultFactory__factory,
   IBerachainRewardsRegistry,
-  IBgtMetaVault,
   InfraredBGTIsolationModeTokenVaultV1,
   InfraredBGTIsolationModeVaultFactory,
   InfraredBGTIsolationModeVaultFactory__factory,
+  InfraredBGTMetaVault,
   IPOLIsolationModeVaultFactory,
   POLIsolationModeTokenVaultV1,
   POLIsolationModeUnwrapperTraderV2,
@@ -56,7 +56,7 @@ export enum RewardVaultType {
 
 export async function createBerachainRewardsRegistry(
   core: CoreProtocolBerachain,
-  metaVaultImplementation: BerachainRewardsMetaVault | IBgtMetaVault,
+  metaVaultImplementation: BerachainRewardsMetaVault | InfraredBGTMetaVault,
 ): Promise<BerachainRewardsRegistry> {
   const implementation = await createContractWithAbi<BerachainRewardsRegistry>(
     BerachainRewardsRegistry__factory.abi,

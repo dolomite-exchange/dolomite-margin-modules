@@ -108,16 +108,16 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
         address _asset,
         IBerachainRewardsRegistry.RewardVaultType _type,
         uint256 _amount
-    ) external onlyMetaVaultOwner(msg.sender) onlyValidDolomiteToken(_asset) {
-        _stake(_asset, _type, _amount);
+    ) external onlyChildVault(msg.sender) {
+        _stake(_asset, _type, _amount, true);
     }
 
     function unstakeDolomiteToken(
         address _asset,
         IBerachainRewardsRegistry.RewardVaultType _type,
         uint256 _amount
-    ) external onlyMetaVaultOwner(msg.sender) onlyValidDolomiteToken(_asset) {
-        _unstake(_asset, _type, _amount);
+    ) external onlyChildVault(msg.sender) {
+        _unstake(_asset, _type, _amount, true);
     }
 
     function setDefaultRewardVaultTypeByAsset(
@@ -132,7 +132,7 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
         IBerachainRewardsRegistry.RewardVaultType _type,
         uint256 _amount
     ) external onlyChildVault(msg.sender) {
-        _stake(_asset, _type, _amount);
+        _stake(_asset, _type, _amount, false);
     }
 
     function unstake(
@@ -140,23 +140,25 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
         IBerachainRewardsRegistry.RewardVaultType _type,
         uint256 _amount
     ) external onlyChildVault(msg.sender) {
-        _unstake(_asset, _type, _amount);
+        _unstake(_asset, _type, _amount, false);
     }
 
     function getReward(
         address _asset
-    ) external onlyMetaVaultOwner(msg.sender) returns (uint256) {
+    ) external onlyChildVault(msg.sender) returns (uint256) {
         return _getReward(_asset);
     }
 
     function exit(
-        address _asset
+        address _asset,
+        bool _isDToken
     ) external onlyChildVault(msg.sender) {
         IBerachainRewardsRegistry.RewardVaultType defaultType = getDefaultRewardVaultTypeByAsset(_asset);
         IERC20 token;
         IMetaVaultRewardTokenFactory factory;
         uint256 balanceBefore;
 
+        // @audit Does not set staked balance to 0
         if (defaultType == IBerachainRewardsRegistry.RewardVaultType.NATIVE) {
             token = REGISTRY().bgt();
             factory = REGISTRY().bgtIsolationModeVaultFactory();
@@ -172,7 +174,6 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
             IInfraredVault infraredVault = IInfraredVault(REGISTRY().rewardVault(_asset, defaultType));
             infraredVault.exit();
         }
-
 
         uint256 balance = IERC20(_asset).balanceOf(address(this));
         /*assert(balance > 0);*/
@@ -499,7 +500,8 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
     function _stake(
         address _asset,
         IBerachainRewardsRegistry.RewardVaultType _type,
-        uint256 _amount
+        uint256 _amount,
+        bool _isDToken
     ) internal {
         IBerachainRewardsRegistry rewardRegistry = REGISTRY();
         INativeRewardVault rewardVault = INativeRewardVault(rewardRegistry.rewardVault(_asset, _type));
@@ -508,7 +510,9 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
         uint256 stakedBalance = getStakedBalanceByAssetAndType(_asset, _type);
         _setUint256InNestedMap(_STAKED_BALANCES_SLOT, _asset, uint256(_type), stakedBalance + _amount);
 
-        IERC20(_asset).safeTransferFrom(msg.sender, address(this), _amount);
+        if (!_isDToken) {
+            IERC20(_asset).safeTransferFrom(msg.sender, address(this), _amount);
+        }
         IERC20(_asset).safeApprove(address(rewardVault), _amount);
         rewardVault.stake(_amount);
     }
@@ -516,15 +520,21 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
     function _unstake(
         address _asset,
         IBerachainRewardsRegistry.RewardVaultType _type,
-        uint256 _amount
+        uint256 _amount,
+        bool _isDToken
     ) internal {
         INativeRewardVault rewardVault = INativeRewardVault(REGISTRY().rewardVault(_asset, _type));
 
         uint256 stakedBalance = getStakedBalanceByAssetAndType(_asset, _type);
+        if (_amount == type(uint256).max) {
+            _amount = stakedBalance;
+        }
         _setUint256InNestedMap(_STAKED_BALANCES_SLOT, _asset, uint256(_type), stakedBalance - _amount);
 
         rewardVault.withdraw(_amount);
-        IERC20(_asset).safeTransfer(msg.sender, _amount);
+        if (!_isDToken) {
+            IERC20(_asset).safeTransfer(msg.sender, _amount);
+        }
     }
 
     function _getReward(address _asset) internal returns (uint256) {

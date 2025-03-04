@@ -78,6 +78,7 @@ contract POLIsolationModeVaultFactory is
 
     function allowableDebtMarketIds() external pure returns (uint256[] memory) {
         // allow all markets
+        // @todo extend from simple just in case so we can change this
         return new uint256[](0);
     }
 

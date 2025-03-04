@@ -57,7 +57,7 @@ interface IBaseMetaVault {
 
     function getReward(address _asset) external returns (uint256);
 
-    function exit(address _asset) external;
+    function exit(address _asset, bool _isDToken) external;
 
     function getDefaultRewardVaultTypeByAsset(
         address _asset

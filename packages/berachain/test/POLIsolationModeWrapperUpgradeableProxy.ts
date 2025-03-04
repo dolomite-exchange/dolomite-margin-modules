@@ -3,9 +3,9 @@ import {
   BerachainRewardsMetaVault,
   BerachainRewardsMetaVault__factory,
   BerachainRewardsRegistry,
-  DolomiteTokenIsolationModeTokenVaultV1,
-  DolomiteTokenIsolationModeVaultFactory,
-  DolomiteTokenIsolationModeVaultFactory__factory,
+  POLIsolationModeTokenVaultV1,
+  POLIsolationModeVaultFactory,
+  POLIsolationModeVaultFactory__factory,
   POLIsolationModeWrapperTraderV2,
   POLIsolationModeWrapperTraderV2__factory,
   POLIsolationModeWrapperUpgradeableProxy,
@@ -24,7 +24,7 @@ describe('POLIsolationModeWrapperUpgradeableProxy', () => {
   let snapshotId: string;
 
   let core: CoreProtocolBerachain;
-  let factory: DolomiteTokenIsolationModeVaultFactory;
+  let factory: POLIsolationModeVaultFactory;
   let dToken: DolomiteERC4626;
   let registry: BerachainRewardsRegistry;
 
@@ -48,14 +48,14 @@ describe('POLIsolationModeWrapperUpgradeableProxy', () => {
     registry = await createBerachainRewardsRegistry(core, metaVaultImplementation);
 
     const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
-    const vaultImplementation = await createContractWithLibrary<DolomiteTokenIsolationModeTokenVaultV1>(
-      'DolomiteTokenIsolationModeTokenVaultV1',
+    const vaultImplementation = await createContractWithLibrary<POLIsolationModeTokenVaultV1>(
+      'POLIsolationModeTokenVaultV1',
       libraries,
       [],
     );
-    factory = await createContractWithAbi<DolomiteTokenIsolationModeVaultFactory>(
-      DolomiteTokenIsolationModeVaultFactory__factory.abi,
-      DolomiteTokenIsolationModeVaultFactory__factory.bytecode,
+    factory = await createContractWithAbi<POLIsolationModeVaultFactory>(
+      POLIsolationModeVaultFactory__factory.abi,
+      POLIsolationModeVaultFactory__factory.bytecode,
       [
         registry.address,
         dToken.address,

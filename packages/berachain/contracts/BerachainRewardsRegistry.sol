@@ -46,6 +46,7 @@ import { IMetaVaultUpgradeableProxy } from "./interfaces/IMetaVaultUpgradeablePr
  *          new contracts or functions that Arbitrum introduces.
  */
 contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
+    // @todo add a fee percentage for unstaking POL tokens
 
     // ================================================
     // ==================== Constants =================

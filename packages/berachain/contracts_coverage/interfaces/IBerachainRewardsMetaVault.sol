@@ -34,10 +34,6 @@ interface IBerachainRewardsMetaVault is IBaseMetaVault {
         bytes pubkey;
     }
 
-    struct BgtValidatorStorageStruct {
-        bytes pubkey;
-    }
-
     // ================================================
     // ==================== Events ====================
     // ================================================
