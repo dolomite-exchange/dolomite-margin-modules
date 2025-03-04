@@ -121,6 +121,7 @@ contract LiquidatorProxyV5 is
         LiquidatorProxyConstants memory constants;
         constants.solidAccount = _liquidateParams.solidAccount;
         constants.liquidAccount = _liquidateParams.liquidAccount;
+        constants.expirationTimestamp = _liquidateParams.expirationTimestamp;
         constants.heldMarket = _liquidateParams.marketIdsPath[0];
         constants.owedMarket = _liquidateParams.marketIdsPath[_liquidateParams.marketIdsPath.length - 1];
 
@@ -133,8 +134,6 @@ contract LiquidatorProxyV5 is
             DOLOMITE_MARGIN().getAccountMarketsWithBalances(_liquidateParams.solidAccount),
             constants.liquidMarkets
         );
-        // If there's no expiry set, don't read EXPIRY (it's not needed)
-        constants.expirationTimestamp = uint32(_liquidateParams.expiry); // @todo change name to expirationTimestamp
 
         LiquidatorProxyCache memory liquidatorCache = _initializeCache(constants);
 

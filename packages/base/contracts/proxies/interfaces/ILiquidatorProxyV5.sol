@@ -41,7 +41,7 @@ interface ILiquidatorProxyV5 {
         uint256 minOutputAmountWei;
         IGenericTraderBase.TraderParam[] tradersPath;
         IDolomiteStructs.AccountInfo[] makerAccounts;
-        uint256 expiry;
+        uint256 expirationTimestamp;
         bool withdrawAllReward;
     }
 

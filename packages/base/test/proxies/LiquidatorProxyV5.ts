@@ -140,7 +140,7 @@ describe('LiquidatorProxyV5', () => {
         minOutputAmountWei: MAX_UINT_256_BI,
         tradersPath: zapParams.tradersPath,
         makerAccounts: zapParams.makerAccounts,
-        expiry: ZERO_BI,
+        expirationTimestamp: ZERO_BI,
         withdrawAllReward: false,
       });
 
@@ -200,7 +200,7 @@ describe('LiquidatorProxyV5', () => {
         minOutputAmountWei: MAX_UINT_256_BI,
         tradersPath: zapParams.tradersPath,
         makerAccounts: zapParams.makerAccounts,
-        expiry: ZERO_BI,
+        expirationTimestamp: ZERO_BI,
         withdrawAllReward: false,
       });
 
@@ -236,7 +236,7 @@ describe('LiquidatorProxyV5', () => {
         minOutputAmountWei: parseEther('0.5'),
         tradersPath: zapParams.tradersPath,
         makerAccounts: zapParams.makerAccounts,
-        expiry: ZERO_BI,
+        expirationTimestamp: ZERO_BI,
         withdrawAllReward: false,
       });
 
@@ -286,7 +286,7 @@ describe('LiquidatorProxyV5', () => {
           minOutputAmountWei: zapParams.minOutputAmountWei,
           tradersPath: zapParams.tradersPath,
           makerAccounts: zapParams.makerAccounts,
-          expiry: ZERO_BI,
+          expirationTimestamp: ZERO_BI,
           withdrawAllReward: false,
         }),
         `OperationImpl: Total supply exceeds max supply <${core.marketIds.weth.toString()}>`
@@ -299,7 +299,7 @@ describe('LiquidatorProxyV5', () => {
         minOutputAmountWei: zapParams.minOutputAmountWei,
         tradersPath: zapParams.tradersPath,
         makerAccounts: zapParams.makerAccounts,
-        expiry: ZERO_BI,
+        expirationTimestamp: ZERO_BI,
         withdrawAllReward: true,
       });
 
@@ -351,7 +351,7 @@ describe('LiquidatorProxyV5', () => {
         minOutputAmountWei: zapParams.minOutputAmountWei,
         tradersPath: zapParams.tradersPath,
         makerAccounts: zapParams.makerAccounts,
-        expiry: ZERO_BI,
+        expirationTimestamp: ZERO_BI,
         withdrawAllReward: true,
       });
 
@@ -400,7 +400,7 @@ describe('LiquidatorProxyV5', () => {
         minOutputAmountWei: MAX_UINT_256_BI,
         tradersPath: zapParams.tradersPath,
         makerAccounts: zapParams.makerAccounts,
-        expiry: ZERO_BI,
+        expirationTimestamp: ZERO_BI,
         withdrawAllReward: false,
       });
 
@@ -450,7 +450,7 @@ describe('LiquidatorProxyV5', () => {
         minOutputAmountWei: zapParams.minOutputAmountWei,
         tradersPath: zapParams.tradersPath,
         makerAccounts: zapParams.makerAccounts,
-        expiry: ZERO_BI,
+        expirationTimestamp: ZERO_BI,
         withdrawAllReward: false,
       });
 
@@ -509,7 +509,7 @@ describe('LiquidatorProxyV5', () => {
         minOutputAmountWei: zapParams.minOutputAmountWei,
         tradersPath: zapParams.tradersPath,
         makerAccounts: zapParams.makerAccounts,
-        expiry: expiry,
+        expirationTimestamp: expiry,
         withdrawAllReward: false,
       });
       const daiAmount = BigNumber.from('500000000000000000001'); // this is off by 1 wei
@@ -537,7 +537,7 @@ describe('LiquidatorProxyV5', () => {
           minOutputAmountWei: zapParams.minOutputAmountWei,
           tradersPath: zapParams.tradersPath,
           makerAccounts: zapParams.makerAccounts,
-          expiry: ZERO_BI,
+          expirationTimestamp: ZERO_BI,
           withdrawAllReward: false,
         }),
         'LiquidatorProxyV5: Invalid amount for IsolationMode'
@@ -555,10 +555,10 @@ describe('LiquidatorProxyV5', () => {
           minOutputAmountWei: zapParams.minOutputAmountWei,
           tradersPath: zapParams.tradersPath,
           makerAccounts: zapParams.makerAccounts,
-          expiry: ZERO_BI,
+          expirationTimestamp: ZERO_BI,
           withdrawAllReward: false,
         }),
-        `LiquidatorProxyBase: Owed market equals held market <${core.marketIds.dai.toString()}>`
+        `BaseLiquidatorProxy: Owed market equals held market <${core.marketIds.dai.toString()}>`
       );
     });
 
@@ -576,10 +576,10 @@ describe('LiquidatorProxyV5', () => {
           minOutputAmountWei: zapParams.minOutputAmountWei,
           tradersPath: zapParams.tradersPath,
           makerAccounts: zapParams.makerAccounts,
-          expiry: ZERO_BI,
+          expirationTimestamp: ZERO_BI,
           withdrawAllReward: false,
         }),
-        `LiquidatorProxyBase: Owed market cannot be positive <${core.marketIds.weth.toString()}>`
+        `BaseLiquidatorProxy: Owed market cannot be positive <${core.marketIds.weth.toString()}>`
       );
     });
 
@@ -611,10 +611,10 @@ describe('LiquidatorProxyV5', () => {
           minOutputAmountWei: zapParams.minOutputAmountWei,
           tradersPath: zapParams.tradersPath,
           makerAccounts: zapParams.makerAccounts,
-          expiry: ZERO_BI,
+          expirationTimestamp: ZERO_BI,
           withdrawAllReward: false,
         }),
-        `LiquidatorProxyBase: Held market cannot be negative <${core.marketIds.usdt.toString()}>`
+        `BaseLiquidatorProxy: Held market cannot be negative <${core.marketIds.usdt.toString()}>`
       );
     });
 
@@ -639,10 +639,10 @@ describe('LiquidatorProxyV5', () => {
           minOutputAmountWei: zapParams.minOutputAmountWei,
           tradersPath: zapParams.tradersPath,
           makerAccounts: zapParams.makerAccounts,
-          expiry: MAX_UINT_256_BI,
+          expirationTimestamp: MAX_UINT_256_BI,
           withdrawAllReward: false,
         }),
-        `LiquidatorProxyBase: Expiry overflows <${MAX_UINT_256_BI.toString()}>`
+        `BaseLiquidatorProxy: Expiration timestamp overflows <${MAX_UINT_256_BI.toString()}>`
       );
     });
 
@@ -669,10 +669,10 @@ describe('LiquidatorProxyV5', () => {
           minOutputAmountWei: zapParams.minOutputAmountWei,
           tradersPath: zapParams.tradersPath,
           makerAccounts: zapParams.makerAccounts,
-          expiry: futureTimestamp,
+          expirationTimestamp: futureTimestamp,
           withdrawAllReward: false,
         }),
-        `LiquidatorProxyBase: Borrow not yet expired <${futureTimestamp.toString()}>`
+        `BaseLiquidatorProxy: Borrow not yet expired <${futureTimestamp.toString()}>`
       );
     });
 
@@ -701,7 +701,7 @@ describe('LiquidatorProxyV5', () => {
           minOutputAmountWei: zapParams.minOutputAmountWei,
           tradersPath: zapParams.tradersPath,
           makerAccounts: zapParams.makerAccounts,
-          expiry: ZERO_BI,
+          expirationTimestamp: ZERO_BI,
           withdrawAllReward: false,
         }),
         `HasLiquidatorRegistry: Asset not whitelisted <${core.marketIds.dai.toString()}>`
@@ -733,7 +733,7 @@ describe('LiquidatorProxyV5', () => {
           minOutputAmountWei: zapParams.minOutputAmountWei,
           tradersPath: zapParams.tradersPath,
           makerAccounts: zapParams.makerAccounts,
-          expiry: ZERO_BI,
+          expirationTimestamp: ZERO_BI,
           withdrawAllReward: false,
         }),
         `HasLiquidatorRegistry: Asset not whitelisted <${core.marketIds.weth.toString()}>`
@@ -761,10 +761,10 @@ describe('LiquidatorProxyV5', () => {
           minOutputAmountWei: zapParams.minOutputAmountWei,
           tradersPath: zapParams.tradersPath,
           makerAccounts: zapParams.makerAccounts,
-          expiry: ZERO_BI,
+          expirationTimestamp: ZERO_BI,
           withdrawAllReward: false,
         }),
-        `LiquidatorProxyBase: Sender not operator <${core.hhUser3.address.toLowerCase()}>`
+        `BaseLiquidatorProxy: Sender not operator <${core.hhUser3.address.toLowerCase()}>`
       );
     });
 
@@ -789,10 +789,10 @@ describe('LiquidatorProxyV5', () => {
           minOutputAmountWei: zapParams.minOutputAmountWei,
           tradersPath: zapParams.tradersPath,
           makerAccounts: zapParams.makerAccounts,
-          expiry: ONE_BI,
+          expirationTimestamp: ONE_BI,
           withdrawAllReward: false,
         }),
-        'LiquidatorProxyBase: Expiry mismatch <0, 1>'
+        'BaseLiquidatorProxy: Expiration timestamp mismatch <0, 1>'
       );
     });
 
@@ -806,7 +806,7 @@ describe('LiquidatorProxyV5', () => {
         minOutputAmountWei: zapParams.minOutputAmountWei,
         tradersPath: zapParams.tradersPath,
         makerAccounts: zapParams.makerAccounts,
-        expiry: ZERO_BI,
+        expirationTimestamp: ZERO_BI,
         withdrawAllReward: false,
       });
       await expectThrow(
