@@ -48,8 +48,9 @@ interface IBaseMetaVault {
     function unstakeDolomiteToken(
         address _asset,
         IBerachainRewardsRegistry.RewardVaultType _type,
-        uint256 _amount
-    ) external;
+        uint256 _amount,
+        bool _chargeFee
+    ) external returns (uint256);
 
     function stake(address _asset, IBerachainRewardsRegistry.RewardVaultType _type, uint256 amount) external;
 
@@ -57,7 +58,7 @@ interface IBaseMetaVault {
 
     function getReward(address _asset) external;
 
-    function exit(address _asset, bool _isDToken) external;
+    function exit(address _asset, bool _isDToken, bool _chargeFee) external;
 
     function getDefaultRewardVaultTypeByAsset(
         address _asset

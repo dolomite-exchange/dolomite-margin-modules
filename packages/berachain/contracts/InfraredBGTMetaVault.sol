@@ -55,6 +55,7 @@ contract InfraredBGTMetaVault is ProxyContractHelpers, IBaseMetaVault {
     bytes32 private constant _STAKED_BALANCES_SLOT = bytes32(uint256(keccak256("eip1967.proxy.stakedBalances")) - 1);
 
     uint256 public constant DEFAULT_ACCOUNT_NUMBER = 0;
+    uint256 private constant _BASE = 1 ether;
 
     // ==================================================================
     // =========================== Modifiers ============================
@@ -109,9 +110,10 @@ contract InfraredBGTMetaVault is ProxyContractHelpers, IBaseMetaVault {
     function unstakeDolomiteToken(
         address _asset,
         IBerachainRewardsRegistry.RewardVaultType _type,
-        uint256 _amount
-    ) external onlyChildVault(msg.sender) {
-        _unstake(_asset, _type, _amount, true);
+        uint256 _amount,
+        bool _chargeFee
+    ) external onlyChildVault(msg.sender) returns (uint256) {
+        return _unstake(_asset, _type, _amount, true, _chargeFee);
     }
 
     function stake(
@@ -127,7 +129,7 @@ contract InfraredBGTMetaVault is ProxyContractHelpers, IBaseMetaVault {
         IBerachainRewardsRegistry.RewardVaultType _type,
         uint256 _amount
     ) external onlyChildVault(msg.sender) {
-        _unstake(_asset, _type, _amount, false);
+        _unstake(_asset, _type, _amount, false, false);
     }
 
     function getReward(
@@ -138,11 +140,12 @@ contract InfraredBGTMetaVault is ProxyContractHelpers, IBaseMetaVault {
 
     function exit(
         address _asset,
-        bool _isDToken
+        bool _isDToken,
+        bool _chargeFee
     ) external onlyChildVault(msg.sender) {
         _getReward(_asset);
         IBerachainRewardsRegistry.RewardVaultType vaultType = getDefaultRewardVaultTypeByAsset(_asset);
-        _unstake(_asset, vaultType, getStakedBalanceByAssetAndType(_asset, vaultType), _isDToken);
+        _unstake(_asset, vaultType, getStakedBalanceByAssetAndType(_asset, vaultType), _isDToken, _chargeFee);
     }
 
     // ==================================================================
@@ -213,17 +216,33 @@ contract InfraredBGTMetaVault is ProxyContractHelpers, IBaseMetaVault {
         address _asset,
         IBerachainRewardsRegistry.RewardVaultType _type,
         uint256 _amount,
-        bool _isDToken
-    ) internal onlyInfrared(_type) {
+        bool _isDToken,
+        bool _chargeFee
+    ) internal onlyInfrared(_type) returns (uint256) {
         IInfraredVault rewardVault = IInfraredVault(REGISTRY().rewardVault(_asset, _type));
 
         uint256 stakedBalance = getStakedBalanceByAssetAndType(_asset, _type);
         _setUint256InNestedMap(_STAKED_BALANCES_SLOT, _asset, uint256(_type), stakedBalance - _amount);
 
         rewardVault.withdraw(_amount);
+
         if (!_isDToken) {
             IERC20(_asset).safeTransfer(msg.sender, _amount);
+            return 0;
         }
+
+        if (_chargeFee) {
+            uint256 feePercentage = REGISTRY().polFeePercentage();
+            address feeAgent = REGISTRY().polFeeAgent();
+
+            uint256 feeAmount = (_amount * feePercentage) / _BASE;
+            if (feeAmount > 0 && feeAgent != address(0)) {
+                IERC20(_asset).safeTransfer(feeAgent, feeAmount);
+                return feeAmount;
+            }
+        }
+
+        return 0;
     }
 
     function _getReward(address _asset) internal {

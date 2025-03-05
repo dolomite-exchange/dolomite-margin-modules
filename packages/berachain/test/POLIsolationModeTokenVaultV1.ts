@@ -10,6 +10,7 @@ import {
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import {
   expectProtocolBalance,
+  expectProtocolParBalance,
   expectThrow,
 } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
@@ -26,8 +27,6 @@ import { defaultAbiCoder, parseEther } from 'ethers/lib/utils';
 import { createContractWithAbi, depositIntoDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
 import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
 import {
-  BerachainRewardsMetaVault,
-  BerachainRewardsMetaVault__factory,
   BerachainRewardsRegistry,
   IInfraredVault,
   IInfraredVault__factory,
@@ -75,7 +74,7 @@ describe('POLIsolationModeTokenVaultV1', () => {
   let vault: POLIsolationModeTokenVaultV1;
   let wrapper: POLIsolationModeWrapperTraderV2;
   let unwrapper: POLIsolationModeUnwrapperTraderV2;
-  let metaVault: BerachainRewardsMetaVault;
+  let metaVault: InfraredBGTMetaVault;
 
   let dToken: DolomiteERC4626;
   let infraredVault: IInfraredVault;
@@ -138,7 +137,7 @@ describe('POLIsolationModeTokenVaultV1', () => {
       POLIsolationModeTokenVaultV1__factory,
       core.hhUser1,
     );
-    metaVault = BerachainRewardsMetaVault__factory.connect(
+    metaVault = InfraredBGTMetaVault__factory.connect(
       await registry.getMetaVaultByAccount(core.hhUser1.address),
       core.hhUser1,
     );
@@ -247,7 +246,7 @@ describe('POLIsolationModeTokenVaultV1', () => {
       const unwrapperParam: GenericTraderParam = {
         trader: unwrapper.address,
         traderType: GenericTraderType.IsolationModeUnwrapper,
-        tradeData: defaultAbiCoder.encode(['uint256'], [2]), // @follow-up Remember why we are encoding this
+        tradeData: defaultAbiCoder.encode(['uint256'], [2]),
         makerAccountIndex: 0,
       };
       await vault.swapExactInputForOutputAndRemoveCollateral(
@@ -275,6 +274,93 @@ describe('POLIsolationModeTokenVaultV1', () => {
       await expectProtocolBalance(core, metaVault, defaultAccountNumber, marketId, ZERO_BI);
       expect(await infraredVault.balanceOf(metaVault.address)).to.equal(ZERO_BI);
       expect(await vault.underlyingBalanceOf()).to.equal(ZERO_BI);
+    });
+
+    it('should work normally with max uint256, unstaking and fee', async () => {
+      await wrapFullBalanceIntoVaultDefaultAccount(core, vault, metaVault, wrapper, marketId);
+      await expectProtocolBalance(core, vault, defaultAccountNumber, marketId, parAmount);
+      expect(await vault.underlyingBalanceOf()).to.equal(parAmount);
+      expect(await infraredVault.balanceOf(metaVault.address)).to.equal(parAmount);
+      
+      await registry.connect(core.governance).ownerSetPolFeeAgent(core.hhUser5.address);
+      await registry.connect(core.governance).ownerSetPolFeePercentage(parseEther('.1'));
+      const unwrapperParam: GenericTraderParam = {
+        trader: unwrapper.address,
+        traderType: GenericTraderType.IsolationModeUnwrapper,
+        tradeData: defaultAbiCoder.encode(['uint256'], [2]),
+        makerAccountIndex: 0,
+      };
+      await vault.swapExactInputForOutputAndRemoveCollateral(
+        defaultAccountNumber,
+        defaultAccountNumber,
+        [marketId, core.marketIds.weth],
+        MAX_UINT_256_BI,
+        ONE_BI,
+        [unwrapperParam],
+        [{
+          owner: metaVault.address,
+          number: defaultAccountNumber,
+        }],
+        {
+          deadline: '123123123123123',
+          balanceCheckFlag: BalanceCheckFlag.None,
+          eventType: GenericEventEmissionType.None,
+        },
+      );
+      const feeAmount = parAmount.div(10);
+      await expectProtocolParBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, parAmount.sub(feeAmount));
+      await expectProtocolParBalance(core, core.hhUser5, defaultAccountNumber, core.marketIds.weth, feeAmount);
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, marketId, ZERO_BI);
+      await expectProtocolBalance(core, vault, defaultAccountNumber, core.marketIds.weth, ZERO_BI);
+      await expectProtocolBalance(core, vault, defaultAccountNumber, marketId, ZERO_BI);
+      await expectProtocolBalance(core, metaVault, defaultAccountNumber, core.marketIds.weth, ZERO_BI);
+      await expectProtocolBalance(core, metaVault, defaultAccountNumber, marketId, ZERO_BI);
+      expect(await infraredVault.balanceOf(metaVault.address)).to.equal(ZERO_BI);
+      expect(await vault.underlyingBalanceOf()).to.equal(ZERO_BI);
+    });
+
+    it('should work normally with input amount, unstaking and fee', async () => {
+      await wrapFullBalanceIntoVaultDefaultAccount(core, vault, metaVault, wrapper, marketId);
+      await expectProtocolBalance(core, vault, defaultAccountNumber, marketId, parAmount);
+      expect(await vault.underlyingBalanceOf()).to.equal(parAmount);
+      expect(await infraredVault.balanceOf(metaVault.address)).to.equal(parAmount);
+      
+      await registry.connect(core.governance).ownerSetPolFeeAgent(core.hhUser5.address);
+      await registry.connect(core.governance).ownerSetPolFeePercentage(parseEther('.1'));
+      const inputAmount = parAmount.div(4);
+      const unwrapperParam: GenericTraderParam = {
+        trader: unwrapper.address,
+        traderType: GenericTraderType.IsolationModeUnwrapper,
+        tradeData: defaultAbiCoder.encode(['uint256'], [2]),
+        makerAccountIndex: 0,
+      };
+      await vault.swapExactInputForOutputAndRemoveCollateral(
+        defaultAccountNumber,
+        defaultAccountNumber,
+        [marketId, core.marketIds.weth],
+        inputAmount,
+        ONE_BI,
+        [unwrapperParam],
+        [{
+          owner: metaVault.address,
+          number: defaultAccountNumber,
+        }],
+        {
+          deadline: '123123123123123',
+          balanceCheckFlag: BalanceCheckFlag.None,
+          eventType: GenericEventEmissionType.None,
+        },
+      );
+      const feeAmount = inputAmount.div(10);
+      await expectProtocolParBalance(core, core.hhUser5, defaultAccountNumber, core.marketIds.weth, feeAmount);
+      await expectProtocolParBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, inputAmount.sub(feeAmount));
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, marketId, ZERO_BI);
+      await expectProtocolBalance(core, vault, defaultAccountNumber, core.marketIds.weth, ZERO_BI);
+      await expectProtocolBalance(core, vault, defaultAccountNumber, marketId, parAmount.sub(inputAmount));
+      await expectProtocolBalance(core, metaVault, defaultAccountNumber, core.marketIds.weth, ZERO_BI);
+      await expectProtocolBalance(core, metaVault, defaultAccountNumber, marketId, ZERO_BI);
+      expect(await infraredVault.balanceOf(metaVault.address)).to.equal(parAmount.sub(inputAmount));
+      expect(await vault.underlyingBalanceOf()).to.equal(parAmount.sub(inputAmount));
     });
 
     it('should work normally when no unstaking is needed', async () => {
@@ -343,7 +429,7 @@ describe('POLIsolationModeTokenVaultV1', () => {
   });
 
   describe('#unstake', () => {
-    it('should work normally', async () => {
+    it('should work normally with no fee', async () => {
       await wrapFullBalanceIntoVaultDefaultAccount(core, vault, metaVault, wrapper, marketId);
       await expectProtocolBalance(core, vault, defaultAccountNumber, marketId, parAmount);
       expect(await vault.underlyingBalanceOf()).to.equal(parAmount);
@@ -352,6 +438,20 @@ describe('POLIsolationModeTokenVaultV1', () => {
       await vault.unstake(RewardVaultType.Infrared, parAmount);
       expect(await infraredVault.balanceOf(metaVault.address)).to.equal(ZERO_BI);
       expect(await vault.underlyingBalanceOf()).to.equal(parAmount);
+    });
+
+    it('should work normally with fee', async () => {
+      await wrapFullBalanceIntoVaultDefaultAccount(core, vault, metaVault, wrapper, marketId);
+      await expectProtocolBalance(core, vault, defaultAccountNumber, marketId, parAmount);
+      expect(await vault.underlyingBalanceOf()).to.equal(parAmount);
+      expect(await infraredVault.balanceOf(metaVault.address)).to.equal(parAmount);
+      
+      await registry.connect(core.governance).ownerSetPolFeeAgent(core.hhUser5.address);
+      await registry.connect(core.governance).ownerSetPolFeePercentage(parseEther('.1'));
+
+      await vault.unstake(RewardVaultType.Infrared, parAmount);
+      expect(await infraredVault.balanceOf(metaVault.address)).to.equal(ZERO_BI);
+      expect(await vault.underlyingBalanceOf()).to.equal(parAmount.mul(9).div(10).add(1));
     });
 
     it('should fail if not called by owner', async () => {
@@ -476,7 +576,7 @@ describe('POLIsolationModeTokenVaultV1', () => {
 async function wrapFullBalanceIntoVaultDefaultAccount(
   core: CoreProtocolBerachain,
   vault: POLIsolationModeTokenVaultV1,
-  metaVault: BerachainRewardsMetaVault,
+  metaVault: InfraredBGTMetaVault,
   wrapper: POLIsolationModeWrapperTraderV2,
   marketId: BigNumber,
 ) {

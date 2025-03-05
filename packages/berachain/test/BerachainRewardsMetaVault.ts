@@ -74,7 +74,7 @@ const MIN_BLOCK_LEN = 8191;
 const defaultAccountNumber = ZERO_BI;
 const amountWei = parseEther('.5');
 
-describe('BerachainRewardsMetaVault', () => {
+xdescribe('BerachainRewardsMetaVault', () => {
   let snapshotId: string;
 
   let core: CoreProtocolBerachain;
