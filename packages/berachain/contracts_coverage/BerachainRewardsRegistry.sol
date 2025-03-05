@@ -46,7 +46,6 @@ import { IMetaVaultUpgradeableProxy } from "./interfaces/IMetaVaultUpgradeablePr
  *          new contracts or functions that Arbitrum introduces.
  */
 contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
-    // @todo add a fee percentage for unstaking POL tokens
 
     // ================================================
     // ==================== Constants =================
@@ -70,6 +69,8 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
 
     bytes32 private constant _POL_UNWRAPPER_TRADER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.polUnwrapperTrader")) - 1);
     bytes32 private constant _POL_WRAPPER_TRADER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.polWrapperTrader")) - 1);
+    bytes32 private constant _POL_FEE_AGENT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.polFeeAgent")) - 1);
+    bytes32 private constant _POL_FEE_PERCENTAGE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.polFeePercentage")) - 1);
 
     bytes32 private constant _ACCOUNT_TO_META_VAULT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.accountToMetaVault")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _META_VAULT_TO_ACCOUNT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.metaVaultToAccount")) - 1); // solhint-disable-line max-line-length
@@ -233,6 +234,18 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
         _ownerSetPolWrapperTrader(_polWrapperTrader);
     }
 
+    function ownerSetPolFeeAgent(
+        address _polFeeAgent
+    ) external override onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetPolFeeAgent(_polFeeAgent);
+    }
+
+    function ownerSetPolFeePercentage(
+        uint256 _polFeePercentage
+    ) external override onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetPolFeePercentage(_polFeePercentage);
+    }
+
     // ===================================================
     // ================== View Functions =================
     // ===================================================
@@ -297,6 +310,14 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
 
     function polWrapperTrader() public view override returns (address) {
         return _getAddress(_POL_WRAPPER_TRADER_SLOT);
+    }
+
+    function polFeeAgent() public view override returns (address) {
+        return _getAddress(_POL_FEE_AGENT_SLOT);
+    }
+
+    function polFeePercentage() public view override returns (uint256) {
+        return _getUint256(_POL_FEE_PERCENTAGE_SLOT);
     }
 
     function rewardVault(address _asset, RewardVaultType _type) public view override returns (address) {
@@ -522,4 +543,25 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
         emit PolWrapperTraderSet(_polWrapperTrader);
     }
 
+    function _ownerSetPolFeeAgent(address _polFeeAgent) internal {
+        if (_polFeeAgent != address(0)) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            _polFeeAgent != address(0),
+            _FILE,
+            "Invalid polFeeAgent address"
+        );
+        _setAddress(_POL_FEE_AGENT_SLOT, _polFeeAgent);
+        emit PolFeeAgentSet(_polFeeAgent);
+    }
+
+    function _ownerSetPolFeePercentage(uint256 _polFeePercentage) internal {
+        if (_polFeePercentage <= 1 ether) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            _polFeePercentage <= 1 ether,
+            _FILE,
+            "Invalid polFeePercentage"
+        );
+        _setUint256(_POL_FEE_PERCENTAGE_SLOT, _polFeePercentage);
+        emit PolFeePercentageSet(_polFeePercentage);
+    }
 }

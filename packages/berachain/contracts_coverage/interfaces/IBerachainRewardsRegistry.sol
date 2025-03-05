@@ -70,6 +70,8 @@ interface IBerachainRewardsRegistry is IBaseRegistry {
     event WberaSet(address wbera);
     event PolUnwrapperTraderSet(address polUnwrapperTrader);
     event PolWrapperTraderSet(address polWrapperTrader);
+    event PolFeeAgentSet(address polFeeAgent);
+    event PolFeePercentageSet(uint256 polFeePercentage);
 
     // ===================================================
     // ================== Admin Functions ================
@@ -89,6 +91,8 @@ interface IBerachainRewardsRegistry is IBaseRegistry {
     function ownerSetWbera(address _wbera) external;
     function ownerSetPolUnwrapperTrader(address _polUnwrapperTrader) external;
     function ownerSetPolWrapperTrader(address _polWrapperTrader) external;
+    function ownerSetPolFeeAgent(address _polFeeAgent) external;
+    function ownerSetPolFeePercentage(uint256 _polFeePercentage) external;
 
     // ===================================================
     // ================== Public Functions ===============
@@ -124,4 +128,6 @@ interface IBerachainRewardsRegistry is IBaseRegistry {
     function wbera() external view returns (IWETH);
     function polUnwrapperTrader() external view returns (address);
     function polWrapperTrader() external view returns (address);
+    function polFeeAgent() external view returns (address);
+    function polFeePercentage() external view returns (uint256);
 }
