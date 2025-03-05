@@ -1,20 +1,14 @@
 import CoreDeployments from '@dolomite-exchange/dolomite-margin/dist/migrations/deployed.json';
 import {
-  DolomiteRegistryImplementation__factory,
   EventEmitterRegistry__factory,
   IDolomiteOwner__factory,
-  IDolomiteRegistry__factory,
   IGenericTraderProxyV1,
   IGenericTraderProxyV1__factory,
   ILiquidatorAssetRegistry__factory,
   IPartiallyDelayedMultiSig__factory,
   RegistryProxy__factory,
 } from '@dolomite-exchange/modules-base/src/types';
-import {
-  GNOSIS_SAFE_MAP,
-  PAYABLE_TOKEN_MAP,
-  SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL,
-} from '@dolomite-exchange/modules-base/src/utils/constants';
+import { GNOSIS_SAFE_MAP } from '@dolomite-exchange/modules-base/src/utils/constants';
 import {
   getDolomiteMigratorConstructorParams,
   getDolomiteOwnerConstructorParams,
@@ -36,9 +30,7 @@ import {
 } from '@dolomite-exchange/modules-base/test/utils/setup';
 import * as CoreDeployment from '@dolomite-margin/dist/migrations/deployed.json';
 import { ethers } from 'hardhat';
-import {
-  CoreProtocolParams,
-} from 'packages/base/test/utils/core-protocols/core-protocol-abstract';
+import { CoreProtocolParams } from 'packages/base/test/utils/core-protocols/core-protocol-abstract';
 import ModuleDeployments from 'packages/deployment/src/deploy/deployments.json';
 import {
   deployContractAndSave,
@@ -49,8 +41,11 @@ import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '..
 import { prettyPrintEncodedDataWithTypeSafety } from '../../utils/encoding/base-encoder-utils';
 import getScriptName from '../../utils/get-script-name';
 import { deployDolomiteAccountRegistry } from './helpers/deploy-dolomite-account-registry';
+import { deployDolomiteAccountRiskOverrideSetter } from './helpers/deploy-dolomite-account-risk-override-setter';
+import { deployDolomiteRegistry } from './helpers/deploy-dolomite-registry';
 import { deployInterestSetters } from './helpers/deploy-interest-setters';
 import { deployOracleAggregator } from './helpers/deploy-oracle-aggregator';
+import { encodeDolomiteAccountRiskOverrideSetterMigrations } from './helpers/encode-dolomite-account-risk-override-setter-migrations';
 import { encodeDolomiteOwnerMigrations } from './helpers/encode-dolomite-owner-migrations';
 import { encodeDolomiteRegistryMigrations } from './helpers/encode-dolomite-registry-migrations';
 import { encodeIsolationModeFreezableLiquidatorMigrations } from './helpers/encode-isolation-mode-freezable-liquidator-migrations';
@@ -127,34 +122,20 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
 
   const dolomiteAccountRegistryProxy = await deployDolomiteAccountRegistry(dolomiteMargin, hhUser1, network);
 
-  const registryImplementationAddress = await deployContractAndSave(
-    'DolomiteRegistryImplementation',
-    [],
-    getMaxDeploymentVersionNameByDeploymentKey('DolomiteRegistryImplementation', 1),
-  );
-  const registryImplementation = DolomiteRegistryImplementation__factory.connect(
-    registryImplementationAddress,
-    hhUser1,
-  );
-  const registryImplementationCalldata = await registryImplementation.populateTransaction.initialize(
-    CoreDeployments.GenericTraderProxyV1[network].address,
-    CoreDeployments.Expiry[network].address,
-    SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL,
-    CoreDeployments.LiquidatorAssetRegistry[network].address,
-    eventEmitterProxyAddress,
-    dolomiteAccountRegistryProxy.address,
-  );
-  const dolomiteRegistryAddress = await deployContractAndSave(
-    'RegistryProxy',
-    getRegistryProxyConstructorParams(
-      registryImplementationAddress,
-      registryImplementationCalldata.data!,
+  const { dolomiteRegistry, dolomiteRegistryProxy, dolomiteRegistryImplementationAddress } =
+    await deployDolomiteRegistry(
       dolomiteMargin,
-    ),
-    'DolomiteRegistryProxy',
-  );
-  const dolomiteRegistry = IDolomiteRegistry__factory.connect(dolomiteRegistryAddress, hhUser1);
-  const dolomiteRegistryProxy = RegistryProxy__factory.connect(dolomiteRegistryAddress, hhUser1);
+      eventEmitterProxyAddress,
+      dolomiteAccountRegistryProxy,
+      network,
+      hhUser1,
+    );
+
+  const {
+    dolomiteAccountRiskOverrideSetter,
+    dolomiteAccountRiskOverrideSetterProxy,
+    dolomiteAccountRiskOverrideSetterImplementationAddress,
+  } = await deployDolomiteAccountRiskOverrideSetter(dolomiteMargin, hhUser1);
 
   const dolomiteMigratorAddress = await deployContractAndSave(
     'DolomiteMigrator',
@@ -227,7 +208,15 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     dolomiteAccountRegistryProxy.address,
     dolomiteMigratorAddress,
     oracleAggregator.address,
-    registryImplementationAddress,
+    dolomiteRegistryImplementationAddress,
+    transactions,
+    core,
+  );
+
+  await encodeDolomiteAccountRiskOverrideSetterMigrations(
+    dolomiteAccountRiskOverrideSetter,
+    dolomiteAccountRiskOverrideSetterProxy,
+    dolomiteAccountRiskOverrideSetterImplementationAddress,
     transactions,
     core,
   );
@@ -260,7 +249,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   );
 
   // This must be the last encoded transaction
-  await encodeDolomiteOwnerMigrations(dolomiteOwnerV1, transactions, core);
+  // await encodeDolomiteOwnerMigrations(dolomiteOwnerV1, transactions, core);
 
   return {
     core: {

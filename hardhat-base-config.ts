@@ -80,7 +80,7 @@ if (!polygonscanApiKey) {
 }
 const superscanApiKey = process.env.SUPERSCAN_API_KEY;
 if (!superscanApiKey) {
-  throw new Error('No POLYGONSCAN_API_KEY provided!');
+  throw new Error('No SUPERSCAN_API_KEY provided!');
 }
 const xLayerApiKey = process.env.X_LAYER_API_KEY;
 if (!xLayerApiKey) {
