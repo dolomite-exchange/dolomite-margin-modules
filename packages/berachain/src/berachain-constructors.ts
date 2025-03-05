@@ -152,9 +152,13 @@ export function getPOLIsolationModeVaultFactoryConstructorParams(
   core: CoreProtocolBerachain,
   beraRegistry: IBerachainRewardsRegistry | BerachainRewardsRegistry,
   dToken: { address: string },
-  userVaultImplementation: POLIsolationModeTokenVaultV1
+  userVaultImplementation: POLIsolationModeTokenVaultV1,
+  initialAllowableDebtMarketIds: number[],
+  initialAllowableCollateralMarketIds: number[],
 ): any[] {
   return [
+    initialAllowableDebtMarketIds,
+    initialAllowableCollateralMarketIds,
     beraRegistry.address,
     dToken.address,
     core.borrowPositionProxyV2.address,

@@ -193,11 +193,20 @@ export async function createPOLIsolationModeVaultFactory(
   beraRegistry: IBerachainRewardsRegistry | BerachainRewardsRegistry,
   dToken: { address: string },
   userVaultImplementation: POLIsolationModeTokenVaultV1,
+  initialAllowableDebtMarketIds: number[],
+  initialAllowableCollateralMarketIds: number[],
 ): Promise<POLIsolationModeVaultFactory> {
   return createContractWithAbi<POLIsolationModeVaultFactory>(
     POLIsolationModeVaultFactory__factory.abi,
     POLIsolationModeVaultFactory__factory.bytecode,
-    getPOLIsolationModeVaultFactoryConstructorParams(core, beraRegistry, dToken, userVaultImplementation),
+    getPOLIsolationModeVaultFactoryConstructorParams(
+      core,
+      beraRegistry,
+      dToken,
+      userVaultImplementation,
+      initialAllowableDebtMarketIds,
+      initialAllowableCollateralMarketIds,
+    ),
   );
 }
 

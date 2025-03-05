@@ -105,7 +105,7 @@ describe('POLIsolationModeTokenVaultV1', () => {
     );
 
     const vaultImplementation = await createPOLIsolationModeTokenVaultV1();
-    factory = await createPOLIsolationModeVaultFactory(core, registry, dToken, vaultImplementation);
+    factory = await createPOLIsolationModeVaultFactory(core, registry, dToken, vaultImplementation, [], []);
 
     const iBgtVaultImplementation = await createInfraredBGTIsolationModeTokenVaultV1();
     iBgtFactory = await createInfraredBGTIsolationModeVaultFactory(
@@ -363,7 +363,7 @@ describe('POLIsolationModeTokenVaultV1', () => {
   });
 
   describe('#getReward', () => {
-    it.only('should work normally with iBgt rewards', async () => {
+    it('should work normally with iBgt rewards', async () => {
       const infraredImpersonator = await impersonate(core.berachainRewardsEcosystem.infrared.address, true);
       await core.tokens.iBgt.connect(infraredImpersonator).approve(infraredVault.address, parseEther('100'));
 

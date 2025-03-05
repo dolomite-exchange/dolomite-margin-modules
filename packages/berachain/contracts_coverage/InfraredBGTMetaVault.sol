@@ -106,6 +106,7 @@ contract InfraredBGTMetaVault is ProxyContractHelpers, IBaseMetaVault {
         _stake(_asset, _type, _amount, true);
     }
 
+    // @todo add a boolean for charging a fee. Do math and then return amount after the fee
     function unstakeDolomiteToken(
         address _asset,
         IBerachainRewardsRegistry.RewardVaultType _type,
@@ -132,41 +133,17 @@ contract InfraredBGTMetaVault is ProxyContractHelpers, IBaseMetaVault {
 
     function getReward(
         address _asset
-    ) external onlyChildVault(msg.sender) returns (uint256) {
-        return _getReward(_asset);
+    ) external onlyChildVault(msg.sender) {
+        _getReward(_asset);
     }
 
     function exit(
         address _asset,
         bool _isDToken
     ) external onlyChildVault(msg.sender) {
-        IBerachainRewardsRegistry.RewardVaultType defaultType = getDefaultRewardVaultTypeByAsset(_asset);
-        /*assert(defaultType == IBerachainRewardsRegistry.RewardVaultType.INFRARED);*/
-        IERC20 token = REGISTRY().iBgt();
-        IMetaVaultRewardTokenFactory factory = REGISTRY().iBgtIsolationModeVaultFactory();
-
-        uint256 balanceBefore = token.balanceOf(address(this));
-        IInfraredVault infraredVault = IInfraredVault(REGISTRY().rewardVault(
-            _asset,
-            IBerachainRewardsRegistry.RewardVaultType.INFRARED
-        ));
-        infraredVault.exit();
-
-        // @follow-up How to handle this? Can't do balance == stakedBalance because user could brick it
-        // by sending 1 wei to this contract
-        uint256 stakedBalance = getStakedBalanceByAssetAndType(_asset, defaultType);
-        _setUint256InNestedMap(_STAKED_BALANCES_SLOT, _asset, uint256(defaultType), 0);
-
-        uint256 balance = IERC20(_asset).balanceOf(address(this));
-        /*assert(balance >= stakedBalance);*/
-        if (!_isDToken) {
-            IERC20(_asset).safeTransfer(msg.sender, stakedBalance);
-        }
-
-        uint256 reward = token.balanceOf(address(this)) - balanceBefore;
-        if (reward > 0) {
-            _performDepositRewardByRewardType(factory, defaultType, reward);
-        }
+        _getReward(_asset);
+        IBerachainRewardsRegistry.RewardVaultType vaultType = getDefaultRewardVaultTypeByAsset(_asset);
+        _unstake(_asset, vaultType, getStakedBalanceByAssetAndType(_asset, vaultType), _isDToken);
     }
 
     // ==================================================================
@@ -250,27 +227,25 @@ contract InfraredBGTMetaVault is ProxyContractHelpers, IBaseMetaVault {
         }
     }
 
-    function _getReward(address _asset) internal returns (uint256) {
-        address rewardVault = REGISTRY().rewardVault(_asset, IBerachainRewardsRegistry.RewardVaultType.INFRARED);
-
+    function _getReward(address _asset) internal {
+        IInfraredVault rewardVault = IInfraredVault(REGISTRY().rewardVault(_asset, IBerachainRewardsRegistry.RewardVaultType.INFRARED));
         IMetaVaultRewardTokenFactory factory = REGISTRY().iBgtIsolationModeVaultFactory();
-        IERC20 iBgt = REGISTRY().iBgt();
 
-        uint256 balanceBefore = iBgt.balanceOf(address(this));
+        IInfraredVault.UserReward[] memory rewards = rewardVault.getAllRewardsForUser(address(this));
         IInfraredVault(rewardVault).getReward();
-        uint256 reward = iBgt.balanceOf(address(this)) - balanceBefore;
 
-        if (reward > 0) {
-            _performDepositRewardByRewardType(factory, IBerachainRewardsRegistry.RewardVaultType.INFRARED, reward);
+        for (uint256 i = 0; i < rewards.length; ++i) {
+            if (rewards[i].amount > 0) {
+                _performDepositRewardByRewardType(factory, IBerachainRewardsRegistry.RewardVaultType.INFRARED, rewards[i].token, rewards[i].amount);
+            }
         }
-
-        return reward;
     }
 
     function _performDepositRewardByRewardType(
         IMetaVaultRewardTokenFactory _factory,
         IBerachainRewardsRegistry.RewardVaultType _type,
-        uint256 _reward
+        address _token,
+        uint256 _amount
     ) internal {
         /*assert(_type == IBerachainRewardsRegistry.RewardVaultType.INFRARED);*/
         address vault = _factory.getVaultByAccount(OWNER());
@@ -278,13 +253,30 @@ contract InfraredBGTMetaVault is ProxyContractHelpers, IBaseMetaVault {
             vault = _factory.createVault(OWNER());
         }
 
-        IERC20(REGISTRY().iBgt()).safeApprove(vault, _reward);
-        IMetaVaultRewardReceiver(vault).setIsDepositSourceMetaVault(true);
-        _factory.depositIntoDolomiteMarginFromMetaVault(
-            OWNER(),
-            DEFAULT_ACCOUNT_NUMBER,
-            _reward
-        );
+        if (_token == address(REGISTRY().iBgt())) {
+            IERC20(_token).safeApprove(vault, _amount);
+            IMetaVaultRewardReceiver(vault).setIsDepositSourceMetaVault(true);
+            _factory.depositIntoDolomiteMarginFromMetaVault(
+                OWNER(),
+                DEFAULT_ACCOUNT_NUMBER,
+                _amount
+            );
+        } else {
+            IDolomiteMargin dolomiteMargin = REGISTRY().DOLOMITE_MARGIN();
+            try dolomiteMargin.getMarketIdByTokenAddress(_token) returns (uint256 marketId) {
+                IERC20(_token).safeApprove(address(dolomiteMargin), _amount);
+                try _factory.depositOtherTokenIntoDolomiteMarginFromMetaVault(
+                    OWNER(),
+                    DEFAULT_ACCOUNT_NUMBER,
+                    marketId,
+                    _amount
+                ) {} catch {
+                    IERC20(_token).safeTransfer(OWNER(), _amount);
+                }
+            } catch {
+                IERC20(_token).safeTransfer(OWNER(), _amount);
+            }
+        }
 
         /*assert(!IMetaVaultRewardReceiver(vault).isDepositSourceMetaVault());*/
         /*assert(IERC20(REGISTRY().iBgt()).allowance(vault, address(this)) == 0);*/

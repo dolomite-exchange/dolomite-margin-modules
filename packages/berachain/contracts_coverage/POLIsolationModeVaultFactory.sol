@@ -20,7 +20,7 @@
 
 pragma solidity ^0.8.9;
 
-import { IsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
+import { SimpleIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/SimpleIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IBerachainRewardsRegistry } from "./interfaces/IBerachainRewardsRegistry.sol";
@@ -36,7 +36,7 @@ import { IPOLIsolationModeVaultFactory } from "./interfaces/IPOLIsolationModeVau
  */
 contract POLIsolationModeVaultFactory is
     IPOLIsolationModeVaultFactory,
-    IsolationModeVaultFactory
+    SimpleIsolationModeVaultFactory
 {
     using SafeERC20 for IERC20;
 
@@ -51,13 +51,17 @@ contract POLIsolationModeVaultFactory is
     // ============ Constructor ============
 
     constructor(
+        uint256[] memory _initialAllowableDebtMarketIds,
+        uint256[] memory _initialAllowableCollateralMarketIds,
         address _berachainRewardsRegistry,
         address _underlyingToken,
         address _borrowPositionProxy,
         address _userVaultImplementation,
         address _dolomiteMargin
     )
-    IsolationModeVaultFactory(
+    SimpleIsolationModeVaultFactory(
+        _initialAllowableDebtMarketIds,
+        _initialAllowableCollateralMarketIds,
         _underlyingToken,
         _borrowPositionProxy,
         _userVaultImplementation,
@@ -74,16 +78,6 @@ contract POLIsolationModeVaultFactory is
     ) external override onlyDolomiteMarginOwner(msg.sender) {
         berachainRewardsRegistry = IBerachainRewardsRegistry(_berachainRewardsRegistry);
         emit BerachainRewardsRegistrySet(_berachainRewardsRegistry);
-    }
-
-    function allowableDebtMarketIds() external pure returns (uint256[] memory) {
-        // allow all markets
-        return new uint256[](0);
-    }
-
-    function allowableCollateralMarketIds() external pure returns (uint256[] memory) {
-        // allow all markets
-        return new uint256[](0);
     }
 
     // ============ Internal Functions ============

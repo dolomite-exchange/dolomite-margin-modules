@@ -21,17 +21,17 @@
 pragma solidity ^0.8.9;
 
 import { IDolomiteRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IDolomiteRegistry.sol";
+import { IGenericTraderProxyV1 } from "@dolomite-exchange/modules-base/contracts/interfaces/IGenericTraderProxyV1.sol";
 import { IsolationModeTokenVaultV1 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
 import { IIsolationModeTokenVaultV1 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
+import { IDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteMargin.sol";
+import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IBerachainRewardsIsolationModeVaultFactory } from "./interfaces/IBerachainRewardsIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { IBerachainRewardsMetaVault } from "./interfaces/IBerachainRewardsMetaVault.sol";
 import { IBerachainRewardsRegistry } from "./interfaces/IBerachainRewardsRegistry.sol";
 import { IPOLIsolationModeTokenVaultV1 } from "./interfaces/IPOLIsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
-import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
-import { IGenericTraderProxyV1 } from "@dolomite-exchange/modules-base/contracts/interfaces/IGenericTraderProxyV1.sol";
-import { IDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteMargin.sol";
 
 
 /**
@@ -175,6 +175,7 @@ contract POLIsolationModeTokenVaultV1 is
     }
 
     // @audit May need to adjust account number checks because we are wrapping not depositing
+    // @note fine to have the 3 functions like this
     function _addCollateralAndSwapExactInputForOutput(
         uint256 _fromAccountNumber,
         uint256 _borrowAccountNumber,
@@ -324,9 +325,11 @@ contract POLIsolationModeTokenVaultV1 is
         );
 
         // @audit check par values are handled correctly everywhere
+        // @todo fix this to use the account number and charge a fee
         _amountWei = _amountWei == type(uint256).max ? underlyingBalanceOf() : _amountWei;
         uint256 bal = IERC20(UNDERLYING_TOKEN()).balanceOf(address(metaVault));
         if (_amountWei > bal) {
+            // @todo fee gets charged anytime unstake is called
             _unstake(UNDERLYING_TOKEN(), defaultType, _amountWei - bal);
         }
     }

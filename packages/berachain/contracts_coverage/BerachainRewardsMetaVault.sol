@@ -145,8 +145,8 @@ contract BerachainRewardsMetaVault is ProxyContractHelpers, IBerachainRewardsMet
 
     function getReward(
         address _asset
-    ) external onlyChildVault(msg.sender) returns (uint256) {
-        return _getReward(_asset);
+    ) external onlyChildVault(msg.sender) {
+        _getReward(_asset);
     }
 
     function exit(
