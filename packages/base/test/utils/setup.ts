@@ -37,6 +37,7 @@ import {
   IBorrowPositionProxyV2__factory,
   IDepositWithdrawalProxy__factory,
   IDolomiteAccountRegistry__factory,
+  IDolomiteAccountRiskOverrideSetter__factory,
   IDolomiteAccountValuesReader__factory,
   IDolomiteMargin,
   IDolomiteMargin__factory,
@@ -264,16 +265,16 @@ interface CoreProtocolConfigXLayer extends CoreProtocolConfigParent<Network.XLay
 export type CoreProtocolConfig<T extends NetworkType> = T extends Network.ArbitrumOne
   ? CoreProtocolConfigArbitrumOne
   : T extends Network.Base
-    ? CoreProtocolConfigBase
-    : T extends Network.Berachain
-      ? CoreProtocolConfigBerachain
-      : T extends Network.Mantle
-        ? CoreProtocolConfigMantle
-        : T extends Network.PolygonZkEvm
-          ? CoreProtocolConfigPolygonZkEvm
-          : T extends Network.XLayer
-            ? CoreProtocolConfigXLayer
-            : never;
+  ? CoreProtocolConfigBase
+  : T extends Network.Berachain
+  ? CoreProtocolConfigBerachain
+  : T extends Network.Mantle
+  ? CoreProtocolConfigMantle
+  : T extends Network.PolygonZkEvm
+  ? CoreProtocolConfigPolygonZkEvm
+  : T extends Network.XLayer
+  ? CoreProtocolConfigXLayer
+  : never;
 
 export async function disableInterestAccrual<T extends NetworkType>(
   core: CoreProtocolAbstract<T>,
@@ -381,7 +382,7 @@ export async function setupDAIBalance(
 }
 
 export async function setupHONEYBalance(
-  core: CoreProtocolBerachain | CoreProtocolBerachainBartio,
+  core: CoreProtocolBerachain,
   signer: SignerWithAddressWithSafety,
   amount: BigNumberish,
   spender: { address: string },
@@ -659,16 +660,16 @@ export function getDefaultCoreProtocolConfigForGmxV2(): CoreProtocolConfig<Netwo
 export type CoreProtocolType<T extends NetworkType> = T extends Network.ArbitrumOne
   ? CoreProtocolArbitrumOne
   : T extends Network.Base
-    ? CoreProtocolBase
-    : T extends Network.Berachain
-      ? CoreProtocolBerachain
-      : T extends Network.Mantle
-        ? CoreProtocolMantle
-        : T extends Network.PolygonZkEvm
-          ? CoreProtocolPolygonZkEvm
-          : T extends Network.XLayer
-            ? CoreProtocolXLayer
-            : never;
+  ? CoreProtocolBase
+  : T extends Network.Berachain
+  ? CoreProtocolBerachain
+  : T extends Network.Mantle
+  ? CoreProtocolMantle
+  : T extends Network.PolygonZkEvm
+  ? CoreProtocolPolygonZkEvm
+  : T extends Network.XLayer
+  ? CoreProtocolXLayer
+  : never;
 
 export function getDolomiteMarginContract<T extends NetworkType>(
   config: CoreProtocolSetupConfig<T>,
@@ -810,6 +811,16 @@ export async function setupCoreProtocol<T extends NetworkType>(
     governance,
   );
 
+  const dolomiteAccountRiskOverrideSetter = IDolomiteAccountRiskOverrideSetter__factory.connect(
+    Deployments.DolomiteAccountRiskOverrideSetterProxy[config.network].address,
+    governance,
+  );
+
+  const dolomiteAccountRiskOverrideSetterProxy = RegistryProxy__factory.connect(
+    Deployments.DolomiteAccountRiskOverrideSetterProxy[config.network].address,
+    governance,
+  );
+
   const eventEmitterRegistry = getContract(
     Deployments.EventEmitterRegistryProxy[config.network].address,
     IEventEmitterRegistry__factory.connect,
@@ -899,6 +910,8 @@ export async function setupCoreProtocol<T extends NetworkType>(
     dolomiteRegistryProxy,
     dolomiteAccountRegistry,
     dolomiteAccountRegistryProxy,
+    dolomiteAccountRiskOverrideSetter,
+    dolomiteAccountRiskOverrideSetterProxy,
     eventEmitterRegistry,
     eventEmitterRegistryProxy,
     expiry,

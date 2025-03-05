@@ -2,8 +2,9 @@ import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import {
   DolomiteAccountRiskOverrideSetter,
-  DolomiteAccountRiskOverrideSetter__factory,
+  DolomiteAccountRiskOverrideSetter__factory, RegistryProxy, RegistryProxy__factory,
 } from '../../src/types';
+import { getRegistryProxyConstructorParams } from '../../src/utils/constructors/dolomite';
 import { createContractWithAbi, depositIntoDolomiteMargin } from '../../src/utils/dolomite-utils';
 import { BYTES_EMPTY, Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from '../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
@@ -54,15 +55,21 @@ describe('DolomiteAccountRiskOverrideSetter', () => {
       blockNumber: 1_130_000,
     });
 
-    riskOverrideSetter = await createContractWithAbi<DolomiteAccountRiskOverrideSetter>(
+    const riskOverrideSetterImplementation = await createContractWithAbi<DolomiteAccountRiskOverrideSetter>(
       DolomiteAccountRiskOverrideSetter__factory.abi,
       DolomiteAccountRiskOverrideSetter__factory.bytecode,
       [core.dolomiteMargin.address],
     );
+    const calldata = (await riskOverrideSetterImplementation.populateTransaction.initialize()).data!;
+    const proxy = await createContractWithAbi<RegistryProxy>(
+      RegistryProxy__factory.abi,
+      RegistryProxy__factory.bytecode,
+      getRegistryProxyConstructorParams(riskOverrideSetterImplementation.address, calldata, core.dolomiteMargin),
+    );
+    riskOverrideSetter = DolomiteAccountRiskOverrideSetter__factory.connect(proxy.address, core.hhUser1);
 
     await core.dolomiteMargin.ownerSetDefaultAccountRiskOverride(riskOverrideSetter.address);
     expect(await core.dolomiteMargin.getDefaultAccountRiskOverrideSetter()).to.eq(riskOverrideSetter.address);
-    await riskOverrideSetter.connect(core.governance).ownerActivateDefaultAccountCheck();
 
     snapshotId = await snapshot();
   });
@@ -494,35 +501,6 @@ describe('DolomiteAccountRiskOverrideSetter', () => {
     });
   });
 
-  describe('#ownerActivateDefaultAccountCheck', () => {
-    it('should work normally', async () => {
-      const testRiskOverrideSetter = await createContractWithAbi<DolomiteAccountRiskOverrideSetter>(
-        DolomiteAccountRiskOverrideSetter__factory.abi,
-        DolomiteAccountRiskOverrideSetter__factory.bytecode,
-        [core.dolomiteMargin.address],
-      );
-
-      expect(await testRiskOverrideSetter.isDefaultAccountCheckActivated()).to.eq(false);
-      const res = await testRiskOverrideSetter.connect(core.governance).ownerActivateDefaultAccountCheck();
-      await expectEvent(testRiskOverrideSetter, res, 'DefaultAccountCheckActivated', {});
-      expect(await testRiskOverrideSetter.isDefaultAccountCheckActivated()).to.eq(true);
-    });
-
-    it('should fail if already activated', async () => {
-      await expectThrow(
-        riskOverrideSetter.connect(core.governance).ownerActivateDefaultAccountCheck(),
-        'AccountRiskOverrideSetter: Already set',
-      );
-    });
-
-    it('should fail if not called by owner', async () => {
-      await expectThrow(
-        riskOverrideSetter.connect(core.hhUser1).ownerActivateDefaultAccountCheck(),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
-      );
-    });
-  });
-
   describe('#getRiskFeatureForSingleCollateralByMarketId', () => {
     it('should fail if risk feature is borrow only', async () => {
       await riskOverrideSetter.connect(core.governance).ownerSetRiskFeatureByMarketId(
@@ -540,7 +518,7 @@ describe('DolomiteAccountRiskOverrideSetter', () => {
 
   describe('#getAccountRiskOverride', () => {
     it('should work normally with borrow only', async () => {
-      // setup USDC to be borrow only
+      // setup USDC to be "borrow_only"
       await riskOverrideSetter.connect(core.governance).ownerSetRiskFeatureByMarketId(
         core.marketIds.usdc,
         RiskFeature.BORROW_ONLY,
