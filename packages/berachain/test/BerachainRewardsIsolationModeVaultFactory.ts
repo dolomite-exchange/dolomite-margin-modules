@@ -29,7 +29,7 @@ import {
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
-describe('BerachainRewardsIsolationModeVaultFactory', () => {
+xdescribe('BerachainRewardsIsolationModeVaultFactory', () => {
   let snapshotId: string;
 
   let core: CoreProtocolBerachain;

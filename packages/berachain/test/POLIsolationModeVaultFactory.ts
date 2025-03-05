@@ -30,7 +30,7 @@ import { createDolomiteErc4626Proxy } from 'packages/base/test/utils/dolomite';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
-describe('DolomiteTokenIsolationModeVaultFactory', () => {
+describe('POLIsolationModeVaultFactory', () => {
   let snapshotId: string;
 
   let core: CoreProtocolBerachain;

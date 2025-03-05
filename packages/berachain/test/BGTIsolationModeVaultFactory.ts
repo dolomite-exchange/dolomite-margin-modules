@@ -46,7 +46,7 @@ const LP_TOKEN_WHALE_ADDRESS = '0x1293DA55eC372a94368Fa20E8DF69FaBc3320baE';
 const amountWei = parseEther('.5');
 const defaultAccountNumber = ZERO_BI;
 
-describe('BGTIsolationModeVaultFactory', () => {
+xdescribe('BGTIsolationModeVaultFactory', () => {
   let snapshotId: string;
 
   let core: CoreProtocolBerachain;

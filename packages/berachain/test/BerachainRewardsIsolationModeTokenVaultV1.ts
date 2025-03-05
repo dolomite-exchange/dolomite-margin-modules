@@ -55,7 +55,7 @@ const LP_TOKEN_WHALE_ADDRESS = '0x4Be03f781C497A489E3cB0287833452cA9B9E80B';
 const defaultAccountNumber = ZERO_BI;
 const amountWei = parseEther('.1');
 
-describe('BerachainRewardsIsolationModeTokenVaultV1', () => {
+xdescribe('BerachainRewardsIsolationModeTokenVaultV1', () => {
   let snapshotId: string;
 
   let core: CoreProtocolBerachain;

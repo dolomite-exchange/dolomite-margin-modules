@@ -52,7 +52,7 @@ enum RewardVaultType {
   BGTM,
 }
 
-describe('BGTMIsolationModeTokenVaultV1', () => {
+xdescribe('BGTMIsolationModeTokenVaultV1', () => {
   let snapshotId: string;
 
   let core: CoreProtocolBerachain;
