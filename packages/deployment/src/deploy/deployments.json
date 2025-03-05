@@ -3725,7 +3725,7 @@
     "57073": {
       "address": "0x8Fa50b998AF366DD477f759b3DB2F1db7EE25FF8",
       "transaction": "0x300bae11011e588ba06b5c790dc7042be1e0fac8ad7a774c3a6f42fb4ba7073d",
-      "isVerified": false
+      "isVerified": true
     },
     "80094": {
       "address": "0x8Fa50b998AF366DD477f759b3DB2F1db7EE25FF8",
@@ -4022,6 +4022,11 @@
     "42161": {
       "address": "0x5a46388BaDe197c332A7065dF982595F920D1ef0",
       "transaction": "0x43f7b376b6171f4a16dca22409cfbdd6b095dfc864c21c6965a370972d1ccdcd",
+      "isVerified": true
+    },
+    "57073": {
+      "address": "0x5a46388BaDe197c332A7065dF982595F920D1ef0",
+      "transaction": "0xb92d5e88c3ce1577fe5dcc92bcf2478b21a552bf9a9ff3daf76f6abe6391062e",
       "isVerified": true
     },
     "80094": {
