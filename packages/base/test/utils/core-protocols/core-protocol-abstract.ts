@@ -9,7 +9,7 @@ import {
   DolomiteOwnerV2,
   IBorrowPositionProxyV2,
   IDepositWithdrawalProxy,
-  IDolomiteAccountRegistry,
+  IDolomiteAccountRegistry, IDolomiteAccountRiskOverrideSetter,
   IDolomiteRegistry,
   IERC20,
   IEventEmitterRegistry,
@@ -120,6 +120,8 @@ export interface CoreProtocolParams<T extends NetworkType> {
   dolomiteRegistryProxy: RegistryProxy;
   dolomiteAccountRegistry: IDolomiteAccountRegistry;
   dolomiteAccountRegistryProxy: RegistryProxy;
+  dolomiteAccountRiskOverrideSetter: IDolomiteAccountRiskOverrideSetter;
+  dolomiteAccountRiskOverrideSetterProxy: RegistryProxy;
   eventEmitterRegistry: IEventEmitterRegistry;
   eventEmitterRegistryProxy: RegistryProxy;
   dolomiteTokens: CoreProtocolDolomiteTokens<T>;
@@ -183,6 +185,8 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
   public readonly dolomiteRegistryProxy: RegistryProxy;
   public readonly dolomiteAccountRegistry: IDolomiteAccountRegistry;
   public readonly dolomiteAccountRegistryProxy: RegistryProxy;
+  public readonly dolomiteAccountRiskOverrideSetter: IDolomiteAccountRiskOverrideSetter;
+  public readonly dolomiteAccountRiskOverrideSetterProxy: RegistryProxy;
   public readonly eventEmitterRegistry: IEventEmitterRegistry;
   public readonly eventEmitterRegistryProxy: RegistryProxy;
   public readonly expiry: Expiry<T>;
@@ -240,6 +244,8 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
     this.dolomiteRegistryProxy = params.dolomiteRegistryProxy;
     this.dolomiteAccountRegistry = params.dolomiteAccountRegistry;
     this.dolomiteAccountRegistryProxy = params.dolomiteAccountRegistryProxy;
+    this.dolomiteAccountRiskOverrideSetter = params.dolomiteAccountRiskOverrideSetter;
+    this.dolomiteAccountRiskOverrideSetterProxy = params.dolomiteAccountRiskOverrideSetterProxy;
     this.eventEmitterRegistry = params.eventEmitterRegistry;
     this.eventEmitterRegistryProxy = params.eventEmitterRegistryProxy;
     this.expiry = params.expiry;
