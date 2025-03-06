@@ -14,19 +14,10 @@ import {
   getPOLIsolationModeVaultFactoryConstructorParams,
 } from '../src/berachain-constructors';
 import {
-  BerachainRewardsIsolationModeTokenVaultV1,
-  BerachainRewardsIsolationModeVaultFactory,
-  BerachainRewardsIsolationModeVaultFactory__factory,
-  BerachainRewardsMetaVault,
-  BerachainRewardsMetaVault__factory,
   BerachainRewardsRegistry,
   BerachainRewardsRegistry__factory,
-  BGTIsolationModeTokenVaultV1,
-  BGTIsolationModeVaultFactory,
-  BGTIsolationModeVaultFactory__factory,
-  BGTMIsolationModeTokenVaultV1,
-  BGTMIsolationModeVaultFactory,
-  BGTMIsolationModeVaultFactory__factory,
+  IBaseMetaVault,
+  IBaseMetaVault__factory,
   IBerachainRewardsRegistry,
   InfraredBGTIsolationModeTokenVaultV1,
   InfraredBGTIsolationModeVaultFactory,
@@ -56,7 +47,7 @@ export enum RewardVaultType {
 
 export async function createBerachainRewardsRegistry(
   core: CoreProtocolBerachain,
-  metaVaultImplementation: BerachainRewardsMetaVault | InfraredBGTMetaVault,
+  metaVaultImplementation: InfraredBGTMetaVault | IBaseMetaVault,
 ): Promise<BerachainRewardsRegistry> {
   const implementation = await createContractWithAbi<BerachainRewardsRegistry>(
     BerachainRewardsRegistry__factory.abi,
@@ -73,7 +64,7 @@ export async function createBerachainRewardsRegistry(
 
 export async function createTestBerachainRewardsRegistry(
   core: CoreProtocolBerachain,
-  metaVaultImplementation: BerachainRewardsMetaVault,
+  metaVaultImplementation: InfraredBGTMetaVault | IBaseMetaVault,
 ): Promise<TestBerachainRewardsRegistry> {
   const implementation = await createContractWithAbi<TestBerachainRewardsRegistry>(
     TestBerachainRewardsRegistry__factory.abi,
@@ -257,13 +248,13 @@ export async function createPOLIsolationModeUnwrapperTraderV2(
 export async function setupUserMetaVault(
   user: SignerWithAddressWithSafety,
   registry: IBerachainRewardsRegistry | BerachainRewardsRegistry,
-): Promise<BerachainRewardsMetaVault> {
+): Promise<IBaseMetaVault> {
   const metaVaultAddress = await registry.getMetaVaultByAccount(user.address);
   if (metaVaultAddress === ADDRESS_ZERO) {
     return Promise.reject(new Error('MetaVault not set up yet'));
   }
 
-  return BerachainRewardsMetaVault__factory.connect(metaVaultAddress, user);
+  return IBaseMetaVault__factory.connect(metaVaultAddress, user);
 }
 
 export async function impersonateUserMetaVault(

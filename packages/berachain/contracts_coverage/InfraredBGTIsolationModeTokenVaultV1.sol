@@ -120,7 +120,7 @@ contract InfraredBGTIsolationModeTokenVaultV1 is
         override(IIsolationModeTokenVaultV1, IsolationModeTokenVaultV1)
         returns (uint256)
     {
-        return super.underlyingBalanceOf() + registry().iBgtVault().balanceOf(address(this));
+        return super.underlyingBalanceOf() + registry().iBgtStakingVault().balanceOf(address(this));
     }
 
     function isDepositSourceThisVault() public view returns (bool) {
@@ -137,18 +137,18 @@ contract InfraredBGTIsolationModeTokenVaultV1 is
     }
 
     function _stake(uint256 _amount) internal {
-        IInfraredVault vault = registry().iBgtVault();
+        IInfraredVault vault = registry().iBgtStakingVault();
         IERC20(UNDERLYING_TOKEN()).safeApprove(address(vault), _amount);
         vault.stake(_amount);
     }
 
     function _unstake(uint256 _amount) internal {
-        IInfraredVault vault = registry().iBgtVault();
+        IInfraredVault vault = registry().iBgtStakingVault();
         vault.withdraw(_amount);
     }
 
     function _getReward() internal {
-        IInfraredVault vault = registry().iBgtVault();
+        IInfraredVault vault = registry().iBgtStakingVault();
 
         IInfraredVault.UserReward[] memory rewards = vault.getAllRewardsForUser(address(this));
         vault.getReward();
@@ -157,7 +157,7 @@ contract InfraredBGTIsolationModeTokenVaultV1 is
     }
 
     function _exit() internal {
-        IInfraredVault vault = registry().iBgtVault();
+        IInfraredVault vault = registry().iBgtStakingVault();
 
         IInfraredVault.UserReward[] memory rewards = vault.getAllRewardsForUser(address(this));
         vault.exit();

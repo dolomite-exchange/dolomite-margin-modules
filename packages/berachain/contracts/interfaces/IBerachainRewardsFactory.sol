@@ -22,11 +22,11 @@ pragma solidity ^0.8.9;
 
 
 /**
- * @title   IBerachainRewardsVaultFactory
+ * @title   IBerachainRewardsFactory
  * @author  Dolomite
  *
  */
-interface IBerachainRewardsVaultFactory {
+interface IBerachainRewardsFactory {
     
     function getVault(address _stakingToken) external view returns (address);
 }

@@ -2,20 +2,13 @@ import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/c
 import {
   BerachainRewardsRegistry,
   IBerachainRewardsRegistry,
-  BerachainRewardsIsolationModeTokenVaultV1,
   IBerachainRewardsIsolationModeVaultFactory,
-  BerachainRewardsIsolationModeVaultFactory,
   IBerachainRewardsIsolationModeTokenVaultV1,
-  BerachainRewardsMetaVault,
-  BGTIsolationModeTokenVaultV1,
   IBGTIsolationModeTokenVaultV1,
   IInfraredBGTIsolationModeTokenVaultV1,
   InfraredBGTIsolationModeTokenVaultV1,
   IBGTMIsolationModeTokenVaultV1,
-  BGTMIsolationModeTokenVaultV1,
-  BGTMIsolationModeUnwrapperTraderV2,
   IBGTMIsolationModeVaultFactory,
-  BGTMIsolationModeVaultFactory,
   POLIsolationModeTokenVaultV1
 } from './types';
 
@@ -28,12 +21,12 @@ export async function getBerachainRewardsRegistryConstructorParams(
     core.tokens.bgt.address,
     core.berachainRewardsEcosystem.bgtm.address,
     core.tokens.iBgt.address,
-    core.berachainRewardsEcosystem.berachainRewardsVaultFactory.address,
-    core.berachainRewardsEcosystem.infrared.address,
+    core.tokens.wbera.address,
+    core.berachainRewardsEcosystem.berachainRewardsFactory.address,
     core.berachainRewardsEcosystem.iBgtStakingPool.address,
+    core.berachainRewardsEcosystem.infrared.address,
     metaVaultImplementation.address,
     core.dolomiteRegistry.address,
-    core.tokens.wbera.address
   );
   return [
     implementation.address,
@@ -45,7 +38,7 @@ export async function getBerachainRewardsRegistryConstructorParams(
 export function getBerachainRewardsIsolationModeVaultFactoryConstructorParams(
   beraRegistry: IBerachainRewardsRegistry | BerachainRewardsRegistry,
   underlyingToken: { address: string },
-  vaultImplementation: IBerachainRewardsIsolationModeTokenVaultV1 | BerachainRewardsIsolationModeTokenVaultV1,
+  vaultImplementation: { address: string },
   core: CoreProtocolBerachain
 ): any[] {
   return [
