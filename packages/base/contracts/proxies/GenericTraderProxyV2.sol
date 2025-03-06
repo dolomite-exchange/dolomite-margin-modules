@@ -79,7 +79,7 @@ contract GenericTraderProxyV2 is GenericTraderProxyBase, ReentrancyGuard, Author
     function swapExactInputForOutput(
         SwapExactInputForOutputParams memory _params
     ) public nonReentrant {
-        _swapExactInputForOutput(msg.sender, _params);
+        _swapExactInputForOutput(/* _accountOwner = */ msg.sender, _params);
     }
 
     function swapExactInputForOutputForDifferentAccount(
@@ -92,7 +92,7 @@ contract GenericTraderProxyV2 is GenericTraderProxyBase, ReentrancyGuard, Author
     function swapExactInputForOutputAndModifyPosition(
         SwapExactInputForOutputAndModifyPositionParams memory _params
     ) public nonReentrant {
-        _swapExactInputForOutputAndModifyPosition(msg.sender, _params);
+        _swapExactInputForOutputAndModifyPosition(/* _accountOwner = */ msg.sender, _params);
     }
 
     function swapExactInputForOutputAndModifyPositionForDifferentAccount(
@@ -197,7 +197,7 @@ contract GenericTraderProxyV2 is GenericTraderProxyBase, ReentrancyGuard, Author
     }
 
     function _swapExactInputForOutputAndModifyPosition(
-        address _user,
+        address _accountOwner,
         SwapExactInputForOutputAndModifyPositionParams memory _params
     ) internal notExpired(_params.userConfig.deadline) {
         GenericTraderProxyCache memory cache = GenericTraderProxyCache({
@@ -227,7 +227,7 @@ contract GenericTraderProxyV2 is GenericTraderProxyBase, ReentrancyGuard, Author
         ) {
             _params.inputAmountWei = _getActualInputAmountWei(
                 cache,
-                _user,
+                _accountOwner,
                 _params.transferCollateralParams.fromAccountNumber,
                 _params.marketIdsPath[0],
                 _params.transferCollateralParams.transferAmounts[0].amountWei
@@ -235,7 +235,7 @@ contract GenericTraderProxyV2 is GenericTraderProxyBase, ReentrancyGuard, Author
         } else {
             _params.inputAmountWei = _getActualInputAmountWei(
                 cache,
-                _user,
+                _accountOwner,
                 _params.accountNumber,
                 _params.marketIdsPath[0],
                 _params.inputAmountWei
@@ -253,14 +253,14 @@ contract GenericTraderProxyV2 is GenericTraderProxyBase, ReentrancyGuard, Author
         IDolomiteStructs.AccountInfo[] memory accounts = _getAccounts(
             cache,
             _params.makerAccounts,
-            /* _tradeAccountOwner = */ _user,
+            _accountOwner,
             _params.accountNumber,
             _params.tradersPath
         );
         // the call to `_getAccounts` leaves accounts[TRANSFER_ACCOUNT_ID] unset, because it only fills in the traders
         // starting at the `traderAccountCursor` index
         accounts[TRANSFER_ACCOUNT_ID] = IDolomiteStructs.AccountInfo({
-            owner: _user,
+            owner: _accountOwner,
             number: cache.otherAccountNumber
         });
         _validateZapAccount(cache, accounts[ZAP_ACCOUNT_ID], _params.marketIdsPath);

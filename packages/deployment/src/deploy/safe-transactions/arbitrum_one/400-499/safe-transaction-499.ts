@@ -3,11 +3,11 @@ import { getAndCheckSpecificNetwork } from 'packages/base/src/utils/dolomite-uti
 import { ADDRESS_ZERO, Network } from 'packages/base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from 'packages/base/test/utils';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
-import { deployContractAndSave, getMaxDeploymentVersionNameByDeploymentKey } from '../../../../utils/deploy-utils';
+import { deployContractAndSave } from '../../../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
+import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 import { IsolationModeVaultType } from '../../../isolation-mode/isolation-mode-helpers';
-import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 
 /**
  * This script encodes the following transactions:
@@ -20,31 +20,26 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
   const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
 
-  const safeDelegateCallLibAddress = await deployContractAndSave('SafeDelegateCallLib', [], 'SafeDelegateCallLibV1');
   const actionsImplAddress = await deployContractAndSave(
     'IsolationModeTokenVaultV1ActionsImpl',
     [],
     'IsolationModeTokenVaultV1ActionsImplV9',
-    { SafeDelegateCallLib: safeDelegateCallLibAddress },
+    core.libraries.safeDelegateCallImpl,
   );
 
   const transactions: EncodedTransaction[] = [];
   for (const deployedVault of core.deployedVaults) {
     if (deployedVault.isUpgradeable) {
       transactions.push(
-        await deployedVault.deployNewVaultAndEncodeUpgradeTransaction(
-          core,
-          { IsolationModeTokenVaultV1ActionsImpl: actionsImplAddress },
-        ),
+        await deployedVault.deployNewVaultAndEncodeUpgradeTransaction(core, {
+          IsolationModeTokenVaultV1ActionsImpl: actionsImplAddress,
+        }),
       );
     }
   }
 
-  const glvLibraryAddress = await deployContractAndSave(
-    'GlvLibrary',
-    [],
-    getMaxDeploymentVersionNameByDeploymentKey('GlvLibrary', 1),
-  );
+  const gmxV2LibraryAddress = await deployContractAndSave('GmxV2Library', [], 'GmxV2LibraryV10');
+  const glvLibraryAddress = await deployContractAndSave('GlvLibrary', [], 'GlvLibraryV3');
   const asyncUnwrapperImplAddress = await deployContractAndSave(
     'AsyncIsolationModeUnwrapperTraderImpl',
     [],
@@ -57,6 +52,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   );
 
   const glvLibraryMap = { GlvLibrary: glvLibraryAddress };
+  const gmxV2LibraryMap = { GmxV2Library: gmxV2LibraryAddress };
   const asyncUnwrapperMap = { AsyncIsolationModeUnwrapperTraderImpl: asyncUnwrapperImplAddress };
   const asyncWrapperMap = { AsyncIsolationModeWrapperTraderImpl: asyncWrapperImplAddress };
 
@@ -64,13 +60,13 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     'GlvIsolationModeUnwrapperTraderV2',
     [core.tokens.weth.address],
     'GlvIsolationModeUnwrapperTraderImplementationV4',
-    { ...glvLibraryMap, ...core.gmxV2Ecosystem.live.gmxV2LibraryMap, ...asyncUnwrapperMap },
+    { ...glvLibraryMap, ...gmxV2LibraryMap, ...asyncUnwrapperMap },
   );
   const glvWrapperAddress = await deployContractAndSave(
     'GlvIsolationModeWrapperTraderV2',
     [core.tokens.weth.address],
     'GlvIsolationModeWrapperTraderImplementationV4',
-    { ...glvLibraryMap, ...core.gmxV2Ecosystem.live.gmxV2LibraryMap, ...asyncWrapperMap },
+    { ...glvLibraryMap, ...gmxV2LibraryMap, ...asyncWrapperMap },
   );
 
   transactions.push(
@@ -92,36 +88,28 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     'GmxV2IsolationModeUnwrapperTraderV2',
     [core.tokens.weth.address],
     'GmxV2IsolationModeUnwrapperTraderImplementationV13',
-    { ...core.gmxV2Ecosystem.live.gmxV2LibraryMap, ...asyncUnwrapperMap },
+    { ...gmxV2LibraryMap, ...asyncUnwrapperMap },
   );
   const gmxV2WrapperImplementationAddress = await deployContractAndSave(
     'GmxV2IsolationModeWrapperTraderV2',
     [core.tokens.weth.address],
     'GmxV2IsolationModeWrapperTraderImplementationV12',
-    { ...core.gmxV2Ecosystem.live.gmxV2LibraryMap, ...asyncWrapperMap },
+    { ...gmxV2LibraryMap, ...asyncWrapperMap },
   );
 
-  const deployedGmxV2Vaults = core.deployedVaults.filter(vault => vault.vaultType === IsolationModeVaultType.GmxV2);
+  const deployedGmxV2Vaults = core.deployedVaults.filter((vault) => vault.vaultType === IsolationModeVaultType.GmxV2);
   if (deployedGmxV2Vaults.length !== core.gmxV2Ecosystem.live.allGmMarkets.length) {
     throw new Error('Number of deployed GMX v2 vaults does not match number of GMX v2 markets');
   }
 
   for (const gmMarket of core.gmxV2Ecosystem.live.allGmMarkets) {
     transactions.push(
-      await prettyPrintEncodedDataWithTypeSafety(
-        core,
-        gmMarket,
-        'unwrapperProxy',
-        'upgradeTo',
-        [gmxV2UnwrapperImplementationAddress],
-      ),
-      await prettyPrintEncodedDataWithTypeSafety(
-        core,
-        gmMarket,
-        'wrapperProxy',
-        'upgradeTo',
-        [gmxV2WrapperImplementationAddress],
-      ),
+      await prettyPrintEncodedDataWithTypeSafety(core, gmMarket, 'unwrapperProxy', 'upgradeTo', [
+        gmxV2UnwrapperImplementationAddress,
+      ]),
+      await prettyPrintEncodedDataWithTypeSafety(core, gmMarket, 'wrapperProxy', 'upgradeTo', [
+        gmxV2WrapperImplementationAddress,
+      ]),
     );
   }
 

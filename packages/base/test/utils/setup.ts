@@ -837,6 +837,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
   }, {} as Record<number, DeployedVault>);
 
   const libraries: LibraryMaps = {
+    safeDelegateCallImpl: createSafeDelegateCallLibraries(config),
     tokenVaultActionsImpl: createTokenVaultActionsLibraries(config),
     unwrapperTraderImpl: createAsyncUnwrapperImplLibraries(config),
     wrapperTraderImpl: createAsyncWrapperImplLibraries(config),
@@ -1489,6 +1490,17 @@ function createImplementationContracts(network: Network, signer: SignerWithAddre
     dolomiteERC4626WithPayableImplementation: DolomiteERC4626WithPayable__factory.connect(
       getMaxDeploymentVersionAddressByDeploymentKey('DolomiteERC4626WithPayableImplementation', network),
       signer,
+    ),
+  };
+}
+
+function createSafeDelegateCallLibraries<T extends NetworkType>(
+  config: CoreProtocolSetupConfig<T>,
+): Record<string, string> {
+  return {
+    SafeDelegateCallLib: getMaxDeploymentVersionAddressByDeploymentKey(
+      'SafeDelegateCallLib',
+      config.network,
     ),
   };
 }

@@ -24,8 +24,6 @@ import { IDolomiteRegistry } from "@dolomite-exchange/modules-base/contracts/int
 import { IGenericTraderBase } from "@dolomite-exchange/modules-base/contracts/interfaces/IGenericTraderBase.sol";
 import { IsolationModeTokenVaultV1WithAsyncFreezable } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeTokenVaultV1WithAsyncFreezable.sol";
 import { IsolationModeTokenVaultV1WithAsyncFreezableAndPausable } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeTokenVaultV1WithAsyncFreezableAndPausable.sol";
-import { IAsyncFreezableIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IAsyncFreezableIsolationModeVaultFactory.sol";
-import { IIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
 import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IUpgradeableAsyncIsolationModeUnwrapperTrader.sol";
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { IWETH } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IWETH.sol";
@@ -254,25 +252,15 @@ contract GlvIsolationModeTokenVaultV1 is
         bytes calldata _extraData
     ) internal override {
         IGlvIsolationModeVaultFactory factory = IGlvIsolationModeVaultFactory(VAULT_FACTORY());
-        Require.that(
-            registry().getUnwrapperByToken(factory).isValidOutputToken(_outputToken),
-            _FILE,
-            "Invalid output token"
-        );
+        GmxV2Library.validateInitiateUnwrapping(factory, factory.glvRegistry(), _outputToken);
 
-        Require.that(
-            msg.value <= IAsyncFreezableIsolationModeVaultFactory(VAULT_FACTORY()).maxExecutionFee(),
-            _FILE,
-            "Invalid execution fee"
-        );
         uint256 ethExecutionFee = msg.value;
         if (_isLiquidation) {
             ethExecutionFee += getExecutionFeeForAccountNumber(_tradeAccountNumber);
             _setExecutionFeeForAccountNumber(_tradeAccountNumber, /* _executionFee = */ 0); // reset it to 0
         }
 
-        IUpgradeableAsyncIsolationModeUnwrapperTrader unwrapper =
-                                registry().getUnwrapperByToken(IIsolationModeVaultFactory(VAULT_FACTORY()));
+        IUpgradeableAsyncIsolationModeUnwrapperTrader unwrapper = registry().getUnwrapperByToken(factory);
         IERC20(UNDERLYING_TOKEN()).safeApprove(address(unwrapper), _inputAmount);
         unwrapper.vaultInitiateUnwrapping{ value: ethExecutionFee }(
             _tradeAccountNumber,

@@ -258,7 +258,7 @@ contract LiquidatorProxyV5 is
                 _constants.owedMarket,
                 _constants.heldMarket,
                 address(EXPIRY),
-                uint32(_constants.expirationTimestamp), // @follow-up Adjusted two things here
+                uint32(_constants.expirationTimestamp),
                 _liquidatorCache.flipMarketsForExpiration
             );
         } else {

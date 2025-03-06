@@ -32,6 +32,7 @@ import { TestEcosystem } from '../ecosystem-utils/testers';
 import { CoreProtocolConfig } from '../setup';
 
 export interface LibraryMaps {
+  safeDelegateCallImpl: Record<string, string>;
   tokenVaultActionsImpl: Record<string, string>;
   unwrapperTraderImpl: Record<string, string>;
   wrapperTraderImpl: Record<string, string>;
@@ -47,10 +48,6 @@ export type WETHType<T extends NetworkType> = T extends Network.ArbitrumOne
   : T extends Network.Base
   ? IWETH
   : T extends Network.Berachain
-  ? IERC20
-  : T extends Network.BerachainBartio
-  ? IERC20
-  : T extends Network.BerachainCartio
   ? IERC20
   : T extends Network.Ink
   ? IWETH
@@ -69,10 +66,6 @@ export type DolomiteWETHType<T extends NetworkType> = T extends Network.Arbitrum
   : T extends Network.Base
   ? DolomiteERC4626WithPayable
   : T extends Network.Berachain
-  ? DolomiteERC4626
-  : T extends Network.BerachainBartio
-  ? DolomiteERC4626
-  : T extends Network.BerachainCartio
   ? DolomiteERC4626
   : T extends Network.Ink
   ? DolomiteERC4626WithPayable

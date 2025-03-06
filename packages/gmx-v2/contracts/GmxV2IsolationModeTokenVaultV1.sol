@@ -24,7 +24,6 @@ import { IDolomiteRegistry } from "@dolomite-exchange/modules-base/contracts/int
 import { IGenericTraderBase } from "@dolomite-exchange/modules-base/contracts/interfaces/IGenericTraderBase.sol";
 import { IsolationModeTokenVaultV1WithAsyncFreezable } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeTokenVaultV1WithAsyncFreezable.sol";
 import { IsolationModeTokenVaultV1WithAsyncFreezableAndPausable } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeTokenVaultV1WithAsyncFreezableAndPausable.sol";
-import { IAsyncFreezableIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IAsyncFreezableIsolationModeVaultFactory.sol";
 import { IIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
 import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IUpgradeableAsyncIsolationModeUnwrapperTrader.sol";
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
@@ -182,7 +181,7 @@ contract GmxV2IsolationModeTokenVaultV1 is
         internal
         override
     {
-        _tradersPath = GmxV2Library.vaultValidateExecutionFeeIfWrapToUnderlying(
+        _tradersPath = GmxV2Library.vaultValidateExecutionFeeIfWrapToUnderlyingAndReturnNewTraders(
             /* _vault = */ this,
             _borrowAccountNumber,
             _tradersPath
@@ -212,7 +211,7 @@ contract GmxV2IsolationModeTokenVaultV1 is
         internal
         override
     {
-        _tradersPath = GmxV2Library.vaultValidateExecutionFeeIfWrapToUnderlying(
+        _tradersPath = GmxV2Library.vaultValidateExecutionFeeIfWrapToUnderlyingAndReturnNewTraders(
             /* _vault = */ this,
             _borrowAccountNumber,
             _tradersPath
@@ -236,7 +235,7 @@ contract GmxV2IsolationModeTokenVaultV1 is
         virtual
         override
     {
-        _params.tradersPath = GmxV2Library.vaultValidateExecutionFeeIfWrapToUnderlying(
+        _params.tradersPath = GmxV2Library.vaultValidateExecutionFeeIfWrapToUnderlyingAndReturnNewTraders(
             /* _vault = */ this,
             _params.tradeAccountNumber,
             _params.tradersPath
@@ -253,17 +252,8 @@ contract GmxV2IsolationModeTokenVaultV1 is
         bytes calldata _extraData
     ) internal override {
         IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(VAULT_FACTORY());
-        Require.that(
-            registry().getUnwrapperByToken(factory).isValidOutputToken(_outputToken),
-            _FILE,
-            "Invalid output token"
-        );
+        GmxV2Library.validateInitiateUnwrapping(factory, factory.gmxV2Registry(), _outputToken);
 
-        Require.that(
-            msg.value <= IAsyncFreezableIsolationModeVaultFactory(VAULT_FACTORY()).maxExecutionFee(),
-            _FILE,
-            "Invalid execution fee"
-        );
         uint256 ethExecutionFee = msg.value;
         if (_isLiquidation) {
             ethExecutionFee += getExecutionFeeForAccountNumber(_tradeAccountNumber);
