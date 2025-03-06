@@ -153,6 +153,8 @@ describe('POLIsolationModeTokenVaultV1', () => {
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(unwrapper.address, true);
     await setupNewGenericTraderProxy(core, marketId);
 
+    await core.liquidatorAssetRegistry.ownerAddLiquidatorToAssetWhitelist(marketId, core.hhUser4.address);
+
     snapshotId = await snapshot();
   });
 
@@ -174,6 +176,33 @@ describe('POLIsolationModeTokenVaultV1', () => {
       await expectThrow(
         vault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, parAmount),
         'Not implemented',
+      );
+    });
+  });
+
+  describe('#prepareForLiquidation', () => {
+    it('should work normally to unstake', async () => {
+      await wrapFullBalanceIntoVaultDefaultAccount(core, vault, metaVault, wrapper, marketId);
+      await vault.connect(core.hhUser4).prepareForLiquidation(defaultAccountNumber, parAmount);
+      expect(await infraredVault.balanceOf(metaVault.address)).to.equal(ZERO_BI);
+      expect(await dToken.balanceOf(metaVault.address)).to.equal(parAmount);
+    });
+
+    it('should work normally if no unstaking is needed', async () => {
+      await wrapFullBalanceIntoVaultDefaultAccount(core, vault, metaVault, wrapper, marketId);
+      await vault.unstake(RewardVaultType.Infrared, parAmount);
+      expect(await infraredVault.balanceOf(metaVault.address)).to.equal(ZERO_BI);
+      expect(await dToken.balanceOf(metaVault.address)).to.equal(parAmount);
+
+      await vault.connect(core.hhUser4).prepareForLiquidation(defaultAccountNumber, parAmount);
+      expect(await infraredVault.balanceOf(metaVault.address)).to.equal(ZERO_BI);
+      expect(await dToken.balanceOf(metaVault.address)).to.equal(parAmount);
+    });
+
+    it('should fail if not called by liquidator', async () => {
+      await expectThrow(
+        vault.connect(core.hhUser2).prepareForLiquidation(defaultAccountNumber, parAmount),
+        `POLIsolationModeTokenVaultV1: Only liquidator can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
   });
