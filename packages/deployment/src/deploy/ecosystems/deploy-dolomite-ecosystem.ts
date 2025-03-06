@@ -153,11 +153,11 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   );
   const genericTraderProxyV2Address = await deployContractAndSave(
     'GenericTraderProxyV2',
-    [network, dolomiteRegistry.address, dolomiteMargin.address],
+    [dolomiteRegistry.address, dolomiteMargin.address],
     getMaxDeploymentVersionNameByDeploymentKey('GenericTraderProxy', 2),
     { GenericTraderProxyV2Lib: genericTraderProxyV2LibAddress },
   );
-  const genericTraderProxy = GenericTraderProxyV2__factory.connect(genericTraderProxyV2Address, hhUser1) as any;
+  const genericTraderProxy = GenericTraderProxyV2__factory.connect(genericTraderProxyV2Address, hhUser1);
 
   const dolomiteMigratorAddress = await deployContractAndSave(
     'DolomiteMigrator',
@@ -208,7 +208,6 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     'BorrowPositionRouterProxy',
   );
 
-  // TODO: uncomment
   const genericTraderRouterImplementationAddress = await deployContractAndSave(
     'GenericTraderRouter',
     [dolomiteRegistry.address, dolomiteMargin.address],
@@ -263,7 +262,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     governance,
     hhUser1,
     liquidatorAssetRegistry,
-    genericTraderProxy,
+    genericTraderProxy: genericTraderProxy as any,
     gnosisSafe: gnosisSafeSigner,
     gnosisSafeAddress: gnosisSafeAddress,
     network: config.network,

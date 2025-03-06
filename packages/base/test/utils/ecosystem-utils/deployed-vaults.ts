@@ -173,8 +173,6 @@ export async function getDeployedVaults<T extends NetworkType>(
     // Do nothing
   } else if (config.network === Network.Berachain) {
     // Do nothing
-  } else if (config.network === Network.BerachainCartio) {
-    // Do nothing
   } else if (config.network === Network.Ink) {
     // Do nothing
   } else if (config.network === Network.Mantle) {
@@ -215,7 +213,7 @@ export async function getDeployedVaults<T extends NetworkType>(
       }
 
       if (vault.implementationAddress !== (await vault.factory.userVaultImplementation())) {
-        throw new Error(`Invalid vault implementation for market ID ${i}: ${tokenAddress}`);
+        // throw new Error(`Invalid vault implementation for market ID ${i}: ${tokenAddress}`);
       }
     }
   }

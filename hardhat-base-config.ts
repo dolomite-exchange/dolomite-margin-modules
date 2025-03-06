@@ -139,6 +139,7 @@ export const base_config: HardhatUserConfig = {
       url: mantleWeb3Url,
       gas: 25_000_000_000, // 25B gas
       accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
+      gasPrice: 30_000_000,
     },
     [NetworkName.PolygonZkEvm]: {
       chainId: parseInt(Network.PolygonZkEvm, 10),

@@ -26,20 +26,34 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     'IsolationModeTokenVaultV1ActionsImplV9',
     core.libraries.safeDelegateCallImpl,
   );
+  const gmxV2LibraryAddress = await deployContractAndSave('GmxV2Library', [], 'GmxV2LibraryV10');
+  const glvLibraryAddress = await deployContractAndSave('GlvLibrary', [], 'GlvLibraryV3');
+
+  const glvLibraryMap = { GlvLibrary: glvLibraryAddress };
+  const gmxV2LibraryMap = { GmxV2Library: gmxV2LibraryAddress };
 
   const transactions: EncodedTransaction[] = [];
   for (const deployedVault of core.deployedVaults) {
     if (deployedVault.isUpgradeable) {
-      transactions.push(
-        await deployedVault.deployNewVaultAndEncodeUpgradeTransaction(core, {
-          IsolationModeTokenVaultV1ActionsImpl: actionsImplAddress,
-        }),
-      );
+      let libraries: any = { IsolationModeTokenVaultV1ActionsImpl: actionsImplAddress };
+
+      if (deployedVault.vaultType === IsolationModeVaultType.GLV) {
+        libraries = {
+          ...libraries,
+          ...glvLibraryMap,
+          ...gmxV2LibraryMap,
+        };
+      } else if (deployedVault.vaultType === IsolationModeVaultType.GmxV2) {
+        libraries = {
+          ...libraries,
+          ...gmxV2LibraryMap,
+        };
+      }
+
+      transactions.push(await deployedVault.deployNewVaultAndEncodeUpgradeTransaction(core, libraries));
     }
   }
 
-  const gmxV2LibraryAddress = await deployContractAndSave('GmxV2Library', [], 'GmxV2LibraryV10');
-  const glvLibraryAddress = await deployContractAndSave('GlvLibrary', [], 'GlvLibraryV3');
   const asyncUnwrapperImplAddress = await deployContractAndSave(
     'AsyncIsolationModeUnwrapperTraderImpl',
     [],
@@ -51,8 +65,6 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     'AsyncIsolationModeWrapperTraderImplV4',
   );
 
-  const glvLibraryMap = { GlvLibrary: glvLibraryAddress };
-  const gmxV2LibraryMap = { GmxV2Library: gmxV2LibraryAddress };
   const asyncUnwrapperMap = { AsyncIsolationModeUnwrapperTraderImpl: asyncUnwrapperImplAddress };
   const asyncWrapperMap = { AsyncIsolationModeWrapperTraderImpl: asyncWrapperImplAddress };
 

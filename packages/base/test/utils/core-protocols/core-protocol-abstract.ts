@@ -9,11 +9,12 @@ import {
   DolomiteOwnerV2,
   IBorrowPositionProxyV2,
   IDepositWithdrawalProxy,
-  IDolomiteAccountRegistry, IDolomiteAccountRiskOverrideSetter,
+  IDolomiteAccountRegistry,
+  IDolomiteAccountRiskOverrideSetter,
   IDolomiteRegistry,
   IERC20,
   IEventEmitterRegistry,
-  IGenericTraderProxyV1,
+  IGenericTraderProxyV2,
   ILiquidatorAssetRegistry,
   ILiquidatorProxyV1,
   ILiquidatorProxyV4WithGenericTrader,
@@ -127,7 +128,7 @@ export interface CoreProtocolParams<T extends NetworkType> {
   dolomiteTokens: CoreProtocolDolomiteTokens<T>;
   expiry: Expiry<T>;
   freezableLiquidatorProxy: IsolationModeFreezableLiquidatorProxy;
-  genericTraderProxy: IGenericTraderProxyV1;
+  genericTraderProxy: IGenericTraderProxyV2;
   implementationContracts: ImplementationContracts;
   interestSetters: InterestSetters;
   libraries: LibraryMaps;
@@ -191,7 +192,7 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
   public readonly eventEmitterRegistryProxy: RegistryProxy;
   public readonly expiry: Expiry<T>;
   public readonly freezableLiquidatorProxy: IsolationModeFreezableLiquidatorProxy;
-  public readonly genericTraderProxy: IGenericTraderProxyV1;
+  public readonly genericTraderProxy: IGenericTraderProxyV2;
   public readonly implementationContracts: ImplementationContracts;
   public readonly interestSetters: InterestSetters;
   public readonly libraries: LibraryMaps;

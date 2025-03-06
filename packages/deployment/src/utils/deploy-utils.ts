@@ -6,9 +6,6 @@ import {
   DolomiteERC4626WithPayable__factory,
   IERC20,
   IERC20Metadata__factory,
-  IIsolationModeUnwrapperTraderV2,
-  IIsolationModeVaultFactory,
-  IIsolationModeWrapperTraderV2,
 } from '@dolomite-exchange/modules-base/src/types';
 import {
   getDolomiteErc4626ProxyConstructorParams,
@@ -401,7 +398,7 @@ export async function deployContractAndSave(
     }
     const opts = {
       nonce: options.nonce === undefined ? nonce : options.nonce,
-      gasPrice: options.gasPrice,
+      gasPrice: options.gasPrice ?? hardhat.userConfig.networks![networkName]?.gasPrice,
       gasLimit: options.gasLimit,
       type: options.type,
     };
