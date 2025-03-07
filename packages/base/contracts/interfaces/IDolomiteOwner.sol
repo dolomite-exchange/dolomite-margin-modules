@@ -136,8 +136,6 @@ interface IDolomiteOwner is IAccessControl {
 
     function isTimelockComplete(uint256 _transactionId) external view returns (bool);
 
-    function transactionCount() external view returns (uint256);
-
     /**
      *  @notice Logic to check if user has permission to submit the transaction:
      *          1. If user has DEFAULT_ADMIN_ROLE, they can submit the transaction

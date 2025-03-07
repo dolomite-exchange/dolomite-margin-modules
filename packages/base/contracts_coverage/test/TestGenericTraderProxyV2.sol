@@ -35,10 +35,9 @@ contract TestGenericTraderProxyV2 is GenericTraderProxyV2 {
     using InternalSafeDelegateCallLib for address;
 
     constructor(
-        uint256 _chainId,
         address _dolomiteRegistry,
         address _dolomiteMargin
-    ) GenericTraderProxyV2(_chainId, _dolomiteRegistry, _dolomiteMargin) {}
+    ) GenericTraderProxyV2(_dolomiteRegistry, _dolomiteMargin) {}
 
     function callFunctionAndTriggerReentrancy(
         bytes calldata _callDataWithSelector

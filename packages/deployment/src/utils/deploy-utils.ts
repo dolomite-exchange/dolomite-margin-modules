@@ -6,9 +6,6 @@ import {
   DolomiteERC4626WithPayable__factory,
   IERC20,
   IERC20Metadata__factory,
-  IIsolationModeUnwrapperTraderV2,
-  IIsolationModeVaultFactory,
-  IIsolationModeWrapperTraderV2,
 } from '@dolomite-exchange/modules-base/src/types';
 import {
   getDolomiteErc4626ProxyConstructorParams,
@@ -401,7 +398,7 @@ export async function deployContractAndSave(
     }
     const opts = {
       nonce: options.nonce === undefined ? nonce : options.nonce,
-      gasPrice: options.gasPrice,
+      gasPrice: options.gasPrice ?? hardhat.userConfig.networks![networkName]?.gasPrice,
       gasLimit: options.gasLimit,
       type: options.type,
     };
@@ -911,7 +908,7 @@ async function prettyPrintAndVerifyContract(
   console.log(`\t${'='.repeat(52 + contractRename.length)}`);
 
   if (!(process.env.SKIP_VERIFICATION === 'true')) {
-    const sleepTimeSeconds = 5;
+    const sleepTimeSeconds = chainId === parseInt(Network.Ink, 10) ? 10 : 5;
     console.log(
       `\tSleeping for ${sleepTimeSeconds}s to wait for the transaction to be indexed by the block explorer...`,
     );

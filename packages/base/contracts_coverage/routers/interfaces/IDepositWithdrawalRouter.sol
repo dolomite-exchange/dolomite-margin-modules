@@ -38,6 +38,13 @@ interface IDepositWithdrawalRouter is IRouterBase {
     }
 
     /**
+     * Initializes the this contract using the payable token
+     *
+     * @param  _payableToken    The address of the wrapped payable token for this network
+     */
+    function ownerLazyInitialize(address _payableToken) external;
+
+    /**
      *
      * @param  _isolationModeMarketId  The market ID of the isolation mode token vault
      *                                 (0 if not using isolation mode)

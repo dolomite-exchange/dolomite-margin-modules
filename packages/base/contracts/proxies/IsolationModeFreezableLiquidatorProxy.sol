@@ -21,7 +21,7 @@
 pragma solidity ^0.8.9;
 
 import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import { BaseLiquidatorProxy } from "../general/BaseLiquidatorProxy.sol";
+import { BaseLiquidatorProxy } from "./BaseLiquidatorProxy.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IIsolationModeFreezableLiquidatorProxy } from "../isolation-mode/interfaces/IIsolationModeFreezableLiquidatorProxy.sol"; // solhint-disable-line max-line-length
 import { IIsolationModeTokenVaultV1WithAsyncFreezable } from "../isolation-mode/interfaces/IIsolationModeTokenVaultV1WithAsyncFreezable.sol"; // solhint-disable-line max-line-length
@@ -80,7 +80,6 @@ contract IsolationModeFreezableLiquidatorProxy is
         requireIsAssetWhitelistedForLiquidation(_params.freezableMarketId)
     {
         address freezableToken = DOLOMITE_MARGIN().getMarketTokenAddress(_params.freezableMarketId);
-        if (IIsolationModeVaultFactory(freezableToken).getAccountByVault(_params.liquidAccount.owner) != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             IIsolationModeVaultFactory(freezableToken).getAccountByVault(_params.liquidAccount.owner) != address(0),
             _FILE,
@@ -122,19 +121,16 @@ contract IsolationModeFreezableLiquidatorProxy is
         uint256 _expirationTimestamp
     ) internal view {
         if (_expirationTimestamp != 0) {
-            if (_expirationTimestamp == uint32(_expirationTimestamp)) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 _expirationTimestamp == uint32(_expirationTimestamp),
                 _FILE,
                 "Invalid expiration timestamp"
             );
-            if (_expirationTimestamp <= block.timestamp) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 _expirationTimestamp <= block.timestamp,
                 _FILE,
                 "Account not expired"
             );
-            if (EXPIRY.getExpiry(_liquidAccount, _outputMarketId) == uint32(_expirationTimestamp)) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 EXPIRY.getExpiry(_liquidAccount, _outputMarketId) == uint32(_expirationTimestamp),
                 _FILE,
@@ -148,11 +144,11 @@ contract IsolationModeFreezableLiquidatorProxy is
             ) = _getAdjustedAccountValues(
                 _marketInfos,
                 _liquidAccount,
-                DOLOMITE_MARGIN().getAccountMarketsWithBalances(_liquidAccount)
+                DOLOMITE_MARGIN().getAccountMarketsWithBalances(_liquidAccount),
+                IDolomiteStructs.Decimal({ value: 0 })
             );
 
             // Panic if there's no supply value
-            if (liquidSupplyValue.value != 0) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 liquidSupplyValue.value != 0,
                 _FILE,
@@ -168,7 +164,6 @@ contract IsolationModeFreezableLiquidatorProxy is
         IDolomiteStructs.MonetaryValue memory _liquidBorrowValue
     ) internal view {
         IDolomiteStructs.Decimal memory marginRatio = DOLOMITE_MARGIN().getMarginRatio();
-        if (DOLOMITE_MARGIN().getAccountStatus(_liquidAccount) == IDolomiteStructs.AccountStatus.Liquid || !_isCollateralized(_liquidSupplyValue.value, _liquidBorrowValue.value, marginRatio)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             DOLOMITE_MARGIN().getAccountStatus(_liquidAccount) == IDolomiteStructs.AccountStatus.Liquid
                 || !_isCollateralized(_liquidSupplyValue.value, _liquidBorrowValue.value, marginRatio),

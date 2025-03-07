@@ -10,10 +10,11 @@ import {
   IBorrowPositionProxyV2,
   IDepositWithdrawalProxy,
   IDolomiteAccountRegistry,
+  IDolomiteAccountRiskOverrideSetter,
   IDolomiteRegistry,
   IERC20,
   IEventEmitterRegistry,
-  IGenericTraderProxyV1,
+  IGenericTraderProxyV2,
   ILiquidatorAssetRegistry,
   ILiquidatorProxyV1,
   ILiquidatorProxyV4WithGenericTrader,
@@ -32,6 +33,7 @@ import { TestEcosystem } from '../ecosystem-utils/testers';
 import { CoreProtocolConfig } from '../setup';
 
 export interface LibraryMaps {
+  safeDelegateCallImpl: Record<string, string>;
   tokenVaultActionsImpl: Record<string, string>;
   unwrapperTraderImpl: Record<string, string>;
   wrapperTraderImpl: Record<string, string>;
@@ -47,10 +49,6 @@ export type WETHType<T extends NetworkType> = T extends Network.ArbitrumOne
   : T extends Network.Base
   ? IWETH
   : T extends Network.Berachain
-  ? IERC20
-  : T extends Network.BerachainBartio
-  ? IERC20
-  : T extends Network.BerachainCartio
   ? IERC20
   : T extends Network.Ink
   ? IWETH
@@ -69,10 +67,6 @@ export type DolomiteWETHType<T extends NetworkType> = T extends Network.Arbitrum
   : T extends Network.Base
   ? DolomiteERC4626WithPayable
   : T extends Network.Berachain
-  ? DolomiteERC4626
-  : T extends Network.BerachainBartio
-  ? DolomiteERC4626
-  : T extends Network.BerachainCartio
   ? DolomiteERC4626
   : T extends Network.Ink
   ? DolomiteERC4626WithPayable
@@ -127,12 +121,14 @@ export interface CoreProtocolParams<T extends NetworkType> {
   dolomiteRegistryProxy: RegistryProxy;
   dolomiteAccountRegistry: IDolomiteAccountRegistry;
   dolomiteAccountRegistryProxy: RegistryProxy;
+  dolomiteAccountRiskOverrideSetter: IDolomiteAccountRiskOverrideSetter;
+  dolomiteAccountRiskOverrideSetterProxy: RegistryProxy;
   eventEmitterRegistry: IEventEmitterRegistry;
   eventEmitterRegistryProxy: RegistryProxy;
   dolomiteTokens: CoreProtocolDolomiteTokens<T>;
   expiry: Expiry<T>;
   freezableLiquidatorProxy: IsolationModeFreezableLiquidatorProxy;
-  genericTraderProxy: IGenericTraderProxyV1;
+  genericTraderProxy: IGenericTraderProxyV2;
   implementationContracts: ImplementationContracts;
   interestSetters: InterestSetters;
   libraries: LibraryMaps;
@@ -190,11 +186,13 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
   public readonly dolomiteRegistryProxy: RegistryProxy;
   public readonly dolomiteAccountRegistry: IDolomiteAccountRegistry;
   public readonly dolomiteAccountRegistryProxy: RegistryProxy;
+  public readonly dolomiteAccountRiskOverrideSetter: IDolomiteAccountRiskOverrideSetter;
+  public readonly dolomiteAccountRiskOverrideSetterProxy: RegistryProxy;
   public readonly eventEmitterRegistry: IEventEmitterRegistry;
   public readonly eventEmitterRegistryProxy: RegistryProxy;
   public readonly expiry: Expiry<T>;
   public readonly freezableLiquidatorProxy: IsolationModeFreezableLiquidatorProxy;
-  public readonly genericTraderProxy: IGenericTraderProxyV1;
+  public readonly genericTraderProxy: IGenericTraderProxyV2;
   public readonly implementationContracts: ImplementationContracts;
   public readonly interestSetters: InterestSetters;
   public readonly libraries: LibraryMaps;
@@ -247,6 +245,8 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
     this.dolomiteRegistryProxy = params.dolomiteRegistryProxy;
     this.dolomiteAccountRegistry = params.dolomiteAccountRegistry;
     this.dolomiteAccountRegistryProxy = params.dolomiteAccountRegistryProxy;
+    this.dolomiteAccountRiskOverrideSetter = params.dolomiteAccountRiskOverrideSetter;
+    this.dolomiteAccountRiskOverrideSetterProxy = params.dolomiteAccountRiskOverrideSetterProxy;
     this.eventEmitterRegistry = params.eventEmitterRegistry;
     this.eventEmitterRegistryProxy = params.eventEmitterRegistryProxy;
     this.expiry = params.expiry;

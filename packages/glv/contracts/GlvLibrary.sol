@@ -338,6 +338,23 @@ library GlvLibrary {
             || _registry.callbackGasLimit() > dataStore.getUint(_MAX_CALLBACK_GAS_LIMIT_KEY);
     }
 
+    function validateInitiateUnwrapping(
+        IGlvIsolationModeVaultFactory _factory,
+        address _outputToken
+    ) public view {
+        Require.that(
+            _factory.glvRegistry().getUnwrapperByToken(_factory).isValidOutputToken(_outputToken),
+            _FILE,
+            "Invalid output token"
+        );
+
+        Require.that(
+            msg.value <= _factory.maxExecutionFee(),
+            _FILE,
+            "Invalid execution fee"
+        );
+    }
+
     function validateEventDataForWithdrawal(
         IGlvIsolationModeVaultFactory _factory,
         uint256 _marketTokenAmount,

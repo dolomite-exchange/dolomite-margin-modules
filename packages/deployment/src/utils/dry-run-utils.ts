@@ -13,6 +13,7 @@ import { execSync } from 'child_process';
 import { BaseContract, BigNumber, BigNumberish, ethers } from 'ethers';
 import hardhat from 'hardhat';
 import { advanceByTimeDelta } from 'packages/base/test/utils';
+import { GNOSIS_SAFE_MAP } from '../../../base/src/utils/constants';
 import {
   createFolder,
   readDeploymentFile,
@@ -21,7 +22,8 @@ import {
   writeFile,
 } from './deploy-utils';
 import { prettyPrintEncodedDataWithTypeSafety } from './encoding/base-encoder-utils';
-import MultiSend from './MultiSend.json';
+import GnosisSafeAbi from './GnosisSafe.json';
+import MultiSendAbi from './MultiSend.json';
 import { checkPerformance } from './performance-utils';
 
 const HARDHAT_CHAIN_ID = '31337';
@@ -272,7 +274,12 @@ async function doStuffInternal<T extends NetworkType>(executionFn: () => Promise
 
     const scriptName = result.scriptName;
     const multiSendContract = NETWORK_TO_MULTI_SEND_MAP[result.upload.chainId];
-    const nonce = parseInt(scriptName.match(/\d+/g)![0], 10);
+    const gnosisSafeContract = new BaseContract(
+      GNOSIS_SAFE_MAP[result.upload.chainId],
+      GnosisSafeAbi,
+      result.core.hhUser1,
+    );
+    const nonce = ((await gnosisSafeContract.functions.nonce()) as BigNumber[])[0].toNumber();
 
     const packedTransactions = ethers.utils.solidityPack(
       result.upload.transactions.reduce(
@@ -285,7 +292,9 @@ async function doStuffInternal<T extends NetworkType>(executionFn: () => Promise
       ),
     );
     const fragment = FunctionFragment.from('multiSend(bytes)');
-    const multiSendCalldata = new ethers.utils.Interface(MultiSend).encodeFunctionData(fragment, [packedTransactions]);
+    const multiSendCalldata = new ethers.utils.Interface(MultiSendAbi).encodeFunctionData(fragment, [
+      packedTransactions,
+    ]);
     const gnosisSafeAddress = result.core.gnosisSafeAddress;
     console.log('\tGenerating safe hash for transaction submission...');
     const networkNameForSafeHashOpt = NETWORK_TO_SAFE_HASH_NAME_MAP[result.upload.chainId];

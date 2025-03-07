@@ -22,6 +22,7 @@ pragma solidity ^0.8.9;
 
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IGenericTraderBase } from "../interfaces/IGenericTraderBase.sol";
+import { IInternalAutoTraderBase } from "../interfaces/traders/IInternalAutoTraderBase.sol";
 import { IIsolationModeUnwrapperTraderV2 } from "../isolation-mode/interfaces/IIsolationModeUnwrapperTraderV2.sol";
 import { IIsolationModeWrapperTraderV2 } from "../isolation-mode/interfaces/IIsolationModeWrapperTraderV2.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
@@ -43,15 +44,11 @@ abstract contract GenericTraderProxyBase is IGenericTraderBase {
 
     bytes32 private constant _FILE = "GenericTraderProxyBase";
 
-    uint256 internal constant ARBITRUM_ONE = 42161;
-    bytes32 internal constant DOLOMITE_FS_GLP_HASH = keccak256(bytes("Dolomite: Fee + Staked GLP"));
-    string internal constant DOLOMITE_ISOLATION_PREFIX = "Dolomite Isolation:";
-
+    uint256 internal constant DEFAULT_ACCOUNT_NUMBER = 0;
     /// @dev The index of the trade account in the accounts array (for executing an operation)
     uint256 internal constant TRADE_ACCOUNT_ID = 0;
     uint256 internal constant ZAP_ACCOUNT_ID = 1;
 
-    uint256 public immutable CHAIN_ID;
     IDolomiteRegistry public immutable DOLOMITE_REGISTRY;
 
     // ========================================================
@@ -59,10 +56,8 @@ abstract contract GenericTraderProxyBase is IGenericTraderBase {
     // ========================================================
 
     constructor (
-        uint256 _chainId,
         address _dolomiteRegistry
     ) {
-        CHAIN_ID = _chainId;
         DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
     }
 
@@ -113,12 +108,23 @@ abstract contract GenericTraderProxyBase is IGenericTraderBase {
         GenericTraderProxyCache memory _cache,
         IDolomiteStructs.AccountInfo[] memory _makerAccounts,
         address _tradeAccountOwner,
-        uint256 _tradeAccountNumber
+        uint256 _tradeAccountNumber,
+        IGenericTraderBase.TraderParam[] memory _tradersPath
     )
         internal
         view
         returns (IDolomiteStructs.AccountInfo[] memory)
     {
+        bool foundInternalLiq = false;
+        for (uint256 i; i < _tradersPath.length; ++i) {
+            if (_tradersPath[i].traderType == TraderType.InternalLiquidity) {
+                foundInternalLiq = true;
+                _cache.feeTransferAccountIndex = _cache.traderAccountStartIndex;
+                _cache.traderAccountStartIndex = _cache.feeTransferAccountIndex + 1;
+                break;
+            }
+        }
+
         IDolomiteStructs.AccountInfo[] memory accounts = new IDolomiteStructs.AccountInfo[](
             _cache.traderAccountStartIndex + _makerAccounts.length
         );
@@ -130,6 +136,14 @@ abstract contract GenericTraderProxyBase is IGenericTraderBase {
             owner: _tradeAccountOwner,
             number: _calculateZapAccountNumber(_tradeAccountOwner, _tradeAccountNumber)
         });
+
+        if (foundInternalLiq) {
+            accounts[_cache.feeTransferAccountIndex] = IDolomiteStructs.AccountInfo({
+                owner: DOLOMITE_REGISTRY.feeAgent(),
+                number: DEFAULT_ACCOUNT_NUMBER
+            });
+        }
+
         _appendTradersToAccounts(_cache, _makerAccounts, accounts);
         return accounts;
     }
@@ -155,7 +169,10 @@ abstract contract GenericTraderProxyBase is IGenericTraderBase {
     }
 
     function _getActionsLengthForTraderParams(
-        TraderParam[] memory _tradersPath
+        GenericTraderProxyCache memory _cache,
+        TraderParam[] memory _tradersPath,
+        IDolomiteStructs.AccountInfo[] memory _accounts,
+        uint256 _minOutputAmountWei
     )
         internal
         view
@@ -168,6 +185,16 @@ abstract contract GenericTraderProxyBase is IGenericTraderBase {
                 actionsLength += IIsolationModeUnwrapperTraderV2(_tradersPath[i].trader).actionsLength();
             } else if (_isWrapperTraderType(_tradersPath[i].traderType)) {
                 actionsLength += IIsolationModeWrapperTraderV2(_tradersPath[i].trader).actionsLength();
+            } else if (_tradersPath[i].traderType == TraderType.InternalLiquidity) {
+                actionsLength += IInternalAutoTraderBase(_tradersPath[i].trader).actionsLength(
+                    _createSwapDataFromTradeParams(
+                        _cache,
+                        _tradersPath,
+                        _accounts,
+                        _minOutputAmountWei,
+                        i
+                    )
+                );
             } else {
                 // If it's not a `wrap` or `unwrap`, trades only require 1 action
                 actionsLength += 1;
@@ -237,25 +264,48 @@ abstract contract GenericTraderProxyBase is IGenericTraderBase {
                     _tradersPath[i].tradeData
                 );
             } else if (_tradersPath[i].traderType == TraderType.InternalLiquidity) {
-                uint256 customInputAmountWei = AccountActionLib.all();
-                bytes memory tradeData = _tradersPath[i].tradeData;
                 if (DOLOMITE_REGISTRY.isTrustedInternalTrader(_tradersPath[i].trader)) { /* FOR COVERAGE TESTING */ }
                 Require.that(
                     DOLOMITE_REGISTRY.isTrustedInternalTrader(_tradersPath[i].trader),
                     _FILE,
                     "Internal trader not whitelisted"
                 );
-                _actions[_cache.actionsCursor++] = AccountActionLib.encodeInternalTradeActionWithCustomData(
-                    /* takerAccountId = */ _tradersPath[i].makerAccountIndex + _cache.traderAccountStartIndex,
-                    /* makerAccountId = */ ZAP_ACCOUNT_ID,
-                    _marketIdsPath[i],
-                    _marketIdsPath[i + 1],
-                    _tradersPath[i].trader,
-                    customInputAmountWei,
-                    CHAIN_ID,
-                    false,
-                    tradeData
-                );
+
+                // TODO: check these changes over
+                // TODO: should we move `extraData` to be in each `trades[i]` struct?
+                IInternalAutoTraderBase.InternalTradeParams[] memory trades =
+                    _createSwapDataFromTradeParams(
+                        _cache,
+                        _tradersPath,
+                        _accounts,
+                        _minOutputAmountWei,
+                        i
+                    );
+                // trades[0].extraData = _tradersPath[i].tradeData; // TODO: Thoughts on this?
+
+                IDolomiteStructs.ActionArgs[] memory tradeActions;
+                {
+                    IDolomiteStructs.AccountInfo[] memory accounts = _accounts;
+                    GenericTraderProxyCache memory cache = _cache;
+                    tradeActions = IInternalAutoTraderBase(_tradersPath[i].trader)
+                        .createActionsForInternalTrade(
+                            IInternalAutoTraderBase.CreateActionsForInternalTradeParams({
+                                takerAccountId: ZAP_ACCOUNT_ID,
+                                takerAccount: accounts[ZAP_ACCOUNT_ID],
+                                feeAccountId: cache.feeTransferAccountIndex,
+                                feeAccount: accounts[cache.feeTransferAccountIndex],
+                                inputMarketId: _marketIdsPath[i],
+                                outputMarketId: _marketIdsPath[i + 1],
+                                inputAmountWei: AccountActionLib.all(),
+                                trades: trades,
+                                extraData: _tradersPath[i].tradeData
+                            })
+                        );
+                }
+
+                for (uint256 j; j < tradeActions.length; ++j) {
+                    _actions[_cache.actionsCursor++] = tradeActions[j];
+                }
             } else if (_isUnwrapperTraderType(_tradersPath[i].traderType)) {
                 // We can't use a Require for the following assert, because there's already an invariant that enforces
                 // the trader is an `IsolationModeWrapper` if the market ID at `i + 1` is in isolation mode. Meaning,
@@ -358,6 +408,21 @@ abstract contract GenericTraderProxyBase is IGenericTraderBase {
         returns (bool)
     {
         return TraderType.IsolationModeUnwrapper == _traderType;
+    }
+
+    function _createSwapDataFromTradeParams(
+        GenericTraderProxyCache memory _cache,
+        TraderParam[] memory _traderParams,
+        IDolomiteStructs.AccountInfo[] memory _accounts,
+        uint256 _minOutputAmountWei,
+        uint256 _index
+    ) internal pure returns (IInternalAutoTraderBase.InternalTradeParams[] memory) {
+        IInternalAutoTraderBase.InternalTradeParams[] memory trades = new IInternalAutoTraderBase.InternalTradeParams[](1);
+        trades[0].makerAccount = _accounts[_traderParams[_index].makerAccountIndex + _cache.traderAccountStartIndex];
+        trades[0].makerAccountId = _traderParams[_index].makerAccountIndex + _cache.traderAccountStartIndex;
+        trades[0].amount = AccountActionLib.all();
+        trades[0].minOutputAmount = _getMinOutputAmountWeiForIndex(_minOutputAmountWei, _index, _traderParams.length);
+        return trades;
     }
 
     // ==================== Private Functions ====================
