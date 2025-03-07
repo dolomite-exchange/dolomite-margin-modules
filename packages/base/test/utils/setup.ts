@@ -436,6 +436,18 @@ export async function setupUSDMBalance(
   await core.tokens.usdm.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
+export async function setupUSDTBalance(
+  core: CoreProtocolArbitrumOne,
+  signer: SignerWithAddressWithSafety,
+  amount: BigNumberish,
+  spender: { address: string },
+) {
+  const whaleAddress = '0x6ab707Aca953eDAeFBc4fD23bA73294241490620'; // Aave token
+  const whaleSigner = await impersonate(whaleAddress, true);
+  await core.tokens.usdt.connect(whaleSigner).transfer(signer.address, amount);
+  await core.tokens.usdt.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
+}
+
 export async function setupGMBalance(
   core: CoreProtocolArbitrumOne,
   gmToken: IGmxMarketToken,
@@ -893,6 +905,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
   }, {} as Record<number, DeployedVault>);
 
   const libraries: LibraryMaps = {
+    safeDelegateCallImpl: createSafeDelegateCallLibraries(config),
     tokenVaultActionsImpl: createTokenVaultActionsLibraries(config),
     unwrapperTraderImpl: createAsyncUnwrapperImplLibraries(config),
     wrapperTraderImpl: createAsyncWrapperImplLibraries(config),
@@ -1547,6 +1560,17 @@ function createImplementationContracts(network: Network, signer: SignerWithAddre
     dolomiteERC4626WithPayableImplementation: DolomiteERC4626WithPayable__factory.connect(
       getMaxDeploymentVersionAddressByDeploymentKey('DolomiteERC4626WithPayableImplementation', network),
       signer,
+    ),
+  };
+}
+
+function createSafeDelegateCallLibraries<T extends NetworkType>(
+  config: CoreProtocolSetupConfig<T>,
+): Record<string, string> {
+  return {
+    SafeDelegateCallLib: getMaxDeploymentVersionAddressByDeploymentKey(
+      'SafeDelegateCallLib',
+      config.network,
     ),
   };
 }

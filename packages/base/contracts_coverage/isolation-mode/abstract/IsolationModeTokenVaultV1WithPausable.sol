@@ -27,6 +27,7 @@ import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { TypesLib } from "../../protocol/lib/TypesLib.sol";
+import { IGenericTraderProxyV2 } from "../../proxies/interfaces/IGenericTraderProxyV2.sol";
 import { IIsolationModeTokenVaultV1WithPausable } from "../interfaces/IIsolationModeTokenVaultV1WithPausable.sol";
 
 
@@ -318,9 +319,9 @@ abstract contract IsolationModeTokenVaultV1WithPausable is
         uint256[] calldata _marketIdsPath,
         uint256 _inputAmountWei,
         uint256 _minOutputAmountWei,
-        IGenericTraderProxyV1.TraderParam[] memory _tradersPath,
+        IGenericTraderProxyV2.TraderParam[] memory _tradersPath,
         IDolomiteMargin.AccountInfo[] memory _makerAccounts,
-        IGenericTraderProxyV1.UserConfig memory _userConfig
+        IGenericTraderProxyV2.UserConfig memory _userConfig
     )
         internal
         virtual
@@ -348,9 +349,9 @@ abstract contract IsolationModeTokenVaultV1WithPausable is
         uint256[] calldata _marketIdsPath,
         uint256 _inputAmountWei,
         uint256 _minOutputAmountWei,
-        IGenericTraderProxyV1.TraderParam[] memory _tradersPath,
+        IGenericTraderProxyV2.TraderParam[] memory _tradersPath,
         IDolomiteMargin.AccountInfo[] memory _makerAccounts,
-        IGenericTraderProxyV1.UserConfig memory _userConfig
+        IGenericTraderProxyV2.UserConfig memory _userConfig
     )
         internal
         virtual

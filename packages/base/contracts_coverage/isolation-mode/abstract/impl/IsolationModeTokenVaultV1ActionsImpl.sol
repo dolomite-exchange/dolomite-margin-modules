@@ -19,10 +19,8 @@
 */
 pragma solidity ^0.8.9;
 
-import { BaseLiquidatorProxy } from "../../../general/BaseLiquidatorProxy.sol";
 import { IDolomiteRegistry } from "../../../interfaces/IDolomiteRegistry.sol";
 import { IEventEmitterRegistry } from "../../../interfaces/IEventEmitterRegistry.sol";
-import { IGenericTraderProxyV1 } from "../../../interfaces/IGenericTraderProxyV1.sol";
 import { AccountActionLib } from "../../../lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "../../../lib/AccountBalanceLib.sol";
 import { DolomiteMarginVersionWrapperLib } from "../../../lib/DolomiteMarginVersionWrapperLib.sol";
@@ -34,6 +32,8 @@ import { BitsLib } from "../../../protocol/lib/BitsLib.sol";
 import { DecimalLib } from "../../../protocol/lib/DecimalLib.sol";
 import { Require } from "../../../protocol/lib/Require.sol";
 import { TypesLib } from "../../../protocol/lib/TypesLib.sol";
+import { BaseLiquidatorProxy } from "../../../proxies/BaseLiquidatorProxy.sol";
+import { IGenericTraderProxyV2 } from "../../../proxies/interfaces/IGenericTraderProxyV2.sol";
 import { IIsolationModeTokenVaultV1 } from "../../interfaces/IIsolationModeTokenVaultV1.sol";
 import { IIsolationModeVaultFactory } from "../../interfaces/IIsolationModeVaultFactory.sol";
 
@@ -332,9 +332,9 @@ library IsolationModeTokenVaultV1ActionsImpl {
         uint256[] calldata _marketIdsPath,
         uint256 _inputAmountWei,
         uint256 _minOutputAmountWei,
-        IGenericTraderProxyV1.TraderParam[] memory _tradersPath,
+        IGenericTraderProxyV2.TraderParam[] memory _tradersPath,
         IDolomiteMargin.AccountInfo[] memory _makerAccounts,
-        IGenericTraderProxyV1.UserConfig memory _userConfig
+        IGenericTraderProxyV2.UserConfig memory _userConfig
     ) public {
         if (_borrowAccountNumber == 0) {
             uint256 marketId = _vault.marketId();
@@ -397,9 +397,9 @@ library IsolationModeTokenVaultV1ActionsImpl {
         uint256[] calldata _marketIdsPath,
         uint256 _inputAmountWei,
         uint256 _minOutputAmountWei,
-        IGenericTraderProxyV1.TraderParam[] memory _tradersPath,
+        IGenericTraderProxyV2.TraderParam[] memory _tradersPath,
         IDolomiteMargin.AccountInfo[] memory _makerAccounts,
-        IGenericTraderProxyV1.UserConfig memory _userConfig
+        IGenericTraderProxyV2.UserConfig memory _userConfig
     ) public {
         uint256 outputMarketId = _marketIdsPath[_marketIdsPath.length - 1];
         if (_borrowAccountNumber == 0) {
@@ -471,9 +471,9 @@ library IsolationModeTokenVaultV1ActionsImpl {
         uint256[] calldata _marketIdsPath,
         uint256 _inputAmountWei,
         uint256 _minOutputAmountWei,
-        IGenericTraderProxyV1.TraderParam[] memory _tradersPath,
+        IGenericTraderProxyV2.TraderParam[] memory _tradersPath,
         IDolomiteMargin.AccountInfo[] memory _makerAccounts,
-        IGenericTraderProxyV1.UserConfig memory _userConfig,
+        IGenericTraderProxyV2.UserConfig memory _userConfig,
         bool _checkOutputMarketIdFlag,
         bool _bypassAccountNumberCheck
     ) public {
@@ -497,13 +497,15 @@ library IsolationModeTokenVaultV1ActionsImpl {
         }
 
         _vault.dolomiteRegistry().genericTraderProxy().swapExactInputForOutput(
-            _tradeAccountNumber,
-            _marketIdsPath,
-            _inputAmountWei,
-            _minOutputAmountWei,
-            _tradersPath,
-            _makerAccounts,
-            _userConfig
+            IGenericTraderProxyV2.SwapExactInputForOutputParams({
+                accountNumber: _tradeAccountNumber,
+                marketIdsPath: _marketIdsPath,
+                inputAmountWei: _inputAmountWei,
+                minOutputAmountWei: _minOutputAmountWei,
+                tradersPath: _tradersPath,
+                makerAccounts: _makerAccounts,
+                userConfig: _userConfig
+            })
         );
 
         uint256 inputMarketId = _marketIdsPath[0];
@@ -514,6 +516,32 @@ library IsolationModeTokenVaultV1ActionsImpl {
         if (_checkOutputMarketIdFlag) {
             _checkAllowableCollateralMarket(_vault, tradeAccountOwner, _tradeAccountNumber, outputMarketId);
             _checkAllowableDebtMarket(_vault, tradeAccountOwner, _tradeAccountNumber, outputMarketId);
+        }
+    }
+
+    function validateDepositIntoVaultAfterTransfer(
+        IIsolationModeTokenVaultV1 _vault,
+        uint256 _accountNumber,
+        uint256 _marketId
+    ) public view {
+        if (_marketId == _vault.marketId()) {
+            _checkFromAccountNumberIsZero(_accountNumber);
+        } else {
+            _checkBorrowAccountNumberIsNotZero(_accountNumber, /* _bypassAccountNumberCheck = */ false);
+            _checkAllowableCollateralMarket(_vault, address(this), _accountNumber, _marketId);
+        }
+    }
+
+    function validateWithdrawalFromVaultAfterTransfer(
+        IIsolationModeTokenVaultV1 _vault,
+        uint256 _accountNumber,
+        uint256 _marketId
+    ) public view {
+        if (_marketId == _vault.marketId()) {
+            _checkFromAccountNumberIsZero(_accountNumber);
+        } else {
+            _checkBorrowAccountNumberIsNotZero(_accountNumber, /* _bypassAccountNumberCheck = */ false);
+            _checkAllowableDebtMarket(_vault, address(this), _accountNumber, _marketId);
         }
     }
 

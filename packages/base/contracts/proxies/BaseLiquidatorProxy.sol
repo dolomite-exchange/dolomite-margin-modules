@@ -19,7 +19,8 @@
 
 pragma solidity ^0.8.9;
 
-import { HasLiquidatorRegistry } from "./HasLiquidatorRegistry.sol";
+import { HasLiquidatorRegistry } from "../general/HasLiquidatorRegistry.sol";
+import { ChainIdHelper } from "../helpers/ChainIdHelper.sol";
 import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 import { IExpiry } from "../interfaces/IExpiry.sol";
 import { DolomiteMarginVersionWrapperLib } from "../lib/DolomiteMarginVersionWrapperLib.sol";
@@ -31,13 +32,14 @@ import { DolomiteMarginMath } from "../protocol/lib/DolomiteMarginMath.sol";
 import { Require } from "../protocol/lib/Require.sol";
 import { TypesLib } from "../protocol/lib/TypesLib.sol";
 
+
 /**
  * @title   BaseLiquidatorProxy
  * @author  Dolomite
  *
  * Inheritable contract that allows sharing code across different liquidator proxy contracts
  */
-abstract contract BaseLiquidatorProxy is HasLiquidatorRegistry, OnlyDolomiteMargin {
+abstract contract BaseLiquidatorProxy is ChainIdHelper, HasLiquidatorRegistry, OnlyDolomiteMargin {
     using DecimalLib for IDolomiteMargin.Decimal;
     using TypesLib for IDolomiteMargin.Par;
     using DolomiteMarginVersionWrapperLib for *;
@@ -89,7 +91,6 @@ abstract contract BaseLiquidatorProxy is HasLiquidatorRegistry, OnlyDolomiteMarg
     // ============ Immutable Fields ============
 
     IExpiry public immutable EXPIRY; // solhint-disable-line var-name-mixedcase
-    uint256 public immutable CHAIN_ID;
 
     // ================ Constructor ===============
 
@@ -99,11 +100,11 @@ abstract contract BaseLiquidatorProxy is HasLiquidatorRegistry, OnlyDolomiteMarg
         address _expiry,
         uint256 _chainId
     )
+        ChainIdHelper(_chainId)
         HasLiquidatorRegistry(_liquidatorAssetRegistry)
         OnlyDolomiteMargin(_dolomiteMargin)
     {
         EXPIRY = IExpiry(_expiry);
-        CHAIN_ID = _chainId;
     }
 
     // ============ Internal Functions ============
@@ -124,7 +125,7 @@ abstract contract BaseLiquidatorProxy is HasLiquidatorRegistry, OnlyDolomiteMarg
         uint256 owedPriceAdj;
         if (_constants.expirationTimestamp > 0) {
             (, IDolomiteMargin.MonetaryPrice memory owedPricePrice) = EXPIRY.getVersionedSpreadAdjustedPrices(
-                CHAIN_ID,
+                _CHAIN_ID,
                 _constants.liquidAccount,
                 _constants.heldMarket,
                 _constants.owedMarket,
@@ -133,7 +134,7 @@ abstract contract BaseLiquidatorProxy is HasLiquidatorRegistry, OnlyDolomiteMarg
             owedPriceAdj = owedPricePrice.value;
         } else {
             IDolomiteMargin.Decimal memory spread = DOLOMITE_MARGIN().getVersionedLiquidationSpreadForPair(
-                CHAIN_ID,
+                _CHAIN_ID,
                 _constants.liquidAccount,
                 _constants.heldMarket,
                 _constants.owedMarket
@@ -180,10 +181,9 @@ abstract contract BaseLiquidatorProxy is HasLiquidatorRegistry, OnlyDolomiteMarg
     view
     {
         // panic if the developer didn't set these variables already
-        /*assert(_constants.solidAccount.owner != address(0));*/
-        /*assert(_constants.liquidAccount.owner != address(0));*/
+        assert(_constants.solidAccount.owner != address(0));
+        assert(_constants.liquidAccount.owner != address(0));
 
-        if (_constants.owedMarket != _constants.heldMarket) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _constants.owedMarket != _constants.heldMarket,
             _FILE,
@@ -191,7 +191,6 @@ abstract contract BaseLiquidatorProxy is HasLiquidatorRegistry, OnlyDolomiteMarg
             _constants.owedMarket
         );
 
-        if (!DOLOMITE_MARGIN().getAccountPar(_constants.liquidAccount, _constants.owedMarket).isPositive()) { /* FOR COVERAGE TESTING */ }
         Require.that(
             !DOLOMITE_MARGIN().getAccountPar(_constants.liquidAccount, _constants.owedMarket).isPositive(),
             _FILE,
@@ -199,7 +198,6 @@ abstract contract BaseLiquidatorProxy is HasLiquidatorRegistry, OnlyDolomiteMarg
             _constants.owedMarket
         );
 
-        if (DOLOMITE_MARGIN().getAccountPar(_constants.liquidAccount, _constants.heldMarket).isPositive()) { /* FOR COVERAGE TESTING */ }
         Require.that(
             DOLOMITE_MARGIN().getAccountPar(_constants.liquidAccount, _constants.heldMarket).isPositive(),
             _FILE,
@@ -207,7 +205,6 @@ abstract contract BaseLiquidatorProxy is HasLiquidatorRegistry, OnlyDolomiteMarg
             _constants.heldMarket
         );
 
-        if (uint32(_constants.expirationTimestamp) == _constants.expirationTimestamp) { /* FOR COVERAGE TESTING */ }
         Require.that(
             uint32(_constants.expirationTimestamp) == _constants.expirationTimestamp,
             _FILE,
@@ -215,7 +212,6 @@ abstract contract BaseLiquidatorProxy is HasLiquidatorRegistry, OnlyDolomiteMarg
             _constants.expirationTimestamp
         );
 
-        if (_constants.expirationTimestamp <= block.timestamp) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _constants.expirationTimestamp <= block.timestamp,
             _FILE,
@@ -236,7 +232,6 @@ abstract contract BaseLiquidatorProxy is HasLiquidatorRegistry, OnlyDolomiteMarg
     view
     {
         // check credentials for msg.sender
-        if (_constants.solidAccount.owner == msg.sender || DOLOMITE_MARGIN().getIsLocalOperator(_constants.solidAccount.owner, msg.sender)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _constants.solidAccount.owner == msg.sender
                 || DOLOMITE_MARGIN().getIsLocalOperator(_constants.solidAccount.owner, msg.sender),
@@ -248,7 +243,6 @@ abstract contract BaseLiquidatorProxy is HasLiquidatorRegistry, OnlyDolomiteMarg
         if (_constants.expirationTimestamp != 0) {
             // check the expiration is valid
             uint32 expirationTimestamp = EXPIRY.getExpiry(_constants.liquidAccount, _constants.owedMarket);
-            if (expirationTimestamp == _constants.expirationTimestamp) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 expirationTimestamp == _constants.expirationTimestamp,
                 _FILE,
@@ -266,7 +260,8 @@ abstract contract BaseLiquidatorProxy is HasLiquidatorRegistry, OnlyDolomiteMarg
     function _getAccountValues(
         MarketInfo[] memory _marketInfos,
         IDolomiteMargin.AccountInfo memory _account,
-        uint256[] memory _marketIds
+        uint256[] memory _marketIds,
+        IDolomiteMargin.Decimal memory _marginRatioOverride
     )
     internal
     view
@@ -279,7 +274,8 @@ abstract contract BaseLiquidatorProxy is HasLiquidatorRegistry, OnlyDolomiteMarg
             _marketInfos,
             _account,
             _marketIds,
-            /* _adjustForMarginPremiums = */ false
+            /* _adjustForMarginPremiums = */ false,
+            _marginRatioOverride
         );
     }
 
@@ -290,7 +286,8 @@ abstract contract BaseLiquidatorProxy is HasLiquidatorRegistry, OnlyDolomiteMarg
     function _getAdjustedAccountValues(
         MarketInfo[] memory _marketInfos,
         IDolomiteMargin.AccountInfo memory _account,
-        uint256[] memory _marketIds
+        uint256[] memory _marketIds,
+        IDolomiteMargin.Decimal memory _marginRatioOverride
     )
     internal
     view
@@ -303,7 +300,8 @@ abstract contract BaseLiquidatorProxy is HasLiquidatorRegistry, OnlyDolomiteMarg
             _marketInfos,
             _account,
             _marketIds,
-            /* _adjustForMarginPremiums = */ true
+            /* _adjustForMarginPremiums = */ true,
+            _marginRatioOverride
         );
     }
 
@@ -378,7 +376,7 @@ abstract contract BaseLiquidatorProxy is HasLiquidatorRegistry, OnlyDolomiteMarg
         returns (uint256 _newInputAmountWei, uint256 _newMinOutputAmountWei)
     {
         // at this point, _cache.owedWeiToLiquidate should be the max amount that can be liquidated on the user.
-        /*assert(_cache.owedWeiToLiquidate > 0);*/ // assert it was initialized
+        assert(_cache.owedWeiToLiquidate > 0); // assert it was initialized
 
         uint256 desiredLiquidationOwedAmount = _minOutputAmountWei;
         if (
@@ -444,7 +442,8 @@ abstract contract BaseLiquidatorProxy is HasLiquidatorRegistry, OnlyDolomiteMarg
         MarketInfo[] memory _marketInfos,
         IDolomiteMargin.AccountInfo memory _account,
         uint256[] memory _marketIds,
-        bool _adjustForMarginPremiums
+        bool _adjustForMarginPremiums,
+        IDolomiteMargin.Decimal memory _marginRatioOverride
     )
         private
         view
@@ -453,6 +452,10 @@ abstract contract BaseLiquidatorProxy is HasLiquidatorRegistry, OnlyDolomiteMarg
             IDolomiteMargin.MonetaryValue memory borrowValue
         )
     {
+
+        // Only adjust for liquidity if prompted AND if there is no override
+        _adjustForMarginPremiums = _adjustForMarginPremiums && _marginRatioOverride.value == 0;
+
         for (uint256 i; i < _marketIds.length; ++i) {
             IDolomiteMargin.Par memory par = DOLOMITE_MARGIN().getAccountPar(_account, _marketIds[i]);
             MarketInfo memory marketInfo = _binarySearch(_marketInfos, _marketIds[i]);
@@ -491,7 +494,7 @@ abstract contract BaseLiquidatorProxy is HasLiquidatorRegistry, OnlyDolomiteMarg
         uint256 _beginInclusive,
         uint256 _endExclusive,
         uint256 _marketId
-    ) private pure returns (MarketInfo memory) {
+    ) internal pure returns (MarketInfo memory) {
         uint256 len = _endExclusive - _beginInclusive;
         if (len == 0 || (len == 1 && _markets[_beginInclusive].marketId != _marketId)) {
             revert("BaseLiquidatorProxy: Market not found"); // solhint-disable-line reason-string

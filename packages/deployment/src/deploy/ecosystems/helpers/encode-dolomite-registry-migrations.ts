@@ -1,5 +1,6 @@
 import { ADDRESS_ZERO } from '@dolomite-exchange/zap-sdk/dist/src/lib/Constants';
 import {
+  GenericTraderProxyV2,
   IDolomiteRegistry,
   IIsolationModeTokenVaultV1__factory,
   RegistryProxy,
@@ -11,8 +12,10 @@ import { prettyPrintEncodedDataWithTypeSafety } from '../../../utils/encoding/ba
 export async function encodeDolomiteRegistryMigrations(
   dolomiteRegistry: IDolomiteRegistry,
   dolomiteRegistryProxy: RegistryProxy,
-  dolomiteAccountRegistryAddress: string,
+  borrowPositionProxyAddress: string,
+  dolomiteAccountRegistryProxy: RegistryProxy,
   dolomiteMigratorAddress: string,
+  genericTraderProxyV2: GenericTraderProxyV2,
   oracleAggregatorAddress: string,
   registryImplementationAddress: string,
   transactions: EncodedTransaction[],
@@ -34,7 +37,7 @@ export async function encodeDolomiteRegistryMigrations(
   try {
     const foundDolomiteAccountRegistryAddress = await dolomiteRegistry.dolomiteAccountRegistry();
     needsRegistryDolomiteAccountRegistryEncoding =
-      foundDolomiteAccountRegistryAddress !== dolomiteAccountRegistryAddress;
+      foundDolomiteAccountRegistryAddress !== dolomiteAccountRegistryProxy.address;
   } catch (e) {}
   if (needsRegistryDolomiteAccountRegistryEncoding) {
     transactions.push(
@@ -43,7 +46,50 @@ export async function encodeDolomiteRegistryMigrations(
         { dolomiteRegistry },
         'dolomiteRegistry',
         'ownerSetDolomiteAccountRegistry',
-        [dolomiteAccountRegistryAddress],
+        [dolomiteAccountRegistryProxy.address],
+      ),
+    );
+  }
+
+  let needsRegistryBorrowPositionProxyEncoding = true;
+  try {
+    const foundBorrowPositionProxyAddress = await dolomiteRegistry.borrowPositionProxy();
+    needsRegistryBorrowPositionProxyEncoding = foundBorrowPositionProxyAddress !== borrowPositionProxyAddress;
+  } catch (e) {}
+  if (needsRegistryBorrowPositionProxyEncoding) {
+    transactions.push(
+      await prettyPrintEncodedDataWithTypeSafety(
+        core,
+        { dolomiteRegistry },
+        'dolomiteRegistry',
+        'ownerSetBorrowPositionProxy',
+        [borrowPositionProxyAddress],
+      ),
+    );
+  }
+
+  let needsRegistryGenericTraderProxyV2Encoding = true;
+  try {
+    const foundGenericTraderProxyV2Address = await dolomiteRegistry.genericTraderProxy();
+    needsRegistryGenericTraderProxyV2Encoding = foundGenericTraderProxyV2Address !== genericTraderProxyV2.address;
+  } catch (e) {}
+  if (needsRegistryGenericTraderProxyV2Encoding) {
+    transactions.push(
+      await prettyPrintEncodedDataWithTypeSafety(
+        core,
+        { dolomiteRegistry },
+        'dolomiteRegistry',
+        'ownerSetGenericTraderProxy',
+        [genericTraderProxyV2.address],
+      ),
+    );
+    transactions.push( // @follow-up Corey do we want this here?
+      await prettyPrintEncodedDataWithTypeSafety(
+        core,
+        core,
+        'dolomiteMargin',
+        'ownerSetGlobalOperator',
+        [genericTraderProxyV2.address, true],
       ),
     );
   }

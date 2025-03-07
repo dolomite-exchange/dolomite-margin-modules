@@ -21,6 +21,7 @@ pragma solidity ^0.8.9;
 
 // solhint-disable max-line-length
 import { IGenericTraderBase } from "@dolomite-exchange/modules-base/contracts/interfaces/IGenericTraderBase.sol";
+import { IHandlerRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IHandlerRegistry.sol";
 import { IAsyncFreezableIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IAsyncFreezableIsolationModeVaultFactory.sol";
 import { IAsyncIsolationModeTraderBase } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IAsyncIsolationModeTraderBase.sol";
 import { IIsolationModeTokenVaultV1WithAsyncFreezable } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeTokenVaultV1WithAsyncFreezable.sol";
@@ -238,19 +239,18 @@ library GmxV2Library {
         return exchangeRouter.createWithdrawal(withdrawalParams);
     }
 
-    function vaultValidateExecutionFeeIfWrapToUnderlying(
+    function vaultValidateExecutionFeeIfWrapToUnderlyingAndReturnNewTraders(
         IIsolationModeTokenVaultV1WithAsyncFreezable _vault,
         uint256 _tradeAccountNumber,
         IGenericTraderBase.TraderParam[] memory _tradersPath
     ) public returns (IGenericTraderBase.TraderParam[] memory) {
         uint256 len = _tradersPath.length;
         if (_tradersPath[len - 1].traderType == IGenericTraderBase.TraderType.IsolationModeWrapper) {
-            _depositAndApproveWethForWrapping(_vault);
-            Require.that(
-                msg.value <= IAsyncFreezableIsolationModeVaultFactory(_vault.VAULT_FACTORY()).maxExecutionFee(),
-                _FILE,
-                "Invalid execution fee"
+            _validateExecutionFee(
+                IAsyncFreezableIsolationModeVaultFactory(_vault.VAULT_FACTORY()),
+                msg.value
             );
+            _depositAndApproveWethForWrapping(_vault);
             _tradersPath[len - 1].tradeData = abi.encode(_tradeAccountNumber, abi.encode(msg.value));
         } else {
             Require.that(
@@ -320,8 +320,8 @@ library GmxV2Library {
         address underlyingToken = _factory.UNDERLYING_TOKEN();
         IGmxDataStore dataStore = _registry.gmxDataStore();
         {
-            bool isMarketDisabled = dataStore.getBool(_isMarketDisableKey(underlyingToken));
-            if (isMarketDisabled) {
+            if (dataStore.getBool(_isMarketDisableKey(underlyingToken))) {
+                // If the market is disabled, return true
                 return true;
             }
         }
@@ -330,8 +330,8 @@ library GmxV2Library {
                 _CREATE_WITHDRAWAL_FEATURE_DISABLED,
                 _registry.gmxWithdrawalHandler()
             ));
-            bool isCreateWithdrawalFeatureDisabled = dataStore.getBool(createWithdrawalKey);
-            if (isCreateWithdrawalFeatureDisabled) {
+            if (dataStore.getBool(createWithdrawalKey)) {
+                // If withdrawal creation is disabled, return true
                 return true;
             }
         }
@@ -341,49 +341,47 @@ library GmxV2Library {
                 _EXECUTE_WITHDRAWAL_FEATURE_DISABLED,
                 _registry.gmxWithdrawalHandler()
             ));
-            bool isExecuteWithdrawalFeatureDisabled = dataStore.getBool(executeWithdrawalKey);
-            if (isExecuteWithdrawalFeatureDisabled) {
+            if (dataStore.getBool(executeWithdrawalKey)) {
+                // If withdrawal execution is disabled, return true
                 return true;
             }
         }
 
-        uint256 maxPnlForWithdrawalsShort = dataStore.getUint(
-            _maxPnlFactorKey(_MAX_PNL_FACTOR_FOR_WITHDRAWALS_KEY, underlyingToken, /* _isLong = */ false)
-        );
-        uint256 maxPnlForWithdrawalsLong = dataStore.getUint(
-            _maxPnlFactorKey(_MAX_PNL_FACTOR_FOR_WITHDRAWALS_KEY, underlyingToken, /* _isLong = */ true)
-        );
-
         IDolomitePriceOracle aggregator = _registry.dolomiteRegistry().oracleAggregator();
         GmxMarket.MarketPrices memory marketPrices = _getGmxMarketPrices(
-            aggregator.getPrice(
-                _registry.gmxMarketToIndexToken(underlyingToken)
-            ).value,
+            aggregator.getPrice(_registry.gmxMarketToIndexToken(underlyingToken)).value,
             aggregator.getPrice(_factory.LONG_TOKEN()).value,
             aggregator.getPrice(_factory.SHORT_TOKEN()).value
         );
 
-        int256 shortPnlToPoolFactor = _registry.gmxReader().getPnlToPoolFactor(
-            dataStore,
-            underlyingToken,
-            marketPrices,
-            /* _isLong = */ false,
-            /* _maximize = */ true
-        );
-        int256 longPnlToPoolFactor = _registry.gmxReader().getPnlToPoolFactor(
-            dataStore,
-            underlyingToken,
-            marketPrices,
-            /* _isLong = */ true,
-            /* _maximize = */ true
-        );
+        {
+            bool isShortPnlTooLarge = _isPnlToPoolFactorTooLarge(
+                _registry,
+                dataStore,
+                underlyingToken,
+                marketPrices,
+                /* _isLong = */ false
+            );
+            if (isShortPnlTooLarge) {
+                return true;
+            }
+        }
 
-        bool isShortPnlTooLarge = shortPnlToPoolFactor > int256(maxPnlForWithdrawalsShort);
-        bool isLongPnlTooLarge = longPnlToPoolFactor > int256(maxPnlForWithdrawalsLong);
+        {
+            bool isLongPnlTooLarge = _isPnlToPoolFactorTooLarge(
+                _registry,
+                dataStore,
+                underlyingToken,
+                marketPrices,
+                /* _isLong = */ true
+            );
+            if (isLongPnlTooLarge) {
+                return true;
+            }
+        }
 
         uint256 maxCallbackGasLimit = dataStore.getUint(_MAX_CALLBACK_GAS_LIMIT_KEY);
-
-        return isShortPnlTooLarge || isLongPnlTooLarge || _registry.callbackGasLimit() > maxCallbackGasLimit;
+        return _registry.callbackGasLimit() > maxCallbackGasLimit;
     }
 
     function validateInitialMarketIds(
@@ -468,6 +466,31 @@ library GmxV2Library {
         }
     }
 
+    function validateInitiateUnwrapping(
+        IAsyncFreezableIsolationModeVaultFactory _factory,
+        IHandlerRegistry _registry,
+        address _outputToken
+    ) public view {
+        Require.that(
+            _registry.getUnwrapperByToken(_factory).isValidOutputToken(_outputToken),
+            _FILE,
+            "Invalid output token"
+        );
+
+        _validateExecutionFee(_factory, msg.value);
+    }
+
+    function _validateExecutionFee(
+        IAsyncFreezableIsolationModeVaultFactory _factory,
+        uint256 _msgValue
+    ) private view {
+        Require.that(
+            _msgValue <= _factory.maxExecutionFee(),
+            _FILE,
+            "Invalid execution fee"
+        );
+    }
+
     function validateMinAmountIsNotTooLargeForLiquidation(
         IGmxV2IsolationModeVaultFactory _factory,
         IDolomiteStructs.AccountInfo memory _liquidAccount,
@@ -529,6 +552,24 @@ library GmxV2Library {
             address(_vault.handlerRegistry().getWrapperByToken(IIsolationModeVaultFactory(_vault.VAULT_FACTORY()))),
             msg.value
         );
+    }
+
+    function _isPnlToPoolFactorTooLarge(
+        IGmxV2Registry _registry,
+        IGmxDataStore _dataStore,
+        address _underlyingToken,
+        GmxMarket.MarketPrices memory _marketPrices,
+        bool _isLong
+    ) private view returns (bool) {
+        int256 pnlToPoolFactor = _registry.gmxReader().getPnlToPoolFactor(
+            _dataStore,
+            _underlyingToken,
+            _marketPrices,
+            _isLong,
+            /* _maximize = */ true
+        );
+        uint256 maxPnlForWithdrawalsValue = _dataStore.getUint(_maxPnlFactorKey(_underlyingToken, _isLong));
+        return pnlToPoolFactor > int256(maxPnlForWithdrawalsValue);
     }
 
     function _getGmxMarketPrices(
@@ -595,11 +636,12 @@ library GmxV2Library {
     }
 
     function _maxPnlFactorKey(
-        bytes32 _pnlFactorType,
         address _market,
         bool _isLong
     ) private pure returns (bytes32) {
-        return keccak256(abi.encode(_MAX_PNL_FACTOR_KEY, _pnlFactorType, _market, _isLong));
+        return keccak256(
+            abi.encode(_MAX_PNL_FACTOR_KEY, _MAX_PNL_FACTOR_FOR_WITHDRAWALS_KEY, _market, _isLong)
+        );
     }
 
     function _isMarketDisableKey(address _market) private pure returns (bytes32) {

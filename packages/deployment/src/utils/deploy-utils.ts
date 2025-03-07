@@ -398,7 +398,7 @@ export async function deployContractAndSave(
     }
     const opts = {
       nonce: options.nonce === undefined ? nonce : options.nonce,
-      gasPrice: options.gasPrice,
+      gasPrice: options.gasPrice ?? hardhat.userConfig.networks![networkName]?.gasPrice,
       gasLimit: options.gasLimit,
       type: options.type,
     };
@@ -426,6 +426,7 @@ export async function deployContractAndSave(
           address: contractAddress,
           transactionHash: result.hash,
         };
+        nonce += 1;
       } else {
         console.warn(`\t${contractRename} was already deployed. Filling in 0x0 for hash...`);
         contract = {
@@ -434,8 +435,6 @@ export async function deployContractAndSave(
         };
       }
     }
-
-    nonce += 1;
   } catch (e) {
     console.error(`\tCould not deploy at attempt ${attempts + 1} due for ${contractName} to error:`, e);
     console.log(); // print new line

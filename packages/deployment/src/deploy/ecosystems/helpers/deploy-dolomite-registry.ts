@@ -1,6 +1,6 @@
 import CoreDeployments from '@dolomite-margin/dist/migrations/deployed.json';
 import {
-  DolomiteRegistryImplementation__factory, IDolomiteAccountRegistry,
+  DolomiteRegistryImplementation__factory, GenericTraderProxyV2, IDolomiteAccountRegistry,
   IDolomiteRegistry__factory, RegistryProxy,
   RegistryProxy__factory,
 } from '../../../../../base/src/types';
@@ -28,6 +28,7 @@ export async function deployDolomiteRegistry<T extends NetworkType>(
     hhUser1,
   );
   const registryImplementationCalldata = await registryImplementation.populateTransaction.initialize(
+    CoreDeployments.BorrowPositionProxyV2[network].address,
     CoreDeployments.GenericTraderProxyV1[network].address,
     CoreDeployments.Expiry[network].address,
     SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL,
