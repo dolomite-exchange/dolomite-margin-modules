@@ -3,10 +3,12 @@ import {
   BorrowPositionRouter__factory,
   DepositWithdrawalRouter__factory,
   EventEmitterRegistry__factory,
-  GenericTraderProxyV2__factory, GenericTraderRouter__factory,
+  GenericTraderProxyV2__factory,
+  GenericTraderRouter__factory,
   IDepositWithdrawalProxy__factory,
   IDolomiteOwner__factory,
   ILiquidatorAssetRegistry__factory,
+  ILiquidatorProxyV5__factory,
   IPartiallyDelayedMultiSig__factory,
   RegistryProxy__factory,
 } from '@dolomite-exchange/modules-base/src/types';
@@ -159,6 +161,14 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   );
   const genericTraderProxy = GenericTraderProxyV2__factory.connect(genericTraderProxyV2Address, hhUser1);
 
+  const liquidatorProxyV5Address = await deployContractAndSave(
+    'LiquidatorProxyV5',
+    [network, expiry.address, dolomiteMargin.address, dolomiteRegistry.address, liquidatorAssetRegistry.address],
+    undefined,
+    { GenericTraderProxyV2Lib: genericTraderProxyV2LibAddress },
+  );
+  const liquidatorProxyV5 = ILiquidatorProxyV5__factory.connect(liquidatorProxyV5Address, hhUser1);
+
   const dolomiteMigratorAddress = await deployContractAndSave(
     'DolomiteMigrator',
     getDolomiteMigratorConstructorParams(dolomiteMargin, dolomiteRegistry, HANDLER_ADDRESS),
@@ -262,6 +272,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     governance,
     hhUser1,
     liquidatorAssetRegistry,
+    liquidatorProxyV5,
     genericTraderProxy: genericTraderProxy as any,
     gnosisSafe: gnosisSafeSigner,
     gnosisSafeAddress: gnosisSafeAddress,
@@ -284,6 +295,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     dolomiteAccountRegistryProxy,
     dolomiteMigratorAddress,
     genericTraderProxy,
+    liquidatorProxyV5,
     oracleAggregator.address,
     dolomiteRegistryImplementationAddress,
     transactions,

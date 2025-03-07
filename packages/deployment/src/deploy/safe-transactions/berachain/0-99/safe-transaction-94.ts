@@ -7,17 +7,30 @@ import {
   TargetCollateralization,
   TargetLiquidationPenalty,
 } from '../../../../../../base/src/utils/constructors/dolomite';
+import { parseOhm } from '../../../../../../base/src/utils/math-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
 import { encodeAddMarket } from '../../../../utils/encoding/add-market-encoder-utils';
-import { encodeSetSupplyCapWithMagic } from '../../../../utils/encoding/dolomite-margin-core-encoder-utils';
+import {
+  encodeSetIsCollateralOnly,
+  encodeSetLiquidationPenalty,
+  encodeSetMinCollateralization,
+  encodeSetSupplyCapWithMagic,
+} from '../../../../utils/encoding/dolomite-margin-core-encoder-utils';
 import { encodeInsertChronicleOracleV3 } from '../../../../utils/encoding/oracle-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
-import { checkBorrowCap, checkInterestSetter, checkSupplyCap } from '../../../../utils/invariant-utils';
+import {
+  checkBorrowCap,
+  checkInterestSetter,
+  checkLiquidationPenalty,
+  checkMinCollateralization,
+  checkSupplyCap,
+  printPriceForVisualCheck,
+} from '../../../../utils/invariant-utils';
 
 /**
  * This script encodes the following transactions:
- * - Increase the supply & borrow cap for BERA
- * - Update the interest setter to optimize for lowering utilization to 60%
+ * - Increase the supply & borrow cap for beraETH
+ * - List OHM as a market
  */
 async function main(): Promise<DryRunOutput<Network.Berachain>> {
   const network = await getAndCheckSpecificNetwork(Network.Berachain);
@@ -28,18 +41,22 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
 
   const transactions: EncodedTransaction[] = [
     await encodeSetSupplyCapWithMagic(core, core.marketIds.beraEth, 20_000),
-    ...await encodeInsertChronicleOracleV3(core, core.tokens.ohm),
-    ...await encodeAddMarket(
+    await encodeSetMinCollateralization(core, core.marketIds.beraEth, TargetCollateralization._133),
+    await encodeSetLiquidationPenalty(core, core.marketIds.beraEth, TargetLiquidationPenalty._8_5),
+    await encodeSetIsCollateralOnly(core, core.marketIds.beraEth, true),
+
+    ...(await encodeInsertChronicleOracleV3(core, core.tokens.ohm)),
+    ...(await encodeAddMarket(
       core,
       core.tokens.ohm,
       core.oracleAggregatorV2,
       core.interestSetters.linearStepFunction16L84U70OInterestSetter,
       TargetCollateralization._133,
       TargetLiquidationPenalty._15,
-      parseEther(`${100_000}`),
-      parseEther(`${70_000}`),
+      parseOhm(`${100_000}`),
+      parseOhm(`${70_000}`),
       false,
-    )
+    )),
   ];
   return {
     core,
@@ -56,13 +73,18 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     scriptName: getScriptName(__filename),
     invariants: async () => {
       await checkSupplyCap(core, core.marketIds.beraEth, parseEther(`${20_000}`));
-      await checkSupplyCap(core, core.marketIds.ohm, parseEther(`${100_000}`));
-      await checkBorrowCap(core, core.marketIds.ohm, parseEther(`${70_000}`));
+      await checkMinCollateralization(core, core.marketIds.beraEth, TargetCollateralization._133);
+      await checkLiquidationPenalty(core, core.marketIds.beraEth, TargetLiquidationPenalty._8_5);
+      await printPriceForVisualCheck(core, core.tokens.beraEth);
+
+      await checkSupplyCap(core, core.marketIds.ohm, parseOhm(`${100_000}`));
+      await checkBorrowCap(core, core.marketIds.ohm, parseOhm(`${70_000}`));
       await checkInterestSetter(
         core,
         core.marketIds.ohm,
         core.interestSetters.linearStepFunction16L84U70OInterestSetter,
       );
+      await printPriceForVisualCheck(core, core.tokens.ohm);
     },
   };
 }

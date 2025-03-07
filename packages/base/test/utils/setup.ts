@@ -13,7 +13,6 @@ import * as BorrowPositionProxyV2Json from '@dolomite-margin/deployed-contracts/
 import * as DepositWithdrawalProxyJson from '@dolomite-margin/deployed-contracts/DepositWithdrawalProxy.json';
 import * as DolomiteMarginJson from '@dolomite-margin/deployed-contracts/DolomiteMargin.json';
 import * as ExpiryJson from '@dolomite-margin/deployed-contracts/Expiry.json';
-import * as IGenericTraderProxyV1Json from '@dolomite-margin/deployed-contracts/GenericTraderProxyV1.json';
 import * as LiquidatorAssetRegistryJson from '@dolomite-margin/deployed-contracts/LiquidatorAssetRegistry.json';
 import * as LiquidatorProxyV1Json from '@dolomite-margin/deployed-contracts/LiquidatorProxyV1.json';
 import * as LiquidatorProxyV4WithGenericTraderJson
@@ -50,13 +49,14 @@ import {
   IEventEmitterRegistry__factory,
   IExpiry__factory,
   IExpiryV2__factory,
-  IGenericTraderProxyV1__factory,
+  IGenericTraderProxyV2__factory,
   ILiquidatorAssetRegistry__factory,
   ILiquidatorProxyV1__factory,
   ILiquidatorProxyV4WithGenericTrader__factory,
   IPartiallyDelayedMultiSig__factory,
   IsolationModeFreezableLiquidatorProxy__factory,
   IWETH__factory,
+  LiquidatorProxyV5__factory,
   RegistryProxy__factory,
 } from '../../src/types';
 import {
@@ -124,6 +124,7 @@ import {
   MIM_MAP,
   NATIVE_USDC_MAP,
   NECT_MAP,
+  OHM_MAP,
   PAYABLE_TOKEN_MAP,
   PENDLE_MAP,
   POL_MAP,
@@ -853,8 +854,8 @@ export async function setupCoreProtocol<T extends NetworkType>(
   );
 
   const genericTraderProxy = getContract(
-    IGenericTraderProxyV1Json.networks[config.network].address,
-    IGenericTraderProxyV1__factory.connect,
+    Deployments.GenericTraderProxyV2[config.network].address,
+    IGenericTraderProxyV2__factory.connect,
     governance,
   );
 
@@ -875,6 +876,12 @@ export async function setupCoreProtocol<T extends NetworkType>(
   const liquidatorProxyV4 = getContract(
     LiquidatorProxyV4WithGenericTraderJson.networks[config.network].address,
     ILiquidatorProxyV4WithGenericTrader__factory.connect,
+    governance,
+  );
+
+  const liquidatorProxyV5 = getContract(
+    Deployments.LiquidatorProxyV5[config.network].address,
+    LiquidatorProxyV5__factory.connect,
     governance,
   );
 
@@ -939,6 +946,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
     liquidatorAssetRegistry,
     liquidatorProxyV1,
     liquidatorProxyV4,
+    liquidatorProxyV5,
     marketIdToDeployedVaultMap,
     oracleAggregatorV2,
     ownerAdapterV1,
@@ -1305,6 +1313,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
         honey: HONEY_MAP[typedConfig.network].marketId,
         lbtc: LBTC_MAP[typedConfig.network].marketId,
         nect: NECT_MAP[typedConfig.network].marketId,
+        ohm: OHM_MAP[typedConfig.network].marketId,
         pumpBtc: PUMP_BTC_MAP[typedConfig.network].marketId,
         rsEth: RS_ETH_MAP[typedConfig.network].marketId,
         rswEth: RSW_ETH_MAP[typedConfig.network].marketId,
@@ -1347,6 +1356,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
         honey: IERC20__factory.connect(HONEY_MAP[typedConfig.network].address, hhUser1),
         lbtc: IERC20__factory.connect(LBTC_MAP[typedConfig.network].address, hhUser1),
         nect: IERC20__factory.connect(NECT_MAP[typedConfig.network].address, hhUser1),
+        ohm: IERC20__factory.connect(OHM_MAP[typedConfig.network].address, hhUser1),
         pumpBtc: IERC20__factory.connect(PUMP_BTC_MAP[typedConfig.network].address, hhUser1),
         rsEth: IERC20__factory.connect(RS_ETH_MAP[typedConfig.network].address, hhUser1),
         rswEth: IERC20__factory.connect(RSW_ETH_MAP[typedConfig.network].address, hhUser1),
@@ -1568,10 +1578,7 @@ function createSafeDelegateCallLibraries<T extends NetworkType>(
   config: CoreProtocolSetupConfig<T>,
 ): Record<string, string> {
   return {
-    SafeDelegateCallLib: getMaxDeploymentVersionAddressByDeploymentKey(
-      'SafeDelegateCallLib',
-      config.network,
-    ),
+    SafeDelegateCallLib: getMaxDeploymentVersionAddressByDeploymentKey('SafeDelegateCallLib', config.network),
   };
 }
 

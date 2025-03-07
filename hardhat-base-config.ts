@@ -120,6 +120,7 @@ export const base_config: HardhatUserConfig = {
       chainId: parseInt(Network.Base, 10),
       url: baseWeb3Url,
       gas: 20_000_000, // 20M gas
+      gasPrice: 30_000_000, // 0.03 gwei
       accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
     },
     [NetworkName.Berachain]: {
@@ -132,25 +133,28 @@ export const base_config: HardhatUserConfig = {
       chainId: parseInt(Network.Ink, 10),
       url: inkWeb3Url,
       gas: 30_000_000, // 30M gas
+      gasPrice: 30_000_000, // 0.03 gwei
       accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
     },
     [NetworkName.Mantle]: {
       chainId: parseInt(Network.Mantle, 10),
       url: mantleWeb3Url,
       gas: 25_000_000_000, // 25B gas
+      gasPrice: 30_000_000, // 0.03 gwei
       accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
-      gasPrice: 30_000_000,
     },
     [NetworkName.PolygonZkEvm]: {
       chainId: parseInt(Network.PolygonZkEvm, 10),
       url: polygonZkEvmWeb3Url,
       gas: 20_000_000, // 20M gas
+      gasPrice: 30_000_000, // 0.03 gwei
       accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
     },
     [NetworkName.SuperSeed]: {
       chainId: parseInt(Network.SuperSeed, 10),
       url: superSeedWeb3Url,
       gas: 30_000_000, // 30M gas
+      gasPrice: 30_000_000, // 0.03 gwei
       accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
     },
     [NetworkName.XLayer]: {

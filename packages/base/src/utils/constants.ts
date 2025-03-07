@@ -591,6 +591,13 @@ export const NECT_MAP: Record<Network.Berachain, TokenWithMarketId> = {
   },
 };
 
+export const OHM_MAP: Record<Network.Berachain, TokenWithMarketId> = {
+  [Network.Berachain]: {
+    address: '0x18878Df23e2a36f81e820e4b47b4A40576D3159C',
+    marketId: 30,
+  },
+};
+
 export const PENDLE_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x0c880f6761F1af8d9Aa9C466984b80DAb9a8c9e8',
@@ -2040,6 +2047,9 @@ export const CHRONICLE_PRICE_SCRIBES_MAP: Record<
     [NECT_MAP[Network.Berachain].address]: {
       scribeAddress: '0xC73637228BF74d10Cf2D5DFeAB0964162488D5e1',
       tokenPairAddress: HONEY_MAP[Network.Berachain].address,
+    },
+    [OHM_MAP[Network.Berachain].address]: {
+      scribeAddress: '0x757D766272A5b66EB9312f34E41AfEc3E77942bB',
     },
     [PUMP_BTC_MAP[Network.Berachain].address]: {
       scribeAddress: '0xc991e18e3f167f7457e06b780e92ea94a6b3c1bb',

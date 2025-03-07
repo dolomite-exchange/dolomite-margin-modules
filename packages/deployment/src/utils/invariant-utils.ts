@@ -7,14 +7,15 @@ import { INVALID_TOKEN_MAP } from '../../../base/src/utils/constants';
 import {
   getLiquidationPremiumForTargetLiquidationPenalty,
   getMarginPremiumForTargetCollateralization,
-  TargetCollateralization, TargetLiquidationPenalty,
+  TargetCollateralization,
+  TargetLiquidationPenalty,
 } from '../../../base/src/utils/constructors/dolomite';
 import { NetworkType, ONE_ETH_BI } from '../../../base/src/utils/no-deps-constants';
 import { CoreProtocolBerachain } from '../../../base/test/utils/core-protocols/core-protocol-berachain';
 import { CoreProtocolType } from '../../../base/test/utils/setup';
 import { readDeploymentFile } from './deploy-utils';
 
-export async function printPriceForVisualCheck(core: CoreProtocolBerachain, token: IERC20) {
+export async function printPriceForVisualCheck<T extends NetworkType>(core: CoreProtocolType<T>, token: IERC20) {
   const meta = IERC20Metadata__factory.connect(token.address, token.provider);
   const invalidToken = INVALID_TOKEN_MAP[core.network][token.address];
   const symbol = invalidToken ? invalidToken.symbol : await meta.symbol();
@@ -157,6 +158,7 @@ export async function checkBorrowCap<T extends NetworkType>(
 }
 
 let baseCollateralization: BigNumber | undefined;
+
 export async function checkMinCollateralization<T extends NetworkType>(
   core: CoreProtocolType<T>,
   marketId: BigNumberish,
@@ -174,6 +176,7 @@ export async function checkMinCollateralization<T extends NetworkType>(
 }
 
 let baseLiquidationPenalty: BigNumber | undefined;
+
 export async function checkLiquidationPenalty<T extends NetworkType>(
   core: CoreProtocolType<T>,
   marketId: BigNumberish,

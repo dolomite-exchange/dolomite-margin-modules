@@ -3,7 +3,7 @@ import CoreDeployments from '@dolomite-margin/dist/migrations/deployed.json';
 import {
   GenericTraderProxyV2,
   IDolomiteRegistry,
-  IIsolationModeTokenVaultV1__factory,
+  IIsolationModeTokenVaultV1__factory, ILiquidatorProxyV5,
   RegistryProxy,
 } from 'packages/base/src/types';
 import { isArraysEqual } from 'packages/base/src/utils';
@@ -19,6 +19,7 @@ export async function encodeDolomiteRegistryMigrations<T extends NetworkType>(
   dolomiteAccountRegistryProxy: RegistryProxy,
   dolomiteMigratorAddress: string,
   genericTraderProxyV2: GenericTraderProxyV2,
+  liquidatorProxyV5: ILiquidatorProxyV5,
   oracleAggregatorAddress: string,
   registryImplementationAddress: string,
   transactions: EncodedTransaction[],
@@ -109,6 +110,18 @@ export async function encodeDolomiteRegistryMigrations<T extends NetworkType>(
         'dolomiteMargin',
         'ownerSetGlobalOperator',
         [genericTraderProxyV1Address, false],
+      ),
+    );
+  }
+
+  if (!(await core.dolomiteMargin.getIsGlobalOperator(liquidatorProxyV5.address))) {
+    transactions.push(
+      await prettyPrintEncodedDataWithTypeSafety(
+        core,
+        { dolomiteMargin: core.dolomiteMargin },
+        'dolomiteMargin',
+        'ownerSetGlobalOperator',
+        [liquidatorProxyV5.address, true],
       ),
     );
   }

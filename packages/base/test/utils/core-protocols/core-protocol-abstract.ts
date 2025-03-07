@@ -17,7 +17,7 @@ import {
   IGenericTraderProxyV2,
   ILiquidatorAssetRegistry,
   ILiquidatorProxyV1,
-  ILiquidatorProxyV4WithGenericTrader,
+  ILiquidatorProxyV4WithGenericTrader, ILiquidatorProxyV5,
   IPartiallyDelayedMultiSig,
   IsolationModeFreezableLiquidatorProxy,
   IWETH,
@@ -135,6 +135,7 @@ export interface CoreProtocolParams<T extends NetworkType> {
   liquidatorAssetRegistry: ILiquidatorAssetRegistry;
   liquidatorProxyV1: ILiquidatorProxyV1;
   liquidatorProxyV4: ILiquidatorProxyV4WithGenericTrader;
+  liquidatorProxyV5: ILiquidatorProxyV5;
   marketIdToDeployedVaultMap: Record<number, DeployedVault>;
   marketIds: CoreProtocolMarketIds;
   oracleAggregatorV2: OracleAggregatorV2;
@@ -199,6 +200,7 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
   public readonly liquidatorAssetRegistry: ILiquidatorAssetRegistry;
   public readonly liquidatorProxyV1: ILiquidatorProxyV1;
   public readonly liquidatorProxyV4: ILiquidatorProxyV4WithGenericTrader;
+  public readonly liquidatorProxyV5: ILiquidatorProxyV5;
   public readonly oracleAggregatorV2: OracleAggregatorV2;
   public readonly ownerAdapterV1: DolomiteOwnerV1;
   public readonly ownerAdapterV2: DolomiteOwnerV2;
@@ -258,6 +260,7 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
     this.liquidatorAssetRegistry = params.liquidatorAssetRegistry;
     this.liquidatorProxyV1 = params.liquidatorProxyV1;
     this.liquidatorProxyV4 = params.liquidatorProxyV4;
+    this.liquidatorProxyV5 = params.liquidatorProxyV5;
     this.oracleAggregatorV2 = params.oracleAggregatorV2;
     this.ownerAdapterV1 = params.ownerAdapterV1;
     this.ownerAdapterV2 = params.ownerAdapterV2;
