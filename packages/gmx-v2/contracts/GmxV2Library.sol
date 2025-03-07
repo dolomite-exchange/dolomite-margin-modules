@@ -239,7 +239,7 @@ library GmxV2Library {
         return exchangeRouter.createWithdrawal(withdrawalParams);
     }
 
-    function vaultValidateExecutionFeeIfWrapToUnderlyingAndReturnNewTraders(
+    function vaultValidateExecutionFeeIfWrapToUnderlying(
         IIsolationModeTokenVaultV1WithAsyncFreezable _vault,
         uint256 _tradeAccountNumber,
         IGenericTraderBase.TraderParam[] memory _tradersPath

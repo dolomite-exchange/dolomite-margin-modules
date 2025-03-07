@@ -181,7 +181,7 @@ contract GmxV2IsolationModeTokenVaultV1 is
         internal
         override
     {
-        _tradersPath = GmxV2Library.vaultValidateExecutionFeeIfWrapToUnderlyingAndReturnNewTraders(
+        _tradersPath = GmxV2Library.vaultValidateExecutionFeeIfWrapToUnderlying(
             /* _vault = */ this,
             _borrowAccountNumber,
             _tradersPath
@@ -211,7 +211,7 @@ contract GmxV2IsolationModeTokenVaultV1 is
         internal
         override
     {
-        _tradersPath = GmxV2Library.vaultValidateExecutionFeeIfWrapToUnderlyingAndReturnNewTraders(
+        _tradersPath = GmxV2Library.vaultValidateExecutionFeeIfWrapToUnderlying(
             /* _vault = */ this,
             _borrowAccountNumber,
             _tradersPath
@@ -235,7 +235,7 @@ contract GmxV2IsolationModeTokenVaultV1 is
         virtual
         override
     {
-        _params.tradersPath = GmxV2Library.vaultValidateExecutionFeeIfWrapToUnderlyingAndReturnNewTraders(
+        _params.tradersPath = GmxV2Library.vaultValidateExecutionFeeIfWrapToUnderlying(
             /* _vault = */ this,
             _params.tradeAccountNumber,
             _params.tradersPath
