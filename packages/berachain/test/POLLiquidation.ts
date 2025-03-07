@@ -7,10 +7,9 @@ import {
   ONE_ETH_BI,
   ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
+import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import {
   expectProtocolBalance,
-  expectThrow,
 } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
   disableInterestAccrual,
@@ -26,12 +25,9 @@ import { defaultAbiCoder, parseEther } from 'ethers/lib/utils';
 import { createContractWithAbi, depositIntoDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
 import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
 import {
-  BerachainRewardsMetaVault,
-  BerachainRewardsMetaVault__factory,
   BerachainRewardsRegistry,
   IInfraredVault,
   IInfraredVault__factory,
-  InfraredBGTIsolationModeTokenVaultV1__factory,
   InfraredBGTIsolationModeVaultFactory,
   InfraredBGTMetaVault,
   InfraredBGTMetaVault__factory,
@@ -50,6 +46,7 @@ import {
   createPOLIsolationModeVaultFactory,
   createPOLIsolationModeWrapperTraderV2,
   RewardVaultType,
+  wrapFullBalanceIntoVaultDefaultAccount,
 } from './berachain-ecosystem-utils';
 import { setupNewGenericTraderProxy } from 'packages/base/test/utils/dolomite';
 import { GenericEventEmissionType, GenericTraderParam, GenericTraderType } from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
@@ -58,11 +55,6 @@ import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 const defaultAccountNumber = ZERO_BI;
 const borrowAccountNumber = BigNumber.from('123');
 const amountWei = parseEther('100');
-
-const ZERO_PAR = {
-  sign: false,
-  value: ZERO_BI,
-};
 
 describe('POLLiquidation', () => {
   let snapshotId: string;
@@ -75,7 +67,7 @@ describe('POLLiquidation', () => {
   let vault: POLIsolationModeTokenVaultV1;
   let wrapper: POLIsolationModeWrapperTraderV2;
   let unwrapper: POLIsolationModeUnwrapperTraderV2;
-  let metaVault: BerachainRewardsMetaVault;
+  let metaVault: InfraredBGTMetaVault;
 
   let dToken: DolomiteERC4626;
   let infraredVault: IInfraredVault;
@@ -105,7 +97,7 @@ describe('POLLiquidation', () => {
     );
 
     const vaultImplementation = await createPOLIsolationModeTokenVaultV1();
-    factory = await createPOLIsolationModeVaultFactory(core, registry, dToken, vaultImplementation);
+    factory = await createPOLIsolationModeVaultFactory(core, registry, dToken, vaultImplementation, [], []);
 
     const iBgtVaultImplementation = await createInfraredBGTIsolationModeTokenVaultV1();
     iBgtFactory = await createInfraredBGTIsolationModeVaultFactory(
@@ -138,7 +130,7 @@ describe('POLLiquidation', () => {
       POLIsolationModeTokenVaultV1__factory,
       core.hhUser1,
     );
-    metaVault = BerachainRewardsMetaVault__factory.connect(
+    metaVault = InfraredBGTMetaVault__factory.connect(
       await registry.getMetaVaultByAccount(core.hhUser1.address),
       core.hhUser1,
     );
@@ -156,7 +148,6 @@ describe('POLLiquidation', () => {
       core.testEcosystem!.testPriceOracle.address,
     );
 
-    // @follow-up Will need to set as global operator or have the metavault set as local operators
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(wrapper.address, true);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(unwrapper.address, true);
     await setupNewGenericTraderProxy(core, marketId);
@@ -209,7 +200,10 @@ describe('POLLiquidation', () => {
 
       const interestRate = parseEther('1').div(ONE_DAY_SECONDS * 365); // 100% APR
       await core.testEcosystem?.testInterestSetter.setInterestRate(core.tokens.weth.address, { value: interestRate });
-      await core.dolomiteMargin.ownerSetInterestSetter(core.marketIds.weth, core.testEcosystem!.testInterestSetter.address);
+      await core.dolomiteMargin.ownerSetInterestSetter(
+        core.marketIds.weth,
+        core.testEcosystem!.testInterestSetter.address
+      );
 
       await increase(ONE_DAY_SECONDS * 300);
       const unwrapperParam: GenericTraderParam = {
@@ -231,44 +225,42 @@ describe('POLLiquidation', () => {
         }],
         ZERO_BI
       );
-      console.log(await core.dolomiteMargin.getAccountWei({ owner: vault.address, number: borrowAccountNumber }, core.marketIds.weth));
-      console.log(await core.dolomiteMargin.getAccountWei({ owner: vault.address, number: borrowAccountNumber }, marketId));
-      console.log(await core.dolomiteMargin.getAccountWei({ owner: core.hhUser2.address, number: defaultAccountNumber }, core.marketIds.weth));
-      console.log(await core.dolomiteMargin.getAccountWei({ owner: core.hhUser2.address, number: defaultAccountNumber }, marketId));
-      console.log(await core.dolomiteMargin.getAccountWei({ owner: metaVault.address, number: defaultAccountNumber }, core.marketIds.weth));
-      console.log(await core.dolomiteMargin.getAccountWei({ owner: metaVault.address, number: defaultAccountNumber }, marketId));
+      console.log(
+        await core.dolomiteMargin.getAccountWei(
+          { owner: vault.address, number: borrowAccountNumber },
+          core.marketIds.weth
+        )
+      );
+      console.log(
+        await core.dolomiteMargin.getAccountWei(
+          { owner: vault.address, number: borrowAccountNumber },
+          marketId
+        )
+      );
+      console.log(
+        await core.dolomiteMargin.getAccountWei(
+          { owner: core.hhUser2.address, number: defaultAccountNumber },
+          core.marketIds.weth
+        )
+      );
+      console.log(
+        await core.dolomiteMargin.getAccountWei(
+          { owner: core.hhUser2.address, number: defaultAccountNumber },
+          marketId
+        )
+      );
+      console.log(
+        await core.dolomiteMargin.getAccountWei(
+          { owner: metaVault.address, number: defaultAccountNumber },
+          core.marketIds.weth
+        )
+      );
+      console.log(
+        await core.dolomiteMargin.getAccountWei(
+          { owner: metaVault.address, number: defaultAccountNumber },
+          marketId
+        )
+      );
     });
   });
 });
-
-async function wrapFullBalanceIntoVaultDefaultAccount(
-  core: CoreProtocolBerachain,
-  vault: POLIsolationModeTokenVaultV1,
-  metaVault: BerachainRewardsMetaVault,
-  wrapper: POLIsolationModeWrapperTraderV2,
-  marketId: BigNumber,
-) {
-  const wrapperParam: GenericTraderParam = {
-    trader: wrapper.address,
-    traderType: GenericTraderType.IsolationModeWrapper,
-    tradeData: defaultAbiCoder.encode(['uint256'], [2]),
-    makerAccountIndex: 0,
-  };
-  await vault.addCollateralAndSwapExactInputForOutput(
-    defaultAccountNumber,
-    defaultAccountNumber,
-    [core.marketIds.weth, marketId],
-    MAX_UINT_256_BI,
-    ONE_BI,
-    [wrapperParam],
-    [{
-      owner: metaVault.address,
-      number: defaultAccountNumber,
-    }],
-    {
-      deadline: '123123123123123',
-      balanceCheckFlag: BalanceCheckFlag.None,
-      eventType: GenericEventEmissionType.None,
-    },
-  );
-}

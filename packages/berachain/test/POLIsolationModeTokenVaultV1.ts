@@ -49,6 +49,7 @@ import {
   createPOLIsolationModeVaultFactory,
   createPOLIsolationModeWrapperTraderV2,
   RewardVaultType,
+  wrapFullBalanceIntoVaultDefaultAccount,
 } from './berachain-ecosystem-utils';
 import { setupNewGenericTraderProxy } from 'packages/base/test/utils/dolomite';
 import { GenericEventEmissionType, GenericTraderParam, GenericTraderType } from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
@@ -57,11 +58,6 @@ import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 const defaultAccountNumber = ZERO_BI;
 const borrowAccountNumber = BigNumber.from('123');
 const amountWei = parseEther('100');
-
-const ZERO_PAR = {
-  sign: false,
-  value: ZERO_BI,
-};
 
 describe('POLIsolationModeTokenVaultV1', () => {
   let snapshotId: string;
@@ -208,7 +204,7 @@ describe('POLIsolationModeTokenVaultV1', () => {
   });
 
   describe('#swapExactInputForOutput', () => {
-    it('should work normally to leverage', async () => {
+    it('should work normally to leverage and pay back debt', async () => {
       // same price as polWETH
       await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.weth.address, parseEther('2000'));
       await core.dolomiteMargin.connect(core.governance).ownerSetPriceOracle(
@@ -247,6 +243,33 @@ describe('POLIsolationModeTokenVaultV1', () => {
       await expectProtocolBalance(core, vault, borrowAccountNumber, marketId, parAmount.mul(2));
       expect(await infraredVault.balanceOf(metaVault.address)).to.equal(parAmount.mul(2));
       expect(await vault.underlyingBalanceOf()).to.equal(parAmount.mul(2));
+
+      const unwrapperParam: GenericTraderParam = {
+        trader: unwrapper.address,
+        traderType: GenericTraderType.IsolationModeUnwrapper,
+        tradeData: defaultAbiCoder.encode(['uint256'], [2]),
+        makerAccountIndex: 0,
+      };
+      await vault.swapExactInputForOutput(
+        borrowAccountNumber,
+        [marketId, core.marketIds.weth],
+        parAmount,
+        amountWei,
+        [unwrapperParam],
+        [{
+          owner: metaVault.address,
+          number: defaultAccountNumber,
+        }],
+        {
+          deadline: '123123123123123',
+          balanceCheckFlag: BalanceCheckFlag.None,
+          eventType: GenericEventEmissionType.None,
+        },
+      );
+      await expectProtocolBalance(core, vault, borrowAccountNumber, core.marketIds.weth, ZERO_BI);
+      await expectProtocolBalance(core, vault, borrowAccountNumber, marketId, parAmount);
+      expect(await infraredVault.balanceOf(metaVault.address)).to.equal(parAmount);
+      expect(await vault.underlyingBalanceOf()).to.equal(parAmount);
     });
   });
 
@@ -262,6 +285,109 @@ describe('POLIsolationModeTokenVaultV1', () => {
       await expectProtocolBalance(core, metaVault, defaultAccountNumber, marketId, ZERO_BI);
       expect(await infraredVault.balanceOf(metaVault.address)).to.equal(parAmount);
       expect(await vault.underlyingBalanceOf()).to.equal(parAmount);
+    });
+
+    it('should work normally to transfer collateral and pay back debt', async () => {
+      // same price as polWETH
+      await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.weth.address, parseEther('2000'));
+      await core.dolomiteMargin.connect(core.governance).ownerSetPriceOracle(
+        core.marketIds.weth,
+        core.testEcosystem!.testPriceOracle.address,
+      );
+
+      await wrapFullBalanceIntoVaultDefaultAccount(core, vault, metaVault, wrapper, marketId);
+      await vault.transferIntoPositionWithUnderlyingToken(defaultAccountNumber, borrowAccountNumber, parAmount);
+      await expectProtocolBalance(core, vault, defaultAccountNumber, marketId, ZERO_BI);
+      await expectProtocolBalance(core, vault, borrowAccountNumber, marketId, parAmount);
+
+      const wrapperParam: GenericTraderParam = {
+        trader: wrapper.address,
+        traderType: GenericTraderType.IsolationModeWrapper,
+        tradeData: defaultAbiCoder.encode(['uint256'], [2]),
+        makerAccountIndex: 0,
+      };
+      await vault.swapExactInputForOutput(
+        borrowAccountNumber,
+        [core.marketIds.weth, marketId],
+        amountWei,
+        parAmount,
+        [wrapperParam],
+        [{
+          owner: metaVault.address,
+          number: defaultAccountNumber,
+        }],
+        {
+          deadline: '123123123123123',
+          balanceCheckFlag: BalanceCheckFlag.None,
+          eventType: GenericEventEmissionType.None,
+        },
+      );
+      await expectProtocolBalance(core, vault, borrowAccountNumber, core.marketIds.weth, ZERO_BI.sub(amountWei));
+      await expectProtocolBalance(core, vault, borrowAccountNumber, marketId, parAmount.mul(2));
+      expect(await infraredVault.balanceOf(metaVault.address)).to.equal(parAmount.mul(2));
+      expect(await vault.underlyingBalanceOf()).to.equal(parAmount.mul(2));
+
+      await setupWETHBalance(core, core.hhUser1, amountWei, core.dolomiteMargin);
+      await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, amountWei);
+      await wrapFullBalanceIntoVaultDefaultAccount(core, vault, metaVault, wrapper, marketId);
+      const unwrapperParam: GenericTraderParam = {
+        trader: unwrapper.address,
+        traderType: GenericTraderType.IsolationModeUnwrapper,
+        tradeData: defaultAbiCoder.encode(['uint256'], [2]),
+        makerAccountIndex: 0,
+      };
+      await vault.addCollateralAndSwapExactInputForOutput(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        [marketId, core.marketIds.weth],
+        parAmount,
+        amountWei,
+        [unwrapperParam],
+        [{
+          owner: metaVault.address,
+          number: defaultAccountNumber,
+        }],
+        {
+          deadline: '123123123123123',
+          balanceCheckFlag: BalanceCheckFlag.None,
+          eventType: GenericEventEmissionType.None,
+        },
+      );
+      await expectProtocolParBalance(core, vault, borrowAccountNumber, core.marketIds.weth, ZERO_BI);
+      await expectProtocolBalance(core, vault, borrowAccountNumber, marketId, parAmount.mul(2));
+      expect(await infraredVault.balanceOf(metaVault.address)).to.equal(parAmount.mul(2));
+      expect(await vault.underlyingBalanceOf()).to.equal(parAmount.mul(2));
+    });
+
+    it('should work normally to transfer and unwrap within borrow account', async () => {
+      await wrapFullBalanceIntoVaultDefaultAccount(core, vault, metaVault, wrapper, marketId);
+      const unwrapperParam: GenericTraderParam = {
+        trader: unwrapper.address,
+        traderType: GenericTraderType.IsolationModeUnwrapper,
+        tradeData: defaultAbiCoder.encode(['uint256'], [2]),
+        makerAccountIndex: 0,
+      };
+      await vault.addCollateralAndSwapExactInputForOutput(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        [marketId, core.marketIds.weth],
+        parAmount,
+        amountWei,
+        [unwrapperParam],
+        [{
+          owner: metaVault.address,
+          number: defaultAccountNumber,
+        }],
+        {
+          deadline: '123123123123123',
+          balanceCheckFlag: BalanceCheckFlag.None,
+          eventType: GenericEventEmissionType.None,
+        },
+      );
+      await expectProtocolParBalance(core, vault, borrowAccountNumber, core.marketIds.weth, parAmount);
+      await expectProtocolBalance(core, vault, borrowAccountNumber, marketId, ZERO_BI);
+      expect(await infraredVault.balanceOf(metaVault.address)).to.equal(ZERO_BI);
+      expect(await vault.underlyingBalanceOf()).to.equal(ZERO_BI);
     });
   });
 
@@ -310,7 +436,7 @@ describe('POLIsolationModeTokenVaultV1', () => {
       await expectProtocolBalance(core, vault, defaultAccountNumber, marketId, parAmount);
       expect(await vault.underlyingBalanceOf()).to.equal(parAmount);
       expect(await infraredVault.balanceOf(metaVault.address)).to.equal(parAmount);
-      
+
       await registry.connect(core.governance).ownerSetPolFeeAgent(core.hhUser5.address);
       await registry.connect(core.governance).ownerSetPolFeePercentage(parseEther('.1'));
       const unwrapperParam: GenericTraderParam = {
@@ -337,7 +463,13 @@ describe('POLIsolationModeTokenVaultV1', () => {
         },
       );
       const feeAmount = parAmount.div(10);
-      await expectProtocolParBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, parAmount.sub(feeAmount));
+      await expectProtocolParBalance(
+        core,
+        core.hhUser1,
+        defaultAccountNumber,
+        core.marketIds.weth,
+        parAmount.sub(feeAmount),
+      );
       await expectProtocolParBalance(core, core.hhUser5, defaultAccountNumber, core.marketIds.weth, feeAmount);
       await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, marketId, ZERO_BI);
       await expectProtocolBalance(core, vault, defaultAccountNumber, core.marketIds.weth, ZERO_BI);
@@ -353,7 +485,7 @@ describe('POLIsolationModeTokenVaultV1', () => {
       await expectProtocolBalance(core, vault, defaultAccountNumber, marketId, parAmount);
       expect(await vault.underlyingBalanceOf()).to.equal(parAmount);
       expect(await infraredVault.balanceOf(metaVault.address)).to.equal(parAmount);
-      
+
       await registry.connect(core.governance).ownerSetPolFeeAgent(core.hhUser5.address);
       await registry.connect(core.governance).ownerSetPolFeePercentage(parseEther('.1'));
       const inputAmount = parAmount.div(4);
@@ -382,7 +514,13 @@ describe('POLIsolationModeTokenVaultV1', () => {
       );
       const feeAmount = inputAmount.div(10);
       await expectProtocolParBalance(core, core.hhUser5, defaultAccountNumber, core.marketIds.weth, feeAmount);
-      await expectProtocolParBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, inputAmount.sub(feeAmount));
+      await expectProtocolParBalance(
+        core,
+        core.hhUser1,
+        defaultAccountNumber,
+        core.marketIds.weth,
+        inputAmount.sub(feeAmount),
+      );
       await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, marketId, ZERO_BI);
       await expectProtocolBalance(core, vault, defaultAccountNumber, core.marketIds.weth, ZERO_BI);
       await expectProtocolBalance(core, vault, defaultAccountNumber, marketId, parAmount.sub(inputAmount));
@@ -402,7 +540,7 @@ describe('POLIsolationModeTokenVaultV1', () => {
       const unwrapperParam: GenericTraderParam = {
         trader: unwrapper.address,
         traderType: GenericTraderType.IsolationModeUnwrapper,
-        tradeData: defaultAbiCoder.encode(['uint256'], [2]), // @follow-up Remember why we are encoding this
+        tradeData: defaultAbiCoder.encode(['uint256'], [2]),
         makerAccountIndex: 0,
       };
       await vault.swapExactInputForOutputAndRemoveCollateral(
@@ -431,6 +569,76 @@ describe('POLIsolationModeTokenVaultV1', () => {
       expect(await infraredVault.balanceOf(metaVault.address)).to.equal(ZERO_BI);
       expect(await vault.underlyingBalanceOf()).to.equal(ZERO_BI);
     });
+
+    it('should work normally when wrapping and removing collateral from borrow account', async () => {
+      await vault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        core.marketIds.weth,
+        amountWei,
+        BalanceCheckFlag.None,
+      );
+      await expectProtocolBalance(core, vault, borrowAccountNumber, core.marketIds.weth, amountWei);
+
+      const wrapperParam: GenericTraderParam = {
+        trader: wrapper.address,
+        traderType: GenericTraderType.IsolationModeWrapper,
+        tradeData: defaultAbiCoder.encode(['uint256'], [2]),
+        makerAccountIndex: 0,
+      };
+      await vault.swapExactInputForOutputAndRemoveCollateral(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        [core.marketIds.weth, marketId],
+        MAX_UINT_256_BI,
+        ONE_BI,
+        [wrapperParam],
+        [{
+          owner: metaVault.address,
+          number: defaultAccountNumber,
+        }],
+        {
+          deadline: '123123123123123',
+          balanceCheckFlag: BalanceCheckFlag.None,
+          eventType: GenericEventEmissionType.None,
+        },
+      );
+      await expectProtocolBalance(core, vault, borrowAccountNumber, core.marketIds.weth, ZERO_BI);
+      await expectProtocolBalance(core, vault, borrowAccountNumber, marketId, ZERO_BI);
+      await expectProtocolBalance(core, vault, defaultAccountNumber, marketId, parAmount);
+      expect(await infraredVault.balanceOf(metaVault.address)).to.equal(parAmount);
+      expect(await vault.underlyingBalanceOf()).to.equal(parAmount);
+    });
+
+    it('should fail if input amount is greater than balance', async () => {
+      await wrapFullBalanceIntoVaultDefaultAccount(core, vault, metaVault, wrapper, marketId);
+      const unwrapperParam: GenericTraderParam = {
+        trader: unwrapper.address,
+        traderType: GenericTraderType.IsolationModeUnwrapper,
+        tradeData: defaultAbiCoder.encode(['uint256'], [2]),
+        makerAccountIndex: 0,
+      };
+      await expectThrow(
+        vault.swapExactInputForOutputAndRemoveCollateral(
+          defaultAccountNumber,
+          defaultAccountNumber,
+          [marketId, core.marketIds.weth],
+          parAmount.add(1),
+          ONE_BI,
+          [unwrapperParam],
+          [{
+            owner: metaVault.address,
+            number: defaultAccountNumber,
+          }],
+          {
+            deadline: '123123123123123',
+            balanceCheckFlag: BalanceCheckFlag.None,
+            eventType: GenericEventEmissionType.None,
+          },
+        ),
+        'POLIsolationModeTokenVaultV1: Insufficient balance',
+      );
+    });
   });
 
   describe('#stake', () => {
@@ -458,7 +666,7 @@ describe('POLIsolationModeTokenVaultV1', () => {
   });
 
   describe('#unstake', () => {
-    it('should work normally with no fee', async () => {
+    it('should work normally', async () => {
       await wrapFullBalanceIntoVaultDefaultAccount(core, vault, metaVault, wrapper, marketId);
       await expectProtocolBalance(core, vault, defaultAccountNumber, marketId, parAmount);
       expect(await vault.underlyingBalanceOf()).to.equal(parAmount);
@@ -467,20 +675,6 @@ describe('POLIsolationModeTokenVaultV1', () => {
       await vault.unstake(RewardVaultType.Infrared, parAmount);
       expect(await infraredVault.balanceOf(metaVault.address)).to.equal(ZERO_BI);
       expect(await vault.underlyingBalanceOf()).to.equal(parAmount);
-    });
-
-    it('should work normally with fee', async () => {
-      await wrapFullBalanceIntoVaultDefaultAccount(core, vault, metaVault, wrapper, marketId);
-      await expectProtocolBalance(core, vault, defaultAccountNumber, marketId, parAmount);
-      expect(await vault.underlyingBalanceOf()).to.equal(parAmount);
-      expect(await infraredVault.balanceOf(metaVault.address)).to.equal(parAmount);
-      
-      await registry.connect(core.governance).ownerSetPolFeeAgent(core.hhUser5.address);
-      await registry.connect(core.governance).ownerSetPolFeePercentage(parseEther('.1'));
-
-      await vault.unstake(RewardVaultType.Infrared, parAmount);
-      expect(await infraredVault.balanceOf(metaVault.address)).to.equal(ZERO_BI);
-      expect(await vault.underlyingBalanceOf()).to.equal(parAmount.mul(9).div(10).add(1));
     });
 
     it('should fail if not called by owner', async () => {
@@ -601,35 +795,3 @@ describe('POLIsolationModeTokenVaultV1', () => {
     });
   });
 });
-
-async function wrapFullBalanceIntoVaultDefaultAccount(
-  core: CoreProtocolBerachain,
-  vault: POLIsolationModeTokenVaultV1,
-  metaVault: InfraredBGTMetaVault,
-  wrapper: POLIsolationModeWrapperTraderV2,
-  marketId: BigNumber,
-) {
-  const wrapperParam: GenericTraderParam = {
-    trader: wrapper.address,
-    traderType: GenericTraderType.IsolationModeWrapper,
-    tradeData: defaultAbiCoder.encode(['uint256'], [2]),
-    makerAccountIndex: 0,
-  };
-  await vault.addCollateralAndSwapExactInputForOutput(
-    defaultAccountNumber,
-    defaultAccountNumber,
-    [core.marketIds.weth, marketId],
-    MAX_UINT_256_BI,
-    ONE_BI,
-    [wrapperParam],
-    [{
-      owner: metaVault.address,
-      number: defaultAccountNumber,
-    }],
-    {
-      deadline: '123123123123123',
-      balanceCheckFlag: BalanceCheckFlag.None,
-      eventType: GenericEventEmissionType.None,
-    },
-  );
-}

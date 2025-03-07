@@ -30,9 +30,9 @@ import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/prot
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { IBerachainRewardsIsolationModeVaultFactory } from "./interfaces/IBerachainRewardsIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
-import { IBerachainRewardsMetaVault } from "./interfaces/IBerachainRewardsMetaVault.sol";
+import { IBaseMetaVault } from "./interfaces/IBaseMetaVault.sol";
 import { IBerachainRewardsRegistry } from "./interfaces/IBerachainRewardsRegistry.sol";
+import { IMetaVaultRewardTokenFactory } from "./interfaces/IMetaVaultRewardTokenFactory.sol"; // solhint-disable-line max-line-length
 import { IPOLIsolationModeTokenVaultV1 } from "./interfaces/IPOLIsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
 
 
@@ -138,17 +138,18 @@ contract POLIsolationModeTokenVaultV1 is
         view
         returns (uint256)
     {
-        IBerachainRewardsMetaVault metaVault = IBerachainRewardsMetaVault(
+        IBaseMetaVault metaVault = IBaseMetaVault(
             registry().getMetaVaultByVault(address(this))
         );
         IBerachainRewardsRegistry.RewardVaultType defaultType = metaVault.getDefaultRewardVaultTypeByAsset(
             UNDERLYING_TOKEN()
         );
-        return IERC20(UNDERLYING_TOKEN()).balanceOf(address(metaVault)) + metaVault.getStakedBalanceByAssetAndType(UNDERLYING_TOKEN(), defaultType);
+        return IERC20(UNDERLYING_TOKEN()).balanceOf(address(metaVault))
+            + metaVault.getStakedBalanceByAssetAndType(UNDERLYING_TOKEN(), defaultType);
     }
 
     function registry() public view returns (IBerachainRewardsRegistry) {
-        return IBerachainRewardsIsolationModeVaultFactory(VAULT_FACTORY()).berachainRewardsRegistry();
+        return IMetaVaultRewardTokenFactory(VAULT_FACTORY()).berachainRewardsRegistry();
     }
 
     function dolomiteRegistry()
@@ -179,7 +180,6 @@ contract POLIsolationModeTokenVaultV1 is
     }
 
     // @audit May need to adjust account number checks because we are wrapping not depositing
-    // @note fine to have the 3 functions like this
     function _addCollateralAndSwapExactInputForOutput(
         uint256 _fromAccountNumber,
         uint256 _borrowAccountNumber,
@@ -191,48 +191,24 @@ contract POLIsolationModeTokenVaultV1 is
         IGenericTraderProxyV1.UserConfig memory _userConfig
     ) internal override {
         uint256 factoryMarketId = marketId();
-        Require.that(
-            _marketIdsPath[0] != _marketIdsPath[_marketIdsPath.length - 1],
-            _FILE,
-            "Cannot swap between same market"
+        if (_marketIdsPath[0] == factoryMarketId) {
+            // @follow-up @Corey, can you double check using the _fromAccountNumber here?
+            _inputAmountWei = _unstakeBeforeUnwrapping(_fromAccountNumber, _inputAmountWei);
+        }
+
+        super._addCollateralAndSwapExactInputForOutput(
+            _fromAccountNumber,
+            _borrowAccountNumber,
+            _marketIdsPath,
+            _inputAmountWei,
+            _minOutputAmountWei,
+            _tradersPath,
+            _makerAccounts,
+            _userConfig
         );
 
-        if (_marketIdsPath[0] == factoryMarketId) {
-            // @follow-up Check if this is even possible
-            _inputAmountWei = _unstakeBeforeUnwrapping(_borrowAccountNumber, _inputAmountWei);
-            super._addCollateralAndSwapExactInputForOutput(
-                _fromAccountNumber,
-                _borrowAccountNumber,
-                _marketIdsPath,
-                _inputAmountWei,
-                _minOutputAmountWei,
-                _tradersPath,
-                _makerAccounts,
-                _userConfig
-            );
-        } else if (_marketIdsPath[_marketIdsPath.length - 1] == factoryMarketId) {
-            super._addCollateralAndSwapExactInputForOutput(
-                _fromAccountNumber,
-                _borrowAccountNumber,
-                _marketIdsPath,
-                _inputAmountWei,
-                _minOutputAmountWei,
-                _tradersPath,
-                _makerAccounts,
-                _userConfig
-            );
+        if (_marketIdsPath[_marketIdsPath.length - 1] == factoryMarketId) {
             _stakeAfterWrapping();
-        } else {
-            super._addCollateralAndSwapExactInputForOutput(
-                _fromAccountNumber,
-                _borrowAccountNumber,
-                _marketIdsPath,
-                _inputAmountWei,
-                _minOutputAmountWei,
-                _tradersPath,
-                _makerAccounts,
-                _userConfig
-            );
         }
     }
 
@@ -245,105 +221,68 @@ contract POLIsolationModeTokenVaultV1 is
         IGenericTraderProxyV1.TraderParam[] memory _tradersPath,
         IDolomiteMargin.AccountInfo[] memory _makerAccounts,
         IGenericTraderProxyV1.UserConfig memory _userConfig
-    )
-        internal
-        override
-    {
+    ) internal override {
         uint256 factoryMarketId = marketId();
-        Require.that(
-            _marketIdsPath[0] != _marketIdsPath[_marketIdsPath.length - 1],
-            _FILE,
-            "Cannot swap between same market"
-        );
-
         if (_marketIdsPath[0] == factoryMarketId) {
             _inputAmountWei = _unstakeBeforeUnwrapping(_borrowAccountNumber, _inputAmountWei);
-            super._swapExactInputForOutputAndRemoveCollateral(
-                _toAccountNumber,
-                _borrowAccountNumber,
-                _marketIdsPath,
-                _inputAmountWei,
-                _minOutputAmountWei,
-                _tradersPath,
-                _makerAccounts,
-                _userConfig
-            );
-        } else if (_marketIdsPath[_marketIdsPath.length - 1] == factoryMarketId) {
-            super._swapExactInputForOutputAndRemoveCollateral(
-                _toAccountNumber,
-                _borrowAccountNumber,
-                _marketIdsPath,
-                _inputAmountWei,
-                _minOutputAmountWei,
-                _tradersPath,
-                _makerAccounts,
-                _userConfig
-            );
+        }
+
+        super._swapExactInputForOutputAndRemoveCollateral(
+            _toAccountNumber,
+            _borrowAccountNumber,
+            _marketIdsPath,
+            _inputAmountWei,
+            _minOutputAmountWei,
+            _tradersPath,
+            _makerAccounts,
+            _userConfig
+        );
+
+        if (_marketIdsPath[_marketIdsPath.length - 1] == factoryMarketId) {
             _stakeAfterWrapping();
-        } else {
-            super._swapExactInputForOutputAndRemoveCollateral(
-                _toAccountNumber,
-                _borrowAccountNumber,
-                _marketIdsPath,
-                _inputAmountWei,
-                _minOutputAmountWei,
-                _tradersPath,
-                _makerAccounts,
-                _userConfig
-            );
         }
     }
 
     function _swapExactInputForOutput(
         SwapExactInputForOutputParams memory _params
-    )
-        internal
-        override
-    {
+    ) internal override {
         uint256 factoryMarketId = marketId();
-        Require.that(
-            _params.marketIdsPath[0] != _params.marketIdsPath[_params.marketIdsPath.length - 1],
-            _FILE,
-            "Cannot swap between same market"
-        );
-
         if (_params.marketIdsPath[0] == factoryMarketId) {
             _params.inputAmountWei = _unstakeBeforeUnwrapping(_params.tradeAccountNumber, _params.inputAmountWei);
-            super._swapExactInputForOutput(_params);
-        } else if (_params.marketIdsPath[_params.marketIdsPath.length - 1] == factoryMarketId) {
-            super._swapExactInputForOutput(_params);
+        }
+
+        super._swapExactInputForOutput(_params);
+
+        if (_params.marketIdsPath[_params.marketIdsPath.length - 1] == factoryMarketId) {
             _stakeAfterWrapping();
-        } else {
-            super._swapExactInputForOutput(_params);
         }
     }
 
     function _unstakeBeforeUnwrapping(uint256 _accountNumber, uint256 _amountWei) internal returns (uint256) {
-        IBerachainRewardsMetaVault metaVault = IBerachainRewardsMetaVault(
+        IBaseMetaVault metaVault = IBaseMetaVault(
             registry().getMetaVaultByVault(address(this))
         );
         IBerachainRewardsRegistry.RewardVaultType defaultType = metaVault.getDefaultRewardVaultTypeByAsset(
             UNDERLYING_TOKEN()
         );
-
-        // @audit check par values are handled correctly everywhere
-        IDolomiteStructs.AccountInfo memory info = IDolomiteStructs.AccountInfo({
-            owner: address(this),
-            number: _accountNumber
-        });
         IDolomiteStructs.Wei memory accountWei = DOLOMITE_MARGIN().getAccountWei(
-            info,
+            IDolomiteStructs.AccountInfo({
+                owner: address(this),
+                number: _accountNumber
+            }),
             marketId()
         );
-
-        // @follow-up @Corey, double check this code
         assert(accountWei.sign);
+
+        // @audit check par values are handled correctly everywhere
+        // @follow-up @Corey, double check this code
         uint256 bal = IERC20(UNDERLYING_TOKEN()).balanceOf(address(metaVault));
+        uint256 feeAmount;
         if (_amountWei == type(uint256).max) {
             if (accountWei.value > bal) {
-                uint256 feeAmount = _unstake(UNDERLYING_TOKEN(), defaultType, accountWei.value - bal);
-                IIsolationModeVaultFactory(VAULT_FACTORY()).withdrawFromDolomiteMargin(_accountNumber, feeAmount);
+                _unstake(UNDERLYING_TOKEN(), defaultType, accountWei.value - bal);
             }
+            feeAmount = metaVault.chargeDTokenFee(UNDERLYING_TOKEN(), marketId(), accountWei.value);
         } else {
             Require.that(
                 _amountWei <= accountWei.value,
@@ -351,17 +290,21 @@ contract POLIsolationModeTokenVaultV1 is
                 "Insufficient balance"
             );
             if (_amountWei > bal) {
-                uint256 feeAmount = _unstake(UNDERLYING_TOKEN(), defaultType, _amountWei - bal);
-                IIsolationModeVaultFactory(VAULT_FACTORY()).withdrawFromDolomiteMargin(_accountNumber, feeAmount);
-                _amountWei -= feeAmount;
+                _unstake(UNDERLYING_TOKEN(), defaultType, _amountWei - bal);
             }
+            feeAmount = metaVault.chargeDTokenFee(UNDERLYING_TOKEN(), marketId(), _amountWei);
+        }
+
+        IIsolationModeVaultFactory(VAULT_FACTORY()).withdrawFromDolomiteMargin(_accountNumber, feeAmount);
+        if (_amountWei != type(uint256).max) {
+            _amountWei -= feeAmount;
         }
 
         return _amountWei;
     }
 
     function _stakeAfterWrapping() internal {
-        IBerachainRewardsMetaVault metaVault = IBerachainRewardsMetaVault(
+        IBaseMetaVault metaVault = IBaseMetaVault(
             registry().getMetaVaultByVault(address(this))
         );
         IBerachainRewardsRegistry.RewardVaultType defaultType = metaVault.getDefaultRewardVaultTypeByAsset(
@@ -373,7 +316,7 @@ contract POLIsolationModeTokenVaultV1 is
     }
 
     function _stake(address _asset, IBerachainRewardsRegistry.RewardVaultType _type, uint256 _amount) internal {
-        IBerachainRewardsMetaVault metaVault = IBerachainRewardsMetaVault(
+        IBaseMetaVault metaVault = IBaseMetaVault(
             registry().getMetaVaultByVault(address(this))
         );
         metaVault.stakeDolomiteToken(_asset, _type, _amount);
@@ -383,24 +326,24 @@ contract POLIsolationModeTokenVaultV1 is
         address _asset,
         IBerachainRewardsRegistry.RewardVaultType _type,
         uint256 _amount
-    ) internal returns (uint256) {
-        IBerachainRewardsMetaVault metaVault = IBerachainRewardsMetaVault(
+    ) internal {
+        IBaseMetaVault metaVault = IBaseMetaVault(
             registry().getMetaVaultByVault(address(this))
         );
-        return metaVault.unstakeDolomiteToken(_asset, _type, _amount, true);
+        metaVault.unstakeDolomiteToken(_asset, _type, _amount);
     }
 
     function _getReward() internal {
-        IBerachainRewardsMetaVault metaVault = IBerachainRewardsMetaVault(
+        IBaseMetaVault metaVault = IBaseMetaVault(
             registry().getMetaVaultByVault(address(this))
         );
         metaVault.getReward(UNDERLYING_TOKEN());
     }
 
     function _exit(address _asset) internal {
-        IBerachainRewardsMetaVault metaVault = IBerachainRewardsMetaVault(
+        IBaseMetaVault metaVault = IBaseMetaVault(
             registry().getMetaVaultByVault(address(this))
         );
-        metaVault.exit(_asset, true, true);
+        metaVault.exit(_asset, true);
     }
 }

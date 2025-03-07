@@ -61,7 +61,7 @@ contract InfraredBGTMetaVault is ProxyContractHelpers, IBaseMetaVault {
     // =========================== Modifiers ============================
     // ==================================================================
 
-    modifier onlyInfrared(IBerachainRewardsRegistry.RewardVaultType _type) {
+    modifier onlyInfraredType(IBerachainRewardsRegistry.RewardVaultType _type) {
         if (_type == IBerachainRewardsRegistry.RewardVaultType.INFRARED) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _type == IBerachainRewardsRegistry.RewardVaultType.INFRARED,
@@ -78,11 +78,6 @@ contract InfraredBGTMetaVault is ProxyContractHelpers, IBaseMetaVault {
 
     modifier onlyMetaVaultOwner(address _sender) {
         _requireOnlyMetaVaultOwner(_sender);
-        _;
-    }
-
-    modifier onlyValidDolomiteToken(address _asset) {
-        _requireValidDolomiteToken(_asset);
         _;
     }
 
@@ -107,14 +102,12 @@ contract InfraredBGTMetaVault is ProxyContractHelpers, IBaseMetaVault {
         _stake(_asset, _type, _amount, true);
     }
 
-    // @todo add a boolean for charging a fee. Do math and then return amount after the fee
     function unstakeDolomiteToken(
         address _asset,
         IBerachainRewardsRegistry.RewardVaultType _type,
-        uint256 _amount,
-        bool _chargeFee
-    ) external onlyChildVault(msg.sender) returns (uint256) {
-        return _unstake(_asset, _type, _amount, true, _chargeFee);
+        uint256 _amount
+    ) external onlyChildVault(msg.sender) {
+        _unstake(_asset, _type, _amount, true);
     }
 
     function stake(
@@ -130,7 +123,7 @@ contract InfraredBGTMetaVault is ProxyContractHelpers, IBaseMetaVault {
         IBerachainRewardsRegistry.RewardVaultType _type,
         uint256 _amount
     ) external onlyChildVault(msg.sender) {
-        _unstake(_asset, _type, _amount, false, false);
+        _unstake(_asset, _type, _amount, false);
     }
 
     function getReward(
@@ -141,12 +134,29 @@ contract InfraredBGTMetaVault is ProxyContractHelpers, IBaseMetaVault {
 
     function exit(
         address _asset,
-        bool _isDToken,
-        bool _chargeFee
+        bool _isDToken
     ) external onlyChildVault(msg.sender) {
         _getReward(_asset);
         IBerachainRewardsRegistry.RewardVaultType vaultType = getDefaultRewardVaultTypeByAsset(_asset);
-        _unstake(_asset, vaultType, getStakedBalanceByAssetAndType(_asset, vaultType), _isDToken, _chargeFee);
+        _unstake(_asset, vaultType, getStakedBalanceByAssetAndType(_asset, vaultType), _isDToken);
+    }
+
+    function chargeDTokenFee(
+        address _asset,
+        uint256 _marketId,
+        uint256 _amount
+    ) external onlyChildVault(msg.sender) returns (uint256) {
+        IBerachainRewardsRegistry registry = REGISTRY();
+        uint256 feePercentage = registry.polFeePercentage(_marketId);
+        address feeAgent = registry.polFeeAgent();
+
+        uint256 feeAmount = (_amount * feePercentage) / _BASE;
+        if (feeAmount > 0 && feeAgent != address(0)) {
+            IERC20(_asset).safeTransfer(feeAgent, feeAmount);
+            return feeAmount;
+        }
+
+        return 0;
     }
 
     // ==================================================================
@@ -181,7 +191,7 @@ contract InfraredBGTMetaVault is ProxyContractHelpers, IBaseMetaVault {
     function _setDefaultRewardVaultTypeByAsset(
         address _asset,
         IBerachainRewardsRegistry.RewardVaultType _type
-    ) internal onlyInfrared(_type) {
+    ) internal onlyInfraredType(_type) {
         IBerachainRewardsRegistry.RewardVaultType currentType = getDefaultRewardVaultTypeByAsset(_asset);
         if (_type == currentType) {
             // No need to change it when the two already match
@@ -199,7 +209,7 @@ contract InfraredBGTMetaVault is ProxyContractHelpers, IBaseMetaVault {
         IBerachainRewardsRegistry.RewardVaultType _type,
         uint256 _amount,
         bool _isDToken
-    ) internal onlyInfrared(_type) {
+    ) internal onlyInfraredType(_type) {
         IInfraredVault rewardVault = IInfraredVault(REGISTRY().rewardVault(_asset, _type));
 
         _setDefaultRewardVaultTypeByAsset(_asset, _type);
@@ -217,9 +227,8 @@ contract InfraredBGTMetaVault is ProxyContractHelpers, IBaseMetaVault {
         address _asset,
         IBerachainRewardsRegistry.RewardVaultType _type,
         uint256 _amount,
-        bool _isDToken,
-        bool _chargeFee
-    ) internal onlyInfrared(_type) returns (uint256) {
+        bool _isDToken
+    ) internal onlyInfraredType(_type) {
         IInfraredVault rewardVault = IInfraredVault(REGISTRY().rewardVault(_asset, _type));
 
         uint256 stakedBalance = getStakedBalanceByAssetAndType(_asset, _type);
@@ -229,25 +238,15 @@ contract InfraredBGTMetaVault is ProxyContractHelpers, IBaseMetaVault {
 
         if (!_isDToken) {
             IERC20(_asset).safeTransfer(msg.sender, _amount);
-            return 0;
         }
-
-        if (_chargeFee) {
-            uint256 feePercentage = REGISTRY().polFeePercentage();
-            address feeAgent = REGISTRY().polFeeAgent();
-
-            uint256 feeAmount = (_amount * feePercentage) / _BASE;
-            if (feeAmount > 0 && feeAgent != address(0)) {
-                IERC20(_asset).safeTransfer(feeAgent, feeAmount);
-                return feeAmount;
-            }
-        }
-
-        return 0;
     }
 
     function _getReward(address _asset) internal {
-        IInfraredVault rewardVault = IInfraredVault(REGISTRY().rewardVault(_asset, IBerachainRewardsRegistry.RewardVaultType.INFRARED));
+        // @follow-up Use defualt type here or infrared type?
+        IInfraredVault rewardVault = IInfraredVault(REGISTRY().rewardVault(
+            _asset,
+            IBerachainRewardsRegistry.RewardVaultType.INFRARED
+        ));
         IMetaVaultRewardTokenFactory factory = REGISTRY().iBgtIsolationModeVaultFactory();
 
         IInfraredVault.UserReward[] memory rewards = rewardVault.getAllRewardsForUser(address(this));
@@ -255,7 +254,12 @@ contract InfraredBGTMetaVault is ProxyContractHelpers, IBaseMetaVault {
 
         for (uint256 i = 0; i < rewards.length; ++i) {
             if (rewards[i].amount > 0) {
-                _performDepositRewardByRewardType(factory, IBerachainRewardsRegistry.RewardVaultType.INFRARED, rewards[i].token, rewards[i].amount);
+                _performDepositRewardByRewardType(
+                    factory,
+                    IBerachainRewardsRegistry.RewardVaultType.INFRARED,
+                    rewards[i].token,
+                    rewards[i].amount
+                );
             }
         }
     }
@@ -321,6 +325,7 @@ contract InfraredBGTMetaVault is ProxyContractHelpers, IBaseMetaVault {
         );
     }
 
+    // @follow-up @Corey, can we remove this?
     function _requireValidDolomiteToken(address _asset) internal view {
         IDolomiteMargin dolomiteMargin = REGISTRY().DOLOMITE_MARGIN();
         (bool isValidDolomiteToken,) = address(dolomiteMargin).staticcall(

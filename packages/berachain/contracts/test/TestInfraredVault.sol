@@ -60,6 +60,7 @@ contract TestInfraredVault is ERC20 {
         for (uint256 i = 0; i < rewardTokens.length; i++) {
             IERC20 token = IERC20(rewardTokens[i]);
             uint256 reward = rewardAmounts[address(token)];
+            rewardAmounts[address(token)] = 0;
             token.transfer(msg.sender, reward);
         }
     }
@@ -79,7 +80,9 @@ contract TestInfraredVault is ERC20 {
         IERC20(token).transferFrom(msg.sender, address(this), amount);
     }
 
-    function getAllRewardsForUser(address /* account */) external view returns (IInfraredVault.UserReward[] memory userRewards) {
+    function getAllRewardsForUser(
+        address /* account */
+    ) external view returns (IInfraredVault.UserReward[] memory userRewards) {
         userRewards = new IInfraredVault.UserReward[](rewardTokens.length);
         for (uint256 i = 0; i < rewardTokens.length; i++) {
             IERC20 token = IERC20(rewardTokens[i]);

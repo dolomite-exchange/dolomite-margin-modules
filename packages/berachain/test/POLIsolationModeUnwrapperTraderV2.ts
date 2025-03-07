@@ -24,8 +24,6 @@ import { defaultAbiCoder, parseEther } from 'ethers/lib/utils';
 import { createContractWithAbi, depositIntoDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
 import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
 import {
-  BerachainRewardsMetaVault,
-  BerachainRewardsMetaVault__factory,
   BerachainRewardsRegistry,
   IInfraredVault,
   IInfraredVault__factory,
@@ -44,6 +42,7 @@ import {
   createPOLIsolationModeVaultFactory,
   createPOLIsolationModeWrapperTraderV2,
   RewardVaultType,
+  wrapFullBalanceIntoVaultDefaultAccount,
 } from './berachain-ecosystem-utils';
 import { setupNewGenericTraderProxy } from 'packages/base/test/utils/dolomite';
 import { ActionType, AmountReference, BalanceCheckFlag } from '@dolomite-margin/dist/src/types';
@@ -76,7 +75,7 @@ describe('POLIsolationModeUnwrapperTraderV2', () => {
   let vault: POLIsolationModeTokenVaultV1;
   let wrapper: POLIsolationModeWrapperTraderV2;
   let unwrapper: POLIsolationModeUnwrapperTraderV2;
-  let metaVault: BerachainRewardsMetaVault;
+  let metaVault: InfraredBGTMetaVault;
 
   let dToken: DolomiteERC4626;
   let infraredVault: IInfraredVault;
@@ -108,7 +107,7 @@ describe('POLIsolationModeUnwrapperTraderV2', () => {
     );
 
     const vaultImplementation = await createPOLIsolationModeTokenVaultV1();
-    factory = await createPOLIsolationModeVaultFactory(core, registry, dToken, vaultImplementation);
+    factory = await createPOLIsolationModeVaultFactory(core, registry, dToken, vaultImplementation, [], []);
 
     marketId = await core.dolomiteMargin.getNumMarkets();
     await core.testEcosystem!.testPriceOracle.setPrice(factory.address, ONE_BI);
@@ -126,7 +125,7 @@ describe('POLIsolationModeUnwrapperTraderV2', () => {
       POLIsolationModeTokenVaultV1__factory,
       core.hhUser1,
     );
-    metaVault = BerachainRewardsMetaVault__factory.connect(
+    metaVault = InfraredBGTMetaVault__factory.connect(
       await registry.getMetaVaultByAccount(core.hhUser1.address),
       core.hhUser1,
     );
@@ -229,14 +228,14 @@ describe('POLIsolationModeUnwrapperTraderV2', () => {
       await unwrapper.connect(dolomiteMarginCaller).callFunction(
         core.genericTraderProxy!.address,
         { owner: vault.address, number: defaultAccountNumber },
-        defaultAbiCoder.encode(['uint256', 'address', 'uint256'], [amountWei, vault.address, ZERO_BI]),
+        defaultAbiCoder.encode(['uint256', 'address', 'uint256'], [parAmount, vault.address, ZERO_BI]),
       );
       const cursor = await factory.transferCursor();
       expect(cursor).to.eq(2);
       const transfer = await factory.getQueuedTransferByCursor(cursor);
       expect(transfer.from).to.eq(core.dolomiteMargin.address);
       expect(transfer.to).to.eq(unwrapper.address);
-      expect(transfer.amount).to.eq(amountWei);
+      expect(transfer.amount).to.eq(parAmount);
       expect(transfer.vault).to.eq(vault.address);
     });
 
@@ -261,7 +260,7 @@ describe('POLIsolationModeUnwrapperTraderV2', () => {
         unwrapper.connect(core.hhUser1).callFunction(
           core.hhUser1.address,
           vaultAccountStruct,
-          defaultAbiCoder.encode(['uint256'], [amountWei]),
+          defaultAbiCoder.encode(['uint256'], [parAmount]),
         ),
         `OnlyDolomiteMargin: Only Dolomite can call function <${core.hhUser1.address.toLowerCase()}>`,
       );
@@ -273,7 +272,7 @@ describe('POLIsolationModeUnwrapperTraderV2', () => {
         unwrapper.connect(dolomiteMarginCaller).callFunction(
           core.hhUser1.address,
           vaultAccountStruct,
-          defaultAbiCoder.encode(['uint256'], [amountWei]),
+          defaultAbiCoder.encode(['uint256'], [parAmount]),
         ),
         `POLIsolationModeTraderBaseV2: Caller is not authorized <${core.hhUser1.address.toLowerCase()}>`,
       );
@@ -285,7 +284,7 @@ describe('POLIsolationModeUnwrapperTraderV2', () => {
         unwrapper.connect(dolomiteMarginCaller).callFunction(
           core.genericTraderProxy!.address,
           { owner: vault.address, number: defaultAccountNumber },
-          defaultAbiCoder.encode(['uint256', 'address', 'uint256'], [amountWei, core.hhUser1.address, ZERO_BI]),
+          defaultAbiCoder.encode(['uint256', 'address', 'uint256'], [parAmount, core.hhUser1.address, ZERO_BI]),
         ),
         `POLIsolationModeUnwrapperV2: Account owner is not a vault <${core.hhUser1.address.toLowerCase()}>`,
       );
@@ -303,16 +302,15 @@ describe('POLIsolationModeUnwrapperTraderV2', () => {
       );
     });
 
-    xit('should fail if vault underlying balance is less than the transfer amount (ISF)', async () => {
+    it('should fail if vault underlying balance is less than the transfer amount (ISF)', async () => {
       const dolomiteMarginCaller = await impersonate(core.dolomiteMargin.address, true);
       await expectThrow(
         unwrapper.connect(dolomiteMarginCaller).callFunction(
           core.genericTraderProxy!.address,
           { owner: vault.address, number: defaultAccountNumber },
-          defaultAbiCoder.encode(['uint256', 'address', 'uint256'], [amountWei.mul(111), vault.address, ZERO_BI]),
+          defaultAbiCoder.encode(['uint256', 'address', 'uint256'], [amountWei, vault.address, ZERO_BI]),
         ),
-        `IsolationModeUnwrapperV2: Insufficient balance <${amountWei.toString()}, ${amountWei.mul(111)
-          .toString()}>`,
+        `POLIsolationModeUnwrapperV2: Insufficient balance <${parAmount.toString()}, ${amountWei.toString()}>`,
       );
     });
   });
@@ -697,35 +695,3 @@ describe('POLIsolationModeUnwrapperTraderV2', () => {
     });
   });
 });
-
-async function wrapFullBalanceIntoVaultDefaultAccount(
-  core: CoreProtocolBerachain,
-  vault: POLIsolationModeTokenVaultV1,
-  metaVault: BerachainRewardsMetaVault,
-  wrapper: POLIsolationModeWrapperTraderV2,
-  marketId: BigNumber,
-) {
-  const wrapperParam: GenericTraderParam = {
-    trader: wrapper.address,
-    traderType: GenericTraderType.IsolationModeWrapper,
-    tradeData: defaultAbiCoder.encode(['uint256'], [2]),
-    makerAccountIndex: 0,
-  };
-  await vault.addCollateralAndSwapExactInputForOutput(
-    defaultAccountNumber,
-    defaultAccountNumber,
-    [core.marketIds.weth, marketId],
-    MAX_UINT_256_BI,
-    ONE_BI,
-    [wrapperParam],
-    [{
-      owner: metaVault.address,
-      number: defaultAccountNumber,
-    }],
-    {
-      deadline: '123123123123123',
-      balanceCheckFlag: BalanceCheckFlag.None,
-      eventType: GenericEventEmissionType.None,
-    },
-  );
-}

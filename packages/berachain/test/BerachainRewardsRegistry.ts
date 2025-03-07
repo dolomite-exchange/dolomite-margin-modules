@@ -8,10 +8,9 @@ import { expectEvent, expectThrow } from '@dolomite-exchange/modules-base/test/u
 import {
   setupCoreProtocol,
   setupTestMarket,
-  setupUserVaultProxy,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { expect } from 'chai';
-import { createContractWithAbi, createContractWithLibrary, createTestToken } from 'packages/base/src/utils/dolomite-utils';
+import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
 import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
 import {
   BerachainRewardsRegistry,
@@ -20,8 +19,6 @@ import {
   IInfraredVault__factory,
   INativeRewardVault,
   INativeRewardVault__factory,
-  InfraredBGTIsolationModeTokenVaultV1,
-  InfraredBGTIsolationModeTokenVaultV1__factory,
   InfraredBGTIsolationModeVaultFactory,
   InfraredBGTMetaVault,
   InfraredBGTMetaVault__factory,
@@ -33,7 +30,6 @@ import {
   RewardVaultType,
 } from './berachain-ecosystem-utils';
 import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
-import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
@@ -46,8 +42,6 @@ describe('BerachainRewardsRegistry', () => {
   let metaVaultImplementation: InfraredBGTMetaVault;
 
   let iBgtFactory: InfraredBGTIsolationModeVaultFactory;
-  let iBgtVault: InfraredBGTIsolationModeTokenVaultV1;
-  let iBgtMarketId: BigNumber;
 
   let asset: IERC20;
   let infraredVault: IInfraredVault;
@@ -77,7 +71,6 @@ describe('BerachainRewardsRegistry', () => {
     );
     factoryImpersonator = await impersonate(iBgtFactory.address, true);
 
-    iBgtMarketId = await core.dolomiteMargin.getNumMarkets();
     await core.testEcosystem!.testPriceOracle.setPrice(iBgtFactory.address, ONE_ETH_BI);
     await setupTestMarket(core, iBgtFactory, true);
 
@@ -596,7 +589,7 @@ describe('BerachainRewardsRegistry', () => {
       await expectEvent(registry, result, 'PolFeePercentageSet', {
         polFeePercentage: parseEther('0.5'),
       });
-      expect(await registry.polFeePercentage()).to.equal(parseEther('0.5'));
+      expect(await registry.polFeePercentage(core.marketIds.weth)).to.equal(parseEther('0.5'));
     });
 
     it('should fail if fee percentage is greater than 1', async () => {

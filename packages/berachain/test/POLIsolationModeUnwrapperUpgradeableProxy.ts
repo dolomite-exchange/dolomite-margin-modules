@@ -1,8 +1,8 @@
 import { expect } from 'chai';
 import {
-  BerachainRewardsMetaVault,
-  BerachainRewardsMetaVault__factory,
   BerachainRewardsRegistry,
+  InfraredBGTMetaVault,
+  InfraredBGTMetaVault__factory,
   POLIsolationModeTokenVaultV1,
   POLIsolationModeUnwrapperTraderV2,
   POLIsolationModeUnwrapperTraderV2__factory,
@@ -14,7 +14,7 @@ import {
 } from '../src/types';
 import { DolomiteERC4626, DolomiteERC4626__factory } from 'packages/base/src/types';
 import { createDolomiteErc4626Proxy, createIsolationModeTokenVaultV1ActionsImpl } from 'packages/base/test/utils/dolomite';
-import { createBerachainRewardsRegistry } from './berachain-ecosystem-utils';
+import { createBerachainRewardsRegistry, createPOLIsolationModeTokenVaultV1, createPOLIsolationModeVaultFactory } from './berachain-ecosystem-utils';
 import { createContractWithAbi, createContractWithLibrary } from 'packages/base/src/utils/dolomite-utils';
 import { setupCoreProtocol, setupTestMarket } from 'packages/base/test/utils/setup';
 import { Network, ONE_BI } from 'packages/base/src/utils/no-deps-constants';
@@ -35,36 +35,20 @@ describe('POLIsolationModeWrapperUpgradeableProxy', () => {
 
   before(async () => {
     core = await setupCoreProtocol({
-      blockNumber: 837_000,
+      blockNumber: 1_679_500,
       network: Network.Berachain,
     });
-    const dTokenProxy = await createDolomiteErc4626Proxy(core.marketIds.honey, core);
-    dToken = DolomiteERC4626__factory.connect(dTokenProxy.address, core.hhUser1);
+    dToken = DolomiteERC4626__factory.connect(core.dolomiteTokens.weth!.address, core.hhUser1);
 
-    const metaVaultImplementation = await createContractWithAbi<BerachainRewardsMetaVault>(
-      BerachainRewardsMetaVault__factory.abi,
-      BerachainRewardsMetaVault__factory.bytecode,
+    const metaVaultImplementation = await createContractWithAbi<InfraredBGTMetaVault>(
+      InfraredBGTMetaVault__factory.abi,
+      InfraredBGTMetaVault__factory.bytecode,
       [],
     );
     registry = await createBerachainRewardsRegistry(core, metaVaultImplementation);
 
-    const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
-    const vaultImplementation = await createContractWithLibrary<POLIsolationModeTokenVaultV1>(
-      'POLIsolationModeTokenVaultV1',
-      libraries,
-      [],
-    );
-    factory = await createContractWithAbi<POLIsolationModeVaultFactory>(
-      POLIsolationModeVaultFactory__factory.abi,
-      POLIsolationModeVaultFactory__factory.bytecode,
-      [
-        registry.address,
-        dToken.address,
-        core.borrowPositionProxyV2.address,
-        vaultImplementation.address,
-        core.dolomiteMargin.address
-      ],
-    );
+    const vaultImplementation = await createPOLIsolationModeTokenVaultV1();
+    factory = await createPOLIsolationModeVaultFactory(core, registry, dToken, vaultImplementation, [], []);
 
     await core.testEcosystem!.testPriceOracle.setPrice(factory.address, ONE_BI);
     await setupTestMarket(core, factory, true);

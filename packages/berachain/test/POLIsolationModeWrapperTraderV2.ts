@@ -25,11 +25,11 @@ import { defaultAbiCoder, parseEther } from 'ethers/lib/utils';
 import { createContractWithAbi, createContractWithLibrary, depositIntoDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
 import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
 import {
-  BerachainRewardsMetaVault,
-  BerachainRewardsMetaVault__factory,
   BerachainRewardsRegistry,
   IInfraredVault,
   IInfraredVault__factory,
+  InfraredBGTMetaVault,
+  InfraredBGTMetaVault__factory,
   POLIsolationModeTokenVaultV1,
   POLIsolationModeTokenVaultV1__factory,
   POLIsolationModeVaultFactory,
@@ -69,7 +69,7 @@ describe('POLIsolationModeWrapperTraderV2', () => {
   let factory: POLIsolationModeVaultFactory;
   let vault: POLIsolationModeTokenVaultV1;
   let wrapper: POLIsolationModeWrapperTraderV2;
-  let metaVault: BerachainRewardsMetaVault;
+  let metaVault: InfraredBGTMetaVault;
 
   let dToken: DolomiteERC4626;
   let infraredVault: IInfraredVault;
@@ -85,9 +85,9 @@ describe('POLIsolationModeWrapperTraderV2', () => {
 
     dToken = DolomiteERC4626__factory.connect(core.dolomiteTokens.weth!.address, core.hhUser1);
 
-    const metaVaultImplementation = await createContractWithAbi<BerachainRewardsMetaVault>(
-      BerachainRewardsMetaVault__factory.abi,
-      BerachainRewardsMetaVault__factory.bytecode,
+    const metaVaultImplementation = await createContractWithAbi<InfraredBGTMetaVault>(
+      InfraredBGTMetaVault__factory.abi,
+      InfraredBGTMetaVault__factory.bytecode,
       [],
     );
     registry = await createBerachainRewardsRegistry(core, metaVaultImplementation);
@@ -98,7 +98,7 @@ describe('POLIsolationModeWrapperTraderV2', () => {
     );
 
     const vaultImplementation = await createPOLIsolationModeTokenVaultV1();
-    factory = await createPOLIsolationModeVaultFactory(core, registry, dToken, vaultImplementation);
+    factory = await createPOLIsolationModeVaultFactory(core, registry, dToken, vaultImplementation, [], []);
 
     marketId = await core.dolomiteMargin.getNumMarkets();
     await core.testEcosystem!.testPriceOracle.setPrice(factory.address, ONE_BI);
@@ -115,7 +115,7 @@ describe('POLIsolationModeWrapperTraderV2', () => {
       POLIsolationModeTokenVaultV1__factory,
       core.hhUser1,
     );
-    metaVault = BerachainRewardsMetaVault__factory.connect(
+    metaVault = InfraredBGTMetaVault__factory.connect(
       await registry.getMetaVaultByAccount(core.hhUser1.address),
       core.hhUser1,
     );

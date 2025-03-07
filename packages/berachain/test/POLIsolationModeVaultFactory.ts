@@ -1,4 +1,4 @@
-import { DolomiteERC4626, DolomiteERC4626__factory, IERC20 } from '@dolomite-exchange/modules-base/src/types';
+import { DolomiteERC4626, DolomiteERC4626__factory } from '@dolomite-exchange/modules-base/src/types';
 import { Network, ONE_ETH_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectEvent, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
@@ -7,26 +7,17 @@ import { expect } from 'chai';
 import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
 import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
 import {
-  BerachainRewardsIsolationModeTokenVaultV1,
-  BerachainRewardsIsolationModeVaultFactory,
-  BerachainRewardsMetaVault,
-  BerachainRewardsMetaVault__factory,
   BerachainRewardsRegistry,
-  BGTIsolationModeVaultFactory,
-  INativeRewardVault,
-  InfraredBGTIsolationModeVaultFactory,
+  InfraredBGTMetaVault,
+  InfraredBGTMetaVault__factory,
+  POLIsolationModeTokenVaultV1,
+  POLIsolationModeVaultFactory,
 } from '../src/types';
 import {
-  createBerachainRewardsIsolationModeTokenVaultV1,
-  createBerachainRewardsIsolationModeVaultFactory,
   createBerachainRewardsRegistry,
-  createBGTIsolationModeTokenVaultV1,
-  createBGTIsolationModeVaultFactory,
-  createInfraredBGTIsolationModeTokenVaultV1,
-  createInfraredBGTIsolationModeVaultFactory,
-  RewardVaultType,
+  createPOLIsolationModeTokenVaultV1,
+  createPOLIsolationModeVaultFactory,
 } from './berachain-ecosystem-utils';
-import { createDolomiteErc4626Proxy } from 'packages/base/test/utils/dolomite';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
@@ -35,67 +26,33 @@ describe('POLIsolationModeVaultFactory', () => {
 
   let core: CoreProtocolBerachain;
   let registry: BerachainRewardsRegistry;
-  let factory: BerachainRewardsIsolationModeVaultFactory;
-
   let dToken: DolomiteERC4626;
 
-  let vaultImplementation: BerachainRewardsIsolationModeTokenVaultV1;
+  let factory: POLIsolationModeVaultFactory;
+  let vaultImplementation: POLIsolationModeTokenVaultV1;
 
   before(async () => {
     core = await setupCoreProtocol({
-      blockNumber: 10_000_000,
+      blockNumber: 1_679_500,
       network: Network.Berachain,
     });
 
-    const dTokenProxy = await createDolomiteErc4626Proxy(core.marketIds.usdc, core);
-    dToken = DolomiteERC4626__factory.connect(dTokenProxy.address, core.hhUser1);
+    dToken = DolomiteERC4626__factory.connect(core.dolomiteTokens.weth!.address, core.hhUser1);
 
-    const metaVaultImplementation = await createContractWithAbi<BerachainRewardsMetaVault>(
-      BerachainRewardsMetaVault__factory.abi,
-      BerachainRewardsMetaVault__factory.bytecode,
+    const metaVaultImplementation = await createContractWithAbi<InfraredBGTMetaVault>(
+      InfraredBGTMetaVault__factory.abi,
+      InfraredBGTMetaVault__factory.bytecode,
       [],
     );
     registry = await createBerachainRewardsRegistry(core, metaVaultImplementation);
 
-    vaultImplementation = await createBerachainRewardsIsolationModeTokenVaultV1();
-    factory = await createBerachainRewardsIsolationModeVaultFactory(
-      registry,
-      dToken,
-      vaultImplementation,
-      core,
-    );
-    // const bgtVaultImplementation = await createBGTIsolationModeTokenVaultV1();
-    // bgtFactory = await createBGTIsolationModeVaultFactory(registry, core.tokens.bgt, bgtVaultImplementation, core);
-    // const iBgtVaultImplementation = await createInfraredBGTIsolationModeTokenVaultV1();
-    // iBgtFactory = await createInfraredBGTIsolationModeVaultFactory(
-    //   registry,
-    //   core.tokens.iBgt,
-    //   iBgtVaultImplementation,
-    //   core,
-    // );
-
-    // await core.testEcosystem!.testPriceOracle.setPrice(iBgtFactory.address, ONE_ETH_BI);
-    // await setupTestMarket(core, iBgtFactory, true);
-
+    vaultImplementation = await createPOLIsolationModeTokenVaultV1();
+    factory = await createPOLIsolationModeVaultFactory(core, registry, dToken, vaultImplementation, [], []);
     await core.testEcosystem!.testPriceOracle.setPrice(factory.address, ONE_ETH_BI);
     await setupTestMarket(core, factory, true);
 
-    // await core.testEcosystem!.testPriceOracle.setPrice(bgtFactory.address, ONE_ETH_BI);
-    // await setupTestMarket(core, bgtFactory, true);
-
-    // await core.testEcosystem!.testPriceOracle.setPrice(otherFactory.address, ONE_ETH_BI);
-    // await setupTestMarket(core, otherFactory, true);
-
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
-    // await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(otherFactory.address, true);
-    // await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(bgtFactory.address, true);
-    // await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(iBgtFactory.address, true);
     await factory.connect(core.governance).ownerInitialize([]);
-    // await otherFactory.connect(core.governance).ownerInitialize([]);
-    // await bgtFactory.connect(core.governance).ownerInitialize([]);
-    // await iBgtFactory.connect(core.governance).ownerInitialize([]);
-    // await registry.connect(core.governance).ownerSetBgtIsolationModeVaultFactory(bgtFactory.address);
-    // await registry.connect(core.governance).ownerSetIBgtIsolationModeVaultFactory(iBgtFactory.address);
 
     snapshotId = await snapshot();
   });
@@ -122,11 +79,6 @@ describe('POLIsolationModeVaultFactory', () => {
         account: core.hhUser1.address,
         metaVault: metaVaultAddress,
       });
-    });
-
-    xit('should not create metaVault if it already exists', async () => {
-      await factory.createVault(core.hhUser1.address);
-      await expect(factory.createVault(core.hhUser1.address)).to.not.emit(registry, 'MetaVaultCreated');
     });
   });
 

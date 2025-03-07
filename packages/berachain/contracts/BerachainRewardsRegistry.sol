@@ -28,8 +28,8 @@ import { Create2 } from "@openzeppelin/contracts/utils/Create2.sol";
 import { MetaVaultUpgradeableProxy } from "./MetaVaultUpgradeableProxy.sol";
 import { IBGT } from "./interfaces/IBGT.sol";
 import { IBGTM } from "./interfaces/IBGTM.sol";
-import { IBerachainRewardsRegistry } from "./interfaces/IBerachainRewardsRegistry.sol";
 import { IBerachainRewardsFactory } from "./interfaces/IBerachainRewardsFactory.sol";
+import { IBerachainRewardsRegistry } from "./interfaces/IBerachainRewardsRegistry.sol";
 import { IInfrared } from "./interfaces/IInfrared.sol";
 import { IInfraredVault } from "./interfaces/IInfraredVault.sol";
 import { IMetaVaultRewardTokenFactory } from "./interfaces/IMetaVaultRewardTokenFactory.sol";
@@ -62,16 +62,16 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
     bytes32 private constant _BERACHAIN_REWARDS_FACTORY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.berachainRewardsFactory")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _I_BGT_STAKING_VAULT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.iBgtStakingVault")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _INFRARED_SLOT = bytes32(uint256(keccak256("eip1967.proxy.infrared")) - 1); // solhint-disable-line max-line-length
-    bytes32 private constant _REWARD_VAULT_OVERRIDE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.rewardVaultOverride")) - 1);
+    bytes32 private constant _REWARD_VAULT_OVERRIDE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.rewardVaultOverride")) - 1); // solhint-disable-line max-line-length
 
     bytes32 private constant _BGT_ISOLATION_MODE_VAULT_FACTORY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.bgtIsolationModeVaultFactory")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _BGTM_ISOLATION_MODE_VAULT_FACTORY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.bgtmIsolationModeVaultFactory")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _I_BGT_ISOLATION_MODE_VAULT_FACTORY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.iBgtIsolationModeVaultFactory")) - 1); // solhint-disable-line max-line-length
 
-    bytes32 private constant _POL_UNWRAPPER_TRADER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.polUnwrapperTrader")) - 1);
-    bytes32 private constant _POL_WRAPPER_TRADER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.polWrapperTrader")) - 1);
+    bytes32 private constant _POL_UNWRAPPER_TRADER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.polUnwrapperTrader")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _POL_WRAPPER_TRADER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.polWrapperTrader")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _POL_FEE_AGENT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.polFeeAgent")) - 1);
-    bytes32 private constant _POL_FEE_PERCENTAGE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.polFeePercentage")) - 1);
+    bytes32 private constant _POL_FEE_PERCENTAGE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.polFeePercentage")) - 1); // solhint-disable-line max-line-length
 
     bytes32 private constant _META_VAULT_IMPLEMENTATION_SLOT = bytes32(uint256(keccak256("eip1967.proxy.metaVaultImplementation")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _ACCOUNT_TO_META_VAULT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.accountToMetaVault")) - 1); // solhint-disable-line max-line-length
@@ -116,17 +116,18 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
         address _account,
         address _vault
     ) external override onlyDolomiteMarginGlobalOperator(msg.sender) returns (address) {
-        (bool isTokenVault,) = address(DOLOMITE_MARGIN()).staticcall(
+        (bool isFactory,) = address(DOLOMITE_MARGIN()).staticcall(
             abi.encodeWithSelector(DOLOMITE_MARGIN().getMarketIdByTokenAddress.selector, msg.sender)
         );
         Require.that(
-            isTokenVault,
+            isFactory,
             _FILE,
             "Caller is not a valid factory",
             msg.sender
         );
 
         address metaVault = getMetaVaultByAccount(_account);
+        // @follow-up Want to add a check to see if vault and account are valid on factory?
         if (metaVault == address(0)) {
             metaVault = _createMetaVault(_account);
         }
@@ -321,7 +322,7 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
         return _getAddress(_POL_FEE_AGENT_SLOT);
     }
 
-    function polFeePercentage() public view override returns (uint256) {
+    function polFeePercentage(uint256 _marketId) public view override returns (uint256) {
         return _getUint256(_POL_FEE_PERCENTAGE_SLOT);
     }
 

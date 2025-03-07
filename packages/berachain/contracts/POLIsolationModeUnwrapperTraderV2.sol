@@ -23,6 +23,7 @@ pragma solidity ^0.8.9;
 import { ProxyContractHelpers } from "@dolomite-exchange/modules-base/contracts/helpers/ProxyContractHelpers.sol";
 import { IDolomiteERC4626 } from "@dolomite-exchange/modules-base/contracts/interfaces/IDolomiteERC4626.sol";
 import { IsolationModeUnwrapperTraderV2 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeUnwrapperTraderV2.sol"; // solhint-disable-line max-line-length
+import { IIsolationModeTokenVaultV1 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
 import { IIsolationModeUnwrapperTraderV2 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeUnwrapperTraderV2.sol"; // solhint-disable-line max-line-length
 import { IIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { AccountActionLib } from "@dolomite-exchange/modules-base/contracts/lib/AccountActionLib.sol";
@@ -314,6 +315,14 @@ contract POLIsolationModeUnwrapperTraderV2 is
             transferAmount > 0,
             _FILE,
             "Invalid transfer amount"
+        );
+        uint256 underlyingBalanceOf = IIsolationModeTokenVaultV1(vault).underlyingBalanceOf();
+        Require.that(
+            underlyingBalanceOf >= transferAmount,
+            _FILE,
+            "Insufficient balance",
+            underlyingBalanceOf,
+            transferAmount
         );
 
         // @audit Have to make sure a user can't maliciously set this

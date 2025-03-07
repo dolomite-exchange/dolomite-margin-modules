@@ -140,5 +140,5 @@ interface IBerachainRewardsRegistry is IBaseRegistry {
     function polUnwrapperTrader() external view returns (address);
     function polWrapperTrader() external view returns (address);
     function polFeeAgent() external view returns (address);
-    function polFeePercentage() external view returns (uint256);
+    function polFeePercentage(uint256 _marketId) external view returns (uint256);
 }
