@@ -3,18 +3,15 @@ import {
   BerachainRewardsRegistry,
   InfraredBGTMetaVault,
   InfraredBGTMetaVault__factory,
-  POLIsolationModeTokenVaultV1,
   POLIsolationModeVaultFactory,
-  POLIsolationModeVaultFactory__factory,
   POLIsolationModeWrapperTraderV2,
   POLIsolationModeWrapperTraderV2__factory,
   POLIsolationModeWrapperUpgradeableProxy,
   POLIsolationModeWrapperUpgradeableProxy__factory
 } from '../src/types';
 import { DolomiteERC4626, DolomiteERC4626__factory } from 'packages/base/src/types';
-import { createDolomiteErc4626Proxy, createIsolationModeTokenVaultV1ActionsImpl } from 'packages/base/test/utils/dolomite';
 import { createBerachainRewardsRegistry, createPOLIsolationModeTokenVaultV1, createPOLIsolationModeVaultFactory } from './berachain-ecosystem-utils';
-import { createContractWithAbi, createContractWithLibrary } from 'packages/base/src/utils/dolomite-utils';
+import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
 import { setupCoreProtocol, setupTestMarket } from 'packages/base/test/utils/setup';
 import { Network, ONE_BI } from 'packages/base/src/utils/no-deps-constants';
 import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';

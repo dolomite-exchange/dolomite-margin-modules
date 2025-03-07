@@ -1,7 +1,6 @@
 import {
   DolomiteERC4626,
   DolomiteERC4626__factory,
-  IERC20,
 } from '@dolomite-exchange/modules-base/src/types';
 import {
   Network,
@@ -10,7 +9,7 @@ import {
   ONE_ETH_BI,
   ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, setEtherBalance, snapshot } from '@dolomite-exchange/modules-base/test/utils';
+import { impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import {
   expectProtocolBalance,
   expectThrow,
@@ -36,7 +35,6 @@ import {
   InfraredBGTMetaVault__factory,
   IInfraredVault,
   POLIsolationModeUnwrapperTraderV2,
-  InfraredBGTIsolationModeTokenVaultV1,
   InfraredBGTIsolationModeTokenVaultV1__factory,
   InfraredBGTIsolationModeVaultFactory,
   IInfraredVault__factory,
@@ -57,13 +55,10 @@ import {
   createPOLIsolationModeVaultFactory,
   createPOLIsolationModeWrapperTraderV2,
   RewardVaultType,
-  setupUserMetaVault,
   wrapFullBalanceIntoVaultDefaultAccount,
 } from './berachain-ecosystem-utils';
 import { setupNewGenericTraderProxy } from 'packages/base/test/utils/dolomite';
-import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
 
-const LP_TOKEN_WHALE_ADDRESS = '0x4Be03f781C497A489E3cB0287833452cA9B9E80B';
 const defaultAccountNumber = ZERO_BI;
 const amountWei = parseEther('.5');
 
@@ -481,6 +476,8 @@ describe('InfraredBGTMetaVault', () => {
     });
 
     it('should work normally with no rewards', async () => {
+      const testToken = await createTestToken();
+      await testInfraredVault.setRewardTokens([testToken.address]);
       await metaVault.connect(core.hhUser1).setDefaultRewardVaultTypeByAsset(dToken.address, RewardVaultType.Infrared);
       await registry.connect(core.governance).ownerSetRewardVaultOverride(
         dToken.address,

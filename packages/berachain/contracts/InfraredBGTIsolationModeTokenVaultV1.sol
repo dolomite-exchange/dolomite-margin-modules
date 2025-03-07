@@ -106,7 +106,7 @@ contract InfraredBGTIsolationModeTokenVaultV1 is
     override(IIsolationModeTokenVaultV1, IsolationModeTokenVaultV1)
     onlyVaultFactory(msg.sender) {
         uint256 unstakedBalance = super.underlyingBalanceOf();
-        if (unstakedBalance < _amount) {
+        if (_amount > unstakedBalance) {
             _unstake(_amount - unstakedBalance);
         }
 

@@ -322,7 +322,7 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
         return _getAddress(_POL_FEE_AGENT_SLOT);
     }
 
-    function polFeePercentage(uint256 _marketId) public view override returns (uint256) {
+    function polFeePercentage(uint256 /* _marketId */) public view override returns (uint256) {
         return _getUint256(_POL_FEE_PERCENTAGE_SLOT);
     }
 

@@ -3,6 +3,7 @@ import { impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exc
 import { expectEvent, expectProtocolBalance, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
   setupCoreProtocol,
+  setupHONEYBalance,
   setupTestMarket,
   setupUserVaultProxy,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
@@ -23,7 +24,10 @@ import {
   createBerachainRewardsRegistry,
   createInfraredBGTIsolationModeTokenVaultV1,
   createInfraredBGTIsolationModeVaultFactory,
+  createPOLIsolationModeTokenVaultV1,
+  createPOLIsolationModeVaultFactory,
 } from './berachain-ecosystem-utils';
+import { DolomiteERC4626__factory } from 'packages/base/src/types';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 const IBGT_WHALE_ADDRESS = '0x9b45388Fc442343dE9959D710eB47Da8c09eE2d9';
@@ -115,6 +119,78 @@ describe('InfraredBGTIsolationModeVaultFactory', () => {
         iBgtFactory
           .connect(core.hhUser1)
           .depositIntoDolomiteMarginFromMetaVault(core.hhUser1.address, ZERO_BI, ONE_ETH_BI),
+        'MetaVaultRewardReceiverFactory: Can only deposit from metaVault',
+      );
+    });
+  });
+
+  describe('#depositOtherTokenIntoDolomiteMarginFromMetaVault', () => {
+    it('should work normally if vault exists', async () => {
+      await iBgtFactory.createVault(core.hhUser1.address);
+      const metaVaultImpersonator = await impersonate(await registry.getMetaVaultByAccount(core.hhUser1.address), true);
+      await setupHONEYBalance(core, metaVaultImpersonator, amountWei, core.dolomiteMargin);
+
+      await iBgtFactory
+        .connect(metaVaultImpersonator)
+        .depositOtherTokenIntoDolomiteMarginFromMetaVault(
+          core.hhUser1.address,
+          defaultAccountNumber,
+          core.marketIds.honey,
+          amountWei
+        );
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.honey, amountWei);
+    });
+
+    it('should work normally if vault does not exist', async () => {
+      // create POL vault so we can create metavault without iBgt vault
+      const dToken = DolomiteERC4626__factory.connect(core.dolomiteTokens.weth!.address, core.hhUser1);
+      const vaultImplementation = await createPOLIsolationModeTokenVaultV1();
+      const factory = await createPOLIsolationModeVaultFactory(core, registry, dToken, vaultImplementation, [], []);
+      await core.testEcosystem!.testPriceOracle.setPrice(factory.address, parseEther('2000')); // same price as WETH
+      await setupTestMarket(core, factory, true);
+      await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
+      await factory.connect(core.governance).ownerInitialize([]);
+      await factory.createVault(core.hhUser1.address);
+
+      const metaVaultImpersonator = await impersonate(await registry.getMetaVaultByAccount(core.hhUser1.address), true);
+      await setupHONEYBalance(core, metaVaultImpersonator, amountWei, core.dolomiteMargin);
+
+      await iBgtFactory
+        .connect(metaVaultImpersonator)
+        .depositOtherTokenIntoDolomiteMarginFromMetaVault(
+          core.hhUser1.address,
+          defaultAccountNumber,
+          core.marketIds.honey,
+          amountWei
+        );
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.honey, amountWei);
+    });
+
+    it('should fail if market id is factory market id', async () => {
+      const metaVaultImpersonator = await impersonate(await registry.getMetaVaultByAccount(core.hhUser1.address), true);
+      await expectThrow(
+        iBgtFactory
+          .connect(metaVaultImpersonator)
+          .depositOtherTokenIntoDolomiteMarginFromMetaVault(
+            core.hhUser1.address,
+            defaultAccountNumber,
+            iBgtMarketId,
+            amountWei
+          ),
+        `MetaVaultRewardReceiverFactory: Invalid market <${iBgtMarketId.toString()}>`,
+      );
+    });
+
+    it('should fail if not called by metavault', async () => {
+      await expectThrow(
+        iBgtFactory
+          .connect(core.hhUser1)
+          .depositOtherTokenIntoDolomiteMarginFromMetaVault(
+            core.hhUser1.address,
+            defaultAccountNumber,
+            core.marketIds.honey,
+            amountWei
+          ),
         'MetaVaultRewardReceiverFactory: Can only deposit from metaVault',
       );
     });

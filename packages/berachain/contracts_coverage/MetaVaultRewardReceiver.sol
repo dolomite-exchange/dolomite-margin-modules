@@ -22,9 +22,9 @@ pragma solidity ^0.8.9;
 
 import { IsolationModeTokenVaultV1 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
-import { IBerachainRewardsIsolationModeVaultFactory } from "./interfaces/IBerachainRewardsIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { IBerachainRewardsRegistry } from "./interfaces/IBerachainRewardsRegistry.sol";
 import { IMetaVaultRewardReceiver } from "./interfaces/IMetaVaultRewardReceiver.sol";
+import { IMetaVaultRewardTokenFactory } from "./interfaces/IMetaVaultRewardTokenFactory.sol"; // solhint-disable-line max-line-length
 
 
 /**
@@ -63,7 +63,7 @@ abstract contract MetaVaultRewardReceiver is IsolationModeTokenVaultV1, IMetaVau
     }
 
     function registry() public view returns (IBerachainRewardsRegistry) {
-        return IBerachainRewardsIsolationModeVaultFactory(VAULT_FACTORY()).berachainRewardsRegistry();
+        return IMetaVaultRewardTokenFactory(VAULT_FACTORY()).berachainRewardsRegistry();
     }
 
     // ==================================================================

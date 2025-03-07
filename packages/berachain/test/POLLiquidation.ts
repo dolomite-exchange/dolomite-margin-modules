@@ -2,7 +2,6 @@ import { DolomiteERC4626, DolomiteERC4626__factory } from '@dolomite-exchange/mo
 import {
   MAX_UINT_256_BI,
   Network,
-  ONE_BI,
   ONE_DAY_SECONDS,
   ONE_ETH_BI,
   ZERO_BI,
@@ -162,10 +161,7 @@ describe('POLLiquidation', () => {
   });
 
   describe('#liquidate', () => {
-    it('should work normally with unstaking', async () => {
-    });
-
-    it.only('should work normally without unstaking', async () => {
+    it('should work normally without unstaking', async () => {
       await vault.transferIntoPositionWithUnderlyingToken(defaultAccountNumber, borrowAccountNumber, parAmount);
       await expectProtocolBalance(core, vault, defaultAccountNumber, marketId, ZERO_BI);
       await expectProtocolBalance(core, vault, borrowAccountNumber, marketId, parAmount);

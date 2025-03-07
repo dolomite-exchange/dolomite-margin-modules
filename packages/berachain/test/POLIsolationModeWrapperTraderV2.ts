@@ -14,7 +14,6 @@ import {
 import {
   disableInterestAccrual,
   setupCoreProtocol,
-  setupHONEYBalance,
   setupTestMarket,
   setupUserVaultProxy,
   setupWETHBalance,
@@ -22,7 +21,7 @@ import {
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { defaultAbiCoder, parseEther } from 'ethers/lib/utils';
-import { createContractWithAbi, createContractWithLibrary, depositIntoDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
+import { createContractWithAbi, depositIntoDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
 import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
 import {
   BerachainRewardsRegistry,
@@ -33,11 +32,7 @@ import {
   POLIsolationModeTokenVaultV1,
   POLIsolationModeTokenVaultV1__factory,
   POLIsolationModeVaultFactory,
-  POLIsolationModeVaultFactory__factory,
   POLIsolationModeWrapperTraderV2,
-  POLIsolationModeWrapperTraderV2__factory,
-  POLIsolationModeWrapperUpgradeableProxy,
-  POLIsolationModeWrapperUpgradeableProxy__factory,
 } from '../src/types';
 import {
   createBerachainRewardsRegistry,
@@ -46,7 +41,7 @@ import {
   createPOLIsolationModeWrapperTraderV2,
   RewardVaultType,
 } from './berachain-ecosystem-utils';
-import { createDolomiteErc4626Proxy, createIsolationModeTokenVaultV1ActionsImpl, setupNewGenericTraderProxy } from 'packages/base/test/utils/dolomite';
+import { setupNewGenericTraderProxy } from 'packages/base/test/utils/dolomite';
 import { ActionType, AmountReference, BalanceCheckFlag } from '@dolomite-margin/dist/src/types';
 import { GenericEventEmissionType, GenericTraderParam, GenericTraderType } from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
 
@@ -134,6 +129,17 @@ describe('POLIsolationModeWrapperTraderV2', () => {
 
   beforeEach(async () => {
     snapshotId = await revertToSnapshotAndCapture(snapshotId);
+  });
+
+  describe('#initializer', () => {
+    it('should fail if already initialized', async () => {
+      await expectThrow(
+        wrapper.initialize(
+          factory.address,
+        ),
+        'Initializable: contract is already initialized',
+      );
+    });
   });
 
   describe('#Call and Exchange for non-liquidation sale', () => {

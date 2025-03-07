@@ -65,7 +65,7 @@ abstract contract POLIsolationModeTraderBaseV2 is OnlyDolomiteMargin, Initializa
         DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
     }
 
-    // @follow-up look into how to chain these together and have one public function
+    // @follow-up @Corey, are we ok with this being public on the base? Have to override if we want one on wrapper/unwrapper
     function initialize(
         address _vaultFactory
     )

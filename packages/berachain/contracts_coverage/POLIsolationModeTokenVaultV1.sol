@@ -30,9 +30,9 @@ import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/prot
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { IBerachainRewardsIsolationModeVaultFactory } from "./interfaces/IBerachainRewardsIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
-import { IBerachainRewardsMetaVault } from "./interfaces/IBerachainRewardsMetaVault.sol";
+import { IBaseMetaVault } from "./interfaces/IBaseMetaVault.sol";
 import { IBerachainRewardsRegistry } from "./interfaces/IBerachainRewardsRegistry.sol";
+import { IMetaVaultRewardTokenFactory } from "./interfaces/IMetaVaultRewardTokenFactory.sol"; // solhint-disable-line max-line-length
 import { IPOLIsolationModeTokenVaultV1 } from "./interfaces/IPOLIsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
 
 
@@ -139,7 +139,7 @@ contract POLIsolationModeTokenVaultV1 is
         view
         returns (uint256)
     {
-        IBerachainRewardsMetaVault metaVault = IBerachainRewardsMetaVault(
+        IBaseMetaVault metaVault = IBaseMetaVault(
             registry().getMetaVaultByVault(address(this))
         );
         IBerachainRewardsRegistry.RewardVaultType defaultType = metaVault.getDefaultRewardVaultTypeByAsset(
@@ -150,7 +150,7 @@ contract POLIsolationModeTokenVaultV1 is
     }
 
     function registry() public view returns (IBerachainRewardsRegistry) {
-        return IBerachainRewardsIsolationModeVaultFactory(VAULT_FACTORY()).berachainRewardsRegistry();
+        return IMetaVaultRewardTokenFactory(VAULT_FACTORY()).berachainRewardsRegistry();
     }
 
     function dolomiteRegistry()
@@ -260,7 +260,7 @@ contract POLIsolationModeTokenVaultV1 is
     }
 
     function _unstakeBeforeUnwrapping(uint256 _accountNumber, uint256 _amountWei) internal returns (uint256) {
-        IBerachainRewardsMetaVault metaVault = IBerachainRewardsMetaVault(
+        IBaseMetaVault metaVault = IBaseMetaVault(
             registry().getMetaVaultByVault(address(this))
         );
         IBerachainRewardsRegistry.RewardVaultType defaultType = metaVault.getDefaultRewardVaultTypeByAsset(
@@ -306,7 +306,7 @@ contract POLIsolationModeTokenVaultV1 is
     }
 
     function _stakeAfterWrapping() internal {
-        IBerachainRewardsMetaVault metaVault = IBerachainRewardsMetaVault(
+        IBaseMetaVault metaVault = IBaseMetaVault(
             registry().getMetaVaultByVault(address(this))
         );
         IBerachainRewardsRegistry.RewardVaultType defaultType = metaVault.getDefaultRewardVaultTypeByAsset(
@@ -318,7 +318,7 @@ contract POLIsolationModeTokenVaultV1 is
     }
 
     function _stake(address _asset, IBerachainRewardsRegistry.RewardVaultType _type, uint256 _amount) internal {
-        IBerachainRewardsMetaVault metaVault = IBerachainRewardsMetaVault(
+        IBaseMetaVault metaVault = IBaseMetaVault(
             registry().getMetaVaultByVault(address(this))
         );
         metaVault.stakeDolomiteToken(_asset, _type, _amount);
@@ -329,21 +329,21 @@ contract POLIsolationModeTokenVaultV1 is
         IBerachainRewardsRegistry.RewardVaultType _type,
         uint256 _amount
     ) internal {
-        IBerachainRewardsMetaVault metaVault = IBerachainRewardsMetaVault(
+        IBaseMetaVault metaVault = IBaseMetaVault(
             registry().getMetaVaultByVault(address(this))
         );
         metaVault.unstakeDolomiteToken(_asset, _type, _amount);
     }
 
     function _getReward() internal {
-        IBerachainRewardsMetaVault metaVault = IBerachainRewardsMetaVault(
+        IBaseMetaVault metaVault = IBaseMetaVault(
             registry().getMetaVaultByVault(address(this))
         );
         metaVault.getReward(UNDERLYING_TOKEN());
     }
 
     function _exit(address _asset) internal {
-        IBerachainRewardsMetaVault metaVault = IBerachainRewardsMetaVault(
+        IBaseMetaVault metaVault = IBaseMetaVault(
             registry().getMetaVaultByVault(address(this))
         );
         metaVault.exit(_asset, true);

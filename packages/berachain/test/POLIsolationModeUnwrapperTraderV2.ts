@@ -153,6 +153,17 @@ describe('POLIsolationModeUnwrapperTraderV2', () => {
     snapshotId = await revertToSnapshotAndCapture(snapshotId);
   });
 
+  describe('#initializer', () => {
+    it('should fail if already initialized', async () => {
+      await expectThrow(
+        unwrapper.initialize(
+          factory.address,
+        ),
+        'Initializable: contract is already initialized',
+      );
+    });
+  });
+
   describe('#Call and Exchange for non-liquidation sale', () => {
     it('should work when called with the normal conditions', async () => {
       const unwrapperParam: GenericTraderParam = {

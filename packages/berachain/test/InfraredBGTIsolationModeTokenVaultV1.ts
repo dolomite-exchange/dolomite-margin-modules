@@ -123,7 +123,10 @@ describe('InfraredBGTIsolationModeTokenVaultV1', () => {
     });
 
     it('should fail if not called by metaVault', async () => {
-      await expectThrow(iBgtVault.setIsDepositSourceMetaVault(true), 'MetaVaultRewardReceiver: Only metaVault');
+      await expectThrow(
+        iBgtVault.connect(core.hhUser1).setIsDepositSourceMetaVault(true),
+        'MetaVaultRewardReceiver: Only metaVault'
+      );
     });
   });
 

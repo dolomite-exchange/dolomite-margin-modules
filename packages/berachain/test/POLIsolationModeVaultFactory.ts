@@ -1,6 +1,6 @@
 import { DolomiteERC4626, DolomiteERC4626__factory } from '@dolomite-exchange/modules-base/src/types';
 import { Network, ONE_ETH_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
+import { impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectEvent, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { setupCoreProtocol, setupTestMarket } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { expect } from 'chai';
@@ -74,11 +74,34 @@ describe('POLIsolationModeVaultFactory', () => {
   describe('#createVault', () => {
     it('should create metaVault if it does not exist', async () => {
       const metaVaultAddress = await registry.calculateMetaVaultByAccount(core.hhUser1.address);
+      const vaultAddress = await factory.calculateVaultByAccount(core.hhUser1.address);
       const res = await factory.createVault(core.hhUser1.address);
       await expectEvent(registry, res, 'MetaVaultCreated', {
         account: core.hhUser1.address,
         metaVault: metaVaultAddress,
       });
+      await expectEvent(factory, res, 'VaultCreated', {
+        account: core.hhUser1.address,
+        vault: metaVaultAddress
+      });
+      await expectEvent(factory, res, 'VaultCreated', {
+        account: core.hhUser1.address,
+        vault: vaultAddress
+      });
+    });
+
+    it('should not emit event if metaVault already exists', async () => {
+      const metaVaultAddress = await registry.calculateMetaVaultByAccount(core.hhUser1.address);
+      const vaultAddress = await factory.calculateVaultByAccount(core.hhUser1.address);
+      const factoryImpersonator = await impersonate(factory, true);
+      await registry.connect(factoryImpersonator).createMetaVault(core.hhUser1.address, OTHER_ADDRESS);
+
+      const res = await factory.createVault(core.hhUser1.address);
+      await expectEvent(factory, res, 'VaultCreated', {
+        account: core.hhUser1.address,
+        vault: vaultAddress
+      });
+      expect(res).to.emit(factory, 'VaultCreated').withArgs(core.hhUser1.address, metaVaultAddress).to.throw;
     });
   });
 

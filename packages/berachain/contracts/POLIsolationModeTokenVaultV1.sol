@@ -275,7 +275,7 @@ contract POLIsolationModeTokenVaultV1 is
         assert(accountWei.sign);
 
         // @audit check par values are handled correctly everywhere
-        // @follow-up @Corey, double check this code
+        // @follow-up @Corey, can you double check this code
         uint256 bal = IERC20(UNDERLYING_TOKEN()).balanceOf(address(metaVault));
         uint256 feeAmount;
         if (_amountWei == type(uint256).max) {
@@ -311,6 +311,7 @@ contract POLIsolationModeTokenVaultV1 is
             UNDERLYING_TOKEN()
         );
 
+        // @follow-up @Corey, do we want to do a specific amount here? Or is this ok?
         uint256 bal = IERC20(UNDERLYING_TOKEN()).balanceOf(address(metaVault));
         _stake(UNDERLYING_TOKEN(), defaultType, bal);
     }
