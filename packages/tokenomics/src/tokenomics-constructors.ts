@@ -13,15 +13,24 @@ export function getBuybackPoolConstructorParams<T extends NetworkType>(
 }
 
 export function getDOLOConstructorParams<T extends NetworkType>(
-  core: CoreProtocolType<T>
+  core: CoreProtocolType<T>,
+  treasury: string
 ): any[] {
-  return [core.dolomiteMargin.address];
+  return [core.dolomiteMargin.address, treasury];
 }
 
 export function getODOLOConstructorParams<T extends NetworkType>(
   core: CoreProtocolType<T>
 ): any[] {
   return [core.governance.address, 'oDOLO Token', 'oDOLO'];
+}
+
+export function getDOLOBuybackPoolConstructorParams<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  dolo: IERC20,
+  oDolo: IERC20
+): any[] {
+  return [dolo.address, oDolo.address, core.dolomiteMargin.address];
 }
 
 export function getVeFeeCalculatorConstructorParams<T extends NetworkType>(
@@ -39,9 +48,8 @@ export function getExternalVesterDiscountCalculatorConstructorParams(
 export function getOptionAirdropConstructorParams<T extends NetworkType>(
   core: CoreProtocolType<T>,
   dolo: IERC20,
-  treasury: string
 ): any[] {
-  return [dolo.address, treasury, core.dolomiteRegistry.address, core.dolomiteMargin.address];
+  return [dolo.address, core.dolomiteRegistry.address, core.dolomiteMargin.address];
 }
 
 export function getRegularAirdropConstructorParams<T extends NetworkType>(
@@ -50,6 +58,24 @@ export function getRegularAirdropConstructorParams<T extends NetworkType>(
   veToken: VotingEscrow | MockVotingEscrow,
 ): any[] {
   return [dolo.address, veToken.address, core.dolomiteRegistry.address, core.dolomiteMargin.address];
+}
+
+export function getVestingClaimsConstructorParams<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  dolo: IERC20,
+  tgeTimestamp: BigNumberish,
+  duration: BigNumberish,
+): any[] {
+  return [dolo.address, tgeTimestamp, duration, core.dolomiteRegistry.address, core.dolomiteMargin.address];
+}
+
+export function getStrategicVestingClaimsConstructorParams<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  dolo: IERC20,
+  tgeTimestamp: BigNumberish,
+  duration: BigNumberish,
+): any[] {
+  return [dolo.address, tgeTimestamp, duration, core.dolomiteRegistry.address, core.dolomiteMargin.address];
 }
 
 export function getVeExternalVesterImplementationConstructorParams<T extends NetworkType>(

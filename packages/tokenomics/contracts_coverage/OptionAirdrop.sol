@@ -20,12 +20,10 @@
 
 pragma solidity ^0.8.9;
 
-import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
 import { AccountActionLib } from "@dolomite-exchange/modules-base/contracts/lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "@dolomite-exchange/modules-base/contracts/lib/AccountBalanceLib.sol";
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
-import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { MerkleProof } from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
@@ -40,7 +38,7 @@ import { IOptionAirdrop } from "./interfaces/IOptionAirdrop.sol";
  *
  * Option airdrop contract for DOLO tokens
  */
-contract OptionAirdrop is OnlyDolomiteMargin, ReentrancyGuard, BaseClaim, IOptionAirdrop {
+contract OptionAirdrop is BaseClaim, IOptionAirdrop {
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.UintSet;
 
@@ -49,7 +47,8 @@ contract OptionAirdrop is OnlyDolomiteMargin, ReentrancyGuard, BaseClaim, IOptio
     // ===================================================
 
     bytes32 private constant _FILE = "OptionAirdrop";
-    bytes32 private constant _OPTION_AIRDROP_STORAGE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.optionAirdropStorage")) - 1);
+    bytes32 private constant _OPTION_AIRDROP_STORAGE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.optionAirdropStorage")) - 1); // solhint-disable-line max-line-length
+    uint256 private constant _DEFAULT_ACCOUNT_NUMBER = 0;
 
     uint256 public constant DOLO_PRICE = 0.03125 ether;
 
@@ -65,13 +64,17 @@ contract OptionAirdrop is OnlyDolomiteMargin, ReentrancyGuard, BaseClaim, IOptio
 
     constructor(
         address _dolo,
-        address _treasury,
         address _dolomiteRegistry,
         address _dolomiteMargin
     ) BaseClaim(_dolomiteRegistry, _dolomiteMargin) {
         DOLO = IERC20(_dolo);
+    }
 
+    function initialize(
+        address _treasury
+    ) public initializer {
         _ownerSetTreasury(_treasury);
+        super.initialize();
     }
 
     // ======================================================
@@ -98,9 +101,9 @@ contract OptionAirdrop is OnlyDolomiteMargin, ReentrancyGuard, BaseClaim, IOptio
         uint256 _claimAmount,
         uint256 _marketId,
         uint256 _fromAccountNumber
-    ) external nonReentrant {
+    ) external nonReentrant onlyClaimEnabled {
         OptionAirdropStorage storage s = _getOptionAirdropStorage();
-        address user = addressRemapping(msg.sender) == address(0) ? msg.sender : addressRemapping(msg.sender);
+        address user = getUserOrRemappedAddress(msg.sender);
 
         // @audit @Corey, double check all uses of user vs msg.sender
         if (_verifyMerkleProof(user, _proof, _allocatedAmount)) { /* FOR COVERAGE TESTING */ }
@@ -126,18 +129,15 @@ contract OptionAirdrop is OnlyDolomiteMargin, ReentrancyGuard, BaseClaim, IOptio
 
         uint256 doloValue = DOLO_PRICE * _claimAmount;
         uint256 paymentAmount = doloValue / DOLOMITE_MARGIN().getMarketPrice(_marketId).value;
-        AccountActionLib.withdraw(
+        AccountActionLib.transfer(
             DOLOMITE_MARGIN(),
             msg.sender,
             _fromAccountNumber,
             s.treasury,
+            _DEFAULT_ACCOUNT_NUMBER,
             _marketId,
-            IDolomiteStructs.AssetAmount({
-                sign: false,
-                denomination: IDolomiteStructs.AssetDenomination.Wei,
-                ref: IDolomiteStructs.AssetReference.Delta,
-                value: paymentAmount
-            }),
+            IDolomiteStructs.AssetDenomination.Wei,
+            paymentAmount,
             AccountBalanceLib.BalanceCheckFlag.From
         );
 
@@ -199,6 +199,13 @@ contract OptionAirdrop is OnlyDolomiteMargin, ReentrancyGuard, BaseClaim, IOptio
     }
 
     function _ownerSetTreasury(address _treasury) internal {
+        if (_treasury != address(0)) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            _treasury != address(0),
+            _FILE,
+            "Invalid treasury address"
+        );
+
         OptionAirdropStorage storage s = _getOptionAirdropStorage();
         s.treasury = _treasury;
         emit TreasurySet(_treasury);

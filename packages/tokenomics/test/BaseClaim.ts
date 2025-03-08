@@ -8,6 +8,7 @@ import { defaultAbiCoder, keccak256, parseEther } from 'ethers/lib/utils';
 import MerkleTree from 'merkletreejs';
 import { revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
 import { expectEvent, expectThrow } from 'packages/base/test/utils/assertions';
+import { UpgradeableProxy, UpgradeableProxy__factory } from 'packages/liquidity-mining/src/types';
 
 describe('BaseClaim', () => {
   let core: CoreProtocolArbitrumOne;
@@ -41,11 +42,19 @@ describe('BaseClaim', () => {
     validProof2 = tree.getHexProof(leaves[1]);
     invalidProof = tree.getHexProof(invalidLeaf);
 
-    baseClaim = await createContractWithAbi<TestBaseClaim>(
+    const baseClaimImplementation = await createContractWithAbi<TestBaseClaim>(
       TestBaseClaim__factory.abi,
       TestBaseClaim__factory.bytecode,
       [core.dolomiteRegistry.address, core.dolomiteMargin.address]
     );
+    const calldata = await baseClaimImplementation.populateTransaction.initialize();
+    const proxy = await createContractWithAbi<UpgradeableProxy>(
+      UpgradeableProxy__factory.abi,
+      UpgradeableProxy__factory.bytecode,
+      [baseClaimImplementation.address, core.dolomiteMargin.address, calldata.data]
+    );
+    baseClaim = TestBaseClaim__factory.connect(proxy.address, core.hhUser1);
+
     await baseClaim.connect(core.governance).ownerSetMerkleRoot(merkleRoot);
 
     snapshotId = await snapshot();
@@ -59,6 +68,15 @@ describe('BaseClaim', () => {
     it('should work normally', async () => {
       expect(await baseClaim.DOLOMITE_MARGIN()).to.eq(core.dolomiteMargin.address);
       expect(await baseClaim.DOLOMITE_REGISTRY()).to.eq(core.dolomiteRegistry.address);
+    });
+  });
+
+  describe('#initialize', () => {
+    it('should fail if called again', async () => {
+      await expectThrow(
+        baseClaim.connect(core.governance).initialize(),
+        'Initializable: contract is already initialized'
+      );
     });
   });
 
@@ -141,6 +159,26 @@ describe('BaseClaim', () => {
     });
   });
 
+  describe('#ownerSetClaimEnabled', () => {
+    it('should work normally', async () => {
+      expect(await baseClaim.claimEnabled()).to.be.false;
+      await baseClaim.connect(core.governance).ownerSetHandler(core.hhUser5.address);
+
+      const res = await baseClaim.connect(core.hhUser5).ownerSetClaimEnabled(true);
+      await expectEvent(baseClaim, res, 'ClaimEnabledSet', {
+        claimEnabled: true
+      });
+      expect(await baseClaim.claimEnabled()).to.be.true;
+    });
+
+    it('should fail if not called by handler', async () => {
+      await expectThrow(
+        baseClaim.connect(core.hhUser1).ownerSetClaimEnabled(true),
+        'BaseClaim: Only handler can call'
+      );
+    });
+  });
+
   describe('#ownerWithdrawRewardToken', () => {
     it('should work normally', async () => {
       await setupDAIBalance(core, core.hhUser1, parseEther('15'), core.governance);
@@ -181,6 +219,18 @@ describe('BaseClaim', () => {
         baseClaim.connect(core.hhUser3).verifyMerkleProof(invalidProof, parseEther('15')),
         'TestBaseClaim: Invalid merkle proof'
       );
+    });
+  });
+
+  describe('#onlyClaimEnabled', () => {
+    it('should work normally', async () => {
+      await expectThrow(
+        baseClaim.connect(core.hhUser1).testOnlyClaimEnabled(),
+        'BaseClaim: Claim is not enabled'
+      );
+      await baseClaim.connect(core.governance).ownerSetHandler(core.hhUser5.address);
+      await baseClaim.connect(core.hhUser5).ownerSetClaimEnabled(true);
+      expect(await baseClaim.connect(core.hhUser1).testOnlyClaimEnabled()).to.be.true;
     });
   });
 });

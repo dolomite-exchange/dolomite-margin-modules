@@ -9,7 +9,7 @@ import { expectThrow } from 'packages/base/test/utils/assertions';
 import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
 import { parseEther } from 'ethers/lib/utils';
 import { VeFeeCalculator, VoterAlwaysActive, VoterAlwaysActive__factory, VotingEscrow } from '../src/types';
-import { createVeFeeCalculator, createVotingEscrow } from './liquidity-mining-ecosystem-utils';
+import { createVeFeeCalculator, createVotingEscrow } from './tokenomics-ecosystem-utils';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 // Using test addresses for vester and buyback pool for ease of testing
@@ -39,7 +39,6 @@ describe('VotingEscrow', () => {
     );
 
     feeCalculator = await createVeFeeCalculator(core);
-    await feeCalculator.connect(core.governance).ownerSetDecayTimestamp(1);
     veToken = await createVotingEscrow(core, token, voter.address, feeCalculator, VESTER_ADDRESS, BUYBACK_POOL_ADDRESS);
 
     snapshotId = await snapshot();

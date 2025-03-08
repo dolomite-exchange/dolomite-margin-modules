@@ -21,8 +21,10 @@
 pragma solidity ^0.8.9;
 
 import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
+import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { ERC20Burnable } from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
+import { IDOLO } from "./interfaces/IDOLO.sol";
 
 
 /**
@@ -31,7 +33,7 @@ import { ERC20Burnable } from "@openzeppelin/contracts/token/ERC20/extensions/ER
  *
  * ERC20 contract for DOLO token
  */
-contract DOLO is ERC20Burnable, OnlyDolomiteMargin {
+contract DOLO is ERC20Burnable, OnlyDolomiteMargin, IDOLO {
 
     // ===================================================
     // ==================== Constants ====================
@@ -39,13 +41,34 @@ contract DOLO is ERC20Burnable, OnlyDolomiteMargin {
 
     bytes32 private constant _FILE = "DOLO";
 
+    // ===================================================
+    // ================== State Variables ================
+    // ===================================================
+
+    address private _ccipAdmin;
+    mapping(address => bool) private _mintersMap;
+    bool private _started;
+
     // ==================================================================
-    // ======================= Constructor =======================
+    // ======================= Modifiers ===============================
+    // ==================================================================
+
+    modifier onlyMinter(address _minter) {
+        Require.that(
+            _mintersMap[_minter],
+            _FILE,
+            "Not a minter"
+        );
+        _;
+    }
+
+    // ==================================================================
+    // ========================= Constructor ============================
     // ==================================================================
 
     constructor(
         address _dolomiteMargin,
-        uint256 _treasury
+        address _treasury
     ) ERC20("Dolomite", "DOLO") OnlyDolomiteMargin(_dolomiteMargin) {
         _mint(_treasury, 1_000_000_000 ether);
     }
@@ -54,8 +77,102 @@ contract DOLO is ERC20Burnable, OnlyDolomiteMargin {
     // ======================= External Functions =======================
     // ==================================================================
 
-    // TODO: change to be compatible with Chainlink
-    function mint(uint256 _amount) external onlyDolomiteMarginOwner(msg.sender) {
-        _mint(msg.sender, _amount);
+    function mint(address _account, uint256 _amount) external onlyMinter(msg.sender) {
+        Require.that(
+            _account != address(this),
+            _FILE,
+            "Invalid account"
+        );
+
+        _mint(_account, _amount);
+    }
+
+    // ==================================================================
+    // ======================== Admin Functions =========================
+    // ==================================================================
+
+    function ownerSetCCIPAdmin(address _newAdmin) external onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetCCIPAdmin(_newAdmin);
+    }
+
+    function ownerSetMinter(address _minter, bool _isMinter) external onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetMinter(_minter, _isMinter);
+    }
+
+    function ownerStart() external onlyDolomiteMarginOwner(msg.sender) {
+        Require.that(
+            !_started,
+            _FILE,
+            "Already started"
+        );
+        _started = true;
+        emit Started();
+    }
+
+    // ==================================================================
+    // ======================== View Functions ==========================
+    // ==================================================================
+
+    function getCCIPAdmin() external view returns (address) {
+        return _ccipAdmin;
+    }
+
+    function isMinter(address _minter) external view returns (bool) {
+        return _mintersMap[_minter];
+    }
+
+    function owner() external view returns (address) {
+        return DOLOMITE_MARGIN_OWNER();
+    }
+
+    function hasStarted() external view returns (bool) {
+        return _started;
+    }
+
+    // ==================================================================
+    // ======================= Internal Functions =======================
+    // ==================================================================
+
+    function _transfer(address _from, address _to, uint256 _amount) internal override {
+        Require.that(
+            _started,
+            _FILE,
+            "Not started"
+        );
+        Require.that(
+            _to != address(this),
+            _FILE,
+            "Invalid recipient"
+        );
+        super._transfer(_from, _to, _amount);
+    }
+
+    function _approve(address _owner, address _spender, uint256 _amount) internal override {
+        Require.that(
+            _spender != address(this),
+            _FILE,
+            "Invalid spender"
+        );
+        super._approve(_owner, _spender, _amount);
+    }
+
+    function _ownerSetCCIPAdmin(address _newAdmin) internal {
+        Require.that(
+            _newAdmin != address(0),
+            _FILE,
+            "Invalid CCIP admin"
+        );
+        _ccipAdmin = _newAdmin;
+        emit CCIPAdminSet(_newAdmin);
+    }
+
+    function _ownerSetMinter(address _minter, bool _isMinter) internal {
+        Require.that(
+            _minter != address(0),
+            _FILE,
+            "Invalid minter"
+        );
+        _mintersMap[_minter] = _isMinter;
+        emit MinterSet(_minter, _isMinter);
     }
 }

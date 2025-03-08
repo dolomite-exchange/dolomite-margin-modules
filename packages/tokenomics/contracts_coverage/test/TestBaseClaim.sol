@@ -52,4 +52,8 @@ contract TestBaseClaim is BaseClaim {
         );
         return true;
     }
+
+    function testOnlyClaimEnabled() external view onlyClaimEnabled returns (bool) {
+        return true;
+    }
 }

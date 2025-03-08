@@ -1,7 +1,12 @@
 import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
-import { DOLO, MockVotingEscrow, MockVotingEscrow__factory, RegularAirdrop } from '../src/types';
+import {
+  DOLO,
+  MockVotingEscrow,
+  MockVotingEscrow__factory,
+  TestRegularAirdrop,
+} from '../src/types';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol } from 'packages/base/test/utils/setup';
-import { createDOLO, createRegularAirdrop } from './tokenomics-ecosystem-utils';
+import { createDOLO, createTestRegularAirdrop } from './tokenomics-ecosystem-utils';
 import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
 import { Network, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
 import { expect } from 'chai';
@@ -14,7 +19,7 @@ describe('RegularAirdrop', () => {
   let core: CoreProtocolArbitrumOne;
   let dolo: DOLO;
   let mockVeToken: MockVotingEscrow;
-  let regularAirdrop: RegularAirdrop;
+  let regularAirdrop: TestRegularAirdrop;
 
   let merkleRoot: string;
   let validProof1: string[];
@@ -25,7 +30,7 @@ describe('RegularAirdrop', () => {
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
-    dolo = await createDOLO(core);
+    dolo = await createDOLO(core, core.hhUser5.address);
     mockVeToken = await createContractWithAbi<MockVotingEscrow>(
       MockVotingEscrow__factory.abi,
       MockVotingEscrow__factory.bytecode,
@@ -50,13 +55,14 @@ describe('RegularAirdrop', () => {
     validProof2 = tree.getHexProof(leaves[1]);
     invalidProof = tree.getHexProof(invalidLeaf);
 
-    regularAirdrop = await createRegularAirdrop(core, dolo, mockVeToken);
+    regularAirdrop = await createTestRegularAirdrop(core, dolo, mockVeToken);
+
     await regularAirdrop.connect(core.governance).ownerSetMerkleRoot(merkleRoot);
     await regularAirdrop.connect(core.governance).ownerSetHandler(core.hhUser5.address);
     await core.dolomiteMargin.ownerSetGlobalOperator(regularAirdrop.address, true);
 
-    await dolo.connect(core.governance).mint(parseEther('15'));
-    await dolo.connect(core.governance).transfer(regularAirdrop.address, parseEther('15'));
+    await dolo.connect(core.hhUser5).transfer(regularAirdrop.address, parseEther('15'));
+    await regularAirdrop.connect(core.hhUser5).ownerSetClaimEnabled(true);
 
     snapshotId = await snapshot();
   });
@@ -67,6 +73,8 @@ describe('RegularAirdrop', () => {
 
   describe('#constructor', () => {
     it('should work normally', async () => {
+      expect(await regularAirdrop.DOLOMITE_MARGIN()).to.eq(core.dolomiteMargin.address);
+      expect(await regularAirdrop.DOLOMITE_REGISTRY()).to.eq(core.dolomiteRegistry.address);
       expect(await regularAirdrop.DOLO()).to.eq(dolo.address);
       expect(await regularAirdrop.VE_DOLO()).to.eq(mockVeToken.address);
       expect(await regularAirdrop.merkleRoot()).to.eq(merkleRoot);
@@ -157,6 +165,14 @@ describe('RegularAirdrop', () => {
       expect(await regularAirdrop.userToClaimStatus(core.hhUser1.address)).to.be.true;
     });
 
+    it('should fail if claim is not enabled', async () => {
+      await regularAirdrop.connect(core.hhUser5).ownerSetClaimEnabled(false);
+      await expectThrow(
+        regularAirdrop.connect(core.hhUser1).claim(validProof1, parseEther('5')),
+        'BaseClaim: Claim is not enabled',
+      );
+    });
+
     it('should fail if remapped user trys to claim again from original address', async () => {
       await regularAirdrop.connect(core.hhUser5).ownerSetAddressRemapping(
         [core.hhUser4.address],
@@ -205,6 +221,13 @@ describe('RegularAirdrop', () => {
       await expectThrow(
         regularAirdrop.connect(core.hhUser1).claim(validProof1, parseEther('5')),
         'RegularAirdrop: User already claimed'
+      );
+    });
+
+    it('should fail if reentered', async () => {
+      await expectThrow(
+        regularAirdrop.callClaimAndTriggerReentrancy(validProof1, parseEther('5')),
+        'ReentrancyGuardUpgradeable: Reentrant call',
       );
     });
   });

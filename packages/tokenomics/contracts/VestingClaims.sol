@@ -20,7 +20,6 @@
 
 pragma solidity ^0.8.9;
 
-import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -35,7 +34,7 @@ import { IVestingClaims } from "./interfaces/IVestingClaims.sol";
  *
  * Vesting claims contract for DOLO tokens
  */
-contract VestingClaims is OnlyDolomiteMargin, BaseClaim, IVestingClaims {
+contract VestingClaims is BaseClaim, IVestingClaims {
     using SafeERC20 for IERC20;
 
     // ===================================================
@@ -76,7 +75,7 @@ contract VestingClaims is OnlyDolomiteMargin, BaseClaim, IVestingClaims {
     // ======================= User Functions =======================
     // ==============================================================
 
-    function claim(bytes32[] calldata _proof, uint256 _allocatedAmount) external {
+    function claim(bytes32[] calldata _proof, uint256 _allocatedAmount) external onlyClaimEnabled {
         VestingClaimsStorage storage s = _getVestingClaimsStorage();
         address user = getUserOrRemappedAddress(msg.sender);
 

@@ -20,9 +20,11 @@
 
 pragma solidity ^0.8.9;
 
-import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
+import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol"; // solhint-disable-line max-line-length
+import { ReentrancyGuardUpgradeable } from "@dolomite-exchange/modules-base/contracts/helpers/ReentrancyGuardUpgradeable.sol"; // solhint-disable-line max-line-length
 import { IDolomiteRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IDolomiteRegistry.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
+import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { MerkleProof } from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
@@ -35,7 +37,7 @@ import { IBaseClaim } from "./interfaces/IBaseClaim.sol";
  *
  * Base contract for merkle root claims
  */
-abstract contract BaseClaim is OnlyDolomiteMargin, IBaseClaim {
+abstract contract BaseClaim is OnlyDolomiteMargin, ReentrancyGuardUpgradeable, Initializable, IBaseClaim {
     using SafeERC20 for IERC20;
 
     // ===================================================
@@ -43,7 +45,7 @@ abstract contract BaseClaim is OnlyDolomiteMargin, IBaseClaim {
     // ===================================================
 
     bytes32 private constant _FILE = "BaseClaim";
-    bytes32 private constant _BASE_CLAIM_STORAGE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.baseClaimStorage")) - 1);
+    bytes32 private constant _BASE_CLAIM_STORAGE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.baseClaimStorage")) - 1); // solhint-disable-line max-line-length
 
     // ===================================================
     // ==================== State Variables ==============
@@ -65,15 +67,26 @@ abstract contract BaseClaim is OnlyDolomiteMargin, IBaseClaim {
         _;
     }
 
+    modifier onlyClaimEnabled() {
+        if (claimEnabled()) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            claimEnabled(),
+            _FILE,
+            "Claim is not enabled"
+        );
+        _;
+    }
+
     // ===========================================================
     // ======================= Constructor =======================
     // ===========================================================
 
-    constructor(
-        address _dolomiteRegistry,
-        address _dolomiteMargin
-    ) OnlyDolomiteMargin(_dolomiteMargin) {
+    constructor(address _dolomiteRegistry, address _dolomiteMargin) OnlyDolomiteMargin(_dolomiteMargin) {
         DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
+    }
+
+    function initialize() public virtual initializer {
+        __ReentrancyGuardUpgradeable__init();
     }
 
     // ======================================================
@@ -84,6 +97,10 @@ abstract contract BaseClaim is OnlyDolomiteMargin, IBaseClaim {
         address[] memory _users, address[] memory _remappedAddresses
     ) external onlyHandler(msg.sender) {
         _ownerSetAddressRemapping(_users, _remappedAddresses);
+    }
+
+    function ownerSetClaimEnabled(bool _enabled) external onlyHandler(msg.sender) {
+        _ownerSetClaimEnabled(_enabled);
     }
 
     function ownerSetHandler(address _handler) external onlyDolomiteMarginOwner(msg.sender) {
@@ -122,6 +139,11 @@ abstract contract BaseClaim is OnlyDolomiteMargin, IBaseClaim {
         return s.handler;
     }
 
+    function claimEnabled() public view returns (bool) {
+        BaseClaimStorage storage s = _getBaseClaimStorage();
+        return s.claimEnabled;
+    }
+
     // ==================================================================
     // ======================= Internal Functions =======================
     // ==================================================================
@@ -140,6 +162,12 @@ abstract contract BaseClaim is OnlyDolomiteMargin, IBaseClaim {
             s.addressRemapping[_users[i]] = _remappedAddresses[i];
         }
         emit AddressRemappingSet(_users, _remappedAddresses);
+    }
+
+    function _ownerSetClaimEnabled(bool _enabled) internal {
+        BaseClaimStorage storage s = _getBaseClaimStorage();
+        s.claimEnabled = _enabled;
+        emit ClaimEnabledSet(_enabled);
     }
 
     function _ownerSetHandler(address _handler) internal {

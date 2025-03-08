@@ -3,7 +3,7 @@ import { BigNumber } from 'ethers';
 import { defaultAbiCoder, keccak256, parseEther } from 'ethers/lib/utils';
 import MerkleTree from 'merkletreejs';
 import { depositIntoDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
-import { Network, ONE_BI, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
+import { ADDRESS_ZERO, Network, ONE_BI, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
 import { expectEvent, expectProtocolBalance, expectThrow } from 'packages/base/test/utils/assertions';
 import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
@@ -34,7 +34,7 @@ describe('OptionAirdrop', () => {
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
-    dolo = await createDOLO(core);
+    dolo = await createDOLO(core, core.hhUser5.address);
     await disableInterestAccrual(core, core.marketIds.nativeUsdc);
     await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.nativeUsdc.address, USDC_PRICE);
     await core.dolomiteMargin.ownerSetPriceOracle(
@@ -59,16 +59,17 @@ describe('OptionAirdrop', () => {
     invalidProof = tree.getHexProof(invalidLeaf);
 
     optionAirdrop = await createTestOptionAirdrop(core, dolo, core.hhUser5.address);
+
     await optionAirdrop.connect(core.governance).ownerSetMerkleRoot(merkleRoot);
     await core.dolomiteMargin.ownerSetGlobalOperator(optionAirdrop.address, true);
 
-    await dolo.connect(core.governance).mint(parseEther('15'));
-    await dolo.connect(core.governance).transfer(optionAirdrop.address, parseEther('15'));
+    await dolo.connect(core.hhUser5).transfer(optionAirdrop.address, parseEther('15'));
 
     await setupNativeUSDCBalance(core, core.hhUser1, usdcAmount, core.dolomiteMargin);
     await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.nativeUsdc, usdcAmount);
     await optionAirdrop.connect(core.governance).ownerSetAllowedMarketIds([core.marketIds.nativeUsdc]);
     await optionAirdrop.connect(core.governance).ownerSetHandler(core.hhUser5.address);
+    await optionAirdrop.connect(core.hhUser5).ownerSetClaimEnabled(true);
 
     snapshotId = await snapshot();
   });
@@ -79,8 +80,20 @@ describe('OptionAirdrop', () => {
 
   describe('#constructor', () => {
     it('should work normally', async () => {
+      expect(await optionAirdrop.DOLOMITE_MARGIN()).to.eq(core.dolomiteMargin.address);
+      expect(await optionAirdrop.DOLOMITE_REGISTRY()).to.eq(core.dolomiteRegistry.address);
       expect(await optionAirdrop.DOLO()).to.eq(dolo.address);
       expect(await optionAirdrop.merkleRoot()).to.eq(merkleRoot);
+      expect(await optionAirdrop.treasury()).to.eq(core.hhUser5.address);
+    });
+  });
+
+  describe('#initializer', () => {
+    it('should fail if called again', async () => {
+      await expectThrow(
+        optionAirdrop.connect(core.hhUser2)['initialize(address)'](core.hhUser5.address),
+        'Initializable: contract is already initialized',
+      );
     });
   });
 
@@ -140,6 +153,13 @@ describe('OptionAirdrop', () => {
         treasury: newTreasury,
       });
       expect(await optionAirdrop.treasury()).to.eq(newTreasury);
+    });
+
+    it('should fail if treasury is zero address', async () => {
+      await expectThrow(
+        optionAirdrop.connect(core.governance).ownerSetTreasury(ADDRESS_ZERO),
+        'OptionAirdrop: Invalid treasury address',
+      );
     });
 
     it('should fail if not called by owner', async () => {
@@ -252,6 +272,20 @@ describe('OptionAirdrop', () => {
       expect(await optionAirdrop.userToClaimedAmount(core.hhUser1.address)).to.eq(parseEther('5'));
     });
 
+    it('should fail if claim is not enabled', async () => {
+      await optionAirdrop.connect(core.hhUser5).ownerSetClaimEnabled(false);
+      await expectThrow(
+        optionAirdrop.connect(core.hhUser1).claim(
+          validProof1,
+          parseEther('5'),
+          parseEther('5'),
+          core.marketIds.nativeUsdc,
+          defaultAccountNumber,
+        ),
+        'BaseClaim: Claim is not enabled',
+      );
+    });
+
     it('should fail if remapped user claims again with original address', async () => {
       await setupNativeUSDCBalance(core, core.hhUser4, usdcAmount, core.dolomiteMargin);
       await depositIntoDolomiteMargin(core, core.hhUser4, defaultAccountNumber, core.marketIds.nativeUsdc, usdcAmount);
@@ -327,7 +361,7 @@ describe('OptionAirdrop', () => {
           core.marketIds.nativeUsdc,
           defaultAccountNumber,
         ),
-        'ReentrancyGuard: reentrant call',
+        'ReentrancyGuardUpgradeable: Reentrant call',
       );
     });
   });
