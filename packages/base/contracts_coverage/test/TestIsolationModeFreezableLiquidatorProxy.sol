@@ -21,8 +21,8 @@
 pragma solidity ^0.8.9;
 
  // solhint-disable max-line-length
-import { IsolationModeFreezableLiquidatorProxy } from "../liquidators/IsolationModeFreezableLiquidatorProxy.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
+import { IsolationModeFreezableLiquidatorProxy } from "../proxies/IsolationModeFreezableLiquidatorProxy.sol";
  // solhint-enable max-line-length
 
 
@@ -92,7 +92,8 @@ contract TestIsolationModeFreezableLiquidatorProxy is
         ) = _getAdjustedAccountValues(
             marketInfos,
             _liquidAccount,
-            DOLOMITE_MARGIN().getAccountMarketsWithBalances(_liquidAccount)
+            DOLOMITE_MARGIN().getAccountMarketsWithBalances(_liquidAccount),
+            IDolomiteStructs.Decimal({ value: 0 })
         );
         _checkIsLiquidatable(_liquidAccount, liquidSupplyValue, liquidBorrowValue);
     }

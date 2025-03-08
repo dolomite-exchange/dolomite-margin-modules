@@ -72,7 +72,7 @@ import {
   getOracleProviderForTokenKey,
   getWithdrawalObject,
 } from '../gmx-v2-ecosystem-utils';
-import { BTC_CHAINLINK_FEED_MAP, GMX_BTC_PLACEHOLDER_MAP } from 'packages/base/src/utils/constants';
+import { BTC_CHAINLINK_FEED_MAP, BTC_PLACEHOLDER_MAP } from 'packages/base/src/utils/constants';
 import { TokenInfo } from 'packages/oracles/src';
 
 enum ReversionType {
@@ -89,7 +89,7 @@ const usdcAmount = BigNumber.from('1000000000'); // $1000
 const amountWei = parseEther('10');
 const DEFAULT_EXTRA_DATA = ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [parseEther('.5'), ONE_BI]);
 const NEW_GENERIC_TRADER_PROXY = '0x905F3adD52F01A9069218c8D1c11E240afF61D2B';
-const WBTC_PLACEHOLDER = GMX_BTC_PLACEHOLDER_MAP[Network.ArbitrumOne];
+const WBTC_PLACEHOLDER = BTC_PLACEHOLDER_MAP[Network.ArbitrumOne];
 
 const executionFee = process.env.COVERAGE !== 'true'
   ? GMX_V2_EXECUTION_FEE_FOR_TESTS
@@ -156,7 +156,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2_singleSided', () => {
     );
 
     await core.chainlinkPriceOracleV3.ownerInsertOrUpdateOracleToken(
-      GMX_BTC_PLACEHOLDER_MAP[Network.ArbitrumOne].address,
+      BTC_PLACEHOLDER_MAP[Network.ArbitrumOne].address,
       BTC_CHAINLINK_FEED_MAP[Network.ArbitrumOne],
       false
     );
@@ -165,7 +165,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2_singleSided', () => {
         { oracle: core.chainlinkPriceOracleV3.address, tokenPair: ZERO_ADDRESS, weight: 100 }
       ],
       decimals: 8,
-      token: GMX_BTC_PLACEHOLDER_MAP[Network.ArbitrumOne].address
+      token: BTC_PLACEHOLDER_MAP[Network.ArbitrumOne].address
     };
     await core.oracleAggregatorV2.ownerInsertOrUpdateToken(tokenInfo);
 

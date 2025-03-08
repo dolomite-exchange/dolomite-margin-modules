@@ -3,6 +3,8 @@ import { execSync } from 'child_process';
 import path from 'path';
 import * as process from 'process';
 
+const HARDHAT_RUN = `node --max-old-space-size=32768 ${process.cwd()}../../../node_modules/.bin/hardhat`;
+
 const ALL_NETWORKS = Object.values(NetworkName);
 
 const ecosystemName = process.argv[2];
@@ -37,7 +39,10 @@ networkNames.forEach((networkName) => {
     console.log(`===========================================================${'='.repeat(4 + networkName.length)}`);
     console.log('');
     try {
-      execSync(`NETWORK=${networkName} hardhat --network hardhat run ${filePath}`, { stdio: 'inherit' });
+      execSync(
+        `NETWORK=${networkName}  ${HARDHAT_RUN} --network hardhat run ${filePath}`,
+        { stdio: 'inherit' },
+      );
     } catch (e) {
       console.error(e);
       process.exit(1);
@@ -51,7 +56,10 @@ networkNames.forEach((networkName) => {
     console.log(`===========================================================${'='.repeat(4 + networkName.length)}`);
     console.log('');
     try {
-      execSync(`NETWORK=${networkName} hardhat --network ${networkName} run ${filePath}`, { stdio: 'inherit' });
+      execSync(
+        `NETWORK=${networkName} ${HARDHAT_RUN} --network ${networkName} run ${filePath}`,
+        { stdio: 'inherit' },
+      );
     } catch (e) {
       console.error(e);
       process.exit(1);

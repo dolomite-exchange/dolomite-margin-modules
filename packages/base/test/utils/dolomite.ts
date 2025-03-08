@@ -3,6 +3,10 @@ import { Provider } from '@ethersproject/providers';
 import { BigNumberish, PopulatedTransaction } from 'ethers';
 import { Network, NetworkType } from 'packages/base/src/utils/no-deps-constants';
 import {
+  BorrowPositionRouter,
+  BorrowPositionRouter__factory,
+  DepositWithdrawalRouter,
+  DepositWithdrawalRouter__factory,
   DolomiteAccountRegistry,
   DolomiteAccountRegistry__factory,
   DolomiteERC20,
@@ -12,6 +16,9 @@ import {
   DolomiteRegistryImplementation__factory,
   EventEmitterRegistry,
   EventEmitterRegistry__factory,
+  GenericTraderProxyV2,
+  GenericTraderRouter,
+  GenericTraderRouter__factory,
   IDolomiteMargin,
   IDolomiteMarginV2,
   IERC20Metadata__factory,
@@ -21,6 +28,12 @@ import {
   IsolationModeTraderProxy__factory,
   RegistryProxy,
   RegistryProxy__factory,
+  RouterProxy,
+  RouterProxy__factory,
+  TestBorrowPositionRouter,
+  TestBorrowPositionRouter__factory,
+  TestDepositWithdrawalRouter,
+  TestDepositWithdrawalRouter__factory,
 } from '../../src/types';
 import {
   getDolomiteErc20ProxyConstructorParams,
@@ -29,10 +42,13 @@ import {
   getEventEmitterRegistryConstructorParams,
   getIsolationModeTraderProxyConstructorParams,
   getRegistryProxyConstructorParams,
+  getRouterProxyConstructorParams,
 } from '../../src/utils/constructors/dolomite';
 import {
+  createArtifactFromBaseWorkspaceIfNotExists,
   createContractWithAbi,
   createContractWithLibrary,
+  createContractWithLibraryAndArtifact,
   createContractWithName,
   LibraryName,
 } from '../../src/utils/dolomite-utils';
@@ -75,6 +91,22 @@ export async function createRegistryProxy(
     RegistryProxy__factory.abi,
     RegistryProxy__factory.bytecode,
     getRegistryProxyConstructorParams(implementationAddress, calldata, core.dolomiteMargin),
+  );
+}
+
+export async function createRouterProxy(
+  implementationAddress: string,
+  initializationCalldata: string | PopulatedTransaction,
+  core: CoreProtocolType<NetworkType>,
+): Promise<RouterProxy> {
+  const calldata =
+    typeof initializationCalldata === 'object' && 'data' in initializationCalldata
+      ? initializationCalldata.data!
+      : initializationCalldata as string;
+  return createContractWithAbi(
+    RouterProxy__factory.abi,
+    RouterProxy__factory.bytecode,
+    getRouterProxyConstructorParams(implementationAddress, calldata, core.dolomiteMargin),
   );
 }
 
@@ -157,6 +189,123 @@ export async function createEventEmitter<T extends NetworkType>(
     await getEventEmitterRegistryConstructorParams(core, implementation),
   );
   return EventEmitterRegistry__factory.connect(proxy.address, core.hhUser1) as EventEmitterRegistry;
+}
+
+export async function createDepositWithdrawalRouter(
+  core: CoreProtocolType<any>,
+  payableToken: { address: string },
+): Promise<DepositWithdrawalRouter> {
+  const implementation = await createContractWithAbi<DepositWithdrawalRouter>(
+    DepositWithdrawalRouter__factory.abi,
+    DepositWithdrawalRouter__factory.bytecode,
+    [core.dolomiteRegistry.address, core.dolomiteMargin.address],
+  );
+  const initCalldata = await implementation.populateTransaction.initialize();
+
+  const proxy = await createContractWithAbi(
+    RouterProxy__factory.abi,
+    RouterProxy__factory.bytecode,
+    [implementation.address, core.dolomiteMargin.address, initCalldata.data!],
+  );
+  await proxy.connect(core.governance).ownerLazyInitialize(payableToken.address);
+  return DepositWithdrawalRouter__factory.connect(proxy.address, core.hhUser1) as DepositWithdrawalRouter;
+}
+
+export async function createBorrowPositionRouter(
+  core: CoreProtocolType<any>,
+): Promise<BorrowPositionRouter> {
+  const implementation = await createContractWithAbi<BorrowPositionRouter>(
+    BorrowPositionRouter__factory.abi,
+    BorrowPositionRouter__factory.bytecode,
+    [core.dolomiteRegistry.address, core.dolomiteMargin.address],
+  );
+  const initCalldata = await implementation.populateTransaction.initialize();
+
+  const proxy = await createContractWithAbi(
+    RouterProxy__factory.abi,
+    RouterProxy__factory.bytecode,
+    [implementation.address, core.dolomiteMargin.address, initCalldata.data!],
+  );
+  return BorrowPositionRouter__factory.connect(proxy.address, core.hhUser1) as BorrowPositionRouter;
+}
+
+export async function createGenericTraderRouter(
+  core: CoreProtocolType<any>,
+): Promise<GenericTraderRouter> {
+  const implementation = await createContractWithAbi<GenericTraderRouter>(
+    GenericTraderRouter__factory.abi,
+    GenericTraderRouter__factory.bytecode,
+    [core.dolomiteRegistry.address, core.dolomiteMargin.address],
+  );
+  const initCalldata = await implementation.populateTransaction.initialize();
+
+  const proxy = await createContractWithAbi(
+    RouterProxy__factory.abi,
+    RouterProxy__factory.bytecode,
+    [implementation.address, core.dolomiteMargin.address, initCalldata.data!],
+  );
+  return GenericTraderRouter__factory.connect(proxy.address, core.hhUser1) as GenericTraderRouter;
+}
+
+export async function createGenericTraderProxyV2Lib(): Promise<Record<LibraryName, address>> {
+  const artifact = await createArtifactFromBaseWorkspaceIfNotExists('GenericTraderProxyV2Lib', 'proxies');
+  const contract = await createContractWithLibraryAndArtifact(
+    artifact,
+    {},
+    [],
+  );
+  return { GenericTraderProxyV2Lib: contract.address };
+}
+
+export async function createGenericTraderProxyV2(core: CoreProtocolType<any>): Promise<GenericTraderProxyV2> {
+  const libraries = await createGenericTraderProxyV2Lib();
+  const artifact = await createArtifactFromBaseWorkspaceIfNotExists('GenericTraderProxyV2', 'proxies');
+  return await createContractWithLibraryAndArtifact(
+    artifact,
+    libraries,
+    [Network.ArbitrumOne, core.dolomiteRegistry.address, core.dolomiteMargin.address],
+  );
+}
+
+export async function createTestBorrowPositionRouter(
+  core: CoreProtocolType<any>,
+): Promise<TestBorrowPositionRouter> {
+  const implementation = await createContractWithAbi<TestBorrowPositionRouter>(
+    TestBorrowPositionRouter__factory.abi,
+    TestBorrowPositionRouter__factory.bytecode,
+    [core.dolomiteRegistry.address, core.dolomiteMargin.address],
+  );
+  const initCalldata = await implementation.populateTransaction.initialize();
+
+  const proxy = await createContractWithAbi(
+    RouterProxy__factory.abi,
+    RouterProxy__factory.bytecode,
+    [implementation.address, core.dolomiteMargin.address, initCalldata.data!],
+  );
+  return TestBorrowPositionRouter__factory.connect(proxy.address, core.hhUser1) as TestBorrowPositionRouter;
+}
+
+export async function createTestDepositWithdrawalRouter(
+  core: CoreProtocolType<any>,
+  payableToken: { address: string },
+): Promise<TestDepositWithdrawalRouter> {
+  const implementation = await createContractWithAbi<TestDepositWithdrawalRouter>(
+    TestDepositWithdrawalRouter__factory.abi,
+    TestDepositWithdrawalRouter__factory.bytecode,
+    [core.dolomiteRegistry.address, core.dolomiteMargin.address],
+  );
+  const initCalldata = await implementation.populateTransaction.initialize();
+
+  const proxy = await createContractWithAbi(
+    RouterProxy__factory.abi,
+    RouterProxy__factory.bytecode,
+    [implementation.address, core.dolomiteMargin.address, initCalldata.data!],
+  );
+
+  await TestDepositWithdrawalRouter__factory.connect(proxy.address, core.governance)
+    .ownerLazyInitialize(payableToken.address);
+
+  return TestDepositWithdrawalRouter__factory.connect(proxy.address, core.hhUser1) as TestDepositWithdrawalRouter;
 }
 
 export async function setupNewGenericTraderProxy<T extends NetworkType>(

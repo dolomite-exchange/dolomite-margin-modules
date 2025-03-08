@@ -556,7 +556,7 @@ contract GLPIsolationModeTokenVaultV2 is
         IERC20 _gmx = gmx();
         uint256 balance = _gmx.balanceOf(address(this));
 
-        if (_addDepositIntoDolomite) {
+        if (_addDepositIntoDolomite && balance > 0) {
             if (_shouldStakeGmx) {
                 _depositIntoGMXVault(gmxVault, _DEFAULT_ACCOUNT_NUMBER, balance, /* shouldSkipTransfer = */ true);
                 _stakeGmx(_gmx, balance);

@@ -9,13 +9,10 @@ import { setupCoreProtocol } from 'packages/base/test/utils/setup';
 import { parseEther } from 'ethers/lib/utils';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { Network, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
-import {
-  EncodedTransaction,
-  prettyPrintEncodeAddMarket,
-  prettyPrintEncodedDataWithTypeSafety,
-  prettyPrintEncodeInsertChainlinkOracle,
-} from '../../../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
+import { encodeAddMarket } from '../../../../utils/encoding/add-market-encoder-utils';
+import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
+import { encodeInsertChainlinkOracle } from '../../../../utils/encoding/oracle-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 
 /**
@@ -33,15 +30,15 @@ async function main(): Promise<DryRunOutput<Network.PolygonZkEvm>> {
 
   const transactions: EncodedTransaction[] = [];
   transactions.push(
-    await prettyPrintEncodeInsertChainlinkOracle(
+    await encodeInsertChainlinkOracle(
       core,
       core.tokens.wbtc,
     ),
-    await prettyPrintEncodeInsertChainlinkOracle(
+    await encodeInsertChainlinkOracle(
       core,
       core.tokens.usdt,
     ),
-    await prettyPrintEncodeInsertChainlinkOracle(
+    await encodeInsertChainlinkOracle(
       core,
       core.tokens.matic,
     ),
@@ -66,7 +63,7 @@ async function main(): Promise<DryRunOutput<Network.PolygonZkEvm>> {
       'ownerSetInterestSetter',
       [core.marketIds.weth, core.interestSetters.linearStepFunction14L86U90OInterestSetter.address],
     ),
-    ...await prettyPrintEncodeAddMarket(
+    ...await encodeAddMarket(
       core,
       core.tokens.dai,
       core.chainlinkPriceOracleV1,
@@ -77,7 +74,7 @@ async function main(): Promise<DryRunOutput<Network.PolygonZkEvm>> {
       parseEther(`${200_000}`),
       false,
     ),
-    ...await prettyPrintEncodeAddMarket(
+    ...await encodeAddMarket(
       core,
       core.tokens.usdc,
       core.chainlinkPriceOracleV1,
@@ -88,7 +85,7 @@ async function main(): Promise<DryRunOutput<Network.PolygonZkEvm>> {
       ZERO_BI,
       false,
     ),
-    ...await prettyPrintEncodeAddMarket(
+    ...await encodeAddMarket(
       core,
       core.tokens.link,
       core.chainlinkPriceOracleV1,
@@ -99,7 +96,7 @@ async function main(): Promise<DryRunOutput<Network.PolygonZkEvm>> {
       parseEther(`${4_000}`),
       false,
     ),
-    ...await prettyPrintEncodeAddMarket(
+    ...await encodeAddMarket(
       core,
       core.tokens.wbtc,
       core.chainlinkPriceOracleV1,
@@ -110,7 +107,7 @@ async function main(): Promise<DryRunOutput<Network.PolygonZkEvm>> {
       parseBtc(`${4_000}`),
       false,
     ),
-    ...await prettyPrintEncodeAddMarket(
+    ...await encodeAddMarket(
       core,
       core.tokens.usdt,
       core.chainlinkPriceOracleV1,
@@ -121,7 +118,7 @@ async function main(): Promise<DryRunOutput<Network.PolygonZkEvm>> {
       parseUsdt(`${900_000}`),
       false,
     ),
-    ...await prettyPrintEncodeAddMarket(
+    ...await encodeAddMarket(
       core,
       core.tokens.matic,
       core.chainlinkPriceOracleV1,

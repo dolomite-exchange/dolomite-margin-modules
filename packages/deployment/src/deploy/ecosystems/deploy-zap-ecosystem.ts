@@ -5,8 +5,8 @@ import { CoreProtocolType, setupCoreProtocol } from '@dolomite-exchange/modules-
 import { BigNumberish } from 'ethers';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { isIsolationModeByMarketId } from 'packages/base/test/utils/dolomite';
-import { EncodedTransaction, prettyPrintEncodedDataWithTypeSafety } from '../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../utils/dry-run-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../utils/dry-run-utils';
+import { prettyPrintEncodedDataWithTypeSafety } from '../../utils/encoding/base-encoder-utils';
 import getScriptName from '../../utils/get-script-name';
 
 const OLD_ADDRESSES: Record<'GenericTraderProxyV1' | 'LiquidatorProxyV4WithGenericTrader', Record<string, string>> = {

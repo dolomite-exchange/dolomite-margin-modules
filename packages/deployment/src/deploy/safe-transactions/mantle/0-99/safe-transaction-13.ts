@@ -2,8 +2,8 @@ import { getAndCheckSpecificNetwork } from 'packages/base/src/utils/dolomite-uti
 import { getRealLatestBlockNumber } from 'packages/base/test/utils';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
-import { EncodedTransaction, prettyPrintEncodeInsertChronicleOracleV3 } from '../../../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
+import { encodeInsertChronicleOracleV3 } from '../../../../utils/encoding/oracle-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 
 /**
@@ -19,11 +19,11 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
 
   const transactions: EncodedTransaction[] = [];
   transactions.push(
-    ...await prettyPrintEncodeInsertChronicleOracleV3(core, core.tokens.usde),
-    ...await prettyPrintEncodeInsertChronicleOracleV3(core, core.tokens.usdt),
-    ...await prettyPrintEncodeInsertChronicleOracleV3(core, core.tokens.usdy),
-    ...await prettyPrintEncodeInsertChronicleOracleV3(core, core.tokens.weth),
-    ...await prettyPrintEncodeInsertChronicleOracleV3(core, core.tokens.wmnt),
+    ...await encodeInsertChronicleOracleV3(core, core.tokens.usde),
+    ...await encodeInsertChronicleOracleV3(core, core.tokens.usdt),
+    ...await encodeInsertChronicleOracleV3(core, core.tokens.usdy),
+    ...await encodeInsertChronicleOracleV3(core, core.tokens.weth),
+    ...await encodeInsertChronicleOracleV3(core, core.tokens.wmnt),
   );
   return {
     core,

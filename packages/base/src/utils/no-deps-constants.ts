@@ -6,8 +6,7 @@ import { GenericTraderParamStruct } from './index';
 export enum Network {
   ArbitrumOne = '42161',
   Base = '8453',
-  Berachain = '80084',
-  BerachainCartio = '80000',
+  Berachain = '80094',
   Ink = '57073',
   Mantle = '5000',
   PolygonZkEvm = '1101',
@@ -19,7 +18,6 @@ export type NetworkType =
   Network.ArbitrumOne
   | Network.Base
   | Network.Berachain
-  | Network.BerachainCartio
   | Network.Ink
   | Network.Mantle
   | Network.PolygonZkEvm
@@ -30,7 +28,6 @@ export enum NetworkName {
   ArbitrumOne = 'arbitrum_one',
   Base = 'base',
   Berachain = 'berachain',
-  BerachainCartio = 'berachain_cartio',
   Ink = 'ink',
   Mantle = 'mantle',
   PolygonZkEvm = 'polygon_zkevm',
@@ -42,12 +39,36 @@ export const NETWORK_TO_NETWORK_NAME_MAP: Record<Network, NetworkName> = {
   [Network.ArbitrumOne]: NetworkName.ArbitrumOne,
   [Network.Base]: NetworkName.Base,
   [Network.Berachain]: NetworkName.Berachain,
-  [Network.BerachainCartio]: NetworkName.BerachainCartio,
   [Network.Ink]: NetworkName.Ink,
   [Network.Mantle]: NetworkName.Mantle,
   [Network.PolygonZkEvm]: NetworkName.PolygonZkEvm,
   [Network.SuperSeed]: NetworkName.SuperSeed,
   [Network.XLayer]: NetworkName.XLayer,
+};
+
+/**
+ * Generated via `safe_hashes --list-networks`
+ */
+export const NETWORK_TO_SAFE_HASH_NAME_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: 'arbitrum',
+  [Network.Base]: 'base',
+  [Network.Berachain]: 'berachain',
+  [Network.Ink]: undefined,
+  [Network.Mantle]: 'mantle',
+  [Network.PolygonZkEvm]: 'polygon-zkevm',
+  [Network.SuperSeed]: undefined,
+  [Network.XLayer]: 'xlayer',
+};
+
+export const NETWORK_TO_MULTI_SEND_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0xA1dabEF33b3B82c7814B6D82A79e50F4AC44102B',
+  [Network.Base]: '0xA1dabEF33b3B82c7814B6D82A79e50F4AC44102B',
+  [Network.Berachain]: '0xA1dabEF33b3B82c7814B6D82A79e50F4AC44102B',
+  [Network.Ink]: '0xA1dabEF33b3B82c7814B6D82A79e50F4AC44102B',
+  [Network.Mantle]: '0xA1dabEF33b3B82c7814B6D82A79e50F4AC44102B',
+  [Network.PolygonZkEvm]: '0xA1dabEF33b3B82c7814B6D82A79e50F4AC44102B',
+  [Network.SuperSeed]: '0xA1dabEF33b3B82c7814B6D82A79e50F4AC44102B',
+  [Network.XLayer]: '0xA1dabEF33b3B82c7814B6D82A79e50F4AC44102B',
 };
 
 const typedNetworkIdString = process.env.NETWORK_ID || Network.ArbitrumOne;
@@ -58,12 +79,11 @@ export const NO_EXPIRY = BigNumber.from('0');
 export const NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP: Record<Network, number> = {
   [Network.ArbitrumOne]: 221_467_300,
   [Network.Base]: 10_050_058,
-  [Network.Berachain]: 1_708_014,
-  [Network.BerachainCartio]: 10_000,
+  [Network.Berachain]: 160822,
   [Network.Ink]: 0,
   [Network.Mantle]: 66_804_500,
   [Network.PolygonZkEvm]: 9_860_500,
-  [Network.SuperSeed]: -1,
+  [Network.SuperSeed]: 0,
   [Network.XLayer]: 854_000,
 };
 
