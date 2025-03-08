@@ -28,8 +28,8 @@ import { Create2 } from "@openzeppelin/contracts/utils/Create2.sol";
 import { MetaVaultUpgradeableProxy } from "./MetaVaultUpgradeableProxy.sol";
 import { IBGT } from "./interfaces/IBGT.sol";
 import { IBGTM } from "./interfaces/IBGTM.sol";
+import { IBerachainRewardsFactory } from "./interfaces/IBerachainRewardsFactory.sol";
 import { IBerachainRewardsRegistry } from "./interfaces/IBerachainRewardsRegistry.sol";
-import { IBerachainRewardsVaultFactory } from "./interfaces/IBerachainRewardsVaultFactory.sol";
 import { IInfrared } from "./interfaces/IInfrared.sol";
 import { IInfraredVault } from "./interfaces/IInfraredVault.sol";
 import { IMetaVaultRewardTokenFactory } from "./interfaces/IMetaVaultRewardTokenFactory.sol";
@@ -54,19 +54,26 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
     bytes32 private constant _FILE = "BerachainRewardsRegistry";
     address private constant _DEAD_VAULT = 0x000000000000000000000000000000000000dEaD;
 
-    bytes32 private constant _BERACHAIN_REWARDS_VAULT_FACTORY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.berachainRewardsVaultFactory")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _BGT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.bgt")) - 1);
-    bytes32 private constant _BGT_ISOLATION_MODE_VAULT_FACTORY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.bgtIsolationModeVaultFactory")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _BGTM_SLOT = bytes32(uint256(keccak256("eip1967.proxy.bgtm")) - 1);
-    bytes32 private constant _BGTM_ISOLATION_MODE_VAULT_FACTORY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.bgtmIsolationModeVaultFactory")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _I_BGT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.iBgt")) - 1);
-    bytes32 private constant _I_BGT_ISOLATION_MODE_VAULT_FACTORY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.iBgtIsolationModeVaultFactory")) - 1); // solhint-disable-line max-line-length
-    bytes32 private constant _I_BGT_VAULT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.iBgtVault")) - 1); // solhint-disable-line max-line-length
-    bytes32 private constant _INFRARED_SLOT = bytes32(uint256(keccak256("eip1967.proxy.infrared")) - 1); // solhint-disable-line max-line-length
-    bytes32 private constant _META_VAULT_IMPLEMENTATION_SLOT = bytes32(uint256(keccak256("eip1967.proxy.metaVaultImplementation")) - 1); // solhint-disable-line max-line-length
-    bytes32 private constant _REWARD_VAULT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.rewardVault")) - 1);
     bytes32 private constant _WBERA_SLOT = bytes32(uint256(keccak256("eip1967.proxy.wbera")) - 1);
 
+    bytes32 private constant _BERACHAIN_REWARDS_FACTORY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.berachainRewardsFactory")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _I_BGT_STAKING_VAULT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.iBgtStakingVault")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _INFRARED_SLOT = bytes32(uint256(keccak256("eip1967.proxy.infrared")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _REWARD_VAULT_OVERRIDE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.rewardVaultOverride")) - 1); // solhint-disable-line max-line-length
+
+    bytes32 private constant _BGT_ISOLATION_MODE_VAULT_FACTORY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.bgtIsolationModeVaultFactory")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _BGTM_ISOLATION_MODE_VAULT_FACTORY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.bgtmIsolationModeVaultFactory")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _I_BGT_ISOLATION_MODE_VAULT_FACTORY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.iBgtIsolationModeVaultFactory")) - 1); // solhint-disable-line max-line-length
+
+    bytes32 private constant _POL_UNWRAPPER_TRADER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.polUnwrapperTrader")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _POL_WRAPPER_TRADER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.polWrapperTrader")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _POL_FEE_AGENT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.polFeeAgent")) - 1);
+    bytes32 private constant _POL_FEE_PERCENTAGE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.polFeePercentage")) - 1); // solhint-disable-line max-line-length
+
+    bytes32 private constant _META_VAULT_IMPLEMENTATION_SLOT = bytes32(uint256(keccak256("eip1967.proxy.metaVaultImplementation")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _ACCOUNT_TO_META_VAULT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.accountToMetaVault")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _META_VAULT_TO_ACCOUNT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.metaVaultToAccount")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _VAULT_TO_META_VAULT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.vaultToMetaVault")) - 1); // solhint-disable-line max-line-length
@@ -80,22 +87,24 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
         address _bgt,
         address _bgtm,
         address _iBgt,
-        address _berachainRewardsVaultFactory,
+        address _wbera,
+        address _berachainRewardsFactory,
+        address _iBgtStakingVault,
         address _infrared,
-        address _iBgtVault,
         address _metaVaultImplementation,
-        address _dolomiteRegistry,
-        address _wbera
+        address _dolomiteRegistry
     ) external initializer {
         _ownerSetBgt(_bgt);
         _ownerSetBgtm(_bgtm);
         _ownerSetIBgt(_iBgt);
-        _ownerSetBerachainRewardsVaultFactory(_berachainRewardsVaultFactory);
+        _ownerSetWbera(_wbera);
+
+        _ownerSetBerachainRewardsFactory(_berachainRewardsFactory);
+        _ownerSetIBgtStakingVault(_iBgtStakingVault);
         _ownerSetInfrared(_infrared);
-        _ownerSetIBgtVault(_iBgtVault);
+
         _ownerSetMetaVaultImplementation(_metaVaultImplementation);
         _ownerSetDolomiteRegistry(_dolomiteRegistry);
-        _ownerSetWbera(_wbera);
         _createMetaVault(_DEAD_VAULT);
     }
 
@@ -107,17 +116,18 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
         address _account,
         address _vault
     ) external override onlyDolomiteMarginGlobalOperator(msg.sender) returns (address) {
-        (bool isTokenVault,) = address(DOLOMITE_MARGIN()).staticcall(
+        (bool isFactory,) = address(DOLOMITE_MARGIN()).staticcall(
             abi.encodeWithSelector(DOLOMITE_MARGIN().getMarketIdByTokenAddress.selector, msg.sender)
         );
         Require.that(
-            isTokenVault,
+            isFactory,
             _FILE,
             "Caller is not a valid factory",
             msg.sender
         );
 
         address metaVault = getMetaVaultByAccount(_account);
+        // @follow-up Want to add a check to see if vault and account are valid on factory?
         if (metaVault == address(0)) {
             metaVault = _createMetaVault(_account);
         }
@@ -147,10 +157,10 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
     // ================ Admin Functions ===============
     // ================================================
 
-    function ownerSetBerachainRewardsVaultFactory(
-        address _berachainRewardsVaultFactory
+    function ownerSetBerachainRewardsFactory(
+        address _berachainRewardsFactory
     ) external override onlyDolomiteMarginOwner(msg.sender) {
-        _ownerSetBerachainRewardsVaultFactory(_berachainRewardsVaultFactory);
+        _ownerSetBerachainRewardsFactory(_berachainRewardsFactory);
     }
 
     function ownerSetBgt(address _bgt) external override onlyDolomiteMarginOwner(msg.sender) {
@@ -183,10 +193,10 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
         _ownerSetIBgt(_iBgt);
     }
 
-    function ownerSetIBgtVault(
-        address _iBgtVault
+    function ownerSetIBgtStakingVault(
+        address _iBgtStakingVault
     ) external override onlyDolomiteMarginOwner(msg.sender) {
-        _ownerSetIBgtVault(_iBgtVault);
+        _ownerSetIBgtStakingVault(_iBgtStakingVault);
     }
 
     function ownerSetInfrared(
@@ -201,18 +211,42 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
         _ownerSetMetaVaultImplementation(_metaVaultImplementation);
     }
 
-    function ownerSetRewardVault(
+    function ownerSetRewardVaultOverride(
         address _asset,
         RewardVaultType _type,
         address _rewardVault
     ) external override onlyDolomiteMarginOwner(msg.sender) {
-        _ownerSetRewardVault(_asset, _type, _rewardVault);
+        _ownerSetRewardVaultOverride(_asset, _type, _rewardVault);
     }
 
     function ownerSetWbera(
         address _wbera
     ) external override onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetWbera(_wbera);
+    }
+
+    function ownerSetPolUnwrapperTrader(
+        address _polUnwrapperTrader
+    ) external override onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetPolUnwrapperTrader(_polUnwrapperTrader);
+    }
+
+    function ownerSetPolWrapperTrader(
+        address _polWrapperTrader
+    ) external override onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetPolWrapperTrader(_polWrapperTrader);
+    }
+
+    function ownerSetPolFeeAgent(
+        address _polFeeAgent
+    ) external override onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetPolFeeAgent(_polFeeAgent);
+    }
+
+    function ownerSetPolFeePercentage(
+        uint256 _polFeePercentage
+    ) external override onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetPolFeePercentage(_polFeePercentage);
     }
 
     // ===================================================
@@ -227,6 +261,40 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
         return IBGTM(_getAddress(_BGTM_SLOT));
     }
 
+    function iBgt() external view override returns (IERC20) {
+        return IERC20(_getAddress(_I_BGT_SLOT));
+    }
+
+    function wbera() external view override returns (IWETH) {
+        return IWETH(_getAddress(_WBERA_SLOT));
+    }
+
+    function berachainRewardsFactory() public view override returns (IBerachainRewardsFactory) {
+        return IBerachainRewardsFactory(_getAddress(_BERACHAIN_REWARDS_FACTORY_SLOT));
+    }
+
+    function iBgtStakingVault() external view override returns (IInfraredVault) {
+        return IInfraredVault(_getAddress(_I_BGT_STAKING_VAULT_SLOT));
+    }
+
+    function infrared() public view override returns (IInfrared) {
+        return IInfrared(_getAddress(_INFRARED_SLOT));
+    }
+
+    function rewardVault(address _asset, RewardVaultType _type) public view override returns (address) {
+        address overrideVault =  _getAddressInNestedMap(_REWARD_VAULT_OVERRIDE_SLOT, _asset, uint256(_type));
+        if (overrideVault != address(0)) {
+            return overrideVault;
+        }
+
+        if (_type == RewardVaultType.NATIVE || _type == RewardVaultType.BGTM) {
+            return berachainRewardsFactory().getVault(_asset);
+        } else {
+            assert(_type == RewardVaultType.INFRARED);
+            return infrared().vaultRegistry(_asset);
+        }
+    }
+
     function bgtIsolationModeVaultFactory(
     ) public view override returns (IMetaVaultRewardTokenFactory) {
         return IMetaVaultRewardTokenFactory(_getAddress(_BGT_ISOLATION_MODE_VAULT_FACTORY_SLOT));
@@ -237,17 +305,25 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
         return IMetaVaultRewardTokenFactory(_getAddress(_BGTM_ISOLATION_MODE_VAULT_FACTORY_SLOT));
     }
 
-    function iBgt() external view override returns (IERC20) {
-        return IERC20(_getAddress(_I_BGT_SLOT));
-    }
-
     function iBgtIsolationModeVaultFactory(
     ) public view override returns (IMetaVaultRewardTokenFactory) {
         return IMetaVaultRewardTokenFactory(_getAddress(_I_BGT_ISOLATION_MODE_VAULT_FACTORY_SLOT));
     }
 
-    function iBgtVault() external view override returns (IInfraredVault) {
-        return IInfraredVault(_getAddress(_I_BGT_VAULT_SLOT));
+    function polUnwrapperTrader() public view override returns (address) {
+        return _getAddress(_POL_UNWRAPPER_TRADER_SLOT);
+    }
+
+    function polWrapperTrader() public view override returns (address) {
+        return _getAddress(_POL_WRAPPER_TRADER_SLOT);
+    }
+
+    function polFeeAgent() public view override returns (address) {
+        return _getAddress(_POL_FEE_AGENT_SLOT);
+    }
+
+    function polFeePercentage(uint256 /* _marketId */) public view override returns (uint256) {
+        return _getUint256(_POL_FEE_PERCENTAGE_SLOT);
     }
 
     function metaVaultImplementation() external view override returns (address) {
@@ -259,32 +335,6 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
             keccak256(abi.encodePacked(_account)),
             keccak256(type(MetaVaultUpgradeableProxy).creationCode)
         );
-    }
-
-    function wbera() external view override returns (IWETH) {
-        return IWETH(_getAddress(_WBERA_SLOT));
-    }
-
-    function berachainRewardsVaultFactory() public view override returns (IBerachainRewardsVaultFactory) {
-        return IBerachainRewardsVaultFactory(_getAddress(_BERACHAIN_REWARDS_VAULT_FACTORY_SLOT));
-    }
-
-    function infrared() public view override returns (IInfrared) {
-        return IInfrared(_getAddress(_INFRARED_SLOT));
-    }
-
-    function rewardVault(address _asset, RewardVaultType _type) public view override returns (address) {
-        address overrideVault =  _getAddressInNestedMap(_REWARD_VAULT_SLOT, _asset, uint256(_type));
-        if (overrideVault != address(0)) {
-            return overrideVault;
-        }
-
-        if (_type == RewardVaultType.NATIVE || _type == RewardVaultType.BGTM) {
-            return berachainRewardsVaultFactory().getVault(_asset);
-        } else {
-            assert(_type == RewardVaultType.INFRARED);
-            return infrared().vaultRegistry(_asset);
-        }
     }
 
     function getAccountToAssetToDefaultType(
@@ -336,14 +386,14 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
         IMetaVaultUpgradeableProxy(_metaVault).initialize(_account);
     }
 
-    function _ownerSetBerachainRewardsVaultFactory(address _berachainRewardsVaultFactory) internal {
+    function _ownerSetBerachainRewardsFactory(address _berachainRewardsFactory) internal {
         Require.that(
-            _berachainRewardsVaultFactory != address(0),
+            _berachainRewardsFactory != address(0),
             _FILE,
             "Invalid vault factory address"
         );
-        _setAddress(_BERACHAIN_REWARDS_VAULT_FACTORY_SLOT, _berachainRewardsVaultFactory);
-        emit BerachainRewardsVaultFactorySet(_berachainRewardsVaultFactory);
+        _setAddress(_BERACHAIN_REWARDS_FACTORY_SLOT, _berachainRewardsFactory);
+        emit BerachainRewardsFactorySet(_berachainRewardsFactory);
     }
 
     function _ownerSetBgt(address _bgt) internal {
@@ -364,6 +414,16 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
         );
         _setAddress(_BGTM_SLOT, _bgtm);
         emit BgtmSet(_bgtm);
+    }
+
+    function _ownerSetWbera(address _wbera) internal {
+        Require.that(
+            _wbera != address(0),
+            _FILE,
+            "Invalid wbera address"
+        );
+        _setAddress(_WBERA_SLOT, _wbera);
+        emit WberaSet(_wbera);
     }
 
     function _ownerSetBgtIsolationModeVaultFactory(
@@ -412,14 +472,14 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
         emit IBgtIsolationModeVaultFactorySet(_iBgtIsolationModeVaultFactory);
     }
 
-    function _ownerSetIBgtVault(address _iBgtVault) internal {
+    function _ownerSetIBgtStakingVault(address _iBgtStakingVault) internal {
         Require.that(
-            _iBgtVault != address(0),
+            _iBgtStakingVault != address(0),
             _FILE,
-            "Invalid iBgtVault address"
+            "Invalid iBgtStakingVault address"
         );
-        _setAddress(_I_BGT_VAULT_SLOT, _iBgtVault);
-        emit IBgtVaultSet(_iBgtVault);
+        _setAddress(_I_BGT_STAKING_VAULT_SLOT, _iBgtStakingVault);
+        emit IBgtStakingVaultSet(_iBgtStakingVault);
     }
 
     function _ownerSetInfrared(address _infrared) internal {
@@ -442,23 +502,53 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
         emit MetaVaultImplementationSet(_metaVaultImplementation);
     }
 
-    function _ownerSetRewardVault(address _asset, RewardVaultType _type, address _rewardVault) internal {
+    function _ownerSetRewardVaultOverride(address _asset, RewardVaultType _type, address _rewardVault) internal {
         Require.that(
             _rewardVault != address(0),
             _FILE,
             "Invalid rewardVault address"
         );
-        _setAddressInNestedMap(_REWARD_VAULT_SLOT, _asset, uint256(_type), _rewardVault);
-        emit RewardVaultSet(_asset, _type, _rewardVault);
+        _setAddressInNestedMap(_REWARD_VAULT_OVERRIDE_SLOT, _asset, uint256(_type), _rewardVault);
+        emit RewardVaultOverrideSet(_asset, _type, _rewardVault);
     }
 
-    function _ownerSetWbera(address _wbera) internal {
+    function _ownerSetPolUnwrapperTrader(address _polUnwrapperTrader) internal {
         Require.that(
-            _wbera != address(0),
+            _polUnwrapperTrader != address(0),
             _FILE,
-            "Invalid wbera address"
+            "Invalid polUnwrapperTrader"
         );
-        _setAddress(_WBERA_SLOT, _wbera);
-        emit WberaSet(_wbera);
+        _setAddress(_POL_UNWRAPPER_TRADER_SLOT, _polUnwrapperTrader);
+        emit PolUnwrapperTraderSet(_polUnwrapperTrader);
+    }
+
+    function _ownerSetPolWrapperTrader(address _polWrapperTrader) internal {
+        Require.that(
+            _polWrapperTrader != address(0),
+            _FILE,
+            "Invalid polWrapperTrader"
+        );
+        _setAddress(_POL_WRAPPER_TRADER_SLOT, _polWrapperTrader);
+        emit PolWrapperTraderSet(_polWrapperTrader);
+    }
+
+    function _ownerSetPolFeeAgent(address _polFeeAgent) internal {
+        Require.that(
+            _polFeeAgent != address(0),
+            _FILE,
+            "Invalid polFeeAgent address"
+        );
+        _setAddress(_POL_FEE_AGENT_SLOT, _polFeeAgent);
+        emit PolFeeAgentSet(_polFeeAgent);
+    }
+
+    function _ownerSetPolFeePercentage(uint256 _polFeePercentage) internal {
+        Require.that(
+            _polFeePercentage <= 1 ether,
+            _FILE,
+            "Invalid polFeePercentage"
+        );
+        _setUint256(_POL_FEE_PERCENTAGE_SLOT, _polFeePercentage);
+        emit PolFeePercentageSet(_polFeePercentage);
     }
 }
