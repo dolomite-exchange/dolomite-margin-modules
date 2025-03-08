@@ -40,7 +40,7 @@ import { ethers } from 'hardhat';
 import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { IERC20, OARB, TestVesterImplementationV1 } from '../src/types';
 import { createOARB, createTestVesterV1Proxy } from './liquidity-mining-ecosystem-utils';
-import { expectEmptyPosition } from './liquidityMining-utils';
+import { expectEmptyPosition } from './liquidity-mining-utils';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 const defaultAccountNumber = ZERO_BI;

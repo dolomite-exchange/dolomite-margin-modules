@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 /*
 
-    Copyright 2024 Dolomite
+    Copyright 2025 Dolomite
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -20,16 +20,20 @@
 
 pragma solidity ^0.8.9;
 
+import { Internal } from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Internal.sol";
+
 
 /**
- * @title   VoterAlwaysActive
+ * @title   ICCIPOffRamp
  * @author  Dolomite
  *
- * Voter implementation to be used by VotingEscrow which always returns false for stale
+ * @notice  Interface for CCIPOffRamp contract
  */
-contract VoterAlwaysActive {
+interface ICCIPOffRamp {
 
-    function stale(uint256 /* _tokenId */) external pure returns (bool) {
-        return false;
-    }
+    function executeSingleMessage(
+        Internal.EVM2EVMMessage calldata message,
+        bytes[] calldata offchainTokenData,
+        uint32[] memory tokenGasOverrides
+    ) external;
 }
