@@ -133,8 +133,8 @@ contract POLIsolationModeWrapperTraderV2 is
         IDolomiteStructs.AccountInfo calldata takerAccount,
         IDolomiteStructs.Par calldata oldInputPar,
         IDolomiteStructs.Par calldata newInputPar,
-        IDolomiteStructs.Wei calldata inputDeltaWei,
-        bytes calldata data
+        IDolomiteStructs.Wei calldata /* inputDeltaWei */,
+        bytes calldata /* data */
     )
     external
     onlyDolomiteMargin(msg.sender)

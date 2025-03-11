@@ -66,8 +66,6 @@ contract POLIsolationModeUnwrapperTraderV2 is
     // ========================== Constructor ===========================
     // ==================================================================
 
-    // @todo may want to still check underlying balance somewhere
-    // @todo Add fee on unwrapping
     constructor(
         address _berachainRewardsRegistry,
         address _dolomiteMargin
@@ -96,25 +94,25 @@ contract POLIsolationModeUnwrapperTraderV2 is
 
     function exchange(
         address _tradeOriginator,
-        address _receiver,
+        address /* _receiver */,
         address _outputToken,
         address _inputToken,
         uint256 _inputAmount,
-        bytes calldata _orderData
+        bytes calldata /* _orderData */
     )
     external
     override
     onlyDolomiteMargin(msg.sender)
     returns (uint256) {
         IIsolationModeVaultFactory factory = vaultFactory();
-        address vaultOwner = _getLiquidationAddressOverride(_tradeOriginator);
+        address vault = _getVaultFromTradeOriginator(_tradeOriginator);
 
         _validateInputAndOutputToken(
             _inputToken,
             _outputToken
         );
         Require.that(
-            factory.getAccountByVault(vaultOwner) != address(0),
+            factory.getAccountByVault(vault) != address(0),
             _FILE,
             "Invalid trade originator",
             _tradeOriginator
@@ -144,7 +142,7 @@ contract POLIsolationModeUnwrapperTraderV2 is
     returns (IDolomiteStructs.AssetAmount memory) {
         // @audit Ensure that I can't call for a different isolation mode vault
         IIsolationModeVaultFactory factory = vaultFactory();
-        address vault = _getLiquidationAddressOverride(makerAccount.owner);
+        address vault = _getVaultFromTradeOriginator(makerAccount.owner);
 
         _validateInputAndOutputMarketId(
             inputMarketId,
@@ -361,7 +359,7 @@ contract POLIsolationModeUnwrapperTraderV2 is
         );
     }
 
-    function _getLiquidationAddressOverride(
+    function _getVaultFromTradeOriginator(
         address _tradeOriginator
     ) internal view returns (address) {
         address liquidationAddressOverride = _getAddressFromMap(_LIQUIDATION_ADDRESS_OVERRIDE_SLOT, _tradeOriginator);
