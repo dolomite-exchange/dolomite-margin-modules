@@ -92,7 +92,7 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
     vaultType: IsolationModeVaultType.Pt,
   },
   [DYT_GLP_2024_MAP[network].marketId]: {
-    contractName: 'PendleYtGLP2024IsolationModeTokenVaultV1',
+    contractName: 'PendleYtGLPMar2024IsolationModeTokenVaultV1',
     contractRenameWithoutVersion: 'PendleYtGLPMar2024IsolationModeTokenVault',
     implementationAddress: getMaxDeploymentVersionAddressByDeploymentKey(
       'PendleYtGLPMar2024IsolationModeTokenVault',
@@ -152,7 +152,7 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
     vaultType: IsolationModeVaultType.None,
   },
   [D_GM_ARB_USD_MAP[network].marketId]: {
-    contractName: 'GMXIsolationModeTokenVaultV1',
+    contractName: 'GmxV2IsolationModeTokenVaultV1',
     contractRenameWithoutVersion: 'GmxV2IsolationModeTokenVaultImplementation',
     implementationAddress: getMaxDeploymentVersionAddressByDeploymentKey(
       'GmxV2IsolationModeTokenVaultImplementation',

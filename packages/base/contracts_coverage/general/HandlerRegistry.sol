@@ -134,17 +134,20 @@ abstract contract HandlerRegistry is
     )
     internal {
         _validateFactoryToken(_factoryToken);
-        bytes memory result = ValidationLib.callAndCheckSuccess(
-            address(_unwrapperTrader),
-            _unwrapperTrader.VAULT_FACTORY.selector,
-            /* _data = */ bytes("")
-        );
-        if (abi.decode(result, (address)) == address(_factoryToken)) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            abi.decode(result, (address)) == address(_factoryToken),
-            _FILE,
-            "Invalid unwrapper trader"
-        );
+        if (address(_unwrapperTrader) != address(0)) {
+            bytes memory result = ValidationLib.callAndCheckSuccess(
+                address(_unwrapperTrader),
+                _unwrapperTrader.VAULT_FACTORY.selector,
+                /* _data = */ bytes("")
+            );
+            if (abi.decode(result, (address)) == address(_factoryToken)) { /* FOR COVERAGE TESTING */ }
+            Require.that(
+                abi.decode(result, (address)) == address(_factoryToken),
+                _FILE,
+                "Invalid unwrapper trader"
+            );
+        }
+
         bytes32 slot = keccak256(abi.encodePacked(_UNWRAPPER_BY_TOKEN_SLOT, address(_factoryToken)));
         _setAddress(slot, address(_unwrapperTrader));
         emit UnwrapperTraderSet(address(_factoryToken), address(_unwrapperTrader));
@@ -156,17 +159,20 @@ abstract contract HandlerRegistry is
     )
     internal {
         _validateFactoryToken(_factoryToken);
-        bytes memory result = ValidationLib.callAndCheckSuccess(
-            address(_wrapperTrader),
-            _wrapperTrader.VAULT_FACTORY.selector,
-            /* _data = */ bytes("")
-        );
-        if (abi.decode(result, (address)) == address(_factoryToken)) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            abi.decode(result, (address)) == address(_factoryToken),
-            _FILE,
-            "Invalid wrapper trader"
-        );
+        if (address(_wrapperTrader) != address(0)) {
+            bytes memory result = ValidationLib.callAndCheckSuccess(
+                address(_wrapperTrader),
+                _wrapperTrader.VAULT_FACTORY.selector,
+                /* _data = */ bytes("")
+            );
+            if (abi.decode(result, (address)) == address(_factoryToken)) { /* FOR COVERAGE TESTING */ }
+            Require.that(
+                abi.decode(result, (address)) == address(_factoryToken),
+                _FILE,
+                "Invalid wrapper trader"
+            );
+        }
+
 
         bytes32 slot = keccak256(abi.encodePacked(_WRAPPER_BY_TOKEN_SLOT, address(_factoryToken)));
         _setAddress(slot, address(_wrapperTrader));

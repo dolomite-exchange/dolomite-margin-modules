@@ -490,6 +490,29 @@ library AccountActionLib {
         });
     }
 
+    function encodeTransferToTargetAmountAction(
+        uint256 _fromAccountId,
+        uint256 _toAccountId,
+        uint256 _marketId,
+        IDolomiteStructs.Wei memory _targetAmountWei
+    ) internal pure returns (IDolomiteStructs.ActionArgs memory) {
+        return IDolomiteStructs.ActionArgs({
+            actionType : IDolomiteStructs.ActionType.Transfer,
+            accountId : _fromAccountId,
+            amount : IDolomiteStructs.AssetAmount({
+                sign: _targetAmountWei.sign,
+                denomination: IDolomiteStructs.AssetDenomination.Wei,
+                ref: IDolomiteStructs.AssetReference.Target,
+                value: _targetAmountWei.value
+            }),
+            primaryMarketId : _marketId,
+            secondaryMarketId : 0,
+            otherAddress : address(0),
+            otherAccountId : _toAccountId,
+            data : bytes("")
+        });
+    }
+
     function encodeWithdrawalAction(
         uint256 _accountId,
         uint256 _marketId,

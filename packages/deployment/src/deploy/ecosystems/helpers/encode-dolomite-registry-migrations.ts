@@ -1,22 +1,29 @@
 import { ADDRESS_ZERO } from '@dolomite-exchange/zap-sdk/dist/src/lib/Constants';
+import CoreDeployments from '@dolomite-margin/dist/migrations/deployed.json';
 import {
+  GenericTraderProxyV2,
   IDolomiteRegistry,
-  IIsolationModeTokenVaultV1__factory,
+  IIsolationModeTokenVaultV1__factory, ILiquidatorProxyV5,
   RegistryProxy,
 } from 'packages/base/src/types';
 import { isArraysEqual } from 'packages/base/src/utils';
+import { NetworkType } from '../../../../../base/src/utils/no-deps-constants';
+import { CoreProtocolType } from '../../../../../base/test/utils/setup';
 import { EncodedTransaction } from '../../../utils/dry-run-utils';
 import { prettyPrintEncodedDataWithTypeSafety } from '../../../utils/encoding/base-encoder-utils';
 
-export async function encodeDolomiteRegistryMigrations(
+export async function encodeDolomiteRegistryMigrations<T extends NetworkType>(
   dolomiteRegistry: IDolomiteRegistry,
   dolomiteRegistryProxy: RegistryProxy,
-  dolomiteAccountRegistryAddress: string,
+  borrowPositionProxyAddress: string,
+  dolomiteAccountRegistryProxy: RegistryProxy,
   dolomiteMigratorAddress: string,
+  genericTraderProxyV2: GenericTraderProxyV2,
+  liquidatorProxyV5: ILiquidatorProxyV5,
   oracleAggregatorAddress: string,
   registryImplementationAddress: string,
   transactions: EncodedTransaction[],
-  core: any,
+  core: CoreProtocolType<T>,
 ) {
   if ((await dolomiteRegistryProxy.implementation()) !== registryImplementationAddress) {
     transactions.push(
@@ -34,7 +41,7 @@ export async function encodeDolomiteRegistryMigrations(
   try {
     const foundDolomiteAccountRegistryAddress = await dolomiteRegistry.dolomiteAccountRegistry();
     needsRegistryDolomiteAccountRegistryEncoding =
-      foundDolomiteAccountRegistryAddress !== dolomiteAccountRegistryAddress;
+      foundDolomiteAccountRegistryAddress !== dolomiteAccountRegistryProxy.address;
   } catch (e) {}
   if (needsRegistryDolomiteAccountRegistryEncoding) {
     transactions.push(
@@ -43,7 +50,78 @@ export async function encodeDolomiteRegistryMigrations(
         { dolomiteRegistry },
         'dolomiteRegistry',
         'ownerSetDolomiteAccountRegistry',
-        [dolomiteAccountRegistryAddress],
+        [dolomiteAccountRegistryProxy.address],
+      ),
+    );
+  }
+
+  let needsRegistryBorrowPositionProxyEncoding = true;
+  try {
+    const foundBorrowPositionProxyAddress = await dolomiteRegistry.borrowPositionProxy();
+    needsRegistryBorrowPositionProxyEncoding = foundBorrowPositionProxyAddress !== borrowPositionProxyAddress;
+  } catch (e) {}
+  if (needsRegistryBorrowPositionProxyEncoding) {
+    transactions.push(
+      await prettyPrintEncodedDataWithTypeSafety(
+        core,
+        { dolomiteRegistry },
+        'dolomiteRegistry',
+        'ownerSetBorrowPositionProxy',
+        [borrowPositionProxyAddress],
+      ),
+    );
+  }
+
+  let needsRegistryGenericTraderProxyV2Encoding = true;
+  try {
+    const foundGenericTraderProxyV2Address = await dolomiteRegistry.genericTraderProxy();
+    needsRegistryGenericTraderProxyV2Encoding = foundGenericTraderProxyV2Address !== genericTraderProxyV2.address;
+  } catch (e) {}
+  if (needsRegistryGenericTraderProxyV2Encoding) {
+    transactions.push(
+      await prettyPrintEncodedDataWithTypeSafety(
+        core,
+        { dolomiteRegistry },
+        'dolomiteRegistry',
+        'ownerSetGenericTraderProxy',
+        [genericTraderProxyV2.address],
+      ),
+    );
+  }
+
+  if (!(await core.dolomiteMargin.getIsGlobalOperator(genericTraderProxyV2.address))) {
+    transactions.push(
+      await prettyPrintEncodedDataWithTypeSafety(
+        core,
+        { dolomiteMargin: core.dolomiteMargin },
+        'dolomiteMargin',
+        'ownerSetGlobalOperator',
+        [genericTraderProxyV2.address, true],
+      ),
+    );
+  }
+
+  const genericTraderProxyV1Address = CoreDeployments.GenericTraderProxyV1[core.network].address;
+  if (await core.dolomiteMargin.getIsGlobalOperator(genericTraderProxyV1Address)) {
+    transactions.push(
+      await prettyPrintEncodedDataWithTypeSafety(
+        core,
+        { dolomiteMargin: core.dolomiteMargin },
+        'dolomiteMargin',
+        'ownerSetGlobalOperator',
+        [genericTraderProxyV1Address, false],
+      ),
+    );
+  }
+
+  if (!(await core.dolomiteMargin.getIsGlobalOperator(liquidatorProxyV5.address))) {
+    transactions.push(
+      await prettyPrintEncodedDataWithTypeSafety(
+        core,
+        { dolomiteMargin: core.dolomiteMargin },
+        'dolomiteMargin',
+        'ownerSetGlobalOperator',
+        [liquidatorProxyV5.address, true],
       ),
     );
   }

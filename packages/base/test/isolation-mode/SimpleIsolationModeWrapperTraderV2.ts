@@ -16,6 +16,7 @@ import {
 import {
   createContractWithAbi,
   createContractWithLibrary,
+  createContractWithName,
   createTestToken,
   depositIntoDolomiteMargin,
 } from '../../src/utils/dolomite-utils';
@@ -24,7 +25,7 @@ import { revertToSnapshotAndCapture, snapshot } from '../utils';
 import { expectProtocolBalance } from '../utils/assertions';
 
 import { CoreProtocolArbitrumOne } from '../utils/core-protocols/core-protocol-arbitrum-one';
-import { createIsolationModeTokenVaultV1ActionsImpl } from '../utils/dolomite';
+import { createAndUpgradeDolomiteRegistry, createIsolationModeTokenVaultV1ActionsImpl } from '../utils/dolomite';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from '../utils/setup';
 import { getWrapZapParams } from '../utils/zap-utils';
 
@@ -46,6 +47,16 @@ describe('SimpleIsolationModeWrapperTraderV2', () => {
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
+    await createAndUpgradeDolomiteRegistry(core);
+    const genericTraderLib = await createContractWithName('GenericTraderProxyV2Lib', []);
+    const genericTraderProxy = await createContractWithLibrary(
+      'GenericTraderProxyV2',
+      { GenericTraderProxyV2Lib: genericTraderLib.address },
+      [Network.ArbitrumOne, core.dolomiteRegistry.address, core.dolomiteMargin.address]
+    );
+    await core.dolomiteRegistry.ownerSetGenericTraderProxy(genericTraderProxy.address);
+    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(genericTraderProxy.address, true);
+
     underlyingToken = await createTestToken();
     const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
     userVaultImplementation = await createContractWithLibrary<TestIsolationModeTokenVaultV1>(
@@ -59,12 +70,12 @@ describe('SimpleIsolationModeWrapperTraderV2', () => {
       TestSimpleIsolationModeVaultFactory__factory.abi,
       TestSimpleIsolationModeVaultFactory__factory.bytecode,
       [
-        core.dolomiteRegistry.address,
         initialAllowableDebtMarketIds,
         initialAllowableCollateralMarketIds,
         underlyingToken.address,
         core.borrowPositionProxyV2.address,
         userVaultImplementation.address,
+        core.dolomiteRegistry.address,
         core.dolomiteMargin.address,
       ],
     );

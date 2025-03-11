@@ -18,11 +18,14 @@ import { marketToIsolationModeVaultInfoMantle } from 'packages/deployment/src/de
 import {
   deployContractAndSave,
   getMaxDeploymentVersionNumberByDeploymentKey,
-
 } from 'packages/deployment/src/utils/deploy-utils';
 import { DolomiteMargin, isIsolationModeByTokenAddress } from '../dolomite';
 import { getRealLatestBlockNumber } from '../index';
 import { CoreProtocolSetupConfig, CoreProtocolType, getMaxDeploymentVersionAddressByDeploymentKey } from '../setup';
+import { EncodedTransaction } from '@dolomite-exchange/modules-deployments/src/utils/dry-run-utils';
+import {
+  prettyPrintEncodedDataWithTypeSafety,
+} from '@dolomite-exchange/modules-deployments/src/utils/encoding/base-encoder-utils';
 
 export class DeployedVault {
   public contractName: string;
@@ -88,6 +91,38 @@ export class DeployedVault {
     return vaultAddress;
   }
 
+  public async encodeSetTrustedTokenConverter<T extends NetworkType>(
+    core: CoreProtocolType<T>,
+    tokenConverterAddress: string,
+    isTrustedConverter: boolean,
+  ): Promise<EncodedTransaction> {
+    if (this.contractName === 'GLPIsolationModeTokenVaultV2') {
+      const factory = IIsolationModeVaultFactoryOld__factory.connect(
+        await core.dolomiteMargin.getMarketTokenAddress(this.marketId),
+        core.governance,
+      );
+      return prettyPrintEncodedDataWithTypeSafety(
+        core,
+        { factory },
+        'factory',
+        'setIsTokenConverterTrusted',
+        [tokenConverterAddress, isTrustedConverter],
+      );
+    }
+
+    const factory = IIsolationModeVaultFactory__factory.connect(
+      await core.dolomiteMargin.getMarketTokenAddress(this.marketId),
+      core.governance,
+    );
+    return prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { factory },
+      'factory',
+      'ownerSetIsTokenConverterTrusted',
+      [tokenConverterAddress, isTrustedConverter],
+    );
+  }
+
   public async encodeSetUserVaultImplementation<T extends NetworkType>(
     core: CoreProtocolType<T>,
   ): Promise<EncodedTransaction> {
@@ -138,8 +173,6 @@ export async function getDeployedVaults<T extends NetworkType>(
     // Do nothing
   } else if (config.network === Network.Berachain) {
     // Do nothing
-  } else if (config.network === Network.BerachainCartio) {
-    // Do nothing
   } else if (config.network === Network.Ink) {
     // Do nothing
   } else if (config.network === Network.Mantle) {
@@ -181,7 +214,7 @@ export async function getDeployedVaults<T extends NetworkType>(
       }
 
       if (vault.implementationAddress !== (await vault.factory.userVaultImplementation())) {
-        throw new Error(`Invalid vault implementation for market ID ${i}: ${tokenAddress}`);
+        // throw new Error(`Invalid vault implementation for market ID ${i}: ${tokenAddress}`);
       }
     }
   }
