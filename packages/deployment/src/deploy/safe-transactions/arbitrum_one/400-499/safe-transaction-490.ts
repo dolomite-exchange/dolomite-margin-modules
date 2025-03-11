@@ -17,7 +17,8 @@ import { encodeInsertChainlinkOracleV3 } from '../../../../utils/encoding/oracle
 import getScriptName from '../../../../utils/get-script-name';
 import {
   checkIsCollateralOnly,
-  checkLiquidationPenalty, checkMarket, checkMarketId,
+  checkLiquidationPenalty,
+  checkMarketId,
   checkMinCollateralization,
   checkSupplyCap,
   printPriceForVisualCheck,
@@ -37,10 +38,10 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   transactions.push(
     await encodeSetSupplyCapWithMagic(core, core.marketIds.dGmx, 225_000),
     await encodeSetLiquidationPenalty(core, core.marketIds.dGmx, TargetLiquidationPenalty._9),
-    ...await encodeInsertChainlinkOracleV3(core, core.tokens.aave),
-    ...await encodeInsertChainlinkOracleV3(core, core.tokens.usds),
-    ...await encodeInsertChainlinkOracleV3(core, core.tokens.sUsds),
-    ...await encodeAddMarket(
+    ...(await encodeInsertChainlinkOracleV3(core, core.tokens.aave)),
+    ...(await encodeInsertChainlinkOracleV3(core, core.tokens.usds)),
+    ...(await encodeInsertChainlinkOracleV3(core, core.tokens.sUsds)),
+    ...(await encodeAddMarket(
       core,
       core.tokens.aave,
       core.oracleAggregatorV2,
@@ -50,8 +51,8 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       parseEther(`${10_000}`),
       ZERO_BI,
       true,
-    ),
-    ...await encodeAddMarket(
+    )),
+    ...(await encodeAddMarket(
       core,
       core.tokens.usds,
       core.oracleAggregatorV2,
@@ -61,8 +62,8 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       parseEther(`${10_000_000}`),
       ZERO_BI,
       false,
-    ),
-    ...await encodeAddMarket(
+    )),
+    ...(await encodeAddMarket(
       core,
       core.tokens.sUsds,
       core.oracleAggregatorV2,
@@ -72,7 +73,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       parseEther(`${15_000_000}`),
       ZERO_BI,
       true,
-    ),
+    )),
   );
 
   return {
