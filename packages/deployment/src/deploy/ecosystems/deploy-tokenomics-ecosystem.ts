@@ -4,12 +4,12 @@ import { getAndCheckSpecificNetwork } from 'packages/base/src/utils/dolomite-uti
 import { ADDRESS_ZERO, BYTES_EMPTY, MAX_UINT_256_BI, Network, NetworkType, ONE_DAY_SECONDS } from 'packages/base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from 'packages/base/test/utils';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
+import { deployContractAndSave } from 'packages/deployment/src/utils/deploy-utils';
 import {
-  deployContractAndSave,
+  doDryRunAndCheckDeployment,
+  DryRunOutput,
   EncodedTransaction,
-  prettyPrintEncodedDataWithTypeSafety,
-} from 'packages/deployment/src/utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from 'packages/deployment/src/utils/dry-run-utils';
+} from 'packages/deployment/src/utils/dry-run-utils';
 import getScriptName from 'packages/deployment/src/utils/get-script-name';
 import {
   getBuybackPoolConstructorParams,
@@ -32,7 +32,7 @@ import {
   VeExternalVesterImplementationV1__factory,
   VestingClaims__factory,
   VotingEscrow__factory,
-} from 'packages/tokenomics/src/types';
+} from 'packages/tokenomics/src/types';import { prettyPrintEncodedDataWithTypeSafety } from '../../utils/encoding/base-encoder-utils';
 
 const NO_MARKET_ID = MAX_UINT_256_BI;
 const TGE_TIMESTAMP = 2222222222;
@@ -52,9 +52,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   })) as any;
 
   // Deploy new custom token
-  const doloAddress = await deployContractAndSave(
-    'DOLO',
-    [core.dolomiteMargin.address, core.gnosisSafeAddress],
+  const doloAddress = await deployContractAndSave('DOLO', [core.dolomiteMargin.address, core.gnosisSafeAddress],
     'DOLO',
   );
   const dolo = DOLO__factory.connect(doloAddress, core.hhUser1);

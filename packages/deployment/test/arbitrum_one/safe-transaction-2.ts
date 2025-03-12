@@ -6,9 +6,9 @@ import { setupCoreProtocol } from 'packages/base/test/utils/setup';
 import { IsolationModeVaultType } from '../../src/deploy/isolation-mode/isolation-mode-helpers';
 import {
   deployContractAndSave,
-  EncodedTransaction,
+
 } from '../../src/utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../src/utils/dry-run-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../src/utils/dry-run-utils';
 import getScriptName from '../../src/utils/get-script-name';
 import { filterVaultsByType } from 'packages/base/test/utils/ecosystem-utils/deployed-vaults';
 import { D_ARB_MAP } from 'packages/base/src/utils/constants';
@@ -16,7 +16,8 @@ import { D_ARB_MAP } from 'packages/base/src/utils/constants';
 /**
  * This test script encodes the following transactions:
  * - Deploys a new GMX V2 Library
- * - Sets the new user vault implementation for each GM-Factory (currently just one in the deployedVaultsMap)
+ * - Sets the new user vault implementation for each GM-Factory
+ * - Deploys and updates a new vault implementation for dARB
  */
 async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);

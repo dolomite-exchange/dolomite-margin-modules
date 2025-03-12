@@ -1,5 +1,6 @@
 import { ApiToken, DolomiteZap } from '@dolomite-exchange/zap-sdk';
 import { BigNumberish } from 'ethers';
+import { IsolationModeVaultType } from 'packages/deployment/src/deploy/isolation-mode/isolation-mode-helpers';
 import { IChainlinkPriceOracleV1, IChainlinkPriceOracleV3, OracleAggregatorV2 } from 'packages/oracles/src/types';
 import {
   DolomiteERC4626,
@@ -9,13 +10,14 @@ import {
   IBorrowPositionProxyV2,
   IDepositWithdrawalProxy,
   IDolomiteAccountRegistry,
+  IDolomiteAccountRiskOverrideSetter,
   IDolomiteRegistry,
   IERC20,
   IEventEmitterRegistry,
-  IGenericTraderProxyV1,
+  IGenericTraderProxyV2,
   ILiquidatorAssetRegistry,
   ILiquidatorProxyV1,
-  ILiquidatorProxyV4WithGenericTrader,
+  ILiquidatorProxyV4WithGenericTrader, ILiquidatorProxyV5,
   IPartiallyDelayedMultiSig,
   IsolationModeFreezableLiquidatorProxy,
   IWETH,
@@ -25,6 +27,7 @@ import { CHAINLINK_PRICE_AGGREGATORS_MAP, SUBGRAPH_URL_MAP } from '../../../src/
 import { Network, NetworkType } from '../../../src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';
 import { DolomiteMargin, Expiry } from '../dolomite';
+import { DeployedVault } from '../ecosystem-utils/deployed-vaults';
 import { InterestSetters } from '../ecosystem-utils/interest-setters';
 import { TestEcosystem } from '../ecosystem-utils/testers';
 import { CoreProtocolConfig } from '../setup';
@@ -33,6 +36,7 @@ import { IsolationModeVaultType } from 'packages/deployment/src/deploy/isolation
 import { TokenomicsEcosystem } from '../ecosystem-utils/tokenomics';
 
 export interface LibraryMaps {
+  safeDelegateCallImpl: Record<string, string>;
   tokenVaultActionsImpl: Record<string, string>;
   unwrapperTraderImpl: Record<string, string>;
   wrapperTraderImpl: Record<string, string>;
@@ -49,14 +53,34 @@ export type WETHType<T extends NetworkType> = T extends Network.ArbitrumOne
   ? IWETH
   : T extends Network.Berachain
   ? IERC20
-  : T extends Network.BerachainCartio
-  ? IERC20
+  : T extends Network.Ink
+  ? IWETH
   : T extends Network.Mantle
   ? IERC20
   : T extends Network.PolygonZkEvm
   ? IWETH
+  : T extends Network.SuperSeed
+  ? IWETH
   : T extends Network.XLayer
   ? IERC20
+  : never;
+
+export type DolomiteWETHType<T extends NetworkType> = T extends Network.ArbitrumOne
+  ? DolomiteERC4626WithPayable
+  : T extends Network.Base
+  ? DolomiteERC4626WithPayable
+  : T extends Network.Berachain
+  ? DolomiteERC4626
+  : T extends Network.Ink
+  ? DolomiteERC4626WithPayable
+  : T extends Network.Mantle
+  ? DolomiteERC4626
+  : T extends Network.PolygonZkEvm
+  ? DolomiteERC4626WithPayable
+  : T extends Network.SuperSeed
+  ? DolomiteERC4626WithPayable
+  : T extends Network.XLayer
+  ? DolomiteERC4626
   : never;
 
 export interface CoreProtocolTokens<T extends NetworkType> {
@@ -64,6 +88,11 @@ export interface CoreProtocolTokens<T extends NetworkType> {
   usdc: IERC20;
   weth: WETHType<T>;
   stablecoins: IERC20[];
+}
+
+export interface CoreProtocolDolomiteTokens<T extends NetworkType> {
+  usdc: DolomiteERC4626 | undefined;
+  weth: DolomiteWETHType<T> | undefined;
 }
 
 export interface CoreProtocolMarketIds {
@@ -95,17 +124,21 @@ export interface CoreProtocolParams<T extends NetworkType> {
   dolomiteRegistryProxy: RegistryProxy;
   dolomiteAccountRegistry: IDolomiteAccountRegistry;
   dolomiteAccountRegistryProxy: RegistryProxy;
+  dolomiteAccountRiskOverrideSetter: IDolomiteAccountRiskOverrideSetter;
+  dolomiteAccountRiskOverrideSetterProxy: RegistryProxy;
   eventEmitterRegistry: IEventEmitterRegistry;
   eventEmitterRegistryProxy: RegistryProxy;
+  dolomiteTokens: CoreProtocolDolomiteTokens<T>;
   expiry: Expiry<T>;
   freezableLiquidatorProxy: IsolationModeFreezableLiquidatorProxy;
-  genericTraderProxy: IGenericTraderProxyV1;
+  genericTraderProxy: IGenericTraderProxyV2;
   implementationContracts: ImplementationContracts;
   interestSetters: InterestSetters;
   libraries: LibraryMaps;
   liquidatorAssetRegistry: ILiquidatorAssetRegistry;
   liquidatorProxyV1: ILiquidatorProxyV1;
   liquidatorProxyV4: ILiquidatorProxyV4WithGenericTrader;
+  liquidatorProxyV5: ILiquidatorProxyV5;
   marketIdToDeployedVaultMap: Record<number, DeployedVault>;
   marketIds: CoreProtocolMarketIds;
   oracleAggregatorV2: OracleAggregatorV2;
@@ -158,17 +191,20 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
   public readonly dolomiteRegistryProxy: RegistryProxy;
   public readonly dolomiteAccountRegistry: IDolomiteAccountRegistry;
   public readonly dolomiteAccountRegistryProxy: RegistryProxy;
+  public readonly dolomiteAccountRiskOverrideSetter: IDolomiteAccountRiskOverrideSetter;
+  public readonly dolomiteAccountRiskOverrideSetterProxy: RegistryProxy;
   public readonly eventEmitterRegistry: IEventEmitterRegistry;
   public readonly eventEmitterRegistryProxy: RegistryProxy;
   public readonly expiry: Expiry<T>;
   public readonly freezableLiquidatorProxy: IsolationModeFreezableLiquidatorProxy;
-  public readonly genericTraderProxy: IGenericTraderProxyV1;
+  public readonly genericTraderProxy: IGenericTraderProxyV2;
   public readonly implementationContracts: ImplementationContracts;
   public readonly interestSetters: InterestSetters;
   public readonly libraries: LibraryMaps;
   public readonly liquidatorAssetRegistry: ILiquidatorAssetRegistry;
   public readonly liquidatorProxyV1: ILiquidatorProxyV1;
   public readonly liquidatorProxyV4: ILiquidatorProxyV4WithGenericTrader;
+  public readonly liquidatorProxyV5: ILiquidatorProxyV5;
   public readonly oracleAggregatorV2: OracleAggregatorV2;
   public readonly ownerAdapterV1: DolomiteOwnerV1;
   public readonly ownerAdapterV2: DolomiteOwnerV2;
@@ -216,6 +252,8 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
     this.dolomiteRegistryProxy = params.dolomiteRegistryProxy;
     this.dolomiteAccountRegistry = params.dolomiteAccountRegistry;
     this.dolomiteAccountRegistryProxy = params.dolomiteAccountRegistryProxy;
+    this.dolomiteAccountRiskOverrideSetter = params.dolomiteAccountRiskOverrideSetter;
+    this.dolomiteAccountRiskOverrideSetterProxy = params.dolomiteAccountRiskOverrideSetterProxy;
     this.eventEmitterRegistry = params.eventEmitterRegistry;
     this.eventEmitterRegistryProxy = params.eventEmitterRegistryProxy;
     this.expiry = params.expiry;
@@ -227,6 +265,7 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
     this.liquidatorAssetRegistry = params.liquidatorAssetRegistry;
     this.liquidatorProxyV1 = params.liquidatorProxyV1;
     this.liquidatorProxyV4 = params.liquidatorProxyV4;
+    this.liquidatorProxyV5 = params.liquidatorProxyV5;
     this.oracleAggregatorV2 = params.oracleAggregatorV2;
     this.ownerAdapterV1 = params.ownerAdapterV1;
     this.ownerAdapterV2 = params.ownerAdapterV2;
@@ -240,7 +279,7 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
   public abstract get network(): T;
 
   public getDeployedVaultsByType(vaultType: IsolationModeVaultType): DeployedVault[] {
-    return this.deployedVaults.filter(v => v.vaultType === vaultType);
+    return this.deployedVaults.filter((v) => v.vaultType === vaultType);
   }
 
   public getDeployedVaultsMapByType(vaultType: IsolationModeVaultType): Record<number, DeployedVault> {

@@ -9,9 +9,9 @@ import { BYTES_ZERO, Network } from 'packages/base/src/utils/no-deps-constants';
 import {
   createFolder,
   deployContractAndSave,
-  prettyPrintEncodedDataWithTypeSafety,
   writeFile,
 } from '../../../../utils/deploy-utils';
+import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 
 /**
  * This script encodes the following transactions:

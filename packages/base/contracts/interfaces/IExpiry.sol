@@ -21,6 +21,7 @@
 pragma solidity ^0.8.9;
 
 import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
+import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 
 
 /**
@@ -52,14 +53,33 @@ interface IExpiry {
         uint32 minTimeDelta;
     }
 
+    function callFunction(
+        address /* sender */,
+        IDolomiteStructs.AccountInfo memory account,
+        bytes memory data
+    ) external;
+
+    function getLiquidationSpreadAdjustedPrices(
+        IDolomiteStructs.AccountInfo calldata liquidAccount,
+        uint256 heldMarketId,
+        uint256 owedMarketId,
+        uint32 expiry
+    )
+        external
+        view
+        returns (IDolomiteStructs.MonetaryPrice memory heldPrice, IDolomiteStructs.MonetaryPrice memory owedPriceAdj);
+
+    /**
+     * @notice Backwards-compatible version of this function for Dolomite Margin V1
+     */
     function getSpreadAdjustedPrices(
         uint256 heldMarketId,
         uint256 owedMarketId,
         uint32 expiry
     )
-    external
-    view
-    returns (IDolomiteMargin.MonetaryPrice memory heldPrice, IDolomiteMargin.MonetaryPrice memory owedPriceAdj);
+        external
+        view
+        returns (IDolomiteStructs.MonetaryPrice memory heldPrice, IDolomiteStructs.MonetaryPrice memory owedPriceAdj);
 
     function getExpiry(
         IDolomiteMargin.AccountInfo calldata account,

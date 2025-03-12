@@ -11,12 +11,12 @@ import { formatEther, parseEther } from 'ethers/lib/utils';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import {
   deployGmxV2GmTokenSystem,
-  EncodedTransaction,
   GmxV2GmTokenSystem,
-  prettyPrintEncodeAddGmxV2Market,
-  prettyPrintEncodeInsertChainlinkOracleV3,
+
 } from '../../../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
+import { encodeAddGmxV2Market } from '../../../../utils/encoding/add-market-encoder-utils';
+import { encodeInsertChainlinkOracleV3 } from '../../../../utils/encoding/oracle-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 
 /**
@@ -66,13 +66,13 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   }
 
   const transactions: EncodedTransaction[] = [
-    ...(await prettyPrintEncodeInsertChainlinkOracleV3(core, core.gmxV2Ecosystem.gmTokens.pepeUsd.indexToken)),
-    ...(await prettyPrintEncodeInsertChainlinkOracleV3(core, core.gmxV2Ecosystem.gmTokens.wifUsd.indexToken)),
+    ...(await encodeInsertChainlinkOracleV3(core, core.gmxV2Ecosystem.gmTokens.pepeUsd.indexToken)),
+    ...(await encodeInsertChainlinkOracleV3(core, core.gmxV2Ecosystem.gmTokens.wifUsd.indexToken)),
   ];
 
   for (let i = 0; i < systems.length; i++) {
     transactions.push(
-      ...(await prettyPrintEncodeAddGmxV2Market(
+      ...(await encodeAddGmxV2Market(
         core,
         systems[i].factory,
         systems[i].unwrapper,

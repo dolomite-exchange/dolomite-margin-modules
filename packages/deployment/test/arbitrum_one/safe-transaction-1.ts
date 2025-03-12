@@ -5,9 +5,9 @@ import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/se
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../src/utils/dry-run-utils';
+import { prettyPrintEncodedDataWithTypeSafety } from '../../src/utils/encoding/base-encoder-utils';
 import getScriptName from '../../src/utils/get-script-name';
 import { DolomiteOwnerV1, DolomiteOwnerV1__factory } from 'packages/base/src/types';
-import { prettyPrintEncodedDataWithTypeSafety } from '../../src/utils/deploy-utils';
 
 const GOVERNANCE_ADDRESS = '0x52d7BcB650c591f6E8da90f797A1d0Bfd8fD05F9';
 

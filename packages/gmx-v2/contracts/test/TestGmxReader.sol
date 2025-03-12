@@ -113,7 +113,7 @@ contract TestGmxReader is IGmxReader {
         GmxPrice.PriceProps memory /* _indexTokenPrice */,
         bool /* _isLong */,
         bool /* _maximize */
-    ) external view returns (int256) {
+    ) external pure returns (int256) {
         return 0;
     }
 

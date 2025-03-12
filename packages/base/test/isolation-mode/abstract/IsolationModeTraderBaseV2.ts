@@ -81,7 +81,7 @@ describe('IsolationModeTraderBaseV2', () => {
 
   describe('#testOnlyGenericTraderOrTrustedLiquidator', async () => {
     it('should work if generic trader', async () => {
-      const genericTraderImpersonator = await impersonate(core.genericTraderProxy.address, true);
+      const genericTraderImpersonator = await impersonate(await core.dolomiteRegistry.genericTraderProxy(), true);
       await trader.connect(genericTraderImpersonator).testOnlyGenericTraderOrTrustedLiquidator();
     });
 

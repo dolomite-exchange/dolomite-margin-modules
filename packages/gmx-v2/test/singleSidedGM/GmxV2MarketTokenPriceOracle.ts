@@ -33,7 +33,7 @@ import {
   createGmxV2MarketTokenPriceOracle,
   createGmxV2Registry,
 } from '../gmx-v2-ecosystem-utils';
-import { BTC_CHAINLINK_FEED_MAP, GMX_BTC_PLACEHOLDER_MAP } from 'packages/base/src/utils/constants';
+import { BTC_CHAINLINK_FEED_MAP, BTC_PLACEHOLDER_MAP } from 'packages/base/src/utils/constants';
 import { TokenInfo } from 'packages/oracles/src';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 
@@ -71,7 +71,7 @@ describe('GmxV2MarketTokenPriceOracle_singleSided', () => {
 
     // for GM BTC
     await core.chainlinkPriceOracleV3.ownerInsertOrUpdateOracleToken(
-      GMX_BTC_PLACEHOLDER_MAP[Network.ArbitrumOne].address,
+      BTC_PLACEHOLDER_MAP[Network.ArbitrumOne].address,
       BTC_CHAINLINK_FEED_MAP[Network.ArbitrumOne],
       false
     );
@@ -80,7 +80,7 @@ describe('GmxV2MarketTokenPriceOracle_singleSided', () => {
         { oracle: core.chainlinkPriceOracleV3.address, tokenPair: ZERO_ADDRESS, weight: 100 }
       ],
       decimals: 8,
-      token: GMX_BTC_PLACEHOLDER_MAP[Network.ArbitrumOne].address
+      token: BTC_PLACEHOLDER_MAP[Network.ArbitrumOne].address
     };
     await core.oracleAggregatorV2.ownerInsertOrUpdateToken(tokenInfo);
 

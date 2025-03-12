@@ -8,14 +8,11 @@ import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/se
 import { expect } from 'chai';
 import { parseEther } from 'ethers/lib/utils';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
-import {
-  deployContractAndSave,
-  EncodedTransaction,
-  prettyPrintEncodeAddMarket,
-  prettyPrintEncodedDataWithTypeSafety,
-  prettyPrintEncodeInsertChainlinkOracleV3,
-} from '../../../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
+import { deployContractAndSave } from '../../../../utils/deploy-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
+import { encodeAddMarket } from '../../../../utils/encoding/add-market-encoder-utils';
+import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
+import { encodeInsertChainlinkOracleV3 } from '../../../../utils/encoding/oracle-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 
 const GRAI_FRAX_POOL = '0x6E0Ced11922386900BE369cBBF3cdb971dc58487';
@@ -31,12 +28,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
 
   const graiFraxOracleAddress = await deployContractAndSave(
     'RamsesLegacyPriceOracle',
-    [
-      core.tokens.grai.address,
-      GRAI_FRAX_POOL,
-      core.dolomiteRegistry.address,
-      core.dolomiteMargin.address,
-    ],
+    [core.tokens.grai.address, GRAI_FRAX_POOL, core.dolomiteRegistry.address, core.dolomiteMargin.address],
     'GraiFraxPriceOracleV3',
   );
 
@@ -49,20 +41,14 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       'ownerInsertOrUpdateToken',
       [
         {
-          oracleInfos: [
-            { oracle: graiFraxOracleAddress, tokenPair: core.tokens.frax.address, weight: 100 },
-          ],
+          oracleInfos: [{ oracle: graiFraxOracleAddress, tokenPair: core.tokens.frax.address, weight: 100 }],
           decimals: 18,
           token: core.tokens.grai.address,
         },
       ],
     ),
-    ...await prettyPrintEncodeInsertChainlinkOracleV3(
-      core,
-      core.tokens.frax,
-      false,
-    ),
-    ...await prettyPrintEncodeAddMarket(
+    ...(await encodeInsertChainlinkOracleV3(core, core.tokens.frax, false)),
+    ...(await encodeAddMarket(
       core,
       core.tokens.grai,
       core.oracleAggregatorV2,
@@ -72,9 +58,8 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       parseEther(`${100_000}`),
       parseEther(`${80_000}`),
       false,
-    ),
-  )
-  ;
+    )),
+  );
 
   return {
     core,

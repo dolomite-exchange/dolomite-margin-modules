@@ -21,12 +21,12 @@ import { getChaosLabsPriceOracleV3ConstructorParams } from 'packages/oracles/src
 import {
   deployContractAndSave,
   deployGmxV2GlvTokenSystem,
-  EncodedTransaction,
   GmxV2GlvTokenSystem,
-  prettyPrintEncodeAddGlvMarket,
-  prettyPrintEncodeInsertChaosLabsOracleV3,
+
 } from '../../../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
+import { encodeAddGlvMarket } from '../../../../utils/encoding/add-market-encoder-utils';
+import { encodeInsertChaosLabsOracleV3 } from '../../../../utils/encoding/oracle-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 
 /**
@@ -104,7 +104,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const transactions: EncodedTransaction[] = [];
   for (let i = 0; i < systems.length; i++) {
     transactions.push(
-      ...(await prettyPrintEncodeInsertChaosLabsOracleV3(
+      ...(await encodeInsertChaosLabsOracleV3(
         core,
         IERC20__factory.connect(systems[i].factory.address, core.hhUser1),
         undefined,
@@ -112,7 +112,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
         CHAOS_LABS_PRICE_AGGREGATORS_MAP[core.network][glvTokens[i].glvToken.address]!.aggregatorAddress,
         { ignoreDescription: true },
       )),
-      ...(await prettyPrintEncodeAddGlvMarket(
+      ...(await encodeAddGlvMarket(
         core,
         systems[i].factory,
         underlyingGmTokens[i],

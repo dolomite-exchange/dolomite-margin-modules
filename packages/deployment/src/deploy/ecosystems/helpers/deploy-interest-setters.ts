@@ -67,6 +67,11 @@ export async function deployInterestSetters(): Promise<void> {
 
   await deployContractAndSave(
     'LinearStepFunctionInterestSetter',
+    getLinearStepFunctionInterestSetterConstructorParams(parseEther('0.15'), parseEther('1.35'), parseEther('0.60')),
+    'LinearStepFunction15L135U60OInterestSetter',
+  );
+  await deployContractAndSave(
+    'LinearStepFunctionInterestSetter',
     getLinearStepFunctionInterestSetterConstructorParams(parseEther('0.15'), parseEther('1.35'), parseEther('0.70')),
     'LinearStepFunction15L135U70OInterestSetter',
   );
@@ -91,6 +96,11 @@ export async function deployInterestSetters(): Promise<void> {
     'LinearStepFunction15L135U90OInterestSetter',
   );
 
+  await deployContractAndSave(
+    'LinearStepFunctionInterestSetter',
+    getLinearStepFunctionInterestSetterConstructorParams(parseEther('0.16'), parseEther('0.84'), parseEther('0.60')),
+    'LinearStepFunction16L84U60OInterestSetter',
+  );
   await deployContractAndSave(
     'LinearStepFunctionInterestSetter',
     getLinearStepFunctionInterestSetterConstructorParams(parseEther('0.16'), parseEther('0.84'), parseEther('0.70')),

@@ -9,10 +9,10 @@ import { setupCoreProtocol } from 'packages/base/test/utils/setup';
 import { GmxV2IsolationModeVaultFactory } from 'packages/gmx-v2/src/types';
 import {
   deployContractAndSave,
-  EncodedTransaction,
-  prettyPrintEncodedDataWithTypeSafety,
+
 } from '../../../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
+import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 
 /**

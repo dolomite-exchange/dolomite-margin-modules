@@ -49,6 +49,7 @@ contract DolomiteAccountRegistry is
 
     bytes32 private constant _FILE = "DolomiteAccountRegistry";
     bytes32 private constant _ACCOUNT_INFORMATION_SLOT = bytes32(uint256(keccak256("eip1967.proxy.accountInformation")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _TRANSFER_TOKEN_OVERRIDE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.transferTokenOverride")) - 1); // solhint-disable-line max-line-length
 
     bytes32 internal constant GLP_ISOLATION_MODE_HASH = keccak256(bytes("Dolomite: Fee + Staked GLP"));
     bytes32 internal constant ISOLATION_MODE_PREFIX_HASH = keccak256(bytes("Dolomite Isolation:"));
@@ -78,6 +79,15 @@ contract DolomiteAccountRegistry is
     external
     onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetRestrictedAccount(_account, _isRestricted);
+    }
+
+    function ownerSetTransferTokenOverride(
+        address _token,
+        address _override
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetTransferTokenOverride(_token, _override);
     }
 
     // ========================== View Functions =========================
@@ -135,6 +145,10 @@ contract DolomiteAccountRegistry is
         );
     }
 
+    function getTransferTokenOverride(address _token) public view returns (address) {
+        return _getAddressFromMap(_TRANSFER_TOKEN_OVERRIDE_SLOT, _token);
+    }
+
     // ===================== Internal Functions =====================
 
     function _addVault(
@@ -168,6 +182,14 @@ contract DolomiteAccountRegistry is
         AccountInformation storage storageStruct = _getAccountInformation();
         storageStruct.restrictedAccounts[_account] = _isRestricted;
         emit RestrictedAccountSet(_account, _isRestricted);
+    }
+
+    function _ownerSetTransferTokenOverride(
+        address _token,
+        address _override
+    ) internal {
+        _setAddressInMap(_TRANSFER_TOKEN_OVERRIDE_SLOT, _token, _override);
+        emit TransferTokenOverrideSet(_token, _override);
     }
 
     function _isRestrictedAccount(

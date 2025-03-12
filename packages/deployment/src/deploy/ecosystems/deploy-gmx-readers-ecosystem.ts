@@ -6,8 +6,8 @@ import {
   getEsGmxReaderConstructorParams,
   getStakedGmxReaderConstructorParams,
 } from 'packages/glp/src/glp-constructors';
-import { deployContractAndSave, EncodedTransaction } from '../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../utils/dry-run-utils';
+import { deployContractAndSave } from '../../utils/deploy-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../utils/dry-run-utils';
 import getScriptName from '../../utils/get-script-name';
 
 type AcceptableNetworks = Network.ArbitrumOne;
