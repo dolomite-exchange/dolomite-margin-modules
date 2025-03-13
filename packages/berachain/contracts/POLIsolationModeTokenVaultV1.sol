@@ -21,7 +21,7 @@
 pragma solidity ^0.8.9;
 
 import { IDolomiteRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IDolomiteRegistry.sol";
-import { IGenericTraderProxyV1 } from "@dolomite-exchange/modules-base/contracts/interfaces/IGenericTraderProxyV1.sol";
+import { IGenericTraderProxyV2 } from "@dolomite-exchange/modules-base/contracts/proxies/interfaces/IGenericTraderProxyV2.sol";
 import { IsolationModeTokenVaultV1 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
 import { IIsolationModeTokenVaultV1 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
 import { IIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
@@ -186,9 +186,9 @@ contract POLIsolationModeTokenVaultV1 is
         uint256[] calldata _marketIdsPath,
         uint256 _inputAmountWei,
         uint256 _minOutputAmountWei,
-        IGenericTraderProxyV1.TraderParam[] memory _tradersPath,
+        IGenericTraderProxyV2.TraderParam[] memory _tradersPath,
         IDolomiteMargin.AccountInfo[] memory _makerAccounts,
-        IGenericTraderProxyV1.UserConfig memory _userConfig
+        IGenericTraderProxyV2.UserConfig memory _userConfig
     ) internal override {
         uint256 factoryMarketId = marketId();
         if (_marketIdsPath[0] == factoryMarketId) {
@@ -218,9 +218,9 @@ contract POLIsolationModeTokenVaultV1 is
         uint256[] calldata _marketIdsPath,
         uint256 _inputAmountWei,
         uint256 _minOutputAmountWei,
-        IGenericTraderProxyV1.TraderParam[] memory _tradersPath,
+        IGenericTraderProxyV2.TraderParam[] memory _tradersPath,
         IDolomiteMargin.AccountInfo[] memory _makerAccounts,
-        IGenericTraderProxyV1.UserConfig memory _userConfig
+        IGenericTraderProxyV2.UserConfig memory _userConfig
     ) internal override {
         uint256 factoryMarketId = marketId();
         if (_marketIdsPath[0] == factoryMarketId) {

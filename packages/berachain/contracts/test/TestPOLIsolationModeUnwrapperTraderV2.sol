@@ -63,8 +63,8 @@ contract TestPOLIsolationModeUnwrapperTraderV2 is
         return _getUint256FromMap(_INPUT_AMOUNT_PAR_SLOT, _owner);
     }
 
-    function getLiquidationAddressOverride(address _owner) public view returns (address) {
-        return _getLiquidationAddressOverride(_owner);
+    function getVaultFromTradeOriginator(address _tradeOriginator) public view returns (address) {
+        return _getVaultFromTradeOriginator(_tradeOriginator);
     }
 
     function validateInputAndOutputMarketId(uint256 _inputMarketId, uint256 _outputMarketId) public view {
