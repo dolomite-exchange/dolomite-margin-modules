@@ -19,7 +19,7 @@ Overview charts as well as detailed call flows can be seen on the whimsical link
 ## Scope
 
 packages/berachain/contracts/*
-packages/base/proxies/GenericTraderProxy.sol (only the call from the vault to the generic trader proxies)
+packages/base/proxies/GenericTraderProxyV2.sol (only the call from the vault to the generic trader proxies)
 
 ## Some ideas of where I would look for bugs
 
