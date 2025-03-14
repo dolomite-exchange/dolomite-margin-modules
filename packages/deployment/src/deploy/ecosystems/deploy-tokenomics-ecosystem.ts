@@ -1,7 +1,13 @@
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { getUpgradeableProxyConstructorParams } from 'packages/base/src/utils/constructors/dolomite';
 import { getAndCheckSpecificNetwork } from 'packages/base/src/utils/dolomite-utils';
-import { ADDRESS_ZERO, BYTES_EMPTY, MAX_UINT_256_BI, Network, NetworkType, ONE_DAY_SECONDS } from 'packages/base/src/utils/no-deps-constants';
+import {
+  ADDRESS_ZERO,
+  MAX_UINT_256_BI,
+  Network,
+  NetworkType,
+  ONE_DAY_SECONDS,
+} from 'packages/base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from 'packages/base/test/utils';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
 import { deployContractAndSave } from 'packages/deployment/src/utils/deploy-utils';
@@ -32,7 +38,8 @@ import {
   VeExternalVesterImplementationV1__factory,
   VestingClaims__factory,
   VotingEscrow__factory,
-} from 'packages/tokenomics/src/types';import { prettyPrintEncodedDataWithTypeSafety } from '../../utils/encoding/base-encoder-utils';
+} from 'packages/tokenomics/src/types';
+import { prettyPrintEncodedDataWithTypeSafety } from '../../utils/encoding/base-encoder-utils';
 
 const NO_MARKET_ID = MAX_UINT_256_BI;
 const TGE_TIMESTAMP = 2222222222;
@@ -52,7 +59,8 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   })) as any;
 
   // Deploy new custom token
-  const doloAddress = await deployContractAndSave('DOLO', [core.dolomiteMargin.address, core.gnosisSafeAddress],
+  const doloAddress = await deployContractAndSave(
+    'DOLO', [core.dolomiteMargin.address, core.gnosisSafeAddress],
     'DOLO',
   );
   const dolo = DOLO__factory.connect(doloAddress, core.hhUser1);
@@ -140,11 +148,11 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   const optionAirdropAddress = await deployContractAndSave(
     'OptionAirdrop',
     getOptionAirdropConstructorParams(core, dolo),
-    'OptionAirdropImplementationV1'
+    'OptionAirdropImplementationV1',
   );
   const optionAirdropImplementation = OptionAirdrop__factory.connect(optionAirdropAddress, core.hhUser1);
-  const optionAirdropInitCalldata = await optionAirdropImplementation.populateTransaction.initialize(
-    core.gnosisSafeAddress // @follow-up Confirm that this is the correct treasury address
+  const optionAirdropInitCalldata = await optionAirdropImplementation.populateTransaction['initialize(address)'](
+    core.gnosisSafeAddress, // @follow-up Confirm that this is the correct treasury address
   );
   const optionAirdropProxyAddress = await deployContractAndSave(
     'UpgradeableProxy',
@@ -156,7 +164,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   const regularAirdropAddress = await deployContractAndSave(
     'RegularAirdrop',
     getRegularAirdropConstructorParams(core, dolo, votingEscrow),
-    'RegularAirdropImplementationV1'
+    'RegularAirdropImplementationV1',
   );
   const regularAirdropProxyAddress = await deployContractAndSave(
     'UpgradeableProxy',
@@ -168,7 +176,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   const vestingClaimsAddress = await deployContractAndSave(
     'VestingClaims',
     getVestingClaimsConstructorParams(core, dolo, TGE_TIMESTAMP, THREE_YEARS_SECONDS),
-    'VestingClaimsImplementationV1'
+    'VestingClaimsImplementationV1',
   );
   const vestingClaimsProxyAddress = await deployContractAndSave(
     'UpgradeableProxy',
@@ -180,7 +188,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   const strategicVestingAddress = await deployContractAndSave(
     'StrategicVesting',
     getStrategicVestingClaimsConstructorParams(core, dolo, TGE_TIMESTAMP, ONE_YEAR_SECONDS),
-    'StrategicVestingImplementationV1'
+    'StrategicVestingImplementationV1',
   );
   const strategicVestingProxyAddress = await deployContractAndSave(
     'UpgradeableProxy',
@@ -215,16 +223,16 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
       true,
     ]),
     await prettyPrintEncodedDataWithTypeSafety(core, { optionAirdrop }, 'optionAirdrop', 'ownerSetHandler', [
-      core.gnosisSafeAddress
+      core.gnosisSafeAddress,
     ]),
     await prettyPrintEncodedDataWithTypeSafety(core, { regularAirdrop }, 'regularAirdrop', 'ownerSetHandler', [
-      core.gnosisSafeAddress
+      core.gnosisSafeAddress,
     ]),
     await prettyPrintEncodedDataWithTypeSafety(core, { vestingClaims }, 'vestingClaims', 'ownerSetHandler', [
-      core.gnosisSafeAddress
+      core.gnosisSafeAddress,
     ]),
     await prettyPrintEncodedDataWithTypeSafety(core, { strategicVesting }, 'strategicVesting', 'ownerSetHandler', [
-      core.gnosisSafeAddress
+      core.gnosisSafeAddress,
     ]),
     await prettyPrintEncodedDataWithTypeSafety(core, { optionAirdrop }, 'optionAirdrop', 'ownerSetAllowedMarketIds', [
       [core.marketIds.nativeUsdc, core.marketIds.weth], // @follow-up Check this list of market ids and invariants below
@@ -242,27 +250,48 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     invariants: async () => {
       assertHardhatInvariant(
         (await vester.PAYMENT_TOKEN()) === core.tokens.weth.address &&
-          (await vester.REWARD_TOKEN()) === doloAddress &&
-          (await vester.PAIR_TOKEN()) === doloAddress,
+        (await vester.REWARD_TOKEN()) === doloAddress &&
+        (await vester.PAIR_TOKEN()) === doloAddress,
         'Invalid vester token addresses',
       );
       assertHardhatInvariant(
         (await vester.VE_TOKEN()) === votingEscrowProxyAddress &&
-          (await vester.discountCalculator()) === discountCalculator &&
-          (await vester.oToken()) === oDoloAddress,
+        (await vester.discountCalculator()) === discountCalculator &&
+        (await vester.oToken()) === oDoloAddress,
         'Invalid vester init addresses',
       );
       assertHardhatInvariant((await votingEscrow.vester()) === vesterProxyAddress, 'Invalid vester on votingEscrow');
 
-      assertHardhatInvariant((await core.dolomiteMargin.getIsGlobalOperator(vester.address)) === true, 'Vester is not a global operator');
-      assertHardhatInvariant((await core.dolomiteMargin.getIsGlobalOperator(optionAirdrop.address)) === true, 'OptionAirdrop is not a global operator');
+      assertHardhatInvariant(
+        (await core.dolomiteMargin.getIsGlobalOperator(vester.address)) === true,
+        'Vester is not a global operator',
+      );
+      assertHardhatInvariant(
+        (await core.dolomiteMargin.getIsGlobalOperator(optionAirdrop.address)) === true,
+        'OptionAirdrop is not a global operator',
+      );
 
-      assertHardhatInvariant(await optionAirdrop.handler() === core.gnosisSafeAddress, 'Invalid handler on optionAirdrop');
-      assertHardhatInvariant(await regularAirdrop.handler() === core.gnosisSafeAddress, 'Invalid handler on regularAirdrop');
-      assertHardhatInvariant(await vestingClaims.handler() === core.gnosisSafeAddress, 'Invalid handler on vestingClaims');
-      assertHardhatInvariant(await strategicVesting.handler() === core.gnosisSafeAddress, 'Invalid handler on strategicVesting');
+      assertHardhatInvariant(
+        await optionAirdrop.handler() === core.gnosisSafeAddress,
+        'Invalid handler on optionAirdrop',
+      );
+      assertHardhatInvariant(
+        await regularAirdrop.handler() === core.gnosisSafeAddress,
+        'Invalid handler on regularAirdrop',
+      );
+      assertHardhatInvariant(
+        await vestingClaims.handler() === core.gnosisSafeAddress,
+        'Invalid handler on vestingClaims',
+      );
+      assertHardhatInvariant(
+        await strategicVesting.handler() === core.gnosisSafeAddress,
+        'Invalid handler on strategicVesting',
+      );
 
-      assertHardhatInvariant(await optionAirdrop.isAllowedMarketId(core.marketIds.nativeUsdc), 'Native USDC not allowed');
+      assertHardhatInvariant(
+        await optionAirdrop.isAllowedMarketId(core.marketIds.nativeUsdc),
+        'Native USDC not allowed',
+      );
       assertHardhatInvariant(await optionAirdrop.isAllowedMarketId(core.marketIds.weth), 'WETH not allowed');
     },
   };

@@ -203,7 +203,6 @@ import { DolomiteMargin, Expiry } from './dolomite';
 import { createAbraEcosystem } from './ecosystem-utils/abra';
 import { createArbEcosystem } from './ecosystem-utils/arb';
 import { createCamelotEcosystem } from './ecosystem-utils/camelot';
-import { DeployedVault, getDeployedVaults } from './ecosystem-utils/deployed-vaults';
 import { createGlvEcosystem } from './ecosystem-utils/glv';
 import { createGmxEcosystem, createGmxEcosystemV2 } from './ecosystem-utils/gmx';
 import { createInterestSetters } from './ecosystem-utils/interest-setters';
@@ -271,16 +270,16 @@ interface CoreProtocolConfigXLayer extends CoreProtocolConfigParent<Network.XLay
 export type CoreProtocolConfig<T extends NetworkType> = T extends Network.ArbitrumOne
   ? CoreProtocolConfigArbitrumOne
   : T extends Network.Base
-  ? CoreProtocolConfigBase
-  : T extends Network.Berachain
-  ? CoreProtocolConfigBerachain
-  : T extends Network.Mantle
-  ? CoreProtocolConfigMantle
-  : T extends Network.PolygonZkEvm
-  ? CoreProtocolConfigPolygonZkEvm
-  : T extends Network.XLayer
-  ? CoreProtocolConfigXLayer
-  : never;
+    ? CoreProtocolConfigBase
+    : T extends Network.Berachain
+      ? CoreProtocolConfigBerachain
+      : T extends Network.Mantle
+        ? CoreProtocolConfigMantle
+        : T extends Network.PolygonZkEvm
+          ? CoreProtocolConfigPolygonZkEvm
+          : T extends Network.XLayer
+            ? CoreProtocolConfigXLayer
+            : never;
 
 export async function disableInterestAccrual<T extends NetworkType>(
   core: CoreProtocolAbstract<T>,
@@ -678,16 +677,16 @@ export function getDefaultCoreProtocolConfigForGmxV2(): CoreProtocolConfig<Netwo
 export type CoreProtocolType<T extends NetworkType> = T extends Network.ArbitrumOne
   ? CoreProtocolArbitrumOne
   : T extends Network.Base
-  ? CoreProtocolBase
-  : T extends Network.Berachain
-  ? CoreProtocolBerachain
-  : T extends Network.Mantle
-  ? CoreProtocolMantle
-  : T extends Network.PolygonZkEvm
-  ? CoreProtocolPolygonZkEvm
-  : T extends Network.XLayer
-  ? CoreProtocolXLayer
-  : never;
+    ? CoreProtocolBase
+    : T extends Network.Berachain
+      ? CoreProtocolBerachain
+      : T extends Network.Mantle
+        ? CoreProtocolMantle
+        : T extends Network.PolygonZkEvm
+          ? CoreProtocolPolygonZkEvm
+          : T extends Network.XLayer
+            ? CoreProtocolXLayer
+            : never;
 
 export function getDolomiteMarginContract<T extends NetworkType>(
   config: CoreProtocolSetupConfig<T>,
