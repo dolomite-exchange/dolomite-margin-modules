@@ -2,11 +2,13 @@
 
 ## Overview
 
-Isolation mode is a main feature of Dolomite. Essentially, a user transfers a token to the isolation mode token vault and the isolation mode vault factory mints tokens to DolomiteMargin on behalf of the vault. Further details can be seen on the Whimsical charts.
+Isolation mode is a main feature of Dolomite. Essentially, a user transfers a token to the isolation mode token vault (each user has their own token vault, per asset) and the isolation mode vault factory mints tokens to DolomiteMargin on behalf of the vault. Further details can be seen on the Whimsical charts.
 
-DTokens are an ERC4626 wrapper around a user's Dolomite balance. If a user deposits 100 USDC into Dolomite, their Wei balance will be 100, but their Par balance will be something smaller than that. Par balances never change, but Wei balances increase as a user accrues interest. The ERC4626 wrapper will show the user as having a balance of their par value and `convertToAssets(parValue)` will return the Wei value.
+DTokens are an ERC4626 wrapper around a user's Dolomite balance. If a user deposits 100 USDC into Dolomite, their Wei balance will be 100, but their Par balance will be something smaller than that. Par balances never change (they are "interest-adjusted"), but Wei balances increase as a user accrues interest. The ERC4626 wrapper will show the user as having a balance of their par value and `convertToAssets(parValue)` will return the Wei value.
 
-Through proof of liquidity, users can stake their dTokens in a number of different POL providers such as Infrared, BGTM, and BGT. We are providing a product where users can transfer their balance in Dolomite to a POLIsolationModeVault and then stake through those different providers. This first iteration that is being audited will only include Infrared.
+Through proof of liquidity (POL), users can stake their dTokens in a number of different POL providers such as Infrared, BGTM, and BGT. We are providing a product where users can transfer their balance in Dolomite to a POLIsolationModeVault and then stake through those different providers. This first iteration that is being audited will only include Infrared.
+
+Through POL isolation mode token vaults, we're looking to create markets for DTokens as "polTokens" in Dolomite, where a user can put their dTokens to work in proof of liquidity while they borrow against that equity at the same time.
 
 ## Further details
 
