@@ -32,14 +32,6 @@ const berachainWeb3Url = process.env.BERACHAIN_WEB3_PROVIDER_URL;
 if (!berachainWeb3Url) {
   throw new Error('No BERACHAIN_WEB3_PROVIDER_URL provided!');
 }
-const berachainBartioWeb3Url = process.env.BERACHAIN_BARTIO_WEB3_PROVIDER_URL;
-if (!berachainWeb3Url) {
-  throw new Error('No BERACHAIN_CARTIO_WEB3_PROVIDER_URL provided!');
-}
-const berachainCartioWeb3Url = process.env.BERACHAIN_CARTIO_WEB3_PROVIDER_URL;
-if (!berachainWeb3Url) {
-  throw new Error('No BERACHAIN_CARTIO_WEB3_PROVIDER_URL provided!');
-}
 const inkWeb3Url = process.env.INK_WEB3_PROVIDER_URL;
 if (!inkWeb3Url) {
   throw new Error('No INK_WEB3_PROVIDER_URL provided!');
@@ -88,7 +80,7 @@ if (!polygonscanApiKey) {
 }
 const superscanApiKey = process.env.SUPERSCAN_API_KEY;
 if (!superscanApiKey) {
-  throw new Error('No POLYGONSCAN_API_KEY provided!');
+  throw new Error('No SUPERSCAN_API_KEY provided!');
 }
 const xLayerApiKey = process.env.X_LAYER_API_KEY;
 if (!xLayerApiKey) {
@@ -128,6 +120,7 @@ export const base_config: HardhatUserConfig = {
       chainId: parseInt(Network.Base, 10),
       url: baseWeb3Url,
       gas: 20_000_000, // 20M gas
+      gasPrice: 30_000_000, // 0.03 gwei
       accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
     },
     [NetworkName.Berachain]: {
@@ -136,40 +129,32 @@ export const base_config: HardhatUserConfig = {
       gas: 20_000_000, // 20M gas
       accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
     },
-    [NetworkName.BerachainBartio]: {
-      chainId: parseInt(Network.Berachain, 10),
-      url: berachainBartioWeb3Url,
-      gas: 20_000_000, // 20M gas
-      accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
-    },
-    [NetworkName.BerachainCartio]: {
-      chainId: parseInt(Network.BerachainCartio, 10),
-      url: berachainCartioWeb3Url,
-      gas: 20_000_000, // 20M gas
-      accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
-    },
     [NetworkName.Ink]: {
       chainId: parseInt(Network.Ink, 10),
       url: inkWeb3Url,
       gas: 30_000_000, // 30M gas
+      gasPrice: 30_000_000, // 0.03 gwei
       accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
     },
     [NetworkName.Mantle]: {
       chainId: parseInt(Network.Mantle, 10),
       url: mantleWeb3Url,
       gas: 25_000_000_000, // 25B gas
+      gasPrice: 30_000_000, // 0.03 gwei
       accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
     },
     [NetworkName.PolygonZkEvm]: {
       chainId: parseInt(Network.PolygonZkEvm, 10),
       url: polygonZkEvmWeb3Url,
       gas: 20_000_000, // 20M gas
+      gasPrice: 30_000_000, // 0.03 gwei
       accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
     },
     [NetworkName.SuperSeed]: {
       chainId: parseInt(Network.SuperSeed, 10),
       url: superSeedWeb3Url,
       gas: 30_000_000, // 30M gas
+      gasPrice: 30_000_000, // 0.03 gwei
       accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
     },
     [NetworkName.XLayer]: {
@@ -219,7 +204,6 @@ export const base_config: HardhatUserConfig = {
       [NetworkName.ArbitrumOne]: arbiscanApiKey,
       [NetworkName.Base]: basescanApiKey,
       [NetworkName.Berachain]: berascanApiKey,
-      [NetworkName.BerachainCartio]: berascanApiKey,
       [NetworkName.Ink]: inkscanApiKey,
       [NetworkName.Mantle]: mantlescanApiKey,
       [NetworkName.PolygonZkEvm]: polygonscanApiKey,
@@ -249,22 +233,6 @@ export const base_config: HardhatUserConfig = {
         urls: {
           apiURL: 'https://api.berascan.com/api',
           browserURL: 'https://berscan.com/address',
-        },
-      },
-      {
-        network: NetworkName.BerachainBartio,
-        chainId: parseInt(Network.BerachainBartio, 10),
-        urls: {
-          apiURL: 'https://api.routescan.io/v2/network/testnet/evm/80084/etherscan/api',
-          browserURL: 'https://bartio.beratrail.io/address',
-        },
-      },
-      {
-        network: NetworkName.BerachainCartio,
-        chainId: parseInt(Network.BerachainCartio, 10),
-        urls: {
-          apiURL: 'https://api.routescan.io/v2/network/testnet/evm/80000/etherscan/api',
-          browserURL: 'https://80000.testnet.routescan.io',
         },
       },
       {

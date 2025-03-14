@@ -18,16 +18,16 @@ import {
   INativeRewardVault__factory,
   IInfraredVault,
   IInfraredVault__factory,
-  IBerachainRewardsVaultFactory,
   IInfrared,
-  IBerachainRewardsVaultFactory__factory,
   IInfrared__factory,
   IBGTM,
   IBGTM__factory,
+  IBerachainRewardsFactory,
+  IBerachainRewardsFactory__factory,
 } from "packages/berachain/src/types";
 
 export interface BerachainRewardsEcosystem {
-  berachainRewardsVaultFactory: IBerachainRewardsVaultFactory;
+  berachainRewardsFactory: IBerachainRewardsFactory;
   infrared: IInfrared;
   bgtm: IBGTM;
   iBgtStakingPool: IInfraredVault;
@@ -52,7 +52,7 @@ export async function createBerachainRewardsEcosystem(
   }
 
   return {
-    berachainRewardsVaultFactory: IBerachainRewardsVaultFactory__factory.connect(BERACHAIN_REWARDS_VAULT_FACTORY_MAP[network]!, signer),
+    berachainRewardsFactory: IBerachainRewardsFactory__factory.connect(BERACHAIN_REWARDS_VAULT_FACTORY_MAP[network]!, signer),
     bgtm: IBGTM__factory.connect(BGTM_MAP[network]!, signer),
     infrared: IInfrared__factory.connect(INFRARED_MAP[network]!, signer),
     iBgtStakingPool: IInfraredVault__factory.connect(IBGT_STAKING_POOL_MAP[network]!, signer),

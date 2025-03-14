@@ -1,15 +1,21 @@
 import { BigNumber, BigNumberish, ethers } from 'ethers';
 import { formatUnits } from 'ethers/lib/utils';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
-import { IERC20, IERC20Metadata__factory } from '../../../base/src/types';
+import { IDolomiteInterestSetter, IERC20, IERC20Metadata__factory } from '../../../base/src/types';
 import { IDolomiteStructs } from '../../../base/src/types/contracts/protocol/interfaces/IDolomiteMargin';
 import { INVALID_TOKEN_MAP } from '../../../base/src/utils/constants';
+import {
+  getLiquidationPremiumForTargetLiquidationPenalty,
+  getMarginPremiumForTargetCollateralization,
+  TargetCollateralization,
+  TargetLiquidationPenalty,
+} from '../../../base/src/utils/constructors/dolomite';
 import { NetworkType, ONE_ETH_BI } from '../../../base/src/utils/no-deps-constants';
 import { CoreProtocolBerachain } from '../../../base/test/utils/core-protocols/core-protocol-berachain';
 import { CoreProtocolType } from '../../../base/test/utils/setup';
 import { readDeploymentFile } from './deploy-utils';
 
-export async function printPriceForVisualCheck(core: CoreProtocolBerachain, token: IERC20) {
+export async function printPriceForVisualCheck<T extends NetworkType>(core: CoreProtocolType<T>, token: IERC20) {
   const meta = IERC20Metadata__factory.connect(token.address, token.provider);
   const invalidToken = INVALID_TOKEN_MAP[core.network][token.address];
   const symbol = invalidToken ? invalidToken.symbol : await meta.symbol();
@@ -111,6 +117,17 @@ export async function checkIsGlobalOperator<T extends NetworkType>(
   );
 }
 
+export async function checkMarketId<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  marketId: BigNumberish,
+  token: IERC20,
+) {
+  assertHardhatInvariant(
+    (await core.dolomiteMargin.getMarketTokenAddress(marketId)) === token.address,
+    `Invalid market ID for ${marketId}`,
+  );
+}
+
 export async function checkSupplyCap<T extends NetworkType>(
   core: CoreProtocolType<T>,
   marketId: BigNumberish,
@@ -151,6 +168,42 @@ export async function checkBorrowCap<T extends NetworkType>(
   );
 }
 
+let baseCollateralization: BigNumber | undefined;
+
+export async function checkMinCollateralization<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  marketId: BigNumberish,
+  collateralization: TargetCollateralization,
+) {
+  if (!baseCollateralization) {
+    baseCollateralization = (await core.dolomiteMargin.getMarginRatio()).value.add(ONE_ETH_BI);
+  }
+
+  const marginPremium = (await core.dolomiteMargin.getMarketMarginPremium(marketId)).value;
+  assertHardhatInvariant(
+    getMarginPremiumForTargetCollateralization(baseCollateralization, collateralization).eq(marginPremium),
+    `Expected market [${marketId}] to have a target collateralization of ${collateralization}`,
+  );
+}
+
+let baseLiquidationPenalty: BigNumber | undefined;
+
+export async function checkLiquidationPenalty<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  marketId: BigNumberish,
+  liquidationPenalty: TargetLiquidationPenalty,
+) {
+  if (!baseLiquidationPenalty) {
+    baseLiquidationPenalty = (await core.dolomiteMargin.getLiquidationSpread()).value;
+  }
+
+  const liquidationPremium = (await core.dolomiteMargin.getMarketSpreadPremium(marketId)).value;
+  assertHardhatInvariant(
+    getLiquidationPremiumForTargetLiquidationPenalty(baseLiquidationPenalty, liquidationPenalty).eq(liquidationPremium),
+    `Expected market [${marketId}] to have a target liquidation penalty of ${liquidationPenalty}`,
+  );
+}
+
 export async function checkIsCollateralOnly<T extends NetworkType>(
   core: CoreProtocolType<T>,
   marketId: BigNumberish,
@@ -165,5 +218,16 @@ export async function checkIsCollateralOnly<T extends NetworkType>(
   assertHardhatInvariant(
     (await core.dolomiteMargin.getMarketIsClosing(marketId)) === expectedCollateralOnly,
     errorMessage,
+  );
+}
+
+export async function checkInterestSetter<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  marketId: BigNumberish,
+  expectedInterestSetter: IDolomiteInterestSetter,
+) {
+  assertHardhatInvariant(
+    (await core.dolomiteMargin.getMarketInterestSetter(marketId)) === expectedInterestSetter.address,
+    `Expected market [${marketId}] to have interest setter ${expectedInterestSetter.address}`,
   );
 }

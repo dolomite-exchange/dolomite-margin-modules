@@ -1,5 +1,4 @@
 import { BaseContract, BigNumberish } from 'ethers';
-import { parseEther } from 'ethers/lib/utils';
 import { IGlvIsolationModeVaultFactory, IGmxV2IsolationModeVaultFactory } from 'packages/glv/src/types';
 import {
   HandlerRegistry,
@@ -58,6 +57,7 @@ export async function encodeAddIsolationModeMarket<T extends NetworkType>(
     options,
   );
 
+  throw new Error('add routers to core object and ownerInitialize!');
   transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(
       core,

@@ -25,6 +25,7 @@ import {
 } from '../../../src/utils/constructors/traders';
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
 import { CoreProtocolBerachainBartio } from '../core-protocols/core-protocol-berachain-bartio';
+import { CoreProtocolBerachain } from '../core-protocols/core-protocol-berachain';
 
 export async function createParaswapAggregatorTrader<T extends Network>(
   core: CoreProtocolWithParaswap<T>,
@@ -77,7 +78,7 @@ export async function createOkxAggregatorTrader<T extends Network>(
 }
 
 export async function createOogaBoogaAggregatorTrader(
-  core: CoreProtocolBerachainBartio
+  core: CoreProtocolBerachain
 ): Promise<OogaBoogaAggregatorTrader> {
   return await createContractWithAbi<OogaBoogaAggregatorTrader>(
     OogaBoogaAggregatorTrader__factory.abi,

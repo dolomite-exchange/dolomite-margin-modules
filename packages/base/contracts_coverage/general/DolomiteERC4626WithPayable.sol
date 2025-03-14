@@ -38,12 +38,6 @@ contract DolomiteERC4626WithPayable is
 
     uint256 private constant _DEFAULT_ACCOUNT_NUMBER = 0;
 
-    IWETH private immutable _WETH;
-
-    constructor(address _weth) {
-        _WETH = IWETH(_weth);
-    }
-
     function depositFromPayable(address _receiver) external nonReentrant payable returns (uint256) {
         if (msg.value > 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
@@ -59,8 +53,8 @@ contract DolomiteERC4626WithPayable is
             _receiver
         );
 
-        _WETH.deposit{ value: msg.value }();
-        _WETH.approve(address(DOLOMITE_MARGIN()), msg.value);
+        IWETH(asset()).deposit{ value: msg.value }();
+        IWETH(asset()).approve(address(DOLOMITE_MARGIN()), msg.value);
 
         IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
         IDolomiteStructs.AccountInfo memory account = IDolomiteStructs.AccountInfo({
@@ -142,7 +136,7 @@ contract DolomiteERC4626WithPayable is
         IDolomiteStructs.Par memory deltaPar = balanceBeforePar.sub(dolomiteMargin.getAccountPar(account, marketId()));
         /*assert(deltaPar.sign);*/
 
-        _WETH.withdraw(_amount);
+        IWETH(asset()).withdraw(_amount);
         payable(_receiver).sendValue(_amount);
 
         emit Transfer(_owner, address(0), deltaPar.value);
@@ -199,7 +193,7 @@ contract DolomiteERC4626WithPayable is
         IDolomiteStructs.Wei memory deltaWei = balanceBeforeWei.sub(dolomiteMargin.getAccountWei(account, marketId()));
         /*assert(deltaWei.sign);*/
 
-        _WETH.withdraw(deltaWei.value);
+        IWETH(asset()).withdraw(deltaWei.value);
         payable(_receiver).sendValue(deltaWei.value);
 
         emit Transfer(_owner, address(0), _dAmount);
