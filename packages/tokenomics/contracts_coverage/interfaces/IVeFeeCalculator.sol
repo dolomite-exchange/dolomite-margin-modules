@@ -30,11 +30,8 @@ pragma solidity ^0.8.9;
 interface IVeFeeCalculator {
 
     event BurnFeeSet(uint256 burnFee);
-    event DecayTimestampSet(uint256 decayTimestamp);
 
     function ownerSetBurnFee(uint256 _burnFee) external;
-
-    function ownerSetDecayTimestamp(uint256 _decayTimestamp) external;
 
     function getEarlyWithdrawalFees(uint256 _amount, uint256 _lockEndTime) external view returns (uint256, uint256);
 }

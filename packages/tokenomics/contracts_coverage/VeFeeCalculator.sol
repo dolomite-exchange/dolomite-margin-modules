@@ -40,17 +40,14 @@ contract VeFeeCalculator is IVeFeeCalculator, OnlyDolomiteMargin {
     uint256 private constant BASE = 1 ether;
     uint256 private constant TWO_YEARS = 104 weeks;
 
-    uint256 private constant _STARTING_RECOUP_FEE = .5 ether; // 50%
-    uint256 private constant _FORTY_PERCENT = .4 ether; // 40%
-    uint256 private constant _FIVE_PERCENT = .05 ether; // 5%
-    uint256 private constant _DECAY_DURATION = 8 weeks;
+    uint256 private constant _STARTING_RECOUP_FEE = 0.5 ether; // 50%
+    uint256 private constant _FIVE_PERCENT = 0.05 ether; // 5%
 
     // =========================================================
     // ==================== State Variables ====================
     // =========================================================
 
     uint256 public burnFee;
-    uint256 public decayTimestamp;
 
     // ===========================================================
     // ======================= Constructor =======================
@@ -70,10 +67,6 @@ contract VeFeeCalculator is IVeFeeCalculator, OnlyDolomiteMargin {
         _ownerSetBurnFee(_burnFee);
     }
 
-    function ownerSetDecayTimestamp(uint256 _decayTimestamp) external onlyDolomiteMarginOwner(msg.sender) {
-        _ownerSetDecayTimestamp(_decayTimestamp);
-    }
-
     function getEarlyWithdrawalFees(
         uint256 _amount,
         uint256 _lockEndTime
@@ -82,8 +75,7 @@ contract VeFeeCalculator is IVeFeeCalculator, OnlyDolomiteMargin {
             return (0, 0);
         }
 
-        /*assert(decayTimestamp != 0);*/
-        uint256 burnFeeAmount = _calculateBurnFee() * _amount / BASE;
+        uint256 burnFeeAmount = burnFee * _amount / BASE;
         uint256 recoupFeeAmount = _calculateRecoupFee(_lockEndTime - block.timestamp) * _amount / BASE;
 
         return (burnFeeAmount, recoupFeeAmount);
@@ -96,23 +88,6 @@ contract VeFeeCalculator is IVeFeeCalculator, OnlyDolomiteMargin {
     function _ownerSetBurnFee(uint256 _burnFee) internal {
         burnFee = _burnFee;
         emit BurnFeeSet(_burnFee);
-    }
-
-    function _ownerSetDecayTimestamp(uint256 _decayTimestamp) internal {
-        decayTimestamp = _decayTimestamp;
-        emit DecayTimestampSet(_decayTimestamp);
-    }
-
-    function _calculateBurnFee() internal view returns (uint256) {
-        uint256 duration = block.timestamp - decayTimestamp;
-        if (duration >= _DECAY_DURATION) {
-            return burnFee;
-        }
-
-        // @dev linear formula where y intercept is 40% and slope is -35% over 8 weeks
-        // @dev slope will change if the burnFee is updated.
-        uint256 slope = _FORTY_PERCENT - burnFee;
-        return _FORTY_PERCENT - (duration * slope) / _DECAY_DURATION;
     }
 
     // @dev linear formula where y intercept is 5% for the first week then slope is 45% over 103 weeks

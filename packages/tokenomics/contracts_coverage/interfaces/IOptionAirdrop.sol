@@ -20,6 +20,9 @@
 
 pragma solidity ^0.8.9;
 
+import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import { IBaseClaim } from "./IBaseClaim.sol";
+
 
 /**
  * @title   IOptionAirdrop
@@ -27,13 +30,20 @@ pragma solidity ^0.8.9;
  *
  * @notice  Interface for DOLO option airdrop contract
  */
-interface IOptionAirdrop {
+interface IOptionAirdrop is IBaseClaim {
+
+    struct OptionAirdropStorage {
+        address treasury;
+        mapping(address => uint256) userToClaimedAmount;
+        mapping(address => uint256) userToPurchases;
+
+        EnumerableSet.UintSet allowedMarketIds;
+    }
 
     // ======================================================
     // ======================== Events ======================
     // ======================================================
 
-    event MerkleRootSet(bytes32 merkleRoot);
     event TreasurySet(address treasury);
     event AllowedMarketIdsSet(uint256[] marketIds);
     event RewardTokenWithdrawn(address token, uint256 amount, address receiver);
@@ -41,10 +51,6 @@ interface IOptionAirdrop {
     // ======================================================
     // ================== External Functions ================
     // ======================================================
-
-    function ownerSetMerkleRoot(bytes32 _merkleRoot) external;
-
-    function ownerWithdrawRewardToken(address _token, address _receiver) external;
 
     function claim(
         bytes32[] memory _proof,

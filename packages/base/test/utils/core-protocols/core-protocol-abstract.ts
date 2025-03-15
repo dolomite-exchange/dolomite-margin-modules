@@ -31,6 +31,9 @@ import { DeployedVault } from '../ecosystem-utils/deployed-vaults';
 import { InterestSetters } from '../ecosystem-utils/interest-setters';
 import { TestEcosystem } from '../ecosystem-utils/testers';
 import { CoreProtocolConfig } from '../setup';
+import { DeployedVault } from '../ecosystem-utils/deployed-vaults';
+import { IsolationModeVaultType } from 'packages/deployment/src/deploy/isolation-mode/isolation-mode-helpers';
+import { TokenomicsEcosystem } from '../ecosystem-utils/tokenomics';
 
 export interface LibraryMaps {
   safeDelegateCallImpl: Record<string, string>;
@@ -142,6 +145,7 @@ export interface CoreProtocolParams<T extends NetworkType> {
   ownerAdapterV1: DolomiteOwnerV1;
   ownerAdapterV2: DolomiteOwnerV2;
   testEcosystem: TestEcosystem | undefined;
+  tokenomics: TokenomicsEcosystem;
   apiTokens: {
     usdc: ApiToken;
     weth: ApiToken;
@@ -205,6 +209,7 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
   public readonly ownerAdapterV1: DolomiteOwnerV1;
   public readonly ownerAdapterV2: DolomiteOwnerV2;
   public readonly testEcosystem: TestEcosystem | undefined;
+  public readonly tokenomics: TokenomicsEcosystem;
   /// =========================
   /// Markets and Tokens
   /// =========================
@@ -265,6 +270,7 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
     this.ownerAdapterV1 = params.ownerAdapterV1;
     this.ownerAdapterV2 = params.ownerAdapterV2;
     this.testEcosystem = params.testEcosystem;
+    this.tokenomics = params.tokenomics;
     this.marketIds = params.marketIds;
     this.apiTokens = params.apiTokens;
     this.tokens = params.tokens;
