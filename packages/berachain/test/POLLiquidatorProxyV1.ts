@@ -13,6 +13,7 @@ import {
 import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import {
   expectProtocolBalance,
+  expectThrow,
 } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
   disableInterestAccrual,
@@ -167,7 +168,7 @@ describe('POLLiquidatorProxyV1', () => {
     polLiquidatorProxy = await createContractWithAbi<POLLiquidatorProxyV1>(
       POLLiquidatorProxyV1__factory.abi,
       POLLiquidatorProxyV1__factory.bytecode,
-      [liquidatorProxyV5.address],
+      [liquidatorProxyV5.address, core.dolomiteMargin.address],
     );
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(polLiquidatorProxy.address, true);
     await core.liquidatorAssetRegistry.ownerAddLiquidatorToAssetWhitelist(marketId, polLiquidatorProxy.address);
@@ -214,6 +215,7 @@ describe('POLLiquidatorProxyV1', () => {
   describe('#constructor', () => {
     it('should work normally', async () => {
       expect(await polLiquidatorProxy.LIQUIDATOR_PROXY_V5()).to.equal(liquidatorProxyV5.address);
+      expect(await polLiquidatorProxy.DOLOMITE_MARGIN()).to.equal(core.dolomiteMargin.address);
     });
   });
 
@@ -350,6 +352,104 @@ describe('POLLiquidatorProxyV1', () => {
           { owner: metaVault.address, number: defaultAccountNumber },
           marketId
         )
+      );
+    });
+
+    it('should work normally if sender is local operator for solid account', async () => {
+      await core.dolomiteMargin.connect(core.hhUser2).setOperators([{
+        operator: core.hhUser3.address,
+        trusted: true,
+      }]);
+      await vault.unstake(RewardVaultType.Infrared, parAmount.mul(2));
+      const interestRate = parseEther('1').div(ONE_DAY_SECONDS * 365); // 100% APR
+      await core.testEcosystem?.testInterestSetter.setInterestRate(core.tokens.weth.address, { value: interestRate });
+      await core.dolomiteMargin.ownerSetInterestSetter(
+        core.marketIds.weth,
+        core.testEcosystem!.testInterestSetter.address
+      );
+
+      await increase(ONE_DAY_SECONDS * 300);
+      const unwrapperParam: GenericTraderParam = {
+        trader: unwrapper.address,
+        traderType: GenericTraderType.IsolationModeUnwrapper,
+        tradeData: defaultAbiCoder.encode(['uint256'], [3]),
+        makerAccountIndex: 0,
+      };
+      await polLiquidatorProxy.connect(core.hhUser3).liquidatePOL({
+        solidAccount: { owner: core.hhUser2.address, number: defaultAccountNumber },
+        liquidAccount: { owner: vault.address, number: borrowAccountNumber },
+        marketIdsPath: [marketId, core.marketIds.weth],
+        inputAmountWei: MAX_UINT_256_BI,
+        minOutputAmountWei: MAX_UINT_256_BI,
+        tradersPath: [unwrapperParam],
+        makerAccounts: [{
+          owner: metaVault.address,
+          number: defaultAccountNumber,
+        }],
+        expirationTimestamp: ZERO_BI,
+        withdrawAllReward: false,
+      });
+      console.log(
+        await core.dolomiteMargin.getAccountWei(
+          { owner: vault.address, number: borrowAccountNumber },
+          core.marketIds.weth
+        )
+      );
+      console.log(
+        await core.dolomiteMargin.getAccountWei(
+          { owner: vault.address, number: borrowAccountNumber },
+          marketId
+        )
+      );
+      console.log(
+        await core.dolomiteMargin.getAccountWei(
+          { owner: core.hhUser2.address, number: defaultAccountNumber },
+          core.marketIds.weth
+        )
+      );
+      console.log(
+        await core.dolomiteMargin.getAccountWei(
+          { owner: core.hhUser2.address, number: defaultAccountNumber },
+          marketId
+        )
+      );
+      console.log(
+        await core.dolomiteMargin.getAccountWei(
+          { owner: metaVault.address, number: defaultAccountNumber },
+          core.marketIds.weth
+        )
+      );
+      console.log(
+        await core.dolomiteMargin.getAccountWei(
+          { owner: metaVault.address, number: defaultAccountNumber },
+          marketId
+        )
+      );
+    });
+
+    it('should fail if solid account is not sender or local operator', async () => {
+      const unwrapperParam: GenericTraderParam = {
+        trader: unwrapper.address,
+        traderType: GenericTraderType.IsolationModeUnwrapper,
+        tradeData: defaultAbiCoder.encode(['uint256'], [3]),
+        makerAccountIndex: 0,
+      };
+      await expectThrow(
+        polLiquidatorProxy.connect(core.hhUser3).liquidatePOL({
+          solidAccount: { owner: core.hhUser2.address, number: defaultAccountNumber },
+          liquidAccount: { owner: vault.address, number: borrowAccountNumber },
+          marketIdsPath: [marketId, core.marketIds.weth],
+          inputAmountWei: MAX_UINT_256_BI,
+          minOutputAmountWei: MAX_UINT_256_BI,
+          tradersPath: [unwrapperParam],
+          makerAccounts: [{
+            owner: metaVault.address,
+            number: defaultAccountNumber,
+          }],
+          expirationTimestamp: ZERO_BI,
+          withdrawAllReward: false,
+        }),
+        `POLLiquidatorProxyV1: Sender not operator <${core.hhUser3.address.toLowerCase()}>`
       );
     });
   });

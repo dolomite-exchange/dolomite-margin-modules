@@ -24,6 +24,8 @@ import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable
 import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import { IPOLIsolationModeTokenVaultV1 } from "./interfaces/IPOLIsolationModeTokenVaultV1.sol";
 import { IPOLLiquidatorProxyV1 } from "./interfaces/IPOLLiquidatorProxyV1.sol";
+import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
+import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 
 
 /**
@@ -35,6 +37,7 @@ import { IPOLLiquidatorProxyV1 } from "./interfaces/IPOLLiquidatorProxyV1.sol";
 contract POLLiquidatorProxyV1 is
     ReentrancyGuard,
     Initializable,
+    OnlyDolomiteMargin,
     IPOLLiquidatorProxyV1
 {
 
@@ -46,8 +49,9 @@ contract POLLiquidatorProxyV1 is
     // ============ Constructor ============
 
     constructor (
-        address _liquidatorProxyV5
-    ) {
+        address _liquidatorProxyV5,
+        address _dolomiteMargin
+    ) OnlyDolomiteMargin(_dolomiteMargin) {
         LIQUIDATOR_PROXY_V5 = ILiquidatorProxyV5(_liquidatorProxyV5);
     }
 
@@ -58,6 +62,14 @@ contract POLLiquidatorProxyV1 is
     function liquidatePOL(
         ILiquidatorProxyV5.LiquidateParams memory _liquidateParams
     ) public nonReentrant {
+        Require.that(
+            _liquidateParams.solidAccount.owner == msg.sender
+                || DOLOMITE_MARGIN().getIsLocalOperator(_liquidateParams.solidAccount.owner, msg.sender),
+            _FILE,
+            "Sender not operator",
+            msg.sender
+        );
+
         IPOLIsolationModeTokenVaultV1(_liquidateParams.liquidAccount.owner).prepareForLiquidation(
             _liquidateParams.liquidAccount.number,
             _liquidateParams.minOutputAmountWei
