@@ -117,6 +117,17 @@ export async function checkIsGlobalOperator<T extends NetworkType>(
   );
 }
 
+export async function checkMarketId<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  marketId: BigNumberish,
+  token: IERC20,
+) {
+  assertHardhatInvariant(
+    (await core.dolomiteMargin.getMarketTokenAddress(marketId)) === token.address,
+    `Invalid market ID for ${marketId}`,
+  );
+}
+
 export async function checkSupplyCap<T extends NetworkType>(
   core: CoreProtocolType<T>,
   marketId: BigNumberish,

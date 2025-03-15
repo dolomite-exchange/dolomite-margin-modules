@@ -10,7 +10,7 @@ export interface AccountStruct {
   number: BigNumberish;
 }
 
-interface TokenWithMarketId {
+export interface TokenWithMarketId {
   address: string;
   marketId: number;
 }
@@ -47,7 +47,7 @@ export const SUBGRAPH_URL_MAP: Record<Network, string> = {
 export const AAVE_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0xba5DdD1f9d7F570dc94a51479a000E3BCE967196',
-    marketId: -1,
+    marketId: 72,
   },
 };
 
@@ -744,6 +744,13 @@ export const S_USDE_MAP: Record<Network.Berachain, TokenWithMarketId> = {
   },
 };
 
+export const S_USDS_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0xdDb46999F8891663a8F2828d25298f70416d7610',
+    marketId: 74,
+  },
+};
+
 export const ST_ETH_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84',
@@ -776,6 +783,20 @@ export const UNI_BTC_MAP: Record<
   [Network.Berachain]: {
     address: '0xC3827A4BC8224ee2D116637023b124CED6db6e90',
     marketId: 13,
+  },
+};
+
+export const USD0_MAP: Record<Network.Berachain, TokenWithMarketId> = {
+  [Network.Berachain]: {
+    address: '0x91a6aF4C8Cb1673AB0D776828b6B271AC3dA9DcB',
+    marketId: 26,
+  },
+};
+
+export const USD0PP_MAP: Record<Network.Berachain, TokenWithMarketId> = {
+  [Network.Berachain]: {
+    address: '0x30Ea2d525eF7C234F8AA6E3a8909B88f71244cB0',
+    marketId: 27,
   },
 };
 
@@ -853,17 +874,10 @@ export const USDM_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   },
 };
 
-export const USD0_MAP: Record<Network.Berachain, TokenWithMarketId> = {
-  [Network.Berachain]: {
-    address: '0x91a6aF4C8Cb1673AB0D776828b6B271AC3dA9DcB',
-    marketId: 26,
-  },
-};
-
-export const USD0PP_MAP: Record<Network.Berachain, TokenWithMarketId> = {
-  [Network.Berachain]: {
-    address: '0x30Ea2d525eF7C234F8AA6E3a8909B88f71244cB0',
-    marketId: 27,
+export const USDS_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0x6491c05A82219b8D1479057361ff1654749b876b',
+    marketId: 73,
   },
 };
 
@@ -1891,6 +1905,10 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<Network, Record<string, Agg
       tokenPairAddress: WETH_MAP[Network.ArbitrumOne].address,
       invert: true,
     },
+    [S_USDS_MAP[Network.ArbitrumOne].address]: {
+      aggregatorAddress: '0x2483326d19f780Fb082f333Fe124e4C075B207ba',
+      tokenPairAddress: USDS_MAP[Network.ArbitrumOne].address,
+    },
     [SOL_MAP[Network.ArbitrumOne].address]: {
       aggregatorAddress: '0x24ceA4b8ce57cdA5058b924B9B9987992450590c',
     },
@@ -1916,6 +1934,9 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<Network, Record<string, Agg
     },
     [USDL_MAP[Network.ArbitrumOne].address]: {
       aggregatorAddress: '0x18DdDDEe3682853c746E5203e0495CAaC5054a75',
+    },
+    [USDS_MAP[Network.ArbitrumOne].address]: {
+      aggregatorAddress: '0x37833E5b3fbbEd4D613a3e0C354eF91A42B81eeB',
     },
     [USDT_MAP[Network.ArbitrumOne].address]: {
       aggregatorAddress: '0x3f3f5dF88dC9F13eac63DF89EC16ef6e7E25DdE7',

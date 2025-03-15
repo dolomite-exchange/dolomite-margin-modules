@@ -71,11 +71,8 @@ contract LiquidatorProxyV5 is
         _expiry,
         _chainId
     )
-    GenericTraderProxyBase(
-        _dolomiteRegistry
-    )
-    {
-    }
+    GenericTraderProxyBase(_dolomiteRegistry)
+    {}
 
     // ============ External Functions ============
 
