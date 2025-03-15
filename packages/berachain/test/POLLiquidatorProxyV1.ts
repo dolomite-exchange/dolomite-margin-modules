@@ -1,4 +1,8 @@
-import { DolomiteERC4626, DolomiteERC4626__factory } from '@dolomite-exchange/modules-base/src/types';
+import {
+  DolomiteERC4626,
+  DolomiteERC4626__factory,
+  LiquidatorProxyV5,
+} from '@dolomite-exchange/modules-base/src/types';
 import {
   MAX_UINT_256_BI,
   Network,
@@ -35,6 +39,8 @@ import {
   POLIsolationModeUnwrapperTraderV2,
   POLIsolationModeVaultFactory,
   POLIsolationModeWrapperTraderV2,
+  POLLiquidatorProxyV1,
+  POLLiquidatorProxyV1__factory,
 } from '../src/types';
 import {
   createBerachainRewardsRegistry,
@@ -47,7 +53,7 @@ import {
   RewardVaultType,
   wrapFullBalanceIntoVaultDefaultAccount,
 } from './berachain-ecosystem-utils';
-import { setupNewGenericTraderProxy } from 'packages/base/test/utils/dolomite';
+import { createLiquidatorProxyV5, setupNewGenericTraderProxy } from 'packages/base/test/utils/dolomite';
 import { GenericEventEmissionType, GenericTraderParam, GenericTraderType } from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 
@@ -55,7 +61,7 @@ const defaultAccountNumber = ZERO_BI;
 const borrowAccountNumber = BigNumber.from('123');
 const amountWei = parseEther('100');
 
-describe('POLLiquidation', () => {
+describe('POLLiquidatorProxyV1', () => {
   let snapshotId: string;
 
   let core: CoreProtocolBerachain;
@@ -68,6 +74,9 @@ describe('POLLiquidation', () => {
   let unwrapper: POLIsolationModeUnwrapperTraderV2;
   let metaVault: InfraredBGTMetaVault;
 
+  let polLiquidatorProxy: POLLiquidatorProxyV1;
+  let liquidatorProxyV5: LiquidatorProxyV5;
+
   let dToken: DolomiteERC4626;
   let infraredVault: IInfraredVault;
   let parAmount: BigNumber;
@@ -76,10 +85,12 @@ describe('POLLiquidation', () => {
 
   before(async () => {
     core = await setupCoreProtocol({
-      blockNumber: 1_679_500,
+      blockNumber: 2_031_000,
       network: Network.Berachain,
     });
     await disableInterestAccrual(core, core.marketIds.weth);
+    liquidatorProxyV5 = await createLiquidatorProxyV5(core);
+    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(liquidatorProxyV5.address, true);
 
     dToken = DolomiteERC4626__factory.connect(core.dolomiteTokens.weth!.address, core.hhUser1);
 
@@ -140,18 +151,58 @@ describe('POLLiquidation', () => {
     await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, amountWei);
     parAmount = await dToken.balanceOf(core.hhUser1.address);
 
-    // same price as polWETH
     await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.weth.address, parseEther('2000'));
     await core.dolomiteMargin.connect(core.governance).ownerSetPriceOracle(
       core.marketIds.weth,
       core.testEcosystem!.testPriceOracle.address,
     );
 
+    // @follow-up Will need to set as global operator or have the metavault set as local operators
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(wrapper.address, true);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(unwrapper.address, true);
     await setupNewGenericTraderProxy(core, marketId);
 
     await wrapFullBalanceIntoVaultDefaultAccount(core, vault, metaVault, wrapper, marketId);
+
+    polLiquidatorProxy = await createContractWithAbi<POLLiquidatorProxyV1>(
+      POLLiquidatorProxyV1__factory.abi,
+      POLLiquidatorProxyV1__factory.bytecode,
+      [liquidatorProxyV5.address],
+    );
+    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(polLiquidatorProxy.address, true);
+    await core.liquidatorAssetRegistry.ownerAddLiquidatorToAssetWhitelist(marketId, polLiquidatorProxy.address);
+    await core.liquidatorAssetRegistry.ownerAddLiquidatorToAssetWhitelist(marketId, liquidatorProxyV5.address);
+
+    await vault.transferIntoPositionWithUnderlyingToken(defaultAccountNumber, borrowAccountNumber, parAmount);
+    await expectProtocolBalance(core, vault, defaultAccountNumber, marketId, ZERO_BI);
+    await expectProtocolBalance(core, vault, borrowAccountNumber, marketId, parAmount);
+
+    const wrapperParam: GenericTraderParam = {
+      trader: wrapper.address,
+      traderType: GenericTraderType.IsolationModeWrapper,
+      tradeData: defaultAbiCoder.encode(['uint256'], [2]),
+      makerAccountIndex: 0,
+    };
+    await vault.swapExactInputForOutput(
+      borrowAccountNumber,
+      [core.marketIds.weth, marketId],
+      amountWei,
+      parAmount,
+      [wrapperParam],
+      [{
+        owner: metaVault.address,
+        number: defaultAccountNumber,
+      }],
+      {
+        deadline: '123123123123123',
+        balanceCheckFlag: BalanceCheckFlag.None,
+        eventType: GenericEventEmissionType.None,
+      },
+    );
+    await expectProtocolBalance(core, vault, borrowAccountNumber, core.marketIds.weth, ZERO_BI.sub(amountWei));
+    await expectProtocolBalance(core, vault, borrowAccountNumber, marketId, parAmount.mul(2));
+    expect(await infraredVault.balanceOf(metaVault.address)).to.equal(parAmount.mul(2));
+    expect(await vault.underlyingBalanceOf()).to.equal(parAmount.mul(2));
 
     snapshotId = await snapshot();
   });
@@ -160,40 +211,14 @@ describe('POLLiquidation', () => {
     snapshotId = await revertToSnapshotAndCapture(snapshotId);
   });
 
-  describe('#liquidate', () => {
-    it('should work normally without unstaking', async () => {
-      await vault.transferIntoPositionWithUnderlyingToken(defaultAccountNumber, borrowAccountNumber, parAmount);
-      await expectProtocolBalance(core, vault, defaultAccountNumber, marketId, ZERO_BI);
-      await expectProtocolBalance(core, vault, borrowAccountNumber, marketId, parAmount);
+  describe('#constructor', () => {
+    it('should work normally', async () => {
+      expect(await polLiquidatorProxy.LIQUIDATOR_PROXY_V5()).to.equal(liquidatorProxyV5.address);
+    });
+  });
 
-      const wrapperParam: GenericTraderParam = {
-        trader: wrapper.address,
-        traderType: GenericTraderType.IsolationModeWrapper,
-        tradeData: defaultAbiCoder.encode(['uint256'], [2]),
-        makerAccountIndex: 0,
-      };
-      await vault.swapExactInputForOutput(
-        borrowAccountNumber,
-        [core.marketIds.weth, marketId],
-        amountWei,
-        parAmount,
-        [wrapperParam],
-        [{
-          owner: metaVault.address,
-          number: defaultAccountNumber,
-        }],
-        {
-          deadline: '123123123123123',
-          balanceCheckFlag: BalanceCheckFlag.None,
-          eventType: GenericEventEmissionType.None,
-        },
-      );
-      await expectProtocolBalance(core, vault, borrowAccountNumber, core.marketIds.weth, ZERO_BI.sub(amountWei));
-      await expectProtocolBalance(core, vault, borrowAccountNumber, marketId, parAmount.mul(2));
-      expect(await infraredVault.balanceOf(metaVault.address)).to.equal(parAmount.mul(2));
-      expect(await vault.underlyingBalanceOf()).to.equal(parAmount.mul(2));
-      await vault.unstake(RewardVaultType.Infrared, parAmount.mul(2));
-
+  describe('#liquidatePOL', () => {
+    it('should work normally if unstaking is needed', async () => {
       const interestRate = parseEther('1').div(ONE_DAY_SECONDS * 365); // 100% APR
       await core.testEcosystem?.testInterestSetter.setInterestRate(core.tokens.weth.address, { value: interestRate });
       await core.dolomiteMargin.ownerSetInterestSetter(
@@ -208,19 +233,88 @@ describe('POLLiquidation', () => {
         tradeData: defaultAbiCoder.encode(['uint256'], [3]),
         makerAccountIndex: 0,
       };
-      await core.liquidatorProxyV4.connect(core.hhUser2).liquidate(
-        { owner: core.hhUser2.address, number: defaultAccountNumber },
-        { owner: vault.address, number: borrowAccountNumber },
-        [marketId, core.marketIds.weth],
-        MAX_UINT_256_BI,
-        MAX_UINT_256_BI,
-        [unwrapperParam],
-        [{
+      await polLiquidatorProxy.connect(core.hhUser2).liquidatePOL({
+        solidAccount: { owner: core.hhUser2.address, number: defaultAccountNumber },
+        liquidAccount: { owner: vault.address, number: borrowAccountNumber },
+        marketIdsPath: [marketId, core.marketIds.weth],
+        inputAmountWei: MAX_UINT_256_BI,
+        minOutputAmountWei: MAX_UINT_256_BI,
+        tradersPath: [unwrapperParam],
+        makerAccounts: [{
           owner: metaVault.address,
           number: defaultAccountNumber,
         }],
-        ZERO_BI
+        expirationTimestamp: ZERO_BI,
+        withdrawAllReward: false,
+      });
+      console.log(
+        await core.dolomiteMargin.getAccountWei(
+          { owner: vault.address, number: borrowAccountNumber },
+          core.marketIds.weth
+        )
       );
+      console.log(
+        await core.dolomiteMargin.getAccountWei(
+          { owner: vault.address, number: borrowAccountNumber },
+          marketId
+        )
+      );
+      console.log(
+        await core.dolomiteMargin.getAccountWei(
+          { owner: core.hhUser2.address, number: defaultAccountNumber },
+          core.marketIds.weth
+        )
+      );
+      console.log(
+        await core.dolomiteMargin.getAccountWei(
+          { owner: core.hhUser2.address, number: defaultAccountNumber },
+          marketId
+        )
+      );
+      console.log(
+        await core.dolomiteMargin.getAccountWei(
+          { owner: metaVault.address, number: defaultAccountNumber },
+          core.marketIds.weth
+        )
+      );
+      console.log(
+        await core.dolomiteMargin.getAccountWei(
+          { owner: metaVault.address, number: defaultAccountNumber },
+          marketId
+        )
+      );
+    });
+
+    it('should work normally if no unstaking is needed', async () => {
+      await vault.unstake(RewardVaultType.Infrared, parAmount.mul(2));
+      const interestRate = parseEther('1').div(ONE_DAY_SECONDS * 365); // 100% APR
+      await core.testEcosystem?.testInterestSetter.setInterestRate(core.tokens.weth.address, { value: interestRate });
+      await core.dolomiteMargin.ownerSetInterestSetter(
+        core.marketIds.weth,
+        core.testEcosystem!.testInterestSetter.address
+      );
+
+      await increase(ONE_DAY_SECONDS * 300);
+      const unwrapperParam: GenericTraderParam = {
+        trader: unwrapper.address,
+        traderType: GenericTraderType.IsolationModeUnwrapper,
+        tradeData: defaultAbiCoder.encode(['uint256'], [3]),
+        makerAccountIndex: 0,
+      };
+      await polLiquidatorProxy.connect(core.hhUser2).liquidatePOL({
+        solidAccount: { owner: core.hhUser2.address, number: defaultAccountNumber },
+        liquidAccount: { owner: vault.address, number: borrowAccountNumber },
+        marketIdsPath: [marketId, core.marketIds.weth],
+        inputAmountWei: MAX_UINT_256_BI,
+        minOutputAmountWei: MAX_UINT_256_BI,
+        tradersPath: [unwrapperParam],
+        makerAccounts: [{
+          owner: metaVault.address,
+          number: defaultAccountNumber,
+        }],
+        expirationTimestamp: ZERO_BI,
+        withdrawAllReward: false,
+      });
       console.log(
         await core.dolomiteMargin.getAccountWei(
           { owner: vault.address, number: borrowAccountNumber },

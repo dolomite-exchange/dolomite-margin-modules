@@ -21,13 +21,13 @@
 pragma solidity ^0.8.9;
 
 import { IDolomiteRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IDolomiteRegistry.sol";
-import { IGenericTraderProxyV2 } from "@dolomite-exchange/modules-base/contracts/proxies/interfaces/IGenericTraderProxyV2.sol";
 import { IsolationModeTokenVaultV1 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
 import { IIsolationModeTokenVaultV1 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
 import { IIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { IDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
+import { IGenericTraderProxyV2 } from "@dolomite-exchange/modules-base/contracts/proxies/interfaces/IGenericTraderProxyV2.sol"; // solhint-disable-line max-line-length
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IBaseMetaVault } from "./interfaces/IBaseMetaVault.sol";
@@ -62,7 +62,7 @@ contract POLIsolationModeTokenVaultV1 is
     // ==================================================================
 
     modifier onlyLiquidator(address _from) {
-        // @audit Should we confirm that there is more than 1 liquidator set? If not anybody can call this
+        // @note Should we confirm that there is more than 1 liquidator set? If not anybody can call this
         Require.that(
             dolomiteRegistry().liquidatorAssetRegistry().isAssetWhitelistedForLiquidation(
                 marketId(),
@@ -125,7 +125,7 @@ contract POLIsolationModeTokenVaultV1 is
         uint256 _accountNumber,
         uint256 _amount
     ) external onlyLiquidator(msg.sender) returns (uint256) {
-        return _unstakeBeforeUnwrapping(_accountNumber, _amount);
+        return _unstakeBeforeUnwrapping(_accountNumber, _amount, true);
     }
 
     // ==================================================================
@@ -193,7 +193,7 @@ contract POLIsolationModeTokenVaultV1 is
         uint256 factoryMarketId = marketId();
         if (_marketIdsPath[0] == factoryMarketId) {
             // @follow-up @Corey, can you double check using the _fromAccountNumber here?
-            _inputAmountWei = _unstakeBeforeUnwrapping(_fromAccountNumber, _inputAmountWei);
+            _inputAmountWei = _unstakeBeforeUnwrapping(_fromAccountNumber, _inputAmountWei, false);
         }
 
         super._addCollateralAndSwapExactInputForOutput(
@@ -224,7 +224,7 @@ contract POLIsolationModeTokenVaultV1 is
     ) internal override {
         uint256 factoryMarketId = marketId();
         if (_marketIdsPath[0] == factoryMarketId) {
-            _inputAmountWei = _unstakeBeforeUnwrapping(_borrowAccountNumber, _inputAmountWei);
+            _inputAmountWei = _unstakeBeforeUnwrapping(_borrowAccountNumber, _inputAmountWei, false);
         }
 
         super._swapExactInputForOutputAndRemoveCollateral(
@@ -248,7 +248,11 @@ contract POLIsolationModeTokenVaultV1 is
     ) internal override {
         uint256 factoryMarketId = marketId();
         if (_params.marketIdsPath[0] == factoryMarketId) {
-            _params.inputAmountWei = _unstakeBeforeUnwrapping(_params.tradeAccountNumber, _params.inputAmountWei);
+            _params.inputAmountWei = _unstakeBeforeUnwrapping(
+                _params.tradeAccountNumber,
+                _params.inputAmountWei,
+                false
+            );
         }
 
         super._swapExactInputForOutput(_params);
@@ -258,12 +262,13 @@ contract POLIsolationModeTokenVaultV1 is
         }
     }
 
-    function _unstakeBeforeUnwrapping(uint256 _accountNumber, uint256 _amountWei) internal returns (uint256) {
+    function _unstakeBeforeUnwrapping(
+        uint256 _accountNumber,
+        uint256 _amountWei,
+        bool _isLiquidation
+    ) internal returns (uint256) {
         IBaseMetaVault metaVault = IBaseMetaVault(
             registry().getMetaVaultByVault(address(this))
-        );
-        IBerachainRewardsRegistry.RewardVaultType defaultType = metaVault.getDefaultRewardVaultTypeByAsset(
-            UNDERLYING_TOKEN()
         );
         IDolomiteStructs.Wei memory accountWei = DOLOMITE_MARGIN().getAccountWei(
             IDolomiteStructs.AccountInfo({
@@ -276,28 +281,29 @@ contract POLIsolationModeTokenVaultV1 is
 
         // @audit check par values are handled correctly everywhere
         // @follow-up @Corey, can you double check this code
+        uint256 withdrawAmount = _amountWei == type(uint256).max ? accountWei.value : _amountWei;
+        Require.that(
+            withdrawAmount <= accountWei.value,
+            _FILE,
+            "Insufficient balance"
+        );
+
         uint256 bal = IERC20(UNDERLYING_TOKEN()).balanceOf(address(metaVault));
-        uint256 feeAmount;
-        if (_amountWei == type(uint256).max) {
-            if (accountWei.value > bal) {
-                _unstake(UNDERLYING_TOKEN(), defaultType, accountWei.value - bal);
-            }
-            feeAmount = metaVault.chargeDTokenFee(UNDERLYING_TOKEN(), marketId(), accountWei.value);
-        } else {
-            Require.that(
-                _amountWei <= accountWei.value,
-                _FILE,
-                "Insufficient balance"
+        if (withdrawAmount > bal) {
+            _unstake(
+                UNDERLYING_TOKEN(),
+                metaVault.getDefaultRewardVaultTypeByAsset(UNDERLYING_TOKEN()),
+                withdrawAmount - bal
             );
-            if (_amountWei > bal) {
-                _unstake(UNDERLYING_TOKEN(), defaultType, _amountWei - bal);
-            }
-            feeAmount = metaVault.chargeDTokenFee(UNDERLYING_TOKEN(), marketId(), _amountWei);
         }
 
-        IIsolationModeVaultFactory(VAULT_FACTORY()).withdrawFromDolomiteMargin(_accountNumber, feeAmount);
-        if (_amountWei != type(uint256).max) {
-            _amountWei -= feeAmount;
+        if (!_isLiquidation) {
+            uint256 feeAmount = metaVault.chargeDTokenFee(UNDERLYING_TOKEN(), marketId(), withdrawAmount);
+            IIsolationModeVaultFactory(VAULT_FACTORY()).withdrawFromDolomiteMargin(_accountNumber, feeAmount);
+
+            if (_amountWei != type(uint256).max) {
+                _amountWei -= feeAmount;
+            }
         }
 
         return _amountWei;
