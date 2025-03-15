@@ -231,10 +231,12 @@ abstract contract BaseLiquidatorProxy is ChainIdHelper, HasLiquidatorRegistry, O
     internal
     view
     {
+        // @follow-up @Corey, I had to change this if called from POLLiquidatorProxy
         // check credentials for msg.sender
         Require.that(
             _constants.solidAccount.owner == msg.sender
-                || DOLOMITE_MARGIN().getIsLocalOperator(_constants.solidAccount.owner, msg.sender),
+                || DOLOMITE_MARGIN().getIsLocalOperator(_constants.solidAccount.owner, msg.sender)
+                || DOLOMITE_MARGIN().getIsGlobalOperator(msg.sender),
             _FILE,
             "Sender not operator",
             msg.sender

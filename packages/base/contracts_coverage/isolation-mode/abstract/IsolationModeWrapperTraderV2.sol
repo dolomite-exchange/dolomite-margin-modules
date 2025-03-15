@@ -42,7 +42,7 @@ abstract contract IsolationModeWrapperTraderV2 is IIsolationModeWrapperTraderV2,
     // ======================== Constants ========================
 
     bytes32 private constant _FILE = "IsolationModeWrapperTraderV2";
-    uint256 private constant _ACTIONS_LENGTH = 1;
+    uint256 internal constant _ACTIONS_LENGTH = 1;
 
     // ======================== Constructor ========================
 
@@ -70,6 +70,7 @@ abstract contract IsolationModeWrapperTraderV2 is IIsolationModeWrapperTraderV2,
         bytes calldata _orderData
     )
     external
+    virtual
     onlyDolomiteMargin(msg.sender)
     returns (uint256) {
         if (VAULT_FACTORY.getAccountByVault(_tradeOriginator) != address(0)) { /* FOR COVERAGE TESTING */ }
@@ -133,6 +134,7 @@ abstract contract IsolationModeWrapperTraderV2 is IIsolationModeWrapperTraderV2,
         CreateActionsForWrappingParams calldata _params
     )
     external
+    virtual
     override
     view
     returns (IDolomiteMargin.ActionArgs[] memory) {
@@ -166,7 +168,7 @@ abstract contract IsolationModeWrapperTraderV2 is IIsolationModeWrapperTraderV2,
         return actions;
     }
 
-    function actionsLength() external override pure returns (uint256) {
+    function actionsLength() external virtual override pure returns (uint256) {
         return _ACTIONS_LENGTH;
     }
 
