@@ -1,11 +1,17 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.9;
 
-import {IBurnMintERC20} from "@chainlink/contracts-ccip/src/v0.8/shared/token/ERC20/IBurnMintERC20.sol";
+import { Pool } from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Pool.sol";
+import { IBurnMintERC20 } from "@chainlink/contracts-ccip/src/v0.8/shared/token/ERC20/IBurnMintERC20.sol";
+import { TokenPool } from "./TokenPool.sol";
 
-import {Pool} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Pool.sol";
-import {TokenPool} from "./TokenPool.sol";
 
+/**
+ * @title   BurnMintTokenPoolAbstract
+ * @author  Chainlink
+ *
+ * Abstract token pool implementation for burning / minting across networks
+ */
 abstract contract BurnMintTokenPoolAbstract is TokenPool {
   /// @notice Contains the specific burn call for a pool.
   /// @dev overriding this method allows us to create pools with different burn signatures

@@ -17,7 +17,8 @@ import {
   IGenericTraderProxyV2,
   ILiquidatorAssetRegistry,
   ILiquidatorProxyV1,
-  ILiquidatorProxyV4WithGenericTrader, ILiquidatorProxyV5,
+  ILiquidatorProxyV4WithGenericTrader,
+  ILiquidatorProxyV5,
   IPartiallyDelayedMultiSig,
   IsolationModeFreezableLiquidatorProxy,
   IWETH,
@@ -30,10 +31,8 @@ import { DolomiteMargin, Expiry } from '../dolomite';
 import { DeployedVault } from '../ecosystem-utils/deployed-vaults';
 import { InterestSetters } from '../ecosystem-utils/interest-setters';
 import { TestEcosystem } from '../ecosystem-utils/testers';
-import { CoreProtocolConfig } from '../setup';
-import { DeployedVault } from '../ecosystem-utils/deployed-vaults';
-import { IsolationModeVaultType } from 'packages/deployment/src/deploy/isolation-mode/isolation-mode-helpers';
 import { TokenomicsEcosystem } from '../ecosystem-utils/tokenomics';
+import { CoreProtocolConfig } from '../setup';
 
 export interface LibraryMaps {
   safeDelegateCallImpl: Record<string, string>;

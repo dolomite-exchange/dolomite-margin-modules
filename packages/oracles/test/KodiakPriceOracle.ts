@@ -3,25 +3,16 @@ import {
   DolomiteRegistryImplementation__factory,
 } from '@dolomite-exchange/modules-base/src/types';
 import { createContractWithAbi } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { ADDRESS_ZERO, Network, ONE_DAY_SECONDS } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { Network, ONE_DAY_SECONDS } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
-import { CoreProtocolPolygonZkEvm } from 'packages/base/test/utils/core-protocols/core-protocol-polygon-zkevm';
-import { TokenInfo } from '../src';
-import { getChainlinkPriceOracleV3ConstructorParamsFromChainlinkOracleV1ZkEvm } from '../src/oracles-constructors';
-import {
-  ChainlinkPriceOracleV3,
-  ChainlinkPriceOracleV3__factory,
-  OracleAggregatorV2,
-  OracleAggregatorV2__factory,
-  PancakeV3PriceOracle,
-  PancakeV3PriceOracle__factory,
-} from '../src/types';
 import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
+import { TokenInfo } from '../src';
+import { PancakeV3PriceOracle, PancakeV3PriceOracle__factory } from '../src/types';
 
 const WBERA_USDC_KODIAK_POOL_PRICE = BigNumber.from('6895047921730619496');
 const FIFTEEN_MINUTES = BigNumber.from('900');
@@ -51,21 +42,14 @@ describe('KodiakPriceOracle', () => {
     oracle = await createContractWithAbi<PancakeV3PriceOracle>(
       PancakeV3PriceOracle__factory.abi,
       PancakeV3PriceOracle__factory.bytecode,
-      [
-        core.tokens.wbera.address,
-        HONEY_WBERA_KODIAK_POOL,
-        core.dolomiteRegistry.address,
-        core.dolomiteMargin.address,
-      ],
+      [core.tokens.wbera.address, HONEY_WBERA_KODIAK_POOL, core.dolomiteRegistry.address, core.dolomiteMargin.address],
     );
     const tokenInfo: TokenInfo = {
-      oracleInfos: [
-        { oracle: oracle.address, tokenPair: core.tokens.honey.address, weight: 100 },
-      ],
+      oracleInfos: [{ oracle: oracle.address, tokenPair: core.tokens.honey.address, weight: 100 }],
       decimals: 18,
       token: core.tokens.wbera.address,
     };
-    
+
     await core.oracleAggregatorV2.connect(core.governance).ownerInsertOrUpdateToken(tokenInfo);
 
     snapshotId = await snapshot();

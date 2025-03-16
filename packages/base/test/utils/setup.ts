@@ -221,10 +221,9 @@ import { createPendleEcosystemArbitrumOne, createPendleEcosystemMantle } from '.
 import { createPlutusEcosystem } from './ecosystem-utils/plutus';
 import { createPremiaEcosystem } from './ecosystem-utils/premia';
 import { createTestEcosystem } from './ecosystem-utils/testers';
+import { createTokenomicsEcosystem } from './ecosystem-utils/tokenomics';
 import { createUmamiEcosystem } from './ecosystem-utils/umami';
 import { impersonate, impersonateOrFallback, resetForkIfPossible } from './index';
-import { DeployedVault, getDeployedVaults } from './ecosystem-utils/deployed-vaults';
-import { createTokenomicsEcosystem } from './ecosystem-utils/tokenomics';
 
 /**
  * Config to for setting up tests in the `before` function

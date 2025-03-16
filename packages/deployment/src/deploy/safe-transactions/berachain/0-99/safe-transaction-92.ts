@@ -1,11 +1,11 @@
+import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { getAndCheckSpecificNetwork } from 'packages/base/src/utils/dolomite-utils';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from 'packages/base/test/utils';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
-import { EncodedTransaction, prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
+import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
-import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 
 // @follow-up Update addresses
 const remappedAddresses = [
@@ -81,20 +81,24 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     invariants: async () => {
       for (const remappedAddress of remappedAddresses) {
         assertHardhatInvariant(
-          await core.tokenomics.regularAirdrop.addressRemapping(remappedAddress.berachainAddress) === remappedAddress.arbitrumAddress,
-          'Regular airdrop address remapping is incorrect'
+          (await core.tokenomics.regularAirdrop.addressRemapping(remappedAddress.berachainAddress)) ===
+            remappedAddress.arbitrumAddress,
+          'Regular airdrop address remapping is incorrect',
         );
         assertHardhatInvariant(
-          await core.tokenomics.optionAirdrop.addressRemapping(remappedAddress.berachainAddress) === remappedAddress.arbitrumAddress,
-          'Option airdrop address remapping is incorrect'
+          (await core.tokenomics.optionAirdrop.addressRemapping(remappedAddress.berachainAddress)) ===
+            remappedAddress.arbitrumAddress,
+          'Option airdrop address remapping is incorrect',
         );
         assertHardhatInvariant(
-          await core.tokenomics.vestingClaims.addressRemapping(remappedAddress.berachainAddress) === remappedAddress.arbitrumAddress,
-          'Vesting claims address remapping is incorrect'
+          (await core.tokenomics.vestingClaims.addressRemapping(remappedAddress.berachainAddress)) ===
+            remappedAddress.arbitrumAddress,
+          'Vesting claims address remapping is incorrect',
         );
         assertHardhatInvariant(
-          await core.tokenomics.strategicVesting.addressRemapping(remappedAddress.berachainAddress) === remappedAddress.arbitrumAddress,
-          'Strategic vesting address remapping is incorrect'
+          (await core.tokenomics.strategicVesting.addressRemapping(remappedAddress.berachainAddress)) ===
+            remappedAddress.arbitrumAddress,
+          'Strategic vesting address remapping is incorrect',
         );
       }
     },
