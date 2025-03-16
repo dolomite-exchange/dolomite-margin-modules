@@ -1,34 +1,37 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.9;
 
-import {IPoolV1} from "./IPool.sol";
-import {IRMN} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRMN.sol";
-import {IRouter} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouter.sol";
-
-import {Ownable2StepMsgSender} from "@chainlink/contracts-ccip/src/v0.8/shared/access/Ownable2StepMsgSender.sol";
-import {Pool} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Pool.sol";
-import {RateLimiter} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/RateLimiter.sol";
-
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
-import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import { IRMN } from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRMN.sol";
+import { IRouter } from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouter.sol";
+import { Pool } from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Pool.sol";
+import { RateLimiter } from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/RateLimiter.sol";
+import { Ownable2StepMsgSender } from "@chainlink/contracts-ccip/src/v0.8/shared/access/Ownable2StepMsgSender.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
+import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import { IPoolV1 } from "./IPoolV1.sol";
 
 
-/// @dev This pool supports different decimals on different chains but using this feature could impact the total number
-/// of tokens in circulation. Since all of the tokens are locked/burned on the source, and a rounded amount is minted/released on the
-/// destination, the number of tokens minted/released could be less than the number of tokens burned/locked. This is because the source
-/// chain does not know about the destination token decimals. This is not a problem if the decimals are the same on both
-/// chains.
-///
-/// Example:
-/// Assume there is a token with 6 decimals on chain A and 3 decimals on chain B.
-/// - 1.234567 tokens are burned on chain A.
-/// - 1.234    tokens are minted on chain B.
-/// When sending the 1.234 tokens back to chain A, you will receive 1.234000 tokens on chain A, effectively losing
-/// 0.000567 tokens.
-/// In the case of a burnMint pool on chain A, these funds are burned in the pool on chain A.
-/// In the case of a lockRelease pool on chain A, these funds accumulate in the pool on chain A.
+/**
+ * @title   TokenPool
+ * @author  Chainlink
+ *
+ * @dev This pool supports different decimals on different chains but using this feature could impact the total number
+ * of tokens in circulation. Since all of the tokens are locked/burned on the source, and a rounded amount is
+ * minted/released on the destination, the number of tokens minted/released could be less than the number of tokens
+ * burned/locked. This is because the source chain does not know about the destination token decimals. This is not a
+ * problem if the decimals are the same on both chains.
+ *
+ * Example:
+ * Assume there is a token with 6 decimals on chain A and 3 decimals on chain B.
+ * - 1.234567 tokens are burned on chain A.
+ * - 1.234    tokens are minted on chain B.
+ * When sending the 1.234 tokens back to chain A, you will receive 1.234000 tokens on chain A, effectively losing
+ * 0.000567 tokens.
+ * In the case of a burnMint pool on chain A, these funds are burned in the pool on chain A.
+ * In the case of a lockRelease pool on chain A, these funds accumulate in the pool on chain A.
+ */
 abstract contract TokenPool is IPoolV1, Ownable2StepMsgSender {
   using EnumerableSet for EnumerableSet.Bytes32Set;
   using EnumerableSet for EnumerableSet.AddressSet;
@@ -77,18 +80,27 @@ abstract contract TokenPool is IPoolV1, Ownable2StepMsgSender {
   event RateLimitAdminSet(address rateLimitAdmin);
 
   struct ChainUpdate {
-    uint64 remoteChainSelector; // Remote chain selector
-    bytes[] remotePoolAddresses; // Address of the remote pool, ABI encoded in the case of a remote EVM chain.
-    bytes remoteTokenAddress; // Address of the remote token, ABI encoded in the case of a remote EVM chain.
-    RateLimiter.Config outboundRateLimiterConfig; // Outbound rate limited config, meaning the rate limits for all of the onRamps for the given chain
-    RateLimiter.Config inboundRateLimiterConfig; // Inbound rate limited config, meaning the rate limits for all of the offRamps for the given chain
+    /// Remote chain selector
+    uint64 remoteChainSelector;
+    /// Address of the remote pool, ABI encoded in the case of a remote EVM chain.
+    bytes[] remotePoolAddresses;
+    /// Address of the remote token, ABI encoded in the case of a remote EVM chain.
+    bytes remoteTokenAddress;
+    /// Outbound rate limited config, meaning the rate limits for all of the onRamps for the given chain
+    RateLimiter.Config outboundRateLimiterConfig;
+    /// Inbound rate limited config, meaning the rate limits for all of the offRamps for the given chain
+    RateLimiter.Config inboundRateLimiterConfig;
   }
 
   struct RemoteChainConfig {
-    RateLimiter.TokenBucket outboundRateLimiterConfig; // Outbound rate limited config, meaning the rate limits for all of the onRamps for the given chain
-    RateLimiter.TokenBucket inboundRateLimiterConfig; // Inbound rate limited config, meaning the rate limits for all of the offRamps for the given chain
-    bytes remoteTokenAddress; // Address of the remote token, ABI encoded in the case of a remote EVM chain.
-    EnumerableSet.Bytes32Set remotePools; // Set of remote pool hashes, ABI encoded in the case of a remote EVM chain.
+    /// Outbound rate limited config, meaning the rate limits for all of the onRamps for the given chain
+    RateLimiter.TokenBucket outboundRateLimiterConfig;
+    /// Inbound rate limited config, meaning the rate limits for all of the offRamps for the given chain
+    RateLimiter.TokenBucket inboundRateLimiterConfig;
+    /// Address of the remote token, ABI encoded in the case of a remote EVM chain.
+    bytes remoteTokenAddress;
+    /// Set of remote pool hashes, ABI encoded in the case of a remote EVM chain.
+    EnumerableSet.Bytes32Set remotePools;
   }
 
   /// @dev The bridgeable token that is managed by this pool. Pools could support multiple tokens at the same time if
@@ -128,8 +140,8 @@ abstract contract TokenPool is IPoolV1, Ownable2StepMsgSender {
         revert InvalidDecimalArgs(localTokenDecimals, actualTokenDecimals);
       }
     } catch {
-      // The decimals function doesn't exist, which is possible since it's optional in the ERC20 spec. We skip the check and
-      // assume the supplied token decimals are correct.
+      // The decimals function doesn't exist, which is possible since it's optional in the ERC20 spec. We skip the check
+      // and assume the supplied token decimals are correct.
     }
     i_tokenDecimals = localTokenDecimals;
 
@@ -168,7 +180,7 @@ abstract contract TokenPool is IPoolV1, Ownable2StepMsgSender {
   }
 
   /// @notice Sets the pool's Router
-  /// @param newRouter The new Router
+  /// @param  newRouter The new Router
   function setRouter(
     address newRouter
   ) public onlyOwner {
@@ -197,7 +209,7 @@ abstract contract TokenPool is IPoolV1, Ownable2StepMsgSender {
   /// - allowlist status
   /// - if the sender is a valid onRamp
   /// - rate limit status
-  /// @param lockOrBurnIn The input to validate.
+  /// @param  lockOrBurnIn The input to validate.
   /// @dev This function should always be called before executing a lock or burn. Not doing so would allow
   /// for various exploits.
   function _validateLockOrBurn(
@@ -217,7 +229,7 @@ abstract contract TokenPool is IPoolV1, Ownable2StepMsgSender {
   /// - if the sender is a valid offRamp
   /// - if the source pool is valid
   /// - rate limit status
-  /// @param releaseOrMintIn The input to validate.
+  /// @param  releaseOrMintIn The input to validate.
   /// @dev This function should always be called before executing a release or mint. Not doing so would allow
   /// for various exploits.
   function _validateReleaseOrMint(
@@ -266,8 +278,8 @@ abstract contract TokenPool is IPoolV1, Ownable2StepMsgSender {
   }
 
   /// @notice Calculates the local amount based on the remote amount and decimals.
-  /// @param remoteAmount The amount on the remote chain.
-  /// @param remoteDecimals The decimals of the token on the remote chain.
+  /// @param  remoteAmount The amount on the remote chain.
+  /// @param  remoteDecimals The decimals of the token on the remote chain.
   /// @return The local amount.
   /// @dev This function protects against overflows. If there is a transaction that hits the overflow check, it is
   /// probably incorrect as that means the amount cannot be represented on this chain. If the local decimals have been
@@ -303,7 +315,7 @@ abstract contract TokenPool is IPoolV1, Ownable2StepMsgSender {
   // ================================================================
 
   /// @notice Gets the pool address on the remote chain.
-  /// @param remoteChainSelector Remote chain selector.
+  /// @param  remoteChainSelector Remote chain selector.
   /// @dev To support non-evm chains, this value is encoded into bytes
   function getRemotePools(
     uint64 remoteChainSelector
@@ -319,14 +331,14 @@ abstract contract TokenPool is IPoolV1, Ownable2StepMsgSender {
   }
 
   /// @notice Checks if the pool address is configured on the remote chain.
-  /// @param remoteChainSelector Remote chain selector.
-  /// @param remotePoolAddress The address of the remote pool.
+  /// @param  remoteChainSelector Remote chain selector.
+  /// @param  remotePoolAddress The address of the remote pool.
   function isRemotePool(uint64 remoteChainSelector, bytes calldata remotePoolAddress) public view returns (bool) {
     return s_remoteChainConfigs[remoteChainSelector].remotePools.contains(keccak256(remotePoolAddress));
   }
 
   /// @notice Gets the token address on the remote chain.
-  /// @param remoteChainSelector Remote chain selector.
+  /// @param  remoteChainSelector Remote chain selector.
   /// @dev To support non-evm chains, this value is encoded into bytes
   function getRemoteToken(
     uint64 remoteChainSelector
@@ -337,8 +349,8 @@ abstract contract TokenPool is IPoolV1, Ownable2StepMsgSender {
   /// @notice Adds a remote pool for a given chain selector. This could be due to a pool being upgraded on the remote
   /// chain. We don't simply want to replace the old pool as there could still be valid inflight messages from the old
   /// pool. This function allows for multiple pools to be added for a single chain selector.
-  /// @param remoteChainSelector The remote chain selector for which the remote pool address is being added.
-  /// @param remotePoolAddress The address of the new remote pool.
+  /// @param  remoteChainSelector The remote chain selector for which the remote pool address is being added.
+  /// @param  remotePoolAddress The address of the new remote pool.
   function addRemotePool(uint64 remoteChainSelector, bytes calldata remotePoolAddress) external onlyOwner {
     if (!isSupportedChain(remoteChainSelector)) revert NonExistentChain(remoteChainSelector);
 
@@ -379,8 +391,8 @@ abstract contract TokenPool is IPoolV1, Ownable2StepMsgSender {
 
   /// @notice Sets the permissions for a list of chains selectors. Actual senders for these chains
   /// need to be allowed on the Router to interact with this pool.
-  /// @param remoteChainSelectorsToRemove A list of chain selectors to remove.
-  /// @param chainsToAdd A list of chains and their new permission status & rate limits. Rate limits
+  /// @param  remoteChainSelectorsToRemove A list of chain selectors to remove.
+  /// @param  chainsToAdd A list of chains and their new permission status & rate limits. Rate limits
   /// are only used when the chain is being added through `allowed` being true.
   /// @dev Only callable by the owner
   function applyChainUpdates(
@@ -451,8 +463,8 @@ abstract contract TokenPool is IPoolV1, Ownable2StepMsgSender {
   }
 
   /// @notice Adds a pool address to the allowed remote token pools for a particular chain.
-  /// @param remoteChainSelector The remote chain selector for which the remote pool address is being added.
-  /// @param remotePoolAddress The address of the new remote pool.
+  /// @param  remoteChainSelector The remote chain selector for which the remote pool address is being added.
+  /// @param  remotePoolAddress The address of the new remote pool.
   function _setRemotePool(uint64 remoteChainSelector, bytes memory remotePoolAddress) internal {
     if (remotePoolAddress.length == 0) {
       revert ZeroAddressNotAllowed();
@@ -495,7 +507,7 @@ abstract contract TokenPool is IPoolV1, Ownable2StepMsgSender {
 
   /// @notice Sets the rate limiter admin address.
   /// @dev Only callable by the owner.
-  /// @param rateLimitAdmin The new rate limiter admin address.
+  /// @param  rateLimitAdmin The new rate limiter admin address.
   function setRateLimitAdmin(
     address rateLimitAdmin
   ) external onlyOwner {
@@ -535,9 +547,9 @@ abstract contract TokenPool is IPoolV1, Ownable2StepMsgSender {
   }
 
   /// @notice Sets multiple chain rate limiter configs.
-  /// @param remoteChainSelectors The remote chain selector for which the rate limits apply.
-  /// @param outboundConfigs The new outbound rate limiter config, meaning the onRamp rate limits for the given chain.
-  /// @param inboundConfigs The new inbound rate limiter config, meaning the offRamp rate limits for the given chain.
+  /// @param  remoteChainSelectors The remote chain selector for which the rate limits apply.
+  /// @param  outboundConfigs The new outbound rate limiter config, meaning the onRamp rate limits for the given chain.
+  /// @param  inboundConfigs The new inbound rate limiter config, meaning the offRamp rate limits for the given chain.
   function setChainRateLimiterConfigs(
     uint64[] calldata remoteChainSelectors,
     RateLimiter.Config[] calldata outboundConfigs,
@@ -554,9 +566,9 @@ abstract contract TokenPool is IPoolV1, Ownable2StepMsgSender {
   }
 
   /// @notice Sets the chain rate limiter config.
-  /// @param remoteChainSelector The remote chain selector for which the rate limits apply.
-  /// @param outboundConfig The new outbound rate limiter config, meaning the onRamp rate limits for the given chain.
-  /// @param inboundConfig The new inbound rate limiter config, meaning the offRamp rate limits for the given chain.
+  /// @param  remoteChainSelector The remote chain selector for which the rate limits apply.
+  /// @param  outboundConfig The new outbound rate limiter config, meaning the onRamp rate limits for the given chain.
+  /// @param  inboundConfig The new inbound rate limiter config, meaning the offRamp rate limits for the given chain.
   function setChainRateLimiterConfig(
     uint64 remoteChainSelector,
     RateLimiter.Config memory outboundConfig,
@@ -629,8 +641,8 @@ abstract contract TokenPool is IPoolV1, Ownable2StepMsgSender {
   }
 
   /// @notice Apply updates to the allow list.
-  /// @param removes The addresses to be removed.
-  /// @param adds The addresses to be added.
+  /// @param  removes The addresses to be removed.
+  /// @param  adds The addresses to be added.
   function applyAllowListUpdates(address[] calldata removes, address[] calldata adds) external onlyOwner {
     _applyAllowListUpdates(removes, adds);
   }

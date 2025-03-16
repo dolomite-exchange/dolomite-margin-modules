@@ -16,8 +16,6 @@ import {
   setupUserVaultProxy,
   setupWstETHBalance,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { BaseRouter, Router } from '@pendle/sdk-v2';
-import { CHAIN_ID_MAPPING } from '@pendle/sdk-v2/dist/common/ChainId';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
@@ -42,7 +40,7 @@ import {
   createPendlePtPriceOracle,
   createPendleRegistry,
 } from '../pendle-ecosystem-utils';
-import { encodeRedeemPyToToken, encodeSwapExactPtForTokensV3, ONE_TENTH_OF_ONE_BIPS_NUMBER } from '../pendle-utils';
+import { encodeRedeemPyToToken, encodeSwapExactPtForTokensV3 } from '../pendle-utils';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
@@ -64,7 +62,6 @@ describe('PendlePtWstEthJun2024IsolationModeUnwrapperTraderV3', () => {
   let vault: PendlePtIsolationModeTokenVaultV1;
   let priceOracle: PendlePtPriceOracle;
   let defaultAccount: AccountInfoStruct;
-  let router: BaseRouter;
   let ptToken: IPendlePtToken;
   let ptMarket: IPendlePtMarket;
 
@@ -81,12 +78,7 @@ describe('PendlePtWstEthJun2024IsolationModeUnwrapperTraderV3', () => {
       core.pendleEcosystem!.syWstEthToken,
     );
     await pendleRegistry.connect(core.governance).ownerSetPendleRouter(core.pendleEcosystem.pendleRouterV3.address);
-    factory = await createPendlePtIsolationModeVaultFactory(
-      core,
-      pendleRegistry,
-      ptToken,
-      userVaultImplementation,
-    );
+    factory = await createPendlePtIsolationModeVaultFactory(core, pendleRegistry, ptToken, userVaultImplementation);
     underlyingToken = core.tokens.wstEth!;
     underlyingMarketId = BigNumber.from(core.marketIds.wstEth!);
     unwrapper = await createPendlePtIsolationModeUnwrapperTraderV3(core, pendleRegistry, underlyingToken, factory);
@@ -109,21 +101,9 @@ describe('PendlePtWstEthJun2024IsolationModeUnwrapperTraderV3', () => {
     );
     defaultAccount = { owner: vault.address, number: defaultAccountNumber };
 
-    router = Router.getRouter({
-      chainId: CHAIN_ID_MAPPING.ARBITRUM,
-      provider: core.hhUser1.provider,
-      signer: core.hhUser1,
-    });
-
     const amount = parseEther('500');
     await setupWstETHBalance(core, core.hhUser1, amount, core.pendleEcosystem!.pendleRouter);
 
-    await router.swapExactTokenForPt(
-      ptMarket.address as any,
-      underlyingToken.address as any,
-      amount,
-      ONE_TENTH_OF_ONE_BIPS_NUMBER,
-    );
     await ptToken.connect(core.hhUser1).approve(vault.address, amountWei);
     await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
 
@@ -150,7 +130,7 @@ describe('PendlePtWstEthJun2024IsolationModeUnwrapperTraderV3', () => {
         amountWei,
         ptMarket.address,
         underlyingToken.address,
-        '0.002'
+        '0.002',
       );
 
       const actions = await unwrapper.createActionsForUnwrapping({
@@ -168,10 +148,7 @@ describe('PendlePtWstEthJun2024IsolationModeUnwrapperTraderV3', () => {
       });
 
       const genericTrader = await impersonate(core.genericTraderProxy!, true);
-      await core.dolomiteMargin.connect(genericTrader).operate(
-        [defaultAccount],
-        actions,
-      );
+      await core.dolomiteMargin.connect(genericTrader).operate([defaultAccount], actions);
 
       const underlyingBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, marketId);
       expect(underlyingBalanceWei.value).to.eq(ZERO_BI);
@@ -190,11 +167,7 @@ describe('PendlePtWstEthJun2024IsolationModeUnwrapperTraderV3', () => {
       const solidAccountId = 0;
       const liquidAccountId = 0;
 
-      const { extraOrderData } = await encodeRedeemPyToToken(
-        amountWei,
-        ONE_BI,
-        underlyingToken.address,
-      );
+      const { extraOrderData } = await encodeRedeemPyToToken(amountWei, ONE_BI, underlyingToken.address);
 
       const actions = await unwrapper.createActionsForUnwrapping({
         primaryAccountId: solidAccountId,
@@ -211,10 +184,7 @@ describe('PendlePtWstEthJun2024IsolationModeUnwrapperTraderV3', () => {
       });
 
       const genericTrader = await impersonate(core.genericTraderProxy!, true);
-      await core.dolomiteMargin.connect(genericTrader).operate(
-        [defaultAccount],
-        actions,
-      );
+      await core.dolomiteMargin.connect(genericTrader).operate([defaultAccount], actions);
 
       const underlyingBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, marketId);
       expect(underlyingBalanceWei.value).to.eq(ZERO_BI);
@@ -229,14 +199,16 @@ describe('PendlePtWstEthJun2024IsolationModeUnwrapperTraderV3', () => {
   describe('#exchange', () => {
     it('should fail if not called by DolomiteMargin', async () => {
       await expectThrow(
-        unwrapper.connect(core.hhUser1).exchange(
-          vault.address,
-          core.dolomiteMargin.address,
-          underlyingToken.address,
-          factory.address,
-          amountWei,
-          BYTES_EMPTY,
-        ),
+        unwrapper
+          .connect(core.hhUser1)
+          .exchange(
+            vault.address,
+            core.dolomiteMargin.address,
+            underlyingToken.address,
+            factory.address,
+            amountWei,
+            BYTES_EMPTY,
+          ),
         `OnlyDolomiteMargin: Only Dolomite can call function <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
@@ -244,14 +216,16 @@ describe('PendlePtWstEthJun2024IsolationModeUnwrapperTraderV3', () => {
     it('should fail if input token is incorrect', async () => {
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
       await expectThrow(
-        unwrapper.connect(dolomiteMarginImpersonator).exchange(
-          vault.address,
-          core.dolomiteMargin.address,
-          underlyingToken.address,
-          core.tokens.weth.address,
-          amountWei,
-          BYTES_EMPTY,
-        ),
+        unwrapper
+          .connect(dolomiteMarginImpersonator)
+          .exchange(
+            vault.address,
+            core.dolomiteMargin.address,
+            underlyingToken.address,
+            core.tokens.weth.address,
+            amountWei,
+            BYTES_EMPTY,
+          ),
         `IsolationModeUnwrapperTraderV2: Invalid input token <${core.tokens.weth.address.toLowerCase()}>`,
       );
     });
@@ -260,14 +234,16 @@ describe('PendlePtWstEthJun2024IsolationModeUnwrapperTraderV3', () => {
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
       await ptToken.connect(core.hhUser1).transfer(unwrapper.address, amountWei);
       await expectThrow(
-        unwrapper.connect(dolomiteMarginImpersonator).exchange(
-          vault.address,
-          core.dolomiteMargin.address,
-          core.tokens.weth.address,
-          factory.address,
-          amountWei,
-          encodeExternalSellActionDataWithNoData(otherAmountWei),
-        ),
+        unwrapper
+          .connect(dolomiteMarginImpersonator)
+          .exchange(
+            vault.address,
+            core.dolomiteMargin.address,
+            core.tokens.weth.address,
+            factory.address,
+            amountWei,
+            encodeExternalSellActionDataWithNoData(otherAmountWei),
+          ),
         `IsolationModeUnwrapperTraderV2: Invalid output token <${core.tokens.weth.address.toLowerCase()}>`,
       );
     });
@@ -276,14 +252,16 @@ describe('PendlePtWstEthJun2024IsolationModeUnwrapperTraderV3', () => {
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
       await ptToken.connect(core.hhUser1).transfer(unwrapper.address, amountWei);
       await expectThrow(
-        unwrapper.connect(dolomiteMarginImpersonator).exchange(
-          vault.address,
-          core.dolomiteMargin.address,
-          underlyingToken.address,
-          factory.address,
-          ZERO_BI,
-          encodeExternalSellActionDataWithNoData(otherAmountWei),
-        ),
+        unwrapper
+          .connect(dolomiteMarginImpersonator)
+          .exchange(
+            vault.address,
+            core.dolomiteMargin.address,
+            underlyingToken.address,
+            factory.address,
+            ZERO_BI,
+            encodeExternalSellActionDataWithNoData(otherAmountWei),
+          ),
         'IsolationModeUnwrapperTraderV2: Invalid input amount',
       );
     });

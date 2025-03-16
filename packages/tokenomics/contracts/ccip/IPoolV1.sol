@@ -1,22 +1,27 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.9;
 
-import {Pool} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Pool.sol";
+import { Pool } from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Pool.sol";
 
-import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
+import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
-/// @notice Shared public interface for multiple V1 pool types.
-/// Each pool type handles a different child token model (lock/unlock, mint/burn.)
+/**
+ * @title   IPoolV1
+ * @author  Chainlink
+ *
+ * @notice  Shared public interface for multiple V1 pool types. Each pool type handles a different child token model
+ *          (lock/unlock, mint/burn.)
+ */
 interface IPoolV1 is IERC165 {
   /// @notice Lock tokens into the pool or burn the tokens.
-  /// @param lockOrBurnIn Encoded data fields for the processing of tokens on the source chain.
+  /// @param  lockOrBurnIn Encoded data fields for the processing of tokens on the source chain.
   /// @return lockOrBurnOut Encoded data fields for the processing of tokens on the destination chain.
   function lockOrBurn(
     Pool.LockOrBurnInV1 calldata lockOrBurnIn
   ) external returns (Pool.LockOrBurnOutV1 memory lockOrBurnOut);
 
   /// @notice Releases or mints tokens to the receiver address.
-  /// @param releaseOrMintIn All data required to release or mint tokens.
+  /// @param  releaseOrMintIn All data required to release or mint tokens.
   /// @return releaseOrMintOut The amount of tokens released or minted on the local chain, denominated
   /// in the local token's decimals.
   /// @dev The offramp asserts that the balanceOf of the receiver has been incremented by exactly the number
@@ -26,14 +31,14 @@ interface IPoolV1 is IERC165 {
   ) external returns (Pool.ReleaseOrMintOutV1 memory);
 
   /// @notice Checks whether a remote chain is supported in the token pool.
-  /// @param remoteChainSelector The selector of the remote chain.
+  /// @param  remoteChainSelector The selector of the remote chain.
   /// @return true if the given chain is a permissioned remote chain.
   function isSupportedChain(
     uint64 remoteChainSelector
   ) external view returns (bool);
 
   /// @notice Returns if the token pool supports the given token.
-  /// @param token The address of the token.
+  /// @param  token The address of the token.
   /// @return true if the token is supported by the pool.
   function isSupportedToken(
     address token

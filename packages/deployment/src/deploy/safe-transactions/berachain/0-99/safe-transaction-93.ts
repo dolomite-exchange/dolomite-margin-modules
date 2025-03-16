@@ -1,11 +1,11 @@
+import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { getAndCheckSpecificNetwork } from 'packages/base/src/utils/dolomite-utils';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from 'packages/base/test/utils';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
-import { EncodedTransaction, prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
+import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
-import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 
 /**
  * This script encodes the following transactions:
@@ -67,19 +67,13 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     invariants: async () => {
       assertHardhatInvariant(
         await core.tokenomics.regularAirdrop.claimEnabled(),
-        'Regular airdrop claim is not enabled'
+        'Regular airdrop claim is not enabled',
       );
-      assertHardhatInvariant(
-        await core.tokenomics.optionAirdrop.claimEnabled(),
-        'Option airdrop claim is not enabled'
-      );
-      assertHardhatInvariant(
-        await core.tokenomics.vestingClaims.claimEnabled(),
-        'Vesting claims claim is not enabled'
-      );
+      assertHardhatInvariant(await core.tokenomics.optionAirdrop.claimEnabled(), 'Option airdrop claim is not enabled');
+      assertHardhatInvariant(await core.tokenomics.vestingClaims.claimEnabled(), 'Vesting claims claim is not enabled');
       assertHardhatInvariant(
         await core.tokenomics.strategicVesting.claimEnabled(),
-        'Strategic vesting claim is not enabled'
+        'Strategic vesting claim is not enabled',
       );
     },
   };

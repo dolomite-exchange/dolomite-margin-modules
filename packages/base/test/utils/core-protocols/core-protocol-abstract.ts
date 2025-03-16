@@ -31,8 +31,8 @@ import { DolomiteMargin, Expiry } from '../dolomite';
 import { DeployedVault } from '../ecosystem-utils/deployed-vaults';
 import { InterestSetters } from '../ecosystem-utils/interest-setters';
 import { TestEcosystem } from '../ecosystem-utils/testers';
-import { CoreProtocolConfig } from '../setup';
 import { TokenomicsEcosystem } from '../ecosystem-utils/tokenomics';
+import { CoreProtocolConfig } from '../setup';
 
 export interface LibraryMaps {
   safeDelegateCallImpl: Record<string, string>;

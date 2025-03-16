@@ -53,17 +53,18 @@ const THREE_YEARS_SECONDS = ONE_YEAR_SECONDS * 3;
  */
 async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   const network = await getAndCheckSpecificNetwork(Network.Berachain);
-  const core = (await setupCoreProtocol({
+  const core = await setupCoreProtocol({
     network,
     blockNumber: await getRealLatestBlockNumber(true, network),
-  })) as any;
+  });
 
   // Deploy new custom token
   const doloAddress = await deployContractAndSave(
-    'DOLO', [core.dolomiteMargin.address, core.gnosisSafeAddress],
     'DOLO',
+    [core.dolomiteMargin.address, core.gnosisSafeAddress],
+    'DolomiteToken',
   );
-  const dolo = DOLO__factory.connect(doloAddress, core.hhUser1);
+  console.log('doloAddress', doloAddress);
 
   // Deploy always active voter, oToken, veFeeCalculator, buybackPool
   const alwaysActiveVoter = await deployContractAndSave('VoterAlwaysActive', [], 'VoterAlwaysActive');
@@ -118,8 +119,8 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
       core,
       { address: doloAddress } as any, // pairToken
       NO_MARKET_ID,
-      core.tokens.weth, // paymentToken
-      core.marketIds.weth,
+      core.tokens.usdc,
+      core.marketIds.usdc,
       { address: doloAddress } as any, // rewardToken
       NO_MARKET_ID,
     ),
@@ -222,21 +223,6 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
       vester.address,
       true,
     ]),
-    await prettyPrintEncodedDataWithTypeSafety(core, { optionAirdrop }, 'optionAirdrop', 'ownerSetHandler', [
-      core.gnosisSafeAddress,
-    ]),
-    await prettyPrintEncodedDataWithTypeSafety(core, { regularAirdrop }, 'regularAirdrop', 'ownerSetHandler', [
-      core.gnosisSafeAddress,
-    ]),
-    await prettyPrintEncodedDataWithTypeSafety(core, { vestingClaims }, 'vestingClaims', 'ownerSetHandler', [
-      core.gnosisSafeAddress,
-    ]),
-    await prettyPrintEncodedDataWithTypeSafety(core, { strategicVesting }, 'strategicVesting', 'ownerSetHandler', [
-      core.gnosisSafeAddress,
-    ]),
-    await prettyPrintEncodedDataWithTypeSafety(core, { optionAirdrop }, 'optionAirdrop', 'ownerSetAllowedMarketIds', [
-      [core.marketIds.nativeUsdc, core.marketIds.weth], // @follow-up Check this list of market ids and invariants below
-    ]),
   );
 
   return {
@@ -249,7 +235,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     },
     invariants: async () => {
       assertHardhatInvariant(
-        (await vester.PAYMENT_TOKEN()) === core.tokens.weth.address &&
+        (await vester.PAYMENT_TOKEN()) === core.tokens.usdc.address &&
         (await vester.REWARD_TOKEN()) === doloAddress &&
         (await vester.PAIR_TOKEN()) === doloAddress,
         'Invalid vester token addresses',
@@ -266,33 +252,6 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
         (await core.dolomiteMargin.getIsGlobalOperator(vester.address)) === true,
         'Vester is not a global operator',
       );
-      assertHardhatInvariant(
-        (await core.dolomiteMargin.getIsGlobalOperator(optionAirdrop.address)) === true,
-        'OptionAirdrop is not a global operator',
-      );
-
-      assertHardhatInvariant(
-        await optionAirdrop.handler() === core.gnosisSafeAddress,
-        'Invalid handler on optionAirdrop',
-      );
-      assertHardhatInvariant(
-        await regularAirdrop.handler() === core.gnosisSafeAddress,
-        'Invalid handler on regularAirdrop',
-      );
-      assertHardhatInvariant(
-        await vestingClaims.handler() === core.gnosisSafeAddress,
-        'Invalid handler on vestingClaims',
-      );
-      assertHardhatInvariant(
-        await strategicVesting.handler() === core.gnosisSafeAddress,
-        'Invalid handler on strategicVesting',
-      );
-
-      assertHardhatInvariant(
-        await optionAirdrop.isAllowedMarketId(core.marketIds.nativeUsdc),
-        'Native USDC not allowed',
-      );
-      assertHardhatInvariant(await optionAirdrop.isAllowedMarketId(core.marketIds.weth), 'WETH not allowed');
     },
   };
 }
