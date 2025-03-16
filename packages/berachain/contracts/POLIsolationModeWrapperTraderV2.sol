@@ -81,6 +81,14 @@ contract POLIsolationModeWrapperTraderV2 is
     // ======================== Public Functions ========================
     // ==================================================================
 
+    function initialize(
+        address _vaultFactory
+    )
+    external
+    initializer {
+        _POLIsolationModeTraderBaseV2__initialize(_vaultFactory);
+    }
+
     function exchange(
         address _tradeOriginator,
         address _receiver,
@@ -197,7 +205,7 @@ contract POLIsolationModeWrapperTraderV2 is
             /* _amountInPar = */ _params.inputAmount,
             /* _chainId = */ block.chainid,
             /* _calculateAmountWithMakerAccount = */ false,
-            ''
+            /* _orderData = */ bytes("")
         );
 
         // @dev Encode sell action where the user will spend 0 input tokens and receive the original

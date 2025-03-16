@@ -241,7 +241,8 @@ contract InfraredBGTMetaVault is ProxyContractHelpers, IBaseMetaVault {
     }
 
     function _getReward(address _asset) internal {
-        // @follow-up Use defualt type here or infrared type?
+        // @follow-up Use default type here or infrared type
+        // --> I changed the default type to be Infrared
         IInfraredVault rewardVault = IInfraredVault(REGISTRY().rewardVault(
             _asset,
             IBerachainRewardsRegistry.RewardVaultType.INFRARED

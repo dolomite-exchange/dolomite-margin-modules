@@ -67,7 +67,6 @@ contract POLPriceOracleV2 is IDolomitePriceOracle, OnlyDolomiteMargin {
             "invalid token",
             _token
         );
-        // @follow-up Do we still want this check?
         Require.that(
             DOLOMITE_MARGIN().getMarketIsClosing(DOLOMITE_MARGIN().getMarketIdByTokenAddress(_token)),
             _FILE,

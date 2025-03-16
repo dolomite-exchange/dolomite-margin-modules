@@ -31,6 +31,7 @@ import {
 } from './berachain-ecosystem-utils';
 import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
 import { parseEther } from 'ethers/lib/utils';
+import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
@@ -155,11 +156,35 @@ describe('BerachainRewardsRegistry', () => {
       expect(await registry.getMetaVaultByVault(vaultAddress)).to.equal(metaVaultAddress);
     });
 
+    it('should fail if account is invalid', async () => {
+      await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(core.hhUser5.address, true);
+      await expectThrow(
+        registry.connect(core.hhUser5).createMetaVault(ZERO_ADDRESS, OTHER_ADDRESS),
+        'BerachainRewardsRegistry: Invalid account',
+      );
+    });
+
+    it('should fail if vault is invalid', async () => {
+      await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(core.hhUser5.address, true);
+      await expectThrow(
+        registry.connect(core.hhUser5).createMetaVault(core.hhUser5.address, ZERO_ADDRESS),
+        'BerachainRewardsRegistry: Invalid vault',
+      );
+    });
+
     it('should fail if not called by a factory', async () => {
       await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(core.hhUser5.address, true);
       await expectThrow(
         registry.connect(core.hhUser5).createMetaVault(core.hhUser5.address, OTHER_ADDRESS),
         `BerachainRewardsRegistry: Caller is not a valid factory <${core.hhUser5.addressLower}>`,
+      );
+    });
+
+    it('should fail if account does not match vault', async () => {
+      const iBgtFactoryImp = await impersonate(iBgtFactory.address, true);
+      await expectThrow(
+        registry.connect(iBgtFactoryImp).createMetaVault(core.hhUser5.address, OTHER_ADDRESS),
+        'BerachainRewardsRegistry: Invalid vault for account',
       );
     });
 

@@ -44,8 +44,8 @@ interface IBerachainRewardsRegistry is IBaseRegistry {
     // ================================================
 
     enum RewardVaultType {
-        NATIVE,
         INFRARED,
+        NATIVE,
         BGTM
     }
 

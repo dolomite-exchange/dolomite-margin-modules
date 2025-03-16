@@ -32,8 +32,8 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IBaseMetaVault } from "./interfaces/IBaseMetaVault.sol";
 import { IBerachainRewardsRegistry } from "./interfaces/IBerachainRewardsRegistry.sol";
-import { IMetaVaultRewardTokenFactory } from "./interfaces/IMetaVaultRewardTokenFactory.sol"; // solhint-disable-line max-line-length
-import { IPOLIsolationModeTokenVaultV1 } from "./interfaces/IPOLIsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
+import { IMetaVaultRewardTokenFactory } from "./interfaces/IMetaVaultRewardTokenFactory.sol";
+import { IPOLIsolationModeTokenVaultV1 } from "./interfaces/IPOLIsolationModeTokenVaultV1.sol";
 
 
 /**
@@ -165,20 +165,6 @@ contract POLIsolationModeTokenVaultV1 is
     // ======================== Internal Functions ========================
     // ==================================================================
 
-    function _depositIntoVaultForDolomiteMargin(
-        uint256 _toAccountNumber,
-        uint256 _amountWei
-    ) internal override {
-        revert("Not implemented");
-    }
-
-    function _withdrawFromVaultForDolomiteMargin(
-        uint256 _fromAccountNumber,
-        uint256 _amountWei
-    ) internal override {
-        revert("Not implemented");
-    }
-
     // @audit May need to adjust account number checks because we are wrapping not depositing
     function _addCollateralAndSwapExactInputForOutput(
         uint256 _fromAccountNumber,
@@ -288,16 +274,18 @@ contract POLIsolationModeTokenVaultV1 is
             "Insufficient balance"
         );
 
-        uint256 bal = IERC20(UNDERLYING_TOKEN()).balanceOf(address(metaVault));
-        if (withdrawAmount > bal) {
+        uint256 balance = IERC20(UNDERLYING_TOKEN()).balanceOf(address(metaVault));
+        if (withdrawAmount > balance) {
             _unstake(
                 UNDERLYING_TOKEN(),
                 metaVault.getDefaultRewardVaultTypeByAsset(UNDERLYING_TOKEN()),
-                withdrawAmount - bal
+                withdrawAmount - balance
             );
         }
 
         if (!_isLiquidation) {
+            // @dev Only charge fees if we're not liquidating. Otherwise, this triggers a collateralization check,
+            //      which reverts if the user is underwater.
             uint256 feeAmount = metaVault.chargeDTokenFee(UNDERLYING_TOKEN(), marketId(), withdrawAmount);
             IIsolationModeVaultFactory(VAULT_FACTORY()).withdrawFromDolomiteMargin(_accountNumber, feeAmount);
 
@@ -352,5 +340,19 @@ contract POLIsolationModeTokenVaultV1 is
             registry().getMetaVaultByVault(address(this))
         );
         metaVault.exit(_asset, true);
+    }
+
+    function _depositIntoVaultForDolomiteMargin(
+        uint256 /* _toAccountNumber */,
+        uint256 /* _amountWei */
+    ) internal pure override {
+        revert("Not implemented");
+    }
+
+    function _withdrawFromVaultForDolomiteMargin(
+        uint256 /* _fromAccountNumber */,
+        uint256 /* _amountWei */
+    ) internal pure override {
+        revert("Not implemented");
     }
 }

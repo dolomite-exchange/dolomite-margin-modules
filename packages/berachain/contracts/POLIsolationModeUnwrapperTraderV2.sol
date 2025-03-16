@@ -44,11 +44,11 @@ import { IBerachainRewardsRegistry } from "./interfaces/IBerachainRewardsRegistr
  *          the burned dToken is sent from the user's vault to this contract and the factory
  *          token is burned from `DolomiteMargin`.
  */
-contract POLIsolationModeUnwrapperTraderV2 is 
+contract POLIsolationModeUnwrapperTraderV2 is
     ProxyContractHelpers,
     POLIsolationModeTraderBaseV2,
     IIsolationModeUnwrapperTraderV2,
-    IDolomiteMarginInternalTrader 
+    IDolomiteMarginInternalTrader
 {
     using TypesLib for IDolomiteStructs.Par;
 
@@ -78,8 +78,16 @@ contract POLIsolationModeUnwrapperTraderV2 is
     }
 
     // ==================================================================
-    // ======================== Public Functions ========================
+    // ======================= External Functions =======================
     // ==================================================================
+
+    function initialize(
+        address _vaultFactory
+    )
+    external
+    initializer {
+        _POLIsolationModeTraderBaseV2__initialize(_vaultFactory);
+    }
 
     function callFunction(
         address _sender,
@@ -90,41 +98,6 @@ contract POLIsolationModeUnwrapperTraderV2 is
     onlyDolomiteMargin(msg.sender)
     onlyGenericTraderOrTrustedLiquidator(_sender) {
         _callFunction(_sender, _accountInfo, _data);
-    }
-
-    function exchange(
-        address _tradeOriginator,
-        address /* _receiver */,
-        address _outputToken,
-        address _inputToken,
-        uint256 _inputAmount,
-        bytes calldata /* _orderData */
-    )
-    external
-    override
-    onlyDolomiteMargin(msg.sender)
-    returns (uint256) {
-        IIsolationModeVaultFactory factory = vaultFactory();
-        address vault = _getVaultFromTradeOriginator(_tradeOriginator);
-
-        _validateInputAndOutputToken(
-            _inputToken,
-            _outputToken
-        );
-        Require.that(
-            factory.getAccountByVault(vault) != address(0),
-            _FILE,
-            "Invalid trade originator",
-            _tradeOriginator
-        );
-        Require.that(
-            _inputAmount > 0,
-            _FILE,
-            "Invalid input amount"
-        );
-
-        // @dev Always 0 because we are "selling" POL tokens for 0 tokens
-        return 0;
     }
 
     function getTradeCost(
@@ -188,6 +161,42 @@ contract POLIsolationModeUnwrapperTraderV2 is
     // ==================================================================
     // ========================== View Functions ========================
     // ==================================================================
+
+    function exchange(
+        address _tradeOriginator,
+        address /* _receiver */,
+        address _outputToken,
+        address _inputToken,
+        uint256 _inputAmount,
+        bytes calldata /* _orderData */
+    )
+    external
+    view
+    override
+    onlyDolomiteMargin(msg.sender)
+    returns (uint256) {
+        IIsolationModeVaultFactory factory = vaultFactory();
+        address vault = _getVaultFromTradeOriginator(_tradeOriginator);
+
+        _validateInputAndOutputToken(
+            _inputToken,
+            _outputToken
+        );
+        Require.that(
+            factory.getAccountByVault(vault) != address(0),
+            _FILE,
+            "Invalid trade originator",
+            _tradeOriginator
+        );
+        Require.that(
+            _inputAmount > 0,
+            _FILE,
+            "Invalid input amount"
+        );
+
+        // @dev Always 0 because we are "selling" POL tokens for 0 tokens
+        return 0;
+    }
 
     function createActionsForUnwrapping(
         CreateActionsForUnwrappingParams calldata _params

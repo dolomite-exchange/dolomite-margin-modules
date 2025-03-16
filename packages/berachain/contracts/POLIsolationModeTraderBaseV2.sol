@@ -65,20 +65,19 @@ abstract contract POLIsolationModeTraderBaseV2 is OnlyDolomiteMargin, Initializa
         DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
     }
 
-    // @follow-up @Corey, are we ok with this being public on the base? Have to override if we want one on wrapper/unwrapper
-    function initialize(
-        address _vaultFactory
-    )
-    public
-    initializer {
-        _setAddress(_VAULT_FACTORY_SLOT, _vaultFactory);
-    }
-
     function vaultFactory() public view returns (IIsolationModeVaultFactory) {
         return IIsolationModeVaultFactory(_getAddress(_VAULT_FACTORY_SLOT));
     }
 
     // ========================= Internal Functions ========================
+
+    function _POLIsolationModeTraderBaseV2__initialize(
+        address _vaultFactory
+    )
+    internal
+    initializer {
+        _setAddress(_VAULT_FACTORY_SLOT, _vaultFactory);
+    }
 
     function _isValidLiquidator(
         address _from,
