@@ -1,7 +1,7 @@
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { getUpgradeableProxyConstructorParams } from 'packages/base/src/utils/constructors/dolomite';
 import { getAndCheckSpecificNetwork } from 'packages/base/src/utils/dolomite-utils';
-import { Network, NetworkType, ONE_DAY_SECONDS } from 'packages/base/src/utils/no-deps-constants';
+import { Network, ONE_DAY_SECONDS } from 'packages/base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from 'packages/base/test/utils';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
 import { deployContractAndSave } from 'packages/deployment/src/utils/deploy-utils';
@@ -33,7 +33,7 @@ const THREE_YEARS_SECONDS = ONE_YEAR_SECONDS * 3;
  * This script encodes the following transactions:
  * - Deploys the airdrop contracts
  */
-async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
+async function main(): Promise<DryRunOutput<Network.Berachain>> {
   const network = await getAndCheckSpecificNetwork(Network.Berachain);
   const core = await setupCoreProtocol({
     network,

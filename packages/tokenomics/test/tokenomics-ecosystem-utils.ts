@@ -1,4 +1,8 @@
-import { createContractWithAbi, createContractWithLibrary, createContractWithName } from 'packages/base/src/utils/dolomite-utils';
+import {
+  createContractWithAbi,
+  createContractWithLibrary,
+  createContractWithName,
+} from 'packages/base/src/utils/dolomite-utils';
 import {
   DOLO,
   DOLO__factory,
@@ -25,12 +29,14 @@ import {
   TestVeExternalVesterImplementationV1__factory,
   TestVeToken,
   TestVeToken__factory,
+  VeArt,
+  VeArt__factory,
   VeFeeCalculator,
   VeFeeCalculator__factory,
   VestingClaims,
   VestingClaims__factory,
   VotingEscrow,
-  VotingEscrow__factory
+  VotingEscrow__factory,
 } from '../src/types';
 import { ADDRESS_ZERO, NetworkType } from 'packages/base/src/utils/no-deps-constants';
 import { CoreProtocolType } from 'packages/base/test/utils/setup';
@@ -45,7 +51,7 @@ import {
   getVeExternalVesterImplementationConstructorParams,
   getVeExternalVesterInitializationCalldata,
   getVeFeeCalculatorConstructorParams,
-  getVestingClaimsConstructorParams
+  getVestingClaimsConstructorParams,
 } from '../src/tokenomics-constructors';
 import { BigNumberish, PopulatedTransaction } from 'ethers';
 import { getUpgradeableProxyConstructorParams } from 'packages/base/src/utils/constructors/dolomite';
@@ -53,39 +59,47 @@ import { UpgradeableProxy, UpgradeableProxy__factory } from 'packages/liquidity-
 
 export async function createDOLO<T extends NetworkType>(
   core: CoreProtocolType<T>,
-  treasury: string
+  treasury: string,
 ): Promise<DOLO> {
   return createContractWithAbi<DOLO>(
     DOLO__factory.abi,
     DOLO__factory.bytecode,
-    getDOLOConstructorParams(core, treasury)
+    getDOLOConstructorParams(core, treasury),
   );
 }
 
 export async function createODOLO<T extends NetworkType>(
-  core: CoreProtocolType<T>
+  core: CoreProtocolType<T>,
 ): Promise<ODOLO> {
   return createContractWithAbi<ODOLO>(
     ODOLO__factory.abi,
     ODOLO__factory.bytecode,
-    getODOLOConstructorParams(core)
+    getODOLOConstructorParams(core),
   );
 }
 
 export async function createDOLOBuybackPool<T extends NetworkType>(
   core: CoreProtocolType<T>,
   dolo: IERC20,
-  oDolo: IERC20
+  oDolo: IERC20,
 ): Promise<DOLOBuybackPool> {
   return createContractWithAbi<DOLOBuybackPool>(
     DOLOBuybackPool__factory.abi,
     DOLOBuybackPool__factory.bytecode,
-    getDOLOBuybackPoolConstructorParams(core, dolo, oDolo)
+    getDOLOBuybackPoolConstructorParams(core, dolo, oDolo),
+  );
+}
+
+export async function createVeArt(): Promise<VeArt> {
+  return createContractWithAbi<VeArt>(
+    VeArt__factory.abi,
+    VeArt__factory.bytecode,
+    [],
   );
 }
 
 export async function createVeFeeCalculator<T extends NetworkType>(
-  core: CoreProtocolType<T>
+  core: CoreProtocolType<T>,
 ): Promise<VeFeeCalculator> {
   return createContractWithAbi<VeFeeCalculator>(
     VeFeeCalculator__factory.abi,
@@ -114,7 +128,7 @@ export async function createVotingEscrow<T extends NetworkType>(
     feeCalculator.address,
     vester,
     buybackPool,
-    core.governance.address
+    core.governance.address,
   );
 
   const proxy = await createContractWithAbi<UpgradeableProxy>(
@@ -136,7 +150,7 @@ export async function createTestVeToken(
 }
 
 export async function createExternalVesterDiscountCalculatorV1(
-  veToken: VotingEscrow
+  veToken: VotingEscrow,
 ): Promise<ExternalVesterDiscountCalculatorV1> {
   return createContractWithAbi<ExternalVesterDiscountCalculatorV1>(
     ExternalVesterDiscountCalculatorV1__factory.abi,

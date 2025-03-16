@@ -92,7 +92,8 @@ abstract contract BaseClaim is OnlyDolomiteMargin, ReentrancyGuardUpgradeable, I
     // ======================================================
 
     function ownerSetAddressRemapping(
-        address[] memory _users, address[] memory _remappedAddresses
+        address[] memory _users,
+        address[] memory _remappedAddresses
     ) external onlyHandler(msg.sender) {
         _ownerSetAddressRemapping(_users, _remappedAddresses);
     }

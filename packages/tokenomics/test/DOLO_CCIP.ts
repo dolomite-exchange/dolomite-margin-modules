@@ -15,7 +15,7 @@ import {
   ITokenAdminRegistry,
   ITokenAdminRegistry__factory,
   LockReleaseTokenPool,
-  LockReleaseTokenPool__factory
+  LockReleaseTokenPool__factory,
 } from '../src/types';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
 import { ADDRESS_ZERO, BYTES_EMPTY, Network, ONE_ETH_BI, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
@@ -28,7 +28,6 @@ import { BigNumber, ContractTransaction } from 'ethers';
 import { CoreProtocolBase } from 'packages/base/test/utils/core-protocols/core-protocol-base';
 import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
 import { ethers } from 'hardhat';
-import { expectThrow } from 'packages/base/test/utils/assertions';
 
 const EMPTY_RATE_LIMITER_CONFIG = {
   isEnabled: false,
@@ -78,10 +77,9 @@ describe('DOLO_CCIP', () => {
   it('should work normally', async () => {
     core = await setupCoreProtocol({
       blockNumber: 295_821_500,
-      network: Network.ArbitrumOne
+      network: Network.ArbitrumOne,
     });
     dolo = await createDOLO(core, core.hhUser5.address);
-    await dolo.connect(core.governance).ownerSetMinter(core.hhUser5.address, true);
 
     doloL1TokenPool = await createContractWithAbi<LockReleaseTokenPool>(
       LockReleaseTokenPool__factory.abi,
@@ -96,8 +94,7 @@ describe('DOLO_CCIP', () => {
     ccipRouter = ICCIPRouter__factory.connect(CCIP_ROUTER, core.hhUser1);
     onRamp = ICCIPOnRamp__factory.connect(CCIP_ARB_TO_BASE_ON_RAMP, core.hhUser1);
 
-    await dolo.connect(core.hhUser5).mint(core.hhUser1.address, ONE_ETH_BI);
-    await dolo.connect(core.governance).ownerStart();
+    await dolo.connect(core.hhUser5).transfer(core.hhUser1.address, ONE_ETH_BI);
 
     // Set up CCIP on ARB
     await registryModuleOwnerCustom.connect(core.governance).registerAdminViaOwner(dolo.address);
@@ -111,7 +108,7 @@ describe('DOLO_CCIP', () => {
         remoteTokenAddress: defaultAbiCoder.encode(['address'], ['0x38628490c3043E5D0bbB26d5a0a62fC77342e9d5']),
         outboundRateLimiterConfig: EMPTY_RATE_LIMITER_CONFIG,
         inboundRateLimiterConfig: EMPTY_RATE_LIMITER_CONFIG,
-      }]
+      }],
     );
 
     // Call ccipSend and get event
@@ -127,11 +124,10 @@ describe('DOLO_CCIP', () => {
     // Switch to Base and set up CCIP
     core = await setupCoreProtocol({
       blockNumber: 25_124_500,
-      network: Network.Base
+      network: Network.Base,
     });
 
     doloBase = await createDOLO(core, core.hhUser5.address);
-    await doloBase.connect(core.governance).ownerStart();
     doloL2TokenPool = await createContractWithAbi<BurnMintTokenPool>(
       BurnMintTokenPool__factory.abi,
       BurnMintTokenPool__factory.bytecode,
@@ -141,12 +137,14 @@ describe('DOLO_CCIP', () => {
     await doloL2TokenPool.connect(core.governance).acceptOwnership();
     await doloBase.connect(core.governance).ownerSetMinter(doloL2TokenPool.address, true);
     expect(doloBase.address).to.equal(DOLO_BASE_ADDRESS, 'Dolo base address is not correct. Update the const');
-    expect(doloL2TokenPool.address).to.equal(DOLO_L2_POOL_ADDRESS, 'Dolo L2 pool address is not correct. Update the const');
+    expect(doloL2TokenPool.address)
+      .to
+      .equal(DOLO_L2_POOL_ADDRESS, 'Dolo L2 pool address is not correct. Update the const');
 
     tokenAdminRegistryBase = ITokenAdminRegistry__factory.connect(CCIP_TOKEN_ADMIN_REGISTRY_BASE, core.hhUser1);
     registryModuleOwnerCustomBase = IRegistryModuleOwnerCustom__factory.connect(
       CCIP_REGISTRY_MODULE_OWNER_BASE,
-      core.hhUser1
+      core.hhUser1,
     );
     ccipRouterBase = ICCIPRouter__factory.connect(CCIP_ROUTER_BASE, core.hhUser1);
     offRamp = ICCIPOffRamp__factory.connect(CCIP_OFF_RAMP_BASE, core.hhUser1);
@@ -162,7 +160,7 @@ describe('DOLO_CCIP', () => {
         remoteTokenAddress: defaultAbiCoder.encode(['address'], [dolo.address]),
         outboundRateLimiterConfig: EMPTY_RATE_LIMITER_CONFIG,
         inboundRateLimiterConfig: EMPTY_RATE_LIMITER_CONFIG,
-      }]
+      }],
     );
 
     // impersonate offRamp and execute single message
@@ -171,7 +169,7 @@ describe('DOLO_CCIP', () => {
     await offRamp.connect(offRampImpersonator).executeSingleMessage(
       message,
       [BYTES_EMPTY],
-      [message.gasLimit]
+      [message.gasLimit],
     );
     expect(await doloBase.balanceOf(core.hhUser1.address)).to.equal(ONE_ETH_BI);
 
@@ -181,51 +179,6 @@ describe('DOLO_CCIP', () => {
     expect(await doloBase.balanceOf(core.hhUser1.address)).to.equal(ZERO_BI);
     expect(await doloBase.balanceOf(doloL2TokenPool.address)).to.equal(ZERO_BI);
   });
-
-  it('should fail if not started', async () => {
-    core = await setupCoreProtocol({
-      blockNumber: 295_821_500,
-      network: Network.ArbitrumOne
-    });
-    dolo = await createDOLO(core, core.hhUser5.address);
-    await dolo.connect(core.governance).ownerSetMinter(core.hhUser5.address, true);
-
-    doloL1TokenPool = await createContractWithAbi<LockReleaseTokenPool>(
-      LockReleaseTokenPool__factory.abi,
-      LockReleaseTokenPool__factory.bytecode,
-      [dolo.address, 18, [], CCIP_RMN, false as any, CCIP_ROUTER],
-    );
-    await doloL1TokenPool.connect(core.hhUser1).transferOwnership(core.governance.address);
-    await doloL1TokenPool.connect(core.governance).acceptOwnership();
-
-    tokenAdminRegistry = ITokenAdminRegistry__factory.connect(CCIP_TOKEN_ADMIN_REGISTRY, core.hhUser1);
-    registryModuleOwnerCustom = IRegistryModuleOwnerCustom__factory.connect(CCIP_REGISTRY_MODULE_OWNER, core.hhUser1);
-    ccipRouter = ICCIPRouter__factory.connect(CCIP_ROUTER, core.hhUser1);
-    onRamp = ICCIPOnRamp__factory.connect(CCIP_ARB_TO_BASE_ON_RAMP, core.hhUser1);
-    await dolo.connect(core.hhUser5).mint(core.hhUser1.address, ONE_ETH_BI);
-
-    // Set up CCIP on ARB
-    await registryModuleOwnerCustom.connect(core.governance).registerAdminViaOwner(dolo.address);
-    await tokenAdminRegistry.connect(core.governance).acceptAdminRole(dolo.address);
-    await tokenAdminRegistry.connect(core.governance).setPool(dolo.address, doloL1TokenPool.address);
-    await doloL1TokenPool.connect(core.governance).applyChainUpdates(
-      [],
-      [{
-        remoteChainSelector: BigNumber.from(BASE_CHAIN_SELECTOR),
-        remotePoolAddresses: [defaultAbiCoder.encode(['address'], ['0x05bB67cB592C1753425192bF8f34b95ca8649f09'])],
-        remoteTokenAddress: defaultAbiCoder.encode(['address'], ['0x38628490c3043E5D0bbB26d5a0a62fC77342e9d5']),
-        outboundRateLimiterConfig: EMPTY_RATE_LIMITER_CONFIG,
-        inboundRateLimiterConfig: EMPTY_RATE_LIMITER_CONFIG,
-      }]
-    );
-
-    // Call ccipSend and get event
-    await dolo.connect(core.hhUser1).approve(CCIP_ROUTER, ONE_ETH_BI);
-    await expectThrow(
-      getFeeAndSendTokens(ccipRouter, BASE_CHAIN_SELECTOR, core.hhUser1, dolo, ONE_ETH_BI),
-      'DOLO: Not started'
-    );
-  });
 });
 
 async function getFeeAndSendTokens(
@@ -233,7 +186,7 @@ async function getFeeAndSendTokens(
   destinationChainSelector: BigNumber,
   sender: SignerWithAddressWithSafety,
   token: IERC20,
-  amount: BigNumber
+  amount: BigNumber,
 ): Promise<ContractTransaction> {
   const functionSelector = ethers.utils.keccak256(ethers.utils.toUtf8Bytes('CCIP EVMExtraArgsV2')).slice(0, 10);
   // Set gas limit to 0 as we are only transferring tokens and not calling a contract on the destination chain
@@ -242,7 +195,7 @@ async function getFeeAndSendTokens(
   const allowOutOfOrderExecution = true;
   const extraArgs = defaultAbiCoder.encode(
     ['uint256', 'bool'],
-    [gasLimit, allowOutOfOrderExecution]
+    [gasLimit, allowOutOfOrderExecution],
   );
   const encodedExtraArgs = functionSelector + extraArgs.slice(2);
 
@@ -253,8 +206,8 @@ async function getFeeAndSendTokens(
       data: '0x',
       tokenAmounts: [{ amount, token: token.address }],
       feeToken: ADDRESS_ZERO,
-      extraArgs: '0x'
-    }
+      extraArgs: '0x',
+    },
   );
 
   return await ccipRouter.connect(sender).ccipSend(
@@ -264,8 +217,8 @@ async function getFeeAndSendTokens(
       data: '0x',
       tokenAmounts: [{ amount, token: token.address }],
       feeToken: ADDRESS_ZERO,
-      extraArgs: encodedExtraArgs
+      extraArgs: encodedExtraArgs,
     },
-    { value: fee }
+    { value: fee },
   );
 }

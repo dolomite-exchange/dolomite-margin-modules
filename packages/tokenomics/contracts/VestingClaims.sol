@@ -34,6 +34,7 @@ import { IVestingClaims } from "./interfaces/IVestingClaims.sol";
  *
  * Vesting claims contract for DOLO tokens
  */
+// TODO: change to use a traditional mapping with allocations instead of Merkle
 contract VestingClaims is BaseClaim, IVestingClaims {
     using SafeERC20 for IERC20;
 

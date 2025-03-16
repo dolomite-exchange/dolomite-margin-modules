@@ -1,13 +1,7 @@
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { getUpgradeableProxyConstructorParams } from 'packages/base/src/utils/constructors/dolomite';
 import { getAndCheckSpecificNetwork } from 'packages/base/src/utils/dolomite-utils';
-import {
-  ADDRESS_ZERO,
-  MAX_UINT_256_BI,
-  Network,
-  NetworkType,
-  ONE_DAY_SECONDS,
-} from 'packages/base/src/utils/no-deps-constants';
+import { ADDRESS_ZERO, MAX_UINT_256_BI, Network } from 'packages/base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from 'packages/base/test/utils';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
 import { deployContractAndSave } from 'packages/deployment/src/utils/deploy-utils';
@@ -21,37 +15,25 @@ import {
   getBuybackPoolConstructorParams,
   getExternalVesterDiscountCalculatorConstructorParams,
   getODOLOConstructorParams,
-  getOptionAirdropConstructorParams,
-  getRegularAirdropConstructorParams,
-  getStrategicVestingClaimsConstructorParams,
   getVeExternalVesterImplementationConstructorParams,
   getVeExternalVesterInitializationCalldata,
   getVeFeeCalculatorConstructorParams,
-  getVestingClaimsConstructorParams,
 } from 'packages/tokenomics/src/tokenomics-constructors';
 import {
   DOLO__factory,
   ODOLO__factory,
-  OptionAirdrop__factory,
-  RegularAirdrop__factory,
-  StrategicVestingClaims__factory,
   VeExternalVesterImplementationV1__factory,
-  VestingClaims__factory,
   VotingEscrow__factory,
 } from 'packages/tokenomics/src/types';
 import { prettyPrintEncodedDataWithTypeSafety } from '../../utils/encoding/base-encoder-utils';
 
 const NO_MARKET_ID = MAX_UINT_256_BI;
-const TGE_TIMESTAMP = 2222222222;
-const ONE_YEAR_SECONDS = 365 * ONE_DAY_SECONDS;
-const THREE_YEARS_SECONDS = ONE_YEAR_SECONDS * 3;
 
 /**
  * This script encodes the following transactions:
  * - Deploys DOLO tokenomics
- * - Deploys the airdrop contracts
  */
-async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
+async function main(): Promise<DryRunOutput<Network.Berachain>> {
   const network = await getAndCheckSpecificNetwork(Network.Berachain);
   const core = await setupCoreProtocol({
     network,
@@ -64,7 +46,8 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     [core.dolomiteMargin.address, core.gnosisSafeAddress],
     'DolomiteToken',
   );
-  console.log('doloAddress', doloAddress);
+  const dolo = DOLO__factory.connect(doloAddress, core.hhUser1);
+  console.log('doloAddress', dolo.address);
 
   // Deploy always active voter, oToken, veFeeCalculator, buybackPool
   const alwaysActiveVoter = await deployContractAndSave('VoterAlwaysActive', [], 'VoterAlwaysActive');
@@ -82,6 +65,12 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     'BuybackPool',
   );
 
+  const artProxyAddress = await deployContractAndSave(
+    'VeArt',
+    [],
+    'VeArtV1',
+  );
+
   // Deploy VotingEscrow
   const votingEscrowImplementationAddress = await deployContractAndSave(
     'VotingEscrow',
@@ -91,7 +80,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   const votingEscrowImplementation = VotingEscrow__factory.connect(votingEscrowImplementationAddress, core.hhUser1);
   const initCalldata = await votingEscrowImplementation.populateTransaction.initialize(
     doloAddress,
-    ADDRESS_ZERO, // art_proxy
+    artProxyAddress,
     alwaysActiveVoter,
     veFeeCalculator,
     ADDRESS_ZERO, // vester
@@ -134,7 +123,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     getVeExternalVesterInitializationCalldata(
       { address: discountCalculator } as any,
       { address: oDoloAddress } as any,
-      'baseUri', // @todo update these
+      'ipfs://', // @todo update this
       'Dolomite oDOLO Vesting',
       'voDOLO',
     ),
@@ -146,67 +135,11 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   );
   const vester = VeExternalVesterImplementationV1__factory.connect(vesterProxyAddress, core.hhUser1);
 
-  const optionAirdropAddress = await deployContractAndSave(
-    'OptionAirdrop',
-    getOptionAirdropConstructorParams(core, dolo),
-    'OptionAirdropImplementationV1',
-  );
-  const optionAirdropImplementation = OptionAirdrop__factory.connect(optionAirdropAddress, core.hhUser1);
-  const optionAirdropInitCalldata = await optionAirdropImplementation.populateTransaction['initialize(address)'](
-    core.gnosisSafeAddress, // @follow-up Confirm that this is the correct treasury address
-  );
-  const optionAirdropProxyAddress = await deployContractAndSave(
-    'UpgradeableProxy',
-    getUpgradeableProxyConstructorParams(optionAirdropAddress, optionAirdropInitCalldata, core.dolomiteMargin),
-    'OptionAirdrop',
-  );
-  const optionAirdrop = OptionAirdrop__factory.connect(optionAirdropProxyAddress, core.hhUser1);
-
-  const regularAirdropAddress = await deployContractAndSave(
-    'RegularAirdrop',
-    getRegularAirdropConstructorParams(core, dolo, votingEscrow),
-    'RegularAirdropImplementationV1',
-  );
-  const regularAirdropProxyAddress = await deployContractAndSave(
-    'UpgradeableProxy',
-    getUpgradeableProxyConstructorParams(regularAirdropAddress, null, core.dolomiteMargin),
-    'RegularAirdrop',
-  );
-  const regularAirdrop = RegularAirdrop__factory.connect(regularAirdropProxyAddress, core.hhUser1);
-
-  const vestingClaimsAddress = await deployContractAndSave(
-    'VestingClaims',
-    getVestingClaimsConstructorParams(core, dolo, TGE_TIMESTAMP, THREE_YEARS_SECONDS),
-    'VestingClaimsImplementationV1',
-  );
-  const vestingClaimsProxyAddress = await deployContractAndSave(
-    'UpgradeableProxy',
-    getUpgradeableProxyConstructorParams(vestingClaimsAddress, null, core.dolomiteMargin),
-    'VestingClaims',
-  );
-  const vestingClaims = VestingClaims__factory.connect(vestingClaimsProxyAddress, core.hhUser1);
-
-  const strategicVestingAddress = await deployContractAndSave(
-    'StrategicVesting',
-    getStrategicVestingClaimsConstructorParams(core, dolo, TGE_TIMESTAMP, ONE_YEAR_SECONDS),
-    'StrategicVestingImplementationV1',
-  );
-  const strategicVestingProxyAddress = await deployContractAndSave(
-    'UpgradeableProxy',
-    getUpgradeableProxyConstructorParams(strategicVestingAddress, null, core.dolomiteMargin),
-    'StrategicVesting',
-  );
-  const strategicVesting = StrategicVestingClaims__factory.connect(strategicVestingProxyAddress, core.hhUser1);
-
   // Push admin transactions
   const transactions: EncodedTransaction[] = [];
   transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(core, core, 'dolomiteMargin', 'ownerSetGlobalOperator', [
       vester.address,
-      true,
-    ]),
-    await prettyPrintEncodedDataWithTypeSafety(core, core, 'dolomiteMargin', 'ownerSetGlobalOperator', [
-      optionAirdrop.address,
       true,
     ]),
     await prettyPrintEncodedDataWithTypeSafety(core, { votingEscrow: votingEscrow }, 'votingEscrow', 'setVester', [
@@ -249,7 +182,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
       assertHardhatInvariant((await votingEscrow.vester()) === vesterProxyAddress, 'Invalid vester on votingEscrow');
 
       assertHardhatInvariant(
-        (await core.dolomiteMargin.getIsGlobalOperator(vester.address)) === true,
+        await core.dolomiteMargin.getIsGlobalOperator(vester.address),
         'Vester is not a global operator',
       );
     },

@@ -50,7 +50,7 @@ contract OptionAirdrop is BaseClaim, IOptionAirdrop {
     bytes32 private constant _OPTION_AIRDROP_STORAGE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.optionAirdropStorage")) - 1); // solhint-disable-line max-line-length
     uint256 private constant _DEFAULT_ACCOUNT_NUMBER = 0;
 
-    uint256 public constant DOLO_PRICE = 0.03125 ether;
+    uint256 public constant DOLO_PRICE = 0.045 ether;
 
     // ===================================================
     // ==================== State Variables ==============
@@ -105,7 +105,6 @@ contract OptionAirdrop is BaseClaim, IOptionAirdrop {
         OptionAirdropStorage storage s = _getOptionAirdropStorage();
         address user = getUserOrRemappedAddress(msg.sender);
 
-        // @audit @Corey, double check all uses of user vs msg.sender
         Require.that(
             _verifyMerkleProof(user, _proof, _allocatedAmount),
             _FILE,
