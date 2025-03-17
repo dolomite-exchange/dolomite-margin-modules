@@ -178,6 +178,18 @@ export const base_config: HardhatUserConfig = {
           },
         },
       },
+      // {
+      //   version: '0.8.24',
+      //   settings: {
+      //     optimizer: {
+      //       enabled: true,
+      //       runs: 200,
+      //       details: {
+      //         yul: false, // To fix some extraneous "stack too deep" errors that don't make sense, set this to false.
+      //       },
+      //     },
+      //   },
+      // },
     ],
   },
   paths: {

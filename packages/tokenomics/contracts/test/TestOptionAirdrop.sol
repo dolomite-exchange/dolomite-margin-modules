@@ -34,12 +34,10 @@ contract TestOptionAirdrop is OptionAirdrop {
 
     constructor(
         address _dolo,
-        address _treasury,
         address _dolomiteRegistry,
         address _dolomiteMargin
     ) OptionAirdrop(
         _dolo,
-        _treasury,
         _dolomiteRegistry,
         _dolomiteMargin
     ) {} // solhint-disable-line

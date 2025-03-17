@@ -1,6 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.9;
 
+
+/**
+ * @title   IVotingEscrow
+ * @author  Dolomite
+ *
+ * @notice  Interface for implementing VE on an NFT contract
+ */
 interface IVotingEscrow {
     struct Point {
         int128 bias;

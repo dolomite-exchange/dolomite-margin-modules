@@ -1,8 +1,7 @@
-import { ApproxParamsStruct, BaseRouter, TokenInput, TokenOutput } from '@pendle/sdk-v2';
-import axios from 'axios';
 import axios from 'axios';
 import { BigNumber, BigNumberish, ethers } from 'ethers';
-import { ADDRESS_ZERO, BYTES_EMPTY, ZERO_BI, Network } from 'packages/base/src/utils/no-deps-constants';
+import { ADDRESS_ZERO, BYTES_EMPTY, Network, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
+import { IPendleRouterV3 } from '../src/types';
 
 export const ONE_TENTH_OF_ONE_BIPS_NUMBER = 0.00001; // 0.001%
 export const PENDLE_SDK_BASE_URL = 'https://api-v2.pendle.finance/sdk/api/v1';
@@ -23,72 +22,19 @@ const ORDER_COMPONENTS = {
     { name: 'lnImpliedRate', type: 'uint256' },
     { name: 'failSafeRate', type: 'uint256' },
     { name: 'permit', type: 'bytes' },
-  ]
+  ],
 };
-
-export async function encodeSwapExactPtForTokens(
-  router: BaseRouter,
-  ptAmountIn: BigNumberish,
-  slippageTolerance: number,
-  market: string,
-  tokenOut: string,
-): Promise<{
-  extraOrderData: string;
-  tokenOutput: TokenOutput
-}> {
-  const [, , , tokenOutput] = await router.swapExactPtForToken(
-    market as any,
-    ptAmountIn,
-    tokenOut as any,
-    slippageTolerance,
-    { method: 'extractParams' },
-  );
-
-  const extraOrderData = ethers.utils.defaultAbiCoder.encode(
-    ['tuple(address,uint256,address,address,address,tuple(uint8,address,bytes,bool))'],
-    [
-      [
-        tokenOutput.tokenOut,
-        tokenOutput.minTokenOut,
-        tokenOutput.tokenRedeemSy,
-        tokenOutput.bulk,
-        tokenOutput.pendleSwap,
-        [
-          tokenOutput.swapData.swapType,
-          tokenOutput.swapData.extRouter,
-          tokenOutput.swapData.extCalldata,
-          tokenOutput.swapData.needScale,
-        ],
-      ],
-    ],
-  );
-
-  return { extraOrderData, tokenOutput: tokenOutput as any };
-}
 
 export async function encodeRedeemPyToToken(
   ptAmountIn: BigNumberish,
   minOutputAmount: BigNumberish,
   tokenOut: string,
 ): Promise<{
-  extraOrderData: string
+  extraOrderData: string;
 }> {
   const extraOrderData = ethers.utils.defaultAbiCoder.encode(
     ['tuple(address,uint256,address,address,tuple(uint8,address,bytes,bool))'],
-    [
-      [
-        tokenOut,
-        minOutputAmount,
-        tokenOut,
-        ADDRESS_ZERO,
-        [
-          0,
-          ADDRESS_ZERO,
-          BYTES_EMPTY,
-          false,
-        ],
-      ],
-    ],
+    [[tokenOut, minOutputAmount, tokenOut, ADDRESS_ZERO, [0, ADDRESS_ZERO, BYTES_EMPTY, false]]],
   );
 
   return { extraOrderData };
@@ -104,24 +50,25 @@ export async function encodeSwapExactPtForTokensV3(
 ): Promise<{
   extraOrderData: string;
   minOutputAmount: BigNumber;
-  tokenOutput: TokenOutput;
-  limitOrderData: any;
+  tokenOutput: IPendleRouterV3.TokenOutputStruct;
+  limitOrderData: IPendleRouterV3.LimitOrderDataStruct;
 }> {
-  const data = await axios.get(`${PENDLE_SDK_BASE_URL}/swapExactPtForToken`, {
-    params: {
-      chainId: network,
-      receiverAddr: receiver,
-      marketAddr: market,
-      amountPtIn: ptAmountIn.toString(),
-      tokenOutAddr: tokenOut,
-      slippage: slippageTolerance,
-    },
-  })
-  .then(result => result.data)
-  .catch(e => {
-    console.log(e);
-    return Promise.reject(e);
-  });
+  const data = await axios
+    .get(`${PENDLE_SDK_BASE_URL}/swapExactPtForToken`, {
+      params: {
+        chainId: network,
+        receiverAddr: receiver,
+        marketAddr: market,
+        amountPtIn: ptAmountIn.toString(),
+        tokenOutAddr: tokenOut,
+        slippage: slippageTolerance,
+      },
+    })
+    .then((result) => result.data)
+    .catch((e) => {
+      console.log(e);
+      return Promise.reject(e);
+    });
   const tokenOutput = data.contractCallParams['3'];
   const limitOrderData = data.contractCallParams['4'];
 
@@ -142,10 +89,10 @@ export async function encodeSwapExactPtForTokensV3(
             { name: 'swapType', type: 'uint8' },
             { name: 'extRouter', type: 'address' },
             { name: 'extCalldata', type: 'bytes' },
-            { name: 'needScale', type: 'bool' }
-          ]
-        }
-      ]
+            { name: 'needScale', type: 'bool' },
+          ],
+        },
+      ],
     },
     {
       type: 'tuple',
@@ -160,7 +107,7 @@ export async function encodeSwapExactPtForTokensV3(
             ORDER_COMPONENTS,
             { name: 'signature', type: 'bytes' },
             { name: 'makingAmount', type: 'uint256' },
-          ]
+          ],
         },
         {
           type: 'tuple[]',
@@ -169,76 +116,20 @@ export async function encodeSwapExactPtForTokensV3(
             ORDER_COMPONENTS,
             { name: 'signature', type: 'bytes' },
             { name: 'makingAmount', type: 'uint256' },
-          ]
+          ],
         },
         { name: 'optData', type: 'bytes' },
-      ]
-    }
+      ],
+    },
   ];
-  const encodedData = ethers.utils.defaultAbiCoder.encode(
-    EXTRA_ORDER_DATA_TYPE as any,
-    [
-      tokenOutput,
-      limitOrderData
-    ],
-  );
+  const encodedData = ethers.utils.defaultAbiCoder.encode(EXTRA_ORDER_DATA_TYPE as any, [tokenOutput, limitOrderData]);
 
   return {
     tokenOutput,
     limitOrderData,
     extraOrderData: encodedData,
-    minOutputAmount: BigNumber.from(tokenOutput.minTokenOut)
+    minOutputAmount: BigNumber.from(tokenOutput.minTokenOut),
   };
-}
-
-export async function encodeSwapExactTokensForPt(
-  router: BaseRouter,
-  tokenAmountIn: BigNumberish,
-  slippageTolerance: number,
-  marketIn: string,
-  tokenIn: string,
-): Promise<{
-  extraOrderData: string;
-  tokenInput: TokenInput,
-  approxParams: ApproxParamsStruct
-}> {
-  const [, , , approxParams, tokenInput] = await router.swapExactTokenForPt(
-    marketIn as any,
-    tokenIn as any,
-    tokenAmountIn,
-    slippageTolerance,
-    { method: 'extractParams' },
-  );
-
-  const approxParamsType = 'tuple(uint256,uint256,uint256,uint256,uint256)';
-  const tokenInputType = 'tuple(address,uint256,address,address,address,tuple(uint8,address,bytes,bool))';
-  const extraOrderData = ethers.utils.defaultAbiCoder.encode(
-    [approxParamsType, tokenInputType],
-    [
-      [
-        approxParams.guessMin,
-        approxParams.guessMax,
-        approxParams.guessOffchain,
-        approxParams.maxIteration,
-        approxParams.eps,
-      ],
-      [
-        tokenInput.tokenIn,
-        tokenInput.netTokenIn,
-        tokenInput.tokenMintSy,
-        tokenInput.bulk,
-        tokenInput.pendleSwap,
-        [
-          tokenInput.swapData.swapType,
-          tokenInput.swapData.extRouter,
-          tokenInput.swapData.extCalldata,
-          tokenInput.swapData.needScale,
-        ],
-      ],
-    ],
-  );
-
-  return { extraOrderData, tokenInput: tokenInput as any, approxParams: approxParams as any };
 }
 
 export async function encodeSwapExactTokensForPtV3(
@@ -250,25 +141,26 @@ export async function encodeSwapExactTokensForPtV3(
   slippageTolerance: string,
 ): Promise<{
   extraOrderData: string;
-  tokenInput: TokenInput,
-  approxParams: ApproxParamsStruct
-  limitOrderData: any
+  tokenInput: IPendleRouterV3.TokenInputStruct;
+  approxParams: IPendleRouterV3.ApproxParamsStruct;
+  limitOrderData: IPendleRouterV3.LimitOrderDataStruct;
 }> {
-  const data = await axios.get(`${PENDLE_SDK_BASE_URL}/swapExactTokenForPt`, {
-    params: {
-      chainId: network,
-      receiverAddr: receiver,
-      marketAddr: marketIn,
-      tokenInAddr: tokenIn,
-      amountTokenIn: tokenAmountIn.toString(),
-      slippage: slippageTolerance,
-    },
-  })
-  .then(result => result.data)
-  .catch(e => {
-    console.log(e);
-    return Promise.reject(e);
-  });
+  const data = await axios
+    .get(`${PENDLE_SDK_BASE_URL}/swapExactTokenForPt`, {
+      params: {
+        chainId: network,
+        receiverAddr: receiver,
+        marketAddr: marketIn,
+        tokenInAddr: tokenIn,
+        amountTokenIn: tokenAmountIn.toString(),
+        slippage: slippageTolerance,
+      },
+    })
+    .then((result) => result.data)
+    .catch((e) => {
+      console.log(e);
+      return Promise.reject(e);
+    });
   const approxParams = data.contractCallParams['3'];
   const tokenInput = data.contractCallParams['4'];
   const limitOrderData = data.contractCallParams['5'];
@@ -284,23 +176,15 @@ export async function encodeSwapExactTokensForPtV3(
       {
         type: 'tuple[]',
         name: 'normalFills',
-        components: [
-          ORDER_COMPONENTS,
-          { name: 'signature', type: 'bytes' },
-          { name: 'makingAmount', type: 'uint256' },
-        ]
+        components: [ORDER_COMPONENTS, { name: 'signature', type: 'bytes' }, { name: 'makingAmount', type: 'uint256' }],
       },
       {
         type: 'tuple[]',
         name: 'flashFills',
-        components: [
-          ORDER_COMPONENTS,
-          { name: 'signature', type: 'bytes' },
-          { name: 'makingAmount', type: 'uint256' },
-        ]
+        components: [ORDER_COMPONENTS, { name: 'signature', type: 'bytes' }, { name: 'makingAmount', type: 'uint256' }],
       },
       { name: 'optData', type: 'bytes' },
-    ]
+    ],
   };
   const extraOrderData = ethers.utils.defaultAbiCoder.encode(
     [approxParamsType, tokenInputType, limitOrderDataInputType as any],
@@ -324,13 +208,7 @@ export async function encodeSwapExactTokensForPtV3(
           tokenInput.swapData.needScale,
         ],
       ],
-      [
-        ADDRESS_ZERO,
-        ZERO_BI,
-        [],
-        [],
-        BYTES_EMPTY
-      ]
+      [ADDRESS_ZERO, ZERO_BI, [], [], BYTES_EMPTY],
     ],
   );
 
@@ -344,7 +222,6 @@ export async function encodeSwapExactYtForTokensV3(
   ytAmountIn: BigNumberish,
   tokenOut: string,
   slippageTolerance: number,
-  syTokenOutAddr: string = ADDRESS_ZERO,
 ): Promise<{
   extraOrderData: string;
   minTokenOutput: BigNumberish;
@@ -369,23 +246,15 @@ export async function encodeSwapExactYtForTokensV3(
       {
         type: 'tuple[]',
         name: 'normalFills',
-        components: [
-          ORDER_COMPONENTS,
-          { name: 'signature', type: 'bytes' },
-          { name: 'makingAmount', type: 'uint256' },
-        ]
+        components: [ORDER_COMPONENTS, { name: 'signature', type: 'bytes' }, { name: 'makingAmount', type: 'uint256' }],
       },
       {
         type: 'tuple[]',
         name: 'flashFills',
-        components: [
-          ORDER_COMPONENTS,
-          { name: 'signature', type: 'bytes' },
-          { name: 'makingAmount', type: 'uint256' },
-        ]
+        components: [ORDER_COMPONENTS, { name: 'signature', type: 'bytes' }, { name: 'makingAmount', type: 'uint256' }],
       },
       { name: 'optData', type: 'bytes' },
-    ]
+    ],
   };
   const extraOrderData = ethers.utils.defaultAbiCoder.encode(
     [tokenOutputType, limitOrderDataInputType as any],
@@ -408,61 +277,11 @@ export async function encodeSwapExactYtForTokensV3(
         res.data.contractCallParams['4'].normalFills,
         res.data.contractCallParams['4'].flashFills,
         res.data.contractCallParams['4'].optData,
-      ]
+      ],
     ],
   );
 
   return { extraOrderData, minTokenOutput: res.data.contractCallParams['3'].minTokenOut };
-}
-
-export async function encodeSwapExactTokensForYt(
-  router: BaseRouter,
-  tokenAmountIn: BigNumberish,
-  slippageTolerance: number,
-  ptMarket: string,
-  tokenIn: string,
-): Promise<{
-  extraOrderData: string;
-  tokenInput: TokenInput,
-  approxParams: ApproxParamsStruct
-}> {
-  const [, , , approxParams, tokenInput] = await router.swapExactTokenForYt(
-    ptMarket as any,
-    tokenIn as any,
-    tokenAmountIn,
-    slippageTolerance,
-    { method: 'extractParams' },
-  );
-
-  const approxParamsType = 'tuple(uint256,uint256,uint256,uint256,uint256)';
-  const tokenInputType = 'tuple(address,uint256,address,address,address,tuple(uint8,address,bytes,bool))';
-  const extraOrderData = ethers.utils.defaultAbiCoder.encode(
-    [approxParamsType, tokenInputType],
-    [
-      [
-        approxParams.guessMin,
-        approxParams.guessMax,
-        approxParams.guessOffchain,
-        approxParams.maxIteration,
-        approxParams.eps,
-      ],
-      [
-        tokenInput.tokenIn,
-        tokenInput.netTokenIn,
-        tokenInput.tokenMintSy,
-        tokenInput.bulk,
-        tokenInput.pendleSwap,
-        [
-          tokenInput.swapData.swapType,
-          tokenInput.swapData.extRouter,
-          tokenInput.swapData.extCalldata,
-          tokenInput.swapData.needScale,
-        ],
-      ],
-    ],
-  );
-
-  return { extraOrderData, tokenInput: tokenInput as any, approxParams: approxParams as any };
 }
 
 export async function encodeSwapExactTokensForYtV3(
@@ -498,23 +317,15 @@ export async function encodeSwapExactTokensForYtV3(
       {
         type: 'tuple[]',
         name: 'normalFills',
-        components: [
-          ORDER_COMPONENTS,
-          { name: 'signature', type: 'bytes' },
-          { name: 'makingAmount', type: 'uint256' },
-        ]
+        components: [ORDER_COMPONENTS, { name: 'signature', type: 'bytes' }, { name: 'makingAmount', type: 'uint256' }],
       },
       {
         type: 'tuple[]',
         name: 'flashFills',
-        components: [
-          ORDER_COMPONENTS,
-          { name: 'signature', type: 'bytes' },
-          { name: 'makingAmount', type: 'uint256' },
-        ]
+        components: [ORDER_COMPONENTS, { name: 'signature', type: 'bytes' }, { name: 'makingAmount', type: 'uint256' }],
       },
       { name: 'optData', type: 'bytes' },
-    ]
+    ],
   };
   const extraOrderData = ethers.utils.defaultAbiCoder.encode(
     [approxParamsType, tokenInputType, limitOrderDataInputType as any],
@@ -544,9 +355,9 @@ export async function encodeSwapExactTokensForYtV3(
         res.data.contractCallParams['5'].normalFills,
         res.data.contractCallParams['5'].flashFills,
         res.data.contractCallParams['5'].optData,
-      ]
+      ],
     ],
   );
 
-  return { extraOrderData , minAmountOut: res.data.data.amountYtOut };
+  return { extraOrderData, minAmountOut: res.data.data.amountYtOut };
 }

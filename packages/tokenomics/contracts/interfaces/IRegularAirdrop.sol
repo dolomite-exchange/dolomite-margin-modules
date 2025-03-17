@@ -20,6 +20,8 @@
 
 pragma solidity ^0.8.9;
 
+import { IBaseClaim } from "./IBaseClaim.sol";
+
 
 /**
  * @title   IRegularAirdrop
@@ -27,23 +29,28 @@ pragma solidity ^0.8.9;
  *
  * @notice  Interface for DOLO regular airdrop contract
  */
-interface IRegularAirdrop {
+interface IRegularAirdrop is IBaseClaim {
+
+    struct RegularAirdropStorage {
+        mapping(address => bool) userToClaimStatus;
+        mapping(address => bool) userToFullDolo;
+    }
 
     // ======================================================
     // ======================== Events ======================
     // ======================================================
 
-    event MerkleRootSet(bytes32 merkleRoot);
+    event UserToFullDoloSet(address[] users, bool[] fullDolo);
 
     // ======================================================
     // ================== External Functions ================
     // ======================================================
 
-    function ownerSetMerkleRoot(bytes32 _merkleRoot) external;
-
-    function ownerWithdrawRewardToken(address _token, address _receiver) external;
+    function ownerSetUserToFullDolo(address[] memory _users, bool[] memory _fullDolo) external;
 
     function claim(bytes32[] memory _proof, uint256 _amount) external;
 
-    function getClaimStatusByUser(address _user) external view returns (bool);
+    function userToClaimStatus(address _user) external view returns (bool);
+
+    function userToFullDolo(address _user) external view returns (bool);
 }

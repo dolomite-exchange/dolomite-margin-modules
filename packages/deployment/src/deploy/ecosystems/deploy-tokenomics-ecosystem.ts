@@ -1,7 +1,7 @@
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { getUpgradeableProxyConstructorParams } from 'packages/base/src/utils/constructors/dolomite';
 import { getAndCheckSpecificNetwork } from 'packages/base/src/utils/dolomite-utils';
-import { ADDRESS_ZERO, MAX_UINT_256_BI, Network, NetworkType } from 'packages/base/src/utils/no-deps-constants';
+import { ADDRESS_ZERO, MAX_UINT_256_BI, Network } from 'packages/base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from 'packages/base/test/utils';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
 import { deployContractAndSave } from 'packages/deployment/src/utils/deploy-utils';
@@ -20,6 +20,7 @@ import {
   getVeFeeCalculatorConstructorParams,
 } from 'packages/tokenomics/src/tokenomics-constructors';
 import {
+  DOLO__factory,
   ODOLO__factory,
   VeExternalVesterImplementationV1__factory,
   VotingEscrow__factory,
@@ -32,15 +33,21 @@ const NO_MARKET_ID = MAX_UINT_256_BI;
  * This script encodes the following transactions:
  * - Deploys DOLO tokenomics
  */
-async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
+async function main(): Promise<DryRunOutput<Network.Berachain>> {
   const network = await getAndCheckSpecificNetwork(Network.Berachain);
-  const core = (await setupCoreProtocol({
+  const core = await setupCoreProtocol({
     network,
     blockNumber: await getRealLatestBlockNumber(true, network),
-  })) as any;
+  });
 
   // Deploy new custom token
-  const doloAddress = await deployContractAndSave('DOLO', [core.dolomiteMargin.address], 'DOLO');
+  const doloAddress = await deployContractAndSave(
+    'DOLO',
+    [core.dolomiteMargin.address, core.gnosisSafeAddress],
+    'DolomiteToken',
+  );
+  const dolo = DOLO__factory.connect(doloAddress, core.hhUser1);
+  console.log('doloAddress', dolo.address);
 
   // Deploy always active voter, oToken, veFeeCalculator, buybackPool
   const alwaysActiveVoter = await deployContractAndSave('VoterAlwaysActive', [], 'VoterAlwaysActive');
@@ -58,6 +65,12 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     'BuybackPool',
   );
 
+  const artProxyAddress = await deployContractAndSave(
+    'VeArt',
+    [],
+    'VeArtV1',
+  );
+
   // Deploy VotingEscrow
   const votingEscrowImplementationAddress = await deployContractAndSave(
     'VotingEscrow',
@@ -67,7 +80,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   const votingEscrowImplementation = VotingEscrow__factory.connect(votingEscrowImplementationAddress, core.hhUser1);
   const initCalldata = await votingEscrowImplementation.populateTransaction.initialize(
     doloAddress,
-    ADDRESS_ZERO, // art_proxy
+    artProxyAddress,
     alwaysActiveVoter,
     veFeeCalculator,
     ADDRESS_ZERO, // vester
@@ -95,8 +108,8 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
       core,
       { address: doloAddress } as any, // pairToken
       NO_MARKET_ID,
-      core.tokens.weth, // paymentToken
-      core.marketIds.weth,
+      core.tokens.usdc,
+      core.marketIds.usdc,
       { address: doloAddress } as any, // rewardToken
       NO_MARKET_ID,
     ),
@@ -110,9 +123,9 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     getVeExternalVesterInitializationCalldata(
       { address: discountCalculator } as any,
       { address: oDoloAddress } as any,
-      'baseUri', // @todo update these
-      'name',
-      'SYMBOL',
+      'ipfs://', // @todo update this
+      'Dolomite oDOLO Vesting',
+      'voDOLO',
     ),
   );
   const vesterProxyAddress = await deployContractAndSave(
@@ -143,7 +156,6 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
       vester.address,
       true,
     ]),
-    // @follow-up Not sure if we want to mint, deposit reward tokens, deploy airdrop contracts, etc
   );
 
   return {
@@ -156,18 +168,23 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     },
     invariants: async () => {
       assertHardhatInvariant(
-        (await vester.PAYMENT_TOKEN()) === core.tokens.weth.address &&
-          (await vester.REWARD_TOKEN()) === doloAddress &&
-          (await vester.PAIR_TOKEN()) === doloAddress,
+        (await vester.PAYMENT_TOKEN()) === core.tokens.usdc.address &&
+        (await vester.REWARD_TOKEN()) === doloAddress &&
+        (await vester.PAIR_TOKEN()) === doloAddress,
         'Invalid vester token addresses',
       );
       assertHardhatInvariant(
         (await vester.VE_TOKEN()) === votingEscrowProxyAddress &&
-          (await vester.discountCalculator()) === discountCalculator &&
-          (await vester.oToken()) === oDoloAddress,
+        (await vester.discountCalculator()) === discountCalculator &&
+        (await vester.oToken()) === oDoloAddress,
         'Invalid vester init addresses',
       );
       assertHardhatInvariant((await votingEscrow.vester()) === vesterProxyAddress, 'Invalid vester on votingEscrow');
+
+      assertHardhatInvariant(
+        await core.dolomiteMargin.getIsGlobalOperator(vester.address),
+        'Vester is not a global operator',
+      );
     },
   };
 }

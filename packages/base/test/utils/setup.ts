@@ -203,7 +203,6 @@ import { DolomiteMargin, Expiry } from './dolomite';
 import { createAbraEcosystem } from './ecosystem-utils/abra';
 import { createArbEcosystem } from './ecosystem-utils/arb';
 import { createCamelotEcosystem } from './ecosystem-utils/camelot';
-import { DeployedVault, getDeployedVaults } from './ecosystem-utils/deployed-vaults';
 import { createGlvEcosystem } from './ecosystem-utils/glv';
 import { createGmxEcosystem, createGmxEcosystemV2 } from './ecosystem-utils/gmx';
 import { createInterestSetters } from './ecosystem-utils/interest-setters';
@@ -223,6 +222,8 @@ import { createPremiaEcosystem } from './ecosystem-utils/premia';
 import { createTestEcosystem } from './ecosystem-utils/testers';
 import { createUmamiEcosystem } from './ecosystem-utils/umami';
 import { impersonate, impersonateOrFallback, resetForkIfPossible } from './index';
+import { DeployedVault, getDeployedVaults } from './ecosystem-utils/deployed-vaults';
+import { createTokenomicsEcosystem } from './ecosystem-utils/tokenomics';
 
 /**
  * Config to for setting up tests in the `before` function
@@ -269,16 +270,16 @@ interface CoreProtocolConfigXLayer extends CoreProtocolConfigParent<Network.XLay
 export type CoreProtocolConfig<T extends NetworkType> = T extends Network.ArbitrumOne
   ? CoreProtocolConfigArbitrumOne
   : T extends Network.Base
-  ? CoreProtocolConfigBase
-  : T extends Network.Berachain
-  ? CoreProtocolConfigBerachain
-  : T extends Network.Mantle
-  ? CoreProtocolConfigMantle
-  : T extends Network.PolygonZkEvm
-  ? CoreProtocolConfigPolygonZkEvm
-  : T extends Network.XLayer
-  ? CoreProtocolConfigXLayer
-  : never;
+    ? CoreProtocolConfigBase
+    : T extends Network.Berachain
+      ? CoreProtocolConfigBerachain
+      : T extends Network.Mantle
+        ? CoreProtocolConfigMantle
+        : T extends Network.PolygonZkEvm
+          ? CoreProtocolConfigPolygonZkEvm
+          : T extends Network.XLayer
+            ? CoreProtocolConfigXLayer
+            : never;
 
 export async function disableInterestAccrual<T extends NetworkType>(
   core: CoreProtocolAbstract<T>,
@@ -676,16 +677,16 @@ export function getDefaultCoreProtocolConfigForGmxV2(): CoreProtocolConfig<Netwo
 export type CoreProtocolType<T extends NetworkType> = T extends Network.ArbitrumOne
   ? CoreProtocolArbitrumOne
   : T extends Network.Base
-  ? CoreProtocolBase
-  : T extends Network.Berachain
-  ? CoreProtocolBerachain
-  : T extends Network.Mantle
-  ? CoreProtocolMantle
-  : T extends Network.PolygonZkEvm
-  ? CoreProtocolPolygonZkEvm
-  : T extends Network.XLayer
-  ? CoreProtocolXLayer
-  : never;
+    ? CoreProtocolBase
+    : T extends Network.Berachain
+      ? CoreProtocolBerachain
+      : T extends Network.Mantle
+        ? CoreProtocolMantle
+        : T extends Network.PolygonZkEvm
+          ? CoreProtocolPolygonZkEvm
+          : T extends Network.XLayer
+            ? CoreProtocolXLayer
+            : never;
 
 export function getDolomiteMarginContract<T extends NetworkType>(
   config: CoreProtocolSetupConfig<T>,
@@ -908,6 +909,8 @@ export async function setupCoreProtocol<T extends NetworkType>(
 
   const testEcosystem = await createTestEcosystem(dolomiteMargin, governance);
 
+  const tokenomics = await createTokenomicsEcosystem(config.network, hhUser1);
+
   const deployedVaults = await getDeployedVaults(config, dolomiteMargin, governance);
   const marketIdToDeployedVaultMap = deployedVaults.reduce((acc, vault) => {
     acc[vault.marketId] = vault;
@@ -954,6 +957,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
     oracleAggregatorV2,
     ownerAdapterV1,
     testEcosystem,
+    tokenomics,
     hhUser1,
     hhUser2,
     hhUser3,
