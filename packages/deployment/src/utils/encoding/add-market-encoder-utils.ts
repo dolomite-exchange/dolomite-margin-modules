@@ -67,7 +67,14 @@ export async function encodeAddIsolationModeMarket<T extends NetworkType>(
       [factory.address, true],
     ),
     await prettyPrintEncodedDataWithTypeSafety(core, { factory }, 'factory', 'ownerInitialize', [
-      [unwrapper.address, wrapper.address, ...(options.additionalConverters ?? []).map((c) => c.address)],
+      [
+        core.borrowPositionRouter,
+        core.depositWithdrawalRouter,
+        core.genericTraderRouter,
+        unwrapper.address,
+        wrapper.address,
+        ...(options.additionalConverters ?? []).map((c) => c.address),
+      ],
     ]),
     await prettyPrintEncodedDataWithTypeSafety(
       core,

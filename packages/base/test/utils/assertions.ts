@@ -167,7 +167,6 @@ export async function expectProtocolParBalance<T extends Network>(
     );
 }
 
-
 export async function expectProtocolBalanceDustyOrZero<T extends Network>(
   core: CoreProtocolType<T>,
   accountOwner: { address: address } | address,
