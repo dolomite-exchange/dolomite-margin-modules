@@ -33,8 +33,8 @@ import {
   DolomiteERC4626__factory,
   DolomiteERC4626WithPayable__factory,
   DolomiteOwnerV1__factory,
-  IBorrowPositionProxyV2__factory,
-  IDepositWithdrawalProxy__factory,
+  IBorrowPositionProxyV2__factory, IBorrowPositionRouter__factory,
+  IDepositWithdrawalProxy__factory, IDepositWithdrawalRouter__factory,
   IDolomiteAccountRegistry__factory,
   IDolomiteAccountRiskOverrideSetter__factory,
   IDolomiteAccountValuesReader__factory,
@@ -49,7 +49,7 @@ import {
   IEventEmitterRegistry__factory,
   IExpiry__factory,
   IExpiryV2__factory,
-  IGenericTraderProxyV2__factory,
+  IGenericTraderProxyV2__factory, IGenericTraderRouter__factory,
   ILiquidatorAssetRegistry__factory,
   ILiquidatorProxyV1__factory,
   ILiquidatorProxyV4WithGenericTrader__factory,
@@ -789,6 +789,11 @@ export async function setupCoreProtocol<T extends NetworkType>(
     governance,
   );
 
+  const borrowPositionRouter = IBorrowPositionRouter__factory.connect(
+    Deployments.BorrowPositionRouterProxy[config.network].address,
+    governance,
+  );
+
   const chainlinkPriceOracleV1 = getContract(
     CHAINLINK_PRICE_ORACLE_V1_MAP[config.network],
     IChainlinkPriceOracleV1__factory.connect,
@@ -808,6 +813,11 @@ export async function setupCoreProtocol<T extends NetworkType>(
 
   const depositWithdrawalProxy = IDepositWithdrawalProxy__factory.connect(
     DepositWithdrawalProxyJson.networks[config.network].address,
+    governance,
+  );
+
+  const depositWithdrawalRouter = IDepositWithdrawalRouter__factory.connect(
+    Deployments.DepositWithdrawalRouterProxy[config.network].address,
     governance,
   );
 
@@ -863,6 +873,12 @@ export async function setupCoreProtocol<T extends NetworkType>(
   const genericTraderProxy = getContract(
     Deployments.GenericTraderProxyV2[config.network].address,
     IGenericTraderProxyV2__factory.connect,
+    governance,
+  );
+
+  const genericTraderRouter = getContract(
+    Deployments.GenericTraderRouterProxy[config.network].address,
+    IGenericTraderRouter__factory.connect,
     governance,
   );
 
@@ -927,11 +943,13 @@ export async function setupCoreProtocol<T extends NetworkType>(
 
   const coreProtocolParams: CoreProtocolParams<T> = {
     borrowPositionProxyV2,
+    borrowPositionRouter,
     chainlinkPriceOracleV1,
     chainlinkPriceOracleV3,
     delayedMultiSig,
     deployedVaults,
     depositWithdrawalProxy,
+    depositWithdrawalRouter,
     dolomiteMargin,
     dolomiteRegistry,
     dolomiteRegistryProxy,
@@ -944,6 +962,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
     expiry,
     freezableLiquidatorProxy,
     genericTraderProxy,
+    genericTraderRouter,
     gnosisSafe,
     gnosisSafeAddress,
     governance,
