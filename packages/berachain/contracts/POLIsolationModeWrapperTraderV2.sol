@@ -130,32 +130,32 @@ contract POLIsolationModeWrapperTraderV2 is
 
     // @audit Ensure that I can't maliciously invoke this function
     function getTradeCost(
-        uint256 inputMarketId,
-        uint256 outputMarketId,
-        IDolomiteStructs.AccountInfo calldata makerAccount,
-        IDolomiteStructs.AccountInfo calldata takerAccount,
-        IDolomiteStructs.Par calldata oldInputPar,
-        IDolomiteStructs.Par calldata newInputPar,
+        uint256 _inputMarketId,
+        uint256 _outputMarketId,
+        IDolomiteStructs.AccountInfo calldata _makerAccount,
+        IDolomiteStructs.AccountInfo calldata _takerAccount,
+        IDolomiteStructs.Par calldata _oldInputPar,
+        IDolomiteStructs.Par calldata _newInputPar,
         IDolomiteStructs.Wei calldata /* inputDeltaWei */,
         bytes calldata /* data */
     )
     external
     onlyDolomiteMargin(msg.sender)
     returns (IDolomiteStructs.AssetAmount memory) {
-        _validateInputAndOutputMarketId(inputMarketId, outputMarketId);
+        _validateInputAndOutputMarketId(_inputMarketId, _outputMarketId);
         Require.that(
-            vaultFactory().getAccountByVault(takerAccount.owner) != address(0),
+            vaultFactory().getAccountByVault(_takerAccount.owner) != address(0),
             _FILE,
             "Invalid taker account"
         );
         Require.that(
-            makerAccount.owner == BERACHAIN_REWARDS_REGISTRY.getMetaVaultByVault(takerAccount.owner)
-                && makerAccount.number == 0,
+            _makerAccount.owner == BERACHAIN_REWARDS_REGISTRY.getMetaVaultByVault(_takerAccount.owner)
+                && _makerAccount.number == 0,
             _FILE,
             "Invalid maker account"
         );
 
-        IDolomiteStructs.Par memory deltaPar = newInputPar.sub(oldInputPar);
+        IDolomiteStructs.Par memory deltaPar = _newInputPar.sub(_oldInputPar);
         Require.that(
             deltaPar.sign && deltaPar.value > 0,
             _FILE,
@@ -163,7 +163,7 @@ contract POLIsolationModeWrapperTraderV2 is
         );
         // @audit Have to make sure a user can't maliciously set this
         // @todo add check where we retrieve the input amount par and assert it is 0
-        _setUint256InMap(_INPUT_AMOUNT_PAR_SLOT, takerAccount.owner, deltaPar.value);
+        _setUint256InMap(_INPUT_AMOUNT_PAR_SLOT, _takerAccount.owner, deltaPar.value);
 
         return IDolomiteStructs.AssetAmount({
             sign: false,
@@ -187,7 +187,7 @@ contract POLIsolationModeWrapperTraderV2 is
         _validateInputAndOutputMarketId(_params.inputMarket, _params.outputMarket);
 
         IDolomiteMargin.ActionArgs[] memory actions = new IDolomiteMargin.ActionArgs[](actionsLength());
-        uint256 makerAccountId = abi.decode(_params.orderData, (uint256));
+        uint256 makerAccountId = abi.decode(_params.orderData, (uint256)); // @stephen -- I don't lke that this is manually set
 
         // @dev Encode internal transfer from vault to metavault which sends input token to the metavault
         // and returns 0 POL tokens. getTradeCost is responsible for input validation
@@ -197,7 +197,6 @@ contract POLIsolationModeWrapperTraderV2 is
             _params.inputMarket,
             _params.outputMarket,
             /* _trader = */ address(this),
-            /* _amountInPar = */ _params.inputAmount,
             /* _chainId = */ block.chainid,
             /* _calculateAmountWithMakerAccount = */ false,
             /* _orderData = */ bytes("")

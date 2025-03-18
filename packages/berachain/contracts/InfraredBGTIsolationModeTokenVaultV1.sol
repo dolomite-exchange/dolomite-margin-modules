@@ -189,6 +189,7 @@ contract InfraredBGTIsolationModeTokenVaultV1 is
                             marketId,
                             _rewards[i].amount
                         ) {} catch {
+                            IERC20(_rewards[i].token).safeApprove(address(DOLOMITE_MARGIN()), 0);
                             IERC20(_rewards[i].token).safeTransfer(OWNER(), _rewards[i].amount);
                         }
                     } catch {

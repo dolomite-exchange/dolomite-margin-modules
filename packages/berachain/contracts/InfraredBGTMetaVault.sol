@@ -214,6 +214,7 @@ contract InfraredBGTMetaVault is ProxyContractHelpers, IBaseMetaVault {
         uint256 stakedBalance = getStakedBalanceByAssetAndType(_asset, _type);
         _setUint256InNestedMap(_STAKED_BALANCES_SLOT, _asset, uint256(_type), stakedBalance + _amount);
 
+        // @dev D Tokens are pushed into the vault, and thus don't need to be pulled in via `safeTransferFrom`
         if (!_isDToken) {
             IERC20(_asset).safeTransferFrom(msg.sender, address(this), _amount);
         }
@@ -292,7 +293,8 @@ contract InfraredBGTMetaVault is ProxyContractHelpers, IBaseMetaVault {
                     marketId,
                     _amount
                 ) {} catch {
-                    // If we can't deposit the token into Dolomite, send it directly to the owner
+                    // If we can't deposit the token into Dolomite, reset the allowance and send the token directly to
+                    // the owner
                     IERC20(_token).safeApprove(address(dolomiteMargin), 0);
                     IERC20(_token).safeTransfer(OWNER(), _amount);
                 }

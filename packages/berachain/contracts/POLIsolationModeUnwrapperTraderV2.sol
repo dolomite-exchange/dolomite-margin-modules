@@ -203,21 +203,23 @@ contract POLIsolationModeUnwrapperTraderV2 is
         _validateInputAndOutputMarketId(_params.inputMarket, _params.outputMarket);
 
         IDolomiteMargin.ActionArgs[] memory actions = new IDolomiteMargin.ActionArgs[](actionsLength());
-        uint256 makerAccountId = abi.decode(_params.orderData, (uint256));
+        uint256 makerAccountId = abi.decode(_params.orderData, (uint256)); // @stephen -- I don't lke that this is manually set
 
         // Transfer the IsolationMode tokens to this contract. Do this by enqueuing a transfer via the call to
         // `enqueueTransferFromDolomiteMargin` in `callFunction` on this contract.
         actions[0] = AccountActionLib.encodeCallAction(
             _params.primaryAccountId,
-            /* _callee */ address(this),
-            /* _callData = */ abi.encode(
+                /* _callee */ address(this),
+                /* _callData = */ abi.encode(
                 _params.inputAmount,
                 _params.otherAccountOwner,
                 _params.otherAccountNumber
             )
         );
 
-        // "Sell" POL tokens for 0 tokens
+        // "Sell" POL tokens for 0 tokens. This can trigger a burn for the POL tokens while lowering the total supply of
+        // POL tokens on Dolomite. We cannot transfer dTokens using an external sell action though, since it would
+        // trigger reentrancy into `DolomiteMargin.operate`.
         actions[1] = AccountActionLib.encodeExternalSellAction(
             _params.primaryAccountId,
             _params.inputMarket,
@@ -235,7 +237,6 @@ contract POLIsolationModeUnwrapperTraderV2 is
             _params.inputMarket,
             _params.outputMarket,
             /* _trader = */ address(this),
-            /* _amountInPar = */ 0,
             block.chainid,
             false,
             ''

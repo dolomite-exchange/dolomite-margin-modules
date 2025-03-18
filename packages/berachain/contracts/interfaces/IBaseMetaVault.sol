@@ -63,7 +63,7 @@ interface IBaseMetaVault {
         address _asset,
         uint256 _marketId,
         uint256 _amount
-    ) external returns (uint256);
+    ) external returns (uint256 _feeAmount);
 
     function getDefaultRewardVaultTypeByAsset(
         address _asset
