@@ -136,9 +136,7 @@ contract POLIsolationModeTokenVaultV1 is
         view
         returns (uint256)
     {
-        IBaseMetaVault metaVault = IBaseMetaVault(
-            registry().getMetaVaultByVault(address(this))
-        );
+        IBaseMetaVault metaVault = IBaseMetaVault(registry().getMetaVaultByVault(address(this)));
         IBerachainRewardsRegistry.RewardVaultType defaultType = metaVault.getDefaultRewardVaultTypeByAsset(
             UNDERLYING_TOKEN()
         );
@@ -321,9 +319,7 @@ contract POLIsolationModeTokenVaultV1 is
         IBerachainRewardsRegistry.RewardVaultType _type,
         uint256 _amount
     ) internal {
-        IBaseMetaVault metaVault = IBaseMetaVault(
-            registry().getMetaVaultByVault(address(this))
-        );
+        IBaseMetaVault metaVault = IBaseMetaVault(registry().getMetaVaultByVault(address(this)));
         metaVault.unstakeDolomiteToken(_asset, _type, _amount);
     }
 

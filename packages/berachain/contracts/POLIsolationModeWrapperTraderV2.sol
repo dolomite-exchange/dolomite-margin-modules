@@ -140,7 +140,10 @@ contract POLIsolationModeWrapperTraderV2 is
         return outputAmount;
     }
 
-    // @audit Ensure that I can't maliciously invoke this function
+    // ==================================================================
+    // ========================== View Functions ========================
+    // ==================================================================
+
     function getTradeCost(
         uint256 _inputMarketId,
         uint256 _outputMarketId,
@@ -149,9 +152,10 @@ contract POLIsolationModeWrapperTraderV2 is
         IDolomiteStructs.Par calldata _oldInputPar,
         IDolomiteStructs.Par calldata _newInputPar,
         IDolomiteStructs.Wei calldata /* _inputDeltaWei */,
-        bytes calldata /* data */
+        bytes calldata /* _data */
     )
     external
+    view
     onlyDolomiteMargin(msg.sender)
     returns (IDolomiteStructs.AssetAmount memory) {
         _validateInputAndOutputMarketId(_inputMarketId, _outputMarketId);
@@ -162,7 +166,7 @@ contract POLIsolationModeWrapperTraderV2 is
         );
         Require.that(
             _metaVaultAccount.owner == BERACHAIN_REWARDS_REGISTRY.getMetaVaultByVault(_isolationModeVaultAccount.owner)
-                && _metaVaultAccount.number == _DEFAULT_ACCOUNT_NUMBER,
+            && _metaVaultAccount.number == _DEFAULT_ACCOUNT_NUMBER,
             _FILE,
             "Invalid maker account"
         );
@@ -181,10 +185,6 @@ contract POLIsolationModeWrapperTraderV2 is
             value: 0
         });
     }
-
-    // ==================================================================
-    // ========================== View Functions ========================
-    // ==================================================================
 
     function createActionsForWrapping(
         CreateActionsForWrappingParams calldata _params
@@ -290,6 +290,7 @@ contract POLIsolationModeWrapperTraderV2 is
             _accountInfo.owner
         );
 
+        /// @dev This is set by the GenericTraderProxyV2 and is always set to the max value
         assert(transferAmount == type(uint256).max);
         address assetToken = IDolomiteERC4626(vaultFactory().UNDERLYING_TOKEN()).asset();
         uint256 marketId = DOLOMITE_MARGIN().getMarketIdByTokenAddress(assetToken);

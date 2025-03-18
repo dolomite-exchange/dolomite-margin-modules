@@ -159,7 +159,6 @@ describe('POLLiquidatorProxyV1', () => {
       core.testEcosystem!.testPriceOracle.address,
     );
 
-    // @follow-up Will need to set as global operator or have the metavault set as local operators
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(wrapper.address, true);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(unwrapper.address, true);
     await setupNewGenericTraderProxy(core, marketId);

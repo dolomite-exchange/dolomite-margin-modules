@@ -123,7 +123,6 @@ describe('POLIsolationModeWrapperTraderV2', () => {
     await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, amountWei);
     parAmount = await dToken.balanceOf(core.hhUser1.address);
 
-    // @follow-up Will need to set as global operator or have the metavault set as local operators
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(wrapper.address, true);
     await setupNewGenericTraderProxy(core, marketId);
 

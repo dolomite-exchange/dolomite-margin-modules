@@ -147,7 +147,6 @@ describe('POLIsolationModeTokenVaultV1', () => {
     await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, amountWei);
     parAmount = await dToken.balanceOf(core.hhUser1.address);
 
-    // @follow-up Will need to set as global operator or have the metavault set as local operators
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(wrapper.address, true);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(unwrapper.address, true);
     await setupNewGenericTraderProxy(core, marketId);
@@ -818,13 +817,43 @@ describe('POLIsolationModeTokenVaultV1', () => {
   });
 
   describe('#underlyingBalanceOf', () => {
-    it('should work normally', async () => {
+    it.only('should work normally', async () => {
+      console.log('parAmount', parAmount.toString());
       await wrapFullBalanceIntoVaultDefaultAccount(core, vault, metaVault, wrapper, marketId);
       expect(await vault.underlyingBalanceOf()).to.equal(parAmount);
+
+      const balance1 = await dToken.balanceOf(metaVault.address);
+      const metaBalance1 = await metaVault.getStakedBalanceByAssetAndType(dToken.address, RewardVaultType.Infrared);
+      console.log('raw balance1', balance1.toString());
+      console.log('metaBalance1', metaBalance1.toString());
+
       await vault.unstake(RewardVaultType.Infrared, parAmount.div(2));
       expect(await vault.underlyingBalanceOf()).to.equal(parAmount);
+
+      const balance2 = await dToken.balanceOf(metaVault.address);
+      const metaBalance2 = await metaVault.getStakedBalanceByAssetAndType(dToken.address, RewardVaultType.Infrared);
+      console.log('balance2', balance2.toString());
+      console.log('metaBalance2', metaBalance2.toString());
+
       await vault.unstake(RewardVaultType.Infrared, parAmount.div(2));
       expect(await vault.underlyingBalanceOf()).to.equal(parAmount.sub(1)); // @follow-up @Corey rounding issue here
+
+      const balance3 = await dToken.balanceOf(metaVault.address);
+      const metaBalance3 = await metaVault.getStakedBalanceByAssetAndType(dToken.address, RewardVaultType.Infrared);
+      console.log('balance3', balance3.toString());
+      console.log('metaBalance3', metaBalance3.toString());
+
+      expect(await vault.underlyingBalanceOf()).to.equal(parAmount.sub(1)); // @follow-up @Corey rounding issue here
+
+      await vault.unstake(RewardVaultType.Infrared, 1);
+
+      const balance4 = await dToken.balanceOf(metaVault.address);
+      const metaBalance4 = await metaVault.getStakedBalanceByAssetAndType(dToken.address, RewardVaultType.Infrared);
+      console.log('balance4', balance4.toString()); // this is one unit off
+      console.log('metaBalance4', metaBalance4.toString()); // this is zeroed out
+
+      // @audit - this fails. There is 1 unit missing in the meta vault which can lead to DOS issues
+      expect(await vault.underlyingBalanceOf()).to.equal(parAmount); // @follow-up @Corey rounding issue here
     });
   });
 
