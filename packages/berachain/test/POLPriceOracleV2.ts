@@ -27,9 +27,11 @@ import {
   createBerachainRewardsRegistry,
   createPOLIsolationModeTokenVaultV1,
   createPOLIsolationModeVaultFactory,
+  createPolLiquidatorProxy,
 } from './berachain-ecosystem-utils';
 import { expect } from 'chai';
 import { expectThrow } from 'packages/base/test/utils/assertions';
+import { createLiquidatorProxyV5 } from 'packages/base/test/utils/dolomite';
 
 const defaultAccountNumber = ZERO_BI;
 
@@ -57,7 +59,9 @@ describe('POLPriceOracleV2', () => {
       InfraredBGTMetaVault__factory.bytecode,
       [],
     );
-    registry = await createBerachainRewardsRegistry(core, metaVaultImplementation);
+    const liquidatorProxyV5 = await createLiquidatorProxyV5(core);
+    const polLiquidatorProxy = await createPolLiquidatorProxy(core, liquidatorProxyV5);
+    registry = await createBerachainRewardsRegistry(core, metaVaultImplementation, polLiquidatorProxy);
 
     const vaultImplementation = await createPOLIsolationModeTokenVaultV1();
     factory = await createPOLIsolationModeVaultFactory(core, registry, dToken, vaultImplementation, [], []);

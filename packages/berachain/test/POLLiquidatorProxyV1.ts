@@ -10,7 +10,7 @@ import {
   ONE_ETH_BI,
   ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
+import { getLatestBlockNumber, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import {
   expectProtocolBalance,
   expectThrow,
@@ -25,6 +25,7 @@ import {
 import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
+import { ethers } from 'hardhat';
 import { defaultAbiCoder, parseEther } from 'ethers/lib/utils';
 import { createContractWithAbi, depositIntoDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
 import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
@@ -86,7 +87,7 @@ describe('POLLiquidatorProxyV1', () => {
 
   before(async () => {
     core = await setupCoreProtocol({
-      blockNumber: 2_031_000,
+      blockNumber: 2_040_000,
       network: Network.Berachain,
     });
     await disableInterestAccrual(core, core.marketIds.weth);

@@ -24,7 +24,7 @@ import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/c
 import { revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
 import { createLiquidatorProxyV5 } from 'packages/base/test/utils/dolomite';
 
-describe('POLIsolationModeWrapperUpgradeableProxy', () => {
+describe('POLIsolationModeUnwrapperUpgradeableProxy', () => {
   let snapshotId: string;
 
   let core: CoreProtocolBerachain;

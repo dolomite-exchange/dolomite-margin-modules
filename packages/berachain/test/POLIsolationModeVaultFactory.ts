@@ -30,6 +30,7 @@ describe('POLIsolationModeVaultFactory', () => {
   let dToken: DolomiteERC4626;
 
   let factory: POLIsolationModeVaultFactory;
+  let factory2: POLIsolationModeVaultFactory;
   let vaultImplementation: POLIsolationModeTokenVaultV1;
 
   before(async () => {
@@ -39,6 +40,7 @@ describe('POLIsolationModeVaultFactory', () => {
     });
 
     dToken = DolomiteERC4626__factory.connect(core.dolomiteTokens.weth!.address, core.hhUser1);
+    const dToken2 = DolomiteERC4626__factory.connect(core.dolomiteTokens.usdc!.address, core.hhUser1);
 
     const liquidatorProxyV5 = await createLiquidatorProxyV5(core);
     const polLiquidatorProxy = await createPolLiquidatorProxy(core, liquidatorProxyV5);
@@ -51,11 +53,17 @@ describe('POLIsolationModeVaultFactory', () => {
 
     vaultImplementation = await createPOLIsolationModeTokenVaultV1();
     factory = await createPOLIsolationModeVaultFactory(core, registry, dToken, vaultImplementation, [], []);
+    factory2 = await createPOLIsolationModeVaultFactory(core, registry, dToken2, vaultImplementation, [], []);
+
     await core.testEcosystem!.testPriceOracle.setPrice(factory.address, ONE_ETH_BI);
+    await core.testEcosystem!.testPriceOracle.setPrice(factory2.address, ONE_ETH_BI);
     await setupTestMarket(core, factory, true);
+    await setupTestMarket(core, factory2, true);
 
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
+    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory2.address, true);
     await factory.connect(core.governance).ownerInitialize([]);
+    await factory2.connect(core.governance).ownerInitialize([]);
 
     snapshotId = await snapshot();
   });
@@ -94,11 +102,10 @@ describe('POLIsolationModeVaultFactory', () => {
     });
 
     it('should not emit event if metaVault already exists', async () => {
+      await factory2.connect(core.hhUser1).createVault(core.hhUser1.address);
+
       const metaVaultAddress = await registry.calculateMetaVaultByAccount(core.hhUser1.address);
       const vaultAddress = await factory.calculateVaultByAccount(core.hhUser1.address);
-      const factoryImpersonator = await impersonate(factory, true);
-      await registry.connect(factoryImpersonator).createMetaVault(core.hhUser1.address, OTHER_ADDRESS);
-
       const res = await factory.createVault(core.hhUser1.address);
       await expectEvent(factory, res, 'VaultCreated', {
         account: core.hhUser1.address,

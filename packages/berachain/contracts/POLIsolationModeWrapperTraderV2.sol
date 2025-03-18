@@ -148,7 +148,7 @@ contract POLIsolationModeWrapperTraderV2 is
         IDolomiteStructs.AccountInfo calldata _isolationModeVaultAccount,
         IDolomiteStructs.Par calldata _oldInputPar,
         IDolomiteStructs.Par calldata _newInputPar,
-        IDolomiteStructs.Wei calldata _inputDeltaWei,
+        IDolomiteStructs.Wei calldata /* _inputDeltaWei */,
         bytes calldata /* data */
     )
     external

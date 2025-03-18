@@ -279,7 +279,7 @@ export async function createLiquidatorProxyV5(
     artifact,
     libraries,
     [
-      Network.ArbitrumOne,
+      core.config.network,
       core.expiry.address,
       core.dolomiteMargin.address,
       core.dolomiteRegistry.address,

@@ -46,6 +46,7 @@ import { ActionType, AmountReference, BalanceCheckFlag } from '@dolomite-margin/
 import { GenericEventEmissionType, GenericTraderParam, GenericTraderType } from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
 
 const defaultAccountNumber = ZERO_BI;
+const borrowAccountNumber = BigNumber.from('123');
 const amountWei = parseEther('10');
 const sampleTradeData = defaultAbiCoder.encode(['uint256'], [2]);
 
@@ -287,7 +288,14 @@ describe('POLIsolationModeWrapperTraderV2', () => {
 
   describe('#getTradeCost', () => {
     it('should work normally', async () => {
+      await vault.transferIntoPositionWithOtherToken(defaultAccountNumber, borrowAccountNumber, core.marketIds.weth, amountWei, BalanceCheckFlag.None);
+
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
+      await wrapper.connect(dolomiteMarginImpersonator).callFunction(
+        core.genericTraderProxy.address,
+        { owner: vault.address, number: borrowAccountNumber },
+        defaultAbiCoder.encode(['uint256', 'address', 'uint256'], [MAX_UINT_256_BI, vault.address, borrowAccountNumber]),
+      );
       const tradeCost = await wrapper.connect(dolomiteMarginImpersonator).callStatic.getTradeCost(
         core.marketIds.weth,
         marketId,
@@ -297,7 +305,7 @@ describe('POLIsolationModeWrapperTraderV2', () => {
         },
         {
           owner: vault.address,
-          number: defaultAccountNumber,
+          number: borrowAccountNumber,
         },
         {
           sign: true,
@@ -305,12 +313,41 @@ describe('POLIsolationModeWrapperTraderV2', () => {
         },
         {
           sign: true,
-          value: amountWei,
+          value: parAmount,
         },
         ZERO_PAR,
         BYTES_EMPTY,
       );
       expect(tradeCost.value).to.equal(ZERO_BI);
+    });
+
+    it('should fail if input amount par is not already set', async () => {
+      const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
+      await expectThrow(
+          wrapper.connect(dolomiteMarginImpersonator).callStatic.getTradeCost(
+          core.marketIds.weth,
+          marketId,
+          {
+            owner: metaVault.address,
+            number: defaultAccountNumber,
+          },
+          {
+            owner: vault.address,
+            number: defaultAccountNumber,
+          },
+          {
+            sign: true,
+            value: ZERO_BI,
+          },
+          {
+            sign: true,
+            value: amountWei,
+          },
+          ZERO_PAR,
+          BYTES_EMPTY,
+        ),
+        'POLIsolationModeTraderBaseV2: Invalid input amount par',
+      );
     });
 
     it('should fail if taker account is not a vault', async () => {
@@ -444,14 +481,16 @@ describe('POLIsolationModeWrapperTraderV2', () => {
           orderData: defaultAbiCoder.encode(['uint256'], [2]),
         },
       );
-      expect(actions.length).to.equal(2);
-      expect(actions[0].actionType).to.equal(ActionType.Trade);
-      expect(actions[0].amount.value).to.equal(ZERO_BI);
-      expect(actions[0].amount.ref).to.equal(AmountReference.Target);
+      expect(actions.length).to.equal(3);
+      expect(actions[0].actionType).to.equal(ActionType.Call);
 
-      expect(actions[1].actionType).to.equal(ActionType.Sell);
+      expect(actions[1].actionType).to.equal(ActionType.Trade);
       expect(actions[1].amount.value).to.equal(ZERO_BI);
-      expect(actions[1].amount.ref).to.equal(AmountReference.Delta);
+      expect(actions[1].amount.ref).to.equal(AmountReference.Target);
+
+      expect(actions[2].actionType).to.equal(ActionType.Sell);
+      expect(actions[2].amount.value).to.equal(ZERO_BI);
+      expect(actions[2].amount.ref).to.equal(AmountReference.Delta);
     });
 
     it('should fail if input market is not valid', async () => {
