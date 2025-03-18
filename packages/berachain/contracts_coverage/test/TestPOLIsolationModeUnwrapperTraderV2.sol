@@ -59,12 +59,12 @@ contract TestPOLIsolationModeUnwrapperTraderV2 is
     // ======================== Public Functions ========================
     // ==================================================================
 
-    function getInputAmountPar(address _owner) public view returns (uint256) {
-        return _getUint256FromMap(_INPUT_AMOUNT_PAR_SLOT, _owner);
+    function getInputAmountParInternalTrade() public view returns (uint256) {
+        return _getInputAmountParInternalTrade();
     }
 
-    function getVaultFromTradeOriginator(address _tradeOriginator) public view returns (address) {
-        return _getVaultFromTradeOriginator(_tradeOriginator);
+    function getVaultForInternalTrade() public view returns (address) {
+        return _getVaultForInternalTrade();
     }
 
     function validateInputAndOutputMarketId(uint256 _inputMarketId, uint256 _outputMarketId) public view {

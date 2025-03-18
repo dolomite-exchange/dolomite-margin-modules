@@ -26,6 +26,8 @@ import { ILiquidatorAssetRegistry } from "@dolomite-exchange/modules-base/contra
 import { IIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import { IBerachainRewardsRegistry } from "./interfaces/IBerachainRewardsRegistry.sol";
+import { IPOLLiquidatorProxyV1 } from "./interfaces/IPOLLiquidatorProxyV1.sol";
 
 
 /**
@@ -37,13 +39,23 @@ import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable
  */
 abstract contract POLIsolationModeTraderBaseV2 is OnlyDolomiteMargin, Initializable {
 
+    // ============ Events ============
+
+    event TransientIsolationModeVaultSet(address isolationModeVault);
+    event TransientInputAmountPairSet(uint256 inputAmountPar);
+
     // ======================== Constants ========================
 
     bytes32 private constant _FILE = "POLIsolationModeTraderBaseV2";
     bytes32 private constant _VAULT_FACTORY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.vaultFactory")) - 1);
+    bytes32 private constant _INPUT_AMOUNT_PAR_SLOT = bytes32(uint256(keccak256("eip1967.proxy.inputAmountPar")) - 1);
+    bytes32 private constant _ISOLATION_MODE_VAULT_ADDRESS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isolationModeAddress")) - 1); // solhint-disable-line max-line-length
+
+    uint256 internal constant _DEFAULT_ACCOUNT_NUMBER = 0;
 
     // ======================== Field Variables ========================
 
+    IBerachainRewardsRegistry public immutable BERACHAIN_REWARDS_REGISTRY; // solhint-disable-line var-name-mixedcase
     IDolomiteRegistry public immutable DOLOMITE_REGISTRY; // solhint-disable-line var-name-mixedcase
 
     // ========================= Modifiers =========================
@@ -57,12 +69,13 @@ abstract contract POLIsolationModeTraderBaseV2 is OnlyDolomiteMargin, Initializa
 
     constructor(
         address _dolomiteMargin,
-        address _dolomiteRegistry
+        address _berachainRegistry
     )
     OnlyDolomiteMargin(
         _dolomiteMargin
     ) {
-        DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
+        BERACHAIN_REWARDS_REGISTRY = IBerachainRewardsRegistry(_berachainRegistry);
+        DOLOMITE_REGISTRY = BERACHAIN_REWARDS_REGISTRY.dolomiteRegistry();
     }
 
     function vaultFactory() public view returns (IIsolationModeVaultFactory) {
@@ -79,13 +92,50 @@ abstract contract POLIsolationModeTraderBaseV2 is OnlyDolomiteMargin, Initializa
         _setAddress(_VAULT_FACTORY_SLOT, _vaultFactory);
     }
 
+    function _setTransientValues(
+        address _isolationModeVault,
+        uint256 _inputAmountPar
+    ) internal {
+        _setAddress(_ISOLATION_MODE_VAULT_ADDRESS_SLOT, _isolationModeVault);
+        emit TransientIsolationModeVaultSet(_isolationModeVault);
+
+        _setUint256(_INPUT_AMOUNT_PAR_SLOT, _inputAmountPar);
+        emit TransientInputAmountPairSet(_inputAmountPar);
+    }
+
     function _isValidLiquidator(
         address _from,
         uint256 _marketId
     ) internal view returns (bool) {
+        IPOLLiquidatorProxyV1 polLiquidator = IPOLLiquidatorProxyV1(BERACHAIN_REWARDS_REGISTRY.polLiquidator());
         ILiquidatorAssetRegistry liquidatorRegistry = DOLOMITE_REGISTRY.liquidatorAssetRegistry();
-        return liquidatorRegistry.isAssetWhitelistedForLiquidation(_marketId, _from)
-            && liquidatorRegistry.getLiquidatorsForAsset(_marketId).length > 0;
+        return liquidatorRegistry.isAssetWhitelistedForLiquidation(_marketId, address(polLiquidator))
+            && liquidatorRegistry.getLiquidatorsForAsset(_marketId).length != 0
+            && polLiquidator.liquidatorProxy() == _from;
+    }
+
+    function _getVaultForInternalTrade() internal view returns (address) {
+        address isolationModeVault = _getAddress(_ISOLATION_MODE_VAULT_ADDRESS_SLOT);
+        if (isolationModeVault != address(0)) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            isolationModeVault != address(0),
+            _FILE,
+            "Invalid isolation mode vault"
+        );
+
+        return isolationModeVault;
+    }
+
+    function _getInputAmountParInternalTrade() internal view returns (uint256) {
+        uint256 inputAmountPar = _getUint256(_INPUT_AMOUNT_PAR_SLOT);
+        if (inputAmountPar != 0) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            inputAmountPar != 0,
+            _FILE,
+            "Invalid input amount par"
+        );
+
+        return inputAmountPar;
     }
 
     // ========================= Private Functions ========================

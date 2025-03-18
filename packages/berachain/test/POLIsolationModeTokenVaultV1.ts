@@ -330,7 +330,7 @@ describe('POLIsolationModeTokenVaultV1', () => {
       await expectProtocolBalance(core, metaVault, defaultAccountNumber, marketId, ZERO_BI);
       expect(await infraredVault.balanceOf(metaVault.address)).to.equal(parAmount);
       expect(await vault.underlyingBalanceOf()).to.equal(parAmount);
-    })
+    });
 
     it('should work normally to transfer collateral and pay back debt', async () => {
       // same price as polWETH

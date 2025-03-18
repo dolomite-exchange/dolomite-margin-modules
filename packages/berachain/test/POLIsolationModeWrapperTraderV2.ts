@@ -288,13 +288,22 @@ describe('POLIsolationModeWrapperTraderV2', () => {
 
   describe('#getTradeCost', () => {
     it('should work normally', async () => {
-      await vault.transferIntoPositionWithOtherToken(defaultAccountNumber, borrowAccountNumber, core.marketIds.weth, amountWei, BalanceCheckFlag.None);
+      await vault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        core.marketIds.weth,
+        amountWei,
+        BalanceCheckFlag.None,
+      );
 
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
       await wrapper.connect(dolomiteMarginImpersonator).callFunction(
         core.genericTraderProxy.address,
         { owner: vault.address, number: borrowAccountNumber },
-        defaultAbiCoder.encode(['uint256', 'address', 'uint256'], [MAX_UINT_256_BI, vault.address, borrowAccountNumber]),
+        defaultAbiCoder.encode(
+          ['uint256', 'address', 'uint256'],
+          [MAX_UINT_256_BI, vault.address, borrowAccountNumber]
+        ),
       );
       const tradeCost = await wrapper.connect(dolomiteMarginImpersonator).callStatic.getTradeCost(
         core.marketIds.weth,
@@ -324,7 +333,7 @@ describe('POLIsolationModeWrapperTraderV2', () => {
     it('should fail if input amount par is not already set', async () => {
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
       await expectThrow(
-          wrapper.connect(dolomiteMarginImpersonator).callStatic.getTradeCost(
+        wrapper.connect(dolomiteMarginImpersonator).callStatic.getTradeCost(
           core.marketIds.weth,
           marketId,
           {

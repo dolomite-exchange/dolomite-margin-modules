@@ -124,7 +124,7 @@ contract POLIsolationModeTokenVaultV1 is
         uint256 _accountNumber,
         uint256 _amount
     ) external onlyLiquidator(msg.sender) returns (uint256) {
-        return _unstakeBeforeUnwrapping(_accountNumber, _amount, true);
+        return _unstakeBeforeUnwrapping(_accountNumber, _amount, /* _isLiquidation = */ true);
     }
 
     // ==================================================================
@@ -164,7 +164,6 @@ contract POLIsolationModeTokenVaultV1 is
     // ======================== Internal Functions ========================
     // ==================================================================
 
-    // @audit May need to adjust account number checks because we are wrapping not depositing
     function _addCollateralAndSwapExactInputForOutput(
         uint256 _fromAccountNumber,
         uint256 _borrowAccountNumber,
@@ -177,8 +176,11 @@ contract POLIsolationModeTokenVaultV1 is
     ) internal override {
         uint256 factoryMarketId = marketId();
         if (_marketIdsPath[0] == factoryMarketId) {
-            // @follow-up @Corey, can you double check using the _fromAccountNumber here?
-            _inputAmountWei = _unstakeBeforeUnwrapping(_fromAccountNumber, _inputAmountWei, false);
+            _inputAmountWei = _unstakeBeforeUnwrapping(
+                _fromAccountNumber,
+                _inputAmountWei,
+                /* _isLiquidation = */ false
+            );
         }
 
         super._addCollateralAndSwapExactInputForOutput(
@@ -209,7 +211,11 @@ contract POLIsolationModeTokenVaultV1 is
     ) internal override {
         uint256 factoryMarketId = marketId();
         if (_marketIdsPath[0] == factoryMarketId) {
-            _inputAmountWei = _unstakeBeforeUnwrapping(_borrowAccountNumber, _inputAmountWei, false);
+            _inputAmountWei = _unstakeBeforeUnwrapping(
+                _borrowAccountNumber,
+                _inputAmountWei,
+                /* _isLiquidation = */ false
+            );
         }
 
         super._swapExactInputForOutputAndRemoveCollateral(
@@ -236,7 +242,7 @@ contract POLIsolationModeTokenVaultV1 is
             _params.inputAmountWei = _unstakeBeforeUnwrapping(
                 _params.tradeAccountNumber,
                 _params.inputAmountWei,
-                false
+                /* _isLiquidation = */ false
             );
         }
 
@@ -251,10 +257,8 @@ contract POLIsolationModeTokenVaultV1 is
         uint256 _accountNumber,
         uint256 _amountWei,
         bool _isLiquidation
-    ) internal returns (uint256) {
-        IBaseMetaVault metaVault = IBaseMetaVault(
-            registry().getMetaVaultByVault(address(this))
-        );
+    ) internal returns (uint256 _newInputAmountWei) {
+        IBaseMetaVault metaVault = IBaseMetaVault(registry().getMetaVaultByVault(address(this)));
         IDolomiteStructs.Wei memory accountWei = DOLOMITE_MARGIN().getAccountWei(
             IDolomiteStructs.AccountInfo({
                 owner: address(this),
@@ -264,8 +268,6 @@ contract POLIsolationModeTokenVaultV1 is
         );
         /*assert(accountWei.sign);*/
 
-        // @audit check par values are handled correctly everywhere
-        // @follow-up @Corey, can you double check this code
         uint256 withdrawAmount = _amountWei == type(uint256).max ? accountWei.value : _amountWei;
         if (withdrawAmount <= accountWei.value) { /* FOR COVERAGE TESTING */ }
         Require.that(
@@ -274,27 +276,27 @@ contract POLIsolationModeTokenVaultV1 is
             "Insufficient balance"
         );
 
-        uint256 balance = IERC20(UNDERLYING_TOKEN()).balanceOf(address(metaVault));
-        if (withdrawAmount > balance) {
+        uint256 unstakedBalance = IERC20(UNDERLYING_TOKEN()).balanceOf(address(metaVault));
+        if (withdrawAmount > unstakedBalance) {
             _unstake(
                 UNDERLYING_TOKEN(),
                 metaVault.getDefaultRewardVaultTypeByAsset(UNDERLYING_TOKEN()),
-                withdrawAmount - balance
+                withdrawAmount - unstakedBalance
             );
         }
 
         if (!_isLiquidation) {
             // @dev Only charge fees if we're not liquidating. Otherwise, this triggers a collateralization check,
             //      which reverts if the user is underwater.
+            // @dev It's also possible that charging the fee this way pushes the user under water (when they previously
+            //      were barely above water). If so, we expect this will revert
             uint256 feeAmount = metaVault.chargeDTokenFee(UNDERLYING_TOKEN(), marketId(), withdrawAmount);
             IIsolationModeVaultFactory(VAULT_FACTORY()).withdrawFromDolomiteMargin(_accountNumber, feeAmount);
 
-            if (_amountWei != type(uint256).max) {
-                _amountWei -= feeAmount;
-            }
+            withdrawAmount -= feeAmount;
         }
 
-        return _amountWei;
+        return withdrawAmount;
     }
 
     function _stakeAfterWrapping() internal {
