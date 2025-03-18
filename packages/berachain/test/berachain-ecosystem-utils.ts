@@ -1,6 +1,15 @@
 import { ADDRESS_ZERO } from '@dolomite-exchange/zap-sdk/dist/src/lib/Constants';
-import { RegistryProxy, RegistryProxy__factory } from 'packages/base/src/types';
+import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
+import {
+  GenericEventEmissionType,
+  GenericTraderParam,
+  GenericTraderType,
+} from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
+import { BigNumber } from 'ethers';
+import { defaultAbiCoder } from 'ethers/lib/utils';
+import { LiquidatorProxyV5, RegistryProxy, RegistryProxy__factory } from 'packages/base/src/types';
 import { createContractWithAbi, createContractWithLibrary } from 'packages/base/src/utils/dolomite-utils';
+import { MAX_UINT_256_BI, ONE_BI, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
 import { impersonate } from 'packages/base/test/utils';
 import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
@@ -20,6 +29,7 @@ import {
   InfraredBGTIsolationModeVaultFactory,
   InfraredBGTIsolationModeVaultFactory__factory,
   InfraredBGTMetaVault,
+  IPOLLiquidatorProxyV1,
   POLIsolationModeTokenVaultV1,
   POLIsolationModeUnwrapperTraderV2,
   POLIsolationModeUnwrapperTraderV2__factory,
@@ -31,24 +41,22 @@ import {
   POLIsolationModeWrapperTraderV2__factory,
   POLIsolationModeWrapperUpgradeableProxy,
   POLIsolationModeWrapperUpgradeableProxy__factory,
+  POLLiquidatorProxyV1,
+  POLLiquidatorProxyV1__factory,
   TestBerachainRewardsRegistry,
   TestBerachainRewardsRegistry__factory,
 } from '../src/types';
-import { BigNumber } from 'ethers';
-import { GenericEventEmissionType, GenericTraderParam, GenericTraderType } from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
-import { defaultAbiCoder } from 'ethers/lib/utils';
-import { MAX_UINT_256_BI, ONE_BI, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
-import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 
 export enum RewardVaultType {
-  Native,
   Infrared,
+  Native,
   BGTM,
 }
 
 export async function createBerachainRewardsRegistry(
   core: CoreProtocolBerachain,
   metaVaultImplementation: InfraredBGTMetaVault | IBaseMetaVault,
+  polLiquidator: IPOLLiquidatorProxyV1,
 ): Promise<BerachainRewardsRegistry> {
   const implementation = await createContractWithAbi<BerachainRewardsRegistry>(
     BerachainRewardsRegistry__factory.abi,
@@ -58,7 +66,7 @@ export async function createBerachainRewardsRegistry(
   const proxy = await createContractWithAbi<RegistryProxy>(
     RegistryProxy__factory.abi,
     RegistryProxy__factory.bytecode,
-    await getBerachainRewardsRegistryConstructorParams(implementation, metaVaultImplementation, core),
+    await getBerachainRewardsRegistryConstructorParams(implementation, metaVaultImplementation, polLiquidator, core),
   );
   return BerachainRewardsRegistry__factory.connect(proxy.address, core.hhUser1);
 }
@@ -66,6 +74,7 @@ export async function createBerachainRewardsRegistry(
 export async function createTestBerachainRewardsRegistry(
   core: CoreProtocolBerachain,
   metaVaultImplementation: InfraredBGTMetaVault | IBaseMetaVault,
+  polLiquidator: IPOLLiquidatorProxyV1,
 ): Promise<TestBerachainRewardsRegistry> {
   const implementation = await createContractWithAbi<TestBerachainRewardsRegistry>(
     TestBerachainRewardsRegistry__factory.abi,
@@ -75,7 +84,7 @@ export async function createTestBerachainRewardsRegistry(
   const proxy = await createContractWithAbi<RegistryProxy>(
     RegistryProxy__factory.abi,
     RegistryProxy__factory.bytecode,
-    await getBerachainRewardsRegistryConstructorParams(implementation, metaVaultImplementation, core),
+    await getBerachainRewardsRegistryConstructorParams(implementation, metaVaultImplementation, polLiquidator, core),
   );
   return TestBerachainRewardsRegistry__factory.connect(proxy.address, core.hhUser1);
 }
@@ -109,11 +118,7 @@ export async function createInfraredBGTIsolationModeVaultFactory(
 
 export async function createPOLIsolationModeTokenVaultV1(): Promise<POLIsolationModeTokenVaultV1> {
   const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
-  return createContractWithLibrary<POLIsolationModeTokenVaultV1>(
-    'POLIsolationModeTokenVaultV1',
-    libraries,
-    [],
-  );
+  return createContractWithLibrary<POLIsolationModeTokenVaultV1>('POLIsolationModeTokenVaultV1', libraries, []);
 }
 
 export async function createPOLIsolationModeVaultFactory(
@@ -138,6 +143,17 @@ export async function createPOLIsolationModeVaultFactory(
   );
 }
 
+export async function createPolLiquidatorProxy(
+  core: CoreProtocolBerachain,
+  liquidatorProxyV5: LiquidatorProxyV5,
+): Promise<POLLiquidatorProxyV1> {
+  return createContractWithAbi<POLLiquidatorProxyV1>(
+    POLLiquidatorProxyV1__factory.abi,
+    POLLiquidatorProxyV1__factory.bytecode,
+    [liquidatorProxyV5.address, core.dolomiteMargin.address],
+  );
+}
+
 export async function createPOLIsolationModeWrapperTraderV2(
   core: CoreProtocolBerachain,
   beraRegistry: IBerachainRewardsRegistry | BerachainRewardsRegistry,
@@ -149,9 +165,7 @@ export async function createPOLIsolationModeWrapperTraderV2(
     [beraRegistry.address, core.dolomiteMargin.address],
   );
   await beraRegistry.connect(core.governance).ownerSetPolWrapperTrader(wrapperImpl.address);
-  const calldata = await wrapperImpl.populateTransaction.initialize(
-    factory.address,
-  );
+  const calldata = await wrapperImpl.populateTransaction.initialize(factory.address);
   const proxy = await createContractWithAbi<POLIsolationModeWrapperUpgradeableProxy>(
     POLIsolationModeWrapperUpgradeableProxy__factory.abi,
     POLIsolationModeWrapperUpgradeableProxy__factory.bytecode,
@@ -171,9 +185,7 @@ export async function createPOLIsolationModeUnwrapperTraderV2(
     [beraRegistry.address, core.dolomiteMargin.address],
   );
   await beraRegistry.connect(core.governance).ownerSetPolUnwrapperTrader(unwrapperImpl.address);
-  const calldata = await unwrapperImpl.populateTransaction.initialize(
-    factory.address,
-  );
+  const calldata = await unwrapperImpl.populateTransaction.initialize(factory.address);
   const proxy = await createContractWithAbi<POLIsolationModeUnwrapperUpgradeableProxy>(
     POLIsolationModeUnwrapperUpgradeableProxy__factory.abi,
     POLIsolationModeUnwrapperUpgradeableProxy__factory.bytecode,
@@ -221,10 +233,12 @@ export async function wrapFullBalanceIntoVaultDefaultAccount(
     MAX_UINT_256_BI,
     ONE_BI,
     [wrapperParam],
-    [{
-      owner: metaVault.address,
-      number: ZERO_BI,
-    }],
+    [
+      {
+        owner: metaVault.address,
+        number: ZERO_BI,
+      },
+    ],
     {
       deadline: '123123123123123',
       balanceCheckFlag: BalanceCheckFlag.None,

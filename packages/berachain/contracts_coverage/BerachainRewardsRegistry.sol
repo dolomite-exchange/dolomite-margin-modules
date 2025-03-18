@@ -21,6 +21,7 @@
 pragma solidity ^0.8.9;
 
 import { BaseRegistry } from "@dolomite-exchange/modules-base/contracts/general/BaseRegistry.sol";
+import { IIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { IWETH } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IWETH.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -116,6 +117,18 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
         address _account,
         address _vault
     ) external override onlyDolomiteMarginGlobalOperator(msg.sender) returns (address) {
+        if (_account != address(0)) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            _account != address(0),
+            _FILE,
+            "Invalid account"
+        );
+        if (_vault != address(0)) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            _vault != address(0),
+            _FILE,
+            "Invalid vault"
+        );
         (bool isFactory,) = address(DOLOMITE_MARGIN()).staticcall(
             abi.encodeWithSelector(DOLOMITE_MARGIN().getMarketIdByTokenAddress.selector, msg.sender)
         );
@@ -126,9 +139,14 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
             "Caller is not a valid factory",
             msg.sender
         );
+        if (IIsolationModeVaultFactory(msg.sender).getVaultByAccount(_account) == _vault) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            IIsolationModeVaultFactory(msg.sender).getVaultByAccount(_account) == _vault,
+            _FILE,
+            "Invalid vault for account"
+        );
 
         address metaVault = getMetaVaultByAccount(_account);
-        // @follow-up Want to add a check to see if vault and account are valid on factory?
         if (metaVault == address(0)) {
             metaVault = _createMetaVault(_account);
         }
@@ -324,7 +342,7 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
         return _getAddress(_POL_FEE_AGENT_SLOT);
     }
 
-    function polFeePercentage(uint256 _marketId) public view override returns (uint256) {
+    function polFeePercentage(uint256 /* _marketId */) public view override returns (uint256) {
         return _getUint256(_POL_FEE_PERCENTAGE_SLOT);
     }
 

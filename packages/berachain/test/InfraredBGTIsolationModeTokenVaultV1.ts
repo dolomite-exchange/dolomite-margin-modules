@@ -31,9 +31,10 @@ import {
 import {
   createBerachainRewardsRegistry,
   createInfraredBGTIsolationModeTokenVaultV1,
-  createInfraredBGTIsolationModeVaultFactory,
+  createInfraredBGTIsolationModeVaultFactory, createPolLiquidatorProxy,
 } from './berachain-ecosystem-utils';
 import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
+import { createLiquidatorProxyV5 } from 'packages/base/test/utils/dolomite';
 
 const IBGT_WHALE_ADDRESS = '0x9b45388Fc442343dE9959D710eB47Da8c09eE2d9';
 const defaultAccountNumber = ZERO_BI;
@@ -58,12 +59,14 @@ describe('InfraredBGTIsolationModeTokenVaultV1', () => {
       network: Network.Berachain,
     });
 
+    const liquidatorProxyV5 = await createLiquidatorProxyV5(core);
+    const polLiquidatorProxy = await createPolLiquidatorProxy(core, liquidatorProxyV5);
     const metaVaultImplementation = await createContractWithAbi<InfraredBGTMetaVault>(
       InfraredBGTMetaVault__factory.abi,
       InfraredBGTMetaVault__factory.bytecode,
       [],
     );
-    registry = await createBerachainRewardsRegistry(core, metaVaultImplementation);
+    registry = await createBerachainRewardsRegistry(core, metaVaultImplementation, polLiquidatorProxy);
 
     const iBgtVaultImplementation = await createInfraredBGTIsolationModeTokenVaultV1();
     iBgtFactory = await createInfraredBGTIsolationModeVaultFactory(

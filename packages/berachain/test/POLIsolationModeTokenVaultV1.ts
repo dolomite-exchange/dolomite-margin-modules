@@ -200,6 +200,12 @@ describe('POLIsolationModeTokenVaultV1', () => {
         vault.connect(core.hhUser2).prepareForLiquidation(defaultAccountNumber, parAmount),
         `POLIsolationModeTokenVaultV1: Only liquidator can call <${core.hhUser2.address.toLowerCase()}>`,
       );
+
+      await core.liquidatorAssetRegistry.ownerRemoveLiquidatorFromAssetWhitelist(marketId, core.hhUser4.address);
+      await expectThrow(
+        vault.connect(core.hhUser2).prepareForLiquidation(defaultAccountNumber, parAmount),
+        `POLIsolationModeTokenVaultV1: Only liquidator can call <${core.hhUser2.address.toLowerCase()}>`,
+      );
     });
   });
 

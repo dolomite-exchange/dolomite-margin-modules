@@ -66,8 +66,6 @@ contract POLIsolationModeUnwrapperTraderV2 is
     // ========================== Constructor ===========================
     // ==================================================================
 
-    // @todo may want to still check underlying balance somewhere
-    // @todo Add fee on unwrapping
     constructor(
         address _berachainRewardsRegistry,
         address _dolomiteMargin
@@ -80,8 +78,16 @@ contract POLIsolationModeUnwrapperTraderV2 is
     }
 
     // ==================================================================
-    // ======================== Public Functions ========================
+    // ======================= External Functions =======================
     // ==================================================================
+
+    function initialize(
+        address _vaultFactory
+    )
+    external
+    initializer {
+        _POLIsolationModeTraderBaseV2__initialize(_vaultFactory);
+    }
 
     function callFunction(
         address _sender,
@@ -92,43 +98,6 @@ contract POLIsolationModeUnwrapperTraderV2 is
     onlyDolomiteMargin(msg.sender)
     onlyGenericTraderOrTrustedLiquidator(_sender) {
         _callFunction(_sender, _accountInfo, _data);
-    }
-
-    function exchange(
-        address _tradeOriginator,
-        address _receiver,
-        address _outputToken,
-        address _inputToken,
-        uint256 _inputAmount,
-        bytes calldata _orderData
-    )
-    external
-    override
-    onlyDolomiteMargin(msg.sender)
-    returns (uint256) {
-        IIsolationModeVaultFactory factory = vaultFactory();
-        address vaultOwner = _getLiquidationAddressOverride(_tradeOriginator);
-
-        _validateInputAndOutputToken(
-            _inputToken,
-            _outputToken
-        );
-        if (factory.getAccountByVault(vaultOwner) != address(0)) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            factory.getAccountByVault(vaultOwner) != address(0),
-            _FILE,
-            "Invalid trade originator",
-            _tradeOriginator
-        );
-        if (_inputAmount > 0) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            _inputAmount > 0,
-            _FILE,
-            "Invalid input amount"
-        );
-
-        // @dev Always 0 because we are "selling" POL tokens for 0 tokens
-        return 0;
     }
 
     function getTradeCost(
@@ -146,7 +115,7 @@ contract POLIsolationModeUnwrapperTraderV2 is
     returns (IDolomiteStructs.AssetAmount memory) {
         // @audit Ensure that I can't call for a different isolation mode vault
         IIsolationModeVaultFactory factory = vaultFactory();
-        address vault = _getLiquidationAddressOverride(makerAccount.owner);
+        address vault = _getVaultFromTradeOriginator(makerAccount.owner);
 
         _validateInputAndOutputMarketId(
             inputMarketId,
@@ -196,6 +165,44 @@ contract POLIsolationModeUnwrapperTraderV2 is
     // ==================================================================
     // ========================== View Functions ========================
     // ==================================================================
+
+    function exchange(
+        address _tradeOriginator,
+        address /* _receiver */,
+        address _outputToken,
+        address _inputToken,
+        uint256 _inputAmount,
+        bytes calldata /* _orderData */
+    )
+    external
+    view
+    override
+    onlyDolomiteMargin(msg.sender)
+    returns (uint256) {
+        IIsolationModeVaultFactory factory = vaultFactory();
+        address vault = _getVaultFromTradeOriginator(_tradeOriginator);
+
+        _validateInputAndOutputToken(
+            _inputToken,
+            _outputToken
+        );
+        if (factory.getAccountByVault(vault) != address(0)) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            factory.getAccountByVault(vault) != address(0),
+            _FILE,
+            "Invalid trade originator",
+            _tradeOriginator
+        );
+        if (_inputAmount > 0) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            _inputAmount > 0,
+            _FILE,
+            "Invalid input amount"
+        );
+
+        // @dev Always 0 because we are "selling" POL tokens for 0 tokens
+        return 0;
+    }
 
     function createActionsForUnwrapping(
         CreateActionsForUnwrappingParams calldata _params
@@ -311,10 +318,11 @@ contract POLIsolationModeUnwrapperTraderV2 is
 
         if (transferAmount == type(uint256).max) {
             uint256 marketId = DOLOMITE_MARGIN().getMarketIdByTokenAddress(address(factory));
-            /// @note   Account wei cannot be negative for Isolation Mode assets
-            /// @note   We can safely get the _accountInfo's (the Zap account for ordinary unwraps or Solid account for
-            ///         liquidations) balance here without worrying about read-only reentrancy
+            // We can safely get the _accountInfo's balance (the Zap account for ordinary unwraps or Solid account for
+            // liquidations) here without worrying about read-only reentrancy
             IDolomiteStructs.Wei memory balanceWei = DOLOMITE_MARGIN().getAccountWei(_accountInfo, marketId);
+
+            // Account wei cannot be negative for Isolation Mode assets
             /*assert(balanceWei.sign || balanceWei.value == 0);*/
 
             transferAmount = balanceWei.value;
@@ -373,7 +381,7 @@ contract POLIsolationModeUnwrapperTraderV2 is
         );
     }
 
-    function _getLiquidationAddressOverride(
+    function _getVaultFromTradeOriginator(
         address _tradeOriginator
     ) internal view returns (address) {
         address liquidationAddressOverride = _getAddressFromMap(_LIQUIDATION_ADDRESS_OVERRIDE_SLOT, _tradeOriginator);

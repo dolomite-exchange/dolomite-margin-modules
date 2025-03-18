@@ -69,10 +69,11 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
     bytes32 private constant _BGTM_ISOLATION_MODE_VAULT_FACTORY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.bgtmIsolationModeVaultFactory")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _I_BGT_ISOLATION_MODE_VAULT_FACTORY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.iBgtIsolationModeVaultFactory")) - 1); // solhint-disable-line max-line-length
 
-    bytes32 private constant _POL_UNWRAPPER_TRADER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.polUnwrapperTrader")) - 1); // solhint-disable-line max-line-length
-    bytes32 private constant _POL_WRAPPER_TRADER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.polWrapperTrader")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _POL_FEE_AGENT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.polFeeAgent")) - 1);
     bytes32 private constant _POL_FEE_PERCENTAGE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.polFeePercentage")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _POL_LIQUIDATOR_SLOT = bytes32(uint256(keccak256("eip1967.proxy.polLiquidator")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _POL_UNWRAPPER_TRADER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.polUnwrapperTrader")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _POL_WRAPPER_TRADER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.polWrapperTrader")) - 1); // solhint-disable-line max-line-length
 
     bytes32 private constant _META_VAULT_IMPLEMENTATION_SLOT = bytes32(uint256(keccak256("eip1967.proxy.metaVaultImplementation")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _ACCOUNT_TO_META_VAULT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.accountToMetaVault")) - 1); // solhint-disable-line max-line-length
@@ -93,6 +94,7 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
         address _iBgtStakingVault,
         address _infrared,
         address _metaVaultImplementation,
+        address _polLiquidator,
         address _dolomiteRegistry
     ) external initializer {
         _ownerSetBgt(_bgt);
@@ -105,6 +107,8 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
         _ownerSetInfrared(_infrared);
 
         _ownerSetMetaVaultImplementation(_metaVaultImplementation);
+        _ownerSetPolLiquidator(_polLiquidator);
+
         _ownerSetDolomiteRegistry(_dolomiteRegistry);
         _createMetaVault(_DEAD_VAULT);
     }
@@ -240,18 +244,6 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
         _ownerSetWbera(_wbera);
     }
 
-    function ownerSetPolUnwrapperTrader(
-        address _polUnwrapperTrader
-    ) external override onlyDolomiteMarginOwner(msg.sender) {
-        _ownerSetPolUnwrapperTrader(_polUnwrapperTrader);
-    }
-
-    function ownerSetPolWrapperTrader(
-        address _polWrapperTrader
-    ) external override onlyDolomiteMarginOwner(msg.sender) {
-        _ownerSetPolWrapperTrader(_polWrapperTrader);
-    }
-
     function ownerSetPolFeeAgent(
         address _polFeeAgent
     ) external override onlyDolomiteMarginOwner(msg.sender) {
@@ -262,6 +254,24 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
         uint256 _polFeePercentage
     ) external override onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetPolFeePercentage(_polFeePercentage);
+    }
+
+    function ownerSetPolLiquidator(
+        address _polLiquidator
+    ) external override onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetPolLiquidator(_polLiquidator);
+    }
+
+    function ownerSetPolUnwrapperTrader(
+        address _polUnwrapperTrader
+    ) external override onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetPolUnwrapperTrader(_polUnwrapperTrader);
+    }
+
+    function ownerSetPolWrapperTrader(
+        address _polWrapperTrader
+    ) external override onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetPolWrapperTrader(_polWrapperTrader);
     }
 
     // ===================================================
@@ -325,20 +335,24 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
         return IMetaVaultRewardTokenFactory(_getAddress(_I_BGT_ISOLATION_MODE_VAULT_FACTORY_SLOT));
     }
 
-    function polUnwrapperTrader() public view override returns (address) {
-        return _getAddress(_POL_UNWRAPPER_TRADER_SLOT);
-    }
-
-    function polWrapperTrader() public view override returns (address) {
-        return _getAddress(_POL_WRAPPER_TRADER_SLOT);
-    }
-
     function polFeeAgent() public view override returns (address) {
         return _getAddress(_POL_FEE_AGENT_SLOT);
     }
 
     function polFeePercentage(uint256 /* _marketId */) public view override returns (uint256) {
         return _getUint256(_POL_FEE_PERCENTAGE_SLOT);
+    }
+
+    function polLiquidator() public view override returns (address) {
+        return _getAddress(_POL_LIQUIDATOR_SLOT);
+    }
+
+    function polUnwrapperTrader() public view override returns (address) {
+        return _getAddress(_POL_UNWRAPPER_TRADER_SLOT);
+    }
+
+    function polWrapperTrader() public view override returns (address) {
+        return _getAddress(_POL_WRAPPER_TRADER_SLOT);
     }
 
     function metaVaultImplementation() external view override returns (address) {
@@ -525,6 +539,16 @@ contract BerachainRewardsRegistry is IBerachainRewardsRegistry, BaseRegistry {
         );
         _setAddressInNestedMap(_REWARD_VAULT_OVERRIDE_SLOT, _asset, uint256(_type), _rewardVault);
         emit RewardVaultOverrideSet(_asset, _type, _rewardVault);
+    }
+
+    function _ownerSetPolLiquidator(address _polLiquidator) internal {
+        Require.that(
+            _polLiquidator != address(0),
+            _FILE,
+            "Invalid polLiquidator"
+        );
+        _setAddress(_POL_LIQUIDATOR_SLOT, _polLiquidator);
+        emit PolLiquidatorSet(_polLiquidator);
     }
 
     function _ownerSetPolUnwrapperTrader(address _polUnwrapperTrader) internal {

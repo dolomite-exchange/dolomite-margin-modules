@@ -37,9 +37,7 @@ interface IPOLLiquidatorProxyV1 {
 
     function initialize() external;
 
-    function liquidateProofOfLiquidityCollateral(
+    function liquidate(
         ILiquidatorProxyV5.LiquidateParams memory _liquidateParams
     ) external;
-
-    function liquidatorProxy() external view returns (address);
 }

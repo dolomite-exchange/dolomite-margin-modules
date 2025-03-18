@@ -64,7 +64,7 @@ contract POLPriceOracleV2 is IDolomitePriceOracle, OnlyDolomiteMargin {
         Require.that(
             _token == address(DPOL_TOKEN),
             _FILE,
-            "invalid token",
+            "Invalid token",
             _token
         );
         Require.that(

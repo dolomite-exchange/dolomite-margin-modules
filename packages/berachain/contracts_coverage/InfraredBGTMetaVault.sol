@@ -21,7 +21,6 @@
 pragma solidity ^0.8.9;
 
 import { ProxyContractHelpers } from "@dolomite-exchange/modules-base/contracts/helpers/ProxyContractHelpers.sol";
-import { IERC4626 } from "@dolomite-exchange/modules-base/contracts/interfaces/IERC4626.sol";
 import { IDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteMargin.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -242,10 +241,10 @@ contract InfraredBGTMetaVault is ProxyContractHelpers, IBaseMetaVault {
     }
 
     function _getReward(address _asset) internal {
-        // @follow-up Use defualt type here or infrared type?
+        IBerachainRewardsRegistry.RewardVaultType rewardVaultType = IBerachainRewardsRegistry.RewardVaultType.INFRARED;
         IInfraredVault rewardVault = IInfraredVault(REGISTRY().rewardVault(
             _asset,
-            IBerachainRewardsRegistry.RewardVaultType.INFRARED
+            rewardVaultType
         ));
         IMetaVaultRewardTokenFactory factory = REGISTRY().iBgtIsolationModeVaultFactory();
 
@@ -256,7 +255,7 @@ contract InfraredBGTMetaVault is ProxyContractHelpers, IBaseMetaVault {
             if (rewards[i].amount > 0) {
                 _performDepositRewardByRewardType(
                     factory,
-                    IBerachainRewardsRegistry.RewardVaultType.INFRARED,
+                    rewardVaultType,
                     rewards[i].token,
                     rewards[i].amount
                 );
@@ -294,9 +293,12 @@ contract InfraredBGTMetaVault is ProxyContractHelpers, IBaseMetaVault {
                     marketId,
                     _amount
                 ) {} catch {
+                    // If we can't deposit the token into Dolomite, send it directly to the owner
+                    IERC20(_token).safeApprove(address(dolomiteMargin), 0);
                     IERC20(_token).safeTransfer(OWNER(), _amount);
                 }
             } catch {
+                // If the token is not supported on Dolomite, send it directly to the owner
                 IERC20(_token).safeTransfer(OWNER(), _amount);
             }
         }
@@ -322,23 +324,6 @@ contract InfraredBGTMetaVault is ProxyContractHelpers, IBaseMetaVault {
             _FILE,
             "Only owner can call",
             _sender
-        );
-    }
-
-    // @follow-up @Corey, can we remove this?
-    function _requireValidDolomiteToken(address _asset) internal view {
-        IDolomiteMargin dolomiteMargin = REGISTRY().DOLOMITE_MARGIN();
-        (bool isValidDolomiteToken,) = address(dolomiteMargin).staticcall(
-            abi.encodeWithSelector(
-                IDolomiteMargin.getMarketIdByTokenAddress.selector,
-                IERC4626(_asset).asset()
-            )
-        );
-        if (isValidDolomiteToken && dolomiteMargin.getIsGlobalOperator(_asset)) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            isValidDolomiteToken && dolomiteMargin.getIsGlobalOperator(_asset),
-            _FILE,
-            "Invalid Dolomite token"
         );
     }
 }

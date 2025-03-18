@@ -109,7 +109,7 @@ describe('POLPriceOracleV2', () => {
     it('should fail with invalid token', async () => {
       await expectThrow(
         oracle.getPrice(core.tokens.weth.address),
-        `POLPriceOracleV2: invalid token <${core.tokens.weth.address.toLowerCase()}>`
+        `POLPriceOracleV2: Invalid token <${core.tokens.weth.address.toLowerCase()}>`
       );
     });
 

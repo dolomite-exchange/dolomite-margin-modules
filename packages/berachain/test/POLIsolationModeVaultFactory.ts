@@ -6,6 +6,7 @@ import { setupCoreProtocol, setupTestMarket } from '@dolomite-exchange/modules-b
 import { expect } from 'chai';
 import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
 import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
+import { createLiquidatorProxyV5 } from 'packages/base/test/utils/dolomite';
 import {
   BerachainRewardsRegistry,
   InfraredBGTMetaVault,
@@ -16,7 +17,7 @@ import {
 import {
   createBerachainRewardsRegistry,
   createPOLIsolationModeTokenVaultV1,
-  createPOLIsolationModeVaultFactory,
+  createPOLIsolationModeVaultFactory, createPolLiquidatorProxy,
 } from './berachain-ecosystem-utils';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
@@ -39,12 +40,14 @@ describe('POLIsolationModeVaultFactory', () => {
 
     dToken = DolomiteERC4626__factory.connect(core.dolomiteTokens.weth!.address, core.hhUser1);
 
+    const liquidatorProxyV5 = await createLiquidatorProxyV5(core);
+    const polLiquidatorProxy = await createPolLiquidatorProxy(core, liquidatorProxyV5);
     const metaVaultImplementation = await createContractWithAbi<InfraredBGTMetaVault>(
       InfraredBGTMetaVault__factory.abi,
       InfraredBGTMetaVault__factory.bytecode,
       [],
     );
-    registry = await createBerachainRewardsRegistry(core, metaVaultImplementation);
+    registry = await createBerachainRewardsRegistry(core, metaVaultImplementation, polLiquidatorProxy);
 
     vaultImplementation = await createPOLIsolationModeTokenVaultV1();
     factory = await createPOLIsolationModeVaultFactory(core, registry, dToken, vaultImplementation, [], []);

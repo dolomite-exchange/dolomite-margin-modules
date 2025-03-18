@@ -25,9 +25,10 @@ import {
   createInfraredBGTIsolationModeTokenVaultV1,
   createInfraredBGTIsolationModeVaultFactory,
   createPOLIsolationModeTokenVaultV1,
-  createPOLIsolationModeVaultFactory,
+  createPOLIsolationModeVaultFactory, createPolLiquidatorProxy,
 } from './berachain-ecosystem-utils';
 import { DolomiteERC4626__factory } from 'packages/base/src/types';
+import { createLiquidatorProxyV5 } from 'packages/base/test/utils/dolomite';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 const IBGT_WHALE_ADDRESS = '0x9b45388Fc442343dE9959D710eB47Da8c09eE2d9';
@@ -50,12 +51,14 @@ describe('InfraredBGTIsolationModeVaultFactory', () => {
       network: Network.Berachain,
     });
 
+    const liquidatorProxyV5 = await createLiquidatorProxyV5(core);
+    const polLiquidatorProxy = await createPolLiquidatorProxy(core, liquidatorProxyV5);
     const metaVaultImplementation = await createContractWithAbi<InfraredBGTMetaVault>(
       InfraredBGTMetaVault__factory.abi,
       InfraredBGTMetaVault__factory.bytecode,
       [],
     );
-    registry = await createBerachainRewardsRegistry(core, metaVaultImplementation);
+    registry = await createBerachainRewardsRegistry(core, metaVaultImplementation, polLiquidatorProxy);
 
     iBgtVaultImplementation = await createInfraredBGTIsolationModeTokenVaultV1();
     iBgtFactory = await createInfraredBGTIsolationModeVaultFactory(

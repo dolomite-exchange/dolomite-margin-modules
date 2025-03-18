@@ -11,12 +11,18 @@ import {
   POLIsolationModeWrapperUpgradeableProxy,
 } from '../src/types';
 import { DolomiteERC4626, DolomiteERC4626__factory } from 'packages/base/src/types';
-import { createBerachainRewardsRegistry, createPOLIsolationModeTokenVaultV1, createPOLIsolationModeVaultFactory } from './berachain-ecosystem-utils';
+import {
+  createBerachainRewardsRegistry,
+  createPOLIsolationModeTokenVaultV1,
+  createPOLIsolationModeVaultFactory,
+  createPolLiquidatorProxy,
+} from './berachain-ecosystem-utils';
 import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
 import { setupCoreProtocol, setupTestMarket } from 'packages/base/test/utils/setup';
 import { Network, ONE_BI } from 'packages/base/src/utils/no-deps-constants';
 import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
 import { revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
+import { createLiquidatorProxyV5 } from 'packages/base/test/utils/dolomite';
 
 describe('POLIsolationModeWrapperUpgradeableProxy', () => {
   let snapshotId: string;
@@ -37,12 +43,14 @@ describe('POLIsolationModeWrapperUpgradeableProxy', () => {
     });
     dToken = DolomiteERC4626__factory.connect(core.dolomiteTokens.weth!.address, core.hhUser1);
 
+    const liquidatorProxyV5 = await createLiquidatorProxyV5(core);
+    const polLiquidatorProxy = await createPolLiquidatorProxy(core, liquidatorProxyV5);
     const metaVaultImplementation = await createContractWithAbi<InfraredBGTMetaVault>(
       InfraredBGTMetaVault__factory.abi,
       InfraredBGTMetaVault__factory.bytecode,
       [],
     );
-    registry = await createBerachainRewardsRegistry(core, metaVaultImplementation);
+    registry = await createBerachainRewardsRegistry(core, metaVaultImplementation, polLiquidatorProxy);
 
     const vaultImplementation = await createPOLIsolationModeTokenVaultV1();
     factory = await createPOLIsolationModeVaultFactory(core, registry, dToken, vaultImplementation, [], []);

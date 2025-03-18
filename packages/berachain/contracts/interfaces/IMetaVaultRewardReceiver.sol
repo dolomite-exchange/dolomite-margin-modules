@@ -28,7 +28,7 @@ import { IBerachainRewardsRegistry } from "./IBerachainRewardsRegistry.sol";
  * @author  Dolomite
  *
  * @notice  This interface defines the functions that are universally available on IsolationModeTokenVault
- *          implementations that can receive deposits from the BerachainRewardsMetaVault
+ *          implementations that can receive deposits from the BerachainRewardsMetaVault (from POL-centric assets)
  */
 interface IMetaVaultRewardReceiver {
 

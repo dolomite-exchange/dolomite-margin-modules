@@ -40,17 +40,16 @@ import {
   createPOLIsolationModeTokenVaultV1,
   createPOLIsolationModeUnwrapperTraderV2,
   createPOLIsolationModeVaultFactory,
-  createPOLIsolationModeWrapperTraderV2,
+  createPOLIsolationModeWrapperTraderV2, createPolLiquidatorProxy,
   RewardVaultType,
   wrapFullBalanceIntoVaultDefaultAccount,
 } from './berachain-ecosystem-utils';
-import { setupNewGenericTraderProxy } from 'packages/base/test/utils/dolomite';
+import { createLiquidatorProxyV5, setupNewGenericTraderProxy } from 'packages/base/test/utils/dolomite';
 import { ActionType, AmountReference, BalanceCheckFlag } from '@dolomite-margin/dist/src/types';
 import { GenericEventEmissionType, GenericTraderParam, GenericTraderType } from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
 import { AccountInfoStruct } from 'packages/base/src/utils';
 
 const defaultAccountNumber = ZERO_BI;
-const borrowAccountNumber = '123';
 const amountWei = parseEther('.1');
 
 const ZERO_PAR = {
@@ -94,12 +93,14 @@ describe('POLIsolationModeUnwrapperTraderV2', () => {
 
     dToken = DolomiteERC4626__factory.connect(core.dolomiteTokens.weth!.address, core.hhUser1);
 
+    const liquidatorProxyV5 = await createLiquidatorProxyV5(core);
+    const polLiquidatorProxy = await createPolLiquidatorProxy(core, liquidatorProxyV5);
     const metaVaultImplementation = await createContractWithAbi<InfraredBGTMetaVault>(
       InfraredBGTMetaVault__factory.abi,
       InfraredBGTMetaVault__factory.bytecode,
       [],
     );
-    registry = await createBerachainRewardsRegistry(core, metaVaultImplementation);
+    registry = await createBerachainRewardsRegistry(core, metaVaultImplementation, polLiquidatorProxy);
 
     infraredVault = IInfraredVault__factory.connect(
       await registry.rewardVault(dToken.address, RewardVaultType.Infrared),

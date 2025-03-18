@@ -20,6 +20,7 @@ import {
 } from '../../../../base/src/utils/constructors/dolomite';
 import { ADDRESS_ZERO, NetworkType, ONE_ETH_BI, ZERO_BI } from '../../../../base/src/utils/no-deps-constants';
 import { CoreProtocolArbitrumOne } from '../../../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
+import { CoreProtocolBerachain } from '../../../../base/test/utils/core-protocols/core-protocol-berachain';
 import { GmToken } from '../../../../base/test/utils/ecosystem-utils/gmx';
 import { CoreProtocolType } from '../../../../base/test/utils/setup';
 import { EncodedTransaction } from '../dry-run-utils';
@@ -29,6 +30,7 @@ export interface AddMarketOptions {
   additionalConverters?: BaseContract[];
   skipAmountValidation?: boolean;
   decimals?: number;
+  skipEncodeLiquidatorWhitelist?: boolean;
 }
 
 export async function encodeAddIsolationModeMarket<T extends NetworkType>(
@@ -57,7 +59,6 @@ export async function encodeAddIsolationModeMarket<T extends NetworkType>(
     options,
   );
 
-  throw new Error('add routers to core object and ownerInitialize!');
   transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(
       core,
@@ -68,22 +69,27 @@ export async function encodeAddIsolationModeMarket<T extends NetworkType>(
     ),
     await prettyPrintEncodedDataWithTypeSafety(core, { factory }, 'factory', 'ownerInitialize', [
       [
-        core.borrowPositionRouter,
-        core.depositWithdrawalRouter,
-        core.genericTraderRouter,
+        core.borrowPositionRouter.address,
+        core.depositWithdrawalRouter.address,
+        core.genericTraderRouter.address,
         unwrapper.address,
         wrapper.address,
         ...(options.additionalConverters ?? []).map((c) => c.address),
       ],
     ]),
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { liquidatorAssetRegistry: core.liquidatorAssetRegistry },
-      'liquidatorAssetRegistry',
-      'ownerAddLiquidatorToAssetWhitelist',
-      [marketId, core.liquidatorProxyV4.address],
-    ),
   );
+
+  if (!options.skipEncodeLiquidatorWhitelist) {
+    transactions.push(
+      await prettyPrintEncodedDataWithTypeSafety(
+        core,
+        { liquidatorAssetRegistry: core.liquidatorAssetRegistry },
+        'liquidatorAssetRegistry',
+        'ownerAddLiquidatorToAssetWhitelist',
+        [marketId, core.liquidatorProxyV5.address],
+      )
+    );
+  }
 
   return transactions;
 }
@@ -101,38 +107,17 @@ export async function encodeAddAsyncIsolationModeMarket<T extends NetworkType>(
   maxSupplyWei: BigNumberish,
   options: AddMarketOptions = {},
 ): Promise<EncodedTransaction[]> {
-  const transactions: EncodedTransaction[] = await encodeAddMarket(
+  const transactions: EncodedTransaction[] = await encodeAddIsolationModeMarket(
     core,
-    IERC20__factory.connect(factory.address, factory.signer),
+    factory,
     oracle,
-    core.interestSetters.alwaysZeroInterestSetter,
+    unwrapper,
+    wrapper,
+    marketId,
     targetCollateralization,
     targetLiquidationPremium,
     maxSupplyWei,
-    ZERO_BI,
-    true,
-    ZERO_BI,
     options,
-  );
-
-  transactions.push(
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { dolomiteMargin: core.dolomiteMargin },
-      'dolomiteMargin',
-      'ownerSetGlobalOperator',
-      [factory.address, true],
-    ),
-    await prettyPrintEncodedDataWithTypeSafety(core, { factory }, 'factory', 'ownerInitialize', [
-      [unwrapper.address, wrapper.address, ...(options.additionalConverters ?? []).map((c) => c.address)],
-    ]),
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { liquidatorAssetRegistry: core.liquidatorAssetRegistry },
-      'liquidatorAssetRegistry',
-      'ownerAddLiquidatorToAssetWhitelist',
-      [marketId, core.liquidatorProxyV4.address],
-    ),
   );
 
   transactions.push(
@@ -154,6 +139,44 @@ export async function encodeAddAsyncIsolationModeMarket<T extends NetworkType>(
       factory.address,
       wrapper.address,
     ]),
+  );
+
+  return transactions;
+}
+
+export async function encodeAddPoLIsolationModeMarket(
+  core: CoreProtocolBerachain,
+  factory: IIsolationModeVaultFactory,
+  oracle: IDolomitePriceOracle,
+  unwrapper: IIsolationModeUnwrapperTraderV2,
+  wrapper: IIsolationModeWrapperTraderV2,
+  marketId: BigNumberish,
+  targetCollateralization: TargetCollateralization,
+  targetLiquidationPremium: TargetLiquidationPenalty,
+  maxSupplyWei: BigNumberish,
+  options: AddMarketOptions = {},
+): Promise<EncodedTransaction[]> {
+  const transactions: EncodedTransaction[] = await encodeAddIsolationModeMarket(
+    core,
+    factory,
+    oracle,
+    unwrapper,
+    wrapper,
+    marketId,
+    targetCollateralization,
+    targetLiquidationPremium,
+    maxSupplyWei,
+    { ...options, skipEncodeLiquidatorWhitelist: true }, // we only want the POL liquidator to be whitelisted
+  );
+
+  transactions.push(
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { liquidatorAssetRegistry: core.liquidatorAssetRegistry },
+      'liquidatorAssetRegistry',
+      'ownerAddLiquidatorToAssetWhitelist',
+      [marketId, core.polLiquidatorProxy.address],
+    ),
   );
 
   return transactions;

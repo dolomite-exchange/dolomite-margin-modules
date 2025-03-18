@@ -101,7 +101,13 @@ contract TestInfraredVault is ERC20 {
         return rewardTokens;
     }
 
-    function rewardData(address _rewardsToken) external view returns (
+    function lastTimeRewardApplicable(address /* _rewardsToken */) external view returns (uint256) {
+        return block.timestamp;
+    }
+
+    function rewardData(
+        address /* _rewardsToken */
+    ) external pure returns (
         address rewardsDistributor,
         uint256 rewardsDuration,
         uint256 periodFinish,
@@ -117,9 +123,5 @@ contract TestInfraredVault is ERC20 {
         lastUpdateTime = 0;
         rewardPerTokenStored = 0;
         rewardResidual = 0;
-    }
-
-    function lastTimeRewardApplicable(address _rewardsToken) external view returns (uint256) {
-        return block.timestamp;
     }
 }

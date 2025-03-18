@@ -67,10 +67,11 @@ interface IBerachainRewardsRegistry is IBaseRegistry {
     event BgtmIsolationModeVaultFactorySet(address bgtmIsolationModeVaultFactory);
     event IBgtIsolationModeVaultFactorySet(address iBgtIsolationModeVaultFactory);
 
-    event PolUnwrapperTraderSet(address polUnwrapperTrader);
-    event PolWrapperTraderSet(address polWrapperTrader);
     event PolFeeAgentSet(address polFeeAgent);
     event PolFeePercentageSet(uint256 polFeePercentage);
+    event PolLiquidatorSet(address polLiquidator);
+    event PolUnwrapperTraderSet(address polUnwrapperTrader);
+    event PolWrapperTraderSet(address polWrapperTrader);
 
     event AccountToAssetToDefaultTypeSet(address indexed account, address indexed asset, RewardVaultType rewardType);
     event MetaVaultCreated(address indexed account, address metaVault);
@@ -95,10 +96,11 @@ interface IBerachainRewardsRegistry is IBaseRegistry {
     function ownerSetBgtmIsolationModeVaultFactory(address _bgtmIsolationModeVaultFactory) external;
     function ownerSetIBgtIsolationModeVaultFactory(address _iBgtIsolationModeVaultFactory) external;
 
-    function ownerSetPolUnwrapperTrader(address _polUnwrapperTrader) external;
-    function ownerSetPolWrapperTrader(address _polWrapperTrader) external;
     function ownerSetPolFeeAgent(address _polFeeAgent) external;
     function ownerSetPolFeePercentage(uint256 _polFeePercentage) external;
+    function ownerSetPolLiquidator(address _polLiquidator) external;
+    function ownerSetPolUnwrapperTrader(address _polUnwrapperTrader) external;
+    function ownerSetPolWrapperTrader(address _polWrapperTrader) external;
 
     function ownerSetMetaVaultImplementation(address _metaVaultImplementation) external;
 
@@ -137,8 +139,9 @@ interface IBerachainRewardsRegistry is IBaseRegistry {
         address _asset
     ) external view returns (RewardVaultType);
 
-    function polUnwrapperTrader() external view returns (address);
-    function polWrapperTrader() external view returns (address);
     function polFeeAgent() external view returns (address);
     function polFeePercentage(uint256 _marketId) external view returns (uint256);
+    function polLiquidator() external view returns (address);
+    function polUnwrapperTrader() external view returns (address);
+    function polWrapperTrader() external view returns (address);
 }

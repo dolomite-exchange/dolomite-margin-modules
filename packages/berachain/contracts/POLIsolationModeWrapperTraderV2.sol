@@ -33,7 +33,6 @@ import { TypesLib } from "@dolomite-exchange/modules-base/contracts/protocol/lib
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { POLIsolationModeTraderBaseV2 } from "./POLIsolationModeTraderBaseV2.sol";
-import { IBerachainRewardsRegistry } from "./interfaces/IBerachainRewardsRegistry.sol";
 
 
 /**
@@ -61,8 +60,6 @@ contract POLIsolationModeWrapperTraderV2 is
 
     uint256 internal constant _ACTIONS_LENGTH = 2;
 
-    IBerachainRewardsRegistry public immutable BERACHAIN_REWARDS_REGISTRY;
-
     // ==================================================================
     // ========================== Constructor ===========================
     // ==================================================================
@@ -72,10 +69,8 @@ contract POLIsolationModeWrapperTraderV2 is
         address _dolomiteMargin
     ) POLIsolationModeTraderBaseV2(
         _dolomiteMargin,
-        address(IBerachainRewardsRegistry(_berachainRewardsRegistry).dolomiteRegistry())
-    ) {
-        BERACHAIN_REWARDS_REGISTRY = IBerachainRewardsRegistry(_berachainRewardsRegistry);
-    }
+        _berachainRewardsRegistry
+    ) {}
 
     // ==================================================================
     // ======================== Public Functions ========================

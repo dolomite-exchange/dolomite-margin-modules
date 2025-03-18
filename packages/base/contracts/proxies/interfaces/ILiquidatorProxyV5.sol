@@ -37,7 +37,9 @@ interface ILiquidatorProxyV5 {
         IDolomiteStructs.AccountInfo solidAccount;
         IDolomiteStructs.AccountInfo liquidAccount;
         uint256[] marketIdsPath;
+        /// @dev Can be -1 to denote selling all of the user's received collateral
         uint256 inputAmountWei;
+        /// @dev Can be -1 to denote liquidating the entire position
         uint256 minOutputAmountWei;
         IGenericTraderBase.TraderParam[] tradersPath;
         IDolomiteStructs.AccountInfo[] makerAccounts;
@@ -47,7 +49,12 @@ interface ILiquidatorProxyV5 {
 
     function initialize() external;
 
-    function liquidate(
-        LiquidateParams memory _liquidateParams
-    ) external;
+    /**
+     * Same as `liquidate` but only callable by a global operator. The `_validateAssetForLiquidation` checks are
+     * performed on the `msg.sender` since it's presumed to be the valid liquidator. Only the input market has a strict
+     * check performed
+     */
+    function liquidateViaProxyWithStrictInputMarket(LiquidateParams memory _liquidateParams) external;
+
+    function liquidate(LiquidateParams memory _liquidateParams) external;
 }

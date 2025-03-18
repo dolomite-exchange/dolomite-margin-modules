@@ -33,7 +33,6 @@ import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/prot
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { TypesLib } from "@dolomite-exchange/modules-base/contracts/protocol/lib/TypesLib.sol";
 import { POLIsolationModeTraderBaseV2 } from "./POLIsolationModeTraderBaseV2.sol";
-import { IBerachainRewardsRegistry } from "./interfaces/IBerachainRewardsRegistry.sol";
 
 
 /**
@@ -60,8 +59,6 @@ contract POLIsolationModeUnwrapperTraderV2 is
 
     uint256 internal constant _ACTIONS_LENGTH = 3;
 
-    IBerachainRewardsRegistry public immutable BERACHAIN_REWARDS_REGISTRY;
-
     // ==================================================================
     // ========================== Constructor ===========================
     // ==================================================================
@@ -72,10 +69,8 @@ contract POLIsolationModeUnwrapperTraderV2 is
     )
     POLIsolationModeTraderBaseV2(
         _dolomiteMargin,
-        address(IBerachainRewardsRegistry(_berachainRewardsRegistry).dolomiteRegistry())
-    ) {
-        BERACHAIN_REWARDS_REGISTRY = IBerachainRewardsRegistry(_berachainRewardsRegistry);
-    }
+        _berachainRewardsRegistry
+    ) {}
 
     // ==================================================================
     // ======================= External Functions =======================
@@ -310,10 +305,11 @@ contract POLIsolationModeUnwrapperTraderV2 is
 
         if (transferAmount == type(uint256).max) {
             uint256 marketId = DOLOMITE_MARGIN().getMarketIdByTokenAddress(address(factory));
-            /// @note   Account wei cannot be negative for Isolation Mode assets
-            /// @note   We can safely get the _accountInfo's (the Zap account for ordinary unwraps or Solid account for
-            ///         liquidations) balance here without worrying about read-only reentrancy
+            // We can safely get the _accountInfo's balance (the Zap account for ordinary unwraps or Solid account for
+            // liquidations) here without worrying about read-only reentrancy
             IDolomiteStructs.Wei memory balanceWei = DOLOMITE_MARGIN().getAccountWei(_accountInfo, marketId);
+
+            // Account wei cannot be negative for Isolation Mode assets
             assert(balanceWei.sign || balanceWei.value == 0);
 
             transferAmount = balanceWei.value;

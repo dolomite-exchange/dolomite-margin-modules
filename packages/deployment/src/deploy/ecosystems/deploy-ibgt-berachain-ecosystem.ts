@@ -6,7 +6,11 @@ import {
   SimpleIsolationModeWrapperTraderV2,
   SimpleIsolationModeWrapperTraderV2__factory,
 } from 'packages/base/src/types';
-import { TargetCollateralization, TargetLiquidationPenalty } from 'packages/base/src/utils/constructors/dolomite';
+import {
+  getUpgradeableProxyConstructorParams,
+  TargetCollateralization,
+  TargetLiquidationPenalty,
+} from 'packages/base/src/utils/constructors/dolomite';
 import { getAnyNetwork } from 'packages/base/src/utils/dolomite-utils';
 import { Network, ONE_BI, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber, setEtherBalance } from 'packages/base/test/utils';
@@ -19,6 +23,8 @@ import {
   BerachainRewardsRegistry__factory,
   InfraredBGTIsolationModeTokenVaultV1__factory,
   InfraredBGTIsolationModeVaultFactory__factory,
+  POLLiquidatorProxyV1,
+  POLLiquidatorProxyV1__factory,
 } from 'packages/berachain/src/types';
 import { deployContractAndSave } from '../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../utils/dry-run-utils';
@@ -42,6 +48,26 @@ async function main(): Promise<DryRunOutput<AcceptableNetworks>> {
   const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
   await setEtherBalance(core.gnosisSafe.address, parseEther('1000'));
 
+  const polLiquidatorImplementationAddress = await deployContractAndSave(
+    'POLLiquidatorProxyV1',
+    [core.liquidatorProxyV5.address, core.dolomiteMargin.address],
+    'POLLiquidatorProxyImplementationV1',
+  );
+  const polLiquidatorImplementation = POLLiquidatorProxyV1__factory.connect(
+    polLiquidatorImplementationAddress,
+    core.hhUser1,
+  );
+  const polLiquidatorProxyAddress = await deployContractAndSave(
+    'RegistryProxy',
+    getUpgradeableProxyConstructorParams(
+      polLiquidatorImplementationAddress,
+      await polLiquidatorImplementation.populateTransaction.initialize(),
+      core.dolomiteMargin,
+    ),
+    'PolLiquidatorProxy',
+  );
+  const polLiquidatorProxy = POLLiquidatorProxyV1__factory.connect(polLiquidatorProxyAddress, core.hhUser1);
+
   /*
    * Deploy metavault implementation and berachain rewards registry
    */
@@ -64,6 +90,7 @@ async function main(): Promise<DryRunOutput<AcceptableNetworks>> {
     await getBerachainRewardsRegistryConstructorParams(
       berachainRegistryImplementation,
       { address: metaVaultImplementationAddress } as any,
+      polLiquidatorProxy,
       core,
     ),
     'BerachainRewardsRegistryProxy',

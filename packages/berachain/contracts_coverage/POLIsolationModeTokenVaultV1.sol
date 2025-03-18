@@ -21,19 +21,19 @@
 pragma solidity ^0.8.9;
 
 import { IDolomiteRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IDolomiteRegistry.sol";
-import { IGenericTraderProxyV1 } from "@dolomite-exchange/modules-base/contracts/interfaces/IGenericTraderProxyV1.sol";
 import { IsolationModeTokenVaultV1 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
 import { IIsolationModeTokenVaultV1 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
 import { IIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { IDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
+import { IGenericTraderProxyV2 } from "@dolomite-exchange/modules-base/contracts/proxies/interfaces/IGenericTraderProxyV2.sol"; // solhint-disable-line max-line-length
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IBaseMetaVault } from "./interfaces/IBaseMetaVault.sol";
 import { IBerachainRewardsRegistry } from "./interfaces/IBerachainRewardsRegistry.sol";
-import { IMetaVaultRewardTokenFactory } from "./interfaces/IMetaVaultRewardTokenFactory.sol"; // solhint-disable-line max-line-length
-import { IPOLIsolationModeTokenVaultV1 } from "./interfaces/IPOLIsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
+import { IMetaVaultRewardTokenFactory } from "./interfaces/IMetaVaultRewardTokenFactory.sol";
+import { IPOLIsolationModeTokenVaultV1 } from "./interfaces/IPOLIsolationModeTokenVaultV1.sol";
 
 
 /**
@@ -62,13 +62,11 @@ contract POLIsolationModeTokenVaultV1 is
     // ==================================================================
 
     modifier onlyLiquidator(address _from) {
-        // @audit Should we confirm that there is more than 1 liquidator set? If not anybody can call this
-        if (dolomiteRegistry().liquidatorAssetRegistry().isAssetWhitelistedForLiquidation( marketId(), _from )) { /* FOR COVERAGE TESTING */ }
+        uint256 _marketId = marketId();
+        if (dolomiteRegistry().liquidatorAssetRegistry().isAssetWhitelistedForLiquidation(_marketId, _from) && dolomiteRegistry().liquidatorAssetRegistry().getLiquidatorsForAsset(_marketId).length != 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
-            dolomiteRegistry().liquidatorAssetRegistry().isAssetWhitelistedForLiquidation(
-                marketId(),
-                _from
-            ),
+            dolomiteRegistry().liquidatorAssetRegistry().isAssetWhitelistedForLiquidation(_marketId, _from) &&
+                dolomiteRegistry().liquidatorAssetRegistry().getLiquidatorsForAsset(_marketId).length != 0,
             _FILE,
             "Only liquidator can call",
             _from
@@ -126,7 +124,7 @@ contract POLIsolationModeTokenVaultV1 is
         uint256 _accountNumber,
         uint256 _amount
     ) external onlyLiquidator(msg.sender) returns (uint256) {
-        return _unstakeBeforeUnwrapping(_accountNumber, _amount);
+        return _unstakeBeforeUnwrapping(_accountNumber, _amount, true);
     }
 
     // ==================================================================
@@ -166,20 +164,6 @@ contract POLIsolationModeTokenVaultV1 is
     // ======================== Internal Functions ========================
     // ==================================================================
 
-    function _depositIntoVaultForDolomiteMargin(
-        uint256 _toAccountNumber,
-        uint256 _amountWei
-    ) internal override {
-        revert("Not implemented");
-    }
-
-    function _withdrawFromVaultForDolomiteMargin(
-        uint256 _fromAccountNumber,
-        uint256 _amountWei
-    ) internal override {
-        revert("Not implemented");
-    }
-
     // @audit May need to adjust account number checks because we are wrapping not depositing
     function _addCollateralAndSwapExactInputForOutput(
         uint256 _fromAccountNumber,
@@ -187,14 +171,14 @@ contract POLIsolationModeTokenVaultV1 is
         uint256[] calldata _marketIdsPath,
         uint256 _inputAmountWei,
         uint256 _minOutputAmountWei,
-        IGenericTraderProxyV1.TraderParam[] memory _tradersPath,
+        IGenericTraderProxyV2.TraderParam[] memory _tradersPath,
         IDolomiteMargin.AccountInfo[] memory _makerAccounts,
-        IGenericTraderProxyV1.UserConfig memory _userConfig
+        IGenericTraderProxyV2.UserConfig memory _userConfig
     ) internal override {
         uint256 factoryMarketId = marketId();
         if (_marketIdsPath[0] == factoryMarketId) {
             // @follow-up @Corey, can you double check using the _fromAccountNumber here?
-            _inputAmountWei = _unstakeBeforeUnwrapping(_fromAccountNumber, _inputAmountWei);
+            _inputAmountWei = _unstakeBeforeUnwrapping(_fromAccountNumber, _inputAmountWei, false);
         }
 
         super._addCollateralAndSwapExactInputForOutput(
@@ -219,13 +203,13 @@ contract POLIsolationModeTokenVaultV1 is
         uint256[] calldata _marketIdsPath,
         uint256 _inputAmountWei,
         uint256 _minOutputAmountWei,
-        IGenericTraderProxyV1.TraderParam[] memory _tradersPath,
+        IGenericTraderProxyV2.TraderParam[] memory _tradersPath,
         IDolomiteMargin.AccountInfo[] memory _makerAccounts,
-        IGenericTraderProxyV1.UserConfig memory _userConfig
+        IGenericTraderProxyV2.UserConfig memory _userConfig
     ) internal override {
         uint256 factoryMarketId = marketId();
         if (_marketIdsPath[0] == factoryMarketId) {
-            _inputAmountWei = _unstakeBeforeUnwrapping(_borrowAccountNumber, _inputAmountWei);
+            _inputAmountWei = _unstakeBeforeUnwrapping(_borrowAccountNumber, _inputAmountWei, false);
         }
 
         super._swapExactInputForOutputAndRemoveCollateral(
@@ -249,7 +233,11 @@ contract POLIsolationModeTokenVaultV1 is
     ) internal override {
         uint256 factoryMarketId = marketId();
         if (_params.marketIdsPath[0] == factoryMarketId) {
-            _params.inputAmountWei = _unstakeBeforeUnwrapping(_params.tradeAccountNumber, _params.inputAmountWei);
+            _params.inputAmountWei = _unstakeBeforeUnwrapping(
+                _params.tradeAccountNumber,
+                _params.inputAmountWei,
+                false
+            );
         }
 
         super._swapExactInputForOutput(_params);
@@ -259,12 +247,13 @@ contract POLIsolationModeTokenVaultV1 is
         }
     }
 
-    function _unstakeBeforeUnwrapping(uint256 _accountNumber, uint256 _amountWei) internal returns (uint256) {
+    function _unstakeBeforeUnwrapping(
+        uint256 _accountNumber,
+        uint256 _amountWei,
+        bool _isLiquidation
+    ) internal returns (uint256) {
         IBaseMetaVault metaVault = IBaseMetaVault(
             registry().getMetaVaultByVault(address(this))
-        );
-        IBerachainRewardsRegistry.RewardVaultType defaultType = metaVault.getDefaultRewardVaultTypeByAsset(
-            UNDERLYING_TOKEN()
         );
         IDolomiteStructs.Wei memory accountWei = DOLOMITE_MARGIN().getAccountWei(
             IDolomiteStructs.AccountInfo({
@@ -276,30 +265,33 @@ contract POLIsolationModeTokenVaultV1 is
         /*assert(accountWei.sign);*/
 
         // @audit check par values are handled correctly everywhere
-        // @follow-up @Corey, double check this code
-        uint256 bal = IERC20(UNDERLYING_TOKEN()).balanceOf(address(metaVault));
-        uint256 feeAmount;
-        if (_amountWei == type(uint256).max) {
-            if (accountWei.value > bal) {
-                _unstake(UNDERLYING_TOKEN(), defaultType, accountWei.value - bal);
-            }
-            feeAmount = metaVault.chargeDTokenFee(UNDERLYING_TOKEN(), marketId(), accountWei.value);
-        } else {
-            if (_amountWei <= accountWei.value) { /* FOR COVERAGE TESTING */ }
-            Require.that(
-                _amountWei <= accountWei.value,
-                _FILE,
-                "Insufficient balance"
+        // @follow-up @Corey, can you double check this code
+        uint256 withdrawAmount = _amountWei == type(uint256).max ? accountWei.value : _amountWei;
+        if (withdrawAmount <= accountWei.value) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            withdrawAmount <= accountWei.value,
+            _FILE,
+            "Insufficient balance"
+        );
+
+        uint256 balance = IERC20(UNDERLYING_TOKEN()).balanceOf(address(metaVault));
+        if (withdrawAmount > balance) {
+            _unstake(
+                UNDERLYING_TOKEN(),
+                metaVault.getDefaultRewardVaultTypeByAsset(UNDERLYING_TOKEN()),
+                withdrawAmount - balance
             );
-            if (_amountWei > bal) {
-                _unstake(UNDERLYING_TOKEN(), defaultType, _amountWei - bal);
-            }
-            feeAmount = metaVault.chargeDTokenFee(UNDERLYING_TOKEN(), marketId(), _amountWei);
         }
 
-        IIsolationModeVaultFactory(VAULT_FACTORY()).withdrawFromDolomiteMargin(_accountNumber, feeAmount);
-        if (_amountWei != type(uint256).max) {
-            _amountWei -= feeAmount;
+        if (!_isLiquidation) {
+            // @dev Only charge fees if we're not liquidating. Otherwise, this triggers a collateralization check,
+            //      which reverts if the user is underwater.
+            uint256 feeAmount = metaVault.chargeDTokenFee(UNDERLYING_TOKEN(), marketId(), withdrawAmount);
+            IIsolationModeVaultFactory(VAULT_FACTORY()).withdrawFromDolomiteMargin(_accountNumber, feeAmount);
+
+            if (_amountWei != type(uint256).max) {
+                _amountWei -= feeAmount;
+            }
         }
 
         return _amountWei;
@@ -313,8 +305,8 @@ contract POLIsolationModeTokenVaultV1 is
             UNDERLYING_TOKEN()
         );
 
-        uint256 bal = IERC20(UNDERLYING_TOKEN()).balanceOf(address(metaVault));
-        _stake(UNDERLYING_TOKEN(), defaultType, bal);
+        uint256 balance = IERC20(UNDERLYING_TOKEN()).balanceOf(address(metaVault));
+        _stake(UNDERLYING_TOKEN(), defaultType, balance);
     }
 
     function _stake(address _asset, IBerachainRewardsRegistry.RewardVaultType _type, uint256 _amount) internal {
@@ -347,5 +339,19 @@ contract POLIsolationModeTokenVaultV1 is
             registry().getMetaVaultByVault(address(this))
         );
         metaVault.exit(_asset, true);
+    }
+
+    function _depositIntoVaultForDolomiteMargin(
+        uint256 /* _toAccountNumber */,
+        uint256 /* _amountWei */
+    ) internal pure override {
+        revert("Not implemented");
+    }
+
+    function _withdrawFromVaultForDolomiteMargin(
+        uint256 /* _fromAccountNumber */,
+        uint256 /* _amountWei */
+    ) internal pure override {
+        revert("Not implemented");
     }
 }

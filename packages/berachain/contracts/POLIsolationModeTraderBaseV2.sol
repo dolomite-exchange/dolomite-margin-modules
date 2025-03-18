@@ -26,6 +26,8 @@ import { ILiquidatorAssetRegistry } from "@dolomite-exchange/modules-base/contra
 import { IIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import { IBerachainRewardsRegistry } from "./interfaces/IBerachainRewardsRegistry.sol";
+import { IPOLLiquidatorProxyV1 } from "./interfaces/IPOLLiquidatorProxyV1.sol";
 
 
 /**
@@ -44,6 +46,7 @@ abstract contract POLIsolationModeTraderBaseV2 is OnlyDolomiteMargin, Initializa
 
     // ======================== Field Variables ========================
 
+    IBerachainRewardsRegistry public immutable BERACHAIN_REWARDS_REGISTRY; // solhint-disable-line var-name-mixedcase
     IDolomiteRegistry public immutable DOLOMITE_REGISTRY; // solhint-disable-line var-name-mixedcase
 
     // ========================= Modifiers =========================
@@ -57,12 +60,13 @@ abstract contract POLIsolationModeTraderBaseV2 is OnlyDolomiteMargin, Initializa
 
     constructor(
         address _dolomiteMargin,
-        address _dolomiteRegistry
+        address _berachainRegistry
     )
     OnlyDolomiteMargin(
         _dolomiteMargin
     ) {
-        DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
+        BERACHAIN_REWARDS_REGISTRY = IBerachainRewardsRegistry(_berachainRegistry);
+        DOLOMITE_REGISTRY = BERACHAIN_REWARDS_REGISTRY.dolomiteRegistry();
     }
 
     function vaultFactory() public view returns (IIsolationModeVaultFactory) {
@@ -83,9 +87,11 @@ abstract contract POLIsolationModeTraderBaseV2 is OnlyDolomiteMargin, Initializa
         address _from,
         uint256 _marketId
     ) internal view returns (bool) {
+        IPOLLiquidatorProxyV1 polLiquidator = IPOLLiquidatorProxyV1(BERACHAIN_REWARDS_REGISTRY.polLiquidator());
         ILiquidatorAssetRegistry liquidatorRegistry = DOLOMITE_REGISTRY.liquidatorAssetRegistry();
-        return liquidatorRegistry.isAssetWhitelistedForLiquidation(_marketId, _from)
-            && liquidatorRegistry.getLiquidatorsForAsset(_marketId).length > 0;
+        return liquidatorRegistry.isAssetWhitelistedForLiquidation(_marketId, address(polLiquidator))
+            && liquidatorRegistry.getLiquidatorsForAsset(_marketId).length != 0
+            && polLiquidator.liquidatorProxy() == _from;
     }
 
     // ========================= Private Functions ========================

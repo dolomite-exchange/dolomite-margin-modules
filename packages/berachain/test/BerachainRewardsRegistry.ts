@@ -21,17 +21,18 @@ import {
   INativeRewardVault__factory,
   InfraredBGTIsolationModeVaultFactory,
   InfraredBGTMetaVault,
-  InfraredBGTMetaVault__factory,
+  InfraredBGTMetaVault__factory, POLLiquidatorProxyV1,
 } from '../src/types';
 import {
   createBerachainRewardsRegistry,
   createInfraredBGTIsolationModeTokenVaultV1,
-  createInfraredBGTIsolationModeVaultFactory,
+  createInfraredBGTIsolationModeVaultFactory, createPolLiquidatorProxy,
   RewardVaultType,
 } from './berachain-ecosystem-utils';
 import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
 import { parseEther } from 'ethers/lib/utils';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
+import { createLiquidatorProxyV5 } from 'packages/base/test/utils/dolomite';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
@@ -40,6 +41,7 @@ describe('BerachainRewardsRegistry', () => {
 
   let core: CoreProtocolBerachain;
   let registry: BerachainRewardsRegistry;
+  let polLiquidatorProxy: POLLiquidatorProxyV1;
   let metaVaultImplementation: InfraredBGTMetaVault;
 
   let iBgtFactory: InfraredBGTIsolationModeVaultFactory;
@@ -56,12 +58,14 @@ describe('BerachainRewardsRegistry', () => {
       network: Network.Berachain,
     });
 
+    const liquidatorProxyV5 = await createLiquidatorProxyV5(core);
+    polLiquidatorProxy = await createPolLiquidatorProxy(core, liquidatorProxyV5);
     metaVaultImplementation = await createContractWithAbi<InfraredBGTMetaVault>(
       InfraredBGTMetaVault__factory.abi,
       InfraredBGTMetaVault__factory.bytecode,
       [],
     );
-    registry = await createBerachainRewardsRegistry(core, metaVaultImplementation);
+    registry = await createBerachainRewardsRegistry(core, metaVaultImplementation, polLiquidatorProxy);
 
     const iBgtVaultImplementation = await createInfraredBGTIsolationModeTokenVaultV1();
     iBgtFactory = await createInfraredBGTIsolationModeVaultFactory(
@@ -123,6 +127,7 @@ describe('BerachainRewardsRegistry', () => {
           core.berachainRewardsEcosystem.iBgtStakingPool.address,
           core.berachainRewardsEcosystem.infrared.address,
           metaVaultImplementation.address,
+          polLiquidatorProxy.address,
           core.dolomiteRegistry.address,
         ),
         'Initializable: contract is already initialized',
@@ -199,7 +204,7 @@ describe('BerachainRewardsRegistry', () => {
   describe('#setDefaultRewardVaultTypeFromMetaVaultByAsset', () => {
     it('should work normally if called by meta vault', async () => {
       expect(await registry.getAccountToAssetToDefaultType(core.hhUser1.address, asset.address)).to.equal(
-        RewardVaultType.Native,
+        RewardVaultType.Infrared,
       );
       const metaVaultAddress = await registry.calculateMetaVaultByAccount(core.hhUser1.address);
       await iBgtFactory.createVault(core.hhUser1.address);
@@ -536,54 +541,6 @@ describe('BerachainRewardsRegistry', () => {
     });
   });
 
-  describe('#ownerSetPolUnwrapperTrader', () => {
-    it('should work normally', async () => {
-      const result = await registry.connect(core.governance).ownerSetPolUnwrapperTrader(OTHER_ADDRESS);
-      await expectEvent(registry, result, 'PolUnwrapperTraderSet', {
-        polUnwrapperTrader: OTHER_ADDRESS,
-      });
-      expect(await registry.polUnwrapperTrader()).to.equal(OTHER_ADDRESS);
-    });
-
-    it('should fail if zero address is set', async () => {
-      await expectThrow(
-        registry.connect(core.governance).ownerSetPolUnwrapperTrader(ADDRESS_ZERO),
-        'BerachainRewardsRegistry: Invalid polUnwrapperTrader',
-      );
-    });
-
-    it('should fail when not called by owner', async () => {
-      await expectThrow(
-        registry.connect(core.hhUser1).ownerSetPolUnwrapperTrader(OTHER_ADDRESS),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
-      );
-    });
-  });
-
-  describe('#ownerSetPolWrapperTrader', () => {
-    it('should work normally', async () => {
-      const result = await registry.connect(core.governance).ownerSetPolWrapperTrader(OTHER_ADDRESS);
-      await expectEvent(registry, result, 'PolWrapperTraderSet', {
-        polWrapperTrader: OTHER_ADDRESS,
-      });
-      expect(await registry.polWrapperTrader()).to.equal(OTHER_ADDRESS);
-    });
-
-    it('should fail if zero address is set', async () => {
-      await expectThrow(
-        registry.connect(core.governance).ownerSetPolWrapperTrader(ADDRESS_ZERO),
-        'BerachainRewardsRegistry: Invalid polWrapperTrader',
-      );
-    });
-
-    it('should fail when not called by owner', async () => {
-      await expectThrow(
-        registry.connect(core.hhUser1).ownerSetPolWrapperTrader(OTHER_ADDRESS),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
-      );
-    });
-  });
-
   describe('#ownerSetPolFeeAgent', () => {
     it('should work normally', async () => {
       const result = await registry.connect(core.governance).ownerSetPolFeeAgent(OTHER_ADDRESS);
@@ -627,6 +584,78 @@ describe('BerachainRewardsRegistry', () => {
     it('should fail when not called by owner', async () => {
       await expectThrow(
         registry.connect(core.hhUser1).ownerSetPolFeePercentage(parseEther('0.5')),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+  });
+
+  describe('#ownerSetPolLiquidator', () => {
+    it('should work normally', async () => {
+      const result = await registry.connect(core.governance).ownerSetPolLiquidator(OTHER_ADDRESS);
+      await expectEvent(registry, result, 'PolLiquidatorSet', {
+        polLiquidator: OTHER_ADDRESS,
+      });
+      expect(await registry.polLiquidator()).to.equal(OTHER_ADDRESS);
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetPolLiquidator(ADDRESS_ZERO),
+        'BerachainRewardsRegistry: Invalid polLiquidator',
+      );
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetPolLiquidator(OTHER_ADDRESS),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+  });
+
+  describe('#ownerSetPolUnwrapperTrader', () => {
+    it('should work normally', async () => {
+      const result = await registry.connect(core.governance).ownerSetPolUnwrapperTrader(OTHER_ADDRESS);
+      await expectEvent(registry, result, 'PolUnwrapperTraderSet', {
+        polUnwrapperTrader: OTHER_ADDRESS,
+      });
+      expect(await registry.polUnwrapperTrader()).to.equal(OTHER_ADDRESS);
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetPolUnwrapperTrader(ADDRESS_ZERO),
+        'BerachainRewardsRegistry: Invalid polUnwrapperTrader',
+      );
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetPolUnwrapperTrader(OTHER_ADDRESS),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+  });
+
+  describe('#ownerSetPolWrapperTrader', () => {
+    it('should work normally', async () => {
+      const result = await registry.connect(core.governance).ownerSetPolWrapperTrader(OTHER_ADDRESS);
+      await expectEvent(registry, result, 'PolWrapperTraderSet', {
+        polWrapperTrader: OTHER_ADDRESS,
+      });
+      expect(await registry.polWrapperTrader()).to.equal(OTHER_ADDRESS);
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetPolWrapperTrader(ADDRESS_ZERO),
+        'BerachainRewardsRegistry: Invalid polWrapperTrader',
+      );
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetPolWrapperTrader(OTHER_ADDRESS),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });

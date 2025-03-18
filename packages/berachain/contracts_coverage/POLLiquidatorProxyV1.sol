@@ -59,9 +59,10 @@ contract POLLiquidatorProxyV1 is
 
     function initialize() external initializer {}
 
-    function liquidateProofOfLiquidityCollateral(
+    function liquidate(
         ILiquidatorProxyV5.LiquidateParams memory _liquidateParams
     ) public nonReentrant {
+        if (_liquidateParams.solidAccount.owner == msg.sender || DOLOMITE_MARGIN().getIsLocalOperator(_liquidateParams.solidAccount.owner, msg.sender)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _liquidateParams.solidAccount.owner == msg.sender
                 || DOLOMITE_MARGIN().getIsLocalOperator(_liquidateParams.solidAccount.owner, msg.sender),
@@ -74,10 +75,6 @@ contract POLLiquidatorProxyV1 is
             _liquidateParams.liquidAccount.number,
             _liquidateParams.minOutputAmountWei
         );
-        LIQUIDATOR_PROXY_V5.liquidateViaProxyWithStrictInputMarket(_liquidateParams);
-    }
-
-    function liquidatorProxy() external view returns (address) {
-        return address(LIQUIDATOR_PROXY_V5);
+        LIQUIDATOR_PROXY_V5.liquidate(_liquidateParams);
     }
 }

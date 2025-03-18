@@ -50,7 +50,7 @@ import {
   createPOLIsolationModeTokenVaultV1,
   createPOLIsolationModeUnwrapperTraderV2,
   createPOLIsolationModeVaultFactory,
-  createPOLIsolationModeWrapperTraderV2,
+  createPOLIsolationModeWrapperTraderV2, createPolLiquidatorProxy,
   RewardVaultType,
   wrapFullBalanceIntoVaultDefaultAccount,
 } from './berachain-ecosystem-utils';
@@ -95,12 +95,14 @@ describe('POLLiquidatorProxyV1', () => {
 
     dToken = DolomiteERC4626__factory.connect(core.dolomiteTokens.weth!.address, core.hhUser1);
 
+    polLiquidatorProxy = await createPolLiquidatorProxy(core, liquidatorProxyV5);
+
     const metaVaultImplementation = await createContractWithAbi<InfraredBGTMetaVault>(
       InfraredBGTMetaVault__factory.abi,
       InfraredBGTMetaVault__factory.bytecode,
       [],
     );
-    registry = await createBerachainRewardsRegistry(core, metaVaultImplementation);
+    registry = await createBerachainRewardsRegistry(core, metaVaultImplementation, polLiquidatorProxy);
 
     infraredVault = IInfraredVault__factory.connect(
       await registry.rewardVault(dToken.address, RewardVaultType.Infrared),
@@ -165,14 +167,8 @@ describe('POLLiquidatorProxyV1', () => {
 
     await wrapFullBalanceIntoVaultDefaultAccount(core, vault, metaVault, wrapper, marketId);
 
-    polLiquidatorProxy = await createContractWithAbi<POLLiquidatorProxyV1>(
-      POLLiquidatorProxyV1__factory.abi,
-      POLLiquidatorProxyV1__factory.bytecode,
-      [liquidatorProxyV5.address, core.dolomiteMargin.address],
-    );
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(polLiquidatorProxy.address, true);
     await core.liquidatorAssetRegistry.ownerAddLiquidatorToAssetWhitelist(marketId, polLiquidatorProxy.address);
-    await core.liquidatorAssetRegistry.ownerAddLiquidatorToAssetWhitelist(marketId, liquidatorProxyV5.address);
 
     await vault.transferIntoPositionWithUnderlyingToken(defaultAccountNumber, borrowAccountNumber, parAmount);
     await expectProtocolBalance(core, vault, defaultAccountNumber, marketId, ZERO_BI);
@@ -219,7 +215,7 @@ describe('POLLiquidatorProxyV1', () => {
     });
   });
 
-  describe('#liquidatePOL', () => {
+  describe('#liquidateProofOfLiquidityCollateral', () => {
     it('should work normally if unstaking is needed', async () => {
       const interestRate = parseEther('1').div(ONE_DAY_SECONDS * 365); // 100% APR
       await core.testEcosystem?.testInterestSetter.setInterestRate(core.tokens.weth.address, { value: interestRate });
@@ -235,7 +231,7 @@ describe('POLLiquidatorProxyV1', () => {
         tradeData: defaultAbiCoder.encode(['uint256'], [3]),
         makerAccountIndex: 0,
       };
-      await polLiquidatorProxy.connect(core.hhUser2).liquidatePOL({
+      await polLiquidatorProxy.connect(core.hhUser2).liquidateProofOfLiquidityCollateral({
         solidAccount: { owner: core.hhUser2.address, number: defaultAccountNumber },
         liquidAccount: { owner: vault.address, number: borrowAccountNumber },
         marketIdsPath: [marketId, core.marketIds.weth],
@@ -303,7 +299,7 @@ describe('POLLiquidatorProxyV1', () => {
         tradeData: defaultAbiCoder.encode(['uint256'], [3]),
         makerAccountIndex: 0,
       };
-      await polLiquidatorProxy.connect(core.hhUser2).liquidatePOL({
+      await polLiquidatorProxy.connect(core.hhUser2).liquidateProofOfLiquidityCollateral({
         solidAccount: { owner: core.hhUser2.address, number: defaultAccountNumber },
         liquidAccount: { owner: vault.address, number: borrowAccountNumber },
         marketIdsPath: [marketId, core.marketIds.weth],
@@ -375,7 +371,7 @@ describe('POLLiquidatorProxyV1', () => {
         tradeData: defaultAbiCoder.encode(['uint256'], [3]),
         makerAccountIndex: 0,
       };
-      await polLiquidatorProxy.connect(core.hhUser3).liquidatePOL({
+      await polLiquidatorProxy.connect(core.hhUser3).liquidateProofOfLiquidityCollateral({
         solidAccount: { owner: core.hhUser2.address, number: defaultAccountNumber },
         liquidAccount: { owner: vault.address, number: borrowAccountNumber },
         marketIdsPath: [marketId, core.marketIds.weth],
@@ -435,7 +431,7 @@ describe('POLLiquidatorProxyV1', () => {
         makerAccountIndex: 0,
       };
       await expectThrow(
-        polLiquidatorProxy.connect(core.hhUser3).liquidatePOL({
+        polLiquidatorProxy.connect(core.hhUser3).liquidateProofOfLiquidityCollateral({
           solidAccount: { owner: core.hhUser2.address, number: defaultAccountNumber },
           liquidAccount: { owner: vault.address, number: borrowAccountNumber },
           marketIdsPath: [marketId, core.marketIds.weth],

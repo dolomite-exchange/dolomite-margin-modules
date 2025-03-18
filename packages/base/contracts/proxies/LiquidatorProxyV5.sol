@@ -78,12 +78,40 @@ contract LiquidatorProxyV5 is
 
     function initialize() external initializer {}
 
-    function liquidate(
+    function liquidateViaProxyWithStrictInputMarket(
         LiquidateParams memory _liquidateParams
     )
-        public
-        nonReentrant
-    {
+    public
+    nonReentrant
+    onlyDolomiteMarginGlobalOperator(msg.sender) {
+        _validateMarketIdPath(_liquidateParams.marketIdsPath);
+        _validateAssetForLiquidation(
+            _liquidateParams.marketIdsPath[0],
+            /* _liquidator */ msg.sender,
+            /* _strict */ true
+        );
+        _validateAssetForLiquidation(
+            _liquidateParams.marketIdsPath[_liquidateParams.marketIdsPath.length - 1],
+            /* _liquidator */ msg.sender,
+            /* _strict */ false
+        );
+        _liquidate(_liquidateParams);
+    }
+
+    function liquidate(
+        LiquidateParams memory _liquidateParams
+    ) public nonReentrant {
+        _validateMarketIdPath(_liquidateParams.marketIdsPath);
+        _validateAssetForLiquidation(_liquidateParams.marketIdsPath[0]);
+        _validateAssetForLiquidation(_liquidateParams.marketIdsPath[_liquidateParams.marketIdsPath.length - 1]);
+        _liquidate(_liquidateParams);
+    }
+
+    // ============ Internal Functions ============
+
+    function _liquidate(
+        LiquidateParams memory _liquidateParams
+    ) internal {
         GenericTraderProxyCache memory genericCache = GenericTraderProxyCache({
             dolomiteMargin: DOLOMITE_MARGIN(),
             eventEmitterRegistry: IEventEmitterRegistry(address(0)),
@@ -102,7 +130,6 @@ contract LiquidatorProxyV5 is
             // unused for this function
             transferBalanceWeiBeforeOperate: TypesLib.zeroWei()
         });
-        _validateMarketIdPath(_liquidateParams.marketIdsPath);
         _validateAmountWeis(_liquidateParams.inputAmountWei, _liquidateParams.minOutputAmountWei);
         GenericTraderProxyV2Lib.validateTraderParams(
             genericCache,
@@ -115,7 +142,7 @@ contract LiquidatorProxyV5 is
             _liquidateParams.inputAmountWei
         );
 
-        // put all values that will not change into a single struct
+        // Put all values that will not change into a single struct
         LiquidatorProxyConstants memory constants;
         constants.solidAccount = _liquidateParams.solidAccount;
         constants.liquidAccount = _liquidateParams.liquidAccount;
@@ -124,8 +151,6 @@ contract LiquidatorProxyV5 is
         constants.owedMarket = _liquidateParams.marketIdsPath[_liquidateParams.marketIdsPath.length - 1];
 
         _checkConstants(constants);
-        _validateAssetForLiquidation(constants.heldMarket);
-        _validateAssetForLiquidation(constants.owedMarket);
 
         constants.liquidMarkets = DOLOMITE_MARGIN().getAccountMarketsWithBalances(constants.liquidAccount);
         constants.markets = _getMarketInfos(
@@ -142,11 +167,11 @@ contract LiquidatorProxyV5 is
         _calculateAndSetMaxLiquidationAmount(liquidatorCache);
 
         (_liquidateParams.inputAmountWei, _liquidateParams.minOutputAmountWei) =
-            _calculateAndSetActualLiquidationAmount(
-                _liquidateParams.inputAmountWei,
-                _liquidateParams.minOutputAmountWei,
-                liquidatorCache
-            );
+        _calculateAndSetActualLiquidationAmount(
+            _liquidateParams.inputAmountWei,
+            _liquidateParams.minOutputAmountWei,
+            liquidatorCache
+        );
 
         IDolomiteStructs.AccountInfo[] memory accounts = _getAccounts(
             genericCache,
@@ -195,8 +220,6 @@ contract LiquidatorProxyV5 is
         }
         genericCache.dolomiteMargin.operate(accounts, actions);
     }
-
-    // ============ Internal Functions ============
 
     function _appendWithdrawRewardAction(
         IDolomiteStructs.ActionArgs[] memory _actions,
