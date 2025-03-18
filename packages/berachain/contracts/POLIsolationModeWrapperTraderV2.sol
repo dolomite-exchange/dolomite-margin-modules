@@ -113,8 +113,9 @@ contract POLIsolationModeWrapperTraderV2 is
 
         (uint256 minOutputAmount, ) = abi.decode(_orderData, (uint256, bytes));
 
-        uint256 outputAmount = _getUint256FromMap(_INPUT_AMOUNT_PAR_SLOT, _tradeOriginator);
-        _setUint256InMap(_INPUT_AMOUNT_PAR_SLOT, _tradeOriginator, 0);
+        uint256 outputAmount = _getInputAmountParInternalTrade();
+        _setTransientValues(/* _isolationModeVault = */ address(0), /* _inputAmountPar = */ 0);
+
         Require.that(
             outputAmount >= minOutputAmount,
             _FILE,
@@ -132,8 +133,8 @@ contract POLIsolationModeWrapperTraderV2 is
     function getTradeCost(
         uint256 _inputMarketId,
         uint256 _outputMarketId,
-        IDolomiteStructs.AccountInfo calldata _makerAccount,
-        IDolomiteStructs.AccountInfo calldata _takerAccount,
+        IDolomiteStructs.AccountInfo calldata _metaVaultAccount,
+        IDolomiteStructs.AccountInfo calldata _isolationModeVaultAccount,
         IDolomiteStructs.Par calldata _oldInputPar,
         IDolomiteStructs.Par calldata _newInputPar,
         IDolomiteStructs.Wei calldata /* inputDeltaWei */,
@@ -144,13 +145,13 @@ contract POLIsolationModeWrapperTraderV2 is
     returns (IDolomiteStructs.AssetAmount memory) {
         _validateInputAndOutputMarketId(_inputMarketId, _outputMarketId);
         Require.that(
-            vaultFactory().getAccountByVault(_takerAccount.owner) != address(0),
+            vaultFactory().getAccountByVault(_isolationModeVaultAccount.owner) != address(0),
             _FILE,
             "Invalid taker account"
         );
         Require.that(
-            _makerAccount.owner == BERACHAIN_REWARDS_REGISTRY.getMetaVaultByVault(_takerAccount.owner)
-                && _makerAccount.number == 0,
+            _metaVaultAccount.owner == BERACHAIN_REWARDS_REGISTRY.getMetaVaultByVault(_isolationModeVaultAccount.owner)
+                && _metaVaultAccount.number == _DEFAULT_ACCOUNT_NUMBER,
             _FILE,
             "Invalid maker account"
         );
@@ -161,9 +162,7 @@ contract POLIsolationModeWrapperTraderV2 is
             _FILE,
             "Invalid delta par"
         );
-        // @audit Have to make sure a user can't maliciously set this
-        // @todo add check where we retrieve the input amount par and assert it is 0
-        _setUint256InMap(_INPUT_AMOUNT_PAR_SLOT, _takerAccount.owner, deltaPar.value);
+        _setTransientValues(/* _isolationModeVault = */ address(0), deltaPar.value);
 
         return IDolomiteStructs.AssetAmount({
             sign: false,
@@ -187,13 +186,13 @@ contract POLIsolationModeWrapperTraderV2 is
         _validateInputAndOutputMarketId(_params.inputMarket, _params.outputMarket);
 
         IDolomiteMargin.ActionArgs[] memory actions = new IDolomiteMargin.ActionArgs[](actionsLength());
-        uint256 makerAccountId = abi.decode(_params.orderData, (uint256)); // @stephen -- I don't lke that this is manually set
+        uint256 metaVaultAccountId = abi.decode(_params.orderData, (uint256));
 
         // @dev Encode internal transfer from vault to metavault which sends input token to the metavault
         // and returns 0 POL tokens. getTradeCost is responsible for input validation
         actions[0] = AccountActionLib.encodeInternalTradeActionForWrap(
             _params.primaryAccountId,
-            makerAccountId,
+            metaVaultAccountId,
             _params.inputMarket,
             _params.outputMarket,
             /* _trader = */ address(this),

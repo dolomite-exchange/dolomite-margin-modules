@@ -163,7 +163,6 @@ contract POLIsolationModeTokenVaultV1 is
     // ======================== Internal Functions ========================
     // ==================================================================
 
-    // @audit May need to adjust account number checks because we are wrapping not depositing
     function _addCollateralAndSwapExactInputForOutput(
         uint256 _fromAccountNumber,
         uint256 _borrowAccountNumber,

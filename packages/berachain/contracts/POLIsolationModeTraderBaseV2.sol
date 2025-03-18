@@ -39,10 +39,19 @@ import { IPOLLiquidatorProxyV1 } from "./interfaces/IPOLLiquidatorProxyV1.sol";
  */
 abstract contract POLIsolationModeTraderBaseV2 is OnlyDolomiteMargin, Initializable {
 
+    // ============ Events ============
+
+    event TransientIsolationModeVaultSet(address isolationModeVault);
+    event TransientInputAmountPairSet(uint256 inputAmountPar);
+
     // ======================== Constants ========================
 
     bytes32 private constant _FILE = "POLIsolationModeTraderBaseV2";
     bytes32 private constant _VAULT_FACTORY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.vaultFactory")) - 1);
+    bytes32 private constant _INPUT_AMOUNT_PAR_SLOT = bytes32(uint256(keccak256("eip1967.proxy.inputAmountPar")) - 1);
+    bytes32 private constant _ISOLATION_MODE_VAULT_ADDRESS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isolationModeAddress")) - 1); // solhint-disable-line max-line-length
+
+    uint256 internal constant _DEFAULT_ACCOUNT_NUMBER = 0;
 
     // ======================== Field Variables ========================
 
@@ -83,6 +92,17 @@ abstract contract POLIsolationModeTraderBaseV2 is OnlyDolomiteMargin, Initializa
         _setAddress(_VAULT_FACTORY_SLOT, _vaultFactory);
     }
 
+    function _setTransientValues(
+        address _isolationModeVault,
+        uint256 _inputAmountPar
+    ) internal {
+        _setAddress(_ISOLATION_MODE_VAULT_ADDRESS_SLOT, _isolationModeVault);
+        emit TransientIsolationModeVaultSet(_isolationModeVault);
+
+        _setUint256(_INPUT_AMOUNT_PAR_SLOT, _inputAmountPar);
+        emit TransientInputAmountPairSet(_inputAmountPar);
+    }
+
     function _isValidLiquidator(
         address _from,
         uint256 _marketId
@@ -92,6 +112,28 @@ abstract contract POLIsolationModeTraderBaseV2 is OnlyDolomiteMargin, Initializa
         return liquidatorRegistry.isAssetWhitelistedForLiquidation(_marketId, address(polLiquidator))
             && liquidatorRegistry.getLiquidatorsForAsset(_marketId).length != 0
             && polLiquidator.liquidatorProxy() == _from;
+    }
+
+    function _getVaultForInternalTrade() internal view returns (address) {
+        address isolationModeVault = _getAddress(_ISOLATION_MODE_VAULT_ADDRESS_SLOT);
+        Require.that(
+            isolationModeVault != address(0),
+            _FILE,
+            "Invalid isolation mode vault"
+        );
+
+        return isolationModeVault;
+    }
+
+    function _getInputAmountParInternalTrade() internal view returns (uint256) {
+        uint256 inputAmountPar = _getUint256(_INPUT_AMOUNT_PAR_SLOT);
+        Require.that(
+            inputAmountPar != 0,
+            _FILE,
+            "Invalid input amount par"
+        );
+
+        return inputAmountPar;
     }
 
     // ========================= Private Functions ========================

@@ -54,8 +54,6 @@ contract POLIsolationModeUnwrapperTraderV2 is
     // ============ Constants ============
 
     bytes32 private constant _FILE = "POLIsolationModeUnwrapperV2";
-    bytes32 private constant _INPUT_AMOUNT_PAR_SLOT = bytes32(uint256(keccak256("eip1967.proxy.inputAmountPar")) - 1);
-    bytes32 private constant _LIQUIDATION_ADDRESS_OVERRIDE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.liquidationAddressOverride")) - 1); // solhint-disable-line max-line-length
 
     uint256 internal constant _ACTIONS_LENGTH = 3;
 
@@ -95,11 +93,14 @@ contract POLIsolationModeUnwrapperTraderV2 is
         _callFunction(_sender, _accountInfo, _data);
     }
 
+    /**
+     * @dev The `_makerAccount` could be the liquidator OR the isolation mode vault, so it's not really usable
+     */
     function getTradeCost(
-        uint256 inputMarketId,
-        uint256 outputMarketId,
-        IDolomiteStructs.AccountInfo calldata makerAccount,
-        IDolomiteStructs.AccountInfo calldata takerAccount,
+        uint256 _inputMarketId,
+        uint256 _outputMarketId,
+        IDolomiteStructs.AccountInfo calldata /* _makerAccount */,
+        IDolomiteStructs.AccountInfo calldata _metaVaultAccount,
         IDolomiteStructs.Par calldata /* oldInputPar */,
         IDolomiteStructs.Par calldata /* newInputPar */,
         IDolomiteStructs.Wei calldata inputDeltaWei,
@@ -108,13 +109,12 @@ contract POLIsolationModeUnwrapperTraderV2 is
     external
     onlyDolomiteMargin(msg.sender)
     returns (IDolomiteStructs.AssetAmount memory) {
-        // @audit Ensure that I can't call for a different isolation mode vault
         IIsolationModeVaultFactory factory = vaultFactory();
-        address vault = _getVaultFromTradeOriginator(makerAccount.owner);
+        address vault = _getVaultForInternalTrade();
 
         _validateInputAndOutputMarketId(
-            inputMarketId,
-            outputMarketId
+            _inputMarketId,
+            _outputMarketId
         );
         Require.that(
             factory.getAccountByVault(vault) != address(0),
@@ -123,11 +123,11 @@ contract POLIsolationModeUnwrapperTraderV2 is
             vault
         );
         Require.that(
-            takerAccount.owner == BERACHAIN_REWARDS_REGISTRY.getMetaVaultByVault(vault)
-                && takerAccount.number == 0,
+            _metaVaultAccount.owner == BERACHAIN_REWARDS_REGISTRY.getMetaVaultByVault(vault)
+                && _metaVaultAccount.number == _DEFAULT_ACCOUNT_NUMBER,
             _FILE,
             "Invalid taker account",
-            takerAccount.owner
+            _metaVaultAccount.owner
         );
 
         Require.that(
@@ -136,15 +136,10 @@ contract POLIsolationModeUnwrapperTraderV2 is
             "Invalid input wei"
         );
 
-        uint256 returnAmount = _getUint256FromMap(_INPUT_AMOUNT_PAR_SLOT, makerAccount.owner);
-        Require.that(
-            returnAmount > 0,
-            _FILE,
-            "Invalid return amount"
-        );
+        uint256 returnAmount = _getInputAmountParInternalTrade();
 
-        _setUint256InMap(_INPUT_AMOUNT_PAR_SLOT, makerAccount.owner, 0);
-        _setAddressInMap(_LIQUIDATION_ADDRESS_OVERRIDE_SLOT, makerAccount.owner, address(0));
+        _setTransientValues(/* _isolationModeVault = */ address(0), /* _inputAmountPar = */ 0);
+
         return IDolomiteStructs.AssetAmount({
             sign: true,
             denomination: IDolomiteStructs.AssetDenomination.Par,
@@ -171,7 +166,7 @@ contract POLIsolationModeUnwrapperTraderV2 is
     onlyDolomiteMargin(msg.sender)
     returns (uint256) {
         IIsolationModeVaultFactory factory = vaultFactory();
-        address vault = _getVaultFromTradeOriginator(_tradeOriginator);
+        address vault = _getVaultForInternalTrade();
 
         _validateInputAndOutputToken(
             _inputToken,
@@ -203,7 +198,7 @@ contract POLIsolationModeUnwrapperTraderV2 is
         _validateInputAndOutputMarketId(_params.inputMarket, _params.outputMarket);
 
         IDolomiteMargin.ActionArgs[] memory actions = new IDolomiteMargin.ActionArgs[](actionsLength());
-        uint256 makerAccountId = abi.decode(_params.orderData, (uint256)); // @stephen -- I don't lke that this is manually set
+        uint256 metaVaultAccountId = abi.decode(_params.orderData, (uint256));
 
         // Transfer the IsolationMode tokens to this contract. Do this by enqueuing a transfer via the call to
         // `enqueueTransferFromDolomiteMargin` in `callFunction` on this contract.
@@ -217,7 +212,7 @@ contract POLIsolationModeUnwrapperTraderV2 is
             )
         );
 
-        // "Sell" POL tokens for 0 tokens. This can trigger a burn for the POL tokens while lowering the total supply of
+        // "Sell" POL tokens for 0 tokens. This triggers a burn for the POL tokens and lowers the total supply of
         // POL tokens on Dolomite. We cannot transfer dTokens using an external sell action though, since it would
         // trigger reentrancy into `DolomiteMargin.operate`.
         actions[1] = AccountActionLib.encodeExternalSellAction(
@@ -232,14 +227,14 @@ contract POLIsolationModeUnwrapperTraderV2 is
 
         // transfer from metavault to vault
         actions[2] = AccountActionLib.encodeInternalTradeActionForUnwrap(
-            makerAccountId,
+            metaVaultAccountId,
             _params.primaryAccountId,
             _params.inputMarket,
             _params.outputMarket,
             /* _trader = */ address(this),
-            block.chainid,
-            false,
-            ''
+            /* _chainId = */ block.chainid,
+            /* _calculateAmountWithMakerAccount = */ false,
+            /* _orderData = */ ''
         );
 
         return actions;
@@ -329,11 +324,7 @@ contract POLIsolationModeUnwrapperTraderV2 is
             transferAmount
         );
 
-        // @audit Have to make sure a user can't maliciously set this
-        if (_accountInfo.owner != vault) {
-            _setAddressInMap(_LIQUIDATION_ADDRESS_OVERRIDE_SLOT, _accountInfo.owner, vault);
-        }
-        _setUint256InMap(_INPUT_AMOUNT_PAR_SLOT, _accountInfo.owner, transferAmount);
+        _setTransientValues(vault, transferAmount);
 
         factory.enqueueTransferFromDolomiteMargin(vault, transferAmount);
     }
@@ -363,12 +354,5 @@ contract POLIsolationModeUnwrapperTraderV2 is
             "Invalid output token",
             _outputToken
         );
-    }
-
-    function _getVaultFromTradeOriginator(
-        address _tradeOriginator
-    ) internal view returns (address) {
-        address liquidationAddressOverride = _getAddressFromMap(_LIQUIDATION_ADDRESS_OVERRIDE_SLOT, _tradeOriginator);
-        return liquidationAddressOverride == address(0) ? _tradeOriginator : liquidationAddressOverride;
     }
 }
