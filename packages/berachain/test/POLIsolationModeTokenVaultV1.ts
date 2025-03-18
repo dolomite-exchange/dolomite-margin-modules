@@ -48,10 +48,11 @@ import {
   createPOLIsolationModeUnwrapperTraderV2,
   createPOLIsolationModeVaultFactory,
   createPOLIsolationModeWrapperTraderV2,
+  createPolLiquidatorProxy,
   RewardVaultType,
   wrapFullBalanceIntoVaultDefaultAccount,
 } from './berachain-ecosystem-utils';
-import { setupNewGenericTraderProxy } from 'packages/base/test/utils/dolomite';
+import { createLiquidatorProxyV5, setupNewGenericTraderProxy } from 'packages/base/test/utils/dolomite';
 import { GenericEventEmissionType, GenericTraderParam, GenericTraderType } from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 
@@ -80,19 +81,21 @@ describe('POLIsolationModeTokenVaultV1', () => {
 
   before(async () => {
     core = await setupCoreProtocol({
-      blockNumber: 1_679_500,
+      blockNumber: 2_040_000,
       network: Network.Berachain,
     });
     await disableInterestAccrual(core, core.marketIds.weth);
 
     dToken = DolomiteERC4626__factory.connect(core.dolomiteTokens.weth!.address, core.hhUser1);
+    const liquidatorProxyV5 = await createLiquidatorProxyV5(core);
+    const polLiquidatorProxy = await createPolLiquidatorProxy(core, liquidatorProxyV5);
 
     const metaVaultImplementation = await createContractWithAbi<InfraredBGTMetaVault>(
       InfraredBGTMetaVault__factory.abi,
       InfraredBGTMetaVault__factory.bytecode,
       [],
     );
-    registry = await createBerachainRewardsRegistry(core, metaVaultImplementation);
+    registry = await createBerachainRewardsRegistry(core, metaVaultImplementation, polLiquidatorProxy);
 
     infraredVault = IInfraredVault__factory.connect(
       await registry.rewardVault(dToken.address, RewardVaultType.Infrared),
@@ -292,6 +295,42 @@ describe('POLIsolationModeTokenVaultV1', () => {
       expect(await infraredVault.balanceOf(metaVault.address)).to.equal(parAmount);
       expect(await vault.underlyingBalanceOf()).to.equal(parAmount);
     });
+
+    it('should work normally with non max uint256', async () => {
+      const wrapperParam: GenericTraderParam = {
+        trader: wrapper.address,
+        traderType: GenericTraderType.IsolationModeWrapper,
+        tradeData: defaultAbiCoder.encode(['uint256'], [2]),
+        makerAccountIndex: 0,
+      };
+      await vault.addCollateralAndSwapExactInputForOutput(
+        ZERO_BI,
+        ZERO_BI,
+        [core.marketIds.weth, marketId],
+        amountWei,
+        ONE_BI,
+        [wrapperParam],
+        [
+          {
+            owner: metaVault.address,
+            number: ZERO_BI,
+          },
+        ],
+        {
+          deadline: '123123123123123',
+          balanceCheckFlag: BalanceCheckFlag.None,
+          eventType: GenericEventEmissionType.None,
+        },
+      );
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, marketId, ZERO_BI);
+      await expectProtocolBalance(core, vault, defaultAccountNumber, core.marketIds.weth, ZERO_BI);
+      await expectProtocolBalance(core, vault, defaultAccountNumber, marketId, parAmount);
+      await expectProtocolBalance(core, metaVault, defaultAccountNumber, core.marketIds.weth, ZERO_BI);
+      await expectProtocolBalance(core, metaVault, defaultAccountNumber, marketId, ZERO_BI);
+      expect(await infraredVault.balanceOf(metaVault.address)).to.equal(parAmount);
+      expect(await vault.underlyingBalanceOf()).to.equal(parAmount);
+    })
 
     it('should work normally to transfer collateral and pay back debt', async () => {
       // same price as polWETH

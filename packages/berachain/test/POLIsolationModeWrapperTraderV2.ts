@@ -73,7 +73,7 @@ describe('POLIsolationModeWrapperTraderV2', () => {
 
   before(async () => {
     core = await setupCoreProtocol({
-      blockNumber: 1_679_500,
+      blockNumber: 2_040_000,
       network: Network.Berachain,
     });
     await disableInterestAccrual(core, core.marketIds.weth);

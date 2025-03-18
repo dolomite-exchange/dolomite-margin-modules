@@ -58,7 +58,7 @@ contract POLIsolationModeWrapperTraderV2 is
     bytes32 private constant _FILE = "POLIsolationModeWrapperV2";
     bytes32 private constant _INPUT_AMOUNT_PAR_SLOT = bytes32(uint256(keccak256("eip1967.proxy.inputAmountPar")) - 1);
 
-    uint256 internal constant _ACTIONS_LENGTH = 2;
+    uint256 internal constant _ACTIONS_LENGTH = 3;
 
     // ==================================================================
     // ========================== Constructor ===========================
@@ -82,6 +82,17 @@ contract POLIsolationModeWrapperTraderV2 is
     external
     initializer {
         _POLIsolationModeTraderBaseV2__initialize(_vaultFactory);
+    }
+
+    function callFunction(
+        address _sender,
+        IDolomiteStructs.AccountInfo calldata _accountInfo,
+        bytes calldata _data
+    )
+    external
+    onlyDolomiteMargin(msg.sender)
+    onlyGenericTraderOrTrustedLiquidator(_sender) {
+        _callFunction(_sender, _accountInfo, _data);
     }
 
     function exchange(
@@ -137,7 +148,7 @@ contract POLIsolationModeWrapperTraderV2 is
         IDolomiteStructs.AccountInfo calldata _isolationModeVaultAccount,
         IDolomiteStructs.Par calldata _oldInputPar,
         IDolomiteStructs.Par calldata _newInputPar,
-        IDolomiteStructs.Wei calldata /* inputDeltaWei */,
+        IDolomiteStructs.Wei calldata _inputDeltaWei,
         bytes calldata /* data */
     )
     external
@@ -158,11 +169,10 @@ contract POLIsolationModeWrapperTraderV2 is
 
         IDolomiteStructs.Par memory deltaPar = _newInputPar.sub(_oldInputPar);
         Require.that(
-            deltaPar.sign && deltaPar.value > 0,
+            deltaPar.sign && deltaPar.value == _getInputAmountParInternalTrade(),
             _FILE,
             "Invalid delta par"
         );
-        _setTransientValues(/* _isolationModeVault = */ address(0), deltaPar.value);
 
         return IDolomiteStructs.AssetAmount({
             sign: false,
@@ -188,9 +198,19 @@ contract POLIsolationModeWrapperTraderV2 is
         IDolomiteMargin.ActionArgs[] memory actions = new IDolomiteMargin.ActionArgs[](actionsLength());
         uint256 metaVaultAccountId = abi.decode(_params.orderData, (uint256));
 
+        actions[0] = AccountActionLib.encodeCallAction(
+            _params.primaryAccountId,
+            /* _callee = */ address(this),
+            /* _callData = */ abi.encode(
+                _params.inputAmount,
+                _params.primaryAccountId,
+                _params.primaryAccountNumber
+            )
+        );
+
         // @dev Encode internal transfer from vault to metavault which sends input token to the metavault
         // and returns 0 POL tokens. getTradeCost is responsible for input validation
-        actions[0] = AccountActionLib.encodeInternalTradeActionForWrap(
+        actions[1] = AccountActionLib.encodeInternalTradeActionForWrap(
             _params.primaryAccountId,
             metaVaultAccountId,
             _params.inputMarket,
@@ -203,7 +223,7 @@ contract POLIsolationModeWrapperTraderV2 is
 
         // @dev Encode sell action where the user will spend 0 input tokens and receive the original
         // internal transfer amount
-        actions[1] = AccountActionLib.encodeExternalSellAction(
+        actions[2] = AccountActionLib.encodeExternalSellAction(
             _params.primaryAccountId,
             _params.inputMarket,
             _params.outputMarket,
@@ -251,6 +271,43 @@ contract POLIsolationModeWrapperTraderV2 is
     // ==================================================================
     // ======================== Internal Functions ======================
     // ==================================================================
+
+    function _callFunction(
+        address /* _sender */,
+        IDolomiteStructs.AccountInfo calldata _accountInfo,
+        bytes calldata _data
+    ) internal {
+        (uint256 transferAmount, /* address vault */, /* uint256 vaultSubAccount */) = abi.decode(
+            _data,
+            (uint256, address, uint256)
+        );
+        IIsolationModeVaultFactory factory = vaultFactory();
+
+        Require.that(
+            factory.getAccountByVault(_accountInfo.owner) != address(0),
+            _FILE,
+            "Account owner is not a vault",
+            _accountInfo.owner
+        );
+
+        assert(transferAmount == type(uint256).max);
+        address assetToken = IDolomiteERC4626(vaultFactory().UNDERLYING_TOKEN()).asset();
+        uint256 marketId = DOLOMITE_MARGIN().getMarketIdByTokenAddress(assetToken);
+        // We can safely get the zap account's balance here without worrying about read-only reentrancy
+        IDolomiteStructs.Par memory balancePar = DOLOMITE_MARGIN().getAccountPar(_accountInfo, marketId);
+
+        // Account par will always be positive for the zap account
+        assert(balancePar.sign || balancePar.value == 0);
+
+        transferAmount = balancePar.value;
+
+        Require.that(
+            transferAmount > 0,
+            _FILE,
+            "Invalid transfer amount"
+        );
+        _setTransientValues(_accountInfo.owner, transferAmount);
+    }
 
     function _approveIsolationModeTokenForTransfer(
         address _vault,
