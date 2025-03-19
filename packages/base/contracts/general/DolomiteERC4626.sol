@@ -532,6 +532,12 @@ contract DolomiteERC4626 is
             _to
         );
 
+        uint256 actionsCursor = 0;
+        // Step 1: we transfer par from 0 to 1. account[1] their par balance is set using `setParFromDeltaWei`
+        // Step 2: we need to calculate account[1] new balance using `setParFromDeltaWei` after we get the delta wei from doing the second transfer
+        // Step 3: needsVaporize = `!account[1].par.sign && account[1].par.value != 0` then we know we need to vaporize
+        bool needsVaporize = false;
+
         uint256 _marketId = marketId();
         IDolomiteStructs.AccountInfo[] memory accounts = new IDolomiteStructs.AccountInfo[](3);
         accounts[0] = IDolomiteStructs.AccountInfo({
@@ -554,7 +560,7 @@ contract DolomiteERC4626 is
             ref: IDolomiteStructs.AssetReference.Delta,
             value: _amount
         });
-        actions[0] = IDolomiteStructs.ActionArgs({
+        actions[actionsCursor++] = IDolomiteStructs.ActionArgs({
             actionType: IDolomiteStructs.ActionType.Transfer,
             accountId: 0,
             amount: assetAmount0,
@@ -571,7 +577,7 @@ contract DolomiteERC4626 is
             ref: IDolomiteStructs.AssetReference.Delta,
             value: _amount
         });
-        actions[1] = IDolomiteStructs.ActionArgs({
+        actions[actionsCursor++] = IDolomiteStructs.ActionArgs({
             actionType: IDolomiteStructs.ActionType.Transfer,
             accountId: 2,
             amount: assetAmount1,
@@ -581,6 +587,25 @@ contract DolomiteERC4626 is
             otherAccountId: 1,
             data: bytes("")
         });
+
+        if (needsVaporize) {
+            IDolomiteStructs.AssetAmount memory vaporizeAmount = IDolomiteStructs.AssetAmount({
+                sign: false,
+                denomination: IDolomiteStructs.AssetDenomination.Par,
+                ref: IDolomiteStructs.AssetReference.Target,
+                value: 0
+            });
+            actions[actionsCursor++] = IDolomiteStructs.ActionArgs({
+                actionType: IDolomiteStructs.ActionType.Vaporize,
+                accountId: 0, // The from account pays if excess funds don't cover the vaporization
+                amount: vaporizeAmount,
+                primaryMarketId: _marketId,
+                secondaryMarketId: _marketId == 0 ? 1 : 0, // This must be a different market from `_marketId`
+                otherAddress: address(0),
+                otherAccountId: 1, // the 4626 contract
+                data: bytes("")
+            });
+        }
 
         DOLOMITE_MARGIN().operate(accounts, actions);
 
