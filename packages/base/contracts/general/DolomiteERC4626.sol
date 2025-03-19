@@ -6,7 +6,7 @@ pragma solidity ^0.8.9;
 import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { OnlyDolomiteMarginForUpgradeable } from "../helpers/OnlyDolomiteMarginForUpgradeable.sol";
+import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
 import { ReentrancyGuardUpgradeable } from "../helpers/ReentrancyGuardUpgradeable.sol";
 import { IDolomiteERC4626 } from "../interfaces/IDolomiteERC4626.sol";
@@ -32,7 +32,7 @@ contract DolomiteERC4626 is
     Initializable,
     ProxyContractHelpers,
     ReentrancyGuardUpgradeable,
-    OnlyDolomiteMarginForUpgradeable
+    OnlyDolomiteMargin
 {
     using AccountActionLib for IDolomiteMargin;
     using DolomiteMarginMath for uint256;
@@ -49,23 +49,29 @@ contract DolomiteERC4626 is
 
     bytes32 private constant _ASSET_SLOT = bytes32(uint256(keccak256("eip1967.proxy.asset")) - 1);
     bytes32 private constant _ALLOWANCES_SLOT = bytes32(uint256(keccak256("eip1967.proxy.allowances")) - 1);
-    bytes32 private constant _DOLOMITE_REGISTRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.dolomiteRegistry")) - 1); // solhint-disable-line max-line-length
     /// @dev mapping containing users that may receive token transfers
     bytes32 private constant _MARKET_ID_SLOT = bytes32(uint256(keccak256("eip1967.proxy.marketId")) - 1);
     bytes32 private constant _METADATA_SLOT = bytes32(uint256(keccak256("eip1967.proxy.metadata")) - 1);
 
+    IDolomiteRegistry public immutable DOLOMITE_REGISTRY; // solhint-disable-line var-name-mixedcase
     uint256 private constant _DEFAULT_ACCOUNT_NUMBER = 0;
 
     // ==================================================================
     // ========================== Initializer ===========================
     // ==================================================================
 
+    constructor (
+        address _dolomiteRegistry,
+        address _dolomiteMargin
+    ) OnlyDolomiteMargin(_dolomiteMargin) {
+        DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
+    }
+
     function initialize(
         string calldata _name,
         string calldata _symbol,
         uint8 _decimals,
-        uint256 _marketId,
-        address _dolomiteRegistry
+        uint256 _marketId
     ) external initializer {
         MetadataStruct memory metadata = MetadataStruct({
             name: _name,
@@ -76,7 +82,6 @@ contract DolomiteERC4626 is
 
         _setUint256(_MARKET_ID_SLOT, _marketId);
         _setAddress(_ASSET_SLOT, DOLOMITE_MARGIN().getMarketTokenAddress(_marketId));
-        _setAddress(_DOLOMITE_REGISTRY_SLOT, _dolomiteRegistry);
 
         __ReentrancyGuardUpgradeable__init();
     }
@@ -431,7 +436,7 @@ contract DolomiteERC4626 is
     }
 
     function isValidReceiver(address _receiver) public view returns (bool) {
-        return !dolomiteRegistry().dolomiteAccountRegistry().isAccountInRegistry(_receiver);
+        return !DOLOMITE_REGISTRY.dolomiteAccountRegistry().isAccountInRegistry(_receiver);
     }
 
     function marketId() public view returns (uint256) {
@@ -448,10 +453,6 @@ contract DolomiteERC4626 is
             value: totalSupply().to128()
         });
         return DOLOMITE_MARGIN().parToWei(marketId(), totalSupplyPar).value;
-    }
-
-    function dolomiteRegistry() public view returns (IDolomiteRegistry) {
-        return IDolomiteRegistry(_getAddress(_DOLOMITE_REGISTRY_SLOT));
     }
 
     /**
@@ -515,6 +516,11 @@ contract DolomiteERC4626 is
             "Transfer to the zero address"
         );
         Require.that(
+            _to != address(this),
+            _FILE,
+            "Transfer to this contract"
+        );
+        Require.that(
             balanceOf(_from) >= _amount,
             _FILE,
             "Transfer amount exceeds balance"
@@ -526,15 +532,69 @@ contract DolomiteERC4626 is
             _to
         );
 
-        DOLOMITE_MARGIN().transfer(
-            _from,
-            _DEFAULT_ACCOUNT_NUMBER,
-            _to,
-            _DEFAULT_ACCOUNT_NUMBER,
-            marketId(),
-            IDolomiteStructs.AssetDenomination.Par,
-            _amount,
-            AccountBalanceLib.BalanceCheckFlag.Both
+        uint256 _marketId = marketId();
+        IDolomiteStructs.AccountInfo[] memory accounts = new IDolomiteStructs.AccountInfo[](3);
+        accounts[0] = IDolomiteStructs.AccountInfo({
+            owner: _from,
+            number: _DEFAULT_ACCOUNT_NUMBER
+        });
+        accounts[1] = IDolomiteStructs.AccountInfo({
+            owner: address(this),
+            number: _DEFAULT_ACCOUNT_NUMBER
+        });
+        accounts[2] = IDolomiteStructs.AccountInfo({
+            owner: _to,
+            number: _DEFAULT_ACCOUNT_NUMBER
+        });
+
+        IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](2);
+        IDolomiteStructs.AssetAmount memory assetAmount0 = IDolomiteStructs.AssetAmount({
+            sign: false,
+            denomination: IDolomiteStructs.AssetDenomination.Par,
+            ref: IDolomiteStructs.AssetReference.Delta,
+            value: _amount
+        });
+        actions[0] = IDolomiteStructs.ActionArgs({
+            actionType: IDolomiteStructs.ActionType.Transfer,
+            accountId: 0,
+            amount: assetAmount0,
+            primaryMarketId: _marketId,
+            secondaryMarketId: 0,
+            otherAddress: address(0),
+            otherAccountId: 1,
+            data: bytes("")
+        });
+
+        IDolomiteStructs.AssetAmount memory assetAmount1 = IDolomiteStructs.AssetAmount({
+            sign: true,
+            denomination: IDolomiteStructs.AssetDenomination.Par,
+            ref: IDolomiteStructs.AssetReference.Delta,
+            value: _amount
+        });
+        actions[1] = IDolomiteStructs.ActionArgs({
+            actionType: IDolomiteStructs.ActionType.Transfer,
+            accountId: 2,
+            amount: assetAmount1,
+            primaryMarketId: _marketId,
+            secondaryMarketId: 1,
+            otherAddress: address(0),
+            otherAccountId: 1,
+            data: bytes("")
+        });
+
+        DOLOMITE_MARGIN().operate(accounts, actions);
+
+        AccountBalanceLib.verifyBalanceIsNonNegative(
+            DOLOMITE_MARGIN(),
+            accounts[0].owner,
+            accounts[0].number,
+            _marketId
+        );
+        AccountBalanceLib.verifyBalanceIsNonNegative(
+            DOLOMITE_MARGIN(),
+            accounts[2].owner,
+            accounts[2].number,
+            _marketId
         );
 
         emit Transfer(_from, _to, _amount);

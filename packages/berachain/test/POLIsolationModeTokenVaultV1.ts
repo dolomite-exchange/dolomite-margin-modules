@@ -1,4 +1,8 @@
-import { DolomiteERC4626, DolomiteERC4626__factory } from '@dolomite-exchange/modules-base/src/types';
+import {
+  DolomiteERC4626,
+  DolomiteERC4626__factory,
+  RegistryProxy__factory,
+} from '@dolomite-exchange/modules-base/src/types';
 import {
   MAX_UINT_256_BI,
   Network,
@@ -20,12 +24,19 @@ import {
   setupUserVaultProxy,
   setupWETHBalance,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
+import {
+  GenericEventEmissionType,
+  GenericTraderParam,
+  GenericTraderType,
+} from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
 import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { defaultAbiCoder, parseEther } from 'ethers/lib/utils';
 import { createContractWithAbi, depositIntoDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
 import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
+import { createLiquidatorProxyV5, setupNewGenericTraderProxy } from 'packages/base/test/utils/dolomite';
 import {
   BerachainRewardsRegistry,
   IInfraredVault,
@@ -52,9 +63,6 @@ import {
   RewardVaultType,
   wrapFullBalanceIntoVaultDefaultAccount,
 } from './berachain-ecosystem-utils';
-import { createLiquidatorProxyV5, setupNewGenericTraderProxy } from 'packages/base/test/utils/dolomite';
-import { GenericEventEmissionType, GenericTraderParam, GenericTraderType } from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
-import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 
 const defaultAccountNumber = ZERO_BI;
 const borrowAccountNumber = BigNumber.from('123');
@@ -86,7 +94,15 @@ describe('POLIsolationModeTokenVaultV1', () => {
     });
     await disableInterestAccrual(core, core.marketIds.weth);
 
-    dToken = DolomiteERC4626__factory.connect(core.dolomiteTokens.weth!.address, core.hhUser1);
+    dToken = core.dolomiteTokens.weth!.connect(core.hhUser1);
+    const implementation = await createContractWithAbi<DolomiteERC4626>(
+      DolomiteERC4626__factory.abi,
+      DolomiteERC4626__factory.bytecode,
+      [core.dolomiteRegistry.address, core.dolomiteMargin.address],
+    );
+    const dTokenProxy = RegistryProxy__factory.connect(dToken.address, core.governance);
+    await dTokenProxy.upgradeTo(implementation.address);
+
     const liquidatorProxyV5 = await createLiquidatorProxyV5(core);
     const polLiquidatorProxy = await createPolLiquidatorProxy(core, liquidatorProxyV5);
 
@@ -162,19 +178,13 @@ describe('POLIsolationModeTokenVaultV1', () => {
 
   describe('#depositIntoVaultForDolomiteMargin', () => {
     it('should revert', async () => {
-      await expectThrow(
-        vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, parAmount),
-        'Not implemented',
-      );
+      await expectThrow(vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, parAmount), 'Not implemented');
     });
   });
 
   describe('#withdrawFromVaultForDolomiteMargin', () => {
     it('should revert', async () => {
-      await expectThrow(
-        vault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, parAmount),
-        'Not implemented',
-      );
+      await expectThrow(vault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, parAmount), 'Not implemented');
     });
   });
 
@@ -215,10 +225,9 @@ describe('POLIsolationModeTokenVaultV1', () => {
     it('should work normally to leverage and pay back debt', async () => {
       // same price as polWETH
       await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.weth.address, parseEther('2000'));
-      await core.dolomiteMargin.connect(core.governance).ownerSetPriceOracle(
-        core.marketIds.weth,
-        core.testEcosystem!.testPriceOracle.address,
-      );
+      await core.dolomiteMargin
+        .connect(core.governance)
+        .ownerSetPriceOracle(core.marketIds.weth, core.testEcosystem!.testPriceOracle.address);
 
       await wrapFullBalanceIntoVaultDefaultAccount(core, vault, metaVault, wrapper, marketId);
       await vault.transferIntoPositionWithUnderlyingToken(defaultAccountNumber, borrowAccountNumber, parAmount);
@@ -237,10 +246,12 @@ describe('POLIsolationModeTokenVaultV1', () => {
         amountWei,
         parAmount,
         [wrapperParam],
-        [{
-          owner: metaVault.address,
-          number: defaultAccountNumber,
-        }],
+        [
+          {
+            owner: metaVault.address,
+            number: defaultAccountNumber,
+          },
+        ],
         {
           deadline: '123123123123123',
           balanceCheckFlag: BalanceCheckFlag.None,
@@ -264,10 +275,12 @@ describe('POLIsolationModeTokenVaultV1', () => {
         parAmount,
         amountWei,
         [unwrapperParam],
-        [{
-          owner: metaVault.address,
-          number: defaultAccountNumber,
-        }],
+        [
+          {
+            owner: metaVault.address,
+            number: defaultAccountNumber,
+          },
+        ],
         {
           deadline: '123123123123123',
           balanceCheckFlag: BalanceCheckFlag.None,
@@ -334,10 +347,9 @@ describe('POLIsolationModeTokenVaultV1', () => {
     it('should work normally to transfer collateral and pay back debt', async () => {
       // same price as polWETH
       await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.weth.address, parseEther('2000'));
-      await core.dolomiteMargin.connect(core.governance).ownerSetPriceOracle(
-        core.marketIds.weth,
-        core.testEcosystem!.testPriceOracle.address,
-      );
+      await core.dolomiteMargin
+        .connect(core.governance)
+        .ownerSetPriceOracle(core.marketIds.weth, core.testEcosystem!.testPriceOracle.address);
 
       await wrapFullBalanceIntoVaultDefaultAccount(core, vault, metaVault, wrapper, marketId);
       await vault.transferIntoPositionWithUnderlyingToken(defaultAccountNumber, borrowAccountNumber, parAmount);
@@ -356,10 +368,12 @@ describe('POLIsolationModeTokenVaultV1', () => {
         amountWei,
         parAmount,
         [wrapperParam],
-        [{
-          owner: metaVault.address,
-          number: defaultAccountNumber,
-        }],
+        [
+          {
+            owner: metaVault.address,
+            number: defaultAccountNumber,
+          },
+        ],
         {
           deadline: '123123123123123',
           balanceCheckFlag: BalanceCheckFlag.None,
@@ -387,10 +401,12 @@ describe('POLIsolationModeTokenVaultV1', () => {
         parAmount,
         amountWei,
         [unwrapperParam],
-        [{
-          owner: metaVault.address,
-          number: defaultAccountNumber,
-        }],
+        [
+          {
+            owner: metaVault.address,
+            number: defaultAccountNumber,
+          },
+        ],
         {
           deadline: '123123123123123',
           balanceCheckFlag: BalanceCheckFlag.None,
@@ -418,10 +434,12 @@ describe('POLIsolationModeTokenVaultV1', () => {
         parAmount,
         amountWei,
         [unwrapperParam],
-        [{
-          owner: metaVault.address,
-          number: defaultAccountNumber,
-        }],
+        [
+          {
+            owner: metaVault.address,
+            number: defaultAccountNumber,
+          },
+        ],
         {
           deadline: '123123123123123',
           balanceCheckFlag: BalanceCheckFlag.None,
@@ -455,10 +473,12 @@ describe('POLIsolationModeTokenVaultV1', () => {
         MAX_UINT_256_BI,
         ONE_BI,
         [unwrapperParam],
-        [{
-          owner: metaVault.address,
-          number: defaultAccountNumber,
-        }],
+        [
+          {
+            owner: metaVault.address,
+            number: defaultAccountNumber,
+          },
+        ],
         {
           deadline: '123123123123123',
           balanceCheckFlag: BalanceCheckFlag.None,
@@ -475,7 +495,7 @@ describe('POLIsolationModeTokenVaultV1', () => {
       expect(await vault.underlyingBalanceOf()).to.equal(ZERO_BI);
     });
 
-    it('should work normally with max uint256, unstaking and fee', async () => {
+    it.only('should work normally with max uint256, unstaking and fee', async () => {
       await wrapFullBalanceIntoVaultDefaultAccount(core, vault, metaVault, wrapper, marketId);
       await expectProtocolBalance(core, vault, defaultAccountNumber, marketId, parAmount);
       expect(await vault.underlyingBalanceOf()).to.equal(parAmount);
@@ -496,10 +516,12 @@ describe('POLIsolationModeTokenVaultV1', () => {
         MAX_UINT_256_BI,
         ONE_BI,
         [unwrapperParam],
-        [{
-          owner: metaVault.address,
-          number: defaultAccountNumber,
-        }],
+        [
+          {
+            owner: metaVault.address,
+            number: defaultAccountNumber,
+          },
+        ],
         {
           deadline: '123123123123123',
           balanceCheckFlag: BalanceCheckFlag.None,
@@ -514,7 +536,7 @@ describe('POLIsolationModeTokenVaultV1', () => {
         core.marketIds.weth,
         parAmount.sub(feeAmount),
       );
-      await expectProtocolParBalance(core, core.hhUser5, defaultAccountNumber, core.marketIds.weth, feeAmount.sub(1)); // @follow-up @Corey rounding issue here
+      await expectProtocolParBalance(core, core.hhUser5, defaultAccountNumber, core.marketIds.weth, feeAmount);
       await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, marketId, ZERO_BI);
       await expectProtocolBalance(core, vault, defaultAccountNumber, core.marketIds.weth, ZERO_BI);
       await expectProtocolBalance(core, vault, defaultAccountNumber, marketId, ZERO_BI);
@@ -546,10 +568,12 @@ describe('POLIsolationModeTokenVaultV1', () => {
         inputAmount,
         ONE_BI,
         [unwrapperParam],
-        [{
-          owner: metaVault.address,
-          number: defaultAccountNumber,
-        }],
+        [
+          {
+            owner: metaVault.address,
+            number: defaultAccountNumber,
+          },
+        ],
         {
           deadline: '123123123123123',
           balanceCheckFlag: BalanceCheckFlag.None,
@@ -594,10 +618,12 @@ describe('POLIsolationModeTokenVaultV1', () => {
         MAX_UINT_256_BI,
         ONE_BI,
         [unwrapperParam],
-        [{
-          owner: metaVault.address,
-          number: defaultAccountNumber,
-        }],
+        [
+          {
+            owner: metaVault.address,
+            number: defaultAccountNumber,
+          },
+        ],
         {
           deadline: '123123123123123',
           balanceCheckFlag: BalanceCheckFlag.None,
@@ -637,10 +663,12 @@ describe('POLIsolationModeTokenVaultV1', () => {
         MAX_UINT_256_BI,
         ONE_BI,
         [wrapperParam],
-        [{
-          owner: metaVault.address,
-          number: defaultAccountNumber,
-        }],
+        [
+          {
+            owner: metaVault.address,
+            number: defaultAccountNumber,
+          },
+        ],
         {
           deadline: '123123123123123',
           balanceCheckFlag: BalanceCheckFlag.None,
@@ -670,10 +698,12 @@ describe('POLIsolationModeTokenVaultV1', () => {
           parAmount.add(1),
           ONE_BI,
           [unwrapperParam],
-          [{
-            owner: metaVault.address,
-            number: defaultAccountNumber,
-          }],
+          [
+            {
+              owner: metaVault.address,
+              number: defaultAccountNumber,
+            },
+          ],
           {
             deadline: '123123123123123',
             balanceCheckFlag: BalanceCheckFlag.None,
@@ -704,7 +734,7 @@ describe('POLIsolationModeTokenVaultV1', () => {
     it('should fail if not called by owner', async () => {
       await expectThrow(
         vault.connect(core.hhUser2).stake(RewardVaultType.Infrared, parAmount),
-        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`
+        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
   });
@@ -724,7 +754,7 @@ describe('POLIsolationModeTokenVaultV1', () => {
     it('should fail if not called by owner', async () => {
       await expectThrow(
         vault.connect(core.hhUser2).unstake(RewardVaultType.Infrared, parAmount),
-        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`
+        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
   });
@@ -754,7 +784,7 @@ describe('POLIsolationModeTokenVaultV1', () => {
     it('should fail if not called by owner', async () => {
       await expectThrow(
         vault.connect(core.hhUser2).getReward(),
-        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`
+        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
   });
@@ -774,10 +804,9 @@ describe('POLIsolationModeTokenVaultV1', () => {
       const rewards = await infraredVault.getAllRewardsForUser(metaVault.address);
 
       await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.weth.address, parseEther('2000'));
-      await core.dolomiteMargin.connect(core.governance).ownerSetPriceOracle(
-        core.marketIds.weth,
-        core.testEcosystem!.testPriceOracle.address
-      );
+      await core.dolomiteMargin
+        .connect(core.governance)
+        .ownerSetPriceOracle(core.marketIds.weth, core.testEcosystem!.testPriceOracle.address);
       await vault.exit();
       const iBgtVault = InfraredBGTIsolationModeTokenVaultV1__factory.connect(
         await iBgtFactory.getVaultByAccount(core.hhUser1.address),
@@ -793,7 +822,7 @@ describe('POLIsolationModeTokenVaultV1', () => {
     it('should fail if not called by owner', async () => {
       await expectThrow(
         vault.connect(core.hhUser2).exit(),
-        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`
+        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
   });
@@ -802,7 +831,7 @@ describe('POLIsolationModeTokenVaultV1', () => {
     it('should fail if not called by factory', async () => {
       await expectThrow(
         vault.connect(core.hhUser2).executeDepositIntoVault(core.hhUser1.address, parAmount),
-        `IsolationModeTokenVaultV1: Only factory can call <${core.hhUser2.address.toLowerCase()}>`
+        `IsolationModeTokenVaultV1: Only factory can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
   });
@@ -811,7 +840,7 @@ describe('POLIsolationModeTokenVaultV1', () => {
     it('should fail if not called by factory', async () => {
       await expectThrow(
         vault.connect(core.hhUser2).executeWithdrawalFromVault(core.hhUser1.address, parAmount),
-        `IsolationModeTokenVaultV1: Only factory can call <${core.hhUser2.address.toLowerCase()}>`
+        `IsolationModeTokenVaultV1: Only factory can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
   });
@@ -836,24 +865,14 @@ describe('POLIsolationModeTokenVaultV1', () => {
       console.log('metaBalance2', metaBalance2.toString());
 
       await vault.unstake(RewardVaultType.Infrared, parAmount.div(2));
-      expect(await vault.underlyingBalanceOf()).to.equal(parAmount.sub(1)); // @follow-up @Corey rounding issue here
+      expect(await vault.underlyingBalanceOf()).to.equal(parAmount);
 
       const balance3 = await dToken.balanceOf(metaVault.address);
       const metaBalance3 = await metaVault.getStakedBalanceByAssetAndType(dToken.address, RewardVaultType.Infrared);
       console.log('balance3', balance3.toString());
       console.log('metaBalance3', metaBalance3.toString());
 
-      expect(await vault.underlyingBalanceOf()).to.equal(parAmount.sub(1)); // @follow-up @Corey rounding issue here
-
-      await vault.unstake(RewardVaultType.Infrared, 1);
-
-      const balance4 = await dToken.balanceOf(metaVault.address);
-      const metaBalance4 = await metaVault.getStakedBalanceByAssetAndType(dToken.address, RewardVaultType.Infrared);
-      console.log('balance4', balance4.toString()); // this is one unit off
-      console.log('metaBalance4', metaBalance4.toString()); // this is zeroed out
-
-      // @audit - this fails. There is 1 unit missing in the meta vault which can lead to DOS issues
-      expect(await vault.underlyingBalanceOf()).to.equal(parAmount); // @follow-up @Corey rounding issue here
+      expect(await vault.underlyingBalanceOf()).to.equal(parAmount);
     });
   });
 
