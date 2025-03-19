@@ -209,18 +209,99 @@ describe('POLIsolationModeWrapperTraderV2', () => {
     });
   });
 
-  describe('#exchange', () => {
+  describe('#callFunction', () => {
+    it('should work normally', async () => {
+      await vault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        core.marketIds.weth,
+        amountWei,
+        BalanceCheckFlag.None,
+      );
+      const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
+      await wrapper.connect(dolomiteMarginImpersonator).callFunction(
+        core.genericTraderProxy.address,
+        { owner: vault.address, number: borrowAccountNumber },
+        defaultAbiCoder.encode(
+          ['uint256', 'address', 'uint256'],
+          [MAX_UINT_256_BI, vault.address, borrowAccountNumber]
+        ),
+      );
+    });
+
+    it('should fail if account owner is not vault', async () => {
+      const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
+      await expectThrow(
+        wrapper.connect(dolomiteMarginImpersonator).callFunction(
+          core.genericTraderProxy.address,
+          { owner: core.hhUser1.address, number: borrowAccountNumber },
+          defaultAbiCoder.encode(
+            ['uint256', 'address', 'uint256'],
+            [MAX_UINT_256_BI, vault.address, borrowAccountNumber]
+          ),
+        ),
+        `POLIsolationModeWrapperV2: Account owner is not a vault <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if transfer amount is 0', async () => {
+      const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
+      await expectThrow(
+        wrapper.connect(dolomiteMarginImpersonator).callFunction(
+          core.genericTraderProxy.address,
+          { owner: vault.address, number: borrowAccountNumber },
+          defaultAbiCoder.encode(
+            ['uint256', 'address', 'uint256'],
+            [MAX_UINT_256_BI, vault.address, borrowAccountNumber]
+          ),
+        ),
+        'POLIsolationModeWrapperV2: Invalid transfer amount',
+      );
+    });
+
     it('should fail if not called by DolomiteMargin', async () => {
       await expectThrow(
-        wrapper.connect(core.hhUser1).exchange(
+        wrapper.connect(core.hhUser1).callFunction(
+          core.genericTraderProxy.address,
+          { owner: vault.address, number: borrowAccountNumber },
+          defaultAbiCoder.encode(
+            ['uint256', 'address', 'uint256'],
+            [MAX_UINT_256_BI, vault.address, borrowAccountNumber]
+          ),
+        ),
+        `OnlyDolomiteMargin: Only Dolomite can call function <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if sender is not generic trader proxy or liquidator', async () => {
+      const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
+      await expectThrow(
+        wrapper.connect(dolomiteMarginImpersonator).callFunction(
+          core.hhUser1.address,
+          { owner: vault.address, number: borrowAccountNumber },
+          defaultAbiCoder.encode(
+            ['uint256', 'address', 'uint256'],
+            [MAX_UINT_256_BI, vault.address, borrowAccountNumber]
+          ),
+        ),
+        `POLIsolationModeTraderBaseV2: Caller is not authorized <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+  });
+
+  describe('#exchange', () => {
+    it('should fail if vault for internal trade is empty', async () => {
+      const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
+      await expectThrow(
+        wrapper.connect(dolomiteMarginImpersonator).exchange(
           vault.address,
           core.dolomiteMargin.address,
           factory.address,
-          core.tokens.honey.address,
+          core.tokens.weth.address,
           ZERO_BI,
           defaultAbiCoder.encode(['uint256', 'bytes'], [ONE_BI, sampleTradeData]),
         ),
-        `OnlyDolomiteMargin: Only Dolomite can call function <${core.hhUser1.address.toLowerCase()}>`,
+        'POLIsolationModeTraderBaseV2: Invalid isolation mode vault',
       );
     });
 
@@ -281,6 +362,20 @@ describe('POLIsolationModeWrapperTraderV2', () => {
           defaultAbiCoder.encode(['uint256', 'bytes'], [ONE_BI, sampleTradeData]),
         ),
         'POLIsolationModeWrapperV2: Invalid input amount',
+      );
+    });
+
+    it('should fail if not called by DolomiteMargin', async () => {
+      await expectThrow(
+        wrapper.connect(core.hhUser1).exchange(
+          vault.address,
+          core.dolomiteMargin.address,
+          factory.address,
+          core.tokens.honey.address,
+          ZERO_BI,
+          defaultAbiCoder.encode(['uint256', 'bytes'], [ONE_BI, sampleTradeData]),
+        ),
+        `OnlyDolomiteMargin: Only Dolomite can call function <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });

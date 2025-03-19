@@ -110,6 +110,7 @@ contract POLIsolationModeWrapperTraderV2 is
         IIsolationModeVaultFactory factory = vaultFactory();
 
         _validateInputAndOutputToken(_inputToken, _outputToken);
+        assert(_tradeOriginator == _getVaultForInternalTrade());
         Require.that(
             factory.getAccountByVault(_tradeOriginator) != address(0),
             _FILE,
@@ -159,6 +160,7 @@ contract POLIsolationModeWrapperTraderV2 is
     onlyDolomiteMargin(msg.sender)
     returns (IDolomiteStructs.AssetAmount memory) {
         _validateInputAndOutputMarketId(_inputMarketId, _outputMarketId);
+        assert(_isolationModeVaultAccount.owner == _getVaultForInternalTrade());
         Require.that(
             vaultFactory().getAccountByVault(_isolationModeVaultAccount.owner) != address(0),
             _FILE,

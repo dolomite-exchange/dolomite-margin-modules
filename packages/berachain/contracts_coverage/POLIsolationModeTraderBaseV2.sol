@@ -86,9 +86,7 @@ abstract contract POLIsolationModeTraderBaseV2 is OnlyDolomiteMargin, Initializa
 
     function _POLIsolationModeTraderBaseV2__initialize(
         address _vaultFactory
-    )
-    internal
-    initializer {
+    ) internal {
         _setAddress(_VAULT_FACTORY_SLOT, _vaultFactory);
     }
 

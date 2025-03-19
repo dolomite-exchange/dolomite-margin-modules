@@ -41,6 +41,7 @@ import {
   POLIsolationModeVaultFactory,
   POLIsolationModeWrapperTraderV2,
   POLLiquidatorProxyV1,
+  TestPOLLiquidatorProxyV1,
 } from '../src/types';
 import {
   createBerachainRewardsRegistry,
@@ -50,6 +51,7 @@ import {
   createPOLIsolationModeUnwrapperTraderV2,
   createPOLIsolationModeVaultFactory,
   createPOLIsolationModeWrapperTraderV2, createPolLiquidatorProxy,
+  createTestPolLiquidatorProxy,
   RewardVaultType,
   wrapFullBalanceIntoVaultDefaultAccount,
 } from './berachain-ecosystem-utils';
@@ -74,7 +76,7 @@ describe('POLLiquidatorProxyV1', () => {
   let unwrapper: POLIsolationModeUnwrapperTraderV2;
   let metaVault: InfraredBGTMetaVault;
 
-  let polLiquidatorProxy: POLLiquidatorProxyV1;
+  let polLiquidatorProxy: TestPOLLiquidatorProxyV1;
   let liquidatorProxyV5: LiquidatorProxyV5;
 
   let dToken: DolomiteERC4626;
@@ -94,7 +96,7 @@ describe('POLLiquidatorProxyV1', () => {
 
     dToken = DolomiteERC4626__factory.connect(core.dolomiteTokens.weth!.address, core.hhUser1);
 
-    polLiquidatorProxy = await createPolLiquidatorProxy(core, liquidatorProxyV5);
+    polLiquidatorProxy = await createTestPolLiquidatorProxy(core, liquidatorProxyV5);
 
     const metaVaultImplementation = await createContractWithAbi<InfraredBGTMetaVault>(
       InfraredBGTMetaVault__factory.abi,
@@ -210,6 +212,15 @@ describe('POLLiquidatorProxyV1', () => {
     it('should work normally', async () => {
       expect(await polLiquidatorProxy.LIQUIDATOR_PROXY_V5()).to.equal(liquidatorProxyV5.address);
       expect(await polLiquidatorProxy.DOLOMITE_MARGIN()).to.equal(core.dolomiteMargin.address);
+    });
+  });
+
+  describe('#initialize', () => {
+    it('should fail if already initialized', async () => {
+      await expectThrow(
+        polLiquidatorProxy.initialize(),
+        'Initializable: contract is already initialized'
+      );
     });
   });
 
@@ -444,6 +455,33 @@ describe('POLLiquidatorProxyV1', () => {
           withdrawAllReward: false,
         }),
         `POLLiquidatorProxyV1: Sender not operator <${core.hhUser3.address.toLowerCase()}>`
+      );
+    });
+
+    it('should fail if reentered', async () => {
+      const unwrapperParam: GenericTraderParam = {
+        trader: unwrapper.address,
+        traderType: GenericTraderType.IsolationModeUnwrapper,
+        tradeData: defaultAbiCoder.encode(['uint256'], [3]),
+        makerAccountIndex: 0,
+      };
+      const data = await polLiquidatorProxy.populateTransaction.liquidateProofOfLiquidityCollateral({
+        solidAccount: { owner: core.hhUser3.address, number: defaultAccountNumber },
+        liquidAccount: { owner: vault.address, number: borrowAccountNumber },
+        marketIdsPath: [marketId, core.marketIds.weth],
+        inputAmountWei: MAX_UINT_256_BI,
+        minOutputAmountWei: MAX_UINT_256_BI,
+        tradersPath: [unwrapperParam],
+        makerAccounts: [{
+          owner: metaVault.address,
+          number: defaultAccountNumber,
+        }],
+        expirationTimestamp: ZERO_BI,
+        withdrawAllReward: false,
+      });
+      await expectThrow(
+        polLiquidatorProxy.connect(core.hhUser3).callFunctionAndTriggerReentrancy(data.data!),
+        'ReentrancyGuard: reentrant call'
       );
     });
   });

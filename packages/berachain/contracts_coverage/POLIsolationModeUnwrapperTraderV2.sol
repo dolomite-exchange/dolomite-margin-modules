@@ -111,17 +111,11 @@ contract POLIsolationModeUnwrapperTraderV2 is
     returns (IDolomiteStructs.AssetAmount memory) {
         IIsolationModeVaultFactory factory = vaultFactory();
         address vault = _getVaultForInternalTrade();
+        /*assert(factory.getAccountByVault(vault) != address(0));*/
 
         _validateInputAndOutputMarketId(
             _inputMarketId,
             _outputMarketId
-        );
-        if (factory.getAccountByVault(vault) != address(0)) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            factory.getAccountByVault(vault) != address(0),
-            _FILE,
-            "Invalid maker account",
-            vault
         );
         if (_metaVaultAccount.owner == BERACHAIN_REWARDS_REGISTRY.getMetaVaultByVault(vault) && _metaVaultAccount.number == _DEFAULT_ACCOUNT_NUMBER) { /* FOR COVERAGE TESTING */ }
         Require.that(
@@ -170,17 +164,11 @@ contract POLIsolationModeUnwrapperTraderV2 is
     returns (uint256) {
         IIsolationModeVaultFactory factory = vaultFactory();
         address vault = _getVaultForInternalTrade();
+        /*assert(factory.getAccountByVault(vault) != address(0));*/
 
         _validateInputAndOutputToken(
             _inputToken,
             _outputToken
-        );
-        if (factory.getAccountByVault(vault) != address(0)) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            factory.getAccountByVault(vault) != address(0),
-            _FILE,
-            "Invalid trade originator",
-            _tradeOriginator
         );
         if (_inputAmount > 0) { /* FOR COVERAGE TESTING */ }
         Require.that(

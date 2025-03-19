@@ -111,16 +111,11 @@ contract POLIsolationModeUnwrapperTraderV2 is
     returns (IDolomiteStructs.AssetAmount memory) {
         IIsolationModeVaultFactory factory = vaultFactory();
         address vault = _getVaultForInternalTrade();
+        assert(factory.getAccountByVault(vault) != address(0));
 
         _validateInputAndOutputMarketId(
             _inputMarketId,
             _outputMarketId
-        );
-        Require.that(
-            factory.getAccountByVault(vault) != address(0),
-            _FILE,
-            "Invalid maker account",
-            vault
         );
         Require.that(
             _metaVaultAccount.owner == BERACHAIN_REWARDS_REGISTRY.getMetaVaultByVault(vault)
@@ -167,16 +162,11 @@ contract POLIsolationModeUnwrapperTraderV2 is
     returns (uint256) {
         IIsolationModeVaultFactory factory = vaultFactory();
         address vault = _getVaultForInternalTrade();
+        assert(factory.getAccountByVault(vault) != address(0));
 
         _validateInputAndOutputToken(
             _inputToken,
             _outputToken
-        );
-        Require.that(
-            factory.getAccountByVault(vault) != address(0),
-            _FILE,
-            "Invalid trade originator",
-            _tradeOriginator
         );
         Require.that(
             _inputAmount > 0,

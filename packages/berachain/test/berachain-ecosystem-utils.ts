@@ -45,7 +45,10 @@ import {
   POLLiquidatorProxyV1__factory,
   TestBerachainRewardsRegistry,
   TestBerachainRewardsRegistry__factory,
+  TestPOLLiquidatorProxyV1,
+  TestPOLLiquidatorProxyV1__factory,
 } from '../src/types';
+import { UpgradeableProxy__factory } from 'packages/tokenomics/src/types';
 
 export enum RewardVaultType {
   Infrared,
@@ -147,11 +150,36 @@ export async function createPolLiquidatorProxy(
   core: CoreProtocolBerachain,
   liquidatorProxyV5: LiquidatorProxyV5,
 ): Promise<POLLiquidatorProxyV1> {
-  return createContractWithAbi<POLLiquidatorProxyV1>(
+  const implementation = await createContractWithAbi<POLLiquidatorProxyV1>(
     POLLiquidatorProxyV1__factory.abi,
     POLLiquidatorProxyV1__factory.bytecode,
     [liquidatorProxyV5.address, core.dolomiteMargin.address],
   );
+  const data = await implementation.populateTransaction.initialize();
+  const proxy = await createContractWithAbi(
+    UpgradeableProxy__factory.abi,
+    UpgradeableProxy__factory.bytecode,
+    [implementation.address, core.dolomiteMargin.address, data.data!],
+  );
+  return POLLiquidatorProxyV1__factory.connect(proxy.address, core.hhUser1);
+}
+
+export async function createTestPolLiquidatorProxy(
+  core: CoreProtocolBerachain,
+  liquidatorProxyV5: LiquidatorProxyV5,
+): Promise<TestPOLLiquidatorProxyV1> {
+  const implementation = await createContractWithAbi<TestPOLLiquidatorProxyV1>(
+    TestPOLLiquidatorProxyV1__factory.abi,
+    TestPOLLiquidatorProxyV1__factory.bytecode,
+    [liquidatorProxyV5.address, core.dolomiteMargin.address],
+  );
+  const data = await implementation.populateTransaction.initialize();
+  const proxy = await createContractWithAbi(
+    UpgradeableProxy__factory.abi,
+    UpgradeableProxy__factory.bytecode,
+    [implementation.address, core.dolomiteMargin.address, data.data!],
+  );
+  return TestPOLLiquidatorProxyV1__factory.connect(proxy.address, core.hhUser1);
 }
 
 export async function createPOLIsolationModeWrapperTraderV2(

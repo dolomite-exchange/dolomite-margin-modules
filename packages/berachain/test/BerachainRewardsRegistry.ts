@@ -21,12 +21,14 @@ import {
   INativeRewardVault__factory,
   InfraredBGTIsolationModeVaultFactory,
   InfraredBGTMetaVault,
-  InfraredBGTMetaVault__factory, POLLiquidatorProxyV1,
+  InfraredBGTMetaVault__factory,
+  POLLiquidatorProxyV1,
 } from '../src/types';
 import {
   createBerachainRewardsRegistry,
   createInfraredBGTIsolationModeTokenVaultV1,
-  createInfraredBGTIsolationModeVaultFactory, createPolLiquidatorProxy,
+  createInfraredBGTIsolationModeVaultFactory,
+  createPolLiquidatorProxy,
   RewardVaultType,
 } from './berachain-ecosystem-utils';
 import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
