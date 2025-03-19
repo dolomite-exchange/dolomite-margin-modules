@@ -495,7 +495,7 @@ describe('POLIsolationModeTokenVaultV1', () => {
       expect(await vault.underlyingBalanceOf()).to.equal(ZERO_BI);
     });
 
-    it.only('should work normally with max uint256, unstaking and fee', async () => {
+    it('should work normally with max uint256, unstaking and fee', async () => {
       await wrapFullBalanceIntoVaultDefaultAccount(core, vault, metaVault, wrapper, marketId);
       await expectProtocolBalance(core, vault, defaultAccountNumber, marketId, parAmount);
       expect(await vault.underlyingBalanceOf()).to.equal(parAmount);
@@ -846,31 +846,15 @@ describe('POLIsolationModeTokenVaultV1', () => {
   });
 
   describe('#underlyingBalanceOf', () => {
-    it.only('should work normally', async () => {
-      console.log('parAmount', parAmount.toString());
+    it('should work normally', async () => {
       await wrapFullBalanceIntoVaultDefaultAccount(core, vault, metaVault, wrapper, marketId);
       expect(await vault.underlyingBalanceOf()).to.equal(parAmount);
 
-      const balance1 = await dToken.balanceOf(metaVault.address);
-      const metaBalance1 = await metaVault.getStakedBalanceByAssetAndType(dToken.address, RewardVaultType.Infrared);
-      console.log('raw balance1', balance1.toString());
-      console.log('metaBalance1', metaBalance1.toString());
-
       await vault.unstake(RewardVaultType.Infrared, parAmount.div(2));
       expect(await vault.underlyingBalanceOf()).to.equal(parAmount);
 
-      const balance2 = await dToken.balanceOf(metaVault.address);
-      const metaBalance2 = await metaVault.getStakedBalanceByAssetAndType(dToken.address, RewardVaultType.Infrared);
-      console.log('balance2', balance2.toString());
-      console.log('metaBalance2', metaBalance2.toString());
-
       await vault.unstake(RewardVaultType.Infrared, parAmount.div(2));
       expect(await vault.underlyingBalanceOf()).to.equal(parAmount);
-
-      const balance3 = await dToken.balanceOf(metaVault.address);
-      const metaBalance3 = await metaVault.getStakedBalanceByAssetAndType(dToken.address, RewardVaultType.Infrared);
-      console.log('balance3', balance3.toString());
-      console.log('metaBalance3', metaBalance3.toString());
 
       expect(await vault.underlyingBalanceOf()).to.equal(parAmount);
     });
