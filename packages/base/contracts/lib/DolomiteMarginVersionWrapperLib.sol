@@ -86,6 +86,18 @@ library DolomiteMarginVersionWrapperLib {
         }
     }
 
+    function getVersionedMaxSupplyWei(
+        IDolomiteMargin _dolomiteMargin,
+        uint256 _chainId,
+        uint256 _marketId
+    ) internal view returns (IDolomiteStructs.Wei memory) {
+        if (ChainHelperLib.isArbitrum(_chainId)) {
+            return _dolomiteMargin.getMarket(_marketId).maxWei;
+        } else {
+            return dv2(_dolomiteMargin).getMarket(_marketId).maxSupplyWei;
+        }
+    }
+
     // ===========================================
     // ============ Private Functions ============
     // ===========================================

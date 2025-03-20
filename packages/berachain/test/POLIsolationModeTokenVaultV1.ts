@@ -92,6 +92,9 @@ describe('POLIsolationModeTokenVaultV1', () => {
       blockNumber: 2_040_000,
       network: Network.Berachain,
     });
+    // @todo update dToken implementation to handle lossy better
+    await setupWETHBalance(core, core.governance, ONE_ETH_BI, core.dolomiteMargin);
+    await depositIntoDolomiteMargin(core, core.governance, defaultAccountNumber, core.marketIds.weth, ONE_ETH_BI);
     await disableInterestAccrual(core, core.marketIds.weth);
 
     dToken = core.dolomiteTokens.weth!.connect(core.hhUser1);

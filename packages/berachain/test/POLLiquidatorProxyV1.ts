@@ -2,6 +2,7 @@ import {
   DolomiteERC4626,
   DolomiteERC4626__factory,
   LiquidatorProxyV5,
+  RegistryProxy__factory,
 } from '@dolomite-exchange/modules-base/src/types';
 import {
   MAX_UINT_256_BI,
@@ -94,7 +95,17 @@ describe('POLLiquidatorProxyV1', () => {
     liquidatorProxyV5 = await createLiquidatorProxyV5(core);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(liquidatorProxyV5.address, true);
 
+    // @todo update dToken implementation to handle lossy better
+    await setupWETHBalance(core, core.governance, ONE_ETH_BI, core.dolomiteMargin);
+    await depositIntoDolomiteMargin(core, core.governance, defaultAccountNumber, core.marketIds.weth, ONE_ETH_BI);
     dToken = DolomiteERC4626__factory.connect(core.dolomiteTokens.weth!.address, core.hhUser1);
+    const implementation = await createContractWithAbi<DolomiteERC4626>(
+      DolomiteERC4626__factory.abi,
+      DolomiteERC4626__factory.bytecode,
+      [core.dolomiteRegistry.address, core.dolomiteMargin.address],
+    );
+    const dTokenProxy = RegistryProxy__factory.connect(dToken.address, core.governance);
+    await dTokenProxy.upgradeTo(implementation.address);
 
     polLiquidatorProxy = await createTestPolLiquidatorProxy(core, liquidatorProxyV5);
 

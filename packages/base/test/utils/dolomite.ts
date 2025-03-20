@@ -12,6 +12,8 @@ import {
   DolomiteERC20,
   DolomiteOwnerV1,
   DolomiteOwnerV1__factory,
+  DolomiteOwnerV2,
+  DolomiteOwnerV2__factory,
   DolomiteRegistryImplementation,
   DolomiteRegistryImplementation__factory,
   EventEmitterRegistry,

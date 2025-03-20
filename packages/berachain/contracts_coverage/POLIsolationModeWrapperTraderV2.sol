@@ -107,13 +107,10 @@ contract POLIsolationModeWrapperTraderV2 is
     override
     onlyDolomiteMargin(msg.sender)
     returns (uint256) {
-        IIsolationModeVaultFactory factory = vaultFactory();
-
         _validateInputAndOutputToken(_inputToken, _outputToken);
-        /*assert(_tradeOriginator == _getVaultForInternalTrade());*/
-        if (factory.getAccountByVault(_tradeOriginator) != address(0)) { /* FOR COVERAGE TESTING */ }
+        if (_tradeOriginator == _getVaultForInternalTrade()) { /* FOR COVERAGE TESTING */ }
         Require.that(
-            factory.getAccountByVault(_tradeOriginator) != address(0),
+            _tradeOriginator == _getVaultForInternalTrade(),
             _FILE,
             "Invalid trade originator",
             _tradeOriginator
@@ -163,10 +160,9 @@ contract POLIsolationModeWrapperTraderV2 is
     onlyDolomiteMargin(msg.sender)
     returns (IDolomiteStructs.AssetAmount memory) {
         _validateInputAndOutputMarketId(_inputMarketId, _outputMarketId);
-        /*assert(_isolationModeVaultAccount.owner == _getVaultForInternalTrade());*/
-        if (vaultFactory().getAccountByVault(_isolationModeVaultAccount.owner) != address(0)) { /* FOR COVERAGE TESTING */ }
+        if (_isolationModeVaultAccount.owner == _getVaultForInternalTrade()) { /* FOR COVERAGE TESTING */ }
         Require.that(
-            vaultFactory().getAccountByVault(_isolationModeVaultAccount.owner) != address(0),
+            _isolationModeVaultAccount.owner == _getVaultForInternalTrade(),
             _FILE,
             "Invalid taker account"
         );

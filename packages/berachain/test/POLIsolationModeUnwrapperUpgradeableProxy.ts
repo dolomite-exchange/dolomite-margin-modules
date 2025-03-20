@@ -10,16 +10,16 @@ import {
   POLIsolationModeVaultFactory,
   POLIsolationModeWrapperUpgradeableProxy,
 } from '../src/types';
-import { DolomiteERC4626, DolomiteERC4626__factory } from 'packages/base/src/types';
+import { DolomiteERC4626, DolomiteERC4626__factory, RegistryProxy__factory } from 'packages/base/src/types';
 import {
   createBerachainRewardsRegistry,
   createPOLIsolationModeTokenVaultV1,
   createPOLIsolationModeVaultFactory,
   createPolLiquidatorProxy,
 } from './berachain-ecosystem-utils';
-import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
-import { setupCoreProtocol, setupTestMarket } from 'packages/base/test/utils/setup';
-import { Network, ONE_BI } from 'packages/base/src/utils/no-deps-constants';
+import { createContractWithAbi, depositIntoDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
+import { setupCoreProtocol, setupTestMarket, setupWETHBalance } from 'packages/base/test/utils/setup';
+import { Network, ONE_BI, ONE_ETH_BI } from 'packages/base/src/utils/no-deps-constants';
 import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
 import { revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
 import { createLiquidatorProxyV5 } from 'packages/base/test/utils/dolomite';

@@ -56,9 +56,11 @@ import {
   createPOLIsolationModeVaultFactory,
   createPOLIsolationModeWrapperTraderV2, createPolLiquidatorProxy,
   RewardVaultType,
+  upgradeAndSetupDTokensAndOwnerForPOLTests,
   wrapFullBalanceIntoVaultDefaultAccount,
 } from './berachain-ecosystem-utils';
 import { createLiquidatorProxyV5, setupNewGenericTraderProxy } from 'packages/base/test/utils/dolomite';
+import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
 
 const defaultAccountNumber = ZERO_BI;
 const amountWei = parseEther('.5');
@@ -78,6 +80,7 @@ describe('InfraredBGTMetaVault', () => {
   let unwrapper: POLIsolationModeUnwrapperTraderV2;
 
   let testInfraredVault: TestInfraredVault;
+  let ownerContractImpersonator: SignerWithAddressWithSafety;
 
   let dToken: DolomiteERC4626;
   let infraredVault: IInfraredVault;
@@ -90,9 +93,12 @@ describe('InfraredBGTMetaVault', () => {
       blockNumber: 2_040_000,
       network: Network.Berachain,
     });
+    // @todo update dToken implementation to handle lossy better
+    await setupWETHBalance(core, core.governance, ONE_ETH_BI, core.dolomiteMargin);
+    await depositIntoDolomiteMargin(core, core.governance, defaultAccountNumber, core.marketIds.weth, ONE_ETH_BI);
     await disableInterestAccrual(core, core.marketIds.weth);
 
-    dToken = DolomiteERC4626__factory.connect(core.dolomiteTokens.weth!.address, core.hhUser1);
+    dToken = core.dolomiteTokens.weth!.connect(core.hhUser1);
     const implementation = await createContractWithAbi<DolomiteERC4626>(
       DolomiteERC4626__factory.abi,
       DolomiteERC4626__factory.bytecode,
@@ -541,22 +547,12 @@ describe('InfraredBGTMetaVault', () => {
   });
 
   describe('#chargeDTokenFee', () => {
-    it.only('should work normally', async () => {
+    it('should work normally', async () => {
       const vaultImpersonator = await impersonate(vault.address, true);
       await wrapFullBalanceIntoVaultDefaultAccount(core, vault, metaVault, wrapper, marketId);
 
-      console.log('par amount: ', parAmount.toString());
-
-      console.log(await dToken.balanceOf(metaVault.address));
-      console.log(await dToken.balanceOf(vault.address));
-      console.log(await dToken.balanceOf(dToken.address));
-
       await vault.unstake(RewardVaultType.Infrared, parAmount);
       await expectWalletBalance(metaVault, dToken, parAmount);
-
-      console.log(await dToken.balanceOf(metaVault.address));
-      console.log(await dToken.balanceOf(vault.address));
-      console.log(await dToken.balanceOf(dToken.address));
 
       await registry.connect(core.governance).ownerSetPolFeeAgent(core.hhUser5.address);
       await registry.connect(core.governance).ownerSetPolFeePercentage(parseEther('.1'));
