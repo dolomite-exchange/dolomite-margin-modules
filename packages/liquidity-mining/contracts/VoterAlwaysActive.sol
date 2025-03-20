@@ -29,7 +29,7 @@ pragma solidity ^0.8.9;
  */
 contract VoterAlwaysActive {
 
-    function stale(uint256 _tokenId) external view returns (bool) {
+    function stale(uint256 /* _tokenId */) external pure returns (bool) {
         return false;
     }
 }

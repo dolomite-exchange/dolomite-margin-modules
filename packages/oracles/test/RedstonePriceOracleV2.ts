@@ -246,7 +246,7 @@ describe('RedstonePriceOracleV2', () => {
       await waitTime((60 * 60 * 36) + 1); // prices expire in 36 hours by default
       await expectThrow(
         oracle.getPrice(testToken.address),
-        `RedstonePriceOracleV2: Chainlink price expired <${testToken.address.toLowerCase()}>`,
+        `RedstonePriceOracleV2: Price expired <${testToken.address.toLowerCase()}>`,
       );
     });
   });

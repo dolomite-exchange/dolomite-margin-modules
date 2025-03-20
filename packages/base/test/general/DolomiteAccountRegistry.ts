@@ -101,6 +101,25 @@ describe('DolomiteAccountRegistry', () => {
     });
   });
 
+  describe('#ownerSetTransferTokenOverride', () => {
+    it('should work normally', async () => {
+      expect(await registry.getTransferTokenOverride(core.tokens.dArb.address)).to.equal(ZERO_ADDRESS);
+      const res = await registry.ownerSetTransferTokenOverride(core.tokens.dArb.address, OTHER_ADDRESS);
+      await expectEvent(registry, res, 'TransferTokenOverrideSet', {
+        token: core.tokens.dArb.address,
+        override: OTHER_ADDRESS,
+      });
+      expect(await registry.getTransferTokenOverride(core.tokens.dArb.address)).to.equal(OTHER_ADDRESS);
+    });
+
+    it('should fail if not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetTransferTokenOverride(core.tokens.dArb.address, OTHER_ADDRESS),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+  });
+
   describe('#isIsolationModeVault', () => {
     it('should work normally', async () => {
       const vaultAddress = await core.arbEcosystem.live.dArb.calculateVaultByAccount(core.hhUser1.address);

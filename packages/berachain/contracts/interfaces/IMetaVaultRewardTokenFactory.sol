@@ -50,5 +50,12 @@ interface IMetaVaultRewardTokenFactory is IIsolationModeVaultFactory {
         uint256 _amountWei
     ) external;
 
+    function depositOtherTokenIntoDolomiteMarginFromMetaVault(
+        address _owner,
+        uint256 _toAccountNumber,
+        uint256 _otherMarketId,
+        uint256 _amountWei
+    ) external;
+
     function berachainRewardsRegistry() external view returns (IBerachainRewardsRegistry);
 }

@@ -33,12 +33,15 @@ import { IDolomiteMarginExchangeWrapper } from "../../protocol/interfaces/IDolom
 interface IIsolationModeWrapperTraderV2 is IDolomiteMarginExchangeWrapper {
 
     struct CreateActionsForWrappingParams {
-        /// @dev    The index of the account (according the Accounts[] array) that is performing the sell.
+        /// @dev    The index of the account (according the Accounts[] array) that is performing the sell. This is
+        ///         always set to the isolation mode vault account ID
         uint256 primaryAccountId;
-        /// @dev    The index of the account (according the Accounts[] array) that is being liquidated. This is set to
-        ///         `_primaryAccountId` if a liquidation is not occurring.
+        /// @dev    The index of the account (according the Accounts[] array) that is being liquidated. This is always
+        ///         set to `_primaryAccountId` because wrap liquidations are impossible. Liquidations cannot occur with
+        ///         wraps as of now, since isolation mode assets are never borrowable.
         uint256 otherAccountId;
-        /// @dev    The address of the owner of the account that is performing the sell.
+        /// @dev    The address of the owner of the account that is performing the sell. This is always the isolation
+        ///         mode account
         address primaryAccountOwner;
         /// @dev    The account number of the owner of the account that is performing the sell.
         uint256 primaryAccountNumber;
