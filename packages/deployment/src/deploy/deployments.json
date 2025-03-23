@@ -906,6 +906,20 @@
       "isVerified": true
     }
   },
+  "DolomiteAccountRiskOverrideSetterImplementationV2": {
+    "80094": {
+      "address": "0xc8a239d171c14dc97ff8e3a72f30b5A13F35EE82",
+      "transaction": "0x81a23ec3cf62f6e46c3cf0569c48f00438c43578dc966e554d0408188b49ad62",
+      "isVerified": true
+    }
+  },
+  "DolomiteAccountRiskOverrideSetterImplementationV3": {
+    "80094": {
+      "address": "0xa3e09BE2361A2e734695Bd581451A08C05815B2A",
+      "transaction": "0x4112a007a147ec88611e10d8f715310a2568f929fb47d4ce2af0be7d531ee0f8",
+      "isVerified": true
+    }
+  },
   "DolomiteAccountRiskOverrideSetterProxy": {
     "196": {
       "address": "0x7BCaF5253C417c84bBD1b7DfE4Ca4F0A4c4cA435",

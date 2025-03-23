@@ -1,10 +1,11 @@
 import { BigNumber, BigNumberish, ethers } from 'ethers';
-import { formatUnits } from 'ethers/lib/utils';
+import { formatUnits, parseEther } from 'ethers/lib/utils';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { IDolomiteInterestSetter, IERC20, IERC20Metadata__factory } from '../../../base/src/types';
 import { IDolomiteStructs } from '../../../base/src/types/contracts/protocol/interfaces/IDolomiteMargin';
 import { INVALID_TOKEN_MAP } from '../../../base/src/utils/constants';
 import {
+  AccountRiskOverrideCategory,
   getLiquidationPremiumForTargetLiquidationPenalty,
   getMarginPremiumForTargetCollateralization,
   TargetCollateralization,
@@ -229,5 +230,33 @@ export async function checkInterestSetter<T extends NetworkType>(
   assertHardhatInvariant(
     (await core.dolomiteMargin.getMarketInterestSetter(marketId)) === expectedInterestSetter.address,
     `Expected market [${marketId}] to have interest setter ${expectedInterestSetter.address}`,
+  );
+}
+
+export async function checkAccountRiskOverrideCategory<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  marketId: BigNumberish,
+  category: AccountRiskOverrideCategory,
+) {
+  assertHardhatInvariant(
+    (await core.dolomiteAccountRiskOverrideSetter.getCategoryByMarketId(marketId)) === category,
+    `Expected market [${marketId}] to have risk category ${category}`,
+  );
+}
+
+export async function checkAccountRiskOverrideCategorySettings<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  category: AccountRiskOverrideCategory,
+  expectedCollateralization: TargetCollateralization,
+  expectedLiquidationPenalty: TargetLiquidationPenalty,
+) {
+  const param = await core.dolomiteAccountRiskOverrideSetter.getCategoryParamByCategory(category);
+  assertHardhatInvariant(
+    param.marginRatioOverride.value.eq(parseEther(expectedCollateralization).sub(ONE_ETH_BI)),
+    `Expected category [${category}] to have margin ratio of ${expectedCollateralization}`,
+  );
+  assertHardhatInvariant(
+    param.liquidationRewardOverride.value.eq(parseEther(expectedLiquidationPenalty)),
+    `Expected category [${category}] to have liquidation penalty of ${expectedLiquidationPenalty}`,
   );
 }
