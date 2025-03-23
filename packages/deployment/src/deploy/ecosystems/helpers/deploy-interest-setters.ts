@@ -5,6 +5,22 @@ import { deployContractAndSave } from '../../../utils/deploy-utils';
 export async function deployInterestSetters(): Promise<void> {
   await deployContractAndSave(
     'LinearStepFunctionInterestSetter',
+    getLinearStepFunctionInterestSetterConstructorParams(parseEther('0.04'), parseEther('0.96'), parseEther('0.70')),
+    'LinearStepFunction4L96U70OInterestSetter',
+  );
+  await deployContractAndSave(
+    'LinearStepFunctionInterestSetter',
+    getLinearStepFunctionInterestSetterConstructorParams(parseEther('0.04'), parseEther('0.96'), parseEther('0.80')),
+    'LinearStepFunction4L96U80OInterestSetter',
+  );
+  await deployContractAndSave(
+    'LinearStepFunctionInterestSetter',
+    getLinearStepFunctionInterestSetterConstructorParams(parseEther('0.04'), parseEther('0.96'), parseEther('0.90')),
+    'LinearStepFunction4L96U90OInterestSetter',
+  );
+
+  await deployContractAndSave(
+    'LinearStepFunctionInterestSetter',
     getLinearStepFunctionInterestSetterConstructorParams(parseEther('0.06'), parseEther('0.94'), parseEther('0.70')),
     'LinearStepFunction6L94U70OInterestSetter',
   );

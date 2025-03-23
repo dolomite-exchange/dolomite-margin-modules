@@ -6,8 +6,10 @@ import { IDolomiteStructs } from '../../../base/src/types/contracts/protocol/int
 import { INVALID_TOKEN_MAP } from '../../../base/src/utils/constants';
 import {
   AccountRiskOverrideCategory,
+  AccountRiskOverrideRiskFeature,
   getLiquidationPremiumForTargetLiquidationPenalty,
   getMarginPremiumForTargetCollateralization,
+  SingleCollateralWithStrictDebtParams,
   TargetCollateralization,
   TargetLiquidationPenalty,
 } from '../../../base/src/utils/constructors/dolomite';
@@ -242,6 +244,53 @@ export async function checkAccountRiskOverrideCategory<T extends NetworkType>(
     (await core.dolomiteAccountRiskOverrideSetter.getCategoryByMarketId(marketId)) === category,
     `Expected market [${marketId}] to have risk category ${category}`,
   );
+}
+
+export async function checkAccountRiskOverrideIsNone<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  marketId: BigNumberish,
+) {
+  const riskFeature = await core.dolomiteAccountRiskOverrideSetter.getRiskFeatureByMarketId(marketId);
+  assertHardhatInvariant(
+    riskFeature === AccountRiskOverrideRiskFeature.NONE,
+    `Expected market [${marketId}] to be none`,
+  );
+}
+
+export async function checkAccountRiskOverrideIsBorrowOnly<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  marketId: BigNumberish,
+) {
+  const riskFeature = await core.dolomiteAccountRiskOverrideSetter.getRiskFeatureByMarketId(marketId);
+  assertHardhatInvariant(
+    riskFeature === AccountRiskOverrideRiskFeature.BORROW_ONLY,
+    `Expected market [${marketId}] to be borrow only`,
+  );
+}
+
+export async function checkAccountRiskOverrideIsSingleCollateral<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  marketId: BigNumberish,
+  params: SingleCollateralWithStrictDebtParams[],
+) {
+  const structs = await core.dolomiteAccountRiskOverrideSetter.getRiskFeatureForSingleCollateralByMarketId(marketId);
+  structs.forEach(s => {
+    const expectedParam = params[0];
+    assertHardhatInvariant(
+      s.debtMarketIds.length === expectedParam.debtMarketIds.length &&
+      s.debtMarketIds.every(d1 => expectedParam.debtMarketIds.some(d2 => d1.eq(d2))),
+      'Single collateral params debt markets do not match',
+    );
+
+    assertHardhatInvariant(
+      s.marginRatioOverride.value.eq(parseEther(expectedParam.marginRatioOverride).sub(ONE_ETH_BI)),
+      'Single collateral params margin ratios do not match',
+    );
+    assertHardhatInvariant(
+      s.liquidationRewardOverride.value.eq(expectedParam.liquidationRewardOverride),
+      'Single collateral params margin ratios do not match',
+    );
+  });
 }
 
 export async function checkAccountRiskOverrideCategorySettings<T extends NetworkType>(

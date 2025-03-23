@@ -114,8 +114,8 @@ export enum AccountRiskOverrideRiskFeature {
 
 export interface SingleCollateralWithStrictDebtParams {
   debtMarketIds: BigNumberish[];
-  marginRatioOverride: { value: BigNumberish };
-  liquidationRewardOverride: { value: BigNumberish };
+  marginRatioOverride: TargetCollateralization;
+  liquidationRewardOverride: TargetLiquidationPenalty;
 }
 
 export function getDolomiteOwnerConstructorParams(gnosisSafeAddress: string, secondsTimeLocked: BigNumberish): any[] {

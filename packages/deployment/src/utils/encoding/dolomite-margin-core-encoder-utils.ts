@@ -4,7 +4,8 @@ import {
   AccountRiskOverrideCategory,
   AccountRiskOverrideRiskFeature,
   getLiquidationPremiumForTargetLiquidationPenalty,
-  getMarginPremiumForTargetCollateralization, SingleCollateralWithStrictDebtParams,
+  getMarginPremiumForTargetCollateralization,
+  SingleCollateralWithStrictDebtParams,
   TargetCollateralization,
   TargetLiquidationPenalty,
 } from '../../../../base/src/utils/constructors/dolomite';
@@ -268,11 +269,22 @@ export async function encodeSetBorrowOnlyByMarketId<T extends NetworkTypeForDolo
   );
 }
 
+interface SingleCollateralWithStrictDebtParamsForEncoding {
+  debtMarketIds: BigNumberish[];
+  marginRatioOverride: { value: BigNumberish };
+  liquidationRewardOverride: { value: BigNumberish };
+}
+
 export async function encodeSetSingleCollateralWithStrictDebtByMarketId<T extends NetworkTypeForDolomiteV2>(
   core: CoreProtocolType<T>,
   marketId: BigNumberish,
   params: SingleCollateralWithStrictDebtParams[],
 ): Promise<EncodedTransaction> {
+  const mappedParams = params.map<SingleCollateralWithStrictDebtParamsForEncoding>(p => ({
+    ...p,
+    marginRatioOverride: { value: parseEther(p.marginRatioOverride).sub(ONE_ETH_BI) },
+    liquidationRewardOverride: { value: parseEther(p.liquidationRewardOverride) },
+  }));
   return prettyPrintEncodedDataWithTypeSafety(
     core,
     { dolomiteAccountRiskOverrideSetter: core.dolomiteAccountRiskOverrideSetter },
@@ -283,7 +295,7 @@ export async function encodeSetSingleCollateralWithStrictDebtByMarketId<T extend
       AccountRiskOverrideRiskFeature.SINGLE_COLLATERAL_WITH_STRICT_DEBT,
       ethers.utils.defaultAbiCoder.encode(
         ['(uint256[],(uint256),(uint256))[]'],
-        [params]
+        [mappedParams],
       ),
     ],
   );
