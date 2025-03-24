@@ -10,8 +10,6 @@ import {
   DolomiteAccountRegistry,
   DolomiteAccountRegistry__factory,
   DolomiteERC20,
-  DolomiteOwnerV1,
-  DolomiteOwnerV1__factory,
   DolomiteRegistryImplementation,
   DolomiteRegistryImplementation__factory,
   EventEmitterRegistry,
@@ -38,7 +36,6 @@ import {
 import {
   getDolomiteErc20ProxyConstructorParams,
   getDolomiteErc4626ProxyConstructorParams,
-  getDolomiteOwnerConstructorParams,
   getEventEmitterRegistryConstructorParams,
   getIsolationModeTraderProxyConstructorParams,
   getRegistryProxyConstructorParams,
@@ -142,17 +139,6 @@ export async function createDolomiteRegistryImplementation(): Promise<DolomiteRe
     DolomiteRegistryImplementation__factory.abi,
     DolomiteRegistryImplementation__factory.bytecode,
     [],
-  );
-}
-
-export async function createDolomiteOwner(
-  core: CoreProtocolType<NetworkType>,
-  secondsTimeLocked: BigNumberish,
-): Promise<DolomiteOwnerV1> {
-  return createContractWithAbi(
-    DolomiteOwnerV1__factory.abi,
-    DolomiteOwnerV1__factory.bytecode,
-    getDolomiteOwnerConstructorParams(core.gnosisSafe.address, secondsTimeLocked),
   );
 }
 

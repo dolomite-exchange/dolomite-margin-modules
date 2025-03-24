@@ -132,10 +132,6 @@ export interface SingleCollateralWithStrictDebtParams {
   liquidationRewardOverride: TargetLiquidationPenalty;
 }
 
-export function getDolomiteOwnerConstructorParams(gnosisSafeAddress: string, secondsTimeLocked: BigNumberish): any[] {
-  return [gnosisSafeAddress, secondsTimeLocked];
-}
-
 export function getRegistryProxyConstructorParams<T extends NetworkType>(
   implementationAddress: string,
   implementationCalldata: string,

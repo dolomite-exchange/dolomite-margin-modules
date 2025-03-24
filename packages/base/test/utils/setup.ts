@@ -32,7 +32,6 @@ import {
   DolomiteERC20WithPayable__factory,
   DolomiteERC4626__factory,
   DolomiteERC4626WithPayable__factory,
-  DolomiteOwnerV1__factory,
   IBorrowPositionProxyV2__factory,
   IBorrowPositionRouter__factory,
   IDepositWithdrawalProxy__factory,
@@ -227,6 +226,7 @@ import { createPremiaEcosystem } from './ecosystem-utils/premia';
 import { createTestEcosystem } from './ecosystem-utils/testers';
 import { createUmamiEcosystem } from './ecosystem-utils/umami';
 import { impersonate, impersonateOrFallback, resetForkIfPossible } from './index';
+import { DolomiteOwnerV1__factory } from 'packages/admin/src/types';
 
 /**
  * Config to for setting up tests in the `before` function

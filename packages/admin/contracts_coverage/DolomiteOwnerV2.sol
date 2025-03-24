@@ -24,8 +24,8 @@ import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol"
 import { IAccessControl } from "@openzeppelin/contracts/access/IAccessControl.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import { IDolomiteOwner } from "../interfaces/IDolomiteOwner.sol";
-import { Require } from "../protocol/lib/Require.sol";
+import { IDolomiteOwner } from "./interfaces/IDolomiteOwner.sol";
+import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 
 
 /**
@@ -70,6 +70,7 @@ contract DolomiteOwnerV2 is IDolomiteOwner, AccessControl {
     // ================================================
 
     modifier onlySelf(address _sender) {
+        if (_sender == address(this)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _sender == address(this),
             _FILE,
@@ -80,6 +81,7 @@ contract DolomiteOwnerV2 is IDolomiteOwner, AccessControl {
     }
 
     modifier notNull(address _address) {
+        if (_address != _ADDRESS_ZERO) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _address != _ADDRESS_ZERO,
             _FILE,
@@ -89,6 +91,7 @@ contract DolomiteOwnerV2 is IDolomiteOwner, AccessControl {
     }
 
     modifier transactionExists(uint256 _transactionId) {
+        if (transactions[_transactionId].destination != _ADDRESS_ZERO) { /* FOR COVERAGE TESTING */ }
         Require.that(
             transactions[_transactionId].destination != _ADDRESS_ZERO,
             _FILE,
@@ -98,6 +101,7 @@ contract DolomiteOwnerV2 is IDolomiteOwner, AccessControl {
     }
 
     modifier validExecutor(address _sender) {
+        if (hasRole(EXECUTOR_ROLE, _sender) || hasRole(DEFAULT_ADMIN_ROLE, _sender)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             hasRole(EXECUTOR_ROLE, _sender) || hasRole(DEFAULT_ADMIN_ROLE, _sender),
             _FILE,
@@ -107,6 +111,7 @@ contract DolomiteOwnerV2 is IDolomiteOwner, AccessControl {
     }
 
     modifier activeRole(bytes32 _role) {
+        if (isRole(_role)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             isRole(_role),
             _FILE,
@@ -120,6 +125,7 @@ contract DolomiteOwnerV2 is IDolomiteOwner, AccessControl {
         address _sender,
         uint256 _transactionId
     ) {
+        if (isTimelockComplete(_transactionId) || hasRole(BYPASS_TIMELOCK_ROLE, _sender)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             isTimelockComplete(_transactionId) || hasRole(BYPASS_TIMELOCK_ROLE, _sender),
             _FILE,
@@ -136,9 +142,13 @@ contract DolomiteOwnerV2 is IDolomiteOwner, AccessControl {
         address _admin,
         uint32 _secondsTimeLocked
     ) {
-        _allRoles.add(BYPASS_TIMELOCK_ROLE);
         _allRoles.add(DEFAULT_ADMIN_ROLE);
+
+        _allRoles.add(BYPASS_TIMELOCK_ROLE);
         _allRoles.add(EXECUTOR_ROLE);
+
+        _allRoles.add(SECURITY_COUNCIL_ROLE);
+        _allRoles.add(LISTING_COMMITTEE_ROLE);
 
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
         _ownerSetSecondsTimeLocked(_secondsTimeLocked);
@@ -178,6 +188,7 @@ contract DolomiteOwnerV2 is IDolomiteOwner, AccessControl {
     function ownerRemoveRole(
         bytes32 _role
     ) external onlySelf(msg.sender) {
+        if (_role != DEFAULT_ADMIN_ROLE) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _role != DEFAULT_ADMIN_ROLE,
             _FILE,
@@ -254,6 +265,7 @@ contract DolomiteOwnerV2 is IDolomiteOwner, AccessControl {
         uint256 transactionId
     ) external transactionExists(transactionId) onlyRole(DEFAULT_ADMIN_ROLE) {
         Transaction storage txn = transactions[transactionId];
+        if (!txn.executed && !txn.cancelled) { /* FOR COVERAGE TESTING */ }
         Require.that(
             !txn.executed && !txn.cancelled,
             _FILE,
@@ -291,6 +303,7 @@ contract DolomiteOwnerV2 is IDolomiteOwner, AccessControl {
         address _destination,
         bytes memory _data
     ) public returns (uint256) {
+        if (_data.length >= 4) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _data.length >= 4,
             _FILE,
@@ -305,6 +318,7 @@ contract DolomiteOwnerV2 is IDolomiteOwner, AccessControl {
         bytes4 selector = bytes4(rawData);
 
         bool approved = isUserApprovedToSubmitTransaction(msg.sender, _destination, selector);
+        if (approved) { /* FOR COVERAGE TESTING */ }
         Require.that(
             approved,
             _FILE,
@@ -412,6 +426,7 @@ contract DolomiteOwnerV2 is IDolomiteOwner, AccessControl {
         if (hasRole(DEFAULT_ADMIN_ROLE, _user)) {
             return true;
         }
+        if (_destination != address(this)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _destination != address(this),
             _FILE,
@@ -457,6 +472,7 @@ contract DolomiteOwnerV2 is IDolomiteOwner, AccessControl {
         uint256 _transactionId
     ) internal transactionExists(_transactionId) pastTimeLock(msg.sender, _transactionId) returns (bytes memory) {
         Transaction storage txn = transactions[_transactionId];
+        if (!txn.executed && !txn.cancelled) { /* FOR COVERAGE TESTING */ }
         Require.that(
             !txn.executed && !txn.cancelled,
             _FILE,
@@ -513,12 +529,12 @@ contract DolomiteOwnerV2 is IDolomiteOwner, AccessControl {
     }
 
     function _grantRole(bytes32 _role, address _account) internal activeRole(_role) override {
-        // TODO: test
-        Require.that(
-            _role != BYPASS_TIMELOCK_ROLE || !hasRole(DEFAULT_ADMIN_ROLE, _account),
-            _FILE,
-            "Admin cannot bypass timelock"
-        );
+        if (_role == BYPASS_TIMELOCK_ROLE && hasRole(DEFAULT_ADMIN_ROLE, _account)) {
+            revert("DolomiteOwnerV2: Admin cannot bypass timelock");
+        }
+        if (_role == DEFAULT_ADMIN_ROLE && hasRole(BYPASS_TIMELOCK_ROLE, _account)) {
+            revert("DolomiteOwnerV2: Admin cannot bypass timelock");
+        }
 
         _userToRoles[_account].add(_role);
         return super._grantRole(_role, _account);
