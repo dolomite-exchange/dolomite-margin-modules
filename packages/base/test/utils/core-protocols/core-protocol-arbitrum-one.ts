@@ -36,6 +36,7 @@ import {
 import { GlvEcosystem } from '../ecosystem-utils/glv';
 
 interface CoreProtocolTokensArbitrumOne extends CoreProtocolTokens<Network.ArbitrumOne> {
+  aave: IERC20;
   arb: IERC20;
   dai: IERC20;
   dArb: IERC20;
@@ -61,7 +62,6 @@ interface CoreProtocolTokensArbitrumOne extends CoreProtocolTokens<Network.Arbit
   ezEth: IERC20;
   ezEthReversed: IERC20;
   eUsd: IERC20;
-  sGlp: IERC20;
   frax: IERC20;
   gmx: IERC20;
   gmxBtc: IERC20;
@@ -80,6 +80,8 @@ interface CoreProtocolTokensArbitrumOne extends CoreProtocolTokens<Network.Arbit
   rsEth: IERC20;
   rsEthReversed: IERC20;
   radiant: IERC20;
+  sGlp: IERC20;
+  sUsds: IERC20;
   size: IERC20;
   sol: IERC20;
   stEth: IERC20;
@@ -89,6 +91,7 @@ interface CoreProtocolTokensArbitrumOne extends CoreProtocolTokens<Network.Arbit
   usde: IERC20;
   usdl: IERC20;
   usdm: IERC20;
+  usds: IERC20;
   usdt: IERC20;
   wbtc: IERC20;
   weEth: IERC20;
@@ -109,6 +112,7 @@ interface CoreProtocolArbitrumOneDTokens {
 }
 
 interface CoreProtocolMarketIdsArbitrumOne extends CoreProtocolMarketIds {
+  aave: BigNumberish;
   arb: BigNumberish;
   dArb: BigNumberish;
   dfsGlp: BigNumberish;
@@ -162,9 +166,11 @@ interface CoreProtocolMarketIdsArbitrumOne extends CoreProtocolMarketIds {
   rsEth: BigNumberish;
   radiant: BigNumberish;
   sGlp: BigNumberish;
+  sUsds: BigNumberish;
   tbtc: BigNumberish;
   uni: BigNumberish;
   uniBtc: BigNumberish;
+  usds: BigNumberish;
   usdt: BigNumberish;
   wbtc: BigNumberish;
   weEth: BigNumberish;

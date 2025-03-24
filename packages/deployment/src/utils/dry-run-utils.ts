@@ -1,14 +1,19 @@
 import {
+  NETWORK_TO_MULTI_SEND_MAP,
   NETWORK_TO_NETWORK_NAME_MAP,
+  NETWORK_TO_SAFE_HASH_NAME_MAP,
   NetworkType,
   ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { CoreProtocolType } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { FunctionFragment } from '@ethersproject/abi';
 import { TransactionResponse } from '@ethersproject/abstract-provider';
 import { Overrides } from '@ethersproject/contracts/src.ts';
-import { BaseContract, BigNumber, BigNumberish } from 'ethers';
+import { execSync } from 'child_process';
+import { BaseContract, BigNumber, BigNumberish, ethers } from 'ethers';
 import hardhat from 'hardhat';
 import { advanceByTimeDelta } from 'packages/base/test/utils';
+import { GNOSIS_SAFE_MAP } from '../../../base/src/utils/constants';
 import {
   createFolder,
   readDeploymentFile,
@@ -17,6 +22,8 @@ import {
   writeFile,
 } from './deploy-utils';
 import { prettyPrintEncodedDataWithTypeSafety } from './encoding/base-encoder-utils';
+import GnosisSafeAbi from './GnosisSafe.json';
+import MultiSendAbi from './MultiSend.json';
 import { checkPerformance } from './performance-utils';
 
 const HARDHAT_CHAIN_ID = '31337';
@@ -180,6 +187,7 @@ async function doStuffInternal<T extends NetworkType>(executionFn: () => Promise
           }
         }
       }
+
       console.log('\tAdmin transactions succeeded!');
     }
 
@@ -217,7 +225,7 @@ async function doStuffInternal<T extends NetworkType>(executionFn: () => Promise
       const submitTransactionMethodIds = ['0xc6427474', '0xbbf1b2f1'];
       const transactionIds: number[] = [];
       result.upload.transactions.forEach((t) => {
-        if (submitTransactionMethodIds.some(methodId => t.data.startsWith(methodId))) {
+        if (submitTransactionMethodIds.some((methodId) => t.data.startsWith(methodId))) {
           transactionIds.push(transactionCount++);
         }
       });
@@ -265,6 +273,67 @@ async function doStuffInternal<T extends NetworkType>(executionFn: () => Promise
     }
 
     const scriptName = result.scriptName;
+    const multiSendContract = NETWORK_TO_MULTI_SEND_MAP[result.upload.chainId];
+    const gnosisSafeContract = new BaseContract(
+      GNOSIS_SAFE_MAP[result.upload.chainId],
+      GnosisSafeAbi,
+      result.core.hhUser1,
+    );
+    const nonce = ((await gnosisSafeContract.functions.nonce()) as BigNumber[])[0].toNumber();
+
+    const packedTransactions = ethers.utils.solidityPack(
+      result.upload.transactions.reduce(
+        (acc, _) => acc.concat(...['uint8', 'address', 'uint256', 'uint256', 'bytes']),
+        [] as string[],
+      ),
+      result.upload.transactions.reduce(
+        (acc, t) => acc.concat(...['0', t.to, t.value, ((t.data.length - 2) / 2).toString(), t.data]),
+        [] as string[],
+      ),
+    );
+    const fragment = FunctionFragment.from('multiSend(bytes)');
+    const multiSendCalldata = new ethers.utils.Interface(MultiSendAbi).encodeFunctionData(fragment, [
+      packedTransactions,
+    ]);
+    const gnosisSafeAddress = result.core.gnosisSafeAddress;
+    console.log('\tGenerating safe hash for transaction submission...');
+    const networkNameForSafeHashOpt = NETWORK_TO_SAFE_HASH_NAME_MAP[result.upload.chainId];
+    if (!networkNameForSafeHashOpt) {
+      console.log();
+      console.warn('\tSafe Hash is not supported on this network. You can only validate the message hash...');
+      console.log();
+    }
+
+    const networkNameForSafeHash = networkNameForSafeHashOpt ?? 'arbitrum';
+
+    if (result.upload.transactions.length > 1) {
+      execSync(
+        `safe_hashes --offline --network ${networkNameForSafeHash} --nonce ${nonce} --address ${gnosisSafeAddress} --to ${multiSendContract} --data ${multiSendCalldata} --operation 1`,
+        { stdio: 'inherit' },
+      );
+    } else {
+      const to = result.upload.transactions[0].to;
+      const data = result.upload.transactions[0].data;
+      execSync(
+        `safe_hashes --offline --network ${networkNameForSafeHash} --nonce ${nonce} --address ${gnosisSafeAddress} --to ${to} --data ${data}`,
+        { stdio: 'inherit' },
+      );
+    }
+
+    if (encodedTransactionForExecution) {
+      console.log('');
+      console.log('');
+      console.log('\tGenerating safe hash for transaction submission...');
+      const encodedTo = encodedTransactionForExecution.to;
+      const encodedCalldata = encodedTransactionForExecution.data;
+      const nextNonce = nonce + 1;
+
+      execSync(
+        `safe_hashes --offline --network ${networkNameForSafeHash} --nonce ${nextNonce} --address ${gnosisSafeAddress} --to ${encodedTo} --data ${encodedCalldata}`,
+        { stdio: 'inherit' },
+      );
+    }
+
     const networkName = NETWORK_TO_NETWORK_NAME_MAP[result.upload.chainId];
     const dir = `${__dirname}/../deploy/safe-transactions/${networkName}/output`;
     createFolder(dir);

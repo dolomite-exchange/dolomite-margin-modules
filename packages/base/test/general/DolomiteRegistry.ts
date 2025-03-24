@@ -7,7 +7,7 @@ import { expectEvent, expectThrow } from '../utils/assertions';
 
 import { CoreProtocolArbitrumOne } from '../utils/core-protocols/core-protocol-arbitrum-one';
 import { createDolomiteRegistryImplementation, createRegistryProxy } from '../utils/dolomite';
-import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '../utils/setup';
+import { setupCoreProtocol } from '../utils/setup';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
@@ -19,9 +19,13 @@ describe('DolomiteRegistryImplementation', () => {
   let registry: DolomiteRegistryImplementation;
 
   before(async () => {
-    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
+    core = await setupCoreProtocol({
+      blockNumber: 274_000_000,
+      network: Network.ArbitrumOne,
+    });
     implementation = await createDolomiteRegistryImplementation();
     const calldata = await implementation.populateTransaction.initialize(
+      core.borrowPositionProxyV2.address,
       core.genericTraderProxy.address,
       core.expiry.address,
       core.constants.slippageToleranceForPauseSentinel,
@@ -43,9 +47,9 @@ describe('DolomiteRegistryImplementation', () => {
     it('should initialize variables properly', async () => {
       expect(await registry.genericTraderProxy()).to.equal(core.genericTraderProxy.address);
       expect(await registry.expiry()).to.equal(core.expiry.address);
-      expect(await registry.slippageToleranceForPauseSentinel())
-        .to
-        .equal(core.constants.slippageToleranceForPauseSentinel);
+      expect(await registry.slippageToleranceForPauseSentinel()).to.equal(
+        core.constants.slippageToleranceForPauseSentinel,
+      );
       expect(await registry.liquidatorAssetRegistry()).to.equal(core.liquidatorAssetRegistry.address);
       expect(await registry.eventEmitter()).to.equal(core.eventEmitterRegistryProxy.address);
     });
@@ -53,6 +57,7 @@ describe('DolomiteRegistryImplementation', () => {
     it('should fail to initialize if already initialized', async () => {
       await expectThrow(
         registry.initialize(
+          core.borrowPositionProxyV2.address,
           core.genericTraderProxy.address,
           core.expiry.address,
           core.constants.slippageToleranceForPauseSentinel,
@@ -71,6 +76,30 @@ describe('DolomiteRegistryImplementation', () => {
     });
   });
 
+  describe('#ownerSetBorrowPositionProxy', () => {
+    it('should work normally', async () => {
+      const borrowPositionProxy = core.borrowPositionProxyV2.address;
+      const result = await registry.connect(core.governance).ownerSetBorrowPositionProxy(borrowPositionProxy);
+      await expectEvent(registry, result, 'BorrowPositionProxySet', {
+        borrowPositionProxy,
+      });
+      expect(await registry.borrowPositionProxy()).to.equal(borrowPositionProxy);
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetBorrowPositionProxy(ZERO_ADDRESS),
+        'DolomiteRegistryImplementation: Invalid borrowPositionProxy',
+      );
+    });
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetBorrowPositionProxy(OTHER_ADDRESS),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+  });
+
   describe('#ownerSetGenericTraderProxy', () => {
     it('should work normally', async () => {
       const genericTraderProxy = core.genericTraderProxy.address;
@@ -79,13 +108,6 @@ describe('DolomiteRegistryImplementation', () => {
         genericTraderProxy,
       });
       expect(await registry.genericTraderProxy()).to.equal(genericTraderProxy);
-    });
-
-    it('should fail if genericTraderProxy is invalid', async () => {
-      await expectThrow(
-        registry.connect(core.governance).ownerSetGenericTraderProxy(OTHER_ADDRESS),
-        `ValidationLib: Call to target failed <${OTHER_ADDRESS.toLowerCase()}>`,
-      );
     });
 
     it('should fail when not called by owner', async () => {
@@ -135,10 +157,36 @@ describe('DolomiteRegistryImplementation', () => {
     });
   });
 
+  describe('#ownerSetFeeAgent', () => {
+    it('should work normally', async () => {
+      expect(await registry.feeAgent()).to.equal(ZERO_ADDRESS);
+      const result = await registry.connect(core.governance).ownerSetFeeAgent(OTHER_ADDRESS);
+      await expectEvent(registry, result, 'FeeAgentSet', {
+        feeAgent: OTHER_ADDRESS,
+      });
+      expect(await registry.feeAgent()).to.equal(OTHER_ADDRESS);
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetFeeAgent(ZERO_ADDRESS),
+        'DolomiteRegistryImplementation: Invalid feeAgent',
+      );
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetFeeAgent(OTHER_ADDRESS),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+  });
+
   describe('#ownerSetSlippageToleranceForPauseSentinel', () => {
     it('should work normally', async () => {
       const slippageTolerance = '123';
-      const result = await registry.connect(core.governance)
+      const result = await registry
+        .connect(core.governance)
         .ownerSetSlippageToleranceForPauseSentinel(slippageTolerance);
       await expectEvent(registry, result, 'SlippageToleranceForPauseSentinelSet', {
         slippageTolerance,
@@ -341,12 +389,53 @@ describe('DolomiteRegistryImplementation', () => {
     });
   });
 
+  describe('#ownerSetTrustedInternalTraders', () => {
+    it('should work normally', async () => {
+      const res = await registry.connect(core.governance).ownerSetTrustedInternalTraders(
+        [core.hhUser1.address],
+        [true]
+      );
+      await expectEvent(registry, res, 'TrustedInternalTradersSet', {
+        trustedInternalTraders: [core.hhUser1.address],
+        isTrusted: [true],
+      });
+      expect(await registry.isTrustedInternalTrader(core.hhUser1.address)).to.equal(true);
+    });
+
+    it('should fail if the length of the arrays do not match', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetTrustedInternalTraders(
+          [core.hhUser1.address],
+          []
+        ),
+        'DolomiteRegistryImplementation: Array length mismatch'
+      );
+    });
+
+    it('should fail if a zero address is provided', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetTrustedInternalTraders(
+          [ZERO_ADDRESS],
+          [true]
+        ),
+        'DolomiteRegistryImplementation: Invalid trustedInternalTrader'
+      );
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetTrustedInternalTraders(
+          [core.hhUser1.address],
+          [true]
+        ),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+  });
+
   describe('#ownerSetIsolationModeMulticallFunctions', () => {
     it('should work normally', async () => {
-      const selectors = [
-        '0x12345678',
-        '0x12345679',
-      ];
+      const selectors = ['0x12345678', '0x12345679'];
 
       const result = await registry.connect(core.governance).ownerSetIsolationModeMulticallFunctions(selectors);
       await expectEvent(registry, result, 'IsolationModeMulticallFunctionsSet', {
@@ -367,10 +456,7 @@ describe('DolomiteRegistryImplementation', () => {
     });
 
     it('should fail if duplicate selectors are provided', async () => {
-      const selectors = [
-        '0x12345678',
-        '0x12345678',
-      ];
+      const selectors = ['0x12345678', '0x12345678'];
       await expectThrow(
         registry.connect(core.governance).ownerSetIsolationModeMulticallFunctions(selectors),
         'DolomiteRegistryImplementation: Selectors not sorted',
@@ -378,10 +464,7 @@ describe('DolomiteRegistryImplementation', () => {
     });
 
     it('should fail if selectors are not sorted', async () => {
-      const selectors = [
-        '0x12345679',
-        '0x12345678',
-      ];
+      const selectors = ['0x12345679', '0x12345678'];
       await expectThrow(
         registry.connect(core.governance).ownerSetIsolationModeMulticallFunctions(selectors),
         'DolomiteRegistryImplementation: Selectors not sorted',
@@ -394,6 +477,5 @@ describe('DolomiteRegistryImplementation', () => {
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
-
   });
 });

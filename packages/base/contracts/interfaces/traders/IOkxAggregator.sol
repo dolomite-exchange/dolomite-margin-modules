@@ -94,7 +94,6 @@ interface IOkxAggregator {
         PMMSwapRequest[] calldata extraData
     ) external returns (uint256 returnAmount);
 
-    // @follow-up I don't think we need these two commented ones and I removed all the XBridge ones
     // function swapWrap(
     //     uint256 orderId,
     //     uint256 rawdata

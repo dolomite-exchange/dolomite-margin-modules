@@ -23,16 +23,17 @@ pragma solidity ^0.8.9;
 import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import { OnlyDolomiteMarginForUpgradeable } from "../helpers/OnlyDolomiteMarginForUpgradeable.sol";
 import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
+import { IBorrowPositionProxyV2 } from "../interfaces/IBorrowPositionProxyV2.sol";
 import { IDolomiteAccountRegistry } from "../interfaces/IDolomiteAccountRegistry.sol";
 import { IDolomiteMigrator } from "../interfaces/IDolomiteMigrator.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IEventEmitterRegistry } from "../interfaces/IEventEmitterRegistry.sol";
 import { IExpiry } from "../interfaces/IExpiry.sol";
-import { IGenericTraderProxyV1 } from "../interfaces/IGenericTraderProxyV1.sol";
 import { ILiquidatorAssetRegistry } from "../interfaces/ILiquidatorAssetRegistry.sol";
 import { ValidationLib } from "../lib/ValidationLib.sol";
 import { IDolomitePriceOracle } from "../protocol/interfaces/IDolomitePriceOracle.sol";
 import { Require } from "../protocol/lib/Require.sol";
+import { IGenericTraderProxyV2 } from "../proxies/interfaces/IGenericTraderProxyV2.sol";
 
 
 /**
@@ -51,21 +52,25 @@ contract DolomiteRegistryImplementation is
     // ===================== Constants =====================
 
     bytes32 private constant _FILE = "DolomiteRegistryImplementation";
+    bytes32 private constant _BORROW_POSITION_PROXY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.borrowPositionProxy")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _CHAINLINK_PRICE_ORACLE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.chainlinkPriceOracle")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _DOLOMITE_ACCOUNT_REGISTRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.dolomiteAccountRegistry")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _DOLOMITE_MIGRATOR_SLOT = bytes32(uint256(keccak256("eip1967.proxy.dolomiteMigrator")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _EVENT_EMITTER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.eventEmitter")) - 1);
     bytes32 private constant _EXPIRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.expiry")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _FEE_AGENT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.feeAgent")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _GENERIC_TRADER_PROXY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.genericTraderProxy")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _LIQUIDATOR_ASSET_REGISTRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.liquidatorAssetRegistry")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _ORACLE_AGGREGATOR_SLOT = bytes32(uint256(keccak256("eip1967.proxy.oracleAggregator")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _REDSTONE_PRICE_ORACLE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.redstonePriceOracle")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL_SLOT = bytes32(uint256(keccak256("eip1967.proxy.slippageToleranceForPauseSentinel")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _TRUSTED_INTERNAL_TRADERS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.trustedInternalTraders")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _ISOLATION_MODE_STORAGE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isolationModeStorage")) - 1); // solhint-disable-line max-line-length
 
     // ==================== Constructor ====================
 
     function initialize(
+        address _borrowPositionProxy,
         address _genericTraderProxy,
         address _expiry,
         uint256 _slippageToleranceForPauseSentinel,
@@ -73,6 +78,7 @@ contract DolomiteRegistryImplementation is
         address _eventEmitter,
         address _dolomiteAccountRegistry
     ) external initializer {
+        _ownerSetBorrowPositionProxy(_borrowPositionProxy);
         _ownerSetGenericTraderProxy(_genericTraderProxy);
         _ownerSetExpiry(_expiry);
         _ownerSetSlippageToleranceForPauseSentinel(_slippageToleranceForPauseSentinel);
@@ -98,6 +104,14 @@ contract DolomiteRegistryImplementation is
 
     // ===================== Functions =====================
 
+    function ownerSetBorrowPositionProxy(
+        address _borrowPositionProxy
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetBorrowPositionProxy(_borrowPositionProxy);
+    }
+
     function ownerSetGenericTraderProxy(
         address _genericTraderProxy
     )
@@ -112,6 +126,14 @@ contract DolomiteRegistryImplementation is
     external
     onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetExpiry(_expiry);
+    }
+
+    function ownerSetFeeAgent(
+        address _feeAgent
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetFeeAgent(_feeAgent);
     }
 
     function ownerSetSlippageToleranceForPauseSentinel(
@@ -178,6 +200,15 @@ contract DolomiteRegistryImplementation is
         _ownerSetDolomiteAccountRegistry(_dolomiteAccountRegistry);
     }
 
+    function ownerSetTrustedInternalTraders(
+        address[] memory _trustedInternalTraders,
+        bool[] memory _isTrusted
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetTrustedInternalTraders(_trustedInternalTraders, _isTrusted);
+    }
+
     function ownerSetIsolationModeMulticallFunctions(
         bytes4[] memory _selectors
     )
@@ -188,8 +219,12 @@ contract DolomiteRegistryImplementation is
 
     // ========================== View Functions =========================
 
-    function genericTraderProxy() public view returns (IGenericTraderProxyV1) {
-        return IGenericTraderProxyV1(_getAddress(_GENERIC_TRADER_PROXY_SLOT));
+    function borrowPositionProxy() public view returns (IBorrowPositionProxyV2) {
+        return IBorrowPositionProxyV2(_getAddress(_BORROW_POSITION_PROXY_SLOT));
+    }
+
+    function genericTraderProxy() public view returns (IGenericTraderProxyV2) {
+        return IGenericTraderProxyV2(_getAddress(_GENERIC_TRADER_PROXY_SLOT));
     }
 
     function expiry() public view returns (IExpiry) {
@@ -206,6 +241,10 @@ contract DolomiteRegistryImplementation is
 
     function eventEmitter() public view returns (IEventEmitterRegistry) {
         return IEventEmitterRegistry(_getAddress(_EVENT_EMITTER_SLOT));
+    }
+
+    function feeAgent() public view returns (address) {
+        return _getAddress(_FEE_AGENT_SLOT);
     }
 
     function chainlinkPriceOracle() public view returns (IDolomitePriceOracle) {
@@ -228,6 +267,10 @@ contract DolomiteRegistryImplementation is
         return IDolomiteAccountRegistry(_getAddress(_DOLOMITE_ACCOUNT_REGISTRY_SLOT));
     }
 
+    function isTrustedInternalTrader(address _trader) public view returns (bool) {
+        return _getUint256FromMap(_TRUSTED_INTERNAL_TRADERS_SLOT, _trader) == 1;
+    }
+
     function isolationModeMulticallFunctions() public view returns (bytes4[] memory) {
         IsolationModeStorage storage ims;
         bytes32 slot = _ISOLATION_MODE_STORAGE_SLOT;
@@ -244,6 +287,20 @@ contract DolomiteRegistryImplementation is
 
     // ===================== Internal Functions =====================
 
+    function _ownerSetBorrowPositionProxy(
+        address _borrowPositionProxy
+    ) internal {
+        if (_borrowPositionProxy != address(0)) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            _borrowPositionProxy != address(0),
+            _FILE,
+            "Invalid borrowPositionProxy"
+        );
+
+        _setAddress(_BORROW_POSITION_PROXY_SLOT, _borrowPositionProxy);
+        emit BorrowPositionProxySet(_borrowPositionProxy);
+    }
+
     function _ownerSetGenericTraderProxy(
         address _genericTraderProxy
     ) internal {
@@ -253,12 +310,6 @@ contract DolomiteRegistryImplementation is
             _FILE,
             "Invalid genericTraderProxy"
         );
-         bytes memory returnData = ValidationLib.callAndCheckSuccess(
-             _genericTraderProxy,
-             IGenericTraderProxyV1(_genericTraderProxy).EXPIRY.selector,
-             bytes("")
-         );
-         abi.decode(returnData, (address));
 
         _setAddress(_GENERIC_TRADER_PROXY_SLOT, _genericTraderProxy);
         emit GenericTraderProxySet(_genericTraderProxy);
@@ -282,6 +333,20 @@ contract DolomiteRegistryImplementation is
 
         _setAddress(_EXPIRY_SLOT, _expiry);
         emit ExpirySet(_expiry);
+    }
+
+     function _ownerSetFeeAgent(
+        address _feeAgent
+    ) internal {
+        if (_feeAgent != address(0)) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            _feeAgent != address(0),
+            _FILE,
+            "Invalid feeAgent"
+        );
+
+        _setAddress(_FEE_AGENT_SLOT, _feeAgent);
+        emit FeeAgentSet(_feeAgent);
     }
 
     function _ownerSetSlippageToleranceForPauseSentinel(
@@ -400,6 +465,28 @@ contract DolomiteRegistryImplementation is
 
         _setAddress(_DOLOMITE_ACCOUNT_REGISTRY_SLOT, _dolomiteAccountRegistry);
         emit DolomiteAccountRegistrySet(_dolomiteAccountRegistry);
+    }
+
+    function _ownerSetTrustedInternalTraders(
+        address[] memory _trustedInternalTraders,
+        bool[] memory _isTrusted
+    ) internal {
+        if (_trustedInternalTraders.length == _isTrusted.length) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            _trustedInternalTraders.length == _isTrusted.length,
+            _FILE,
+            "Array length mismatch"
+        );
+        for (uint256 i; i < _trustedInternalTraders.length; ++i) {
+            if (_trustedInternalTraders[i] != address(0)) { /* FOR COVERAGE TESTING */ }
+            Require.that(
+                _trustedInternalTraders[i] != address(0),
+                _FILE,
+                "Invalid trustedInternalTrader"
+            );
+            _setUint256InMap(_TRUSTED_INTERNAL_TRADERS_SLOT, _trustedInternalTraders[i], _isTrusted[i] ? 1 : 0);
+        }
+        emit TrustedInternalTradersSet(_trustedInternalTraders, _isTrusted);
     }
 
     function _ownerSetIsolationModeMulticallFunctions(

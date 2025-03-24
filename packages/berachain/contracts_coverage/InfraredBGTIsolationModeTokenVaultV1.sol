@@ -54,7 +54,6 @@ contract InfraredBGTIsolationModeTokenVaultV1 is
     bytes32 private constant _IS_DEPOSIT_SOURCE_THIS_VAULT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isDepositSourceThisVault")) - 1); // solhint-disable-line max-line-length
 
     uint256 public constant DEFAULT_ACCOUNT_NUMBER = 0;
-    uint256 public constant MAX_NUMBER_OF_REWARD_TOKENS = 10;
 
     // ==================================================================
     // =========================== Functions ============================
@@ -70,6 +69,10 @@ contract InfraredBGTIsolationModeTokenVaultV1 is
 
     function getReward() external onlyVaultOwner(msg.sender) {
         _getReward();
+    }
+
+    function exit() external onlyVaultOwner(msg.sender) {
+        _exit();
     }
 
     function executeDepositIntoVault(
@@ -103,7 +106,7 @@ contract InfraredBGTIsolationModeTokenVaultV1 is
     override(IIsolationModeTokenVaultV1, IsolationModeTokenVaultV1)
     onlyVaultFactory(msg.sender) {
         uint256 unstakedBalance = super.underlyingBalanceOf();
-        if (unstakedBalance < _amount) {
+        if (_amount > unstakedBalance) {
             _unstake(_amount - unstakedBalance);
         }
 
@@ -117,7 +120,7 @@ contract InfraredBGTIsolationModeTokenVaultV1 is
         override(IIsolationModeTokenVaultV1, IsolationModeTokenVaultV1)
         returns (uint256)
     {
-        return super.underlyingBalanceOf() + registry().iBgtVault().balanceOf(address(this));
+        return super.underlyingBalanceOf() + registry().iBgtStakingVault().balanceOf(address(this));
     }
 
     function isDepositSourceThisVault() public view returns (bool) {
@@ -134,51 +137,66 @@ contract InfraredBGTIsolationModeTokenVaultV1 is
     }
 
     function _stake(uint256 _amount) internal {
-        IInfraredVault vault = registry().iBgtVault();
+        IInfraredVault vault = registry().iBgtStakingVault();
         IERC20(UNDERLYING_TOKEN()).safeApprove(address(vault), _amount);
         vault.stake(_amount);
     }
 
     function _unstake(uint256 _amount) internal {
-        IInfraredVault vault = registry().iBgtVault();
+        IInfraredVault vault = registry().iBgtStakingVault();
         vault.withdraw(_amount);
     }
 
     function _getReward() internal {
-        IInfraredVault vault = registry().iBgtVault();
+        IInfraredVault vault = registry().iBgtStakingVault();
+
         IInfraredVault.UserReward[] memory rewards = vault.getAllRewardsForUser(address(this));
-        IIsolationModeVaultFactory factory = IIsolationModeVaultFactory(VAULT_FACTORY());
         vault.getReward();
 
-        for (uint256 i = 0; i < rewards.length; ++i) {
-            if (rewards[i].amount > 0) {
-                if (rewards[i].token == UNDERLYING_TOKEN()) {
-                    _setIsDepositSourceThisVault(true);
-                    factory.depositIntoDolomiteMargin(
-                        DEFAULT_ACCOUNT_NUMBER,
-                        rewards[i].amount
-                    );
-                    /*assert(!isDepositSourceThisVault());*/
-                } else {
-                    try DOLOMITE_MARGIN().getMarketIdByTokenAddress(rewards[i].token) returns (uint256 marketId) {
-                        IERC20(rewards[i].token).safeApprove(address(DOLOMITE_MARGIN()), rewards[i].amount);
-                        try factory.depositOtherTokenIntoDolomiteMarginForVaultOwner(
-                            DEFAULT_ACCOUNT_NUMBER,
-                            marketId,
-                            rewards[i].amount
-                        ) {} catch {
-                            IERC20(rewards[i].token).safeTransfer(OWNER(), rewards[i].amount);
-                        }
-                    } catch {
-                        IERC20(rewards[i].token).safeTransfer(OWNER(), rewards[i].amount);
-                    }
-                }
-            }
-        }
+        _handleRewards(rewards);
+    }
+
+    function _exit() internal {
+        IInfraredVault vault = registry().iBgtStakingVault();
+
+        IInfraredVault.UserReward[] memory rewards = vault.getAllRewardsForUser(address(this));
+        vault.exit();
+
+        _handleRewards(rewards);
     }
 
     function _setIsDepositSourceThisVault(bool _isDepositSourceThisVault) internal {
         _setUint256(_IS_DEPOSIT_SOURCE_THIS_VAULT_SLOT, _isDepositSourceThisVault ? 1 : 0);
         emit IsDepositSourceThisVaultSet(_isDepositSourceThisVault);
+    }
+
+    function _handleRewards(IInfraredVault.UserReward[] memory _rewards) internal {
+        IIsolationModeVaultFactory factory = IIsolationModeVaultFactory(VAULT_FACTORY());
+        for (uint256 i = 0; i < _rewards.length; ++i) {
+            if (_rewards[i].amount > 0) {
+                if (_rewards[i].token == UNDERLYING_TOKEN()) {
+                    _setIsDepositSourceThisVault(true);
+                    factory.depositIntoDolomiteMargin(
+                        DEFAULT_ACCOUNT_NUMBER,
+                        _rewards[i].amount
+                    );
+                    /*assert(!isDepositSourceThisVault());*/
+                } else {
+                    try DOLOMITE_MARGIN().getMarketIdByTokenAddress(_rewards[i].token) returns (uint256 marketId) {
+                        IERC20(_rewards[i].token).safeApprove(address(DOLOMITE_MARGIN()), _rewards[i].amount);
+                        try factory.depositOtherTokenIntoDolomiteMarginForVaultOwner(
+                            DEFAULT_ACCOUNT_NUMBER,
+                            marketId,
+                            _rewards[i].amount
+                        ) {} catch {
+                            IERC20(_rewards[i].token).safeApprove(address(DOLOMITE_MARGIN()), 0);
+                            IERC20(_rewards[i].token).safeTransfer(OWNER(), _rewards[i].amount);
+                        }
+                    } catch {
+                        IERC20(_rewards[i].token).safeTransfer(OWNER(), _rewards[i].amount);
+                    }
+                }
+            }
+        }
     }
 }

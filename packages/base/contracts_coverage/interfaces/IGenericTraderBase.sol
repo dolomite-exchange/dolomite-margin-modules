@@ -20,8 +20,8 @@
 
 pragma solidity ^0.8.9;
 
+import { IEventEmitterRegistry } from "./IEventEmitterRegistry.sol";
 import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
-
 
 /**
  * @title   IGenericTraderBase
@@ -65,11 +65,14 @@ interface IGenericTraderBase {
 
     struct GenericTraderProxyCache {
         IDolomiteMargin dolomiteMargin;
+        IEventEmitterRegistry eventEmitterRegistry;
         /// @dev    True if the user is making a margin deposit, false if they are withdrawing. False if the variable is
         ///         unused too.
         bool isMarginDeposit;
         /// @dev    The other account number that is not `_traderAccountNumber`. Only used for TransferCollateralParams.
         uint256 otherAccountNumber;
+        /// @dev    The index into the account array at which the fee transfer account is located.
+        uint256 feeTransferAccountIndex;
         /// @dev    The index into the account array at which traders start.
         uint256 traderAccountStartIndex;
         /// @dev    The cursor for the looping through the operation's actions.

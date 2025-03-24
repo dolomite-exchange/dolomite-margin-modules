@@ -744,7 +744,7 @@ describe('IsolationModeVaultFactory', () => {
         inputAmount: smallAmountWei,
         orderData: BYTES_EMPTY,
       });
-      const genericTrader = await impersonate(core.genericTraderProxy!.address, true);
+      const genericTrader = await impersonate(await core.dolomiteRegistry.genericTraderProxy(), true);
       return core.dolomiteMargin
         .connect(genericTrader)
         .operate([{ owner: vault, number: toAccountNumber }], actions);

@@ -148,4 +148,6 @@ interface IDolomiteOwner is IAccessControl {
         address _destination,
         bytes4 _selector
     ) external view returns (bool);
+
+    function transactionCount() external view returns (uint256);
 }

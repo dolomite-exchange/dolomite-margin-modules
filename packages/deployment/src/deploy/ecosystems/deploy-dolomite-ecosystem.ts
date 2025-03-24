@@ -1,20 +1,18 @@
 import CoreDeployments from '@dolomite-exchange/dolomite-margin/dist/migrations/deployed.json';
 import {
-  DolomiteRegistryImplementation__factory,
+  BorrowPositionRouter__factory,
+  DepositWithdrawalRouter__factory,
   EventEmitterRegistry__factory,
+  GenericTraderProxyV2__factory,
+  GenericTraderRouter__factory,
+  IDepositWithdrawalProxy__factory,
   IDolomiteOwner__factory,
-  IDolomiteRegistry__factory,
-  IGenericTraderProxyV1,
-  IGenericTraderProxyV1__factory,
   ILiquidatorAssetRegistry__factory,
+  ILiquidatorProxyV5__factory,
   IPartiallyDelayedMultiSig__factory,
   RegistryProxy__factory,
 } from '@dolomite-exchange/modules-base/src/types';
-import {
-  GNOSIS_SAFE_MAP,
-  PAYABLE_TOKEN_MAP,
-  SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL,
-} from '@dolomite-exchange/modules-base/src/utils/constants';
+import { GNOSIS_SAFE_MAP } from '@dolomite-exchange/modules-base/src/utils/constants';
 import {
   getDolomiteMigratorConstructorParams,
   getDolomiteOwnerConstructorParams,
@@ -36,9 +34,8 @@ import {
 } from '@dolomite-exchange/modules-base/test/utils/setup';
 import * as CoreDeployment from '@dolomite-margin/dist/migrations/deployed.json';
 import { ethers } from 'hardhat';
-import {
-  CoreProtocolParams,
-} from 'packages/base/test/utils/core-protocols/core-protocol-abstract';
+import { CoreProtocolParams } from 'packages/base/test/utils/core-protocols/core-protocol-abstract';
+import { getDeployedVaults } from 'packages/base/test/utils/ecosystem-utils/deployed-vaults';
 import ModuleDeployments from 'packages/deployment/src/deploy/deployments.json';
 import {
   deployContractAndSave,
@@ -49,13 +46,17 @@ import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '..
 import { prettyPrintEncodedDataWithTypeSafety } from '../../utils/encoding/base-encoder-utils';
 import getScriptName from '../../utils/get-script-name';
 import { deployDolomiteAccountRegistry } from './helpers/deploy-dolomite-account-registry';
+import { deployDolomiteAccountRiskOverrideSetter } from './helpers/deploy-dolomite-account-risk-override-setter';
+import { deployDolomiteRegistry } from './helpers/deploy-dolomite-registry';
 import { deployInterestSetters } from './helpers/deploy-interest-setters';
 import { deployOracleAggregator } from './helpers/deploy-oracle-aggregator';
-import { encodeDolomiteOwnerMigrations } from './helpers/encode-dolomite-owner-migrations';
+import { encodeDolomiteAccountRegistryMigrations } from './helpers/encode-dolomite-account-registry-migrations';
+import { encodeDolomiteAccountRiskOverrideSetterMigrations } from './helpers/encode-dolomite-account-risk-override-setter-migrations';
 import { encodeDolomiteRegistryMigrations } from './helpers/encode-dolomite-registry-migrations';
+import { encodeDolomiteRouterMigrations } from './helpers/encode-dolomite-router-migrations';
 import { encodeIsolationModeFreezableLiquidatorMigrations } from './helpers/encode-isolation-mode-freezable-liquidator-migrations';
 
-const THIRTY_MINUTES_SECONDS = 60 * 30;
+const FIVE_MINUTES_SECONDS = 60 * 5;
 const HANDLER_ADDRESS = '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe'; // Level Initiator
 
 async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
@@ -80,6 +81,10 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     CoreDeployment.PartiallyDelayedMultiSig[network].address,
     gnosisSafeSigner,
   );
+  const depositWithdrawalProxy = IDepositWithdrawalProxy__factory.connect(
+    CoreDeployment.DepositWithdrawalProxy[network].address,
+    hhUser1,
+  );
   const dolomiteMargin = getDolomiteMarginContract<T>(config, hhUser1);
   const expiry = getExpiryContract<T>(config, hhUser1);
 
@@ -100,7 +105,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   );
   const dolomiteOwnerAddress = await deployContractAndSave(
     'DolomiteOwnerV1',
-    getDolomiteOwnerConstructorParams(GNOSIS_SAFE_MAP[network], THIRTY_MINUTES_SECONDS),
+    getDolomiteOwnerConstructorParams(GNOSIS_SAFE_MAP[network], FIVE_MINUTES_SECONDS),
     'DolomiteOwnerV1',
   );
   const dolomiteOwnerV1 = IDolomiteOwner__factory.connect(dolomiteOwnerAddress, gnosisSafeSigner);
@@ -125,36 +130,44 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   );
   const eventEmitterProxy = RegistryProxy__factory.connect(eventEmitterProxyAddress, hhUser1);
 
-  const dolomiteAccountRegistryProxy = await deployDolomiteAccountRegistry(dolomiteMargin, hhUser1, network);
+  const [dolomiteAccountRegistryImplementationAddress, dolomiteAccountRegistryProxy] =
+    await deployDolomiteAccountRegistry(dolomiteMargin, hhUser1, network);
 
-  const registryImplementationAddress = await deployContractAndSave(
-    'DolomiteRegistryImplementation',
-    [],
-    getMaxDeploymentVersionNameByDeploymentKey('DolomiteRegistryImplementation', 1),
-  );
-  const registryImplementation = DolomiteRegistryImplementation__factory.connect(
-    registryImplementationAddress,
-    hhUser1,
-  );
-  const registryImplementationCalldata = await registryImplementation.populateTransaction.initialize(
-    CoreDeployments.GenericTraderProxyV1[network].address,
-    CoreDeployments.Expiry[network].address,
-    SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL,
-    CoreDeployments.LiquidatorAssetRegistry[network].address,
-    eventEmitterProxyAddress,
-    dolomiteAccountRegistryProxy.address,
-  );
-  const dolomiteRegistryAddress = await deployContractAndSave(
-    'RegistryProxy',
-    getRegistryProxyConstructorParams(
-      registryImplementationAddress,
-      registryImplementationCalldata.data!,
+  const { dolomiteRegistry, dolomiteRegistryProxy, dolomiteRegistryImplementationAddress } =
+    await deployDolomiteRegistry(
       dolomiteMargin,
-    ),
-    'DolomiteRegistryProxy',
+      eventEmitterProxyAddress,
+      dolomiteAccountRegistryProxy,
+      network,
+      hhUser1,
+    );
+
+  const {
+    dolomiteAccountRiskOverrideSetter,
+    dolomiteAccountRiskOverrideSetterProxy,
+    dolomiteAccountRiskOverrideSetterImplementationAddress,
+  } = await deployDolomiteAccountRiskOverrideSetter(dolomiteMargin, hhUser1);
+
+  const genericTraderProxyV2LibAddress = await deployContractAndSave(
+    'GenericTraderProxyV2Lib',
+    [],
+    getMaxDeploymentVersionNameByDeploymentKey('GenericTraderProxyV2Lib', 1),
   );
-  const dolomiteRegistry = IDolomiteRegistry__factory.connect(dolomiteRegistryAddress, hhUser1);
-  const dolomiteRegistryProxy = RegistryProxy__factory.connect(dolomiteRegistryAddress, hhUser1);
+  const genericTraderProxyV2Address = await deployContractAndSave(
+    'GenericTraderProxyV2',
+    [dolomiteRegistry.address, dolomiteMargin.address],
+    getMaxDeploymentVersionNameByDeploymentKey('GenericTraderProxy', 2),
+    { GenericTraderProxyV2Lib: genericTraderProxyV2LibAddress },
+  );
+  const genericTraderProxy = GenericTraderProxyV2__factory.connect(genericTraderProxyV2Address, hhUser1);
+
+  const liquidatorProxyV5Address = await deployContractAndSave(
+    'LiquidatorProxyV5',
+    [network, expiry.address, dolomiteMargin.address, dolomiteRegistry.address, liquidatorAssetRegistry.address],
+    undefined,
+    { GenericTraderProxyV2Lib: genericTraderProxyV2LibAddress },
+  );
+  const liquidatorProxyV5 = ILiquidatorProxyV5__factory.connect(liquidatorProxyV5Address, hhUser1);
 
   const dolomiteMigratorAddress = await deployContractAndSave(
     'DolomiteMigrator',
@@ -173,6 +186,51 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
       config,
     ),
     getMaxDeploymentVersionNameByDeploymentKey('IsolationModeFreezableLiquidatorProxy', 1),
+  );
+
+  const depositWithdrawalRouterImplementationAddress = await deployContractAndSave(
+    'DepositWithdrawalRouter',
+    [dolomiteRegistry.address, dolomiteMargin.address],
+    getMaxDeploymentVersionNameByDeploymentKey('DepositWithdrawalRouterImplementation', 1),
+  );
+  const depositWithdrawalRouterCalldata = await DepositWithdrawalRouter__factory.connect(
+    depositWithdrawalRouterImplementationAddress,
+    hhUser1,
+  ).populateTransaction.initialize();
+  const depositWithdrawalRouterProxyAddress = await deployContractAndSave(
+    'RouterProxy',
+    [depositWithdrawalRouterImplementationAddress, dolomiteMargin.address, depositWithdrawalRouterCalldata.data!],
+    'DepositWithdrawalRouterProxy',
+  );
+
+  const borrowPositionRouterImplementationAddress = await deployContractAndSave(
+    'BorrowPositionRouter',
+    [dolomiteRegistry.address, dolomiteMargin.address],
+    getMaxDeploymentVersionNameByDeploymentKey('BorrowPositionRouterImplementation', 1),
+  );
+  const borrowPositionRouterCalldata = await BorrowPositionRouter__factory.connect(
+    borrowPositionRouterImplementationAddress,
+    hhUser1,
+  ).populateTransaction.initialize();
+  const borrowPositionRouterProxyAddress = await deployContractAndSave(
+    'RouterProxy',
+    [borrowPositionRouterImplementationAddress, dolomiteMargin.address, borrowPositionRouterCalldata.data!],
+    'BorrowPositionRouterProxy',
+  );
+
+  const genericTraderRouterImplementationAddress = await deployContractAndSave(
+    'GenericTraderRouter',
+    [dolomiteRegistry.address, dolomiteMargin.address],
+    getMaxDeploymentVersionNameByDeploymentKey('GenericTraderRouterImplementation', 1),
+  );
+  const genericTraderRouterCalldata = await GenericTraderRouter__factory.connect(
+    genericTraderRouterImplementationAddress,
+    hhUser1,
+  ).populateTransaction.initialize();
+  const genericTraderRouterProxyAddress = await deployContractAndSave(
+    'RouterProxy',
+    [genericTraderRouterImplementationAddress, dolomiteMargin.address, genericTraderRouterCalldata.data!],
+    'GenericTraderRouterProxy',
   );
 
   const safeDelegateCallLibAddress = await deployContractAndSave(
@@ -203,53 +261,59 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   await deployInterestSetters();
 
   // We can't set up the core protocol here because there are too many missing contracts/context
-  const genericTraderAddress = CoreDeployments.GenericTraderProxyV1[network].address;
   const governanceAddress = await dolomiteMargin.connect(hhUser1).owner();
   const governance = await impersonateOrFallback(governanceAddress, true, hhUser1);
   const core = {
     config,
     delayedMultiSig,
+    depositWithdrawalProxy,
     dolomiteMargin,
     dolomiteRegistry,
     governance,
     hhUser1,
     liquidatorAssetRegistry,
-    genericTraderProxy: IGenericTraderProxyV1__factory.connect(genericTraderAddress, governance),
+    liquidatorProxyV5,
+    genericTraderProxy: genericTraderProxy as any,
     gnosisSafe: gnosisSafeSigner,
     gnosisSafeAddress: gnosisSafeAddress,
+    network: config.network,
     ownerAdapterV1: dolomiteOwnerV1,
     ownerAdapterV2: dolomiteOwnerV1, // TODO: fix after review + test
   } as CoreProtocolType<T>;
 
-  await encodeDolomiteRegistryMigrations(
-    dolomiteRegistry,
-    dolomiteRegistryProxy,
-    dolomiteAccountRegistryProxy.address,
-    dolomiteMigratorAddress,
-    oracleAggregator.address,
-    registryImplementationAddress,
+  await encodeDolomiteAccountRegistryMigrations(
+    dolomiteAccountRegistryProxy,
+    dolomiteAccountRegistryImplementationAddress,
     transactions,
     core,
   );
 
+  await encodeDolomiteRegistryMigrations(
+    dolomiteRegistry,
+    dolomiteRegistryProxy,
+    CoreDeployments.BorrowPositionProxyV2[network].address,
+    dolomiteAccountRegistryProxy,
+    dolomiteMigratorAddress,
+    genericTraderProxy,
+    liquidatorProxyV5,
+    oracleAggregator.address,
+    dolomiteRegistryImplementationAddress,
+    transactions,
+    core,
+  );
+
+  await encodeDolomiteAccountRiskOverrideSetterMigrations(
+    dolomiteAccountRiskOverrideSetter,
+    dolomiteAccountRiskOverrideSetterProxy,
+    dolomiteAccountRiskOverrideSetterImplementationAddress,
+    transactions,
+    core,
+  );
   if ((await eventEmitterProxy.implementation()) !== eventEmitterRegistryImplementation.address) {
     transactions.push(
       await prettyPrintEncodedDataWithTypeSafety(core, { eventEmitterProxy }, 'eventEmitterProxy', 'upgradeTo', [
         eventEmitterRegistryImplementation.address,
       ]),
-    );
-  }
-
-  const genericTraderProxy = core.genericTraderProxy as IGenericTraderProxyV1;
-  if ((await genericTraderProxy.EVENT_EMITTER_REGISTRY()) !== eventEmitterProxy.address) {
-    transactions.push(
-      await prettyPrintEncodedDataWithTypeSafety(
-        core,
-        { genericTraderProxy },
-        'genericTraderProxy',
-        'ownerSetEventEmitterRegistry',
-        [eventEmitterProxy.address],
-      ),
     );
   }
 
@@ -259,8 +323,18 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     transactions,
   );
 
+  const deployedVaults = await getDeployedVaults(config, dolomiteMargin, governance);
+  await encodeDolomiteRouterMigrations(
+    core,
+    DepositWithdrawalRouter__factory.connect(depositWithdrawalRouterProxyAddress, hhUser1),
+    [depositWithdrawalRouterProxyAddress, borrowPositionRouterProxyAddress, genericTraderRouterProxyAddress],
+    deployedVaults,
+    transactions,
+  );
+
   // This must be the last encoded transaction
-  await encodeDolomiteOwnerMigrations(dolomiteOwnerV1, transactions, core);
+  // TODO: uncomment
+  // await encodeDolomiteOwnerMigrations(dolomiteOwnerV1, transactions, core);
 
   return {
     core: {
