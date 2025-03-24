@@ -32,7 +32,6 @@ import { Require } from "../protocol/lib/Require.sol";
 import { TypesLib } from "../protocol/lib/TypesLib.sol";
 import { ILiquidatorProxyV5 } from "./interfaces/ILiquidatorProxyV5.sol";
 
-import "hardhat/console.sol";
 
 /**
  * @title   LiquidatorProxyV5
@@ -72,11 +71,8 @@ contract LiquidatorProxyV5 is
         _expiry,
         _chainId
     )
-    GenericTraderProxyBase(
-        _dolomiteRegistry
-    )
-    {
-    }
+    GenericTraderProxyBase(_dolomiteRegistry)
+    {}
 
     // ============ External Functions ============
 
@@ -145,11 +141,12 @@ contract LiquidatorProxyV5 is
         // get the max liquidation amount
         _calculateAndSetMaxLiquidationAmount(liquidatorCache);
 
-        (_liquidateParams.inputAmountWei, _liquidateParams.minOutputAmountWei) = _calculateAndSetActualLiquidationAmount(
-            _liquidateParams.inputAmountWei,
-            _liquidateParams.minOutputAmountWei,
-            liquidatorCache
-        );
+        (_liquidateParams.inputAmountWei, _liquidateParams.minOutputAmountWei) =
+            _calculateAndSetActualLiquidationAmount(
+                _liquidateParams.inputAmountWei,
+                _liquidateParams.minOutputAmountWei,
+                liquidatorCache
+            );
 
         IDolomiteStructs.AccountInfo[] memory accounts = _getAccounts(
             genericCache,
@@ -259,7 +256,7 @@ contract LiquidatorProxyV5 is
                 _constants.owedMarket,
                 _constants.heldMarket,
                 address(EXPIRY),
-                uint32(_constants.expirationTimestamp), // @follow-up Adjusted two things here
+                uint32(_constants.expirationTimestamp),
                 _liquidatorCache.flipMarketsForExpiration
             );
         } else {

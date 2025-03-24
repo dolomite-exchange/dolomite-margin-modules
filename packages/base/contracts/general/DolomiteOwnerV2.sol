@@ -136,9 +136,13 @@ contract DolomiteOwnerV2 is IDolomiteOwner, AccessControl {
         address _admin,
         uint32 _secondsTimeLocked
     ) {
-        _allRoles.add(BYPASS_TIMELOCK_ROLE);
         _allRoles.add(DEFAULT_ADMIN_ROLE);
+
+        _allRoles.add(BYPASS_TIMELOCK_ROLE);
         _allRoles.add(EXECUTOR_ROLE);
+
+        _allRoles.add(SECURITY_COUNCIL_ROLE);
+        _allRoles.add(LISTING_COMMITTEE_ROLE);
 
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
         _ownerSetSecondsTimeLocked(_secondsTimeLocked);
@@ -513,12 +517,12 @@ contract DolomiteOwnerV2 is IDolomiteOwner, AccessControl {
     }
 
     function _grantRole(bytes32 _role, address _account) internal activeRole(_role) override {
-        // TODO: test
-        Require.that(
-            _role != BYPASS_TIMELOCK_ROLE || !hasRole(DEFAULT_ADMIN_ROLE, _account),
-            _FILE,
-            "Admin cannot bypass timelock"
-        );
+        if (_role == BYPASS_TIMELOCK_ROLE && hasRole(DEFAULT_ADMIN_ROLE, _account)) {
+            revert("DolomiteOwnerV2: Admin cannot bypass timelock");
+        }
+        if (_role == DEFAULT_ADMIN_ROLE && hasRole(BYPASS_TIMELOCK_ROLE, _account)) {
+            revert("DolomiteOwnerV2: Admin cannot bypass timelock");
+        }
 
         _userToRoles[_account].add(_role);
         return super._grantRole(_role, _account);
