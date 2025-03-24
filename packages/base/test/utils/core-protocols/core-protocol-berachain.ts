@@ -102,7 +102,7 @@ interface CoreProtocolMarketIdsBerachain extends CoreProtocolMarketIds {
   wbera: BigNumberish;
   wbtc: BigNumberish;
   weEth: BigNumberish;
-  ylBtcLst: BigNumberish;
+  ylFbtc: BigNumberish;
   ylPumpBtc: BigNumberish;
   ylStEth: BigNumberish;
 }

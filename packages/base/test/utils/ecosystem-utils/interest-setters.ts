@@ -10,6 +10,9 @@ import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddres
 
 export interface InterestSetters {
   alwaysZeroInterestSetter: IDolomiteInterestSetter;
+  linearStepFunction4L96U70OInterestSetter: ILinearStepFunctionInterestSetter;
+  linearStepFunction4L96U80OInterestSetter: ILinearStepFunctionInterestSetter;
+  linearStepFunction4L96U90OInterestSetter: ILinearStepFunctionInterestSetter;
   linearStepFunction6L94U70OInterestSetter: ILinearStepFunctionInterestSetter;
   linearStepFunction6L94U80OInterestSetter: ILinearStepFunctionInterestSetter;
   linearStepFunction6L94U90OInterestSetter: ILinearStepFunctionInterestSetter;
@@ -40,6 +43,18 @@ export async function createInterestSetters(
   return {
     alwaysZeroInterestSetter: IDolomiteInterestSetter__factory.connect(
       coreDeployments.AlwaysZeroInterestSetter[network].address,
+      signer,
+    ),
+    linearStepFunction4L96U70OInterestSetter: ILinearStepFunctionInterestSetter__factory.connect(
+      deployments.LinearStepFunction4L96U70OInterestSetter[network].address,
+      signer,
+    ),
+    linearStepFunction4L96U80OInterestSetter: ILinearStepFunctionInterestSetter__factory.connect(
+      deployments.LinearStepFunction4L96U80OInterestSetter[network].address,
+      signer,
+    ),
+    linearStepFunction4L96U90OInterestSetter: ILinearStepFunctionInterestSetter__factory.connect(
+      deployments.LinearStepFunction4L96U90OInterestSetter[network].address,
       signer,
     ),
     linearStepFunction6L94U70OInterestSetter: ILinearStepFunctionInterestSetter__factory.connect(

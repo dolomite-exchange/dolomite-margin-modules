@@ -41,7 +41,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
   const stone = await deployDolomiteErc4626Token(core, 'Stone', core.marketIds.stone);
   const uniBtc = await deployDolomiteErc4626Token(core, 'UniBtc', core.marketIds.uniBtc);
   const usde = await deployDolomiteErc4626Token(core, 'Usde', core.marketIds.usde);
-  const ylBtcLst = await deployDolomiteErc4626Token(core, 'YlBtcLst', core.marketIds.ylBtcLst);
+  const ylBtcLst = await deployDolomiteErc4626Token(core, 'YlBtcLst', core.marketIds.ylFbtc);
   const ylPumpBtc = await deployDolomiteErc4626Token(core, 'YlPumpBtc', core.marketIds.ylPumpBtc);
   const ylStEth = await deployDolomiteErc4626Token(core, 'YlStEth', core.marketIds.ylStEth);
   const beraEth = await deployDolomiteErc4626Token(core, 'BeraEth', core.marketIds.beraEth);

@@ -1,16 +1,24 @@
 import { BigNumber, BigNumberish, ethers } from 'ethers';
 import { IDolomiteInterestSetter, IERC20Metadata__factory } from '../../../../base/src/types';
 import {
+  AccountRiskOverrideCategory,
+  AccountRiskOverrideRiskFeature,
   getLiquidationPremiumForTargetLiquidationPenalty,
   getMarginPremiumForTargetCollateralization,
+  SingleCollateralWithStrictDebtParams,
   TargetCollateralization,
   TargetLiquidationPenalty,
 } from '../../../../base/src/utils/constructors/dolomite';
-import { NetworkType, ONE_ETH_BI } from '../../../../base/src/utils/no-deps-constants';
+import {
+  BYTES_EMPTY,
+  NetworkType,
+  NetworkTypeForDolomiteV2,
+  ONE_ETH_BI,
+} from '../../../../base/src/utils/no-deps-constants';
 import { CoreProtocolType } from '../../../../base/test/utils/setup';
 import { EncodedTransaction } from '../dry-run-utils';
-import { checkPerformance } from '../performance-utils';
 import { prettyPrintEncodedDataWithTypeSafety } from './base-encoder-utils';
+import { parseEther } from 'ethers/lib/utils';
 
 export async function encodeSetGlobalOperator<T extends NetworkType>(
   core: CoreProtocolType<T>,
@@ -65,10 +73,16 @@ export async function encodeSetSupplyCapWithMagic<T extends NetworkType>(
     ]);
   }
 
-  return prettyPrintEncodedDataWithTypeSafety(core, { dolomite: core.dolomiteMargin }, 'dolomite', 'ownerSetMaxSupplyWei', [
-    marketId,
-    actualAmount,
-  ]);
+  return prettyPrintEncodedDataWithTypeSafety(
+    core,
+    { dolomite: core.dolomiteMargin },
+    'dolomite',
+    'ownerSetMaxSupplyWei',
+    [
+      marketId,
+      actualAmount,
+    ],
+  );
 }
 
 export async function encodeSetBorrowCap<T extends NetworkType>(
@@ -192,5 +206,97 @@ export async function encodeSetIsCollateralOnly<T extends NetworkType>(
     'dolomite',
     'ownerSetIsClosing',
     [marketId, isCollateralOnly],
+  );
+}
+
+export async function encodeSetAccountRiskOverrideCategoryByMarketId<T extends NetworkTypeForDolomiteV2>(
+  core: CoreProtocolType<T>,
+  marketId: BigNumberish,
+  category: AccountRiskOverrideCategory,
+): Promise<EncodedTransaction> {
+  return prettyPrintEncodedDataWithTypeSafety(
+    core,
+    { dolomiteAccountRiskOverrideSetter: core.dolomiteAccountRiskOverrideSetter },
+    'dolomiteAccountRiskOverrideSetter',
+    'ownerSetCategoryByMarketId',
+    [marketId, category],
+  );
+}
+
+export async function encodeSetAccountRiskOverrideCategorySettings<T extends NetworkTypeForDolomiteV2>(
+  core: CoreProtocolType<T>,
+  category: AccountRiskOverrideCategory,
+  collateralization: TargetCollateralization,
+  liquidationPenalty: TargetLiquidationPenalty,
+): Promise<EncodedTransaction> {
+  return prettyPrintEncodedDataWithTypeSafety(
+    core,
+    { dolomiteAccountRiskOverrideSetter: core.dolomiteAccountRiskOverrideSetter },
+    'dolomiteAccountRiskOverrideSetter',
+    'ownerSetCategoryParam',
+    [category, { value: parseEther(collateralization).sub(ONE_ETH_BI) }, { value: parseEther(liquidationPenalty) }],
+  );
+}
+
+export async function encodeRemoveAllRiskFeaturesByMarketId<T extends NetworkTypeForDolomiteV2>(
+  core: CoreProtocolType<T>,
+  marketId: BigNumberish,
+): Promise<EncodedTransaction> {
+  return prettyPrintEncodedDataWithTypeSafety(
+    core,
+    { dolomiteAccountRiskOverrideSetter: core.dolomiteAccountRiskOverrideSetter },
+    'dolomiteAccountRiskOverrideSetter',
+    'ownerSetRiskFeatureByMarketId',
+    [marketId, AccountRiskOverrideRiskFeature.NONE, BYTES_EMPTY],
+  );
+}
+
+export async function encodeSetBorrowOnlyByMarketId<T extends NetworkTypeForDolomiteV2>(
+  core: CoreProtocolType<T>,
+  marketId: BigNumberish,
+  isBorrowOnly: boolean,
+): Promise<EncodedTransaction> {
+  return prettyPrintEncodedDataWithTypeSafety(
+    core,
+    { dolomiteAccountRiskOverrideSetter: core.dolomiteAccountRiskOverrideSetter },
+    'dolomiteAccountRiskOverrideSetter',
+    'ownerSetRiskFeatureByMarketId',
+    [
+      marketId,
+      isBorrowOnly ? AccountRiskOverrideRiskFeature.BORROW_ONLY : AccountRiskOverrideRiskFeature.NONE,
+      BYTES_EMPTY,
+    ],
+  );
+}
+
+interface SingleCollateralWithStrictDebtParamsForEncoding {
+  debtMarketIds: BigNumberish[];
+  marginRatioOverride: { value: BigNumberish };
+  liquidationRewardOverride: { value: BigNumberish };
+}
+
+export async function encodeSetSingleCollateralWithStrictDebtByMarketId<T extends NetworkTypeForDolomiteV2>(
+  core: CoreProtocolType<T>,
+  marketId: BigNumberish,
+  params: SingleCollateralWithStrictDebtParams[],
+): Promise<EncodedTransaction> {
+  const mappedParams = params.map<SingleCollateralWithStrictDebtParamsForEncoding>(p => ({
+    ...p,
+    marginRatioOverride: { value: parseEther(p.marginRatioOverride).sub(ONE_ETH_BI) },
+    liquidationRewardOverride: { value: parseEther(p.liquidationRewardOverride) },
+  }));
+  return prettyPrintEncodedDataWithTypeSafety(
+    core,
+    { dolomiteAccountRiskOverrideSetter: core.dolomiteAccountRiskOverrideSetter },
+    'dolomiteAccountRiskOverrideSetter',
+    'ownerSetRiskFeatureByMarketId',
+    [
+      marketId,
+      AccountRiskOverrideRiskFeature.SINGLE_COLLATERAL_WITH_STRICT_DEBT,
+      ethers.utils.defaultAbiCoder.encode(
+        ['(uint256[],(uint256),(uint256))[]'],
+        [mappedParams],
+      ),
+    ],
   );
 }

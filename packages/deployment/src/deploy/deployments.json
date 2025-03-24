@@ -906,6 +906,27 @@
       "isVerified": true
     }
   },
+  "DolomiteAccountRiskOverrideSetterImplementationV2": {
+    "80094": {
+      "address": "0xc8a239d171c14dc97ff8e3a72f30b5A13F35EE82",
+      "transaction": "0x81a23ec3cf62f6e46c3cf0569c48f00438c43578dc966e554d0408188b49ad62",
+      "isVerified": true
+    }
+  },
+  "DolomiteAccountRiskOverrideSetterImplementationV3": {
+    "80094": {
+      "address": "0xa3e09BE2361A2e734695Bd581451A08C05815B2A",
+      "transaction": "0x4112a007a147ec88611e10d8f715310a2568f929fb47d4ce2af0be7d531ee0f8",
+      "isVerified": true
+    }
+  },
+  "DolomiteAccountRiskOverrideSetterImplementationV4": {
+    "80094": {
+      "address": "0xa424E1BfE8845B9c324eeDd5575844B42a88C998",
+      "transaction": "0x82b804c1d951eb0537661aa040e838785da7456ad0d6ad3ff224873f1911b04e",
+      "isVerified": true
+    }
+  },
   "DolomiteAccountRiskOverrideSetterProxy": {
     "196": {
       "address": "0x7BCaF5253C417c84bBD1b7DfE4Ca4F0A4c4cA435",
@@ -4860,6 +4881,27 @@
     "80094": {
       "address": "0x938f971edB5A4d05098407cb5B72d2Ca9B3029c6",
       "transaction": "0x825a71f8abc6a6b2fd4f6fba6991cef408ebfae075fe3fad88400212ea247c79",
+      "isVerified": true
+    }
+  },
+  "LinearStepFunction4L96U70OInterestSetter": {
+    "80094": {
+      "address": "0xDead17ecf90497997C3C3E68aF3c833cB0a4917B",
+      "transaction": "0x1cc4f522a90013d906f9197e854124c5e89d68f673c5fa7e8a1677753b983c25",
+      "isVerified": true
+    }
+  },
+  "LinearStepFunction4L96U80OInterestSetter": {
+    "80094": {
+      "address": "0x7Bd5862B17243b54d2a6409da2Bcd9d23F6e0284",
+      "transaction": "0x89a20b5d9efe645162eeee608594cb723c5165d47e8586ee27f28b17e1751a21",
+      "isVerified": true
+    }
+  },
+  "LinearStepFunction4L96U90OInterestSetter": {
+    "80094": {
+      "address": "0x220a4F8A16b296a7C4D8c28BEEC7037DbA0EC991",
+      "transaction": "0x1918de7eaee039d5ae40c6509440a6843fbdee6cb957b53463cab6b34ebbdcee",
       "isVerified": true
     }
   },

@@ -1050,7 +1050,7 @@ export const XAI_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   },
 };
 
-export const YL_BTC_LST_MAP: Record<Network.Berachain, TokenWithMarketId> = {
+export const YL_FBTC_MAP: Record<Network.Berachain, TokenWithMarketId> = {
   [Network.Berachain]: {
     address: '0xE946Dd7d03F6F5C440F68c84808Ca88d26475FC5',
     marketId: 15,
@@ -2112,7 +2112,7 @@ export const CHRONICLE_PRICE_SCRIBES_MAP: Record<
     [WETH_MAP[Network.Berachain].address]: {
       scribeAddress: '0x3d97ad50ce86a1fc3425b46ac799074b0fa35570',
     },
-    [YL_BTC_LST_MAP[Network.Berachain].address]: {
+    [YL_FBTC_MAP[Network.Berachain].address]: {
       scribeAddress: '0xcfee055bf4dec42563f023ca097edf0c48cc357f',
       tokenPairAddress: FBTC_MAP[Network.Berachain].address,
     },

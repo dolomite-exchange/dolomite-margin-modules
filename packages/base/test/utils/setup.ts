@@ -174,7 +174,7 @@ import {
   WOKB_MAP,
   WST_ETH_MAP,
   XAI_MAP,
-  YL_BTC_LST_MAP,
+  YL_FBTC_MAP,
   YL_PUMP_BTC_MAP,
   YL_ST_ETH_MAP,
 } from '../../src/utils/constants';
@@ -1365,7 +1365,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
         wbera: WBERA_MAP[typedConfig.network].marketId,
         wbtc: WBTC_MAP[typedConfig.network].marketId,
         weEth: WE_ETH_MAP[typedConfig.network].marketId,
-        ylBtcLst: YL_BTC_LST_MAP[typedConfig.network].marketId,
+        ylFbtc: YL_FBTC_MAP[typedConfig.network].marketId,
         ylPumpBtc: YL_PUMP_BTC_MAP[typedConfig.network].marketId,
         ylStEth: YL_ST_ETH_MAP[typedConfig.network].marketId,
         stablecoins: [...coreProtocolParams.marketIds.stablecoins, HONEY_MAP[typedConfig.network].marketId],
@@ -1408,7 +1408,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
         wbera: IWETH__factory.connect(WBERA_MAP[typedConfig.network].address, hhUser1),
         wbtc: IERC20__factory.connect(WBTC_MAP[typedConfig.network].address, hhUser1),
         weEth: IERC20__factory.connect(WE_ETH_MAP[typedConfig.network].address, hhUser1),
-        ylBtcLst: IERC20__factory.connect(YL_BTC_LST_MAP[typedConfig.network].address, hhUser1),
+        ylBtcLst: IERC20__factory.connect(YL_FBTC_MAP[typedConfig.network].address, hhUser1),
         ylPumpBtc: IERC20__factory.connect(YL_PUMP_BTC_MAP[typedConfig.network].address, hhUser1),
         ylStEth: IERC20__factory.connect(YL_ST_ETH_MAP[typedConfig.network].address, hhUser1),
         stablecoins: [

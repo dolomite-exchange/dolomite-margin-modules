@@ -23,6 +23,11 @@ export enum TargetCollateralization {
   Base = '1.00',
 
   /**
+   * 111% collateralization || 90% LTV
+   */
+  _111 = '1.11111111',
+
+  /**
    * 120% collateralization || 83.33% LTV
    */
   _120 = '1.20',
@@ -56,6 +61,10 @@ export enum TargetCollateralization {
 export enum TargetLiquidationPenalty {
   Base = '0.000',
   /**
+   * 4%
+   */
+  _4 = '0.040',
+  /**
    * 6%
    */
   _6 = '0.060',
@@ -87,6 +96,26 @@ export enum TargetLiquidationPenalty {
    * 15%
    */
   _15 = '0.150',
+}
+
+export enum AccountRiskOverrideCategory {
+  NONE = 0,
+  BERA = 1,
+  BTC = 2,
+  ETH = 3,
+  STABLE = 4,
+}
+
+export enum AccountRiskOverrideRiskFeature {
+  NONE = 0,
+  BORROW_ONLY = 1,
+  SINGLE_COLLATERAL_WITH_STRICT_DEBT = 2,
+}
+
+export interface SingleCollateralWithStrictDebtParams {
+  debtMarketIds: BigNumberish[];
+  marginRatioOverride: TargetCollateralization;
+  liquidationRewardOverride: TargetLiquidationPenalty;
 }
 
 export function getDolomiteOwnerConstructorParams(gnosisSafeAddress: string, secondsTimeLocked: BigNumberish): any[] {
