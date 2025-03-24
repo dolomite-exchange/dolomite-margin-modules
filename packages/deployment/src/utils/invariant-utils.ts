@@ -264,7 +264,7 @@ export async function checkAccountRiskOverrideIsBorrowOnly<T extends NetworkType
   const riskFeature = await core.dolomiteAccountRiskOverrideSetter.getRiskFeatureByMarketId(marketId);
   assertHardhatInvariant(
     riskFeature === AccountRiskOverrideRiskFeature.BORROW_ONLY,
-    `Expected market [${marketId}] to be borrow only`,
+    `Expected market [${marketId}] to be borrow only but found: ${riskFeature}`,
   );
 }
 
@@ -274,8 +274,8 @@ export async function checkAccountRiskOverrideIsSingleCollateral<T extends Netwo
   params: SingleCollateralWithStrictDebtParams[],
 ) {
   const structs = await core.dolomiteAccountRiskOverrideSetter.getRiskFeatureForSingleCollateralByMarketId(marketId);
-  structs.forEach(s => {
-    const expectedParam = params[0];
+  structs.forEach((s, index) => {
+    const expectedParam = params[index];
     assertHardhatInvariant(
       s.debtMarketIds.length === expectedParam.debtMarketIds.length &&
       s.debtMarketIds.every(d1 => expectedParam.debtMarketIds.some(d2 => d1.eq(d2))),
@@ -287,7 +287,7 @@ export async function checkAccountRiskOverrideIsSingleCollateral<T extends Netwo
       'Single collateral params margin ratios do not match',
     );
     assertHardhatInvariant(
-      s.liquidationRewardOverride.value.eq(expectedParam.liquidationRewardOverride),
+      s.liquidationRewardOverride.value.eq(parseEther(expectedParam.liquidationRewardOverride)),
       'Single collateral params margin ratios do not match',
     );
   });

@@ -1,4 +1,5 @@
 import { BigNumber, BigNumberish, ethers } from 'ethers';
+import { parseEther } from 'ethers/lib/utils';
 import { IDolomiteInterestSetter, IERC20Metadata__factory } from '../../../../base/src/types';
 import {
   AccountRiskOverrideCategory,
@@ -18,7 +19,6 @@ import {
 import { CoreProtocolType } from '../../../../base/test/utils/setup';
 import { EncodedTransaction } from '../dry-run-utils';
 import { prettyPrintEncodedDataWithTypeSafety } from './base-encoder-utils';
-import { parseEther } from 'ethers/lib/utils';
 
 export async function encodeSetGlobalOperator<T extends NetworkType>(
   core: CoreProtocolType<T>,
@@ -78,10 +78,7 @@ export async function encodeSetSupplyCapWithMagic<T extends NetworkType>(
     { dolomite: core.dolomiteMargin },
     'dolomite',
     'ownerSetMaxSupplyWei',
-    [
-      marketId,
-      actualAmount,
-    ],
+    [marketId, actualAmount],
   );
 }
 
@@ -280,11 +277,12 @@ export async function encodeSetSingleCollateralWithStrictDebtByMarketId<T extend
   marketId: BigNumberish,
   params: SingleCollateralWithStrictDebtParams[],
 ): Promise<EncodedTransaction> {
-  const mappedParams = params.map<SingleCollateralWithStrictDebtParamsForEncoding>(p => ({
+  const mappedParams = params.map<SingleCollateralWithStrictDebtParamsForEncoding>((p) => ({
     ...p,
     marginRatioOverride: { value: parseEther(p.marginRatioOverride).sub(ONE_ETH_BI) },
     liquidationRewardOverride: { value: parseEther(p.liquidationRewardOverride) },
   }));
+  const decimalType = 'tuple(uint256 value)';
   return prettyPrintEncodedDataWithTypeSafety(
     core,
     { dolomiteAccountRiskOverrideSetter: core.dolomiteAccountRiskOverrideSetter },
@@ -294,7 +292,9 @@ export async function encodeSetSingleCollateralWithStrictDebtByMarketId<T extend
       marketId,
       AccountRiskOverrideRiskFeature.SINGLE_COLLATERAL_WITH_STRICT_DEBT,
       ethers.utils.defaultAbiCoder.encode(
-        ['(uint256[],(uint256),(uint256))[]'],
+        [
+          `tuple(uint256[] debtMarketIds, ${decimalType} marginRatioOverride, ${decimalType} liquidationRewardOverride)[]`,
+        ],
         [mappedParams],
       ),
     ],

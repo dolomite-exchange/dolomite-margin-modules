@@ -45,6 +45,7 @@ function getBtcLstRiskFeatureEncoding(core: CoreProtocolBerachain) {
 /**
  * This script encodes the following transactions:
  * - Enable e-mode risk settings for various assets
+ * - Update supply / borrow caps for various assets
  */
 async function main(): Promise<DryRunOutput<Network.Berachain>> {
   const network = await getAndCheckSpecificNetwork(Network.Berachain);

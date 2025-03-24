@@ -751,6 +751,13 @@ export const S_USDS_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   },
 };
 
+export const SR_USD_MAP: Record<Network.Berachain, TokenWithMarketId> = {
+  [Network.Berachain]: {
+    address: '0x5475611Dffb8ef4d697Ae39df9395513b6E947d7',
+    marketId: 31,
+  },
+};
+
 export const ST_ETH_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84',
@@ -2075,9 +2082,15 @@ export const CHRONICLE_PRICE_SCRIBES_MAP: Record<
     [PUMP_BTC_MAP[Network.Berachain].address]: {
       scribeAddress: '0xc991e18e3f167f7457e06b780e92ea94a6b3c1bb',
     },
+    [R_USD_MAP[Network.Berachain].address]: {
+      scribeAddress: '0x4f2c5717476c13ad28C89229d6075f16e6554592',
+    },
     [RS_ETH_MAP[Network.Berachain].address]: {
       scribeAddress: '0xbf2c7e033a95eddf91c9433a2facd2bb3a358186',
       tokenPairAddress: WETH_MAP[Network.Berachain].address,
+    },
+    [SR_USD_MAP[Network.Berachain].address]: {
+      scribeAddress: '0xE262021D583b9c97244EB3e5cD3C31cB19F94447',
     },
     [S_USDA_MAP[Network.Berachain].address]: {
       scribeAddress: '0x8d64f7320bfaa19e19e18824276adbc4dc27aeee',
