@@ -1,6 +1,7 @@
 import {
   DolomiteERC4626,
   DolomiteERC4626__factory,
+  DolomiteOwnerV2,
   RegistryProxy__factory,
 } from '@dolomite-exchange/modules-base/src/types';
 import {
@@ -59,11 +60,14 @@ import {
   upgradeAndSetupDTokensAndOwnerForPOLTests,
   wrapFullBalanceIntoVaultDefaultAccount,
 } from './berachain-ecosystem-utils';
-import { createLiquidatorProxyV5, setupNewGenericTraderProxy } from 'packages/base/test/utils/dolomite';
+import { createDolomiteOwner, createDolomiteOwnerV2, createLiquidatorProxyV5, setupNewGenericTraderProxy } from 'packages/base/test/utils/dolomite';
 import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
+import { Ownable__factory } from 'packages/tokenomics/src/types';
 
 const defaultAccountNumber = ZERO_BI;
 const amountWei = parseEther('.5');
+const OTHER_ROLE = '0x1111111111111111111111111111111111111111111111111111111111111111';
+const TIMELOCK = ONE_DAY_SECONDS;
 
 describe('InfraredBGTMetaVault', () => {
   let snapshotId: string;
@@ -80,7 +84,8 @@ describe('InfraredBGTMetaVault', () => {
   let unwrapper: POLIsolationModeUnwrapperTraderV2;
 
   let testInfraredVault: TestInfraredVault;
-  let ownerContractImpersonator: SignerWithAddressWithSafety;
+  let dolomiteOwner: DolomiteOwnerV2;
+  let dolomiteOwnerImpersonator: SignerWithAddressWithSafety;
 
   let dToken: DolomiteERC4626;
   let infraredVault: IInfraredVault;
@@ -93,9 +98,7 @@ describe('InfraredBGTMetaVault', () => {
       blockNumber: 2_040_000,
       network: Network.Berachain,
     });
-    // @todo update dToken implementation to handle lossy better
-    await setupWETHBalance(core, core.governance, ONE_ETH_BI, core.dolomiteMargin);
-    await depositIntoDolomiteMargin(core, core.governance, defaultAccountNumber, core.marketIds.weth, ONE_ETH_BI);
+
     await disableInterestAccrual(core, core.marketIds.weth);
 
     dToken = core.dolomiteTokens.weth!.connect(core.hhUser1);
@@ -175,6 +178,31 @@ describe('InfraredBGTMetaVault', () => {
       [dToken.address],
     );
 
+    dolomiteOwner = await createDolomiteOwnerV2(core, TIMELOCK);
+    dolomiteOwnerImpersonator = await impersonate(dolomiteOwner.address, true);
+    await dolomiteOwner.connect(dolomiteOwnerImpersonator).ownerAddRole(OTHER_ROLE);
+    await dolomiteOwner.connect(dolomiteOwnerImpersonator).grantRole(OTHER_ROLE, dToken.address);
+    await dolomiteOwner.connect(dolomiteOwnerImpersonator).grantRole(await dolomiteOwner.BYPASS_TIMELOCK_ROLE(), dToken.address);
+    await dolomiteOwner.connect(dolomiteOwnerImpersonator).grantRole(await dolomiteOwner.EXECUTOR_ROLE(), dToken.address);
+    await dolomiteOwner.connect(dolomiteOwnerImpersonator).ownerAddRoleToAddressFunctionSelectors(
+      OTHER_ROLE,
+      core.dolomiteMargin.address,
+      ['0x8f6bc659']
+    );
+
+    await Ownable__factory.connect(core.dolomiteMargin.address, core.governance).transferOwnership(dolomiteOwner.address);
+
+    await wrapFullBalanceIntoVaultDefaultAccount(core, vault, metaVault, wrapper, marketId);
+
+    await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, ZERO_BI);
+    await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, marketId, ZERO_BI);
+    await expectProtocolBalance(core, vault, defaultAccountNumber, core.marketIds.weth, ZERO_BI);
+    await expectProtocolBalance(core, vault, defaultAccountNumber, marketId, parAmount);
+    await expectProtocolBalance(core, metaVault, defaultAccountNumber, core.marketIds.weth, ZERO_BI);
+    await expectProtocolBalance(core, metaVault, defaultAccountNumber, marketId, ZERO_BI);
+    expect(await infraredVault.balanceOf(metaVault.address)).to.equal(parAmount);
+    expect(await vault.underlyingBalanceOf()).to.equal(parAmount);
+
     snapshotId = await snapshot();
   });
 
@@ -216,16 +244,7 @@ describe('InfraredBGTMetaVault', () => {
 
   describe('#stakeDolomiteToken', () => {
     it('should work normally', async () => {
-      await wrapFullBalanceIntoVaultDefaultAccount(core, vault, metaVault, wrapper, marketId);
-
-      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, ZERO_BI);
-      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, marketId, ZERO_BI);
-      await expectProtocolBalance(core, vault, defaultAccountNumber, core.marketIds.weth, ZERO_BI);
-      await expectProtocolBalance(core, vault, defaultAccountNumber, marketId, parAmount);
-      await expectProtocolBalance(core, metaVault, defaultAccountNumber, core.marketIds.weth, ZERO_BI);
-      await expectProtocolBalance(core, metaVault, defaultAccountNumber, marketId, ZERO_BI);
-      expect(await infraredVault.balanceOf(metaVault.address)).to.equal(parAmount);
-      expect(await vault.underlyingBalanceOf()).to.equal(parAmount);
+      // tested in before
     });
 
     it('should fail if type is not infrared', async () => {
@@ -246,7 +265,6 @@ describe('InfraredBGTMetaVault', () => {
 
   describe('#unstakeDolomiteToken', () => {
     it('should work normally', async () => {
-      await wrapFullBalanceIntoVaultDefaultAccount(core, vault, metaVault, wrapper, marketId);
       await vault.unstake(RewardVaultType.Infrared, parAmount);
 
       await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, ZERO_BI);
@@ -371,13 +389,8 @@ describe('InfraredBGTMetaVault', () => {
     it('should work normally with iBgt rewards', async () => {
       const infraredImpersonator = await impersonate(core.berachainRewardsEcosystem.infrared.address, true);
       await core.tokens.iBgt.connect(infraredImpersonator).approve(infraredVault.address, parseEther('100'));
-
-      await wrapFullBalanceIntoVaultDefaultAccount(core, vault, metaVault, wrapper, marketId);
-      await expectProtocolBalance(core, vault, defaultAccountNumber, marketId, parAmount);
-      expect(await vault.underlyingBalanceOf()).to.equal(parAmount);
-      expect(await infraredVault.balanceOf(metaVault.address)).to.equal(parAmount);
-
       await infraredVault.connect(infraredImpersonator).notifyRewardAmount(core.tokens.iBgt.address, parseEther('100'));
+
       await increase(10 * ONE_DAY_SECONDS);
       const rewards = await infraredVault.getAllRewardsForUser(metaVault.address);
       await vault.getReward();
@@ -394,16 +407,11 @@ describe('InfraredBGTMetaVault', () => {
       await testInfraredVault.setRewardTokens([core.tokens.honey.address]);
       await setupHONEYBalance(core, core.hhUser1, rewardAmount, { address: testInfraredVault.address });
       await testInfraredVault.connect(core.hhUser1).addReward(core.tokens.honey.address, rewardAmount);
-      await registry.connect(core.governance).ownerSetRewardVaultOverride(
+      await registry.connect(dolomiteOwnerImpersonator).ownerSetRewardVaultOverride(
         dToken.address,
         RewardVaultType.Infrared,
         testInfraredVault.address,
       );
-
-      await wrapFullBalanceIntoVaultDefaultAccount(core, vault, metaVault, wrapper, marketId);
-      await expectProtocolBalance(core, vault, defaultAccountNumber, marketId, parAmount);
-      expect(await vault.underlyingBalanceOf()).to.equal(parAmount);
-      expect(await testInfraredVault.balanceOf(metaVault.address)).to.equal(parAmount);
 
       const rewards = await testInfraredVault.getAllRewardsForUser(metaVault.address);
       await vault.getReward();
@@ -416,19 +424,14 @@ describe('InfraredBGTMetaVault', () => {
       await testInfraredVault.setRewardTokens([core.tokens.honey.address]);
       await setupHONEYBalance(core, core.hhUser1, rewardAmount, { address: testInfraredVault.address });
       await testInfraredVault.connect(core.hhUser1).addReward(core.tokens.honey.address, rewardAmount);
-      await registry.connect(core.governance).ownerSetRewardVaultOverride(
+      await registry.connect(dolomiteOwnerImpersonator).ownerSetRewardVaultOverride(
         dToken.address,
         RewardVaultType.Infrared,
         testInfraredVault.address,
       );
 
-      await wrapFullBalanceIntoVaultDefaultAccount(core, vault, metaVault, wrapper, marketId);
-      await expectProtocolBalance(core, vault, defaultAccountNumber, marketId, parAmount);
-      expect(await vault.underlyingBalanceOf()).to.equal(parAmount);
-      expect(await testInfraredVault.balanceOf(metaVault.address)).to.equal(parAmount);
-
       await expectWalletBalance(core.hhUser1, core.tokens.honey, ZERO_BI);
-      await core.dolomiteMargin.connect(core.governance).ownerSetMaxSupplyWei(core.marketIds.honey, ONE_BI);
+      await core.dolomiteMargin.connect(dolomiteOwnerImpersonator).ownerSetMaxSupplyWei(core.marketIds.honey, ONE_BI);
       const rewards = await testInfraredVault.getAllRewardsForUser(metaVault.address);
       await vault.getReward();
       await expectWalletBalance(core.hhUser1, core.tokens.honey, rewards[0].amount);
@@ -442,16 +445,11 @@ describe('InfraredBGTMetaVault', () => {
       await testToken.addBalance(core.hhUser1.address, rewardAmount);
       await testToken.connect(core.hhUser1).approve(testInfraredVault.address, rewardAmount);
       await testInfraredVault.connect(core.hhUser1).addReward(testToken.address, rewardAmount);
-      await registry.connect(core.governance).ownerSetRewardVaultOverride(
+      await registry.connect(dolomiteOwnerImpersonator).ownerSetRewardVaultOverride(
         dToken.address,
         RewardVaultType.Infrared,
         testInfraredVault.address,
       );
-
-      await wrapFullBalanceIntoVaultDefaultAccount(core, vault, metaVault, wrapper, marketId);
-      await expectProtocolBalance(core, vault, defaultAccountNumber, marketId, parAmount);
-      expect(await vault.underlyingBalanceOf()).to.equal(parAmount);
-      expect(await testInfraredVault.balanceOf(metaVault.address)).to.equal(parAmount);
 
       await expectWalletBalance(core.hhUser1, testToken, ZERO_BI);
       const rewards = await testInfraredVault.getAllRewardsForUser(metaVault.address);
@@ -469,11 +467,6 @@ describe('InfraredBGTMetaVault', () => {
         core.hhUser1,
       );
 
-      await wrapFullBalanceIntoVaultDefaultAccount(core, vault, metaVault, wrapper, marketId);
-      await expectProtocolBalance(core, vault, defaultAccountNumber, marketId, parAmount);
-      expect(await vault.underlyingBalanceOf()).to.equal(parAmount);
-      expect(await infraredVault.balanceOf(metaVault.address)).to.equal(parAmount);
-
       await infraredVault.connect(infraredImpersonator).notifyRewardAmount(core.tokens.iBgt.address, parseEther('100'));
       await increase(10 * ONE_DAY_SECONDS);
       const rewards = await infraredVault.getAllRewardsForUser(metaVault.address);
@@ -485,16 +478,11 @@ describe('InfraredBGTMetaVault', () => {
     it('should work normally with no rewards', async () => {
       const testToken = await createTestToken();
       await testInfraredVault.setRewardTokens([testToken.address]);
-      await registry.connect(core.governance).ownerSetRewardVaultOverride(
+      await registry.connect(dolomiteOwnerImpersonator).ownerSetRewardVaultOverride(
         dToken.address,
         RewardVaultType.Infrared,
         testInfraredVault.address,
       );
-
-      await wrapFullBalanceIntoVaultDefaultAccount(core, vault, metaVault, wrapper, marketId);
-      await expectProtocolBalance(core, vault, defaultAccountNumber, marketId, parAmount);
-      expect(await vault.underlyingBalanceOf()).to.equal(parAmount);
-      expect(await testInfraredVault.balanceOf(metaVault.address)).to.equal(parAmount);
 
       await vault.getReward();
       await expectProtocolBalance(core, vault, defaultAccountNumber, marketId, parAmount);
@@ -513,13 +501,8 @@ describe('InfraredBGTMetaVault', () => {
       const infraredImpersonator = await impersonate(core.berachainRewardsEcosystem.infrared.address, true);
       await core.tokens.iBgt.connect(infraredImpersonator).approve(infraredVault.address, parseEther('100'));
 
-      await wrapFullBalanceIntoVaultDefaultAccount(core, vault, metaVault, wrapper, marketId);
-      await expectProtocolBalance(core, vault, defaultAccountNumber, marketId, parAmount);
-      expect(await vault.underlyingBalanceOf()).to.equal(parAmount);
-      expect(await infraredVault.balanceOf(metaVault.address)).to.equal(parAmount);
-
       await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.weth.address, ONE_ETH_BI);
-      await core.dolomiteMargin.connect(core.governance).ownerSetPriceOracle(
+      await core.dolomiteMargin.connect(dolomiteOwnerImpersonator).ownerSetPriceOracle(
         core.marketIds.weth,
         core.testEcosystem!.testPriceOracle.address
       );
@@ -549,13 +532,11 @@ describe('InfraredBGTMetaVault', () => {
   describe('#chargeDTokenFee', () => {
     it('should work normally', async () => {
       const vaultImpersonator = await impersonate(vault.address, true);
-      await wrapFullBalanceIntoVaultDefaultAccount(core, vault, metaVault, wrapper, marketId);
-
       await vault.unstake(RewardVaultType.Infrared, parAmount);
       await expectWalletBalance(metaVault, dToken, parAmount);
 
-      await registry.connect(core.governance).ownerSetPolFeeAgent(core.hhUser5.address);
-      await registry.connect(core.governance).ownerSetPolFeePercentage(parseEther('.1'));
+      await registry.connect(dolomiteOwnerImpersonator).ownerSetPolFeeAgent(core.hhUser5.address);
+      await registry.connect(dolomiteOwnerImpersonator).ownerSetPolFeePercentage(parseEther('.1'));
       const feeAmount = parAmount.div(10);
       await metaVault.connect(vaultImpersonator).chargeDTokenFee(dToken.address, marketId, parAmount);
       await expectWalletBalance(core.hhUser5, dToken, feeAmount);
@@ -564,7 +545,6 @@ describe('InfraredBGTMetaVault', () => {
 
     it('should work normally with no fee or fee agent', async () => {
       const vaultImpersonator = await impersonate(vault.address, true);
-      await wrapFullBalanceIntoVaultDefaultAccount(core, vault, metaVault, wrapper, marketId);
       await vault.unstake(RewardVaultType.Infrared, parAmount);
       await expectWalletBalance(metaVault, dToken, parAmount);
 
@@ -575,11 +555,10 @@ describe('InfraredBGTMetaVault', () => {
 
     it('should work normally with fee but no fee agent', async () => {
       const vaultImpersonator = await impersonate(vault.address, true);
-      await wrapFullBalanceIntoVaultDefaultAccount(core, vault, metaVault, wrapper, marketId);
       await vault.unstake(RewardVaultType.Infrared, parAmount);
       await expectWalletBalance(metaVault, dToken, parAmount);
 
-      await registry.connect(core.governance).ownerSetPolFeePercentage(parseEther('.1'));
+      await registry.connect(dolomiteOwnerImpersonator).ownerSetPolFeePercentage(parseEther('.1'));
       await metaVault.connect(vaultImpersonator).chargeDTokenFee(dToken.address, marketId, parAmount);
       await expectWalletBalance(core.hhUser5, dToken, ZERO_BI);
       await expectWalletBalance(metaVault, dToken, parAmount);

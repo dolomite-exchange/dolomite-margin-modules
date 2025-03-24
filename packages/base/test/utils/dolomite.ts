@@ -161,6 +161,17 @@ export async function createDolomiteOwner(
   );
 }
 
+export async function createDolomiteOwnerV2(
+  core: CoreProtocolType<NetworkType>,
+  secondsTimeLocked: BigNumberish,
+): Promise<DolomiteOwnerV2> {
+  return createContractWithAbi(
+    DolomiteOwnerV2__factory.abi,
+    DolomiteOwnerV2__factory.bytecode,
+    getDolomiteOwnerConstructorParams(core.gnosisSafe.address, secondsTimeLocked),
+  );
+}
+
 export async function createAndUpgradeDolomiteRegistry<T extends NetworkType>(
   core: CoreProtocolType<T>,
 ): Promise<void> {

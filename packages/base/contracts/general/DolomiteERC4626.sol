@@ -647,15 +647,14 @@ contract DolomiteERC4626 is
             uint256 excessTokens = IERC20(asset()).balanceOf(address(this)) - preBal;
 
             if (excessTokens > 0) {
-                IDolomiteStructs.Market memory market = DOLOMITE_MARGIN().getMarket(marketId());
-                IDolomiteStructs.Par memory supplyPar = IDolomiteStructs.Par({
-                    sign: true,
-                    value: market.totalPar.supply
-                });
-                IDolomiteStructs.Wei memory maxWei = DOLOMITE_MARGIN().getVersionedMaxSupplyWei(
+                (
+                    IDolomiteStructs.Par memory supplyPar,
+                    IDolomiteStructs.Wei memory maxWei
+                ) = DOLOMITE_MARGIN().getVersionedSupplyParAndMaxSupplyWei(
                     block.chainid,
                     marketId()
                 );
+                // @follow-up @Corey, can you double check this? Want to make sure par to wei is right direction and this isn't wrong cause rounding
                 uint256 remainingSupplyAvailable = maxWei.sub(DOLOMITE_MARGIN().parToWei(marketId(), supplyPar)).value;
                 assert(remainingSupplyAvailable > 0);
                 
@@ -667,15 +666,16 @@ contract DolomiteERC4626 is
                         value: remainingSupplyAvailable
                     });
                     actions[actionsCursor++] = IDolomiteStructs.ActionArgs({
-                        actionType: IDolomiteStructs.ActionType.Transfer,
+                        actionType: IDolomiteStructs.ActionType.Deposit,
                         accountId: 3, // dolomiteMarginOwner
                         amount: depositAmount,
                         primaryMarketId: _marketId,
                         secondaryMarketId: _marketId,
-                        otherAddress: address(0),
-                        otherAccountId: 3,
+                        otherAddress: address(this),
+                        otherAccountId: 0,
                         data: bytes("")
                     });
+                    IERC20(asset()).safeApprove(address(DOLOMITE_MARGIN()), remainingSupplyAvailable);
                     IERC20(asset()).safeTransfer(address(DOLOMITE_MARGIN_OWNER()), excessTokens - remainingSupplyAvailable);
                 } else {
                     IDolomiteStructs.AssetAmount memory depositAmount = IDolomiteStructs.AssetAmount({
@@ -685,15 +685,16 @@ contract DolomiteERC4626 is
                         value: excessTokens
                     });
                     actions[actionsCursor++] = IDolomiteStructs.ActionArgs({
-                        actionType: IDolomiteStructs.ActionType.Transfer,
+                        actionType: IDolomiteStructs.ActionType.Deposit,
                         accountId: 3, // dolomiteMarginOwner
                         amount: depositAmount,
                         primaryMarketId: _marketId,
                         secondaryMarketId: _marketId,
-                        otherAddress: address(0),
-                        otherAccountId: 3,
+                        otherAddress: address(this),
+                        otherAccountId: 0,
                         data: bytes("")
                     });
+                    IERC20(asset()).safeApprove(address(DOLOMITE_MARGIN()), excessTokens);
                 }
             }
         }

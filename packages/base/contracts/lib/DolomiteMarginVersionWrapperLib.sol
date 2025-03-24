@@ -86,15 +86,25 @@ library DolomiteMarginVersionWrapperLib {
         }
     }
 
-    function getVersionedMaxSupplyWei(
+    function getVersionedSupplyParAndMaxSupplyWei(
         IDolomiteMargin _dolomiteMargin,
         uint256 _chainId,
         uint256 _marketId
-    ) internal view returns (IDolomiteStructs.Wei memory) {
+    ) internal view returns (IDolomiteStructs.Par memory, IDolomiteStructs.Wei memory) {
         if (ChainHelperLib.isArbitrum(_chainId)) {
-            return _dolomiteMargin.getMarket(_marketId).maxWei;
+            IDolomiteStructs.Market memory market = _dolomiteMargin.getMarket(_marketId);
+            IDolomiteStructs.Par memory supplyPar = IDolomiteStructs.Par({
+                sign: true,
+                value: market.totalPar.supply
+            });
+            return (supplyPar, market.maxWei);
         } else {
-            return dv2(_dolomiteMargin).getMarket(_marketId).maxSupplyWei;
+            IDolomiteStructs.MarketV2 memory market = dv2(_dolomiteMargin).getMarket(_marketId);
+            IDolomiteStructs.Par memory supplyPar = IDolomiteStructs.Par({
+                sign: true,
+                value: market.totalPar.supply
+            });
+            return (supplyPar, market.maxSupplyWei);
         }
     }
 
