@@ -8,17 +8,24 @@ import {
   TestDolomiteERC4626,
   TestDolomiteERC4626__factory,
 } from '../../src/types';
-import { createContractWithAbi, depositIntoDolomiteMargin } from '../../src/utils/dolomite-utils';
-import { ADDRESS_ZERO, MAX_UINT_256_BI, Network, ONE_ETH_BI, ZERO_BI } from '../../src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, snapshot } from '../utils';
-import { expectEvent, expectProtocolBalance, expectThrow } from '../utils/assertions';
+import { createContractWithAbi, depositIntoDolomiteMargin, withdrawFromDolomiteMargin } from '../../src/utils/dolomite-utils';
+import { ADDRESS_ZERO, MAX_UINT_256_BI, Network, ONE_BI, ONE_DAY_SECONDS, ONE_ETH_BI, ZERO_BI } from '../../src/utils/no-deps-constants';
+import { impersonate, revertToSnapshotAndCapture, setEtherBalance, snapshot } from '../utils';
+import { expectEvent, expectProtocolBalance, expectProtocolBalanceIsGreaterThan, expectThrow } from '../utils/assertions';
 
 import { CoreProtocolArbitrumOne } from '../utils/core-protocols/core-protocol-arbitrum-one';
 import { createAndUpgradeDolomiteRegistry, createDolomiteErc4626Proxy } from '../utils/dolomite';
-import { disableInterestAccrual, setupCoreProtocol, setupUSDCBalance } from '../utils/setup';
+import { disableInterestAccrual, setupCoreProtocol, setupUSDCBalance, setupWETHBalance } from '../utils/setup';
+import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
+import { DolomiteOwnerV2 } from 'packages/admin/src/types';
+import { createDolomiteOwnerV2 } from 'packages/admin/test/admin-ecosystem-utils';
+import { Ownable__factory } from 'packages/tokenomics/src/types';
+import { parseEther } from 'ethers/lib/utils';
 
 const usdcAmount = BigNumber.from('100000000'); // 100 USDC
 const isolationModeVault = '0xffa18b366fa3ebE5832a49535F42aa0c93c791eF';
+const OTHER_ROLE = '0x1111111111111111111111111111111111111111111111111111111111111111';
+const TIMELOCK = ONE_DAY_SECONDS;
 
 describe('DolomiteERC4626', () => {
   let snapshotId: string;
@@ -29,6 +36,9 @@ describe('DolomiteERC4626', () => {
   let accountInfo2: AccountInfoStruct;
   let parValue: BigNumber;
 
+  let dolomiteOwner: DolomiteOwnerV2;
+  let dolomiteOwnerImpersonator: SignerWithAddressWithSafety;
+
   before(async () => {
     core = await setupCoreProtocol({
       network: Network.ArbitrumOne,
@@ -37,7 +47,7 @@ describe('DolomiteERC4626', () => {
     core.implementationContracts.dolomiteERC4626Implementation = await createContractWithAbi<TestDolomiteERC4626>(
       TestDolomiteERC4626__factory.abi,
       TestDolomiteERC4626__factory.bytecode,
-      [],
+      [core.dolomiteRegistryProxy.address, core.dolomiteMargin.address],
     );
     const tokenProxy = await createDolomiteErc4626Proxy(core.marketIds.usdc, core);
     token = TestDolomiteERC4626__factory.connect(tokenProxy.address, core.hhUser1);
@@ -58,6 +68,31 @@ describe('DolomiteERC4626', () => {
     accountInfo2 = { owner: core.hhUser2.address, number: ZERO_BI };
     parValue = (await core.dolomiteMargin.getAccountPar(accountInfo, core.marketIds.usdc)).value;
 
+    dolomiteOwner = await createDolomiteOwnerV2(core, TIMELOCK);
+    dolomiteOwnerImpersonator = await impersonate(dolomiteOwner.address, true);
+    await dolomiteOwner.connect(dolomiteOwnerImpersonator).ownerAddRole(OTHER_ROLE);
+    await dolomiteOwner.connect(dolomiteOwnerImpersonator).grantRole(OTHER_ROLE, token.address);
+    await dolomiteOwner.connect(dolomiteOwnerImpersonator).grantRole(
+      await dolomiteOwner.BYPASS_TIMELOCK_ROLE(),
+      token.address
+    );
+    await dolomiteOwner.connect(dolomiteOwnerImpersonator).grantRole(
+      await dolomiteOwner.EXECUTOR_ROLE(),
+      token.address
+    );
+    await dolomiteOwner.connect(dolomiteOwnerImpersonator).ownerAddRoleToAddressFunctionSelectors(
+      OTHER_ROLE,
+      core.dolomiteMargin.address,
+      [
+        '0x8f6bc659' /* ownerWithdrawExcessTokens */,
+        '0x0cd30a0e' /* ownerSetMaxWei */
+      ]
+    );
+
+    await Ownable__factory.connect(core.dolomiteMargin.address, core.governance).transferOwnership(
+      dolomiteOwner.address
+    );
+
     snapshotId = await snapshot();
   });
 
@@ -75,7 +110,7 @@ describe('DolomiteERC4626', () => {
     });
 
     it('should not be callable again', async () => {
-      await expectThrow(token.initialize('', '', 18, 0, ADDRESS_ZERO));
+      await expectThrow(token.initialize('', '', 18, 0));
     });
   });
 
@@ -84,10 +119,13 @@ describe('DolomiteERC4626', () => {
       expect(await token.maxDeposit(core.hhUser1.address)).to.eq(MAX_UINT_256_BI);
 
       const assets = await token.totalAssets();
-      await core.dolomiteMargin.ownerSetMaxWei(core.marketIds.usdc, assets.add(usdcAmount));
+      await core.dolomiteMargin.connect(dolomiteOwnerImpersonator).ownerSetMaxWei(
+        core.marketIds.usdc,
+        assets.add(usdcAmount)
+      );
       expect(await token.maxDeposit(core.hhUser1.address)).to.eq(usdcAmount);
 
-      await core.dolomiteMargin.ownerSetMaxWei(core.marketIds.usdc, 1);
+      await core.dolomiteMargin.connect(dolomiteOwnerImpersonator).ownerSetMaxWei(core.marketIds.usdc, 1);
       expect(await token.maxDeposit(core.hhUser1.address)).to.eq(0);
     });
   });
@@ -115,6 +153,38 @@ describe('DolomiteERC4626', () => {
       await expectProtocolBalance(core, core.hhUser2, ZERO_BI, core.marketIds.usdc, usdcAmount);
     });
 
+    it('should work normally if user already has a balance', async () => {
+      const parResult = await token.previewDeposit(usdcAmount.div(2));
+      await asset.connect(core.hhUser2).approve(token.address, usdcAmount.div(2));
+      const result = await token.connect(core.hhUser2).deposit(usdcAmount.div(2), core.hhUser2.address);
+      await expectEvent(token, result, 'Transfer', {
+        from: ADDRESS_ZERO,
+        to: core.hhUser2.address,
+        value: parResult,
+      });
+      await expectEvent(token, result, 'Deposit', {
+        sender: core.hhUser2.address,
+        owner: core.hhUser2.address,
+        assets: usdcAmount.div(2),
+        shares: parResult
+      });
+
+      const parResult2 = await token.previewDeposit(usdcAmount.div(2));
+      await asset.connect(core.hhUser2).approve(token.address, usdcAmount.div(2));
+      const result2 = await token.connect(core.hhUser2).deposit(usdcAmount.div(2), core.hhUser2.address);
+      await expectEvent(token, result2, 'Transfer', {
+        from: ADDRESS_ZERO,
+        to: core.hhUser2.address,
+        value: parResult2.add(1), // rounding error
+      });
+      await expectEvent(token, result2, 'Deposit', {
+        sender: core.hhUser2.address,
+        owner: core.hhUser2.address,
+        assets: usdcAmount.div(2),
+        shares: parResult2.add(1) // rounding error
+      });
+    });
+
     it('should work normally with different recipient', async () => {
       expect(await token.balanceOf(core.hhUser2.address)).to.eq(ZERO_BI);
 
@@ -134,6 +204,18 @@ describe('DolomiteERC4626', () => {
 
       expect(await token.balanceOf(core.hhUser3.address)).to.eq(parValue);
       await expectProtocolBalance(core, core.hhUser3, ZERO_BI, core.marketIds.usdc, usdcAmount);
+    });
+
+    it('should fail if user has negative balance', async () => {
+      await setupWETHBalance(core, core.hhUser2, ONE_ETH_BI, core.dolomiteMargin);
+      await depositIntoDolomiteMargin(core, core.hhUser2, ZERO_BI, core.marketIds.weth, ONE_ETH_BI);
+      await withdrawFromDolomiteMargin(core, core.hhUser2, ZERO_BI, core.marketIds.usdc, ONE_BI);
+
+      await asset.connect(core.hhUser2).approve(token.address, usdcAmount);
+      await expectThrow(
+        token.connect(core.hhUser2).deposit(usdcAmount, core.hhUser2.address),
+        'DolomiteERC4626: Balance cannot be negative'
+      );
     });
 
     it('should fail if amount is 0', async () => {
@@ -164,7 +246,10 @@ describe('DolomiteERC4626', () => {
       expect(await token.maxMint(core.hhUser1.address)).to.eq(MAX_UINT_256_BI);
 
       const assets = await token.totalAssets();
-      await core.dolomiteMargin.ownerSetMaxWei(core.marketIds.usdc, assets.add(usdcAmount));
+      await core.dolomiteMargin.connect(dolomiteOwnerImpersonator).ownerSetMaxWei(
+        core.marketIds.usdc,
+        assets.add(usdcAmount)
+      );
       // Adding usdcAmount to assets is some reason one less
       expect(await token.maxMint(core.hhUser1.address)).to.eq(parValue.sub(1));
       await expectThrow(
@@ -173,7 +258,7 @@ describe('DolomiteERC4626', () => {
       );
       await token.connect(core.hhUser2).mint(parValue.sub(1), core.hhUser2.address);
 
-      await core.dolomiteMargin.ownerSetMaxWei(core.marketIds.usdc, 1);
+      await core.dolomiteMargin.connect(dolomiteOwnerImpersonator).ownerSetMaxWei(core.marketIds.usdc, 1);
       expect(await token.maxMint(core.hhUser1.address)).to.eq(0);
     });
   });
@@ -482,6 +567,103 @@ describe('DolomiteERC4626', () => {
       expect((await core.dolomiteMargin.getAccountPar(accountInfo2, core.marketIds.usdc)).value).to.eq(parValue);
     });
 
+    it('should work when lossy and owner has to withdraw excess tokens', async () => {
+      expect((await core.dolomiteMargin.getAccountPar(
+        { owner: dolomiteOwner.address, number: ZERO_BI },
+        core.marketIds.usdc
+      )).value).to.eq(ZERO_BI);
+
+      const transferAmount = parValue.div(3);
+      await token.connect(core.hhUser1).transfer(core.hhUser2.address, transferAmount);
+
+      expect(await token.balanceOf(core.hhUser1.address)).to.eq(parValue.sub(transferAmount));
+      expect(await token.balanceOf(core.hhUser2.address)).to.eq(transferAmount);
+      expect((await core.dolomiteMargin.getAccountPar(accountInfo, core.marketIds.usdc)).value)
+        .to.eq(parValue.sub(transferAmount));
+      expect((await core.dolomiteMargin.getAccountPar(accountInfo2, core.marketIds.usdc)).value)
+        .to.eq(transferAmount);
+    });
+
+    it('should work when lossy and owner does not have to withdraw', async () => {
+      await setEtherBalance(dolomiteOwnerImpersonator.address, parseEther('100'));
+      await setupUSDCBalance(core, dolomiteOwnerImpersonator, usdcAmount, core.dolomiteMargin);
+      await depositIntoDolomiteMargin(core, dolomiteOwnerImpersonator, ZERO_BI, core.marketIds.usdc, usdcAmount);
+      await expectProtocolBalanceIsGreaterThan(
+        core,
+        { owner: dolomiteOwner.address, number: ZERO_BI },
+        core.marketIds.usdc,
+        ZERO_BI,
+        0,
+      );
+
+      const transferAmount = parValue.div(3);
+      await token.connect(core.hhUser1).transfer(core.hhUser2.address, transferAmount);
+
+      expect(await token.balanceOf(core.hhUser1.address)).to.eq(parValue.sub(transferAmount));
+      expect(await token.balanceOf(core.hhUser2.address)).to.eq(transferAmount);
+      expect((await core.dolomiteMargin.getAccountPar(accountInfo, core.marketIds.usdc)).value)
+        .to.eq(parValue.sub(transferAmount));
+      expect((await core.dolomiteMargin.getAccountPar(accountInfo2, core.marketIds.usdc)).value)
+        .to.eq(transferAmount);
+    });
+
+    it('should work when lossy and owner deposit exceeds supply cap', async () => {
+      const assets = await token.totalAssets();
+      const ownerUsdc = BigNumber.from('1000000000');
+      await core.dolomiteMargin.connect(dolomiteOwnerImpersonator).ownerSetMaxWei(
+        core.marketIds.usdc,
+        assets.add(ownerUsdc)
+      );
+
+      const transferAmount = parValue.div(3);
+      await token.connect(core.hhUser1).transfer(core.hhUser2.address, transferAmount);
+
+      expect(await token.balanceOf(core.hhUser1.address)).to.eq(parValue.sub(transferAmount));
+      expect(await token.balanceOf(core.hhUser2.address)).to.eq(transferAmount);
+      expect((await core.dolomiteMargin.getAccountPar(accountInfo, core.marketIds.usdc)).value)
+        .to.eq(parValue.sub(transferAmount));
+      expect((await core.dolomiteMargin.getAccountPar(accountInfo2, core.marketIds.usdc)).value)
+        .to.eq(transferAmount);
+
+      expect((await core.dolomiteMargin.getMarketMaxWei(core.marketIds.usdc)).value).to.eq(assets.add(ownerUsdc));
+      await expectProtocolBalanceIsGreaterThan(
+        core,
+        { owner: dolomiteOwner.address, number: ZERO_BI },
+        core.marketIds.usdc,
+        ownerUsdc,
+        0
+      );
+    });
+
+    it('should work when lossy and owner deposit DOES NOT exceed supply cap', async () => {
+      const assets = await token.totalAssets();
+      const numExcessTokens = await core.dolomiteMargin.getNumExcessTokens(core.marketIds.usdc);
+      await core.dolomiteMargin.connect(dolomiteOwnerImpersonator).ownerSetMaxWei(
+        core.marketIds.usdc,
+        assets.add(numExcessTokens.value)
+      );
+
+      const transferAmount = parValue.div(3);
+      await token.connect(core.hhUser1).transfer(core.hhUser2.address, transferAmount);
+
+      expect(await token.balanceOf(core.hhUser1.address)).to.eq(parValue.sub(transferAmount));
+      expect(await token.balanceOf(core.hhUser2.address)).to.eq(transferAmount);
+      expect((await core.dolomiteMargin.getAccountPar(accountInfo, core.marketIds.usdc)).value)
+        .to.eq(parValue.sub(transferAmount));
+      expect((await core.dolomiteMargin.getAccountPar(accountInfo2, core.marketIds.usdc)).value)
+        .to.eq(transferAmount);
+
+      expect((await core.dolomiteMargin.getMarketMaxWei(core.marketIds.usdc)).value)
+        .to.eq(assets.add(numExcessTokens.value));
+      await expectProtocolBalance(
+        core,
+        dolomiteOwner,
+        ZERO_BI,
+        core.marketIds.usdc,
+        numExcessTokens.value.sub(1) // sub one because transfer is lossy and owner loses 1 par
+      );
+    });
+
     it('should work for different receivers', async () => {
       const doloErc20User = await createContractWithAbi<TestDolomiteERC20User>(
         TestDolomiteERC20User__factory.abi,
@@ -511,6 +693,13 @@ describe('DolomiteERC4626', () => {
       await expectThrow(token.transfer(ADDRESS_ZERO, 100), 'DolomiteERC4626: Transfer to the zero address');
     });
 
+    it('should fail if to the contract', async () => {
+      await expectThrow(
+        token.connect(core.hhUser1).transfer(token.address, parValue),
+        'DolomiteERC4626: Transfer to this contract',
+      );
+    });
+
     it('should fail if amount is greater than balance', async () => {
       await expectThrow(
         token.transfer(core.hhUser2.address, parValue.add(1)),
@@ -519,7 +708,10 @@ describe('DolomiteERC4626', () => {
     });
 
     it('should fail if invalid receiver', async () => {
-      await core.dolomiteAccountRegistry.ownerSetRestrictedAccount(core.hhUser2.address, true);
+      await core.dolomiteAccountRegistry.connect(dolomiteOwnerImpersonator).ownerSetRestrictedAccount(
+        core.hhUser2.address,
+        true
+      );
       await expectThrow(
         token.transfer(core.hhUser2.address, parValue),
         `DolomiteERC4626: Invalid receiver <${core.hhUser2.address.toLowerCase()}>`,

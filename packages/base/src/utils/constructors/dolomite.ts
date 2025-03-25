@@ -362,8 +362,7 @@ export async function getDolomiteErc4626ProxyConstructorParams<T extends Network
     `Dolomite: ${symbol}`,
     `d${symbol}`,
     await token.decimals(),
-    marketId,
-    core.dolomiteRegistry.address,
+    marketId
   );
   return [implementationContract.address, core.dolomiteMargin.address, transaction.data!];
 }
@@ -386,8 +385,7 @@ export async function getDolomiteErc4626WithPayableProxyConstructorParams<T exte
     `Dolomite: ${symbol}`,
     `d${symbol}`,
     await token.decimals(),
-    marketId,
-    core.dolomiteRegistry.address,
+    marketId
   );
   return [implementationContract.address, core.dolomiteMargin.address, transaction.data!];
 }

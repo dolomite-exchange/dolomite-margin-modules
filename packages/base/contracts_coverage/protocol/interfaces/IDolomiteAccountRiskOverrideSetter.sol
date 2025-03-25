@@ -79,6 +79,11 @@ interface IDolomiteAccountRiskOverrideSetter {
 
     // ===================== Functions =====================
 
+    function ownerSetCategoriesByMarketIds(
+        uint256[] memory _marketIds,
+        Category[] memory _categories
+    ) external;
+
     function ownerSetCategoryByMarketId(
         uint256 _marketId,
         Category _category
@@ -101,7 +106,7 @@ interface IDolomiteAccountRiskOverrideSetter {
      *          called within `_verifyFinalState`, after all of the operation's actions have occurred. Thus, it is safe
      *          to read the account's state from Dolomite Margin's storage.
      *
-     * @param  _account                    The account whose risk override should be retrieved.
+     * @param  _account                     The account whose risk override should be retrieved.
      * @return _marginRatioOverride         The margin ratio override for this account.
      * @return _liquidationRewardOverride   The liquidation spread override for this account.
      */
@@ -122,7 +127,11 @@ interface IDolomiteAccountRiskOverrideSetter {
 
     function getCategoryParamByCategory(Category _category) external view returns (CategoryStruct memory);
 
+    function getCategoryParamByMarketId(uint256 _marketId) external view returns (CategoryStruct memory);
+
     function getRiskFeatureByMarketId(uint256 _marketId) external view returns (RiskFeature);
+
+    function getRiskFeatureParamByMarketId(uint256 _marketId) external view returns (RiskFeatureStruct memory);
 
     function getRiskFeatureForSingleCollateralByMarketId(
         uint256 _marketId
