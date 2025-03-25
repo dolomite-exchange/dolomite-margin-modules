@@ -248,7 +248,7 @@ export async function encodeRemoveAllRiskFeaturesByMarketId<T extends NetworkTyp
   );
 }
 
-export async function encodeSetBorrowOnlyByMarketId<T extends NetworkTypeForDolomiteV2>(
+export async function encodeSetIsBorrowOnly<T extends NetworkTypeForDolomiteV2>(
   core: CoreProtocolType<T>,
   marketId: BigNumberish,
   isBorrowOnly: boolean,

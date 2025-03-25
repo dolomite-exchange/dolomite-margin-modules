@@ -13,7 +13,7 @@ import { encodeAddMarket } from '../../../../utils/encoding/add-market-encoder-u
 import {
   encodeSetAccountRiskOverrideCategoryByMarketId,
   encodeSetBorrowCapWithMagic,
-  encodeSetBorrowOnlyByMarketId,
+  encodeSetIsBorrowOnly,
   encodeSetInterestSetter,
   encodeSetIsCollateralOnly,
   encodeSetSingleCollateralWithStrictDebtByMarketId,
@@ -52,7 +52,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     await encodeSetSupplyCapWithMagic(core, marketIds.rUsd, 5_000_000),
     await encodeSetBorrowCapWithMagic(core, marketIds.rUsd, 3_000_000),
     await encodeSetInterestSetter(core, marketIds.rUsd, core.interestSetters.linearStepFunction12L88U90OInterestSetter),
-    await encodeSetBorrowOnlyByMarketId(core, marketIds.rUsd, true),
+    await encodeSetIsBorrowOnly(core, marketIds.rUsd, true),
     await encodeSetAccountRiskOverrideCategoryByMarketId(core, marketIds.rUsd, AccountRiskOverrideCategory.STABLE),
 
     ...(await encodeInsertChronicleOracleV3(core, core.tokens.srUsd)),

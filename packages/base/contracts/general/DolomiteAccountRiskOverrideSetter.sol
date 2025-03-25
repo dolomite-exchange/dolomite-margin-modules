@@ -485,7 +485,6 @@ contract DolomiteAccountRiskOverrideSetter is
             if (_marketIds[mid] < _find) {
                 left = mid + 1;
             } else {
-                // @follow-up Ok with doing it this way?
                 if (mid == 0) {
                     return type(uint256).max;
                 }
