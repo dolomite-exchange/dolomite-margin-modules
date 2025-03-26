@@ -49,6 +49,8 @@ contract DolomiteOwnerV2 is IDolomiteOwner, AccessControl {
     bytes32 public constant LISTING_COMMITTEE_ROLE = keccak256("LISTING_COMMITTEE_ROLE");
     bytes32 public constant EXECUTOR_ROLE = keccak256("EXECUTOR_ROLE");
     bytes32 public constant BYPASS_TIMELOCK_ROLE = keccak256("BYPASS_TIMELOCK_ROLE");
+    bytes32 public constant D_TOKEN_ROLE = keccak256("D_TOKEN_ROLE");
+
     address private constant _ADDRESS_ZERO = address(0x0);
 
     // ================================================
@@ -143,6 +145,7 @@ contract DolomiteOwnerV2 is IDolomiteOwner, AccessControl {
 
         _allRoles.add(SECURITY_COUNCIL_ROLE);
         _allRoles.add(LISTING_COMMITTEE_ROLE);
+        _allRoles.add(D_TOKEN_ROLE);
 
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
         _ownerSetSecondsTimeLocked(_secondsTimeLocked);

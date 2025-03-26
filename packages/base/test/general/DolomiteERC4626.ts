@@ -24,7 +24,7 @@ import { parseEther } from 'ethers/lib/utils';
 
 const usdcAmount = BigNumber.from('100000000'); // 100 USDC
 const isolationModeVault = '0xffa18b366fa3ebE5832a49535F42aa0c93c791eF';
-const OTHER_ROLE = '0x1111111111111111111111111111111111111111111111111111111111111111';
+const D_TOKEN_ROLE = '0xcd86ded6d567eb7adb1b98d283b7e4004869021f7651dbae982e0992bfe0df5a';
 const TIMELOCK = ONE_DAY_SECONDS;
 
 describe('DolomiteERC4626', () => {
@@ -70,8 +70,8 @@ describe('DolomiteERC4626', () => {
 
     dolomiteOwner = await createDolomiteOwnerV2(core, TIMELOCK);
     dolomiteOwnerImpersonator = await impersonate(dolomiteOwner.address, true);
-    await dolomiteOwner.connect(dolomiteOwnerImpersonator).ownerAddRole(OTHER_ROLE);
-    await dolomiteOwner.connect(dolomiteOwnerImpersonator).grantRole(OTHER_ROLE, token.address);
+    await dolomiteOwner.connect(dolomiteOwnerImpersonator).ownerAddRole(D_TOKEN_ROLE);
+    await dolomiteOwner.connect(dolomiteOwnerImpersonator).grantRole(D_TOKEN_ROLE, token.address);
     await dolomiteOwner.connect(dolomiteOwnerImpersonator).grantRole(
       await dolomiteOwner.BYPASS_TIMELOCK_ROLE(),
       token.address
@@ -81,7 +81,7 @@ describe('DolomiteERC4626', () => {
       token.address
     );
     await dolomiteOwner.connect(dolomiteOwnerImpersonator).ownerAddRoleToAddressFunctionSelectors(
-      OTHER_ROLE,
+      D_TOKEN_ROLE,
       core.dolomiteMargin.address,
       [
         '0x8f6bc659' /* ownerWithdrawExcessTokens */,
