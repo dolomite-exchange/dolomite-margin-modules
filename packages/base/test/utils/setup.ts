@@ -1054,6 +1054,14 @@ export async function setupCoreProtocol<T extends NetworkType>(
         Deployments.DolomiteMigratorV2[typedConfig.network].address,
         hhUser1,
       ),
+      dolomiteTokens: {
+        ...coreProtocolParams.dolomiteTokens,
+        bridgedUsdc: DolomiteERC4626__factory.connect(Deployments.DolomiteBridgedUsdc4626Token[typedConfig.network].address, hhUser1),
+        dai: DolomiteERC4626__factory.connect(Deployments.DolomiteDai4626Token[typedConfig.network].address, hhUser1),
+        usdt: DolomiteERC4626__factory.connect(Deployments.DolomiteUsdt4626Token[typedConfig.network].address, hhUser1),
+        wbtc: DolomiteERC4626__factory.connect(Deployments.DolomiteWbtc4626Token[typedConfig.network].address, hhUser1),
+        weth: coreProtocolParams.dolomiteTokens.weth as any,
+      },
       dTokens: {
         usdc: DolomiteERC20__factory.connect(Deployments.DolomiteUsdcToken[typedConfig.network].address, hhUser1),
         wbtc: DolomiteERC20__factory.connect(Deployments.DolomiteWbtcToken[typedConfig.network].address, hhUser1),

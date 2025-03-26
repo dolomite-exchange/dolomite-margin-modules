@@ -5,8 +5,6 @@ import { IChainlinkPriceOracleV1, IChainlinkPriceOracleV3, OracleAggregatorV2 } 
 import {
   DolomiteERC4626,
   DolomiteERC4626WithPayable,
-  DolomiteOwnerV1,
-  DolomiteOwnerV2,
   IBorrowPositionProxyV2, IBorrowPositionRouter,
   IDepositWithdrawalProxy, IDepositWithdrawalRouter,
   IDolomiteAccountRegistry,
@@ -31,6 +29,7 @@ import { DeployedVault } from '../ecosystem-utils/deployed-vaults';
 import { InterestSetters } from '../ecosystem-utils/interest-setters';
 import { TestEcosystem } from '../ecosystem-utils/testers';
 import { CoreProtocolConfig } from '../setup';
+import { DolomiteOwnerV1, DolomiteOwnerV2 } from 'packages/admin/src/types';
 
 export interface LibraryMaps {
   safeDelegateCallImpl: Record<string, string>;
@@ -190,6 +189,7 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
   public readonly dolomiteMargin: DolomiteMargin<T>;
   public readonly dolomiteRegistry: IDolomiteRegistry;
   public readonly dolomiteRegistryProxy: RegistryProxy;
+  public readonly dolomiteTokens: CoreProtocolDolomiteTokens<T>;
   public readonly dolomiteAccountRegistry: IDolomiteAccountRegistry;
   public readonly dolomiteAccountRegistryProxy: RegistryProxy;
   public readonly dolomiteAccountRiskOverrideSetter: IDolomiteAccountRiskOverrideSetter;
@@ -253,6 +253,7 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
     this.dolomiteMargin = params.dolomiteMargin;
     this.dolomiteRegistry = params.dolomiteRegistry;
     this.dolomiteRegistryProxy = params.dolomiteRegistryProxy;
+    this.dolomiteTokens = params.dolomiteTokens;
     this.dolomiteAccountRegistry = params.dolomiteAccountRegistry;
     this.dolomiteAccountRegistryProxy = params.dolomiteAccountRegistryProxy;
     this.dolomiteAccountRiskOverrideSetter = params.dolomiteAccountRiskOverrideSetter;
