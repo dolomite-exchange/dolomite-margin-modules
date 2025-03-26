@@ -278,7 +278,7 @@ export async function encodeSetSingleCollateralWithStrictDebtByMarketId<T extend
   params: SingleCollateralWithStrictDebtParams[],
 ): Promise<EncodedTransaction> {
   const mappedParams = params.map<SingleCollateralWithStrictDebtParamsForEncoding>((p) => ({
-    ...p,
+    debtMarketIds: [...p.debtMarketIds].sort((a, b) => BigNumber.from(a).toNumber() - BigNumber.from(b).toNumber()),
     marginRatioOverride: { value: parseEther(p.marginRatioOverride).sub(ONE_ETH_BI) },
     liquidationRewardOverride: { value: parseEther(p.liquidationRewardOverride) },
   }));
