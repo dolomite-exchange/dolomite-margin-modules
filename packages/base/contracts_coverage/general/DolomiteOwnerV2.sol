@@ -529,7 +529,6 @@ contract DolomiteOwnerV2 is IDolomiteOwner, AccessControl {
     }
 
     function _grantRole(bytes32 _role, address _account) internal activeRole(_role) override {
-        // TODO: test
         if (_role == BYPASS_TIMELOCK_ROLE && hasRole(DEFAULT_ADMIN_ROLE, _account)) {
             revert("DolomiteOwnerV2: Admin cannot bypass timelock");
         }
