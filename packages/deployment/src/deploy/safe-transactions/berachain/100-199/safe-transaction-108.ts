@@ -5,7 +5,7 @@ import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/se
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
 import {
   encodeSetBorrowCapWithMagic,
-  encodeSetBorrowOnlyByMarketId,
+  encodeSetIsBorrowOnly,
   encodeSetInterestSetter,
   encodeSetIsCollateralOnly,
   encodeSetMinCollateralization,
@@ -45,6 +45,7 @@ function getBtcLstRiskFeatureEncoding(core: CoreProtocolBerachain) {
 /**
  * This script encodes the following transactions:
  * - Enable e-mode risk settings for various assets
+ * - Update supply / borrow caps for various assets
  */
 async function main(): Promise<DryRunOutput<Network.Berachain>> {
   const network = await getAndCheckSpecificNetwork(Network.Berachain);
@@ -68,14 +69,14 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     await encodeSetBorrowCapWithMagic(core, marketIds.weth, 60_000),
     await encodeSetInterestSetter(core, marketIds.weth, core.interestSetters.linearStepFunction4L96U90OInterestSetter),
 
-    await encodeSetBorrowOnlyByMarketId(core, marketIds.nect, true),
-    await encodeSetBorrowOnlyByMarketId(core, marketIds.rUsd, true),
+    await encodeSetIsBorrowOnly(core, marketIds.nect, true),
+    await encodeSetIsBorrowOnly(core, marketIds.rUsd, true),
 
     // De-list
-    await encodeSetBorrowOnlyByMarketId(core, marketIds.ylFbtc, true),
-    await encodeSetBorrowOnlyByMarketId(core, marketIds.ylPumpBtc, true),
-    await encodeSetBorrowOnlyByMarketId(core, marketIds.ylStEth, true),
-    await encodeSetBorrowOnlyByMarketId(core, marketIds.stBtc, true),
+    await encodeSetIsBorrowOnly(core, marketIds.ylFbtc, true),
+    await encodeSetIsBorrowOnly(core, marketIds.ylPumpBtc, true),
+    await encodeSetIsBorrowOnly(core, marketIds.ylStEth, true),
+    await encodeSetIsBorrowOnly(core, marketIds.stBtc, true),
 
     await encodeSetSingleCollateralWithStrictDebtByMarketId(
       core,
