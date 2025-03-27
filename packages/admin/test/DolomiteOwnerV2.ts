@@ -15,8 +15,7 @@ import { DolomiteOwnerV2 } from '../src/types';
 import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { createDolomiteOwnerV2 } from './admin-ecosystem-utils';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol } from 'packages/base/test/utils/setup';
-import { revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
-import { impersonate } from 'packages/base/test/utils';
+import { revertToSnapshotAndCapture, snapshot, impersonate } from 'packages/base/test/utils';
 import { expectEvent, expectThrow } from 'packages/base/test/utils/assertions';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';

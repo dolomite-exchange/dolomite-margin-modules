@@ -1,9 +1,9 @@
-import { BigNumberish } from "ethers";
-import { NetworkType } from "packages/base/src/utils/no-deps-constants";
-import { CoreProtocolType } from "packages/base/test/utils/setup";
-import { DolomiteOwnerV1, DolomiteOwnerV1__factory, DolomiteOwnerV2, DolomiteOwnerV2__factory } from "../src/types";
-import { createContractWithAbi } from "packages/base/src/utils/dolomite-utils";
-import { getDolomiteOwnerConstructorParams } from "../src/admin";
+import { BigNumberish } from 'ethers';
+import { NetworkType } from 'packages/base/src/utils/no-deps-constants';
+import { CoreProtocolType } from 'packages/base/test/utils/setup';
+import { DolomiteOwnerV1, DolomiteOwnerV1__factory, DolomiteOwnerV2, DolomiteOwnerV2__factory } from '../src/types';
+import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
+import { getDolomiteOwnerConstructorParams } from '../src/admin';
 
 export async function createDolomiteOwner(
   core: CoreProtocolType<NetworkType>,

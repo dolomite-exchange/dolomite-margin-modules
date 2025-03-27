@@ -16,7 +16,6 @@ import { revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
 import { expectEvent, expectThrow } from 'packages/base/test/utils/assertions';
 import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
 
-
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 const BYTES32_OTHER_SELECTOR = '0x1234567800000000000000000000000000000000000000000000000000000000';
 const BAD_ROLE = '0x1111111111111111111111111111111111111111111111111111111111111111';
