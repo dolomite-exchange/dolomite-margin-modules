@@ -1,20 +1,23 @@
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { getAndCheckSpecificNetwork } from 'packages/base/src/utils/dolomite-utils';
-import { Network, ONE_DAY_SECONDS } from 'packages/base/src/utils/no-deps-constants';
+import { Network } from 'packages/base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from 'packages/base/test/utils';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
 import {
   deployContractAndSave,
-  deployDolomiteErc4626Token,
-  deployDolomiteErc4626WithPayableToken,
 
 } from '../../../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
 import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 import { RegistryProxy__factory } from 'packages/base/src/types/factories/contracts/general/RegistryProxy__factory';
-import { DolomiteOwnerV2__factory } from 'packages/admin/src/types/factories/contracts/DolomiteOwnerV2__factory';
 import { Ownable__factory } from 'packages/tokenomics/src/types';
+
+const D_TOKEN_ROLE = '0xcd86ded6d567eb7adb1b98d283b7e4004869021f7651dbae982e0992bfe0df5a';
+const OWNER_WITHDRAW_EXCESS_TOKENS_SELECTOR = '0x8f6bc659';
+const OWNER_WITHDRAW_EXCESS_TOKENS_BYTES32_SELECTOR = '0x8f6bc65900000000000000000000000000000000000000000000000000000000';
+const OWNER_SET_MAX_WEI_SELECTOR = '0x0cd30a0e';
+const OWNER_SET_MAX_WEI_BYTES32_SELECTOR = '0x0cd30a0e00000000000000000000000000000000000000000000000000000000';
 
 /**
  * This script encodes the following transactions:
@@ -26,17 +29,10 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
   const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
 
-  // @todo deploy ownerAdapterV2 and fix this
-  const ownerAdapterV2Address = await deployContractAndSave(
-    'DolomiteOwnerV2',
-    [core.gnosisSafe.address, ONE_DAY_SECONDS],
-    'DolomiteOwnerV2',
-    {},
-    { signer: core.hhUser1 }
+  // @todo remove once ownership is transferred
+  await Ownable__factory.connect(core.dolomiteMargin.address, core.governance).transferOwnership(
+    core.ownerAdapterV2.address
   );
-  // @todo Switch ownerAdapterV2 back to readonly on core-protocol-abstract.ts
-  core.ownerAdapterV2 = DolomiteOwnerV2__factory.connect(ownerAdapterV2Address, core.hhUser1);
-  await Ownable__factory.connect(core.dolomiteMargin.address, core.governance).transferOwnership(ownerAdapterV2Address);
 
   const erc4626Implementation = await deployContractAndSave(
     'DolomiteERC4626',
@@ -55,7 +51,6 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
 
   const bypassTimelockRole = await core.ownerAdapterV2.BYPASS_TIMELOCK_ROLE();
   const executorRole = await core.ownerAdapterV2.EXECUTOR_ROLE();
-  const dTokenRole = await core.ownerAdapterV2.D_TOKEN_ROLE();
 
   const transactions: EncodedTransaction[] = [];
 
@@ -65,13 +60,22 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       core,
       core,
       'ownerAdapterV2',
+      'ownerAddRole',
+      [D_TOKEN_ROLE]
+    )
+  );
+  transactions.push(
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      core,
+      'ownerAdapterV2',
       'ownerAddRoleToAddressFunctionSelectors',
       [
-        dTokenRole,
+        D_TOKEN_ROLE,
         core.dolomiteMargin.address,
         [
-          '0x8f6bc659', /* ownerWithdrawExcessTokens */
-          '0x0cd30a0e' /* ownerSetMaxWei */
+          OWNER_WITHDRAW_EXCESS_TOKENS_SELECTOR,
+          OWNER_SET_MAX_WEI_SELECTOR
         ]
       ]
     )
@@ -142,13 +146,12 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
         'ownerAdapterV2',
         'grantRole',
         [
-          dTokenRole,
+          D_TOKEN_ROLE,
           dToken.address
         ]
       )
     );
   }
-
 
   return {
     core,
@@ -159,7 +162,47 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       addExecuteImmediatelyTransactions: true,
     },
     invariants: async () => {
+      assertHardhatInvariant(
+        await core.ownerAdapterV2.isRole(D_TOKEN_ROLE),
+        'D_TOKEN_ROLE is not an active role'
+      );
+      assertHardhatInvariant(
+        (await core.ownerAdapterV2.getRoleToAddressFunctionSelectors(
+          D_TOKEN_ROLE,
+          core.dolomiteMargin.address
+        )).length === 2,
+        'D_TOKEN_ROLE has the wrong number of address to function selectors'
+      );
+      assertHardhatInvariant(
+        (await core.ownerAdapterV2.getRoleToAddressFunctionSelectors(
+          D_TOKEN_ROLE,
+          core.dolomiteMargin.address
+        )).includes(OWNER_WITHDRAW_EXCESS_TOKENS_BYTES32_SELECTOR),
+        'OWNER_WITHDRAW_EXCESS_TOKENS_SELECTOR is not in the D_TOKEN_ROLE'
+      );
+      assertHardhatInvariant(
+        (await core.ownerAdapterV2.getRoleToAddressFunctionSelectors(
+          D_TOKEN_ROLE,
+          core.dolomiteMargin.address
+        )).includes(OWNER_SET_MAX_WEI_BYTES32_SELECTOR),
+        'OWNER_SET_MAX_WEI_SELECTOR is not in the D_TOKEN_ROLE'
+      );
+
       for (const [key, dToken] of Object.entries(core.dolomiteTokens)) {
+        // check dToken was granted the correct roles
+        assertHardhatInvariant(
+          await core.ownerAdapterV2.hasRole(D_TOKEN_ROLE, dToken.address),
+          `dToken ${key} does not have D_TOKEN_ROLE`
+        );
+        assertHardhatInvariant(
+          await core.ownerAdapterV2.hasRole(executorRole, dToken.address),
+          `dToken ${key} does not have EXECUTOR_ROLE`
+        );
+        assertHardhatInvariant(
+          await core.ownerAdapterV2.hasRole(bypassTimelockRole, dToken.address),
+          `dToken ${key} does not have BYPASS_TIMELOCK_ROLE`
+        );
+
         // Check all implementations were upgraded
         const proxy = RegistryProxy__factory.connect(dToken.address, core.hhUser1);
         if (key === 'weth') {
