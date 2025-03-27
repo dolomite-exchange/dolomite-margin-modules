@@ -49,7 +49,6 @@ contract DolomiteAccountRiskOverrideSetter is
     bytes32 private constant _MARKET_TO_CATEGORY_MAP_SLOT = bytes32(uint256(keccak256("eip1967.proxy.marketToCategoryMap")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _CATEGORY_TO_CATEGORY_PARAM_MAP_SLOT = bytes32(uint256(keccak256("eip1967.proxy.categoryToCategoryParamMap")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _MARKET_TO_RISK_FEATURE_MAP_SLOT = bytes32(uint256(keccak256("eip1967.proxy.marketToRiskFeatureMap")) - 1); // solhint-disable-line max-line-length
-    bytes32 private constant _CHECK_DEFAULT_ACCOUNT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.checkDefaultAccount")) - 1); // solhint-disable-line max-line-length
     uint256 private constant _DOLOMITE_BALANCE_CUTOFF_ACCOUNT_NUMBER = 100;
 
     uint256 private constant _MASK_CATEGORY_BERA = 0x000F;
@@ -60,6 +59,8 @@ contract DolomiteAccountRiskOverrideSetter is
     constructor(address _dolomiteMargin) OnlyDolomiteMargin(_dolomiteMargin) {}
 
     // ===================== External Functions =====================
+
+    function initialize() external initializer {}
 
     function ownerSetCategoriesByMarketIds(
         uint256[] memory _marketIds,
@@ -172,17 +173,6 @@ contract DolomiteAccountRiskOverrideSetter is
         emit RiskFeatureSet(_marketId, _riskFeature, _extraData);
     }
 
-    function ownerActivateDefaultAccountCheck() external onlyDolomiteMarginOwner(msg.sender) {
-        if (_getUint256(_CHECK_DEFAULT_ACCOUNT_SLOT) == 0) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            _getUint256(_CHECK_DEFAULT_ACCOUNT_SLOT) == 0,
-            _FILE,
-            "Already set"
-        );
-        _setUint256(_CHECK_DEFAULT_ACCOUNT_SLOT, 1);
-        emit DefaultAccountCheckActivated();
-    }
-
     function getAccountRiskOverride(
         IDolomiteStructs.AccountInfo calldata _account
     )
@@ -190,25 +180,28 @@ contract DolomiteAccountRiskOverrideSetter is
     view
     returns
     (IDolomiteStructs.Decimal memory, IDolomiteStructs.Decimal memory) {
+        if (_account.owner == DOLOMITE_MARGIN_OWNER() || _account.owner == address(0)) {
+            // The Dolomite Margin owner and 0 address call this contract for various readers
+            return _getDefaultValuesForOverride();
+        }
+
         IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
         uint256[] memory marketIds = dolomiteMargin.getAccountMarketsWithBalances(_account);
         uint256 marketIdsLength = marketIds.length;
 
         // Since this function is always called at the end of an operate call when a user has debt, these two invariants
         // will always hold.
-        if (isDefaultAccountCheckActivated()) {
-            /*assert(marketIdsLength != 0);*/
-            /*assert(dolomiteMargin.getAccountNumberOfMarketsWithDebt(_account) != 0);*/
+        /*assert(marketIdsLength != 0);*/
+        /*assert(dolomiteMargin.getAccountNumberOfMarketsWithDebt(_account) != 0);*/
 
-            if (_account.number >= _DOLOMITE_BALANCE_CUTOFF_ACCOUNT_NUMBER) { /* FOR COVERAGE TESTING */ }
-            Require.that(
-                _account.number >= _DOLOMITE_BALANCE_CUTOFF_ACCOUNT_NUMBER,
-                _FILE,
-                "Invalid account for debt",
-                _account.owner,
-                _account.number
-            );
-        }
+        if (_account.number >= _DOLOMITE_BALANCE_CUTOFF_ACCOUNT_NUMBER) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            _account.number >= _DOLOMITE_BALANCE_CUTOFF_ACCOUNT_NUMBER,
+            _FILE,
+            "Invalid account for debt",
+            _account.owner,
+            _account.number
+        );
 
         (
             IDolomiteStructs.Decimal memory marginRatioOverride,
@@ -286,10 +279,6 @@ contract DolomiteAccountRiskOverrideSetter is
         return categoryStruct;
     }
 
-    function isDefaultAccountCheckActivated() public view returns (bool) {
-        return _getUint256(_CHECK_DEFAULT_ACCOUNT_SLOT) != 0;
-    }
-
     // ===================== Internal Functions =====================
 
     // @dev If given a single collateral market, this function will stop at that market id. For that
@@ -361,10 +350,6 @@ contract DolomiteAccountRiskOverrideSetter is
         uint256[] memory _marketIds,
         uint256 _marketIdsLength
     ) internal view returns (uint256) {
-        if (!isDefaultAccountCheckActivated()) {
-            return 0;
-        }
-
         uint256 exclusiveCategory = _MASK_CATEGORY_BERA
             | _MASK_CATEGORY_BTC
             | _MASK_CATEGORY_ETH
