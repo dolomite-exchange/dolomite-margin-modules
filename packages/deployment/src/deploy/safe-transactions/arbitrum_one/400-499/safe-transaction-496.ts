@@ -1,11 +1,11 @@
+import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { getAndCheckSpecificNetwork } from 'packages/base/src/utils/dolomite-utils';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from 'packages/base/test/utils';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
+import { prettyPrintEncodedDataWithTypeSafety } from 'packages/deployment/src/utils/encoding/base-encoder-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
 import getScriptName from '../../../../utils/get-script-name';
-import { prettyPrintEncodedDataWithTypeSafety } from 'packages/deployment/src/utils/encoding/base-encoder-utils';
-import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 
 /**
  * This script encodes the following transactions:
@@ -58,7 +58,10 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
           `Market [${marketId}] should have liquidator proxy v5 whitelisted`,
         );
         assertHardhatInvariant(
-          !(await core.liquidatorAssetRegistry.isAssetWhitelistedForLiquidation(marketId, core.liquidatorProxyV4.address)),
+          !(await core.liquidatorAssetRegistry.isAssetWhitelistedForLiquidation(
+            marketId,
+            core.liquidatorProxyV4.address,
+          )),
           `Market [${marketId}] should not have liquidator proxy v4 whitelisted`,
         );
       }
