@@ -276,9 +276,10 @@ export async function checkAccountRiskOverrideIsSingleCollateral<T extends Netwo
   const structs = await core.dolomiteAccountRiskOverrideSetter.getRiskFeatureForSingleCollateralByMarketId(marketId);
   structs.forEach((s, index) => {
     const expectedParam = params[index];
+    const debtMarketIdsSorted = [...s.debtMarketIds].sort((a, b) => a.toNumber() - b.toNumber());
     assertHardhatInvariant(
-      s.debtMarketIds.length === expectedParam.debtMarketIds.length &&
-      s.debtMarketIds.every(d1 => expectedParam.debtMarketIds.some(d2 => d1.eq(d2))),
+      debtMarketIdsSorted.length === debtMarketIdsSorted.length &&
+      debtMarketIdsSorted.every(d1 => debtMarketIdsSorted.some(d2 => d1.eq(d2))),
       'Single collateral params debt markets do not match',
     );
 

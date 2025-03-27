@@ -2019,20 +2019,20 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<Network, Record<string, Agg
   },
   [Network.SuperSeed]: {},
   [Network.XLayer]: {
-    [WETH_MAP[Network.XLayer].address]: {
-      aggregatorAddress: '0x98ff91433c992153A8D6507cEA5b791Df69d7c99',
-    },
-    [WOKB_MAP[Network.XLayer].address]: {
-      aggregatorAddress: '0x90AB4bc4991c71889A67F25eec044fD90E255e77',
-    },
     [USDC_MAP[Network.XLayer].address]: {
-      aggregatorAddress: '0xc975719d0ec39bb8880444acea9cc8d29a35e4d4',
-    },
-    [WBTC_MAP[Network.XLayer].address]: {
-      aggregatorAddress: '0x3C7dCE5F83E99452CD399a1bCa5542BEd979E6CA',
+      aggregatorAddress: '0xB8a08c178D96C315FbFB5661ABD208477391BC40',
     },
     [USDT_MAP[Network.XLayer].address]: {
-      aggregatorAddress: '0xB249978EfdB8E01D5266F926409870c1Ec7336EA',
+      aggregatorAddress: '0xb928a0678352005a2e51F614efD0b54C9830dB80',
+    },
+    [WBTC_MAP[Network.XLayer].address]: {
+      aggregatorAddress: '0x4D6f6488a2B3a5f7b088f276887f608a1e9805c4',
+    },
+    [WETH_MAP[Network.XLayer].address]: {
+      aggregatorAddress: '0x8b85b50535551F8E8cDAF78dA235b5Cf1005907b',
+    },
+    [WOKB_MAP[Network.XLayer].address]: {
+      aggregatorAddress: '0x4Ff345b18a2bF894F8627F41501FBf30d5C5e7BE',
     },
   },
 };

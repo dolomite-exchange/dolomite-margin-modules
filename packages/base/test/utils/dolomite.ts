@@ -51,6 +51,8 @@ import {
 } from '../../src/utils/dolomite-utils';
 import { SignerWithAddressWithSafety } from '../../src/utils/SignerWithAddressWithSafety';
 import { CoreProtocolType } from './setup';
+import { DolomiteOwnerV1, DolomiteOwnerV1__factory, DolomiteOwnerV2, DolomiteOwnerV2__factory } from 'packages/admin/src/types';
+import { getDolomiteOwnerConstructorParams } from 'packages/admin/src/admin';
 
 export type DolomiteMargin<T extends NetworkType> = T extends Network.ArbitrumOne ? IDolomiteMargin : IDolomiteMarginV2;
 export type Expiry<T extends NetworkType> = T extends Network.ArbitrumOne ? IExpiry : IExpiryV2;
@@ -139,6 +141,28 @@ export async function createDolomiteRegistryImplementation(): Promise<DolomiteRe
     DolomiteRegistryImplementation__factory.abi,
     DolomiteRegistryImplementation__factory.bytecode,
     [],
+  );
+}
+
+export async function createDolomiteOwner(
+  core: CoreProtocolType<NetworkType>,
+  secondsTimeLocked: BigNumberish,
+): Promise<DolomiteOwnerV1> {
+  return createContractWithAbi(
+    DolomiteOwnerV1__factory.abi,
+    DolomiteOwnerV1__factory.bytecode,
+    getDolomiteOwnerConstructorParams(core.gnosisSafe.address, secondsTimeLocked),
+  );
+}
+
+export async function createDolomiteOwnerV2(
+  core: CoreProtocolType<NetworkType>,
+  secondsTimeLocked: BigNumberish,
+): Promise<DolomiteOwnerV2> {
+  return createContractWithAbi(
+    DolomiteOwnerV2__factory.abi,
+    DolomiteOwnerV2__factory.bytecode,
+    getDolomiteOwnerConstructorParams(core.gnosisSafe.address, secondsTimeLocked),
   );
 }
 

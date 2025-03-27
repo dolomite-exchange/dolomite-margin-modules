@@ -1,42 +1,33 @@
 import {
-  AccountRiskOverrideCategory,
   TargetCollateralization,
   TargetLiquidationPenalty,
 } from '@dolomite-exchange/modules-base/src/utils/constructors/dolomite';
 import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { parseEther } from 'ethers/lib/utils';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
-import { encodeAddMarket } from '../../../../utils/encoding/add-market-encoder-utils';
 import {
-  encodeSetAccountRiskOverrideCategoryByMarketId,
   encodeSetBorrowCapWithMagic,
-  encodeSetIsBorrowOnly,
   encodeSetInterestSetter,
-  encodeSetIsCollateralOnly,
   encodeSetSingleCollateralWithStrictDebtByMarketId,
   encodeSetSupplyCapWithMagic,
 } from '../../../../utils/encoding/dolomite-margin-core-encoder-utils';
-import { encodeInsertChronicleOracleV3 } from '../../../../utils/encoding/oracle-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 import {
-  checkAccountRiskOverrideCategory,
-  checkAccountRiskOverrideIsBorrowOnly,
   checkAccountRiskOverrideIsSingleCollateral,
   checkBorrowCap,
   checkInterestSetter,
-  checkIsCollateralOnly,
   checkSupplyCap,
-  printPriceForVisualCheck,
 } from '../../../../utils/invariant-utils';
 
 /**
  * This script encodes the following transactions:
- * - Modify risk params for rUSD
- * - List srUSD as collateral
- * - Enable e-mode for rUSD and srUSD
+ * - Update the caps for BERA
+ * - Update the interest rate model for BERA
+ * - Update e-mode for srUSD
+ * - Enable e-mode for sUSDa
  */
 async function main(): Promise<DryRunOutput<Network.Berachain>> {
   const network = await getAndCheckSpecificNetwork(Network.Berachain);
@@ -47,29 +38,35 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
 
   const marketIds = core.marketIds;
   const transactions: EncodedTransaction[] = [
-    ...(await encodeInsertChronicleOracleV3(core, core.tokens.rUsd)),
-    await encodeSetIsCollateralOnly(core, marketIds.rUsd, false),
-    await encodeSetSupplyCapWithMagic(core, marketIds.rUsd, 5_000_000),
-    await encodeSetBorrowCapWithMagic(core, marketIds.rUsd, 3_000_000),
-    await encodeSetInterestSetter(core, marketIds.rUsd, core.interestSetters.linearStepFunction12L88U90OInterestSetter),
-    await encodeSetIsBorrowOnly(core, marketIds.rUsd, true),
-    await encodeSetAccountRiskOverrideCategoryByMarketId(core, marketIds.rUsd, AccountRiskOverrideCategory.STABLE),
-
-    ...(await encodeInsertChronicleOracleV3(core, core.tokens.srUsd)),
-    ...(await encodeAddMarket(
+    await encodeSetSupplyCapWithMagic(core, marketIds.wbera, 6_250_000),
+    await encodeSetBorrowCapWithMagic(core, marketIds.wbera, 5_000_000),
+    await encodeSetInterestSetter(
       core,
-      core.tokens.srUsd,
-      core.oracleAggregatorV2,
-      core.interestSetters.alwaysZeroInterestSetter,
-      TargetCollateralization._133,
-      TargetLiquidationPenalty._8,
-      parseEther(`${5_000_000}`),
-      ZERO_BI,
-      true,
-    )),
+      marketIds.wbera,
+      core.interestSetters.linearStepFunction50L75U70OInterestSetter,
+    ),
+
     await encodeSetSingleCollateralWithStrictDebtByMarketId(core, marketIds.srUsd, [
       {
+        debtMarketIds: [
+          core.marketIds.usdc,
+          core.marketIds.honey,
+          core.marketIds.usdt,
+          core.marketIds.usde,
+          core.marketIds.nect,
+        ],
+        marginRatioOverride: TargetCollateralization._111,
+        liquidationRewardOverride: TargetLiquidationPenalty._4,
+      },
+      {
         debtMarketIds: [core.marketIds.rUsd],
+        marginRatioOverride: TargetCollateralization._105,
+        liquidationRewardOverride: TargetLiquidationPenalty._2,
+      },
+    ]),
+    await encodeSetSingleCollateralWithStrictDebtByMarketId(core, marketIds.sUsda, [
+      {
+        debtMarketIds: [core.marketIds.usda],
         marginRatioOverride: TargetCollateralization._105,
         liquidationRewardOverride: TargetLiquidationPenalty._2,
       },
@@ -89,22 +86,36 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     },
     scriptName: getScriptName(__filename),
     invariants: async () => {
-      await checkInterestSetter(core, marketIds.rUsd, core.interestSetters.linearStepFunction12L88U90OInterestSetter);
-      await checkSupplyCap(core, marketIds.rUsd, parseEther(`${5_000_000}`));
-      await checkBorrowCap(core, marketIds.rUsd, parseEther(`${3_000_000}`));
-      await checkAccountRiskOverrideCategory(core, marketIds.rUsd, AccountRiskOverrideCategory.STABLE);
-      await checkAccountRiskOverrideIsBorrowOnly(core, marketIds.rUsd);
-      await checkIsCollateralOnly(core, marketIds.rUsd, false);
+      await checkInterestSetter(core, marketIds.wbera, core.interestSetters.linearStepFunction50L75U70OInterestSetter);
+      await checkSupplyCap(core, marketIds.wbera, parseEther(`${6_250_000}`));
+      await checkBorrowCap(core, marketIds.wbera, parseEther(`${5_000_000}`));
 
-      await checkSupplyCap(core, marketIds.srUsd, parseEther(`${5_000_000}`));
       await checkAccountRiskOverrideIsSingleCollateral(core, marketIds.srUsd, [
+        {
+          debtMarketIds: [
+            core.marketIds.usdc,
+            core.marketIds.honey,
+            core.marketIds.usdt,
+            core.marketIds.usde,
+            core.marketIds.nect,
+            core.marketIds.rUsd,
+          ],
+          marginRatioOverride: TargetCollateralization._111,
+          liquidationRewardOverride: TargetLiquidationPenalty._4,
+        },
         {
           debtMarketIds: [core.marketIds.rUsd],
           marginRatioOverride: TargetCollateralization._105,
           liquidationRewardOverride: TargetLiquidationPenalty._2,
         },
       ]);
-      await printPriceForVisualCheck(core, core.tokens.srUsd);
+      await checkAccountRiskOverrideIsSingleCollateral(core, marketIds.sUsda, [
+        {
+          debtMarketIds: [core.marketIds.usda],
+          marginRatioOverride: TargetCollateralization._105,
+          liquidationRewardOverride: TargetLiquidationPenalty._2,
+        },
+      ]);
     },
   };
 }

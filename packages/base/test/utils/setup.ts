@@ -226,7 +226,7 @@ import { createPremiaEcosystem } from './ecosystem-utils/premia';
 import { createTestEcosystem } from './ecosystem-utils/testers';
 import { createUmamiEcosystem } from './ecosystem-utils/umami';
 import { impersonate, impersonateOrFallback, resetForkIfPossible } from './index';
-import { DolomiteOwnerV1__factory } from 'packages/admin/src/types';
+import { DolomiteOwnerV1__factory, DolomiteOwnerV2__factory } from 'packages/admin/src/types';
 
 /**
  * Config to for setting up tests in the `before` function
@@ -919,12 +919,11 @@ export async function setupCoreProtocol<T extends NetworkType>(
     DolomiteOwnerV1__factory.connect,
     gnosisSafe,
   );
-  // TODO:
-  // const ownerAdapterV2 = getContract(
-  //   Deployments.DolomiteOwnerV2[config.network].address,
-  //   DolomiteOwner__factory.connect,
-  //   gnosisSafe,
-  // );
+  const ownerAdapterV2 = getContract(
+    Deployments.DolomiteOwnerV2[config.network].address,
+    DolomiteOwnerV2__factory.connect,
+    gnosisSafe,
+  );
 
   const testEcosystem = await createTestEcosystem(dolomiteMargin, governance);
 
@@ -976,13 +975,13 @@ export async function setupCoreProtocol<T extends NetworkType>(
     marketIdToDeployedVaultMap,
     oracleAggregatorV2,
     ownerAdapterV1,
+    ownerAdapterV2,
     testEcosystem,
     hhUser1,
     hhUser2,
     hhUser3,
     hhUser4,
     hhUser5,
-    ownerAdapterV2: ownerAdapterV1 as any, // TODO: fix
     apiTokens: {
       usdc: {
         marketId: new ZapBigNumber(USDC_MAP[config.network].marketId),
