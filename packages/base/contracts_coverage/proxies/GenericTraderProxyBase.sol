@@ -271,8 +271,6 @@ abstract contract GenericTraderProxyBase is IGenericTraderBase {
                     "Internal trader not whitelisted"
                 );
 
-                // TODO: check these changes over
-                // TODO: should we move `extraData` to be in each `trades[i]` struct?
                 IInternalAutoTraderBase.InternalTradeParams[] memory trades =
                     _createSwapDataFromTradeParams(
                         _cache,
@@ -281,7 +279,6 @@ abstract contract GenericTraderProxyBase is IGenericTraderBase {
                         _minOutputAmountWei,
                         i
                     );
-                // trades[0].extraData = _tradersPath[i].tradeData; // TODO: Thoughts on this?
 
                 IDolomiteStructs.ActionArgs[] memory tradeActions;
                 {
@@ -417,7 +414,8 @@ abstract contract GenericTraderProxyBase is IGenericTraderBase {
         uint256 _minOutputAmountWei,
         uint256 _index
     ) internal pure returns (IInternalAutoTraderBase.InternalTradeParams[] memory) {
-        IInternalAutoTraderBase.InternalTradeParams[] memory trades = new IInternalAutoTraderBase.InternalTradeParams[](1);
+        IInternalAutoTraderBase.InternalTradeParams[] memory trades =
+            new IInternalAutoTraderBase.InternalTradeParams[](1);
         trades[0].makerAccount = _accounts[_traderParams[_index].makerAccountIndex + _cache.traderAccountStartIndex];
         trades[0].makerAccountId = _traderParams[_index].makerAccountIndex + _cache.traderAccountStartIndex;
         trades[0].amount = AccountActionLib.all();

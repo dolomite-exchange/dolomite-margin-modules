@@ -79,6 +79,11 @@ interface IDolomiteAccountRiskOverrideSetter {
 
     // ===================== Functions =====================
 
+    function ownerSetCategoriesByMarketIds(
+        uint256[] memory _marketIds,
+        Category[] memory _categories
+    ) external;
+
     function ownerSetCategoryByMarketId(
         uint256 _marketId,
         Category _category
