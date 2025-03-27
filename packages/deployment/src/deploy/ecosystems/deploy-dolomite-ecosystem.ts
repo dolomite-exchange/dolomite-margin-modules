@@ -52,6 +52,7 @@ import { deployInterestSetters } from './helpers/deploy-interest-setters';
 import { deployOracleAggregator } from './helpers/deploy-oracle-aggregator';
 import { encodeDolomiteAccountRegistryMigrations } from './helpers/encode-dolomite-account-registry-migrations';
 import { encodeDolomiteAccountRiskOverrideSetterMigrations } from './helpers/encode-dolomite-account-risk-override-setter-migrations';
+import { encodeDolomiteOwnerMigrations } from './helpers/encode-dolomite-owner-migrations';
 import { encodeDolomiteRegistryMigrations } from './helpers/encode-dolomite-registry-migrations';
 import { encodeDolomiteRouterMigrations } from './helpers/encode-dolomite-router-migrations';
 import { encodeIsolationModeFreezableLiquidatorMigrations } from './helpers/encode-isolation-mode-freezable-liquidator-migrations';
@@ -103,12 +104,18 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     [],
     getMaxDeploymentVersionNameByDeploymentKey('DolomiteERC4626WithPayableImplementation', 1),
   );
-  const dolomiteOwnerAddress = await deployContractAndSave(
+  const dolomiteOwnerV1Address = await deployContractAndSave(
     'DolomiteOwnerV1',
     getDolomiteOwnerConstructorParams(GNOSIS_SAFE_MAP[network], FIVE_MINUTES_SECONDS),
     'DolomiteOwnerV1',
   );
-  const dolomiteOwnerV1 = IDolomiteOwner__factory.connect(dolomiteOwnerAddress, gnosisSafeSigner);
+  const dolomiteOwnerV1 = IDolomiteOwner__factory.connect(dolomiteOwnerV1Address, gnosisSafeSigner);
+  const dolomiteOwnerV2Address = await deployContractAndSave(
+    'DolomiteOwnerV2',
+    getDolomiteOwnerConstructorParams(GNOSIS_SAFE_MAP[network], FIVE_MINUTES_SECONDS),
+    'DolomiteOwnerV2',
+  );
+  const dolomiteOwnerV2 = IDolomiteOwner__factory.connect(dolomiteOwnerV2Address, gnosisSafeSigner);
   const eventEmitterRegistryImplementationAddress = await deployContractAndSave(
     'EventEmitterRegistry',
     [],
@@ -278,7 +285,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     gnosisSafeAddress: gnosisSafeAddress,
     network: config.network,
     ownerAdapterV1: dolomiteOwnerV1,
-    ownerAdapterV2: dolomiteOwnerV1, // TODO: fix after review + test
+    ownerAdapterV2: dolomiteOwnerV2,
   } as CoreProtocolType<T>;
 
   await encodeDolomiteAccountRegistryMigrations(
@@ -333,8 +340,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   );
 
   // This must be the last encoded transaction
-  // TODO: uncomment
-  // await encodeDolomiteOwnerMigrations(dolomiteOwnerV1, transactions, core);
+  await encodeDolomiteOwnerMigrations(dolomiteOwnerV2, transactions, core);
 
   return {
     core: {

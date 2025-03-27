@@ -12,8 +12,8 @@ import getScriptName from '../../../../utils/get-script-name';
  * - For all markets that specifically have liquidator proxy v4, it adds liquidator proxy v5
  *   and removes liquidator proxy v4
  */
-async function main(): Promise<DryRunOutput<Network.Mantle>> {
-  const network = await getAndCheckSpecificNetwork(Network.Mantle);
+async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
+  const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
   const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
 
   const numMarkets = await core.dolomiteMargin.getNumMarkets();
@@ -50,11 +50,6 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
       transactions,
       chainId: network,
       addExecuteImmediatelyTransactions: true,
-      version: '1.0',
-      meta: {
-        txBuilderVersion: '1.16.5',
-        name: __filename,
-      },
     },
     invariants: async () => {
       for (const marketId of marketsWithV4Liquidator) {

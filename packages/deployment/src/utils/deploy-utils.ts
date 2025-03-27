@@ -106,8 +106,10 @@ export async function verifyContract(
   constructorArguments: any[],
   contractName: string,
   libraries: Libraries,
+  sleepTimeSeconds: number,
   attempts: number = 0,
 ): Promise<void> {
+  await sleep(sleepTimeSeconds * 1_000);
   const customChain = hardhat.config.etherscan.customChains.filter((c) => c.network === hardhat.network.name)[0];
   const instance = new Etherscan(
     (hardhat.config.etherscan.apiKey as Record<string, string>)[customChain.network],
@@ -163,8 +165,8 @@ export async function verifyContract(
     if (e?.message.toLowerCase().includes('already verified')) {
       console.log('\tEtherscanVerification: Swallowing already verified error');
     } else if (attempts < 2) {
-      await sleep(3_000);
-      await verifyContract(address, constructorArguments, contractName, libraries, attempts + 1);
+      const sleepTimeSeconds = 3_000;
+      await verifyContract(address, constructorArguments, contractName, libraries, sleepTimeSeconds, attempts + 1);
     } else {
       console.error('Error with verifying:', e);
       return Promise.reject(e);
@@ -912,9 +914,14 @@ async function prettyPrintAndVerifyContract(
     console.log(
       `\tSleeping for ${sleepTimeSeconds}s to wait for the transaction to be indexed by the block explorer...`,
     );
-    await sleep(sleepTimeSeconds * 1_000);
     const artifact = await artifacts.readArtifact(contractName);
-    await verifyContract(contract.address, [...args], `${artifact.sourceName}:${contractName}`, libraries);
+    await verifyContract(
+      contract.address,
+      [...args],
+      `${artifact.sourceName}:${contractName}`,
+      libraries,
+      sleepTimeSeconds,
+    );
     file[contractRename][chainId].isVerified = true;
     writeDeploymentFile(file);
   } else {

@@ -14,15 +14,16 @@ export enum Network {
   XLayer = '196',
 }
 
-export type NetworkType =
-  Network.ArbitrumOne
-  | Network.Base
+export type NetworkTypeForDolomiteV2 =
+  Network.Base
   | Network.Berachain
   | Network.Ink
   | Network.Mantle
   | Network.PolygonZkEvm
   | Network.SuperSeed
   | Network.XLayer;
+
+export type NetworkType = Network.ArbitrumOne | NetworkTypeForDolomiteV2;
 
 export enum NetworkName {
   ArbitrumOne = 'arbitrum_one',
