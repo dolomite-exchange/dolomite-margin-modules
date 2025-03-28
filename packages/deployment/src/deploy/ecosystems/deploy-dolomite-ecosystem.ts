@@ -1,4 +1,5 @@
 import CoreDeployments from '@dolomite-exchange/dolomite-margin/dist/migrations/deployed.json';
+import { getDolomiteOwnerConstructorParams } from '@dolomite-exchange/modules-admin/src/admin';
 import {
   BorrowPositionRouter__factory,
   DepositWithdrawalRouter__factory,
@@ -15,7 +16,6 @@ import {
 import { GNOSIS_SAFE_MAP } from '@dolomite-exchange/modules-base/src/utils/constants';
 import {
   getDolomiteMigratorConstructorParams,
-  getDolomiteOwnerConstructorParams,
   getIsolationModeFreezableLiquidatorProxyConstructorParamsWithoutCore,
   getRegistryProxyConstructorParams,
 } from '@dolomite-exchange/modules-base/src/utils/constructors/dolomite';
