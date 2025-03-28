@@ -224,6 +224,7 @@ import { createPendleEcosystemArbitrumOne, createPendleEcosystemMantle } from '.
 import { createPlutusEcosystem } from './ecosystem-utils/plutus';
 import { createPremiaEcosystem } from './ecosystem-utils/premia';
 import { createTestEcosystem } from './ecosystem-utils/testers';
+import { createTokenomicsAirdropEcosystem } from './ecosystem-utils/tokenomics-airdrop';
 import { createUmamiEcosystem } from './ecosystem-utils/umami';
 import { impersonate, impersonateOrFallback, resetForkIfPossible } from './index';
 import { DeployedVault, getDeployedVaults } from './ecosystem-utils/deployed-vaults';
@@ -928,8 +929,6 @@ export async function setupCoreProtocol<T extends NetworkType>(
 
   const testEcosystem = await createTestEcosystem(dolomiteMargin, governance);
 
-  const tokenomics = await createTokenomicsEcosystem(config.network, hhUser1);
-
   const deployedVaults = await getDeployedVaults(config, dolomiteMargin, governance);
   const marketIdToDeployedVaultMap = deployedVaults.reduce((acc, vault) => {
     acc[vault.marketId] = vault;
@@ -980,7 +979,6 @@ export async function setupCoreProtocol<T extends NetworkType>(
     ownerAdapterV1,
     ownerAdapterV2,
     testEcosystem,
-    tokenomics,
     hhUser1,
     hhUser2,
     hhUser3,
@@ -1276,8 +1274,12 @@ export async function setupCoreProtocol<T extends NetworkType>(
       getMaxDeploymentVersionAddressByDeploymentKey('RedstonePriceOracle', Network.Berachain, ADDRESS_ZERO),
       hhUser1,
     );
+    const tokenomics = await createTokenomicsEcosystem(typedConfig.network, hhUser1);
+    const tokenomicsAirdrop = await createTokenomicsAirdropEcosystem(typedConfig.network, hhUser1);
     return new CoreProtocolBerachain(coreProtocolParams as CoreProtocolParams<Network.Berachain>, {
       oogaBoogaEcosystem,
+      tokenomics,
+      tokenomicsAirdrop,
       chroniclePriceOracleV3: chroniclePriceOracle,
       redstonePriceOracleV3: redstonePriceOracle,
       dolomiteTokens: {

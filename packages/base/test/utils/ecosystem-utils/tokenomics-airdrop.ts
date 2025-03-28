@@ -1,12 +1,6 @@
 import { Network } from 'packages/base/src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
-import {
-  DOLO,
-  OptionAirdrop,
-  RegularAirdrop,
-  StrategicVestingClaims,
-  VestingClaims,
-} from 'packages/tokenomics/src/types';
+import { OptionAirdrop, RegularAirdrop, StrategicVestingClaims, VestingClaims } from 'packages/tokenomics/src/types';
 
 export interface TokenomicsAirdropEcosystem {
   optionAirdrop: OptionAirdrop;
@@ -15,7 +9,7 @@ export interface TokenomicsAirdropEcosystem {
   strategicVesting: StrategicVestingClaims;
 }
 
-export async function createTokenomicsEcosystem(
+export async function createTokenomicsAirdropEcosystem(
   network: Network,
   signer: SignerWithAddressWithSafety,
 ): Promise<TokenomicsAirdropEcosystem> {
