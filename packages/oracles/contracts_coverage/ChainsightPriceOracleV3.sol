@@ -24,8 +24,8 @@ import { IDolomiteRegistry } from "@dolomite-exchange/modules-base/contracts/int
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IChainsightOracle } from "./interfaces/IChainsightOracle.sol";
-import { IOracleAggregatorV2 } from "./interfaces/IOracleAggregatorV2.sol";
 import { IChainsightPriceOracleV3 } from "./interfaces/IChainsightPriceOracleV3.sol";
+import { IOracleAggregatorV2 } from "./interfaces/IOracleAggregatorV2.sol";
 
 
 /**
@@ -41,6 +41,7 @@ contract ChainsightPriceOracleV3 is IChainsightPriceOracleV3, OnlyDolomiteMargin
 
     bytes32 private constant _FILE = "ChainsightPriceOracleV3";
     uint256 private constant _ONE_DOLLAR = 10 ** 36;
+    uint8 private constant _CHAINSIGHT_PRICE_DECIMALS = 8;
 
     // ========================= Storage =========================
 
@@ -74,9 +75,7 @@ contract ChainsightPriceOracleV3 is IChainsightPriceOracleV3, OnlyDolomiteMargin
         bool[] memory _invertPrice,
         address _dolomiteRegistry,
         address _dolomiteMargin
-    )
-        OnlyDolomiteMargin(_dolomiteMargin)
-    {
+    ) OnlyDolomiteMargin(_dolomiteMargin) {
         if (_tokens.length == _keys.length) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _tokens.length == _keys.length,
@@ -90,9 +89,6 @@ contract ChainsightPriceOracleV3 is IChainsightPriceOracleV3, OnlyDolomiteMargin
             "Invalid keys length"
         );
 
-        chainsightOracle = IChainsightOracle(_chainsightOracle);
-        chainsightSender = _chainsightSender;
-
         uint256 tokensLength = _tokens.length;
         for (uint256 i; i < tokensLength; ++i) {
             _ownerInsertOrUpdateOracleToken(
@@ -102,6 +98,8 @@ contract ChainsightPriceOracleV3 is IChainsightPriceOracleV3, OnlyDolomiteMargin
             );
         }
 
+        _ownerSetChainsightOracle(_chainsightOracle);
+        _ownerSetChainsightSender(_chainsightSender);
         _ownerSetStalenessThreshold(36 hours);
         DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
     }
@@ -110,28 +108,19 @@ contract ChainsightPriceOracleV3 is IChainsightPriceOracleV3, OnlyDolomiteMargin
 
     function ownerSetStalenessThreshold(
         uint256 _stalenessThreshold
-    )
-    external
-    onlyDolomiteMarginOwner(msg.sender)
-    {
+    ) external onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetStalenessThreshold(_stalenessThreshold);
     }
 
     function ownerSetChainsightOracle(
         address _chainsightOracle
-    )
-    external
-    onlyDolomiteMarginOwner(msg.sender)
-    {
+    ) external onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetChainsightOracle(_chainsightOracle);
     }
 
     function ownerSetChainsightSender(
         address _chainsightSender
-    )
-    external
-    onlyDolomiteMarginOwner(msg.sender)
-    {
+    ) external onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetChainsightSender(_chainsightSender);
     }
 
@@ -139,10 +128,7 @@ contract ChainsightPriceOracleV3 is IChainsightPriceOracleV3, OnlyDolomiteMargin
         address _token,
         bytes32 _key,
         bool _invertPrice
-    )
-    external
-    onlyDolomiteMarginOwner(msg.sender)
-    {
+    ) external onlyDolomiteMarginOwner(msg.sender) {
         _ownerInsertOrUpdateOracleToken(
             _token,
             _key,
@@ -154,11 +140,7 @@ contract ChainsightPriceOracleV3 is IChainsightPriceOracleV3, OnlyDolomiteMargin
 
     function getPrice(
         address _token
-    )
-    public
-    view
-    returns (IDolomiteStructs.MonetaryPrice memory)
-    {
+    ) public view returns (IDolomiteStructs.MonetaryPrice memory) {
         if (_tokenToKeyMap[_token] != bytes32(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _tokenToKeyMap[_token] != bytes32(0),
@@ -190,21 +172,19 @@ contract ChainsightPriceOracleV3 is IChainsightPriceOracleV3, OnlyDolomiteMargin
             updatedAt
         );
 
-        uint8 valueDecimals = 8;
-
         if (_tokenToInvertPriceMap[_token]) {
-            uint256 decimalFactor = 10 ** uint256(valueDecimals);
+            uint256 decimalFactor = 10 ** uint256(_CHAINSIGHT_PRICE_DECIMALS);
             price = (decimalFactor ** 2) / price;
         }
 
-        // standardize the Chronicle price to be the proper number of decimals of (36 - tokenDecimals)
+        // standardize the Chainsight price to be the proper number of decimals of (36 - tokenDecimals)
         IOracleAggregatorV2 aggregator = IOracleAggregatorV2(address(DOLOMITE_REGISTRY.oracleAggregator()));
         uint8 tokenDecimals = aggregator.getDecimalsByToken(_token);
         /*assert(tokenDecimals > 0);*/
         uint256 standardizedPrice = standardizeNumberOfDecimals(
             tokenDecimals,
             price,
-            valueDecimals
+            _CHAINSIGHT_PRICE_DECIMALS
         );
 
         return IDolomiteStructs.MonetaryPrice({
@@ -227,11 +207,7 @@ contract ChainsightPriceOracleV3 is IChainsightPriceOracleV3, OnlyDolomiteMargin
         uint8 _tokenDecimals,
         uint256 _value,
         uint8 _valueDecimals
-    )
-        public
-        pure
-        returns (uint)
-    {
+    ) public pure returns (uint) {
         uint256 tokenDecimalsFactor = 10 ** uint256(_tokenDecimals);
         uint256 priceFactor = _ONE_DOLLAR / tokenDecimalsFactor;
         uint256 valueFactor = 10 ** uint256(_valueDecimals);
@@ -242,9 +218,7 @@ contract ChainsightPriceOracleV3 is IChainsightPriceOracleV3, OnlyDolomiteMargin
 
     function _ownerSetStalenessThreshold(
         uint256 _stalenessThreshold
-    )
-    internal
-    {
+    ) internal {
         if (_stalenessThreshold >= 24 hours) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _stalenessThreshold >= 24 hours,

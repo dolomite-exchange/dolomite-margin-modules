@@ -211,7 +211,12 @@ export async function prettyPrintEncodedDataWithTypeSafety<
       transaction.to!,
       transaction.data!,
     );
-  } else if (realtimeOwner === core.delayedMultiSig?.address) {
+  } else if (realtimeOwner === core.ownerAdapterV2?.address) {
+    outerTransaction = await core.ownerAdapterV2.populateTransaction.submitTransaction(
+      transaction.to!,
+      transaction.data!,
+    );
+  }else if (realtimeOwner === core.delayedMultiSig?.address) {
     outerTransaction = await core.delayedMultiSig.populateTransaction.submitTransaction(
       transaction.to!,
       transaction.value ?? ZERO_BI,

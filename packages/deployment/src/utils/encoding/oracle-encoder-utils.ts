@@ -3,6 +3,7 @@ import { network } from 'hardhat';
 import {
   CoreProtocolWithChainlinkOld,
   CoreProtocolWithChainlinkV3,
+  CoreProtocolWithChainsightV3,
   CoreProtocolWithChaosLabsV3,
   CoreProtocolWithChronicle,
   CoreProtocolWithRedstone,
@@ -11,6 +12,7 @@ import { IChainlinkAggregator__factory, IChronicleScribe__factory } from 'packag
 import { IERC20, IERC20Metadata__factory, TestPriceOracleForAdmin__factory } from '../../../../base/src/types';
 import {
   CHAINLINK_PRICE_AGGREGATORS_MAP,
+  CHAINSIGHT_KEYS_MAP,
   CHAOS_LABS_PRICE_AGGREGATORS_MAP,
   CHRONICLE_PRICE_SCRIBES_MAP,
   INVALID_TOKEN_MAP,
@@ -227,6 +229,53 @@ export async function encodeInsertChaosLabsOracleV3<T extends NetworkType>(
           oracleInfos: [
             {
               oracle: core.chaosLabsPriceOracleV3.address,
+              tokenPair: tokenPairAddress ?? ADDRESS_ZERO,
+              weight: 100,
+            },
+          ],
+        },
+      ],
+    ),
+  ];
+}
+
+export async function encodeInsertChainsightOracleV3<T extends NetworkType>(
+  core: CoreProtocolWithChainsightV3<T>,
+  token: IERC20,
+  invertPrice: boolean = CHAINSIGHT_KEYS_MAP[core.config.network][token.address].invertPrice ?? false,
+  tokenPairAddress: string | undefined = CHAINSIGHT_KEYS_MAP[core.config.network][token.address].tokenPairAddress,
+  key: string = CHAINSIGHT_KEYS_MAP[core.config.network][token.address].key,
+): Promise<EncodedTransaction[]> {
+  const invalidTokenSettings = INVALID_TOKEN_MAP[core.network][token.address];
+
+  let tokenDecimals: number;
+  if (invalidTokenSettings) {
+    tokenDecimals = invalidTokenSettings.decimals;
+  } else {
+    tokenDecimals = await IERC20Metadata__factory.connect(token.address, core.hhUser1).decimals();
+  }
+
+  setMostRecentTokenDecimals(tokenDecimals);
+  return [
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { chainsightPriceOracle: core.chainsightPriceOracleV3 },
+      'chainsightPriceOracle',
+      'ownerInsertOrUpdateOracleToken',
+      [token.address, key, invertPrice],
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { oracleAggregatorV2: core.oracleAggregatorV2 },
+      'oracleAggregatorV2',
+      'ownerInsertOrUpdateToken',
+      [
+        {
+          token: token.address,
+          decimals: tokenDecimals,
+          oracleInfos: [
+            {
+              oracle: core.chainsightPriceOracleV3.address,
               tokenPair: tokenPairAddress ?? ADDRESS_ZERO,
               weight: 100,
             },

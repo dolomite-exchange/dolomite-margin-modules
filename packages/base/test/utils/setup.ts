@@ -1,6 +1,7 @@
 import CoreDeployments from '@dolomite-exchange/dolomite-margin/dist/migrations/deployed.json';
 import Deployments, * as deployments from '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
 import {
+  ChainsightPriceOracleV3__factory,
   ChroniclePriceOracleV3__factory,
   IChainlinkAutomationRegistry__factory,
   IChainlinkPriceOracleV3__factory,
@@ -1267,6 +1268,10 @@ export async function setupCoreProtocol<T extends NetworkType>(
       getMaxDeploymentVersionAddressByDeploymentKey('ChroniclePriceOracle', Network.Berachain, ADDRESS_ZERO),
       hhUser1,
     );
+    const chainsightPriceOracle = ChainsightPriceOracleV3__factory.connect(
+      getMaxDeploymentVersionAddressByDeploymentKey('ChainsightPriceOracle', Network.Berachain, ADDRESS_ZERO),
+      hhUser1,
+    );
     const oogaBoogaEcosystem = await createOogaBoogaEcosystem(config.network, hhUser1);
     const redstonePriceOracle = RedstonePriceOracleV3__factory.connect(
       getMaxDeploymentVersionAddressByDeploymentKey('RedstonePriceOracle', Network.Berachain, ADDRESS_ZERO),
@@ -1275,6 +1280,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
     return new CoreProtocolBerachain(coreProtocolParams as CoreProtocolParams<Network.Berachain>, {
       oogaBoogaEcosystem,
       chroniclePriceOracleV3: chroniclePriceOracle,
+      chainsightPriceOracleV3: chainsightPriceOracle,
       redstonePriceOracleV3: redstonePriceOracle,
       dolomiteTokens: {
         ...coreProtocolParams.dolomiteTokens,

@@ -18,6 +18,7 @@ import { CoreProtocolPolygonZkEvm } from 'packages/base/test/utils/core-protocol
 import { TokenInfo } from './index';
 import {
   ChainlinkPriceOracleV3,
+  ChainsightPriceOracleV3,
   ChroniclePriceOracleV3,
   IAlgebraV3Pool,
   IChainlinkAggregator,
@@ -54,6 +55,16 @@ export type CoreProtocolWithChaosLabsV3<T extends NetworkType> = Extract<
   {
     dolomiteMargin: DolomiteMargin<T>;
     chaosLabsPriceOracleV3: IChaosLabsPriceOracleV3;
+    oracleAggregatorV2: OracleAggregatorV2;
+  }
+>;
+
+export type CoreProtocolWithChainsightV3<T extends NetworkType> = Extract<
+  CoreProtocolType<T>,
+  {
+    config: CoreProtocolConfig<T>;
+    dolomiteMargin: DolomiteMargin<T>;
+    chainsightPriceOracleV3: ChainsightPriceOracleV3;
     oracleAggregatorV2: OracleAggregatorV2;
   }
 >;

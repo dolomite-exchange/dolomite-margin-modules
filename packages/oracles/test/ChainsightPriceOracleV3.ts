@@ -29,7 +29,7 @@ import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/help
 import {
   CHAINSIGHT_SENDER_ADDRESS_MAP,
   CHAINSIGHT_ORACLE_ADDRESS_MAP,
-  CHAINSIGHT_TOKEN_TO_KEY_MAP,
+  CHAINSIGHT_KEYS_MAP,
   IBERA_MAP,
   IBGT_MAP,
   HENLO_MAP
@@ -66,8 +66,8 @@ describe('ChainsightPriceOracleV3', () => {
         core,
         [ibgt.address, ibera.address],
         [
-          CHAINSIGHT_TOKEN_TO_KEY_MAP[Network.Berachain][ibgt.address],
-          CHAINSIGHT_TOKEN_TO_KEY_MAP[Network.Berachain][ibera.address]
+          CHAINSIGHT_KEYS_MAP[Network.Berachain][ibgt.address].key,
+          CHAINSIGHT_KEYS_MAP[Network.Berachain][ibera.address].key
         ],
         [false, false],
       ),
@@ -104,10 +104,10 @@ describe('ChainsightPriceOracleV3', () => {
     it('should work normally', async () => {
       expect(await oracle.stalenessThreshold()).to.eq(36 * 60 * 60);
       expect(await oracle.getKeyByToken(ibgt.address)).to.eq(
-        CHAINSIGHT_TOKEN_TO_KEY_MAP[Network.Berachain][ibgt.address]
+        CHAINSIGHT_KEYS_MAP[Network.Berachain][ibgt.address].key
       );
       expect(await oracle.getKeyByToken(ibera.address)).to.eq(
-        CHAINSIGHT_TOKEN_TO_KEY_MAP[Network.Berachain][ibera.address]
+        CHAINSIGHT_KEYS_MAP[Network.Berachain][ibera.address].key
       );
       expect(await oracle.DOLOMITE_MARGIN()).to.eq(core.dolomiteMargin.address);
       expect(await oracle.DOLOMITE_REGISTRY()).to.eq(core.dolomiteRegistry.address);
@@ -161,7 +161,7 @@ describe('ChainsightPriceOracleV3', () => {
     it('returns the inverse if invertPrice is true', async () => {
       await oracle.connect(core.governance).ownerInsertOrUpdateOracleToken(
         ibgt.address,
-        CHAINSIGHT_TOKEN_TO_KEY_MAP[Network.Berachain][ibgt.address],
+        CHAINSIGHT_KEYS_MAP[Network.Berachain][ibgt.address].key,
         true,
       );
       expect((await oracle.getPrice(ibgt.address)).value).to.eq(IBGT_PRICE_INVERSE);
@@ -195,7 +195,7 @@ describe('ChainsightPriceOracleV3', () => {
       );
       const data = await chainsight.readAsUint256WithTimestamp(
         CHAINSIGHT_SENDER_ADDRESS_MAP[Network.Berachain],
-        CHAINSIGHT_TOKEN_TO_KEY_MAP[Network.Berachain][ibgt.address],
+        CHAINSIGHT_KEYS_MAP[Network.Berachain][ibgt.address].key,
       );
       await expectThrow(
         oracle.getPrice(ibgt.address),
@@ -292,11 +292,11 @@ describe('ChainsightPriceOracleV3', () => {
     it('can insert a new oracle', async () => {
       await oracle.connect(core.governance).ownerInsertOrUpdateOracleToken(
         HENLO_MAP[Network.Berachain].address,
-        CHAINSIGHT_TOKEN_TO_KEY_MAP[Network.Berachain][HENLO_MAP[Network.Berachain].address],
+        CHAINSIGHT_KEYS_MAP[Network.Berachain][HENLO_MAP[Network.Berachain].address].key,
         false,
       );
       expect(await oracle.getKeyByToken(HENLO_MAP[Network.Berachain].address)).to.eq(
-        CHAINSIGHT_TOKEN_TO_KEY_MAP[Network.Berachain][HENLO_MAP[Network.Berachain].address]
+        CHAINSIGHT_KEYS_MAP[Network.Berachain][HENLO_MAP[Network.Berachain].address].key
       );
       expect(await oracle.getInvertPriceByToken(HENLO_MAP[Network.Berachain].address)).to.eq(false);
     });
@@ -315,7 +315,7 @@ describe('ChainsightPriceOracleV3', () => {
       await expectThrow(
         oracle.connect(core.hhUser1).ownerInsertOrUpdateOracleToken(
           HENLO_MAP[Network.Berachain].address,
-          CHAINSIGHT_TOKEN_TO_KEY_MAP[Network.Berachain][HENLO_MAP[Network.Berachain].address],
+          CHAINSIGHT_KEYS_MAP[Network.Berachain][HENLO_MAP[Network.Berachain].address].key,
           false,
         ),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,

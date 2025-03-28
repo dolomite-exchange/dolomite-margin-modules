@@ -12,6 +12,7 @@
     "deploy:boyco-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts boyco",
     "deploy:chainlink-price-oracle-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts chainlink-price-oracle",
     "deploy:chronicle-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts chronicle",
+    "deploy:chainsight-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts chainsight",
     "deploy:create3-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts create3",
     "deploy:dolomite-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts dolomite",
     "deploy:gmx-readers-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts gmx-readers",

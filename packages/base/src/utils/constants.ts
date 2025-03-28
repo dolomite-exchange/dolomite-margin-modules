@@ -21,6 +21,12 @@ interface ChronicleScribe {
   invertPrice?: boolean;
 }
 
+interface ChainsightKey {
+  key: string;
+  tokenPairAddress?: string;
+  invertPrice?: boolean;
+}
+
 type EverythingButBase =
   | Network.ArbitrumOne
   | Network.Berachain
@@ -2105,13 +2111,19 @@ export const CHAINSIGHT_SENDER_ADDRESS_MAP: Record<Network, string> = {
   [Network.XLayer]: '0x0000000000000000000000000000000000000000',
 };
 
-export const CHAINSIGHT_TOKEN_TO_KEY_MAP: Record<Network, Record<string, string>> = {
+export const CHAINSIGHT_KEYS_MAP: Record<Network, Record<string, ChainsightKey>> = {
   [Network.ArbitrumOne]: {},
   [Network.Base]: {},
   [Network.Berachain]: {
-    [HENLO_MAP[Network.Berachain].address]: '0x9cd823bd88f3bc5680010088a5300e1e999c2b18ca81fd068bd56d6ccb051934',
-    [IBGT_MAP[Network.Berachain].address]: '0xb45dccc0c96fe02ddbcd663c80eaaa692f188e4bea2c6101135d358fc9535473',
-    [IBERA_MAP[Network.Berachain].address]: '0xae0cd7d9dec07cb743c7d42a0ecc9b659e3a350b5e09e8c8dc353f8ac0083ce4',
+    [HENLO_MAP[Network.Berachain].address]: {
+      key: '0x9cd823bd88f3bc5680010088a5300e1e999c2b18ca81fd068bd56d6ccb051934',
+    },
+    [IBGT_MAP[Network.Berachain].address]: {
+      key: '0xb45dccc0c96fe02ddbcd663c80eaaa692f188e4bea2c6101135d358fc9535473',
+    },
+    [IBERA_MAP[Network.Berachain].address]: {
+      key: '0xae0cd7d9dec07cb743c7d42a0ecc9b659e3a350b5e09e8c8dc353f8ac0083ce4'
+    }
   },
   [Network.Ink]: {},
   [Network.Mantle]: {},
