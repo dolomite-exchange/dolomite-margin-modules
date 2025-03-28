@@ -170,6 +170,7 @@ export async function depositIntoDolomiteMargin<T extends NetworkType>(
     .operate(
       [{ owner: accountOwner.address, number: accountNumber }],
       [createDepositAction(amount, tokenId, accountOwner, fromAddress)],
+      { gasLimit: 10_000_000 },
     );
 }
 
