@@ -9,6 +9,8 @@ import {
   AggregatorInfo,
   CHAINLINK_PRICE_AGGREGATORS_MAP,
   CHAINLINK_PRICE_ORACLE_V1_MAP,
+  CHAINSIGHT_ORACLE_ADDRESS_MAP,
+  CHAINSIGHT_SENDER_ADDRESS_MAP,
 } from 'packages/base/src/utils/constants';
 import { ADDRESS_ZERO, Network, NetworkType } from 'packages/base/src/utils/no-deps-constants';
 import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
@@ -197,6 +199,23 @@ export async function getChainlinkPriceOracleV1ConstructorParamsFromOldPriceOrac
     }
   }
   return [tokens, aggregators, tokenDecimals, tokenPairs, core.dolomiteMargin.address];
+}
+
+export function getChainsightPriceOracleV3ConstructorParams<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  tokens: string[],
+  keys: string[],
+  invertPrices: boolean[],
+): any[] {
+  return [
+    CHAINSIGHT_ORACLE_ADDRESS_MAP[core.config.network],
+    CHAINSIGHT_SENDER_ADDRESS_MAP[core.config.network],
+    tokens,
+    keys,
+    invertPrices,
+    core.dolomiteRegistry.address,
+    core.dolomiteMargin.address,
+  ];
 }
 
 export async function getOracleAggregatorV2ConstructorParams(

@@ -58,6 +58,27 @@ export const ARB_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   },
 };
 
+export const BGT_MAP: Record<Network.Berachain, TokenWithMarketId> = {
+  [Network.Berachain]: {
+    address: '0x656b95E550C07a9ffe548bd4085c72418Ceb1dba',
+    marketId: -1,
+  },
+};
+
+export const IBGT_MAP: Record<Network.Berachain, TokenWithMarketId> = {
+  [Network.Berachain]: {
+    address: '0xac03CABA51e17c86c921E1f6CBFBdC91F8BB2E6b',
+    marketId: -1,
+  },
+};
+
+export const IBERA_MAP: Record<Network.Berachain, TokenWithMarketId> = {
+  [Network.Berachain]: {
+    address: '0x9b6761bf2397Bb5a6624a856cC84A3A14Dcd3fe5',
+    marketId: -1,
+  },
+};
+
 export const CHAINLINK_PRICE_ORACLE_V1_MAP: Record<Network, string> = {
   [Network.ArbitrumOne]: CoreDeployments.ChainlinkPriceOracleV1[Network.ArbitrumOne].address,
   [Network.Base]: CoreDeployments.ChainlinkPriceOracleV1[Network.Base].address,
@@ -494,6 +515,13 @@ export const GRAIL_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x3d9907F9a368ad0a51Be60f7Da3b97cf940982D8',
     marketId: 18,
+  },
+};
+
+export const HENLO_MAP: Record<Network.Berachain, TokenWithMarketId> = {
+  [Network.Berachain]: {
+    address: '0xb2F776e9c1C926C4b2e54182Fac058dA9Af0B6A5',
+    marketId: -1,
   },
 };
 
@@ -2048,6 +2076,43 @@ export const CHAOS_LABS_PRICE_AGGREGATORS_MAP: Record<Network, Record<string, Ag
   },
   [Network.Base]: {},
   [Network.Berachain]: {},
+  [Network.Ink]: {},
+  [Network.Mantle]: {},
+  [Network.PolygonZkEvm]: {},
+  [Network.SuperSeed]: {},
+  [Network.XLayer]: {},
+};
+
+export const CHAINSIGHT_ORACLE_ADDRESS_MAP: Record<Network, string> = {
+  [Network.ArbitrumOne]: '0x0000000000000000000000000000000000000000',
+  [Network.Base]: '0x0000000000000000000000000000000000000000',
+  [Network.Berachain]: '0xD5F76a363135A0781295043241f18496dAa31E3d',
+  [Network.Ink]: '0x0000000000000000000000000000000000000000',
+  [Network.Mantle]: '0x0000000000000000000000000000000000000000',
+  [Network.PolygonZkEvm]: '0x0000000000000000000000000000000000000000',
+  [Network.SuperSeed]: '0x0000000000000000000000000000000000000000',
+  [Network.XLayer]: '0x0000000000000000000000000000000000000000',
+};
+
+export const CHAINSIGHT_SENDER_ADDRESS_MAP: Record<Network, string> = {
+  [Network.ArbitrumOne]: '0x0000000000000000000000000000000000000000',
+  [Network.Base]: '0x0000000000000000000000000000000000000000',
+  [Network.Berachain]: '0x16D90c83817Cf64d40321018C8FC1E7e62c427da',
+  [Network.Ink]: '0x0000000000000000000000000000000000000000',
+  [Network.Mantle]: '0x0000000000000000000000000000000000000000',
+  [Network.PolygonZkEvm]: '0x0000000000000000000000000000000000000000',
+  [Network.SuperSeed]: '0x0000000000000000000000000000000000000000',
+  [Network.XLayer]: '0x0000000000000000000000000000000000000000',
+};
+
+export const CHAINSIGHT_TOKEN_TO_KEY_MAP: Record<Network, Record<string, string>> = {
+  [Network.ArbitrumOne]: {},
+  [Network.Base]: {},
+  [Network.Berachain]: {
+    [HENLO_MAP[Network.Berachain].address]: '0x9cd823bd88f3bc5680010088a5300e1e999c2b18ca81fd068bd56d6ccb051934',
+    [IBGT_MAP[Network.Berachain].address]: '0xb45dccc0c96fe02ddbcd663c80eaaa692f188e4bea2c6101135d358fc9535473',
+    [IBERA_MAP[Network.Berachain].address]: '0xae0cd7d9dec07cb743c7d42a0ecc9b659e3a350b5e09e8c8dc353f8ac0083ce4',
+  },
   [Network.Ink]: {},
   [Network.Mantle]: {},
   [Network.PolygonZkEvm]: {},

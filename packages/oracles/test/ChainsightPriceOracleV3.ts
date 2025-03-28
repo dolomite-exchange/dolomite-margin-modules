@@ -21,25 +21,25 @@ import {
   ChainsightPriceOracleV3,
   ChainsightPriceOracleV3__factory,
   IChainsightOracle__factory,
+  IERC20,
+  IERC20__factory,
 } from '../src/types';
 import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
 import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
+import {
+  CHAINSIGHT_SENDER_ADDRESS_MAP,
+  CHAINSIGHT_ORACLE_ADDRESS_MAP,
+  CHAINSIGHT_TOKEN_TO_KEY_MAP,
+  IBERA_MAP,
+  IBGT_MAP,
+  HENLO_MAP
+} from 'packages/base/src/utils/constants';
+import { getChainsightPriceOracleV3ConstructorParams } from '../src/oracles-constructors';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
-const CHAINSIGHT_ORACLE_ADDRESS = '0xD5F76a363135A0781295043241f18496dAa31E3d';
-const CHAINSIGHT_SENDER_ADDRESS = '0x16D90c83817Cf64d40321018C8FC1E7e62c427da';
-
-const IBGT_ADDRESS = '0xac03CABA51e17c86c921E1f6CBFBdC91F8BB2E6b';
-const CHAINSIGHT_KEY_IBGT = '0xb45dccc0c96fe02ddbcd663c80eaaa692f188e4bea2c6101135d358fc9535473';
 const IBGT_PRICE = parseEther('9.13');
 const IBGT_PRICE_INVERSE = BigNumber.from('109529020000000000');
-
-const IBERA_ADDRESS = '0x9b6761bf2397Bb5a6624a856cC84A3A14Dcd3fe5';
-const CHAINSIGHT_KEY_IBERA = '0xae0cd7d9dec07cb743c7d42a0ecc9b659e3a350b5e09e8c8dc353f8ac0083ce4';
-
-const HENLO_ADDRESS = '0xb2F776e9c1C926C4b2e54182Fac058dA9Af0B6A5';
-const CHAINSIGHT_KEY_HENLO = '0x9cd823bd88f3bc5680010088a5300e1e999c2b18ca81fd068bd56d6ccb051934';
 
 describe('ChainsightPriceOracleV3', () => {
   let snapshotId: string;
@@ -47,24 +47,30 @@ describe('ChainsightPriceOracleV3', () => {
   let core: CoreProtocolBerachain;
   let oracle: ChainsightPriceOracleV3;
 
+  let ibgt: IERC20;
+  let ibera: IERC20;
+
   before(async () => {
     core = await setupCoreProtocol({
       network: Network.Berachain,
       blockNumber: 2_870_000
     });
 
+    ibgt = IERC20__factory.connect(IBGT_MAP[Network.Berachain].address, core.hhUser1);
+    ibera = IERC20__factory.connect(IBERA_MAP[Network.Berachain].address, core.hhUser1);
+
     oracle = await createContractWithAbi<ChainsightPriceOracleV3>(
       ChainsightPriceOracleV3__factory.abi,
       ChainsightPriceOracleV3__factory.bytecode,
-      [
-        CHAINSIGHT_ORACLE_ADDRESS,
-        CHAINSIGHT_SENDER_ADDRESS,
-        [IBGT_ADDRESS, IBERA_ADDRESS],
-        [CHAINSIGHT_KEY_IBGT, CHAINSIGHT_KEY_IBERA],
+      getChainsightPriceOracleV3ConstructorParams(
+        core,
+        [ibgt.address, ibera.address],
+        [
+          CHAINSIGHT_TOKEN_TO_KEY_MAP[Network.Berachain][ibgt.address],
+          CHAINSIGHT_TOKEN_TO_KEY_MAP[Network.Berachain][ibera.address]
+        ],
         [false, false],
-        core.dolomiteRegistry.address,
-        core.dolomiteMargin.address,
-      ],
+      ),
     );
 
     const tokenInfos: TokenInfo[] = [
@@ -73,14 +79,14 @@ describe('ChainsightPriceOracleV3', () => {
           { oracle: oracle.address, tokenPair: ADDRESS_ZERO, weight: 100 },
         ],
         decimals: 18,
-        token: IBGT_ADDRESS,
+        token: ibgt.address,
       },
       {
         oracleInfos: [
           { oracle: oracle.address, tokenPair: ADDRESS_ZERO, weight: 100 },
         ],
         decimals: 18,
-        token: IBERA_ADDRESS,
+        token: ibera.address,
       },
     ];
     for (const tokenInfo of tokenInfos) {
@@ -97,8 +103,12 @@ describe('ChainsightPriceOracleV3', () => {
   describe('#constructor', () => {
     it('should work normally', async () => {
       expect(await oracle.stalenessThreshold()).to.eq(36 * 60 * 60);
-      expect(await oracle.getKeyByToken(IBGT_ADDRESS)).to.eq(CHAINSIGHT_KEY_IBGT);
-      expect(await oracle.getKeyByToken(IBERA_ADDRESS)).to.eq(CHAINSIGHT_KEY_IBERA);
+      expect(await oracle.getKeyByToken(ibgt.address)).to.eq(
+        CHAINSIGHT_TOKEN_TO_KEY_MAP[Network.Berachain][ibgt.address]
+      );
+      expect(await oracle.getKeyByToken(ibera.address)).to.eq(
+        CHAINSIGHT_TOKEN_TO_KEY_MAP[Network.Berachain][ibera.address]
+      );
       expect(await oracle.DOLOMITE_MARGIN()).to.eq(core.dolomiteMargin.address);
       expect(await oracle.DOLOMITE_REGISTRY()).to.eq(core.dolomiteRegistry.address);
     });
@@ -109,8 +119,8 @@ describe('ChainsightPriceOracleV3', () => {
           ChainsightPriceOracleV3__factory.abi,
           ChainsightPriceOracleV3__factory.bytecode,
           [
-            CHAINSIGHT_ORACLE_ADDRESS,
-            CHAINSIGHT_SENDER_ADDRESS,
+            CHAINSIGHT_ORACLE_ADDRESS_MAP[Network.Berachain],
+            CHAINSIGHT_SENDER_ADDRESS_MAP[Network.Berachain],
             [ZERO_ADDRESS],
             [BYTES_ZERO, BYTES_ZERO],
             [false, false],
@@ -128,8 +138,8 @@ describe('ChainsightPriceOracleV3', () => {
           ChainsightPriceOracleV3__factory.abi,
           ChainsightPriceOracleV3__factory.bytecode,
           [
-            CHAINSIGHT_ORACLE_ADDRESS,
-            CHAINSIGHT_SENDER_ADDRESS,
+            CHAINSIGHT_ORACLE_ADDRESS_MAP[Network.Berachain],
+            CHAINSIGHT_SENDER_ADDRESS_MAP[Network.Berachain],
             [ZERO_ADDRESS, ZERO_ADDRESS],
             [BYTES_ZERO, BYTES_ZERO],
             [false],
@@ -144,23 +154,23 @@ describe('ChainsightPriceOracleV3', () => {
 
   describe('#getPrice', () => {
     it('returns the correct value for a token with 18 decimals', async () => {
-      expect((await oracle.getPrice(IBGT_ADDRESS)).value).to.eq(IBGT_PRICE);
-      expect((await core.oracleAggregatorV2.getPrice(IBGT_ADDRESS)).value).to.eq(IBGT_PRICE);
+      expect((await oracle.getPrice(ibgt.address)).value).to.eq(IBGT_PRICE);
+      expect((await core.oracleAggregatorV2.getPrice(ibgt.address)).value).to.eq(IBGT_PRICE);
     });
 
     it('returns the inverse if invertPrice is true', async () => {
       await oracle.connect(core.governance).ownerInsertOrUpdateOracleToken(
-        IBGT_ADDRESS,
-        CHAINSIGHT_KEY_IBGT,
+        ibgt.address,
+        CHAINSIGHT_TOKEN_TO_KEY_MAP[Network.Berachain][ibgt.address],
         true,
       );
-      expect((await oracle.getPrice(IBGT_ADDRESS)).value).to.eq(IBGT_PRICE_INVERSE);
+      expect((await oracle.getPrice(ibgt.address)).value).to.eq(IBGT_PRICE_INVERSE);
     });
 
     it('reverts when caller is dolomite margin', async () => {
       const doloImpersonator = await impersonate(core.dolomiteMargin.address, true);
       await expectThrow(
-        oracle.connect(doloImpersonator).getPrice(IBGT_ADDRESS),
+        oracle.connect(doloImpersonator).getPrice(ibgt.address),
         'ChainsightPriceOracleV3: DolomiteMargin cannot call',
       );
     });
@@ -179,14 +189,17 @@ describe('ChainsightPriceOracleV3', () => {
 
     it('reverts when the price is expired', async () => {
       await increase(ONE_DAY_SECONDS * 2);
-      const chainsight = IChainsightOracle__factory.connect(CHAINSIGHT_ORACLE_ADDRESS, core.hhUser1);
+      const chainsight = IChainsightOracle__factory.connect(
+        CHAINSIGHT_ORACLE_ADDRESS_MAP[Network.Berachain],
+        core.hhUser1
+      );
       const data = await chainsight.readAsUint256WithTimestamp(
-        CHAINSIGHT_SENDER_ADDRESS,
-        CHAINSIGHT_KEY_IBGT,
+        CHAINSIGHT_SENDER_ADDRESS_MAP[Network.Berachain],
+        CHAINSIGHT_TOKEN_TO_KEY_MAP[Network.Berachain][ibgt.address],
       );
       await expectThrow(
-        oracle.getPrice(IBGT_ADDRESS),
-        `ChainsightPriceOracleV3: Chainsight price expired <${IBGT_ADDRESS.toLowerCase()}, ${data[1]}>`,
+        oracle.getPrice(ibgt.address),
+        `ChainsightPriceOracleV3: Chainsight price expired <${ibgt.address.toLowerCase()}, ${data[1]}>`,
       );
     });
   });
@@ -224,7 +237,7 @@ describe('ChainsightPriceOracleV3', () => {
 
   describe('#ownerSetChainsightOracle', () => {
     it('works normally', async () => {
-      expect(await oracle.chainsightOracle()).to.eq(CHAINSIGHT_ORACLE_ADDRESS);
+      expect(await oracle.chainsightOracle()).to.eq(CHAINSIGHT_ORACLE_ADDRESS_MAP[Network.Berachain]);
 
       const res = await oracle.connect(core.governance).ownerSetChainsightOracle(OTHER_ADDRESS);
       await expectEvent(oracle, res, 'ChainsightOracleUpdated', {
@@ -251,7 +264,7 @@ describe('ChainsightPriceOracleV3', () => {
 
   describe('#ownerSetChainsightSender', () => {
     it('works normally', async () => {
-      expect(await oracle.chainsightSender()).to.eq(CHAINSIGHT_SENDER_ADDRESS);
+      expect(await oracle.chainsightSender()).to.eq(CHAINSIGHT_SENDER_ADDRESS_MAP[Network.Berachain]);
 
       const res = await oracle.connect(core.governance).ownerSetChainsightSender(OTHER_ADDRESS);
       await expectEvent(oracle, res, 'ChainsightSenderUpdated', {
@@ -278,29 +291,31 @@ describe('ChainsightPriceOracleV3', () => {
   describe('#ownerInsertOrUpdateOracleToken', () => {
     it('can insert a new oracle', async () => {
       await oracle.connect(core.governance).ownerInsertOrUpdateOracleToken(
-        HENLO_ADDRESS,
-        CHAINSIGHT_KEY_HENLO,
+        HENLO_MAP[Network.Berachain].address,
+        CHAINSIGHT_TOKEN_TO_KEY_MAP[Network.Berachain][HENLO_MAP[Network.Berachain].address],
         false,
       );
-      expect(await oracle.getKeyByToken(HENLO_ADDRESS)).to.eq(CHAINSIGHT_KEY_HENLO);
-      expect(await oracle.getInvertPriceByToken(HENLO_ADDRESS)).to.eq(false);
+      expect(await oracle.getKeyByToken(HENLO_MAP[Network.Berachain].address)).to.eq(
+        CHAINSIGHT_TOKEN_TO_KEY_MAP[Network.Berachain][HENLO_MAP[Network.Berachain].address]
+      );
+      expect(await oracle.getInvertPriceByToken(HENLO_MAP[Network.Berachain].address)).to.eq(false);
     });
 
     it('can update an existing oracle', async () => {
       await oracle.connect(core.governance).ownerInsertOrUpdateOracleToken(
-        IBGT_ADDRESS,
+        ibgt.address,
         BYTES_ZERO,
         true,
       );
-      expect(await oracle.getKeyByToken(IBGT_ADDRESS)).to.eq(BYTES_ZERO);
-      expect(await oracle.getInvertPriceByToken(IBGT_ADDRESS)).to.eq(true);
+      expect(await oracle.getKeyByToken(ibgt.address)).to.eq(BYTES_ZERO);
+      expect(await oracle.getInvertPriceByToken(ibgt.address)).to.eq(true);
     });
 
     it('fails when invoked by non-admin', async () => {
       await expectThrow(
         oracle.connect(core.hhUser1).ownerInsertOrUpdateOracleToken(
-          HENLO_ADDRESS,
-          CHAINSIGHT_KEY_HENLO,
+          HENLO_MAP[Network.Berachain].address,
+          CHAINSIGHT_TOKEN_TO_KEY_MAP[Network.Berachain][HENLO_MAP[Network.Berachain].address],
           false,
         ),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
