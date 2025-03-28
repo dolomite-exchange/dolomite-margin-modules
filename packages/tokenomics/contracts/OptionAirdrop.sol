@@ -20,17 +20,15 @@
 
 pragma solidity ^0.8.9;
 
-import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
-import { IDolomiteRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IDolomiteRegistry.sol";
 import { AccountActionLib } from "@dolomite-exchange/modules-base/contracts/lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "@dolomite-exchange/modules-base/contracts/lib/AccountBalanceLib.sol";
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
-import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { MerkleProof } from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import { BaseClaim } from "./BaseClaim.sol";
 import { IOptionAirdrop } from "./interfaces/IOptionAirdrop.sol";
 
 
@@ -40,7 +38,7 @@ import { IOptionAirdrop } from "./interfaces/IOptionAirdrop.sol";
  *
  * Option airdrop contract for DOLO tokens
  */
-contract OptionAirdrop is OnlyDolomiteMargin, ReentrancyGuard, IOptionAirdrop {
+contract OptionAirdrop is BaseClaim, IOptionAirdrop {
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.UintSet;
 
@@ -49,22 +47,16 @@ contract OptionAirdrop is OnlyDolomiteMargin, ReentrancyGuard, IOptionAirdrop {
     // ===================================================
 
     bytes32 private constant _FILE = "OptionAirdrop";
+    bytes32 private constant _OPTION_AIRDROP_STORAGE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.optionAirdropStorage")) - 1); // solhint-disable-line max-line-length
+    uint256 private constant _DEFAULT_ACCOUNT_NUMBER = 0;
 
-    uint256 public constant DOLO_PRICE = 0.03125 ether;
+    uint256 public constant DOLO_PRICE = 0.045 ether;
 
     // ===================================================
     // ==================== State Variables ==============
     // ===================================================
 
-    IDolomiteRegistry public immutable DOLOMITE_REGISTRY; // solhint-disable-line mixed-case
     IERC20 public immutable DOLO; // solhint-disable-line mixed-case
-
-    bytes32 public merkleRoot;
-    address public treasury;
-    mapping(address => uint256) public userToClaimedAmount;
-    mapping(address => uint256) public userToPurchases;
-
-    EnumerableSet.UintSet private _allowedMarketIds;
 
     // ===========================================================
     // ======================= Constructor =======================
@@ -72,14 +64,17 @@ contract OptionAirdrop is OnlyDolomiteMargin, ReentrancyGuard, IOptionAirdrop {
 
     constructor(
         address _dolo,
-        address _treasury,
         address _dolomiteRegistry,
         address _dolomiteMargin
-    ) OnlyDolomiteMargin(_dolomiteMargin) {
+    ) BaseClaim(_dolomiteRegistry, _dolomiteMargin) {
         DOLO = IERC20(_dolo);
-        DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
+    }
 
+    function initialize(
+        address _treasury
+    ) public initializer {
         _ownerSetTreasury(_treasury);
+        super.initialize();
     }
 
     // ======================================================
@@ -92,16 +87,8 @@ contract OptionAirdrop is OnlyDolomiteMargin, ReentrancyGuard, IOptionAirdrop {
         _ownerSetAllowedMarketIds(_marketIds);
     }
 
-    function ownerSetMerkleRoot(bytes32 _merkleRoot) external onlyDolomiteMarginOwner(msg.sender) {
-        _ownerSetMerkleRoot(_merkleRoot);
-    }
-
     function ownerSetTreasury(address _treasury) external onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetTreasury(_treasury);
-    }
-
-    function ownerWithdrawRewardToken(address _token, address _receiver) external onlyDolomiteMarginOwner(msg.sender) {
-        _ownerWithdrawRewardToken(_token, _receiver);
     }
 
     // ==============================================================
@@ -114,46 +101,46 @@ contract OptionAirdrop is OnlyDolomiteMargin, ReentrancyGuard, IOptionAirdrop {
         uint256 _claimAmount,
         uint256 _marketId,
         uint256 _fromAccountNumber
-    ) external nonReentrant {
+    ) external nonReentrant onlyClaimEnabled {
+        OptionAirdropStorage storage s = _getOptionAirdropStorage();
+        address user = getUserOrRemappedAddress(msg.sender);
+
         Require.that(
-            _verifyMerkleProof(_proof, _allocatedAmount),
+            _verifyMerkleProof(user, _proof, _allocatedAmount),
             _FILE,
             "Invalid merkle proof"
         );
         Require.that(
-            userToClaimedAmount[msg.sender] + _claimAmount <= _allocatedAmount,
-            _FILE,
-            "Insufficient allocated amount"
-        );
-        Require.that(
-            _allowedMarketIds.contains(_marketId),
+            s.allowedMarketIds.contains(_marketId),
             _FILE,
             "Payment asset not allowed"
         );
+        Require.that(
+            s.userToClaimedAmount[user] + _claimAmount <= _allocatedAmount,
+            _FILE,
+            "Insufficient allocated amount"
+        );
+        s.userToClaimedAmount[user] += _claimAmount;
 
-        userToClaimedAmount[msg.sender] += _claimAmount;
 
         uint256 doloValue = DOLO_PRICE * _claimAmount;
         uint256 paymentAmount = doloValue / DOLOMITE_MARGIN().getMarketPrice(_marketId).value;
-        AccountActionLib.withdraw(
+        AccountActionLib.transfer(
             DOLOMITE_MARGIN(),
             msg.sender,
             _fromAccountNumber,
-            treasury,
+            s.treasury,
+            _DEFAULT_ACCOUNT_NUMBER,
             _marketId,
-            IDolomiteStructs.AssetAmount({
-                sign: false,
-                denomination: IDolomiteStructs.AssetDenomination.Wei,
-                ref: IDolomiteStructs.AssetReference.Delta,
-                value: paymentAmount
-            }),
+            IDolomiteStructs.AssetDenomination.Wei,
+            paymentAmount,
             AccountBalanceLib.BalanceCheckFlag.From
         );
 
         DOLO.safeTransfer(msg.sender, _claimAmount);
         DOLOMITE_REGISTRY.eventEmitter().emitRewardClaimed(
-            msg.sender,
-            userToPurchases[msg.sender]++,
+            user,
+            s.userToPurchases[user]++,
             _claimAmount
         );
     }
@@ -163,11 +150,28 @@ contract OptionAirdrop is OnlyDolomiteMargin, ReentrancyGuard, IOptionAirdrop {
     // ==============================================================
 
     function isAllowedMarketId(uint256 _marketId) external view returns (bool) {
-        return _allowedMarketIds.contains(_marketId);
+        OptionAirdropStorage storage s = _getOptionAirdropStorage();
+        return s.allowedMarketIds.contains(_marketId);
     }
 
     function getAllowedMarketIds() external view returns (uint256[] memory) {
-        return _allowedMarketIds.values();
+        OptionAirdropStorage storage s = _getOptionAirdropStorage();
+        return s.allowedMarketIds.values();
+    }
+
+    function treasury() external view returns (address) {
+        OptionAirdropStorage storage s = _getOptionAirdropStorage();
+        return s.treasury;
+    }
+
+    function userToClaimedAmount(address _user) external view returns (uint256) {
+        OptionAirdropStorage storage s = _getOptionAirdropStorage();
+        return s.userToClaimedAmount[_user];
+    }
+
+    function userToPurchases(address _user) external view returns (uint256) {
+        OptionAirdropStorage storage s = _getOptionAirdropStorage();
+        return s.userToPurchases[_user];
     }
 
     // ==================================================================
@@ -175,37 +179,38 @@ contract OptionAirdrop is OnlyDolomiteMargin, ReentrancyGuard, IOptionAirdrop {
     // ==================================================================
 
     function _ownerSetAllowedMarketIds(uint256[] memory _marketIds) internal {
+        OptionAirdropStorage storage s = _getOptionAirdropStorage();
+
         // Clear out current set
-        uint256 len = _allowedMarketIds.length();
+        uint256 len = s.allowedMarketIds.length();
         for (uint256 i; i < len; i++) {
-            _allowedMarketIds.remove(_allowedMarketIds.at(0));
+            s.allowedMarketIds.remove(s.allowedMarketIds.at(0));
         }
 
         len = _marketIds.length;
         for (uint256 i; i < len; i++) {
-            _allowedMarketIds.add(_marketIds[i]);
+            s.allowedMarketIds.add(_marketIds[i]);
         }
         emit AllowedMarketIdsSet(_marketIds);
     }
 
-    function _ownerSetMerkleRoot(bytes32 _merkleRoot) internal {
-        merkleRoot = _merkleRoot;
-        emit MerkleRootSet(_merkleRoot);
-    }
-
     function _ownerSetTreasury(address _treasury) internal {
-        treasury = _treasury;
+        Require.that(
+            _treasury != address(0),
+            _FILE,
+            "Invalid treasury address"
+        );
+
+        OptionAirdropStorage storage s = _getOptionAirdropStorage();
+        s.treasury = _treasury;
         emit TreasurySet(_treasury);
     }
 
-    function _ownerWithdrawRewardToken(address _token, address _receiver) internal {
-        uint256 bal = IERC20(_token).balanceOf(address(this));
-        IERC20(_token).safeTransfer(_receiver, bal);
-        emit RewardTokenWithdrawn(_token, bal, _receiver);
-    }
-
-    function _verifyMerkleProof(bytes32[] calldata _proof, uint256 _allocatedAmount) internal view returns (bool) {
-        bytes32 leaf = keccak256(abi.encode(msg.sender, _allocatedAmount));
-        return MerkleProof.verifyCalldata(_proof, merkleRoot, leaf);
+    function _getOptionAirdropStorage() internal pure returns (OptionAirdropStorage storage optionAirdropStorage) {
+        bytes32 slot = _OPTION_AIRDROP_STORAGE_SLOT;
+        // solhint-disable-next-line no-inline-assembly
+        assembly {
+            optionAirdropStorage.slot := slot
+        }
     }
 }

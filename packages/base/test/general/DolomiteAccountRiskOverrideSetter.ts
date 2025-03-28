@@ -2,13 +2,21 @@ import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import {
   DolomiteAccountRiskOverrideSetter,
-  DolomiteAccountRiskOverrideSetter__factory, RegistryProxy, RegistryProxy__factory,
+  DolomiteAccountRiskOverrideSetter__factory,
+  RegistryProxy,
+  RegistryProxy__factory,
 } from '../../src/types';
 import { getRegistryProxyConstructorParams } from '../../src/utils/constructors/dolomite';
 import { createContractWithAbi, depositIntoDolomiteMargin } from '../../src/utils/dolomite-utils';
 import { BYTES_EMPTY, Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from '../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
-import { setupCoreProtocol, setupHONEYBalance, setupWBERABalance, setupWBTCBalance, setupWETHBalance } from '../utils/setup';
+import {
+  setupCoreProtocol,
+  setupHONEYBalance,
+  setupWBERABalance,
+  setupWBTCBalance,
+  setupWETHBalance,
+} from '../utils/setup';
 import { CoreProtocolBerachain } from '../utils/core-protocols/core-protocol-berachain';
 import { expectEvent, expectThrow } from '../utils/assertions';
 import { defaultAbiCoder, parseEther } from 'ethers/lib/utils';
@@ -91,13 +99,13 @@ describe('DolomiteAccountRiskOverrideSetter', () => {
 
       const res = await riskOverrideSetter.connect(core.governance).ownerSetCategoriesByMarketIds(
         marketIds,
-        categories
+        categories,
       );
 
       for (let i = 0; i < marketIds.length; i++) {
         await expectEvent(riskOverrideSetter, res, 'CategorySet', {
           marketId: marketIds[i],
-          category: categories[i]
+          category: categories[i],
         });
         expect(await riskOverrideSetter.getCategoryByMarketId(marketIds[i])).to.eq(categories[i]);
       }
@@ -109,11 +117,11 @@ describe('DolomiteAccountRiskOverrideSetter', () => {
 
       await expectThrow(
         riskOverrideSetter.connect(core.governance).ownerSetCategoriesByMarketIds(marketIds, categories),
-        'AccountRiskOverrideSetter: Invalid market IDs length'
+        'AccountRiskOverrideSetter: Invalid market IDs length',
       );
       await expectThrow(
         riskOverrideSetter.connect(core.governance).ownerSetCategoriesByMarketIds([], []),
-        'AccountRiskOverrideSetter: Invalid market IDs length'
+        'AccountRiskOverrideSetter: Invalid market IDs length',
       );
     });
 
@@ -123,7 +131,7 @@ describe('DolomiteAccountRiskOverrideSetter', () => {
 
       await expectThrow(
         riskOverrideSetter.connect(core.hhUser1).ownerSetCategoriesByMarketIds(marketIds, categories),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
@@ -144,7 +152,7 @@ describe('DolomiteAccountRiskOverrideSetter', () => {
     it('should fail if not called by owner', async () => {
       await expectThrow(
         riskOverrideSetter.connect(core.hhUser1).ownerSetCategoryByMarketId(core.marketIds.wbera, Category.BERA),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
@@ -157,12 +165,12 @@ describe('DolomiteAccountRiskOverrideSetter', () => {
       const res = await riskOverrideSetter.connect(core.governance).ownerSetCategoryParam(
         Category.BERA,
         marginRatio,
-        liquidationReward
+        liquidationReward,
       );
       await expectEvent(riskOverrideSetter, res, 'CategoryParamSet', {
         category: Category.BERA,
         marginRatioOverride: marginRatio,
-        liquidationRewardOverride: liquidationReward
+        liquidationRewardOverride: liquidationReward,
       });
 
       const categoryStruct = await riskOverrideSetter.getCategoryParamByCategory(Category.BERA);
@@ -179,9 +187,9 @@ describe('DolomiteAccountRiskOverrideSetter', () => {
         riskOverrideSetter.connect(core.hhUser1).ownerSetCategoryParam(
           Category.BERA,
           marginRatio,
-          liquidationReward
+          liquidationReward,
         ),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
@@ -196,7 +204,7 @@ describe('DolomiteAccountRiskOverrideSetter', () => {
       const extraData = defaultAbiCoder.encode(
         [singleCollateralRiskStruct],
         [
-          [riskStruct1]
+          [riskStruct1],
         ],
       );
       const res = await riskOverrideSetter.connect(core.governance).ownerSetRiskFeatureByMarketId(
@@ -210,7 +218,7 @@ describe('DolomiteAccountRiskOverrideSetter', () => {
         extraData: extraData,
       });
       expect(
-        await riskOverrideSetter.getRiskFeatureByMarketId(core.marketIds.wbera)
+        await riskOverrideSetter.getRiskFeatureByMarketId(core.marketIds.wbera),
       ).to.eq(RiskFeature.SINGLE_COLLATERAL_WITH_STRICT_DEBT);
     });
 
@@ -242,7 +250,7 @@ describe('DolomiteAccountRiskOverrideSetter', () => {
         extraData: extraData,
       });
       expect(
-        await riskOverrideSetter.getRiskFeatureByMarketId(core.marketIds.wbera)
+        await riskOverrideSetter.getRiskFeatureByMarketId(core.marketIds.wbera),
       ).to.eq(RiskFeature.SINGLE_COLLATERAL_WITH_STRICT_DEBT);
       const structs = await riskOverrideSetter.getRiskFeatureForSingleCollateralByMarketId(core.marketIds.wbera);
       expect(structs.length).to.eq(2);
@@ -282,7 +290,7 @@ describe('DolomiteAccountRiskOverrideSetter', () => {
           RiskFeature.SINGLE_COLLATERAL_WITH_STRICT_DEBT,
           extraData,
         ),
-        'AccountRiskOverrideSetter: Invalid risk riskStructs'
+        'AccountRiskOverrideSetter: Invalid risk riskStructs',
       );
     });
 
@@ -302,7 +310,7 @@ describe('DolomiteAccountRiskOverrideSetter', () => {
           RiskFeature.SINGLE_COLLATERAL_WITH_STRICT_DEBT,
           extraData,
         ),
-        'AccountRiskOverrideSetter: Invalid debt market IDs'
+        'AccountRiskOverrideSetter: Invalid debt market IDs',
       );
     });
 
@@ -322,7 +330,7 @@ describe('DolomiteAccountRiskOverrideSetter', () => {
           RiskFeature.SINGLE_COLLATERAL_WITH_STRICT_DEBT,
           extraData,
         ),
-        'AccountRiskOverrideSetter: Invalid margin ratio'
+        'AccountRiskOverrideSetter: Invalid margin ratio',
       );
     });
 
@@ -342,7 +350,7 @@ describe('DolomiteAccountRiskOverrideSetter', () => {
           RiskFeature.SINGLE_COLLATERAL_WITH_STRICT_DEBT,
           extraData,
         ),
-        'AccountRiskOverrideSetter: Invalid liquidation reward'
+        'AccountRiskOverrideSetter: Invalid liquidation reward',
       );
     });
 
@@ -362,7 +370,7 @@ describe('DolomiteAccountRiskOverrideSetter', () => {
           RiskFeature.SINGLE_COLLATERAL_WITH_STRICT_DEBT,
           extraData,
         ),
-        'AccountRiskOverrideSetter: Margin ratio too high'
+        'AccountRiskOverrideSetter: Margin ratio too high',
       );
     });
 
@@ -382,7 +390,7 @@ describe('DolomiteAccountRiskOverrideSetter', () => {
           RiskFeature.SINGLE_COLLATERAL_WITH_STRICT_DEBT,
           extraData,
         ),
-        'AccountRiskOverrideSetter: Liquidation reward too high'
+        'AccountRiskOverrideSetter: Liquidation reward too high',
       );
     });
 
@@ -402,7 +410,7 @@ describe('DolomiteAccountRiskOverrideSetter', () => {
           RiskFeature.SINGLE_COLLATERAL_WITH_STRICT_DEBT,
           extraData,
         ),
-        'AccountRiskOverrideSetter: Markets must be in asc order'
+        'AccountRiskOverrideSetter: Markets must be in asc order',
       );
     });
 
@@ -422,7 +430,7 @@ describe('DolomiteAccountRiskOverrideSetter', () => {
           RiskFeature.SINGLE_COLLATERAL_WITH_STRICT_DEBT,
           extraData,
         ),
-        'AccountRiskOverrideSetter: Markets must be in asc order'
+        'AccountRiskOverrideSetter: Markets must be in asc order',
       );
     });
 
@@ -447,7 +455,7 @@ describe('DolomiteAccountRiskOverrideSetter', () => {
           RiskFeature.SINGLE_COLLATERAL_WITH_STRICT_DEBT,
           extraData,
         ),
-        'AccountRiskOverrideSetter: Found duplicate debt market ID'
+        'AccountRiskOverrideSetter: Found duplicate debt market ID',
       );
     });
 
@@ -466,7 +474,7 @@ describe('DolomiteAccountRiskOverrideSetter', () => {
           RiskFeature.BORROW_ONLY,
           extraData,
         ),
-        `AccountRiskOverrideSetter: Invalid data for risk feature <${RiskFeature.BORROW_ONLY.toString()}>`
+        `AccountRiskOverrideSetter: Invalid data for risk feature <${RiskFeature.BORROW_ONLY.toString()}>`,
       );
     });
 
@@ -485,7 +493,7 @@ describe('DolomiteAccountRiskOverrideSetter', () => {
           RiskFeature.NONE,
           extraData,
         ),
-        `AccountRiskOverrideSetter: Invalid data for risk feature <${RiskFeature.NONE.toString()}>`
+        `AccountRiskOverrideSetter: Invalid data for risk feature <${RiskFeature.NONE.toString()}>`,
       );
     });
 
@@ -494,9 +502,9 @@ describe('DolomiteAccountRiskOverrideSetter', () => {
         riskOverrideSetter.connect(core.hhUser1).ownerSetRiskFeatureByMarketId(
           core.marketIds.wbera,
           RiskFeature.NONE,
-          BYTES_EMPTY
+          BYTES_EMPTY,
         ),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
@@ -511,7 +519,7 @@ describe('DolomiteAccountRiskOverrideSetter', () => {
 
       await expectThrow(
         riskOverrideSetter.getRiskFeatureForSingleCollateralByMarketId(core.marketIds.usdc),
-        `AccountRiskOverrideSetter: Invalid risk feature <${RiskFeature.BORROW_ONLY.toString()}>`
+        `AccountRiskOverrideSetter: Invalid risk feature <${RiskFeature.BORROW_ONLY.toString()}>`,
       );
     });
   });
@@ -532,11 +540,11 @@ describe('DolomiteAccountRiskOverrideSetter', () => {
         defaultAccountNumber,
         core.marketIds.usdc,
         usdcAmount,
-        BalanceCheckFlag.None
+        BalanceCheckFlag.None,
       );
 
       const accountRiskOverride = await riskOverrideSetter.getAccountRiskOverride(
-        { owner: core.hhUser1.address, number: borrowAccountNumber }
+        { owner: core.hhUser1.address, number: borrowAccountNumber },
       );
       expect(accountRiskOverride[0].value).to.eq(ZERO_BI);
       expect(accountRiskOverride[1].value).to.eq(ZERO_BI);
@@ -565,18 +573,18 @@ describe('DolomiteAccountRiskOverrideSetter', () => {
         defaultAccountNumber,
         core.marketIds.usdc,
         usdcAmount,
-        BalanceCheckFlag.None
+        BalanceCheckFlag.None,
       );
       await core.borrowPositionProxyV2.connect(core.hhUser1).transferBetweenAccounts(
         borrowAccountNumber,
         defaultAccountNumber,
         core.marketIds.honey,
         honeyAmount,
-        BalanceCheckFlag.None
+        BalanceCheckFlag.None,
       );
 
       const accountRiskOverride = await riskOverrideSetter.getAccountRiskOverride(
-        { owner: core.hhUser1.address, number: borrowAccountNumber }
+        { owner: core.hhUser1.address, number: borrowAccountNumber },
       );
       expect(accountRiskOverride[0].value).to.eq(parseEther('.1'));
       expect(accountRiskOverride[1].value).to.eq(parseEther('.05'));
@@ -603,11 +611,11 @@ describe('DolomiteAccountRiskOverrideSetter', () => {
         defaultAccountNumber,
         core.marketIds.honey,
         honeyAmount,
-        BalanceCheckFlag.None
+        BalanceCheckFlag.None,
       );
 
       const accountRiskOverride = await riskOverrideSetter.getAccountRiskOverride(
-        { owner: core.hhUser1.address, number: borrowAccountNumber }
+        { owner: core.hhUser1.address, number: borrowAccountNumber },
       );
       expect(accountRiskOverride[0].value).to.eq(ZERO_BI);
       expect(accountRiskOverride[1].value).to.eq(ZERO_BI);
@@ -634,11 +642,11 @@ describe('DolomiteAccountRiskOverrideSetter', () => {
         defaultAccountNumber,
         core.marketIds.honey,
         honeyAmount,
-        BalanceCheckFlag.None
+        BalanceCheckFlag.None,
       );
 
       const accountRiskOverride = await riskOverrideSetter.getAccountRiskOverride(
-        { owner: core.hhUser1.address, number: borrowAccountNumber }
+        { owner: core.hhUser1.address, number: borrowAccountNumber },
       );
       expect(accountRiskOverride[0].value).to.eq(parseEther('.1'));
       expect(accountRiskOverride[1].value).to.eq(parseEther('.05'));
@@ -665,11 +673,11 @@ describe('DolomiteAccountRiskOverrideSetter', () => {
         defaultAccountNumber,
         core.marketIds.lbtc,
         ONE_BI,
-        BalanceCheckFlag.None
+        BalanceCheckFlag.None,
       );
 
       const accountRiskOverride = await riskOverrideSetter.getAccountRiskOverride(
-        { owner: core.hhUser1.address, number: borrowAccountNumber }
+        { owner: core.hhUser1.address, number: borrowAccountNumber },
       );
       expect(accountRiskOverride[0].value).to.eq(parseEther('.1'));
       expect(accountRiskOverride[1].value).to.eq(parseEther('.05'));
@@ -697,10 +705,10 @@ describe('DolomiteAccountRiskOverrideSetter', () => {
         defaultAccountNumber,
         core.marketIds.weEth,
         ONE_BI,
-        BalanceCheckFlag.None
+        BalanceCheckFlag.None,
       );
       const accountRiskOverride = await riskOverrideSetter.getAccountRiskOverride(
-        { owner: core.hhUser1.address, number: borrowAccountNumber }
+        { owner: core.hhUser1.address, number: borrowAccountNumber },
       );
       expect(accountRiskOverride[0].value).to.eq(parseEther('.1'));
       expect(accountRiskOverride[1].value).to.eq(parseEther('.05'));
@@ -727,18 +735,18 @@ describe('DolomiteAccountRiskOverrideSetter', () => {
         core.hhUser1,
         borrowAccountNumber,
         core.marketIds.honey,
-        honeyAmount.mul(100)
+        honeyAmount.mul(100),
       );
       await core.borrowPositionProxyV2.connect(core.hhUser1).transferBetweenAccounts(
         borrowAccountNumber,
         defaultAccountNumber,
         core.marketIds.usdc,
         usdcAmount,
-        BalanceCheckFlag.None
+        BalanceCheckFlag.None,
       );
 
       const accountRiskOverride = await riskOverrideSetter.getAccountRiskOverride(
-        { owner: core.hhUser1.address, number: borrowAccountNumber }
+        { owner: core.hhUser1.address, number: borrowAccountNumber },
       );
       expect(accountRiskOverride[0].value).to.eq(parseEther('.95'));
       expect(accountRiskOverride[1].value).to.eq(parseEther('.05'));
@@ -750,7 +758,7 @@ describe('DolomiteAccountRiskOverrideSetter', () => {
       await riskOverrideSetter.connect(core.governance).ownerSetRiskFeatureByMarketId(
         core.marketIds.wbera,
         RiskFeature.BORROW_ONLY,
-        BYTES_EMPTY
+        BYTES_EMPTY,
       );
       await expectThrow(
         core.borrowPositionProxyV2.connect(core.hhUser1).transferBetweenAccounts(
@@ -758,9 +766,9 @@ describe('DolomiteAccountRiskOverrideSetter', () => {
           defaultAccountNumber,
           core.marketIds.usdc,
           usdcAmount,
-          BalanceCheckFlag.None
+          BalanceCheckFlag.None,
         ),
-        `AccountRiskOverrideSetter: Market is borrow only <${core.marketIds.wbera.toString()}>`
+        `AccountRiskOverrideSetter: Market is borrow only <${core.marketIds.wbera.toString()}>`,
       );
     });
 
@@ -790,9 +798,9 @@ describe('DolomiteAccountRiskOverrideSetter', () => {
           defaultAccountNumber,
           core.marketIds.usdc,
           usdcAmount,
-          BalanceCheckFlag.None
+          BalanceCheckFlag.None,
         ),
-        `AccountRiskOverrideSetter: Market is borrow only <${core.marketIds.honey.toString()}>`
+        `AccountRiskOverrideSetter: Market is borrow only <${core.marketIds.honey.toString()}>`,
       );
     });
 
@@ -817,9 +825,9 @@ describe('DolomiteAccountRiskOverrideSetter', () => {
           defaultAccountNumber,
           core.marketIds.wbera,
           ONE_ETH_BI,
-          BalanceCheckFlag.None
+          BalanceCheckFlag.None,
         ),
-        `AccountRiskOverrideSetter: Market is collateral only <${core.marketIds.wbera.toString()}>`
+        `AccountRiskOverrideSetter: Market is collateral only <${core.marketIds.wbera.toString()}>`,
       );
     });
 
@@ -849,9 +857,9 @@ describe('DolomiteAccountRiskOverrideSetter', () => {
           defaultAccountNumber,
           core.marketIds.usdc,
           usdcAmount,
-          BalanceCheckFlag.None
+          BalanceCheckFlag.None,
         ),
-        'AccountRiskOverrideSetter: Could not find risk param'
+        'AccountRiskOverrideSetter: Could not find risk param',
       );
     });
 
@@ -864,10 +872,57 @@ describe('DolomiteAccountRiskOverrideSetter', () => {
           defaultAccountNumber,
           core.marketIds.usdc,
           usdcAmount,
-          BalanceCheckFlag.None
+          BalanceCheckFlag.None,
         ),
-        `AccountRiskOverrideSetter: Invalid account for debt <${core.hhUser1.address.toLowerCase()}, ${ONE_BI.toString()}>`
+        `AccountRiskOverrideSetter: Invalid account for debt <${core.hhUser1.address.toLowerCase()}, ${ONE_BI.toString()}>`,
       );
+    });
+  });
+
+  describe('#getCategoryParamByMarketId', () => {
+    it('should work when the market ID is valid', async () => {
+      const marketIds = [core.marketIds.wbera, core.marketIds.wbtc, core.marketIds.weth];
+      const categories = [Category.BERA, Category.BTC, Category.ETH];
+
+      await riskOverrideSetter.connect(core.governance).ownerSetCategoriesByMarketIds(marketIds, categories);
+      await riskOverrideSetter.connect(core.governance)
+        .ownerSetCategoryParam(Category.BERA, { value: parseEther('.1') }, { value: parseEther('.05') });
+
+      const categoryStruct = await riskOverrideSetter.getCategoryParamByMarketId(core.marketIds.wbera);
+      expect(categoryStruct.category).to.eq(Category.BERA);
+      expect(categoryStruct.marginRatioOverride.value).to.eq(parseEther('.1'));
+      expect(categoryStruct.liquidationRewardOverride.value).to.eq(parseEther('.05'));
+    });
+
+    it('should fail when the market ID is has no category', async () => {
+      const marketIds = [core.marketIds.wbera, core.marketIds.wbtc, core.marketIds.weth];
+      const categories = [Category.BERA, Category.BTC, Category.ETH];
+
+      await riskOverrideSetter.connect(core.governance).ownerSetCategoriesByMarketIds(marketIds, categories);
+      await riskOverrideSetter.connect(core.governance)
+        .ownerSetCategoryParam(Category.BERA, { value: parseEther('.1') }, { value: parseEther('.05') });
+
+      await expectThrow(
+        riskOverrideSetter.getCategoryParamByMarketId(core.marketIds.lbtc),
+        `AccountRiskOverrideSetter: No category found <${core.marketIds.lbtc.toString()}>`,
+      );
+    });
+  });
+
+  describe('#getRiskFeatureParamByMarketId', () => {
+    it('should work when the market ID is valid', async () => {
+      await riskOverrideSetter.connect(core.governance)
+        .ownerSetRiskFeatureByMarketId(core.marketIds.wbera, RiskFeature.BORROW_ONLY, BYTES_EMPTY);
+
+      const riskFeatureStruct = await riskOverrideSetter.getRiskFeatureParamByMarketId(core.marketIds.wbera);
+      expect(riskFeatureStruct.riskFeature).to.eq(RiskFeature.BORROW_ONLY);
+      expect(riskFeatureStruct.extraData).to.eq(BYTES_EMPTY);
+    });
+
+    it('should return default when the market ID is has no risk feature', async () => {
+      const result = await riskOverrideSetter.getRiskFeatureParamByMarketId(core.marketIds.lbtc);
+      expect(result.riskFeature).to.eq(RiskFeature.NONE);
+      expect(result.extraData).to.eq(BYTES_EMPTY);
     });
   });
 
@@ -890,7 +945,7 @@ describe('DolomiteAccountRiskOverrideSetter', () => {
         Category.BTC,
       );
       expect(await riskOverrideSetter.getCategoryMaskByMarketIds([
-        core.marketIds.wbtc, core.marketIds.eBtc
+        core.marketIds.wbtc, core.marketIds.eBtc,
       ])).to.eq(CategoryMask.BTC);
     });
 
@@ -904,7 +959,7 @@ describe('DolomiteAccountRiskOverrideSetter', () => {
         Category.ETH,
       );
       expect(await riskOverrideSetter.getCategoryMaskByMarketIds([
-        core.marketIds.weth, core.marketIds.rsEth
+        core.marketIds.weth, core.marketIds.rsEth,
       ])).to.eq(CategoryMask.ETH);
     });
 
@@ -914,7 +969,7 @@ describe('DolomiteAccountRiskOverrideSetter', () => {
         Category.STABLE,
       );
       expect(await riskOverrideSetter.getCategoryMaskByMarketIds([
-        core.marketIds.usdc
+        core.marketIds.usdc,
       ])).to.eq(CategoryMask.STABLE);
     });
 
@@ -924,7 +979,7 @@ describe('DolomiteAccountRiskOverrideSetter', () => {
         Category.BERA,
       );
       expect(await riskOverrideSetter.getCategoryMaskByMarketIds([
-        core.marketIds.wbera, core.marketIds.usdc
+        core.marketIds.wbera, core.marketIds.usdc,
       ])).to.eq(0);
     });
 
@@ -938,14 +993,14 @@ describe('DolomiteAccountRiskOverrideSetter', () => {
         Category.STABLE,
       );
       expect(await riskOverrideSetter.getCategoryMaskByMarketIds([
-        core.marketIds.wbera, core.marketIds.usdc
+        core.marketIds.wbera, core.marketIds.usdc,
       ])).to.eq(0);
     });
 
     it('should fail if no markets are provided', async () => {
       await expectThrow(
         riskOverrideSetter.getCategoryMaskByMarketIds([]),
-        'AccountRiskOverrideSetter: Invalid market IDs length'
+        'AccountRiskOverrideSetter: Invalid market IDs length',
       );
     });
   });

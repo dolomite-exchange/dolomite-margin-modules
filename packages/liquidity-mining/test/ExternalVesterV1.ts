@@ -44,7 +44,7 @@ import {
   createTestExternalVesterV1Proxy,
   createVesterDiscountCalculatorV1,
 } from './liquidity-mining-ecosystem-utils';
-import { expectEmptyExternalVesterPosition } from './liquidityMining-utils';
+import { expectEmptyExternalVesterPosition } from './liquidity-mining-utils';
 
 const defaultAccountNumber = ZERO_BI;
 const ONE_WEEK = BigNumber.from('604800');

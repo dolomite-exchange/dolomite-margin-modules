@@ -32,9 +32,11 @@ import {
   DolomiteERC20WithPayable__factory,
   DolomiteERC4626__factory,
   DolomiteERC4626WithPayable__factory,
-  DolomiteOwnerV1__factory,
+  DolomiteOwnerV1__factory, DolomiteOwnerV2__factory,
   IBorrowPositionProxyV2__factory,
+  IBorrowPositionRouter__factory,
   IDepositWithdrawalProxy__factory,
+  IDepositWithdrawalRouter__factory,
   IDolomiteAccountRegistry__factory,
   IDolomiteAccountRiskOverrideSetter__factory,
   IDolomiteAccountValuesReader__factory,
@@ -50,6 +52,7 @@ import {
   IExpiry__factory,
   IExpiryV2__factory,
   IGenericTraderProxyV2__factory,
+  IGenericTraderRouter__factory,
   ILiquidatorAssetRegistry__factory,
   ILiquidatorProxyV1__factory,
   ILiquidatorProxyV4WithGenericTrader__factory,
@@ -146,6 +149,7 @@ import {
   SOL_MAP,
   SOLV_BTC_BBN_MAP,
   SOLV_BTC_MAP,
+  SR_USD_MAP,
   ST_BTC_MAP,
   ST_ETH_MAP,
   STONE_BTC_MAP,
@@ -174,7 +178,7 @@ import {
   WOKB_MAP,
   WST_ETH_MAP,
   XAI_MAP,
-  YL_BTC_LST_MAP,
+  YL_FBTC_MAP,
   YL_PUMP_BTC_MAP,
   YL_ST_ETH_MAP,
 } from '../../src/utils/constants';
@@ -203,7 +207,6 @@ import { DolomiteMargin, Expiry } from './dolomite';
 import { createAbraEcosystem } from './ecosystem-utils/abra';
 import { createArbEcosystem } from './ecosystem-utils/arb';
 import { createCamelotEcosystem } from './ecosystem-utils/camelot';
-import { DeployedVault, getDeployedVaults } from './ecosystem-utils/deployed-vaults';
 import { createGlvEcosystem } from './ecosystem-utils/glv';
 import { createGmxEcosystem, createGmxEcosystemV2 } from './ecosystem-utils/gmx';
 import { createInterestSetters } from './ecosystem-utils/interest-setters';
@@ -223,6 +226,8 @@ import { createPremiaEcosystem } from './ecosystem-utils/premia';
 import { createTestEcosystem } from './ecosystem-utils/testers';
 import { createUmamiEcosystem } from './ecosystem-utils/umami';
 import { impersonate, impersonateOrFallback, resetForkIfPossible } from './index';
+import { DeployedVault, getDeployedVaults } from './ecosystem-utils/deployed-vaults';
+import { createTokenomicsEcosystem } from './ecosystem-utils/tokenomics';
 
 /**
  * Config to for setting up tests in the `before` function
@@ -269,16 +274,16 @@ interface CoreProtocolConfigXLayer extends CoreProtocolConfigParent<Network.XLay
 export type CoreProtocolConfig<T extends NetworkType> = T extends Network.ArbitrumOne
   ? CoreProtocolConfigArbitrumOne
   : T extends Network.Base
-  ? CoreProtocolConfigBase
-  : T extends Network.Berachain
-  ? CoreProtocolConfigBerachain
-  : T extends Network.Mantle
-  ? CoreProtocolConfigMantle
-  : T extends Network.PolygonZkEvm
-  ? CoreProtocolConfigPolygonZkEvm
-  : T extends Network.XLayer
-  ? CoreProtocolConfigXLayer
-  : never;
+    ? CoreProtocolConfigBase
+    : T extends Network.Berachain
+      ? CoreProtocolConfigBerachain
+      : T extends Network.Mantle
+        ? CoreProtocolConfigMantle
+        : T extends Network.PolygonZkEvm
+          ? CoreProtocolConfigPolygonZkEvm
+          : T extends Network.XLayer
+            ? CoreProtocolConfigXLayer
+            : never;
 
 export async function disableInterestAccrual<T extends NetworkType>(
   core: CoreProtocolAbstract<T>,
@@ -676,16 +681,16 @@ export function getDefaultCoreProtocolConfigForGmxV2(): CoreProtocolConfig<Netwo
 export type CoreProtocolType<T extends NetworkType> = T extends Network.ArbitrumOne
   ? CoreProtocolArbitrumOne
   : T extends Network.Base
-  ? CoreProtocolBase
-  : T extends Network.Berachain
-  ? CoreProtocolBerachain
-  : T extends Network.Mantle
-  ? CoreProtocolMantle
-  : T extends Network.PolygonZkEvm
-  ? CoreProtocolPolygonZkEvm
-  : T extends Network.XLayer
-  ? CoreProtocolXLayer
-  : never;
+    ? CoreProtocolBase
+    : T extends Network.Berachain
+      ? CoreProtocolBerachain
+      : T extends Network.Mantle
+        ? CoreProtocolMantle
+        : T extends Network.PolygonZkEvm
+          ? CoreProtocolPolygonZkEvm
+          : T extends Network.XLayer
+            ? CoreProtocolXLayer
+            : never;
 
 export function getDolomiteMarginContract<T extends NetworkType>(
   config: CoreProtocolSetupConfig<T>,
@@ -785,6 +790,11 @@ export async function setupCoreProtocol<T extends NetworkType>(
     governance,
   );
 
+  const borrowPositionRouter = IBorrowPositionRouter__factory.connect(
+    Deployments.BorrowPositionRouterProxy[config.network].address,
+    governance,
+  );
+
   const chainlinkPriceOracleV1 = getContract(
     CHAINLINK_PRICE_ORACLE_V1_MAP[config.network],
     IChainlinkPriceOracleV1__factory.connect,
@@ -804,6 +814,11 @@ export async function setupCoreProtocol<T extends NetworkType>(
 
   const depositWithdrawalProxy = IDepositWithdrawalProxy__factory.connect(
     DepositWithdrawalProxyJson.networks[config.network].address,
+    governance,
+  );
+
+  const depositWithdrawalRouter = IDepositWithdrawalRouter__factory.connect(
+    Deployments.DepositWithdrawalRouterProxy[config.network].address,
     governance,
   );
 
@@ -862,6 +877,12 @@ export async function setupCoreProtocol<T extends NetworkType>(
     governance,
   );
 
+  const genericTraderRouter = getContract(
+    Deployments.GenericTraderRouterProxy[config.network].address,
+    IGenericTraderRouter__factory.connect,
+    governance,
+  );
+
   const implementationContracts = createImplementationContracts(config.network, hhUser1);
 
   const interestSetters = await createInterestSetters(config.network, hhUser1);
@@ -899,14 +920,15 @@ export async function setupCoreProtocol<T extends NetworkType>(
     DolomiteOwnerV1__factory.connect,
     gnosisSafe,
   );
-  // TODO:
-  // const ownerAdapterV2 = getContract(
-  //   Deployments.DolomiteOwnerV2[config.network].address,
-  //   DolomiteOwner__factory.connect,
-  //   gnosisSafe,
-  // );
+  const ownerAdapterV2 = getContract(
+    Deployments.DolomiteOwnerV2[config.network].address,
+    DolomiteOwnerV2__factory.connect,
+    gnosisSafe,
+  );
 
   const testEcosystem = await createTestEcosystem(dolomiteMargin, governance);
+
+  const tokenomics = await createTokenomicsEcosystem(config.network, hhUser1);
 
   const deployedVaults = await getDeployedVaults(config, dolomiteMargin, governance);
   const marketIdToDeployedVaultMap = deployedVaults.reduce((acc, vault) => {
@@ -923,11 +945,13 @@ export async function setupCoreProtocol<T extends NetworkType>(
 
   const coreProtocolParams: CoreProtocolParams<T> = {
     borrowPositionProxyV2,
+    borrowPositionRouter,
     chainlinkPriceOracleV1,
     chainlinkPriceOracleV3,
     delayedMultiSig,
     deployedVaults,
     depositWithdrawalProxy,
+    depositWithdrawalRouter,
     dolomiteMargin,
     dolomiteRegistry,
     dolomiteRegistryProxy,
@@ -940,6 +964,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
     expiry,
     freezableLiquidatorProxy,
     genericTraderProxy,
+    genericTraderRouter,
     gnosisSafe,
     gnosisSafeAddress,
     governance,
@@ -953,13 +978,14 @@ export async function setupCoreProtocol<T extends NetworkType>(
     marketIdToDeployedVaultMap,
     oracleAggregatorV2,
     ownerAdapterV1,
+    ownerAdapterV2,
     testEcosystem,
+    tokenomics,
     hhUser1,
     hhUser2,
     hhUser3,
     hhUser4,
     hhUser5,
-    ownerAdapterV2: ownerAdapterV1 as any, // TODO: fix
     apiTokens: {
       usdc: {
         marketId: new ZapBigNumber(USDC_MAP[config.network].marketId),
@@ -1334,6 +1360,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
         sUsda: S_USDA_MAP[typedConfig.network].marketId,
         sUsde: S_USDE_MAP[typedConfig.network].marketId,
         stBtc: ST_BTC_MAP[typedConfig.network].marketId,
+        srUsd: SR_USD_MAP[typedConfig.network].marketId,
         solvBtc: SOLV_BTC_MAP[typedConfig.network].marketId,
         solvBtcBbn: SOLV_BTC_BBN_MAP[typedConfig.network].marketId,
         stone: STONE_MAP[typedConfig.network].marketId,
@@ -1346,7 +1373,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
         wbera: WBERA_MAP[typedConfig.network].marketId,
         wbtc: WBTC_MAP[typedConfig.network].marketId,
         weEth: WE_ETH_MAP[typedConfig.network].marketId,
-        ylBtcLst: YL_BTC_LST_MAP[typedConfig.network].marketId,
+        ylFbtc: YL_FBTC_MAP[typedConfig.network].marketId,
         ylPumpBtc: YL_PUMP_BTC_MAP[typedConfig.network].marketId,
         ylStEth: YL_ST_ETH_MAP[typedConfig.network].marketId,
         stablecoins: [...coreProtocolParams.marketIds.stablecoins, HONEY_MAP[typedConfig.network].marketId],
@@ -1376,6 +1403,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
         stonebtc: IERC20__factory.connect(STONE_BTC_MAP[typedConfig.network].address, hhUser1),
         sUsda: IERC20__factory.connect(S_USDA_MAP[typedConfig.network].address, hhUser1),
         sUsde: IERC20__factory.connect(S_USDE_MAP[typedConfig.network].address, hhUser1),
+        srUsd: IERC20__factory.connect(SR_USD_MAP[typedConfig.network].address, hhUser1),
         stBtc: IERC20__factory.connect(ST_BTC_MAP[typedConfig.network].address, hhUser1),
         solvBtc: IERC20__factory.connect(SOLV_BTC_MAP[typedConfig.network].address, hhUser1),
         solvBtcBbn: IERC20__factory.connect(SOLV_BTC_BBN_MAP[typedConfig.network].address, hhUser1),
@@ -1389,7 +1417,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
         wbera: IWETH__factory.connect(WBERA_MAP[typedConfig.network].address, hhUser1),
         wbtc: IERC20__factory.connect(WBTC_MAP[typedConfig.network].address, hhUser1),
         weEth: IERC20__factory.connect(WE_ETH_MAP[typedConfig.network].address, hhUser1),
-        ylBtcLst: IERC20__factory.connect(YL_BTC_LST_MAP[typedConfig.network].address, hhUser1),
+        ylBtcLst: IERC20__factory.connect(YL_FBTC_MAP[typedConfig.network].address, hhUser1),
         ylPumpBtc: IERC20__factory.connect(YL_PUMP_BTC_MAP[typedConfig.network].address, hhUser1),
         ylStEth: IERC20__factory.connect(YL_ST_ETH_MAP[typedConfig.network].address, hhUser1),
         stablecoins: [

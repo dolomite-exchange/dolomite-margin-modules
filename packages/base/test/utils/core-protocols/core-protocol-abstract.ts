@@ -7,17 +7,18 @@ import {
   DolomiteERC4626WithPayable,
   DolomiteOwnerV1,
   DolomiteOwnerV2,
-  IBorrowPositionProxyV2,
-  IDepositWithdrawalProxy,
+  IBorrowPositionProxyV2, IBorrowPositionRouter,
+  IDepositWithdrawalProxy, IDepositWithdrawalRouter,
   IDolomiteAccountRegistry,
   IDolomiteAccountRiskOverrideSetter,
   IDolomiteRegistry,
   IERC20,
   IEventEmitterRegistry,
-  IGenericTraderProxyV2,
+  IGenericTraderProxyV2, IGenericTraderRouter,
   ILiquidatorAssetRegistry,
   ILiquidatorProxyV1,
-  ILiquidatorProxyV4WithGenericTrader, ILiquidatorProxyV5,
+  ILiquidatorProxyV4WithGenericTrader,
+  ILiquidatorProxyV5,
   IPartiallyDelayedMultiSig,
   IsolationModeFreezableLiquidatorProxy,
   IWETH,
@@ -47,38 +48,38 @@ export interface ImplementationContracts {
 export type WETHType<T extends NetworkType> = T extends Network.ArbitrumOne
   ? IWETH
   : T extends Network.Base
-  ? IWETH
-  : T extends Network.Berachain
-  ? IERC20
-  : T extends Network.Ink
-  ? IWETH
-  : T extends Network.Mantle
-  ? IERC20
-  : T extends Network.PolygonZkEvm
-  ? IWETH
-  : T extends Network.SuperSeed
-  ? IWETH
-  : T extends Network.XLayer
-  ? IERC20
-  : never;
+    ? IWETH
+    : T extends Network.Berachain
+      ? IERC20
+      : T extends Network.Ink
+        ? IWETH
+        : T extends Network.Mantle
+          ? IERC20
+          : T extends Network.PolygonZkEvm
+            ? IWETH
+            : T extends Network.SuperSeed
+              ? IWETH
+              : T extends Network.XLayer
+                ? IERC20
+                : never;
 
 export type DolomiteWETHType<T extends NetworkType> = T extends Network.ArbitrumOne
   ? DolomiteERC4626WithPayable
   : T extends Network.Base
-  ? DolomiteERC4626WithPayable
-  : T extends Network.Berachain
-  ? DolomiteERC4626
-  : T extends Network.Ink
-  ? DolomiteERC4626WithPayable
-  : T extends Network.Mantle
-  ? DolomiteERC4626
-  : T extends Network.PolygonZkEvm
-  ? DolomiteERC4626WithPayable
-  : T extends Network.SuperSeed
-  ? DolomiteERC4626WithPayable
-  : T extends Network.XLayer
-  ? DolomiteERC4626
-  : never;
+    ? DolomiteERC4626WithPayable
+    : T extends Network.Berachain
+      ? DolomiteERC4626
+      : T extends Network.Ink
+        ? DolomiteERC4626WithPayable
+        : T extends Network.Mantle
+          ? DolomiteERC4626
+          : T extends Network.PolygonZkEvm
+            ? DolomiteERC4626WithPayable
+            : T extends Network.SuperSeed
+              ? DolomiteERC4626WithPayable
+              : T extends Network.XLayer
+                ? DolomiteERC4626
+                : never;
 
 export interface CoreProtocolTokens<T extends NetworkType> {
   payableToken: IWETH;
@@ -110,12 +111,14 @@ export interface CoreProtocolParams<T extends NetworkType> {
   hhUser4: SignerWithAddressWithSafety;
   hhUser5: SignerWithAddressWithSafety;
   borrowPositionProxyV2: IBorrowPositionProxyV2;
+  borrowPositionRouter: IBorrowPositionRouter;
   constants: CoreProtocolConstants<T>;
   chainlinkPriceOracleV1: IChainlinkPriceOracleV1;
   chainlinkPriceOracleV3: IChainlinkPriceOracleV3;
   delayedMultiSig: IPartiallyDelayedMultiSig;
   deployedVaults: DeployedVault[];
   depositWithdrawalProxy: IDepositWithdrawalProxy;
+  depositWithdrawalRouter: IDepositWithdrawalRouter;
   dolomiteMargin: DolomiteMargin<T>;
   dolomiteRegistry: IDolomiteRegistry;
   dolomiteRegistryProxy: RegistryProxy;
@@ -129,6 +132,7 @@ export interface CoreProtocolParams<T extends NetworkType> {
   expiry: Expiry<T>;
   freezableLiquidatorProxy: IsolationModeFreezableLiquidatorProxy;
   genericTraderProxy: IGenericTraderProxyV2;
+  genericTraderRouter: IGenericTraderRouter;
   implementationContracts: ImplementationContracts;
   interestSetters: InterestSetters;
   libraries: LibraryMaps;
@@ -175,11 +179,13 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
   /// Contracts and Ecosystems
   /// =========================
   public readonly borrowPositionProxyV2: IBorrowPositionProxyV2;
+  public readonly borrowPositionRouter: IBorrowPositionRouter;
   public readonly chainlinkPriceOracleV1: IChainlinkPriceOracleV1;
   public readonly chainlinkPriceOracleV3: IChainlinkPriceOracleV3;
   public readonly constants: CoreProtocolConstants<T>;
   public readonly delayedMultiSig: IPartiallyDelayedMultiSig;
   public readonly depositWithdrawalProxy: IDepositWithdrawalProxy;
+  public readonly depositWithdrawalRouter: IDepositWithdrawalRouter;
   public readonly deployedVaults: DeployedVault[];
   public readonly deployedVaultsMap: Record<number, DeployedVault>;
   public readonly dolomiteMargin: DolomiteMargin<T>;
@@ -194,6 +200,7 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
   public readonly expiry: Expiry<T>;
   public readonly freezableLiquidatorProxy: IsolationModeFreezableLiquidatorProxy;
   public readonly genericTraderProxy: IGenericTraderProxyV2;
+  public readonly genericTraderRouter: IGenericTraderRouter;
   public readonly implementationContracts: ImplementationContracts;
   public readonly interestSetters: InterestSetters;
   public readonly libraries: LibraryMaps;
@@ -235,11 +242,13 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
     this.hhUser4 = params.hhUser4;
     this.hhUser5 = params.hhUser5;
     this.borrowPositionProxyV2 = params.borrowPositionProxyV2;
+    this.borrowPositionRouter = params.borrowPositionRouter;
     this.chainlinkPriceOracleV1 = params.chainlinkPriceOracleV1;
     this.chainlinkPriceOracleV3 = params.chainlinkPriceOracleV3;
     this.constants = params.constants;
     this.delayedMultiSig = params.delayedMultiSig;
     this.depositWithdrawalProxy = params.depositWithdrawalProxy;
+    this.depositWithdrawalRouter = params.depositWithdrawalRouter;
     this.deployedVaults = params.deployedVaults;
     this.deployedVaultsMap = params.marketIdToDeployedVaultMap;
     this.dolomiteMargin = params.dolomiteMargin;
@@ -254,6 +263,7 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
     this.expiry = params.expiry;
     this.freezableLiquidatorProxy = params.freezableLiquidatorProxy;
     this.genericTraderProxy = params.genericTraderProxy;
+    this.genericTraderRouter = params.genericTraderRouter;
     this.implementationContracts = params.implementationContracts;
     this.interestSetters = params.interestSetters;
     this.libraries = params.libraries;

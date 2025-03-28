@@ -273,6 +273,29 @@ contract DolomiteAccountRiskOverrideSetter is
         return categoryStruct;
     }
 
+    function getCategoryParamByMarketId(uint256 _marketId) public view returns (CategoryStruct memory) {
+        Category category = getCategoryByMarketId(_marketId);
+        Require.that(
+            category != Category.NONE,
+            _FILE,
+            "No category found",
+            _marketId
+        );
+
+        return getCategoryParamByCategory(category);
+    }
+
+    function getRiskFeatureParamByMarketId(uint256 _marketId) public view returns (RiskFeatureStruct memory) {
+        if (getRiskFeatureByMarketId(_marketId) == RiskFeature.NONE) {
+            return RiskFeatureStruct({
+                riskFeature: RiskFeature.NONE,
+                extraData: bytes("")
+            });
+        }
+
+        return _getRiskFeatureParamByMarketId(_marketId);
+    }
+
     // ===================== Internal Functions =====================
 
     // @dev If given a single collateral market, this function will stop at that market id. For that
@@ -468,7 +491,6 @@ contract DolomiteAccountRiskOverrideSetter is
             if (_marketIds[mid] < _find) {
                 left = mid + 1;
             } else {
-                // @follow-up Ok with doing it this way?
                 if (mid == 0) {
                     return type(uint256).max;
                 }
