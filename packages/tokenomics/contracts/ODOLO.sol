@@ -20,7 +20,7 @@
 
 pragma solidity ^0.8.9;
 
-import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 
@@ -30,7 +30,7 @@ import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
  *
  * ERC20 contract for oDOLO tokens
  */
-contract ODOLO is ERC20, Ownable {
+contract ODOLO is ERC20, OnlyDolomiteMargin {
 
     // ===================================================
     // ====================== Events =====================
@@ -51,34 +51,32 @@ contract ODOLO is ERC20, Ownable {
     // ==================== Constants ====================
     // ===================================================
 
-    mapping(address => bool) _handlersMap;
+    mapping(address => bool) private _handlersMap;
 
     // ==================================================================
     // ======================= Constructor =======================
     // ==================================================================
 
     constructor(
-        address _owner,
+        address _dolomiteMargin,
         string memory _name,
         string memory _symbol
-    ) ERC20(_name, _symbol) {
-        _transferOwnership(_owner);
-    }
+    ) OnlyDolomiteMargin(_dolomiteMargin) ERC20(_name, _symbol) {}
 
     // ==================================================================
     // ======================= External Functions =======================
     // ==================================================================
 
-    function ownerSetHandler(address _handler, bool _isTrusted) external onlyOwner {
+    function ownerSetHandler(address _handler, bool _isTrusted) external onlyDolomiteMarginOwner(msg.sender) {
         _handlersMap[_handler] = _isTrusted;
         emit HandlerSet(_handler, _isTrusted);
     }
 
-    function ownerMint(uint256 _amount) external onlyOwner {
+    function ownerMint(uint256 _amount) external onlyDolomiteMarginOwner(msg.sender) {
         _mint(msg.sender, _amount);
     }
 
-    function ownerBurn(uint256 _amount) external onlyOwner {
+    function ownerBurn(uint256 _amount) external onlyDolomiteMarginOwner(msg.sender) {
         _burn(msg.sender, _amount);
     }
 

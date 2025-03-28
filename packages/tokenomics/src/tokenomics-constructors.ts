@@ -22,7 +22,7 @@ export function getDOLOConstructorParams<T extends NetworkType>(
 export function getODOLOConstructorParams<T extends NetworkType>(
   core: CoreProtocolType<T>
 ): any[] {
-  return [core.governance.address, 'oDOLO Token', 'oDOLO'];
+  return [core.dolomiteMargin.address, 'oDOLO Token', 'oDOLO'];
 }
 
 export function getDOLOBuybackPoolConstructorParams<T extends NetworkType>(

@@ -47,7 +47,6 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     'DolomiteToken',
   );
   const dolo = DOLO__factory.connect(doloAddress, core.hhUser1);
-  console.log('doloAddress', dolo.address);
 
   // Deploy always active voter, oToken, veFeeCalculator, buybackPool
   const alwaysActiveVoter = await deployContractAndSave('VoterAlwaysActive', [], 'VoterAlwaysActive');
@@ -60,12 +59,12 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     'VeFeeCalculator',
   );
   const buybackPool = await deployContractAndSave(
-    'BuybackPool',
+    'DOLOBuybackPool',
     getBuybackPoolConstructorParams(core, { address: doloAddress } as any, { address: oDoloAddress } as any),
-    'BuybackPool',
+    'DOLOBuybackPoolV1',
   );
 
-  const artProxyAddress = await deployContractAndSave(
+  const veArtAddress = await deployContractAndSave(
     'VeArt',
     [],
     'VeArtV1',
@@ -78,19 +77,20 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     'VotingEscrowImplementationV1',
   );
   const votingEscrowImplementation = VotingEscrow__factory.connect(votingEscrowImplementationAddress, core.hhUser1);
+  const governanceAddress = await core.dolomiteMargin.owner();
   const initCalldata = await votingEscrowImplementation.populateTransaction.initialize(
     doloAddress,
-    artProxyAddress,
+    veArtAddress,
     alwaysActiveVoter,
     veFeeCalculator,
     ADDRESS_ZERO, // vester
     buybackPool,
-    core.governance.address,
+    governanceAddress,
   );
   const votingEscrowProxyAddress = await deployContractAndSave(
     'UpgradeableProxy',
     getUpgradeableProxyConstructorParams(votingEscrowImplementationAddress, initCalldata, core.dolomiteMargin),
-    'VotingEscrow',
+    'VotingEscrowProxy',
   );
   const votingEscrow = VotingEscrow__factory.connect(votingEscrowProxyAddress, core.hhUser1);
 
@@ -142,17 +142,16 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
       vester.address,
       true,
     ]),
-    await prettyPrintEncodedDataWithTypeSafety(core, { votingEscrow: votingEscrow }, 'votingEscrow', 'setVester', [
+    await prettyPrintEncodedDataWithTypeSafety(core, { dolo }, 'dolo', 'ownerSetCCIPAdmin', [
+      core.gnosisSafeAddress,
+    ]),
+    await prettyPrintEncodedDataWithTypeSafety(core, { votingEscrow }, 'votingEscrow', 'setVester', [
       vesterProxyAddress,
     ]),
-    await prettyPrintEncodedDataWithTypeSafety(core, { vester: vester }, 'vester', 'lazyInitialize', [
+    await prettyPrintEncodedDataWithTypeSafety(core, { vester }, 'vester', 'lazyInitialize', [
       votingEscrow.address,
     ]),
-    await prettyPrintEncodedDataWithTypeSafety(core, { oToken: oDolo }, 'oToken', 'ownerSetHandler', [
-      core.governance.address,
-      true,
-    ]),
-    await prettyPrintEncodedDataWithTypeSafety(core, { oToken: oDolo }, 'oToken', 'ownerSetHandler', [
+    await prettyPrintEncodedDataWithTypeSafety(core, { oDolo }, 'oDolo', 'ownerSetHandler', [
       vester.address,
       true,
     ]),

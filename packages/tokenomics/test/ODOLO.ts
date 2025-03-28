@@ -26,7 +26,6 @@ describe('ODOLO', () => {
 
   describe('#constructor', () => {
     it('should work normally', async () => {
-      expect(await oDolo.owner()).to.eq(core.governance.address);
       expect(await oDolo.name()).to.eq('oDOLO Token');
       expect(await oDolo.symbol()).to.eq('oDOLO');
     });
@@ -46,7 +45,7 @@ describe('ODOLO', () => {
     it('should fail if not called by owner', async () => {
       await expectThrow(
         oDolo.connect(core.hhUser5).ownerSetHandler(core.hhUser5.address, true),
-        'Ownable: caller is not the owner',
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser5.addressLower}>`,
       );
     });
   });
@@ -61,7 +60,7 @@ describe('ODOLO', () => {
     it('should fail if not called by owner', async () => {
       await expectThrow(
         oDolo.connect(core.hhUser5).ownerMint(ONE_ETH_BI),
-        'Ownable: caller is not the owner',
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser5.addressLower}>`,
       );
     });
   });
@@ -78,7 +77,7 @@ describe('ODOLO', () => {
     it('should fail if not called by owner', async () => {
       await expectThrow(
         oDolo.connect(core.hhUser5).ownerBurn(ONE_ETH_BI),
-        'Ownable: caller is not the owner',
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser5.addressLower}>`,
       );
     });
   });
