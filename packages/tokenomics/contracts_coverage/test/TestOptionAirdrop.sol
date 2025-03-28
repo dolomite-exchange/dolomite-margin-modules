@@ -20,8 +20,7 @@
 
 pragma solidity ^0.8.9;
 
-import { InternalSafeDelegateCallLib } from "@dolomite-exchange/modules-base/contracts/lib/InternalSafeDelegateCallLib.sol";
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import { InternalSafeDelegateCallLib } from "@dolomite-exchange/modules-base/contracts/lib/InternalSafeDelegateCallLib.sol"; // solhint-disable-line max-line-length
 import { OptionAirdrop } from "../OptionAirdrop.sol";
 
 
@@ -35,12 +34,10 @@ contract TestOptionAirdrop is OptionAirdrop {
 
     constructor(
         address _dolo,
-        address _treasury,
         address _dolomiteRegistry,
         address _dolomiteMargin
     ) OptionAirdrop(
         _dolo,
-        _treasury,
         _dolomiteRegistry,
         _dolomiteMargin
     ) {} // solhint-disable-line
