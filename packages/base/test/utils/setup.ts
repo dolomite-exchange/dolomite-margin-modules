@@ -23,6 +23,7 @@ import ZapBigNumber from 'bignumber.js';
 import { BaseContract, BigNumber, BigNumberish, ContractInterface, Signer } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
+import { DolomiteOwnerV1__factory, DolomiteOwnerV2__factory } from 'packages/admin/src/types';
 import { IGlvToken } from 'packages/glv/src/types';
 import { IGmxMarketToken } from 'packages/gmx-v2/src/types';
 import { IMantleRewardStation__factory } from 'packages/mantle/src/types';
@@ -224,9 +225,9 @@ import { createPendleEcosystemArbitrumOne, createPendleEcosystemMantle } from '.
 import { createPlutusEcosystem } from './ecosystem-utils/plutus';
 import { createPremiaEcosystem } from './ecosystem-utils/premia';
 import { createTestEcosystem } from './ecosystem-utils/testers';
+import { createTokenomicsEcosystem } from './ecosystem-utils/tokenomics';
 import { createUmamiEcosystem } from './ecosystem-utils/umami';
 import { impersonate, impersonateOrFallback, resetForkIfPossible } from './index';
-import { DolomiteOwnerV1__factory, DolomiteOwnerV2__factory } from 'packages/admin/src/types';
 
 /**
  * Config to for setting up tests in the `before` function
@@ -927,6 +928,8 @@ export async function setupCoreProtocol<T extends NetworkType>(
 
   const testEcosystem = await createTestEcosystem(dolomiteMargin, governance);
 
+  const tokenomics = await createTokenomicsEcosystem(config.network, hhUser1);
+
   const deployedVaults = await getDeployedVaults(config, dolomiteMargin, governance);
   const marketIdToDeployedVaultMap = deployedVaults.reduce((acc, vault) => {
     acc[vault.marketId] = vault;
@@ -977,6 +980,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
     ownerAdapterV1,
     ownerAdapterV2,
     testEcosystem,
+    tokenomics,
     hhUser1,
     hhUser2,
     hhUser3,
@@ -1057,7 +1061,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
         ...coreProtocolParams.dolomiteTokens,
         bridgedUsdc: DolomiteERC4626__factory.connect(
           Deployments.DolomiteBridgedUsdc4626Token[typedConfig.network].address,
-          hhUser1
+          hhUser1,
         ),
         dai: DolomiteERC4626__factory.connect(Deployments.DolomiteDai4626Token[typedConfig.network].address, hhUser1),
         usdt: DolomiteERC4626__factory.connect(Deployments.DolomiteUsdt4626Token[typedConfig.network].address, hhUser1),

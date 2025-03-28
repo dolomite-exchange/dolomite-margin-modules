@@ -50,7 +50,7 @@ import {
   VesterImplementationLibForV2__factory,
 } from '../src/types';
 import { createTestVesterV2Proxy } from './liquidity-mining-ecosystem-utils';
-import { expectEmptyPosition } from './liquidityMining-utils';
+import { expectEmptyPosition } from './liquidity-mining-utils';
 
 const oldWalletWithPosition = '0x52256ef863a713Ef349ae6E97A7E8f35785145dE';
 const oldWalletWithPositionNftId = '266';

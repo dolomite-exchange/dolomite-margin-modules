@@ -15,7 +15,7 @@ import {
   RegistryProxy,
 } from '../../types';
 import { IDolomiteInterestSetter, IDolomiteStructs } from '../../types/contracts/protocol/interfaces/IDolomiteMargin';
-import { Network, NetworkType, ZERO_BI } from '../no-deps-constants';
+import { BYTES_EMPTY, Network, NetworkType, ZERO_BI } from '../no-deps-constants';
 import InterestRateStruct = IDolomiteInterestSetter.InterestRateStruct;
 import MonetaryPriceStruct = IDolomiteStructs.MonetaryPriceStruct;
 
@@ -150,10 +150,10 @@ export function getRouterProxyConstructorParams<T extends NetworkType>(
 
 export function getUpgradeableProxyConstructorParams<T extends NetworkType>(
   implementationAddress: string,
-  implementationCalldata: PopulatedTransaction,
+  implementationCalldata: PopulatedTransaction | null,
   dolomiteMargin: DolomiteMargin<T>,
 ): any[] {
-  return [implementationAddress, dolomiteMargin.address, implementationCalldata.data!];
+  return [implementationAddress, dolomiteMargin.address, implementationCalldata?.data! ?? BYTES_EMPTY];
 }
 
 export function getIsolationModeFreezableLiquidatorProxyConstructorParams<T extends NetworkType>(

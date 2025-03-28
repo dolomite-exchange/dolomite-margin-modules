@@ -172,7 +172,8 @@ contract DolomiteAccountRiskOverrideSetter is
     view
     returns
     (IDolomiteStructs.Decimal memory, IDolomiteStructs.Decimal memory) {
-        if (_account.owner == DOLOMITE_MARGIN_OWNER()) {
+        if (_account.owner == DOLOMITE_MARGIN_OWNER() || _account.owner == address(0)) {
+            // The Dolomite Margin owner and 0 address call this contract for various readers
             return _getDefaultValuesForOverride();
         }
 

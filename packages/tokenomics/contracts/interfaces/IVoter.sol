@@ -1,6 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.9;
 
+
+/**
+ * @title   IVoter
+ * @author  Dolomite
+ *
+ * @notice  Interface for implementing voting via ve NFT
+ */
 interface IVoter {
     function _ve() external view returns (address);
 
