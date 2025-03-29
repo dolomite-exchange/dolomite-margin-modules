@@ -557,7 +557,7 @@ contract DolomiteERC4626 is
         );
         actionsCursor = _appendTransferActions(actions, actionsCursor, _amount);
 
-        (bool changedSupplyCap, uint256 maxSupplyWei) = _handleIsLossy(
+        uint256 maxSupplyWeiBefore = _handleIsLossy(
             actions,
             actionsCursor,
             isLossy,
@@ -578,17 +578,11 @@ contract DolomiteERC4626 is
             accounts[_TO_ACCOUNT_ID].number,
             _marketId
         );
-        if (isLossy) {
-            AccountBalanceLib.verifyBalanceIsNonNegative(
-                DOLOMITE_MARGIN(),
-                DOLOMITE_MARGIN_OWNER(),
-                _DEFAULT_ACCOUNT_NUMBER,
-                _marketId
-            );
-        }
 
-        if (changedSupplyCap && maxSupplyWei != 0) {
-            _ownerSetMaxSupplyWei(maxSupplyWei);
+        assert(IERC20(asset()).allowance(address(this), address(DOLOMITE_MARGIN())) == 0);
+
+        if (maxSupplyWeiBefore != 0) {
+            _ownerSetMaxSupplyWei(maxSupplyWeiBefore, _marketId);
         }
 
         emit Transfer(_from, _to, _amount);
@@ -670,6 +664,7 @@ contract DolomiteERC4626 is
             marketId(),
             _assetAmount
         );
+        assert(underlyingToken.allowance(address(this), address(_dolomiteMargin)) == 0);
     }
 
     function _ownerWithdrawExcessTokens() internal {
@@ -683,12 +678,12 @@ contract DolomiteERC4626 is
         );
     }
 
-    function _ownerSetMaxSupplyWei(uint256 _maxSupplyWei) internal {
+    function _ownerSetMaxSupplyWei(uint256 _maxSupplyWei, uint256 _marketId) internal {
         IDolomiteOwner(DOLOMITE_MARGIN_OWNER()).submitTransactionAndExecute(
             address(DOLOMITE_MARGIN()),
             DolomiteMarginVersionWrapperLib.encodeVersionedOwnerSetMaxSupplyWei(
                 CHAIN_ID,
-                marketId(),
+                _marketId,
                 _maxSupplyWei
             )
         );
@@ -735,17 +730,16 @@ contract DolomiteERC4626 is
     }
 
     /**
-     * @return  bool - True if the max supply cap was adjusted; false if it wasn't. uint256 - the max supply wei before
-     *          the update occurred
+     * @return  The max supply wei before the update occurred. 0 if it was unchanged or was "unlimited" beforehand.
      */
     function _handleIsLossy(
         IDolomiteStructs.ActionArgs[] memory _actions,
         uint256 _actionsCursor,
         bool _isLossy,
         bool _dolomiteOwnerZeroBalance
-    ) internal returns (bool, uint256) {
+    ) internal returns (uint256) {
         if (!_isLossy) {
-            return (false, 0);
+            return 0;
         }
 
         // transfer from dolomite margin owner to dToken. primaryAccount is dToken
@@ -762,14 +756,14 @@ contract DolomiteERC4626 is
             accountId: _THIS_ACCOUNT_ID,
             amount: transferAmount,
             primaryMarketId: _marketId,
-            secondaryMarketId: _marketId,
+            secondaryMarketId: 0,
             otherAddress: address(0),
             otherAccountId: _DOLOMITE_MARGIN_OWNER_ACCOUNT_ID,
             data: bytes("")
         });
 
         if (!_dolomiteOwnerZeroBalance) {
-            return (false, 0);
+            return 0;
         }
 
         uint256 balanceBefore = IERC20(asset()).balanceOf(address(this));
@@ -792,6 +786,7 @@ contract DolomiteERC4626 is
             otherAccountId: 0,
             data: bytes("")
         });
+
         IERC20(asset()).safeApprove(address(DOLOMITE_MARGIN()), excessTokens);
 
         IDolomiteStructs.Wei memory maxSupplyWei = DOLOMITE_MARGIN().getVersionedMaxSupplyWei(CHAIN_ID, _marketId);
@@ -799,12 +794,13 @@ contract DolomiteERC4626 is
             uint256 remainingSupplyAvailable = _getRemainingSupplyAvailable(maxSupplyWei, _marketId);
 
             if (excessTokens > remainingSupplyAvailable) {
-                _ownerSetMaxSupplyWei(0);
-                return (true, maxSupplyWei.value);
+                // Increase the supply cap temporarily so the admin can deposit
+                _ownerSetMaxSupplyWei(0, _marketId);
+                return maxSupplyWei.value;
             }
         }
 
-        return (false, 0);
+        return 0;
     }
 
     function _appendTransferActions(

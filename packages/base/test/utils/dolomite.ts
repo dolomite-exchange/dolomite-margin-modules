@@ -35,7 +35,7 @@ import {
 } from '../../src/types';
 import {
   getDolomiteErc20ProxyConstructorParams,
-  getDolomiteErc4626ProxyConstructorParams,
+  getDolomiteErc4626ProxyConstructorParams, getDolomiteErc4626WithPayableProxyConstructorParams,
   getEventEmitterRegistryConstructorParams,
   getIsolationModeTraderProxyConstructorParams,
   getRegistryProxyConstructorParams,
@@ -129,6 +129,17 @@ export async function createDolomiteErc4626Proxy(
     RegistryProxy__factory.abi,
     RegistryProxy__factory.bytecode,
     await getDolomiteErc4626ProxyConstructorParams(core, marketId),
+  );
+}
+
+export async function createDolomiteErc4626WithPayableProxy(
+  marketId: BigNumberish,
+  core: CoreProtocolType<NetworkType>,
+): Promise<RegistryProxy> {
+  return createContractWithAbi(
+    RegistryProxy__factory.abi,
+    RegistryProxy__factory.bytecode,
+    await getDolomiteErc4626WithPayableProxyConstructorParams(core, marketId),
   );
 }
 

@@ -15,7 +15,7 @@ import { revertToSnapshotAndCapture, snapshot } from '../utils';
 import { expectEvent, expectProtocolBalance, expectThrow } from '../utils/assertions';
 
 import { CoreProtocolArbitrumOne } from '../utils/core-protocols/core-protocol-arbitrum-one';
-import { createAndUpgradeDolomiteRegistry, createDolomiteErc4626Proxy } from '../utils/dolomite';
+import { createAndUpgradeDolomiteRegistry, createDolomiteErc4626WithPayableProxy } from '../utils/dolomite';
 import { disableInterestAccrual, setupCoreProtocol, setupWETHBalance } from '../utils/setup';
 import { getDolomiteErc4626ImplementationConstructorParams } from '../../src/utils/constructors/dolomite';
 
@@ -41,7 +41,7 @@ describe('DolomiteERC4626WithPayable', () => {
         TestDolomiteERC4626WithPayable__factory.bytecode,
         await getDolomiteErc4626ImplementationConstructorParams(core),
       );
-    const tokenProxy = await createDolomiteErc4626Proxy(core.marketIds.weth, core);
+    const tokenProxy = await createDolomiteErc4626WithPayableProxy(core.marketIds.weth, core);
     token = TestDolomiteERC4626WithPayable__factory.connect(tokenProxy.address, core.hhUser1);
     asset = core.tokens.weth;
 
