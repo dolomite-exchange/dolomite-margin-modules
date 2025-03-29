@@ -57,6 +57,7 @@ contract DolomiteERC4626 is
     bytes32 private constant _MARKET_ID_SLOT = bytes32(uint256(keccak256("eip1967.proxy.marketId")) - 1);
     bytes32 private constant _METADATA_SLOT = bytes32(uint256(keccak256("eip1967.proxy.metadata")) - 1);
 
+    uint256 public immutable CHAIN_ID; // solhint-disable-line var-name-mixedcase
     IDolomiteRegistry public immutable DOLOMITE_REGISTRY; // solhint-disable-line var-name-mixedcase
     uint256 private constant _DEFAULT_ACCOUNT_NUMBER = 0;
 
@@ -70,9 +71,11 @@ contract DolomiteERC4626 is
     // ==================================================================
 
     constructor (
+        uint256 _chainId,
         address _dolomiteRegistry,
         address _dolomiteMargin
     ) OnlyDolomiteMargin(_dolomiteMargin) {
+        CHAIN_ID = _chainId;
         DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
     }
 
@@ -156,6 +159,7 @@ contract DolomiteERC4626 is
         );
 
         IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
+        uint256 _marketId = marketId();
         IDolomiteStructs.AccountInfo memory account = IDolomiteStructs.AccountInfo({
             owner: _receiver,
             number: _DEFAULT_ACCOUNT_NUMBER
@@ -164,15 +168,15 @@ contract DolomiteERC4626 is
         uint256 assets;
         {
             // For avoiding "stack too deep" errors
-            IDolomiteStructs.Par memory balanceBeforePar = dolomiteMargin.getAccountPar(account, marketId());
+            IDolomiteStructs.Par memory balanceBeforePar = dolomiteMargin.getAccountPar(account, _marketId);
             IDolomiteStructs.Par memory deltaPar = IDolomiteStructs.Par({
                 sign: true,
                 value: _shares.to128()
             });
             IDolomiteStructs.Par memory balanceAfterPar = balanceBeforePar.add(deltaPar);
-            balanceBeforeWei = dolomiteMargin.getAccountWei(account, marketId());
+            balanceBeforeWei = dolomiteMargin.parToWei(_marketId, balanceBeforePar);
 
-            IDolomiteStructs.Wei memory balanceAfterWei = DOLOMITE_MARGIN().parToWei(marketId(), balanceAfterPar);
+            IDolomiteStructs.Wei memory balanceAfterWei = DOLOMITE_MARGIN().parToWei(_marketId, balanceAfterPar);
             assert(balanceAfterWei.sub(balanceBeforeWei).sign);
             assets = balanceAfterWei.sub(balanceBeforeWei).value;
         }
@@ -185,7 +189,7 @@ contract DolomiteERC4626 is
         });
         _depositIntoDolomite(account, assetAmount, assets, dolomiteMargin);
 
-        IDolomiteStructs.Wei memory deltaWei = dolomiteMargin.getAccountWei(account, marketId()).sub(balanceBeforeWei);
+        IDolomiteStructs.Wei memory deltaWei = dolomiteMargin.getAccountWei(account, _marketId).sub(balanceBeforeWei);
         assert(deltaWei.sign);
         assert(deltaWei.value != 0);
 
@@ -544,7 +548,7 @@ contract DolomiteERC4626 is
         uint256 actionsCursor = 0;
         uint256 _marketId = marketId();
         bool isLossy = _getIsLossy(_from, _to, _amount);
-        bool dolomiteOwnerZeroBalance = _isOwnerBalanceZero();
+        bool dolomiteOwnerZeroBalance = _isOwnerBalanceZeroOrNegative();
 
         IDolomiteStructs.AccountInfo[] memory accounts = _getAccounts(_from, _to, isLossy);
 
@@ -683,7 +687,7 @@ contract DolomiteERC4626 is
         IDolomiteOwner(DOLOMITE_MARGIN_OWNER()).submitTransactionAndExecute(
             address(DOLOMITE_MARGIN()),
             DolomiteMarginVersionWrapperLib.encodeVersionedOwnerSetMaxSupplyWei(
-                block.chainid,
+                CHAIN_ID,
                 marketId(),
                 _maxSupplyWei
             )
@@ -730,6 +734,10 @@ contract DolomiteERC4626 is
         }
     }
 
+    /**
+     * @return  bool - True if the max supply cap was adjusted; false if it wasn't. uint256 - the max supply wei before
+     *          the update occurred
+     */
     function _handleIsLossy(
         IDolomiteStructs.ActionArgs[] memory _actions,
         uint256 _actionsCursor,
@@ -764,9 +772,9 @@ contract DolomiteERC4626 is
             return (false, 0);
         }
 
-        uint256 preBal = IERC20(asset()).balanceOf(address(this));
+        uint256 balanceBefore = IERC20(asset()).balanceOf(address(this));
         _ownerWithdrawExcessTokens();
-        uint256 excessTokens = IERC20(asset()).balanceOf(address(this)) - preBal;
+        uint256 excessTokens = IERC20(asset()).balanceOf(address(this)) - balanceBefore;
 
         IDolomiteStructs.AssetAmount memory depositAmount = IDolomiteStructs.AssetAmount({
             sign: true,
@@ -776,7 +784,7 @@ contract DolomiteERC4626 is
         });
         _actions[_actionsCursor++] = IDolomiteStructs.ActionArgs({
             actionType: IDolomiteStructs.ActionType.Deposit,
-            accountId: _DOLOMITE_MARGIN_OWNER_ACCOUNT_ID, // dolomiteMarginOwner
+            accountId: _DOLOMITE_MARGIN_OWNER_ACCOUNT_ID,
             amount: depositAmount,
             primaryMarketId: _marketId,
             secondaryMarketId: _marketId,
@@ -785,10 +793,10 @@ contract DolomiteERC4626 is
             data: bytes("")
         });
         IERC20(asset()).safeApprove(address(DOLOMITE_MARGIN()), excessTokens);
-        
-        IDolomiteStructs.Wei memory maxSupplyWei = DOLOMITE_MARGIN().getVersionedMaxSupplyWei(block.chainid, _marketId);
+
+        IDolomiteStructs.Wei memory maxSupplyWei = DOLOMITE_MARGIN().getVersionedMaxSupplyWei(CHAIN_ID, _marketId);
         if (!maxSupplyWei.isZero()) {
-            uint256 remainingSupplyAvailable = _getRemainingSupplyAvailable(maxSupplyWei);
+            uint256 remainingSupplyAvailable = _getRemainingSupplyAvailable(maxSupplyWei, _marketId);
 
             if (excessTokens > remainingSupplyAvailable) {
                 _ownerSetMaxSupplyWei(0);
@@ -834,7 +842,7 @@ contract DolomiteERC4626 is
             accountId: _TO_ACCOUNT_ID,
             amount: assetAmount1,
             primaryMarketId: _marketId,
-            secondaryMarketId: 1,
+            secondaryMarketId: 0,
             otherAddress: address(0),
             otherAccountId: _THIS_ACCOUNT_ID,
             data: bytes("")
@@ -843,12 +851,16 @@ contract DolomiteERC4626 is
         return _actionsCursor;
     }
 
+    /**
+     * @return  True if the transfer will make `address(this)` go negative due to a rounding error
+     */
     function _getIsLossy(
         address _from,
         address _to,
         uint256 _amount
     ) internal view returns (bool) {
         IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
+        uint256 _marketId = marketId();
         IDolomiteStructs.Par memory deltaPar = IDolomiteStructs.Par({
             sign: true,
             value: _amount.to128()
@@ -860,10 +872,12 @@ contract DolomiteERC4626 is
                 owner: _from,
                 number: _DEFAULT_ACCOUNT_NUMBER
             }),
-            marketId()
+            _marketId
         );
-        IDolomiteStructs.Wei memory fromWei = dolomiteMargin.parToWei(marketId(), fromPar);
-        IDolomiteStructs.Wei memory deltaWei1 = fromWei.sub(dolomiteMargin.parToWei(marketId(), fromPar.sub(deltaPar)));
+        IDolomiteStructs.Wei memory fromWei = dolomiteMargin.parToWei(_marketId, fromPar);
+        IDolomiteStructs.Wei memory deltaWei1 = fromWei.sub(
+            dolomiteMargin.parToWei(_marketId, fromPar.sub(deltaPar))
+        );
 
         // @dev Calculate the second delta wei
         IDolomiteStructs.Par memory toPar = dolomiteMargin.getAccountPar(
@@ -871,18 +885,18 @@ contract DolomiteERC4626 is
                 owner: _to,
                 number: _DEFAULT_ACCOUNT_NUMBER
             }),
-            marketId()
+            _marketId
         );
-        IDolomiteStructs.Wei memory toWei = dolomiteMargin.parToWei(marketId(), toPar);
-        IDolomiteStructs.Wei memory deltaWei2 = dolomiteMargin.parToWei(marketId(), toPar.add(deltaPar)).sub(toWei);
+        IDolomiteStructs.Wei memory toWei = dolomiteMargin.parToWei(_marketId, toPar);
+        IDolomiteStructs.Wei memory deltaWei2 = dolomiteMargin.parToWei(_marketId, toPar.add(deltaPar)).sub(toWei);
 
         // @dev convert the difference in wei values to par
-        IDolomiteStructs.Par memory finalPar = dolomiteMargin.weiToPar(marketId(), deltaWei1.sub(deltaWei2));
+        IDolomiteStructs.Par memory finalPar = dolomiteMargin.weiToPar(_marketId, deltaWei1.sub(deltaWei2));
 
         return !finalPar.isZero();
     }
 
-    function _isOwnerBalanceZero() internal view returns (bool) {
+    function _isOwnerBalanceZeroOrNegative() internal view returns (bool) {
         IDolomiteStructs.Par memory dolomiteOwnerPar = DOLOMITE_MARGIN().getAccountPar(
             IDolomiteStructs.AccountInfo({
                 owner: DOLOMITE_MARGIN_OWNER(),
@@ -891,19 +905,18 @@ contract DolomiteERC4626 is
             marketId()
         );
 
-        return dolomiteOwnerPar.isZero();
+        return dolomiteOwnerPar.isZero() || !dolomiteOwnerPar.sign;
     }
 
     function _getRemainingSupplyAvailable(
-        IDolomiteStructs.Wei memory _maxSupplyWei
+        IDolomiteStructs.Wei memory _maxSupplyWei,
+        uint256 _marketId
     ) internal view returns (uint256) {
-        IDolomiteStructs.Par memory supplyPar = DOLOMITE_MARGIN().getVersionedSupplyPar(
-            block.chainid,
-            marketId()
-        );
+        assert(_maxSupplyWei.isPositive());
 
-        // @follow-up @Corey, can you double check this? Want to make sure par to wei is right direction and this isn't wrong cause rounding
-        return _maxSupplyWei.sub(DOLOMITE_MARGIN().parToWei(marketId(), supplyPar)).value;
+        IDolomiteStructs.Par memory supplyPar = DOLOMITE_MARGIN().getVersionedSupplyPar(CHAIN_ID, _marketId);
+
+        return _maxSupplyWei.sub(DOLOMITE_MARGIN().parToWei(_marketId, supplyPar)).value;
     }
 
     function _setMetadataStruct(MetadataStruct memory _metadata) internal {

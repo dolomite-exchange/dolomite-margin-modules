@@ -39,9 +39,10 @@ contract DolomiteERC4626WithPayable is
     uint256 private constant _DEFAULT_ACCOUNT_NUMBER = 0;
 
     constructor (
+        uint256 _chainId,
         address _dolomiteRegistry,
         address _dolomiteMargin
-    ) DolomiteERC4626(_dolomiteRegistry, _dolomiteMargin) {}
+    ) DolomiteERC4626(_chainId, _dolomiteRegistry, _dolomiteMargin) {}
 
     function depositFromPayable(address _receiver) external nonReentrant payable returns (uint256) {
         Require.that(

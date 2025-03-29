@@ -21,6 +21,7 @@ import { DolomiteOwnerV2 } from 'packages/admin/src/types';
 import { createDolomiteOwnerV2 } from 'packages/admin/test/admin-ecosystem-utils';
 import { Ownable__factory } from 'packages/tokenomics/src/types';
 import { parseEther } from 'ethers/lib/utils';
+import { getDolomiteErc4626ImplementationConstructorParams } from '../../src/utils/constructors/dolomite';
 
 const usdcAmount = BigNumber.from('100000000'); // 100 USDC
 const isolationModeVault = '0xffa18b366fa3ebE5832a49535F42aa0c93c791eF';
@@ -47,7 +48,7 @@ describe('DolomiteERC4626', () => {
     core.implementationContracts.dolomiteERC4626Implementation = await createContractWithAbi<TestDolomiteERC4626>(
       TestDolomiteERC4626__factory.abi,
       TestDolomiteERC4626__factory.bytecode,
-      [core.dolomiteRegistryProxy.address, core.dolomiteMargin.address],
+      await getDolomiteErc4626ImplementationConstructorParams(core),
     );
     const tokenProxy = await createDolomiteErc4626Proxy(core.marketIds.usdc, core);
     token = TestDolomiteERC4626__factory.connect(tokenProxy.address, core.hhUser1);
