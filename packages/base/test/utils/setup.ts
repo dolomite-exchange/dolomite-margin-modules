@@ -1394,7 +1394,6 @@ export async function setupCoreProtocol<T extends NetworkType>(
           ...coreProtocolParams.marketIds.stablecoins,
           HONEY_MAP[typedConfig.network].marketId,
           R_USD_MAP[typedConfig.network].marketId,
-          S_USDE_MAP[typedConfig.network].marketId,
           USDE_MAP[typedConfig.network].marketId,
           USDT_MAP[typedConfig.network].marketId,
         ],
