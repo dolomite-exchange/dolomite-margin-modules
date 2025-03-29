@@ -579,6 +579,15 @@ contract DolomiteERC4626 is
             _marketId
         );
 
+        if (isLossy) {
+            AccountBalanceLib.verifyBalanceIsNonNegative(
+                DOLOMITE_MARGIN(),
+                accounts[_DOLOMITE_MARGIN_OWNER_ACCOUNT_ID].owner,
+                accounts[_DOLOMITE_MARGIN_OWNER_ACCOUNT_ID].number,
+                _marketId
+            );
+        }
+
         assert(IERC20(asset()).allowance(address(this), address(DOLOMITE_MARGIN())) == 0);
 
         if (maxSupplyWeiBefore != 0) {
