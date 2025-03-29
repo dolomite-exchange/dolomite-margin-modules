@@ -57,7 +57,15 @@ export async function encodeAddIsolationModeMarket<T extends NetworkType>(
     options,
   );
 
-  throw new Error('add routers to core object and ownerInitialize!');
+  const converters = [
+    unwrapper.address,
+    wrapper.address,
+    core.borrowPositionRouter.address,
+    core.depositWithdrawalRouter.address,
+    core.genericTraderRouter.address,
+  ];
+  const additionalConverters = (options.additionalConverters ?? []).map((c) => c.address);
+
   transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(
       core,
@@ -66,15 +74,19 @@ export async function encodeAddIsolationModeMarket<T extends NetworkType>(
       'ownerSetGlobalOperator',
       [factory.address, true],
     ),
-    await prettyPrintEncodedDataWithTypeSafety(core, { factory }, 'factory', 'ownerInitialize', [
-      [unwrapper.address, wrapper.address, ...(options.additionalConverters ?? []).map((c) => c.address)],
-    ]),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { factory },
+      'factory',
+      'ownerInitialize',
+      [converters.concat(additionalConverters)],
+    ),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       { liquidatorAssetRegistry: core.liquidatorAssetRegistry },
       'liquidatorAssetRegistry',
       'ownerAddLiquidatorToAssetWhitelist',
-      [marketId, core.liquidatorProxyV4.address],
+      [marketId, core.liquidatorProxyV5.address],
     ),
   );
 
@@ -94,38 +106,17 @@ export async function encodeAddAsyncIsolationModeMarket<T extends NetworkType>(
   maxSupplyWei: BigNumberish,
   options: AddMarketOptions = {},
 ): Promise<EncodedTransaction[]> {
-  const transactions: EncodedTransaction[] = await encodeAddMarket(
+  const transactions: EncodedTransaction[] = await encodeAddIsolationModeMarket(
     core,
-    IERC20__factory.connect(factory.address, factory.signer),
+    factory,
     oracle,
-    core.interestSetters.alwaysZeroInterestSetter,
+    unwrapper,
+    wrapper,
+    marketId,
     targetCollateralization,
     targetLiquidationPremium,
     maxSupplyWei,
-    ZERO_BI,
-    true,
-    ZERO_BI,
     options,
-  );
-
-  transactions.push(
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { dolomiteMargin: core.dolomiteMargin },
-      'dolomiteMargin',
-      'ownerSetGlobalOperator',
-      [factory.address, true],
-    ),
-    await prettyPrintEncodedDataWithTypeSafety(core, { factory }, 'factory', 'ownerInitialize', [
-      [unwrapper.address, wrapper.address, ...(options.additionalConverters ?? []).map((c) => c.address)],
-    ]),
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { liquidatorAssetRegistry: core.liquidatorAssetRegistry },
-      'liquidatorAssetRegistry',
-      'ownerAddLiquidatorToAssetWhitelist',
-      [marketId, core.liquidatorProxyV4.address],
-    ),
   );
 
   transactions.push(

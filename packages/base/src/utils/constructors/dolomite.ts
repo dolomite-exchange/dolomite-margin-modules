@@ -132,10 +132,6 @@ export interface SingleCollateralWithStrictDebtParams {
   liquidationRewardOverride: TargetLiquidationPenalty;
 }
 
-export function getDolomiteOwnerConstructorParams(gnosisSafeAddress: string, secondsTimeLocked: BigNumberish): any[] {
-  return [gnosisSafeAddress, secondsTimeLocked];
-}
-
 export function getRegistryProxyConstructorParams<T extends NetworkType>(
   implementationAddress: string,
   implementationCalldata: string,
@@ -348,6 +344,16 @@ export async function getDolomiteErc20ProxyConstructorParams<T extends NetworkTy
   return [implementation.address, core.dolomiteMargin.address, transaction.data!];
 }
 
+export async function getDolomiteErc4626ImplementationConstructorParams<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+): Promise<any[]> {
+  return [
+    core.network,
+    core.dolomiteRegistry.address,
+    core.dolomiteMargin.address,
+  ];
+}
+
 export async function getDolomiteErc4626ProxyConstructorParams<T extends NetworkType>(
   core: CoreProtocolType<T>,
   marketId: BigNumberish,
@@ -366,8 +372,7 @@ export async function getDolomiteErc4626ProxyConstructorParams<T extends Network
     `Dolomite: ${symbol}`,
     `d${symbol}`,
     await token.decimals(),
-    marketId,
-    core.dolomiteRegistry.address,
+    marketId
   );
   return [implementationContract.address, core.dolomiteMargin.address, transaction.data!];
 }
@@ -390,8 +395,7 @@ export async function getDolomiteErc4626WithPayableProxyConstructorParams<T exte
     `Dolomite: ${symbol}`,
     `d${symbol}`,
     await token.decimals(),
-    marketId,
-    core.dolomiteRegistry.address,
+    marketId
   );
   return [implementationContract.address, core.dolomiteMargin.address, transaction.data!];
 }

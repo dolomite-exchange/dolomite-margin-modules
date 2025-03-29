@@ -42,5 +42,5 @@ interface IDolomiteERC4626 is IERC4626 {
 
     function marketId() external view returns (uint256);
 
-    function dolomiteRegistry() external view returns (IDolomiteRegistry);
+    function DOLOMITE_REGISTRY() external view returns (IDolomiteRegistry);
 }

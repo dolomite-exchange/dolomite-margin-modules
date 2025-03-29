@@ -20,20 +20,21 @@
 
 pragma solidity ^0.8.9;
 
+import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
+import { IAccessControl } from "@openzeppelin/contracts/access/IAccessControl.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import { IDolomiteOwner } from "../interfaces/IDolomiteOwner.sol";
-import { Require } from "../protocol/lib/Require.sol";
+import { IDolomiteOwner } from "./interfaces/IDolomiteOwner.sol";
 
 
 /**
- * @title   DolomiteOwnerV1
+ * @title   DolomiteOwnerV2
  * @author  Dolomite
  *
- * @notice  DolomiteOwnerV1 contract that enables an admin to set roles and permissions for other addresses
+ * @notice  DolomiteOwnerV2 contract that enables an admin to set roles and permissions for other addresses
  */
-contract DolomiteOwnerV1 is IDolomiteOwner, AccessControl {
+contract DolomiteOwnerV2 is IDolomiteOwner, AccessControl {
     using EnumerableSet for EnumerableSet.AddressSet;
     using EnumerableSet for EnumerableSet.Bytes32Set;
     using Address for address;
@@ -42,12 +43,13 @@ contract DolomiteOwnerV1 is IDolomiteOwner, AccessControl {
     // =================== Constants ==================
     // ================================================
 
-    bytes32 private constant _FILE = "DolomiteOwnerV1";
+    bytes32 private constant _FILE = "DolomiteOwnerV2";
 
     bytes32 public constant SECURITY_COUNCIL_ROLE = keccak256("SECURITY_COUNCIL_ROLE");
     bytes32 public constant LISTING_COMMITTEE_ROLE = keccak256("LISTING_COMMITTEE_ROLE");
     bytes32 public constant EXECUTOR_ROLE = keccak256("EXECUTOR_ROLE");
     bytes32 public constant BYPASS_TIMELOCK_ROLE = keccak256("BYPASS_TIMELOCK_ROLE");
+
     address private constant _ADDRESS_ZERO = address(0x0);
 
     // ================================================
@@ -68,8 +70,17 @@ contract DolomiteOwnerV1 is IDolomiteOwner, AccessControl {
     // =================== Modifiers ================
     // ================================================
 
+    modifier onlySelf(address _sender) {
+        Require.that(
+            _sender == address(this),
+            _FILE,
+            "Invalid caller",
+            _sender
+        );
+        _;
+    }
+
     modifier notNull(address _address) {
-        if (_address != _ADDRESS_ZERO) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _address != _ADDRESS_ZERO,
             _FILE,
@@ -79,7 +90,6 @@ contract DolomiteOwnerV1 is IDolomiteOwner, AccessControl {
     }
 
     modifier transactionExists(uint256 _transactionId) {
-        if (transactions[_transactionId].destination != _ADDRESS_ZERO) { /* FOR COVERAGE TESTING */ }
         Require.that(
             transactions[_transactionId].destination != _ADDRESS_ZERO,
             _FILE,
@@ -89,7 +99,6 @@ contract DolomiteOwnerV1 is IDolomiteOwner, AccessControl {
     }
 
     modifier validExecutor(address _sender) {
-        if (hasRole(EXECUTOR_ROLE, _sender) || hasRole(DEFAULT_ADMIN_ROLE, _sender)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             hasRole(EXECUTOR_ROLE, _sender) || hasRole(DEFAULT_ADMIN_ROLE, _sender),
             _FILE,
@@ -99,7 +108,6 @@ contract DolomiteOwnerV1 is IDolomiteOwner, AccessControl {
     }
 
     modifier activeRole(bytes32 _role) {
-        if (isRole(_role)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             isRole(_role),
             _FILE,
@@ -113,7 +121,6 @@ contract DolomiteOwnerV1 is IDolomiteOwner, AccessControl {
         address _sender,
         uint256 _transactionId
     ) {
-        if (isTimelockComplete(_transactionId) || hasRole(BYPASS_TIMELOCK_ROLE, _sender)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             isTimelockComplete(_transactionId) || hasRole(BYPASS_TIMELOCK_ROLE, _sender),
             _FILE,
@@ -130,9 +137,13 @@ contract DolomiteOwnerV1 is IDolomiteOwner, AccessControl {
         address _admin,
         uint32 _secondsTimeLocked
     ) {
-        _allRoles.add(BYPASS_TIMELOCK_ROLE);
         _allRoles.add(DEFAULT_ADMIN_ROLE);
+
+        _allRoles.add(BYPASS_TIMELOCK_ROLE);
         _allRoles.add(EXECUTOR_ROLE);
+
+        _allRoles.add(SECURITY_COUNCIL_ROLE);
+        _allRoles.add(LISTING_COMMITTEE_ROLE);
 
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
         _ownerSetSecondsTimeLocked(_secondsTimeLocked);
@@ -142,23 +153,36 @@ contract DolomiteOwnerV1 is IDolomiteOwner, AccessControl {
     // =================== Admin Functions ============
     // ================================================
 
+    function grantRole(
+        bytes32 role,
+        address account
+    ) public override(AccessControl, IAccessControl) onlySelf(msg.sender) {
+        _grantRole(role, account);
+    }
+
+    function revokeRole(
+        bytes32 role,
+        address account
+    ) public override(AccessControl, IAccessControl) onlySelf(msg.sender) {
+        _revokeRole(role, account);
+    }
+
     function ownerSetSecondsTimeLocked(
         uint32 _secondsTimeLocked
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    ) external onlySelf(msg.sender) {
         _ownerSetSecondsTimeLocked(_secondsTimeLocked);
     }
 
     function ownerAddRole(
         bytes32 _role
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    ) external onlySelf(msg.sender) {
         _allRoles.add(_role);
         emit RoleAdded(_role);
     }
 
     function ownerRemoveRole(
         bytes32 _role
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (_role != DEFAULT_ADMIN_ROLE) { /* FOR COVERAGE TESTING */ }
+    ) external onlySelf(msg.sender) {
         Require.that(
             _role != DEFAULT_ADMIN_ROLE,
             _FILE,
@@ -172,7 +196,7 @@ contract DolomiteOwnerV1 is IDolomiteOwner, AccessControl {
     function ownerAddRoleAddresses(
         bytes32 _role,
         address[] calldata _addresses
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) activeRole(_role) {
+    ) external onlySelf(msg.sender) activeRole(_role) {
         for (uint256 i; i < _addresses.length; i++) {
             _roleToAddresses[_role].add(_addresses[i]);
         }
@@ -182,7 +206,7 @@ contract DolomiteOwnerV1 is IDolomiteOwner, AccessControl {
     function ownerRemoveRoleAddresses(
         bytes32 _role,
         address[] calldata _addresses
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    ) external onlySelf(msg.sender) {
         for (uint256 i; i < _addresses.length; i++) {
             _roleToAddresses[_role].remove(_addresses[i]);
         }
@@ -192,7 +216,7 @@ contract DolomiteOwnerV1 is IDolomiteOwner, AccessControl {
     function ownerAddRoleFunctionSelectors(
         bytes32 _role,
         bytes4[] calldata _selectors
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) activeRole(_role) {
+    ) external onlySelf(msg.sender) activeRole(_role) {
         for (uint256 i; i < _selectors.length; i++) {
             _roleToFunctionSelectors[_role].add(bytes32(_selectors[i]));
         }
@@ -202,7 +226,7 @@ contract DolomiteOwnerV1 is IDolomiteOwner, AccessControl {
     function ownerRemoveRoleFunctionSelectors(
         bytes32 _role,
         bytes4[] calldata _selectors
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    ) external onlySelf(msg.sender) {
         for (uint256 i; i < _selectors.length; i++) {
             _roleToFunctionSelectors[_role].remove(bytes32(_selectors[i]));
         }
@@ -213,7 +237,7 @@ contract DolomiteOwnerV1 is IDolomiteOwner, AccessControl {
         bytes32 _role,
         address _destination,
         bytes4[] calldata _selectors
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) activeRole(_role){
+    ) external onlySelf(msg.sender) activeRole(_role){
         for (uint256 i; i < _selectors.length; i++) {
             _roleToAddressToFunctionSelectors[_role][_destination].add(_selectors[i]);
         }
@@ -224,7 +248,7 @@ contract DolomiteOwnerV1 is IDolomiteOwner, AccessControl {
         bytes32 _role,
         address _destination,
         bytes4[] calldata _selectors
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    ) external onlySelf(msg.sender) {
         for (uint256 i; i < _selectors.length; i++) {
             _roleToAddressToFunctionSelectors[_role][_destination].remove(_selectors[i]);
         }
@@ -235,7 +259,6 @@ contract DolomiteOwnerV1 is IDolomiteOwner, AccessControl {
         uint256 transactionId
     ) external transactionExists(transactionId) onlyRole(DEFAULT_ADMIN_ROLE) {
         Transaction storage txn = transactions[transactionId];
-        if (!txn.executed && !txn.cancelled) { /* FOR COVERAGE TESTING */ }
         Require.that(
             !txn.executed && !txn.cancelled,
             _FILE,
@@ -273,7 +296,6 @@ contract DolomiteOwnerV1 is IDolomiteOwner, AccessControl {
         address _destination,
         bytes memory _data
     ) public returns (uint256) {
-        if (_data.length >= 4) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _data.length >= 4,
             _FILE,
@@ -288,7 +310,6 @@ contract DolomiteOwnerV1 is IDolomiteOwner, AccessControl {
         bytes4 selector = bytes4(rawData);
 
         bool approved = isUserApprovedToSubmitTransaction(msg.sender, _destination, selector);
-        if (approved) { /* FOR COVERAGE TESTING */ }
         Require.that(
             approved,
             _FILE,
@@ -396,6 +417,11 @@ contract DolomiteOwnerV1 is IDolomiteOwner, AccessControl {
         if (hasRole(DEFAULT_ADMIN_ROLE, _user)) {
             return true;
         }
+        Require.that(
+            _destination != address(this),
+            _FILE,
+            "Invalid destination"
+        );
 
         bytes32[] memory userRoles = _userToRoles[_user].values();
         for (uint256 i; i < userRoles.length; ++i) {
@@ -436,7 +462,6 @@ contract DolomiteOwnerV1 is IDolomiteOwner, AccessControl {
         uint256 _transactionId
     ) internal transactionExists(_transactionId) pastTimeLock(msg.sender, _transactionId) returns (bytes memory) {
         Transaction storage txn = transactions[_transactionId];
-        if (!txn.executed && !txn.cancelled) { /* FOR COVERAGE TESTING */ }
         Require.that(
             !txn.executed && !txn.cancelled,
             _FILE,
@@ -493,6 +518,13 @@ contract DolomiteOwnerV1 is IDolomiteOwner, AccessControl {
     }
 
     function _grantRole(bytes32 _role, address _account) internal activeRole(_role) override {
+        if (_role == BYPASS_TIMELOCK_ROLE && hasRole(DEFAULT_ADMIN_ROLE, _account)) {
+            revert("DolomiteOwnerV2: Admin cannot bypass timelock");
+        }
+        if (_role == DEFAULT_ADMIN_ROLE && hasRole(BYPASS_TIMELOCK_ROLE, _account)) {
+            revert("DolomiteOwnerV2: Admin cannot bypass timelock");
+        }
+
         _userToRoles[_account].add(_role);
         return super._grantRole(_role, _account);
     }

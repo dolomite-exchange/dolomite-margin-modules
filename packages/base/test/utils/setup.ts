@@ -23,6 +23,7 @@ import ZapBigNumber from 'bignumber.js';
 import { BaseContract, BigNumber, BigNumberish, ContractInterface, Signer } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
+import { DolomiteOwnerV1__factory, DolomiteOwnerV2__factory } from 'packages/admin/src/types';
 import { IGlvToken } from 'packages/glv/src/types';
 import { IGmxMarketToken } from 'packages/gmx-v2/src/types';
 import { IMantleRewardStation__factory } from 'packages/mantle/src/types';
@@ -32,7 +33,6 @@ import {
   DolomiteERC20WithPayable__factory,
   DolomiteERC4626__factory,
   DolomiteERC4626WithPayable__factory,
-  DolomiteOwnerV1__factory, DolomiteOwnerV2__factory,
   IBorrowPositionProxyV2__factory,
   IBorrowPositionRouter__factory,
   IDepositWithdrawalProxy__factory,
@@ -207,6 +207,7 @@ import { DolomiteMargin, Expiry } from './dolomite';
 import { createAbraEcosystem } from './ecosystem-utils/abra';
 import { createArbEcosystem } from './ecosystem-utils/arb';
 import { createCamelotEcosystem } from './ecosystem-utils/camelot';
+import { DeployedVault, getDeployedVaults } from './ecosystem-utils/deployed-vaults';
 import { createGlvEcosystem } from './ecosystem-utils/glv';
 import { createGmxEcosystem, createGmxEcosystemV2 } from './ecosystem-utils/gmx';
 import { createInterestSetters } from './ecosystem-utils/interest-setters';
@@ -224,11 +225,10 @@ import { createPendleEcosystemArbitrumOne, createPendleEcosystemMantle } from '.
 import { createPlutusEcosystem } from './ecosystem-utils/plutus';
 import { createPremiaEcosystem } from './ecosystem-utils/premia';
 import { createTestEcosystem } from './ecosystem-utils/testers';
+import { createTokenomicsEcosystem } from './ecosystem-utils/tokenomics';
 import { createTokenomicsAirdropEcosystem } from './ecosystem-utils/tokenomics-airdrop';
 import { createUmamiEcosystem } from './ecosystem-utils/umami';
 import { impersonate, impersonateOrFallback, resetForkIfPossible } from './index';
-import { DeployedVault, getDeployedVaults } from './ecosystem-utils/deployed-vaults';
-import { createTokenomicsEcosystem } from './ecosystem-utils/tokenomics';
 
 /**
  * Config to for setting up tests in the `before` function
@@ -275,16 +275,16 @@ interface CoreProtocolConfigXLayer extends CoreProtocolConfigParent<Network.XLay
 export type CoreProtocolConfig<T extends NetworkType> = T extends Network.ArbitrumOne
   ? CoreProtocolConfigArbitrumOne
   : T extends Network.Base
-    ? CoreProtocolConfigBase
-    : T extends Network.Berachain
-      ? CoreProtocolConfigBerachain
-      : T extends Network.Mantle
-        ? CoreProtocolConfigMantle
-        : T extends Network.PolygonZkEvm
-          ? CoreProtocolConfigPolygonZkEvm
-          : T extends Network.XLayer
-            ? CoreProtocolConfigXLayer
-            : never;
+  ? CoreProtocolConfigBase
+  : T extends Network.Berachain
+  ? CoreProtocolConfigBerachain
+  : T extends Network.Mantle
+  ? CoreProtocolConfigMantle
+  : T extends Network.PolygonZkEvm
+  ? CoreProtocolConfigPolygonZkEvm
+  : T extends Network.XLayer
+  ? CoreProtocolConfigXLayer
+  : never;
 
 export async function disableInterestAccrual<T extends NetworkType>(
   core: CoreProtocolAbstract<T>,
@@ -682,16 +682,16 @@ export function getDefaultCoreProtocolConfigForGmxV2(): CoreProtocolConfig<Netwo
 export type CoreProtocolType<T extends NetworkType> = T extends Network.ArbitrumOne
   ? CoreProtocolArbitrumOne
   : T extends Network.Base
-    ? CoreProtocolBase
-    : T extends Network.Berachain
-      ? CoreProtocolBerachain
-      : T extends Network.Mantle
-        ? CoreProtocolMantle
-        : T extends Network.PolygonZkEvm
-          ? CoreProtocolPolygonZkEvm
-          : T extends Network.XLayer
-            ? CoreProtocolXLayer
-            : never;
+  ? CoreProtocolBase
+  : T extends Network.Berachain
+  ? CoreProtocolBerachain
+  : T extends Network.Mantle
+  ? CoreProtocolMantle
+  : T extends Network.PolygonZkEvm
+  ? CoreProtocolPolygonZkEvm
+  : T extends Network.XLayer
+  ? CoreProtocolXLayer
+  : never;
 
 export function getDolomiteMarginContract<T extends NetworkType>(
   config: CoreProtocolSetupConfig<T>,
@@ -1055,6 +1055,17 @@ export async function setupCoreProtocol<T extends NetworkType>(
         Deployments.DolomiteMigratorV2[typedConfig.network].address,
         hhUser1,
       ),
+      dolomiteTokens: {
+        ...coreProtocolParams.dolomiteTokens,
+        bridgedUsdc: DolomiteERC4626__factory.connect(
+          Deployments.DolomiteBridgedUsdc4626Token[typedConfig.network].address,
+          hhUser1,
+        ),
+        dai: DolomiteERC4626__factory.connect(Deployments.DolomiteDai4626Token[typedConfig.network].address, hhUser1),
+        usdt: DolomiteERC4626__factory.connect(Deployments.DolomiteUsdt4626Token[typedConfig.network].address, hhUser1),
+        wbtc: DolomiteERC4626__factory.connect(Deployments.DolomiteWbtc4626Token[typedConfig.network].address, hhUser1),
+        weth: coreProtocolParams.dolomiteTokens.weth as any,
+      },
       dTokens: {
         usdc: DolomiteERC20__factory.connect(Deployments.DolomiteUsdcToken[typedConfig.network].address, hhUser1),
         wbtc: DolomiteERC20__factory.connect(Deployments.DolomiteWbtcToken[typedConfig.network].address, hhUser1),

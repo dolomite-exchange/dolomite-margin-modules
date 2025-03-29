@@ -110,11 +110,10 @@ export async function expectEvent(
   contract: BaseContract,
   contractTransaction: ContractTransaction,
   eventName: string,
-  args: object,
+  args: Record<string, unknown> | undefined,
 ): Promise<void> {
-  const argsArray = Object.values(args);
-  if (argsArray.length > 0) {
-    return expect(contractTransaction).to.emit(contract, eventName).withArgs(...argsArray);
+  if (args && Object.values(args).length > 0) {
+    return expect(contractTransaction).to.emit(contract, eventName).withNamedArgs(args);
   }
   return expect(contractTransaction).to.emit(contract, eventName);
 }
