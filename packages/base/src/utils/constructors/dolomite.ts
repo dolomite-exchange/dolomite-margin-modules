@@ -15,7 +15,7 @@ import {
   RegistryProxy,
 } from '../../types';
 import { IDolomiteInterestSetter, IDolomiteStructs } from '../../types/contracts/protocol/interfaces/IDolomiteMargin';
-import { Network, NetworkType, ZERO_BI } from '../no-deps-constants';
+import { BYTES_EMPTY, Network, NetworkType, ZERO_BI } from '../no-deps-constants';
 import InterestRateStruct = IDolomiteInterestSetter.InterestRateStruct;
 import MonetaryPriceStruct = IDolomiteStructs.MonetaryPriceStruct;
 
@@ -132,10 +132,6 @@ export interface SingleCollateralWithStrictDebtParams {
   liquidationRewardOverride: TargetLiquidationPenalty;
 }
 
-export function getDolomiteOwnerConstructorParams(gnosisSafeAddress: string, secondsTimeLocked: BigNumberish): any[] {
-  return [gnosisSafeAddress, secondsTimeLocked];
-}
-
 export function getRegistryProxyConstructorParams<T extends NetworkType>(
   implementationAddress: string,
   implementationCalldata: string,
@@ -154,10 +150,10 @@ export function getRouterProxyConstructorParams<T extends NetworkType>(
 
 export function getUpgradeableProxyConstructorParams<T extends NetworkType>(
   implementationAddress: string,
-  implementationCalldata: PopulatedTransaction,
+  implementationCalldata: PopulatedTransaction | null,
   dolomiteMargin: DolomiteMargin<T>,
 ): any[] {
-  return [implementationAddress, dolomiteMargin.address, implementationCalldata.data!];
+  return [implementationAddress, dolomiteMargin.address, implementationCalldata?.data! ?? BYTES_EMPTY];
 }
 
 export function getIsolationModeFreezableLiquidatorProxyConstructorParams<T extends NetworkType>(
@@ -348,6 +344,16 @@ export async function getDolomiteErc20ProxyConstructorParams<T extends NetworkTy
   return [implementation.address, core.dolomiteMargin.address, transaction.data!];
 }
 
+export async function getDolomiteErc4626ImplementationConstructorParams<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+): Promise<any[]> {
+  return [
+    core.network,
+    core.dolomiteRegistry.address,
+    core.dolomiteMargin.address,
+  ];
+}
+
 export async function getDolomiteErc4626ProxyConstructorParams<T extends NetworkType>(
   core: CoreProtocolType<T>,
   marketId: BigNumberish,
@@ -366,8 +372,7 @@ export async function getDolomiteErc4626ProxyConstructorParams<T extends Network
     `Dolomite: ${symbol}`,
     `d${symbol}`,
     await token.decimals(),
-    marketId,
-    core.dolomiteRegistry.address,
+    marketId
   );
   return [implementationContract.address, core.dolomiteMargin.address, transaction.data!];
 }
@@ -390,8 +395,7 @@ export async function getDolomiteErc4626WithPayableProxyConstructorParams<T exte
     `Dolomite: ${symbol}`,
     `d${symbol}`,
     await token.decimals(),
-    marketId,
-    core.dolomiteRegistry.address,
+    marketId
   );
   return [implementationContract.address, core.dolomiteMargin.address, transaction.data!];
 }

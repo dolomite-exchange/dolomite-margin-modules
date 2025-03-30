@@ -4,11 +4,14 @@ import { DolomiteERC4626, DolomiteERC4626WithPayable, IERC20, IWETH } from '../.
 import { Network } from '../../../src/utils/no-deps-constants';
 import { OogaBoogaEcosystem } from '../ecosystem-utils/ooga-booga';
 import {
-  CoreProtocolAbstract, CoreProtocolDolomiteTokens,
+  CoreProtocolAbstract,
+  CoreProtocolDolomiteTokens,
   CoreProtocolMarketIds,
   CoreProtocolParams,
-  CoreProtocolTokens,
+  CoreProtocolTokens, DolomiteWETHType,
 } from './core-protocol-abstract';
+import { TokenomicsEcosystem } from '../ecosystem-utils/tokenomics';
+import { TokenomicsAirdropEcosystem } from '../ecosystem-utils/tokenomics-airdrop';
 
 export interface CoreProtocolTokensBerachain extends CoreProtocolTokens<Network.Berachain> {
   beraEth: IERC20;
@@ -66,10 +69,12 @@ export interface CoreProtocolDolomiteTokensBerachain extends CoreProtocolDolomit
   usd0: DolomiteERC4626;
   usd0pp: DolomiteERC4626;
   usda: DolomiteERC4626;
+  usdc: DolomiteERC4626;
   usde: DolomiteERC4626;
   usdt: DolomiteERC4626;
   wbera: DolomiteERC4626WithPayable;
   wbtc: DolomiteERC4626;
+  weth: DolomiteWETHType<Network.Berachain>;
   weEth: DolomiteERC4626;
   ylBtcLst: DolomiteERC4626;
   ylPumpBtc: DolomiteERC4626;
@@ -110,12 +115,14 @@ interface CoreProtocolMarketIdsBerachain extends CoreProtocolMarketIds {
 }
 
 export interface CoreProtocolParamsBerachain {
-  dolomiteTokens: CoreProtocolDolomiteTokensBerachain;
+  dTokens: CoreProtocolDolomiteTokensBerachain;
   marketIds: CoreProtocolMarketIdsBerachain;
   chroniclePriceOracleV3: ChroniclePriceOracleV3;
   chainsightPriceOracleV3: ChainsightPriceOracleV3;
   oogaBoogaEcosystem: OogaBoogaEcosystem;
   redstonePriceOracleV3: RedstonePriceOracleV3;
+  tokenomics: TokenomicsEcosystem;
+  tokenomicsAirdrop: TokenomicsAirdropEcosystem;
   tokens: CoreProtocolTokensBerachain;
 }
 
@@ -127,16 +134,20 @@ export class CoreProtocolBerachain extends CoreProtocolAbstract<Network.Berachai
   public readonly chainsightPriceOracleV3: ChainsightPriceOracleV3;
   public readonly oogaBoogaEcosystem: OogaBoogaEcosystem;
   public readonly redstonePriceOracleV3: RedstonePriceOracleV3;
+  public readonly tokenomics: TokenomicsEcosystem;
+  public readonly tokenomicsAirdrop: TokenomicsAirdropEcosystem;
   public readonly tokens: CoreProtocolTokensBerachain;
 
   constructor(params: CoreProtocolParams<Network.Berachain>, berachainParams: CoreProtocolParamsBerachain) {
     super(params);
     this.chroniclePriceOracleV3 = berachainParams.chroniclePriceOracleV3;
     this.chainsightPriceOracleV3 = berachainParams.chainsightPriceOracleV3;
-    this.dolomiteTokens = berachainParams.dolomiteTokens;
+    this.dolomiteTokens = berachainParams.dTokens;
     this.marketIds = berachainParams.marketIds;
     this.oogaBoogaEcosystem = berachainParams.oogaBoogaEcosystem;
     this.redstonePriceOracleV3 = berachainParams.redstonePriceOracleV3;
+    this.tokenomics = berachainParams.tokenomics;
+    this.tokenomicsAirdrop = berachainParams.tokenomicsAirdrop;
     this.tokens = berachainParams.tokens;
   }
 }

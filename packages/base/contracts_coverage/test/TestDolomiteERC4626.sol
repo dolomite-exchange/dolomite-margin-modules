@@ -33,7 +33,10 @@ import { InternalSafeDelegateCallLib } from "../lib/InternalSafeDelegateCallLib.
 contract TestDolomiteERC4626 is DolomiteERC4626 {
     using InternalSafeDelegateCallLib for address;
 
-    // ============ Functions ============
+    constructor (
+        address _dolomiteRegistry,
+        address _dolomiteMargin
+    ) DolomiteERC4626(_dolomiteRegistry, _dolomiteMargin) {}
 
     function callFunctionAndTriggerReentrancy(
         bytes calldata _callDataWithSelector

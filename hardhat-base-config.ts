@@ -95,7 +95,7 @@ export const base_config: HardhatUserConfig = {
       allowUnlimitedContractSize: true,
       gas: 50_000_000,
       blockGasLimit: 100000000429720,
-      chainId: parseInt(Network.PolygonZkEvm, 10),
+      chainId: parseInt(Network.ArbitrumOne, 10),
       chains: {
         [Network.PolygonZkEvm]: {
           hardforkHistory: {
@@ -178,6 +178,18 @@ export const base_config: HardhatUserConfig = {
           },
         },
       },
+      // {
+      //   version: '0.8.24',
+      //   settings: {
+      //     optimizer: {
+      //       enabled: true,
+      //       runs: 200,
+      //       details: {
+      //         yul: false, // To fix some extraneous "stack too deep" errors that don't make sense, set this to false.
+      //       },
+      //     },
+      //   },
+      // },
     ],
   },
   paths: {

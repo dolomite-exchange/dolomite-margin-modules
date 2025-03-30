@@ -29,7 +29,10 @@ def lintImports(dir, filepath):
 
     # remove unused import lines
     ogImportLines = copy.deepcopy(importLines);
-    importLines = [x for x in importLines if any(x[2] in line for line in postLines)]
+    try:
+        importLines = [x for x in importLines if any(x[2] in line for line in postLines)]
+    except Exception as e:
+        raise Exception(f'Cannot import lines for file: {filepath}')
 
     # remove duplicate import lines
     temp = set()

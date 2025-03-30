@@ -4,7 +4,7 @@ import { time, mine } from '@nomicfoundation/hardhat-network-helpers';
 import { BigNumber, BigNumberish, ContractTransaction } from 'ethers';
 import { config as hardhatConfig, ethers, network as hardhatNetwork, tracer } from 'hardhat';
 import { HttpNetworkConfig } from 'hardhat/src/types/config';
-import { Network, NETWORK_TO_NETWORK_NAME_MAP } from '../../src/utils/no-deps-constants';
+import { Network, NETWORK_TO_NETWORK_NAME_MAP, ONE_ETH_BI } from '../../src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '../../src/utils/SignerWithAddressWithSafety';
 
 const gasLogger: Record<string, BigNumber> = {};
@@ -155,7 +155,7 @@ export async function impersonateOrFallback(
 export async function impersonate(
   targetAccount: string | { address: string },
   giveEther: boolean = false,
-  balance = BigNumber.from('1000000000000000000'),
+  balance = ONE_ETH_BI,
 ): Promise<SignerWithAddressWithSafety> {
   const targetAddress = typeof targetAccount === 'string' ? targetAccount : targetAccount.address;
   await hardhatNetwork.provider.request({

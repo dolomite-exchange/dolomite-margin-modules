@@ -86,4 +86,22 @@ contract TestVeExternalVesterImplementationV1 is VeExternalVesterImplementationV
             )
         );
     }
+
+    function testWithdrawFromDolomite(
+        uint256 _accountNumber,
+        address _toAccount,
+        address _token,
+        uint256 _marketId,
+        uint256 _amount,
+        bool _withdrawAllIfPossible
+    ) external {
+        _withdrawFromDolomite(
+            _accountNumber,
+            _toAccount,
+            IERC20(_token),
+            _marketId,
+            _amount,
+            _withdrawAllIfPossible
+        );
+    }
 }

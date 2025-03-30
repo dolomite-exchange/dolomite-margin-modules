@@ -21,6 +21,7 @@ import { CoreProtocolBerachain } from '../utils/core-protocols/core-protocol-ber
 import { expectEvent, expectThrow } from '../utils/assertions';
 import { defaultAbiCoder, parseEther } from 'ethers/lib/utils';
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
+import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 
 const defaultAccountNumber = ZERO_BI;
 const borrowAccountNumber = BigNumber.from(123);
@@ -89,6 +90,15 @@ describe('DolomiteAccountRiskOverrideSetter', () => {
   describe('#constructor', () => {
     it('should work normally', async () => {
       expect(await riskOverrideSetter.DOLOMITE_MARGIN()).to.eq(core.dolomiteMargin.address);
+    });
+  });
+
+  describe('#intialize', () => {
+    it('should fail if called again', async () => {
+      await expectThrow(
+        riskOverrideSetter.connect(core.governance).initialize(),
+        'Initializable: contract is already initialized'
+      );
     });
   });
 
@@ -750,6 +760,22 @@ describe('DolomiteAccountRiskOverrideSetter', () => {
       );
       expect(accountRiskOverride[0].value).to.eq(parseEther('.95'));
       expect(accountRiskOverride[1].value).to.eq(parseEther('.05'));
+    });
+
+    it('should return 0 if dolomite owner is passed through', async () => {
+      const accountRiskOverride = await riskOverrideSetter.getAccountRiskOverride(
+        { owner: core.governance.address, number: ZERO_BI }
+      );
+      expect(accountRiskOverride[0].value).to.eq(ZERO_BI);
+      expect(accountRiskOverride[1].value).to.eq(ZERO_BI);
+    });
+
+    it('should return 0 if zero address is passed through', async () => {
+      const accountRiskOverride = await riskOverrideSetter.getAccountRiskOverride(
+        { owner: ZERO_ADDRESS, number: ZERO_BI }
+      );
+      expect(accountRiskOverride[0].value).to.eq(ZERO_BI);
+      expect(accountRiskOverride[1].value).to.eq(ZERO_BI);
     });
 
     it('should fail if user is using borrow only as collateral', async () => {
