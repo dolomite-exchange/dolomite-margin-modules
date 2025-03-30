@@ -638,6 +638,43 @@
       "isVerified": true
     }
   },
+  "DepositWithdrawalRouterImplementationV2": {
+    "196": {
+      "address": "0x803063080b01d2D664C80a14243369ee43e50203",
+      "transaction": "0xcbbd3fb293511e9f5964f7b59ac5d4db2c748814809a7503eb3edf7d2f770a9c",
+      "isVerified": true
+    },
+    "1101": {
+      "address": "0x803063080b01d2D664C80a14243369ee43e50203",
+      "transaction": "0x35707b4e2236565ffcf5f179a44f2669fba6be53eb8a3597b3f66b376a94e445",
+      "isVerified": true
+    },
+    "5000": {
+      "address": "0x803063080b01d2D664C80a14243369ee43e50203",
+      "transaction": "0x85ce0fd9410b7b4bcc0b78e5c32eb18df10ad337f9ba171d2f9fe1b106018296",
+      "isVerified": true
+    },
+    "8453": {
+      "address": "0x803063080b01d2D664C80a14243369ee43e50203",
+      "transaction": "0x46b7d8cd59848830fa8f4e3b69a5f614eb1fea584b2955ce3c70c6097d01e543",
+      "isVerified": true
+    },
+    "42161": {
+      "address": "0x803063080b01d2D664C80a14243369ee43e50203",
+      "transaction": "0x4b31c6b16aeb15bbefd46742956297c72dc89c1252eabdbb3e88e8ce2b203dd3",
+      "isVerified": true
+    },
+    "57073": {
+      "address": "0x803063080b01d2D664C80a14243369ee43e50203",
+      "transaction": "0xcbd14ae087cd8ef8520587bdd8f99970e5817819c6b0bb0fbb60f79ce7dcc16a",
+      "isVerified": true
+    },
+    "80094": {
+      "address": "0x803063080b01d2D664C80a14243369ee43e50203",
+      "transaction": "0x67b2f7196be48fcd867ab39959654d0cc6297e75d80ce9dd9d49ea3d157eb82f",
+      "isVerified": true
+    }
+  },
   "DepositWithdrawalRouterProxy": {
     "196": {
       "address": "0xf8b2c637A68cF6A17b1DF9F8992EeBeFf63d2dFf",

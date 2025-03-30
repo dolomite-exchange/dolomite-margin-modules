@@ -103,6 +103,7 @@ export interface CoreProtocolParams<T extends NetworkType> {
   gnosisSafe: SignerWithAddressWithSafety;
   gnosisSafeAddress: string;
   governance: SignerWithAddressWithSafety;
+  governanceAddress: string;
   hhUser1: SignerWithAddressWithSafety;
   hhUser2: SignerWithAddressWithSafety;
   hhUser3: SignerWithAddressWithSafety;
@@ -168,6 +169,7 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
   public readonly gnosisSafe: SignerWithAddressWithSafety;
   public readonly gnosisSafeAddress: string;
   public readonly governance: SignerWithAddressWithSafety;
+  public readonly governanceAddress: string;
   public readonly hhUser1: SignerWithAddressWithSafety;
   public readonly hhUser2: SignerWithAddressWithSafety;
   public readonly hhUser3: SignerWithAddressWithSafety;
@@ -235,6 +237,7 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
     this.gnosisSafe = params.gnosisSafe;
     this.gnosisSafeAddress = params.gnosisSafeAddress;
     this.governance = params.governance;
+    this.governanceAddress = params.governanceAddress;
     this.hhUser1 = params.hhUser1;
     this.hhUser2 = params.hhUser2;
     this.hhUser3 = params.hhUser3;

@@ -845,11 +845,8 @@ export async function setupCoreProtocol<T extends NetworkType>(
   const gnosisSafeAddress = GNOSIS_SAFE_MAP[config.network];
   const gnosisSafe: SignerWithAddressWithSafety = await impersonateOrFallback(gnosisSafeAddress, true, hhUser1);
 
-  const governance: SignerWithAddressWithSafety = await impersonateOrFallback(
-    await IDolomiteMargin__factory.connect(dolomiteMarginAddress, hhUser1).owner(),
-    true,
-    hhUser1,
-  );
+  const governanceAddress = await IDolomiteMargin__factory.connect(dolomiteMarginAddress, hhUser1).owner();
+  const governance: SignerWithAddressWithSafety = await impersonateOrFallback(governanceAddress, true, hhUser1);
 
   const dolomiteMargin = getDolomiteMarginContract<T>(config, governance);
 
@@ -1034,6 +1031,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
     gnosisSafe,
     gnosisSafeAddress,
     governance,
+    governanceAddress,
     implementationContracts,
     interestSetters,
     libraries,

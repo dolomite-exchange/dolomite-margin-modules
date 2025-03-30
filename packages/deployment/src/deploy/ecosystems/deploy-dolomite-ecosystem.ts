@@ -346,6 +346,11 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     core,
     DepositWithdrawalRouter__factory.connect(depositWithdrawalRouterProxyAddress, hhUser1),
     [depositWithdrawalRouterProxyAddress, borrowPositionRouterProxyAddress, genericTraderRouterProxyAddress],
+    [
+      depositWithdrawalRouterImplementationAddress,
+      borrowPositionRouterImplementationAddress,
+      genericTraderRouterImplementationAddress,
+    ],
     deployedVaults,
     transactions,
   );
