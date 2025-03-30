@@ -9,6 +9,7 @@ import {
 import {
   DolomiteERC20,
   DolomiteERC20WithPayable,
+  DolomiteERC4626,
   IDolomiteAccountValuesReader,
   IDolomiteMigrator,
   IERC20,
@@ -29,9 +30,10 @@ import { PremiaEcosystem } from '../ecosystem-utils/premia';
 import { UmamiEcosystem } from '../ecosystem-utils/umami';
 import {
   CoreProtocolAbstract,
+  CoreProtocolDolomiteTokens,
   CoreProtocolMarketIds,
   CoreProtocolParams,
-  CoreProtocolTokens,
+  CoreProtocolTokens, DolomiteWETHType,
 } from './core-protocol-abstract';
 import { GlvEcosystem } from '../ecosystem-utils/glv';
 
@@ -100,6 +102,15 @@ interface CoreProtocolTokensArbitrumOne extends CoreProtocolTokens<Network.Arbit
   wusdl: IERC20;
   wusdm: IERC20;
   xai: IERC20;
+}
+
+interface CoreProtocolDolomiteTokensArbitrumOne extends CoreProtocolDolomiteTokens<Network.ArbitrumOne> {
+  bridgedUsdc: DolomiteERC4626;
+  dai: DolomiteERC4626;
+  usdc: DolomiteERC4626;
+  usdt: DolomiteERC4626;
+  wbtc: DolomiteERC4626;
+  weth: DolomiteWETHType<Network.ArbitrumOne>;
 }
 
 interface CoreProtocolArbitrumOneDTokens {
@@ -192,7 +203,8 @@ interface CoreProtocolParamsArbitrumOne {
   chroniclePriceOracleV3: ChroniclePriceOracleV3;
   dolomiteAccountValuesReader: IDolomiteAccountValuesReader;
   dolomiteMigrator: IDolomiteMigrator;
-  dTokens: CoreProtocolArbitrumOneDTokens;
+  dTokens: CoreProtocolDolomiteTokensArbitrumOne;
+  dTokensOld: CoreProtocolArbitrumOneDTokens;
   glvEcosystem: GlvEcosystem;
   gmxEcosystem: GmxEcosystem;
   gmxEcosystemV2: GmxV2Ecosystem;
@@ -218,6 +230,7 @@ export class CoreProtocolArbitrumOne extends CoreProtocolAbstract<Network.Arbitr
   public readonly chroniclePriceOracleV3: ChroniclePriceOracleV3;
   public readonly dolomiteAccountValuesReader: IDolomiteAccountValuesReader;
   public readonly dolomiteMigrator: IDolomiteMigrator;
+  public readonly dolomiteTokens: CoreProtocolDolomiteTokensArbitrumOne;
   public readonly dTokens: CoreProtocolArbitrumOneDTokens;
   public readonly glvEcosystem: GlvEcosystem;
   public readonly gmxEcosystem: GmxEcosystem;
@@ -245,7 +258,8 @@ export class CoreProtocolArbitrumOne extends CoreProtocolAbstract<Network.Arbitr
     this.chroniclePriceOracleV3 = arbParams.chroniclePriceOracleV3;
     this.dolomiteAccountValuesReader = arbParams.dolomiteAccountValuesReader;
     this.dolomiteMigrator = arbParams.dolomiteMigrator;
-    this.dTokens = arbParams.dTokens;
+    this.dolomiteTokens = arbParams.dTokens;
+    this.dTokens = arbParams.dTokensOld;
     this.glvEcosystem = arbParams.glvEcosystem;
     this.gmxEcosystem = arbParams.gmxEcosystem;
     this.gmxV2Ecosystem = arbParams.gmxEcosystemV2;

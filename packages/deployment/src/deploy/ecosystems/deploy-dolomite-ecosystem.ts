@@ -1,4 +1,5 @@
 import CoreDeployments from '@dolomite-exchange/dolomite-margin/dist/migrations/deployed.json';
+import { getDolomiteOwnerConstructorParams } from '@dolomite-exchange/modules-admin/src/admin';
 import {
   BorrowPositionRouter__factory,
   DepositWithdrawalRouter__factory,
@@ -6,7 +7,6 @@ import {
   GenericTraderProxyV2__factory,
   GenericTraderRouter__factory,
   IDepositWithdrawalProxy__factory,
-  IDolomiteOwner__factory,
   ILiquidatorAssetRegistry__factory,
   ILiquidatorProxyV5__factory,
   IPartiallyDelayedMultiSig__factory,
@@ -14,8 +14,8 @@ import {
 } from '@dolomite-exchange/modules-base/src/types';
 import { GNOSIS_SAFE_MAP } from '@dolomite-exchange/modules-base/src/utils/constants';
 import {
+  getDolomiteErc4626ImplementationConstructorParams,
   getDolomiteMigratorConstructorParams,
-  getDolomiteOwnerConstructorParams,
   getIsolationModeFreezableLiquidatorProxyConstructorParamsWithoutCore,
   getRegistryProxyConstructorParams,
 } from '@dolomite-exchange/modules-base/src/utils/constructors/dolomite';
@@ -51,11 +51,16 @@ import { deployDolomiteRegistry } from './helpers/deploy-dolomite-registry';
 import { deployInterestSetters } from './helpers/deploy-interest-setters';
 import { deployOracleAggregator } from './helpers/deploy-oracle-aggregator';
 import { encodeDolomiteAccountRegistryMigrations } from './helpers/encode-dolomite-account-registry-migrations';
-import { encodeDolomiteAccountRiskOverrideSetterMigrations } from './helpers/encode-dolomite-account-risk-override-setter-migrations';
+import {
+  encodeDolomiteAccountRiskOverrideSetterMigrations,
+} from './helpers/encode-dolomite-account-risk-override-setter-migrations';
 import { encodeDolomiteOwnerMigrations } from './helpers/encode-dolomite-owner-migrations';
 import { encodeDolomiteRegistryMigrations } from './helpers/encode-dolomite-registry-migrations';
 import { encodeDolomiteRouterMigrations } from './helpers/encode-dolomite-router-migrations';
-import { encodeIsolationModeFreezableLiquidatorMigrations } from './helpers/encode-isolation-mode-freezable-liquidator-migrations';
+import {
+  encodeIsolationModeFreezableLiquidatorMigrations,
+} from './helpers/encode-isolation-mode-freezable-liquidator-migrations';
+import { DolomiteOwnerV1__factory, DolomiteOwnerV2__factory } from '@dolomite-exchange/modules-admin/src/types';
 
 const FIVE_MINUTES_SECONDS = 60 * 5;
 const HANDLER_ADDRESS = '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe'; // Level Initiator
@@ -94,28 +99,18 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     hhUser1,
   );
 
-  await deployContractAndSave(
-    'DolomiteERC4626',
-    [],
-    getMaxDeploymentVersionNameByDeploymentKey('DolomiteERC4626Implementation', 1),
-  );
-  await deployContractAndSave(
-    'DolomiteERC4626WithPayable',
-    [],
-    getMaxDeploymentVersionNameByDeploymentKey('DolomiteERC4626WithPayableImplementation', 1),
-  );
   const dolomiteOwnerV1Address = await deployContractAndSave(
     'DolomiteOwnerV1',
     getDolomiteOwnerConstructorParams(GNOSIS_SAFE_MAP[network], FIVE_MINUTES_SECONDS),
     'DolomiteOwnerV1',
   );
-  const dolomiteOwnerV1 = IDolomiteOwner__factory.connect(dolomiteOwnerV1Address, gnosisSafeSigner);
+  const dolomiteOwnerV1 = DolomiteOwnerV1__factory.connect(dolomiteOwnerV1Address, gnosisSafeSigner);
   const dolomiteOwnerV2Address = await deployContractAndSave(
     'DolomiteOwnerV2',
     getDolomiteOwnerConstructorParams(GNOSIS_SAFE_MAP[network], FIVE_MINUTES_SECONDS),
     'DolomiteOwnerV2',
   );
-  const dolomiteOwnerV2 = IDolomiteOwner__factory.connect(dolomiteOwnerV2Address, gnosisSafeSigner);
+  const dolomiteOwnerV2 = DolomiteOwnerV2__factory.connect(dolomiteOwnerV2Address, gnosisSafeSigner);
   const eventEmitterRegistryImplementationAddress = await deployContractAndSave(
     'EventEmitterRegistry',
     [],
@@ -154,6 +149,22 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     dolomiteAccountRiskOverrideSetterProxy,
     dolomiteAccountRiskOverrideSetterImplementationAddress,
   } = await deployDolomiteAccountRiskOverrideSetter(dolomiteMargin, hhUser1);
+
+  const coreFor4626 = {
+    dolomiteRegistry,
+    dolomiteMargin,
+    network: config.network,
+  } as any;
+  await deployContractAndSave(
+    'DolomiteERC4626',
+    await getDolomiteErc4626ImplementationConstructorParams(coreFor4626),
+    getMaxDeploymentVersionNameByDeploymentKey('DolomiteERC4626Implementation', 1),
+  );
+  await deployContractAndSave(
+    'DolomiteERC4626WithPayable',
+    await getDolomiteErc4626ImplementationConstructorParams(coreFor4626),
+    getMaxDeploymentVersionNameByDeploymentKey('DolomiteERC4626WithPayableImplementation', 1),
+  );
 
   const genericTraderProxyV2LibAddress = await deployContractAndSave(
     'GenericTraderProxyV2Lib',
@@ -349,7 +360,8 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
         network,
       },
     } as any,
-    invariants: async () => {},
+    invariants: async () => {
+    },
     scriptName: getScriptName(__filename),
     upload: {
       transactions,

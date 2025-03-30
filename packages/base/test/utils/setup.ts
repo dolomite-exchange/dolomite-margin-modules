@@ -22,7 +22,8 @@ import { Provider } from '@ethersproject/providers';
 import ZapBigNumber from 'bignumber.js';
 import { BaseContract, BigNumber, BigNumberish, ContractInterface, Signer } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
-import { ethers } from 'hardhat';
+import { ethers, network as hardhatNetwork } from 'hardhat';
+import { DolomiteOwnerV1__factory, DolomiteOwnerV2__factory } from 'packages/admin/src/types';
 import { IGlvToken } from 'packages/glv/src/types';
 import { IGmxMarketToken } from 'packages/gmx-v2/src/types';
 import { IMantleRewardStation__factory } from 'packages/mantle/src/types';
@@ -30,9 +31,10 @@ import { IChainlinkPriceOracleV1__factory } from 'packages/oracles/src/types';
 import {
   DolomiteERC20__factory,
   DolomiteERC20WithPayable__factory,
+  DolomiteERC4626,
   DolomiteERC4626__factory,
+  DolomiteERC4626WithPayable,
   DolomiteERC4626WithPayable__factory,
-  DolomiteOwnerV1__factory, DolomiteOwnerV2__factory,
   IBorrowPositionProxyV2__factory,
   IBorrowPositionRouter__factory,
   IDepositWithdrawalProxy__factory,
@@ -184,6 +186,7 @@ import {
 } from '../../src/utils/constants';
 import {
   ADDRESS_ZERO,
+  BYTES_EMPTY,
   Network,
   NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP,
   NetworkType,
@@ -207,6 +210,7 @@ import { DolomiteMargin, Expiry } from './dolomite';
 import { createAbraEcosystem } from './ecosystem-utils/abra';
 import { createArbEcosystem } from './ecosystem-utils/arb';
 import { createCamelotEcosystem } from './ecosystem-utils/camelot';
+import { DeployedVault, getDeployedVaults } from './ecosystem-utils/deployed-vaults';
 import { createGlvEcosystem } from './ecosystem-utils/glv';
 import { createGmxEcosystem, createGmxEcosystemV2 } from './ecosystem-utils/gmx';
 import { createInterestSetters } from './ecosystem-utils/interest-setters';
@@ -224,11 +228,10 @@ import { createPendleEcosystemArbitrumOne, createPendleEcosystemMantle } from '.
 import { createPlutusEcosystem } from './ecosystem-utils/plutus';
 import { createPremiaEcosystem } from './ecosystem-utils/premia';
 import { createTestEcosystem } from './ecosystem-utils/testers';
+import { createTokenomicsEcosystem } from './ecosystem-utils/tokenomics';
 import { createTokenomicsAirdropEcosystem } from './ecosystem-utils/tokenomics-airdrop';
 import { createUmamiEcosystem } from './ecosystem-utils/umami';
-import { impersonate, impersonateOrFallback, resetForkIfPossible } from './index';
-import { DeployedVault, getDeployedVaults } from './ecosystem-utils/deployed-vaults';
-import { createTokenomicsEcosystem } from './ecosystem-utils/tokenomics';
+import { getRealLatestBlockNumber, impersonate, impersonateOrFallback, resetForkIfPossible } from './index';
 
 /**
  * Config to for setting up tests in the `before` function
@@ -240,6 +243,7 @@ export interface CoreProtocolSetupConfig<T extends NetworkType> {
   readonly blockNumber: number;
   readonly network: T;
   readonly skipForking?: boolean;
+  readonly isLatest?: boolean;
 }
 
 export interface CoreProtocolConfigParent<T extends NetworkType> {
@@ -736,7 +740,66 @@ export function getWethContract<T extends NetworkType>(
   }
 }
 
-export function getDolomiteWethTokenContract<T extends NetworkType>(
+export function getDolomite4626TokenContract<T extends NetworkType>(
+  config: CoreProtocolSetupConfig<T>,
+  signer: SignerWithAddressWithSafety,
+  deploymentKey: keyof (typeof Deployments),
+): DolomiteERC4626 {
+  return DolomiteERC4626__factory.connect(
+    (Deployments[deploymentKey] as any)[config.network]!.address,
+    signer,
+  );
+}
+
+export function getDolomite4626WithPayableTokenContract<T extends NetworkType>(
+  config: CoreProtocolSetupConfig<T>,
+  signer: SignerWithAddressWithSafety,
+  deploymentKey: keyof (typeof Deployments),
+): DolomiteERC4626WithPayable {
+  return DolomiteERC4626WithPayable__factory.connect(
+    (Deployments[deploymentKey] as any)[config.network]!.address,
+    signer,
+  );
+}
+
+export async function gatherAllDolomite4626TokenContracts<T extends NetworkType>(
+  config: CoreProtocolSetupConfig<T>,
+  signer: SignerWithAddressWithSafety,
+): Promise<(DolomiteERC4626 | DolomiteERC4626WithPayable)[]> {
+  let payableFound = false;
+  const dTokens: (DolomiteERC4626 | DolomiteERC4626WithPayable)[] = [];
+
+  const keys = Object.keys(Deployments);
+  for (const key of keys) {
+    const deployments = (Deployments as any);
+    if (deployments[key][config.network] && key.startsWith('Dolomite') && key.endsWith('4626Token')) {
+      const deploymentValue = deployments[key][config.network];
+      const address = deploymentValue.address;
+      if (hardhatNetwork.name === 'hardhat' && !config.isLatest) {
+        const code = await ethers.provider.getCode(address);
+        if (code === BYTES_EMPTY) {
+          console.warn(`\tCode not found for dToken (${key}) with address ${address}. Skipping dToken gathering...`);
+          return [];
+        }
+      }
+
+      if ('isPayable' in deploymentValue && deploymentValue.isPayable) {
+        payableFound = true;
+        dTokens.push(DolomiteERC4626WithPayable__factory.connect(address, signer));
+      } else {
+        dTokens.push(DolomiteERC4626__factory.connect(address, signer));
+      }
+    }
+  }
+
+  if (!payableFound && dTokens.length > 0) {
+    return Promise.reject(new Error('No payable dToken found.'));
+  }
+
+  return dTokens;
+}
+
+export function getDolomiteWeth4626TokenContract<T extends NetworkType>(
   config: CoreProtocolSetupConfig<T>,
   signer: SignerWithAddressWithSafety,
 ): DolomiteWETHType<T> | undefined {
@@ -764,6 +827,9 @@ export async function setupCoreProtocol<T extends NetworkType>(
   if (!config.skipForking) {
     await resetForkIfPossible(config.blockNumber, config.network);
   }
+
+  const realLatest = await getRealLatestBlockNumber(true, config.network);
+  (config as any).isLatest = realLatest - config.blockNumber < 1_000;
 
   const dolomiteMarginAddress = DolomiteMarginJson.networks[config.network].address;
   const [hhUser1, hhUser2, hhUser3, hhUser4, hhUser5] = await Promise.all(
@@ -1005,13 +1071,8 @@ export async function setupCoreProtocol<T extends NetworkType>(
       slippageToleranceForPauseSentinel: SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL,
       chainlinkAggregators: CHAINLINK_PRICE_AGGREGATORS_MAP[config.network],
     },
-    dolomiteTokens: {
-      usdc: getContractOpt(
-        (Deployments.DolomiteUsdc4626Token as any)[config.network]?.address,
-        DolomiteERC4626__factory.connect,
-        hhUser1,
-      ),
-      weth: getDolomiteWethTokenContract(config, hhUser1),
+    dTokens: {
+      all: await gatherAllDolomite4626TokenContracts(config, hhUser1),
     },
     marketIds: {
       usdc: USDC_MAP[config.network].marketId,
@@ -1056,6 +1117,18 @@ export async function setupCoreProtocol<T extends NetworkType>(
         hhUser1,
       ),
       dTokens: {
+        ...coreProtocolParams.dTokens,
+        bridgedUsdc: DolomiteERC4626__factory.connect(
+          Deployments.DolomiteBridgedUsdc4626Token[typedConfig.network].address,
+          hhUser1,
+        ),
+        dai: getDolomite4626TokenContract(config, hhUser1, 'DolomiteDai4626Token'),
+        usdc: getDolomite4626TokenContract(config, hhUser1, 'DolomiteUsdc4626Token'),
+        usdt: getDolomite4626TokenContract(config, hhUser1, 'DolomiteUsdt4626Token'),
+        wbtc: getDolomite4626TokenContract(config, hhUser1, 'DolomiteWbtc4626Token'),
+        weth: getDolomiteWeth4626TokenContract(typedConfig, hhUser1)!,
+      },
+      dTokensOld: {
         usdc: DolomiteERC20__factory.connect(Deployments.DolomiteUsdcToken[typedConfig.network].address, hhUser1),
         wbtc: DolomiteERC20__factory.connect(Deployments.DolomiteWbtcToken[typedConfig.network].address, hhUser1),
         weth: DolomiteERC20WithPayable__factory.connect(
@@ -1282,69 +1355,38 @@ export async function setupCoreProtocol<T extends NetworkType>(
       tokenomicsAirdrop,
       chroniclePriceOracleV3: chroniclePriceOracle,
       redstonePriceOracleV3: redstonePriceOracle,
-      dolomiteTokens: {
-        ...coreProtocolParams.dolomiteTokens,
-        beraEth: DolomiteERC4626__factory.connect(
-          Deployments.DolomiteBeraEth4626Token[Network.Berachain].address,
-          hhUser1,
-        ),
-        eBtc: DolomiteERC4626__factory.connect(Deployments.DolomiteEBtc4626Token[Network.Berachain].address, hhUser1),
-        honey: DolomiteERC4626__factory.connect(Deployments.DolomiteHoney4626Token[Network.Berachain].address, hhUser1),
-        lbtc: DolomiteERC4626__factory.connect(Deployments.DolomiteLbtc4626Token[Network.Berachain].address, hhUser1),
-        nect: DolomiteERC4626__factory.connect(Deployments.DolomiteNect4626Token[Network.Berachain].address, hhUser1),
-        pumpBtc: DolomiteERC4626__factory.connect(
-          Deployments.DolomitePumpBtc4626Token[Network.Berachain].address,
-          hhUser1,
-        ),
-        rsEth: DolomiteERC4626__factory.connect(Deployments.DolomiteRsEth4626Token[Network.Berachain].address, hhUser1),
-        rswEth: DolomiteERC4626__factory.connect(
-          Deployments.DolomiteRswEth4626Token[Network.Berachain].address,
-          hhUser1,
-        ),
-        rUsd: DolomiteERC4626__factory.connect(Deployments.DolomiteRUsd4626Token[Network.Berachain].address, hhUser1),
-        sbtc: DolomiteERC4626__factory.connect(Deployments.DolomiteSbtc4626Token[Network.Berachain].address, hhUser1),
-        sUsda: DolomiteERC4626__factory.connect(Deployments.DolomiteSUsda4626Token[Network.Berachain].address, hhUser1),
-        sUsde: DolomiteERC4626__factory.connect(Deployments.DolomiteSUsde4626Token[Network.Berachain].address, hhUser1),
-        stBtc: DolomiteERC4626__factory.connect(Deployments.DolomiteStBtc4626Token[Network.Berachain].address, hhUser1),
-        solvBtc: DolomiteERC4626__factory.connect(
-          Deployments.DolomiteSolvBtc4626Token[Network.Berachain].address,
-          hhUser1,
-        ),
-        solvBtcBbn: DolomiteERC4626__factory.connect(
-          Deployments.DolomiteSolvBtcBbn4626Token[Network.Berachain].address,
-          hhUser1,
-        ),
-        stone: DolomiteERC4626__factory.connect(Deployments.DolomiteStone4626Token[Network.Berachain].address, hhUser1),
-        uniBtc: DolomiteERC4626__factory.connect(
-          Deployments.DolomiteUniBtc4626Token[Network.Berachain].address,
-          hhUser1,
-        ),
-        usd0: DolomiteERC4626__factory.connect(Deployments.DolomiteUsd04626Token[Network.Berachain].address, hhUser1),
-        usd0pp: DolomiteERC4626__factory.connect(
-          Deployments.DolomiteUsd0pp4626Token[Network.Berachain].address,
-          hhUser1,
-        ),
-        usda: DolomiteERC4626__factory.connect(Deployments.DolomiteUsda4626Token[Network.Berachain].address, hhUser1),
-        usde: DolomiteERC4626__factory.connect(Deployments.DolomiteUsde4626Token[Network.Berachain].address, hhUser1),
-        usdt: DolomiteERC4626__factory.connect(Deployments.DolomiteUsdt4626Token[Network.Berachain].address, hhUser1),
-        wbera: DolomiteERC4626WithPayable__factory.connect(
-          Deployments.DolomiteWBera4626Token[Network.Berachain].address,
-          hhUser1,
-        ),
-        wbtc: DolomiteERC4626__factory.connect(Deployments.DolomiteWbtc4626Token[Network.Berachain].address, hhUser1),
-        weEth: DolomiteERC4626__factory.connect(Deployments.DolomiteWeEth4626Token[Network.Berachain].address, hhUser1),
-        ylBtcLst: DolomiteERC4626__factory.connect(
-          Deployments.DolomiteYlBtcLst4626Token[Network.Berachain].address,
-          hhUser1,
-        ),
-        ylPumpBtc: DolomiteERC4626__factory.connect(
-          Deployments.DolomiteYlPumpBtc4626Token[Network.Berachain].address,
-          hhUser1,
-        ),
-        ylStEth: DolomiteERC4626__factory.connect(
-          Deployments.DolomiteYlStEth4626Token[Network.Berachain].address,
-          hhUser1,
-        ),
+      dTokens: {
+        ...coreProtocolParams.dTokens,
+        beraEth: getDolomite4626TokenContract(config, hhUser1, 'DolomiteBeraEth4626Token'),
+        eBtc: getDolomite4626TokenContract(config, hhUser1, 'DolomiteEBtc4626Token'),
+        honey: getDolomite4626TokenContract(config, hhUser1, 'DolomiteHoney4626Token'),
+        lbtc: getDolomite4626TokenContract(config, hhUser1, 'DolomiteLbtc4626Token'),
+        nect: getDolomite4626TokenContract(config, hhUser1, 'DolomiteNect4626Token'),
+        pumpBtc: getDolomite4626TokenContract(config, hhUser1, 'DolomitePumpBtc4626Token'),
+        rsEth: getDolomite4626TokenContract(config, hhUser1, 'DolomiteRsEth4626Token'),
+        rswEth: getDolomite4626TokenContract(config, hhUser1, 'DolomiteRswEth4626Token'),
+        rUsd: getDolomite4626TokenContract(config, hhUser1, 'DolomiteRUsd4626Token'),
+        sbtc: getDolomite4626TokenContract(config, hhUser1, 'DolomiteSbtc4626Token'),
+        sUsda: getDolomite4626TokenContract(config, hhUser1, 'DolomiteSUsda4626Token'),
+        sUsde: getDolomite4626TokenContract(config, hhUser1, 'DolomiteSUsde4626Token'),
+        stBtc: getDolomite4626TokenContract(config, hhUser1, 'DolomiteStBtc4626Token'),
+        solvBtc: getDolomite4626TokenContract(config, hhUser1, 'DolomiteSolvBtc4626Token'),
+        solvBtcBbn: getDolomite4626TokenContract(config, hhUser1, 'DolomiteSolvBtcBbn4626Token'),
+        stone: getDolomite4626TokenContract(config, hhUser1, 'DolomiteStone4626Token'),
+        uniBtc: getDolomite4626TokenContract(config, hhUser1, 'DolomiteUniBtc4626Token'),
+        usd0: getDolomite4626TokenContract(config, hhUser1, 'DolomiteUsd04626Token'),
+        usd0pp: getDolomite4626TokenContract(config, hhUser1, 'DolomiteUsd0pp4626Token'),
+        usda: getDolomite4626TokenContract(config, hhUser1, 'DolomiteUsda4626Token'),
+        usdc: getDolomite4626TokenContract(config, hhUser1, 'DolomiteUsdc4626Token'),
+        usde: getDolomite4626TokenContract(config, hhUser1, 'DolomiteUsde4626Token'),
+        usdt: getDolomite4626TokenContract(config, hhUser1, 'DolomiteUsdt4626Token'),
+        wbera: getDolomite4626WithPayableTokenContract(config, hhUser1, 'DolomiteWBera4626Token'),
+        wbtc: getDolomite4626TokenContract(config, hhUser1, 'DolomiteWbtc4626Token'),
+        weth: getDolomite4626TokenContract(config, hhUser1, 'DolomiteWeth4626Token'),
+        weEth: getDolomite4626TokenContract(config, hhUser1, 'DolomiteWeEth4626Token'),
+        ylBtcLst: getDolomite4626TokenContract(config, hhUser1, 'DolomiteYlBtcLst4626Token'),
+        ylPumpBtc: getDolomite4626TokenContract(config, hhUser1, 'DolomiteYlPumpBtc4626Token'),
+        ylStEth: getDolomite4626TokenContract(config, hhUser1, 'DolomiteYlStEth4626Token'),
       },
       marketIds: {
         ...coreProtocolParams.marketIds,

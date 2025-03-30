@@ -10,10 +10,6 @@ import {
   DolomiteAccountRegistry,
   DolomiteAccountRegistry__factory,
   DolomiteERC20,
-  DolomiteOwnerV1,
-  DolomiteOwnerV1__factory,
-  DolomiteOwnerV2,
-  DolomiteOwnerV2__factory,
   DolomiteRegistryImplementation,
   DolomiteRegistryImplementation__factory,
   EventEmitterRegistry,
@@ -39,8 +35,7 @@ import {
 } from '../../src/types';
 import {
   getDolomiteErc20ProxyConstructorParams,
-  getDolomiteErc4626ProxyConstructorParams,
-  getDolomiteOwnerConstructorParams,
+  getDolomiteErc4626ProxyConstructorParams, getDolomiteErc4626WithPayableProxyConstructorParams,
   getEventEmitterRegistryConstructorParams,
   getIsolationModeTraderProxyConstructorParams,
   getRegistryProxyConstructorParams,
@@ -56,6 +51,8 @@ import {
 } from '../../src/utils/dolomite-utils';
 import { SignerWithAddressWithSafety } from '../../src/utils/SignerWithAddressWithSafety';
 import { CoreProtocolType } from './setup';
+import { DolomiteOwnerV1, DolomiteOwnerV1__factory, DolomiteOwnerV2, DolomiteOwnerV2__factory } from 'packages/admin/src/types';
+import { getDolomiteOwnerConstructorParams } from 'packages/admin/src/admin';
 
 export type DolomiteMargin<T extends NetworkType> = T extends Network.ArbitrumOne ? IDolomiteMargin : IDolomiteMarginV2;
 export type Expiry<T extends NetworkType> = T extends Network.ArbitrumOne ? IExpiry : IExpiryV2;
@@ -132,6 +129,17 @@ export async function createDolomiteErc4626Proxy(
     RegistryProxy__factory.abi,
     RegistryProxy__factory.bytecode,
     await getDolomiteErc4626ProxyConstructorParams(core, marketId),
+  );
+}
+
+export async function createDolomiteErc4626WithPayableProxy(
+  marketId: BigNumberish,
+  core: CoreProtocolType<NetworkType>,
+): Promise<RegistryProxy> {
+  return createContractWithAbi(
+    RegistryProxy__factory.abi,
+    RegistryProxy__factory.bytecode,
+    await getDolomiteErc4626WithPayableProxyConstructorParams(core, marketId),
   );
 }
 

@@ -7,14 +7,14 @@ import {
   Network,
   ONE_DAY_SECONDS,
 } from 'packages/base/src/utils/no-deps-constants';
+import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { Ownable__factory } from 'packages/liquidity-mining/src/types';
-import { DolomiteOwner } from '../../src/types';
-import { advanceByTimeDelta, revertToSnapshotAndCapture, snapshot } from '../utils';
-import { expectEvent, expectThrow } from '../utils/assertions';
-
-import { CoreProtocolArbitrumOne } from '../utils/core-protocols/core-protocol-arbitrum-one';
-import { createDolomiteOwner } from '../utils/dolomite';
-import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '../utils/setup';
+import { DolomiteOwnerV1 } from '../src/types';
+import { getDefaultCoreProtocolConfig, setupCoreProtocol } from 'packages/base/test/utils/setup';
+import { createDolomiteOwner } from './admin-ecosystem-utils';
+import { revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
+import { expectEvent, expectThrow } from 'packages/base/test/utils/assertions';
+import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 const BYTES32_OTHER_SELECTOR = '0x1234567800000000000000000000000000000000000000000000000000000000';
@@ -26,7 +26,7 @@ describe('DolomiteOwner', () => {
   let snapshotId: string;
 
   let core: CoreProtocolArbitrumOne;
-  let dolomiteOwner: DolomiteOwner;
+  let dolomiteOwner: DolomiteOwnerV1;
   let bypassTimelockRole: BytesLike;
   let executorRole: BytesLike;
   let securityCouncilRole: BytesLike;
@@ -110,7 +110,7 @@ describe('DolomiteOwner', () => {
     });
 
     it('should fail if attempting to remove DEFAULT_ADMIN', async () => {
-      await expectThrow(dolomiteOwner.ownerRemoveRole(BYTES_ZERO), 'DolomiteOwner: Cannot remove admin role');
+      await expectThrow(dolomiteOwner.ownerRemoveRole(BYTES_ZERO), 'DolomiteOwnerV1: Cannot remove admin role');
     });
 
     it('should fail if not called by DEFAULT_ADMIN', async () => {
@@ -137,7 +137,7 @@ describe('DolomiteOwner', () => {
     it('should fail if invalid role', async () => {
       await expectThrow(
         dolomiteOwner.ownerAddRoleAddresses(BAD_ROLE, [OTHER_ADDRESS]),
-        `DolomiteOwner: Invalid role <${BAD_ROLE}>`,
+        `DolomiteOwnerV1: Invalid role <${BAD_ROLE}>`,
       );
     });
 
@@ -186,7 +186,7 @@ describe('DolomiteOwner', () => {
     it('should fail if invalid role', async () => {
       await expectThrow(
         dolomiteOwner.ownerAddRoleFunctionSelectors(BAD_ROLE, [BYTES4_OTHER_SELECTOR]),
-        `DolomiteOwner: Invalid role <${BAD_ROLE}>`,
+        `DolomiteOwnerV1: Invalid role <${BAD_ROLE}>`,
       );
     });
 
@@ -246,7 +246,7 @@ describe('DolomiteOwner', () => {
     it('should fail if invalid role', async () => {
       await expectThrow(
         dolomiteOwner.ownerAddRoleToAddressFunctionSelectors(BAD_ROLE, OTHER_ADDRESS, ['0x12345678']),
-        `DolomiteOwner: Invalid role <${BAD_ROLE}>`,
+        `DolomiteOwnerV1: Invalid role <${BAD_ROLE}>`,
       );
     });
 
@@ -309,7 +309,7 @@ describe('DolomiteOwner', () => {
       await dolomiteOwner.submitTransaction(core.dolomiteRegistry.address, data.data!);
 
       await dolomiteOwner.executeTransaction(0);
-      await expectThrow(dolomiteOwner.ownerCancelTransaction(0), 'DolomiteOwner: Transaction not cancellable');
+      await expectThrow(dolomiteOwner.ownerCancelTransaction(0), 'DolomiteOwnerV1: Transaction not cancellable');
     });
 
     it('should fail if transaction is already cancelled', async () => {
@@ -317,11 +317,11 @@ describe('DolomiteOwner', () => {
       await dolomiteOwner.submitTransaction(core.dolomiteRegistry.address, data.data!);
 
       await dolomiteOwner.ownerCancelTransaction(0);
-      await expectThrow(dolomiteOwner.ownerCancelTransaction(0), 'DolomiteOwner: Transaction not cancellable');
+      await expectThrow(dolomiteOwner.ownerCancelTransaction(0), 'DolomiteOwnerV1: Transaction not cancellable');
     });
 
     it('should fail if transaction does not exist', async () => {
-      await expectThrow(dolomiteOwner.ownerCancelTransaction(0), 'DolomiteOwner: Transaction does not exist');
+      await expectThrow(dolomiteOwner.ownerCancelTransaction(0), 'DolomiteOwnerV1: Transaction does not exist');
     });
 
     it('should fail if not called by DEFAULT_ADMIN', async () => {
@@ -381,7 +381,7 @@ describe('DolomiteOwner', () => {
       await dolomiteOwner.grantRole(securityCouncilRole, core.hhUser1.address);
       await expectThrow(
         dolomiteOwner.connect(core.hhUser1).submitTransaction(core.dolomiteRegistry.address, data.data!),
-        'DolomiteOwner: Transaction not approved',
+        'DolomiteOwnerV1: Transaction not approved',
       );
     });
 
@@ -396,33 +396,33 @@ describe('DolomiteOwner', () => {
 
       await expectThrow(
         dolomiteOwner.connect(core.hhUser1).submitTransaction(core.dolomiteRegistry.address, data.data!),
-        'DolomiteOwner: Transaction not approved',
+        'DolomiteOwnerV1: Transaction not approved',
       );
     });
 
     it('should fail for default admin when submitting a transaction with data that is too small', async () => {
       await expectThrow(
         dolomiteOwner.submitTransaction(core.hhUser1.address, '0x'),
-        'DolomiteOwner: Invalid calldata length',
+        'DolomiteOwnerV1: Invalid calldata length',
       );
       await expectThrow(
         dolomiteOwner.submitTransaction(core.hhUser1.address, '0x12'),
-        'DolomiteOwner: Invalid calldata length',
+        'DolomiteOwnerV1: Invalid calldata length',
       );
       await expectThrow(
         dolomiteOwner.submitTransaction(core.hhUser1.address, '0x1234'),
-        'DolomiteOwner: Invalid calldata length',
+        'DolomiteOwnerV1: Invalid calldata length',
       );
       await expectThrow(
         dolomiteOwner.submitTransaction(core.hhUser1.address, '0x123456'),
-        'DolomiteOwner: Invalid calldata length',
+        'DolomiteOwnerV1: Invalid calldata length',
       );
     });
 
     it('should fail for default admin when submitting a transaction with no data', async () => {
       await expectThrow(
         dolomiteOwner.submitTransaction(core.hhUser1.address, BYTES_EMPTY),
-        'DolomiteOwner: Invalid calldata length',
+        'DolomiteOwnerV1: Invalid calldata length',
       );
     });
 
@@ -433,7 +433,7 @@ describe('DolomiteOwner', () => {
 
       await expectThrow(
         dolomiteOwner.connect(core.hhUser1).submitTransaction(core.hhUser5.address, BYTES_EMPTY),
-        'DolomiteOwner: Invalid calldata length',
+        'DolomiteOwnerV1: Invalid calldata length',
       );
     });
 
@@ -447,7 +447,7 @@ describe('DolomiteOwner', () => {
       await dolomiteOwner.ownerRemoveRole(securityCouncilRole);
       await expectThrow(
         dolomiteOwner.connect(core.hhUser1).submitTransaction(core.hhUser5.address, BYTES4_OTHER_SELECTOR),
-        'DolomiteOwner: Transaction not approved',
+        'DolomiteOwnerV1: Transaction not approved',
       );
     });
 
@@ -459,12 +459,12 @@ describe('DolomiteOwner', () => {
 
       await expectThrow(
         dolomiteOwner.connect(core.hhUser1).submitTransaction(core.dolomiteRegistry.address, BYTES4_OTHER_SELECTOR),
-        'DolomiteOwner: Transaction not approved',
+        'DolomiteOwnerV1: Transaction not approved',
       );
     });
 
     it('should fail if destination is address zero', async () => {
-      await expectThrow(dolomiteOwner.submitTransaction(ADDRESS_ZERO, BYTES_ZERO), 'DolomiteOwner: Address is null');
+      await expectThrow(dolomiteOwner.submitTransaction(ADDRESS_ZERO, BYTES_ZERO), 'DolomiteOwnerV1: Address is null');
     });
   });
 
@@ -487,9 +487,9 @@ describe('DolomiteOwner', () => {
       const data = await core.dolomiteRegistry.populateTransaction.ownerSetChainlinkPriceOracle(OTHER_ADDRESS);
       await dolomiteOwner.submitTransaction(core.dolomiteRegistry.address, data.data!);
 
-      await expectThrow(dolomiteOwner.executeTransaction(0), 'DolomiteOwner: Timelock incomplete');
+      await expectThrow(dolomiteOwner.executeTransaction(0), 'DolomiteOwnerV1: Timelock incomplete');
 
-      await advanceByTimeDelta(ONE_DAY_SECONDS);
+      await increase(ONE_DAY_SECONDS);
 
       const res = await dolomiteOwner.executeTransaction(0);
       await expectEvent(dolomiteOwner, res, 'TransactionExecuted', {
@@ -505,7 +505,7 @@ describe('DolomiteOwner', () => {
       const data = await core.dolomiteRegistry.populateTransaction.ownerSetChainlinkPriceOracle(OTHER_ADDRESS);
       await dolomiteOwner.submitTransaction(core.dolomiteRegistry.address, data.data!);
 
-      await expectThrow(dolomiteOwner.executeTransaction(0), 'DolomiteOwner: Timelock incomplete');
+      await expectThrow(dolomiteOwner.executeTransaction(0), 'DolomiteOwnerV1: Timelock incomplete');
 
       const bypassTimeLockRole = await dolomiteOwner.BYPASS_TIMELOCK_ROLE();
       await dolomiteOwner.grantRole(bypassTimeLockRole, core.gnosisSafe.address);
@@ -537,11 +537,11 @@ describe('DolomiteOwner', () => {
       const data = await core.dolomiteRegistry.populateTransaction.ownerSetChainlinkPriceOracle(OTHER_ADDRESS);
       await dolomiteOwner.submitTransaction(core.dolomiteRegistry.address, data.data!);
 
-      await expectThrow(dolomiteOwner.connect(core.hhUser1).executeTransaction(0), 'DolomiteOwner: Invalid executor');
+      await expectThrow(dolomiteOwner.connect(core.hhUser1).executeTransaction(0), 'DolomiteOwnerV1: Invalid executor');
     });
 
     it('should fail if transaction does not exist', async () => {
-      await expectThrow(dolomiteOwner.executeTransaction(0), 'DolomiteOwner: Transaction does not exist');
+      await expectThrow(dolomiteOwner.executeTransaction(0), 'DolomiteOwnerV1: Transaction does not exist');
     });
 
     it('should fail if transaction is already executed', async () => {
@@ -549,7 +549,7 @@ describe('DolomiteOwner', () => {
       await dolomiteOwner.submitTransaction(core.dolomiteRegistry.address, data.data!);
 
       await dolomiteOwner.executeTransaction(0);
-      await expectThrow(dolomiteOwner.executeTransaction(0), 'DolomiteOwner: Transaction not executable');
+      await expectThrow(dolomiteOwner.executeTransaction(0), 'DolomiteOwnerV1: Transaction not executable');
     });
 
     it('should fail if transaction is cancelled', async () => {
@@ -557,7 +557,7 @@ describe('DolomiteOwner', () => {
       await dolomiteOwner.submitTransaction(core.dolomiteRegistry.address, data.data!);
 
       await dolomiteOwner.ownerCancelTransaction(0);
-      await expectThrow(dolomiteOwner.executeTransaction(0), 'DolomiteOwner: Transaction not executable');
+      await expectThrow(dolomiteOwner.executeTransaction(0), 'DolomiteOwnerV1: Transaction not executable');
     });
   });
 
@@ -599,7 +599,7 @@ describe('DolomiteOwner', () => {
 
       await expectThrow(
         dolomiteOwner.connect(core.hhUser1).executeTransactions([0, 1]),
-        'DolomiteOwner: Invalid executor',
+        'DolomiteOwnerV1: Invalid executor',
       );
     });
   });
@@ -624,7 +624,7 @@ describe('DolomiteOwner', () => {
     it('should fail if role is not active', async () => {
       await expectThrow(
         dolomiteOwner.grantRole(BAD_ROLE, core.hhUser1.address),
-        `DolomiteOwner: Invalid role <${BAD_ROLE}>`,
+        `DolomiteOwnerV1: Invalid role <${BAD_ROLE}>`,
       );
     });
   });
@@ -643,7 +643,7 @@ describe('DolomiteOwner', () => {
     it('should fail if role is not active', async () => {
       await expectThrow(
         dolomiteOwner.revokeRole(BAD_ROLE, core.hhUser1.address),
-        `DolomiteOwner: Invalid role <${BAD_ROLE}>`,
+        `DolomiteOwnerV1: Invalid role <${BAD_ROLE}>`,
       );
     });
   });

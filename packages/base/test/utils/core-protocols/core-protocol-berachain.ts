@@ -8,7 +8,7 @@ import {
   CoreProtocolDolomiteTokens,
   CoreProtocolMarketIds,
   CoreProtocolParams,
-  CoreProtocolTokens,
+  CoreProtocolTokens, DolomiteWETHType,
 } from './core-protocol-abstract';
 import { TokenomicsEcosystem } from '../ecosystem-utils/tokenomics';
 import { TokenomicsAirdropEcosystem } from '../ecosystem-utils/tokenomics-airdrop';
@@ -69,10 +69,12 @@ export interface CoreProtocolDolomiteTokensBerachain extends CoreProtocolDolomit
   usd0: DolomiteERC4626;
   usd0pp: DolomiteERC4626;
   usda: DolomiteERC4626;
+  usdc: DolomiteERC4626;
   usde: DolomiteERC4626;
   usdt: DolomiteERC4626;
   wbera: DolomiteERC4626WithPayable;
   wbtc: DolomiteERC4626;
+  weth: DolomiteWETHType<Network.Berachain>;
   weEth: DolomiteERC4626;
   ylBtcLst: DolomiteERC4626;
   ylPumpBtc: DolomiteERC4626;
@@ -113,7 +115,7 @@ interface CoreProtocolMarketIdsBerachain extends CoreProtocolMarketIds {
 }
 
 export interface CoreProtocolParamsBerachain {
-  dolomiteTokens: CoreProtocolDolomiteTokensBerachain;
+  dTokens: CoreProtocolDolomiteTokensBerachain;
   marketIds: CoreProtocolMarketIdsBerachain;
   chroniclePriceOracleV3: ChroniclePriceOracleV3;
   oogaBoogaEcosystem: OogaBoogaEcosystem;
@@ -137,7 +139,7 @@ export class CoreProtocolBerachain extends CoreProtocolAbstract<Network.Berachai
   constructor(params: CoreProtocolParams<Network.Berachain>, berachainParams: CoreProtocolParamsBerachain) {
     super(params);
     this.chroniclePriceOracleV3 = berachainParams.chroniclePriceOracleV3;
-    this.dolomiteTokens = berachainParams.dolomiteTokens;
+    this.dolomiteTokens = berachainParams.dTokens;
     this.marketIds = berachainParams.marketIds;
     this.oogaBoogaEcosystem = berachainParams.oogaBoogaEcosystem;
     this.redstonePriceOracleV3 = berachainParams.redstonePriceOracleV3;
