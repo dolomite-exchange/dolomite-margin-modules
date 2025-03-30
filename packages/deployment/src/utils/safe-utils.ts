@@ -6,51 +6,38 @@ import { getOwnerContractAndSubmissionFilter } from './dry-run-utils';
 interface TransactionData {
   type: 'TRANSACTION';
   transaction: {
-    txInfo: {
-      type: 'Custom';
-      humanDescription: string | null;
-      to: {
-        value: string; // Address
-        name: string | null;
-        logoUri: string | null;
-      };
-      dataSize: string;
-      value: string; // Transaction value
-      methodName: string | null;
-      actionCount: number | null;
-      isCancellation: boolean;
-    };
-    id: string; // Unique transaction ID
-    timestamp: number; // UNIX timestamp in milliseconds
-    txStatus: 'SUCCESS' | 'PENDING' | 'FAILED'; // Transaction status
-    executionInfo: {
+    txStatus: 'SUCCESS' | 'FAILED' | 'CANCELLED' | 'AWAITING_CONFIRMATIONS' | 'AWAITING_EXECUTION';
+    executionInfo: null | {
       type: 'MULTISIG';
       nonce: number;
       confirmationsRequired: number;
       confirmationsSubmitted: number;
-      missingSigners: string[] | null; // Addresses of missing signers, if any
+      missingSigners: string[] | null;
     };
-    safeAppInfo: null | {
-      // Define structure if safeAppInfo is not null in other cases
-    };
-    txHash: string; // Transaction hash
+    txHash: string | null; // Transaction hash
   };
-  conflictType: 'None' | string; // Additional conflict type statuses (if applicable)
+  conflictType: 'None';
 }
 
 export async function getTransactionIdsBySafeNonce<T extends NetworkType>(
   core: CoreProtocolType<T>,
   nonce: number,
-): Promise<BigNumberish[] | undefined> {
+): Promise<BigNumberish[]> {
+  const network = core.network;
   const safeAddress = core.gnosisSafeAddress;
-  const url = `https://safe-client.safe.global/v1/chains/80094/safes/${safeAddress}/transactions/history`;
-  const response = await fetch(url);
-  const json = (await response.json())['results'] as any[];
-  const transactionData = json.find((value: any): value is TransactionData => {
-    return isTransactionType(value) && value.transaction.executionInfo.nonce === nonce;
-  });
+  let url = `https://safe-client.safe.global/v1/chains/${network}/safes/${safeAddress}/transactions/history`;
+  let transactionData: TransactionData | undefined;
+  while (url && !transactionData) {
+    const json = await fetch(url).then(r => r.json());
+    transactionData = json['results'].find((value: any): value is TransactionData => {
+      return isTransactionType(value) && value.transaction.executionInfo?.nonce === nonce;
+    });
+
+    url = json['next'];
+  }
+
   if (!transactionData) {
-    return undefined;
+    return Promise.reject(new Error(`Could not find transaction for nonce: ${nonce}`));
   }
 
   const ownerAddress = await core.dolomiteMargin.owner();
@@ -59,7 +46,7 @@ export async function getTransactionIdsBySafeNonce<T extends NetworkType>(
     return Promise.reject(new Error('Invalid owner address; cannot find filter'));
   }
 
-  const receipt = await core.hhUser1.provider!.getTransactionReceipt(transactionData.transaction.txHash);
+  const receipt = await core.hhUser1.provider!.getTransactionReceipt(transactionData.transaction.txHash!);
   const logs = receipt.logs.filter(log => log.topics[0] === filter!.topics![0]);
   return logs.reduce((acc, log) => {
     const event = ownerContract.interface.parseLog(log);

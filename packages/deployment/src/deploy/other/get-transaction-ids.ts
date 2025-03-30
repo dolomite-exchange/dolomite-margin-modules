@@ -1,47 +1,45 @@
-import { NetworkName } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { execSync } from 'child_process';
-import path from 'path';
-import * as process from 'process';
+import { getAnyNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import { NetworkType } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
+import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../utils/dry-run-utils';
+import { prettyPrintEncodedDataWithTypeSafety } from '../../utils/encoding/base-encoder-utils';
+import getScriptName from '../../utils/get-script-name';
+import { getTransactionIdsBySafeNonce } from '../../utils/safe-utils';
 
-const HARDHAT_RUN = `node --max-old-space-size=32768 ${process.cwd()}../../../node_modules/.bin/hardhat`;
+/**
+ * Gets the transaction IDs from a given nonce
+ */
+async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
+  const network = (await getAnyNetwork()) as T;
+  const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
+  const nonce = parseInt(process.env.NONCE!, 10);
 
-const ALL_NETWORKS = Object.values(NetworkName);
+  const transactions: EncodedTransaction[] = [
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { owner: core.ownerAdapterV2 },
+      'owner',
+      'executeTransactions',
+      [await getTransactionIdsBySafeNonce(core, nonce)],
+      { skipWrappingCalldataInSubmitTransaction: true },
+    ),
+  ];
 
-const scriptNumber = parseInt(process.argv[2], 10);
-if (isNaN(scriptNumber) || scriptNumber < 0) {
-  throw new Error(`Invalid script number, found: ${scriptNumber}`);
+  return {
+    core,
+    scriptName: getScriptName(__filename),
+    upload: {
+      transactions,
+      chainId: network,
+      version: '1.0',
+      meta: {
+        txBuilderVersion: '1.16.5',
+        name: __filename,
+      },
+    },
+    invariants: async () => {},
+  };
 }
 
-const networkName = process.env.NETWORK;
-if (!networkName || !ALL_NETWORKS.includes(networkName as any)) {
-  throw new Error(`Invalid network name, found: ${networkName}. Expected one of ${ALL_NETWORKS.join(', ')}`);
-}
-
-const DRY_RUN_ONLY_KEY = '--dry-run-only';
-const SKIP_DRY_RUN_KEY = '--skip-dry-run';
-const dryRunOnly = process.argv.some((arg) => arg === DRY_RUN_ONLY_KEY) || process.env.DRY_RUN_ONLY === 'true';
-const skipDryRun = process.argv.some((arg) => arg === SKIP_DRY_RUN_KEY) || process.env.SKIP_DRY_RUN === 'true';
-
-const lowerBound = Math.floor(scriptNumber / 100) * 100;
-const directory = `${lowerBound}-${lowerBound + 99}`;
-const filePath = path.resolve(__dirname, networkName, directory, `safe-transaction-${scriptNumber}.ts`);
-
-if (!dryRunOnly) {
-  console.log('');
-  console.log('===========================================================');
-  console.log('==================== Executing Real Run ===================');
-  console.log('===========================================================');
-  console.log('');
-  try {
-    const startTimestamp = Date.now();
-    execSync(
-      `${HARDHAT_RUN} --network ${networkName} run ${filePath}`,
-      { stdio: 'inherit' },
-    );
-    const duration = Math.floor((Date.now() - startTimestamp) / 1000);
-    console.log(`\tFinished real run in ${duration}s`);
-  } catch (e) {
-    console.error(e);
-    process.exit(1);
-  }
-}
+doDryRunAndCheckDeployment(main);

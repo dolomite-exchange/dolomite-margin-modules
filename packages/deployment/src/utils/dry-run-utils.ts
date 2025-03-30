@@ -261,43 +261,43 @@ async function doStuffInternal<T extends NetworkType>(executionFn: () => Promise
 
       if (transactionIds.length === 0) {
         console.warn('\tTransaction IDs length is equal to 0');
-      }
-
-      console.log('============================================================');
-      console.log('================ Real Transaction Execution ================');
-      console.log('============================================================');
-
-      if (ownerAddress === result.core.ownerAdapterV1.address) {
-        encodedTransactionForExecution = await prettyPrintEncodedDataWithTypeSafety(
-          result.core,
-          { ownerAdapter: result.core.ownerAdapterV1 },
-          'ownerAdapter',
-          'executeTransactions',
-          [transactionIds],
-          { skipWrappingCalldataInSubmitTransaction: true },
-        );
-      } else if (ownerAddress === result.core.ownerAdapterV2.address) {
-        encodedTransactionForExecution = await prettyPrintEncodedDataWithTypeSafety(
-          result.core,
-          { ownerAdapter: result.core.ownerAdapterV2 },
-          'ownerAdapter',
-          'executeTransactions',
-          [transactionIds],
-          { skipWrappingCalldataInSubmitTransaction: true },
-        );
-      } else if (ownerAddress === result.core.delayedMultiSig.address) {
-        encodedTransactionForExecution = await prettyPrintEncodedDataWithTypeSafety(
-          result.core,
-          { delayedMultiSig: result.core.delayedMultiSig },
-          'delayedMultiSig',
-          'executeMultipleTransactions',
-          [transactionIds],
-          { skipWrappingCalldataInSubmitTransaction: true },
-        );
-      } else if (ownerAddress === result.core.gnosisSafeAddress) {
-        console.log('\tExecute the transactions directly against the Gnosis Safe');
       } else {
-        return Promise.reject(new Error(invalidOwnerAddress));
+        console.log('============================================================');
+        console.log('================ Real Transaction Execution ================');
+        console.log('============================================================');
+
+        if (ownerAddress === result.core.ownerAdapterV1.address) {
+          encodedTransactionForExecution = await prettyPrintEncodedDataWithTypeSafety(
+            result.core,
+            { ownerAdapter: result.core.ownerAdapterV1 },
+            'ownerAdapter',
+            'executeTransactions',
+            [transactionIds],
+            { skipWrappingCalldataInSubmitTransaction: true },
+          );
+        } else if (ownerAddress === result.core.ownerAdapterV2.address) {
+          encodedTransactionForExecution = await prettyPrintEncodedDataWithTypeSafety(
+            result.core,
+            { ownerAdapter: result.core.ownerAdapterV2 },
+            'ownerAdapter',
+            'executeTransactions',
+            [transactionIds],
+            { skipWrappingCalldataInSubmitTransaction: true },
+          );
+        } else if (ownerAddress === result.core.delayedMultiSig.address) {
+          encodedTransactionForExecution = await prettyPrintEncodedDataWithTypeSafety(
+            result.core,
+            { delayedMultiSig: result.core.delayedMultiSig },
+            'delayedMultiSig',
+            'executeMultipleTransactions',
+            [transactionIds],
+            { skipWrappingCalldataInSubmitTransaction: true },
+          );
+        } else if (ownerAddress === result.core.gnosisSafeAddress) {
+          console.log('\tExecute the transactions directly against the Gnosis Safe');
+        } else {
+          return Promise.reject(new Error(invalidOwnerAddress));
+        }
       }
     }
 
