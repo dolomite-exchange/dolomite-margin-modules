@@ -10,7 +10,7 @@ import { FunctionFragment } from '@ethersproject/abi';
 import { TransactionResponse } from '@ethersproject/abstract-provider';
 import { Overrides } from '@ethersproject/contracts/src.ts';
 import { execSync } from 'child_process';
-import { BaseContract, BigNumber, BigNumberish, ethers } from 'ethers';
+import { BaseContract, BigNumber, BigNumberish, ethers, type EventFilter } from 'ethers';
 import hardhat from 'hardhat';
 import { advanceByTimeDelta } from 'packages/base/test/utils';
 import { GNOSIS_SAFE_MAP } from '../../../base/src/utils/constants';
@@ -71,6 +71,35 @@ function cleanHardhatDeployment(): void {
   }
 }
 
+export function getOwnerContractAndSubmissionFilter<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  ownerAddress: string,
+) {
+  let ownerContract: BaseContract | undefined;
+  let filter: EventFilter | undefined;
+  if (ownerAddress === core.ownerAdapterV1.address) {
+    ownerContract = core.ownerAdapterV1;
+    filter = core.ownerAdapterV1.filters.TransactionSubmitted();
+  } else if (ownerAddress === core.ownerAdapterV2.address) {
+    ownerContract = core.ownerAdapterV2;
+    filter = core.ownerAdapterV2.filters.TransactionSubmitted();
+  } else if (ownerAddress === core.delayedMultiSig.address) {
+    ownerContract = core.delayedMultiSig;
+    filter = core.delayedMultiSig.filters.Submission();
+  } else if (ownerAddress === core.gnosisSafeAddress) {
+    ownerContract = undefined;
+    filter = undefined;
+  } else {
+    throw new Error(getInvalidOwnerError(ownerAddress));
+  }
+
+  return { ownerContract, filter };
+}
+
+function getInvalidOwnerError(ownerAddress: string): string {
+  return `Invalid governance (not DolomiteOwner or DelayedMultisig), found: ${ownerAddress}`;
+}
+
 async function doStuffInternal<T extends NetworkType>(executionFn: () => Promise<DryRunOutput<T>>) {
   if (hardhat.network.name === 'hardhat') {
     const result = await executionFn();
@@ -78,10 +107,10 @@ async function doStuffInternal<T extends NetworkType>(executionFn: () => Promise
     if (result.core && result.upload.transactions.length > 0) {
       console.log('\tSimulating admin transactions...');
       const ownerAddress = await result.core.dolomiteMargin.owner();
-      const invalidOwnerError = `Invalid governance (not DolomiteOwner or DelayedMultisig), found: ${ownerAddress}`;
+      const invalidOwnerError = getInvalidOwnerError(ownerAddress);
 
       let ownerContract: BaseContract | undefined;
-      let filter;
+      let filter: EventFilter | undefined;
       if (ownerAddress === result.core.ownerAdapterV1.address) {
         ownerContract = result.core.ownerAdapterV1;
         filter = result.core.ownerAdapterV1.filters.TransactionSubmitted();
