@@ -754,6 +754,28 @@ describe('DolomiteERC4626', () => {
         `DolomiteERC4626: Invalid receiver <${isolationModeVault.toLowerCase()}>`,
       );
     });
+
+    it('should fail if dolomite owner has negative balance after lossy conversion', async () => {
+      const assets = await token.totalAssets();
+      const numExcessTokens = await core.dolomiteMargin.getNumExcessTokens(core.marketIds.usdc);
+      await core.dolomiteMargin.connect(dolomiteOwnerImpersonator).ownerSetMaxWei(
+        core.marketIds.usdc,
+        assets.add(numExcessTokens.value),
+      );
+      await core.dolomiteMargin.connect(dolomiteOwnerImpersonator)
+        .ownerWithdrawExcessTokens(core.marketIds.usdc, core.gnosisSafeAddress);
+      await withdrawFromDolomiteMargin(core, dolomiteOwnerImpersonator, ZERO_BI, core.marketIds.usdc, MAX_UINT_256_BI);
+
+      // Make sure the owner would be over collateralized
+      await setupWETHBalance(core, dolomiteOwnerImpersonator, parseEther('0.1'), core.dolomiteMargin);
+      await depositIntoDolomiteMargin(core, dolomiteOwnerImpersonator, ZERO_BI, core.marketIds.weth, parseEther('0.1'));
+
+      const transferAmount = parValue.div(3);
+      await expectThrow(
+        token.connect(core.hhUser1).transfer(core.hhUser2.address, transferAmount),
+        `AccountBalanceLib: account cannot go negative <${dolomiteOwnerImpersonator.addressLower}, 0, ${core.marketIds.usdc.toString()}>`,
+      );
+    });
   });
 
   describe('#approve', () => {

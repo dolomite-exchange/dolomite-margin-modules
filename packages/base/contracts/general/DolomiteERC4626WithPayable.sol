@@ -45,22 +45,13 @@ contract DolomiteERC4626WithPayable is
     ) DolomiteERC4626(_chainId, _dolomiteRegistry, _dolomiteMargin) {}
 
     function depositFromPayable(address _receiver) external nonReentrant payable returns (uint256) {
-        Require.that(
-            msg.value > 0,
-            _FILE,
-            "Invalid amount"
-        );
-        Require.that(
-            isValidReceiver(_receiver),
-            _FILE,
-            "Invalid receiver",
-            _receiver
-        );
-
-        IWETH(asset()).deposit{ value: msg.value }();
-        IWETH(asset()).approve(address(DOLOMITE_MARGIN()), msg.value);
+        _checkBasicRequirements(msg.value, _receiver);
 
         IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
+
+        IWETH(asset()).deposit{ value: msg.value }();
+        IWETH(asset()).approve(address(dolomiteMargin), msg.value);
+
         IDolomiteStructs.AccountInfo memory account = IDolomiteStructs.AccountInfo({
             owner: _receiver,
             number: _DEFAULT_ACCOUNT_NUMBER
@@ -82,8 +73,7 @@ contract DolomiteERC4626WithPayable is
         );
 
         IDolomiteStructs.Par memory deltaPar = dolomiteMargin.getAccountPar(account, marketId()).sub(balanceBeforePar);
-        assert(deltaPar.sign);
-        assert(deltaPar.value != 0);
+        _checkDeltaPar(deltaPar);
 
         emit Transfer(address(0), _receiver, deltaPar.value);
         emit Deposit(msg.sender, _receiver, msg.value, deltaPar.value);
@@ -96,11 +86,7 @@ contract DolomiteERC4626WithPayable is
         address _receiver,
         address _owner
     ) external nonReentrant returns (uint256) {
-        Require.that(
-            _amount > 0,
-            _FILE,
-            "Invalid amount"
-        );
+        _checkBasicRequirements(_amount, _receiver);
 
         IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
         IDolomiteStructs.AccountInfo memory account = IDolomiteStructs.AccountInfo({
@@ -136,10 +122,9 @@ contract DolomiteERC4626WithPayable is
         );
 
         IDolomiteStructs.Par memory deltaPar = balanceBeforePar.sub(dolomiteMargin.getAccountPar(account, marketId()));
-        assert(deltaPar.sign);
+        _checkDeltaPar(deltaPar);
 
-        IWETH(asset()).withdraw(_amount);
-        payable(_receiver).sendValue(_amount);
+        _unwrapAndSend(_receiver, _amount);
 
         emit Transfer(_owner, address(0), deltaPar.value);
         emit Withdraw(msg.sender, _receiver, _owner, _amount, deltaPar.value);
@@ -152,17 +137,7 @@ contract DolomiteERC4626WithPayable is
         address _receiver,
         address _owner
     ) external nonReentrant returns (uint256) {
-        Require.that(
-            _dAmount > 0,
-            _FILE,
-            "Invalid amount"
-        );
-        Require.that(
-            isValidReceiver(_receiver),
-            _FILE,
-            "Invalid receiver",
-            _receiver
-        );
+        _checkBasicRequirements(_dAmount, _receiver);
 
         if (msg.sender != _owner) {
             _spendAllowance(_owner, msg.sender, _dAmount);
@@ -191,14 +166,36 @@ contract DolomiteERC4626WithPayable is
         );
 
         IDolomiteStructs.Wei memory deltaWei = balanceBeforeWei.sub(dolomiteMargin.getAccountWei(account, marketId()));
-        assert(deltaWei.sign);
 
-        IWETH(asset()).withdraw(deltaWei.value);
-        payable(_receiver).sendValue(deltaWei.value);
+        _unwrapAndSend(_receiver, deltaWei.value);
 
         emit Transfer(_owner, address(0), _dAmount);
         emit Withdraw(msg.sender, _receiver, _owner, deltaWei.value, _dAmount);
 
         return deltaWei.value;
+    }
+
+    function _unwrapAndSend(address _receiver, uint256 _amount) internal {
+        IWETH(asset()).withdraw(_amount);
+        payable(_receiver).sendValue(_amount);
+    }
+
+    function _checkBasicRequirements(uint256 _amount, address _receiver) internal view {
+        Require.that(
+            _amount > 0,
+            _FILE,
+            "Invalid amount"
+        );
+        Require.that(
+            isValidReceiver(_receiver),
+            _FILE,
+            "Invalid receiver",
+            _receiver
+        );
+    }
+
+    function _checkDeltaPar(IDolomiteStructs.Par memory _deltaPar) internal pure {
+        assert(_deltaPar.sign);
+        assert(_deltaPar.value != 0);
     }
 }

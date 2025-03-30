@@ -4,13 +4,11 @@ import { NetworkType } from '../../../../base/src/utils/no-deps-constants';
 import { EncodedTransaction } from '../dry-run-utils';
 import { prettyPrintEncodedDataWithTypeSafety } from './base-encoder-utils';
 import { encodeSetGlobalOperator } from './dolomite-margin-core-encoder-utils';
+import { encodeAddressToFunctionSelectorForRoleIfNecessary } from './dolomite-owner-encoder-utils';
 
-const D_TOKEN_ROLE = '0xcd86ded6d567eb7adb1b98d283b7e4004869021f7651dbae982e0992bfe0df5a';
+export const D_TOKEN_ROLE = '0xcd86ded6d567eb7adb1b98d283b7e4004869021f7651dbae982e0992bfe0df5a';
 const OWNER_WITHDRAW_EXCESS_TOKENS_SELECTOR = '0x8f6bc659';
-const OWNER_WITHDRAW_EXCESS_TOKENS_BYTES32_SELECTOR =
-  '0x8f6bc65900000000000000000000000000000000000000000000000000000000';
 const OWNER_SET_MAX_WEI_SELECTOR = '0x0cd30a0e';
-const OWNER_SET_MAX_WEI_BYTES32_SELECTOR = '0x0cd30a0e00000000000000000000000000000000000000000000000000000000';
 
 export async function setupDolomiteOwnerV2<T extends NetworkType>(
   core: CoreProtocolType<T>,
@@ -30,32 +28,20 @@ export async function setupDolomiteOwnerV2<T extends NetworkType>(
     );
   }
 
-  const selectorsBytes32 = await core.ownerAdapterV2.getRoleToAddressFunctionSelectors(
+  await encodeAddressToFunctionSelectorForRoleIfNecessary(
+    core,
+    transactions,
     D_TOKEN_ROLE,
-    core.dolomiteMargin.address,
+    core.dolomiteMargin,
+    OWNER_WITHDRAW_EXCESS_TOKENS_SELECTOR,
   );
-  if (!selectorsBytes32.includes(OWNER_WITHDRAW_EXCESS_TOKENS_BYTES32_SELECTOR)) {
-    transactions.push(
-      await prettyPrintEncodedDataWithTypeSafety(
-        core,
-        { ownerAdapterV2: core.ownerAdapterV2 },
-        'ownerAdapterV2',
-        'ownerAddRoleToAddressFunctionSelectors',
-        [D_TOKEN_ROLE, core.dolomiteMargin.address, [OWNER_WITHDRAW_EXCESS_TOKENS_SELECTOR]],
-      ),
-    );
-  }
-  if (!selectorsBytes32.includes(OWNER_SET_MAX_WEI_BYTES32_SELECTOR)) {
-    transactions.push(
-      await prettyPrintEncodedDataWithTypeSafety(
-        core,
-        { ownerAdapterV2: core.ownerAdapterV2 },
-        'ownerAdapterV2',
-        'ownerAddRoleToAddressFunctionSelectors',
-        [D_TOKEN_ROLE, core.dolomiteMargin.address, [OWNER_SET_MAX_WEI_SELECTOR]],
-      ),
-    );
-  }
+  await encodeAddressToFunctionSelectorForRoleIfNecessary(
+    core,
+    transactions,
+    D_TOKEN_ROLE,
+    core.dolomiteMargin,
+    OWNER_SET_MAX_WEI_SELECTOR,
+  );
 
   return transactions;
 }

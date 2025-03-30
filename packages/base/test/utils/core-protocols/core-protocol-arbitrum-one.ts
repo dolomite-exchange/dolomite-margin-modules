@@ -33,7 +33,7 @@ import {
   CoreProtocolDolomiteTokens,
   CoreProtocolMarketIds,
   CoreProtocolParams,
-  CoreProtocolTokens,
+  CoreProtocolTokens, DolomiteWETHType,
 } from './core-protocol-abstract';
 import { GlvEcosystem } from '../ecosystem-utils/glv';
 
@@ -107,8 +107,10 @@ interface CoreProtocolTokensArbitrumOne extends CoreProtocolTokens<Network.Arbit
 interface CoreProtocolDolomiteTokensArbitrumOne extends CoreProtocolDolomiteTokens<Network.ArbitrumOne> {
   bridgedUsdc: DolomiteERC4626;
   dai: DolomiteERC4626;
+  usdc: DolomiteERC4626;
   usdt: DolomiteERC4626;
   wbtc: DolomiteERC4626;
+  weth: DolomiteWETHType<Network.ArbitrumOne>;
 }
 
 interface CoreProtocolArbitrumOneDTokens {
@@ -201,8 +203,8 @@ interface CoreProtocolParamsArbitrumOne {
   chroniclePriceOracleV3: ChroniclePriceOracleV3;
   dolomiteAccountValuesReader: IDolomiteAccountValuesReader;
   dolomiteMigrator: IDolomiteMigrator;
-  dolomiteTokens: CoreProtocolDolomiteTokensArbitrumOne;
-  dTokens: CoreProtocolArbitrumOneDTokens;
+  dTokens: CoreProtocolDolomiteTokensArbitrumOne;
+  dTokensOld: CoreProtocolArbitrumOneDTokens;
   glvEcosystem: GlvEcosystem;
   gmxEcosystem: GmxEcosystem;
   gmxEcosystemV2: GmxV2Ecosystem;
@@ -256,8 +258,8 @@ export class CoreProtocolArbitrumOne extends CoreProtocolAbstract<Network.Arbitr
     this.chroniclePriceOracleV3 = arbParams.chroniclePriceOracleV3;
     this.dolomiteAccountValuesReader = arbParams.dolomiteAccountValuesReader;
     this.dolomiteMigrator = arbParams.dolomiteMigrator;
-    this.dolomiteTokens = arbParams.dolomiteTokens;
-    this.dTokens = arbParams.dTokens;
+    this.dolomiteTokens = arbParams.dTokens;
+    this.dTokens = arbParams.dTokensOld;
     this.glvEcosystem = arbParams.glvEcosystem;
     this.gmxEcosystem = arbParams.gmxEcosystem;
     this.gmxV2Ecosystem = arbParams.gmxEcosystemV2;

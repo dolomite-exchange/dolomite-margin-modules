@@ -88,8 +88,7 @@ export interface CoreProtocolTokens<T extends NetworkType> {
 }
 
 export interface CoreProtocolDolomiteTokens<T extends NetworkType> {
-  usdc: DolomiteERC4626 | undefined;
-  weth: DolomiteWETHType<T> | undefined;
+  all: (DolomiteERC4626 | DolomiteERC4626WithPayable)[];
 }
 
 export interface CoreProtocolMarketIds {
@@ -127,7 +126,7 @@ export interface CoreProtocolParams<T extends NetworkType> {
   dolomiteAccountRiskOverrideSetterProxy: RegistryProxy;
   eventEmitterRegistry: IEventEmitterRegistry;
   eventEmitterRegistryProxy: RegistryProxy;
-  dolomiteTokens: CoreProtocolDolomiteTokens<T>;
+  dTokens: CoreProtocolDolomiteTokens<T>;
   expiry: Expiry<T>;
   freezableLiquidatorProxy: IsolationModeFreezableLiquidatorProxy;
   genericTraderProxy: IGenericTraderProxyV2;
@@ -254,7 +253,7 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
     this.dolomiteMargin = params.dolomiteMargin;
     this.dolomiteRegistry = params.dolomiteRegistry;
     this.dolomiteRegistryProxy = params.dolomiteRegistryProxy;
-    this.dolomiteTokens = params.dolomiteTokens;
+    this.dolomiteTokens = params.dTokens;
     this.dolomiteAccountRegistry = params.dolomiteAccountRegistry;
     this.dolomiteAccountRegistryProxy = params.dolomiteAccountRegistryProxy;
     this.dolomiteAccountRiskOverrideSetter = params.dolomiteAccountRiskOverrideSetter;
