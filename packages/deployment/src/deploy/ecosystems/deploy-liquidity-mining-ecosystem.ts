@@ -39,7 +39,6 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     [core.dolomiteMargin.address],
     'BurnableToken'
   );
-  // @follow-up Will we be adding this token as a market to Dolomite?
   const customTokenMarketId = MAX_UINT_256_BI;
 
   // Deploy always active voter, oToken, veFeeCalculator, buybackPool
@@ -172,7 +171,6 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       'ownerSetHandler',
       [vester.address, true]
     ),
-    // @follow-up Not sure if we want to mint, deposit reward tokens, etc.
   );
 
   return {

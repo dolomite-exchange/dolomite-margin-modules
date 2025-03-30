@@ -918,7 +918,6 @@ contract DolomiteERC4626 is
             marketId()
         );
 
-        // @follow-up @Corey, can you double check this? Want to make sure par to wei is right direction and this isn't wrong cause rounding
         return _maxSupplyWei.sub(DOLOMITE_MARGIN().parToWei(marketId(), supplyPar)).value;
     }
 
