@@ -190,11 +190,11 @@ describe('ChainsightPriceOracleV3', () => {
     it('reverts when the price is expired', async () => {
       await increase(ONE_DAY_SECONDS * 2);
       const chainsight = IChainsightOracle__factory.connect(
-        CHAINSIGHT_ORACLE_ADDRESS_MAP[Network.Berachain],
+        CHAINSIGHT_ORACLE_ADDRESS_MAP[Network.Berachain]!,
         core.hhUser1
       );
       const data = await chainsight.readAsUint256WithTimestamp(
-        CHAINSIGHT_SENDER_ADDRESS_MAP[Network.Berachain],
+        CHAINSIGHT_SENDER_ADDRESS_MAP[Network.Berachain]!,
         CHAINSIGHT_KEYS_MAP[Network.Berachain][ibgt.address].key,
       );
       await expectThrow(

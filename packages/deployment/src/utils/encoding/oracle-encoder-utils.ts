@@ -242,9 +242,9 @@ export async function encodeInsertChaosLabsOracleV3<T extends NetworkType>(
 export async function encodeInsertChainsightOracleV3<T extends NetworkType>(
   core: CoreProtocolWithChainsightV3<T>,
   token: IERC20,
-  invertPrice: boolean = CHAINSIGHT_KEYS_MAP[core.config.network][token.address].invertPrice ?? false,
-  tokenPairAddress: string | undefined = CHAINSIGHT_KEYS_MAP[core.config.network][token.address].tokenPairAddress,
-  key: string = CHAINSIGHT_KEYS_MAP[core.config.network][token.address].key,
+  invertPrice: boolean = CHAINSIGHT_KEYS_MAP[core.config.network][token.address]!.invertPrice ?? false,
+  tokenPairAddress: string | undefined = CHAINSIGHT_KEYS_MAP[core.config.network][token.address]?.tokenPairAddress,
+  key: string = CHAINSIGHT_KEYS_MAP[core.config.network][token.address]!.key,
 ): Promise<EncodedTransaction[]> {
   const invalidTokenSettings = INVALID_TOKEN_MAP[core.network][token.address];
 

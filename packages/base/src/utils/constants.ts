@@ -2089,41 +2089,41 @@ export const CHAOS_LABS_PRICE_AGGREGATORS_MAP: Record<Network, Record<string, Ag
   [Network.XLayer]: {},
 };
 
-export const CHAINSIGHT_ORACLE_ADDRESS_MAP: Record<Network, string> = {
-  [Network.ArbitrumOne]: '0x0000000000000000000000000000000000000000',
-  [Network.Base]: '0x0000000000000000000000000000000000000000',
+export const CHAINSIGHT_ORACLE_ADDRESS_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: undefined,
+  [Network.Base]: undefined,
   [Network.Berachain]: '0xD5F76a363135A0781295043241f18496dAa31E3d',
-  [Network.Ink]: '0x0000000000000000000000000000000000000000',
-  [Network.Mantle]: '0x0000000000000000000000000000000000000000',
-  [Network.PolygonZkEvm]: '0x0000000000000000000000000000000000000000',
-  [Network.SuperSeed]: '0x0000000000000000000000000000000000000000',
-  [Network.XLayer]: '0x0000000000000000000000000000000000000000',
+  [Network.Ink]: undefined,
+  [Network.Mantle]: undefined,
+  [Network.PolygonZkEvm]: undefined,
+  [Network.SuperSeed]: undefined,
+  [Network.XLayer]: undefined,
 };
 
-export const CHAINSIGHT_SENDER_ADDRESS_MAP: Record<Network, string> = {
-  [Network.ArbitrumOne]: '0x0000000000000000000000000000000000000000',
-  [Network.Base]: '0x0000000000000000000000000000000000000000',
+export const CHAINSIGHT_SENDER_ADDRESS_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: undefined,
+  [Network.Base]: undefined,
   [Network.Berachain]: '0x16D90c83817Cf64d40321018C8FC1E7e62c427da',
-  [Network.Ink]: '0x0000000000000000000000000000000000000000',
-  [Network.Mantle]: '0x0000000000000000000000000000000000000000',
-  [Network.PolygonZkEvm]: '0x0000000000000000000000000000000000000000',
-  [Network.SuperSeed]: '0x0000000000000000000000000000000000000000',
-  [Network.XLayer]: '0x0000000000000000000000000000000000000000',
+  [Network.Ink]: undefined,
+  [Network.Mantle]: undefined,
+  [Network.PolygonZkEvm]: undefined,
+  [Network.SuperSeed]: undefined,
+  [Network.XLayer]: undefined,
 };
 
-export const CHAINSIGHT_KEYS_MAP: Record<Network, Record<string, ChainsightKey>> = {
+export const CHAINSIGHT_KEYS_MAP: Record<Network, Record<string, ChainsightKey | undefined>> = {
   [Network.ArbitrumOne]: {},
   [Network.Base]: {},
   [Network.Berachain]: {
     [HENLO_MAP[Network.Berachain].address]: {
       key: '0x9cd823bd88f3bc5680010088a5300e1e999c2b18ca81fd068bd56d6ccb051934',
     },
+    [IBERA_MAP[Network.Berachain].address]: {
+      key: '0xae0cd7d9dec07cb743c7d42a0ecc9b659e3a350b5e09e8c8dc353f8ac0083ce4'
+    },
     [IBGT_MAP[Network.Berachain].address]: {
       key: '0xb45dccc0c96fe02ddbcd663c80eaaa692f188e4bea2c6101135d358fc9535473',
     },
-    [IBERA_MAP[Network.Berachain].address]: {
-      key: '0xae0cd7d9dec07cb743c7d42a0ecc9b659e3a350b5e09e8c8dc353f8ac0083ce4'
-    }
   },
   [Network.Ink]: {},
   [Network.Mantle]: {},

@@ -69,7 +69,6 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
     vaultType: IsolationModeVaultType.None,
   },
   [DJ_USDC_V1[network].marketId]: {
-    // @follow-up How to handle this one? I added Migrator so we could avoid it
     contractName: 'JonesIsolationModeTokenVaultMigrator',
     contractRenameWithoutVersion: 'JonesIsolationModeTokenVaultMigrator',
     implementationAddress: getMaxDeploymentVersionAddressByDeploymentKey(
@@ -121,7 +120,7 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
       network,
     ),
     constructorParams: [],
-    libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.Pt), // @follow-up Also not latest
+    libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.Pt),
     vaultType: IsolationModeVaultType.Pt,
   },
   [DPT_WST_ETH_JUN_2025_MAP[network].marketId]: {

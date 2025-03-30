@@ -498,6 +498,13 @@
       "isVerified": true
     }
   },
+  "ChainsightPriceOracleV3": {
+    "80094": {
+      "address": "0x655A589A224B091a1950DCEBE9C1dA4aB06B4Bc1",
+      "transaction": "0x0c75336f7fa2522811c6e0aa38634e07aaa9907bb4d33f10e2ac4e65a186da8a",
+      "isVerified": true
+    }
+  },
   "ChaosLabsPriceOracleV3": {
     "42161": {
       "address": "0xB02808f5db0E6926E00AF4971AbdF1dA6C7DB34e",
