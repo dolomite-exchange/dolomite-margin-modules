@@ -33,11 +33,15 @@ interface IVestingClaims is IBaseClaim {
 
     struct VestingClaimsStorage {
         mapping(address => uint256) released;
+        mapping(address => uint256) allocatedAmount;
     }
+
+    event AllocatedAmountSet(address indexed user, uint256 allocatedAmount);
+    event InvestorRevoked(address indexed user, uint256 amount);
 
     // ======================================================
     // ================== External Functions ================
     // ======================================================
 
-    function claim(bytes32[] memory _proof, uint256 _allocatedAmount) external;
+    function claim() external;
 }
