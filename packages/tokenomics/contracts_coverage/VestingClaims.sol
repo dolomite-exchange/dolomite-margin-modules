@@ -110,8 +110,8 @@ contract VestingClaims is BaseClaim, IVestingClaims {
 
         uint256 amount = s.allocatedAmount[_user] - s.released[_user];
 
-        delete s.allocatedAmount[_user];
-        delete s.released[_user];
+        s.allocatedAmount[_user] = 0;
+        s.released[_user] = 0;
         _ownerClearAddressRemapping(_user);
 
         DOLO.safeTransfer(_recipient, amount);

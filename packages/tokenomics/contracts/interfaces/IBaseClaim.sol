@@ -41,6 +41,7 @@ interface IBaseClaim {
     // ======================================================
 
     event AddressRemappingSet(address[] users, address[] remappedAddresses);
+    event AddressRemappingCleared(address user);
     event ClaimEnabledSet(bool claimEnabled);
     event HandlerSet(address handler);
     event MerkleRootSet(bytes32 merkleRoot);

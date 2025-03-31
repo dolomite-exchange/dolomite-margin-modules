@@ -167,7 +167,7 @@ abstract contract BaseClaim is OnlyDolomiteMargin, ReentrancyGuardUpgradeable, I
 
     function _ownerClearAddressRemapping(address _user) internal {
         BaseClaimStorage storage s = _getBaseClaimStorage();
-        delete s.addressRemapping[_user];
+        s.addressRemapping[_user] = address(0);
         emit AddressRemappingCleared(_user);
     }
 

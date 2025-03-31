@@ -43,5 +43,27 @@ interface IVestingClaims is IBaseClaim {
     // ================== External Functions ================
     // ======================================================
 
+    function ownerSetAllocatedAmounts(
+        address[] memory _users,
+        uint256[] memory _allocatedAmounts
+    ) external;
+
+    function ownerRevokeInvestor(
+        address _user,
+        address _recipient
+    ) external;
+
     function claim() external;
+
+    // ======================================================
+    // ======================= View Functions ================
+    // ======================================================
+
+    function allocatedAmount(address _user) external view returns (uint256);
+
+    function released(address _user) external view returns (uint256);
+
+    function releasable(uint256 _totalAllocation, address _user) external view returns (uint256);
+
+
 }
