@@ -17,10 +17,10 @@ import {
 
 import { createOogaBoogaAggregatorTrader } from '../utils/ecosystem-utils/traders';
 import { disableInterestAccrual, setupCoreProtocol, setupWBERABalance } from '../utils/setup';
-import { CoreProtocolBerachain } from '../utils/core-protocols/core-protocol-berachain';
 import { getCalldataForOogaBooga } from '../utils/trader-utils';
 import { ethers } from 'hardhat';
 import { ActionType, AmountDenomination, AmountReference } from '@dolomite-exchange/dolomite-margin';
+import { CoreProtocolBerachain } from '../utils/core-protocols/core-protocol-berachain';
 
 const defaultAccountNumber = '0';
 const amountIn = BigNumber.from('1000000000000000000');
@@ -44,6 +44,7 @@ describe('OogaBoogaAggregatorTrader', () => {
     // prevent interest accrual between calls
     await disableInterestAccrual(core, core.marketIds.wbera);
 
+    await core.dolomiteMargin.connect(core.governance).ownerSetMaxSupplyWei(core.marketIds.wbera, 0);
     await setupWBERABalance(core, core.hhUser1, amountIn, { address: core.dolomiteMargin.address });
     await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.wbera, amountIn);
 

@@ -26,10 +26,12 @@ import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
 import {
   deployContractAndSave,
-  EncodedTransaction,
-  prettyPrintEncodeAddGmxV2Market, prettyPrintEncodedDataWithTypeSafety, prettyPrintEncodeInsertChainlinkOracleV3,
+
 } from '../../../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
+import { encodeAddGmxV2Market } from '../../../../utils/encoding/add-market-encoder-utils';
+import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
+import { encodeInsertChainlinkOracleV3 } from '../../../../utils/encoding/oracle-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 
 import ModuleDeployments from '../../../deployments.json';
@@ -158,15 +160,15 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   }
 
   const transactions: EncodedTransaction[] = [
-    ...await prettyPrintEncodeInsertChainlinkOracleV3(
+    ...await encodeInsertChainlinkOracleV3(
       core,
       core.gmxV2Ecosystem.gmTokens.aaveUsd.longToken,
     ),
-    ...await prettyPrintEncodeInsertChainlinkOracleV3(
+    ...await encodeInsertChainlinkOracleV3(
       core,
       core.gmxV2Ecosystem.gmTokens.dogeUsd.indexToken,
     ),
-    ...await prettyPrintEncodeInsertChainlinkOracleV3(
+    ...await encodeInsertChainlinkOracleV3(
       core,
       core.gmxV2Ecosystem.gmTokens.solUsd.longToken,
     ),
@@ -175,7 +177,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   for (let i = 0; i < factories.length; i++) {
     const factory = factories[i];
     transactions.push(
-      ...await prettyPrintEncodeAddGmxV2Market(
+      ...await encodeAddGmxV2Market(
         core,
         factory,
         unwrappers[i],

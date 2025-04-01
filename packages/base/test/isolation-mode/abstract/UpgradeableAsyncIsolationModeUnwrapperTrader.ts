@@ -6,7 +6,9 @@ import { BigNumber, BigNumberish } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
 import { AccountStruct } from 'packages/base/src/utils/constants';
-import { getIsolationModeFreezableLiquidatorProxyConstructorParams } from 'packages/base/src/utils/constructors/dolomite';
+import {
+  getIsolationModeFreezableLiquidatorProxyConstructorParams,
+} from 'packages/base/src/utils/constructors/dolomite';
 import {
   CustomTestToken,
   EventEmitterRegistry,
@@ -57,11 +59,7 @@ import {
   createTestUpgradeableAsyncIsolationModeWrapperTrader,
 } from '../../utils/ecosystem-utils/testers';
 import { liquidateV4WithZapParam } from '../../utils/liquidation-utils';
-import {
-  setupCoreProtocol,
-  setupTestMarket,
-  setupUserVaultProxy,
-} from '../../utils/setup';
+import { setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from '../../utils/setup';
 import { getLiquidateIsolationModeZapPath, getUnwrapZapParams } from '../../utils/zap-utils';
 
 const defaultAccountNumber = '0';
@@ -122,7 +120,7 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
     genericTraderProxy = await createContractWithLibrary(
       'GenericTraderProxyV2',
       { GenericTraderProxyV2Lib: genericTraderLib.address },
-      [Network.ArbitrumOne, core.dolomiteRegistry.address, core.dolomiteMargin.address]
+      [Network.ArbitrumOne, core.dolomiteRegistry.address, core.dolomiteMargin.address],
     );
     await core.dolomiteRegistry.ownerSetGenericTraderProxy(genericTraderProxy.address);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(genericTraderProxy.address, true);
@@ -944,13 +942,8 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
       );
       const key = (await asyncProtocol.queryFilter(asyncProtocol.filters.WithdrawalCreated()))[0].args.key;
       await asyncProtocol.executeWithdrawal(key, amountWei);
-      await expectProtocolBalance(
-        core,
-        core.hhUser1.address,
-        defaultAccountNumber,
-        otherMarketId1,
-        amountWei.mul(2)
-      ); // User started with amountWei
+      // User started with amountWei
+      await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, otherMarketId1, amountWei.mul(2));
       await expectProtocolBalance(core, userVault.address, defaultAccountNumber, underlyingMarketId, ZERO_BI);
     });
 

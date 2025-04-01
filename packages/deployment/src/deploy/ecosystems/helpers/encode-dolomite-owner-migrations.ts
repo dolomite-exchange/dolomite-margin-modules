@@ -1,6 +1,8 @@
 import { IDolomiteOwner } from 'packages/base/src/types';
 import { Ownable__factory } from 'packages/liquidity-mining/src/types';
-import { EncodedTransaction, prettyPrintEncodedDataWithTypeSafety } from '../../../utils/deploy-utils';
+import { EncodedTransaction } from '../../../utils/dry-run-utils';
+import { prettyPrintEncodedDataWithTypeSafety } from '../../../utils/encoding/base-encoder-utils';
+import { setupDolomiteOwnerV2 } from '../../../utils/encoding/dolomite-4626-token-encoder-utils';
 
 export async function encodeDolomiteOwnerMigrations(
   dolomiteOwner: IDolomiteOwner,
@@ -19,4 +21,6 @@ export async function encodeDolomiteOwnerMigrations(
       ),
     );
   }
+
+  transactions.push(...await setupDolomiteOwnerV2(core));
 }

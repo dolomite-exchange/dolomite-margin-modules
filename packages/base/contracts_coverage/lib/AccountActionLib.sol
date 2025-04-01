@@ -412,7 +412,7 @@ library AccountActionLib {
             actionType: IDolomiteStructs.ActionType.Trade,
             accountId: _makerAccountId,
             amount: IDolomiteStructs.AssetAmount({
-                sign: false, // @audit check
+                sign: false,
                 denomination: IDolomiteStructs.AssetDenomination.Wei,
                 ref: _amountInWei == _ALL
                     ? IDolomiteStructs.AssetReference.Target
@@ -423,7 +423,7 @@ library AccountActionLib {
             secondaryMarketId: _secondaryMarketId,
             otherAddress: _traderAddress,
             otherAccountId: _takerAccountId,
-            data: ChainHelperLib.isArbitrum(_chainId) // @audit check
+            data: ChainHelperLib.isArbitrum(_chainId)
                 ? _orderData
                 : abi.encode(_calculateAmountWithMakerAccount, _orderData)
         });

@@ -10,6 +10,9 @@ import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddres
 
 export interface InterestSetters {
   alwaysZeroInterestSetter: IDolomiteInterestSetter;
+  linearStepFunction4L96U70OInterestSetter: ILinearStepFunctionInterestSetter;
+  linearStepFunction4L96U80OInterestSetter: ILinearStepFunctionInterestSetter;
+  linearStepFunction4L96U90OInterestSetter: ILinearStepFunctionInterestSetter;
   linearStepFunction6L94U70OInterestSetter: ILinearStepFunctionInterestSetter;
   linearStepFunction6L94U80OInterestSetter: ILinearStepFunctionInterestSetter;
   linearStepFunction6L94U90OInterestSetter: ILinearStepFunctionInterestSetter;
@@ -21,14 +24,24 @@ export interface InterestSetters {
   linearStepFunction10L90U95OInterestSetter: ILinearStepFunctionInterestSetter;
   linearStepFunction12L88U90OInterestSetter: ILinearStepFunctionInterestSetter;
   linearStepFunction14L86U90OInterestSetter: ILinearStepFunctionInterestSetter;
+  linearStepFunction15L135U60OInterestSetter: ILinearStepFunctionInterestSetter;
   linearStepFunction15L135U70OInterestSetter: ILinearStepFunctionInterestSetter;
   linearStepFunction15L135U75OInterestSetter: ILinearStepFunctionInterestSetter;
   linearStepFunction15L135U80OInterestSetter: ILinearStepFunctionInterestSetter;
   linearStepFunction15L135U85OInterestSetter: ILinearStepFunctionInterestSetter;
   linearStepFunction15L135U90OInterestSetter: ILinearStepFunctionInterestSetter;
+  linearStepFunction16L84U60OInterestSetter: ILinearStepFunctionInterestSetter;
   linearStepFunction16L84U70OInterestSetter: ILinearStepFunctionInterestSetter;
   linearStepFunction16L84U80OInterestSetter: ILinearStepFunctionInterestSetter;
   linearStepFunction16L84U90OInterestSetter: ILinearStepFunctionInterestSetter;
+  linearStepFunction20L105U70OInterestSetter: ILinearStepFunctionInterestSetter;
+  linearStepFunction20L130U70OInterestSetter: ILinearStepFunctionInterestSetter;
+  linearStepFunction30L95U70OInterestSetter: ILinearStepFunctionInterestSetter;
+  linearStepFunction30L120U70OInterestSetter: ILinearStepFunctionInterestSetter;
+  linearStepFunction40L85U70OInterestSetter: ILinearStepFunctionInterestSetter;
+  linearStepFunction40L110U70OInterestSetter: ILinearStepFunctionInterestSetter;
+  linearStepFunction50L75U70OInterestSetter: ILinearStepFunctionInterestSetter;
+  linearStepFunction50L100U70OInterestSetter: ILinearStepFunctionInterestSetter;
 }
 
 export async function createInterestSetters(
@@ -38,6 +51,18 @@ export async function createInterestSetters(
   return {
     alwaysZeroInterestSetter: IDolomiteInterestSetter__factory.connect(
       coreDeployments.AlwaysZeroInterestSetter[network].address,
+      signer,
+    ),
+    linearStepFunction4L96U70OInterestSetter: ILinearStepFunctionInterestSetter__factory.connect(
+      deployments.LinearStepFunction4L96U70OInterestSetter[network].address,
+      signer,
+    ),
+    linearStepFunction4L96U80OInterestSetter: ILinearStepFunctionInterestSetter__factory.connect(
+      deployments.LinearStepFunction4L96U80OInterestSetter[network].address,
+      signer,
+    ),
+    linearStepFunction4L96U90OInterestSetter: ILinearStepFunctionInterestSetter__factory.connect(
+      deployments.LinearStepFunction4L96U90OInterestSetter[network].address,
       signer,
     ),
     linearStepFunction6L94U70OInterestSetter: ILinearStepFunctionInterestSetter__factory.connect(
@@ -84,6 +109,10 @@ export async function createInterestSetters(
       deployments.LinearStepFunction14L86U90OInterestSetter[network].address,
       signer,
     ),
+    linearStepFunction15L135U60OInterestSetter: ILinearStepFunctionInterestSetter__factory.connect(
+      deployments.LinearStepFunction15L135U60OInterestSetter[network].address,
+      signer,
+    ),
     linearStepFunction15L135U70OInterestSetter: ILinearStepFunctionInterestSetter__factory.connect(
       deployments.LinearStepFunction15L135U70OInterestSetter[network].address,
       signer,
@@ -104,6 +133,10 @@ export async function createInterestSetters(
       deployments.LinearStepFunction15L135U90OInterestSetter[network].address,
       signer,
     ),
+    linearStepFunction16L84U60OInterestSetter: ILinearStepFunctionInterestSetter__factory.connect(
+      deployments.LinearStepFunction16L84U60OInterestSetter[network].address,
+      signer,
+    ),
     linearStepFunction16L84U70OInterestSetter: ILinearStepFunctionInterestSetter__factory.connect(
       deployments.LinearStepFunction16L84U70OInterestSetter[network].address,
       signer,
@@ -114,6 +147,39 @@ export async function createInterestSetters(
     ),
     linearStepFunction16L84U90OInterestSetter: ILinearStepFunctionInterestSetter__factory.connect(
       deployments.LinearStepFunction16L84U90OInterestSetter[network].address,
+      signer,
+    ),
+
+    linearStepFunction20L105U70OInterestSetter: ILinearStepFunctionInterestSetter__factory.connect(
+      deployments.LinearStepFunction20L105U70OInterestSetter[network].address,
+      signer,
+    ),
+    linearStepFunction20L130U70OInterestSetter: ILinearStepFunctionInterestSetter__factory.connect(
+      deployments.LinearStepFunction20L130U70OInterestSetter[network].address,
+      signer,
+    ),
+    linearStepFunction30L95U70OInterestSetter: ILinearStepFunctionInterestSetter__factory.connect(
+      deployments.LinearStepFunction30L95U70OInterestSetter[network].address,
+      signer,
+    ),
+    linearStepFunction30L120U70OInterestSetter: ILinearStepFunctionInterestSetter__factory.connect(
+      deployments.LinearStepFunction30L120U70OInterestSetter[network].address,
+      signer,
+    ),
+    linearStepFunction40L85U70OInterestSetter: ILinearStepFunctionInterestSetter__factory.connect(
+      deployments.LinearStepFunction40L85U70OInterestSetter[network].address,
+      signer,
+    ),
+    linearStepFunction40L110U70OInterestSetter: ILinearStepFunctionInterestSetter__factory.connect(
+      deployments.LinearStepFunction40L110U70OInterestSetter[network].address,
+      signer,
+    ),
+    linearStepFunction50L75U70OInterestSetter: ILinearStepFunctionInterestSetter__factory.connect(
+      deployments.LinearStepFunction50L75U70OInterestSetter[network].address,
+      signer,
+    ),
+    linearStepFunction50L100U70OInterestSetter: ILinearStepFunctionInterestSetter__factory.connect(
+      deployments.LinearStepFunction50L100U70OInterestSetter[network].address,
       signer,
     ),
   };

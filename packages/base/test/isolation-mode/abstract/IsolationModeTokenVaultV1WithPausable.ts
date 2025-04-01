@@ -3,11 +3,11 @@ import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import {
   CustomTestToken,
-  TestIsolationModeVaultFactory,
   TestIsolationModeTokenVaultV1WithPausable,
   TestIsolationModeTokenVaultV1WithPausable__factory,
   TestIsolationModeUnwrapperTraderV2,
   TestIsolationModeUnwrapperTraderV2__factory,
+  TestIsolationModeVaultFactory,
   TestIsolationModeWrapperTraderV2,
   TestIsolationModeWrapperTraderV2__factory,
 } from '../../../src/types';
@@ -65,7 +65,7 @@ describe('IsolationModeTokenVaultV1WithPausable', () => {
     const genericTraderProxy = await createContractWithLibrary(
       'GenericTraderProxyV2',
       { GenericTraderProxyV2Lib: genericTraderLib.address },
-      [Network.ArbitrumOne, core.dolomiteRegistry.address, core.dolomiteMargin.address]
+      [Network.ArbitrumOne, core.dolomiteRegistry.address, core.dolomiteMargin.address],
     );
     await core.dolomiteRegistry.ownerSetGenericTraderProxy(genericTraderProxy.address);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(genericTraderProxy.address, true);
@@ -991,7 +991,7 @@ describe('IsolationModeTokenVaultV1WithPausable', () => {
         underlyingMarketId,
         amountWei,
         tokenWrapper,
-        core
+        core,
       );
       await expectThrow(
         userVault.addCollateralAndSwapExactInputForOutput(
@@ -1032,36 +1032,39 @@ describe('IsolationModeTokenVaultV1WithPausable', () => {
           zapParams.makerAccounts,
           zapParams.userConfig,
         ),
-        'OperationImpl: Market is closing <50>'
+        'OperationImpl: Market is closing <50>',
       );
     });
 
-    it('should fail if external redemption is paused and user removes collateral from borrow position', async () => {
-      await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
-      await userVault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei);
-      await userVault.transferFromPositionWithOtherToken(
-        borrowAccountNumber,
-        defaultAccountNumber,
-        otherMarketId2,
-        otherAmountWei,
-        BalanceCheckFlag.To,
-      );
-      await userVault.setIsExternalRedemptionPaused(true);
-
-      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, amountWei, core);
-      await expectThrow(
-        userVault.swapExactInputForOutputAndRemoveCollateral(
-          defaultAccountNumber,
+    it(
+      'should fail if external redemption is paused and user is removing collateral from borrow position',
+      async () => {
+        await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+        await userVault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei);
+        await userVault.transferFromPositionWithOtherToken(
           borrowAccountNumber,
-          zapParams.marketIdsPath,
-          zapParams.inputAmountWei,
-          zapParams.minOutputAmountWei,
-          zapParams.tradersPath,
-          zapParams.makerAccounts,
-          zapParams.userConfig,
-        ),
-        'IsolationModeVaultV1Pausable: Cannot execute when paused',
-      );
-    });
+          defaultAccountNumber,
+          otherMarketId2,
+          otherAmountWei,
+          BalanceCheckFlag.To,
+        );
+        await userVault.setIsExternalRedemptionPaused(true);
+
+        const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, amountWei, core);
+        await expectThrow(
+          userVault.swapExactInputForOutputAndRemoveCollateral(
+            defaultAccountNumber,
+            borrowAccountNumber,
+            zapParams.marketIdsPath,
+            zapParams.inputAmountWei,
+            zapParams.minOutputAmountWei,
+            zapParams.tradersPath,
+            zapParams.makerAccounts,
+            zapParams.userConfig,
+          ),
+          'IsolationModeVaultV1Pausable: Cannot execute when paused',
+        );
+      },
+    );
   });
 });

@@ -15,31 +15,121 @@ import {
   RegistryProxy,
 } from '../../types';
 import { IDolomiteInterestSetter, IDolomiteStructs } from '../../types/contracts/protocol/interfaces/IDolomiteMargin';
-import { Network, NetworkType, ZERO_BI } from '../no-deps-constants';
+import { BYTES_EMPTY, Network, NetworkType, ZERO_BI } from '../no-deps-constants';
 import InterestRateStruct = IDolomiteInterestSetter.InterestRateStruct;
 import MonetaryPriceStruct = IDolomiteStructs.MonetaryPriceStruct;
 
 export enum TargetCollateralization {
   Base = '1.00',
+
+  /**
+   * 105.263% collateralization || 95.00% LTV
+   */
+  _105 = '1.052631578947368421',
+
+  /**
+   * 111% collateralization || 90% LTV
+   */
+  _111 = '1.111111111111111111',
+
+  /**
+   * 120% collateralization || 83.33% LTV
+   */
   _120 = '1.20',
+
+  /**
+   * 125% collateralization || 80.00% LTV
+   */
   _125 = '1.25',
-  _133 = '1.33333333',
+
+  /**
+   * 128.205% collateralization || 78.00% LTV
+   */
+  _128 = '1.282051282051282051',
+
+  /**
+   * 133% collateralization || 75.00% LTV
+   */
+  _133 = '1.333333333333333333',
+
+  /**
+   * 150% collateralization || 66.66% LTV
+   */
   _150 = '1.50',
-  _166 = '1.66666666',
+
+  /**
+   * 166.66% collateralization || 60.00% LTV
+   */
+  _166 = '1.666666666666666666',
+
+  /**
+   * 200% collateralization || 50.00% LTV
+   */
+  _200 = '2.00',
 }
 
 export enum TargetLiquidationPenalty {
-  Base = '0',
-  _6 = '0.06',
-  _7 = '0.07',
-  _8 = '0.08',
-  _9 = '0.09',
-  _10 = '0.10',
-  _15 = '0.15',
+  Base = '0.000',
+  /**
+   * 2%
+   */
+  _2 = '0.020',
+  /**
+   * 4%
+   */
+  _4 = '0.040',
+  /**
+   * 6%
+   */
+  _6 = '0.060',
+  /**
+   * 7%
+   */
+  _7 = '0.070',
+  /**
+   * 8%
+   */
+  _8 = '0.080',
+  /**
+   * 8.5%
+   */
+  _8_5 = '0.085',
+  /**
+   * 9%
+   */
+  _9 = '0.090',
+  /**
+   * 10%
+   */
+  _10 = '0.100',
+  /**
+   * 12%
+   */
+  _12 = '0.120',
+  /**
+   * 15%
+   */
+  _15 = '0.150',
 }
 
-export function getDolomiteOwnerConstructorParams(gnosisSafeAddress: string, secondsTimeLocked: BigNumberish): any[] {
-  return [gnosisSafeAddress, secondsTimeLocked];
+export enum AccountRiskOverrideCategory {
+  NONE = 0,
+  BERA = 1,
+  BTC = 2,
+  ETH = 3,
+  STABLE = 4,
+}
+
+export enum AccountRiskOverrideRiskFeature {
+  NONE = 0,
+  BORROW_ONLY = 1,
+  SINGLE_COLLATERAL_WITH_STRICT_DEBT = 2,
+}
+
+export interface SingleCollateralWithStrictDebtParams {
+  debtMarketIds: BigNumberish[];
+  marginRatioOverride: TargetCollateralization;
+  liquidationRewardOverride: TargetLiquidationPenalty;
 }
 
 export function getRegistryProxyConstructorParams<T extends NetworkType>(
@@ -60,10 +150,10 @@ export function getRouterProxyConstructorParams<T extends NetworkType>(
 
 export function getUpgradeableProxyConstructorParams<T extends NetworkType>(
   implementationAddress: string,
-  implementationCalldata: PopulatedTransaction,
+  implementationCalldata: PopulatedTransaction | null,
   dolomiteMargin: DolomiteMargin<T>,
 ): any[] {
-  return [implementationAddress, dolomiteMargin.address, implementationCalldata.data!];
+  return [implementationAddress, dolomiteMargin.address, implementationCalldata?.data! ?? BYTES_EMPTY];
 }
 
 export function getIsolationModeFreezableLiquidatorProxyConstructorParams<T extends NetworkType>(
@@ -167,25 +257,35 @@ export function getOwnerAddMarketParameters<T extends NetworkType>(
 }
 
 export function getMarginPremiumForTargetCollateralization(
+  baseCollateralization: BigNumber,
   targetCollateralization: TargetCollateralization,
 ): BigNumber {
+  const one = parseEther('1');
+  if (baseCollateralization.lte(one)) {
+    throw new Error('Base collateralization must be greater than 100% (1.00)');
+  }
+
   if (targetCollateralization === TargetCollateralization.Base) {
     return ZERO_BI;
   }
 
-  const one = parseEther('1');
-  const baseCollateralization = parseEther('1.15');
   return parseEther(targetCollateralization).mul(one).div(baseCollateralization).sub(one);
 }
 
-export function getLiquidationPremiumForTargetLiquidationPenalty(targetPenalty: TargetLiquidationPenalty): BigNumber {
+export function getLiquidationPremiumForTargetLiquidationPenalty(
+  baseLiquidationPenalty: BigNumber,
+  targetPenalty: TargetLiquidationPenalty,
+): BigNumber {
+  if (baseLiquidationPenalty.gte(parseEther('1.00'))) {
+    throw new Error('Base collateralization must be less than 100% (1.00)');
+  }
+
   if (targetPenalty === TargetLiquidationPenalty.Base) {
     return ZERO_BI;
   }
 
   const one = parseEther('1');
-  const baseAmount = parseEther('0.05');
-  return parseEther(targetPenalty).mul(one).div(baseAmount).sub(one);
+  return parseEther(targetPenalty).mul(one).div(baseLiquidationPenalty).sub(one);
 }
 
 export function getOwnerAddMarketParametersForIsolationMode<T extends NetworkType>(
@@ -244,6 +344,16 @@ export async function getDolomiteErc20ProxyConstructorParams<T extends NetworkTy
   return [implementation.address, core.dolomiteMargin.address, transaction.data!];
 }
 
+export async function getDolomiteErc4626ImplementationConstructorParams<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+): Promise<any[]> {
+  return [
+    core.network,
+    core.dolomiteRegistry.address,
+    core.dolomiteMargin.address,
+  ];
+}
+
 export async function getDolomiteErc4626ProxyConstructorParams<T extends NetworkType>(
   core: CoreProtocolType<T>,
   marketId: BigNumberish,
@@ -262,14 +372,9 @@ export async function getDolomiteErc4626ProxyConstructorParams<T extends Network
     `Dolomite: ${symbol}`,
     `d${symbol}`,
     await token.decimals(),
-    marketId,
-    core.dolomiteRegistry.address,
+    marketId
   );
-  return [
-    implementationContract.address,
-    core.dolomiteMargin.address,
-    transaction.data!,
-  ];
+  return [implementationContract.address, core.dolomiteMargin.address, transaction.data!];
 }
 
 export async function getDolomiteErc4626WithPayableProxyConstructorParams<T extends NetworkType>(
@@ -290,14 +395,9 @@ export async function getDolomiteErc4626WithPayableProxyConstructorParams<T exte
     `Dolomite: ${symbol}`,
     `d${symbol}`,
     await token.decimals(),
-    marketId,
-    core.dolomiteRegistry.address,
+    marketId
   );
-  return [
-    implementationContract.address,
-    core.dolomiteMargin.address,
-    transaction.data!,
-  ];
+  return [implementationContract.address, core.dolomiteMargin.address, transaction.data!];
 }
 
 export function getIsolationModeTokenVaultMigratorConstructorParams<T extends NetworkType>(

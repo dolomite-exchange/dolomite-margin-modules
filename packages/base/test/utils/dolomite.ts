@@ -10,8 +10,6 @@ import {
   DolomiteAccountRegistry,
   DolomiteAccountRegistry__factory,
   DolomiteERC20,
-  DolomiteOwnerV1,
-  DolomiteOwnerV1__factory,
   DolomiteRegistryImplementation,
   DolomiteRegistryImplementation__factory,
   EventEmitterRegistry,
@@ -43,8 +41,7 @@ import {
 } from '../../src/types';
 import {
   getDolomiteErc20ProxyConstructorParams,
-  getDolomiteErc4626ProxyConstructorParams,
-  getDolomiteOwnerConstructorParams,
+  getDolomiteErc4626ProxyConstructorParams, getDolomiteErc4626WithPayableProxyConstructorParams,
   getEventEmitterRegistryConstructorParams,
   getIsolationModeTraderProxyConstructorParams,
   getRegistryProxyConstructorParams,
@@ -61,6 +58,13 @@ import {
 import { SignerWithAddressWithSafety } from '../../src/utils/SignerWithAddressWithSafety';
 import { CoreProtocolType } from './setup';
 import { UpgradeableProxy__factory } from 'packages/liquidity-mining/src/types';
+import {
+  DolomiteOwnerV1,
+  DolomiteOwnerV1__factory,
+  DolomiteOwnerV2,
+  DolomiteOwnerV2__factory,
+} from 'packages/admin/src/types';
+import { getDolomiteOwnerConstructorParams } from 'packages/admin/src/admin';
 
 export type DolomiteMargin<T extends NetworkType> = T extends Network.ArbitrumOne ? IDolomiteMargin : IDolomiteMarginV2;
 export type Expiry<T extends NetworkType> = T extends Network.ArbitrumOne ? IExpiry : IExpiryV2;
@@ -140,6 +144,17 @@ export async function createDolomiteErc4626Proxy(
   );
 }
 
+export async function createDolomiteErc4626WithPayableProxy(
+  marketId: BigNumberish,
+  core: CoreProtocolType<NetworkType>,
+): Promise<RegistryProxy> {
+  return createContractWithAbi(
+    RegistryProxy__factory.abi,
+    RegistryProxy__factory.bytecode,
+    await getDolomiteErc4626WithPayableProxyConstructorParams(core, marketId),
+  );
+}
+
 export async function createDolomiteAccountRegistryImplementation(): Promise<DolomiteAccountRegistry> {
   return createContractWithAbi(DolomiteAccountRegistry__factory.abi, DolomiteAccountRegistry__factory.bytecode, []);
 }
@@ -159,6 +174,17 @@ export async function createDolomiteOwner(
   return createContractWithAbi(
     DolomiteOwnerV1__factory.abi,
     DolomiteOwnerV1__factory.bytecode,
+    getDolomiteOwnerConstructorParams(core.gnosisSafe.address, secondsTimeLocked),
+  );
+}
+
+export async function createDolomiteOwnerV2(
+  core: CoreProtocolType<NetworkType>,
+  secondsTimeLocked: BigNumberish,
+): Promise<DolomiteOwnerV2> {
+  return createContractWithAbi(
+    DolomiteOwnerV2__factory.abi,
+    DolomiteOwnerV2__factory.bytecode,
     getDolomiteOwnerConstructorParams(core.gnosisSafe.address, secondsTimeLocked),
   );
 }
@@ -200,12 +226,12 @@ export async function createEventEmitter<T extends NetworkType>(
 
 export async function createDepositWithdrawalRouter(
   core: CoreProtocolType<any>,
-  payableToken: { address: string }
+  payableToken: { address: string },
 ): Promise<DepositWithdrawalRouter> {
   const implementation = await createContractWithAbi<DepositWithdrawalRouter>(
     DepositWithdrawalRouter__factory.abi,
     DepositWithdrawalRouter__factory.bytecode,
-    [payableToken.address, core.dolomiteRegistry.address, core.dolomiteMargin.address],
+    [core.dolomiteRegistry.address, core.dolomiteMargin.address],
   );
   const initCalldata = await implementation.populateTransaction.initialize();
 
@@ -214,6 +240,7 @@ export async function createDepositWithdrawalRouter(
     RouterProxy__factory.bytecode,
     [implementation.address, core.dolomiteMargin.address, initCalldata.data!],
   );
+  await proxy.connect(core.governance).ownerLazyInitialize(payableToken.address);
   return DepositWithdrawalRouter__factory.connect(proxy.address, core.hhUser1) as DepositWithdrawalRouter;
 }
 
@@ -258,7 +285,7 @@ export async function createGenericTraderProxyV2Lib(): Promise<Record<LibraryNam
   const contract = await createContractWithLibraryAndArtifact(
     artifact,
     {},
-    []
+    [],
   );
   return { GenericTraderProxyV2Lib: contract.address };
 }
@@ -296,12 +323,12 @@ export async function createTestBorrowPositionRouter(
 
 export async function createTestDepositWithdrawalRouter(
   core: CoreProtocolType<any>,
-  payableToken: { address: string }
+  payableToken: { address: string },
 ): Promise<TestDepositWithdrawalRouter> {
   const implementation = await createContractWithAbi<TestDepositWithdrawalRouter>(
     TestDepositWithdrawalRouter__factory.abi,
     TestDepositWithdrawalRouter__factory.bytecode,
-    [payableToken.address, core.dolomiteRegistry.address],
+    [core.dolomiteRegistry.address, core.dolomiteMargin.address],
   );
   const initCalldata = await implementation.populateTransaction.initialize();
 
@@ -310,6 +337,10 @@ export async function createTestDepositWithdrawalRouter(
     RouterProxy__factory.bytecode,
     [implementation.address, core.dolomiteMargin.address, initCalldata.data!],
   );
+
+  await TestDepositWithdrawalRouter__factory.connect(proxy.address, core.governance)
+    .ownerLazyInitialize(payableToken.address);
+
   return TestDepositWithdrawalRouter__factory.connect(proxy.address, core.hhUser1) as TestDepositWithdrawalRouter;
 }
 

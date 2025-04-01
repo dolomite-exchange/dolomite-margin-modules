@@ -4,9 +4,13 @@ import { Network } from 'packages/base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from 'packages/base/test/utils';
 import { isIsolationModeByMarketId } from 'packages/base/test/utils/dolomite';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
-import { EncodedTransaction, prettyPrintEncodedDataWithTypeSafety } from 'packages/deployment/src/utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from 'packages/deployment/src/utils/dry-run-utils';
+import {
+  doDryRunAndCheckDeployment,
+  DryRunOutput,
+  EncodedTransaction,
+} from 'packages/deployment/src/utils/dry-run-utils';
 import getScriptName from 'packages/deployment/src/utils/get-script-name';
+import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 
 /**
  * This script encodes the following transactions:

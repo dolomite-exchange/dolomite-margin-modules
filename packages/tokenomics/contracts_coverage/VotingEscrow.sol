@@ -20,7 +20,7 @@ import {ERC20Burnable} from "@openzeppelin/contracts/token/ERC20/extensions/ERC2
 /// @author Modified from Solidly (https://github.com/solidlyexchange/solidly/blob/master/contracts/ve.sol)
 /// @author Modified from Curve (https://github.com/curvefi/curve-dao-contracts/blob/master/contracts/VotingEscrow.vy)
 /// @author Modified from Nouns DAO (https://github.com/withtally/my-nft-dao-project/blob/main/contracts/ERC721Checkpointable.sol)
-/// @dev Vote weight decays linearly over time. Lock time cannot be more than `MAXTIME` (4 years).
+/// @dev Vote weight decays linearly over time. Lock time cannot be more than `MAXTIME` (2 years).
 contract VotingEscrow is IERC721, IERC721Metadata, IVotes, Initializable {
     using SafeERC20 for IERC20;
 
@@ -66,12 +66,14 @@ contract VotingEscrow is IERC721, IERC721Metadata, IVotes, Initializable {
         DepositType deposit_type,
         uint256 ts
     );
+
     event Withdraw(
         address indexed provider,
         uint256 tokenId,
         uint256 value,
         uint256 ts
     );
+
     event Supply(uint256 prevSupply, uint256 supply);
 
     /*//////////////////////////////////////////////////////////////
@@ -107,8 +109,8 @@ contract VotingEscrow is IERC721, IERC721Metadata, IVotes, Initializable {
     uint8 internal constant _entered = 2;
     uint8 internal _entered_state;
 
-    string public constant name = "veToken";
-    string public constant symbol = "veToken";
+    string public constant name = "veDOLO";
+    string public constant symbol = "veDOLO";
     string public constant version = "1.0.0";
     uint8 public constant decimals = 18;
 

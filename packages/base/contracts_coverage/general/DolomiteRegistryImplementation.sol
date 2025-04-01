@@ -29,12 +29,12 @@ import { IDolomiteMigrator } from "../interfaces/IDolomiteMigrator.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IEventEmitterRegistry } from "../interfaces/IEventEmitterRegistry.sol";
 import { IExpiry } from "../interfaces/IExpiry.sol";
-import { IGenericTraderProxyV1 } from "../interfaces/IGenericTraderProxyV1.sol";
 import { ILiquidatorAssetRegistry } from "../interfaces/ILiquidatorAssetRegistry.sol";
 import { ISmartDebtAutoTrader } from "../interfaces/traders/ISmartDebtAutoTrader.sol";
 import { ValidationLib } from "../lib/ValidationLib.sol";
 import { IDolomitePriceOracle } from "../protocol/interfaces/IDolomitePriceOracle.sol";
 import { Require } from "../protocol/lib/Require.sol";
+import { IGenericTraderProxyV2 } from "../proxies/interfaces/IGenericTraderProxyV2.sol";
 
 
 /**
@@ -253,8 +253,8 @@ contract DolomiteRegistryImplementation is
         return IBorrowPositionProxyV2(_getAddress(_BORROW_POSITION_PROXY_SLOT));
     }
 
-    function genericTraderProxy() public view returns (IGenericTraderProxyV1) {
-        return IGenericTraderProxyV1(_getAddress(_GENERIC_TRADER_PROXY_SLOT));
+    function genericTraderProxy() public view returns (IGenericTraderProxyV2) {
+        return IGenericTraderProxyV2(_getAddress(_GENERIC_TRADER_PROXY_SLOT));
     }
 
     function expiry() public view returns (IExpiry) {
@@ -275,6 +275,10 @@ contract DolomiteRegistryImplementation is
 
     function eventEmitter() public view returns (IEventEmitterRegistry) {
         return IEventEmitterRegistry(_getAddress(_EVENT_EMITTER_SLOT));
+    }
+
+    function feeAgent() public view returns (address) {
+        return _getAddress(_FEE_AGENT_SLOT);
     }
 
     function chainlinkPriceOracle() public view returns (IDolomitePriceOracle) {

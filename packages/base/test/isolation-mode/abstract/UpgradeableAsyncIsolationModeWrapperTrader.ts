@@ -24,7 +24,14 @@ import {
   createTestToken,
   depositIntoDolomiteMargin,
 } from '../../../src/utils/dolomite-utils';
-import { BYTES_EMPTY, MAX_UINT_256_BI, Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
+import {
+  BYTES_EMPTY,
+  MAX_UINT_256_BI,
+  Network,
+  ONE_BI,
+  ONE_ETH_BI,
+  ZERO_BI,
+} from '../../../src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectEvent, expectProtocolBalance, expectThrow, expectWalletBalance } from '../../utils/assertions';
@@ -32,7 +39,6 @@ import { expectEvent, expectProtocolBalance, expectThrow, expectWalletBalance } 
 import { CoreProtocolArbitrumOne } from '../../utils/core-protocols/core-protocol-arbitrum-one';
 import {
   createAndUpgradeDolomiteRegistry,
-  createDolomiteRegistryImplementation,
   createEventEmitter,
   createIsolationModeTokenVaultV1ActionsImpl,
 } from '../../utils/dolomite';
@@ -100,7 +106,7 @@ describe('UpgradeableAsyncIsolationModeWrapperTrader', () => {
     const genericTraderProxy = await createContractWithLibrary(
       'GenericTraderProxyV2',
       { GenericTraderProxyV2Lib: genericTraderLib.address },
-      [Network.ArbitrumOne, core.dolomiteRegistry.address, core.dolomiteMargin.address]
+      [Network.ArbitrumOne, core.dolomiteRegistry.address, core.dolomiteMargin.address],
     );
     await core.dolomiteRegistry.ownerSetGenericTraderProxy(genericTraderProxy.address);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(genericTraderProxy.address, true);
@@ -726,7 +732,7 @@ describe('UpgradeableAsyncIsolationModeWrapperTrader', () => {
         core.hhUser1.address,
         defaultAccountNumber,
         otherMarketId1,
-        amountWei.add(otherAmountWei)
+        amountWei.add(otherAmountWei),
       );
       await expectProtocolBalance(core, userVault.address, defaultAccountNumber, underlyingMarketId, ZERO_BI);
       expect(await userVault.shouldSkipTransfer()).to.eq(false);

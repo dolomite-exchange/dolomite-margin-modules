@@ -1,5 +1,4 @@
 import {
-  DolomiteAccountRegistry,
   DolomiteAccountRegistry__factory,
   IERC20Metadata__factory,
   RegistryProxy,
@@ -12,11 +11,13 @@ import { DolomiteMargin } from 'packages/base/test/utils/dolomite';
 import { deployContractAndSave, getMaxDeploymentVersionNameByDeploymentKey } from '../../../utils/deploy-utils';
 import ModuleDeployments from '../../deployments.json';
 
+type ImplementationAddress = string;
+
 export async function deployDolomiteAccountRegistry<T extends NetworkType>(
   dolomiteMargin: DolomiteMargin<T>,
   signer: SignerWithAddressWithSafety,
   network: T,
-): Promise<[string, RegistryProxy]> {
+): Promise<[ImplementationAddress, RegistryProxy]> {
   const dolomiteAccountRegistryImplementationAddress = await deployContractAndSave(
     'DolomiteAccountRegistry',
     [],

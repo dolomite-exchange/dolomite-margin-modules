@@ -50,6 +50,10 @@ export async function deployOracleAggregator<T extends NetworkType>(
     getMaxDeploymentVersionNameByDeploymentKey('ChainlinkPriceOracle', 3),
   );
 
+  await deployContractAndSave('ChroniclePriceOracleV3', [[], [], [], dolomiteRegistry.address, dolomiteMargin.address]);
+
+  await deployContractAndSave('RedstonePriceOracleV3', [[], [], [], dolomiteRegistry.address, dolomiteMargin.address]);
+
   const tokenInfos = tokens.map<TokenInfo>((token, i) => {
     return {
       token: token.address,

@@ -7,12 +7,11 @@ import {
 import { Network } from 'packages/base/src/utils/no-deps-constants';
 import {
   createFolder,
-  DenJsonUpload,
   deployContractAndSave,
-  EncodedTransaction,
-  prettyPrintEncodedDataWithTypeSafety,
   writeFile,
 } from '../../../../utils/deploy-utils';
+import { DenJsonUpload, EncodedTransaction } from '../../../../utils/dry-run-utils';
+import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 
 const old2024Unwrapper = '0x05C5A361431A5b141d9f09D761EA4323B651dfB8';
 const old2024Wrapper = '0x30173DbD3A5af41bE2b8462d1D27E18e536D6705';

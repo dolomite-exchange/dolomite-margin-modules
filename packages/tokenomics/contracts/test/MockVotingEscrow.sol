@@ -37,7 +37,11 @@ contract MockVotingEscrow {
         DOLO = IERC20(_dolo);
     }
 
-    function create_lock_for(uint256 _amount, uint256 _lockDuration, address _receiver) external returns (uint256) {
+    function create_lock_for(
+        uint256 _amount,
+        uint256 /* _lockDuration */,
+        address /* _receiver */
+    ) external returns (uint256) {
         DOLO.transferFrom(msg.sender, address(this), _amount);
         return _amount;
     }

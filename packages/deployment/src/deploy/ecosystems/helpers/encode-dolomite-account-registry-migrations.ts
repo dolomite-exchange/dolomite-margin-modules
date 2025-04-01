@@ -1,7 +1,8 @@
 import {
   RegistryProxy,
 } from 'packages/base/src/types';
-import { EncodedTransaction, prettyPrintEncodedDataWithTypeSafety } from '../../../utils/deploy-utils';
+import { EncodedTransaction } from '../../../utils/dry-run-utils';
+import { prettyPrintEncodedDataWithTypeSafety } from '../../../utils/encoding/base-encoder-utils';
 
 export async function encodeDolomiteAccountRegistryMigrations(
   dolomiteAccountRegistryProxy: RegistryProxy,
@@ -9,7 +10,6 @@ export async function encodeDolomiteAccountRegistryMigrations(
   transactions: EncodedTransaction[],
   core: any,
 ) {
-
   if ((await dolomiteAccountRegistryProxy.implementation()) !== dolomiteAccountRegistryImplementationAddress) {
     transactions.push(
       await prettyPrintEncodedDataWithTypeSafety(

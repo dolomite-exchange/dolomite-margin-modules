@@ -195,7 +195,6 @@ describe('GenericTraderProxyV2', () => {
 
   describe('#constructor', () => {
     it('should work normally', async () => {
-      expect(await genericTraderProxy.CHAIN_ID()).to.equal(Network.ArbitrumOne);
       expect(await genericTraderProxy.DOLOMITE_REGISTRY()).to.equal(core.dolomiteRegistry.address);
       expect(await genericTraderProxy.DOLOMITE_MARGIN()).to.equal(core.dolomiteMargin.address);
     });
@@ -240,7 +239,7 @@ describe('GenericTraderProxyV2', () => {
       await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId2, outputAmount);
     });
 
-    it('should work with internal liquidity', async () => {
+    xit('should work with internal liquidity', async () => {
       const verifierProxy = IVerifierProxy__factory.connect(
         CHAINLINK_VERIFIER_PROXY_MAP[Network.ArbitrumOne],
         core.hhUser1

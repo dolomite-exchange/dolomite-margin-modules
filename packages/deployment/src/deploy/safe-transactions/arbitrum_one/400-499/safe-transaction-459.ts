@@ -6,10 +6,10 @@ import { setupCoreProtocol } from 'packages/base/test/utils/setup';
 import {
   deployDolomiteErc4626Token,
   deployDolomiteErc4626WithPayableToken,
-  EncodedTransaction,
-  prettyPrintEncodedDataWithTypeSafety,
+
 } from '../../../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
+import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
+import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 
 const OLD_WETH_ADDRESS = '0x1FE20a7d3C71705421af8F2AC36e2850a6449E06';

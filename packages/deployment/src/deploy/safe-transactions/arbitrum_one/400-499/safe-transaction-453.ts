@@ -1,18 +1,18 @@
-import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
-import { getAndCheckSpecificNetwork } from 'packages/base/src/utils/dolomite-utils';
-import { Network } from 'packages/base/src/utils/no-deps-constants';
-import { getRealLatestBlockNumber } from 'packages/base/test/utils';
-import { setupCoreProtocol } from 'packages/base/test/utils/setup';
-import { EncodedTransaction, prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/deploy-utils';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
-import getScriptName from '../../../../utils/get-script-name';
-import { parseEther } from 'ethers/lib/utils';
 import {
   getLiquidationPremiumForTargetLiquidationPenalty,
   getMarginPremiumForTargetCollateralization,
   TargetCollateralization,
   TargetLiquidationPenalty,
 } from '@dolomite-exchange/modules-base/src/utils/constructors/dolomite';
+import { parseEther } from 'ethers/lib/utils';
+import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
+import { getAndCheckSpecificNetwork } from 'packages/base/src/utils/dolomite-utils';
+import { Network } from 'packages/base/src/utils/no-deps-constants';
+import { getRealLatestBlockNumber } from 'packages/base/test/utils';
+import { setupCoreProtocol } from 'packages/base/test/utils/setup';
+import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
+import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
+import getScriptName from '../../../../utils/get-script-name';
 
 const LIQUIDATOR_ADDRESS = '0x1fF6B8E1192eB0369006Bbad76dA9068B68961B2';
 
@@ -28,6 +28,8 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
 
   const pendleMarketId = core.marketIds.pendle;
+  const baseCollateralization = parseEther('1.15');
+  const baseLiquidationPenalty = parseEther('0.05');
 
   const transactions: EncodedTransaction[] = [];
   transactions.push(
@@ -57,14 +59,22 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       { dolomiteMargin: core.dolomiteMargin },
       'dolomiteMargin',
       'ownerSetMarginPremium',
-      [pendleMarketId, { value: getMarginPremiumForTargetCollateralization(TargetCollateralization._133) }],
+      [
+        pendleMarketId,
+        { value: getMarginPremiumForTargetCollateralization(baseCollateralization, TargetCollateralization._133) },
+      ],
     ),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       { dolomiteMargin: core.dolomiteMargin },
       'dolomiteMargin',
       'ownerSetSpreadPremium',
-      [pendleMarketId, { value: getLiquidationPremiumForTargetLiquidationPenalty(TargetLiquidationPenalty._9) }],
+      [
+        pendleMarketId,
+        {
+          value: getLiquidationPremiumForTargetLiquidationPenalty(baseLiquidationPenalty, TargetLiquidationPenalty._9),
+        },
+      ],
     ),
   );
 
@@ -82,8 +92,8 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
         'Invalid handler status',
       );
       assertHardhatInvariant(
-        await core.dolomiteMargin.getMarketInterestSetter(pendleMarketId) ===
-        core.interestSetters.linearStepFunction15L135U80OInterestSetter.address,
+        (await core.dolomiteMargin.getMarketInterestSetter(pendleMarketId)) ===
+          core.interestSetters.linearStepFunction15L135U80OInterestSetter.address,
         'Invalid interest setter',
       );
       assertHardhatInvariant(
@@ -92,12 +102,14 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       );
       assertHardhatInvariant(
         (await core.dolomiteMargin.getMarketMarginPremium(pendleMarketId)).value.eq(
-          getMarginPremiumForTargetCollateralization(TargetCollateralization._133)),
+          getMarginPremiumForTargetCollateralization(baseCollateralization, TargetCollateralization._133),
+        ),
         'Invalid margin premium',
       );
       assertHardhatInvariant(
         (await core.dolomiteMargin.getMarketSpreadPremium(pendleMarketId)).value.eq(
-          getLiquidationPremiumForTargetLiquidationPenalty(TargetLiquidationPenalty._9)),
+          getLiquidationPremiumForTargetLiquidationPenalty(baseCollateralization, TargetLiquidationPenalty._9),
+        ),
         'Invalid liquidation spread premium',
       );
     },

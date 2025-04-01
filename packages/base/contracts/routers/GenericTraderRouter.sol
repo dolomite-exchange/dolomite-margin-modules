@@ -84,7 +84,7 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
             Require.that(
                 msg.value == 0,
                 _FILE,
-                'msg.value must be 0'
+                "msg.value must be 0"
             );
             IGenericTraderProxyV2 proxy = IGenericTraderProxyV2(address(DOLOMITE_REGISTRY.genericTraderProxy()));
             proxy.swapExactInputForOutputForDifferentAccount(
@@ -144,11 +144,11 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
             Require.that(
                 msg.value == 0,
                 _FILE,
-                'msg.value must be 0'
+                "msg.value must be 0"
             );
             IGenericTraderProxyV2 proxy = IGenericTraderProxyV2(address(DOLOMITE_REGISTRY.genericTraderProxy()));
             proxy.swapExactInputForOutputAndModifyPositionForDifferentAccount(
-                msg.sender,
+                /* _tradeAccountOwner = */ msg.sender,
                 _params
             );
         } else {
@@ -439,6 +439,7 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
     ) internal pure returns (bool) {
         return (
             _params.transferCollateralParams.transferAmounts.length == 1
+                && _params.transferCollateralParams.transferAmounts[0].marketId == _params.marketIdsPath[0]
                 && isDolomiteBalance(_params.transferCollateralParams.fromAccountNumber)
                 && !isDolomiteBalance(_params.transferCollateralParams.toAccountNumber)
         );
@@ -447,8 +448,10 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
     function _checkSwapAndRemoveCollateral(
         IGenericTraderProxyV2.SwapExactInputForOutputAndModifyPositionParams memory _params
     ) internal pure returns (bool) {
+        uint256 lastMarketId = _params.marketIdsPath[_params.marketIdsPath.length - 1];
         return (
             _params.transferCollateralParams.transferAmounts.length == 1
+                && _params.transferCollateralParams.transferAmounts[0].marketId == lastMarketId
                 && !isDolomiteBalance(_params.transferCollateralParams.fromAccountNumber)
                 && isDolomiteBalance(_params.transferCollateralParams.toAccountNumber)
         );
