@@ -277,10 +277,6 @@ contract DolomiteRegistryImplementation is
         return IEventEmitterRegistry(_getAddress(_EVENT_EMITTER_SLOT));
     }
 
-    function feeAgent() public view returns (address) {
-        return _getAddress(_FEE_AGENT_SLOT);
-    }
-
     function chainlinkPriceOracle() public view returns (IDolomitePriceOracle) {
         return IDolomitePriceOracle(_getAddress(_CHAINLINK_PRICE_ORACLE_SLOT));
     }

@@ -253,7 +253,7 @@ contract SmartDebtAutoTrader is InternalAutoTraderBase, ISmartDebtAutoTrader {
     view
     override(IInternalAutoTraderBase, InternalAutoTraderBase) returns (IDolomiteStructs.ActionArgs[] memory) {
         IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](
-            actionsLength(_params.trades.length)
+            actionsLength(_params.trades)
         );
         uint256 actionCursor;
 
@@ -337,9 +337,9 @@ contract SmartDebtAutoTrader is InternalAutoTraderBase, ISmartDebtAutoTrader {
     }
 
     function actionsLength(
-        uint256 _trades
+        InternalTradeParams[] memory _trades
     ) public pure override(IInternalAutoTraderBase, InternalAutoTraderBase) returns (uint256) {
-        return _trades + 3;
+        return _trades.length + 3;
     }
 
     // ========================================================

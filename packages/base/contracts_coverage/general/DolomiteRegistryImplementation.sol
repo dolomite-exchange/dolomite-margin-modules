@@ -70,7 +70,6 @@ contract DolomiteRegistryImplementation is
     bytes32 private constant _SMART_DEBT_TRADER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.smartDebtTrader")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _TRUSTED_INTERNAL_TRADERS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.trustedInternalTraders")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _TRUSTED_INTERNAL_TRADE_CALLERS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.trustedInternalTradeCallers")) - 1); // solhint-disable-line max-line-length
-    // @todo add comment that it implements getActionsForTrade, is used by generic trader proxy, and flips maker and taker
 
     // ==================== Constructor ====================
 
@@ -230,6 +229,8 @@ contract DolomiteRegistryImplementation is
         _ownerSetTrustedInternalTraders(_trustedInternalTraders, _isTrusted);
     }
 
+    // @dev In order to be a trusted internal trade caller, it must implement 'createActionsForInternalTrade',
+    // flip maker and taker, and can be used by the generic trader proxy
     function ownerSetTrustedInternalTradeCallers(
         address[] memory _trustedInternalTradeCallers,
         bool[] memory _isTrusted
@@ -275,10 +276,6 @@ contract DolomiteRegistryImplementation is
 
     function eventEmitter() public view returns (IEventEmitterRegistry) {
         return IEventEmitterRegistry(_getAddress(_EVENT_EMITTER_SLOT));
-    }
-
-    function feeAgent() public view returns (address) {
-        return _getAddress(_FEE_AGENT_SLOT);
     }
 
     function chainlinkPriceOracle() public view returns (IDolomitePriceOracle) {

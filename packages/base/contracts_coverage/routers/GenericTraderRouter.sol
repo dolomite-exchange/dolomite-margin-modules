@@ -360,7 +360,7 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
         IInternalAutoTraderBase.InternalTradeParams[] memory _trades,
         bool _isExternalTrade
     ) internal view returns (uint256) {
-        uint256 actionsLen = DOLOMITE_REGISTRY.smartDebtTrader().actionsLength(_trades.length);
+        uint256 actionsLen = DOLOMITE_REGISTRY.smartDebtTrader().actionsLength(_trades);
         return _isExternalTrade ? actionsLen + _EXTERNAL_TRADE_ACTIONS_NUM : actionsLen;
     }
 
@@ -390,19 +390,20 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
             );
         }
 
-        IDolomiteStructs.ActionArgs[] memory tradeActions = DOLOMITE_REGISTRY.smartDebtTrader().createActionsForInternalTrade(
-            IInternalAutoTraderBase.CreateActionsForInternalTradeParams({
-                takerAccountId: _TRADE_ACCOUNT_ID,
-                takerAccount: _accounts[_TRADE_ACCOUNT_ID],
-                feeAccountId: _FEE_ACCOUNT_ID,
-                feeAccount: _accounts[_FEE_ACCOUNT_ID],
-                inputMarketId: _inputMarketId,
-                outputMarketId: _outputMarketId,
-                inputAmountWei: _inputAmountWei,
-                trades: _trades,
-                extraData: _extraData
-            })
-        );
+        IDolomiteStructs.ActionArgs[] memory tradeActions =
+            DOLOMITE_REGISTRY.smartDebtTrader().createActionsForInternalTrade(
+                IInternalAutoTraderBase.CreateActionsForInternalTradeParams({
+                    takerAccountId: _TRADE_ACCOUNT_ID,
+                    takerAccount: _accounts[_TRADE_ACCOUNT_ID],
+                    feeAccountId: _FEE_ACCOUNT_ID,
+                    feeAccount: _accounts[_FEE_ACCOUNT_ID],
+                    inputMarketId: _inputMarketId,
+                    outputMarketId: _outputMarketId,
+                    inputAmountWei: _inputAmountWei,
+                    trades: _trades,
+                    extraData: _extraData
+                })
+            );
         for (uint256 i; i < tradeActions.length; i++) {
             _actions[actionsCursor++] = tradeActions[i];
         }

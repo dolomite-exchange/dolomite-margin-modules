@@ -19,7 +19,6 @@
 
 pragma solidity ^0.8.9;
 
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import { InternalAutoTraderBase } from "./InternalAutoTraderBase.sol";
@@ -27,10 +26,10 @@ import { IInternalAutoTraderBase } from "../interfaces/traders/IInternalAutoTrad
 import { ISmartDebtAutoTrader } from "../interfaces/traders/ISmartDebtAutoTrader.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { IDolomiteAutoTrader } from "../protocol/interfaces/IDolomiteAutoTrader.sol";
+import { IDolomitePriceOracle } from "../protocol/interfaces/IDolomitePriceOracle.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { DecimalLib } from "../protocol/lib/DecimalLib.sol";
 import { Require } from "../protocol/lib/Require.sol";
-import { IDolomitePriceOracle } from "../protocol/interfaces/IDolomitePriceOracle.sol";
 
 
 // @follow-up Can't import this because of weird package stuff
@@ -262,7 +261,7 @@ contract SmartDebtAutoTrader is InternalAutoTraderBase, ISmartDebtAutoTrader {
     view
     override(IInternalAutoTraderBase, InternalAutoTraderBase) returns (IDolomiteStructs.ActionArgs[] memory) {
         IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](
-            actionsLength(_params.trades.length)
+            actionsLength(_params.trades)
         );
         uint256 actionCursor;
 
@@ -347,9 +346,9 @@ contract SmartDebtAutoTrader is InternalAutoTraderBase, ISmartDebtAutoTrader {
     }
 
     function actionsLength(
-        uint256 _trades
+        InternalTradeParams[] memory _trades
     ) public pure override(IInternalAutoTraderBase, InternalAutoTraderBase) returns (uint256) {
-        return _trades + 3;
+        return _trades.length + 3;
     }
 
     // ========================================================

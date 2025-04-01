@@ -20,14 +20,14 @@
 
 pragma solidity ^0.8.9;
 
+import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { IDolomiteAutoTrader } from "../protocol/interfaces/IDolomiteAutoTrader.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { InternalAutoTraderBase } from "../traders/InternalAutoTraderBase.sol";
-import { AccountActionLib } from "../lib/AccountActionLib.sol";
 
 
 /**
- * @title   TestAutoTrader
+ * @title   TestDolomiteAutoTrader
  * @author  Dolomite
  *
  * @notice  A test implementation of IDolomiteAutoTrader
@@ -63,7 +63,7 @@ contract TestDolomiteAutoTrader is InternalAutoTraderBase {
         CreateActionsForInternalTradeParams memory _params
     ) external view override returns (IDolomiteStructs.ActionArgs[] memory) {
         IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](
-            actionsLength(_params.trades.length)
+            actionsLength(_params.trades)
         );
         actions[0] = AccountActionLib.encodeCallAction(
             /* accountId = */ 0,
@@ -73,8 +73,8 @@ contract TestDolomiteAutoTrader is InternalAutoTraderBase {
         return actions;
     }
 
-    function actionsLength(uint256 _trades) public pure override returns (uint256) {
-        return _trades;
+    function actionsLength(InternalTradeParams[] memory _trades) public pure override returns (uint256) {
+        return _trades.length;
     }
 }
 

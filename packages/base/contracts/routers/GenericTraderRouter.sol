@@ -356,7 +356,7 @@ contract GenericTraderRouter is RouterBase, IGenericTraderRouter {
         IInternalAutoTraderBase.InternalTradeParams[] memory _trades,
         bool _isExternalTrade
     ) internal view returns (uint256) {
-        uint256 actionsLen = DOLOMITE_REGISTRY.smartDebtTrader().actionsLength(_trades.length);
+        uint256 actionsLen = DOLOMITE_REGISTRY.smartDebtTrader().actionsLength(_trades);
         return _isExternalTrade ? actionsLen + _EXTERNAL_TRADE_ACTIONS_NUM : actionsLen;
     }
 

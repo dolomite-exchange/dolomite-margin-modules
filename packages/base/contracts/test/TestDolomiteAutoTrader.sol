@@ -50,7 +50,7 @@ contract TestDolomiteAutoTrader is InternalAutoTraderBase {
         IDolomiteStructs.Par calldata /* _newInputPar */,
         IDolomiteStructs.Wei calldata _inputDeltaWei,
         bytes calldata /* _data */
-    ) external pure returns (IDolomiteStructs.AssetAmount memory) {
+    ) external pure override returns (IDolomiteStructs.AssetAmount memory) {
         return IDolomiteStructs.AssetAmount({
             sign: true,
             denomination: IDolomiteStructs.AssetDenomination.Wei,
@@ -63,7 +63,7 @@ contract TestDolomiteAutoTrader is InternalAutoTraderBase {
         CreateActionsForInternalTradeParams memory _params
     ) external view override returns (IDolomiteStructs.ActionArgs[] memory) {
         IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](
-            actionsLength(_params.trades.length)
+            actionsLength(_params.trades)
         );
         actions[0] = AccountActionLib.encodeCallAction(
             /* accountId = */ 0,
@@ -73,8 +73,8 @@ contract TestDolomiteAutoTrader is InternalAutoTraderBase {
         return actions;
     }
 
-    function actionsLength(uint256 _trades) public pure override returns (uint256) {
-        return _trades;
+    function actionsLength(InternalTradeParams[] memory _trades) public pure override returns (uint256) {
+        return _trades.length;
     }
 }
 

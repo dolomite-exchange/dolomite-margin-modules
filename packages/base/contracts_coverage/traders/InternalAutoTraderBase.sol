@@ -127,7 +127,7 @@ abstract contract InternalAutoTraderBase is OnlyDolomiteMargin, Initializable, I
         return _getInternalTraderStorage().tradeEnabled;
     }
 
-    function actionsLength(uint256 _trades) public pure virtual returns (uint256);
+    function actionsLength(InternalTradeParams[] memory _trades) public pure virtual returns (uint256);
 
     // ========================================================
     // ================== Internal Functions ==================
@@ -153,7 +153,8 @@ abstract contract InternalAutoTraderBase is OnlyDolomiteMargin, Initializable, I
         return (internalTraderStorage.adminFee, internalTraderStorage.globalFee);
     }
 
-    function _getInternalTraderStorage() internal pure returns (InternalTraderBaseStorage storage internalTraderStorage) {
+    function _getInternalTraderStorage(
+    ) internal pure returns (InternalTraderBaseStorage storage internalTraderStorage) {
         bytes32 slot = _INTERNAL_AUTO_TRADER_STORAGE_SLOT;
         // solhint-disable-next-line no-inline-assembly
         assembly {

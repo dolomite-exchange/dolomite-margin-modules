@@ -29,6 +29,7 @@ import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../protocol/lib/Require.sol";
 
+
 /**
  * @title   GenericTraderProxyBase
  * @author  Dolomite
@@ -140,14 +141,12 @@ abstract contract GenericTraderProxyBase is IGenericTraderBase {
             owner: _tradeAccountOwner,
             number: _calculateZapAccountNumber(_tradeAccountOwner, _tradeAccountNumber)
         });
-
         if (foundInternalLiq) {
             accounts[_cache.feeTransferAccountIndex] = IDolomiteStructs.AccountInfo({
                 owner: DOLOMITE_REGISTRY.feeAgent(),
                 number: DEFAULT_ACCOUNT_NUMBER
             });
         }
-
         _appendTradersToAccounts(_cache, _makerAccounts, accounts);
         return accounts;
     }

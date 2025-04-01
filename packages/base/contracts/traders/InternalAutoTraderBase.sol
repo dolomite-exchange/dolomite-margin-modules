@@ -126,7 +126,7 @@ abstract contract InternalAutoTraderBase is OnlyDolomiteMargin, Initializable, I
         return _getInternalTraderStorage().tradeEnabled;
     }
 
-    function actionsLength(uint256 _trades) public pure virtual returns (uint256);
+    function actionsLength(InternalTradeParams[] memory _trades) public pure virtual returns (uint256);
 
     // ========================================================
     // ================== Internal Functions ==================
