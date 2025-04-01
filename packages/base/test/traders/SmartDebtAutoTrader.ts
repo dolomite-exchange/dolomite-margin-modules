@@ -56,7 +56,7 @@ describe('SmartDebtAutoTrader', () => {
   before(async () => {
     core = await setupCoreProtocol({
       network: Network.ArbitrumOne,
-      blockNumber: 221_470_000,
+      blockNumber: 321_868_000,
     });
     await createAndUpgradeDolomiteRegistry(core);
     await core.dolomiteRegistry.connect(core.governance).ownerSetBorrowPositionProxy(
@@ -89,12 +89,10 @@ describe('SmartDebtAutoTrader', () => {
       )
     );
     await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkDataStreamsPriceOracle(oracle.address);
-
     dolomiteImpersonator = await impersonate(core.dolomiteMargin.address, true);
     genericTraderProxy = await createGenericTraderProxyV2(core, Network.ArbitrumOne);
     await core.dolomiteRegistry.ownerSetGenericTraderProxy(genericTraderProxy.address);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(genericTraderProxy.address, true);
-
     trader = await createTestSmartDebtAutoTrader(core, Network.ArbitrumOne);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(trader.address, true);
     await core.dolomiteRegistry.connect(core.governance).ownerSetTrustedInternalTraders(
@@ -105,7 +103,6 @@ describe('SmartDebtAutoTrader', () => {
       [genericTraderProxy.address],
       [true]
     );
-
     await disableInterestAccrual(core, core.marketIds.usdc);
     await disableInterestAccrual(core, core.marketIds.usdt);
 
@@ -228,7 +225,7 @@ describe('SmartDebtAutoTrader', () => {
       const extraBytes = defaultAbiCoder.encode(['bytes[]', 'bool'], [[result.report.fullReport], true]);
 
       const time = getTimestampFromReport(result);
-      await setNextBlockTimestamp(time + ONE_DAY_SECONDS * 2);
+      await setNextBlockTimestamp(time.add(ONE_DAY_SECONDS * 2));
       await expectThrow(
         trader.connect(dolomiteImpersonator).callFunction(
           genericTraderProxy.address,

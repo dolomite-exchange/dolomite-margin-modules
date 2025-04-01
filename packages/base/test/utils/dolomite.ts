@@ -299,7 +299,7 @@ export async function createGenericTraderProxyV2(
   return await createContractWithLibraryAndArtifact(
     artifact,
     libraries,
-    [network, core.dolomiteRegistry.address, core.dolomiteMargin.address],
+    [core.dolomiteRegistry.address, core.dolomiteMargin.address],
   );
 }
 
