@@ -26,6 +26,13 @@ import { IAccessControl } from "@openzeppelin/contracts/access/IAccessControl.so
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import { IDolomiteOwner } from "./interfaces/IDolomiteOwner.sol";
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { IDolomiteOwner } from "./interfaces/IDolomiteOwner.sol";
+import { IDepositWithdrawalRouter } from "@dolomite-exchange/modules-base/contracts/routers/interfaces/IDepositWithdrawalRouter.sol";
+import { IDolomiteMarginAdmin } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteMarginAdmin.sol";
+import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 
 /**
@@ -34,5 +41,68 @@ import { IDolomiteOwner } from "./interfaces/IDolomiteOwner.sol";
  *
  * @notice  AdminClaimExcessTokens contract that enables an admin to claim excess tokens from the protocol
  */
-contract AdminClaimExcessTokens {
+contract AdminClaimExcessTokens is Ownable, OnlyDolomiteMargin {
+    using SafeERC20 for IERC20;
+
+    bytes32 private constant _FILE = "AdminClaimExcessTokens";
+
+    IDepositWithdrawalRouter public immutable DEPOSIT_WITHDRAWAL_ROUTER;
+
+    constructor(
+        address _gnosisSafe,
+        address _depositWithdrawalRouter,
+        address _dolomiteMargin
+    ) OnlyDolomiteMargin(_dolomiteMargin) {
+        _transferOwnership(_gnosisSafe);
+
+        DEPOSIT_WITHDRAWAL_ROUTER = IDepositWithdrawalRouter(_depositWithdrawalRouter);
+    }
+
+    function claimExcessTokens(address _token, address _recipient) external onlyOwner {
+        Require.that(
+            _recipient == address(this) || _recipient == DOLOMITE_MARGIN_OWNER(),
+            _FILE,
+            "Invalid recipient"
+        );
+
+        uint256 marketId = DOLOMITE_MARGIN().getMarketIdByTokenAddress(_token);
+        IDolomiteOwner(DOLOMITE_MARGIN_OWNER()).submitTransactionAndExecute(
+            address(DOLOMITE_MARGIN()),
+            abi.encodeWithSelector(
+                IDolomiteMarginAdmin.ownerWithdrawExcessTokens.selector,
+                marketId,
+                _recipient
+            )
+        );
+
+        uint256 balance = IERC20(_token).balanceOf(address(this));
+        if (_recipient == address(this)) {
+            IERC20(_token).safeTransfer(
+                owner(),
+                balance
+            );
+        } else if (_recipient == DOLOMITE_MARGIN_OWNER()) {
+            IDolomiteOwner(DOLOMITE_MARGIN_OWNER()).submitTransactionAndExecute(
+                _token,
+                abi.encodeWithSelector(
+                    IERC20.approve.selector,
+                    address(DEPOSIT_WITHDRAWAL_ROUTER),
+                    balance
+                )
+            );
+            IDolomiteOwner(DOLOMITE_MARGIN_OWNER()).submitTransactionAndExecute(
+                address(DEPOSIT_WITHDRAWAL_ROUTER),
+                abi.encodeWithSelector(
+                    IDepositWithdrawalRouter.depositWei.selector,
+                    /* isolationModeMarketId */ 0,
+                    /* toAccountNumber */ 0,
+                    marketId,
+                    balance,
+                    /* eventFlag */ 0
+                )
+            );
+        } else {
+            revert("Invalid recipient");
+        }
+    }
 }
