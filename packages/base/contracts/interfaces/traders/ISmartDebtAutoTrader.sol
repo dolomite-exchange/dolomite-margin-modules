@@ -40,6 +40,8 @@ interface ISmartDebtAutoTrader is IInternalAutoTraderBase {
     struct PairPosition {
         PairType pairType;
         bytes32 pairBytes;
+        uint256 minExchangeRate;
+        uint256 maxExchangeRate;
     }
 
     struct SmartPairsStorage {
@@ -63,7 +65,14 @@ interface ISmartDebtAutoTrader is IInternalAutoTraderBase {
     // ================== External Functions ==================
     // ========================================================
 
-    function userSetPair(uint256 _accountNumber, PairType _pairType, uint256 _marketId1, uint256 _marketId2) external;
+    function userSetPair(
+        uint256 _accountNumber,
+        PairType _pairType,
+        uint256 _marketId1,
+        uint256 _marketId2,
+        uint256 _minExchangeRate,
+        uint256 _maxExchangeRate
+    ) external;
 
     function ownerAddSmartDebtPair(uint256 _marketId1, uint256 _marketId2) external;
     function ownerRemoveSmartDebtPair(uint256 _marketId1, uint256 _marketId2) external;

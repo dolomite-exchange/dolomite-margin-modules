@@ -117,7 +117,7 @@ contract SmartDebtAutoTrader is InternalAutoTraderBase, ISmartDebtAutoTrader {
         (uint256 adjInputAmount, uint256 outputTokenAmount) = _calculateInputAndOutputTokenAmount(
             _inputMarketId,
             _outputMarketId,
-            pairBytes,
+            pairPosition,
             _inputDeltaWei.value,
             _data
         );
@@ -166,13 +166,22 @@ contract SmartDebtAutoTrader is InternalAutoTraderBase, ISmartDebtAutoTrader {
         });
     }
 
-    function userSetPair(uint256 _accountNumber, PairType _pairType, uint256 _marketId1, uint256 _marketId2) external {
+    function userSetPair(
+        uint256 _accountNumber,
+        PairType _pairType,
+        uint256 _marketId1,
+        uint256 _marketId2,
+        uint256 _minExchangeRate,
+        uint256 _maxExchangeRate
+    ) external {
         SmartPairsStorage storage smartPairsStorage = _getSmartPairsStorage();
 
         if (_pairType == PairType.NONE && _marketId1 == 0 && _marketId2 == 0) {
             smartPairsStorage.userToPair[msg.sender][_accountNumber] = PairPosition({
                 pairType: PairType.NONE,
-                pairBytes: bytes32(0)
+                pairBytes: bytes32(0),
+                minExchangeRate: 0,
+                maxExchangeRate: 0
             });
             emit UserToPairSet(msg.sender, _accountNumber, _pairType, bytes32(0));
             return;
@@ -197,7 +206,9 @@ contract SmartDebtAutoTrader is InternalAutoTraderBase, ISmartDebtAutoTrader {
 
         smartPairsStorage.userToPair[msg.sender][_accountNumber] = PairPosition({
             pairType: _pairType,
-            pairBytes: pairBytes
+            pairBytes: pairBytes,
+            minExchangeRate: _minExchangeRate,
+            maxExchangeRate: _maxExchangeRate
         });
         emit UserToPairSet(msg.sender, _accountNumber, _pairType, pairBytes);
     }
@@ -423,12 +434,12 @@ contract SmartDebtAutoTrader is InternalAutoTraderBase, ISmartDebtAutoTrader {
     function _calculateInputAndOutputTokenAmount(
         uint256 _inputMarketId,
         uint256 _outputMarketId,
-        bytes32 _pairBytes,
+        PairPosition memory _pairPosition,
         uint256 _inputAmountWei,
         bytes memory _data
     ) internal view returns (uint256, uint256) {
         (uint256 minOutputAmount, uint256 adminFeeAmount) = abi.decode(_data, (uint256, uint256));
-        (, IDolomiteStructs.Decimal memory feePercentage) = _getFees(_pairBytes);
+        (, IDolomiteStructs.Decimal memory feePercentage) = _getFees(_pairPosition.pairBytes);
         uint256 adjInputAmount = (_inputAmountWei + adminFeeAmount).mul(DecimalLib.oneSub(feePercentage));
 
         IDolomitePriceOracle chainlinkDataStreamsPriceOracle = DOLOMITE_REGISTRY.chainlinkDataStreamsPriceOracle();
@@ -439,8 +450,8 @@ contract SmartDebtAutoTrader is InternalAutoTraderBase, ISmartDebtAutoTrader {
         uint256 outputPrice = chainlinkDataStreamsPriceOracle.getPrice(outputToken).value;
         assert(inputPrice != 0 && outputPrice != 0);
 
-        uint256 inputValue = adjInputAmount * inputPrice;
-        uint256 outputAmount = inputValue / outputPrice;
+        uint256 adjInputValue = adjInputAmount * inputPrice;
+        uint256 outputAmount = adjInputValue / outputPrice;
 
         Require.that(
             outputAmount >= minOutputAmount,
