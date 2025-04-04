@@ -56,7 +56,7 @@ describe('SmartDebtAutoTrader', () => {
   before(async () => {
     core = await setupCoreProtocol({
       network: Network.ArbitrumOne,
-      blockNumber: 321_868_000,
+      blockNumber: 322_901_700,
     });
     await createAndUpgradeDolomiteRegistry(core);
     await core.dolomiteRegistry.connect(core.governance).ownerSetBorrowPositionProxy(
@@ -441,7 +441,7 @@ describe('SmartDebtAutoTrader', () => {
     });
   });
 
-  describe('#getTradeCost', () => {
+  describe.only('#getTradeCost', () => {
     it('should work normally with smart collateral when prices are equal', async () => {
       await setupUSDTBalance(core, core.hhUser2, usdtAmount, core.dolomiteMargin);
       await depositIntoDolomiteMargin(core, core.hhUser2, 0, core.marketIds.usdt, usdtAmount);
@@ -451,7 +451,9 @@ describe('SmartDebtAutoTrader', () => {
         defaultAccountNumber,
         PairType.SMART_COLLATERAL,
         core.marketIds.usdc,
-        core.marketIds.usdt
+        core.marketIds.usdt,
+        ZERO_BI,
+        ZERO_BI
       );
 
       const adminFeeAmount = usdcAmount.div(10).div(2);
@@ -493,7 +495,9 @@ describe('SmartDebtAutoTrader', () => {
         defaultAccountNumber,
         PairType.SMART_COLLATERAL,
         core.marketIds.usdc,
-        core.marketIds.usdt
+        core.marketIds.usdt,
+        ZERO_BI,
+        ZERO_BI
       );
 
       const adminFeeAmount = usdcAmount.div(10).div(2);
@@ -531,7 +535,9 @@ describe('SmartDebtAutoTrader', () => {
         defaultAccountNumber,
         PairType.SMART_COLLATERAL,
         core.marketIds.usdc,
-        core.marketIds.usdt
+        core.marketIds.usdt,
+        ZERO_BI,
+        ZERO_BI
       );
       await trader.connect(core.governance).ownerRemoveSmartCollateralPair(core.marketIds.usdc, core.marketIds.usdt);
 
@@ -567,7 +573,9 @@ describe('SmartDebtAutoTrader', () => {
         defaultAccountNumber,
         PairType.SMART_COLLATERAL,
         core.marketIds.usdc,
-        core.marketIds.usdt
+        core.marketIds.usdt,
+        ZERO_BI,
+        ZERO_BI
       );
       await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkDataStreamsPriceOracle(testOracle.address);
 
@@ -611,7 +619,9 @@ describe('SmartDebtAutoTrader', () => {
         borrowAccountNumber,
         PairType.SMART_DEBT,
         core.marketIds.usdc,
-        core.marketIds.usdt
+        core.marketIds.usdt,
+        ZERO_BI,
+        ZERO_BI
       );
 
       const adminFeeAmount = usdcAmount.div(10).div(2);
@@ -653,7 +663,9 @@ describe('SmartDebtAutoTrader', () => {
         borrowAccountNumber,
         PairType.SMART_DEBT,
         core.marketIds.usdc,
-        core.marketIds.usdt
+        core.marketIds.usdt,
+        ZERO_BI,
+        ZERO_BI
       );
 
       const adminFeeAmount = usdcAmount.div(10).div(2);
@@ -695,7 +707,9 @@ describe('SmartDebtAutoTrader', () => {
         borrowAccountNumber,
         PairType.SMART_DEBT,
         core.marketIds.usdc,
-        core.marketIds.usdt
+        core.marketIds.usdt,
+        ZERO_BI,
+        ZERO_BI
       );
       await trader.connect(core.governance).ownerRemoveSmartDebtPair(core.marketIds.usdc, core.marketIds.usdt);
 
@@ -732,7 +746,9 @@ describe('SmartDebtAutoTrader', () => {
         borrowAccountNumber,
         PairType.SMART_DEBT,
         core.marketIds.usdc,
-        core.marketIds.usdt
+        core.marketIds.usdt,
+        ZERO_BI,
+        ZERO_BI
       );
 
       const adminFeeAmount = usdcAmount.div(10).div(2);
@@ -818,7 +834,9 @@ describe('SmartDebtAutoTrader', () => {
         defaultAccountNumber,
         PairType.SMART_COLLATERAL,
         core.marketIds.usdc,
-        core.marketIds.usdt
+        core.marketIds.usdt,
+        ZERO_BI,
+        ZERO_BI
       );
 
       const adminFeeAmount = usdcAmount.div(10).div(2);
@@ -857,7 +875,9 @@ describe('SmartDebtAutoTrader', () => {
         defaultAccountNumber,
         PairType.SMART_DEBT,
         core.marketIds.usdc,
-        core.marketIds.usdt
+        core.marketIds.usdt,
+        ZERO_BI,
+        ZERO_BI
       );
       await expectEvent(trader, res, 'UserToPairSet', {
         user: core.hhUser1.address,
@@ -875,7 +895,9 @@ describe('SmartDebtAutoTrader', () => {
         defaultAccountNumber,
         PairType.SMART_COLLATERAL,
         core.marketIds.usdc,
-        core.marketIds.usdt
+        core.marketIds.usdt,
+        ZERO_BI,
+        ZERO_BI
       );
       await expectEvent(trader, res, 'UserToPairSet', {
         user: core.hhUser1.address,
@@ -890,14 +912,16 @@ describe('SmartDebtAutoTrader', () => {
         defaultAccountNumber,
         PairType.SMART_DEBT,
         core.marketIds.usdc,
-        core.marketIds.usdt
+        core.marketIds.usdt,
+        ZERO_BI,
+        ZERO_BI
       );
-      const res = await trader.connect(core.hhUser1).userSetPair(defaultAccountNumber, PairType.NONE, 0, 0);
+      const res = await trader.connect(core.hhUser1).userSetPair(defaultAccountNumber, PairType.NONE, 0, 0, 0, 0);
       await expectEvent(trader, res, 'UserToPairSet', {
         user: core.hhUser1.address,
         accountNumber: defaultAccountNumber,
         pairType: PairType.NONE,
-        pairBytes: BYTES_ZERO
+        pairBytes: BYTES_ZERO,
       });
       await expectEmptyPair(trader, core.hhUser1.address, defaultAccountNumber);
     });
@@ -910,7 +934,9 @@ describe('SmartDebtAutoTrader', () => {
           defaultAccountNumber,
           PairType.SMART_DEBT,
           core.marketIds.usdc,
-          core.marketIds.usdt
+          core.marketIds.usdt,
+          ZERO_BI,
+          ZERO_BI
         ),
         'SmartDebtAutoTrader: Pair does not exist'
       );
@@ -919,7 +945,9 @@ describe('SmartDebtAutoTrader', () => {
           defaultAccountNumber,
           PairType.SMART_COLLATERAL,
           core.marketIds.usdc,
-          core.marketIds.usdt
+          core.marketIds.usdt,
+          ZERO_BI,
+          ZERO_BI
         ),
         'SmartDebtAutoTrader: Pair does not exist'
       );
@@ -931,7 +959,9 @@ describe('SmartDebtAutoTrader', () => {
           defaultAccountNumber,
           PairType.NONE,
           core.marketIds.usdc,
-          core.marketIds.usdt
+          core.marketIds.usdt,
+          ZERO_BI,
+          ZERO_BI
         ),
         'Invalid pair type'
       );

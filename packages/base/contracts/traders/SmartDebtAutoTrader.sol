@@ -30,7 +30,9 @@ import { IDolomitePriceOracle } from "../protocol/interfaces/IDolomitePriceOracl
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { DecimalLib } from "../protocol/lib/DecimalLib.sol";
 import { Require } from "../protocol/lib/Require.sol";
+import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
+import "hardhat/console.sol";
 
 // @follow-up Can't import this because of weird package stuff
 interface ChainlinkDataStreamsPriceOracle {
@@ -54,6 +56,7 @@ contract SmartDebtAutoTrader is InternalAutoTraderBase, ISmartDebtAutoTrader {
 
     bytes32 private constant _FILE = "SmartDebtAutoTrader";
     bytes32 private constant _SMART_PAIRS_STORAGE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.smartPairsStorage")) - 1); // solhint-disable-line max-line-length
+    uint256 private constant _36_DECIMALS_FACTOR = 10 ** 36;
 
     // ========================================================
     // ===================== Constructor ========================
@@ -120,6 +123,13 @@ contract SmartDebtAutoTrader is InternalAutoTraderBase, ISmartDebtAutoTrader {
             pairPosition,
             _inputDeltaWei.value,
             _data
+        );
+        _validateExchangeRate(
+            pairPosition,
+            _inputMarketId,
+            _outputMarketId,
+            adjInputAmount,
+            outputTokenAmount
         );
 
         uint256 inputMarketId = _inputMarketId;
@@ -460,6 +470,51 @@ contract SmartDebtAutoTrader is InternalAutoTraderBase, ISmartDebtAutoTrader {
         );
 
         return (adjInputAmount, outputAmount);
+    }
+
+    function _validateExchangeRate(
+        PairPosition memory _pairPosition,
+        uint256 _inputMarketId,
+        uint256 _outputMarketId,
+        uint256 _inputAmountWei,
+        uint256 _outputAmount
+    ) internal view {
+        address inputToken = DOLOMITE_MARGIN().getMarketTokenAddress(_inputMarketId);
+        address outputToken = DOLOMITE_MARGIN().getMarketTokenAddress(_outputMarketId);
+        uint256 inputDecimals = IERC20Metadata(inputToken).decimals();
+        uint256 outputDecimals = IERC20Metadata(outputToken).decimals();
+
+        uint256 inputAmountStandardized = _standardizeAmount(_inputAmountWei, inputDecimals);
+        uint256 outputAmountStandardized = _standardizeAmount(_outputAmount, outputDecimals);
+        
+        uint256 exchangeRate;
+        if (_inputMarketId < _outputMarketId) {
+            exchangeRate = inputAmountStandardized.div(outputAmountStandardized.toDecimal());
+        } else {
+            exchangeRate = outputAmountStandardized.div(inputAmountStandardized.toDecimal());
+        }
+
+        Require.that(
+            exchangeRate >= _pairPosition.minExchangeRate,
+            _FILE,
+            "Invalid exchange rate"
+        );
+        if (_pairPosition.maxExchangeRate != 0) {
+            Require.that(
+                exchangeRate <= _pairPosition.maxExchangeRate,
+                _FILE,
+                "Invalid exchange rate"
+            );
+        }
+    }
+
+    function _standardizeAmount(
+        uint256 _amount,
+        uint256 _decimals
+    ) internal pure returns (uint256) {
+        uint256 tokenDecimalsFactor = 10 ** _decimals;
+        uint256 changeFactor = _36_DECIMALS_FACTOR / tokenDecimalsFactor;
+        return _amount * changeFactor;
     }
 
     function _getFees(
