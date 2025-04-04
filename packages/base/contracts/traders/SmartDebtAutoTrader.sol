@@ -32,7 +32,6 @@ import { DecimalLib } from "../protocol/lib/DecimalLib.sol";
 import { Require } from "../protocol/lib/Require.sol";
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
-import "hardhat/console.sol";
 
 // @follow-up Can't import this because of weird package stuff
 interface ChainlinkDataStreamsPriceOracle {
