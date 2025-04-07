@@ -42,9 +42,21 @@ import { IDolomiteOwner } from "./interfaces/IDolomiteOwner.sol";
 contract AdminClaimExcessTokens is OnlyDolomiteMargin, IAdminClaimExcessTokens {
     using SafeERC20 for IERC20;
 
+    // ===================================================================
+    // ============================ Constants ============================
+    // ===================================================================
+
     bytes32 private constant _FILE = "AdminClaimExcessTokens";
 
+    // ===================================================================
+    // ====================== Immutable Variables ========================
+    // ===================================================================
+
     IDolomiteRegistry public immutable DOLOMITE_REGISTRY;
+
+    // ===================================================================
+    // ========================== Constructor ============================
+    // ===================================================================
 
     constructor(
         address _dolomiteRegistry,
@@ -52,6 +64,10 @@ contract AdminClaimExcessTokens is OnlyDolomiteMargin, IAdminClaimExcessTokens {
     ) OnlyDolomiteMargin(_dolomiteMargin) {
         DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
     }
+
+    // ===================================================================
+    // ========================= Admin Functions =========================
+    // ===================================================================
 
     function claimExcessTokens(address _token, bool _depositIntoDolomite) external {
         address treasury = DOLOMITE_REGISTRY.treasury();
