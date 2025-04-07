@@ -10,7 +10,7 @@ import { getBlockTimestamp, getLatestBlockNumber, impersonate, revertToSnapshotA
 import { expectEvent, expectThrow } from '../utils/assertions';
 
 import { CoreProtocolArbitrumOne } from '../utils/core-protocols/core-protocol-arbitrum-one';
-import { disableInterestAccrual, setupCoreProtocol, setupLINKBalance, setupUSDTBalance, setupWETHBalance } from '../utils/setup';
+import { disableInterestAccrual, setupCoreProtocol, setupLINKBalance, setupUSDCBalance, setupUSDTBalance, setupWETHBalance } from '../utils/setup';
 import { createAndUpgradeDolomiteRegistry, createGenericTraderProxyV2, createTestSmartDebtAutoTrader } from '../utils/dolomite';
 import { BigNumber } from 'ethers';
 import { ActionType, BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin';
@@ -56,7 +56,7 @@ describe('SmartDebtAutoTrader', () => {
   before(async () => {
     core = await setupCoreProtocol({
       network: Network.ArbitrumOne,
-      blockNumber: 322_901_700,
+      blockNumber: 323_903_800,
     });
     await createAndUpgradeDolomiteRegistry(core);
     await core.dolomiteRegistry.connect(core.governance).ownerSetBorrowPositionProxy(
@@ -441,7 +441,7 @@ describe('SmartDebtAutoTrader', () => {
     });
   });
 
-  describe.only('#getTradeCost', () => {
+  describe('#getTradeCost', () => {
     it('should work normally with smart collateral when prices are equal', async () => {
       await setupUSDTBalance(core, core.hhUser2, usdtAmount, core.dolomiteMargin);
       await depositIntoDolomiteMargin(core, core.hhUser2, 0, core.marketIds.usdt, usdtAmount);
@@ -524,6 +524,170 @@ describe('SmartDebtAutoTrader', () => {
       );
       expect(outputAmount.value).to.equal(BigNumber.from('45000000')); // $45
       expect(outputAmount.sign).to.equal(true);
+    });
+
+    it('should work normally with exchange rate between min and max', async () => {
+      await setupUSDTBalance(core, core.hhUser2, usdtAmount, core.dolomiteMargin);
+      await depositIntoDolomiteMargin(core, core.hhUser2, 0, core.marketIds.usdt, usdtAmount);
+      await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkDataStreamsPriceOracle(testOracle.address);
+
+      await trader.connect(core.hhUser2).userSetPair(
+        defaultAccountNumber,
+        PairType.SMART_COLLATERAL,
+        core.marketIds.usdc,
+        core.marketIds.usdt,
+        parseEther('.9'),
+        parseEther('1.2')
+      );
+
+      const adminFeeAmount = usdcAmount.div(10).div(2);
+      const timestamp = BigNumber.from(await getBlockTimestamp(await getLatestBlockNumber()));
+      // exchange rate comes to 1.10000001ish
+      const payloads = getTestPayloads(
+        [CHAINLINK_DATA_STREAM_FEEDS_MAP['USDT'], CHAINLINK_DATA_STREAM_FEEDS_MAP['USDC']],
+        [price.mul(110).div(100), price],
+        timestamp
+      );
+      await trader.connect(dolomiteImpersonator).callFunction(
+        genericTraderProxy.address,
+        { owner: core.hhUser1.address, number: defaultAccountNumber },
+        defaultAbiCoder.encode(['bytes[]', 'bool'], [payloads, true])
+      );
+      const outputAmount = await trader.callStatic.getTradeCost(
+        core.marketIds.usdc,
+        core.marketIds.usdt,
+        { owner: core.hhUser1.address, number: defaultAccountNumber },
+        { owner: core.hhUser2.address, number: defaultAccountNumber },
+        { value: ZERO_BI, sign: false },
+        { value: ZERO_BI, sign: false },
+        { value: usdcAmount.sub(adminFeeAmount), sign: false },
+        defaultAbiCoder.encode(['uint256', 'uint256'], [ONE_BI, adminFeeAmount])
+      );
+      expect(outputAmount.value).to.equal(BigNumber.from('81818181')); // $81
+      expect(outputAmount.sign).to.equal(true);
+    });
+
+    it('should work normally with exchange rate between min and max when market ids are reversed', async () => {
+      await setupUSDCBalance(core, core.hhUser1, usdtAmount, core.dolomiteMargin);
+      await depositIntoDolomiteMargin(core, core.hhUser1, 0, core.marketIds.usdc, usdtAmount);
+      await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkDataStreamsPriceOracle(testOracle.address);
+
+      await trader.connect(core.hhUser1).userSetPair(
+        defaultAccountNumber,
+        PairType.SMART_COLLATERAL,
+        core.marketIds.usdc,
+        core.marketIds.usdt,
+        parseEther('.9'),
+        parseEther('1.1')
+      );
+
+      const adminFeeAmount = usdcAmount.div(10).div(2);
+      const timestamp = BigNumber.from(await getBlockTimestamp(await getLatestBlockNumber()));
+      // exchange rate comes to .9091ish
+      const payloads = getTestPayloads(
+        [CHAINLINK_DATA_STREAM_FEEDS_MAP['USDT'], CHAINLINK_DATA_STREAM_FEEDS_MAP['USDC']],
+        [price, price.mul(110).div(100)],
+        timestamp
+      );
+      await trader.connect(dolomiteImpersonator).callFunction(
+        genericTraderProxy.address,
+        { owner: core.hhUser2.address, number: defaultAccountNumber },
+        defaultAbiCoder.encode(['bytes[]', 'bool'], [payloads, true])
+      );
+      const outputAmount = await trader.callStatic.getTradeCost(
+        core.marketIds.usdt,
+        core.marketIds.usdc,
+        { owner: core.hhUser2.address, number: defaultAccountNumber },
+        { owner: core.hhUser1.address, number: defaultAccountNumber },
+        { value: ZERO_BI, sign: false },
+        { value: ZERO_BI, sign: false },
+        { value: usdcAmount.sub(adminFeeAmount), sign: false },
+        defaultAbiCoder.encode(['uint256', 'uint256'], [ONE_BI, adminFeeAmount])
+      );
+      expect(outputAmount.value).to.equal(BigNumber.from('81818181')); // $81
+      expect(outputAmount.sign).to.equal(true);
+    });
+
+    it('should fail if exchange rate is above max', async () => {
+      await setupUSDTBalance(core, core.hhUser2, usdtAmount, core.dolomiteMargin);
+      await depositIntoDolomiteMargin(core, core.hhUser2, 0, core.marketIds.usdt, usdtAmount);
+      await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkDataStreamsPriceOracle(testOracle.address);
+
+      await trader.connect(core.hhUser2).userSetPair(
+        defaultAccountNumber,
+        PairType.SMART_COLLATERAL,
+        core.marketIds.usdc,
+        core.marketIds.usdt,
+        parseEther('.98'),
+        parseEther('1.02')
+      );
+
+      const adminFeeAmount = usdcAmount.div(10).div(2);
+      const timestamp = BigNumber.from(await getBlockTimestamp(await getLatestBlockNumber()));
+      const payloads = getTestPayloads(
+        [CHAINLINK_DATA_STREAM_FEEDS_MAP['USDT'], CHAINLINK_DATA_STREAM_FEEDS_MAP['USDC']],
+        [price.mul(2), price],
+        timestamp
+      );
+      await trader.connect(dolomiteImpersonator).callFunction(
+        genericTraderProxy.address,
+        { owner: core.hhUser1.address, number: defaultAccountNumber },
+        defaultAbiCoder.encode(['bytes[]', 'bool'], [payloads, true])
+      );
+      await expectThrow(
+        trader.callStatic.getTradeCost(
+          core.marketIds.usdc,
+          core.marketIds.usdt,
+          { owner: core.hhUser1.address, number: defaultAccountNumber },
+          { owner: core.hhUser2.address, number: defaultAccountNumber },
+          { value: ZERO_BI, sign: false },
+          { value: ZERO_BI, sign: false },
+          { value: usdcAmount.sub(adminFeeAmount), sign: false },
+          defaultAbiCoder.encode(['uint256', 'uint256'], [ONE_BI, adminFeeAmount]),
+        ),
+        'SmartDebtAutoTrader: Invalid exchange rate'
+      );
+    });
+
+    it('should fail if exchange rate is below min', async () => {
+      await setupUSDTBalance(core, core.hhUser2, usdtAmount, core.dolomiteMargin);
+      await depositIntoDolomiteMargin(core, core.hhUser2, 0, core.marketIds.usdt, usdtAmount);
+      await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkDataStreamsPriceOracle(testOracle.address);
+
+      await trader.connect(core.hhUser2).userSetPair(
+        defaultAccountNumber,
+        PairType.SMART_COLLATERAL,
+        core.marketIds.usdc,
+        core.marketIds.usdt,
+        parseEther('.98'),
+        parseEther('1.02')
+      );
+
+      const adminFeeAmount = usdcAmount.div(10).div(2);
+      const timestamp = BigNumber.from(await getBlockTimestamp(await getLatestBlockNumber()));
+      const payloads = getTestPayloads(
+        [CHAINLINK_DATA_STREAM_FEEDS_MAP['USDT'], CHAINLINK_DATA_STREAM_FEEDS_MAP['USDC']],
+        [price, price.mul(2)],
+        timestamp
+      );
+      await trader.connect(dolomiteImpersonator).callFunction(
+        genericTraderProxy.address,
+        { owner: core.hhUser1.address, number: defaultAccountNumber },
+        defaultAbiCoder.encode(['bytes[]', 'bool'], [payloads, true])
+      );
+      await expectThrow(
+        trader.callStatic.getTradeCost(
+          core.marketIds.usdc,
+          core.marketIds.usdt,
+          { owner: core.hhUser1.address, number: defaultAccountNumber },
+          { owner: core.hhUser2.address, number: defaultAccountNumber },
+          { value: ZERO_BI, sign: false },
+          { value: ZERO_BI, sign: false },
+          { value: usdcAmount.sub(adminFeeAmount), sign: false },
+          defaultAbiCoder.encode(['uint256', 'uint256'], [ONE_BI, adminFeeAmount]),
+        ),
+        'SmartDebtAutoTrader: Invalid exchange rate'
+      );
     });
 
     it('should fail if smart collateral pair is not active', async () => {

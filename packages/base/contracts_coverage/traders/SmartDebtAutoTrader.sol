@@ -30,6 +30,7 @@ import { IDolomitePriceOracle } from "../protocol/interfaces/IDolomitePriceOracl
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { DecimalLib } from "../protocol/lib/DecimalLib.sol";
 import { Require } from "../protocol/lib/Require.sol";
+import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
 
 // @follow-up Can't import this because of weird package stuff
@@ -54,6 +55,7 @@ contract SmartDebtAutoTrader is InternalAutoTraderBase, ISmartDebtAutoTrader {
 
     bytes32 private constant _FILE = "SmartDebtAutoTrader";
     bytes32 private constant _SMART_PAIRS_STORAGE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.smartPairsStorage")) - 1); // solhint-disable-line max-line-length
+    uint256 private constant _36_DECIMALS_FACTOR = 10 ** 36;
 
     // ========================================================
     // ===================== Constructor ========================
@@ -119,9 +121,16 @@ contract SmartDebtAutoTrader is InternalAutoTraderBase, ISmartDebtAutoTrader {
         (uint256 adjInputAmount, uint256 outputTokenAmount) = _calculateInputAndOutputTokenAmount(
             _inputMarketId,
             _outputMarketId,
-            pairBytes,
+            pairPosition,
             _inputDeltaWei.value,
             _data
+        );
+        _validateExchangeRate(
+            pairPosition,
+            _inputMarketId,
+            _outputMarketId,
+            adjInputAmount,
+            outputTokenAmount
         );
 
         uint256 inputMarketId = _inputMarketId;
@@ -172,13 +181,22 @@ contract SmartDebtAutoTrader is InternalAutoTraderBase, ISmartDebtAutoTrader {
         });
     }
 
-    function userSetPair(uint256 _accountNumber, PairType _pairType, uint256 _marketId1, uint256 _marketId2) external {
+    function userSetPair(
+        uint256 _accountNumber,
+        PairType _pairType,
+        uint256 _marketId1,
+        uint256 _marketId2,
+        uint256 _minExchangeRate,
+        uint256 _maxExchangeRate
+    ) external {
         SmartPairsStorage storage smartPairsStorage = _getSmartPairsStorage();
 
         if (_pairType == PairType.NONE && _marketId1 == 0 && _marketId2 == 0) {
             smartPairsStorage.userToPair[msg.sender][_accountNumber] = PairPosition({
                 pairType: PairType.NONE,
-                pairBytes: bytes32(0)
+                pairBytes: bytes32(0),
+                minExchangeRate: 0,
+                maxExchangeRate: 0
             });
             emit UserToPairSet(msg.sender, _accountNumber, _pairType, bytes32(0));
             return;
@@ -205,7 +223,9 @@ contract SmartDebtAutoTrader is InternalAutoTraderBase, ISmartDebtAutoTrader {
 
         smartPairsStorage.userToPair[msg.sender][_accountNumber] = PairPosition({
             pairType: _pairType,
-            pairBytes: pairBytes
+            pairBytes: pairBytes,
+            minExchangeRate: _minExchangeRate,
+            maxExchangeRate: _maxExchangeRate
         });
         emit UserToPairSet(msg.sender, _accountNumber, _pairType, pairBytes);
     }
@@ -436,12 +456,12 @@ contract SmartDebtAutoTrader is InternalAutoTraderBase, ISmartDebtAutoTrader {
     function _calculateInputAndOutputTokenAmount(
         uint256 _inputMarketId,
         uint256 _outputMarketId,
-        bytes32 _pairBytes,
+        PairPosition memory _pairPosition,
         uint256 _inputAmountWei,
         bytes memory _data
     ) internal view returns (uint256, uint256) {
         (uint256 minOutputAmount, uint256 adminFeeAmount) = abi.decode(_data, (uint256, uint256));
-        (, IDolomiteStructs.Decimal memory feePercentage) = _getFees(_pairBytes);
+        (, IDolomiteStructs.Decimal memory feePercentage) = _getFees(_pairPosition.pairBytes);
         uint256 adjInputAmount = (_inputAmountWei + adminFeeAmount).mul(DecimalLib.oneSub(feePercentage));
 
         IDolomitePriceOracle chainlinkDataStreamsPriceOracle = DOLOMITE_REGISTRY.chainlinkDataStreamsPriceOracle();
@@ -452,8 +472,8 @@ contract SmartDebtAutoTrader is InternalAutoTraderBase, ISmartDebtAutoTrader {
         uint256 outputPrice = chainlinkDataStreamsPriceOracle.getPrice(outputToken).value;
         /*assert(inputPrice != 0 && outputPrice != 0);*/
 
-        uint256 inputValue = adjInputAmount * inputPrice;
-        uint256 outputAmount = inputValue / outputPrice;
+        uint256 adjInputValue = adjInputAmount * inputPrice;
+        uint256 outputAmount = adjInputValue / outputPrice;
 
         if (outputAmount >= minOutputAmount) { /* FOR COVERAGE TESTING */ }
         Require.that(
@@ -463,6 +483,53 @@ contract SmartDebtAutoTrader is InternalAutoTraderBase, ISmartDebtAutoTrader {
         );
 
         return (adjInputAmount, outputAmount);
+    }
+
+    function _validateExchangeRate(
+        PairPosition memory _pairPosition,
+        uint256 _inputMarketId,
+        uint256 _outputMarketId,
+        uint256 _inputAmountWei,
+        uint256 _outputAmount
+    ) internal view {
+        address inputToken = DOLOMITE_MARGIN().getMarketTokenAddress(_inputMarketId);
+        address outputToken = DOLOMITE_MARGIN().getMarketTokenAddress(_outputMarketId);
+        uint256 inputDecimals = IERC20Metadata(inputToken).decimals();
+        uint256 outputDecimals = IERC20Metadata(outputToken).decimals();
+
+        uint256 inputAmountStandardized = _standardizeAmount(_inputAmountWei, inputDecimals);
+        uint256 outputAmountStandardized = _standardizeAmount(_outputAmount, outputDecimals);
+
+        uint256 exchangeRate;
+        if (_inputMarketId < _outputMarketId) {
+            exchangeRate = inputAmountStandardized.div(outputAmountStandardized.toDecimal());
+        } else {
+            exchangeRate = outputAmountStandardized.div(inputAmountStandardized.toDecimal());
+        }
+
+        if (exchangeRate >= _pairPosition.minExchangeRate) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            exchangeRate >= _pairPosition.minExchangeRate,
+            _FILE,
+            "Invalid exchange rate"
+        );
+        if (_pairPosition.maxExchangeRate != 0) {
+            if (exchangeRate <= _pairPosition.maxExchangeRate) { /* FOR COVERAGE TESTING */ }
+            Require.that(
+                exchangeRate <= _pairPosition.maxExchangeRate,
+                _FILE,
+                "Invalid exchange rate"
+            );
+        }
+    }
+
+    function _standardizeAmount(
+        uint256 _amount,
+        uint256 _decimals
+    ) internal pure returns (uint256) {
+        uint256 tokenDecimalsFactor = 10 ** _decimals;
+        uint256 changeFactor = _36_DECIMALS_FACTOR / tokenDecimalsFactor;
+        return _amount * changeFactor;
     }
 
     function _getFees(
