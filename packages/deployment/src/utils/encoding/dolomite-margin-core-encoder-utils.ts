@@ -1,6 +1,6 @@
 import { BigNumber, BigNumberish, ethers } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
-import { IDolomiteInterestSetter, IERC20Metadata__factory } from '../../../../base/src/types';
+import { IDolomiteInterestSetter, IERC20__factory, IERC20Metadata__factory } from '../../../../base/src/types';
 import {
   AccountRiskOverrideCategory,
   AccountRiskOverrideRiskFeature,
@@ -18,7 +18,7 @@ import {
 } from '../../../../base/src/utils/no-deps-constants';
 import { CoreProtocolType } from '../../../../base/test/utils/setup';
 import { EncodedTransaction } from '../dry-run-utils';
-import { prettyPrintEncodedDataWithTypeSafety } from './base-encoder-utils';
+import { getFormattedTokenName, isValidAmountForCapForToken, prettyPrintEncodedDataWithTypeSafety } from './base-encoder-utils';
 
 export async function encodeSetGlobalOperator<T extends NetworkType>(
   core: CoreProtocolType<T>,
@@ -39,6 +39,12 @@ export async function encodeSetSupplyCap<T extends NetworkType>(
   marketId: BigNumberish,
   amount: BigNumberish,
 ): Promise<EncodedTransaction> {
+  const token = IERC20__factory.connect(await core.dolomiteMargin.getMarketTokenAddress(marketId), core.hhUser1);
+  if (!(await isValidAmountForCapForToken(token, amount))) {
+    const name = await getFormattedTokenName(core, token.address);
+    return Promise.reject(new Error(`Invalid max supply wei for ${name}, found: ${amount.toString()}`));
+  }
+
   if ('ownerSetMaxWei' in core.dolomiteMargin) {
     return prettyPrintEncodedDataWithTypeSafety(core, { dolomite: core.dolomiteMargin }, 'dolomite', 'ownerSetMaxWei', [
       marketId,
@@ -87,6 +93,12 @@ export async function encodeSetBorrowCap<T extends NetworkType>(
   marketId: BigNumberish,
   amount: BigNumberish,
 ): Promise<EncodedTransaction> {
+  const token = IERC20__factory.connect(await core.dolomiteMargin.getMarketTokenAddress(marketId), core.hhUser1);
+  if (!(await isValidAmountForCapForToken(token, amount))) {
+    const name = await getFormattedTokenName(core, token.address);
+    return Promise.reject(new Error(`Invalid max supply wei for ${name}, found: ${amount.toString()}`));
+  }
+
   if ('ownerSetMaxWei' in core.dolomiteMargin) {
     return Promise.reject(new Error('Invalid Dolomite version!'));
   }
