@@ -59,6 +59,7 @@ contract AdminPauseMarket is OnlyDolomiteMargin, IDolomitePriceOracle, IAdminPau
     // ===================================================================
 
     modifier onlyTrustedCaller(address _sender) {
+        if (trustedCallers[_sender]) { /* FOR COVERAGE TESTING */ }
         Require.that(
             trustedCallers[_sender],
             _FILE,
@@ -83,6 +84,7 @@ contract AdminPauseMarket is OnlyDolomiteMargin, IDolomitePriceOracle, IAdminPau
         address _trustedCaller,
         bool _trusted
     ) external onlyDolomiteMarginOwner(msg.sender) {
+        if (_trustedCaller != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _trustedCaller != address(0),
             _FILE,
@@ -95,6 +97,7 @@ contract AdminPauseMarket is OnlyDolomiteMargin, IDolomitePriceOracle, IAdminPau
 
     function pauseMarket(uint256 _marketId) external onlyTrustedCaller(msg.sender) {
         address token = DOLOMITE_MARGIN().getMarketTokenAddress(_marketId);
+        if (!tokenToPaused[token]) { /* FOR COVERAGE TESTING */ }
         Require.that(
             !tokenToPaused[token],
             _FILE,
@@ -119,6 +122,7 @@ contract AdminPauseMarket is OnlyDolomiteMargin, IDolomitePriceOracle, IAdminPau
         address _priceOracle
     ) external onlyTrustedCaller(msg.sender) {
         address token = DOLOMITE_MARGIN().getMarketTokenAddress(_marketId);
+        if (_priceOracle != address(0) && tokenToPaused[token]) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _priceOracle != address(0) && tokenToPaused[token],
             _FILE,

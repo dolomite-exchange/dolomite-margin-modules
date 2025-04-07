@@ -431,6 +431,11 @@ export async function setupUSDCBalance<T extends NetworkType>(
     const whaleSigner = await impersonate(whaleAddress, true);
     await core.tokens.usdc.connect(whaleSigner).transfer(signer.address, amount);
     await core.tokens.usdc.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
+  } else if (core.network === Network.Berachain) {
+    const whaleAddress = '0x90bc07408f5b5eAc4dE38Af76EA6069e1fcEe363'; // Bera Collateral Vault
+    const whaleSigner = await impersonate(whaleAddress, true);
+    await core.tokens.usdc.connect(whaleSigner).transfer(signer.address, amount);
+    await core.tokens.usdc.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
   } else {
     const whaleAddress = '0x805ba50001779CeD4f59CfF63aea527D12B94829'; // Radiant USDC pool
     const whaleSigner = await impersonate(whaleAddress, true);
