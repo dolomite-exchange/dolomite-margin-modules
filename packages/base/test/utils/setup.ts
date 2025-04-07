@@ -119,7 +119,10 @@ import {
   GNOSIS_SAFE_MAP,
   GRAI_MAP,
   GRAIL_MAP,
+  HENLO_MAP,
   HONEY_MAP,
+  IBERA_MAP,
+  IBGT_MAP,
   JONES_MAP,
   LBTC_MAP,
   LINK_MAP,
@@ -280,16 +283,16 @@ interface CoreProtocolConfigXLayer extends CoreProtocolConfigParent<Network.XLay
 export type CoreProtocolConfig<T extends NetworkType> = T extends Network.ArbitrumOne
   ? CoreProtocolConfigArbitrumOne
   : T extends Network.Base
-    ? CoreProtocolConfigBase
-    : T extends Network.Berachain
-      ? CoreProtocolConfigBerachain
-      : T extends Network.Mantle
-        ? CoreProtocolConfigMantle
-        : T extends Network.PolygonZkEvm
-          ? CoreProtocolConfigPolygonZkEvm
-          : T extends Network.XLayer
-            ? CoreProtocolConfigXLayer
-            : never;
+  ? CoreProtocolConfigBase
+  : T extends Network.Berachain
+  ? CoreProtocolConfigBerachain
+  : T extends Network.Mantle
+  ? CoreProtocolConfigMantle
+  : T extends Network.PolygonZkEvm
+  ? CoreProtocolConfigPolygonZkEvm
+  : T extends Network.XLayer
+  ? CoreProtocolConfigXLayer
+  : never;
 
 export async function disableInterestAccrual<T extends NetworkType>(
   core: CoreProtocolAbstract<T>,
@@ -692,16 +695,16 @@ export function getDefaultCoreProtocolConfigForGmxV2(): CoreProtocolConfig<Netwo
 export type CoreProtocolType<T extends NetworkType> = T extends Network.ArbitrumOne
   ? CoreProtocolArbitrumOne
   : T extends Network.Base
-    ? CoreProtocolBase
-    : T extends Network.Berachain
-      ? CoreProtocolBerachain
-      : T extends Network.Mantle
-        ? CoreProtocolMantle
-        : T extends Network.PolygonZkEvm
-          ? CoreProtocolPolygonZkEvm
-          : T extends Network.XLayer
-            ? CoreProtocolXLayer
-            : never;
+  ? CoreProtocolBase
+  : T extends Network.Berachain
+  ? CoreProtocolBerachain
+  : T extends Network.Mantle
+  ? CoreProtocolMantle
+  : T extends Network.PolygonZkEvm
+  ? CoreProtocolPolygonZkEvm
+  : T extends Network.XLayer
+  ? CoreProtocolXLayer
+  : never;
 
 export function getDolomiteMarginContract<T extends NetworkType>(
   config: CoreProtocolSetupConfig<T>,
@@ -749,18 +752,15 @@ export function getWethContract<T extends NetworkType>(
 export function getDolomite4626TokenContract<T extends NetworkType>(
   config: CoreProtocolSetupConfig<T>,
   signer: SignerWithAddressWithSafety,
-  deploymentKey: keyof (typeof Deployments),
+  deploymentKey: keyof typeof Deployments,
 ): DolomiteERC4626 {
-  return DolomiteERC4626__factory.connect(
-    (Deployments[deploymentKey] as any)[config.network]!.address,
-    signer,
-  );
+  return DolomiteERC4626__factory.connect((Deployments[deploymentKey] as any)[config.network]!.address, signer);
 }
 
 export function getDolomite4626WithPayableTokenContract<T extends NetworkType>(
   config: CoreProtocolSetupConfig<T>,
   signer: SignerWithAddressWithSafety,
-  deploymentKey: keyof (typeof Deployments),
+  deploymentKey: keyof typeof Deployments,
 ): DolomiteERC4626WithPayable {
   return DolomiteERC4626WithPayable__factory.connect(
     (Deployments[deploymentKey] as any)[config.network]!.address,
@@ -777,7 +777,7 @@ export async function gatherAllDolomite4626TokenContracts<T extends NetworkType>
 
   const keys = Object.keys(Deployments);
   for (const key of keys) {
-    const deployments = (Deployments as any);
+    const deployments = Deployments as any;
     if (deployments[key][config.network] && key.startsWith('Dolomite') && key.endsWith('4626Token')) {
       const deploymentValue = deployments[key][config.network];
       const address = deploymentValue.address;
@@ -1401,7 +1401,10 @@ export async function setupCoreProtocol<T extends NetworkType>(
         ...coreProtocolParams.marketIds,
         beraEth: BERA_ETH_MAP[typedConfig.network].marketId,
         eBtc: E_BTC_MAP[typedConfig.network].marketId,
+        henlo: HENLO_MAP[typedConfig.network].marketId,
         honey: HONEY_MAP[typedConfig.network].marketId,
+        iBera: IBERA_MAP[typedConfig.network].marketId,
+        iBgt: IBGT_MAP[typedConfig.network].marketId,
         lbtc: LBTC_MAP[typedConfig.network].marketId,
         nect: NECT_MAP[typedConfig.network].marketId,
         ohm: OHM_MAP[typedConfig.network].marketId,
@@ -1444,7 +1447,10 @@ export async function setupCoreProtocol<T extends NetworkType>(
         beraEth: IERC20__factory.connect(BERA_ETH_MAP[typedConfig.network].address, hhUser1),
         eBtc: IERC20__factory.connect(E_BTC_MAP[typedConfig.network].address, hhUser1),
         fbtc: IERC20__factory.connect(FBTC_MAP[typedConfig.network].address, hhUser1),
+        henlo: IERC20__factory.connect(HENLO_MAP[typedConfig.network].address, hhUser1),
         honey: IERC20__factory.connect(HONEY_MAP[typedConfig.network].address, hhUser1),
+        iBera: IERC20__factory.connect(IBERA_MAP[typedConfig.network].address, hhUser1),
+        iBgt: IERC20__factory.connect(IBGT_MAP[typedConfig.network].address, hhUser1),
         lbtc: IERC20__factory.connect(LBTC_MAP[typedConfig.network].address, hhUser1),
         nect: IERC20__factory.connect(NECT_MAP[typedConfig.network].address, hhUser1),
         ohm: IERC20__factory.connect(OHM_MAP[typedConfig.network].address, hhUser1),

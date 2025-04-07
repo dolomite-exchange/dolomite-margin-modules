@@ -1,10 +1,11 @@
-import { BaseContract, BigNumber, BigNumberish, PopulatedTransaction } from 'ethers';
+import { BaseContract, BigNumber, BigNumberish, ethers, PopulatedTransaction } from 'ethers';
 import { commify, formatEther, FormatTypes, ParamType } from 'ethers/lib/utils';
 import fs from 'fs';
 import hardhat from 'hardhat';
 import { IChainlinkAggregator__factory } from 'packages/oracles/src/types';
 import { IERC20, IERC20Metadata__factory } from '../../../../base/src/types';
 import { INVALID_TOKEN_MAP } from '../../../../base/src/utils/constants';
+import { AccountRiskOverrideRiskFeature } from '../../../../base/src/utils/constructors/dolomite';
 import { ADDRESS_ZERO, NetworkType, ONE_BI, TEN_BI, ZERO_BI } from '../../../../base/src/utils/no-deps-constants';
 import { CoreProtocolType } from '../../../../base/test/utils/setup';
 import { CORE_DEPLOYMENT_FILE_NAME, readDeploymentFile } from '../deploy-utils';
@@ -59,8 +60,7 @@ export async function getFormattedTokenName<T extends NetworkType>(
     } else {
       mostRecentTokenDecimals = await token.decimals();
     }
-  } catch (e) {
-  }
+  } catch (e) {}
 
   const cachedName = addressToNameCache[tokenAddress.toString().toLowerCase()];
   if (typeof cachedName !== 'undefined') {
@@ -139,15 +139,19 @@ export function isOwnerFunction(methodName: string, isMultisig: boolean): boolea
   );
 }
 
-export async function isValidAmount(token: IERC20, amount: BigNumberish) {
+export async function isValidAmountForCapForToken(token: IERC20, amount: BigNumberish) {
   const realAmount = BigNumber.from(amount);
   if (realAmount.eq(ZERO_BI) || realAmount.eq('1')) {
     return true;
   }
 
+  const totalSupply = await token.totalSupply();
   const decimals = await IERC20Metadata__factory.connect(token.address, token.signer).decimals();
   const scale = TEN_BI.pow(decimals);
-  return realAmount.div(scale).gt(ONE_BI) && realAmount.div(scale).lte(100_000_000);
+  return (
+    // should not be truncated to 0 AND (be less than 100M units or 5% of the total supply)
+    realAmount.div(scale).gt(ONE_BI) && (realAmount.div(scale).lte(100_000_000) || realAmount.lte(totalSupply.div(20)))
+  );
 }
 
 let counter = 1;
@@ -173,7 +177,7 @@ export async function prettyPrintEncodedDataWithTypeSafety<
     const fragment = contract.interface.getFunction(methodName.toString());
     const mappedArgs: string[] = [];
     for (let i = 0; i < (args as any[]).length; i++) {
-      mappedArgs.push(await getReadableArg(core, fragment.inputs[i], (args as any[])[i]));
+      mappedArgs.push(await getReadableArg(core, fragment.inputs[i], (args as any[])[i], methodName.toString(), args));
     }
 
     const repeatLength = 76 + (counter - 1).toString().length + key.toString().length + methodName.toString().length;
@@ -186,7 +190,9 @@ export async function prettyPrintEncodedDataWithTypeSafety<
     console.log('Readable:\t', `${String(key)}.${String(methodName)}(\n\t\t\t${mappedArgs.join(' ,\n\t\t\t')}\n\t\t)`);
     console.log(
       'To:\t\t',
-      (await getReadableArg(core, ParamType.fromString('address to'), transaction.to)).substring(13),
+      (
+        await getReadableArg(core, ParamType.fromString('address to'), transaction.to, undefined, args)
+      ).substring(13),
     );
     console.log('Data:\t\t', transaction.data);
     console.log('='.repeat(repeatLength));
@@ -239,6 +245,8 @@ export async function getReadableArg<T extends NetworkType>(
   core: CoreProtocolType<T>,
   inputParamType: ParamType,
   arg: any,
+  methodName: string | undefined,
+  args: any[],
   decimals?: number,
   index?: number,
   nestedLevel: number = 3,
@@ -250,6 +258,34 @@ export async function getReadableArg<T extends NetworkType>(
     formattedInputParamName = inputParamType.format(FormatTypes.full);
   }
 
+  if (
+    methodName === 'ownerSetRiskFeatureByMarketId' &&
+    args[1] === AccountRiskOverrideRiskFeature.SINGLE_COLLATERAL_WITH_STRICT_DEBT &&
+    typeof arg === 'string' &&
+    arg.startsWith('0x')
+  ) {
+    const decimalType = 'tuple(uint256 value)';
+    const tupleType = ParamType.fromString(
+      `tuple singleCollateralRiskStructs(uint256[] debtMarketIds, ${decimalType} marginRatioOverride, ${decimalType} liquidationRewardOverride)[]`,
+    );
+    const decodedValue = ethers.utils.defaultAbiCoder.decode([tupleType], arg)[0].map((tuples: any[]) => {
+      return tuples.reduce((acc: any, v: any, i: number) => {
+        if (i === 0) {
+          acc.debtMarketIds = v.map((a: any) => a.toString());
+        } else if (i === 1) {
+          acc.marginRatioOverride = v.value;
+        } else if (i === 2) {
+          acc.liquidationRewardOverride = v.value;
+        } else {
+          throw new Error(`Invalid index, found: ${i}`);
+        }
+
+        return acc;
+      }, {} as any);
+    });
+    return getReadableArg(core, tupleType, decodedValue, undefined, args, undefined, index, nestedLevel);
+  }
+
   if (Array.isArray(arg)) {
     // remove the [] at the end
     const subParamType = ParamType.fromObject({
@@ -258,7 +294,7 @@ export async function getReadableArg<T extends NetworkType>(
     });
     const formattedArgs = await Promise.all(
       arg.map(async (value, i) => {
-        return await getReadableArg(core, subParamType, value, decimals, i, nestedLevel + 1);
+        return await getReadableArg(core, subParamType, value, methodName, args, decimals, i, nestedLevel + 1);
       }),
     );
     const tabs = '\t'.repeat(nestedLevel);
@@ -319,7 +355,16 @@ export async function getReadableArg<T extends NetworkType>(
     for (let i = 0; i < keys.length; i++) {
       const componentPiece = inputParamType.components[i];
       values.push(
-        await getReadableArg(core, componentPiece, arg[componentPiece.name], decimals, index, nestedLevel + 1),
+        await getReadableArg(
+          core,
+          componentPiece,
+          arg[componentPiece.name],
+          methodName,
+          args,
+          decimals,
+          index,
+          nestedLevel + 1,
+        ),
       );
     }
     const tabs = '\t'.repeat(nestedLevel);
@@ -329,6 +374,10 @@ export async function getReadableArg<T extends NetworkType>(
   if (BigNumber.isBigNumber(arg) && typeof decimals !== 'undefined') {
     const multiplier = BigNumber.from(10).pow(18 - decimals);
     specialName = ` (${commify(formatEther(arg.mul(multiplier)))})`;
+  } else if (BigNumber.isBigNumber(arg)) {
+    if (formattedInputParamName.includes('marginRatio') || formattedInputParamName.includes('liquidationReward')) {
+      specialName = ` (${commify(formatEther(arg))})`;
+    }
   }
 
   return `${formattedInputParamName} = ${arg}${specialName}`;
