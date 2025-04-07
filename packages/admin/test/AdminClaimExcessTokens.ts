@@ -1,68 +1,61 @@
 import { expect } from 'chai';
 import { BytesLike } from 'ethers';
 import {
-  ADDRESS_ZERO,
-  BYTES_EMPTY,
-  BYTES_ZERO,
   Network,
-  ONE_DAY_SECONDS,
+  ZERO_BI,
 } from 'packages/base/src/utils/no-deps-constants';
-import { Ownable__factory } from 'packages/liquidity-mining/src/types';
-
-import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
 import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
-import { AdminClaimExcessTokens, AdminClaimExcessTokens__factory, DolomiteOwnerV2 } from '../src/types';
-import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
-import { createDolomiteOwnerV2 } from './admin-ecosystem-utils';
-import { disableInterestAccrual, getDefaultCoreProtocolConfig, setupCoreProtocol } from 'packages/base/test/utils/setup';
+import {
+  AdminClaimExcessTokens,
+  AdminClaimExcessTokens__factory,
+  DolomiteOwnerV2,
+  DolomiteOwnerV2__factory,
+} from '../src/types';
+import { disableInterestAccrual, setupCoreProtocol } from 'packages/base/test/utils/setup';
 import { revertToSnapshotAndCapture, snapshot, impersonate } from 'packages/base/test/utils';
-import { expectEvent, expectThrow } from 'packages/base/test/utils/assertions';
+import { expectProtocolBalance, expectThrow } from 'packages/base/test/utils/assertions';
 import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
+import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
+import { createAndUpgradeDolomiteRegistry } from 'packages/base/test/utils/dolomite';
 
-const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 const OTHER_ROLE = '0x1111111111111111111111111111111111111111111111111111111111111111';
-const BAD_ROLE = '0x8888888888888888888888888888888888888888888888888888888888888888';
-const BYTES4_OTHER_SELECTOR = '0x12345678';
-const BYTES32_OTHER_SELECTOR = '0x1234567800000000000000000000000000000000000000000000000000000000';
-const SECONDS_TIME_LOCKED = ONE_DAY_SECONDS;
 
 describe('AdminClaimExcessTokens', () => {
   let snapshotId: string;
 
-  let core: CoreProtocolArbitrumOne;
-
+  let core: CoreProtocolBerachain;
   let dolomiteOwner: DolomiteOwnerV2;
-  let adminClaimExcessTokens: AdminClaimExcessTokens;
-
   let bypassTimelockRole: BytesLike;
   let executorRole: BytesLike;
-  let securityCouncilRole: BytesLike;
-  let listingCommitteeRole: BytesLike;
 
+  let adminClaimExcessTokens: AdminClaimExcessTokens;
   let dolomiteOwnerImpersonator: SignerWithAddressWithSafety;
 
   before(async () => {
-    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
+    core = await setupCoreProtocol({
+      network: Network.Berachain,
+      blockNumber: 3_389_300
+    });
     await disableInterestAccrual(core, core.marketIds.usdc);
+    await createAndUpgradeDolomiteRegistry(core);
 
-    dolomiteOwner = (await createDolomiteOwnerV2(core, SECONDS_TIME_LOCKED)).connect(core.gnosisSafe);
+    dolomiteOwner = DolomiteOwnerV2__factory.connect(await core.dolomiteMargin.owner(), core.gnosisSafe);
     adminClaimExcessTokens = await createContractWithAbi<AdminClaimExcessTokens>(
       AdminClaimExcessTokens__factory.abi,
       AdminClaimExcessTokens__factory.bytecode,
-      [core.gnosisSafe.address, core.depositWithdrawalRouter.address, core.dolomiteMargin.address],
+      [core.dolomiteRegistry.address, core.dolomiteMargin.address],
     );
 
     bypassTimelockRole = await dolomiteOwner.BYPASS_TIMELOCK_ROLE();
     executorRole = await dolomiteOwner.EXECUTOR_ROLE();
-    securityCouncilRole = await dolomiteOwner.SECURITY_COUNCIL_ROLE();
-    listingCommitteeRole = await dolomiteOwner.LISTING_COMMITTEE_ROLE();
-    const ownable = Ownable__factory.connect(core.dolomiteMargin.address, core.governance);
-    await ownable.transferOwnership(dolomiteOwner.address);
 
     dolomiteOwnerImpersonator = await impersonate(dolomiteOwner.address, true);
     await dolomiteOwner.connect(dolomiteOwnerImpersonator).ownerAddRole(OTHER_ROLE);
     await dolomiteOwner.connect(dolomiteOwnerImpersonator).grantRole(OTHER_ROLE, adminClaimExcessTokens.address);
-    await dolomiteOwner.connect(dolomiteOwnerImpersonator).grantRole(bypassTimelockRole, adminClaimExcessTokens.address);
+    await dolomiteOwner.connect(dolomiteOwnerImpersonator).grantRole(
+      bypassTimelockRole,
+      adminClaimExcessTokens.address
+    );
     await dolomiteOwner.connect(dolomiteOwnerImpersonator).grantRole(executorRole, adminClaimExcessTokens.address);
 
     await dolomiteOwner.connect(dolomiteOwnerImpersonator).ownerAddRoleToAddressFunctionSelectors(
@@ -72,19 +65,12 @@ describe('AdminClaimExcessTokens', () => {
         '0x8f6bc659' /* ownerWithdrawExcessTokens */,
       ],
     );
-    await dolomiteOwner.connect(dolomiteOwnerImpersonator).ownerAddRoleToAddressFunctionSelectors(
-      OTHER_ROLE,
-      core.depositWithdrawalRouter.address,
-      [
-        '0xb6f32e03' /* depositWei */,
-      ],
+    await core.dolomiteMargin.connect(dolomiteOwnerImpersonator).ownerSetGlobalOperator(
+      adminClaimExcessTokens.address,
+      true
     );
-    await dolomiteOwner.connect(dolomiteOwnerImpersonator).ownerAddRoleFunctionSelectors(
-      OTHER_ROLE,
-      [
-        '0x095ea7b3' /* approve */,
-      ],
-    );
+    await core.dolomiteRegistry.connect(dolomiteOwnerImpersonator).ownerSetTreasury(core.gnosisSafe.address);
+
     snapshotId = await snapshot();
   });
 
@@ -94,24 +80,39 @@ describe('AdminClaimExcessTokens', () => {
 
   describe('#constructor', () => {
     it('should work normally', async () => {
-      expect(await adminClaimExcessTokens.owner()).to.equal(core.gnosisSafe.address);
-      expect(await adminClaimExcessTokens.DEPOSIT_WITHDRAWAL_ROUTER()).to.equal(core.depositWithdrawalRouter.address);
       expect(await adminClaimExcessTokens.DOLOMITE_MARGIN()).to.equal(core.dolomiteMargin.address);
+      expect(await adminClaimExcessTokens.DOLOMITE_REGISTRY()).to.equal(core.dolomiteRegistry.address);
     });
   });
 
-  describe.only('#claimExcessTokens', () => {
+  describe('#claimExcessTokens', () => {
     it('should work normally to transfer to gnosis safe', async () => {
-      console.log(await core.dolomiteMargin.getNumExcessTokens(core.marketIds.usdc));
+      const excessTokens = await core.dolomiteMargin.getNumExcessTokens(core.marketIds.usdc);
       await adminClaimExcessTokens.connect(core.gnosisSafe).claimExcessTokens(
         core.tokens.usdc.address,
-        adminClaimExcessTokens.address
+        false
       );
-      console.log(await core.tokens.usdc.balanceOf(core.gnosisSafe.address));
+      expect(await core.tokens.usdc.balanceOf(core.gnosisSafe.address)).to.equal(excessTokens.value);
     });
 
     it('should work normally to deposit into dolomite margin for dolomite margin owner', async () => {
+      const excessTokens = await core.dolomiteMargin.getNumExcessTokens(core.marketIds.usdc);
+      await expectProtocolBalance(core, core.gnosisSafe, ZERO_BI, core.marketIds.usdc, ZERO_BI);
+      await adminClaimExcessTokens.connect(core.gnosisSafe).claimExcessTokens(
+        core.tokens.usdc.address,
+        true
+      );
+      await expectProtocolBalance(core, core.gnosisSafe, ZERO_BI, core.marketIds.usdc, excessTokens.value);
+    });
 
+    it('should fail if sender is not treasury', async () => {
+      await expectThrow(
+        adminClaimExcessTokens.connect(core.hhUser1).claimExcessTokens(
+          core.tokens.usdc.address,
+          false
+        ),
+        'AdminClaimExcessTokens: Sender is not treasury'
+      );
     });
   });
 });

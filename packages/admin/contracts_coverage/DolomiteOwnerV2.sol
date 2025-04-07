@@ -20,12 +20,12 @@
 
 pragma solidity ^0.8.9;
 
+import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
 import { IAccessControl } from "@openzeppelin/contracts/access/IAccessControl.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import { IDolomiteOwner } from "./interfaces/IDolomiteOwner.sol";
-import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 
 
 /**
@@ -49,6 +49,7 @@ contract DolomiteOwnerV2 is IDolomiteOwner, AccessControl {
     bytes32 public constant LISTING_COMMITTEE_ROLE = keccak256("LISTING_COMMITTEE_ROLE");
     bytes32 public constant EXECUTOR_ROLE = keccak256("EXECUTOR_ROLE");
     bytes32 public constant BYPASS_TIMELOCK_ROLE = keccak256("BYPASS_TIMELOCK_ROLE");
+
     address private constant _ADDRESS_ZERO = address(0x0);
 
     // ================================================

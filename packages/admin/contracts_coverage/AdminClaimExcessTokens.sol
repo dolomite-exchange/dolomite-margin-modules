@@ -54,6 +54,7 @@ contract AdminClaimExcessTokens is OnlyDolomiteMargin {
 
     function claimExcessTokens(address _token, bool _depositIntoDolomite) external {
         address treasury = DOLOMITE_REGISTRY.treasury();
+        if (msg.sender == treasury) { /* FOR COVERAGE TESTING */ }
         Require.that(
             msg.sender == treasury,
             _FILE,

@@ -246,4 +246,9 @@ interface IDolomiteRegistry {
      * @return  Whether the trader is trusted
      */
     function isTrustedInternalTrader(address _trader) external view returns (bool);
+
+    /**
+     * @return The address of the treasury
+     */
+    function treasury() external view returns (address);
 }
