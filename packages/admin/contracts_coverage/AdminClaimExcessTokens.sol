@@ -29,6 +29,7 @@ import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
+import { IAdminClaimExcessTokens } from "./interfaces/IAdminClaimExcessTokens.sol";
 import { IDolomiteOwner } from "./interfaces/IDolomiteOwner.sol";
 
 
@@ -38,7 +39,7 @@ import { IDolomiteOwner } from "./interfaces/IDolomiteOwner.sol";
  *
  * @notice  AdminClaimExcessTokens contract that enables an admin to claim excess tokens from the protocol
  */
-contract AdminClaimExcessTokens is OnlyDolomiteMargin {
+contract AdminClaimExcessTokens is OnlyDolomiteMargin, IAdminClaimExcessTokens {
     using SafeERC20 for IERC20;
 
     bytes32 private constant _FILE = "AdminClaimExcessTokens";

@@ -8,8 +8,6 @@ import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithA
 import {
   AdminClaimExcessTokens,
   AdminClaimExcessTokens__factory,
-  DolomiteOwnerV2,
-  DolomiteOwnerV2__factory,
 } from '../src/types';
 import { disableInterestAccrual, setupCoreProtocol } from 'packages/base/test/utils/setup';
 import { revertToSnapshotAndCapture, snapshot, impersonate } from 'packages/base/test/utils';
@@ -24,12 +22,11 @@ describe('AdminClaimExcessTokens', () => {
   let snapshotId: string;
 
   let core: CoreProtocolBerachain;
-  let dolomiteOwner: DolomiteOwnerV2;
   let bypassTimelockRole: BytesLike;
   let executorRole: BytesLike;
+  let dolomiteOwnerImpersonator: SignerWithAddressWithSafety;
 
   let adminClaimExcessTokens: AdminClaimExcessTokens;
-  let dolomiteOwnerImpersonator: SignerWithAddressWithSafety;
 
   before(async () => {
     core = await setupCoreProtocol({
@@ -39,26 +36,28 @@ describe('AdminClaimExcessTokens', () => {
     await disableInterestAccrual(core, core.marketIds.usdc);
     await createAndUpgradeDolomiteRegistry(core);
 
-    dolomiteOwner = DolomiteOwnerV2__factory.connect(await core.dolomiteMargin.owner(), core.gnosisSafe);
     adminClaimExcessTokens = await createContractWithAbi<AdminClaimExcessTokens>(
       AdminClaimExcessTokens__factory.abi,
       AdminClaimExcessTokens__factory.bytecode,
       [core.dolomiteRegistry.address, core.dolomiteMargin.address],
     );
 
-    bypassTimelockRole = await dolomiteOwner.BYPASS_TIMELOCK_ROLE();
-    executorRole = await dolomiteOwner.EXECUTOR_ROLE();
+    bypassTimelockRole = await core.ownerAdapterV2.BYPASS_TIMELOCK_ROLE();
+    executorRole = await core.ownerAdapterV2.EXECUTOR_ROLE();
 
-    dolomiteOwnerImpersonator = await impersonate(dolomiteOwner.address, true);
-    await dolomiteOwner.connect(dolomiteOwnerImpersonator).ownerAddRole(OTHER_ROLE);
-    await dolomiteOwner.connect(dolomiteOwnerImpersonator).grantRole(OTHER_ROLE, adminClaimExcessTokens.address);
-    await dolomiteOwner.connect(dolomiteOwnerImpersonator).grantRole(
+    dolomiteOwnerImpersonator = await impersonate(core.ownerAdapterV2.address, true);
+    await core.ownerAdapterV2.connect(dolomiteOwnerImpersonator).ownerAddRole(OTHER_ROLE);
+    await core.ownerAdapterV2.connect(dolomiteOwnerImpersonator).grantRole(OTHER_ROLE, adminClaimExcessTokens.address);
+    await core.ownerAdapterV2.connect(dolomiteOwnerImpersonator).grantRole(
       bypassTimelockRole,
       adminClaimExcessTokens.address
     );
-    await dolomiteOwner.connect(dolomiteOwnerImpersonator).grantRole(executorRole, adminClaimExcessTokens.address);
+    await core.ownerAdapterV2.connect(dolomiteOwnerImpersonator).grantRole(
+      executorRole,
+      adminClaimExcessTokens.address
+    );
 
-    await dolomiteOwner.connect(dolomiteOwnerImpersonator).ownerAddRoleToAddressFunctionSelectors(
+    await core.ownerAdapterV2.connect(dolomiteOwnerImpersonator).ownerAddRoleToAddressFunctionSelectors(
       OTHER_ROLE,
       core.dolomiteMargin.address,
       [
