@@ -36,10 +36,15 @@ contract TestInfraredVault is ERC20 {
     address public immutable asset;
     address[] public rewardTokens;
     mapping(address => uint256) public rewardAmounts;
+    bool public paused;
 
 
     constructor(address _asset) ERC20("TestInfraredVault", "TEST") {
         asset = _asset;
+    }
+
+    function setPaused(bool _paused) external {
+        paused = _paused;
     }
 
     function setRewardTokens(address[] memory _rewardTokens) external {

@@ -95,8 +95,9 @@ contract InfraredBGTIsolationModeTokenVaultV1 is
             IERC20(UNDERLYING_TOKEN()).safeTransferFrom(_from, address(this), _amount);
         }
 
-        // TODO: check if it's paused here or not and continue processing
-        _stake(_amount);
+        if (!registry().iBgtStakingVault().paused()) {
+            _stake(_amount);
+        }
     }
 
     function executeWithdrawalFromVault(
@@ -166,7 +167,7 @@ contract InfraredBGTIsolationModeTokenVaultV1 is
         _handleRewards(rewards);
 
         for (uint256 i = 0; i < rewards.length; ++i) {
-            if (rewards[i].amount > 0 && rewards[i].token == UNDERLYING_TOKEN() && !vault.paused()) {
+            if (rewards[i].amount > 0 && rewards[i].token == UNDERLYING_TOKEN()) {
                 _unstake(rewards[i].amount);
             }
         }

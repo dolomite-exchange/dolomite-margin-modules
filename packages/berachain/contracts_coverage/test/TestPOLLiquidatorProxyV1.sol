@@ -20,8 +20,8 @@
 
 pragma solidity ^0.8.9;
 
-import { POLLiquidatorProxyV1 } from "../POLLiquidatorProxyV1.sol";
 import { InternalSafeDelegateCallLib } from "@dolomite-exchange/modules-base/contracts/lib/InternalSafeDelegateCallLib.sol"; // solhint-disable-line max-line-length
+import { POLLiquidatorProxyV1 } from "../POLLiquidatorProxyV1.sol";
 
 
 /**

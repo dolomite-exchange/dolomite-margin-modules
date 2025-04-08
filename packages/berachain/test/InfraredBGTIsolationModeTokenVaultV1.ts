@@ -141,6 +141,19 @@ describe('InfraredBGTIsolationModeTokenVaultV1', () => {
       expect(await core.berachainRewardsEcosystem.iBgtStakingPool.balanceOf(iBgtVault.address)).to.eq(amountWei);
     });
 
+    it('should work normally if staking is paused', async () => {
+      await testInfraredVault.setRewardTokens([core.tokens.iBgt.address]);
+      await core.tokens.iBgt.connect(iBgtWhale).approve(testInfraredVault.address, rewardAmount);
+      await testInfraredVault.connect(iBgtWhale).addReward(core.tokens.iBgt.address, rewardAmount);
+      await registry.connect(core.governance).ownerSetIBgtStakingVault(testInfraredVault.address);
+      await testInfraredVault.setPaused(true);
+
+      await iBgtVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await expectProtocolBalance(core, iBgtVault, defaultAccountNumber, iBgtMarketId, amountWei);
+      expect(await iBgtVault.underlyingBalanceOf()).to.eq(amountWei);
+      expect(await core.berachainRewardsEcosystem.iBgtStakingPool.balanceOf(iBgtVault.address)).to.eq(ZERO_BI);
+    })
+
     it('should work normally if deposit comes from metaVault', async () => {
       const metaVaultImpersonator = await impersonate(await registry.getMetaVaultByAccount(core.hhUser1.address), true);
       await core.tokens.iBgt.connect(core.hhUser1).transfer(metaVaultImpersonator.address, amountWei);
@@ -328,6 +341,61 @@ describe('InfraredBGTIsolationModeTokenVaultV1', () => {
       await expectProtocolBalance(core, iBgtVault, defaultAccountNumber, iBgtMarketId, amountWei);
       expect(await core.berachainRewardsEcosystem.iBgtStakingPool.balanceOf(iBgtVault.address)).to.eq(ZERO_BI);
       await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.honey, reward[0].amount);
+    });
+
+    it('should work normally if iBGT rewards are accrued in exit', async () => {
+      await testInfraredVault.setRewardTokens([core.tokens.iBgt.address]);
+      await core.tokens.iBgt.connect(iBgtWhale).approve(testInfraredVault.address, rewardAmount);
+      await testInfraredVault.connect(iBgtWhale).addReward(core.tokens.iBgt.address, rewardAmount);
+      await registry.connect(core.governance).ownerSetIBgtStakingVault(testInfraredVault.address);
+    
+      await iBgtVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await expectProtocolBalance(core, iBgtVault, defaultAccountNumber, iBgtMarketId, amountWei);
+      
+      // Get   the initial staking balance before exit
+      const initialStakingBalance = await testInfraredVault.balanceOf(iBgtVault.address);
+      expect(initialStakingBalance).to.eq(amountWei);
+    
+      // Call exit which should unstake original amount but rewards will be re-staked
+      await iBgtVault.exit();
+      
+      // Check that staking balance equals reward amount (rewards were re-staked)
+      const finalStakingBalance = await testInfraredVault.balanceOf(iBgtVault.address);
+      expect(finalStakingBalance).to.eq(ZERO_BI, "Staking balance should equal reward amount after exit");
+      
+      // Verify original deposit is in the wallet with rewards
+      await expectWalletBalance(iBgtVault, core.tokens.iBgt, amountWei.add(rewardAmount));
+      
+      // Verify protocol balance now includes both original deposit and rewards
+      await expectProtocolBalance(core, iBgtVault, defaultAccountNumber, iBgtMarketId, amountWei.add(rewardAmount));
+    })
+
+    // fails now after the fix
+    xit('should demonstrate that iBGT rewards are re-staked after exit', async () => {
+      await testInfraredVault.setRewardTokens([core.tokens.iBgt.address]);
+      await core.tokens.iBgt.connect(iBgtWhale).approve(testInfraredVault.address, rewardAmount);
+      await testInfraredVault.connect(iBgtWhale).addReward(core.tokens.iBgt.address, rewardAmount);
+      await registry.connect(core.governance).ownerSetIBgtStakingVault(testInfraredVault.address);
+    
+      await iBgtVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await expectProtocolBalance(core, iBgtVault, defaultAccountNumber, iBgtMarketId, amountWei);
+      
+      // Get   the initial staking balance before exit
+      const initialStakingBalance = await testInfraredVault.balanceOf(iBgtVault.address);
+      expect(initialStakingBalance).to.eq(amountWei);
+    
+      // Call exit which should unstake original amount but rewards will be re-staked
+      await iBgtVault.exit();
+      
+      // Check that staking balance equals reward amount (rewards were re-staked)
+      const finalStakingBalance = await testInfraredVault.balanceOf(iBgtVault.address);
+      expect(finalStakingBalance).to.eq(rewardAmount, "Staking balance should equal reward amount after exit");
+      
+      // Verify original deposit is in the wallet (but not rewards)
+      await expectWalletBalance(iBgtVault, core.tokens.iBgt, amountWei);
+      
+      // Verify protocol balance now includes both original deposit and rewards
+      await expectProtocolBalance(core, iBgtVault, defaultAccountNumber, iBgtMarketId, amountWei.add(rewardAmount));
     });
 
     it('should fail if not called by vault owner', async () => {
