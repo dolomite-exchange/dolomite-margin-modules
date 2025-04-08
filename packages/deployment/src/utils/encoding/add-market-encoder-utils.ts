@@ -23,7 +23,7 @@ import { CoreProtocolArbitrumOne } from '../../../../base/test/utils/core-protoc
 import { GmToken } from '../../../../base/test/utils/ecosystem-utils/gmx';
 import { CoreProtocolType } from '../../../../base/test/utils/setup';
 import { EncodedTransaction } from '../dry-run-utils';
-import { getFormattedTokenName, isValidAmount, prettyPrintEncodedDataWithTypeSafety } from './base-encoder-utils';
+import { getFormattedTokenName, isValidAmountForCapForToken, prettyPrintEncodedDataWithTypeSafety } from './base-encoder-utils';
 
 export interface AddMarketOptions {
   additionalConverters?: BaseContract[];
@@ -262,11 +262,11 @@ export async function encodeAddMarket<T extends NetworkType>(
   earningsRateOverride: BigNumberish = ZERO_BI,
   options: AddMarketOptions = {},
 ): Promise<EncodedTransaction[]> {
-  if (!options.skipAmountValidation && !(await isValidAmount(token, maxSupplyWei))) {
+  if (!options.skipAmountValidation && !(await isValidAmountForCapForToken(token, maxSupplyWei))) {
     const name = await getFormattedTokenName(core, token.address);
     return Promise.reject(new Error(`Invalid max supply wei for ${name}, found: ${maxSupplyWei.toString()}`));
   }
-  if (!options.skipAmountValidation && !(await isValidAmount(token, maxBorrowWei))) {
+  if (!options.skipAmountValidation && !(await isValidAmountForCapForToken(token, maxBorrowWei))) {
     const name = await getFormattedTokenName(core, token.address);
     return Promise.reject(new Error(`Invalid max borrow wei for ${name}, found: ${maxBorrowWei.toString()}`));
   }

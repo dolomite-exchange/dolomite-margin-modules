@@ -18,7 +18,10 @@ export interface CoreProtocolTokensBerachain extends CoreProtocolTokens<Network.
   btcPlaceholder: IERC20;
   eBtc: IERC20;
   fbtc: IERC20;
+  henlo: IERC20;
   honey: IERC20;
+  iBera: IERC20;
+  iBgt: IERC20;
   lbtc: IERC20;
   nect: IERC20;
   ohm: IERC20;
@@ -84,7 +87,10 @@ export interface CoreProtocolDolomiteTokensBerachain extends CoreProtocolDolomit
 interface CoreProtocolMarketIdsBerachain extends CoreProtocolMarketIds {
   beraEth: BigNumberish;
   eBtc: BigNumberish;
+  henlo: BigNumberish;
   honey: BigNumberish;
+  iBera: BigNumberish;
+  iBgt: BigNumberish;
   lbtc: BigNumberish;
   nect: BigNumberish;
   ohm: BigNumberish;

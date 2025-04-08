@@ -2,6 +2,7 @@ import { NetworkName } from '@dolomite-exchange/modules-base/src/utils/no-deps-c
 import { execSync } from 'child_process';
 import path from 'path';
 import * as process from 'process';
+import { getCommandlineArg } from '../../utils/cmd-utils';
 
 const HARDHAT_RUN = `node --max-old-space-size=32768 ${process.cwd()}../../../node_modules/.bin/hardhat`;
 
@@ -12,7 +13,7 @@ if (isNaN(nonce) || nonce < 0) {
   throw new Error(`Invalid script number, found: ${nonce}`);
 }
 
-const networkName = process.env.NETWORK;
+const networkName = getCommandlineArg('--network');
 if (!networkName || !ALL_NETWORKS.includes(networkName as any)) {
   throw new Error(`Invalid network name, found: ${networkName}. Expected one of ${ALL_NETWORKS.join(', ')}`);
 }
