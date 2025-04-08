@@ -9,7 +9,7 @@ function toBytes32(hex: string): string {
   return `${hex}${'0'.repeat(66 - hex.length)}`;
 }
 
-export async function encodeGrantRole<T extends NetworkType>(
+export async function encodeGrantRoleIfNecessary<T extends NetworkType>(
   core: CoreProtocolType<T>,
   role: string,
   destination: { address: string },
@@ -17,6 +17,18 @@ export async function encodeGrantRole<T extends NetworkType>(
   assertHardhatInvariant(role.length === 66, 'Invalid role!');
 
   const transactions: EncodedTransaction[] = [];
+  if (!(await core.ownerAdapterV2.isRole(role))) {
+    transactions.push(
+      await prettyPrintEncodedDataWithTypeSafety(
+        core,
+        { ownerAdapterV2: core.ownerAdapterV2 },
+        'ownerAdapterV2',
+        'ownerAddRole',
+        [role],
+      ),
+    );
+  }
+
   if (!(await core.ownerAdapterV2.hasRole(role, destination.address))) {
     transactions.push(
       await prettyPrintEncodedDataWithTypeSafety(

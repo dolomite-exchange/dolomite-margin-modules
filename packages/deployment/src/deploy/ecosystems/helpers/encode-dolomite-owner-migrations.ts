@@ -1,13 +1,18 @@
 import { AdminClaimExcessTokens, AdminPauseMarket, DolomiteOwnerV2 } from 'packages/admin/src/types';
 import { Ownable__factory } from 'packages/liquidity-mining/src/types';
 import { IDolomiteMargin, IDolomiteMarginV2 } from '../../../../../base/src/types';
+import {
+  ADMIN_CLAIM_EXCESS_TOKENS_ROLE, ADMIN_PAUSE_MARKET_ROLE,
+  BYPASS_TIMELOCK_ROLE,
+  EXECUTOR_ROLE,
+} from '../../../../../base/src/utils/no-deps-constants';
 import { EncodedTransaction } from '../../../utils/dry-run-utils';
 import { prettyPrintEncodedDataWithTypeSafety } from '../../../utils/encoding/base-encoder-utils';
 import { setupDolomiteOwnerV2 } from '../../../utils/encoding/dolomite-4626-token-encoder-utils';
 import { encodeSetGlobalOperatorIfNecessary } from '../../../utils/encoding/dolomite-margin-core-encoder-utils';
 import {
   encodeAddressToFunctionSelectorForRole,
-  encodeGrantRole,
+  encodeGrantRoleIfNecessary,
 } from '../../../utils/encoding/dolomite-owner-encoder-utils';
 
 export async function encodeDolomiteOwnerMigrations(
@@ -29,31 +34,26 @@ export async function encodeDolomiteOwnerMigrations(
 
   transactions.push(...(await setupDolomiteOwnerV2(core)));
 
-  const bypassTimelockRole = await dolomiteOwner.BYPASS_TIMELOCK_ROLE();
-  const executorRole = await dolomiteOwner.EXECUTOR_ROLE();
-
-  const claimExcessTokensRole = await adminClaimExcessTokens.ADMIN_CLAIM_EXCESS_TOKENS_ROLE();
   transactions.push(
-    ...(await encodeGrantRole(core, bypassTimelockRole, adminClaimExcessTokens)),
-    ...(await encodeGrantRole(core, executorRole, adminClaimExcessTokens)),
-    ...(await encodeGrantRole(core, claimExcessTokensRole, adminClaimExcessTokens)),
+    ...(await encodeGrantRoleIfNecessary(core, BYPASS_TIMELOCK_ROLE, adminClaimExcessTokens)),
+    ...(await encodeGrantRoleIfNecessary(core, EXECUTOR_ROLE, adminClaimExcessTokens)),
+    ...(await encodeGrantRoleIfNecessary(core, ADMIN_CLAIM_EXCESS_TOKENS_ROLE, adminClaimExcessTokens)),
     ...(await encodeAddressToFunctionSelectorForRole(
       core,
-      claimExcessTokensRole,
+      ADMIN_CLAIM_EXCESS_TOKENS_ROLE,
       dolomiteMargin,
       dolomiteMargin.interface.getFunction('ownerWithdrawExcessTokens'),
     )),
     ...(await encodeSetGlobalOperatorIfNecessary(core, adminClaimExcessTokens, true)),
   );
 
-  const pauseMarketRole = await adminPauseMarket.ADMIN_PAUSE_MARKET_ROLE();
   transactions.push(
-    ...(await encodeGrantRole(core, bypassTimelockRole, adminPauseMarket)),
-    ...(await encodeGrantRole(core, executorRole, adminPauseMarket)),
-    ...(await encodeGrantRole(core, pauseMarketRole, adminPauseMarket)),
+    ...(await encodeGrantRoleIfNecessary(core, BYPASS_TIMELOCK_ROLE, adminPauseMarket)),
+    ...(await encodeGrantRoleIfNecessary(core, EXECUTOR_ROLE, adminPauseMarket)),
+    ...(await encodeGrantRoleIfNecessary(core, ADMIN_PAUSE_MARKET_ROLE, adminPauseMarket)),
     ...(await encodeAddressToFunctionSelectorForRole(
       core,
-      pauseMarketRole,
+      ADMIN_PAUSE_MARKET_ROLE,
       dolomiteMargin,
       dolomiteMargin.interface.getFunction('ownerSetPriceOracle'),
     )),

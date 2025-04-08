@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { BaseContract, BigNumber, BigNumberish, ethers, PopulatedTransaction } from 'ethers';
 import { commify, formatEther, FormatTypes, ParamType } from 'ethers/lib/utils';
 import fs from 'fs';
@@ -6,7 +7,14 @@ import { IChainlinkAggregator__factory } from 'packages/oracles/src/types';
 import { IERC20, IERC20Metadata__factory } from '../../../../base/src/types';
 import { INVALID_TOKEN_MAP } from '../../../../base/src/utils/constants';
 import { AccountRiskOverrideRiskFeature } from '../../../../base/src/utils/constructors/dolomite';
-import { ADDRESS_ZERO, NetworkType, ONE_BI, TEN_BI, ZERO_BI } from '../../../../base/src/utils/no-deps-constants';
+import {
+  ADDRESS_ZERO,
+  NETWORK_TO_NETWORK_NAME_MAP,
+  NetworkType,
+  ONE_BI,
+  TEN_BI,
+  ZERO_BI,
+} from '../../../../base/src/utils/no-deps-constants';
 import { CoreProtocolType } from '../../../../base/test/utils/setup';
 import { CORE_DEPLOYMENT_FILE_NAME, readDeploymentFile } from '../deploy-utils';
 import { EncodedTransaction } from '../dry-run-utils';
@@ -190,9 +198,7 @@ export async function prettyPrintEncodedDataWithTypeSafety<
     console.log('Readable:\t', `${String(key)}.${String(methodName)}(\n\t\t\t${mappedArgs.join(' ,\n\t\t\t')}\n\t\t)`);
     console.log(
       'To:\t\t',
-      (
-        await getReadableArg(core, ParamType.fromString('address to'), transaction.to, undefined, args)
-      ).substring(13),
+      (await getReadableArg(core, ParamType.fromString('address to'), transaction.to, undefined, args)).substring(13),
     );
     console.log('Data:\t\t', transaction.data);
     console.log('='.repeat(repeatLength));
@@ -284,6 +290,26 @@ export async function getReadableArg<T extends NetworkType>(
       }, {} as any);
     });
     return getReadableArg(core, tupleType, decodedValue, undefined, args, undefined, index, nestedLevel);
+  }
+  if (methodName === 'ownerAddRoleToAddressFunctionSelectors' && typeof arg === 'string' && arg.length === 10) {
+    // We're dealing with a function selector
+    const chain = hardhat.userConfig.etherscan?.customChains?.find(
+      (c) => c.chainId === parseInt(core.config.network, 10),
+    );
+    if (typeof hardhat.userConfig.etherscan?.apiKey === 'string') {
+      throw new Error('Invalid API key field on etherscan object');
+    }
+    const apiKey = hardhat.userConfig.etherscan?.apiKey?.[NETWORK_TO_NETWORK_NAME_MAP[core.config.network]];
+
+    if (chain && apiKey) {
+      const baseUrl = chain.urls.apiURL;
+      const response = await axios.get(`${baseUrl}?module=contract&action=getabi&address=${args[1]}&apikey=${apiKey}`);
+      if (response.data.status === '1') {
+        const abi = JSON.parse(response.data.result);
+        const functionName = new ethers.utils.Interface(abi).getFunction(arg).name;
+        return `${formattedInputParamName} = ${arg} (${functionName})`;
+      }
+    }
   }
 
   if (Array.isArray(arg)) {

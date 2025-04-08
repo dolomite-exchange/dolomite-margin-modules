@@ -24,7 +24,6 @@ import {
   getParaswapAggregatorTraderV2ConstructorParams,
 } from '../../../src/utils/constructors/traders';
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
-import { CoreProtocolBerachainBartio } from '../core-protocols/core-protocol-berachain-bartio';
 import { CoreProtocolBerachain } from '../core-protocols/core-protocol-berachain';
 
 export async function createParaswapAggregatorTrader<T extends Network>(
