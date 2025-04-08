@@ -27,7 +27,6 @@ import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/
 import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { MerkleProof } from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import { IBaseClaim } from "./interfaces/IBaseClaim.sol";
 
 
@@ -35,7 +34,7 @@ import { IBaseClaim } from "./interfaces/IBaseClaim.sol";
  * @title   BaseClaim
  * @author  Dolomite
  *
- * Base contract for merkle root claims
+ * Base contract for claiming DOLO
  */
 abstract contract BaseClaim is OnlyDolomiteMargin, ReentrancyGuardUpgradeable, Initializable, IBaseClaim {
     using SafeERC20 for IERC20;
@@ -106,10 +105,6 @@ abstract contract BaseClaim is OnlyDolomiteMargin, ReentrancyGuardUpgradeable, I
         _ownerSetHandler(_handler);
     }
 
-    function ownerSetMerkleRoot(bytes32 _merkleRoot) external onlyDolomiteMarginOwner(msg.sender) {
-        _ownerSetMerkleRoot(_merkleRoot);
-    }
-
     function ownerWithdrawRewardToken(address _token, address _receiver) external onlyDolomiteMarginOwner(msg.sender) {
         _ownerWithdrawRewardToken(_token, _receiver);
     }
@@ -126,11 +121,6 @@ abstract contract BaseClaim is OnlyDolomiteMargin, ReentrancyGuardUpgradeable, I
     function getUserOrRemappedAddress(address _user) public view returns (address) {
         address remappedAddress = addressRemapping(_user);
         return remappedAddress == address(0) ? _user : remappedAddress;
-    }
-
-    function merkleRoot() public view virtual returns (bytes32) {
-        BaseClaimStorage storage s = _getBaseClaimStorage();
-        return s.merkleRoot;
     }
 
     function handler() public view returns (address) {
@@ -186,24 +176,9 @@ abstract contract BaseClaim is OnlyDolomiteMargin, ReentrancyGuardUpgradeable, I
         emit HandlerSet(_handler);
     }
 
-    function _ownerSetMerkleRoot(bytes32 _merkleRoot) internal virtual {
-        BaseClaimStorage storage s = _getBaseClaimStorage();
-        s.merkleRoot = _merkleRoot;
-        emit MerkleRootSet(_merkleRoot);
-    }
-
     function _ownerWithdrawRewardToken(address _token, address _receiver) internal {
         uint256 bal = IERC20(_token).balanceOf(address(this));
         IERC20(_token).safeTransfer(_receiver, bal);
-    }
-
-    function _verifyMerkleProof(
-        address _user,
-        bytes32[] calldata _proof,
-        uint256 _amount
-    ) internal view returns (bool) {
-        bytes32 leaf = keccak256(abi.encode(_user, _amount));
-        return MerkleProof.verifyCalldata(_proof, merkleRoot(), leaf);
     }
 
     function _getBaseClaimStorage() internal pure returns (BaseClaimStorage storage baseClaimStorage) {

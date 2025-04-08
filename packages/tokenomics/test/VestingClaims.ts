@@ -181,15 +181,6 @@ describe('VestingClaims', () => {
     });
   });
 
-  describe('#ownerSetMerkleRoot', () => {
-    it('should fail', async () => {
-      await expectThrow(
-        claims.connect(core.governance).ownerSetMerkleRoot(ethers.constants.HashZero),
-        'VestingClaims: Not implemented'
-      );
-    });
-  });
-
   describe('#claim', () => {
     it('should revert if before start time', async () => {
       await expectThrow(
@@ -338,12 +329,6 @@ describe('VestingClaims', () => {
         claims.connect(core.hhUser1).claim(),
         'BaseClaim: Claim is not enabled',
       );
-    });
-  });
-
-  describe('#merkleRoot', () => {
-    it('should fail', async () => {
-      await expectThrow(claims.merkleRoot(), 'VestingClaims: Not implemented');
     });
   });
 });
