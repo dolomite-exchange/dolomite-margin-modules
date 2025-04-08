@@ -20,11 +20,11 @@
 
 pragma solidity ^0.8.9;
 
+import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import { IDolomiteOwner } from "./interfaces/IDolomiteOwner.sol";
-import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 
 
 /**

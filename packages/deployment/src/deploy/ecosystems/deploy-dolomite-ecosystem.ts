@@ -1,5 +1,6 @@
 import CoreDeployments from '@dolomite-exchange/dolomite-margin/dist/migrations/deployed.json';
 import { getDolomiteOwnerConstructorParams } from '@dolomite-exchange/modules-admin/src/admin';
+import { DolomiteOwnerV1__factory, DolomiteOwnerV2__factory } from '@dolomite-exchange/modules-admin/src/types';
 import {
   BorrowPositionRouter__factory,
   DepositWithdrawalRouter__factory,
@@ -47,20 +48,16 @@ import { prettyPrintEncodedDataWithTypeSafety } from '../../utils/encoding/base-
 import getScriptName from '../../utils/get-script-name';
 import { deployDolomiteAccountRegistry } from './helpers/deploy-dolomite-account-registry';
 import { deployDolomiteAccountRiskOverrideSetter } from './helpers/deploy-dolomite-account-risk-override-setter';
+import { deployDolomiteAdminContracts } from './helpers/deploy-dolomite-admin-contracts';
 import { deployDolomiteRegistry } from './helpers/deploy-dolomite-registry';
 import { deployInterestSetters } from './helpers/deploy-interest-setters';
 import { deployOracleAggregator } from './helpers/deploy-oracle-aggregator';
 import { encodeDolomiteAccountRegistryMigrations } from './helpers/encode-dolomite-account-registry-migrations';
-import {
-  encodeDolomiteAccountRiskOverrideSetterMigrations,
-} from './helpers/encode-dolomite-account-risk-override-setter-migrations';
+import { encodeDolomiteAccountRiskOverrideSetterMigrations } from './helpers/encode-dolomite-account-risk-override-setter-migrations';
 import { encodeDolomiteOwnerMigrations } from './helpers/encode-dolomite-owner-migrations';
 import { encodeDolomiteRegistryMigrations } from './helpers/encode-dolomite-registry-migrations';
 import { encodeDolomiteRouterMigrations } from './helpers/encode-dolomite-router-migrations';
-import {
-  encodeIsolationModeFreezableLiquidatorMigrations,
-} from './helpers/encode-isolation-mode-freezable-liquidator-migrations';
-import { DolomiteOwnerV1__factory, DolomiteOwnerV2__factory } from '@dolomite-exchange/modules-admin/src/types';
+import { encodeIsolationModeFreezableLiquidatorMigrations } from './helpers/encode-isolation-mode-freezable-liquidator-migrations';
 
 const FIVE_MINUTES_SECONDS = 60 * 5;
 const HANDLER_ADDRESS = '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe'; // Level Initiator
@@ -278,6 +275,12 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
 
   await deployInterestSetters();
 
+  const { adminClaimExcessTokens, adminPauseMarket } = await deployDolomiteAdminContracts(
+    dolomiteMargin,
+    dolomiteRegistry,
+    hhUser1,
+  );
+
   // We can't set up the core protocol here because there are too many missing contracts/context
   const governanceAddress = await dolomiteMargin.connect(hhUser1).owner();
   const governance = await impersonateOrFallback(governanceAddress, true, hhUser1);
@@ -356,7 +359,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   );
 
   // This must be the last encoded transaction
-  await encodeDolomiteOwnerMigrations(dolomiteOwnerV2, transactions, core);
+  await encodeDolomiteOwnerMigrations(dolomiteOwnerV2, adminClaimExcessTokens, adminPauseMarket, transactions, core);
 
   return {
     core: {
@@ -365,8 +368,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
         network,
       },
     } as any,
-    invariants: async () => {
-    },
+    invariants: async () => {},
     scriptName: getScriptName(__filename),
     upload: {
       transactions,

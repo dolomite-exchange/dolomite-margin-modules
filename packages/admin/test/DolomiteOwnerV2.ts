@@ -129,7 +129,7 @@ describe('DolomiteOwnerV2', () => {
       await increase(SECONDS_TIME_LOCKED);
       const result = await dolomiteOwner.executeTransaction(0);
       await expectEvent(dolomiteOwner, result, 'SecondsTimeLockedChanged', {
-        secondsTimeLocked: newSecondsTimeLocked,
+        _secondsTimeLocked: newSecondsTimeLocked,
       });
       expect(await dolomiteOwner.secondsTimeLocked()).to.equal(newSecondsTimeLocked);
     });
@@ -149,7 +149,7 @@ describe('DolomiteOwnerV2', () => {
       await increase(SECONDS_TIME_LOCKED);
       const res = await dolomiteOwner.executeTransaction(0);
       await expectEvent(dolomiteOwner, res, 'RoleAdded', {
-        role: OTHER_ROLE,
+        _role: OTHER_ROLE,
       });
       expect(await dolomiteOwner.getRoles()).to.deep.equal(
         [BYTES_ZERO, bypassTimelockRole, executorRole, securityCouncilRole, listingCommitteeRole, OTHER_ROLE]
@@ -177,7 +177,7 @@ describe('DolomiteOwnerV2', () => {
       const res = await dolomiteOwner.executeTransaction(1);
 
       await expectEvent(dolomiteOwner, res, 'RoleRemoved', {
-        role: OTHER_ROLE,
+        _role: OTHER_ROLE,
       });
       expect(await dolomiteOwner.getRoles()).to.deep.equal(
         [BYTES_ZERO, bypassTimelockRole, executorRole, securityCouncilRole, listingCommitteeRole]
@@ -211,8 +211,8 @@ describe('DolomiteOwnerV2', () => {
         [core.dolomiteRegistry.address]
       );
       await expectEvent(dolomiteOwner, res, 'AddressesAddedToRole', {
-        role: securityCouncilRole,
-        addresses: [core.dolomiteRegistry.address],
+        _role: securityCouncilRole,
+        _address: [core.dolomiteRegistry.address],
       });
       expect(await dolomiteOwner.getRoleAddresses(securityCouncilRole)).to.deep.equal([core.dolomiteRegistry.address]);
     });
@@ -244,8 +244,8 @@ describe('DolomiteOwnerV2', () => {
         [core.dolomiteRegistry.address],
       );
       await expectEvent(dolomiteOwner, res, 'AddressesRemovedFromRole', {
-        role: securityCouncilRole,
-        addresses: [core.dolomiteRegistry.address],
+        _role: securityCouncilRole,
+        _address: [core.dolomiteRegistry.address],
       });
       expect(await dolomiteOwner.getRoleAddresses(securityCouncilRole)).to.deep.equal([]);
     });
@@ -270,8 +270,8 @@ describe('DolomiteOwnerV2', () => {
       const res = await dolomiteOwner.executeTransaction(0);
 
       await expectEvent(dolomiteOwner, res, 'FunctionSelectorsAddedToRole', {
-        role: securityCouncilRole,
-        selectors: [BYTES4_OTHER_SELECTOR],
+        _role: securityCouncilRole,
+        _selectors: [BYTES4_OTHER_SELECTOR],
       });
       expect(await dolomiteOwner.getRoleFunctionSelectors(securityCouncilRole)).to.deep.equal([BYTES32_OTHER_SELECTOR]);
     });
@@ -318,8 +318,8 @@ describe('DolomiteOwnerV2', () => {
       await increase(SECONDS_TIME_LOCKED);
       const res = await dolomiteOwner.executeTransaction(1);
       await expectEvent(dolomiteOwner, res, 'FunctionSelectorsRemovedFromRole', {
-        role: securityCouncilRole,
-        selectors: [BYTES4_OTHER_SELECTOR],
+        _role: securityCouncilRole,
+        _selectors: [BYTES4_OTHER_SELECTOR],
       });
       expect(await dolomiteOwner.getRoleFunctionSelectors(securityCouncilRole)).to.deep.equal([]);
     });
@@ -351,9 +351,9 @@ describe('DolomiteOwnerV2', () => {
       const res = await dolomiteOwner.executeTransaction(0);
 
       await expectEvent(dolomiteOwner, res, 'FunctionSelectorsAddedToAddress', {
-        role: securityCouncilRole,
-        address: core.dolomiteRegistry.address,
-        selectors: ['0x12345678'],
+        _role: securityCouncilRole,
+        _address: core.dolomiteRegistry.address,
+        _selectors: ['0x12345678'],
       });
       expect(
         await dolomiteOwner.getRoleToAddressFunctionSelectors(securityCouncilRole, core.dolomiteRegistry.address),
@@ -406,9 +406,9 @@ describe('DolomiteOwnerV2', () => {
       await increase(SECONDS_TIME_LOCKED);
       const res = await dolomiteOwner.executeTransaction(1);
       await expectEvent(dolomiteOwner, res, 'FunctionSelectorsRemovedFromAddress', {
-        role: securityCouncilRole,
-        address: core.dolomiteRegistry.address,
-        selectors: ['0x12345678'],
+        _role: securityCouncilRole,
+        _address: core.dolomiteRegistry.address,
+        _selectors: ['0x12345678'],
       });
       expect(
         await dolomiteOwner.getRoleToAddressFunctionSelectors(securityCouncilRole, core.dolomiteRegistry.address),

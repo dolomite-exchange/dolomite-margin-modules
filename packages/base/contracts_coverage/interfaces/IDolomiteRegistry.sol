@@ -60,6 +60,7 @@ interface IDolomiteRegistry {
     event DolomiteAccountRegistrySet(address indexed _dolomiteAccountRegistry);
     event TrustedInternalTradersSet(address[] _trustedInternalTraders, bool[] _isTrusted);
     event IsolationModeMulticallFunctionsSet(bytes4[] _selectors);
+    event TreasurySet(address indexed _treasury);
 
     // ========================================================
     // =================== Write Functions ====================
@@ -117,6 +118,10 @@ interface IDolomiteRegistry {
      */
     function ownerSetChainlinkPriceOracle(address _chainlinkPriceOracle) external;
 
+    /**
+     *
+     * @param  _dolomiteMigrator    The new address of the Dolomite migrator
+     */
     function ownerSetDolomiteMigrator(address _dolomiteMigrator) external;
 
     /**
@@ -148,6 +153,12 @@ interface IDolomiteRegistry {
         address[] memory _trustedInternalTraders,
         bool[] memory _isTrusted
     ) external;
+
+    /**
+     *
+     * @param  _treasury    The new address of the treasury
+     */
+    function ownerSetTreasury(address _treasury) external;
 
     /**
      *
