@@ -23,7 +23,6 @@ pragma solidity ^0.8.9;
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { MerkleProof } from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import { BaseClaim } from "./BaseClaim.sol";
 import { IVestingClaims } from "./interfaces/IVestingClaims.sol";
 
@@ -34,7 +33,6 @@ import { IVestingClaims } from "./interfaces/IVestingClaims.sol";
  *
  * Vesting claims contract for DOLO tokens
  */
-// TODO: change to use a traditional mapping with allocations instead of Merkle
 contract VestingClaims is BaseClaim, IVestingClaims {
     using SafeERC20 for IERC20;
 
@@ -73,20 +71,57 @@ contract VestingClaims is BaseClaim, IVestingClaims {
     }
 
     // ==============================================================
+    // ======================= Admin Functions =======================
+    // ==============================================================
+
+    function ownerSetAllocatedAmounts(
+        address[] memory _users,
+        uint256[] memory _allocatedAmounts
+    ) external onlyDolomiteMarginOwner(msg.sender) {
+        Require.that(
+            _users.length == _allocatedAmounts.length,
+            _FILE,
+            "Invalid array lengths"
+        );
+
+        VestingClaimsStorage storage s = _getVestingClaimsStorage();
+        for (uint256 i = 0; i < _users.length; i++) {
+            Require.that(
+                s.allocatedAmount[_users[i]] == 0,
+                _FILE,
+                "User has allocated amount"
+            );
+            assert(s.released[_users[i]] == 0);
+            s.allocatedAmount[_users[i]] = _allocatedAmounts[i];
+            emit AllocatedAmountSet(_users[i], _allocatedAmounts[i]);
+        }
+    }
+
+    function ownerRevokeInvestor(
+        address _user,
+        address _recipient
+    ) external onlyDolomiteMarginOwner(msg.sender) {
+        VestingClaimsStorage storage s = _getVestingClaimsStorage();
+
+        uint256 amount = s.allocatedAmount[_user] - s.released[_user];
+
+        s.allocatedAmount[_user] = 0;
+        s.released[_user] = 0;
+        _ownerClearAddressRemapping(_user);
+
+        DOLO.safeTransfer(_recipient, amount);
+        emit InvestorRevoked(_user, amount);
+    }
+
+    // ==============================================================
     // ======================= User Functions =======================
     // ==============================================================
 
-    function claim(bytes32[] calldata _proof, uint256 _allocatedAmount) external onlyClaimEnabled {
+    function claim() external onlyClaimEnabled {
         VestingClaimsStorage storage s = _getVestingClaimsStorage();
         address user = getUserOrRemappedAddress(msg.sender);
 
-        Require.that(
-            _verifyMerkleProof(user, _proof, _allocatedAmount),
-            _FILE,
-            "Invalid merkle proof"
-        );
-
-        uint256 amount = releasable(_allocatedAmount, user);
+        uint256 amount = releasable(s.allocatedAmount[user], user);
         Require.that(
             amount > 0,
             _FILE,
@@ -105,6 +140,11 @@ contract VestingClaims is BaseClaim, IVestingClaims {
     // ==============================================================
     // ======================= View Functions =======================
     // ==============================================================
+
+    function allocatedAmount(address _user) external view returns (uint256) {
+        VestingClaimsStorage storage s = _getVestingClaimsStorage();
+        return s.allocatedAmount[_user];
+    }
 
     function released(address _user) external view returns (uint256) {
         VestingClaimsStorage storage s = _getVestingClaimsStorage();

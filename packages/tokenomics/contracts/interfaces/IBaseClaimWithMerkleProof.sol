@@ -20,57 +20,31 @@
 
 pragma solidity ^0.8.9;
 
+import { IBaseClaim } from "./IBaseClaim.sol";
 
 /**
- * @title   IBaseClaim
+ * @title   IBaseClaimWithMerkleProof
  * @author  Dolomite
  *
  * @notice  Interface for base claim contract
  */
-interface IBaseClaim {
-
-    struct BaseClaimStorage {
-        bytes32 merkleRoot;
-        mapping(address => address) addressRemapping;
-        address handler;
-        bool claimEnabled;
-    }
+interface IBaseClaimWithMerkleProof is IBaseClaim {
 
     // ======================================================
     // ======================== Events ======================
     // ======================================================
 
-    event AddressRemappingSet(address[] users, address[] remappedAddresses);
-    event AddressRemappingCleared(address user);
-    event ClaimEnabledSet(bool claimEnabled);
-    event HandlerSet(address handler);
     event MerkleRootSet(bytes32 merkleRoot);
 
     // ======================================================
     // ================== External Functions ================
     // ======================================================
 
-    function ownerSetAddressRemapping(address[] memory _users, address[] memory _remappedAddresses) external;
-
-    function ownerSetClaimEnabled(bool _enabled) external;
-
-    function ownerSetHandler(address _handler) external;
-
     function ownerSetMerkleRoot(bytes32 _merkleRoot) external;
-
-    function ownerWithdrawRewardToken(address _token, address _receiver) external;
 
     // ======================================================
     // ==================== View Functions ==================
     // ======================================================
 
-    function addressRemapping(address _user) external view returns (address);
-
-    function claimEnabled() external view returns (bool);
-
-    function getUserOrRemappedAddress(address _user) external view returns (address);
-
     function merkleRoot() external view returns (bytes32);
-
-    function handler() external view returns (address);
 }

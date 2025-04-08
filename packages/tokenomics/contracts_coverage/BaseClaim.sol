@@ -94,7 +94,8 @@ abstract contract BaseClaim is OnlyDolomiteMargin, ReentrancyGuardUpgradeable, I
     // ======================================================
 
     function ownerSetAddressRemapping(
-        address[] memory _users, address[] memory _remappedAddresses
+        address[] memory _users,
+        address[] memory _remappedAddresses
     ) external onlyHandler(msg.sender) {
         _ownerSetAddressRemapping(_users, _remappedAddresses);
     }
@@ -129,7 +130,7 @@ abstract contract BaseClaim is OnlyDolomiteMargin, ReentrancyGuardUpgradeable, I
         return remappedAddress == address(0) ? _user : remappedAddress;
     }
 
-    function merkleRoot() public view returns (bytes32) {
+    function merkleRoot() public view virtual returns (bytes32) {
         BaseClaimStorage storage s = _getBaseClaimStorage();
         return s.merkleRoot;
     }
@@ -164,6 +165,12 @@ abstract contract BaseClaim is OnlyDolomiteMargin, ReentrancyGuardUpgradeable, I
         emit AddressRemappingSet(_users, _remappedAddresses);
     }
 
+    function _ownerClearAddressRemapping(address _user) internal {
+        BaseClaimStorage storage s = _getBaseClaimStorage();
+        s.addressRemapping[_user] = address(0);
+        emit AddressRemappingCleared(_user);
+    }
+
     function _ownerSetClaimEnabled(bool _enabled) internal {
         BaseClaimStorage storage s = _getBaseClaimStorage();
         s.claimEnabled = _enabled;
@@ -183,7 +190,7 @@ abstract contract BaseClaim is OnlyDolomiteMargin, ReentrancyGuardUpgradeable, I
         emit HandlerSet(_handler);
     }
 
-    function _ownerSetMerkleRoot(bytes32 _merkleRoot) internal {
+    function _ownerSetMerkleRoot(bytes32 _merkleRoot) internal virtual {
         BaseClaimStorage storage s = _getBaseClaimStorage();
         s.merkleRoot = _merkleRoot;
         emit MerkleRootSet(_merkleRoot);
