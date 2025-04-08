@@ -64,8 +64,8 @@ describe('StrategicVestingClaims', () => {
         epoch: ZERO_BI,
         amount: user1Amount.div(10),
       });
-      expect(await dolo.balanceOf(core.hhUser1.address)).to.eq(ONE_ETH_BI);
-      expect(await claims.released(core.hhUser1.address)).to.eq(ONE_ETH_BI);
+      expect(await dolo.balanceOf(core.hhUser1.address)).to.eq(user1Amount.div(10));
+      expect(await claims.released(core.hhUser1.address)).to.eq(user1Amount.div(10));
     });
 
     it('should fail if claim is not enabled', async () => {
