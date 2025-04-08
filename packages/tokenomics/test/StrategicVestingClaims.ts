@@ -2,7 +2,7 @@ import { setNextBlockTimestamp } from '@nomicfoundation/hardhat-network-helpers/
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
-import { Network, ONE_DAY_SECONDS, ONE_ETH_BI, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
+import { Network, ONE_DAY_SECONDS, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
 import { expectEvent, expectThrow } from 'packages/base/test/utils/assertions';
 import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
