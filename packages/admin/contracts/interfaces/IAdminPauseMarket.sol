@@ -36,9 +36,8 @@ interface IAdminPauseMarket is IDolomitePriceOracle {
     // ======================== Events ========================
     // ========================================================
 
-    event MarketPaused(uint256 marketId);
-    event MarketUnpaused(uint256 marketId);
-    event TrustedCallerSet(address trustedCaller, bool trusted);
+    event SetMarketPaused(uint256 marketId, bool isPaused);
+    event TrustedCallerSet(address trustedCaller, bool isTrusted);
 
     // ========================================================
     // ==================== Admin Functions ===================

@@ -47,6 +47,7 @@ contract AdminClaimExcessTokens is OnlyDolomiteMargin, IAdminClaimExcessTokens {
     // ===================================================================
 
     bytes32 private constant _FILE = "AdminClaimExcessTokens";
+    bytes32 public constant ADMIN_CLAIM_EXCESS_TOKENS_ROLE = keccak256("AdminClaimExcessTokens");
 
     // ===================================================================
     // ====================== Immutable Variables ========================
