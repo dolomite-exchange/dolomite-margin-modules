@@ -18,7 +18,11 @@ import {
 } from '../../../../base/src/utils/no-deps-constants';
 import { CoreProtocolType } from '../../../../base/test/utils/setup';
 import { EncodedTransaction } from '../dry-run-utils';
-import { getFormattedTokenName, isValidAmountForCapForToken, prettyPrintEncodedDataWithTypeSafety } from './base-encoder-utils';
+import {
+  getFormattedTokenName,
+  isValidAmountForCapForToken,
+  prettyPrintEncodedDataWithTypeSafety,
+} from './base-encoder-utils';
 
 export async function encodeSetGlobalOperator<T extends NetworkType>(
   core: CoreProtocolType<T>,
@@ -32,6 +36,20 @@ export async function encodeSetGlobalOperator<T extends NetworkType>(
     'ownerSetGlobalOperator',
     [typeof address === 'string' ? address : address.address, isGlobalOperator],
   );
+}
+
+export async function encodeSetGlobalOperatorIfNecessary<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  address: string | { address: string },
+  isGlobalOperator: boolean,
+): Promise<EncodedTransaction[]> {
+  const transactions = [];
+  const operatorAddress = typeof address === 'string' ? address : address.address;
+  if (isGlobalOperator !== (await core.dolomiteMargin.getIsGlobalOperator(operatorAddress))) {
+    transactions.push(await encodeSetGlobalOperator(core, address, isGlobalOperator));
+  }
+
+  return transactions;
 }
 
 export async function encodeSetSupplyCap<T extends NetworkType>(

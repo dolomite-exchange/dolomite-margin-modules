@@ -81,7 +81,7 @@ describe('DolomiteRegistryImplementation', () => {
       const borrowPositionProxy = core.borrowPositionProxyV2.address;
       const result = await registry.connect(core.governance).ownerSetBorrowPositionProxy(borrowPositionProxy);
       await expectEvent(registry, result, 'BorrowPositionProxySet', {
-        borrowPositionProxy,
+        _borrowPositionProxy: borrowPositionProxy,
       });
       expect(await registry.borrowPositionProxy()).to.equal(borrowPositionProxy);
     });
@@ -105,7 +105,7 @@ describe('DolomiteRegistryImplementation', () => {
       const genericTraderProxy = core.genericTraderProxy.address;
       const result = await registry.connect(core.governance).ownerSetGenericTraderProxy(genericTraderProxy);
       await expectEvent(registry, result, 'GenericTraderProxySet', {
-        genericTraderProxy,
+        _genericTraderProxy: genericTraderProxy,
       });
       expect(await registry.genericTraderProxy()).to.equal(genericTraderProxy);
     });
@@ -130,7 +130,7 @@ describe('DolomiteRegistryImplementation', () => {
       const expiryAddress = core.expiry.address;
       const result = await registry.connect(core.governance).ownerSetExpiry(expiryAddress);
       await expectEvent(registry, result, 'ExpirySet', {
-        expiryAddress,
+        _expiry: expiryAddress,
       });
       expect(await registry.expiry()).to.equal(expiryAddress);
     });
@@ -162,7 +162,7 @@ describe('DolomiteRegistryImplementation', () => {
       expect(await registry.feeAgent()).to.equal(ZERO_ADDRESS);
       const result = await registry.connect(core.governance).ownerSetFeeAgent(OTHER_ADDRESS);
       await expectEvent(registry, result, 'FeeAgentSet', {
-        feeAgent: OTHER_ADDRESS,
+        _feeAgent: OTHER_ADDRESS,
       });
       expect(await registry.feeAgent()).to.equal(OTHER_ADDRESS);
     });
@@ -189,7 +189,7 @@ describe('DolomiteRegistryImplementation', () => {
         .connect(core.governance)
         .ownerSetSlippageToleranceForPauseSentinel(slippageTolerance);
       await expectEvent(registry, result, 'SlippageToleranceForPauseSentinelSet', {
-        slippageTolerance,
+        _slippageTolerance: slippageTolerance,
       });
       expect(await registry.slippageToleranceForPauseSentinel()).to.equal(slippageTolerance);
     });
@@ -218,7 +218,7 @@ describe('DolomiteRegistryImplementation', () => {
       const liquidatorAssetRegistry = core.liquidatorAssetRegistry.address;
       const result = await registry.connect(core.governance).ownerSetLiquidatorAssetRegistry(liquidatorAssetRegistry);
       await expectEvent(registry, result, 'LiquidatorAssetRegistrySet', {
-        liquidatorAssetRegistry,
+        _liquidatorAssetRegistry: liquidatorAssetRegistry,
       });
       expect(await registry.liquidatorAssetRegistry()).to.equal(liquidatorAssetRegistry);
     });
@@ -249,7 +249,7 @@ describe('DolomiteRegistryImplementation', () => {
     it('should work normally', async () => {
       const result = await registry.connect(core.governance).ownerSetEventEmitter(OTHER_ADDRESS);
       await expectEvent(registry, result, 'EventEmitterSet', {
-        eventEmitter: OTHER_ADDRESS,
+        _eventEmitter: OTHER_ADDRESS,
       });
       expect(await registry.eventEmitter()).to.equal(OTHER_ADDRESS);
     });
@@ -273,7 +273,7 @@ describe('DolomiteRegistryImplementation', () => {
     it('should work normally', async () => {
       const result = await registry.connect(core.governance).ownerSetChainlinkPriceOracle(OTHER_ADDRESS);
       await expectEvent(registry, result, 'ChainlinkPriceOracleSet', {
-        chainlinkPriceOracle: OTHER_ADDRESS,
+        _chainlinkPriceOracle: OTHER_ADDRESS,
       });
       expect(await registry.chainlinkPriceOracle()).to.equal(OTHER_ADDRESS);
     });
@@ -297,7 +297,7 @@ describe('DolomiteRegistryImplementation', () => {
     it('should work normally', async () => {
       const result = await registry.connect(core.governance).ownerSetDolomiteMigrator(OTHER_ADDRESS);
       await expectEvent(registry, result, 'DolomiteMigratorSet', {
-        dolomiteMigrator: OTHER_ADDRESS,
+        _dolomiteMigrator: OTHER_ADDRESS,
       });
       expect(await registry.dolomiteMigrator()).to.equal(OTHER_ADDRESS);
     });
@@ -321,7 +321,7 @@ describe('DolomiteRegistryImplementation', () => {
     it('should work normally', async () => {
       const result = await registry.connect(core.governance).ownerSetRedstonePriceOracle(OTHER_ADDRESS);
       await expectEvent(registry, result, 'RedstonePriceOracleSet', {
-        redstonePriceOracle: OTHER_ADDRESS,
+        _redstonePriceOracle: OTHER_ADDRESS,
       });
       expect(await registry.redstonePriceOracle()).to.equal(OTHER_ADDRESS);
     });
@@ -345,7 +345,7 @@ describe('DolomiteRegistryImplementation', () => {
     it('should work normally', async () => {
       const result = await registry.connect(core.governance).ownerSetOracleAggregator(OTHER_ADDRESS);
       await expectEvent(registry, result, 'OracleAggregatorSet', {
-        oracleAggregator: OTHER_ADDRESS,
+        _oracleAggregator: OTHER_ADDRESS,
       });
       expect(await registry.oracleAggregator()).to.equal(OTHER_ADDRESS);
     });
@@ -369,7 +369,7 @@ describe('DolomiteRegistryImplementation', () => {
     it('should work normally', async () => {
       const result = await registry.connect(core.governance).ownerSetDolomiteAccountRegistry(OTHER_ADDRESS);
       await expectEvent(registry, result, 'DolomiteAccountRegistrySet', {
-        dolomiteAccountRegistry: OTHER_ADDRESS,
+        _dolomiteAccountRegistry: OTHER_ADDRESS,
       });
       expect(await registry.dolomiteAccountRegistry()).to.equal(OTHER_ADDRESS);
     });
@@ -396,8 +396,8 @@ describe('DolomiteRegistryImplementation', () => {
         [true]
       );
       await expectEvent(registry, res, 'TrustedInternalTradersSet', {
-        trustedInternalTraders: [core.hhUser1.address],
-        isTrusted: [true],
+        _trustedInternalTraders: [core.hhUser1.address],
+        _isTrusted: [true],
       });
       expect(await registry.isTrustedInternalTrader(core.hhUser1.address)).to.equal(true);
     });
@@ -433,13 +433,37 @@ describe('DolomiteRegistryImplementation', () => {
     });
   });
 
+  describe('#ownerSetTreasury', () => {
+    it('should work normally', async () => {
+      const result = await registry.connect(core.governance).ownerSetTreasury(core.hhUser1.address);
+      await expectEvent(registry, result, 'TreasurySet', {
+        _treasury: core.hhUser1.address,
+      });
+      expect(await registry.treasury()).to.equal(core.hhUser1.address);
+    });
+
+    it('should fail if zero address is provided', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetTreasury(ZERO_ADDRESS),
+        'DolomiteRegistryImplementation: Invalid treasury'
+      );
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetTreasury(core.hhUser1.address),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+  });
+
   describe('#ownerSetIsolationModeMulticallFunctions', () => {
     it('should work normally', async () => {
       const selectors = ['0x12345678', '0x12345679'];
 
       const result = await registry.connect(core.governance).ownerSetIsolationModeMulticallFunctions(selectors);
       await expectEvent(registry, result, 'IsolationModeMulticallFunctionsSet', {
-        selectors,
+        _selectors: selectors,
       });
       expect(await registry.isolationModeMulticallFunctions()).to.deep.equal(selectors);
 
@@ -450,7 +474,7 @@ describe('DolomiteRegistryImplementation', () => {
     it('should pass if zero selectors are provided', async () => {
       const result = await registry.connect(core.governance).ownerSetIsolationModeMulticallFunctions([]);
       await expectEvent(registry, result, 'IsolationModeMulticallFunctionsSet', {
-        selectors: [],
+        _selectors: [],
       });
       expect(await registry.isolationModeMulticallFunctions()).to.deep.equal([]);
     });

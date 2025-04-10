@@ -15,7 +15,7 @@ export enum Network {
 }
 
 export type NetworkTypeForDolomiteV2 =
-  Network.Base
+  | Network.Base
   | Network.Berachain
   | Network.Ink
   | Network.Mantle
@@ -116,3 +116,14 @@ export const LIQUIDATE_ALL = MAX_UINT_256_BI;
 export const SELL_ALL = MAX_UINT_256_BI;
 
 export const NO_PARASWAP_TRADER_PARAM: GenericTraderParamStruct | undefined = undefined;
+
+// ========================================
+// ================= Roles ================
+// ========================================
+
+export const ADMIN_CLAIM_EXCESS_TOKENS_ROLE = '0xebeb1fd66be1e1671e89346bde616d3c80a23c8200e82898d23f4769ae075f75';
+export const ADMIN_PAUSE_MARKET_ROLE = '0xb74ffa3c06e003b9396a9563087dd5e1f06cf2c92548550a731a01f76c77545f';
+export const BYPASS_TIMELOCK_ROLE = '0x21bee6ac0139693d77752bbffb07a6fab05816a10c9d8daed537913d19d5e921';
+export const D_TOKEN_ROLE = '0xcd86ded6d567eb7adb1b98d283b7e4004869021f7651dbae982e0992bfe0df5a';
+export const DEFAULT_ADMIN_ROLE = '0x0000000000000000000000000000000000000000000000000000000000000000';
+export const EXECUTOR_ROLE = '0xd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e63';

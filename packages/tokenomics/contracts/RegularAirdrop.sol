@@ -24,7 +24,7 @@ import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { MerkleProof } from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
-import { BaseClaim } from "./BaseClaim.sol";
+import { BaseClaimWithMerkleProof } from "./BaseClaimWithMerkleProof.sol";
 import { IRegularAirdrop } from "./interfaces/IRegularAirdrop.sol";
 import { IVotingEscrow } from "./interfaces/IVotingEscrow.sol";
 
@@ -35,7 +35,7 @@ import { IVotingEscrow } from "./interfaces/IVotingEscrow.sol";
  *
  * Regular airdrop contract for DOLO tokens. 50% is given to the user and 50% is locked in veDolo
  */
-contract RegularAirdrop is BaseClaim, IRegularAirdrop {
+contract RegularAirdrop is BaseClaimWithMerkleProof, IRegularAirdrop {
     using SafeERC20 for IERC20;
 
     // ===================================================
@@ -64,7 +64,7 @@ contract RegularAirdrop is BaseClaim, IRegularAirdrop {
         address _veDolo,
         address _dolomiteRegistry,
         address _dolomiteMargin
-    ) BaseClaim(_dolomiteRegistry, _dolomiteMargin) {
+    ) BaseClaimWithMerkleProof(_dolomiteRegistry, _dolomiteMargin) {
         DOLO = IERC20(_dolo);
         VE_DOLO = IVotingEscrow(_veDolo);
     }

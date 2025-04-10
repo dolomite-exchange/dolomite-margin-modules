@@ -123,8 +123,10 @@ export async function verifyContract(
 
   try {
     console.log('\tVerifying contract...');
+
     const artifact = await artifacts.readArtifact(contractName);
     const factory = await ethers.getContractFactoryFromArtifact(artifact, { libraries });
+    console.log('\tGot contract info for verification...');
 
     const buildInfo = artifacts.getBuildInfoSync(contractName);
 
@@ -152,8 +154,9 @@ export async function verifyContract(
       `v${buildInfo!.solcLongVersion}`,
       factory.interface.encodeDeploy(constructorArguments).slice(2),
     );
+    console.log('\tSubmitted verification. Checking status...');
 
-    await sleep(1000);
+    await sleep(1_000);
     const verificationStatus = await instance.getVerificationStatus(guid);
     if (verificationStatus.isSuccess() || verificationStatus.isOk()) {
       const contractURL = instance.getContractUrl(address);

@@ -28,7 +28,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { MerkleProof } from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import { BaseClaim } from "./BaseClaim.sol";
+import { BaseClaimWithMerkleProof } from "./BaseClaimWithMerkleProof.sol";
 import { IOptionAirdrop } from "./interfaces/IOptionAirdrop.sol";
 
 
@@ -38,7 +38,7 @@ import { IOptionAirdrop } from "./interfaces/IOptionAirdrop.sol";
  *
  * Option airdrop contract for DOLO tokens
  */
-contract OptionAirdrop is BaseClaim, IOptionAirdrop {
+contract OptionAirdrop is BaseClaimWithMerkleProof, IOptionAirdrop {
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.UintSet;
 
@@ -66,7 +66,7 @@ contract OptionAirdrop is BaseClaim, IOptionAirdrop {
         address _dolo,
         address _dolomiteRegistry,
         address _dolomiteMargin
-    ) BaseClaim(_dolomiteRegistry, _dolomiteMargin) {
+    ) BaseClaimWithMerkleProof(_dolomiteRegistry, _dolomiteMargin) {
         DOLO = IERC20(_dolo);
     }
 

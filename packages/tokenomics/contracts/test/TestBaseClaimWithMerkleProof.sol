@@ -21,23 +21,23 @@
 pragma solidity ^0.8.9;
 
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
-import { BaseClaim } from "../BaseClaim.sol";
+import { BaseClaimWithMerkleProof } from "../BaseClaimWithMerkleProof.sol";
 
 
 /**
- * @title   TestBaseClaim
+ * @title   TestBaseClaimWithMerkleProof
  * @author  Dolomite
  *
  * @notice  Test implementation for exposing areas for coverage testing
  */
-contract TestBaseClaim is BaseClaim {
+contract TestBaseClaimWithMerkleProof is BaseClaimWithMerkleProof {
 
     bytes32 private constant _FILE = "TestBaseClaim";
 
     constructor(
         address _dolomiteRegistry,
         address _dolomiteMargin
-    ) BaseClaim(
+    ) BaseClaimWithMerkleProof(
         _dolomiteRegistry,
         _dolomiteMargin
     ) {} // solhint-disable-line

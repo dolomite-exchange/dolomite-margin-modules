@@ -31,13 +31,19 @@ interface IDOLO {
 
     event CCIPAdminSet(address ccipAdmin);
     event MinterSet(address minter, bool isMinter);
-    event Started();
 
     function ownerSetCCIPAdmin(address _ccipAdmin) external;
 
     function ownerSetMinter(address _minter, bool _isMinter) external;
 
-    function ownerStart() external;
+    /**
+     * @notice This function can only be called by Chainlink's CCIP when tokens are natively minted across networks.
+     * @dev Throws if the caller is not a valid minter.
+     *
+     * @param  _account The account to receive the minted tokens
+     * @param  _amount  The amount of tokens to mint
+     */
+    function mint(address _account, uint256 _amount) external;
 
     function getCCIPAdmin() external view returns (address);
 

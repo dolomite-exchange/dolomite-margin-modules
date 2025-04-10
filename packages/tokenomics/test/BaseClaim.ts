@@ -1,5 +1,5 @@
 import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
-import { TestBaseClaim, TestBaseClaim__factory } from '../src/types';
+import { TestBaseClaimWithMerkleProof, TestBaseClaimWithMerkleProof__factory } from '../src/types';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol, setupDAIBalance } from 'packages/base/test/utils/setup';
 import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
 import { ADDRESS_ZERO, BYTES_ZERO, Network, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
@@ -12,11 +12,10 @@ import { UpgradeableProxy, UpgradeableProxy__factory } from 'packages/liquidity-
 
 describe('BaseClaim', () => {
   let core: CoreProtocolArbitrumOne;
-  let baseClaim: TestBaseClaim;
+  let baseClaim: TestBaseClaimWithMerkleProof;
 
   let merkleRoot: string;
   let validProof1: string[];
-  let validProof2: string[];
   let invalidProof: string[];
 
   let snapshotId: string;
@@ -39,12 +38,11 @@ describe('BaseClaim', () => {
 
     merkleRoot = tree.getHexRoot();
     validProof1 = tree.getHexProof(leaves[0]);
-    validProof2 = tree.getHexProof(leaves[1]);
     invalidProof = tree.getHexProof(invalidLeaf);
 
-    const baseClaimImplementation = await createContractWithAbi<TestBaseClaim>(
-      TestBaseClaim__factory.abi,
-      TestBaseClaim__factory.bytecode,
+    const baseClaimImplementation = await createContractWithAbi<TestBaseClaimWithMerkleProof>(
+      TestBaseClaimWithMerkleProof__factory.abi,
+      TestBaseClaimWithMerkleProof__factory.bytecode,
       [core.dolomiteRegistry.address, core.dolomiteMargin.address]
     );
     const calldata = await baseClaimImplementation.populateTransaction.initialize();
@@ -53,7 +51,7 @@ describe('BaseClaim', () => {
       UpgradeableProxy__factory.bytecode,
       [baseClaimImplementation.address, core.dolomiteMargin.address, calldata.data]
     );
-    baseClaim = TestBaseClaim__factory.connect(proxy.address, core.hhUser1);
+    baseClaim = TestBaseClaimWithMerkleProof__factory.connect(proxy.address, core.hhUser1);
 
     await baseClaim.connect(core.governance).ownerSetMerkleRoot(merkleRoot);
 
@@ -217,7 +215,7 @@ describe('BaseClaim', () => {
     it('should fail if invalid merkle proof', async () => {
       await expectThrow(
         baseClaim.connect(core.hhUser3).verifyMerkleProof(invalidProof, parseEther('15')),
-        'TestBaseClaim: Invalid merkle proof'
+        'TestBaseClaimWithMerkleProof: Invalid merkle proof'
       );
     });
   });
