@@ -2,16 +2,24 @@ import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/
 import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { AccountRiskOverrideCategory } from '../../../../../../base/src/utils/constructors/dolomite';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
 import {
-  encodeSetIsBorrowOnly,
+  encodeSetAccountRiskOverrideCategoryByMarketId,
+  encodeSetInterestSetter,
   encodeSetIsCollateralOnly,
 } from '../../../../utils/encoding/dolomite-margin-core-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
+import {
+  checkAccountRiskOverrideCategory,
+  checkInterestSetter,
+  checkIsCollateralOnly,
+} from '../../../../utils/invariant-utils';
 
 /**
  * This script encodes the following transactions:
- * - Delist stBTC
+ * - Sets USDa to be in the stablecoin category
+ * - Make HENLO a borrowable asset
  */
 async function main(): Promise<DryRunOutput<Network.Berachain>> {
   const network = await getAndCheckSpecificNetwork(Network.Berachain);
@@ -21,8 +29,13 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
   });
 
   const transactions: EncodedTransaction[] = [
-    await encodeSetIsBorrowOnly(core, core.marketIds.stBtc, true),
-    await encodeSetIsCollateralOnly(core, core.marketIds.stBtc, true),
+    await encodeSetAccountRiskOverrideCategoryByMarketId(core, core.marketIds.usda, AccountRiskOverrideCategory.STABLE),
+    await encodeSetIsCollateralOnly(core, core.marketIds.henlo, false),
+    await encodeSetInterestSetter(
+      core,
+      core.marketIds.henlo,
+      core.interestSetters.linearStepFunction50L75U70OInterestSetter,
+    ),
   ];
 
   return {
@@ -38,7 +51,15 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
       },
     },
     scriptName: getScriptName(__filename),
-    invariants: async () => {},
+    invariants: async () => {
+      await checkAccountRiskOverrideCategory(core, core.marketIds.usda, AccountRiskOverrideCategory.STABLE);
+      await checkIsCollateralOnly(core, core.marketIds.henlo, false);
+      await checkInterestSetter(
+        core,
+        core.marketIds.henlo,
+        core.interestSetters.linearStepFunction50L75U70OInterestSetter,
+      );
+    },
   };
 }
 
