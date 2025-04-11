@@ -182,15 +182,23 @@ describe('InfraredBGTMetaVault', () => {
     dolomiteOwnerImpersonator = await impersonate(dolomiteOwner.address, true);
     await dolomiteOwner.connect(dolomiteOwnerImpersonator).ownerAddRole(OTHER_ROLE);
     await dolomiteOwner.connect(dolomiteOwnerImpersonator).grantRole(OTHER_ROLE, dToken.address);
-    await dolomiteOwner.connect(dolomiteOwnerImpersonator).grantRole(await dolomiteOwner.BYPASS_TIMELOCK_ROLE(), dToken.address);
-    await dolomiteOwner.connect(dolomiteOwnerImpersonator).grantRole(await dolomiteOwner.EXECUTOR_ROLE(), dToken.address);
+    await dolomiteOwner.connect(dolomiteOwnerImpersonator).grantRole(
+      await dolomiteOwner.BYPASS_TIMELOCK_ROLE(),
+      dToken.address
+    );
+    await dolomiteOwner.connect(dolomiteOwnerImpersonator).grantRole(
+      await dolomiteOwner.EXECUTOR_ROLE(),
+      dToken.address
+    );
     await dolomiteOwner.connect(dolomiteOwnerImpersonator).ownerAddRoleToAddressFunctionSelectors(
       OTHER_ROLE,
       core.dolomiteMargin.address,
       ['0x8f6bc659']
     );
 
-    await Ownable__factory.connect(core.dolomiteMargin.address, core.governance).transferOwnership(dolomiteOwner.address);
+    await Ownable__factory.connect(core.dolomiteMargin.address, core.governance).transferOwnership(
+      dolomiteOwner.address
+    );
 
     await wrapFullBalanceIntoVaultDefaultAccount(core, vault, metaVault, wrapper, marketId);
 
@@ -337,6 +345,15 @@ describe('InfraredBGTMetaVault', () => {
     });
   });
 
+  describe('#stakeIBgt', () => {
+    it('should fail if not called by child vault', async () => {
+      await expectThrow(
+        metaVault.connect(core.hhUser1).stakeIBgt(amountWei),
+        `InfraredBGTMetaVault: Only child vault can call <${core.hhUser1.addressLower}>`,
+      );
+    });
+  });
+
   describe('#unstake', () => {
     it('should work normally', async () => {
       const vaultImpersonator = await impersonate(vault.address, true);
@@ -380,6 +397,15 @@ describe('InfraredBGTMetaVault', () => {
       );
       await expectThrow(
         metaVault.connect(core.hhUser1).unstake(bexHoneyWbera.address, RewardVaultType.Infrared, amountWei),
+        `InfraredBGTMetaVault: Only child vault can call <${core.hhUser1.addressLower}>`,
+      );
+    });
+  });
+
+  describe('#unstakeIBgt', () => {
+    it('should fail if not called by child vault', async () => {
+      await expectThrow(
+        metaVault.connect(core.hhUser1).unstakeIBgt(amountWei),
         `InfraredBGTMetaVault: Only child vault can call <${core.hhUser1.addressLower}>`,
       );
     });
@@ -491,6 +517,15 @@ describe('InfraredBGTMetaVault', () => {
     it('should fail if not called by child vault', async () => {
       await expectThrow(
         metaVault.connect(core.hhUser1).getReward(dToken.address),
+        `InfraredBGTMetaVault: Only child vault can call <${core.hhUser1.addressLower}>`,
+      );
+    });
+  });
+
+  describe('#getRewardIBgt', () => {
+    it('should fail if not called by child vault', async () => {
+      await expectThrow(
+        metaVault.connect(core.hhUser1).getRewardIBgt(),
         `InfraredBGTMetaVault: Only child vault can call <${core.hhUser1.addressLower}>`,
       );
     });

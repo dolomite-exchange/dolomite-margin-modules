@@ -116,6 +116,12 @@ contract InfraredBGTMetaVault is ProxyContractHelpers, IBaseMetaVault {
         _stake(_asset, _type, _amount, false);
     }
 
+    function stakeIBgt(
+        uint256 _amount
+    ) external onlyChildVault(msg.sender) {
+        _stakeIBgt(_amount);
+    }
+
     function unstake(
         address _asset,
         IBerachainRewardsRegistry.RewardVaultType _type,
@@ -124,10 +130,20 @@ contract InfraredBGTMetaVault is ProxyContractHelpers, IBaseMetaVault {
         _unstake(_asset, _type, _amount, false);
     }
 
+    function unstakeIBgt(
+        uint256 _amount
+    ) external onlyChildVault(msg.sender) {
+        _unstakeIBgt(_amount);
+    }
+
     function getReward(
         address _asset
     ) external onlyChildVault(msg.sender) {
         _getReward(IInfraredVault(REGISTRY().rewardVault(_asset, IBerachainRewardsRegistry.RewardVaultType.INFRARED)));
+    }
+
+    function getRewardIBgt() external onlyChildVault(msg.sender) {
+        _getReward(IInfraredVault(REGISTRY().iBgtStakingVault()));
     }
 
     function exit(
@@ -222,6 +238,15 @@ contract InfraredBGTMetaVault is ProxyContractHelpers, IBaseMetaVault {
         rewardVault.stake(_amount);
     }
 
+    function _stakeIBgt(uint256 _amount) internal {
+        IERC20 iBgt = IERC20(REGISTRY().iBgt());
+        iBgt.safeTransferFrom(msg.sender, address(this), _amount);
+
+        IInfraredVault vault = IInfraredVault(REGISTRY().iBgtStakingVault());
+        iBgt.safeApprove(address(vault), _amount);
+        vault.stake(_amount);
+    }
+
     function _unstake(
         address _asset,
         IBerachainRewardsRegistry.RewardVaultType _type,
@@ -240,21 +265,29 @@ contract InfraredBGTMetaVault is ProxyContractHelpers, IBaseMetaVault {
         }
     }
 
+    function _unstakeIBgt(uint256 _amount) internal {
+        IInfraredVault vault = IInfraredVault(REGISTRY().iBgtStakingVault());
+        vault.withdraw(_amount);
+
+        IERC20(REGISTRY().iBgt()).safeTransfer(msg.sender, _amount);
+    }
+
     function _getReward(IInfraredVault _rewardVault) internal {
         IBerachainRewardsRegistry.RewardVaultType rewardVaultType = IBerachainRewardsRegistry.RewardVaultType.INFRARED;
         IMetaVaultRewardTokenFactory factory = REGISTRY().iBgtIsolationModeVaultFactory();
 
-        // Loop through tokens not rewards (in case of 0 length array)
-        IInfraredVault.UserReward[] memory rewards = _rewardVault.getAllRewardsForUser(address(this));
         IInfraredVault(_rewardVault).getReward();
 
-        for (uint256 i = 0; i < rewards.length; ++i) {
-            if (rewards[i].amount > 0) {
+        // Loop through tokens not rewards (in case of 0 length array)
+        address[] memory rewardTokens = _rewardVault.getAllRewardTokens();
+        for (uint256 i = 0; i < rewardTokens.length; ++i) {
+            uint256 bal = IERC20(rewardTokens[i]).balanceOf(address(this));
+            if (bal > 0) {
                 _performDepositRewardByRewardType(
                     factory,
                     rewardVaultType,
-                    rewards[i].token,
-                    rewards[i].amount
+                    rewardTokens[i],
+                    bal
                 );
             }
         }
@@ -267,16 +300,18 @@ contract InfraredBGTMetaVault is ProxyContractHelpers, IBaseMetaVault {
         uint256 _amount
     ) internal {
         assert(_type == IBerachainRewardsRegistry.RewardVaultType.INFRARED);
-        address vault = _factory.getVaultByAccount(OWNER());
+
+        address owner = OWNER();
+        address vault = _factory.getVaultByAccount(owner);
         if (vault == address(0)) {
-            vault = _factory.createVault(OWNER());
+            vault = _factory.createVault(owner);
         }
 
         if (_token == address(REGISTRY().iBgt())) {
             IERC20(_token).safeApprove(vault, _amount);
             IMetaVaultRewardReceiver(vault).setIsDepositSourceMetaVault(true);
             _factory.depositIntoDolomiteMarginFromMetaVault(
-                OWNER(),
+                owner,
                 DEFAULT_ACCOUNT_NUMBER,
                 _amount
             );
@@ -285,7 +320,7 @@ contract InfraredBGTMetaVault is ProxyContractHelpers, IBaseMetaVault {
             try dolomiteMargin.getMarketIdByTokenAddress(_token) returns (uint256 marketId) {
                 IERC20(_token).safeApprove(address(dolomiteMargin), _amount);
                 try _factory.depositOtherTokenIntoDolomiteMarginFromMetaVault(
-                    OWNER(),
+                    owner,
                     DEFAULT_ACCOUNT_NUMBER,
                     marketId,
                     _amount
@@ -293,11 +328,11 @@ contract InfraredBGTMetaVault is ProxyContractHelpers, IBaseMetaVault {
                     // If we can't deposit the token into Dolomite, reset the allowance and send the token directly to
                     // the owner
                     IERC20(_token).safeApprove(address(dolomiteMargin), 0);
-                    IERC20(_token).safeTransfer(OWNER(), _amount);
+                    IERC20(_token).safeTransfer(owner, _amount);
                 }
             } catch {
                 // If the token is not supported on Dolomite, send it directly to the owner
-                IERC20(_token).safeTransfer(OWNER(), _amount);
+                IERC20(_token).safeTransfer(owner, _amount);
             }
         }
 
