@@ -184,10 +184,7 @@ contract InfraredBGTIsolationModeTokenVaultV1 is
             if (_rewards[i].amount > 0) {
                 if (_rewards[i].token == UNDERLYING_TOKEN()) {
                     _setIsDepositSourceThisVault(true);
-                    factory.depositIntoDolomiteMargin(
-                        DEFAULT_ACCOUNT_NUMBER,
-                        _rewards[i].amount
-                    );
+                    factory.depositIntoDolomiteMargin(DEFAULT_ACCOUNT_NUMBER, _rewards[i].amount);
                     assert(!isDepositSourceThisVault());
                 } else {
                     try DOLOMITE_MARGIN().getMarketIdByTokenAddress(_rewards[i].token) returns (uint256 marketId) {
