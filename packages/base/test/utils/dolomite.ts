@@ -12,6 +12,8 @@ import {
   DolomiteERC20,
   DolomiteOwnerV1,
   DolomiteOwnerV1__factory,
+  DolomiteOwnerV2,
+  DolomiteOwnerV2__factory,
   DolomiteRegistryImplementation,
   DolomiteRegistryImplementation__factory,
   EventEmitterRegistry,
@@ -155,6 +157,17 @@ export async function createDolomiteOwner(
   return createContractWithAbi(
     DolomiteOwnerV1__factory.abi,
     DolomiteOwnerV1__factory.bytecode,
+    getDolomiteOwnerConstructorParams(core.gnosisSafe.address, secondsTimeLocked),
+  );
+}
+
+export async function createDolomiteOwnerV2(
+  core: CoreProtocolType<NetworkType>,
+  secondsTimeLocked: BigNumberish,
+): Promise<DolomiteOwnerV2> {
+  return createContractWithAbi(
+    DolomiteOwnerV2__factory.abi,
+    DolomiteOwnerV2__factory.bytecode,
     getDolomiteOwnerConstructorParams(core.gnosisSafe.address, secondsTimeLocked),
   );
 }

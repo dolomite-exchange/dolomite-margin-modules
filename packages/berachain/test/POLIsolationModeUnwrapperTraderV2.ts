@@ -1,9 +1,10 @@
-import { DolomiteERC4626, DolomiteERC4626__factory } from '@dolomite-exchange/modules-base/src/types';
+import { DolomiteERC4626, DolomiteERC4626__factory, RegistryProxy__factory } from '@dolomite-exchange/modules-base/src/types';
 import {
   BYTES_EMPTY,
   MAX_UINT_256_BI,
   Network,
   ONE_BI,
+  ONE_ETH_BI,
   ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
@@ -90,8 +91,18 @@ describe('POLIsolationModeUnwrapperTraderV2', () => {
       network: Network.Berachain,
     });
     await disableInterestAccrual(core, core.marketIds.weth);
+    // @todo update dToken implementation to handle lossy better
+    await setupWETHBalance(core, core.governance, ONE_ETH_BI, core.dolomiteMargin);
+    await depositIntoDolomiteMargin(core, core.governance, defaultAccountNumber, core.marketIds.weth, ONE_ETH_BI);
 
     dToken = DolomiteERC4626__factory.connect(core.dolomiteTokens.weth!.address, core.hhUser1);
+    const implementation = await createContractWithAbi<DolomiteERC4626>(
+      DolomiteERC4626__factory.abi,
+      DolomiteERC4626__factory.bytecode,
+      [core.dolomiteRegistry.address, core.dolomiteMargin.address],
+    );
+    const dTokenProxy = RegistryProxy__factory.connect(dToken.address, core.governance);
+    await dTokenProxy.upgradeTo(implementation.address);
 
     const liquidatorProxyV5 = await createLiquidatorProxyV5(core);
     const polLiquidatorProxy = await createPolLiquidatorProxy(core, liquidatorProxyV5);

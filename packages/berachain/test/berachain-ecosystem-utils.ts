@@ -7,13 +7,13 @@ import {
 } from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
 import { BigNumber } from 'ethers';
 import { defaultAbiCoder } from 'ethers/lib/utils';
-import { LiquidatorProxyV5, RegistryProxy, RegistryProxy__factory } from 'packages/base/src/types';
+import { DolomiteERC4626, DolomiteERC4626__factory, LiquidatorProxyV5, RegistryProxy, RegistryProxy__factory } from 'packages/base/src/types';
 import { createContractWithAbi, createContractWithLibrary } from 'packages/base/src/utils/dolomite-utils';
 import { MAX_UINT_256_BI, ONE_BI, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
 import { impersonate } from 'packages/base/test/utils';
 import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
-import { createIsolationModeTokenVaultV1ActionsImpl } from 'packages/base/test/utils/dolomite';
+import { createDolomiteOwner, createDolomiteOwnerV2, createIsolationModeTokenVaultV1ActionsImpl } from 'packages/base/test/utils/dolomite';
 import {
   getBerachainRewardsRegistryConstructorParams,
   getInfraredBGTIsolationModeVaultFactoryConstructorParams,
@@ -48,7 +48,7 @@ import {
   TestPOLLiquidatorProxyV1,
   TestPOLLiquidatorProxyV1__factory,
 } from '../src/types';
-import { UpgradeableProxy__factory } from 'packages/tokenomics/src/types';
+import { Ownable__factory, UpgradeableProxy__factory } from 'packages/tokenomics/src/types';
 
 export enum RewardVaultType {
   Infrared,
@@ -239,6 +239,35 @@ export async function impersonateUserMetaVault(
   registry: IBerachainRewardsRegistry | BerachainRewardsRegistry,
 ): Promise<SignerWithAddressWithSafety> {
   return impersonate(await setupUserMetaVault(user, registry));
+}
+
+export async function upgradeAndSetupDTokensAndOwnerForPOLTests(core: CoreProtocolBerachain) {
+  const dToken = DolomiteERC4626__factory.connect(core.dolomiteTokens.weth!.address, core.hhUser1);
+  const implementation = await createContractWithAbi<DolomiteERC4626>(
+    DolomiteERC4626__factory.abi,
+    DolomiteERC4626__factory.bytecode,
+    [core.dolomiteRegistry.address, core.dolomiteMargin.address],
+  );
+  const dTokenProxy = RegistryProxy__factory.connect(dToken.address, core.governance);
+  await dTokenProxy.upgradeTo(implementation.address);
+
+  const dolomiteOwner = (await createDolomiteOwner(core, 30)).connect(core.gnosisSafe);
+  console.log("dolomite owner contract address: ", dolomiteOwner.address);
+  const bypassTimelockRole = await dolomiteOwner.BYPASS_TIMELOCK_ROLE();
+  const executorRole = await dolomiteOwner.EXECUTOR_ROLE();
+  const dTokenRole = await dolomiteOwner.D_TOKEN_WITHDRAW_EXCESS_ROLE();
+  const ownable = Ownable__factory.connect(core.dolomiteMargin.address, core.governance);
+  await ownable.transferOwnership(dolomiteOwner.address);
+
+  await dolomiteOwner.connect(core.gnosisSafe).grantRole(bypassTimelockRole, dToken.address);
+  await dolomiteOwner.connect(core.gnosisSafe).grantRole(executorRole, dToken.address);
+
+  await dolomiteOwner.connect(core.gnosisSafe).grantRole(dTokenRole, dToken.address);
+  await dolomiteOwner.connect(core.gnosisSafe).ownerAddRoleToAddressFunctionSelectors(
+    dTokenRole,
+    core.dolomiteMargin.address,
+    ['0x8f6bc659']
+  );
 }
 
 export async function wrapFullBalanceIntoVaultDefaultAccount(
