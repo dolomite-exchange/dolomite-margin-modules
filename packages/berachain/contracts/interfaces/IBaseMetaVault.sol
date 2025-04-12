@@ -31,6 +31,12 @@ import { IBerachainRewardsRegistry } from "./IBerachainRewardsRegistry.sol";
 interface IBaseMetaVault {
 
     // ================================================
+    // ==================== Events ====================
+    // ================================================
+
+    event DTokenFeeCharged(address indexed asset, address indexed feeAgent, uint256 feeAmount);
+
+    // ================================================
     // ================== Functions ===================
     // ================================================
 

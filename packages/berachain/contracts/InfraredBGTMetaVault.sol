@@ -167,6 +167,7 @@ contract InfraredBGTMetaVault is ProxyContractHelpers, IBaseMetaVault {
         uint256 feeAmount = (_amount * feePercentage) / _BASE;
         if (feeAmount > 0 && feeAgent != address(0)) {
             IERC20(_asset).safeTransfer(feeAgent, feeAmount);
+            emit DTokenFeeCharged(_asset, feeAgent, feeAmount);
             return feeAmount;
         }
 
@@ -278,7 +279,8 @@ contract InfraredBGTMetaVault is ProxyContractHelpers, IBaseMetaVault {
 
         IInfraredVault(_rewardVault).getReward();
 
-        // Loop through tokens not rewards (in case of 0 length array)
+        /// @dev    We loop through the reward tokens, not the UserReward[], since the array returns a length of 0 if a
+        //          different user claims this vault's rewards on the user's behalf
         address[] memory rewardTokens = _rewardVault.getAllRewardTokens();
         for (uint256 i = 0; i < rewardTokens.length; ++i) {
             uint256 bal = IERC20(rewardTokens[i]).balanceOf(address(this));
