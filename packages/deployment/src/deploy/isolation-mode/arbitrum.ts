@@ -48,6 +48,8 @@ import {
 
 const network = Network.ArbitrumOne;
 
+const GMX_V2_TOKEN_VAULT_RENAME = 'GmxV2IsolationModeTokenVaultImplementation';
+
 export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedVaultInformation> = {
   [DFS_GLP_MAP[network].marketId]: {
     contractName: 'GLPIsolationModeTokenVaultV2',
@@ -152,9 +154,9 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
   },
   [D_GM_ARB_USD_MAP[network].marketId]: {
     contractName: 'GmxV2IsolationModeTokenVaultV1',
-    contractRenameWithoutVersion: 'GmxV2IsolationModeTokenVaultImplementation',
+    contractRenameWithoutVersion: GMX_V2_TOKEN_VAULT_RENAME,
     implementationAddress: getMaxDeploymentVersionAddressByDeploymentKey(
-      'GmxV2IsolationModeTokenVaultImplementation',
+      GMX_V2_TOKEN_VAULT_RENAME,
       network,
     ),
     constructorParams: getConstructorParametersForAsyncIsolationMode(network),
@@ -163,9 +165,9 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
   },
   [D_GM_BTC_USD_MAP[network].marketId]: {
     contractName: 'GmxV2IsolationModeTokenVaultV1',
-    contractRenameWithoutVersion: 'GmxV2IsolationModeTokenVaultImplementation',
+    contractRenameWithoutVersion: GMX_V2_TOKEN_VAULT_RENAME,
     implementationAddress: getMaxDeploymentVersionAddressByDeploymentKey(
-      'GmxV2IsolationModeTokenVaultImplementation',
+      GMX_V2_TOKEN_VAULT_RENAME,
       network,
     ),
     constructorParams: getConstructorParametersForAsyncIsolationMode(network),
@@ -174,9 +176,9 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
   },
   [D_GM_ETH_USD_MAP[network].marketId]: {
     contractName: 'GmxV2IsolationModeTokenVaultV1',
-    contractRenameWithoutVersion: 'GmxV2IsolationModeTokenVaultImplementation',
+    contractRenameWithoutVersion: GMX_V2_TOKEN_VAULT_RENAME,
     implementationAddress: getMaxDeploymentVersionAddressByDeploymentKey(
-      'GmxV2IsolationModeTokenVaultImplementation',
+      GMX_V2_TOKEN_VAULT_RENAME,
       network,
     ),
     constructorParams: getConstructorParametersForAsyncIsolationMode(network),
@@ -185,9 +187,9 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
   },
   [D_GM_LINK_USD_MAP[network].marketId]: {
     contractName: 'GmxV2IsolationModeTokenVaultV1',
-    contractRenameWithoutVersion: 'GmxV2IsolationModeTokenVaultImplementation',
+    contractRenameWithoutVersion: GMX_V2_TOKEN_VAULT_RENAME,
     implementationAddress: getMaxDeploymentVersionAddressByDeploymentKey(
-      'GmxV2IsolationModeTokenVaultImplementation',
+      GMX_V2_TOKEN_VAULT_RENAME,
       network,
     ),
     constructorParams: getConstructorParametersForAsyncIsolationMode(network),
@@ -248,9 +250,9 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
   },
   [D_GM_BTC_MAP[network].marketId]: {
     contractName: 'GmxV2IsolationModeTokenVaultV1',
-    contractRenameWithoutVersion: 'GmxV2IsolationModeTokenVaultImplementation',
+    contractRenameWithoutVersion: GMX_V2_TOKEN_VAULT_RENAME,
     implementationAddress: getMaxDeploymentVersionAddressByDeploymentKey(
-      'GmxV2IsolationModeTokenVaultImplementation',
+      GMX_V2_TOKEN_VAULT_RENAME,
       network,
     ),
     constructorParams: getConstructorParametersForAsyncIsolationMode(network),
@@ -259,9 +261,9 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
   },
   [D_GM_ETH_MAP[network].marketId]: {
     contractName: 'GmxV2IsolationModeTokenVaultV1',
-    contractRenameWithoutVersion: 'GmxV2IsolationModeTokenVaultImplementation',
+    contractRenameWithoutVersion: GMX_V2_TOKEN_VAULT_RENAME,
     implementationAddress: getMaxDeploymentVersionAddressByDeploymentKey(
-      'GmxV2IsolationModeTokenVaultImplementation',
+      GMX_V2_TOKEN_VAULT_RENAME,
       network,
     ),
     constructorParams: getConstructorParametersForAsyncIsolationMode(network),
@@ -270,9 +272,9 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
   },
   [D_GM_UNI_USD_MAP[network].marketId]: {
     contractName: 'GmxV2IsolationModeTokenVaultV1',
-    contractRenameWithoutVersion: 'GmxV2IsolationModeTokenVaultImplementation',
+    contractRenameWithoutVersion: GMX_V2_TOKEN_VAULT_RENAME,
     implementationAddress: getMaxDeploymentVersionAddressByDeploymentKey(
-      'GmxV2IsolationModeTokenVaultImplementation',
+      GMX_V2_TOKEN_VAULT_RENAME,
       network,
     ),
     constructorParams: getConstructorParametersForAsyncIsolationMode(network),
@@ -314,9 +316,9 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
   },
   [D_GM_AAVE_USD_MAP[network].marketId]: {
     contractName: 'GmxV2IsolationModeTokenVaultV1',
-    contractRenameWithoutVersion: 'GmxV2IsolationModeTokenVaultImplementation',
+    contractRenameWithoutVersion: GMX_V2_TOKEN_VAULT_RENAME,
     implementationAddress: getMaxDeploymentVersionAddressByDeploymentKey(
-      'GmxV2IsolationModeTokenVaultImplementation',
+      GMX_V2_TOKEN_VAULT_RENAME,
       network,
     ),
     constructorParams: getConstructorParametersForAsyncIsolationMode(network),
@@ -325,9 +327,9 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
   },
   [D_GM_DOGE_USD_MAP[network].marketId]: {
     contractName: 'GmxV2IsolationModeTokenVaultV1',
-    contractRenameWithoutVersion: 'GmxV2IsolationModeTokenVaultImplementation',
+    contractRenameWithoutVersion: GMX_V2_TOKEN_VAULT_RENAME,
     implementationAddress: getMaxDeploymentVersionAddressByDeploymentKey(
-      'GmxV2IsolationModeTokenVaultImplementation',
+      GMX_V2_TOKEN_VAULT_RENAME,
       network,
     ),
     constructorParams: getConstructorParametersForAsyncIsolationMode(network),
@@ -336,9 +338,9 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
   },
   [D_GM_GMX_USD_MAP[network].marketId]: {
     contractName: 'GmxV2IsolationModeTokenVaultV1',
-    contractRenameWithoutVersion: 'GmxV2IsolationModeTokenVaultImplementation',
+    contractRenameWithoutVersion: GMX_V2_TOKEN_VAULT_RENAME,
     implementationAddress: getMaxDeploymentVersionAddressByDeploymentKey(
-      'GmxV2IsolationModeTokenVaultImplementation',
+      GMX_V2_TOKEN_VAULT_RENAME,
       network,
     ),
     constructorParams: getConstructorParametersForAsyncIsolationMode(network),
@@ -347,9 +349,9 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
   },
   [D_GM_SOL_USD_MAP[network].marketId]: {
     contractName: 'GmxV2IsolationModeTokenVaultV1',
-    contractRenameWithoutVersion: 'GmxV2IsolationModeTokenVaultImplementation',
+    contractRenameWithoutVersion: GMX_V2_TOKEN_VAULT_RENAME,
     implementationAddress: getMaxDeploymentVersionAddressByDeploymentKey(
-      'GmxV2IsolationModeTokenVaultImplementation',
+      GMX_V2_TOKEN_VAULT_RENAME,
       network,
     ),
     constructorParams: getConstructorParametersForAsyncIsolationMode(network),
@@ -358,9 +360,9 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
   },
   [D_GM_WST_ETH_USD_MAP[network].marketId]: {
     contractName: 'GmxV2IsolationModeTokenVaultV1',
-    contractRenameWithoutVersion: 'GmxV2IsolationModeTokenVaultImplementation',
+    contractRenameWithoutVersion: GMX_V2_TOKEN_VAULT_RENAME,
     implementationAddress: getMaxDeploymentVersionAddressByDeploymentKey(
-      'GmxV2IsolationModeTokenVaultImplementation',
+      GMX_V2_TOKEN_VAULT_RENAME,
       network,
     ),
     constructorParams: getConstructorParametersForAsyncIsolationMode(network),
@@ -391,9 +393,9 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
   },
   [D_GM_GMX_MAP[network].marketId]: {
     contractName: 'GmxV2IsolationModeTokenVaultV1',
-    contractRenameWithoutVersion: 'GmxV2IsolationModeTokenVaultImplementation',
+    contractRenameWithoutVersion: GMX_V2_TOKEN_VAULT_RENAME,
     implementationAddress: getMaxDeploymentVersionAddressByDeploymentKey(
-      'GmxV2IsolationModeTokenVaultImplementation',
+      GMX_V2_TOKEN_VAULT_RENAME,
       network,
     ),
     constructorParams: getConstructorParametersForAsyncIsolationMode(network),
@@ -402,9 +404,9 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
   },
   [D_GM_PENDLE_USD_MAP[network].marketId]: {
     contractName: 'GmxV2IsolationModeTokenVaultV1',
-    contractRenameWithoutVersion: 'GmxV2IsolationModeTokenVaultImplementation',
+    contractRenameWithoutVersion: GMX_V2_TOKEN_VAULT_RENAME,
     implementationAddress: getMaxDeploymentVersionAddressByDeploymentKey(
-      'GmxV2IsolationModeTokenVaultImplementation',
+      GMX_V2_TOKEN_VAULT_RENAME,
       network,
     ),
     constructorParams: getConstructorParametersForAsyncIsolationMode(network),
@@ -413,9 +415,9 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
   },
   [D_GM_PEPE_USD_MAP[network].marketId]: {
     contractName: 'GmxV2IsolationModeTokenVaultV1',
-    contractRenameWithoutVersion: 'GmxV2IsolationModeTokenVaultImplementation',
+    contractRenameWithoutVersion: GMX_V2_TOKEN_VAULT_RENAME,
     implementationAddress: getMaxDeploymentVersionAddressByDeploymentKey(
-      'GmxV2IsolationModeTokenVaultImplementation',
+      GMX_V2_TOKEN_VAULT_RENAME,
       network,
     ),
     constructorParams: getConstructorParametersForAsyncIsolationMode(network),
@@ -424,9 +426,9 @@ export const marketToIsolationModeVaultInfoArbitrumOne: Record<number, DeployedV
   },
   [D_GM_WIF_MAP[network].marketId]: {
     contractName: 'GmxV2IsolationModeTokenVaultV1',
-    contractRenameWithoutVersion: 'GmxV2IsolationModeTokenVaultImplementation',
+    contractRenameWithoutVersion: GMX_V2_TOKEN_VAULT_RENAME,
     implementationAddress: getMaxDeploymentVersionAddressByDeploymentKey(
-      'GmxV2IsolationModeTokenVaultImplementation',
+      GMX_V2_TOKEN_VAULT_RENAME,
       network,
     ),
     constructorParams: getConstructorParametersForAsyncIsolationMode(network),

@@ -326,4 +326,30 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezableAndPausable is
     {
         IsolationModeTokenVaultV1._swapExactInputForOutput(_params);
     }
+
+    function _validateDepositIntoVaultAfterTransfer(
+        uint256 _accountNumber,
+        uint256 _marketId
+    )
+        internal
+        virtual
+        override (IsolationModeTokenVaultV1WithAsyncFreezable, IsolationModeTokenVaultV1)
+        view
+        _depositIntoVaultForDolomiteMarginFreezableValidator(_accountNumber)
+    {
+        super._validateDepositIntoVaultAfterTransfer(_accountNumber, _marketId);
+    }
+
+    function _validateWithdrawalFromVaultAfterTransfer(
+        uint256 _accountNumber,
+        uint256 _marketId
+    )
+        internal
+        virtual
+        override (IsolationModeTokenVaultV1WithAsyncFreezable, IsolationModeTokenVaultV1)
+        view
+        _withdrawFromVaultForDolomiteMarginAsyncFreezableValidator(_accountNumber)
+    {
+        super._validateWithdrawalFromVaultAfterTransfer(_accountNumber, _marketId);
+    }
 }

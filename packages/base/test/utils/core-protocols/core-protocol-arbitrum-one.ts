@@ -139,6 +139,8 @@ interface CoreProtocolMarketIdsArbitrumOne extends CoreProtocolMarketIds {
   dGmEthUsd: BigNumberish;
   dGmGmxUsd: BigNumberish;
   dGmLinkUsd: BigNumberish;
+  dGmPendleUsd: BigNumberish;
+  dGmPepeUsd: BigNumberish;
   dGmSolUsd: BigNumberish;
   dGmUniUsd: BigNumberish;
   dGmWstEthUsd: BigNumberish;

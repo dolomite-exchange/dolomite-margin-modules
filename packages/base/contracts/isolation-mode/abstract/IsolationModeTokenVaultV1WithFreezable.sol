@@ -357,6 +357,32 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         emit IsVaultFrozenSet(_isVaultFrozen);
     }
 
+    function _validateDepositIntoVaultAfterTransfer(
+        uint256 _accountNumber,
+        uint256 _marketId
+    )
+        internal
+        virtual
+        override
+        view
+        _depositIntoVaultForDolomiteMarginFreezableValidator(_accountNumber)
+    {
+        super._validateDepositIntoVaultAfterTransfer(_accountNumber, _marketId);
+    }
+
+    function _validateWithdrawalFromVaultAfterTransfer(
+        uint256 _accountNumber,
+        uint256 _marketId
+    )
+        internal
+        virtual
+        override (IsolationModeTokenVaultV1)
+        view
+        _withdrawFromVaultForDolomiteMarginFreezableValidator(_accountNumber)
+    {
+        super._validateWithdrawalFromVaultAfterTransfer(_accountNumber, _marketId);
+    }
+
     function _requireNotFrozen() internal view {
         Require.that(
             !isVaultFrozen(),

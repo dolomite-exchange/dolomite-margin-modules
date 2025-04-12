@@ -3082,6 +3082,13 @@
       "isVerified": true
     }
   },
+  "GmxV2IsolationModeTokenVaultImplementationV18": {
+    "42161": {
+      "address": "0x214b165F439b60D2497CA94E868f0CC719dB870b",
+      "transaction": "0xf901e09e36f37961a406174bed819f1b306d29738d08596bd8dd29b98f2f2f1c",
+      "isVerified": true
+    }
+  },
   "GmxV2IsolationModeUnwrapperTraderImplementationV2": {
     "42161": {
       "address": "0xa39f1a9900C57Fef088fd14E9aE43e77661eA0fD",
