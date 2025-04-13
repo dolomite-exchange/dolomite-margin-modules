@@ -3,6 +3,7 @@
 import '@nomiclabs/hardhat-etherscan';
 import '@typechain/hardhat';
 import 'hardhat-gas-reporter';
+import 'hardhat-tracer';
 import {
   Network,
   NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP,

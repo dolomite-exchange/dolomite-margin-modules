@@ -129,7 +129,7 @@ export function isMaxWeiParam(paramType: ParamType): boolean {
   );
 }
 
-export function isOwnerFunction(methodName: string, isMultisig: boolean): boolean {
+export function isOwnerFunction(methodName: string, isMultiSig: boolean): boolean {
   return (
     methodName.startsWith('owner') ||
     methodName === 'initializeETHMarket' ||
@@ -138,12 +138,12 @@ export function isOwnerFunction(methodName: string, isMultisig: boolean): boolea
     methodName === 'setUserVaultImplementation' ||
     methodName === 'upgradeTo' ||
     methodName === 'upgradeToAndCall' ||
-    (isMultisig && methodName === 'addOwner') ||
-    (isMultisig && methodName === 'changeRequirement') ||
-    (isMultisig && methodName === 'changeTimelock') ||
-    (isMultisig && methodName === 'removeOver') ||
-    (isMultisig && methodName === 'replaceOwner') ||
-    (isMultisig && methodName === 'setSelector')
+    (isMultiSig && methodName === 'addOwner') ||
+    (isMultiSig && methodName === 'changeRequirement') ||
+    (isMultiSig && methodName === 'changeTimelock') ||
+    (isMultiSig && methodName === 'removeOver') ||
+    (isMultiSig && methodName === 'replaceOwner') ||
+    (isMultiSig && methodName === 'setSelector')
   );
 }
 
@@ -348,19 +348,20 @@ export async function getReadableArg<T extends NetworkType>(
   let specialName: string = '';
   if (inputParamType.type === 'address') {
     const chainId = core.config.network;
-    const allDeployments = readAllDeploymentFiles();
-    Object.keys(allDeployments).forEach((key) => {
-      if ((allDeployments as any)[key][chainId]?.address?.toLowerCase() === arg.toLowerCase()) {
-        specialName = ` (${key})`;
-      }
-    });
+    if (arg.toLowerCase() === core.gnosisSafeAddress.toLowerCase()) {
+      specialName = ' (Dolomite Foundation Safe)';
+    }
+
     if (!specialName) {
+      const allDeployments = readAllDeploymentFiles();
       Object.keys(allDeployments).forEach((key) => {
         if ((allDeployments as any)[key][chainId]?.address?.toLowerCase() === arg.toLowerCase()) {
           specialName = ` (${key})`;
         }
       });
+    }
 
+    if (!specialName) {
       const tokenName = await getFormattedTokenName(core, arg);
       if (tokenName) {
         specialName = ` ${tokenName}`;

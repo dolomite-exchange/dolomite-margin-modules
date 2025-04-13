@@ -5,19 +5,29 @@ import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/se
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
 import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
+import { checkIsGlobalOperator } from '../../../../utils/invariant-utils';
+import { expect } from 'chai';
 
 /**
  * This script encodes the following transactions:
- * - Unset the token converter
+ * - Unset the token converter and global operator
  */
 async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
   const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
+  const gmPendleUsd = core.gmxV2Ecosystem.live.gmPendleUsd;
 
   const transactions: EncodedTransaction[] = [
     await prettyPrintEncodedDataWithTypeSafety(
       core,
-      core.gmxV2Ecosystem.live.gmPendleUsd,
+      { dolomite: core.dolomiteMargin },
+      'dolomite',
+      'ownerSetGlobalOperator',
+      [core.gnosisSafeAddress, false],
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      gmPendleUsd,
       'factory',
       'ownerSetIsTokenConverterTrusted',
       [core.gnosisSafeAddress, false],
@@ -32,7 +42,10 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       chainId: network,
       addExecuteImmediatelyTransactions: true,
     },
-    invariants: async () => {},
+    invariants: async () => {
+      await checkIsGlobalOperator(core, core.gnosisSafeAddress, false);
+      expect(await gmPendleUsd.factory.isTokenConverterTrusted(core.gnosisSafeAddress)).to.be.false;
+    },
   };
 }
 

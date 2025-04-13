@@ -1,4 +1,5 @@
 import {
+  D_GLV_BTC_MAP,
   D_MNT_MAP,
   DPT_CM_ETH_FEB_2025_MAP,
   DPT_METH_DEC_2024_MAP,
@@ -28,6 +29,7 @@ export const marketToIsolationModeVaultInfoMantle: Record<number, DeployedVaultI
     constructorParams: [],
     libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.Pt),
     vaultType: IsolationModeVaultType.Pt,
+    tokenAddress: DPT_USDE_JUL_2024_MAP[network].address,
   },
   [DPT_USDE_DEC_2024_MAP[network].marketId]: {
     contractName: 'PendlePtIsolationModeTokenVaultV1',
@@ -39,6 +41,7 @@ export const marketToIsolationModeVaultInfoMantle: Record<number, DeployedVaultI
     constructorParams: [],
     libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.Pt),
     vaultType: IsolationModeVaultType.Pt,
+    tokenAddress: DPT_USDE_DEC_2024_MAP[network].address,
   },
   [DPT_METH_DEC_2024_MAP[network].marketId]: {
     contractName: 'PendlePtIsolationModeTokenVaultV1',
@@ -50,6 +53,7 @@ export const marketToIsolationModeVaultInfoMantle: Record<number, DeployedVaultI
     constructorParams: [],
     libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.Pt),
     vaultType: IsolationModeVaultType.Pt,
+    tokenAddress: DPT_METH_DEC_2024_MAP[network].address,
   },
   [DPT_MNT_OCT_2024_MAP[network].marketId]: {
     contractName: 'PendlePtIsolationModeTokenVaultV1',
@@ -61,6 +65,7 @@ export const marketToIsolationModeVaultInfoMantle: Record<number, DeployedVaultI
     constructorParams: [],
     libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.Pt),
     vaultType: IsolationModeVaultType.Pt,
+    tokenAddress: DPT_MNT_OCT_2024_MAP[network].address,
   },
   [DPT_CM_ETH_FEB_2025_MAP[network].marketId]: {
     contractName: 'PendlePtIsolationModeTokenVaultV1',
@@ -72,6 +77,7 @@ export const marketToIsolationModeVaultInfoMantle: Record<number, DeployedVaultI
     constructorParams: [],
     libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.Pt),
     vaultType: IsolationModeVaultType.Pt,
+    tokenAddress: DPT_CM_ETH_FEB_2025_MAP[network].address,
   },
   [D_MNT_MAP[network].marketId]: {
     contractName: 'MNTIsolationModeTokenVaultV1',
@@ -83,5 +89,6 @@ export const marketToIsolationModeVaultInfoMantle: Record<number, DeployedVaultI
     constructorParams: [],
     libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.None),
     vaultType: IsolationModeVaultType.None,
+    tokenAddress: D_MNT_MAP[network].address,
   },
 };

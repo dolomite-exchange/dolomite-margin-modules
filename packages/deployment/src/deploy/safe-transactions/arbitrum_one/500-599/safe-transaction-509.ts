@@ -9,16 +9,18 @@ import { expectProtocolBalance } from '../../../../../../base/test/utils/asserti
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
 import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
+import { GmxV2IsolationModeTokenVaultV1__factory } from '@dolomite-exchange/modules-gmx-v2/src/types';
 
 /**
  * This script encodes the following transactions:
- * -Deposit funds into the vault that is frozen
+ * - Deposit funds into the vault that is frozen
  */
 async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
   const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
 
-  const vault = '0x8AFaA91E86f62a4b49a0C9dfF35B76a926B0180A';
+  const vaultAddress = '0x8AFaA91E86f62a4b49a0C9dfF35B76a926B0180A';
+  const vault = GmxV2IsolationModeTokenVaultV1__factory.connect(vaultAddress, core.hhUser1);
   const amountWei = parseEther('15');
 
   const transactions: EncodedTransaction[] = [
@@ -27,7 +29,15 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       core.gmxV2Ecosystem.gmTokens.pendleUsd,
       'marketToken',
       'approve',
-      [vault, amountWei],
+      [vault.address, amountWei],
+      { skipWrappingCalldataInSubmitTransaction: true },
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      core.tokens,
+      'dGmPendleUsd',
+      'approve',
+      [core.dolomiteMargin.address, amountWei],
       { skipWrappingCalldataInSubmitTransaction: true },
     ),
     await prettyPrintEncodedDataWithTypeSafety(
@@ -35,7 +45,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       core.gmxV2Ecosystem.live.gmPendleUsd,
       'factory',
       'enqueueTransferIntoDolomiteMargin',
-      [vault, amountWei],
+      [vault.address, amountWei],
       { skipWrappingCalldataInSubmitTransaction: true },
     ),
     await prettyPrintEncodedDataWithTypeSafety(
@@ -44,7 +54,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       'dolomite',
       'operate',
       [
-        [{ owner: vault, number: ZERO_BI }],
+        [{ owner: vault.address, number: ZERO_BI }],
         [
           {
             actionType: ActionType.Deposit,
@@ -71,7 +81,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       addExecuteImmediatelyTransactions: true,
     },
     invariants: async () => {
-      await expectProtocolBalance(core, vault, ZERO_BI, core.marketIds.dGmPendleUsd, amountWei);
+      await expectProtocolBalance(core, vault.address, ZERO_BI, core.marketIds.dGmPendleUsd, amountWei);
     },
   };
 }

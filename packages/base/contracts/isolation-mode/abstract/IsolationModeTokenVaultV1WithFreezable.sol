@@ -367,7 +367,7 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         view
         _depositIntoVaultForDolomiteMarginFreezableValidator(_accountNumber)
     {
-        super._validateDepositIntoVaultAfterTransfer(_accountNumber, _marketId);
+        IsolationModeTokenVaultV1._validateDepositIntoVaultAfterTransfer(_accountNumber, _marketId);
     }
 
     function _validateWithdrawalFromVaultAfterTransfer(
@@ -380,7 +380,7 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         view
         _withdrawFromVaultForDolomiteMarginFreezableValidator(_accountNumber)
     {
-        super._validateWithdrawalFromVaultAfterTransfer(_accountNumber, _marketId);
+        IsolationModeTokenVaultV1._validateWithdrawalFromVaultAfterTransfer(_accountNumber, _marketId);
     }
 
     function _requireNotFrozen() internal view {

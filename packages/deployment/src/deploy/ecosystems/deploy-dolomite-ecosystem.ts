@@ -257,8 +257,14 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   await deployContractAndSave(
     'IsolationModeTokenVaultV1ActionsImpl',
     [],
-    getMaxDeploymentVersionNameByDeploymentKey('IsolationModeTokenVaultV1ActionsImpl', 1),
+    getMaxDeploymentVersionNameByDeploymentKey('IsolationModeTokenVaultV1ActionsImpl', 10),
     { SafeDelegateCallLib: safeDelegateCallLibAddress },
+  );
+
+  await deployContractAndSave(
+    'AsyncIsolationModeTokenVaultV1ActionsImpl',
+    [],
+    getMaxDeploymentVersionNameByDeploymentKey('AsyncIsolationModeTokenVaultV1ActionsImpl', 1),
   );
 
   await deployContractAndSave(

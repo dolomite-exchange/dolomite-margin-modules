@@ -147,6 +147,7 @@ export async function verifyContract(
       return acc;
     }, {});
 
+    console.log('\tSubmitting verification...');
     const { message: guid } = await instance.verify(
       address,
       JSON.stringify(buildInfo!.input),

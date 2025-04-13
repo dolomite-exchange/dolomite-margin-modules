@@ -268,7 +268,7 @@ export const D_GM_UNI_USD_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = 
   },
 };
 
-export const D_GM_WIF_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+export const D_GM_WIF_USD_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0xF5063b40fa66aB2fbDa2E6807ac5759A41A1B0c3',
     marketId: 66,
