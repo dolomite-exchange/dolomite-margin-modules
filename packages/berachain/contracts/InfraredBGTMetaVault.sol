@@ -237,6 +237,7 @@ contract InfraredBGTMetaVault is ProxyContractHelpers, IBaseMetaVault {
         }
         IERC20(_asset).safeApprove(address(rewardVault), _amount);
         rewardVault.stake(_amount);
+        emit AssetStaked(_asset, _type, _amount);
     }
 
     function _stakeIBgt(uint256 _amount) internal {
@@ -246,6 +247,7 @@ contract InfraredBGTMetaVault is ProxyContractHelpers, IBaseMetaVault {
         IInfraredVault vault = IInfraredVault(REGISTRY().iBgtStakingVault());
         iBgt.safeApprove(address(vault), _amount);
         vault.stake(_amount);
+        emit IBgtStaked(_amount);
     }
 
     function _unstake(
@@ -264,6 +266,7 @@ contract InfraredBGTMetaVault is ProxyContractHelpers, IBaseMetaVault {
         if (!_isDToken) {
             IERC20(_asset).safeTransfer(msg.sender, _amount);
         }
+        emit AssetUnstaked(_asset, _type, _amount);
     }
 
     function _unstakeIBgt(uint256 _amount) internal {
@@ -271,6 +274,7 @@ contract InfraredBGTMetaVault is ProxyContractHelpers, IBaseMetaVault {
         vault.withdraw(_amount);
 
         IERC20(REGISTRY().iBgt()).safeTransfer(msg.sender, _amount);
+        emit IBgtUnstaked(_amount);
     }
 
     function _getReward(IInfraredVault _rewardVault) internal {
@@ -293,6 +297,7 @@ contract InfraredBGTMetaVault is ProxyContractHelpers, IBaseMetaVault {
                 );
             }
         }
+        emit RewardClaimed(address(_rewardVault));
     }
 
     function _performDepositRewardByRewardType(
