@@ -58,10 +58,12 @@ contract POLIsolationModeWrapperUpgradeableProxy is
 
     // ============ Functions ============
 
-    receive() external payable {} // solhint-disable-line no-empty-blocks
+    receive() external payable {
+        _callImplementation(implementation());
+    }
 
+    // solhint-disable-next-line payable-fallback
     fallback() external payable {
-        // solhint-disable-previous-line payable-fallback
         _callImplementation(implementation());
     }
 
