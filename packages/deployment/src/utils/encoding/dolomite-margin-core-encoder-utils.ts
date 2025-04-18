@@ -222,6 +222,20 @@ export async function encodeSetInterestSetter<T extends NetworkType>(
   );
 }
 
+export async function encodeSetEarningsRateOverride<T extends NetworkTypeForDolomiteV2>(
+  core: CoreProtocolType<T>,
+  marketId: BigNumberish,
+  override: BigNumberish,
+): Promise<EncodedTransaction> {
+  return prettyPrintEncodedDataWithTypeSafety(
+    core,
+    { dolomite: core.dolomiteMargin },
+    'dolomite',
+    'ownerSetEarningsRateOverride',
+    [marketId, { value: override }],
+  );
+}
+
 export async function encodeSetIsCollateralOnly<T extends NetworkType>(
   core: CoreProtocolType<T>,
   marketId: BigNumberish,
