@@ -112,10 +112,11 @@ export async function checkMarket(core: CoreProtocolBerachain, marketId: BigNumb
 export async function checkIsGlobalOperator<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   address: string | { address: string },
+  isGlobalOperator: boolean,
 ) {
   const value = typeof address === 'string' ? address : address.address;
   assertHardhatInvariant(
-    await core.dolomiteMargin.getIsGlobalOperator(value),
+    await core.dolomiteMargin.getIsGlobalOperator(value) === isGlobalOperator,
     `Expected ${value} to be global operator`,
   );
 }

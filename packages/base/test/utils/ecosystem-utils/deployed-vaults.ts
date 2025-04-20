@@ -43,12 +43,13 @@ export class DeployedVault {
     marketId: number,
     factory: IIsolationModeVaultFactory | IIsolationModeVaultFactoryOld,
     info: DeployedVaultInformation,
+    network: Network,
   ) {
     this.contractName = info.contractName;
     this.contractRenameWithoutVersion = info.contractRenameWithoutVersion;
     this.implementationAddress = info.implementationAddress;
     this.constructorParams = info.constructorParams;
-    this.libraries = this.populateLibraryAddresses(info.libraries);
+    this.libraries = this.populateLibraryAddresses(info.libraries, network);
     this.currentVersionNumber = getMaxDeploymentVersionNumberByDeploymentKey(
       this.contractRenameWithoutVersion,
       info.defaultVersion ?? 1,
@@ -145,10 +146,10 @@ export class DeployedVault {
     ]);
   }
 
-  private populateLibraryAddresses(libraries: string[]) {
+  private populateLibraryAddresses(libraries: string[], network: Network) {
     const libraryAddresses: Record<string, string> = {};
     for (const library of libraries) {
-      libraryAddresses[library] = getMaxDeploymentVersionAddressByDeploymentKey(library, Network.ArbitrumOne);
+      libraryAddresses[library] = getMaxDeploymentVersionAddressByDeploymentKey(library, network);
     }
     return libraryAddresses;
   }
@@ -164,7 +165,6 @@ export async function getDeployedVaults<T extends DolomiteNetwork>(
   if (config.network === Network.ArbitrumOne) {
     skippedMarkets = await initializeVaults(
       config,
-      dolomiteMargin,
       governance,
       marketToIsolationModeVaultInfoArbitrumOne,
       deployedVaults,
@@ -178,7 +178,6 @@ export async function getDeployedVaults<T extends DolomiteNetwork>(
   } else if (config.network === Network.Mantle) {
     skippedMarkets = await initializeVaults(
       config,
-      dolomiteMargin,
       governance,
       marketToIsolationModeVaultInfoMantle,
       deployedVaults,
@@ -223,28 +222,21 @@ export async function getDeployedVaults<T extends DolomiteNetwork>(
 
 async function initializeVaults<T extends DolomiteNetwork>(
   config: CoreProtocolSetupConfig<T>,
-  dolomiteMargin: DolomiteMargin<T>,
   governance: SignerWithAddressWithSafety,
   marketToDeployedVaultInformation: Record<number, DeployedVaultInformation>,
   deployedVaults: DeployedVault[],
 ): Promise<number> {
   let skippedMarkets = 0;
-  for (const [marketId, params] of Object.entries(marketToDeployedVaultInformation)) {
+  for (const [marketId, info] of Object.entries(marketToDeployedVaultInformation)) {
     try {
       let factory;
       if (config.network === Network.ArbitrumOne && marketId === DFS_GLP_MAP[Network.ArbitrumOne].marketId.toString()) {
-        factory = IIsolationModeVaultFactoryOld__factory.connect(
-          await dolomiteMargin.getMarketTokenAddress(Number(marketId)),
-          governance,
-        );
+        factory = IIsolationModeVaultFactoryOld__factory.connect(info.tokenAddress, governance);
       } else {
-        factory = IIsolationModeVaultFactory__factory.connect(
-          await dolomiteMargin.getMarketTokenAddress(Number(marketId)),
-          governance,
-        );
+        factory = IIsolationModeVaultFactory__factory.connect(info.tokenAddress, governance);
       }
 
-      deployedVaults.push(new DeployedVault(Number(marketId), factory, params));
+      deployedVaults.push(new DeployedVault(Number(marketId), factory, info, config.network));
     } catch (e) {
       skippedMarkets += 1;
     }

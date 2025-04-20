@@ -35,7 +35,7 @@ if (!skipDryRun) {
   try {
     const startTimestamp = Date.now();
     execSync(
-      `NETWORK=${networkName} ${HARDHAT_RUN} --network hardhat run ${filePath}`,
+      `NETWORK=${networkName} ${HARDHAT_RUN} --network hardhat --show-stack-traces run --vvvv ${filePath}`,
       { stdio: 'inherit' },
     );
     const duration = Math.floor((Date.now() - startTimestamp) / 1000);

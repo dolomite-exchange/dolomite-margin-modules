@@ -59,12 +59,14 @@ export async function encodeDolomiteOwnerMigrations(
     )),
   );
   if (!(await adminPauseMarket.trustedCallers(core.gnosisSafeAddress))) {
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { adminPauseMarket },
-      'adminPauseMarket',
-      'ownerSetTrustedCaller',
-      [core.gnosisSafeAddress, true],
+    transactions.push(
+      await prettyPrintEncodedDataWithTypeSafety(
+        core,
+        { adminPauseMarket },
+        'adminPauseMarket',
+        'ownerSetTrustedCaller',
+        [core.gnosisSafeAddress, true],
+      ),
     );
   }
 }

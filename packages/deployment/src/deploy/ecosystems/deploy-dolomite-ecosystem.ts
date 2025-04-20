@@ -206,7 +206,7 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
   const depositWithdrawalRouterImplementationAddress = await deployContractAndSave(
     'DepositWithdrawalRouter',
     [dolomiteRegistry.address, dolomiteMargin.address],
-    getMaxDeploymentVersionNameByDeploymentKey('DepositWithdrawalRouterImplementation', 1),
+    getMaxDeploymentVersionNameByDeploymentKey('DepositWithdrawalRouterImplementation', 3),
   );
   const depositWithdrawalRouterCalldata = await DepositWithdrawalRouter__factory.connect(
     depositWithdrawalRouterImplementationAddress,
@@ -257,8 +257,14 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
   await deployContractAndSave(
     'IsolationModeTokenVaultV1ActionsImpl',
     [],
-    getMaxDeploymentVersionNameByDeploymentKey('IsolationModeTokenVaultV1ActionsImpl', 1),
+    getMaxDeploymentVersionNameByDeploymentKey('IsolationModeTokenVaultV1ActionsImpl', 11),
     { SafeDelegateCallLib: safeDelegateCallLibAddress },
+  );
+
+  await deployContractAndSave(
+    'AsyncIsolationModeTokenVaultV1ActionsImpl',
+    [],
+    getMaxDeploymentVersionNameByDeploymentKey('AsyncIsolationModeTokenVaultV1ActionsImpl', 2),
   );
 
   await deployContractAndSave(
