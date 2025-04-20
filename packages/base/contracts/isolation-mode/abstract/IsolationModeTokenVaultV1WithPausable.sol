@@ -189,7 +189,7 @@ abstract contract IsolationModeTokenVaultV1WithPausable is
         }
     }
 
-    modifier _depositFromVaultForDolomiteMarginPausableValidator(uint256 _accountNumber, uint256 _marketId) {
+    modifier _depositIntoVaultForDolomiteMarginPausableValidator(uint256 _accountNumber, uint256 _marketId) {
         if (_marketId == marketId()) {
             _requireExternalRedemptionNotPaused();
         }
@@ -211,6 +211,18 @@ abstract contract IsolationModeTokenVaultV1WithPausable is
      *          contamination of this market across Dolomite.
      */
     function isExternalRedemptionPaused() public virtual view returns (bool);
+
+    function _depositIntoVaultForDolomiteMargin(
+        uint256 _toAccountNumber,
+        uint256 _amountWei
+    )
+        internal
+        virtual
+        override
+        _depositIntoVaultForDolomiteMarginPausableValidator(_toAccountNumber, marketId())
+    {
+        super._depositIntoVaultForDolomiteMargin(_toAccountNumber, _amountWei);
+    }
 
     /// @dev   Cannot further collateralize a position with underlying, when underlying is paused
     function _openBorrowPosition(
@@ -411,7 +423,7 @@ abstract contract IsolationModeTokenVaultV1WithPausable is
         virtual
         override
         view
-        _depositFromVaultForDolomiteMarginPausableValidator(_accountNumber, _marketId)
+        _depositIntoVaultForDolomiteMarginPausableValidator(_accountNumber, _marketId)
     {
         IsolationModeTokenVaultV1._validateDepositIntoVaultAfterTransfer(_accountNumber, _marketId);
     }

@@ -75,6 +75,15 @@ export async function createIsolationModeTokenVaultV1ActionsImpl(): Promise<Reco
   return { IsolationModeTokenVaultV1ActionsImpl: contract.address };
 }
 
+export async function createAsyncIsolationModeTokenVaultV1ActionsImpl(): Promise<Record<LibraryName, address>> {
+  const contract = await createContractWithLibrary(
+    'AsyncIsolationModeTokenVaultV1ActionsImpl',
+    {},
+    [],
+  );
+  return { AsyncIsolationModeTokenVaultV1ActionsImpl: contract.address };
+}
+
 export async function createAsyncIsolationModeUnwrapperTraderImpl(): Promise<Record<LibraryName, address>> {
   const contract = await createContractWithName('AsyncIsolationModeUnwrapperTraderImpl', []);
   return { AsyncIsolationModeUnwrapperTraderImpl: contract.address };
