@@ -7,7 +7,7 @@ import { ERC20__factory } from '../../src/types';
 import { AccountInfoStruct } from '../../src/utils';
 import { AccountStruct } from '../../src/utils/constants';
 import { valueStructToBigNumber } from '../../src/utils/dolomite-utils';
-import { Network, ZERO_BI } from '../../src/utils/no-deps-constants';
+import { DolomiteNetwork, ZERO_BI } from '../../src/utils/no-deps-constants';
 import { CoreProtocolType } from './setup';
 
 export async function expectThrowWithMatchingReason(call: Promise<any>, reason: RegExp) {
@@ -47,7 +47,7 @@ export async function expectNoThrow(call: Promise<any>) {
 
 // ========================= Balance Assertions =========================
 
-export async function expectProtocolBalanceIsGreaterThan<T extends Network>(
+export async function expectProtocolBalanceIsGreaterThan<T extends DolomiteNetwork>(
   coreProtocol: CoreProtocolType<T>,
   accountStruct: AccountStruct,
   marketId: BigNumberish,
@@ -64,7 +64,7 @@ export async function expectProtocolBalanceIsGreaterThan<T extends Network>(
     .gte(expectedBalanceWithMarginOfError);
 }
 
-export async function expectProtocolBalanceIsLessThan<T extends Network>(
+export async function expectProtocolBalanceIsLessThan<T extends DolomiteNetwork>(
   coreProtocol: CoreProtocolType<T>,
   accountStruct: AccountStruct,
   marketId: BigNumberish,
@@ -83,7 +83,7 @@ export async function expectProtocolBalanceIsLessThan<T extends Network>(
 
 const ONE_CENT: BigNumber = BigNumber.from('10000000000000000000000000000000000'); // $1 eq 1e36. Take off 2 decimals
 
-export async function expectWalletBalanceOrDustyIfZero<T extends Network>(
+export async function expectWalletBalanceOrDustyIfZero<T extends DolomiteNetwork>(
   coreProtocol: CoreProtocolType<T>,
   wallet: address,
   token: address,
@@ -126,7 +126,7 @@ export async function expectNotEvent(
   return expect(contractTransaction).to.not.emit(contract, eventName);
 }
 
-export async function expectProtocolBalance<T extends Network>(
+export async function expectProtocolBalance<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   accountOwner: { address: address } | address,
   accountNumber: BigNumberish,
@@ -146,7 +146,7 @@ export async function expectProtocolBalance<T extends Network>(
     );
 }
 
-export async function expectProtocolParBalance<T extends Network>(
+export async function expectProtocolParBalance<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   accountOwner: { address: address } | address,
   accountNumber: BigNumberish,
@@ -166,7 +166,7 @@ export async function expectProtocolParBalance<T extends Network>(
     );
 }
 
-export async function expectProtocolBalanceDustyOrZero<T extends Network>(
+export async function expectProtocolBalanceDustyOrZero<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   accountOwner: { address: address } | address,
   accountNumber: BigNumberish,
@@ -250,7 +250,7 @@ export async function expectWalletBalanceIsBetween(
     );
 }
 
-export async function expectVaultBalanceToMatchAccountBalances<T extends Network>(
+export async function expectVaultBalanceToMatchAccountBalances<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   vault: { underlyingBalanceOf(overrides?: CallOverrides): Promise<BigNumber> },
   accounts: AccountInfoStruct[],

@@ -2,7 +2,7 @@ import { address } from '@dolomite-exchange/dolomite-margin';
 import { GenericTraderType } from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
 import axios from 'axios';
 import { BigNumber, ContractTransaction } from 'ethers';
-import { Network } from 'packages/base/src/utils/no-deps-constants';
+import { DolomiteNetwork } from 'packages/base/src/utils/no-deps-constants';
 import { GenericTraderParamStruct } from '../../src/utils';
 import { expectThrow } from './assertions';
 
@@ -47,7 +47,7 @@ export enum ParaswapSwapSelector {
   Simple = '0x54e3f31b',
 }
 
-export async function getCalldataForOdos<T extends Network>(
+export async function getCalldataForOdos<T extends DolomiteNetwork>(
   inputAmount: BigNumber,
   inputToken: { address: address },
   inputDecimals: number,
@@ -115,7 +115,7 @@ export async function getCalldataForOdos<T extends Network>(
   };
 }
 
-export async function getCalldataForOkx<T extends Network>(
+export async function getCalldataForOkx<T extends DolomiteNetwork>(
   chainId: string,
   amount: BigNumber,
   fromTokenAddress: string,
@@ -145,7 +145,7 @@ export async function getCalldataForOkx<T extends Network>(
   };
   const swapResponse = await axios.get(`https://www.okx.com${request_path}`, {
     params,
-    headers
+    headers,
   })
     .then(response => response.data)
     .catch((error) => {
@@ -166,14 +166,14 @@ export async function getCalldataForOogaBooga(
   receiver: { address: address },
 ): Promise<TraderOutput> {
   const result = await axios.get('https://mainnet.api.oogabooga.io/v1/swap', {
-      headers: { Authorization: `Bearer ${process.env.OOGA_BOOGA_SECRET_KEY}` },
-      params: {
-        tokenIn: inputToken.address,
-        tokenOut: outputToken.address,
-        amount: inputAmount.toString(),
-        to: receiver.address,
-        slippage: '0.02' // 2%
-      }
+    headers: { Authorization: `Bearer ${process.env.OOGA_BOOGA_SECRET_KEY}` },
+    params: {
+      tokenIn: inputToken.address,
+      tokenOut: outputToken.address,
+      amount: inputAmount.toString(),
+      to: receiver.address,
+      slippage: '0.02', // 2%
+    },
   })
     .then(response => response.data)
     .catch((error) => {
@@ -183,11 +183,11 @@ export async function getCalldataForOogaBooga(
 
   return {
     calldata: `0x${result.tx.data.slice(10)}`, // get rid of the method ID
-    outputAmount: BigNumber.from(result.routerParams.swapTokenInfo.outputMin) // @follow-up Use min or quote here?
+    outputAmount: BigNumber.from(result.routerParams.swapTokenInfo.outputMin), // @follow-up Use min or quote here?
   };
 }
 
-export async function getCalldataForParaswap<T extends Network>(
+export async function getCalldataForParaswap<T extends DolomiteNetwork>(
   inputAmount: BigNumber,
   inputToken: { address: address },
   inputDecimals: number,
@@ -297,7 +297,7 @@ export function getParaswapTraderParamStruct(
   };
 }
 
-function preHash(timestamp: string, method: string, request_path: string, params: Object) {
+function preHash(timestamp: string, method: string, request_path: string, params: Record<string, any>) {
   // Create a pre-signature based on strings and parameters
   let query_string;
   if (method === 'GET' && params) {
@@ -317,7 +317,7 @@ function sign(message: string, secret_key: string) {
   return hmac.digest('base64');
 }
 
-function createSignature(method: string, request_path: string, params: Object) {
+function createSignature(method: string, request_path: string, params: Record<string, any>) {
   // Get the timestamp in ISO 8601 format
   const timestamp = `${new Date().toISOString().slice(0, -5)}Z`;
   // Generate a signature

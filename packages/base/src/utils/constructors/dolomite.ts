@@ -200,7 +200,7 @@ export async function getEventEmitterRegistryConstructorParams<T extends Dolomit
   return [implementation.address, core.dolomiteMargin.address, initializationCallData.data!];
 }
 
-type OwnerAddMarketParameters<T extends Network> = T extends Network.ArbitrumOne
+type OwnerAddMarketParameters<T extends DolomiteNetwork> = T extends Network.ArbitrumOne
   ? Parameters<IDolomiteMargin['functions']['ownerAddMarket']>
   : Parameters<IDolomiteMarginV2['functions']['ownerAddMarket']>;
 

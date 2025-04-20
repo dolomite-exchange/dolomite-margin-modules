@@ -5,7 +5,7 @@ import {
 } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { createIsolationModeTokenVaultV1ActionsImpl } from '@dolomite-exchange/modules-base/test/utils/dolomite';
 import { BigNumberish } from 'ethers';
-import { Network } from 'packages/base/src/utils/no-deps-constants';
+import { DolomiteNetwork } from 'packages/base/src/utils/no-deps-constants';
 import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import {
   CoreProtocolWithPendle,
@@ -113,7 +113,7 @@ export async function createPendleGLPRegistry(core: CoreProtocolArbitrumOne): Pr
   return PendleGLPRegistry__factory.connect(registry.address, core.hhUser1);
 }
 
-export async function createPendleRegistry<T extends Network>(
+export async function createPendleRegistry<T extends DolomiteNetwork>(
   core: CoreProtocolWithPendle<T>,
   ptMarket: IPendlePtMarket,
   ptOracle: IPendlePtOracle,
@@ -160,7 +160,7 @@ export async function createPendleYtIsolationModeTokenVaultV1(): Promise<PendleY
   );
 }
 
-export function createPendlePtIsolationModeVaultFactory<T extends Network>(
+export function createPendlePtIsolationModeVaultFactory<T extends DolomiteNetwork>(
   core: CoreProtocolWithPendle<T>,
   registry: IPendleRegistry | PendleRegistry,
   ptToken: IPendlePtToken,
@@ -195,7 +195,7 @@ export function createPendleYtIsolationModeVaultFactory(
   );
 }
 
-export function createPendlePtIsolationModeWrapperTraderV2<T extends Network>(
+export function createPendlePtIsolationModeWrapperTraderV2<T extends DolomiteNetwork>(
   core: CoreProtocolWithPendle<T>,
   pendleRegistry: IPendleRegistry | PendleRegistry,
   underlyingToken: IERC20,
@@ -208,7 +208,7 @@ export function createPendlePtIsolationModeWrapperTraderV2<T extends Network>(
   );
 }
 
-export function createPendlePtIsolationModeWrapperTraderV3<T extends Network>(
+export function createPendlePtIsolationModeWrapperTraderV3<T extends DolomiteNetwork>(
   core: CoreProtocolWithPendle<T>,
   pendleRegistry: IPendleRegistry | PendleRegistry,
   underlyingToken: IERC20,
@@ -221,7 +221,7 @@ export function createPendlePtIsolationModeWrapperTraderV3<T extends Network>(
   );
 }
 
-export function createPendlePtIsolationModeUnwrapperTraderV2<T extends Network>(
+export function createPendlePtIsolationModeUnwrapperTraderV2<T extends DolomiteNetwork>(
   core: CoreProtocolWithPendle<T>,
   pendleRegistry: IPendleRegistry | PendleRegistry,
   underlyingToken: IERC20,
@@ -247,7 +247,7 @@ export function createPendleYtIsolationModeUnwrapperTraderV2(
   );
 }
 
-export function createPendleYtIsolationModeWrapperTraderV2<T extends Network>(
+export function createPendleYtIsolationModeWrapperTraderV2<T extends DolomiteNetwork>(
   core: CoreProtocolWithPendle<T>,
   underlyingToken: IERC20,
   dytToken: IPendleYtIsolationModeVaultFactory | PendleYtIsolationModeVaultFactory,
@@ -260,7 +260,7 @@ export function createPendleYtIsolationModeWrapperTraderV2<T extends Network>(
   );
 }
 
-export function createPendlePtIsolationModeUnwrapperTraderV3<T extends Network>(
+export function createPendlePtIsolationModeUnwrapperTraderV3<T extends DolomiteNetwork>(
   core: CoreProtocolWithPendle<T>,
   pendleRegistry: IPendleRegistry | PendleRegistry,
   underlyingToken: IERC20,
@@ -286,7 +286,7 @@ export function createPendleYtPriceOracle(
   );
 }
 
-export function createPendlePtPriceOracle<T extends Network>(
+export function createPendlePtPriceOracle<T extends DolomiteNetwork>(
   core: CoreProtocolWithPendle<T>,
   dptToken: IPendlePtIsolationModeVaultFactory | PendlePtIsolationModeVaultFactory,
   pendleRegistry: IPendleRegistry | PendleRegistry,
@@ -299,7 +299,7 @@ export function createPendlePtPriceOracle<T extends Network>(
   );
 }
 
-export function createPendlePtPriceOracleV2<T extends Network>(
+export function createPendlePtPriceOracleV2<T extends DolomiteNetwork>(
   core: CoreProtocolWithPendle<T>,
   dptToken: IPendlePtIsolationModeVaultFactory | PendlePtIsolationModeVaultFactory,
   pendleRegistry: IPendleRegistry | PendleRegistry,

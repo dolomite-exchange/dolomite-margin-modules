@@ -241,6 +241,9 @@ import { createUmamiEcosystem } from './ecosystem-utils/umami';
 import { getRealLatestBlockNumber, impersonate, impersonateOrFallback, resetForkIfPossible } from './index';
 import { readDeploymentFile } from '@dolomite-exchange/modules-deployments/src/utils/deploy-utils';
 import { IBGT__factory } from 'packages/berachain/src/types';
+import { createBerachainRewardsEcosystem } from './ecosystem-utils/berachain-rewards';
+import { createTokenomicsEcosystem } from './ecosystem-utils/tokenomics';
+import { createTokenomicsAirdropEcosystem } from './ecosystem-utils/tokenomics-airdrop';
 
 /**
  * Config to for setting up tests in the `before` function
@@ -440,7 +443,7 @@ export async function setupUSDCBalance<T extends DolomiteNetwork>(
   } else if (core.network === Network.XLayer) {
     whaleAddress = '0x2d22604d6bbf51839c404aef5c65443e424e0945';
   } else if (core.network === Network.Berachain) {
-    const whaleAddress = '0x90bc07408f5b5eAc4dE38Af76EA6069e1fcEe363'; // Bera Collateral Vault
+    whaleAddress = '0x90bc07408f5b5eAc4dE38Af76EA6069e1fcEe363'; // Bera Collateral Vault
     const whaleSigner = await impersonate(whaleAddress, true);
     await core.tokens.usdc.connect(whaleSigner).transfer(signer.address, amount);
     await core.tokens.usdc.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
@@ -1470,7 +1473,6 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
       tokens: {
         ...coreProtocolParams.tokens,
         bgt: IBGT__factory.connect(BGT_MAP[typedConfig.network].address, hhUser1),
-        iBgt: IERC20__factory.connect(IBGT_MAP[typedConfig.network].address, hhUser1),
         btcPlaceholder: IERC20__factory.connect(BTC_PLACEHOLDER_MAP[typedConfig.network].address, hhUser1),
         beraEth: IERC20__factory.connect(BERA_ETH_MAP[typedConfig.network].address, hhUser1),
         eBtc: IERC20__factory.connect(E_BTC_MAP[typedConfig.network].address, hhUser1),
