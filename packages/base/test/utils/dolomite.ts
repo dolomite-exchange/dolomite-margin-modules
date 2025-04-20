@@ -1,7 +1,7 @@
 import { address } from '@dolomite-margin/dist/src';
 import { Provider } from '@ethersproject/providers';
 import { BigNumberish, PopulatedTransaction } from 'ethers';
-import { Network, DolomiteNetwork } from 'packages/base/src/utils/no-deps-constants';
+import { DolomiteNetwork, Network } from 'packages/base/src/utils/no-deps-constants';
 import {
   BorrowPositionRouter,
   BorrowPositionRouter__factory,
@@ -35,7 +35,8 @@ import {
 } from '../../src/types';
 import {
   getDolomiteErc20ProxyConstructorParams,
-  getDolomiteErc4626ProxyConstructorParams, getDolomiteErc4626WithPayableProxyConstructorParams,
+  getDolomiteErc4626ProxyConstructorParams,
+  getDolomiteErc4626WithPayableProxyConstructorParams,
   getEventEmitterRegistryConstructorParams,
   getIsolationModeTraderProxyConstructorParams,
   getRegistryProxyConstructorParams,
@@ -51,10 +52,17 @@ import {
 } from '../../src/utils/dolomite-utils';
 import { SignerWithAddressWithSafety } from '../../src/utils/SignerWithAddressWithSafety';
 import { CoreProtocolType } from './setup';
-import { DolomiteOwnerV1, DolomiteOwnerV1__factory, DolomiteOwnerV2, DolomiteOwnerV2__factory } from 'packages/admin/src/types';
+import {
+  DolomiteOwnerV1,
+  DolomiteOwnerV1__factory,
+  DolomiteOwnerV2,
+  DolomiteOwnerV2__factory,
+} from 'packages/admin/src/types';
 import { getDolomiteOwnerConstructorParams } from 'packages/admin/src/admin';
 
-export type DolomiteMargin<T extends DolomiteNetwork> = T extends Network.ArbitrumOne ? IDolomiteMargin : IDolomiteMarginV2;
+export type DolomiteMargin<T extends DolomiteNetwork> = T extends Network.ArbitrumOne
+  ? IDolomiteMargin
+  : IDolomiteMarginV2;
 export type Expiry<T extends DolomiteNetwork> = T extends Network.ArbitrumOne ? IExpiry : IExpiryV2;
 
 export async function createIsolationModeTokenVaultV1ActionsImpl(): Promise<Record<LibraryName, address>> {
@@ -155,7 +163,7 @@ export async function createDolomiteRegistryImplementation(): Promise<DolomiteRe
   );
 }
 
-export async function createDolomiteOwner(
+export async function createDolomiteOwnerV1(
   core: CoreProtocolType<DolomiteNetwork>,
   secondsTimeLocked: BigNumberish,
 ): Promise<DolomiteOwnerV1> {

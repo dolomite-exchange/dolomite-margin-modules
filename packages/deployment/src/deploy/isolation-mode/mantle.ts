@@ -1,12 +1,10 @@
 import {
-  D_GLV_BTC_MAP,
   D_MNT_MAP,
   DPT_CM_ETH_FEB_2025_MAP,
   DPT_METH_DEC_2024_MAP,
   DPT_MNT_OCT_2024_MAP,
   DPT_USDE_DEC_2024_MAP,
   DPT_USDE_JUL_2024_MAP,
-  WMNT_MAP,
 } from 'packages/base/src/utils/constants';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
 import { getMaxDeploymentVersionAddressByDeploymentKey } from '../../utils/deploy-utils';
@@ -84,7 +82,7 @@ export const marketToIsolationModeVaultInfoMantle: Record<number, DeployedVaultI
     contractRenameWithoutVersion: 'WMNTIsolationModeTokenVault',
     implementationAddress: getMaxDeploymentVersionAddressByDeploymentKey(
       'MNTIsolationModeTokenVault',
-      network
+      network,
     ),
     constructorParams: [],
     libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.None),
