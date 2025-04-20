@@ -34,9 +34,10 @@ contract TestDolomiteERC4626WithPayable is DolomiteERC4626WithPayable {
     using InternalSafeDelegateCallLib for address;
 
     constructor (
+        uint256 _chainId,
         address _dolomiteRegistry,
         address _dolomiteMargin
-    ) DolomiteERC4626WithPayable(_dolomiteRegistry, _dolomiteMargin) {}
+    ) DolomiteERC4626WithPayable(_chainId, _dolomiteRegistry, _dolomiteMargin) {}
 
     function callFunctionAndTriggerReentrancy(
         bytes calldata _callDataWithSelector

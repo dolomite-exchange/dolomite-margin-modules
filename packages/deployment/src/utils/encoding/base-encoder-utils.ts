@@ -1,11 +1,20 @@
-import { BaseContract, BigNumber, BigNumberish, PopulatedTransaction } from 'ethers';
+import axios from 'axios';
+import { BaseContract, BigNumber, BigNumberish, ethers, PopulatedTransaction } from 'ethers';
 import { commify, formatEther, FormatTypes, ParamType } from 'ethers/lib/utils';
 import fs from 'fs';
 import hardhat from 'hardhat';
 import { IChainlinkAggregator__factory } from 'packages/oracles/src/types';
 import { IERC20, IERC20Metadata__factory } from '../../../../base/src/types';
 import { INVALID_TOKEN_MAP } from '../../../../base/src/utils/constants';
-import { ADDRESS_ZERO, NetworkType, ONE_BI, TEN_BI, ZERO_BI } from '../../../../base/src/utils/no-deps-constants';
+import { AccountRiskOverrideRiskFeature } from '../../../../base/src/utils/constructors/dolomite';
+import {
+  ADDRESS_ZERO,
+  NETWORK_TO_NETWORK_NAME_MAP,
+  DolomiteNetwork,
+  ONE_BI,
+  TEN_BI,
+  ZERO_BI,
+} from '../../../../base/src/utils/no-deps-constants';
 import { CoreProtocolType } from '../../../../base/test/utils/setup';
 import { CORE_DEPLOYMENT_FILE_NAME, readDeploymentFile } from '../deploy-utils';
 import { EncodedTransaction } from '../dry-run-utils';
@@ -18,7 +27,7 @@ export function setMostRecentTokenDecimals(_mostRecentTokenDecimals: number) {
   mostRecentTokenDecimals = _mostRecentTokenDecimals;
 }
 
-export async function getFormattedMarketName<T extends NetworkType>(
+export async function getFormattedMarketName<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   marketId: BigNumberish,
 ): Promise<string> {
@@ -43,7 +52,7 @@ export async function getFormattedMarketName<T extends NetworkType>(
 
 const addressToNameCache: Record<string, string | undefined> = {};
 
-export async function getFormattedTokenName<T extends NetworkType>(
+export async function getFormattedTokenName<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   tokenAddress: string,
 ): Promise<string> {
@@ -59,8 +68,7 @@ export async function getFormattedTokenName<T extends NetworkType>(
     } else {
       mostRecentTokenDecimals = await token.decimals();
     }
-  } catch (e) {
-  }
+  } catch (e) {}
 
   const cachedName = addressToNameCache[tokenAddress.toString().toLowerCase()];
   if (typeof cachedName !== 'undefined') {
@@ -75,7 +83,7 @@ export async function getFormattedTokenName<T extends NetworkType>(
   }
 }
 
-export async function getFormattedChainlinkAggregatorName<T extends NetworkType>(
+export async function getFormattedChainlinkAggregatorName<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   aggregatorAddress: string,
 ): Promise<string> {
@@ -121,7 +129,7 @@ export function isMaxWeiParam(paramType: ParamType): boolean {
   );
 }
 
-export function isOwnerFunction(methodName: string, isMultisig: boolean): boolean {
+export function isOwnerFunction(methodName: string, isMultiSig: boolean): boolean {
   return (
     methodName.startsWith('owner') ||
     methodName === 'initializeETHMarket' ||
@@ -130,30 +138,34 @@ export function isOwnerFunction(methodName: string, isMultisig: boolean): boolea
     methodName === 'setUserVaultImplementation' ||
     methodName === 'upgradeTo' ||
     methodName === 'upgradeToAndCall' ||
-    (isMultisig && methodName === 'addOwner') ||
-    (isMultisig && methodName === 'changeRequirement') ||
-    (isMultisig && methodName === 'changeTimelock') ||
-    (isMultisig && methodName === 'removeOver') ||
-    (isMultisig && methodName === 'replaceOwner') ||
-    (isMultisig && methodName === 'setSelector')
+    (isMultiSig && methodName === 'addOwner') ||
+    (isMultiSig && methodName === 'changeRequirement') ||
+    (isMultiSig && methodName === 'changeTimelock') ||
+    (isMultiSig && methodName === 'removeOver') ||
+    (isMultiSig && methodName === 'replaceOwner') ||
+    (isMultiSig && methodName === 'setSelector')
   );
 }
 
-export async function isValidAmount(token: IERC20, amount: BigNumberish) {
+export async function isValidAmountForCapForToken(token: IERC20, amount: BigNumberish) {
   const realAmount = BigNumber.from(amount);
   if (realAmount.eq(ZERO_BI) || realAmount.eq('1')) {
     return true;
   }
 
+  const totalSupply = await token.totalSupply();
   const decimals = await IERC20Metadata__factory.connect(token.address, token.signer).decimals();
   const scale = TEN_BI.pow(decimals);
-  return realAmount.div(scale).gt(ONE_BI) && realAmount.div(scale).lte(100_000_000);
+  return (
+    // should not be truncated to 0 AND (be less than 100M units or 5% of the total supply)
+    realAmount.div(scale).gt(ONE_BI) && (realAmount.div(scale).lte(100_000_000) || realAmount.lte(totalSupply.div(20)))
+  );
 }
 
 let counter = 1;
 
 export async function prettyPrintEncodedDataWithTypeSafety<
-  N extends NetworkType,
+  N extends DolomiteNetwork,
   T extends V[K],
   U extends keyof T['populateTransaction'],
   V extends Record<K, BaseContract>,
@@ -173,7 +185,7 @@ export async function prettyPrintEncodedDataWithTypeSafety<
     const fragment = contract.interface.getFunction(methodName.toString());
     const mappedArgs: string[] = [];
     for (let i = 0; i < (args as any[]).length; i++) {
-      mappedArgs.push(await getReadableArg(core, fragment.inputs[i], (args as any[])[i]));
+      mappedArgs.push(await getReadableArg(core, fragment.inputs[i], (args as any[])[i], methodName.toString(), args));
     }
 
     const repeatLength = 76 + (counter - 1).toString().length + key.toString().length + methodName.toString().length;
@@ -186,7 +198,7 @@ export async function prettyPrintEncodedDataWithTypeSafety<
     console.log('Readable:\t', `${String(key)}.${String(methodName)}(\n\t\t\t${mappedArgs.join(' ,\n\t\t\t')}\n\t\t)`);
     console.log(
       'To:\t\t',
-      (await getReadableArg(core, ParamType.fromString('address to'), transaction.to)).substring(13),
+      (await getReadableArg(core, ParamType.fromString('address to'), transaction.to, undefined, args)).substring(13),
     );
     console.log('Data:\t\t', transaction.data);
     console.log('='.repeat(repeatLength));
@@ -211,6 +223,11 @@ export async function prettyPrintEncodedDataWithTypeSafety<
       transaction.to!,
       transaction.data!,
     );
+  } else if (realtimeOwner === core.ownerAdapterV2?.address) {
+    outerTransaction = await core.ownerAdapterV2.populateTransaction.submitTransaction(
+      transaction.to!,
+      transaction.data!,
+    );
   } else if (realtimeOwner === core.delayedMultiSig?.address) {
     outerTransaction = await core.delayedMultiSig.populateTransaction.submitTransaction(
       transaction.to!,
@@ -230,10 +247,12 @@ export async function prettyPrintEncodedDataWithTypeSafety<
   };
 }
 
-export async function getReadableArg<T extends NetworkType>(
+export async function getReadableArg<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   inputParamType: ParamType,
   arg: any,
+  methodName: string | undefined,
+  args: any[],
   decimals?: number,
   index?: number,
   nestedLevel: number = 3,
@@ -245,6 +264,54 @@ export async function getReadableArg<T extends NetworkType>(
     formattedInputParamName = inputParamType.format(FormatTypes.full);
   }
 
+  if (
+    methodName === 'ownerSetRiskFeatureByMarketId' &&
+    args[1] === AccountRiskOverrideRiskFeature.SINGLE_COLLATERAL_WITH_STRICT_DEBT &&
+    typeof arg === 'string' &&
+    arg.startsWith('0x')
+  ) {
+    const decimalType = 'tuple(uint256 value)';
+    const tupleType = ParamType.fromString(
+      `tuple singleCollateralRiskStructs(uint256[] debtMarketIds, ${decimalType} marginRatioOverride, ${decimalType} liquidationRewardOverride)[]`,
+    );
+    const decodedValue = ethers.utils.defaultAbiCoder.decode([tupleType], arg)[0].map((tuples: any[]) => {
+      return tuples.reduce((acc: any, v: any, i: number) => {
+        if (i === 0) {
+          acc.debtMarketIds = v.map((a: any) => a.toString());
+        } else if (i === 1) {
+          acc.marginRatioOverride = v.value;
+        } else if (i === 2) {
+          acc.liquidationRewardOverride = v.value;
+        } else {
+          throw new Error(`Invalid index, found: ${i}`);
+        }
+
+        return acc;
+      }, {} as any);
+    });
+    return getReadableArg(core, tupleType, decodedValue, undefined, args, undefined, index, nestedLevel);
+  }
+  if (methodName === 'ownerAddRoleToAddressFunctionSelectors' && typeof arg === 'string' && arg.length === 10) {
+    // We're dealing with a function selector
+    const chain = hardhat.userConfig.etherscan?.customChains?.find(
+      (c) => c.chainId === parseInt(core.config.network, 10),
+    );
+    if (typeof hardhat.userConfig.etherscan?.apiKey === 'string') {
+      throw new Error('Invalid API key field on etherscan object');
+    }
+    const apiKey = hardhat.userConfig.etherscan?.apiKey?.[NETWORK_TO_NETWORK_NAME_MAP[core.config.network]];
+
+    if (chain && apiKey) {
+      const baseUrl = chain.urls.apiURL;
+      const response = await axios.get(`${baseUrl}?module=contract&action=getabi&address=${args[1]}&apikey=${apiKey}`);
+      if (response.data.status === '1') {
+        const abi = JSON.parse(response.data.result);
+        const functionName = new ethers.utils.Interface(abi).getFunction(arg).name;
+        return `${formattedInputParamName} = ${arg} (${functionName})`;
+      }
+    }
+  }
+
   if (Array.isArray(arg)) {
     // remove the [] at the end
     const subParamType = ParamType.fromObject({
@@ -253,7 +320,7 @@ export async function getReadableArg<T extends NetworkType>(
     });
     const formattedArgs = await Promise.all(
       arg.map(async (value, i) => {
-        return await getReadableArg(core, subParamType, value, decimals, i, nestedLevel + 1);
+        return await getReadableArg(core, subParamType, value, methodName, args, decimals, i, nestedLevel + 1);
       }),
     );
     const tabs = '\t'.repeat(nestedLevel);
@@ -281,19 +348,20 @@ export async function getReadableArg<T extends NetworkType>(
   let specialName: string = '';
   if (inputParamType.type === 'address') {
     const chainId = core.config.network;
-    const allDeployments = readAllDeploymentFiles();
-    Object.keys(allDeployments).forEach((key) => {
-      if ((allDeployments as any)[key][chainId]?.address?.toLowerCase() === arg.toLowerCase()) {
-        specialName = ` (${key})`;
-      }
-    });
+    if (arg.toLowerCase() === core.gnosisSafeAddress.toLowerCase()) {
+      specialName = ' (Dolomite Foundation Safe)';
+    }
+
     if (!specialName) {
+      const allDeployments = readAllDeploymentFiles();
       Object.keys(allDeployments).forEach((key) => {
         if ((allDeployments as any)[key][chainId]?.address?.toLowerCase() === arg.toLowerCase()) {
           specialName = ` (${key})`;
         }
       });
+    }
 
+    if (!specialName) {
       const tokenName = await getFormattedTokenName(core, arg);
       if (tokenName) {
         specialName = ` ${tokenName}`;
@@ -314,7 +382,16 @@ export async function getReadableArg<T extends NetworkType>(
     for (let i = 0; i < keys.length; i++) {
       const componentPiece = inputParamType.components[i];
       values.push(
-        await getReadableArg(core, componentPiece, arg[componentPiece.name], decimals, index, nestedLevel + 1),
+        await getReadableArg(
+          core,
+          componentPiece,
+          arg[componentPiece.name],
+          methodName,
+          args,
+          decimals,
+          index,
+          nestedLevel + 1,
+        ),
       );
     }
     const tabs = '\t'.repeat(nestedLevel);
@@ -324,6 +401,10 @@ export async function getReadableArg<T extends NetworkType>(
   if (BigNumber.isBigNumber(arg) && typeof decimals !== 'undefined') {
     const multiplier = BigNumber.from(10).pow(18 - decimals);
     specialName = ` (${commify(formatEther(arg.mul(multiplier)))})`;
+  } else if (BigNumber.isBigNumber(arg)) {
+    if (formattedInputParamName.includes('marginRatio') || formattedInputParamName.includes('liquidationReward')) {
+      specialName = ` (${commify(formatEther(arg))})`;
+    }
   }
 
   return `${formattedInputParamName} = ${arg}${specialName}`;

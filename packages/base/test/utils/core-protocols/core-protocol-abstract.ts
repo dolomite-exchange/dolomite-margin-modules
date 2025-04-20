@@ -5,8 +5,6 @@ import { IChainlinkPriceOracleV1, IChainlinkPriceOracleV3, OracleAggregatorV2 } 
 import {
   DolomiteERC4626,
   DolomiteERC4626WithPayable,
-  DolomiteOwnerV1,
-  DolomiteOwnerV2,
   IBorrowPositionProxyV2, IBorrowPositionRouter,
   IDepositWithdrawalProxy, IDepositWithdrawalRouter,
   IDolomiteAccountRegistry,
@@ -17,20 +15,22 @@ import {
   IGenericTraderProxyV2, IGenericTraderRouter,
   ILiquidatorAssetRegistry,
   ILiquidatorProxyV1,
-  ILiquidatorProxyV4WithGenericTrader, ILiquidatorProxyV5,
+  ILiquidatorProxyV4WithGenericTrader,
+  ILiquidatorProxyV5,
   IPartiallyDelayedMultiSig,
   IsolationModeFreezableLiquidatorProxy,
   IWETH,
   RegistryProxy,
 } from '../../../src/types';
 import { CHAINLINK_PRICE_AGGREGATORS_MAP, SUBGRAPH_URL_MAP } from '../../../src/utils/constants';
-import { Network, NetworkType } from '../../../src/utils/no-deps-constants';
+import { Network, DolomiteNetwork } from '../../../src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';
 import { DolomiteMargin, Expiry } from '../dolomite';
 import { DeployedVault } from '../ecosystem-utils/deployed-vaults';
 import { InterestSetters } from '../ecosystem-utils/interest-setters';
 import { TestEcosystem } from '../ecosystem-utils/testers';
 import { CoreProtocolConfig } from '../setup';
+import { DolomiteOwnerV1, DolomiteOwnerV2 } from 'packages/admin/src/types';
 
 export interface LibraryMaps {
   safeDelegateCallImpl: Record<string, string>;
@@ -44,52 +44,51 @@ export interface ImplementationContracts {
   dolomiteERC4626WithPayableImplementation: DolomiteERC4626WithPayable;
 }
 
-export type WETHType<T extends NetworkType> = T extends Network.ArbitrumOne
+export type WETHType<T extends DolomiteNetwork> = T extends Network.ArbitrumOne
   ? IWETH
   : T extends Network.Base
-  ? IWETH
-  : T extends Network.Berachain
-  ? IERC20
-  : T extends Network.Ink
-  ? IWETH
-  : T extends Network.Mantle
-  ? IERC20
-  : T extends Network.PolygonZkEvm
-  ? IWETH
-  : T extends Network.SuperSeed
-  ? IWETH
-  : T extends Network.XLayer
-  ? IERC20
-  : never;
+    ? IWETH
+    : T extends Network.Berachain
+      ? IERC20
+      : T extends Network.Ink
+        ? IWETH
+        : T extends Network.Mantle
+          ? IERC20
+          : T extends Network.PolygonZkEvm
+            ? IWETH
+            : T extends Network.SuperSeed
+              ? IWETH
+              : T extends Network.XLayer
+                ? IERC20
+                : never;
 
-export type DolomiteWETHType<T extends NetworkType> = T extends Network.ArbitrumOne
+export type DolomiteWETHType<T extends DolomiteNetwork> = T extends Network.ArbitrumOne
   ? DolomiteERC4626WithPayable
   : T extends Network.Base
-  ? DolomiteERC4626WithPayable
-  : T extends Network.Berachain
-  ? DolomiteERC4626
-  : T extends Network.Ink
-  ? DolomiteERC4626WithPayable
-  : T extends Network.Mantle
-  ? DolomiteERC4626
-  : T extends Network.PolygonZkEvm
-  ? DolomiteERC4626WithPayable
-  : T extends Network.SuperSeed
-  ? DolomiteERC4626WithPayable
-  : T extends Network.XLayer
-  ? DolomiteERC4626
-  : never;
+    ? DolomiteERC4626WithPayable
+    : T extends Network.Berachain
+      ? DolomiteERC4626
+      : T extends Network.Ink
+        ? DolomiteERC4626WithPayable
+        : T extends Network.Mantle
+          ? DolomiteERC4626
+          : T extends Network.PolygonZkEvm
+            ? DolomiteERC4626WithPayable
+            : T extends Network.SuperSeed
+              ? DolomiteERC4626WithPayable
+              : T extends Network.XLayer
+                ? DolomiteERC4626
+                : never;
 
-export interface CoreProtocolTokens<T extends NetworkType> {
+export interface CoreProtocolTokens<T extends DolomiteNetwork> {
   payableToken: IWETH;
   usdc: IERC20;
   weth: WETHType<T>;
   stablecoins: IERC20[];
 }
 
-export interface CoreProtocolDolomiteTokens<T extends NetworkType> {
-  usdc: DolomiteERC4626 | undefined;
-  weth: DolomiteWETHType<T> | undefined;
+export interface CoreProtocolDolomiteTokens<T extends DolomiteNetwork> {
+  all: (DolomiteERC4626 | DolomiteERC4626WithPayable)[];
 }
 
 export interface CoreProtocolMarketIds {
@@ -99,11 +98,12 @@ export interface CoreProtocolMarketIds {
   stablecoinsWithUnifiedInterestRateModels: BigNumberish[];
 }
 
-export interface CoreProtocolParams<T extends NetworkType> {
+export interface CoreProtocolParams<T extends DolomiteNetwork> {
   config: CoreProtocolConfig<T>;
   gnosisSafe: SignerWithAddressWithSafety;
   gnosisSafeAddress: string;
   governance: SignerWithAddressWithSafety;
+  governanceAddress: string;
   hhUser1: SignerWithAddressWithSafety;
   hhUser2: SignerWithAddressWithSafety;
   hhUser3: SignerWithAddressWithSafety;
@@ -127,7 +127,7 @@ export interface CoreProtocolParams<T extends NetworkType> {
   dolomiteAccountRiskOverrideSetterProxy: RegistryProxy;
   eventEmitterRegistry: IEventEmitterRegistry;
   eventEmitterRegistryProxy: RegistryProxy;
-  dolomiteTokens: CoreProtocolDolomiteTokens<T>;
+  dTokens: CoreProtocolDolomiteTokens<T>;
   expiry: Expiry<T>;
   freezableLiquidatorProxy: IsolationModeFreezableLiquidatorProxy;
   genericTraderProxy: IGenericTraderProxyV2;
@@ -152,12 +152,12 @@ export interface CoreProtocolParams<T extends NetworkType> {
   tokens: CoreProtocolTokens<T>;
 }
 
-export interface CoreProtocolConstants<T extends NetworkType> {
+export interface CoreProtocolConstants<T extends DolomiteNetwork> {
   slippageToleranceForPauseSentinel: BigNumberish;
   chainlinkAggregators: (typeof CHAINLINK_PRICE_AGGREGATORS_MAP)[T];
 }
 
-export abstract class CoreProtocolAbstract<T extends NetworkType> {
+export abstract class CoreProtocolAbstract<T extends DolomiteNetwork> {
   /// =========================
   /// Config and Signers
   /// =========================
@@ -169,6 +169,7 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
   public readonly gnosisSafe: SignerWithAddressWithSafety;
   public readonly gnosisSafeAddress: string;
   public readonly governance: SignerWithAddressWithSafety;
+  public readonly governanceAddress: string;
   public readonly hhUser1: SignerWithAddressWithSafety;
   public readonly hhUser2: SignerWithAddressWithSafety;
   public readonly hhUser3: SignerWithAddressWithSafety;
@@ -190,6 +191,7 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
   public readonly dolomiteMargin: DolomiteMargin<T>;
   public readonly dolomiteRegistry: IDolomiteRegistry;
   public readonly dolomiteRegistryProxy: RegistryProxy;
+  public readonly dolomiteTokens: CoreProtocolDolomiteTokens<T>;
   public readonly dolomiteAccountRegistry: IDolomiteAccountRegistry;
   public readonly dolomiteAccountRegistryProxy: RegistryProxy;
   public readonly dolomiteAccountRiskOverrideSetter: IDolomiteAccountRiskOverrideSetter;
@@ -235,6 +237,7 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
     this.gnosisSafe = params.gnosisSafe;
     this.gnosisSafeAddress = params.gnosisSafeAddress;
     this.governance = params.governance;
+    this.governanceAddress = params.governanceAddress;
     this.hhUser1 = params.hhUser1;
     this.hhUser2 = params.hhUser2;
     this.hhUser3 = params.hhUser3;
@@ -253,6 +256,7 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
     this.dolomiteMargin = params.dolomiteMargin;
     this.dolomiteRegistry = params.dolomiteRegistry;
     this.dolomiteRegistryProxy = params.dolomiteRegistryProxy;
+    this.dolomiteTokens = params.dTokens;
     this.dolomiteAccountRegistry = params.dolomiteAccountRegistry;
     this.dolomiteAccountRegistryProxy = params.dolomiteAccountRegistryProxy;
     this.dolomiteAccountRiskOverrideSetter = params.dolomiteAccountRiskOverrideSetter;

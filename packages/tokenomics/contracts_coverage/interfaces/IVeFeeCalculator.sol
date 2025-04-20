@@ -30,11 +30,19 @@ pragma solidity ^0.8.9;
 interface IVeFeeCalculator {
 
     event BurnFeeSet(uint256 burnFee);
-    event DecayTimestampSet(uint256 decayTimestamp);
 
     function ownerSetBurnFee(uint256 _burnFee) external;
 
-    function ownerSetDecayTimestamp(uint256 _decayTimestamp) external;
-
-    function getEarlyWithdrawalFees(uint256 _amount, uint256 _lockEndTime) external view returns (uint256, uint256);
+    /**
+     * Calculates how much in fees the user will pay to exit their lock
+     *
+     * @param  _amount          The
+     * @param  _lockEndTime     The timestamp at which the lock matures
+     * @return  burnFeeAmount   The amount of fees to be burned
+     * @return  recoupFeeAmount The amount of feed to be paid back to the DAO
+     */
+    function getEarlyWithdrawalFees(
+        uint256 _amount,
+        uint256 _lockEndTime
+    ) external view returns (uint256 burnFeeAmount, uint256 recoupFeeAmount);
 }

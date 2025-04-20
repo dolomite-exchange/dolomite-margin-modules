@@ -3,6 +3,7 @@ import { network } from 'hardhat';
 import {
   CoreProtocolWithChainlinkOld,
   CoreProtocolWithChainlinkV3,
+  CoreProtocolWithChainsightV3,
   CoreProtocolWithChaosLabsV3,
   CoreProtocolWithChronicle,
   CoreProtocolWithRedstone,
@@ -11,12 +12,13 @@ import { IChainlinkAggregator__factory, IChronicleScribe__factory } from 'packag
 import { IERC20, IERC20Metadata__factory, TestPriceOracleForAdmin__factory } from '../../../../base/src/types';
 import {
   CHAINLINK_PRICE_AGGREGATORS_MAP,
+  CHAINSIGHT_KEYS_MAP,
   CHAOS_LABS_PRICE_AGGREGATORS_MAP,
   CHRONICLE_PRICE_SCRIBES_MAP,
   INVALID_TOKEN_MAP,
   REDSTONE_PRICE_AGGREGATORS_MAP,
 } from '../../../../base/src/utils/constants';
-import { ADDRESS_ZERO, Network, NetworkType, ONE_BI, ZERO_BI } from '../../../../base/src/utils/no-deps-constants';
+import { ADDRESS_ZERO, Network, DolomiteNetwork, ONE_BI, ZERO_BI } from '../../../../base/src/utils/no-deps-constants';
 import { impersonate } from '../../../../base/test/utils';
 import { CoreProtocolBerachain } from '../../../../base/test/utils/core-protocols/core-protocol-berachain';
 import { CoreProtocolXLayer } from '../../../../base/test/utils/core-protocols/core-protocol-x-layer';
@@ -67,7 +69,7 @@ export async function encodeTestOracleAndDisableSupply(
   ];
 }
 
-export async function encodeInsertChainlinkOracle<T extends NetworkType>(
+export async function encodeInsertChainlinkOracle<T extends DolomiteNetwork>(
   core: CoreProtocolWithChainlinkOld<T>,
   token: IERC20,
   tokenPairAddress: string | undefined = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address]!.tokenPairAddress,
@@ -102,7 +104,7 @@ export async function encodeInsertChainlinkOracle<T extends NetworkType>(
   );
 }
 
-export async function encodeInsertChainlinkOracleV3<T extends NetworkType>(
+export async function encodeInsertChainlinkOracleV3<T extends DolomiteNetwork>(
   core: CoreProtocolWithChainlinkV3<T>,
   token: IERC20,
   invertPrice: boolean = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address]!.invert ?? false,
@@ -169,7 +171,7 @@ export async function encodeInsertChainlinkOracleV3<T extends NetworkType>(
   ];
 }
 
-export async function encodeInsertChaosLabsOracleV3<T extends NetworkType>(
+export async function encodeInsertChaosLabsOracleV3<T extends DolomiteNetwork>(
   core: CoreProtocolWithChaosLabsV3<T>,
   token: IERC20,
   invertPrice: boolean = CHAOS_LABS_PRICE_AGGREGATORS_MAP[core.network][token.address]?.invert ?? false,
@@ -227,6 +229,53 @@ export async function encodeInsertChaosLabsOracleV3<T extends NetworkType>(
           oracleInfos: [
             {
               oracle: core.chaosLabsPriceOracleV3.address,
+              tokenPair: tokenPairAddress ?? ADDRESS_ZERO,
+              weight: 100,
+            },
+          ],
+        },
+      ],
+    ),
+  ];
+}
+
+export async function encodeInsertChainsightOracleV3<T extends DolomiteNetwork>(
+  core: CoreProtocolWithChainsightV3<T>,
+  token: IERC20,
+  invertPrice: boolean = CHAINSIGHT_KEYS_MAP[core.config.network][token.address]!.invertPrice ?? false,
+  tokenPairAddress: string | undefined = CHAINSIGHT_KEYS_MAP[core.config.network][token.address]?.tokenPairAddress,
+  key: string = CHAINSIGHT_KEYS_MAP[core.config.network][token.address]!.key,
+): Promise<EncodedTransaction[]> {
+  const invalidTokenSettings = INVALID_TOKEN_MAP[core.network][token.address];
+
+  let tokenDecimals: number;
+  if (invalidTokenSettings) {
+    tokenDecimals = invalidTokenSettings.decimals;
+  } else {
+    tokenDecimals = await IERC20Metadata__factory.connect(token.address, core.hhUser1).decimals();
+  }
+
+  setMostRecentTokenDecimals(tokenDecimals);
+  return [
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { chainsightPriceOracle: core.chainsightPriceOracleV3 },
+      'chainsightPriceOracle',
+      'ownerInsertOrUpdateOracleToken',
+      [token.address, key, invertPrice],
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { oracleAggregatorV2: core.oracleAggregatorV2 },
+      'oracleAggregatorV2',
+      'ownerInsertOrUpdateToken',
+      [
+        {
+          token: token.address,
+          decimals: tokenDecimals,
+          oracleInfos: [
+            {
+              oracle: core.chainsightPriceOracleV3.address,
               tokenPair: tokenPairAddress ?? ADDRESS_ZERO,
               weight: 100,
             },
@@ -373,7 +422,7 @@ export async function encodeInsertOkxOracleV3(
   ];
 }
 
-export async function encodeInsertPendlePtOracle<T extends NetworkType>(
+export async function encodeInsertPendlePtOracle<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   pendleSystem: PendlePtSystem,
   token: IERC20,
@@ -399,7 +448,7 @@ export async function encodeInsertPendlePtOracle<T extends NetworkType>(
   );
 }
 
-export async function encodeInsertRedstoneOracleV3<T extends NetworkType>(
+export async function encodeInsertRedstoneOracleV3<T extends DolomiteNetwork>(
   core: CoreProtocolWithRedstone<T>,
   token: IERC20,
   invertPrice: boolean = REDSTONE_PRICE_AGGREGATORS_MAP[core.config.network][token.address]!.invert ?? false,

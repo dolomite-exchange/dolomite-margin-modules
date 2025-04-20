@@ -24,7 +24,9 @@ import { ChainHelperLib } from "./ChainHelperLib.sol";
 import { IExpiry } from "../interfaces/IExpiry.sol";
 import { IExpiryV2 } from "../interfaces/IExpiryV2.sol";
 import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
+import { IDolomiteMarginAdmin } from "../protocol/interfaces/IDolomiteMarginAdmin.sol";
 import { IDolomiteMarginV2 } from "../protocol/interfaces/IDolomiteMarginV2.sol";
+import { IDolomiteMarginV2Admin } from "../protocol/interfaces/IDolomiteMarginV2Admin.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 
 
@@ -86,6 +88,55 @@ library DolomiteMarginVersionWrapperLib {
         }
     }
 
+    function getVersionedMaxSupplyWei(
+        IDolomiteMargin _dolomiteMargin,
+        uint256 _chainId,
+        uint256 _marketId
+    ) internal view returns (IDolomiteStructs.Wei memory) {
+        if (ChainHelperLib.isArbitrum(_chainId)) {
+            return _dolomiteMargin.getMarket(_marketId).maxWei;
+        } else {
+            return dv2(_dolomiteMargin).getMarket(_marketId).maxSupplyWei;
+        }
+    }
+
+    function getVersionedSupplyPar(
+        IDolomiteMargin _dolomiteMargin,
+        uint256 _chainId,
+        uint256 _marketId
+    ) internal view returns (IDolomiteStructs.Par memory) {
+        if (ChainHelperLib.isArbitrum(_chainId)) {
+            return IDolomiteStructs.Par({
+                sign: true,
+                value: _dolomiteMargin.getMarket(_marketId).totalPar.supply
+            });
+        } else {
+            return IDolomiteStructs.Par({
+                sign: true,
+                value: dv2(_dolomiteMargin).getMarket(_marketId).totalPar.supply
+            });
+        }
+    }
+
+    function encodeVersionedOwnerSetMaxSupplyWei(
+        uint256 _chainId,
+        uint256 _marketId,
+        uint256 _maxSupplyWei
+    ) internal pure returns (bytes memory) {
+        if (ChainHelperLib.isArbitrum(_chainId)) {
+            return abi.encodeWithSelector(
+                IDolomiteMarginAdmin.ownerSetMaxWei.selector,
+                _marketId,
+                _maxSupplyWei
+            );
+        } else {
+            return abi.encodeWithSelector(
+                IDolomiteMarginV2Admin.ownerSetMaxSupplyWei.selector,
+                _marketId,
+                _maxSupplyWei
+            );
+        }
+    }
     function getVersionedSupplyParAndMaxSupplyWei(
         IDolomiteMargin _dolomiteMargin,
         uint256 _chainId,

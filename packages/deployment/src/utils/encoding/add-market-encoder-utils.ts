@@ -18,13 +18,13 @@ import {
   TargetCollateralization,
   TargetLiquidationPenalty,
 } from '../../../../base/src/utils/constructors/dolomite';
-import { ADDRESS_ZERO, NetworkType, ONE_ETH_BI, ZERO_BI } from '../../../../base/src/utils/no-deps-constants';
+import { ADDRESS_ZERO, DolomiteNetwork, ONE_ETH_BI, ZERO_BI } from '../../../../base/src/utils/no-deps-constants';
 import { CoreProtocolArbitrumOne } from '../../../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { CoreProtocolBerachain } from '../../../../base/test/utils/core-protocols/core-protocol-berachain';
 import { GmToken } from '../../../../base/test/utils/ecosystem-utils/gmx';
 import { CoreProtocolType } from '../../../../base/test/utils/setup';
 import { EncodedTransaction } from '../dry-run-utils';
-import { getFormattedTokenName, isValidAmount, prettyPrintEncodedDataWithTypeSafety } from './base-encoder-utils';
+import { getFormattedTokenName, isValidAmountForCapForToken, prettyPrintEncodedDataWithTypeSafety } from './base-encoder-utils';
 
 export interface AddMarketOptions {
   additionalConverters?: BaseContract[];
@@ -33,7 +33,7 @@ export interface AddMarketOptions {
   skipEncodeLiquidatorWhitelist?: boolean;
 }
 
-export async function encodeAddIsolationModeMarket<T extends NetworkType>(
+export async function encodeAddIsolationModeMarket<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   factory: IIsolationModeVaultFactory,
   oracle: IDolomitePriceOracle,
@@ -59,6 +59,15 @@ export async function encodeAddIsolationModeMarket<T extends NetworkType>(
     options,
   );
 
+  const converters = [
+    unwrapper.address,
+    wrapper.address,
+    core.borrowPositionRouter.address,
+    core.depositWithdrawalRouter.address,
+    core.genericTraderRouter.address,
+  ];
+  const additionalConverters = (options.additionalConverters ?? []).map((c) => c.address);
+
   transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(
       core,
@@ -67,34 +76,26 @@ export async function encodeAddIsolationModeMarket<T extends NetworkType>(
       'ownerSetGlobalOperator',
       [factory.address, true],
     ),
-    await prettyPrintEncodedDataWithTypeSafety(core, { factory }, 'factory', 'ownerInitialize', [
-      [
-        core.borrowPositionRouter.address,
-        core.depositWithdrawalRouter.address,
-        core.genericTraderRouter.address,
-        unwrapper.address,
-        wrapper.address,
-        ...(options.additionalConverters ?? []).map((c) => c.address),
-      ],
-    ]),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { factory },
+      'factory',
+      'ownerInitialize',
+      [converters.concat(additionalConverters)],
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { liquidatorAssetRegistry: core.liquidatorAssetRegistry },
+      'liquidatorAssetRegistry',
+      'ownerAddLiquidatorToAssetWhitelist',
+      [marketId, core.liquidatorProxyV5.address],
+    ),
   );
-
-  if (!options.skipEncodeLiquidatorWhitelist) {
-    transactions.push(
-      await prettyPrintEncodedDataWithTypeSafety(
-        core,
-        { liquidatorAssetRegistry: core.liquidatorAssetRegistry },
-        'liquidatorAssetRegistry',
-        'ownerAddLiquidatorToAssetWhitelist',
-        [marketId, core.liquidatorProxyV5.address],
-      )
-    );
-  }
 
   return transactions;
 }
 
-export async function encodeAddAsyncIsolationModeMarket<T extends NetworkType>(
+export async function encodeAddAsyncIsolationModeMarket<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   factory: IIsolationModeVaultFactory,
   oracle: IDolomitePriceOracle,
@@ -288,7 +289,7 @@ export async function encodeAddGmxV2Market(
   ];
 }
 
-export async function encodeAddMarket<T extends NetworkType>(
+export async function encodeAddMarket<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   token: IERC20,
   oracle: IDolomitePriceOracle,
@@ -301,11 +302,11 @@ export async function encodeAddMarket<T extends NetworkType>(
   earningsRateOverride: BigNumberish = ZERO_BI,
   options: AddMarketOptions = {},
 ): Promise<EncodedTransaction[]> {
-  if (!options.skipAmountValidation && !(await isValidAmount(token, maxSupplyWei))) {
+  if (!options.skipAmountValidation && !(await isValidAmountForCapForToken(token, maxSupplyWei))) {
     const name = await getFormattedTokenName(core, token.address);
     return Promise.reject(new Error(`Invalid max supply wei for ${name}, found: ${maxSupplyWei.toString()}`));
   }
-  if (!options.skipAmountValidation && !(await isValidAmount(token, maxBorrowWei))) {
+  if (!options.skipAmountValidation && !(await isValidAmountForCapForToken(token, maxBorrowWei))) {
     const name = await getFormattedTokenName(core, token.address);
     return Promise.reject(new Error(`Invalid max borrow wei for ${name}, found: ${maxBorrowWei.toString()}`));
   }

@@ -3,6 +3,9 @@ import { expect } from 'chai';
 import { BigNumber, BigNumberish, ContractTransaction } from 'ethers';
 import {
   CustomTestToken,
+  DepositWithdrawalRouter,
+  DepositWithdrawalRouter__factory,
+  RouterProxy__factory,
   TestAsyncFreezableIsolationModeVaultFactory,
   TestIsolationModeTokenVaultV1WithAsyncFreezableAndPausable,
   TestIsolationModeTokenVaultV1WithAsyncFreezableAndPausable__factory,
@@ -38,7 +41,7 @@ import {
 } from '../../utils/assertions';
 
 import { CoreProtocolArbitrumOne } from '../../utils/core-protocols/core-protocol-arbitrum-one';
-import { createAndUpgradeDolomiteRegistry, createIsolationModeTokenVaultV1ActionsImpl } from '../../utils/dolomite';
+import { createAndUpgradeDolomiteRegistry, createAsyncIsolationModeTokenVaultV1ActionsImpl, createIsolationModeTokenVaultV1ActionsImpl } from '../../utils/dolomite';
 import {
   createTestAsyncFreezableIsolationModeVaultFactory,
   createTestHandlerRegistry,
@@ -90,22 +93,34 @@ describe('IsolationModeTokenVaultV1WithAsyncFreezableAndPausable', () => {
   let otherMarketId2: BigNumber;
 
   before(async () => {
-    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
+    core = await setupCoreProtocol({
+      blockNumber: 326_681_400,
+      network: Network.ArbitrumOne,
+    });
     await createAndUpgradeDolomiteRegistry(core);
     const genericTraderLib = await createContractWithName('GenericTraderProxyV2Lib', []);
     const genericTraderProxy = await createContractWithLibrary(
       'GenericTraderProxyV2',
       { GenericTraderProxyV2Lib: genericTraderLib.address },
-      [Network.ArbitrumOne, core.dolomiteRegistry.address, core.dolomiteMargin.address],
+      [core.dolomiteRegistry.address, core.dolomiteMargin.address],
     );
     await core.dolomiteRegistry.ownerSetGenericTraderProxy(genericTraderProxy.address);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(genericTraderProxy.address, true);
 
+    const newDepositWithdrawalRouter = await createContractWithAbi<DepositWithdrawalRouter>(
+      DepositWithdrawalRouter__factory.abi,
+      DepositWithdrawalRouter__factory.bytecode,
+      [core.dolomiteRegistry.address, core.dolomiteMargin.address],
+    );
+    const routerProxy = RouterProxy__factory.connect(core.depositWithdrawalRouter.address, core.hhUser1);
+    await routerProxy.connect(core.governance).upgradeTo(newDepositWithdrawalRouter.address);
+
     underlyingToken = await createTestToken();
     const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
+    const asyncLib = await createAsyncIsolationModeTokenVaultV1ActionsImpl();
     userVaultImplementation = await createContractWithLibrary(
       'TestIsolationModeTokenVaultV1WithAsyncFreezableAndPausable',
-      libraries,
+      { ...libraries, ...asyncLib },
       [core.tokens.weth.address, core.network],
     );
     const registry = await createTestHandlerRegistry(core);
@@ -153,7 +168,7 @@ describe('IsolationModeTokenVaultV1WithAsyncFreezableAndPausable', () => {
       [otherToken1.address, factory.address, core.dolomiteMargin.address, core.dolomiteRegistry.address],
     );
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
-    await factory.connect(core.governance).ownerInitialize([tokenUnwrapper.address, tokenWrapper.address]);
+    await factory.connect(core.governance).ownerInitialize([tokenUnwrapper.address, tokenWrapper.address, core.depositWithdrawalRouter.address]);
 
     await factory.createVault(core.hhUser1.address);
     const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);
@@ -275,6 +290,37 @@ describe('IsolationModeTokenVaultV1WithAsyncFreezableAndPausable', () => {
         `IsolationVaultV1AsyncFreezable: Vault account is frozen <${defaultAccountNumber.toString()}>`,
       );
     });
+
+    it('should fail through router if sub-account is frozen', async () => {
+      await underlyingToken.connect(core.hhUser1).approve(core.depositWithdrawalRouter.address, amountWei);
+
+      await freezeVault();
+      await expectThrow(core.depositWithdrawalRouter.connect(core.hhUser1).depositWei(
+        underlyingMarketId,
+        defaultAccountNumber,
+        underlyingMarketId,
+        amountWei,
+        0,
+      ),
+        `IsolationVaultV1AsyncFreezable: Vault account is frozen <${defaultAccountNumber}>`,
+      );
+    });
+
+    it('should fail through router if vault is paused', async () => {
+      await underlyingToken.connect(core.hhUser1).approve(core.depositWithdrawalRouter.address, amountWei);
+
+      await userVault.setIsExternalRedemptionPaused(true);
+      await expectThrow(
+        core.depositWithdrawalRouter.connect(core.hhUser1).depositWei(
+          underlyingMarketId,
+          defaultAccountNumber,
+          underlyingMarketId,
+          amountWei,
+          0,
+        ),
+        'IsolationModeVaultV1Pausable: Cannot execute when paused',
+      );
+    });
   });
 
   describe('#withdrawFromVaultForDolomiteMargin', () => {
@@ -311,6 +357,49 @@ describe('IsolationModeTokenVaultV1WithAsyncFreezableAndPausable', () => {
       await expectThrow(
         userVault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, amountWei),
         `IsolationVaultV1AsyncFreezable: Vault account is frozen <${defaultAccountNumber.toString()}>`,
+      );
+    });
+
+    it('should fail through router if sub-account is frozen', async () => {
+      await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await freezeVault();
+      await expectThrow(
+        core.depositWithdrawalRouter.connect(core.hhUser1).withdrawWei(
+          underlyingMarketId,
+          defaultAccountNumber,
+          underlyingMarketId,
+          amountWei,
+          0,
+        ),
+        `IsolationVaultV1AsyncFreezable: Vault account is frozen <${defaultAccountNumber}>`,
+      );
+    });
+
+    it('should fail to lever up through routerif paused', async () => {
+      await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await userVault.transferIntoPositionWithUnderlyingToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        amountWei,
+      );
+      await userVault.transferFromPositionWithOtherToken(
+        borrowAccountNumber,
+        defaultAccountNumber,
+        otherMarketId1,
+        1,
+        BalanceCheckFlag.None,
+      );
+
+      await userVault.setIsExternalRedemptionPaused(true);
+      await expectThrow(
+        core.depositWithdrawalRouter.connect(core.hhUser1).withdrawWei(
+          underlyingMarketId,
+          borrowAccountNumber,
+          underlyingMarketId,
+          ONE_BI,
+          0,
+        ),
+        'IsolationModeVaultV1Pausable: Cannot lever up when paused',
       );
     });
   });

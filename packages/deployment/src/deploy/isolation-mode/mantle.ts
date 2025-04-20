@@ -5,7 +5,6 @@ import {
   DPT_MNT_OCT_2024_MAP,
   DPT_USDE_DEC_2024_MAP,
   DPT_USDE_JUL_2024_MAP,
-  WMNT_MAP,
 } from 'packages/base/src/utils/constants';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
 import { getMaxDeploymentVersionAddressByDeploymentKey } from '../../utils/deploy-utils';
@@ -28,6 +27,7 @@ export const marketToIsolationModeVaultInfoMantle: Record<number, DeployedVaultI
     constructorParams: [],
     libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.Pt),
     vaultType: IsolationModeVaultType.Pt,
+    tokenAddress: DPT_USDE_JUL_2024_MAP[network].address,
   },
   [DPT_USDE_DEC_2024_MAP[network].marketId]: {
     contractName: 'PendlePtIsolationModeTokenVaultV1',
@@ -39,6 +39,7 @@ export const marketToIsolationModeVaultInfoMantle: Record<number, DeployedVaultI
     constructorParams: [],
     libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.Pt),
     vaultType: IsolationModeVaultType.Pt,
+    tokenAddress: DPT_USDE_DEC_2024_MAP[network].address,
   },
   [DPT_METH_DEC_2024_MAP[network].marketId]: {
     contractName: 'PendlePtIsolationModeTokenVaultV1',
@@ -50,6 +51,7 @@ export const marketToIsolationModeVaultInfoMantle: Record<number, DeployedVaultI
     constructorParams: [],
     libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.Pt),
     vaultType: IsolationModeVaultType.Pt,
+    tokenAddress: DPT_METH_DEC_2024_MAP[network].address,
   },
   [DPT_MNT_OCT_2024_MAP[network].marketId]: {
     contractName: 'PendlePtIsolationModeTokenVaultV1',
@@ -61,6 +63,7 @@ export const marketToIsolationModeVaultInfoMantle: Record<number, DeployedVaultI
     constructorParams: [],
     libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.Pt),
     vaultType: IsolationModeVaultType.Pt,
+    tokenAddress: DPT_MNT_OCT_2024_MAP[network].address,
   },
   [DPT_CM_ETH_FEB_2025_MAP[network].marketId]: {
     contractName: 'PendlePtIsolationModeTokenVaultV1',
@@ -72,16 +75,18 @@ export const marketToIsolationModeVaultInfoMantle: Record<number, DeployedVaultI
     constructorParams: [],
     libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.Pt),
     vaultType: IsolationModeVaultType.Pt,
+    tokenAddress: DPT_CM_ETH_FEB_2025_MAP[network].address,
   },
   [D_MNT_MAP[network].marketId]: {
     contractName: 'MNTIsolationModeTokenVaultV1',
     contractRenameWithoutVersion: 'WMNTIsolationModeTokenVault',
     implementationAddress: getMaxDeploymentVersionAddressByDeploymentKey(
       'MNTIsolationModeTokenVault',
-      network
+      network,
     ),
     constructorParams: [],
     libraries: getIsolationModeLibrariesByType(IsolationModeVaultType.None),
     vaultType: IsolationModeVaultType.None,
+    tokenAddress: D_MNT_MAP[network].address,
   },
 };
