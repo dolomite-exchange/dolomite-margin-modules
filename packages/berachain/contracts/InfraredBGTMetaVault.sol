@@ -287,13 +287,13 @@ contract InfraredBGTMetaVault is ProxyContractHelpers, IBaseMetaVault {
         //          different user claims this vault's rewards on the user's behalf
         address[] memory rewardTokens = _rewardVault.getAllRewardTokens();
         for (uint256 i = 0; i < rewardTokens.length; ++i) {
-            uint256 bal = IERC20(rewardTokens[i]).balanceOf(address(this));
-            if (bal > 0) {
+            uint256 balance = IERC20(rewardTokens[i]).balanceOf(address(this));
+            if (balance > 0) {
                 _performDepositRewardByRewardType(
                     factory,
                     rewardVaultType,
                     rewardTokens[i],
-                    bal
+                    balance
                 );
             }
         }

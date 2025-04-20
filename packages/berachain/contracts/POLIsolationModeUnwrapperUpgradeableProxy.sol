@@ -31,9 +31,7 @@ import { IBerachainRewardsRegistry } from "./interfaces/IBerachainRewardsRegistr
  *
  * @notice  Base contract for upgradeable POL unwrapper trader contracts
  */
-contract POLIsolationModeUnwrapperUpgradeableProxy is
-    ProxyContractHelpers
-{
+contract POLIsolationModeUnwrapperUpgradeableProxy is ProxyContractHelpers {
     using Address for address;
 
     // ============ Constants ============
@@ -70,5 +68,4 @@ contract POLIsolationModeUnwrapperUpgradeableProxy is
     function implementation() public view returns (address) {
         return BERACHAIN_REWARDS_REGISTRY.polUnwrapperTrader();
     }
-
 }
