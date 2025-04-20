@@ -5,12 +5,12 @@ import {
   RegistryProxy__factory,
 } from '../../../../../base/src/types';
 import { getRegistryProxyConstructorParams } from '../../../../../base/src/utils/constructors/dolomite';
-import { NetworkType } from '../../../../../base/src/utils/no-deps-constants';
+import { DolomiteNetwork } from '../../../../../base/src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '../../../../../base/src/utils/SignerWithAddressWithSafety';
 import { DolomiteMargin } from '../../../../../base/test/utils/dolomite';
 import { deployContractAndSave, getMaxDeploymentVersionNameByDeploymentKey } from '../../../utils/deploy-utils';
 
-export async function deployDolomiteAccountRiskOverrideSetter<T extends NetworkType>(
+export async function deployDolomiteAccountRiskOverrideSetter<T extends DolomiteNetwork>(
   dolomiteMargin: DolomiteMargin<T>,
   hhUser1: SignerWithAddressWithSafety,
 ) {

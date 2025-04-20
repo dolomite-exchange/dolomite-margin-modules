@@ -6,7 +6,7 @@ import {
   createContractWithLibrary,
   createContractWithName,
 } from '../../base/src/utils/dolomite-utils';
-import { NetworkType } from '../../base/src/utils/no-deps-constants';
+import { DolomiteNetwork } from '../../base/src/utils/no-deps-constants';
 import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { CoreProtocolType } from '../../base/test/utils/setup';
 import {
@@ -128,7 +128,7 @@ export async function createVesterDiscountCalculatorV1(): Promise<VesterDiscount
   );
 }
 
-export async function createExternalVesterV1Proxy<T extends NetworkType>(
+export async function createExternalVesterV1Proxy<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   paymentToken: IERC20,
   pairToken: IERC20,
@@ -156,7 +156,7 @@ export async function createExternalVesterV1Proxy<T extends NetworkType>(
   return ExternalVesterImplementationV1__factory.connect(vesterProxy.address, core.hhUser1);
 }
 
-export async function createTestExternalVesterV1Proxy<T extends NetworkType>(
+export async function createTestExternalVesterV1Proxy<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   pairToken: IERC20,
   paymentToken: IERC20,

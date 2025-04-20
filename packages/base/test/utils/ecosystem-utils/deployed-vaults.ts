@@ -7,7 +7,7 @@ import {
   IIsolationModeVaultFactoryOld__factory,
 } from 'packages/base/src/types';
 import { DFS_GLP_MAP } from 'packages/base/src/utils/constants';
-import { Network, NetworkType } from 'packages/base/src/utils/no-deps-constants';
+import { Network, DolomiteNetwork } from 'packages/base/src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
 import { marketToIsolationModeVaultInfoArbitrumOne } from 'packages/deployment/src/deploy/isolation-mode/arbitrum';
 import {
@@ -60,7 +60,7 @@ export class DeployedVault {
     this.isUpgradeable = info.vaultType !== IsolationModeVaultType.Migrator;
   }
 
-  public async deployNewVaultAndEncodeUpgradeTransaction<T extends NetworkType>(
+  public async deployNewVaultAndEncodeUpgradeTransaction<T extends DolomiteNetwork>(
     core: CoreProtocolType<T>,
     newLibraries: Record<string, string>,
   ): Promise<EncodedTransaction> {
@@ -92,7 +92,7 @@ export class DeployedVault {
     return vaultAddress;
   }
 
-  public async encodeSetTrustedTokenConverter<T extends NetworkType>(
+  public async encodeSetTrustedTokenConverter<T extends DolomiteNetwork>(
     core: CoreProtocolType<T>,
     tokenConverterAddress: string,
     isTrustedConverter: boolean,
@@ -124,7 +124,7 @@ export class DeployedVault {
     );
   }
 
-  public async encodeSetUserVaultImplementation<T extends NetworkType>(
+  public async encodeSetUserVaultImplementation<T extends DolomiteNetwork>(
     core: CoreProtocolType<T>,
   ): Promise<EncodedTransaction> {
     if (this.contractName === 'GLPIsolationModeTokenVaultV2') {
@@ -155,7 +155,7 @@ export class DeployedVault {
   }
 }
 
-export async function getDeployedVaults<T extends NetworkType>(
+export async function getDeployedVaults<T extends DolomiteNetwork>(
   config: CoreProtocolSetupConfig<T>,
   dolomiteMargin: DolomiteMargin<T>,
   governance: SignerWithAddressWithSafety,
@@ -220,7 +220,7 @@ export async function getDeployedVaults<T extends NetworkType>(
   return deployedVaults;
 }
 
-async function initializeVaults<T extends NetworkType>(
+async function initializeVaults<T extends DolomiteNetwork>(
   config: CoreProtocolSetupConfig<T>,
   governance: SignerWithAddressWithSafety,
   marketToDeployedVaultInformation: Record<number, DeployedVaultInformation>,

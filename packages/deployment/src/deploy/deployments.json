@@ -681,6 +681,11 @@
     }
   },
   "CREATE3Factory": {
+    "1": {
+      "address": "0xa8F7e7A361De6A2172fcb2accE68bd21597599F7",
+      "transaction": "0x13cd802fceea7169141ed3757bc3a2a9faa961427f59c7fd771e143d4a68d316",
+      "isVerified": true
+    },
     "196": {
       "address": "0xa8F7e7A361De6A2172fcb2accE68bd21597599F7",
       "transaction": "0xc96dc52e3340360a0fd1915e732c93e0b13874bbf6f7dc8a8679b143956fe9ce",
@@ -1864,6 +1869,11 @@
     }
   },
   "DolomiteToken": {
+    "1": {
+      "address": "0x0F81001eF0A83ecCE5ccebf63EB302c70a39a654",
+      "transaction": "0x5a79d4db06dbb5f78a1950979cd27e3c9611396f0398591230a15ca19082dbaa",
+      "isVerified": true
+    },
     "80094": {
       "address": "0x0F81001eF0A83ecCE5ccebf63EB302c70a39a654",
       "transaction": "0x364dbcc32c36056768c3790725d5d315715f32d1bdd8acfcbd8f622677b009ab",

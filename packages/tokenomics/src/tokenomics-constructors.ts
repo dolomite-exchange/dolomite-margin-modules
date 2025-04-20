@@ -1,10 +1,10 @@
-import { NetworkType } from 'packages/base/src/utils/no-deps-constants';
+import { DolomiteNetwork } from 'packages/base/src/utils/no-deps-constants';
 import { CoreProtocolType } from 'packages/base/test/utils/setup';
 import { IERC20, IVesterDiscountCalculator, IVotingEscrow, MockVotingEscrow, VotingEscrow } from './types';
 import { BigNumberish } from 'ethers';
 import { ethers } from 'hardhat';
 
-export function getBuybackPoolConstructorParams<T extends NetworkType>(
+export function getBuybackPoolConstructorParams<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   dolo: IERC20,
   oDolo: IERC20
@@ -12,20 +12,20 @@ export function getBuybackPoolConstructorParams<T extends NetworkType>(
   return [dolo.address, oDolo.address, core.dolomiteMargin.address];
 }
 
-export function getDOLOConstructorParams<T extends NetworkType>(
+export function getDOLOConstructorParams<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   treasury: string
 ): any[] {
   return [core.dolomiteMargin.address, treasury];
 }
 
-export function getODOLOConstructorParams<T extends NetworkType>(
+export function getODOLOConstructorParams<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>
 ): any[] {
   return [core.dolomiteMargin.address, 'oDOLO Token', 'oDOLO'];
 }
 
-export function getDOLOBuybackPoolConstructorParams<T extends NetworkType>(
+export function getDOLOBuybackPoolConstructorParams<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   dolo: IERC20,
   oDolo: IERC20
@@ -33,7 +33,7 @@ export function getDOLOBuybackPoolConstructorParams<T extends NetworkType>(
   return [dolo.address, oDolo.address, core.dolomiteMargin.address];
 }
 
-export function getVeFeeCalculatorConstructorParams<T extends NetworkType>(
+export function getVeFeeCalculatorConstructorParams<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>
 ): any[] {
   return [core.dolomiteMargin.address];
@@ -45,14 +45,14 @@ export function getExternalVesterDiscountCalculatorConstructorParams(
   return [veToken.address];
 }
 
-export function getOptionAirdropConstructorParams<T extends NetworkType>(
+export function getOptionAirdropConstructorParams<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   dolo: IERC20,
 ): any[] {
   return [dolo.address, core.dolomiteRegistry.address, core.dolomiteMargin.address];
 }
 
-export function getRegularAirdropConstructorParams<T extends NetworkType>(
+export function getRegularAirdropConstructorParams<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   dolo: IERC20,
   veToken: VotingEscrow | MockVotingEscrow,
@@ -60,7 +60,7 @@ export function getRegularAirdropConstructorParams<T extends NetworkType>(
   return [dolo.address, veToken.address, core.dolomiteRegistry.address, core.dolomiteMargin.address];
 }
 
-export function getVestingClaimsConstructorParams<T extends NetworkType>(
+export function getVestingClaimsConstructorParams<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   dolo: IERC20,
   tgeTimestamp: BigNumberish,
@@ -69,7 +69,7 @@ export function getVestingClaimsConstructorParams<T extends NetworkType>(
   return [dolo.address, tgeTimestamp, duration, core.dolomiteRegistry.address, core.dolomiteMargin.address];
 }
 
-export function getStrategicVestingClaimsConstructorParams<T extends NetworkType>(
+export function getStrategicVestingClaimsConstructorParams<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   dolo: IERC20,
   tgeTimestamp: BigNumberish,
@@ -78,7 +78,7 @@ export function getStrategicVestingClaimsConstructorParams<T extends NetworkType
   return [dolo.address, tgeTimestamp, duration, core.dolomiteRegistry.address, core.dolomiteMargin.address];
 }
 
-export function getVeExternalVesterImplementationConstructorParams<T extends NetworkType>(
+export function getVeExternalVesterImplementationConstructorParams<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   pairToken: IERC20,
   pairMarketId: BigNumberish,

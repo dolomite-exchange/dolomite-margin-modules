@@ -17,10 +17,6 @@ import path from 'path';
 dotenv.config({ path: path.resolve(process.cwd(), '../../.env') });
 
 // RPC URLs
-const mainnetWeb3Url = process.env.MAINNET_WEB3_PROVIDER_URL;
-if (!mainnetWeb3Url) {
-  throw new Error('No MAINNET_WEB3_PROVIDER_URL provided!');
-}
 const arbitrumOneWeb3Url = process.env.ARBITRUM_ONE_WEB3_PROVIDER_URL;
 if (!arbitrumOneWeb3Url) {
   throw new Error('No ARBITRUM_ONE_WEB3_PROVIDER_URL provided!');
@@ -32,6 +28,10 @@ if (!baseWeb3Url) {
 const berachainWeb3Url = process.env.BERACHAIN_WEB3_PROVIDER_URL;
 if (!berachainWeb3Url) {
   throw new Error('No BERACHAIN_WEB3_PROVIDER_URL provided!');
+}
+const ethereumWeb3Url = process.env.ETHEREUM_WEB3_PROVIDER_URL;
+if (!ethereumWeb3Url) {
+  throw new Error('No ETHEREUM_WEB3_PROVIDER_URL provided!');
 }
 const inkWeb3Url = process.env.INK_WEB3_PROVIDER_URL;
 if (!inkWeb3Url) {
@@ -66,6 +66,10 @@ if (!basescanApiKey) {
 const berascanApiKey = process.env.BERASCAN_API_KEY;
 if (!berascanApiKey) {
   throw new Error('No BERASCAN_API_KEY provided!');
+}
+const etherscanApiKey = process.env.ETHERSCAN_API_KEY;
+if (!etherscanApiKey) {
+  throw new Error('No ETHERSCAN_API_KEY provided!');
 }
 const inkscanApiKey = process.env.INKSCAN_API_KEY;
 if (!inkscanApiKey) {
@@ -105,12 +109,6 @@ export const base_config: HardhatUserConfig = {
         },
       },
     },
-    mainnet: {
-      chainId: 1,
-      url: mainnetWeb3Url,
-      gas: 30_000_000, // 30M gas
-      accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
-    },
     [NetworkName.ArbitrumOne]: {
       chainId: parseInt(Network.ArbitrumOne, 10),
       url: arbitrumOneWeb3Url,
@@ -128,6 +126,12 @@ export const base_config: HardhatUserConfig = {
       chainId: parseInt(Network.Berachain, 10),
       url: berachainWeb3Url,
       gas: 20_000_000, // 20M gas
+      accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
+    },
+    [NetworkName.Ethereum]: {
+      chainId: parseInt(Network.Ethereum, 10),
+      url: ethereumWeb3Url,
+      gas: 15_000_000, // 15M gas
       accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
     },
     [NetworkName.Ink]: {
@@ -179,18 +183,6 @@ export const base_config: HardhatUserConfig = {
           },
         },
       },
-      // {
-      //   version: '0.8.24',
-      //   settings: {
-      //     optimizer: {
-      //       enabled: true,
-      //       runs: 200,
-      //       details: {
-      //         yul: false, // To fix some extraneous "stack too deep" errors that don't make sense, set this to false.
-      //       },
-      //     },
-      //   },
-      // },
     ],
   },
   paths: {
@@ -217,6 +209,7 @@ export const base_config: HardhatUserConfig = {
       [NetworkName.ArbitrumOne]: arbiscanApiKey,
       [NetworkName.Base]: basescanApiKey,
       [NetworkName.Berachain]: berascanApiKey,
+      [NetworkName.Ethereum]: etherscanApiKey,
       [NetworkName.Ink]: inkscanApiKey,
       [NetworkName.Mantle]: mantlescanApiKey,
       [NetworkName.PolygonZkEvm]: polygonscanApiKey,
@@ -245,7 +238,15 @@ export const base_config: HardhatUserConfig = {
         chainId: parseInt(Network.Berachain, 10),
         urls: {
           apiURL: 'https://api.berascan.com/api',
-          browserURL: 'https://berscan.com/address',
+          browserURL: 'https://berascan.com/address',
+        },
+      },
+      {
+        network: NetworkName.Ethereum,
+        chainId: parseInt(Network.Ethereum, 10),
+        urls: {
+          apiURL: 'https://api.etherscan.io/api',
+          browserURL: 'https://etherscan.io/address',
         },
       },
       {

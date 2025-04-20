@@ -13,12 +13,12 @@ import {
   TargetCollateralization,
   TargetLiquidationPenalty,
 } from '../../../base/src/utils/constructors/dolomite';
-import { NetworkType, ONE_ETH_BI } from '../../../base/src/utils/no-deps-constants';
+import { DolomiteNetwork, ONE_ETH_BI } from '../../../base/src/utils/no-deps-constants';
 import { CoreProtocolBerachain } from '../../../base/test/utils/core-protocols/core-protocol-berachain';
 import { CoreProtocolType } from '../../../base/test/utils/setup';
 import { readDeploymentFile } from './deploy-utils';
 
-export async function printPriceForVisualCheck<T extends NetworkType>(core: CoreProtocolType<T>, token: IERC20) {
+export async function printPriceForVisualCheck<T extends DolomiteNetwork>(core: CoreProtocolType<T>, token: IERC20) {
   const meta = IERC20Metadata__factory.connect(token.address, token.provider);
   const invalidToken = INVALID_TOKEN_MAP[core.network][token.address];
   const symbol = invalidToken ? invalidToken.symbol : await meta.symbol();
@@ -27,7 +27,7 @@ export async function printPriceForVisualCheck<T extends NetworkType>(core: Core
   console.log(`\tPrice for ${symbol}:`, formatUnits(price.value, 36 - decimals));
 }
 
-export async function printRiskDataVisualCheck<T extends NetworkType>(
+export async function printRiskDataVisualCheck<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   marketId: BigNumberish,
 ) {
@@ -75,7 +75,7 @@ function convertWeiToDisplayNumber(value: BigNumberish, decimals: number, symbol
   return `${Number(ethers.utils.formatUnits(value, decimals)).toLocaleString()} ${symbol}`;
 }
 
-function convertInterestSetterToDisplayName<T extends NetworkType>(
+function convertInterestSetterToDisplayName<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   interestSetter: string,
 ): string {
@@ -109,7 +109,7 @@ export async function checkMarket(core: CoreProtocolBerachain, marketId: BigNumb
   );
 }
 
-export async function checkIsGlobalOperator<T extends NetworkType>(
+export async function checkIsGlobalOperator<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   address: string | { address: string },
   isGlobalOperator: boolean,
@@ -121,7 +121,7 @@ export async function checkIsGlobalOperator<T extends NetworkType>(
   );
 }
 
-export async function checkMarketId<T extends NetworkType>(
+export async function checkMarketId<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   marketId: BigNumberish,
   token: IERC20,
@@ -132,7 +132,7 @@ export async function checkMarketId<T extends NetworkType>(
   );
 }
 
-export async function checkSupplyCap<T extends NetworkType>(
+export async function checkSupplyCap<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   marketId: BigNumberish,
   expectedAmount: BigNumberish,
@@ -152,7 +152,7 @@ export async function checkSupplyCap<T extends NetworkType>(
   );
 }
 
-export async function checkBorrowCap<T extends NetworkType>(
+export async function checkBorrowCap<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   marketId: BigNumberish,
   expectedAmount: BigNumberish,
@@ -174,7 +174,7 @@ export async function checkBorrowCap<T extends NetworkType>(
 
 let baseCollateralization: BigNumber | undefined;
 
-export async function checkMinCollateralization<T extends NetworkType>(
+export async function checkMinCollateralization<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   marketId: BigNumberish,
   collateralization: TargetCollateralization,
@@ -192,7 +192,7 @@ export async function checkMinCollateralization<T extends NetworkType>(
 
 let baseLiquidationPenalty: BigNumber | undefined;
 
-export async function checkLiquidationPenalty<T extends NetworkType>(
+export async function checkLiquidationPenalty<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   marketId: BigNumberish,
   liquidationPenalty: TargetLiquidationPenalty,
@@ -208,7 +208,7 @@ export async function checkLiquidationPenalty<T extends NetworkType>(
   );
 }
 
-export async function checkIsCollateralOnly<T extends NetworkType>(
+export async function checkIsCollateralOnly<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   marketId: BigNumberish,
   expectedCollateralOnly: boolean,
@@ -225,7 +225,7 @@ export async function checkIsCollateralOnly<T extends NetworkType>(
   );
 }
 
-export async function checkInterestSetter<T extends NetworkType>(
+export async function checkInterestSetter<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   marketId: BigNumberish,
   expectedInterestSetter: IDolomiteInterestSetter,
@@ -236,7 +236,7 @@ export async function checkInterestSetter<T extends NetworkType>(
   );
 }
 
-export async function checkAccountRiskOverrideCategory<T extends NetworkType>(
+export async function checkAccountRiskOverrideCategory<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   marketId: BigNumberish,
   category: AccountRiskOverrideCategory,
@@ -247,7 +247,7 @@ export async function checkAccountRiskOverrideCategory<T extends NetworkType>(
   );
 }
 
-export async function checkAccountRiskOverrideIsNone<T extends NetworkType>(
+export async function checkAccountRiskOverrideIsNone<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   marketId: BigNumberish,
 ) {
@@ -258,7 +258,7 @@ export async function checkAccountRiskOverrideIsNone<T extends NetworkType>(
   );
 }
 
-export async function checkAccountRiskOverrideIsBorrowOnly<T extends NetworkType>(
+export async function checkAccountRiskOverrideIsBorrowOnly<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   marketId: BigNumberish,
 ) {
@@ -269,7 +269,7 @@ export async function checkAccountRiskOverrideIsBorrowOnly<T extends NetworkType
   );
 }
 
-export async function checkAccountRiskOverrideIsSingleCollateral<T extends NetworkType>(
+export async function checkAccountRiskOverrideIsSingleCollateral<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   marketId: BigNumberish,
   params: SingleCollateralWithStrictDebtParams[],
@@ -295,7 +295,7 @@ export async function checkAccountRiskOverrideIsSingleCollateral<T extends Netwo
   });
 }
 
-export async function checkAccountRiskOverrideCategorySettings<T extends NetworkType>(
+export async function checkAccountRiskOverrideCategorySettings<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   category: AccountRiskOverrideCategory,
   expectedCollateralization: TargetCollateralization,

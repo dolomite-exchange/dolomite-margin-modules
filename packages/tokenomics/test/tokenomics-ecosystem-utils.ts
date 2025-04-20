@@ -1,13 +1,33 @@
+import { BigNumberish, PopulatedTransaction } from 'ethers';
+import { getUpgradeableProxyConstructorParams } from 'packages/base/src/utils/constructors/dolomite';
 import {
   createContractWithAbi,
   createContractWithLibrary,
   createContractWithName,
 } from 'packages/base/src/utils/dolomite-utils';
+import { ADDRESS_ZERO, DolomiteNetwork } from 'packages/base/src/utils/no-deps-constants';
+import { CoreProtocolType } from 'packages/base/test/utils/setup';
+import { UpgradeableProxy, UpgradeableProxy__factory } from 'packages/liquidity-mining/src/types';
+import {
+  getDOLOBuybackPoolConstructorParams,
+  getDOLOConstructorParams,
+  getExternalVesterDiscountCalculatorConstructorParams,
+  getODOLOConstructorParams,
+  getOptionAirdropConstructorParams,
+  getRegularAirdropConstructorParams,
+  getStrategicVestingClaimsConstructorParams,
+  getVeExternalVesterImplementationConstructorParams,
+  getVeExternalVesterInitializationCalldata,
+  getVeFeeCalculatorConstructorParams,
+  getVestingClaimsConstructorParams,
+} from '../src/tokenomics-constructors';
 import {
   DOLO,
   DOLO__factory,
   DOLOBuybackPool,
   DOLOBuybackPool__factory,
+  DOLOWithOwnable,
+  DOLOWithOwnable__factory,
   ExternalVesterDiscountCalculatorV1,
   ExternalVesterDiscountCalculatorV1__factory,
   IERC20,
@@ -38,26 +58,8 @@ import {
   VotingEscrow,
   VotingEscrow__factory,
 } from '../src/types';
-import { ADDRESS_ZERO, NetworkType } from 'packages/base/src/utils/no-deps-constants';
-import { CoreProtocolType } from 'packages/base/test/utils/setup';
-import {
-  getDOLOBuybackPoolConstructorParams,
-  getDOLOConstructorParams,
-  getExternalVesterDiscountCalculatorConstructorParams,
-  getODOLOConstructorParams,
-  getOptionAirdropConstructorParams,
-  getRegularAirdropConstructorParams,
-  getStrategicVestingClaimsConstructorParams,
-  getVeExternalVesterImplementationConstructorParams,
-  getVeExternalVesterInitializationCalldata,
-  getVeFeeCalculatorConstructorParams,
-  getVestingClaimsConstructorParams,
-} from '../src/tokenomics-constructors';
-import { BigNumberish, PopulatedTransaction } from 'ethers';
-import { getUpgradeableProxyConstructorParams } from 'packages/base/src/utils/constructors/dolomite';
-import { UpgradeableProxy, UpgradeableProxy__factory } from 'packages/liquidity-mining/src/types';
 
-export async function createDOLO<T extends NetworkType>(
+export async function createDOLO<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   treasury: string,
 ): Promise<DOLO> {
@@ -68,17 +70,17 @@ export async function createDOLO<T extends NetworkType>(
   );
 }
 
-export async function createODOLO<T extends NetworkType>(
-  core: CoreProtocolType<T>,
-): Promise<ODOLO> {
-  return createContractWithAbi<ODOLO>(
-    ODOLO__factory.abi,
-    ODOLO__factory.bytecode,
-    getODOLOConstructorParams(core),
-  );
+export async function createDOLOWithOwnable(treasury: string): Promise<DOLOWithOwnable> {
+  return createContractWithAbi<DOLOWithOwnable>(DOLOWithOwnable__factory.abi, DOLOWithOwnable__factory.bytecode, [
+    treasury,
+  ]);
 }
 
-export async function createDOLOBuybackPool<T extends NetworkType>(
+export async function createODOLO<T extends DolomiteNetwork>(core: CoreProtocolType<T>): Promise<ODOLO> {
+  return createContractWithAbi<ODOLO>(ODOLO__factory.abi, ODOLO__factory.bytecode, getODOLOConstructorParams(core));
+}
+
+export async function createDOLOBuybackPool<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   dolo: IERC20,
   oDolo: IERC20,
@@ -91,14 +93,10 @@ export async function createDOLOBuybackPool<T extends NetworkType>(
 }
 
 export async function createVeArt(): Promise<VeArt> {
-  return createContractWithAbi<VeArt>(
-    VeArt__factory.abi,
-    VeArt__factory.bytecode,
-    [],
-  );
+  return createContractWithAbi<VeArt>(VeArt__factory.abi, VeArt__factory.bytecode, []);
 }
 
-export async function createVeFeeCalculator<T extends NetworkType>(
+export async function createVeFeeCalculator<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
 ): Promise<VeFeeCalculator> {
   return createContractWithAbi<VeFeeCalculator>(
@@ -108,7 +106,7 @@ export async function createVeFeeCalculator<T extends NetworkType>(
   );
 }
 
-export async function createVotingEscrow<T extends NetworkType>(
+export async function createVotingEscrow<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   dolo: IERC20,
   voter: string,
@@ -139,14 +137,10 @@ export async function createVotingEscrow<T extends NetworkType>(
   return VotingEscrow__factory.connect(proxy.address, core.hhUser1);
 }
 
-export async function createTestVeToken(
-  underlyingToken: IERC20,
-): Promise<TestVeToken> {
-  return createContractWithAbi<TestVeToken>(
-    TestVeToken__factory.abi,
-    TestVeToken__factory.bytecode,
-    [underlyingToken.address],
-  );
+export async function createTestVeToken(underlyingToken: IERC20): Promise<TestVeToken> {
+  return createContractWithAbi<TestVeToken>(TestVeToken__factory.abi, TestVeToken__factory.bytecode, [
+    underlyingToken.address,
+  ]);
 }
 
 export async function createExternalVesterDiscountCalculatorV1(
@@ -159,7 +153,7 @@ export async function createExternalVesterDiscountCalculatorV1(
   );
 }
 
-export async function createTestVeExternalVesterV1Proxy<T extends NetworkType>(
+export async function createTestVeExternalVesterV1Proxy<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   pairToken: IERC20,
   pairMarketId: BigNumberish,
@@ -198,7 +192,7 @@ export async function createTestVeExternalVesterV1Proxy<T extends NetworkType>(
   return TestVeExternalVesterImplementationV1__factory.connect(vesterProxy.address, core.hhUser1);
 }
 
-export async function createTestOptionAirdropImplementation<T extends NetworkType>(
+export async function createTestOptionAirdropImplementation<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   dolo: DOLO,
 ): Promise<TestOptionAirdrop> {
@@ -209,7 +203,7 @@ export async function createTestOptionAirdropImplementation<T extends NetworkTyp
   );
 }
 
-export async function createTestOptionAirdrop<T extends NetworkType>(
+export async function createTestOptionAirdrop<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   dolo: DOLO,
   treasury: string,
@@ -220,7 +214,7 @@ export async function createTestOptionAirdrop<T extends NetworkType>(
   return TestOptionAirdrop__factory.connect(proxy.address, core.hhUser1);
 }
 
-export async function createOptionAirdropImplementation<T extends NetworkType>(
+export async function createOptionAirdropImplementation<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   dolo: DOLO,
 ): Promise<OptionAirdrop> {
@@ -231,7 +225,7 @@ export async function createOptionAirdropImplementation<T extends NetworkType>(
   );
 }
 
-export async function createOptionAirdrop<T extends NetworkType>(
+export async function createOptionAirdrop<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   dolo: DOLO,
   treasury: string,
@@ -242,7 +236,7 @@ export async function createOptionAirdrop<T extends NetworkType>(
   return OptionAirdrop__factory.connect(proxy.address, core.hhUser1);
 }
 
-export async function createRegularAirdropImplementation<T extends NetworkType>(
+export async function createRegularAirdropImplementation<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   dolo: DOLO,
   veToken: VotingEscrow | MockVotingEscrow,
@@ -254,7 +248,7 @@ export async function createRegularAirdropImplementation<T extends NetworkType>(
   );
 }
 
-export async function createTestRegularAirdropImplementation<T extends NetworkType>(
+export async function createTestRegularAirdropImplementation<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   dolo: DOLO,
   veToken: VotingEscrow | MockVotingEscrow,
@@ -266,7 +260,7 @@ export async function createTestRegularAirdropImplementation<T extends NetworkTy
   );
 }
 
-export async function createRegularAirdrop<T extends NetworkType>(
+export async function createRegularAirdrop<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   dolo: DOLO,
   veToken: VotingEscrow | MockVotingEscrow,
@@ -277,7 +271,7 @@ export async function createRegularAirdrop<T extends NetworkType>(
   return RegularAirdrop__factory.connect(proxy.address, core.hhUser1);
 }
 
-export async function createTestRegularAirdrop<T extends NetworkType>(
+export async function createTestRegularAirdrop<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   dolo: DOLO,
   veToken: VotingEscrow | MockVotingEscrow,
@@ -288,7 +282,7 @@ export async function createTestRegularAirdrop<T extends NetworkType>(
   return TestRegularAirdrop__factory.connect(proxy.address, core.hhUser1);
 }
 
-export async function createVestingClaimsImplementation<T extends NetworkType>(
+export async function createVestingClaimsImplementation<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   dolo: DOLO,
   tgeTimestamp: BigNumberish,
@@ -301,7 +295,7 @@ export async function createVestingClaimsImplementation<T extends NetworkType>(
   );
 }
 
-export async function createVestingClaims<T extends NetworkType>(
+export async function createVestingClaims<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   dolo: DOLO,
   tgeTimestamp: BigNumberish,
@@ -313,7 +307,7 @@ export async function createVestingClaims<T extends NetworkType>(
   return VestingClaims__factory.connect(proxy.address, core.hhUser1);
 }
 
-export async function createStrategicVestingClaimsImplementation<T extends NetworkType>(
+export async function createStrategicVestingClaimsImplementation<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   dolo: DOLO,
   tgeTimestamp: BigNumberish,
@@ -326,7 +320,7 @@ export async function createStrategicVestingClaimsImplementation<T extends Netwo
   );
 }
 
-export async function createStrategicVestingClaims<T extends NetworkType>(
+export async function createStrategicVestingClaims<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   dolo: DOLO,
   tgeTimestamp: BigNumberish,
@@ -338,7 +332,7 @@ export async function createStrategicVestingClaims<T extends NetworkType>(
   return StrategicVestingClaims__factory.connect(proxy.address, core.hhUser1);
 }
 
-export async function createUpgradeableProxy<T extends NetworkType>(
+export async function createUpgradeableProxy<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   implementation: { address: string },
   calldata: PopulatedTransaction,

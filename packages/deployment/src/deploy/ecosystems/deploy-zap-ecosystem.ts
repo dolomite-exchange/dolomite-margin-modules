@@ -1,5 +1,5 @@
 import { getAnyNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { NetworkType } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { DolomiteNetwork } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { CoreProtocolType, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { BigNumberish } from 'ethers';
@@ -28,11 +28,11 @@ const OLD_ADDRESSES: Record<'GenericTraderProxyV1' | 'LiquidatorProxyV4WithGener
   },
 };
 
-async function isGlobalOperator<T extends NetworkType>(core: CoreProtocolType<T>, operator: string): Promise<boolean> {
+async function isGlobalOperator<T extends DolomiteNetwork>(core: CoreProtocolType<T>, operator: string): Promise<boolean> {
   return core.dolomiteMargin.getIsGlobalOperator(operator);
 }
 
-async function isAssetWhitelistedForLiquidation<T extends NetworkType>(
+async function isAssetWhitelistedForLiquidation<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   marketId: BigNumberish,
   liquidator: string,
@@ -49,7 +49,7 @@ async function isAssetWhitelistedForLiquidation<T extends NetworkType>(
  * - For each isolation mode asset, adds the LiquidatorProxyV4 to the LiquidatorAssetRegistry
  * - For each isolation mode asset, removes the old LiquidatorProxyV4 from the LiquidatorAssetRegistry
  */
-async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
+async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
   const network = (await getAnyNetwork()) as T;
   const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
 

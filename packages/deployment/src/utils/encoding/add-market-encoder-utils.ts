@@ -18,7 +18,7 @@ import {
   TargetCollateralization,
   TargetLiquidationPenalty,
 } from '../../../../base/src/utils/constructors/dolomite';
-import { ADDRESS_ZERO, NetworkType, ONE_ETH_BI, ZERO_BI } from '../../../../base/src/utils/no-deps-constants';
+import { ADDRESS_ZERO, DolomiteNetwork, ONE_ETH_BI, ZERO_BI } from '../../../../base/src/utils/no-deps-constants';
 import { CoreProtocolArbitrumOne } from '../../../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { GmToken } from '../../../../base/test/utils/ecosystem-utils/gmx';
 import { CoreProtocolType } from '../../../../base/test/utils/setup';
@@ -31,7 +31,7 @@ export interface AddMarketOptions {
   decimals?: number;
 }
 
-export async function encodeAddIsolationModeMarket<T extends NetworkType>(
+export async function encodeAddIsolationModeMarket<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   factory: IIsolationModeVaultFactory,
   oracle: IDolomitePriceOracle,
@@ -93,7 +93,7 @@ export async function encodeAddIsolationModeMarket<T extends NetworkType>(
   return transactions;
 }
 
-export async function encodeAddAsyncIsolationModeMarket<T extends NetworkType>(
+export async function encodeAddAsyncIsolationModeMarket<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   factory: IIsolationModeVaultFactory,
   oracle: IDolomitePriceOracle,
@@ -249,7 +249,7 @@ export async function encodeAddGmxV2Market(
   ];
 }
 
-export async function encodeAddMarket<T extends NetworkType>(
+export async function encodeAddMarket<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   token: IERC20,
   oracle: IDolomitePriceOracle,

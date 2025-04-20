@@ -1,12 +1,12 @@
 import { CoreProtocolType } from 'packages/base/test/utils/setup';
 import { DolomiteERC4626 } from '../../../../base/src/types';
-import { D_TOKEN_ROLE, Network, NetworkType } from '../../../../base/src/utils/no-deps-constants';
+import { D_TOKEN_ROLE, Network, DolomiteNetwork } from '../../../../base/src/utils/no-deps-constants';
 import { EncodedTransaction } from '../dry-run-utils';
 import { prettyPrintEncodedDataWithTypeSafety } from './base-encoder-utils';
 import { encodeSetGlobalOperator } from './dolomite-margin-core-encoder-utils';
 import { encodeAddressToFunctionSelectorForRole, encodeGrantRoleIfNecessary } from './dolomite-owner-encoder-utils';
 
-export async function setupDolomiteOwnerV2<T extends NetworkType>(
+export async function setupDolomiteOwnerV2<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
 ): Promise<EncodedTransaction[]> {
   const transactions: EncodedTransaction[] = [];
@@ -44,7 +44,7 @@ export async function setupDolomiteOwnerV2<T extends NetworkType>(
   return transactions;
 }
 
-export async function encodeSetupDolomite4626Token<T extends NetworkType>(
+export async function encodeSetupDolomite4626Token<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   dToken: DolomiteERC4626,
 ): Promise<EncodedTransaction[]> {

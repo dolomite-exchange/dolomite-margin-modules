@@ -1,11 +1,11 @@
 import { AdminClaimExcessTokens__factory, AdminPauseMarket__factory } from 'packages/admin/src/types';
 import { IDolomiteRegistry } from '../../../../../base/src/types';
-import { NetworkType } from '../../../../../base/src/utils/no-deps-constants';
+import { DolomiteNetwork } from '../../../../../base/src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '../../../../../base/src/utils/SignerWithAddressWithSafety';
 import { DolomiteMargin } from '../../../../../base/test/utils/dolomite';
 import { deployContractAndSave, getMaxDeploymentVersionNameByDeploymentKey } from '../../../utils/deploy-utils';
 
-export async function deployDolomiteAdminContracts<T extends NetworkType>(
+export async function deployDolomiteAdminContracts<T extends DolomiteNetwork>(
   dolomiteMargin: DolomiteMargin<T>,
   dolomiteRegistry: IDolomiteRegistry,
   hhUser1: SignerWithAddressWithSafety,

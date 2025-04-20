@@ -1,5 +1,5 @@
 import { CoreProtocolType } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { NetworkType } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { DolomiteNetwork } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { BigNumberish } from 'ethers';
 import { getOwnerContractAndSubmissionFilter } from './dry-run-utils';
 
@@ -19,7 +19,7 @@ interface TransactionData {
   conflictType: 'None';
 }
 
-export async function getTransactionIdsBySafeNonce<T extends NetworkType>(
+export async function getTransactionIdsBySafeNonce<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   nonce: number,
 ): Promise<BigNumberish[]> {
