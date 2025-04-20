@@ -17,38 +17,10 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
   const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
 
-  const actionsImplAddress = await deployContractAndSave(
-    'IsolationModeTokenVaultV1ActionsImpl',
-    [],
-    'IsolationModeTokenVaultV1ActionsImplV10',
-    core.libraries.safeDelegateCallImpl,
-  );
-  const asyncActionsImplAddress = await deployContractAndSave(
-    'AsyncIsolationModeTokenVaultV1ActionsImpl',
-    [],
-    'AsyncIsolationModeTokenVaultV1ActionsImplV1',
-    { IsolationModeTokenVaultV1ActionsImpl: actionsImplAddress }
-  );
-  const asyncActionsImplMap = { AsyncIsolationModeTokenVaultV1ActionsImpl: asyncActionsImplAddress };
-
   const transactions: EncodedTransaction[] = [];
   for (const deployedVault of core.deployedVaults) {
     if (deployedVault.isUpgradeable) {
-      let libraries: any = { IsolationModeTokenVaultV1ActionsImpl: actionsImplAddress };
-
-      if (deployedVault.vaultType === IsolationModeVaultType.GLV) {
-        libraries = {
-          ...libraries,
-          ...asyncActionsImplMap,
-        };
-      } else if (deployedVault.vaultType === IsolationModeVaultType.GmxV2) {
-        libraries = {
-          ...libraries,
-          ...asyncActionsImplMap,
-        };
-      }
-
-      transactions.push(await deployedVault.deployNewVaultAndEncodeUpgradeTransaction(core, libraries));
+      transactions.push(await deployedVault.deployNewVaultAndEncodeUpgradeTransaction(core, {}));
     }
   }
 

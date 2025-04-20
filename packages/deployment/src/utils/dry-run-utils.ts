@@ -409,7 +409,7 @@ async function doStuffInternal<T extends DolomiteNetwork>(executionFn: () => Pro
   }
 }
 
-async function executeTransactionAndTraceOnFailure<T extends NetworkType>(
+async function executeTransactionAndTraceOnFailure<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   transactionExecutor: () => Promise<TransactionResponse>,
 ): Promise<TransactionResponse> {

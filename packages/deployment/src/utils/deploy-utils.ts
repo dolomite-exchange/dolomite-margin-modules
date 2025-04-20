@@ -927,7 +927,7 @@ async function prettyPrintAndVerifyContract(
   console.log('\tAddress: ', contract.address);
   console.log(`\t${'='.repeat(52 + contractRename.length)}`);
 
-  if (!(process.env.SKIP_VERIFICATION === 'true')) {
+  if (!(process.env.SKIP_VERIFICATION === 'true') && !contract.isVerified) {
     const sleepTimeSeconds = chainId === parseInt(Network.Ink, 10) ? 10 : 5;
     console.log(
       `\tSleeping for ${sleepTimeSeconds}s to wait for the transaction to be indexed by the block explorer...`,
