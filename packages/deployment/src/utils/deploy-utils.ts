@@ -15,9 +15,9 @@ import {
   ADDRESS_ZERO,
   BYTES_EMPTY,
   BYTES_ZERO,
+  DolomiteNetwork,
   Network,
   NETWORK_TO_NETWORK_NAME_MAP,
-  NetworkType,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { CoreProtocolType } from '@dolomite-exchange/modules-base/test/utils/setup';
@@ -53,14 +53,15 @@ import {
   PendlePtPriceOracleV2__factory,
   PendleRegistry__factory,
 } from '@dolomite-exchange/modules-pendle/src/types';
+import { Wallet } from '@ethersproject/wallet/src.ts';
 import { Etherscan } from '@nomicfoundation/hardhat-verify/etherscan';
 import { Libraries } from '@nomiclabs/hardhat-ethers/src/types';
 import { sleep } from '@openzeppelin/upgrades';
-import { BigNumber, BigNumberish, Signer } from 'ethers';
+import { BigNumber, BigNumberish, ethers, Signer } from 'ethers';
 import { keccak256, parseEther } from 'ethers/lib/utils';
 import fs, { readFileSync } from 'fs';
 import fsExtra from 'fs-extra';
-import hardhat, { artifacts, ethers, network } from 'hardhat';
+import hardhat, { artifacts, network } from 'hardhat';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { createContractWithName } from 'packages/base/src/utils/dolomite-utils';
 import { GlvToken } from 'packages/base/test/utils/ecosystem-utils/glv';
@@ -85,6 +86,8 @@ import {
   GMX_V2_EXECUTION_FEE,
 } from 'packages/gmx-v2/src/gmx-v2-constructors';
 import path, { join } from 'path';
+import { SignerWithAddressWithSafety } from '../../../base/src/utils/SignerWithAddressWithSafety';
+import { impersonate } from '../../../base/test/utils';
 import ModuleDeployments from '../deploy/deployments.json';
 import { CREATE3Factory__factory } from '../saved-types';
 
@@ -99,6 +102,17 @@ export const TRANSACTION_BUILDER_VERSION = '1.16.5';
 
 export function readDeploymentFile(): Record<string, Record<ChainId, any>> {
   return JSON.parse(fs.readFileSync(DEPLOYMENT_FILE_NAME).toString());
+}
+
+export async function getDeployerSigner(): Promise<{ signer: Wallet | SignerWithAddressWithSafety; wallet: Wallet }> {
+  const wallet = new ethers.Wallet(process.env.DEPLOYER_PRIVATE_KEY as string);
+  let hhUser1: Wallet | SignerWithAddressWithSafety;
+  if (hardhat.network.name === 'hardhat') {
+    hhUser1 = await impersonate(wallet.address);
+  } else {
+    hhUser1 = wallet.connect(hardhat.ethers.provider);
+  }
+  return { wallet, signer: hhUser1 };
 }
 
 export async function verifyContract(
@@ -125,7 +139,7 @@ export async function verifyContract(
     console.log('\tVerifying contract...');
 
     const artifact = await artifacts.readArtifact(contractName);
-    const factory = await ethers.getContractFactoryFromArtifact(artifact, { libraries });
+    const factory = await hardhat.ethers.getContractFactoryFromArtifact(artifact, { libraries });
     console.log('\tGot contract info for verification...');
 
     const buildInfo = artifacts.getBuildInfoSync(contractName);
@@ -147,6 +161,7 @@ export async function verifyContract(
       return acc;
     }, {});
 
+    console.log('\tSubmitting verification...');
     const { message: guid } = await instance.verify(
       address,
       JSON.stringify(buildInfo!.input),
@@ -154,8 +169,8 @@ export async function verifyContract(
       `v${buildInfo!.solcLongVersion}`,
       factory.interface.encodeDeploy(constructorArguments).slice(2),
     );
-    console.log('\tSubmitted verification. Checking status...');
 
+    console.log('\tSubmitted verification. Checking status...');
     await sleep(1_000);
     const verificationStatus = await instance.getVerificationStatus(guid);
     if (verificationStatus.isSuccess() || verificationStatus.isOk()) {
@@ -395,11 +410,11 @@ export async function deployContractAndSave(
   let contract: { address: string; transactionHash: string };
   try {
     const deployer = process.env.DEPLOYER_PRIVATE_KEY
-      ? new ethers.Wallet(process.env.DEPLOYER_PRIVATE_KEY, ethers.provider)
+      ? new ethers.Wallet(process.env.DEPLOYER_PRIVATE_KEY, hardhat.ethers.provider)
       : undefined;
-    const signer = options.signer ?? deployer ?? ethers.provider.getSigner(0);
+    const signer = options.signer ?? deployer ?? hardhat.ethers.provider.getSigner(0);
     if (nonce === undefined) {
-      nonce = await ethers.provider.getTransactionCount(await signer.getAddress(), 'pending');
+      nonce = await hardhat.ethers.provider.getTransactionCount(await signer.getAddress(), 'pending');
     }
     const opts = {
       nonce: options.nonce === undefined ? nonce : options.nonce,
@@ -415,7 +430,7 @@ export async function deployContractAndSave(
         transactionHash: result.deployTransaction.hash,
       };
     } else {
-      const factory = await ethers.getContractFactory(contractName, { libraries, signer });
+      const factory = await hardhat.ethers.getContractFactory(contractName, { libraries, signer });
       const transaction = factory.getDeployTransaction(...args);
       const deployer = CREATE3Factory__factory.connect(
         (ModuleDeployments.CREATE3Factory as any)[chainId].address,
@@ -423,7 +438,7 @@ export async function deployContractAndSave(
       );
       const salt = keccak256(ethers.utils.defaultAbiCoder.encode(['string'], [usedContractName]));
       const contractAddress = await deployer.getDeployed(await signer.getAddress(), salt);
-      const code = await ethers.provider.getCode(contractAddress);
+      const code = await hardhat.ethers.provider.getCode(contractAddress);
       if (code === BYTES_EMPTY) {
         const result = await deployer.deploy(salt, transaction.data!, opts);
         await result.wait();
@@ -447,8 +462,8 @@ export async function deployContractAndSave(
     const errorMessage = (e as any).message;
     if (errorMessage.includes('nonce has already been used') || errorMessage.includes('replacement fee too low')) {
       console.log('\tRe-fetching nonce...');
-      const signer = ethers.provider.getSigner(0);
-      nonce = await ethers.provider.getTransactionCount(await signer.getAddress(), 'pending');
+      const signer = hardhat.ethers.provider.getSigner(0);
+      nonce = await hardhat.ethers.provider.getTransactionCount(await signer.getAddress(), 'pending');
     }
     return deployContractAndSave(contractName, args, contractRename, libraries, options, attempts + 1);
   }
@@ -486,7 +501,7 @@ async function verifyFactoryChildProxyContractIfNecessary(
   chainId: number,
 ) {
   if (network.name !== 'hardhat') {
-    const receipt = await ethers.provider.getTransactionReceipt(deploymentTransactionHash);
+    const receipt = await hardhat.ethers.provider.getTransactionReceipt(deploymentTransactionHash);
     const vaultCreatedTopic0 = '0x5d9c31ffa0fecffd7cf379989a3c7af252f0335e0d2a1320b55245912c781f53';
     const event = receipt?.logs.find((l) => l.topics[0] === vaultCreatedTopic0);
     if (event) {
@@ -705,7 +720,7 @@ export interface PendlePtSystem {
   wrapper: PendlePtIsolationModeWrapperTraderV2;
 }
 
-export async function deployPendlePtSystem<T extends NetworkType>(
+export async function deployPendlePtSystem<T extends DolomiteNetwork>(
   core: CoreProtocolWithPendle<T>,
   ptName: string,
   ptMarket: IPendlePtMarket,

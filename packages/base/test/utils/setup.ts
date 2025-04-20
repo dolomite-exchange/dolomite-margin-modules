@@ -193,7 +193,7 @@ import {
   BYTES_EMPTY,
   Network,
   NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP,
-  NetworkType,
+  DolomiteNetwork,
 } from '../../src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '../../src/utils/SignerWithAddressWithSafety';
 import {
@@ -240,7 +240,7 @@ import { getRealLatestBlockNumber, impersonate, impersonateOrFallback, resetFork
 /**
  * Config to for setting up tests in the `before` function
  */
-export interface CoreProtocolSetupConfig<T extends NetworkType> {
+export interface CoreProtocolSetupConfig<T extends DolomiteNetwork> {
   /**
    * The block number at which the tests will be run on Arbitrum
    */
@@ -250,7 +250,7 @@ export interface CoreProtocolSetupConfig<T extends NetworkType> {
   readonly isLatest?: boolean;
 }
 
-export interface CoreProtocolConfigParent<T extends NetworkType> {
+export interface CoreProtocolConfigParent<T extends DolomiteNetwork> {
   readonly blockNumber: number;
   readonly network: T;
   readonly networkNumber: number;
@@ -280,7 +280,7 @@ interface CoreProtocolConfigXLayer extends CoreProtocolConfigParent<Network.XLay
   readonly xLayer: boolean;
 }
 
-export type CoreProtocolConfig<T extends NetworkType> = T extends Network.ArbitrumOne
+export type CoreProtocolConfig<T extends DolomiteNetwork> = T extends Network.ArbitrumOne
   ? CoreProtocolConfigArbitrumOne
   : T extends Network.Base
   ? CoreProtocolConfigBase
@@ -294,14 +294,14 @@ export type CoreProtocolConfig<T extends NetworkType> = T extends Network.Arbitr
   ? CoreProtocolConfigXLayer
   : never;
 
-export async function disableInterestAccrual<T extends NetworkType>(
+export async function disableInterestAccrual<T extends DolomiteNetwork>(
   core: CoreProtocolAbstract<T>,
   marketId: BigNumberish,
 ) {
   return core.dolomiteMargin.ownerSetInterestSetter(marketId, core.interestSetters.alwaysZeroInterestSetter.address);
 }
 
-export async function enableInterestAccrual<T extends NetworkType>(
+export async function enableInterestAccrual<T extends DolomiteNetwork>(
   core: CoreProtocolAbstract<T>,
   marketId: BigNumberish,
 ) {
@@ -321,7 +321,7 @@ export async function setupWBERABalance(
   await core.tokens.wbera.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
-export async function setupWETHBalance<T extends NetworkType>(
+export async function setupWETHBalance<T extends DolomiteNetwork>(
   core: CoreProtocolAbstract<T>,
   signer: SignerWithAddressWithSafety,
   amount: BigNumberish,
@@ -356,7 +356,7 @@ export async function setupWMNTBalance(
   await core.tokens.wmnt.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
-export async function setupWBTCBalance<T extends NetworkType>(
+export async function setupWBTCBalance<T extends DolomiteNetwork>(
   core: CoreProtocolArbitrumOne | CoreProtocolBerachain,
   signer: SignerWithAddressWithSafety,
   amount: BigNumberish,
@@ -423,7 +423,7 @@ export async function setupNativeUSDCBalance(
   await core.tokens.nativeUsdc!.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
-export async function setupUSDCBalance<T extends NetworkType>(
+export async function setupUSDCBalance<T extends DolomiteNetwork>(
   core: CoreProtocolAbstract<T>,
   signer: SignerWithAddressWithSafety,
   amount: BigNumberish,
@@ -554,7 +554,7 @@ export async function setupSolvBtcBalance(
   await core.tokens.solvBtc!.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
-export async function setupUSDEBalance<T extends NetworkType>(
+export async function setupUSDEBalance<T extends DolomiteNetwork>(
   core: CoreProtocolBerachain | CoreProtocolArbitrumOne,
   signer: SignerWithAddressWithSafety,
   amount: BigNumberish,
@@ -612,11 +612,11 @@ export function setupUserVaultProxy<T extends BaseContract>(
   return new BaseContract(vault, factoryInterface.abi, signer) as T;
 }
 
-export function getDefaultCoreProtocolConfig<T extends NetworkType>(network: T): CoreProtocolConfig<T> {
+export function getDefaultCoreProtocolConfig<T extends DolomiteNetwork>(network: T): CoreProtocolConfig<T> {
   return getCoreProtocolConfig(network, NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP[network]);
 }
 
-function getCoreProtocolConfig<T extends NetworkType>(network: T, blockNumber: number): CoreProtocolConfig<T> {
+function getCoreProtocolConfig<T extends DolomiteNetwork>(network: T, blockNumber: number): CoreProtocolConfig<T> {
   if (network === Network.ArbitrumOne) {
     return {
       network,
@@ -692,7 +692,7 @@ export function getDefaultCoreProtocolConfigForGmxV2(): CoreProtocolConfig<Netwo
   };
 }
 
-export type CoreProtocolType<T extends NetworkType> = T extends Network.ArbitrumOne
+export type CoreProtocolType<T extends DolomiteNetwork> = T extends Network.ArbitrumOne
   ? CoreProtocolArbitrumOne
   : T extends Network.Base
   ? CoreProtocolBase
@@ -706,7 +706,7 @@ export type CoreProtocolType<T extends NetworkType> = T extends Network.Arbitrum
   ? CoreProtocolXLayer
   : never;
 
-export function getDolomiteMarginContract<T extends NetworkType>(
+export function getDolomiteMarginContract<T extends DolomiteNetwork>(
   config: CoreProtocolSetupConfig<T>,
   signer: SignerWithAddressWithSafety,
 ): DolomiteMargin<T> {
@@ -717,7 +717,7 @@ export function getDolomiteMarginContract<T extends NetworkType>(
   ) as DolomiteMargin<T>;
 }
 
-export function getExpiryContract<T extends NetworkType>(
+export function getExpiryContract<T extends DolomiteNetwork>(
   config: CoreProtocolSetupConfig<T>,
   signer: SignerWithAddressWithSafety,
 ): Expiry<T> {
@@ -728,7 +728,7 @@ export function getExpiryContract<T extends NetworkType>(
   ) as Expiry<T>;
 }
 
-export function getWethContract<T extends NetworkType>(
+export function getWethContract<T extends DolomiteNetwork>(
   config: CoreProtocolSetupConfig<T>,
   signer: SignerWithAddressWithSafety,
 ): WETHType<T> {
@@ -749,7 +749,7 @@ export function getWethContract<T extends NetworkType>(
   }
 }
 
-export function getDolomite4626TokenContract<T extends NetworkType>(
+export function getDolomite4626TokenContract<T extends DolomiteNetwork>(
   config: CoreProtocolSetupConfig<T>,
   signer: SignerWithAddressWithSafety,
   deploymentKey: keyof typeof Deployments,
@@ -757,7 +757,7 @@ export function getDolomite4626TokenContract<T extends NetworkType>(
   return DolomiteERC4626__factory.connect((Deployments[deploymentKey] as any)[config.network]!.address, signer);
 }
 
-export function getDolomite4626WithPayableTokenContract<T extends NetworkType>(
+export function getDolomite4626WithPayableTokenContract<T extends DolomiteNetwork>(
   config: CoreProtocolSetupConfig<T>,
   signer: SignerWithAddressWithSafety,
   deploymentKey: keyof typeof Deployments,
@@ -768,7 +768,7 @@ export function getDolomite4626WithPayableTokenContract<T extends NetworkType>(
   );
 }
 
-export async function gatherAllDolomite4626TokenContracts<T extends NetworkType>(
+export async function gatherAllDolomite4626TokenContracts<T extends DolomiteNetwork>(
   config: CoreProtocolSetupConfig<T>,
   signer: SignerWithAddressWithSafety,
 ): Promise<(DolomiteERC4626 | DolomiteERC4626WithPayable)[]> {
@@ -805,7 +805,7 @@ export async function gatherAllDolomite4626TokenContracts<T extends NetworkType>
   return dTokens;
 }
 
-export function getDolomiteWeth4626TokenContract<T extends NetworkType>(
+export function getDolomiteWeth4626TokenContract<T extends DolomiteNetwork>(
   config: CoreProtocolSetupConfig<T>,
   signer: SignerWithAddressWithSafety,
 ): DolomiteWETHType<T> | undefined {
@@ -827,7 +827,7 @@ export function getDolomiteWeth4626TokenContract<T extends NetworkType>(
   }
 }
 
-export async function setupCoreProtocol<T extends NetworkType>(
+export async function setupCoreProtocol<T extends DolomiteNetwork>(
   config: Readonly<CoreProtocolSetupConfig<T>>,
 ): Promise<CoreProtocolType<T>> {
   if (!config.skipForking) {
@@ -1622,7 +1622,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
   return Promise.reject(new Error(`Invalid network, found: ${config.network}`));
 }
 
-export async function setupTestMarket<T extends NetworkType>(
+export async function setupTestMarket<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   token: { address: address },
   isClosing: boolean,
@@ -1674,7 +1674,7 @@ function createImplementationContracts(network: Network, signer: SignerWithAddre
   };
 }
 
-function createSafeDelegateCallLibraries<T extends NetworkType>(
+function createSafeDelegateCallLibraries<T extends DolomiteNetwork>(
   config: CoreProtocolSetupConfig<T>,
 ): Record<string, string> {
   return {
@@ -1682,7 +1682,7 @@ function createSafeDelegateCallLibraries<T extends NetworkType>(
   };
 }
 
-function createTokenVaultActionsLibraries<T extends NetworkType>(
+function createTokenVaultActionsLibraries<T extends DolomiteNetwork>(
   config: CoreProtocolSetupConfig<T>,
 ): Record<string, string> {
   return {
@@ -1693,7 +1693,7 @@ function createTokenVaultActionsLibraries<T extends NetworkType>(
   };
 }
 
-function createAsyncUnwrapperImplLibraries<T extends NetworkType>(
+function createAsyncUnwrapperImplLibraries<T extends DolomiteNetwork>(
   config: CoreProtocolSetupConfig<T>,
 ): Record<string, string> {
   return {
@@ -1704,7 +1704,7 @@ function createAsyncUnwrapperImplLibraries<T extends NetworkType>(
   };
 }
 
-function createAsyncWrapperImplLibraries<T extends NetworkType>(
+function createAsyncWrapperImplLibraries<T extends DolomiteNetwork>(
   config: CoreProtocolSetupConfig<T>,
 ): Record<string, string> {
   return {

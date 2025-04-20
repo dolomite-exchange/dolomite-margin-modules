@@ -1,12 +1,12 @@
 import { BigNumberish } from 'ethers';
-import { NetworkType } from 'packages/base/src/utils/no-deps-constants';
+import { DolomiteNetwork } from 'packages/base/src/utils/no-deps-constants';
 import { CoreProtocolType } from 'packages/base/test/utils/setup';
 import { DolomiteOwnerV1, DolomiteOwnerV1__factory, DolomiteOwnerV2, DolomiteOwnerV2__factory } from '../src/types';
 import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
 import { getDolomiteOwnerConstructorParams } from '../src/admin';
 
 export async function createDolomiteOwner(
-  core: CoreProtocolType<NetworkType>,
+  core: CoreProtocolType<DolomiteNetwork>,
   secondsTimeLocked: BigNumberish,
 ): Promise<DolomiteOwnerV1> {
   return createContractWithAbi(
@@ -17,7 +17,7 @@ export async function createDolomiteOwner(
 }
 
 export async function createDolomiteOwnerV2(
-  core: CoreProtocolType<NetworkType>,
+  core: CoreProtocolType<DolomiteNetwork>,
   secondsTimeLocked: BigNumberish,
 ): Promise<DolomiteOwnerV2> {
   return createContractWithAbi(

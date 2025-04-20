@@ -12,7 +12,7 @@ import {
   CHAINSIGHT_ORACLE_ADDRESS_MAP,
   CHAINSIGHT_SENDER_ADDRESS_MAP,
 } from 'packages/base/src/utils/constants';
-import { ADDRESS_ZERO, Network, NetworkType } from 'packages/base/src/utils/no-deps-constants';
+import { ADDRESS_ZERO, DolomiteNetwork } from 'packages/base/src/utils/no-deps-constants';
 import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { CoreProtocolPolygonZkEvm } from 'packages/base/test/utils/core-protocols/core-protocol-polygon-zkevm';
 import { TokenInfo } from './index';
@@ -33,7 +33,7 @@ import {
   RedstonePriceOracleV3,
 } from './types';
 
-export type CoreProtocolWithChainlinkOld<T extends NetworkType> = Extract<
+export type CoreProtocolWithChainlinkOld<T extends DolomiteNetwork> = Extract<
   CoreProtocolType<T>,
   {
     dolomiteMargin: DolomiteMargin<T>;
@@ -41,7 +41,7 @@ export type CoreProtocolWithChainlinkOld<T extends NetworkType> = Extract<
   }
 >;
 
-export type CoreProtocolWithChainlinkV3<T extends NetworkType> = Extract<
+export type CoreProtocolWithChainlinkV3<T extends DolomiteNetwork> = Extract<
   CoreProtocolType<T>,
   {
     dolomiteMargin: DolomiteMargin<T>;
@@ -50,7 +50,7 @@ export type CoreProtocolWithChainlinkV3<T extends NetworkType> = Extract<
   }
 >;
 
-export type CoreProtocolWithChaosLabsV3<T extends NetworkType> = Extract<
+export type CoreProtocolWithChaosLabsV3<T extends DolomiteNetwork> = Extract<
   CoreProtocolType<T>,
   {
     dolomiteMargin: DolomiteMargin<T>;
@@ -59,7 +59,7 @@ export type CoreProtocolWithChaosLabsV3<T extends NetworkType> = Extract<
   }
 >;
 
-export type CoreProtocolWithChainsightV3<T extends NetworkType> = Extract<
+export type CoreProtocolWithChainsightV3<T extends DolomiteNetwork> = Extract<
   CoreProtocolType<T>,
   {
     config: CoreProtocolConfig<T>;
@@ -69,7 +69,7 @@ export type CoreProtocolWithChainsightV3<T extends NetworkType> = Extract<
   }
 >;
 
-export type CoreProtocolWithChronicle<T extends NetworkType> = Extract<
+export type CoreProtocolWithChronicle<T extends DolomiteNetwork> = Extract<
   CoreProtocolType<T>,
   {
     config: CoreProtocolConfig<T>;
@@ -79,7 +79,7 @@ export type CoreProtocolWithChronicle<T extends NetworkType> = Extract<
   }
 >;
 
-export type CoreProtocolWithRedstone<T extends NetworkType> = Extract<
+export type CoreProtocolWithRedstone<T extends DolomiteNetwork> = Extract<
   CoreProtocolType<T>,
   {
     config: CoreProtocolConfig<T>;
@@ -212,7 +212,7 @@ export async function getChainlinkPriceOracleV1ConstructorParamsFromOldPriceOrac
   return [tokens, aggregators, tokenDecimals, tokenPairs, core.dolomiteMargin.address];
 }
 
-export function getChainsightPriceOracleV3ConstructorParams<T extends NetworkType>(
+export function getChainsightPriceOracleV3ConstructorParams<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   tokens: string[],
   keys: string[],
@@ -338,7 +338,7 @@ export async function getOracleAggregatorV2ConstructorParams(
   return [tokensInfos.concat(extraTokenInfos), core.dolomiteMargin.address];
 }
 
-export function getChainlinkPriceOracleV3ConstructorParams<T extends NetworkType>(
+export function getChainlinkPriceOracleV3ConstructorParams<T extends DolomiteNetwork>(
   tokens: IERC20[],
   aggregators: IChainlinkAggregator[],
   invertPrices: boolean[],
@@ -354,7 +354,7 @@ export function getChainlinkPriceOracleV3ConstructorParams<T extends NetworkType
   ];
 }
 
-export function getChaosLabsPriceOracleV3ConstructorParams<T extends NetworkType>(
+export function getChaosLabsPriceOracleV3ConstructorParams<T extends DolomiteNetwork>(
   tokens: IERC20[],
   aggregators: IChainlinkAggregator[],
   invertPrices: boolean[],
@@ -370,7 +370,7 @@ export function getChaosLabsPriceOracleV3ConstructorParams<T extends NetworkType
   ];
 }
 
-export function getChroniclePriceOracleV3ConstructorParams<T extends NetworkType>(
+export function getChroniclePriceOracleV3ConstructorParams<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   tokens: string[],
   scribes: string[],
@@ -379,7 +379,7 @@ export function getChroniclePriceOracleV3ConstructorParams<T extends NetworkType
   return [tokens, scribes, invertPrices, core.dolomiteRegistry.address, core.dolomiteMargin.address];
 }
 
-export function getRamsesCLPriceOracleV3ConstructorParams<T extends NetworkType>(
+export function getRamsesCLPriceOracleV3ConstructorParams<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   token: IERC20,
   pool: string,
@@ -387,7 +387,7 @@ export function getRamsesCLPriceOracleV3ConstructorParams<T extends NetworkType>
   return [token.address, pool, core.dolomiteRegistry.address, core.dolomiteMargin.address];
 }
 
-export async function getRedstonePriceOracleV2ConstructorParams<T extends NetworkType>(
+export async function getRedstonePriceOracleV2ConstructorParams<T extends DolomiteNetwork>(
   tokens: IERC20[],
   aggregators: string[],
   tokenPairs: string[],
@@ -404,7 +404,7 @@ export async function getRedstonePriceOracleV2ConstructorParams<T extends Networ
   ];
 }
 
-export function getRedstonePriceOracleV3ConstructorParams<T extends NetworkType>(
+export function getRedstonePriceOracleV3ConstructorParams<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   tokens: string[],
   redstoneAggregators: string[],
@@ -413,7 +413,7 @@ export function getRedstonePriceOracleV3ConstructorParams<T extends NetworkType>
   return [tokens, redstoneAggregators, invertPrices, core.dolomiteRegistry.address, core.dolomiteMargin.address];
 }
 
-export function getTWAPPriceOracleV1ConstructorParams<T extends Network>(
+export function getTWAPPriceOracleV1ConstructorParams<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   token: IERC20,
   tokenPairs: IAlgebraV3Pool[],
@@ -421,7 +421,7 @@ export function getTWAPPriceOracleV1ConstructorParams<T extends Network>(
   return [token.address, tokenPairs.map((pair) => pair.address), core.dolomiteMargin.address];
 }
 
-export function getTWAPPriceOracleV2ConstructorParams<T extends Network>(
+export function getTWAPPriceOracleV2ConstructorParams<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   token: IERC20,
   tokenPair: IAlgebraV3Pool,

@@ -5,7 +5,7 @@ import {
   RegistryProxy__factory,
 } from 'packages/base/src/types';
 import { getRegistryProxyConstructorParams } from 'packages/base/src/utils/constructors/dolomite';
-import { NetworkType } from 'packages/base/src/utils/no-deps-constants';
+import { DolomiteNetwork } from 'packages/base/src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
 import { DolomiteMargin } from 'packages/base/test/utils/dolomite';
 import { deployContractAndSave, getMaxDeploymentVersionNameByDeploymentKey } from '../../../utils/deploy-utils';
@@ -13,7 +13,7 @@ import ModuleDeployments from '../../deployments.json';
 
 type ImplementationAddress = string;
 
-export async function deployDolomiteAccountRegistry<T extends NetworkType>(
+export async function deployDolomiteAccountRegistry<T extends DolomiteNetwork>(
   dolomiteMargin: DolomiteMargin<T>,
   signer: SignerWithAddressWithSafety,
   network: T,

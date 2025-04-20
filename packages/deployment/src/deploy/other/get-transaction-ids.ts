@@ -1,5 +1,5 @@
 import { getAnyNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { NetworkType } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { DolomiteNetwork } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../utils/dry-run-utils';
@@ -10,7 +10,7 @@ import { getTransactionIdsBySafeNonce } from '../../utils/safe-utils';
 /**
  * Gets the transaction IDs from a given nonce
  */
-async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
+async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
   const network = (await getAnyNetwork()) as T;
   const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
   const nonce = parseInt(process.env.NONCE!, 10);

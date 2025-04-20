@@ -1,5 +1,5 @@
 import { getAnyNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { NetworkType } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { DolomiteNetwork } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { deployContractAndSave } from '../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../utils/dry-run-utils';
@@ -26,7 +26,7 @@ const baseUri = 'ipfs://QmXKCDcuSPrxadMa6shPPVLDtBcwrhAqA73xdemhP4rqqv';
 const name = 'Gravita goARB Vesting';
 const symbol = 'vgoARB';
 
-async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
+async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
   const network = await getAnyNetwork() as T;
   const core = await setupCoreProtocol<T>({
     network,

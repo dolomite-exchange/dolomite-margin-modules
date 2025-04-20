@@ -1,4 +1,4 @@
-import { NetworkType } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { DolomiteNetwork } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { CoreProtocolType } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { FunctionFragment } from '@ethersproject/abi';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
@@ -9,7 +9,7 @@ function toBytes32(hex: string): string {
   return `${hex}${'0'.repeat(66 - hex.length)}`;
 }
 
-export async function encodeGrantRoleIfNecessary<T extends NetworkType>(
+export async function encodeGrantRoleIfNecessary<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   role: string,
   destination: { address: string },
@@ -44,7 +44,7 @@ export async function encodeGrantRoleIfNecessary<T extends NetworkType>(
   return transactions;
 }
 
-export async function encodeAddressToFunctionSelectorForRole<T extends NetworkType>(
+export async function encodeAddressToFunctionSelectorForRole<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   role: string,
   destination: { address: string },

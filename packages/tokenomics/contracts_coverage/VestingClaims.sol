@@ -23,10 +23,8 @@ pragma solidity ^0.8.9;
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { MerkleProof } from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import { BaseClaim } from "./BaseClaim.sol";
 import { IVestingClaims } from "./interfaces/IVestingClaims.sol";
-import { IBaseClaim } from "./interfaces/IBaseClaim.sol";
 
 
 /**
@@ -35,7 +33,6 @@ import { IBaseClaim } from "./interfaces/IBaseClaim.sol";
  *
  * Vesting claims contract for DOLO tokens
  */
-// TODO: change to use a traditional mapping with allocations instead of Merkle
 contract VestingClaims is BaseClaim, IVestingClaims {
     using SafeERC20 for IERC20;
 
@@ -161,14 +158,6 @@ contract VestingClaims is BaseClaim, IVestingClaims {
         VestingClaimsStorage storage s = _getVestingClaimsStorage();
 
         return _vestingSchedule(_totalAllocation, uint64(block.timestamp)) - s.released[_user];
-    }
-
-    function merkleRoot() public view override(BaseClaim, IBaseClaim) returns (bytes32) {
-        revert("VestingClaims: Not implemented");
-    }
-
-    function _ownerSetMerkleRoot(bytes32 _merkleRoot) internal override {
-        revert("VestingClaims: Not implemented");
     }
 
     function _vestingSchedule(

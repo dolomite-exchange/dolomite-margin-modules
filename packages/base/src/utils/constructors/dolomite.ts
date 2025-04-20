@@ -15,7 +15,7 @@ import {
   RegistryProxy,
 } from '../../types';
 import { IDolomiteInterestSetter, IDolomiteStructs } from '../../types/contracts/protocol/interfaces/IDolomiteMargin';
-import { BYTES_EMPTY, Network, NetworkType, ZERO_BI } from '../no-deps-constants';
+import { BYTES_EMPTY, Network, DolomiteNetwork, ZERO_BI } from '../no-deps-constants';
 import InterestRateStruct = IDolomiteInterestSetter.InterestRateStruct;
 import MonetaryPriceStruct = IDolomiteStructs.MonetaryPriceStruct;
 
@@ -132,7 +132,7 @@ export interface SingleCollateralWithStrictDebtParams {
   liquidationRewardOverride: TargetLiquidationPenalty;
 }
 
-export function getRegistryProxyConstructorParams<T extends NetworkType>(
+export function getRegistryProxyConstructorParams<T extends DolomiteNetwork>(
   implementationAddress: string,
   implementationCalldata: string,
   dolomiteMargin: DolomiteMargin<T>,
@@ -140,7 +140,7 @@ export function getRegistryProxyConstructorParams<T extends NetworkType>(
   return [implementationAddress, dolomiteMargin.address, implementationCalldata];
 }
 
-export function getRouterProxyConstructorParams<T extends NetworkType>(
+export function getRouterProxyConstructorParams<T extends DolomiteNetwork>(
   implementationAddress: string,
   implementationCalldata: string,
   dolomiteMargin: DolomiteMargin<T>,
@@ -148,7 +148,7 @@ export function getRouterProxyConstructorParams<T extends NetworkType>(
   return [implementationAddress, dolomiteMargin.address, implementationCalldata];
 }
 
-export function getUpgradeableProxyConstructorParams<T extends NetworkType>(
+export function getUpgradeableProxyConstructorParams<T extends DolomiteNetwork>(
   implementationAddress: string,
   implementationCalldata: PopulatedTransaction | null,
   dolomiteMargin: DolomiteMargin<T>,
@@ -156,7 +156,7 @@ export function getUpgradeableProxyConstructorParams<T extends NetworkType>(
   return [implementationAddress, dolomiteMargin.address, implementationCalldata?.data! ?? BYTES_EMPTY];
 }
 
-export function getIsolationModeFreezableLiquidatorProxyConstructorParams<T extends NetworkType>(
+export function getIsolationModeFreezableLiquidatorProxyConstructorParams<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
 ): any[] {
   return getIsolationModeFreezableLiquidatorProxyConstructorParamsWithoutCore(
@@ -168,7 +168,7 @@ export function getIsolationModeFreezableLiquidatorProxyConstructorParams<T exte
   );
 }
 
-export function getIsolationModeFreezableLiquidatorProxyConstructorParamsWithoutCore<T extends NetworkType>(
+export function getIsolationModeFreezableLiquidatorProxyConstructorParamsWithoutCore<T extends DolomiteNetwork>(
   dolomiteRegistry: IDolomiteRegistry | RegistryProxy,
   liquidatorAssetRegistry: ILiquidatorAssetRegistry,
   dolomiteMargin: DolomiteMargin<T>,
@@ -214,7 +214,7 @@ export interface BaseInterestRateSetterContract {
   getInterestRate: (token: string, borrowWei: BigNumberish, supplyWei: BigNumberish) => Promise<InterestRateStruct>;
 }
 
-export function getOwnerAddMarketParameters<T extends NetworkType>(
+export function getOwnerAddMarketParameters<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   token: IERC20,
   priceOracle: BaseOracleContract,
@@ -288,7 +288,7 @@ export function getLiquidationPremiumForTargetLiquidationPenalty(
   return parseEther(targetPenalty).mul(one).div(baseLiquidationPenalty).sub(one);
 }
 
-export function getOwnerAddMarketParametersForIsolationMode<T extends NetworkType>(
+export function getOwnerAddMarketParametersForIsolationMode<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   token: IIsolationModeVaultFactory,
   priceOracle: { address: string; getPrice: (token: string) => Promise<MonetaryPriceStruct> },
@@ -317,7 +317,7 @@ export function getOwnerAddMarketParametersForIsolationMode<T extends NetworkTyp
   );
 }
 
-export function getDolomiteMigratorConstructorParams<T extends NetworkType>(
+export function getDolomiteMigratorConstructorParams<T extends DolomiteNetwork>(
   dolomiteMargin: DolomiteMargin<T>,
   dolomiteRegistry: IDolomiteRegistry,
   handler: string,
@@ -325,7 +325,7 @@ export function getDolomiteMigratorConstructorParams<T extends NetworkType>(
   return [dolomiteRegistry.address, handler, dolomiteMargin.address];
 }
 
-export async function getDolomiteErc20ProxyConstructorParams<T extends NetworkType>(
+export async function getDolomiteErc20ProxyConstructorParams<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   implementation: DolomiteERC20,
   marketId: BigNumberish,
@@ -344,7 +344,7 @@ export async function getDolomiteErc20ProxyConstructorParams<T extends NetworkTy
   return [implementation.address, core.dolomiteMargin.address, transaction.data!];
 }
 
-export async function getDolomiteErc4626ImplementationConstructorParams<T extends NetworkType>(
+export async function getDolomiteErc4626ImplementationConstructorParams<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
 ): Promise<any[]> {
   return [
@@ -354,7 +354,7 @@ export async function getDolomiteErc4626ImplementationConstructorParams<T extend
   ];
 }
 
-export async function getDolomiteErc4626ProxyConstructorParams<T extends NetworkType>(
+export async function getDolomiteErc4626ProxyConstructorParams<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   marketId: BigNumberish,
 ): Promise<any[]> {
@@ -377,7 +377,7 @@ export async function getDolomiteErc4626ProxyConstructorParams<T extends Network
   return [implementationContract.address, core.dolomiteMargin.address, transaction.data!];
 }
 
-export async function getDolomiteErc4626WithPayableProxyConstructorParams<T extends NetworkType>(
+export async function getDolomiteErc4626WithPayableProxyConstructorParams<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   marketId: BigNumberish,
 ): Promise<any[]> {
@@ -400,7 +400,7 @@ export async function getDolomiteErc4626WithPayableProxyConstructorParams<T exte
   return [implementationContract.address, core.dolomiteMargin.address, transaction.data!];
 }
 
-export function getIsolationModeTokenVaultMigratorConstructorParams<T extends NetworkType>(
+export function getIsolationModeTokenVaultMigratorConstructorParams<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   token: IERC20,
 ): any[] {

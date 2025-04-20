@@ -1,5 +1,5 @@
 import { getAnyNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { Network, NetworkType } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { Network, DolomiteNetwork } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { CHRONICLE_PRICE_SCRIBES_MAP } from 'packages/base/src/utils/constants';
@@ -13,7 +13,7 @@ import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '..
 import { encodeInsertChronicleOracleV3 } from '../../utils/encoding/oracle-encoder-utils';
 import getScriptName from '../../utils/get-script-name';
 
-async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
+async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
   const rawNetwork = (await getAnyNetwork()) as T;
   if (rawNetwork !== Network.ArbitrumOne && rawNetwork !== Network.Berachain && rawNetwork !== Network.Mantle) {
     return Promise.reject(new Error(`Invalid network: ${rawNetwork}`));

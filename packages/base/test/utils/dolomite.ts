@@ -1,7 +1,7 @@
 import { address } from '@dolomite-margin/dist/src';
 import { Provider } from '@ethersproject/providers';
 import { BigNumberish, PopulatedTransaction } from 'ethers';
-import { Network, NetworkType } from 'packages/base/src/utils/no-deps-constants';
+import { Network, DolomiteNetwork } from 'packages/base/src/utils/no-deps-constants';
 import {
   BorrowPositionRouter,
   BorrowPositionRouter__factory,
@@ -54,8 +54,8 @@ import { CoreProtocolType } from './setup';
 import { DolomiteOwnerV1, DolomiteOwnerV1__factory, DolomiteOwnerV2, DolomiteOwnerV2__factory } from 'packages/admin/src/types';
 import { getDolomiteOwnerConstructorParams } from 'packages/admin/src/admin';
 
-export type DolomiteMargin<T extends NetworkType> = T extends Network.ArbitrumOne ? IDolomiteMargin : IDolomiteMarginV2;
-export type Expiry<T extends NetworkType> = T extends Network.ArbitrumOne ? IExpiry : IExpiryV2;
+export type DolomiteMargin<T extends DolomiteNetwork> = T extends Network.ArbitrumOne ? IDolomiteMargin : IDolomiteMarginV2;
+export type Expiry<T extends DolomiteNetwork> = T extends Network.ArbitrumOne ? IExpiry : IExpiryV2;
 
 export async function createIsolationModeTokenVaultV1ActionsImpl(): Promise<Record<LibraryName, address>> {
   const safeDelegateCallLib = await createContractWithName('SafeDelegateCallLib', []);
@@ -80,7 +80,7 @@ export async function createAsyncIsolationModeWrapperTraderImpl(): Promise<Recor
 export async function createRegistryProxy(
   implementationAddress: string,
   initializationCalldata: string | PopulatedTransaction,
-  core: CoreProtocolType<NetworkType>,
+  core: CoreProtocolType<DolomiteNetwork>,
 ): Promise<RegistryProxy> {
   const calldata =
     typeof initializationCalldata === 'object' && 'data' in initializationCalldata
@@ -96,7 +96,7 @@ export async function createRegistryProxy(
 export async function createRouterProxy(
   implementationAddress: string,
   initializationCalldata: string | PopulatedTransaction,
-  core: CoreProtocolType<NetworkType>,
+  core: CoreProtocolType<DolomiteNetwork>,
 ): Promise<RouterProxy> {
   const calldata =
     typeof initializationCalldata === 'object' && 'data' in initializationCalldata
@@ -112,7 +112,7 @@ export async function createRouterProxy(
 export async function createDolomiteErc20Proxy(
   implementation: DolomiteERC20,
   marketId: BigNumberish,
-  core: CoreProtocolType<NetworkType>,
+  core: CoreProtocolType<DolomiteNetwork>,
 ): Promise<RegistryProxy> {
   return createContractWithAbi(
     RegistryProxy__factory.abi,
@@ -123,7 +123,7 @@ export async function createDolomiteErc20Proxy(
 
 export async function createDolomiteErc4626Proxy(
   marketId: BigNumberish,
-  core: CoreProtocolType<NetworkType>,
+  core: CoreProtocolType<DolomiteNetwork>,
 ): Promise<RegistryProxy> {
   return createContractWithAbi(
     RegistryProxy__factory.abi,
@@ -134,7 +134,7 @@ export async function createDolomiteErc4626Proxy(
 
 export async function createDolomiteErc4626WithPayableProxy(
   marketId: BigNumberish,
-  core: CoreProtocolType<NetworkType>,
+  core: CoreProtocolType<DolomiteNetwork>,
 ): Promise<RegistryProxy> {
   return createContractWithAbi(
     RegistryProxy__factory.abi,
@@ -156,7 +156,7 @@ export async function createDolomiteRegistryImplementation(): Promise<DolomiteRe
 }
 
 export async function createDolomiteOwner(
-  core: CoreProtocolType<NetworkType>,
+  core: CoreProtocolType<DolomiteNetwork>,
   secondsTimeLocked: BigNumberish,
 ): Promise<DolomiteOwnerV1> {
   return createContractWithAbi(
@@ -167,7 +167,7 @@ export async function createDolomiteOwner(
 }
 
 export async function createDolomiteOwnerV2(
-  core: CoreProtocolType<NetworkType>,
+  core: CoreProtocolType<DolomiteNetwork>,
   secondsTimeLocked: BigNumberish,
 ): Promise<DolomiteOwnerV2> {
   return createContractWithAbi(
@@ -177,14 +177,14 @@ export async function createDolomiteOwnerV2(
   );
 }
 
-export async function createAndUpgradeDolomiteRegistry<T extends NetworkType>(
+export async function createAndUpgradeDolomiteRegistry<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
 ): Promise<void> {
   const implementation = await createDolomiteRegistryImplementation();
   await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(implementation.address);
 }
 
-export async function createIsolationModeTraderProxy<T extends NetworkType>(
+export async function createIsolationModeTraderProxy<T extends DolomiteNetwork>(
   implementationAddress: string,
   initializationCalldata: string,
   core: CoreProtocolType<T>,
@@ -196,7 +196,7 @@ export async function createIsolationModeTraderProxy<T extends NetworkType>(
   );
 }
 
-export async function createEventEmitter<T extends NetworkType>(
+export async function createEventEmitter<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
 ): Promise<EventEmitterRegistry> {
   const implementation = await createContractWithAbi<EventEmitterRegistry>(
@@ -329,7 +329,7 @@ export async function createTestDepositWithdrawalRouter(
   return TestDepositWithdrawalRouter__factory.connect(proxy.address, core.hhUser1) as TestDepositWithdrawalRouter;
 }
 
-export async function setupNewGenericTraderProxy<T extends NetworkType>(
+export async function setupNewGenericTraderProxy<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   marketId: BigNumberish,
 ) {

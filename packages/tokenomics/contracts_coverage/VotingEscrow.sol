@@ -1021,7 +1021,7 @@ contract VotingEscrow is IERC721, IERC721Metadata, IVotes, Initializable {
         require(unlock_time > _locked.end, "Can only increase lock duration");
         require(
             unlock_time <= block.timestamp + MAXTIME,
-            "Voting lock can be 4 years max"
+            "Voting lock can be 2 years max"
         );
 
         _deposit_for(

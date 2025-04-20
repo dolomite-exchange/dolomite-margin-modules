@@ -7,13 +7,13 @@ import {
   RegistryProxy,
 } from 'packages/base/src/types';
 import { isArraysEqual } from 'packages/base/src/utils';
-import { NetworkType } from '../../../../../base/src/utils/no-deps-constants';
+import { DolomiteNetwork } from '../../../../../base/src/utils/no-deps-constants';
 import { CoreProtocolType } from '../../../../../base/test/utils/setup';
 import { EncodedTransaction } from '../../../utils/dry-run-utils';
 import { prettyPrintEncodedDataWithTypeSafety } from '../../../utils/encoding/base-encoder-utils';
 import { encodeSetGlobalOperatorIfNecessary } from '../../../utils/encoding/dolomite-margin-core-encoder-utils';
 
-export async function encodeDolomiteRegistryMigrations<T extends NetworkType>(
+export async function encodeDolomiteRegistryMigrations<T extends DolomiteNetwork>(
   dolomiteRegistry: IDolomiteRegistry,
   dolomiteRegistryProxy: RegistryProxy,
   borrowPositionProxyAddress: string,

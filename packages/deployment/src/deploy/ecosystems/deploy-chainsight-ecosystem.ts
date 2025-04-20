@@ -1,5 +1,5 @@
 import { getAnyNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { Network, NetworkType } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { Network, DolomiteNetwork } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { CHAINSIGHT_KEYS_MAP } from 'packages/base/src/utils/constants';
@@ -11,7 +11,7 @@ import { encodeInsertChainsightOracleV3 } from '../../utils/encoding/oracle-enco
 import getScriptName from '../../utils/get-script-name';
 import { printPriceForVisualCheck } from '../../utils/invariant-utils';
 
-async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
+async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
   const rawNetwork = (await getAnyNetwork()) as T;
   if (rawNetwork !== Network.Berachain) {
     return Promise.reject(new Error(`Invalid network: ${rawNetwork}`));

@@ -23,7 +23,7 @@ import {
   RegistryProxy,
 } from '../../../src/types';
 import { CHAINLINK_PRICE_AGGREGATORS_MAP, SUBGRAPH_URL_MAP } from '../../../src/utils/constants';
-import { Network, NetworkType } from '../../../src/utils/no-deps-constants';
+import { Network, DolomiteNetwork } from '../../../src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';
 import { DolomiteMargin, Expiry } from '../dolomite';
 import { DeployedVault } from '../ecosystem-utils/deployed-vaults';
@@ -44,7 +44,7 @@ export interface ImplementationContracts {
   dolomiteERC4626WithPayableImplementation: DolomiteERC4626WithPayable;
 }
 
-export type WETHType<T extends NetworkType> = T extends Network.ArbitrumOne
+export type WETHType<T extends DolomiteNetwork> = T extends Network.ArbitrumOne
   ? IWETH
   : T extends Network.Base
     ? IWETH
@@ -62,7 +62,7 @@ export type WETHType<T extends NetworkType> = T extends Network.ArbitrumOne
                 ? IERC20
                 : never;
 
-export type DolomiteWETHType<T extends NetworkType> = T extends Network.ArbitrumOne
+export type DolomiteWETHType<T extends DolomiteNetwork> = T extends Network.ArbitrumOne
   ? DolomiteERC4626WithPayable
   : T extends Network.Base
     ? DolomiteERC4626WithPayable
@@ -80,14 +80,14 @@ export type DolomiteWETHType<T extends NetworkType> = T extends Network.Arbitrum
                 ? DolomiteERC4626
                 : never;
 
-export interface CoreProtocolTokens<T extends NetworkType> {
+export interface CoreProtocolTokens<T extends DolomiteNetwork> {
   payableToken: IWETH;
   usdc: IERC20;
   weth: WETHType<T>;
   stablecoins: IERC20[];
 }
 
-export interface CoreProtocolDolomiteTokens<T extends NetworkType> {
+export interface CoreProtocolDolomiteTokens<T extends DolomiteNetwork> {
   all: (DolomiteERC4626 | DolomiteERC4626WithPayable)[];
 }
 
@@ -98,7 +98,7 @@ export interface CoreProtocolMarketIds {
   stablecoinsWithUnifiedInterestRateModels: BigNumberish[];
 }
 
-export interface CoreProtocolParams<T extends NetworkType> {
+export interface CoreProtocolParams<T extends DolomiteNetwork> {
   config: CoreProtocolConfig<T>;
   gnosisSafe: SignerWithAddressWithSafety;
   gnosisSafeAddress: string;
@@ -152,12 +152,12 @@ export interface CoreProtocolParams<T extends NetworkType> {
   tokens: CoreProtocolTokens<T>;
 }
 
-export interface CoreProtocolConstants<T extends NetworkType> {
+export interface CoreProtocolConstants<T extends DolomiteNetwork> {
   slippageToleranceForPauseSentinel: BigNumberish;
   chainlinkAggregators: (typeof CHAINLINK_PRICE_AGGREGATORS_MAP)[T];
 }
 
-export abstract class CoreProtocolAbstract<T extends NetworkType> {
+export abstract class CoreProtocolAbstract<T extends DolomiteNetwork> {
   /// =========================
   /// Config and Signers
   /// =========================

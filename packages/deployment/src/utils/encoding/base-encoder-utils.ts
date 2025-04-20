@@ -10,7 +10,7 @@ import { AccountRiskOverrideRiskFeature } from '../../../../base/src/utils/const
 import {
   ADDRESS_ZERO,
   NETWORK_TO_NETWORK_NAME_MAP,
-  NetworkType,
+  DolomiteNetwork,
   ONE_BI,
   TEN_BI,
   ZERO_BI,
@@ -27,7 +27,7 @@ export function setMostRecentTokenDecimals(_mostRecentTokenDecimals: number) {
   mostRecentTokenDecimals = _mostRecentTokenDecimals;
 }
 
-export async function getFormattedMarketName<T extends NetworkType>(
+export async function getFormattedMarketName<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   marketId: BigNumberish,
 ): Promise<string> {
@@ -52,7 +52,7 @@ export async function getFormattedMarketName<T extends NetworkType>(
 
 const addressToNameCache: Record<string, string | undefined> = {};
 
-export async function getFormattedTokenName<T extends NetworkType>(
+export async function getFormattedTokenName<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   tokenAddress: string,
 ): Promise<string> {
@@ -83,7 +83,7 @@ export async function getFormattedTokenName<T extends NetworkType>(
   }
 }
 
-export async function getFormattedChainlinkAggregatorName<T extends NetworkType>(
+export async function getFormattedChainlinkAggregatorName<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   aggregatorAddress: string,
 ): Promise<string> {
@@ -165,7 +165,7 @@ export async function isValidAmountForCapForToken(token: IERC20, amount: BigNumb
 let counter = 1;
 
 export async function prettyPrintEncodedDataWithTypeSafety<
-  N extends NetworkType,
+  N extends DolomiteNetwork,
   T extends V[K],
   U extends keyof T['populateTransaction'],
   V extends Record<K, BaseContract>,
@@ -247,7 +247,7 @@ export async function prettyPrintEncodedDataWithTypeSafety<
   };
 }
 
-export async function getReadableArg<T extends NetworkType>(
+export async function getReadableArg<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   inputParamType: ParamType,
   arg: any,
