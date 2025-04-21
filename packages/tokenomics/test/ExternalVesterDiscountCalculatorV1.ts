@@ -1,25 +1,23 @@
-import { createContractWithAbi } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { ADDRESS_ZERO, MAX_UINT_256_BI, Network, ONE_DAY_SECONDS, ONE_WEEK_SECONDS, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import {
+  MAX_UINT_256_BI,
+  Network,
+  ONE_DAY_SECONDS,
+  ONE_WEEK_SECONDS,
+  ZERO_BI,
+} from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { expect } from 'chai';
-import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
-import { ExternalVesterDiscountCalculatorV1, TestVeToken, VoterAlwaysActive, VoterAlwaysActive__factory } from '../src/types';
-import {
-  createDOLO,
-  createExternalVesterDiscountCalculatorV1,
-  createTestVeToken,
-  createVeFeeCalculator,
-  createVotingEscrow,
-} from './tokenomics-ecosystem-utils';
-import { convertToNearestWeek } from './tokenomics-utils';
 import { increaseTo } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
-import { defaultAbiCoder, parseEther } from 'ethers/lib/utils';
+import { expect } from 'chai';
 import { BigNumber } from 'ethers';
+import { defaultAbiCoder, parseEther } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
 import { expectThrow } from 'packages/base/test/utils/assertions';
+import { CoreProtocolArbitrumOne } from '../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
+import { ExternalVesterDiscountCalculatorV1, TestVeToken } from '../src/types';
+import { createDOLO, createExternalVesterDiscountCalculatorV1, createTestVeToken } from './tokenomics-ecosystem-utils';
+import { convertToNearestWeek } from './tokenomics-utils';
 
-const BUYBACK_POOL_ADDRESS = '0x1111111111111111111111111111111111111111';
 const NFT_ID = 0;
 const EXTRA_BYTES = defaultAbiCoder.encode(['uint256', 'uint256'], [1, 0]);
 const TIMESTAMP = 1814400000; // timestamp divisible by 1 week
