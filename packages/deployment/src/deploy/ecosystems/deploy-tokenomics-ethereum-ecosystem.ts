@@ -1,6 +1,5 @@
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
-import { getAndCheckSpecificNetwork } from 'packages/base/src/utils/dolomite-utils';
-import { Network } from 'packages/base/src/utils/no-deps-constants';
+import { getAnyNetwork } from 'packages/base/src/utils/dolomite-utils';
 import { deployContractAndSave, getDeployerSigner } from 'packages/deployment/src/utils/deploy-utils';
 import { doDryRunAndCheckDeployment, EncodedTransaction } from 'packages/deployment/src/utils/dry-run-utils';
 import getScriptName from 'packages/deployment/src/utils/get-script-name';
@@ -10,10 +9,11 @@ import { getRealLatestBlockNumber, resetForkIfPossible } from '../../../../base/
 
 /**
  * This script encodes the following transactions:
- * - Deploys DOLO for Ethereum Mainnet
+ * -  Deploys DOLO for networks that don't want to tie the DOLO token to the DolomiteMargin instance (in case of
+ *    upgrades)
  */
 async function main(): Promise<any> {
-  const network = await getAndCheckSpecificNetwork(Network.Ethereum);
+  const network = await getAnyNetwork();
   await resetForkIfPossible(await getRealLatestBlockNumber(true, network), network);
   const gnosisSafeAddress = GNOSIS_SAFE_MAP[network];
   const { signer: hhUser1 } = await getDeployerSigner();

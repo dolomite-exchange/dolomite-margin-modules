@@ -25,9 +25,12 @@ import {
 } from 'packages/tokenomics/src/types';
 import { prettyPrintEncodedDataWithTypeSafety } from '../../utils/encoding/base-encoder-utils';
 
-const TGE_TIMESTAMP = 2222222222;
+const TGE_TIMESTAMP = 1745496000;
 const ONE_YEAR_SECONDS = 365 * ONE_DAY_SECONDS;
 const THREE_YEARS_SECONDS = ONE_YEAR_SECONDS * 3;
+
+const OPTION_AIRDROP_MERKLE_ROOT = '0x40c2944667a515db4f206498e199c149602bd65a817ac59dc47bfeb38ded6294';
+const REGULAR_AIRDROP_MERKLE_ROOT = '0xea62ba20f90986e03792f67bdd49d0b63f4895c413aacc52110f92aed8df1d3e';
 
 /**
  * This script encodes the following transactions:
@@ -64,9 +67,14 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     getRegularAirdropConstructorParams(core, dolo, votingEscrow),
     'RegularAirdropImplementationV1',
   );
+  const regularAirdropImplementation = RegularAirdrop__factory.connect(regularAirdropAddress, core.hhUser1);
   const regularAirdropProxyAddress = await deployContractAndSave(
     'UpgradeableProxy',
-    getUpgradeableProxyConstructorParams(regularAirdropAddress, null, core.dolomiteMargin),
+    getUpgradeableProxyConstructorParams(
+      regularAirdropAddress,
+      await regularAirdropImplementation.populateTransaction.initialize(),
+      core.dolomiteMargin,
+    ),
     'RegularAirdrop',
   );
   const regularAirdrop = RegularAirdrop__factory.connect(regularAirdropProxyAddress, core.hhUser1);
@@ -76,12 +84,34 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     getVestingClaimsConstructorParams(core, dolo, TGE_TIMESTAMP, THREE_YEARS_SECONDS),
     'VestingClaimsImplementationV1',
   );
+  const vestingClaimsImplementation = VestingClaims__factory.connect(vestingClaimsAddress, core.hhUser1);
   const vestingClaimsProxyAddress = await deployContractAndSave(
     'UpgradeableProxy',
-    getUpgradeableProxyConstructorParams(vestingClaimsAddress, null, core.dolomiteMargin),
+    getUpgradeableProxyConstructorParams(
+      vestingClaimsAddress,
+      await vestingClaimsImplementation.populateTransaction.initialize(),
+      core.dolomiteMargin,
+    ),
     'VestingClaimsProxy',
   );
   const vestingClaims = VestingClaims__factory.connect(vestingClaimsProxyAddress, core.hhUser1);
+
+  const advisorClaimsAddress = await deployContractAndSave(
+    'VestingClaims',
+    getVestingClaimsConstructorParams(core, dolo, TGE_TIMESTAMP, THREE_YEARS_SECONDS),
+    'VestingClaimsImplementationV1',
+  );
+  const advisorClaimsImplementation = VestingClaims__factory.connect(advisorClaimsAddress, core.hhUser1);
+  const advisorClaimsProxyAddress = await deployContractAndSave(
+    'UpgradeableProxy',
+    getUpgradeableProxyConstructorParams(
+      advisorClaimsAddress,
+      await advisorClaimsImplementation.populateTransaction.initialize(),
+      core.dolomiteMargin,
+    ),
+    'AdvisorClaimsProxy',
+  );
+  const advisorClaims = VestingClaims__factory.connect(advisorClaimsProxyAddress, core.hhUser1);
 
   const strategicVestingAddress = await deployContractAndSave(
     'StrategicVestingClaims',
@@ -107,6 +137,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
       optionAirdrop.address,
       true,
     ]),
+
     await prettyPrintEncodedDataWithTypeSafety(core, { optionAirdrop }, 'optionAirdrop', 'ownerSetHandler', [
       core.gnosisSafeAddress,
     ]),
@@ -119,8 +150,19 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     await prettyPrintEncodedDataWithTypeSafety(core, { strategicVesting }, 'strategicVesting', 'ownerSetHandler', [
       core.gnosisSafeAddress,
     ]),
+    await prettyPrintEncodedDataWithTypeSafety(core, { advisorClaims }, 'advisorClaims', 'ownerSetHandler', [
+      core.gnosisSafeAddress,
+    ]),
+
     await prettyPrintEncodedDataWithTypeSafety(core, { optionAirdrop }, 'optionAirdrop', 'ownerSetAllowedMarketIds', [
       [core.marketIds.honey, core.marketIds.usdc, core.marketIds.usdt],
+    ]),
+
+    await prettyPrintEncodedDataWithTypeSafety(core, { optionAirdrop }, 'optionAirdrop', 'ownerSetMerkleRoot', [
+      OPTION_AIRDROP_MERKLE_ROOT,
+    ]),
+    await prettyPrintEncodedDataWithTypeSafety(core, { regularAirdrop }, 'regularAirdrop', 'ownerSetMerkleRoot', [
+      REGULAR_AIRDROP_MERKLE_ROOT,
     ]),
   );
 
@@ -154,10 +196,23 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
         (await strategicVesting.handler()) === core.gnosisSafeAddress,
         'Invalid handler on strategicVesting',
       );
+      assertHardhatInvariant(
+        (await advisorClaims.handler()) === core.gnosisSafeAddress,
+        'Invalid handler on advisorClaims',
+      );
 
       assertHardhatInvariant(await optionAirdrop.isAllowedMarketId(core.marketIds.honey), 'HONEY not allowed');
       assertHardhatInvariant(await optionAirdrop.isAllowedMarketId(core.marketIds.usdc), 'USDC not allowed');
       assertHardhatInvariant(await optionAirdrop.isAllowedMarketId(core.marketIds.usdt), 'USDT not allowed');
+
+      assertHardhatInvariant(
+        (await optionAirdrop.merkleRoot()) === OPTION_AIRDROP_MERKLE_ROOT,
+        'Invalid option merkle root',
+      );
+      assertHardhatInvariant(
+        (await regularAirdrop.merkleRoot()) === REGULAR_AIRDROP_MERKLE_ROOT,
+        'Invalid regular merkle root',
+      );
     },
   };
 }
