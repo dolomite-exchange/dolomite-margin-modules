@@ -1,3 +1,4 @@
+import { expect } from 'chai';
 import { getAndCheckSpecificNetwork } from '../../../../../../base/src/utils/dolomite-utils';
 import { Network } from '../../../../../../base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from '../../../../../../base/test/utils';
@@ -5,6 +6,9 @@ import { setupCoreProtocol } from '../../../../../../base/test/utils/setup';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
 import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
+
+const OPTION_AIRDROP_MERKLE_ROOT = '0xea62ba20f90986e03792f67bdd49d0b63f4895c413aacc52110f92aed8df1d3e';
+const REGULAR_AIRDROP_MERKLE_ROOT = '0x40c2944667a515db4f206498e199c149602bd65a817ac59dc47bfeb38ded6294';
 
 /**
  * This script encodes the following transactions:
@@ -20,38 +24,10 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
   const transactions: EncodedTransaction[] = [
     await prettyPrintEncodedDataWithTypeSafety(
       core,
-      { dolomite: core.dolomiteMargin },
-      'dolomite',
-      'ownerSetGlobalOperator',
-      [core.tokenomicsAirdrop.optionAirdrop.address, true],
-    ),
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { dolomite: core.dolomiteMargin },
-      'dolomite',
-      'ownerSetGlobalOperator',
-      [core.tokenomicsAirdrop.regularAirdrop.address, true],
-    ),
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { dolomite: core.dolomiteMargin },
-      'dolomite',
-      'ownerSetGlobalOperator',
-      [core.tokenomicsAirdrop.strategicVesting.address, true],
-    ),
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { dolomite: core.dolomiteMargin },
-      'dolomite',
-      'ownerSetGlobalOperator',
-      [core.tokenomicsAirdrop.advisorVesting.address, true],
-    ),
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { dolomite: core.dolomiteMargin },
-      'dolomite',
-      'ownerSetGlobalOperator',
-      [core.tokenomicsAirdrop.regularInvestorVesting.address, true],
+      core.tokenomics,
+      'oDolo',
+      'ownerSetHandler',
+      [core.gnosisSafeAddress, true],
     ),
   ];
 
@@ -68,7 +44,9 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
       },
     },
     scriptName: getScriptName(__filename),
-    invariants: async () => {},
+    invariants: async () => {
+      expect(await core.tokenomics.oDolo.isHandler(core.gnosisSafeAddress)).to.be.true;
+    },
   };
 }
 

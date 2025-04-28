@@ -2,7 +2,7 @@ import { address } from '@dolomite-exchange/dolomite-margin';
 import { GenericTraderType } from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
 import axios from 'axios';
 import { BigNumber, ContractTransaction } from 'ethers';
-import { Network } from 'packages/base/src/utils/no-deps-constants';
+import { DolomiteNetwork, Network } from 'packages/base/src/utils/no-deps-constants';
 import { GenericTraderParamStruct } from '../../src/utils';
 import { expectThrow } from './assertions';
 
@@ -47,7 +47,7 @@ export enum ParaswapSwapSelector {
   Simple = '0x54e3f31b',
 }
 
-export async function getCalldataForOdos<T extends Network>(
+export async function getCalldataForOdos<T extends DolomiteNetwork>(
   inputAmount: BigNumber,
   inputToken: { address: address },
   inputDecimals: number,
@@ -187,7 +187,7 @@ export async function getCalldataForOogaBooga(
   };
 }
 
-export async function getCalldataForParaswap<T extends Network>(
+export async function getCalldataForParaswap<T extends DolomiteNetwork>(
   inputAmount: BigNumber,
   inputToken: { address: address },
   inputDecimals: number,

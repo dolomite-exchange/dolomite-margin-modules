@@ -35,7 +35,6 @@ export interface CoreProtocolTokensBerachain extends CoreProtocolTokens<Network.
   srUsd: IERC20;
   stBtc: IERC20;
   solvBtc: IERC20;
-  solvBtcBbn: IERC20;
   stone: IERC20;
   uniBtc: IERC20;
   usd0: IERC20;
@@ -46,6 +45,7 @@ export interface CoreProtocolTokensBerachain extends CoreProtocolTokens<Network.
   wbera: IWETH;
   wbtc: IERC20;
   weEth: IERC20;
+  xSolvBtc: IERC20;
   ylBtcLst: IERC20;
   ylPumpBtc: IERC20;
   ylStEth: IERC20;
@@ -104,7 +104,6 @@ interface CoreProtocolMarketIdsBerachain extends CoreProtocolMarketIds {
   srUsd: BigNumberish;
   stBtc: BigNumberish;
   solvBtc: BigNumberish;
-  solvBtcBbn: BigNumberish;
   stone: BigNumberish;
   uniBtc: BigNumberish;
   usd0: BigNumberish;
@@ -115,6 +114,7 @@ interface CoreProtocolMarketIdsBerachain extends CoreProtocolMarketIds {
   wbera: BigNumberish;
   wbtc: BigNumberish;
   weEth: BigNumberish;
+  xSolvBtc: BigNumberish;
   ylFbtc: BigNumberish;
   ylPumpBtc: BigNumberish;
   ylStEth: BigNumberish;

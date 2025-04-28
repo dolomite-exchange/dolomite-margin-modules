@@ -1,3 +1,5 @@
+import { expect } from 'chai';
+import { parseEther } from 'ethers/lib/utils';
 import { getAndCheckSpecificNetwork } from '../../../../../../base/src/utils/dolomite-utils';
 import { Network } from '../../../../../../base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from '../../../../../../base/test/utils';
@@ -8,7 +10,7 @@ import getScriptName from '../../../../utils/get-script-name';
 
 /**
  * This script encodes the following transactions:
- * - Set initial addresses and amounts for vesting contracts
+ * - Update vesting for one investor
  */
 async function main(): Promise<DryRunOutput<Network.Berachain>> {
   const network = await getAndCheckSpecificNetwork(Network.Berachain);
@@ -17,41 +19,31 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     blockNumber: await getRealLatestBlockNumber(true, network),
   });
 
+  const balanceBefore1 = await core.tokenomics.dolo.balanceOf(core.tokenomicsAirdrop.strategicVesting.address);
+  const balanceBefore2 = await core.tokenomics.dolo.balanceOf(core.gnosisSafeAddress);
+  const amount = parseEther(`${166_667}`);
   const transactions: EncodedTransaction[] = [
     await prettyPrintEncodedDataWithTypeSafety(
       core,
-      { dolomite: core.dolomiteMargin },
-      'dolomite',
-      'ownerSetGlobalOperator',
-      [core.tokenomicsAirdrop.optionAirdrop.address, true],
+      core.tokenomicsAirdrop,
+      'strategicVesting',
+      'ownerRevokeInvestor',
+      ['0xe11Eb0BC4B34DEa57DcB0b74019Ba05b28B6f91c', core.gnosisSafeAddress],
     ),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
-      { dolomite: core.dolomiteMargin },
-      'dolomite',
-      'ownerSetGlobalOperator',
-      [core.tokenomicsAirdrop.regularAirdrop.address, true],
+      core.tokenomicsAirdrop,
+      'strategicVesting',
+      'ownerSetAllocatedAmounts',
+      [['0xf8dDAFa195177E7e7879e1C6f36808c504FF5321'], [amount]],
     ),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
-      { dolomite: core.dolomiteMargin },
-      'dolomite',
-      'ownerSetGlobalOperator',
-      [core.tokenomicsAirdrop.strategicVesting.address, true],
-    ),
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { dolomite: core.dolomiteMargin },
-      'dolomite',
-      'ownerSetGlobalOperator',
-      [core.tokenomicsAirdrop.advisorVesting.address, true],
-    ),
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { dolomite: core.dolomiteMargin },
-      'dolomite',
-      'ownerSetGlobalOperator',
-      [core.tokenomicsAirdrop.regularInvestorVesting.address, true],
+      core.tokenomics,
+      'dolo',
+      'transfer',
+      [core.tokenomicsAirdrop.strategicVesting.address, amount],
+      { skipWrappingCalldataInSubmitTransaction: true },
     ),
   ];
 
@@ -68,7 +60,12 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
       },
     },
     scriptName: getScriptName(__filename),
-    invariants: async () => {},
+    invariants: async () => {
+      expect(balanceBefore1).to.eq(
+        await core.tokenomics.dolo.balanceOf(core.tokenomicsAirdrop.strategicVesting.address),
+      );
+      expect(balanceBefore2).to.eq(await core.tokenomics.dolo.balanceOf(core.gnosisSafeAddress));
+    },
   };
 }
 

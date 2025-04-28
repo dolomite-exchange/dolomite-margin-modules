@@ -90,7 +90,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     ),
     await encodeSetSingleCollateralWithStrictDebtByMarketId(
       core,
-      marketIds.solvBtcBbn,
+      marketIds.xSolvBtc,
       getBtcLstRiskFeatureEncoding(core),
     ),
     await encodeSetSingleCollateralWithStrictDebtByMarketId(core, marketIds.sUsda, [
@@ -139,7 +139,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
         marketIds.solvBtc,
         [getBtcLstRiskFeatureEncoding(core)[0]],
       );
-      await checkAccountRiskOverrideIsSingleCollateral(core, marketIds.solvBtcBbn, getBtcLstRiskFeatureEncoding(core));
+      await checkAccountRiskOverrideIsSingleCollateral(core, marketIds.xSolvBtc, getBtcLstRiskFeatureEncoding(core));
       await checkAccountRiskOverrideIsSingleCollateral(core, marketIds.sUsda, [
         {
           debtMarketIds: [core.marketIds.usda],

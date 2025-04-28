@@ -50,7 +50,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
   const rsEth = await deployDolomiteErc4626Token(core, 'RsEth', core.marketIds.rsEth);
   const sUsda = await deployDolomiteErc4626Token(core, 'SUsda', core.marketIds.sUsda);
   const solvBtc = await deployDolomiteErc4626Token(core, 'SolvBtc', core.marketIds.solvBtc);
-  const solvBtcBbn = await deployDolomiteErc4626Token(core, 'SolvBtcBbn', core.marketIds.solvBtcBbn);
+  const solvBtcBbn = await deployDolomiteErc4626Token(core, 'SolvBtcBbn', core.marketIds.xSolvBtc);
   const usda = await deployDolomiteErc4626Token(core, 'Usda', core.marketIds.usda);
   const usd0 = await deployDolomiteErc4626Token(core, 'Usd0', core.marketIds.usd0);
   const usd0pp = await deployDolomiteErc4626Token(core, 'Usd0pp', core.marketIds.usd0pp);

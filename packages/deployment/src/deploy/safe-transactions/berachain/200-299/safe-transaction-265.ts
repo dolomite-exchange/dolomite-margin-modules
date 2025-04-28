@@ -17,41 +17,30 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     blockNumber: await getRealLatestBlockNumber(true, network),
   });
 
+  const remappings = await import('../../../ecosystems/helpers/airdrop/airdrop-mappings.json');
+  const remappingData = remappings.remappings2;
   const transactions: EncodedTransaction[] = [
     await prettyPrintEncodedDataWithTypeSafety(
       core,
-      { dolomite: core.dolomiteMargin },
-      'dolomite',
-      'ownerSetGlobalOperator',
-      [core.tokenomicsAirdrop.optionAirdrop.address, true],
+      core.tokenomicsAirdrop,
+      'regularAirdrop',
+      'ownerSetAddressRemapping',
+      [
+        remappingData.map((r) => r.newUserAddress),
+        remappingData.map((r) => r.oldUserAddress),
+      ],
+      { skipWrappingCalldataInSubmitTransaction: true },
     ),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
-      { dolomite: core.dolomiteMargin },
-      'dolomite',
-      'ownerSetGlobalOperator',
-      [core.tokenomicsAirdrop.regularAirdrop.address, true],
-    ),
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { dolomite: core.dolomiteMargin },
-      'dolomite',
-      'ownerSetGlobalOperator',
-      [core.tokenomicsAirdrop.strategicVesting.address, true],
-    ),
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { dolomite: core.dolomiteMargin },
-      'dolomite',
-      'ownerSetGlobalOperator',
-      [core.tokenomicsAirdrop.advisorVesting.address, true],
-    ),
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { dolomite: core.dolomiteMargin },
-      'dolomite',
-      'ownerSetGlobalOperator',
-      [core.tokenomicsAirdrop.regularInvestorVesting.address, true],
+      core.tokenomicsAirdrop,
+      'optionAirdrop',
+      'ownerSetAddressRemapping',
+      [
+        remappingData.map((r) => r.newUserAddress),
+        remappingData.map((r) => r.oldUserAddress),
+      ],
+      { skipWrappingCalldataInSubmitTransaction: true },
     ),
   ];
 

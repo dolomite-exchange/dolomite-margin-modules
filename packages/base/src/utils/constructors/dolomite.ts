@@ -53,6 +53,11 @@ export enum TargetCollateralization {
   _133 = '1.333333333333333333',
 
   /**
+   * 142.85% collateralization || 70.00% LTV
+   */
+  _142 = '1.428571428571428571',
+
+  /**
    * 150% collateralization || 66.66% LTV
    */
   _150 = '1.50',
@@ -184,7 +189,7 @@ export function getIsolationModeFreezableLiquidatorProxyConstructorParamsWithout
   ];
 }
 
-export function getIsolationModeTraderProxyConstructorParams<T extends Network>(
+export function getIsolationModeTraderProxyConstructorParams<T extends DolomiteNetwork>(
   implementationAddress: string,
   implementationCalldata: string,
   core: CoreProtocolType<T>,
@@ -192,7 +197,7 @@ export function getIsolationModeTraderProxyConstructorParams<T extends Network>(
   return [implementationAddress, core.dolomiteMargin.address, implementationCalldata];
 }
 
-export async function getEventEmitterRegistryConstructorParams<T extends Network>(
+export async function getEventEmitterRegistryConstructorParams<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   implementation: EventEmitterRegistry,
 ): Promise<any[]> {
