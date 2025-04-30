@@ -44,6 +44,7 @@ contract AdminPauseMarket is OnlyDolomiteMargin, IDolomitePriceOracle, IAdminPau
     // ===================================================================
 
     bytes32 private constant _FILE = "AdminPauseMarket";
+    bytes32 public constant ADMIN_PAUSE_MARKET_ROLE = keccak256("AdminPauseMarket");
 
     // ===================================================================
     // ========================= State Variables =========================
@@ -114,7 +115,7 @@ contract AdminPauseMarket is OnlyDolomiteMargin, IDolomitePriceOracle, IAdminPau
         );
 
         tokenToPaused[token] = true;
-        emit MarketPaused(_marketId);
+        emit SetMarketPaused(_marketId, true);
     }
 
     function unpauseMarket(
@@ -139,7 +140,7 @@ contract AdminPauseMarket is OnlyDolomiteMargin, IDolomitePriceOracle, IAdminPau
             )
         );
 
-        emit MarketUnpaused(_marketId);
+        emit SetMarketPaused(_marketId, false);
     }
 
     // ===================================================================

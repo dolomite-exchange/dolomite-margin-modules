@@ -20,42 +20,56 @@
 
 pragma solidity ^0.8.9;
 
-import { IDolomiteRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IDolomiteRegistry.sol";
-import { IDolomitePriceOracle } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomitePriceOracle.sol"; // solhint-disable-line max-line-length
+import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 
 
 /**
- * @title   IAdminPauseMarket
+ * @title   IPartnerClaimExcessTokens
  * @author  Dolomite
  *
- * @notice  Interface for the AdminPauseMarket contract
+ * @notice  Interface for the PartnerClaimExcessTokens contract
  */
-interface IAdminPauseMarket is IDolomitePriceOracle {
+interface IPartnerClaimExcessTokens {
+
+    // ========================================================
+    // ======================== Structs =======================
+    // ========================================================
+
+    struct PartnerInfo {
+        uint256 marketId;
+        address partner;
+        IDolomiteStructs.Decimal feeSplitToPartner;
+    }
 
     // ========================================================
     // ======================== Events ========================
     // ========================================================
 
-    event SetMarketPaused(uint256 marketId, bool isPaused);
-    event TrustedCallerSet(address trustedCaller, bool isTrusted);
+    event PartnerInfoSet(
+        uint256 indexed marketId,
+        address indexed partner,
+        IDolomiteStructs.Decimal feeSplitToPartner
+    );
+
+    event PartnerInfoRemoved(uint256 indexed marketId);
 
     // ========================================================
     // ==================== Admin Functions ===================
     // ========================================================
 
-    function ownerSetTrustedCaller(address _caller, bool _trusted) external;
+    function ownerSetPartnerInfo(
+        uint256 _marketId,
+        address _partner,
+        IDolomiteStructs.Decimal calldata _feeSplitToPartner
+    ) external;
 
-    function pauseMarket(uint256 _marketId) external;
-
-    function unpauseMarket(uint256 _marketId, address _priceOracle) external;
+    function ownerRemovePartnerInfo(uint256 _marketId) external;
 
     // ========================================================
-    // ==================== View Functions ====================
+    // ================== External Functions ==================
     // ========================================================
 
-    function tokenToPaused(address _token) external view returns (bool);
+    function claimExcessTokens(address _token, bool _depositIntoDolomite) external;
 
-    function trustedCallers(address _caller) external view returns (bool);
-
-    function DOLOMITE_REGISTRY() external view returns (IDolomiteRegistry);
+    function getPartnerInfo(uint256 _marketId) external view returns (PartnerInfo memory);
 }
