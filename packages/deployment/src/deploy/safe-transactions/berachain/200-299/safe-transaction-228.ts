@@ -7,7 +7,8 @@ import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '..
 import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 
-const MINT_BURN_CCIP_POOL = '0xFd8008cC03c0963C6Da4d135f919C57e15696D92';
+const OLD_MINT_BURN_CCIP_POOL = '0xFd8008cC03c0963C6Da4d135f919C57e15696D92';
+const NEW_MINT_BURN_CCIP_POOL = '0x9E7728077F753dFDF53C2236097E27C743890992';
 
 /**
  * This script encodes the following transactions:
@@ -22,7 +23,11 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
 
   const transactions: EncodedTransaction[] = [
     await prettyPrintEncodedDataWithTypeSafety(core, { dolo: core.tokenomics.dolo }, 'dolo', 'ownerSetMinter', [
-      MINT_BURN_CCIP_POOL,
+      OLD_MINT_BURN_CCIP_POOL,
+      false,
+    ]),
+    await prettyPrintEncodedDataWithTypeSafety(core, { dolo: core.tokenomics.dolo }, 'dolo', 'ownerSetMinter', [
+      NEW_MINT_BURN_CCIP_POOL,
       true,
     ]),
   ];
@@ -41,7 +46,8 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     },
     scriptName: getScriptName(__filename),
     invariants: async () => {
-      expect(await core.tokenomics.dolo.isMinter(MINT_BURN_CCIP_POOL)).to.be.true;
+      expect(await core.tokenomics.dolo.isMinter(OLD_MINT_BURN_CCIP_POOL)).to.be.false;
+      expect(await core.tokenomics.dolo.isMinter(NEW_MINT_BURN_CCIP_POOL)).to.be.true;
     },
   };
 }

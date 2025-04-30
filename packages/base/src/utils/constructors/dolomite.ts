@@ -53,6 +53,11 @@ export enum TargetCollateralization {
   _133 = '1.333333333333333333',
 
   /**
+   * 142.85% collateralization || 70.00% LTV
+   */
+  _142 = '1.428571428571428571',
+
+  /**
    * 150% collateralization || 66.66% LTV
    */
   _150 = '1.50',
@@ -78,6 +83,10 @@ export enum TargetLiquidationPenalty {
    * 4%
    */
   _4 = '0.040',
+  /**
+   * 5%
+   */
+  _5 = '0.050',
   /**
    * 6%
    */

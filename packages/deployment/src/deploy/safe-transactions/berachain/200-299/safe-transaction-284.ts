@@ -3,15 +3,14 @@ import { getAndCheckSpecificNetwork } from '../../../../../../base/src/utils/dol
 import { Network } from '../../../../../../base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from '../../../../../../base/test/utils';
 import { setupCoreProtocol } from '../../../../../../base/test/utils/setup';
+import { deployDolomiteErc4626Token } from '../../../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
-import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
+import { encodeSetupDolomite4626Token } from '../../../../utils/encoding/dolomite-4626-token-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
-
-const MINT_BURN_CCIP_POOL = '0xFd8008cC03c0963C6Da4d135f919C57e15696D92';
 
 /**
  * This script encodes the following transactions:
- * - Minters for DOLO for CCIP
+ * - Create and list dsrUSD
  */
 async function main(): Promise<DryRunOutput<Network.Berachain>> {
   const network = await getAndCheckSpecificNetwork(Network.Berachain);
@@ -20,12 +19,9 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     blockNumber: await getRealLatestBlockNumber(true, network),
   });
 
-  const transactions: EncodedTransaction[] = [
-    await prettyPrintEncodedDataWithTypeSafety(core, { dolo: core.tokenomics.dolo }, 'dolo', 'ownerSetMinter', [
-      MINT_BURN_CCIP_POOL,
-      true,
-    ]),
-  ];
+  const dsrUsd = await deployDolomiteErc4626Token(core, 'SrUsd', core.marketIds.srUsd);
+
+  const transactions: EncodedTransaction[] = await encodeSetupDolomite4626Token(core, dsrUsd);
 
   return {
     core,
@@ -41,7 +37,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     },
     scriptName: getScriptName(__filename),
     invariants: async () => {
-      expect(await core.tokenomics.dolo.isMinter(MINT_BURN_CCIP_POOL)).to.be.true;
+      expect(await core.dolomiteMargin.getIsGlobalOperator(dsrUsd.address)).to.be.true;
     },
   };
 }

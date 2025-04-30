@@ -7,11 +7,12 @@ import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '..
 import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 
-const MINT_BURN_CCIP_POOL = '0xFd8008cC03c0963C6Da4d135f919C57e15696D92';
+const OPTION_AIRDROP_MERKLE_ROOT = '0xea62ba20f90986e03792f67bdd49d0b63f4895c413aacc52110f92aed8df1d3e';
+const REGULAR_AIRDROP_MERKLE_ROOT = '0x40c2944667a515db4f206498e199c149602bd65a817ac59dc47bfeb38ded6294';
 
 /**
  * This script encodes the following transactions:
- * - Minters for DOLO for CCIP
+ * - Set initial addresses and amounts for vesting contracts
  */
 async function main(): Promise<DryRunOutput<Network.Berachain>> {
   const network = await getAndCheckSpecificNetwork(Network.Berachain);
@@ -21,10 +22,13 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
   });
 
   const transactions: EncodedTransaction[] = [
-    await prettyPrintEncodedDataWithTypeSafety(core, { dolo: core.tokenomics.dolo }, 'dolo', 'ownerSetMinter', [
-      MINT_BURN_CCIP_POOL,
-      true,
-    ]),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      core.tokenomics,
+      'oDolo',
+      'ownerSetHandler',
+      [core.gnosisSafeAddress, true],
+    ),
   ];
 
   return {
@@ -41,7 +45,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     },
     scriptName: getScriptName(__filename),
     invariants: async () => {
-      expect(await core.tokenomics.dolo.isMinter(MINT_BURN_CCIP_POOL)).to.be.true;
+      expect(await core.tokenomics.oDolo.isHandler(core.gnosisSafeAddress)).to.be.true;
     },
   };
 }

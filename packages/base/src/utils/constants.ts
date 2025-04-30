@@ -752,13 +752,6 @@ export const SOLV_BTC_MAP: Record<Network.Berachain, TokenWithMarketId> = {
   },
 };
 
-export const SOLV_BTC_BBN_MAP: Record<Network.Berachain, TokenWithMarketId> = {
-  [Network.Berachain]: {
-    address: '0xCC0966D8418d412c599A6421b760a847eB169A8c',
-    marketId: 24,
-  },
-};
-
 export const ST_BTC_MAP: Record<Network.Berachain, TokenWithMarketId> = {
   [Network.Berachain]: {
     address: '0xf6718b2701D4a6498eF77D7c152b2137Ab28b8A3',
@@ -1091,6 +1084,13 @@ export const WIF_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   },
 };
 
+export const X_SOLV_BTC_MAP: Record<Network.Berachain, TokenWithMarketId> = {
+  [Network.Berachain]: {
+    address: '0xCC0966D8418d412c599A6421b760a847eB169A8c',
+    marketId: 24,
+  },
+};
+
 export const XAI_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x4Cb9a7AE498CEDcBb5EAe9f25736aE7d428C9D66',
@@ -1344,6 +1344,19 @@ export const GNOSIS_SAFE_MAP: Record<Network, string> = {
   // v2 = 0xa75c21C5BE284122a87A37a76cc6C4DD3E55a1D4; need to fix once they enable the L2 safe module
   [Network.SuperSeed]: '0x145637A4Aa6B2001DC9ECBc89CEf75bB960F90B2',
   [Network.XLayer]: '0xa75c21C5BE284122a87A37a76cc6C4DD3E55a1D4',
+};
+
+export const DOLOMITE_DAO_GNOSIS_SAFE_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: undefined,
+  [Network.Base]: undefined,
+  [Network.Berachain]: '0x6E939BBAceb45159982A2CAc3a1fcBf7E93Cf682',
+  [Network.Ethereum]: undefined,
+  [Network.Ink]: undefined,
+  [Network.Mantle]: undefined,
+  [Network.PolygonZkEvm]: undefined,
+  // v2 = 0xa75c21C5BE284122a87A37a76cc6C4DD3E55a1D4; need to fix once they enable the L2 safe module
+  [Network.SuperSeed]: undefined,
+  [Network.XLayer]: undefined,
 };
 
 export const GRAIL_USDC_V3_POOL_MAP: Record<Network.ArbitrumOne, string> = {
@@ -2329,6 +2342,9 @@ export const REDSTONE_PRICE_AGGREGATORS_MAP: Record<
     },
   },
   [Network.Berachain]: {
+    [BERA_ETH_MAP[Network.Berachain].address]: {
+      aggregatorAddress: '0xcA727511c9d542AAb9eF406d24E5bbbE4567c22d',
+    },
     [BTC_PLACEHOLDER_MAP[Network.Berachain].address]: {
       aggregatorAddress: '0xa8a94Da411425634e3Ed6C331a32ab4fd774aa43',
     },
@@ -2356,12 +2372,15 @@ export const REDSTONE_PRICE_AGGREGATORS_MAP: Record<
       aggregatorAddress: '0x3401DAF2b1f150Ef0c709Cc0283b5F2e55c3DF29',
       tokenPairAddress: BTC_PLACEHOLDER_MAP[Network.Berachain].address,
     },
-    [SOLV_BTC_BBN_MAP[Network.Berachain].address]: {
+    [X_SOLV_BTC_MAP[Network.Berachain].address]: {
       aggregatorAddress: '0x24eDD61cdA334bFf871A80DEB135073a7d7a9187',
       tokenPairAddress: BTC_PLACEHOLDER_MAP[Network.Berachain].address,
     },
     [USDE_MAP[Network.Berachain].address]: {
       aggregatorAddress: '0xbbF121624c3b85C929Ac83872bf6c86b0976A55e',
+    },
+    [WETH_MAP[Network.Berachain].address]: {
+      aggregatorAddress: '0x3587a73AA02519335A8a6053a97657BECe0bC2Cc',
     },
     [WE_ETH_MAP[Network.Berachain].address]: {
       aggregatorAddress: '0x65eD6a4ac085620eE943c0B15525C4428D23e4Db',

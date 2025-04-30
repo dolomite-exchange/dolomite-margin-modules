@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { getAndCheckSpecificNetwork } from '../../../../../../base/src/utils/dolomite-utils';
 import { Network } from '../../../../../../base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from '../../../../../../base/test/utils';
@@ -7,11 +6,9 @@ import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '..
 import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 
-const MINT_BURN_CCIP_POOL = '0xFd8008cC03c0963C6Da4d135f919C57e15696D92';
-
 /**
  * This script encodes the following transactions:
- * - Minters for DOLO for CCIP
+ * - Set initial addresses and amounts for vesting contracts
  */
 async function main(): Promise<DryRunOutput<Network.Berachain>> {
   const network = await getAndCheckSpecificNetwork(Network.Berachain);
@@ -20,11 +17,31 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     blockNumber: await getRealLatestBlockNumber(true, network),
   });
 
+  const remappings = await import('../../../ecosystems/helpers/airdrop/airdrop-mappings.json');
+  const remappingData = remappings.remappings2;
   const transactions: EncodedTransaction[] = [
-    await prettyPrintEncodedDataWithTypeSafety(core, { dolo: core.tokenomics.dolo }, 'dolo', 'ownerSetMinter', [
-      MINT_BURN_CCIP_POOL,
-      true,
-    ]),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      core.tokenomicsAirdrop,
+      'regularAirdrop',
+      'ownerSetAddressRemapping',
+      [
+        remappingData.map((r) => r.newUserAddress),
+        remappingData.map((r) => r.oldUserAddress),
+      ],
+      { skipWrappingCalldataInSubmitTransaction: true },
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      core.tokenomicsAirdrop,
+      'optionAirdrop',
+      'ownerSetAddressRemapping',
+      [
+        remappingData.map((r) => r.newUserAddress),
+        remappingData.map((r) => r.oldUserAddress),
+      ],
+      { skipWrappingCalldataInSubmitTransaction: true },
+    ),
   ];
 
   return {
@@ -40,9 +57,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
       },
     },
     scriptName: getScriptName(__filename),
-    invariants: async () => {
-      expect(await core.tokenomics.dolo.isMinter(MINT_BURN_CCIP_POOL)).to.be.true;
-    },
+    invariants: async () => {},
   };
 }
 

@@ -1,16 +1,15 @@
+import { increaseTo } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
+import { expect } from 'chai';
+import { parseEther } from 'ethers/lib/utils';
 import { Network, ONE_DAY_SECONDS, ONE_ETH_BI, ONE_WEEK_SECONDS } from 'packages/base/src/utils/no-deps-constants';
+import { revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
+import { expectEvent, expectThrow } from 'packages/base/test/utils/assertions';
 import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol } from 'packages/base/test/utils/setup';
 import { VeFeeCalculator } from '../src/types';
-import { revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
-import { expect } from 'chai';
-import { expectEvent, expectThrow } from 'packages/base/test/utils/assertions';
-import { increaseTo } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
-import { parseEther } from 'ethers/lib/utils';
 import { createVeFeeCalculator } from './tokenomics-ecosystem-utils';
 
 const TWO_YEARS_SECONDS = ONE_DAY_SECONDS * 365 * 2;
-const ONE_YEAR_SECONDS = ONE_DAY_SECONDS * 365;
 const TIMESTAMP = 2_000_000_000; // using timestamp for ease of testing
 const tokenAmount = ONE_ETH_BI;
 
@@ -35,9 +34,7 @@ describe('VeFeeCalculator', () => {
     it('should work normally', async () => {
       expect(await feeCalculator.burnFee()).to.eq(parseEther('.05'));
       const res = await feeCalculator.connect(core.governance).ownerSetBurnFee(parseEther('.1'));
-      await expectEvent(feeCalculator, res, 'BurnFeeSet',
-        { burnFee: parseEther('.1') }
-      );
+      await expectEvent(feeCalculator, res, 'BurnFeeSet', { burnFee: parseEther('.1') });
       expect(await feeCalculator.burnFee()).to.eq(parseEther('.1'));
     });
 
@@ -109,10 +106,7 @@ describe('VeFeeCalculator', () => {
 
     it('recoup fee should work normally with one quarter of the time left (103 / 4) + 1 week', async () => {
       await increaseTo(TIMESTAMP);
-      const fees = await feeCalculator.getEarlyWithdrawalFees(
-        tokenAmount,
-        TIMESTAMP + ONE_WEEK_SECONDS * 26.75
-      );
+      const fees = await feeCalculator.getEarlyWithdrawalFees(tokenAmount, TIMESTAMP + ONE_WEEK_SECONDS * 26.75);
       expect(fees[1]).to.eq(parseEther('.1625'));
     });
 

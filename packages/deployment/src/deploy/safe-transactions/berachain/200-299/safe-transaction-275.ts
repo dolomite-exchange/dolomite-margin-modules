@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+import { parseEther } from 'ethers/lib/utils';
 import { getAndCheckSpecificNetwork } from '../../../../../../base/src/utils/dolomite-utils';
 import { Network } from '../../../../../../base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from '../../../../../../base/test/utils';
@@ -7,11 +8,9 @@ import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '..
 import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 
-const MINT_BURN_CCIP_POOL = '0xFd8008cC03c0963C6Da4d135f919C57e15696D92';
-
 /**
  * This script encodes the following transactions:
- * - Minters for DOLO for CCIP
+ * - Update vesting for one investor
  */
 async function main(): Promise<DryRunOutput<Network.Berachain>> {
   const network = await getAndCheckSpecificNetwork(Network.Berachain);
@@ -20,11 +19,25 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     blockNumber: await getRealLatestBlockNumber(true, network),
   });
 
+  const balanceBefore1 = await core.tokenomics.dolo.balanceOf(core.tokenomicsAirdrop.regularInvestorVesting.address);
+  const balanceBefore2 = await core.tokenomics.dolo.balanceOf(core.gnosisSafeAddress);
+  const amount = parseEther(`${640_000}`);
   const transactions: EncodedTransaction[] = [
-    await prettyPrintEncodedDataWithTypeSafety(core, { dolo: core.tokenomics.dolo }, 'dolo', 'ownerSetMinter', [
-      MINT_BURN_CCIP_POOL,
-      true,
-    ]),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      core.tokenomicsAirdrop,
+      'regularInvestorVesting',
+      'ownerSetAllocatedAmounts',
+      [['0xe11Eb0BC4B34DEa57DcB0b74019Ba05b28B6f91c'], [amount]],
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      core.tokenomics,
+      'dolo',
+      'transfer',
+      [core.tokenomicsAirdrop.regularInvestorVesting.address, amount],
+      { skipWrappingCalldataInSubmitTransaction: true },
+    ),
   ];
 
   return {
@@ -41,7 +54,10 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     },
     scriptName: getScriptName(__filename),
     invariants: async () => {
-      expect(await core.tokenomics.dolo.isMinter(MINT_BURN_CCIP_POOL)).to.be.true;
+      expect(balanceBefore1.add(amount)).to.eq(
+        await core.tokenomics.dolo.balanceOf(core.tokenomicsAirdrop.regularInvestorVesting.address),
+      );
+      expect(balanceBefore2.sub(amount)).to.eq(await core.tokenomics.dolo.balanceOf(core.gnosisSafeAddress));
     },
   };
 }

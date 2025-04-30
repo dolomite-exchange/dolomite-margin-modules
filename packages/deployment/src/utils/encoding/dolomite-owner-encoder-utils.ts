@@ -9,6 +9,16 @@ function toBytes32(hex: string): string {
   return `${hex}${'0'.repeat(66 - hex.length)}`;
 }
 
+export async function encodeGrantBypassTimelockAndExecutorRolesIfNecessary<T extends DolomiteNetwork>(
+  core: CoreProtocolType<T>,
+  destination: { address: string },
+) {
+  return [
+    ...await encodeGrantRoleIfNecessary(core, await core.ownerAdapterV2.BYPASS_TIMELOCK_ROLE(), destination),
+    ...await encodeGrantRoleIfNecessary(core, await core.ownerAdapterV2.EXECUTOR_ROLE(), destination),
+  ];
+}
+
 export async function encodeGrantRoleIfNecessary<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   role: string,

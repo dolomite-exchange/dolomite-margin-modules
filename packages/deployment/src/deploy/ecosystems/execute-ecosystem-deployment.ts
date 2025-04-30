@@ -11,7 +11,7 @@ const ALL_NETWORKS = Object.values(NetworkName).filter(n => n !== NetworkName.Et
 
 const ecosystemName = process.argv[2];
 if (!ecosystemName) {
-  throw new Error(`Invalid script number, found: ${ecosystemName}`);
+  throw new Error(`Invalid script name, found: ${ecosystemName}`);
 }
 
 const DEPLOY_ALL_NETWORKS_KEY = '--all-networks';
@@ -26,7 +26,7 @@ if (allNetworks) {
   networkNames = ALL_NETWORKS;
 } else {
   const networkName = process.env.NETWORK;
-  if (!networkName || !ALL_NETWORKS.includes(networkName as any)) {
+  if ((!networkName || !ALL_NETWORKS.includes(networkName as any) && !ecosystemName.includes('ethereum'))) {
     throw new Error(`Invalid NETWORK name, found: ${networkName}. Expected one of ${ALL_NETWORKS.join(', ')}`);
   }
   networkNames = [networkName];
