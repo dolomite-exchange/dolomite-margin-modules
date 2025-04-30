@@ -48,6 +48,7 @@ contract PartnerClaimExcessTokens is OnlyDolomiteMargin, IPartnerClaimExcessToke
     // ============================ Constants ============================
     // ===================================================================
 
+    bytes32 public constant ADMIN_CLAIM_EXCESS_TOKENS_ROLE = keccak256("ADMIN_CLAIM_EXCESS_TOKENS_ROLE");
     bytes32 private constant _FILE = "PartnerClaimExcessTokens";
     uint256 private constant _ONE = 1 ether;
 
@@ -76,19 +77,19 @@ contract PartnerClaimExcessTokens is OnlyDolomiteMargin, IPartnerClaimExcessToke
     function ownerSetPartnerInfo(
         uint256 _marketId,
         address _partner,
-        uint256 _feeSplit
+        IDolomiteStructs.Decimal calldata _feeSplitToPartner
     ) external onlyDolomiteMarginOwner(msg.sender) {
         Require.that(
-            _partner != address(0) && _feeSplit < _ONE,
+            _partner != address(0) && _feeSplitToPartner.value > 0 && _feeSplitToPartner.value < _ONE,
             _FILE,
             "Invalid partner or fee split"
         );
         partnerInfo[_marketId] = PartnerInfo({
             marketId: _marketId,
             partner: _partner,
-            feeSplit: _feeSplit
+            feeSplitToPartner: _feeSplitToPartner
         });
-        emit PartnerInfoSet(_marketId, _partner, _feeSplit);
+        emit PartnerInfoSet(_marketId, _partner, _feeSplitToPartner);
     }
 
     function ownerRemovePartnerInfo(uint256 _marketId) external onlyDolomiteMarginOwner(msg.sender) {
@@ -127,7 +128,7 @@ contract PartnerClaimExcessTokens is OnlyDolomiteMargin, IPartnerClaimExcessToke
         );
         uint256 balance = IERC20(_token).balanceOf(address(this));
 
-        uint256 partnerAmount = balance.mul(IDolomiteStructs.Decimal({ value: info.feeSplit }));
+        uint256 partnerAmount = balance.mul(info.feeSplitToPartner);
         if (partnerAmount > 0) {
             IERC20(_token).safeTransfer(info.partner, partnerAmount);
         }

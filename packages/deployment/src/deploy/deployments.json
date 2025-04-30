@@ -6191,6 +6191,13 @@
       "isVerified": true
     }
   },
+  "PartnerClaimExcessTokensV1": {
+    "80094": {
+      "address": "0xf3550Ed83E3FE0616282da4182589636C7a32ea2",
+      "transaction": "0x04b9204d52b916a54bdaad6b0f7a0516efcb03e3b21034028ecf237bd42712e8",
+      "isVerified": true
+    }
+  },
   "PendlecmETHFeb2025RegistryProxy": {
     "5000": {
       "address": "0xf1fc3079620A5D6d5E3Dc68e2D0854C3aa65c210",

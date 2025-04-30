@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import { BytesLike } from 'ethers';
+import { parseEther } from 'ethers/lib/utils';
 import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
 import { ADDRESS_ZERO, Network, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
@@ -9,12 +10,6 @@ import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/c
 import { createAndUpgradeDolomiteRegistry } from 'packages/base/test/utils/dolomite';
 import { disableInterestAccrual, setupCoreProtocol } from 'packages/base/test/utils/setup';
 import { PartnerClaimExcessTokens, PartnerClaimExcessTokens__factory } from '../src/types';
-import { ethers } from 'hardhat';
-import { parseEther } from 'ethers/lib/utils';
-
-const ADMIN_CLAIM_EXCESS_TOKENS_ROLE = ethers.utils.keccak256(
-  ethers.utils.toUtf8Bytes('AdminClaimExcessTokens')
-);
 
 describe('PartnerClaimExcessTokens', () => {
   let snapshotId: string;
@@ -40,14 +35,15 @@ describe('PartnerClaimExcessTokens', () => {
       [core.dolomiteRegistry.address, core.dolomiteMargin.address],
     );
 
+    const adminClaimExcessTokensRole = await partnerClaimExcessTokens.ADMIN_CLAIM_EXCESS_TOKENS_ROLE();
     bypassTimelockRole = await core.ownerAdapterV2.BYPASS_TIMELOCK_ROLE();
     executorRole = await core.ownerAdapterV2.EXECUTOR_ROLE();
 
     dolomiteOwnerImpersonator = await impersonate(core.ownerAdapterV2.address, true);
-    await core.ownerAdapterV2.connect(dolomiteOwnerImpersonator).ownerAddRole(ADMIN_CLAIM_EXCESS_TOKENS_ROLE);
+    await core.ownerAdapterV2.connect(dolomiteOwnerImpersonator).ownerAddRole(adminClaimExcessTokensRole);
     await core.ownerAdapterV2
       .connect(dolomiteOwnerImpersonator)
-      .grantRole(ADMIN_CLAIM_EXCESS_TOKENS_ROLE, partnerClaimExcessTokens.address);
+      .grantRole(adminClaimExcessTokensRole, partnerClaimExcessTokens.address);
     await core.ownerAdapterV2
       .connect(dolomiteOwnerImpersonator)
       .grantRole(bypassTimelockRole, partnerClaimExcessTokens.address);
@@ -57,7 +53,7 @@ describe('PartnerClaimExcessTokens', () => {
 
     await core.ownerAdapterV2
       .connect(dolomiteOwnerImpersonator)
-      .ownerAddRoleToAddressFunctionSelectors(ADMIN_CLAIM_EXCESS_TOKENS_ROLE, core.dolomiteMargin.address, [
+      .ownerAddRoleToAddressFunctionSelectors(adminClaimExcessTokensRole, core.dolomiteMargin.address, [
         core.dolomiteMargin.interface.getSighash(
           core.dolomiteMargin.interface.getFunction('ownerWithdrawExcessTokens'),
         ),
@@ -83,131 +79,124 @@ describe('PartnerClaimExcessTokens', () => {
 
   describe('#ownerSetPartnerInfo', () => {
     it('should work normally', async () => {
-      const res = await partnerClaimExcessTokens.connect(dolomiteOwnerImpersonator).ownerSetPartnerInfo(
-        core.marketIds.usdc,
-        core.hhUser5.address,
-        parseEther('.5'),
-      );
+      const res = await partnerClaimExcessTokens
+        .connect(dolomiteOwnerImpersonator)
+        .ownerSetPartnerInfo(core.marketIds.usdc, core.hhUser5.address, { value: parseEther('.6') });
       await expectEvent(partnerClaimExcessTokens, res, 'PartnerInfoSet', {
         marketId: core.marketIds.usdc,
         partner: core.hhUser5.address,
-        feeSplit: parseEther('.5'),
+        feeSplitToPartner: { value: parseEther('.6') },
       });
 
       const partnerInfo = await partnerClaimExcessTokens.getPartnerInfo(core.marketIds.usdc);
       expect(partnerInfo.marketId).to.equal(core.marketIds.usdc);
       expect(partnerInfo.partner).to.equal(core.hhUser5.address);
-      expect(partnerInfo.feeSplit).to.equal(parseEther('.5'));
+      expect(partnerInfo.feeSplitToPartner.value).to.equal(parseEther('.6'));
     });
 
     it('should fail if fee split is greater than 100%', async () => {
       await expectThrow(
-        partnerClaimExcessTokens.connect(dolomiteOwnerImpersonator).ownerSetPartnerInfo(
-          core.marketIds.usdc,
-          core.hhUser5.address,
-          parseEther('1.5'),
-        ),
+        partnerClaimExcessTokens
+          .connect(dolomiteOwnerImpersonator)
+          .ownerSetPartnerInfo(core.marketIds.usdc, core.hhUser5.address, { value: parseEther('1.5') }),
+        'PartnerClaimExcessTokens: Invalid partner or fee split',
+      );
+    });
+
+    it('should fail if fee split is equal to 0%', async () => {
+      await expectThrow(
+        partnerClaimExcessTokens
+          .connect(dolomiteOwnerImpersonator)
+          .ownerSetPartnerInfo(core.marketIds.usdc, core.hhUser5.address, { value: parseEther('0') }),
         'PartnerClaimExcessTokens: Invalid partner or fee split',
       );
     });
 
     it('should fail if partner address is zero address', async () => {
       await expectThrow(
-        partnerClaimExcessTokens.connect(dolomiteOwnerImpersonator).ownerSetPartnerInfo(
-          core.marketIds.usdc,
-          ADDRESS_ZERO,
-          parseEther('.5'),
-        ),
+        partnerClaimExcessTokens
+          .connect(dolomiteOwnerImpersonator)
+          .ownerSetPartnerInfo(core.marketIds.usdc, ADDRESS_ZERO, { value: parseEther('.5') }),
         'PartnerClaimExcessTokens: Invalid partner or fee split',
       );
     });
 
     it('should fail if sender is not dolomite owner', async () => {
       await expectThrow(
-        partnerClaimExcessTokens.connect(core.hhUser1).ownerSetPartnerInfo(
-          core.marketIds.usdc,
-          core.hhUser5.address,
-          parseEther('.5'),
-        ),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+        partnerClaimExcessTokens
+          .connect(core.hhUser1)
+          .ownerSetPartnerInfo(core.marketIds.usdc, core.hhUser5.address, { value: parseEther('.5') }),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
 
   describe('#ownerRemovePartnerInfo', () => {
     it('should work normally', async () => {
-      await partnerClaimExcessTokens.connect(dolomiteOwnerImpersonator).ownerSetPartnerInfo(
-        core.marketIds.usdc,
-        core.hhUser5.address,
-        parseEther('.5'),
-      );
+      await partnerClaimExcessTokens
+        .connect(dolomiteOwnerImpersonator)
+        .ownerSetPartnerInfo(core.marketIds.usdc, core.hhUser5.address, { value: parseEther('.5') });
       let partnerInfo = await partnerClaimExcessTokens.getPartnerInfo(core.marketIds.usdc);
       expect(partnerInfo.marketId).to.equal(core.marketIds.usdc);
       expect(partnerInfo.partner).to.equal(core.hhUser5.address);
-      expect(partnerInfo.feeSplit).to.equal(parseEther('.5'));
+      expect(partnerInfo.feeSplitToPartner.value).to.equal(parseEther('.5'));
 
-      const res = await partnerClaimExcessTokens.connect(dolomiteOwnerImpersonator).ownerRemovePartnerInfo(
-        core.marketIds.usdc
-      );
+      const res = await partnerClaimExcessTokens
+        .connect(dolomiteOwnerImpersonator)
+        .ownerRemovePartnerInfo(core.marketIds.usdc);
       await expectEvent(partnerClaimExcessTokens, res, 'PartnerInfoRemoved', {
         marketId: core.marketIds.usdc,
       });
       partnerInfo = await partnerClaimExcessTokens.getPartnerInfo(core.marketIds.usdc);
       expect(partnerInfo.marketId).to.equal(ZERO_BI);
       expect(partnerInfo.partner).to.equal(ADDRESS_ZERO);
-      expect(partnerInfo.feeSplit).to.equal(ZERO_BI);
+      expect(partnerInfo.feeSplitToPartner.value).to.equal(ZERO_BI);
     });
 
     it('should fail if sender is not dolomite owner', async () => {
       await expectThrow(
         partnerClaimExcessTokens.connect(core.hhUser1).ownerRemovePartnerInfo(core.marketIds.usdc),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
 
   describe('#claimExcessTokens', () => {
     it('should work normally when called by partner and not depositing into dolomite margin', async () => {
-      await partnerClaimExcessTokens.connect(dolomiteOwnerImpersonator).ownerSetPartnerInfo(
-        core.marketIds.usdc,
-        core.hhUser5.address,
-        parseEther('.5'),
-      );
+      await partnerClaimExcessTokens
+        .connect(dolomiteOwnerImpersonator)
+        .ownerSetPartnerInfo(core.marketIds.usdc, core.hhUser5.address, { value: parseEther('.6') });
 
       const excessTokens = await core.dolomiteMargin.getNumExcessTokens(core.marketIds.usdc);
-      const partnerBalance = excessTokens.value.div(2);
+      const partnerBalance = excessTokens.value.mul(6).div(10);
       await partnerClaimExcessTokens.connect(core.hhUser5).claimExcessTokens(core.tokens.usdc.address, false);
       expect(await core.tokens.usdc.balanceOf(core.hhUser5.address)).to.equal(partnerBalance);
       expect(await core.tokens.usdc.balanceOf(core.gnosisSafe.address)).to.equal(
-        excessTokens.value.sub(partnerBalance)
+        excessTokens.value.sub(partnerBalance),
       );
     });
 
     it('should work normally when called by treasury and not depositing into dolomite margin', async () => {
-      await partnerClaimExcessTokens.connect(dolomiteOwnerImpersonator).ownerSetPartnerInfo(
-        core.marketIds.usdc,
-        core.hhUser5.address,
-        parseEther('.5'),
-      );
+      await partnerClaimExcessTokens
+        .connect(dolomiteOwnerImpersonator)
+        .ownerSetPartnerInfo(core.marketIds.usdc, core.hhUser5.address, { value: parseEther('.6') });
 
       const excessTokens = await core.dolomiteMargin.getNumExcessTokens(core.marketIds.usdc);
-      const partnerBalance = excessTokens.value.div(2);
+      const partnerBalance = excessTokens.value.mul(6).div(10);
       await partnerClaimExcessTokens.connect(core.gnosisSafe).claimExcessTokens(core.tokens.usdc.address, false);
       expect(await core.tokens.usdc.balanceOf(core.hhUser5.address)).to.equal(partnerBalance);
       expect(await core.tokens.usdc.balanceOf(core.gnosisSafe.address)).to.equal(
-        excessTokens.value.sub(partnerBalance)
+        excessTokens.value.sub(partnerBalance),
       );
     });
 
     it('should work normally when depositing into dolomite margin', async () => {
-      await partnerClaimExcessTokens.connect(dolomiteOwnerImpersonator).ownerSetPartnerInfo(
-        core.marketIds.usdc,
-        core.hhUser5.address,
-        parseEther('.5'),
-      );
+      await partnerClaimExcessTokens
+        .connect(dolomiteOwnerImpersonator)
+        .ownerSetPartnerInfo(core.marketIds.usdc, core.hhUser5.address, { value: parseEther('.6') });
 
       const excessTokens = await core.dolomiteMargin.getNumExcessTokens(core.marketIds.usdc);
-      const partnerBalance = excessTokens.value.div(2);
+      const partnerBalance = excessTokens.value.mul(6).div(10);
       await partnerClaimExcessTokens.connect(core.gnosisSafe).claimExcessTokens(core.tokens.usdc.address, true);
       expect(await core.tokens.usdc.balanceOf(core.hhUser5.address)).to.equal(partnerBalance);
       await expectProtocolBalance(
@@ -220,16 +209,13 @@ describe('PartnerClaimExcessTokens', () => {
     });
 
     it('should work normally when no fees to transfer', async () => {
-      await partnerClaimExcessTokens.connect(dolomiteOwnerImpersonator).ownerSetPartnerInfo(
-        core.marketIds.usdc,
-        core.hhUser5.address,
-        parseEther('.5'),
-      );
+      await partnerClaimExcessTokens
+        .connect(dolomiteOwnerImpersonator)
+        .ownerSetPartnerInfo(core.marketIds.usdc, core.hhUser5.address, { value: parseEther('.6') });
 
-      await core.dolomiteMargin.connect(dolomiteOwnerImpersonator).ownerWithdrawExcessTokens(
-        core.marketIds.usdc,
-        core.hhUser4.address,
-      );
+      await core.dolomiteMargin
+        .connect(dolomiteOwnerImpersonator)
+        .ownerWithdrawExcessTokens(core.marketIds.usdc, core.hhUser4.address);
       await partnerClaimExcessTokens.connect(core.gnosisSafe).claimExcessTokens(core.tokens.usdc.address, false);
       expect(await core.tokens.usdc.balanceOf(core.hhUser5.address)).to.equal(0);
       expect(await core.tokens.usdc.balanceOf(core.gnosisSafe.address)).to.equal(0);
@@ -243,11 +229,9 @@ describe('PartnerClaimExcessTokens', () => {
     });
 
     it('should fail if sender is not partner or treasury', async () => {
-      await partnerClaimExcessTokens.connect(dolomiteOwnerImpersonator).ownerSetPartnerInfo(
-        core.marketIds.usdc,
-        core.hhUser5.address,
-        parseEther('.5'),
-      );
+      await partnerClaimExcessTokens
+        .connect(dolomiteOwnerImpersonator)
+        .ownerSetPartnerInfo(core.marketIds.usdc, core.hhUser5.address, { value: parseEther('.6') });
 
       await expectThrow(
         partnerClaimExcessTokens.connect(core.hhUser1).claimExcessTokens(core.tokens.usdc.address, false),
