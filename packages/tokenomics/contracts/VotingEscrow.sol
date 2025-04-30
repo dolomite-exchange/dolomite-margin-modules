@@ -74,8 +74,21 @@ contract VotingEscrow is IERC721, IERC721Metadata, IVotes, Initializable {
     event Withdraw(
         address indexed provider,
         uint256 tokenId,
-        uint256 value,
+        uint256 amountReceived,
         uint256 ts
+    );
+
+    event BurnFeePaid(
+        address indexed provider,
+        uint256 tokenId,
+        uint256 amountBurned
+    );
+
+    event RecoupFeePaid(
+        address indexed provider,
+        uint256 tokenId,
+        uint256 amountToVester,
+        uint256 amountToBuybackPool
     );
 
     event Supply(uint256 prevSupply, uint256 supply);
@@ -1057,11 +1070,18 @@ contract VotingEscrow is IERC721, IERC721Metadata, IVotes, Initializable {
 
         if (burnFeeAmount > 0) {
             ERC20Burnable(token).burn(burnFeeAmount);
+            emit BurnFeePaid(msg.sender, _tokenId, burnFeeAmount);
         }
         if (recoupFeeAmount > 0) {
-            uint256 buybackAmount = recoupFeeAmount * 90 / 100;
+            uint256 buybackAmount = recoupFeeAmount * 9 / 10;
             IERC20(token).safeTransfer(vester, recoupFeeAmount - buybackAmount);
             IERC20(token).safeTransfer(buybackPool, buybackAmount);
+            emit RecoupFeePaid(
+                msg.sender,
+                _tokenId,
+                recoupFeeAmount - buybackAmount,
+                buybackAmount
+            );
         }
         IERC20(token).safeTransfer(msg.sender, value);
 

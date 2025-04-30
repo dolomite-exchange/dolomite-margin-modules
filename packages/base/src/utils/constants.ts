@@ -2279,6 +2279,9 @@ export const REDSTONE_PRICE_AGGREGATORS_MAP: Record<
     },
   },
   [Network.Berachain]: {
+    [BERA_ETH_MAP[Network.Berachain].address]: {
+      aggregatorAddress: '0xcA727511c9d542AAb9eF406d24E5bbbE4567c22d',
+    },
     [BTC_PLACEHOLDER_MAP[Network.Berachain].address]: {
       aggregatorAddress: '0xa8a94Da411425634e3Ed6C331a32ab4fd774aa43',
     },
@@ -2312,6 +2315,9 @@ export const REDSTONE_PRICE_AGGREGATORS_MAP: Record<
     },
     [USDE_MAP[Network.Berachain].address]: {
       aggregatorAddress: '0xbbF121624c3b85C929Ac83872bf6c86b0976A55e',
+    },
+    [WETH_MAP[Network.Berachain].address]: {
+      aggregatorAddress: '0x3587a73AA02519335A8a6053a97657BECe0bC2Cc',
     },
     [WE_ETH_MAP[Network.Berachain].address]: {
       aggregatorAddress: '0x65eD6a4ac085620eE943c0B15525C4428D23e4Db',
