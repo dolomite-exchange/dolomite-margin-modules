@@ -84,6 +84,10 @@ export enum TargetLiquidationPenalty {
    */
   _4 = '0.040',
   /**
+   * 5%
+   */
+  _5 = '0.050',
+  /**
    * 6%
    */
   _6 = '0.060',

@@ -1979,6 +1979,11 @@
       "transaction": "0x5a79d4db06dbb5f78a1950979cd27e3c9611396f0398591230a15ca19082dbaa",
       "isVerified": true
     },
+    "42161": {
+      "address": "0x0F81001eF0A83ecCE5ccebf63EB302c70a39a654",
+      "transaction": "0x553e8a0c1ad031ab02e92ae4f2581334281893ad39d35bbc70ca817a4f2c1c38",
+      "isVerified": true
+    },
     "80094": {
       "address": "0x0F81001eF0A83ecCE5ccebf63EB302c70a39a654",
       "transaction": "0x364dbcc32c36056768c3790725d5d315715f32d1bdd8acfcbd8f622677b009ab",
