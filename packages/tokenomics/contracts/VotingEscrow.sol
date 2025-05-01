@@ -2,6 +2,7 @@
 pragma solidity ^0.8.9;
 
 import { IERC721, IERC721Metadata } from "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
+import { DecimalLib } from "@dolomite-exchange/modules-base/contracts/protocol/lib/DecimalLib.sol";
 import { IVotes } from "@openzeppelin/contracts/governance/utils/IVotes.sol";
 import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -26,6 +27,7 @@ import { IVoter } from "./interfaces/IVoter.sol";
  * @dev     Vote weight decays linearly over time. Lock time cannot be more than `MAXTIME` (2 years).
  */
 contract VotingEscrow is IERC721, IERC721Metadata, IVotes, Initializable {
+    using DecimalLib for uint256;
     using SafeERC20 for IERC20;
 
     enum DepositType {
@@ -1073,7 +1075,7 @@ contract VotingEscrow is IERC721, IERC721Metadata, IVotes, Initializable {
             emit BurnFeePaid(msg.sender, _tokenId, burnFeeAmount);
         }
         if (recoupFeeAmount > 0) {
-            uint256 buybackAmount = recoupFeeAmount * 9 / 10;
+            uint256 buybackAmount = recoupFeeAmount.mul(IVeFeeCalculator(feeCalculator).buybackFeeSplit());
             IERC20(token).safeTransfer(vester, recoupFeeAmount - buybackAmount);
             IERC20(token).safeTransfer(buybackPool, buybackAmount);
             emit RecoupFeePaid(

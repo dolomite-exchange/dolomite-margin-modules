@@ -8406,10 +8406,17 @@
       "isVerified": true
     }
   },
-  "VeFeeCalculator": {
+  "VeFeeCalculatorV1": {
     "80094": {
       "address": "0xa7b2c7B13E7628b70DDA64a257767F7292917cE9",
       "transaction": "0x0b9f7e47891ad8e2fe00a1a514aa819b7dc39dfb4f159e5fb487ab0082bbdf6e",
+      "isVerified": true
+    }
+  },
+  "VeFeeCalculatorV2": {
+    "80094": {
+      "address": "0x27E4235cBd6A7Ee619Ac6321Aa69Fc7F3814bEe0",
+      "transaction": "0xaa8f530bbde918e3aa955d9d7b983e05622d05726e02c8fd08061b5dcd966d73",
       "isVerified": true
     }
   },
@@ -8501,6 +8508,13 @@
     "80094": {
       "address": "0x9a79E1eA1f83Fd5ff46816C42929bbFC1Dd2c0b2",
       "transaction": "0xae8c64245c6f01d0bde14be60e0ddc57616f406d55621f4e3cd0365592413dd6",
+      "isVerified": true
+    }
+  },
+  "VotingEscrowImplementationV3": {
+    "80094": {
+      "address": "0x95A85904Fa475200b87700119343c32a134f7f05",
+      "transaction": "0x9602f1d05dd0b156a843def15758638102d11e43b9885257ab5233cb74acedd3",
       "isVerified": true
     }
   },
