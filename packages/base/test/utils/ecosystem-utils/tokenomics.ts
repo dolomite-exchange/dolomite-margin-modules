@@ -14,7 +14,8 @@ import {
   IVeExternalVesterV1__factory,
   IVesterDiscountCalculator,
   IVesterDiscountCalculator__factory,
-  ODOLO, ODOLO__factory,
+  ODOLO,
+  ODOLO__factory,
   VeFeeCalculator,
   VeFeeCalculator__factory,
   VotingEscrow,
@@ -60,6 +61,9 @@ export async function createTokenomicsEcosystem(
       Deployments.ExternalVesterDiscountCalculatorV1[network].address,
       signer,
     ),
-    veFeeCalculator: VeFeeCalculator__factory.connect(Deployments.VeFeeCalculator[network].address, signer),
+    veFeeCalculator: VeFeeCalculator__factory.connect(
+      getMaxDeploymentVersionAddressByDeploymentKey('VeFeeCalculator', network),
+      signer,
+    ),
   };
 }
