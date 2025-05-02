@@ -24,26 +24,42 @@ import { IBaseClaim } from "./IBaseClaim.sol";
 
 
 /**
- * @title   IRollingClaims
+ * @title   IFeeRebateRollingClaims
  * @author  Dolomite
  *
- * @notice  Interface for rolling claims contract
+ * @notice  Interface for fee rebate rolling claims contract
  */
-interface IRollingClaims is IBaseClaim {
+interface IFeeRebateRollingClaims is IBaseClaim {
 
-    struct RollingClaimsStorage {
-        mapping(address => uint256) userToClaimAmount;
+    struct FeeRebateRollingClaimsStorage {
+        mapping(address => mapping(uint256 => uint256)) userToMarketIdToClaimAmount;
+        mapping(uint256 => bytes32) marketIdToMerkleRoot;
     }
 
+    struct ClaimParams {
+        uint256 marketId;
+        bytes32[] proof;
+        uint256 amount;
+    }
+
+    event MarketIdToMerkleRootSet(uint256 marketId, bytes32 merkleRoot);
+
     // ======================================================
-    // ======================== Events ======================
+    // ==================== Admin Functions =================
     // ======================================================
+
+    function ownerSetMarketIdToMerkleRoot(uint256 _marketId, bytes32 _merkleRoot) external;
 
     // ======================================================
     // ================== External Functions ================
     // ======================================================
 
-    function claim(bytes32[] memory _proof, uint256 _amount) external;
+    function claim(ClaimParams[] memory _claimParams) external;
 
-    function userToClaimAmount(address _user) external view returns (uint256);
+    // ======================================================
+    // ==================== View Functions ==================
+    // ======================================================
+
+    function marketIdToMerkleRoot(uint256 _marketId) external view returns (bytes32);
+    function userToMarketIdToClaimAmount(address _user, uint256 _marketId) external view returns (uint256);
 }

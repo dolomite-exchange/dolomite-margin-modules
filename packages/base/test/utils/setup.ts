@@ -440,7 +440,7 @@ export async function setupUSDCBalance<T extends DolomiteNetwork>(
     await core.tokens.usdc.connect(whaleSigner).transfer(signer.address, amount);
     await core.tokens.usdc.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
   } else if (core.network === Network.Berachain) {
-    const whaleAddress = '0x90bc07408f5b5eAc4dE38Af76EA6069e1fcEe363'; // Bera Collateral Vault
+    const whaleAddress = '0x4Be03f781C497A489E3cB0287833452cA9B9E80B'; // BEX vault
     const whaleSigner = await impersonate(whaleAddress, true);
     await core.tokens.usdc.connect(whaleSigner).transfer(signer.address, amount);
     await core.tokens.usdc.connect(signer).approve(spender.address, ethers.constants.MaxUint256);

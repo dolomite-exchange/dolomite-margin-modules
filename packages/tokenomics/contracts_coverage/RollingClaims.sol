@@ -26,7 +26,6 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { MerkleProof } from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import { BaseClaimWithMerkleProof } from "./BaseClaimWithMerkleProof.sol";
 import { IRollingClaims } from "./interfaces/IRollingClaims.sol";
-import { IVotingEscrow } from "./interfaces/IVotingEscrow.sol";
 
 
 /**

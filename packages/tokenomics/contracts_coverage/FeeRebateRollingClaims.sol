@@ -25,47 +25,39 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { MerkleProof } from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import { BaseClaim } from "./BaseClaim.sol";
-import { IVeTokenClaim } from "./interfaces/IVeTokenClaim.sol";
-import { IVotingEscrow } from "./interfaces/IVotingEscrow.sol";
+import { IFeeRebateRollingClaims } from "./interfaces/IFeeRebateRollingClaims.sol";
+import { AccountActionLib } from "@dolomite-exchange/modules-base/contracts/lib/AccountActionLib.sol";
+import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 
 
 /**
- * @title   VeTokenClaim
+ * @title   FeeRebateRollingClaims
  * @author  Dolomite
  *
- * Claim contract for veDOLO from Boyco rewards
+ * Claim contract for fee rebates for veDOLO holders
  */
-contract VeTokenClaim is BaseClaim, IVeTokenClaim {
+contract FeeRebateRollingClaims is BaseClaim, IFeeRebateRollingClaims {
     using SafeERC20 for IERC20;
 
     // ===================================================
     // ==================== Constants ====================
     // ===================================================
 
-    bytes32 private constant _FILE = "VeTokenClaim";
-    bytes32 private constant _VE_TOKEN_CLAIM_STORAGE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.veTokenClaimStorage")) - 1); // solhint-disable-line max-line-length
-
-    uint256 public constant _BOYCO_START_TIME = 1738800000; // Feb 06 2025 00:00:00 UTC
+    bytes32 private constant _FILE = "FeeRebateRollingClaims";
+    bytes32 private constant _FEE_REBATE_ROLLING_CLAIMS_STORAGE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.feeRebateRollingClaimsStorage")) - 1); // solhint-disable-line max-line-length
 
     // ===================================================
     // ==================== State Variables ==============
     // ===================================================
-
-    IERC20 public immutable DOLO; // solhint -disable-line mixed-case
-    IVotingEscrow public immutable VE_DOLO; // solhint -disable-line mixed-case
 
     // ===========================================================
     // ======================= Constructor =======================
     // ===========================================================
 
     constructor(
-        address _dolo,
-        address _veDolo,
         address _dolomiteRegistry,
         address _dolomiteMargin
     ) BaseClaim(_dolomiteRegistry, _dolomiteMargin) {
-        DOLO = IERC20(_dolo);
-        VE_DOLO = IVotingEscrow(_veDolo);
     }
 
     // ======================================================
@@ -84,64 +76,79 @@ contract VeTokenClaim is BaseClaim, IVeTokenClaim {
     // ======================================================
 
     function claim(ClaimParams[] memory _claimParams) external onlyClaimEnabled nonReentrant {
-        VeTokenClaimStorage storage s = _getVeTokenClaimStorage();
-        address user = getUserOrRemappedAddress(msg.sender);
-
-        uint256 totalAmount;
         for (uint256 i = 0; i < _claimParams.length; i++) {
-            ClaimParams memory claimParam = _claimParams[i];
-
-            Require.that(
-                _verifyMerkleProof(
-                    user,
-                    s.marketIdToMerkleRoot[claimParam.marketId],
-                    claimParam.proof,
-                    claimParam.amount
-                ),
-                _FILE,
-                "Invalid merkle proof",
-                claimParam.marketId
-            );
-            Require.that(
-                !s.userToMarketIdToClaimStatus[user][claimParam.marketId],
-                _FILE,
-                "User already claimed"
-            );
-
-            s.userToMarketIdToClaimStatus[user][claimParam.marketId] = true;
-            totalAmount += claimParam.amount;
-            DOLOMITE_REGISTRY.eventEmitter().emitRewardClaimed(
-                user,
-                claimParam.marketId, // @follow-up @Corey, do you want an event like this? Or one event per claim with an array?
-                claimParam.amount
-            );
+            _claim(_claimParams[i]);
         }
-
-        DOLO.safeApprove(address(VE_DOLO), totalAmount);
-        VE_DOLO.create_lock_for(totalAmount, block.timestamp - _BOYCO_START_TIME, msg.sender);
     }
-
 
     // ==============================================================
     // ======================= View Functions =======================
     // ==============================================================
 
     function marketIdToMerkleRoot(uint256 _marketId) external view returns (bytes32) {
-        VeTokenClaimStorage storage s = _getVeTokenClaimStorage();
+        FeeRebateRollingClaimsStorage storage s = _getFeeRebateRollingClaimsStorage();
         return s.marketIdToMerkleRoot[_marketId];
     }
 
-    function userToClaimStatus(address _user, uint256 _marketId) external view returns (bool) {
-        VeTokenClaimStorage storage s = _getVeTokenClaimStorage();
-        return s.userToMarketIdToClaimStatus[_user][_marketId];
+    function userToMarketIdToClaimAmount(address _user, uint256 _marketId) external view returns (uint256) {
+        FeeRebateRollingClaimsStorage storage s = _getFeeRebateRollingClaimsStorage();
+        return s.userToMarketIdToClaimAmount[_user][_marketId];
     }
 
     // ==================================================================
     // ======================= Internal Functions =======================
     // ==================================================================
 
+    function _claim(ClaimParams memory _claimParams) internal {
+        FeeRebateRollingClaimsStorage storage s = _getFeeRebateRollingClaimsStorage();
+
+        if (_verifyMerkleProof( msg.sender, s.marketIdToMerkleRoot[_claimParams.marketId], _claimParams.proof, _claimParams.amount )) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            _verifyMerkleProof(
+                msg.sender,
+                s.marketIdToMerkleRoot[_claimParams.marketId],
+                _claimParams.proof,
+                _claimParams.amount
+            ),
+            _FILE,
+            "Invalid merkle proof",
+            _claimParams.marketId
+        );
+        if (_claimParams.amount > s.userToMarketIdToClaimAmount[msg.sender][_claimParams.marketId]) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            _claimParams.amount > s.userToMarketIdToClaimAmount[msg.sender][_claimParams.marketId],
+            _FILE,
+            "No amount to claim"
+        );
+
+        uint256 amountToClaim = _claimParams.amount - s.userToMarketIdToClaimAmount[msg.sender][_claimParams.marketId];
+        s.userToMarketIdToClaimAmount[msg.sender][_claimParams.marketId] = _claimParams.amount;
+
+        IERC20 token = IERC20(DOLOMITE_MARGIN().getMarketTokenAddress(_claimParams.marketId));
+        token.safeApprove(address(DOLOMITE_MARGIN()), amountToClaim);
+        AccountActionLib.deposit(
+            DOLOMITE_MARGIN(),
+            msg.sender,
+            address(this),
+            0,
+            _claimParams.marketId,
+            IDolomiteStructs.AssetAmount({
+                sign: true,
+                denomination: IDolomiteStructs.AssetDenomination.Wei,
+                ref: IDolomiteStructs.AssetReference.Delta,
+                value: amountToClaim
+            })
+        );
+
+        DOLOMITE_REGISTRY.eventEmitter().emitRewardClaimed(
+            msg.sender,
+            _claimParams.marketId,
+            amountToClaim
+        );
+    }
+
     function _ownerSetMarketIdToMerkleRoot(uint256 _marketId, bytes32 _merkleRoot) internal virtual {
-        VeTokenClaimStorage storage s = _getVeTokenClaimStorage();
+        FeeRebateRollingClaimsStorage storage s = _getFeeRebateRollingClaimsStorage();
         s.marketIdToMerkleRoot[_marketId] = _merkleRoot;
         emit MarketIdToMerkleRootSet(_marketId, _merkleRoot);
     }
@@ -156,10 +163,10 @@ contract VeTokenClaim is BaseClaim, IVeTokenClaim {
         return MerkleProof.verify(_proof, _merkleRoot, leaf);
     }
 
-    function _getVeTokenClaimStorage() internal pure returns (VeTokenClaimStorage storage veTokenClaimStorage) {
-        bytes32 slot = _VE_TOKEN_CLAIM_STORAGE_SLOT;
+    function _getFeeRebateRollingClaimsStorage() internal pure returns (FeeRebateRollingClaimsStorage storage feeRebateRollingClaimsStorage) {
+        bytes32 slot = _FEE_REBATE_ROLLING_CLAIMS_STORAGE_SLOT;
         assembly {
-            veTokenClaimStorage.slot := slot
+            feeRebateRollingClaimsStorage.slot := slot
         }
     }
 }
