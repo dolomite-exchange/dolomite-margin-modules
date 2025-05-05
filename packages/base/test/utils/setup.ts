@@ -1017,6 +1017,7 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
     tokenVaultActionsImpl: createTokenVaultActionsLibraries(config),
     unwrapperTraderImpl: createAsyncUnwrapperImplLibraries(config),
     wrapperTraderImpl: createAsyncWrapperImplLibraries(config),
+    genericTraderProxyV2Lib: createGenericTraderProxyV2LibLibraries(config),
   };
 
   const coreProtocolParams: CoreProtocolParams<T> = {
@@ -1717,6 +1718,17 @@ function createTokenVaultActionsLibraries<T extends DolomiteNetwork>(
     IsolationModeTokenVaultV1ActionsImpl: getMaxDeploymentVersionAddressByDeploymentKey(
       'IsolationModeTokenVaultV1ActionsImpl',
       config.network,
+    ),
+  };
+}
+
+function createGenericTraderProxyV2LibLibraries<T extends DolomiteNetwork>(
+  config: CoreProtocolSetupConfig<T>,
+): Record<string, string> {
+  return {
+    GenericTraderProxyV2Lib: getMaxDeploymentVersionAddressByDeploymentKey(
+      'GenericTraderProxyV2Lib',
+      config.network
     ),
   };
 }

@@ -179,7 +179,7 @@ async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
   const liquidatorProxyV5Address = await deployContractAndSave(
     'LiquidatorProxyV5',
     [network, expiry.address, dolomiteMargin.address, dolomiteRegistry.address, liquidatorAssetRegistry.address],
-    undefined,
+    'LiquidatorProxyV6',
     { GenericTraderProxyV2Lib: genericTraderProxyV2LibAddress },
   );
   const liquidatorProxyV5 = ILiquidatorProxyV5__factory.connect(liquidatorProxyV5Address, hhUser1);
