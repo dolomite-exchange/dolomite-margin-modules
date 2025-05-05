@@ -4,7 +4,12 @@ import { FinalSettlementViaInternalSwapProxy } from 'packages/base/src/types';
 import { createContractWithName } from 'packages/base/src/utils/dolomite-utils';
 import { Network, ONE_ETH_BI, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
-import { expectProtocolBalance, expectThrow, expectWalletBalance } from '../utils/assertions';
+import {
+  expectProtocolBalance,
+  expectProtocolBalanceIsGreaterThan,
+  expectThrow,
+  expectWalletBalance,
+} from '../utils/assertions';
 import { CoreProtocolArbitrumOne } from '../utils/core-protocols/core-protocol-arbitrum-one';
 import { disableInterestAccrual, setupCoreProtocol } from '../utils/setup';
 
@@ -75,11 +80,6 @@ describe('FinalSettlementViaInternalSwapProxy', () => {
     await disableInterestAccrual(core, graiMarketId);
     await disableInterestAccrual(core, usdcMarketId);
 
-    graiPrice = (await core.dolomiteMargin.getMarketPrice(graiMarketId)).value;
-    graiPriceAdj = graiPrice.mul(reward.value.add(ONE_ETH_BI)).div(ONE_ETH_BI);
-    usdcPrice = (await core.dolomiteMargin.getMarketPrice(usdcMarketId)).value;
-    console.log('\tPrices', graiPrice.toString(), graiPriceAdj.toString(), usdcPrice.toString());
-
     graiHeld1 = (await core.dolomiteMargin.getAccountWei(supplier1, graiMarketId)).value;
     graiHeld2 = (await core.dolomiteMargin.getAccountWei(supplier2, graiMarketId)).value;
     graiHeld3 = (await core.dolomiteMargin.getAccountWei(supplier3, graiMarketId)).value;
@@ -102,12 +102,20 @@ describe('FinalSettlementViaInternalSwapProxy', () => {
     );
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(finalSettlement.address, true);
 
+    await capturePrices();
+
     snapshotId = await snapshot();
   });
 
   beforeEach(async () => {
     snapshotId = await revertToSnapshotAndCapture(snapshotId);
   });
+
+  async function capturePrices() {
+    graiPrice = (await core.dolomiteMargin.getMarketPrice(graiMarketId)).value;
+    graiPriceAdj = graiPrice.mul(reward.value.add(ONE_ETH_BI)).div(ONE_ETH_BI);
+    usdcPrice = (await core.dolomiteMargin.getMarketPrice(usdcMarketId)).value;
+  }
 
   describe('#ownerForceWithdraw', () => {
     it('should work when the supplier can partially cover the debt', async () => {
@@ -138,18 +146,52 @@ describe('FinalSettlementViaInternalSwapProxy', () => {
   describe('#ownerSettle', () => {
     it('should work when the supplier can fully cover the debt', async () => {
       await finalSettlement.ownerSettle([borrower2], [supplier1], graiMarketId, usdcMarketId, reward);
+      await capturePrices();
 
       await expectProtocolBalance(core, borrower2.owner, borrower2.number, graiMarketId, ZERO_BI);
       await expectProtocolBalance(core, supplier1.owner, supplier1.number, graiMarketId, graiHeld1.sub(graiBorrowed2));
 
       const usdcReward = graiBorrowed2.mul(graiPriceAdj).div(usdcPrice);
-      console.log('\tusdc amounts', usdcBorrowed2.toString(), usdcHeld1.toString(), usdcReward.toString());
-      await expectProtocolBalance(core, supplier1.owner, supplier1.number, usdcMarketId, usdcHeld1.add(usdcReward));
-      await expectProtocolBalance(core, borrower2.owner, borrower2.number, usdcMarketId, usdcBorrowed2.sub(usdcReward));
+      await expectProtocolBalanceIsGreaterThan(core, supplier1, usdcMarketId, usdcHeld1.add(usdcReward), 1);
+      await expectProtocolBalanceIsGreaterThan(core, borrower2, usdcMarketId, usdcBorrowed2.sub(usdcReward), 1);
+    });
+
+    it('should work when the supplier can fully cover many borrowers', async () => {
+      await finalSettlement.ownerSettle(
+        [borrower2, borrower3],
+        [supplier1, supplier1],
+        graiMarketId,
+        usdcMarketId,
+        reward,
+      );
+      await capturePrices();
+
+      await expectProtocolBalance(core, borrower2.owner, borrower2.number, graiMarketId, ZERO_BI);
+      await expectProtocolBalance(core, borrower3.owner, borrower3.number, graiMarketId, ZERO_BI);
+      await expectProtocolBalance(
+        core,
+        supplier1.owner,
+        supplier1.number,
+        graiMarketId,
+        graiHeld1.sub(graiBorrowed2).sub(graiBorrowed3),
+      );
+
+      const usdcReward2 = graiBorrowed2.mul(graiPriceAdj).div(usdcPrice);
+      const usdcReward3 = graiBorrowed3.mul(graiPriceAdj).div(usdcPrice);
+      await expectProtocolBalanceIsGreaterThan(
+        core,
+        supplier1,
+        usdcMarketId,
+        usdcHeld1.add(usdcReward2).add(usdcReward3),
+        1,
+      );
+      await expectProtocolBalanceIsGreaterThan(core, borrower2, usdcMarketId, usdcBorrowed2.sub(usdcReward2), 1);
+      await expectProtocolBalanceIsGreaterThan(core, borrower3, usdcMarketId, usdcBorrowed3.sub(usdcReward3), 1);
     });
 
     it('should work when the supplier can partially cover the debt', async () => {
       await finalSettlement.ownerSettle([borrower1], [supplier1], graiMarketId, usdcMarketId, reward);
+      await capturePrices();
 
       await expectProtocolBalance(core, supplier1.owner, supplier1.number, graiMarketId, ZERO_BI);
       await expectProtocolBalance(
@@ -159,6 +201,10 @@ describe('FinalSettlementViaInternalSwapProxy', () => {
         graiMarketId,
         ZERO_BI.sub(graiBorrowed1.sub(graiHeld1)),
       );
+
+      const usdcReward = graiHeld1.mul(graiPriceAdj).div(usdcPrice);
+      await expectProtocolBalanceIsGreaterThan(core, supplier1, usdcMarketId, usdcHeld1.add(usdcReward), 1);
+      await expectProtocolBalanceIsGreaterThan(core, borrower1, usdcMarketId, usdcBorrowed1.sub(usdcReward), 1);
     });
 
     it('should fail if the caller is not the owner', async () => {
