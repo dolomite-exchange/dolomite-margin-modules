@@ -61,5 +61,6 @@ interface IFeeRebateRollingClaims is IBaseClaim {
     // ======================================================
 
     function marketIdToMerkleRoot(uint256 _marketId) external view returns (bytes32);
+
     function userToMarketIdToClaimAmount(address _user, uint256 _marketId) external view returns (uint256);
 }

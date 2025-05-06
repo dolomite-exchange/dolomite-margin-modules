@@ -20,14 +20,14 @@
 
 pragma solidity ^0.8.9;
 
+import { AccountActionLib } from "@dolomite-exchange/modules-base/contracts/lib/AccountActionLib.sol";
+import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { MerkleProof } from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import { BaseClaim } from "./BaseClaim.sol";
 import { IFeeRebateRollingClaims } from "./interfaces/IFeeRebateRollingClaims.sol";
-import { AccountActionLib } from "@dolomite-exchange/modules-base/contracts/lib/AccountActionLib.sol";
-import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 
 
 /**
@@ -75,7 +75,7 @@ contract FeeRebateRollingClaims is BaseClaim, IFeeRebateRollingClaims {
     // ================== Public Functions ==================
     // ======================================================
 
-    function claim(ClaimParams[] memory _claimParams) external onlyClaimEnabled nonReentrant {
+    function claim(ClaimParams[] calldata _claimParams) external onlyClaimEnabled nonReentrant {
         for (uint256 i = 0; i < _claimParams.length; i++) {
             _claim(_claimParams[i]);
         }
@@ -101,11 +101,12 @@ contract FeeRebateRollingClaims is BaseClaim, IFeeRebateRollingClaims {
 
     function _claim(ClaimParams memory _claimParams) internal {
         FeeRebateRollingClaimsStorage storage s = _getFeeRebateRollingClaimsStorage();
+        address user = msg.sender;
 
-        if (_verifyMerkleProof( msg.sender, s.marketIdToMerkleRoot[_claimParams.marketId], _claimParams.proof, _claimParams.amount )) { /* FOR COVERAGE TESTING */ }
+        if (_verifyMerkleProof( user, s.marketIdToMerkleRoot[_claimParams.marketId], _claimParams.proof, _claimParams.amount )) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _verifyMerkleProof(
-                msg.sender,
+                user,
                 s.marketIdToMerkleRoot[_claimParams.marketId],
                 _claimParams.proof,
                 _claimParams.amount
@@ -114,21 +115,22 @@ contract FeeRebateRollingClaims is BaseClaim, IFeeRebateRollingClaims {
             "Invalid merkle proof",
             _claimParams.marketId
         );
-        if (_claimParams.amount > s.userToMarketIdToClaimAmount[msg.sender][_claimParams.marketId]) { /* FOR COVERAGE TESTING */ }
+        if (_claimParams.amount > s.userToMarketIdToClaimAmount[user][_claimParams.marketId]) { /* FOR COVERAGE TESTING */ }
         Require.that(
-            _claimParams.amount > s.userToMarketIdToClaimAmount[msg.sender][_claimParams.marketId],
+            _claimParams.amount > s.userToMarketIdToClaimAmount[user][_claimParams.marketId],
             _FILE,
             "No amount to claim"
         );
 
-        uint256 amountToClaim = _claimParams.amount - s.userToMarketIdToClaimAmount[msg.sender][_claimParams.marketId];
-        s.userToMarketIdToClaimAmount[msg.sender][_claimParams.marketId] = _claimParams.amount;
+        uint256 amountToClaim = _claimParams.amount - s.userToMarketIdToClaimAmount[user][_claimParams.marketId];
+        s.userToMarketIdToClaimAmount[user][_claimParams.marketId] = _claimParams.amount;
 
+        // TODO: change to transfer and move funds from a rebate address (treasury)
         IERC20 token = IERC20(DOLOMITE_MARGIN().getMarketTokenAddress(_claimParams.marketId));
         token.safeApprove(address(DOLOMITE_MARGIN()), amountToClaim);
         AccountActionLib.deposit(
             DOLOMITE_MARGIN(),
-            msg.sender,
+            user,
             address(this),
             0,
             _claimParams.marketId,
@@ -140,11 +142,7 @@ contract FeeRebateRollingClaims is BaseClaim, IFeeRebateRollingClaims {
             })
         );
 
-        DOLOMITE_REGISTRY.eventEmitter().emitRewardClaimed(
-            msg.sender,
-            _claimParams.marketId,
-            amountToClaim
-        );
+        DOLOMITE_REGISTRY.eventEmitter().emitRewardClaimed(user, _claimParams.marketId, amountToClaim);
     }
 
     function _ownerSetMarketIdToMerkleRoot(uint256 _marketId, bytes32 _merkleRoot) internal virtual {
@@ -163,7 +161,8 @@ contract FeeRebateRollingClaims is BaseClaim, IFeeRebateRollingClaims {
         return MerkleProof.verify(_proof, _merkleRoot, leaf);
     }
 
-    function _getFeeRebateRollingClaimsStorage() internal pure returns (FeeRebateRollingClaimsStorage storage feeRebateRollingClaimsStorage) {
+    function _getFeeRebateRollingClaimsStorage(
+    ) internal pure returns (FeeRebateRollingClaimsStorage storage feeRebateRollingClaimsStorage) {
         bytes32 slot = _FEE_REBATE_ROLLING_CLAIMS_STORAGE_SLOT;
         assembly {
             feeRebateRollingClaimsStorage.slot := slot

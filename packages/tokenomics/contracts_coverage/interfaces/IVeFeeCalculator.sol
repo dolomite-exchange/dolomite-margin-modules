@@ -20,6 +20,8 @@
 
 pragma solidity ^0.8.9;
 
+import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
+
 
 /**
  * @title   IVeFeeCalculator
@@ -30,8 +32,11 @@ pragma solidity ^0.8.9;
 interface IVeFeeCalculator {
 
     event BurnFeeSet(uint256 burnFee);
+    event BuybackFeeSplitSet(IDolomiteStructs.Decimal buybackFeeSplit);
 
     function ownerSetBurnFee(uint256 _burnFee) external;
+
+    function ownerSetBuybackFeeSplit(IDolomiteStructs.Decimal memory _buybackFeeSplit) external;
 
     /**
      * Calculates how much in fees the user will pay to exit their lock
@@ -45,4 +50,6 @@ interface IVeFeeCalculator {
         uint256 _amount,
         uint256 _lockEndTime
     ) external view returns (uint256 burnFeeAmount, uint256 recoupFeeAmount);
+
+    function buybackFeeSplit() external view returns (IDolomiteStructs.Decimal memory);
 }
