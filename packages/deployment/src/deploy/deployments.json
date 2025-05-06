@@ -3881,6 +3881,13 @@
       "isVerified": true
     }
   },
+  "GravitaExternalVesterImplementationV3": {
+    "42161": {
+      "address": "0x63D906BE17224CA2201B19BF6c4FD1124c8e30e4",
+      "transaction": "0xae87562231002108d58ab272244438981e97dc7692e6cd6b8bbf238b78f4864a",
+      "isVerified": true
+    }
+  },
   "GravitaExternalVesterProxy": {
     "42161": {
       "address": "0xeC0f08BC015A0d0fBA1DF0B8B11d4779F5a04326",
@@ -3899,6 +3906,13 @@
     "42161": {
       "address": "0x8b43F6E9DE2dC56AFeE03393A7d80E66EcD6A4dA",
       "transaction": "0xb103238231d1f25b215c7e0ad71308216f4b7583d19e4b3da2a01b663b719ade",
+      "isVerified": true
+    }
+  },
+  "GravitaVesterDiscountCalculatorV2": {
+    "42161": {
+      "address": "0x1371e3B6c4B19919a86Bc6824Ec408c70668bFd7",
+      "transaction": "0x4a8f374e693e629a86d2a6bc485837767d52e32456a195132ef613cb8cc990e9",
       "isVerified": true
     }
   },
