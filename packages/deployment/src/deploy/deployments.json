@@ -2348,6 +2348,13 @@
       "isVerified": true
     }
   },
+  "FinalSettlementViaInternalSwapProxyV1": {
+    "42161": {
+      "address": "0xAcd89991e6732325c227Da86674bdcC6987a2373",
+      "transaction": "0x8547dce845d61f75ba5bc7cc273e5133d93f7ceeda0c6a0674341ab36b096c61",
+      "isVerified": true
+    }
+  },
   "GenericTraderProxyV2": {
     "196": {
       "address": "0xD6C1b15716742689c5b33C19c78D9d2a1494bF33",
@@ -3864,6 +3871,13 @@
     "42161": {
       "address": "0x3D2586dA719CaC754aB3b0143F1c9886bEA7a8B9",
       "transaction": "0xd95cc3bcced7b0d30c2b8edcc21cff68da4ad40e8d984c256267285133da8331",
+      "isVerified": true
+    }
+  },
+  "GravitaExternalVesterImplementationV2": {
+    "42161": {
+      "address": "0x5d5Af3DE21CD759d9fA14Bf7ae4C1140F20DAe5C",
+      "transaction": "0x7e158a7da387807657cd2bbb8e56c837423b26ee5548de2b54c9080e6205de4a",
       "isVerified": true
     }
   },

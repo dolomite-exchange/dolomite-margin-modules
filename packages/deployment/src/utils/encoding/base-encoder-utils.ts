@@ -9,8 +9,8 @@ import { INVALID_TOKEN_MAP } from '../../../../base/src/utils/constants';
 import { AccountRiskOverrideRiskFeature } from '../../../../base/src/utils/constructors/dolomite';
 import {
   ADDRESS_ZERO,
-  NETWORK_TO_NETWORK_NAME_MAP,
   DolomiteNetwork,
+  NETWORK_TO_NETWORK_NAME_MAP,
   ONE_BI,
   TEN_BI,
   ZERO_BI,
@@ -176,7 +176,10 @@ export async function prettyPrintEncodedDataWithTypeSafety<
   key: K,
   methodName: U,
   args: Parameters<T['populateTransaction'][U]>,
-  options: { skipWrappingCalldataInSubmitTransaction: boolean } = { skipWrappingCalldataInSubmitTransaction: false },
+  options: {
+    skipWrappingCalldataInSubmitTransaction?: boolean;
+    submitAndExecuteImmediately?: boolean;
+  } = { skipWrappingCalldataInSubmitTransaction: false, submitAndExecuteImmediately: false },
 ): Promise<EncodedTransaction> {
   const contract = liveMap[key];
   const transaction = await contract.populateTransaction[methodName.toString()](...(args as any));
@@ -219,15 +222,29 @@ export async function prettyPrintEncodedDataWithTypeSafety<
 
   let outerTransaction: PopulatedTransaction;
   if (realtimeOwner === core.ownerAdapterV1?.address) {
-    outerTransaction = await core.ownerAdapterV1.populateTransaction.submitTransaction(
-      transaction.to!,
-      transaction.data!,
-    );
+    if (options.submitAndExecuteImmediately) {
+      outerTransaction = await core.ownerAdapterV1.populateTransaction.submitTransactionAndExecute(
+        transaction.to!,
+        transaction.data!,
+      );
+    } else {
+      outerTransaction = await core.ownerAdapterV1.populateTransaction.submitTransaction(
+        transaction.to!,
+        transaction.data!,
+      );
+    }
   } else if (realtimeOwner === core.ownerAdapterV2?.address) {
-    outerTransaction = await core.ownerAdapterV2.populateTransaction.submitTransaction(
-      transaction.to!,
-      transaction.data!,
-    );
+    if (options.submitAndExecuteImmediately) {
+      outerTransaction = await core.ownerAdapterV2.populateTransaction.submitTransactionAndExecute(
+        transaction.to!,
+        transaction.data!,
+      );
+    } else {
+      outerTransaction = await core.ownerAdapterV2.populateTransaction.submitTransaction(
+        transaction.to!,
+        transaction.data!,
+      );
+    }
   } else if (realtimeOwner === core.delayedMultiSig?.address) {
     outerTransaction = await core.delayedMultiSig.populateTransaction.submitTransaction(
       transaction.to!,

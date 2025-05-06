@@ -7,7 +7,7 @@ import { ERC20__factory } from '../../src/types';
 import { AccountInfoStruct } from '../../src/utils';
 import { AccountStruct } from '../../src/utils/constants';
 import { valueStructToBigNumber } from '../../src/utils/dolomite-utils';
-import { Network, ZERO_BI } from '../../src/utils/no-deps-constants';
+import { DolomiteNetwork, ZERO_BI } from '../../src/utils/no-deps-constants';
 import { CoreProtocolType } from './setup';
 
 export async function expectThrowWithMatchingReason(call: Promise<any>, reason: RegExp) {
@@ -47,7 +47,7 @@ export async function expectNoThrow(call: Promise<any>) {
 
 // ========================= Balance Assertions =========================
 
-export async function expectProtocolBalanceIsGreaterThan<T extends Network>(
+export async function expectProtocolBalanceIsGreaterThan<T extends DolomiteNetwork>(
   coreProtocol: CoreProtocolType<T>,
   accountStruct: AccountStruct,
   marketId: BigNumberish,
@@ -56,15 +56,19 @@ export async function expectProtocolBalanceIsGreaterThan<T extends Network>(
 ) {
   assertHardhatInvariant(BigNumber.from(marginOfErrorBps).lte(10000), 'Margin of error must be less than 10000 bps');
 
-  const expectedBalanceWithMarginOfError = BigNumber.from(expectedBalance)
-    .sub(BigNumber.from(expectedBalance).mul(marginOfErrorBps).div('10000'));
+  const expectedBalanceWithMarginOfError = BigNumber.from(expectedBalance).sub(
+    BigNumber.from(expectedBalance).mul(marginOfErrorBps).div('10000'),
+  );
   const balance = await coreProtocol.dolomiteMargin.getAccountWei(accountStruct, marketId);
-  expect(valueStructToBigNumber(balance))
-    .to
-    .gte(expectedBalanceWithMarginOfError);
+
+  if (BigNumber.from(expectedBalance).lt(ZERO_BI)) {
+    expect(valueStructToBigNumber(balance)).to.lte(expectedBalanceWithMarginOfError);
+  } else {
+    expect(valueStructToBigNumber(balance)).to.gte(expectedBalanceWithMarginOfError);
+  }
 }
 
-export async function expectProtocolBalanceIsLessThan<T extends Network>(
+export async function expectProtocolBalanceIsLessThan<T extends DolomiteNetwork>(
   coreProtocol: CoreProtocolType<T>,
   accountStruct: AccountStruct,
   marketId: BigNumberish,
@@ -73,17 +77,16 @@ export async function expectProtocolBalanceIsLessThan<T extends Network>(
 ) {
   assertHardhatInvariant(BigNumber.from(marginOfErrorBps).lte(10000), 'Margin of error must be less than 10000 bps');
 
-  const expectedBalanceWithMarginOfError = BigNumber.from(expectedBalance)
-    .sub(BigNumber.from(expectedBalance).mul(marginOfErrorBps).div('10000'));
+  const expectedBalanceWithMarginOfError = BigNumber.from(expectedBalance).sub(
+    BigNumber.from(expectedBalance).mul(marginOfErrorBps).div('10000'),
+  );
   const balance = await coreProtocol.dolomiteMargin.getAccountWei(accountStruct, marketId);
-  expect(valueStructToBigNumber(balance))
-    .to
-    .lte(expectedBalanceWithMarginOfError);
+  expect(valueStructToBigNumber(balance)).to.lte(expectedBalanceWithMarginOfError);
 }
 
 const ONE_CENT: BigNumber = BigNumber.from('10000000000000000000000000000000000'); // $1 eq 1e36. Take off 2 decimals
 
-export async function expectWalletBalanceOrDustyIfZero<T extends Network>(
+export async function expectWalletBalanceOrDustyIfZero<T extends DolomiteNetwork>(
   coreProtocol: CoreProtocolType<T>,
   wallet: address,
   token: address,
@@ -126,7 +129,7 @@ export async function expectNotEvent(
   return expect(contractTransaction).to.not.emit(contract, eventName);
 }
 
-export async function expectProtocolBalance<T extends Network>(
+export async function expectProtocolBalance<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   accountOwner: { address: address } | address,
   accountNumber: BigNumberish,
@@ -139,14 +142,13 @@ export async function expectProtocolBalance<T extends Network>(
   };
   const rawBalanceWei = await core.dolomiteMargin.getAccountWei(account, marketId);
   const balanceWei = rawBalanceWei.sign ? rawBalanceWei.value : rawBalanceWei.value.mul(-1);
-  expect(balanceWei)
-    .eq(
-      amountWei,
-      `Expected ${balanceWei.toString()} to equal ${amountWei.toString()} for ${accountOwner} ${accountNumber} ${marketId}`,
-    );
+  expect(balanceWei).eq(
+    amountWei,
+    `Expected ${balanceWei.toString()} to equal ${amountWei.toString()} for ${accountOwner} ${accountNumber} ${marketId}`,
+  );
 }
 
-export async function expectProtocolBalanceDustyOrZero<T extends Network>(
+export async function expectProtocolBalanceDustyOrZero<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   accountOwner: { address: address } | address,
   accountNumber: BigNumberish,
@@ -163,74 +165,60 @@ export async function expectProtocolBalanceDustyOrZero<T extends Network>(
   expect(balanceWei.mul(price.value)).to.be.lt(maxDustyValueUsd);
 }
 
-export async function expectEthBalance(
-  accountOwner: { address: address } | address,
-  amount: BigNumberish,
-) {
+export async function expectEthBalance(accountOwner: { address: address } | address, amount: BigNumberish) {
   const owner = typeof accountOwner === 'object' ? accountOwner.address : accountOwner;
   const balance = await ethers.provider.getBalance(owner);
-  expect(balance)
-    .eq(
-      amount,
-      `Expected ${balance.toString()} to equal ${amount.toString()} for ${accountOwner} ${owner}`,
-    );
+  expect(balance).eq(
+    amount,
+    `Expected ${balance.toString()} to equal ${amount.toString()} for ${accountOwner} ${owner}`,
+  );
 }
 
 export async function expectWalletBalance(
   accountOwner: { address: address } | address,
-  token: { balanceOf(account: string, overrides?: CallOverrides): Promise<BigNumber>, address: address },
+  token: { balanceOf(account: string, overrides?: CallOverrides): Promise<BigNumber>; address: address },
   amount: BigNumberish,
 ) {
   const owner = typeof accountOwner === 'object' ? accountOwner.address : accountOwner;
   const balance = await token.balanceOf(owner);
-  expect(balance)
-    .eq(
-      amount,
-      `Expected ${balance.toString()} to equal ${amount.toString()} for ${accountOwner} ${owner} ${token.address}`,
-    );
+  expect(balance).eq(
+    amount,
+    `Expected ${balance.toString()} to equal ${amount.toString()} for ${accountOwner} ${owner} ${token.address}`,
+  );
 }
 
 export async function expectWalletBalanceIsGreaterThan(
   accountOwner: { address: address } | address,
-  token: { balanceOf(account: string, overrides?: CallOverrides): Promise<BigNumber>, address: address },
+  token: { balanceOf(account: string, overrides?: CallOverrides): Promise<BigNumber>; address: address },
   amount: BigNumberish,
 ) {
   const owner = typeof accountOwner === 'object' ? accountOwner.address : accountOwner;
   const balance = await token.balanceOf(owner);
-  expect(balance)
-    .to
-    .be
-    .gt(
-      amount,
-      `Expected ${balance.toString()} to be gt ${amount.toString()} for ${accountOwner} ${owner} ${token.address}`,
-    );
+  expect(balance).to.be.gt(
+    amount,
+    `Expected ${balance.toString()} to be gt ${amount.toString()} for ${accountOwner} ${owner} ${token.address}`,
+  );
 }
 
 export async function expectWalletBalanceIsBetween(
   accountOwner: { address: address } | address,
-  token: { balanceOf(account: string, overrides?: CallOverrides): Promise<BigNumber>, address: address },
+  token: { balanceOf(account: string, overrides?: CallOverrides): Promise<BigNumber>; address: address },
   amountLowerEnd: BigNumberish,
   amountUpperEnd: BigNumberish,
 ) {
   const owner = typeof accountOwner === 'object' ? accountOwner.address : accountOwner;
   const balance = await token.balanceOf(owner);
-  expect(balance)
-    .to
-    .be
-    .gt(
-      amountLowerEnd,
-      `Expected ${balance.toString()} to be gt ${amountLowerEnd.toString()} for ${owner} ${token.address}`,
-    );
-  expect(balance)
-    .to
-    .be
-    .lt(
-      amountUpperEnd,
-      `Expected ${balance.toString()} to be lt ${amountUpperEnd.toString()} for ${owner} ${token.address}`,
-    );
+  expect(balance).to.be.gt(
+    amountLowerEnd,
+    `Expected ${balance.toString()} to be gt ${amountLowerEnd.toString()} for ${owner} ${token.address}`,
+  );
+  expect(balance).to.be.lt(
+    amountUpperEnd,
+    `Expected ${balance.toString()} to be lt ${amountUpperEnd.toString()} for ${owner} ${token.address}`,
+  );
 }
 
-export async function expectVaultBalanceToMatchAccountBalances<T extends Network>(
+export async function expectVaultBalanceToMatchAccountBalances<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   vault: { underlyingBalanceOf(overrides?: CallOverrides): Promise<BigNumber> },
   accounts: AccountInfoStruct[],
@@ -268,10 +256,7 @@ interface AssetAmount {
   value: BigNumberish;
 }
 
-export function expectAssetAmountToEq(
-  found: AssetAmount,
-  expected: AssetAmount,
-) {
+export function expectAssetAmountToEq(found: AssetAmount, expected: AssetAmount) {
   expect(found.sign).eq(expected.sign);
   expect(found.denomination).eq(expected.denomination);
   expect(found.ref).eq(expected.ref);
