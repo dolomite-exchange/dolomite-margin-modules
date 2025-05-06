@@ -62,6 +62,24 @@ library OracleLibrary {
         if (tickCumulativesDelta < 0 && (tickCumulativesDelta % int32(_period) != 0)) timeWeightedAverageTick--;
     }
 
+    function consultKodiak(
+        address _pool,
+        uint32 _period
+    ) internal view returns (int24 timeWeightedAverageTick) {
+        require(_period != 0); // solhint-disable-line reason-string
+
+        uint32[] memory secondAgos = new uint32[](2);
+        secondAgos[0] = _period;
+        secondAgos[1] = 0;
+
+        (int56[] memory tickCumulatives, ) = IPancakeV3Pair(_pool).observe(secondAgos);
+        int56 tickCumulativesDelta = tickCumulatives[1] - tickCumulatives[0];
+        timeWeightedAverageTick = int24(tickCumulativesDelta / int32(_period));
+
+        // Always round to negative infinity
+        if (tickCumulativesDelta < 0 && (tickCumulativesDelta % int32(_period) != 0)) timeWeightedAverageTick--;
+    }
+
     function getQuoteAtTick(
         int24 tick,
         uint128 baseAmount,

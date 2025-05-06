@@ -1412,6 +1412,10 @@ export const JONES_WHITELIST_CONTROLLER_V2_MAP: Record<Network.ArbitrumOne, stri
   [Network.ArbitrumOne]: '0xDe3476a7C0a408325385605203665A8836c2bcca',
 };
 
+export const KODIAK_POOL_DOLO_WBERA_MAP: Record<Network.Berachain, string> = {
+  [Network.Berachain]: '0xD5980e98A89e2D2361b3BE657e8a003c6d3514e3',
+};
+
 export const ODOS_ROUTER_MAP: Record<DolomiteNetwork, string | undefined> = {
   [Network.ArbitrumOne]: '0xa669e7A0d4b3e4Fa48af2dE86BD4CD7126Be4e13',
   [Network.Base]: '0x19cEeAd7105607Cd444F5ad10dd51356436095a1',
