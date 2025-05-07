@@ -90,4 +90,8 @@ contract GravitaExternalVesterImplementationV2 is ExternalVesterImplementationV1
             balance - (balance * 7724.560802275551609804 ether / _GRAI_AMOUNT)
         );
     }
+
+    function owner() public override view returns (address) {
+        return DOLOMITE_MARGIN_OWNER();
+    }
 }
