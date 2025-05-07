@@ -395,6 +395,64 @@ library AccountActionLib {
         });
     }
 
+    function encodeInternalTradeActionForWrap(
+        uint256 _fromAccountId,
+        uint256 _toAccountId,
+        uint256 _primaryMarketId,
+        uint256 _secondaryMarketId,
+        address _traderAddress,
+        uint256 _chainId,
+        bool _calculateAmountWithMakerAccount,
+        bytes memory _orderData
+    ) internal pure returns (IDolomiteStructs.ActionArgs memory) {
+        return IDolomiteStructs.ActionArgs({
+            actionType: IDolomiteStructs.ActionType.Trade,
+            accountId: _fromAccountId,
+            amount: IDolomiteStructs.AssetAmount({
+                sign: false,
+                denomination: IDolomiteStructs.AssetDenomination.Wei,
+                ref: IDolomiteStructs.AssetReference.Target,
+                value: 0
+            }),
+            primaryMarketId: _primaryMarketId,
+            secondaryMarketId: _secondaryMarketId,
+            otherAddress: _traderAddress,
+            otherAccountId: _toAccountId,
+            data: ChainHelperLib.isArbitrum(_chainId)
+                ? _orderData
+                : abi.encode(_calculateAmountWithMakerAccount, _orderData)
+        });
+    }
+
+    function encodeInternalTradeActionForUnwrap(
+        uint256 _fromAccountId,
+        uint256 _toAccountId,
+        uint256 _primaryMarketId,
+        uint256 _secondaryMarketId,
+        address _traderAddress,
+        uint256 _chainId,
+        bool _calculateAmountWithMakerAccount,
+        bytes memory _orderData
+    ) internal pure returns (IDolomiteStructs.ActionArgs memory) {
+        return IDolomiteStructs.ActionArgs({
+            actionType: IDolomiteStructs.ActionType.Trade,
+            accountId: _fromAccountId,
+            amount: IDolomiteStructs.AssetAmount({
+                sign: false,
+                denomination: IDolomiteStructs.AssetDenomination.Wei,
+                ref: IDolomiteStructs.AssetReference.Delta,
+                value: 0
+            }),
+            primaryMarketId: _primaryMarketId,
+            secondaryMarketId: _secondaryMarketId,
+            otherAddress: _traderAddress,
+            otherAccountId: _toAccountId,
+            data: ChainHelperLib.isArbitrum(_chainId)
+                ? _orderData
+                : abi.encode(_calculateAmountWithMakerAccount, _orderData)
+        });
+    }
+
     function encodeTransferAction(
         uint256 _fromAccountId,
         uint256 _toAccountId,
@@ -422,6 +480,29 @@ library AccountActionLib {
             actionType : IDolomiteStructs.ActionType.Transfer,
             accountId : _fromAccountId,
             amount : assetAmount,
+            primaryMarketId : _marketId,
+            secondaryMarketId : 0,
+            otherAddress : address(0),
+            otherAccountId : _toAccountId,
+            data : bytes("")
+        });
+    }
+
+    function encodeTransferToTargetAmountAction(
+        uint256 _fromAccountId,
+        uint256 _toAccountId,
+        uint256 _marketId,
+        IDolomiteStructs.Wei memory _targetAmountWei
+    ) internal pure returns (IDolomiteStructs.ActionArgs memory) {
+        return IDolomiteStructs.ActionArgs({
+            actionType : IDolomiteStructs.ActionType.Transfer,
+            accountId : _fromAccountId,
+            amount : IDolomiteStructs.AssetAmount({
+                sign: _targetAmountWei.sign,
+                denomination: IDolomiteStructs.AssetDenomination.Wei,
+                ref: IDolomiteStructs.AssetReference.Target,
+                value: _targetAmountWei.value
+            }),
             primaryMarketId : _marketId,
             secondaryMarketId : 0,
             otherAddress : address(0),

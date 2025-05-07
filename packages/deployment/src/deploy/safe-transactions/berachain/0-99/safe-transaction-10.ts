@@ -41,7 +41,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
   const stone = await deployDolomiteErc4626Token(core, 'Stone', core.marketIds.stone);
   const uniBtc = await deployDolomiteErc4626Token(core, 'UniBtc', core.marketIds.uniBtc);
   const usde = await deployDolomiteErc4626Token(core, 'Usde', core.marketIds.usde);
-  const ylBtcLst = await deployDolomiteErc4626Token(core, 'YlBtcLst', core.marketIds.ylBtcLst);
+  const ylBtcLst = await deployDolomiteErc4626Token(core, 'YlBtcLst', core.marketIds.ylFbtc);
   const ylPumpBtc = await deployDolomiteErc4626Token(core, 'YlPumpBtc', core.marketIds.ylPumpBtc);
   const ylStEth = await deployDolomiteErc4626Token(core, 'YlStEth', core.marketIds.ylStEth);
   const beraEth = await deployDolomiteErc4626Token(core, 'BeraEth', core.marketIds.beraEth);
@@ -50,7 +50,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
   const rsEth = await deployDolomiteErc4626Token(core, 'RsEth', core.marketIds.rsEth);
   const sUsda = await deployDolomiteErc4626Token(core, 'SUsda', core.marketIds.sUsda);
   const solvBtc = await deployDolomiteErc4626Token(core, 'SolvBtc', core.marketIds.solvBtc);
-  const solvBtcBbn = await deployDolomiteErc4626Token(core, 'SolvBtcBbn', core.marketIds.solvBtcBbn);
+  const solvBtcBbn = await deployDolomiteErc4626Token(core, 'SolvBtcBbn', core.marketIds.xSolvBtc);
   const usda = await deployDolomiteErc4626Token(core, 'Usda', core.marketIds.usda);
   const usd0 = await deployDolomiteErc4626Token(core, 'Usd0', core.marketIds.usd0);
   const usd0pp = await deployDolomiteErc4626Token(core, 'Usd0pp', core.marketIds.usd0pp);
@@ -100,34 +100,34 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     },
     scriptName: getScriptName(__filename),
     invariants: async () => {
-      await checkIsGlobalOperator(core, weth);
-      await checkIsGlobalOperator(core, wbera);
-      await checkIsGlobalOperator(core, usdc);
-      await checkIsGlobalOperator(core, honey);
-      await checkIsGlobalOperator(core, wbtc);
-      await checkIsGlobalOperator(core, usdt);
-      await checkIsGlobalOperator(core, lbtc);
-      await checkIsGlobalOperator(core, rswEth);
-      await checkIsGlobalOperator(core, rUsd);
-      await checkIsGlobalOperator(core, sbtc);
-      await checkIsGlobalOperator(core, sUsde);
-      await checkIsGlobalOperator(core, stBtc);
-      await checkIsGlobalOperator(core, stone);
-      await checkIsGlobalOperator(core, uniBtc);
-      await checkIsGlobalOperator(core, usde);
-      await checkIsGlobalOperator(core, ylBtcLst);
-      await checkIsGlobalOperator(core, ylPumpBtc);
-      await checkIsGlobalOperator(core, ylStEth);
-      await checkIsGlobalOperator(core, beraEth);
-      await checkIsGlobalOperator(core, nect);
-      await checkIsGlobalOperator(core, pumpBtc);
-      await checkIsGlobalOperator(core, rsEth);
-      await checkIsGlobalOperator(core, sUsda);
-      await checkIsGlobalOperator(core, solvBtc);
-      await checkIsGlobalOperator(core, solvBtcBbn);
-      await checkIsGlobalOperator(core, usda);
-      await checkIsGlobalOperator(core, usd0);
-      await checkIsGlobalOperator(core, usd0pp);
+      await checkIsGlobalOperator(core, weth, false);
+      await checkIsGlobalOperator(core, wbera, false);
+      await checkIsGlobalOperator(core, usdc, false);
+      await checkIsGlobalOperator(core, honey, false);
+      await checkIsGlobalOperator(core, wbtc, false);
+      await checkIsGlobalOperator(core, usdt, false);
+      await checkIsGlobalOperator(core, lbtc, false);
+      await checkIsGlobalOperator(core, rswEth, false);
+      await checkIsGlobalOperator(core, rUsd, false);
+      await checkIsGlobalOperator(core, sbtc, false);
+      await checkIsGlobalOperator(core, sUsde, false);
+      await checkIsGlobalOperator(core, stBtc, false);
+      await checkIsGlobalOperator(core, stone, false);
+      await checkIsGlobalOperator(core, uniBtc, false);
+      await checkIsGlobalOperator(core, usde, false);
+      await checkIsGlobalOperator(core, ylBtcLst, false);
+      await checkIsGlobalOperator(core, ylPumpBtc, false);
+      await checkIsGlobalOperator(core, ylStEth, false);
+      await checkIsGlobalOperator(core, beraEth, false);
+      await checkIsGlobalOperator(core, nect, false);
+      await checkIsGlobalOperator(core, pumpBtc, false);
+      await checkIsGlobalOperator(core, rsEth, false);
+      await checkIsGlobalOperator(core, sUsda, false);
+      await checkIsGlobalOperator(core, solvBtc, false);
+      await checkIsGlobalOperator(core, solvBtcBbn, false);
+      await checkIsGlobalOperator(core, usda, false);
+      await checkIsGlobalOperator(core, usd0, false);
+      await checkIsGlobalOperator(core, usd0pp, false);
     },
   };
 }

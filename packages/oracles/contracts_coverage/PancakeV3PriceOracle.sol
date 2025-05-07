@@ -110,7 +110,6 @@ contract PancakeV3PriceOracle is ITWAPPriceOracleV1, OnlyDolomiteMargin {
         uint8 outputTokenDecimals = aggregator.getDecimalsByToken(outputToken);
         /*assert(outputTokenDecimals > 0);*/
 
-        // @follow-up Is this standardization correct here? Also in the TWAP oracle
         return IDolomiteStructs.MonetaryPrice({
             value: _standardizeNumberOfDecimals(quote, outputTokenDecimals)
         });

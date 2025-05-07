@@ -32,3 +32,6 @@ yarn-error.log
 
 .yarn
 .yarnrc.yml
+
+airdrop-mappings.json
+investor-allocations.json

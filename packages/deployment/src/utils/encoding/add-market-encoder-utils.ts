@@ -1,5 +1,4 @@
 import { BaseContract, BigNumberish } from 'ethers';
-import { parseEther } from 'ethers/lib/utils';
 import { IGlvIsolationModeVaultFactory, IGmxV2IsolationModeVaultFactory } from 'packages/glv/src/types';
 import {
   HandlerRegistry,
@@ -19,20 +18,22 @@ import {
   TargetCollateralization,
   TargetLiquidationPenalty,
 } from '../../../../base/src/utils/constructors/dolomite';
-import { ADDRESS_ZERO, NetworkType, ONE_ETH_BI, ZERO_BI } from '../../../../base/src/utils/no-deps-constants';
+import { ADDRESS_ZERO, DolomiteNetwork, Network, ONE_ETH_BI, ZERO_BI } from '../../../../base/src/utils/no-deps-constants';
 import { CoreProtocolArbitrumOne } from '../../../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
+import { CoreProtocolBerachain } from '../../../../base/test/utils/core-protocols/core-protocol-berachain';
 import { GmToken } from '../../../../base/test/utils/ecosystem-utils/gmx';
 import { CoreProtocolType } from '../../../../base/test/utils/setup';
 import { EncodedTransaction } from '../dry-run-utils';
-import { getFormattedTokenName, isValidAmount, prettyPrintEncodedDataWithTypeSafety } from './base-encoder-utils';
+import { getFormattedTokenName, isValidAmountForCapForToken, prettyPrintEncodedDataWithTypeSafety } from './base-encoder-utils';
 
 export interface AddMarketOptions {
   additionalConverters?: BaseContract[];
   skipAmountValidation?: boolean;
   decimals?: number;
+  skipEncodeLiquidatorWhitelist?: boolean;
 }
 
-export async function encodeAddIsolationModeMarket<T extends NetworkType>(
+export async function encodeAddIsolationModeMarket<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   factory: IIsolationModeVaultFactory,
   oracle: IDolomitePriceOracle,
@@ -58,6 +59,15 @@ export async function encodeAddIsolationModeMarket<T extends NetworkType>(
     options,
   );
 
+  const converters = [
+    unwrapper.address,
+    wrapper.address,
+    core.borrowPositionRouter.address,
+    core.depositWithdrawalRouter.address,
+    core.genericTraderRouter.address,
+  ];
+  const additionalConverters = (options.additionalConverters ?? []).map((c) => c.address);
+
   transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(
       core,
@@ -66,22 +76,108 @@ export async function encodeAddIsolationModeMarket<T extends NetworkType>(
       'ownerSetGlobalOperator',
       [factory.address, true],
     ),
-    await prettyPrintEncodedDataWithTypeSafety(core, { factory }, 'factory', 'ownerInitialize', [
-      [unwrapper.address, wrapper.address, ...(options.additionalConverters ?? []).map((c) => c.address)],
-    ]),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { factory },
+      'factory',
+      'ownerInitialize',
+      [converters.concat(additionalConverters)],
+    ),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       { liquidatorAssetRegistry: core.liquidatorAssetRegistry },
       'liquidatorAssetRegistry',
       'ownerAddLiquidatorToAssetWhitelist',
-      [marketId, core.liquidatorProxyV4.address],
+      [marketId, core.liquidatorProxyV5.address],
     ),
   );
 
   return transactions;
 }
 
-export async function encodeAddAsyncIsolationModeMarket<T extends NetworkType>(
+export async function encodeAddPOLIsolationModeMarket<T extends DolomiteNetwork>(
+  core: CoreProtocolType<T>,
+  factory: IIsolationModeVaultFactory,
+  oracle: IDolomitePriceOracle,
+  unwrapper: IIsolationModeUnwrapperTraderV2,
+  wrapper: IIsolationModeWrapperTraderV2,
+  marketId: BigNumberish,
+  targetCollateralization: TargetCollateralization,
+  targetLiquidationPremium: TargetLiquidationPenalty,
+  maxSupplyWei: BigNumberish,
+  options: AddMarketOptions = {},
+): Promise<EncodedTransaction[]> {
+  if (core.network !== Network.Berachain) {
+    return Promise.reject(new Error('Core protocol is not Berachain'));
+  }
+
+  const transactions: EncodedTransaction[] = await encodeAddMarket(
+    core,
+    IERC20__factory.connect(factory.address, factory.signer),
+    oracle,
+    core.interestSetters.alwaysZeroInterestSetter,
+    targetCollateralization,
+    targetLiquidationPremium,
+    maxSupplyWei,
+    ZERO_BI,
+    true,
+    ZERO_BI,
+    options,
+  );
+
+  const converters = [
+    unwrapper.address,
+    wrapper.address,
+    core.borrowPositionRouter.address,
+    core.depositWithdrawalRouter.address,
+    core.genericTraderRouter.address,
+  ];
+  const additionalConverters = (options.additionalConverters ?? []).map((c) => c.address);
+
+  transactions.push(
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { dolomiteMargin: core.dolomiteMargin },
+      'dolomiteMargin',
+      'ownerSetGlobalOperator',
+      [factory.address, true],
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { dolomiteMargin: core.dolomiteMargin },
+      'dolomiteMargin',
+      'ownerSetGlobalOperator',
+      [unwrapper.address, true],
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { dolomiteMargin: core.dolomiteMargin },
+      'dolomiteMargin',
+      'ownerSetGlobalOperator',
+      [wrapper.address, true],
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { factory },
+      'factory',
+      'ownerInitialize',
+      [converters.concat(additionalConverters)],
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { liquidatorAssetRegistry: core.liquidatorAssetRegistry },
+      'liquidatorAssetRegistry',
+      'ownerAddLiquidatorToAssetWhitelist',
+      [marketId, core.berachainRewardsEcosystem.live.polLiquidatorProxy.address],
+    ),
+  );
+
+  return transactions;
+}
+
+
+
+export async function encodeAddAsyncIsolationModeMarket<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   factory: IIsolationModeVaultFactory,
   oracle: IDolomitePriceOracle,
@@ -94,38 +190,17 @@ export async function encodeAddAsyncIsolationModeMarket<T extends NetworkType>(
   maxSupplyWei: BigNumberish,
   options: AddMarketOptions = {},
 ): Promise<EncodedTransaction[]> {
-  const transactions: EncodedTransaction[] = await encodeAddMarket(
+  const transactions: EncodedTransaction[] = await encodeAddIsolationModeMarket(
     core,
-    IERC20__factory.connect(factory.address, factory.signer),
+    factory,
     oracle,
-    core.interestSetters.alwaysZeroInterestSetter,
+    unwrapper,
+    wrapper,
+    marketId,
     targetCollateralization,
     targetLiquidationPremium,
     maxSupplyWei,
-    ZERO_BI,
-    true,
-    ZERO_BI,
     options,
-  );
-
-  transactions.push(
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { dolomiteMargin: core.dolomiteMargin },
-      'dolomiteMargin',
-      'ownerSetGlobalOperator',
-      [factory.address, true],
-    ),
-    await prettyPrintEncodedDataWithTypeSafety(core, { factory }, 'factory', 'ownerInitialize', [
-      [unwrapper.address, wrapper.address, ...(options.additionalConverters ?? []).map((c) => c.address)],
-    ]),
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { liquidatorAssetRegistry: core.liquidatorAssetRegistry },
-      'liquidatorAssetRegistry',
-      'ownerAddLiquidatorToAssetWhitelist',
-      [marketId, core.liquidatorProxyV4.address],
-    ),
   );
 
   transactions.push(
@@ -258,7 +333,7 @@ export async function encodeAddGmxV2Market(
   ];
 }
 
-export async function encodeAddMarket<T extends NetworkType>(
+export async function encodeAddMarket<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   token: IERC20,
   oracle: IDolomitePriceOracle,
@@ -271,11 +346,11 @@ export async function encodeAddMarket<T extends NetworkType>(
   earningsRateOverride: BigNumberish = ZERO_BI,
   options: AddMarketOptions = {},
 ): Promise<EncodedTransaction[]> {
-  if (!options.skipAmountValidation && !(await isValidAmount(token, maxSupplyWei))) {
+  if (!options.skipAmountValidation && !(await isValidAmountForCapForToken(token, maxSupplyWei))) {
     const name = await getFormattedTokenName(core, token.address);
     return Promise.reject(new Error(`Invalid max supply wei for ${name}, found: ${maxSupplyWei.toString()}`));
   }
-  if (!options.skipAmountValidation && !(await isValidAmount(token, maxBorrowWei))) {
+  if (!options.skipAmountValidation && !(await isValidAmountForCapForToken(token, maxBorrowWei))) {
     const name = await getFormattedTokenName(core, token.address);
     return Promise.reject(new Error(`Invalid max borrow wei for ${name}, found: ${maxBorrowWei.toString()}`));
   }

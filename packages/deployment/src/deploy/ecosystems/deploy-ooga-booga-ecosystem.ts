@@ -2,12 +2,12 @@ import { getOogaBoogaAggregatorTraderConstructorParams } from '@dolomite-exchang
 import { getAnyNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { Network, NetworkType } from 'packages/base/src/utils/no-deps-constants';
+import { Network, DolomiteNetwork } from 'packages/base/src/utils/no-deps-constants';
 import { deployContractAndSave, TRANSACTION_BUILDER_VERSION } from '../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../utils/dry-run-utils';
 import getScriptName from '../../utils/get-script-name';
 
-async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
+async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
   const network = await getAnyNetwork<T>();
   const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
   if (core.network !== Network.Berachain) {

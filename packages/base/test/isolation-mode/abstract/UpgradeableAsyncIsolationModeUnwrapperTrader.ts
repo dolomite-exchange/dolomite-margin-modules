@@ -6,10 +6,13 @@ import { BigNumber, BigNumberish } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
 import { AccountStruct } from 'packages/base/src/utils/constants';
-import { getIsolationModeFreezableLiquidatorProxyConstructorParams } from 'packages/base/src/utils/constructors/dolomite';
+import {
+  getIsolationModeFreezableLiquidatorProxyConstructorParams,
+} from 'packages/base/src/utils/constructors/dolomite';
 import {
   CustomTestToken,
   EventEmitterRegistry,
+  GenericTraderProxyV2,
   IERC20,
   TestAsyncProtocol,
   TestAsyncProtocol__factory,
@@ -25,6 +28,7 @@ import {
 import {
   createContractWithAbi,
   createContractWithLibrary,
+  createContractWithName,
   createTestToken,
   depositIntoDolomiteMargin,
 } from '../../../src/utils/dolomite-utils';
@@ -44,7 +48,7 @@ import { expectEvent, expectProtocolBalance, expectThrow, expectWalletBalance } 
 
 import { CoreProtocolArbitrumOne } from '../../utils/core-protocols/core-protocol-arbitrum-one';
 import {
-  createDolomiteRegistryImplementation,
+  createAndUpgradeDolomiteRegistry,
   createEventEmitter,
   createIsolationModeTokenVaultV1ActionsImpl,
 } from '../../utils/dolomite';
@@ -55,12 +59,7 @@ import {
   createTestUpgradeableAsyncIsolationModeWrapperTrader,
 } from '../../utils/ecosystem-utils/testers';
 import { liquidateV4WithZapParam } from '../../utils/liquidation-utils';
-import {
-  getDefaultCoreProtocolConfig,
-  setupCoreProtocol,
-  setupTestMarket,
-  setupUserVaultProxy,
-} from '../../utils/setup';
+import { setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from '../../utils/setup';
 import { getLiquidateIsolationModeZapPath, getUnwrapZapParams } from '../../utils/zap-utils';
 
 const defaultAccountNumber = '0';
@@ -101,6 +100,7 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
   let registry: TestHandlerRegistry;
   let liquidatorProxy: TestIsolationModeFreezableLiquidatorProxy;
   let asyncProtocol: TestAsyncProtocol;
+  let genericTraderProxy: GenericTraderProxyV2;
 
   let solidUser: SignerWithAddressWithSafety;
   let solidAccount: AccountStruct;
@@ -111,7 +111,21 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
   let otherMarketId2: BigNumber;
 
   before(async () => {
-    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
+    core = await setupCoreProtocol({
+      blockNumber: 242_011_939,
+      network: Network.ArbitrumOne,
+    });
+    await createAndUpgradeDolomiteRegistry(core);
+    const genericTraderLib = await createContractWithName('GenericTraderProxyV2Lib', []);
+    genericTraderProxy = await createContractWithLibrary(
+      'GenericTraderProxyV2',
+      { GenericTraderProxyV2Lib: genericTraderLib.address },
+      [Network.ArbitrumOne, core.dolomiteRegistry.address, core.dolomiteMargin.address],
+    );
+    await core.dolomiteRegistry.ownerSetGenericTraderProxy(genericTraderProxy.address);
+    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(genericTraderProxy.address, true);
+    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(core.liquidatorProxyV4.address, true);
+
     asyncProtocol = await createContractWithAbi<TestAsyncProtocol>(
       TestAsyncProtocol__factory.abi,
       TestAsyncProtocol__factory.bytecode,
@@ -137,7 +151,7 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
       registry,
       core,
       asyncProtocol,
-      userVaultImplementation,
+      userVaultImplementation as any,
     );
     await core.testEcosystem!.testPriceOracle.setPrice(factory.address, price);
 
@@ -163,18 +177,15 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
       asyncProtocol,
     );
     tokenWrapper = await createTestUpgradeableAsyncIsolationModeWrapperTrader(core, registry, factory, asyncProtocol);
-    await factory.connect(core.governance).ownerInitialize([tokenUnwrapper.address, tokenWrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
+    await factory.connect(core.governance).ownerInitialize([tokenUnwrapper.address, tokenWrapper.address]);
     await registry.connect(core.governance).ownerSetIsHandler(asyncProtocol.address, true);
     await registry.connect(core.governance).ownerSetIsHandler(core.dolomiteMargin.address, true);
     await registry.connect(core.governance).ownerSetWrapperByToken(factory.address, tokenWrapper.address);
     await registry.connect(core.governance).ownerSetUnwrapperByToken(factory.address, tokenUnwrapper.address);
 
     eventEmitter = await createEventEmitter(core);
-    const newRegistry = await createDolomiteRegistryImplementation();
-    await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(newRegistry.address);
     await core.dolomiteRegistry.connect(core.governance).ownerSetEventEmitter(eventEmitter.address);
-    await core.genericTraderProxy.ownerSetEventEmitterRegistry(eventEmitter.address);
     await core.dolomiteRegistry.ownerSetLiquidatorAssetRegistry(core.liquidatorAssetRegistry.address);
     await core.liquidatorAssetRegistry.ownerAddLiquidatorToAssetWhitelist(underlyingMarketId, liquidatorProxy.address);
     await core.liquidatorAssetRegistry.ownerAddLiquidatorToAssetWhitelist(
@@ -289,8 +300,8 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
 
     it('should work normally for underwater account that must be liquidated', async () => {
       await setupBalances();
-      await core.testEcosystem!.testPriceOracle.setPrice(factory.address, price.mul(95).div(100));
-      await core.testEcosystem!.testPriceOracle.setPrice(otherToken2.address, price.mul(107).div(100));
+      await core.testEcosystem!.testPriceOracle.setPrice(factory.address, price.mul(94).div(100));
+      await core.testEcosystem!.testPriceOracle.setPrice(otherToken2.address, price.mul(108).div(100));
       const extraData = ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [parseEther('.5'), ONE_BI]);
       await liquidatorProxy.prepareForLiquidation({
         extraData,
@@ -301,10 +312,14 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
         minOutputAmount: ONE_BI,
         expirationTimestamp: NO_EXPIRY,
       });
-      const key = (await asyncProtocol.queryFilter(await asyncProtocol.filters.WithdrawalCreated()))[0].args.key;
+      const key = (await asyncProtocol.queryFilter(asyncProtocol.filters.WithdrawalCreated()))[0].args.key;
       // Add a little bit to the borrow amount to cover liquidation fee
-      const result = await asyncProtocol.executeWithdrawal(key, borrowAmount.add(parseEther('4')));
-      await expectEvent(eventEmitter, result, 'AsyncWithdrawalFailed', {});
+      const result = await asyncProtocol.executeWithdrawal(key, borrowAmount.add(parseEther('1.6')));
+      await expectEvent(eventEmitter, result, 'AsyncWithdrawalFailed', {
+        key: key,
+        token: factory.address,
+        reason: `OperationImpl: Undercollateralized account <${userVault.address.toLowerCase()}, ${borrowAccountNumber.toString()}>`,
+      });
 
       const allKeys = [key];
       const tradeTypes = [UnwrapperTradeType.FromWithdrawal];
@@ -326,7 +341,7 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
 
     it('should work when severely underwater', async () => {
       await setupBalances();
-      await core.testEcosystem!.testPriceOracle.setPrice(factory.address, price.mul(95).div(100));
+      await core.testEcosystem!.testPriceOracle.setPrice(factory.address, price.mul(94).div(100));
       // Push severely underwater
       await core.testEcosystem!.testPriceOracle.setPrice(otherToken2.address, price.mul(150).div(100));
       const extraData = ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [parseEther('.5'), ONE_BI]);
@@ -341,7 +356,7 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
       });
       const key = (await asyncProtocol.queryFilter(await asyncProtocol.filters.WithdrawalCreated()))[0].args.key;
       // Add a little bit to the borrow amount to cover liquidation fee
-      const result = await asyncProtocol.executeWithdrawal(key, borrowAmount.add(parseEther('4')));
+      const result = await asyncProtocol.executeWithdrawal(key, borrowAmount.add(parseEther('1.6')));
       await expectEvent(eventEmitter, result, 'AsyncWithdrawalFailed', {});
 
       const allKeys = [key];
@@ -377,8 +392,8 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
         BalanceCheckFlag.To,
       );
 
-      await core.testEcosystem!.testPriceOracle.setPrice(factory.address, price.mul(95).div(100));
-      await core.testEcosystem!.testPriceOracle.setPrice(otherToken2.address, price.mul(107).div(100));
+      await core.testEcosystem!.testPriceOracle.setPrice(factory.address, price.mul(94).div(100));
+      await core.testEcosystem!.testPriceOracle.setPrice(otherToken2.address, price.mul(108).div(100));
       const extraData = ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [parseEther('.5'), ONE_BI]);
       await liquidatorProxy.prepareForLiquidation({
         extraData,
@@ -391,7 +406,7 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
       });
       let key = (await asyncProtocol.queryFilter(await asyncProtocol.filters.WithdrawalCreated()))[0].args.key;
       // Add a little bit to the borrow amount to cover liquidation fee
-      const result = await asyncProtocol.executeWithdrawal(key, borrowAmount.add(parseEther('4')));
+      const result = await asyncProtocol.executeWithdrawal(key, borrowAmount.add(parseEther('1.6')));
       await expectEvent(eventEmitter, result, 'AsyncWithdrawalFailed', {});
 
       //
@@ -405,7 +420,7 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
         expirationTimestamp: NO_EXPIRY,
       });
       key = (await asyncProtocol.queryFilter(await asyncProtocol.filters.WithdrawalCreated()))[1].args.key;
-      const result2 = await asyncProtocol.executeWithdrawal(key, borrowAmount.add(parseEther('4')));
+      const result2 = await asyncProtocol.executeWithdrawal(key, borrowAmount.add(parseEther('1.6')));
       await expectEvent(eventEmitter, result2, 'AsyncWithdrawalFailed', {});
 
       const allKeys = [key];
@@ -431,8 +446,8 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
 
     it('should fail if withdrawal keys are not retryable', async () => {
       await setupBalances();
-      await core.testEcosystem!.testPriceOracle.setPrice(factory.address, price.mul(95).div(100));
-      await core.testEcosystem!.testPriceOracle.setPrice(otherToken2.address, price.mul(107).div(100));
+      await core.testEcosystem!.testPriceOracle.setPrice(factory.address, price.mul(94).div(100));
+      await core.testEcosystem!.testPriceOracle.setPrice(otherToken2.address, price.mul(108).div(100));
       const extraData = ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [parseEther('.5'), ONE_BI]);
       await liquidatorProxy.prepareForLiquidation({
         extraData,
@@ -443,7 +458,7 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
         minOutputAmount: ONE_BI,
         expirationTimestamp: NO_EXPIRY,
       });
-      const key = (await asyncProtocol.queryFilter(await asyncProtocol.filters.WithdrawalCreated()))[0].args.key;
+      const key = (await asyncProtocol.queryFilter(asyncProtocol.filters.WithdrawalCreated()))[0].args.key;
 
       const allKeys = [key];
       const tradeTypes = [UnwrapperTradeType.FromWithdrawal];
@@ -468,8 +483,8 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
 
     it('should fail if output amount is insufficient', async () => {
       await setupBalances();
-      await core.testEcosystem!.testPriceOracle.setPrice(factory.address, price.mul(95).div(100));
-      await core.testEcosystem!.testPriceOracle.setPrice(otherToken2.address, price.mul(107).div(100));
+      await core.testEcosystem!.testPriceOracle.setPrice(factory.address, price.mul(94).div(100));
+      await core.testEcosystem!.testPriceOracle.setPrice(otherToken2.address, price.mul(108).div(100));
       const extraData = ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [parseEther('.5'), ONE_BI]);
       await liquidatorProxy.prepareForLiquidation({
         extraData,
@@ -480,7 +495,7 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
         minOutputAmount: ONE_BI,
         expirationTimestamp: NO_EXPIRY,
       });
-      const key = (await asyncProtocol.queryFilter(await asyncProtocol.filters.WithdrawalCreated()))[0].args.key;
+      const key = (await asyncProtocol.queryFilter(asyncProtocol.filters.WithdrawalCreated()))[0].args.key;
       const result = await asyncProtocol.executeWithdrawal(key, amountWei.div(2));
       await expectEvent(eventEmitter, result, 'AsyncWithdrawalFailed', {});
 
@@ -503,6 +518,25 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
       await expectThrow(liquidateV4WithZapParam(core, solidAccount, liquidAccount, zapParam));
     });
 
+    it('should fail if min output amount is too large', async () => {
+      await setupBalances();
+      await core.testEcosystem!.testPriceOracle.setPrice(factory.address, price.mul(94).div(100));
+      await core.testEcosystem!.testPriceOracle.setPrice(otherToken2.address, price.mul(108).div(100));
+      const extraData = ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [parseEther('.5'), ONE_BI]);
+      await expectThrow(
+        liquidatorProxy.prepareForLiquidation({
+          extraData,
+          liquidAccount: { owner: userVault.address, number: borrowAccountNumber },
+          freezableMarketId: underlyingMarketId,
+          inputTokenAmount: amountWei,
+          outputMarketId: otherMarketId2,
+          minOutputAmount: amountWei.mul(120),
+          expirationTimestamp: NO_EXPIRY,
+        }),
+        'IsolationModeVaultV1ActionsImpl: minOutputAmount too large',
+      );
+    });
+
     it('should fail if output token mismatch', async () => {
       await setupBalances();
       await core.testEcosystem!.testPriceOracle.setPrice(
@@ -523,7 +557,7 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
         minOutputAmount: ONE_BI,
         expirationTimestamp: NO_EXPIRY,
       });
-      const key = (await asyncProtocol.queryFilter(await asyncProtocol.filters.WithdrawalCreated()))[0].args.key;
+      const key = (await asyncProtocol.queryFilter(asyncProtocol.filters.WithdrawalCreated()))[0].args.key;
       const result = await asyncProtocol.executeWithdrawal(key, amountWei.div(4));
       await expectEvent(eventEmitter, result, 'AsyncWithdrawalFailed', {});
 
@@ -887,10 +921,30 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
 
     it('should work normally', async () => {
       await setupWithdrawal();
-      const key = (await asyncProtocol.queryFilter(await asyncProtocol.filters.WithdrawalCreated()))[0].args.key;
+      const key = (await asyncProtocol.queryFilter(asyncProtocol.filters.WithdrawalCreated()))[0].args.key;
       await asyncProtocol.executeWithdrawal(key, amountWei);
       await expectProtocolBalance(core, userVault.address, borrowAccountNumber, otherMarketId1, amountWei);
       await expectProtocolBalance(core, userVault.address, borrowAccountNumber, underlyingMarketId, ZERO_BI);
+    });
+
+    it('should work normally for account number 0', async () => {
+      await asyncProtocol.addBalance(core.hhUser1.address, amountWei);
+      await otherToken1.addBalance(asyncProtocol.address, amountWei);
+      await asyncProtocol.connect(core.hhUser1).approve(userVault.address, amountWei);
+      await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+
+      await userVault.initiateUnwrapping(
+        defaultAccountNumber,
+        amountWei,
+        otherToken1.address,
+        amountWei,
+        DEFAULT_ORDER_DATA,
+      );
+      const key = (await asyncProtocol.queryFilter(asyncProtocol.filters.WithdrawalCreated()))[0].args.key;
+      await asyncProtocol.executeWithdrawal(key, amountWei);
+      // User started with amountWei
+      await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, otherMarketId1, amountWei.mul(2));
+      await expectProtocolBalance(core, userVault.address, defaultAccountNumber, underlyingMarketId, ZERO_BI);
     });
 
     it('should work normally if reverts with message', async () => {
@@ -957,7 +1011,7 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
     });
   });
 
-  describe.only('#executeWithdrawalCancellation', () => {
+  describe('#executeWithdrawalCancellation', () => {
     it('should work normally', async () => {
       await asyncProtocol.addBalance(core.hhUser1.address, amountWei);
       await otherToken1.addBalance(asyncProtocol.address, amountWei);
@@ -978,7 +1032,7 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
       await asyncProtocol.addBalance(tokenUnwrapper.address, amountWei);
       await expectWalletBalance(tokenUnwrapper, underlyingToken, amountWei);
 
-      const key = (await asyncProtocol.queryFilter(await asyncProtocol.filters.WithdrawalCreated()))[0].args.key;
+      const key = (await asyncProtocol.queryFilter(asyncProtocol.filters.WithdrawalCreated()))[0].args.key;
       await registry.connect(core.governance).ownerSetIsHandler(core.hhUser5.address, true);
       await tokenUnwrapper.connect(core.hhUser5).executeWithdrawalCancellation(key, { gasLimit });
       await expectWalletBalance(userVault, underlyingToken, amountWei);
@@ -1180,6 +1234,24 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
       await expectThrow(
         tokenUnwrapper.testValidateIsBalanceSufficient(212),
         'UpgradeableUnwrapperTraderV2: Insufficient input token <0, 212>',
+      );
+    });
+  });
+
+  describe('#emitWithdrawalExecuted', () => {
+    it('should work normally', async () => {
+      await registry.connect(core.governance).ownerSetIsHandler(core.hhUser5.address, true);
+      const res = await tokenUnwrapper.connect(core.hhUser5).emitWithdrawalExecuted(DEFAULT_KEY);
+      await expectEvent(eventEmitter, res, 'AsyncWithdrawalExecuted', {
+        key: DEFAULT_KEY,
+        factory: factory.address,
+      });
+    });
+
+    it('should fail if not called by handler', async () => {
+      await expectThrow(
+        tokenUnwrapper.connect(core.hhUser1).emitWithdrawalExecuted(DEFAULT_KEY),
+        `AsyncIsolationModeTraderBase: Only handler can call <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });

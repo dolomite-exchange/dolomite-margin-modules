@@ -19,10 +19,8 @@
 */
 pragma solidity ^0.8.9;
 
-import { BaseLiquidatorProxy } from "../../../general/BaseLiquidatorProxy.sol";
 import { IDolomiteRegistry } from "../../../interfaces/IDolomiteRegistry.sol";
 import { IEventEmitterRegistry } from "../../../interfaces/IEventEmitterRegistry.sol";
-import { IGenericTraderProxyV1 } from "../../../interfaces/IGenericTraderProxyV1.sol";
 import { AccountActionLib } from "../../../lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "../../../lib/AccountBalanceLib.sol";
 import { DolomiteMarginVersionWrapperLib } from "../../../lib/DolomiteMarginVersionWrapperLib.sol";
@@ -34,6 +32,8 @@ import { BitsLib } from "../../../protocol/lib/BitsLib.sol";
 import { DecimalLib } from "../../../protocol/lib/DecimalLib.sol";
 import { Require } from "../../../protocol/lib/Require.sol";
 import { TypesLib } from "../../../protocol/lib/TypesLib.sol";
+import { BaseLiquidatorProxy } from "../../../proxies/BaseLiquidatorProxy.sol";
+import { IGenericTraderProxyV2 } from "../../../proxies/interfaces/IGenericTraderProxyV2.sol";
 import { IIsolationModeTokenVaultV1 } from "../../interfaces/IIsolationModeTokenVaultV1.sol";
 import { IIsolationModeVaultFactory } from "../../interfaces/IIsolationModeVaultFactory.sol";
 
@@ -329,9 +329,9 @@ library IsolationModeTokenVaultV1ActionsImpl {
         uint256[] calldata _marketIdsPath,
         uint256 _inputAmountWei,
         uint256 _minOutputAmountWei,
-        IGenericTraderProxyV1.TraderParam[] memory _tradersPath,
+        IGenericTraderProxyV2.TraderParam[] memory _tradersPath,
         IDolomiteMargin.AccountInfo[] memory _makerAccounts,
-        IGenericTraderProxyV1.UserConfig memory _userConfig
+        IGenericTraderProxyV2.UserConfig memory _userConfig
     ) public {
         if (_borrowAccountNumber == 0) {
             uint256 marketId = _vault.marketId();
@@ -393,9 +393,9 @@ library IsolationModeTokenVaultV1ActionsImpl {
         uint256[] calldata _marketIdsPath,
         uint256 _inputAmountWei,
         uint256 _minOutputAmountWei,
-        IGenericTraderProxyV1.TraderParam[] memory _tradersPath,
+        IGenericTraderProxyV2.TraderParam[] memory _tradersPath,
         IDolomiteMargin.AccountInfo[] memory _makerAccounts,
-        IGenericTraderProxyV1.UserConfig memory _userConfig
+        IGenericTraderProxyV2.UserConfig memory _userConfig
     ) public {
         uint256 outputMarketId = _marketIdsPath[_marketIdsPath.length - 1];
         if (_borrowAccountNumber == 0) {
@@ -466,9 +466,9 @@ library IsolationModeTokenVaultV1ActionsImpl {
         uint256[] calldata _marketIdsPath,
         uint256 _inputAmountWei,
         uint256 _minOutputAmountWei,
-        IGenericTraderProxyV1.TraderParam[] memory _tradersPath,
+        IGenericTraderProxyV2.TraderParam[] memory _tradersPath,
         IDolomiteMargin.AccountInfo[] memory _makerAccounts,
-        IGenericTraderProxyV1.UserConfig memory _userConfig,
+        IGenericTraderProxyV2.UserConfig memory _userConfig,
         bool _checkOutputMarketIdFlag,
         bool _bypassAccountNumberCheck
     ) public {
@@ -491,13 +491,15 @@ library IsolationModeTokenVaultV1ActionsImpl {
         }
 
         _vault.dolomiteRegistry().genericTraderProxy().swapExactInputForOutput(
-            _tradeAccountNumber,
-            _marketIdsPath,
-            _inputAmountWei,
-            _minOutputAmountWei,
-            _tradersPath,
-            _makerAccounts,
-            _userConfig
+            IGenericTraderProxyV2.SwapExactInputForOutputParams({
+                accountNumber: _tradeAccountNumber,
+                marketIdsPath: _marketIdsPath,
+                inputAmountWei: _inputAmountWei,
+                minOutputAmountWei: _minOutputAmountWei,
+                tradersPath: _tradersPath,
+                makerAccounts: _makerAccounts,
+                userConfig: _userConfig
+            })
         );
 
         uint256 inputMarketId = _marketIdsPath[0];
@@ -508,6 +510,28 @@ library IsolationModeTokenVaultV1ActionsImpl {
         if (_checkOutputMarketIdFlag) {
             _checkAllowableCollateralMarket(_vault, tradeAccountOwner, _tradeAccountNumber, outputMarketId);
             _checkAllowableDebtMarket(_vault, tradeAccountOwner, _tradeAccountNumber, outputMarketId);
+        }
+    }
+
+    function validateDepositIntoVaultAfterTransfer(
+        IIsolationModeTokenVaultV1 _vault,
+        uint256 _accountNumber,
+        uint256 _marketId
+    ) public view {
+        if (_marketId != _vault.marketId()) {
+            _checkBorrowAccountNumberIsNotZero(_accountNumber, /* _bypassAccountNumberCheck = */ false);
+            _checkAllowableCollateralMarket(_vault, address(this), _accountNumber, _marketId);
+        }
+    }
+
+    function validateWithdrawalFromVaultAfterTransfer(
+        IIsolationModeTokenVaultV1 _vault,
+        uint256 _accountNumber,
+        uint256 _marketId
+    ) public view {
+        if (_marketId != _vault.marketId()) {
+            _checkBorrowAccountNumberIsNotZero(_accountNumber, /* _bypassAccountNumberCheck = */ false);
+            _checkAllowableDebtMarket(_vault, address(this), _accountNumber, _marketId);
         }
     }
 
@@ -542,67 +566,6 @@ library IsolationModeTokenVaultV1ActionsImpl {
                 && _isCollateralized(liquidSupplyValue.value, liquidBorrowValue.value, marginRatio),
             _FILE,
             "Account liquidatable"
-        );
-    }
-
-    function requireMinAmountIsNotTooLargeForLiquidation(
-        IDolomiteMargin _dolomiteMargin,
-        uint256 _chainId,
-        IDolomiteStructs.AccountInfo memory _liquidAccount,
-        uint256 _inputMarketId,
-        uint256 _outputMarketId,
-        uint256 _inputTokenAmount,
-        uint256 _minOutputAmount
-    ) public view {
-        uint256 inputValue = _dolomiteMargin.getMarketPrice(_inputMarketId).value * _inputTokenAmount;
-        uint256 outputValue = _dolomiteMargin.getMarketPrice(_outputMarketId).value * _minOutputAmount;
-
-        IDolomiteStructs.Decimal memory spread = _dolomiteMargin.getVersionedLiquidationSpreadForPair(
-            _chainId,
-            _liquidAccount,
-            /* heldMarketId = */ _inputMarketId,
-            /* ownedMarketId = */ _outputMarketId
-        );
-        spread.value /= 2;
-        uint256 inputValueAdj = inputValue - inputValue.mul(spread);
-
-        Require.that(
-            outputValue <= inputValueAdj,
-            _FILE,
-            "minOutputAmount too large"
-        );
-    }
-
-    function requireMinAmountIsNotTooLargeForWrapToUnderlying(
-        IDolomiteRegistry _dolomiteRegistry,
-        IDolomiteMargin _dolomiteMargin,
-        address _accountOwner,
-        uint256 _accountNumber,
-        uint256 _inputMarketId,
-        uint256 _outputMarketId,
-        uint256 _inputAmount,
-        uint256 _minOutputAmount
-    ) public view {
-        if (_inputAmount == type(uint256).max) {
-            IDolomiteStructs.AccountInfo memory account = IDolomiteStructs.AccountInfo({
-                owner: _accountOwner,
-                number: _accountNumber
-            });
-            _inputAmount = _dolomiteMargin.getAccountWei(account, _inputMarketId).value;
-        }
-
-        uint256 inputValue = _dolomiteMargin.getMarketPrice(_inputMarketId).value * _inputAmount;
-        uint256 outputValue = _dolomiteMargin.getMarketPrice(_outputMarketId).value * _minOutputAmount;
-
-        IDolomiteStructs.Decimal memory toleranceDecimal = IDolomiteStructs.Decimal({
-            value: _dolomiteRegistry.slippageToleranceForPauseSentinel()
-        });
-        uint256 inputValueAdj = inputValue + inputValue.mul(toleranceDecimal);
-
-        Require.that(
-            outputValue <= inputValueAdj,
-            _FILE,
-            "minOutputAmount too large"
         );
     }
 
@@ -843,7 +806,6 @@ library IsolationModeTokenVaultV1ActionsImpl {
 
         return marketInfos;
     }
-
 
     function _checkFromAccountNumberIsZero(uint256 _fromAccountNumber) private pure {
         Require.that(

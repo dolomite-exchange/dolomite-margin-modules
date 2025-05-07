@@ -29,11 +29,7 @@ import { parseEther } from 'ethers/lib/utils';
 import hardhat from 'hardhat';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { ADDRESS_ZERO, Network } from 'packages/base/src/utils/no-deps-constants';
-import {
-  deployContractAndSave,
-
-
-} from '../../../../utils/deploy-utils';
+import { deployContractAndSave } from '../../../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
 import { encodeAddAsyncIsolationModeMarket } from '../../../../utils/encoding/add-market-encoder-utils';
 import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
@@ -170,9 +166,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
 
   const transactions: EncodedTransaction[] = [];
 
-  transactions.push(
-    ...(await encodeInsertChainlinkOracleV3(core, core.gmxV2Ecosystem.gmTokens.btc.indexToken, false)),
-  );
+  transactions.push(...(await encodeInsertChainlinkOracleV3(core, core.gmxV2Ecosystem.gmTokens.btc.indexToken, false)));
 
   for (let i = 0; i < factories.length; i++) {
     const factory = factories[i];

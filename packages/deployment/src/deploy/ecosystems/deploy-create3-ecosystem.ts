@@ -1,33 +1,32 @@
 import { getAnyNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import {
+  DolomiteNetwork,
   NETWORK_TO_NETWORK_NAME_MAP,
-  NetworkType,
   ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { sleep } from '@openzeppelin/upgrades';
 import { parseEther } from 'ethers/lib/utils';
 import hardhat, { ethers } from 'hardhat';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
-import { getRealLatestBlockNumber, impersonate, resetForkIfPossible } from 'packages/base/test/utils';
-import { deployContractAndSave, getBuildInfoFromDebugFileSync, isDeployed } from '../../utils/deploy-utils';
+import { getRealLatestBlockNumber, resetForkIfPossible } from 'packages/base/test/utils';
+import {
+  deployContractAndSave,
+  getBuildInfoFromDebugFileSync,
+  getDeployerSigner,
+  isDeployed,
+} from '../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../utils/dry-run-utils';
 import getScriptName from '../../utils/get-script-name';
 
 const FACTORY_DEPLOYER = '0x4427040bBbc8084Acf86ff409e84a83B3FaD9e85';
 const EXPECTED_CREATE3_FACTORY_ADDRESS = '0xa8F7e7A361De6A2172fcb2accE68bd21597599F7';
 
-async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
+async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
   const network = (await getAnyNetwork()) as T;
   const networkName = NETWORK_TO_NETWORK_NAME_MAP[network];
   await resetForkIfPossible(await getRealLatestBlockNumber(true, network), network);
 
-  const wallet = new ethers.Wallet(process.env.DEPLOYER_PRIVATE_KEY as string);
-  let hhUser1;
-  if (hardhat.network.name === 'hardhat') {
-    hhUser1 = await impersonate(wallet.address);
-  } else {
-    hhUser1 = wallet.connect(ethers.provider);
-  }
+  const { signer: hhUser1, wallet } = await getDeployerSigner();
 
   assertHardhatInvariant(
     hhUser1.address === FACTORY_DEPLOYER,

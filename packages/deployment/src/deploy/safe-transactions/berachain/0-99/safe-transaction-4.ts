@@ -76,7 +76,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
       await checkMarket(core, core.marketIds.stone, core.tokens.stone);
       await checkMarket(core, core.marketIds.uniBtc, core.tokens.uniBtc);
       await checkMarket(core, core.marketIds.usde, core.tokens.usde);
-      await checkMarket(core, core.marketIds.ylBtcLst, core.tokens.ylBtcLst);
+      await checkMarket(core, core.marketIds.ylFbtc, core.tokens.ylBtcLst);
       await checkMarket(core, core.marketIds.ylPumpBtc, core.tokens.ylPumpBtc);
       await checkMarket(core, core.marketIds.ylStEth, core.tokens.ylStEth);
     },

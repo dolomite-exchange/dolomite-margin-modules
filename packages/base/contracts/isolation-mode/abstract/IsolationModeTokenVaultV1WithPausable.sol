@@ -21,12 +21,12 @@
 pragma solidity ^0.8.9;
 
 import { IsolationModeTokenVaultV1 } from "./IsolationModeTokenVaultV1.sol";
-import { IGenericTraderProxyV1 } from "../../interfaces/IGenericTraderProxyV1.sol";
 import { AccountBalanceLib } from "../../lib/AccountBalanceLib.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { TypesLib } from "../../protocol/lib/TypesLib.sol";
+import { IGenericTraderProxyV2 } from "../../proxies/interfaces/IGenericTraderProxyV2.sol";
 import { IIsolationModeTokenVaultV1WithPausable } from "../interfaces/IIsolationModeTokenVaultV1WithPausable.sol";
 
 
@@ -69,9 +69,7 @@ abstract contract IsolationModeTokenVaultV1WithPausable is
         uint256[] calldata _collateralMarketIds
     ) {
         _;
-        if (isExternalRedemptionPaused()) {
-            _requireNumberOfMarketsWithDebtIsZero(_borrowAccountNumber);
-        }
+        _validateWithdrawalFromPositionAfterAction(_borrowAccountNumber);
     }
 
     modifier _transferIntoPositionWithUnderlyingTokenPausableValidator(
@@ -90,28 +88,17 @@ abstract contract IsolationModeTokenVaultV1WithPausable is
         uint256 _amountWei,
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
     ) {
-        IDolomiteMargin.Par memory valueBefore = DOLOMITE_MARGIN().getAccountPar(
-            IDolomiteStructs.AccountInfo({
-                owner: address(this),
-                number: _borrowAccountNumber
-            }),
-            _marketId
-        );
-
         _;
+        _validateWithdrawalFromPositionAfterAction(_borrowAccountNumber);
+    }
 
-        if (isExternalRedemptionPaused()) {
-            Require.that(
-                valueBefore.isPositive(),
-                _FILE,
-                "Cannot lever up when paused",
-                _marketId
-            );
-
-            // If redemptions are paused (preventing liquidations), the user cannot decrease collateralization.
-            // If there is no debt markets, the user can can withdraw without affecting collateralization (it's ∞)
-            _requireNumberOfMarketsWithDebtIsZero(_borrowAccountNumber);
-        }
+    modifier _transferFromPositionWithUnderlyingTokenPausableValidator(
+        uint256 _borrowAccountNumber,
+        uint256 _toAccountNumber,
+        uint256 _amountWei
+    ) {
+        _;
+        _validateWithdrawalFromPositionAfterAction(_borrowAccountNumber);
     }
 
     modifier _addCollateralAndSwapExactInputForOutputPausableValidator(
@@ -202,6 +189,18 @@ abstract contract IsolationModeTokenVaultV1WithPausable is
         }
     }
 
+    modifier _depositIntoVaultForDolomiteMarginPausableValidator(uint256 _accountNumber, uint256 _marketId) {
+        if (_marketId == marketId()) {
+            _requireExternalRedemptionNotPaused();
+        }
+        _;
+    }
+
+    modifier _withdrawFromVaultForDolomiteMarginPausableValidator(uint256 _accountNumber) {
+        _;
+        _validateWithdrawalFromPositionAfterAction(_accountNumber);
+    }
+
     // ===================================================
     // ==================== Functions ====================
     // ===================================================
@@ -212,6 +211,18 @@ abstract contract IsolationModeTokenVaultV1WithPausable is
      *          contamination of this market across Dolomite.
      */
     function isExternalRedemptionPaused() public virtual view returns (bool);
+
+    function _depositIntoVaultForDolomiteMargin(
+        uint256 _toAccountNumber,
+        uint256 _amountWei
+    )
+        internal
+        virtual
+        override
+        _depositIntoVaultForDolomiteMarginPausableValidator(_toAccountNumber, marketId())
+    {
+        IsolationModeTokenVaultV1._depositIntoVaultForDolomiteMargin(_toAccountNumber, _amountWei);
+    }
 
     /// @dev   Cannot further collateralize a position with underlying, when underlying is paused
     function _openBorrowPosition(
@@ -228,7 +239,7 @@ abstract contract IsolationModeTokenVaultV1WithPausable is
             _amountWei
         )
     {
-        super._openBorrowPosition(
+        IsolationModeTokenVaultV1._openBorrowPosition(
             _fromAccountNumber,
             _toAccountNumber,
             _amountWei
@@ -250,7 +261,7 @@ abstract contract IsolationModeTokenVaultV1WithPausable is
             _collateralMarketIds
         )
     {
-        super._closeBorrowPositionWithOtherTokens(
+        IsolationModeTokenVaultV1._closeBorrowPositionWithOtherTokens(
             _borrowAccountNumber,
             _toAccountNumber,
             _collateralMarketIds
@@ -272,14 +283,35 @@ abstract contract IsolationModeTokenVaultV1WithPausable is
             _amountWei
         )
     {
-        super._transferIntoPositionWithUnderlyingToken(
+        IsolationModeTokenVaultV1._transferIntoPositionWithUnderlyingToken(
             _fromAccountNumber,
             _borrowAccountNumber,
             _amountWei
         );
     }
 
-    /// @dev   Cannot reduce collateralization by withdrawing other tokens, when underlying is paused
+    /// @dev   Cannot reduce collateralization by withdrawing assets, when underlying is paused
+    function _transferFromPositionWithUnderlyingToken(
+        uint256 _borrowAccountNumber,
+        uint256 _toAccountNumber,
+        uint256 _amountWei
+    )
+        internal
+        virtual
+        override
+        _transferFromPositionWithUnderlyingTokenPausableValidator(
+            _borrowAccountNumber,
+            _toAccountNumber,
+            _amountWei
+        )
+    {
+        IsolationModeTokenVaultV1._transferFromPositionWithUnderlyingToken(
+            _borrowAccountNumber,
+            _toAccountNumber,
+            _amountWei
+        );
+    }
+
     function _transferFromPositionWithOtherToken(
         uint256 _borrowAccountNumber,
         uint256 _toAccountNumber,
@@ -298,7 +330,7 @@ abstract contract IsolationModeTokenVaultV1WithPausable is
             _balanceCheckFlag
         )
     {
-        super._transferFromPositionWithOtherToken(
+        IsolationModeTokenVaultV1._transferFromPositionWithOtherToken(
             _borrowAccountNumber,
             _toAccountNumber,
             _marketId,
@@ -313,9 +345,9 @@ abstract contract IsolationModeTokenVaultV1WithPausable is
         uint256[] calldata _marketIdsPath,
         uint256 _inputAmountWei,
         uint256 _minOutputAmountWei,
-        IGenericTraderProxyV1.TraderParam[] memory _tradersPath,
+        IGenericTraderProxyV2.TraderParam[] memory _tradersPath,
         IDolomiteMargin.AccountInfo[] memory _makerAccounts,
-        IGenericTraderProxyV1.UserConfig memory _userConfig
+        IGenericTraderProxyV2.UserConfig memory _userConfig
     )
         internal
         virtual
@@ -343,9 +375,9 @@ abstract contract IsolationModeTokenVaultV1WithPausable is
         uint256[] calldata _marketIdsPath,
         uint256 _inputAmountWei,
         uint256 _minOutputAmountWei,
-        IGenericTraderProxyV1.TraderParam[] memory _tradersPath,
+        IGenericTraderProxyV2.TraderParam[] memory _tradersPath,
         IDolomiteMargin.AccountInfo[] memory _makerAccounts,
-        IGenericTraderProxyV1.UserConfig memory _userConfig
+        IGenericTraderProxyV2.UserConfig memory _userConfig
     )
         internal
         virtual
@@ -383,9 +415,43 @@ abstract contract IsolationModeTokenVaultV1WithPausable is
         );
     }
 
+    function _validateDepositIntoVaultAfterTransfer(
+        uint256 _accountNumber,
+        uint256 _marketId
+    )
+        internal
+        virtual
+        override
+        view
+        _depositIntoVaultForDolomiteMarginPausableValidator(_accountNumber, _marketId)
+    {
+        IsolationModeTokenVaultV1._validateDepositIntoVaultAfterTransfer(_accountNumber, _marketId);
+    }
+
+    function _validateWithdrawalFromVaultAfterTransfer(
+        uint256 _accountNumber,
+        uint256 _marketId
+    )
+        internal
+        virtual
+        override
+        view
+        _withdrawFromVaultForDolomiteMarginPausableValidator(_accountNumber)
+    {
+        IsolationModeTokenVaultV1._validateWithdrawalFromVaultAfterTransfer(_accountNumber, _marketId);
+    }
+
     // ===================================================
     // =============== Private Functions =================
     // ===================================================
+
+    function _validateWithdrawalFromPositionAfterAction(uint256 _borrowAccountNumber) private view {
+        if (isExternalRedemptionPaused()) {
+            // If redemptions are paused (preventing liquidations), the user cannot decrease collateralization.
+            // If there is no debt markets, the user can can withdraw without affecting collateralization (it's ∞)
+            _requireNumberOfMarketsWithDebtIsZero(_borrowAccountNumber);
+        }
+    }
 
     function _requireExternalRedemptionNotPaused() private view {
         Require.that(

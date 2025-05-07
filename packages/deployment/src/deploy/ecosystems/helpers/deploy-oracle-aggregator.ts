@@ -1,7 +1,7 @@
 import { ADDRESS_ZERO } from '@dolomite-exchange/zap-sdk/dist/src/lib/Constants';
 import { IDolomiteRegistry, IERC20__factory, IERC20Metadata__factory } from 'packages/base/src/types';
 import { CHAINLINK_PRICE_AGGREGATORS_MAP, INVALID_TOKEN_MAP } from 'packages/base/src/utils/constants';
-import { NetworkType } from 'packages/base/src/utils/no-deps-constants';
+import { DolomiteNetwork } from 'packages/base/src/utils/no-deps-constants';
 import { DolomiteMargin } from 'packages/base/test/utils/dolomite';
 import { TokenInfo } from 'packages/oracles/src';
 import { getChainlinkPriceOracleV3ConstructorParams } from 'packages/oracles/src/oracles-constructors';
@@ -12,7 +12,7 @@ import {
 } from 'packages/oracles/src/types';
 import { deployContractAndSave, getMaxDeploymentVersionNameByDeploymentKey } from '../../../utils/deploy-utils';
 
-export async function deployOracleAggregator<T extends NetworkType>(
+export async function deployOracleAggregator<T extends DolomiteNetwork>(
   network: T,
   dolomiteRegistry: IDolomiteRegistry,
   dolomiteMargin: DolomiteMargin<T>,

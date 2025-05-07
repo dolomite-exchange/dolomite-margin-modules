@@ -113,6 +113,62 @@ abstract contract MetaVaultRewardTokenFactory is
         );
     }
 
+    function depositOtherTokenIntoDolomiteMarginFromMetaVault(
+        address _owner,
+        uint256 _toAccountNumber,
+        uint256 _otherMarketId,
+        uint256 _amountWei
+    ) external {
+        address vault = _userToVaultMap[_owner];
+        if (vault == address(0)) {
+            vault = _createVault(_owner);
+        }
+
+        Require.that(
+            _otherMarketId != marketId,
+            _FILE,
+            "Invalid market",
+            _otherMarketId
+        );
+        Require.that(
+            berachainRewardsRegistry.getMetaVaultByVault(vault) == msg.sender,
+            _FILE,
+            "Can only deposit from metaVault"
+        );
+
+        IDolomiteStructs.AccountInfo[] memory accounts = new IDolomiteStructs.AccountInfo[](2);
+        accounts[0] = IDolomiteStructs.AccountInfo({
+            owner: msg.sender,
+            number: 0
+        });
+        accounts[1] = IDolomiteStructs.AccountInfo({
+            owner: _owner,
+            number: _toAccountNumber
+        });
+
+        IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](2);
+        actions[0] = AccountActionLib.encodeDepositAction(
+            /* _accountId = */ 0,
+            _otherMarketId,
+            IDolomiteStructs.AssetAmount({
+                sign: true,
+                denomination: IDolomiteStructs.AssetDenomination.Wei,
+                ref: IDolomiteStructs.AssetReference.Delta,
+                value: _amountWei
+            }),
+            /* _fromAccount = */ msg.sender
+        );
+        actions[1] = AccountActionLib.encodeTransferAction(
+            /* _fromAccountId = */ 0,
+            /* _toAccountId = */ 1,
+            _otherMarketId,
+            IDolomiteStructs.AssetDenomination.Wei,
+            _amountWei
+        );
+
+        DOLOMITE_MARGIN().operate(accounts, actions);
+    }
+
     function ownerSetBerachainRewardsRegistry(
         address _berachainRewardsRegistry
     ) external override onlyDolomiteMarginOwner(msg.sender) {

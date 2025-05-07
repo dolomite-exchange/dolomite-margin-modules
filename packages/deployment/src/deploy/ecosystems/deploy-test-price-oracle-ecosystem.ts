@@ -1,5 +1,5 @@
 import { getAnyNetwork } from 'packages/base/src/utils/dolomite-utils';
-import { NetworkType } from 'packages/base/src/utils/no-deps-constants';
+import { DolomiteNetwork } from 'packages/base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from 'packages/base/test/utils';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
 import { deployContractAndSave } from '../../utils/deploy-utils';
@@ -10,7 +10,7 @@ import getScriptName from '../../utils/get-script-name';
  * This script encodes the following transactions:
  * - Deploys the test price oracle
  */
-async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
+async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
   const network = (await getAnyNetwork()) as T;
   const core = await setupCoreProtocol({
     network,

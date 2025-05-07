@@ -1,7 +1,7 @@
 import { DolomiteMargin } from '@dolomite-exchange/modules-base/test/utils/dolomite';
 import { CoreProtocolType } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { BigNumberish } from 'ethers';
-import { Network } from 'packages/base/src/utils/no-deps-constants';
+import { DolomiteNetwork } from 'packages/base/src/utils/no-deps-constants';
 import { CoreProtocolArbitrumOne } from 'packages/base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { CorePendleEcosystem } from 'packages/base/test/utils/ecosystem-utils/pendle';
 import {
@@ -31,7 +31,7 @@ import {
   PendleYtIsolationModeVaultFactory,
 } from './types';
 
-export type CoreProtocolWithPendle<T extends Network> = Extract<
+export type CoreProtocolWithPendle<T extends DolomiteNetwork> = Extract<
   CoreProtocolType<T>,
   {
     dolomiteMargin: DolomiteMargin<T>;
@@ -72,7 +72,7 @@ export async function getPendleGLPRegistryConstructorParams(
   return [implementation.address, core.dolomiteMargin.address, calldata.data];
 }
 
-export async function getPendleRegistryConstructorParams<T extends Network>(
+export async function getPendleRegistryConstructorParams<T extends DolomiteNetwork>(
   implementation: PendleRegistry,
   core: CoreProtocolWithPendle<T>,
   ptMarket: IPendlePtMarket,
@@ -90,7 +90,7 @@ export async function getPendleRegistryConstructorParams<T extends Network>(
   return [implementation.address, core.dolomiteMargin.address, calldata.data];
 }
 
-export function getPendlePtIsolationModeVaultFactoryConstructorParams<T extends Network>(
+export function getPendlePtIsolationModeVaultFactoryConstructorParams<T extends DolomiteNetwork>(
   core: CoreProtocolWithPendle<T>,
   registry: IPendleRegistry | PendleRegistry,
   ptToken: IPendlePtToken,
@@ -150,7 +150,7 @@ export function getPendleYtPriceOracleConstructorParams(
   ];
 }
 
-export function getPendlePtPriceOracleConstructorParams<T extends Network>(
+export function getPendlePtPriceOracleConstructorParams<T extends DolomiteNetwork>(
   core: CoreProtocolWithPendle<T>,
   dptToken: IPendlePtIsolationModeVaultFactory | PendlePtIsolationModeVaultFactory,
   pendleRegistry: IPendleRegistry | PendleRegistry,
@@ -163,7 +163,7 @@ export function getPendlePtPriceOracleConstructorParams<T extends Network>(
   return [dptToken.address, pendleRegistry.address, underlyingToken.address, core.dolomiteMargin.address];
 }
 
-export function getPendlePtPriceOracleV2ConstructorParams<T extends Network>(
+export function getPendlePtPriceOracleV2ConstructorParams<T extends DolomiteNetwork>(
   core: CoreProtocolWithPendle<T>,
   dptToken: IPendlePtIsolationModeVaultFactory | PendlePtIsolationModeVaultFactory,
   pendleRegistry: IPendleRegistry | PendleRegistry,
@@ -199,7 +199,7 @@ export function getPendlePtEEthPriceOracleConstructorParamsz(
   return [dptToken.address, pendleRegistry.address, core.tokens.weEth.address, core.dolomiteMargin.address];
 }
 
-export function getPendlePtIsolationModeWrapperTraderV2ConstructorParams<T extends Network>(
+export function getPendlePtIsolationModeWrapperTraderV2ConstructorParams<T extends DolomiteNetwork>(
   core: CoreProtocolWithPendle<T>,
   pendleRegistry: IPendleRegistry | PendleRegistry,
   underlyingToken: IERC20,
@@ -212,7 +212,7 @@ export function getPendlePtIsolationModeWrapperTraderV2ConstructorParams<T exten
   return [pendleRegistry.address, underlyingToken.address, dptFactory.address, core.dolomiteMargin.address];
 }
 
-export function getPendleYtIsolationModeWrapperTraderV2ConstructorParams<T extends Network>(
+export function getPendleYtIsolationModeWrapperTraderV2ConstructorParams<T extends DolomiteNetwork>(
   core: CoreProtocolWithPendle<T>,
   underlyingToken: IERC20,
   pendleRegistry: IPendleRegistry | PendleRegistry,
@@ -230,7 +230,7 @@ export function getPendleYtIsolationModeWrapperTraderV2ConstructorParams<T exten
   ];
 }
 
-export function getPendlePtIsolationModeWrapperTraderV3ConstructorParams<T extends Network>(
+export function getPendlePtIsolationModeWrapperTraderV3ConstructorParams<T extends DolomiteNetwork>(
   core: CoreProtocolWithPendle<T>,
   pendleRegistry: IPendleRegistry | PendleRegistry | IPendleGLPRegistry,
   underlyingToken: IERC20,
@@ -243,7 +243,7 @@ export function getPendlePtIsolationModeWrapperTraderV3ConstructorParams<T exten
   return [pendleRegistry.address, underlyingToken.address, dptFactory.address, core.dolomiteMargin.address];
 }
 
-export function getPendlePtIsolationModeUnwrapperTraderV2ConstructorParams<T extends Network>(
+export function getPendlePtIsolationModeUnwrapperTraderV2ConstructorParams<T extends DolomiteNetwork>(
   core: CoreProtocolWithPendle<T>,
   pendleRegistry: IPendleRegistry | PendleRegistry,
   underlyingToken: IERC20,
@@ -256,7 +256,7 @@ export function getPendlePtIsolationModeUnwrapperTraderV2ConstructorParams<T ext
   return [pendleRegistry.address, underlyingToken.address, dptToken.address, core.dolomiteMargin.address];
 }
 
-export function getPendleYtIsolationModeUnwrapperTraderV2ConstructorParams<T extends Network>(
+export function getPendleYtIsolationModeUnwrapperTraderV2ConstructorParams<T extends DolomiteNetwork>(
   core: CoreProtocolWithPendle<T>,
   underlyingToken: IERC20,
   pendleRegistry: IPendleRegistry | PendleRegistry,
@@ -274,7 +274,7 @@ export function getPendleYtIsolationModeUnwrapperTraderV2ConstructorParams<T ext
   ];
 }
 
-export function getPendlePtIsolationModeUnwrapperTraderV3ConstructorParams<T extends Network>(
+export function getPendlePtIsolationModeUnwrapperTraderV3ConstructorParams<T extends DolomiteNetwork>(
   core: CoreProtocolWithPendle<T>,
   pendleRegistry: IPendleRegistry | PendleRegistry | IPendleGLPRegistry,
   underlyingToken: IERC20,

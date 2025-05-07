@@ -19,9 +19,9 @@
 
 pragma solidity ^0.8.9;
 
-import { BaseLiquidatorProxy } from "../general/BaseLiquidatorProxy.sol";
 import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
-
+import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
+import { BaseLiquidatorProxy } from "../proxies/BaseLiquidatorProxy.sol";
 
 /**
  * @title   TestBaseLiquidatorProxy
@@ -91,7 +91,8 @@ contract TestBaseLiquidatorProxy is BaseLiquidatorProxy {
         return _getAccountValues(
             _marketInfos,
             _account,
-            _marketIds
+            _marketIds,
+            IDolomiteStructs.Decimal({ value: 0 })
         );
     }
 
@@ -110,7 +111,8 @@ contract TestBaseLiquidatorProxy is BaseLiquidatorProxy {
         return _getAdjustedAccountValues(
             _marketInfos,
             _account,
-            _marketIds
+            _marketIds,
+            IDolomiteStructs.Decimal({ value: 0 })
         );
     }
 

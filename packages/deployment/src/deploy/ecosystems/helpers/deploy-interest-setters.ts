@@ -5,6 +5,22 @@ import { deployContractAndSave } from '../../../utils/deploy-utils';
 export async function deployInterestSetters(): Promise<void> {
   await deployContractAndSave(
     'LinearStepFunctionInterestSetter',
+    getLinearStepFunctionInterestSetterConstructorParams(parseEther('0.04'), parseEther('0.96'), parseEther('0.70')),
+    'LinearStepFunction4L96U70OInterestSetter',
+  );
+  await deployContractAndSave(
+    'LinearStepFunctionInterestSetter',
+    getLinearStepFunctionInterestSetterConstructorParams(parseEther('0.04'), parseEther('0.96'), parseEther('0.80')),
+    'LinearStepFunction4L96U80OInterestSetter',
+  );
+  await deployContractAndSave(
+    'LinearStepFunctionInterestSetter',
+    getLinearStepFunctionInterestSetterConstructorParams(parseEther('0.04'), parseEther('0.96'), parseEther('0.90')),
+    'LinearStepFunction4L96U90OInterestSetter',
+  );
+
+  await deployContractAndSave(
+    'LinearStepFunctionInterestSetter',
     getLinearStepFunctionInterestSetterConstructorParams(parseEther('0.06'), parseEther('0.94'), parseEther('0.70')),
     'LinearStepFunction6L94U70OInterestSetter',
   );
@@ -67,6 +83,11 @@ export async function deployInterestSetters(): Promise<void> {
 
   await deployContractAndSave(
     'LinearStepFunctionInterestSetter',
+    getLinearStepFunctionInterestSetterConstructorParams(parseEther('0.15'), parseEther('1.35'), parseEther('0.60')),
+    'LinearStepFunction15L135U60OInterestSetter',
+  );
+  await deployContractAndSave(
+    'LinearStepFunctionInterestSetter',
     getLinearStepFunctionInterestSetterConstructorParams(parseEther('0.15'), parseEther('1.35'), parseEther('0.70')),
     'LinearStepFunction15L135U70OInterestSetter',
   );
@@ -93,6 +114,11 @@ export async function deployInterestSetters(): Promise<void> {
 
   await deployContractAndSave(
     'LinearStepFunctionInterestSetter',
+    getLinearStepFunctionInterestSetterConstructorParams(parseEther('0.16'), parseEther('0.84'), parseEther('0.60')),
+    'LinearStepFunction16L84U60OInterestSetter',
+  );
+  await deployContractAndSave(
+    'LinearStepFunctionInterestSetter',
     getLinearStepFunctionInterestSetterConstructorParams(parseEther('0.16'), parseEther('0.84'), parseEther('0.70')),
     'LinearStepFunction16L84U70OInterestSetter',
   );
@@ -105,5 +131,46 @@ export async function deployInterestSetters(): Promise<void> {
     'LinearStepFunctionInterestSetter',
     getLinearStepFunctionInterestSetterConstructorParams(parseEther('0.16'), parseEther('0.84'), parseEther('0.90')),
     'LinearStepFunction16L84U90OInterestSetter',
+  );
+
+  await deployContractAndSave(
+    'LinearStepFunctionInterestSetter',
+    getLinearStepFunctionInterestSetterConstructorParams(parseEther('0.20'), parseEther('1.05'), parseEther('0.70')),
+    'LinearStepFunction20L105U70OInterestSetter',
+  );
+  await deployContractAndSave(
+    'LinearStepFunctionInterestSetter',
+    getLinearStepFunctionInterestSetterConstructorParams(parseEther('0.20'), parseEther('1.30'), parseEther('0.70')),
+    'LinearStepFunction20L130U70OInterestSetter',
+  );
+  await deployContractAndSave(
+    'LinearStepFunctionInterestSetter',
+    getLinearStepFunctionInterestSetterConstructorParams(parseEther('0.30'), parseEther('0.95'), parseEther('0.70')),
+    'LinearStepFunction30L95U70OInterestSetter',
+  );
+  await deployContractAndSave(
+    'LinearStepFunctionInterestSetter',
+    getLinearStepFunctionInterestSetterConstructorParams(parseEther('0.30'), parseEther('1.20'), parseEther('0.70')),
+    'LinearStepFunction30L120U70OInterestSetter',
+  );
+  await deployContractAndSave(
+    'LinearStepFunctionInterestSetter',
+    getLinearStepFunctionInterestSetterConstructorParams(parseEther('0.40'), parseEther('0.85'), parseEther('0.70')),
+    'LinearStepFunction40L85U70OInterestSetter',
+  );
+  await deployContractAndSave(
+    'LinearStepFunctionInterestSetter',
+    getLinearStepFunctionInterestSetterConstructorParams(parseEther('0.40'), parseEther('1.10'), parseEther('0.70')),
+    'LinearStepFunction40L110U70OInterestSetter',
+  );
+  await deployContractAndSave(
+    'LinearStepFunctionInterestSetter',
+    getLinearStepFunctionInterestSetterConstructorParams(parseEther('0.50'), parseEther('0.75'), parseEther('0.70')),
+    'LinearStepFunction50L75U70OInterestSetter',
+  );
+  await deployContractAndSave(
+    'LinearStepFunctionInterestSetter',
+    getLinearStepFunctionInterestSetterConstructorParams(parseEther('0.50'), parseEther('1.00'), parseEther('0.70')),
+    'LinearStepFunction50L100U70OInterestSetter',
   );
 }

@@ -3,6 +3,9 @@ import { expect } from 'chai';
 import { BigNumber, ContractTransaction } from 'ethers';
 import {
   CustomTestToken,
+  DepositWithdrawalRouter,
+  DepositWithdrawalRouter__factory,
+  RouterProxy__factory,
   TestIsolationModeTokenVaultV1WithFreezable,
   TestIsolationModeTokenVaultV1WithFreezable__factory,
   TestIsolationModeUnwrapperTraderV2,
@@ -14,6 +17,7 @@ import {
 import {
   createContractWithAbi,
   createContractWithLibrary,
+  createContractWithName,
   createTestToken,
   depositIntoDolomiteMargin,
   withdrawFromDolomiteMargin,
@@ -24,7 +28,7 @@ import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectProtocolBalance, expectThrow, expectTotalSupply, expectWalletBalance } from '../../utils/assertions';
 
 import { CoreProtocolArbitrumOne } from '../../utils/core-protocols/core-protocol-arbitrum-one';
-import { createIsolationModeTokenVaultV1ActionsImpl } from '../../utils/dolomite';
+import { createAndUpgradeDolomiteRegistry, createIsolationModeTokenVaultV1ActionsImpl } from '../../utils/dolomite';
 import { createTestIsolationModeVaultFactory } from '../../utils/ecosystem-utils/testers';
 import {
   getDefaultCoreProtocolConfig,
@@ -33,6 +37,7 @@ import {
   setupUserVaultProxy,
 } from '../../utils/setup';
 import { getSimpleZapParams, getUnwrapZapParams, getWrapZapParams } from '../../utils/zap-utils';
+import { hrtime } from 'process';
 
 const defaultAccountNumber = '0';
 const borrowAccountNumber = '123';
@@ -59,7 +64,28 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
   let otherMarketId2: BigNumber;
 
   before(async () => {
-    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
+    core = await setupCoreProtocol({
+      blockNumber: 326_681_400,
+      network: Network.ArbitrumOne,
+    });
+    await createAndUpgradeDolomiteRegistry(core);
+    const genericTraderLib = await createContractWithName('GenericTraderProxyV2Lib', []);
+    const genericTraderProxy = await createContractWithLibrary(
+      'GenericTraderProxyV2',
+      { GenericTraderProxyV2Lib: genericTraderLib.address },
+      [core.dolomiteRegistry.address, core.dolomiteMargin.address]
+    );
+    await core.dolomiteRegistry.ownerSetGenericTraderProxy(genericTraderProxy.address);
+    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(genericTraderProxy.address, true);
+
+    const newDepositWithdrawalRouter = await createContractWithAbi<DepositWithdrawalRouter>(
+      DepositWithdrawalRouter__factory.abi,
+      DepositWithdrawalRouter__factory.bytecode,
+      [core.dolomiteRegistry.address, core.dolomiteMargin.address],
+    );
+    const routerProxy = RouterProxy__factory.connect(core.depositWithdrawalRouter.address, core.hhUser1);
+    await routerProxy.connect(core.governance).upgradeTo(newDepositWithdrawalRouter.address);
+
     underlyingToken = await createTestToken();
     const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
     userVaultImplementation = await createContractWithLibrary<TestIsolationModeTokenVaultV1WithFreezable>(
@@ -70,7 +96,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
     factory = await createTestIsolationModeVaultFactory(
       core,
       underlyingToken,
-      userVaultImplementation,
+      userVaultImplementation as any,
     );
     await core.testEcosystem!.testPriceOracle.setPrice(
       factory.address,
@@ -108,8 +134,8 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
       TestIsolationModeWrapperTraderV2__factory.bytecode,
       [otherToken1.address, factory.address, core.dolomiteMargin.address, core.dolomiteRegistry.address],
     );
-    await factory.connect(core.governance).ownerInitialize([tokenUnwrapper.address, tokenWrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
+    await factory.connect(core.governance).ownerInitialize([tokenUnwrapper.address, tokenWrapper.address, core.depositWithdrawalRouter.address]);
 
     await factory.createVault(core.hhUser1.address);
     const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);
@@ -185,6 +211,25 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
       await expectTotalSupply(factory, amountWei);
     });
 
+    it('should work normally through router', async () => {
+      await underlyingToken.connect(core.hhUser1).approve(core.depositWithdrawalRouter.address, amountWei);
+      await core.depositWithdrawalRouter.connect(core.hhUser1).depositWei(
+        underlyingMarketId,
+        defaultAccountNumber,
+        underlyingMarketId,
+        amountWei,
+        0,
+      );
+
+      await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, underlyingMarketId, ZERO_BI);
+      await expectProtocolBalance(core, userVault, defaultAccountNumber, underlyingMarketId, amountWei);
+      
+      await expectWalletBalance(core.dolomiteMargin, factory, amountWei);
+      await expectWalletBalance(userVault, underlyingToken, amountWei);
+
+      await expectTotalSupply(factory, amountWei);
+    });
+
     it('should work when interacted with via factory', async () => {
       const factorySigner = await impersonate(factory.address, true);
       await userVault.connect(factorySigner).depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
@@ -213,6 +258,21 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
       );
     });
 
+    it('should fail if deposited through the router and vault is frozen', async () => {
+      await underlyingToken.connect(core.hhUser1).approve(core.depositWithdrawalRouter.address, amountWei);
+      await freezeVault();
+      await expectThrow(
+        core.depositWithdrawalRouter.connect(core.hhUser1).depositWei(
+          underlyingMarketId,
+          defaultAccountNumber,
+          underlyingMarketId,
+          amountWei,
+          0,
+        ),
+        'IsolationModeVaultV1Freezable: Vault is frozen',
+      );
+    });
+
     it('should fail if vault is frozen', async () => {
       await freezeVault();
       await expectThrow(
@@ -226,6 +286,26 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
     it('should work normally', async () => {
       await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await userVault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+
+      await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, underlyingMarketId, ZERO_BI);
+      await expectProtocolBalance(core, userVault, defaultAccountNumber, underlyingMarketId, ZERO_BI);
+
+      await expectWalletBalance(core.dolomiteMargin, factory, ZERO_BI);
+      await expectWalletBalance(userVault, underlyingToken, ZERO_BI);
+      await expectWalletBalance(core.hhUser1, underlyingToken, amountWei);
+
+      await expectTotalSupply(factory, ZERO_BI);
+    });
+
+    it('should work normally through router', async () => {
+      await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await core.depositWithdrawalRouter.connect(core.hhUser1).withdrawWei(
+        underlyingMarketId,
+        defaultAccountNumber,
+        underlyingMarketId,
+        amountWei,
+        0,
+      );
 
       await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, underlyingMarketId, ZERO_BI);
       await expectProtocolBalance(core, userVault, defaultAccountNumber, underlyingMarketId, ZERO_BI);
@@ -251,6 +331,21 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
       );
     });
 
+    it('should fail if through router and vault is frozen', async () => {
+      await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await freezeVault();
+      await expectThrow(
+        core.depositWithdrawalRouter.connect(core.hhUser1).withdrawWei(
+          underlyingMarketId,
+          defaultAccountNumber,
+          underlyingMarketId,
+          amountWei,
+          0,
+        ),
+        'IsolationModeVaultV1Freezable: Vault is frozen',
+      );
+    }); 
+
     it('should fail if vault is frozen', async () => {
       await freezeVault();
       await expectThrow(
@@ -271,10 +366,10 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
       await expectProtocolBalance(core, userVault, borrowAccountNumber, underlyingMarketId, amountWei);
     });
 
-    it('should fail when not called by owner', async () => {
+    it('should fail when not called by owner or converter', async () => {
       await expectThrow(
         userVault.connect(core.hhUser2).openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei),
-        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
+        `IsolationModeTokenVaultV1: Only owner or converter can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
 
@@ -313,11 +408,11 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
       await expectProtocolBalance(core, userVault, borrowAccountNumber, underlyingMarketId, ZERO_BI);
     });
 
-    it('should fail when not called by owner', async () => {
+    it('should fail when not called by owner or converter', async () => {
       await expectThrow(
         userVault.connect(core.hhUser2)
           .closeBorrowPositionWithUnderlyingVaultToken(borrowAccountNumber, defaultAccountNumber),
-        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
+        `IsolationModeTokenVaultV1: Only owner or converter can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
 
@@ -374,14 +469,14 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
       );
     });
 
-    it('should fail when not called by owner', async () => {
+    it('should fail when not called by owner or converter', async () => {
       await expectThrow(
         userVault.connect(core.hhUser2).closeBorrowPositionWithOtherTokens(
           borrowAccountNumber,
           defaultAccountNumber,
           [otherMarketId1],
         ),
-        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
+        `IsolationModeTokenVaultV1: Only owner or converter can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
 
@@ -412,11 +507,11 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
       await expectProtocolBalance(core, userVault, borrowAccountNumber, underlyingMarketId, amountWei);
     });
 
-    it('should fail when not called by owner', async () => {
+    it('should fail when not called by owner or converter', async () => {
       await expectThrow(
         userVault.connect(core.hhUser2)
           .transferIntoPositionWithUnderlyingToken(defaultAccountNumber, borrowAccountNumber, amountWei),
-        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
+        `IsolationModeTokenVaultV1: Only owner or converter can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
 
@@ -518,7 +613,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
       await expectProtocolBalance(core, userVault, borrowAccountNumber, otherMarketId1, otherAmountWei);
     });
 
-    it('should fail when not called by owner', async () => {
+    it('should fail when not called by owner or converter', async () => {
       await expectThrow(
         userVault.connect(core.hhUser2).transferIntoPositionWithOtherToken(
           defaultAccountNumber,
@@ -527,7 +622,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
           otherAmountWei,
           BalanceCheckFlag.Both,
         ),
-        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
+        `IsolationModeTokenVaultV1: Only owner or converter can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
 
@@ -598,11 +693,11 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
       await expectProtocolBalance(core, userVault, borrowAccountNumber, underlyingMarketId, ZERO_BI);
     });
 
-    it('should fail when not called by owner', async () => {
+    it('should fail when not called by owner or converter', async () => {
       await expectThrow(
         userVault.connect(core.hhUser2)
           .transferFromPositionWithUnderlyingToken(borrowAccountNumber, defaultAccountNumber, amountWei),
-        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
+        `IsolationModeTokenVaultV1: Only owner or converter can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
 
@@ -689,7 +784,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
       );
     });
 
-    it('should fail when not called by owner', async () => {
+    it('should fail when not called by owner or converter', async () => {
       await expectThrow(
         userVault.connect(core.hhUser2).transferFromPositionWithOtherToken(
           borrowAccountNumber,
@@ -698,7 +793,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
           otherAmountWei,
           BalanceCheckFlag.Both,
         ),
-        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
+        `IsolationModeTokenVaultV1: Only owner or converter can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
 
@@ -788,7 +883,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
       await expectProtocolBalance(core, userVault, borrowAccountNumber, otherMarketId1, ZERO_BI);
     });
 
-    it('should fail when not called by owner', async () => {
+    it('should fail when not called by owner or converter', async () => {
       await expectThrow(
         userVault.connect(core.hhUser2).repayAllForBorrowPosition(
           defaultAccountNumber,
@@ -796,7 +891,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
           otherMarketId1,
           BalanceCheckFlag.Both,
         ),
-        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
+        `IsolationModeTokenVaultV1: Only owner or converter can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
 

@@ -1,7 +1,7 @@
 import { ActionType, AmountDenomination, AmountReference, ExpiryCallFunctionType } from '@dolomite-margin/dist/src';
 import { BigNumberish, Contract, ContractTransaction } from 'ethers';
 import { ethers } from 'hardhat';
-import { Network } from 'packages/base/src/utils/no-deps-constants';
+import { DolomiteNetwork } from 'packages/base/src/utils/no-deps-constants';
 import { ActionArgsStruct } from '../../src/utils';
 import { AccountStruct } from '../../src/utils/constants';
 import { impersonate } from './index';
@@ -14,7 +14,7 @@ export async function createExpirationLibrary(): Promise<Contract> {
   return await ExpirationLib.deploy();
 }
 
-export async function setExpiry<T extends Network>(
+export async function setExpiry<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   account: AccountStruct,
   owedMarketId: BigNumberish,
