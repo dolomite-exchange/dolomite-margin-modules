@@ -6149,18 +6149,19 @@
       "isVerified": true
     }
   },
-  "OptionAirdrop": {
-    "80094": {
-      "address": "0xD88f473832b0403c7736EF237aF5aFF8759B99Ef",
-      "transaction": "0xf35115fb7511ed8c12c8a97202714f3e67cf1444aaeffcc5dd495122541b5088",
-      "isVerified": true
-    }
-  },
   "OptionAirdropImplementationV1": {
     "80094": {
       "address": "0x5748FAb564dB0BA0aF03615efCa0c2988A405D3c",
       "transaction": "0x76cee1a1eac83622fabbe24b2ce5b494d386398856392fcc46f2f7112d85e999",
       "isVerified": true
+    }
+  },
+  "OptionAirdropProxy": {
+    "80094": {
+      "address": "0xD88f473832b0403c7736EF237aF5aFF8759B99Ef",
+      "transaction": "0xf35115fb7511ed8c12c8a97202714f3e67cf1444aaeffcc5dd495122541b5088",
+      "isVerified": true,
+      "extraName": "Minerals Airdrop"
     }
   },
   "OracleAggregatorV2": {
@@ -8315,17 +8316,17 @@
       "isVerified": true
     }
   },
-  "RegularAirdrop": {
-    "80094": {
-      "address": "0xa3f079292cC35BA64996Fe0bcE3049928a838bC9",
-      "transaction": "0xda8b00c3b536739226cab1ad7b9cb953859efcb92581670d82ecc446510a245b",
-      "isVerified": true
-    }
-  },
   "RegularAirdropImplementationV1": {
     "80094": {
       "address": "0xD50230c1f75e08492be2D96C3b1Fdddf3daE97Ec",
       "transaction": "0xbcab4b57ac44b1d4dfed7733b03453aca3cee972399b0ff2280946ae13693fe3",
+      "isVerified": true
+    }
+  },
+  "RegularAirdropProxy": {
+    "80094": {
+      "address": "0xa3f079292cC35BA64996Fe0bcE3049928a838bC9",
+      "transaction": "0xda8b00c3b536739226cab1ad7b9cb953859efcb92581670d82ecc446510a245b",
       "isVerified": true
     }
   },
@@ -8396,7 +8397,8 @@
     "80094": {
       "address": "0x7eFD088aE500598A19a242D6D48b9f7E0d061176",
       "transaction": "0x14f69d86a18e3d4b8168981cc7455f682ea1ccc68e00695a20cee3ef5220e539",
-      "isVerified": true
+      "isVerified": true,
+      "extraName": "Strategic investor claims"
     }
   },
   "TestPriceOracleForAdmin": {
@@ -8431,7 +8433,8 @@
     "80094": {
       "address": "0x3E9b9A16743551DA49b5e136C716bBa7932d2cEc",
       "transaction": "0x47ce811eff8912eea06180c9b1c4711eec60314f90d758de51d13bb7e465e737",
-      "isVerified": true
+      "isVerified": true,
+      "extraName": "voDOLO"
     }
   },
   "VeFeeCalculatorV1": {
@@ -8515,7 +8518,8 @@
     "80094": {
       "address": "0x3a025C7fCF7632197ea82e64ACD6fF53E1C06C07",
       "transaction": "0x6e664991976f642cff4b5c29c0bd2e1800d357ce9777b685272dd06871aa743d",
-      "isVerified": true
+      "isVerified": true,
+      "extraName": "Regular Investor claims"
     }
   },
   "VeTokenClaimImplementationV1": {
@@ -8564,7 +8568,8 @@
     "80094": {
       "address": "0xCB86B75EE6133d179a12D550b09FB3cdB1e141D4",
       "transaction": "0xf3787a8c00413d43198f41f3776e7065aa10430b0d6e2073cbb66ae3c2727235",
-      "isVerified": true
+      "isVerified": true,
+      "extraName": "veDOLO"
     }
   },
   "WMNTIsolationModeTokenVaultV2": {
