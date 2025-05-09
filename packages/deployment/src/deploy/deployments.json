@@ -626,6 +626,13 @@
       "isVerified": true
     }
   },
+  "BoycoPartnerClaimProxy": {
+    "80094": {
+      "address": "0x232FaF2D9163DcA0f62d0ecDE2C2C259AA5eF44B",
+      "transaction": "0x6befe7db248aa49205a55e64e6c459b239abe799cab1422abf90d55e572f395d",
+      "isVerified": true
+    }
+  },
   "ChainlinkPriceOracleV1": {
     "1101": {
       "address": "0xcE29B273fdd21cef1cE4dfd104dD608941D781a0",
