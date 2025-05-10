@@ -16,6 +16,7 @@ import { TokenomicsAirdropEcosystem } from '../ecosystem-utils/tokenomics-airdro
 export interface CoreProtocolTokensBerachain extends CoreProtocolTokens<Network.Berachain> {
   beraEth: IERC20;
   btcPlaceholder: IERC20;
+  dolo: IERC20;
   eBtc: IERC20;
   fbtc: IERC20;
   henlo: IERC20;
@@ -86,6 +87,7 @@ export interface CoreProtocolDolomiteTokensBerachain extends CoreProtocolDolomit
 
 interface CoreProtocolMarketIdsBerachain extends CoreProtocolMarketIds {
   beraEth: BigNumberish;
+  dolo: BigNumberish;
   eBtc: BigNumberish;
   henlo: BigNumberish;
   honey: BigNumberish;

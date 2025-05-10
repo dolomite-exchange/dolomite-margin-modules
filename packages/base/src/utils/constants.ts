@@ -115,26 +115,6 @@ export const CM_ETH_MAP: Record<Network.Mantle, TokenWithMarketId> = {
   },
 };
 
-export const DAI_MAP: Record<DolomiteNetwork, TokenWithMarketId | undefined> = {
-  [Network.ArbitrumOne]: {
-    address: '0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1',
-    marketId: 1,
-  },
-  [Network.Base]: {
-    address: '0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb',
-    marketId: 1,
-  },
-  [Network.Berachain]: undefined,
-  [Network.Ink]: undefined,
-  [Network.Mantle]: undefined,
-  [Network.PolygonZkEvm]: {
-    address: '0xC5015b9d9161Dca7e18e32f6f25C4aD850731Fd4',
-    marketId: 1,
-  },
-  [Network.SuperSeed]: undefined,
-  [Network.XLayer]: undefined,
-};
-
 export const D_ARB_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x1d9E10B161aE54FEAbe1E3F71f658cac3468e3C3',
@@ -142,12 +122,6 @@ export const D_ARB_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   },
 };
 
-export const DFS_GLP_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
-  [Network.ArbitrumOne]: {
-    address: '0x34DF4E8062A8C8Ae97E3382B452bd7BF60542698',
-    marketId: 6,
-  },
-};
 
 export const D_GLV_BTC_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
@@ -443,9 +417,51 @@ export const DYT_GLP_2024_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = 
   },
 };
 
+export const DAI_MAP: Record<DolomiteNetwork, TokenWithMarketId | undefined> = {
+  [Network.ArbitrumOne]: {
+    address: '0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1',
+    marketId: 1,
+  },
+  [Network.Base]: {
+    address: '0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb',
+    marketId: 1,
+  },
+  [Network.Berachain]: undefined,
+  [Network.Ink]: undefined,
+  [Network.Mantle]: undefined,
+  [Network.PolygonZkEvm]: {
+    address: '0xC5015b9d9161Dca7e18e32f6f25C4aD850731Fd4',
+    marketId: 1,
+  },
+  [Network.SuperSeed]: undefined,
+  [Network.XLayer]: undefined,
+};
+
+export const DFS_GLP_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0x34DF4E8062A8C8Ae97E3382B452bd7BF60542698',
+    marketId: 6,
+  },
+};
+
 export const DOGE_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0xC4da4c24fd591125c3F47b340b6f4f76111883d8',
+    marketId: -1, // does not exist; purely here for the Chainlink oracle pairing
+  },
+};
+
+export const DOLO_MAP: Record<Network.ArbitrumOne | Network.Berachain | Network.Ethereum, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0x0F81001eF0A83ecCE5ccebf63EB302c70a39a654',
+    marketId: -1, // does not exist; purely here for the Chainlink oracle pairing
+  },
+  [Network.Berachain]: {
+    address: '0x0F81001eF0A83ecCE5ccebf63EB302c70a39a654',
+    marketId: 35, // does not exist; purely here for the Chainlink oracle pairing
+  },
+  [Network.Ethereum]: {
+    address: '0x0F81001eF0A83ecCE5ccebf63EB302c70a39a654',
     marketId: -1, // does not exist; purely here for the Chainlink oracle pairing
   },
 };
@@ -774,6 +790,13 @@ export const S_USDS_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0xdDb46999F8891663a8F2828d25298f70416d7610',
     marketId: 74,
+  },
+};
+
+export const SDE_USD_MAP: Record<Network.Berachain, TokenWithMarketId> = {
+  [Network.Berachain]: {
+    address: '',
+    marketId: 36,
   },
 };
 

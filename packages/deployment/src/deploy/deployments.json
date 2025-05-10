@@ -2180,6 +2180,13 @@
       "isVerified": true
     }
   },
+  "DOLOPriceOracle": {
+    "80094": {
+      "address": "0x8517ed4E41e3bc6B5660162ed1B131510458542b",
+      "transaction": "0x11b7786ce8a3105d87d406ec03e391d1458373c0ff311497be03316d1c6baa1f",
+      "isVerified": true
+    }
+  },
   "DPXTWAPPriceOracleV1": {
     "42161": {
       "address": "0xcB10913Bb95E66658BDb065EA85C7D6594AedF47",

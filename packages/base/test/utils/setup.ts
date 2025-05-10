@@ -190,7 +190,7 @@ import {
   XAI_MAP,
   YL_FBTC_MAP,
   YL_PUMP_BTC_MAP,
-  YL_ST_ETH_MAP,
+  YL_ST_ETH_MAP, DOLO_MAP,
 } from '../../src/utils/constants';
 import {
   ADDRESS_ZERO,
@@ -1391,6 +1391,7 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
       dTokens: {
         ...coreProtocolParams.dTokens,
         beraEth: getDolomite4626TokenContract(config, hhUser1, 'DolomiteBeraEth4626Token'),
+        // dolo: getDolomite4626TokenContract(config, hhUser1, 'DolomiteDolo4626Token'),
         eBtc: getDolomite4626TokenContract(config, hhUser1, 'DolomiteEBtc4626Token'),
         honey: getDolomite4626TokenContract(config, hhUser1, 'DolomiteHoney4626Token'),
         lbtc: getDolomite4626TokenContract(config, hhUser1, 'DolomiteLbtc4626Token'),
@@ -1424,6 +1425,7 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
       marketIds: {
         ...coreProtocolParams.marketIds,
         beraEth: BERA_ETH_MAP[typedConfig.network].marketId,
+        dolo: DOLO_MAP[typedConfig.network].marketId,
         eBtc: E_BTC_MAP[typedConfig.network].marketId,
         henlo: HENLO_MAP[typedConfig.network].marketId,
         honey: HONEY_MAP[typedConfig.network].marketId,
@@ -1469,6 +1471,7 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
         ...coreProtocolParams.tokens,
         btcPlaceholder: IERC20__factory.connect(BTC_PLACEHOLDER_MAP[typedConfig.network].address, hhUser1),
         beraEth: IERC20__factory.connect(BERA_ETH_MAP[typedConfig.network].address, hhUser1),
+        dolo: IERC20__factory.connect(DOLO_MAP[typedConfig.network].address, hhUser1),
         eBtc: IERC20__factory.connect(E_BTC_MAP[typedConfig.network].address, hhUser1),
         fbtc: IERC20__factory.connect(FBTC_MAP[typedConfig.network].address, hhUser1),
         henlo: IERC20__factory.connect(HENLO_MAP[typedConfig.network].address, hhUser1),
