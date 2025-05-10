@@ -8547,7 +8547,8 @@
     "80094": {
       "address": "0x51B3116eF47073AB8A0353A2751dC533D4238527",
       "transaction": "0xb2542d86639253f3e6ebcbdad4aa9e216ea9d2f4953e7c53ff291e723bb34112",
-      "isVerified": true
+      "isVerified": true,
+      "extraName": "Boyco"
     }
   },
   "VoterAlwaysActive": {
