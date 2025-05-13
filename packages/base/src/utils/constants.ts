@@ -122,7 +122,6 @@ export const D_ARB_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   },
 };
 
-
 export const D_GLV_BTC_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x7E584529BB40220A2bD5d0c13E3d65aBd4A47F0E',
@@ -253,6 +252,13 @@ export const D_GM_WST_ETH_USD_MAP: Record<Network.ArbitrumOne, TokenWithMarketId
   [Network.ArbitrumOne]: {
     address: '0xc587646f67b38739006ED0200e2E0a26FDb01c9B',
     marketId: 59,
+  },
+};
+
+export const DE_USD_MAP: Record<Network.Berachain, TokenWithMarketId> = {
+  [Network.Berachain]: {
+    address: '0x7203fB920421170Cc4Da001d758fdE8f391A0570',
+    marketId: 36,
   },
 };
 
@@ -795,8 +801,8 @@ export const S_USDS_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
 
 export const SDE_USD_MAP: Record<Network.Berachain, TokenWithMarketId> = {
   [Network.Berachain]: {
-    address: '',
-    marketId: 36,
+    address: '0xAF51434Ac57f05e0Bc397739c15CF653dbdBd86D',
+    marketId: 37,
   },
 };
 
@@ -2321,6 +2327,9 @@ export const REDSTONE_PRICE_AGGREGATORS_MAP: Record<
     [BTC_PLACEHOLDER_MAP[Network.Berachain].address]: {
       aggregatorAddress: '0xa8a94Da411425634e3Ed6C331a32ab4fd774aa43',
     },
+    [DE_USD_MAP[Network.Berachain].address]: {
+      aggregatorAddress: '', // TODO
+    },
     [E_BTC_MAP[Network.Berachain].address]: {
       aggregatorAddress: '0x09639692CE6ff12A06CA3AE9A24b3Aae4CD80DC8',
       tokenPairAddress: WBTC_MAP[Network.Berachain].address,
@@ -2336,6 +2345,9 @@ export const REDSTONE_PRICE_AGGREGATORS_MAP: Record<
     [S_USDE_MAP[Network.Berachain].address]: {
       aggregatorAddress: '0x197225B3B017eb9b72Ac356D6B3c267d0c04c57c',
       tokenPairAddress: USDE_MAP[Network.Berachain].address,
+    },
+    [SDE_USD_MAP[Network.Berachain].address]: {
+      aggregatorAddress: '', // TODO
     },
     [ST_BTC_MAP[Network.Berachain].address]: {
       aggregatorAddress: '0xa8a94Da411425634e3Ed6C331a32ab4fd774aa43', // TODO: fix this

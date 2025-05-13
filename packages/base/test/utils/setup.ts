@@ -190,7 +190,7 @@ import {
   XAI_MAP,
   YL_FBTC_MAP,
   YL_PUMP_BTC_MAP,
-  YL_ST_ETH_MAP, DOLO_MAP,
+  YL_ST_ETH_MAP, DOLO_MAP, SDE_USD_MAP, DE_USD_MAP,
 } from '../../src/utils/constants';
 import {
   ADDRESS_ZERO,
@@ -1425,6 +1425,7 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
       marketIds: {
         ...coreProtocolParams.marketIds,
         beraEth: BERA_ETH_MAP[typedConfig.network].marketId,
+        deUsd: DE_USD_MAP[typedConfig.network].marketId,
         dolo: DOLO_MAP[typedConfig.network].marketId,
         eBtc: E_BTC_MAP[typedConfig.network].marketId,
         henlo: HENLO_MAP[typedConfig.network].marketId,
@@ -1441,6 +1442,7 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
         sbtc: STONE_BTC_MAP[typedConfig.network].marketId,
         sUsda: S_USDA_MAP[typedConfig.network].marketId,
         sUsde: S_USDE_MAP[typedConfig.network].marketId,
+        sdeUsd: SDE_USD_MAP[typedConfig.network].marketId,
         stBtc: ST_BTC_MAP[typedConfig.network].marketId,
         srUsd: SR_USD_MAP[typedConfig.network].marketId,
         solvBtc: SOLV_BTC_MAP[typedConfig.network].marketId,
@@ -1471,6 +1473,7 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
         ...coreProtocolParams.tokens,
         btcPlaceholder: IERC20__factory.connect(BTC_PLACEHOLDER_MAP[typedConfig.network].address, hhUser1),
         beraEth: IERC20__factory.connect(BERA_ETH_MAP[typedConfig.network].address, hhUser1),
+        deUsd: IERC20__factory.connect(DE_USD_MAP[typedConfig.network].address, hhUser1),
         dolo: IERC20__factory.connect(DOLO_MAP[typedConfig.network].address, hhUser1),
         eBtc: IERC20__factory.connect(E_BTC_MAP[typedConfig.network].address, hhUser1),
         fbtc: IERC20__factory.connect(FBTC_MAP[typedConfig.network].address, hhUser1),
@@ -1488,6 +1491,7 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
         stonebtc: IERC20__factory.connect(STONE_BTC_MAP[typedConfig.network].address, hhUser1),
         sUsda: IERC20__factory.connect(S_USDA_MAP[typedConfig.network].address, hhUser1),
         sUsde: IERC20__factory.connect(S_USDE_MAP[typedConfig.network].address, hhUser1),
+        sdeUsd: IERC20__factory.connect(SDE_USD_MAP[typedConfig.network].address, hhUser1),
         srUsd: IERC20__factory.connect(SR_USD_MAP[typedConfig.network].address, hhUser1),
         stBtc: IERC20__factory.connect(ST_BTC_MAP[typedConfig.network].address, hhUser1),
         solvBtc: IERC20__factory.connect(SOLV_BTC_MAP[typedConfig.network].address, hhUser1),
