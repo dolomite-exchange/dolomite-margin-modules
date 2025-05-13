@@ -7,12 +7,13 @@ import {
   RegistryProxy,
 } from 'packages/base/src/types';
 import { isArraysEqual } from 'packages/base/src/utils';
-import { NetworkType } from '../../../../../base/src/utils/no-deps-constants';
+import { DolomiteNetwork } from '../../../../../base/src/utils/no-deps-constants';
 import { CoreProtocolType } from '../../../../../base/test/utils/setup';
 import { EncodedTransaction } from '../../../utils/dry-run-utils';
 import { prettyPrintEncodedDataWithTypeSafety } from '../../../utils/encoding/base-encoder-utils';
+import { encodeSetGlobalOperatorIfNecessary } from '../../../utils/encoding/dolomite-margin-core-encoder-utils';
 
-export async function encodeDolomiteRegistryMigrations<T extends NetworkType>(
+export async function encodeDolomiteRegistryMigrations<T extends DolomiteNetwork>(
   dolomiteRegistry: IDolomiteRegistry,
   dolomiteRegistryProxy: RegistryProxy,
   borrowPositionProxyAddress: string,
@@ -89,42 +90,41 @@ export async function encodeDolomiteRegistryMigrations<T extends NetworkType>(
     );
   }
 
-  if (!(await core.dolomiteMargin.getIsGlobalOperator(genericTraderProxyV2.address))) {
+  let needsTreasuryEncoding = true;
+  try {
+    const foundTreasury = await dolomiteRegistry.treasury();
+    needsTreasuryEncoding = foundTreasury !== core.gnosisSafeAddress;
+  } catch (e) {}
+  if (needsTreasuryEncoding) {
     transactions.push(
       await prettyPrintEncodedDataWithTypeSafety(
         core,
-        { dolomiteMargin: core.dolomiteMargin },
-        'dolomiteMargin',
-        'ownerSetGlobalOperator',
-        [genericTraderProxyV2.address, true],
+        { dolomiteRegistry },
+        'dolomiteRegistry',
+        'ownerSetTreasury',
+        [core.gnosisSafeAddress],
       ),
     );
   }
 
   const genericTraderProxyV1Address = CoreDeployments.GenericTraderProxyV1[core.network].address;
-  if (await core.dolomiteMargin.getIsGlobalOperator(genericTraderProxyV1Address)) {
-    transactions.push(
-      await prettyPrintEncodedDataWithTypeSafety(
-        core,
-        { dolomiteMargin: core.dolomiteMargin },
-        'dolomiteMargin',
-        'ownerSetGlobalOperator',
-        [genericTraderProxyV1Address, false],
-      ),
-    );
-  }
-
-  if (!(await core.dolomiteMargin.getIsGlobalOperator(liquidatorProxyV5.address))) {
-    transactions.push(
-      await prettyPrintEncodedDataWithTypeSafety(
-        core,
-        { dolomiteMargin: core.dolomiteMargin },
-        'dolomiteMargin',
-        'ownerSetGlobalOperator',
-        [liquidatorProxyV5.address, true],
-      ),
-    );
-  }
+  transactions.push(
+    ...await encodeSetGlobalOperatorIfNecessary(
+      core,
+      genericTraderProxyV1Address,
+      false,
+    ),
+    ...await encodeSetGlobalOperatorIfNecessary(
+      core,
+      genericTraderProxyV2,
+      true,
+    ),
+    ...await encodeSetGlobalOperatorIfNecessary(
+      core,
+      liquidatorProxyV5,
+      true,
+    ),
+  );
 
   let needsRegistryMigratorEncoding = true;
   let needsRegistryOracleAggregatorEncoding = true;

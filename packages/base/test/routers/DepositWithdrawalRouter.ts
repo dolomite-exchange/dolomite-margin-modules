@@ -242,16 +242,16 @@ describe('DepositWithdrawalRouter', () => {
     it('should emit a borrow event with borrow flag', async () => {
       await underlyingToken.connect(core.hhUser1).addBalance(core.hhUser1.address, amountWei);
       await underlyingToken.connect(core.hhUser1).approve(router.address, amountWei);
-      const res = await router.depositWei(
+      const result = await router.depositWei(
         isolationModeMarketId,
         borrowAccountNumber,
         isolationModeMarketId,
         amountWei,
         EventFlag.Borrow,
       );
-      await expectEvent(core.eventEmitterRegistry, res, 'BorrowPositionOpen', {
-        accountOwner: userVault.address,
-        accountNumber: borrowAccountNumber,
+      await expectEvent(core.eventEmitterRegistry, result, 'BorrowPositionOpen', {
+        borrower: userVault.address,
+        borrowAccountNumber: borrowAccountNumber,
       });
     });
 
@@ -543,6 +543,13 @@ describe('DepositWithdrawalRouter', () => {
       await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, ZERO_BI);
     });
 
+    it('should work when withdrawing all', async () => {
+      await router.depositPayable(ZERO_BI, defaultAccountNumber, EventFlag.None, { value: amountWei });
+      await expect(() => router.withdrawPayable(ZERO_BI, defaultAccountNumber, MAX_UINT_256_BI, BalanceCheckFlag.Both))
+        .to.changeEtherBalance(core.hhUser1, amountWei);
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, ZERO_BI);
+    });
+
     it('should work normally for isolation mode vault', async () => {
       await factory.connect(core.governance).setAllowableCollateralMarketIds(
         [isolationModeMarketId, core.marketIds.dai, core.marketIds.weth],
@@ -554,6 +561,22 @@ describe('DepositWithdrawalRouter', () => {
         isolationModeMarketId,
         borrowAccountNumber,
         amountWei,
+        BalanceCheckFlag.Both,
+      )).to.changeEtherBalance(core.hhUser1, amountWei);
+      await expectProtocolBalance(core, userVault, borrowAccountNumber, core.marketIds.weth, ZERO_BI);
+    });
+
+    it('should work normally for isolation mode vault when withdrawing all', async () => {
+      await factory.connect(core.governance).setAllowableCollateralMarketIds(
+        [isolationModeMarketId, core.marketIds.dai, core.marketIds.weth],
+      );
+      await router.depositPayable(isolationModeMarketId, borrowAccountNumber, EventFlag.None, { value: amountWei });
+      await expectProtocolBalance(core, userVault, borrowAccountNumber, core.marketIds.weth, amountWei);
+
+      await expect(() => router.withdrawPayable(
+        isolationModeMarketId,
+        borrowAccountNumber,
+        MAX_UINT_256_BI,
         BalanceCheckFlag.Both,
       )).to.changeEtherBalance(core.hhUser1, amountWei);
       await expectProtocolBalance(core, userVault, borrowAccountNumber, core.marketIds.weth, ZERO_BI);

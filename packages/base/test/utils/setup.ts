@@ -1,6 +1,7 @@
 import CoreDeployments from '@dolomite-exchange/dolomite-margin/dist/migrations/deployed.json';
-import Deployments, * as deployments from '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
+import ModuleDeployments from '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
 import {
+  ChainsightPriceOracleV3__factory,
   ChroniclePriceOracleV3__factory,
   IChainlinkAutomationRegistry__factory,
   IChainlinkPriceOracleV3__factory,
@@ -22,7 +23,8 @@ import { Provider } from '@ethersproject/providers';
 import ZapBigNumber from 'bignumber.js';
 import { BaseContract, BigNumber, BigNumberish, ContractInterface, Signer } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
-import { ethers } from 'hardhat';
+import { ethers, network as hardhatNetwork } from 'hardhat';
+import { DolomiteOwnerV1__factory, DolomiteOwnerV2__factory } from 'packages/admin/src/types';
 import { IGlvToken } from 'packages/glv/src/types';
 import { IGmxMarketToken } from 'packages/gmx-v2/src/types';
 import { IMantleRewardStation__factory } from 'packages/mantle/src/types';
@@ -30,11 +32,14 @@ import { IChainlinkPriceOracleV1__factory } from 'packages/oracles/src/types';
 import {
   DolomiteERC20__factory,
   DolomiteERC20WithPayable__factory,
+  DolomiteERC4626,
   DolomiteERC4626__factory,
+  DolomiteERC4626WithPayable,
   DolomiteERC4626WithPayable__factory,
-  DolomiteOwnerV1__factory,
-  IBorrowPositionProxyV2__factory, IBorrowPositionRouter__factory,
-  IDepositWithdrawalProxy__factory, IDepositWithdrawalRouter__factory,
+  IBorrowPositionProxyV2__factory,
+  IBorrowPositionRouter__factory,
+  IDepositWithdrawalProxy__factory,
+  IDepositWithdrawalRouter__factory,
   IDolomiteAccountRegistry__factory,
   IDolomiteAccountRiskOverrideSetter__factory,
   IDolomiteAccountValuesReader__factory,
@@ -49,7 +54,8 @@ import {
   IEventEmitterRegistry__factory,
   IExpiry__factory,
   IExpiryV2__factory,
-  IGenericTraderProxyV2__factory, IGenericTraderRouter__factory,
+  IGenericTraderProxyV2__factory,
+  IGenericTraderRouter__factory,
   ILiquidatorAssetRegistry__factory,
   ILiquidatorProxyV1__factory,
   ILiquidatorProxyV4WithGenericTrader__factory,
@@ -79,10 +85,14 @@ import {
   D_GM_DOGE_USD_MAP,
   D_GM_ETH_MAP,
   D_GM_ETH_USD_MAP,
+  D_GM_GMX_MAP,
   D_GM_GMX_USD_MAP,
   D_GM_LINK_USD_MAP,
+  D_GM_PENDLE_USD_MAP,
+  D_GM_PEPE_USD_MAP,
   D_GM_SOL_USD_MAP,
   D_GM_UNI_USD_MAP,
+  D_GM_WIF_USD_MAP,
   D_GM_WST_ETH_USD_MAP,
   D_GMX_MAP,
   DAI_MAP,
@@ -114,7 +124,9 @@ import {
   GNOSIS_SAFE_MAP,
   GRAI_MAP,
   GRAIL_MAP,
+  HENLO_MAP,
   HONEY_MAP,
+  IBERA_MAP,
   IBGT_MAP,
   JONES_MAP,
   LBTC_MAP,
@@ -146,8 +158,9 @@ import {
   SIZE_MAP,
   SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL,
   SOL_MAP,
-  SOLV_BTC_BBN_MAP,
+  X_SOLV_BTC_MAP,
   SOLV_BTC_MAP,
+  SR_USD_MAP,
   ST_BTC_MAP,
   ST_ETH_MAP,
   STONE_BTC_MAP,
@@ -176,15 +189,16 @@ import {
   WOKB_MAP,
   WST_ETH_MAP,
   XAI_MAP,
-  YL_BTC_LST_MAP,
+  YL_FBTC_MAP,
   YL_PUMP_BTC_MAP,
-  YL_ST_ETH_MAP,
+  YL_ST_ETH_MAP, DOLO_MAP, SDE_USD_MAP, DE_USD_MAP,
 } from '../../src/utils/constants';
 import {
   ADDRESS_ZERO,
+  BYTES_EMPTY,
   Network,
   NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP,
-  NetworkType,
+  DolomiteNetwork,
 } from '../../src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '../../src/utils/SignerWithAddressWithSafety';
 import {
@@ -223,7 +237,11 @@ import { createPendleEcosystemArbitrumOne, createPendleEcosystemMantle } from '.
 import { createPlutusEcosystem } from './ecosystem-utils/plutus';
 import { createPremiaEcosystem } from './ecosystem-utils/premia';
 import { createTestEcosystem } from './ecosystem-utils/testers';
+import { createTokenomicsEcosystem } from './ecosystem-utils/tokenomics';
+import { createTokenomicsAirdropEcosystem } from './ecosystem-utils/tokenomics-airdrop';
 import { createUmamiEcosystem } from './ecosystem-utils/umami';
+import { getRealLatestBlockNumber, impersonate, impersonateOrFallback, resetForkIfPossible } from './index';
+import { readDeploymentFile } from '@dolomite-exchange/modules-deployments/src/utils/deploy-utils';
 import { impersonate, impersonateOrFallback, resetForkIfPossible } from './index';
 import { IBGT__factory } from 'packages/berachain/src/types';
 import { createBerachainRewardsEcosystem } from './ecosystem-utils/berachain-rewards';
@@ -231,16 +249,17 @@ import { createBerachainRewardsEcosystem } from './ecosystem-utils/berachain-rew
 /**
  * Config to for setting up tests in the `before` function
  */
-export interface CoreProtocolSetupConfig<T extends NetworkType> {
+export interface CoreProtocolSetupConfig<T extends DolomiteNetwork> {
   /**
    * The block number at which the tests will be run on Arbitrum
    */
   readonly blockNumber: number;
   readonly network: T;
   readonly skipForking?: boolean;
+  readonly isLatest?: boolean;
 }
 
-export interface CoreProtocolConfigParent<T extends NetworkType> {
+export interface CoreProtocolConfigParent<T extends DolomiteNetwork> {
   readonly blockNumber: number;
   readonly network: T;
   readonly networkNumber: number;
@@ -270,28 +289,28 @@ interface CoreProtocolConfigXLayer extends CoreProtocolConfigParent<Network.XLay
   readonly xLayer: boolean;
 }
 
-export type CoreProtocolConfig<T extends NetworkType> = T extends Network.ArbitrumOne
+export type CoreProtocolConfig<T extends DolomiteNetwork> = T extends Network.ArbitrumOne
   ? CoreProtocolConfigArbitrumOne
   : T extends Network.Base
-  ? CoreProtocolConfigBase
-  : T extends Network.Berachain
-  ? CoreProtocolConfigBerachain
-  : T extends Network.Mantle
-  ? CoreProtocolConfigMantle
-  : T extends Network.PolygonZkEvm
-  ? CoreProtocolConfigPolygonZkEvm
-  : T extends Network.XLayer
-  ? CoreProtocolConfigXLayer
-  : never;
+    ? CoreProtocolConfigBase
+    : T extends Network.Berachain
+      ? CoreProtocolConfigBerachain
+      : T extends Network.Mantle
+        ? CoreProtocolConfigMantle
+        : T extends Network.PolygonZkEvm
+          ? CoreProtocolConfigPolygonZkEvm
+          : T extends Network.XLayer
+            ? CoreProtocolConfigXLayer
+            : never;
 
-export async function disableInterestAccrual<T extends NetworkType>(
+export async function disableInterestAccrual<T extends DolomiteNetwork>(
   core: CoreProtocolAbstract<T>,
   marketId: BigNumberish,
 ) {
   return core.dolomiteMargin.ownerSetInterestSetter(marketId, core.interestSetters.alwaysZeroInterestSetter.address);
 }
 
-export async function enableInterestAccrual<T extends NetworkType>(
+export async function enableInterestAccrual<T extends DolomiteNetwork>(
   core: CoreProtocolAbstract<T>,
   marketId: BigNumberish,
 ) {
@@ -311,7 +330,7 @@ export async function setupWBERABalance(
   await core.tokens.wbera.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
-export async function setupWETHBalance<T extends NetworkType>(
+export async function setupWETHBalance<T extends DolomiteNetwork>(
   core: CoreProtocolAbstract<T>,
   signer: SignerWithAddressWithSafety,
   amount: BigNumberish,
@@ -346,7 +365,7 @@ export async function setupWMNTBalance(
   await core.tokens.wmnt.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
-export async function setupWBTCBalance<T extends NetworkType>(
+export async function setupWBTCBalance<T extends DolomiteNetwork>(
   core: CoreProtocolArbitrumOne | CoreProtocolBerachain,
   signer: SignerWithAddressWithSafety,
   amount: BigNumberish,
@@ -413,7 +432,7 @@ export async function setupNativeUSDCBalance(
   await core.tokens.nativeUsdc!.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
-export async function setupUSDCBalance<T extends NetworkType>(
+export async function setupUSDCBalance<T extends DolomiteNetwork>(
   core: CoreProtocolAbstract<T>,
   signer: SignerWithAddressWithSafety,
   amount: BigNumberish,
@@ -424,6 +443,11 @@ export async function setupUSDCBalance<T extends NetworkType>(
     whaleAddress = '0xBD8DFf36a635B951e008E414ED73021869324Fd7';
   } else if (core.network === Network.XLayer) {
     whaleAddress = '0x2d22604d6bbf51839c404aef5c65443e424e0945';
+  } else if (core.network === Network.Berachain) {
+    const whaleAddress = '0x4Be03f781C497A489E3cB0287833452cA9B9E80B'; // BEX vault
+    const whaleSigner = await impersonate(whaleAddress, true);
+    await core.tokens.usdc.connect(whaleSigner).transfer(signer.address, amount);
+    await core.tokens.usdc.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
   } else {
     whaleAddress = '0x805ba50001779CeD4f59CfF63aea527D12B94829'; // Radiant USDC pool
   }
@@ -539,7 +563,7 @@ export async function setupSolvBtcBalance(
   await core.tokens.solvBtc!.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
-export async function setupUSDEBalance<T extends NetworkType>(
+export async function setupUSDEBalance<T extends DolomiteNetwork>(
   core: CoreProtocolBerachain | CoreProtocolArbitrumOne,
   signer: SignerWithAddressWithSafety,
   amount: BigNumberish,
@@ -597,11 +621,11 @@ export function setupUserVaultProxy<T extends BaseContract>(
   return new BaseContract(vault, factoryInterface.abi, signer) as T;
 }
 
-export function getDefaultCoreProtocolConfig<T extends NetworkType>(network: T): CoreProtocolConfig<T> {
+export function getDefaultCoreProtocolConfig<T extends DolomiteNetwork>(network: T): CoreProtocolConfig<T> {
   return getCoreProtocolConfig(network, NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP[network]);
 }
 
-function getCoreProtocolConfig<T extends NetworkType>(network: T, blockNumber: number): CoreProtocolConfig<T> {
+function getCoreProtocolConfig<T extends DolomiteNetwork>(network: T, blockNumber: number): CoreProtocolConfig<T> {
   if (network === Network.ArbitrumOne) {
     return {
       network,
@@ -677,21 +701,21 @@ export function getDefaultCoreProtocolConfigForGmxV2(): CoreProtocolConfig<Netwo
   };
 }
 
-export type CoreProtocolType<T extends NetworkType> = T extends Network.ArbitrumOne
+export type CoreProtocolType<T extends DolomiteNetwork> = T extends Network.ArbitrumOne
   ? CoreProtocolArbitrumOne
   : T extends Network.Base
-  ? CoreProtocolBase
-  : T extends Network.Berachain
-  ? CoreProtocolBerachain
-  : T extends Network.Mantle
-  ? CoreProtocolMantle
-  : T extends Network.PolygonZkEvm
-  ? CoreProtocolPolygonZkEvm
-  : T extends Network.XLayer
-  ? CoreProtocolXLayer
-  : never;
+    ? CoreProtocolBase
+    : T extends Network.Berachain
+      ? CoreProtocolBerachain
+      : T extends Network.Mantle
+        ? CoreProtocolMantle
+        : T extends Network.PolygonZkEvm
+          ? CoreProtocolPolygonZkEvm
+          : T extends Network.XLayer
+            ? CoreProtocolXLayer
+            : never;
 
-export function getDolomiteMarginContract<T extends NetworkType>(
+export function getDolomiteMarginContract<T extends DolomiteNetwork>(
   config: CoreProtocolSetupConfig<T>,
   signer: SignerWithAddressWithSafety,
 ): DolomiteMargin<T> {
@@ -702,7 +726,7 @@ export function getDolomiteMarginContract<T extends NetworkType>(
   ) as DolomiteMargin<T>;
 }
 
-export function getExpiryContract<T extends NetworkType>(
+export function getExpiryContract<T extends DolomiteNetwork>(
   config: CoreProtocolSetupConfig<T>,
   signer: SignerWithAddressWithSafety,
 ): Expiry<T> {
@@ -713,7 +737,7 @@ export function getExpiryContract<T extends NetworkType>(
   ) as Expiry<T>;
 }
 
-export function getWethContract<T extends NetworkType>(
+export function getWethContract<T extends DolomiteNetwork>(
   config: CoreProtocolSetupConfig<T>,
   signer: SignerWithAddressWithSafety,
 ): WETHType<T> {
@@ -734,11 +758,67 @@ export function getWethContract<T extends NetworkType>(
   }
 }
 
-export function getDolomiteWethTokenContract<T extends NetworkType>(
+export function getDolomite4626TokenContract<T extends DolomiteNetwork>(
+  config: CoreProtocolSetupConfig<T>,
+  signer: SignerWithAddressWithSafety,
+  deploymentKey: keyof typeof ModuleDeployments,
+): DolomiteERC4626 {
+  return DolomiteERC4626__factory.connect((ModuleDeployments[deploymentKey] as any)[config.network]!.address, signer);
+}
+
+export function getDolomite4626WithPayableTokenContract<T extends DolomiteNetwork>(
+  config: CoreProtocolSetupConfig<T>,
+  signer: SignerWithAddressWithSafety,
+  deploymentKey: keyof typeof ModuleDeployments,
+): DolomiteERC4626WithPayable {
+  return DolomiteERC4626WithPayable__factory.connect(
+    (ModuleDeployments[deploymentKey] as any)[config.network]!.address,
+    signer,
+  );
+}
+
+export async function gatherAllDolomite4626TokenContracts<T extends DolomiteNetwork>(
+  config: CoreProtocolSetupConfig<T>,
+  signer: SignerWithAddressWithSafety,
+): Promise<(DolomiteERC4626 | DolomiteERC4626WithPayable)[]> {
+  let payableFound = false;
+  const dTokens: (DolomiteERC4626 | DolomiteERC4626WithPayable)[] = [];
+
+  const keys = Object.keys(ModuleDeployments);
+  for (const key of keys) {
+    const deployments = ModuleDeployments as any;
+    if (deployments[key][config.network] && key.startsWith('Dolomite') && key.endsWith('4626Token')) {
+      const deploymentValue = deployments[key][config.network];
+      const address = deploymentValue.address;
+      if (hardhatNetwork.name === 'hardhat' && !config.isLatest) {
+        const code = await ethers.provider.getCode(address);
+        if (code === BYTES_EMPTY) {
+          console.warn(`\tCode not found for dToken (${key}) with address ${address}. Skipping dToken gathering...`);
+          return [];
+        }
+      }
+
+      if ('isPayable' in deploymentValue && deploymentValue.isPayable) {
+        payableFound = true;
+        dTokens.push(DolomiteERC4626WithPayable__factory.connect(address, signer));
+      } else {
+        dTokens.push(DolomiteERC4626__factory.connect(address, signer));
+      }
+    }
+  }
+
+  if (!payableFound && dTokens.length > 0) {
+    return Promise.reject(new Error('No payable dToken found.'));
+  }
+
+  return dTokens;
+}
+
+export function getDolomiteWeth4626TokenContract<T extends DolomiteNetwork>(
   config: CoreProtocolSetupConfig<T>,
   signer: SignerWithAddressWithSafety,
 ): DolomiteWETHType<T> | undefined {
-  const address = (Deployments.DolomiteWeth4626Token as any)[config.network as any]?.address;
+  const address = (ModuleDeployments.DolomiteWeth4626Token as any)[config.network as any]?.address;
   switch (config.network) {
     case Network.ArbitrumOne:
     case Network.Base:
@@ -756,12 +836,15 @@ export function getDolomiteWethTokenContract<T extends NetworkType>(
   }
 }
 
-export async function setupCoreProtocol<T extends NetworkType>(
+export async function setupCoreProtocol<T extends DolomiteNetwork>(
   config: Readonly<CoreProtocolSetupConfig<T>>,
 ): Promise<CoreProtocolType<T>> {
   if (!config.skipForking) {
     await resetForkIfPossible(config.blockNumber, config.network);
   }
+
+  const realLatest = await getRealLatestBlockNumber(true, config.network);
+  (config as any).isLatest = realLatest - config.blockNumber < 1_000;
 
   const dolomiteMarginAddress = DolomiteMarginJson.networks[config.network].address;
   const [hhUser1, hhUser2, hhUser3, hhUser4, hhUser5] = await Promise.all(
@@ -776,11 +859,8 @@ export async function setupCoreProtocol<T extends NetworkType>(
   const gnosisSafeAddress = GNOSIS_SAFE_MAP[config.network];
   const gnosisSafe: SignerWithAddressWithSafety = await impersonateOrFallback(gnosisSafeAddress, true, hhUser1);
 
-  const governance: SignerWithAddressWithSafety = await impersonateOrFallback(
-    await IDolomiteMargin__factory.connect(dolomiteMarginAddress, hhUser1).owner(),
-    true,
-    hhUser1,
-  );
+  const governanceAddress = await IDolomiteMargin__factory.connect(dolomiteMarginAddress, hhUser1).owner();
+  const governance: SignerWithAddressWithSafety = await impersonateOrFallback(governanceAddress, true, hhUser1);
 
   const dolomiteMargin = getDolomiteMarginContract<T>(config, governance);
 
@@ -790,7 +870,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
   );
 
   const borrowPositionRouter = IBorrowPositionRouter__factory.connect(
-    Deployments.BorrowPositionRouterProxy[config.network].address,
+    ModuleDeployments.BorrowPositionRouterProxy[config.network].address,
     governance,
   );
 
@@ -801,7 +881,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
   );
 
   const chainlinkPriceOracleV3 = getContract(
-    Deployments.ChainlinkPriceOracleV3[config.network]?.address,
+    ModuleDeployments.ChainlinkPriceOracleV3[config.network]?.address,
     IChainlinkPriceOracleV3__factory.connect,
     governance,
   );
@@ -817,48 +897,48 @@ export async function setupCoreProtocol<T extends NetworkType>(
   );
 
   const depositWithdrawalRouter = IDepositWithdrawalRouter__factory.connect(
-    Deployments.DepositWithdrawalRouterProxy[config.network].address,
+    ModuleDeployments.DepositWithdrawalRouterProxy[config.network].address,
     governance,
   );
 
   const dolomiteRegistry = IDolomiteRegistry__factory.connect(
-    Deployments.DolomiteRegistryProxy[config.network].address,
+    ModuleDeployments.DolomiteRegistryProxy[config.network].address,
     governance,
   );
 
   const dolomiteRegistryProxy = RegistryProxy__factory.connect(
-    Deployments.DolomiteRegistryProxy[config.network].address,
+    ModuleDeployments.DolomiteRegistryProxy[config.network].address,
     governance,
   );
 
   const dolomiteAccountRegistry = IDolomiteAccountRegistry__factory.connect(
-    Deployments.DolomiteAccountRegistryProxy[config.network].address,
+    ModuleDeployments.DolomiteAccountRegistryProxy[config.network].address,
     governance,
   );
 
   const dolomiteAccountRegistryProxy = RegistryProxy__factory.connect(
-    Deployments.DolomiteAccountRegistryProxy[config.network].address,
+    ModuleDeployments.DolomiteAccountRegistryProxy[config.network].address,
     governance,
   );
 
   const dolomiteAccountRiskOverrideSetter = IDolomiteAccountRiskOverrideSetter__factory.connect(
-    Deployments.DolomiteAccountRiskOverrideSetterProxy[config.network].address,
+    ModuleDeployments.DolomiteAccountRiskOverrideSetterProxy[config.network].address,
     governance,
   );
 
   const dolomiteAccountRiskOverrideSetterProxy = RegistryProxy__factory.connect(
-    Deployments.DolomiteAccountRiskOverrideSetterProxy[config.network].address,
+    ModuleDeployments.DolomiteAccountRiskOverrideSetterProxy[config.network].address,
     governance,
   );
 
   const eventEmitterRegistry = getContract(
-    Deployments.EventEmitterRegistryProxy[config.network].address,
+    ModuleDeployments.EventEmitterRegistryProxy[config.network].address,
     IEventEmitterRegistry__factory.connect,
     governance,
   );
 
   const eventEmitterRegistryProxy = getContract(
-    Deployments.EventEmitterRegistryProxy[config.network].address,
+    ModuleDeployments.EventEmitterRegistryProxy[config.network].address,
     RegistryProxy__factory.connect,
     governance,
   );
@@ -871,13 +951,13 @@ export async function setupCoreProtocol<T extends NetworkType>(
   );
 
   const genericTraderProxy = getContract(
-    Deployments.GenericTraderProxyV2[config.network].address,
+    ModuleDeployments.GenericTraderProxyV2[config.network].address,
     IGenericTraderProxyV2__factory.connect,
     governance,
   );
 
   const genericTraderRouter = getContract(
-    Deployments.GenericTraderRouterProxy[config.network].address,
+    ModuleDeployments.GenericTraderRouterProxy[config.network].address,
     IGenericTraderRouter__factory.connect,
     governance,
   );
@@ -903,28 +983,27 @@ export async function setupCoreProtocol<T extends NetworkType>(
   );
 
   const liquidatorProxyV5 = getContract(
-    Deployments.LiquidatorProxyV5[config.network].address,
+    ModuleDeployments.LiquidatorProxyV5[config.network].address,
     LiquidatorProxyV5__factory.connect,
     governance,
   );
 
   const oracleAggregatorV2 = getContract(
-    Deployments.OracleAggregatorV2[config.network].address,
+    ModuleDeployments.OracleAggregatorV2[config.network].address,
     OracleAggregatorV2__factory.connect,
     governance,
   );
 
   const ownerAdapterV1 = getContract(
-    Deployments.DolomiteOwnerV1[config.network].address,
+    ModuleDeployments.DolomiteOwnerV1[config.network].address,
     DolomiteOwnerV1__factory.connect,
     gnosisSafe,
   );
-  // TODO:
-  // const ownerAdapterV2 = getContract(
-  //   Deployments.DolomiteOwnerV2[config.network].address,
-  //   DolomiteOwner__factory.connect,
-  //   gnosisSafe,
-  // );
+  const ownerAdapterV2 = getContract(
+    ModuleDeployments.DolomiteOwnerV2[config.network].address,
+    DolomiteOwnerV2__factory.connect,
+    gnosisSafe,
+  );
 
   const testEcosystem = await createTestEcosystem(dolomiteMargin, governance);
 
@@ -966,6 +1045,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
     gnosisSafe,
     gnosisSafeAddress,
     governance,
+    governanceAddress,
     implementationContracts,
     interestSetters,
     libraries,
@@ -976,13 +1056,13 @@ export async function setupCoreProtocol<T extends NetworkType>(
     marketIdToDeployedVaultMap,
     oracleAggregatorV2,
     ownerAdapterV1,
+    ownerAdapterV2,
     testEcosystem,
     hhUser1,
     hhUser2,
     hhUser3,
     hhUser4,
     hhUser5,
-    ownerAdapterV2: ownerAdapterV1 as any, // TODO: fix
     apiTokens: {
       usdc: {
         marketId: new ZapBigNumber(USDC_MAP[config.network].marketId),
@@ -1004,13 +1084,8 @@ export async function setupCoreProtocol<T extends NetworkType>(
       slippageToleranceForPauseSentinel: SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL,
       chainlinkAggregators: CHAINLINK_PRICE_AGGREGATORS_MAP[config.network],
     },
-    dolomiteTokens: {
-      usdc: getContractOpt(
-        (Deployments.DolomiteUsdc4626Token as any)[config.network]?.address,
-        DolomiteERC4626__factory.connect,
-        hhUser1,
-      ),
-      weth: getDolomiteWethTokenContract(config, hhUser1),
+    dTokens: {
+      all: await gatherAllDolomite4626TokenContracts(config, hhUser1),
     },
     marketIds: {
       usdc: USDC_MAP[config.network].marketId,
@@ -1039,11 +1114,11 @@ export async function setupCoreProtocol<T extends NetworkType>(
         governance,
       ),
       chaosLabsPriceOracleV3: IChaosLabsPriceOracleV3__factory.connect(
-        Deployments.ChaosLabsPriceOracleV3[typedConfig.network].address,
+        ModuleDeployments.ChaosLabsPriceOracleV3[typedConfig.network].address,
         hhUser1,
       ),
       chroniclePriceOracleV3: ChroniclePriceOracleV3__factory.connect(
-        Deployments.ChroniclePriceOracleV3[typedConfig.network].address,
+        ModuleDeployments.ChroniclePriceOracleV3[typedConfig.network].address,
         hhUser1,
       ),
       dolomiteAccountValuesReader: IDolomiteAccountValuesReader__factory.connect(
@@ -1051,19 +1126,40 @@ export async function setupCoreProtocol<T extends NetworkType>(
         hhUser1,
       ),
       dolomiteMigrator: IDolomiteMigrator__factory.connect(
-        Deployments.DolomiteMigratorV2[typedConfig.network].address,
+        ModuleDeployments.DolomiteMigratorV2[typedConfig.network].address,
         hhUser1,
       ),
       dTokens: {
-        usdc: DolomiteERC20__factory.connect(Deployments.DolomiteUsdcToken[typedConfig.network].address, hhUser1),
-        wbtc: DolomiteERC20__factory.connect(Deployments.DolomiteWbtcToken[typedConfig.network].address, hhUser1),
-        weth: DolomiteERC20WithPayable__factory.connect(
-          Deployments.DolomiteWethToken[typedConfig.network].address,
+        ...coreProtocolParams.dTokens,
+        bridgedUsdc: DolomiteERC4626__factory.connect(
+          ModuleDeployments.DolomiteBridgedUsdc4626Token[typedConfig.network].address,
           hhUser1,
         ),
-        usdcProxy: RegistryProxy__factory.connect(Deployments.DolomiteUsdcToken[typedConfig.network].address, hhUser1),
-        wbtcProxy: RegistryProxy__factory.connect(Deployments.DolomiteWbtcToken[typedConfig.network].address, hhUser1),
-        wethProxy: RegistryProxy__factory.connect(Deployments.DolomiteWethToken[typedConfig.network].address, hhUser1),
+        dai: getDolomite4626TokenContract(config, hhUser1, 'DolomiteDai4626Token'),
+        usdc: getDolomite4626TokenContract(config, hhUser1, 'DolomiteUsdc4626Token'),
+        usdt: getDolomite4626TokenContract(config, hhUser1, 'DolomiteUsdt4626Token'),
+        wbtc: getDolomite4626TokenContract(config, hhUser1, 'DolomiteWbtc4626Token'),
+        weth: getDolomiteWeth4626TokenContract(typedConfig, hhUser1)!,
+      },
+      dTokensOld: {
+        usdc: DolomiteERC20__factory.connect(ModuleDeployments.DolomiteUsdcToken[typedConfig.network].address, hhUser1),
+        wbtc: DolomiteERC20__factory.connect(ModuleDeployments.DolomiteWbtcToken[typedConfig.network].address, hhUser1),
+        weth: DolomiteERC20WithPayable__factory.connect(
+          ModuleDeployments.DolomiteWethToken[typedConfig.network].address,
+          hhUser1,
+        ),
+        usdcProxy: RegistryProxy__factory.connect(
+          ModuleDeployments.DolomiteUsdcToken[typedConfig.network].address,
+          hhUser1,
+        ),
+        wbtcProxy: RegistryProxy__factory.connect(
+          ModuleDeployments.DolomiteWbtcToken[typedConfig.network].address,
+          hhUser1,
+        ),
+        wethProxy: RegistryProxy__factory.connect(
+          ModuleDeployments.DolomiteWethToken[typedConfig.network].address,
+          hhUser1,
+        ),
       },
       glvEcosystem: await createGlvEcosystem(typedConfig.network, hhUser1),
       gmxEcosystem: await createGmxEcosystem(typedConfig.network, hhUser1),
@@ -1080,7 +1176,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
       plutusEcosystem: await createPlutusEcosystem(typedConfig.network, hhUser1),
       premiaEcosystem: await createPremiaEcosystem(typedConfig.network, hhUser1),
       redstonePriceOracleV3: RedstonePriceOracleV3__factory.connect(
-        Deployments.RedstonePriceOracleV3[typedConfig.network].address,
+        ModuleDeployments.RedstonePriceOracleV3[typedConfig.network].address,
         hhUser1,
       ),
       umamiEcosystem: await createUmamiEcosystem(typedConfig.network, hhUser1),
@@ -1102,6 +1198,8 @@ export async function setupCoreProtocol<T extends NetworkType>(
         dGmEth: D_GM_ETH_MAP[typedConfig.network].marketId,
         dGmGmxUsd: D_GM_GMX_USD_MAP[typedConfig.network].marketId,
         dGmLinkUsd: D_GM_LINK_USD_MAP[typedConfig.network].marketId,
+        dGmPendleUsd: D_GM_PENDLE_USD_MAP[typedConfig.network].marketId,
+        dGmPepeUsd: D_GM_PEPE_USD_MAP[typedConfig.network].marketId,
         dGmSolUsd: D_GM_SOL_USD_MAP[typedConfig.network].marketId,
         dGmUniUsd: D_GM_UNI_USD_MAP[typedConfig.network].marketId,
         dGmWstEthUsd: D_GM_WST_ETH_USD_MAP[typedConfig.network].marketId,
@@ -1185,10 +1283,18 @@ export async function setupCoreProtocol<T extends NetworkType>(
         dGlvBtc: IERC20__factory.connect(D_GLV_BTC_MAP[typedConfig.network].address, hhUser1),
         dGlvEth: IERC20__factory.connect(D_GLV_ETH_MAP[typedConfig.network].address, hhUser1),
         dGmx: IERC20__factory.connect(D_GMX_MAP[typedConfig.network].address, hhUser1),
-        dGmArb: IERC20__factory.connect(D_GM_ARB_USD_MAP[typedConfig.network].address, hhUser1),
-        dGmBtc: IERC20__factory.connect(D_GM_BTC_USD_MAP[typedConfig.network].address, hhUser1),
-        dGmEth: IERC20__factory.connect(D_GM_ETH_USD_MAP[typedConfig.network].address, hhUser1),
-        dGmLink: IERC20__factory.connect(D_GM_LINK_USD_MAP[typedConfig.network].address, hhUser1),
+        dGmArbUsd: IERC20__factory.connect(D_GM_ARB_USD_MAP[typedConfig.network].address, hhUser1),
+        dGmBtc: IERC20__factory.connect(D_GM_BTC_MAP[typedConfig.network].address, hhUser1),
+        dGmBtcUsd: IERC20__factory.connect(D_GM_BTC_USD_MAP[typedConfig.network].address, hhUser1),
+        dGmEth: IERC20__factory.connect(D_GM_ETH_MAP[typedConfig.network].address, hhUser1),
+        dGmEthUsd: IERC20__factory.connect(D_GM_ETH_USD_MAP[typedConfig.network].address, hhUser1),
+        dGmGmx: IERC20__factory.connect(D_GM_GMX_MAP[typedConfig.network].address, hhUser1),
+        dGmGmxUsd: IERC20__factory.connect(D_GM_GMX_USD_MAP[typedConfig.network].address, hhUser1),
+        dGmLinkUsd: IERC20__factory.connect(D_GM_LINK_USD_MAP[typedConfig.network].address, hhUser1),
+        dGmPendleUsd: IERC20__factory.connect(D_GM_PENDLE_USD_MAP[typedConfig.network].address, hhUser1),
+        dGmPepeUsd: IERC20__factory.connect(D_GM_PEPE_USD_MAP[typedConfig.network].address, hhUser1),
+        dGmSolUsd: IERC20__factory.connect(D_GM_SOL_USD_MAP[typedConfig.network].address, hhUser1),
+        dGmWifUsd: IERC20__factory.connect(D_GM_WIF_USD_MAP[typedConfig.network].address, hhUser1),
         djUsdcV1: IERC20__factory.connect(DJ_USDC_V1[typedConfig.network].address, hhUser1),
         djUsdcV2: IERC20__factory.connect(DJ_USDC_V2[typedConfig.network].address, hhUser1),
         dPtGlp: IERC20__factory.connect(DPT_GLP_MAR_2024_MAP[typedConfig.network].address, hhUser1),
@@ -1264,8 +1370,13 @@ export async function setupCoreProtocol<T extends NetworkType>(
   }
   if (config.network === Network.Berachain) {
     const typedConfig = config as CoreProtocolSetupConfig<Network.Berachain>;
+    const berachainRewardsEcosystem = await createBerachainRewardsEcosystem(typedConfig.network, hhUser1);
     const chroniclePriceOracle = ChroniclePriceOracleV3__factory.connect(
       getMaxDeploymentVersionAddressByDeploymentKey('ChroniclePriceOracle', Network.Berachain, ADDRESS_ZERO),
+      hhUser1,
+    );
+    const chainsightPriceOracle = ChainsightPriceOracleV3__factory.connect(
+      getMaxDeploymentVersionAddressByDeploymentKey('ChainsightPriceOracle', Network.Berachain, ADDRESS_ZERO),
       hhUser1,
     );
     const oogaBoogaEcosystem = await createOogaBoogaEcosystem(config.network, hhUser1);
@@ -1273,81 +1384,60 @@ export async function setupCoreProtocol<T extends NetworkType>(
       getMaxDeploymentVersionAddressByDeploymentKey('RedstonePriceOracle', Network.Berachain, ADDRESS_ZERO),
       hhUser1,
     );
-    const berachainRewardsEcosystem = await createBerachainRewardsEcosystem(typedConfig.network, hhUser1);
+    const tokenomics = await createTokenomicsEcosystem(typedConfig.network, hhUser1);
+    const tokenomicsAirdrop = await createTokenomicsAirdropEcosystem(typedConfig.network, hhUser1);
     return new CoreProtocolBerachain(coreProtocolParams as CoreProtocolParams<Network.Berachain>, {
       berachainRewardsEcosystem,
       oogaBoogaEcosystem,
+      tokenomics,
+      tokenomicsAirdrop,
       chroniclePriceOracleV3: chroniclePriceOracle,
+      chainsightPriceOracleV3: chainsightPriceOracle,
       redstonePriceOracleV3: redstonePriceOracle,
-      dolomiteTokens: {
-        ...coreProtocolParams.dolomiteTokens,
-        beraEth: DolomiteERC4626__factory.connect(
-          Deployments.DolomiteBeraEth4626Token[Network.Berachain].address,
-          hhUser1,
-        ),
-        eBtc: DolomiteERC4626__factory.connect(Deployments.DolomiteEBtc4626Token[Network.Berachain].address, hhUser1),
-        honey: DolomiteERC4626__factory.connect(Deployments.DolomiteHoney4626Token[Network.Berachain].address, hhUser1),
-        lbtc: DolomiteERC4626__factory.connect(Deployments.DolomiteLbtc4626Token[Network.Berachain].address, hhUser1),
-        nect: DolomiteERC4626__factory.connect(Deployments.DolomiteNect4626Token[Network.Berachain].address, hhUser1),
-        pumpBtc: DolomiteERC4626__factory.connect(
-          Deployments.DolomitePumpBtc4626Token[Network.Berachain].address,
-          hhUser1,
-        ),
-        rsEth: DolomiteERC4626__factory.connect(Deployments.DolomiteRsEth4626Token[Network.Berachain].address, hhUser1),
-        rswEth: DolomiteERC4626__factory.connect(
-          Deployments.DolomiteRswEth4626Token[Network.Berachain].address,
-          hhUser1,
-        ),
-        rUsd: DolomiteERC4626__factory.connect(Deployments.DolomiteRUsd4626Token[Network.Berachain].address, hhUser1),
-        sbtc: DolomiteERC4626__factory.connect(Deployments.DolomiteSbtc4626Token[Network.Berachain].address, hhUser1),
-        sUsda: DolomiteERC4626__factory.connect(Deployments.DolomiteSUsda4626Token[Network.Berachain].address, hhUser1),
-        sUsde: DolomiteERC4626__factory.connect(Deployments.DolomiteSUsde4626Token[Network.Berachain].address, hhUser1),
-        stBtc: DolomiteERC4626__factory.connect(Deployments.DolomiteStBtc4626Token[Network.Berachain].address, hhUser1),
-        solvBtc: DolomiteERC4626__factory.connect(
-          Deployments.DolomiteSolvBtc4626Token[Network.Berachain].address,
-          hhUser1,
-        ),
-        solvBtcBbn: DolomiteERC4626__factory.connect(
-          Deployments.DolomiteSolvBtcBbn4626Token[Network.Berachain].address,
-          hhUser1,
-        ),
-        stone: DolomiteERC4626__factory.connect(Deployments.DolomiteStone4626Token[Network.Berachain].address, hhUser1),
-        uniBtc: DolomiteERC4626__factory.connect(
-          Deployments.DolomiteUniBtc4626Token[Network.Berachain].address,
-          hhUser1,
-        ),
-        usd0: DolomiteERC4626__factory.connect(Deployments.DolomiteUsd04626Token[Network.Berachain].address, hhUser1),
-        usd0pp: DolomiteERC4626__factory.connect(
-          Deployments.DolomiteUsd0pp4626Token[Network.Berachain].address,
-          hhUser1,
-        ),
-        usda: DolomiteERC4626__factory.connect(Deployments.DolomiteUsda4626Token[Network.Berachain].address, hhUser1),
-        usde: DolomiteERC4626__factory.connect(Deployments.DolomiteUsde4626Token[Network.Berachain].address, hhUser1),
-        usdt: DolomiteERC4626__factory.connect(Deployments.DolomiteUsdt4626Token[Network.Berachain].address, hhUser1),
-        wbera: DolomiteERC4626WithPayable__factory.connect(
-          Deployments.DolomiteWBera4626Token[Network.Berachain].address,
-          hhUser1,
-        ),
-        wbtc: DolomiteERC4626__factory.connect(Deployments.DolomiteWbtc4626Token[Network.Berachain].address, hhUser1),
-        weEth: DolomiteERC4626__factory.connect(Deployments.DolomiteWeEth4626Token[Network.Berachain].address, hhUser1),
-        ylBtcLst: DolomiteERC4626__factory.connect(
-          Deployments.DolomiteYlBtcLst4626Token[Network.Berachain].address,
-          hhUser1,
-        ),
-        ylPumpBtc: DolomiteERC4626__factory.connect(
-          Deployments.DolomiteYlPumpBtc4626Token[Network.Berachain].address,
-          hhUser1,
-        ),
-        ylStEth: DolomiteERC4626__factory.connect(
-          Deployments.DolomiteYlStEth4626Token[Network.Berachain].address,
-          hhUser1,
-        ),
+      dTokens: {
+        ...coreProtocolParams.dTokens,
+        beraEth: getDolomite4626TokenContract(config, hhUser1, 'DolomiteBeraEth4626Token'),
+        // dolo: getDolomite4626TokenContract(config, hhUser1, 'DolomiteDolo4626Token'),
+        eBtc: getDolomite4626TokenContract(config, hhUser1, 'DolomiteEBtc4626Token'),
+        honey: getDolomite4626TokenContract(config, hhUser1, 'DolomiteHoney4626Token'),
+        lbtc: getDolomite4626TokenContract(config, hhUser1, 'DolomiteLbtc4626Token'),
+        nect: getDolomite4626TokenContract(config, hhUser1, 'DolomiteNect4626Token'),
+        pumpBtc: getDolomite4626TokenContract(config, hhUser1, 'DolomitePumpBtc4626Token'),
+        rsEth: getDolomite4626TokenContract(config, hhUser1, 'DolomiteRsEth4626Token'),
+        rswEth: getDolomite4626TokenContract(config, hhUser1, 'DolomiteRswEth4626Token'),
+        rUsd: getDolomite4626TokenContract(config, hhUser1, 'DolomiteRUsd4626Token'),
+        sbtc: getDolomite4626TokenContract(config, hhUser1, 'DolomiteSbtc4626Token'),
+        sUsda: getDolomite4626TokenContract(config, hhUser1, 'DolomiteSUsda4626Token'),
+        sUsde: getDolomite4626TokenContract(config, hhUser1, 'DolomiteSUsde4626Token'),
+        stBtc: getDolomite4626TokenContract(config, hhUser1, 'DolomiteStBtc4626Token'),
+        solvBtc: getDolomite4626TokenContract(config, hhUser1, 'DolomiteSolvBtc4626Token'),
+        solvBtcBbn: getDolomite4626TokenContract(config, hhUser1, 'DolomiteSolvBtcBbn4626Token'),
+        stone: getDolomite4626TokenContract(config, hhUser1, 'DolomiteStone4626Token'),
+        uniBtc: getDolomite4626TokenContract(config, hhUser1, 'DolomiteUniBtc4626Token'),
+        usd0: getDolomite4626TokenContract(config, hhUser1, 'DolomiteUsd04626Token'),
+        usd0pp: getDolomite4626TokenContract(config, hhUser1, 'DolomiteUsd0pp4626Token'),
+        usda: getDolomite4626TokenContract(config, hhUser1, 'DolomiteUsda4626Token'),
+        usdc: getDolomite4626TokenContract(config, hhUser1, 'DolomiteUsdc4626Token'),
+        usde: getDolomite4626TokenContract(config, hhUser1, 'DolomiteUsde4626Token'),
+        usdt: getDolomite4626TokenContract(config, hhUser1, 'DolomiteUsdt4626Token'),
+        wbera: getDolomite4626WithPayableTokenContract(config, hhUser1, 'DolomiteWBera4626Token'),
+        wbtc: getDolomite4626TokenContract(config, hhUser1, 'DolomiteWbtc4626Token'),
+        weth: getDolomite4626TokenContract(config, hhUser1, 'DolomiteWeth4626Token'),
+        weEth: getDolomite4626TokenContract(config, hhUser1, 'DolomiteWeEth4626Token'),
+        ylBtcLst: getDolomite4626TokenContract(config, hhUser1, 'DolomiteYlBtcLst4626Token'),
+        ylPumpBtc: getDolomite4626TokenContract(config, hhUser1, 'DolomiteYlPumpBtc4626Token'),
+        ylStEth: getDolomite4626TokenContract(config, hhUser1, 'DolomiteYlStEth4626Token'),
       },
       marketIds: {
         ...coreProtocolParams.marketIds,
         beraEth: BERA_ETH_MAP[typedConfig.network].marketId,
+        deUsd: DE_USD_MAP[typedConfig.network].marketId,
+        dolo: DOLO_MAP[typedConfig.network].marketId,
         eBtc: E_BTC_MAP[typedConfig.network].marketId,
+        henlo: HENLO_MAP[typedConfig.network].marketId,
         honey: HONEY_MAP[typedConfig.network].marketId,
+        iBera: IBERA_MAP[typedConfig.network].marketId,
+        iBgt: IBGT_MAP[typedConfig.network].marketId,
         lbtc: LBTC_MAP[typedConfig.network].marketId,
         nect: NECT_MAP[typedConfig.network].marketId,
         ohm: OHM_MAP[typedConfig.network].marketId,
@@ -1358,9 +1448,10 @@ export async function setupCoreProtocol<T extends NetworkType>(
         sbtc: STONE_BTC_MAP[typedConfig.network].marketId,
         sUsda: S_USDA_MAP[typedConfig.network].marketId,
         sUsde: S_USDE_MAP[typedConfig.network].marketId,
+        sdeUsd: SDE_USD_MAP[typedConfig.network].marketId,
         stBtc: ST_BTC_MAP[typedConfig.network].marketId,
+        srUsd: SR_USD_MAP[typedConfig.network].marketId,
         solvBtc: SOLV_BTC_MAP[typedConfig.network].marketId,
-        solvBtcBbn: SOLV_BTC_BBN_MAP[typedConfig.network].marketId,
         stone: STONE_MAP[typedConfig.network].marketId,
         uniBtc: UNI_BTC_MAP[typedConfig.network].marketId,
         usd0: USD0_MAP[typedConfig.network].marketId,
@@ -1371,15 +1462,15 @@ export async function setupCoreProtocol<T extends NetworkType>(
         wbera: WBERA_MAP[typedConfig.network].marketId,
         wbtc: WBTC_MAP[typedConfig.network].marketId,
         weEth: WE_ETH_MAP[typedConfig.network].marketId,
-        ylBtcLst: YL_BTC_LST_MAP[typedConfig.network].marketId,
+        xSolvBtc: X_SOLV_BTC_MAP[typedConfig.network].marketId,
+        ylFbtc: YL_FBTC_MAP[typedConfig.network].marketId,
         ylPumpBtc: YL_PUMP_BTC_MAP[typedConfig.network].marketId,
         ylStEth: YL_ST_ETH_MAP[typedConfig.network].marketId,
         stablecoins: [...coreProtocolParams.marketIds.stablecoins, HONEY_MAP[typedConfig.network].marketId],
         stablecoinsWithUnifiedInterestRateModels: [
           ...coreProtocolParams.marketIds.stablecoins,
           HONEY_MAP[typedConfig.network].marketId,
-          R_USD_MAP[typedConfig.network].marketId,
-          S_USDE_MAP[typedConfig.network].marketId,
+          USDA_MAP[typedConfig.network].marketId,
           USDE_MAP[typedConfig.network].marketId,
           USDT_MAP[typedConfig.network].marketId,
         ],
@@ -1390,9 +1481,14 @@ export async function setupCoreProtocol<T extends NetworkType>(
         iBgt: IERC20__factory.connect(IBGT_MAP[typedConfig.network].address, hhUser1),
         btcPlaceholder: IERC20__factory.connect(BTC_PLACEHOLDER_MAP[typedConfig.network].address, hhUser1),
         beraEth: IERC20__factory.connect(BERA_ETH_MAP[typedConfig.network].address, hhUser1),
+        deUsd: IERC20__factory.connect(DE_USD_MAP[typedConfig.network].address, hhUser1),
+        dolo: IERC20__factory.connect(DOLO_MAP[typedConfig.network].address, hhUser1),
         eBtc: IERC20__factory.connect(E_BTC_MAP[typedConfig.network].address, hhUser1),
         fbtc: IERC20__factory.connect(FBTC_MAP[typedConfig.network].address, hhUser1),
+        henlo: IERC20__factory.connect(HENLO_MAP[typedConfig.network].address, hhUser1),
         honey: IERC20__factory.connect(HONEY_MAP[typedConfig.network].address, hhUser1),
+        iBera: IERC20__factory.connect(IBERA_MAP[typedConfig.network].address, hhUser1),
+        iBgt: IERC20__factory.connect(IBGT_MAP[typedConfig.network].address, hhUser1),
         lbtc: IERC20__factory.connect(LBTC_MAP[typedConfig.network].address, hhUser1),
         nect: IERC20__factory.connect(NECT_MAP[typedConfig.network].address, hhUser1),
         ohm: IERC20__factory.connect(OHM_MAP[typedConfig.network].address, hhUser1),
@@ -1403,9 +1499,10 @@ export async function setupCoreProtocol<T extends NetworkType>(
         stonebtc: IERC20__factory.connect(STONE_BTC_MAP[typedConfig.network].address, hhUser1),
         sUsda: IERC20__factory.connect(S_USDA_MAP[typedConfig.network].address, hhUser1),
         sUsde: IERC20__factory.connect(S_USDE_MAP[typedConfig.network].address, hhUser1),
+        sdeUsd: IERC20__factory.connect(SDE_USD_MAP[typedConfig.network].address, hhUser1),
+        srUsd: IERC20__factory.connect(SR_USD_MAP[typedConfig.network].address, hhUser1),
         stBtc: IERC20__factory.connect(ST_BTC_MAP[typedConfig.network].address, hhUser1),
         solvBtc: IERC20__factory.connect(SOLV_BTC_MAP[typedConfig.network].address, hhUser1),
-        solvBtcBbn: IERC20__factory.connect(SOLV_BTC_BBN_MAP[typedConfig.network].address, hhUser1),
         stone: IERC20__factory.connect(STONE_MAP[typedConfig.network].address, hhUser1),
         uniBtc: IERC20__factory.connect(UNI_BTC_MAP[typedConfig.network].address, hhUser1),
         usd0: IERC20__factory.connect(USD0_MAP[typedConfig.network].address, hhUser1),
@@ -1416,7 +1513,8 @@ export async function setupCoreProtocol<T extends NetworkType>(
         wbera: IWETH__factory.connect(WBERA_MAP[typedConfig.network].address, hhUser1),
         wbtc: IERC20__factory.connect(WBTC_MAP[typedConfig.network].address, hhUser1),
         weEth: IERC20__factory.connect(WE_ETH_MAP[typedConfig.network].address, hhUser1),
-        ylBtcLst: IERC20__factory.connect(YL_BTC_LST_MAP[typedConfig.network].address, hhUser1),
+        xSolvBtc: IERC20__factory.connect(X_SOLV_BTC_MAP[typedConfig.network].address, hhUser1),
+        ylBtcLst: IERC20__factory.connect(YL_FBTC_MAP[typedConfig.network].address, hhUser1),
         ylPumpBtc: IERC20__factory.connect(YL_PUMP_BTC_MAP[typedConfig.network].address, hhUser1),
         ylStEth: IERC20__factory.connect(YL_ST_ETH_MAP[typedConfig.network].address, hhUser1),
         stablecoins: [
@@ -1542,7 +1640,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
       },
       okxEcosystem: await createOkxEcosystem(typedConfig.network, hhUser1),
       okxPriceOracleV3: OkxPriceOracleV3__factory.connect(
-        Deployments.OkxPriceOracleV3[typedConfig.network].address,
+        ModuleDeployments.OkxPriceOracleV3[typedConfig.network].address,
         hhUser1,
       ),
       tokens: {
@@ -1561,7 +1659,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
   return Promise.reject(new Error(`Invalid network, found: ${config.network}`));
 }
 
-export async function setupTestMarket<T extends NetworkType>(
+export async function setupTestMarket<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   token: { address: address },
   isClosing: boolean,
@@ -1613,7 +1711,7 @@ function createImplementationContracts(network: Network, signer: SignerWithAddre
   };
 }
 
-function createSafeDelegateCallLibraries<T extends NetworkType>(
+function createSafeDelegateCallLibraries<T extends DolomiteNetwork>(
   config: CoreProtocolSetupConfig<T>,
 ): Record<string, string> {
   return {
@@ -1621,7 +1719,7 @@ function createSafeDelegateCallLibraries<T extends NetworkType>(
   };
 }
 
-function createTokenVaultActionsLibraries<T extends NetworkType>(
+function createTokenVaultActionsLibraries<T extends DolomiteNetwork>(
   config: CoreProtocolSetupConfig<T>,
 ): Record<string, string> {
   return {
@@ -1632,7 +1730,7 @@ function createTokenVaultActionsLibraries<T extends NetworkType>(
   };
 }
 
-function createAsyncUnwrapperImplLibraries<T extends NetworkType>(
+function createAsyncUnwrapperImplLibraries<T extends DolomiteNetwork>(
   config: CoreProtocolSetupConfig<T>,
 ): Record<string, string> {
   return {
@@ -1643,7 +1741,7 @@ function createAsyncUnwrapperImplLibraries<T extends NetworkType>(
   };
 }
 
-function createAsyncWrapperImplLibraries<T extends NetworkType>(
+function createAsyncWrapperImplLibraries<T extends DolomiteNetwork>(
   config: CoreProtocolSetupConfig<T>,
 ): Record<string, string> {
   return {
@@ -1659,7 +1757,7 @@ export function getMaxDeploymentVersionAddressByDeploymentKey(
   network: Network,
   defaultAddress?: string,
 ): address {
-  const deploymentsMap = deployments as Record<string, any>;
+  const deploymentsMap = readDeploymentFile();
   const maxVersion = Object.keys(deploymentsMap)
     .filter((k) => k.startsWith(key) && deploymentsMap[k][network])
     .sort((a, b) => {

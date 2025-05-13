@@ -2,7 +2,7 @@ import {
   NETWORK_TO_MULTI_SEND_MAP,
   NETWORK_TO_NETWORK_NAME_MAP,
   NETWORK_TO_SAFE_HASH_NAME_MAP,
-  NetworkType,
+  DolomiteNetwork,
   ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { CoreProtocolType } from '@dolomite-exchange/modules-base/test/utils/setup';
@@ -10,7 +10,7 @@ import { FunctionFragment } from '@ethersproject/abi';
 import { TransactionResponse } from '@ethersproject/abstract-provider';
 import { Overrides } from '@ethersproject/contracts/src.ts';
 import { execSync } from 'child_process';
-import { BaseContract, BigNumber, BigNumberish, ethers } from 'ethers';
+import { BaseContract, BigNumber, BigNumberish, ethers, type EventFilter } from 'ethers';
 import hardhat from 'hardhat';
 import { advanceByTimeDelta } from 'packages/base/test/utils';
 import { GNOSIS_SAFE_MAP } from '../../../base/src/utils/constants';
@@ -36,7 +36,7 @@ export interface EncodedTransaction {
 
 export interface DenJsonUpload {
   addExecuteImmediatelyTransactions?: boolean;
-  chainId: NetworkType;
+  chainId: DolomiteNetwork;
   transactions: EncodedTransaction[];
 }
 
@@ -48,7 +48,7 @@ export interface TransactionBuilderUpload extends DenJsonUpload {
   };
 }
 
-export interface DryRunOutput<T extends NetworkType> {
+export interface DryRunOutput<T extends DolomiteNetwork> {
   readonly upload: DenJsonUpload | TransactionBuilderUpload;
   readonly core: CoreProtocolType<T>;
   readonly scriptName: string;
@@ -71,17 +71,46 @@ function cleanHardhatDeployment(): void {
   }
 }
 
-async function doStuffInternal<T extends NetworkType>(executionFn: () => Promise<DryRunOutput<T>>) {
+export function getOwnerContractAndSubmissionFilter<T extends DolomiteNetwork>(
+  core: CoreProtocolType<T>,
+  ownerAddress: string,
+) {
+  let ownerContract: BaseContract | undefined;
+  let filter: EventFilter | undefined;
+  if (ownerAddress === core.ownerAdapterV1.address) {
+    ownerContract = core.ownerAdapterV1;
+    filter = core.ownerAdapterV1.filters.TransactionSubmitted();
+  } else if (ownerAddress === core.ownerAdapterV2.address) {
+    ownerContract = core.ownerAdapterV2;
+    filter = core.ownerAdapterV2.filters.TransactionSubmitted();
+  } else if (ownerAddress === core.delayedMultiSig.address) {
+    ownerContract = core.delayedMultiSig;
+    filter = core.delayedMultiSig.filters.Submission();
+  } else if (ownerAddress === core.gnosisSafeAddress) {
+    ownerContract = undefined;
+    filter = undefined;
+  } else {
+    throw new Error(getInvalidOwnerError(ownerAddress));
+  }
+
+  return { ownerContract, filter };
+}
+
+function getInvalidOwnerError(ownerAddress: string): string {
+  return `Invalid governance (not DolomiteOwner or DelayedMultisig), found: ${ownerAddress}`;
+}
+
+async function doStuffInternal<T extends DolomiteNetwork>(executionFn: () => Promise<DryRunOutput<T>>) {
   if (hardhat.network.name === 'hardhat') {
     const result = await executionFn();
 
     if (result.core && result.upload.transactions.length > 0) {
       console.log('\tSimulating admin transactions...');
       const ownerAddress = await result.core.dolomiteMargin.owner();
-      const invalidOwnerError = `Invalid governance (not DolomiteOwner or DelayedMultisig), found: ${ownerAddress}`;
+      const invalidOwnerError = getInvalidOwnerError(ownerAddress);
 
       let ownerContract: BaseContract | undefined;
-      let filter;
+      let filter: EventFilter | undefined;
       if (ownerAddress === result.core.ownerAdapterV1.address) {
         ownerContract = result.core.ownerAdapterV1;
         filter = result.core.ownerAdapterV1.filters.TransactionSubmitted();
@@ -106,31 +135,51 @@ async function doStuffInternal<T extends NetworkType>(executionFn: () => Promise
           gasLimit,
         };
         let txResult: TransactionResponse;
-        if (transaction.to === result.core.governance.address) {
-          txResult = await signer.sendTransaction({
-            gasLimit,
-            to: transaction.to,
-            data: transaction.data,
-          });
+        if (transaction.to === result.core.governance.address || transaction.to !== ownerAddress) {
+          txResult = await executeTransactionAndTraceOnFailure(
+            result.core,
+            () =>
+              signer.sendTransaction({
+                gasLimit,
+                to: transaction.to,
+                data: transaction.data,
+              }),
+          );
         } else {
           if (ownerAddress === result.core.ownerAdapterV1.address) {
-            txResult = await result.core.ownerAdapterV1
-              .connect(signer)
-              .submitTransaction(transaction.to, transaction.data, overrides);
+            txResult = await executeTransactionAndTraceOnFailure(
+              result.core,
+              () =>
+                result.core.ownerAdapterV1
+                  .connect(signer)
+                  .submitTransaction(transaction.to, transaction.data, overrides),
+            );
           } else if (ownerAddress === result.core.ownerAdapterV2.address) {
-            txResult = await result.core.ownerAdapterV2
-              .connect(signer)
-              .submitTransaction(transaction.to, transaction.data, overrides);
+            txResult = await executeTransactionAndTraceOnFailure(
+              result.core,
+              () =>
+                result.core.ownerAdapterV2
+                  .connect(signer)
+                  .submitTransaction(transaction.to, transaction.data, overrides),
+            );
           } else if (ownerAddress === result.core.delayedMultiSig.address) {
-            txResult = await result.core.delayedMultiSig
-              .connect(signer)
-              .submitTransaction(transaction.to, ZERO_BI, transaction.data, overrides);
+            txResult = await executeTransactionAndTraceOnFailure(
+              result.core,
+              () =>
+                result.core.delayedMultiSig
+                  .connect(signer)
+                  .submitTransaction(transaction.to, ZERO_BI, transaction.data, overrides),
+            );
           } else if (ownerAddress === result.core.gnosisSafe.address) {
-            txResult = await signer.sendTransaction({
-              gasLimit,
-              to: transaction.to,
-              data: transaction.data,
-            });
+            txResult = await executeTransactionAndTraceOnFailure(
+              result.core,
+              () =>
+                signer.sendTransaction({
+                  gasLimit,
+                  to: transaction.to,
+                  data: transaction.data,
+                }),
+            );
           } else {
             throw new Error(invalidOwnerError);
           }
@@ -168,11 +217,23 @@ async function doStuffInternal<T extends NetworkType>(executionFn: () => Promise
         for (const transactionId of transactionIds) {
           try {
             if (ownerAddress === result.core.ownerAdapterV1.address) {
-              await result.core.ownerAdapterV1.executeTransactions([transactionId], {});
+              await executeTransactionAndTraceOnFailure(
+                result.core,
+                () =>
+                  result.core.ownerAdapterV1.executeTransactions([transactionId], {}),
+              );
             } else if (ownerAddress === result.core.ownerAdapterV2.address) {
-              await result.core.ownerAdapterV2.executeTransactions([transactionId], {});
+              await executeTransactionAndTraceOnFailure(
+                result.core,
+                () =>
+                  result.core.ownerAdapterV2.executeTransactions([transactionId], {}),
+              );
             } else if (ownerAddress === result.core.delayedMultiSig.address) {
-              await result.core.delayedMultiSig.executeTransaction(transactionId, {});
+              await executeTransactionAndTraceOnFailure(
+                result.core,
+                () =>
+                  result.core.delayedMultiSig.executeTransaction(transactionId, {}),
+              );
             } else if (ownerAddress === result.core.gnosisSafe.address) {
               console.log('\tSkipping execution for Gnosis Safe owner');
             } else {
@@ -232,43 +293,43 @@ async function doStuffInternal<T extends NetworkType>(executionFn: () => Promise
 
       if (transactionIds.length === 0) {
         console.warn('\tTransaction IDs length is equal to 0');
-      }
-
-      console.log('============================================================');
-      console.log('================ Real Transaction Execution ================');
-      console.log('============================================================');
-
-      if (ownerAddress === result.core.ownerAdapterV1.address) {
-        encodedTransactionForExecution = await prettyPrintEncodedDataWithTypeSafety(
-          result.core,
-          { ownerAdapter: result.core.ownerAdapterV1 },
-          'ownerAdapter',
-          'executeTransactions',
-          [transactionIds],
-          { skipWrappingCalldataInSubmitTransaction: true },
-        );
-      } else if (ownerAddress === result.core.ownerAdapterV2.address) {
-        encodedTransactionForExecution = await prettyPrintEncodedDataWithTypeSafety(
-          result.core,
-          { ownerAdapter: result.core.ownerAdapterV2 },
-          'ownerAdapter',
-          'executeTransactions',
-          [transactionIds],
-          { skipWrappingCalldataInSubmitTransaction: true },
-        );
-      } else if (ownerAddress === result.core.delayedMultiSig.address) {
-        encodedTransactionForExecution = await prettyPrintEncodedDataWithTypeSafety(
-          result.core,
-          { delayedMultiSig: result.core.delayedMultiSig },
-          'delayedMultiSig',
-          'executeMultipleTransactions',
-          [transactionIds],
-          { skipWrappingCalldataInSubmitTransaction: true },
-        );
-      } else if (ownerAddress === result.core.gnosisSafeAddress) {
-        console.log('\tExecute the transactions directly against the Gnosis Safe');
       } else {
-        return Promise.reject(new Error(invalidOwnerAddress));
+        console.log('============================================================');
+        console.log('================ Real Transaction Execution ================');
+        console.log('============================================================');
+
+        if (ownerAddress === result.core.ownerAdapterV1.address) {
+          encodedTransactionForExecution = await prettyPrintEncodedDataWithTypeSafety(
+            result.core,
+            { ownerAdapter: result.core.ownerAdapterV1 },
+            'ownerAdapter',
+            'executeTransactions',
+            [transactionIds],
+            { skipWrappingCalldataInSubmitTransaction: true },
+          );
+        } else if (ownerAddress === result.core.ownerAdapterV2.address) {
+          encodedTransactionForExecution = await prettyPrintEncodedDataWithTypeSafety(
+            result.core,
+            { ownerAdapter: result.core.ownerAdapterV2 },
+            'ownerAdapter',
+            'executeTransactions',
+            [transactionIds],
+            { skipWrappingCalldataInSubmitTransaction: true },
+          );
+        } else if (ownerAddress === result.core.delayedMultiSig.address) {
+          encodedTransactionForExecution = await prettyPrintEncodedDataWithTypeSafety(
+            result.core,
+            { delayedMultiSig: result.core.delayedMultiSig },
+            'delayedMultiSig',
+            'executeMultipleTransactions',
+            [transactionIds],
+            { skipWrappingCalldataInSubmitTransaction: true },
+          );
+        } else if (ownerAddress === result.core.gnosisSafeAddress) {
+          console.log('\tExecute the transactions directly against the Gnosis Safe');
+        } else {
+          return Promise.reject(new Error(invalidOwnerAddress));
+        }
       }
     }
 
@@ -348,7 +409,20 @@ async function doStuffInternal<T extends NetworkType>(executionFn: () => Promise
   }
 }
 
-export async function doDryRunAndCheckDeployment<T extends NetworkType>(
+async function executeTransactionAndTraceOnFailure<T extends DolomiteNetwork>(
+  core: CoreProtocolType<T>,
+  transactionExecutor: () => Promise<TransactionResponse>,
+): Promise<TransactionResponse> {
+  try {
+    hardhat.tracer.enabled = true;
+    hardhat.tracer.printNext = true;
+    return await transactionExecutor();
+  } catch (e: any) {
+    return Promise.reject(e);
+  }
+}
+
+export async function doDryRunAndCheckDeployment<T extends DolomiteNetwork>(
   executionFn: () => Promise<DryRunOutput<T>>,
 ): Promise<void> {
   await doStuffInternal(executionFn)

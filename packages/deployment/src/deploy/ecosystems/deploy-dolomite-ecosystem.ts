@@ -1,4 +1,6 @@
 import CoreDeployments from '@dolomite-exchange/dolomite-margin/dist/migrations/deployed.json';
+import { getDolomiteOwnerConstructorParams } from '@dolomite-exchange/modules-admin/src/admin';
+import { DolomiteOwnerV1__factory, DolomiteOwnerV2__factory } from '@dolomite-exchange/modules-admin/src/types';
 import {
   BorrowPositionRouter__factory,
   DepositWithdrawalRouter__factory,
@@ -6,7 +8,6 @@ import {
   GenericTraderProxyV2__factory,
   GenericTraderRouter__factory,
   IDepositWithdrawalProxy__factory,
-  IDolomiteOwner__factory,
   ILiquidatorAssetRegistry__factory,
   ILiquidatorProxyV5__factory,
   IPartiallyDelayedMultiSig__factory,
@@ -14,13 +15,13 @@ import {
 } from '@dolomite-exchange/modules-base/src/types';
 import { GNOSIS_SAFE_MAP } from '@dolomite-exchange/modules-base/src/utils/constants';
 import {
+  getDolomiteErc4626ImplementationConstructorParams,
   getDolomiteMigratorConstructorParams,
-  getDolomiteOwnerConstructorParams,
   getIsolationModeFreezableLiquidatorProxyConstructorParamsWithoutCore,
   getRegistryProxyConstructorParams,
 } from '@dolomite-exchange/modules-base/src/utils/constructors/dolomite';
 import { getAnyNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { NetworkType } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { DolomiteNetwork } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '@dolomite-exchange/modules-base/src/utils/SignerWithAddressWithSafety';
 import {
   getRealLatestBlockNumber,
@@ -47,11 +48,13 @@ import { prettyPrintEncodedDataWithTypeSafety } from '../../utils/encoding/base-
 import getScriptName from '../../utils/get-script-name';
 import { deployDolomiteAccountRegistry } from './helpers/deploy-dolomite-account-registry';
 import { deployDolomiteAccountRiskOverrideSetter } from './helpers/deploy-dolomite-account-risk-override-setter';
+import { deployDolomiteAdminContracts } from './helpers/deploy-dolomite-admin-contracts';
 import { deployDolomiteRegistry } from './helpers/deploy-dolomite-registry';
 import { deployInterestSetters } from './helpers/deploy-interest-setters';
 import { deployOracleAggregator } from './helpers/deploy-oracle-aggregator';
 import { encodeDolomiteAccountRegistryMigrations } from './helpers/encode-dolomite-account-registry-migrations';
 import { encodeDolomiteAccountRiskOverrideSetterMigrations } from './helpers/encode-dolomite-account-risk-override-setter-migrations';
+import { encodeDolomiteOwnerMigrations } from './helpers/encode-dolomite-owner-migrations';
 import { encodeDolomiteRegistryMigrations } from './helpers/encode-dolomite-registry-migrations';
 import { encodeDolomiteRouterMigrations } from './helpers/encode-dolomite-router-migrations';
 import { encodeIsolationModeFreezableLiquidatorMigrations } from './helpers/encode-isolation-mode-freezable-liquidator-migrations';
@@ -59,7 +62,7 @@ import { encodeIsolationModeFreezableLiquidatorMigrations } from './helpers/enco
 const FIVE_MINUTES_SECONDS = 60 * 5;
 const HANDLER_ADDRESS = '0xdF86dFdf493bCD2b838a44726A1E58f66869ccBe'; // Level Initiator
 
-async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
+async function main<T extends DolomiteNetwork>(): Promise<DryRunOutput<T>> {
   const network = (await getAnyNetwork()) as T;
   if (!(ModuleDeployments.CREATE3Factory as any)?.[network]) {
     return Promise.reject(new Error('CREATE3 not found! Please deploy first!'));
@@ -93,22 +96,18 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     hhUser1,
   );
 
-  await deployContractAndSave(
-    'DolomiteERC4626',
-    [],
-    getMaxDeploymentVersionNameByDeploymentKey('DolomiteERC4626Implementation', 1),
-  );
-  await deployContractAndSave(
-    'DolomiteERC4626WithPayable',
-    [],
-    getMaxDeploymentVersionNameByDeploymentKey('DolomiteERC4626WithPayableImplementation', 1),
-  );
-  const dolomiteOwnerAddress = await deployContractAndSave(
+  const dolomiteOwnerV1Address = await deployContractAndSave(
     'DolomiteOwnerV1',
     getDolomiteOwnerConstructorParams(GNOSIS_SAFE_MAP[network], FIVE_MINUTES_SECONDS),
     'DolomiteOwnerV1',
   );
-  const dolomiteOwnerV1 = IDolomiteOwner__factory.connect(dolomiteOwnerAddress, gnosisSafeSigner);
+  const dolomiteOwnerV1 = DolomiteOwnerV1__factory.connect(dolomiteOwnerV1Address, gnosisSafeSigner);
+  const dolomiteOwnerV2Address = await deployContractAndSave(
+    'DolomiteOwnerV2',
+    getDolomiteOwnerConstructorParams(GNOSIS_SAFE_MAP[network], FIVE_MINUTES_SECONDS),
+    'DolomiteOwnerV2',
+  );
+  const dolomiteOwnerV2 = DolomiteOwnerV2__factory.connect(dolomiteOwnerV2Address, gnosisSafeSigner);
   const eventEmitterRegistryImplementationAddress = await deployContractAndSave(
     'EventEmitterRegistry',
     [],
@@ -147,6 +146,22 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     dolomiteAccountRiskOverrideSetterProxy,
     dolomiteAccountRiskOverrideSetterImplementationAddress,
   } = await deployDolomiteAccountRiskOverrideSetter(dolomiteMargin, hhUser1);
+
+  const coreFor4626 = {
+    dolomiteRegistry,
+    dolomiteMargin,
+    network: config.network,
+  } as any;
+  await deployContractAndSave(
+    'DolomiteERC4626',
+    await getDolomiteErc4626ImplementationConstructorParams(coreFor4626),
+    getMaxDeploymentVersionNameByDeploymentKey('DolomiteERC4626Implementation', 1),
+  );
+  await deployContractAndSave(
+    'DolomiteERC4626WithPayable',
+    await getDolomiteErc4626ImplementationConstructorParams(coreFor4626),
+    getMaxDeploymentVersionNameByDeploymentKey('DolomiteERC4626WithPayableImplementation', 1),
+  );
 
   const genericTraderProxyV2LibAddress = await deployContractAndSave(
     'GenericTraderProxyV2Lib',
@@ -191,7 +206,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   const depositWithdrawalRouterImplementationAddress = await deployContractAndSave(
     'DepositWithdrawalRouter',
     [dolomiteRegistry.address, dolomiteMargin.address],
-    getMaxDeploymentVersionNameByDeploymentKey('DepositWithdrawalRouterImplementation', 1),
+    getMaxDeploymentVersionNameByDeploymentKey('DepositWithdrawalRouterImplementation', 3),
   );
   const depositWithdrawalRouterCalldata = await DepositWithdrawalRouter__factory.connect(
     depositWithdrawalRouterImplementationAddress,
@@ -242,8 +257,14 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   await deployContractAndSave(
     'IsolationModeTokenVaultV1ActionsImpl',
     [],
-    getMaxDeploymentVersionNameByDeploymentKey('IsolationModeTokenVaultV1ActionsImpl', 1),
+    getMaxDeploymentVersionNameByDeploymentKey('IsolationModeTokenVaultV1ActionsImpl', 11),
     { SafeDelegateCallLib: safeDelegateCallLibAddress },
+  );
+
+  await deployContractAndSave(
+    'AsyncIsolationModeTokenVaultV1ActionsImpl',
+    [],
+    getMaxDeploymentVersionNameByDeploymentKey('AsyncIsolationModeTokenVaultV1ActionsImpl', 2),
   );
 
   await deployContractAndSave(
@@ -259,6 +280,12 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   );
 
   await deployInterestSetters();
+
+  const { adminClaimExcessTokens, adminPauseMarket } = await deployDolomiteAdminContracts(
+    dolomiteMargin,
+    dolomiteRegistry,
+    hhUser1,
+  );
 
   // We can't set up the core protocol here because there are too many missing contracts/context
   const governanceAddress = await dolomiteMargin.connect(hhUser1).owner();
@@ -278,7 +305,7 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     gnosisSafeAddress: gnosisSafeAddress,
     network: config.network,
     ownerAdapterV1: dolomiteOwnerV1,
-    ownerAdapterV2: dolomiteOwnerV1, // TODO: fix after review + test
+    ownerAdapterV2: dolomiteOwnerV2,
   } as CoreProtocolType<T>;
 
   await encodeDolomiteAccountRegistryMigrations(
@@ -328,13 +355,17 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
     core,
     DepositWithdrawalRouter__factory.connect(depositWithdrawalRouterProxyAddress, hhUser1),
     [depositWithdrawalRouterProxyAddress, borrowPositionRouterProxyAddress, genericTraderRouterProxyAddress],
+    [
+      depositWithdrawalRouterImplementationAddress,
+      borrowPositionRouterImplementationAddress,
+      genericTraderRouterImplementationAddress,
+    ],
     deployedVaults,
     transactions,
   );
 
   // This must be the last encoded transaction
-  // TODO: uncomment
-  // await encodeDolomiteOwnerMigrations(dolomiteOwnerV1, transactions, core);
+  await encodeDolomiteOwnerMigrations(dolomiteOwnerV2, adminClaimExcessTokens, adminPauseMarket, transactions, core);
 
   return {
     core: {

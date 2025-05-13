@@ -1,0 +1,27 @@
+{
+  "name": "@dolomite-exchange/modules-admin",
+  "version": "0.0.1",
+  "scripts": {
+    "build": "hardhat compile",
+    "clean": "hardhat clean",
+    "test": "hardhat --network hardhat test",
+    "coverage": "yarn coverage:prepare && COVERAGE=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat coverage --testfiles \"test/*.ts\" --solcoverjs ../../.solcover.js",
+    "coverage:prepare": "ts-node ../../scripts/fix-contracts-for-coverage.ts admin",
+    "coverage:specific": "yarn coverage:prepare && COVERAGE=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat coverage --testfiles \"test/PartnerClaimExcessTokens.ts\" --solcoverjs ../../.solcover.js",
+    "test:specific": "TEST_SPECIFIC=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat --network hardhat test test/PartnerClaimExcessTokens.ts",
+    "test:specific2": "TEST_SPECIFIC=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat --network hardhat test test/AdminClaimExcessTokens.ts",
+    "lint": "yarn lint:sol && yarn lint:ts",
+    "lint:sol": "hardhat check && python3 ../../scripts/lint-contracts.py fix admin",
+    "lint:ts": "tslint --project ../../ -t verbose 'src/**/*.ts' 'test/**/*.ts'"
+  },
+  "files": [
+    "contracts/**/*",
+    "!contracts/test/*"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dolomite-exchange/dolomite-margin-modules.git",
+    "directory": "packages/admin"
+  },
+  "license": "GPL-2.0"
+}

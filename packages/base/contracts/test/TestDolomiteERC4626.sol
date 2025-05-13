@@ -34,9 +34,10 @@ contract TestDolomiteERC4626 is DolomiteERC4626 {
     using InternalSafeDelegateCallLib for address;
 
     constructor (
+        uint256 _chainId,
         address _dolomiteRegistry,
         address _dolomiteMargin
-    ) DolomiteERC4626(_dolomiteRegistry, _dolomiteMargin) {}
+    ) DolomiteERC4626(_chainId, _dolomiteRegistry, _dolomiteMargin) {}
 
     function callFunctionAndTriggerReentrancy(
         bytes calldata _callDataWithSelector

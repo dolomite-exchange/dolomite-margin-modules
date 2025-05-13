@@ -1,33 +1,51 @@
-import { getAndCheckSpecificNetwork } from 'packages/base/src/utils/dolomite-utils';
-import { getRealLatestBlockNumber } from 'packages/base/test/utils';
-import { setupCoreProtocol } from 'packages/base/test/utils/setup';
-import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
-import { Network } from 'packages/base/src/utils/no-deps-constants';
-import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../../utils/dry-run-utils';
+import { RegistryProxy__factory } from '@dolomite-exchange/modules-base/src/types';
+import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
+import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
 import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
+import { encodeSetupDolomite4626Token } from '../../../../utils/encoding/dolomite-4626-token-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
 
 /**
  * This script encodes the following transactions:
- * - Update the interest rate model for all stables to use optimal rate of 14%
+ * - Upgrades each existing 4626 dToken to the new implementation
+ * - Gives appropriate DolomiteOwnerV2 roles to each 4626 contract
  */
 async function main(): Promise<DryRunOutput<Network.Mantle>> {
   const network = await getAndCheckSpecificNetwork(Network.Mantle);
   const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
 
-  const stablecoins = core.marketIds.stablecoinsWithUnifiedInterestRateModels;
+  const transactions: EncodedTransaction[] = [];
 
-  const transactions = [];
-  for (let i = 0; i < stablecoins.length; i++) {
-    transactions.push(
-      await prettyPrintEncodedDataWithTypeSafety(
-        core,
-        { dolomiteMargin: core.dolomiteMargin },
-        'dolomiteMargin',
-        'ownerSetInterestSetter',
-        [stablecoins[i], core.interestSetters.linearStepFunction14L86U90OInterestSetter.address],
-      ),
-    );
+  for (let i = 0; i < core.dolomiteTokens.all.length; i += 1) {
+    // Upgrade the implementations
+    const dToken = core.dolomiteTokens.all[i];
+    const proxy = RegistryProxy__factory.connect(dToken.address, core.hhUser1);
+    if ('depositFromPayable' in dToken) {
+      transactions.push(
+        await prettyPrintEncodedDataWithTypeSafety(
+          core,
+          { proxy },
+          'proxy',
+          'upgradeTo',
+          [core.implementationContracts.dolomiteERC4626WithPayableImplementation.address],
+        ),
+      );
+    } else {
+      transactions.push(
+        await prettyPrintEncodedDataWithTypeSafety(
+          core,
+          { proxy },
+          'proxy',
+          'upgradeTo',
+          [core.implementationContracts.dolomiteERC4626Implementation.address],
+        ),
+      );
+    }
+
+    transactions.push(...(await encodeSetupDolomite4626Token(core, dToken)));
   }
 
   return {
@@ -35,8 +53,8 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
     scriptName: getScriptName(__filename),
     upload: {
       transactions,
-      addExecuteImmediatelyTransactions: true,
       chainId: network,
+      addExecuteImmediatelyTransactions: true,
       version: '1.0',
       meta: {
         txBuilderVersion: '1.16.5',
@@ -44,13 +62,6 @@ async function main(): Promise<DryRunOutput<Network.Mantle>> {
       },
     },
     invariants: async () => {
-      const interestSetterAddress = core.interestSetters.linearStepFunction14L86U90OInterestSetter.address;
-      for (let i = 0; i < stablecoins.length; i++) {
-        assertHardhatInvariant(
-          (await core.dolomiteMargin.getMarketInterestSetter(stablecoins[i])) === interestSetterAddress,
-          `Invalid interest setter for ${stablecoins[i]}`
-        );
-      }
     },
   };
 }

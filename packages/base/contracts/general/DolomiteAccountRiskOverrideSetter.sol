@@ -172,18 +172,14 @@ contract DolomiteAccountRiskOverrideSetter is
     view
     returns
     (IDolomiteStructs.Decimal memory, IDolomiteStructs.Decimal memory) {
-        if (_account.owner == DOLOMITE_MARGIN_OWNER()) {
-            return _getDefaultValuesForOverride();
-        }
-
         IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
         uint256[] memory marketIds = dolomiteMargin.getAccountMarketsWithBalances(_account);
         uint256 marketIdsLength = marketIds.length;
 
-        // Since this function is always called at the end of an operate call when a user has debt, these two invariants
-        // will always hold.
-        assert(marketIdsLength != 0);
-        assert(dolomiteMargin.getAccountNumberOfMarketsWithDebt(_account) != 0);
+        if (marketIdsLength == 0 || dolomiteMargin.getAccountNumberOfMarketsWithDebt(_account) == 0) {
+            // The Dolomite Margin call this contract for various readers
+            return _getDefaultValuesForOverride();
+        }
 
         Require.that(
             _account.number >= _DOLOMITE_BALANCE_CUTOFF_ACCOUNT_NUMBER,
@@ -265,6 +261,29 @@ contract DolomiteAccountRiskOverrideSetter is
         }
 
         return categoryStruct;
+    }
+
+    function getCategoryParamByMarketId(uint256 _marketId) public view returns (CategoryStruct memory) {
+        Category category = getCategoryByMarketId(_marketId);
+        Require.that(
+            category != Category.NONE,
+            _FILE,
+            "No category found",
+            _marketId
+        );
+
+        return getCategoryParamByCategory(category);
+    }
+
+    function getRiskFeatureParamByMarketId(uint256 _marketId) public view returns (RiskFeatureStruct memory) {
+        if (getRiskFeatureByMarketId(_marketId) == RiskFeature.NONE) {
+            return RiskFeatureStruct({
+                riskFeature: RiskFeature.NONE,
+                extraData: bytes("")
+            });
+        }
+
+        return _getRiskFeatureParamByMarketId(_marketId);
     }
 
     // ===================== Internal Functions =====================
@@ -462,7 +481,6 @@ contract DolomiteAccountRiskOverrideSetter is
             if (_marketIds[mid] < _find) {
                 left = mid + 1;
             } else {
-                // @follow-up Ok with doing it this way?
                 if (mid == 0) {
                     return type(uint256).max;
                 }

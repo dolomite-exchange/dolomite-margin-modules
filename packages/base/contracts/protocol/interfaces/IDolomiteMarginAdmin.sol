@@ -33,6 +33,88 @@ import { IDolomiteStructs } from "./IDolomiteStructs.sol";
  */
 interface IDolomiteMarginAdmin is IDolomiteStructs {
 
+    // ============ Events ============
+
+    event LogWithdrawExcessTokens(
+        address token,
+        uint256 amount
+    );
+
+    event LogWithdrawUnsupportedTokens(
+        address token,
+        uint256 amount
+    );
+
+    event LogAddMarket(
+        uint256 marketId,
+        address token
+    );
+
+    event LogRemoveMarket(
+        uint256 marketId,
+        address token
+    );
+
+    event LogSetIsClosing(
+        uint256 marketId,
+        bool isClosing
+    );
+
+    event LogSetPriceOracle(
+        uint256 marketId,
+        address priceOracle
+    );
+
+    event LogSetInterestSetter(
+        uint256 marketId,
+        address interestSetter
+    );
+
+    event LogSetMarginPremium(
+        uint256 marketId,
+        IDolomiteStructs.Decimal marginPremium
+    );
+
+    event LogSetSpreadPremium(
+        uint256 marketId,
+        IDolomiteStructs.Decimal spreadPremium
+    );
+
+    event LogSetMaxWei(
+        uint256 marketId,
+        IDolomiteStructs.Wei maxWei
+    );
+
+    event LogSetMarginRatio(
+        IDolomiteStructs.Decimal marginRatio
+    );
+
+    event LogSetLiquidationSpread(
+        IDolomiteStructs.Decimal liquidationSpread
+    );
+
+    event LogSetEarningsRate(
+        IDolomiteStructs.Decimal earningsRate
+    );
+
+    event LogSetMinBorrowedValue(
+        IDolomiteStructs.MonetaryValue minBorrowedValue
+    );
+
+    event LogSetAccountMaxNumberOfMarketsWithBalances(
+        uint256 accountMaxNumberOfMarketsWithBalances
+    );
+
+    event LogSetGlobalOperator(
+        address operator,
+        bool approved
+    );
+
+    event LogSetAutoTraderIsSpecial(
+        address autoTrader,
+        bool isSpecial
+    );
+
     // ============ Token Functions ============
 
     /**

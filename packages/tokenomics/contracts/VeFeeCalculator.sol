@@ -21,6 +21,7 @@
 pragma solidity ^0.8.9;
 
 import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
+import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { IVeFeeCalculator } from "./interfaces/IVeFeeCalculator.sol";
 
 
@@ -48,7 +49,7 @@ contract VeFeeCalculator is IVeFeeCalculator, OnlyDolomiteMargin {
     // =========================================================
 
     uint256 public burnFee;
-    uint256 public decayTimestamp;
+    IDolomiteStructs.Decimal private _buybackFeeSplit;
 
     // ===========================================================
     // ======================= Constructor =======================
@@ -57,7 +58,8 @@ contract VeFeeCalculator is IVeFeeCalculator, OnlyDolomiteMargin {
     constructor(address _dolomiteMargin) OnlyDolomiteMargin(
         _dolomiteMargin
     ) {
-        _ownerSetBurnFee(.05 ether);
+        _ownerSetBurnFee(0.05 ether);
+        _ownerSetBuybackFeeSplit(IDolomiteStructs.Decimal({ value: 0.50 ether }));
     }
 
     // ==================================================================
@@ -68,6 +70,16 @@ contract VeFeeCalculator is IVeFeeCalculator, OnlyDolomiteMargin {
         _ownerSetBurnFee(_burnFee);
     }
 
+    function ownerSetBuybackFeeSplit(
+        IDolomiteStructs.Decimal memory __buybackFeeSplit
+    ) external onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetBuybackFeeSplit(__buybackFeeSplit);
+    }
+
+    function buybackFeeSplit() external view returns (IDolomiteStructs.Decimal memory) {
+        return _buybackFeeSplit;
+    }
+
     function getEarlyWithdrawalFees(
         uint256 _amount,
         uint256 _lockEndTime
@@ -76,7 +88,6 @@ contract VeFeeCalculator is IVeFeeCalculator, OnlyDolomiteMargin {
             return (0, 0);
         }
 
-        assert(decayTimestamp != 0);
         uint256 burnFeeAmount = burnFee * _amount / BASE;
         uint256 recoupFeeAmount = _calculateRecoupFee(_lockEndTime - block.timestamp) * _amount / BASE;
 
@@ -90,6 +101,11 @@ contract VeFeeCalculator is IVeFeeCalculator, OnlyDolomiteMargin {
     function _ownerSetBurnFee(uint256 _burnFee) internal {
         burnFee = _burnFee;
         emit BurnFeeSet(_burnFee);
+    }
+
+    function _ownerSetBuybackFeeSplit(IDolomiteStructs.Decimal memory __buybackFeeSplit) internal {
+        _buybackFeeSplit = __buybackFeeSplit;
+        emit BuybackFeeSplitSet(__buybackFeeSplit);
     }
 
     // @dev linear formula where y intercept is 5% for the first week then slope is 45% over 103 weeks
