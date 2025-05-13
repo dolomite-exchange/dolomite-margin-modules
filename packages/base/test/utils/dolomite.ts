@@ -24,6 +24,8 @@ import {
   IExpiryV2,
   IsolationModeTraderProxy,
   IsolationModeTraderProxy__factory,
+  LiquidatorProxyV5,
+  LiquidatorProxyV5__factory,
   RegistryProxy,
   RegistryProxy__factory,
   RouterProxy,
@@ -59,6 +61,7 @@ import {
   DolomiteOwnerV2__factory,
 } from 'packages/admin/src/types';
 import { getDolomiteOwnerConstructorParams } from 'packages/admin/src/admin';
+import { UpgradeableProxy__factory } from 'packages/liquidity-mining/src/types';
 
 export type DolomiteMargin<T extends DolomiteNetwork> = T extends Network.ArbitrumOne
   ? IDolomiteMargin
@@ -302,6 +305,34 @@ export async function createGenericTraderProxyV2(core: CoreProtocolType<any>): P
     artifact,
     libraries,
     [Network.ArbitrumOne, core.dolomiteRegistry.address, core.dolomiteMargin.address],
+  );
+}
+
+export async function createLiquidatorProxyV5(
+  core: CoreProtocolType<any>,
+): Promise<LiquidatorProxyV5> {
+  const libraries = await createGenericTraderProxyV2Lib();
+  const artifact = await createArtifactFromBaseWorkspaceIfNotExists('LiquidatorProxyV5', 'proxies');
+  const liquidatorProxyImplementation = await createContractWithLibraryAndArtifact(
+    artifact,
+    libraries,
+    [
+      core.config.network,
+      core.expiry.address,
+      core.dolomiteMargin.address,
+      core.dolomiteRegistry.address,
+      core.liquidatorAssetRegistry.address,
+    ],
+  );
+  const data = await liquidatorProxyImplementation.populateTransaction.initialize();
+  const proxy = await createContractWithAbi(
+    UpgradeableProxy__factory.abi,
+    UpgradeableProxy__factory.bytecode,
+    [liquidatorProxyImplementation.address, core.dolomiteMargin.address, data.data!],
+  );
+  return LiquidatorProxyV5__factory.connect(
+    proxy.address,
+    core.hhUser1,
   );
 }
 

@@ -1,4 +1,4 @@
-import { Network } from 'packages/base/src/utils/no-deps-constants';
+import { DolomiteNetwork } from 'packages/base/src/utils/no-deps-constants';
 import {
   OdosAggregatorTrader,
   OdosAggregatorTrader__factory,
@@ -18,15 +18,15 @@ import {
   CoreProtocolWithOkx,
   CoreProtocolWithParaswap,
   getOdosAggregatorTraderConstructorParams,
-  getOogaBoogaAggregatorTraderConstructorParams,
   getOkxAggregatorTraderConstructorParams,
+  getOogaBoogaAggregatorTraderConstructorParams,
   getParaswapAggregatorTraderConstructorParams,
   getParaswapAggregatorTraderV2ConstructorParams,
 } from '../../../src/utils/constructors/traders';
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
 import { CoreProtocolBerachain } from '../core-protocols/core-protocol-berachain';
 
-export async function createParaswapAggregatorTrader<T extends Network>(
+export async function createParaswapAggregatorTrader<T extends DolomiteNetwork>(
   core: CoreProtocolWithParaswap<T>,
 ): Promise<ParaswapAggregatorTrader> {
   return await createContractWithAbi<ParaswapAggregatorTrader>(
@@ -36,7 +36,7 @@ export async function createParaswapAggregatorTrader<T extends Network>(
   );
 }
 
-export async function createParaswapAggregatorTraderV2<T extends Network>(
+export async function createParaswapAggregatorTraderV2<T extends DolomiteNetwork>(
   core: CoreProtocolWithParaswap<T>,
 ): Promise<ParaswapAggregatorTraderV2> {
   return await createContractWithAbi<ParaswapAggregatorTraderV2>(
@@ -46,7 +46,7 @@ export async function createParaswapAggregatorTraderV2<T extends Network>(
   );
 }
 
-export async function createOdosAggregatorTrader<T extends Network>(
+export async function createOdosAggregatorTrader<T extends DolomiteNetwork>(
   core: CoreProtocolWithOdos<T>,
 ): Promise<OdosAggregatorTrader> {
   return await createContractWithAbi<OdosAggregatorTrader>(
@@ -56,7 +56,7 @@ export async function createOdosAggregatorTrader<T extends Network>(
   );
 }
 
-export async function createTestOkxAggregatorTrader<T extends Network>(
+export async function createTestOkxAggregatorTrader<T extends DolomiteNetwork>(
   core: CoreProtocolWithOkx<T>,
 ): Promise<TestOkxAggregatorTrader> {
   return await createContractWithAbi<TestOkxAggregatorTrader>(
@@ -66,7 +66,7 @@ export async function createTestOkxAggregatorTrader<T extends Network>(
   );
 }
 
-export async function createOkxAggregatorTrader<T extends Network>(
+export async function createOkxAggregatorTrader<T extends DolomiteNetwork>(
   core: CoreProtocolWithOkx<T>,
 ): Promise<OkxAggregatorTrader> {
   return await createContractWithAbi<OkxAggregatorTrader>(
@@ -77,7 +77,7 @@ export async function createOkxAggregatorTrader<T extends Network>(
 }
 
 export async function createOogaBoogaAggregatorTrader(
-  core: CoreProtocolBerachain
+  core: CoreProtocolBerachain,
 ): Promise<OogaBoogaAggregatorTrader> {
   return await createContractWithAbi<OogaBoogaAggregatorTrader>(
     OogaBoogaAggregatorTrader__factory.abi,

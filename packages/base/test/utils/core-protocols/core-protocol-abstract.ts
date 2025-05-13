@@ -37,6 +37,7 @@ export interface LibraryMaps {
   tokenVaultActionsImpl: Record<string, string>;
   unwrapperTraderImpl: Record<string, string>;
   wrapperTraderImpl: Record<string, string>;
+  genericTraderProxyV2Lib: Record<string, string>;
 }
 
 export interface ImplementationContracts {

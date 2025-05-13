@@ -29,6 +29,7 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { MetaVaultRewardReceiver } from "./MetaVaultRewardReceiver.sol";
 import { IInfraredBGTIsolationModeTokenVaultV1 } from "./interfaces/IInfraredBGTIsolationModeTokenVaultV1.sol";
 import { IInfraredVault } from "./interfaces/IInfraredVault.sol";
+import { IBaseMetaVault } from "./interfaces/IBaseMetaVault.sol";
 
 
 /**
@@ -51,12 +52,11 @@ contract InfraredBGTIsolationModeTokenVaultV1 is
     // ==================================================================
 
     bytes32 private constant _FILE = "InfraredBGTUserVaultV1";
-    bytes32 private constant _IS_DEPOSIT_SOURCE_THIS_VAULT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isDepositSourceThisVault")) - 1); // solhint-disable-line max-line-length
 
     uint256 public constant DEFAULT_ACCOUNT_NUMBER = 0;
 
     // ==================================================================
-    // =========================== Functions ============================
+    // ======================= Public Functions =========================
     // ==================================================================
 
     function stake(uint256 _amount) external onlyVaultOwner(msg.sender) {
@@ -68,11 +68,17 @@ contract InfraredBGTIsolationModeTokenVaultV1 is
     }
 
     function getReward() external onlyVaultOwner(msg.sender) {
-        _getReward();
+        IBaseMetaVault(_getMetaVault()).getRewardIBgt();
     }
 
     function exit() external onlyVaultOwner(msg.sender) {
-        _exit();
+        IBaseMetaVault metaVault = IBaseMetaVault(_getMetaVault());
+        metaVault.getRewardIBgt();
+
+        uint256 stakedBalance = registry().iBgtStakingVault().balanceOf(address(metaVault));
+        if (stakedBalance > 0) {
+            metaVault.unstakeIBgt(stakedBalance);
+        }
     }
 
     function executeDepositIntoVault(
@@ -83,19 +89,18 @@ contract InfraredBGTIsolationModeTokenVaultV1 is
     override(IsolationModeTokenVaultV1, IIsolationModeTokenVaultV1)
     onlyVaultFactory(msg.sender) {
         if (isDepositSourceMetaVault()) {
-            address metaVault = registry().getMetaVaultByVault(address(this));
+            address metaVault = _getMetaVault();
             /*assert(metaVault != address(0));*/
 
             _setIsDepositSourceMetaVault(false);
             IERC20(UNDERLYING_TOKEN()).safeTransferFrom(metaVault, address(this), _amount);
-        } else if (isDepositSourceThisVault()) {
-            _setIsDepositSourceThisVault(false);
-            /*assert(IERC20(UNDERLYING_TOKEN()).balanceOf(address(this)) >= _amount);*/
         } else {
             IERC20(UNDERLYING_TOKEN()).safeTransferFrom(_from, address(this), _amount);
         }
 
-        _stake(_amount);
+        if (!registry().iBgtStakingVault().paused()) {
+            _stake(_amount);
+        }
     }
 
     function executeWithdrawalFromVault(
@@ -114,17 +119,17 @@ contract InfraredBGTIsolationModeTokenVaultV1 is
         IERC20(UNDERLYING_TOKEN()).safeTransfer(_recipient, _amount);
     }
 
+    // ==================================================================
+    // ======================== View Functions ==========================
+    // ==================================================================
+
     function underlyingBalanceOf()
         public
         view
         override(IIsolationModeTokenVaultV1, IsolationModeTokenVaultV1)
         returns (uint256)
     {
-        return super.underlyingBalanceOf() + registry().iBgtStakingVault().balanceOf(address(this));
-    }
-
-    function isDepositSourceThisVault() public view returns (bool) {
-        return _getUint256(_IS_DEPOSIT_SOURCE_THIS_VAULT_SLOT) == 1;
+        return super.underlyingBalanceOf() + registry().iBgtStakingVault().balanceOf(_getMetaVault());
     }
 
     function dolomiteRegistry()
@@ -136,67 +141,21 @@ contract InfraredBGTIsolationModeTokenVaultV1 is
         return registry().dolomiteRegistry();
     }
 
+    // ==================================================================
+    // ======================== Internal Functions ======================
+    // ==================================================================
+
     function _stake(uint256 _amount) internal {
-        IInfraredVault vault = registry().iBgtStakingVault();
-        IERC20(UNDERLYING_TOKEN()).safeApprove(address(vault), _amount);
-        vault.stake(_amount);
+        IBaseMetaVault metaVault = IBaseMetaVault(_getMetaVault());
+        IERC20(UNDERLYING_TOKEN()).safeApprove(address(metaVault), _amount);
+        metaVault.stakeIBgt(_amount);
     }
 
     function _unstake(uint256 _amount) internal {
-        IInfraredVault vault = registry().iBgtStakingVault();
-        vault.withdraw(_amount);
+        IBaseMetaVault(_getMetaVault()).unstakeIBgt(_amount);
     }
 
-    function _getReward() internal {
-        IInfraredVault vault = registry().iBgtStakingVault();
-
-        IInfraredVault.UserReward[] memory rewards = vault.getAllRewardsForUser(address(this));
-        vault.getReward();
-
-        _handleRewards(rewards);
-    }
-
-    function _exit() internal {
-        IInfraredVault vault = registry().iBgtStakingVault();
-
-        IInfraredVault.UserReward[] memory rewards = vault.getAllRewardsForUser(address(this));
-        vault.exit();
-
-        _handleRewards(rewards);
-    }
-
-    function _setIsDepositSourceThisVault(bool _isDepositSourceThisVault) internal {
-        _setUint256(_IS_DEPOSIT_SOURCE_THIS_VAULT_SLOT, _isDepositSourceThisVault ? 1 : 0);
-        emit IsDepositSourceThisVaultSet(_isDepositSourceThisVault);
-    }
-
-    function _handleRewards(IInfraredVault.UserReward[] memory _rewards) internal {
-        IIsolationModeVaultFactory factory = IIsolationModeVaultFactory(VAULT_FACTORY());
-        for (uint256 i = 0; i < _rewards.length; ++i) {
-            if (_rewards[i].amount > 0) {
-                if (_rewards[i].token == UNDERLYING_TOKEN()) {
-                    _setIsDepositSourceThisVault(true);
-                    factory.depositIntoDolomiteMargin(
-                        DEFAULT_ACCOUNT_NUMBER,
-                        _rewards[i].amount
-                    );
-                    /*assert(!isDepositSourceThisVault());*/
-                } else {
-                    try DOLOMITE_MARGIN().getMarketIdByTokenAddress(_rewards[i].token) returns (uint256 marketId) {
-                        IERC20(_rewards[i].token).safeApprove(address(DOLOMITE_MARGIN()), _rewards[i].amount);
-                        try factory.depositOtherTokenIntoDolomiteMarginForVaultOwner(
-                            DEFAULT_ACCOUNT_NUMBER,
-                            marketId,
-                            _rewards[i].amount
-                        ) {} catch {
-                            IERC20(_rewards[i].token).safeApprove(address(DOLOMITE_MARGIN()), 0);
-                            IERC20(_rewards[i].token).safeTransfer(OWNER(), _rewards[i].amount);
-                        }
-                    } catch {
-                        IERC20(_rewards[i].token).safeTransfer(OWNER(), _rewards[i].amount);
-                    }
-                }
-            }
-        }
+    function _getMetaVault() internal view returns (address) {
+        return registry().getMetaVaultByVault(address(this));
     }
 }

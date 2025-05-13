@@ -123,7 +123,9 @@ contract POLIsolationModeTokenVaultV1 is
         uint256 _accountNumber,
         uint256 _amount
     ) external onlyLiquidator(msg.sender) returns (uint256) {
-        return _unstakeBeforeUnwrapping(_accountNumber, _amount, /* _isLiquidation = */ true);
+        uint256 newInputAmountWei = _unstakeBeforeUnwrapping(_accountNumber, _amount, /* _isLiquidation = */ true);
+        emit PrepareForLiquidation(_accountNumber, _amount);
+        return newInputAmountWei;
     }
 
     // ==================================================================

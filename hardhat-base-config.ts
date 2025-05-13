@@ -100,7 +100,7 @@ export const base_config: HardhatUserConfig = {
       allowUnlimitedContractSize: true,
       gas: 80_000_000,
       blockGasLimit: 100000000429720,
-      chainId: parseInt(Network.ArbitrumOne, 10),
+      chainId: parseInt(Network.Berachain, 10),
       chains: {
         [Network.PolygonZkEvm]: {
           hardforkHistory: {

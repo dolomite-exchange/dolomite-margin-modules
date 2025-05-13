@@ -33,6 +33,16 @@ import { IBerachainRewardsRegistry } from "./IBerachainRewardsRegistry.sol";
  */
 interface IPOLIsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
 
+    // ==================================================================
+    // ========================== Events =============================
+    // ==================================================================
+
+    event PrepareForLiquidation(uint256 accountNumber, uint256 amount);
+
+    // ==================================================================
+    // ========================== Functions =============================
+    // ==================================================================
+
     function stake(IBerachainRewardsRegistry.RewardVaultType _type, uint256 _amount) external;
 
     function unstake(IBerachainRewardsRegistry.RewardVaultType _type, uint256 _amount) external;

@@ -68,8 +68,7 @@ import {
 import {
   AAVE_MAP,
   ARB_MAP,
-  BERA_ETH_MAP,
-  BGT_MAP,
+  BERA_ETH_MAP, BGT_MAP,
   BTC_PLACEHOLDER_MAP,
   CHAINLINK_AUTOMATION_REGISTRY_MAP,
   CHAINLINK_PRICE_AGGREGATORS_MAP,
@@ -96,9 +95,11 @@ import {
   D_GM_WST_ETH_USD_MAP,
   D_GMX_MAP,
   DAI_MAP,
+  DE_USD_MAP,
   DFS_GLP_MAP,
   DJ_USDC_V1,
   DJ_USDC_V2,
+  DOLO_MAP,
   DPLV_GLP_MAP,
   DPT_EZ_ETH_JUN_2024_MAP,
   DPT_EZ_ETH_SEP_2024_MAP,
@@ -155,10 +156,10 @@ import {
   S_USDA_MAP,
   S_USDE_MAP,
   S_USDS_MAP,
+  SDE_USD_MAP,
   SIZE_MAP,
   SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL,
   SOL_MAP,
-  X_SOLV_BTC_MAP,
   SOLV_BTC_MAP,
   SR_USD_MAP,
   ST_BTC_MAP,
@@ -188,17 +189,18 @@ import {
   WO_ETH_MAP,
   WOKB_MAP,
   WST_ETH_MAP,
+  X_SOLV_BTC_MAP,
   XAI_MAP,
   YL_FBTC_MAP,
   YL_PUMP_BTC_MAP,
-  YL_ST_ETH_MAP, DOLO_MAP, SDE_USD_MAP, DE_USD_MAP,
+  YL_ST_ETH_MAP,
 } from '../../src/utils/constants';
 import {
   ADDRESS_ZERO,
   BYTES_EMPTY,
+  DolomiteNetwork,
   Network,
   NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP,
-  DolomiteNetwork,
 } from '../../src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '../../src/utils/SignerWithAddressWithSafety';
 import {
@@ -237,14 +239,13 @@ import { createPendleEcosystemArbitrumOne, createPendleEcosystemMantle } from '.
 import { createPlutusEcosystem } from './ecosystem-utils/plutus';
 import { createPremiaEcosystem } from './ecosystem-utils/premia';
 import { createTestEcosystem } from './ecosystem-utils/testers';
-import { createTokenomicsEcosystem } from './ecosystem-utils/tokenomics';
-import { createTokenomicsAirdropEcosystem } from './ecosystem-utils/tokenomics-airdrop';
 import { createUmamiEcosystem } from './ecosystem-utils/umami';
 import { getRealLatestBlockNumber, impersonate, impersonateOrFallback, resetForkIfPossible } from './index';
 import { readDeploymentFile } from '@dolomite-exchange/modules-deployments/src/utils/deploy-utils';
-import { impersonate, impersonateOrFallback, resetForkIfPossible } from './index';
-import { IBGT__factory } from 'packages/berachain/src/types';
 import { createBerachainRewardsEcosystem } from './ecosystem-utils/berachain-rewards';
+import { createTokenomicsEcosystem } from './ecosystem-utils/tokenomics';
+import { createTokenomicsAirdropEcosystem } from './ecosystem-utils/tokenomics-airdrop';
+import { IBGT__factory } from '@dolomite-exchange/modules-berachain/src/types';
 
 /**
  * Config to for setting up tests in the `before` function
@@ -444,7 +445,7 @@ export async function setupUSDCBalance<T extends DolomiteNetwork>(
   } else if (core.network === Network.XLayer) {
     whaleAddress = '0x2d22604d6bbf51839c404aef5c65443e424e0945';
   } else if (core.network === Network.Berachain) {
-    const whaleAddress = '0x4Be03f781C497A489E3cB0287833452cA9B9E80B'; // BEX vault
+    whaleAddress = '0x4Be03f781C497A489E3cB0287833452cA9B9E80B'; // BEX vault
     const whaleSigner = await impersonate(whaleAddress, true);
     await core.tokens.usdc.connect(whaleSigner).transfer(signer.address, amount);
     await core.tokens.usdc.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
@@ -1018,6 +1019,7 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
     tokenVaultActionsImpl: createTokenVaultActionsLibraries(config),
     unwrapperTraderImpl: createAsyncUnwrapperImplLibraries(config),
     wrapperTraderImpl: createAsyncWrapperImplLibraries(config),
+    genericTraderProxyV2Lib: createGenericTraderProxyV2LibLibraries(config),
   };
 
   const coreProtocolParams: CoreProtocolParams<T> = {
@@ -1725,6 +1727,17 @@ function createTokenVaultActionsLibraries<T extends DolomiteNetwork>(
   return {
     IsolationModeTokenVaultV1ActionsImpl: getMaxDeploymentVersionAddressByDeploymentKey(
       'IsolationModeTokenVaultV1ActionsImpl',
+      config.network,
+    ),
+  };
+}
+
+function createGenericTraderProxyV2LibLibraries<T extends DolomiteNetwork>(
+  config: CoreProtocolSetupConfig<T>,
+): Record<string, string> {
+  return {
+    GenericTraderProxyV2Lib: getMaxDeploymentVersionAddressByDeploymentKey(
+      'GenericTraderProxyV2Lib',
       config.network,
     ),
   };

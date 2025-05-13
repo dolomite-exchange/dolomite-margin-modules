@@ -148,7 +148,7 @@ export async function expectProtocolBalance<T extends DolomiteNetwork>(
   );
 }
 
-export async function expectProtocolParBalance<T extends Network>(
+export async function expectProtocolParBalance<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   accountOwner: { address: address } | address,
   accountNumber: BigNumberish,

@@ -14,9 +14,12 @@ import { IBGT } from 'packages/berachain/src/types';
 import { BerachainRewardsEcosystem } from '../ecosystem-utils/berachain-rewards';
 import { TokenomicsEcosystem } from '../ecosystem-utils/tokenomics';
 import { TokenomicsAirdropEcosystem } from '../ecosystem-utils/tokenomics-airdrop';
+import { IBGT } from 'packages/berachain/src/types';
+import { BerachainRewardsEcosystem } from '../ecosystem-utils/berachain-rewards';
 
 export interface CoreProtocolTokensBerachain extends CoreProtocolTokens<Network.Berachain> {
   beraEth: IERC20;
+  bgt: IBGT;
   btcPlaceholder: IERC20;
   deUsd: IERC20;
   dolo: IERC20;
@@ -162,6 +165,8 @@ export class CoreProtocolBerachain extends CoreProtocolAbstract<Network.Berachai
     berachainParams: CoreProtocolParamsBerachain,
   ) {
     super(params);
+    this.berachainRewardsEcosystem = berachainParams.berachainRewardsEcosystem;
+    this.oogaBoogaEcosystem = berachainParams.oogaBoogaEcosystem;
     this.chroniclePriceOracleV3 = berachainParams.chroniclePriceOracleV3;
     this.chainsightPriceOracleV3 = berachainParams.chainsightPriceOracleV3;
     this.dolomiteTokens = berachainParams.dTokens;
@@ -171,7 +176,5 @@ export class CoreProtocolBerachain extends CoreProtocolAbstract<Network.Berachai
     this.tokenomics = berachainParams.tokenomics;
     this.tokenomicsAirdrop = berachainParams.tokenomicsAirdrop;
     this.tokens = berachainParams.tokens;
-    this.berachainRewardsEcosystem = berachainParams.berachainRewardsEcosystem;
-    this.oogaBoogaEcosystem = berachainParams.oogaBoogaEcosystem;
   }
 }

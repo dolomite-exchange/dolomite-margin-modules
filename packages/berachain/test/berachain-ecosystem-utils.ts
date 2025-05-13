@@ -252,13 +252,13 @@ export async function upgradeAndSetupDTokensAndOwnerForPOLTests(core: CoreProtoc
   await dTokenProxy.upgradeTo(implementation.address);
 
   const dolomiteOwner = (await createDolomiteOwner(core, 30)).connect(core.gnosisSafe);
-  console.log("dolomite owner contract address: ", dolomiteOwner.address);
   const bypassTimelockRole = await dolomiteOwner.BYPASS_TIMELOCK_ROLE();
   const executorRole = await dolomiteOwner.EXECUTOR_ROLE();
-  const dTokenRole = await dolomiteOwner.D_TOKEN_WITHDRAW_EXCESS_ROLE();
+  const dTokenRole = '0xcd86ded6d567eb7adb1b98d283b7e4004869021f7651dbae982e0992bfe0df5a';
   const ownable = Ownable__factory.connect(core.dolomiteMargin.address, core.governance);
   await ownable.transferOwnership(dolomiteOwner.address);
 
+  await dolomiteOwner.ownerAddRole(dTokenRole);
   await dolomiteOwner.connect(core.gnosisSafe).grantRole(bypassTimelockRole, dToken.address);
   await dolomiteOwner.connect(core.gnosisSafe).grantRole(executorRole, dToken.address);
 

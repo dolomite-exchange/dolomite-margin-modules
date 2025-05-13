@@ -36,10 +36,15 @@ contract TestInfraredVault is ERC20 {
     address public immutable asset;
     address[] public rewardTokens;
     mapping(address => uint256) public rewardAmounts;
+    bool public paused;
 
 
     constructor(address _asset) ERC20("TestInfraredVault", "TEST") {
         asset = _asset;
+    }
+
+    function setPaused(bool _paused) external {
+        paused = _paused;
     }
 
     function setRewardTokens(address[] memory _rewardTokens) external {
@@ -57,12 +62,11 @@ contract TestInfraredVault is ERC20 {
     }
 
     function getReward() public {
-        for (uint256 i = 0; i < rewardTokens.length; i++) {
-            IERC20 token = IERC20(rewardTokens[i]);
-            uint256 reward = rewardAmounts[address(token)];
-            rewardAmounts[address(token)] = 0;
-            token.transfer(msg.sender, reward);
-        }
+        _getReward(msg.sender);
+    }
+
+    function getRewardForUser(address _user) public {
+        _getReward(_user);
     }
 
     function exit() external {
@@ -123,5 +127,14 @@ contract TestInfraredVault is ERC20 {
         lastUpdateTime = 0;
         rewardPerTokenStored = 0;
         rewardResidual = 0;
+    }
+
+    function _getReward(address _user) internal {
+        for (uint256 i = 0; i < rewardTokens.length; i++) {
+            IERC20 token = IERC20(rewardTokens[i]);
+            uint256 reward = rewardAmounts[address(token)];
+            rewardAmounts[address(token)] = 0;
+            token.transfer(_user, reward);
+        }
     }
 }

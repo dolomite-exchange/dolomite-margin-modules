@@ -90,6 +90,11 @@ import { SignerWithAddressWithSafety } from '../../../base/src/utils/SignerWithA
 import { impersonate } from '../../../base/test/utils';
 import ModuleDeployments from '../deploy/deployments.json';
 import { CREATE3Factory__factory } from '../saved-types';
+import { IBerachainRewardsRegistry, POLIsolationModeTokenVaultV1, POLIsolationModeUnwrapperTraderV2__factory, POLIsolationModeVaultFactory__factory, POLIsolationModeWrapperTraderV2, POLIsolationModeWrapperTraderV2__factory, POLPriceOracleV2__factory } from 'packages/berachain/src/types';
+import { POLIsolationModeVaultFactory } from 'packages/berachain/src/types';
+import { POLIsolationModeUnwrapperTraderV2 } from 'packages/berachain/src/types';
+import { POLPriceOracleV2 } from 'packages/berachain/src/types';
+import { getPOLIsolationModeVaultFactoryConstructorParams } from 'packages/berachain/src/berachain-constructors';
 
 type ChainId = string;
 
@@ -811,6 +816,75 @@ export async function deployPendlePtSystem<T extends DolomiteNetwork>(
     oracle,
     unwrapper: PendlePtIsolationModeUnwrapperTraderV2__factory.connect(unwrapperAddress, core.governance),
     wrapper: PendlePtIsolationModeWrapperTraderV2__factory.connect(wrapperAddress, core.governance),
+  };
+}
+
+export interface BerachainPOLSystem {
+  factory: POLIsolationModeVaultFactory;
+  oracle: POLPriceOracleV2;
+  unwrapper: POLIsolationModeUnwrapperTraderV2;
+  wrapper: POLIsolationModeWrapperTraderV2;
+}
+
+export async function deployBerachainPOLSystem<T extends DolomiteNetwork>(
+  core: CoreProtocolType<T>,
+  registry: IBerachainRewardsRegistry,
+  dToken: DolomiteERC4626,
+  polName: string,
+  userVaultImplementation: POLIsolationModeTokenVaultV1,
+  polUnwrapperImplementation: POLIsolationModeUnwrapperTraderV2,
+  polWrapperImplementation: POLIsolationModeWrapperTraderV2,
+): Promise<BerachainPOLSystem> {
+  if (core.network !== Network.Berachain) {
+    return Promise.reject(new Error('Core protocol is not Berachain'));
+  }
+  const marketId = await dToken.marketId();
+  if (!marketId) {
+    return Promise.reject(new Error('Invalid dToken'));
+  }
+  
+  const factoryAddress = await deployContractAndSave(
+    'POLIsolationModeVaultFactory',
+    getPOLIsolationModeVaultFactoryConstructorParams(
+      core,
+      registry,
+      dToken,
+      userVaultImplementation,
+      [], // @follow-up add collateral and debt markets
+      [],
+    ),
+    `${polName}IsolationModeVaultFactory`,
+  );
+  const factory = POLIsolationModeVaultFactory__factory.connect(factoryAddress, core.governance);
+
+  const calldata = await polUnwrapperImplementation.populateTransaction.initialize(factory.address);
+  const unwrapperProxyAddress = await deployContractAndSave(
+    'POLIsolationModeUnwrapperUpgradeableProxy',
+    [registry.address, calldata.data!],
+    `${polName}IsolationModeUnwrapperUpgradeableProxy`,
+  );
+  const unwrapper = POLIsolationModeUnwrapperTraderV2__factory.connect(unwrapperProxyAddress, core.governance);
+
+  const wrapperCalldata = await polWrapperImplementation.populateTransaction.initialize(factory.address);
+  const wrapperProxyAddress = await deployContractAndSave(
+    'POLIsolationModeWrapperUpgradeableProxy',
+    [registry.address, wrapperCalldata.data!],
+    `${polName}IsolationModeWrapperUpgradeableProxy`,
+  );
+  const wrapper = POLIsolationModeWrapperTraderV2__factory.connect(wrapperProxyAddress, core.governance);
+
+  const oracleAddress = await deployContractAndSave(
+    'POLPriceOracleV2',
+    [factory.address, core.dolomiteMargin.address],
+    `${polName}PriceOracleV2`,
+  );
+  const oracle = POLPriceOracleV2__factory.connect(oracleAddress, core.governance);
+
+  return {
+    factory,
+    unwrapper,
+    wrapper,
+    oracle,
   };
 }
 
