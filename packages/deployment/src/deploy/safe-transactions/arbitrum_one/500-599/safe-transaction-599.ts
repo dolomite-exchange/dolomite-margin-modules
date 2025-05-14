@@ -1,57 +1,30 @@
-import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { getAndCheckSpecificNetwork } from 'packages/base/src/utils/dolomite-utils';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber } from 'packages/base/test/utils';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
-import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
+import { GMXV2_TOKEN_ADDRESS_MAP } from 'packages/base/src/utils/constants';
+import { encodeInsertChainlinkOracleV3 } from 'packages/deployment/src/utils/encoding/oracle-encoder-utils';
 
 /**
  * This script encodes the following transactions:
- * - Sets the GLV tokens to default GMX markets for deposits and withdrawals
+ * - Adds the GLV/ETH GM markets index tokens to the oracle aggregator
  */
 async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
   const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
 
-  const glvRegistry = core.glvEcosystem.live.registry;
-
-  const glvBtc = core.glvEcosystem.glvTokens.wbtcUsdc.glvToken;
-  const glvEth = core.glvEcosystem.glvTokens.wethUsdc.glvToken;
-
+  const tokenSymbols = Object.keys(GMXV2_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]);
   const transactions: EncodedTransaction[] = [];
-  transactions.push(
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { glvRegistry: glvRegistry },
-      'glvRegistry',
-      'ownerSetGlvTokenToGmMarketForDeposit',
-      [glvBtc.address, core.gmxV2Ecosystem.gmTokens.btcUsd.marketToken.address],
-    ),
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { glvRegistry: glvRegistry },
-      'glvRegistry',
-      'ownerSetGlvTokenToGmMarketForWithdrawal',
-      [glvBtc.address, core.gmxV2Ecosystem.gmTokens.btcUsd.marketToken.address],
-    ),
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { glvRegistry: glvRegistry },
-      'glvRegistry',
-      'ownerSetGlvTokenToGmMarketForDeposit',
-      [glvEth.address, core.gmxV2Ecosystem.gmTokens.ethUsd.marketToken.address],
-    ),
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { glvRegistry: glvRegistry },
-      'glvRegistry',
-      'ownerSetGlvTokenToGmMarketForWithdrawal',
-      [glvEth.address, core.gmxV2Ecosystem.gmTokens.ethUsd.marketToken.address],
-    ),
-  );
 
+  for (const tokenSymbol of tokenSymbols) {
+    const tokenAddress = GMXV2_TOKEN_ADDRESS_MAP[Network.ArbitrumOne][tokenSymbol];
+    transactions.push(
+      ...(await encodeInsertChainlinkOracleV3(core, { address: tokenAddress } as any))
+    );
+  }
+  
   return {
     core,
     scriptName: getScriptName(__filename),
@@ -61,22 +34,10 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       addExecuteImmediatelyTransactions: true,
     },
     invariants: async () => {
-      assertHardhatInvariant(
-        (await glvRegistry.glvTokenToGmMarketForDeposit(glvBtc.address)) === core.gmxV2Ecosystem.gmTokens.btcUsd.marketToken.address,
-        'Invalid gm market for glv btc',
-      );
-      assertHardhatInvariant(
-        (await glvRegistry.glvTokenToGmMarketForWithdrawal(glvBtc.address)) === core.gmxV2Ecosystem.gmTokens.btcUsd.marketToken.address,
-        'Invalid gm market for glv btc',
-      );
-      assertHardhatInvariant(
-        (await glvRegistry.glvTokenToGmMarketForDeposit(glvEth.address)) === core.gmxV2Ecosystem.gmTokens.ethUsd.marketToken.address,
-        'Invalid gm market for glv eth',
-      );
-      assertHardhatInvariant(
-        (await glvRegistry.glvTokenToGmMarketForWithdrawal(glvEth.address)) === core.gmxV2Ecosystem.gmTokens.ethUsd.marketToken.address,
-        'Invalid gm market for glv eth',
-      );
+      for (const tokenSymbol of tokenSymbols) {
+        const tokenAddress = GMXV2_TOKEN_ADDRESS_MAP[Network.ArbitrumOne][tokenSymbol];
+        console.log(tokenSymbol + ' price: ' + (await core.oracleAggregatorV2.getPrice(tokenAddress)).value.toString());
+      }
     },
   };
 }
