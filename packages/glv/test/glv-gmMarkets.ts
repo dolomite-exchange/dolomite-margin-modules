@@ -5,7 +5,7 @@ import { setupCoreProtocol, setupTestMarket } from "packages/base/test/utils/set
 import { GlvIsolationModeTokenVaultV1, GlvIsolationModeTokenVaultV1__factory } from "../src/types";
 import { SignerWithAddressWithSafety } from "packages/base/src/utils/SignerWithAddressWithSafety";
 import { ZERO_ADDRESS } from "@openzeppelin/upgrades/lib/utils/Addresses";
-import { CHAINLINK_PRICE_AGGREGATORS_MAP, GMXV2_TOKEN_ADDRESS_MAP } from "packages/base/src/utils/constants";
+import { CHAINLINK_PRICE_AGGREGATORS_MAP, GMXV2_TOKEN_ADDRESS_MAP, INVALID_TOKEN_MAP } from "packages/base/src/utils/constants";
 import { createGmxV2IsolationModeVaultFactory, createGmxV2Library } from "packages/gmx-v2/test/gmx-v2-ecosystem-utils";
 import { GMX_V2_EXECUTION_FEE_FOR_TESTS } from "packages/gmx-v2/src/gmx-v2-constructors";
 import { formatEther } from "ethers/lib/utils";
@@ -36,7 +36,283 @@ describe('Glv Gm Markets Test', () => {
     snapshotId = await revertToSnapshotAndCapture(snapshotId);
   });
 
-  describe('#bug', () => {
+  describe('#glv btc', () => {
+    it('should work normally for ada', async () => {
+      // Add ada oracle and gmx ada address
+      const gmxAdaAddress = GMXV2_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['ADA'];
+      await core.chainlinkPriceOracleV3.connect(core.governance).ownerInsertOrUpdateOracleToken(
+        gmxAdaAddress,
+        CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][gmxAdaAddress]!.aggregatorAddress,
+        false
+      );
+      await core.oracleAggregatorV2.connect(core.governance).ownerInsertOrUpdateToken({
+        oracleInfos: [
+          { oracle: core.chainlinkPriceOracleV3.address, tokenPair: ZERO_ADDRESS, weight: 100 }
+        ],
+        decimals: INVALID_TOKEN_MAP[Network.ArbitrumOne][gmxAdaAddress]!.decimals,
+        token: gmxAdaAddress
+      });
+
+      const gmxV2Library = await createGmxV2Library();
+      const factory = await createGmxV2IsolationModeVaultFactory(
+        core,
+        gmxV2Library,
+        core.gmxV2Ecosystem.live.registry,
+        [core.marketIds.wbtc, core.marketIds.nativeUsdc],
+        [core.marketIds.wbtc, core.marketIds.nativeUsdc],
+        core.gmxV2Ecosystem.gmTokens.adaUsd,
+        core.gmxV2Ecosystem.live.tokenVaultImplementation,
+        GMX_V2_EXECUTION_FEE_FOR_TESTS
+      );
+      await core.gmxV2Ecosystem.live.registry.connect(core.governance).ownerSetGmxMarketToIndexToken(
+        core.gmxV2Ecosystem.gmTokens.adaUsd.marketToken.address,
+        core.gmxV2Ecosystem.gmTokens.adaUsd.indexToken.address
+      );
+      await core.gmxV2Ecosystem.live.priceOracle.connect(core.governance).ownerSetMarketToken(factory.address, true);
+
+      await setupTestMarket(core, factory, true, core.gmxV2Ecosystem.live.priceOracle);
+      await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
+      await factory.connect(core.governance).ownerInitialize([]);
+
+      console.log("ada gm price: ", formatEther((await core.gmxV2Ecosystem.live.priceOracle.getPrice(factory.address)).value.toString()));
+    });
+
+    it('should work normally for cake', async () => {
+      const gmxCakeAddress = GMXV2_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['CAKE'];
+      await core.chainlinkPriceOracleV3.connect(core.governance).ownerInsertOrUpdateOracleToken(
+        gmxCakeAddress,
+        CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][gmxCakeAddress]!.aggregatorAddress,
+        false
+      );
+      await core.oracleAggregatorV2.connect(core.governance).ownerInsertOrUpdateToken({
+        oracleInfos: [
+          { oracle: core.chainlinkPriceOracleV3.address, tokenPair: ZERO_ADDRESS, weight: 100 }
+        ],
+        decimals: INVALID_TOKEN_MAP[Network.ArbitrumOne][gmxCakeAddress]!.decimals,
+        token: gmxCakeAddress
+      });
+
+      const gmxV2Library = await createGmxV2Library();
+      const factory = await createGmxV2IsolationModeVaultFactory(
+        core,
+        gmxV2Library,
+        core.gmxV2Ecosystem.live.registry,
+        [core.marketIds.wbtc, core.marketIds.nativeUsdc],
+        [core.marketIds.wbtc, core.marketIds.nativeUsdc],
+        core.gmxV2Ecosystem.gmTokens.cakeUsd,
+        core.gmxV2Ecosystem.live.tokenVaultImplementation,
+        GMX_V2_EXECUTION_FEE_FOR_TESTS
+      );
+      await core.gmxV2Ecosystem.live.registry.connect(core.governance).ownerSetGmxMarketToIndexToken(
+        core.gmxV2Ecosystem.gmTokens.cakeUsd.marketToken.address,
+        core.gmxV2Ecosystem.gmTokens.cakeUsd.indexToken.address
+      );
+      await core.gmxV2Ecosystem.live.priceOracle.connect(core.governance).ownerSetMarketToken(factory.address, true);
+
+      await setupTestMarket(core, factory, true, core.gmxV2Ecosystem.live.priceOracle);
+      await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
+      await factory.connect(core.governance).ownerInitialize([]);
+
+      console.log("cake gm price: ", formatEther((await core.gmxV2Ecosystem.live.priceOracle.getPrice(factory.address)).value.toString()));
+    });
+
+    it('should work normally for dot', async () => {
+      const gmxDotAddress = GMXV2_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['DOT'];
+      await core.chainlinkPriceOracleV3.connect(core.governance).ownerInsertOrUpdateOracleToken(
+        gmxDotAddress,
+        CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][gmxDotAddress]!.aggregatorAddress,
+        false
+      );
+      await core.oracleAggregatorV2.connect(core.governance).ownerInsertOrUpdateToken({
+        oracleInfos: [
+          { oracle: core.chainlinkPriceOracleV3.address, tokenPair: ZERO_ADDRESS, weight: 100 }
+        ],
+        decimals: INVALID_TOKEN_MAP[Network.ArbitrumOne][gmxDotAddress]!.decimals,
+        token: gmxDotAddress
+      });
+
+      const gmxV2Library = await createGmxV2Library();
+      const factory = await createGmxV2IsolationModeVaultFactory(
+        core,
+        gmxV2Library,
+        core.gmxV2Ecosystem.live.registry,
+        [core.marketIds.wbtc, core.marketIds.nativeUsdc],
+        [core.marketIds.wbtc, core.marketIds.nativeUsdc],
+        core.gmxV2Ecosystem.gmTokens.dotUsd,
+        core.gmxV2Ecosystem.live.tokenVaultImplementation,
+        GMX_V2_EXECUTION_FEE_FOR_TESTS
+      );
+      await core.gmxV2Ecosystem.live.registry.connect(core.governance).ownerSetGmxMarketToIndexToken(
+        core.gmxV2Ecosystem.gmTokens.dotUsd.marketToken.address,
+        core.gmxV2Ecosystem.gmTokens.dotUsd.indexToken.address
+      );
+      await core.gmxV2Ecosystem.live.priceOracle.connect(core.governance).ownerSetMarketToken(factory.address, true);
+
+      await setupTestMarket(core, factory, true, core.gmxV2Ecosystem.live.priceOracle);
+      await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
+      await factory.connect(core.governance).ownerInitialize([]);
+
+      console.log("dot gm price: ", formatEther((await core.gmxV2Ecosystem.live.priceOracle.getPrice(factory.address)).value.toString()));
+    });
+
+    it('should work normally for hype', async () => {
+      const gmxHypeAddress = GMXV2_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['HYPE'];
+      await core.chainlinkPriceOracleV3.connect(core.governance).ownerInsertOrUpdateOracleToken(
+        gmxHypeAddress,
+        CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][gmxHypeAddress]!.aggregatorAddress,
+        false
+      );
+      await core.oracleAggregatorV2.connect(core.governance).ownerInsertOrUpdateToken({
+        oracleInfos: [
+          { oracle: core.chainlinkPriceOracleV3.address, tokenPair: ZERO_ADDRESS, weight: 100 }
+        ],
+        decimals: INVALID_TOKEN_MAP[Network.ArbitrumOne][gmxHypeAddress]!.decimals,
+        token: gmxHypeAddress
+      });
+
+      const gmxV2Library = await createGmxV2Library();
+      const factory = await createGmxV2IsolationModeVaultFactory(
+        core,
+        gmxV2Library,
+        core.gmxV2Ecosystem.live.registry,
+        [core.marketIds.wbtc, core.marketIds.nativeUsdc],
+        [core.marketIds.wbtc, core.marketIds.nativeUsdc],
+        core.gmxV2Ecosystem.gmTokens.hypeUsd,
+        core.gmxV2Ecosystem.live.tokenVaultImplementation,
+        GMX_V2_EXECUTION_FEE_FOR_TESTS
+      );
+      await core.gmxV2Ecosystem.live.registry.connect(core.governance).ownerSetGmxMarketToIndexToken(
+        core.gmxV2Ecosystem.gmTokens.hypeUsd.marketToken.address,
+        core.gmxV2Ecosystem.gmTokens.hypeUsd.indexToken.address
+      );
+      await core.gmxV2Ecosystem.live.priceOracle.connect(core.governance).ownerSetMarketToken(factory.address, true);
+
+      await setupTestMarket(core, factory, true, core.gmxV2Ecosystem.live.priceOracle);
+      await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
+      await factory.connect(core.governance).ownerInitialize([]);
+
+      console.log("hype gm price: ", formatEther((await core.gmxV2Ecosystem.live.priceOracle.getPrice(factory.address)).value.toString()));
+    });
+
+    it('should work normally for ordi', async () => {
+      const gmxOrdiAddress = GMXV2_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['ORDI'];
+      await core.chainlinkPriceOracleV3.connect(core.governance).ownerInsertOrUpdateOracleToken(
+        gmxOrdiAddress,
+        CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][gmxOrdiAddress]!.aggregatorAddress,
+        false
+      );
+      await core.oracleAggregatorV2.connect(core.governance).ownerInsertOrUpdateToken({
+        oracleInfos: [
+          { oracle: core.chainlinkPriceOracleV3.address, tokenPair: ZERO_ADDRESS, weight: 100 }
+        ],
+        decimals: INVALID_TOKEN_MAP[Network.ArbitrumOne][gmxOrdiAddress]!.decimals,
+        token: gmxOrdiAddress
+      });
+
+      const gmxV2Library = await createGmxV2Library();
+      const factory = await createGmxV2IsolationModeVaultFactory(
+        core,
+        gmxV2Library,
+        core.gmxV2Ecosystem.live.registry,
+        [core.marketIds.wbtc, core.marketIds.nativeUsdc],
+        [core.marketIds.wbtc, core.marketIds.nativeUsdc],
+        core.gmxV2Ecosystem.gmTokens.ordiUsd,
+        core.gmxV2Ecosystem.live.tokenVaultImplementation,
+        GMX_V2_EXECUTION_FEE_FOR_TESTS
+      );
+      await core.gmxV2Ecosystem.live.registry.connect(core.governance).ownerSetGmxMarketToIndexToken(
+        core.gmxV2Ecosystem.gmTokens.ordiUsd.marketToken.address,
+        core.gmxV2Ecosystem.gmTokens.ordiUsd.indexToken.address
+      );
+      await core.gmxV2Ecosystem.live.priceOracle.connect(core.governance).ownerSetMarketToken(factory.address, true);
+
+      await setupTestMarket(core, factory, true, core.gmxV2Ecosystem.live.priceOracle);
+      await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
+      await factory.connect(core.governance).ownerInitialize([]);
+
+      console.log("ordi gm price: ", formatEther((await core.gmxV2Ecosystem.live.priceOracle.getPrice(factory.address)).value.toString()));
+    });
+
+    it('should work normally for stx', async () => {
+      const gmxStxAddress = GMXV2_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['STX'];
+      await core.chainlinkPriceOracleV3.connect(core.governance).ownerInsertOrUpdateOracleToken(
+        gmxStxAddress,
+        CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][gmxStxAddress]!.aggregatorAddress,
+        false
+      );
+      await core.oracleAggregatorV2.connect(core.governance).ownerInsertOrUpdateToken({
+        oracleInfos: [
+          { oracle: core.chainlinkPriceOracleV3.address, tokenPair: ZERO_ADDRESS, weight: 100 }
+        ],
+        decimals: INVALID_TOKEN_MAP[Network.ArbitrumOne][gmxStxAddress]!.decimals,
+        token: gmxStxAddress
+      });
+
+      const gmxV2Library = await createGmxV2Library();
+      const factory = await createGmxV2IsolationModeVaultFactory(
+        core,
+        gmxV2Library,
+        core.gmxV2Ecosystem.live.registry,
+        [core.marketIds.wbtc, core.marketIds.nativeUsdc],
+        [core.marketIds.wbtc, core.marketIds.nativeUsdc],
+        core.gmxV2Ecosystem.gmTokens.stxUsd,
+        core.gmxV2Ecosystem.live.tokenVaultImplementation,
+        GMX_V2_EXECUTION_FEE_FOR_TESTS
+      );
+      await core.gmxV2Ecosystem.live.registry.connect(core.governance).ownerSetGmxMarketToIndexToken(
+        core.gmxV2Ecosystem.gmTokens.stxUsd.marketToken.address,
+        core.gmxV2Ecosystem.gmTokens.stxUsd.indexToken.address
+      );
+      await core.gmxV2Ecosystem.live.priceOracle.connect(core.governance).ownerSetMarketToken(factory.address, true);
+
+      await setupTestMarket(core, factory, true, core.gmxV2Ecosystem.live.priceOracle);
+      await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
+      await factory.connect(core.governance).ownerInitialize([]);
+
+      console.log("stx gm price: ", formatEther((await core.gmxV2Ecosystem.live.priceOracle.getPrice(factory.address)).value.toString()));
+    });
+
+    it('should work normally for tao', async () => {
+      const gmxTaoAddress = GMXV2_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['TAO'];
+      await core.chainlinkPriceOracleV3.connect(core.governance).ownerInsertOrUpdateOracleToken(
+        gmxTaoAddress,
+        CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][gmxTaoAddress]!.aggregatorAddress,
+        false
+      );
+      await core.oracleAggregatorV2.connect(core.governance).ownerInsertOrUpdateToken({
+        oracleInfos: [
+          { oracle: core.chainlinkPriceOracleV3.address, tokenPair: ZERO_ADDRESS, weight: 100 }
+        ],
+        decimals: INVALID_TOKEN_MAP[Network.ArbitrumOne][gmxTaoAddress]!.decimals,
+        token: gmxTaoAddress
+      });
+
+      const gmxV2Library = await createGmxV2Library();
+      const factory = await createGmxV2IsolationModeVaultFactory(
+        core,
+        gmxV2Library,
+        core.gmxV2Ecosystem.live.registry,
+        [core.marketIds.wbtc, core.marketIds.nativeUsdc],
+        [core.marketIds.wbtc, core.marketIds.nativeUsdc],
+        core.gmxV2Ecosystem.gmTokens.taoUsd,
+        core.gmxV2Ecosystem.live.tokenVaultImplementation,
+        GMX_V2_EXECUTION_FEE_FOR_TESTS
+      );
+      await core.gmxV2Ecosystem.live.registry.connect(core.governance).ownerSetGmxMarketToIndexToken(
+        core.gmxV2Ecosystem.gmTokens.taoUsd.marketToken.address,
+        core.gmxV2Ecosystem.gmTokens.taoUsd.indexToken.address
+      );
+      await core.gmxV2Ecosystem.live.priceOracle.connect(core.governance).ownerSetMarketToken(factory.address, true);
+
+      await setupTestMarket(core, factory, true, core.gmxV2Ecosystem.live.priceOracle);
+      await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
+      await factory.connect(core.governance).ownerInitialize([]);
+
+      console.log("tao gm price: ", formatEther((await core.gmxV2Ecosystem.live.priceOracle.getPrice(factory.address)).value.toString()));
+    });
+  });
+
+  describe('#glv eth', () => {
     it('should work normally for dolo', async () => {
       // Add dolo oracle and gmx dolo address
       const gmxDoloAddress = GMXV2_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['DOLO'];

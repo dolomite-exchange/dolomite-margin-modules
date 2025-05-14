@@ -10,6 +10,7 @@ import { encodeInsertChainlinkOracleV3 } from 'packages/deployment/src/utils/enc
 /**
  * This script encodes the following transactions:
  * - Adds the GLV/ETH GM markets index tokens to the oracle aggregator
+ * - Adds the GLV/BTC GM markets index tokens to the oracle aggregator
  */
 async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
