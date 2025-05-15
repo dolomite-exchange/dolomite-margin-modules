@@ -13,7 +13,7 @@ import { MAX_UINT_256_BI, ONE_BI, ZERO_BI } from 'packages/base/src/utils/no-dep
 import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
 import { impersonate } from 'packages/base/test/utils';
 import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
-import { createDolomiteOwner, createDolomiteOwnerV2, createIsolationModeTokenVaultV1ActionsImpl } from 'packages/base/test/utils/dolomite';
+import { createIsolationModeTokenVaultV1ActionsImpl } from 'packages/base/test/utils/dolomite';
 import {
   getBerachainRewardsRegistryConstructorParams,
   getInfraredBGTIsolationModeVaultFactoryConstructorParams,
@@ -24,7 +24,7 @@ import {
   BerachainRewardsRegistry__factory,
   IBaseMetaVault,
   IBaseMetaVault__factory,
-  IBerachainRewardsRegistry,
+  IBerachainRewardsRegistry, IERC4626__factory,
   InfraredBGTIsolationModeTokenVaultV1,
   InfraredBGTIsolationModeVaultFactory,
   InfraredBGTIsolationModeVaultFactory__factory,
@@ -48,7 +48,9 @@ import {
   TestPOLLiquidatorProxyV1,
   TestPOLLiquidatorProxyV1__factory,
 } from '../src/types';
-import { Ownable__factory, UpgradeableProxy__factory } from 'packages/tokenomics/src/types';
+import { Ownable__factory } from 'packages/tokenomics/src/types';
+import { UpgradeableProxy__factory } from 'packages/liquidity-mining/src/types';
+import { createDolomiteOwnerV2 } from '@dolomite-exchange/modules-admin/test/admin-ecosystem-utils';
 
 export enum RewardVaultType {
   Infrared,
@@ -132,11 +134,15 @@ export async function createPOLIsolationModeVaultFactory(
   initialAllowableDebtMarketIds: number[],
   initialAllowableCollateralMarketIds: number[],
 ): Promise<POLIsolationModeVaultFactory> {
+  const underlyingAddress = await IERC4626__factory.connect(dToken.address, core.hhUser1).asset();
+  const underlyingSymbol = await IERC4626__factory.connect(underlyingAddress, core.hhUser1).symbol();
+
   return createContractWithAbi<POLIsolationModeVaultFactory>(
     POLIsolationModeVaultFactory__factory.abi,
     POLIsolationModeVaultFactory__factory.bytecode,
     getPOLIsolationModeVaultFactoryConstructorParams(
       core,
+      underlyingSymbol,
       beraRegistry,
       dToken,
       userVaultImplementation,
@@ -251,7 +257,7 @@ export async function upgradeAndSetupDTokensAndOwnerForPOLTests(core: CoreProtoc
   const dTokenProxy = RegistryProxy__factory.connect(dToken.address, core.governance);
   await dTokenProxy.upgradeTo(implementation.address);
 
-  const dolomiteOwner = (await createDolomiteOwner(core, 30)).connect(core.gnosisSafe);
+  const dolomiteOwner = (await createDolomiteOwnerV2(core, 30)).connect(core.gnosisSafe);
   const bypassTimelockRole = await dolomiteOwner.BYPASS_TIMELOCK_ROLE();
   const executorRole = await dolomiteOwner.EXECUTOR_ROLE();
   const dTokenRole = '0xcd86ded6d567eb7adb1b98d283b7e4004869021f7651dbae982e0992bfe0df5a';

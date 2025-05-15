@@ -1,7 +1,6 @@
 import {
   DolomiteERC4626,
   DolomiteERC4626__factory,
-  DolomiteOwnerV2,
   RegistryProxy__factory,
 } from '@dolomite-exchange/modules-base/src/types';
 import {
@@ -60,9 +59,11 @@ import {
   upgradeAndSetupDTokensAndOwnerForPOLTests,
   wrapFullBalanceIntoVaultDefaultAccount,
 } from './berachain-ecosystem-utils';
-import { createDolomiteOwner, createDolomiteOwnerV2, createLiquidatorProxyV5, setupNewGenericTraderProxy } from 'packages/base/test/utils/dolomite';
+import { createLiquidatorProxyV5, setupNewGenericTraderProxy } from 'packages/base/test/utils/dolomite';
 import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
 import { Ownable__factory } from 'packages/tokenomics/src/types';
+import { DolomiteOwnerV2 } from '@dolomite-exchange/modules-admin/src/types';
+import { createDolomiteOwnerV2 } from '@dolomite-exchange/modules-admin/test/admin-ecosystem-utils';
 
 const defaultAccountNumber = ZERO_BI;
 const amountWei = parseEther('.5');

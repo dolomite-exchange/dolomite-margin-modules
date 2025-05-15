@@ -1,25 +1,31 @@
-import { expect } from 'chai';
-import { formatEther, parseEther } from 'ethers/lib/utils';
-import { CHAINSIGHT_KEYS_MAP, DOLOMITE_DAO_GNOSIS_SAFE_MAP } from '@dolomite-exchange/modules-base/src/utils/constants';
+import { parseEther } from 'ethers/lib/utils';
+import { CHAINSIGHT_KEYS_MAP } from '@dolomite-exchange/modules-base/src/utils/constants';
 import {
   TargetCollateralization,
   TargetLiquidationPenalty,
 } from '@dolomite-exchange/modules-base/src/utils/constructors/dolomite';
 import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { ADDRESS_ZERO, Network, ONE_ETH_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { getRealLatestBlockNumber, setEtherBalance } from '@dolomite-exchange/modules-base/test/utils';
+import { ADDRESS_ZERO, Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
 import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
-import {
-  encodeSetSingleCollateralWithStrictDebtByMarketId,
-  encodeSetSupplyCapWithMagic,
-} from '../../../../utils/encoding/dolomite-margin-core-encoder-utils';
 import getScriptName from '../../../../utils/get-script-name';
-import { deployBerachainPOLSystem, deployContractAndSave } from 'packages/deployment/src/utils/deploy-utils';
-import { getBerachainRewardsRegistryConstructorParams, getInfraredBGTIsolationModeVaultFactoryConstructorParams } from 'packages/berachain/src/berachain-constructors';
-import { BerachainRewardsRegistry__factory, InfraredBGTIsolationModeTokenVaultV1__factory, InfraredBGTIsolationModeVaultFactory__factory, InfraredBGTMetaVault__factory, POLIsolationModeTokenVaultV1__factory, POLLiquidatorProxyV1__factory } from 'packages/berachain/src/types';
-import { SimpleIsolationModeUnwrapperTraderV2__factory, SimpleIsolationModeWrapperTraderV2__factory } from 'packages/base/src/types';
+import { deployContractAndSave } from 'packages/deployment/src/utils/deploy-utils';
+import {
+  getBerachainRewardsRegistryConstructorParams,
+  getInfraredBGTIsolationModeVaultFactoryConstructorParams,
+} from 'packages/berachain/src/berachain-constructors';
+import {
+  BerachainRewardsRegistry__factory,
+  InfraredBGTIsolationModeTokenVaultV1__factory,
+  InfraredBGTIsolationModeVaultFactory__factory,
+  InfraredBGTMetaVault__factory,
+} from 'packages/berachain/src/types';
+import {
+  SimpleIsolationModeUnwrapperTraderV2__factory,
+  SimpleIsolationModeWrapperTraderV2__factory,
+} from 'packages/base/src/types';
 import { encodeAddIsolationModeMarket } from 'packages/deployment/src/utils/encoding/add-market-encoder-utils';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { encodeInsertChainsightOracleV3 } from 'packages/deployment/src/utils/encoding/oracle-encoder-utils';
@@ -66,11 +72,19 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     [],
     'BerachainRewardsRegistryImplementationV1',
   );
-  const registryImplementation = BerachainRewardsRegistry__factory.connect(registryImplementationAddress, core.governance);
+  const registryImplementation = BerachainRewardsRegistry__factory.connect(
+    registryImplementationAddress,
+    core.governance,
+  );
 
   const registryAddress = await deployContractAndSave(
     'RegistryProxy',
-    await getBerachainRewardsRegistryConstructorParams(registryImplementation, infraredMetavaultImplementation, core),
+    await getBerachainRewardsRegistryConstructorParams(
+      registryImplementation,
+      infraredMetavaultImplementation,
+      core.berachainRewardsEcosystem.live.polLiquidatorProxy,
+      core,
+    ),
     'BerachainRewardsRegistryProxy',
   );
   const registry = BerachainRewardsRegistry__factory.connect(registryAddress, core.governance);
@@ -106,7 +120,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
       false,
       ADDRESS_ZERO,
       CHAINSIGHT_KEYS_MAP[Network.Berachain][core.tokens.iBgt.address]!.key,
-    ))
+    )),
   );
 
   transactions.push(
@@ -120,7 +134,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
       TargetCollateralization._120, // @follow-up adjust
       TargetLiquidationPenalty._6, // adjust
       parseEther(`${2_000}`), // adjust
-    ))
+    )),
   );
 
   transactions.push(
@@ -130,7 +144,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
       'berachainRewardsRegistry',
       'ownerSetIBgtIsolationModeVaultFactory',
       [ibgtFactory.address],
-    )
+    ),
   );
 
   return {

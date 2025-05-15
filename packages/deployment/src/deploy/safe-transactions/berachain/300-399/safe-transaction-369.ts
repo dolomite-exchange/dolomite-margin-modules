@@ -13,7 +13,7 @@ import {
   InfraredBGTMetaVault__factory,
   POLIsolationModeUnwrapperTraderV2__factory,
   POLIsolationModeWrapperTraderV2__factory,
-  POLLiquidatorProxyV1__factory
+  POLLiquidatorProxyV1__factory,
 } from 'packages/berachain/src/types';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 
@@ -30,23 +30,26 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
 
   const transactions: EncodedTransaction[] = [];
 
-  const infraredMetavaultImplementationAddress = await deployContractAndSave(
+  const infraredMetaVaultImplementationAddress = await deployContractAndSave(
     'InfraredBGTMetaVault',
     [],
     'InfraredBGTMetaVaultImplementationV1',
   );
-  const infraredMetavaultImplementation = InfraredBGTMetaVault__factory.connect(
-    infraredMetavaultImplementationAddress,
+  const infraredMetaVaultImplementation = InfraredBGTMetaVault__factory.connect(
+    infraredMetaVaultImplementationAddress,
     core.governance,
   );
 
   // Deploy POL liquidator proxy
   const polLiquidatorImplementationAddress = await deployContractAndSave(
     'POLLiquidatorProxyV1',
-    [core.liquidatorProxyV5.address, core.dolomiteMargin.address],
+    [core.liquidatorProxyV6.address, core.dolomiteMargin.address],
     'POLLiquidatorProxyImplementationV1',
   );
-  const polLiquidatorImplementation = POLLiquidatorProxyV1__factory.connect(polLiquidatorImplementationAddress, core.governance);
+  const polLiquidatorImplementation = POLLiquidatorProxyV1__factory.connect(
+    polLiquidatorImplementationAddress,
+    core.governance,
+  );
 
   const data = await polLiquidatorImplementation.populateTransaction.initialize();
   const polLiquidatorProxyAddress = await deployContractAndSave(
@@ -62,11 +65,19 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     [],
     'BerachainRewardsRegistryImplementationV1',
   );
-  const registryImplementation = BerachainRewardsRegistry__factory.connect(registryImplementationAddress, core.governance);
+  const registryImplementation = BerachainRewardsRegistry__factory.connect(
+    registryImplementationAddress,
+    core.governance,
+  );
 
   const registryAddress = await deployContractAndSave(
     'RegistryProxy',
-    await getBerachainRewardsRegistryConstructorParams(registryImplementation, infraredMetavaultImplementation, polLiquidatorProxy, core),
+    await getBerachainRewardsRegistryConstructorParams(
+      registryImplementation,
+      infraredMetaVaultImplementation,
+      polLiquidatorProxy,
+      core,
+    ),
     'BerachainRewardsRegistryProxy',
   );
   const registry = BerachainRewardsRegistry__factory.connect(registryAddress, core.governance);
@@ -107,7 +118,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
       'berachainRewardsRegistry',
       'ownerSetPolWrapperTrader',
       [wrapperImplementation.address],
-    )
+    ),
   );
   transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(
@@ -116,7 +127,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
       'berachainRewardsRegistry',
       'ownerSetPolUnwrapperTrader',
       [unwrapperImplementation.address],
-    )
+    ),
   );
 
   // set pol fee agent and fee percentage
@@ -127,7 +138,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
       'berachainRewardsRegistry',
       'ownerSetPolFeeAgent',
       [core.gnosisSafe.address], // @follow-up adjust
-    )
+    ),
   );
   transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(
@@ -136,7 +147,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
       'berachainRewardsRegistry',
       'ownerSetPolFeePercentage',
       [parseEther('0.03')], // @follow-up adjust
-    )
+    ),
   );
 
   return {
@@ -154,7 +165,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     scriptName: getScriptName(__filename),
     invariants: async () => {
       assertHardhatInvariant(
-        (await registry.metaVaultImplementation()) === infraredMetavaultImplementationAddress,
+        (await registry.metaVaultImplementation()) === infraredMetaVaultImplementationAddress,
         'Invalid meta vault implementation address',
       );
       assertHardhatInvariant(

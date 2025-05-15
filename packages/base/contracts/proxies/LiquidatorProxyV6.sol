@@ -20,21 +20,21 @@
 pragma solidity ^0.8.9;
 
 import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
-import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import { BaseLiquidatorProxy } from "./BaseLiquidatorProxy.sol";
 import { GenericTraderProxyBase } from "./GenericTraderProxyBase.sol";
 import { GenericTraderProxyV2Lib } from "./GenericTraderProxyV2Lib.sol";
 import { HasLiquidatorRegistry } from "../general/HasLiquidatorRegistry.sol";
+import { ReentrancyGuardUpgradeable } from "../helpers/ReentrancyGuardUpgradeable.sol";
 import { IEventEmitterRegistry } from "../interfaces/IEventEmitterRegistry.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../protocol/lib/Require.sol";
 import { TypesLib } from "../protocol/lib/TypesLib.sol";
-import { ILiquidatorProxyV5 } from "./interfaces/ILiquidatorProxyV5.sol";
+import { ILiquidatorProxyV6 } from "./interfaces/ILiquidatorProxyV6.sol";
 
 
 /**
- * @title   LiquidatorProxyV5
+ * @title   LiquidatorProxyV6
  * @author  Dolomite
  *
  * Contract for liquidating accounts in DolomiteMargin using generic traders. This contract should presumably work with
@@ -42,18 +42,18 @@ import { ILiquidatorProxyV5 } from "./interfaces/ILiquidatorProxyV5.sol";
  * the `traders` array passed to the `liquidate` function is correct and will not result in any unexpected behavior
  * for special assets like IsolationMode tokens.
  */
-contract LiquidatorProxyV5 is
+contract LiquidatorProxyV6 is
     HasLiquidatorRegistry,
     BaseLiquidatorProxy,
     GenericTraderProxyBase,
-    ReentrancyGuard,
+    ReentrancyGuardUpgradeable,
     Initializable,
-    ILiquidatorProxyV5
+    ILiquidatorProxyV6
 {
 
     // ============ Constants ============
 
-    bytes32 private constant _FILE = "LiquidatorProxyV5";
+    bytes32 private constant _FILE = "LiquidatorProxyV6";
     uint256 private constant LIQUID_ACCOUNT_ID = 2;
 
     // ============ Constructor ============
@@ -76,7 +76,9 @@ contract LiquidatorProxyV5 is
 
     // ============ External Functions ============
 
-    function initialize() external initializer {}
+    function initialize() external initializer {
+        __ReentrancyGuardUpgradeable__init();
+    }
 
     function liquidateViaProxyWithStrictInputMarket(
         LiquidateParams memory _liquidateParams

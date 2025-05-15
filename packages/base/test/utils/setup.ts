@@ -62,7 +62,7 @@ import {
   IPartiallyDelayedMultiSig__factory,
   IsolationModeFreezableLiquidatorProxy__factory,
   IWETH__factory,
-  LiquidatorProxyV5__factory,
+  LiquidatorProxyV6__factory,
   RegistryProxy__factory,
 } from '../../src/types';
 import {
@@ -983,9 +983,9 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
     governance,
   );
 
-  const liquidatorProxyV5 = getContract(
-    ModuleDeployments.LiquidatorProxyV5[config.network].address,
-    LiquidatorProxyV5__factory.connect,
+  const liquidatorProxyV6 = getContract(
+    ModuleDeployments.LiquidatorProxyV6[config.network].address,
+    LiquidatorProxyV6__factory.connect,
     governance,
   );
 
@@ -1054,7 +1054,7 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
     liquidatorAssetRegistry,
     liquidatorProxyV1,
     liquidatorProxyV4,
-    liquidatorProxyV5,
+    liquidatorProxyV6,
     marketIdToDeployedVaultMap,
     oracleAggregatorV2,
     ownerAdapterV1,
@@ -1400,6 +1400,7 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
         ...coreProtocolParams.dTokens,
         beraEth: getDolomite4626TokenContract(config, hhUser1, 'DolomiteBeraEth4626Token'),
         // dolo: getDolomite4626TokenContract(config, hhUser1, 'DolomiteDolo4626Token'),
+        deUsd: getDolomite4626TokenContract(config, hhUser1, 'DolomiteDeUsd4626Token'),
         eBtc: getDolomite4626TokenContract(config, hhUser1, 'DolomiteEBtc4626Token'),
         honey: getDolomite4626TokenContract(config, hhUser1, 'DolomiteHoney4626Token'),
         lbtc: getDolomite4626TokenContract(config, hhUser1, 'DolomiteLbtc4626Token'),
@@ -1411,6 +1412,8 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
         sbtc: getDolomite4626TokenContract(config, hhUser1, 'DolomiteSbtc4626Token'),
         sUsda: getDolomite4626TokenContract(config, hhUser1, 'DolomiteSUsda4626Token'),
         sUsde: getDolomite4626TokenContract(config, hhUser1, 'DolomiteSUsde4626Token'),
+        srUsd: getDolomite4626TokenContract(config, hhUser1, 'DolomiteSrUsd4626Token'),
+        sdeUsd: getDolomite4626TokenContract(config, hhUser1, 'DolomiteSdeUsd4626Token'),
         stBtc: getDolomite4626TokenContract(config, hhUser1, 'DolomiteStBtc4626Token'),
         solvBtc: getDolomite4626TokenContract(config, hhUser1, 'DolomiteSolvBtc4626Token'),
         solvBtcBbn: getDolomite4626TokenContract(config, hhUser1, 'DolomiteSolvBtcBbn4626Token'),
@@ -1480,7 +1483,6 @@ export async function setupCoreProtocol<T extends DolomiteNetwork>(
       tokens: {
         ...coreProtocolParams.tokens,
         bgt: IBGT__factory.connect(BGT_MAP[typedConfig.network].address, hhUser1),
-        iBgt: IERC20__factory.connect(IBGT_MAP[typedConfig.network].address, hhUser1),
         btcPlaceholder: IERC20__factory.connect(BTC_PLACEHOLDER_MAP[typedConfig.network].address, hhUser1),
         beraEth: IERC20__factory.connect(BERA_ETH_MAP[typedConfig.network].address, hhUser1),
         deUsd: IERC20__factory.connect(DE_USD_MAP[typedConfig.network].address, hhUser1),

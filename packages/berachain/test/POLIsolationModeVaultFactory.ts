@@ -74,6 +74,8 @@ describe('POLIsolationModeVaultFactory', () => {
 
   describe('#contructor', () => {
     it('should initialize variables properly', async () => {
+      expect(await factory.symbol()).to.equal('pol-WETH');
+      expect(await factory.name()).to.equal('Dolomite Isolation: pol-WETH');
       expect(await factory.berachainRewardsRegistry()).to.equal(registry.address);
       expect(await factory.UNDERLYING_TOKEN()).to.equal(dToken.address);
       expect(await factory.BORROW_POSITION_PROXY()).to.equal(core.borrowPositionProxyV2.address);

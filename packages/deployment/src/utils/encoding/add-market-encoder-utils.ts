@@ -18,19 +18,33 @@ import {
   TargetCollateralization,
   TargetLiquidationPenalty,
 } from '../../../../base/src/utils/constructors/dolomite';
-import { ADDRESS_ZERO, DolomiteNetwork, Network, ONE_ETH_BI, ZERO_BI } from '../../../../base/src/utils/no-deps-constants';
+import {
+  ADDRESS_ZERO,
+  DolomiteNetwork,
+  Network,
+  ONE_ETH_BI,
+  ZERO_BI,
+} from '../../../../base/src/utils/no-deps-constants';
 import { CoreProtocolArbitrumOne } from '../../../../base/test/utils/core-protocols/core-protocol-arbitrum-one';
-import { CoreProtocolBerachain } from '../../../../base/test/utils/core-protocols/core-protocol-berachain';
 import { GmToken } from '../../../../base/test/utils/ecosystem-utils/gmx';
 import { CoreProtocolType } from '../../../../base/test/utils/setup';
 import { EncodedTransaction } from '../dry-run-utils';
-import { getFormattedTokenName, isValidAmountForCapForToken, prettyPrintEncodedDataWithTypeSafety } from './base-encoder-utils';
+import {
+  getFormattedTokenName,
+  isValidAmountForCapForToken,
+  prettyPrintEncodedDataWithTypeSafety,
+} from './base-encoder-utils';
+import { BerachainPOLSystem } from '../deploy-utils';
 
 export interface AddMarketOptions {
   additionalConverters?: BaseContract[];
   skipAmountValidation?: boolean;
   decimals?: number;
   skipEncodeLiquidatorWhitelist?: boolean;
+}
+
+export interface AddIsolationModeMarketOptions extends AddMarketOptions {
+  whitelistedLiquidatorAddress?: string;
 }
 
 export async function encodeAddIsolationModeMarket<T extends DolomiteNetwork>(
@@ -43,7 +57,7 @@ export async function encodeAddIsolationModeMarket<T extends DolomiteNetwork>(
   targetCollateralization: TargetCollateralization,
   targetLiquidationPremium: TargetLiquidationPenalty,
   maxSupplyWei: BigNumberish,
-  options: AddMarketOptions = {},
+  options: AddIsolationModeMarketOptions = {},
 ): Promise<EncodedTransaction[]> {
   const transactions: EncodedTransaction[] = await encodeAddMarket(
     core,
@@ -88,7 +102,7 @@ export async function encodeAddIsolationModeMarket<T extends DolomiteNetwork>(
       { liquidatorAssetRegistry: core.liquidatorAssetRegistry },
       'liquidatorAssetRegistry',
       'ownerAddLiquidatorToAssetWhitelist',
-      [marketId, core.liquidatorProxyV5.address],
+      [marketId, options.whitelistedLiquidatorAddress ?? core.liquidatorProxyV6.address],
     ),
   );
 
@@ -97,42 +111,52 @@ export async function encodeAddIsolationModeMarket<T extends DolomiteNetwork>(
 
 export async function encodeAddPOLIsolationModeMarket<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
-  factory: IIsolationModeVaultFactory,
+  polSystem: BerachainPOLSystem,
   oracle: IDolomitePriceOracle,
-  unwrapper: IIsolationModeUnwrapperTraderV2,
-  wrapper: IIsolationModeWrapperTraderV2,
   marketId: BigNumberish,
   targetCollateralization: TargetCollateralization,
   targetLiquidationPremium: TargetLiquidationPenalty,
   maxSupplyWei: BigNumberish,
-  options: AddMarketOptions = {},
+  options: AddIsolationModeMarketOptions = {},
 ): Promise<EncodedTransaction[]> {
   if (core.network !== Network.Berachain) {
     return Promise.reject(new Error('Core protocol is not Berachain'));
   }
 
-  const transactions: EncodedTransaction[] = await encodeAddMarket(
-    core,
-    IERC20__factory.connect(factory.address, factory.signer),
-    oracle,
-    core.interestSetters.alwaysZeroInterestSetter,
-    targetCollateralization,
-    targetLiquidationPremium,
-    maxSupplyWei,
-    ZERO_BI,
-    true,
-    ZERO_BI,
-    options,
-  );
+  const transactions: EncodedTransaction[] = [
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { oracleAggregatorV2: core.oracleAggregatorV2 },
+      'oracleAggregatorV2',
+      'ownerInsertOrUpdateToken',
+      [
+        {
+          token: polSystem.factory.address,
+          decimals: 18,
+          oracleInfos: [
+            {
+              oracle: polSystem.oracle.address,
+              tokenPair: ADDRESS_ZERO,
+              weight: 100,
+            },
+          ],
+        },
+      ],
+    ),
 
-  const converters = [
-    unwrapper.address,
-    wrapper.address,
-    core.borrowPositionRouter.address,
-    core.depositWithdrawalRouter.address,
-    core.genericTraderRouter.address,
+    ...await encodeAddIsolationModeMarket(
+      core,
+      polSystem.factory,
+      oracle,
+      polSystem.unwrapper,
+      polSystem.wrapper,
+      marketId,
+      targetCollateralization,
+      targetLiquidationPremium,
+      maxSupplyWei,
+      { ...options, whitelistedLiquidatorAddress: core.berachainRewardsEcosystem.live.polLiquidatorProxy.address },
+    ),
   ];
-  const additionalConverters = (options.additionalConverters ?? []).map((c) => c.address);
 
   transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(
@@ -140,42 +164,19 @@ export async function encodeAddPOLIsolationModeMarket<T extends DolomiteNetwork>
       { dolomiteMargin: core.dolomiteMargin },
       'dolomiteMargin',
       'ownerSetGlobalOperator',
-      [factory.address, true],
+      [polSystem.unwrapper.address, true],
     ),
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       { dolomiteMargin: core.dolomiteMargin },
       'dolomiteMargin',
       'ownerSetGlobalOperator',
-      [unwrapper.address, true],
-    ),
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { dolomiteMargin: core.dolomiteMargin },
-      'dolomiteMargin',
-      'ownerSetGlobalOperator',
-      [wrapper.address, true],
-    ),
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { factory },
-      'factory',
-      'ownerInitialize',
-      [converters.concat(additionalConverters)],
-    ),
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { liquidatorAssetRegistry: core.liquidatorAssetRegistry },
-      'liquidatorAssetRegistry',
-      'ownerAddLiquidatorToAssetWhitelist',
-      [marketId, core.berachainRewardsEcosystem.live.polLiquidatorProxy.address],
+      [polSystem.wrapper.address, true],
     ),
   );
 
   return transactions;
 }
-
-
 
 export async function encodeAddAsyncIsolationModeMarket<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,

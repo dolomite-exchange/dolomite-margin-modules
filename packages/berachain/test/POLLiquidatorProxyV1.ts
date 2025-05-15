@@ -1,7 +1,7 @@
 import {
   DolomiteERC4626,
   DolomiteERC4626__factory,
-  LiquidatorProxyV5,
+  LiquidatorProxyV6,
   RegistryProxy__factory,
 } from '@dolomite-exchange/modules-base/src/types';
 import {
@@ -12,10 +12,7 @@ import {
   ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
-import {
-  expectProtocolBalance,
-  expectThrow,
-} from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { expectProtocolBalance, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
   disableInterestAccrual,
   setupCoreProtocol,
@@ -41,7 +38,6 @@ import {
   POLIsolationModeUnwrapperTraderV2,
   POLIsolationModeVaultFactory,
   POLIsolationModeWrapperTraderV2,
-  POLLiquidatorProxyV1,
   TestPOLLiquidatorProxyV1,
 } from '../src/types';
 import {
@@ -51,13 +47,17 @@ import {
   createPOLIsolationModeTokenVaultV1,
   createPOLIsolationModeUnwrapperTraderV2,
   createPOLIsolationModeVaultFactory,
-  createPOLIsolationModeWrapperTraderV2, createPolLiquidatorProxy,
+  createPOLIsolationModeWrapperTraderV2,
   createTestPolLiquidatorProxy,
   RewardVaultType,
   wrapFullBalanceIntoVaultDefaultAccount,
 } from './berachain-ecosystem-utils';
-import { createLiquidatorProxyV5, setupNewGenericTraderProxy } from 'packages/base/test/utils/dolomite';
-import { GenericEventEmissionType, GenericTraderParam, GenericTraderType } from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
+import { createLiquidatorProxyV6, setupNewGenericTraderProxy } from 'packages/base/test/utils/dolomite';
+import {
+  GenericEventEmissionType,
+  GenericTraderParam,
+  GenericTraderType,
+} from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 
 const defaultAccountNumber = ZERO_BI;
@@ -78,7 +78,7 @@ describe('POLLiquidatorProxyV1', () => {
   let metaVault: InfraredBGTMetaVault;
 
   let polLiquidatorProxy: TestPOLLiquidatorProxyV1;
-  let liquidatorProxyV5: LiquidatorProxyV5;
+  let liquidatorProxyV6: LiquidatorProxyV6;
 
   let dToken: DolomiteERC4626;
   let infraredVault: IInfraredVault;
@@ -92,10 +92,9 @@ describe('POLLiquidatorProxyV1', () => {
       network: Network.Berachain,
     });
     await disableInterestAccrual(core, core.marketIds.weth);
-    liquidatorProxyV5 = await createLiquidatorProxyV5(core);
-    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(liquidatorProxyV5.address, true);
+    liquidatorProxyV6 = await createLiquidatorProxyV6(core);
+    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(liquidatorProxyV6.address, true);
 
-    // @todo update dToken implementation to handle lossy better
     await setupWETHBalance(core, core.governance, ONE_ETH_BI, core.dolomiteMargin);
     await depositIntoDolomiteMargin(core, core.governance, defaultAccountNumber, core.marketIds.weth, ONE_ETH_BI);
     dToken = DolomiteERC4626__factory.connect(core.dolomiteTokens.weth!.address, core.hhUser1);
@@ -107,7 +106,7 @@ describe('POLLiquidatorProxyV1', () => {
     const dTokenProxy = RegistryProxy__factory.connect(dToken.address, core.governance);
     await dTokenProxy.upgradeTo(implementation.address);
 
-    polLiquidatorProxy = await createTestPolLiquidatorProxy(core, liquidatorProxyV5);
+    polLiquidatorProxy = await createTestPolLiquidatorProxy(core, liquidatorProxyV6);
 
     const metaVaultImplementation = await createContractWithAbi<InfraredBGTMetaVault>(
       InfraredBGTMetaVault__factory.abi,
@@ -221,7 +220,7 @@ describe('POLLiquidatorProxyV1', () => {
 
   describe('#constructor', () => {
     it('should work normally', async () => {
-      expect(await polLiquidatorProxy.LIQUIDATOR_PROXY_V5()).to.equal(liquidatorProxyV5.address);
+      expect(await polLiquidatorProxy.LIQUIDATOR_PROXY_V6()).to.equal(liquidatorProxyV6.address);
       expect(await polLiquidatorProxy.DOLOMITE_MARGIN()).to.equal(core.dolomiteMargin.address);
     });
   });
@@ -230,7 +229,7 @@ describe('POLLiquidatorProxyV1', () => {
     it('should fail if already initialized', async () => {
       await expectThrow(
         polLiquidatorProxy.initialize(),
-        'Initializable: contract is already initialized'
+        'Initializable: contract is already initialized',
       );
     });
   });
@@ -241,7 +240,7 @@ describe('POLLiquidatorProxyV1', () => {
       await core.testEcosystem?.testInterestSetter.setInterestRate(core.tokens.weth.address, { value: interestRate });
       await core.dolomiteMargin.ownerSetInterestSetter(
         core.marketIds.weth,
-        core.testEcosystem!.testInterestSetter.address
+        core.testEcosystem!.testInterestSetter.address,
       );
 
       await increase(ONE_DAY_SECONDS * 300);
@@ -268,38 +267,38 @@ describe('POLLiquidatorProxyV1', () => {
       console.log(
         await core.dolomiteMargin.getAccountWei(
           { owner: vault.address, number: borrowAccountNumber },
-          core.marketIds.weth
-        )
+          core.marketIds.weth,
+        ),
       );
       console.log(
         await core.dolomiteMargin.getAccountWei(
           { owner: vault.address, number: borrowAccountNumber },
-          marketId
-        )
+          marketId,
+        ),
       );
       console.log(
         await core.dolomiteMargin.getAccountWei(
           { owner: core.hhUser2.address, number: defaultAccountNumber },
-          core.marketIds.weth
-        )
+          core.marketIds.weth,
+        ),
       );
       console.log(
         await core.dolomiteMargin.getAccountWei(
           { owner: core.hhUser2.address, number: defaultAccountNumber },
-          marketId
-        )
+          marketId,
+        ),
       );
       console.log(
         await core.dolomiteMargin.getAccountWei(
           { owner: metaVault.address, number: defaultAccountNumber },
-          core.marketIds.weth
-        )
+          core.marketIds.weth,
+        ),
       );
       console.log(
         await core.dolomiteMargin.getAccountWei(
           { owner: metaVault.address, number: defaultAccountNumber },
-          marketId
-        )
+          marketId,
+        ),
       );
     });
 
@@ -309,7 +308,7 @@ describe('POLLiquidatorProxyV1', () => {
       await core.testEcosystem?.testInterestSetter.setInterestRate(core.tokens.weth.address, { value: interestRate });
       await core.dolomiteMargin.ownerSetInterestSetter(
         core.marketIds.weth,
-        core.testEcosystem!.testInterestSetter.address
+        core.testEcosystem!.testInterestSetter.address,
       );
 
       await increase(ONE_DAY_SECONDS * 300);
@@ -336,38 +335,38 @@ describe('POLLiquidatorProxyV1', () => {
       console.log(
         await core.dolomiteMargin.getAccountWei(
           { owner: vault.address, number: borrowAccountNumber },
-          core.marketIds.weth
-        )
+          core.marketIds.weth,
+        ),
       );
       console.log(
         await core.dolomiteMargin.getAccountWei(
           { owner: vault.address, number: borrowAccountNumber },
-          marketId
-        )
+          marketId,
+        ),
       );
       console.log(
         await core.dolomiteMargin.getAccountWei(
           { owner: core.hhUser2.address, number: defaultAccountNumber },
-          core.marketIds.weth
-        )
+          core.marketIds.weth,
+        ),
       );
       console.log(
         await core.dolomiteMargin.getAccountWei(
           { owner: core.hhUser2.address, number: defaultAccountNumber },
-          marketId
-        )
+          marketId,
+        ),
       );
       console.log(
         await core.dolomiteMargin.getAccountWei(
           { owner: metaVault.address, number: defaultAccountNumber },
-          core.marketIds.weth
-        )
+          core.marketIds.weth,
+        ),
       );
       console.log(
         await core.dolomiteMargin.getAccountWei(
           { owner: metaVault.address, number: defaultAccountNumber },
-          marketId
-        )
+          marketId,
+        ),
       );
     });
 
@@ -381,7 +380,7 @@ describe('POLLiquidatorProxyV1', () => {
       await core.testEcosystem?.testInterestSetter.setInterestRate(core.tokens.weth.address, { value: interestRate });
       await core.dolomiteMargin.ownerSetInterestSetter(
         core.marketIds.weth,
-        core.testEcosystem!.testInterestSetter.address
+        core.testEcosystem!.testInterestSetter.address,
       );
 
       await increase(ONE_DAY_SECONDS * 300);
@@ -408,38 +407,38 @@ describe('POLLiquidatorProxyV1', () => {
       console.log(
         await core.dolomiteMargin.getAccountWei(
           { owner: vault.address, number: borrowAccountNumber },
-          core.marketIds.weth
-        )
+          core.marketIds.weth,
+        ),
       );
       console.log(
         await core.dolomiteMargin.getAccountWei(
           { owner: vault.address, number: borrowAccountNumber },
-          marketId
-        )
+          marketId,
+        ),
       );
       console.log(
         await core.dolomiteMargin.getAccountWei(
           { owner: core.hhUser2.address, number: defaultAccountNumber },
-          core.marketIds.weth
-        )
+          core.marketIds.weth,
+        ),
       );
       console.log(
         await core.dolomiteMargin.getAccountWei(
           { owner: core.hhUser2.address, number: defaultAccountNumber },
-          marketId
-        )
+          marketId,
+        ),
       );
       console.log(
         await core.dolomiteMargin.getAccountWei(
           { owner: metaVault.address, number: defaultAccountNumber },
-          core.marketIds.weth
-        )
+          core.marketIds.weth,
+        ),
       );
       console.log(
         await core.dolomiteMargin.getAccountWei(
           { owner: metaVault.address, number: defaultAccountNumber },
-          marketId
-        )
+          marketId,
+        ),
       );
     });
 
@@ -465,7 +464,7 @@ describe('POLLiquidatorProxyV1', () => {
           expirationTimestamp: ZERO_BI,
           withdrawAllReward: false,
         }),
-        `POLLiquidatorProxyV1: Sender not operator <${core.hhUser3.address.toLowerCase()}>`
+        `POLLiquidatorProxyV1: Sender not operator <${core.hhUser3.address.toLowerCase()}>`,
       );
     });
 
@@ -492,7 +491,7 @@ describe('POLLiquidatorProxyV1', () => {
       });
       await expectThrow(
         polLiquidatorProxy.connect(core.hhUser3).callFunctionAndTriggerReentrancy(data.data!),
-        'ReentrancyGuard: reentrant call'
+        'ReentrancyGuard: reentrant call',
       );
     });
   });

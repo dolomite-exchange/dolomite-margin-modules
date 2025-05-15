@@ -1,9 +1,9 @@
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
-import { getAndCheckSpecificNetwork } from 'packages/base/src/utils/dolomite-utils';
-import { Network } from 'packages/base/src/utils/no-deps-constants';
-import { getRealLatestBlockNumber } from 'packages/base/test/utils';
-import { setupCoreProtocol } from 'packages/base/test/utils/setup';
-import { prettyPrintEncodedDataWithTypeSafety } from 'packages/deployment/src/utils/encoding/base-encoder-utils';
+import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
+import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
 import getScriptName from '../../../../utils/get-script-name';
 
@@ -14,14 +14,14 @@ const LIQUIDATOR_PROXY_V5_ADDRESS = '0x1506f80d2FD5fbeF2424573EC86E5481C972B99a'
  * - For all markets that specifically have the liquidator proxy v5, it adds the liquidator proxy v6
  *   and removes liquidator proxy v5
  */
-async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
-  const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
+async function main(): Promise<DryRunOutput<Network.Mantle>> {
+  const network = await getAndCheckSpecificNetwork(Network.Mantle);
   const core = await setupCoreProtocol({ network, blockNumber: await getRealLatestBlockNumber(true, network) });
 
   const numMarkets = await core.dolomiteMargin.getNumMarkets();
   const marketsWithV5Liquidator: number[] = [];
 
-  const liquidatorProxyV6Address = core.liquidatorProxyV5.address; // After deployment, this will be new address
+  const liquidatorProxyV6Address = core.liquidatorProxyV6.address; // After deployment, this will be new address
 
   const transactions: EncodedTransaction[] = [];
   for (let i = 0; i < numMarkets.toNumber(); i++) {
@@ -54,6 +54,11 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
       transactions,
       chainId: network,
       addExecuteImmediatelyTransactions: true,
+      version: '1.0',
+      meta: {
+        txBuilderVersion: '1.16.5',
+        name: __filename,
+      },
     },
     invariants: async () => {
       for (const marketId of marketsWithV5Liquidator) {

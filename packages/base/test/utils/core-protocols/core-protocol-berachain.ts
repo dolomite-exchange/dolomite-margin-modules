@@ -1,4 +1,8 @@
-import { ChainsightPriceOracleV3, ChroniclePriceOracleV3, RedstonePriceOracleV3 } from '@dolomite-exchange/modules-oracles/src/types';
+import {
+  ChainsightPriceOracleV3,
+  ChroniclePriceOracleV3,
+  RedstonePriceOracleV3,
+} from '@dolomite-exchange/modules-oracles/src/types';
 import { BigNumberish } from 'ethers';
 import { DolomiteERC4626, DolomiteERC4626WithPayable, IERC20, IWETH } from '../../../src/types';
 import { Network } from '../../../src/utils/no-deps-constants';
@@ -8,10 +12,9 @@ import {
   CoreProtocolDolomiteTokens,
   CoreProtocolMarketIds,
   CoreProtocolParams,
-  CoreProtocolTokens, DolomiteWETHType,
+  CoreProtocolTokens,
+  DolomiteWETHType,
 } from './core-protocol-abstract';
-import { IBGT } from 'packages/berachain/src/types';
-import { BerachainRewardsEcosystem } from '../ecosystem-utils/berachain-rewards';
 import { TokenomicsEcosystem } from '../ecosystem-utils/tokenomics';
 import { TokenomicsAirdropEcosystem } from '../ecosystem-utils/tokenomics-airdrop';
 import { IBGT } from 'packages/berachain/src/types';
@@ -51,8 +54,6 @@ export interface CoreProtocolTokensBerachain extends CoreProtocolTokens<Network.
   usde: IERC20;
   usdt: IERC20;
   wbera: IWETH;
-  bgt: IBGT;
-  iBgt: IERC20;
   wbtc: IERC20;
   weEth: IERC20;
   xSolvBtc: IERC20;
@@ -63,6 +64,7 @@ export interface CoreProtocolTokensBerachain extends CoreProtocolTokens<Network.
 
 export interface CoreProtocolDolomiteTokensBerachain extends CoreProtocolDolomiteTokens<Network.Berachain> {
   beraEth: DolomiteERC4626;
+  deUsd: DolomiteERC4626;
   eBtc: DolomiteERC4626;
   honey: DolomiteERC4626;
   lbtc: DolomiteERC4626;
@@ -74,6 +76,8 @@ export interface CoreProtocolDolomiteTokensBerachain extends CoreProtocolDolomit
   sbtc: DolomiteERC4626;
   sUsda: DolomiteERC4626;
   sUsde: DolomiteERC4626;
+  sdeUsd: DolomiteERC4626;
+  srUsd: DolomiteERC4626;
   stBtc: DolomiteERC4626;
   solvBtc: DolomiteERC4626;
   solvBtcBbn: DolomiteERC4626;

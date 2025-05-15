@@ -50,7 +50,7 @@ async function main(): Promise<DryRunOutput<AcceptableNetworks>> {
 
   const polLiquidatorImplementationAddress = await deployContractAndSave(
     'POLLiquidatorProxyV1',
-    [core.liquidatorProxyV5.address, core.dolomiteMargin.address],
+    [core.liquidatorProxyV6.address, core.dolomiteMargin.address],
     'POLLiquidatorProxyImplementationV1',
   );
   const polLiquidatorImplementation = POLLiquidatorProxyV1__factory.connect(

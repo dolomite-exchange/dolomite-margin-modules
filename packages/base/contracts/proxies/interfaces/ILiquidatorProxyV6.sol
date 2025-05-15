@@ -24,12 +24,12 @@ import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol
 
 
 /**
- * @title   ILiquidatorProxyV5
+ * @title   ILiquidatorProxyV6
  * @author  Dolomite
  *
  * Interface for liquidating positions via the LiquidatorProxyV5
  */
-interface ILiquidatorProxyV5 {
+interface ILiquidatorProxyV6 {
 
     // ============ Enums ============
 

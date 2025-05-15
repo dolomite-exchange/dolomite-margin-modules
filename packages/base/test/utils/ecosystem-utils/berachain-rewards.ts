@@ -1,5 +1,4 @@
-import Deployments from '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
-import { IERC20, IERC20__factory, RegistryProxy, RegistryProxy__factory } from 'packages/base/src/types';
+import { IERC20, IERC20__factory, RegistryProxy } from 'packages/base/src/types';
 import {
   BERACHAIN_REWARDS_VAULT_FACTORY_MAP,
   BGTM_MAP,
@@ -16,7 +15,6 @@ import { Network } from 'packages/base/src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
 import {
   BerachainRewardsRegistry,
-  BerachainRewardsRegistry__factory,
   IBerachainRewardsFactory,
   IBerachainRewardsFactory__factory,
   IBGTM,
@@ -27,17 +25,11 @@ import {
   IInfraredVault__factory,
   INativeRewardVault,
   INativeRewardVault__factory,
-  InfraredBGTIsolationModeTokenVaultV1,
   POLIsolationModeTokenVaultV1,
-  POLIsolationModeTokenVaultV1__factory,
   POLIsolationModeUnwrapperTraderV2,
-  POLIsolationModeUnwrapperTraderV2__factory,
   POLIsolationModeWrapperTraderV2,
-  POLIsolationModeWrapperTraderV2__factory,
   POLLiquidatorProxyV1,
-  POLLiquidatorProxyV1__factory,
 } from 'packages/berachain/src/types';
-import { getMaxDeploymentVersionAddressByDeploymentKey } from 'packages/deployment/src/utils/deploy-utils';
 
 export interface BerachainRewardsEcosystem {
   berachainRewardsFactory: IBerachainRewardsFactory;
@@ -48,14 +40,14 @@ export interface BerachainRewardsEcosystem {
     bexHoneyUsdc: ListedRewardAsset;
     bexHoneyWbera: ListedRewardAsset;
   };
-  // live: {
-  //   registry: BerachainRewardsRegistry;
-  //   registryProxy: RegistryProxy;
-  //   tokenVaultImplementation: POLIsolationModeTokenVaultV1;
-  //   unwrapperImplementation: POLIsolationModeUnwrapperTraderV2;
-  //   wrapperImplementation: POLIsolationModeWrapperTraderV2;
-  //   polLiquidatorProxy: POLLiquidatorProxyV1;
-  // }
+  live: {
+    registry: BerachainRewardsRegistry;
+    registryProxy: RegistryProxy;
+    tokenVaultImplementation: POLIsolationModeTokenVaultV1;
+    unwrapperImplementation: POLIsolationModeUnwrapperTraderV2;
+    wrapperImplementation: POLIsolationModeWrapperTraderV2;
+    polLiquidatorProxy: POLLiquidatorProxyV1;
+  };
 }
 
 export interface ListedRewardAsset {
@@ -121,6 +113,7 @@ export async function createBerachainRewardsEcosystem(
         ),
       },
     },
+    live: {} as any, // TODO: fix
     // live: {
     //   registry: BerachainRewardsRegistry__factory.connect(Deployments.BerachainRewardsRegistryProxy['80094'].address, signer),
     //   registryProxy: RegistryProxy__factory.connect(Deployments.BerachainRewardsRegistryProxy['80094'].address, signer),

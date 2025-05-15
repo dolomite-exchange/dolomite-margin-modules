@@ -21,6 +21,7 @@
 pragma solidity ^0.8.9;
 
 import { SimpleIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/SimpleIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
+import { MinimalERC20 } from "@dolomite-exchange/modules-base/contracts/general/MinimalERC20.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IBerachainRewardsRegistry } from "./interfaces/IBerachainRewardsRegistry.sol";
@@ -51,6 +52,8 @@ contract POLIsolationModeVaultFactory is
     // ============ Constructor ============
 
     constructor(
+        string memory _name,
+        string memory _symbol,
         uint256[] memory _initialAllowableDebtMarketIds,
         uint256[] memory _initialAllowableCollateralMarketIds,
         address _berachainRewardsRegistry,
@@ -69,6 +72,7 @@ contract POLIsolationModeVaultFactory is
         _dolomiteMargin
     ) {
         berachainRewardsRegistry = IBerachainRewardsRegistry(_berachainRewardsRegistry);
+        _initializeTokenInfo(_name, _symbol, MinimalERC20(_underlyingToken).decimals());
     }
 
     // ============ External Functions ============

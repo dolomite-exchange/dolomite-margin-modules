@@ -6,7 +6,7 @@ import { BigNumber } from 'ethers';
 import { defaultAbiCoder, parseEther } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
 import { ARBIsolationModeTokenVaultV1__factory } from 'packages/arb/src/types';
-import { TestLiquidatorProxyV5, TestLiquidatorProxyV5__factory } from 'packages/base/src/types';
+import { TestLiquidatorProxyV6, TestLiquidatorProxyV6__factory } from 'packages/base/src/types';
 import {
   createContractWithAbi,
   createContractWithLibrary,
@@ -14,7 +14,6 @@ import {
   depositIntoDolomiteMargin,
 } from 'packages/base/src/utils/dolomite-utils';
 import { MAX_UINT_256_BI, Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
-import { UpgradeableProxy__factory } from 'packages/tokenomics/src/types';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../utils';
 import { expectProtocolBalance, expectThrow, expectWalletBalance } from '../utils/assertions';
 import { CoreProtocolArbitrumOne } from '../utils/core-protocols/core-protocol-arbitrum-one';
@@ -33,16 +32,17 @@ import {
   getUnwrapZapParams,
   getWrapZapParams,
 } from '../utils/zap-utils';
+import { UpgradeableProxy__factory } from '@dolomite-exchange/modules-liquidity-mining/src/types';
 
 const amountWei = parseEther('1000');
 const usdcAmount = BigNumber.from('1000000000'); // $1000
 const defaultAccountNumber = ZERO_BI;
 const borrowAccountNumber = BigNumber.from('123');
 
-describe('LiquidatorProxyV5', () => {
+describe('LiquidatorProxyV6', () => {
   let snapshotId: string;
   let core: CoreProtocolArbitrumOne;
-  let liquidatorProxy: TestLiquidatorProxyV5;
+  let liquidatorProxy: TestLiquidatorProxyV6;
 
   before(async () => {
     core = await setupCoreProtocol({
@@ -58,7 +58,7 @@ describe('LiquidatorProxyV5', () => {
 
     const genericTraderLib = await createContractWithName('GenericTraderProxyV2Lib', []);
     const liquidatorProxyImplementation = await createContractWithLibrary(
-      'TestLiquidatorProxyV5',
+      'TestLiquidatorProxyV6',
       { GenericTraderProxyV2Lib: genericTraderLib.address },
       [
         Network.ArbitrumOne,
@@ -74,7 +74,7 @@ describe('LiquidatorProxyV5', () => {
       core.dolomiteMargin.address,
       data.data!,
     ]);
-    liquidatorProxy = TestLiquidatorProxyV5__factory.connect(proxy.address, core.hhUser1);
+    liquidatorProxy = TestLiquidatorProxyV6__factory.connect(proxy.address, core.hhUser1);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(liquidatorProxy.address, true);
 
     await setupWETHBalance(core, core.hhUser2, parseEther('5'), core.dolomiteMargin);
@@ -736,7 +736,7 @@ describe('LiquidatorProxyV5', () => {
           expirationTimestamp: ZERO_BI,
           withdrawAllReward: false,
         }),
-        'LiquidatorProxyV5: Invalid amount for IsolationMode',
+        'LiquidatorProxyV6: Invalid amount for IsolationMode',
       );
       const wrapParams = await getWrapZapParams(
         core.marketIds.weth,
@@ -758,7 +758,7 @@ describe('LiquidatorProxyV5', () => {
           expirationTimestamp: ZERO_BI,
           withdrawAllReward: false,
         }),
-        'LiquidatorProxyV5: Invalid amount for IsolationMode',
+        'LiquidatorProxyV6: Invalid amount for IsolationMode',
       );
     });
 
@@ -1109,7 +1109,8 @@ describe('LiquidatorProxyV5', () => {
   });
 
   describe('#liquidateViaProxyWithStrictInputMarket', () => {
-    it('should work if the sender is a global operator and whitelisted for the asset', async () => {});
+    it('should work if the sender is a global operator and whitelisted for the asset', async () => {
+    });
 
     it('should fail if the sender is not a global operator', async () => {
       const zapParams = await getSimpleZapParams(
