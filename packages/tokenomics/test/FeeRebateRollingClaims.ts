@@ -123,6 +123,42 @@ describe('FeeRebateRollingClaims', () => {
       await expectProtocolBalance(core, core.hhUser1, 0, core.marketIds.usdc, BigNumber.from('500000000'));
     });
 
+    it('should work normally with remapped address', async () => {
+      await feeRebateClaims.connect(core.hhUser5).ownerSetAddressRemapping([core.hhUser4.address], [core.hhUser1.address]);
+
+      const res = await feeRebateClaims.connect(core.hhUser4).claim([{
+        marketId: core.marketIds.usdc,
+        proof: validProofUsdc,
+        amount: BigNumber.from('500000000')
+      }]);
+      await expectEvent(core.eventEmitterRegistry, res, 'RewardClaimed', {
+        distributor: feeRebateClaims.address,
+        user: core.hhUser1.address,
+        epoch: core.marketIds.usdc,
+        amount: BigNumber.from('500000000')
+      });
+      expect(await feeRebateClaims.userToMarketIdToClaimAmount(core.hhUser1.address, core.marketIds.usdc))
+        .to.eq(BigNumber.from('500000000'));
+      await expectProtocolBalance(core, core.hhUser4, 0, core.marketIds.usdc, BigNumber.from('500000000'));
+
+      await expectThrow(
+        feeRebateClaims.connect(core.hhUser1).claim([{
+          marketId: core.marketIds.usdc,
+          proof: validProofUsdc,
+          amount: BigNumber.from('500000000')
+        }]),
+        'FeeRebateRollingClaims: No amount to claim'
+      );
+      await expectThrow(
+        feeRebateClaims.connect(core.hhUser4).claim([{
+          marketId: core.marketIds.usdc,
+          proof: validProofUsdc,
+          amount: BigNumber.from('500000000')
+        }]),
+        'FeeRebateRollingClaims: No amount to claim'
+      );
+    });
+
     it('should work normally with first merkle root and two marketIds', async () => {
       const res = await feeRebateClaims.connect(core.hhUser1).claim([
         {

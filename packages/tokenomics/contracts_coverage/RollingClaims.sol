@@ -71,26 +71,27 @@ contract RollingClaims is BaseClaimWithMerkleProof, IRollingClaims {
 
     function claim(bytes32[] calldata _proof, uint256 _amount) external onlyClaimEnabled nonReentrant {
         RollingClaimsStorage storage s = _getRollingClaimsStorage();
+        address user = getUserOrRemappedAddress(msg.sender);
 
-        if (_verifyMerkleProof(msg.sender, _proof, _amount)) { /* FOR COVERAGE TESTING */ }
+        if (_verifyMerkleProof(user, _proof, _amount)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-            _verifyMerkleProof(msg.sender, _proof, _amount),
+            _verifyMerkleProof(user, _proof, _amount),
             _FILE,
             "Invalid merkle proof"
         );
-        if (_amount > s.userToClaimAmount[msg.sender]) { /* FOR COVERAGE TESTING */ }
+        if (_amount > s.userToClaimAmount[user]) { /* FOR COVERAGE TESTING */ }
         Require.that(
-            _amount > s.userToClaimAmount[msg.sender],
+            _amount > s.userToClaimAmount[user],
             _FILE,
             "No amount to claim"
         );
-        uint256 amountToClaim = _amount - s.userToClaimAmount[msg.sender];
-        s.userToClaimAmount[msg.sender] = _amount;
+        uint256 amountToClaim = _amount - s.userToClaimAmount[user];
+        s.userToClaimAmount[user] = _amount;
 
         ODOLO.safeTransfer(msg.sender, amountToClaim);
 
         DOLOMITE_REGISTRY.eventEmitter().emitRewardClaimed(
-            msg.sender,
+            user,
             EPOCH_NUMBER,
             amountToClaim
         );

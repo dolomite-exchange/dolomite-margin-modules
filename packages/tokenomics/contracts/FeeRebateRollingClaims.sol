@@ -101,10 +101,11 @@ contract FeeRebateRollingClaims is BaseClaim, IFeeRebateRollingClaims {
 
     function _claim(ClaimParams memory _claimParams) internal {
         FeeRebateRollingClaimsStorage storage s = _getFeeRebateRollingClaimsStorage();
+        address user = getUserOrRemappedAddress(msg.sender);
 
         Require.that(
             _verifyMerkleProof(
-                msg.sender,
+                user,
                 s.marketIdToMerkleRoot[_claimParams.marketId],
                 _claimParams.proof,
                 _claimParams.amount
@@ -114,13 +115,13 @@ contract FeeRebateRollingClaims is BaseClaim, IFeeRebateRollingClaims {
             _claimParams.marketId
         );
         Require.that(
-            _claimParams.amount > s.userToMarketIdToClaimAmount[msg.sender][_claimParams.marketId],
+            _claimParams.amount > s.userToMarketIdToClaimAmount[user][_claimParams.marketId],
             _FILE,
             "No amount to claim"
         );
 
-        uint256 amountToClaim = _claimParams.amount - s.userToMarketIdToClaimAmount[msg.sender][_claimParams.marketId];
-        s.userToMarketIdToClaimAmount[msg.sender][_claimParams.marketId] = _claimParams.amount;
+        uint256 amountToClaim = _claimParams.amount - s.userToMarketIdToClaimAmount[user][_claimParams.marketId];
+        s.userToMarketIdToClaimAmount[user][_claimParams.marketId] = _claimParams.amount;
 
         IERC20 token = IERC20(DOLOMITE_MARGIN().getMarketTokenAddress(_claimParams.marketId));
         token.safeApprove(address(DOLOMITE_MARGIN()), amountToClaim);
@@ -139,7 +140,7 @@ contract FeeRebateRollingClaims is BaseClaim, IFeeRebateRollingClaims {
         );
 
         DOLOMITE_REGISTRY.eventEmitter().emitRewardClaimed(
-            msg.sender,
+            user,
             _claimParams.marketId,
             amountToClaim
         );

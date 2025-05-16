@@ -91,6 +91,29 @@ describe('RollingClaims', () => {
       expect(await odolo.balanceOf(core.hhUser1.address)).to.eq(parseEther('5'));
     });
 
+    it('should work normally with remapped address', async () => {
+      await rollingClaims.connect(core.hhUser5).ownerSetAddressRemapping([core.hhUser4.address], [core.hhUser1.address]);
+
+      const res = await rollingClaims.connect(core.hhUser4).claim(validProof1, parseEther('5'));
+      await expectEvent(core.eventEmitterRegistry, res, 'RewardClaimed', {
+        distributor: rollingClaims.address,
+        user: core.hhUser1.address,
+        epoch: 0,
+        amount: parseEther('5')
+      });
+      expect(await rollingClaims.userToClaimAmount(core.hhUser1.address)).to.eq(parseEther('5'));
+      expect(await odolo.balanceOf(core.hhUser4.address)).to.eq(parseEther('5'));
+
+      await expectThrow(
+        rollingClaims.connect(core.hhUser1).claim(validProof1, parseEther('5')),
+        'RollingClaims: No amount to claim'
+      );
+      await expectThrow(
+        rollingClaims.connect(core.hhUser4).claim(validProof1, parseEther('5')),
+        'RollingClaims: No amount to claim'
+      );
+    });
+
     it('should work normally with two merkle roots', async () => {
       const res = await rollingClaims.connect(core.hhUser1).claim(validProof1, parseEther('5'));
       await expectEvent(core.eventEmitterRegistry, res, 'RewardClaimed', {
