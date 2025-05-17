@@ -23,7 +23,6 @@ import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/he
 import { IDolomiteRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IDolomiteRegistry.sol";
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
-import { IChainlinkAccessControlAggregator } from "./interfaces/IChainlinkAccessControlAggregator.sol";
 import { IChainlinkAggregator } from "./interfaces/IChainlinkAggregator.sol";
 import { IChaosLabsPriceOracleV3 } from "./interfaces/IChaosLabsPriceOracleV3.sol";
 import { IOracleAggregatorV2 } from "./interfaces/IOracleAggregatorV2.sol";

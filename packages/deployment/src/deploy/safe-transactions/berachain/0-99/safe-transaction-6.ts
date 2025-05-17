@@ -33,7 +33,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     ...(await encodeSimpleBoycoListing(core, core.tokens.rsEth, ETH_PRICE)),
     ...(await encodeSimpleBoycoListing(core, core.tokens.sUsda, STABLE_COIN_PRICE_18D)),
     ...(await encodeSimpleBoycoListing(core, core.tokens.solvBtc, BTC_PRICE_18D)),
-    ...(await encodeSimpleBoycoListing(core, core.tokens.solvBtcBbn, BTC_PRICE_18D)),
+    ...(await encodeSimpleBoycoListing(core, core.tokens.xSolvBtc, BTC_PRICE_18D)),
     ...(await encodeSimpleBoycoListing(core, core.tokens.usda, STABLE_COIN_PRICE_18D)),
   );
   return {
@@ -56,7 +56,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
       await checkMarket(core, core.marketIds.rsEth, core.tokens.rsEth);
       await checkMarket(core, core.marketIds.sUsda, core.tokens.sUsda);
       await checkMarket(core, core.marketIds.solvBtc, core.tokens.solvBtc);
-      await checkMarket(core, core.marketIds.solvBtcBbn, core.tokens.solvBtcBbn);
+      await checkMarket(core, core.marketIds.xSolvBtc, core.tokens.xSolvBtc);
       await checkMarket(core, core.marketIds.usda, core.tokens.usda);
     },
   };

@@ -31,6 +31,17 @@ import { IBerachainRewardsRegistry } from "./IBerachainRewardsRegistry.sol";
 interface IBaseMetaVault {
 
     // ================================================
+    // ==================== Events ====================
+    // ================================================
+
+    event AssetStaked(address indexed asset, IBerachainRewardsRegistry.RewardVaultType indexed rewardVaultType, uint256 amount);
+    event AssetUnstaked(address indexed asset, IBerachainRewardsRegistry.RewardVaultType indexed rewardVaultType, uint256 amount);
+    event DTokenFeeCharged(address indexed asset, address indexed feeAgent, uint256 feeAmount);
+    event IBgtStaked(uint256 amount);
+    event IBgtUnstaked(uint256 amount);
+    event RewardClaimed(address indexed rewardVault);
+
+    // ================================================
     // ================== Functions ===================
     // ================================================
 
@@ -55,9 +66,21 @@ interface IBaseMetaVault {
 
     function unstake(address _asset, IBerachainRewardsRegistry.RewardVaultType _type, uint256 amount) external;
 
-    function getReward(address _asset) external returns (uint256);
+    function stakeIBgt(uint256 _amount) external;
 
-    function exit(address _asset) external;
+    function unstakeIBgt(uint256 _amount) external;
+
+    function getReward(address _asset) external;
+
+    function getRewardIBgt() external;
+
+    function exit(address _asset, bool _isDToken) external;
+
+    function chargeDTokenFee(
+        address _asset,
+        uint256 _marketId,
+        uint256 _amount
+    ) external returns (uint256 _feeAmount);
 
     function getDefaultRewardVaultTypeByAsset(
         address _asset

@@ -1,7 +1,10 @@
 import { address } from '@dolomite-exchange/dolomite-margin';
 import { ActionType, AmountDenomination, AmountReference } from '@dolomite-margin/dist/src';
 import { BaseContract, BigNumber, BigNumberish, BytesLike, Signer } from 'ethers';
-import hardhat, { ethers } from 'hardhat';
+import fs, { readFileSync } from 'fs';
+import hardhat, { artifacts, ethers } from 'hardhat';
+import { Artifact } from 'hardhat/types';
+import path, { join } from 'path';
 import { CoreProtocolType } from '../../test/utils/setup';
 import {
   CustomTestToken,
@@ -10,8 +13,42 @@ import {
   CustomTestVaultToken__factory,
 } from '../types';
 import { ActionArgsStruct } from './index';
-import { MAX_UINT_256_BI, NETWORK_TO_NETWORK_NAME_MAP, NetworkType } from './no-deps-constants';
+import { DolomiteNetwork, MAX_UINT_256_BI, NETWORK_TO_NETWORK_NAME_MAP } from './no-deps-constants';
 import { SignerWithAddressWithSafety } from './SignerWithAddressWithSafety';
+
+export async function createArtifactFromBaseWorkspaceIfNotExists(
+  artifactName: string,
+  subFolder: string,
+): Promise<Artifact> {
+  if (await artifacts.artifactExists(artifactName)) {
+    // GUARD STATEMENT!
+    return artifacts.readArtifact(artifactName);
+  }
+
+  const packagesPath = '../../../../packages';
+  const children = fs
+    .readdirSync(join(__dirname, packagesPath), { withFileTypes: true })
+    .filter((d) => d.isDirectory())
+    .map((d) => path.join(packagesPath, d.name));
+
+  const contractsFolders = ['contracts_coverage', 'contracts'];
+  for (const contractFolder of contractsFolders) {
+    for (const child of children) {
+      const artifactPath = join(
+        __dirname,
+        child,
+        `artifacts/${contractFolder}/${subFolder}/${artifactName}.sol/${artifactName}.json`,
+      );
+      if (fs.existsSync(artifactPath)) {
+        const artifact = JSON.parse(readFileSync(artifactPath, 'utf8'));
+        await artifacts.saveArtifactAndDebugFile(artifact);
+        return artifact;
+      }
+    }
+  }
+
+  return Promise.reject(new Error(`Could not find ${artifactName}`));
+}
 
 /**
  * @return  The deployed contract
@@ -23,7 +60,7 @@ export async function createContractWithName<T extends BaseContract>(
   signer?: Signer,
 ): Promise<T> {
   const ContractFactory = await ethers.getContractFactory(contractName, signer);
-  return await ContractFactory.deploy(...(options ? [...args, options] : [...args])) as T;
+  return (await ContractFactory.deploy(...(options ? [...args, options] : [...args]))) as T;
 }
 
 export async function createContractWithAbi<T extends BaseContract>(
@@ -33,7 +70,7 @@ export async function createContractWithAbi<T extends BaseContract>(
   options?: {},
 ): Promise<T> {
   const ContractFactory = await ethers.getContractFactory(abi as any[], bytecode);
-  return await ContractFactory.deploy(...(options ? [...args, options] : [...args])) as T;
+  return (await ContractFactory.deploy(...(options ? [...args, options] : [...args]))) as T;
 }
 
 export type LibraryName = string;
@@ -46,7 +83,7 @@ export async function createContractWithLibrary<T extends BaseContract>(
   signer?: Signer,
 ): Promise<T> {
   const ContractFactory = await ethers.getContractFactory(name, { libraries, signer });
-  return await ContractFactory.deploy(...(options ? [...args, options] : [...args])) as T;
+  return (await ContractFactory.deploy(...(options ? [...args, options] : [...args]))) as T;
 }
 
 export async function createContractWithLibraryAndArtifact<T extends BaseContract>(
@@ -55,15 +92,15 @@ export async function createContractWithLibraryAndArtifact<T extends BaseContrac
   args: (number | string | BigNumberish | object)[],
 ): Promise<T> {
   const ContractFactory = await ethers.getContractFactoryFromArtifact(artifact as any, { libraries });
-  return await ContractFactory.deploy(...args) as T;
+  return (await ContractFactory.deploy(...args)) as T;
 }
 
 export async function createTestToken(decimals: number = 18): Promise<CustomTestToken> {
-  return createContractWithAbi<CustomTestToken>(
-    CustomTestToken__factory.abi,
-    CustomTestToken__factory.bytecode,
-    ['Test Token', 'TEST', decimals],
-  );
+  return createContractWithAbi<CustomTestToken>(CustomTestToken__factory.abi, CustomTestToken__factory.bytecode, [
+    'Test Token',
+    'TEST',
+    decimals,
+  ]);
 }
 
 export async function createTestVaultToken(asset: { address: string }): Promise<CustomTestVaultToken> {
@@ -120,7 +157,7 @@ export function createWithdrawAction(
   };
 }
 
-export async function depositIntoDolomiteMargin<T extends NetworkType>(
+export async function depositIntoDolomiteMargin<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   accountOwner: SignerWithAddressWithSafety,
   accountNumber: BigNumberish,
@@ -133,10 +170,11 @@ export async function depositIntoDolomiteMargin<T extends NetworkType>(
     .operate(
       [{ owner: accountOwner.address, number: accountNumber }],
       [createDepositAction(amount, tokenId, accountOwner, fromAddress)],
+      { gasLimit: 10_000_000 },
     );
 }
 
-export async function withdrawFromDolomiteMargin<T extends NetworkType>(
+export async function withdrawFromDolomiteMargin<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   accountOwner: SignerWithAddressWithSafety,
   accountNumber: BigNumberish,
@@ -168,23 +206,15 @@ export function getPartialRoundHalfUp(target: BigNumber, numerator: BigNumber, d
   return target.mul(numerator).add(denominator.div(2)).div(denominator);
 }
 
-export function owedWeiToHeldWei(
-  owedWei: BigNumber,
-  owedPrice: BigNumber,
-  heldPrice: BigNumber,
-): BigNumber {
+export function owedWeiToHeldWei(owedWei: BigNumber, owedPrice: BigNumber, heldPrice: BigNumber): BigNumber {
   return getPartial(owedWei, owedPrice, heldPrice);
 }
 
-export function heldWeiToOwedWei(
-  heldWei: BigNumber,
-  heldPrice: BigNumber,
-  owedPrice: BigNumber,
-): BigNumber {
+export function heldWeiToOwedWei(heldWei: BigNumber, heldPrice: BigNumber, owedPrice: BigNumber): BigNumber {
   return getPartialRoundUp(heldWei, heldPrice, owedPrice);
 }
 
-export async function getAnyNetwork<T extends NetworkType>(): Promise<T> {
+export async function getAnyNetwork<T extends DolomiteNetwork>(): Promise<T> {
   let foundNetwork;
   if (hardhat.network.name === 'hardhat') {
     if (!process.env.NETWORK) {
@@ -198,7 +228,7 @@ export async function getAnyNetwork<T extends NetworkType>(): Promise<T> {
   return foundNetwork as T;
 }
 
-export async function getAndCheckSpecificNetwork<T extends NetworkType>(networkInvariant: T): Promise<T> {
+export async function getAndCheckSpecificNetwork<T extends DolomiteNetwork>(networkInvariant: T): Promise<T> {
   let foundNetwork: string;
   if (hardhat.network.name === 'hardhat') {
     if (!process.env.NETWORK) {
@@ -211,9 +241,9 @@ export async function getAndCheckSpecificNetwork<T extends NetworkType>(networkI
 
   if (foundNetwork !== networkInvariant) {
     const expectedName = NETWORK_TO_NETWORK_NAME_MAP[networkInvariant];
-    return Promise.reject(new Error(
-      `This script can only be run on ${networkInvariant} (${expectedName}), but found: ${foundNetwork}`,
-    ));
+    return Promise.reject(
+      new Error(`This script can only be run on ${networkInvariant} (${expectedName}), but found: ${foundNetwork}`),
+    );
   }
 
   return networkInvariant;

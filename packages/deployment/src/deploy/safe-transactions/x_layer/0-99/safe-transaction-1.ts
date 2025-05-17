@@ -20,7 +20,7 @@ import {
 
 } from '../../../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
-import getScriptName from '../../../../../utils/get-script-name';
+import getScriptName from '../../../../utils/get-script-name';
 import { encodeAddMarket } from '../../../../utils/encoding/add-market-encoder-utils';
 import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 
@@ -212,7 +212,7 @@ async function main(): Promise<DryRunOutput<Network.XLayer>> {
       core,
       { proxy: core.depositWithdrawalProxy },
       'proxy',
-      'initializeETHMarket',
+      'initializePayableMarket',
       [core.tokens.wokb.address],
     ),
   );

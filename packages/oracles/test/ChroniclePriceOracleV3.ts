@@ -213,7 +213,7 @@ describe('ChroniclePriceOracleV3', () => {
       expect((await core.oracleAggregatorV2.getPrice(testToken.address)).value).to.eq(WETH_PRICE.mul(2));
     });
 
-    it('reverts when and caller is dolomite margin', async () => {
+    it('reverts when caller is dolomite margin', async () => {
       const doloImpersonator = await impersonate(core.dolomiteMargin.address, true);
       await oracle.connect(core.governance).ownerInsertOrUpdateOracleToken(
         testToken.address,

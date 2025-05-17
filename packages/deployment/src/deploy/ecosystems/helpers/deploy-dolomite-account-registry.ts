@@ -5,17 +5,19 @@ import {
   RegistryProxy__factory,
 } from 'packages/base/src/types';
 import { getRegistryProxyConstructorParams } from 'packages/base/src/utils/constructors/dolomite';
-import { NetworkType } from 'packages/base/src/utils/no-deps-constants';
+import { DolomiteNetwork } from 'packages/base/src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
 import { DolomiteMargin } from 'packages/base/test/utils/dolomite';
 import { deployContractAndSave, getMaxDeploymentVersionNameByDeploymentKey } from '../../../utils/deploy-utils';
 import ModuleDeployments from '../../deployments.json';
 
-export async function deployDolomiteAccountRegistry<T extends NetworkType>(
+type ImplementationAddress = string;
+
+export async function deployDolomiteAccountRegistry<T extends DolomiteNetwork>(
   dolomiteMargin: DolomiteMargin<T>,
   signer: SignerWithAddressWithSafety,
   network: T,
-): Promise<RegistryProxy> {
+): Promise<[ImplementationAddress, RegistryProxy]> {
   const dolomiteAccountRegistryImplementationAddress = await deployContractAndSave(
     'DolomiteAccountRegistry',
     [],
@@ -45,5 +47,8 @@ export async function deployDolomiteAccountRegistry<T extends NetworkType>(
     getRegistryProxyConstructorParams(dolomiteAccountRegistryImplementation.address, calldata.data!, dolomiteMargin),
     'DolomiteAccountRegistryProxy',
   );
-  return RegistryProxy__factory.connect(registryProxyAddress, signer);
+  return [
+    dolomiteAccountRegistryImplementationAddress,
+    RegistryProxy__factory.connect(registryProxyAddress, signer)
+  ];
 }

@@ -22,11 +22,13 @@ export interface DeployedVaultInformation {
   constructorParams: any[];
   libraries: IsolationModeLibraryNames[];
   vaultType: IsolationModeVaultType;
+  tokenAddress: string;
   defaultVersion?: number;
 }
 
 export enum IsolationModeLibraryNames {
   IsolationModeTokenVaultV1ActionsImpl = 'IsolationModeTokenVaultV1ActionsImpl',
+  AsyncIsolationModeTokenVaultV1ActionsImpl = 'AsyncIsolationModeTokenVaultV1ActionsImpl',
   GlvLibrary = 'GlvLibrary',
   GmxV2Library = 'GmxV2Library',
 }
@@ -45,11 +47,16 @@ export function getIsolationModeLibrariesByType(vaultType: IsolationModeVaultTyp
     return [IsolationModeLibraryNames.IsolationModeTokenVaultV1ActionsImpl];
   }
   if (vaultType === IsolationModeVaultType.GmxV2) {
-    return [IsolationModeLibraryNames.IsolationModeTokenVaultV1ActionsImpl, IsolationModeLibraryNames.GmxV2Library];
+    return [
+      IsolationModeLibraryNames.IsolationModeTokenVaultV1ActionsImpl,
+      IsolationModeLibraryNames.AsyncIsolationModeTokenVaultV1ActionsImpl,
+      IsolationModeLibraryNames.GmxV2Library,
+    ];
   }
   if (vaultType === IsolationModeVaultType.GLV) {
     return [
       IsolationModeLibraryNames.IsolationModeTokenVaultV1ActionsImpl,
+      IsolationModeLibraryNames.AsyncIsolationModeTokenVaultV1ActionsImpl,
       IsolationModeLibraryNames.GmxV2Library,
       IsolationModeLibraryNames.GlvLibrary,
     ];

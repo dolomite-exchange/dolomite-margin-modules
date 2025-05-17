@@ -42,7 +42,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     await encodeSetMinCollateralization(core, marketIds.weth, TargetCollateralization._133),
     await encodeSetMinCollateralization(core, marketIds.wbtc, TargetCollateralization._133),
     await encodeSetMinCollateralization(core, marketIds.solvBtc, TargetCollateralization._200),
-    await encodeSetMinCollateralization(core, marketIds.solvBtcBbn, TargetCollateralization._200),
+    await encodeSetMinCollateralization(core, marketIds.xSolvBtc, TargetCollateralization._200),
     await encodeSetMinCollateralization(core, marketIds.pumpBtc, TargetCollateralization._200),
     await encodeSetMinCollateralization(core, marketIds.eBtc, TargetCollateralization._150),
     await encodeSetMinCollateralization(core, marketIds.stone, TargetCollateralization._150),
@@ -63,7 +63,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     await encodeSetLiquidationPenalty(core, marketIds.weth, TargetLiquidationPenalty._7),
     await encodeSetLiquidationPenalty(core, marketIds.wbtc, TargetLiquidationPenalty._7),
     await encodeSetLiquidationPenalty(core, marketIds.solvBtc, TargetLiquidationPenalty._15),
-    await encodeSetLiquidationPenalty(core, marketIds.solvBtcBbn, TargetLiquidationPenalty._15),
+    await encodeSetLiquidationPenalty(core, marketIds.xSolvBtc, TargetLiquidationPenalty._15),
     await encodeSetLiquidationPenalty(core, marketIds.pumpBtc, TargetLiquidationPenalty._15),
     await encodeSetLiquidationPenalty(core, marketIds.eBtc, TargetLiquidationPenalty._9),
     await encodeSetLiquidationPenalty(core, marketIds.stone, TargetLiquidationPenalty._9),
@@ -84,7 +84,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     await encodeSetSupplyCapWithMagic(core, marketIds.weth, 75_000),
     await encodeSetSupplyCapWithMagic(core, marketIds.wbtc, 1_000),
     await encodeSetSupplyCapWithMagic(core, marketIds.solvBtc, 5),
-    await encodeSetSupplyCapWithMagic(core, marketIds.solvBtcBbn, 5),
+    await encodeSetSupplyCapWithMagic(core, marketIds.xSolvBtc, 5),
     await encodeSetSupplyCapWithMagic(core, marketIds.pumpBtc, 7),
     await encodeSetSupplyCapWithMagic(core, marketIds.eBtc, 2_000),
     await encodeSetSupplyCapWithMagic(core, marketIds.stone, 10_000),
@@ -158,7 +158,7 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
       await printRiskDataVisualCheck(core, marketIds.weth);
       await printRiskDataVisualCheck(core, marketIds.wbtc);
       await printRiskDataVisualCheck(core, marketIds.solvBtc);
-      await printRiskDataVisualCheck(core, marketIds.solvBtcBbn);
+      await printRiskDataVisualCheck(core, marketIds.xSolvBtc);
       await printRiskDataVisualCheck(core, marketIds.pumpBtc);
       await printRiskDataVisualCheck(core, marketIds.eBtc);
       await printRiskDataVisualCheck(core, marketIds.stone);

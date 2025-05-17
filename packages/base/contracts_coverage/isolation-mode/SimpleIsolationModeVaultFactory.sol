@@ -129,4 +129,11 @@ abstract contract SimpleIsolationModeVaultFactory is IsolationModeVaultFactory {
         _allowableCollateralMarketIds = _newAllowableCollateralMarketIds;
         emit AllowableCollateralMarketIdsSet(_newAllowableCollateralMarketIds);
     }
+
+    function _afterInitialize() internal virtual override {
+        if (_allowableCollateralMarketIds.length > 0) {
+            // Only add this isolated market ID if the user is restricted by which collateral assets they may use
+            _allowableCollateralMarketIds.push(marketId);
+        }
+    }
 }

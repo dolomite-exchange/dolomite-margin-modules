@@ -2,8 +2,8 @@ import * as deployments from '@dolomite-exchange/modules-deployments/src/deploy/
 import {
   ExternalOARB,
   ExternalOARB__factory,
-  ExternalVesterImplementationV1,
-  ExternalVesterImplementationV1__factory,
+  GravitaExternalVesterImplementationV2,
+  GravitaExternalVesterImplementationV2__factory,
   MineralToken,
   MineralToken__factory,
   OARB,
@@ -36,7 +36,7 @@ export interface OARBLiquidityMiningEcosystem {
 }
 
 export interface GoARBLiquidityMiningEcosystem {
-  goArbVester: ExternalVesterImplementationV1;
+  goArbVester: GravitaExternalVesterImplementationV2;
   goArbVesterProxy: UpgradeableProxy;
   goArb: ExternalOARB;
 }
@@ -56,7 +56,7 @@ export async function createGoARBLiquidityMiningEcosystem(
   signer: SignerWithAddressWithSafety,
 ): Promise<GoARBLiquidityMiningEcosystem> {
   return {
-    goArbVester: ExternalVesterImplementationV1__factory.connect(
+    goArbVester: GravitaExternalVesterImplementationV2__factory.connect(
       deployments.GravitaExternalVesterProxy[network].address,
       signer,
     ),

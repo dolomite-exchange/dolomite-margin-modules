@@ -15,8 +15,9 @@ import { revertToSnapshotAndCapture, snapshot } from '../utils';
 import { expectEvent, expectProtocolBalance, expectThrow } from '../utils/assertions';
 
 import { CoreProtocolArbitrumOne } from '../utils/core-protocols/core-protocol-arbitrum-one';
-import { createAndUpgradeDolomiteRegistry, createDolomiteErc4626Proxy } from '../utils/dolomite';
+import { createAndUpgradeDolomiteRegistry, createDolomiteErc4626WithPayableProxy } from '../utils/dolomite';
 import { disableInterestAccrual, setupCoreProtocol, setupWETHBalance } from '../utils/setup';
+import { getDolomiteErc4626ImplementationConstructorParams } from '../../src/utils/constructors/dolomite';
 
 const wethAmount = parseEther('1');
 const isolationModeVault = '0xffa18b366fa3ebE5832a49535F42aa0c93c791eF';
@@ -38,9 +39,9 @@ describe('DolomiteERC4626WithPayable', () => {
       await createContractWithAbi<TestDolomiteERC4626WithPayable>(
         TestDolomiteERC4626WithPayable__factory.abi,
         TestDolomiteERC4626WithPayable__factory.bytecode,
-        [core.tokens.weth.address],
+        await getDolomiteErc4626ImplementationConstructorParams(core),
       );
-    const tokenProxy = await createDolomiteErc4626Proxy(core.marketIds.weth, core);
+    const tokenProxy = await createDolomiteErc4626WithPayableProxy(core.marketIds.weth, core);
     token = TestDolomiteERC4626WithPayable__factory.connect(tokenProxy.address, core.hhUser1);
     asset = core.tokens.weth;
 
@@ -74,7 +75,7 @@ describe('DolomiteERC4626WithPayable', () => {
     });
 
     it('should not be callable again', async () => {
-      await expectThrow(token.initialize('Dolomite: WETH', 'dWETH', 18, 0, core.dolomiteRegistry.address));
+      await expectThrow(token.initialize('Dolomite: WETH', 'dWETH', 18, 0));
     });
   });
 

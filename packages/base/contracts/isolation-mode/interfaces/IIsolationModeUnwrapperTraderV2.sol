@@ -36,17 +36,20 @@ interface IIsolationModeUnwrapperTraderV2 is IDolomiteMarginExchangeWrapper {
         /// @dev    The index of the account (according the Accounts[] array) that is performing the sell.
         uint256 primaryAccountId;
         /// @dev    The index of the account (according the Accounts[] array) that is being liquidated. This is set to
-        ///         `_primaryAccountId` if a liquidation is not occurring.
+        ///         `_primaryAccountId` if a liquidation is not occurring. This is always the address of the isolation
+        ///         mode vault.
         uint256 otherAccountId;
         /// @dev    The address of the owner of the account that is performing the sell.
         address primaryAccountOwner;
         /// @dev    The account number of the owner of the account that is performing the sell.
         uint256 primaryAccountNumber;
         /// @dev    The address of the owner of the account that is being liquidated. This is set to
-        ///         `_primaryAccountOwner` if a liquidation is not occurring.
+        ///         `_primaryAccountOwner` if a liquidation is not occurring. This is always the address of the
+        ///         isolation mode vault.
         address otherAccountOwner;
         /// @dev    The account number of the owner of the account that is being liquidated. This is set to
-        ///         `_primaryAccountNumber` if a liquidation is not occurring.
+        ///         `_primaryAccountNumber` if a liquidation is not occurring. This is always the account number of the
+        ///         isolation mode vault
         uint256 otherAccountNumber;
         /// @dev    The market that is being outputted by the unwrapping.
         uint256 outputMarket;

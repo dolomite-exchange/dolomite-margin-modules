@@ -49,7 +49,7 @@ abstract contract IsolationModeUnwrapperTraderV2 is
     // ======================== Constants ========================
 
     bytes32 private constant _FILE = "IsolationModeUnwrapperTraderV2";
-    uint256 private constant _ACTIONS_LENGTH = 2;
+    uint256 internal constant _ACTIONS_LENGTH = 2;
 
     // ======================== Constructor ========================
 
@@ -88,6 +88,7 @@ abstract contract IsolationModeUnwrapperTraderV2 is
         bytes calldata _orderData
     )
     external
+    virtual
     onlyDolomiteMargin(msg.sender)
     returns (uint256) {
         Require.that(
@@ -157,6 +158,7 @@ abstract contract IsolationModeUnwrapperTraderV2 is
         CreateActionsForUnwrappingParams calldata _params
     )
         external
+        virtual
         view
         returns (IDolomiteMargin.ActionArgs[] memory)
     {

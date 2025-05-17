@@ -5,8 +5,8 @@ import { BigNumber, BigNumberish, ContractTransaction } from 'ethers';
 import { AccountInfoStruct, GenericTraderParamStruct } from '../../src/utils';
 import {
   BYTES_EMPTY,
+  DolomiteNetwork,
   MAX_UINT_256_BI,
-  Network,
   NO_EXPIRY,
   NO_PARASWAP_TRADER_PARAM,
 } from '../../src/utils/no-deps-constants';
@@ -21,7 +21,7 @@ export function getLastZapAmountToBigNumber(zapOutput: ZapOutputParam): BigNumbe
   return BigNumber.from(zapOutput.amountWeisPath[zapOutput.amountWeisPath.length - 1].toString());
 }
 
-export async function liquidateV4WithIsolationMode<T extends Network>(
+export async function liquidateV4WithIsolationMode<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   solidAccountStruct: AccountInfoStruct,
   liquidAccountStruct: AccountInfoStruct,
@@ -55,7 +55,7 @@ export async function liquidateV4WithIsolationMode<T extends Network>(
   );
 }
 
-export async function liquidateV4WithLiquidityToken<T extends Network>(
+export async function liquidateV4WithLiquidityToken<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   solidAccountStruct: AccountInfoStruct,
   liquidAccountStruct: AccountInfoStruct,
@@ -90,7 +90,7 @@ export async function liquidateV4WithLiquidityToken<T extends Network>(
   );
 }
 
-export async function liquidateV4WithZap<T extends Network>(
+export async function liquidateV4WithZap<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   solidAccountStruct: AccountInfoStruct,
   liquidAccountStruct: AccountInfoStruct,
@@ -120,7 +120,7 @@ export async function liquidateV4WithZap<T extends Network>(
   return Promise.reject(latestError);
 }
 
-export async function liquidateV4WithZapParam<T extends Network>(
+export async function liquidateV4WithZapParam<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   solidAccountStruct: AccountInfoStruct,
   liquidAccountStruct: AccountInfoStruct,

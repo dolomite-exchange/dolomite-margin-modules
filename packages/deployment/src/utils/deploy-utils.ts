@@ -6,6 +6,8 @@ import {
   DolomiteERC4626WithPayable__factory,
   IERC20,
   IERC20Metadata__factory,
+  IIsolationModeUnwrapperTraderV2, IIsolationModeUnwrapperTraderV2__factory,
+  IIsolationModeWrapperTraderV2, IIsolationModeWrapperTraderV2__factory,
 } from '@dolomite-exchange/modules-base/src/types';
 import {
   getDolomiteErc4626ProxyConstructorParams,
@@ -15,11 +17,13 @@ import {
   ADDRESS_ZERO,
   BYTES_EMPTY,
   BYTES_ZERO,
+  DolomiteNetwork,
   Network,
   NETWORK_TO_NETWORK_NAME_MAP,
-  NetworkType,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocols/core-protocol-arbitrum-one';
+import {
+  CoreProtocolArbitrumOne,
+} from '@dolomite-exchange/modules-base/test/utils/core-protocols/core-protocol-arbitrum-one';
 import { CoreProtocolType } from '@dolomite-exchange/modules-base/test/utils/setup';
 import {
   GmxV2IsolationModeVaultFactory,
@@ -53,14 +57,15 @@ import {
   PendlePtPriceOracleV2__factory,
   PendleRegistry__factory,
 } from '@dolomite-exchange/modules-pendle/src/types';
+import { Wallet } from '@ethersproject/wallet/src.ts';
 import { Etherscan } from '@nomicfoundation/hardhat-verify/etherscan';
 import { Libraries } from '@nomiclabs/hardhat-ethers/src/types';
 import { sleep } from '@openzeppelin/upgrades';
-import { BigNumber, BigNumberish, Signer } from 'ethers';
+import { BigNumber, BigNumberish, ethers, Signer } from 'ethers';
 import { keccak256, parseEther } from 'ethers/lib/utils';
 import fs, { readFileSync } from 'fs';
 import fsExtra from 'fs-extra';
-import hardhat, { artifacts, ethers, network } from 'hardhat';
+import hardhat, { artifacts, network } from 'hardhat';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { createContractWithName } from 'packages/base/src/utils/dolomite-utils';
 import { GlvToken } from 'packages/base/test/utils/ecosystem-utils/glv';
@@ -85,8 +90,24 @@ import {
   GMX_V2_EXECUTION_FEE,
 } from 'packages/gmx-v2/src/gmx-v2-constructors';
 import path, { join } from 'path';
+import { SignerWithAddressWithSafety } from '../../../base/src/utils/SignerWithAddressWithSafety';
+import { impersonate } from '../../../base/test/utils';
 import ModuleDeployments from '../deploy/deployments.json';
 import { CREATE3Factory__factory } from '../saved-types';
+import {
+  IBerachainRewardsRegistry,
+  IERC4626__factory,
+  POLIsolationModeTokenVaultV1,
+  POLIsolationModeUnwrapperTraderV2,
+  POLIsolationModeUnwrapperTraderV2__factory,
+  POLIsolationModeVaultFactory,
+  POLIsolationModeVaultFactory__factory,
+  POLIsolationModeWrapperTraderV2,
+  POLIsolationModeWrapperTraderV2__factory,
+  POLPriceOracleV2,
+  POLPriceOracleV2__factory,
+} from 'packages/berachain/src/types';
+import { getPOLIsolationModeVaultFactoryConstructorParams } from 'packages/berachain/src/berachain-constructors';
 
 type ChainId = string;
 
@@ -101,13 +122,26 @@ export function readDeploymentFile(): Record<string, Record<ChainId, any>> {
   return JSON.parse(fs.readFileSync(DEPLOYMENT_FILE_NAME).toString());
 }
 
+export async function getDeployerSigner(): Promise<{ signer: Wallet | SignerWithAddressWithSafety; wallet: Wallet }> {
+  const wallet = new ethers.Wallet(process.env.DEPLOYER_PRIVATE_KEY as string);
+  let hhUser1: Wallet | SignerWithAddressWithSafety;
+  if (hardhat.network.name === 'hardhat') {
+    hhUser1 = await impersonate(wallet.address);
+  } else {
+    hhUser1 = wallet.connect(hardhat.ethers.provider);
+  }
+  return { wallet, signer: hhUser1 };
+}
+
 export async function verifyContract(
   address: string,
   constructorArguments: any[],
   contractName: string,
   libraries: Libraries,
+  sleepTimeSeconds: number,
   attempts: number = 0,
 ): Promise<void> {
+  await sleep(sleepTimeSeconds * 1_000);
   const customChain = hardhat.config.etherscan.customChains.filter((c) => c.network === hardhat.network.name)[0];
   const instance = new Etherscan(
     (hardhat.config.etherscan.apiKey as Record<string, string>)[customChain.network],
@@ -121,8 +155,10 @@ export async function verifyContract(
 
   try {
     console.log('\tVerifying contract...');
+
     const artifact = await artifacts.readArtifact(contractName);
-    const factory = await ethers.getContractFactoryFromArtifact(artifact, { libraries });
+    const factory = await hardhat.ethers.getContractFactoryFromArtifact(artifact, { libraries });
+    console.log('\tGot contract info for verification...');
 
     const buildInfo = artifacts.getBuildInfoSync(contractName);
 
@@ -143,6 +179,7 @@ export async function verifyContract(
       return acc;
     }, {});
 
+    console.log('\tSubmitting verification...');
     const { message: guid } = await instance.verify(
       address,
       JSON.stringify(buildInfo!.input),
@@ -151,7 +188,8 @@ export async function verifyContract(
       factory.interface.encodeDeploy(constructorArguments).slice(2),
     );
 
-    await sleep(1000);
+    console.log('\tSubmitted verification. Checking status...');
+    await sleep(1_000);
     const verificationStatus = await instance.getVerificationStatus(guid);
     if (verificationStatus.isSuccess() || verificationStatus.isOk()) {
       const contractURL = instance.getContractUrl(address);
@@ -163,8 +201,8 @@ export async function verifyContract(
     if (e?.message.toLowerCase().includes('already verified')) {
       console.log('\tEtherscanVerification: Swallowing already verified error');
     } else if (attempts < 2) {
-      await sleep(3_000);
-      await verifyContract(address, constructorArguments, contractName, libraries, attempts + 1);
+      const sleepTimeSeconds = 3_000;
+      await verifyContract(address, constructorArguments, contractName, libraries, sleepTimeSeconds, attempts + 1);
     } else {
       console.error('Error with verifying:', e);
       return Promise.reject(e);
@@ -332,6 +370,7 @@ export async function deployContractAndSave(
   contractRename?: string,
   libraries?: Record<string, string>,
   options: {
+    skipRenameUpgradeableContracts?: boolean;
     nonce?: number;
     gasLimit?: BigNumberish;
     gasPrice?: BigNumberish;
@@ -343,6 +382,13 @@ export async function deployContractAndSave(
 ): Promise<address> {
   if (attempts === 3) {
     return Promise.reject(new Error(`\tCould not deploy after ${attempts} attempts!`));
+  }
+
+  const invalidNames = ['RegistryProxy', 'UpgradeableProxy'];
+  if (invalidNames.includes(contractName) && !contractRename) {
+    if (!options.skipRenameUpgradeableContracts) {
+      console.error('Cannot deploy an upgradeable contract with an invalid name:', invalidNames);
+    }
   }
 
   const fileBuffer = fs.readFileSync(DEPLOYMENT_FILE_NAME);
@@ -363,7 +409,6 @@ export async function deployContractAndSave(
     typeof chainId === 'number' && NETWORK_TO_NETWORK_NAME_MAP[chainId.toString() as Network] === networkName,
     `Invalid chainId, found: ${chainId}`,
   );
-  const usedContractName = contractRename ?? contractName;
   const contractData = file[usedContractName]?.[chainId.toString()];
   if (contractData && contractData.address !== ADDRESS_ZERO) {
     const contract = file[usedContractName][chainId.toString()];
@@ -390,15 +435,15 @@ export async function deployContractAndSave(
   let contract: { address: string; transactionHash: string };
   try {
     const deployer = process.env.DEPLOYER_PRIVATE_KEY
-      ? new ethers.Wallet(process.env.DEPLOYER_PRIVATE_KEY, ethers.provider)
+      ? new ethers.Wallet(process.env.DEPLOYER_PRIVATE_KEY, hardhat.ethers.provider)
       : undefined;
-    const signer = options.signer ?? deployer ?? ethers.provider.getSigner(0);
+    const signer = options.signer ?? deployer ?? hardhat.ethers.provider.getSigner(0);
     if (nonce === undefined) {
-      nonce = await ethers.provider.getTransactionCount(await signer.getAddress(), 'pending');
+      nonce = await hardhat.ethers.provider.getTransactionCount(await signer.getAddress(), 'pending');
     }
     const opts = {
       nonce: options.nonce === undefined ? nonce : options.nonce,
-      gasPrice: options.gasPrice,
+      gasPrice: options.gasPrice ?? hardhat.userConfig.networks![networkName]?.gasPrice,
       gasLimit: options.gasLimit,
       type: options.type,
     };
@@ -410,7 +455,7 @@ export async function deployContractAndSave(
         transactionHash: result.deployTransaction.hash,
       };
     } else {
-      const factory = await ethers.getContractFactory(contractName, { libraries, signer });
+      const factory = await hardhat.ethers.getContractFactory(contractName, { libraries, signer });
       const transaction = factory.getDeployTransaction(...args);
       const deployer = CREATE3Factory__factory.connect(
         (ModuleDeployments.CREATE3Factory as any)[chainId].address,
@@ -418,7 +463,7 @@ export async function deployContractAndSave(
       );
       const salt = keccak256(ethers.utils.defaultAbiCoder.encode(['string'], [usedContractName]));
       const contractAddress = await deployer.getDeployed(await signer.getAddress(), salt);
-      const code = await ethers.provider.getCode(contractAddress);
+      const code = await hardhat.ethers.provider.getCode(contractAddress);
       if (code === BYTES_EMPTY) {
         const result = await deployer.deploy(salt, transaction.data!, opts);
         await result.wait();
@@ -426,6 +471,7 @@ export async function deployContractAndSave(
           address: contractAddress,
           transactionHash: result.hash,
         };
+        nonce += 1;
       } else {
         console.warn(`\t${contractRename} was already deployed. Filling in 0x0 for hash...`);
         contract = {
@@ -434,8 +480,6 @@ export async function deployContractAndSave(
         };
       }
     }
-
-    nonce += 1;
   } catch (e) {
     console.error(`\tCould not deploy at attempt ${attempts + 1} due for ${contractName} to error:`, e);
     console.log(); // print new line
@@ -443,8 +487,8 @@ export async function deployContractAndSave(
     const errorMessage = (e as any).message;
     if (errorMessage.includes('nonce has already been used') || errorMessage.includes('replacement fee too low')) {
       console.log('\tRe-fetching nonce...');
-      const signer = ethers.provider.getSigner(0);
-      nonce = await ethers.provider.getTransactionCount(await signer.getAddress(), 'pending');
+      const signer = hardhat.ethers.provider.getSigner(0);
+      nonce = await hardhat.ethers.provider.getTransactionCount(await signer.getAddress(), 'pending');
     }
     return deployContractAndSave(contractName, args, contractRename, libraries, options, attempts + 1);
   }
@@ -482,7 +526,7 @@ async function verifyFactoryChildProxyContractIfNecessary(
   chainId: number,
 ) {
   if (network.name !== 'hardhat') {
-    const receipt = await ethers.provider.getTransactionReceipt(deploymentTransactionHash);
+    const receipt = await hardhat.ethers.provider.getTransactionReceipt(deploymentTransactionHash);
     const vaultCreatedTopic0 = '0x5d9c31ffa0fecffd7cf379989a3c7af252f0335e0d2a1320b55245912c781f53';
     const event = receipt?.logs.find((l) => l.topics[0] === vaultCreatedTopic0);
     if (event) {
@@ -701,7 +745,7 @@ export interface PendlePtSystem {
   wrapper: PendlePtIsolationModeWrapperTraderV2;
 }
 
-export async function deployPendlePtSystem<T extends NetworkType>(
+export async function deployPendlePtSystem<T extends DolomiteNetwork>(
   core: CoreProtocolWithPendle<T>,
   ptName: string,
   ptMarket: IPendlePtMarket,
@@ -792,6 +836,80 @@ export async function deployPendlePtSystem<T extends NetworkType>(
     oracle,
     unwrapper: PendlePtIsolationModeUnwrapperTraderV2__factory.connect(unwrapperAddress, core.governance),
     wrapper: PendlePtIsolationModeWrapperTraderV2__factory.connect(wrapperAddress, core.governance),
+  };
+}
+
+export interface BerachainPOLSystem {
+  factory: POLIsolationModeVaultFactory;
+  oracle: POLPriceOracleV2;
+  unwrapper: IIsolationModeUnwrapperTraderV2;
+  wrapper: IIsolationModeWrapperTraderV2;
+}
+
+export async function deployBerachainPOLSystem<T extends DolomiteNetwork>(
+  core: CoreProtocolType<T>,
+  registry: IBerachainRewardsRegistry,
+  dToken: DolomiteERC4626,
+  polName: string,
+  userVaultImplementation: POLIsolationModeTokenVaultV1,
+  polUnwrapperImplementation: POLIsolationModeUnwrapperTraderV2,
+  polWrapperImplementation: POLIsolationModeWrapperTraderV2,
+): Promise<BerachainPOLSystem> {
+  if (core.network !== Network.Berachain) {
+    return Promise.reject(new Error('Core protocol is not Berachain'));
+  }
+  const marketId = await dToken.marketId();
+  if (!marketId || marketId.isNegative()) {
+    return Promise.reject(new Error('Invalid dToken'));
+  }
+
+  const underlyingAddress = await IERC4626__factory.connect(dToken.address, core.hhUser1).asset();
+  const underlyingSymbol = await IERC4626__factory.connect(underlyingAddress, core.hhUser1).symbol();
+  console.log(`\tReal symbol for POL name: ${underlyingSymbol}`);
+
+  const factoryAddress = await deployContractAndSave(
+    'POLIsolationModeVaultFactory',
+    getPOLIsolationModeVaultFactoryConstructorParams(
+      core,
+      underlyingSymbol,
+      registry,
+      dToken,
+      userVaultImplementation,
+      [],
+      [],
+    ),
+    `${polName}IsolationModeVaultFactory`,
+  );
+  const factory = POLIsolationModeVaultFactory__factory.connect(factoryAddress, core.governance);
+
+  const calldata = await polUnwrapperImplementation.populateTransaction.initialize(factory.address);
+  const unwrapperProxyAddress = await deployContractAndSave(
+    'POLIsolationModeUnwrapperUpgradeableProxy',
+    [registry.address, calldata.data!],
+    `${polName}IsolationModeUnwrapperUpgradeableProxy`,
+  );
+  const unwrapper = IIsolationModeUnwrapperTraderV2__factory.connect(unwrapperProxyAddress, core.governance);
+
+  const wrapperCalldata = await polWrapperImplementation.populateTransaction.initialize(factory.address);
+  const wrapperProxyAddress = await deployContractAndSave(
+    'POLIsolationModeWrapperUpgradeableProxy',
+    [registry.address, wrapperCalldata.data!],
+    `${polName}IsolationModeWrapperUpgradeableProxy`,
+  );
+  const wrapper = IIsolationModeWrapperTraderV2__factory.connect(wrapperProxyAddress, core.governance);
+
+  const oracleAddress = await deployContractAndSave(
+    'POLPriceOracleV2',
+    [factory.address, core.dolomiteMargin.address],
+    `${polName}PriceOracleV2`,
+  );
+  const oracle = POLPriceOracleV2__factory.connect(oracleAddress, core.governance);
+
+  return {
+    factory,
+    unwrapper,
+    wrapper,
+    oracle,
   };
 }
 
@@ -908,14 +1026,19 @@ async function prettyPrintAndVerifyContract(
   console.log('\tAddress: ', contract.address);
   console.log(`\t${'='.repeat(52 + contractRename.length)}`);
 
-  if (!(process.env.SKIP_VERIFICATION === 'true')) {
-    const sleepTimeSeconds = 5;
+  if (!(process.env.SKIP_VERIFICATION === 'true') && !contract.isVerified) {
+    const sleepTimeSeconds = chainId === parseInt(Network.Ink, 10) ? 10 : 5;
     console.log(
       `\tSleeping for ${sleepTimeSeconds}s to wait for the transaction to be indexed by the block explorer...`,
     );
-    await sleep(sleepTimeSeconds * 1_000);
     const artifact = await artifacts.readArtifact(contractName);
-    await verifyContract(contract.address, [...args], `${artifact.sourceName}:${contractName}`, libraries);
+    await verifyContract(
+      contract.address,
+      [...args],
+      `${artifact.sourceName}:${contractName}`,
+      libraries,
+      sleepTimeSeconds,
+    );
     file[contractRename][chainId].isVerified = true;
     writeDeploymentFile(file);
   } else {

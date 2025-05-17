@@ -1,22 +1,30 @@
 import { ADDRESS_ZERO } from '@dolomite-exchange/zap-sdk/dist/src/lib/Constants';
+import CoreDeployments from '@dolomite-margin/dist/migrations/deployed.json';
 import {
+  GenericTraderProxyV2,
   IDolomiteRegistry,
-  IIsolationModeTokenVaultV1__factory,
+  IIsolationModeTokenVaultV1__factory, ILiquidatorProxyV5,
   RegistryProxy,
 } from 'packages/base/src/types';
 import { isArraysEqual } from 'packages/base/src/utils';
+import { DolomiteNetwork } from '../../../../../base/src/utils/no-deps-constants';
+import { CoreProtocolType } from '../../../../../base/test/utils/setup';
 import { EncodedTransaction } from '../../../utils/dry-run-utils';
 import { prettyPrintEncodedDataWithTypeSafety } from '../../../utils/encoding/base-encoder-utils';
+import { encodeSetGlobalOperatorIfNecessary } from '../../../utils/encoding/dolomite-margin-core-encoder-utils';
 
-export async function encodeDolomiteRegistryMigrations(
+export async function encodeDolomiteRegistryMigrations<T extends DolomiteNetwork>(
   dolomiteRegistry: IDolomiteRegistry,
   dolomiteRegistryProxy: RegistryProxy,
-  dolomiteAccountRegistryAddress: string,
+  borrowPositionProxyAddress: string,
+  dolomiteAccountRegistryProxy: RegistryProxy,
   dolomiteMigratorAddress: string,
+  genericTraderProxyV2: GenericTraderProxyV2,
+  liquidatorProxyV5: ILiquidatorProxyV5,
   oracleAggregatorAddress: string,
   registryImplementationAddress: string,
   transactions: EncodedTransaction[],
-  core: any,
+  core: CoreProtocolType<T>,
 ) {
   if ((await dolomiteRegistryProxy.implementation()) !== registryImplementationAddress) {
     transactions.push(
@@ -34,7 +42,7 @@ export async function encodeDolomiteRegistryMigrations(
   try {
     const foundDolomiteAccountRegistryAddress = await dolomiteRegistry.dolomiteAccountRegistry();
     needsRegistryDolomiteAccountRegistryEncoding =
-      foundDolomiteAccountRegistryAddress !== dolomiteAccountRegistryAddress;
+      foundDolomiteAccountRegistryAddress !== dolomiteAccountRegistryProxy.address;
   } catch (e) {}
   if (needsRegistryDolomiteAccountRegistryEncoding) {
     transactions.push(
@@ -43,10 +51,80 @@ export async function encodeDolomiteRegistryMigrations(
         { dolomiteRegistry },
         'dolomiteRegistry',
         'ownerSetDolomiteAccountRegistry',
-        [dolomiteAccountRegistryAddress],
+        [dolomiteAccountRegistryProxy.address],
       ),
     );
   }
+
+  let needsRegistryBorrowPositionProxyEncoding = true;
+  try {
+    const foundBorrowPositionProxyAddress = await dolomiteRegistry.borrowPositionProxy();
+    needsRegistryBorrowPositionProxyEncoding = foundBorrowPositionProxyAddress !== borrowPositionProxyAddress;
+  } catch (e) {}
+  if (needsRegistryBorrowPositionProxyEncoding) {
+    transactions.push(
+      await prettyPrintEncodedDataWithTypeSafety(
+        core,
+        { dolomiteRegistry },
+        'dolomiteRegistry',
+        'ownerSetBorrowPositionProxy',
+        [borrowPositionProxyAddress],
+      ),
+    );
+  }
+
+  let needsRegistryGenericTraderProxyV2Encoding = true;
+  try {
+    const foundGenericTraderProxyV2Address = await dolomiteRegistry.genericTraderProxy();
+    needsRegistryGenericTraderProxyV2Encoding = foundGenericTraderProxyV2Address !== genericTraderProxyV2.address;
+  } catch (e) {}
+  if (needsRegistryGenericTraderProxyV2Encoding) {
+    transactions.push(
+      await prettyPrintEncodedDataWithTypeSafety(
+        core,
+        { dolomiteRegistry },
+        'dolomiteRegistry',
+        'ownerSetGenericTraderProxy',
+        [genericTraderProxyV2.address],
+      ),
+    );
+  }
+
+  let needsTreasuryEncoding = true;
+  try {
+    const foundTreasury = await dolomiteRegistry.treasury();
+    needsTreasuryEncoding = foundTreasury !== core.gnosisSafeAddress;
+  } catch (e) {}
+  if (needsTreasuryEncoding) {
+    transactions.push(
+      await prettyPrintEncodedDataWithTypeSafety(
+        core,
+        { dolomiteRegistry },
+        'dolomiteRegistry',
+        'ownerSetTreasury',
+        [core.gnosisSafeAddress],
+      ),
+    );
+  }
+
+  const genericTraderProxyV1Address = CoreDeployments.GenericTraderProxyV1[core.network].address;
+  transactions.push(
+    ...await encodeSetGlobalOperatorIfNecessary(
+      core,
+      genericTraderProxyV1Address,
+      false,
+    ),
+    ...await encodeSetGlobalOperatorIfNecessary(
+      core,
+      genericTraderProxyV2,
+      true,
+    ),
+    ...await encodeSetGlobalOperatorIfNecessary(
+      core,
+      liquidatorProxyV5,
+      true,
+    ),
+  );
 
   let needsRegistryMigratorEncoding = true;
   let needsRegistryOracleAggregatorEncoding = true;

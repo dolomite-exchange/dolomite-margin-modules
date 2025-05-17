@@ -39,7 +39,7 @@ import {
   createContractWithLibrary,
   createContractWithLibraryAndArtifact
 } from '../../../src/utils/dolomite-utils';
-import { NetworkType } from '../../../src/utils/no-deps-constants';
+import { DolomiteNetwork } from '../../../src/utils/no-deps-constants';
 import { SignerWithAddressWithSafety } from '../../../src/utils/SignerWithAddressWithSafety';
 import {
   createAsyncIsolationModeUnwrapperTraderImpl,
@@ -61,7 +61,7 @@ export interface TestEcosystem {
   testPriceOracle: TestPriceOracle;
 }
 
-export async function createTestIsolationModeVaultFactory<T extends NetworkType>(
+export async function createTestIsolationModeVaultFactory<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   underlyingToken: CustomTestToken,
   userVaultImplementation: TestIsolationModeTokenVault | IIsolationModeTokenVaultV1,
@@ -94,7 +94,7 @@ type FreezableVault =
   | TestIsolationModeTokenVaultV1WithAsyncFreezable
   | TestIsolationModeTokenVaultV1WithAsyncFreezableAndPausable;
 
-export async function createTestHandlerRegistry<T extends NetworkType>(
+export async function createTestHandlerRegistry<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
 ): Promise<TestHandlerRegistry> {
   const implementation = await createContractWithAbi<TestHandlerRegistry>(
@@ -107,7 +107,7 @@ export async function createTestHandlerRegistry<T extends NetworkType>(
   return TestHandlerRegistry__factory.connect(proxy.address, core.hhUser1);
 }
 
-export async function createTestAsyncFreezableIsolationModeVaultFactory<T extends NetworkType>(
+export async function createTestAsyncFreezableIsolationModeVaultFactory<T extends DolomiteNetwork>(
   executionFee: BigNumberish,
   registry: TestHandlerRegistry,
   core: CoreProtocolType<T>,
@@ -129,7 +129,7 @@ export async function createTestAsyncFreezableIsolationModeVaultFactory<T extend
   );
 }
 
-export async function createTestAsyncProtocolIsolationModeVaultFactory<T extends NetworkType>(
+export async function createTestAsyncProtocolIsolationModeVaultFactory<T extends DolomiteNetwork>(
   executionFee: BigNumberish,
   registry: TestHandlerRegistry,
   core: CoreProtocolType<T>,
@@ -151,7 +151,7 @@ export async function createTestAsyncProtocolIsolationModeVaultFactory<T extends
   );
 }
 
-export async function createTestUpgradeableAsyncIsolationModeWrapperTrader<T extends NetworkType>(
+export async function createTestUpgradeableAsyncIsolationModeWrapperTrader<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   registry: TestHandlerRegistry,
   factory: TestAsyncFreezableIsolationModeVaultFactory,
@@ -178,7 +178,7 @@ export async function createTestUpgradeableAsyncIsolationModeWrapperTrader<T ext
   return TestUpgradeableAsyncIsolationModeWrapperTrader__factory.connect(proxy.address, core.hhUser1);
 }
 
-export async function createTestUpgradeableAsyncIsolationModeUnwrapperTrader<T extends NetworkType>(
+export async function createTestUpgradeableAsyncIsolationModeUnwrapperTrader<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   registry: TestHandlerRegistry,
   factory: TestAsyncFreezableIsolationModeVaultFactory,
@@ -205,7 +205,7 @@ export async function createTestUpgradeableAsyncIsolationModeUnwrapperTrader<T e
   return TestUpgradeableAsyncIsolationModeUnwrapperTrader__factory.connect(proxy.address, core.hhUser1);
 }
 
-export async function createTestEcosystem<T extends NetworkType>(
+export async function createTestEcosystem<T extends DolomiteNetwork>(
   dolomiteMargin: DolomiteMargin<T>,
   signer: SignerWithAddressWithSafety,
 ): Promise<TestEcosystem | undefined> {

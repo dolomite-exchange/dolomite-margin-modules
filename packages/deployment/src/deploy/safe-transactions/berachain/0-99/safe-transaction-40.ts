@@ -44,8 +44,8 @@ async function main(): Promise<DryRunOutput<Network.Berachain>> {
     },
     scriptName: getScriptName(__filename),
     invariants: async () => {
-      await checkIsGlobalOperator(core, eBtc);
-      await checkIsGlobalOperator(core, weEth);
+      await checkIsGlobalOperator(core, eBtc, true);
+      await checkIsGlobalOperator(core, weEth, true);
     },
   };
 }

@@ -3,7 +3,7 @@ import { getRealLatestBlockNumber } from 'packages/base/test/utils';
 import { setupCoreProtocol } from 'packages/base/test/utils/setup';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
 import { doDryRunAndCheckDeployment, DryRunOutput, EncodedTransaction } from '../../../../utils/dry-run-utils';
-import getScriptName from '../../../../../utils/get-script-name';
+import getScriptName from '../../../../utils/get-script-name';
 import { prettyPrintEncodedDataWithTypeSafety } from '../../../../utils/encoding/base-encoder-utils';
 
 /**

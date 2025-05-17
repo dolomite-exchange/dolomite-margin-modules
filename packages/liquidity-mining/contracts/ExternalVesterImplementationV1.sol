@@ -502,7 +502,7 @@ contract ExternalVesterImplementationV1 is
         return IERC20Mintable(_getAddress(_O_TOKEN_SLOT));
     }
 
-    function owner() public view returns (address) {
+    function owner() public virtual view returns (address) {
         return _getAddress(_OWNER_SLOT);
     }
 

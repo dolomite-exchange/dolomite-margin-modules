@@ -8,6 +8,7 @@ import {
 } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
   setupCoreProtocol,
+  setupHONEYBalance,
   setupTestMarket,
   setupUserVaultProxy,
   setupWBERABalance,
@@ -19,21 +20,22 @@ import { createContractWithAbi, createTestToken } from 'packages/base/src/utils/
 import { SignerWithAddressWithSafety } from 'packages/base/src/utils/SignerWithAddressWithSafety';
 import { CoreProtocolBerachain } from 'packages/base/test/utils/core-protocols/core-protocol-berachain';
 import {
-  BerachainRewardsMetaVault,
-  BerachainRewardsMetaVault__factory,
   BerachainRewardsRegistry,
   InfraredBGTIsolationModeTokenVaultV1,
   InfraredBGTIsolationModeTokenVaultV1__factory,
   InfraredBGTIsolationModeVaultFactory,
+  InfraredBGTMetaVault,
+  InfraredBGTMetaVault__factory,
   TestInfraredVault,
   TestInfraredVault__factory,
 } from '../src/types';
 import {
   createBerachainRewardsRegistry,
   createInfraredBGTIsolationModeTokenVaultV1,
-  createInfraredBGTIsolationModeVaultFactory,
+  createInfraredBGTIsolationModeVaultFactory, createPolLiquidatorProxy,
 } from './berachain-ecosystem-utils';
 import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
+import { createLiquidatorProxyV5 } from 'packages/base/test/utils/dolomite';
 
 const IBGT_WHALE_ADDRESS = '0x9b45388Fc442343dE9959D710eB47Da8c09eE2d9';
 const defaultAccountNumber = ZERO_BI;
@@ -51,6 +53,7 @@ describe('InfraredBGTIsolationModeTokenVaultV1', () => {
   let iBgtVault: InfraredBGTIsolationModeTokenVaultV1;
   let iBgtMarketId: BigNumber;
   let iBgtWhale: SignerWithAddressWithSafety;
+  let metaVault: InfraredBGTMetaVault;
 
   before(async () => {
     core = await setupCoreProtocol({
@@ -58,12 +61,14 @@ describe('InfraredBGTIsolationModeTokenVaultV1', () => {
       network: Network.Berachain,
     });
 
-    const metaVaultImplementation = await createContractWithAbi<BerachainRewardsMetaVault>(
-      BerachainRewardsMetaVault__factory.abi,
-      BerachainRewardsMetaVault__factory.bytecode,
+    const liquidatorProxyV5 = await createLiquidatorProxyV5(core);
+    const polLiquidatorProxy = await createPolLiquidatorProxy(core, liquidatorProxyV5);
+    const metaVaultImplementation = await createContractWithAbi<InfraredBGTMetaVault>(
+      InfraredBGTMetaVault__factory.abi,
+      InfraredBGTMetaVault__factory.bytecode,
       [],
     );
-    registry = await createBerachainRewardsRegistry(core, metaVaultImplementation);
+    registry = await createBerachainRewardsRegistry(core, metaVaultImplementation, polLiquidatorProxy);
 
     const iBgtVaultImplementation = await createInfraredBGTIsolationModeTokenVaultV1();
     iBgtFactory = await createInfraredBGTIsolationModeVaultFactory(
@@ -87,6 +92,10 @@ describe('InfraredBGTIsolationModeTokenVaultV1', () => {
       InfraredBGTIsolationModeTokenVaultV1__factory,
       core.hhUser1,
     );
+    metaVault = InfraredBGTMetaVault__factory.connect(
+      await registry.getMetaVaultByVault(iBgtVault.address),
+      core.hhUser1
+    );
 
     iBgtWhale = await impersonate(IBGT_WHALE_ADDRESS, true);
     await core.tokens.iBgt.connect(iBgtWhale).transfer(core.hhUser1.address, amountWei);
@@ -96,6 +105,13 @@ describe('InfraredBGTIsolationModeTokenVaultV1', () => {
       TestInfraredVault__factory.abi,
       TestInfraredVault__factory.bytecode,
       [core.tokens.iBgt.address],
+    );
+
+    // to avoid price expired errors when advancing time
+    await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.honey.address, ONE_ETH_BI);
+    await core.dolomiteMargin.connect(core.governance).ownerSetPriceOracle(
+      core.marketIds.honey,
+      core.testEcosystem!.testPriceOracle.address
     );
 
     snapshotId = await snapshot();
@@ -116,7 +132,10 @@ describe('InfraredBGTIsolationModeTokenVaultV1', () => {
     });
 
     it('should fail if not called by metaVault', async () => {
-      await expectThrow(iBgtVault.setIsDepositSourceMetaVault(true), 'MetaVaultRewardReceiver: Only metaVault');
+      await expectThrow(
+        iBgtVault.connect(core.hhUser1).setIsDepositSourceMetaVault(true),
+        'MetaVaultRewardReceiver: Only metaVault'
+      );
     });
   });
 
@@ -125,7 +144,20 @@ describe('InfraredBGTIsolationModeTokenVaultV1', () => {
       await iBgtVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await expectProtocolBalance(core, iBgtVault, defaultAccountNumber, iBgtMarketId, amountWei);
       expect(await iBgtVault.underlyingBalanceOf()).to.eq(amountWei);
-      expect(await core.berachainRewardsEcosystem.iBgtStakingPool.balanceOf(iBgtVault.address)).to.eq(amountWei);
+      expect(await core.berachainRewardsEcosystem.iBgtStakingPool.balanceOf(metaVault.address)).to.eq(amountWei);
+    });
+
+    it('should work normally if staking is paused', async () => {
+      await testInfraredVault.setRewardTokens([core.tokens.iBgt.address]);
+      await core.tokens.iBgt.connect(iBgtWhale).approve(testInfraredVault.address, rewardAmount);
+      await testInfraredVault.connect(iBgtWhale).addReward(core.tokens.iBgt.address, rewardAmount);
+      await registry.connect(core.governance).ownerSetIBgtStakingVault(testInfraredVault.address);
+      await testInfraredVault.setPaused(true);
+
+      await iBgtVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await expectProtocolBalance(core, iBgtVault, defaultAccountNumber, iBgtMarketId, amountWei);
+      expect(await iBgtVault.underlyingBalanceOf()).to.eq(amountWei);
+      expect(await core.berachainRewardsEcosystem.iBgtStakingPool.balanceOf(metaVault.address)).to.eq(ZERO_BI);
     });
 
     it('should work normally if deposit comes from metaVault', async () => {
@@ -139,7 +171,7 @@ describe('InfraredBGTIsolationModeTokenVaultV1', () => {
         .depositIntoDolomiteMarginFromMetaVault(core.hhUser1.address, defaultAccountNumber, amountWei);
       await expectProtocolBalance(core, iBgtVault, defaultAccountNumber, iBgtMarketId, amountWei);
       expect(await iBgtVault.underlyingBalanceOf()).to.eq(amountWei);
-      expect(await core.berachainRewardsEcosystem.iBgtStakingPool.balanceOf(iBgtVault.address)).to.eq(amountWei);
+      expect(await core.berachainRewardsEcosystem.iBgtStakingPool.balanceOf(metaVault.address)).to.eq(amountWei);
     });
 
     it('should fail if not called by factory', async () => {
@@ -190,10 +222,14 @@ describe('InfraredBGTIsolationModeTokenVaultV1', () => {
       await iBgtVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await iBgtVault.unstake(amountWei);
       expect(await iBgtVault.underlyingBalanceOf()).to.eq(amountWei);
+      expect(await core.berachainRewardsEcosystem.iBgtStakingPool.balanceOf(iBgtVault.address)).to.eq(ZERO_BI);
+      expect(await core.tokens.iBgt.balanceOf(iBgtVault.address)).to.eq(amountWei);
 
       await iBgtVault.stake(amountWei);
       expect(await iBgtVault.underlyingBalanceOf()).to.eq(amountWei);
-      expect(await core.berachainRewardsEcosystem.iBgtStakingPool.balanceOf(iBgtVault.address)).to.eq(amountWei);
+      expect(await core.berachainRewardsEcosystem.iBgtStakingPool.balanceOf(metaVault.address)).to.eq(amountWei);
+      expect(await core.tokens.iBgt.balanceOf(iBgtVault.address)).to.eq(ZERO_BI);
+      expect(await core.tokens.iBgt.balanceOf(metaVault.address)).to.eq(ZERO_BI);
     });
 
     it('should fail if not called by vault owner', async () => {
@@ -209,7 +245,10 @@ describe('InfraredBGTIsolationModeTokenVaultV1', () => {
       await iBgtVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       expect(await iBgtVault.underlyingBalanceOf()).to.eq(amountWei);
       await iBgtVault.unstake(amountWei);
+      expect(await core.berachainRewardsEcosystem.iBgtStakingPool.balanceOf(iBgtVault.address)).to.eq(ZERO_BI);
+      expect(await core.berachainRewardsEcosystem.iBgtStakingPool.balanceOf(metaVault.address)).to.eq(ZERO_BI);
       expect(await iBgtVault.underlyingBalanceOf()).to.eq(amountWei);
+      expect(await core.tokens.iBgt.balanceOf(iBgtVault.address)).to.eq(amountWei);
     });
 
     it('should fail if not called by vault owner', async () => {
@@ -221,28 +260,47 @@ describe('InfraredBGTIsolationModeTokenVaultV1', () => {
   });
 
   describe('#getReward', () => {
+    // @todo add tests here with new situations with extra tokens in metavault and/or vault
     it('should work normally (honey)', async () => {
+      await testInfraredVault.setRewardTokens([core.tokens.honey.address]);
+      await setupHONEYBalance(core, core.hhUser5, rewardAmount, { address: testInfraredVault.address });
+      await testInfraredVault.connect(core.hhUser5).addReward(core.tokens.honey.address, rewardAmount);
+      await registry.connect(core.governance).ownerSetIBgtStakingVault(testInfraredVault.address);
+
       await iBgtVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await expectProtocolBalance(core, iBgtVault, defaultAccountNumber, iBgtMarketId, amountWei);
-      await increase(ONE_DAY_SECONDS * 30);
-      await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.honey.address, ONE_ETH_BI);
-      await core.dolomiteMargin.connect(core.governance).ownerSetPriceOracle(
-        core.marketIds.honey,
-        core.testEcosystem!.testPriceOracle.address
-      );
 
-      const reward = await core.berachainRewardsEcosystem.iBgtStakingPool.getAllRewardsForUser(iBgtVault.address);
       await iBgtVault.getReward();
       await expectWalletBalance(iBgtVault, core.tokens.iBgt, ZERO_BI);
       await expectProtocolBalance(core, iBgtVault, defaultAccountNumber, iBgtMarketId, amountWei);
-      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.honey, reward[0].amount);
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.honey, rewardAmount);
+    });
+
+    it('should work normally if rewards are sent prior to user calling getReward', async () => {
+      await testInfraredVault.setRewardTokens([core.tokens.honey.address]);
+      await setupHONEYBalance(core, core.hhUser5, rewardAmount, { address: testInfraredVault.address });
+      await testInfraredVault.connect(core.hhUser5).addReward(core.tokens.honey.address, rewardAmount);
+      await registry.connect(core.governance).ownerSetIBgtStakingVault(testInfraredVault.address);
+
+      await iBgtVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await expectProtocolBalance(core, iBgtVault, defaultAccountNumber, iBgtMarketId, amountWei);
+
+      await testInfraredVault.getRewardForUser(metaVault.address);
+      await expectWalletBalance(metaVault, core.tokens.honey, rewardAmount);
+
+      await iBgtVault.getReward();
+      await expectWalletBalance(iBgtVault, core.tokens.iBgt, ZERO_BI);
+      await expectProtocolBalance(core, iBgtVault, defaultAccountNumber, iBgtMarketId, amountWei);
+
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.honey, rewardAmount);
+      await expectWalletBalance(metaVault, core.tokens.honey, ZERO_BI);
     });
 
     it('should work normally for iBgt reward', async () => {
       await testInfraredVault.setRewardTokens([core.tokens.iBgt.address]);
       await core.tokens.iBgt.connect(iBgtWhale).approve(testInfraredVault.address, rewardAmount);
       await testInfraredVault.connect(iBgtWhale).addReward(core.tokens.iBgt.address, rewardAmount);
-      await registry.connect(core.governance).ownerSetIBgtVault(testInfraredVault.address);
+      await registry.connect(core.governance).ownerSetIBgtStakingVault(testInfraredVault.address);
 
       await iBgtVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await expectProtocolBalance(core, iBgtVault, defaultAccountNumber, iBgtMarketId, amountWei);
@@ -252,15 +310,56 @@ describe('InfraredBGTIsolationModeTokenVaultV1', () => {
       await expectProtocolBalance(core, iBgtVault, defaultAccountNumber, iBgtMarketId, amountWei.add(rewardAmount));
     });
 
+    it('should work normally if ibgt rewards are sent prior to user calling getReward', async () => {
+      await testInfraredVault.setRewardTokens([core.tokens.iBgt.address]);
+      await core.tokens.iBgt.connect(iBgtWhale).approve(testInfraredVault.address, rewardAmount);
+      await testInfraredVault.connect(iBgtWhale).addReward(core.tokens.iBgt.address, rewardAmount);
+      await registry.connect(core.governance).ownerSetIBgtStakingVault(testInfraredVault.address);
+
+      await iBgtVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await expectProtocolBalance(core, iBgtVault, defaultAccountNumber, iBgtMarketId, amountWei);
+
+      await testInfraredVault.getRewardForUser(metaVault.address);
+      await expectWalletBalance(metaVault, core.tokens.iBgt, rewardAmount);
+
+      await iBgtVault.getReward();
+      await expectWalletBalance(iBgtVault, core.tokens.iBgt, ZERO_BI);
+      await expectWalletBalance(metaVault, core.tokens.iBgt, ZERO_BI);
+      await expectProtocolBalance(core, iBgtVault, defaultAccountNumber, iBgtMarketId, amountWei.add(rewardAmount));
+      expect(await testInfraredVault.balanceOf(metaVault.address)).to.eq(amountWei.add(rewardAmount));
+    });
+
+    it('should work normally if ibgt rewards are sent to a vault with an unstaked balance', async () => {
+      await testInfraredVault.setRewardTokens([core.tokens.iBgt.address]);
+      await core.tokens.iBgt.connect(iBgtWhale).approve(testInfraredVault.address, rewardAmount);
+      await testInfraredVault.connect(iBgtWhale).addReward(core.tokens.iBgt.address, rewardAmount);
+      await registry.connect(core.governance).ownerSetIBgtStakingVault(testInfraredVault.address);
+
+      await iBgtVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await iBgtVault.unstake(amountWei);
+      await expectProtocolBalance(core, iBgtVault, defaultAccountNumber, iBgtMarketId, amountWei);
+      await expectWalletBalance(iBgtVault, core.tokens.iBgt, amountWei);
+
+      await testInfraredVault.getRewardForUser(metaVault.address);
+      await expectWalletBalance(metaVault, core.tokens.iBgt, rewardAmount);
+
+      await iBgtVault.getReward();
+      await expectWalletBalance(iBgtVault, core.tokens.iBgt, amountWei);
+      await expectWalletBalance(metaVault, core.tokens.iBgt, ZERO_BI);
+      await expectProtocolBalance(core, iBgtVault, defaultAccountNumber, iBgtMarketId, amountWei.add(rewardAmount));
+      expect(await testInfraredVault.balanceOf(metaVault.address)).to.eq(rewardAmount);
+    });
+
     it('should work normally for reward that has reached max supply wei', async () => {
       await core.dolomiteMargin.connect(core.governance).ownerSetMaxSupplyWei(core.marketIds.wbera, 1);
       await testInfraredVault.setRewardTokens([core.tokens.wbera.address]);
       await setupWBERABalance(core, core.hhUser1, rewardAmount, { address: testInfraredVault.address });
       await testInfraredVault.connect(core.hhUser1).addReward(core.tokens.wbera.address, rewardAmount);
-      await registry.connect(core.governance).ownerSetIBgtVault(testInfraredVault.address);
+      await registry.connect(core.governance).ownerSetIBgtStakingVault(testInfraredVault.address);
 
       await iBgtVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await expectProtocolBalance(core, iBgtVault, defaultAccountNumber, iBgtMarketId, amountWei);
+      await expectWalletBalance(core.hhUser1, core.tokens.wbera, ZERO_BI);
       await iBgtVault.getReward();
       await expectProtocolBalance(core, iBgtVault, defaultAccountNumber, iBgtMarketId, amountWei);
       await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.wbera, ZERO_BI);
@@ -273,10 +372,11 @@ describe('InfraredBGTIsolationModeTokenVaultV1', () => {
       await testToken.addBalance(core.hhUser1.address, rewardAmount);
       await testToken.connect(core.hhUser1).approve(testInfraredVault.address, rewardAmount);
       await testInfraredVault.connect(core.hhUser1).addReward(testToken.address, rewardAmount);
-      await registry.connect(core.governance).ownerSetIBgtVault(testInfraredVault.address);
+      await registry.connect(core.governance).ownerSetIBgtStakingVault(testInfraredVault.address);
 
       await iBgtVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await expectProtocolBalance(core, iBgtVault, defaultAccountNumber, iBgtMarketId, amountWei);
+      await expectWalletBalance(core.hhUser1, testToken, ZERO_BI);
       await iBgtVault.getReward();
       await expectProtocolBalance(core, iBgtVault, defaultAccountNumber, iBgtMarketId, amountWei);
       await expectWalletBalance(core.hhUser1, testToken, rewardAmount);
@@ -284,7 +384,7 @@ describe('InfraredBGTIsolationModeTokenVaultV1', () => {
 
     it('should work normally if 0 reward', async () => {
       await testInfraredVault.setRewardTokens([core.tokens.iBgt.address]);
-      await registry.connect(core.governance).ownerSetIBgtVault(testInfraredVault.address);
+      await registry.connect(core.governance).ownerSetIBgtStakingVault(testInfraredVault.address);
 
       await iBgtVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await expectProtocolBalance(core, iBgtVault, defaultAccountNumber, iBgtMarketId, amountWei);
@@ -296,6 +396,73 @@ describe('InfraredBGTIsolationModeTokenVaultV1', () => {
     it('should fail if not called by vault owner', async () => {
       await expectThrow(
         iBgtVault.connect(core.hhUser2).getReward(),
+        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
+      );
+    });
+  });
+
+  describe('#exit', () => {
+    it('should work normally', async () => {
+      await testInfraredVault.setRewardTokens([core.tokens.honey.address]);
+      await setupHONEYBalance(core, core.hhUser5, rewardAmount, { address: testInfraredVault.address });
+      await testInfraredVault.connect(core.hhUser5).addReward(core.tokens.honey.address, rewardAmount);
+      await registry.connect(core.governance).ownerSetIBgtStakingVault(testInfraredVault.address);
+
+      await iBgtVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await expectProtocolBalance(core, iBgtVault, defaultAccountNumber, iBgtMarketId, amountWei);
+
+      await iBgtVault.exit();
+      await expectWalletBalance(iBgtVault, core.tokens.iBgt, amountWei);
+      await expectProtocolBalance(core, iBgtVault, defaultAccountNumber, iBgtMarketId, amountWei);
+      expect(await core.berachainRewardsEcosystem.iBgtStakingPool.balanceOf(iBgtVault.address)).to.eq(ZERO_BI);
+      expect(await core.berachainRewardsEcosystem.iBgtStakingPool.balanceOf(metaVault.address)).to.eq(ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.honey, rewardAmount);
+    });
+
+    it('should work normally if iBGT rewards are accrued in exit', async () => {
+      await testInfraredVault.setRewardTokens([core.tokens.iBgt.address]);
+      await core.tokens.iBgt.connect(iBgtWhale).approve(testInfraredVault.address, rewardAmount);
+      await testInfraredVault.connect(iBgtWhale).addReward(core.tokens.iBgt.address, rewardAmount);
+      await registry.connect(core.governance).ownerSetIBgtStakingVault(testInfraredVault.address);
+
+      await iBgtVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await expectProtocolBalance(core, iBgtVault, defaultAccountNumber, iBgtMarketId, amountWei);
+
+      // Get   the initial staking balance before exit
+      const initialStakingBalance = await testInfraredVault.balanceOf(metaVault.address);
+      expect(initialStakingBalance).to.eq(amountWei);
+
+      // Call exit which should unstake original amount but rewards will be re-staked
+      await iBgtVault.exit();
+
+      // Check that staking balance equals reward amount (rewards were re-staked)
+      const finalStakingBalance = await testInfraredVault.balanceOf(metaVault.address);
+      expect(finalStakingBalance).to.eq(ZERO_BI, 'Staking balance should equal reward amount after exit');
+
+      // Verify original deposit is in the wallet with rewards
+      await expectWalletBalance(iBgtVault, core.tokens.iBgt, amountWei.add(rewardAmount));
+
+      // Verify protocol balance now includes both original deposit and rewards
+      await expectProtocolBalance(core, iBgtVault, defaultAccountNumber, iBgtMarketId, amountWei.add(rewardAmount));
+    });
+
+    it('should work if user has no balance at all', async () => {
+      await testInfraredVault.setRewardTokens([core.tokens.iBgt.address]);
+      await registry.connect(core.governance).ownerSetIBgtStakingVault(testInfraredVault.address);
+
+      await iBgtVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await iBgtVault.unstake(amountWei);
+      await expectWalletBalance(iBgtVault, core.tokens.iBgt, amountWei);
+      await expectProtocolBalance(core, iBgtVault, defaultAccountNumber, iBgtMarketId, amountWei);
+
+      await iBgtVault.exit();
+      await expectWalletBalance(iBgtVault, core.tokens.iBgt, amountWei);
+      await expectProtocolBalance(core, iBgtVault, defaultAccountNumber, iBgtMarketId, amountWei);
+    });
+
+    it('should fail if not called by vault owner', async () => {
+      await expectThrow(
+        iBgtVault.connect(core.hhUser2).exit(),
         `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });

@@ -1,15 +1,24 @@
 import { BigNumber, BigNumberish, ethers } from 'ethers';
-import { formatUnits } from 'ethers/lib/utils';
+import { formatUnits, parseEther } from 'ethers/lib/utils';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
-import { IERC20, IERC20Metadata__factory } from '../../../base/src/types';
+import { IDolomiteInterestSetter, IERC20, IERC20Metadata__factory } from '../../../base/src/types';
 import { IDolomiteStructs } from '../../../base/src/types/contracts/protocol/interfaces/IDolomiteMargin';
 import { INVALID_TOKEN_MAP } from '../../../base/src/utils/constants';
-import { NetworkType, ONE_ETH_BI } from '../../../base/src/utils/no-deps-constants';
+import {
+  AccountRiskOverrideCategory,
+  AccountRiskOverrideRiskFeature,
+  getLiquidationPremiumForTargetLiquidationPenalty,
+  getMarginPremiumForTargetCollateralization,
+  SingleCollateralWithStrictDebtParams,
+  TargetCollateralization,
+  TargetLiquidationPenalty,
+} from '../../../base/src/utils/constructors/dolomite';
+import { DolomiteNetwork, ONE_ETH_BI } from '../../../base/src/utils/no-deps-constants';
 import { CoreProtocolBerachain } from '../../../base/test/utils/core-protocols/core-protocol-berachain';
 import { CoreProtocolType } from '../../../base/test/utils/setup';
 import { readDeploymentFile } from './deploy-utils';
 
-export async function printPriceForVisualCheck(core: CoreProtocolBerachain, token: IERC20) {
+export async function printPriceForVisualCheck<T extends DolomiteNetwork>(core: CoreProtocolType<T>, token: IERC20) {
   const meta = IERC20Metadata__factory.connect(token.address, token.provider);
   const invalidToken = INVALID_TOKEN_MAP[core.network][token.address];
   const symbol = invalidToken ? invalidToken.symbol : await meta.symbol();
@@ -18,7 +27,7 @@ export async function printPriceForVisualCheck(core: CoreProtocolBerachain, toke
   console.log(`\tPrice for ${symbol}:`, formatUnits(price.value, 36 - decimals));
 }
 
-export async function printRiskDataVisualCheck<T extends NetworkType>(
+export async function printRiskDataVisualCheck<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   marketId: BigNumberish,
 ) {
@@ -66,7 +75,7 @@ function convertWeiToDisplayNumber(value: BigNumberish, decimals: number, symbol
   return `${Number(ethers.utils.formatUnits(value, decimals)).toLocaleString()} ${symbol}`;
 }
 
-function convertInterestSetterToDisplayName<T extends NetworkType>(
+function convertInterestSetterToDisplayName<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   interestSetter: string,
 ): string {
@@ -100,18 +109,30 @@ export async function checkMarket(core: CoreProtocolBerachain, marketId: BigNumb
   );
 }
 
-export async function checkIsGlobalOperator<T extends NetworkType>(
+export async function checkIsGlobalOperator<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   address: string | { address: string },
+  isGlobalOperator: boolean,
 ) {
   const value = typeof address === 'string' ? address : address.address;
   assertHardhatInvariant(
-    await core.dolomiteMargin.getIsGlobalOperator(value),
+    await core.dolomiteMargin.getIsGlobalOperator(value) === isGlobalOperator,
     `Expected ${value} to be global operator`,
   );
 }
 
-export async function checkSupplyCap<T extends NetworkType>(
+export async function checkMarketId<T extends DolomiteNetwork>(
+  core: CoreProtocolType<T>,
+  marketId: BigNumberish,
+  token: IERC20,
+) {
+  assertHardhatInvariant(
+    (await core.dolomiteMargin.getMarketTokenAddress(marketId)) === token.address,
+    `Invalid market ID for ${marketId}`,
+  );
+}
+
+export async function checkSupplyCap<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   marketId: BigNumberish,
   expectedAmount: BigNumberish,
@@ -131,7 +152,7 @@ export async function checkSupplyCap<T extends NetworkType>(
   );
 }
 
-export async function checkBorrowCap<T extends NetworkType>(
+export async function checkBorrowCap<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   marketId: BigNumberish,
   expectedAmount: BigNumberish,
@@ -151,7 +172,43 @@ export async function checkBorrowCap<T extends NetworkType>(
   );
 }
 
-export async function checkIsCollateralOnly<T extends NetworkType>(
+let baseCollateralization: BigNumber | undefined;
+
+export async function checkMinCollateralization<T extends DolomiteNetwork>(
+  core: CoreProtocolType<T>,
+  marketId: BigNumberish,
+  collateralization: TargetCollateralization,
+) {
+  if (!baseCollateralization) {
+    baseCollateralization = (await core.dolomiteMargin.getMarginRatio()).value.add(ONE_ETH_BI);
+  }
+
+  const marginPremium = (await core.dolomiteMargin.getMarketMarginPremium(marketId)).value;
+  assertHardhatInvariant(
+    getMarginPremiumForTargetCollateralization(baseCollateralization, collateralization).eq(marginPremium),
+    `Expected market [${marketId}] to have a target collateralization of ${collateralization}`,
+  );
+}
+
+let baseLiquidationPenalty: BigNumber | undefined;
+
+export async function checkLiquidationPenalty<T extends DolomiteNetwork>(
+  core: CoreProtocolType<T>,
+  marketId: BigNumberish,
+  liquidationPenalty: TargetLiquidationPenalty,
+) {
+  if (!baseLiquidationPenalty) {
+    baseLiquidationPenalty = (await core.dolomiteMargin.getLiquidationSpread()).value;
+  }
+
+  const liquidationPremium = (await core.dolomiteMargin.getMarketSpreadPremium(marketId)).value;
+  assertHardhatInvariant(
+    getLiquidationPremiumForTargetLiquidationPenalty(baseLiquidationPenalty, liquidationPenalty).eq(liquidationPremium),
+    `Expected market [${marketId}] to have a target liquidation penalty of ${liquidationPenalty}`,
+  );
+}
+
+export async function checkIsCollateralOnly<T extends DolomiteNetwork>(
   core: CoreProtocolType<T>,
   marketId: BigNumberish,
   expectedCollateralOnly: boolean,
@@ -165,5 +222,92 @@ export async function checkIsCollateralOnly<T extends NetworkType>(
   assertHardhatInvariant(
     (await core.dolomiteMargin.getMarketIsClosing(marketId)) === expectedCollateralOnly,
     errorMessage,
+  );
+}
+
+export async function checkInterestSetter<T extends DolomiteNetwork>(
+  core: CoreProtocolType<T>,
+  marketId: BigNumberish,
+  expectedInterestSetter: IDolomiteInterestSetter,
+) {
+  assertHardhatInvariant(
+    (await core.dolomiteMargin.getMarketInterestSetter(marketId)) === expectedInterestSetter.address,
+    `Expected market [${marketId}] to have interest setter ${expectedInterestSetter.address}`,
+  );
+}
+
+export async function checkAccountRiskOverrideCategory<T extends DolomiteNetwork>(
+  core: CoreProtocolType<T>,
+  marketId: BigNumberish,
+  category: AccountRiskOverrideCategory,
+) {
+  assertHardhatInvariant(
+    (await core.dolomiteAccountRiskOverrideSetter.getCategoryByMarketId(marketId)) === category,
+    `Expected market [${marketId}] to have risk category ${category}`,
+  );
+}
+
+export async function checkAccountRiskOverrideIsNone<T extends DolomiteNetwork>(
+  core: CoreProtocolType<T>,
+  marketId: BigNumberish,
+) {
+  const riskFeature = await core.dolomiteAccountRiskOverrideSetter.getRiskFeatureByMarketId(marketId);
+  assertHardhatInvariant(
+    riskFeature === AccountRiskOverrideRiskFeature.NONE,
+    `Expected market [${marketId}] to be none`,
+  );
+}
+
+export async function checkAccountRiskOverrideIsBorrowOnly<T extends DolomiteNetwork>(
+  core: CoreProtocolType<T>,
+  marketId: BigNumberish,
+) {
+  const riskFeature = await core.dolomiteAccountRiskOverrideSetter.getRiskFeatureByMarketId(marketId);
+  assertHardhatInvariant(
+    riskFeature === AccountRiskOverrideRiskFeature.BORROW_ONLY,
+    `Expected market [${marketId}] to be borrow only but found: ${riskFeature}`,
+  );
+}
+
+export async function checkAccountRiskOverrideIsSingleCollateral<T extends DolomiteNetwork>(
+  core: CoreProtocolType<T>,
+  marketId: BigNumberish,
+  params: SingleCollateralWithStrictDebtParams[],
+) {
+  const structs = await core.dolomiteAccountRiskOverrideSetter.getRiskFeatureForSingleCollateralByMarketId(marketId);
+  structs.forEach((s, index) => {
+    const expectedParam = params[index];
+    const debtMarketIdsSorted = [...s.debtMarketIds].sort((a, b) => a.toNumber() - b.toNumber());
+    assertHardhatInvariant(
+      debtMarketIdsSorted.length === debtMarketIdsSorted.length &&
+      debtMarketIdsSorted.every(d1 => debtMarketIdsSorted.some(d2 => d1.eq(d2))),
+      'Single collateral params debt markets do not match',
+    );
+
+    assertHardhatInvariant(
+      s.marginRatioOverride.value.eq(parseEther(expectedParam.marginRatioOverride).sub(ONE_ETH_BI)),
+      'Single collateral params margin ratios do not match',
+    );
+    assertHardhatInvariant(
+      s.liquidationRewardOverride.value.eq(parseEther(expectedParam.liquidationRewardOverride)),
+      'Single collateral params margin ratios do not match',
+    );
+  });
+}
+
+export async function checkAccountRiskOverrideCategorySettings<T extends DolomiteNetwork>(
+  core: CoreProtocolType<T>,
+  category: AccountRiskOverrideCategory,
+  expectedCollateralization: TargetCollateralization,
+  expectedLiquidationPenalty: TargetLiquidationPenalty,
+) {
+  const param = await core.dolomiteAccountRiskOverrideSetter.getCategoryParamByCategory(category);
+  assertHardhatInvariant(
+    param.marginRatioOverride.value.eq(parseEther(expectedCollateralization).sub(ONE_ETH_BI)),
+    `Expected category [${category}] to have margin ratio of ${expectedCollateralization}`,
+  );
+  assertHardhatInvariant(
+    param.liquidationRewardOverride.value.eq(parseEther(expectedLiquidationPenalty)),
+    `Expected category [${category}] to have liquidation penalty of ${expectedLiquidationPenalty}`,
   );
 }
