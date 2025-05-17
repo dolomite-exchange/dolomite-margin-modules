@@ -385,8 +385,7 @@ export async function deployContractAndSave(
   }
 
   const invalidNames = ['RegistryProxy', 'UpgradeableProxy'];
-  const usedContractName = contractRename ?? contractName;
-  if (invalidNames.includes(usedContractName)) {
+  if (invalidNames.includes(contractName) && !contractRename) {
     if (!options.skipRenameUpgradeableContracts) {
       console.error('Cannot deploy an upgradeable contract with an invalid name:', invalidNames);
     }
