@@ -5,7 +5,7 @@ import { setupCoreProtocol, setupTestMarket } from "packages/base/test/utils/set
 import { GlvIsolationModeTokenVaultV1, GlvIsolationModeTokenVaultV1__factory } from "../src/types";
 import { SignerWithAddressWithSafety } from "packages/base/src/utils/SignerWithAddressWithSafety";
 import { ZERO_ADDRESS } from "@openzeppelin/upgrades/lib/utils/Addresses";
-import { CHAINLINK_PRICE_AGGREGATORS_MAP, GMXV2_TOKEN_ADDRESS_MAP, INVALID_TOKEN_MAP } from "packages/base/src/utils/constants";
+import { CHAINLINK_PRICE_AGGREGATORS_MAP, GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP, INVALID_TOKEN_MAP } from "packages/base/src/utils/constants";
 import { createGmxV2IsolationModeVaultFactory, createGmxV2Library } from "packages/gmx-v2/test/gmx-v2-ecosystem-utils";
 import { GMX_V2_EXECUTION_FEE_FOR_TESTS } from "packages/gmx-v2/src/gmx-v2-constructors";
 import { formatEther } from "ethers/lib/utils";
@@ -39,7 +39,7 @@ describe('Glv Gm Markets Test', () => {
   describe('#glv btc', () => {
     it('should work normally for ada', async () => {
       // Add ada oracle and gmx ada address
-      const gmxAdaAddress = GMXV2_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['ADA'];
+      const gmxAdaAddress = GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['ADA'];
       await core.chainlinkPriceOracleV3.connect(core.governance).ownerInsertOrUpdateOracleToken(
         gmxAdaAddress,
         CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][gmxAdaAddress]!.aggregatorAddress,
@@ -78,7 +78,7 @@ describe('Glv Gm Markets Test', () => {
     });
 
     it('should work normally for cake', async () => {
-      const gmxCakeAddress = GMXV2_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['CAKE'];
+      const gmxCakeAddress = GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['CAKE'];
       await core.chainlinkPriceOracleV3.connect(core.governance).ownerInsertOrUpdateOracleToken(
         gmxCakeAddress,
         CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][gmxCakeAddress]!.aggregatorAddress,
@@ -117,7 +117,7 @@ describe('Glv Gm Markets Test', () => {
     });
 
     it('should work normally for dot', async () => {
-      const gmxDotAddress = GMXV2_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['DOT'];
+      const gmxDotAddress = GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['DOT'];
       await core.chainlinkPriceOracleV3.connect(core.governance).ownerInsertOrUpdateOracleToken(
         gmxDotAddress,
         CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][gmxDotAddress]!.aggregatorAddress,
@@ -156,7 +156,7 @@ describe('Glv Gm Markets Test', () => {
     });
 
     it('should work normally for hype', async () => {
-      const gmxHypeAddress = GMXV2_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['HYPE'];
+      const gmxHypeAddress = GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['HYPE'];
       await core.chainlinkPriceOracleV3.connect(core.governance).ownerInsertOrUpdateOracleToken(
         gmxHypeAddress,
         CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][gmxHypeAddress]!.aggregatorAddress,
@@ -195,7 +195,7 @@ describe('Glv Gm Markets Test', () => {
     });
 
     it('should work normally for ordi', async () => {
-      const gmxOrdiAddress = GMXV2_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['ORDI'];
+      const gmxOrdiAddress = GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['ORDI'];
       await core.chainlinkPriceOracleV3.connect(core.governance).ownerInsertOrUpdateOracleToken(
         gmxOrdiAddress,
         CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][gmxOrdiAddress]!.aggregatorAddress,
@@ -234,7 +234,7 @@ describe('Glv Gm Markets Test', () => {
     });
 
     it('should work normally for stx', async () => {
-      const gmxStxAddress = GMXV2_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['STX'];
+      const gmxStxAddress = GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['STX'];
       await core.chainlinkPriceOracleV3.connect(core.governance).ownerInsertOrUpdateOracleToken(
         gmxStxAddress,
         CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][gmxStxAddress]!.aggregatorAddress,
@@ -273,7 +273,7 @@ describe('Glv Gm Markets Test', () => {
     });
 
     it('should work normally for tao', async () => {
-      const gmxTaoAddress = GMXV2_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['TAO'];
+      const gmxTaoAddress = GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['TAO'];
       await core.chainlinkPriceOracleV3.connect(core.governance).ownerInsertOrUpdateOracleToken(
         gmxTaoAddress,
         CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][gmxTaoAddress]!.aggregatorAddress,
@@ -315,7 +315,7 @@ describe('Glv Gm Markets Test', () => {
   describe('#glv eth', () => {
     it('should work normally for dolo', async () => {
       // Add dolo oracle and gmx dolo address
-      const gmxDoloAddress = GMXV2_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['DOLO'];
+      const gmxDoloAddress = GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['DOLO'];
       await core.chainlinkPriceOracleV3.connect(core.governance).ownerInsertOrUpdateOracleToken(
         gmxDoloAddress,
         CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][gmxDoloAddress]!.aggregatorAddress,
@@ -355,7 +355,7 @@ describe('Glv Gm Markets Test', () => {
 
     it('should work normally for ethena', async () => {
       // Add ethena oracle and gmx ethena address
-      const gmxEthenaAddress = GMXV2_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['ENA'];
+      const gmxEthenaAddress = GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['ENA'];
       await core.chainlinkPriceOracleV3.connect(core.governance).ownerInsertOrUpdateOracleToken(
         gmxEthenaAddress,
         CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][gmxEthenaAddress]!.aggregatorAddress,
@@ -395,7 +395,7 @@ describe('Glv Gm Markets Test', () => {
 
     it('should work normally for near', async () => {
       // Add near oracle and gmx near address
-      const gmxNearAddress = GMXV2_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['NEAR'];
+      const gmxNearAddress = GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['NEAR'];
       await core.chainlinkPriceOracleV3.connect(core.governance).ownerInsertOrUpdateOracleToken(
         gmxNearAddress,
         CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][gmxNearAddress]!.aggregatorAddress,
@@ -435,7 +435,7 @@ describe('Glv Gm Markets Test', () => {
 
     it('should work normally for tia', async () => {
       // Add tia oracle and gmx tia address
-      const gmxTiaAddress = GMXV2_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['TIA'];
+      const gmxTiaAddress = GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['TIA'];
       await core.chainlinkPriceOracleV3.connect(core.governance).ownerInsertOrUpdateOracleToken(
         gmxTiaAddress,
         CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][gmxTiaAddress]!.aggregatorAddress,
@@ -475,7 +475,7 @@ describe('Glv Gm Markets Test', () => {
 
     it('should work normally for ltc', async () => {
       // Add ltc oracle and gmx ltc address
-      const gmxLtcAddress = GMXV2_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['LTC'];
+      const gmxLtcAddress = GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['LTC'];
       await core.chainlinkPriceOracleV3.connect(core.governance).ownerInsertOrUpdateOracleToken(
         gmxLtcAddress,
         CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][gmxLtcAddress]!.aggregatorAddress,
@@ -515,7 +515,7 @@ describe('Glv Gm Markets Test', () => {
 
     it.only('should work normally for atom', async () => {
       // Add atom oracle and gmx atom address
-      const gmxAtomAddress = GMXV2_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['ATOM'];
+      const gmxAtomAddress = GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['ATOM'];
       await core.chainlinkPriceOracleV3.connect(core.governance).ownerInsertOrUpdateOracleToken(
         gmxAtomAddress,
         CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][gmxAtomAddress]!.aggregatorAddress,
@@ -555,7 +555,7 @@ describe('Glv Gm Markets Test', () => {
 
     it('should work normally for sei', async () => {
       // Add sei oracle and gmx sei address
-      const gmxSeiAddress = GMXV2_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['SEI'];
+      const gmxSeiAddress = GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['SEI'];
       await core.chainlinkPriceOracleV3.connect(core.governance).ownerInsertOrUpdateOracleToken(
         gmxSeiAddress,
         CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][gmxSeiAddress]!.aggregatorAddress,
@@ -595,7 +595,7 @@ describe('Glv Gm Markets Test', () => {
 
     it('should work normally for makerUsd', async () => {
       // Add mkr oracle and gmx mkr address
-      const gmxMkrAddress = GMXV2_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['MKR'];
+      const gmxMkrAddress = GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['MKR'];
       await core.chainlinkPriceOracleV3.connect(core.governance).ownerInsertOrUpdateOracleToken(
         gmxMkrAddress,
         CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][gmxMkrAddress]!.aggregatorAddress,
@@ -635,7 +635,7 @@ describe('Glv Gm Markets Test', () => {
 
     it('should work normally for zro', async () => {
       // Add zro oracle and gmx zro address
-      const gmxZroAddress = GMXV2_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['ZRO'];
+      const gmxZroAddress = GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['ZRO'];
       await core.chainlinkPriceOracleV3.connect(core.governance).ownerInsertOrUpdateOracleToken(
         gmxZroAddress,
         CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][gmxZroAddress]!.aggregatorAddress,
@@ -675,7 +675,7 @@ describe('Glv Gm Markets Test', () => {
 
     it('should work normally for melania', async () => {
       // Add melania oracle and gmx melania address
-      const gmxMelaniaAddress = GMXV2_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['MELANIA'];
+      const gmxMelaniaAddress = GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['MELANIA'];
       await core.chainlinkPriceOracleV3.connect(core.governance).ownerInsertOrUpdateOracleToken(
         gmxMelaniaAddress,
         CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][gmxMelaniaAddress]!.aggregatorAddress,
@@ -715,7 +715,7 @@ describe('Glv Gm Markets Test', () => {
 
     it('should work normally for ldo', async () => {
       // Add ldo oracle and gmx ldo address
-      const gmxLdoAddress = GMXV2_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['LDO'];
+      const gmxLdoAddress = GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['LDO'];
       await core.chainlinkPriceOracleV3.connect(core.governance).ownerInsertOrUpdateOracleToken(
         gmxLdoAddress,
         CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][gmxLdoAddress]!.aggregatorAddress,
@@ -755,7 +755,7 @@ describe('Glv Gm Markets Test', () => {
 
     it('should work normally for pol', async () => {
       // Add pol oracle and gmx pol address
-      const gmxPolAddress = GMXV2_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['POL'];
+      const gmxPolAddress = GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['POL'];
       await core.chainlinkPriceOracleV3.connect(core.governance).ownerInsertOrUpdateOracleToken(
         gmxPolAddress,
         CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][gmxPolAddress]!.aggregatorAddress,
@@ -795,7 +795,7 @@ describe('Glv Gm Markets Test', () => {
 
     it('should work normally for bera', async () => {
       // Add bera oracle and gmx bera address
-      const gmxBeraAddress = GMXV2_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['BERA'];
+      const gmxBeraAddress = GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['BERA'];
       await core.chainlinkPriceOracleV3.connect(core.governance).ownerInsertOrUpdateOracleToken(
         gmxBeraAddress,
         CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][gmxBeraAddress]!.aggregatorAddress,
@@ -835,7 +835,7 @@ describe('Glv Gm Markets Test', () => {
 
     it('should work normally for xrp', async () => {
       // Add xrp oracle and gmx xrp address
-      const gmxXrpAddress = GMXV2_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['XRP'];
+      const gmxXrpAddress = GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['XRP'];
       await core.chainlinkPriceOracleV3.connect(core.governance).ownerInsertOrUpdateOracleToken(
         gmxXrpAddress,
         CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][gmxXrpAddress]!.aggregatorAddress,
@@ -875,7 +875,7 @@ describe('Glv Gm Markets Test', () => {
 
     it('should work normally for trump', async () => {
       // Add trump oracle and gmx trump address
-      const gmxTrumpAddress = GMXV2_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['TRUMP'];
+      const gmxTrumpAddress = GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['TRUMP'];
       await core.chainlinkPriceOracleV3.connect(core.governance).ownerInsertOrUpdateOracleToken(
         gmxTrumpAddress,
         CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][gmxTrumpAddress]!.aggregatorAddress,
@@ -915,7 +915,7 @@ describe('Glv Gm Markets Test', () => {
 
     it('should work normally for doge', async () => {
       // Add doge oracle and gmx doge address
-      const gmxDogeAddress = GMXV2_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['DOGE'];
+      const gmxDogeAddress = GMX_V2_PLACEHOLDER_TOKEN_ADDRESS_MAP[Network.ArbitrumOne]['DOGE'];
       await core.chainlinkPriceOracleV3.connect(core.governance).ownerInsertOrUpdateOracleToken(
         gmxDogeAddress,
         CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][gmxDogeAddress]!.aggregatorAddress,
